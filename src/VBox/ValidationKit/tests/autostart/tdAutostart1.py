@@ -35,21 +35,15 @@ import array;
 import os;
 import sys;
 import re;
-import struct;
-import time;
 import ssl;
 
 # Python 3 hacks:
 if sys.version_info[0] < 3:
     import urllib2 as urllib; # pylint: disable=import-error,no-name-in-module
-    from urllib2        import quote        as urllib_quote;        # pylint: disable=import-error,no-name-in-module
-    from urllib         import urlencode    as urllib_urlencode;    # pylint: disable=import-error,no-name-in-module
     from urllib2        import ProxyHandler as urllib_ProxyHandler; # pylint: disable=import-error,no-name-in-module
     from urllib2        import build_opener as urllib_build_opener; # pylint: disable=import-error,no-name-in-module
 else:
     import urllib; # pylint: disable=import-error,no-name-in-module
-    from urllib.parse   import quote        as urllib_quote;        # pylint: disable=import-error,no-name-in-module
-    from urllib.parse   import urlencode    as urllib_urlencode;    # pylint: disable=import-error,no-name-in-module
     from urllib.request import ProxyHandler as urllib_ProxyHandler; # pylint: disable=import-error,no-name-in-module
     from urllib.request import build_opener as urllib_build_opener; # pylint: disable=import-error,no-name-in-module
 
@@ -280,7 +274,8 @@ class tdAutostartOs(object):
                 return False;
         return True;
 
-    def guestProcessExecute(self, oGuestSession, sTestName, cMsTimeout, sExecName, asArgs = (), fGetStdOut = True, fIsError = True):
+    def guestProcessExecute(self, oGuestSession, sTestName, cMsTimeout, sExecName, asArgs = (),
+                            fGetStdOut = True, fIsError = True):
         """
         Helper function to execute a program on a guest, specified in the current test.
         Returns (True, ProcessStatus, ProcessExitCode, ProcessStdOutBuffer) on success or (False, 0, 0, None) on failure.
@@ -490,9 +485,8 @@ class tdAutostartOs(object):
         if fRc is not True:
             if not fIgnoreErrors:
                 return reporter.errorXcpt('Download file failed: Could not create session for vbox');
-            else:
-                reporter.log('warning: Download file failed: Could not create session for vbox');
-                return False;
+            reporter.log('warning: Download file failed: Could not create session for vbox');
+            return False;
 
         try:
             if self.fpApiVer >= 5.0:
@@ -707,14 +701,18 @@ class tdAutostartOsLinux(tdAutostartOs):
                               '/tmp/' + os.path.basename(self.sTestBuild));
 
         if fRc:
-            (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Allowing execution for the vbox installer',
-                                                    30 * 1000, '/usr/bin/sudo',
-                                                    ['/usr/bin/sudo', '/bin/chmod', '755', '/tmp/' + os.path.basename(self.sTestBuild)],
-                                                    False, True);
+            (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 
+                                                      'Allowing execution for the vbox installer',
+                                                      30 * 1000, '/usr/bin/sudo',
+                                                      ['/usr/bin/sudo', '/bin/chmod', '755',
+                                                       '/tmp/' + os.path.basename(self.sTestBuild)],
+                                                      False, True);
         if fRc:
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
-                                                    240 * 1000, '/usr/bin/sudo',
-                                                    ['/usr/bin/sudo', '/tmp/' + os.path.basename(self.sTestBuild),], False, True);
+                                                      240 * 1000, '/usr/bin/sudo',
+                                                      ['/usr/bin/sudo',
+                                                       '/tmp/' + os.path.basename(self.sTestBuild),],
+                                                      False, True);
 
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         return fRc;
@@ -1046,13 +1044,14 @@ class tdAutostartOsWin(tdAutostartOs):
             return fRc;
 
         # Create autostart database directory writeable for everyone
-        (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Setting the autostart environment variable',
-                                                  30 * 1000, 'C:\\Windows\\System32\\reg.exe',
-                                                  ['reg', 'add',
-                                                   'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment',
-                                                   '/v', 'VBOXAUTOSTART_CONFIG', '/d',
-                                                   'C:\\ProgramData\\autostart.cfg', '/f'],
-                                                  False, True);
+        (fRc, _, _, _) = \
+            self.guestProcessExecute(oGuestSession, 'Setting the autostart environment variable',
+                                     30 * 1000, 'C:\\Windows\\System32\\reg.exe',
+                                     ['reg', 'add',
+                                      'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment',
+                                      '/v', 'VBOXAUTOSTART_CONFIG', '/d',
+                                      'C:\\ProgramData\\autostart.cfg', '/f'],
+                                     False, True);
 
         sVBoxCfg = self._createAutostartCfg(sDefaultPolicy, asUserAllow, asUserDeny);
         fRc = fRc and self.uploadString(oSession, sVBoxCfg, 'C:\\ProgramData\\autostart.cfg');
@@ -1069,22 +1068,26 @@ class tdAutostartOsWin(tdAutostartOs):
         if not fRc:
             return fRc;
 
-        (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Create VM ' + sVmName,
-                                                30 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
-                                                ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe', 'createvm',
-                                                 '--name', sVmName, '--register'], False, True);
+        (fRc, _, _, _) = \
+            self.guestProcessExecute(oGuestSession, 'Create VM ' + sVmName,
+                                     30 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
+                                     ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe', 'createvm',
+                                      '--name', sVmName, '--register'], False, True);
         if fRc:
-            (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Enabling autostart for test VM',
-                                                    30 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
-                                                    ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
-                                                     'modifyvm', sVmName, '--autostart-enabled', 'on'], False, True);
+            (fRc, _, _, _) = \
+                self.guestProcessExecute(oGuestSession, 'Enabling autostart for test VM',
+                                         30 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
+                                         ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
+                                          'modifyvm', sVmName, '--autostart-enabled', 'on'], False, True);
         fRc = fRc and self.uploadString(oSession, 'password', 'C:\\ProgramData\\password.cfg');
         if fRc:
-            (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Install autostart service for the user',
-                                                    30 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxAutostartSvc.exe',
-                                                    ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxAutostartSvc.exe',
-                                                     'install', '--user=' + sUser, '--password-file=C:\\ProgramData\\password.cfg'],
-                                                    False, True);
+            (fRc, _, _, _) = \
+                self.guestProcessExecute(oGuestSession, 'Install autostart service for the user',
+                                         30 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxAutostartSvc.exe',
+                                         ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxAutostartSvc.exe',
+                                          'install', '--user=' + sUser,
+                                          '--password-file=C:\\ProgramData\\password.cfg'],
+                                         False, True);
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
 
         return fRc;
