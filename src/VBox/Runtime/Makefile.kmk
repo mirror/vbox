@@ -3659,7 +3659,9 @@ RuntimeR3VccTricks_SOURCES  = \
 	r3/win/vcc-fakes-kernel32.cpp \
 	r3/win/vcc-fakes-kernel32-A.asm \
 	r3/win/vcc-fakes-shell32.cpp \
-	r3/win/vcc-fakes-shell32-A.asm
+	r3/win/vcc-fakes-shell32-A.asm \
+	r3/win/vcc-fakes-ntdll.cpp \
+	r3/win/vcc-fakes-ntdll-A.asm
 
 if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" # Ugly hacks... :-)
 LIBRARIES += RuntimeR3VccTricks2

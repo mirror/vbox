@@ -119,6 +119,9 @@ TEMPLATE_VBoxValidationKitR3SupDrv_DEFS = IN_SUP_R3
 TEMPLATE_VBoxValidationKitR3SupDrv_LIBS = \
 	$(PATH_STAGE_LIB)/SUPR3Static$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/RuntimeR3$(VBOX_SUFF_LIB)
+TEMPLATE_VBoxValidationKitR3SupDrv_LDFLAGS.win.x86 = \
+	-Include:_vcc100_ntdll_fakes_cpp \
+	-Include:_vcc100_ntdll_fakes_asm
 
 #
 # Template for building agnostic ring-0 host modules for the Validation Kit.
