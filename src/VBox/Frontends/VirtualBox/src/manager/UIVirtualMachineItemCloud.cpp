@@ -109,7 +109,10 @@ void UIVirtualMachineItemCloud::recache()
         m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
 
     /* Determine configuration access level: */
-    m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
+    if (itemType() == UIVirtualMachineItemType_CloudReal)
+        m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Full;
+    else
+        m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
 
     /* Determine whether we should show this VM details: */
     m_fHasDetails = true;

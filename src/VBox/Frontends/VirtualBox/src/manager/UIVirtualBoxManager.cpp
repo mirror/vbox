@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "UIActionPoolManager.h"
+#include "UICloudMachineSettingsDialog.h"
 #include "UICloudProfileManager.h"
 #include "UIDesktopServices.h"
 #include "UIExtraDataManager.h"
@@ -611,37 +612,54 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
     UIVirtualMachineItem *pItem = currentItem();
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
-    /* Process href from VM details / description: */
-    if (!strCategory.isEmpty() && strCategory[0] != '#')
+    /* For local machine: */
+    if (pItem->itemType() == UIVirtualMachineItemType_Local)
     {
-        uiCommon().openURL(strCategory);
+        /* Process href from VM details / description: */
+        if (!strCategory.isEmpty() && strCategory[0] != '#')
+        {
+            uiCommon().openURL(strCategory);
+        }
+        else
+        {
+            /* Check if control is coded into the URL by %%: */
+            if (strControl.isEmpty())
+            {
+                QStringList parts = strCategory.split("%%");
+                if (parts.size() == 2)
+                {
+                    strCategory = parts.at(0);
+                    strControl = parts.at(1);
+                }
+            }
+
+            /* Don't show the inaccessible warning
+             * if the user tries to open VM settings: */
+            m_fFirstMediumEnumerationHandled = true;
+
+            /* Use the "safe way" to open stack of Mac OS X Sheets: */
+            QWidget *pDialogParent = windowManager().realParentWindow(this);
+            UISafePointerSettingsDialogMachine pDialog = new UISettingsDialogMachine(pDialogParent,
+                                                                                     uID.isNull() ? pItem->id() : uID,
+                                                                                     strCategory, strControl);
+            windowManager().registerNewParent(pDialog, pDialogParent);
+
+            /* Execute dialog: */
+            pDialog->execute();
+            delete pDialog;
+        }
     }
+    /* For cloud machine: */
     else
     {
-        /* Check if control is coded into the URL by %%: */
-        if (strControl.isEmpty())
-        {
-            QStringList parts = strCategory.split("%%");
-            if (parts.size() == 2)
-            {
-                strCategory = parts.at(0);
-                strControl = parts.at(1);
-            }
-        }
-
-        /* Don't show the inaccessible warning
-         * if the user tries to open VM settings: */
-        m_fFirstMediumEnumerationHandled = true;
-
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pDialogParent = windowManager().realParentWindow(this);
-        UISafePointerSettingsDialogMachine pDialog = new UISettingsDialogMachine(pDialogParent,
-                                                                                 uID.isNull() ? pItem->id() : uID,
-                                                                                 strCategory, strControl);
+        UISafePointerCloudMachineSettingsDialog pDialog = new UICloudMachineSettingsDialog(pDialogParent,
+                                                                                           pItem->toCloud()->machine());
         windowManager().registerNewParent(pDialog, pDialogParent);
 
         /* Execute dialog: */
-        pDialog->execute();
+        pDialog->exec();
         delete pDialog;
     }
 }
@@ -1987,7 +2005,6 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         {
             return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
-                   pItem->toLocal() &&
                    pItem->configurationAccessLevel() != ConfigurationAccessLevel_Null &&
                    (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
                     m_pWidget->isCurrentStateItemSelected());
