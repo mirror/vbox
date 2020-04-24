@@ -546,10 +546,14 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
 
-    /* Create and execute global settings window: */
-    QPointer<UISettingsDialogGlobal> pDlg = new UISettingsDialogGlobal(this);
-    pDlg->execute();
-    delete pDlg;
+    /* Use the "safe way" to open stack of Mac OS X Sheets: */
+    QWidget *pDialogParent = windowManager().realParentWindow(this);
+    UISafePointerSettingsDialogGlobal pDialog = new UISettingsDialogGlobal(pDialogParent);
+    windowManager().registerNewParent(pDialog, pDialogParent);
+
+    /* Execute dialog: */
+    pDialog->execute();
+    delete pDialog;
 }
 
 void UIVirtualBoxManager::sltPerformExit()
@@ -569,7 +573,7 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog()
     updateActionsAppearance();
 
     /* Get first selected item: */
-    UIVirtualMachineItem *pItem = currentItems().value(0);
+    UIVirtualMachineItem *pItem = currentItem();
 
     /* For global item or local machine: */
     if (   !pItem
@@ -597,15 +601,15 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
                                                        QString strControl /* = QString() */,
                                                        const QUuid &uID /* = QString() */)
 {
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
-
     /* Lock the action preventing cascade calls: */
     UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), "opened", true);
     connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
+
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
     /* Process href from VM details / description: */
     if (!strCategory.isEmpty() && strCategory[0] != '#')
@@ -629,12 +633,16 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
          * if the user tries to open VM settings: */
         m_fFirstMediumEnumerationHandled = true;
 
-        /* Create and execute corresponding VM settings window: */
-        QPointer<UISettingsDialogMachine> pDlg = new UISettingsDialogMachine(this,
-                                                                             uID.isNull() ? pItem->id() : uID,
-                                                                             strCategory, strControl);
-        pDlg->execute();
-        delete pDlg;
+        /* Use the "safe way" to open stack of Mac OS X Sheets: */
+        QWidget *pDialogParent = windowManager().realParentWindow(this);
+        UISafePointerSettingsDialogMachine pDialog = new UISettingsDialogMachine(pDialogParent,
+                                                                                 uID.isNull() ? pItem->id() : uID,
+                                                                                 strCategory, strControl);
+        windowManager().registerNewParent(pDialog, pDialogParent);
+
+        /* Execute dialog: */
+        pDialog->execute();
+        delete pDialog;
     }
 }
 

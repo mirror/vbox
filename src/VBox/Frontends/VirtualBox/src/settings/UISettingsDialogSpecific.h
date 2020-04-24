@@ -21,6 +21,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QPointer>
+
 /* GUI includes: */
 #include "UISettingsDialog.h"
 
@@ -73,6 +76,9 @@ private:
     /** Holds the name of control to be focused. */
     QString  m_strControl;
 };
+
+/** Safe pointer to cloud machine settings dialog. */
+typedef QPointer<UISettingsDialogGlobal> UISafePointerSettingsDialogGlobal;
 
 
 /** UISettingsDialog extension encapsulating all the specific functionality of the Machine Settings. */
@@ -165,6 +171,9 @@ private:
     /** Holds whether we have request to reset first run flag. */
     bool  m_fResetFirstRunFlag;
 };
+
+/** Safe pointer to cloud machine settings dialog. */
+typedef QPointer<UISettingsDialogMachine> UISafePointerSettingsDialogMachine;
 
 
 #endif /* !FEQT_INCLUDED_SRC_settings_UISettingsDialogSpecific_h */
