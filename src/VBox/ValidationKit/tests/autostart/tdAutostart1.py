@@ -1366,17 +1366,17 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
 
         oGuestOsHlp = None              # type: tdAutostartOs
         if sVmName == self.ksOsLinux:
-            oGuestOsHlp = tdAutostartOsLinux(self, self.sTestBuildDir, self.fpApiVer,
-                                             self.sGuestAdditionsIso);   # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsLinux(self, self.sTestBuildDir, self.fpApiVer, # pylint: disable=redefined-variable-type
+                                             self.sGuestAdditionsIso);
         elif sVmName == self.ksOsSolaris:
-            oGuestOsHlp = tdAutostartOsSolaris(self, self.sTestBuildDir, self.fpApiVer,
-                                               self.sGuestAdditionsIso); # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsSolaris(self, self.sTestBuildDir, self.fpApiVer, # pylint: disable=redefined-variable-type
+                                               self.sGuestAdditionsIso);
         elif sVmName == self.ksOsDarwin:
-            oGuestOsHlp = tdAutostartOsDarwin(self, self.sTestBuildDir, self.fpApiVer,
-                                              self.sGuestAdditionsIso);  # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsDarwin(self, self.sTestBuildDir, self.fpApiVer, # pylint: disable=redefined-variable-type
+                                              self.sGuestAdditionsIso);
         elif sVmName == self.ksOsWindows:
-            oGuestOsHlp = tdAutostartOsWin(self, self.sTestBuildDir, self.fpApiVer,
-                                           self.sGuestAdditionsIso);     # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsWin(self, self.sTestBuildDir, self.fpApiVer, # pylint: disable=redefined-variable-type
+                                           self.sGuestAdditionsIso);
 
         sTestUserAllow = 'test1';
         sTestUserDeny = 'test2';
