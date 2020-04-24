@@ -29,6 +29,7 @@
 class QHeaderView;
 class UIFormEditorModel;
 class UIFormEditorView;
+class CForm;
 class CVirtualSystemDescriptionForm;
 
 /** QWidget subclass representing model/view Form Editor widget. */
@@ -46,6 +47,8 @@ public:
     /** Returns vertical header reference. */
     QHeaderView *verticalHeader() const;
 
+    /** Defines @a comForm to be edited. */
+    void setForm(const CForm &comForm);
     /** Defines virtual system description @a comForm to be edited. */
     void setVirtualSystemDescriptionForm(const CVirtualSystemDescriptionForm &comForm);
 
