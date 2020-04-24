@@ -77,6 +77,13 @@
 #define IOMMU_MMIO_OFF_PPR_EVT_B_BAR                0xf8
 
 #define IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST            0x100
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_1                0x100
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_2                0x108
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_3                0x110
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_4                0x118
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_5                0x120
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_6                0x128
+#define IOMMU_MMIO_OFF_DEV_TAB_SEG_7                0x130
 #define IOMMU_MMIO_OFF_DEV_TAB_SEG_LAST             0x130
 
 #define IOMMU_MMIO_OFF_DEV_SPECIFIC_FEAT            0x138
@@ -371,12 +378,20 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 
 /** @name Miscellaneous IOMMU defines.
  * @{ */
-#define IOMMU_LOG_PFX                               "AMD_IOMMU"     /**< Log prefix string. */
-#define IOMMU_SAVED_STATE_VERSION                   1               /**< The current saved state version. */
-#define IOMMU_PCI_VENDOR_ID                         0x1022          /**< AMD's vendor ID. */
-#define IOMMU_PCI_DEVICE_ID                         0xc0de          /**< VirtualBox IOMMU device ID. */
-#define IOMMU_PCI_REVISION_ID                       0x01            /**< VirtualBox IOMMU device revision ID. */
-#define IOMMU_MMIO_REGION_SIZE                      _16K            /**< Size of the MMIO region in bytes. */
+/** Log prefix string. */
+#define IOMMU_LOG_PFX                               "AMD_IOMMU"
+/** The current saved state version. */
+#define IOMMU_SAVED_STATE_VERSION                   1
+/** AMD's vendor ID. */
+#define IOMMU_PCI_VENDOR_ID                         0x1022
+/** VirtualBox IOMMU device ID. */
+#define IOMMU_PCI_DEVICE_ID                         0xc0de
+/** VirtualBox IOMMU device revision ID. */
+#define IOMMU_PCI_REVISION_ID                       0x01
+/** Size of the MMIO region in bytes. */
+#define IOMMU_MMIO_REGION_SIZE                      _16K
+/** Number of device table segments supported (power of 2). */
+#define IOMMU_MAX_DEV_TAB_SEGMENTS                  3
 /** @} */
 
 /**
@@ -1056,7 +1071,7 @@ typedef union
     uint64_t    u64;
 } DEV_TAB_BAR_T;
 AssertCompileSize(DEV_TAB_BAR_T, 8);
-#define IOMMU_DEV_TAB_BAR_VALID_MASK      UINT64_C(0x000ffffffffff3ff)
+#define IOMMU_DEV_TAB_BAR_VALID_MASK      UINT64_C(0x000ffffffffff1ff)
 
 /**
  * Command Buffer Base Address Register (MMIO).
@@ -1375,6 +1390,7 @@ typedef union
     uint64_t    u64;
 } DEV_TAB_SEG_BAR_T;
 AssertCompileSize(DEV_TAB_SEG_BAR_T, 8);
+#define IOMMU_DEV_TAB_SEG_BAR_VALID_MASK      UINT64_C(0x000ffffffffff0ff)
 
 /**
  * Device-specific Feature Extension (DSFX) Register (MMIO).
@@ -2084,6 +2100,22 @@ typedef struct
 } IOMMUREGACC;
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/**
+ * An array of the number of device table segments supported.
+ * Indexed by u2DevTabSegSup.
+ */
+static uint8_t const g_aDevTabSegments[] = { 0, 2, 4, 8 };
+
+/**
+ * The maximum size (inclusive) of each device table segment (0 to 7).
+ * Indexed by the device table segment index.
+ */
+static uint16_t const g_aDevTabSegmentSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f, 0x3f, 0x3f, 0x3f };
+
+
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /**
@@ -2298,7 +2330,7 @@ static VBOXSTRICTRC iommuAmdHwEvtStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint
 {
     RT_NOREF(pDevIns, iReg);
 
-    /* Ignore all unrecognized bits. */
+    /* Mask out all unrecognized bits. */
     u64Value &= IOMMU_HW_EVT_STATUS_VALID_MASK;
 
     /*
@@ -2314,6 +2346,33 @@ static VBOXSTRICTRC iommuAmdHwEvtStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint
     if (u64Value & HwStatus & RT_BIT_64(1))
         HwStatus &= ~RT_BIT_64(1);
     pThis->HwEvtStatus.u64 = HwStatus;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the Device Table Segment Base Address Register.
+ */
+static VBOXSTRICTRC iommuAmdDevTabSegBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns);
+
+    /* Figure out which segment is being written. */
+    uint8_t const idxDevTabSeg = (iReg - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
+    Assert(idxDevTabSeg < RT_ELEMENTS(pThis->DevTabSeg));
+
+    /* Mask out all unrecognized bits. */
+    u64Value &= IOMMU_DEV_TAB_SEG_BAR_VALID_MASK;
+    uint8_t const cbSegSize = u64Value & UINT64_C(0xff);
+
+    /* Validate the size and write the register. */
+    uint8_t const  idxSegment   = idxDevTabSeg + 1;
+    uint16_t const cbMaxSegSize = g_aDevTabSegmentSizes[idxSegment];
+    if (cbSegSize <= cbMaxSegSize)
+        pThis->DevTabSeg[idxDevTabSeg].u64 = u64Value;
+    else
+        Log((IOMMU_LOG_PFX ": Setting device table segment %u with invalid size (%#RX32) -> Ignored\n", idxSegment, cbSegSize));
+
     return VINF_SUCCESS;
 }
 
@@ -2526,13 +2585,13 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_OFF_PPR_LOG_B_BAR:
         case IOMMU_MMIO_OFF_PPR_EVT_B_BAR:       return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST:
-        case IOMMU_MMIO_OFF_DEV_TAB_SEG_LAST:
-        {
-            uint8_t const idxDevTabSeg = (off - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
-            Assert(idxDevTabSeg < RT_ELEMENTS(pThis->DevTabSeg));
-            return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
-        }
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_1:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_2:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_3:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_4:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_5:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_6:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_7:       return iommuAmdDevTabSegBar_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_DEV_SPECIFIC_FEAT:
         case IOMMU_MMIO_OFF_DEV_SPECIFIC_CTRL:
@@ -2788,6 +2847,55 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
 
     *puResult = uReg;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Reads a device table segment (0-7) from guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   idxSeg      The device table segment index.
+ * @param   pvBuf       Where to store the device table segment.
+ * @param   cbBuf       The size of the buffer in bytes.
+ */
+static int iommuAmdReadDeviceTableSegment(PPDMDEVINS pDevIns, uint8_t idxSeg, void *pvBuf, uint32_t cbBuf)
+{
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    Assert(pThis);
+
+    /* Validate. */
+    Assert(pvBuf);
+    Assert(cbBuf <= _2M);
+    Assert(!idxSeg || pThis->ExtFeat.n.u2DevTabSegSup);
+    Assert(!idxSeg || idxSeg < g_aDevTabSegments[pThis->ExtFeat.n.u2DevTabSegSup]);
+
+    /* Get the base address and size of the segment. */
+    RTGCPHYS GCPhysDevTab;
+    uint32_t cbDevTab;
+    if (!idxSeg)
+    {
+        GCPhysDevTab = pThis->DevTabBaseAddr.n.u40DevTabBase;
+        cbDevTab     = pThis->DevTabBaseAddr.n.u9Size;
+    }
+    else
+    {
+        GCPhysDevTab = pThis->DevTabSeg[idxSeg].n.u40DevTabBase;
+        cbDevTab     = pThis->DevTabSeg[idxSeg].n.u8Size;
+    }
+
+    /* Validate that the destination buffer is large enough to hold the segment. */
+    Assert(cbBuf >= cbDevTab);
+
+    /* Copy the device table to the buffer. */
+    int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTab, pvBuf, cbDevTab);
+    if (RT_FAILURE(rc))
+    {
+        Log((IOMMU_LOG_PFX ": iommuAmdFetchDeviceTable: Failed to read device table segment. idxSeg=%u GCPhys=%#RGp rc=%Rrc",
+             idxSeg, GCPhysDevTab, rc));
+    }
+
+    return rc;
 }
 
 
@@ -3089,39 +3197,40 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "    Prefetch support                        = %RTbool\n", ExtFeat.n.u1PrefetchSup);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    PPR support                             = %RTbool\n", ExtFeat.n.u1PprSup);
-            pHlp->pfnPrintf(pHlp, "    x2APIC support                          = %RTbool\n", ExtFeat.n.u1X2ApicSup);
-            pHlp->pfnPrintf(pHlp, "    NX and privilege level support          = %RTbool\n", ExtFeat.n.u1NoExecuteSup);
-            pHlp->pfnPrintf(pHlp, "    Guest translation support               = %RTbool\n", ExtFeat.n.u1GstTranslateSup);
-            pHlp->pfnPrintf(pHlp, "    Invalidate-All command support          = %RTbool\n", ExtFeat.n.u1InvAllSup);
-            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC support              = %RTbool\n", ExtFeat.n.u1GstVirtApicSup);
-            pHlp->pfnPrintf(pHlp, "    Hardware error register support         = %RTbool\n", ExtFeat.n.u1HwErrorSup);
-            pHlp->pfnPrintf(pHlp, "    Performance counters support            = %RTbool\n", ExtFeat.n.u1PerfCounterSup);
-            pHlp->pfnPrintf(pHlp, "    Host address translation size           = %#x\n",     ExtFeat.n.u2HostAddrTranslateSize);
-            pHlp->pfnPrintf(pHlp, "    Guest address translation size          = %#x\n",     ExtFeat.n.u2GstAddrTranslateSize);
-            pHlp->pfnPrintf(pHlp, "    Guest CR3 root table level support      = %#x\n",     ExtFeat.n.u2GstCr3RootTblLevel);
-            pHlp->pfnPrintf(pHlp, "    SMI filter register support             = %#x\n",     ExtFeat.n.u2SmiFilterSup);
-            pHlp->pfnPrintf(pHlp, "    SMI filter register count               = %#x\n",     ExtFeat.n.u3SmiFilterCount);
-            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC modes support        = %#x\n",     ExtFeat.n.u3GstVirtApicModeSup);
-            pHlp->pfnPrintf(pHlp, "    Dual PPR log support                    = %#x\n",     ExtFeat.n.u2DualPprLogSup);
-            pHlp->pfnPrintf(pHlp, "    Dual event log support                  = %#x\n",     ExtFeat.n.u2DualEvtLogSup);
-            pHlp->pfnPrintf(pHlp, "    Maximum PASID                           = %#x\n",     ExtFeat.n.u5MaxPasidSup);
-            pHlp->pfnPrintf(pHlp, "    User/supervisor page protection support = %RTbool\n", ExtFeat.n.u1UserSupervisorSup);
-            pHlp->pfnPrintf(pHlp, "    Device table segments supported         = %u\n",      (ExtFeat.n.u2DevTabSegSup << 1));
-            pHlp->pfnPrintf(pHlp, "    PPR log overflow early warning support  = %RTbool\n", ExtFeat.n.u1PprLogOverflowWarn);
-            pHlp->pfnPrintf(pHlp, "    PPR auto response support               = %RTbool\n", ExtFeat.n.u1PprAutoRespSup);
-            pHlp->pfnPrintf(pHlp, "    MARC support                            = %#x\n",     ExtFeat.n.u2MarcSup);
-            pHlp->pfnPrintf(pHlp, "    Block StopMark message support          = %RTbool\n", ExtFeat.n.u1BlockStopMarkSup);
-            pHlp->pfnPrintf(pHlp, "    Performance optimization support        = %RTbool\n", ExtFeat.n.u1PerfOptSup);
-            pHlp->pfnPrintf(pHlp, "    MSI capability MMIO access support      = %RTbool\n", ExtFeat.n.u1MsiCapMmioSup);
-            pHlp->pfnPrintf(pHlp, "    Guest I/O protection support            = %RTbool\n", ExtFeat.n.u1GstIoSup);
-            pHlp->pfnPrintf(pHlp, "    Host access support                     = %RTbool\n", ExtFeat.n.u1HostAccessSup);
-            pHlp->pfnPrintf(pHlp, "    Enhanced PPR handling support           = %RTbool\n", ExtFeat.n.u1EnhancedPprSup);
-            pHlp->pfnPrintf(pHlp, "    Attribute forward supported             = %RTbool\n", ExtFeat.n.u1AttrForwardSup);
-            pHlp->pfnPrintf(pHlp, "    Host dirty support                      = %RTbool\n", ExtFeat.n.u1HostDirtySup);
-            pHlp->pfnPrintf(pHlp, "    Invalidate IOTLB type support           = %RTbool\n", ExtFeat.n.u1InvIoTlbTypeSup);
-            pHlp->pfnPrintf(pHlp, "    Guest page table access bit hw disable  = %RTbool\n", ExtFeat.n.u1GstUpdateDisSup);
-            pHlp->pfnPrintf(pHlp, "    Force physical dest for remapped intr.  = %RTbool\n", ExtFeat.n.u1ForcePhysDstSup);
+            pHlp->pfnPrintf(pHlp, "    PPR support                             = %RTbool\n",  ExtFeat.n.u1PprSup);
+            pHlp->pfnPrintf(pHlp, "    x2APIC support                          = %RTbool\n",  ExtFeat.n.u1X2ApicSup);
+            pHlp->pfnPrintf(pHlp, "    NX and privilege level support          = %RTbool\n",  ExtFeat.n.u1NoExecuteSup);
+            pHlp->pfnPrintf(pHlp, "    Guest translation support               = %RTbool\n",  ExtFeat.n.u1GstTranslateSup);
+            pHlp->pfnPrintf(pHlp, "    Invalidate-All command support          = %RTbool\n",  ExtFeat.n.u1InvAllSup);
+            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC support              = %RTbool\n",  ExtFeat.n.u1GstVirtApicSup);
+            pHlp->pfnPrintf(pHlp, "    Hardware error register support         = %RTbool\n",  ExtFeat.n.u1HwErrorSup);
+            pHlp->pfnPrintf(pHlp, "    Performance counters support            = %RTbool\n",  ExtFeat.n.u1PerfCounterSup);
+            pHlp->pfnPrintf(pHlp, "    Host address translation size           = %#x\n",      ExtFeat.n.u2HostAddrTranslateSize);
+            pHlp->pfnPrintf(pHlp, "    Guest address translation size          = %#x\n",      ExtFeat.n.u2GstAddrTranslateSize);
+            pHlp->pfnPrintf(pHlp, "    Guest CR3 root table level support      = %#x\n",      ExtFeat.n.u2GstCr3RootTblLevel);
+            pHlp->pfnPrintf(pHlp, "    SMI filter register support             = %#x\n",      ExtFeat.n.u2SmiFilterSup);
+            pHlp->pfnPrintf(pHlp, "    SMI filter register count               = %#x\n",      ExtFeat.n.u3SmiFilterCount);
+            pHlp->pfnPrintf(pHlp, "    Guest virtual-APIC modes support        = %#x\n",      ExtFeat.n.u3GstVirtApicModeSup);
+            pHlp->pfnPrintf(pHlp, "    Dual PPR log support                    = %#x\n",      ExtFeat.n.u2DualPprLogSup);
+            pHlp->pfnPrintf(pHlp, "    Dual event log support                  = %#x\n",      ExtFeat.n.u2DualEvtLogSup);
+            pHlp->pfnPrintf(pHlp, "    Maximum PASID                           = %#x\n",      ExtFeat.n.u5MaxPasidSup);
+            pHlp->pfnPrintf(pHlp, "    User/supervisor page protection support = %RTbool\n",  ExtFeat.n.u1UserSupervisorSup);
+            pHlp->pfnPrintf(pHlp, "    Device table segments supported         = %#x (%u)\n", ExtFeat.n.u2DevTabSegSup,
+                            g_aDevTabSegments[ExtFeat.n.u2DevTabSegSup]);
+            pHlp->pfnPrintf(pHlp, "    PPR log overflow early warning support  = %RTbool\n",  ExtFeat.n.u1PprLogOverflowWarn);
+            pHlp->pfnPrintf(pHlp, "    PPR auto response support               = %RTbool\n",  ExtFeat.n.u1PprAutoRespSup);
+            pHlp->pfnPrintf(pHlp, "    MARC support                            = %#x\n",      ExtFeat.n.u2MarcSup);
+            pHlp->pfnPrintf(pHlp, "    Block StopMark message support          = %RTbool\n",  ExtFeat.n.u1BlockStopMarkSup);
+            pHlp->pfnPrintf(pHlp, "    Performance optimization support        = %RTbool\n",  ExtFeat.n.u1PerfOptSup);
+            pHlp->pfnPrintf(pHlp, "    MSI capability MMIO access support      = %RTbool\n",  ExtFeat.n.u1MsiCapMmioSup);
+            pHlp->pfnPrintf(pHlp, "    Guest I/O protection support            = %RTbool\n",  ExtFeat.n.u1GstIoSup);
+            pHlp->pfnPrintf(pHlp, "    Host access support                     = %RTbool\n",  ExtFeat.n.u1HostAccessSup);
+            pHlp->pfnPrintf(pHlp, "    Enhanced PPR handling support           = %RTbool\n",  ExtFeat.n.u1EnhancedPprSup);
+            pHlp->pfnPrintf(pHlp, "    Attribute forward supported             = %RTbool\n",  ExtFeat.n.u1AttrForwardSup);
+            pHlp->pfnPrintf(pHlp, "    Host dirty support                      = %RTbool\n",  ExtFeat.n.u1HostDirtySup);
+            pHlp->pfnPrintf(pHlp, "    Invalidate IOTLB type support           = %RTbool\n",  ExtFeat.n.u1InvIoTlbTypeSup);
+            pHlp->pfnPrintf(pHlp, "    Guest page table access bit hw disable  = %RTbool\n",  ExtFeat.n.u1GstUpdateDisSup);
+            pHlp->pfnPrintf(pHlp, "    Force physical dest for remapped intr.  = %RTbool\n",  ExtFeat.n.u1ForcePhysDstSup);
         }
     }
     /* PPR Log Base Address Register. */
@@ -3584,7 +3693,8 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
     pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup. */
     pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
-    pThis->ExtFeat.n.u2DevTabSegSup          = 0;
+    AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS < RT_ELEMENTS(g_aDevTabSegments));
+    pThis->ExtFeat.n.u2DevTabSegSup          = IOMMU_MAX_DEV_TAB_SEGMENTS;
     pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
     pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
     pThis->ExtFeat.n.u2MarcSup               = 0;
