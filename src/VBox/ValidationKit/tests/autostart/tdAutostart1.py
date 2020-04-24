@@ -30,7 +30,6 @@ __version__ = "$Id$"
 
 
 # Standard Python imports.
-import array;
 import os;
 import sys;
 import re;
