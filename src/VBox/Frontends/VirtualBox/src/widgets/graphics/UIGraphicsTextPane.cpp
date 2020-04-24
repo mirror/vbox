@@ -390,7 +390,11 @@ void UIGraphicsTextPane::updateHoverStuff()
     updateTextLayout();
 
     /* Update tool-tip: */
-    setToolTip(m_strHoveredAnchor.section(',', -1));
+    const QString strType = m_strHoveredAnchor.section(',', 0, 0);
+    if (strType == "#attach")
+        setToolTip(m_strHoveredAnchor.section(',', -1));
+    else
+        setToolTip(QString());
 
     /* Update text-pane: */
     update();
