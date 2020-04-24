@@ -168,28 +168,28 @@ void UIDetailsElement::updateAppearance()
     updateNameHoverLink();
 
     /* Update anchor role restrictions: */
-    ConfigurationAccessLevel cal = m_pSet->configurationAccessLevel();
-    m_pTextPane->setAnchorRoleRestricted("#machine_name",    cal != ConfigurationAccessLevel_Full
-                                                          && cal != ConfigurationAccessLevel_Partial_Saved);
-    m_pTextPane->setAnchorRoleRestricted("#machine_location", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#os_type", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#base_memory", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#boot_order", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#video_memory", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#graphics_controller_type", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#mount", cal == ConfigurationAccessLevel_Null);
-    m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#audio_host_driver_type",    cal != ConfigurationAccessLevel_Full
-                                                                    && cal != ConfigurationAccessLevel_Partial_Saved);
-    m_pTextPane->setAnchorRoleRestricted("#audio_controller_type", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#network_attachment_type", cal == ConfigurationAccessLevel_Null);
-    m_pTextPane->setAnchorRoleRestricted("#usb_controller_type", cal != ConfigurationAccessLevel_Full);
+    const ConfigurationAccessLevel enmCal = m_pSet->configurationAccessLevel();
+    m_pTextPane->setAnchorRoleRestricted("#machine_name",    enmCal != ConfigurationAccessLevel_Full
+                                                          && enmCal != ConfigurationAccessLevel_Partial_Saved);
+    m_pTextPane->setAnchorRoleRestricted("#machine_location", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#os_type", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#base_memory", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#boot_order", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#video_memory", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#graphics_controller_type", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#mount", enmCal == ConfigurationAccessLevel_Null);
+    m_pTextPane->setAnchorRoleRestricted("#attach", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#audio_host_driver_type",    enmCal != ConfigurationAccessLevel_Full
+                                                                    && enmCal != ConfigurationAccessLevel_Partial_Saved);
+    m_pTextPane->setAnchorRoleRestricted("#audio_controller_type", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#network_attachment_type", enmCal == ConfigurationAccessLevel_Null);
+    m_pTextPane->setAnchorRoleRestricted("#usb_controller_type", enmCal != ConfigurationAccessLevel_Full);
 #ifndef VBOX_WS_MAC
-    m_pTextPane->setAnchorRoleRestricted("#menu_bar", cal == ConfigurationAccessLevel_Null);
+    m_pTextPane->setAnchorRoleRestricted("#menu_bar", enmCal == ConfigurationAccessLevel_Null);
 #endif
-    m_pTextPane->setAnchorRoleRestricted("#status_bar", cal == ConfigurationAccessLevel_Null);
+    m_pTextPane->setAnchorRoleRestricted("#status_bar", enmCal == ConfigurationAccessLevel_Null);
 #ifndef VBOX_WS_MAC
-    m_pTextPane->setAnchorRoleRestricted("#mini_toolbar", cal == ConfigurationAccessLevel_Null);
+    m_pTextPane->setAnchorRoleRestricted("#mini_toolbar", enmCal == ConfigurationAccessLevel_Null);
 #endif
 }
 
