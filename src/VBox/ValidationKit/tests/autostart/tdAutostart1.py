@@ -4,7 +4,6 @@
 """
 AUtostart testcase using.
 """
-from __builtin__ import isinstance
 
 __copyright__ = \
 """
