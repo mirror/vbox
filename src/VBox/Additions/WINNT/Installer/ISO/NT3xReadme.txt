@@ -5,6 +5,9 @@ making it hard to extract (VBoxWindowsAdditions-x86.exe /extract /D=C:\dir)
 the necessary files.  So, the 32-bit drivers and components that might work
 on NT 3.x are provided here for convenience.
 
+The VBoxAddInstallNt3x.exe program is a simple command line installation
+utility for NT 3.x guest additions.  It automats the steps detailed below.
+
 
 NT 3.51:
 -------
@@ -37,3 +40,15 @@ the registry editor (regedt32.exe) to set (create it if necessary) value
 HKEY_LOCAL_MACHINE/System/CurrentControlSet/Service/i8042prt/ImagePath
 (REG_EXPAND_SZ) to "System32\drivers\VBoxGuestNT.sys".  (The i8042prt driver
 is the NT PS/2 mouse + keyboard driver and VBoxGuestNT.sys replaces it.)
+
+
+NT 3.50
+-------
+
+Same as for 3.51.
+
+
+NT 3.1
+------
+
+Does not currently work.
