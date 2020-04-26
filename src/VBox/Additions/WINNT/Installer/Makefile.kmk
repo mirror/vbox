@@ -29,6 +29,7 @@ VBOX_WITH_GUEST_INSTALL_HELPER := 1 # Use our guest install helper DLL.
 
 ## @todo VBOX_WIN_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/Installer/win
 
+
 PROGRAMS += VBoxDrvInst
 VBoxDrvInst_TEMPLATE= VBoxGuestR3Exe
 VBoxDrvInst_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
@@ -311,6 +312,84 @@ RePackScriptsAddResources_SOURCES = \
 	Languages/English.nsh=>Languages/English.nsh \
 	Languages/French.nsh=>Languages/French.nsh \
 	Languages/German.nsh=>Languages/German.nsh
+
+
+#
+# NT3.x installer.
+#
+# Just for fun, this one does not use the CRT more than it really really needs
+# to.  This saves space and avoid compatiblity issues, it also makes for a
+# fun challenge.
+#
+TEMPLATE_VBoxGuestR3BareExe = No extra libs and tricks
+TEMPLATE_VBoxGuestR3BareExe_EXTENDS         = VBoxGuestR3Exe
+TEMPLATE_VBoxGuestR3BareExe_SDKS            = $(subst WINSDK10-UCRT-STATIC,WINSDK10-UCRT-INCS,$(filter-out ReorderCompilerIncs, $(TEMPLATE_VBoxGuestR3Exe_SDKS)))
+TEMPLATE_VBoxGuestR3BareExe_DEFS            = $(TEMPLATE_VBoxGuestR3Exe_DEFS) RT_NO_CRT
+TEMPLATE_VBoxGuestR3BareExe_LIBS            = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBoxGuestR3BareExe_LIBS.x86        = \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib \
+       $(PATH_TOOL_$(TEMPLATE_VBoxGuestR3BareExe_TOOL.win.x86)_LIB)/chkstk.obj
+TEMPLATE_VBoxGuestR3BareExe_LIBS.win        = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBoxGuestR3BareExe_LIBS.win.x86    = $(NO_SUCH_VARIABLE)
+TEMPLATE_VBoxGuestR3BareExe_LDFLAGS.win.x86 = $(filter-out -Include%, $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS.win.x86))
+TEMPLATE_VBoxGuestR3BareExe_CXXFLAGS        = $(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS) /GS-
+TEMPLATE_VBoxGuestR3BareExe_CXXFLAGS.debug  = $(filter-out /RTC% -RTC%, $(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS.debug))
+
+
+PROGRAMS.win.x86 += VBoxAddInstallNt3x
+VBoxAddInstallNt3x_TEMPLATE := VBoxGuestR3BareExe
+VBoxAddInstallNt3x_SDKS     := VBOX_NTDLL
+VBoxAddInstallNt3x_DEFS     := \
+	RT_NO_STRICT \
+	RT_WITHOUT_NOCRT_WRAPPERS \
+	IPRT_NO_ERROR_DATA \
+	IPRT_NO_ALLOCA_TROUBLE IPRT_MINIMAL \
+	IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES
+VBoxAddInstallNt3x_LDFLAGS  := /Entry:CustomMainEntrypoint /subsystem:console
+VBoxAddInstallNt3x_INCS     := \
+	../../../Runtime/include
+VBoxAddInstallNt3x_SOURCES  := \
+	VBoxAddInstallNt3x.cpp \
+       \
+       ../../../Runtime/common/string/straprintf.cpp \
+       ../../../Runtime/common/string/strformat.cpp \
+       ../../../Runtime/common/string/strformatnum.cpp \
+       ../../../Runtime/common/string/strformatrt.cpp \
+       ../../../Runtime/common/string/strformattype.cpp \
+       ../../../Runtime/common/string/strprintf.cpp \
+       ../../../Runtime/common/string/strprintf2.cpp \
+       ../../../Runtime/common/string/stringalloc.cpp \
+       ../../../Runtime/common/string/strtonum.cpp \
+       ../../../Runtime/common/string/RTStrNLen.cpp \
+       ../../../Runtime/common/string/RTStrCmp.cpp \
+       ../../../Runtime/common/string/RTStrNCmp.cpp \
+       ../../../Runtime/common/string/RTStrICmpAscii.cpp \
+       ../../../Runtime/common/string/RTStrNICmpAscii.cpp \
+       ../../../Runtime/common/string/RTStrCopy.cpp \
+       ../../../Runtime/common/string/RTStrEnd.asm \
+       ../../../Runtime/common/string/RTUtf16Copy.cpp \
+       ../../../Runtime/common/string/utf-16.cpp \
+       ../../../Runtime/common/string/utf-8.cpp \
+       ../../../Runtime/common/string/memcpy.asm \
+       ../../../Runtime/common/string/memchr.asm \
+       ../../../Runtime/common/string/memcmp.asm \
+       ../../../Runtime/common/string/memmove.asm \
+       ../../../Runtime/common/string/memset.asm \
+       ../../../Runtime/common/string/strlen.asm \
+       ../../../Runtime/common/string/strchr.asm \
+       ../../../Runtime/common/string/strcmp.asm \
+       ../../../Runtime/common/string/strncmp.asm \
+       ../../../Runtime/common/path/RTPathFilename.cpp \
+       ../../../Runtime/common/misc/getopt.cpp \
+       ../../../Runtime/common/misc/getoptargv.cpp \
+       ../../../Runtime/common/misc/message.cpp \
+       ../../../Runtime/common/err/errmsg.cpp \
+       ../../../Runtime/generic/uuid-generic.cpp \
+       ../../../Runtime/win/errmsgwin.cpp \
+	../../../Runtime/generic/rtStrFormatKernelAddress-generic.cpp
+
+
+VBoxAddInstallNt3x.cpp_DEPS = $(VBOX_SVN_REV_HEADER)
 
 
 include $(FILE_KBUILD_SUB_FOOTER)

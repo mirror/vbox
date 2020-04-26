@@ -42,6 +42,16 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#ifdef IPRT_MINIMAL
+# define RTStrICmp  RTStrICmpAscii
+# define RTStrNICmp RTStrNICmpAscii
+#else
+#endif
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
@@ -90,6 +100,7 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
 }
 RT_EXPORT_SYMBOL(RTGetOptInit);
 
+#ifndef IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES
 
 /**
  * Converts an stringified IPv4 address into the RTNETADDRIPV4 representation.
@@ -127,6 +138,7 @@ static int rtgetoptConvertMacAddr(const char *pszValue, PRTMAC pAddr)
     return VINF_SUCCESS;
 }
 
+#endif /* IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES */
 
 /**
  * Searches for a long option.
@@ -369,6 +381,8 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
 #undef MY_INT_CASE
 #undef MY_BASE_INT_CASE
 
+#ifndef IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES
+
         case RTGETOPT_REQ_IPV4ADDR:
         {
             RTNETADDRIPV4 Addr;
@@ -397,6 +411,8 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
             pValueUnion->MacAddr = Addr;
             break;
         }
+
+#endif /* IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES */
 
         case RTGETOPT_REQ_UUID:
         {
@@ -441,13 +457,14 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
                             if (rc == VINF_SUCCESS) \
                             { /* likely */ } \
                             else \
-                               { RTAssertMsg2("z rc=%Rrc: '%s' '%s' uBase=%d\n", rc, pszValue, pszNext, uBase); return VERR_GETOPT_INVALID_ARGUMENT_FORMAT; } \
+                                AssertMsgFailedReturn(("z rc=%Rrc: '%s' '%s' uBase=%d\n", rc, pszValue, pszNext, uBase), \
+                                                       VERR_GETOPT_INVALID_ARGUMENT_FORMAT); \
                         } \
                         else if (fSwitchValue != (a_fReqValueOptional)) \
-                        { RTAssertMsg2("x\n"); return VERR_GETOPT_INVALID_ARGUMENT_FORMAT; } \
+                            AssertMsgFailedReturn(("x\n"), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); \
                     } \
                     else if (fSwitchValue != (a_fReqValueOptional)) \
-                        { RTAssertMsg2("y\n"); return VERR_GETOPT_INVALID_ARGUMENT_FORMAT; } \
+                        AssertMsgFailedReturn(("y\n"), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); \
                     pValueUnion->a_MemberPrefix##Second = Value2; \
                     pValueUnion->a_MemberPrefix##First  = Value1; \
                     break; \

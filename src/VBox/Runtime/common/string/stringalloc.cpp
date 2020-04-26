@@ -186,7 +186,7 @@ RTDECL(int) RTStrAAppendNTag(char **ppsz, const char *pszAppend, size_t cchAppen
 }
 
 
-#ifndef IN_RING0
+#if !defined(IN_RING0) && !defined(IPRT_NO_ALLOCA_TROUBLE)
 
 /* XXX Currently not needed anywhere. alloca() induces some linker problems for ring 0 code
  * with newer versions of VCC */
