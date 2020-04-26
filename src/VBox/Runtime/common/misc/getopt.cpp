@@ -44,10 +44,9 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#ifdef IPRT_MINIMAL
+#ifdef IN_RT_STATIC  /* We don't need full unicode case insensitive if we ASSUME basic latin only. */
 # define RTStrICmp  RTStrICmpAscii
 # define RTStrNICmp RTStrNICmpAscii
-#else
 #endif
 
 
@@ -87,6 +86,7 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
     pState->fFlags       = fFlags;
     pState->cNonOptions  = 0;
 
+#ifdef RT_STRICT
     /* validate the options. */
     for (size_t i = 0; i < cOptions; i++)
     {
@@ -94,7 +94,15 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
         Assert(paOptions[i].iShort > 0);
         Assert(paOptions[i].iShort != VINF_GETOPT_NOT_OPTION);
         Assert(paOptions[i].iShort != '-');
+        if (paOptions[i].fFlags & RTGETOPT_FLAG_ICASE)
+        {
+            const char   *psz = paOptions[i].pszLong;
+            unsigned char ch;
+            while ((ch = *psz++) != '\0')
+                Assert(ch <= 0x7f); /* ASSUMPTION that we can use RTStrICmpAscii and RTStrNICmpAscii. */
+        }
     }
+#endif
 
     return VINF_SUCCESS;
 }
