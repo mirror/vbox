@@ -67,7 +67,7 @@ DECLHIDDEN(size_t) rtStrFormatKernelAddress(char *pszBuf, size_t cbBuf, RTR0INTP
     return cbBuf - 1;
 
 #else  /* DEBUG */
-    Assert(cbBuf >= 64);
+    Assert(cbBuf >= 64); RT_NOREF(cbBuf);
     return RTStrFormatNumber(pszBuf, uPtr, 16, cchWidth, cchPrecision, fFlags);
 #endif /* DEBUG */
 }
