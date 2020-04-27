@@ -519,14 +519,7 @@ static RTEXITCODE vgsvcToolboxCat(int argc, char **argv)
                     RTFileClose(hInput);
                 }
                 else
-                {
-                    PCRTSTATUSMSG pMsg = RTErrGet(rc);
-                    if (pMsg)
-                        RTMsgError("Could not open input file '%s': %s\n", pNodeIt->pszName, pMsg->pszMsgFull);
-                    else
-                        RTMsgError("Could not open input file '%s', rc=%Rrc\n", pNodeIt->pszName, rc);
-                }
-
+                    RTMsgError("Could not open input file '%s': %Rrc\n", pNodeIt->pszName, rc);
                 if (RT_FAILURE(rc))
                     break;
             }
