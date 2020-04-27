@@ -204,11 +204,12 @@ int main(int argc, char **argv)
             iPrev = pMsg->iCode;
 
             /* Produce the output: */
-            fprintf(pOut, "/*%8d:*/ { \"%s\", \"%s\", \"%s\", %s },\n",
+            fprintf(pOut, "/*%8d:*/ ENTRY(\"%s\", \"%s\", \"%s\", %s),\n",
                     pMsg->iCode,
                     EscapeString(pMsg->pszMsgShort, s_szMsgTmp1, sizeof(s_szMsgTmp1)),
                     EscapeString(pMsg->pszMsgFull, s_szMsgTmp2, sizeof(s_szMsgTmp2)),
                     pMsg->pszDefine, pMsg->pszDefine);
+
         }
 
         /*

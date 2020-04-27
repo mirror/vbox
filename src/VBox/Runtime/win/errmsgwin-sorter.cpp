@@ -184,7 +184,7 @@ int main(int argc, char **argv)
             iPrev = pMsg->iCode;
 
             /* Produce the output: */
-            fprintf(pOut, "/*%#010lx:*/ { \"%s\", \"%s\", %ld },\n", (unsigned long)pMsg->iCode,
+            fprintf(pOut, "/*%#010lx:*/ ENTRY(\"%s\", \"%s\", %ld),\n", (unsigned long)pMsg->iCode,
                     EscapeString(pMsg->pszMsgFull, s_szMsgTmp, sizeof(s_szMsgTmp)), pMsg->pszDefine, pMsg->iCode);
         }
 

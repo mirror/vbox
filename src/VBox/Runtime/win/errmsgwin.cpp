@@ -36,6 +36,18 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#if defined(IPRT_ERRMSG_DEFINES_ONLY) || defined(IN_RT_STATIC) /* No message text in static builds to save space. */
+# define ENTRY(a_pszMsg, a_pszDefine, a_iCode) \
+    { a_pszDefine, a_pszDefine, a_iCode }
+#else
+# define ENTRY(a_pszMsg, a_pszDefine, a_iCode) \
+    { a_pszMsg, a_pszDefine, a_iCode }
+#endif
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Array of messages.
