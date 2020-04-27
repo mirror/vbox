@@ -420,6 +420,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
  */
 #define IOMMU_GET_DEV_TAB_SIZE(a_uSize)     (((a_uSize) + 1) << X86_PAGE_4K_SHIFT)
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -2942,7 +2943,10 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_
     Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
     int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTabEntry, pDevTabEntry, sizeof(*pDevTabEntry));
     if (RT_FAILURE(rc))
+    {
         Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc\n", GCPhysDevTabEntry, rc));
+        /** @todo IOMMU: Log this failure to the IOMMU Event log here. */
+    }
 
     return rc;
 }
