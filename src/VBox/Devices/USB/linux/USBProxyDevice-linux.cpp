@@ -667,8 +667,7 @@ static DECLCALLBACK(int) usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *p
     else if (rc == VERR_ACCESS_DENIED)
         rc = VERR_VUSB_USBFS_PERMISSION;
 
-    Log(("usbProxyLinuxOpen(%p, %s) failed, rc=%s!\n", pProxyDev, pszAddress,
-         RTErrGetShort(rc)));
+    Log(("usbProxyLinuxOpen(%p, %s) failed, rc=%Rrc!\n", pProxyDev, pszAddress, rc));
 
     NOREF(pvBackend);
     return rc;
@@ -830,8 +829,7 @@ static DECLCALLBACK(int) usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetO
     if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_RESET, NULL, false, 10))
     {
         int rc = errno;
-        LogRel(("usb-linux: Reset failed, rc=%s errno=%d.\n",
-               RTErrGetShort(RTErrConvertFromErrno(rc)), rc));
+        LogRel(("usb-linux: Reset failed, rc=%Rrc errno=%d.\n", RTErrConvertFromErrno(rc), rc));
         pProxyDev->iActiveCfg = -1;
         return RTErrConvertFromErrno(rc);
     }
