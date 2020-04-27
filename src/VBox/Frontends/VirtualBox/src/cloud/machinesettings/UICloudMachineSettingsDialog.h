@@ -62,6 +62,9 @@ protected:
 
 private slots:
 
+    /** Sets Ok button to be @a fEnabled. */
+    void setOkButtonEnabled(bool fEnabled);
+
     /** Performs dialog refresh. */
     void sltRefresh();
 

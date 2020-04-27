@@ -37,6 +37,11 @@ class UICloudMachineSettingsDialogPage : public QWidget
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about value has became @a fValid. */
+    void sigValidChanged(bool fValid);
+
 public:
 
     /** Constructs cloud machine settings dialog page passing @a pParent to the base-class. */

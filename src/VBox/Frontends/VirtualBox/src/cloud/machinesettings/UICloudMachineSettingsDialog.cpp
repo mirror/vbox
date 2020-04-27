@@ -73,6 +73,13 @@ void UICloudMachineSettingsDialog::retranslateUi()
         setWindowTitle(tr("%1 - %2").arg(m_strName, strCaption));
 }
 
+void UICloudMachineSettingsDialog::setOkButtonEnabled(bool fEnabled)
+{
+    AssertPtrReturnVoid(m_pButtonBox);
+    AssertPtrReturnVoid(m_pButtonBox->button(QDialogButtonBox::Ok));
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fEnabled);
+}
+
 void UICloudMachineSettingsDialog::sltRefresh()
 {
     /* Update name: */
@@ -100,6 +107,8 @@ void UICloudMachineSettingsDialog::prepare()
         m_pPage = new UICloudMachineSettingsDialogPage(this);
         if (m_pPage)
         {
+            connect(m_pPage, &UICloudMachineSettingsDialogPage::sigValidChanged,
+                    this, &UICloudMachineSettingsDialog::setOkButtonEnabled);
             /* Add into layout: */
             pLayout->addWidget(m_pPage);
         }
@@ -112,6 +121,7 @@ void UICloudMachineSettingsDialog::prepare()
             m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
             connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UICloudMachineSettingsDialog::accept);
             connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UICloudMachineSettingsDialog::reject);
+            setOkButtonEnabled(false);
             /* Add into layout: */
             pLayout->addWidget(m_pButtonBox);
         }

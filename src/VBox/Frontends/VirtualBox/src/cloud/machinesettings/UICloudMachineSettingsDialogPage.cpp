@@ -110,4 +110,7 @@ void UICloudMachineSettingsDialogPage::updateEditor()
             m_pFormEditor->setValues(filteredValues);
         }
     }
+
+    /* Revalidate: */
+    emit sigValidChanged(m_comForm.isNotNull());
 }
