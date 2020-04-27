@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_IOMMU
+#include <VBox/msi.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/AssertGuest.h>
 
@@ -374,6 +375,47 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_BF_MSI_MAP_CAPHDR_CAP_TYPE_MASK       UINT32_C(0xf8000000)
 RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
                             (CAP_ID, CAP_PTR, EN, FIXED, RSVD_18_28, CAP_TYPE));
+/** @} */
+
+/**
+ * @name IOMMU Status Register Bits.
+ * In accordance with the AMD spec.
+ * @{
+ */
+/** EventOverflow: Event log overflow. */
+#define IOMMU_STATUS_EVT_LOG_OVERFLOW               RT_BIT_64(0)
+/** EventLogInt: Event log interrupt. */
+#define IOMMU_STATUS_EVT_LOG_INTR                   RT_BIT_64(1)
+/** ComWaitInt: Completion wait interrupt. */
+#define IOMMU_STATUS_COMPLETION_WAIT_INTR           RT_BIT_64(2)
+/** EventLogRun: Event log is running. */
+#define IOMMU_STATUS_EVT_LOG_RUNNING                RT_BIT_64(3)
+/** CmdBufRun: Command buffer is running. */
+#define IOMMU_STATUS_CMD_BUF_RUNNING                RT_BIT_64(4)
+/** PprOverflow: Peripheral page request log overflow. */
+#define IOMMU_STATUS_PPR_LOG_OVERFLOW               RT_BIT_64(5)
+/** PprInt: Peripheral page request log interrupt. */
+#define IOMMU_STATUS_PPR_LOG_INTR                   RT_BIT_64(6)
+/** PprLogRun: Peripheral page request log is running. */
+#define IOMMU_STATUS_PPR_LOG_RUN                    RT_BIT_64(7)
+/** GALogRun: Guest virtual-APIC log is running. */
+#define IOMMU_STATUS_GA_LOG_RUN                     RT_BIT_64(8)
+/** GALOverflow: Guest virtual-APIC log overflow. */
+#define IOMMU_STATUS_GA_LOG_OVERFLOW                RT_BIT_64(9)
+/** GAInt: Guest virtual-APIC log interrupt. */
+#define IOMMU_STATUS_GA_LOG_INTR                    RT_BIT_64(10)
+/** PprOvrflwB: PPR Log B overflow. */
+#define IOMMU_STATUS_PPR_LOG_B_OVERFLOW             RT_BIT_64(11)
+/** PprLogActive: PPR Log B is active. */
+#define IOMMU_STATUS_PPR_LOG_B_ACTIVE               RT_BIT_64(12)
+/** EvtOvrflwB: Event log B overflow. */
+#define IOMMU_STATUS_EVT_LOG_B_OVERFLOW             RT_BIT_64(15)
+/** EventLogActive: Event log B active. */
+#define IOMMU_STATUS_EVT_LOG_B_ACTIVE               RT_BIT_64(16)
+/** PprOvrflwEarlyB: PPR log B overflow early warning. */
+#define IOMMU_STATUS_PPR_LOG_B_OVERFLOW_EARLY       RT_BIT_64(17)
+/** PprOverflowEarly: PPR log overflow early warning. */
+#define IOMMU_STATUS_PPR_LOG_OVERFLOW_EARLY         RT_BIT_64(18)
 /** @} */
 
 /** @name Miscellaneous IOMMU defines.
@@ -766,6 +808,10 @@ typedef union
     uint32_t    au32[4];
 } EVT_GENERIC_T;
 AssertCompileSize(EVT_GENERIC_T, 16);
+/** Pointer to a generic event log entry. */
+typedef EVT_GENERIC_T *PEVT_GENERIC_T;
+/** Pointer to a const generic event log entry. */
+typedef const EVT_GENERIC_T *PCEVT_GENERIC_T;
 
 /**
  * Event Log Entry: ILLEGAL_DEV_TAB_ENTRY.
@@ -2104,39 +2150,33 @@ static uint16_t const g_auDevTabSegMaxSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f,
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
-
 /**
- * Gets the buffer length length corresponding to a base address.
+ * Gets the number of buffer entries given a base register's encoded length.
  *
- * @param   uEncodedLen     The length to decode (power-of-2 encoded).
- * @param   pcEntries       Where to store the number of entries. Optional, can be
- *                          NULL.
- * @param   pcbBuffer       Where to store the size of the buffer. Optional, can be
- *                          NULL.
- *
- * @remarks Both @a pcEntries and @a pcbBuffer cannot both be NULL.
+ * @returns Number of buffer entries.
+ * @param   uEncodedLen     The length (power-of-2 encoded).
  */
-static void iommuAmdGetBaseBufferLength(uint8_t uEncodedLen, uint32_t *pcEntries, uint32_t *pcbBuffer)
+DECLINLINE(uint32_t) iommuAmdGetBaseBufEntryCount(uint8_t uEncodedLen)
 {
-    uint32_t cEntries;
-    uint32_t cbBuffer;
-    if (uEncodedLen > 7)
-    {
-        cEntries = 2 << (uEncodedLen - 1);
-        cbBuffer = *pcEntries << 4;
-    }
-    else
-        cEntries = cbBuffer = 0;
-
-    Assert(pcEntries || pcbBuffer);
-    if (pcEntries)
-        *pcEntries = cEntries;
-    if (pcbBuffer)
-        *pcbBuffer = cbBuffer;
+    Assert(uEncodedLen > 7);
+    return 2 << (uEncodedLen - 1);
 }
 
 
-DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
+/**
+ * Gets the length of the buffer given a base register's encoded length.
+ *
+ * @returns The length of the buffer in bytes.
+ * @param   uEncodedLen     The length (power-of-2 encoded).
+ */
+DECLINLINE(uint32_t) iommuAmdGetBaseBufLength(uint8_t uEncodedLen)
+{
+    Assert(uEncodedLen > 7);
+    return (2 << (uEncodedLen - 1)) << 4;
+}
+
+
+DECLINLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
 {
     IOMMU_STATUS_T Status;
     Status.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Status.u64);
@@ -2144,11 +2184,24 @@ DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
 }
 
 
-DECL_FORCE_INLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
+DECLINLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
 {
     IOMMU_CTRL_T Ctrl;
     Ctrl.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Ctrl.u64);
     return Ctrl;
+}
+
+
+/**
+ * Determines whether MSI is enabled for the IOMMU. This influences interrupt
+ * handling in IOMMU.
+ *
+ * @note There should be a PCIDevXxx function for this.
+ */
+static bool iommuAmdIsMsiEnabled(PPDMPCIDEV pDevIns)
+{
+    uint16_t const uMsgCtl = PDMPciDevGetWord(pDevIns, IOMMU_PCI_OFF_MSI_CAP_HDR + VBOX_MSI_CAP_MESSAGE_CONTROL);
+    return RT_BOOL(uMsgCtl & VBOX_PCI_MSI_FLAGS_ENABLE);
 }
 
 
@@ -2506,10 +2559,9 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * IOMMU behavior is undefined when software writes a value outside the buffer length.
      * In our emulation, we ignore the write entirely.
      */
-    uint32_t const      offBuf     = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
-    CMD_BUF_BAR_T const CmdBufBar  = pThis->CmdBufBaseAddr;
-    uint32_t            cbBuf;
-    iommuAmdGetBaseBufferLength(CmdBufBar.n.u4Len, NULL, &cbBuf);
+    uint32_t const      offBuf    = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
+    CMD_BUF_BAR_T const CmdBufBar = pThis->CmdBufBaseAddr;
+    uint32_t const      cbBuf     = iommuAmdGetBaseBufLength(CmdBufBar.n.u4Len);
     if (offBuf >= cbBuf)
     {
         Log((IOMMU_LOG_PFX ": Setting CmdBufHeadPtr (%#RX32) to a value that exceeds buffer length (%#RX23) -> Ignored\n",
@@ -2753,8 +2805,8 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
  *
  * This is because most registers are 64-bit and aligned on 8-byte boundaries but
  * some are really 32-bit registers aligned on an 8-byte boundary. We cannot assume
- * guests will only perform 32-bit reads on those 32-bit registers that are aligned
- * on 8-byte boundaries.
+ * software will only perform 32-bit reads on those 32-bit registers that are
+ * aligned on 8-byte boundaries.
  *
  * @returns Strict VBox status code.
  * @param   pDevIns     The IOMMU device instance.
@@ -2914,6 +2966,46 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
 
     *puResult = uReg;
     return VINF_SUCCESS;
+}
+
+
+static int iommuAmdWriteEventLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
+{
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
+
+    /* Check if event logging is active and the log has not overflowed. */
+    if (   Status.n.u1EvtLogRunning
+        && !Status.n.u1EvtOverflow)
+    {
+        /* Figure out the event log entry offset. */
+        EVT_LOG_TAIL_PTR_T const TailPtr = pThis->EvtLogTailPtr;
+        uint32_t const offEvtLogEntry = TailPtr.n.u15Ptr << 4;
+
+        /* Ensure the event log entry is within limits. */
+        uint32_t const uEvtLogLen = iommuAmdGetBaseBufLength(pThis->EvtLogBaseAddr.n.u4Len);
+        if (offEvtLogEntry < uEvtLogLen)
+        {
+            /* Write the event log entry to memory. */
+            RTGCPHYS const GCPhysEvtLog      = pThis->EvtLogBaseAddr.n.u40Base;
+            RTGCPHYS const GCPhysEvtLogEntry = GCPhysEvtLog + offEvtLogEntry;
+            int rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhysEvtLogEntry, pEvent, sizeof(*pEvent));
+            if (RT_FAILURE(rc))
+                Log((IOMMU_LOG_PFX ": Failed to write event log entry at %#RGp. rc=%Rrc\n", GCPhysEvtLogEntry, rc));
+
+            /* Increment the event log tail pointer. */
+            pThis->EvtLogTailPtr.n.u15Ptr += sizeof(*pEvent);
+
+            /* Check if software wants to receive an interrupt when the event log is updated. */
+            IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+            if (Ctrl.n.u1EvtIntrEn)
+            {
+                /* Signal the event log interrupt. */
+                ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_INTR);
+                /** @todo IOMMU: Generate the interrupt. */
+            }
+        }
+    }
 }
 
 
@@ -3150,10 +3242,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     /* Command Buffer Base Address Register. */
     {
         CMD_BUF_BAR_T const CmdBufBar = pThis->CmdBufBaseAddr;
-        uint32_t      cEntries;
-        uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = CmdBufBar.n.u4Len;
-        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        uint8_t const  uEncodedLen = CmdBufBar.n.u4Len;
+        uint32_t const cEntries    = iommuAmdGetBaseBufEntryCount(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetBaseBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  Command buffer BAR                      = %#RX64\n", CmdBufBar.u64);
         if (fVerbose)
         {
@@ -3165,10 +3256,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     /* Event Log Base Address Register. */
     {
         EVT_LOG_BAR_T const EvtLogBar = pThis->EvtLogBaseAddr;
-        uint32_t      cEntries;
-        uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = EvtLogBar.n.u4Len;
-        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        uint8_t const  uEncodedLen = EvtLogBar.n.u4Len;
+        uint32_t const cEntries    = iommuAmdGetBaseBufEntryCount(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetBaseBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  Event log BAR                           = %#RX64\n", EvtLogBar.u64);
         if (fVerbose)
         {
@@ -3287,10 +3377,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     /* PPR Log Base Address Register. */
     {
         PPR_LOG_BAR_T PprLogBar = pThis->PprLogBaseAddr;
-        uint32_t      cEntries;
-        uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = PprLogBar.n.u4Len;
-        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        uint8_t const  uEncodedLen = PprLogBar.n.u4Len;
+        uint32_t const cEntries    = iommuAmdGetBaseBufEntryCount(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetBaseBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  PPR Log BAR                             = %#RX64\n",   PprLogBar.u64);
         if (fVerbose)
         {
@@ -3324,10 +3413,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     /* Guest Virtual-APIC Log Base Address Register. */
     {
         GALOG_BAR_T const GALogBar = pThis->GALogBaseAddr;
-        uint32_t      cEntries;
-        uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = GALogBar.n.u4Len;
-        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        uint8_t const  uEncodedLen = GALogBar.n.u4Len;
+        uint32_t const cEntries    = iommuAmdGetBaseBufEntryCount(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetBaseBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  Guest Log BAR                           = %#RX64\n",    GALogBar.u64);
         if (fVerbose)
         {
@@ -3346,10 +3434,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     /* PPR Log B Base Address Register. */
     {
         PPR_LOG_B_BAR_T PprLogBBar = pThis->PprLogBBaseAddr;
-        uint32_t      cEntries;
-        uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = PprLogBBar.n.u4Len;
-        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        uint8_t const uEncodedLen  = PprLogBBar.n.u4Len;
+        uint32_t const cEntries    = iommuAmdGetBaseBufEntryCount(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetBaseBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  PPR Log B BAR                           = %#RX64\n",   PprLogBBar.u64);
         if (fVerbose)
         {
@@ -3361,10 +3448,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     /* Event Log B Base Address Register. */
     {
         EVT_LOG_B_BAR_T EvtLogBBar = pThis->EvtLogBBaseAddr;
-        uint32_t      cEntries;
-        uint32_t      cbBuffer;
-        uint8_t const uEncodedLen = EvtLogBBar.n.u4Len;
-        iommuAmdGetBaseBufferLength(uEncodedLen, &cEntries, &cbBuffer);
+        uint8_t const  uEncodedLen = EvtLogBBar.n.u4Len;
+        uint32_t const cEntries    = iommuAmdGetBaseBufEntryCount(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetBaseBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  Event Log B BAR                         = %#RX64\n",   EvtLogBBar.u64);
         if (fVerbose)
         {
