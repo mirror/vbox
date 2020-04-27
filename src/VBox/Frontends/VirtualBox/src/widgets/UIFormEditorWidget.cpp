@@ -1438,20 +1438,24 @@ QHeaderView *UIFormEditorWidget::verticalHeader() const
     return m_pTableView->verticalHeader();
 }
 
+void UIFormEditorWidget::setValues(const QVector<CFormValue> &values)
+{
+    m_pTableModel->setFormValues(values);
+    adjustTable();
+}
+
 void UIFormEditorWidget::setForm(const CForm &comForm)
 {
     AssertPtrReturnVoid(m_pTableModel);
     /// @todo add some check..
-    m_pTableModel->setFormValues(comForm.GetValues());
-    adjustTable();
+    setValues(comForm.GetValues());
 }
 
 void UIFormEditorWidget::setVirtualSystemDescriptionForm(const CVirtualSystemDescriptionForm &comForm)
 {
     AssertPtrReturnVoid(m_pTableModel);
     /// @todo add some check..
-    m_pTableModel->setFormValues(comForm.GetValues());
-    adjustTable();
+    setValues(comForm.GetValues());
 }
 
 void UIFormEditorWidget::makeSureEditorDataCommitted()

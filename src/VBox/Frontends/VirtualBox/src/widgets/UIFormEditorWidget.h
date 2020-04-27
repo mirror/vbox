@@ -25,6 +25,10 @@
 #include <QPointer>
 #include <QWidget>
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CFormValue.h"
+
 /* Forward declarations: */
 class QHeaderView;
 class UIFormEditorModel;
@@ -47,6 +51,8 @@ public:
     /** Returns vertical header reference. */
     QHeaderView *verticalHeader() const;
 
+    /** Defines @a values to be edited. */
+    void setValues(const QVector<CFormValue> &values);
     /** Defines @a comForm to be edited. */
     void setForm(const CForm &comForm);
     /** Defines virtual system description @a comForm to be edited. */
