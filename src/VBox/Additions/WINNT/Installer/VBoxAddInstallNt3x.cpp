@@ -1,24 +1,18 @@
 /* $Id$ */
 /** @file
- * VBoxAddInstallNt3x = Install Guest Additions on NT3.51, 3.5 and 3.1.
+ * VBoxAddInstallNt3x - Install Guest Additions on NT3.51, 3.5 and 3.1.
  */
 
 /*
- * Copyright (c) 2020 knut st. osmundsen <bird-kBuild-spamx@anduin.net>
+ * Copyright (C) 2020 Oracle Corporation
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with This program.  If not, see <http://www.gnu.org/licenses/>
- *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
 
@@ -28,7 +22,6 @@
 #include <iprt/nt/nt-and-windows.h>
 #include <iprt/ctype.h>
 #include <iprt/getopt.h>
-#include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
@@ -39,215 +32,19 @@
 #include <revision-generated.h> /* VBOX_SVN_REV. */
 
 
-/*********************************************************************************************************************************
-*   Minimal stream implementation (for message.cpp).                                                                             *
-*********************************************************************************************************************************/
-/** @todo might be an idea to make a more native version of this and use
- *        this as a base for it. */
-
-typedef struct PRINTFBUF
-{
-    HANDLE  hHandle;
-    size_t  offBuf;
-    char    szBuf[128];
-} PRINTFBUF;
-
-struct RTSTREAM
-{
-    int     iStream;
-    HANDLE  hHandle;
-};
-
-
-RTSTREAM g_aStdStreams[3] =
-{
-    { 0, NULL },
-    { 1, NULL },
-    { 2, NULL },
-};
-
-RTSTREAM *g_pStdIn  = &g_aStdStreams[0];
-RTSTREAM *g_pStdOut = &g_aStdStreams[1];
-RTSTREAM *g_pStdErr = &g_aStdStreams[2];
-
-
-static void InitStdHandles(PRTL_USER_PROCESS_PARAMETERS pParams)
-{
-    if (pParams)
-    {
-        g_pStdIn->hHandle  = pParams->StandardInput;
-        g_pStdOut->hHandle = pParams->StandardOutput;
-        g_pStdErr->hHandle = pParams->StandardError;
-    }
-}
-
-
-static void FlushPrintfBuffer(PRINTFBUF *pBuf)
-{
-    if (pBuf->offBuf)
-    {
-        DWORD cbWritten = 0;
-        WriteFile(pBuf->hHandle, pBuf->szBuf, pBuf->offBuf, &cbWritten, NULL);
-        pBuf->offBuf   = 0;
-        pBuf->szBuf[0] = '\0';
-    }
-}
-
-
-/** @callback_method_impl{FNRTSTROUTPUT} */
-static DECLCALLBACK(size_t) MyPrintfOutputter(void *pvArg, const char *pachChars, size_t cbChars)
-{
-    PRINTFBUF *pBuf = (PRINTFBUF *)pvArg;
-    if (cbChars != 0)
-    {
-        size_t offSrc = 0;
-        while  (offSrc < cbChars)
-        {
-            size_t cbLeft = sizeof(pBuf->szBuf) - pBuf->offBuf - 1;
-            if (cbLeft > 0)
-            {
-                size_t cbToCopy = RT_MIN(cbChars - offSrc, cbLeft);
-                memcpy(&pBuf->szBuf[pBuf->offBuf], &pachChars[offSrc], cbToCopy);
-                pBuf->offBuf += cbToCopy;
-                pBuf->szBuf[pBuf->offBuf] = '\0';
-                if (cbLeft > cbToCopy)
-                    break;
-                offSrc += cbToCopy;
-            }
-            FlushPrintfBuffer(pBuf);
-        }
-    }
-    else /* Special zero byte write at the end of the formatting. */
-        FlushPrintfBuffer(pBuf);
-    return cbChars;
-}
-
-
-RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args)
-{
-    PRINTFBUF Buf;
-    Buf.hHandle  = pStream->hHandle;
-    Buf.offBuf   = 0;
-    Buf.szBuf[0] = '\0';
-
-    return RTStrFormatV(MyPrintfOutputter, &Buf, NULL, NULL, pszFormat, args);
-}
-
-
-RTR3DECL(int) RTStrmPrintf(PRTSTREAM pStream, const char *pszFormat, ...)
-{
-    va_list args;
-    va_start(args, pszFormat);
-    int rc = RTStrmPrintfV(pStream, pszFormat, args);
-    va_end(args);
-    return rc;
-}
-
-
-RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list va)
-{
-    PRINTFBUF Buf;
-    Buf.hHandle  = g_pStdOut->hHandle;
-    Buf.offBuf   = 0;
-    Buf.szBuf[0] = '\0';
-
-    return RTStrFormatV(MyPrintfOutputter, &Buf, NULL, NULL, pszFormat, va);
-}
-
-
-RTR3DECL(int) RTPrintf(const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    int rc = RTPrintfV(pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
 
 /*********************************************************************************************************************************
-*   Allocation using process heap                                                                                                *
+*   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** @todo put this into a file in r3/win/ and r3/nt/ */
-RTDECL(void) RTMemTmpFree(void *pv)
-{
-    HeapFree(GetProcessHeap(), 0, pv);
-}
-
-RTDECL(void) RTMemFree(void *pv)
-{
-    HeapFree(GetProcessHeap(), 0, pv);
-}
-
-
-RTDECL(void *) RTMemTmpAllocTag(size_t cb, const char *pszTag)
-{
-    RT_NOREF(pszTag);
-    return HeapAlloc(GetProcessHeap(), 0, cb);
-}
-
-
-RTDECL(void *) RTMemTmpAllocZTag(size_t cb, const char *pszTag)
-{
-    RT_NOREF(pszTag);
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cb);
-}
-
-
-RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag)
-{
-    RT_NOREF(pszTag);
-    return HeapAlloc(GetProcessHeap(), 0, cb);
-}
-
-
-RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag)
-{
-    RT_NOREF(pszTag);
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cb);
-}
-
-
-RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag)
-{
-    RT_NOREF(pszTag);
-    if (pvOld)
-        return HeapReAlloc(GetProcessHeap(), 0, pvOld, cbNew);
-    return HeapAlloc(GetProcessHeap(), 0, cbNew);
-}
-
-
-RTDECL(void *) RTMemReallocZTag(void *pvOld, size_t cbOld, size_t cbNew, const char *pszTag)
-{
-    RT_NOREF(pszTag, cbOld);
-    if (pvOld)
-        return HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, pvOld, cbNew);
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cbNew);
-}
-
-
-/*********************************************************************************************************************************
-*   UTF-16                                                                                                                       *
-*********************************************************************************************************************************/
-
-RTDECL(PRTUTF16) RTUtf16ToLowerAscii(PRTUTF16 pwsz)
-{
-    for (PRTUTF16 pwc = pwsz; *pwc; pwc++)
-        if (*pwc < 0x7f)
-            *pwc = RT_C_TO_LOWER(*pwc);
-    return pwsz;
-}
-
-
-/*********************************************************************************************************************************
-*   Actual installer code.                                                                                                       *
-*********************************************************************************************************************************/
-
 /** Components (also indexes into g_aComponents). */
 typedef enum { kComp_VBoxGuest = 0, kComp_VBoxService = 1, kComp_VBoxMouse = 2} VBOXGACOMP;
 /** File status. */
 typedef enum { kFile_NotFound, kFile_LongName, kFile_8Dot3, kFile_Both, kFile_Mismatch } VBOXGAFILE;
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** The components. */
 struct
 {
@@ -298,6 +95,15 @@ static size_t g_cwcSrc = 0;
 #define MAKE_SANE_VERSION(a_uMajor, a_uMinor) RT_MAKE_U32(a_uMinor, a_uMajor)
 static uint32_t g_uSaneVersion = MAKE_SANE_VERSION(3,51);
 static DWORD    g_dwVersion    = 3 | (51 << 8);
+
+
+RTDECL(PRTUTF16) RTUtf16ToLowerAscii(PRTUTF16 pwsz)
+{
+    for (PRTUTF16 pwc = pwsz; *pwc; pwc++)
+        if (*pwc < 0x7f)
+            *pwc = RT_C_TO_LOWER(*pwc);
+    return pwsz;
+}
 
 
 /**
@@ -945,79 +751,5 @@ int main(int argc, char **argv)
     if (enmMode == kMode_Install)
         return DoInstall(f8Dot3);
     return DoUninstall();
-}
-
-
-#include <internal/process.h>
-
-RT_C_DECLS_BEGIN
-DECLHIDDEN(char)             g_szrtProcExePath[RTPATH_MAX] = "Unknown.exe";
-DECLHIDDEN(size_t)           g_cchrtProcExePath = 11;
-DECLHIDDEN(size_t)           g_cchrtProcExeDir = 0;
-DECLHIDDEN(size_t)           g_offrtProcName = 0;
-RT_C_DECLS_END
-
-
-DECL_NO_INLINE(static, void) initProcExecPath(void)
-{
-    WCHAR wszPath[RTPATH_MAX];
-    UINT cwcPath = GetModuleFileNameW(NULL, wszPath, RT_ELEMENTS(wszPath));
-    if (cwcPath)
-    {
-        char *pszDst = g_szrtProcExePath;
-        int rc = RTUtf16ToUtf8Ex(wszPath, cwcPath, &pszDst, sizeof(g_szrtProcExePath), &g_cchrtProcExePath);
-        if (RT_SUCCESS(rc))
-        {
-            g_cchrtProcExeDir = g_offrtProcName = RTPathFilename(pszDst) - g_szrtProcExePath;
-            while (   g_cchrtProcExeDir >= 2
-                   && RTPATH_IS_SLASH(g_szrtProcExePath[g_cchrtProcExeDir - 1])
-                   && g_szrtProcExePath[g_cchrtProcExeDir - 2] != ':')
-                g_cchrtProcExeDir--;
-        }
-    }
-}
-
-
-void CustomMainEntrypoint(PPEB pPeb)
-{
-    /*
-     * Initialize stuff.
-     */
-    InitStdHandles(pPeb->ProcessParameters);
-    initProcExecPath();
-
-    /*
-     * Get and convert the command line to argc/argv format.
-     */
-    RTEXITCODE rcExit;
-    UNICODE_STRING const *pCmdLine = pPeb->ProcessParameters ? &pPeb->ProcessParameters->CommandLine : NULL;
-    if (pCmdLine)
-    {
-        char *pszCmdLine = NULL;
-        int rc = RTUtf16ToUtf8Ex(pCmdLine->Buffer, pCmdLine->Length / sizeof(WCHAR), &pszCmdLine, 0, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            char **papszArgv;
-            int    cArgs = 0;
-            rc = RTGetOptArgvFromString(&papszArgv, &cArgs, pszCmdLine,
-                                        RTGETOPTARGV_CNV_MODIFY_INPUT | RTGETOPTARGV_CNV_QUOTE_MS_CRT,  NULL);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Call the main function.
-                 */
-                rcExit = (RTEXITCODE)main(cArgs, papszArgv);
-            }
-            else
-                rcExit = RTMsgErrorExitFailure("Error parsing command line: %Rrc\n", rc);
-        }
-        else
-            rcExit = RTMsgErrorExitFailure("Failed to convert command line to UTF-8: %Rrc\n", rc);
-    }
-    else
-        rcExit = RTMsgErrorExitFailure("No command line\n");
-
-    for (;;)
-        NtTerminateProcess(NtCurrentProcess(), rcExit);
 }
 

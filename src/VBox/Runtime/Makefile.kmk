@@ -32,6 +32,7 @@ ifdef VBOX_ONLY_ADDITIONS
  # Only build the additions, sort out the legacy names first.
  #
  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared
+ LIBRARIES.win += RuntimeR3NoCrt
  LIBRARIES.win.amd64 += RuntimeGuestR3-x86 RuntimeGuestR3Shared-x86
  ifdef VBOX_WITH_ADDITION_DRIVERS
   LIBRARIES += RuntimeGuestR0
@@ -48,7 +49,7 @@ else ifdef VBOX_ONLY_VALIDATIONKIT
  #
  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeR3 RuntimeR0 RuntimeBldProg
  LIBRARIES.solaris += RuntimeR0Stub
- LIBRARIES.win += RuntimeR0Stub
+ LIBRARIES.win += RuntimeR0Stub #RuntimeR3NoCrt
  LIBRARIES.win.x86 += RuntimeR3VccTricks
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
@@ -85,7 +86,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
  BLDPROGS += uniread
  LIBRARIES += RuntimeR3 RuntimeBldProg RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
  LIBRARIES.solaris += RuntimeR0Stub
- LIBRARIES.win += RuntimeR0Stub
+ LIBRARIES.win += RuntimeR0Stub RuntimeR3NoCrt
  LIBRARIES.win.amd64 += RuntimeR3-x86
  ifdef VBOX_WITH_RAW_MODE
   LIBRARIES += RuntimeRC
@@ -723,6 +724,7 @@ RuntimeR3_SOURCES       = \
 	r3/init.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
+	r3/RTPathTemp.cpp \
 	r3/poll.cpp \
 	r3/process.cpp \
 	r3/socket.cpp \
@@ -1896,6 +1898,7 @@ RuntimeBldProg_SOURCES         = \
 	r3/init.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
+	r3/RTPathTemp.cpp \
 	r3/process.cpp \
 	r3/socket.cpp \
 	r3/stream.cpp \
@@ -2568,6 +2571,71 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 	common/math/gcc/umoddi3.c \
 	common/math/gcc/xordi3.c
 
+#
+# RuntimeR3NoCRT - For windows applications w/o any runtime library.
+# Experimental.
+#
+RuntimeR3NoCrt_TEMPLATE := VBoxR3StaticNoCrt
+RuntimeR3NoCrt_INCS     := include
+RuntimeR3NoCrt_DEFS     := \
+	RT_NO_STRICT \
+	IPRT_NO_ALLOCA_TROUBLE \
+	IPRT_GETOPT_WITHOUT_NETWORK_ADDRESSES
+RuntimeR3NoCrt_SOURCES  := \
+	common/string/straprintf.cpp \
+	common/string/strformat.cpp \
+	common/string/strformatnum.cpp \
+	common/string/strformatrt.cpp \
+	common/string/strformattype.cpp \
+	common/string/strprintf.cpp \
+	common/string/strprintf2.cpp \
+	common/string/stringalloc.cpp \
+	common/string/strtonum.cpp \
+	common/string/RTStrNLen.cpp \
+	common/string/RTStrCmp.cpp \
+	common/string/RTStrNCmp.cpp \
+	common/string/RTStrICmpAscii.cpp \
+	common/string/RTStrNICmpAscii.cpp \
+	common/string/RTStrCopy.cpp \
+	common/string/RTStrEnd.asm \
+	common/string/RTUtf16Copy.cpp \
+	common/string/utf-16.cpp \
+	common/string/utf-8.cpp \
+	common/path/RTPathFilename.cpp \
+	common/misc/getopt.cpp \
+	common/misc/getoptargv.cpp \
+	common/misc/message.cpp \
+	common/err/errmsg.cpp \
+	generic/uuid-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp
+
+RuntimeR3NoCrt_SOURCES.x86 := \
+	common/string/memcpy.asm \
+	common/string/memchr.asm \
+	common/string/memcmp.asm \
+	common/string/memmove.asm \
+	common/string/memset.asm \
+	common/string/strlen.asm \
+	common/string/strchr.asm \
+	common/string/strcmp.asm \
+	common/string/strncmp.asm
+RuntimeR3NoCrt_SOURCES.amd64 := \
+	common/string/memcpy.asm \
+	common/string/memchr.asm \
+	common/string/memcmp.asm \
+	common/string/memmove.asm \
+	common/string/memset.asm \
+	common/string/strlen.asm \
+	common/string/strchr.asm \
+	common/string/strcmp.asm \
+	common/string/strncmp.asm \
+
+RuntimeR3NoCrt_SOURCES.win := \
+	r3/win/nocrt-startup-exe-win.cpp \
+	r3/win/nocrt-alloc-win.cpp \
+	r3/win/nocrt-streams-win.cpp \
+	\
+	win/errmsgwin.cpp
 
 #
 # RuntimeR0 - Ring-0 library for VMMR0.
@@ -4111,3 +4179,4 @@ taf-template.o taf-template.obj: taf-core.o taf-asn1-decoder.o taf-sanity.o taf-
 tsp-template.o tsp-template.obj: tsp-core.o tsp-asn1-decoder.o tsp-sanity.o tsp-init.o
 x509-template.o x509-template.obj: x509-core.o x509-asn1-decoder.o x509-sanity.o x509-init.o
 pkcs7-template.o pkcs7-template.obj: pkcs7-core.o pkcs7-asn1-decoder.o pkcs7-sanity.o pkcs7-init.o
+
