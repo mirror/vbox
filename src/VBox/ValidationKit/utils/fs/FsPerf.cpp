@@ -6378,9 +6378,30 @@ int main(int argc, char *argv[])
     /*
      * Default values.
      */
-    char szDefaultDir[32];
+    char szDefaultDir[RTPATH_MAX];
     const char *pszDir = szDefaultDir;
-    RTStrPrintf(szDefaultDir, sizeof(szDefaultDir), "fstestdir-%u" RTPATH_SLASH_STR, RTProcSelf());
+
+    /* As default retrieve the system's temporary directory and create a test directory beneath it,
+     * as this binary might get executed from a read-only medium such as ${CDROM}. */
+    rc = RTPathTemp(szDefaultDir, sizeof(szDefaultDir));
+    if (RT_SUCCESS(rc))
+    {
+        char szDirName[32];
+        RTStrPrintf2(szDirName, sizeof(szDirName), "fstestdir-%u" RTPATH_SLASH_STR, RTProcSelf());
+        rc = RTPathAppend(szDefaultDir, sizeof(szDefaultDir), szDirName);
+        if (RT_FAILURE(rc))
+        {
+            RTTestFailed(g_hTest, "Unable to append dir name in temp dir, rc=%Rrc\n", rc);
+            return RTTestSummaryAndDestroy(g_hTest);
+        }
+    }
+    else
+    {
+        RTTestFailed(g_hTest, "Unable to retrieve temp dir, rc=%Rrc\n", rc);
+        return RTTestSummaryAndDestroy(g_hTest);
+    }
+
+    RTTestIPrintf(RTTESTLVL_INFO, "Default directory is: %s\n", szDefaultDir);
 
     bool fCommsSlave = false;
 
