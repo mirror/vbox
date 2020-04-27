@@ -35,8 +35,13 @@ UICloudMachineSettingsDialogPage::UICloudMachineSettingsDialogPage(QWidget *pPar
 void UICloudMachineSettingsDialogPage::setForm(const CForm &comForm)
 {
     m_comForm = comForm;
-    AssertPtrReturnVoid(m_pFormEditor.data());
-    m_pFormEditor->setForm(m_comForm);
+    updateEditor();
+}
+
+void UICloudMachineSettingsDialogPage::setFilter(const QString &strFilter)
+{
+    m_strFilter = strFilter;
+    updateEditor();
 }
 
 void UICloudMachineSettingsDialogPage::makeSureDataCommitted()
@@ -70,6 +75,39 @@ void UICloudMachineSettingsDialogPage::prepare()
 
             /* Add into layout: */
             pLayout->addWidget(m_pFormEditor);
+        }
+    }
+}
+
+void UICloudMachineSettingsDialogPage::updateEditor()
+{
+    /* Make sure editor present: */
+    AssertPtrReturnVoid(m_pFormEditor.data());
+
+    /* Make sure form isn't null: */
+    if (m_comForm.isNotNull())
+    {
+        /* Acquire initial values: */
+        const QVector<CFormValue> initialValues = m_comForm.GetValues();
+
+        /* If filter null: */
+        if (m_strFilter.isNull())
+        {
+            /* Push initial values to editor: */
+            m_pFormEditor->setValues(initialValues);
+        }
+        /* If filter present: */
+        else
+        {
+            /* Acquire group fields: */
+            const QVector<QString> groupFields = m_comForm.GetFieldGroup(m_strFilter);
+            /* Filter out unrelated values: */
+            QVector<CFormValue> filteredValues;
+            foreach (const CFormValue &comValue, initialValues)
+                if (groupFields.contains(comValue.GetLabel()))
+                    filteredValues << comValue;
+            /* Push filtered values to editor: */
+            m_pFormEditor->setValues(filteredValues);
         }
     }
 }

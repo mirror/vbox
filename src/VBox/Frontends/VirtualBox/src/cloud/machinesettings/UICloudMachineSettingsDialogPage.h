@@ -44,11 +44,15 @@ public:
 
     /** Returns page form. */
     CForm form() const { return m_comForm; }
+    /** Returns page filter. */
+    QString filter() const { return m_strFilter; }
 
 public slots:
 
     /** Defines page @a comForm. */
     void setForm(const CForm &comForm);
+    /** Defines page @a strFilter. */
+    void setFilter(const QString &strFilter);
 
     /** Makes sure page data committed. */
     void makeSureDataCommitted();
@@ -58,11 +62,16 @@ private:
     /** Prepares all. */
     void prepare();
 
+    /** Updates editor. */
+    void updateEditor();
+
     /** Holds the form editor widget instance. */
     UIFormEditorWidgetPointer  m_pFormEditor;
 
     /** Holds the page form. */
-    CForm  m_comForm;
+    CForm    m_comForm;
+    /** Holds the page filter. */
+    QString  m_strFilter;
 };
 
 /** Safe pointer to Form Editor widget. */
