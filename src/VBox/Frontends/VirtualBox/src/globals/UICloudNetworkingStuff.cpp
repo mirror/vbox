@@ -26,6 +26,7 @@
 #include "CProgress.h"
 #include "CStringArray.h"
 #include "CVirtualBox.h"
+#include "CVirtualBoxErrorInfo.h"
 #include "CVirtualSystemDescription.h"
 
 
@@ -116,6 +117,90 @@ CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProvide
     }
     /* Null by default: */
     return CCloudMachine();
+}
+
+bool UICloudNetworkingStuff::cloudMachineId(const CCloudMachine &comCloudMachine,
+                                            QUuid &uResult,
+                                            QWidget *pParent /* = 0 */)
+{
+    const QUuid uId = comCloudMachine.GetId();
+    if (!comCloudMachine.isOk())
+    {
+        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        return false;
+    }
+    uResult = uId;
+    return true;
+}
+
+bool UICloudNetworkingStuff::cloudMachineAccessible(const CCloudMachine &comCloudMachine,
+                                                    bool &fResult,
+                                                    QWidget *pParent /* = 0 */)
+{
+    const bool fAccessible = comCloudMachine.GetAccessible();
+    if (!comCloudMachine.isOk())
+    {
+        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        return false;
+    }
+    fResult = fAccessible;
+    return true;
+}
+
+bool UICloudNetworkingStuff::cloudMachineAccessError(const CCloudMachine &comCloudMachine,
+                                                     CVirtualBoxErrorInfo &comResult,
+                                                     QWidget *pParent /* = 0 */)
+{
+    const CVirtualBoxErrorInfo comAccessError = comCloudMachine.GetAccessError();
+    if (!comCloudMachine.isOk())
+    {
+        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        return false;
+    }
+    comResult = comAccessError;
+    return true;
+}
+
+bool UICloudNetworkingStuff::cloudMachineName(const CCloudMachine &comCloudMachine,
+                                              QString &strResult,
+                                              QWidget *pParent /* = 0 */)
+{
+    const QString strName = comCloudMachine.GetName();
+    if (!comCloudMachine.isOk())
+    {
+        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        return false;
+    }
+    strResult = strName;
+    return true;
+}
+
+bool UICloudNetworkingStuff::cloudMachineOSTypeId(const CCloudMachine &comCloudMachine,
+                                                  QString &strResult,
+                                                  QWidget *pParent /* = 0 */)
+{
+    const QString strOSTypeId = comCloudMachine.GetOSTypeId();
+    if (!comCloudMachine.isOk())
+    {
+        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        return false;
+    }
+    strResult = strOSTypeId;
+    return true;
+}
+
+bool UICloudNetworkingStuff::cloudMachineState(const CCloudMachine &comCloudMachine,
+                                               KMachineState &enmResult,
+                                               QWidget *pParent /* = 0 */)
+{
+    const KMachineState enmState = comCloudMachine.GetState();
+    if (!comCloudMachine.isOk())
+    {
+        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        return false;
+    }
+    enmResult = enmState;
+    return true;
 }
 
 QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient &comCloudClient,
