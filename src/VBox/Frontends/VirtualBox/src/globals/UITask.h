@@ -47,6 +47,7 @@ public:
         Type_DetailsPopulation       = 2,
         Type_CloudListMachines       = 3,
         Type_CloudRefreshMachineInfo = 4,
+        Type_CloudGetSettingsForm    = 5,
     };
 
     /** Constructs the task of passed @a enmType. */

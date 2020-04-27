@@ -31,6 +31,8 @@
 #include "UIAudioHostDriverEditor.h"
 #include "UIBaseMemoryEditor.h"
 #include "UIBootOrderEditor.h"
+#include "UICloudMachineSettingsDialogPage.h"
+#include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDetailsElement.h"
@@ -44,6 +46,8 @@
 #include "UIMachineAttributeSetter.h"
 #include "UINameAndSystemEditor.h"
 #include "UINetworkAttachmentEditor.h"
+#include "UITaskCloudGetSettingsForm.h"
+#include "UIThreadPool.h"
 #include "UIVideoMemoryEditor.h"
 #include "UIVirtualBoxManager.h"
 
@@ -71,6 +75,7 @@ enum AnchorRole
 #ifndef VBOX_WS_MAC
     AnchorRole_MiniToolbar,
 #endif
+    AnchorRole_Cloud,
 };
 
 
@@ -498,6 +503,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 #ifndef VBOX_WS_MAC
     roles["#mini_toolbar"] = AnchorRole_MiniToolbar;
 #endif
+    roles["#cloud"] = AnchorRole_Cloud;
 
     /* Current anchor role: */
     const QString strRole = strAnchor.section(',', 0, 0);
@@ -959,6 +965,66 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
             break;
         }
 #endif
+        case AnchorRole_Cloud:
+        {
+            /* Prepare popup: */
+            QPointer<QIDialogContainer> pPopup = new QIDialogContainer(0, Qt::Tool);
+            if (pPopup)
+            {
+                /* Acquire cloud machine: */
+                CCloudMachine comCloudMachine = cloudMachine();
+
+                /* Prepare editor: */
+                UISafePointerCloudMachineSettingsDialogPage pEditor = new UICloudMachineSettingsDialogPage(pPopup,
+                                                                                                           false /* full-scale? */);
+                if (pEditor)
+                {
+                    /* Configure editor: */
+                    connect(pEditor, &UICloudMachineSettingsDialogPage::sigValidChanged,
+                            pPopup.data(), &QIDialogContainer::setProgressBarHidden);
+                    connect(pEditor, &UICloudMachineSettingsDialogPage::sigValidChanged,
+                            pPopup.data(), &QIDialogContainer::setOkButtonEnabled);
+                    pEditor->setFilter(strData);
+                    /* Create get settings form task: */
+                    UITaskCloudGetSettingsForm *pTask = new UITaskCloudGetSettingsForm(comCloudMachine);
+                    /* Create get settings form receiver: */
+                    UIReceiverCloudGetSettingsForm *pReceiver = new UIReceiverCloudGetSettingsForm(pEditor);
+                    if (pReceiver)
+                        connect(pReceiver, &UIReceiverCloudGetSettingsForm::sigTaskComplete,
+                                pEditor.data(), &UICloudMachineSettingsDialogPage::setForm);
+                    /* Start task: */
+                    if (pTask && pReceiver)
+                        uiCommon().threadPoolCloud()->enqueueTask(pTask);
+                    /* Embed editor: */
+                    pPopup->setWidget(pEditor);
+                }
+
+                /* Adjust popup geometry: */
+                pPopup->move(QCursor::pos());
+                pPopup->resize(pPopup->minimumSizeHint());
+
+                // WORKAROUND:
+                // On Windows, Tool dialogs aren't activated by default by some reason.
+                // So we have created sltActivateWindow wrapping actual activateWindow
+                // to fix that annoying issue.
+                QMetaObject::invokeMethod(pPopup, "sltActivateWindow", Qt::QueuedConnection);
+                /* Execute popup, change machine name if confirmed: */
+                if (pPopup->exec() == QDialog::Accepted)
+                {
+                    /* Makes sure page data committed: */
+                    if (pEditor)
+                        pEditor->makeSureDataCommitted();
+
+                    /* Apply form: */
+                    CForm comForm = pEditor->form();
+                    applyCloudMachineSettingsForm(comCloudMachine, comForm);
+                }
+
+                /* Delete popup: */
+                delete pPopup;
+            }
+            break;
+        }
         default:
             break;
     }
