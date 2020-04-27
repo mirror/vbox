@@ -107,7 +107,7 @@ void UICloudMachineSettingsDialog::prepare()
         m_pPage = new UICloudMachineSettingsDialogPage(this);
         if (m_pPage)
         {
-            connect(m_pPage, &UICloudMachineSettingsDialogPage::sigValidChanged,
+            connect(m_pPage.data(), &UICloudMachineSettingsDialogPage::sigValidChanged,
                     this, &UICloudMachineSettingsDialog::setOkButtonEnabled);
             /* Add into layout: */
             pLayout->addWidget(m_pPage);
