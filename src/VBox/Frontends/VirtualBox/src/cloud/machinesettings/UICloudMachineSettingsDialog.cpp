@@ -24,6 +24,7 @@
 #include "UIMessageCenter.h"
 #include "UICloudMachineSettingsDialog.h"
 #include "UICloudMachineSettingsDialogPage.h"
+#include "UICloudNetworkingStuff.h"
 
 /* COM includes: */
 #include "CProgress.h"
@@ -49,7 +50,7 @@ int UICloudMachineSettingsDialog::exec()
 
 void UICloudMachineSettingsDialog::accept()
 {
-    /** Makes sure page data committed: */
+    /* Makes sure page data committed: */
     if (m_pPage)
         m_pPage->makeSureDataCommitted();
 
@@ -87,33 +88,15 @@ void UICloudMachineSettingsDialog::retranslateUi()
 void UICloudMachineSettingsDialog::sltRefresh()
 {
     /* Update name: */
-    m_strName = m_comCloudMachine.GetName();
-    if (!m_comCloudMachine.isOk())
-    {
-        msgCenter().cannotAcquireCloudMachineParameter(m_comCloudMachine, this);
+    if (!cloudMachineName(m_comCloudMachine, m_strName, this))
         reject();
-    }
 
     /* Retranslate title: */
     retranslateUi();
 
     /* Update form: */
-    CForm comForm;
-    CProgress comProgress = m_comCloudMachine.GetSettingsForm(comForm);
-    if (!m_comCloudMachine.isOk())
-    {
-        msgCenter().cannotAcquireCloudMachineParameter(m_comCloudMachine, this);
+    if (!cloudMachineSettingsForm(m_comCloudMachine, m_comForm, this))
         reject();
-    }
-    msgCenter().showModalProgressDialog(comProgress,
-                                        m_strName,
-                                        ":/progress_settings_90px.png", this, 0);
-    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-    {
-        msgCenter().cannotAcquireCloudClientParameter(comProgress, this);
-        reject();
-    }
-    m_comForm = comForm;
 
     /* Assign page with form: */
     m_pPage->setForm(m_comForm);

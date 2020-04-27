@@ -75,6 +75,12 @@ namespace UICloudNetworkingStuff
                                                 KMachineState &enmResult,
                                                 QWidget *pParent = 0);
 
+    /** Acquires @a comCloudMachine settings form as a @a comResult, using @a pParent to show messages according to.
+      * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
+    SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine &comCloudMachine,
+                                                       CForm &comResult,
+                                                       QWidget *pParent = 0);
+
     /** Acquires instance map.
       * @param  comCloudClient   Brings cloud client object.
       * @param  strErrorMessage  Brings error message container.
