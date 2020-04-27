@@ -44,8 +44,9 @@ signals:
 
 public:
 
-    /** Constructs cloud machine settings dialog page passing @a pParent to the base-class. */
-    UICloudMachineSettingsDialogPage(QWidget *pParent);
+    /** Constructs cloud machine settings dialog page passing @a pParent to the base-class.
+      * @param  fFullScale  Brings whether this page is full-scale and should reflect at least 12 fields. */
+    UICloudMachineSettingsDialogPage(QWidget *pParent, bool fFullScale = true);
 
     /** Returns page form. */
     CForm form() const { return m_comForm; }
@@ -69,6 +70,9 @@ private:
 
     /** Updates editor. */
     void updateEditor();
+
+    /** Holds whether this page is full-scale and should reflect at least 12 fields. */
+    bool  m_fFullScale;
 
     /** Holds the form editor widget instance. */
     UIFormEditorWidgetPointer  m_pFormEditor;
