@@ -3924,7 +3924,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 Log(("vmsvgaR3FifoLoop: UPDATE (%d,%d)(%d,%d)\n", pUpdate->x, pUpdate->y, pUpdate->width, pUpdate->height));
                 /** @todo Multiple screens? */
                 VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, 0);
-                AssertBreak(pScreen);
+                AssertPtrBreak(pScreen);
                 vmsvgaR3UpdateScreen(pThisCC, pScreen, pUpdate->x, pUpdate->y, pUpdate->width, pUpdate->height);
                 break;
             }
@@ -3983,7 +3983,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 cbCursorShape = cbAndMask + pCursor->width * sizeof(uint32_t) * pCursor->height;    /* + size of the XOR mask (32-bit BRGA format) */
 
                 pCursorCopy = (uint8_t *)RTMemAlloc(cbCursorShape);
-                AssertBreak(pCursorCopy);
+                AssertPtrBreak(pCursorCopy);
 
                 /* Transparency is defined by the alpha bytes, so make the whole bitmap visible. */
                 memset(pCursorCopy, 0xff, cbAndMask);
@@ -4046,7 +4046,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
                 Log(("vmsvgaR3FifoLoop: RECT COPY %d,%d -> %d,%d (%dx%d)\n", pRectCopy->srcX, pRectCopy->srcY, pRectCopy->destX, pRectCopy->destY, pRectCopy->width, pRectCopy->height));
                 VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, 0);
-                AssertBreak(pScreen);
+                AssertPtrBreak(pScreen);
 
                 /* Check that arguments aren't complete junk. A precise check is done in vmsvgaR3RectCopy(). */
                 AssertBreak(pRectCopy->srcX < pThis->svga.u32MaxWidth);
@@ -4081,7 +4081,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 }
 
                 VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, 0);
-                AssertBreak(pScreen);
+                AssertPtrBreak(pScreen);
 
                 /* Check that arguments aren't complete junk. A precise check is done in vmsvgaR3RectCopy(). */
                 AssertBreak(pRRCopy->srcX < pThis->svga.u32MaxWidth);
@@ -4249,7 +4249,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                     STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdRemapGmr2Modify);
 
                     paNewPage64 = (uint64_t *)RTMemAllocZ(cNewTotalPages * sizeof(uint64_t));
-                    AssertBreak(paNewPage64);
+                    AssertPtrBreak(paNewPage64);
 
                     uint32_t idxPage = 0;
                     for (uint32_t i = 0; i < pGMR->numDescriptors; i++)
@@ -4463,7 +4463,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 RT_UNTRUSTED_VALIDATED_FENCE();
 
                 VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, pCmd->destScreenId);
-                AssertBreak(pScreen);
+                AssertPtrBreak(pScreen);
 
                 /** @todo Support GMRFB.format.s.bitsPerPixel != pThis->svga.uBpp   */
                 AssertBreak(pSVGAState->GMRFB.format.s.bitsPerPixel == pScreen->cBpp);
@@ -4535,7 +4535,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 RT_UNTRUSTED_VALIDATED_FENCE();
 
                 VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, pCmd->srcScreenId);
-                AssertBreak(pScreen);
+                AssertPtrBreak(pScreen);
 
                 /** @todo Support GMRFB.format.s.bitsPerPixel != pThis->svga.uBpp?   */
                 AssertBreak(pSVGAState->GMRFB.format.s.bitsPerPixel == pScreen->cBpp);
