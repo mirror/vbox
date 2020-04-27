@@ -25,17 +25,19 @@
 #include <QDialog>
 
 /* GUI includes: */
+#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QGridLayout;
+class QLabel;
 class QProgressBar;
 class QWidget;
 class QIDialogButtonBox;
 
 /** QDialog sub-class used as executable input container for passed widget.
   * Should be used as popup or modal dialog wrapping functionality of the passed widget. */
-class SHARED_LIBRARY_STUFF QIDialogContainer : public QDialog
+class SHARED_LIBRARY_STUFF QIDialogContainer : public QIWithRetranslateUI2<QDialog>
 {
     Q_OBJECT;
 
@@ -58,6 +60,11 @@ public slots:
     /** Sets Ok button to be @a fEnabled. */
     void setOkButtonEnabled(bool fEnabled);
 
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
 private:
 
     /** Prepares all. */
@@ -67,6 +74,8 @@ private:
     QGridLayout       *m_pLayout;
     /** Holds the widget reference. */
     QWidget           *m_pWidget;
+    /** Holds the progress-bar instance. */
+    QLabel            *m_pProgressLabel;
     /** Holds the progress-bar instance. */
     QProgressBar      *m_pProgressBar;
     /** Holds the button-box instance. */

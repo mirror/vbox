@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QGridLayout>
+#include <QLabel>
 #include <QProgressBar>
 #include <QPushButton>
 
@@ -29,9 +30,10 @@
 
 
 QIDialogContainer::QIDialogContainer(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
-    : QDialog(pParent, enmFlags)
+    : QIWithRetranslateUI2<QDialog>(pParent, enmFlags)
     , m_pLayout(0)
     , m_pWidget(0)
+    , m_pProgressLabel(0)
     , m_pProgressBar(0)
     , m_pButtonBox(0)
 {
@@ -48,7 +50,9 @@ void QIDialogContainer::setWidget(QWidget *pWidget)
 
 void QIDialogContainer::setProgressBarHidden(bool fHidden)
 {
+    AssertPtrReturnVoid(m_pProgressLabel);
     AssertPtrReturnVoid(m_pProgressBar);
+    m_pProgressLabel->setHidden(fHidden);
     m_pProgressBar->setHidden(fHidden);
 }
 
@@ -59,44 +63,64 @@ void QIDialogContainer::setOkButtonEnabled(bool fEnabled)
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fEnabled);
 }
 
+void QIDialogContainer::retranslateUi()
+{
+    m_pProgressLabel->setText(tr("Loading"));
+}
+
 void QIDialogContainer::prepare()
 {
     /* Prepare layout: */
     m_pLayout = new QGridLayout(this);
     if (m_pLayout)
     {
-        /* Prepare horizontal layout: */
-        QHBoxLayout *pHLayout = new QHBoxLayout;
-        if (pHLayout)
+        /* Prepare dialog button-box: */
+        m_pButtonBox = new QIDialogButtonBox(this);
+        if (m_pButtonBox)
         {
-            /* Prepare progress-bar: */
-            m_pProgressBar = new QProgressBar(this);
-            if (m_pProgressBar)
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok);
+            connect(m_pButtonBox, &QIDialogButtonBox::accepted,
+                    this, &QDialog::accept);
+            connect(m_pButtonBox, &QIDialogButtonBox::rejected,
+                    this, &QDialog::reject);
+
+            /* Prepare progress-layout: */
+            QHBoxLayout *pHLayout = new QHBoxLayout;
+            if (pHLayout)
             {
-                m_pProgressBar->setHidden(true);
-                m_pProgressBar->setMinimum(0);
-                m_pProgressBar->setMaximum(0);
+                pHLayout->setContentsMargins(0, 0, 0, 0);
 
-                /* Add into layout: */
-                pHLayout->addWidget(m_pProgressBar);
-            }
+                /* Prepare progress-label: */
+                m_pProgressLabel = new QLabel(this);
+                if (m_pProgressLabel)
+                {
+                    m_pProgressLabel->setHidden(true);
 
-            /* Prepare dialog button-box: */
-            m_pButtonBox = new QIDialogButtonBox(this);
-            if (m_pButtonBox)
-            {
-                m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok);
-                connect(m_pButtonBox, &QIDialogButtonBox::accepted,
-                        this, &QDialog::accept);
-                connect(m_pButtonBox, &QIDialogButtonBox::rejected,
-                        this, &QDialog::reject);
+                    /* Add into layout: */
+                    pHLayout->addWidget(m_pProgressLabel);
+                }
+                /* Prepare progress-bar: */
+                m_pProgressBar = new QProgressBar(this);
+                if (m_pProgressBar)
+                {
+                    m_pProgressBar->setHidden(true);
+                    m_pProgressBar->setTextVisible(false);
+                    m_pProgressBar->setMinimum(0);
+                    m_pProgressBar->setMaximum(0);
 
-                /* Add into layout: */
-                pHLayout->addWidget(m_pButtonBox);
+                    /* Add into layout: */
+                    pHLayout->addWidget(m_pProgressBar);
+                }
+
+                /* Add into button-box: */
+                m_pButtonBox->addExtraLayout(pHLayout);
             }
 
             /* Add into layout: */
-            m_pLayout->addLayout(pHLayout, 1, 0);
+            m_pLayout->addWidget(m_pButtonBox, 1, 0);
         }
     }
+
+    /* Apply language settings: */
+    retranslateUi();
 }
