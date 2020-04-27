@@ -2091,6 +2091,11 @@ typedef struct
 static uint8_t const g_acDevTabSegs[] = { 0, 2, 4, 8 };
 
 /**
+ * An array of the masks to select the device table segment index from a device ID.
+ */
+static uint16_t const g_auDevTabSegMasks[] = { 0x0, 0x8000, 0xc000, 0xe000 };
+
+/**
  * The maximum size (inclusive) of each device table segment (0 to 7).
  * Indexed by the device table segment index.
  */
@@ -2907,20 +2912,51 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
 
 
 /**
+ * Reads a device table entry from guest memory given the device ID.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uDevId          The device ID.
+ * @param   pDevTabEntry    Where to store the device table entry.
+ */
+static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_ENTRY_T *pDevTabEntry)
+{
+    PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+
+    uint8_t const idxSegsEn = Ctrl.n.u3DevTabSegEn;
+    Assert(idxSegsEn < RT_ELEMENTS(g_auDevTabSegMasks));
+
+    uint8_t const idxSeg = uDevId & g_auDevTabSegMasks[idxSegsEn] >> 13;
+    Assert(idxSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
+
+    RTGCPHYS const GCPhysDevTab   = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base;
+    uint16_t const offDevTabEntry = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
+    RTGCPHYS const GCPhysDevTabEntry = GCPhysDevTab + offDevTabEntry;
+
+    int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTabEntry, pDevTabEntry, sizeof(*pDevTabEntry));
+    if (RT_FAILURE(rc))
+        Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc\n", GCPhysDevTabEntry, rc));
+
+    return rc;
+}
+
+
+/**
  * Memory read transaction from a device.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   uDeviceId   The device identifier (bus, device, function).
+ * @param   uDevId      The device identifier (bus, device, function).
  * @param   uDva        The device virtual address being read.
  * @param   cbRead      The number of bytes being read.
  * @param   pGCPhysOut  Where to store the translated physical address.
  *
  * @thread  Any.
  */
-static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbRead, PRTGCPHYS pGCPhysOut)
+static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbRead, PRTGCPHYS pGCPhysOut)
 {
-    RT_NOREF(pDevIns, uDeviceId, uDva, cbRead, pGCPhysOut);
+    RT_NOREF(pDevIns, uDevId, uDva, cbRead, pGCPhysOut);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -2930,16 +2966,16 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   uDeviceId   The device identifier (bus, device, function).
+ * @param   uDevId      The device identifier (bus, device, function).
  * @param   uDva        The device virtual address being written.
  * @param   cbWrite     The number of bytes being written.
  * @param   pGCPhysOut  Where to store the translated physical address.
  *
  * @thread  Any.
  */
-static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDeviceId, uint64_t uDva, size_t cbWrite, PRTGCPHYS pGCPhysOut)
+static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbWrite, PRTGCPHYS pGCPhysOut)
 {
-    RT_NOREF(pDevIns, uDeviceId, uDva, cbWrite, pGCPhysOut);
+    RT_NOREF(pDevIns, uDevId, uDva, cbWrite, pGCPhysOut);
     return VERR_NOT_IMPLEMENTED;
 }
 
