@@ -1795,12 +1795,12 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
         && pDevInsIommu != pDevIns)
     {
         RTGCPHYS GCPhysOut;
-        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemRead(pDevInsIommu, uDeviceId, GCPhys, cbRead, &GCPhysOut);
+        uint16_t const uDevId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
+        int rc = pIommu->pfnMemRead(pDevInsIommu, uDevId, GCPhys, cbRead, &GCPhysOut);
         if (RT_FAILURE(rc))
         {
-            Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
-                 GCPhys, cbRead, rc));
+            Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
+                 cbRead, rc));
             return rc;
         }
     }
@@ -1843,12 +1843,12 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
         && pDevInsIommu != pDevIns)
     {
         RTGCPHYS GCPhysOut;
-        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
-        int rc = pIommu->pfnMemWrite(pDevInsIommu, uDeviceId, GCPhys, cbWrite, &GCPhysOut);
+        uint16_t const uDevId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
+        int rc = pIommu->pfnMemWrite(pDevInsIommu, uDevId, GCPhys, cbWrite, &GCPhysOut);
         if (RT_FAILURE(rc))
         {
-            Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
-                 GCPhys, cbWrite, rc));
+            Log(("pdmR3DevHlp_PCIPhysRead: IOMMU translation failed. uDevId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDevId, GCPhys,
+                 cbWrite, rc));
             return rc;
         }
     }
