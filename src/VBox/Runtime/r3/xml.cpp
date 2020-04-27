@@ -146,20 +146,15 @@ XmlError::XmlError(xmlErrorPtr aErr)
     return finalMsg;
 }
 
-EIPRTFailure::EIPRTFailure(int aRC, const char *pcszContext, ...)
-    : RuntimeError(NULL),
-      mRC(aRC)
+EIPRTFailure::EIPRTFailure(int aRC, const char *pszContextFmt, ...)
+    : RuntimeError(NULL)
+    , mRC(aRC)
 {
-    char *pszContext2;
-    va_list args;
-    va_start(args, pcszContext);
-    RTStrAPrintfV(&pszContext2, pcszContext, args);
-    va_end(args);
-    char *newMsg;
-    RTStrAPrintf(&newMsg, "%s: %d (%s)", pszContext2, aRC, RTErrGetShort(aRC));
-    setWhat(newMsg);
-    RTStrFree(newMsg);
-    RTStrFree(pszContext2);
+    va_list va;
+    va_start(va, pszContextFmt);
+    m_strMsg.printfVNoThrow(pszContextFmt, va);
+    va_end(va);
+    m_strMsg.appendPrintfNoThrow(" %Rrc (%Rrs)", aRC, aRC);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
