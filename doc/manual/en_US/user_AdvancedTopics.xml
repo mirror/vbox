@@ -6077,19 +6077,56 @@ alice = {
 
     <sect2 id="autostart-windows">
 
-      <title>Windows: Starting the Autostart Service With a Windows service</title>
+      <title>Windows: Starting the Autostart Service</title>
 
       <para>
-        On Windows, autostarting is implemented as a Windows service.
-        The service is installed for every user with their own
-        credentials. Before installing any autostart services on a
-        system you first have to define the
-        <literal>VBOXAUTOSTART_CONFIG</literal> environment variable in
-        the system variables with the path to the autostart
-        configuration file. The configuration file has the same format
-        as on Linux, see <xref linkend="autostart-linux" />, except the
-        user name can be specified using the following formats: "user",
-        "domain\user", ".\user" and "user@domain".
+        On Windows, autostart functionality consist of two components.
+        First one is configuration file where the administrator can both
+        set delayed start of the VMs and temporary disable autostarting
+        for the particular user. The configuration file should be located
+        in the folder accessible by all required users but it should have
+        permissions allowing the only reading by everyone but
+        administrators. The configuration file contains several options.
+        One is <literal>default_policy</literal> which controls whether the
+        autostart service allows or denies to start a VM for users which
+        are not in the exception list. The exception list starts with
+        <literal>exception_list</literal> and contains a comma separated
+        list with usernames. Furthermore a separate startup delay can be
+        configured for every user to avoid overloading the host. A
+        sample configuration is given below:
+      </para>
+
+<screen>
+# Default policy is to deny starting a VM, the other option is "allow".
+default_policy = deny
+
+# Bob is allowed to start virtual machines but starting them
+# will be delayed for 10 seconds
+bob = {
+    allow = true
+    startup_delay = 10
+}
+
+# Alice is not allowed to start virtual machines, useful to exclude certain users
+# if the default policy is set to allow.
+alice = {
+    allow = false
+}
+</screen>
+
+      <para>
+        The user name can be specified using the following forms: "user",
+        "domain\user", ".\user" and "user@domain". Administrator must add
+        the <literal>VBOXAUTOSTART_CONFIG</literal> environment variable into
+        system variables containing the path to the configuration file
+        described above. The environment variable tells the autostart services
+        what configuration file is used.
+      </para>
+
+      <para>
+        Second component of autostart functionality is Windows service, every
+        instance of it works on behalf of particular user using its own
+        credentials.
       </para>
 
       <para>
@@ -6097,7 +6134,7 @@ alice = {
         administrators group must run the following command:
       </para>
 
-<screen>VBoxAutostartSvc install --user=&lt;user&gt; [--password-file=&lt;password_file&gt;]</screen>
+  <screen>VBoxAutostartSvc install --user=<replaceable>user</replaceable> [--password-file=<replaceable>password_file</replaceable>]</screen>
 
       <para>
         The password file should contain the password followed by a line
@@ -6110,7 +6147,7 @@ alice = {
         administrators group must run the following command:
       </para>
 
-<screen>VBoxAutostartSvc delete --user=&lt;user&gt;</screen>
+  <screen>VBoxAutostartSvc delete --user=<replaceable>user</replaceable></screen>
 
       <para>
         If a user has changed their password then a member of the
@@ -6119,6 +6156,21 @@ alice = {
         Windows security policies, the autostart service cannot be
         installed for users with empty passwords.
       </para>
+
+      <para>
+        Finally, the particular user should define which VM should be
+        started at boot or not. The user should run the following command
+        for every VM it desired to start at boot:
+      </para>
+
+  <screen>VBoxManage modifyvm <replaceable>VM name or UUID</replaceable> --autostart-enabled on</screen>
+
+      <para>
+        The user can remove the particular VM from the VMs starting at boot
+        by running the following command:
+      </para>
+
+  <screen>VBoxManage modifyvm <replaceable>VM name or UUID</replaceable> --autostart-enabled off</screen>
 
     </sect2>
 
