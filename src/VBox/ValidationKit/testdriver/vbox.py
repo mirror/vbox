@@ -2033,15 +2033,15 @@ class TestDriver(base.TestDriver):                                              
             reporter.log("  VRAM:               %sMB" % (oVM.graphicsAdapter.VRAMSize,));
             reporter.log("  Monitors:           %s" % (oVM.graphicsAdapter.monitorCount,));
             reporter.log("  GraphicsController: %s"
-                         % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType',
+                         % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType',                                              # pylint: disable=not-callable
                                                            oVM.graphicsAdapter.graphicsControllerType),));
         else:
             reporter.log("  VRAM:               %sMB" % (oVM.VRAMSize,));
             reporter.log("  Monitors:           %s" % (oVM.monitorCount,));
             reporter.log("  GraphicsController: %s"
-                         % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsControllerType),));
-        reporter.log("  Chipset:            %s" % (self.oVBoxMgr.getEnumValueName('ChipsetType', oVM.chipsetType),));
-        reporter.log("  Firmware:           %s" % (self.oVBoxMgr.getEnumValueName('FirmwareType', oVM.firmwareType),));
+                         % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsControllerType),));              # pylint: disable=not-callable
+        reporter.log("  Chipset:            %s" % (self.oVBoxMgr.getEnumValueName('ChipsetType', oVM.chipsetType),));             # pylint: disable=not-callable
+        reporter.log("  Firmware:           %s" % (self.oVBoxMgr.getEnumValueName('FirmwareType', oVM.firmwareType),));           # pylint: disable=not-callable
         reporter.log("  HwVirtEx:           %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled),));
         reporter.log("  VPID support:       %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_VPID),));
         reporter.log("  Nested paging:      %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging),));
@@ -2098,10 +2098,10 @@ class TestDriver(base.TestDriver):                                              
         for oCtrl in aoControllers:
             reporter.log("    %s %s bus: %s type: %s" % (oCtrl.name, oCtrl.controllerType, oCtrl.bus, oCtrl.controllerType,));
         reporter.log("    AudioController:  %s"
-                     % (self.oVBoxMgr.getEnumValueName('AudioControllerType', oVM.audioAdapter.audioController),));
+                     % (self.oVBoxMgr.getEnumValueName('AudioControllerType', oVM.audioAdapter.audioController),));               # pylint: disable=not-callable
         reporter.log("    AudioEnabled:     %s" % (oVM.audioAdapter.enabled,));
         reporter.log("    Host AudioDriver: %s"
-                     % (self.oVBoxMgr.getEnumValueName('AudioDriverType', oVM.audioAdapter.audioDriver),));
+                     % (self.oVBoxMgr.getEnumValueName('AudioDriverType', oVM.audioAdapter.audioDriver),));                       # pylint: disable=not-callable
 
         self.processPendingEvents();
         aoAttachments = self.oVBoxMgr.getArray(oVM, 'mediumAttachments')
@@ -2154,7 +2154,7 @@ class TestDriver(base.TestDriver):                                              
                 reporter.log2("    slot #%d found but not enabled, skipping" % (iSlot,));
                 continue;
             reporter.log("    slot #%d: type: %s (%s) MAC Address: %s lineSpeed: %s"
-                         % (iSlot, self.oVBoxMgr.getEnumValueName('NetworkAdapterType', oNic.adapterType),
+                         % (iSlot, self.oVBoxMgr.getEnumValueName('NetworkAdapterType', oNic.adapterType),                        # pylint: disable=not-callable
                             oNic.adapterType, oNic.MACAddress, oNic.lineSpeed) );
 
             if   oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
@@ -2196,7 +2196,7 @@ class TestDriver(base.TestDriver):                                              
             if oPort is not None and oPort.enabled:
                 enmHostMode = oPort.hostMode;
                 reporter.log("    slot #%d: hostMode: %s (%s)  I/O port: %s  IRQ: %s  server: %s  path: %s" %
-                             (iSlot,  self.oVBoxMgr.getEnumValueName('PortMode', enmHostMode),
+                             (iSlot,  self.oVBoxMgr.getEnumValueName('PortMode', enmHostMode),                                    # pylint: disable=not-callable
                               enmHostMode, oPort.IOBase, oPort.IRQ, oPort.server, oPort.path,) );
                 self.processPendingEvents();
 
@@ -3509,6 +3509,9 @@ class TestDriver(base.TestDriver):                                              
 
         if sFile is None:
             sFile = 'valkit.txt';
+
+        reporter.log2('txsCdWait: Waiting for file "%s" to become available ...' % (sFile,));
+
         fRemoveVm   = self.addTask(oSession);
         fRemoveTxs  = self.addTask(oTxsSession);
         cMsTimeout  = self.adjustTimeoutMs(cMsTimeout);
@@ -3638,6 +3641,7 @@ class TestDriver(base.TestDriver):                                              
             if fRc is True:
                 if fCdWait:
                     # Wait for CD?
+                    reporter.log2('startVmAndConnectToTxsViaTcp: Waiting for file "%s" to become available ...' % (sFileCdWait,));
                     fRc = self.txsCdWait(oSession, oTxsSession, cMsCdWait, sFileCdWait);
                     if fRc is not True:
                         reporter.error('startVmAndConnectToTxsViaTcp: txsCdWait failed');
