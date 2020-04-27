@@ -239,6 +239,37 @@ bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine &comCloudMac
     return true;
 }
 
+bool UICloudNetworkingStuff::applyCloudMachineSettingsForm(CCloudMachine &comCloudMachine,
+                                                           CForm &comForm,
+                                                           QWidget *pParent /* = 0 */)
+{
+    /* Acquire machine name first: */
+    QString strMachineName;
+    if (!cloudMachineName(comCloudMachine, strMachineName))
+        return false;
+
+    /* Now execute Apply async method: */
+    CProgress comProgress = comForm.Apply();
+    if (!comForm.isOk())
+    {
+        msgCenter().cannotApplyCloudMachineFormSettings(comForm, strMachineName, pParent);
+        return false;
+    }
+
+    /* Show "Apply" progress: */
+    msgCenter().showModalProgressDialog(comProgress,
+                                        strMachineName,
+                                        ":/progress_settings_90px.png", pParent, 0);
+    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+    {
+        msgCenter().cannotApplyCloudMachineFormSettings(comProgress, strMachineName, pParent);
+        return false;
+    }
+
+    /* Return result: */
+    return true;
+}
+
 QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient &comCloudClient,
                                                              QString &strErrorMessage,
                                                              QWidget *pParent /* = 0 */)
