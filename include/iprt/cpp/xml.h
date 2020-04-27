@@ -143,7 +143,7 @@ class RT_DECL_CLASS EIPRTFailure : public RuntimeError
 {
 public:
 
-    EIPRTFailure(int aRC, const char *pcszContext, ...);
+    EIPRTFailure(int aRC, const char *pszContextFmt, ...);
 
     int rc() const
     {
