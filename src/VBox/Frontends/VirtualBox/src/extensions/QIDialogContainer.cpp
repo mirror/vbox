@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QGridLayout>
+#include <QProgressBar>
 #include <QPushButton>
 
 /* GUI includes: */
@@ -31,6 +32,7 @@ QIDialogContainer::QIDialogContainer(QWidget *pParent /* = 0 */, Qt::WindowFlags
     : QDialog(pParent, enmFlags)
     , m_pLayout(0)
     , m_pWidget(0)
+    , m_pProgressBar(0)
     , m_pButtonBox(0)
 {
     prepare();
@@ -42,6 +44,12 @@ void QIDialogContainer::setWidget(QWidget *pWidget)
     m_pWidget = pWidget;
     if (m_pWidget)
         m_pLayout->addWidget(m_pWidget, 0, 0);
+}
+
+void QIDialogContainer::setProgressBarHidden(bool fHidden)
+{
+    AssertPtrReturnVoid(m_pProgressBar);
+    m_pProgressBar->setHidden(fHidden);
 }
 
 void QIDialogContainer::setOkButtonEnabled(bool fEnabled)
@@ -57,16 +65,38 @@ void QIDialogContainer::prepare()
     m_pLayout = new QGridLayout(this);
     if (m_pLayout)
     {
-        /* Prepare dialog button-box: */
-        m_pButtonBox = new QIDialogButtonBox(this);
-        if (m_pButtonBox)
+        /* Prepare horizontal layout: */
+        QHBoxLayout *pHLayout = new QHBoxLayout;
+        if (pHLayout)
         {
-            m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok);
-            connect(m_pButtonBox, &QIDialogButtonBox::accepted,
-                    this, &QDialog::accept);
-            connect(m_pButtonBox, &QIDialogButtonBox::rejected,
-                    this, &QDialog::reject);
-            m_pLayout->addWidget(m_pButtonBox, 1, 0);
+            /* Prepare progress-bar: */
+            m_pProgressBar = new QProgressBar(this);
+            if (m_pProgressBar)
+            {
+                m_pProgressBar->setHidden(true);
+                m_pProgressBar->setMinimum(0);
+                m_pProgressBar->setMaximum(0);
+
+                /* Add into layout: */
+                pHLayout->addWidget(m_pProgressBar);
+            }
+
+            /* Prepare dialog button-box: */
+            m_pButtonBox = new QIDialogButtonBox(this);
+            if (m_pButtonBox)
+            {
+                m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok);
+                connect(m_pButtonBox, &QIDialogButtonBox::accepted,
+                        this, &QDialog::accept);
+                connect(m_pButtonBox, &QIDialogButtonBox::rejected,
+                        this, &QDialog::reject);
+
+                /* Add into layout: */
+                pHLayout->addWidget(m_pButtonBox);
+            }
+
+            /* Add into layout: */
+            m_pLayout->addLayout(pHLayout, 1, 0);
         }
     }
 }
