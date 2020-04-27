@@ -980,9 +980,9 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                 if (pEditor)
                 {
                     /* Configure editor: */
-                    connect(pEditor, &UICloudMachineSettingsDialogPage::sigValidChanged,
+                    connect(pEditor.data(), &UICloudMachineSettingsDialogPage::sigValidChanged,
                             pPopup.data(), &QIDialogContainer::setProgressBarHidden);
-                    connect(pEditor, &UICloudMachineSettingsDialogPage::sigValidChanged,
+                    connect(pEditor.data(), &UICloudMachineSettingsDialogPage::sigValidChanged,
                             pPopup.data(), &QIDialogContainer::setOkButtonEnabled);
                     pEditor->setFilter(strData);
                     /* Create get settings form task: */
