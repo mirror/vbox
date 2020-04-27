@@ -935,7 +935,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
               respHdr.uResponse, virtioGetReqRespText(respHdr.uResponse)));
 
     if (RT_FAILURE(rcReq))
-        Log2Func(("rcReq:  %s\n", RTErrGetDefine(rcReq)));
+        Log2Func(("rcReq:  %Rrc\n", rcReq));
 
     if (LogIs3Enabled())
     {
