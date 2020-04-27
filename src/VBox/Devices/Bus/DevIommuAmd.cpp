@@ -3005,6 +3005,10 @@ static int iommuAmdWriteEventLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent
                 /** @todo IOMMU: Generate the interrupt. */
             }
         }
+        else
+        {
+            /** @todo IOMMU: Set the overflow bit and generate interrupt. */
+        }
     }
 }
 
