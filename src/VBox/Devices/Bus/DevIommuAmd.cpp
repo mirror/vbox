@@ -1075,7 +1075,8 @@ typedef union
     uint64_t    u64;
 } DEV_TAB_BAR_T;
 AssertCompileSize(DEV_TAB_BAR_T, 8);
-#define IOMMU_DEV_TAB_BAR_VALID_MASK      UINT64_C(0x000ffffffffff1ff)
+#define IOMMU_DEV_TAB_BAR_VALID_MASK          UINT64_C(0x000ffffffffff1ff)
+#define IOMMU_DEV_TAB_SEG_BAR_VALID_MASK      UINT64_C(0x000ffffffffff0ff)
 
 /**
  * Command Buffer Base Address Register (MMIO).
@@ -1376,25 +1377,6 @@ typedef PPR_LOG_BAR_T       PPR_LOG_B_BAR_T;
  * Currently identical to EVT_LOG_BAR_T.
  */
 typedef EVT_LOG_BAR_T       EVT_LOG_B_BAR_T;
-
-/**
- * Device Table Segment Register (MMIO).
- * In accordance with the AMD spec.
- */
-typedef union
-{
-    struct
-    {
-        RT_GCC_EXTENSION uint64_t   u8Size : 8;     /**< Bits 7:0   - Size: Size of the Device Table segment. */
-        RT_GCC_EXTENSION uint64_t   u4Rsvd0 : 4;    /**< Bits 11:8  - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u40Base : 40;   /**< Bits 51:12 - DevTabBase: Device Table Segment Base Address. */
-        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;  /**< Bits 63:52 - Reserved. */
-    } n;
-    /** The 64-bit unsigned integer view. */
-    uint64_t    u64;
-} DEV_TAB_SEG_BAR_T;
-AssertCompileSize(DEV_TAB_SEG_BAR_T, 8);
-#define IOMMU_DEV_TAB_SEG_BAR_VALID_MASK      UINT64_C(0x000ffffffffff0ff)
 
 /**
  * Device-specific Feature Extension (DSFX) Register (MMIO).
@@ -1914,116 +1896,111 @@ typedef struct IOMMU
 
     /** @name PCI: Base capability block registers.
      * @{ */
-    IOMMU_BAR_T                 IommuBar;           /**< IOMMU base address register. */
+    IOMMU_BAR_T                 IommuBar;            /**< IOMMU base address register. */
     /** @} */
 
     /** @name MMIO: Control and status registers.
      * @{ */
-    DEV_TAB_BAR_T               DevTabBaseAddr;     /**< Device table base address register. */
-    CMD_BUF_BAR_T               CmdBufBaseAddr;     /**< Command buffer base address register. */
-    EVT_LOG_BAR_T               EvtLogBaseAddr;     /**< Event log base address register. */
-    IOMMU_CTRL_T                Ctrl;               /**< IOMMU control register. */
-    IOMMU_EXCL_RANGE_BAR_T      ExclRangeBaseAddr;  /**< IOMMU exclusion range base register. */
-    IOMMU_EXCL_RANGE_LIMIT_T    ExclRangeLimit;     /**< IOMMU exclusion range limit. */
-    IOMMU_EXT_FEAT_T            ExtFeat;            /**< IOMMU extended feature register. */
+    DEV_TAB_BAR_T               aDevTabBaseAddrs[8]; /**< Device table base address registers. */
+    CMD_BUF_BAR_T               CmdBufBaseAddr;      /**< Command buffer base address register. */
+    EVT_LOG_BAR_T               EvtLogBaseAddr;      /**< Event log base address register. */
+    IOMMU_CTRL_T                Ctrl;                /**< IOMMU control register. */
+    IOMMU_EXCL_RANGE_BAR_T      ExclRangeBaseAddr;   /**< IOMMU exclusion range base register. */
+    IOMMU_EXCL_RANGE_LIMIT_T    ExclRangeLimit;      /**< IOMMU exclusion range limit. */
+    IOMMU_EXT_FEAT_T            ExtFeat;             /**< IOMMU extended feature register. */
     /** @} */
 
     /** @name MMIO: PPR Log registers.
      * @{ */
-    PPR_LOG_BAR_T               PprLogBaseAddr;     /**< PPR Log base address register. */
-    IOMMU_HW_EVT_HI_T           HwEvtHi;            /**< IOMMU hardware event register (Hi). */
-    IOMMU_HW_EVT_LO_T           HwEvtLo;            /**< IOMMU hardware event register (Lo). */
-    IOMMU_HW_EVT_STATUS_T       HwEvtStatus;        /**< IOMMU hardware event status. */
+    PPR_LOG_BAR_T               PprLogBaseAddr;      /**< PPR Log base address register. */
+    IOMMU_HW_EVT_HI_T           HwEvtHi;             /**< IOMMU hardware event register (Hi). */
+    IOMMU_HW_EVT_LO_T           HwEvtLo;             /**< IOMMU hardware event register (Lo). */
+    IOMMU_HW_EVT_STATUS_T       HwEvtStatus;         /**< IOMMU hardware event status. */
     /** @} */
 
     /** @todo IOMMU: SMI filter. */
 
     /** @name MMIO: Guest Virtual-APIC Log registers.
      * @{ */
-    GALOG_BAR_T                 GALogBaseAddr;      /**< Guest Virtual-APIC Log base address register. */
-    GALOG_TAIL_ADDR_T           GALogTailAddr;      /**< Guest Virtual-APIC Log Tail address register. */
+    GALOG_BAR_T                 GALogBaseAddr;       /**< Guest Virtual-APIC Log base address register. */
+    GALOG_TAIL_ADDR_T           GALogTailAddr;       /**< Guest Virtual-APIC Log Tail address register. */
     /** @} */
 
     /** @name MMIO: Alternate PPR and Event Log registers.
      *  @{ */
-    PPR_LOG_B_BAR_T             PprLogBBaseAddr;    /**< PPR Log B base address register. */
-    EVT_LOG_B_BAR_T             EvtLogBBaseAddr;    /**< Event Log B base address register. */
-    /** @} */
-
-    /** @name MMIO: Device table segment registers.
-     * @{ */
-    DEV_TAB_SEG_BAR_T           DevTabSeg[7];       /**< Device Table Segment base address register. */
+    PPR_LOG_B_BAR_T             PprLogBBaseAddr;     /**< PPR Log B base address register. */
+    EVT_LOG_B_BAR_T             EvtLogBBaseAddr;     /**< Event Log B base address register. */
     /** @} */
 
     /** @name MMIO: Device-specific feature registers.
      * @{ */
-    DEV_SPECIFIC_FEAT_T         DevSpecificFeat;    /**< Device-specific feature extension register (DSFX). */
-    DEV_SPECIFIC_CTRL_T         DevSpecificCtrl;    /**< Device-specific control extension register (DSCX). */
-    DEV_SPECIFIC_STATUS_T       DevSpecificStatus;  /**< Device-specific status extension register (DSSX). */
+    DEV_SPECIFIC_FEAT_T         DevSpecificFeat;     /**< Device-specific feature extension register (DSFX). */
+    DEV_SPECIFIC_CTRL_T         DevSpecificCtrl;     /**< Device-specific control extension register (DSCX). */
+    DEV_SPECIFIC_STATUS_T       DevSpecificStatus;   /**< Device-specific status extension register (DSSX). */
     /** @} */
 
     /** @name MMIO: MSI Capability Block registers.
      * @{ */
-    MSI_MISC_INFO_T             MsiMiscInfo;        /**< MSI Misc. info registers / MSI Vector registers. */
+    MSI_MISC_INFO_T             MsiMiscInfo;         /**< MSI Misc. info registers / MSI Vector registers. */
     /** @} */
 
     /** @name MMIO: Performance Optimization Control registers.
      *  @{ */
-    IOMMU_PERF_OPT_CTRL_T       PerfOptCtrl;       /**< IOMMU Performance optimization control register. */
+    IOMMU_PERF_OPT_CTRL_T       PerfOptCtrl;         /**< IOMMU Performance optimization control register. */
     /** @} */
 
     /** @name MMIO: x2APIC Control registers.
      * @{ */
-    IOMMU_XT_GEN_INTR_CTRL_T    XtGenIntrCtrl;      /**< IOMMU X2APIC General interrupt control register. */
-    IOMMU_XT_PPR_INTR_CTRL_T    XtPprIntrCtrl;      /**< IOMMU X2APIC PPR interrupt control register. */
-    IOMMU_XT_GALOG_INTR_CTRL_T  XtGALogIntrCtrl;    /**< IOMMU X2APIC Guest Log interrupt control register. */
+    IOMMU_XT_GEN_INTR_CTRL_T    XtGenIntrCtrl;       /**< IOMMU X2APIC General interrupt control register. */
+    IOMMU_XT_PPR_INTR_CTRL_T    XtPprIntrCtrl;       /**< IOMMU X2APIC PPR interrupt control register. */
+    IOMMU_XT_GALOG_INTR_CTRL_T  XtGALogIntrCtrl;     /**< IOMMU X2APIC Guest Log interrupt control register. */
     /** @} */
 
     /** @name MMIO: MARC registers.
      * @{ */
-    MARC_APER_T                 aMarcApers[4];      /**< MARC Aperture Registers. */
+    MARC_APER_T                 aMarcApers[4];       /**< MARC Aperture Registers. */
     /** @} */
 
     /** @name MMIO: Reserved register.
      *  @{ */
-    IOMMU_RSVD_REG_T            RsvdReg;            /**< IOMMU Reserved Register. */
+    IOMMU_RSVD_REG_T            RsvdReg;             /**< IOMMU Reserved Register. */
     /** @} */
 
     /** @name MMIO: Command and Event Log pointer registers.
      * @{ */
-    CMD_BUF_HEAD_PTR_T          CmdBufHeadPtr;      /**< Command buffer head pointer register. */
-    CMD_BUF_TAIL_PTR_T          CmdBufTailPtr;      /**< Command buffer tail pointer register. */
-    EVT_LOG_HEAD_PTR_T          EvtLogHeadPtr;      /**< Event log head pointer register. */
-    EVT_LOG_TAIL_PTR_T          EvtLogTailPtr;      /**< Event log tail pointer register. */
+    CMD_BUF_HEAD_PTR_T          CmdBufHeadPtr;       /**< Command buffer head pointer register. */
+    CMD_BUF_TAIL_PTR_T          CmdBufTailPtr;       /**< Command buffer tail pointer register. */
+    EVT_LOG_HEAD_PTR_T          EvtLogHeadPtr;       /**< Event log head pointer register. */
+    EVT_LOG_TAIL_PTR_T          EvtLogTailPtr;       /**< Event log tail pointer register. */
     /** @} */
 
     /** @name MMIO: Command and Event Status register.
      * @{ */
-    IOMMU_STATUS_T              Status;             /**< IOMMU status register. */
+    IOMMU_STATUS_T              Status;              /**< IOMMU status register. */
     /** @} */
 
     /** @name MMIO: PPR Log Head and Tail pointer registers.
      * @{ */
-    PPR_LOG_HEAD_PTR_T          PprLogHeadPtr;      /**< IOMMU PPR log head pointer register. */
-    PPR_LOG_TAIL_PTR_T          PprLogTailPtr;      /**< IOMMU PPR log tail pointer register. */
+    PPR_LOG_HEAD_PTR_T          PprLogHeadPtr;       /**< IOMMU PPR log head pointer register. */
+    PPR_LOG_TAIL_PTR_T          PprLogTailPtr;       /**< IOMMU PPR log tail pointer register. */
     /** @} */
 
     /** @name MMIO: Guest Virtual-APIC Log Head and Tail pointer registers.
      * @{ */
-    GALOG_HEAD_PTR_T            GALogHeadPtr;       /**< Guest Virtual-APIC log head pointer register. */
-    GALOG_TAIL_PTR_T            GALogTailPtr;       /**< Guest Virtual-APIC log tail pointer register. */
+    GALOG_HEAD_PTR_T            GALogHeadPtr;        /**< Guest Virtual-APIC log head pointer register. */
+    GALOG_TAIL_PTR_T            GALogTailPtr;        /**< Guest Virtual-APIC log tail pointer register. */
     /** @} */
 
     /** @name MMIO: PPR Log B Head and Tail pointer registers.
      *  @{ */
-    PPR_LOG_B_HEAD_PTR_T        PprLogBHeadPtr;     /**< PPR log B head pointer register. */
-    PPR_LOG_B_TAIL_PTR_T        PprLogBTailPtr;     /**< PPR log B tail pointer register. */
+    PPR_LOG_B_HEAD_PTR_T        PprLogBHeadPtr;      /**< PPR log B head pointer register. */
+    PPR_LOG_B_TAIL_PTR_T        PprLogBTailPtr;      /**< PPR log B tail pointer register. */
     /** @} */
 
     /** @name MMIO: Event Log B Head and Tail pointer registers.
      * @{ */
-    EVT_LOG_B_HEAD_PTR_T        EvtLogBHeadPtr;     /**< Event log B head pointer register. */
-    EVT_LOG_B_TAIL_PTR_T        EvtLogBTailPtr;     /**< Event log B tail pointer register. */
+    EVT_LOG_B_HEAD_PTR_T        EvtLogBHeadPtr;      /**< Event log B head pointer register. */
+    EVT_LOG_B_TAIL_PTR_T        EvtLogBTailPtr;      /**< Event log B tail pointer register. */
     /** @} */
 
     /** @name MMIO: PPR Log Overflow protection registers.
@@ -2117,7 +2094,7 @@ static uint8_t const g_acDevTabSegs[] = { 0, 2, 4, 8 };
  * The maximum size (inclusive) of each device table segment (0 to 7).
  * Indexed by the device table segment index.
  */
-static uint16_t const g_auDevTabSegSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f, 0x3f, 0x3f, 0x3f };
+static uint16_t const g_auDevTabSegMaxSizes[] = { 0x1ff, 0xff, 0x7f, 0x7f, 0x3f, 0x3f, 0x3f, 0x3f };
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -2195,7 +2172,7 @@ static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     /* Validate the base address. */
     RTGCPHYS const GCPhysDevTab = DevTabBaseAddr.n.u40Base;
     if (!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK))
-        pThis->DevTabBaseAddr.u64 = DevTabBaseAddr.u64;
+        pThis->aDevTabBaseAddrs[0].u64 = DevTabBaseAddr.u64;
     else
         Log((IOMMU_LOG_PFX ": Device table base address (%#RX64) misaligned -> Ignored\n", GCPhysDevTab));
     return VINF_SUCCESS;
@@ -2428,13 +2405,13 @@ static VBOXSTRICTRC iommuAmdDevTabSegBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uin
     RT_NOREF(pDevIns);
 
     /* Figure out which segment is being written. */
-    uint8_t const idxDevTabSeg = (iReg - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
-    uint8_t const idxSegment   = idxDevTabSeg + 1;
-    Assert(idxDevTabSeg < RT_ELEMENTS(pThis->DevTabSeg));
+    uint8_t const offSegment = (iReg - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
+    uint8_t const idxSegment = offSegment + 1;
+    Assert(idxSegment < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
 
     /* Mask out all unrecognized bits. */
     u64Value &= IOMMU_DEV_TAB_SEG_BAR_VALID_MASK;
-    DEV_TAB_SEG_BAR_T DevTabSegBar;
+    DEV_TAB_BAR_T DevTabSegBar;
     DevTabSegBar.u64 = u64Value;
 
     /* Validate the base address. */
@@ -2442,12 +2419,12 @@ static VBOXSTRICTRC iommuAmdDevTabSegBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uin
     if (!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK))
     {
         /* Validate the size. */
-        uint16_t const uSegSize    = DevTabSegBar.n.u8Size;
-        uint16_t const uMaxSegSize = g_auDevTabSegSizes[idxSegment];
+        uint16_t const uSegSize    = DevTabSegBar.n.u9Size;
+        uint16_t const uMaxSegSize = g_auDevTabSegMaxSizes[idxSegment];
         if (uSegSize <= uMaxSegSize)
         {
             /* Finally, update the segment register. */
-            pThis->DevTabSeg[idxDevTabSeg].u64 = u64Value;
+            pThis->aDevTabBaseAddrs[idxSegment].u64 = u64Value;
         }
         else
             Log((IOMMU_LOG_PFX ": Device table segment (%u) size invalid (%#RX32) -> Ignored\n", idxSegment, uSegSize));
@@ -2791,7 +2768,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
     uint64_t uReg;
     switch (off)
     {
-        case IOMMU_MMIO_OFF_DEV_TAB_BAR:              uReg = pThis->DevTabBaseAddr.u64;         break;
+        case IOMMU_MMIO_OFF_DEV_TAB_BAR:              uReg = pThis->aDevTabBaseAddrs[0].u64;    break;
         case IOMMU_MMIO_OFF_CMD_BUF_BAR:              uReg = pThis->CmdBufBaseAddr.u64;         break;
         case IOMMU_MMIO_OFF_EVT_LOG_BAR:              uReg = pThis->EvtLogBaseAddr.u64;         break;
         case IOMMU_MMIO_OFF_CTRL:                     uReg = pThis->Ctrl.u64;                   break;
@@ -2813,9 +2790,10 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
         case IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST:
         case IOMMU_MMIO_OFF_DEV_TAB_SEG_LAST:
         {
-            uint8_t const idxDevTabSeg = (off - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
-            Assert(idxDevTabSeg < RT_ELEMENTS(pThis->DevTabSeg));
-            uReg = pThis->DevTabSeg[idxDevTabSeg].u64;
+            uint8_t const offDevTabSeg = (off - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
+            uint8_t const idxDevTabSeg = offDevTabSeg + 1;
+            Assert(idxDevTabSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
+            uReg = pThis->aDevTabBaseAddrs[idxDevTabSeg].u64;
             break;
         }
 
@@ -2925,87 +2903,6 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
 
     *puResult = uReg;
     return VINF_SUCCESS;
-}
-
-
-/**
- * Reads a device table segment (0-7) from guest memory.
- *
- * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   idxSeg      The device table segment index.
- * @param   pvBuf       Where to store the device table segment.
- * @param   cbBuf       The size of the buffer in bytes.
- *
- * @thread  Any.
- */
-static int iommuAmdReadDeviceTableSegment(PPDMDEVINS pDevIns, uint8_t idxSeg, void *pvBuf, uint32_t cbBuf)
-{
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-
-    /* Validate. */
-    Assert(pvBuf);
-    Assert(cbBuf <= _2M);
-    Assert(!idxSeg || pThis->ExtFeat.n.u2DevTabSegSup);
-    Assert(!idxSeg || idxSeg < g_acDevTabSegs[pThis->ExtFeat.n.u2DevTabSegSup]);
-
-    /* Get the base address and size of the segment. */
-    RTGCPHYS GCPhysDevTab;
-    uint32_t cbDevTab;
-    if (!idxSeg)
-    {
-        GCPhysDevTab = pThis->DevTabBaseAddr.n.u40Base;
-        cbDevTab     = IOMMU_GET_DEV_TAB_SIZE(pThis->DevTabBaseAddr.n.u9Size);
-    }
-    else
-    {
-        GCPhysDevTab = pThis->DevTabSeg[idxSeg].n.u40Base;
-        cbDevTab     = IOMMU_GET_DEV_TAB_SIZE(pThis->DevTabSeg[idxSeg].n.u8Size);
-    }
-
-    /* Validate that the destination buffer is large enough to hold the segment. */
-    Assert(cbBuf >= cbDevTab);
-
-    /* Copy the device table to the buffer. */
-    int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTab, pvBuf, cbDevTab);
-    if (RT_FAILURE(rc))
-    {
-        Log((IOMMU_LOG_PFX ": iommuAmdFetchDeviceTable: Failed to read device table segment. idxSeg=%u GCPhys=%#RGp rc=%Rrc",
-             idxSeg, GCPhysDevTab, rc));
-    }
-
-    return rc;
-}
-
-
-/**
- * Calculates and returns the total size of the device table.
- * This includes device table segments if they are used.
- *
- * @returns The size of the device table in bytes.
- * @param   pDevIns     The IOMMU device instance.
- *
- * @thread  Any.
- */
-static uint32_t iommuAmdCalcTotalDevTabSize(PPDMDEVINS pDevIns)
-{
-    PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
-
-    /* The base address register always exists. */
-    uint32_t cbDevTabSize = IOMMU_GET_DEV_TAB_SIZE(pThis->DevTabBaseAddr.n.u9Size);
-
-    /* If segmentation is enabled, add the size of each segments. */
-    uint8_t const uSegmentsEnabled = Ctrl.n.u3DevTabSegEn;
-    if (uSegmentsEnabled)
-    {
-        Assert(uSegmentsEnabled < RT_ELEMENTS(g_acDevTabSegs));
-        uint8_t const cSegments = g_acDevTabSegs[uSegmentsEnabled] - 1;
-        for (uint8_t idxSegment = 0; idxSegment < cSegments - 1; idxSegment++)
-            cbDevTabSize += IOMMU_GET_DEV_TAB_SIZE(pThis->DevTabSeg[idxSegment].n.u8Size);
-    }
-
-    return cbDevTabSize;
 }
 
 
@@ -3192,10 +3089,11 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     bool const fVerbose = !strncmp(pszArgs, RT_STR_TUPLE("verbose")) ? true : false;
 
     pHlp->pfnPrintf(pHlp, "AMD-IOMMU:\n");
-    /* Device Table Base Address. */
+    /* Device Table Base Addresses (all segments). */
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDevTabBaseAddrs); i++)
     {
-        DEV_TAB_BAR_T const DevTabBar = pThis->DevTabBaseAddr;
-        pHlp->pfnPrintf(pHlp, "  Device Table BAR                        = %#RX64\n", DevTabBar.u64);
+        DEV_TAB_BAR_T const DevTabBar = pThis->aDevTabBaseAddrs[i];
+        pHlp->pfnPrintf(pHlp, "  Device Table BAR [%u]                   = %#RX64\n", i, DevTabBar.u64);
         if (fVerbose)
         {
             pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabBar.n.u9Size,
@@ -3427,18 +3325,6 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
             pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBBar.n.u40Base);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
-        }
-    }
-    /* Device Table Segment Registers. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->DevTabSeg); i++)
-    {
-        DEV_TAB_SEG_BAR_T const DevTabSeg = pThis->DevTabSeg[i];
-        pHlp->pfnPrintf(pHlp, "  Device Table Segment BAR [%u]            = %#RX64\n",  DevTabSeg.u64);
-        if (fVerbose)
-        {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabSeg.n.u40Base);
-            pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabSeg.n.u8Size,
-                            IOMMU_GET_DEV_TAB_SIZE(DevTabSeg.n.u8Size));
         }
     }
     /* Device-Specific Feature Extension Register. */
@@ -3773,7 +3659,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    pThis->DevTabBaseAddr.u64     = 0;
+    memset(&pThis->aDevTabBaseAddrs[0], 0, sizeof(pThis->aDevTabBaseAddrs));
 
     pThis->CmdBufBaseAddr.u64     = 0;
     pThis->CmdBufBaseAddr.n.u4Len = 8;
@@ -3837,8 +3723,6 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->PprLogBBaseAddr.n.u4Len   = 8;
     pThis->EvtLogBBaseAddr.n.u40Base = 0;
     pThis->EvtLogBBaseAddr.n.u4Len   = 8;
-
-    memset(&pThis->DevTabSeg[0], 0, sizeof(pThis->DevTabSeg));
 
     pThis->DevSpecificFeat.u64       = 0;
     pThis->DevSpecificCtrl.u64       = 0;
