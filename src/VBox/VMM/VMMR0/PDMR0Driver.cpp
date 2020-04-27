@@ -31,6 +31,99 @@
 
 
 
+/** @name Ring-0 Context Driver Helpers
+ * @{
+ */
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnVMSetError} */
+static DECLCALLBACK(int) pdmR0DrvHlp_VMSetError(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    va_list args;
+    va_start(args, pszFormat);
+    int rc2 = VMSetErrorV(pDrvIns->Internal.s.pVMR0, rc, RT_SRC_POS_ARGS, pszFormat, args); Assert(rc2 == rc); NOREF(rc2);
+    va_end(args);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnVMSetErrorV} */
+static DECLCALLBACK(int) pdmR0DrvHlp_VMSetErrorV(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    int rc2 = VMSetErrorV(pDrvIns->Internal.s.pVMR0, rc, RT_SRC_POS_ARGS, pszFormat, va); Assert(rc2 == rc); NOREF(rc2);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnVMSetRuntimeError} */
+static DECLCALLBACK(int) pdmR0DrvHlp_VMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                       const char *pszFormat, ...)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = VMSetRuntimeErrorV(pDrvIns->Internal.s.pVMR0, fFlags, pszErrorId, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnVMSetRuntimeErrorV} */
+static DECLCALLBACK(int) pdmR0DrvHlp_VMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
+                                                        const char *pszFormat, va_list va)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    int rc = VMSetRuntimeErrorV(pDrvIns->Internal.s.pVMR0, fFlags, pszErrorId, pszFormat, va);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnAssertEMT} */
+static DECLCALLBACK(bool) pdmR0DrvHlp_AssertEMT(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    if (VM_IS_EMT(pDrvIns->Internal.s.pVMR0))
+        return true;
+
+    RTAssertMsg1Weak("AssertEMT", iLine, pszFile, pszFunction);
+    RTAssertPanic();
+    return false;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR0,pfnAssertOther} */
+static DECLCALLBACK(bool) pdmR0DrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    if (!VM_IS_EMT(pDrvIns->Internal.s.pVMR0))
+        return true;
+
+    RTAssertMsg1Weak("AssertOther", iLine, pszFile, pszFunction);
+    RTAssertPanic();
+    return false;
+}
+
+
+/**
+ * The Ring-0 Context Driver Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMDRVHLPR0) g_pdmR0DrvHlp =
+{
+    PDM_DRVHLPRC_VERSION,
+    pdmR0DrvHlp_VMSetError,
+    pdmR0DrvHlp_VMSetErrorV,
+    pdmR0DrvHlp_VMSetRuntimeError,
+    pdmR0DrvHlp_VMSetRuntimeErrorV,
+    pdmR0DrvHlp_AssertEMT,
+    pdmR0DrvHlp_AssertOther,
+    PDM_DRVHLPRC_VERSION
+};
+
+/** @} */
+
+
+
 /**
  * PDMDrvHlpCallR0 helper.
  *
