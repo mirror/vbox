@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - No-CRT windows EXE startup code.
+ * IPRT - No-CRT - Windows EXE startup code.
  *
  * @note Does not run static constructors and destructors!
  */
