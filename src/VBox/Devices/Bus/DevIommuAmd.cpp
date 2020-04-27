@@ -2792,8 +2792,13 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
         case IOMMU_MMIO_OFF_PPR_LOG_B_BAR:            uReg = pThis->PprLogBBaseAddr.u64;        break;
         case IOMMU_MMIO_OFF_PPR_EVT_B_BAR:            uReg = pThis->EvtLogBBaseAddr.u64;        break;
 
-        case IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST:
-        case IOMMU_MMIO_OFF_DEV_TAB_SEG_LAST:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_1:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_2:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_3:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_4:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_5:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_6:
+        case IOMMU_MMIO_OFF_DEV_TAB_SEG_7:
         {
             uint8_t const offDevTabSeg = (off - IOMMU_MMIO_OFF_DEV_TAB_SEG_FIRST) >> 3;
             uint8_t const idxDevTabSeg = offDevTabSeg + 1;
@@ -2934,6 +2939,7 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_
     uint16_t const offDevTabEntry = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
     RTGCPHYS const GCPhysDevTabEntry = GCPhysDevTab + offDevTabEntry;
 
+    Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
     int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTabEntry, pDevTabEntry, sizeof(*pDevTabEntry));
     if (RT_FAILURE(rc))
         Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc\n", GCPhysDevTabEntry, rc));
@@ -3727,7 +3733,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
     pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup. */
     pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
-    AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS < RT_ELEMENTS(g_acDevTabSegs));
+    AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS <= 3);
     pThis->ExtFeat.n.u2DevTabSegSup          = IOMMU_MAX_DEV_TAB_SEGMENTS;
     pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
     pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
