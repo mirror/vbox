@@ -1539,21 +1539,28 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *                            short description of the specified status code.
  *      - \%Rrf             - Takes an integer iprt status code as argument. Will insert the
  *                            full description of the specified status code.
+ *                            Note! Works like \%Rrs when IN_RT_STATIC is defined (so please avoid).
  *      - \%Rra             - Takes an integer iprt status code as argument. Will insert the
  *                            status code define + full description.
+ *                            Note! Reduced output when IN_RT_STATIC is defined (so please avoid).
  *      - \%Rwc             - Takes a long Windows error code as argument. Will insert the status
  *                            code define corresponding to the Windows error code.
  *      - \%Rwf             - Takes a long Windows error code as argument. Will insert the
  *                            full description of the specified status code.
+ *                            Note! Works like \%Rwc when IN_RT_STATIC is defined.
  *      - \%Rwa             - Takes a long Windows error code as argument. Will insert the
  *                            error code define + full description.
+ *                            Note! Reduced output when IN_RT_STATIC is defined (so please avoid).
  *
  *      - \%Rhrc            - Takes a COM/XPCOM status code as argument. Will insert the status
  *                            code define corresponding to the Windows error code.
  *      - \%Rhrf            - Takes a COM/XPCOM status code as argument. Will insert the
  *                            full description of the specified status code.
+ *                            Note! Works like \%Rhrc when IN_RT_STATIC is
+ *                                  defined on Windows (so please avoid).
  *      - \%Rhra            - Takes a COM/XPCOM error code as argument. Will insert the
  *                            error code define + full description.
+ *                            Note! Reduced output when IN_RT_STATIC is defined on Windows (so please avoid).
  *
  *      - \%Rfn             - Pretty printing of a function or method. It drops the
  *                            return code and parameter list.

@@ -1030,9 +1030,19 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             case 'c':
                                 return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
                             case 'f':
-                                return pfnOutput(pvArgOutput, pMsg->pszMsgFull,strlen(pMsg->pszMsgFull));
+# if !defined(RT_OS_WINDOWS) || (!defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY))
+                                return pfnOutput(pvArgOutput, pMsg->pszMsgFull, strlen(pMsg->pszMsgFull));
+# else
+                                AssertFailed();
+                                return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
+# endif
                             case 'a':
+# if !defined(RT_OS_WINDOWS) || (!defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY))
                                 return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, hrc, pMsg->pszMsgFull);
+# else
+                                AssertFailed();
+                                return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X)", pMsg->pszDefine, hrc);
+# endif
                             default:
                                 AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                                 return 0;
@@ -1183,11 +1193,26 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case 'c':
                         return pfnOutput(pvArgOutput, pMsg->pszDefine,    strlen(pMsg->pszDefine));
                     case 's':
+# if !defined(IPRT_ERRMSG_DEFINES_ONLY)
                         return pfnOutput(pvArgOutput, pMsg->pszMsgShort,  strlen(pMsg->pszMsgShort));
+# else
+                        return pfnOutput(pvArgOutput, pMsg->pszDefine,    strlen(pMsg->pszDefine));
+# endif
                     case 'f':
+# if !defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY)
                         return pfnOutput(pvArgOutput, pMsg->pszMsgFull,   strlen(pMsg->pszMsgFull));
+# else
+                        return pfnOutput(pvArgOutput, pMsg->pszDefine,    strlen(pMsg->pszDefine));
+# endif
                     case 'a':
+# if !defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY)
                         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (%d) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
+# elif !defined(IPRT_ERRMSG_DEFINES_ONLY)
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (%d) - %s", pMsg->pszDefine, rc, pMsg->pszMsgShort);
+# else
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (%d)", pMsg->pszDefine, rc);
+# endif
+
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                         return 0;
@@ -1224,15 +1249,25 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case 'c':
                         return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
                     case 'f':
-                        return pfnOutput(pvArgOutput, pMsg->pszMsgFull,strlen(pMsg->pszMsgFull));
+#  if !defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY)
+                        return pfnOutput(pvArgOutput, pMsg->pszMsgFull, strlen(pMsg->pszMsgFull));
+#  else
+                        AssertFailed();
+                        return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
+#  endif
                     case 'a':
+#  if !defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY)
                         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
-# else
+#  else
+                        AssertFailed();
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X)", pMsg->pszDefine, rc);
+#  endif
+# else  /* !RT_OS_WINDOWS */
                     case 'c':
                     case 'f':
                     case 'a':
                         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "0x%08X", rc);
-# endif
+# endif /* !RT_OS_WINDOWS */
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                         return 0;
