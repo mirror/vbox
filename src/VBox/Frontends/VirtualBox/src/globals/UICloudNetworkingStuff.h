@@ -31,6 +31,7 @@
 #include "CCloudProviderManager.h"
 #include "CCloudClient.h"
 #include "CCloudMachine.h"
+#include "CForm.h"
 
 /** Cloud networking stuff namespace. */
 namespace UICloudNetworkingStuff
@@ -77,19 +78,19 @@ namespace UICloudNetworkingStuff
 
     /** Acquires @a comCloudMachine settings form as a @a comResult, using @a pParent to show messages according to.
       * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
-    SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine &comCloudMachine,
+    SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine comCloudMachine,
                                                        CForm &comResult,
                                                        QWidget *pParent = 0);
     /** Acquires @a comCloudMachine settings form as a @a comResult, using @a strErrorMessage to store messages to.
       * @note  Be aware, this is a blocking function, it will hang for a time of progress being executed. */
-    SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine &comCloudMachine,
+    SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine comCloudMachine,
                                                        CForm &comResult,
                                                        QString &strErrorMessage);
 
     /** Applies @a comCloudMachine @a comForm settings, using @a pParent to show messages according to.
       * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
-    SHARED_LIBRARY_STUFF bool applyCloudMachineSettingsForm(CCloudMachine &comCloudMachine,
-                                                            CForm &comForm,
+    SHARED_LIBRARY_STUFF bool applyCloudMachineSettingsForm(CCloudMachine comCloudMachine,
+                                                            CForm comForm,
                                                             QWidget *pParent = 0);
 
     /** Acquires instance map.
@@ -105,7 +106,7 @@ namespace UICloudNetworkingStuff
       * @param  strErrorMessage  Brings error message container.
       * @param  pWidget          Brings parent widget to show messages according to,
       *                          if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient &comCloudClient,
+    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
                                                                   QString &strErrorMessage,
                                                                   QWidget *pParent = 0);
 
@@ -135,7 +136,7 @@ namespace UICloudNetworkingStuff
       * @param  strErrorMessage  Brings error message container.
       * @param  pWidget          Brings parent widget to show messages according to,
       *                          if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF void refreshCloudMachineInfo(CCloudMachine &comCloudMachine,
+    SHARED_LIBRARY_STUFF void refreshCloudMachineInfo(CCloudMachine comCloudMachine,
                                                       QString &strErrorMessage,
                                                       QWidget *pParent = 0);
 
@@ -149,23 +150,6 @@ namespace UICloudNetworkingStuff
                                                              const QString &strId,
                                                              QString &strErrorMessage,
                                                              QWidget *pParent = 0);
-
-    /** Fetches cloud instance OS type from the passed @a info. */
-    SHARED_LIBRARY_STUFF QString fetchOsType(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud instance memory size from the passed @a info. */
-    SHARED_LIBRARY_STUFF int fetchMemorySize(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud instance CPU count from the passed @a info. */
-    SHARED_LIBRARY_STUFF int fetchCpuCount(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud instance shape from the passed @a info. */
-    SHARED_LIBRARY_STUFF QString fetchShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud instance domain from the passed @a info. */
-    SHARED_LIBRARY_STUFF QString fetchDomain(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud instance state from the passed @a info. */
-    SHARED_LIBRARY_STUFF KMachineState fetchMachineState(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud instance booting firmware from the passed @a info. */
-    SHARED_LIBRARY_STUFF QString fetchBootingFirmware(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
-    /** Fetches cloud instance image id from the passed @a info. */
-    SHARED_LIBRARY_STUFF QString fetchImageId(const QMap<KVirtualSystemDescriptionType, QString> &infoMap);
 }
 
 /* Using across any module who included us: */

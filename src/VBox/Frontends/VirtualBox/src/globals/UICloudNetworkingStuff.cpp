@@ -204,7 +204,7 @@ bool UICloudNetworkingStuff::cloudMachineState(const CCloudMachine &comCloudMach
     return true;
 }
 
-bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine &comCloudMachine,
+bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMachine,
                                                       CForm &comResult,
                                                       QWidget *pParent /* = 0 */)
 {
@@ -239,7 +239,7 @@ bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine &comCloudMac
     return true;
 }
 
-bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine &comCloudMachine,
+bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMachine,
                                                       CForm &comResult,
                                                       QString &strErrorMessage)
 {
@@ -267,8 +267,8 @@ bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine &comCloudMac
     return true;
 }
 
-bool UICloudNetworkingStuff::applyCloudMachineSettingsForm(CCloudMachine &comCloudMachine,
-                                                           CForm &comForm,
+bool UICloudNetworkingStuff::applyCloudMachineSettingsForm(CCloudMachine comCloudMachine,
+                                                           CForm comForm,
                                                            QWidget *pParent /* = 0 */)
 {
     /* Acquire machine name first: */
@@ -351,7 +351,7 @@ QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient 
     return QMap<QString, QString>();
 }
 
-QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient &comCloudClient,
+QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
                                                                  QString &strErrorMessage,
                                                                  QWidget *pParent /* = 0 */)
 {
@@ -484,7 +484,7 @@ QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType en
     return getInstanceInfo(comCloudClient, strId, strErrorMessage, pParent).value(enmType, QString());
 }
 
-void UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine &comCloudMachine,
+void UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine comCloudMachine,
                                                      QString &strErrorMessage,
                                                      QWidget *pParent /* = 0 */)
 {
@@ -564,65 +564,4 @@ QMap<QString, QString> UICloudNetworkingStuff::getImageInfo(const CCloudClient &
 
     /* Return result: */
     return resultMap;
-}
-
-QString UICloudNetworkingStuff::fetchOsType(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Prepare a map of known OS types: */
-    QMap<QString, QString> osTypes;
-    osTypes["Custom"] = QString("Other");
-    osTypes["Oracle Linux"] = QString("Oracle_64");
-    osTypes["Canonical Ubuntu"] = QString("Ubuntu_64");
-
-    /* Return OS type value: */
-    return osTypes.value(infoMap.value(KVirtualSystemDescriptionType_OS), "Other");
-}
-
-int UICloudNetworkingStuff::fetchMemorySize(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Return memory size value: */
-    return infoMap.value(KVirtualSystemDescriptionType_Memory).toInt();
-}
-
-int UICloudNetworkingStuff::fetchCpuCount(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Return CPU count value: */
-    return infoMap.value(KVirtualSystemDescriptionType_CPU).toInt();
-}
-
-QString UICloudNetworkingStuff::fetchShape(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Return shape value: */
-    return infoMap.value(KVirtualSystemDescriptionType_CloudInstanceShape);
-}
-
-QString UICloudNetworkingStuff::fetchDomain(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Return domain value: */
-    return infoMap.value(KVirtualSystemDescriptionType_CloudDomain);
-}
-
-KMachineState UICloudNetworkingStuff::fetchMachineState(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Prepare a map of known machine states: */
-    QMap<QString, KMachineState> machineStates;
-    machineStates["RUNNING"] = KMachineState_Running;
-    machineStates["STOPPED"] = KMachineState_Paused;
-    machineStates["STOPPING"] = KMachineState_Stopping;
-    machineStates["STARTING"] = KMachineState_Starting;
-
-    /* Return machine state value: */
-    return machineStates.value(infoMap.value(KVirtualSystemDescriptionType_CloudInstanceState), KMachineState_PoweredOff);
-}
-
-QString UICloudNetworkingStuff::fetchBootingFirmware(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Return booting firmware value: */
-    return infoMap.value(KVirtualSystemDescriptionType_BootingFirmware);
-}
-
-QString UICloudNetworkingStuff::fetchImageId(const QMap<KVirtualSystemDescriptionType, QString> &infoMap)
-{
-    /* Return image id value: */
-    return infoMap.value(KVirtualSystemDescriptionType_CloudImageId);
 }
