@@ -143,24 +143,26 @@ static void vboxPushRcAsString(int rc)
     TCHAR szErr[NSIS_MAX_STRLEN];
     if (RT_FAILURE(rc))
     {
-        char szMsg[80];
-        RTErrQueryDefine(rc, szMsg, sizeof(szMsg), false /*fFailIfUnknown*/);
-        /** @todo r=bird: Just use RTUtf16Printf here as RTErrQueryDefine drags in
-         *        the whole IPRT printf machinery anyway. */
+        static const char s_szPrefix[] = "Error: ";
+        AssertCompile(NSIS_MAX_STRLEN > sizeof(s_szPrefix) + 32);
 #ifdef UNICODE
-        int rc2 = RTStrToUtf16(szMsg, &pszErrAsString);
-        if (RT_SUCCESS(rc2))
-        {
-#endif
-            StringCchPrintf(szErr, sizeof(szErr), _T("Error: %s"), pszErrAsString);
+        char szTmp[80];
+        memcpy(szTmp, s_szPrefix, sizeof(s_szPrefix));
+        RTErrQueryDefine(rc, &szTmp[sizeof(s_szPrefix) - 1], sizeof(szTmp) - sizeof(s_szPrefix) - 1, false);
 
-#ifdef UNICODE
-            RTUtf16Free(pszErrAsString);
-        }
+        RT_ZERO(szErr);
+        PRTUTF16 pwszDst = szErr;
+        RTStrToUtf16Ex(szTmp, RTSTR_MAX, &pwszDst, RT_ELEMENTS(szErr), NULL);
+#else
+        memcpy(szErr, s_szPrefix, sizeof(s_szPrefix));
+        RTErrQueryDefine(rc, &szErr[sizeof(s_szPrefix) - 1], sizeof(szErr) - sizeof(s_szPrefix) - 1, false);
 #endif
     }
     else
-        StringCchPrintf(szErr, sizeof(szErr), _T("0"));
+    {
+        szErr[0] = '0';
+        szErr[1] = '\0';
+    }
 
     pushstring(szErr);
 }
