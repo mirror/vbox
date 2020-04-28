@@ -314,7 +314,7 @@ RTDECL(size_t)  RTErrFormatMsgAll(  int rc, PFNRTSTROUTPUT pfnOutput, void *pvAr
 /** @} */
 
 
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
 /**
  * Windows error code message.
  */
@@ -332,18 +332,18 @@ typedef RTWINERRMSG *PRTWINERRMSG;
 /** Pointer to const Windows error code message. */
 typedef const RTWINERRMSG *PCRTWINERRMSG;
 
-/**
- * Get the message structure corresponding to a given Windows error code.
- *
- * @returns Pointer to read-only message description.
- * @param   rc      The status code.
- */
-RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc);
+RTDECL(bool)    RTErrWinIsKnown(long rc);
+RTDECL(ssize_t) RTErrWinQueryDefine(long rc, char *pszBuf, size_t cbBuf, bool fFailIfUnknown);
 
-/** On windows COM errors are part of the Windows error database. */
-typedef RTWINERRMSG RTCOMERRMSG;
+/** @name Error formatters used internally by RTStrFormat.
+ * @internal
+ * @{ */
+RTDECL(size_t)  RTErrWinFormatDefine(long rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp);
+RTDECL(size_t)  RTErrWinFormatMsg(   long rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp);
+RTDECL(size_t)  RTErrWinFormatMsgAll(long rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp);
+/** @} */
 
-#else  /* !RT_OS_WINDOWS */
+# else  /* !RT_OS_WINDOWS */
 
 /**
  * COM/XPCOM error code message.
@@ -357,7 +357,6 @@ typedef struct RTCOMERRMSG
     /** Error code number. */
     uint32_t    iCode;
 } RTCOMERRMSG;
-#endif /* !RT_OS_WINDOWS */
 /** Pointer to a XPCOM/COM error code message. */
 typedef RTCOMERRMSG *PRTCOMERRMSG;
 /** Pointer to const a XPCOM/COM error code message. */
@@ -370,6 +369,8 @@ typedef const RTCOMERRMSG *PCRTCOMERRMSG;
  * @param   rc      The status code.
  */
 RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
+
+# endif /* !RT_OS_WINDOWS */
 
 #endif /* IN_RING3 */
 

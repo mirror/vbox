@@ -38,7 +38,11 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(IPRT_ERRMSG_DEFINES_ONLY) || defined(IN_RT_STATIC) /* No message text in static builds to save space. */
+#if !defined(IPRT_ERRMSG_DEFINES_ONLY) && defined(IN_RT_STATIC) /* No message text in static builds to save space. */
+# define IPRT_ERRMSG_DEFINES_ONLY
+#endif
+
+#ifdef IPRT_ERRMSG_DEFINES_ONLY
 # define ENTRY(a_pszMsg, a_pszDefine, a_iCode) \
     { a_pszDefine, a_pszDefine, a_iCode }
 #else
@@ -84,15 +88,15 @@ static volatile uint32_t    g_iUnknownMsgs;
 
 
 /**
- * Get the message corresponding to a given status code.
+ * Looks up the message table entry for @a rc.
  *
- * @returns Pointer to read-only message description.
- * @param   rc      The status code.
+ * @returns index into g_aStatusMsgs on success, ~(size_t)0 if not found.
+ * @param   rc      The status code to locate the entry for.
  */
-RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc)
+static size_t rtErrWinLookup(long rc)
 {
     /*
-     * Perform binary search (duplicate code in RTErrGet).
+     * Perform binary search (duplicate code in rtErrLookup).
      */
     size_t iStart = 0;
     size_t iEnd   = RT_ELEMENTS(g_aStatusMsgs);
@@ -116,7 +120,7 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc)
                 break;
         }
         else
-            return &g_aStatusMsgs[i];
+            return i;
     }
 
 #ifdef RT_STRICT
@@ -124,59 +128,130 @@ RTDECL(PCRTWINERRMSG) RTErrWinGet(long rc)
         Assert(g_aStatusMsgs[i].iCode != rc);
 #endif
 
+    return ~(size_t)0;
+}
+
+
+RTDECL(bool)    RTErrWinIsKnown(long rc)
+{
+    if (rtErrWinLookup(rc) != ~(size_t)0)
+        return true;
+    if (SCODE_FACILITY(rc) == FACILITY_WIN32)
+    {
+        if (rtErrWinLookup(HRESULT_CODE(rc)) != ~(size_t)0)
+            return true;
+    }
+    return false;
+}
+
+
+RTDECL(ssize_t) RTErrWinQueryDefine(long rc, char *pszBuf, size_t cbBuf, bool fFailIfUnknown)
+{
+    size_t i = rtErrWinLookup(rc);
+    if (i != ~(size_t)0)
+    {
+        size_t cch = strlen(g_aStatusMsgs[i].pszDefine);
+        if (cch < cbBuf)
+        {
+            memcpy(pszBuf, g_aStatusMsgs[i].pszDefine, cch + 1);
+            return cch;
+        }
+        if (cbBuf)
+        {
+            memcpy(pszBuf, g_aStatusMsgs[i].pszDefine, cbBuf);
+            pszBuf[cbBuf - 1] = '\0';
+        }
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    /*
+     * If FACILITY_WIN32 kind of status, look up the win32 code.
+     */
+    if (   SCODE_FACILITY(rc) == FACILITY_WIN32
+        && (i = rtErrWinLookup(HRESULT_CODE(rc))) != ~(size_t)0)
+    {
+        /* Append the incoming rc, so we know it's not a regular WIN32 status: */
+        ssize_t cchRet = RTStrPrintf2(pszBuf, cbBuf, "%s/0x%x", g_aStatusMsgs[i].pszDefine, rc);
+        return cchRet >= 0 ? cchRet : VERR_BUFFER_OVERFLOW;
+    }
+
+    if (fFailIfUnknown)
+        return VERR_NOT_FOUND;
+    return RTStrFormatU32(pszBuf, cbBuf, rc, 16, 0, 0, RTSTR_F_SPECIAL);
+}
+
+
+RTDECL(size_t)  RTErrWinFormatDefine(long rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp)
+{
+    RT_NOREF(pszTmp, cbTmp);
+    size_t i = rtErrWinLookup(rc);
+    if (i != ~(size_t)0)
+        return pfnOutput(pvArgOutput, g_aStatusMsgs[i].pszDefine, strlen(g_aStatusMsgs[i].pszDefine));
+
     /*
      * If FACILITY_WIN32 kind of status, look up the win32 code.
      */
     if (SCODE_FACILITY(rc) == FACILITY_WIN32)
     {
-        long const rcWin32 = HRESULT_CODE(rc);
-        iStart = 0;
-        iEnd   = RT_ELEMENTS(g_aStatusMsgs);
-        for (;;)
-        {
-            size_t i = iStart + (iEnd - iStart) / 2;
-            long const iCode = g_aStatusMsgs[i].iCode;
-            if (rcWin32 < iCode)
-            {
-                if (iStart < i)
-                    iEnd = i;
-                else
-                    break;
-            }
-            else if (rcWin32 > iCode)
-            {
-                i++;
-                if (i < iEnd)
-                    iStart = i;
-                else
-                    break;
-            }
-            else
-            {
-                /* Append the incoming rc, so we know it's not a regular WIN32 status: */
-                int32_t iMsg = (ASMAtomicIncU32(&g_iUnknownMsgs) - 1) % RT_ELEMENTS(g_aUnknownMsgs);
-                RTStrPrintf(&g_aszUnknownStr[iMsg][0], sizeof(g_aszUnknownStr[iMsg]), "%s/0x%x", g_aStatusMsgs[i].pszDefine, rc);
-                return &g_aUnknownMsgs[iMsg];
-            }
-        }
-
-#ifdef RT_STRICT
-        for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
-            Assert(g_aStatusMsgs[i].iCode != rcWin32);
-#endif
+        i = rtErrWinLookup(HRESULT_CODE(rc));
+        if (i != ~(size_t)0)
+            /* Append the incoming rc, so we know it's not a regular WIN32 status: */
+            return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%s/0x%x", g_aStatusMsgs[i].pszDefine, rc);
     }
 
-    /*
-     * Need to use the temporary stuff.
-     */
-    int32_t iMsg = (ASMAtomicIncU32(&g_iUnknownMsgs) - 1) % RT_ELEMENTS(g_aUnknownMsgs);
-    RTStrPrintf(&g_aszUnknownStr[iMsg][0], sizeof(g_aszUnknownStr[iMsg]), "Unknown Status 0x%X", rc);
-    return &g_aUnknownMsgs[iMsg];
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "0x%x", rc);
 }
 
 
-RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc)
+RTDECL(size_t)  RTErrWinFormatMsg(   long rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp)
 {
-    return RTErrWinGet((long)rc);
+    RT_NOREF(pszTmp, cbTmp);
+#ifdef IPRT_ERRMSG_DEFINES_ONLY
+    return RTErrWinFormatDefine(rc, pfnOutput, pvArgOutput, pszTmp, cbTmp);
+#else
+    size_t i = rtErrWinLookup(rc);
+    if (i != ~(size_t)0)
+        return pfnOutput(pvArgOutput, g_aStatusMsgs[i].pszMsgFull, strlen(g_aStatusMsgs[i].pszMsgFull));
+
+    /*
+     * If FACILITY_WIN32 kind of status, look up the win32 code.
+     */
+    if (SCODE_FACILITY(rc) == FACILITY_WIN32)
+    {
+        i = rtErrWinLookup(HRESULT_CODE(rc));
+        if (i != ~(size_t)0)
+            /* Append the incoming rc, so we know it's not a regular WIN32 status: */
+            return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%s/0x%x", g_aStatusMsgs[i].pszDefine, rc);
+    }
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "Unknown Status 0x%x", rc);
+#endif
+}
+
+
+RTDECL(size_t)  RTErrWinFormatMsgAll(long rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp)
+{
+    RT_NOREF(pszTmp, cbTmp);
+    size_t i = rtErrWinLookup(rc);
+    if (i != ~(size_t)0)
+#ifdef IPRT_ERRMSG_DEFINES_ONLY
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%s (0x%x)", g_aStatusMsgs[i].pszDefine, rc, g_aStatusMsgs[i].pszMsgFull);
+#else
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%s (0x%x) - %s", g_aStatusMsgs[i].pszDefine, rc, g_aStatusMsgs[i].pszMsgFull);
+#endif
+
+    /*
+     * If FACILITY_WIN32 kind of status, look up the win32 code.
+     */
+    if (SCODE_FACILITY(rc) == FACILITY_WIN32)
+    {
+        i = rtErrWinLookup(HRESULT_CODE(rc));
+        if (i != ~(size_t)0)
+#ifdef IPRT_ERRMSG_DEFINES_ONLY
+            return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%s (0x%x)", g_aStatusMsgs[i].pszDefine, rc, g_aStatusMsgs[i].pszMsgFull);
+#else
+            return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%s (0x%x) - %s", g_aStatusMsgs[i].pszDefine, rc, g_aStatusMsgs[i].pszMsgFull);
+#endif
+    }
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "Unknown Status 0x%x", rc);
 }
 

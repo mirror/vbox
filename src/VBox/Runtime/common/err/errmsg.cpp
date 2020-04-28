@@ -86,7 +86,7 @@ static const struct
 static size_t rtErrLookup(int rc)
 {
     /*
-     * Perform binary search (duplicate code in RTErrWinGet).
+     * Perform binary search (duplicate code in rtErrWinLookup).
      */
     size_t iStart = 0;
     size_t iEnd   = RT_ELEMENTS(g_aStatusMsgs);

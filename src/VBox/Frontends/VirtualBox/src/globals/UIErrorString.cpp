@@ -36,16 +36,12 @@ QString UIErrorString::formatRC(HRESULT rc)
      *  Maybe to try get the error variant?  It won't really work for S_FALSE and
      *  probably a bunch of others too.  I've modified it on windows to try get
      *  the exact one, the one with the top bit set, or just the value. */
-#if 0//def RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
     char szDefine[80];
-    if (!SUCCEEDED_WARNING(rc))
+    if (   !SUCCEEDED_WARNING(rc)
+        || (   RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/) == VERR_NOT_FOUND
+            && RTErrWinQueryDefine(rc | 0x80000000, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/) == VERR_NOT_FOUND))
         RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
-    else
-    {
-        if (   RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/) < 0
-            || RTErrWinQueryDefine(rc | 0x80000000, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/) < 0)
-            RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
-    }
 
     QString str;
     str.sprintf("%s", szDefine);
@@ -64,14 +60,14 @@ QString UIErrorString::formatRC(HRESULT rc)
 QString UIErrorString::formatRCFull(HRESULT rc)
 {
     /** @todo r=bird: See UIErrorString::formatRC for 31th bit discussion. */
-#if 0//def RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
     char szDefine[80];
     ssize_t cchRet = RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/);
-    if (RT_FAILURE(cchRet) && SUCCEEDED_WARNING(rc)))
+    if (cchRet == VERR_NOT_FOUND && SUCCEEDED_WARNING(rc))
         cchRet = RTErrWinQueryDefine(rc | 0x80000000, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/);
 
     QString str;
-    if (RT_SUCCESS(cchRet))
+    if (cchRet != VERR_NOT_FOUND)
         str.sprintf("%s (0x%08x)", szDefine, rc);
     else
         str.sprintf("0x%08x", rc);

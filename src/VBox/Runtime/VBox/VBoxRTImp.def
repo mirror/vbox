@@ -985,7 +985,6 @@ EXPORTS
     RTEnvSetEx
     RTEnvUnset
     RTEnvUnsetEx
-    RTErrCOMGet
     RTErrConvertFromErrno
     RTErrConvertToErrno
     RTErrIsKnown

@@ -1023,25 +1023,26 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case 'r':
                     {
                         uint32_t hrc = va_arg(*pArgs, uint32_t);
+# ifndef RT_OS_WINDOWS
                         PCRTCOMERRMSG pMsg = RTErrCOMGet(hrc);
+# endif
                         switch (*(*ppszFormat)++)
                         {
+# ifdef RT_OS_WINDOWS
+                            case 'c':
+                                return RTErrWinFormatDefine(hrc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
+                            case 'f':
+                                return RTErrWinFormatMsg(hrc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
+                            case 'a':
+                                return RTErrWinFormatMsgAll(hrc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
+# else  /* !RT_OS_WINDOWS */
                             case 'c':
                                 return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
                             case 'f':
-# if !defined(RT_OS_WINDOWS) || (!defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY))
                                 return pfnOutput(pvArgOutput, pMsg->pszMsgFull, strlen(pMsg->pszMsgFull));
-# else
-                                AssertFailed();
-                                return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
-# endif
                             case 'a':
-# if !defined(RT_OS_WINDOWS) || (!defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY))
                                 return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, hrc, pMsg->pszMsgFull);
-# else
-                                AssertFailed();
-                                return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X)", pMsg->pszDefine, hrc);
-# endif
+# endif /* !RT_OS_WINDOWS */
                             default:
                                 AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                                 return 0;
@@ -1223,33 +1224,20 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
             case 'w':
             {
                 long rc = va_arg(*pArgs, long);
-# if defined(RT_OS_WINDOWS)
-                PCRTWINERRMSG pMsg = RTErrWinGet(rc);
-# endif
                 switch (*(*ppszFormat)++)
                 {
 # if defined(RT_OS_WINDOWS)
                     case 'c':
-                        return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
+                        return RTErrWinFormatDefine(rc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
                     case 'f':
-#  if !defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY)
-                        return pfnOutput(pvArgOutput, pMsg->pszMsgFull, strlen(pMsg->pszMsgFull));
-#  else
-                        AssertFailed();
-                        return pfnOutput(pvArgOutput, pMsg->pszDefine, strlen(pMsg->pszDefine));
-#  endif
+                        return RTErrWinFormatMsg(rc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
                     case 'a':
-#  if !defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY)
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
-#  else
-                        AssertFailed();
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X)", pMsg->pszDefine, rc);
-#  endif
+                        return RTErrWinFormatMsgAll(rc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
 # else  /* !RT_OS_WINDOWS */
                     case 'c':
                     case 'f':
                     case 'a':
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "0x%08X", rc);
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "0x%08x", rc);
 # endif /* !RT_OS_WINDOWS */
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
