@@ -217,6 +217,104 @@ CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProvide
     return CCloudMachine();
 }
 
+QVector<CCloudProvider> UICloudNetworkingStuff::listCloudProviders(QWidget *pParent /* = 0 */)
+{
+    /* Acquire cloud provider manager: */
+    CCloudProviderManager comProviderManager = cloudProviderManager();
+    if (comProviderManager.isNotNull())
+    {
+        /* Acquire cloud providers: */
+        QVector<CCloudProvider> providers = comProviderManager.GetProviders();
+        if (!comProviderManager.isOk())
+            msgCenter().cannotAcquireCloudProviderManagerParameter(comProviderManager, pParent);
+        else
+            return providers;
+    }
+    /* Return empty list by default: */
+    return QVector<CCloudProvider>();
+}
+
+QVector<CCloudProvider> UICloudNetworkingStuff::listCloudProviders(QString &strErrorMessage)
+{
+    /* Acquire cloud provider manager: */
+    CCloudProviderManager comProviderManager = cloudProviderManager();
+    if (comProviderManager.isNotNull())
+    {
+        /* Acquire cloud providers: */
+        QVector<CCloudProvider> providers = comProviderManager.GetProviders();
+        if (!comProviderManager.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comProviderManager);
+        else
+            return providers;
+    }
+    /* Return empty list by default: */
+    return QVector<CCloudProvider>();
+}
+
+bool UICloudNetworkingStuff::cloudProviderShortName(const CCloudProvider &comCloudProvider,
+                                                    QString &strResult,
+                                                    QWidget *pParent /* = 0 */)
+{
+    const QString strShortName = comCloudProvider.GetShortName();
+    if (!comCloudProvider.isOk())
+        msgCenter().cannotAcquireCloudProviderParameter(comCloudProvider, pParent);
+    else
+    {
+        strResult = strShortName;
+        return true;
+    }
+    return false;
+}
+
+QVector<CCloudProfile> UICloudNetworkingStuff::listCloudProfiles(CCloudProvider comCloudProvider,
+                                                                 QWidget *pParent /* = 0 */)
+{
+    /* Check cloud provider: */
+    if (comCloudProvider.isNotNull())
+    {
+        /* Acquire cloud providers: */
+        QVector<CCloudProfile> profiles = comCloudProvider.GetProfiles();
+        if (!comCloudProvider.isOk())
+            msgCenter().cannotAcquireCloudProviderParameter(comCloudProvider, pParent);
+        else
+            return profiles;
+    }
+    /* Return empty list by default: */
+    return QVector<CCloudProfile>();
+}
+
+QVector<CCloudProfile> UICloudNetworkingStuff::listCloudProfiles(CCloudProvider comCloudProvider,
+                                                                 QString &strErrorMessage)
+{
+    /* Check cloud provider: */
+    if (comCloudProvider.isNotNull())
+    {
+        /* Acquire cloud providers: */
+        QVector<CCloudProfile> profiles = comCloudProvider.GetProfiles();
+        if (!comCloudProvider.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comCloudProvider);
+        else
+            return profiles;
+    }
+    /* Return empty list by default: */
+    return QVector<CCloudProfile>();
+}
+
+bool UICloudNetworkingStuff::cloudProfileName(const CCloudProfile &comCloudProfile,
+                                              QString &strResult,
+                                              QWidget *pParent /* = 0 */)
+{
+    const QString strName = comCloudProfile.GetName();
+    if (!comCloudProfile.isOk())
+        msgCenter().cannotAcquireCloudProfileParameter(comCloudProfile, pParent);
+    else
+    {
+        strResult = strName;
+        return true;
+    }
+    return false;
+}
+
 QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
                                                                  QWidget *pParent /* = 0 */)
 {
