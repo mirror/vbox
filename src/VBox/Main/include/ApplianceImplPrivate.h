@@ -132,6 +132,7 @@ struct Appliance::Data
             pbSignedDigest = NULL;
             cbSignedDigest = 0;
         }
+
         if (fSignerCertLoaded)
         {
             RTCrX509Certificate_Delete(&SignerCert);
@@ -147,6 +148,8 @@ struct Appliance::Data
         fDigestTypes             = RTMANIFEST_ATTR_SHA1 | RTMANIFEST_ATTR_SHA256 | RTMANIFEST_ATTR_SHA512;
         ptrCertificateInfo.setNull();
         strCertError.setNull();
+        strManifest.setNull();
+        strManifestName.setNull();
     }
 
     Appliance::ApplianceState      state;
@@ -160,7 +163,7 @@ struct Appliance::Data
 
     /** @name Write data
      * @{ */
-    bool                fManifest;      // Create a manifest file on export
+    bool                fManifest;     // Create a manifest file on export
     /** @} */
 
     /** @name Read data
@@ -175,6 +178,10 @@ struct Appliance::Data
     RTMANIFEST          hTheirManifest;
     /** Memorized copy of the manifest file for signature checking purposes. */
     RTVFSFILE           hMemFileTheirManifest;
+    /** The string contains manifest data. */
+    Utf8Str            strManifest;
+    /** The string contains manifest file name after reading appliance. */
+    Utf8Str            strManifestName;
 
     /** The signer certificate from the signature file (.cert).
      * This will be used in the future provide information about the signer via

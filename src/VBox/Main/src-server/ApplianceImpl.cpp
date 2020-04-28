@@ -504,6 +504,18 @@ HRESULT Appliance::getPath(com::Utf8Str &aPath)
 /**
  * Public method implementation.
  */
+HRESULT Appliance::getManifest(com::Utf8Str &aManifest, com::Utf8Str &aManifestName)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aManifest = m->strManifest;
+    aManifestName = m->strManifestName;
+    return S_OK;
+}
+
+/**
+ * Public method implementation.
+ */
 HRESULT Appliance::getDisks(std::vector<com::Utf8Str> &aDisks)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

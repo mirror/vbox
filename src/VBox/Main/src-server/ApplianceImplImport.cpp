@@ -2568,6 +2568,9 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
 {
     LogFlowFunc(("%s[%s]\n", pTask->locInfo.strPath.c_str(), pszSubFileNm));
 
+    /* Remember the manifet file name */
+    m->strManifestName.assign(pszSubFileNm);
+
     /*
      * Copy the manifest into a memory backed file so we can later do signature
      * validation indepentend of the algorithms used by the signature.
@@ -2577,6 +2580,21 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("Error reading the manifest file '%s' for '%s' (%Rrc)"),
                            pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc);
+
+    /*
+     * Store the manifest as a string in the m->strManifest
+     */
+    {
+        char   abBuf[_16K];
+        size_t cbRead;
+
+        vrc = RTVfsFileRead(m->hMemFileTheirManifest, &abBuf, sizeof(abBuf), &cbRead);
+        if (RT_SUCCESS(vrc))
+            m->strManifest.assignEx((const char*)abBuf, cbRead);
+
+        /* Rewind to the beginning, because the manifest will be read later again */
+        RTVfsFileSeek(m->hMemFileTheirManifest, 0, RTFILE_SEEK_BEGIN, NULL);
+    }
 
     /*
      * Parse the manifest.

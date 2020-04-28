@@ -93,6 +93,8 @@ private:
     HRESULT getVirtualSystemDescriptions(std::vector<ComPtr<IVirtualSystemDescription> > &aVirtualSystemDescriptions);
     HRESULT getMachines(std::vector<com::Utf8Str> &aMachines);
 
+    HRESULT getManifest(com::Utf8Str &aManifest, com::Utf8Str &aManifestName);
+
     // wrapped IAppliance methods
     HRESULT read(const com::Utf8Str &aFile,
                  ComPtr<IProgress> &aProgress);
