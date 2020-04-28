@@ -146,6 +146,8 @@ typedef struct vusb_ctrl_extra
      * This starts at the default 8KB, and this structure will be reallocated to
      * accommodate any larger request (unlikely). */
     uint32_t            cbMax;
+    /** VUSB internal data for the extra URB. */
+    VUSBURBVUSBINT      vUsbExtra;
     /** The message URB. */
     VUSBURB             Urb;
 } VUSBCTRLEXTRA, *PVUSBCTRLEXTRA;

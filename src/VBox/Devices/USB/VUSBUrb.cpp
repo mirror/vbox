@@ -610,7 +610,11 @@ static PVUSBCTRLEXTRA vusbMsgAllocExtraData(PVUSBURB pUrb)
 {
 /** @todo reuse these? */
     PVUSBCTRLEXTRA pExtra;
-    const size_t cbMax = sizeof(VUSBURBVUSBINT) + sizeof(pExtra->Urb.abData) + sizeof(VUSBSETUP);
+#if 0
+    const size_t cbMax = sizeof(pExtra->Urb.abData) + sizeof(VUSBSETUP);
+#else
+    const size_t cbMax = sizeof(VUSBSETUP);
+#endif
     pExtra = (PVUSBCTRLEXTRA)RTMemAllocZ(RT_UOFFSETOF_DYN(VUSBCTRLEXTRA, Urb.abData[cbMax]));
     if (pExtra)
     {
@@ -628,7 +632,7 @@ static PVUSBCTRLEXTRA vusbMsgAllocExtraData(PVUSBURB pUrb)
 #ifdef LOG_ENABLED
         RTStrAPrintf(&pExtra->Urb.pszDesc, "URB %p msg->%p", &pExtra->Urb, pUrb);
 #endif
-        pExtra->Urb.pVUsb = (PVUSBURBVUSB)&pExtra->Urb.abData[sizeof(pExtra->Urb.abData) + sizeof(VUSBSETUP)];
+        pExtra->Urb.pVUsb = (PVUSBURBVUSB)&pExtra->vUsbExtra;
         //pExtra->Urb.pVUsb->pCtrlUrb = NULL;
         //pExtra->Urb.pVUsb->pNext = NULL;
         //pExtra->Urb.pVUsb->ppPrev = NULL;
@@ -700,13 +704,9 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
     /*
      * Check that we've got sufficient space in the message URB.
      */
-    if (pExtra->cbMax < cbBuf + pSetupIn->wLength + sizeof(VUSBURBVUSBINT))
+    if (pExtra->cbMax < cbBuf + pSetupIn->wLength)
     {
-#if 1
-        LogRelMax(10, ("VUSB: Control URB too large (wLength=%u)!\n", pSetupIn->wLength));
-        return false;
-#else
-        uint32_t cbReq = RT_ALIGN_32(cbBuf + pSetupIn->wLength + sizeof(VUSBURBVUSBINT), 1024);
+        uint32_t cbReq = RT_ALIGN_32(cbBuf + pSetupIn->wLength, 64);
         PVUSBCTRLEXTRA pNew = (PVUSBCTRLEXTRA)RTMemRealloc(pExtra, RT_UOFFSETOF_DYN(VUSBCTRLEXTRA, Urb.abData[cbReq]));
         if (!pNew)
         {
@@ -716,20 +716,16 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
         }
         if (pExtra != pNew)
         {
+            LogFunc(("Reallocated %u -> %u\n", pExtra->cbMax, cbReq));
             pNew->pMsg = (PVUSBSETUP)pNew->Urb.abData;
             pExtra = pNew;
             pPipe->pCtrl = pExtra;
+            pExtra->Urb.pVUsb = (PVUSBURBVUSB)&pExtra->vUsbExtra;
+            pExtra->Urb.pVUsb->pUrb = &pExtra->Urb;
+            pExtra->Urb.pVUsb->pvFreeCtx = &pExtra->Urb;
         }
 
-        PVUSBURBVUSB pOldVUsb = (PVUSBURBVUSB)&pExtra->Urb.abData[pExtra->cbMax - sizeof(VUSBURBVUSBINT)];
-        pExtra->Urb.pVUsb = (PVUSBURBVUSB)&pExtra->Urb.abData[cbBuf + pSetupIn->wLength];
-        memmove(pExtra->Urb.pVUsb, pOldVUsb, sizeof(VUSBURBVUSBINT));
-        memset(pOldVUsb, 0, (uint8_t *)pExtra->Urb.pVUsb - (uint8_t *)pOldVUsb);
-        pExtra->Urb.pVUsb->pUrb = &pExtra->Urb;
-        pExtra->Urb.pVUsb->pvFreeCtx = &pExtra->Urb;
         pExtra->cbMax = cbReq;
-
-#endif
     }
     Assert(pExtra->Urb.enmState == VUSBURBSTATE_ALLOCATED);
 
