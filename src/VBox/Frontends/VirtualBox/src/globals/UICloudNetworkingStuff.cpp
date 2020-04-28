@@ -48,6 +48,23 @@ CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager(QWidget *pPar
     return CCloudProviderManager();
 }
 
+CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager(QString &strErrorMessage)
+{
+    /* Acquire VBox: */
+    const CVirtualBox comVBox = uiCommon().virtualBox();
+    if (comVBox.isNotNull())
+    {
+        /* Acquire cloud provider manager: */
+        CCloudProviderManager comProviderManager = comVBox.GetCloudProviderManager();
+        if (!comVBox.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comVBox);
+        else
+            return comProviderManager;
+    }
+    /* Null by default: */
+    return CCloudProviderManager();
+}
+
 CCloudProvider UICloudNetworkingStuff::cloudProviderByShortName(const QString &strProviderShortName,
                                                                 QWidget *pParent /* = 0 */)
 {
@@ -59,6 +76,24 @@ CCloudProvider UICloudNetworkingStuff::cloudProviderByShortName(const QString &s
         CCloudProvider comProvider = comProviderManager.GetProviderByShortName(strProviderShortName);
         if (!comProviderManager.isOk())
             msgCenter().cannotAcquireCloudProviderManagerParameter(comProviderManager, pParent);
+        else
+            return comProvider;
+    }
+    /* Null by default: */
+    return CCloudProvider();
+}
+
+CCloudProvider UICloudNetworkingStuff::cloudProviderByShortName(const QString &strProviderShortName,
+                                                                QString &strErrorMessage)
+{
+    /* Acquire cloud provider manager: */
+    CCloudProviderManager comProviderManager = cloudProviderManager(strErrorMessage);
+    if (comProviderManager.isNotNull())
+    {
+        /* Acquire cloud provider: */
+        CCloudProvider comProvider = comProviderManager.GetProviderByShortName(strProviderShortName);
+        if (!comProviderManager.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comProviderManager);
         else
             return comProvider;
     }
@@ -85,6 +120,25 @@ CCloudProfile UICloudNetworkingStuff::cloudProfileByName(const QString &strProvi
     return CCloudProfile();
 }
 
+CCloudProfile UICloudNetworkingStuff::cloudProfileByName(const QString &strProviderShortName,
+                                                         const QString &strProfileName,
+                                                         QString &strErrorMessage)
+{
+    /* Acquire cloud provider: */
+    CCloudProvider comProvider = cloudProviderByShortName(strProviderShortName, strErrorMessage);
+    if (comProvider.isNotNull())
+    {
+        /* Acquire cloud profile: */
+        CCloudProfile comProfile = comProvider.GetProfileByName(strProfileName);
+        if (!comProvider.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comProvider);
+        else
+            return comProfile;
+    }
+    /* Null by default: */
+    return CCloudProfile();
+}
+
 CCloudClient UICloudNetworkingStuff::cloudClientByName(const QString &strProviderShortName,
                                                        const QString &strProfileName,
                                                        QWidget *pParent /* = 0 */)
@@ -97,6 +151,25 @@ CCloudClient UICloudNetworkingStuff::cloudClientByName(const QString &strProvide
         CCloudClient comClient = comProfile.CreateCloudClient();
         if (!comProfile.isOk())
             msgCenter().cannotAcquireCloudProfileParameter(comProfile, pParent);
+        else
+            return comClient;
+    }
+    /* Null by default: */
+    return CCloudClient();
+}
+
+CCloudClient UICloudNetworkingStuff::cloudClientByName(const QString &strProviderShortName,
+                                                       const QString &strProfileName,
+                                                       QString &strErrorMessage)
+{
+    /* Acquire cloud profile: */
+    CCloudProfile comProfile = cloudProfileByName(strProviderShortName, strProfileName, strErrorMessage);
+    if (comProfile.isNotNull())
+    {
+        /* Create cloud client: */
+        CCloudClient comClient = comProfile.CreateCloudClient();
+        if (!comProfile.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comProfile);
         else
             return comClient;
     }
@@ -117,6 +190,26 @@ CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProvide
         CCloudMachine comMachine = comClient.GetCloudMachine(uMachineId);
         if (!comClient.isOk())
             msgCenter().cannotAcquireCloudClientParameter(comClient, pParent);
+        else
+            return comMachine;
+    }
+    /* Null by default: */
+    return CCloudMachine();
+}
+
+CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProviderShortName,
+                                                       const QString &strProfileName,
+                                                       const QUuid &uMachineId,
+                                                       QString &strErrorMessage)
+{
+    /* Acquire cloud client: */
+    CCloudClient comClient = cloudClientByName(strProviderShortName, strProfileName, strErrorMessage);
+    if (comClient.isNotNull())
+    {
+        /* Acquire cloud machine: */
+        CCloudMachine comMachine = comClient.GetCloudMachine(uMachineId);
+        if (!comClient.isOk())
+            strErrorMessage = UIErrorString::formatErrorInfo(comClient);
         else
             return comMachine;
     }
