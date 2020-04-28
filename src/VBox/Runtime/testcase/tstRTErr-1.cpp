@@ -358,7 +358,8 @@ static void tstWinComStatuses(RTTEST hTest)
         RTTestRestoreAssertions(hTest);
     }
 }
-#endif
+#endif /* RT_OS_WINDOWS */
+
 
 int main(int argc, char **argv)
 {
