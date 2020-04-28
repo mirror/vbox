@@ -29,6 +29,7 @@
 #include <VBox/err.h>
 
 #include <iprt/spinlock.h>
+#include <iprt/asm-math.h>
 
 
 /**
@@ -50,14 +51,14 @@ VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVMCC pVM, PVMCPUCC pVCpu)
     AssertReturn(pKvm->hSpinlockR0 != NIL_RTSPINLOCK, VERR_GIM_IPE_3);
 
     /*
-     * Record the TSC and virtual NanoTS pairs.
+     * Record TSC and derive the virtual time from that (to ensure that
+     * the two quantities are in perfect sync).
      */
     uint64_t uTsc;
     uint64_t uVirtNanoTS;
-    RTCCUINTREG fEFlags = ASMIntDisableFlags();
+
     uTsc        = TMCpuTickGetNoCheck(pVCpu);
-    uVirtNanoTS = TMVirtualGetNoCheck(pVM);
-    ASMSetFlags(fEFlags);
+    uVirtNanoTS = ASMMultU64ByU32DivByU32(uTsc, RT_NS_1SEC, pKvm->cTscTicksPerSecond);
 
     /*
      * Update VCPUs with this information. The first VCPU's values

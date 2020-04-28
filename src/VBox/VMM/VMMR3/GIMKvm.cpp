@@ -414,19 +414,30 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu)
     }
     SystemTime.u32TscScale = ASMDivU64ByU32RetU32(RT_NS_1SEC_64 << 32, uTscFreqLo);
 
+    /* For informational purposes, back-calculate the exact TSC frequency the guest will see.
+     * Note that the frequency is in kHz, not Hz, since that's what Linux uses.
+     */
+    uint64_t uTscKHz;
+
+    uTscKHz = (RT_NS_1MS_64 << 32) / SystemTime.u32TscScale;
+    if (SystemTime.i8TscShift < 0)
+        uTscKHz <<= -SystemTime.i8TscShift;
+    else
+        uTscKHz >>=  SystemTime.i8TscShift;
+
     /*
      * Update guest memory with the system-time struct. Technically we are cheating
      * by only writing the struct once with the version incremented by two; in reality,
-     * the system-time struct is enabled once by the boot CPU and not concurrently read
-     * by other VCPUs at the same time.
+     * the system-time struct is enabled once for each CPU at boot and not concurrently
+     * read by other VCPUs at the same time.
      */
     Assert(!(SystemTime.u32Version & UINT32_C(1)));
     int rc = PGMPhysSimpleWriteGCPhys(pVM, pKvmCpu->GCPhysSystemTime, &SystemTime, sizeof(GIMKVMSYSTEMTIME));
     if (RT_SUCCESS(rc))
     {
         LogRel(("GIM: KVM: VCPU%3d: Enabled system-time struct. at %#RGp - u32TscScale=%#RX32 i8TscShift=%d uVersion=%#RU32 "
-                "fFlags=%#x uTsc=%#RX64 uVirtNanoTS=%#RX64\n", pVCpu->idCpu, pKvmCpu->GCPhysSystemTime, SystemTime.u32TscScale,
-                SystemTime.i8TscShift, SystemTime.u32Version, SystemTime.fFlags, pKvmCpu->uTsc, pKvmCpu->uVirtNanoTS));
+                "fFlags=%#x uTsc=%#RX64 uVirtNanoTS=%#RX64 TscKHz=%RU64\n", pVCpu->idCpu, pKvmCpu->GCPhysSystemTime, SystemTime.u32TscScale,
+                SystemTime.i8TscShift, SystemTime.u32Version, SystemTime.fFlags, pKvmCpu->uTsc, pKvmCpu->uVirtNanoTS, uTscKHz));
         TMR3CpuTickParavirtEnable(pVM);
     }
     else
