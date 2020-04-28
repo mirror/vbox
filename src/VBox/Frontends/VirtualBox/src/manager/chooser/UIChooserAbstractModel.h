@@ -34,11 +34,9 @@
 class QUuid;
 class UIChooser;
 class UIChooserNode;
+class UITask;
 class CCloudMachine;
 class CMachine;
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
-class UITask;
-#endif
 
 
 /** QObject extension used as VM Chooser-pane abstract model.
@@ -155,13 +153,11 @@ protected slots:
         virtual void sltReloadMachine(const QUuid &uMachineId);
     /** @} */
 
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
     /** @name Cloud stuff.
       * @{ */
         /** Handles list cloud machines task complete signal. */
         virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask);
     /** @} */
-#endif /* VBOX_GUI_WITH_CLOUD_VMS */
 
 private slots:
 

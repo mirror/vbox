@@ -263,13 +263,11 @@ protected slots:
         virtual void sltReloadMachine(const QUuid &uId) /* override */;
     /** @} */
 
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
     /** @name Cloud stuff.
       * @{ */
         /** Handles list cloud machines task complete signal. */
         virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask) /* override */;
     /** @} */
-#endif /* VBOX_GUI_WITH_CLOUD_VMS */
 
 private slots:
 

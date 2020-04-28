@@ -26,22 +26,16 @@
 #include "UICloudNetworkingStuff.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
+#include "UITaskCloudListMachines.h"
+#include "UIThreadPool.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItemCloud.h"
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
-# include "UITaskCloudListMachines.h"
-# include "UIThreadPool.h"
-#endif
 
 /* COM includes: */
+#include "CCloudMachine.h"
+#include "CCloudProfile.h"
+#include "CCloudProvider.h"
 #include "CMachine.h"
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
-# include "CCloudClient.h"
-# include "CCloudMachine.h"
-# include "CCloudProfile.h"
-# include "CCloudProvider.h"
-# include "CCloudProviderManager.h"
-#endif
 
 /* Type defs: */
 typedef QSet<QString> UIStringSet;
@@ -442,7 +436,6 @@ void UIChooserAbstractModel::sltStartGroupSaving()
     saveGroupOrders();
 }
 
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
 void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
 {
     /* Skip unrelated tasks: */
@@ -492,7 +485,6 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
         pFakeCloudMachineItem->recache();
     }
 }
-#endif /* VBOX_GUI_WITH_CLOUD_VMS */
 
 void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
 {

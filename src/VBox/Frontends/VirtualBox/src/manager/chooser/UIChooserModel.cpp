@@ -743,7 +743,6 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
     emit sigSelectionChanged();
 }
 
-#ifdef VBOX_GUI_WITH_CLOUD_VMS
 void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
 {
     /* Skip unrelated tasks: */
@@ -766,7 +765,6 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
     else
         makeSureAtLeastOneItemSelected();
 }
-#endif /* VBOX_GUI_WITH_CLOUD_VMS */
 
 void UIChooserModel::sltMakeSureCurrentItemVisible()
 {
