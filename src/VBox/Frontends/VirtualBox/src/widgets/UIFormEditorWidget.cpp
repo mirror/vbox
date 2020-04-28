@@ -1039,10 +1039,13 @@ Qt::ItemFlags UIFormEditorModel::flags(const QModelIndex &index) const
             return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
         case UIFormEditorDataType_Value:
         {
-            Qt::ItemFlags enmFlags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+            Qt::ItemFlags enmFlags = Qt::NoItemFlags;
             if (m_dataList[index.row()]->isEnabled())
+            {
+                enmFlags |= Qt::ItemIsEnabled | Qt::ItemIsSelectable;
                 enmFlags |= m_dataList[index.row()]->valueType() == KFormValueType_Boolean
                           ? Qt::ItemIsUserCheckable : Qt::ItemIsEditable;
+            }
             return enmFlags;
         }
         default:
