@@ -665,7 +665,7 @@ typedef union
 {
     struct
     {
-        uint16_t                     u16DeviceId;       /**< Bits 15:0   - DeviceID. */
+        uint16_t                     u16DevId;          /**< Bits 15:0   - Device ID. */
         uint16_t                     u16Rsvd0;          /**< Bits 31:16  - Reserved. */
         uint32_t                     u28Rsvd0 : 28;     /**< Bits 59:32  - Reserved. */
         uint32_t                     u4OpCode : 4;      /**< Bits 63:60  - Op Code (Command). */
@@ -709,7 +709,7 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DeviceId;            /**< Bits 15:0   - Device ID. */
+        uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
         uint8_t     u8PasidLo;              /**< Bits 23:16  - PASID: Process Address-Space ID (Lo). */
         uint8_t     u8MaxPend;              /**< Bits 31:24  - Maxpend: Maximum simultaneous in-flight transactions. */
         uint32_t    u16QueueId : 16;        /**< Bits 47:32  - Queue ID. */
@@ -737,7 +737,7 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DeviceId;        /**< Bits 15:0   - Device ID. */
+        uint16_t    u16DevId;           /**< Bits 15:0   - Device ID. */
         uint16_t    u16Rsvd0;           /**< Bits 31:16  - Reserved. */
         uint32_t    u32Rsvd0 : 28;      /**< Bits 59:32  - Reserved. */
         uint32_t    u4OpCode : 4;       /**< Bits 63:60  - Op Code (Command). */
@@ -756,7 +756,7 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DeviceId;            /**< Bits 15:0    - Device ID. */
+        uint16_t    u16DevId;               /**< Bits 15:0    - Device ID. */
         uint16_t    u16Rsvd0;               /**< Bits 31:16   - Reserved. */
         uint32_t    u20Pasid : 20;          /**< Bits 51:32   - PASID: Process Address-Space ID. */
         uint32_t    u8Rsvd0 : 8;            /**< Bits 59:52   - Reserved. */
@@ -800,7 +800,7 @@ typedef union
     {
         uint32_t    u32Operand1Lo;          /**< Bits 31:0   - Operand 1 (Lo). */
         uint32_t    u32Operand1Hi : 28;     /**< Bits 59:32  - Operand 1 (Hi). */
-        uint32_t    u4EventCode : 4;        /**< Bits 63:60  - Event code. */
+        uint32_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
         uint32_t    u32Operand2Lo;          /**< Bits 95:64  - Operand 2 (Lo). */
         uint32_t    u32Operand2Hi;          /**< Bits 127:96 - Operand 2 (Hi). */
     } n;
@@ -821,7 +821,7 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DeviceId;            /**< Bits 15:0   - Device ID. */
+        uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
         uint16_t    u4PasidHi : 4;          /**< Bits 19:16  - PASID: Process Address-Space ID (Hi). */
         uint16_t    u12Rsvd0 : 12;          /**< Bits 31:20  - Reserved. */
         uint16_t    u16PasidLo;             /**< Bits 47:32  - PASID: Process Address-Space ID (Lo). */
@@ -834,7 +834,7 @@ typedef union
         uint16_t    u1RsvdZero : 1;         /**< Bit  55     - RZ: Reserved bit not Zero or invalid level encoding. */
         uint16_t    u1Translation : 1;      /**< Bit  56     - TN: Translation. */
         uint16_t    u3Rsvd0 : 3;            /**< Bits 59:57  - Reserved. */
-        uint16_t    u4EventCode : 4;        /**< Bits 63:60  - Event code. */
+        uint16_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
         uint32_t    u2Rsvd1 : 2;            /**< Bits 65:64  - Reserved. */
         uint32_t    u30AddrLo : 2;          /**< Bits 95:66  - Address: Device Virtual Address (Lo). */
         uint32_t    u30AddrHi;              /**< Bits 127:96 - Address: Device Virtual Address (Hi). */
@@ -852,7 +852,7 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DeviceId;            /**< Bits 15:0   - Device ID. */
+        uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
         uint16_t    u4PasidHi : 4;          /**< Bits 19:16  - PASID: Process Address-Space ID (Hi). */
         uint16_t    u16DomainOrPasidLo;     /**< Bits 47:32  - D/P: Domain ID or Process Address-Space ID (Lo). */
         uint16_t    u1GuestOrNested : 1;    /**< Bit  48     - GN: Guest (GPA) or Nested (GVA). */
@@ -865,7 +865,7 @@ typedef union
         uint16_t    u1RsvdZero : 1;         /**< Bit  55     - RZ: Reserved bit not Zero or invalid level encoding. */
         uint16_t    u1Translation : 1;      /**< Bit  56     - TN: Translation. */
         uint16_t    u3Rsvd0 : 3;            /**< Bit  59:57  - Reserved. */
-        uint16_t    u4EventCode : 4;        /**< Bits 63:60  - Event code. */
+        uint16_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
         uint64_t    u64Addr;                /**< Bits 127:64 - Address: Device Virtual Address. */
     } n;
     /** The 32-bit unsigned integer view.  */
@@ -881,7 +881,7 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DeviceId;            /**< Bits 15:0   - Device ID. */
+        uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
         uint16_t    u16Rsvd0;               /**< Bits 31:16  - Reserved. */
         uint32_t    u19Rsvd0 : 19;          /**< Bits 50:32  - Reserved. */
         uint32_t    u1Intr : 1;             /**< Bit  51     - I: Interrupt. */
@@ -891,7 +891,7 @@ typedef union
         uint32_t    u1Translation : 1;      /**< Bit  56     - TR: Translation. */
         uint32_t    u2Type : 2;             /**< Bits 58:57  - Type: The type of hardware error. */
         uint32_t    u1Rsvd1 : 1;            /**< Bit  59     - Reserved. */
-        uint32_t    u4EventCode : 4;        /**< Bits 63:60  - Event code. */
+        uint32_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
         uint32_t    u4Rsvd0 : 4;            /**< Bits 67:64  - Reserved. */
         uint32_t    u28AddrLo : 28;         /**< Bits 95:68  - Address: System Physical Address (Lo). */
         uint32_t    u32AddrHi;              /**< Bits 127:96 - Address: System Physical Address (Hi). */
@@ -909,7 +909,7 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DeviceId;                /**< Bits 15:0   - Device ID. */
+        uint16_t    u16DevId;                   /**< Bits 15:0   - Device ID. */
         uint16_t    u16Rsvd0;                   /**< Bits 31:16  - Reserved. */
         uint32_t    u16DomainOrPasidLo : 16;    /**< Bits 47:32  - D/P: Domain ID or Process Address-Space ID (Lo). */
         uint32_t    u1GuestOrNested : 1;        /**< Bit  48     - GN: Guest (GPA) or Nested (GVA). */
@@ -921,7 +921,7 @@ typedef union
         uint32_t    u1Translation : 1;          /**< Bit  56     - TR: Translation. */
         uint32_t    u2Type : 2;                 /**< Bits 58:57  - Type: The type of hardware error. */
         uint32_t    u1Rsvd1 : 1;                /**< Bit  59     - Reserved. */
-        uint32_t    u4EventCode : 4;            /**< Bit  63:60  - Event code. */
+        uint32_t    u4EvtCode : 4;              /**< Bit  63:60  - Event code. */
         /** @todo r=ramshankar: Figure 55: PAGE_TAB_HARDWARE_ERROR says Addr[31:3] but
          *        table 58 mentions Addr[31:4]. Looks like a typo in the figure. Use
          *        table as it makes more sense and matches address size in
@@ -946,7 +946,7 @@ typedef union
     {
         uint32_t    u32Rsvd0;           /**< Bits 31:0   - Reserved. */
         uint32_t    u28Rsvd0 : 28;      /**< Bits 47:32  - Reserved. */
-        uint32_t    u4EventCode : 4;    /**< Bits 63:60  - Event code. */
+        uint32_t    u4EvtCode : 4;      /**< Bits 63:60  - Event code. */
         uint32_t    u4Rsvd0 : 4;        /**< Bits 67:64  - Reserved. */
         uint32_t    u28AddrLo : 28;     /**< Bits 95:68  - Address: SPA of the invalid command (Lo). */
         uint32_t    u32AddrHi;          /**< Bits 127:96 - Address: SPA of the invalid command (Hi). */
@@ -982,10 +982,10 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DeviceId;        /**< Bits 15:0   - Device ID. */
+        uint16_t    u16DevId;           /**< Bits 15:0   - Device ID. */
         uint16_t    u16Rsvd0;           /**< Bits 31:16  - Reserved.*/
         uint32_t    u28Rsvd0 : 28;      /**< Bits 59:32  - Reserved. */
-        uint32_t    u4EventCode : 4;    /**< Bits 63:60  - Event code. */
+        uint32_t    u4EvtCode : 4;      /**< Bits 63:60  - Event code. */
         uint32_t    u4Rsvd0 : 4;        /**< Bits 67:64  - Reserved. */
         uint32_t    u28AddrLo : 28;     /**< Bits 95:68  - Address: SPA of the invalidation command that timedout (Lo). */
         uint32_t    u32AddrHi;          /**< Bits 127:96 - Address: SPA of the invalidation command that timedout (Hi). */
@@ -1003,7 +1003,7 @@ typedef union
 {
     struct
     {
-        uint32_t    u16DeviceId : 16;       /***< Bits 15:0   - Device ID. */
+        uint32_t    u16DevId : 16;          /***< Bits 15:0   - Device ID. */
         uint32_t    u4PasidHi : 4;          /***< Bits 19:16  - PASID: Process Address-Space ID (Hi). */
         uint32_t    u12Rsvd0 : 12;          /***< Bits 31:20  - Reserved. */
         uint32_t    u16PasidLo : 16;        /***< Bits 47:32  - PASID: Process Address-Space ID (Lo). */
@@ -1012,7 +1012,7 @@ typedef union
         uint32_t    u6Rsvd0 : 6;            /***< Bits 55:50  - Reserved. */
         uint32_t    u1Translation: 1;       /***< Bit  56     - TR: Translation. */
         uint32_t    u3Type: 3;              /***< Bits 59:57  - Type: The type of hardware error. */
-        uint32_t    u4EventCode : 4;        /***< Bits 63:60  - Event code. */
+        uint32_t    u4EvtCode : 4;          /***< Bits 63:60  - Event code. */
         uint64_t    u64Addr;                /***< Bits 127:64 - Address: Translation or access address. */
     } n;
     /** The 32-bit unsigned integer view. */
@@ -1030,7 +1030,7 @@ typedef union
     {
         uint32_t    u32Rsvd0;               /**< Bits 31:0   - Reserved. */
         uint32_t    u28Rsvd0 : 28;          /**< Bits 59:32  - Reserved. */
-        uint32_t    u4EventCode : 4;        /**< Bits 63:60  - Event code. */
+        uint32_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
         uint32_t    u20CounterNoteHi : 20;  /**< Bits 83:64  - CounterNote: Counter value for the event counter register (Hi). */
         uint32_t    u12Rsvd0 : 12;          /**< Bits 95:84  - Reserved. */
         uint32_t    u32CounterNoteLo;       /**< Bits 127:96 - CounterNote: Counter value for the event cuonter register (Lo). */
@@ -2193,16 +2193,20 @@ DECLINLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
 
 
 /**
- * Determines whether MSI is enabled for the IOMMU. This influences interrupt
- * handling in IOMMU.
+ * Returns whether MSI is enabled for the IOMMU.
+ *
+ * @returns Whether MSI is enabled.
+ * @param   pDevIns     The IOMMU device instance.
  *
  * @note There should be a PCIDevXxx function for this.
  */
-static bool iommuAmdIsMsiEnabled(PPDMPCIDEV pDevIns)
+static bool iommuAmdIsMsiEnabled(PPDMDEVINS pDevIns)
 {
-    uint16_t const uMsgCtl = PDMPciDevGetWord(pDevIns, IOMMU_PCI_OFF_MSI_CAP_HDR + VBOX_MSI_CAP_MESSAGE_CONTROL);
-    return RT_BOOL(uMsgCtl & VBOX_PCI_MSI_FLAGS_ENABLE);
+    MSI_CAP_HDR_T MsiCapHdr;
+    MsiCapHdr.u32 = PDMPciDevGetDWord(pDevIns->apPciDevs[0], IOMMU_PCI_OFF_MSI_CAP_HDR);
+    return MsiCapHdr.n.u1MsiEnable;
 }
+
 
 
 /**
@@ -2969,7 +2973,39 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
 }
 
 
-static int iommuAmdWriteEventLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
+/**
+ * Raises the MSI interrupt for the IOMMU device.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ */
+static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
+{
+    if (iommuAmdIsMsiEnabled(pDevIns))
+        PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
+}
+
+/**
+ * Clears the MSI interrupt for the IOMMU device.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ */
+static void iommuAmdClearMsiInterrupt(PPDMDEVINS pDevIns)
+{
+    if (iommuAmdIsMsiEnabled(pDevIns))
+        PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
+}
+
+
+/**
+ * Writes an entry to the event log.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pEvent      The event to log.
+ *
+ * @thread  Any.
+ */
+static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
@@ -2996,18 +3032,23 @@ static int iommuAmdWriteEventLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent
             /* Increment the event log tail pointer. */
             pThis->EvtLogTailPtr.n.u15Ptr += sizeof(*pEvent);
 
-            /* Check if software wants to receive an interrupt when the event log is updated. */
+            /* Indicate that an event log entry was written. */
+            ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_INTR);
+
+            /* Check and signal an interrupt if software wants to receive one when an event log entry is written. */
             IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
             if (Ctrl.n.u1EvtIntrEn)
-            {
-                /* Signal the event log interrupt. */
-                ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_INTR);
-                /** @todo IOMMU: Generate the interrupt. */
-            }
+                iommuAmdRaiseMsiInterrupt(pDevIns);
         }
         else
         {
-            /** @todo IOMMU: Set the overflow bit and generate interrupt. */
+            /* Indicate that the event log has overflowed. */
+            ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_OVERFLOW);
+
+            /* Check and signal an interrupt if software wants to receive one when the event log has overflowed. */
+            IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+            if (Ctrl.n.u1EvtIntrEn)
+                iommuAmdRaiseMsiInterrupt(pDevIns);
         }
     }
 }
@@ -3020,6 +3061,8 @@ static int iommuAmdWriteEventLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent
  * @param   pDevIns         The IOMMU device instance.
  * @param   uDevId          The device ID.
  * @param   pDevTabEntry    Where to store the device table entry.
+ *
+ * @thread  Any.
  */
 static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_ENTRY_T *pDevTabEntry)
 {
@@ -3053,7 +3096,7 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   uDevId      The device identifier (bus, device, function).
+ * @param   uDevId      The device ID (bus, device, function).
  * @param   uDva        The device virtual address being read.
  * @param   cbRead      The number of bytes being read.
  * @param   pGCPhysOut  Where to store the translated physical address.
@@ -3072,7 +3115,7 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   uDevId      The device identifier (bus, device, function).
+ * @param   uDevId      The device ID (bus, device, function).
  * @param   uDva        The device virtual address being written.
  * @param   cbWrite     The number of bytes being written.
  * @param   pGCPhysOut  Where to store the translated physical address.
