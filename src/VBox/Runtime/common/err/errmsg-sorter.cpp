@@ -261,15 +261,15 @@ int main(int argc, char **argv)
                 "\n"
                 "typedef struct RTMSGENTRYINT\n"
                 "{\n"
-                "    uint32_t offDefine : 20;\n"
-                "    uint32_t cchDefine : 9;\n"
+                "    uint32_t offDefine   : 20;\n"
+                "    uint32_t cchDefine   : 9;\n"
                 "%s"
                 "%s"
                 "    int32_t  iCode;\n"
                 "} RTMSGENTRYINT;\n"
                 "typedef RTMSGENTRYINT *PCRTMSGENTRYINT;\n"
                 "\n"
-                "static const RTMSGENTRYINT g_aStatusMsgs[] =\n"
+                "static const RTMSGENTRYINT g_aStatusMsgs[ /*%lu*/ ] =\n"
                 "{\n"
                 ,
                 enmMode != kMode_OnlyDefines
@@ -277,7 +277,8 @@ int main(int argc, char **argv)
                   "    uint32_t cchMsgShort : 9;\n" : "",
                 enmMode == kMode_All
                 ? "    uint32_t offMsgFull  : 23;\n"
-                  "    uint32_t cchMsgFull  : 9;\n" : "");
+                  "    uint32_t cchMsgFull  : 9;\n" : "",
+                (unsigned long)cStatusMsgs);
 
         if (enmMode == kMode_All)
             for (size_t i = 0; i < cStatusMsgs; i++)

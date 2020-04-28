@@ -139,6 +139,8 @@ typedef struct BLDPROGSTRTAB
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
     /** The 127 words we've picked to be indexed by reference.  */
     BLDPROGSTRING       aCompDict[127];
+    /** The frequency of the 127 dictionary entries.  */
+    size_t              auCompDictFreq[127];
     /** Incoming strings pending compression. */
     PBLDPROGSTRING     *papPendingStrings;
     /** Current number of entries in papStrPending. */
@@ -612,6 +614,7 @@ static bool bldProgStrTab_compressorDoStringCompression(PBLDPROGSTRTAB pThis, bo
          it != SortMap.end() && i < RT_ELEMENTS(pThis->aCompDict);
          ++it, i++)
     {
+        pThis->auCompDictFreq[i]      = it->m_pPair->second;
         pThis->aCompDict[i].cchString = it->m_pPair->first.length();
         pThis->aCompDict[i].pszString = (char *)malloc(pThis->aCompDict[i].cchString + 1);
         if (pThis->aCompDict[i].pszString)
@@ -1031,8 +1034,9 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
             "{\n",
             pszBaseName, (unsigned)RT_ELEMENTS(pThis->aCompDict));
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCompDict); i++)
-        fprintf(pOut, "    { %#08x, %#04x }, // %s\n",
-                pThis->aCompDict[i].offStrTab, (unsigned)pThis->aCompDict[i].cchString, pThis->aCompDict[i].pszString);
+        fprintf(pOut, "    { %#08x, %#04x }, // %6lu - %s\n",
+                pThis->aCompDict[i].offStrTab, (unsigned)pThis->aCompDict[i].cchString,
+                (unsigned long)pThis->auCompDictFreq[i], pThis->aCompDict[i].pszString);
     fprintf(pOut, "};\n\n");
 #endif
 
