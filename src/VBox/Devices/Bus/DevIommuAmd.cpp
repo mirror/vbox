@@ -418,6 +418,26 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_STATUS_PPR_LOG_OVERFLOW_EARLY         RT_BIT_64(18)
 /** @} */
 
+/**
+ * @name IOMMU Control Register Bits.
+ * In accordance with the AMD spec.
+ * @{
+ */
+/** IommuEn: Enable the IOMMU. */
+#define IOMMU_CTRL_IOMMU_EN                         RT_BIT_64(0)
+/** HtTunEn: HyperTransport tunnel translation enable. */
+#define IOMMU_CTRL_HT_TUNNEL_EN                     RT_BIT_64(1)
+/** EventLogEn: Event log enable. */
+#define IOMMU_CTRL_EVT_LOG_EN                       RT_BIT_64(2)
+/** EventIntEn: Event interrupt enable. */
+#define IOMMU_CTRL_EVT_INTR_EN                      RT_BIT_64(3)
+/** ComWaitIntEn: Completion wait interrupt enable. */
+#define IOMMU_CTRL_COMPLETION_WAIT_INTR_EN          RT_BIT_64(4)
+/** InvTimeout: Invalidation timeout. */
+#define IOMMU_CTRL_INV_TIMEOUT                      RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7)
+/** @todo IOMMU: the rest or remove it. */
+/** @} */
+
 /** @name Miscellaneous IOMMU defines.
  * @{ */
 /** Log prefix string. */
@@ -1220,6 +1240,7 @@ typedef union
     uint64_t    u64;
 } IOMMU_CTRL_T;
 AssertCompileSize(IOMMU_CTRL_T, 8);
+#define IOMMU_CTRL_VALID_MASK       UINT64_C(0x004defffffffffff)
 
 /**
  * IOMMU Exclusion Base Register (MMIO).
@@ -2208,6 +2229,33 @@ static bool iommuAmdIsMsiEnabled(PPDMDEVINS pDevIns)
 }
 
 
+/**
+ * The IOMMU command thread.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pThread     The command thread.
+ */
+static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    RT_NOREF(pDevIns, pThread);
+}
+
+
+/**
+ * Unblocks the command thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pThread     The command thread.
+ */
+static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    RT_NOREF(pThread);
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
+}
+
 
 /**
  * Writes to a read-only register.
@@ -2279,7 +2327,7 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
         Log((IOMMU_LOG_PFX ": Command buffer base address (%#RX64) misaligned -> Ignored\n", CmdBufBaseAddr.n.u40Base));
 
     /*
-     * Writing the command log base address, clears the command buffer head and tail pointers.
+     * Writing the command buffer base address, clears the command buffer head and tail pointers.
      * See AMD spec. 2.4 "Commands".
      */
     pThis->CmdBufHeadPtr.u64 = 0;
@@ -2334,6 +2382,55 @@ static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     pThis->EvtLogTailPtr.u64 = 0;
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the Control Register.
+ */
+static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+
+    /* Mask out all unrecognized bits. */
+    u64Value &= IOMMU_CTRL_VALID_MASK;
+
+    IOMMU_CTRL_T const OldCtrl = iommuAmdGetCtrl(pThis);
+    IOMMU_CTRL_T NewCtrl;
+    NewCtrl.u64 = u64Value;
+
+    /* Enable or disable event logging when the bit transitions. */
+    if (OldCtrl.n.u1EvtLogEn != NewCtrl.n.u1EvtLogEn)
+    {
+        if (NewCtrl.n.u1EvtLogEn)
+        {
+            ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_EVT_LOG_OVERFLOW);
+            ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_RUNNING);
+        }
+        else
+            ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_EVT_LOG_RUNNING);
+    }
+
+    /* Update the control register. */
+    ASMAtomicWriteU64(&pThis->Ctrl.u64, NewCtrl.u64);
+
+    /* Enable or disable command buffer processing when the bit transitions. */
+    if (OldCtrl.n.u1CmdBufEn != NewCtrl.n.u1CmdBufEn)
+    {
+        if (NewCtrl.n.u1CmdBufEn)
+        {
+            ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_CMD_BUF_RUNNING);
+            /* If the command buffer isn't empty, kick the command thread to start processing commands. */
+            if (pThis->CmdBufHeadPtr.n.u15Ptr != pThis->CmdBufTailPtr.n.u15Ptr)
+                PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
+        }
+        else
+        {
+            ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
+            /* Kick the command thread to stop processing commands. */
+            PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
+        }
+    }
 }
 
 
@@ -2622,34 +2719,6 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
 }
 
 
-/**
- * The IOMMU command thread.
- *
- * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   pThread     The command thread.
- */
-static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    RT_NOREF(pDevIns, pThread);
-}
-
-
-/**
- * Unblocks the command thread so it can respond to a state change.
- *
- * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   pThread     The command thread.
- */
-static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    RT_NOREF(pThread);
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
-}
-
-
 #if 0
 /**
  * Table 0: Registers-access table.
@@ -2688,7 +2757,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_OFF_DEV_TAB_BAR:         return iommuAmdDevTabBar_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_CMD_BUF_BAR:         return iommuAmdCmdBufBar_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_EVT_LOG_BAR:         return iommuAmdEvtLogBar_w(pDevIns, pThis, off, uValue);
-        case IOMMU_MMIO_OFF_CTRL:                /** @todo IOMMU: Control register. */
+        case IOMMU_MMIO_OFF_CTRL:                return iommuAmdCtrl_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_EXCL_BAR:            return iommuAmdExclRangeBar_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_EXCL_RANGE_LIMIT:    return iommuAmdExclRangeLimit_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_EXT_FEAT:            return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
@@ -2997,7 +3066,7 @@ static void iommuAmdClearMsiInterrupt(PPDMDEVINS pDevIns)
 
 
 /**
- * Writes an entry to the event log.
+ * Writes an entry to the event log in memory.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
