@@ -32,75 +32,61 @@
 /* static */
 QString UIErrorString::formatRC(HRESULT rc)
 {
-    QString str;
-
-    PCRTCOMERRMSG msg = NULL;
-    const char *pErrMsg = NULL;
-
-    /* First, try as is (only set bit 31 bit for warnings): */
-    if (SUCCEEDED_WARNING(rc))
-        msg = RTErrCOMGet(rc | 0x80000000);
+    /** @todo r=bird: Not sure why we set the sign bit 31 bit for warnings.
+     *  Maybe to try get the error variant?  It won't really work for S_FALSE and
+     *  probably a bunch of others too.  I've modified it on windows to try get
+     *  the exact one, the one with the top bit set, or just the value. */
+#if 0//def RT_OS_WINDOWS
+    char szDefine[80];
+    if (!SUCCEEDED_WARNING(rc))
+        RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
     else
-        msg = RTErrCOMGet(rc);
-
-    if (msg != NULL)
-        pErrMsg = msg->pszDefine;
-
-#ifdef VBOX_WS_WIN
-    PCRTWINERRMSG winMsg = NULL;
-
-    /* If not found, try again using RTErrWinGet with masked off top 16bit: */
-    if (msg == NULL)
     {
-        winMsg = RTErrWinGet(rc & 0xFFFF);
-
-        if (winMsg != NULL)
-            pErrMsg = winMsg->pszDefine;
+        if (   RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/) < 0
+            || RTErrWinQueryDefine(rc | 0x80000000, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/) < 0)
+            RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
     }
-#endif /* VBOX_WS_WIN */
 
-    if (pErrMsg != NULL && *pErrMsg != '\0')
-        str.sprintf("%s", pErrMsg);
-
+    QString str;
+    str.sprintf("%s", szDefine);
     return str;
+#else
+    const char *pszDefine = RTErrCOMGet(SUCCEEDED_WARNING(rc) ? rc | 0x80000000 : rc)->pszDefine;
+    Assert(pszDefine);
+
+    QString str;
+    str.sprintf("%s", pszDefine);
+    return str;
+#endif
 }
 
 /* static */
 QString UIErrorString::formatRCFull(HRESULT rc)
 {
+    /** @todo r=bird: See UIErrorString::formatRC for 31th bit discussion. */
+#if 0//def RT_OS_WINDOWS
+    char szDefine[80];
+    ssize_t cchRet = RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/);
+    if (RT_FAILURE(cchRet) && SUCCEEDED_WARNING(rc)))
+        cchRet = RTErrWinQueryDefine(rc | 0x80000000, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/);
+
     QString str;
-
-    PCRTCOMERRMSG msg = NULL;
-    const char *pErrMsg = NULL;
-
-    /* First, try as is (only set bit 31 bit for warnings): */
-    if (SUCCEEDED_WARNING(rc))
-        msg = RTErrCOMGet(rc | 0x80000000);
+    if (RT_SUCCESS(cchRet))
+        str.sprintf("%s (0x%08x)", szDefine, rc);
     else
-        msg = RTErrCOMGet(rc);
+        str.sprintf("0x%08x", rc);
+    return str;
+#else
+    const char *pszDefine = RTErrCOMGet(SUCCEEDED_WARNING(rc) ? rc | 0x80000000 : rc)->pszDefine;
+    Assert(pszDefine);
 
-    if (msg != NULL)
-        pErrMsg = msg->pszDefine;
-
-#ifdef VBOX_WS_WIN
-    PCRTWINERRMSG winMsg = NULL;
-
-    /* If not found, try again using RTErrWinGet with masked off top 16bit: */
-    if (msg == NULL)
-    {
-        winMsg = RTErrWinGet(rc & 0xFFFF);
-
-        if (winMsg != NULL)
-            pErrMsg = winMsg->pszDefine;
-    }
-#endif /* VBOX_WS_WIN */
-
-    if (pErrMsg != NULL && *pErrMsg != '\0')
-        str.sprintf("%s (0x%08X)", pErrMsg, rc);
+    QString str;
+    if (strncmp(pszDefine, RT_STR_TUPLE("Unknown ")))
+        str.sprintf("%s (0x%08X)", pszDefine, rc);
     else
         str.sprintf("0x%08X", rc);
-
     return str;
+#endif
 }
 
 /* static */
