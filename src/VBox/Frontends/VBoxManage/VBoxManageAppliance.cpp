@@ -1894,12 +1894,18 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
     Utf8Str strAppliancePath;
     Utf8Str strApplianceFullPath;
 
+    if (strOvfFilename.isEmpty())
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The OVA package name is empty");
+
     do
     {
+        char *pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
+
+        if (!RTFileExists(pszAbsFilePath))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "The OVA package %s wasn't found", pszAbsFilePath);
+
         ComPtr<IAppliance> pAppliance;
         CHECK_ERROR_BREAK(arg->virtualBox, CreateAppliance(pAppliance.asOutParam()));
-
-        char *pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
 
         ComPtr<IProgress> progressRead;
         CHECK_ERROR_BREAK(pAppliance, Read(Bstr(pszAbsFilePath).raw(), progressRead.asOutParam()));
