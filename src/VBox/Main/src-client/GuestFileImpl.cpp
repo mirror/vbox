@@ -402,20 +402,6 @@ int GuestFile::i_closeFile(int *prcGuest)
     return vrc;
 }
 
-/* static */ const char *GuestFile::i_guestVrcToString(int rcGuest)
-{
-    /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
-    switch (rcGuest)
-    {
-        case VERR_ACCESS_DENIED:        return tr("Access denied");
-        case VERR_ALREADY_EXISTS:       return tr("File already exists");
-        case VERR_FILE_NOT_FOUND:       return tr("File not found");
-        case VERR_NET_HOST_NOT_FOUND:   return tr("Host name not found");
-        case VERR_SHARING_VIOLATION:    return tr("Sharing violation");
-        default:                        return RTErrGetDefine(rcGuest);
-    }
-}
-
 /**
  * @todo r=bird: This is an absolutely cryptic way of reporting errors.  You may convert
  *               this to a const char * returning function for explaining rcGuest and
@@ -428,7 +414,20 @@ int GuestFile::i_closeFile(int *prcGuest)
 /* static */ Utf8Str GuestFile::i_guestErrorToString(int rcGuest)
 {
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
-    return i_guestVrcToString(rcGuest);
+    switch (rcGuest)
+    {
+        case VERR_ACCESS_DENIED:        return tr("Access denied");
+        case VERR_ALREADY_EXISTS:       return tr("File already exists");
+        case VERR_FILE_NOT_FOUND:       return tr("File not found");
+        case VERR_NET_HOST_NOT_FOUND:   return tr("Host name not found");
+        case VERR_SHARING_VIOLATION:    return tr("Sharing violation");
+        default:
+        {
+            char szDefine[80];
+            RTErrQueryDefine(rcGuest, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
+            return &szDefine[0];
+        }
+    }
 }
 
 int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)

@@ -417,6 +417,34 @@ static void BldProgStrTab_AddString(PBLDPROGSTRTAB pThis, PBLDPROGSTRING pStr)
 #endif
 }
 
+
+/**
+ * Adds a string to the string table.
+ *
+ * @param   pThis   The strint table compiler instance.
+ * @param   pStr    The string entry.
+ * @param   psz     The string, will be duplicated if compression is enabled.
+ */
+DECLINLINE(void) BldProgStrTab_AddStringDup(PBLDPROGSTRTAB pThis, PBLDPROGSTRING pStr, const char *psz)
+{
+#ifdef BLDPROG_STRTAB_WITH_COMPRESSION
+    pStr->pszString = strdup(psz);
+    if (pStr->pszString)
+    {
+        bldProgStrTab_compressorAnalyzeString(pThis, pStr);
+        if (pThis->cPendingStrings < pThis->cMaxPendingStrings)
+            pThis->papPendingStrings[pThis->cPendingStrings++] = pStr;
+        else
+            abort();
+    }
+    else
+        abort();
+#else
+    pStr->pszString = (char *)psz;
+    bldProgStrTab_AddStringToHashTab(pThis, pStr);
+#endif
+}
+
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
 
 /**

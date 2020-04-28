@@ -1612,7 +1612,7 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *
  */
 
-#ifndef DECLARED_FNRTSTROUTPUT          /* duplicated in iprt/log.h */
+#ifndef DECLARED_FNRTSTROUTPUT          /* duplicated in iprt/log.h & errcore.h */
 # define DECLARED_FNRTSTROUTPUT
 /**
  * Output callback.

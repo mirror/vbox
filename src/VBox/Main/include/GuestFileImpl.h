@@ -60,7 +60,6 @@ public:
      * @{ */
     int             i_closeFile(int *pGuestRc);
     EventSource    *i_getEventSource(void) { return mEventSource; }
-    static const char *i_guestVrcToString(int guestRc);
     static Utf8Str  i_guestErrorToString(int guestRc);
     int             i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int             i_onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);

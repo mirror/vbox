@@ -988,7 +988,10 @@ EXPORTS
     RTErrCOMGet
     RTErrConvertFromErrno
     RTErrConvertToErrno
-    RTErrGet
+    RTErrIsKnown
+    RTErrQueryDefine
+    RTErrQueryMsgShort
+    RTErrQueryMsgFull
     RTErrInfoAlloc
     RTErrInfoAllocEx
     RTErrInfoFree

@@ -2391,10 +2391,10 @@ dbgfR3RegPrintfCbFormatField(PDBGFR3REGPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutpu
     int rc = dbgfR3RegNmQueryWorkerOnCpu(pThis->pUVM, pLookupRec, DBGFREGVALTYPE_END, &Value, &enmType);
     if (RT_FAILURE(rc))
     {
-        PCRTSTATUSMSG pErr = RTErrGet(rc);
-        if (pErr)
-            return pfnOutput(pvArgOutput, pErr->pszDefine, strlen(pErr->pszDefine));
-        return pfnOutput(pvArgOutput, szTmp, RTStrPrintf(szTmp, sizeof(szTmp), "rc=%d", rc));
+        ssize_t cchDefine = RTErrQueryDefine(rc, szTmp, sizeof(szTmp), true /*fFailIfUnknown*/);
+        if (cchDefine <= 0)
+            cchDefine = RTStrPrintf(szTmp, sizeof(szTmp), "rc=%d", rc);
+        return pfnOutput(pvArgOutput, szTmp, cchDefine);
     }
 
     char *psz = szTmp;
@@ -2484,10 +2484,10 @@ dbgfR3RegPrintfCbFormatNormal(PDBGFR3REGPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutp
     int rc = dbgfR3RegNmQueryWorkerOnCpu(pThis->pUVM, pLookupRec, DBGFREGVALTYPE_END, &Value, &enmType);
     if (RT_FAILURE(rc))
     {
-        PCRTSTATUSMSG pErr = RTErrGet(rc);
-        if (pErr)
-            return pfnOutput(pvArgOutput, pErr->pszDefine, strlen(pErr->pszDefine));
-        return pfnOutput(pvArgOutput, szTmp, RTStrPrintf(szTmp, sizeof(szTmp), "rc=%d", rc));
+        ssize_t cchDefine = RTErrQueryDefine(rc, szTmp, sizeof(szTmp), true /*fFailIfUnknown*/);
+        if (cchDefine <= 0)
+            cchDefine = RTStrPrintf(szTmp, sizeof(szTmp), "rc=%d", rc);
+        return pfnOutput(pvArgOutput, szTmp, cchDefine);
     }
 
     /*

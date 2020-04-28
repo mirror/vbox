@@ -281,58 +281,38 @@ RTDECL(int)  RTErrConvertFromWin32(unsigned uNativeCode);
  */
 RTDECL(int)  RTErrConvertToErrno(int iErr);
 
+
+#ifndef DECLARED_FNRTSTROUTPUT          /* duplicated in iprt/string.h & iprt/log.h */
+#define DECLARED_FNRTSTROUTPUT
+/**
+ * Output callback.
+ *
+ * @returns number of bytes written.
+ * @param   pvArg       User argument.
+ * @param   pachChars   Pointer to an array of utf-8 characters.
+ * @param   cbChars     Number of bytes in the character array pointed to by pachChars.
+ */
+typedef DECLCALLBACK(size_t) FNRTSTROUTPUT(void *pvArg, const char *pachChars, size_t cbChars);
+/** Pointer to callback function. */
+typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
+#endif
+
 #ifdef IN_RING3
 
-/**
- * iprt status code message.
- */
-typedef struct RTSTATUSMSG
-{
-    /** Pointer to the short message string. */
-    const char *pszMsgShort;
-    /** Pointer to the full message string. */
-    const char *pszMsgFull;
-    /** Pointer to the define string. */
-    const char *pszDefine;
-    /** Status code number. */
-    int         iCode;
-} RTSTATUSMSG;
-/** Pointer to iprt status code message. */
-typedef RTSTATUSMSG *PRTSTATUSMSG;
-/** Pointer to const iprt status code message. */
-typedef const RTSTATUSMSG *PCRTSTATUSMSG;
+RTDECL(bool)    RTErrIsKnown(int rc);
+RTDECL(ssize_t) RTErrQueryDefine(int rc, char *pszBuf, size_t cbBuf, bool fFailIfUnknown);
+RTDECL(ssize_t) RTErrQueryMsgShort(int rc, char *pszBuf, size_t cbBuf, bool fFailIfUnknown);
+RTDECL(ssize_t) RTErrQueryMsgFull(int rc, char *pszBuf, size_t cbBuf, bool fFailIfUnknown);
 
-/**
- * Get the message structure corresponding to a given iprt status code.
- *
- * @returns Pointer to read-only message description.
- * @param   rc      The status code.
- */
-RTDECL(PCRTSTATUSMSG) RTErrGet(int rc);
+/** @name Error formatters used internally by RTStrFormat.
+ * @internal
+ * @{ */
+RTDECL(size_t)  RTErrFormatDefine(  int rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp);
+RTDECL(size_t)  RTErrFormatMsgShort(int rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp);
+RTDECL(size_t)  RTErrFormatMsgFull( int rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp);
+RTDECL(size_t)  RTErrFormatMsgAll(  int rc, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, char *pszTmp, size_t cbTmp);
+/** @} */
 
-/**
- * Get the define corresponding to a given iprt status code.
- *
- * @returns Pointer to read-only string with the \#define identifier.
- * @param   rc      The status code.
- */
-#define RTErrGetDefine(rc)      (RTErrGet(rc)->pszDefine)
-
-/**
- * Get the short description corresponding to a given iprt status code.
- *
- * @returns Pointer to read-only string with the description.
- * @param   rc      The status code.
- */
-#define RTErrGetShort(rc)       (RTErrGet(rc)->pszMsgShort)
-
-/**
- * Get the full description corresponding to a given iprt status code.
- *
- * @returns Pointer to read-only string with the description.
- * @param   rc      The status code.
- */
-#define RTErrGetFull(rc)        (RTErrGet(rc)->pszMsgFull)
 
 #ifdef RT_OS_WINDOWS
 /**

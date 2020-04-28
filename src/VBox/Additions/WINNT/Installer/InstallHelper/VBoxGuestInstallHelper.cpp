@@ -143,14 +143,14 @@ static void vboxPushRcAsString(int rc)
     TCHAR szErr[NSIS_MAX_STRLEN];
     if (RT_FAILURE(rc))
     {
-
+        char szMsg[80];
+        RTErrQueryDefine(rc, szMsg, sizeof(szMsg), false /*fFailIfUnknown*/);
+        /** @todo r=bird: Just use RTUtf16Printf here as RTErrQueryDefine drags in
+         *        the whole IPRT printf machinery anyway. */
 #ifdef UNICODE
-        TCHAR *pszErrAsString;
-        int rc2 = RTStrToUtf16(RTErrGetDefine(rc), &pszErrAsString);
+        int rc2 = RTStrToUtf16(szMsg, &pszErrAsString);
         if (RT_SUCCESS(rc2))
         {
-#else
-            TCHAR *pszErrAsString = RTErrGetDefine(rc);
 #endif
             StringCchPrintf(szErr, sizeof(szErr), _T("Error: %s"), pszErrAsString);
 

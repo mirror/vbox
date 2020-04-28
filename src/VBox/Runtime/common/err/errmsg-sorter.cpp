@@ -37,10 +37,61 @@
 #include <stdlib.h>
 
 
+#define ERRMSG_WITH_STRTAB
+#ifdef ERRMSG_WITH_STRTAB
+/*
+ * Include the string table code.
+ */
+# define BLDPROG_STRTAB_MAX_STRLEN           512
+# define BLDPROG_STRTAB_WITH_COMPRESSION
+# define BLDPROG_STRTAB_PURE_ASCII
+# define BLDPROG_STRTAB_WITH_CAMEL_WORDS
+# include <iprt/bldprog-strtab-template.cpp.h>
+#endif
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** Used for raw-input and sorting. */
+typedef struct RTSTATUSMSGINT1
+{
+    /** Pointer to the short message string. */
+    const char     *pszMsgShort;
+    /** Pointer to the full message string. */
+    const char     *pszMsgFull;
+    /** Pointer to the define string. */
+    const char     *pszDefine;
+    /** Status code number. */
+    int             iCode;
+    /** Set if duplicate. */
+    bool            fDuplicate;
+} RTSTATUSMSGINT1;
+typedef RTSTATUSMSGINT1 *PRTSTATUSMSGINT1;
+
+
+/** This is used when building the string table and printing it. */
+typedef struct RTSTATUSMSGINT2
+{
+    /** The short message string. */
+    BLDPROGSTRING   MsgShort;
+    /** The full message string. */
+    BLDPROGSTRING   MsgFull;
+    /** The define string. */
+    BLDPROGSTRING   Define;
+    /** Pointer to the define string. */
+    const char     *pszDefine;
+    /** Status code number. */
+    int             iCode;
+} RTSTATUSMSGINT2;
+typedef RTSTATUSMSGINT2 *PRTSTATUSMSGINT2;
+
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static RTSTATUSMSG g_aStatusMsgs[] =
+static const char *g_pszProgName = "errmsg-sorter";
+static RTSTATUSMSGINT1 g_aStatusMsgs[] =
 {
 #if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
 # include "errmsgdata.h"
@@ -50,11 +101,22 @@ static RTSTATUSMSG g_aStatusMsgs[] =
 };
 
 
+static RTEXITCODE error(const char *pszFormat,  ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    fprintf(stderr, "%s: error: ", g_pszProgName);
+    vfprintf(stderr, pszFormat, va);
+    va_end(va);
+    return RTEXITCODE_FAILURE;
+}
+
+
 /** qsort callback. */
 static int CompareErrMsg(const void *pv1, const void *pv2)
 {
-    PCRTSTATUSMSG p1 = (PCRTSTATUSMSG)pv1;
-    PCRTSTATUSMSG p2 = (PCRTSTATUSMSG)pv2;
+    PRTSTATUSMSGINT1 p1 = (PRTSTATUSMSGINT1)pv1;
+    PRTSTATUSMSGINT1 p2 = (PRTSTATUSMSGINT1)pv2;
     int iDiff;
     if (p1->iCode < p2->iCode)
         iDiff = -1;
@@ -102,126 +164,170 @@ static bool IgnoreDuplicateDefine(const char *pszDefine)
 }
 
 
-/**
- * Escapes @a pszString using @a pszBuf as needed.
- * @note Duplicated in errmsg-sorter.cpp.
- */
-static const char *EscapeString(const char *pszString, char *pszBuf, size_t cbBuf)
-{
-    if (strpbrk(pszString, "\n\t\r\"\\") == NULL)
-        return pszString;
-
-    char *pszDst = pszBuf;
-    char  ch;
-    do
-    {
-        ch = *pszString++;
-        switch (ch)
-        {
-            default:
-                *pszDst++ = ch;
-                break;
-            case '\\':
-            case '"':
-                *pszDst++ = '\\';
-                *pszDst++ = ch;
-                break;
-            case '\n':
-                *pszDst++ = '\\';
-                *pszDst++ = 'n';
-                break;
-            case '\t':
-                *pszDst++ = '\\';
-                *pszDst++ = 't';
-                break;
-            case '\r':
-                break; /* drop it */
-        }
-    } while (ch);
-
-    if ((uintptr_t)(pszDst - pszBuf) > cbBuf)
-        fprintf(stderr, "Escape buffer overrun!\n");
-
-    return pszBuf;
-}
-
-
 int main(int argc, char **argv)
 {
     /*
-     * Argument check.
+     * Parse arguments.
      */
-    if (argc != 1 && argc != 2)
+    enum { kMode_All, kMode_NoFullMsg, kMode_OnlyDefines } enmMode;
+    if (argc == 3 && strcmp(argv[1], "--all") == 0)
+        enmMode = kMode_All;
+    else if (argc == 3 && strcmp(argv[1], "--no-full-msg") == 0)
+        enmMode = kMode_NoFullMsg;
+    else if (argc == 3 && strcmp(argv[1], "--only-defines") == 0)
+        enmMode = kMode_OnlyDefines;
+    else
     {
         fprintf(stderr,
                 "syntax error!\n"
-                "Usage: %s [outfile]\n", argv[0]);
+                "Usage: %s <--all|--no-full-msg|--only-defines> <outfile>\n", argv[0]);
         return RTEXITCODE_SYNTAX;
+    }
+    const char * const pszOutFile = argv[2];
+
+    /*
+     * Sort the table and mark duplicates.
+     */
+    qsort(g_aStatusMsgs, RT_ELEMENTS(g_aStatusMsgs), sizeof(g_aStatusMsgs[0]), CompareErrMsg);
+
+    int rcExit = RTEXITCODE_SUCCESS;
+    int iPrev  = INT32_MAX;
+    for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
+    {
+        /* Deal with duplicates, trying to eliminate unnecessary *_FIRST, *_LAST,
+           *_LOWEST, and *_HIGHEST entries as well as some deliberate duplicate entries.
+           This means we need to look forward and backwards here. */
+        PRTSTATUSMSGINT1 pMsg = &g_aStatusMsgs[i];
+        if (pMsg->iCode == iPrev && i != 0)
+        {
+            if (IgnoreDuplicateDefine(pMsg->pszDefine))
+            {
+                pMsg->fDuplicate = true;
+                continue;
+            }
+            PRTSTATUSMSGINT1 pPrev = &g_aStatusMsgs[i - 1];
+            rcExit = error("Duplicate value %d - %s and %s\n", iPrev, pMsg->pszDefine, pPrev->pszDefine);
+        }
+        else if (i + 1 < RT_ELEMENTS(g_aStatusMsgs))
+        {
+            PRTSTATUSMSGINT1 pNext = &g_aStatusMsgs[i];
+            if (   pMsg->iCode == pNext->iCode
+                && IgnoreDuplicateDefine(pMsg->pszDefine))
+            {
+                pMsg->fDuplicate = true;
+                continue;
+            }
+        }
+        iPrev = pMsg->iCode;
+        pMsg->fDuplicate = false;
     }
 
     /*
-     * Sort the table.
+     * Create a string table for it all.
      */
-    qsort(g_aStatusMsgs, RT_ELEMENTS(g_aStatusMsgs), sizeof(g_aStatusMsgs[0]), CompareErrMsg);
+    BLDPROGSTRTAB StrTab;
+    if (!BldProgStrTab_Init(&StrTab, RT_ELEMENTS(g_aStatusMsgs) * 3))
+        return error("Out of memory!\n");
+
+    static RTSTATUSMSGINT2 s_aStatusMsgs2[RT_ELEMENTS(g_aStatusMsgs)];
+    size_t                 cStatusMsgs = 0;
+    for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
+    {
+        if (!g_aStatusMsgs[i].fDuplicate)
+        {
+            s_aStatusMsgs2[cStatusMsgs].iCode     = g_aStatusMsgs[i].iCode;
+            s_aStatusMsgs2[cStatusMsgs].pszDefine = g_aStatusMsgs[i].pszDefine;
+            BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[cStatusMsgs].Define, g_aStatusMsgs[i].pszDefine);
+            if (enmMode != kMode_OnlyDefines)
+            {
+                BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[cStatusMsgs].MsgShort, g_aStatusMsgs[i].pszMsgShort);
+                if (enmMode == kMode_All)
+                    BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[cStatusMsgs].MsgFull, g_aStatusMsgs[i].pszMsgFull);
+            }
+            cStatusMsgs++;
+        }
+    }
+
+    if (!BldProgStrTab_CompileIt(&StrTab, true))
+        return error("BldProgStrTab_CompileIt failed!\n");
 
     /*
      * Prepare output file.
      */
-    int rcExit = RTEXITCODE_FAILURE;
-    FILE *pOut = stdout;
-    if (argc > 1)
-        pOut = fopen(argv[1], "wt");
+    FILE *pOut = fopen(pszOutFile, "wt");
     if (pOut)
     {
         /*
          * Print the table.
          */
-        static char s_szMsgTmp1[_32K];
-        static char s_szMsgTmp2[_64K];
-        int iPrev = INT32_MAX;
-        for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
-        {
-            PCRTSTATUSMSG pMsg = &g_aStatusMsgs[i];
+        fprintf(pOut,
+                "\n"
+                "typedef struct RTMSGENTRYINT\n"
+                "{\n"
+                "    uint32_t offDefine : 20;\n"
+                "    uint32_t cchDefine : 9;\n"
+                "%s"
+                "%s"
+                "    int32_t  iCode;\n"
+                "} RTMSGENTRYINT;\n"
+                "typedef RTMSGENTRYINT *PCRTMSGENTRYINT;\n"
+                "\n"
+                "static const RTMSGENTRYINT g_aStatusMsgs[] =\n"
+                "{\n"
+                ,
+                enmMode != kMode_OnlyDefines
+                ? "    uint32_t offMsgShort : 23;\n"
+                  "    uint32_t cchMsgShort : 9;\n" : "",
+                enmMode == kMode_All
+                ? "    uint32_t offMsgFull  : 23;\n"
+                  "    uint32_t cchMsgFull  : 9;\n" : "");
 
-            /* Deal with duplicates, trying to eliminate unnecessary *_FIRST, *_LAST,
-               *_LOWEST, and *_HIGHEST entries as well as some deliberate duplicate entries.
-               This means we need to look forward and backwards here. */
-            if (pMsg->iCode == iPrev && i != 0)
-            {
-                if (IgnoreDuplicateDefine(pMsg->pszDefine))
-                    continue;
-                PCRTSTATUSMSG pPrev = &g_aStatusMsgs[i - 1];
-                fprintf(stderr, "%s: warning: Duplicate value %d - %s and %s\n",
-                        argv[0], iPrev, pMsg->pszDefine, pPrev->pszDefine);
-            }
-            else if (i + 1 < RT_ELEMENTS(g_aStatusMsgs))
-            {
-                PCRTSTATUSMSG pNext = &g_aStatusMsgs[i];
-                if (   pMsg->iCode == pNext->iCode
-                    && IgnoreDuplicateDefine(pMsg->pszDefine))
-                    continue;
-            }
-            iPrev = pMsg->iCode;
+        if (enmMode == kMode_All)
+            for (size_t i = 0; i < cStatusMsgs; i++)
+                fprintf(pOut, "/*%8d:*/ { %#08x, %3u, %#08x, %3u, %#08x, %3u, %s },\n",
+                        s_aStatusMsgs2[i].iCode,
+                        s_aStatusMsgs2[i].Define.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].Define.cchString,
+                        s_aStatusMsgs2[i].MsgShort.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].MsgShort.cchString,
+                        s_aStatusMsgs2[i].MsgFull.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].MsgFull.cchString,
+                        s_aStatusMsgs2[i].pszDefine);
+        else if (enmMode == kMode_NoFullMsg)
+            for (size_t i = 0; i < cStatusMsgs; i++)
+                fprintf(pOut, "/*%8d:*/ { %#08x, %3u, %#08x, %3u, %s },\n",
+                        s_aStatusMsgs2[i].iCode,
+                        s_aStatusMsgs2[i].Define.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].Define.cchString,
+                        s_aStatusMsgs2[i].MsgShort.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].MsgShort.cchString,
+                        s_aStatusMsgs2[i].pszDefine);
+        else if (enmMode == kMode_OnlyDefines)
+            for (size_t i = 0; i < cStatusMsgs; i++)
+                fprintf(pOut, "/*%8d:*/ { %#08x, %3u, %s },\n",
+                        s_aStatusMsgs2[i].iCode,
+                        s_aStatusMsgs2[i].Define.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].Define.cchString,
+                        s_aStatusMsgs2[i].pszDefine);
+        else
+            return error("Unsupported message selection (%d)!\n", enmMode);
+        fprintf(pOut,
+                "};\n"
+                "\n");
 
-            /* Produce the output: */
-            fprintf(pOut, "/*%8d:*/ ENTRY(\"%s\", \"%s\", \"%s\", %s),\n",
-                    pMsg->iCode,
-                    EscapeString(pMsg->pszMsgShort, s_szMsgTmp1, sizeof(s_szMsgTmp1)),
-                    EscapeString(pMsg->pszMsgFull, s_szMsgTmp2, sizeof(s_szMsgTmp2)),
-                    pMsg->pszDefine, pMsg->pszDefine);
-
-        }
+        BldProgStrTab_WriteStringTable(&StrTab, pOut, "static ", "g_", "StatusMsgStrTab");
 
         /*
          * Close the output file and we're done.
          */
-        if (fclose(pOut) == 0)
-            rcExit = RTEXITCODE_SUCCESS;
-        else
-            fprintf(stderr, "%s: Failed to flush/close '%s' after writing it!\n", argv[0], argv[1]);
+        fflush(pOut);
+        if (ferror(pOut))
+            rcExit = error("Error writing '%s'!\n", pszOutFile);
+        if (fclose(pOut) != 0)
+            rcExit = error("Failed to close '%s' after writing it!\n", pszOutFile);
     }
     else
-        fprintf(stderr, "%s: Failed to open '%s' for writing!\n", argv[0], argv[1]);
+        rcExit = error("Failed to open '%s' for writing!\n", pszOutFile);
     return rcExit;
 }
 

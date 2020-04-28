@@ -671,9 +671,8 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             cch = 0;
                             if (s_aTypes[i].enmFormat == RTSF_ERRINFO)
                             {
-#ifdef IN_RING3                         /* we don't want this anywhere else yet. */
-                                PCRTSTATUSMSG pMsg = RTErrGet(u.pErrInfo->rc);
-                                cch += pfnOutput(pvArgOutput, pMsg->pszMsgShort, strlen(pMsg->pszMsgShort));
+#ifdef IN_RING3 /* we don't want this anywhere else yet. */
+                                cch += RTErrFormatMsgShort(u.pErrInfo->rc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
 #else
                                 cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%d", u.pErrInfo->rc);
 #endif
@@ -1187,32 +1186,16 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
             {
                 int rc = va_arg(*pArgs, int);
 #ifdef IN_RING3                         /* we don't want this anywhere else yet. */
-                PCRTSTATUSMSG pMsg = RTErrGet(rc);
                 switch (*(*ppszFormat)++)
                 {
                     case 'c':
-                        return pfnOutput(pvArgOutput, pMsg->pszDefine,    strlen(pMsg->pszDefine));
+                        return RTErrFormatDefine(rc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
                     case 's':
-# if !defined(IPRT_ERRMSG_DEFINES_ONLY)
-                        return pfnOutput(pvArgOutput, pMsg->pszMsgShort,  strlen(pMsg->pszMsgShort));
-# else
-                        return pfnOutput(pvArgOutput, pMsg->pszDefine,    strlen(pMsg->pszDefine));
-# endif
+                        return RTErrFormatMsgShort(rc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
                     case 'f':
-# if !defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY)
-                        return pfnOutput(pvArgOutput, pMsg->pszMsgFull,   strlen(pMsg->pszMsgFull));
-# else
-                        return pfnOutput(pvArgOutput, pMsg->pszDefine,    strlen(pMsg->pszDefine));
-# endif
+                        return RTErrFormatMsgFull(rc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
                     case 'a':
-# if !defined(RT_IN_STATIC) && !defined(IPRT_ERRMSG_DEFINES_ONLY)
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (%d) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
-# elif !defined(IPRT_ERRMSG_DEFINES_ONLY)
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (%d) - %s", pMsg->pszDefine, rc, pMsg->pszMsgShort);
-# else
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (%d)", pMsg->pszDefine, rc);
-# endif
-
+                        return RTErrFormatMsgAll(rc, pfnOutput, pvArgOutput, szBuf, sizeof(szBuf));
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                         return 0;

@@ -309,7 +309,10 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
 
                 default:
                     if (VMR3GetErrorCount(pUVM) == 0)
-                        pszError = RTErrGetFull(rc);
+                    {
+                        pszError = (char *)alloca(1024);
+                        RTErrQueryMsgFull(rc, (char *)pszError, 1024, false /*fFailIfUnknown*/);
+                    }
                     else
                         pszError = NULL; /* already set. */
                     break;

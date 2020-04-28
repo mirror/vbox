@@ -62,6 +62,7 @@ PROGRAMS += \
 	tstDir-3 \
 	tstRTDvm \
 	tstRTEnv \
+	tstRTErr-1 \
 	tstFile \
 	tstRTFileAio \
 	tstRTFileAppend-1 \
@@ -348,6 +349,9 @@ tstRTDvm_SOURCES = tstRTDvm.cpp
 
 tstRTEnv_TEMPLATE = VBOXR3TSTEXE
 tstRTEnv_SOURCES = tstRTEnv.cpp
+
+tstRTErr-1_TEMPLATE = VBOXR3TSTEXE
+tstRTErr-1_SOURCES = tstRTErr-1.cpp
 
 tstFile_TEMPLATE = VBOXR3TSTEXE
 tstFile_SOURCES = tstFile.cpp

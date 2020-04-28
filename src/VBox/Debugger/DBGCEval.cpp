@@ -1472,14 +1472,11 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
                 break;
 
             default:
-            {
-                PCRTSTATUSMSG pErr = RTErrGet(rc);
-                if (strncmp(pErr->pszDefine, RT_STR_TUPLE("Unknown Status")))
-                    rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: %s (%d) - %s\n", pErr->pszDefine, rc, pErr->pszMsgFull);
+                if (RTErrIsKnown(rc))
+                    rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: %Rra\n", rc);
                 else
                     rc = DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "Error: Unknown error %d (%#x)!\n", rc, rc);
                 break;
-            }
         }
     }
 

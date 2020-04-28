@@ -2407,7 +2407,7 @@ RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list va)  RT_IPRT_FORMAT_ATT
 RTDECL(void) RTLogDumpPrintfV(void *pvUser, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 
-#ifndef DECLARED_FNRTSTROUTPUT          /* duplicated in iprt/string.h */
+#ifndef DECLARED_FNRTSTROUTPUT          /* duplicated in iprt/string.h & iprt/errcore.h */
 #define DECLARED_FNRTSTROUTPUT
 /**
  * Output callback.

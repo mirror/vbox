@@ -245,10 +245,9 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINIT
         if (pErrInfo && pErrInfo->cbMsg > 32)
         {
             /* Prefix. */
-            size_t      cchPrefix;
-            const char *pszDefine = RTErrGetDefine(rc);
-            if (strncmp(pszDefine, RT_STR_TUPLE("Unknown")))
-                cchPrefix = RTStrPrintf(pErrInfo->pszMsg, pErrInfo->cbMsg / 2, "Integrity error (%#x/%s): ", rcNt, pszDefine);
+            size_t cchPrefix;
+            if (RTErrIsKnown(rc))
+                cchPrefix = RTStrPrintf(pErrInfo->pszMsg, pErrInfo->cbMsg / 2, "Integrity error (%#x/%Rrc): ", rcNt, rc);
             else
                 cchPrefix = RTStrPrintf(pErrInfo->pszMsg, pErrInfo->cbMsg / 2, "Integrity error (%#x/%d): ", rcNt, rc);
 

@@ -38,6 +38,19 @@
 #include <stdlib.h>
 
 
+#define ERRMSG_WITH_STRTAB
+#ifdef ERRMSG_WITH_STRTAB
+/*
+ * Include the string table code.
+ */
+# define BLDPROG_STRTAB_MAX_STRLEN           512
+# define BLDPROG_STRTAB_WITH_COMPRESSION
+# define BLDPROG_STRTAB_PURE_ASCII
+# define BLDPROG_STRTAB_WITH_CAMEL_WORDS
+# include <iprt/bldprog-strtab-template.cpp.h>
+#endif
+
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -56,6 +69,7 @@ typedef long VBOXSTATUSTYPE; /* used by errmsgvboxcomdata.h */
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+static const char *g_pszProgName = "errmsgwin-sorter";
 static RTWINERRMSG  g_aStatusMsgs[] =
 {
 #if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
@@ -66,6 +80,17 @@ static RTWINERRMSG  g_aStatusMsgs[] =
 #endif
     { "Success.", "ERROR_SUCCESS", 0 },
 };
+
+
+static RTEXITCODE error(const char *pszFormat,  ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    fprintf(stderr, "%s: error: ", g_pszProgName);
+    vfprintf(stderr, pszFormat, va);
+    va_end(va);
+    return RTEXITCODE_FAILURE;
+}
 
 
 /** qsort callback. */
@@ -155,6 +180,17 @@ int main(int argc, char **argv)
         pOut = fopen(argv[1], "wt");
     if (pOut)
     {
+#ifdef ERRMSG_WITH_STRTAB
+        /*
+         * String table fun.
+         */
+        static BLDPROGSTRING s_aStrings[RT_ELEMENTS(g_aStatusMsgs) * 2];
+        size_t               iString = 0;
+        BLDPROGSTRTAB        StrTab;
+        if (!BldProgStrTab_Init(&StrTab, RT_ELEMENTS(s_aStrings)))
+            return error("Out of memory!\n");
+#endif
+
         /*
          * Print the table.
          */
@@ -183,6 +219,19 @@ int main(int argc, char **argv)
             }
             iPrev = pMsg->iCode;
 
+#ifdef ERRMSG_WITH_STRTAB
+# if 1
+            s_aStrings[iString].pszString = strdup(pMsg->pszDefine);
+            BldProgStrTab_AddString(&StrTab, &s_aStrings[iString]);
+            iString++;
+# endif
+# if 0
+            s_aStrings[iString].pszString = strdup(pMsg->pszMsgFull);
+            BldProgStrTab_AddString(&StrTab, &s_aStrings[iString]);
+            iString++;
+# endif
+#endif
+
             /* Produce the output: */
             fprintf(pOut, "/*%#010lx:*/ ENTRY(\"%s\", \"%s\", %ld),\n", (unsigned long)pMsg->iCode,
                     EscapeString(pMsg->pszMsgFull, s_szMsgTmp, sizeof(s_szMsgTmp)), pMsg->pszDefine, pMsg->iCode);
@@ -196,6 +245,14 @@ int main(int argc, char **argv)
             fprintf(stderr, "%s: Failed to flush/close '%s' after writing it!\n", argv[0], argv[1]);
             rcExit = RTEXITCODE_FAILURE;
         }
+
+#ifdef ERRMSG_WITH_STRTAB
+        /*
+         * More string table fun.
+         */
+        if (!BldProgStrTab_CompileIt(&StrTab, true))
+            return error("BldProgStrTab_CompileIt failed!\n");
+#endif
     }
     else
         fprintf(stderr, "%s: Failed to open '%s' for writing!\n", argv[0], argv[1]);
