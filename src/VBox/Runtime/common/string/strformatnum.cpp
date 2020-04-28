@@ -79,7 +79,7 @@ RTDECL(ssize_t) RTStrFormatU16(char *pszBuf, size_t cbBuf, uint16_t u16Value, un
     {
         char szTmp[64];
         cchRet = RTStrFormatNumber(szTmp, u16Value, uiBase, cchWidth, cchPrecision, fFlags);
-        if ((size_t)cchRet <= cbBuf)
+        if ((size_t)cchRet < cbBuf)
             memcpy(pszBuf, szTmp, cchRet + 1);
         else
         {
@@ -108,7 +108,7 @@ RTDECL(ssize_t) RTStrFormatU32(char *pszBuf, size_t cbBuf, uint32_t u32Value, un
     {
         char szTmp[64];
         cchRet = RTStrFormatNumber(szTmp, u32Value, uiBase, cchWidth, cchPrecision, fFlags);
-        if ((size_t)cchRet <= cbBuf)
+        if ((size_t)cchRet < cbBuf)
             memcpy(pszBuf, szTmp, cchRet + 1);
         else
         {
@@ -137,7 +137,7 @@ RTDECL(ssize_t) RTStrFormatU64(char *pszBuf, size_t cbBuf, uint64_t u64Value, un
     {
         char szTmp[64];
         cchRet = RTStrFormatNumber(szTmp, u64Value, uiBase, cchWidth, cchPrecision, fFlags);
-        if ((size_t)cchRet <= cbBuf)
+        if ((size_t)cchRet < cbBuf)
             memcpy(pszBuf, szTmp, cchRet + 1);
         else
         {
@@ -323,7 +323,7 @@ RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80V
      * Copy out the result.
      */
     ssize_t cchRet = pszTmp - &szTmp[0];
-    if ((size_t)cchRet <= cbBuf)
+    if ((size_t)cchRet < cbBuf)
         memcpy(pszBuf, szTmp, cchRet + 1);
     else
     {
