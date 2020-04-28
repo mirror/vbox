@@ -136,7 +136,8 @@ void UIVirtualMachineItemCloud::recachePixmap()
 
 bool UIVirtualMachineItemCloud::isItemEditable() const
 {
-    return accessible();
+    return    accessible()
+           && itemType() == UIVirtualMachineItemType_CloudReal;
 }
 
 bool UIVirtualMachineItemCloud::isItemSaved() const
@@ -221,7 +222,6 @@ void UIVirtualMachineItemCloud::retranslateUi()
                                        "<nobr>%2</nobr>")
                                        .arg(m_strName)
                                        .arg(gpConverter->toString(m_enmMachineState));
-
         }
     }
     /* Otherwise: */
