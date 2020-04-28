@@ -45,6 +45,8 @@
  */
 #include <stdio.h>
 #include <dlfcn.h>
+/** For sleep(..) */
+#include <unistd.h>
 #include "VBoxClient.h"
 
 #include <VBox/VBoxGuestLib.h>
@@ -203,7 +205,7 @@ static int determineOutputCount();
   * from the xserver source code. Computes several parameters of a display mode
   * out of horizontal and vertical resolutions. Replicated here to avoid further
   * dependencies. */
-DisplayModeR f86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
+DisplayModeR f86CVTMode(int HDisplay, int VDisplay, float VRefresh /* Herz */, Bool Reduced,
             Bool Interlaced)
 {
     DisplayModeR Mode;
@@ -922,7 +924,7 @@ static bool resizeFrameBuffer(struct RANDROUTPUT *paOutputs)
     unsigned int iXRes = 0;
     unsigned int iYRes = 0;
     /* Don't care about the output positions for now. */
-    for (int i = 0; i < VMW_MAX_HEADS; ++i)
+    for (int i = 0; i < x11Context.hOutputCount; ++i)
     {
         if (!paOutputs[i].fEnabled)
             continue;
@@ -1172,17 +1174,15 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
             continue;
         configureOutput(i, paOutputs);
     }
-
-    XUngrabServer(x11Context.pDisplay);
-    XFlush(x11Context.pDisplay);
-
+    XSync(x11Context.pDisplay, False);
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     XRRFreeScreenResources(x11Context.pScreenResources);
 #else
     if (x11Context.pXRRFreeScreenResources)
         x11Context.pXRRFreeScreenResources(x11Context.pScreenResources);
 #endif
-
+    XUngrabServer(x11Context.pDisplay);
+    XFlush(x11Context.pDisplay);
 }
 
 static const char *getName()
@@ -1203,7 +1203,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
     bool fAck = false;
-
+    bool fFirstRun = true;
     if (!init())
         return VINF_SUCCESS;
     static struct VMMDevDisplayDef aMonitors[VMW_MAX_HEADS];
@@ -1265,6 +1265,15 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                     iRunningX += aOutputs[j].width;
             }
             setXrandrTopology(aOutputs);
+            /* Wait for some seconds and set toplogy again after the boot. In some desktop environments (cinnamon) where
+               DE get into our resizing our first resize is reverted by the DE. Sleeping for some secs. helps. Setting
+               topology a 2nd time resolves the black screen I get after resizing.*/
+            if (fFirstRun)
+            {
+                sleep(4);
+                setXrandrTopology(aOutputs);
+                fFirstRun = false;
+            }
         }
         do
         {
