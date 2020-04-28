@@ -51,6 +51,13 @@ namespace UICloudNetworkingStuff
                                                         const QString &strProfileName,
                                                         const QUuid &uMachineId);
 
+    /** Acquires cloud machines of certain @a comCloudClient, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
+                                                                  QWidget *pParent = 0);
+    /** Acquires cloud machines of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
+    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
+                                                                  QString &strErrorMessage);
+
     /** Acquires @a comCloudMachine ID as a @a uResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineId(const CCloudMachine &comCloudMachine,
                                              QUuid &uResult,
@@ -76,6 +83,14 @@ namespace UICloudNetworkingStuff
                                                 KMachineState &enmResult,
                                                 QWidget *pParent = 0);
 
+    /** Refreshes @a comCloudMachine information, using @a pParent to show messages according to.
+      * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
+    SHARED_LIBRARY_STUFF bool refreshCloudMachineInfo(CCloudMachine comCloudMachine,
+                                                      QWidget *pParent = 0);
+    /** Refreshes @a comCloudMachine information, using @a pParent to show messages according to.
+      * @note  Be aware, this is a blocking function, it will hang for a time of progress being executed. */
+    SHARED_LIBRARY_STUFF bool refreshCloudMachineInfo(CCloudMachine comCloudMachine,
+                                                      QString &strErrorMessage);
     /** Acquires @a comCloudMachine settings form as a @a comResult, using @a pParent to show messages according to.
       * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
     SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine comCloudMachine,
@@ -101,15 +116,6 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF QMap<QString, QString> listInstances(const CCloudClient &comCloudClient,
                                                               QString &strErrorMessage,
                                                               QWidget *pParent = 0);
-    /** Acquires cloud machine vector.
-      * @param  comCloudClient   Brings cloud client object.
-      * @param  strErrorMessage  Brings error message container.
-      * @param  pWidget          Brings parent widget to show messages according to,
-      *                          if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
-                                                                  QString &strErrorMessage,
-                                                                  QWidget *pParent = 0);
-
     /** Acquires instance info as a map.
       * @param  comCloudClient   Brings cloud client object.
       * @param  strId            Brings cloud instance id.
@@ -131,15 +137,6 @@ namespace UICloudNetworkingStuff
                                                  const QString &strId,
                                                  QString &strErrorMessage,
                                                  QWidget *pParent = 0);
-    /** Refreshes cloud machine information.
-      * @param  comCloudMachine  Brings cloud machine object.
-      * @param  strErrorMessage  Brings error message container.
-      * @param  pWidget          Brings parent widget to show messages according to,
-      *                          if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF void refreshCloudMachineInfo(CCloudMachine comCloudMachine,
-                                                      QString &strErrorMessage,
-                                                      QWidget *pParent = 0);
-
     /** Acquires image info as a map.
       * @param  comCloudClient   Brings cloud client object.
       * @param  strId            Brings cloud image id.

@@ -120,18 +120,61 @@ CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProvide
     return CCloudMachine();
 }
 
+QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
+                                                                 QWidget *pParent /* = 0 */)
+{
+    /* Execute ReadCloudMachineList async method: */
+    CProgress comProgress = comCloudClient.ReadCloudMachineList();
+    if (!comCloudClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
+    else
+    {
+        /* Show "Read cloud machines" progress: */
+        msgCenter().showModalProgressDialog(comProgress,
+                                            QString(),
+                                            ":/progress_reading_appliance_90px.png", pParent, 0);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
+        else
+            return comCloudClient.GetCloudMachineList();
+    }
+    /* Return empty list by default: */
+    return QVector<CCloudMachine>();
+}
+
+QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
+                                                                 QString &strErrorMessage)
+{
+    /* Execute ReadCloudMachineList async method: */
+    CProgress comProgress = comCloudClient.ReadCloudMachineList();
+    if (!comCloudClient.isOk())
+        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
+    else
+    {
+        /* Show "Read cloud machines" progress: */
+        comProgress.WaitForCompletion(-1);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        else
+            return comCloudClient.GetCloudMachineList();
+    }
+    /* Return empty list by default: */
+    return QVector<CCloudMachine>();
+}
+
 bool UICloudNetworkingStuff::cloudMachineId(const CCloudMachine &comCloudMachine,
                                             QUuid &uResult,
                                             QWidget *pParent /* = 0 */)
 {
     const QUuid uId = comCloudMachine.GetId();
     if (!comCloudMachine.isOk())
-    {
         msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
-        return false;
+    else
+    {
+        uResult = uId;
+        return true;
     }
-    uResult = uId;
-    return true;
+    return false;
 }
 
 bool UICloudNetworkingStuff::cloudMachineAccessible(const CCloudMachine &comCloudMachine,
@@ -140,12 +183,13 @@ bool UICloudNetworkingStuff::cloudMachineAccessible(const CCloudMachine &comClou
 {
     const bool fAccessible = comCloudMachine.GetAccessible();
     if (!comCloudMachine.isOk())
-    {
         msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
-        return false;
+    else
+    {
+        fResult = fAccessible;
+        return true;
     }
-    fResult = fAccessible;
-    return true;
+    return false;
 }
 
 bool UICloudNetworkingStuff::cloudMachineAccessError(const CCloudMachine &comCloudMachine,
@@ -154,12 +198,13 @@ bool UICloudNetworkingStuff::cloudMachineAccessError(const CCloudMachine &comClo
 {
     const CVirtualBoxErrorInfo comAccessError = comCloudMachine.GetAccessError();
     if (!comCloudMachine.isOk())
-    {
         msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
-        return false;
+    else
+    {
+        comResult = comAccessError;
+        return true;
     }
-    comResult = comAccessError;
-    return true;
+    return false;
 }
 
 bool UICloudNetworkingStuff::cloudMachineName(const CCloudMachine &comCloudMachine,
@@ -168,12 +213,13 @@ bool UICloudNetworkingStuff::cloudMachineName(const CCloudMachine &comCloudMachi
 {
     const QString strName = comCloudMachine.GetName();
     if (!comCloudMachine.isOk())
-    {
         msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
-        return false;
+    else
+    {
+        strResult = strName;
+        return true;
     }
-    strResult = strName;
-    return true;
+    return false;
 }
 
 bool UICloudNetworkingStuff::cloudMachineOSTypeId(const CCloudMachine &comCloudMachine,
@@ -182,12 +228,13 @@ bool UICloudNetworkingStuff::cloudMachineOSTypeId(const CCloudMachine &comCloudM
 {
     const QString strOSTypeId = comCloudMachine.GetOSTypeId();
     if (!comCloudMachine.isOk())
-    {
         msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
-        return false;
+    else
+    {
+        strResult = strOSTypeId;
+        return true;
     }
-    strResult = strOSTypeId;
-    return true;
+    return false;
 }
 
 bool UICloudNetworkingStuff::cloudMachineState(const CCloudMachine &comCloudMachine,
@@ -196,11 +243,65 @@ bool UICloudNetworkingStuff::cloudMachineState(const CCloudMachine &comCloudMach
 {
     const KMachineState enmState = comCloudMachine.GetState();
     if (!comCloudMachine.isOk())
+        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+    else
+    {
+        enmResult = enmState;
+        return true;
+    }
+    return false;
+}
+
+bool UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine comCloudMachine,
+                                                     QWidget *pParent /* = 0 */)
+{
+    /* Acquire machine name first: */
+    QString strMachineName;
+    if (!cloudMachineName(comCloudMachine, strMachineName))
+        return false;
+
+    /* Now execute Refresh async method: */
+    CProgress comProgress = comCloudMachine.Refresh();
+    if (!comCloudMachine.isOk())
     {
         msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
         return false;
     }
-    enmResult = enmState;
+
+    /* Show "Refresh cloud machine information" progress: */
+    msgCenter().showModalProgressDialog(comProgress,
+                                        strMachineName,
+                                        ":/progress_reading_appliance_90px.png", pParent, 0);
+    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+    {
+        msgCenter().cannotAcquireCloudMachineParameter(comProgress, pParent);
+        return false;
+    }
+
+    /* Return result: */
+    return true;
+}
+
+bool UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine comCloudMachine,
+                                                     QString &strErrorMessage)
+{
+    /* Execute Refresh async method: */
+    CProgress comProgress = comCloudMachine.Refresh();
+    if (!comCloudMachine.isOk())
+    {
+        strErrorMessage = UIErrorString::formatErrorInfo(comCloudMachine);
+        return false;
+    }
+
+    /* Show "Refresh cloud machine information" progress: */
+    comProgress.WaitForCompletion(-1);
+    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+    {
+        strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        return false;
+    }
+
+    /* Return result: */
     return true;
 }
 
@@ -324,7 +425,7 @@ QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient 
         /* Show "Acquire cloud instances" progress: */
         if (pParent)
             msgCenter().showModalProgressDialog(comProgress,
-                                                UICommon::tr("Acquire cloud instances ..."),
+                                                QString(),
                                                 ":/progress_reading_appliance_90px.png", pParent, 0);
         else
             comProgress.WaitForCompletion(-1);
@@ -349,46 +450,6 @@ QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient 
 
     /* Return empty map by default: */
     return QMap<QString, QString>();
-}
-
-QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
-                                                                 QString &strErrorMessage,
-                                                                 QWidget *pParent /* = 0 */)
-{
-    /* Execute ReadCloudMachineList async method: */
-    CProgress comProgress = comCloudClient.ReadCloudMachineList();
-    if (!comCloudClient.isOk())
-    {
-        if (pParent)
-            msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-        else
-            strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    }
-    else
-    {
-        /* Show "Read cloud machines" progress: */
-        if (pParent)
-            msgCenter().showModalProgressDialog(comProgress,
-                                                UICommon::tr("Read cloud machines ..."),
-                                                ":/progress_reading_appliance_90px.png", pParent, 0);
-        else
-            comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-        {
-            if (pParent)
-                msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-            else
-                strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        }
-        else
-        {
-            /* Return acquired cloud machines: */
-            return comCloudClient.GetCloudMachineList();
-        }
-    }
-
-    /* Return empty list by default: */
-    return QVector<CCloudMachine>();
 }
 
 QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstanceInfo(const CCloudClient &comCloudClient,
@@ -443,7 +504,7 @@ QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstance
                 /* Show "Acquire instance info" progress: */
                 if (pParent)
                     msgCenter().showModalProgressDialog(comProgress,
-                                                        UICommon::tr("Acquire cloud instance info ..."),
+                                                        QString(),
                                                         ":/progress_reading_appliance_90px.png", pParent, 0);
                 else
                     comProgress.WaitForCompletion(-1);
@@ -484,38 +545,6 @@ QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType en
     return getInstanceInfo(comCloudClient, strId, strErrorMessage, pParent).value(enmType, QString());
 }
 
-void UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine comCloudMachine,
-                                                     QString &strErrorMessage,
-                                                     QWidget *pParent /* = 0 */)
-{
-    /* Execute Refresh async method: */
-    CProgress comProgress = comCloudMachine.Refresh();
-    if (!comCloudMachine.isOk())
-    {
-        if (pParent)
-            msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
-        else
-            strErrorMessage = UIErrorString::formatErrorInfo(comCloudMachine);
-    }
-    else
-    {
-        /* Show "Refresh cloud machine information" progress: */
-        if (pParent)
-            msgCenter().showModalProgressDialog(comProgress,
-                                                UICommon::tr("Refresh cloud machine information ..."),
-                                                ":/progress_reading_appliance_90px.png", pParent, 0);
-        else
-            comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-        {
-            if (pParent)
-                msgCenter().cannotAcquireCloudMachineParameter(comProgress, pParent);
-            else
-                strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        }
-    }
-}
-
 QMap<QString, QString> UICloudNetworkingStuff::getImageInfo(const CCloudClient &comCloudClient,
                                                             const QString &strId,
                                                             QString &strErrorMessage,
@@ -539,7 +568,7 @@ QMap<QString, QString> UICloudNetworkingStuff::getImageInfo(const CCloudClient &
         /* Show "Acquire image info" progress: */
         if (pParent)
             msgCenter().showModalProgressDialog(comProgress,
-                                                UICommon::tr("Acquire cloud image info ..."),
+                                                QString(),
                                                 ":/progress_reading_appliance_90px.png", pParent, 0);
         else
             comProgress.WaitForCompletion(-1);
