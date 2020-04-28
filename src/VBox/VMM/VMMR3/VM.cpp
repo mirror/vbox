@@ -77,12 +77,13 @@
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
-#include <iprt/alloc.h>
+#include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/env.h>
+#include <iprt/mem.h>
+#include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
-#include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
 
