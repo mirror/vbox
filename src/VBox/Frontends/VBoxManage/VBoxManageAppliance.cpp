@@ -2227,8 +2227,6 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                                             if (fResign)
                                                 continue;
                                         }
-                                   
-                                        /** todo: some progress object should be added here to display the action progress */
 
                                         /* Read the input stream and add the content into the output stream */
                                         rc = RTVfsFsStrmAdd(hVfsFssOVADest, pszName, hVfsObj, 0 /*fFlags*/);
