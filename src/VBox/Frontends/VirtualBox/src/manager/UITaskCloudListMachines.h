@@ -29,11 +29,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CCloudClient.h"
 #include "CCloudMachine.h"
-
-/* Forward declaratiuons: */
-class UIChooserNode;
 
 /** UITask extension used to list cloud machines. */
 class UITaskCloudListMachines : public UITask
@@ -42,15 +38,15 @@ class UITaskCloudListMachines : public UITask
 
 public:
 
-    /** Constructs update task taking @a comCloudClient and @a pParentNode as data.
-      * @param  comCloudClient  Brings the cloud client object.
-      * @param  m_pParentNode   Brings the parent node reference. */
-    UITaskCloudListMachines(const CCloudClient &comCloudClient, UIChooserNode *pParentNode);
+    /** Constructs task taking @a strProviderShortName and @a strProfileName as data.
+      * @param  strProviderShortName  Brings the provider short name.
+      * @param  strProfileName        Brings the profile name. */
+    UITaskCloudListMachines(const QString &strProviderShortName, const QString &strProfileName);
 
-    /** Returns cloud client object. */
-    CCloudClient cloudClient() const { return m_comCloudClient; }
-    /** Returns parent node reference. */
-    UIChooserNode *parentNode() const { return m_pParentNode; }
+    /** Returns provider short name. */
+    QString providerShortName() const { return m_strProviderShortName; }
+    /** Returns profile name. */
+    QString profileName() const { return m_strProfileName; }
 
     /** Returns error info. */
     QString errorInfo() const;
@@ -68,10 +64,10 @@ private:
     /** Holds the mutex to access result. */
     mutable QMutex  m_mutex;
 
-    /** Holds the cloud client object. */
-    CCloudClient   m_comCloudClient;
-    /** Holds the parent node reference. */
-    UIChooserNode *m_pParentNode;
+    /** Holds the provider short name. */
+    const QString  m_strProviderShortName;
+    /** Holds the profile name. */
+    const QString  m_strProfileName;
 
     /** Holds the error info. */
     QString  m_strErrorInfo;
