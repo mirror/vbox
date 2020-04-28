@@ -44,7 +44,7 @@ static void tstIprtStatuses(RTTEST hTest)
     char         szMsgFull[sizeof(szMsgShort)];
     char         szMsgAll[sizeof(szMsgShort) + 80];
     size_t const cbBuf  = sizeof(szMsgShort);
-    char        *pszBuf = (char *)RTTestGuardedAllocTail(hTest, cbBuf);
+    char * const pszBuf = (char *)RTTestGuardedAllocTail(hTest, cbBuf);
     RTTESTI_CHECK_RETV(pszBuf);
 
     static const struct
@@ -124,7 +124,10 @@ static void tstIprtStatuses(RTTEST hTest)
             /* Same thru the string formatter. */
 #define CHECK_TEST_RESULT2(a_szFunction, a_pszExpect, a_cchExpect) do { \
                     ssize_t const cchLocalExpect = cbBuf2 > (a_cchExpect) ? (ssize_t)(a_cchExpect) : -(ssize_t)(a_cchExpect) - 1; \
-                    if (cchRet != cchLocalExpect) \
+                    if (cchRet != cchLocalExpect && cchRet > 0) \
+                        RTTestFailed(hTest, "%s(%s, , %#x) -> %zd, expected %zd ('%s' vs '%s')", a_szFunction, pszDefine, cbBuf2, \
+                                     cchRet, cchLocalExpect, pszBuf2, (a_pszExpect)); \
+                    else if (cchRet != cchLocalExpect && cchRet <= 0) \
                         RTTestFailed(hTest, "%s(%s, , %#x) -> %zd, expected %zd", a_szFunction, pszDefine, cbBuf2, \
                                      cchRet, cchLocalExpect); \
                     else if (cbBuf2 > 0 && memcmp(pszBuf2, (a_pszExpect), RT_MIN(cbBuf2 - 1, (a_cchExpect) + 1)) != 0) \
@@ -135,21 +138,21 @@ static void tstIprtStatuses(RTTEST hTest)
                 } while (0)
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rrc", rc);
-            CHECK_TEST_RESULT2("RTErrFormateDefine/%Rrc", pszDefine, cchDefine);
+            CHECK_TEST_RESULT2("RTErrFormatDefine/%Rrc", pszDefine, cchDefine);
 
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rrs", rc);
-            CHECK_TEST_RESULT2("RTErrFormateDefine/%Rrs", szMsgShort, cchMsgShort);
+            CHECK_TEST_RESULT2("RTErrFormatMsgShort/%Rrs", szMsgShort, cchMsgShort);
 
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rrf", rc);
-            CHECK_TEST_RESULT2("RTErrFormateDefine/%Rrf", szMsgFull, cchMsgFull);
+            CHECK_TEST_RESULT2("RTErrFormatMsgFull/%Rrf", szMsgFull, cchMsgFull);
 
             if (cchMsgAll == ~(size_t)0)
                 cchMsgAll = RTStrPrintf(szMsgAll, sizeof(szMsgAll), "%s (%d) - %s", pszDefine, rc, szMsgFull);
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rra", rc);
-            CHECK_TEST_RESULT2("RTErrFormateDefine/%Rra", szMsgAll, cchMsgAll);
+            CHECK_TEST_RESULT2("RTErrFormatMsgAll/%Rra", szMsgAll, cchMsgAll);
         }
         RTTestRestoreAssertions(hTest);
     }
@@ -197,24 +200,165 @@ static void tstIprtStatuses(RTTEST hTest)
             /* Same thru the string formatter. */
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rrc", rc);
-            CHECK_TEST_RESULT2("RTErrFormateDefine/%Rrc", pszDefine, cchDefine);
+            CHECK_TEST_RESULT2("RTErrFormatDefine/%Rrc", pszDefine, cchDefine);
 
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rrs", rc);
-            CHECK_TEST_RESULT2("RTErrFormateDefine/%Rrs", pszMsg, cchMsg);
+            CHECK_TEST_RESULT2("RTErrFormatMsgShort/%Rrs", pszMsg, cchMsg);
 
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rrf", rc);
-            CHECK_TEST_RESULT2("RTErrFormateDefine/%Rrf", pszMsg, cchMsg);
+            CHECK_TEST_RESULT2("RTErrFormatMsgFull/%Rrf", pszMsg, cchMsg);
 
             memset(pszBuf, '?', cbBuf);
             cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rra", rc);
-            CHECK_TEST_RESULT2("RTErrFormateDefine/%Rra", pszMsg, cchMsg);
+            CHECK_TEST_RESULT2("RTErrFormatMsgAll/%Rra", pszMsg, cchMsg);
+        }
+        RTTestRestoreAssertions(hTest);
+    }
+
+    RTTestGuardedFree(hTest, pszBuf);
+}
+
+
+#ifdef RT_OS_WINDOWS
+static void tstWinComStatuses(RTTEST hTest)
+{
+    RTTestSub(hTest, "COM/Win status codes");
+
+    char         szMsg[640];
+    char         szMsgAll[sizeof(szMsg) + 80];
+    size_t const cbBuf  = sizeof(szMsg);
+    char * const pszBuf = (char *)RTTestGuardedAllocTail(hTest, cbBuf);
+    RTTESTI_CHECK_RETV(pszBuf);
+
+    static const struct
+    {
+        int32_t rc;
+        const char *pszDefine;
+    } s_aTests[] =
+    {
+        { (int32_t)0x00000000, "ERROR_SUCCESS" },
+        { (int32_t)0x0000000e, "ERROR_OUTOFMEMORY" },
+        { (int32_t)0x8007000e, "E_OUTOFMEMORY" },
+        { (int32_t)0x00000057, "ERROR_INVALID_PARAMETER" },
+        { (int32_t)0x80070057, "E_INVALIDARG" },
+        { (int32_t)0x80004005, "E_FAIL" },
+        { (int32_t)0x00000783, "RPC_S_NOT_ALL_OBJS_EXPORTED" },
+
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        int32_t const      rc        = s_aTests[i].rc;
+        const char * const pszDefine = s_aTests[i].pszDefine;
+        size_t const       cchDefine = strlen(pszDefine);
+
+        if (RTErrWinIsKnown(rc) != true)
+            RTTestFailed(hTest, "RTErrIsKnown(%s) did not return true", pszDefine);
+
+        RTTestDisableAssertions(hTest);
+        size_t cchMsg    = ~(size_t)0;
+        size_t cchMsgAll = ~(size_t)0;
+        size_t cbBuf2    = cbBuf - 1;
+        while (cbBuf2-- > 0)
+        {
+            /* RTErrQueryDefine: */
+            memset(pszBuf, '?', cbBuf);
+            char *pszBuf2 = &pszBuf[cbBuf - cbBuf2];
+            ssize_t cchRet = RTErrWinQueryDefine(rc, pszBuf2, cbBuf2, false);
+            CHECK_TEST_RESULT("RTErrWinQueryDefine", pszDefine, cchDefine);
+
+            /* Thru the string formatter. */
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwc", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatDefine/%Rwc", pszDefine, cchDefine);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rhrc", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatDefine/%Rhrc", pszDefine, cchDefine);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwf", rc);
+            if (cchMsg == ~(size_t)0)
+            {
+                cchMsg = (size_t)cchRet;
+                memcpy(szMsg, pszBuf2, cchMsg + 1);
+            }
+            CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rwf", szMsg, cchMsg);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rhrf", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rhrf", szMsg, cchMsg);
+
+            if (cchMsgAll == ~(size_t)0)
+                cchMsgAll = RTStrPrintf(szMsgAll, sizeof(szMsgAll), "%s (%#x) - %s", pszDefine, rc, szMsg);
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwa", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsgAll/%Rwa", szMsgAll, cchMsgAll);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rhra", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsgAll/%Rhra", szMsgAll, cchMsgAll);
+        }
+        RTTestRestoreAssertions(hTest);
+    }
+
+    /*
+     * Same but for an unknown status code.
+     */
+    static const int32_t s_arcUnknowns[] = { (int32_t)0xff88ff88, 0x0f88ff88, };
+    for (size_t i = 0; i < RT_ELEMENTS(s_arcUnknowns); i++)
+    {
+        int32_t const rc = s_arcUnknowns[i];
+
+        if (RTErrIsKnown(rc) != false)
+            RTTestFailed(hTest, "RTErrIsKnown(%d) did not return false", rc);
+
+        size_t const       cchDefine = RTStrPrintf(szMsg, sizeof(szMsg), "%#x", rc);
+        const char * const pszDefine = szMsg;
+        size_t const       cchMsg    = RTStrPrintf(szMsgAll, sizeof(szMsgAll), "Unknown Status %#x", rc);
+        const char * const pszMsg    = szMsgAll;
+
+        RTTestDisableAssertions(hTest);
+        size_t cbBuf2      = cbBuf - 1;
+        while (cbBuf2-- > 0)
+        {
+            /* RTErrWinQueryDefine: */
+            memset(pszBuf, '?', cbBuf);
+            char *pszBuf2 = &pszBuf[cbBuf - cbBuf2];
+            ssize_t cchRet = RTErrWinQueryDefine(rc, pszBuf2, cbBuf2, false);
+            CHECK_TEST_RESULT("RTErrWinQueryDefine", pszDefine, cchDefine);
+            RTTEST_CHECK(hTest, RTErrWinQueryDefine(rc, pszBuf2, cbBuf2, true) == VERR_NOT_FOUND);
+
+            /* Thru the string formatter. */
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwc", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatDefine/%Rwc", pszDefine, cchDefine);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rhrc", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatDefine/%Rhrc", pszDefine, cchDefine);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwf", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rwf", pszMsg, cchMsg);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rhrf", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsg/%Rhrf", pszMsg, cchMsg);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rwa", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsgAll/%Rwa", pszMsg, cchMsg);
+
+            memset(pszBuf, '?', cbBuf);
+            cchRet = RTStrPrintf2(pszBuf2, cbBuf2, "%Rhra", rc);
+            CHECK_TEST_RESULT2("RTErrWinFormatMsgAll/%Rhra", pszMsg, cchMsg);
         }
         RTTestRestoreAssertions(hTest);
     }
 }
-
+#endif
 
 int main(int argc, char **argv)
 {
@@ -226,7 +370,10 @@ int main(int argc, char **argv)
     RTTestBanner(hTest);
 
     tstIprtStatuses(hTest);
-    //tstComStatuses(hTest);
+#ifdef RT_OS_WINDOWS
+    tstWinComStatuses(hTest);
+#else
+#endif
 
     /*
      * Summary

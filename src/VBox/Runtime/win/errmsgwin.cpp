@@ -262,7 +262,7 @@ RTDECL(size_t)  RTErrWinFormatMsgAll(long rc, PFNRTSTROUTPUT pfnOutput, void *pv
 #ifndef IPRT_ERRMSG_DEFINES_ONLY
     if (idx != ~(size_t)0)
     {
-        cchRet += pfnOutput(pvArgOutput, RT_STR_TUPLE(" - "));
+        cchRet += pfnOutput(pvArgOutput, RT_STR_TUPLE(") - "));
         cchRet += RTBldProgStrTabQueryOutput(&g_WinMsgStrTab,
                                              g_aWinMsgs[idx].offMsgFull, g_aWinMsgs[idx].cchMsgFull,
                                              pfnOutput, pvArgOutput);
