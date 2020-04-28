@@ -1405,8 +1405,25 @@ void UIChooserModel::loadLastSelectedItem()
 
 void UIChooserModel::saveLastSelectedItem()
 {
+    /* Acquire first selected item: */
+    UIChooserItem *pFirstSelectedItem = firstSelectedItem();
+    /* If this item is of machine type: */
+    if (   pFirstSelectedItem
+        && pFirstSelectedItem->type() == UIChooserNodeType_Machine)
+    {
+        /* Cast to machine item: */
+        UIChooserItemMachine *pMachineItem = pFirstSelectedItem->toMachineItem();
+        AssertPtrReturnVoid(pMachineItem);
+        /* If this machine item is of cloud type: */
+        if (   pMachineItem->cacheType() == UIVirtualMachineItemType_CloudFake
+            || pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
+        {
+            /* Choose the parent (profile) group item as the last one selected: */
+            pFirstSelectedItem = pMachineItem->parentItem();
+        }
+    }
     /* Save last selected-item: */
-    gEDataManager->setSelectorWindowLastItemChosen(firstSelectedItem() ? firstSelectedItem()->definition() : QString());
+    gEDataManager->setSelectorWindowLastItemChosen(pFirstSelectedItem ? pFirstSelectedItem->definition() : QString());
 }
 
 void UIChooserModel::cleanupConnections()
