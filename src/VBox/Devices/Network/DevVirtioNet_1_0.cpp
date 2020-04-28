@@ -72,7 +72,7 @@
 
 #define VIRTQNAME(idxQueue)       (pThis->aszVirtqNames[idxQueue])
 #define CBVIRTQNAME(idxQueue)     RTStrNLen(VIRTQNAME(idxQueue), sizeof(VIRTQNAME(idxQueue)))
-#define FEATURE_ENABLED(feature)  (!!(pThis->fNegotiatedFeatures & VIRTIONET_F_##feature))
+#define FEATURE_ENABLED(feature)  RT_BOOL(pThis->fNegotiatedFeatures & VIRTIONET_F_##feature)
 #define FEATURE_DISABLED(feature) (!FEATURE_ENABLED(feature))
 #define FEATURE_OFFERED(feature)  VIRTIONET_HOST_FEATURES_OFFERED & VIRTIONET_F_##feature
 
@@ -586,6 +586,7 @@ DECLINLINE(void) virtioNetR3PacketDump(PVIRTIONET pThis, const uint8_t *pbPacket
 void virtioNetDumpGcPhysRxBuf(PPDMDEVINS pDevIns, PVIRTIONET_PKT_HDR_T pRxPktHdr,
                      uint16_t cDescs, uint8_t *pvBuf, uint16_t cb, RTGCPHYS gcPhysRxBuf, uint8_t cbRxBuf)
 {
+#ifdef LOG_ENABLED
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     pRxPktHdr->uNumBuffers = cDescs;
     if (pRxPktHdr)
@@ -609,7 +610,11 @@ void virtioNetDumpGcPhysRxBuf(PPDMDEVINS pDevIns, PVIRTIONET_PKT_HDR_T pRxPktHdr
     LogFunc((". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .\n"));
     virtioCoreGcPhysHexDump(pDevIns, gcPhysRxBuf, cbRxBuf, 0, "Phys Mem Dump of Rx pkt");
     LogFunc(("-------------------------------------------------------------------\n"));
+#else
+    RT_NOREF7(pDevIns, pRxPktHdr, cDescs, pvBuf, cb, gcPhysRxBuf, cbRxBuf);
+#endif
 }
+
 
 DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis)
 {
@@ -663,7 +668,7 @@ DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis)
     RTMemFree(pszBuf);
 
 #else  /* !LOG_ENABLED */
-    RT_NOREF3(pThis, fFeatures, pcszText);
+    RT_NOREF(pThis);
 #endif /* !LOG_ENABLED */
 }
 
@@ -795,6 +800,7 @@ static DECLCALLBACK(int) virtioNetR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOff
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
 
     LogFunc(("%s uOffset: %d, cb: %d\n",  INSTANCE(pThis), uOffset, cb));
+    RT_NOREF(pThis);
     return virtioNetR3CfgAccessed(PDMDEVINS_2_DATA(pDevIns, PVIRTIONET), uOffset, pv, cb, false /*fRead*/);
 }
 
@@ -806,6 +812,7 @@ static DECLCALLBACK(int) virtioNetR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOf
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
 
     Log10Func(("%s uOffset: %d, cb: %d: %.*Rhxs\n", INSTANCE(pThis), uOffset, cb, RT_MAX(cb, 8) , pv));
+    RT_NOREF(pThis);
     return virtioNetR3CfgAccessed(PDMDEVINS_2_DATA(pDevIns, PVIRTIONET), uOffset, (void *)pv, cb, true /*fWrite*/);
 }
 
@@ -1070,7 +1077,7 @@ static DECLCALLBACK(void) virtioNetR3PowerOff(PPDMDEVINS pDevIns)
 {
     PVIRTIONET   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     Log7Func(("%s\n", INSTANCE(pThis)));
-
+    RT_NOREF(pThis);
     virtioNetR3SuspendOrPowerOff(pDevIns, kvirtIoVmStateChangedPowerOff);
 }
 
@@ -1081,6 +1088,7 @@ static DECLCALLBACK(void) virtioNetR3Suspend(PPDMDEVINS pDevIns)
 {
     PVIRTIONET   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     Log7Func(("%s \n", INSTANCE(pThis)));
+    RT_NOREF(pThis);
     virtioNetR3SuspendOrPowerOff(pDevIns, kvirtIoVmStateChangedSuspend);
 }
 
@@ -1451,7 +1459,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
                                        uint16_t idxRxQueue)
 {
     uint8_t fAddPktHdr = true;
-    RTGCPHYS gcPhysPktHdrNumBuffers;
+    RTGCPHYS gcPhysPktHdrNumBuffers = 0;
     uint16_t cDescs;
     uint32_t uOffset;
     for (cDescs = uOffset = 0; uOffset < cb; )
@@ -1735,6 +1743,7 @@ static void virtioNetR3PullChain(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO_D
     }
     LogFunc(("%s Pulled %d/%d bytes from desc chain (%d bytes left)\n",
              INSTANCE(pThis), cb - cbLim, cb, pDescChain->cbPhysSend));
+    RT_NOREF(pThis);
 }
 
 static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC,
@@ -1744,6 +1753,7 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
 #define LOG_VIRTIONET_FLAG(fld) LogFunc(("%s Setting %s=%d\n", INSTANCE(pThis), #fld, pThis->fld))
 
     LogFunc(("%s Processing CTRL Rx command\n", INSTANCE(pThis)));
+    RT_NOREF(pThis);
     switch(pCtrlPktHdr->uCmd)
     {
       case VIRTIONET_CTRL_RX_PROMISC:
@@ -1769,29 +1779,29 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
     switch(pCtrlPktHdr->uCmd)
     {
       case VIRTIONET_CTRL_RX_PROMISC:
-        pThis->fPromiscuous = !!fOn;
+        pThis->fPromiscuous = RT_BOOL(fOn);
         fPromiscChanged = true;
         LOG_VIRTIONET_FLAG(fPromiscuous);
         break;
       case VIRTIONET_CTRL_RX_ALLMULTI:
-        pThis->fAllMulticast = !!fOn;
+        pThis->fAllMulticast = RT_BOOL(fOn);
         fPromiscChanged = true;
         LOG_VIRTIONET_FLAG(fAllMulticast);
         break;
       case VIRTIONET_CTRL_RX_ALLUNI:
-        pThis->fAllUnicast = !!fOn;
+        pThis->fAllUnicast = RT_BOOL(fOn);
         LOG_VIRTIONET_FLAG(fAllUnicast);
         break;
       case VIRTIONET_CTRL_RX_NOMULTI:
-        pThis->fNoMulticast = !!fOn;
+        pThis->fNoMulticast = RT_BOOL(fOn);
         LOG_VIRTIONET_FLAG(fNoMulticast);
         break;
       case VIRTIONET_CTRL_RX_NOUNI:
-        pThis->fNoUnicast = !!fOn;
+        pThis->fNoUnicast = RT_BOOL(fOn);
         LOG_VIRTIONET_FLAG(fNoUnicast);
         break;
       case VIRTIONET_CTRL_RX_NOBCAST:
-        pThis->fNoBroadcast = !!fOn;
+        pThis->fNoBroadcast = RT_BOOL(fOn);
         LOG_VIRTIONET_FLAG(fNoBroadcast);
         break;
     }
@@ -2026,7 +2036,7 @@ static int virtioNetR3ReadHeader(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PVIRTIONET
 
         /* Segmentation offloading cannot be done without checksumming, and we do not support ECN */
         AssertMsgReturn(    RT_LIKELY(pPktHdr->uFlags & VIRTIONET_HDR_F_NEEDS_CSUM)
-                         && RT_UNLIKELY(pPktHdr->uGsoType & VIRTIONET_HDR_GSO_ECN),
+                         && !(RT_UNLIKELY(pPktHdr->uGsoType & VIRTIONET_HDR_GSO_ECN)),
                          ("Unsupported ECN request in pkt header\n"), VERR_NOT_SUPPORTED);
 
         switch (pPktHdr->uGsoType)
@@ -2604,8 +2614,8 @@ static int virtioNetR3CreateWorkerThreads(PPDMDEVINS pDevIns, PVIRTIONET pThis, 
         AssertRCReturn(rc, rc);
         idxWorker++;
     }
-    rc = virtioNetR3CreateOneWorkerThread(pDevIns, pThis, pThisCC, idxWorker++, CTRLQIDX);
-    pThis->cWorkers = idxWorker;
+    rc = virtioNetR3CreateOneWorkerThread(pDevIns, pThis, pThisCC, idxWorker, CTRLQIDX);
+    pThis->cWorkers = idxWorker + 1;
     return rc;
 }
 /**
@@ -2627,8 +2637,10 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
         pThis->fResetting    = false;
         pThisCC->fQuiescing  = false;
         pThis->fNegotiatedFeatures = virtioCoreGetAcceptedFeatures(pVirtio);
+#ifdef LOG_ENABLED
         virtioPrintFeatures(pVirtio);
         virtioNetPrintFeatures(pThis);
+#endif
         for (unsigned idxQueue = 0; idxQueue < pThis->cVirtQueues; idxQueue++)
         {
             (void) virtioCoreR3QueueAttach(&pThis->Virtio, idxQueue, VIRTQNAME(idxQueue));
@@ -2855,11 +2867,11 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
      * Do core virtio initialization.
      */
 
-#if VIRTIONET_HOST_FEATURES_OFFERED & VIRTIONET_F_STATUS
+#if FEATURE_OFFERED(STATUS)
     pThis->virtioNetConfig.uStatus = 0;
 #endif
 
-#if VIRTIONET_HOST_FEATURES_OFFERED & VIRTIONET_F_MQ
+#if FEATURE_OFFERED(MQ)
     pThis->virtioNetConfig.uMaxVirtqPairs = VIRTIONET_MAX_QPAIRS;
 #endif
 
@@ -3002,6 +3014,7 @@ static DECLCALLBACK(int) virtioNetRZConstruct(PPDMDEVINS pDevIns)
     PVIRTIONET   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     PVIRTIONETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
 
+LogRelFunc(("\n"));
     return virtioCoreRZInit(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
 }
 
@@ -3017,7 +3030,7 @@ const PDMDEVREG g_DeviceVirtioNet_1_0 =
     /* .uVersion = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "virtio-net-1-dot-0",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE //| PDM_DEVREG_FLAGS_RZ
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE | PDM_DEVREG_FLAGS_RZ
                                     | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION
                                     | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
     /* .fClass = */                 PDM_DEVREG_CLASS_NETWORK,
