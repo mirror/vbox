@@ -31,7 +31,7 @@
 #include "CVirtualSystemDescription.h"
 
 
-CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager()
+CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager(QWidget *pParent /* = 0 */)
 {
     /* Acquire VBox: */
     const CVirtualBox comVBox = uiCommon().virtualBox();
@@ -40,7 +40,7 @@ CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager()
         /* Acquire cloud provider manager: */
         CCloudProviderManager comProviderManager = comVBox.GetCloudProviderManager();
         if (!comVBox.isOk())
-            msgCenter().cannotAcquireCloudProviderManager(comVBox);
+            msgCenter().cannotAcquireCloudProviderManager(comVBox, pParent);
         else
             return comProviderManager;
     }
@@ -48,16 +48,17 @@ CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager()
     return CCloudProviderManager();
 }
 
-CCloudProvider UICloudNetworkingStuff::cloudProviderByShortName(const QString &strProviderShortName)
+CCloudProvider UICloudNetworkingStuff::cloudProviderByShortName(const QString &strProviderShortName,
+                                                                QWidget *pParent /* = 0 */)
 {
     /* Acquire cloud provider manager: */
-    CCloudProviderManager comProviderManager = cloudProviderManager();
+    CCloudProviderManager comProviderManager = cloudProviderManager(pParent);
     if (comProviderManager.isNotNull())
     {
         /* Acquire cloud provider: */
         CCloudProvider comProvider = comProviderManager.GetProviderByShortName(strProviderShortName);
         if (!comProviderManager.isOk())
-            msgCenter().cannotAcquireCloudProviderManagerParameter(comProviderManager);
+            msgCenter().cannotAcquireCloudProviderManagerParameter(comProviderManager, pParent);
         else
             return comProvider;
     }
@@ -66,16 +67,17 @@ CCloudProvider UICloudNetworkingStuff::cloudProviderByShortName(const QString &s
 }
 
 CCloudProfile UICloudNetworkingStuff::cloudProfileByName(const QString &strProviderShortName,
-                                                         const QString &strProfileName)
+                                                         const QString &strProfileName,
+                                                         QWidget *pParent /* = 0 */)
 {
     /* Acquire cloud provider: */
-    CCloudProvider comProvider = cloudProviderByShortName(strProviderShortName);
+    CCloudProvider comProvider = cloudProviderByShortName(strProviderShortName, pParent);
     if (comProvider.isNotNull())
     {
         /* Acquire cloud profile: */
         CCloudProfile comProfile = comProvider.GetProfileByName(strProfileName);
         if (!comProvider.isOk())
-            msgCenter().cannotAcquireCloudProviderParameter(comProvider);
+            msgCenter().cannotAcquireCloudProviderParameter(comProvider, pParent);
         else
             return comProfile;
     }
@@ -84,16 +86,17 @@ CCloudProfile UICloudNetworkingStuff::cloudProfileByName(const QString &strProvi
 }
 
 CCloudClient UICloudNetworkingStuff::cloudClientByName(const QString &strProviderShortName,
-                                                       const QString &strProfileName)
+                                                       const QString &strProfileName,
+                                                       QWidget *pParent /* = 0 */)
 {
     /* Acquire cloud profile: */
-    CCloudProfile comProfile = cloudProfileByName(strProviderShortName, strProfileName);
+    CCloudProfile comProfile = cloudProfileByName(strProviderShortName, strProfileName, pParent);
     if (comProfile.isNotNull())
     {
         /* Create cloud client: */
         CCloudClient comClient = comProfile.CreateCloudClient();
         if (!comProfile.isOk())
-            msgCenter().cannotAcquireCloudProfileParameter(comProfile);
+            msgCenter().cannotAcquireCloudProfileParameter(comProfile, pParent);
         else
             return comClient;
     }
@@ -103,16 +106,17 @@ CCloudClient UICloudNetworkingStuff::cloudClientByName(const QString &strProvide
 
 CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProviderShortName,
                                                        const QString &strProfileName,
-                                                       const QUuid &uMachineId)
+                                                       const QUuid &uMachineId,
+                                                       QWidget *pParent /* = 0 */)
 {
     /* Acquire cloud client: */
-    CCloudClient comClient = cloudClientByName(strProviderShortName, strProfileName);
+    CCloudClient comClient = cloudClientByName(strProviderShortName, strProfileName, pParent);
     if (comClient.isNotNull())
     {
         /* Acquire cloud machine: */
         CCloudMachine comMachine = comClient.GetCloudMachine(uMachineId);
         if (!comClient.isOk())
-            msgCenter().cannotAcquireCloudClientParameter(comClient);
+            msgCenter().cannotAcquireCloudClientParameter(comClient, pParent);
         else
             return comMachine;
     }

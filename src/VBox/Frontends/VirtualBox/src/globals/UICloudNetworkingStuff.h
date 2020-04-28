@@ -36,20 +36,29 @@
 /** Cloud networking stuff namespace. */
 namespace UICloudNetworkingStuff
 {
-    /** Acquires cloud provider manager. */
-    SHARED_LIBRARY_STUFF CCloudProviderManager cloudProviderManager();
-    /** Acquires cloud provider specified by @a strProviderShortName. */
-    SHARED_LIBRARY_STUFF CCloudProvider cloudProviderByShortName(const QString &strProviderShortName);
-    /** Acquires cloud profile specified by @a strProviderShortName and @a strProfileName. */
+    /** Acquires cloud provider manager,
+      * using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF CCloudProviderManager cloudProviderManager(QWidget *pParent = 0);
+    /** Acquires cloud provider specified by @a strProviderShortName,
+      * using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF CCloudProvider cloudProviderByShortName(const QString &strProviderShortName,
+                                                                 QWidget *pParent = 0);
+    /** Acquires cloud profile specified by @a strProviderShortName and @a strProfileName,
+      * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudProfile cloudProfileByName(const QString &strProviderShortName,
-                                                          const QString &strProfileName);
-    /** Acquires cloud client specified by @a strProviderShortName and @a strProfileName. */
+                                                          const QString &strProfileName,
+                                                          QWidget *pParent = 0);
+    /** Acquires cloud client specified by @a strProviderShortName and @a strProfileName,
+      * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudClient cloudClientByName(const QString &strProviderShortName,
-                                                        const QString &strProfileName);
-    /** Acquires cloud machine specified by @a strProviderShortName, @a strProfileName and @a uMachineId. */
+                                                        const QString &strProfileName,
+                                                        QWidget *pParent = 0);
+    /** Acquires cloud machine specified by @a strProviderShortName, @a strProfileName and @a uMachineId,
+      * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudMachine cloudMachineById(const QString &strProviderShortName,
                                                         const QString &strProfileName,
-                                                        const QUuid &uMachineId);
+                                                        const QUuid &uMachineId,
+                                                        QWidget *pParent = 0);
 
     /** Acquires cloud machines of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
