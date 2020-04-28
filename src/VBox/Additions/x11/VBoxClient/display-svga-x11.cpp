@@ -620,10 +620,10 @@ static int stopX11MonitorThread(void)
     return rc;
 }
 
-static bool callVMWCTRL()
+static bool callVMWCTRL(struct RANDROUTPUT *paOutputs)
 {
-    const int hHeight = 600;
-    const int hWidth = 800;
+    int hHeight = 600;
+    int hWidth = 800;
 
     xXineramaScreenInfo *extents = (xXineramaScreenInfo *)malloc(x11Context.hOutputCount * sizeof(xXineramaScreenInfo));
     if (!extents)
@@ -631,6 +631,16 @@ static bool callVMWCTRL()
     int hRunningOffset = 0;
     for (int i = 0; i < x11Context.hOutputCount; ++i)
     {
+        if (paOutputs[i].fEnabled)
+        {
+            hHeight = paOutputs[i].height;
+            hWidth = paOutputs[i].width;
+        }
+        else
+        {
+            hHeight = 0;
+            hWidth = 0;
+        }
         extents[i].x_org = hRunningOffset;
         extents[i].y_org = 0;
         extents[i].width = hWidth;
@@ -647,7 +657,6 @@ static bool init()
     x11Connect();
     if (x11Context.pDisplay == NULL)
         return false;
-    callVMWCTRL();
     if (RT_FAILURE(startX11MonitorThread()))
         return false;
     return true;
@@ -1116,7 +1125,7 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
         return;
 
     XGrabServer(x11Context.pDisplay);
-
+    callVMWCTRL(paOutputs);
     /* Disable crtcs. */
     for (int i = 0; i < x11Context.pScreenResources->noutput; ++i)
     {
