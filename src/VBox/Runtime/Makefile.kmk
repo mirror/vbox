@@ -3768,12 +3768,11 @@ common/err/errmsg.cpp_DEPS = \
 	$(IPRT_OUT_DIR)/errmsgdata-only-defines.h
 common/err/errmsg.cpp_INCS = $(IPRT_OUT_DIR)
 
-win/errmsgwin.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgwindata-sorted.h
+win/errmsgwin.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgwindata-all.h $(IPRT_OUT_DIR)/errmsgwindata-only-defines.h
 win/errmsgwin.cpp_INCS = $(IPRT_OUT_DIR)
 
 # Our COM errors only for R3 libraries on the host
 define def_errmsgwin_deps
- $(lib)_win/errmsgwin.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
  $(lib)_common/err/errmsgxpcom.cpp_INCS = $(IPRT_OUT_DIR)
  $(lib)_common/err/errmsgxpcom.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
 endef
@@ -3825,11 +3824,17 @@ $(IPRT_OUT_DIR)/errmsgvboxdata.h.ts +| $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
 	$(QUIET)$(VBOX_XSLTPROC) -o $(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts $< $(filter %.xidl,$^)
 	$(QUIET)$(CP) --changed -fv -- $(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
 
-$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts +| $(IPRT_OUT_DIR)/errmsgwindata-sorted.h: \
+$(IPRT_OUT_DIR)/errmsgwindata-all.h.ts +| $(IPRT_OUT_DIR)/errmsgwindata-all.h: \
 		$$(bldRTErrMsgWinSorter_1_TARGET)
 	$(call MSG_GENERATE,,$@,$<)
-	$(QUIET)"$<" "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts"
-	$(QUIET)$(CP) --changed -fv -- "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h.ts" "$(IPRT_OUT_DIR)/errmsgwindata-sorted.h"
+	$(QUIET)"$<" --all "$(IPRT_OUT_DIR)/errmsgwindata-all.h.ts"
+	$(QUIET)$(CP) --changed -fv -- "$(IPRT_OUT_DIR)/errmsgwindata-all.h.ts" "$(IPRT_OUT_DIR)/errmsgwindata-all.h"
+
+$(IPRT_OUT_DIR)/errmsgwindata-only-defines.h.ts +| $(IPRT_OUT_DIR)/errmsgwindata-only-defines.h: \
+		$$(bldRTErrMsgWinSorter_1_TARGET)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)"$<" --only-defines "$(IPRT_OUT_DIR)/errmsgwindata-only-defines.h.ts"
+	$(QUIET)$(CP) --changed -fv -- "$(IPRT_OUT_DIR)/errmsgwindata-only-defines.h.ts" "$(IPRT_OUT_DIR)/errmsgwindata-only-defines.h"
 
 
 #

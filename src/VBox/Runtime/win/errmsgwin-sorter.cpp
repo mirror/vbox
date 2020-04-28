@@ -38,17 +38,14 @@
 #include <stdlib.h>
 
 
-#define ERRMSG_WITH_STRTAB
-#ifdef ERRMSG_WITH_STRTAB
 /*
  * Include the string table code.
  */
-# define BLDPROG_STRTAB_MAX_STRLEN           512
-# define BLDPROG_STRTAB_WITH_COMPRESSION
-# define BLDPROG_STRTAB_PURE_ASCII
-# define BLDPROG_STRTAB_WITH_CAMEL_WORDS
-# include <iprt/bldprog-strtab-template.cpp.h>
-#endif
+#define BLDPROG_STRTAB_MAX_STRLEN           512
+#define BLDPROG_STRTAB_WITH_COMPRESSION
+#define BLDPROG_STRTAB_PURE_ASCII
+#define BLDPROG_STRTAB_WITH_CAMEL_WORDS
+#include <iprt/bldprog-strtab-template.cpp.h>
 
 
 /*********************************************************************************************************************************
@@ -61,16 +58,45 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
+*   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 typedef long VBOXSTATUSTYPE; /* used by errmsgvboxcomdata.h */
+
+/** Used for raw-input and sorting. */
+typedef struct RTWINERRMSGINT1
+{
+    /** Pointer to the full message string. */
+    const char     *pszMsgFull;
+    /** Pointer to the define string. */
+    const char     *pszDefine;
+    /** Status code number. */
+    long            iCode;
+    /** Set if duplicate. */
+    bool            fDuplicate;
+} RTWINERRMSGINT1;
+typedef RTWINERRMSGINT1 *PRTWINERRMSGINT1;
+
+
+/** This is used when building the string table and printing it. */
+typedef struct RTWINERRMSGINT2
+{
+    /** The full message string. */
+    BLDPROGSTRING   MsgFull;
+    /** The define string. */
+    BLDPROGSTRING   Define;
+    /** Pointer to the define string. */
+    const char     *pszDefine;
+    /** Status code number. */
+    long            iCode;
+} RTWINERRMSGINT2;
+typedef RTWINERRMSGINT2 *PRTWINERRMSGINT2;
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static const char *g_pszProgName = "errmsgwin-sorter";
-static RTWINERRMSG  g_aStatusMsgs[] =
+static const char     *g_pszProgName = "errmsgwin-sorter";
+static RTWINERRMSGINT1 g_aStatusMsgs[] =
 {
 #if !defined(IPRT_NO_ERROR_DATA) && !defined(DOXYGEN_RUNNING)
 # include "errmsgwindata.h"
@@ -78,7 +104,7 @@ static RTWINERRMSG  g_aStatusMsgs[] =
 #  include "errmsgvboxcomdata.h"
 # endif
 #endif
-    { "Success.", "ERROR_SUCCESS", 0 },
+    { "Success.", "ERROR_SUCCESS", 0, false },
 };
 
 
@@ -109,153 +135,147 @@ static int CompareWinErrMsg(const void *pv1, const void *pv2)
 }
 
 
-/**
- * Escapes @a pszString using @a pszBuf as needed.
- * @note Duplicated in errmsg-sorter.cpp.
- */
-static const char *EscapeString(const char *pszString, char *pszBuf, size_t cbBuf)
-{
-    if (strpbrk(pszString, "\n\t\r\"\\") == NULL)
-        return pszString;
-
-    char *pszDst = pszBuf;
-    char  ch;
-    do
-    {
-        ch = *pszString++;
-        switch (ch)
-        {
-            default:
-                *pszDst++ = ch;
-                break;
-            case '\\':
-            case '"':
-                *pszDst++ = '\\';
-                *pszDst++ = ch;
-                break;
-            case '\n':
-                *pszDst++ = '\\';
-                *pszDst++ = 'n';
-                break;
-            case '\t':
-                *pszDst++ = '\\';
-                *pszDst++ = 't';
-                break;
-            case '\r':
-                break; /* drop it */
-        }
-    } while (ch);
-
-    if ((uintptr_t)(pszDst - pszBuf) > cbBuf)
-        fprintf(stderr, "Escape buffer overrun!\n");
-
-    return pszBuf;
-}
-
-
 int main(int argc, char **argv)
 {
     /*
-     * Argument check.
+     * Parse arguments.
      */
-    if (argc != 1 && argc != 2)
+    enum { kMode_All, kMode_OnlyDefines } enmMode;
+    if (argc == 3 && strcmp(argv[1], "--all") == 0)
+        enmMode = kMode_All;
+    else if (argc == 3 && strcmp(argv[1], "--only-defines") == 0)
+        enmMode = kMode_OnlyDefines;
+    else
     {
         fprintf(stderr,
                 "syntax error!\n"
-                "Usage: %s [outfile]\n", argv[0]);
+                "Usage: %s <--all|--only-defines> <outfile>\n", argv[0]);
         return RTEXITCODE_SYNTAX;
     }
+    const char * const pszOutFile = argv[2];
 
     /*
-     * Sort the table.
+     * Sort the table and mark duplicates.
      */
     qsort(g_aStatusMsgs, RT_ELEMENTS(g_aStatusMsgs), sizeof(g_aStatusMsgs[0]), CompareWinErrMsg);
+
+    int rcExit = RTEXITCODE_SUCCESS;
+    long iPrev = (long)0x80000000;
+    bool fHaveSuccess = false;
+    for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
+    {
+        PRTWINERRMSGINT1 pMsg = &g_aStatusMsgs[i];
+        if (pMsg->iCode == iPrev && i != 0)
+        {
+            pMsg->fDuplicate = true;
+
+            if (iPrev == 0)
+                continue;
+
+            PRTWINERRMSGINT1 pPrev = &g_aStatusMsgs[i - 1];
+            if (strcmp(pMsg->pszDefine, pPrev->pszDefine) == 0)
+                continue;
+            rcExit = error("Duplicate value %#lx (%ld) - %s and %s\n",
+                           (unsigned long)iPrev, iPrev, pMsg->pszDefine, pPrev->pszDefine);
+        }
+        else
+        {
+            pMsg->fDuplicate = false;
+            iPrev = pMsg->iCode;
+            if (iPrev == 0)
+                fHaveSuccess = true;
+        }
+    }
+    if (!fHaveSuccess)
+        rcExit = error("No zero / success value in the table!\n");
+
+    /*
+     * Create a string table for it all.
+     */
+    BLDPROGSTRTAB StrTab;
+    if (!BldProgStrTab_Init(&StrTab, RT_ELEMENTS(g_aStatusMsgs) * 3))
+        return error("Out of memory!\n");
+
+    static RTWINERRMSGINT2 s_aStatusMsgs2[RT_ELEMENTS(g_aStatusMsgs)];
+    size_t                 cStatusMsgs = 0;
+    for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
+    {
+        if (!g_aStatusMsgs[i].fDuplicate)
+        {
+            s_aStatusMsgs2[cStatusMsgs].iCode     = g_aStatusMsgs[i].iCode;
+            s_aStatusMsgs2[cStatusMsgs].pszDefine = g_aStatusMsgs[i].pszDefine;
+            BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[cStatusMsgs].Define, g_aStatusMsgs[i].pszDefine);
+            if (enmMode != kMode_OnlyDefines)
+                BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[cStatusMsgs].MsgFull, g_aStatusMsgs[i].pszMsgFull);
+            cStatusMsgs++;
+        }
+    }
+
+    if (!BldProgStrTab_CompileIt(&StrTab, true))
+        return error("BldProgStrTab_CompileIt failed!\n");
 
     /*
      * Prepare output file.
      */
-    int rcExit = RTEXITCODE_FAILURE;
-    FILE *pOut = stdout;
-    if (argc > 1)
-        pOut = fopen(argv[1], "wt");
+    FILE *pOut = fopen(pszOutFile, "wt");
     if (pOut)
     {
-#ifdef ERRMSG_WITH_STRTAB
-        /*
-         * String table fun.
-         */
-        static BLDPROGSTRING s_aStrings[RT_ELEMENTS(g_aStatusMsgs) * 2];
-        size_t               iString = 0;
-        BLDPROGSTRTAB        StrTab;
-        if (!BldProgStrTab_Init(&StrTab, RT_ELEMENTS(s_aStrings)))
-            return error("Out of memory!\n");
-#endif
-
         /*
          * Print the table.
          */
-        static char s_szMsgTmp[_256K];
-        long iPrev = (long)0x80000000;
-        rcExit = RTEXITCODE_SUCCESS;
-        for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
-        {
-            PCRTWINERRMSG pMsg = &g_aStatusMsgs[i];
+        fprintf(pOut,
+                "\n"
+                "typedef struct RTMSGWINENTRYINT\n"
+                "{\n"
+                "    uint32_t offDefine : 20;\n"
+                "    uint32_t cchDefine : 9;\n"
+                "%s"
+                "    int32_t  iCode;\n"
+                "} RTMSGWINENTRYINT;\n"
+                "typedef RTMSGWINENTRYINT *PCRTMSGWINENTRYINT;\n"
+                "\n"
+                "static const RTMSGWINENTRYINT g_aWinMsgs[] =\n"
+                "{\n"
+                ,
+                enmMode == kMode_All
+                ? "    uint32_t offMsgFull  : 23;\n"
+                  "    uint32_t cchMsgFull  : 9;\n" : "");
 
-            /* Paranoid ERROR_SUCCESS handling: */
-            if (pMsg->iCode > 0 && iPrev < 0)
-                fprintf(pOut, "/*%#010lx:*/ { \"Success.\", \"ERROR_SUCCESS\", 0 }\n", (unsigned long)0);
-            else if (pMsg->iCode == 0 && iPrev == 0)
-                continue;
+        if (enmMode == kMode_All)
+            for (size_t i = 0; i < cStatusMsgs; i++)
+                fprintf(pOut, "/*%#010lx:*/ { %#08x, %3u, %#08x, %3u, %ld },\n",
+                        s_aStatusMsgs2[i].iCode,
+                        s_aStatusMsgs2[i].Define.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].Define.cchString,
+                        s_aStatusMsgs2[i].MsgFull.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].MsgFull.cchString,
+                        s_aStatusMsgs2[i].iCode);
+        else if (enmMode == kMode_OnlyDefines)
+            for (size_t i = 0; i < cStatusMsgs; i++)
+                fprintf(pOut, "/*%#010lx:*/ { %#08x, %3u, %ld },\n",
+                        s_aStatusMsgs2[i].iCode,
+                        s_aStatusMsgs2[i].Define.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].Define.cchString,
+                        s_aStatusMsgs2[i].iCode);
+        else
+            return error("Unsupported message selection (%d)!\n", enmMode);
+        fprintf(pOut,
+                "};\n"
+                "\n");
 
-            /* Deal with duplicates in a gentle manner: */
-            if (pMsg->iCode == iPrev && i != 0)
-            {
-                PCRTWINERRMSG pPrev = &g_aStatusMsgs[i - 1];
-                if (strcmp(pMsg->pszDefine, pPrev->pszDefine) == 0)
-                    continue;
-                fprintf(stderr, "%s: error: Duplicate value %#lx (%ld) - %s and %s\n",
-                        argv[0], (unsigned long)iPrev, iPrev, pMsg->pszDefine, pPrev->pszDefine);
-                rcExit = RTEXITCODE_FAILURE;
-            }
-            iPrev = pMsg->iCode;
-
-#ifdef ERRMSG_WITH_STRTAB
-# if 1
-            s_aStrings[iString].pszString = strdup(pMsg->pszDefine);
-            BldProgStrTab_AddString(&StrTab, &s_aStrings[iString]);
-            iString++;
-# endif
-# if 0
-            s_aStrings[iString].pszString = strdup(pMsg->pszMsgFull);
-            BldProgStrTab_AddString(&StrTab, &s_aStrings[iString]);
-            iString++;
-# endif
-#endif
-
-            /* Produce the output: */
-            fprintf(pOut, "/*%#010lx:*/ ENTRY(\"%s\", \"%s\", %ld),\n", (unsigned long)pMsg->iCode,
-                    EscapeString(pMsg->pszMsgFull, s_szMsgTmp, sizeof(s_szMsgTmp)), pMsg->pszDefine, pMsg->iCode);
-        }
+        BldProgStrTab_WriteStringTable(&StrTab, pOut, "static ", "g_", "WinMsgStrTab");
 
         /*
          * Close the output file and we're done.
          */
+        fflush(pOut);
+        if (ferror(pOut))
+            rcExit = error("Error writing '%s'!\n", pszOutFile);
         if (fclose(pOut) != 0)
-        {
-            fprintf(stderr, "%s: Failed to flush/close '%s' after writing it!\n", argv[0], argv[1]);
-            rcExit = RTEXITCODE_FAILURE;
-        }
-
-#ifdef ERRMSG_WITH_STRTAB
-        /*
-         * More string table fun.
-         */
-        if (!BldProgStrTab_CompileIt(&StrTab, true))
-            return error("BldProgStrTab_CompileIt failed!\n");
-#endif
+            rcExit = error("Failed to close '%s' after writing it!\n", pszOutFile);
     }
     else
-        fprintf(stderr, "%s: Failed to open '%s' for writing!\n", argv[0], argv[1]);
+        rcExit = error("Failed to open '%s' for writing!\n", pszOutFile);
     return rcExit;
 }
 
