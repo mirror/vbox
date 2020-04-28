@@ -220,7 +220,10 @@ void UIProgressDialog::sltCancelOperation()
 void UIProgressDialog::prepare()
 {
     /* Setup dialog: */
-    setWindowTitle(QString("%1: %2").arg(m_strTitle, m_comProgress.GetDescription()));
+    if (m_strTitle.isNull())
+        setWindowTitle(m_comProgress.GetDescription());
+    else
+        setWindowTitle(QString("%1: %2").arg(m_strTitle, m_comProgress.GetDescription()));
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 #ifdef VBOX_WS_MAC
     ::darwinSetHidesAllTitleButtons(this);
