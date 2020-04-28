@@ -1985,8 +1985,11 @@ class TestVmManager(object):
                sKind = 'Windows2003', acCpusSup = range(1, 33), fPae = True, sNic0AttachType = 'bridged'),
 
         # W7
-        TestVm('tst-win7',                  kfGrpStdSmoke,        sHd = '4.2/win7-32/t-win7.vdi',
-               sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True),
+        TestVm('tst-win7',                  kfGrpStdSmoke,        sHd = '6.1/win7-32/t-win7-32.vdi',
+               sKind = 'Windows7',    acCpusSup = range(1, 33), fIoApic = True),
+        # Note: Deprecated; use the one in the 6.1 folder.
+        #TestVm('tst-win7',                  kfGrpStdSmoke,        sHd = '4.2/win7-32/t-win7.vdi',
+        #       sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True),
 
         # W8
         TestVm('tst-win8-64',               kfGrpStdSmoke,        sHd = '4.2/win8-64/t-win8-64.vdi',
