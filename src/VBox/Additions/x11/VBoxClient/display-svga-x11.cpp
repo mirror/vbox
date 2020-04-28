@@ -1113,6 +1113,9 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
 /** Construct the xrandr command which sets the whole monitor topology each time. */
 static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
 {
+    XGrabServer(x11Context.pDisplay);
+    callVMWCTRL(paOutputs);
+
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     x11Context.pScreenResources = XRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
 #else
@@ -1122,10 +1125,11 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
     x11Context.hOutputCount = determineOutputCount();
 
     if (!x11Context.pScreenResources)
+    {
+        XUngrabServer(x11Context.pDisplay);
         return;
+    }
 
-    XGrabServer(x11Context.pDisplay);
-    callVMWCTRL(paOutputs);
     /* Disable crtcs. */
     for (int i = 0; i < x11Context.pScreenResources->noutput; ++i)
     {
