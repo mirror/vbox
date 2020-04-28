@@ -313,9 +313,10 @@ int parseBool(const char *psz, bool *pb);
 RTEXITCODE handleStorageAttach(HandlerArg *a);
 RTEXITCODE handleStorageController(HandlerArg *a);
 
-// VBoxManageImport.cpp
+// VBoxManageAppliance.cpp
 RTEXITCODE handleImportAppliance(HandlerArg *a);
 RTEXITCODE handleExportAppliance(HandlerArg *a);
+RTEXITCODE handleSignAppliance(HandlerArg *a);
 
 // VBoxManageSnapshot.cpp
 RTEXITCODE handleSnapshot(HandlerArg *a);
