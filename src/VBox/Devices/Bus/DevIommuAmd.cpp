@@ -2774,6 +2774,7 @@ static const IOMMUREGACC g_aTable1Regs[] =
 };
 #endif
 
+
 /**
  * Writes an IOMMU register (32-bit and 64-bit).
  *
@@ -3384,7 +3385,9 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
             {
                 pThis->IommuBar.au32[0] = u32Value & IOMMU_BAR_VALID_MASK;
                 Assert(pThis->hMmio == NIL_IOMMMIOHANDLE);
-                RTGCPHYS const GCPhysMmioBase = RT_MAKE_U64(pThis->IommuBar.n.u18BaseAddrLo, pThis->IommuBar.n.u32BaseAddrHi);
+                RTGCPHYS GCPhysMmioBase = RT_MAKE_U64(pThis->IommuBar.n.u18BaseAddrLo, pThis->IommuBar.n.u32BaseAddrHi);
+                GCPhysMmioBase <<= 14;  /* 16K aligned when performance counters are not supported. */
+                Assert(!pThis->ExtFeat.n.u1PerfCounterSup);
                 rcStrict = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
                 if (RT_FAILURE(rcStrict))
                     Log((IOMMU_LOG_PFX ": Failed to map IOMMU MMIO region at %#RGp. rc=%Rrc\n", GCPhysMmioBase, rcStrict));
