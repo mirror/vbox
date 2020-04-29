@@ -29,7 +29,6 @@
 
 /* Forward declarations: */
 class QAction;
-class QLabel;
 class QString;
 class QTextBrowser;
 class QToolButton;
@@ -65,8 +64,6 @@ private:
     /** Holds the VM refresh button instance. */
     QToolButton *m_pButtonRefresh;
 
-    /** Holds the label instance. */
-    QLabel       *m_pLabel;
     /** Holds the text-browser instance. */
     QTextBrowser *m_pBrowserDetails;
 };
