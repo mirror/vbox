@@ -107,10 +107,15 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
         {
             case UIToolType_Error:
             {
-                /* Create Desktop pane: */
+                /* Create Error pane: */
                 m_pPaneError = new UIErrorPane(m_pActionPool->action(UIActionIndexST_M_Group_S_Refresh));
                 if (m_pPaneError)
                 {
+#ifndef VBOX_WS_MAC
+                    const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                    m_pPaneError->setContentsMargins(iMargin, 0, iMargin, 0);
+#endif
+
                     /* Configure pane: */
                     m_pPaneError->setProperty("ToolType", QVariant::fromValue(UIToolType_Error));
 
