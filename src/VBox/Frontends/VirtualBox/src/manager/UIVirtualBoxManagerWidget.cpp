@@ -700,7 +700,6 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                         pButton->setPopupMode(QToolButton::InstantPopup);
                         pButton->setAutoRaise(true);
                     }
-
                     break;
                 }
 
@@ -765,6 +764,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 case UIToolType_Error:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
                     m_pToolBar->addSeparator();
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
                     break;
