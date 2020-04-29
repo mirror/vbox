@@ -1850,6 +1850,8 @@ typedef union
     uint64_t    u64;
 } IOMMU_STATUS_T;
 AssertCompileSize(IOMMU_STATUS_T, 8);
+#define IOMMU_STATUS_VALID_MASK     UINT64_C(0x0000000000079fff)
+#define IOMMU_STATUS_RW1C_MASK      UINT64_C(0x0000000000068e67)
 
 /**
  * PPR Log Head Pointer Register (MMIO).
@@ -2728,6 +2730,33 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
 }
 
 
+/**
+ * Writes the Status Register (64-bit).
+ */
+static VBOXSTRICTRC iommuAmdStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pDevIns, iReg);
+
+    /* Mask out all unrecognized bits. */
+    u64Value &= IOMMU_STATUS_VALID_MASK;
+
+    /*
+     * Compute RW1C (read-only, write-1-to-clear) bits and preserve the rest (which are read-only).
+     * Writing 0 to an RW1C bit has no effect. Writing 1 to an RW1C bit, clears the bit if it's already 1.
+     */
+    IOMMU_STATUS_T const OldStatus = iommuAmdGetStatus(pThis);
+    uint64_t const fOldRw1cBits = (OldStatus.u64 &  IOMMU_STATUS_RW1C_MASK);
+    uint64_t const fOldRoBits   = (OldStatus.u64 & ~IOMMU_STATUS_RW1C_MASK);
+    uint64_t const fNewRw1cBits = (u64Value      &  IOMMU_STATUS_RW1C_MASK);
+
+    uint64_t const uNewStatus = (fOldRw1cBits & ~fNewRw1cBits) | fOldRoBits;
+
+    /* Update the register. */
+    ASMAtomicWriteU64(&pThis->Status.u64, uNewStatus);
+    return VINF_SUCCESS;
+}
+
+
 #if 0
 /**
  * Table 0: Registers-access table.
@@ -2842,7 +2871,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_EVT_LOG_HEAD_PTR:        return iommuAmdEvtLogHeadPtr_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_EVT_LOG_TAIL_PTR:        return iommuAmdEvtLogTailPtr_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_STATUS:
+        case IOMMU_MMIO_OFF_STATUS:              return iommuAmdStatus_w(pDevIns, pThis, off, uValue);
 
         case IOMMU_MMIO_OFF_PPR_LOG_HEAD_PTR:
         case IOMMU_MMIO_OFF_PPR_LOG_TAIL_PTR:
