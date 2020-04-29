@@ -716,12 +716,15 @@ class ConsoleEventHandlerBase(EventHandlerBase):
             except:
                 reporter.logXcpt();
         ## @todo implement the other events.
-        if eType not in (vboxcon.VBoxEventType_OnMousePointerShapeChanged,
-                         vboxcon.VBoxEventType_OnCursorPositionChanged):
-            if eType in self.dEventNo2Name:
-                reporter.log2('%s(%s)/%s' % (self.dEventNo2Name[eType], str(eType), self.sName));
-            else:
-                reporter.log2('%s/%s' % (str(eType), self.sName));
+        try:
+            if eType not in (vboxcon.VBoxEventType_OnMousePointerShapeChanged,
+                             vboxcon.VBoxEventType_OnCursorPositionChanged):
+                if eType in self.dEventNo2Name:
+                    reporter.log2('%s(%s)/%s' % (self.dEventNo2Name[eType], str(eType), self.sName));
+                else:
+                    reporter.log2('%s/%s' % (str(eType), self.sName));
+        except AttributeError: # Handle older VBox versions which don't have a specific event.
+            pass;
         return None;
 
 
