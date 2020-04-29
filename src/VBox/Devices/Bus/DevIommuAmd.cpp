@@ -3135,17 +3135,15 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 /**
  * Constructs a DEV_TAB_HARDWARE_ERROR event.
  *
- * @param   uDevId              The device ID.
- * @param   GCPhysDevTabEntry   The device table system physical address.
- * @param   fTranslation        Whether this is an translation or transaction
- *                              request.
- * @param   fInterrupt          Whether the transaction was an interrupt or memory
- *                              request.
- * @param   fReadWrite          Whether the transaction was read-write or read-only.
- *                              Only meaninful when @a fTranslate is @c false and @a
- *                              fInterrupt is
- *                              @c false.
- * @param   pEvent              Where to store the event.
+ * @param   uDevId          The device ID.
+ * @param   GCPhysDevTab    The device table system physical address.
+ * @param   fTranslation    Whether this is an translation or transaction request.
+ * @param   fInterrupt      Whether the transaction was an interrupt or memory
+ *                          request.
+ * @param   fReadWrite      Whether the transaction was read-write or read-only.
+ *                          Only meaninful when @a fTranslate is @c false and
+ *                          @a fInterrupt is false.
+ * @param   pEvent          Where to store the constructed event.
  *
  * @thread  Any.
  */
