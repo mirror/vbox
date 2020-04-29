@@ -933,9 +933,7 @@ typedef union
         uint32_t    u2Type : 2;             /**< Bits 58:57  - Type: The type of hardware error. */
         uint32_t    u1Rsvd1 : 1;            /**< Bit  59     - Reserved. */
         uint32_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
-        uint32_t    u4Rsvd0 : 4;            /**< Bits 67:64  - Reserved. */
-        uint32_t    u28AddrLo : 28;         /**< Bits 95:68  - Address: System Physical Address (Lo). */
-        uint32_t    u32AddrHi;              /**< Bits 127:96 - Address: System Physical Address (Hi). */
+        uint64_t    u64Addr;                /**< Bits 127:64 - Address. */
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
@@ -3162,9 +3160,7 @@ static void iommuAmdMakeDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDevTa
     pDevTabHwErr->n.u1Translation = fTranslation;
     pDevTabHwErr->n.u2Type        = EVTLOGTYPE_TARGET_ABORT;
     pDevTabHwErr->n.u4EvtCode     = IOMMU_EVT_DEV_TAB_HW_ERROR;
-    pDevTabHwErr->n.u28AddrLo     = RT_LO_U32(GCPhysDevTab >> 4);
-    pDevTabHwErr->n.u32AddrHi     = RT_HI_U32(GCPhysDevTab >> 4);
-    Assert(!(GCPhysDevTab & UINT64_C(0xf000000000000000)));
+    pDevTabHwErr->n.u64Addr       = GCPhysDevTab;
 }
 
 
