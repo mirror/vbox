@@ -180,13 +180,13 @@
  */
 #define IOMMU_EVT_ILLEGAL_DEV_TAB_ENTRY             0x01
 #define IOMMU_EVT_IO_PAGE_FAULT                     0x02
-#define IOMMU_EVT_DEV_TAB_HARDWARE_ERROR            0x03
-#define IOMMU_EVT_PAGE_TAB_HARDWARE_ERROR           0x04
-#define IOMMU_EVT_ILLEGAL_COMMAND_ERROR             0x05
-#define IOMMU_EVT_COMMAND_HARDWARE_ERROR            0x06
+#define IOMMU_EVT_DEV_TAB_HW_ERROR                  0x03
+#define IOMMU_EVT_PAGE_TAB_HW_ERROR                 0x04
+#define IOMMU_EVT_ILLEGAL_CMD_ERROR                 0x05
+#define IOMMU_EVT_COMMAND_HW_ERROR                  0x06
 #define IOMMU_EVT_IOTLB_INV_TIMEOUT                 0x07
-#define IOMMU_EVT_INVALID_DEVICE_REQUEST            0x08
-#define IOMMU_EVT_INVALID_PPR_REQUEST               0x09
+#define IOMMU_EVT_INVALID_DEV_REQ                   0x08
+#define IOMMU_EVT_INVALID_PPR_REQ                   0x09
 #define IOMMU_EVT_EVENT_COUNTER_ZERO                0x10
 #define IOMMU_EVT_GUEST_EVENT_FAULT                 0x11
 /** @} */
@@ -476,6 +476,14 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
     do { \
         PDMDevHlpCritSectLeave((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo)); \
     } while (0)
+
+/**
+ * Asserts that the critsect is owned by this thread.
+ */
+#define IOMMU_ASSERT_LOCKED(a_pDevIns) \
+    do { \
+        Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo))); \
+    }  while (0)
 
 /**
  * Gets the device table size given the size field.
@@ -834,7 +842,20 @@ typedef EVT_GENERIC_T *PEVT_GENERIC_T;
 typedef const EVT_GENERIC_T *PCEVT_GENERIC_T;
 
 /**
- * Event Log Entry: ILLEGAL_DEV_TAB_ENTRY.
+ * Event log types.
+ * In accordance with the AMD spec.
+ */
+typedef enum EVTLOGTYPE
+{
+    EVTLOGTYPE_RSVD = 0,
+    EVTLOGTYPE_MASTER_ABORT,
+    EVTLOGTYPE_TARGET_ABORT,
+    EVTLOGTYPE_DATA_ERROR
+} EVTLOGTYPE;
+AssertCompileSize(EVTLOGTYPE, 4);
+
+/**
+ * Event Log Entry: ILLEGAL_DEV_TABLE_ENTRY.
  * In accordance with the AMD spec.
  */
 typedef union
@@ -904,11 +925,11 @@ typedef union
         uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
         uint16_t    u16Rsvd0;               /**< Bits 31:16  - Reserved. */
         uint32_t    u19Rsvd0 : 19;          /**< Bits 50:32  - Reserved. */
-        uint32_t    u1Intr : 1;             /**< Bit  51     - I: Interrupt. */
+        uint32_t    u1Intr : 1;             /**< Bit  51     - I: Interrupt (1=interrupt request, 0=memory request). */
         uint32_t    u1Rsvd0 : 1;            /**< Bit  52     - Reserved. */
-        uint32_t    u1ReadWrite : 1;        /**< Bit  53     - RW: Read/Write. */
+        uint32_t    u1ReadWrite : 1;        /**< Bit  53     - RW: Read/Write transaction (only meaninful when I=0 and TR=0). */
         uint32_t    u2Rsvd0 : 2;            /**< Bits 55:54  - Reserved. */
-        uint32_t    u1Translation : 1;      /**< Bit  56     - TR: Translation. */
+        uint32_t    u1Translation : 1;      /**< Bit  56     - TR: Translation (1=translation, 0=transaction). */
         uint32_t    u2Type : 2;             /**< Bits 58:57  - Type: The type of hardware error. */
         uint32_t    u1Rsvd1 : 1;            /**< Bit  59     - Reserved. */
         uint32_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
@@ -918,8 +939,10 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
-} EVT_DEV_TAB_HARDWARE_ERROR;
-AssertCompileSize(EVT_DEV_TAB_HARDWARE_ERROR, 16);
+} EVT_DEV_TAB_HW_ERROR_T;
+AssertCompileSize(EVT_DEV_TAB_HW_ERROR_T, 16);
+/** Pointer to a device table hardware error event. */
+typedef EVT_DEV_TAB_HW_ERROR_T *PEVT_DEV_TAB_HW_ERROR_T;
 
 /**
  * Event Log Entry: EVT_PAGE_TAB_HARDWARE_ERROR.
@@ -953,8 +976,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[4];
-} EVT_PAGE_TAB_HARDWARE_ERROR;
-AssertCompileSize(EVT_PAGE_TAB_HARDWARE_ERROR, 16);
+} EVT_PAGE_TAB_HW_ERR_T;
+AssertCompileSize(EVT_PAGE_TAB_HW_ERR_T, 16);
 
 /**
  * Event Log Entry: ILLEGAL_COMMAND_ERROR.
@@ -973,8 +996,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[4];
-} EVT_ILLEGAL_COMMAND_ENTRY;
-AssertCompileSize(EVT_ILLEGAL_COMMAND_ENTRY, 16);
+} EVT_ILLEGAL_CMD_ERR_T;
+AssertCompileSize(EVT_ILLEGAL_CMD_ERR_T, 16);
 
 /**
  * Event Log Entry: COMMAND_HARDWARE_ERROR.
@@ -991,8 +1014,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[3];
-} EVT_COMMAND_HARDWARE_ERROR;
-AssertCompileSize(EVT_COMMAND_HARDWARE_ERROR, 12);
+} EVT_CMD_HW_ERROR_T;
+AssertCompileSize(EVT_CMD_HW_ERROR_T, 12);
 
 /**
  * Event Log Entry: IOTLB_INV_TIMEOUT.
@@ -1012,8 +1035,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[4];
-} EVT_IOTLB_INV_TIMEOUT;
-AssertCompileSize(EVT_IOTLB_INV_TIMEOUT, 16);
+} EVT_IOTLB_INV_TIMEOUT_T;
+AssertCompileSize(EVT_IOTLB_INV_TIMEOUT_T, 16);
 
 /**
  * Event Log Entry: INVALID_DEVICE_REQUEST.
@@ -1037,8 +1060,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[4];
-} EVT_INVALID_DEVICE_REQUEST;
-AssertCompileSize(EVT_INVALID_DEVICE_REQUEST, 16);
+} EVT_INVALID_DEV_REQ_T;
+AssertCompileSize(EVT_INVALID_DEV_REQ_T, 16);
 
 /**
  * Event Log Entry: EVENT_COUNTER_ZERO.
@@ -1057,8 +1080,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[4];
-} EVT_EVENT_COUNTER_ZERO;
-AssertCompileSize(EVT_EVENT_COUNTER_ZERO, 16);
+} EVT_EVENT_COUNTER_ZERO_T;
+AssertCompileSize(EVT_EVENT_COUNTER_ZERO_T, 16);
 
 /**
  * IOMMU Capability Header (PCI).
@@ -2230,6 +2253,19 @@ static bool iommuAmdIsMsiEnabled(PPDMDEVINS pDevIns)
 
 
 /**
+ * Signals a PCI target abort.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ */
+static void iommuAmdSetPciTargetAbort(PPDMDEVINS pDevIns)
+{
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    uint16_t const u16Status = PDMPciDevGetStatus(pPciDev) | VBOX_PCI_STATUS_SIG_TARGET_ABORT;
+    PDMPciDevSetStatus(pPciDev, u16Status);
+}
+
+
+/**
  * The IOMMU command thread.
  *
  * @returns VBox status code.
@@ -2277,15 +2313,9 @@ static VBOXSTRICTRC iommuAmdDevTabBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
 
     /* Mask out all unrecognized bits. */
     u64Value &= IOMMU_DEV_TAB_BAR_VALID_MASK;
-    DEV_TAB_BAR_T DevTabBaseAddr;
-    DevTabBaseAddr.u64 = u64Value;
 
-    /* Validate the base address. */
-    RTGCPHYS const GCPhysDevTab = DevTabBaseAddr.n.u40Base;
-    if (!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK))
-        pThis->aDevTabBaseAddrs[0].u64 = DevTabBaseAddr.u64;
-    else
-        Log((IOMMU_LOG_PFX ": Device table base address (%#RX64) misaligned -> Ignored\n", GCPhysDevTab));
+    /* Update the register. */
+    pThis->aDevTabBaseAddrs[0].u64 = u64Value;
     return VINF_SUCCESS;
 }
 
@@ -2313,25 +2343,21 @@ static VBOXSTRICTRC iommuAmdCmdBufBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     CMD_BUF_BAR_T CmdBufBaseAddr;
     CmdBufBaseAddr.u64 = u64Value & IOMMU_CMD_BUF_BAR_VALID_MASK;
 
-    /* Validate the base address. */
-    RTGCPHYS const GCPhysCmdBuf = CmdBufBaseAddr.n.u40Base;
-    if (!(GCPhysCmdBuf & X86_PAGE_4K_OFFSET_MASK))
+    /* Validate the length. */
+    if (CmdBufBaseAddr.n.u4Len >= 8)
     {
-        /* Validate the length. */
-        if (CmdBufBaseAddr.n.u4Len >= 8)
-            pThis->CmdBufBaseAddr.u64 = CmdBufBaseAddr.u64;
-        else
-            Log((IOMMU_LOG_PFX ": Command buffer length (%#x) invalid -> Ignored\n", CmdBufBaseAddr.n.u4Len));
+        /* Update the register. */
+        pThis->CmdBufBaseAddr.u64 = CmdBufBaseAddr.u64;
+
+        /*
+         * Writing the command buffer base address, clears the command buffer head and tail pointers.
+         * See AMD spec. 2.4 "Commands".
+         */
+        pThis->CmdBufHeadPtr.u64 = 0;
+        pThis->CmdBufTailPtr.u64 = 0;
     }
     else
-        Log((IOMMU_LOG_PFX ": Command buffer base address (%#RX64) misaligned -> Ignored\n", CmdBufBaseAddr.n.u40Base));
-
-    /*
-     * Writing the command buffer base address, clears the command buffer head and tail pointers.
-     * See AMD spec. 2.4 "Commands".
-     */
-    pThis->CmdBufHeadPtr.u64 = 0;
-    pThis->CmdBufTailPtr.u64 = 0;
+        Log((IOMMU_LOG_PFX ": Command buffer length (%#x) invalid -> Ignored\n", CmdBufBaseAddr.n.u4Len));
 
     return VINF_SUCCESS;
 }
@@ -2361,25 +2387,21 @@ static VBOXSTRICTRC iommuAmdEvtLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     EVT_LOG_BAR_T EvtLogBaseAddr;
     EvtLogBaseAddr.u64 = u64Value;
 
-    /* Validate the base address. */
-    RTGCPHYS const GCPhysEvtLog = EvtLogBaseAddr.n.u40Base;
-    if (!(GCPhysEvtLog & X86_PAGE_4K_OFFSET_MASK))
+    /* Validate the length. */
+    if (EvtLogBaseAddr.n.u4Len >= 8)
     {
-        /* Validate the length. */
-        if (EvtLogBaseAddr.n.u4Len >= 8)
-            pThis->EvtLogBaseAddr.u64 = EvtLogBaseAddr.u64;
-        else
-            Log((IOMMU_LOG_PFX ": Event log length (%#x) invalid -> Ignored\n", EvtLogBaseAddr.n.u4Len));
+        /* Update the register. */
+        pThis->EvtLogBaseAddr.u64 = EvtLogBaseAddr.u64;
+
+        /*
+         * Writing the event log base address, clears the event log head and tail pointers.
+         * See AMD spec. 2.5 "Event Logging".
+         */
+        pThis->EvtLogHeadPtr.u64 = 0;
+        pThis->EvtLogTailPtr.u64 = 0;
     }
     else
-        Log((IOMMU_LOG_PFX ": Event log base address (%#RX64) misaligned -> Ignored\n", EvtLogBaseAddr.n.u40Base));
-
-    /*
-     * Writing the event log base address, clears the event log head and tail pointers.
-     * See AMD spec. 2.5 "Event Logging".
-     */
-    pThis->EvtLogHeadPtr.u64 = 0;
-    pThis->EvtLogTailPtr.u64 = 0;
+        Log((IOMMU_LOG_PFX ": Event log length (%#x) invalid -> Ignored\n", EvtLogBaseAddr.n.u4Len));
 
     return VINF_SUCCESS;
 }
@@ -2480,25 +2502,21 @@ static VBOXSTRICTRC iommuAmdPprLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     PPR_LOG_BAR_T PprLogBaseAddr;
     PprLogBaseAddr.u64 = u64Value;
 
-    /* Validate the base address. */
-    RTGCPHYS const GCPhysPprLog = PprLogBaseAddr.n.u40Base;
-    if (!(GCPhysPprLog & X86_PAGE_4K_OFFSET_MASK))
+    /* Validate the length. */
+    if (PprLogBaseAddr.n.u4Len >= 8)
     {
-        /* Validate the length. */
-        if (PprLogBaseAddr.n.u4Len >= 8)
-            pThis->PprLogBaseAddr.u64 = PprLogBaseAddr.u64;
-        else
-            Log((IOMMU_LOG_PFX ": PPR log length (%#x) invalid -> Ignored\n", PprLogBaseAddr.n.u4Len));
+        /* Update the register. */
+        pThis->PprLogBaseAddr.u64 = PprLogBaseAddr.u64;
+
+        /*
+         * Writing the event log base address, clears the PPR log head and tail pointers.
+         * See AMD spec. 2.6 "Peripheral Page Request (PPR) Logging"
+         */
+        pThis->PprLogHeadPtr.u64 = 0;
+        pThis->PprLogTailPtr.u64 = 0;
     }
     else
-        Log((IOMMU_LOG_PFX ": PPR log base address (%#RX64) misaligned -> Ignored\n", PprLogBaseAddr.n.u40Base));
-
-    /*
-     * Writing the event log base address, clears the PPR log head and tail pointers.
-     * See AMD spec. 2.6 "Peripheral Page Request (PPR) Logging"
-     */
-    pThis->PprLogHeadPtr.u64 = 0;
-    pThis->PprLogTailPtr.u64 = 0;
+        Log((IOMMU_LOG_PFX ": PPR log length (%#x) invalid -> Ignored\n", PprLogBaseAddr.n.u4Len));
 
     return VINF_SUCCESS;
 }
@@ -2574,23 +2592,16 @@ static VBOXSTRICTRC iommuAmdDevTabSegBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uin
     DEV_TAB_BAR_T DevTabSegBar;
     DevTabSegBar.u64 = u64Value;
 
-    /* Validate the base address. */
-    RTGCPHYS const GCPhysDevTab = DevTabSegBar.n.u40Base;
-    if (!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK))
+    /* Validate the size. */
+    uint16_t const uSegSize    = DevTabSegBar.n.u9Size;
+    uint16_t const uMaxSegSize = g_auDevTabSegMaxSizes[idxSegment];
+    if (uSegSize <= uMaxSegSize)
     {
-        /* Validate the size. */
-        uint16_t const uSegSize    = DevTabSegBar.n.u9Size;
-        uint16_t const uMaxSegSize = g_auDevTabSegMaxSizes[idxSegment];
-        if (uSegSize <= uMaxSegSize)
-        {
-            /* Finally, update the segment register. */
-            pThis->aDevTabBaseAddrs[idxSegment].u64 = u64Value;
-        }
-        else
-            Log((IOMMU_LOG_PFX ": Device table segment (%u) size invalid (%#RX32) -> Ignored\n", idxSegment, uSegSize));
+        /* Update the register. */
+        pThis->aDevTabBaseAddrs[idxSegment].u64 = u64Value;
     }
     else
-        Log((IOMMU_LOG_PFX ": Device table segment (%u) address misaligned (%#RX64) -> Ignored\n", idxSegment, GCPhysDevTab));
+        Log((IOMMU_LOG_PFX ": Device table segment (%u) size invalid (%#RX32) -> Ignored\n", idxSegment, uSegSize));
 
     return VINF_SUCCESS;
 }
@@ -2871,7 +2882,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
 
 
 /**
- * Reads an IOMMU register (64-bit).
+ * Reads an IOMMU register (64-bit) given its MMIO offset.
  *
  * All reads are 64-bit but reads to 32-bit registers that are aligned on an 8-byte
  * boundary include the lower half of the subsequent register.
@@ -2883,7 +2894,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
  *
  * @returns Strict VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   off         Offset in bytes.
+ * @param   off         The MMIO offset of the register in bytes.
  * @param   puResult    Where to store the value being read.
  */
 static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint64_t *puResult)
@@ -3092,7 +3103,7 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
         if (offEvtLogEntry < uEvtLogLen)
         {
             /* Write the event log entry to memory. */
-            RTGCPHYS const GCPhysEvtLog      = pThis->EvtLogBaseAddr.n.u40Base;
+            RTGCPHYS const GCPhysEvtLog      = pThis->EvtLogBaseAddr.n.u40Base << X86_PAGE_4K_SHIFT;
             RTGCPHYS const GCPhysEvtLogEntry = GCPhysEvtLog + offEvtLogEntry;
             int rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhysEvtLogEntry, pEvent, sizeof(*pEvent));
             if (RT_FAILURE(rc))
@@ -3124,6 +3135,63 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 
 
 /**
+ * Constructs a DEV_TAB_HARDWARE_ERROR event.
+ *
+ * @param   uDevId              The device ID.
+ * @param   GCPhysDevTabEntry   The device table system physical address.
+ * @param   fTranslation        Whether this is an translation or transaction
+ *                              request.
+ * @param   fInterrupt          Whether the transaction was an interrupt or memory
+ *                              request.
+ * @param   fReadWrite          Whether the transaction was read-write or read-only.
+ *                              Only meaninful when @a fTranslate is @c false and @a
+ *                              fInterrupt is
+ *                              @c false.
+ * @param   pEvent              Where to store the event.
+ *
+ * @thread  Any.
+ */
+static void iommuAmdMakeDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDevTab, bool fTranslation, bool fReadWrite,
+                                           bool fInterrupt, PEVT_GENERIC_T pEvent)
+{
+    memset(pEvent, 0, sizeof(*pEvent));
+    PEVT_DEV_TAB_HW_ERROR_T pDevTabHwErr = (PEVT_DEV_TAB_HW_ERROR_T)pEvent;
+    pDevTabHwErr->n.u16DevId      = uDevId;
+    pDevTabHwErr->n.u1Intr        = fInterrupt;
+    pDevTabHwErr->n.u1ReadWrite   = fReadWrite;
+    pDevTabHwErr->n.u1Translation = fTranslation;
+    pDevTabHwErr->n.u2Type        = EVTLOGTYPE_TARGET_ABORT;
+    pDevTabHwErr->n.u4EvtCode     = IOMMU_EVT_DEV_TAB_HW_ERROR;
+    pDevTabHwErr->n.u28AddrLo     = RT_LO_U32(GCPhysDevTab >> 4);
+    pDevTabHwErr->n.u32AddrHi     = RT_HI_U32(GCPhysDevTab >> 4);
+    Assert(!(GCPhysDevTab & UINT64_C(0xf000000000000000)));
+}
+
+
+/**
+ * Sets an event in the hardware error registers.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pEvent      The event.
+ *
+ * @thread  Any.
+ */
+static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
+{
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    if (pThis->ExtFeat.n.u1HwErrorSup)
+    {
+        if (pThis->HwEvtStatus.n.u1Valid)
+            pThis->HwEvtStatus.n.u1Overflow = 1;
+        pThis->HwEvtStatus.n.u1Valid = 1;
+        pThis->HwEvtHi.u64 = RT_MAKE_U64(pEvent->au32[0], pEvent->au32[1]);
+        pThis->HwEvtLo     = RT_MAKE_U64(pEvent->au32[2], pEvent->au32[3]);
+        Assert(pThis->HwEvtHi.n.u4EvtCode == IOMMU_EVT_DEV_TAB_HW_ERROR);
+    }
+}
+
+
+/**
  * Reads a device table entry from guest memory given the device ID.
  *
  * @returns VBox status code.
@@ -3144,7 +3212,7 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_
     uint8_t const idxSeg = uDevId & g_auDevTabSegMasks[idxSegsEn] >> 13;
     Assert(idxSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
 
-    RTGCPHYS const GCPhysDevTab   = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base;
+    RTGCPHYS const GCPhysDevTab   = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
     uint16_t const offDevTabEntry = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
     RTGCPHYS const GCPhysDevTabEntry = GCPhysDevTab + offDevTabEntry;
 
@@ -3152,8 +3220,17 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_
     int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTabEntry, pDevTabEntry, sizeof(*pDevTabEntry));
     if (RT_FAILURE(rc))
     {
-        Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc\n", GCPhysDevTabEntry, rc));
-        /** @todo IOMMU: Log this failure to the IOMMU Event log here. */
+        EVT_GENERIC_T Event;
+        iommuAmdMakeDevTabHwErrorEvent(uDevId,
+                                       GCPhysDevTab,
+                                       true  /* fTranslation */,
+                                       false /* fReadWrite */,
+                                       false /* fInterrupt */,
+                                       &Event);
+        iommuAmdSetHwError(pDevIns, &Event);
+        iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+        iommuAmdSetPciTargetAbort(pDevIns);
+        Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc -> target abort\n", GCPhysDevTabEntry, rc));
     }
 
     return rc;
@@ -3352,7 +3429,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         {
             pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabBar.n.u9Size,
                             IOMMU_GET_DEV_TAB_SIZE(DevTabBar.n.u9Size));
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40Base);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT);
         }
     }
     /* Command Buffer Base Address Register. */
@@ -3364,7 +3441,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Command buffer BAR                      = %#RX64\n", CmdBufBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", CmdBufBar.n.u40Base);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", CmdBufBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3378,7 +3455,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Event log BAR                           = %#RX64\n", EvtLogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBar.n.u40Base);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3437,7 +3514,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         {
             pHlp->pfnPrintf(pHlp, "    Exclusion enable                        = %RTbool\n", ExclRangeBar.n.u1ExclEnable);
             pHlp->pfnPrintf(pHlp, "    Allow all devices                       = %RTbool\n", ExclRangeBar.n.u1AllowAll);
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", ExclRangeBar.n.u40ExclRangeBase);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n",
+                            ExclRangeBar.n.u40ExclRangeBase << X86_PAGE_4K_SHIFT);
         }
     }
     /* Exclusion Range Limit Register. */
@@ -3499,7 +3577,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  PPR Log BAR                             = %#RX64\n",   PprLogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBar.n.u40Base);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3535,7 +3613,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Guest Log BAR                           = %#RX64\n",    GALogBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %RTbool\n", GALogBar.n.u40Base);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %RTbool\n", GALogBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3556,7 +3634,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  PPR Log B BAR                           = %#RX64\n",   PprLogBBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBBar.n.u40Base);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", PprLogBBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3570,7 +3648,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         pHlp->pfnPrintf(pHlp, "  Event Log B BAR                         = %#RX64\n",   EvtLogBBar.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBBar.n.u40Base);
+            pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBBar.n.u40Base << X86_PAGE_4K_SHIFT);
             pHlp->pfnPrintf(pHlp, "    Length                                  = %u (%u entries, %u bytes)\n", uEncodedLen,
                             cEntries, cbBuffer);
         }
@@ -3726,12 +3804,12 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         {
             pHlp->pfnPrintf(pHlp, " MARC Aperature %u:\n", i);
             MARC_APER_BAR_T const MarcAperBar = pThis->aMarcApers[i].Base;
-            pHlp->pfnPrintf(pHlp, "   Base    = %#RX64 (addr: %#RX64)\n", MarcAperBar.u64, MarcAperBar.n.u40MarcBaseAddr);
+            pHlp->pfnPrintf(pHlp, "   Base    = %#RX64\n", MarcAperBar.n.u40MarcBaseAddr << X86_PAGE_4K_SHIFT);
 
             MARC_APER_RELOC_T const MarcAperReloc = pThis->aMarcApers[i].Reloc;
             pHlp->pfnPrintf(pHlp, "   Reloc   = %#RX64 (addr: %#RX64, read-only: %RTbool, enable: %RTbool)\n",
-                            MarcAperReloc.u64, MarcAperReloc.n.u40MarcRelocAddr, MarcAperReloc.n.u1ReadOnly,
-                            MarcAperReloc.n.u1RelocEn);
+                            MarcAperReloc.u64, MarcAperReloc.n.u40MarcRelocAddr << X86_PAGE_4K_SHIFT,
+                            MarcAperReloc.n.u1ReadOnly, MarcAperReloc.n.u1RelocEn);
 
             MARC_APER_LEN_T const MarcAperLen = pThis->aMarcApers[i].Length;
             pHlp->pfnPrintf(pHlp, "   Length  = %u pages\n", MarcAperLen.n.u40MarcLength);
@@ -3963,13 +4041,14 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->HwEvtLo                   = 0;
     pThis->HwEvtStatus.u64           = 0;
 
-    pThis->GALogBaseAddr.n.u40Base   = 0;
+    pThis->GALogBaseAddr.u64         = 0;
     pThis->GALogBaseAddr.n.u4Len     = 8;
     pThis->GALogTailAddr.u64         = 0;
 
-    pThis->PprLogBBaseAddr.n.u40Base = 0;
+    pThis->PprLogBBaseAddr.u64       = 0;
     pThis->PprLogBBaseAddr.n.u4Len   = 8;
-    pThis->EvtLogBBaseAddr.n.u40Base = 0;
+
+    pThis->EvtLogBBaseAddr.u64       = 0;
     pThis->EvtLogBBaseAddr.n.u4Len   = 8;
 
     pThis->DevSpecificFeat.u64       = 0;
@@ -4093,37 +4172,42 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
     /* Header. */
-    PDMPciDevSetVendorId(pPciDev,           IOMMU_PCI_VENDOR_ID);     /* AMD */
-    PDMPciDevSetDeviceId(pPciDev,           IOMMU_PCI_DEVICE_ID);     /* VirtualBox IOMMU device */
-    PDMPciDevSetCommand(pPciDev,            0);                       /* Command */
-    PDMPciDevSetStatus(pPciDev,             0x5);                     /* Status - CapList supported */
-    PDMPciDevSetRevisionId(pPciDev,         IOMMU_PCI_REVISION_ID);   /* VirtualBox specific device implementation revision */
-    PDMPciDevSetClassBase(pPciDev,          0x08);                    /* System Base Peripheral */
-    PDMPciDevSetClassSub(pPciDev,           0x06);                    /* IOMMU */
-    PDMPciDevSetClassProg(pPciDev,          0x00);                    /* IOMMU Programming interface */
-    PDMPciDevSetHeaderType(pPciDev,         0x00);                    /* Single function, type 0. */
-    PDMPciDevSetSubSystemId(pPciDev,        IOMMU_PCI_DEVICE_ID);     /* AMD */
-    PDMPciDevSetSubSystemVendorId(pPciDev,  IOMMU_PCI_VENDOR_ID);     /* VirtualBox IOMMU device */
-    PDMPciDevSetCapabilityList(pPciDev,     IOMMU_PCI_OFF_CAP_HDR);   /* Offset into capability registers. */
-    PDMPciDevSetInterruptPin(pPciDev,       0x01);                    /* INTA#. */
-    PDMPciDevSetInterruptLine(pPciDev,      0x00);                    /* For software compatibility; no effect on hardware. */
+    PDMPciDevSetVendorId(pPciDev,           IOMMU_PCI_VENDOR_ID);      /* AMD */
+    PDMPciDevSetDeviceId(pPciDev,           IOMMU_PCI_DEVICE_ID);      /* VirtualBox IOMMU device */
+    PDMPciDevSetCommand(pPciDev,            0);                        /* Command */
+    PDMPciDevSetStatus(pPciDev,             VBOX_PCI_STATUS_CAP_LIST); /* Status - CapList supported */
+    PDMPciDevSetRevisionId(pPciDev,         IOMMU_PCI_REVISION_ID);    /* VirtualBox specific device implementation revision */
+    PDMPciDevSetClassBase(pPciDev,          0x08);                     /* System Base Peripheral */
+    PDMPciDevSetClassSub(pPciDev,           0x06);                     /* IOMMU */
+    PDMPciDevSetClassProg(pPciDev,          0x00);                     /* IOMMU Programming interface */
+    PDMPciDevSetHeaderType(pPciDev,         0x00);                     /* Single function, type 0. */
+    PDMPciDevSetSubSystemId(pPciDev,        IOMMU_PCI_DEVICE_ID);      /* AMD */
+    PDMPciDevSetSubSystemVendorId(pPciDev,  IOMMU_PCI_VENDOR_ID);      /* VirtualBox IOMMU device */
+    PDMPciDevSetCapabilityList(pPciDev,     IOMMU_PCI_OFF_CAP_HDR);    /* Offset into capability registers. */
+    PDMPciDevSetInterruptPin(pPciDev,       0x01);                     /* INTA#. */
+    PDMPciDevSetInterruptLine(pPciDev,      0x00);                     /* For software compatibility; no effect on hardware. */
+
     /* Capability Header. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_CAP_HDR,
-                        RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_ID,    0xf)    /* RO - Secure Device capability block */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_PTR,   IOMMU_PCI_OFF_MSI_CAP_HDR)  /* RO - Offset to next capability block */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_TYPE,  0x3)    /* RO - IOMMU capability block */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_REV,   0x1)    /* RO - IOMMU interface revision */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_IOTLB_SUP, 0x0)    /* RO - Remote IOTLB support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_HT_TUNNEL, 0x0)    /* RO - HyperTransport Tunnel support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_NP_CACHE,  0x0)    /* RO - Cache NP page table entries */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_EFR_SUP,   0x1)    /* RO - Extended Feature Register support */
-                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,   0x1));  /* RO - Misc. Information Register support */
+                        RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_ID,    0xf)     /* RO - Secure Device capability block */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_PTR,   IOMMU_PCI_OFF_MSI_CAP_HDR)  /* RO - Offset to next capability */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_TYPE,  0x3)     /* RO - IOMMU capability block */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_REV,   0x1)     /* RO - IOMMU interface revision */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_IOTLB_SUP, 0x0)     /* RO - Remote IOTLB support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_HT_TUNNEL, 0x0)     /* RO - HyperTransport Tunnel support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_NP_CACHE,  0x0)     /* RO - Cache NP page table entries */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_EFR_SUP,   0x1)     /* RO - Extended Feature Register support */
+                      | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,   0x1));   /* RO - Misc. Information Register support */
+
     /* Base Address Low Register. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0x0);  /* RW - Base address (Lo) and enable bit. */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0x0);   /* RW - Base address (Lo) and enable bit. */
+
     /* Base Address High Register. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0x0);  /* RW - Base address (Hi) */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0x0);   /* RW - Base address (Hi) */
+
     /* IOMMU Range Register. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);         /* RW - Range register (implemented as RO by us). */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);          /* RW - Range register (implemented as RO by us). */
+
     /* Misc. Information Register 0. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0,
                         RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,     0x0)    /* RO - MSI number */
@@ -4132,8 +4216,10 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                       | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     0x40)   /* RO - Virt. Addr size (64 bits) */
                       | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV, 0x0)    /* RW - HT ATS reserved */
                       | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR, 0x0));  /* RW - PPR interrupt number */
+
     /* Misc. Information Register 1. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0, 0);
+
     /* MSI Capability Header register. */
     PDMMSIREG MsiReg;
     RT_ZERO(MsiReg);
