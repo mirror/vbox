@@ -59,7 +59,7 @@ public:
     /** @name Data attributes.
       * @{ */
         /** Defines fake cloud item @a enmState. */
-        void setFakeCloudItemState(UIFakeCloudVirtualMachineItemState enmState) { m_enmFakeCloudItemState = enmState; }
+        void setFakeCloudItemState(UIFakeCloudVirtualMachineItemState enmState);
         /** Returns fake cloud item state. */
         UIFakeCloudVirtualMachineItemState fakeCloudItemState() const { return m_enmFakeCloudItemState; }
 

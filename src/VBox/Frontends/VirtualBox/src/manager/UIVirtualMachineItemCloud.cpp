@@ -55,6 +55,12 @@ UIVirtualMachineItemCloud::~UIVirtualMachineItemCloud()
 {
 }
 
+void UIVirtualMachineItemCloud::setFakeCloudItemState(UIFakeCloudVirtualMachineItemState enmState)
+{
+    m_enmFakeCloudItemState = enmState;
+    recache();
+}
+
 void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
 {
     QTimer::singleShot(fDelayed ? 10000 : 0, this, SLOT(sltCreateGetCloudInstanceInfoTask()));
@@ -62,60 +68,82 @@ void UIVirtualMachineItemCloud::updateInfoAsync(bool fDelayed)
 
 void UIVirtualMachineItemCloud::recache()
 {
-    /* Determine attributes which are always available: */
-    if (!m_comCloudMachine.isNull())
+    switch (itemType())
     {
-        m_uId = m_comCloudMachine.GetId();
-        m_strName = m_comCloudMachine.GetName();
-    }
-
-    /* Now determine whether VM is accessible: */
-    m_fAccessible = !m_comCloudMachine.isNull()
-                  ? m_comCloudMachine.GetAccessible()
-                  : true;
-    m_strAccessError =    !m_comCloudMachine.isNull()
-                       && !m_comCloudMachine.GetAccessible()
-                       && !m_comCloudMachine.GetAccessError().isNull()
-                     ? UIErrorString::formatErrorInfo(m_comCloudMachine.GetAccessError())
-                     : QString();
-
-    /* Determine own VM attributes: */
-    m_strOSTypeId =    !m_comCloudMachine.isNull()
-                    && m_comCloudMachine.GetAccessible()
-                  ? m_comCloudMachine.GetOSTypeId()
-                  : "Other";
-
-    /* Determine VM states: */
-    m_enmMachineState =    !m_comCloudMachine.isNull()
-                        && m_comCloudMachine.GetAccessible()
-                      ? m_comCloudMachine.GetState()
-                      : KMachineState_PoweredOff;
-    m_strMachineStateName = gpConverter->toString(m_enmMachineState);
-    if (itemType() == UIVirtualMachineItemType_CloudFake)
-    {
-        switch (m_enmFakeCloudItemState)
+        case UIVirtualMachineItemType_CloudFake:
         {
-            case UIFakeCloudVirtualMachineItemState_Loading:
-                m_machineStateIcon = UIIconPool::iconSet(":/state_loading_16px.png");
-                break;
-            case UIFakeCloudVirtualMachineItemState_Done:
-                m_machineStateIcon = UIIconPool::iconSet(":/vm_new_16px.png");
-                break;
-            default:
-                break;
+            /* Make sure cloud VM is NOT set: */
+            AssertReturnVoid(m_comCloudMachine.isNull());
+
+            /* Determine ID/name: */
+            m_uId = QUuid();
+            m_strName = QString();
+
+            /* Determine whether VM is accessible: */
+            m_fAccessible = true;
+            m_strAccessError = QString();
+
+            /* Determine VM OS type: */
+            m_strOSTypeId = "Other";
+
+            /* Determine VM states: */
+            m_enmMachineState = KMachineState_PoweredOff;
+            m_strMachineStateName = gpConverter->toString(m_enmMachineState);
+            switch (m_enmFakeCloudItemState)
+            {
+                case UIFakeCloudVirtualMachineItemState_Loading:
+                    m_machineStateIcon = UIIconPool::iconSet(":/state_loading_16px.png");
+                    break;
+                case UIFakeCloudVirtualMachineItemState_Done:
+                    m_machineStateIcon = UIIconPool::iconSet(":/vm_new_16px.png");
+                    break;
+                default:
+                    break;
+            }
+
+            /* Determine configuration access level: */
+            m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
+
+            /* Determine whether we should show this VM details: */
+            m_fHasDetails = true;
+
+            break;
+        }
+        case UIVirtualMachineItemType_CloudReal:
+        {
+            /* Make sure cloud VM is set: */
+            AssertReturnVoid(m_comCloudMachine.isNotNull());
+
+            /* Determine ID/name: */
+            m_uId = m_comCloudMachine.GetId();
+            m_strName = m_comCloudMachine.GetName();
+
+            /* Determine whether VM is accessible: */
+            m_fAccessible = m_comCloudMachine.GetAccessible();
+            m_strAccessError = !m_fAccessible ? UIErrorString::formatErrorInfo(m_comCloudMachine.GetAccessError()) : QString();
+
+            /* Determine VM OS type: */
+            m_strOSTypeId = m_fAccessible ? m_comCloudMachine.GetOSTypeId() : "Other";
+
+            /* Determine VM states: */
+            m_enmMachineState = m_fAccessible ? m_comCloudMachine.GetState() : KMachineState_PoweredOff;
+            m_strMachineStateName = gpConverter->toString(m_enmMachineState);
+            m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
+
+            /* Determine configuration access level: */
+            m_enmConfigurationAccessLevel = m_fAccessible ? ConfigurationAccessLevel_Full : ConfigurationAccessLevel_Null;
+
+            /* Determine whether we should show this VM details: */
+            m_fHasDetails = true;
+
+            break;
+        }
+        default:
+        {
+            AssertFailed();
+            break;
         }
     }
-    else
-        m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
-
-    /* Determine configuration access level: */
-    if (itemType() == UIVirtualMachineItemType_CloudReal)
-        m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Full;
-    else
-        m_enmConfigurationAccessLevel = ConfigurationAccessLevel_Null;
-
-    /* Determine whether we should show this VM details: */
-    m_fHasDetails = true;
 
     /* Recache item pixmap: */
     recachePixmap();
