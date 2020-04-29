@@ -563,6 +563,10 @@ int UIDetailsSet::minimumHeightHint() const
 
 void UIDetailsSet::sltMachineStateChange(const QUuid &uId)
 {
+    /* For local VMs only: */
+    if (!m_fIsLocal)
+        return;
+
     /* Is this our VM changed? */
     if (m_comMachine.GetId() != uId)
         return;
@@ -573,6 +577,10 @@ void UIDetailsSet::sltMachineStateChange(const QUuid &uId)
 
 void UIDetailsSet::sltMachineAttributesChange(const QUuid &uId)
 {
+    /* For local VMs only: */
+    if (!m_fIsLocal)
+        return;
+
     /* Is this our VM changed? */
     if (m_comMachine.GetId() != uId)
         return;
@@ -583,6 +591,10 @@ void UIDetailsSet::sltMachineAttributesChange(const QUuid &uId)
 
 void UIDetailsSet::sltMediumEnumerated(const QUuid &uId)
 {
+    /* For local VMs only: */
+    if (!m_fIsLocal)
+        return;
+
     /* Is this our medium changed? */
     const UIMedium guiMedium = uiCommon().medium(uId);
     if (   guiMedium.isNull()
