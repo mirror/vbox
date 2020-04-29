@@ -226,9 +226,7 @@ private:
     UITools            *m_pPaneTools;
 
     /** Holds whether last time single group item was selected exclusively. */
-    bool  m_fSingleGroupSelected : 1;
-    /** Holds whether last time valid item was selected. */
-    bool  m_fValidItemSelected : 1;
+    bool  m_fSingleGroupSelected;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIVirtualBoxManagerWidget_h */

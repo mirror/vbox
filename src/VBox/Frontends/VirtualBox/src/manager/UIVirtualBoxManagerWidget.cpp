@@ -50,7 +50,6 @@ UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParen
     , m_pSlidingAnimation(0)
     , m_pPaneTools(0)
     , m_fSingleGroupSelected(false)
-    , m_fValidItemSelected(false)
 {
     prepare();
 }
@@ -257,28 +256,19 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
         return;
     }
 
-    /* Acquire current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-    const bool fCurrentItemIsOk = pItem && pItem->accessible();
-
     /* If that was machine or group item selected: */
     if (isMachineItemSelected() || isGroupItemSelected())
     {
         /* Recache current item info: */
         recacheCurrentItemInformation();
 
-        /* Update toolbar if we are switching beween:
-         * 1. single group item and rest of possible items,
-         * 2. valid machine item and inaccessible machine item. */
-        if (   m_fSingleGroupSelected != isSingleGroupSelected()
-            || m_fValidItemSelected != fCurrentItemIsOk)
+        /* Update toolbar if we are switching beween single group item and rest of possible items: */
+        if (m_fSingleGroupSelected != isSingleGroupSelected())
             updateToolbar();
     }
 
     /* Remember whether single group item was selected: */
     m_fSingleGroupSelected = isSingleGroupSelected();
-    /* Remember whether valid item was selected: */
-    m_fValidItemSelected = fCurrentItemIsOk;
 }
 
 void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirection enmDirection)
