@@ -49,7 +49,8 @@ UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParen
     , m_pPaneToolsMachine(0)
     , m_pSlidingAnimation(0)
     , m_pPaneTools(0)
-    , m_fSingleGroupSelected(false)
+    , m_enmSelectionType(SelectionType_Invalid)
+    , m_fSelectedMachineItemAccessible(false)
 {
     prepare();
 }
@@ -256,19 +257,31 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
         return;
     }
 
-    /* If that was machine or group item selected: */
+    /* Recache current item info if machine or group item selected: */
     if (isMachineItemSelected() || isGroupItemSelected())
-    {
-        /* Recache current item info: */
         recacheCurrentItemInformation();
 
-        /* Update toolbar if we are switching beween single group item and rest of possible items: */
-        if (m_fSingleGroupSelected != isSingleGroupSelected())
-            updateToolbar();
-    }
+    /* Calculate selection type: */
+    const SelectionType enmSelectedItemType = isSingleGroupSelected()
+                                            ? SelectionType_SingleGroupItem
+                                            : isGlobalItemSelected()
+                                            ? SelectionType_FirstIsGlobalItem
+                                            : isMachineItemSelected()
+                                            ? SelectionType_FirstIsMachineItem
+                                            : SelectionType_Invalid;
+    /* Acquire current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
-    /* Remember whether single group item was selected: */
-    m_fSingleGroupSelected = isSingleGroupSelected();
+    /* Update toolbar if selection type or item accessibility got changed: */
+    if (   m_enmSelectionType != enmSelectedItemType
+        || m_fSelectedMachineItemAccessible != fCurrentItemIsOk)
+        updateToolbar();
+
+    /* Remember the last selection type: */
+    m_enmSelectionType = enmSelectedItemType;
+    /* Remember whether the last selected item was accessible: */
+    m_fSelectedMachineItemAccessible = fCurrentItemIsOk;
 }
 
 void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirection enmDirection)

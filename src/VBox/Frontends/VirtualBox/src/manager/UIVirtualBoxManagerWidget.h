@@ -46,6 +46,15 @@ class UIVirtualBoxManagerWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+    /** Possible selection types. */
+    enum SelectionType
+    {
+        SelectionType_Invalid,
+        SelectionType_SingleGroupItem,
+        SelectionType_FirstIsGlobalItem,
+        SelectionType_FirstIsMachineItem
+    };
+
 signals:
 
     /** Notifies about Chooser-pane index change. */
@@ -225,8 +234,10 @@ private:
     /** Holds the Tools-pane instance. */
     UITools            *m_pPaneTools;
 
-    /** Holds whether last time single group item was selected exclusively. */
-    bool  m_fSingleGroupSelected;
+    /** Holds the last selection type. */
+    SelectionType  m_enmSelectionType;
+    /** Holds whether the last selected item was accessible. */
+    bool           m_fSelectedMachineItemAccessible;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIVirtualBoxManagerWidget_h */
