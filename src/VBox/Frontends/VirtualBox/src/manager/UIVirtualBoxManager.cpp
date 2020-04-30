@@ -2239,7 +2239,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemInaccessible(const QList<UIVirtualMach
 bool UIVirtualBoxManager::isAtLeastOneItemRemovable(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (!pItem->accessible() || pItem->isItemEditable())
+        if (pItem->isItemRemovable())
             return true;
     return false;
 }

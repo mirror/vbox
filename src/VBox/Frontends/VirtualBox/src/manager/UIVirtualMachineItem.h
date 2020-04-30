@@ -119,6 +119,8 @@ public:
       * @{ */
         /** Returns whether this item is editable. */
         virtual bool isItemEditable() const = 0;
+        /** Returns whether this item is removable. */
+        virtual bool isItemRemovable() const = 0;
         /** Returns whether this item is saved. */
         virtual bool isItemSaved() const = 0;
         /** Returns whether this item is powered off. */

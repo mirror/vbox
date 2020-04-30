@@ -214,6 +214,12 @@ bool UIVirtualMachineItemLocal::isItemEditable() const
            && sessionState() == KSessionState_Unlocked;
 }
 
+bool UIVirtualMachineItemLocal::isItemRemovable() const
+{
+    return    !accessible()
+           || sessionState() == KSessionState_Unlocked;
+}
+
 bool UIVirtualMachineItemLocal::isItemSaved() const
 {
     return    accessible()

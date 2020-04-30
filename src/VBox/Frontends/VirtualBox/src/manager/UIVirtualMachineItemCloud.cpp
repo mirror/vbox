@@ -174,6 +174,12 @@ bool UIVirtualMachineItemCloud::isItemEditable() const
            && itemType() == UIVirtualMachineItemType_CloudReal;
 }
 
+bool UIVirtualMachineItemCloud::isItemRemovable() const
+{
+    return    accessible()
+           && itemType() == UIVirtualMachineItemType_CloudReal;
+}
+
 bool UIVirtualMachineItemCloud::isItemSaved() const
 {
     return    accessible()

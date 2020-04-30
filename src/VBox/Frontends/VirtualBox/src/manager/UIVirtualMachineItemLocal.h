@@ -91,6 +91,8 @@ public:
       * @{ */
         /** Returns whether this item is editable. */
         virtual bool isItemEditable() const /* override */;
+        /** Returns whether this item is removable. */
+        virtual bool isItemRemovable() const /* override */;
         /** Returns whether this item is saved. */
         virtual bool isItemSaved() const /* override */;
         /** Returns whether this item is powered off. */
