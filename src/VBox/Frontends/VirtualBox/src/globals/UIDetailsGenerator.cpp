@@ -206,7 +206,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CCloudMachine 
             }
 
             /* Generate table string: */
-            table << UITextTableLine(strLabel, QString("<a href=#%1,%2>%3</a>").arg(strAnchorType, strLabel, strValue));
+            if (comIteratedValue.GetEnabled())
+                table << UITextTableLine(strLabel, QString("<a href=#%1,%2>%3</a>").arg(strAnchorType, strLabel, strValue));
+            else
+                table << UITextTableLine(strLabel, strValue);
         }
     }
 
