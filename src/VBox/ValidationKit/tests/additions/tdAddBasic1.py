@@ -162,6 +162,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         self.logVmInfo(oVM);
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
+                                                                  cMsCdWait = 5 * 60 * 1000,
                                                                   sFileCdWait = self.sFileCdWait);
         if oSession is not None:
             self.addTask(oTxsSession);
@@ -313,7 +314,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         or oTxsSession.getResult() is False:
             reporter.error('Error installing Windows Guest Additions (installer returned with exit code)')
         else:
-            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 3 * 60000);
+            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000);
             if fRc is True:
                 # Add the Windows Guest Additions installer files to the files we want to download
                 # from the guest.
