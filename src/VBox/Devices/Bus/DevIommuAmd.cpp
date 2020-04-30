@@ -568,8 +568,18 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t        au32[8];
+    /** The 64-bit unsigned integer view. */
+    uint64_t        au64[4];
 } DEV_TAB_ENTRY_T;
 AssertCompileSize(DEV_TAB_ENTRY_T, 32);
+#define IOMMU_DEV_TAB_ENTRY_QWORD_0_VALID_MASK      UINT64_C(0x7fffffffffffff83)
+#define IOMMU_DEV_TAB_ENTRY_QWORD_1_VALID_MASK      UINT64_C(0xfffffbffffffffff)
+#define IOMMU_DEV_TAB_ENTRY_QWORD_2_VALID_MASK      UINT64_C(0xf70fffffffffffff)
+#define IOMMU_DEV_TAB_ENTRY_QWORD_3_VALID_MASK      UINT64_C(0xffc0000000000000)
+/** Pointer to a device table entry. */
+typedef DEV_TAB_ENTRY_T *PDEVTAB_ENTRY_T;
+/** Pointer to a const device table entry. */
+typedef DEV_TAB_ENTRY_T const *PCDEV_TAB_ENTRY_T;
 
 /**
  * I/O Page Table Entry.
@@ -842,17 +852,17 @@ typedef EVT_GENERIC_T *PEVT_GENERIC_T;
 typedef const EVT_GENERIC_T *PCEVT_GENERIC_T;
 
 /**
- * Event log types.
+ * Hardware event types.
  * In accordance with the AMD spec.
  */
-typedef enum EVTLOGTYPE
+typedef enum HWEVTTYPE
 {
-    EVTLOGTYPE_RSVD = 0,
-    EVTLOGTYPE_MASTER_ABORT,
-    EVTLOGTYPE_TARGET_ABORT,
-    EVTLOGTYPE_DATA_ERROR
-} EVTLOGTYPE;
-AssertCompileSize(EVTLOGTYPE, 4);
+    HWEVTTYPE_RSVD = 0,
+    HWEVTTYPE_MASTER_ABORT,
+    HWEVTTYPE_TARGET_ABORT,
+    HWEVTTYPE_DATA_ERROR
+} HWEVTTYPE;
+AssertCompileSize(HWEVTTYPE, 4);
 
 /**
  * Event Log Entry: ILLEGAL_DEV_TABLE_ENTRY.
@@ -872,18 +882,18 @@ typedef union
         uint16_t    u1Rsvd0 : 1;            /**< Bit  52     - Reserved. */
         uint16_t    u1ReadWrite : 1;        /**< Bit  53     - RW: Read/Write. */
         uint16_t    u1Rsvd1 : 1;            /**< Bit  54     - Reserved. */
-        uint16_t    u1RsvdZero : 1;         /**< Bit  55     - RZ: Reserved bit not Zero or invalid level encoding. */
+        uint16_t    u1RsvdNotZero : 1;      /**< Bit  55     - RZ: Reserved bit not Zero or invalid level encoding. */
         uint16_t    u1Translation : 1;      /**< Bit  56     - TN: Translation. */
         uint16_t    u3Rsvd0 : 3;            /**< Bits 59:57  - Reserved. */
         uint16_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
-        uint32_t    u2Rsvd1 : 2;            /**< Bits 65:64  - Reserved. */
-        uint32_t    u30AddrLo : 2;          /**< Bits 95:66  - Address: Device Virtual Address (Lo). */
-        uint32_t    u30AddrHi;              /**< Bits 127:96 - Address: Device Virtual Address (Hi). */
+        uint64_t    u64Addr;                /**< Bits 127:64 - Address: Device Virtual Address. */
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
 } EVT_ILLEGAL_DEV_TAB_ENTRY_T;
 AssertCompileSize(EVT_ILLEGAL_DEV_TAB_ENTRY_T, 16);
+/** Pointer to an illegal device table entry event. */
+typedef EVT_ILLEGAL_DEV_TAB_ENTRY_T *PEVT_ILLEGAL_DEV_TAB_ENTRY_T;
 
 /**
  * Event Log Entry: IO_PAGE_FAULT_EVENT.
@@ -903,7 +913,7 @@ typedef union
         uint16_t    u1Present : 1;          /**< Bit  52     - PR: Present. */
         uint16_t    u1ReadWrite : 1;        /**< Bit  53     - RW: Read/Write. */
         uint16_t    u1Perm : 1;             /**< Bit  54     - PE: Permission Indicator. */
-        uint16_t    u1RsvdZero : 1;         /**< Bit  55     - RZ: Reserved bit not Zero or invalid level encoding. */
+        uint16_t    u1RsvdNotZero : 1;      /**< Bit  55     - RZ: Reserved bit not Zero or invalid level encoding. */
         uint16_t    u1Translation : 1;      /**< Bit  56     - TN: Translation. */
         uint16_t    u3Rsvd0 : 3;            /**< Bit  59:57  - Reserved. */
         uint16_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
@@ -1124,7 +1134,7 @@ typedef union
     uint64_t    u64;
 } IOMMU_BAR_T;
 AssertCompileSize(IOMMU_BAR_T, 8);
-#define IOMMU_BAR_VALID_MASK    UINT64_C(0xffffffffffffc001)
+#define IOMMU_BAR_VALID_MASK        UINT64_C(0xffffffffffffc001)
 
 /**
  * IOMMU Range Register (PCI).
@@ -1969,6 +1979,24 @@ AssertCompileSize(PPR_LOG_OVERFLOW_EARLY_T, 8);
  * Currently identical to PPR_LOG_OVERFLOW_EARLY_T.
  */
 typedef PPR_LOG_OVERFLOW_EARLY_T        PPR_LOG_B_OVERFLOW_EARLY_T;
+
+/**
+ * IOMMU operation types.
+ */
+typedef enum IOMMUOP
+{
+    /** Address translation request. */
+    IOMMUOP_TRANSLATE_REQ = 0,
+    /** Memory read request. */
+    IOMMUOP_MEM_READ,
+    /** Memory write request. */
+    IOMMUOP_MEM_WRITE,
+    /** Interrupt request. */
+    IOMMUOP_INTR_REQ,
+    /** Command request. */
+    IOMMUOP_CMD
+} IOMMUOP;
+AssertCompileSize(IOMMUOP, 4);
 
 
 /**
@@ -3163,36 +3191,6 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 
 
 /**
- * Constructs a DEV_TAB_HARDWARE_ERROR event.
- *
- * @param   uDevId          The device ID.
- * @param   GCPhysDevTab    The device table system physical address.
- * @param   fTranslation    Whether this is an translation or transaction request.
- * @param   fInterrupt      Whether the transaction was an interrupt or memory
- *                          request.
- * @param   fReadWrite      Whether the transaction was read-write or read-only.
- *                          Only meaninful when @a fTranslate is @c false and
- *                          @a fInterrupt is false.
- * @param   pEvent          Where to store the constructed event.
- *
- * @thread  Any.
- */
-static void iommuAmdMakeDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDevTab, bool fTranslation, bool fReadWrite,
-                                           bool fInterrupt, PEVT_GENERIC_T pEvent)
-{
-    memset(pEvent, 0, sizeof(*pEvent));
-    PEVT_DEV_TAB_HW_ERROR_T pDevTabHwErr = (PEVT_DEV_TAB_HW_ERROR_T)pEvent;
-    pDevTabHwErr->n.u16DevId      = uDevId;
-    pDevTabHwErr->n.u1Intr        = fInterrupt;
-    pDevTabHwErr->n.u1ReadWrite   = fReadWrite;
-    pDevTabHwErr->n.u1Translation = fTranslation;
-    pDevTabHwErr->n.u2Type        = EVTLOGTYPE_TARGET_ABORT;
-    pDevTabHwErr->n.u4EvtCode     = IOMMU_EVT_DEV_TAB_HW_ERROR;
-    pDevTabHwErr->n.u64Addr       = GCPhysDevTab;
-}
-
-
-/**
  * Sets an event in the hardware error registers.
  *
  * @param   pDevIns     The IOMMU device instance.
@@ -3216,16 +3214,113 @@ static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 
 
 /**
+ * Constructs a DEV_TAB_HARDWARE_ERROR event.
+ *
+ * @param   uDevId          The device ID.
+ * @param   GCPhysDevTab    The system physical address of the failed device table
+ *                          access.
+ * @param   fOperation      The operation being performed.
+ * @param   pEvent          Where to store the constructed event.
+ *
+ * @thread  Any.
+ */
+static void iommuAmdMakeDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDevTabEntry, IOMMUOP enmOp, PEVT_GENERIC_T pEvent)
+{
+    memset(pEvent, 0, sizeof(*pEvent));
+    AssertCompile(sizeof(EVT_DEV_TAB_HW_ERROR_T) == sizeof(EVT_GENERIC_T));
+    PEVT_DEV_TAB_HW_ERROR_T pDevTabHwErr = (PEVT_DEV_TAB_HW_ERROR_T)pEvent;
+    pDevTabHwErr->n.u16DevId      = uDevId;
+    pDevTabHwErr->n.u1Intr        = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
+    pDevTabHwErr->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
+    pDevTabHwErr->n.u1Translation = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
+    pDevTabHwErr->n.u2Type        = enmOp == IOMMUOP_CMD ? HWEVTTYPE_DATA_ERROR : HWEVTTYPE_TARGET_ABORT;
+    pDevTabHwErr->n.u4EvtCode     = IOMMU_EVT_DEV_TAB_HW_ERROR;
+    pDevTabHwErr->n.u64Addr       = GCPhysDevTabEntry;
+}
+
+
+/**
+ * Raises a DEV_TAB_HARDWARE_ERROR event.
+ *
+ * @param   pDevIns             The IOMMU device instance.
+ * @param   uDevId              The device ID.
+ * @param   GCPhysDevTabEntry   The system physical address of the failed device
+ *                              table access.
+ * @param   enmOp               The operation being performed by the IOMMU.
+ */
+static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysDevTabEntry, IOMMUOP enmOp)
+{
+    EVT_GENERIC_T Event;
+    iommuAmdMakeDevTabHwErrorEvent(uDevId, GCPhysDevTabEntry, enmOp, &Event);
+    iommuAmdSetHwError(pDevIns, &Event);
+    iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+    if (enmOp != IOMMUOP_CMD)
+        iommuAmdSetPciTargetAbort(pDevIns);
+}
+
+
+/**
+ * Constructs an ILLEGAL_DEV_TAB_ENTRY event.
+ *
+ * @param   uDevId          The device ID.
+ * @param   uDva            The device virtual address.
+ * @param   fRsvdNotZero    Whether reserved bits in the device table entry were not
+ *                          zero.
+ * @param   enmOp           The operation being performed.
+ * @param   pEvent          Where to store the constructed event.
+ */
+static void iommuAmdMakeIllegalDevTabEntryEvent(uint16_t uDevId, uint64_t uDva, bool fRsvdNotZero, IOMMUOP enmOp,
+                                                PEVT_GENERIC_T pEvent)
+{
+    memset(pEvent, 0, sizeof(*pEvent));
+    AssertCompile(sizeof(EVT_ILLEGAL_DEV_TAB_ENTRY_T) == sizeof(EVT_GENERIC_T));
+    PEVT_ILLEGAL_DEV_TAB_ENTRY_T pIllegalDteErr = (PEVT_ILLEGAL_DEV_TAB_ENTRY_T)pEvent;
+    pIllegalDteErr->n.u16DevId      = uDevId;
+    pIllegalDteErr->n.u1Interrupt   = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
+    pIllegalDteErr->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
+    pIllegalDteErr->n.u1RsvdNotZero = fRsvdNotZero;
+    pIllegalDteErr->n.u1Translation = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
+    pIllegalDteErr->n.u4EvtCode     = IOMMU_EVT_ILLEGAL_DEV_TAB_ENTRY;
+    pIllegalDteErr->n.u64Addr       = uDva & ~UINT64_C(0x3);
+    /** @todo r=ramshankar: Not sure why the last 2 bits are marked as reserved by the
+     *        IOMMU spec here but not for this field for I/O page fault event. */
+    Assert(!(uDva & UINT64_C(0x3)));
+}
+
+
+/**
+ * Raises an ILLEGAL_DEV_TAB_ENTRY event.
+ *
+ * @param   pDevIns         The IOMMU instance data.
+ * @param   uDevId          The device ID.
+ * @param   uDva            The device virtual address.
+ * @param   fRsvdNotZero    Whether reserved bits in the device table entry were not
+ *                          zero.
+ * @param   enmOp           The operation being performed.
+ */
+static void iommuAmdRaiseIllegalDevTabEntryEvent(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, bool fRsvdNotZero,
+                                                 IOMMUOP enmOp)
+{
+    EVT_GENERIC_T Event;
+    iommuAmdMakeIllegalDevTabEntryEvent(uDevId, uDva, fRsvdNotZero, enmOp, &Event);
+    iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+    if (enmOp != IOMMUOP_CMD)
+        iommuAmdSetPciTargetAbort(pDevIns);
+}
+
+
+/**
  * Reads a device table entry from guest memory given the device ID.
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
  * @param   uDevId          The device ID.
+ * @param   enmOp           The operation being performed by the IOMMU.
  * @param   pDevTabEntry    Where to store the device table entry.
  *
  * @thread  Any.
  */
-static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_ENTRY_T *pDevTabEntry)
+static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, DEV_TAB_ENTRY_T *pDevTabEntry)
 {
     PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
@@ -3244,17 +3339,8 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_
     int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTabEntry, pDevTabEntry, sizeof(*pDevTabEntry));
     if (RT_FAILURE(rc))
     {
-        EVT_GENERIC_T Event;
-        iommuAmdMakeDevTabHwErrorEvent(uDevId,
-                                       GCPhysDevTab,
-                                       true  /* fTranslation */,
-                                       false /* fReadWrite */,
-                                       false /* fInterrupt */,
-                                       &Event);
-        iommuAmdSetHwError(pDevIns, &Event);
-        iommuAmdWriteEvtLogEntry(pDevIns, &Event);
-        iommuAmdSetPciTargetAbort(pDevIns);
-        Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc -> target abort\n", GCPhysDevTabEntry, rc));
+        Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc\n", GCPhysDevTabEntry, rc));
+        iommuAmdRaiseDevTabHwErrorEvent(pDevIns, uDevId, GCPhysDevTabEntry, enmOp);
     }
 
     return rc;
@@ -3276,7 +3362,51 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, DEV_TAB_
 static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbRead, PRTGCPHYS pGCPhysOut)
 {
     RT_NOREF(pDevIns, uDevId, uDva, cbRead, pGCPhysOut);
-    return VERR_NOT_IMPLEMENTED;
+
+    Assert(pDevIns);
+    Assert(pGCPhysOut);
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMUOP const enmOp = IOMMUOP_TRANSLATE_REQ;
+
+    /* Addresses are forwarded without translation when the IOMMU is disabled. */
+    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+    if (Ctrl.n.u1IommuEn)
+    {
+        /** @todo IOTLB cache lookup. */
+
+        /* Read the device table entry. */
+        DEV_TAB_ENTRY_T DevTabEntry;
+        int rc = iommuAmdReadDevTabEntry(pDevIns, uDevId, enmOp, &DevTabEntry);
+        if (RT_SUCCESS(rc))
+        {
+            /* Addresses are forwarded without translation when DTE.V is 0. */
+            if (DevTabEntry.n.u1Valid)
+            {
+                /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
+                uint64_t const fRsvdQword0 = DevTabEntry.au64[0] & ~IOMMU_DEV_TAB_ENTRY_QWORD_0_VALID_MASK;
+                uint64_t const fRsvdQword1 = DevTabEntry.au64[1] & ~IOMMU_DEV_TAB_ENTRY_QWORD_1_VALID_MASK;
+                if (   fRsvdQword0
+                    || fRsvdQword1)
+                {
+                    Log((IOMMU_LOG_PFX ":DTE invalid reserved bits ([0]=%#RX64 [1]=%#RX64)\n", fRsvdQword0, fRsvdQword1));
+                    iommuAmdRaiseIllegalDevTabEntryEvent(pDevIns, uDevId, uDva, true /* fRsvdNotZero */, enmOp);
+                    return VERR_GENERAL_FAILURE; /** @todo IOMMU: Change this. */
+                }
+
+                /** @todo IOMMU: Traverse the I/O page table and translate. */
+                return VERR_NOT_IMPLEMENTED;
+            }
+        }
+        else
+        {
+            Log((IOMMU_LOG_PFX ":Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
+            return VERR_GENERAL_FAILURE; /** @todo IOMMU: Change this. */
+        }
+    }
+
+    *pGCPhysOut = uDva;
+    return VINF_SUCCESS;
 }
 
 
@@ -3380,30 +3510,29 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
     {
         case IOMMU_PCI_OFF_BASE_ADDR_REG_LO:
         {
-            IOMMU_BAR_T const IommuBar = pThis->IommuBar;
-            if (!IommuBar.n.u1Enable)
-            {
-                pThis->IommuBar.au32[0] = u32Value & IOMMU_BAR_VALID_MASK;
-                Assert(pThis->hMmio == NIL_IOMMMIOHANDLE);
-                Assert(!pThis->ExtFeat.n.u1PerfCounterSup); /* 16K aligned when performance counters aren't supported. */
-                uint64_t const fAlignMask = UINT64_C(0xffffffffffffc000);
-                RTGCPHYS const GCPhysMmioBase = RT_MAKE_U64(pThis->IommuBar.au32[0] & fAlignMask, pThis->IommuBar.au32[1]);
-                rcStrict = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
-                if (RT_FAILURE(rcStrict))
-                    Log((IOMMU_LOG_PFX ": Failed to map IOMMU MMIO region at %#RGp. rc=%Rrc\n", GCPhysMmioBase, rcStrict));
-            }
-            else
+            if (pThis->IommuBar.n.u1Enable)
             {
                 rcStrict = VINF_SUCCESS;
                 Log((IOMMU_LOG_PFX ": Writing Base Address (Lo) when it's already enabled -> Ignored\n"));
+                break;
+            }
+
+            pThis->IommuBar.au32[0] = u32Value & IOMMU_BAR_VALID_MASK;
+            if (pThis->IommuBar.n.u1Enable)
+            {
+                Assert(pThis->hMmio == NIL_IOMMMIOHANDLE);
+                Assert(!pThis->ExtFeat.n.u1PerfCounterSup); /* Base is 16K aligned when performance counters aren't supported. */
+                RTGCPHYS const GCPhysMmioBase = RT_MAKE_U64(pThis->IommuBar.au32[0] & 0xffffc000, pThis->IommuBar.au32[1]);
+                rcStrict = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
+                if (RT_FAILURE(rcStrict))
+                    Log((IOMMU_LOG_PFX ": Failed to map IOMMU MMIO region at %#RGp. rc=%Rrc\n", GCPhysMmioBase, rcStrict));
             }
             break;
         }
 
         case IOMMU_PCI_OFF_BASE_ADDR_REG_HI:
         {
-            IOMMU_BAR_T const IommuBar = pThis->IommuBar;
-            if (!IommuBar.n.u1Enable)
+            if (!pThis->IommuBar.n.u1Enable)
                 pThis->IommuBar.au32[1] = u32Value;
             else
             {
