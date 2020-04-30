@@ -134,7 +134,6 @@ void UIChooser::prepare()
 
 void UIChooser::preparePalette()
 {
-    /* Setup palette: */
     setAutoFillBackground(true);
     QPalette pal = palette();
     QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
@@ -176,7 +175,17 @@ void UIChooser::prepareConnections()
     AssertPtrReturnVoid(model());
     AssertPtrReturnVoid(view());
 
-    /* Setup chooser-model connections: */
+    /* Chooser-model connections: */
+    connect(model(), &UIChooserModel::sigGroupSavingStateChanged,
+            this, &UIChooser::sigGroupSavingStateChanged);
+    connect(model(), &UIChooserModel::sigSelectionChanged,
+            this, &UIChooser::sigSelectionChanged);
+    connect(model(), &UIChooserModel::sigSelectionInvalidated,
+            this, &UIChooser::sigSelectionInvalidated);
+    connect(model(), &UIChooserModel::sigToggleStarted,
+            this, &UIChooser::sigToggleStarted);
+    connect(model(), &UIChooserModel::sigToggleFinished,
+            this, &UIChooser::sigToggleFinished);
     connect(model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged,
             view(), &UIChooserView::sltMinimumWidthHintChanged);
     connect(model(), &UIChooserModel::sigToolMenuRequested,
@@ -184,7 +193,7 @@ void UIChooser::prepareConnections()
     connect(model(), &UIChooserModel::sigCloudMachineStateChange,
             this, &UIChooser::sigCloudMachineStateChange);
 
-    /* Setup chooser-view connections: */
+    /* Chooser-view connections: */
     connect(view(), &UIChooserView::sigResized,
             model(), &UIChooserModel::sltHandleViewResized);
 }
@@ -201,8 +210,39 @@ void UIChooser::deinitModel()
     model()->deinit();
 }
 
+void UIChooser::cleanupConnections()
+{
+    AssertPtrReturnVoid(model());
+    AssertPtrReturnVoid(view());
+
+    /* Chooser-model connections: */
+    disconnect(model(), &UIChooserModel::sigGroupSavingStateChanged,
+               this, &UIChooser::sigGroupSavingStateChanged);
+    disconnect(model(), &UIChooserModel::sigSelectionChanged,
+               this, &UIChooser::sigSelectionChanged);
+    disconnect(model(), &UIChooserModel::sigSelectionInvalidated,
+               this, &UIChooser::sigSelectionInvalidated);
+    disconnect(model(), &UIChooserModel::sigToggleStarted,
+               this, &UIChooser::sigToggleStarted);
+    disconnect(model(), &UIChooserModel::sigToggleFinished,
+               this, &UIChooser::sigToggleFinished);
+    disconnect(model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged,
+               view(), &UIChooserView::sltMinimumWidthHintChanged);
+    disconnect(model(), &UIChooserModel::sigToolMenuRequested,
+               this, &UIChooser::sltToolMenuRequested);
+    disconnect(model(), &UIChooserModel::sigCloudMachineStateChange,
+               this, &UIChooser::sigCloudMachineStateChange);
+
+    /* Chooser-view connections: */
+    disconnect(view(), &UIChooserView::sigResized,
+               model(), &UIChooserModel::sltHandleViewResized);
+}
+
 void UIChooser::cleanup()
 {
     /* Deinit model: */
     deinitModel();
+
+    /* Cleanup everything: */
+    cleanupConnections();
 }

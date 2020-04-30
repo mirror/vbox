@@ -155,6 +155,8 @@ private:
 
         /** Deinit model. */
         void deinitModel();
+        /** Cleanups connections. */
+        void cleanupConnections();
         /** Cleanups all. */
         void cleanup();
     /** @} */

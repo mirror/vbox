@@ -1368,20 +1368,6 @@ void UIChooserModel::prepareHandlers()
 
 void UIChooserModel::prepareConnections()
 {
-    UIChooser* pChooser = qobject_cast<UIChooser*>(parent());
-    AssertPtrReturnVoid(pChooser);
-    {
-        /* Setup parent connections: */
-        connect(this, &UIChooserModel::sigSelectionChanged,
-                pChooser, &UIChooser::sigSelectionChanged);
-        connect(this, &UIChooserModel::sigSelectionInvalidated,
-                pChooser, &UIChooser::sigSelectionInvalidated);
-        connect(this, &UIChooserModel::sigToggleStarted,
-                pChooser, &UIChooser::sigToggleStarted);
-        connect(this, &UIChooserModel::sigToggleFinished,
-                pChooser, &UIChooser::sigToggleFinished);
-    }
-
     /* Setup action connections: */
     connect(actionPool()->action(UIActionIndexST_M_Welcome_S_New), &UIAction::triggered,
             this, &UIChooserModel::sltCreateNewMachine);
@@ -1439,17 +1425,6 @@ void UIChooserModel::saveLastSelectedItem()
     gEDataManager->setSelectorWindowLastItemChosen(pFirstSelectedItem ? pFirstSelectedItem->definition() : QString());
 }
 
-void UIChooserModel::cleanupConnections()
-{
-    /* Disconnect selection-changed & selection-invalidated signal prematurelly.
-     * Keep in mind, we are using static_cast instead of qobject_cast here to be
-     * sure connection is disconnected even if parent is self-destroyed. */
-    disconnect(this, &UIChooserModel::sigSelectionChanged,
-               static_cast<UIChooser*>(parent()), &UIChooser::sigSelectionChanged);
-    disconnect(this, &UIChooserModel::sigSelectionInvalidated,
-               static_cast<UIChooser*>(parent()), &UIChooser::sigSelectionInvalidated);
-}
-
 void UIChooserModel::cleanupHandlers()
 {
     delete m_pKeyboardHandler;
@@ -1476,7 +1451,6 @@ void UIChooserModel::cleanupScene()
 
 void UIChooserModel::cleanup()
 {
-    cleanupConnections();
     cleanupHandlers();
     cleanupContextMenu();
     cleanupScene();
