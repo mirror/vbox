@@ -1580,7 +1580,7 @@ typedef union
     uint32_t    u32;
 } MSI_CAP_HDR_T;
 AssertCompileSize(MSI_CAP_HDR_T, 4);
-#define IOMMU_MSI_CAP_HDR_RW_MASK       RT_BIT(16)
+#define IOMMU_MSI_CAP_HDR_MSI_EN_MASK       RT_BIT(16)
 
 /**
  * MSI Address Register (PCI + MMIO).
@@ -2638,21 +2638,21 @@ static VBOXSTRICTRC iommuAmdDevTabSegBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uin
 }
 
 
-#if 0
+/**
+ * Writes the MSI Capability Header Register.
+ */
 static VBOXSTRICTRC iommuAmdMsiCapHdr_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
     RT_NOREF(pThis, iReg);
-
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-
     MSI_CAP_HDR_T MsiCapHdr;
     MsiCapHdr.u32 = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
-
-/** @todo   */
+    MsiCapHdr.n.u1MsiEnable = RT_BOOL(u64Value & IOMMU_MSI_CAP_HDR_MSI_EN_MASK);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR, MsiCapHdr.u32);
     return VINF_SUCCESS;
 }
-#endif
+
 
 /**
  * Writes the MSI Address (Lo) Register (32-bit).
