@@ -15,9 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QWidget>
+
 /* GUI includes: */
 #include "UICommon.h"
 #include "UICloudNetworkingStuff.h"
+#include "UIMessageCenter.h"
 #include "UITaskCloudGetSettingsForm.h"
 #include "UIThreadPool.h"
 
@@ -60,8 +64,9 @@ void UITaskCloudGetSettingsForm::run()
 *   Class UIReceiverCloudGetSettingsForm implementation.                                                                         *
 *********************************************************************************************************************************/
 
-UIReceiverCloudGetSettingsForm::UIReceiverCloudGetSettingsForm(QObject *pParent)
+UIReceiverCloudGetSettingsForm::UIReceiverCloudGetSettingsForm(QWidget *pParent)
     : QObject(pParent)
+    , m_pParent(pParent)
 {
     /* Connect receiver: */
     connect(uiCommon().threadPoolCloud(), &UIThreadPool::sigTaskComplete,
@@ -78,5 +83,11 @@ void UIReceiverCloudGetSettingsForm::sltHandleTaskComplete(UITask *pTask)
     UITaskCloudGetSettingsForm *pSettingsTask = static_cast<UITaskCloudGetSettingsForm*>(pTask);
 
     /* Redirect to another listeners: */
-    emit sigTaskComplete(pSettingsTask->result());
+    if (pSettingsTask->errorInfo().isNull())
+        emit sigTaskComplete(pSettingsTask->result());
+    else
+    {
+        msgCenter().cannotAcquireCloudMachineParameter(pSettingsTask->errorInfo(), m_pParent);
+        emit sigTaskFailed(pSettingsTask->errorInfo());
+    }
 }

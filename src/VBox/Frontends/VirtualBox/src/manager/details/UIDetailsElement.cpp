@@ -990,8 +990,12 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                     /* Create get settings form receiver: */
                     UIReceiverCloudGetSettingsForm *pReceiver = new UIReceiverCloudGetSettingsForm(pEditor);
                     if (pReceiver)
+                    {
                         connect(pReceiver, &UIReceiverCloudGetSettingsForm::sigTaskComplete,
                                 pEditor.data(), &UICloudMachineSettingsDialogPage::setForm);
+                        connect(pReceiver, &UIReceiverCloudGetSettingsForm::sigTaskFailed,
+                                pPopup.data(), &QIDialogContainer::close);
+                    }
                     /* Start task: */
                     if (pTask && pReceiver)
                         uiCommon().threadPoolCloud()->enqueueTask(pTask);

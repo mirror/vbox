@@ -82,16 +82,23 @@ signals:
 
     /** Notifies about task is complete with certain comResult. */
     void sigTaskComplete(const CForm &comResult);
+    /** Notifies about task is failed with certain strErrorMessage. */
+    void sigTaskFailed(const QString &strErrorMessage);
 
 public:
 
     /** Constructs receiver passing @a pParent to the base-class. */
-    UIReceiverCloudGetSettingsForm(QObject *pParent);
+    UIReceiverCloudGetSettingsForm(QWidget *pParent);
 
 public slots:
 
     /** Handles thread-pool signal about @a pTask is complete. */
     void sltHandleTaskComplete(UITask *pTask);
+
+private:
+
+    /** Holds the parent widget reference. */
+    QWidget *m_pParent;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UITaskCloudGetSettingsForm_h */

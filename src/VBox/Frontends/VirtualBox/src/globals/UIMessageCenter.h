@@ -265,9 +265,6 @@ public:
     void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
     void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
 
-    /* API: Global cloud warnings: */
-    void cannotAcquireCloudInstanceList(const QString &strErrorDetails, QWidget *pParent = 0) const;
-
     /* API: Selector warnings: */
     void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;
     void cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName) const;
@@ -402,6 +399,7 @@ public:
     void cannotAcquireCloudClientParameter(const CProgress &comProgress, QWidget *pParent = 0) const;
     void cannotAcquireCloudMachineParameter(const CCloudMachine &comMachine, QWidget *pParent = 0) const;
     void cannotAcquireCloudMachineParameter(const CProgress &comProgress, QWidget *pParent = 0) const;
+    void cannotAcquireCloudMachineParameter(const QString &strErrorDetails, QWidget *pParent = 0) const;
     bool confirmCloudProfileRemoval(const QString &strName, QWidget *pParent = 0) const;
     bool confirmCloudProfilesImport(QWidget *pParent = 0) const;
     void cannotAssignFormValue(const CBooleanFormValue &comValue, QWidget *pParent = 0) const;
