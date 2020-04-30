@@ -703,7 +703,8 @@ class TestBoxDataEx(TestBoxData):
             else:
                 asErrors = [];
                 for sKey in dCurErrors:
-                    asErrors.append('%s: %s' % (sKey[len('TestBoxInSchedGroup_'):], dCurErrors[sKey] + ('{%s}' % self.idTestBox)));
+                    asErrors.append('%s: %s' % (sKey[len('TestBoxInSchedGroup_'):],
+                                                dCurErrors[sKey] + ('{%s}' % self.idTestBox)))
                 dErrors[iInGrp] = '<br>\n'.join(asErrors)
             aoNewValues.append(oInSchedGroup);
 
