@@ -26873,7 +26873,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="d5028594-5298-11ea-b1c3-47273cccaac7"
+    uuid="0eb97f1a-8a78-11ea-9915-2b38b433c62b"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
@@ -27036,6 +27036,29 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="createCloudMachine">
+      <desc>
+        This is transitional method that combines
+        <link to="#launchVM"/> and <link to="#addCloudMachine"/>.
+      </desc>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>
+          Virtual system description object which describes the
+          machine and all required parameters.
+        </desc>
+      </param>
+      <param name="machine" type="ICloudMachine" dir="out">
+        <desc>
+          Object that represents the newly created cloud machine.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
       </param>
     </method>
 
