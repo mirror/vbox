@@ -2875,7 +2875,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_OFF_MSI_VECTOR_1:        return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_MSI_CAP_HDR:
         {
-            VBOXSTRICTRC rcStrict = iommuAmdIgnore_w(pDevIns, pThis, off, (uint32_t)uValue);
+            VBOXSTRICTRC rcStrict = iommuAmdMsiCapHdr_w(pDevIns, pThis, off, (uint32_t)uValue);
             if (cb == 4 || RT_FAILURE(rcStrict))
                 return rcStrict;
             uValue >>= 32;
