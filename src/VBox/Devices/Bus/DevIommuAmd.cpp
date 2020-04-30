@@ -326,27 +326,27 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MISCINFO_1_, UINT32_C(0), UINT32_MAX,
  * @{
  */
 /** MsiCapId: Capability ID. */
-#define IOMMU_BF_MSI_CAPHDR_CAP_ID_SHIFT            0
-#define IOMMU_BF_MSI_CAPHDR_CAP_ID_MASK             UINT32_C(0x000000ff)
+#define IOMMU_BF_MSI_CAP_HDR_CAP_ID_SHIFT           0
+#define IOMMU_BF_MSI_CAP_HDR_CAP_ID_MASK            UINT32_C(0x000000ff)
 /** MsiCapPtr: Pointer (PCI config offset) to the next capability. */
-#define IOMMU_BF_MSI_CAPHDR_CAP_PTR_SHIFT           8
-#define IOMMU_BF_MSI_CAPHDR_CAP_PTR_MASK            UINT32_C(0x0000ff00)
+#define IOMMU_BF_MSI_CAP_HDR_CAP_PTR_SHIFT          8
+#define IOMMU_BF_MSI_CAP_HDR_CAP_PTR_MASK           UINT32_C(0x0000ff00)
 /** MsiEn: Message Signal Interrupt enable. */
-#define IOMMU_BF_MSI_CAPHDR_EN_SHIFT                16
-#define IOMMU_BF_MSI_CAPHDR_EN_MASK                 UINT32_C(0x00010000)
+#define IOMMU_BF_MSI_CAP_HDR_EN_SHIFT               16
+#define IOMMU_BF_MSI_CAP_HDR_EN_MASK                UINT32_C(0x00010000)
 /** MsiMultMessCap: MSI Multi-Message Capability. */
-#define IOMMU_BF_MSI_CAPHDR_MULTMESS_CAP_SHIFT      17
-#define IOMMU_BF_MSI_CAPHDR_MULTMESS_CAP_MASK       UINT32_C(0x000e0000)
+#define IOMMU_BF_MSI_CAP_HDR_MULTMESS_CAP_SHIFT     17
+#define IOMMU_BF_MSI_CAP_HDR_MULTMESS_CAP_MASK      UINT32_C(0x000e0000)
 /** MsiMultMessEn: MSI Mult-Message Enable. */
-#define IOMMU_BF_MSI_CAPHDR_MULTMESS_EN_SHIFT       20
-#define IOMMU_BF_MSI_CAPHDR_MULTMESS_EN_MASK        UINT32_C(0x00700000)
+#define IOMMU_BF_MSI_CAP_HDR_MULTMESS_EN_SHIFT      20
+#define IOMMU_BF_MSI_CAP_HDR_MULTMESS_EN_MASK       UINT32_C(0x00700000)
 /** Msi64BitEn: MSI 64-bit Enabled. */
-#define IOMMU_BF_MSI_CAPHDR_64BIT_EN_SHIFT          23
-#define IOMMU_BF_MSI_CAPHDR_64BIT_EN_MASK           UINT32_C(0x00800000)
+#define IOMMU_BF_MSI_CAP_HDR_64BIT_EN_SHIFT         23
+#define IOMMU_BF_MSI_CAP_HDR_64BIT_EN_MASK          UINT32_C(0x00800000)
 /** Bits 31:24 reserved. */
-#define IOMMU_BF_MSI_CAPHDR_RSVD_24_31_SHIFT        24
-#define IOMMU_BF_MSI_CAPHDR_RSVD_24_31_MASK         UINT32_C(0xff000000)
-RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_CAPHDR_, UINT32_C(0), UINT32_MAX,
+#define IOMMU_BF_MSI_CAP_HDR_RSVD_24_31_SHIFT       24
+#define IOMMU_BF_MSI_CAP_HDR_RSVD_24_31_MASK        UINT32_C(0xff000000)
+RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_CAP_HDR_, UINT32_C(0), UINT32_MAX,
                             (CAP_ID, CAP_PTR, EN, MULTMESS_CAP, MULTMESS_EN, 64BIT_EN, RSVD_24_31));
 /** @} */
 
@@ -454,6 +454,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_MMIO_REGION_SIZE                      _16K
 /** Number of device table segments supported (power of 2). */
 #define IOMMU_MAX_DEV_TAB_SEGMENTS                  3
+/** Maximum number of host address translation levels supported. */
+#define IOMMU_MAX_HOST_PT_LEVEL                     6
 /** @} */
 
 /**
@@ -1578,6 +1580,7 @@ typedef union
     uint32_t    u32;
 } MSI_CAP_HDR_T;
 AssertCompileSize(MSI_CAP_HDR_T, 4);
+#define IOMMU_MSI_CAP_HDR_RW_MASK       RT_BIT(16)
 
 /**
  * MSI Address Register (PCI + MMIO).
@@ -2635,6 +2638,22 @@ static VBOXSTRICTRC iommuAmdDevTabSegBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uin
 }
 
 
+#if 0
+static VBOXSTRICTRC iommuAmdMsiCapHdr_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
+{
+    RT_NOREF(pThis, iReg);
+
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    MSI_CAP_HDR_T MsiCapHdr;
+    MsiCapHdr.u32 = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
+
+/** @todo   */
+    return VINF_SUCCESS;
+}
+#endif
+
 /**
  * Writes the MSI Address (Lo) Register (32-bit).
  */
@@ -3216,11 +3235,11 @@ static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 /**
  * Constructs a DEV_TAB_HARDWARE_ERROR event.
  *
- * @param   uDevId          The device ID.
- * @param   GCPhysDevTab    The system physical address of the failed device table
- *                          access.
- * @param   fOperation      The operation being performed.
- * @param   pEvent          Where to store the constructed event.
+ * @param   uDevId              The device ID.
+ * @param   GCPhysDevTabEntry   The system physical address of the failed device
+ *                              table access.
+ * @param   enmOp               The operation being performed.
+ * @param   pEvent              Where to store the constructed event.
  *
  * @thread  Any.
  */
@@ -4142,52 +4161,16 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 
     memset(&pThis->aDevTabBaseAddrs[0], 0, sizeof(pThis->aDevTabBaseAddrs));
 
-    pThis->CmdBufBaseAddr.u64     = 0;
-    pThis->CmdBufBaseAddr.n.u4Len = 8;
+    pThis->CmdBufBaseAddr.u64        = 0;
+    pThis->CmdBufBaseAddr.n.u4Len    = 8;
 
-    pThis->EvtLogBaseAddr.u64     = 0;
-    pThis->EvtLogBaseAddr.n.u4Len = 8;
+    pThis->EvtLogBaseAddr.u64        = 0;
+    pThis->EvtLogBaseAddr.n.u4Len    = 8;
 
-    pThis->Ctrl.u64               = 0;
+    pThis->Ctrl.u64                  = 0;
 
-    pThis->ExclRangeBaseAddr.u64  = 0;
-    pThis->ExclRangeLimit.u64     = 0;
-
-    pThis->ExtFeat.n.u1PrefetchSup           = 0;
-    pThis->ExtFeat.n.u1PprSup                = 0;
-    pThis->ExtFeat.n.u1X2ApicSup             = 0;
-    pThis->ExtFeat.n.u1NoExecuteSup          = 0;
-    pThis->ExtFeat.n.u1GstTranslateSup       = 0;
-    pThis->ExtFeat.n.u1InvAllSup             = 0;
-    pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
-    pThis->ExtFeat.n.u1HwErrorSup            = 1;
-    pThis->ExtFeat.n.u1PerfCounterSup        = 0;
-    pThis->ExtFeat.n.u2HostAddrTranslateSize = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u2SmiFilterSup          = 0;
-    pThis->ExtFeat.n.u3SmiFilterCount        = 0;
-    pThis->ExtFeat.n.u3GstVirtApicModeSup    = 0;   /* Requires GstVirtApicSup */
-    pThis->ExtFeat.n.u2DualPprLogSup         = 0;
-    pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
-    pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
-    AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS <= 3);
-    pThis->ExtFeat.n.u2DevTabSegSup          = IOMMU_MAX_DEV_TAB_SEGMENTS;
-    pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
-    pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
-    pThis->ExtFeat.n.u2MarcSup               = 0;
-    pThis->ExtFeat.n.u1BlockStopMarkSup      = 0;
-    pThis->ExtFeat.n.u1PerfOptSup            = 0;
-    pThis->ExtFeat.n.u1MsiCapMmioSup         = 1;
-    pThis->ExtFeat.n.u1GstIoSup              = 0;
-    pThis->ExtFeat.n.u1HostAccessSup         = 0;
-    pThis->ExtFeat.n.u1EnhancedPprSup        = 0;
-    pThis->ExtFeat.n.u1AttrForwardSup        = 0;
-    pThis->ExtFeat.n.u1HostDirtySup          = 0;
-    pThis->ExtFeat.n.u1InvIoTlbTypeSup       = 0;
-    pThis->ExtFeat.n.u1GstUpdateDisSup       = 0;
-    pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
+    pThis->ExclRangeBaseAddr.u64     = 0;
+    pThis->ExclRangeLimit.u64        = 0;
 
     pThis->PprLogBaseAddr.u64        = 0;
     pThis->PprLogBaseAddr.n.u4Len    = 8;
@@ -4218,8 +4201,6 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->XtGALogIntrCtrl.u64       = 0;
 
     memset(&pThis->aMarcApers[0], 0, sizeof(pThis->aMarcApers));
-
-    pThis->RsvdReg                   = 0;
 
     pThis->CmdBufHeadPtr.u64         = 0;
     pThis->CmdBufTailPtr.u64         = 0;
@@ -4453,6 +4434,51 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEvtCmdThread);
     AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Initialize read-only registers.
+     */
+    /** @todo Don't remove the =0 assignment for now. It's just there so it's easier
+     *        for me to see existing features that we might want to implement. Do it
+     *        later. */
+    pThis->ExtFeat.u64 = 0;
+    pThis->ExtFeat.n.u1PrefetchSup           = 0;
+    pThis->ExtFeat.n.u1PprSup                = 0;
+    pThis->ExtFeat.n.u1X2ApicSup             = 0;
+    pThis->ExtFeat.n.u1NoExecuteSup          = 0;
+    pThis->ExtFeat.n.u1GstTranslateSup       = 0;
+    pThis->ExtFeat.n.u1InvAllSup             = 0;
+    pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
+    pThis->ExtFeat.n.u1HwErrorSup            = 1;
+    pThis->ExtFeat.n.u1PerfCounterSup        = 0;
+    pThis->ExtFeat.n.u2HostAddrTranslateSize = IOMMU_MAX_HOST_PT_LEVEL;
+    pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u2SmiFilterSup          = 0;
+    pThis->ExtFeat.n.u3SmiFilterCount        = 0;
+    pThis->ExtFeat.n.u3GstVirtApicModeSup    = 0;   /* Requires GstVirtApicSup */
+    pThis->ExtFeat.n.u2DualPprLogSup         = 0;
+    pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
+    pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
+    AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS <= 3);
+    pThis->ExtFeat.n.u2DevTabSegSup          = IOMMU_MAX_DEV_TAB_SEGMENTS;
+    pThis->ExtFeat.n.u1PprLogOverflowWarn    = 0;
+    pThis->ExtFeat.n.u1PprAutoRespSup        = 0;
+    pThis->ExtFeat.n.u2MarcSup               = 0;
+    pThis->ExtFeat.n.u1BlockStopMarkSup      = 0;
+    pThis->ExtFeat.n.u1PerfOptSup            = 0;
+    pThis->ExtFeat.n.u1MsiCapMmioSup         = 1;
+    pThis->ExtFeat.n.u1GstIoSup              = 0;
+    pThis->ExtFeat.n.u1HostAccessSup         = 0;
+    pThis->ExtFeat.n.u1EnhancedPprSup        = 0;
+    pThis->ExtFeat.n.u1AttrForwardSup        = 0;
+    pThis->ExtFeat.n.u1HostDirtySup          = 0;
+    pThis->ExtFeat.n.u1InvIoTlbTypeSup       = 0;
+    pThis->ExtFeat.n.u1GstUpdateDisSup       = 0;
+    pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
+
+    pThis->RsvdReg = 0;
 
     /*
      * Initialize parts of the IOMMU state as it would during reset.
