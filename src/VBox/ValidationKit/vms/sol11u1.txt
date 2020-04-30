@@ -11,15 +11,6 @@ Setup:
       - MAXREPEATS=0
       - MINSPECIAL=0
       - MINDIGIT=0
- - Set the 'root' and 'test' passwords to 'password' (as root
-   run 'passwd root; passwd test').
- - Insert the validation kit ISO and install the test execution service
-   (see vboxtxs-readme.txt).
  - Adjust the grub timeout to 1 second.
  - ?More?
- - ?More?
- - ?More?
- - Eject the CD and shut down the VM.
-
-Do  N O T install guest additions!
-
+ - Proceed as shown in readme_first.txt

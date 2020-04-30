@@ -1,6 +1,6 @@
 
 Test VM - tst-ubuntu-15_10-64-efi - Ubuntu smoke test
-==================================================================
+=====================================================
 
 Setup:
  - Configure a VM tst-ubuntu-15_10-64-efi with default Ubuntu 64-bit setting,
@@ -9,10 +9,4 @@ Setup:
  - Configure the VM with 4 GB of RAM.
  - Make sure networking is NAT.
  - Install Ubuntu 15.10 amd64.
- - Create a user named 'vbox' with password as 'password'.
- - Insert the validation kit ISO and install the test execution service (see
-   vboxtxs-runvm-readme.txt).
- - Eject any CD and shut down the VM.
-
-
-Do  N O T install guest additions!
+ - Proceed as shown in readme_first.txt

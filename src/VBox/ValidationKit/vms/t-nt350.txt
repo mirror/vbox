@@ -14,16 +14,10 @@ Setup:
         - You probably have to select the AMD PCNET Family Ethernet Adapter
           manually if detection fails.
         - Make sure to configure DHCP and DNS.
-        - Use 'password' as Administrator password.
  - In the system settings:
         - Reduce the boot wait to 1 second.
         - Disable automatic reboot in recovery settings.
  - Check that you can ping stuff.
- - Add regular user 'test' without a password.
  - Insert the ValidationKit ISO and install the test execution service, see
-   vboxtxs-readme.txt for details.  Heed the NT 3.x bits.
- - Eject the CD, reboot and test that the TXS works.
-
-Do  N O T  install guest additions!
-
-
+   vboxtxs-readme.txt for details. Needs the NT 3.x bits.
+ - Proceed as shown in readme_first.txt

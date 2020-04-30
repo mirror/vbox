@@ -8,9 +8,6 @@ Setup:
  - Make sure networking is NAT.
  - Install Windows XP Pro.
  - Create a user 'test' without a password.
- - Set the password of the 'Administrator' account to 'password'.
- - Insert the validation kit ISO and install the test execution service (see
-   vboxtxs-readme.txt). (As Administrator.)
  - Disable non-windows-logo signed driver popups:
       - Start menu -> Right-click on "My Computer" -> Select Properties.
       - Go to the Hardware tab and press the Driver Signing button.
@@ -44,7 +41,4 @@ Setup:
       - Change "Configure driver search locations" to "Enabled" and check
         the "Don't search Windows Update".
       - Change "Windows Automatic Updates" to "Disabled".
- - Eject the CD and shut down the VM.
-
-Do  N O T install guest additions!
-
+ - Proceed as shown in readme_first.txt

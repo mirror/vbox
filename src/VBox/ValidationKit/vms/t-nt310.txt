@@ -1,6 +1,6 @@
 
 Test VM - t-nt310 - Windows NT 3.1 no service pack
-====================================================
+==================================================
 
 Setup:
  - Configure a VM t-nt310 with using the Windows NT 3.x settings, but with only
@@ -18,14 +18,10 @@ Setup:
         - Use 'password' as Administrator password.
  - Open the system settings and add an environment variable "SystemDrive" with the
    value "C:" (NT 3.50 and later sets this automagically).
- - while in the system settings, reduce the boot wait to 1 second.
+ - While in the system settings, reduce the boot wait to 1 second.
  - Open the network settings and add the TCPIP protocol.  Configure it with IP
    10.0.2.15/24, gateway 10.0.2.2, and DNS 10.0.2.3 (via "Connections..." button).
  - Reboot and check that you can ping stuff.
- - Add regular user 'test' without a password.
  - Insert the ValidationKit ISO and install the test execution service, see
-   vboxtxs-readme.txt for details.  Heed the NT 3.x bits.
- - Eject the CD, reboot and test that the TXS works.
-
-Do  N O T  install guest additions!
-
+   vboxtxs-readme.txt for details. Needs the NT 3.x bits.
+ - Proceed as shown in readme_first.txt
