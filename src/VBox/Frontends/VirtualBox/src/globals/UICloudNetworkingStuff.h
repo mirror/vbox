@@ -26,11 +26,11 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudClient.h"
+#include "CCloudMachine.h"
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
-#include "CCloudClient.h"
-#include "CCloudMachine.h"
 #include "CForm.h"
 
 /** Cloud networking stuff namespace. */

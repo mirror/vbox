@@ -524,6 +524,8 @@ bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMach
     msgCenter().showModalProgressDialog(comProgress,
                                         strMachineName,
                                         ":/progress_settings_90px.png", pParent, 0);
+    if (comProgress.GetCanceled())
+        return false;
     if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
     {
         msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
@@ -552,6 +554,8 @@ bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMach
 
     /* Wait for "Get settings form" progress: */
     comProgress.WaitForCompletion(-1);
+    if (comProgress.GetCanceled())
+        return false;
     if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
     {
         strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
@@ -624,22 +628,25 @@ QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient 
                                                 ":/progress_reading_appliance_90px.png", pParent, 0);
         else
             comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        if (!comProgress.GetCanceled())
         {
-            if (pParent)
-                msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            {
+                if (pParent)
+                    msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
+                else
+                    strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+            }
             else
-                strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        }
-        else
-        {
-            /* Fetch acquired objects to map: */
-            const QVector<QString> instanceIds = comIDs.GetValues();
-            const QVector<QString> instanceNames = comNames.GetValues();
-            QMap<QString, QString> resultMap;
-            for (int i = 0; i < instanceIds.size(); ++i)
-                resultMap[instanceIds.at(i)] = instanceNames.at(i);
-            return resultMap;
+            {
+                /* Fetch acquired objects to map: */
+                const QVector<QString> instanceIds = comIDs.GetValues();
+                const QVector<QString> instanceNames = comNames.GetValues();
+                QMap<QString, QString> resultMap;
+                for (int i = 0; i < instanceIds.size(); ++i)
+                    resultMap[instanceIds.at(i)] = instanceNames.at(i);
+                return resultMap;
+            }
         }
     }
 
