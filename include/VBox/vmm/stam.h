@@ -32,12 +32,8 @@
 #include <VBox/types.h>
 #include <iprt/stdarg.h>
 #ifdef _MSC_VER
-# if _MSC_VER >= 1400
-#  pragma warning(push)
-#  pragma warning(disable:4668) /* Several incorrect __cplusplus uses. */
-#  pragma warning(disable:4255) /* Incorrect __slwpcb prototype. */
-#  include <intrin.h>
-#  pragma warning(pop)
+# if RT_MSC_PREREQ(RT_MSC_VER_VS2005)
+#  include <iprt/sanitized/intrin.h>
 # endif
 #endif
 
@@ -70,7 +66,7 @@ RT_C_DECLS_BEGIN
     } while (0)
 # endif
 #else
-# if _MSC_VER >= 1400
+# if RT_MSC_PREREQ(RT_MSC_VER_VS2005)
 #  pragma intrinsic(__rdtsc)
 #  define STAM_GET_TS(u64)    \
      do { (u64) = __rdtsc(); } while (0)
