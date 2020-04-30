@@ -688,7 +688,7 @@ class TestBoxDataEx(TestBoxData):
         # HACK ALERT! idTestBox might not have been validated and converted yet, but we need detect
         #             adding so we can ignore idTestBox being NIL when validating group memberships.
         ## @todo make base.py pass us the ksValidateFor_Xxxx value.
-        fIsAdding = True if self.idTestBox in [ None, -1, '-1', 'None', '' ] else False;
+        fIsAdding = bool(self.idTestBox in [ None, -1, '-1', 'None', '' ])
 
         for iInGrp, oInSchedGroup in enumerate(self.aoInSchedGroups):
             oInSchedGroup = copy.copy(oInSchedGroup);
