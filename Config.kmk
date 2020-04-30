@@ -4437,9 +4437,6 @@ ifdef VBOX_WITH_RAW_MODE
 
  ifeq ($(VBOX_LDR_FMT32),pe)
   TEMPLATE_VBoxRc_TOOL               = $(VBOX_VCC_TOOL_STEM)X86
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141" # for stddef.h
-   TEMPLATE_VBoxRc_SDKS              = WINSDK10-UCRT-INCS
-  endif
   TEMPLATE_VBoxRc_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
   TEMPLATE_VBoxRc_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) \
   	$(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
