@@ -3513,6 +3513,8 @@ class TestDriver(base.TestDriver):                                              
         if sFile is None:
             sFile = 'valkit.txt';
 
+        reporter.log('txsCdWait: Waiting for file "%s" to become available ...' % (sFile,));
+
         fRemoveVm   = self.addTask(oSession);
         fRemoveTxs  = self.addTask(oTxsSession);
         cMsTimeout  = self.adjustTimeoutMs(cMsTimeout);
@@ -3521,7 +3523,6 @@ class TestDriver(base.TestDriver):                                              
         fRc         = oTxsSession.asyncIsFile('${CDROM}/%s' % (sFile,), cMsTimeout2);
         if fRc is True:
             while True:
-                reporter.log('txsCdWait: Waiting for file "%s" to become available ...' % (sFile,));
                 # wait for it to complete.
                 oTask = self.waitForTasks(cMsTimeout2 + 1);
                 if oTask is not oTxsSession:
@@ -3548,16 +3549,7 @@ class TestDriver(base.TestDriver):                                              
                 # delay.
                 self.sleep(1);
 
-                ## @todo Make this optional and identify guest OS type.
-                reporter.log('txsCdWait: Listing root contents of ${CDROM}:');
-                oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "${CDROM}"), fIgnoreErrors = True);
-                # ASSUMES that we always install Windows on drive C right now.
-                # Does not run on ancient stuff which uses WINNT as %WinDir%.
-                oTxsSession.syncExec("C:\\Windows\\System32\\cmd.exe",
-                                     ("C:\\Windows\\System32\\cmd.exe", "/C", "dir", "${CDROM}"),
-                                     fIgnoreErrors = True);
-
-                # resubmitt the task.
+                # resubmit the task.
                 cMsTimeout2 = msStart + cMsTimeout - base.timestampMilli();
                 if cMsTimeout2 < 500:
                     cMsTimeout2 = 500;
@@ -3567,6 +3559,18 @@ class TestDriver(base.TestDriver):                                              
                     break;
         else:
             reporter.error('txsCdWait: asyncIsFile failed');
+
+        if not fRc:
+            ## @todo Identify guest OS type and only run one of the following commands.
+            reporter.log('txsCdWait: Listing root contents of ${CDROM}:');
+            oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "${CDROM}"), fIgnoreErrors = True);
+            # ASSUMES that we always install Windows on drive C right now.
+            oTxsSession.syncExec("C:\\Windows\\System32\\cmd.exe",
+                                 ("C:\\Windows\\System32\\cmd.exe", "/C", "dir", "${CDROM}"),
+                                 fIgnoreErrors = True);
+            oTxsSession.syncExec("C:\\WINNT\\System32\\cmd.exe",
+                                 ("C:\\WINNT\\System32\\cmd.exe", "/C", "dir", "${CDROM}"),
+                                 fIgnoreErrors = True);
 
         if fRemoveTxs:
             self.removeTask(oTxsSession);
