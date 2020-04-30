@@ -397,18 +397,8 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
 
 void UIVirtualBoxManagerWidget::prepare()
 {
-    /* Configure palette: */
-    setAutoFillBackground(true);
-    QPalette pal = palette();
-#ifdef VBOX_WS_MAC
-    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(145);
-#else
-    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
-#endif
-    pal.setColor(QPalette::Window, color);
-    setPalette(pal);
-
-    /* Prepare: */
+    /* Prepare everything: */
+    preparePalette();
     prepareWidgets();
     prepareConnections();
 
@@ -420,6 +410,19 @@ void UIVirtualBoxManagerWidget::prepare()
 
     /* Make sure current Chooser-pane index fetched: */
     sltHandleChooserPaneIndexChange();
+}
+
+void UIVirtualBoxManagerWidget::preparePalette()
+{
+    setAutoFillBackground(true);
+    QPalette pal = palette();
+#ifdef VBOX_WS_MAC
+    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(145);
+#else
+    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
+#endif
+    pal.setColor(QPalette::Window, color);
+    setPalette(pal);
 }
 
 void UIVirtualBoxManagerWidget::prepareWidgets()
@@ -817,10 +820,44 @@ void UIVirtualBoxManagerWidget::saveSettings()
     }
 }
 
+void UIVirtualBoxManagerWidget::cleanupConnections()
+{
+    /* Tool-bar connections: */
+    disconnect(m_pToolBar, &UIToolBar::sigResized,
+               m_pPaneChooser, &UIChooser::sltHandleToolbarResize);
+    disconnect(m_pToolBar, &UIToolBar::customContextMenuRequested,
+               this, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
+
+    /* Chooser-pane connections: */
+    disconnect(m_pPaneChooser, &UIChooser::sigSelectionChanged,
+               this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange);
+    disconnect(m_pPaneChooser, &UIChooser::sigSelectionInvalidated,
+               this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneSelectionInvalidated);
+    disconnect(m_pPaneChooser, &UIChooser::sigToggleStarted,
+               m_pPaneToolsMachine, &UIToolPaneMachine::sigToggleStarted);
+    disconnect(m_pPaneChooser, &UIChooser::sigToggleFinished,
+               m_pPaneToolsMachine, &UIToolPaneMachine::sigToggleFinished);
+    disconnect(m_pPaneChooser, &UIChooser::sigGroupSavingStateChanged,
+               this, &UIVirtualBoxManagerWidget::sigGroupSavingStateChanged);
+    disconnect(m_pPaneChooser, &UIChooser::sigToolMenuRequested,
+               this, &UIVirtualBoxManagerWidget::sltHandleToolMenuRequested);
+
+    /* Details-pane connections: */
+    disconnect(m_pPaneToolsMachine, &UIToolPaneMachine::sigLinkClicked,
+               this, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked);
+
+    /* Tools-pane connections: */
+    disconnect(m_pPaneTools, &UITools::sigSelectionChanged,
+               this, &UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange);
+}
+
 void UIVirtualBoxManagerWidget::cleanup()
 {
     /* Save settings: */
     saveSettings();
+
+    /* Cleanup everything: */
+    cleanupConnections();
 }
 
 void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErrorPane /* = false */)

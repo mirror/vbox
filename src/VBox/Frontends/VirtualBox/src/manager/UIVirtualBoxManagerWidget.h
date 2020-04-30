@@ -187,8 +187,10 @@ private:
 
     /** @name Prepare/Cleanup cascade.
       * @{ */
-        /** Prepares window. */
+        /** Prepares all. */
         void prepare();
+        /** Prepares palette. */
+        void preparePalette();
         /** Prepares widgets. */
         void prepareWidgets();
         /** Prepares connections. */
@@ -196,12 +198,14 @@ private:
         /** Loads settings. */
         void loadSettings();
 
-        /** Update toolbar. */
+        /** Updates toolbar. */
         void updateToolbar();
 
         /** Saves settings. */
         void saveSettings();
-        /** Cleanups window. */
+        /** Cleanups connections. */
+        void cleanupConnections();
+        /** Cleanups all. */
         void cleanup();
     /** @} */
 
