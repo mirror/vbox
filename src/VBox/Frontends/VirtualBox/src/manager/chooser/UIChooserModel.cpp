@@ -96,9 +96,6 @@ void UIChooserModel::deinit()
     /* Save last selected-item: */
     saveLastSelectedItem();
 
-    /* Clear list of selected-items: */
-    clearSelectedItems();
-
     /* Call to base-class: */
     UIChooserAbstractModel::deinit();
 }
