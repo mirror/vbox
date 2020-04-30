@@ -3561,15 +3561,25 @@ class TestDriver(base.TestDriver):                                              
             reporter.error('txsCdWait: asyncIsFile failed');
 
         if not fRc:
+            # Do some diagnosis to find out why this failed.
             ## @todo Identify guest OS type and only run one of the following commands.
             reporter.log('txsCdWait: Listing root contents of ${CDROM}:');
             oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "${CDROM}"), fIgnoreErrors = True);
             # ASSUMES that we always install Windows on drive C right now.
-            oTxsSession.syncExec("C:\\Windows\\System32\\cmd.exe",
-                                 ("C:\\Windows\\System32\\cmd.exe", "/C", "dir", "${CDROM}"),
+            sWinDir = "C:\\Windows\\System32\\";
+            oTxsSession.syncExec(sWinDir + " cmd.exe",
+                                 (sWinDir + "cmd.exe", "/C", "dir", "${CDROM}"),
                                  fIgnoreErrors = True);
             oTxsSession.syncExec("C:\\WINNT\\System32\\cmd.exe",
                                  ("C:\\WINNT\\System32\\cmd.exe", "/C", "dir", "${CDROM}"),
+                                 fIgnoreErrors = True);
+
+            reporter.log('txsCdWait: Listing mount points / drives:');
+            oTxsSession.syncExec("/bin/mount", ("/bin/mount"), fIgnoreErrors = True);
+            # Should work since WinXP Pro.
+            oTxsSession.syncExec(sWinDir + "wbem\\WMIC.exe",
+                                 (sWinDir + "wbem\\WMIC.exe", "logicaldisk", "get",
+                                  "deviceid, volumename, description"),
                                  fIgnoreErrors = True);
 
         if fRemoveTxs:
