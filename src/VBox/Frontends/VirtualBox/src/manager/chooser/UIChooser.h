@@ -28,7 +28,6 @@
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
-class QVBoxLayout;
 class UIActionPool;
 class UIChooserModel;
 class UIChooserView;
@@ -145,19 +144,17 @@ private:
         void prepare();
         /** Prepares palette. */
         void preparePalette();
-        /** Prepares layout. */
-        void prepareLayout();
         /** Prepares model. */
         void prepareModel();
-        /** Prepares view. */
-        void prepareView();
+        /** Prepares widgets. */
+        void prepareWidgets();
         /** Prepares connections. */
         void prepareConnections();
-        /** Loads settings. */
-        void loadSettings();
+        /** Init model. */
+        void initModel();
 
-        /** Saves settings. */
-        void saveSettings();
+        /** Deinit model. */
+        void deinitModel();
         /** Cleanups all. */
         void cleanup();
     /** @} */
@@ -167,8 +164,6 @@ private:
         /** Holds the manager-widget reference. */
         UIVirtualBoxManagerWidget *m_pManagerWidget;
 
-        /** Holds the main layout instane. */
-        QVBoxLayout    *m_pMainLayout;
         /** Holds the Chooser-model instane. */
         UIChooserModel *m_pChooserModel;
         /** Holds the Chooser-view instane. */

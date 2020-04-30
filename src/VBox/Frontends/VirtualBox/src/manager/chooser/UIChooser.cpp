@@ -19,112 +19,117 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIChooser.h"
 #include "UIChooserModel.h"
 #include "UIChooserView.h"
 #include "UIVirtualBoxManagerWidget.h"
-#include "UICommon.h"
 
 
 UIChooser::UIChooser(UIVirtualBoxManagerWidget *pParent)
     : QWidget(pParent)
     , m_pManagerWidget(pParent)
-    , m_pMainLayout(0)
     , m_pChooserModel(0)
     , m_pChooserView(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIChooser::~UIChooser()
 {
-    /* Cleanup: */
     cleanup();
 }
 
 UIActionPool *UIChooser::actionPool() const
 {
+    AssertPtrReturn(managerWidget(), 0);
     return managerWidget()->actionPool();
 }
 
 UIVirtualMachineItem *UIChooser::currentItem() const
 {
-    return m_pChooserModel->firstSelectedMachineItem();
+    AssertPtrReturn(model(), 0);
+    return model()->firstSelectedMachineItem();
 }
 
 QList<UIVirtualMachineItem*> UIChooser::currentItems() const
 {
-    return m_pChooserModel->selectedMachineItems();
+    AssertPtrReturn(model(), QList<UIVirtualMachineItem*>());
+    return model()->selectedMachineItems();
 }
 
 bool UIChooser::isGroupItemSelected() const
 {
-    return m_pChooserModel->isGroupItemSelected();
+    AssertPtrReturn(model(), false);
+    return model()->isGroupItemSelected();
 }
 
 bool UIChooser::isGlobalItemSelected() const
 {
-    return m_pChooserModel->isGlobalItemSelected();
+    AssertPtrReturn(model(), false);
+    return model()->isGlobalItemSelected();
 }
 
 bool UIChooser::isMachineItemSelected() const
 {
-    return m_pChooserModel->isMachineItemSelected();
+    AssertPtrReturn(model(), false);
+    return model()->isMachineItemSelected();
 }
 
 bool UIChooser::isSingleGroupSelected() const
 {
-    return m_pChooserModel->isSingleGroupSelected();
+    AssertPtrReturn(model(), false);
+    return model()->isSingleGroupSelected();
 }
 
 bool UIChooser::isSingleLocalGroupSelected() const
 {
-    return m_pChooserModel->isSingleLocalGroupSelected();
+    AssertPtrReturn(model(), false);
+    return model()->isSingleLocalGroupSelected();
 }
 
 bool UIChooser::isSingleCloudProfileGroupSelected() const
 {
-    return m_pChooserModel->isSingleCloudProfileGroupSelected();
+    AssertPtrReturn(model(), false);
+    return model()->isSingleCloudProfileGroupSelected();
 }
 
 bool UIChooser::isAllItemsOfOneGroupSelected() const
 {
-    return m_pChooserModel->isAllItemsOfOneGroupSelected();
+    AssertPtrReturn(model(), false);
+    return model()->isAllItemsOfOneGroupSelected();
 }
 
 bool UIChooser::isGroupSavingInProgress() const
 {
-    return m_pChooserModel->isGroupSavingInProgress();
+    AssertPtrReturn(model(), false);
+    return model()->isGroupSavingInProgress();
 }
 
 void UIChooser::sltHandleToolbarResize(const QSize &newSize)
 {
     /* Pass height to a model: */
+    AssertPtrReturnVoid(model());
     model()->setGlobalItemHeightHint(newSize.height());
 }
 
 void UIChooser::sltToolMenuRequested(UIToolClass enmClass, const QPoint &position)
 {
     /* Translate scene coordinates to global one: */
+    AssertPtrReturnVoid(view());
     emit sigToolMenuRequested(enmClass, mapToGlobal(view()->mapFromScene(position)));
 }
 
 void UIChooser::prepare()
 {
-    /* Prepare palette: */
+    /* Prepare everything: */
     preparePalette();
-    /* Prepare layout: */
-    prepareLayout();
-    /* Prepare model: */
     prepareModel();
-    /* Prepare view: */
-    prepareView();
-    /* Prepare connections: */
+    prepareWidgets();
     prepareConnections();
 
-    /* Load settings: */
-    loadSettings();
+    /* Init model: */
+    initModel();
 }
 
 void UIChooser::preparePalette()
@@ -137,69 +142,67 @@ void UIChooser::preparePalette()
     setPalette(pal);
 }
 
-void UIChooser::prepareLayout()
-{
-    /* Create main-layout: */
-    m_pMainLayout = new QVBoxLayout(this);
-    if (m_pMainLayout)
-    {
-        /* Configure main-layout: */
-        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-        m_pMainLayout->setSpacing(0);
-    }
-}
-
 void UIChooser::prepareModel()
 {
-    /* Create chooser-model: */
     m_pChooserModel = new UIChooserModel(this);
 }
 
-void UIChooser::prepareView()
+void UIChooser::prepareWidgets()
 {
-    /* Setup chooser-view: */
-    m_pChooserView = new UIChooserView(this);
-    if (m_pChooserView)
+    /* Prepare main-layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    if (pMainLayout)
     {
-        /* Configure chooser-view. */
-        m_pChooserView->setScene(m_pChooserModel->scene());
-        m_pChooserView->show();
-        setFocusProxy(m_pChooserView);
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
+        pMainLayout->setSpacing(0);
 
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pChooserView);
+        /* Prepare chooser-view: */
+        m_pChooserView = new UIChooserView(this);
+        if (m_pChooserView)
+        {
+            AssertPtrReturnVoid(model());
+            m_pChooserView->setScene(model()->scene());
+            m_pChooserView->show();
+            setFocusProxy(m_pChooserView);
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pChooserView);
+        }
     }
 }
 
 void UIChooser::prepareConnections()
 {
+    AssertPtrReturnVoid(model());
+    AssertPtrReturnVoid(view());
+
     /* Setup chooser-model connections: */
-    connect(m_pChooserModel, &UIChooserModel::sigRootItemMinimumWidthHintChanged,
-            m_pChooserView, &UIChooserView::sltMinimumWidthHintChanged);
-    connect(m_pChooserModel, &UIChooserModel::sigToolMenuRequested,
+    connect(model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged,
+            view(), &UIChooserView::sltMinimumWidthHintChanged);
+    connect(model(), &UIChooserModel::sigToolMenuRequested,
             this, &UIChooser::sltToolMenuRequested);
-    connect(m_pChooserModel, &UIChooserModel::sigCloudMachineStateChange,
+    connect(model(), &UIChooserModel::sigCloudMachineStateChange,
             this, &UIChooser::sigCloudMachineStateChange);
 
     /* Setup chooser-view connections: */
-    connect(m_pChooserView, &UIChooserView::sigResized,
-            m_pChooserModel, &UIChooserModel::sltHandleViewResized);
+    connect(view(), &UIChooserView::sigResized,
+            model(), &UIChooserModel::sltHandleViewResized);
 }
 
-void UIChooser::loadSettings()
+void UIChooser::initModel()
 {
-    /* Init model: */
-    m_pChooserModel->init();
+    AssertPtrReturnVoid(model());
+    model()->init();
 }
 
-void UIChooser::saveSettings()
+void UIChooser::deinitModel()
 {
-    /* Deinit model: */
-    m_pChooserModel->deinit();
+    AssertPtrReturnVoid(model());
+    model()->deinit();
 }
 
 void UIChooser::cleanup()
 {
-    /* Save settings: */
-    saveSettings();
+    /* Deinit model: */
+    deinitModel();
 }
