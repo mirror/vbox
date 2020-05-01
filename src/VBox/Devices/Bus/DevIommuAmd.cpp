@@ -2094,11 +2094,8 @@ typedef struct IOMMU
     EVT_LOG_TAIL_PTR_T          EvtLogTailPtr;       /**< Event log tail pointer register. */
     /** @} */
 
-    /** @name Internal Book keeping.
-     *  @{ */
-    uint32_t                    cbCmdBufUsed;       /**< Size of commands pending in the command buffer. */
-    uint32_t                    cbEvtLogUsed;       /**< Size of entries pending in the event log buffer. */
-    /** @} */
+    uint32_t                    cbCmdBufUsed;        /**< Number of bytes used up in the command buffer. */
+    uint32_t                    cbEvtLogUsed;        /**< Number of bytes used up in the event log. */
 
     /** @name MMIO: Command and Event Status register.
      * @{ */
