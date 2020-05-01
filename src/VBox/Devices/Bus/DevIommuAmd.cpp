@@ -1809,8 +1809,7 @@ AssertCompileSize(CMD_BUF_HEAD_PTR_T, 8);
  * Currently identical to CMD_BUF_HEAD_PTR_T.
  */
 typedef CMD_BUF_HEAD_PTR_T    CMD_BUF_TAIL_PTR_T;
-#define IOMMU_CMD_BUF_TAIL_PTR_VALID_MASK       UINT64_C(0x000000000007fff0)
-
+#define IOMMU_CMD_BUF_TAIL_PTR_VALID_MASK       IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK
 
 /**
  * Event Log Head Pointer Register (MMIO).
@@ -1818,6 +1817,7 @@ typedef CMD_BUF_HEAD_PTR_T    CMD_BUF_TAIL_PTR_T;
  * Currently identical to CMD_BUF_HEAD_PTR_T.
  */
 typedef CMD_BUF_HEAD_PTR_T    EVT_LOG_HEAD_PTR_T;
+#define IOMMU_EVT_LOG_HEAD_PTR_VALID_MASK       IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK
 
 /**
  * Event Log Tail Pointer Register (MMIO).
@@ -1825,6 +1825,8 @@ typedef CMD_BUF_HEAD_PTR_T    EVT_LOG_HEAD_PTR_T;
  * Currently identical to CMD_BUF_HEAD_PTR_T.
  */
 typedef CMD_BUF_HEAD_PTR_T    EVT_LOG_TAIL_PTR_T;
+#define IOMMU_EVT_LOG_TAIL_PTR_VALID_MASK       IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK
+
 
 /**
  * IOMMU Status Register (MMIO).
@@ -2720,9 +2722,8 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * IOMMU behavior is undefined when software writes a value outside the buffer length.
      * In our emulation, we ignore the write entirely.
      */
-    uint32_t const      offBuf    = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
-    CMD_BUF_BAR_T const CmdBufBar = pThis->CmdBufBaseAddr;
-    uint32_t const      cbBuf     = iommuAmdGetBufLength(CmdBufBar.n.u4Len);
+    uint32_t const offBuf = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
+    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
     Assert(cbBuf <= _512K);
     if (offBuf >= cbBuf)
     {
@@ -2749,18 +2750,19 @@ static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * In our emulation, we ignore the write entirely.
      * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
      */
-    uint32_t const offBufTail = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
-    CMD_BUF_BAR_T const CmdBufBar = pThis->CmdBufBaseAddr;
-    uint32_t const      cbBuf     = iommuAmdGetBufLength(CmdBufBar.n.u4Len);
-    if (offBufTail >= cbBuf)
+    uint32_t const offBuf = u64Value & IOMMU_CMD_BUF_TAIL_PTR_VALID_MASK;
+    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+    if (offBuf >= cbBuf)
     {
         Log((IOMMU_LOG_PFX ": Setting CmdBufTailPtr (%#RX32) to a value that exceeds buffer length (%#RX32) -> Ignored\n",
-             offBufTail, cbBuf));
+             offBuf, cbBuf));
         return VINF_SUCCESS;
     }
 
-    pThis->CmdBufTailPtr.au32[0] = offBufTail;
-    LogFlow((IOMMU_LOG_PFX ": Set CmdBufTailPtr to %#RX32\n", offBufTail));
+    /** @todo More validation. Prevent wrap-around overwrite? */
+
+    pThis->CmdBufTailPtr.au32[0] = offBuf;
+    LogFlow((IOMMU_LOG_PFX ": Set CmdBufTailPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
 
@@ -2784,7 +2786,35 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
 {
     RT_NOREF(pDevIns, iReg);
     NOREF(pThis);
-    NOREF(u64Value);
+
+    /*
+     * IOMMU behavior is undefined when software writes this register when the event log is running.
+     * In our emulation, we ignore the write entirely.
+     * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
+     */
+    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
+    if (Status.n.u1EvtLogRunning)
+    {
+        Log((IOMMU_LOG_PFX ": Setting EvtLogTailPtr (%#RX64) when event log is running -> Ignored\n", u64Value));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * IOMMU behavior is undefined when software writes a value outside the buffer length.
+     * In our emulation, we ignore the write entirely.
+     */
+    uint32_t const offBuf = u64Value & IOMMU_EVT_LOG_TAIL_PTR_VALID_MASK;
+    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+    Assert(cbBuf <= _512K);
+    if (offBuf >= cbBuf)
+    {
+        Log((IOMMU_LOG_PFX ": Setting EvtLogTailPtr (%#RX32) to a value that exceeds buffer length (%#RX32) -> Ignored\n",
+             offBuf, cbBuf));
+        return VINF_SUCCESS;
+    }
+
+    pThis->EvtLogTailPtr.au32[0] = offBuf;
+    LogFlow((IOMMU_LOG_PFX ": Set EvtLogTailPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
 
@@ -3185,7 +3215,7 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 
         /* Get the offset we need to write the event to in memory (circular buffer offset). */
         uint32_t const offEvt = pThis->EvtLogTailPtr.n.off;
-        Assert(!(offEvt & ~IOMMU_CMD_BUF_TAIL_PTR_VALID_MASK));
+        Assert(!(offEvt & ~IOMMU_EVT_LOG_TAIL_PTR_VALID_MASK));
 
         /* Ensure we have space in the event log. */
         uint32_t const cbEvtLog = iommuAmdGetBufLength(pThis->EvtLogBaseAddr.n.u4Len);
