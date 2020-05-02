@@ -579,7 +579,7 @@ AssertCompileSize(DEV_TAB_ENTRY_T, 32);
 #define IOMMU_DEV_TAB_ENTRY_QWORD_2_VALID_MASK      UINT64_C(0xf70fffffffffffff)
 #define IOMMU_DEV_TAB_ENTRY_QWORD_3_VALID_MASK      UINT64_C(0xffc0000000000000)
 /** Pointer to a device table entry. */
-typedef DEV_TAB_ENTRY_T *PDEVTAB_ENTRY_T;
+typedef DEV_TAB_ENTRY_T *PDEV_TAB_ENTRY_T;
 /** Pointer to a const device table entry. */
 typedef DEV_TAB_ENTRY_T const *PCDEV_TAB_ENTRY_T;
 
@@ -1309,15 +1309,14 @@ typedef union
 {
     struct
     {
-        RT_GCC_EXTENSION uint64_t   u12Rsvd0 : 12;      /**< Bits 11:0  - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u40ExclLimit : 40;  /**< Bits 51:12 - Exclusion Range Limit. */
+        RT_GCC_EXTENSION uint64_t   u52ExclLimit : 52;  /**< Bits 51:0 - Exclusion Range Limit (last 12 bits are treated as 1s). */
         RT_GCC_EXTENSION uint64_t   u12Rsvd1 : 12;      /**< Bits 63:52 - Reserved. */
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    u64;
 } IOMMU_EXCL_RANGE_LIMIT_T;
 AssertCompileSize(IOMMU_EXCL_RANGE_LIMIT_T, 8);
-#define IOMMU_EXCL_RANGE_LIMIT_VALID_MASK   UINT64_C(0x000ffffffffff000)
+#define IOMMU_EXCL_RANGE_LIMIT_VALID_MASK   UINT64_C(0x000fffffffffffff)
 
 /**
  * IOMMU Extended Feature Register (MMIO).
@@ -2547,7 +2546,9 @@ static VBOXSTRICTRC iommuAmdExclRangeBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uin
 static VBOXSTRICTRC iommuAmdExclRangeLimit_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
     RT_NOREF(pDevIns, iReg);
-    pThis->ExclRangeLimit.u64 = u64Value & IOMMU_EXCL_RANGE_LIMIT_VALID_MASK;
+    u64Value &= IOMMU_EXCL_RANGE_LIMIT_VALID_MASK;
+    u64Value |= UINT64_C(0xfff);
+    pThis->ExclRangeLimit.u64 = u64Value;
     return VINF_SUCCESS;
 }
 
@@ -3404,6 +3405,36 @@ static void iommuAmdRaiseIllegalDevTabEntryEvent(PPDMDEVINS pDevIns, uint16_t uD
 }
 
 
+
+/**
+ * Returns whether the device virtual address is allowed to be excluded from
+ * translation and permission checks.
+ *
+ * @returns @c true if the DVA is excluded, @c false otherwise.
+ * @param   pThis           The IOMMU device state.
+ * @param   pDevTabEntry    The device table entry.
+ * @param   uDva            The device virtual address.
+ */
+static bool iommuAmdIsDvaSubjectToExclRange(PCIOMMU pThis, PCDEV_TAB_ENTRY_T pDevTabEntry, uint64_t uDva)
+{
+    /* Check if the exclusion range is enabled. */
+    if (pThis->ExclRangeBaseAddr.n.u1ExclEnable)
+    {
+        /* Check if the device virtual address falls within the exclusion range. */
+        uint64_t const uDvaExclFirst = pThis->ExclRangeBaseAddr.n.u40ExclRangeBase << X86_PAGE_4K_SHIFT;
+        uint64_t const uDvaExclLast  = pThis->ExclRangeLimit.n.u52ExclLimit;
+        if (uDvaExclLast - uDva >= uDvaExclFirst)
+        {
+            /* Check if device access to addresses in the exclusion can be forwarded untranslated. */
+            if (    pThis->ExclRangeBaseAddr.n.u1AllowAll
+                ||  pDevTabEntry->n.u1AllowExclusion)
+                return true;
+        }
+    }
+    return false;
+}
+
+
 /**
  * Reads a device table entry from guest memory given the device ID.
  *
@@ -3415,7 +3446,7 @@ static void iommuAmdRaiseIllegalDevTabEntryEvent(PPDMDEVINS pDevIns, uint16_t uD
  *
  * @thread  Any.
  */
-static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, DEV_TAB_ENTRY_T *pDevTabEntry)
+static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PDEV_TAB_ENTRY_T pDevTabEntry)
 {
     PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
@@ -3489,8 +3520,12 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
                     return VERR_GENERAL_FAILURE; /** @todo IOMMU: Change this. */
                 }
 
-                /** @todo IOMMU: Traverse the I/O page table and translate. */
-                return VERR_NOT_IMPLEMENTED;
+                /* Check if the exclusion range is active. */
+                if (!iommuAmdIsDvaSubjectToExclRange(pThis, &DevTabEntry, uDva))
+                {
+                    /** @todo IOMMU: Traverse the I/O page table and translate. */
+                    return VERR_NOT_IMPLEMENTED;
+                }
             }
         }
         else
@@ -3773,7 +3808,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         IOMMU_EXCL_RANGE_LIMIT_T const ExclRangeLimit = pThis->ExclRangeLimit;
         pHlp->pfnPrintf(pHlp, "  Exclusion Range Limit                   = %#RX64\n", ExclRangeLimit.u64);
         if (fVerbose)
-            pHlp->pfnPrintf(pHlp, "    Range limit                             = %#RX64\n", ExclRangeLimit.n.u40ExclLimit);
+            pHlp->pfnPrintf(pHlp, "    Range limit                             = %#RX64\n", ExclRangeLimit.n.u52ExclLimit);
     }
     /* Extended Feature Register. */
     {
