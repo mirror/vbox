@@ -2752,6 +2752,7 @@ static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      */
     uint32_t const offBuf = u64Value & IOMMU_CMD_BUF_TAIL_PTR_VALID_MASK;
     uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+    Assert(cbBuf <= _512K);
     if (offBuf >= cbBuf)
     {
         Log((IOMMU_LOG_PFX ": Setting CmdBufTailPtr (%#RX32) to a value that exceeds buffer length (%#RX32) -> Ignored\n",
@@ -2759,8 +2760,17 @@ static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
         return VINF_SUCCESS;
     }
 
-    /** @todo More validation. Prevent wrap-around overwrite? */
-
+    /*
+     * IOMMU behavior is undefined if software advances the tail pointer equal to or beyond the
+     * head pointer after adding one or more commands to the buffer.
+     *
+     * However, we cannot enforce this strictly because it's legal for software to shrink the
+     * command queue (by reducing the offset) as well as wrap around the pointer (when head isn't
+     * at 0). Software might even make the queue empty by making head and tail equal which is
+     * allowed. I don't think we can or should try too hard to prevent software shooting itself
+     * in the foot here. As long as we make sure the offset value is within the circular buffer
+     * bounds (which we do by masking bits above) it should be sufficient.
+     */
     pThis->CmdBufTailPtr.au32[0] = offBuf;
     LogFlow((IOMMU_LOG_PFX ": Set CmdBufTailPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
