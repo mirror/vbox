@@ -2553,50 +2553,6 @@ static VBOXSTRICTRC iommuAmdExclRangeLimit_w(PPDMDEVINS pDevIns, PIOMMU pThis, u
 
 
 /**
- * Writes the PPR Log Base Address Register.
- */
-static VBOXSTRICTRC iommuAmdPprLogBar_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
-{
-    RT_NOREF(pDevIns, iReg);
-
-    /*
-     * IOMMU behavior is undefined when software writes this register when PPR logging is running.
-     * In our emulation, we ignore the write entirely.
-     * See AMD IOMMU spec. 3.3.2 "PPR Log Registers".
-     */
-    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
-    if (Status.n.u1PprLogRunning)
-    {
-        Log((IOMMU_LOG_PFX ": Setting PprLogBar (%#RX64) when PPR logging is running -> Ignored\n", u64Value));
-        return VINF_SUCCESS;
-    }
-
-    /* Mask out all unrecognized bits. */
-    u64Value &= IOMMU_PPR_LOG_BAR_VALID_MASK;
-    PPR_LOG_BAR_T PprLogBaseAddr;
-    PprLogBaseAddr.u64 = u64Value;
-
-    /* Validate the length. */
-    if (PprLogBaseAddr.n.u4Len >= 8)
-    {
-        /* Update the register. */
-        pThis->PprLogBaseAddr.u64 = PprLogBaseAddr.u64;
-
-        /*
-         * Writing the event log base address, clears the PPR log head and tail pointers.
-         * See AMD spec. 2.6 "Peripheral Page Request (PPR) Logging"
-         */
-        pThis->PprLogHeadPtr.u64 = 0;
-        pThis->PprLogTailPtr.u64 = 0;
-    }
-    else
-        Log((IOMMU_LOG_PFX ": PPR log length (%#x) invalid -> Ignored\n", PprLogBaseAddr.n.u4Len));
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Writes the Hardware Event Register (Hi).
  */
 static VBOXSTRICTRC iommuAmdHwEvtHi_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
@@ -2964,7 +2920,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
         case IOMMU_MMIO_OFF_EXCL_RANGE_LIMIT:    return iommuAmdExclRangeLimit_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_EXT_FEAT:            return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
 
-        case IOMMU_MMIO_OFF_PPR_LOG_BAR:         return iommuAmdPprLogBar_w(pDevIns, pThis, off, uValue);
+        case IOMMU_MMIO_OFF_PPR_LOG_BAR:         return iommuAmdIgnore_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_HW_EVT_HI:           return iommuAmdHwEvtHi_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_HW_EVT_LO:           return iommuAmdHwEvtLo_w(pDevIns, pThis, off, uValue);
         case IOMMU_MMIO_OFF_HW_EVT_STATUS:       return iommuAmdHwEvtStatus_w(pDevIns, pThis, off, uValue);
