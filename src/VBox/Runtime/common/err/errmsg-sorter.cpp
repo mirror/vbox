@@ -80,8 +80,21 @@ typedef struct RTSTATUSMSGINT2
     const char     *pszDefine;
     /** Status code number. */
     int             iCode;
+    /** Index into the primary table (for multiple passes). */
+    unsigned        idx1;
 } RTSTATUSMSGINT2;
 typedef RTSTATUSMSGINT2 *PRTSTATUSMSGINT2;
+
+
+/** This used to determin minimum field sizes. */
+typedef struct RTSTATUSMSGSTATS
+{
+    unsigned offMax;
+    unsigned cchMax;
+    unsigned cBitsOffset;
+    unsigned cBitsLength;
+} RTSTATUSMSGSTATS;
+typedef RTSTATUSMSGSTATS *PRTSTATUSMSGSTATS;
 
 
 /*********************************************************************************************************************************
@@ -161,6 +174,31 @@ static bool IgnoreDuplicateDefine(const char *pszDefine)
 }
 
 
+DECLINLINE(void) GatherStringStats(PRTSTATUSMSGSTATS pStats, PBLDPROGSTRING pString)
+{
+    if (pStats->offMax < pString->offStrTab)
+        pStats->offMax = pString->offStrTab;
+    if (pStats->cchMax < pString->cchString)
+        pStats->cchMax = (unsigned)pString->cchString;
+}
+
+
+DECLINLINE(unsigned) CalcBitsForValue(size_t uValue)
+{
+    unsigned cBits = 1;
+    while (RT_BIT_64(cBits) < uValue && cBits < 64)
+        cBits++;
+    return cBits;
+}
+
+
+static void CalcBitsForStringStats(PRTSTATUSMSGSTATS pStats)
+{
+    pStats->cBitsOffset = CalcBitsForValue(pStats->offMax);
+    pStats->cBitsLength = CalcBitsForValue(pStats->cchMax);
+}
+
+
 int main(int argc, char **argv)
 {
     /*
@@ -227,23 +265,24 @@ int main(int argc, char **argv)
         return error("Out of memory!\n");
 
     static RTSTATUSMSGINT2 s_aStatusMsgs2[RT_ELEMENTS(g_aStatusMsgs)];
-    size_t                 cStatusMsgs = 0;
-    for (size_t i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
-    {
+    unsigned               cStatusMsgs = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
         if (!g_aStatusMsgs[i].fDuplicate)
         {
+            s_aStatusMsgs2[cStatusMsgs].idx1      = i;
             s_aStatusMsgs2[cStatusMsgs].iCode     = g_aStatusMsgs[i].iCode;
             s_aStatusMsgs2[cStatusMsgs].pszDefine = g_aStatusMsgs[i].pszDefine;
             BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[cStatusMsgs].Define, g_aStatusMsgs[i].pszDefine);
-            if (enmMode != kMode_OnlyDefines)
-            {
-                BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[cStatusMsgs].MsgShort, g_aStatusMsgs[i].pszMsgShort);
-                if (enmMode == kMode_All)
-                    BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[cStatusMsgs].MsgFull, g_aStatusMsgs[i].pszMsgFull);
-            }
             cStatusMsgs++;
         }
-    }
+
+    if (enmMode != kMode_OnlyDefines)
+        for (size_t i = 0; i < cStatusMsgs; i++)
+            BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[i].MsgShort, g_aStatusMsgs[s_aStatusMsgs2[i].idx1].pszMsgShort);
+
+    if (enmMode == kMode_All)
+        for (size_t i = 0; i < cStatusMsgs; i++)
+            BldProgStrTab_AddStringDup(&StrTab, &s_aStatusMsgs2[i].MsgFull, g_aStatusMsgs[s_aStatusMsgs2[i].idx1].pszMsgFull);
 
     if (!BldProgStrTab_CompileIt(&StrTab, true))
         return error("BldProgStrTab_CompileIt failed!\n");
@@ -255,57 +294,160 @@ int main(int argc, char **argv)
     if (pOut)
     {
         /*
+         * .
+         */
+        RTSTATUSMSGSTATS Defines  = {0, 0, 0, 0};
+        RTSTATUSMSGSTATS MsgShort = {0, 0, 0, 0};
+        RTSTATUSMSGSTATS MsgFull  = {0, 0, 0, 0};
+        for (size_t i = 0; i < cStatusMsgs; i++)
+        {
+            GatherStringStats(&Defines,  &s_aStatusMsgs2[i].Define);
+            GatherStringStats(&MsgShort, &s_aStatusMsgs2[i].MsgShort);
+            GatherStringStats(&MsgFull,  &s_aStatusMsgs2[i].MsgFull);
+        }
+        CalcBitsForStringStats(&Defines);
+        CalcBitsForStringStats(&MsgShort);
+        CalcBitsForStringStats(&MsgFull);
+        printf(" Defines: max offset %#x -> %u bits, max length %#x -> bits %u\n",
+               Defines.offMax, Defines.cBitsOffset, (unsigned)Defines.cchMax, Defines.cBitsLength);
+        if (enmMode != kMode_OnlyDefines)
+            printf("MsgShort: max offset %#x -> %u bits, max length %#x -> bits %u\n",
+                   MsgShort.offMax, MsgShort.cBitsOffset, (unsigned)MsgShort.cchMax, MsgShort.cBitsLength);
+        if (enmMode == kMode_All)
+            printf(" MsgFull: max offset %#x -> %u bits, max length %#x -> bits %u\n",
+                   MsgFull.offMax, MsgFull.cBitsOffset, (unsigned)MsgFull.cchMax, MsgFull.cBitsLength);
+
+        unsigned cBitsCodePos = CalcBitsForValue((size_t)s_aStatusMsgs2[cStatusMsgs - 1].iCode);
+        unsigned cBitsCodeNeg = CalcBitsForValue((size_t)-s_aStatusMsgs2[0].iCode);
+        unsigned cBitsCode    = RT_MAX(cBitsCodePos, cBitsCodeNeg) + 1;
+        printf("Statuses: min %d, max %d -> %u bits\n",
+               s_aStatusMsgs2[0].iCode, s_aStatusMsgs2[cStatusMsgs - 1].iCode, cBitsCode);
+
+        /*
          * Print the table.
          */
         fprintf(pOut,
                 "\n"
+                "#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)\n"
+                "# pragma pack(1)\n"
+                "#endif\n"
                 "typedef struct RTMSGENTRYINT\n"
-                "{\n"
-                "    uint32_t offDefine   : 20;\n"
-                "    uint32_t cchDefine   : 9;\n"
-                "%s"
-                "%s"
-                "    int32_t  iCode;\n"
+                "{\n");
+        /* 16 + 16 + 8 */
+        bool fOptimalLayout = true;
+        if (   enmMode == kMode_OnlyDefines
+            && cBitsCode <= 16
+            && Defines.cBitsOffset <= 16
+            && Defines.cBitsLength <= 8)
+            fprintf(pOut,
+                    "    uint16_t offDefine; /* need %2u bits, max %#x */\n"
+                    "    uint8_t  cchDefine; /* need %2u bits, max %#x */\n"
+                    "    int16_t  iCode;     /* need %2u bits */\n",
+                    Defines.cBitsOffset, Defines.offMax, Defines.cBitsLength, Defines.cchMax, cBitsCode);
+        else if (   enmMode == kMode_NoFullMsg
+                 && cBitsCode + Defines.cBitsOffset + Defines.cBitsLength + MsgShort.cBitsOffset + MsgShort.cBitsLength <= 64)
+            fprintf(pOut,
+                    "    uint64_t offDefine   : %2u; /* max %#x */\n"
+                    "    uint64_t cchDefine   : %2u; /* max %#x */\n"
+                    "    uint64_t offMsgShort : %2u; /* max %#x */\n"
+                    "    uint64_t cchMsgShort : %2u; /* max %#x */\n"
+                    "    int64_t  iCode       : %2u;\n",
+                    Defines.cBitsOffset,  Defines.offMax,
+                    Defines.cBitsLength,  Defines.cchMax,
+                    MsgShort.cBitsOffset, MsgShort.offMax,
+                    MsgShort.cBitsLength, MsgShort.cchMax,
+                    cBitsCode);
+        else if (   enmMode == kMode_All
+                 &&   Defines.cBitsOffset  + Defines.cBitsLength
+                    + MsgShort.cBitsOffset + MsgShort.cBitsLength
+                    + MsgFull.cBitsOffset  + MsgFull.cBitsLength
+                    + cBitsCode <= 96
+                 && cBitsCode + Defines.cBitsLength + MsgShort.cBitsLength <= 32)
+            fprintf(pOut,
+                    "    uint64_t offDefine   : %2u; /* max %#x */\n"
+                    "    uint64_t offMsgShort : %2u; /* max %#x */\n"
+                    "    uint64_t offMsgFull  : %2u; /* max %#x */\n"
+                    "    uint64_t cchMsgFull  : %2u; /* max %#x */\n"
+                    "    int32_t  iCode       : %2u;\n"
+                    "    uint32_t cchDefine   : %2u; /* max %#x */\n"
+                    "    uint32_t cchMsgShort : %2u; /* max %#x */\n",
+                    Defines.cBitsOffset,  Defines.offMax,
+                    MsgShort.cBitsOffset, MsgShort.offMax,
+                    MsgFull.cBitsOffset,  MsgFull.offMax,
+                    MsgFull.cBitsLength,  MsgFull.cchMax,
+                    cBitsCode,
+                    Defines.cBitsLength,  Defines.cchMax,
+                    MsgShort.cBitsLength, MsgShort.cchMax);
+        else
+        {
+            fprintf(stderr, "%s: warning: Optimized structure layouts needs readjusting...\n", g_pszProgName);
+            fOptimalLayout = false;
+            fprintf(pOut,
+                    "    uint32_t offDefine   : 23; /* need %u bits, max %#x */\n"
+                    "    uint32_t cchDefine   :  9; /* need %u bits, max %#x */\n",
+                    Defines.cBitsOffset, Defines.offMax, Defines.cBitsLength, Defines.cchMax);
+            if (enmMode != kMode_OnlyDefines)
+                fprintf(pOut,
+                        "    uint32_t offMsgShort : 23; /* need %u bits, max %#x */\n"
+                        "    uint32_t cchMsgShort :  9; /* need %u bits, max %#x */\n",
+                        MsgShort.cBitsOffset, MsgShort.offMax, MsgShort.cBitsLength, MsgShort.offMax);
+            if (enmMode == kMode_All)
+                fprintf(pOut,
+                        "    uint32_t offMsgFull  : 23; /* need %u bits, max %#x */\n"
+                        "    uint32_t cchMsgFull  :  9; /* need %u bits, max %#x */\n",
+                        MsgFull.cBitsOffset, MsgFull.offMax, MsgFull.cBitsLength, MsgFull.cchMax);
+            fprintf(pOut,
+                    "    int32_t  iCode; /* need %u bits */\n", cBitsCode);
+        }
+        fprintf(pOut,
                 "} RTMSGENTRYINT;\n"
                 "typedef RTMSGENTRYINT *PCRTMSGENTRYINT;\n"
+                "#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)\n"
+                "# pragma pack()\n"
+                "#endif\n"
                 "\n"
                 "static const RTMSGENTRYINT g_aStatusMsgs[ /*%lu*/ ] =\n"
                 "{\n"
                 ,
-                enmMode != kMode_OnlyDefines
-                ? "    uint32_t offMsgShort : 23;\n"
-                  "    uint32_t cchMsgShort : 9;\n" : "",
-                enmMode == kMode_All
-                ? "    uint32_t offMsgFull  : 23;\n"
-                  "    uint32_t cchMsgFull  : 9;\n" : "",
                 (unsigned long)cStatusMsgs);
 
-        if (enmMode == kMode_All)
+        if (enmMode == kMode_All && fOptimalLayout)
             for (size_t i = 0; i < cStatusMsgs; i++)
-                fprintf(pOut, "/*%8d:*/ { %#08x, %3u, %#08x, %3u, %#08x, %3u, %s },\n",
+                fprintf(pOut, "    { %#08x, %#08x, %#08x, %3u, %6d, %3u, %3u }, /* %s */\n",
+                        s_aStatusMsgs2[i].Define.offStrTab,
+                        s_aStatusMsgs2[i].MsgShort.offStrTab,
+                        s_aStatusMsgs2[i].MsgFull.offStrTab,
+                        (unsigned)s_aStatusMsgs2[i].MsgFull.cchString,
                         s_aStatusMsgs2[i].iCode,
+                        (unsigned)s_aStatusMsgs2[i].MsgShort.cchString,
+                        (unsigned)s_aStatusMsgs2[i].Define.cchString,
+                        s_aStatusMsgs2[i].pszDefine);
+        else if (enmMode == kMode_All)
+            for (size_t i = 0; i < cStatusMsgs; i++)
+                fprintf(pOut, "    { %#08x, %3u, %#08x, %3u, %#08x, %3u, %8d }, /* %s */\n",
                         s_aStatusMsgs2[i].Define.offStrTab,
                         (unsigned)s_aStatusMsgs2[i].Define.cchString,
                         s_aStatusMsgs2[i].MsgShort.offStrTab,
                         (unsigned)s_aStatusMsgs2[i].MsgShort.cchString,
                         s_aStatusMsgs2[i].MsgFull.offStrTab,
                         (unsigned)s_aStatusMsgs2[i].MsgFull.cchString,
+                        s_aStatusMsgs2[i].iCode,
                         s_aStatusMsgs2[i].pszDefine);
         else if (enmMode == kMode_NoFullMsg)
             for (size_t i = 0; i < cStatusMsgs; i++)
-                fprintf(pOut, "/*%8d:*/ { %#08x, %3u, %#08x, %3u, %s },\n",
-                        s_aStatusMsgs2[i].iCode,
+                fprintf(pOut, "    { %#08x, %3u, %#08x, %3u, %8d }, /* %s */\n",
                         s_aStatusMsgs2[i].Define.offStrTab,
                         (unsigned)s_aStatusMsgs2[i].Define.cchString,
                         s_aStatusMsgs2[i].MsgShort.offStrTab,
                         (unsigned)s_aStatusMsgs2[i].MsgShort.cchString,
+                        s_aStatusMsgs2[i].iCode,
                         s_aStatusMsgs2[i].pszDefine);
         else if (enmMode == kMode_OnlyDefines)
             for (size_t i = 0; i < cStatusMsgs; i++)
-                fprintf(pOut, "/*%8d:*/ { %#08x, %3u, %s },\n",
-                        s_aStatusMsgs2[i].iCode,
+                fprintf(pOut, "    { %#08x, %3u, %8d }, /* %s */\n",
                         s_aStatusMsgs2[i].Define.offStrTab,
                         (unsigned)s_aStatusMsgs2[i].Define.cchString,
+                        s_aStatusMsgs2[i].iCode,
                         s_aStatusMsgs2[i].pszDefine);
         else
             return error("Unsupported message selection (%d)!\n", enmMode);
