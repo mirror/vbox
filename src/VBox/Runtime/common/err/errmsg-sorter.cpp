@@ -419,8 +419,8 @@ int main(int argc, char **argv)
                         s_aStatusMsgs2[i].MsgFull.offStrTab,
                         (unsigned)s_aStatusMsgs2[i].MsgFull.cchString,
                         s_aStatusMsgs2[i].iCode,
-                        (unsigned)s_aStatusMsgs2[i].MsgShort.cchString,
                         (unsigned)s_aStatusMsgs2[i].Define.cchString,
+                        (unsigned)s_aStatusMsgs2[i].MsgShort.cchString,
                         s_aStatusMsgs2[i].pszDefine);
         else if (enmMode == kMode_All)
             for (size_t i = 0; i < cStatusMsgs; i++)
