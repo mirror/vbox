@@ -758,7 +758,8 @@ static bool BldProgStrTab_CompileIt(PBLDPROGSTRTAB pThis, bool fVerbose)
 
     /*
      * Create papSortedStrings from the hash table.  The table is sorted by
-     * string length, with the longer strings first.
+     * string length, with the longer strings first, so that we increase our
+     * chances of locating duplicate substrings.
      */
     pThis->papSortedStrings = (PBLDPROGSTRING *)malloc(sizeof(pThis->papSortedStrings[0]) * pThis->cUniqueStrings);
     if (!pThis->papSortedStrings)
