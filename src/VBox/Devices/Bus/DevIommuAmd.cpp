@@ -674,6 +674,9 @@ typedef union
     uint64_t    au64[2];
 } CMD_GENERIC_T;
 AssertCompileSize(CMD_GENERIC_T, 16);
+/** Number of bits to shift the byte offset of a command in the command buffer to
+ *  get its index. */
+#define IOMMU_CMD_GENERIC_SHIFT   4
 
 /**
  * Command: COMPLETION_WAIT.
@@ -848,6 +851,9 @@ typedef union
     uint32_t    au32[4];
 } EVT_GENERIC_T;
 AssertCompileSize(EVT_GENERIC_T, 16);
+/** Number of bits to shift the byte offset of an event entry in the event log
+ *  buffer to get its index. */
+#define IOMMU_EVT_GENERIC_SHIFT   4
 /** Pointer to a generic event log entry. */
 typedef EVT_GENERIC_T *PEVT_GENERIC_T;
 /** Pointer to a const generic event log entry. */
@@ -2096,9 +2102,6 @@ typedef struct IOMMU
     EVT_LOG_TAIL_PTR_T          EvtLogTailPtr;       /**< Event log tail pointer register. */
     /** @} */
 
-    uint32_t                    cbCmdBufUsed;        /**< Number of bytes used up in the command buffer. */
-    uint32_t                    cbEvtLogUsed;        /**< Number of bytes used up in the event log. */
-
     /** @name MMIO: Command and Event Status register.
      * @{ */
     IOMMU_STATUS_T              Status;              /**< IOMMU status register. */
@@ -2251,6 +2254,42 @@ DECLINLINE(uint32_t) iommuAmdGetBufLength(uint8_t uEncodedLen)
 {
     Assert(uEncodedLen > 7);
     return (2 << (uEncodedLen - 1)) << 4;
+}
+
+
+/**
+ * Gets the number of (unconsumed) entries in the event log.
+ *
+ * @returns The number of entries in the event log.
+ * @param   pThis     The IOMMU device state.
+ */
+static uint32_t iommuAmdGetEvtLogEntryCount(PIOMMU pThis)
+{
+    uint32_t const idxTail = pThis->EvtLogTailPtr.n.off >> IOMMU_EVT_GENERIC_SHIFT;
+    uint32_t const idxHead = pThis->EvtLogHeadPtr.n.off >> IOMMU_EVT_GENERIC_SHIFT;
+    if (idxTail >= idxHead)
+        return idxTail - idxHead;
+
+    uint32_t const cMaxEvts = iommuAmdGetBufMaxEntries(pThis->EvtLogBaseAddr.n.u4Len);
+    return cMaxEvts - idxHead + idxTail;
+}
+
+
+/**
+ * Gets the number of (unconsumed) commands in the command buffer.
+ *
+ * @returns The number of commands in the command buffer.
+ * @param   pThis     The IOMMU device state.
+ */
+static uint32_t iommuAmdGetCmdBufEntryCount(PIOMMU pThis)
+{
+    uint32_t const idxTail = pThis->CmdBufTailPtr.n.off >> IOMMU_CMD_GENERIC_SHIFT;
+    uint32_t const idxHead = pThis->CmdBufHeadPtr.n.off >> IOMMU_CMD_GENERIC_SHIFT;
+    if (idxTail >= idxHead)
+        return idxTail - idxHead;
+
+    uint32_t const cMaxEvts = iommuAmdGetBufMaxEntries(pThis->CmdBufBaseAddr.n.u4Len);
+    return cMaxEvts - idxHead + idxTail;
 }
 
 
@@ -2467,7 +2506,7 @@ static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iR
             ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_EVT_LOG_RUNNING);
     }
 
-    /* Update the control register. */
+    /* Update the register. */
     ASMAtomicWriteU64(&pThis->Ctrl.u64, NewCtrl.u64);
 
     /* Enable or disable command buffer processing when the bit transitions. */
@@ -2605,6 +2644,8 @@ static VBOXSTRICTRC iommuAmdHwEvtStatus_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint
         HwStatus &= ~RT_BIT_64(0);
     if (u64Value & HwStatus & RT_BIT_64(1))
         HwStatus &= ~RT_BIT_64(1);
+
+    /* Update the register. */
     pThis->HwEvtStatus.u64 = HwStatus;
     return VINF_SUCCESS;
 }
@@ -2732,7 +2773,9 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
         return VINF_SUCCESS;
     }
 
+    /* Update the register. */
     pThis->CmdBufHeadPtr.au32[0] = offBuf;
+
     LogFlow((IOMMU_LOG_PFX ": Set CmdBufHeadPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
@@ -2772,6 +2815,7 @@ static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * bounds (which we do by masking bits above) it should be sufficient.
      */
     pThis->CmdBufTailPtr.au32[0] = offBuf;
+
     LogFlow((IOMMU_LOG_PFX ": Set CmdBufTailPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
@@ -2783,8 +2827,26 @@ static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
 static VBOXSTRICTRC iommuAmdEvtLogHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iReg, uint64_t u64Value)
 {
     RT_NOREF(pDevIns, iReg);
-    NOREF(pThis);
-    NOREF(u64Value);
+
+    /*
+     * IOMMU behavior is undefined when software writes a value outside the buffer length.
+     * In our emulation, we ignore the write entirely.
+     * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
+     */
+    uint32_t const offBuf = u64Value & IOMMU_EVT_LOG_HEAD_PTR_VALID_MASK;
+    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->EvtLogBaseAddr.n.u4Len);
+    Assert(cbBuf <= _512K);
+    if (offBuf >= cbBuf)
+    {
+        Log((IOMMU_LOG_PFX ": Setting EvtLogHeadPtr (%#RX32) to a value that exceeds buffer length (%#RX32) -> Ignored\n",
+             offBuf, cbBuf));
+        return VINF_SUCCESS;
+    }
+
+    /* Update the register. */
+    pThis->EvtLogHeadPtr.au32[0] = offBuf;
+
+    LogFlow((IOMMU_LOG_PFX ": Set EvtLogHeadPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
 
@@ -2814,7 +2876,7 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * In our emulation, we ignore the write entirely.
      */
     uint32_t const offBuf = u64Value & IOMMU_EVT_LOG_TAIL_PTR_VALID_MASK;
-    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->EvtLogBaseAddr.n.u4Len);
     Assert(cbBuf <= _512K);
     if (offBuf >= cbBuf)
     {
@@ -2823,7 +2885,9 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
         return VINF_SUCCESS;
     }
 
+    /* Update the register. */
     pThis->EvtLogTailPtr.au32[0] = offBuf;
+
     LogFlow((IOMMU_LOG_PFX ": Set EvtLogTailPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
@@ -3228,9 +3292,9 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
         Assert(!(offEvt & ~IOMMU_EVT_LOG_TAIL_PTR_VALID_MASK));
 
         /* Ensure we have space in the event log. */
-        uint32_t const cbEvtLog = iommuAmdGetBufLength(pThis->EvtLogBaseAddr.n.u4Len);
-        uint32_t const cbUsed   = pThis->cbEvtLogUsed;
-        if (cbUsed + cbEvt < cbEvtLog)
+        uint32_t const cMaxEvts = iommuAmdGetBufMaxEntries(pThis->EvtLogBaseAddr.n.u4Len);
+        uint32_t const cEvts    = iommuAmdGetEvtLogEntryCount(pThis);
+        if (cEvts + 1 < cMaxEvts)
         {
             /* Write the event log entry to memory. */
             RTGCPHYS const GCPhysEvtLog      = pThis->EvtLogBaseAddr.n.u40Base << X86_PAGE_4K_SHIFT;
@@ -3240,10 +3304,8 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
                 Log((IOMMU_LOG_PFX ": Failed to write event log entry at %#RGp. rc=%Rrc\n", GCPhysEvtLogEntry, rc));
 
             /* Increment the event log tail pointer. */
+            uint32_t const cbEvtLog = iommuAmdGetBufLength(pThis->EvtLogBaseAddr.n.u4Len);
             pThis->EvtLogTailPtr.n.off = (offEvt + cbEvt) % cbEvtLog;
-
-            /* Increment the size of entries pending in the event log. */
-            pThis->cbEvtLogUsed += cbEvt;
 
             /* Indicate that an event log entry was written. */
             ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_INTR);
@@ -4264,9 +4326,6 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->CmdBufTailPtr.u64         = 0;
     pThis->EvtLogHeadPtr.u64         = 0;
     pThis->EvtLogTailPtr.u64         = 0;
-
-    pThis->cbCmdBufUsed              = 0;
-    pThis->cbEvtLogUsed              = 0;
 
     pThis->Status.u64                = 0;
 
