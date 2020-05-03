@@ -539,7 +539,7 @@ typedef union
         uint32_t    u1Rsvd0 : 1;                      /**< Bit  63      - Reserved. */
         uint32_t    u16DomainId : 1;                  /**< Bits 79:64   - Domain ID. */
         uint32_t    u16GstCr3TableRootPtrMed : 16;    /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Pointer (Mid). */
-        uint32_t    u1IoTlbEnable : 1;                /**< Bit  96      - IOTLB Enable. */
+        uint32_t    u1IoTlbEnable : 1;                /**< Bit  96      - I: IOTLB Enable. */
         uint32_t    u1SuppressPfEvents : 1;           /**< Bit  97      - SE: Supress Page-fault events. */
         uint32_t    u1SuppressAllPfEvents : 1;        /**< Bit  98      - SA: Supress All Page-fault events. */
         uint32_t    u2IoCtl : 1;                      /**< Bits 100:99  - IoCtl: Port I/O Control. */
@@ -3425,7 +3425,7 @@ static bool iommuAmdIsDvaSubjectToExclRange(PCIOMMU pThis, PCDEV_TAB_ENTRY_T pDe
         uint64_t const uDvaExclLast  = pThis->ExclRangeLimit.n.u52ExclLimit;
         if (uDvaExclLast - uDva >= uDvaExclFirst)
         {
-            /* Check if device access to addresses in the exclusion can be forwarded untranslated. */
+            /* Check if device access to addresses in the exclusion range can be forwarded untranslated. */
             if (    pThis->ExclRangeBaseAddr.n.u1AllowAll
                 ||  pDevTabEntry->n.u1AllowExclusion)
                 return true;
@@ -3457,8 +3457,8 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
     uint8_t const idxSeg = uDevId & g_auDevTabSegMasks[idxSegsEn] >> 13;
     Assert(idxSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
 
-    RTGCPHYS const GCPhysDevTab   = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
-    uint16_t const offDevTabEntry = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
+    RTGCPHYS const GCPhysDevTab      = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
+    uint16_t const offDevTabEntry    = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
     RTGCPHYS const GCPhysDevTabEntry = GCPhysDevTab + offDevTabEntry;
 
     Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
