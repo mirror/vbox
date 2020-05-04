@@ -38,14 +38,14 @@
 
 
 /** Initialise the host side of the shared clipboard - called by the hgcm layer. */
-int VBoxShClSvcImplInit(void)
+int ShClSvcImplInit(void)
 {
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
 /** Terminate the host side of the shared clipboard - called by the hgcm layer. */
-void VBoxShClSvcImplDestroy(void)
+void ShClSvcImplDestroy(void)
 {
     LogFlowFunc(("called, returning\n"));
 }
@@ -57,7 +57,7 @@ void VBoxShClSvcImplDestroy(void)
   * @param   pClient            Structure containing context information about the guest system
   * @param   fHeadless          Whether headless.
   */
-int VBoxShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
+int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     RT_NOREF(pClient, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
@@ -68,7 +68,7 @@ int VBoxShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int SharedClipboardSvcImplSync(PSHCLCLIENT pClient)
+int ShClSvcImplSync(PSHCLCLIENT pClient)
 {
     RT_NOREF(pClient);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
@@ -80,7 +80,7 @@ int SharedClipboardSvcImplSync(PSHCLCLIENT pClient)
  *
  * @param   pClient         Structure containing context information about the guest system
  */
-int SharedClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
+int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
 {
     RT_NOREF(pClient);
     return VINF_SUCCESS;
@@ -91,13 +91,11 @@ int SharedClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
  * subsystem.
  *
  * @param pClient               Context data for the guest system.
- * @param pCmdCtx               Command context to use.
  * @param fFormats              Clipboard formats the guest is offering.
  */
-int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                         SHCLFORMATS fFormats)
+int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
-    RT_NOREF(pClient, pCmdCtx, fFormats);
+    RT_NOREF(pClient, fFormats);
     return VINF_SUCCESS;
 }
 
@@ -111,8 +109,8 @@ int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX 
  * @param cbData        Size (in bytes) of buffer where to return the clipboard data.
  * @param pcbActual     Where to store the actual amount of data available.
  */
-int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                   SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
+int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                        SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
     RT_NOREF(pClient, pCmdCtx, uFormat, pvData, cbData);
 
@@ -122,8 +120,8 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
     return VINF_SUCCESS;
 }
 
-int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                    SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
+int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                         SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     RT_NOREF(pClient, pCmdCtx, uFormat, pvData, cbData);
     return VERR_NOT_IMPLEMENTED;
