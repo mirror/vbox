@@ -196,10 +196,13 @@ RT_C_DECLS_END
 # endif
 
 
-/* Define any types missing from sys/types.h on windows. */
+/* Define any types missing from sys/types.h on Windows and OS/2. */
 # ifdef _MSC_VER
 #  undef ssize_t
-   typedef intptr_t ssize_t;
+typedef intptr_t ssize_t;
+# endif
+# if defined(RT_OS_OS2) && (defined(__IBMC__) || defined(__IBMCPP__))
+typedef signed long ssize_t;
 # endif
 
 #else  /* no crt */
