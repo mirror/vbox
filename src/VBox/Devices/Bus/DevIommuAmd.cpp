@@ -418,6 +418,19 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_STATUS_PPR_LOG_OVERFLOW_EARLY         RT_BIT_64(18)
 /** @} */
 
+/** @name IOMMU_PERM_XXX: IOMMU I/O access permissions bits.
+ * In accordance with the AMD spec.
+ *
+ * These values match the shifted values of the IR and IW field of the DTE and the
+ * PTE, PDE of the I/O page tables.
+ *
+ * @{ */
+#define IOMMU_IO_PERM_READ                             RT_BIT_64(0)
+#define IOMMU_IO_PERM_WRITE                            RT_BIT_64(1)
+#define IOMMU_IO_PERM_SHIFT                            61
+#define IOMMU_IO_PERM_MASK                             0x3
+/** @} */
+
 /**
  * @name IOMMU Control Register Bits.
  * In accordance with the AMD spec.
@@ -521,67 +534,66 @@ typedef union
 {
     struct
     {
-        uint32_t    u1Valid : 1;                      /**< Bit  0       - V: Valid. */
-        uint32_t    u1TranslationValid : 1;           /**< Bit  1       - TV: Translation information Valid. */
-        uint32_t    u5Rsvd0 : 5;                      /**< Bits 6:2     - Reserved. */
-        uint32_t    u2Had : 2;                        /**< Bits 8:7     - HAD: Host Access Dirty. */
-        uint32_t    u3Mode : 3;                       /**< Bits 11:9    - Mode: Paging mode. */
-        uint32_t    u20PageTableRootPtrLo : 20;       /**< Bits 31:12   - Page Table Root Pointer (Lo). */
-        uint32_t    u20PageTableRootPtrHi : 20;       /**< Bits 51:32   - Page Table Root Pointer (Hi). */
-        uint32_t    u1Ppr : 1;                        /**< Bit  52      - PPR: Peripheral Page Request. */
-        uint32_t    u1GstPprRespPasid : 1;            /**< Bit  53      - GRPR: Guest PPR Response with PASID. */
-        uint32_t    u1GstIoValid : 1;                 /**< Bit  54      - GIoV: Guest I/O Protection Valid. */
-        uint32_t    u1GstTranslateValid : 1;          /**< Bit  55      - GV: Guest translation Valid. */
-        uint32_t    u2GstCr3RootTblTranslated : 2;    /**< Bits 57:56   - GLX: Guest Levels Translated. */
-        uint32_t    u3GstCr3TableRootPtrLo : 2;       /**< Bits 60:58   - GCR3 TRP: Guest CR3 Table Root Pointer (Lo). */
-        uint32_t    u1IoRead : 1;                     /**< Bit  61      - IR: I/O Read permission. */
-        uint32_t    u1IoWrite : 1;                    /**< Bit  62      - IW: I/O Write permission. */
-        uint32_t    u1Rsvd0 : 1;                      /**< Bit  63      - Reserved. */
-        uint32_t    u16DomainId : 1;                  /**< Bits 79:64   - Domain ID. */
-        uint32_t    u16GstCr3TableRootPtrMed : 16;    /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Pointer (Mid). */
-        uint32_t    u1IoTlbEnable : 1;                /**< Bit  96      - I: IOTLB Enable. */
-        uint32_t    u1SuppressPfEvents : 1;           /**< Bit  97      - SE: Supress Page-fault events. */
-        uint32_t    u1SuppressAllPfEvents : 1;        /**< Bit  98      - SA: Supress All Page-fault events. */
-        uint32_t    u2IoCtl : 1;                      /**< Bits 100:99  - IoCtl: Port I/O Control. */
-        uint32_t    u1Cache : 1;                      /**< Bit  101     - Cache: IOTLB Cache Hint. */
-        uint32_t    u1SnoopDisable : 1;               /**< Bit  102     - SD: Snoop Disable. */
-        uint32_t    u1AllowExclusion : 1;             /**< Bit  103     - EX: Allow Exclusion. */
-        uint32_t    u2SysMgt : 2;                     /**< Bits 105:104 - SysMgt: System Management message enable. */
-        uint32_t    u1Rsvd1 : 1;                      /**< Bit  106     - Reserved. */
-        uint32_t    u21GstCr3TableRootPtrHi : 21;     /**< Bits 127:107 - GCR3 TRP: Guest CR3 Table Root Pointer (Hi). */
-        uint32_t    u1IntrMapValid : 1;               /**< Bit  128     - IV: Interrupt map Valid. */
-        uint32_t    u4IntrTableLength : 4;            /**< Bits 132:129 - IntTabLen: Interrupt Table Length. */
-        uint32_t    u1IgnoreUnmappedIntrs : 1;        /**< Bits 133     - IG: Ignore unmapped interrupts. */
-        uint32_t    u26IntrTableRootPtr : 26;         /**< Bits 159:134 - Interrupt Root Table Pointer (Lo). */
-        uint32_t    u20IntrTableRootPtr : 20;         /**< Bits 179:160 - Interrupt Root Table Pointer (Hi). */
-        uint32_t    u4Rsvd0 : 4;                      /**< Bits 183:180 - Reserved. */
-        uint32_t    u1InitPassthru : 1;               /**< Bits 184     - INIT Pass-through. */
-        uint32_t    u1ExtIntPassthru : 1;             /**< Bits 185     - External Interrupt Pass-through. */
-        uint32_t    u1NmiPassthru : 1;                /**< Bits 186     - NMI Pass-through. */
-        uint32_t    u1Rsvd2 : 1;                      /**< Bits 187     - Reserved. */
-        uint32_t    u2IntrCtrl : 2;                   /**< Bits 189:188 - IntCtl: Interrupt Control. */
-        uint32_t    u1Lint0Passthru : 1;              /**< Bit  190     - Lint0Pass: LINT0 (Legacy PIC NMI) Pass-thru. */
-        uint32_t    u1Lint1Passthru : 1;              /**< Bit  191     - Lint1Pass: LINT1 (Legacy PIC NMI) Pass-thru. */
-        uint32_t    u32Rsvd0;                         /**< Bits 223:192 - Reserved. */
-        uint32_t    u22Rsvd0 : 22;                    /**< Bits 245:224 - Reserved. */
-        uint32_t    u1AttrOverride : 1;               /**< Bit  246     - AttrV: Attribute Override. */
-        uint32_t    u1Mode0FC: 1;                     /**< Bit  247     - Mode0FC. */
-        uint32_t    u8SnoopAttr: 1;                   /**< Bits 255:248 - Snoop Attribute. */
+        RT_GCC_EXTENSION uint64_t  u1Valid : 1;                   /**< Bit  0       - V: Valid. */
+        RT_GCC_EXTENSION uint64_t  u1TranslationValid : 1;        /**< Bit  1       - TV: Translation information Valid. */
+        RT_GCC_EXTENSION uint64_t  u5Rsvd0 : 5;                   /**< Bits 6:2     - Reserved. */
+        RT_GCC_EXTENSION uint64_t  u2Had : 2;                     /**< Bits 8:7     - HAD: Host Access Dirty. */
+        RT_GCC_EXTENSION uint64_t  u3Mode : 3;                    /**< Bits 11:9    - Mode: Paging mode. */
+        RT_GCC_EXTENSION uint64_t  u40PageTableRootPtrLo : 40;    /**< Bits 51:12   - Page Table Root Pointer. */
+        RT_GCC_EXTENSION uint64_t  u1Ppr : 1;                     /**< Bit  52      - PPR: Peripheral Page Request. */
+        RT_GCC_EXTENSION uint64_t  u1GstPprRespPasid : 1;         /**< Bit  53      - GRPR: Guest PPR Response with PASID. */
+        RT_GCC_EXTENSION uint64_t  u1GstIoValid : 1;              /**< Bit  54      - GIoV: Guest I/O Protection Valid. */
+        RT_GCC_EXTENSION uint64_t  u1GstTranslateValid : 1;       /**< Bit  55      - GV: Guest translation Valid. */
+        RT_GCC_EXTENSION uint64_t  u2GstCr3RootTblTranslated : 2; /**< Bits 57:56   - GLX: Guest Levels Translated. */
+        RT_GCC_EXTENSION uint64_t  u3GstCr3TableRootPtrLo : 2;    /**< Bits 60:58   - GCR3 TRP: Guest CR3 Table Root Ptr (Lo). */
+        RT_GCC_EXTENSION uint64_t  u1IoRead : 1;                  /**< Bit  61      - IR: I/O Read permission. */
+        RT_GCC_EXTENSION uint64_t  u1IoWrite : 1;                 /**< Bit  62      - IW: I/O Write permission. */
+        RT_GCC_EXTENSION uint64_t  u1Rsvd0 : 1;                   /**< Bit  63      - Reserved. */
+        RT_GCC_EXTENSION uint64_t  u16DomainId : 1;               /**< Bits 79:64   - Domain ID. */
+        RT_GCC_EXTENSION uint64_t  u16GstCr3TableRootPtrMed : 16; /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Ptr (Mid). */
+        RT_GCC_EXTENSION uint64_t  u1IoTlbEnable : 1;             /**< Bit  96      - I: IOTLB Enable. */
+        RT_GCC_EXTENSION uint64_t  u1SuppressPfEvents : 1;        /**< Bit  97      - SE: Supress Page-fault events. */
+        RT_GCC_EXTENSION uint64_t  u1SuppressAllPfEvents : 1;     /**< Bit  98      - SA: Supress All Page-fault events. */
+        RT_GCC_EXTENSION uint64_t  u2IoCtl : 1;                   /**< Bits 100:99  - IoCtl: Port I/O Control. */
+        RT_GCC_EXTENSION uint64_t  u1Cache : 1;                   /**< Bit  101     - Cache: IOTLB Cache Hint. */
+        RT_GCC_EXTENSION uint64_t  u1SnoopDisable : 1;            /**< Bit  102     - SD: Snoop Disable. */
+        RT_GCC_EXTENSION uint64_t  u1AllowExclusion : 1;          /**< Bit  103     - EX: Allow Exclusion. */
+        RT_GCC_EXTENSION uint64_t  u2SysMgt : 2;                  /**< Bits 105:104 - SysMgt: System Management message enable. */
+        RT_GCC_EXTENSION uint64_t  u1Rsvd1 : 1;                   /**< Bit  106     - Reserved. */
+        RT_GCC_EXTENSION uint64_t  u21GstCr3TableRootPtrHi : 21;  /**< Bits 127:107 - GCR3 TRP: Guest CR3 Table Root Ptr (Hi). */
+        RT_GCC_EXTENSION uint64_t  u1IntrMapValid : 1;            /**< Bit  128     - IV: Interrupt map Valid. */
+        RT_GCC_EXTENSION uint64_t  u4IntrTableLength : 4;         /**< Bits 132:129 - IntTabLen: Interrupt Table Length. */
+        RT_GCC_EXTENSION uint64_t  u1IgnoreUnmappedIntrs : 1;     /**< Bits 133     - IG: Ignore unmapped interrupts. */
+        RT_GCC_EXTENSION uint64_t  u26IntrTableRootPtr : 26;      /**< Bits 159:134 - Interrupt Root Table Pointer (Lo). */
+        RT_GCC_EXTENSION uint64_t  u20IntrTableRootPtr : 20;      /**< Bits 179:160 - Interrupt Root Table Pointer (Hi). */
+        RT_GCC_EXTENSION uint64_t  u4Rsvd0 : 4;                   /**< Bits 183:180 - Reserved. */
+        RT_GCC_EXTENSION uint64_t  u1InitPassthru : 1;            /**< Bits 184     - INIT Pass-through. */
+        RT_GCC_EXTENSION uint64_t  u1ExtIntPassthru : 1;          /**< Bits 185     - External Interrupt Pass-through. */
+        RT_GCC_EXTENSION uint64_t  u1NmiPassthru : 1;             /**< Bits 186     - NMI Pass-through. */
+        RT_GCC_EXTENSION uint64_t  u1Rsvd2 : 1;                   /**< Bits 187     - Reserved. */
+        RT_GCC_EXTENSION uint64_t  u2IntrCtrl : 2;                /**< Bits 189:188 - IntCtl: Interrupt Control. */
+        RT_GCC_EXTENSION uint64_t  u1Lint0Passthru : 1;           /**< Bit  190     - Lint0Pass: LINT0 Pass-through. */
+        RT_GCC_EXTENSION uint64_t  u1Lint1Passthru : 1;           /**< Bit  191     - Lint1Pass: LINT1 Pass-through. */
+        RT_GCC_EXTENSION uint64_t  u32Rsvd0 : 32;                 /**< Bits 223:192 - Reserved. */
+        RT_GCC_EXTENSION uint64_t  u22Rsvd0 : 22;                 /**< Bits 245:224 - Reserved. */
+        RT_GCC_EXTENSION uint64_t  u1AttrOverride : 1;            /**< Bit  246     - AttrV: Attribute Override. */
+        RT_GCC_EXTENSION uint64_t  u1Mode0FC: 1;                  /**< Bit  247     - Mode0FC. */
+        RT_GCC_EXTENSION uint64_t  u8SnoopAttr: 1;                /**< Bits 255:248 - Snoop Attribute. */
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t        au32[8];
     /** The 64-bit unsigned integer view. */
     uint64_t        au64[4];
-} DEV_TAB_ENTRY_T;
-AssertCompileSize(DEV_TAB_ENTRY_T, 32);
-#define IOMMU_DEV_TAB_ENTRY_QWORD_0_VALID_MASK      UINT64_C(0x7fffffffffffff83)
-#define IOMMU_DEV_TAB_ENTRY_QWORD_1_VALID_MASK      UINT64_C(0xfffffbffffffffff)
-#define IOMMU_DEV_TAB_ENTRY_QWORD_2_VALID_MASK      UINT64_C(0xf70fffffffffffff)
-#define IOMMU_DEV_TAB_ENTRY_QWORD_3_VALID_MASK      UINT64_C(0xffc0000000000000)
+} DTE_T;
+AssertCompileSize(DTE_T, 32);
+#define IOMMU_DTE_QWORD_0_VALID_MASK      UINT64_C(0x7fffffffffffff83)
+#define IOMMU_DTE_QWORD_1_VALID_MASK      UINT64_C(0xfffffbffffffffff)
+#define IOMMU_DTE_QWORD_2_VALID_MASK      UINT64_C(0xf70fffffffffffff)
+#define IOMMU_DTE_QWORD_3_VALID_MASK      UINT64_C(0xffc0000000000000)
 /** Pointer to a device table entry. */
-typedef DEV_TAB_ENTRY_T *PDEV_TAB_ENTRY_T;
+typedef DTE_T *PDTE_T;
 /** Pointer to a const device table entry. */
-typedef DEV_TAB_ENTRY_T const *PCDEV_TAB_ENTRY_T;
+typedef DTE_T const *PCDTE_T;
 
 /**
  * I/O Page Table Entry.
@@ -716,8 +728,8 @@ typedef union
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    au64[2];
-} CMD_INV_DEV_TAB_ENTRY_T;
-AssertCompileSize(CMD_INV_DEV_TAB_ENTRY_T, 16);
+} CMD_INV_DTE_T;
+AssertCompileSize(CMD_INV_DTE_T, 16);
 
 /**
  * Command: INVALIDATE_IOMMU_PAGES.
@@ -898,10 +910,10 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
-} EVT_ILLEGAL_DEV_TAB_ENTRY_T;
-AssertCompileSize(EVT_ILLEGAL_DEV_TAB_ENTRY_T, 16);
+} EVT_ILLEGAL_DTE_T;
+AssertCompileSize(EVT_ILLEGAL_DTE_T, 16);
 /** Pointer to an illegal device table entry event. */
-typedef EVT_ILLEGAL_DEV_TAB_ENTRY_T *PEVT_ILLEGAL_DEV_TAB_ENTRY_T;
+typedef EVT_ILLEGAL_DTE_T *PEVT_ILLEGAL_DTE_T;
 
 /**
  * Event Log Entry: IO_PAGE_FAULT_EVENT.
@@ -2005,7 +2017,6 @@ typedef enum IOMMUOP
     IOMMUOP_CMD
 } IOMMUOP;
 AssertCompileSize(IOMMUOP, 4);
-
 
 /**
  * The shared IOMMU device state.
@@ -3212,6 +3223,7 @@ static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
         PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
 }
 
+
 /**
  * Clears the MSI interrupt for the IOMMU device.
  *
@@ -3312,15 +3324,15 @@ static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 /**
  * Constructs a DEV_TAB_HARDWARE_ERROR event.
  *
- * @param   uDevId              The device ID.
- * @param   GCPhysDevTabEntry   The system physical address of the failed device
- *                              table access.
- * @param   enmOp               The operation being performed.
- * @param   pEvent              Where to store the constructed event.
+ * @param   uDevId      The device ID.
+ * @param   GCPhysDte   The system physical address of the failed device table
+ *                      access.
+ * @param   enmOp       The operation being performed.
+ * @param   pEvent      Where to store the constructed event.
  *
  * @thread  Any.
  */
-static void iommuAmdMakeDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDevTabEntry, IOMMUOP enmOp, PEVT_GENERIC_T pEvent)
+static void iommuAmdMakeDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, IOMMUOP enmOp, PEVT_GENERIC_T pEvent)
 {
     memset(pEvent, 0, sizeof(*pEvent));
     AssertCompile(sizeof(EVT_DEV_TAB_HW_ERROR_T) == sizeof(EVT_GENERIC_T));
@@ -3331,23 +3343,23 @@ static void iommuAmdMakeDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDevTa
     pDevTabHwErr->n.u1Translation = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
     pDevTabHwErr->n.u2Type        = enmOp == IOMMUOP_CMD ? HWEVTTYPE_DATA_ERROR : HWEVTTYPE_TARGET_ABORT;
     pDevTabHwErr->n.u4EvtCode     = IOMMU_EVT_DEV_TAB_HW_ERROR;
-    pDevTabHwErr->n.u64Addr       = GCPhysDevTabEntry;
+    pDevTabHwErr->n.u64Addr       = GCPhysDte;
 }
 
 
 /**
  * Raises a DEV_TAB_HARDWARE_ERROR event.
  *
- * @param   pDevIns             The IOMMU device instance.
- * @param   uDevId              The device ID.
- * @param   GCPhysDevTabEntry   The system physical address of the failed device
- *                              table access.
- * @param   enmOp               The operation being performed by the IOMMU.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uDevId      The device ID.
+ * @param   GCPhysDte   The system physical address of the failed device table
+ *                      access.
+ * @param   enmOp       The operation being performed by the IOMMU.
  */
-static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysDevTabEntry, IOMMUOP enmOp)
+static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysDte, IOMMUOP enmOp)
 {
     EVT_GENERIC_T Event;
-    iommuAmdMakeDevTabHwErrorEvent(uDevId, GCPhysDevTabEntry, enmOp, &Event);
+    iommuAmdMakeDevTabHwErrorEvent(uDevId, GCPhysDte, enmOp, &Event);
     iommuAmdSetHwError(pDevIns, &Event);
     iommuAmdWriteEvtLogEntry(pDevIns, &Event);
     if (enmOp != IOMMUOP_CMD)
@@ -3365,12 +3377,11 @@ static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, uint16_t uDevId,
  * @param   enmOp           The operation being performed.
  * @param   pEvent          Where to store the constructed event.
  */
-static void iommuAmdMakeIllegalDevTabEntryEvent(uint16_t uDevId, uint64_t uDva, bool fRsvdNotZero, IOMMUOP enmOp,
-                                                PEVT_GENERIC_T pEvent)
+static void iommuAmdMakeIllegalDteEvent(uint16_t uDevId, uint64_t uDva, bool fRsvdNotZero, IOMMUOP enmOp, PEVT_GENERIC_T pEvent)
 {
     memset(pEvent, 0, sizeof(*pEvent));
-    AssertCompile(sizeof(EVT_ILLEGAL_DEV_TAB_ENTRY_T) == sizeof(EVT_GENERIC_T));
-    PEVT_ILLEGAL_DEV_TAB_ENTRY_T pIllegalDteErr = (PEVT_ILLEGAL_DEV_TAB_ENTRY_T)pEvent;
+    AssertCompile(sizeof(EVT_ILLEGAL_DTE_T) == sizeof(EVT_GENERIC_T));
+    PEVT_ILLEGAL_DTE_T pIllegalDteErr = (PEVT_ILLEGAL_DTE_T)pEvent;
     pIllegalDteErr->n.u16DevId      = uDevId;
     pIllegalDteErr->n.u1Interrupt   = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
     pIllegalDteErr->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
@@ -3394,16 +3405,14 @@ static void iommuAmdMakeIllegalDevTabEntryEvent(uint16_t uDevId, uint64_t uDva, 
  *                          zero.
  * @param   enmOp           The operation being performed.
  */
-static void iommuAmdRaiseIllegalDevTabEntryEvent(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, bool fRsvdNotZero,
-                                                 IOMMUOP enmOp)
+static void iommuAmdRaiseIllegalDteEvent(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, bool fRsvdNotZero, IOMMUOP enmOp)
 {
     EVT_GENERIC_T Event;
-    iommuAmdMakeIllegalDevTabEntryEvent(uDevId, uDva, fRsvdNotZero, enmOp, &Event);
+    iommuAmdMakeIllegalDteEvent(uDevId, uDva, fRsvdNotZero, enmOp, &Event);
     iommuAmdWriteEvtLogEntry(pDevIns, &Event);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
 }
-
 
 
 /**
@@ -3411,11 +3420,11 @@ static void iommuAmdRaiseIllegalDevTabEntryEvent(PPDMDEVINS pDevIns, uint16_t uD
  * translation and permission checks.
  *
  * @returns @c true if the DVA is excluded, @c false otherwise.
- * @param   pThis           The IOMMU device state.
- * @param   pDevTabEntry    The device table entry.
- * @param   uDva            The device virtual address.
+ * @param   pThis   The IOMMU device state.
+ * @param   pDte    The device table entry.
+ * @param   uDva    The device virtual address.
  */
-static bool iommuAmdIsDvaSubjectToExclRange(PCIOMMU pThis, PCDEV_TAB_ENTRY_T pDevTabEntry, uint64_t uDva)
+static bool iommuAmdIsDvaSubjectToExclRange(PCIOMMU pThis, PCDTE_T pDte, uint64_t uDva)
 {
     /* Check if the exclusion range is enabled. */
     if (pThis->ExclRangeBaseAddr.n.u1ExclEnable)
@@ -3427,7 +3436,7 @@ static bool iommuAmdIsDvaSubjectToExclRange(PCIOMMU pThis, PCDEV_TAB_ENTRY_T pDe
         {
             /* Check if device access to addresses in the exclusion range can be forwarded untranslated. */
             if (    pThis->ExclRangeBaseAddr.n.u1AllowAll
-                ||  pDevTabEntry->n.u1AllowExclusion)
+                ||  pDte->n.u1AllowExclusion)
                 return true;
         }
     }
@@ -3439,14 +3448,14 @@ static bool iommuAmdIsDvaSubjectToExclRange(PCIOMMU pThis, PCDEV_TAB_ENTRY_T pDe
  * Reads a device table entry from guest memory given the device ID.
  *
  * @returns VBox status code.
- * @param   pDevIns         The IOMMU device instance.
- * @param   uDevId          The device ID.
- * @param   enmOp           The operation being performed by the IOMMU.
- * @param   pDevTabEntry    Where to store the device table entry.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uDevId      The device ID.
+ * @param   enmOp       The operation being performed by the IOMMU.
+ * @param   pDte        Where to store the device table entry.
  *
  * @thread  Any.
  */
-static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PDEV_TAB_ENTRY_T pDevTabEntry)
+static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PDTE_T pDte)
 {
     PCIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
@@ -3457,24 +3466,43 @@ static int iommuAmdReadDevTabEntry(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
     uint8_t const idxSeg = uDevId & g_auDevTabSegMasks[idxSegsEn] >> 13;
     Assert(idxSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
 
-    RTGCPHYS const GCPhysDevTab      = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
-    uint16_t const offDevTabEntry    = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
-    RTGCPHYS const GCPhysDevTabEntry = GCPhysDevTab + offDevTabEntry;
+    RTGCPHYS const GCPhysDevTab = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
+    uint16_t const offDte       = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
+    RTGCPHYS const GCPhysDte    = GCPhysDevTab + offDte;
 
     Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
-    int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTabEntry, pDevTabEntry, sizeof(*pDevTabEntry));
+    int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDte, pDte, sizeof(*pDte));
     if (RT_FAILURE(rc))
     {
-        Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc\n", GCPhysDevTabEntry, rc));
-        iommuAmdRaiseDevTabHwErrorEvent(pDevIns, uDevId, GCPhysDevTabEntry, enmOp);
+        Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc\n", GCPhysDte, rc));
+        iommuAmdRaiseDevTabHwErrorEvent(pDevIns, uDevId, GCPhysDte, enmOp);
     }
 
     return rc;
 }
 
 
+#if 0
 /**
- * Memory read transaction from a device.
+ * Walks the I/O page tables to translate the given device virtual address and
+ * associated data.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uDva        The device virtual address.
+ * @param   cbRead      The size of the access.
+ * @param   fPerms      The access permissions (IOMMU_PERM_XXX).
+ * @param   pGCPhys     Where to store the translated address.
+ */
+static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint64_t uDva, size_t cbRead, uint32_t fAccess, PRTGCPHYS pGCPhys)
+{
+
+}
+#endif
+
+
+/**
+ * Memory read translation request from a device.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
@@ -3502,28 +3530,29 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
         /** @todo IOTLB cache lookup. */
 
         /* Read the device table entry. */
-        DEV_TAB_ENTRY_T DevTabEntry;
-        int rc = iommuAmdReadDevTabEntry(pDevIns, uDevId, enmOp, &DevTabEntry);
+        DTE_T Dte;
+        int rc = iommuAmdReadDte(pDevIns, uDevId, enmOp, &Dte);
         if (RT_SUCCESS(rc))
         {
             /* Addresses are forwarded without translation when DTE.V is 0. */
-            if (DevTabEntry.n.u1Valid)
+            if (Dte.n.u1Valid)
             {
                 /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
-                uint64_t const fRsvdQword0 = DevTabEntry.au64[0] & ~IOMMU_DEV_TAB_ENTRY_QWORD_0_VALID_MASK;
-                uint64_t const fRsvdQword1 = DevTabEntry.au64[1] & ~IOMMU_DEV_TAB_ENTRY_QWORD_1_VALID_MASK;
+                uint64_t const fRsvdQword0 = Dte.au64[0] & ~IOMMU_DTE_QWORD_0_VALID_MASK;
+                uint64_t const fRsvdQword1 = Dte.au64[1] & ~IOMMU_DTE_QWORD_1_VALID_MASK;
                 if (   fRsvdQword0
                     || fRsvdQword1)
                 {
                     Log((IOMMU_LOG_PFX ":DTE invalid reserved bits ([0]=%#RX64 [1]=%#RX64)\n", fRsvdQword0, fRsvdQword1));
-                    iommuAmdRaiseIllegalDevTabEntryEvent(pDevIns, uDevId, uDva, true /* fRsvdNotZero */, enmOp);
+                    iommuAmdRaiseIllegalDteEvent(pDevIns, uDevId, uDva, true /* fRsvdNotZero */, enmOp);
                     return VERR_GENERAL_FAILURE; /** @todo IOMMU: Change this. */
                 }
 
-                /* Check if the exclusion range is active. */
-                if (!iommuAmdIsDvaSubjectToExclRange(pThis, &DevTabEntry, uDva))
+                /* Check if the device virtual address is subject to address exclusion. */
+                if (!iommuAmdIsDvaSubjectToExclRange(pThis, &Dte, uDva))
                 {
                     /** @todo IOMMU: Traverse the I/O page table and translate. */
+
                     return VERR_NOT_IMPLEMENTED;
                 }
             }
@@ -3541,7 +3570,7 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
 
 
 /**
- * Memory write transaction from a device.
+ * Memory write translation request from a device.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
