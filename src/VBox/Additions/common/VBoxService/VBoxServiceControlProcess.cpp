@@ -1555,6 +1555,11 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     /*
      * Create the environment.
      */
+    uint32_t const cbEnv = pProcess->StartupInfo.cbEnv;
+    if (RT_SUCCESS(rc))
+        AssertStmt(   cbEnv <= sizeof(pProcess->StartupInfo.szEnv)
+                   || pProcess->StartupInfo.uNumEnvVars == 0,
+                   rc = VERR_INVALID_PARAMETER);
     if (RT_SUCCESS(rc))
     {
         RTENV hEnv;
@@ -1562,26 +1567,26 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
         if (RT_SUCCESS(rc))
         {
             VGSvcVerbose(3, "Additional environment variables: %RU32 (%RU32 bytes)\n",
-                         pProcess->StartupInfo.uNumEnvVars, pProcess->StartupInfo.cbEnv);
+                         pProcess->StartupInfo.uNumEnvVars, cbEnv);
 
-            if (   pProcess->StartupInfo.uNumEnvVars
-                && pProcess->StartupInfo.cbEnv)
+            if (   pProcess->StartupInfo.uNumEnvVars /** @todo r=bird: s/uNumEnvVars/cEnvVars/g */
+                && cbEnv > 0)
             {
-                      uint32_t cbCur  = 0;
-                const char    *pszCur = pProcess->StartupInfo.szEnv;
-                while (cbCur < pProcess->StartupInfo.cbEnv)
+                size_t offCur = 0;
+                while (offCur < cbEnv)
                 {
+                    const char * const pszCur = &pProcess->StartupInfo.szEnv[offCur];
+                    size_t const       cchCur = RTStrNLen(pszCur, cbEnv - offCur);
+                    AssertBreakStmt(cchCur < cbEnv - offCur, rc = VERR_INVALID_PARAMETER);
                     VGSvcVerbose(3, "Setting environment variable: '%s'\n", pszCur);
                     rc = RTEnvPutEx(hEnv, pszCur);
-                    if (RT_FAILURE(rc))
+                    if (RT_SUCCESS(rc))
+                        offCur += cchCur + 1;
+                    else
                     {
                         VGSvcError("Setting environment variable '%s' failed: %Rrc\n", pszCur, rc);
                         break;
                     }
-                    cbCur  += (uint32_t)strlen(pszCur) + 1;
-                    AssertBreakStmt(cbCur <= GUESTPROCESS_MAX_ENV_LEN   , rc = VERR_INVALID_PARAMETER);
-                    AssertBreakStmt(cbCur <= pProcess->StartupInfo.cbEnv, rc = VERR_INVALID_PARAMETER);
-                    pszCur += cbCur;
                 }
             }
 
