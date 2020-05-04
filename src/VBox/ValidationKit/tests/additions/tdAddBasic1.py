@@ -52,6 +52,38 @@ from tdAddGuestCtrl import SubTstDrvAddGuestCtrl;
 from tdAddSharedFolders1 import SubTstDrvAddSharedFolders1;
 
 
+
+class tdAddBasicConsoleCallbacks(vbox.ConsoleEventHandlerBase):
+    """
+    For catching the Guest Additions change state events.
+    """
+    def __init__(self, dArgs):
+        oTstDrv  = dArgs['oTstDrv'];
+        oVBoxMgr = dArgs['oVBoxMgr']; _ = oVBoxMgr;
+        oGuest   = dArgs['oGuest'];
+
+        vbox.ConsoleEventHandlerBase.__init__(self, dArgs, 'tdAddBasic1');
+        self.oTstDrv  = oTstDrv;
+        self.oGuest   = oGuest;
+
+    def handleEvent(self, oEvt):
+        try:
+            oEvtBase = self.oVBoxMgr.queryInterface(oEvt, 'IEvent');
+            eType = oEvtBase.type;
+        except:
+            reporter.logXcpt();
+            return None;
+        if eType == vboxcon.VBoxEventType_OnAdditionsStateChanged:
+            return self.onAdditionsStateChanged();
+        return None;
+
+    def onAdditionsStateChanged(self):
+        reporter.log('onAdditionsStateChange');
+        self.oTstDrv.fGAStatusCallbackFired = True;
+        self.oTstDrv.iGAStatusCallbackRunlevel = self.oGuest.additionsRunLevel;
+        self.oVBoxMgr.interruptWaitEvents();
+        return None;
+
 class tdAddBasic1(vbox.TestDriver):                                         # pylint: disable=too-many-instance-attributes
     """
     Additions Basics #1.
@@ -71,6 +103,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
         self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
+
+        self.fGAStatusCallbackFired    = False;
+        self.iGAStatusCallbackRunlevel = 0;
 
     #
     # Overridden methods.
@@ -206,6 +241,44 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             self.terminateVmBySession(oSession)
         return fRc;
 
+    def waitForGuestAdditionsRunLevel(self, oSession, oGuest, cMsTimeout, iRunLevel):
+        """
+        Waits for the Guest Additions to reach a specific run level.
+
+        Returns success status.
+        """
+        # No need to wait as we already reached the run level?
+        if iRunLevel == oGuest.additionsRunLevel:
+            reporter.log('Already reached run level %s' % iRunLevel);
+            return True;
+
+        reporter.log('Waiting for Guest Additions to reach run level %s ...' % iRunLevel);
+
+        oConsoleCallbacks = oSession.registerDerivedEventHandler(tdAddBasicConsoleCallbacks, \
+                                                                 {'oTstDrv':self, 'oGuest':oGuest, });
+        fRc = False;
+        if oConsoleCallbacks is not None:
+            # Wait for 5 minutes max.
+            tsStart = base.timestampMilli();
+            while base.timestampMilli() - tsStart < cMsTimeout:
+                oTask = self.waitForTasks(1000);
+                if oTask is not None:
+                    break;
+                if self.fGAStatusCallbackFired:
+                    reporter.log('Reached new run level %s' % iRunLevel);
+                    if iRunLevel == self.iGAStatusCallbackRunlevel:
+                        fRc = True;
+                        break;
+                    self.fGAStatusCallbackFired = False;
+            if not fRc:
+                reporter.testFailure('Guest Additions status did not change to required level');
+
+            # cleanup.
+            oConsoleCallbacks.unregister();
+
+        reporter.log('Waiting for Guest Additions to reach run level %s ended with %s' % (iRunLevel, fRc));
+        return fRc;
+
     def testInstallAdditions(self, oSession, oTxsSession, oTestVm):
         """
         Tests installing the guest additions
@@ -222,20 +295,20 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         #
         # Verify installation of Guest Additions using commmon bits.
         #
-        if fRc is True:
-            #
-            # Wait for the GAs to come up.
-            #
-
-            ## @todo need to signed up for a OnAdditionsStateChanged and wait runlevel to
-            #  at least reach Userland.
-
+        if fRc:
             #
             # Check if the additions are operational.
             #
             try:    oGuest = oSession.o.console.guest;
             except:
                 reporter.errorXcpt('Getting IGuest failed.');
+                return (False, oTxsSession);
+
+            #
+            # Wait for the GAs to come up.
+            #
+            fRc = self.waitForGuestAdditionsRunLevel(oSession, oGuest, 5 * 60 * 1000, vboxcon.AdditionsRunLevelType_Userland);
+            if not fRc:
                 return (False, oTxsSession);
 
             # Check the additionsVersion attribute. It must not be empty.
