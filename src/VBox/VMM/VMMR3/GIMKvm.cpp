@@ -417,9 +417,7 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu)
     /* For informational purposes, back-calculate the exact TSC frequency the guest will see.
      * Note that the frequency is in kHz, not Hz, since that's what Linux uses.
      */
-    uint64_t uTscKHz;
-
-    uTscKHz = (RT_NS_1MS_64 << 32) / SystemTime.u32TscScale;
+    uint64_t uTscKHz = (RT_NS_1MS_64 << 32) / SystemTime.u32TscScale;
     if (SystemTime.i8TscShift < 0)
         uTscKHz <<= -SystemTime.i8TscShift;
     else
