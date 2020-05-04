@@ -2560,7 +2560,7 @@ HRESULT Appliance::i_readOVFFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosOvf, const
  * @param   hVfsIosMf           The I/O stream for the manifest file.  The
  *                              reference is always consumed.
  * @param   pszSubFileNm        The manifest filename (no path) for error
- *                              messages and logging.
+ *                              messages, logging and strManifestName.
  * @returns COM status code, error info set.
  * @throws  Nothing
  */
@@ -2569,7 +2569,8 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
     LogFlowFunc(("%s[%s]\n", pTask->locInfo.strPath.c_str(), pszSubFileNm));
 
     /* Remember the manifet file name */
-    m->strManifestName.assign(pszSubFileNm);
+    HRESULT hrc = m->strManifestName.assignEx(pszSubFileNm);
+    AssertReturn(SUCCEEDED(hrc), hrc);
 
     /*
      * Copy the manifest into a memory backed file so we can later do signature
@@ -2580,21 +2581,6 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("Error reading the manifest file '%s' for '%s' (%Rrc)"),
                            pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc);
-
-    /*
-     * Store the manifest as a string in the m->strManifest
-     */
-    {
-        char   abBuf[_16K];
-        size_t cbRead;
-
-        vrc = RTVfsFileRead(m->hMemFileTheirManifest, &abBuf, sizeof(abBuf), &cbRead);
-        if (RT_SUCCESS(vrc))
-            m->strManifest.assignEx((const char*)abBuf, cbRead);
-
-        /* Rewind to the beginning, because the manifest will be read later again */
-        RTVfsFileSeek(m->hMemFileTheirManifest, 0, RTFILE_SEEK_BEGIN, NULL);
-    }
 
     /*
      * Parse the manifest.
@@ -2608,8 +2594,8 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
     vrc = RTManifestReadStandardEx(m->hTheirManifest, hVfsIos, szErr, sizeof(szErr));
     RTVfsIoStrmRelease(hVfsIos);
     if (RT_FAILURE(vrc))
-        throw setErrorVrc(vrc, tr("Failed to parse manifest file '%s' for '%s' (%Rrc): %s"),
-                          pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, szErr);
+        return setErrorVrc(vrc, tr("Failed to parse manifest file '%s' for '%s' (%Rrc): %s"),
+                           pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, szErr);
 
     /*
      * Check which digest files are used.

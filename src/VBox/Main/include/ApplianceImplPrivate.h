@@ -148,7 +148,6 @@ struct Appliance::Data
         fDigestTypes             = RTMANIFEST_ATTR_SHA1 | RTMANIFEST_ATTR_SHA256 | RTMANIFEST_ATTR_SHA512;
         ptrCertificateInfo.setNull();
         strCertError.setNull();
-        strManifest.setNull();
         strManifestName.setNull();
     }
 
@@ -178,10 +177,8 @@ struct Appliance::Data
     RTMANIFEST          hTheirManifest;
     /** Memorized copy of the manifest file for signature checking purposes. */
     RTVFSFILE           hMemFileTheirManifest;
-    /** The string contains manifest data. */
-    Utf8Str            strManifest;
-    /** The string contains manifest file name after reading appliance. */
-    Utf8Str            strManifestName;
+    /** The manifest filename. */
+    Utf8Str             strManifestName;
 
     /** The signer certificate from the signature file (.cert).
      * This will be used in the future provide information about the signer via
