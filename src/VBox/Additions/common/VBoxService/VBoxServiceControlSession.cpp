@@ -97,6 +97,8 @@ static int vgsvcGstCtrlSessionFileFree(PVBOXSERVICECTRLFILE pFile)
     int rc = RTFileClose(pFile->hFile);
     if (RT_SUCCESS(rc))
     {
+        RTStrFree(pFile->pszName);
+
         /* Remove file entry in any case. */
         RTListNodeRemove(&pFile->Node);
         /* Destroy this object. */
@@ -311,14 +313,19 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
             pFile->hFile = NIL_RTFILE; /* Not zero or NULL! */
             if (szFile[0])
             {
-                RTStrCopy(pFile->szName, sizeof(pFile->szName), szFile);
-
+                pFile->pszName = RTStrDup(szFile);
+                if (!pFile->pszName)
+                    rc = VERR_NO_MEMORY;
 /** @todo
  * Implement szSharing!
  */
                 uint64_t fFlags;
-                rc = RTFileModeToFlagsEx(szAccess, szDisposition, NULL /* pszSharing, not used yet */, &fFlags);
-                VGSvcVerbose(4, "[File %s] Opening with fFlags=%#RX64 -> rc=%Rrc\n", pFile->szName, fFlags, rc);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTFileModeToFlagsEx(szAccess, szDisposition, NULL /* pszSharing, not used yet */, &fFlags);
+                    VGSvcVerbose(4, "[File %s] Opening with fFlags=%#RX64 -> rc=%Rrc\n", pFile->pszName, fFlags, rc);
+                }
+
                 if (RT_SUCCESS(rc))
                 {
                     fFlags |= (uCreationMode << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK;
@@ -326,7 +333,7 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
                      * rtFileRecalcAndValidateFlags() will validate it anyway, but avoid asserting in debug builds. */
                     if (fFlags & RTFILE_O_READ)
                         fFlags &= ~RTFILE_O_TRUNCATE;
-                    rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
+                    rc = RTFileOpen(&pFile->hFile, pFile->pszName, fFlags);
                     if (RT_SUCCESS(rc))
                     {
                         RTFSOBJINFO objInfo;
@@ -351,22 +358,22 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
                                     pFile->uHandle = uHandle;
                                     pFile->fOpen   = fFlags;
                                     RTListAppend(&pSession->lstFiles, &pFile->Node);
-                                    VGSvcVerbose(2, "[File %s] Opened (ID=%RU32)\n", pFile->szName, pFile->uHandle);
+                                    VGSvcVerbose(2, "[File %s] Opened (ID=%RU32)\n", pFile->pszName, pFile->uHandle);
                                 }
                                 else
-                                    VGSvcError("[File %s] Seeking to offset %RU64 failed: rc=%Rrc\n", pFile->szName, offOpen, rc);
+                                    VGSvcError("[File %s] Seeking to offset %RU64 failed: rc=%Rrc\n", pFile->pszName, offOpen, rc);
                             }
                             else
                             {
-                                VGSvcError("[File %s] Unsupported mode %#x\n", pFile->szName, objInfo.Attr.fMode);
+                                VGSvcError("[File %s] Unsupported mode %#x\n", pFile->pszName, objInfo.Attr.fMode);
                                 rc = VERR_NOT_SUPPORTED;
                             }
                         }
                         else
-                            VGSvcError("[File %s] Getting mode failed with rc=%Rrc\n", pFile->szName, rc);
+                            VGSvcError("[File %s] Getting mode failed with rc=%Rrc\n", pFile->pszName, rc);
                     }
                     else
-                        VGSvcError("[File %s] Opening failed with rc=%Rrc\n", pFile->szName, rc);
+                        VGSvcError("[File %s] Opening failed with rc=%Rrc\n", pFile->pszName, rc);
                 }
             }
             else
@@ -378,6 +385,7 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
             /* clean up if we failed. */
             if (RT_FAILURE(rc))
             {
+                RTStrFree(pFile->pszName);
                 if (pFile->hFile != NIL_RTFILE)
                     RTFileClose(pFile->hFile);
                 RTMemFree(pFile);
@@ -424,7 +432,7 @@ static int vgsvcGstCtrlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSes
         PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
-            VGSvcVerbose(2, "[File %s] Closing (handle=%RU32)\n", pFile ? pFile->szName : "<Not found>", uHandle);
+            VGSvcVerbose(2, "[File %s] Closing (handle=%RU32)\n", pFile ? pFile->pszName : "<Not found>", uHandle);
             rc = vgsvcGstCtrlSessionFileFree(pFile);
         }
         else
@@ -483,7 +491,7 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
 
             rc = RTFileRead(pFile->hFile, *ppvScratchBuf, RT_MIN(cbToRead, *pcbScratchBuf), &cbRead);
             offNew = (int64_t)RTFileTell(pFile->hFile);
-            VGSvcVerbose(5, "[File %s] Read %zu/%RU32 bytes, rc=%Rrc, offNew=%RI64\n", pFile->szName, cbRead, cbToRead, rc, offNew);
+            VGSvcVerbose(5, "[File %s] Read %zu/%RU32 bytes, rc=%Rrc, offNew=%RI64\n", pFile->pszName, cbRead, cbToRead, rc, offNew);
         }
         else
         {
@@ -552,7 +560,7 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
             }
             else
                 offNew = (int64_t)RTFileTell(pFile->hFile);
-            VGSvcVerbose(5, "[File %s] Read %zu bytes @ %RU64, rc=%Rrc, offNew=%RI64\n", pFile->szName, cbRead, offReadAt, rc, offNew);
+            VGSvcVerbose(5, "[File %s] Read %zu bytes @ %RU64, rc=%Rrc, offNew=%RI64\n", pFile->pszName, cbRead, offReadAt, rc, offNew);
         }
         else
         {
@@ -612,7 +620,7 @@ static int vgsvcGstCtrlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSes
             rc = RTFileWrite(pFile->hFile, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), &cbWritten);
             offNew = (int64_t)RTFileTell(pFile->hFile);
             VGSvcVerbose(5, "[File %s] Writing %p LB %RU32 =>  %Rrc, cbWritten=%zu, offNew=%RI64\n",
-                         pFile->szName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), rc, cbWritten, offNew);
+                         pFile->pszName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), rc, cbWritten, offNew);
         }
         else
         {
@@ -684,7 +692,7 @@ static int vgsvcGstCtrlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pS
             else
                 offNew = (int64_t)RTFileTell(pFile->hFile);
             VGSvcVerbose(5, "[File %s] Writing %p LB %RU32 @ %RU64 =>  %Rrc, cbWritten=%zu, offNew=%RI64\n",
-                         pFile->szName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), offWriteAt, rc, cbWritten, offNew);
+                         pFile->pszName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), offWriteAt, rc, cbWritten, offNew);
         }
         else
         {
@@ -751,7 +759,7 @@ static int vgsvcGstCtrlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSess
             {
                 rc = RTFileSeek(pFile->hFile, (int64_t)offSeek, s_abMethods[uSeekMethod], &offActual);
                 VGSvcVerbose(5, "[File %s]: Seeking to offSeek=%RI64, uSeekMethodIPRT=%u, rc=%Rrc\n",
-                             pFile->szName, offSeek, s_abMethods[uSeekMethod], rc);
+                             pFile->pszName, offSeek, s_abMethods[uSeekMethod], rc);
             }
             else
             {
@@ -805,7 +813,7 @@ static int vgsvcGstCtrlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSess
         if (pFile)
         {
             offCurrent = RTFileTell(pFile->hFile);
-            VGSvcVerbose(5, "[File %s]: Telling offCurrent=%RU64\n", pFile->szName, offCurrent);
+            VGSvcVerbose(5, "[File %s]: Telling offCurrent=%RU64\n", pFile->pszName, offCurrent);
         }
         else
         {
@@ -853,7 +861,7 @@ static int vgsvcGstCtrlSessionHandleFileSetSize(const PVBOXSERVICECTRLSESSION pS
         if (pFile)
         {
             rc = RTFileSetSize(pFile->hFile, cbNew);
-            VGSvcVerbose(5, "[File %s]: Changing size to %RU64 (%#RX64), rc=%Rrc\n", pFile->szName, cbNew, cbNew, rc);
+            VGSvcVerbose(5, "[File %s]: Changing size to %RU64 (%#RX64), rc=%Rrc\n", pFile->pszName, cbNew, cbNew, rc);
         }
         else
         {
@@ -2044,7 +2052,7 @@ int VGSvcGstCtrlSessionClose(PVBOXSERVICECTRLSESSION pSession)
             int rc2 = vgsvcGstCtrlSessionFileFree(pFile);
             if (RT_FAILURE(rc2))
             {
-                VGSvcError("Unable to close file '%s'; rc=%Rrc\n", pFile->szName, rc2);
+                VGSvcError("Unable to close file '%s'; rc=%Rrc\n", pFile->pszName, rc2);
                 if (RT_SUCCESS(rc))
                     rc = rc2;
                 /* Keep going. */
