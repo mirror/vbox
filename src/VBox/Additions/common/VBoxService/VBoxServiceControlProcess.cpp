@@ -65,13 +65,23 @@ static DECLCALLBACK(int)    vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS 
  *
  * @returns VBox status code.
  * @param   pStartupInfo        Process startup info to initializes.
+ * @param   cbCmd               Size (in bytes) to use for the command buffer.
+ * @param   cbUser              Size (in bytes) to use for the user name buffer.
+ * @param   cbPassword          Size (in bytes) to use for the password buffer.
+ * @param   cbDomain            Size (in bytes) to use for the domain buffer.
  * @param   cbArgs              Size (in bytes) to use for the arguments buffer.
  * @param   cbEnv               Size (in bytes) to use for the environment buffer.
  */
 int VgsvcGstCtrlProcessStartupInfoInitEx(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo,
+                                         size_t cbCmd,
+                                         size_t cbUser, size_t cbPassword, size_t cbDomain,
                                          size_t cbArgs, size_t cbEnv)
 {
     AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
+    AssertReturn(cbCmd,           VERR_INVALID_PARAMETER);
+    AssertReturn(cbUser,          VERR_INVALID_PARAMETER);
+    AssertReturn(cbPassword,      VERR_INVALID_PARAMETER);
+    AssertReturn(cbDomain,        VERR_INVALID_PARAMETER);
     AssertReturn(cbArgs,          VERR_INVALID_PARAMETER);
     AssertReturn(cbEnv,           VERR_INVALID_PARAMETER);
 
@@ -87,12 +97,12 @@ int VgsvcGstCtrlProcessStartupInfoInitEx(PVBOXSERVICECTRLPROCSTARTUPINFO pStartu
 
     do
     {
-        ALLOC_STR(Cmd,      sizeof(char) * GUESTPROCESS_MAX_CMD_LEN);
+        ALLOC_STR(Cmd,      cbCmd);
         ALLOC_STR(Args,     cbArgs);
         ALLOC_STR(Env,      cbEnv);
-        ALLOC_STR(User,     sizeof(char) * GUESTPROCESS_MAX_USER_LEN);
-        ALLOC_STR(Password, sizeof(char) * GUESTPROCESS_MAX_PASSWORD_LEN);
-        ALLOC_STR(Domain,   sizeof(char) * GUESTPROCESS_MAX_DOMAIN_LEN);
+        ALLOC_STR(User,     cbUser);
+        ALLOC_STR(Password, cbPassword);
+        ALLOC_STR(Domain,   cbDomain);
 
         return VINF_SUCCESS;
 
@@ -112,6 +122,9 @@ int VgsvcGstCtrlProcessStartupInfoInitEx(PVBOXSERVICECTRLPROCSTARTUPINFO pStartu
 int VgsvcGstCtrlProcessStartupInfoInit(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
 {
     return VgsvcGstCtrlProcessStartupInfoInitEx(pStartupInfo,
+                                                GUESTPROCESS_MAX_CMD_LEN,
+                                                GUESTPROCESS_MAX_USER_LEN,  GUESTPROCESS_MAX_PASSWORD_LEN,
+                                                GUESTPROCESS_MAX_DOMAIN_LEN,
                                                 GUESTPROCESS_MAX_ARGS_LEN, GUESTPROCESS_MAX_ENV_LEN);
 }
 
@@ -178,19 +191,28 @@ static PVBOXSERVICECTRLPROCSTARTUPINFO vgsvcGstCtrlProcessStartupInfoDup(PVBOXSE
 #define DUP_STR(a_Str) \
     if (pStartupInfo->cb##a_Str) \
     { \
+        pStartupInfoDup->psz##a_Str = (char *)RTStrDup(pStartupInfo->psz##a_Str); \
+        AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
+        pStartupInfoDup->cb##a_Str  = strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
+    }
+
+#define DUP_MEM(a_Str) \
+    if (pStartupInfo->cb##a_Str) \
+    { \
         pStartupInfoDup->psz##a_Str = (char *)RTMemDup(pStartupInfo->psz##a_Str, pStartupInfo->cb##a_Str); \
         AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
         pStartupInfoDup->cb##a_Str  = pStartupInfo->cb##a_Str; \
     }
 
             DUP_STR(Cmd);
-            DUP_STR(Args);
-            DUP_STR(Env);
+            DUP_MEM(Args);
+            DUP_MEM(Env);
             DUP_STR(User);
             DUP_STR(Password);
             DUP_STR(Domain);
 
 #undef DUP_STR
+#undef DUP_MEM
 
             return pStartupInfoDup;
 

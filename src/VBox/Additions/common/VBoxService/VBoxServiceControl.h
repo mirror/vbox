@@ -336,6 +336,7 @@ extern RTEXITCODE               VGSvcGstCtrlSessionSpawnInit(int argc, char **ar
 /** @name Per-session functions.
  * @{ */
 extern int                      VgsvcGstCtrlSessionStartupInfoInit(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo);
+extern int                      VgsvcGstCtrlSessionStartupInfoInitEx(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo, size_t cbUser, size_t cbPassword, size_t cbDomain);
 extern void                     VgsvcGstCtrlSessionStartupInfoDestroy(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo);
 
 extern PVBOXSERVICECTRLPROCESS  VGSvcGstCtrlSessionRetainProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID);
@@ -351,7 +352,7 @@ extern int                      VGSvcGstCtrlSessionReapProcesses(PVBOXSERVICECTR
 /** @name Per-guest process functions.
  * @{ */
 extern int                      VgsvcGstCtrlProcessStartupInfoInit(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo);
-extern int                      VgsvcGstCtrlProcessStartupInfoInitEx(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, size_t cbEnv, size_t cbArgs);
+extern int                      VgsvcGstCtrlProcessStartupInfoInitEx(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, size_t cbCmd, size_t cbUser, size_t cbPassword, size_t cbDomain, size_t cbArgs, size_t cbEnv);
 extern void                     VgsvcGstCtrlProcessStartupInfoDestroy(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo);
 extern void                     VgsvcGstCtrlProcessStartupInfoFree(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo);
 

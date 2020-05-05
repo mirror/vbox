@@ -1034,12 +1034,16 @@ static int vgsvcGstCtrlSessionHandlePathUserHome(PVBOXSERVICECTRLSESSION pSessio
 }
 
 /**
- * Initializes a session startup info.
+ * Initializes a session startup info, extended version.
  *
  * @returns VBox status code.
  * @param   pStartupInfo        Session startup info to initializes.
+ * @param   cbUser              Size (in bytes) to use for the user name buffer.
+ * @param   cbPassword          Size (in bytes) to use for the password buffer.
+ * @param   cbDomain            Size (in bytes) to use for the domain name buffer.
  */
-int VgsvcGstCtrlSessionStartupInfoInit(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo)
+int VgsvcGstCtrlSessionStartupInfoInitEx(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo,
+                                         size_t cbUser, size_t cbPassword, size_t cbDomain)
 {
     AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
 
@@ -1055,9 +1059,9 @@ int VgsvcGstCtrlSessionStartupInfoInit(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStart
 
     do
     {
-        ALLOC_STR(User,     sizeof(char) * GUESTPROCESS_MAX_USER_LEN);
-        ALLOC_STR(Password, sizeof(char) * GUESTPROCESS_MAX_PASSWORD_LEN);
-        ALLOC_STR(Domain,   sizeof(char) * GUESTPROCESS_MAX_DOMAIN_LEN);
+        ALLOC_STR(User,     cbUser);
+        ALLOC_STR(Password, cbPassword);
+        ALLOC_STR(Domain,   cbDomain);
 
         return VINF_SUCCESS;
 
@@ -1067,6 +1071,19 @@ int VgsvcGstCtrlSessionStartupInfoInit(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStart
 
     VgsvcGstCtrlSessionStartupInfoDestroy(pStartupInfo);
     return VERR_NO_MEMORY;
+}
+
+/**
+ * Initializes a session startup info.
+ *
+ * @returns VBox status code.
+ * @param   pStartupInfo        Session startup info to initializes.
+ */
+int VgsvcGstCtrlSessionStartupInfoInit(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    return VgsvcGstCtrlSessionStartupInfoInitEx(pStartupInfo,
+                                                GUESTPROCESS_MAX_USER_LEN, GUESTPROCESS_MAX_PASSWORD_LEN,
+                                                GUESTPROCESS_MAX_DOMAIN_LEN);
 }
 
 /**
@@ -1126,9 +1143,9 @@ static PVBOXSERVICECTRLSESSIONSTARTUPINFO vgsvcGstCtrlSessionStartupInfoDup(PVBO
 #define DUP_STR(a_Str) \
     if (pStartupInfo->cb##a_Str) \
     { \
-        pStartupInfoDup->psz##a_Str = (char *)RTMemDup(pStartupInfo->psz##a_Str, pStartupInfo->cb##a_Str); \
+        pStartupInfoDup->psz##a_Str = (char *)RTStrDup(pStartupInfo->psz##a_Str); \
         AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
-        pStartupInfoDup->cb##a_Str  = pStartupInfo->cb##a_Str; \
+        pStartupInfoDup->cb##a_Str  = strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
     }
             DUP_STR(User);
             DUP_STR(Password);
