@@ -1787,6 +1787,290 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
 }
 
 
+/*********************************************************************************************************************************
+*   signova                                                                                                                      *
+*********************************************************************************************************************************/
+
+/**
+ * Reads the OVA and saves the manifest and signed status.
+ *
+ * @returns VBox status code (fully messaged).
+ * @param   pszOva              The name of the OVA.
+ * @param   iVerbosity          The noise level.
+ * @param   pStrName            Where to return the manifest name.
+ * @param   phVfsManifest       Where to return the manifest file handle (in mem).
+ * @param   pStrSignatureName   Where to return the cert-file name if already
+ *                              signed.
+ */
+static int getManifestFromOva(const char *pszOva, unsigned iVerbosity,
+                              Utf8Str *pStrName, PRTVFSFILE phVfsManifest, Utf8Str *pStrSignatureName)
+{
+    /*
+     * Clear return values.
+     */
+    *phVfsManifest = NIL_RTVFSFILE;
+    pStrName->setNull();
+    pStrSignatureName->setNull();
+
+    /*
+     * Open the file as a tar file system stream.
+     */
+    RTVFSIOSTREAM hVfsIosOva;
+    int rc = RTVfsIoStrmOpenNormal(pszOva, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsIosOva);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Failed to open OVA '%s' for reading: %Rrc", pszOva, rc);
+
+    RTVFSFSSTREAM hVfsFssIn;
+    rc = RTZipTarFsStreamFromIoStream(hVfsIosOva, 0 /*fFlags*/, &hVfsFssIn);
+    RTVfsIoStrmRelease(hVfsIosOva);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Failed to open OVA '%s' as a TAR file: %Rrc", pszOva, rc);
+
+    /*
+     * Scan the objects in the stream and locate the manifest and any existing cert file.
+     */
+    if (iVerbosity >= 2)
+        RTMsgInfo("Scanning OVA '%s' for a manifest and signature...", pszOva);
+    for (;;)
+    {
+        /*
+         * Retrive the next object.
+         */
+        char           *pszName;
+        RTVFSOBJTYPE    enmType;
+        RTVFSOBJ        hVfsObj;
+        rc = RTVfsFsStrmNext(hVfsFssIn, &pszName, &enmType, &hVfsObj);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_EOF)
+                rc = VINF_SUCCESS;
+            else
+                RTMsgError("RTVfsFsStrmNext returned %Rrc", rc);
+            break;
+        }
+
+        if (iVerbosity > 2)
+            RTMsgInfo("  %s %s\n",
+                      enmType == RTVFSOBJTYPE_IO_STREAM || enmType == RTVFSOBJTYPE_FILE ? "file"
+                      : enmType == RTVFSOBJTYPE_DIR ? "dir " : "unk ",
+                      pszName);
+
+        /*
+         * Should we process this entry?
+         */
+        if (   enmType  == RTVFSOBJTYPE_IO_STREAM
+            || enmType  == RTVFSOBJTYPE_FILE)
+        {
+            const char *pszSuffix = RTPathSuffix(pszName);
+            if (pszSuffix && RTStrICmpAscii(pszSuffix, ".mf") == 0)
+            {
+                if (*phVfsManifest != NIL_RTVFSFILE)
+                    rc = RTMsgErrorRc(VERR_DUPLICATE, "OVA contains multiple manifests! first: %s  second: %s",
+                                      pStrName->c_str(), pszName);
+                else
+                {
+                    if (iVerbosity >= 2)
+                        RTMsgInfo("Found manifest file: %s", pszName);
+                    rc = pStrName->assignNoThrow(pszName);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
+                        Assert(hVfsIos != NIL_RTVFSIOSTREAM);
+                        rc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, phVfsManifest);
+                        RTVfsIoStrmRelease(hVfsIos);     /* consumes stream handle.  */
+                        if (RT_FAILURE(rc))
+                            rc = RTMsgErrorRc(VERR_DUPLICATE, "Failed to memorize the manifest: %Rrc", rc);
+                    }
+                    else
+                        RTMsgError("Out of memory!");
+                }
+            }
+            else if (pszSuffix && RTStrICmpAscii(pszSuffix, ".cert") == 0)
+            {
+                if (iVerbosity >= 2)
+                    RTMsgInfo("Found existing signature file: %s", pszName);
+                rc = pStrSignatureName->assignNoThrow(pszName);
+            }
+        }
+
+        /*
+         * Release the current object and string.
+         */
+        RTVfsObjRelease(hVfsObj);
+        RTStrFree(pszName);
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    RTVfsFsStrmRelease(hVfsFssIn);
+
+    /*
+     * Complain if no manifest.
+     */
+    if (RT_SUCCESS(rc) && *phVfsManifest == NIL_RTVFSFILE)
+        rc = RTMsgErrorRc(VERR_NOT_FOUND, "The OVA contains no manifest and cannot be signed!");
+
+    return rc;
+}
+
+
+/**
+ * Creates a PKCS\#7 signature and appends it to the signature file in PEM
+ * format.
+ */
+static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKey,
+                               unsigned cIntermediateCerts, const char **papszIntermediateCerts,
+                               RTCRDIGEST hDigest, PRTERRINFOSTATIC pErrInfo, RTVFSFILE hVfsFileSignature)
+{
+    RT_NOREF(pCertificate, hPrivateKey, cIntermediateCerts, papszIntermediateCerts, hDigest, pErrInfo, hVfsFileSignature);
+    RTPrintf("TODO: doAddPkcs7Signature\n");
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Appends the certificate in PEM format to the given VFS file.
+ */
+static int doWriteCertificate(RTVFSFILE hVfsFileSignature, PCRTCRX509CERTIFICATE pCertificate)
+{
+    RT_NOREF(hVfsFileSignature, pCertificate);
+    RTPrintf("TODO: doWriteCertificate\n");
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Performs the OVA signing, producing an in-memory cert-file.
+ */
+static int doTheOvaSigning(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKey,
+                           const char *pszManifestName, RTVFSFILE hVfsFileManifest,
+                           bool fPkcs7, unsigned cIntermediateCerts, const char **papszIntermediateCerts,
+                           PRTERRINFOSTATIC pErrInfo, PRTVFSFILE phVfsFileSignature)
+{
+    /*
+     * We currently hardcode the digest algorithm to SHA-256.
+     */
+    /** @todo fall back on SHA-1 if the key is too small for SHA-256. */
+    PCRTASN1OBJID const pObjId  = &pCertificate->TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm;
+    RTCRDIGEST          hDigest = NIL_RTCRDIGEST;
+    int rc = RTCrDigestCreateByType(&hDigest, RTDIGESTTYPE_SHA256);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorRc(rc, "Failed to create digest for %s: %Rrc", pObjId->szObjId, rc);
+
+    /* Figure out the digest type name for the .cert file: */
+    RTDIGESTTYPE const enmDigestType = RTCrDigestGetType(hDigest);
+    const char        *pszDigestType;
+    switch (enmDigestType)
+    {
+        case RTDIGESTTYPE_SHA1:         pszDigestType = "SHA1"; break;
+        case RTDIGESTTYPE_SHA256:       pszDigestType = "SHA256"; break;
+        case RTDIGESTTYPE_SHA512:       pszDigestType = "SHA512"; break;
+        default:
+            RTCrDigestRelease(hDigest);
+            return RTMsgErrorRc(VERR_INVALID_PARAMETER,
+                                "Unsupported digest type: %s", RTCrDigestTypeToName(enmDigestType));
+    }
+
+    /*
+     * Digest the manifest file.
+     */
+    rc = RTCrDigestUpdateFromVfsFile(hDigest, hVfsFileManifest, true /*fRewindFile*/);
+    if (RT_SUCCESS(rc))
+        rc = RTCrDigestFinal(hDigest, NULL, 0);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Sign the digest.  Two passes, first to figure the signature size, the
+         * second to do the actual signing.
+         */
+        PCRTASN1OBJID const   pAlgorithm  = &pCertificate->TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm;
+        PCRTASN1DYNTYPE const pAlgoParams = &pCertificate->TbsCertificate.SubjectPublicKeyInfo.Algorithm.Parameters;
+        size_t cbSignature = 0;
+        rc = RTCrPkixPubKeySignDigest(pAlgorithm, hPrivateKey, pAlgoParams, hDigest, 0 /*fFlags*/,
+                                      NULL /*pvSignature*/, &cbSignature, RTErrInfoInitStatic(pErrInfo));
+        if (rc == VERR_BUFFER_OVERFLOW)
+        {
+            void *pvSignature = RTMemAllocZ(cbSignature);
+            if (pvSignature)
+            {
+                rc = RTCrPkixPubKeySignDigest(pAlgorithm, hPrivateKey, pAlgoParams, hDigest, 0,
+                                              pvSignature, &cbSignature, RTErrInfoInitStatic(pErrInfo));
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Verify the signature using the certificate to make sure we've
+                     * been given the right private key.
+                     */
+                    rc = RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo(&pCertificate->TbsCertificate.SubjectPublicKeyInfo,
+                                                                          pvSignature, cbSignature, hDigest,
+                                                                          RTErrInfoInitStatic(pErrInfo));
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Create the output file.
+                         */
+                        RTVFSFILE hVfsFileSignature;
+                        rc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, _8K, &hVfsFileSignature);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = RTVfsFilePrintf(hVfsFileSignature, "%s(%s) = %.*Rhxs\n\n",
+                                                 pszDigestType, pszManifestName, cbSignature, pvSignature);
+                            if (RT_SUCCESS(rc))
+                                rc = doWriteCertificate(hVfsFileSignature, pCertificate);
+                            else
+                                RTMsgError("Failed to produce signature file: %Rrc", rc);
+                            if (RT_SUCCESS(rc) && fPkcs7)
+                                rc = doAddPkcs7Signature(pCertificate, hPrivateKey, cIntermediateCerts, papszIntermediateCerts,
+                                                         hDigest, pErrInfo, hVfsFileSignature);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Success.
+                                 */
+                                *phVfsFileSignature = hVfsFileSignature;
+                            }
+                            else
+                                RTVfsFileRelease(hVfsFileSignature);
+                        }
+                        else
+                            RTMsgError("RTVfsMemFileCreate failed: %Rrc", rc);
+                    }
+                    else
+                        RTMsgError("Encountered a problem when validating the signature we just created: %Rrc%#RTeim\n"
+                                   "Plase make sure the certificate and private key matches.", rc, &pErrInfo->Core);
+                }
+                else
+                    RTMsgError("2nd RTCrPkixPubKeySignDigest call failed: %Rrc%#RTeim", rc, pErrInfo->Core);
+                RTMemFree(pvSignature);
+            }
+            else
+                rc = RTMsgErrorRc(VERR_NO_MEMORY, "Out of memory!");
+        }
+        else
+            RTMsgError("RTCrPkixPubKeySignDigest failed: %Rrc%#RTeim", rc, pErrInfo->Core);
+    }
+    else
+        RTMsgError("Failed to create digest %s: %Rrc", RTCrDigestTypeToName(enmDigestType), rc);
+    RTCrDigestRelease(hDigest);
+    return rc;
+}
+
+
+/**
+ * Alters the OVA file, adding (or replacing) the @a pszSignatureName member.
+ */
+static int updateTheOvaSignature(const char *pszOva, const char *pszSignatureName, RTVFSFILE hVfsFileSignature, bool fIsSigned)
+{
+    RT_NOREF(pszOva, pszSignatureName, hVfsFileSignature, fIsSigned);
+
+    RTMsgError("TODO: updateTheOvaSignature");
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles the 'ovasign' command.
+ */
 RTEXITCODE handleSignAppliance(HandlerArg *arg)
 {
     /*
@@ -1802,7 +2086,8 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
         { "--no-pkcs7",                 'n', RTGETOPT_REQ_NOTHING },
         { "--intermediate-cert-file",   'i', RTGETOPT_REQ_STRING },
         { "--force",                    'f', RTGETOPT_REQ_NOTHING },
-        { "--out-cert",                 'O', RTGETOPT_REQ_NOTHING },
+        { "--verbose",                  'v', RTGETOPT_REQ_NOTHING },
+        { "--quiet",                    'q', RTGETOPT_REQ_NOTHING },
         { "--dry-run",                  'D', RTGETOPT_REQ_NOTHING },
     };
 
@@ -1818,8 +2103,8 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
     unsigned    cIntermediateCerts  = 0;
     const char *apszIntermediateCerts[32];
     bool        fReSign             = false;
+    unsigned    iVerbosity          = 1;
 
-    bool        fOutCert            = false;
     bool        fDryRun             = false;
 
     int c;
@@ -1871,9 +2156,12 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                 fReSign = true;
                 break;
 
+            case 'v':
+                iVerbosity++;
+                break;
 
-            case 'O':
-                fOutCert = true;
+            case 'q':
+                iVerbosity = 0;
                 break;
 
             case 'D':
@@ -1894,487 +2182,86 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
 
     /* Required paramaters: */
     if (!pszOva || !*pszOva)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No OVA file was specified!");
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No OVA file was specified!");
     if (!pszCertificate || !*pszCertificate)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No signing certificate (--certificate=<file>) was specified!");
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No signing certificate (--certificate=<file>) was specified!");
     if (!pszPrivateKey || !*pszPrivateKey)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No signing private key (--private-key=<file>) was specified!");
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No signing private key (--private-key=<file>) was specified!");
 
     /* Check that input files exists before we commence: */
     if (!RTFileExists(pszOva))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The specified OVA file was not found: %s", pszOva);
+        return RTMsgErrorExitFailure("The specified OVA file was not found: %s", pszOva);
     if (!RTFileExists(pszCertificate))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The specified certificate file was not found: %s", pszCertificate);
+        return RTMsgErrorExitFailure("The specified certificate file was not found: %s", pszCertificate);
     if (!RTFileExists(pszPrivateKey))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The specified private key file was not found: %s", pszPrivateKey);
+        return RTMsgErrorExitFailure("The specified private key file was not found: %s", pszPrivateKey);
 
     /*
-     *
+     * Read the certificate and private key.
      */
-    HRESULT hrc = S_OK;
+    RTERRINFOSTATIC     ErrInfo;
+    RTCRX509CERTIFICATE Certificate;
+    rc = RTCrX509Certificate_ReadFromFile(&Certificate, pszCertificate, 0, &g_RTAsn1DefaultAllocator,
+                                          RTErrInfoInitStatic(&ErrInfo));
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Error reading certificate from '%s': %Rrc%#RTeim", pszCertificate, rc, &ErrInfo.Core);
 
-    Utf8Str strManifestData;
-    Utf8Str strManifestName;
-    Utf8Str strAppliancePath;
-    Utf8Str strApplianceFullPath;
-
-    char *pszAbsFilePath = RTPathAbsDup(pszOva);
-
-    do
-    {
-
-        if (!RTFileExists(pszAbsFilePath))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "The OVA package %s wasn't found", pszAbsFilePath);
-
-        ComPtr<IAppliance> pAppliance;
-        CHECK_ERROR_BREAK(arg->virtualBox, CreateAppliance(pAppliance.asOutParam()));
-
-        ComPtr<IProgress> progressRead;
-        CHECK_ERROR_BREAK(pAppliance, Read(Bstr(pszAbsFilePath).raw(), progressRead.asOutParam()));
-        RTStrFree(pszAbsFilePath);
-
-        hrc = showProgress(progressRead);
-        CHECK_PROGRESS_ERROR_RET(progressRead, ("Appliance read failed"), RTEXITCODE_FAILURE);
-
-        /* fetch the path, there is stuff like username/password removed if any */
-        Bstr path;
-        CHECK_ERROR_BREAK(pAppliance, COMGETTER(Path)(path.asOutParam()));
-
-        strAppliancePath = path;
-        strApplianceFullPath = strAppliancePath;
-        strAppliancePath.stripFilename();
-
-        RTPrintf("The original OVA package folder is %s\n\n", strAppliancePath.c_str());
-
-        /* fetch the manifest */
-        Bstr manifest;
-        Bstr manifestName;
-        CHECK_ERROR_BREAK(pAppliance, GetManifest(manifest.asOutParam(), manifestName.asOutParam()));
-
-        strManifestData = manifest;
-        strManifestName = manifestName;
-
-        if (strManifestName.isEmpty() || strManifestData.isEmpty())
-        {
-            RTPrintf("Manifest file wasn't found in the OVA package %s\n\n", strApplianceFullPath.c_str());
-            hrc = E_FAIL;
-        }
-
-    }while (0);
-
-    if (FAILED(hrc))
-        return RTEXITCODE_FAILURE;
-
-
-    /* Read the private key */
-    RTERRINFOSTATIC ErrInfo;
-    RTCRKEY         hPrivateKey = NIL_RTCRKEY;
-    rc = RTCrKeyCreateFromFile(&hPrivateKey, RTCRPEMREADFILE_F_SENSITIVE, pszPrivateKey,
-                               strPrivateKeyPassword.c_str(), RTErrInfoInitStatic(&ErrInfo));
+    RTCRKEY hPrivateKey = NIL_RTCRKEY;
+    rc = RTCrKeyCreateFromFile(&hPrivateKey, 0 /*fFlags*/, pszPrivateKey, strPrivateKeyPassword.c_str(),
+                               RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
-        RTPrintf("Reading the private key from %s was done.\n\n", pszPrivateKey);
-
-        /* Read the certificate */
-        RTCRX509CERTIFICATE     Certificate;
-        rc = RTCrX509Certificate_ReadFromFile(&Certificate, pszCertificate, 0, &g_RTAsn1DefaultAllocator,
-                                              RTErrInfoInitStatic(&ErrInfo));
-        if (RT_FAILURE(rc))
-        {
-            RTCrKeyRelease(hPrivateKey);
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error reading certificate from %s: %Rrc%#RTeim",
-                                  pszCertificate, rc, &ErrInfo.Core);
-        }
-
-        RTPrintf("Reading the certificate from %s was done.\n\n", pszCertificate);
+        if (iVerbosity > 1)
+            RTMsgInfo("Successfully read the certificate and private key.");
 
         /*
-         * Get the manifest from Appliance and sign it.
-         * We have the private key, the password, the certificate.
-         * Also it's needed a digist algorithm SHA1/SHA256/SHA512.
-         * OVF2.0 standard proposes to use SHA256.
+         * Extract the manifest from the OVA and check whether it is already signed.
          */
-
-        RTDIGESTTYPE digestType = RTDIGESTTYPE_SHA256;
-        RTMANIFEST hManifest;
-        RTCRDIGEST hDigest;
-
-        rc = RTManifestCreate(0 /*fFlags*/, &hManifest);
-        if (RT_FAILURE(rc))
-        {
-            RTCrKeyRelease(hPrivateKey);
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error manifest creation: %Rrc", rc);
-        }
-
-        /* Calc the digest of the manifest using the algorithm found above. */
-        rc = RTCrDigestCreateByType(&hDigest, digestType);
+        Utf8Str     strManifestName;
+        Utf8Str     strSignatureName;
+        RTVFSFILE   hVfsFileManifest = NIL_RTVFSFILE;
+        rc = getManifestFromOva(pszOva, iVerbosity, &strManifestName, &hVfsFileManifest, &strSignatureName);
         if (RT_SUCCESS(rc))
         {
-            rc = RTCrDigestUpdate(hDigest, strManifestData.c_str(), strManifestData.length());
-            if (RT_SUCCESS(rc))
+            bool const fIsSigned = strSignatureName.isNotEmpty();
+            if (!fIsSigned || fReSign)
             {
-                uint8_t const * bHash =  RTCrDigestGetHash(hDigest);
+                /*
+                 * Do the signing and create the signature file.
+                 */
+                RTVFSFILE hVfsFileSignature = NIL_RTVFSFILE;
+                rc = doTheOvaSigning(&Certificate, hPrivateKey, strManifestName.c_str(), hVfsFileManifest,
+                                     fPkcs7, cIntermediateCerts, apszIntermediateCerts,
+                                     &ErrInfo, &hVfsFileSignature);
 
-                char szDigest[_4K];
-                rc = RTSha256ToString(bHash, szDigest, sizeof(szDigest));
-                RTPrintf("The digest of manifest is:\n%s\n\n", szDigest);
-
-                PCRTASN1DYNTYPE pParameters = NULL;
-
-                char   signatureBuf[_16K];
-                size_t cbSignature = sizeof(signatureBuf);
-                rc= RTCrPkixPubKeySignDigest(&Certificate.SignatureAlgorithm.Algorithm,
-                                              hPrivateKey,
-                                              pParameters,
-                                              hDigest,
-                                              0,
-                                              signatureBuf,
-                                              &cbSignature,
-                                              RTErrInfoInitStatic(&ErrInfo));
-                if (RT_SUCCESS(rc))
+                /*
+                 * Construct the signature filename if there isn't one already:
+                 */
+                if (RT_SUCCESS(rc) && strSignatureName.isEmpty())
                 {
-                    char szSignature[_4K];
-                    RTStrPrintHexBytes(szSignature, sizeof(szSignature), signatureBuf, cbSignature, 0 /*fFlags*/);
-
-                    /* Verify the signature back using the public key information from the certificate */
-                    rc = RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo(&Certificate.TbsCertificate.SubjectPublicKeyInfo,
-                                                                          signatureBuf, cbSignature, hDigest,
-                                                                          RTErrInfoInitStatic(&ErrInfo));
-                    if (RT_FAILURE(rc))
-                    {
-                        /* Dont' forget */
-                        RTCrDigestRelease(hDigest);
-                        RTCrKeyRelease(hPrivateKey);
-                        if (rc == VERR_CR_PKIX_SIGNATURE_MISMATCH)
-                            return RTMsgErrorExit(RTEXITCODE_FAILURE, "The manifest signature does not match");
-
-                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error validating the manifest signature (%Rrc%#RTeim)",
-                                              rc, &ErrInfo.Core);
-                    }
-                    RTPrintf("The manifest signature was validated successfully\n\n");
-
-                    /*
-                     * Preparing the digest signature according to OVF2.0 standard.
-                     * Only SHA1 and SHA256 are supported for now.
-                     */
-                    Utf8Str strDigestSignature;
-
-                    switch (digestType)
-                    {
-                        case RTDIGESTTYPE_SHA1:
-                            strDigestSignature.append("SHA1");
-                            break;
-                        case RTDIGESTTYPE_SHA256:
-                        default:
-                            strDigestSignature.append("SHA256");
-                            break;
-                    }
-
-                    strDigestSignature.append('(').append(strManifestName).append(')').append(" = ");
-                    strDigestSignature.append(szSignature);
-
-                    /*
-                     * Especially add a new line character to avoid placing the certificate on the same line
-                     * with the digest signature.
-                     */
-                    strDigestSignature.append('\n');
-
-                    RTPrintf("The signed digest is:\n%s\n", strDigestSignature.c_str());
-
-                    /* Just stop here in the case of dry-run scenario */
-                    if (fDryRun)
-                    {
-                        /* Dont' forget */
-                        RTCrDigestRelease(hDigest);
-                        RTCrKeyRelease(hPrivateKey);
-                        return RTEXITCODE_SUCCESS;
-                    }
-
-                    /* Make up the certificate name */
-                    const char *pszSuffix = strrchr(strManifestName.c_str(), '.');
-                    Utf8Str strOVFCertificateName = Utf8Str(strManifestName.c_str(), pszSuffix - strManifestName.c_str());
-                    strOVFCertificateName.append(".cert");
-
-                    /* Create a memory I/O stream and write the digest signature and the certificate to it. */
-                    RTVFSIOSTREAM hVfsIosOVFCertificate;
-
-                    rc = RTVfsMemIoStrmCreate(NIL_RTVFSIOSTREAM, _1K, &hVfsIosOVFCertificate);
+                    rc = strSignatureName.assignNoThrow(strManifestName);
                     if (RT_SUCCESS(rc))
-                    {
-                        size_t cbWritten = 0;
-                        rc = RTVfsIoStrmWrite(hVfsIosOVFCertificate, strDigestSignature.c_str(), strDigestSignature.length(),
-                                              true /*fBlocking*/, &cbWritten);
-                        if (RT_SUCCESS(rc))
-                        {
-                            Utf8Str strX509CertificateContent;
-                            /* Open and read the passed certificate file as a standard file */
-                            RTVFSFILE     hVfsOriginalX509Certificate;
-                            rc = RTVfsFileOpenNormal(pszCertificate, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
-                                                     &hVfsOriginalX509Certificate);
-                            if (RT_SUCCESS(rc))
-                            {
-                                for (;;)
-                                {
-                                    char   abBuf[_4K];
-                                    size_t cbRead;
-                                    rc = RTVfsFileRead(hVfsOriginalX509Certificate, abBuf, sizeof(abBuf), &cbRead);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        bool const fEof = rc == VINF_EOF;
-                                        strX509CertificateContent.append(abBuf, cbRead);
-                                        if (fEof)
-                                            break;
-                                    }
-                                    else
-                                        break;
-                                }
-                            }
-                            else
-                                RTPrintf("Reading the certificate from the file %s failed (%Rrc)", pszCertificate, rc);
-
-                            /* Dont' forget */
-                            RTVfsFileRelease(hVfsOriginalX509Certificate);
-
-                            if (RT_SUCCESS(rc))
-                            {
-                                cbWritten = 0;
-                                /* Write out the certificate into the stream */
-                                rc = RTVfsIoStrmWrite(hVfsIosOVFCertificate, strX509CertificateContent.c_str(),
-                                                      strX509CertificateContent.length(), true /*fBlocking*/, &cbWritten);
-
-                                if (RT_FAILURE(rc))
-                                    RTPrintf("RTVfsIoStrmWrite failed on adding the certificate into the stream (%Rrc)", rc);
-                            }
-                            else
-                                RTPrintf("Reading the certificate from the file %s failed (%Rrc)", pszCertificate, rc);
-                        }
-                        else
-                            RTPrintf("RTVfsIoStrmWrite failed  on adding the digest into the stream (%Rrc)", rc);
-                    }
-                    else
-                        RTPrintf("RTVfsMemIoStrmCreate failed (%Rrc)", rc);
-
-                    if (RT_FAILURE(rc))
-                    {
-                        /* Dont' forget */
-                        RTVfsIoStrmRelease(hVfsIosOVFCertificate);
-                        return RTEXITCODE_FAILURE;
-                    }
-
-
-                    /* Make up new appliance name */
-                    const char *pszSuffix1 = strrchr(strManifestName.c_str(), '.');
-                    Utf8Str strSignedOVAName(strAppliancePath);
-                    strSignedOVAName.append(RTPATH_DELIMITER).append(strManifestName.c_str(),
-                                                                     pszSuffix1 - strManifestName.c_str());
-                    strSignedOVAName.append("-signed.ova");
-
-                    RTPrintf("The path for new OVA signed package is '%s'\n\n", strSignedOVAName.c_str());
-
-                    /*
-                     * Open new OVA file (it's a standard TAR file) as a file stream
-                     */
-                    RTVFSIOSTREAM hVfsIosSignedOVAPackage;
-                    rc = RTVfsIoStrmOpenNormal(strSignedOVAName.c_str(),
-                                               RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
-                                               &hVfsIosSignedOVAPackage);
-                    if (RT_SUCCESS(rc))
-                    {
-                        RTVFSFSSTREAM hVfsFssOVADest;
-                        rc = RTZipTarFsStreamToIoStream(hVfsIosSignedOVAPackage, RTZIPTARFORMAT_USTAR,
-                                                        0 /*fFlags*/, &hVfsFssOVADest);
-                        RTVfsIoStrmRelease(hVfsIosSignedOVAPackage);
-
-                        if (RT_SUCCESS(rc))
-                        {
-                            bool fCertPresence = false;
-                            RTZipTarFsStreamSetFileMode(hVfsFssOVADest, 0660, 0440);
-
-                            /*
-                             * Open the original OVA file (it's a standard TAR file) as a file stream
-                             */
-                            RTVFSIOSTREAM hVfsIosOVASrc;
-                            rc = RTVfsIoStrmOpenNormal(strApplianceFullPath.c_str(),
-                                                       RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
-                                                       &hVfsIosOVASrc);
-                            if (RT_SUCCESS(rc))
-                            {
-                                RTVFSFSSTREAM hVfsFssOVASrc;
-                                rc = RTZipTarFsStreamFromIoStream(hVfsIosOVASrc, 0 /*fFlags*/, &hVfsFssOVASrc);
-                                /* Dont' forget */
-                                RTVfsIoStrmRelease(hVfsIosOVASrc);
-
-                                if (RT_SUCCESS(rc))
-                                {
-                                    for (;;)
-                                    {
-                                        char *pszName = NULL;
-                                        RTVFSOBJTYPE enmType;
-                                        RTVFSOBJ     hVfsObj;
-                                        hrc = S_OK;
-                                        rc = RTVfsFsStrmNext(hVfsFssOVASrc, &pszName, &enmType, &hVfsObj);
-                                        if (RT_FAILURE(rc))
-                                        {
-                                            if (rc != VERR_EOF)
-                                                RTPrintf("Error reading the OVA file '%s' (%Rrc)",
-                                                         strApplianceFullPath.c_str(), rc);
-                                            else
-                                                rc = VINF_SUCCESS;
-
-                                            break;
-                                        }
-
-                                        /*
-                                         * in the case when the certificate has been already presented in the OVA package
-                                         */
-                                        if (strOVFCertificateName.equals(pszName))
-                                        {
-                                            RTPrintf("Some certificate has already presented in the OVA package\n\n");
-                                            fCertPresence = true;//remember for later usage
-                                            /* if the flag --force has been set just skip it and go further */
-                                            if (fReSign)
-                                                continue;
-                                        }
-
-                                        /* Read the input stream and add the content into the output stream */
-                                        rc = RTVfsFsStrmAdd(hVfsFssOVADest, pszName, hVfsObj, 0 /*fFlags*/);
-                                        if (RT_FAILURE(rc))
-                                            RTPrintf("RTVfsFsStrmAdd failed for the %s (%Rrc)", pszName, rc);
-
-                                        /* Free resources */
-                                        RTVfsObjRelease(hVfsObj);
-                                        RTStrFree(pszName);
-
-                                        if (RT_FAILURE(rc))
-                                        {
-                                            RTPrintf("Error writing to new OVA package '%s' (%Rrc)",
-                                                     strSignedOVAName.c_str(), rc);
-                                            break;
-                                        }
-                                    }
-
-                                    /* Dont' forget */
-                                    RTVfsFsStrmRelease(hVfsFssOVASrc);
-                                }
-                                else
-                                    RTPrintf("Error reading the OVA file '%s' (%Rrc)", strApplianceFullPath.c_str(), rc);
-                            }
-                            else
-                                RTPrintf("Error opening the OVA file '%s' (%Rrc)", strApplianceFullPath.c_str(), rc);
-
-                            /*
-                             * Now add the digest signature into new OVA package
-                             */
-                            if (RT_SUCCESS(rc))
-                            {
-                                /* Add only if no cetificate or the flag fReSign was set and certificate is presented */
-                                if ( !fCertPresence || (fCertPresence && fReSign) )
-                                {
-                                    size_t cbWritten;
-                                    size_t cbRead;
-                                    RTFOFF off = RTVfsIoStrmTell(hVfsIosOVFCertificate);
-                                    void *pvBuf = RTMemAlloc(off);
-                                    size_t cbBuf = off;
-
-                                    rc = RTVfsIoStrmReadAt(hVfsIosOVFCertificate, 0, pvBuf, cbBuf,
-                                                           true /*fBlocking*/, &cbRead);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        RTVFSIOSTREAM hVfsIosSrc;
-                                        rc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, pvBuf, cbRead, &hVfsIosSrc);
-                                        RTVFSOBJ hVfsObjCert = RTVfsObjFromIoStream(hVfsIosSrc);
-                                        RTVfsIoStrmRelease(hVfsIosSrc);
-
-                                        RTZipTarFsStreamSetOwner(hVfsFssOVADest, VBOX_VERSION_MAJOR, "vboxovf20");
-                                        RTZipTarFsStreamSetGroup(hVfsFssOVADest, VBOX_VERSION_MINOR,
-                                                                 "vbox_v" RT_XSTR(VBOX_VERSION_MAJOR) "."
-                                                                 RT_XSTR(VBOX_VERSION_MINOR) "."
-                                                                 RT_XSTR(VBOX_VERSION_BUILD) "r"
-                                                                 RT_XSTR(VBOX_SVN_REV) "\0");
-
-                                        /* Write out the certificate into the stream */
-                                        rc = RTVfsFsStrmAdd(hVfsFssOVADest, strOVFCertificateName.c_str(),
-                                                            hVfsObjCert, 0 /*fFlags*/);
-                                        if (RT_FAILURE(rc))
-                                            RTPrintf("RTVfsFsStrmAdd failed for the %s (%Rrc)",
-                                                     strOVFCertificateName.c_str(), rc);
-
-                                        /* Dont' forget */
-                                        RTVfsObjRelease(hVfsObjCert);
-
-                                        /* Save the OVA certificate file next to the original OVA package */
-                                        if (fOutCert)
-                                        {
-                                            Utf8Str strCertificateFileFullPath(strAppliancePath);
-                                            strCertificateFileFullPath.append(RTPATH_DELIMITER).
-                                                                       append(strOVFCertificateName.c_str());
-
-                                            RTVFSIOSTREAM hVfsIosCertFile;
-                                            rc = RTVfsIoStrmOpenNormal(strCertificateFileFullPath.c_str(),
-                                                                       RTFILE_O_CREATE_REPLACE |
-                                                                       RTFILE_O_WRITE |
-                                                                       RTFILE_O_DENY_NONE,
-                                                                       &hVfsIosCertFile);
-                                            if (RT_SUCCESS(rc))
-                                            {
-                                                /* Write out the certificate into the file */
-                                                rc = RTVfsIoStrmWrite(hVfsIosCertFile, pvBuf,
-                                                                      cbBuf, true /*fBlocking*/, &cbWritten);
-                                                if (RT_FAILURE(rc))
-                                                    RTPrintf("Error writing the certificate file '%s' (%Rrc)",
-                                                             strCertificateFileFullPath.c_str(), rc);
-
-                                                /* Dont' forget */
-                                                RTVfsIoStrmFlush(hVfsIosCertFile);
-                                                RTVfsIoStrmRelease(hVfsIosCertFile);
-                                            }
-                                            else
-                                                RTPrintf("Error opening the certificate file '%s' (%Rrc)",
-                                                         strCertificateFileFullPath.c_str(), rc);
-                                        }
-                                    }
-                                    else
-                                        RTPrintf("Error writing the certificate file '%s' (%Rrc)",
-                                                 strOVFCertificateName.c_str(), rc);
-
-                                    /* Dont' forget */
-                                    RTMemFree(pvBuf);
-                                }
-                            }
-
-                            /* Dont' forget */
-                            RTVfsFsStrmRelease(hVfsFssOVADest);
-                        }
-                        else
-                            RTPrintf("Failed create TAR creator for '%s' (%Rrc)", strSignedOVAName.c_str(), rc);
-                    }
-                    else
-                        RTPrintf("Error opening new OVA signed package '%s'\n", strSignedOVAName.c_str());
-
-                    /* Dont' forget */
-                     RTVfsIoStrmRelease(hVfsIosOVFCertificate);
+                        rc = strSignatureName.stripSuffix().appendNoThrow(".cert");
                 }
-                else
-                    RTPrintf("Error signing the digest of manifest: %Rrc", rc);
+                if (RT_SUCCESS(rc) && !fDryRun)
+                {
+                    /*
+                     * Update the OVA.
+                     */
+                    rc = updateTheOvaSignature(pszOva, strSignatureName.c_str(), hVfsFileSignature, fIsSigned);
+                }
             }
             else
-                RTPrintf("Error updating the digest: %Rrc", rc);
+                rc = RTMsgErrorRc(VERR_ALREADY_EXISTS,
+                                  "The OVA is already signed! (Use the --force option to force re-signing it.)");
         }
-        else
-            RTPrintf("Error digest creation: %Rrc", rc);
-
-        /* Don't forget */
-        RTCrDigestRelease(hDigest);
         RTCrKeyRelease(hPrivateKey);
     }
     else
         RTPrintf("Error reading the private key from %s: %Rrc%#RTeim", pszPrivateKey, rc, &ErrInfo.Core);
+    RTCrX509Certificate_Delete(&Certificate);
 
-    /* Dont' forget */
-    if (RT_SUCCESS(rc))
-        hrc = S_OK;
-
-    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 #endif /* !VBOX_ONLY_DOCS */

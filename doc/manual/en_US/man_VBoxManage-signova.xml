@@ -51,7 +51,8 @@
       </group>
       <arg>--intermediate-cert=<replaceable>file</replaceable></arg>
       <arg>--force</arg>
-      <arg>--out-cert</arg>
+      <arg>--verbose</arg>
+      <arg>--quiet</arg>
       <arg>--dry-run</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -104,6 +105,13 @@
         <term><option>--force</option></term>
         <listitem><para>Overwrite existing signature if present.  The default
           behaviour is to fail if the OVA is already signed.</para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-v</option>, <option>--verbose</option>, <option>-q</option>, <option>--quiet</option></term>
+        <listitem><para>Controls the verbositity of the command execution.  The
+          <option>--verbose</option> can be used multiple times to get more output.
+          </para></listitem>
       </varlistentry>
 
       <varlistentry>
