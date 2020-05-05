@@ -56,13 +56,13 @@ struct SHCLCONTEXT
 };
 
 
-int ShClSvcImplInit(void)
+int ShClBackendInit(void)
 {
     LogFlowFuncEnter();
     return VINF_SUCCESS;
 }
 
-void ShClSvcImplDestroy(void)
+void ShClBackendDestroy(void)
 {
     LogFlowFuncEnter();
 }
@@ -71,7 +71,7 @@ void ShClSvcImplDestroy(void)
  * @note  On the host, we assume that some other application already owns
  *        the clipboard and leave ownership to X11.
  */
-int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
+int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     int rc;
 
@@ -105,7 +105,7 @@ int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
     return rc;
 }
 
-int ShClSvcImplSync(PSHCLCLIENT pClient)
+int ShClBackendSync(PSHCLCLIENT pClient)
 {
     LogFlowFuncEnter();
 
@@ -119,7 +119,7 @@ int ShClSvcImplSync(PSHCLCLIENT pClient)
  * Shut down the shared clipboard service and "disconnect" the guest.
  * @note  Host glue code
  */
-int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
+int ShClBackendDisconnect(PSHCLCLIENT pClient)
 {
     LogFlowFuncEnter();
 
@@ -145,7 +145,7 @@ int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
     return rc;
 }
 
-int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
+int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
     int rc = ShClX11ReportFormatsToX11(&pClient->State.pCtx->X11, fFormats);
 
@@ -172,7 +172,7 @@ struct CLIPREADCBREQ
  *         freed in ClipCompleteDataRequestFromX11 when it is called back from
  *         the backend code.
  */
-int ShClSvcImplReadData(PSHCLCLIENT pClient,
+int ShClBackendReadData(PSHCLCLIENT pClient,
                         PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
@@ -226,7 +226,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
     return rc;
 }
 
-int ShClSvcImplWriteData(PSHCLCLIENT pClient,
+int ShClBackendWriteData(PSHCLCLIENT pClient,
                          PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
@@ -363,7 +363,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 
-int ShClSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int ShClBackendTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
 
@@ -373,7 +373,7 @@ int ShClSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
     return rc;
 }
 
-int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int ShClBackendTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
 
@@ -383,7 +383,7 @@ int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
     return rc;
 }
 
-int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int ShClBackendTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     LogFlowFuncEnter();
 

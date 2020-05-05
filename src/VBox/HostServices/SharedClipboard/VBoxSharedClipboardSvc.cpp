@@ -1463,7 +1463,7 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
                 g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
             }
             else
-                rc = ShClSvcImplFormatAnnounce(pClient, fFormats);
+                rc = ShClBackendFormatAnnounce(pClient, fFormats);
         }
     }
 
@@ -1592,7 +1592,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     }
     else
     {
-        rc = ShClSvcImplReadData(pClient, &cmdCtx, uFormat, pvData, cbData, &cbActual);
+        rc = ShClBackendReadData(pClient, &cmdCtx, uFormat, pvData, cbData, &cbActual);
         LogRelFlowFunc(("Shared Clipboard: DATA/Host: cbData=%RU32->%RU32 rc=%Rrc\n", cbData, cbActual, rc));
     }
 
@@ -1709,7 +1709,7 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
         rc = VINF_SUCCESS;
     }
     else
-        rc = ShClSvcImplWriteData(pClient, &cmdCtx, uFormat, pvData, cbData);
+        rc = ShClBackendWriteData(pClient, &cmdCtx, uFormat, pvData, cbData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1776,7 +1776,7 @@ static int svcInit(void)
     {
         shClSvcModeSet(VBOX_SHCL_MODE_OFF);
 
-        rc = ShClSvcImplInit();
+        rc = ShClBackendInit();
 
         /* Clean up on failure, because 'svnUnload' will not be called
          * if the 'svcInit' returns an error.
@@ -1794,7 +1794,7 @@ static DECLCALLBACK(int) svcUnload(void *)
 {
     LogFlowFuncEnter();
 
-    ShClSvcImplDestroy();
+    ShClBackendDestroy();
 
     RTCritSectDelete(&g_CritSect);
 
@@ -1814,7 +1814,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
     shClSvcClientTransfersReset(pClient);
 #endif
 
-    ShClSvcImplDisconnect(pClient);
+    ShClBackendDisconnect(pClient);
 
     shClSvcClientDestroy(pClient);
 
@@ -1831,11 +1831,11 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     int rc = shClSvcClientInit(pClient, u32ClientID);
     if (RT_SUCCESS(rc))
     {
-        rc = ShClSvcImplConnect(pClient, ShClSvcGetHeadless());
+        rc = ShClBackendConnect(pClient, ShClSvcGetHeadless());
         if (RT_SUCCESS(rc))
         {
             /* Sync the host clipboard content with the client. */
-            rc = ShClSvcImplSync(pClient);
+            rc = ShClBackendSync(pClient);
             if (rc == VINF_NO_CHANGE)
             {
                 /*
@@ -2405,7 +2405,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     }
 
     /* Actual host data are to be reported to guest (SYNC). */
-    ShClSvcImplSync(pClient);
+    ShClBackendSync(pClient);
 
 #else  /* UNIT_TEST */
     RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);

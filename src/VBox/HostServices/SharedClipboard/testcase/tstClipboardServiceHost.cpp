@@ -307,18 +307,18 @@ int main(int argc, char *argv[])
     return RTTestSummaryAndDestroy(hTest);
 }
 
-int ShClSvcImplInit() { return VINF_SUCCESS; }
-void ShClSvcImplDestroy() { }
-int ShClSvcImplDisconnect(PSHCLCLIENT) { return VINF_SUCCESS; }
-int ShClSvcImplConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }
-int ShClSvcImplFormatAnnounce(PSHCLCLIENT, SHCLFORMATS) { AssertFailed(); return VINF_SUCCESS; }
-int ShClSvcImplReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
-int ShClSvcImplWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t) { AssertFailed(); return VINF_SUCCESS; }
-int ShClSvcImplSync(PSHCLCLIENT) { return VINF_SUCCESS; }
+int ShClBackendInit() { return VINF_SUCCESS; }
+void ShClBackendDestroy() { }
+int ShClBackendDisconnect(PSHCLCLIENT) { return VINF_SUCCESS; }
+int ShClBackendConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }
+int ShClBackendFormatAnnounce(PSHCLCLIENT, SHCLFORMATS) { AssertFailed(); return VINF_SUCCESS; }
+int ShClBackendReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
+int ShClBackendWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t) { AssertFailed(); return VINF_SUCCESS; }
+int ShClBackendSync(PSHCLCLIENT) { return VINF_SUCCESS; }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int ShClSvcImplTransferCreate(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
-int ShClSvcImplTransferDestroy(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
-int ShClSvcImplTransferGetRoots(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
+int ShClBackendTransferCreate(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
+int ShClBackendTransferDestroy(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
+int ShClBackendTransferGetRoots(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

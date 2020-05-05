@@ -51,14 +51,14 @@ static int setupTable(VBOXHGCMSVCFNTABLE *pTable)
     return VBoxHGCMSvcLoad(pTable);
 }
 
-int ShClSvcImplInit(void) { return VINF_SUCCESS; }
-void ShClSvcImplDestroy(void) { }
-int ShClSvcImplDisconnect(PSHCLCLIENT) { return VINF_SUCCESS; }
-int ShClSvcImplConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }
-int ShClSvcImplFormatAnnounce(PSHCLCLIENT, SHCLFORMATS) { AssertFailed(); return VINF_SUCCESS; }
-int ShClSvcImplReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
-int ShClSvcImplWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t) { AssertFailed(); return VINF_SUCCESS; }
-int ShClSvcImplSync(PSHCLCLIENT) { return VINF_SUCCESS; }
+int ShClBackendInit(void) { return VINF_SUCCESS; }
+void ShClBackendDestroy(void) { }
+int ShClBackendDisconnect(PSHCLCLIENT) { return VINF_SUCCESS; }
+int ShClBackendConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }
+int ShClBackendFormatAnnounce(PSHCLCLIENT, SHCLFORMATS) { AssertFailed(); return VINF_SUCCESS; }
+int ShClBackendReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
+int ShClBackendWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t) { AssertFailed(); return VINF_SUCCESS; }
+int ShClBackendSync(PSHCLCLIENT) { return VINF_SUCCESS; }
 
 static void testAnnounceAndReadData(void)
 {
