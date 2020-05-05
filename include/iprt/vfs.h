@@ -1206,6 +1206,28 @@ RTDECL(int)        RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos, uint32
 #define RTVFS_VALIDATE_UTF8_VALID_MASK      UINT32_C(0x00000003)
 /** @}  */
 
+/**
+ * Printf-like write function.
+ *
+ * @returns Number of characters written on success, negative error status on
+ *          failure.
+ * @param   hVfsIos         The VFS I/O stream handle to write to.
+ * @param   pszFormat       The format string.
+ * @param   ...             Format arguments.
+ */
+RTDECL(ssize_t)     RTVfsIoStrmPrintf(RTVFSIOSTREAM hVfsIos, const char *pszFormat, ...);
+
+/**
+ * Printf-like write function.
+ *
+ * @returns Number of characters written on success, negative error status on
+ *          failure.
+ * @param   hVfsIos         The VFS I/O stream handle to write to.
+ * @param   pszFormat       The format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(ssize_t)     RTVfsIoStrmPrintfV(RTVFSIOSTREAM hVfsIos, const char *pszFormat, va_list va);
+
 /** @} */
 
 
@@ -1482,6 +1504,28 @@ RTDECL(int)         RTVfsFileQueryMaxSize(RTVFSFILE hVfsFile, uint64_t *pcbMax);
  * @param   hVfsFile        The VFS file handle.
  */
 RTDECL(uint64_t)    RTVfsFileGetOpenFlags(RTVFSFILE hVfsFile);
+
+/**
+ * Printf-like write function.
+ *
+ * @returns Number of characters written on success, negative error status on
+ *          failure.
+ * @param   hVfsFile        The VFS file handle to write to.
+ * @param   pszFormat       The format string.
+ * @param   ...             Format arguments.
+ */
+RTDECL(ssize_t)     RTVfsFilePrintf(RTVFSFILE hVfsFile, const char *pszFormat, ...);
+
+/**
+ * Printf-like write function.
+ *
+ * @returns Number of characters written on success, negative error status on
+ *          failure.
+ * @param   hVfsFile        The VFS file handle to write to.
+ * @param   pszFormat       The format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(ssize_t)     RTVfsFilePrintfV(RTVFSFILE hVfsFile, const char *pszFormat, va_list va);
 
 /** @} */
 
