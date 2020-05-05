@@ -30,7 +30,7 @@
 
   <refnamediv>
     <refname>VBoxManage-signova</refname>
-    <refpurpose>move a virtual machine to a new location on the host system</refpurpose>
+    <refpurpose>Digitally sign an OVA</refpurpose>
     <refclass>Oracle VM VirtualBox</refclass>
   </refnamediv>
 
@@ -97,7 +97,8 @@
         <term><option>--intermediate-cert=<replaceable>file</replaceable></option></term>
         <listitem><para>File containing an intermediary certificate that should be
           included in the optional PKCS#7 signature.  Like the others, the file can
-          either be in PEM or DER format.</para></listitem>
+          either be in PEM or DER format.  This option can be repeated to add
+          multiple intermediate certificates.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--force</option></term>

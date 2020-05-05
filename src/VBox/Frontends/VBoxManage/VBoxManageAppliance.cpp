@@ -1789,117 +1789,139 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
 
 RTEXITCODE handleSignAppliance(HandlerArg *arg)
 {
-    HRESULT hrc = S_OK;
-
+    /*
+     * Parse arguments.
+     */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--private-key-form",         'k', RTGETOPT_REQ_STRING },
+        { "--certificate",              'c', RTGETOPT_REQ_STRING },
+        { "--private-key",              'k', RTGETOPT_REQ_STRING },
         { "--private-key-password",     'p', RTGETOPT_REQ_STRING },
-        { "--private-key-password-file",'f', RTGETOPT_REQ_STRING },
-        { "--cert-file",                'c', RTGETOPT_REQ_STRING },
+        { "--private-key-password-file",'P', RTGETOPT_REQ_STRING },
+        { "--pkcs7",                    '7', RTGETOPT_REQ_NOTHING },
+        { "--no-pkcs7",                 'n', RTGETOPT_REQ_NOTHING },
         { "--intermediate-cert-file",   'i', RTGETOPT_REQ_STRING },
-        { "--out-cert",                 'o', RTGETOPT_REQ_NOTHING },
-        { "--pkcs7",                    's', RTGETOPT_REQ_NOTHING },
-        { "--no-pkcs7",                 'S', RTGETOPT_REQ_NOTHING },
-        { "--force",                    'F', RTGETOPT_REQ_NOTHING },
-        { "--dry-run",                  'd', RTGETOPT_REQ_NOTHING },
-        { "help",                       1001, RTGETOPT_REQ_NOTHING },
-        { "--help",                     1002, RTGETOPT_REQ_NOTHING }
+        { "--force",                    'f', RTGETOPT_REQ_NOTHING },
+        { "--out-cert",                 'O', RTGETOPT_REQ_NOTHING },
+        { "--dry-run",                  'D', RTGETOPT_REQ_NOTHING },
     };
 
     RTGETOPTSTATE GetState;
-    RTGETOPTUNION ValueUnion;
-
     int rc = RTGetOptInit(&GetState, arg->argc, arg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
-    if (arg->argc == 1)
-    {
-        RTPrintf("Empty command parameter list, show help.\n");
-        printHelp(g_pStdOut);
-        return RTEXITCODE_SUCCESS;
-    }
 
-    Utf8Str strOvfFilename;
-    Utf8Str strPrivateKeyForm;
-    Utf8Str strPrivateKeyPassword;
-    Utf8Str strPrivateKeyPasswordFile;
-    Utf8Str strX509CertificateFile;
-    Utf8Str strInterimCertificateFile;
-    bool    fOutCert = false; // the default
-    bool    fPKCS7 = false; // the default
-    bool    fResign = false; // the default
-    bool    fDry = false; // the default
-    com::SafeArray<BSTR>  parameters;
+    const char *pszOva              = NULL;
+    const char *pszCertificate      = NULL;
+    const char *pszPrivateKey       = NULL;
+    Utf8Str     strPrivateKeyPassword;
+    bool        fPkcs7              = false;
+    unsigned    cIntermediateCerts  = 0;
+    const char *apszIntermediateCerts[32];
+    bool        fReSign             = false;
+
+    bool        fOutCert            = false;
+    bool        fDryRun             = false;
 
     int c;
+    RTGETOPTUNION ValueUnion;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
+            case 'c':
+                pszCertificate = ValueUnion.psz;
+                break;
+
             case 'k':
-                strPrivateKeyForm=ValueUnion.psz;
+                pszPrivateKey = ValueUnion.psz;
                 break;
 
             case 'p':
-                strPrivateKeyPassword=ValueUnion.psz;
+                if (strPrivateKeyPassword.isNotEmpty())
+                    RTMsgWarning("Password is given more than once.");
+                strPrivateKeyPassword = ValueUnion.psz;
                 break;
 
-            case 'f':
-                strPrivateKeyPasswordFile=ValueUnion.psz;
+            case 'P':
+            {
+                if (strPrivateKeyPassword.isNotEmpty())
+                    RTMsgWarning("Password is given more than once.");
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPrivateKeyPassword);
+                if (rcExit == RTEXITCODE_SUCCESS)
+                    break;
+                return rcExit;
+            }
+
+            case '7':
+                fPkcs7 = true;
                 break;
 
-            case 'c':
-                strX509CertificateFile=ValueUnion.psz;
+            case 'n':
+                fPkcs7 = false;
                 break;
 
             case 'i':
-                strInterimCertificateFile=ValueUnion.psz;
+                if (cIntermediateCerts >= RT_ELEMENTS(apszIntermediateCerts))
+                    return RTMsgErrorExitFailure("Too many intermediate certificates: max %zu",
+                                                 RT_ELEMENTS(apszIntermediateCerts));
+                apszIntermediateCerts[cIntermediateCerts++] = ValueUnion.psz;
                 break;
 
-            case 'o':
+            case 'f':
+                fReSign = true;
+                break;
+
+
+            case 'O':
                 fOutCert = true;
                 break;
 
-            case 's':
-                fPKCS7 = true;
+            case 'D':
+                fDryRun = true;
                 break;
-
-            case 'F':
-                fResign = true;
-                break;
-
-            case 'd':
-                fDry = true;
-                break;
-
-            case 1001:
-            case 1002:
-                printHelp(g_pStdOut);
-                return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
-                if (strOvfFilename.isEmpty())
-                    strOvfFilename = ValueUnion.psz;
-                else
-                    return errorGetOpt(c, &ValueUnion);
-                break;
-
+                if (!pszOva)
+                {
+                    pszOva = ValueUnion.psz;
+                    break;
+                }
+                RT_FALL_THRU();
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    /* Required paramaters: */
+    if (!pszOva || !*pszOva)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No OVA file was specified!");
+    if (!pszCertificate || !*pszCertificate)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No signing certificate (--certificate=<file>) was specified!");
+    if (!pszPrivateKey || !*pszPrivateKey)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No signing private key (--private-key=<file>) was specified!");
+
+    /* Check that input files exists before we commence: */
+    if (!RTFileExists(pszOva))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The specified OVA file was not found: %s", pszOva);
+    if (!RTFileExists(pszCertificate))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The specified certificate file was not found: %s", pszCertificate);
+    if (!RTFileExists(pszPrivateKey))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The specified private key file was not found: %s", pszPrivateKey);
+
+    /*
+     *
+     */
+    HRESULT hrc = S_OK;
 
     Utf8Str strManifestData;
     Utf8Str strManifestName;
     Utf8Str strAppliancePath;
     Utf8Str strApplianceFullPath;
 
-    if (strOvfFilename.isEmpty())
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The OVA package name is empty");
+    char *pszAbsFilePath = RTPathAbsDup(pszOva);
 
     do
     {
-        char *pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
 
         if (!RTFileExists(pszAbsFilePath))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "The OVA package %s wasn't found", pszAbsFilePath);
@@ -1945,43 +1967,26 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
 
 
     /* Read the private key */
-    RTCRKEY hPrivateKey;
-    RTERRINFO ErrInfo;
-    uint32_t fFlags = 0;
-
-    if (strPrivateKeyForm.equalsIgnoreCase("pem"))
-        fFlags = RTCRPEMREADFILE_F_VALID_MASK;//|RTCRKEYFROM_F_VALID_MASK;
-
-    /* check the key file existence */
-    if (!RTFileExists(strPrivateKeyPasswordFile.c_str()))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The file %s with a private key wasn't found",
-                              strPrivateKeyPasswordFile.c_str());
-
-    rc = RTCrKeyCreateFromFile(&hPrivateKey, 0, strPrivateKeyPasswordFile.c_str(), strPrivateKeyPassword.c_str(), &ErrInfo);
+    RTERRINFOSTATIC ErrInfo;
+    RTCRKEY         hPrivateKey = NIL_RTCRKEY;
+    rc = RTCrKeyCreateFromFile(&hPrivateKey, RTCRPEMREADFILE_F_SENSITIVE, pszPrivateKey,
+                               strPrivateKeyPassword.c_str(), RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
-        RTPrintf("Reading the private key from %s was done.\n\n", strPrivateKeyPasswordFile.c_str());
-
-        /* check the certificate file existence */
-        if (!RTFileExists(strX509CertificateFile.c_str()))
-        {
-            RTCrKeyRelease(hPrivateKey);
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "The file %s with a X509 certificate wasn't found",
-                                  strX509CertificateFile.c_str());
-        }
+        RTPrintf("Reading the private key from %s was done.\n\n", pszPrivateKey);
 
         /* Read the certificate */
         RTCRX509CERTIFICATE     Certificate;
-        rc = RTCrX509Certificate_ReadFromFile(&Certificate, strX509CertificateFile.c_str(), 0, &g_RTAsn1DefaultAllocator,
-                                              &ErrInfo);
+        rc = RTCrX509Certificate_ReadFromFile(&Certificate, pszCertificate, 0, &g_RTAsn1DefaultAllocator,
+                                              RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(rc))
         {
             RTCrKeyRelease(hPrivateKey);
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error reading certificate from %s: %Rrc - %s",
-                                  strX509CertificateFile.c_str(), rc, ErrInfo.pszMsg);
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error reading certificate from %s: %Rrc%#RTeim",
+                                  pszCertificate, rc, &ErrInfo.Core);
         }
 
-        RTPrintf("Reading the certificate from %s was done.\n\n", strX509CertificateFile.c_str());
+        RTPrintf("Reading the certificate from %s was done.\n\n", pszCertificate);
 
         /*
          * Get the manifest from Appliance and sign it.
@@ -2025,7 +2030,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                                               0,
                                               signatureBuf,
                                               &cbSignature,
-                                              &ErrInfo);
+                                              RTErrInfoInitStatic(&ErrInfo));
                 if (RT_SUCCESS(rc))
                 {
                     char szSignature[_4K];
@@ -2033,7 +2038,8 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
 
                     /* Verify the signature back using the public key information from the certificate */
                     rc = RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo(&Certificate.TbsCertificate.SubjectPublicKeyInfo,
-                                                                          signatureBuf, cbSignature, hDigest, &ErrInfo);
+                                                                          signatureBuf, cbSignature, hDigest,
+                                                                          RTErrInfoInitStatic(&ErrInfo));
                     if (RT_FAILURE(rc))
                     {
                         /* Dont' forget */
@@ -2042,11 +2048,10 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                         if (rc == VERR_CR_PKIX_SIGNATURE_MISMATCH)
                             return RTMsgErrorExit(RTEXITCODE_FAILURE, "The manifest signature does not match");
 
-                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error validating the manifest signature (%Rrc, %s)",
-                                              rc, ErrInfo.pszMsg);
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error validating the manifest signature (%Rrc%#RTeim)",
+                                              rc, &ErrInfo.Core);
                     }
-                    else
-                        RTPrintf("The manifest signature was validated successfully\n\n");
+                    RTPrintf("The manifest signature was validated successfully\n\n");
 
                     /*
                      * Preparing the digest signature according to OVF2.0 standard.
@@ -2077,7 +2082,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                     RTPrintf("The signed digest is:\n%s\n", strDigestSignature.c_str());
 
                     /* Just stop here in the case of dry-run scenario */
-                    if (fDry)
+                    if (fDryRun)
                     {
                         /* Dont' forget */
                         RTCrDigestRelease(hDigest);
@@ -2104,8 +2109,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                             Utf8Str strX509CertificateContent;
                             /* Open and read the passed certificate file as a standard file */
                             RTVFSFILE     hVfsOriginalX509Certificate;
-                            rc = RTVfsFileOpenNormal(strX509CertificateFile.c_str(),
-                                                     RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
+                            rc = RTVfsFileOpenNormal(pszCertificate, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
                                                      &hVfsOriginalX509Certificate);
                             if (RT_SUCCESS(rc))
                             {
@@ -2126,8 +2130,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                                 }
                             }
                             else
-                                RTPrintf("Reading the certificate from the file %s failed (%Rrc)",
-                                         strX509CertificateFile.c_str(), rc);
+                                RTPrintf("Reading the certificate from the file %s failed (%Rrc)", pszCertificate, rc);
 
                             /* Dont' forget */
                             RTVfsFileRelease(hVfsOriginalX509Certificate);
@@ -2143,8 +2146,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                                     RTPrintf("RTVfsIoStrmWrite failed on adding the certificate into the stream (%Rrc)", rc);
                             }
                             else
-                                RTPrintf("Reading the certificate from the file %s failed (%Rrc)",
-                                         strX509CertificateFile.c_str(), rc);
+                                RTPrintf("Reading the certificate from the file %s failed (%Rrc)", pszCertificate, rc);
                         }
                         else
                             RTPrintf("RTVfsIoStrmWrite failed  on adding the digest into the stream (%Rrc)", rc);
@@ -2230,7 +2232,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                                             RTPrintf("Some certificate has already presented in the OVA package\n\n");
                                             fCertPresence = true;//remember for later usage
                                             /* if the flag --force has been set just skip it and go further */
-                                            if (fResign)
+                                            if (fReSign)
                                                 continue;
                                         }
 
@@ -2265,8 +2267,8 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                              */
                             if (RT_SUCCESS(rc))
                             {
-                                /* Add only if no cetificate or the flag fResign was set and certificate is presented */
-                                if ( !fCertPresence || (fCertPresence && fResign) )
+                                /* Add only if no cetificate or the flag fReSign was set and certificate is presented */
+                                if ( !fCertPresence || (fCertPresence && fReSign) )
                                 {
                                     size_t cbWritten;
                                     size_t cbRead;
@@ -2366,7 +2368,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
         RTCrKeyRelease(hPrivateKey);
     }
     else
-        RTPrintf("Error reading the private key from %s: %Rrc - %s", strPrivateKeyPasswordFile.c_str(), rc, ErrInfo.pszMsg);
+        RTPrintf("Error reading the private key from %s: %Rrc%#RTeim", pszPrivateKey, rc, &ErrInfo.Core);
 
     /* Dont' forget */
     if (RT_SUCCESS(rc))
