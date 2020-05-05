@@ -3509,6 +3509,7 @@
       cause trouble after import, at the price of risking duplicate MAC
       addresses, if the import options are used to keep them.</desc>
     </const>
+
   </enum>
 
   <enum
@@ -3632,7 +3633,7 @@
     name="IAppliance" extends="$unknown"
     uuid="86a98347-7619-41aa-aece-b21ac5c1a7e6"
     wsmap="managed"
-    reservedMethods="6" reservedAttributes="8"
+    reservedMethods="7" reservedAttributes="8"
     >
     <desc>
         Represents a platform-independent appliance in OVF format. An instance of this is returned
@@ -3779,24 +3780,6 @@
         if not signed.  This is available after calling <link to="#read"/>.
       </desc>
     </attribute>
-
-    <method name="getManifest">
-      <desc>
-        Return manifest represented in the OVF and type of digest used there.
-      </desc>
-      <param name="manifest" type="wstring" dir="out">
-        <desc>
-          The manifest represented in the OVF. Empty if not exist.
-          This is available after calling <link to="#read"/>.
-        </desc>
-      </param>
-      <param name="manifestName" type="wstring" dir="out">
-        <desc>
-          The manifest file name. Empty if not exist.
-        </desc>
-      </param>
-
-    </method>
 
     <method name="read">
       <desc>

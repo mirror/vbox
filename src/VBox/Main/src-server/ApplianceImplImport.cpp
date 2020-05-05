@@ -2560,17 +2560,13 @@ HRESULT Appliance::i_readOVFFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosOvf, const
  * @param   hVfsIosMf           The I/O stream for the manifest file.  The
  *                              reference is always consumed.
  * @param   pszSubFileNm        The manifest filename (no path) for error
- *                              messages, logging and strManifestName.
+ *                              messages and logging.
  * @returns COM status code, error info set.
  * @throws  Nothing
  */
 HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, const char *pszSubFileNm)
 {
     LogFlowFunc(("%s[%s]\n", pTask->locInfo.strPath.c_str(), pszSubFileNm));
-
-    /* Remember the manifet file name */
-    HRESULT hrc = m->strManifestName.assignEx(pszSubFileNm);
-    AssertReturn(SUCCEEDED(hrc), hrc);
 
     /*
      * Copy the manifest into a memory backed file so we can later do signature
@@ -2594,8 +2590,8 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
     vrc = RTManifestReadStandardEx(m->hTheirManifest, hVfsIos, szErr, sizeof(szErr));
     RTVfsIoStrmRelease(hVfsIos);
     if (RT_FAILURE(vrc))
-        return setErrorVrc(vrc, tr("Failed to parse manifest file '%s' for '%s' (%Rrc): %s"),
-                           pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, szErr);
+        throw setErrorVrc(vrc, tr("Failed to parse manifest file '%s' for '%s' (%Rrc): %s"),
+                          pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, szErr);
 
     /*
      * Check which digest files are used.
