@@ -9084,29 +9084,31 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
              don't forget to add it here too.
    -->
 
-  <xi:include href="user_man_VBoxManage-unattended.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-unattended.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_man_VBoxManage-snapshot.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-snapshot.xml"       xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-clonevm.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-extpack.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_man_VBoxManage-dhcpserver.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-dhcpserver.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-debugvm.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_man_VBoxManage-cloudprofile.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-cloudprofile.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_man_VBoxManage-cloudlist.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-cloudlist.xml"      xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_man_VBoxManage-cloudinstance.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-cloudinstance.xml"  xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_man_VBoxManage-cloudimage.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-cloudimage.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+  <xi:include href="user_man_VBoxManage-signova.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 <!-- TODO: Figure out how we can handle other manpages. The xml is bolted to
              sect1, so it's not possible to have them "in place" -->
 
-  <xi:include href="user_man_vboximg-mount.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_vboximg-mount.xml"             xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </chapter>

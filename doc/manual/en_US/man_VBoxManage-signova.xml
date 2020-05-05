@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+         manpage, user manual, usage: VBoxManage signova
+
+    Copyright (C) 2006-2020 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+<refentry id="vboxmanage-signova" lang="en">
+  <refentryinfo>
+    <pubdate>May 2020</pubdate>
+    <title>VBoxManage signova</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-signova</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-signova</refname>
+    <refpurpose>move a virtual machine to a new location on the host system</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-signova">
+<!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage signova</command>
+      <arg choice="req"><replaceable>ova</replaceable></arg>
+      <arg choice="req">--certificate=<replaceable>file</replaceable></arg>
+      <arg choice="req">--private-key=<replaceable>file</replaceable></arg>
+      <group>
+        <arg choice="plain">--private-key-password-file=<replaceable>password-file</replaceable></arg>
+        <arg choice="plain">--private-key-password=<replaceable>password</replaceable></arg>
+      </group>
+      <group>
+        <arg choice="plain">--pkcs7</arg>
+        <arg choice="plain">--no-pkcs7</arg>
+      </group>
+      <arg>--intermediate-cert=<replaceable>file</replaceable></arg>
+      <arg>--force</arg>
+      <arg>--out-cert</arg>
+      <arg>--dry-run</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+    <para>
+      The <command>VBoxManage signova</command> command adds a digital
+      signature to an OVA file.
+    </para>
+    <!-- Add more description here -->
+    <variablelist>
+      <varlistentry>
+        <term><replaceable>ova</replaceable></term>
+        <listitem><para>The OVA file to sign.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--certificate=<replaceable>file</replaceable></option></term>
+        <listitem><para>File containing the certificate that the OVA should be
+          signed with.  This can either be in PEM format (base64) or DER (binary),
+          the command will detect which.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--private-key=<replaceable>file</replaceable></option></term>
+        <listitem><para>The file containing the private key.  This can either be
+          in PEM (base64) or DER (binary) format, the command will detect
+          which.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--private-key-password-file=<replaceable>password-file</replaceable></option></term>
+        <listitem><para>File containing the private key password.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--private-key-password=<replaceable>password</replaceable></option></term>
+        <listitem><para>The private key password. <!-- add warning about visibility --> </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--pkcs7</option>, <option>--no-pkcs7</option></term>
+        <listitem><para>Enables or disables (default) the creation of an additional
+          PKCS#7 signature.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--intermediate-cert=<replaceable>file</replaceable></option></term>
+        <listitem><para>File containing an intermediary certificate that should be
+          included in the optional PKCS#7 signature.  Like the others, the file can
+          either be in PEM or DER format.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--force</option></term>
+        <listitem><para>Overwrite existing signature if present.  The default
+          behaviour is to fail if the OVA is already signed.</para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--out-cert</option>, <option>--dry-run</option></term>
+        <listitem><para>Debugging options that could be removed at any time.</para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+</refentry>
+
