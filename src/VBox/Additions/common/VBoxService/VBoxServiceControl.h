@@ -60,7 +60,7 @@ typedef struct VBOXSERVICECTRLFILE
     /** @todo Use a map later? */
     RTLISTNODE                      Node;
     /** The file name. */
-    char                            szName[RTPATH_MAX];
+    char                           *pszName;
     /** The file handle on the guest. */
     RTFILE                          hFile;
     /** File handle to identify this file. */
