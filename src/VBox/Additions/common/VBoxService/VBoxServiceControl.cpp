@@ -394,30 +394,34 @@ static int vgsvcGstCtrlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
     /*
      * Retrieve the message parameters.
      */
-    VBOXSERVICECTRLSESSIONSTARTUPINFO ssInfo = { 0 };
-    int rc = VbglR3GuestCtrlSessionGetOpen(pHostCtx,
-                                           &ssInfo.uProtocol,
-                                           ssInfo.szUser,     sizeof(ssInfo.szUser),
-                                           ssInfo.szPassword, sizeof(ssInfo.szPassword),
-                                           ssInfo.szDomain,   sizeof(ssInfo.szDomain),
-                                           &ssInfo.fFlags,    &ssInfo.uSessionID);
+    VBOXSERVICECTRLSESSIONSTARTUPINFO startupInfo;
+    int rc = VgsvcGstCtrlSessionStartupInfoInit(&startupInfo);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = VbglR3GuestCtrlSessionGetOpen(pHostCtx,
+                                       &startupInfo.uProtocol,
+                                       startupInfo.pszUser,     startupInfo.cbUser,
+                                       startupInfo.pszPassword, startupInfo.cbPassword,
+                                       startupInfo.pszDomain,   startupInfo.cbDomain,
+                                       &startupInfo.fFlags,    &startupInfo.uSessionID);
     if (RT_SUCCESS(rc))
     {
         /*
          * Flat out refuse to work with protocol v1 hosts.
          */
-        if (ssInfo.uProtocol == 2)
+        if (startupInfo.uProtocol == 2)
         {
-            pHostCtx->uProtocol = ssInfo.uProtocol;
+            pHostCtx->uProtocol = startupInfo.uProtocol;
             VGSvcVerbose(3, "Client ID=%RU32 now is using protocol %RU32\n", pHostCtx->uClientID, pHostCtx->uProtocol);
 
 /** @todo Someone explain why this code isn't in this file too?  v1 support? */
-            rc = VGSvcGstCtrlSessionThreadCreate(&g_lstControlSessionThreads, &ssInfo, NULL /* ppSessionThread */);
+            rc = VGSvcGstCtrlSessionThreadCreate(&g_lstControlSessionThreads, &startupInfo, NULL /* ppSessionThread */);
             /* Report failures to the host (successes are taken care of by the session thread). */
         }
         else
         {
-            VGSvcError("The host wants to use protocol v%u, we only support v2!\n", ssInfo.uProtocol);
+            VGSvcError("The host wants to use protocol v%u, we only support v2!\n", startupInfo.uProtocol);
             rc = VERR_VERSION_MISMATCH;
         }
         if (RT_FAILURE(rc))
@@ -432,6 +436,9 @@ static int vgsvcGstCtrlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
         VGSvcError("Error fetching parameters for opening guest session: %Rrc\n", rc);
         VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
     }
+
+    VgsvcGstCtrlSessionStartupInfoDestroy(&startupInfo);
+
     VGSvcVerbose(3, "Opening a new guest session returned rc=%Rrc\n", rc);
     return rc;
 }
@@ -451,7 +458,8 @@ static int vgsvcGstCtrlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
         PVBOXSERVICECTRLSESSIONTHREAD pThread;
         RTListForEach(&g_lstControlSessionThreads, pThread, VBOXSERVICECTRLSESSIONTHREAD, Node)
         {
-            if (pThread->StartupInfo.uSessionID == idSession)
+            if (   pThread->pStartupInfo
+                && pThread->pStartupInfo->uSessionID == idSession)
             {
                 rc = VGSvcGstCtrlSessionThreadDestroy(pThread, fFlags);
                 break;

@@ -80,11 +80,17 @@ typedef struct VBOXSERVICECTRLSESSIONSTARTUPINFO
     /** The session's ID. */
     uint32_t                        uSessionID;
     /** User name (account) to start the guest session under. */
-    char                            szUser[GUESTPROCESS_MAX_USER_LEN];
+    char                           *pszUser;
+    /** Size (in bytes) of allocated pszUser. */
+    uint32_t                        cbUser;
     /** Password of specified user name (account). */
-    char                            szPassword[GUESTPROCESS_MAX_PASSWORD_LEN];
+    char                           *pszPassword;
+    /** Size (in bytes) of allocated pszPassword. */
+    uint32_t                        cbPassword;
     /** Domain of the user account. */
-    char                            szDomain[GUESTPROCESS_MAX_DOMAIN_LEN];
+    char                           *pszDomain;
+    /** Size (in bytes) of allocated pszDomain. */
+    uint32_t                        cbDomain;
     /** Session creation flags.
      *  @sa VBOXSERVICECTRLSESSIONSTARTUPFLAG_* flags. */
     uint32_t                        fFlags;
@@ -103,7 +109,8 @@ typedef struct VBOXSERVICECTRLSESSIONTHREAD
     /** @todo Use a map later? */
     RTLISTNODE                      Node;
     /** The sessions's startup info. */
-    VBOXSERVICECTRLSESSIONSTARTUPINFO StartupInfo;
+    PVBOXSERVICECTRLSESSIONSTARTUPINFO
+                                    pStartupInfo;
     /** Critical section for thread-safe use. */
     RTCRITSECT                      CritSect;
     /** The worker thread. */
@@ -206,27 +213,38 @@ typedef VBOXSERVICECTRLSESSION *PVBOXSERVICECTRLSESSION;
  */
 typedef struct VBOXSERVICECTRLPROCSTARTUPINFO
 {
-    /** Full qualified path of process to start (without arguments). */
-    char szCmd[GUESTPROCESS_MAX_CMD_LEN];
+    /** Full qualified path of process to start (without arguments).
+     *  Note: This is *not* argv[0]! */
+    char *pszCmd;
+    /** Size (in bytes) of allocated pszCmd. */
+    uint32_t cbCmd;
     /** Process execution flags. @sa */
-    uint32_t uFlags;
+    uint32_t fFlags;
     /** Command line arguments. */
-    char szArgs[GUESTPROCESS_MAX_ARGS_LEN];
+    char *pszArgs;
+    /** Size (in bytes) of allocated pszArgs. */
+    uint32_t cbArgs;
     /** Number of arguments specified in pszArgs. */
-    uint32_t uNumArgs;
+    uint32_t cArgs;
     /** String of environment variables ("FOO=BAR") to pass to the process
       * to start. */
-    char szEnv[GUESTPROCESS_MAX_ENV_LEN];
+    char *pszEnv;
     /** Size (in bytes) of environment variables block. */
     uint32_t cbEnv;
     /** Number of environment variables specified in pszEnv. */
-    uint32_t uNumEnvVars;
+    uint32_t cEnvVars;
     /** User name (account) to start the process under. */
-    char szUser[GUESTPROCESS_MAX_USER_LEN];
+    char *pszUser;
+    /** Size (in bytes) of allocated pszUser. */
+    uint32_t cbUser;
     /** Password of specified user name (account). */
-    char szPassword[GUESTPROCESS_MAX_PASSWORD_LEN];
+    char *pszPassword;
+    /** Size (in bytes) of allocated pszPassword. */
+    uint32_t cbPassword;
     /** Domain to be used for authenticating the specified user name (account). */
-    char szDomain[GUESTPROCESS_MAX_DOMAIN_LEN];
+    char *pszDomain;
+    /** Size (in bytes) of allocated pszDomain. */
+    uint32_t cbDomain;
     /** Time limit (in ms) of the process' life time. */
     uint32_t uTimeLimitMS;
     /** Process priority. */
@@ -268,8 +286,8 @@ typedef struct VBOXSERVICECTRLPROCESS
     /** Critical section for thread-safe use. */
     RTCRITSECT                      CritSect;
     /** Process startup information. */
-    VBOXSERVICECTRLPROCSTARTUPINFO
-                                    StartupInfo;
+    PVBOXSERVICECTRLPROCSTARTUPINFO
+                                    pStartupInfo;
     /** The process' PID assigned by the guest OS. */
     uint32_t                        uPID;
     /** The process' request queue to handle requests
@@ -317,6 +335,9 @@ extern RTEXITCODE               VGSvcGstCtrlSessionSpawnInit(int argc, char **ar
 /** @} */
 /** @name Per-session functions.
  * @{ */
+extern int                      VgsvcGstCtrlSessionStartupInfoInit(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo);
+extern void                     VgsvcGstCtrlSessionStartupInfoDestroy(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo);
+
 extern PVBOXSERVICECTRLPROCESS  VGSvcGstCtrlSessionRetainProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID);
 extern int                      VGSvcGstCtrlSessionClose(PVBOXSERVICECTRLSESSION pSession);
 extern int                      VGSvcGstCtrlSessionDestroy(PVBOXSERVICECTRLSESSION pSession);
@@ -329,6 +350,11 @@ extern int                      VGSvcGstCtrlSessionReapProcesses(PVBOXSERVICECTR
 /** @} */
 /** @name Per-guest process functions.
  * @{ */
+extern int                      VgsvcGstCtrlProcessStartupInfoInit(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo);
+extern int                      VgsvcGstCtrlProcessStartupInfoInitEx(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, size_t cbEnv, size_t cbArgs);
+extern void                     VgsvcGstCtrlProcessStartupInfoDestroy(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo);
+extern void                     VgsvcGstCtrlProcessStartupInfoFree(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo);
+
 extern int                      VGSvcGstCtrlProcessFree(PVBOXSERVICECTRLPROCESS pProcess);
 extern int                      VGSvcGstCtrlProcessHandleInput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUESTCTRLCMDCTX pHostCtx, bool fPendingClose, void *pvBuf, uint32_t cbBuf);
 extern int                      VGSvcGstCtrlProcessHandleOutput(PVBOXSERVICECTRLPROCESS pProcess, PVBGLR3GUESTCTRLCMDCTX pHostCtx, uint32_t uHandle, uint32_t cbToRead, uint32_t uFlags);

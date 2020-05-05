@@ -134,7 +134,7 @@ enum eProcessStatus
 #define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000003)
 /** @} */
 
-/** @name Defines for guest process array lengths.
+/** @name Defines for maximum guest process buffer lengths.
  * @{
  */
 #define GUESTPROCESS_MAX_CMD_LEN            _1K

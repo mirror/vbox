@@ -61,6 +61,148 @@ static DECLCALLBACK(int)    vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS 
 
 
 /**
+ * Initializes a process startup info, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pStartupInfo        Process startup info to initializes.
+ * @param   cbArgs              Size (in bytes) to use for the arguments buffer.
+ * @param   cbEnv               Size (in bytes) to use for the environment buffer.
+ */
+int VgsvcGstCtrlProcessStartupInfoInitEx(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo,
+                                         size_t cbArgs, size_t cbEnv)
+{
+    AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
+    AssertReturn(cbArgs,          VERR_INVALID_PARAMETER);
+    AssertReturn(cbEnv,           VERR_INVALID_PARAMETER);
+
+    RT_BZERO(pStartupInfo, sizeof(VBOXSERVICECTRLPROCSTARTUPINFO));
+
+#define ALLOC_STR(a_Str, a_cb) \
+    if ((a_cb) > 0) \
+    { \
+        pStartupInfo->psz##a_Str = RTStrAlloc(a_cb); \
+        AssertPtrBreak(pStartupInfo->psz##a_Str); \
+        pStartupInfo->cb##a_Str  = a_cb; \
+    }
+
+    do
+    {
+        ALLOC_STR(Cmd,      sizeof(char) * GUESTPROCESS_MAX_CMD_LEN);
+        ALLOC_STR(Args,     cbArgs);
+        ALLOC_STR(Env,      cbEnv);
+        ALLOC_STR(User,     sizeof(char) * GUESTPROCESS_MAX_USER_LEN);
+        ALLOC_STR(Password, sizeof(char) * GUESTPROCESS_MAX_PASSWORD_LEN);
+        ALLOC_STR(Domain,   sizeof(char) * GUESTPROCESS_MAX_DOMAIN_LEN);
+
+        return VINF_SUCCESS;
+
+    } while (0);
+
+#undef ALLOC_STR
+
+    VgsvcGstCtrlProcessStartupInfoDestroy(pStartupInfo);
+    return VERR_NO_MEMORY;
+}
+
+/**
+ * Initializes a process startup info with default values.
+ *
+ * @param   pStartupInfo        Process startup info to initializes.
+ */
+int VgsvcGstCtrlProcessStartupInfoInit(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
+{
+    return VgsvcGstCtrlProcessStartupInfoInitEx(pStartupInfo,
+                                                GUESTPROCESS_MAX_ARGS_LEN, GUESTPROCESS_MAX_ENV_LEN);
+}
+
+/**
+ * Destroys a process startup info.
+ *
+ * @param   pStartupInfo        Process startup info to destroy.
+ */
+void VgsvcGstCtrlProcessStartupInfoDestroy(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
+{
+    if (!pStartupInfo)
+        return;
+
+    RTStrFree(pStartupInfo->pszCmd);
+    RTStrFree(pStartupInfo->pszArgs);
+    RTStrFree(pStartupInfo->pszEnv);
+    RTStrFree(pStartupInfo->pszUser);
+    RTStrFree(pStartupInfo->pszPassword);
+    RTStrFree(pStartupInfo->pszDomain);
+
+    RT_BZERO(pStartupInfo, sizeof(VBOXSERVICECTRLPROCSTARTUPINFO));
+}
+
+/**
+ * Free's a process startup info.
+ *
+ * @param   pStartupInfo        Process startup info to free.
+ *                              The pointer will not be valid anymore after return.
+ */
+void VgsvcGstCtrlProcessStartupInfoFree(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
+{
+    if (!pStartupInfo)
+        return;
+
+    VgsvcGstCtrlProcessStartupInfoDestroy(pStartupInfo);
+
+    RTMemFree(pStartupInfo);
+    pStartupInfo = NULL;
+}
+
+/**
+ * Duplicates a process startup info.
+ *
+ * @returns Duplicated process startup info on success, or NULL on error.
+ * @param   pStartupInfo        Process startup info to duplicate.
+ */
+static PVBOXSERVICECTRLPROCSTARTUPINFO vgsvcGstCtrlProcessStartupInfoDup(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
+{
+    AssertPtrReturn(pStartupInfo, NULL);
+
+    PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfoDup = (PVBOXSERVICECTRLPROCSTARTUPINFO)
+                                                            RTMemDup(pStartupInfo, sizeof(VBOXSERVICECTRLPROCSTARTUPINFO));
+    if (pStartupInfoDup)
+    {
+        do
+        {
+            pStartupInfoDup->pszCmd      = NULL;
+            pStartupInfoDup->pszArgs     = NULL;
+            pStartupInfoDup->pszEnv      = NULL;
+            pStartupInfoDup->pszUser     = NULL;
+            pStartupInfoDup->pszPassword = NULL;
+            pStartupInfoDup->pszDomain   = NULL;
+
+#define DUP_STR(a_Str) \
+    if (pStartupInfo->cb##a_Str) \
+    { \
+        pStartupInfoDup->psz##a_Str = (char *)RTMemDup(pStartupInfo->psz##a_Str, pStartupInfo->cb##a_Str); \
+        AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
+        pStartupInfoDup->cb##a_Str  = pStartupInfo->cb##a_Str; \
+    }
+
+            DUP_STR(Cmd);
+            DUP_STR(Args);
+            DUP_STR(Env);
+            DUP_STR(User);
+            DUP_STR(Password);
+            DUP_STR(Domain);
+
+#undef DUP_STR
+
+            return pStartupInfoDup;
+
+        } while (0); /* To use break macros above. */
+
+        VgsvcGstCtrlProcessStartupInfoFree(pStartupInfoDup);
+    }
+
+    return NULL;
+}
+
+/**
  * Initialies the passed in thread data structure with the parameters given.
  *
  * @return  IPRT status code.
@@ -116,13 +258,14 @@ static int vgsvcGstCtrlProcessInit(PVBOXSERVICECTRLPROCESS pProcess,
     rc = RTReqQueueCreate(&pProcess->hReqQueue);
     AssertReleaseRC(rc);
 
-    /* Copy over startup info. */
-    memcpy(&pProcess->StartupInfo, pStartupInfo, sizeof(VBOXSERVICECTRLPROCSTARTUPINFO));
+    /* Duplicate startup info. */
+    pProcess->pStartupInfo = vgsvcGstCtrlProcessStartupInfoDup(pStartupInfo);
+    AssertPtrReturn(pProcess->pStartupInfo, VERR_NO_MEMORY);
 
     /* Adjust timeout value. */
-    if (   pProcess->StartupInfo.uTimeLimitMS == UINT32_MAX
-        || pProcess->StartupInfo.uTimeLimitMS == 0)
-        pProcess->StartupInfo.uTimeLimitMS = RT_INDEFINITE_WAIT;
+    if (   pProcess->pStartupInfo->uTimeLimitMS == UINT32_MAX
+        || pProcess->pStartupInfo->uTimeLimitMS == 0)
+        pProcess->pStartupInfo->uTimeLimitMS = RT_INDEFINITE_WAIT;
 
     if (RT_FAILURE(rc)) /* Clean up on failure. */
         VGSvcGstCtrlProcessFree(pProcess);
@@ -150,6 +293,9 @@ int VGSvcGstCtrlProcessFree(PVBOXSERVICECTRLPROCESS pProcess)
         AssertReturn(pProcess->cRefs == 0, VERR_WRONG_ORDER);
         AssertReturn(pProcess->fStopped, VERR_WRONG_ORDER);
         AssertReturn(pProcess->fShutdown, VERR_WRONG_ORDER);
+
+        VgsvcGstCtrlProcessStartupInfoFree(pProcess->pStartupInfo);
+        pProcess->pStartupInfo = NULL;
 
         /*
          * Destroy other thread data.
@@ -526,8 +672,8 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
      * and that it's now OK to send input to the process.
      */
     VGSvcVerbose(2, "[PID %RU32]: Process '%s' started, CID=%u, User=%s, cMsTimeout=%RU32\n",
-                       pProcess->uPID, pProcess->StartupInfo.szCmd, pProcess->uContextID,
-                       pProcess->StartupInfo.szUser, pProcess->StartupInfo.uTimeLimitMS);
+                       pProcess->uPID, pProcess->pStartupInfo->pszCmd, pProcess->uContextID,
+                       pProcess->pStartupInfo->pszUser, pProcess->pStartupInfo->uTimeLimitMS);
     VBGLR3GUESTCTRLCMDCTX ctxStart = { g_idControlSvcClient, pProcess->uContextID };
     rc = VbglR3GuestCtrlProcCbStatus(&ctxStart,
                                      pProcess->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
@@ -669,12 +815,12 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
          * Check for timed out, killing the process.
          */
         uint32_t cMilliesLeft = RT_INDEFINITE_WAIT;
-        if (   pProcess->StartupInfo.uTimeLimitMS != RT_INDEFINITE_WAIT
-            && pProcess->StartupInfo.uTimeLimitMS != 0)
+        if (   pProcess->pStartupInfo->uTimeLimitMS != RT_INDEFINITE_WAIT
+            && pProcess->pStartupInfo->uTimeLimitMS != 0)
         {
             uint64_t u64Now = RTTimeMilliTS();
             uint64_t cMsElapsed = u64Now - uMsStart;
-            if (cMsElapsed >= pProcess->StartupInfo.uTimeLimitMS)
+            if (cMsElapsed >= pProcess->pStartupInfo->uTimeLimitMS)
             {
                 fProcessTimedOut = true;
                 if (    MsProcessKilled == UINT64_MAX
@@ -684,7 +830,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
                         break; /* Give up after 20 mins. */
 
                     VGSvcVerbose(3, "[PID %RU32]: Timed out (%RU64ms elapsed > %RU32ms timeout), killing ...\n",
-                                 pProcess->uPID, cMsElapsed, pProcess->StartupInfo.uTimeLimitMS);
+                                 pProcess->uPID, cMsElapsed, pProcess->pStartupInfo->uTimeLimitMS);
 
                     rc2 = RTProcTerminate(pProcess->hProcess);
                     VGSvcVerbose(3, "[PID %RU32]: Killing process resulted in rc=%Rrc\n",
@@ -695,7 +841,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
                 cMilliesLeft = 10000;
             }
             else
-                cMilliesLeft = pProcess->StartupInfo.uTimeLimitMS - (uint32_t)cMsElapsed;
+                cMilliesLeft = pProcess->pStartupInfo->uTimeLimitMS - (uint32_t)cMsElapsed;
         }
 
         /* Reset the polling interval since we've done all pending work. */
@@ -815,7 +961,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
         {
             VGSvcVerbose(3, "[PID %RU32]: Got terminated because system/service is about to shutdown\n", pProcess->uPID);
             uStatus = PROC_STS_DWN; /* Service is stopping, process was killed. */
-            fFlags  = pProcess->StartupInfo.uFlags; /* Return handed-in execution flags back to the host. */
+            fFlags  = pProcess->pStartupInfo->fFlags; /* Return handed-in execution flags back to the host. */
         }
         else if (fProcessAlive)
             VGSvcError("[PID %RU32]: Is alive when it should not!\n", pProcess->uPID);
@@ -1506,15 +1652,15 @@ static int vgsvcGstCtrlProcessDbgDumpToFileF(const void *pvBuf, size_t cbBuf, co
 static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
 {
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
-    VGSvcVerbose(3, "Thread of process pThread=0x%p = '%s' started\n", pProcess, pProcess->StartupInfo.szCmd);
+    VGSvcVerbose(3, "Thread of process pThread=0x%p = '%s' started\n", pProcess, pProcess->pStartupInfo->pszCmd);
 
-    VGSvcVerbose(3, "Guest process '%s', flags=0x%x\n", pProcess->StartupInfo.szCmd, pProcess->StartupInfo.uFlags);
+    VGSvcVerbose(3, "Guest process '%s', flags=0x%x\n", pProcess->pStartupInfo->pszCmd, pProcess->pStartupInfo->fFlags);
 
     int rc = VGSvcGstCtrlSessionProcessAdd(pProcess->pSession, pProcess);
     if (RT_FAILURE(rc))
     {
         VGSvcError("Error while adding guest process '%s' (%p) to session process list, rc=%Rrc\n",
-                   pProcess->StartupInfo.szCmd, pProcess, rc);
+                   pProcess->pStartupInfo->pszCmd, pProcess, rc);
         RTThreadUserSignal(RTThreadSelf());
         return rc;
     }
@@ -1525,16 +1671,16 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
      * Prepare argument list.
      */
     VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: fHostFeatures0       = %#x\n",     g_fControlHostFeatures0);
-    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szCmd    = '%s'\n",    pProcess->StartupInfo.szCmd);
-    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.uNumArgs = '%RU32'\n", pProcess->StartupInfo.uNumArgs);
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szCmd    = '%s'\n",    pProcess->pStartupInfo->pszCmd);
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.uNumArgs = '%RU32'\n", pProcess->pStartupInfo->cArgs);
 #ifdef DEBUG /* Never log this stuff in release mode! */
-    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szArgs   = '%s'\n",    pProcess->StartupInfo.szArgs);
+    VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: StartupInfo.szArgs   = '%s'\n",    pProcess->pStartupInfo->pszArgs);
 #endif
 
     char **papszArgs;
     int cArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
     rc = RTGetOptArgvFromString(&papszArgs, &cArgs,
-                                pProcess->StartupInfo.uNumArgs > 0 ? pProcess->StartupInfo.szArgs : "",
+                                pProcess->pStartupInfo->cArgs > 0 ? pProcess->pStartupInfo->pszArgs : "",
                                 RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
 
     VGSvcVerbose(3, "vgsvcGstCtrlProcessProcessWorker: cArgs = %d\n", cArgs);
@@ -1547,18 +1693,18 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
 
     /* Did we get the same result?
      * Take into account that we might not have supplied a (correct) argv[0] from the host. */
-    AssertMsg((int)pProcess->StartupInfo.uNumArgs == cArgsToCheck,
+    AssertMsg((int)pProcess->pStartupInfo->cArgs == cArgsToCheck,
               ("rc=%Rrc, StartupInfo.uNumArgs=%RU32 != cArgsToCheck=%d, cArgs=%d, fHostFeatures0=%#x\n",
-               rc, pProcess->StartupInfo.uNumArgs, cArgsToCheck, cArgs, g_fControlHostFeatures0));
+               rc, pProcess->pStartupInfo->cArgs, cArgsToCheck, cArgs, g_fControlHostFeatures0));
 #endif
 
     /*
      * Create the environment.
      */
-    uint32_t const cbEnv = pProcess->StartupInfo.cbEnv;
+    uint32_t const cbEnv = pProcess->pStartupInfo->cbEnv;
     if (RT_SUCCESS(rc))
-        AssertStmt(   cbEnv <= sizeof(pProcess->StartupInfo.szEnv)
-                   || pProcess->StartupInfo.uNumEnvVars == 0,
+        AssertStmt(   cbEnv <= GUESTPROCESS_MAX_ENV_LEN
+                   || pProcess->pStartupInfo->cEnvVars == 0,
                    rc = VERR_INVALID_PARAMETER);
     if (RT_SUCCESS(rc))
     {
@@ -1567,15 +1713,15 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
         if (RT_SUCCESS(rc))
         {
             VGSvcVerbose(3, "Additional environment variables: %RU32 (%RU32 bytes)\n",
-                         pProcess->StartupInfo.uNumEnvVars, cbEnv);
+                         pProcess->pStartupInfo->cEnvVars, cbEnv);
 
-            if (   pProcess->StartupInfo.uNumEnvVars /** @todo r=bird: s/uNumEnvVars/cEnvVars/g */
+            if (   pProcess->pStartupInfo->cEnvVars
                 && cbEnv > 0)
             {
                 size_t offCur = 0;
                 while (offCur < cbEnv)
                 {
-                    const char * const pszCur = &pProcess->StartupInfo.szEnv[offCur];
+                    const char * const pszCur = &pProcess->pStartupInfo->pszEnv[offCur];
                     size_t const       cchCur = RTStrNLen(pszCur, cbEnv - offCur);
                     AssertBreakStmt(cchCur < cbEnv - offCur, rc = VERR_INVALID_PARAMETER);
                     VGSvcVerbose(3, "Setting environment variable: '%s'\n", pszCur);
@@ -1604,7 +1750,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                 {
                     RTHANDLE    hStdOut;
                     PRTHANDLE   phStdOut;
-                    rc = vgsvcGstCtrlProcessSetupPipe(  (pProcess->StartupInfo.uFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT)
+                    rc = vgsvcGstCtrlProcessSetupPipe(  (pProcess->pStartupInfo->fFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT)
                                                  ? "|" : "/dev/null",
                                                  1 /*STDOUT_FILENO*/,
                                                  &hStdOut, &phStdOut, &pProcess->hPipeStdOutR);
@@ -1612,7 +1758,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                     {
                         RTHANDLE    hStdErr;
                         PRTHANDLE   phStdErr;
-                        rc = vgsvcGstCtrlProcessSetupPipe(  (pProcess->StartupInfo.uFlags & EXECUTEPROCESSFLAG_WAIT_STDERR)
+                        rc = vgsvcGstCtrlProcessSetupPipe(  (pProcess->pStartupInfo->fFlags & EXECUTEPROCESSFLAG_WAIT_STDERR)
                                                      ? "|" : "/dev/null",
                                                      2 /*STDERR_FILENO*/,
                                                      &hStdErr, &phStdErr, &pProcess->hPipeStdErrR);
@@ -1653,12 +1799,12 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                     AssertPtr(pProcess->pSession);
                                     bool fNeedsImpersonation = !(pProcess->pSession->fFlags & VBOXSERVICECTRLSESSION_FLAG_SPAWN);
 
-                                    rc = vgsvcGstCtrlProcessCreateProcess(pProcess->StartupInfo.szCmd, papszArgs, hEnv,
-                                                                     pProcess->StartupInfo.uFlags,
+                                    rc = vgsvcGstCtrlProcessCreateProcess(pProcess->pStartupInfo->pszCmd, papszArgs, hEnv,
+                                                                     pProcess->pStartupInfo->fFlags,
                                                                      phStdIn, phStdOut, phStdErr,
-                                                                     fNeedsImpersonation ? pProcess->StartupInfo.szUser     : NULL,
-                                                                     fNeedsImpersonation ? pProcess->StartupInfo.szPassword : NULL,
-                                                                     fNeedsImpersonation ? pProcess->StartupInfo.szDomain   : NULL,
+                                                                     fNeedsImpersonation ? pProcess->pStartupInfo->pszUser     : NULL,
+                                                                     fNeedsImpersonation ? pProcess->pStartupInfo->pszPassword : NULL,
+                                                                     fNeedsImpersonation ? pProcess->pStartupInfo->pszDomain   : NULL,
                                                                      &pProcess->hProcess);
                                     if (RT_FAILURE(rc))
                                         VGSvcError("Error starting process, rc=%Rrc\n", rc);
@@ -1771,7 +1917,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     ASMAtomicWriteBool(&pProcess->fShutdown, true);
 
     VGSvcVerbose(3, "[PID %RU32]: Thread of process '%s' ended with rc=%Rrc (fSignalled=%RTbool)\n",
-                 pProcess->uPID, pProcess->StartupInfo.szCmd, rc, fSignalled);
+                 pProcess->uPID, pProcess->pStartupInfo->pszCmd, rc, fSignalled);
 
     return rc;
 }
@@ -1844,7 +1990,7 @@ int VGSvcGstCtrlProcessStart(const PVBOXSERVICECTRLSESSION pSession,
         if (RT_FAILURE(rc))
         {
             VGSvcError("Creating thread for guest process '%s' failed: rc=%Rrc, pProcess=%p\n",
-                       pStartupInfo->szCmd, rc, pProcess);
+                       pStartupInfo->pszCmd, rc, pProcess);
 
             VGSvcGstCtrlProcessFree(pProcess);
         }
@@ -1859,7 +2005,7 @@ int VGSvcGstCtrlProcessStart(const PVBOXSERVICECTRLSESSION pSession,
                 || ASMAtomicReadBool(&pProcess->fStopped)
                 || RT_FAILURE(rc))
             {
-                VGSvcError("Thread for process '%s' failed to start, rc=%Rrc\n", pStartupInfo->szCmd, rc);
+                VGSvcError("Thread for process '%s' failed to start, rc=%Rrc\n", pStartupInfo->pszCmd, rc);
                 int rc2 = RTThreadWait(pProcess->Thread, RT_MS_1SEC * 30, NULL);
                 if (RT_SUCCESS(rc2))
                     pProcess->Thread = NIL_RTTHREAD;

@@ -1025,6 +1025,118 @@ static int vgsvcGstCtrlSessionHandlePathUserHome(PVBOXSERVICECTRLSESSION pSessio
     return rc;
 }
 
+/**
+ * Initializes a session startup info.
+ *
+ * @returns VBox status code.
+ * @param   pStartupInfo        Session startup info to initializes.
+ */
+int VgsvcGstCtrlSessionStartupInfoInit(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
+
+    RT_BZERO(pStartupInfo, sizeof(VBOXSERVICECTRLSESSIONSTARTUPINFO));
+
+#define ALLOC_STR(a_Str, a_cb) \
+    if ((a_cb) > 0) \
+    { \
+        pStartupInfo->psz##a_Str = RTStrAlloc(a_cb); \
+        AssertPtrBreak(pStartupInfo->psz##a_Str); \
+        pStartupInfo->cb##a_Str  = a_cb; \
+    }
+
+    do
+    {
+        ALLOC_STR(User,     sizeof(char) * GUESTPROCESS_MAX_USER_LEN);
+        ALLOC_STR(Password, sizeof(char) * GUESTPROCESS_MAX_PASSWORD_LEN);
+        ALLOC_STR(Domain,   sizeof(char) * GUESTPROCESS_MAX_DOMAIN_LEN);
+
+        return VINF_SUCCESS;
+
+    } while (0);
+
+#undef ALLOC_STR
+
+    VgsvcGstCtrlSessionStartupInfoDestroy(pStartupInfo);
+    return VERR_NO_MEMORY;
+}
+
+/**
+ * Destroys a session startup info.
+ *
+ * @param   pStartupInfo        Session startup info to destroy.
+ */
+void VgsvcGstCtrlSessionStartupInfoDestroy(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    if (!pStartupInfo)
+        return;
+
+    RTStrFree(pStartupInfo->pszUser);
+    RTStrFree(pStartupInfo->pszPassword);
+    RTStrFree(pStartupInfo->pszDomain);
+
+    RT_BZERO(pStartupInfo, sizeof(VBOXSERVICECTRLSESSIONSTARTUPINFO));
+}
+
+/**
+ * Free's a session startup info.
+ *
+ * @param   pStartupInfo        Session startup info to free.
+ *                              The pointer will not be valid anymore after return.
+ */
+static void vgsvcGstCtrlSessionStartupInfoFree(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    if (!pStartupInfo)
+        return;
+
+    VgsvcGstCtrlSessionStartupInfoDestroy(pStartupInfo);
+
+    RTMemFree(pStartupInfo);
+    pStartupInfo = NULL;
+}
+
+/**
+ * Duplicates a session startup info.
+ *
+ * @returns Duplicated session startup info on success, or NULL on error.
+ * @param   pStartupInfo        Session startup info to duplicate.
+ */
+static PVBOXSERVICECTRLSESSIONSTARTUPINFO vgsvcGstCtrlSessionStartupInfoDup(PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    AssertPtrReturn(pStartupInfo, NULL);
+
+    PVBOXSERVICECTRLSESSIONSTARTUPINFO pStartupInfoDup = (PVBOXSERVICECTRLSESSIONSTARTUPINFO)
+                                                                RTMemDup(pStartupInfo, sizeof(VBOXSERVICECTRLSESSIONSTARTUPINFO));
+    if (pStartupInfoDup)
+    {
+        do
+        {
+            pStartupInfoDup->pszUser     = NULL;
+            pStartupInfoDup->pszPassword = NULL;
+            pStartupInfoDup->pszDomain   = NULL;
+
+#define DUP_STR(a_Str) \
+    if (pStartupInfo->cb##a_Str) \
+    { \
+        pStartupInfoDup->psz##a_Str = (char *)RTMemDup(pStartupInfo->psz##a_Str, pStartupInfo->cb##a_Str); \
+        AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
+        pStartupInfoDup->cb##a_Str  = pStartupInfo->cb##a_Str; \
+    }
+            DUP_STR(User);
+            DUP_STR(Password);
+            DUP_STR(Domain);
+
+#undef DUP_STR
+
+            return pStartupInfoDup;
+
+        } while (0); /* To use break macros above. */
+
+        vgsvcGstCtrlSessionStartupInfoFree(pStartupInfoDup);
+    }
+
+    return NULL;
+}
 
 /**
  * Handles starting a guest processes.
@@ -1044,35 +1156,36 @@ static int vgsvcGstCtrlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession, P
      * parameter to retrieve the stuff from the host. On output this then
      * will contain the actual block size. */
     VBOXSERVICECTRLPROCSTARTUPINFO startupInfo;
-    RT_ZERO(startupInfo);
-    startupInfo.cbEnv = sizeof(startupInfo.szEnv);
+    int rc = VgsvcGstCtrlProcessStartupInfoInit(&startupInfo);
+    if (RT_FAILURE(rc))
+        return rc;
 
-    int rc = VbglR3GuestCtrlProcGetStart(pHostCtx,
-                                         /* Command */
-                                         startupInfo.szCmd,      sizeof(startupInfo.szCmd),
-                                         /* Flags */
-                                         &startupInfo.uFlags,
-                                         /* Arguments */
-                                         startupInfo.szArgs,     sizeof(startupInfo.szArgs),    &startupInfo.uNumArgs,
-                                         /* Environment */
-                                         startupInfo.szEnv,      &startupInfo.cbEnv,            &startupInfo.uNumEnvVars,
-                                         /* Credentials; for hosts with VBox < 4.3 (protocol version 1).
-                                          * For protocol v2 and up the credentials are part of the session
-                                          * opening call. */
-                                         startupInfo.szUser,     sizeof(startupInfo.szUser),
-                                         startupInfo.szPassword, sizeof(startupInfo.szPassword),
-                                         /* Timeout (in ms) */
-                                         &startupInfo.uTimeLimitMS,
-                                         /* Process priority */
-                                         &startupInfo.uPriority,
-                                         /* Process affinity */
-                                         startupInfo.uAffinity,  sizeof(startupInfo.uAffinity), &startupInfo.uNumAffinity);
+    rc = VbglR3GuestCtrlProcGetStart(pHostCtx,
+                                     /* Command */
+                                     startupInfo.pszCmd,      startupInfo.cbCmd,
+                                     /* Flags */
+                                     &startupInfo.fFlags,
+                                     /* Arguments */
+                                     startupInfo.pszArgs,     startupInfo.cbArgs,     &startupInfo.cArgs,
+                                     /* Environment */
+                                     startupInfo.pszEnv,      &startupInfo.cbEnv,     &startupInfo.cEnvVars,
+                                     /* Credentials; for hosts with VBox < 4.3 (protocol version 1).
+                                      * For protocol v2 and up the credentials are part of the session
+                                      * opening call. */
+                                     startupInfo.pszUser,     startupInfo.cbUser,
+                                     startupInfo.pszPassword, startupInfo.cbPassword,
+                                     /* Timeout (in ms) */
+                                     &startupInfo.uTimeLimitMS,
+                                     /* Process priority */
+                                     &startupInfo.uPriority,
+                                     /* Process affinity */
+                                     startupInfo.uAffinity,  sizeof(startupInfo.uAffinity), &startupInfo.uNumAffinity);
     if (RT_SUCCESS(rc))
     {
         VGSvcVerbose(3, "Request to start process szCmd=%s, fFlags=0x%x, szArgs=%s, szEnv=%s, uTimeout=%RU32\n",
-                     startupInfo.szCmd, startupInfo.uFlags,
-                     startupInfo.uNumArgs ? startupInfo.szArgs : "<None>",
-                     startupInfo.uNumEnvVars ? startupInfo.szEnv : "<None>",
+                     startupInfo.pszCmd, startupInfo.fFlags,
+                     startupInfo.cArgs ? startupInfo.pszArgs : "<None>",
+                     startupInfo.cEnvVars ? startupInfo.pszEnv : "<None>",
                      startupInfo.uTimeLimitMS);
 
         bool fStartAllowed = false; /* Flag indicating whether starting a process is allowed or not. */
@@ -1102,6 +1215,9 @@ static int vgsvcGstCtrlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession, P
         VGSvcError("Failed to retrieve parameters for process start: %Rrc (cParms=%u)\n", rc, pHostCtx->uNumParms);
         VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
     }
+
+    VgsvcGstCtrlProcessStartupInfoDestroy(&startupInfo);
+
     return rc;
 }
 
@@ -1464,7 +1580,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
     PVBOXSERVICECTRLSESSIONTHREAD pThread = (PVBOXSERVICECTRLSESSIONTHREAD)pvUser;
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
 
-    uint32_t const idSession = pThread->StartupInfo.uSessionID;
+    uint32_t const idSession = pThread->pStartupInfo->uSessionID;
     uint32_t const idClient  = g_idControlSvcClient;
     VGSvcVerbose(3, "Session ID=%RU32 thread running\n", idSession);
 
@@ -1517,7 +1633,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
                 {
                     /* .idClient  = */  idClient,
                     /* .idContext = */  VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession),
-                    /* .uProtocol = */  pThread->StartupInfo.uProtocol,
+                    /* .uProtocol = */  pThread->pStartupInfo->uProtocol,
                     /* .cParams   = */  2
                 };
                 rc2 = VbglR3GuestCtrlSessionClose(&hostCtx, 0 /* fFlags */);
@@ -2179,11 +2295,12 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
      * Is this an anonymous session?  Anonymous sessions run with the same
      * privileges as the main VBoxService executable.
      */
-    bool const fAnonymous = pSessionThread->StartupInfo.szUser[0] == '\0';
+    bool const fAnonymous =    pSessionThread->pStartupInfo->pszUser
+                            && pSessionThread->pStartupInfo->pszUser[0] == '\0';
     if (fAnonymous)
     {
-        Assert(!strlen(pSessionThread->StartupInfo.szPassword));
-        Assert(!strlen(pSessionThread->StartupInfo.szDomain));
+        Assert(!strlen(pSessionThread->pStartupInfo->pszPassword));
+        Assert(!strlen(pSessionThread->pStartupInfo->pszDomain));
 
         VGSvcVerbose(3, "New anonymous guest session ID=%RU32 created, fFlags=%x, using protocol %RU32\n",
                      pSessionStartupInfo->uSessionID,
@@ -2194,13 +2311,13 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
     {
         VGSvcVerbose(3, "Spawning new guest session ID=%RU32, szUser=%s, szPassword=%s, szDomain=%s, fFlags=%x, using protocol %RU32\n",
                      pSessionStartupInfo->uSessionID,
-                     pSessionStartupInfo->szUser,
+                     pSessionStartupInfo->pszUser,
 #ifdef DEBUG
-                     pSessionStartupInfo->szPassword,
+                     pSessionStartupInfo->pszPassword,
 #else
                      "XXX", /* Never show passwords in release mode. */
 #endif
-                     pSessionStartupInfo->szDomain,
+                     pSessionStartupInfo->pszDomain,
                      pSessionStartupInfo->fFlags,
                      pSessionStartupInfo->uProtocol);
     }
@@ -2214,11 +2331,11 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
     AssertReturn(pszExeName, VERR_FILENAME_TOO_LONG);
 
     char szParmSessionID[32];
-    RTStrPrintf(szParmSessionID, sizeof(szParmSessionID), "--session-id=%RU32", pSessionThread->StartupInfo.uSessionID);
+    RTStrPrintf(szParmSessionID, sizeof(szParmSessionID), "--session-id=%RU32", pSessionThread->pStartupInfo->uSessionID);
 
     char szParmSessionProto[32];
     RTStrPrintf(szParmSessionProto, sizeof(szParmSessionProto), "--session-proto=%RU32",
-                pSessionThread->StartupInfo.uProtocol);
+                pSessionThread->pStartupInfo->uProtocol);
 #ifdef DEBUG
     char szParmThreadId[32];
     RTStrPrintf(szParmThreadId, sizeof(szParmThreadId), "--thread-id=%RU32", uCtrlSessionThread);
@@ -2236,12 +2353,12 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
     if (!fAnonymous) /* Do we need to pass a user name? */
     {
         apszArgs[idxArg++] = "--user";
-        apszArgs[idxArg++] = pSessionThread->StartupInfo.szUser;
+        apszArgs[idxArg++] = pSessionThread->pStartupInfo->pszUser;
 
-        if (strlen(pSessionThread->StartupInfo.szDomain))
+        if (strlen(pSessionThread->pStartupInfo->pszDomain))
         {
             apszArgs[idxArg++] = "--domain";
-            apszArgs[idxArg++] = pSessionThread->StartupInfo.szDomain;
+            apszArgs[idxArg++] = pSessionThread->pStartupInfo->pszDomain;
         }
     }
 
@@ -2289,11 +2406,11 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
 
 #ifndef DEBUG
         RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%s-%s%s",
-                    cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, szTime, pszSuffix);
+                    cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, pSessionStartupInfo->pszUser, szTime, pszSuffix);
 #else
         RTStrPrintf(szParmLogFile, sizeof(szParmLogFile), "%.*s-%RU32-%RU32-%s-%s%s",
                     cchBase, g_szLogFile, pSessionStartupInfo->uSessionID, uCtrlSessionThread,
-                    pSessionStartupInfo->szUser, szTime, pszSuffix);
+                    pSessionStartupInfo->pszUser, szTime, pszSuffix);
 #endif
         apszArgs[idxArg++] = "--logfile";
         apszArgs[idxArg++] = szParmLogFile;
@@ -2344,14 +2461,14 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
              * Windows: If a domain name is given, construct an UPN (User Principle Name)
              *          with the domain name built-in, e.g. "joedoe@example.com".
              */
-            const char *pszUser    = pSessionThread->StartupInfo.szUser;
+            const char *pszUser    = pSessionThread->pStartupInfo->pszUser;
 #ifdef RT_OS_WINDOWS
             char       *pszUserUPN = NULL;
-            if (pSessionThread->StartupInfo.szDomain[0])
+            if (pSessionThread->pStartupInfo->pszDomain[0])
             {
                 int cchbUserUPN = RTStrAPrintf(&pszUserUPN, "%s@%s",
-                                               pSessionThread->StartupInfo.szUser,
-                                               pSessionThread->StartupInfo.szDomain);
+                                               pSessionThread->pStartupInfo->pszUser,
+                                               pSessionThread->pStartupInfo->pszDomain);
                 if (cchbUserUPN > 0)
                 {
                     pszUser = pszUserUPN;
@@ -2369,7 +2486,7 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
                 rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
                                     &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                     !fAnonymous ? pszUser : NULL,
-                                    !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
+                                    !fAnonymous ? pSessionThread->pStartupInfo->pszPassword : NULL,
                                     NULL /*pvExtraData*/,
                                     &pSessionThread->hProcess);
             }
@@ -2412,9 +2529,9 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
     RTListForEach(pList, pSessionCur, VBOXSERVICECTRLSESSIONTHREAD, Node)
     {
         AssertMsgReturn(   pSessionCur->fStopped == true
-                        || pSessionCur->StartupInfo.uSessionID != pSessionStartupInfo->uSessionID,
+                        || pSessionCur->pStartupInfo->uSessionID != pSessionStartupInfo->uSessionID,
                         ("Guest session thread ID=%RU32 already exists (fStopped=%RTbool)\n",
-                         pSessionCur->StartupInfo.uSessionID, pSessionCur->fStopped), VERR_ALREADY_EXISTS);
+                         pSessionCur->pStartupInfo->uSessionID, pSessionCur->fStopped), VERR_ALREADY_EXISTS);
     }
 #endif
 
@@ -2435,8 +2552,9 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
         pSessionThread->Thread    = NIL_RTTHREAD;
         pSessionThread->hProcess  = NIL_RTPROCESS;
 
-        /* Copy over session startup info. */
-        memcpy(&pSessionThread->StartupInfo, pSessionStartupInfo, sizeof(VBOXSERVICECTRLSESSIONSTARTUPINFO));
+        /* Duplicate startup info. */
+        pSessionThread->pStartupInfo = vgsvcGstCtrlSessionStartupInfoDup(pSessionStartupInfo);
+        AssertPtrReturn(pSessionThread->pStartupInfo, VERR_NO_MEMORY);
 
         /* Generate the secret key. */
         RTRandBytes(pSessionThread->abKey, sizeof(pSessionThread->abKey));
@@ -2481,7 +2599,7 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
                         if (   RT_SUCCESS(rc)
                             && !ASMAtomicReadBool(&pSessionThread->fShutdown))
                         {
-                            VGSvcVerbose(2, "Thread for session ID=%RU32 started\n", pSessionThread->StartupInfo.uSessionID);
+                            VGSvcVerbose(2, "Thread for session ID=%RU32 started\n", pSessionThread->pStartupInfo->uSessionID);
 
                             ASMAtomicXchgBool(&pSessionThread->fStarted, true);
 
@@ -2496,7 +2614,7 @@ int VGSvcGstCtrlSessionThreadCreate(PRTLISTANCHOR pList, const PVBOXSERVICECTRLS
                          * Bail out.
                          */
                         VGSvcError("Thread for session ID=%RU32 failed to start, rc=%Rrc\n",
-                                   pSessionThread->StartupInfo.uSessionID, rc);
+                                   pSessionThread->pStartupInfo->uSessionID, rc);
                         if (RT_SUCCESS_NP(rc))
                             rc = VERR_CANT_CREATE; /** @todo Find a better rc. */
                     }
@@ -2562,22 +2680,22 @@ int VGSvcGstCtrlSessionThreadWait(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_
         ASMAtomicXchgBool(&pThread->fShutdown, true);
 
         VGSvcVerbose(3, "Waiting for session thread ID=%RU32 to close (%RU32ms) ...\n",
-                     pThread->StartupInfo.uSessionID, uTimeoutMS);
+                     pThread->pStartupInfo->uSessionID, uTimeoutMS);
 
         int rcThread;
         rc = RTThreadWait(pThread->Thread, uTimeoutMS, &rcThread);
         if (RT_SUCCESS(rc))
         {
             AssertMsg(pThread->fStopped, ("Thread of session ID=%RU32 not in stopped state when it should\n",
-                      pThread->StartupInfo.uSessionID));
+                      pThread->pStartupInfo->uSessionID));
 
-            VGSvcVerbose(3, "Session thread ID=%RU32 ended with rc=%Rrc\n", pThread->StartupInfo.uSessionID, rcThread);
+            VGSvcVerbose(3, "Session thread ID=%RU32 ended with rc=%Rrc\n", pThread->pStartupInfo->uSessionID, rcThread);
         }
         else
-            VGSvcError("Waiting for session thread ID=%RU32 to close failed with rc=%Rrc\n", pThread->StartupInfo.uSessionID, rc);
+            VGSvcError("Waiting for session thread ID=%RU32 to close failed with rc=%Rrc\n", pThread->pStartupInfo->uSessionID, rc);
     }
     else
-        VGSvcVerbose(3, "Thread for session ID=%RU32 not in started state, skipping wait\n", pThread->StartupInfo.uSessionID);
+        VGSvcVerbose(3, "Thread for session ID=%RU32 not in started state, skipping wait\n", pThread->pStartupInfo->uSessionID);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2594,14 +2712,18 @@ int VGSvcGstCtrlSessionThreadWait(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_
 int VGSvcGstCtrlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_t fFlags)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThread->pStartupInfo, VERR_WRONG_ORDER);
 
-    const uint32_t uSessionID = pThread->StartupInfo.uSessionID;
+    const uint32_t uSessionID = pThread->pStartupInfo->uSessionID;
 
     VGSvcVerbose(3, "Destroying session ID=%RU32 ...\n", uSessionID);
 
     int rc = VGSvcGstCtrlSessionThreadWait(pThread, 5 * 60 * 1000 /* 5 minutes timeout */, fFlags);
     if (RT_SUCCESS(rc))
     {
+        vgsvcGstCtrlSessionStartupInfoFree(pThread->pStartupInfo);
+        pThread->pStartupInfo = NULL;
+
         /* Remove session from list and destroy object. */
         RTListNodeRemove(&pThread->Node);
 
