@@ -3568,17 +3568,17 @@ class TestDriver(base.TestDriver):                                              
             # ASSUMES that we always install Windows on drive C right now.
             sWinDir = "C:\\Windows\\System32\\";
             oTxsSession.syncExec(sWinDir + " cmd.exe",
-                                 (sWinDir + "cmd.exe", "/C", "dir", "${CDROM}"),
+                                 ("cmd.exe", "/C", "dir", "${CDROM}"),
                                  fIgnoreErrors = True);
             oTxsSession.syncExec("C:\\WINNT\\System32\\cmd.exe",
                                  ("C:\\WINNT\\System32\\cmd.exe", "/C", "dir", "${CDROM}"),
                                  fIgnoreErrors = True);
 
             reporter.log('txsCdWait: Listing mount points / drives:');
-            oTxsSession.syncExec("/bin/mount", ("/bin/mount"), fIgnoreErrors = True);
+            oTxsSession.syncExec("/bin/mount", ("mount"), fIgnoreErrors = True);
             # Should work since WinXP Pro.
             oTxsSession.syncExec(sWinDir + "wbem\\WMIC.exe",
-                                 (sWinDir + "wbem\\WMIC.exe", "logicaldisk", "get",
+                                 ("WMIC.exe", "logicaldisk", "get",
                                   "deviceid, volumename, description"),
                                  fIgnoreErrors = True);
 
