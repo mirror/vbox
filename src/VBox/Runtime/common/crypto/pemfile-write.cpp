@@ -33,7 +33,7 @@
 
 #include <iprt/asn1.h>
 #include <iprt/base64.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 
