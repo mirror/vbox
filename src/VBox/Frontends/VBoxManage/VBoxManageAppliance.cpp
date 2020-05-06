@@ -2002,12 +2002,12 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                         rc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, _8K, &hVfsFileSignature);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = RTVfsFilePrintf(hVfsFileSignature, "%s(%s) = %.*Rhxs\n\n",
-                                                 pszDigestType, pszManifestName, cbSignature, pvSignature);
+                            rc = (int)RTVfsFilePrintf(hVfsFileSignature, "%s(%s) = %.*Rhxs\n\n",
+                                                      pszDigestType, pszManifestName, cbSignature, pvSignature);
                             if (RT_SUCCESS(rc))
                             {
-                                rc = RTCrX509Certificate_WriteToVfsFile(hVfsFileSignature, pCertificate,
-                                                                        RTErrInfoInitStatic(pErrInfo));
+                                rc = (int)RTCrX509Certificate_WriteToVfsFile(hVfsFileSignature, pCertificate,
+                                                                             RTErrInfoInitStatic(pErrInfo));
                                 if (RT_SUCCESS(rc))
                                 {
                                     if (fPkcs7)
