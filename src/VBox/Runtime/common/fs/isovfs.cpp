@@ -5135,7 +5135,8 @@ static int rtFsIsoVolHandleUdfDetection(PRTFSISOVOL pThis, uint8_t *puUdfLevel, 
      * again when alternative AVDP sectors points to the same sequences.
      */
     pThis->Udf.uLevel = *puUdfLevel;
-    RTFSISOSEENSEQENCES SeenSequences = { 0 };
+    RTFSISOSEENSEQENCES SeenSequences;
+    RT_ZERO(SeenSequences);
     int rc1 = rtFsIsoVolReadAndHandleUdfAvdp(pThis, 256 * pThis->cbSector, pbBuf, cbBuf,
                                              &SeenSequences, pErrInfo);
     if (RT_SUCCESS(rc1))
