@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Crypto - PEM file reader / writer.
+ * IPRT - Crypto - PEM file reader.
  *
  * See RFC-1341 for the original ideas for the format, but keep in mind
  * that the format was hijacked and put to different uses.  We're aiming at
@@ -650,3 +650,4 @@ RTDECL(const char *) RTCrPemFindFirstSectionInContent(void const *pvContent, siz
         return (const char *)pvContent + offBegin;
     return NULL;
 }
+

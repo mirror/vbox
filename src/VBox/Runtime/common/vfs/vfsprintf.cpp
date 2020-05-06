@@ -34,20 +34,8 @@
 #include <iprt/string.h>
 
 
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-typedef struct PRINTFBUF
-{
-    RTVFSIOSTREAM   hVfsIos;
-    int             rc;
-    size_t          offBuf;
-    char            szBuf[256];
-} PRINTFBUF;
-
-
 /** Writes the buffer to the VFS file. */
-static void FlushPrintfBuffer(PRINTFBUF *pBuf)
+static void FlushPrintfBuffer(PVFSIOSTRMOUTBUF pBuf)
 {
     if (pBuf->offBuf)
     {
@@ -60,27 +48,49 @@ static void FlushPrintfBuffer(PRINTFBUF *pBuf)
 }
 
 
-/** @callback_method_impl{FNRTSTROUTPUT} */
-static DECLCALLBACK(size_t) MyPrintfOutputter(void *pvArg, const char *pachChars, size_t cbChars)
+/**
+ * @callback_method_impl{FNRTSTROUTPUT,
+ *      For use with VFSIOSTRMOUTBUF.}
+ */
+RTDECL(size_t) RTVfsIoStrmStrOutputCallback(void *pvArg, const char *pachChars, size_t cbChars)
 {
-    PRINTFBUF *pBuf = (PRINTFBUF *)pvArg;
+    PVFSIOSTRMOUTBUF pBuf = (PVFSIOSTRMOUTBUF)pvArg;
+    AssertReturn(pBuf->cbSelf == sizeof(*pBuf), 0);
+
     if (cbChars != 0)
     {
-        size_t offSrc = 0;
-        while  (offSrc < cbChars)
+        if (cbChars <= sizeof(pBuf->szBuf) * 3 / 2)
         {
-            size_t cbLeft = sizeof(pBuf->szBuf) - pBuf->offBuf - 1;
-            if (cbLeft > 0)
+            /*
+             * Small piece of output: Buffer it.
+             */
+            size_t offSrc = 0;
+            while  (offSrc < cbChars)
             {
-                size_t cbToCopy = RT_MIN(cbChars - offSrc, cbLeft);
-                memcpy(&pBuf->szBuf[pBuf->offBuf], &pachChars[offSrc], cbToCopy);
-                pBuf->offBuf += cbToCopy;
-                pBuf->szBuf[pBuf->offBuf] = '\0';
-                if (cbLeft > cbToCopy)
-                    break;
-                offSrc += cbToCopy;
+                size_t cbLeft = sizeof(pBuf->szBuf) - pBuf->offBuf - 1;
+                if (cbLeft > 0)
+                {
+                    size_t cbToCopy = RT_MIN(cbChars - offSrc, cbLeft);
+                    memcpy(&pBuf->szBuf[pBuf->offBuf], &pachChars[offSrc], cbToCopy);
+                    pBuf->offBuf += cbToCopy;
+                    pBuf->szBuf[pBuf->offBuf] = '\0';
+                    if (cbLeft > cbToCopy)
+                        break;
+                    offSrc += cbToCopy;
+                }
+                FlushPrintfBuffer(pBuf);
             }
+        }
+        else
+        {
+            /*
+             * Large chunk of output: Output it directly.
+            */
             FlushPrintfBuffer(pBuf);
+
+            int rc = RTVfsIoStrmWrite(pBuf->hVfsIos, pachChars, cbChars, true /*fBlocking*/, NULL);
+            if (RT_FAILURE(rc))
+                pBuf->rc = rc;
         }
     }
     else /* Special zero byte write at the end of the formatting. */
@@ -89,16 +99,12 @@ static DECLCALLBACK(size_t) MyPrintfOutputter(void *pvArg, const char *pachChars
 }
 
 
-
 RTDECL(ssize_t) RTVfsIoStrmPrintfV(RTVFSIOSTREAM hVfsIos, const char *pszFormat, va_list va)
 {
-    PRINTFBUF Buf;
-    Buf.hVfsIos  = hVfsIos;
-    Buf.rc       = VINF_SUCCESS;
-    Buf.offBuf   = 0;
-    Buf.szBuf[0] = '\0';
+    VFSIOSTRMOUTBUF Buf;
+    VFSIOSTRMOUTBUF_INIT(&Buf, hVfsIos);
 
-    size_t cchRet = RTStrFormatV(MyPrintfOutputter, &Buf, NULL, NULL, pszFormat, va);
+    size_t cchRet = RTStrFormatV(RTVfsIoStrmStrOutputCallback, &Buf, NULL, NULL, pszFormat, va);
     if (RT_SUCCESS(Buf.rc))
         return cchRet;
     return Buf.rc;

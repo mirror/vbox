@@ -1228,6 +1228,46 @@ RTDECL(ssize_t)     RTVfsIoStrmPrintf(RTVFSIOSTREAM hVfsIos, const char *pszForm
  */
 RTDECL(ssize_t)     RTVfsIoStrmPrintfV(RTVFSIOSTREAM hVfsIos, const char *pszFormat, va_list va);
 
+/**
+ * VFS I/O stream output buffer structure to use with
+ * RTVfsIoStrmStrOutputCallback().
+ */
+typedef struct VFSIOSTRMOUTBUF
+{
+    /** The I/O stream handle. */
+    RTVFSIOSTREAM   hVfsIos;
+    /** Size of this structure (for sanity). */
+    size_t          cbSelf;
+    /** Status code of the operation. */
+    int             rc;
+    /** Current offset into szBuf (number of output bytes pending). */
+    size_t          offBuf;
+    /** Modest output buffer. */
+    char            szBuf[256];
+} VFSIOSTRMOUTBUF;
+/** Pointer to an VFS I/O stream output buffer for use with
+ *  RTVfsIoStrmStrOutputCallback() */
+typedef VFSIOSTRMOUTBUF *PVFSIOSTRMOUTBUF;
+
+/** Initializer for a VFS I/O stream output buffer. */
+#define VFSIOSTRMOUTBUF_INIT(a_pOutBuf, a_hVfsIos) \
+    do { \
+        (a_pOutBuf)->hVfsIos  = a_hVfsIos; \
+        (a_pOutBuf)->cbSelf   = sizeof(*(a_pOutBuf)); \
+        (a_pOutBuf)->rc       = VINF_SUCCESS; \
+        (a_pOutBuf)->offBuf   = 0; \
+        (a_pOutBuf)->szBuf[0] = '\0'; \
+    } while (0)
+
+/**
+ * @callback_method_impl{FNRTSTROUTPUT,
+ * For use with VFSIOSTRMOUTBUF.
+ *
+ * Users must use VFSIOSTRMOUTBUF_INIT to initialize a VFSIOSTRMOUTBUF and pass
+ * that as the outputter argument to the function this callback is handed to.}
+ */
+RTDECL(size_t) RTVfsIoStrmStrOutputCallback(void *pvArg, const char *pachChars, size_t cbChars);
+
 /** @} */
 
 

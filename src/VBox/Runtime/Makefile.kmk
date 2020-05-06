@@ -392,7 +392,8 @@ RuntimeR3_SOURCES       = \
 	common/crypto/rsa-core.cpp \
 	common/crypto/rsa-init.cpp \
 	common/crypto/rsa-sanity.cpp \
-	common/crypto/pemfile.cpp \
+	common/crypto/pemfile-read.cpp \
+	common/crypto/pemfile-write.cpp \
 	common/crypto/pkcs7-asn1-decoder.cpp \
 	common/crypto/pkcs7-core.cpp \
 	common/crypto/pkcs7-init.cpp \
@@ -1681,7 +1682,8 @@ RuntimeBldProg_SOURCES         = \
 	common/checksum/sha256str.cpp \
 	common/checksum/sha512str.cpp \
 	common/crypto/digest-core.cpp \
-	common/crypto/pemfile.cpp \
+	common/crypto/pemfile-read.cpp \
+	common/crypto/pemfile-write.cpp \
 	common/crypto/pkcs7-asn1-decoder.cpp \
 	common/crypto/pkcs7-core.cpp \
 	common/crypto/pkcs7-init.cpp \
