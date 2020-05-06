@@ -1054,7 +1054,7 @@ int VgsvcGstCtrlSessionStartupInfoInitEx(PVBOXSERVICECTRLSESSIONSTARTUPINFO pSta
     { \
         pStartupInfo->psz##a_Str = RTStrAlloc(a_cb); \
         AssertPtrBreak(pStartupInfo->psz##a_Str); \
-        pStartupInfo->cb##a_Str  = a_cb; \
+        pStartupInfo->cb##a_Str  = (uint32_t)a_cb; \
     }
 
     do
