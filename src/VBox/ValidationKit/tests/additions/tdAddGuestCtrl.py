@@ -1598,6 +1598,42 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return fRc;
 
+    def waitForGuestFacility(self, oSession, eFacilityType, sDesc,
+                             eFacilityStatus, cMsTimeout = 30 * 1000):
+        """
+        Waits for a guest facility to enter a certain status.
+        By default the "Active" status is being used.
+        """
+
+        reporter.log('Waiting for Guest Additions facility "%s" to change to status %s (%dms timeout)...'
+                     % (sDesc, str(eFacilityStatus), cMsTimeout));
+
+        fRc = False;
+
+        eStatusOld = vboxcon.AdditionsFacilityStatus_Unknown;
+        tsStart    = base.timestampMilli();
+        while base.timestampMilli() - tsStart < cMsTimeout:
+            try:
+                eStatus, _ = oSession.o.console.guest.getFacilityStatus(eFacilityType);
+            except:
+                reporter.errorXcpt('Getting facility status failed');
+                break;
+            if eStatus != eStatusOld:
+                reporter.log('Status is now %s' % (str(eStatus)));
+                eStatusOld = eStatus;
+            if eStatus == eFacilityStatus:
+                fRc = True;
+                break;
+            self.oTstDrv.sleep(5); # Do some busy waiting.
+
+        if not fRc:
+            reporter.testFailure('Waiting for Guest Additions facility "%s" timed out' % (sDesc));
+        else:
+            reporter.testFailure('Guest Additions facility "%s" reached requested status %s after %dms'
+                                 % (sDesc, str(eFacilityStatus), base.timestampMilli() - tsStart));
+
+        return fRc;
+
     #
     # Guest test files.
     #
@@ -1608,6 +1644,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Returns success indicator.
         """
         _ = oSession;
+
+        #
+        # Wait for VBoxService to come up.
+        #
+        fRc = self.waitForGuestFacility(oSession, vboxcon.AdditionsFacilityType_VBoxService, "VBoxService",
+                                        vboxcon.AdditionsFacilityStatus_Active);
+        if not fRc:
+            return (False, oTxsSession);
 
         #
         # Make sure the temporary directory exists.
