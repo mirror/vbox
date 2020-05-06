@@ -1054,6 +1054,7 @@ int VgsvcGstCtrlSessionStartupInfoInitEx(PVBOXSERVICECTRLSESSIONSTARTUPINFO pSta
     { \
         pStartupInfo->psz##a_Str = RTStrAlloc(a_cb); \
         AssertPtrBreak(pStartupInfo->psz##a_Str); \
+        AssertBreak((uint32_t)a_cb == a_cb); \
         pStartupInfo->cb##a_Str  = (uint32_t)a_cb; \
     }
 
@@ -1145,7 +1146,9 @@ static PVBOXSERVICECTRLSESSIONSTARTUPINFO vgsvcGstCtrlSessionStartupInfoDup(PVBO
     { \
         pStartupInfoDup->psz##a_Str = (char *)RTStrDup(pStartupInfo->psz##a_Str); \
         AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
-        pStartupInfoDup->cb##a_Str  = strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
+        size_t cbStr = strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
+        AssertBreak((uint32_t)cbStr == cbStr); \
+        pStartupInfoDup->cb##a_Str  = (uint32_t)cbStr; \
     }
             DUP_STR(User);
             DUP_STR(Password);
