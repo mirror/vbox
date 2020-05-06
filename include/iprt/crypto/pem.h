@@ -237,6 +237,7 @@ RTDECL(size_t) RTCrPemWriteBlob(PFNRTSTROUTPUT pfnOutput, void *pvUser,
  * @param   pRoot           The root of the ASN.1 to encode and format as PEM.
  * @param   pszMarker       The PEM marker, .e.g "PRIVATE KEY", "CERTIFICATE" or
  *                          similar.
+ * @param   pErrInfo        For encoding errors. Optional.
  * @sa      RTCrPemWriteAsn1ToVfsFile, RTCrPemWriteAsn1ToVfsFile,
  *          RTCrPemWriteBlob
  */
@@ -256,6 +257,7 @@ RTDECL(ssize_t) RTCrPemWriteAsn1(PFNRTSTROUTPUT pfnOutput, void *pvUser, PRTASN1
  * @param   pRoot           The root of the ASN.1 to encode and format as PEM.
  * @param   pszMarker       The PEM marker, .e.g "PRIVATE KEY", "CERTIFICATE" or
  *                          similar.
+ * @param   pErrInfo        For encoding errors. Optional.
  * @sa      RTCrPemWriteAsn1ToVfsFile, RTCrPemWriteAsn1, RTCrPemWriteBlob
  */
 RTDECL(ssize_t) RTCrPemWriteAsn1ToVfsIoStrm(RTVFSIOSTREAM hVfsIos, PRTASN1CORE pRoot,
@@ -274,6 +276,7 @@ RTDECL(ssize_t) RTCrPemWriteAsn1ToVfsIoStrm(RTVFSIOSTREAM hVfsIos, PRTASN1CORE p
  * @param   pRoot           The root of the ASN.1 to encode and format as PEM.
  * @param   pszMarker       The PEM marker, .e.g "PRIVATE KEY", "CERTIFICATE" or
  *                          similar.
+ * @param   pErrInfo        For encoding errors. Optional.
  * @sa      RTCrPemWriteAsn1ToVfsIoStrm, RTCrPemWriteAsn1, RTCrPemWriteBlob
  */
 RTDECL(ssize_t) RTCrPemWriteAsn1ToVfsFile(RTVFSFILE hVfsFile, PRTASN1CORE pRoot,
