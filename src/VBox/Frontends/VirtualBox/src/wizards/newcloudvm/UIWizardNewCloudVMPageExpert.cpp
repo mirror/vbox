@@ -184,6 +184,10 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             this, &UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick);
     connect(m_pAccountImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange);
+
+    /* Register fields: */
+    registerField("destination", this, "destination");
+    registerField("profileName", this, "profileName");
 }
 
 bool UIWizardNewCloudVMPageExpert::event(QEvent *pEvent)

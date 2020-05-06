@@ -675,6 +675,10 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountButtonClick);
     connect(m_pAccountImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageBasic1::completeChanged);
+
+    /* Register fields: */
+    registerField("destination", this, "destination");
+    registerField("profileName", this, "profileName");
 }
 
 bool UIWizardNewCloudVMPageBasic1::event(QEvent *pEvent)

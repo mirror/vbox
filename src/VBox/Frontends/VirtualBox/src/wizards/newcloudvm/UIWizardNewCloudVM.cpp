@@ -19,6 +19,7 @@
 #include <QAbstractButton>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageBasic1.h"
@@ -26,6 +27,7 @@
 #include "UIWizardNewCloudVMPageExpert.h"
 
 /* COM includes: */
+#include "CCloudMachine.h"
 #include "CProgress.h"
 
 
@@ -139,7 +141,8 @@ bool UIWizardNewCloudVM::createCloudVM()
         AssertReturn(comClient.isNotNull() && comDescription.isNotNull(), false);
 
         /* Initiate cloud VM creation procedure: */
-        CProgress comProgress = comClient.LaunchVM(comDescription);
+        CCloudMachine comMachine;
+        CProgress comProgress = comClient.CreateCloudMachine(comDescription, comMachine);
         if (!comClient.isOk())
         {
             msgCenter().cannotCreateCloudMachine(comClient, this);
@@ -156,6 +159,13 @@ bool UIWizardNewCloudVM::createCloudVM()
             msgCenter().cannotCreateCloudMachine(comProgress, this);
             break;
         }
+
+        /* Check whether VM really added: */
+        if (comMachine.isNotNull())
+            uiCommon().notifyCloudMachineRegistered(field("destination").toString(),
+                                                    field("profileName").toString(),
+                                                    comMachine.GetId(),
+                                                    true /* registered */);
 
         /* Finally, success: */
         fResult = true;

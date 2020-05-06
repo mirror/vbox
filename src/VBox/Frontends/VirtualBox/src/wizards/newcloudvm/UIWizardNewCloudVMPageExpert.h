@@ -34,6 +34,8 @@ class UIWizardNewCloudVMPageExpert : public UIWizardPage,
                                      public UIWizardNewCloudVMPage2
 {
     Q_OBJECT;
+    Q_PROPERTY(QString destination READ destination);
+    Q_PROPERTY(QString profileName READ profileName);
 
 public:
 

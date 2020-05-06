@@ -146,6 +146,8 @@ protected:
 class UIWizardNewCloudVMPageBasic1 : public UIWizardPage, public UIWizardNewCloudVMPage1
 {
     Q_OBJECT;
+    Q_PROPERTY(QString destination READ destination);
+    Q_PROPERTY(QString profileName READ profileName);
 
 public:
 
