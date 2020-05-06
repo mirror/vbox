@@ -123,7 +123,6 @@ struct X11CONTEXT
     int iDefaultScreen;
     XRRScreenResources *pScreenResources;
     int hRandRMajor;
-    int hVMWCtrlMajorOpCode;
     int hRandRMinor;
     int hRandREventBase;
     int hRandRErrorBase;
@@ -131,6 +130,8 @@ struct X11CONTEXT
     /** The number of outputs (monitors, including disconnect ones) xrandr reports. */
     int hOutputCount;
     void *pRandLibraryHandle;
+    bool fWmwareCtrlExtention;
+    int hVMWCtrlMajorOpCode;
     /** Function pointers we used if we dlopen libXrandr instead of linking. */
     void (*pXRRSelectInput) (Display *, Window, int);
     Bool (*pXRRQueryExtension) (Display *, int *, int *);
@@ -425,7 +426,10 @@ DisplayModeR f86CVTMode(int HDisplay, int VDisplay, float VRefresh /* Herz */, B
     return Mode;
 }
 
-
+/** Makes a call to vmwarectrl extension. This updates the
+ * connection information and possible resolutions (modes)
+ * of each monitor on the driver. Also sets the preferred mode
+ * of each output (monitor) to currently selected one. */
 bool VMwareCtrlSetTopology(Display *dpy, int hExtensionMajorOpcode,
                             int screen, xXineramaScreenInfo extents[], int number)
 {
@@ -779,6 +783,7 @@ static void x11Connect()
     x11Context.pXRRGetOutputInfo = NULL;
     x11Context.pXRRGetCrtcInfo = NULL;
     x11Context.pXRRAddOutputMode = NULL;
+    x11Context.fWmwareCtrlExtention = false;
 
     int dummy;
     if (x11Context.pDisplay != NULL)
@@ -797,15 +802,17 @@ static void x11Connect()
         return;
     }
 #endif
-    if (!XQueryExtension(x11Context.pDisplay, "VMWARE_CTRL",
-                         &x11Context.hVMWCtrlMajorOpCode, &dummy, &dummy))
+
+    x11Context.fWmwareCtrlExtention = XQueryExtension(x11Context.pDisplay, "VMWARE_CTRL",
+                                                      &x11Context.hVMWCtrlMajorOpCode, &dummy, &dummy);
+    if (!x11Context.fWmwareCtrlExtention)
+        VBClLogError("VMWARE's ctrl extension is not available!\n");
+    else
     {
-        XCloseDisplay(x11Context.pDisplay);
-        XCloseDisplay(x11Context.pDisplayRandRMonitoring);
-        x11Context.pDisplay = NULL;
-        x11Context.pDisplayRandRMonitoring = NULL;
-        return;
+        VBClLogInfo("VMWARE's ctrl extension is available. Major Opcode is %d.\n", x11Context.hVMWCtrlMajorOpCode);
     }
+
+    /* Check Xrandr stuff. */
     bool fSuccess = false;
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     fSuccess = XRRQueryExtension(x11Context.pDisplay, &x11Context.hRandREventBase, &x11Context.hRandRErrorBase);
@@ -1114,7 +1121,8 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
 static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
 {
     XGrabServer(x11Context.pDisplay);
-    callVMWCTRL(paOutputs);
+    if (x11Context.fWmwareCtrlExtention)
+        callVMWCTRL(paOutputs);
 
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     x11Context.pScreenResources = XRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
