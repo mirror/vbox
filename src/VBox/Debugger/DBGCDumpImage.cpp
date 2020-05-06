@@ -464,16 +464,16 @@ static const char *dbgcMachoFileType(uint32_t uType)
 }
 
 
-static const char *dbgcMachoCpuType(uint32_t uType, uint32_t uSubType)
+static const char *dbgcMachoCpuType(int32_t iType, int32_t iSubType)
 {
-    switch (uType)
+    switch (iType)
     {
         case CPU_TYPE_ANY:          return "CPU_TYPE_ANY";
         case CPU_TYPE_VAX:          return "VAX";
         case CPU_TYPE_MC680x0:      return "MC680x0";
         case CPU_TYPE_X86:          return "X86";
         case CPU_TYPE_X86_64:
-            switch (uSubType)
+            switch (iSubType)
             {
                 case CPU_SUBTYPE_X86_64_ALL:    return "X86_64/ALL64";
             }
