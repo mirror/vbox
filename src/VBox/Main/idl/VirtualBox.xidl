@@ -26691,7 +26691,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <interface name="ICloudMachine" extends="$unknown"
-             uuid="bcc71a82-7b27-11ea-8c77-2b2257f699a6"
+             uuid="d8497a14-8fbf-11ea-aa85-2b4d110b053e"
              wsmap="managed"
              reservedMethods="16" reservedAttributes="8">
     <desc>
@@ -26841,6 +26841,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <method name="unregister" wrap-hint-server="limitedcaller,passcaller">
+      <desc>
+        Unregister this cloud machine, but leave the cloud artifacts
+        intact.
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="remove" wrap-hint-server="limitedcaller,passcaller">
+      <desc>
+        Unregister this cloud machine and delete all its cloud artifacts.
+      </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>
           Progress object to track the operation completion.
