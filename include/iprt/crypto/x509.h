@@ -1034,14 +1034,16 @@ extern RTDATADECL(uint32_t const)       g_cRTCrX509CertificateMarkers;
 
 
 /** Wrapper around RTCrPemWriteAsn1ToVfsIoStrm().  */
-DECLINLINE(int) RTCrX509Certificate_WriteToVfsIoStrm(RTVFSIOSTREAM hVfsIos, PRTCRX509CERTIFICATE pCertificate, PRTERRINFO pErrInfo)
+DECLINLINE(ssize_t) RTCrX509Certificate_WriteToVfsIoStrm(RTVFSIOSTREAM hVfsIos, PRTCRX509CERTIFICATE pCertificate,
+                                                         PRTERRINFO pErrInfo)
 {
     return RTCrPemWriteAsn1ToVfsIoStrm(hVfsIos, &pCertificate->SeqCore.Asn1Core, 0 /*fFlags*/,
                                        g_aRTCrX509CertificateMarkers[0].paWords[0].pszWord, pErrInfo);
 }
 
 /** Wrapper around RTCrPemWriteAsn1ToVfsFile().  */
-DECLINLINE(int) RTCrX509Certificate_WriteToVfsFile(RTVFSFILE hVfsFile, PRTCRX509CERTIFICATE pCertificate, PRTERRINFO pErrInfo)
+DECLINLINE(ssize_t) RTCrX509Certificate_WriteToVfsFile(RTVFSFILE hVfsFile, PRTCRX509CERTIFICATE pCertificate,
+                                                       PRTERRINFO pErrInfo)
 {
     return RTCrPemWriteAsn1ToVfsFile(hVfsFile, &pCertificate->SeqCore.Asn1Core, 0 /*fFlags*/,
                                      g_aRTCrX509CertificateMarkers[0].paWords[0].pszWord, pErrInfo);
