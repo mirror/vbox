@@ -132,6 +132,48 @@ static int drvTcpPollerKick(PDRVTCP pThis, uint8_t bReason)
 }
 
 
+/**
+ * Checks the wakeup pipe for events.
+ *
+ * @returns VBox status code.
+ * @param   pThis                   The TCP driver instance.
+ * @param   fEvts                   Event mask to set if a new connection arrived.
+ */
+static int drvTcpWakeupPipeCheckForRequest(PDRVTCP pThis, uint32_t fEvts)
+{
+    uint8_t bReason;
+    size_t cbRead = 0;
+    int rc = RTPipeRead(pThis->hPipeWakeR, &bReason, 1, &cbRead);
+    if (rc == VINF_TRY_AGAIN) /* Nothing there so we are done here. */
+        rc = VINF_SUCCESS;
+    else if (RT_SUCCESS(rc))
+    {
+        if (bReason == DRVTCP_WAKEUP_REASON_EXTERNAL)
+            rc = VERR_INTERRUPTED;
+        else if (bReason == DRVTCP_WAKEUP_REASON_NEW_CONNECTION)
+        {
+            Assert(pThis->hTcpSock == NIL_RTSOCKET);
+
+            /* Read the socket handle. */
+            RTSOCKET hTcpSockNew = NIL_RTSOCKET;
+            rc = RTPipeReadBlocking(pThis->hPipeWakeR, &hTcpSockNew, sizeof(hTcpSockNew), NULL);
+            AssertRC(rc);
+
+            /* Always include error event. */
+            fEvts |= RTPOLL_EVT_ERROR;
+            rc = RTPollSetAddSocket(pThis->hPollSet, hTcpSockNew,
+                                    fEvts, DRVTCP_POLLSET_ID_SOCKET);
+            if (RT_SUCCESS(rc))
+                pThis->hTcpSock = hTcpSockNew;
+        }
+        else
+            AssertMsgFailed(("Unknown wakeup reason in pipe %u\n", bReason));
+    }
+
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMISTREAM,pfnPoll} */
 static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint32_t *pfEvts, RTMSINTERVAL cMillies)
 {
@@ -146,6 +188,24 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
         fEvts |= RTPOLL_EVT_ERROR;
         rc = RTPollSetEventsChange(pThis->hPollSet, DRVTCP_POLLSET_ID_SOCKET, fEvts);
         AssertRC(rc);
+    }
+    else
+    {
+        /*
+         * Check whether new connection arrived first so we don't miss it in case
+         * the guest is constantly writing data and we always end up here.
+         */
+        rc = drvTcpWakeupPipeCheckForRequest(pThis, fEvts);
+        if (   pThis->hTcpSock == NIL_RTSOCKET
+            && (fEvts & RTPOLL_EVT_WRITE))
+        {
+            /*
+             * Just pretend we can always write to not fill up any buffers and block the guest
+             * from sending data.
+             */
+            *pfEvts |= RTPOLL_EVT_WRITE;
+            return rc;
+        }
     }
 
     if (RT_SUCCESS(rc))
@@ -180,31 +240,7 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
                 if (idHnd == DRVTCP_POLLSET_ID_WAKEUP)
                 {
                     /* We got woken up, drain the pipe and return. */
-                    uint8_t bReason;
-                    size_t cbRead = 0;
-                    rc = RTPipeRead(pThis->hPipeWakeR, &bReason, 1, &cbRead);
-                    AssertRC(rc);
-
-                    if (bReason == DRVTCP_WAKEUP_REASON_EXTERNAL)
-                        rc = VERR_INTERRUPTED;
-                    else if (bReason == DRVTCP_WAKEUP_REASON_NEW_CONNECTION)
-                    {
-                        Assert(pThis->hTcpSock == NIL_RTSOCKET);
-
-                        /* Read the socket handle. */
-                        RTSOCKET hTcpSockNew = NIL_RTSOCKET;
-                        rc = RTPipeReadBlocking(pThis->hPipeWakeR, &hTcpSockNew, sizeof(hTcpSockNew), NULL);
-                        AssertRC(rc);
-
-                        /* Always include error event. */
-                        fEvts |= RTPOLL_EVT_ERROR;
-                        rc = RTPollSetAddSocket(pThis->hPollSet, hTcpSockNew,
-                                                fEvts, DRVTCP_POLLSET_ID_SOCKET);
-                        if (RT_SUCCESS(rc))
-                            pThis->hTcpSock = hTcpSockNew;
-                    }
-                    else
-                        AssertMsgFailed(("Unknown wakeup reason in pipe %u\n", bReason));
+                    rc = drvTcpWakeupPipeCheckForRequest(pThis, fEvts);
                 }
                 else
                 {
@@ -318,8 +354,7 @@ static DECLCALLBACK(int) drvTcpWrite(PPDMISTREAM pInterface, const void *pvBuf, 
             rc = VERR_TIMEOUT;
         }
     }
-    else
-        *pcbWrite = 0;
+    /* else Just pretend we wrote everything to not block. */
 
     LogFlow(("%s: returns %Rrc *pcbWrite=%zu\n", __FUNCTION__, rc, *pcbWrite));
     return rc;
