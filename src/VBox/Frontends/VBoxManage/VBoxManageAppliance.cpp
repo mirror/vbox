@@ -1929,20 +1929,9 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
 
 
 /**
- * Appends the certificate in PEM format to the given VFS file.
- */
-static int doWriteCertificate(RTVFSFILE hVfsFileSignature, PCRTCRX509CERTIFICATE pCertificate)
-{
-    RT_NOREF(hVfsFileSignature, pCertificate);
-    RTPrintf("TODO: doWriteCertificate\n");
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Performs the OVA signing, producing an in-memory cert-file.
  */
-static int doTheOvaSigning(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKey,
+static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKey,
                            const char *pszManifestName, RTVFSFILE hVfsFileManifest,
                            bool fPkcs7, unsigned cIntermediateCerts, const char **papszIntermediateCerts,
                            PRTERRINFOSTATIC pErrInfo, PRTVFSFILE phVfsFileSignature)
@@ -2016,21 +2005,29 @@ static int doTheOvaSigning(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateK
                             rc = RTVfsFilePrintf(hVfsFileSignature, "%s(%s) = %.*Rhxs\n\n",
                                                  pszDigestType, pszManifestName, cbSignature, pvSignature);
                             if (RT_SUCCESS(rc))
-                                rc = doWriteCertificate(hVfsFileSignature, pCertificate);
-                            else
-                                RTMsgError("Failed to produce signature file: %Rrc", rc);
-                            if (RT_SUCCESS(rc) && fPkcs7)
-                                rc = doAddPkcs7Signature(pCertificate, hPrivateKey, cIntermediateCerts, papszIntermediateCerts,
-                                                         hDigest, pErrInfo, hVfsFileSignature);
-                            if (RT_SUCCESS(rc))
                             {
-                                /*
-                                 * Success.
-                                 */
-                                *phVfsFileSignature = hVfsFileSignature;
+                                rc = RTCrX509Certificate_WriteToVfsFile(hVfsFileSignature, pCertificate,
+                                                                        RTErrInfoInitStatic(pErrInfo));
+                                if (RT_SUCCESS(rc))
+                                {
+                                    if (fPkcs7)
+                                        rc = doAddPkcs7Signature(pCertificate, hPrivateKey, cIntermediateCerts,
+                                                                 papszIntermediateCerts, hDigest, pErrInfo, hVfsFileSignature);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        /*
+                                         * Success.
+                                         */
+                                        *phVfsFileSignature = hVfsFileSignature;
+                                        hVfsFileSignature = NIL_RTVFSFILE;
+                                    }
+                                }
+                                else
+                                    RTMsgError("Failed to write certificate to signature file: %Rrc%#RTeim", rc, &pErrInfo->Core);
                             }
                             else
-                                RTVfsFileRelease(hVfsFileSignature);
+                                RTMsgError("Failed to produce signature file: %Rrc", rc);
+                            RTVfsFileRelease(hVfsFileSignature);
                         }
                         else
                             RTMsgError("RTVfsMemFileCreate failed: %Rrc", rc);
