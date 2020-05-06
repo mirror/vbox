@@ -2966,6 +2966,20 @@
 /** Maximum number of Shared Clipboard events for an event source has been reached. */
 #define VERR_SHCLPB_MAX_EVENTS_REACHED              (-7106)
 /** @} */
+
+/** @name Virtual IOMMU Status Codes
+ * @{
+ */
+/** Internal processing error \#1 in the IOMMU device code. */
+#define VERR_IOMMU_IPE_1                            (-7201)
+/** Internal processing error \#2 in the IOMMU device code. */
+#define VERR_IOMMU_IPE_2                            (-7202)
+/** Address translation failed. */
+#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7203)
+/** Access denied for the address. */
+#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7204)
+/** @} */
+
 /* SED-END */
 
 /** @} */
