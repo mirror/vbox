@@ -654,6 +654,7 @@ static bool callVMWCTRL(struct RANDROUTPUT *paOutputs)
     return VMwareCtrlSetTopology(x11Context.pDisplay, x11Context.hVMWCtrlMajorOpCode,
                                  DefaultScreen(x11Context.pDisplay),
                                  extents, x11Context.hOutputCount);
+    free(extents);
 }
 
 static bool init()
