@@ -3771,8 +3771,6 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, uint16_t uDevId, u
             break;
         }
     }
-
-
 }
 
 
@@ -3878,6 +3876,7 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  * @param   cbAccess    The size of the access.
  * @param   fAccess     The access permissions (IOMMU_IO_PERM_XXX). This is the
  *                      permissions for the access being made.
+ * @param   pDte        The device table entry.
  * @param   enmOp       The IOMMU operation being performed.
  * @param   pGCPhysSpa  Where to store the system physical address.
  * @param   pfIoPerm    Where to store the I/O access permissions. This is the
