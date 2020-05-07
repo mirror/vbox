@@ -323,8 +323,10 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
  * @note Only supported when adding file objects.  The files will be read
  *       twice. */
 #define RTZIPTAR_C_SPARSE           RT_BIT_32(0)
+/** Set if opening for updating. */
+#define RTZIPTAR_C_UPDATE           RT_BIT_32(1)
 /** Valid bits. */
-#define RTZIPTAR_C_VALID_MASK       UINT32_C(0x00000001)
+#define RTZIPTAR_C_VALID_MASK       UINT32_C(0x00000003)
 /** @} */
 
 /**
@@ -391,6 +393,28 @@ RTDECL(int) RTZipTarFsStreamSetDirMode(RTVFSFSSTREAM hVfsFss, RTFMODE fAndMode, 
  */
 RTDECL(int) RTZipTarFsStreamSetMTime(RTVFSFSSTREAM hVfsFss, PCRTTIMESPEC pModificationTime);
 
+/**
+ * Truncates a TAR creator stream in update mode.
+ *
+ * Use RTVfsFsStrmNext to examine the TAR stream and locate the cut-off point.
+ *
+ * After performing this call, the stream will be in write mode and
+ * RTVfsFsStrmNext will stop working (VERR_WRONG_ORDER).   The RTVfsFsStrmAdd()
+ * and RTVfsFsStrmPushFile() can be used to add new object to the TAR file,
+ * starting at the trunction point.  RTVfsFsStrmEnd() is used to finish the TAR
+ * file (this performs the actual file trunction).
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFss             The handle to a TAR creator in update mode.
+ * @param   hVfsObj             Object returned by RTVfsFsStrmNext that the
+ *                              trunction is relative to.  This doesn't have to
+ *                              be the current stream object, it can be an
+ *                              earlier one too.
+ * @param   fAfter              If set, @a hVfsObj will remain in the update TAR
+ *                              file.  If clear, @a hVfsObj will not be
+ *                              included.
+ */
+RTDECL(int) RTZipTarFsStreamTruncate(RTVFSFSSTREAM hVfsFss, RTVFSOBJ hVfsObj, bool fAfter);
 
 /**
  * A mini TAR program.

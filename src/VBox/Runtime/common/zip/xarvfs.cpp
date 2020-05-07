@@ -2089,7 +2089,7 @@ RTDECL(int) RTZipXarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlag
                      */
                     PRTZIPXARFSSTREAM pThis;
                     RTVFSFSSTREAM     hVfsFss;
-                    rc = RTVfsNewFsStream(&rtZipXarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, true /*fReadOnly*/,
+                    rc = RTVfsNewFsStream(&rtZipXarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, RTFILE_O_READ,
                                           &hVfsFss, (void **)&pThis);
                     if (RT_SUCCESS(rc))
                     {

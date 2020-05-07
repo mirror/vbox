@@ -44,6 +44,8 @@
 
 #include "tar.h"
 
+#include "tarvfsreader.h"
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -160,7 +162,7 @@ typedef struct RTZIPTARFSSTREAMWRITER
     RTZIPTARFORMAT          enmFormat;
     /** Set if we've encountered a fatal error. */
     int                     rcFatal;
-    /** Flags. */
+    /** Flags, RTZIPTAR_C_XXX. */
     uint32_t                fFlags;
 
     /** Number of bytes written. */
@@ -182,6 +184,12 @@ typedef struct RTZIPTARFSSTREAMWRITER
     RTFMODE                 fDirModeAndMask;    /**< Directory mode AND mask. */
     RTFMODE                 fDirModeOrMask;     /**< Directory mode OR mask. */
     /** @} */
+
+    /** When in update mode (RTZIPTAR_C_UPDATE) we have an reader FSS instance,
+     * though w/o the RTVFSFSSTREAM bits. (Allocated after this structure.) */
+    PRTZIPTARFSSTREAM       pRead;
+    /** Set if we're in writing mode and pfnNext shall fail. */
+    bool                    fWriting;
 
 
     /** Number of headers returned by rtZipTarFssWriter_ObjInfoToHdr. */
@@ -908,6 +916,62 @@ static int rtZipTarFssWriter_CompleteCurrentPushFile(PRTZIPTARFSSTREAMWRITER pTh
 
 
 /**
+ * Does the actual work for rtZipTarFssWriter_SwitchToWriteMode().
+ *
+ * @note    We won't be here if we've truncate the tar file.   Truncation
+ *          switches it into write mode.
+ */
+DECL_NO_INLINE(static, int) rtZipTarFssWriter_SwitchToWriteModeSlow(PRTZIPTARFSSTREAMWRITER pThis)
+{
+    /* Always go thru rtZipTarFssWriter_SwitchToWriteMode(). */
+    AssertRCReturn(pThis->rcFatal, pThis->rcFatal);
+    AssertReturn(!pThis->fWriting, VINF_SUCCESS);
+    AssertReturn(pThis->fFlags & RTZIPTAR_C_UPDATE, VERR_INTERNAL_ERROR_3);
+
+    /*
+     * If we're not at the end, locate the end of the tar file.
+     * Because I'm lazy, we do that using rtZipTarFss_Next.  This isn't entirely
+     * optimial as it involves VFS object instantations and such.
+     */
+    /** @todo Optimize skipping to end of tar file in update mode. */
+    while (!pThis->pRead->fEndOfStream)
+    {
+        int rc = rtZipTarFss_Next(pThis->pRead, NULL, NULL, NULL);
+        if (rc == VERR_EOF)
+            break;
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Seek to the desired cut-off point and indicate that we've switched to writing.
+     */
+    Assert(pThis->pRead->offNextHdr == pThis->pRead->offCurHdr);
+    int rc = RTVfsFileSeek(pThis->hVfsFile, pThis->pRead->offNextHdr, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+    if (RT_SUCCESS(rc))
+        pThis->fWriting = true;
+    else
+        pThis->rcFatal = rc;
+
+    return rc;
+}
+
+
+/**
+ * Switches the stream into writing mode if necessary.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The TAR writer instance.
+ *
+ */
+DECLINLINE(int) rtZipTarFssWriter_SwitchToWriteMode(PRTZIPTARFSSTREAMWRITER pThis)
+{
+    if (pThis->fWriting)
+        return VINF_SUCCESS; /* ASSUMES caller already checked pThis->rcFatal. */
+    return rtZipTarFssWriter_SwitchToWriteModeSlow(pThis);
+}
+
+
+/**
  * Allocates a buffer for transfering file data.
  *
  * @note    Will use the 3rd TAR header as fallback buffer if we're out of
@@ -921,7 +985,7 @@ static int rtZipTarFssWriter_CompleteCurrentPushFile(PRTZIPTARFSSTREAMWRITER pTh
  *                          when done with the buffer.
  * @param   cbFile          The file size.  Used as a buffer size hint.
  */
-static uint8_t *rtZipTarFssWrite_AllocBuf(PRTZIPTARFSSTREAMWRITER pThis, size_t *pcbBuf, void **ppvFree, uint64_t cbObject)
+static uint8_t *rtZipTarFssWriter_AllocBuf(PRTZIPTARFSSTREAMWRITER pThis, size_t *pcbBuf, void **ppvFree, uint64_t cbObject)
 {
     uint8_t *pbBuf;
 
@@ -1273,7 +1337,7 @@ static int rtZipTarFssWriter_AddFileSparse(PRTZIPTARFSSTREAMWRITER pThis, const 
      */
     void    *pvBufFree;
     size_t   cbBuf;
-    uint8_t *pbBuf = rtZipTarFssWrite_AllocBuf(pThis, &cbBuf, &pvBufFree, pObjInfo->cbObject);
+    uint8_t *pbBuf = rtZipTarFssWriter_AllocBuf(pThis, &cbBuf, &pvBufFree, pObjInfo->cbObject);
 
     PRTZIPTARSPARSE pSparse;
     int rc = rtZipTarFssWriter_ScanSparseFile(pThis, hVfsFile, pObjInfo->cbObject, cbBuf, pbBuf, &pSparse);
@@ -1398,9 +1462,9 @@ static int rtZipTarFssWriter_AddFileStream(PRTZIPTARFSSTREAMWRITER pThis, const 
                  */
                 void    *pvBufFree;
                 size_t   cbBuf;
-                uint8_t *pbBuf = rtZipTarFssWrite_AllocBuf(pThis, &cbBuf, &pvBufFree,
-                                                           pObjInfo->cbObject > 0 && pObjInfo->cbObject != RTFOFF_MAX
-                                                           ? pObjInfo->cbObject : _1G);
+                uint8_t *pbBuf = rtZipTarFssWriter_AllocBuf(pThis, &cbBuf, &pvBufFree,
+                                                            pObjInfo->cbObject > 0 && pObjInfo->cbObject != RTFOFF_MAX
+                                                            ? pObjInfo->cbObject : _1G);
 
                 uint64_t cbReadTotal = 0;
                 for (;;)
@@ -1501,7 +1565,7 @@ static int rtZipTarFssWriter_AddFile(PRTZIPTARFSSTREAMWRITER pThis, const char *
              */
             void    *pvBufFree;
             size_t   cbBuf;
-            uint8_t *pbBuf = rtZipTarFssWrite_AllocBuf(pThis, &cbBuf, &pvBufFree, pObjInfo->cbObject);
+            uint8_t *pbBuf = rtZipTarFssWriter_AllocBuf(pThis, &cbBuf, &pvBufFree, pObjInfo->cbObject);
 
             uint64_t cbLeft = pObjInfo->cbObject;
             while (cbLeft > 0)
@@ -1683,6 +1747,26 @@ static DECLCALLBACK(int) rtZipTarFssWriter_QueryInfo(void *pvThis, PRTFSOBJINFO 
 
 
 /**
+ * @interface_method_impl{RTVFSFSSTREAMOPS,pfnNext}
+ */
+static DECLCALLBACK(int) rtZipTarFssWriter_Next(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj)
+{
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)pvThis;
+
+    /*
+     * This only works in update mode and up to the point where
+     * modifications takes place (truncating the archive or appending files).
+     */
+    AssertReturn(pThis->pRead, VERR_ACCESS_DENIED);
+    AssertReturn(pThis->fFlags & RTZIPTAR_C_UPDATE, VERR_ACCESS_DENIED);
+
+    AssertReturn(!pThis->fWriting, VERR_WRONG_ORDER);
+
+    return rtZipTarFss_Next(pThis->pRead, ppszName, penmType, phVfsObj);
+}
+
+
+/**
  * @interface_method_impl{RTVFSFSSTREAMOPS,pfnAdd}
  */
 static DECLCALLBACK(int) rtZipTarFssWriter_Add(void *pvThis, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags)
@@ -1693,8 +1777,7 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Add(void *pvThis, const char *pszPath
      * Before we continue we must complete any current push file and check rcFatal.
      */
     int rc = rtZipTarFssWriter_CompleteCurrentPushFile(pThis);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Query information about the object.
@@ -1712,6 +1795,12 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Add(void *pvThis, const char *pszPath
     rc = RTVfsObjQueryInfo(hVfsObj, &ObjGrpName, RTFSOBJATTRADD_UNIX_GROUP);
     if (RT_FAILURE(rc) || ObjGrpName.Attr.u.UnixGroup.szName[0] == '\0')
         strcpy(ObjGrpName.Attr.u.UnixGroup.szName, "somegroup");
+
+    /*
+     * Switch the stream into write mode if necessary.
+     */
+    rc = rtZipTarFssWriter_SwitchToWriteMode(pThis);
+    AssertRCReturn(rc, rc);
 
     /*
      * Do type specific handling.  File have several options and variations to
@@ -1779,8 +1868,7 @@ static DECLCALLBACK(int) rtZipTarFssWriter_PushFile(void *pvThis, const char *ps
      * Before we continue we must complete any current push file and check rcFatal.
      */
     int rc = rtZipTarFssWriter_CompleteCurrentPushFile(pThis);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * If no object info was provideded, fake up some.
@@ -1830,6 +1918,12 @@ static DECLCALLBACK(int) rtZipTarFssWriter_PushFile(void *pvThis, const char *ps
                      && paObjInfo[i].Attr.u.UnixGroup.szName[0] != '\0')
                 pszGroupNm = paObjInfo[i].Attr.u.UnixGroup.szName;
     }
+
+    /*
+     * Switch the stream into write mode if necessary.
+     */
+    rc = rtZipTarFssWriter_SwitchToWriteMode(pThis);
+    AssertRCReturn(rc, rc);
 
     /*
      * Create an I/O stream object for the caller to use.
@@ -1924,6 +2018,23 @@ static DECLCALLBACK(int) rtZipTarFssWriter_End(void *pvThis)
              * Flush the output.
              */
             rc = RTVfsIoStrmFlush(pThis->hVfsIos);
+
+            /*
+             * If we're in update mode, set the end-of-file here to make sure
+             * unwanted bytes are really discarded.
+             */
+            if (RT_SUCCESS(rc) && (pThis->fFlags & RTZIPTAR_C_UPDATE))
+            {
+                RTFOFF cbTarFile = RTVfsFileTell(pThis->hVfsFile);
+                if (cbTarFile >= 0)
+                    rc =  RTVfsFileSetSize(pThis->hVfsFile, (uint64_t)cbTarFile, RTVFSFILE_SIZE_F_NORMAL);
+                else
+                    rc = (int)cbTarFile;
+            }
+
+            /*
+             * Success?
+             */
             if (RT_SUCCESS(rc))
                 return rc;
         }
@@ -1948,7 +2059,7 @@ static const RTVFSFSSTREAMOPS g_rtZipTarFssOps =
     },
     RTVFSFSSTREAMOPS_VERSION,
     0,
-    NULL,
+    rtZipTarFssWriter_Next,
     rtZipTarFssWriter_Add,
     rtZipTarFssWriter_PushFile,
     rtZipTarFssWriter_End,
@@ -1967,6 +2078,7 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
     AssertPtrReturn(hVfsIosOut, VERR_INVALID_HANDLE);
     AssertReturn(enmFormat > RTZIPTARFORMAT_INVALID && enmFormat < RTZIPTARFORMAT_END, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~RTZIPTAR_C_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & RTZIPTAR_C_UPDATE), VERR_NOT_SUPPORTED); /* Must use RTZipTarFsStreamForFile! */
 
     if (enmFormat == RTZIPTARFORMAT_DEFAULT)
         enmFormat = RTZIPTARFORMAT_GNU;
@@ -1982,7 +2094,7 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
      */
     PRTZIPTARFSSTREAMWRITER pThis;
     RTVFSFSSTREAM           hVfsFss;
-    int rc = RTVfsNewFsStream(&g_rtZipTarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, false /*fReadOnly*/,
+    int rc = RTVfsNewFsStream(&g_rtZipTarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, RTFILE_O_WRITE,
                               &hVfsFss, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
@@ -2003,12 +2115,85 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
         pThis->fFileModeOrMask  = 0;
         pThis->fDirModeAndMask  = ~(RTFMODE)0;
         pThis->fDirModeOrMask   = 0;
+        pThis->fWriting         = true;
 
         *phVfsFss = hVfsFss;
         return VINF_SUCCESS;
     }
 
     RTVfsIoStrmRelease(hVfsIosOut);
+    return rc;
+}
+
+
+RTDECL(int) RTZipTarFsStreamForFile(RTVFSFILE hVfsFile, RTZIPTARFORMAT enmFormat, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss)
+{
+    /*
+     * Input validation.
+     */
+    AssertPtrReturn(phVfsFss, VERR_INVALID_HANDLE);
+    *phVfsFss = NIL_RTVFSFSSTREAM;
+    AssertPtrReturn(hVfsFile != NIL_RTVFSFILE, VERR_INVALID_HANDLE);
+    AssertReturn(enmFormat > RTZIPTARFORMAT_INVALID && enmFormat < RTZIPTARFORMAT_END, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTZIPTAR_C_VALID_MASK), VERR_INVALID_FLAGS);
+
+    if (enmFormat == RTZIPTARFORMAT_DEFAULT)
+        enmFormat = RTZIPTARFORMAT_GNU;
+    AssertReturn(   enmFormat == RTZIPTARFORMAT_GNU
+                 || enmFormat == RTZIPTARFORMAT_USTAR
+                 , VERR_NOT_IMPLEMENTED); /* Only implementing GNU and USTAR output at the moment. */
+
+    RTFOFF const offStart = RTVfsFileTell(hVfsFile);
+    AssertReturn(offStart >= 0, (int)offStart);
+
+    uint32_t cRefs = RTVfsFileRetain(hVfsFile);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+
+    RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(hVfsFile);
+    AssertReturnStmt(hVfsIos != NIL_RTVFSIOSTREAM, RTVfsFileRelease(hVfsFile), VERR_INVALID_HANDLE);
+
+    /*
+     * Retain the input stream and create a new filesystem stream handle.
+     */
+    PRTZIPTARFSSTREAMWRITER pThis;
+    size_t const            cbThis = sizeof(*pThis) + (fFlags & RTZIPTAR_C_UPDATE ? sizeof(*pThis->pRead) : 0);
+    RTVFSFSSTREAM           hVfsFss;
+    int rc = RTVfsNewFsStream(&g_rtZipTarFssOps, cbThis, NIL_RTVFS, NIL_RTVFSLOCK, RTFILE_O_WRITE,
+                              &hVfsFss, (void **)&pThis);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->hVfsIos          = hVfsIos;
+        pThis->hVfsFile         = hVfsFile;
+
+        pThis->enmFormat        = enmFormat;
+        pThis->fFlags           = fFlags;
+        pThis->rcFatal          = VINF_SUCCESS;
+
+        pThis->uidOwner         = NIL_RTUID;
+        pThis->pszOwner         = NULL;
+        pThis->gidGroup         = NIL_RTGID;
+        pThis->pszGroup         = NULL;
+        pThis->pszPrefix        = NULL;
+        pThis->pModTime         = NULL;
+        pThis->fFileModeAndMask = ~(RTFMODE)0;
+        pThis->fFileModeOrMask  = 0;
+        pThis->fDirModeAndMask  = ~(RTFMODE)0;
+        pThis->fDirModeOrMask   = 0;
+        if (!(fFlags & RTZIPTAR_C_UPDATE))
+            pThis->fWriting     = true;
+        else
+        {
+            pThis->fWriting     = false;
+            pThis->pRead        = (PRTZIPTARFSSTREAM)(pThis + 1);
+            rtZipTarReaderInit(pThis->pRead, hVfsIos, (uint64_t)offStart);
+        }
+
+        *phVfsFss = hVfsFss;
+        return VINF_SUCCESS;
+    }
+
+    RTVfsIoStrmRelease(hVfsIos);
+    RTVfsFileRelease(hVfsFile);
     return rc;
 }
 
@@ -2133,5 +2318,34 @@ RTDECL(int) RTZipTarFsStreamSetDirMode(RTVFSFSSTREAM hVfsFss, RTFMODE fAndMode, 
     pThis->fDirModeAndMask = fAndMode | ~RTFS_UNIX_ALL_PERMS;
     pThis->fDirModeOrMask  = fOrMode  & RTFS_UNIX_ALL_PERMS;
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTZipTarFsStreamTruncate(RTVFSFSSTREAM hVfsFss, RTVFSOBJ hVfsObj, bool fAfter)
+{
+    /*
+     * Translate and validate the input.
+     */
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)RTVfsFsStreamToPrivate(hVfsFss, &g_rtZipTarFssOps);
+    AssertReturn(pThis, VERR_WRONG_TYPE);
+
+    AssertReturn(hVfsObj != NIL_RTVFSOBJ, VERR_INVALID_HANDLE);
+    PRTZIPTARBASEOBJ pThisObj = rtZipTarFsStreamBaseObjToPrivate(pThis->pRead, hVfsObj);
+    AssertReturn(pThis, VERR_NOT_OWNER);
+
+    AssertReturn(pThis->pRead, VERR_ACCESS_DENIED);
+    AssertReturn(pThis->fFlags & RTZIPTAR_C_UPDATE, VERR_ACCESS_DENIED);
+    AssertReturn(!pThis->fWriting, VERR_WRONG_ORDER);
+
+    /*
+     * Seek to the desired cut-off point and indicate that we've switched to writing.
+     */
+    int rc = RTVfsFileSeek(pThis->hVfsFile, fAfter ? pThisObj->offNextHdr : pThisObj->offHdr,
+                           RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+    if (RT_SUCCESS(rc))
+        pThis->fWriting = true;
+    else
+        pThis->rcFatal = rc;
+    return rc;
 }
 

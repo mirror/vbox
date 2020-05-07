@@ -310,7 +310,7 @@ RTDECL(int) RTVfsFsStrmToDir(RTVFSDIR hVfsBaseDir, uint32_t fFlags, PRTVFSFSSTRE
      */
     PRTVFSFSSWRITE2DIR      pThis;
     RTVFSFSSTREAM           hVfsFss;
-    int rc = RTVfsNewFsStream(&g_rtVfsFssToDirOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, false /*fReadOnly*/,
+    int rc = RTVfsNewFsStream(&g_rtVfsFssToDirOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, RTFILE_O_WRITE,
                               &hVfsFss, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
@@ -369,7 +369,7 @@ RTDECL(int) RTVfsFsStrmToNormalDir(const char *pszBaseDir, uint32_t fFlags, PRTV
                 PRTVFSFSSWRITE2DIR      pThis;
                 RTVFSFSSTREAM           hVfsFss;
                 rc = RTVfsNewFsStream(&g_rtVfsFssToDirOps, RT_UOFFSETOF_DYN(RTVFSFSSWRITE2DIR, szBaseDir[cbBaseDir]),
-                                      NIL_RTVFS, NIL_RTVFSLOCK, false /*fReadOnly*/, &hVfsFss, (void **)&pThis);
+                                      NIL_RTVFS, NIL_RTVFSLOCK, RTFILE_O_WRITE, &hVfsFss, (void **)&pThis);
                 if (RT_SUCCESS(rc))
                 {
                     pThis->fFlags   = fFlags;

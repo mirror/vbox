@@ -312,6 +312,17 @@ RTDECL(int) RTVfsNewBaseObj(PCRTVFSOBJOPS pObjOps, size_t cbInstance, RTVFS hVfs
 
 
 /**
+ * Gets the private data of a base object.
+ *
+ * @returns Pointer to the private data.  NULL if the handle is invalid in some
+ *          way.
+ * @param   hVfsObj             The I/O base object handle.
+ * @param   pObjOps             The base object operations.  This servers as a
+ *                              sort of password.
+ */
+RTDECL(void *) RTVfsObjToPrivate(RTVFSOBJ hVfsObj, PCRTVFSOBJOPS pObjOps);
+
+/**
  * Additional operations for setting object attributes.
  */
 typedef struct RTVFSOBJSETOPS
@@ -492,12 +503,12 @@ typedef RTVFSFSSTREAMOPS const *PCRTVFSFSSTREAMOPS;
  * @param   hLock               Handle to a custom lock to be used with the new
  *                              object.  The reference is consumed.  NIL and
  *                              special lock handles are fine.
- * @param   fReadOnly           Set if read-only, clear if write-only.
+ * @param   fAccess             RTFILE_O_READ and/or RTFILE_O_WRITE.
  * @param   phVfsFss            Where to return the new handle.
  * @param   ppvInstance         Where to return the pointer to the instance data
  *                              (size is @a cbInstance).
  */
-RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock, bool fReadOnly,
+RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock, uint32_t fAccess,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance);
 
 /**
@@ -827,6 +838,17 @@ typedef RTVFSSYMLINKOPS const *PCRTVFSSYMLINKOPS;
 RTDECL(int) RTVfsNewSymlink(PCRTVFSSYMLINKOPS pSymlinkOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
                             PRTVFSSYMLINK phVfsSym, void **ppvInstance);
 
+
+/**
+ * Gets the private data of a symbolic link.
+ *
+ * @returns Pointer to the private data.  NULL if the handle is invalid in some
+ *          way.
+ * @param   hVfsIos             The I/O stream handle.
+ * @param   pSymlinkOps         The symlink operations.  This servers as a sort
+ *                              of password.
+ */
+RTDECL(void *) RTVfsSymlinkToPrivate(RTVFSSYMLINK hVfsSym, PCRTVFSSYMLINKOPS pSymlinkOps);
 
 /**
  * The basis for all I/O objects (files, pipes, sockets, devices, ++).

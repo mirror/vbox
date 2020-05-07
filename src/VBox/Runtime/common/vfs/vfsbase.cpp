@@ -815,6 +815,17 @@ RTDECL(int) RTVfsNewBaseObj(PCRTVFSOBJOPS pObjOps, size_t cbInstance, RTVFS hVfs
 }
 
 
+RTDECL(void *) RTVfsObjToPrivate(RTVFSOBJ hVfsObj, PCRTVFSOBJOPS pObjOps)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    AssertPtrReturn(pThis, NULL);
+    AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NULL);
+    if (pThis->pOps != pObjOps)
+        return NULL;
+    return pThis->pvThis;
+}
+
+
 /**
  * Internal object retainer that asserts sanity in strict builds.
  *
@@ -2281,7 +2292,7 @@ RTDECL(int) RTVfsQueryRangeState(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUs
  */
 
 
-RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock, bool fReadOnly,
+RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock, uint32_t fAccess,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance)
 {
     /*
@@ -2292,9 +2303,11 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
     AssertReturn(pFsStreamOps->uEndMarker == RTVFSFSSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
     Assert(!pFsStreamOps->fReserved);
     RTVFSOBJ_ASSERT_OPS(&pFsStreamOps->Obj, RTVFSOBJTYPE_FS_STREAM);
-    if (fReadOnly)
+    Assert((fAccess & (RTFILE_O_READ | RTFILE_O_WRITE)) == fAccess);
+    Assert(fAccess);
+    if (fAccess & RTFILE_O_READ)
         AssertPtr(pFsStreamOps->pfnNext);
-    else
+    if (fAccess & RTFILE_O_WRITE)
     {
         AssertPtr(pFsStreamOps->pfnAdd);
         AssertPtr(pFsStreamOps->pfnEnd);
@@ -2323,10 +2336,14 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
     }
 
     pThis->uMagic = RTVFSFSSTREAM_MAGIC;
-    pThis->fFlags = fReadOnly
-                  ? RTFILE_O_READ  | RTFILE_O_OPEN   | RTFILE_O_DENY_NONE
-                  : RTFILE_O_WRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL;
     pThis->pOps   = pFsStreamOps;
+    pThis->fFlags = fAccess;
+    if (fAccess == RTFILE_O_READ)
+        pThis->fFlags |= RTFILE_O_OPEN   | RTFILE_O_DENY_NONE;
+    else if (fAccess == RTFILE_O_WRITE)
+        pThis->fFlags |= RTFILE_O_CREATE | RTFILE_O_DENY_ALL;
+    else
+        pThis->fFlags |= RTFILE_O_OPEN   | RTFILE_O_DENY_ALL;
 
     *phVfsFss     = pThis;
     *ppvInstance  = pThis->Base.pvThis;
@@ -3273,6 +3290,17 @@ RTDECL(int) RTVfsNewSymlink(PCRTVFSSYMLINKOPS pSymlinkOps, size_t cbInstance, RT
     *phVfsSym     = pThis;
     *ppvInstance  = pThis->Base.pvThis;
     return VINF_SUCCESS;
+}
+
+
+RTDECL(void *) RTVfsSymlinkToPrivate(RTVFSSYMLINK hVfsSym, PCRTVFSSYMLINKOPS pSymlinkOps)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, NULL);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, NULL);
+    if (pThis->pOps != pSymlinkOps)
+        return NULL;
+    return pThis->Base.pvThis;
 }
 
 
