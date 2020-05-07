@@ -2859,6 +2859,7 @@
 # define RTZipTarFsStreamSetFileMode                    RT_MANGLER(RTZipTarFsStreamSetFileMode)
 # define RTZipTarFsStreamSetDirMode                     RT_MANGLER(RTZipTarFsStreamSetDirMode)
 # define RTZipTarFsStreamSetModTime                     RT_MANGLER(RTZipTarFsStreamSetModTime)
+# define RTZipTarFsStreamTruncate                       RT_MANGLER(RTZipTarFsStreamTruncate)
 # define RTZipXarFsStreamFromIoStream                   RT_MANGLER(RTZipXarFsStreamFromIoStream)
 
 /* sort/merge into the above later: */
