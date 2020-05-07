@@ -130,10 +130,10 @@ protected slots:
 
     /** @name Main event handling stuff.
       * @{ */
-        /** Handles machine @a enmState change for machine with certain @a uMachineId. */
-        virtual void sltMachineStateChanged(const QUuid &uMachineId, const KMachineState enmState);
-        /** Handles machine data change for machine with certain @a uMachineId. */
-        virtual void sltMachineDataChanged(const QUuid &uMachineId);
+        /** Handles local machine @a enmState change for machine with certain @a uMachineId. */
+        virtual void sltLocalMachineStateChanged(const QUuid &uMachineId, const KMachineState enmState);
+        /** Handles local machine data change for machine with certain @a uMachineId. */
+        virtual void sltLocalMachineDataChanged(const QUuid &uMachineId);
         /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
         virtual void sltLocalMachineRegistered(const QUuid &uMachineId, const bool fRegistered);
         /** Handles cloud machine registering/unregistering for machine with certain @a uMachineId.
