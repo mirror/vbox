@@ -36,6 +36,7 @@
 
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
     : UIVirtualMachineItem(UIVirtualMachineItemType_CloudFake)
+    , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Loading)
     , m_pTask(0)
 {
@@ -45,6 +46,7 @@ UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
 UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(const CCloudMachine &comCloudMachine)
     : UIVirtualMachineItem(UIVirtualMachineItemType_CloudReal)
     , m_comCloudMachine(comCloudMachine)
+    , m_enmMachineState(KCloudMachineState_Invalid)
     , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_NotApplicable)
     , m_pTask(0)
 {
@@ -93,7 +95,7 @@ void UIVirtualMachineItemCloud::recache()
             m_strOSTypeId = "Other";
 
             /* Determine VM states: */
-            m_enmMachineState = KMachineState_PoweredOff;
+            m_enmMachineState = KCloudMachineState_Stopped;
             m_strMachineStateName = gpConverter->toString(m_enmMachineState);
             switch (m_enmFakeCloudItemState)
             {
@@ -132,7 +134,7 @@ void UIVirtualMachineItemCloud::recache()
             m_strOSTypeId = m_fAccessible ? m_comCloudMachine.GetOSTypeId() : "Other";
 
             /* Determine VM states: */
-            m_enmMachineState = m_fAccessible ? m_comCloudMachine.GetState() : KMachineState_PoweredOff;
+            m_enmMachineState = m_fAccessible ? toCloudMachineState(m_comCloudMachine.GetState()) : KCloudMachineState_Stopped;
             m_strMachineStateName = gpConverter->toString(m_enmMachineState);
             m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
 
@@ -182,17 +184,14 @@ bool UIVirtualMachineItemCloud::isItemRemovable() const
 
 bool UIVirtualMachineItemCloud::isItemSaved() const
 {
-    return    accessible()
-           && machineState() == KMachineState_Saved;
+    return false;
 }
 
 bool UIVirtualMachineItemCloud::isItemPoweredOff() const
 {
     return    accessible()
-           && (   machineState() == KMachineState_PoweredOff
-               || machineState() == KMachineState_Saved
-               || machineState() == KMachineState_Teleported
-               || machineState() == KMachineState_Aborted);
+           && (   machineState() == KCloudMachineState_Stopped
+               || machineState() == KCloudMachineState_Terminated);
 }
 
 bool UIVirtualMachineItemCloud::isItemStarted() const
@@ -204,9 +203,7 @@ bool UIVirtualMachineItemCloud::isItemStarted() const
 bool UIVirtualMachineItemCloud::isItemRunning() const
 {
     return    accessible()
-           && (   machineState() == KMachineState_Running
-               || machineState() == KMachineState_Teleporting
-               || machineState() == KMachineState_LiveSnapshotting);
+           && machineState() == KCloudMachineState_Running;
 }
 
 bool UIVirtualMachineItemCloud::isItemRunningHeadless() const
@@ -216,15 +213,12 @@ bool UIVirtualMachineItemCloud::isItemRunningHeadless() const
 
 bool UIVirtualMachineItemCloud::isItemPaused() const
 {
-    return    accessible()
-           && (   machineState() == KMachineState_Paused
-               || machineState() == KMachineState_TeleportingPausedVM);
+    return false;
 }
 
 bool UIVirtualMachineItemCloud::isItemStuck() const
 {
-    return    accessible()
-           && machineState() == KMachineState_Stuck;
+    return false;
 }
 
 bool UIVirtualMachineItemCloud::isItemCanBeSwitchedTo() const
@@ -307,4 +301,17 @@ void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone(UITask *pTa
 
     /* Notify listeners finally: */
     emit sigStateChange();
+}
+
+/* static */
+KCloudMachineState UIVirtualMachineItemCloud::toCloudMachineState(KMachineState enmState)
+{
+    switch (enmState)
+    {
+        case KMachineState_Starting:   return KCloudMachineState_Starting;
+        case KMachineState_Running:    return KCloudMachineState_Running;
+        case KMachineState_Stopping:   return KCloudMachineState_Stopping;
+        case KMachineState_PoweredOff: return KCloudMachineState_Stopped;
+        default:                       return KCloudMachineState_Stopped;
+    }
 }

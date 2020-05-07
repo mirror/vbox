@@ -29,6 +29,7 @@
 
 /* Determines if <Object of type X> can be converted to object of other type.
  * These functions returns 'true' for all allowed conversions. */
+template<> bool canConvert<KCloudMachineState>() { return true; }
 template<> bool canConvert<KMachineState>() { return true; }
 template<> bool canConvert<KSessionState>() { return true; }
 template<> bool canConvert<KParavirtProvider>() { return true; }
@@ -53,6 +54,42 @@ template<> bool canConvert<KStorageBus>() { return true; }
 template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
+
+/* QIcon <= KCloudMachineState: */
+template<> QIcon toIcon(const KCloudMachineState &state)
+{
+    switch (state)
+    {
+        case KCloudMachineState_Provisioning:  return UIIconPool::iconSet(":/state_running_16px.png");
+        case KCloudMachineState_Running:       return UIIconPool::iconSet(":/state_running_16px.png");
+        case KCloudMachineState_Starting:      return UIIconPool::iconSet(":/state_running_16px.png");
+        case KCloudMachineState_Stopping:      return UIIconPool::iconSet(":/state_saving_16px.png");
+        case KCloudMachineState_Stopped:       return UIIconPool::iconSet(":/state_saved_16px.png");
+        case KCloudMachineState_CreatingImage: return UIIconPool::iconSet(":/state_saved_16px.png");
+        case KCloudMachineState_Terminating:   return UIIconPool::iconSet(":/state_discarding_16px.png");
+        case KCloudMachineState_Terminated:    return UIIconPool::iconSet(":/state_powered_off_16px.png");
+        default: AssertMsgFailed(("No icon for %d", state)); break;
+    }
+    return QIcon();
+}
+
+/* QString <= KCloudMachineState: */
+template<> QString toString(const KCloudMachineState &state)
+{
+    switch (state)
+    {
+        case KCloudMachineState_Provisioning:  return QApplication::translate("UICommon", "Provisioning", "CloudMachineState");
+        case KCloudMachineState_Running:       return QApplication::translate("UICommon", "Running", "CloudMachineState");
+        case KCloudMachineState_Starting:      return QApplication::translate("UICommon", "Starting", "CloudMachineState");
+        case KCloudMachineState_Stopping:      return QApplication::translate("UICommon", "Stopping", "CloudMachineState");
+        case KCloudMachineState_Stopped:       return QApplication::translate("UICommon", "Stopped", "CloudMachineState");
+        case KCloudMachineState_CreatingImage: return QApplication::translate("UICommon", "Creating Image", "CloudMachineState");
+        case KCloudMachineState_Terminating:   return QApplication::translate("UICommon", "Terminating", "CloudMachineState");
+        case KCloudMachineState_Terminated:    return QApplication::translate("UICommon", "Terminated", "CloudMachineState");
+        default: AssertMsgFailed(("No text for %d", state)); break;
+    }
+    return QString();
+}
 
 /* QColor <= KMachineState: */
 template<> QColor toColor(const KMachineState &state)

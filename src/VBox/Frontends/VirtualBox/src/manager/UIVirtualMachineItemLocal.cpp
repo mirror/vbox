@@ -42,6 +42,7 @@ UIVirtualMachineItemLocal::UIVirtualMachineItemLocal(const CMachine &comMachine)
     : UIVirtualMachineItem(UIVirtualMachineItemType_Local)
     , m_comMachine(comMachine)
     , m_cSnaphot(0)
+    , m_enmMachineState(KMachineState_Null)
     , m_enmSessionState(KSessionState_Null)
 {
     recache();

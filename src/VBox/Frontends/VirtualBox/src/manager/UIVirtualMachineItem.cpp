@@ -27,7 +27,6 @@
 UIVirtualMachineItem::UIVirtualMachineItem(UIVirtualMachineItemType enmType)
     : m_enmType(enmType)
     , m_fAccessible(false)
-    , m_enmMachineState(KMachineState_Null)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_fHasDetails(false)
 {

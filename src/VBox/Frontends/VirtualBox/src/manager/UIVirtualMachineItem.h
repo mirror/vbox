@@ -84,8 +84,6 @@ public:
 
     /** @name State attributes.
       * @{ */
-        /** Returns cached machine state. */
-        KMachineState machineState() const { return m_enmMachineState; }
         /** Returns cached machine state name. */
         QString machineStateName() const { return m_strMachineStateName; }
         /** Returns cached machine state icon. */
@@ -171,8 +169,6 @@ protected:
 
     /** @name State attributes.
       * @{ */
-        /** Holds cached machine state. */
-        KMachineState  m_enmMachineState;
         /** Holds cached machine state name. */
         QString        m_strMachineStateName;
         /** Holds cached machine state name. */
