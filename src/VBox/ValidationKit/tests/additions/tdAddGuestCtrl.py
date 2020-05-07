@@ -1603,6 +1603,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         Waits for a guest facility to enter a certain status.
         By default the "Active" status is being used.
+
+        Returns success status.
         """
 
         reporter.log('Waiting for Guest Additions facility "%s" to change to status %s (%dms timeout)...'
@@ -1648,8 +1650,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Wait for VBoxService to come up.
         #
+        reporter.testStart('Waiting for VBoxService to get started');
         fRc = self.waitForGuestFacility(oSession, vboxcon.AdditionsFacilityType_VBoxService, "VBoxService",
                                         vboxcon.AdditionsFacilityStatus_Active);
+        reporter.testDone();
         if not fRc:
             return (False, oTxsSession);
 
