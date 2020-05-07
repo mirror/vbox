@@ -844,7 +844,7 @@ RTDECL(int) RTVfsNewSymlink(PCRTVFSSYMLINKOPS pSymlinkOps, size_t cbInstance, RT
  *
  * @returns Pointer to the private data.  NULL if the handle is invalid in some
  *          way.
- * @param   hVfsIos             The I/O stream handle.
+ * @param   hVfsSym             The symlink handle.
  * @param   pSymlinkOps         The symlink operations.  This servers as a sort
  *                              of password.
  */
