@@ -1629,10 +1629,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             self.oTstDrv.sleep(5); # Do some busy waiting.
 
         if not fRc:
-            reporter.testFailure('Waiting for Guest Additions facility "%s" timed out' % (sDesc));
+            reporter.error('Waiting for Guest Additions facility "%s" timed out' % (sDesc));
         else:
-            reporter.testFailure('Guest Additions facility "%s" reached requested status %s after %dms'
-                                 % (sDesc, str(eFacilityStatus), base.timestampMilli() - tsStart));
+            reporter.log('Guest Additions facility "%s" reached requested status %s after %dms'
+                         % (sDesc, str(eFacilityStatus), base.timestampMilli() - tsStart));
 
         return fRc;
 
