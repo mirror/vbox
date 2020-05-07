@@ -241,18 +241,18 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             self.terminateVmBySession(oSession)
         return fRc;
 
-    def waitForGuestAdditionsRunLevel(self, oSession, oGuest, cMsTimeout, iRunLevel):
+    def waitForGuestAdditionsRunLevel(self, oSession, oGuest, cMsTimeout, eRunLevel):
         """
         Waits for the Guest Additions to reach a specific run level.
 
         Returns success status.
         """
         # No need to wait as we already reached the run level?
-        if iRunLevel == oGuest.additionsRunLevel:
-            reporter.log('Already reached run level %s' % iRunLevel);
+        if eRunLevel == oGuest.additionsRunLevel:
+            reporter.log('Already reached run level %s' % eRunLevel);
             return True;
 
-        reporter.log('Waiting for Guest Additions to reach run level %s ...' % iRunLevel);
+        reporter.log('Waiting for Guest Additions to reach run level %s ...' % eRunLevel);
 
         oConsoleCallbacks = oSession.registerDerivedEventHandler(tdAddBasicConsoleCallbacks, \
                                                                  {'oTstDrv':self, 'oGuest':oGuest, });
@@ -265,18 +265,21 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 if oTask is not None:
                     break;
                 if self.fGAStatusCallbackFired:
-                    reporter.log('Reached new run level %s' % iRunLevel);
-                    if iRunLevel == self.iGAStatusCallbackRunlevel:
+                    reporter.log('Reached new run level %s' % eRunLevel);
+                    if eRunLevel == self.iGAStatusCallbackRunlevel:
                         fRc = True;
                         break;
                     self.fGAStatusCallbackFired = False;
-            if not fRc:
-                reporter.testFailure('Guest Additions status did not change to required level');
+            if fRc:
+                reporter.log('Guest Additions run level reached after %dms' % (base.timestampMilli() - tsStart));
+            else:
+                reporter.error('Guest Additions run level not reached');
 
             # cleanup.
             oConsoleCallbacks.unregister();
 
-        reporter.log('Waiting for Guest Additions to reach run level %s ended with %s' % (iRunLevel, fRc));
+        if not fRc:
+            reporter.log('Waiting for Guest Additions to reach run level %s failed' % (eRunLevel));
         return fRc;
 
     def testInstallAdditions(self, oSession, oTxsSession, oTestVm):
