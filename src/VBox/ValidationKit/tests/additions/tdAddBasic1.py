@@ -386,34 +386,38 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000, '${CDROM}/VBoxWindowsAdditions.exe',
                               ('${CDROM}/VBoxWindowsAdditions.exe', '/S', '/l', '/with_autologon'), fCheckSessionStatus = True);
 
+        # Add the Windows Guest Additions installer files to the files we want to download
+        # from the guest.
+        sGuestAddsDir = 'C:/Program Files/Oracle/VirtualBox Guest Additions/';
+        asLogFiles.append(sGuestAddsDir + 'install.log');
+        # Note: There won't be a install_ui.log because of the silent installation.
+        asLogFiles.append(sGuestAddsDir + 'install_drivers.log');
+        asLogFiles.append('C:/Windows/setupapi.log');
+
+        # Note: setupapi.dev.log only is available since Windows 2000.
+        if fHaveSetupApiDevLog:
+            asLogFiles.append('C:/Windows/setupapi.dev.log');
+
+        #
+        # Download log files.
+        # Ignore errors as all files above might not be present (or in different locations)
+        # on different Windows guests.
+        #
+        self.txsDownloadFiles(oSession, oTxsSession, asLogFiles, fIgnoreErrors = True);
+
         #
         # Reboot the VM and reconnect the TXS session.
         #
-        if not fRc \
-        or oTxsSession.getResult() is False:
-            reporter.error('Error installing Windows Guest Additions (installer returned with exit code)')
+        if fRc:
+            reporter.testStart('Rebooting guest w/ updated Guest Additions active');
+            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000);
+            if fRc:
+                pass;
+            else:
+                reporter.testFailure('Rebooting and reconnecting to TXS service failed');
+            reporter.testDone();
         else:
-            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000,
-                                                                  cMsCdWait = 15 * 60 * 1000);
-            if fRc is True:
-                # Add the Windows Guest Additions installer files to the files we want to download
-                # from the guest.
-                sGuestAddsDir = 'C:/Program Files/Oracle/VirtualBox Guest Additions/';
-                asLogFiles.append(sGuestAddsDir + 'install.log');
-                # Note: There won't be a install_ui.log because of the silent installation.
-                asLogFiles.append(sGuestAddsDir + 'install_drivers.log');
-                asLogFiles.append('C:/Windows/setupapi.log');
-
-                # Note: setupapi.dev.log only is available since Windows 2000.
-                if fHaveSetupApiDevLog:
-                    asLogFiles.append('C:/Windows/setupapi.dev.log');
-
-                #
-                # Download log files.
-                # Ignore errors as all files above might not be present (or in different locations)
-                # on different Windows guests.
-                #
-                self.txsDownloadFiles(oSession, oTxsSession, asLogFiles, fIgnoreErrors = True);
+            reporter.error('Error installing Windows Guest Additions (installer returned with exit code <> 0)')
 
         return (fRc, oTxsSession);
 
@@ -465,8 +469,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Do the final reboot to get the just installed Guest Additions up and running.
         if fRc:
             reporter.testStart('Rebooting guest w/ updated Guest Additions active');
-            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000,
-                                                                  cMsCdWait = 15 * 60 * 1000);
+            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 15 * 60 * 1000);
             if fRc:
                 pass
             else:
