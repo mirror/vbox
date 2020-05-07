@@ -1651,7 +1651,7 @@ void UIChooserModel::removeItems(const QList<UIChooserItemMachine*> &machineItem
 void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
 {
     /* Confirm machine removal: */
-    int iResultCode = msgCenter().confirmMachineRemoval(machines);
+    const int iResultCode = msgCenter().confirmMachineRemoval(machines);
     if (iResultCode == AlertButton_Cancel)
         return;
 
@@ -1707,7 +1707,8 @@ void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
 void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machines)
 {
     /* Confirm machine removal: */
-    if (!msgCenter().confirmCloudMachineRemoval(machines))
+    const int iResultCode = msgCenter().confirmCloudMachineRemoval(machines);
+    if (iResultCode == AlertButton_Cancel)
         return;
 
     /* Change selection to some close by item: */
@@ -1723,13 +1724,20 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
             msgCenter().cannotAcquireCloudMachineParameter(comMachine);
             continue;
         }
+
+        CProgress comProgress;
+        /* Prepare remove progress: */
+        if (iResultCode == AlertButton_Choice1)
+            comProgress = comMachine.Remove();
         /* Prepare unregister progress: */
-        CProgress comProgress = comMachine.Unregister();
+        else if (iResultCode == AlertButton_Choice2)
+            comProgress = comMachine.Unregister();
         if (!comMachine.isOk())
         {
             msgCenter().cannotRemoveCloudMachine(comMachine);
             continue;
         }
+
         /* And show unregister progress finally: */
         msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_delete_90px.png");
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)

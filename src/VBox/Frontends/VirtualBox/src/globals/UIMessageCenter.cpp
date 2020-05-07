@@ -752,7 +752,7 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
                    tr("Remove only"));
 }
 
-bool UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const
+int UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const
 {
     /* Enumerate the machines: */
     QStringList machineNames;
@@ -765,14 +765,19 @@ bool UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &mac
 
     /* Prepare message text: */
     QString strText = tr("<p>You are about to remove following cloud virtual machines from the machine list:</p>"
-                         "<p>%1</p>")
+                         "<p>%1</p>"
+                         "<p>Would you like to delete the instances and boot volumes of these machines as well?</p>")
                          .arg(machineNames.join(", "));
 
     /* Prepare message itself: */
-    return questionBinary(0, MessageType_Question,
-                          strText,
-                          0 /* auto-confirm id */,
-                          tr("Remove"));
+    return message(0, MessageType_Question,
+                   strText, QString(),
+                   0 /* auto-confirm id */,
+                   AlertButton_Choice1,
+                   AlertButton_Choice2,
+                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                   tr("Delete everything"),
+                   tr("Remove only"));
 }
 
 void UIMessageCenter::cannotRemoveMachine(const CMachine &machine) const
