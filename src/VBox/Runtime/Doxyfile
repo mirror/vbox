@@ -2087,7 +2087,7 @@ PREDEFINED             = DOXYGEN_RUNNING \
                          "RT_SRC_POS_DECL=int SRC_POS" \
                          RT_IPRT_FORMAT_ATTR(a,b)= \
                          RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
-                         RT_NO_THROW_PROTO=
+                         RT_NO_THROW_PROTO= \
                          \
                          RT_MSC_PREREQ(a)=0 \
                          RT_MSC_PREREQ_EX(a,b)=b
