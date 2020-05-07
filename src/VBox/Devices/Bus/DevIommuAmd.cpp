@@ -480,6 +480,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_MAX_DEV_TAB_SEGMENTS                  3
 /** Maximum number of host address translation levels supported. */
 #define IOMMU_MAX_HOST_PT_LEVEL                     6
+/** The IOTLB entry magic. */
+#define IOMMU_IOTLBE_MAGIC                          0x10acce55
 /** @} */
 
 /**
@@ -2212,14 +2214,14 @@ AssertCompileSize(IOMMUOP, 4);
  */
 typedef struct
 {
+    /** Magic (IOMMU_IOTLBE_MAGIC). */
+    uint32_t        uMagic;
+    /** Reserved for future (eviction hints?). */
+    uint16_t        uRsvd0;
     /** The I/O access permissions (IOMMU_IO_PERM_XXX). */
     uint8_t         fIoPerm;
     /** The number of offset bits in the system physical address. */
     uint8_t         cShift;
-    /** Reserved for future (eviction hints?). */
-    uint16_t        uRsvd0;
-    /** Alignment padding. */
-    uint32_t        uRsvd1;
     /** The translated system physical address of the page. */
     RTGCPHYS        GCPhysSpa;
 } IOTLBE_T;
@@ -3779,9 +3781,25 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, uint16_t uDevId, u
  */
 static void iommuAmdInitIotlbe(RTGCPHYS GCPhysSpa, uint8_t cShift, uint8_t fIoPerm, PIOTLBE_T pIotlbe)
 {
-    pIotlbe->fIoPerm   = fIoPerm;
+    pIotlbe->uMagic    = IOMMU_IOTLBE_MAGIC;
     pIotlbe->uRsvd0    = 0;
-    pIotlbe->uRsvd1    = 0;
+    pIotlbe->fIoPerm   = fIoPerm;
+    pIotlbe->cShift    = cShift;
+    pIotlbe->GCPhysSpa = GCPhysSpa;
+}
+
+/**
+ * Updates an IOTLB entry.
+ *
+ * @param   GCPhysSpa   The translated system physical address.
+ * @param   cShift      The number of offset bits in the system physical address.
+ * @param   fIoPerm     The I/O access permissions (IOMMU_IO_PERM_XXX).
+ * @param   pIotlbe     The IOTLB entry to update.
+ */
+static void iommuAmdUpdateIotlbe(RTGCPHYS GCPhysSpa, uint8_t cShift, uint8_t fIoPerm, PIOTLBE_T pIotlbe)
+{
+    Assert(pIotlbe->uMagic == IOMMU_IOTLBE_MAGIC);
+    pIotlbe->fIoPerm   = fIoPerm;
     pIotlbe->cShift    = cShift;
     pIotlbe->GCPhysSpa = GCPhysSpa;
 }
@@ -3885,7 +3903,7 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
     {
         iommuAmdRaiseIoPageFaultEvent(pDevIns, uDevId, pDte->n.u16DomainId, uIova, true /* fPresentOrValid */,
                                       enmOp, kIoPageFaultType_DteTranslationDisabled);
-        iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
+        iommuAmdUpdateIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -3898,7 +3916,7 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
             Log((IOMMU_LOG_PFX ": Access denied for IOVA (%#RX64). fAccess=%#x fDtePerm=%#x\n", uIova, fAccess, fDtePerm));
             return VERR_IOMMU_ADDR_ACCESS_DENIED;
         }
-        iommuAmdInitIotlbe(uIova, 0 /* cShift */, fDtePerm, pIotlbe);
+        iommuAmdUpdateIotlbe(uIova, 0 /* cShift */, fDtePerm, pIotlbe);
         return VINF_SUCCESS;
     }
 
@@ -3909,7 +3927,7 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
          *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
          *        I'm just going with this one... */
         /** @todo IOMMU: raise I/O page fault. */
-        iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
+        iommuAmdUpdateIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -3936,6 +3954,7 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
 static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, IOMMUOP enmOp,
                                       PIOTLBE_T pIotlbe)
 {
+    Assert(pIotlbe->uMagic == IOMMU_IOTLBE_MAGIC);
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
     /* Read the device table entry from memory. */
@@ -3948,7 +3967,7 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         { /* likely */ }
         else
         {
-            iommuAmdInitIotlbe(uIova, 0 /* cShift */, IOMMU_IO_PERM_READ_WRITE, pIotlbe);
+            iommuAmdUpdateIotlbe(uIova, 0 /* cShift */, IOMMU_IO_PERM_READ_WRITE, pIotlbe);
             return VINF_SUCCESS;
         }
 
@@ -3972,7 +3991,7 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         { /* likely */ }
         else
         {
-            iommuAmdInitIotlbe(uIova, 0 /* cShift */, IOMMU_IO_PERM_READ_WRITE, pIotlbe);
+            iommuAmdUpdateIotlbe(uIova, 0 /* cShift */, IOMMU_IO_PERM_READ_WRITE, pIotlbe);
             return VINF_SUCCESS;
         }
 
