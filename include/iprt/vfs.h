@@ -1516,10 +1516,10 @@ RTDECL(int)         RTVfsFileSetSize(RTVFSFILE hVfsFile, uint64_t cbSize, uint32
  * @{ */
 /** Normal truncate or grow (zero'ed) like RTFileSetSize . */
 #define RTVFSFILE_SIZE_F_NORMAL             UINT32_C(0x00000001)
-/** Only grow the file, ignore call if cbSize would trunacte the file.
+/** Only grow the file, ignore call if cbSize would truncate the file.
  * This is what RTFileSetAllocationSize does by default.  */
 #define RTVFSFILE_SIZE_F_GROW               UINT32_C(0x00000002)
-/** Only grow the file, ignore call if cbSize would trunacte the file.
+/** Only grow the file, ignore call if cbSize would truncate the file.
  * This is what RTFileSetAllocationSize does by default.  */
 #define RTVFSFILE_SIZE_F_GROW_KEEP_SIZE     UINT32_C(0x00000003)
 /** Action mask. */
