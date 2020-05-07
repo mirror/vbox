@@ -80,7 +80,7 @@ class tdAddBasicConsoleCallbacks(vbox.ConsoleEventHandlerBase):
     def onAdditionsStateChanged(self):
         reporter.log('onAdditionsStateChange');
         self.oTstDrv.fGAStatusCallbackFired = True;
-        self.oTstDrv.iGAStatusCallbackRunlevel = self.oGuest.additionsRunLevel;
+        self.oTstDrv.eGAStatusCallbackRunlevel = self.oGuest.additionsRunLevel;
         self.oVBoxMgr.interruptWaitEvents();
         return None;
 
@@ -105,7 +105,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
 
         self.fGAStatusCallbackFired    = False;
-        self.iGAStatusCallbackRunlevel = 0;
+        self.eGAStatusCallbackRunlevel = 0;
 
     #
     # Overridden methods.
@@ -248,11 +248,13 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Returns success status.
         """
         # No need to wait as we already reached the run level?
-        if eRunLevel == oGuest.additionsRunLevel:
+        eRunLevelCur = oGuest.additionsRunLevel;
+        if eRunLevelCur == eRunLevel:
             reporter.log('Already reached run level %s' % eRunLevel);
             return True;
 
-        reporter.log('Waiting for Guest Additions to reach run level %s ...' % eRunLevel);
+        reporter.log('Waiting for Guest Additions to reach run level %s with %dms (current: %s) ...' %
+                     (eRunLevel, cMsTimeout, eRunLevelCur));
 
         oConsoleCallbacks = oSession.registerDerivedEventHandler(tdAddBasicConsoleCallbacks, \
                                                                  {'oTstDrv':self, 'oGuest':oGuest, });
@@ -265,18 +267,21 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 if oTask is not None:
                     break;
                 if self.fGAStatusCallbackFired:
-                    reporter.log('Reached new run level %s' % eRunLevel);
-                    if eRunLevel == self.iGAStatusCallbackRunlevel:
+                    reporter.log('Reached new run level %s after %dms' %
+                                 (self.eGAStatusCallbackRunlevel, base.timestampMilli() - tsStart));
+                    if eRunLevel == self.eGAStatusCallbackRunlevel:
                         fRc = True;
                         break;
                     self.fGAStatusCallbackFired = False;
             if fRc:
-                reporter.log('Guest Additions run level reached after %dms' % (base.timestampMilli() - tsStart));
+                reporter.log('Final Guest Additions run level reached after %dms' % (base.timestampMilli() - tsStart));
             else:
                 reporter.error('Guest Additions run level not reached');
 
             # cleanup.
             oConsoleCallbacks.unregister();
+        else:
+            reporter.error('Registering derived event handler failed');
 
         if not fRc:
             reporter.log('Waiting for Guest Additions to reach run level %s failed' % (eRunLevel));
@@ -294,6 +299,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             reporter.error('Guest Additions installation not implemented for %s yet! (%s)' %
                            (oTestVm.sKind, oTestVm.sVmName,));
             fRc = False;
+        fRc = True;
 
         #
         # Verify installation of Guest Additions using commmon bits.
@@ -307,21 +313,20 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 reporter.errorXcpt('Getting IGuest failed.');
                 return (False, oTxsSession);
 
-            # Check the additionsVersion attribute. It must not be empty.
-            reporter.testStart('IGuest::additionsVersion');
-            fRc = self.testIGuest_additionsVersion(oGuest);
-            reporter.testDone();
-            if not fRc:
-                return (False, oTxsSession);
-
             # Wait for the GAs to come up.
             reporter.testStart('IGuest::additionsRunLevel');
             fRc = self.testIGuest_additionsRunLevel(oSession, oTestVm, oGuest);
             reporter.testDone();
-            if not fRc:
-                return (False, oTxsSession);
 
-            ## @todo test IAdditionsFacilities.
+            # Check the additionsVersion attribute. It must not be empty.
+            reporter.testStart('IGuest::additionsVersion');
+            fRc = self.testIGuest_additionsVersion(oGuest);
+            reporter.testDone();
+
+            # Check Guest Additions facilities
+            reporter.testStart('IGuest::getFacilityStatus');
+            fRc = self.testIGuest_getFacilityStatus(oTestVm, oGuest);
+            reporter.testDone();
 
         return (fRc, oTxsSession);
 
@@ -470,6 +475,21 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         return (fRc, oTxsSession);
 
+    def testIGuest_additionsRunLevel(self, oSession, oTestVm, oGuest):
+        """
+        Do run level tests.
+        """
+        if oTestVm.isWindows():
+            if oTestVm.isLoggedOntoDesktop():
+                eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Desktop;
+            else:
+                eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Userland;
+        else:
+            ## @todo VBoxClient does not have facility statuses implemented yet.
+            eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Userland;
+
+        return self.waitForGuestAdditionsRunLevel(oSession, oGuest, 60 * 1000, eExpectedRunLevel);
+
     def testIGuest_additionsVersion(self, oGuest):
         """
         Returns False if no version string could be obtained, otherwise True
@@ -497,16 +517,78 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         ## @todo verify the format.
         return True;
 
-    def testIGuest_additionsRunLevel(self, oSession, oTestVm, oGuest):
+    def checkFacilityStatus(self, oGuest, eFacilityType, sDesc, fMustSucceed = True):
         """
-        Do run level tests.
-        """
-        if oTestVm.isLoggedOntoDesktop():
-            eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Desktop;
-        else:
-            eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Userland;
+        Prints the current status of a Guest Additions facility.
 
-        return self.waitForGuestAdditionsRunLevel(oSession, oGuest, 5 * 60 * 1000, eExpectedRunLevel);
+        Return success status.
+        """
+
+        fRc = True;
+
+        try:
+            eStatus, _ = oGuest.getFacilityStatus(eFacilityType);
+            reporter.log3('%s -> %s' % (sDesc, eStatus,));
+        except:
+            if fMustSucceed:
+                reporter.errorXcpt('Getting facility status for %s failed' % (eFacilityType,));
+                fRc = False;
+        else:
+            if eStatus == vboxcon.AdditionsFacilityStatus_Inactive:
+                sStatus = "INACTIVE";
+            elif eStatus == vboxcon.AdditionsFacilityStatus_Paused:
+                sStatus = "PAUSED";
+            elif eStatus == vboxcon.AdditionsFacilityStatus_PreInit:
+                sStatus = "PREINIT";
+            elif eStatus == vboxcon.AdditionsFacilityStatus_Init:
+                sStatus = "INIT";
+            elif eStatus == vboxcon.AdditionsFacilityStatus_Active:
+                sStatus = "ACTIVE";
+            elif eStatus == vboxcon.AdditionsFacilityStatus_Terminating:
+                sStatus = "TERMINATING";
+                fRc = not fMustSucceed;
+            elif eStatus == vboxcon.AdditionsFacilityStatus_Terminated:
+                sStatus = "TERMINATED";
+                fRc = not fMustSucceed;
+            elif eStatus == vboxcon.AdditionsFacilityStatus_Failed:
+                sStatus = "FAILED";
+                fRc = not fMustSucceed;
+            else:
+                sStatus = "UNKNOWN";
+                fRc = not fMustSucceed;
+
+        reporter.log('Guest Additions facility "%s": %s' % (sDesc, sStatus));
+        if      fMustSucceed \
+        and not fRc:
+            reporter.error('Guest Additions facility "%s" did not report expected status (is "%s")' % (sDesc, sStatus));
+
+        return fRc;
+
+    def testIGuest_getFacilityStatus(self, oTestVm, oGuest):
+        """
+        Checks Guest Additions facilities for their status.
+
+        Returns success status.
+        """
+
+        reporter.testStart('Status VBoxGuest Driver');
+        fRc = self.checkFacilityStatus(oGuest, vboxcon.AdditionsFacilityType_VBoxGuestDriver, "VBoxGuest Driver");
+        reporter.testDone();
+
+        reporter.testStart('Status VBoxService');
+        fRc = self.checkFacilityStatus(oGuest, vboxcon.AdditionsFacilityType_VBoxService,     "VBoxService") and fRc;
+        reporter.testDone();
+
+        if oTestVm.isWindows():
+            if oTestVm.isLoggedOntoDesktop():
+                ## @todo VBoxClient does not have facility statuses implemented yet.
+                reporter.testStart('Status VBoxTray / VBoxClient');
+                fRc = self.checkFacilityStatus(oGuest, vboxcon.AdditionsFacilityType_VBoxTrayClient,
+                                               "VBoxTray / VBoxClient") and fRc;
+                reporter.testDone();
+        ## @todo Add more.
+
+        return fRc;
 
     def testGuestProperties(self, oSession, oTxsSession, oTestVm):
         """
