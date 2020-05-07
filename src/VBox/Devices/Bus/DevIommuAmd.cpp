@@ -2212,24 +2212,19 @@ AssertCompileSize(IOMMUOP, 4);
  */
 typedef struct
 {
-    /** The device ID. */
-    uint16_t        uDevId;
-    /** The domain ID. */
-    uint16_t        uDomainId;
-    /** @todo Shouldn't we also store how many bits are the offset into the page for
-     *        pages > 4K? */
-    /** The I/O virtual address. */
-    uint64_t        uIova;
-    /** The translated system physical address. */
-    RTGCPHYS        GCPhysSpa;
     /** The I/O access permissions (IOMMU_IO_PERM_XXX). */
     uint8_t         fIoPerm;
-    /** Alignment padding. */
-    uint8_t         fRsvd0;
+    /** The number of offset bits in the system physical address. */
+    uint8_t         cShift;
     /** Reserved for future (eviction hints?). */
-    uint32_t        uPadding0;
+    uint16_t        uRsvd0;
+    /** Alignment padding. */
+    uint32_t        uRsvd1;
+    /** The translated system physical address of the page. */
+    RTGCPHYS        GCPhysSpa;
 } IOTLBE_T;
 AssertCompileSizeAlignment(IOTLBE_T, 8);
+AssertCompileMemberAlignment(IOTLBE_T, GCPhysSpa, 8);
 /** Pointer to an IOMMU I/O TLB entry struct. */
 typedef IOTLBE_T *PIOTLBE_T;
 /** Pointer to a const IOMMU I/O TLB entry struct. */
@@ -3777,22 +3772,17 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, uint16_t uDevId, u
 /**
  * Initializes an IOTLB entry.
  *
- * @param   uDevId      The device ID.
- * @param   uDomainId   The domain ID.
- * @param   fIoPerm     The I/O access permissions (IOMMU_IO_PERM_XXX).
- * @param   uIova       The I/O virtual address.
  * @param   GCPhysSpa   The translated system physical address.
+ * @param   cShift      The number of offset bits in the system physical address.
+ * @param   fIoPerm     The I/O access permissions (IOMMU_IO_PERM_XXX).
  * @param   pIotlbe     Where to store the initialized IOTLB entry.
  */
-static void iommuAmdInitIotlbe(uint16_t uDevId, uint16_t uDomainId, uint8_t fIoPerm, uint64_t uIova, RTGCPHYS GCPhysSpa,
-                               PIOTLBE_T pIotlbe)
+static void iommuAmdInitIotlbe(RTGCPHYS GCPhysSpa, uint8_t cShift, uint8_t fIoPerm, PIOTLBE_T pIotlbe)
 {
-    pIotlbe->uDevId    = uDevId;
-    pIotlbe->uDomainId = uDomainId;
     pIotlbe->fIoPerm   = fIoPerm;
-    pIotlbe->fRsvd0    = 0;
-    pIotlbe->uPadding0 = 0;
-    pIotlbe->uIova     = uIova;
+    pIotlbe->uRsvd0    = 0;
+    pIotlbe->uRsvd1    = 0;
+    pIotlbe->cShift    = cShift;
     pIotlbe->GCPhysSpa = GCPhysSpa;
 }
 
@@ -3878,12 +3868,11 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  *                      permissions for the access being made.
  * @param   pDte        The device table entry.
  * @param   enmOp       The IOMMU operation being performed.
- * @param   pGCPhysSpa  Where to store the system physical address.
- * @param   pfIoPerm    Where to store the I/O access permissions. This is the
- *                      permission of what access is allowed.
+ * @param   pIotlbe     The IOTLB entry to update with the results of the
+ *                      translation.
  */
 static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
-                                    PCDTE_T pDte, IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa, uint8_t *pfIoPerm)
+                                    PCDTE_T pDte, IOMMUOP enmOp, PIOTLBE_T pIotlbe)
 {
     NOREF(pDevIns);
     Assert(pDte->n.u1Valid);
@@ -3896,8 +3885,7 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
     {
         iommuAmdRaiseIoPageFaultEvent(pDevIns, uDevId, pDte->n.u16DomainId, uIova, true /* fPresentOrValid */,
                                       enmOp, kIoPageFaultType_DteTranslationDisabled);
-        *pGCPhysSpa = 0;
-        *pfIoPerm   = 0;
+        iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -3910,8 +3898,7 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
             Log((IOMMU_LOG_PFX ": Access denied for IOVA (%#RX64). fAccess=%#x fDtePerm=%#x\n", uIova, fAccess, fDtePerm));
             return VERR_IOMMU_ADDR_ACCESS_DENIED;
         }
-        *pGCPhysSpa = uIova;
-        *pfIoPerm   = fDtePerm;
+        iommuAmdInitIotlbe(uIova, 0 /* cShift */, fDtePerm, pIotlbe);
         return VINF_SUCCESS;
     }
 
@@ -3921,8 +3908,8 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
         /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
          *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
          *        I'm just going with this one... */
-        *pGCPhysSpa = 0;
-        *pfIoPerm   = IOMMU_IO_PERM_NONE;
+        /** @todo IOMMU: raise I/O page fault. */
+        iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
@@ -3951,61 +3938,54 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
-    /* Read the device table entry. */
+    /* Read the device table entry from memory. */
     DTE_T Dte;
     int rc = iommuAmdReadDte(pDevIns, uDevId, enmOp, &Dte);
     if (RT_SUCCESS(rc))
     {
-        RTGCPHYS GCPhysSpa = 0;
-        uint8_t  fIoPerm   = IOMMU_IO_PERM_NONE;
-
+        /* If the DTE is not valid addresses are forwarded without translation */
         if (Dte.n.u1Valid)
-        {
-            /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
-            uint64_t const fRsvdQword0 = Dte.au64[0] & ~(IOMMU_DTE_QWORD_0_VALID_MASK & ~IOMMU_DTE_QWORD_0_FEAT_MASK);
-            uint64_t const fRsvdQword1 = Dte.au64[1] & ~(IOMMU_DTE_QWORD_1_VALID_MASK & ~IOMMU_DTE_QWORD_1_FEAT_MASK);
-            if (   fRsvdQword0
-                || fRsvdQword1)
-            {
-                Log((IOMMU_LOG_PFX ": Invalid reserved bits in DTE (u64[0]=%#RX64 u64[1]=%#RX64) -> Illegal DTE\n", fRsvdQword0,
-                     fRsvdQword1));
-                iommuAmdRaiseIllegalDteEvent(pDevIns, uDevId, uIova, enmOp, kIllegalDteType_RsvdNotZero);
-                return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
-            }
-
-            /* Ensure the IOVA is not in the exclusion range. */
-            if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable
-                || !iommuAmdIsDvaInExclRange(pThis, &Dte, uIova))
-            {
-                rc = iommuAmdWalkIoPageTables(pDevIns, uDevId, uIova, cbAccess, IOMMU_IO_PERM_READ, &Dte, enmOp, &GCPhysSpa,
-                                              &fIoPerm);
-                if (RT_FAILURE(rc))
-                    Log((IOMMU_LOG_PFX ": I/O page table walk failed. rc=%Rrc\n"));
-            }
-            else
-            {
-                /* If the IOVA is subject to address exclusion, addresses are forwarded without translation. */
-                GCPhysSpa = uIova;
-                fIoPerm   = IOMMU_IO_PERM_READ_WRITE;
-            }
-        }
+        { /* likely */ }
         else
         {
-            /* Addresses are forwarded without translation when DTE.V is 0. */
-            GCPhysSpa = uIova;
-            fIoPerm   = IOMMU_IO_PERM_READ_WRITE;
+            iommuAmdInitIotlbe(uIova, 0 /* cShift */, IOMMU_IO_PERM_READ_WRITE, pIotlbe);
+            return VINF_SUCCESS;
         }
 
-        pIotlbe->GCPhysSpa = GCPhysSpa;
-        pIotlbe->fIoPerm   = fIoPerm;
-    }
-    else
-    {
-        Log((IOMMU_LOG_PFX ": Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
-        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+        /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
+        uint64_t const fRsvdQword0 = Dte.au64[0] & ~(IOMMU_DTE_QWORD_0_VALID_MASK & ~IOMMU_DTE_QWORD_0_FEAT_MASK);
+        uint64_t const fRsvdQword1 = Dte.au64[1] & ~(IOMMU_DTE_QWORD_1_VALID_MASK & ~IOMMU_DTE_QWORD_1_FEAT_MASK);
+        if (RT_LIKELY(   !fRsvdQword0
+                      && !fRsvdQword1))
+        { /* likely */ }
+        else
+        {
+            Log((IOMMU_LOG_PFX ": Invalid reserved bits in DTE (u64[0]=%#RX64 u64[1]=%#RX64) -> Illegal DTE\n", fRsvdQword0,
+                 fRsvdQword1));
+            iommuAmdRaiseIllegalDteEvent(pDevIns, uDevId, uIova, enmOp, kIllegalDteType_RsvdNotZero);
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+        }
+
+        /* If the IOVA is subject to address exclusion addresses are forwarded without translation. */
+        if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable
+            || !iommuAmdIsDvaInExclRange(pThis, &Dte, uIova))
+        { /* likely */ }
+        else
+        {
+            iommuAmdInitIotlbe(uIova, 0 /* cShift */, IOMMU_IO_PERM_READ_WRITE, pIotlbe);
+            return VINF_SUCCESS;
+        }
+
+        /* Walk the I/O page tables to translate and get permission bits for the IOVA. */
+        rc = iommuAmdWalkIoPageTables(pDevIns, uDevId, uIova, cbAccess, IOMMU_IO_PERM_READ, &Dte, enmOp, pIotlbe);
+        if (RT_FAILURE(rc))
+            Log((IOMMU_LOG_PFX ": I/O page table walk failed. rc=%Rrc\n"));
+
+        return rc;
     }
 
-    return rc;
+    Log((IOMMU_LOG_PFX ": Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
+    return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
 }
 
 
@@ -4034,7 +4014,7 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
     if (Ctrl.n.u1IommuEn)
     {
         IOTLBE_T Iotlbe;
-        iommuAmdInitIotlbe(uDevId, 0 /* uDomainId */, IOMMU_IO_PERM_NONE, uIova, 0 /* GCPhySpa */, &Iotlbe);
+        iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /*cShift*/, IOMMU_IO_PERM_NONE, &Iotlbe);
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
