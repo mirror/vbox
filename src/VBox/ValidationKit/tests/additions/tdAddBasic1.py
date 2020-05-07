@@ -260,12 +260,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                                                  {'oTstDrv':self, 'oGuest':oGuest, });
         fRc = False;
         if oConsoleCallbacks is not None:
-            # Wait for 5 minutes max.
             tsStart = base.timestampMilli();
             while base.timestampMilli() - tsStart < cMsTimeout:
-                oTask = self.waitForTasks(1000);
-                if oTask is not None:
-                    break;
+                self.sleep(1); # Do some busy waiting.
                 if self.fGAStatusCallbackFired:
                     reporter.log('Reached new run level %s after %dms' %
                                  (self.eGAStatusCallbackRunlevel, base.timestampMilli() - tsStart));
@@ -299,7 +296,6 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             reporter.error('Guest Additions installation not implemented for %s yet! (%s)' %
                            (oTestVm.sKind, oTestVm.sVmName,));
             fRc = False;
-        fRc = True;
 
         #
         # Verify installation of Guest Additions using commmon bits.
