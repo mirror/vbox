@@ -804,7 +804,12 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
     /* For every selected item: */
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        /* Get item state: */
+        /* But for local machine items only: */
+        AssertPtrReturnVoid(pItem);
+        if (pItem->itemType() != UIVirtualMachineItemType_Local)
+            continue;
+
+        /* Get machine item state: */
         const KMachineState enmState = pItem->machineState();
 
         /* Check if current item could be paused/resumed: */
@@ -918,6 +923,7 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
     foreach (UIVirtualMachineItem *pItem, items)
     {
         /* Check if current item could be saved: */
+        AssertPtrReturnVoid(pItem);
         if (!isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_SaveState, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
@@ -930,8 +936,10 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
         CConsole comConsole = comSession.GetConsole();
         /* Get session machine: */
         CMachine comMachine = comSession.GetMachine();
+        /* Get machine item state: */
+        const KMachineState enmState = pItem->machineState();
         /* Pause VM first if necessary: */
-        if (pItem->machineState() != KMachineState_Paused)
+        if (enmState != KMachineState_Paused)
             comConsole.Pause();
         if (comConsole.isOk())
         {

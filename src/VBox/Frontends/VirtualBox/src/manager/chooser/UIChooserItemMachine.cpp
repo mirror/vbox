@@ -91,13 +91,16 @@ void UIChooserItemMachine::recache()
 
 bool UIChooserItemMachine::isLockedMachine() const
 {
-    const KMachineState enmState = cacheType() == UIVirtualMachineItemType_Local
-                                 ? cache()->machineState()
-                                 : KMachineState_Null;
-    return enmState != KMachineState_PoweredOff &&
-           enmState != KMachineState_Saved &&
-           enmState != KMachineState_Teleported &&
-           enmState != KMachineState_Aborted;
+    /* For local machines only, others always unlocked: */
+    if (cacheType() != UIVirtualMachineItemType_Local)
+        return false;
+
+    /* Acquire local machine state: */
+    const KMachineState enmState = cache()->machineState();
+    return    enmState != KMachineState_PoweredOff
+           && enmState != KMachineState_Saved
+           && enmState != KMachineState_Teleported
+           && enmState != KMachineState_Aborted;
 }
 
 bool UIChooserItemMachine::isToolButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const
