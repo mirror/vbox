@@ -1851,6 +1851,27 @@ static int vgsvcGstCtrlSessionReadKeyAndAccept(uint32_t idClient, uint32_t idSes
 }
 
 /**
+ * Invalidates a guest session by updating all it's internal parameters like host features and stuff.
+ *
+ * @param   pSession            Session to invalidate.
+ * @param   idClient            Client ID to use.
+ */
+static void vgsvcGstCtrlSessionInvalidate(PVBOXSERVICECTRLSESSION pSession, uint32_t idClient)
+{
+    RT_NOREF(pSession);
+
+    VGSvcVerbose(1, "Invalidating session %RU32 (client ID=%RU32)\n", idClient, pSession->StartupInfo.uSessionID);
+
+    int rc2 = VbglR3GuestCtrlQueryFeatures(idClient, &g_fControlHostFeatures0);
+    if (RT_SUCCESS(rc2)) /* Querying host features is not fatal -- do not use rc here. */
+    {
+        VGSvcVerbose(1, "g_fControlHostFeatures0=%#x\n", g_fControlHostFeatures0);
+    }
+    else
+        VGSvcVerbose(1, "Querying host features failed with %Rrc\n", rc2);
+}
+
+/**
  * Main message handler for the guest control session process.
  *
  * @returns exit code.
@@ -1872,15 +1893,13 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
     g_fControlSupportsOptimizations = VbglR3GuestCtrlSupportsOptimizations(idClient);
     g_idControlSvcClient            = idClient;
 
-    int rc2 = VbglR3GuestCtrlQueryFeatures(idClient, &g_fControlHostFeatures0);
-    if (RT_FAILURE(rc2)) /* Querying host features is not fatal -- do not use rc here. */
-        VGSvcVerbose(1, "Querying host features failed with %Rrc\n", rc2);
+    VGSvcVerbose(1, "Using client ID=%RU32\n", idClient);
+
+    vgsvcGstCtrlSessionInvalidate(pSession, idClient);
 
     rc = vgsvcGstCtrlSessionReadKeyAndAccept(idClient, pSession->StartupInfo.uSessionID);
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose(1, "Using client ID=%RU32, g_fControlHostFeatures0=%#x\n", idClient, g_fControlHostFeatures0);
-
         /*
          * Report started status.
          * If session status cannot be posted to the host for some reason, bail out.
@@ -1926,6 +1945,22 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
 
                         /* Let others run (guests are often single CPU) ... */
                         RTThreadYield();
+                    }
+                    /*
+                     * Handle restore notification from host.  All the context IDs (sessions,
+                     * files, proceses, etc) are invalidated by a VM restore and must be closed.
+                     */
+                    else if (rc == VERR_VM_RESTORED)
+                    {
+                        VGSvcVerbose(1, "The VM session ID changed (i.e. restored)\n");
+                        int rc2 = VGSvcGstCtrlSessionClose(&g_Session);
+                        AssertRC(rc2);
+
+                        rc2 = VbglR3GuestCtrlSessionHasChanged(g_idControlSvcClient, g_idControlSvcClient);
+                        AssertRC(rc2);
+
+                        /* Invalidate the internal state to match the current host we got restored from. */
+                        vgsvcGstCtrlSessionInvalidate(pSession, g_idControlSvcClient);
                     }
                     else
                     {
