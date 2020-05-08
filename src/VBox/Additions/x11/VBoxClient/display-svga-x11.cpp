@@ -1133,7 +1133,7 @@ static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
     if (x11Context.pXRRGetScreenResources)
         x11Context.pScreenResources = x11Context.pXRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
 #endif
-    x11Context.hOutputCount = determineOutputCount();
+    x11Context.hOutputCount = x11Context.fWmwareCtrlExtention ? determineOutputCount() : 1;
 
     if (!x11Context.pScreenResources)
     {
