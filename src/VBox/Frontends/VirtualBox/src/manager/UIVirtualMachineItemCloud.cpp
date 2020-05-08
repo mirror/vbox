@@ -128,10 +128,7 @@ void UIVirtualMachineItemCloud::recache()
 
             /* Determine whether VM is accessible: */
             m_fAccessible = m_comCloudMachine.GetAccessible();
-            CVirtualBoxErrorInfo comInfo = m_comCloudMachine.GetAccessError();
-            if (!m_fAccessible && comInfo.isNull())
-                LogRel(("UIVirtualMachineItemCloud::recache: Error info is NULL for inaccessible VM.\n"));
-            m_strAccessError = !m_fAccessible && !comInfo.isNull() ? UIErrorString::formatErrorInfo(comInfo) : QString();
+            m_strAccessError = !m_fAccessible ? UIErrorString::formatErrorInfo(m_comCloudMachine.GetAccessError()) : QString();
 
             /* Determine VM OS type: */
             m_strOSTypeId = m_fAccessible ? m_comCloudMachine.GetOSTypeId() : "Other";
