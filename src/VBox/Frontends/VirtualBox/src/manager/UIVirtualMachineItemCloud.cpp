@@ -184,7 +184,8 @@ bool UIVirtualMachineItemCloud::isItemRemovable() const
 
 bool UIVirtualMachineItemCloud::isItemSaved() const
 {
-    return false;
+    return    accessible()
+           && machineState() == KCloudMachineState_Stopped;
 }
 
 bool UIVirtualMachineItemCloud::isItemPoweredOff() const

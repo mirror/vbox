@@ -1089,8 +1089,8 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Perform Discard' action class. */
-class UIActionSimpleSelectorCommonPerformDiscard : public UIActionSimple
+/** Polymorphic menu action extension, used as 'Perform Discard' action class. */
+class UIActionSimpleSelectorCommonPerformDiscard : public UIActionPolymorphicMenu
 {
     Q_OBJECT;
 
@@ -1098,10 +1098,13 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorCommonPerformDiscard(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/vm_discard_32px.png", ":/vm_discard_16px.png",
-                         ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png")
-    {}
+        : UIActionPolymorphicMenu(pParent,
+                                  ":/vm_discard_32px.png", ":/vm_discard_16px.png",
+                                  ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png")
+    {
+        /* Hide menu always: */
+        hideMenu();
+    }
 
 protected:
 
@@ -1114,10 +1117,27 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setIconText(QApplication::translate("UIActionPool", "Discard"));
-        setName(QApplication::translate("UIActionPool", "D&iscard Saved State..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Discard saved state of selected virtual machines"));
-        setToolTip(simplifyText(text()) + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+        switch (state())
+        {
+            case 0:
+            {
+                setIconText(QApplication::translate("UIActionPool", "Discard"));
+                setName(QApplication::translate("UIActionPool", "D&iscard Saved State..."));
+                setStatusTip(QApplication::translate("UIActionPool", "Discard saved state of selected virtual machines"));
+                setToolTip(simplifyText(text()) + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+                break;
+            }
+            case 1:
+            {
+                setIconText(QApplication::translate("UIActionPool", "Terminate"));
+                setName(QApplication::translate("UIActionPool", "&Terminate Cloud Instance..."));
+                setStatusTip(QApplication::translate("UIActionPool", "Terminate cloud instance of selected virtual machines"));
+                setToolTip(simplifyText(text()) + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+                break;
+            }
+            default:
+                break;
+        }
     }
 };
 

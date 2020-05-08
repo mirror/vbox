@@ -837,6 +837,16 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames) const
                           tr("Discard", "saved state"));
 }
 
+bool UIMessageCenter::confirmTerminateCloudInstance(const QString &strNames) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>Are you sure you want to terminate the cloud instance "
+                             "of the following virtual machines?</p><p><b>%1</b></p>")
+                             .arg(strNames),
+                          0 /* auto-confirm id */,
+                          tr("Terminate", "cloud instance"));
+}
+
 bool UIMessageCenter::confirmResetMachine(const QString &strNames) const
 {
     return questionBinary(0, MessageType_Question,
@@ -891,6 +901,22 @@ void UIMessageCenter::cannotDiscardSavedState(const CMachine &machine) const
           tr("Failed to discard the saved state of the virtual machine <b>%1</b>.")
              .arg(CMachine(machine).GetName()),
           UIErrorString::formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotTerminateCloudInstance(const CCloudMachine &comMachine) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to terminate the cloud instance of the virtual machine <b>%1</b>.")
+             .arg(CCloudMachine(comMachine).GetName()),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotTerminateCloudInstance(const CProgress &comProgress, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to terminate the cloud instance of the virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(comProgress));
 }
 
 void UIMessageCenter::cannotSaveMachineState(const CMachine &machine)

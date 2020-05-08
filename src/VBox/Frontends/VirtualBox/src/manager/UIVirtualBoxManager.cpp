@@ -25,6 +25,7 @@
 #include "QIFileDialog.h"
 #include "UIActionPoolManager.h"
 #include "UICloudMachineSettingsDialog.h"
+#include "UICloudNetworkingStuff.h"
 #include "UICloudProfileManager.h"
 #include "UIDesktopServices.h"
 #include "UIExtraDataManager.h"
@@ -759,27 +760,39 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
-    /* Prepare the list of the machines to be discarded: */
-    QStringList machineNames;
+    /* Prepare the list of the machines to be discarded/terminated: */
+    QStringList machinesToDiscard;
+    QStringList machinesToTerminate;
     QList<UIVirtualMachineItem*> itemsToDiscard;
+    QList<UIVirtualMachineItem*> itemsToTerminate;
     foreach (UIVirtualMachineItem *pItem, items)
     {
         if (isActionEnabled(UIActionIndexST_M_Group_S_Discard, QList<UIVirtualMachineItem*>() << pItem))
         {
-            machineNames << pItem->name();
-            itemsToDiscard << pItem;
+            if (pItem->itemType() == UIVirtualMachineItemType_Local)
+            {
+                machinesToDiscard << pItem->name();
+                itemsToDiscard << pItem;
+            }
+            else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
+            {
+                machinesToTerminate << pItem->name();
+                itemsToTerminate << pItem;
+            }
         }
     }
-    AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
+    AssertMsg(!machinesToDiscard.isEmpty() || !machinesToTerminate.isEmpty(), ("This action should not be allowed!"));
 
-    /* Confirm discarding saved VM state: */
-    if (!msgCenter().confirmDiscardSavedState(machineNames.join(", ")))
+    /* Confirm discarding/terminating: */
+    if (   (machinesToDiscard.isEmpty() || !msgCenter().confirmDiscardSavedState(machinesToDiscard.join(", ")))
+        && (machinesToTerminate.isEmpty() || !msgCenter().confirmTerminateCloudInstance(machinesToTerminate.join(", "))))
         return;
 
-    /* For every confirmed item: */
+    /* For every confirmed item to discard: */
     foreach (UIVirtualMachineItem *pItem, itemsToDiscard)
     {
         /* Open a session to modify VM: */
+        AssertPtrReturnVoid(pItem);
         CSession comSession = uiCommon().openSession(pItem->id());
         if (comSession.isNull())
             return;
@@ -792,6 +805,34 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
 
         /* Unlock machine finally: */
         comSession.UnlockMachine();
+    }
+
+    /* For every confirmed item to terminate: */
+    foreach (UIVirtualMachineItem *pItem, itemsToTerminate)
+    {
+        /* Get cloud machine: */
+        AssertPtrReturnVoid(pItem);
+        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+        AssertPtrReturnVoid(pCloudItem);
+        CCloudMachine comMachine = pCloudItem->machine();
+
+        /* Acquire machine name: */
+        QString strName;
+        if (!cloudMachineName(comMachine, strName))
+            continue;
+
+        /* Prepare terminate cloud instance progress: */
+        CProgress comProgress = comMachine.Terminate();
+        if (!comMachine.isOk())
+        {
+            msgCenter().cannotTerminateCloudInstance(comMachine);
+            continue;
+        }
+
+        /* Show terminate cloud instance progress: */
+        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png"); /// @todo use proper icon
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotTerminateCloudInstance(comProgress, strName);
     }
 }
 
@@ -1885,6 +1926,20 @@ void UIVirtualBoxManager::updateActionsAppearance()
 
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
+
+    /* Discard/Terminate action is deremined by 1st item: */
+    if (   pItem
+        && (   pItem->itemType() == UIVirtualMachineItemType_CloudFake
+            || pItem->itemType() == UIVirtualMachineItemType_CloudReal))
+    {
+        actionPool()->action(UIActionIndexST_M_Group_S_Discard)->toActionPolymorphicMenu()->setState(1);
+        actionPool()->action(UIActionIndexST_M_Machine_S_Discard)->toActionPolymorphicMenu()->setState(1);
+    }
+    else
+    {
+        actionPool()->action(UIActionIndexST_M_Group_S_Discard)->toActionPolymorphicMenu()->setState(0);
+        actionPool()->action(UIActionIndexST_M_Machine_S_Discard)->toActionPolymorphicMenu()->setState(0);
+    }
 
     /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
