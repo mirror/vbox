@@ -4038,14 +4038,14 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
-    /* Virtual address bits indexing table. */
-    static uint8_t const s_acIovaLvlShifts[] = { 0, 12, 21, 30, 39, 48, 57, 0 };
-
     /* Traverse the I/O page table starting with the page directory in the DTE. */
     IOPTENTITY_T PtEntity;
     PtEntity.u64   = pDte->au64[0];
     for (;;)
     {
+        /* The virtual address bits indexing table. */
+        static uint8_t const s_acIovaLvlShifts[] = { 0, 12, 21, 30, 39, 48, 57, 0 };
+
         /* Figure out the system physical address of the page table at the next level. */
         uint8_t const uLevel = PtEntity.n.u3NextLevel;
         Assert(uLevel > 0 && uLevel < RT_ELEMENTS(s_acIovaLvlShifts));
