@@ -1505,6 +1505,8 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *                            i.e. a series of space separated bytes formatted as two digit hex value.
  *                            Use the precision to specify the length. Default length is 16 bytes.
  *                            The width, if specified, is ignored.
+ *                            The space separtor can get change to a colon by
+ *                            using the ' flag, and removed entirely using \#.
  *      - \%RhXd            - Same as \%Rhxd, but takes an additional uint64_t
  *                            value with the memory start address/offset after
  *                            the memory pointer.

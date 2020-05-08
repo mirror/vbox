@@ -2133,7 +2133,7 @@ RTDECL(int) RTZipTarFsStreamForFile(RTVFSFILE hVfsFile, RTZIPTARFORMAT enmFormat
      */
     AssertPtrReturn(phVfsFss, VERR_INVALID_HANDLE);
     *phVfsFss = NIL_RTVFSFSSTREAM;
-    AssertPtrReturn(hVfsFile != NIL_RTVFSFILE, VERR_INVALID_HANDLE);
+    AssertReturn(hVfsFile != NIL_RTVFSFILE, VERR_INVALID_HANDLE);
     AssertReturn(enmFormat > RTZIPTARFORMAT_INVALID && enmFormat < RTZIPTARFORMAT_END, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~RTZIPTAR_C_VALID_MASK), VERR_INVALID_FLAGS);
 
@@ -2158,7 +2158,8 @@ RTDECL(int) RTZipTarFsStreamForFile(RTVFSFILE hVfsFile, RTZIPTARFORMAT enmFormat
     PRTZIPTARFSSTREAMWRITER pThis;
     size_t const            cbThis = sizeof(*pThis) + (fFlags & RTZIPTAR_C_UPDATE ? sizeof(*pThis->pRead) : 0);
     RTVFSFSSTREAM           hVfsFss;
-    int rc = RTVfsNewFsStream(&g_rtZipTarFssOps, cbThis, NIL_RTVFS, NIL_RTVFSLOCK, RTFILE_O_WRITE,
+    int rc = RTVfsNewFsStream(&g_rtZipTarFssOps, cbThis, NIL_RTVFS, NIL_RTVFSLOCK,
+                              fFlags & RTZIPTAR_C_UPDATE ? RTFILE_O_READWRITE : RTFILE_O_WRITE,
                               &hVfsFss, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
