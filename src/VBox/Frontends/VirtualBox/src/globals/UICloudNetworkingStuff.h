@@ -134,7 +134,7 @@ namespace UICloudNetworkingStuff
                                                    QWidget *pParent = 0);
     /** Acquires @a comCloudMachine state as a @a enmResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineState(const CCloudMachine &comCloudMachine,
-                                                KMachineState &enmResult,
+                                                KCloudMachineState &enmResult,
                                                 QWidget *pParent = 0);
 
     /** Refreshes @a comCloudMachine information, using @a pParent to show messages according to.

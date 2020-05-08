@@ -124,9 +124,6 @@ private slots:
 
 private:
 
-    /** Temporary! Converts state from KMachineState to KCloudMachineState. */
-    static KCloudMachineState toCloudMachineState(KMachineState enmState);
-
     /** @name Arguments.
       * @{ */
         /** Holds cached cloud machine object. */

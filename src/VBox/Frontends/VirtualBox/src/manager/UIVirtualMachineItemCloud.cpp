@@ -128,13 +128,16 @@ void UIVirtualMachineItemCloud::recache()
 
             /* Determine whether VM is accessible: */
             m_fAccessible = m_comCloudMachine.GetAccessible();
-            m_strAccessError = !m_fAccessible ? UIErrorString::formatErrorInfo(m_comCloudMachine.GetAccessError()) : QString();
+            CVirtualBoxErrorInfo comInfo = m_comCloudMachine.GetAccessError();
+            if (!m_fAccessible && comInfo.isNull())
+                LogRel(("UIVirtualMachineItemCloud::recache: Error info is NULL for inaccessible VM.\n"));
+            m_strAccessError = !m_fAccessible && !comInfo.isNull() ? UIErrorString::formatErrorInfo(comInfo) : QString();
 
             /* Determine VM OS type: */
             m_strOSTypeId = m_fAccessible ? m_comCloudMachine.GetOSTypeId() : "Other";
 
             /* Determine VM states: */
-            m_enmMachineState = m_fAccessible ? toCloudMachineState(m_comCloudMachine.GetState()) : KCloudMachineState_Stopped;
+            m_enmMachineState = m_fAccessible ? m_comCloudMachine.GetState() : KCloudMachineState_Stopped;
             m_strMachineStateName = gpConverter->toString(m_enmMachineState);
             m_machineStateIcon = gpConverter->toIcon(m_enmMachineState);
 
@@ -301,17 +304,4 @@ void UIVirtualMachineItemCloud::sltHandleRefreshCloudMachineInfoDone(UITask *pTa
 
     /* Notify listeners finally: */
     emit sigStateChange();
-}
-
-/* static */
-KCloudMachineState UIVirtualMachineItemCloud::toCloudMachineState(KMachineState enmState)
-{
-    switch (enmState)
-    {
-        case KMachineState_Starting:   return KCloudMachineState_Starting;
-        case KMachineState_Running:    return KCloudMachineState_Running;
-        case KMachineState_Stopping:   return KCloudMachineState_Stopping;
-        case KMachineState_PoweredOff: return KCloudMachineState_Stopped;
-        default:                       return KCloudMachineState_Stopped;
-    }
 }

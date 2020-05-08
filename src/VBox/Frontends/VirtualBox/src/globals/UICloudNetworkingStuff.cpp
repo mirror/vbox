@@ -433,10 +433,10 @@ bool UICloudNetworkingStuff::cloudMachineOSTypeId(const CCloudMachine &comCloudM
 }
 
 bool UICloudNetworkingStuff::cloudMachineState(const CCloudMachine &comCloudMachine,
-                                               KMachineState &enmResult,
+                                               KCloudMachineState &enmResult,
                                                QWidget *pParent /* = 0 */)
 {
-    const KMachineState enmState = comCloudMachine.GetState();
+    const KCloudMachineState enmState = comCloudMachine.GetState();
     if (!comCloudMachine.isOk())
         msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
     else
