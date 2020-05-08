@@ -1797,40 +1797,50 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
  * @returns VBox status code (fully messaged).
  * @param   pszOva              The name of the OVA.
  * @param   iVerbosity          The noise level.
- * @param   pStrName            Where to return the manifest name.
- * @param   phVfsManifest       Where to return the manifest file handle (in mem).
- * @param   pStrSignatureName   Where to return the cert-file name if already
- *                              signed.
+ * @param   fReSign             Whether it is acceptable to have an existing signature
+ *                              in the OVA or not.
+ * @param   phVfsFssOva         Where to return the OVA file system stream handle.
+ *                              This has been opened for updating and we're positioned
+ *                              at the end of the stream.
+ * @param   pStrManifestName    Where to return the manifest name.
+ * @param   phVfsManifest       Where to return the manifest file handle (copy in mem).
+ * @param   phVfsOldSignature   Where to return the handle to the old signature object.
+ *
+ * @note    Caller must clean up return values on failure too!
  */
-static int getManifestFromOva(const char *pszOva, unsigned iVerbosity,
-                              Utf8Str *pStrName, PRTVFSFILE phVfsManifest, Utf8Str *pStrSignatureName)
+static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVerbosity, bool fReSign,
+                                                PRTVFSFSSTREAM phVfsFssOva, Utf8Str *pStrManifestName,
+                                                PRTVFSFILE phVfsManifest, PRTVFSOBJ phVfsOldSignature)
 {
     /*
      * Clear return values.
      */
-    *phVfsManifest = NIL_RTVFSFILE;
-    pStrName->setNull();
-    pStrSignatureName->setNull();
+    *phVfsFssOva       = NIL_RTVFSFSSTREAM;
+    pStrManifestName->setNull();
+    *phVfsManifest     = NIL_RTVFSFILE;
+    *phVfsOldSignature = NIL_RTVFSOBJ;
 
     /*
      * Open the file as a tar file system stream.
      */
-    RTVFSIOSTREAM hVfsIosOva;
-    int rc = RTVfsIoStrmOpenNormal(pszOva, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsIosOva);
+    RTVFSFILE hVfsFileOva;
+    int rc = RTVfsFileOpenNormal(pszOva, RTFILE_O_OPEN | RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE, &hVfsFileOva);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("Failed to open OVA '%s' for reading: %Rrc", pszOva, rc);
+        return RTMsgErrorExitFailure("Failed to open OVA '%s' for updating: %Rrc", pszOva, rc);
 
-    RTVFSFSSTREAM hVfsFssIn;
-    rc = RTZipTarFsStreamFromIoStream(hVfsIosOva, 0 /*fFlags*/, &hVfsFssIn);
-    RTVfsIoStrmRelease(hVfsIosOva);
+    RTVFSFSSTREAM hVfsFssOva;
+    rc = RTZipTarFsStreamForFile(hVfsFileOva, RTZIPTARFORMAT_DEFAULT, RTZIPTAR_C_UPDATE, &hVfsFssOva);
+    RTVfsFileRelease(hVfsFileOva);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("Failed to open OVA '%s' as a TAR file: %Rrc", pszOva, rc);
+    *phVfsFssOva = hVfsFssOva;
 
     /*
      * Scan the objects in the stream and locate the manifest and any existing cert file.
      */
     if (iVerbosity >= 2)
         RTMsgInfo("Scanning OVA '%s' for a manifest and signature...", pszOva);
+    enum { kScanning, kSeenManifest, kSeenSignature } enmState = kScanning;
     for (;;)
     {
         /*
@@ -1839,7 +1849,7 @@ static int getManifestFromOva(const char *pszOva, unsigned iVerbosity,
         char           *pszName;
         RTVFSOBJTYPE    enmType;
         RTVFSOBJ        hVfsObj;
-        rc = RTVfsFsStrmNext(hVfsFssIn, &pszName, &enmType, &hVfsObj);
+        rc = RTVfsFsStrmNext(hVfsFssOva, &pszName, &enmType, &hVfsObj);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_EOF)
@@ -1850,48 +1860,57 @@ static int getManifestFromOva(const char *pszOva, unsigned iVerbosity,
         }
 
         if (iVerbosity > 2)
-            RTMsgInfo("  %s %s\n",
-                      enmType == RTVFSOBJTYPE_IO_STREAM || enmType == RTVFSOBJTYPE_FILE ? "file"
-                      : enmType == RTVFSOBJTYPE_DIR ? "dir " : "unk ",
-                      pszName);
+            RTMsgInfo("  %s %s\n", RTVfsTypeName(enmType), pszName);
 
         /*
          * Should we process this entry?
          */
-        if (   enmType  == RTVFSOBJTYPE_IO_STREAM
-            || enmType  == RTVFSOBJTYPE_FILE)
+        const char *pszSuffix = RTPathSuffix(pszName);
+        if (   pszSuffix
+            && RTStrICmpAscii(pszSuffix, ".mf") == 0
+            && (enmType == RTVFSOBJTYPE_IO_STREAM || enmType == RTVFSOBJTYPE_FILE))
         {
-            const char *pszSuffix = RTPathSuffix(pszName);
-            if (pszSuffix && RTStrICmpAscii(pszSuffix, ".mf") == 0)
+            if (   enmState >= kSeenManifest
+                || *phVfsManifest != NIL_RTVFSFILE /* paranoia */)
+                rc = RTMsgErrorRc(VERR_DUPLICATE, "OVA contains multiple manifests! first: %s  second: %s",
+                                  pStrManifestName->c_str(), pszName);
+            else
             {
-                if (*phVfsManifest != NIL_RTVFSFILE)
-                    rc = RTMsgErrorRc(VERR_DUPLICATE, "OVA contains multiple manifests! first: %s  second: %s",
-                                      pStrName->c_str(), pszName);
-                else
-                {
-                    if (iVerbosity >= 2)
-                        RTMsgInfo("Found manifest file: %s", pszName);
-                    rc = pStrName->assignNoThrow(pszName);
-                    if (RT_SUCCESS(rc))
-                    {
-                        RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
-                        Assert(hVfsIos != NIL_RTVFSIOSTREAM);
-                        rc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, phVfsManifest);
-                        RTVfsIoStrmRelease(hVfsIos);     /* consumes stream handle.  */
-                        if (RT_FAILURE(rc))
-                            rc = RTMsgErrorRc(VERR_DUPLICATE, "Failed to memorize the manifest: %Rrc", rc);
-                    }
-                    else
-                        RTMsgError("Out of memory!");
-                }
-            }
-            else if (pszSuffix && RTStrICmpAscii(pszSuffix, ".cert") == 0)
-            {
+                enmState = kSeenManifest;
                 if (iVerbosity >= 2)
-                    RTMsgInfo("Found existing signature file: %s", pszName);
-                rc = pStrSignatureName->assignNoThrow(pszName);
+                    RTMsgInfo("Found manifest file: %s", pszName);
+                rc = pStrManifestName->assignNoThrow(pszName);
+                if (RT_SUCCESS(rc))
+                {
+                    RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
+                    Assert(hVfsIos != NIL_RTVFSIOSTREAM);
+                    rc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, phVfsManifest);
+                    RTVfsIoStrmRelease(hVfsIos);     /* consumes stream handle.  */
+                    if (RT_FAILURE(rc))
+                        rc = RTMsgErrorRc(VERR_DUPLICATE, "Failed to memorize the manifest: %Rrc", rc);
+                }
+                else
+                    RTMsgError("Out of memory!");
             }
         }
+        else if (   pszSuffix
+                 && RTStrICmpAscii(pszSuffix, ".cert") == 0
+                 && (enmType == RTVFSOBJTYPE_IO_STREAM || enmType == RTVFSOBJTYPE_FILE))
+        {
+            if (   enmState >= kSeenSignature
+                || *phVfsOldSignature != NIL_RTVFSOBJ /* paranoia */)
+                rc = RTMsgErrorRc(VERR_WRONG_ORDER, "Multiple signature files! (%s)", pszName);
+            else
+            {
+                enmState = kSeenSignature;
+                if (iVerbosity >= 2)
+                    RTMsgInfo("Found existing signature file: %s", pszName);
+                *phVfsOldSignature = hVfsObj;
+                hVfsObj = NIL_RTVFSOBJ;
+            }
+        }
+        else if (enmState >= kSeenManifest)
+            rc = RTMsgErrorRc(VERR_WRONG_ORDER, "Invalid OVA file ordering! (%s)", pszName);
 
         /*
          * Release the current object and string.
@@ -1902,15 +1921,63 @@ static int getManifestFromOva(const char *pszOva, unsigned iVerbosity,
             break;
     }
 
-    RTVfsFsStrmRelease(hVfsFssIn);
-
     /*
      * Complain if no manifest.
      */
     if (RT_SUCCESS(rc) && *phVfsManifest == NIL_RTVFSFILE)
         rc = RTMsgErrorRc(VERR_NOT_FOUND, "The OVA contains no manifest and cannot be signed!");
+    else if (RT_SUCCESS(rc) && *phVfsOldSignature != NIL_RTVFSOBJ && !fReSign)
+        rc = RTMsgErrorRc(VERR_ALREADY_EXISTS,
+                          "The OVA is already signed! (Use the --force option to force re-signing it.)");
 
     return rc;
+}
+
+
+/**
+ * Continues where openOvaAndGetManifestAndOldSignature() left off and writes
+ * the signature file to the OVA.
+ *
+ * When @a hVfsOldSignature isn't NIL, the old signature it represent will be
+ * replaced.  The open function has already made sure there isn't anything
+ * following the .cert file in that case.
+ */
+static int updateTheOvaSignature(RTVFSFSSTREAM hVfsFssOva, const char *pszOva,
+                                 const char *pszSignatureName, RTVFSFILE hVfsFileSignature, RTVFSOBJ hVfsOldSignature)
+{
+    /*
+     * Truncate the file at the old signature, if present.
+     */
+    int rc;
+    if (hVfsOldSignature != NIL_RTVFSOBJ)
+    {
+        rc = RTZipTarFsStreamTruncate(hVfsFssOva, hVfsOldSignature, false /*fAfter*/);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorRc(rc, "RTZipTarFsStreamTruncate failed on '%s': %Rrc", pszOva, rc);
+    }
+
+    /*
+     * Append the signature file.  We have to rewind it first or
+     * we'll end up with VERR_EOF, probably not a great idea...
+     */
+    rc = RTVfsFileSeek(hVfsFileSignature, 0, RTFILE_SEEK_BEGIN, NULL);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorRc(rc, "RTVfsFileSeek(hVfsFileSignature) failed: %Rrc", rc);
+
+    RTVFSOBJ hVfsObj = RTVfsObjFromFile(hVfsFileSignature);
+    rc = RTVfsFsStrmAdd(hVfsFssOva, pszSignatureName, hVfsObj, 0 /*fFlags*/);
+    RTVfsObjRelease(hVfsObj);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorRc(rc, "RTVfsFsStrmAdd('%s') failed on '%s': %Rrc", pszSignatureName, pszOva, rc);
+
+    /*
+     * Terminate the file system stream.
+     */
+    rc = RTVfsFsStrmEnd(hVfsFssOva);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorRc(rc, "RTVfsFsStrmEnd failed on '%s': %Rrc", pszOva, rc);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2002,7 +2069,7 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                         rc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, _8K, &hVfsFileSignature);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = (int)RTVfsFilePrintf(hVfsFileSignature, "%s(%s) = %.*Rhxs\n\n",
+                            rc = (int)RTVfsFilePrintf(hVfsFileSignature, "%s(%s) = %#.*Rhxs\n\n",
                                                       pszDigestType, pszManifestName, cbSignature, pvSignature);
                             if (RT_SUCCESS(rc))
                             {
@@ -2050,18 +2117,6 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
         RTMsgError("Failed to create digest %s: %Rrc", RTCrDigestTypeToName(enmDigestType), rc);
     RTCrDigestRelease(hDigest);
     return rc;
-}
-
-
-/**
- * Alters the OVA file, adding (or replacing) the @a pszSignatureName member.
- */
-static int updateTheOvaSignature(const char *pszOva, const char *pszSignatureName, RTVFSFILE hVfsFileSignature, bool fIsSigned)
-{
-    RT_NOREF(pszOva, pszSignatureName, hVfsFileSignature, fIsSigned);
-
-    RTMsgError("TODO: updateTheOvaSignature");
-    return VINF_SUCCESS;
 }
 
 
@@ -2194,69 +2249,69 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
         return RTMsgErrorExitFailure("The specified private key file was not found: %s", pszPrivateKey);
 
     /*
-     * Read the certificate and private key.
+     * Open the OVA, read the manifest and look for any existing signature.
      */
-    RTERRINFOSTATIC     ErrInfo;
-    RTCRX509CERTIFICATE Certificate;
-    rc = RTCrX509Certificate_ReadFromFile(&Certificate, pszCertificate, 0, &g_RTAsn1DefaultAllocator,
-                                          RTErrInfoInitStatic(&ErrInfo));
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("Error reading certificate from '%s': %Rrc%#RTeim", pszCertificate, rc, &ErrInfo.Core);
-
-    RTCRKEY hPrivateKey = NIL_RTCRKEY;
-    rc = RTCrKeyCreateFromFile(&hPrivateKey, 0 /*fFlags*/, pszPrivateKey, strPrivateKeyPassword.c_str(),
-                               RTErrInfoInitStatic(&ErrInfo));
+    RTVFSFSSTREAM   hVfsFssOva       = NIL_RTVFSFSSTREAM;
+    RTVFSOBJ        hVfsOldSignature = NIL_RTVFSOBJ;
+    RTVFSFILE       hVfsFileManifest = NIL_RTVFSFILE;
+    Utf8Str         strManifestName;
+    rc = openOvaAndGetManifestAndOldSignature(pszOva, iVerbosity, fReSign,
+                                              &hVfsFssOva, &strManifestName, &hVfsFileManifest, &hVfsOldSignature);
     if (RT_SUCCESS(rc))
     {
-        if (iVerbosity > 1)
-            RTMsgInfo("Successfully read the certificate and private key.");
-
         /*
-         * Extract the manifest from the OVA and check whether it is already signed.
+         * Read the certificate and private key.
          */
-        Utf8Str     strManifestName;
-        Utf8Str     strSignatureName;
-        RTVFSFILE   hVfsFileManifest = NIL_RTVFSFILE;
-        rc = getManifestFromOva(pszOva, iVerbosity, &strManifestName, &hVfsFileManifest, &strSignatureName);
+        RTERRINFOSTATIC     ErrInfo;
+        RTCRX509CERTIFICATE Certificate;
+        rc = RTCrX509Certificate_ReadFromFile(&Certificate, pszCertificate, 0, &g_RTAsn1DefaultAllocator,
+                                              RTErrInfoInitStatic(&ErrInfo));
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExitFailure("Error reading certificate from '%s': %Rrc%#RTeim", pszCertificate, rc, &ErrInfo.Core);
+
+        RTCRKEY hPrivateKey = NIL_RTCRKEY;
+        rc = RTCrKeyCreateFromFile(&hPrivateKey, 0 /*fFlags*/, pszPrivateKey, strPrivateKeyPassword.c_str(),
+                                   RTErrInfoInitStatic(&ErrInfo));
         if (RT_SUCCESS(rc))
         {
-            bool const fIsSigned = strSignatureName.isNotEmpty();
-            if (!fIsSigned || fReSign)
-            {
-                /*
-                 * Do the signing and create the signature file.
-                 */
-                RTVFSFILE hVfsFileSignature = NIL_RTVFSFILE;
-                rc = doTheOvaSigning(&Certificate, hPrivateKey, strManifestName.c_str(), hVfsFileManifest,
-                                     fPkcs7, cIntermediateCerts, apszIntermediateCerts,
-                                     &ErrInfo, &hVfsFileSignature);
+            if (iVerbosity > 1)
+                RTMsgInfo("Successfully read the certificate and private key.");
 
-                /*
-                 * Construct the signature filename if there isn't one already:
-                 */
-                if (RT_SUCCESS(rc) && strSignatureName.isEmpty())
-                {
-                    rc = strSignatureName.assignNoThrow(strManifestName);
-                    if (RT_SUCCESS(rc))
-                        rc = strSignatureName.stripSuffix().appendNoThrow(".cert");
-                }
+            /*
+             * Do the signing and create the signature file.
+             */
+            RTVFSFILE hVfsFileSignature = NIL_RTVFSFILE;
+            rc = doTheOvaSigning(&Certificate, hPrivateKey, strManifestName.c_str(), hVfsFileManifest,
+                                 fPkcs7, cIntermediateCerts, apszIntermediateCerts,
+                                 &ErrInfo, &hVfsFileSignature);
+
+            /*
+             * Construct the signature filename:
+             */
+            if (RT_SUCCESS(rc))
+            {
+                Utf8Str strSignatureName;
+                rc = strSignatureName.assignNoThrow(strManifestName);
+                if (RT_SUCCESS(rc))
+                    rc = strSignatureName.stripSuffix().appendNoThrow(".cert");
                 if (RT_SUCCESS(rc) && !fDryRun)
                 {
                     /*
                      * Update the OVA.
                      */
-                    rc = updateTheOvaSignature(pszOva, strSignatureName.c_str(), hVfsFileSignature, fIsSigned);
+                    rc = updateTheOvaSignature(hVfsFssOva, pszOva, strSignatureName.c_str(), hVfsFileSignature, hVfsOldSignature);
                 }
             }
-            else
-                rc = RTMsgErrorRc(VERR_ALREADY_EXISTS,
-                                  "The OVA is already signed! (Use the --force option to force re-signing it.)");
+            RTCrKeyRelease(hPrivateKey);
         }
-        RTCrKeyRelease(hPrivateKey);
+        else
+            RTPrintf("Error reading the private key from %s: %Rrc%#RTeim", pszPrivateKey, rc, &ErrInfo.Core);
+        RTCrX509Certificate_Delete(&Certificate);
     }
-    else
-        RTPrintf("Error reading the private key from %s: %Rrc%#RTeim", pszPrivateKey, rc, &ErrInfo.Core);
-    RTCrX509Certificate_Delete(&Certificate);
+
+    RTVfsObjRelease(hVfsOldSignature);
+    RTVfsFileRelease(hVfsFileManifest);
+    RTVfsFsStrmRelease(hVfsFssOva);
 
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
