@@ -605,31 +605,31 @@ typedef DTE_T *PDTE_T;
 typedef DTE_T const *PCDTE_T;
 
 /** Mask of valid  bits for EPHSUP (Enhanced Peripheral Page Request Handling
- *  Support) features (bits 52:53). */
+ *  Support) feature (bits 52:53). */
 #define IOMMU_DTE_QWORD_0_FEAT_EPHSUP_MASK      UINT64_C(0x0030000000000000)
 
-/** Mask of valid bits for GTSup (Guest Translation Support) features (bits
- *  55:60, bits 80:95). */
+/** Mask of valid bits for GTSup (Guest Translation Support) feature (bits 55:60,
+ *  bits 80:95). */
 #define IOMMU_DTE_QWORD_0_FEAT_GTSUP_MASK       UINT64_C(0x1f80000000000000)
 #define IOMMU_DTE_QWORD_1_FEAT_GTSUP_MASK       UINT64_C(0x00000000ffff0000)
 
-/* Mask of valid bits for GIoSup (Guest I/O Protection Support) features (bit 54). */
+/* Mask of valid bits for GIoSup (Guest I/O Protection Support) feature (bit 54). */
 #define IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK      UINT64_C(0x0040000000000000)
 
-/* Mask of all valid DTE feature bits. */
+/* Mask of valid DTE feature bits. */
 #define IOMMU_DTE_QWORD_0_FEAT_MASK             (  IOMMU_DTE_QWORD_0_FEAT_EPHSUP_MASK \
                                                  | IOMMU_DTE_QWORD_0_FEAT_GTSUP_MASK  \
                                                  | IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK)
 #define IOMMU_DTE_QWORD_1_FEAT_MASK             (IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK)
 
-/* Mask of all valid DTE bits. */
+/* Mask of all valid DTE bits (including all feature bits). */
 #define IOMMU_DTE_QWORD_0_VALID_MASK            UINT64_C(0x7fffffffffffff83)
 #define IOMMU_DTE_QWORD_1_VALID_MASK            UINT64_C(0xfffffbffffffffff)
 #define IOMMU_DTE_QWORD_2_VALID_MASK            UINT64_C(0xf70fffffffffffff)
 #define IOMMU_DTE_QWORD_3_VALID_MASK            UINT64_C(0xffc0000000000000)
 
 /**
- * I/O Page Table Entry.
+ * I/O Page Translation Entry.
  * In accordance with the AMD spec.
  */
 typedef union
@@ -651,7 +651,7 @@ typedef union
         RT_GCC_EXTENSION uint64_t    u1Ign0 : 1;                /**< Bit 63      - Ignored. */
     } n;
     /** The 64-bit unsigned integer view. */
-    uint64_t        u;
+    uint64_t        u64;
 } IOPTE_T;
 AssertCompileSize(IOPTE_T, 8);
 
@@ -675,41 +675,43 @@ typedef union
         RT_GCC_EXTENSION uint64_t    u1Ign0 : 1;            /**< Bit 63      - Ignored. */
     } n;
     /** The 64-bit unsigned integer view. */
-    uint64_t        u;
+    uint64_t        u64;
 } IOPDE_T;
 AssertCompileSize(IOPDE_T, 8);
 
 /**
- * I/O Page Table Generic Entity.
+ * I/O Page Table Entry/Entity.
  * In accordance with the AMD spec.
  *
- * This a common subset of a page table entry.
- * Can be either an IOPTE_T or and IOPDE_T.
+ * This a common subset of an DTE.au64[0], PTE and PDE.
+ * Named as an "entity" to avoid confusing it with PTE.
  */
 typedef union
 {
     struct
     {
-        RT_GCC_EXTENSION uint64_t    u1Present : 1;             /**< Bit  0      - PR: Present. */
-        RT_GCC_EXTENSION uint64_t    u4Ign0 : 4;                /**< Bits 4:1    - Ignored. */
-        RT_GCC_EXTENSION uint64_t    u1Accessed : 1;            /**< Bit  5      - A: Accessed. */
-        RT_GCC_EXTENSION uint64_t    u3Ign0 : 3;                /**< Bits 8:6    - Ignored. */
-        RT_GCC_EXTENSION uint64_t    u3NextLevel : 3;           /**< Bits 11:9   - Next Level: Next page translation level. */
-        RT_GCC_EXTENSION uint64_t    u40PageAddr : 40;          /**< Bits 51:12  - Page address. */
-        RT_GCC_EXTENSION uint64_t    u9Rsvd0 : 9;               /**< Bits 60:52  - Reserved. */
-        RT_GCC_EXTENSION uint64_t    u1IoRead : 1;              /**< Bit 61      - IR: I/O Read permission. */
-        RT_GCC_EXTENSION uint64_t    u1IoWrite : 1;             /**< Bit 62      - IW: I/O Wead permission. */
-        RT_GCC_EXTENSION uint64_t    u1Ign0 : 1;                /**< Bit 63      - Ignored. */
+        RT_GCC_EXTENSION uint64_t    u1Present : 1;         /**< Bit  0      - PR: Present. */
+        RT_GCC_EXTENSION uint64_t    u8Ign0 : 8;            /**< Bits 8:1    - Ignored. */
+        RT_GCC_EXTENSION uint64_t    u3NextLevel : 3;       /**< Bits 11:9   - Mode / Next Level: Next page translation level. */
+        RT_GCC_EXTENSION uint64_t    u40Addr : 40;          /**< Bits 51:12  - Page address. */
+        RT_GCC_EXTENSION uint64_t    u9Ign0 : 9;            /**< Bits 60:52  - Ignored. */
+        RT_GCC_EXTENSION uint64_t    u1IoRead : 1;          /**< Bit 61      - IR: I/O Read permission. */
+        RT_GCC_EXTENSION uint64_t    u1IoWrite : 1;         /**< Bit 62      - IW: I/O Wead permission. */
+        RT_GCC_EXTENSION uint64_t    u1Ign0 : 1;            /**< Bit 63      - Ignored. */
     } n;
+    /** The 64-bit unsigned integer view. */
+    uint64_t        u64;
 } IOPTENTITY_T;
-AssertCompileSize(IOPDE_T, 8);
+AssertCompileSize(IOPTENTITY_T, 8);
+AssertCompile(sizeof(IOPTENTITY_T) == sizeof(IOPTE_T));
+AssertCompile(sizeof(IOPTENTITY_T) == sizeof(IOPDE_T));
 /** Pointer to an IOPT_ENTITY_T struct. */
 typedef IOPTENTITY_T *PIOPTENTITY_T;
 /** Pointer to a const IOPT_ENTITY_T struct. */
 typedef IOPTENTITY_T const *PCIOPTENTITY_T;
 
 /**
- * Interrupt Remapping Table Entry.
+ * Interrupt Remapping Table Entry (IRTE).
  * In accordance with the AMD spec.
  */
 typedef union
@@ -727,9 +729,13 @@ typedef union
         uint32_t    u8Rsvd0 : 8;            /**< Bits 31:24 - Reserved. */
     } n;
     /** The 32-bit unsigned integer view. */
-    uint32_t        u;
+    uint32_t        u32;
 } IRTE_T;
 AssertCompileSize(IRTE_T, 4);
+/** Pointer to an IRTE_T struct. */
+typedef IRTE_T *PIRTE_T;
+/** Pointer to a const IRTE_T struct. */
+typedef IRTE_T const *PCIRTE_T;
 
 /**
  * Command: Generic Command Buffer Entry.
@@ -770,7 +776,7 @@ typedef union
         uint64_t    u64StoreData;          /**< Bits 127:64 - Store Data. */
     } n;
     /** The 64-bit unsigned integer view. */
-    uint32_t    au64[2];
+    uint64_t    au64[2];
 } CMD_COMPLETION_WAIT_T;
 AssertCompileSize(CMD_COMPLETION_WAIT_T, 16);
 
@@ -976,6 +982,8 @@ typedef union
 AssertCompileSize(EVT_ILLEGAL_DTE_T, 16);
 /** Pointer to an illegal device table entry event. */
 typedef EVT_ILLEGAL_DTE_T *PEVT_ILLEGAL_DTE_T;
+/** Pointer to a const illegal device table entry event. */
+typedef EVT_ILLEGAL_DTE_T const *PCEVT_ILLEGAL_DTE_T;
 
 /**
  * Event Log Entry: IO_PAGE_FAULT_EVENT.
@@ -1007,6 +1015,9 @@ typedef union
 AssertCompileSize(EVT_IO_PAGE_FAULT_T, 16);
 /** Pointer to an I/O page fault event. */
 typedef EVT_IO_PAGE_FAULT_T *PEVT_IO_PAGE_FAULT_T;
+/** Pointer to a const I/O page fault event. */
+typedef EVT_IO_PAGE_FAULT_T const *PCEVT_IO_PAGE_FAULT_T;
+
 
 /**
  * Event Log Entry: DEV_TAB_HARDWARE_ERROR.
@@ -1035,6 +1046,8 @@ typedef union
 AssertCompileSize(EVT_DEV_TAB_HW_ERROR_T, 16);
 /** Pointer to a device table hardware error event. */
 typedef EVT_DEV_TAB_HW_ERROR_T *PEVT_DEV_TAB_HW_ERROR_T;
+/** Pointer to a const device table hardware error event. */
+typedef EVT_DEV_TAB_HW_ERROR_T const *PCEVT_DEV_TAB_HW_ERROR_T;
 
 /**
  * Event Log Entry: EVT_PAGE_TAB_HARDWARE_ERROR.
@@ -2222,7 +2235,7 @@ typedef struct
     uint8_t         fIoPerm;
     /** The number of offset bits in the system physical address. */
     uint8_t         cShift;
-    /** The translated system physical address of the page. */
+    /** The translated system physical address (SPA) of the page. */
     RTGCPHYS        GCPhysSpa;
 } IOTLBE_T;
 AssertCompileSizeAlignment(IOTLBE_T, 8);
@@ -2373,7 +2386,6 @@ typedef const struct IOMMU *PCIOMMU;
 AssertCompileMemberAlignment(IOMMU, hEvtCmdThread, 8);
 AssertCompileMemberAlignment(IOMMU, hMmio, 8);
 AssertCompileMemberAlignment(IOMMU, IommuBar, 8);
-
 
 /**
  * The ring-3 IOMMU device state.
@@ -3128,6 +3140,8 @@ static const IOMMUREGACC g_aTable1Regs[] =
  * @param   off         MMIO byte offset to the register.
  * @param   cb          The size of the write access.
  * @param   uValue      The value being written.
+ *
+ * @thread  EMT.
  */
 static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint8_t cb, uint64_t uValue)
 {
@@ -3269,6 +3283,8 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
  * @param   pDevIns     The IOMMU device instance.
  * @param   off         The MMIO offset of the register in bytes.
  * @param   puResult    Where to store the value being read.
+ *
+ * @thread  EMT.
  */
 static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint64_t *puResult)
 {
@@ -3430,6 +3446,8 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
  * Raises the MSI interrupt for the IOMMU device.
  *
  * @param   pDevIns     The IOMMU device instance.
+ *
+ * @thread  Any.
  */
 static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
 {
@@ -3442,6 +3460,8 @@ static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
  * Clears the MSI interrupt for the IOMMU device.
  *
  * @param   pDevIns     The IOMMU device instance.
+ *
+ * @thread  Any.
  */
 static void iommuAmdClearMsiInterrupt(PPDMDEVINS pDevIns)
 {
@@ -3463,6 +3483,8 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
+
+    /** @todo IOMMU: Consider locking here.  */
 
     /* Check if event logging is active and the log has not overflowed. */
     if (   Status.n.u1EvtLogRunning
@@ -3522,6 +3544,7 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
  */
 static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
+    /** @todo IOMMU: We should probably lock the device here */
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     if (pThis->ExtFeat.n.u1HwErrorSup)
     {
@@ -3538,52 +3561,50 @@ static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 /**
  * Initializes a DEV_TAB_HARDWARE_ERROR event.
  *
- * @param   uDevId      The device ID.
- * @param   GCPhysDte   The system physical address of the failed device table
- *                      access.
- * @param   enmOp       The IOMMU operation being performed.
- * @param   pEvent      Where to store the initialized event.
+ * @param   uDevId              The device ID.
+ * @param   GCPhysDte           The system physical address of the failed device table
+ *                              access.
+ * @param   enmOp               The IOMMU operation being performed.
+ * @param   pEvtDevTabHwErr     Where to store the initialized event.
  *
  * @thread  Any.
  */
-static void iommuAmdInitDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, IOMMUOP enmOp, PEVT_GENERIC_T pEvent)
+static void iommuAmdInitDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, IOMMUOP enmOp,
+                                           PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr)
 {
-    memset(pEvent, 0, sizeof(*pEvent));
-    AssertCompile(sizeof(EVT_DEV_TAB_HW_ERROR_T) == sizeof(EVT_GENERIC_T));
-    PEVT_DEV_TAB_HW_ERROR_T pDevTabHwErr = (PEVT_DEV_TAB_HW_ERROR_T)pEvent;
-    pDevTabHwErr->n.u16DevId      = uDevId;
-    pDevTabHwErr->n.u1Intr        = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
+    memset(pEvtDevTabHwErr, 0, sizeof(*pEvtDevTabHwErr));
+    pEvtDevTabHwErr->n.u16DevId      = uDevId;
+    pEvtDevTabHwErr->n.u1Intr        = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
     /** @todo r=ramshankar: Any other transaction type that can set read/write bit? */
-    pDevTabHwErr->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
-    pDevTabHwErr->n.u1Translation = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
-    pDevTabHwErr->n.u2Type        = enmOp == IOMMUOP_CMD ? HWEVTTYPE_DATA_ERROR : HWEVTTYPE_TARGET_ABORT;
-    pDevTabHwErr->n.u4EvtCode     = IOMMU_EVT_DEV_TAB_HW_ERROR;
-    pDevTabHwErr->n.u64Addr       = GCPhysDte;
+    pEvtDevTabHwErr->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
+    pEvtDevTabHwErr->n.u1Translation = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
+    pEvtDevTabHwErr->n.u2Type        = enmOp == IOMMUOP_CMD ? HWEVTTYPE_DATA_ERROR : HWEVTTYPE_TARGET_ABORT;
+    pEvtDevTabHwErr->n.u4EvtCode     = IOMMU_EVT_DEV_TAB_HW_ERROR;
+    pEvtDevTabHwErr->n.u64Addr       = GCPhysDte;
 }
 
 
 /**
  * Raises a DEV_TAB_HARDWARE_ERROR event.
  *
- * @param   pDevIns     The IOMMU device instance.
- * @param   uDevId      The device ID.
- * @param   GCPhysDte   The system physical address of the failed device table
- *                      access.
- * @param   enmOp       The IOMMU operation being performed.
- * @param   enmEvtType  The device table hardware error event type.
+ * @param   pDevIns             The IOMMU device instance.
+ * @param   uDevId              The device ID.
+ * @param   enmOp               The IOMMU operation being performed.
+ * @param   pEvtDevTabHwErr     The device table hardware error event.
+ * @param   enmEvtType          The device table hardware error event type.
  */
-static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysDte, IOMMUOP enmOp,
+static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr,
                                             EVT_DEV_TAB_HW_ERROR_TYPE_T enmEvtType)
 {
-    EVT_GENERIC_T Event;
-    iommuAmdInitDevTabHwErrorEvent(uDevId, GCPhysDte, enmOp, &Event);
-    iommuAmdSetHwError(pDevIns, &Event);
-    iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+    AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_DEV_TAB_HW_ERROR_T));
+    PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtDevTabHwErr;
+    iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
 
-    Log((IOMMU_LOG_PFX ": Raised DEV_TAB_HARDWARE_ERROR. uDevId=%#x GCPhysDte=%#RGp enmOp=%u enmType=%u\n", uDevId, GCPhysDte,
-         enmOp, enmEvtType));
+    Log((IOMMU_LOG_PFX ": Raised DEV_TAB_HARDWARE_ERROR. uDevId=%#x GCPhysDte=%#RGp enmOp=%u enmType=%u\n",
+         pEvtDevTabHwErr->n.u16DevId, pEvtDevTabHwErr->n.u64Addr, enmOp, enmEvtType));
     NOREF(enmEvtType);
 }
 
@@ -3593,23 +3614,23 @@ static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, uint16_t uDevId,
  *
  * @param   uDevId          The device ID.
  * @param   uIova           The I/O virtual address.
+ * @param   fRsvdNotZero    Whether reserved bits are not zero. Pass @c false if the
+ *                          event was caused by an invalid level encoding in the
+ *                          DTE.
  * @param   enmOp           The IOMMU operation being performed.
- * @param   enmEvtType      The illegal DTE event type.
- * @param   pEvent          Where to store the initialized event.
+ * @param   pEvtIllegalDte  Where to store the initialized event.
  */
-static void iommuAmdInitIllegalDteEvent(uint16_t uDevId, uint64_t uIova, IOMMUOP enmOp, EVT_ILLEGAL_DTE_TYPE_T enmEvtType,
-                                        PEVT_GENERIC_T pEvent)
+static void iommuAmdInitIllegalDteEvent(uint16_t uDevId, uint64_t uIova, bool fRsvdNotZero, IOMMUOP enmOp,
+                                        PEVT_ILLEGAL_DTE_T pEvtIllegalDte)
 {
-    memset(pEvent, 0, sizeof(*pEvent));
-    AssertCompile(sizeof(EVT_ILLEGAL_DTE_T) == sizeof(EVT_GENERIC_T));
-    PEVT_ILLEGAL_DTE_T pIllegalDteErr = (PEVT_ILLEGAL_DTE_T)pEvent;
-    pIllegalDteErr->n.u16DevId      = uDevId;
-    pIllegalDteErr->n.u1Interrupt   = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
-    pIllegalDteErr->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
-    pIllegalDteErr->n.u1RsvdNotZero = RT_BOOL(enmEvtType == kIllegalDteType_RsvdNotZero);
-    pIllegalDteErr->n.u1Translation = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
-    pIllegalDteErr->n.u4EvtCode     = IOMMU_EVT_ILLEGAL_DEV_TAB_ENTRY;
-    pIllegalDteErr->n.u64Addr       = uIova & ~UINT64_C(0x3);
+    memset(pEvtIllegalDte, 0, sizeof(*pEvtIllegalDte));
+    pEvtIllegalDte->n.u16DevId      = uDevId;
+    pEvtIllegalDte->n.u1Interrupt   = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
+    pEvtIllegalDte->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
+    pEvtIllegalDte->n.u1RsvdNotZero = fRsvdNotZero;
+    pEvtIllegalDte->n.u1Translation = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
+    pEvtIllegalDte->n.u4EvtCode     = IOMMU_EVT_ILLEGAL_DEV_TAB_ENTRY;
+    pEvtIllegalDte->n.u64Addr       = uIova & ~UINT64_C(0x3);
     /** @todo r=ramshankar: Not sure why the last 2 bits are marked as reserved by the
      *        IOMMU spec here but not for this field for I/O page fault event. */
     Assert(!(uIova & UINT64_C(0x3)));
@@ -3620,22 +3641,21 @@ static void iommuAmdInitIllegalDteEvent(uint16_t uDevId, uint64_t uIova, IOMMUOP
  * Raises an ILLEGAL_DEV_TABLE_ENTRY event.
  *
  * @param   pDevIns         The IOMMU instance data.
- * @param   uDevId          The device ID.
- * @param   uIova           The I/O virtual address.
  * @param   enmOp           The IOMMU operation being performed.
+ * @param   pEvtIllegalDte  The illegal device table entry event.
  * @param   enmEvtType      The illegal DTE event type.
  */
-static void iommuAmdRaiseIllegalDteEvent(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, IOMMUOP enmOp,
+static void iommuAmdRaiseIllegalDteEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEVT_ILLEGAL_DTE_T pEvtIllegalDte,
                                          EVT_ILLEGAL_DTE_TYPE_T enmEvtType)
 {
-    EVT_GENERIC_T Event;
-    iommuAmdInitIllegalDteEvent(uDevId, uIova, enmOp, enmEvtType, &Event);
-    iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+    AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_ILLEGAL_DTE_T));
+    PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIllegalDte;
+    iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
 
-    Log((IOMMU_LOG_PFX ": Raised ILLEGAL_DTE_EVENT. uDevId=%#x uIova=%#RX64 enmOp=%u enmType=%u\n", uDevId, uIova, enmOp,
-         enmEvtType));
+    Log((IOMMU_LOG_PFX ": Raised ILLEGAL_DTE_EVENT. uDevId=%#x uIova=%#RX64 enmOp=%u enmEvtType=%u\n", pEvtIllegalDte->n.u16DevId,
+         pEvtIllegalDte->n.u64Addr, enmOp, enmEvtType));
     NOREF(enmEvtType);
 }
 
@@ -3643,37 +3663,36 @@ static void iommuAmdRaiseIllegalDteEvent(PPDMDEVINS pDevIns, uint16_t uDevId, ui
 /**
  * Initializes an IO_PAGE_FAULT event.
  *
- * @param   uDevId          The device ID.
- * @param   uDomainId       The domain ID.
- * @param   uIova           The I/O virtual address being accessed.
- * @param   fPresent        Transaction to a page marked as present (including
- *                          DTE.V=1) or interrupt marked as remapped
- *                          (IRTE.RemapEn=1).
- * @param   enmOp           The IOMMU operation being performed.
- * @param   enmEvtType      The I/O page fault event type.
- * @param   pEvent          Where to store the initialized event.
+ * @param   uDevId              The device ID.
+ * @param   uDomainId           The domain ID.
+ * @param   uIova               The I/O virtual address being accessed.
+ * @param   fPresent            Transaction to a page marked as present (including
+ *                              DTE.V=1) or interrupt marked as remapped
+ *                              (IRTE.RemapEn=1).
+ * @param   fRsvdNotZero        Whether reserved bits are not zero. Pass @c false if
+ *                              the I/O page fault was caused by invalid level
+ *                              encoding.
+ * @param   enmOp               The IOMMU operation being performed.
+ * @param   pEvtIoPageFault     Where to store the initialized event.
  */
-static void iommuAmdInitIoPageFaultEvent(uint16_t uDevId, uint16_t uDomainId, uint64_t uIova, bool fPresent,
-                                         IOMMUOP enmOp, EVT_IO_PAGE_FAULT_TYPE_T enmEvtType, PEVT_GENERIC_T pEvent)
+static void iommuAmdInitIoPageFaultEvent(uint16_t uDevId, uint16_t uDomainId, uint64_t uIova, bool fPresent, bool fRsvdNotZero,
+                                         IOMMUOP enmOp, PEVT_IO_PAGE_FAULT_T pEvtIoPageFault)
 {
-    memset(pEvent, 0, sizeof(*pEvent));
-    AssertCompile(sizeof(EVT_IO_PAGE_FAULT_T) == sizeof(EVT_GENERIC_T));
-    PEVT_IO_PAGE_FAULT_T pIoPageFault = (PEVT_IO_PAGE_FAULT_T)pEvent;
-    pIoPageFault->n.u16DevId            = uDevId;
-    //pIoPageFault->n.u4PasidHi         = 0;
-    pIoPageFault->n.u16DomainOrPasidLo  = uDomainId;
-    //pIoPageFault->n.u1GuestOrNested   = 0;
-    //pIoPageFault->n.u1NoExecute       = 0;
-    //pIoPageFault->n.u1User            = 0;
-    pIoPageFault->n.u1Interrupt         = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
-    pIoPageFault->n.u1Present           = fPresent;
-    pIoPageFault->n.u1ReadWrite         = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
-    //pIoPageFault->n.u1PermIndicator   = 0;
-    pIoPageFault->n.u1RsvdNotZero       = RT_BOOL(   enmEvtType == kIoPageFaultType_PteRsvdNotZero
-                                                  || enmEvtType == kIoPageFaultType_IrteRemapEn);
-    pIoPageFault->n.u1Translation       = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
-    pIoPageFault->n.u4EvtCode           = IOMMU_EVT_IO_PAGE_FAULT;
-    pIoPageFault->n.u64Addr             = uIova;
+    memset(pEvtIoPageFault, 0, sizeof(*pEvtIoPageFault));
+    pEvtIoPageFault->n.u16DevId            = uDevId;
+    //pEvtIoPageFault->n.u4PasidHi         = 0;
+    pEvtIoPageFault->n.u16DomainOrPasidLo  = uDomainId;
+    //pEvtIoPageFault->n.u1GuestOrNested   = 0;
+    //pEvtIoPageFault->n.u1NoExecute       = 0;
+    //pEvtIoPageFault->n.u1User            = 0;
+    pEvtIoPageFault->n.u1Interrupt         = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
+    pEvtIoPageFault->n.u1Present           = fPresent;
+    pEvtIoPageFault->n.u1ReadWrite         = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
+    //pEvtIoPageFault->n.u1PermIndicator   = 0;
+    pEvtIoPageFault->n.u1RsvdNotZero       = fRsvdNotZero;
+    pEvtIoPageFault->n.u1Translation       = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
+    pEvtIoPageFault->n.u4EvtCode           = IOMMU_EVT_IO_PAGE_FAULT;
+    pEvtIoPageFault->n.u64Addr             = uIova;
 }
 
 
@@ -3681,20 +3700,46 @@ static void iommuAmdInitIoPageFaultEvent(uint16_t uDevId, uint16_t uDomainId, ui
  * Raises an IO_PAGE_FAULT event.
  *
  * @param   pDevIns             The IOMMU instance data.
- * @param   uDevId              The device ID.
- * @param   uDomainId           The domain ID.
- * @param   uIova               The I/O virtual address being accessed.
- * @param   fPresentOrValid     Transaction to a page marked as present (including
- *                              DTE.V=1) or interrupt marked as remapped
- *                              (IRTE.RemapEn=1).
+ * @param   pDte                The device table entry. Optional, can be NULL
+ *                              depending on @a enmOp.
+ * @param   pIrte               The interrupt remapping table entry. Optional, can
+ *                              be NULL depending on @a enmOp.
  * @param   enmOp               The IOMMU operation being performed.
+ * @param   pEvtIoPageFault     The I/O page fault event.
  * @param   enmEvtType          The I/O page fault event type.
+ *
+ * @thread  Any.
  */
-static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, uint16_t uDevId, uint16_t uDomainId, uint64_t uIova,
-                                          bool fPresentOrValid, IOMMUOP enmOp, EVT_IO_PAGE_FAULT_TYPE_T enmEvtType)
+static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIRTE_T pIrte, IOMMUOP enmOp,
+                                          PCEVT_IO_PAGE_FAULT_T pEvtIoPageFault, EVT_IO_PAGE_FAULT_TYPE_T enmEvtType)
 {
-    EVT_GENERIC_T Event;
-    iommuAmdInitIoPageFaultEvent(uDevId, uDomainId, uIova, fPresentOrValid, enmOp, enmEvtType, &Event);
+    AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_IO_PAGE_FAULT_T));
+    PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIoPageFault;
+
+    bool fSuppressEvtLogging = false;
+    if (   enmOp == IOMMUOP_MEM_READ
+        || enmOp == IOMMUOP_MEM_WRITE)
+    {
+        if (   pDte
+            && pDte->n.u1Valid)
+        {
+            fSuppressEvtLogging = pDte->n.u1SuppressAllPfEvents;
+            /** @todo IOMMU: Implement DTE.SE bit, i.e. device ID specific I/O page fault
+             *        suppression. Perhaps will be possible when we complete IOTLB/cache
+             *        handling. */
+        }
+    }
+    else if (enmOp == IOMMUOP_INTR_REQ)
+    {
+        if (   pDte
+            && pDte->n.u1IntrMapValid)
+            fSuppressEvtLogging = !pDte->n.u1IgnoreUnmappedIntrs;
+
+        if (   !fSuppressEvtLogging
+            && pIrte)
+            fSuppressEvtLogging = pIrte->n.u1SuppressPf;
+    }
+    /* else: Events are never suppressed for commands. */
 
     switch (enmEvtType)
     {
@@ -3721,7 +3766,8 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, uint16_t uDevId, u
              */
             if (enmOp != IOMMUOP_TRANSLATE_REQ)
             {
-                iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+                if (!fSuppressEvtLogging)
+                    iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
                 if (enmOp != IOMMUOP_CMD)
                     iommuAmdSetPciTargetAbort(pDevIns);
             }
@@ -3731,7 +3777,8 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, uint16_t uDevId, u
         case kIoPageFaultType_UserSupervisor:
         {
             /* Access is blocked and only creates an event log entry. */
-            iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+            if (!fSuppressEvtLogging)
+                iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
             break;
         }
 
@@ -3744,7 +3791,8 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, uint16_t uDevId, u
         {
             /* Only trigerred by interrupt requests. */
             Assert(enmOp == IOMMUOP_INTR_REQ);
-            iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+            if (!fSuppressEvtLogging)
+                iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
             iommuAmdSetPciTargetAbort(pDevIns);
             break;
         }
@@ -3761,7 +3809,8 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, uint16_t uDevId, u
             /* Cannot be triggered by a command. */
             Assert(enmOp != IOMMUOP_CMD);
             Assert(enmOp != IOMMUOP_TRANSLATE_REQ); /** @todo IOMMU: We don't support translation requests yet. */
-            iommuAmdWriteEvtLogEntry(pDevIns, &Event);
+            if (!fSuppressEvtLogging)
+                iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
             if (   enmOp == IOMMUOP_MEM_READ
                 || enmOp == IOMMUOP_MEM_WRITE)
                 iommuAmdSetPciTargetAbort(pDevIns);
@@ -3787,6 +3836,7 @@ static void iommuAmdInitIotlbe(RTGCPHYS GCPhysSpa, uint8_t cShift, uint8_t fIoPe
     pIotlbe->cShift    = cShift;
     pIotlbe->GCPhysSpa = GCPhysSpa;
 }
+
 
 /**
  * Updates an IOTLB entry.
@@ -3815,6 +3865,8 @@ static void iommuAmdUpdateIotlbe(RTGCPHYS GCPhysSpa, uint8_t cShift, uint8_t fIo
  * @param   uIova   The I/O virtual address.
  *
  * @remarks Ensure the exclusion range is enabled prior to calling this function.
+ *
+ * @thread  Any.
  */
 static bool iommuAmdIsDvaInExclRange(PCIOMMU pThis, PCDTE_T pDte, uint64_t uIova)
 {
@@ -3866,7 +3918,10 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     if (RT_FAILURE(rc))
     {
         Log((IOMMU_LOG_PFX ": Failed to read device table entry at %#RGp. rc=%Rrc -> DevTabHwError\n", GCPhysDte, rc));
-        iommuAmdRaiseDevTabHwErrorEvent(pDevIns, uDevId, GCPhysDte, enmOp, kDevTabHwErrType_TargetAbort);
+
+        EVT_DEV_TAB_HW_ERROR_T EvtDevTabHwErr;
+        iommuAmdInitDevTabHwErrorEvent(uDevId, GCPhysDte, enmOp, &EvtDevTabHwErr);
+        iommuAmdRaiseDevTabHwErrorEvent(pDevIns, enmOp, &EvtDevTabHwErr, kDevTabHwErrType_TargetAbort);
     }
 
     return rc;
@@ -3888,27 +3943,37 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
  * @param   enmOp       The IOMMU operation being performed.
  * @param   pIotlbe     The IOTLB entry to update with the results of the
  *                      translation.
+ *
+ * @thread  Any.
  */
 static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
                                     PCDTE_T pDte, IOMMUOP enmOp, PIOTLBE_T pIotlbe)
 {
-    NOREF(pDevIns);
+    NOREF(cbAccess);
     Assert(pDte->n.u1Valid);
-    Assert(pDte->n.u1TranslationValid);
-    Assert(cbAccess > 0);
 
+    /* If the translation is not valid, raise an I/O page fault. */
     if (pDte->n.u1TranslationValid)
     { /* likely */ }
     else
     {
-        iommuAmdRaiseIoPageFaultEvent(pDevIns, uDevId, pDte->n.u16DomainId, uIova, true /* fPresentOrValid */,
-                                      enmOp, kIoPageFaultType_DteTranslationDisabled);
+        /** @todo r=ramshankar: The AMD IOMMU spec. says page walk is terminated but
+         *        doesn't explicitly say whether an I/O page fault is raised. From other
+         *        places in the spec. it seems early page walk terminations (starting with
+         *        the DTE) return the state computed so far and raises an I/O page fault. So
+         *        returning an invalid translation rather than skipping translation. */
+        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
+                                     enmOp, &EvtIoPageFault);
+        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                      kIoPageFaultType_DteTranslationDisabled);
         iommuAmdUpdateIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
-    /* If the page table depth is 0, translation is disabled and access is controlled by IR and IW bits. */
-    if (pDte->n.u3Mode == 0)
+    /* If the page table level (depth) is 0, translation is disabled and access is controlled by the permission bits. */
+    uint8_t const uLevel = pDte->n.u3Mode;
+    if (uLevel == 0)
     {
         uint8_t const fDtePerm = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
         if ((fAccess & fDtePerm) != fAccess)
@@ -3920,18 +3985,42 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
         return VINF_SUCCESS;
     }
 
-    /* If the paging mode exceeds the host-address translation levels, translation fails. */
-    if (pDte->n.u3Mode > IOMMU_MAX_HOST_PT_LEVEL)
+    /* If the page table level (depth) exceeds the allowed host-address translation levels, page walk terminates. */
+    if (uLevel > IOMMU_MAX_HOST_PT_LEVEL)
     {
         /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
          *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
-         *        I'm just going with this one... */
-        /** @todo IOMMU: raise I/O page fault. */
+         *        I'm just going with I/O page fault. */
+        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */, enmOp,
+                                     &EvtIoPageFault);
+        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,kIoPageFaultType_PteInvalidLvlEncoding);
+
         iommuAmdUpdateIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
-    /** @todo IOMMU: page walk. */
+    /* Traverse the I/O page table starting with the validated DTE. */
+    PIOPTENTITY_T pPtEntity = (PIOPTENTITY_T)&pDte->au64[0];
+    for (;;)
+    {
+        /* If the page entity isn't present or has insufficient permissions for the access being made, raise an I/O page fault. */
+        uint8_t const fPtePerm = (pPtEntity->u64 >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
+        if (   !pPtEntity->n.u1Present
+            || (fAccess & fPtePerm) != fAccess)
+        {
+            EVT_IO_PAGE_FAULT_TYPE_T const EvtIoPageFaultType = (fAccess & IOMMU_IO_PERM_WRITE) ? kIoPageFaultType_WriteProtect
+                                                                                                : kIoPageFaultType_ReadProtect;
+            EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+                                         enmOp, &EvtIoPageFault);
+            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault, EvtIoPageFaultType);
+            iommuAmdUpdateIotlbe(NIL_RTGCPHYS, 0 /* cShift */,  IOMMU_IO_PERM_NONE, pIotlbe);
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+        }
+
+        /** @todo IOMMU: rest of page walk. */
+    }
 
     return VERR_NOT_IMPLEMENTED;
 }
@@ -3950,6 +4039,8 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
  * @remarks Only the translated address and permission bits are updated in @a
  *          pIotlbe when this function returns VINF_SUCCESS. Caller is expected to
  *          know and fill in the rest already.
+ *
+ * @thread  Any.
  */
 static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, IOMMUOP enmOp,
                                       PIOTLBE_T pIotlbe)
@@ -3962,7 +4053,7 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
     int rc = iommuAmdReadDte(pDevIns, uDevId, enmOp, &Dte);
     if (RT_SUCCESS(rc))
     {
-        /* If the DTE is not valid addresses are forwarded without translation */
+        /* If the DTE is not valid, addresses are forwarded without translation */
         if (Dte.n.u1Valid)
         { /* likely */ }
         else
@@ -3972,20 +4063,21 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         }
 
         /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
-        uint64_t const fRsvdQword0 = Dte.au64[0] & ~(IOMMU_DTE_QWORD_0_VALID_MASK & ~IOMMU_DTE_QWORD_0_FEAT_MASK);
-        uint64_t const fRsvdQword1 = Dte.au64[1] & ~(IOMMU_DTE_QWORD_1_VALID_MASK & ~IOMMU_DTE_QWORD_1_FEAT_MASK);
-        if (RT_LIKELY(   !fRsvdQword0
-                      && !fRsvdQword1))
+        uint64_t const fRsvd0 = Dte.au64[0] & ~(IOMMU_DTE_QWORD_0_VALID_MASK & ~IOMMU_DTE_QWORD_0_FEAT_MASK);
+        uint64_t const fRsvd1 = Dte.au64[1] & ~(IOMMU_DTE_QWORD_1_VALID_MASK & ~IOMMU_DTE_QWORD_1_FEAT_MASK);
+        if (RT_LIKELY(   !fRsvd0
+                      && !fRsvd1))
         { /* likely */ }
         else
         {
-            Log((IOMMU_LOG_PFX ": Invalid reserved bits in DTE (u64[0]=%#RX64 u64[1]=%#RX64) -> Illegal DTE\n", fRsvdQword0,
-                 fRsvdQword1));
-            iommuAmdRaiseIllegalDteEvent(pDevIns, uDevId, uIova, enmOp, kIllegalDteType_RsvdNotZero);
+            Log((IOMMU_LOG_PFX ": Invalid reserved bits in DTE (u64[0]=%#RX64 u64[1]=%#RX64) -> Illegal DTE\n", fRsvd0, fRsvd1));
+            EVT_ILLEGAL_DTE_T Event;
+            iommuAmdInitIllegalDteEvent(uDevId, uIova, true /* fRsvdNotZero */, enmOp, &Event);
+            iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
-        /* If the IOVA is subject to address exclusion addresses are forwarded without translation. */
+        /* If the IOVA is subject to address exclusion, addresses are forwarded without translation. */
         if (   !pThis->ExclRangeBaseAddr.n.u1ExclEnable
             || !iommuAmdIsDvaInExclRange(pThis, &Dte, uIova))
         { /* likely */ }
@@ -3995,7 +4087,7 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
             return VINF_SUCCESS;
         }
 
-        /* Walk the I/O page tables to translate and get permission bits for the IOVA. */
+        /* Walk the I/O page tables to translate and get permission bits for the IOVA access. */
         rc = iommuAmdWalkIoPageTables(pDevIns, uDevId, uIova, cbAccess, IOMMU_IO_PERM_READ, &Dte, enmOp, pIotlbe);
         if (RT_FAILURE(rc))
             Log((IOMMU_LOG_PFX ": I/O page table walk failed. rc=%Rrc\n"));
@@ -4033,7 +4125,7 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
     if (Ctrl.n.u1IommuEn)
     {
         IOTLBE_T Iotlbe;
-        iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /*cShift*/, IOMMU_IO_PERM_NONE, &Iotlbe);
+        iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /* cShift */, IOMMU_IO_PERM_NONE, &Iotlbe);
 
         /** @todo IOMMU: IOTLB cache lookup. */
 
