@@ -927,6 +927,86 @@ typedef struct VBGLR3GUESTCTRLCMDCTX
     uint32_t uNumParms;
 } VBGLR3GUESTCTRLCMDCTX, *PVBGLR3GUESTCTRLCMDCTX;
 
+/**
+ * Structure holding information for starting a guest
+ * session.
+ */
+typedef struct VBGLR3GUESTCTRLSESSIONSTARTUPINFO
+{
+    /** The session's protocol version to use. */
+    uint32_t                        uProtocol;
+    /** The session's ID. */
+    uint32_t                        uSessionID;
+    /** User name (account) to start the guest session under. */
+    char                           *pszUser;
+    /** Size (in bytes) of allocated pszUser. */
+    uint32_t                        cbUser;
+    /** Password of specified user name (account). */
+    char                           *pszPassword;
+    /** Size (in bytes) of allocated pszPassword. */
+    uint32_t                        cbPassword;
+    /** Domain of the user account. */
+    char                           *pszDomain;
+    /** Size (in bytes) of allocated pszDomain. */
+    uint32_t                        cbDomain;
+    /** Session creation flags.
+     *  @sa VBOXSERVICECTRLSESSIONSTARTUPFLAG_* flags. */
+    uint32_t                        fFlags;
+} VBGLR3GUESTCTRLSESSIONSTARTUPINFO;
+/** Pointer to a guest session startup info. */
+typedef VBGLR3GUESTCTRLSESSIONSTARTUPINFO *PVBGLR3GUESTCTRLSESSIONSTARTUPINFO;
+
+/**
+ * Structure holding information for starting a guest
+ * process.
+ */
+typedef struct VBGLR3GUESTCTRLPROCSTARTUPINFO
+{
+    /** Full qualified path of process to start (without arguments).
+     *  Note: This is *not* argv[0]! */
+    char *pszCmd;
+    /** Size (in bytes) of allocated pszCmd. */
+    uint32_t cbCmd;
+    /** Process execution flags. @sa */
+    uint32_t fFlags;
+    /** Command line arguments. */
+    char *pszArgs;
+    /** Size (in bytes) of allocated pszArgs. */
+    uint32_t cbArgs;
+    /** Number of arguments specified in pszArgs. */
+    uint32_t cArgs;
+    /** String of environment variables ("FOO=BAR") to pass to the process
+      * to start. */
+    char *pszEnv;
+    /** Size (in bytes) of environment variables block. */
+    uint32_t cbEnv;
+    /** Number of environment variables specified in pszEnv. */
+    uint32_t cEnvVars;
+    /** User name (account) to start the process under. */
+    char *pszUser;
+    /** Size (in bytes) of allocated pszUser. */
+    uint32_t cbUser;
+    /** Password of specified user name (account). */
+    char *pszPassword;
+    /** Size (in bytes) of allocated pszPassword. */
+    uint32_t cbPassword;
+    /** Domain to be used for authenticating the specified user name (account). */
+    char *pszDomain;
+    /** Size (in bytes) of allocated pszDomain. */
+    uint32_t cbDomain;
+    /** Time limit (in ms) of the process' life time. */
+    uint32_t uTimeLimitMS;
+    /** Process priority. */
+    uint32_t uPriority;
+    /** Process affinity block. At the moment we support
+     *  up to 4 blocks, that is, 4 * 64 = 256 CPUs total. */
+    uint64_t uAffinity[4];
+    /** Number of used process affinity blocks. */
+    uint32_t cAffinity;
+} VBGLR3GUESTCTRLPROCSTARTUPINFO;
+/** Pointer to a guest process startup info. */
+typedef VBGLR3GUESTCTRLPROCSTARTUPINFO *PVBGLR3GUESTCTRLPROCSTARTUPINFO;
+
 /* General message handling on the guest. */
 VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *pidClient);
 VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t idClient);
@@ -943,15 +1023,18 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkipOld(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, uint32_t *pcParameters, uint64_t *pidRestoreCheck);
 VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(HGCMCLIENTID idClient);
 /* Guest session handling. */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionStartupInfoInit(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo);
+VBGLR3DECL(int) VbglR3GuestCtrlSessionStartupInfoInitEx(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo, size_t cbUser, size_t cbPassword, size_t cbDomain);
+VBGLR3DECL(void) VbglR3GuestCtrlSessionStartupInfoDestroy(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo);
+VBGLR3DECL(void) VbglR3GuestCtrlSessionStartupInfoFree(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo);
+VBGLR3DECL(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO) VbglR3GuestCtrlSessionStartupInfoDup(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionPrepare(uint32_t idClient, uint32_t idSession, void const *pvKey, uint32_t cbKey);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionAccept(uint32_t idClient, uint32_t idSession, void const *pvKey, uint32_t cbKey);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionCancelPrepared(uint32_t idClient, uint32_t idSession);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionHasChanged(uint32_t idClient, uint64_t idNewControlSession);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t fFlags);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uType, int32_t iResult);
-VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puProtocol, char *pszUser, uint32_t cbUser,
-                                              char *pszPassword, uint32_t  cbPassword, char *pszDomain, uint32_t cbDomain,
-                                              uint32_t *pfFlags, uint32_t *pidSession);
+VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3GUESTCTRLSESSIONSTARTUPINFO *ppStartupInfo);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *pfFlags, uint32_t *pidSession);
 /* Guest path handling. */
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszSource, uint32_t cbSource, char *pszDest,
@@ -959,11 +1042,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX pCtx, char *
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserDocuments(PVBGLR3GUESTCTRLCMDCTX pCtx);
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx);
 /* Guest process execution. */
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, char *pszCmd, uint32_t cbCmd, uint32_t *pfFlags,
-                                            char *pszArgs, uint32_t cbArgs, uint32_t *puNumArgs, char *pszEnv, uint32_t *pcbEnv,
-                                            uint32_t *puNumEnvVars, char *pszUser, uint32_t cbUser, char *pszPassword,
-                                            uint32_t cbPassword, uint32_t *puTimeoutMS, uint32_t *puPriority,
-                                            uint64_t *puAffinity, uint32_t cbAffinity, uint32_t *pcAffinity);
+VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInit(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo);
+VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo, size_t cbCmd, size_t cbUser, size_t cbPassword, size_t cbDomain, size_t cbArgs, size_t cbEnv);
+VBGLR3DECL(void) VbglR3GuestCtrlProcStartupInfoDestroy(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo);
+VBGLR3DECL(void) VbglR3GuestCtrlProcStartupInfoFree(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo);
+VBGLR3DECL(PVBGLR3GUESTCTRLPROCSTARTUPINFO) VbglR3GuestCtrlProcStartupInfoDup(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo);
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3GUESTCTRLPROCSTARTUPINFO *ppStartupInfo);
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puPID);
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puPID, uint32_t *pfFlags, void *pvData,
                                             uint32_t cbData, uint32_t *pcbSize);

@@ -60,169 +60,6 @@ static DECLCALLBACK(int)    vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS 
                                                         uint32_t uHandle, uint32_t cbToRead, uint32_t uFlags);
 
 
-/**
- * Initializes a process startup info, extended version.
- *
- * @returns VBox status code.
- * @param   pStartupInfo        Process startup info to initializes.
- * @param   cbCmd               Size (in bytes) to use for the command buffer.
- * @param   cbUser              Size (in bytes) to use for the user name buffer.
- * @param   cbPassword          Size (in bytes) to use for the password buffer.
- * @param   cbDomain            Size (in bytes) to use for the domain buffer.
- * @param   cbArgs              Size (in bytes) to use for the arguments buffer.
- * @param   cbEnv               Size (in bytes) to use for the environment buffer.
- */
-int VgsvcGstCtrlProcessStartupInfoInitEx(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo,
-                                         size_t cbCmd,
-                                         size_t cbUser, size_t cbPassword, size_t cbDomain,
-                                         size_t cbArgs, size_t cbEnv)
-{
-    AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
-    AssertReturn(cbCmd,           VERR_INVALID_PARAMETER);
-    AssertReturn(cbUser,          VERR_INVALID_PARAMETER);
-    AssertReturn(cbPassword,      VERR_INVALID_PARAMETER);
-    AssertReturn(cbDomain,        VERR_INVALID_PARAMETER);
-    AssertReturn(cbArgs,          VERR_INVALID_PARAMETER);
-    AssertReturn(cbEnv,           VERR_INVALID_PARAMETER);
-
-    RT_BZERO(pStartupInfo, sizeof(VBOXSERVICECTRLPROCSTARTUPINFO));
-
-#define ALLOC_STR(a_Str, a_cb) \
-    if ((a_cb) > 0) \
-    { \
-        pStartupInfo->psz##a_Str = RTStrAlloc(a_cb); \
-        AssertPtrBreak(pStartupInfo->psz##a_Str); \
-        pStartupInfo->cb##a_Str  = (uint32_t)a_cb; \
-    }
-
-    do
-    {
-        ALLOC_STR(Cmd,      cbCmd);
-        ALLOC_STR(Args,     cbArgs);
-        ALLOC_STR(Env,      cbEnv);
-        ALLOC_STR(User,     cbUser);
-        ALLOC_STR(Password, cbPassword);
-        ALLOC_STR(Domain,   cbDomain);
-
-        return VINF_SUCCESS;
-
-    } while (0);
-
-#undef ALLOC_STR
-
-    VgsvcGstCtrlProcessStartupInfoDestroy(pStartupInfo);
-    return VERR_NO_MEMORY;
-}
-
-/**
- * Initializes a process startup info with default values.
- *
- * @param   pStartupInfo        Process startup info to initializes.
- */
-int VgsvcGstCtrlProcessStartupInfoInit(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
-{
-    return VgsvcGstCtrlProcessStartupInfoInitEx(pStartupInfo,
-                                                GUESTPROCESS_MAX_CMD_LEN,
-                                                GUESTPROCESS_MAX_USER_LEN,  GUESTPROCESS_MAX_PASSWORD_LEN,
-                                                GUESTPROCESS_MAX_DOMAIN_LEN,
-                                                GUESTPROCESS_MAX_ARGS_LEN, GUESTPROCESS_MAX_ENV_LEN);
-}
-
-/**
- * Destroys a process startup info.
- *
- * @param   pStartupInfo        Process startup info to destroy.
- */
-void VgsvcGstCtrlProcessStartupInfoDestroy(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
-{
-    if (!pStartupInfo)
-        return;
-
-    RTStrFree(pStartupInfo->pszCmd);
-    RTStrFree(pStartupInfo->pszArgs);
-    RTStrFree(pStartupInfo->pszEnv);
-    RTStrFree(pStartupInfo->pszUser);
-    RTStrFree(pStartupInfo->pszPassword);
-    RTStrFree(pStartupInfo->pszDomain);
-
-    RT_BZERO(pStartupInfo, sizeof(VBOXSERVICECTRLPROCSTARTUPINFO));
-}
-
-/**
- * Free's a process startup info.
- *
- * @param   pStartupInfo        Process startup info to free.
- *                              The pointer will not be valid anymore after return.
- */
-void VgsvcGstCtrlProcessStartupInfoFree(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
-{
-    if (!pStartupInfo)
-        return;
-
-    VgsvcGstCtrlProcessStartupInfoDestroy(pStartupInfo);
-
-    RTMemFree(pStartupInfo);
-    pStartupInfo = NULL;
-}
-
-/**
- * Duplicates a process startup info.
- *
- * @returns Duplicated process startup info on success, or NULL on error.
- * @param   pStartupInfo        Process startup info to duplicate.
- */
-static PVBOXSERVICECTRLPROCSTARTUPINFO vgsvcGstCtrlProcessStartupInfoDup(PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo)
-{
-    AssertPtrReturn(pStartupInfo, NULL);
-
-    PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfoDup = (PVBOXSERVICECTRLPROCSTARTUPINFO)
-                                                            RTMemDup(pStartupInfo, sizeof(VBOXSERVICECTRLPROCSTARTUPINFO));
-    if (pStartupInfoDup)
-    {
-        do
-        {
-            pStartupInfoDup->pszCmd      = NULL;
-            pStartupInfoDup->pszArgs     = NULL;
-            pStartupInfoDup->pszEnv      = NULL;
-            pStartupInfoDup->pszUser     = NULL;
-            pStartupInfoDup->pszPassword = NULL;
-            pStartupInfoDup->pszDomain   = NULL;
-
-#define DUP_STR(a_Str) \
-    if (pStartupInfo->cb##a_Str) \
-    { \
-        pStartupInfoDup->psz##a_Str = (char *)RTStrDup(pStartupInfo->psz##a_Str); \
-        AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
-        pStartupInfoDup->cb##a_Str  = (uint32_t)strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
-    }
-
-#define DUP_MEM(a_Str) \
-    if (pStartupInfo->cb##a_Str) \
-    { \
-        pStartupInfoDup->psz##a_Str = (char *)RTMemDup(pStartupInfo->psz##a_Str, pStartupInfo->cb##a_Str); \
-        AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
-        pStartupInfoDup->cb##a_Str  = (uint32_t)pStartupInfo->cb##a_Str; \
-    }
-
-            DUP_STR(Cmd);
-            DUP_MEM(Args);
-            DUP_MEM(Env);
-            DUP_STR(User);
-            DUP_STR(Password);
-            DUP_STR(Domain);
-
-#undef DUP_STR
-#undef DUP_MEM
-
-            return pStartupInfoDup;
-
-        } while (0); /* To use break macros above. */
-
-        VgsvcGstCtrlProcessStartupInfoFree(pStartupInfoDup);
-    }
-
-    return NULL;
-}
 
 /**
  * Initialies the passed in thread data structure with the parameters given.
@@ -235,7 +72,7 @@ static PVBOXSERVICECTRLPROCSTARTUPINFO vgsvcGstCtrlProcessStartupInfoDup(PVBOXSE
  */
 static int vgsvcGstCtrlProcessInit(PVBOXSERVICECTRLPROCESS pProcess,
                                    const PVBOXSERVICECTRLSESSION pSession,
-                                   const PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo,
+                                   const PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo,
                                    uint32_t u32ContextID)
 {
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
@@ -281,7 +118,7 @@ static int vgsvcGstCtrlProcessInit(PVBOXSERVICECTRLPROCESS pProcess,
     AssertReleaseRC(rc);
 
     /* Duplicate startup info. */
-    pProcess->pStartupInfo = vgsvcGstCtrlProcessStartupInfoDup(pStartupInfo);
+    pProcess->pStartupInfo = VbglR3GuestCtrlProcStartupInfoDup(pStartupInfo);
     AssertPtrReturn(pProcess->pStartupInfo, VERR_NO_MEMORY);
 
     /* Adjust timeout value. */
@@ -316,7 +153,7 @@ int VGSvcGstCtrlProcessFree(PVBOXSERVICECTRLPROCESS pProcess)
         AssertReturn(pProcess->fStopped, VERR_WRONG_ORDER);
         AssertReturn(pProcess->fShutdown, VERR_WRONG_ORDER);
 
-        VgsvcGstCtrlProcessStartupInfoFree(pProcess->pStartupInfo);
+        VbglR3GuestCtrlProcStartupInfoFree(pProcess->pStartupInfo);
         pProcess->pStartupInfo = NULL;
 
         /*
@@ -1990,7 +1827,7 @@ static int vgsvcGstCtrlProcessUnlock(PVBOXSERVICECTRLPROCESS pProcess)
  * @param   uContextID                  Context ID to associate the process to start with.
  */
 int VGSvcGstCtrlProcessStart(const PVBOXSERVICECTRLSESSION pSession,
-                             const PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, uint32_t uContextID)
+                             const PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo, uint32_t uContextID)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);

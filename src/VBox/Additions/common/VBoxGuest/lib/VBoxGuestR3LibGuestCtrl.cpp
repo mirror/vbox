@@ -35,6 +35,7 @@
 #include <iprt/stdarg.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/GuestHost/GuestControl.h>
 #include <VBox/HostServices/GuestControlSvc.h>
 
 #ifndef RT_OS_WINDOWS
@@ -717,50 +718,193 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
+/**
+ * Initializes a session startup info, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pStartupInfo        Session startup info to initializes.
+ * @param   cbUser              Size (in bytes) to use for the user name buffer.
+ * @param   cbPassword          Size (in bytes) to use for the password buffer.
+ * @param   cbDomain            Size (in bytes) to use for the domain name buffer.
+ */
+VBGLR3DECL(int)  VbglR3GuestCtrlSessionStartupInfoInitEx(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo,
+                                                         size_t cbUser, size_t cbPassword, size_t cbDomain)
+{
+    AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
+
+    RT_BZERO(pStartupInfo, sizeof(VBGLR3GUESTCTRLSESSIONSTARTUPINFO));
+
+#define ALLOC_STR(a_Str, a_cb) \
+    if ((a_cb) > 0) \
+    { \
+        pStartupInfo->psz##a_Str = RTStrAlloc(a_cb); \
+        AssertPtrBreak(pStartupInfo->psz##a_Str); \
+        pStartupInfo->cb##a_Str  = (uint32_t)a_cb; \
+    }
+
+    do
+    {
+        ALLOC_STR(User,     cbUser);
+        ALLOC_STR(Password, cbPassword);
+        ALLOC_STR(Domain,   cbDomain);
+
+        return VINF_SUCCESS;
+
+    } while (0);
+
+#undef ALLOC_STR
+
+    VbglR3GuestCtrlSessionStartupInfoDestroy(pStartupInfo);
+    return VERR_NO_MEMORY;
+}
+
+/**
+ * Initializes a session startup info.
+ *
+ * @returns VBox status code.
+ * @param   pStartupInfo        Session startup info to initializes.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionStartupInfoInit(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    return VbglR3GuestCtrlSessionStartupInfoInitEx(pStartupInfo,
+                                                   GUESTPROCESS_MAX_USER_LEN, GUESTPROCESS_MAX_PASSWORD_LEN,
+                                                   GUESTPROCESS_MAX_DOMAIN_LEN);
+}
+
+/**
+ * Destroys a session startup info.
+ *
+ * @param   pStartupInfo        Session startup info to destroy.
+ */
+VBGLR3DECL(void) VbglR3GuestCtrlSessionStartupInfoDestroy(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    if (!pStartupInfo)
+        return;
+
+    RTStrFree(pStartupInfo->pszUser);
+    RTStrFree(pStartupInfo->pszPassword);
+    RTStrFree(pStartupInfo->pszDomain);
+
+    RT_BZERO(pStartupInfo, sizeof(VBGLR3GUESTCTRLSESSIONSTARTUPINFO));
+}
+
+/**
+ * Free's a session startup info.
+ *
+ * @param   pStartupInfo        Session startup info to free.
+ *                              The pointer will not be valid anymore after return.
+ */
+VBGLR3DECL(void) VbglR3GuestCtrlSessionStartupInfoFree(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    if (!pStartupInfo)
+        return;
+
+    VbglR3GuestCtrlSessionStartupInfoDestroy(pStartupInfo);
+
+    RTMemFree(pStartupInfo);
+    pStartupInfo = NULL;
+}
+
+/**
+ * Duplicates a session startup info.
+ *
+ * @returns Duplicated session startup info on success, or NULL on error.
+ * @param   pStartupInfo        Session startup info to duplicate.
+ */
+VBGLR3DECL(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO) VbglR3GuestCtrlSessionStartupInfoDup(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo)
+{
+    AssertPtrReturn(pStartupInfo, NULL);
+
+    PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfoDup = (PVBGLR3GUESTCTRLSESSIONSTARTUPINFO)
+                                                                RTMemDup(pStartupInfo, sizeof(VBGLR3GUESTCTRLSESSIONSTARTUPINFO));
+    if (pStartupInfoDup)
+    {
+        do
+        {
+            pStartupInfoDup->pszUser     = NULL;
+            pStartupInfoDup->pszPassword = NULL;
+            pStartupInfoDup->pszDomain   = NULL;
+
+#define DUP_STR(a_Str) \
+    if (pStartupInfo->cb##a_Str) \
+    { \
+        pStartupInfoDup->psz##a_Str = (char *)RTStrDup(pStartupInfo->psz##a_Str); \
+        AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
+        pStartupInfoDup->cb##a_Str  = strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
+    }
+            DUP_STR(User);
+            DUP_STR(Password);
+            DUP_STR(Domain);
+
+#undef DUP_STR
+
+            return pStartupInfoDup;
+
+        } while (0); /* To use break macros above. */
+
+        VbglR3GuestCtrlSessionStartupInfoFree(pStartupInfoDup);
+    }
+
+    return NULL;
+}
 
 /**
  * Retrieves a HOST_SESSION_CREATE message.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Guest control command context to use.
+ * @param   ppStartupInfo       Where to store the allocated session startup info.
+ *                              Needs to be free'd by VbglR3GuestCtrlSessionStartupInfoFree().
  */
-VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
-                                              uint32_t *puProtocol,
-                                              char     *pszUser,     uint32_t  cbUser,
-                                              char     *pszPassword, uint32_t  cbPassword,
-                                              char     *pszDomain,   uint32_t  cbDomain,
-                                              uint32_t *pfFlags,     uint32_t *pidSession)
+VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3GUESTCTRLSESSIONSTARTUPINFO *ppStartupInfo)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertReturn(pCtx->uNumParms == 6, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppStartupInfo, VERR_INVALID_POINTER);
 
-    AssertPtrReturn(puProtocol, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszPassword, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszDomain, VERR_INVALID_POINTER);
-    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
+    PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo
+        = (PVBGLR3GUESTCTRLSESSIONSTARTUPINFO)RTMemAlloc(sizeof(VBGLR3GUESTCTRLSESSIONSTARTUPINFO));
+    if (!pStartupInfo)
+        return VERR_NO_MEMORY;
 
-    int rc;
+    int rc = VbglR3GuestCtrlSessionStartupInfoInit(pStartupInfo);
+    if (RT_FAILURE(rc))
+    {
+        VbglR3GuestCtrlSessionStartupInfoFree(pStartupInfo);
+        return rc;
+    }
+
     do
     {
         HGCMMsgSessionOpen Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_SESSION_CREATE);
         VbglHGCMParmUInt32Set(&Msg.protocol, 0);
-        VbglHGCMParmPtrSet(&Msg.username, pszUser, cbUser);
-        VbglHGCMParmPtrSet(&Msg.password, pszPassword, cbPassword);
-        VbglHGCMParmPtrSet(&Msg.domain, pszDomain, cbDomain);
+        VbglHGCMParmPtrSet(&Msg.username, pStartupInfo->pszUser, pStartupInfo->cbUser);
+        VbglHGCMParmPtrSet(&Msg.password, pStartupInfo->pszPassword, pStartupInfo->cbPassword);
+        VbglHGCMParmPtrSet(&Msg.domain, pStartupInfo->pszDomain, pStartupInfo->cbDomain);
         VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.protocol.GetUInt32(puProtocol);
-            Msg.flags.GetUInt32(pfFlags);
+            Msg.protocol.GetUInt32(&pStartupInfo->uProtocol);
+            Msg.flags.GetUInt32(&pStartupInfo->fFlags);
 
-            if (pidSession)
-                *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
+            pStartupInfo->uSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
         }
 
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppStartupInfo = pStartupInfo;
+    }
+    else
+        VbglR3GuestCtrlSessionStartupInfoFree(pStartupInfo);
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -881,90 +1025,274 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
     return rc;
 }
 
+/**
+ * Initializes a process startup info, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pStartupInfo        Process startup info to initializes.
+ * @param   cbCmd               Size (in bytes) to use for the command buffer.
+ * @param   cbUser              Size (in bytes) to use for the user name buffer.
+ * @param   cbPassword          Size (in bytes) to use for the password buffer.
+ * @param   cbDomain            Size (in bytes) to use for the domain buffer.
+ * @param   cbArgs              Size (in bytes) to use for the arguments buffer.
+ * @param   cbEnv               Size (in bytes) to use for the environment buffer.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo,
+                                                     size_t cbCmd,
+                                                     size_t cbUser, size_t cbPassword, size_t cbDomain,
+                                                     size_t cbArgs, size_t cbEnv)
+{
+    AssertPtrReturn(pStartupInfo, VERR_INVALID_POINTER);
+    AssertReturn(cbCmd,           VERR_INVALID_PARAMETER);
+    AssertReturn(cbUser,          VERR_INVALID_PARAMETER);
+    AssertReturn(cbPassword,      VERR_INVALID_PARAMETER);
+    AssertReturn(cbDomain,        VERR_INVALID_PARAMETER);
+    AssertReturn(cbArgs,          VERR_INVALID_PARAMETER);
+    AssertReturn(cbEnv,           VERR_INVALID_PARAMETER);
+
+    RT_BZERO(pStartupInfo, sizeof(VBGLR3GUESTCTRLPROCSTARTUPINFO));
+
+#define ALLOC_STR(a_Str, a_cb) \
+    if ((a_cb) > 0) \
+    { \
+        pStartupInfo->psz##a_Str = RTStrAlloc(a_cb); \
+        AssertPtrBreak(pStartupInfo->psz##a_Str); \
+        pStartupInfo->cb##a_Str  = (uint32_t)a_cb; \
+    }
+
+    do
+    {
+        ALLOC_STR(Cmd,      cbCmd);
+        ALLOC_STR(Args,     cbArgs);
+        ALLOC_STR(Env,      cbEnv);
+        ALLOC_STR(User,     cbUser);
+        ALLOC_STR(Password, cbPassword);
+        ALLOC_STR(Domain,   cbDomain);
+
+        return VINF_SUCCESS;
+
+    } while (0);
+
+#undef ALLOC_STR
+
+    VbglR3GuestCtrlProcStartupInfoDestroy(pStartupInfo);
+    return VERR_NO_MEMORY;
+}
+
+/**
+ * Initializes a process startup info with default values.
+ *
+ * @param   pStartupInfo        Process startup info to initializes.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInit(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo)
+{
+    return VbglR3GuestCtrlProcStartupInfoInitEx(pStartupInfo,
+                                                GUESTPROCESS_MAX_CMD_LEN,
+                                                GUESTPROCESS_MAX_USER_LEN,  GUESTPROCESS_MAX_PASSWORD_LEN,
+                                                GUESTPROCESS_MAX_DOMAIN_LEN,
+                                                GUESTPROCESS_MAX_ARGS_LEN, GUESTPROCESS_MAX_ENV_LEN);
+}
+
+/**
+ * Destroys a process startup info.
+ *
+ * @param   pStartupInfo        Process startup info to destroy.
+ */
+VBGLR3DECL(void) VbglR3GuestCtrlProcStartupInfoDestroy(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo)
+{
+    if (!pStartupInfo)
+        return;
+
+    RTStrFree(pStartupInfo->pszCmd);
+    RTStrFree(pStartupInfo->pszArgs);
+    RTStrFree(pStartupInfo->pszEnv);
+    RTStrFree(pStartupInfo->pszUser);
+    RTStrFree(pStartupInfo->pszPassword);
+    RTStrFree(pStartupInfo->pszDomain);
+
+    RT_BZERO(pStartupInfo, sizeof(VBGLR3GUESTCTRLPROCSTARTUPINFO));
+}
+
+/**
+ * Free's a process startup info.
+ *
+ * @param   pStartupInfo        Process startup info to free.
+ *                              The pointer will not be valid anymore after return.
+ */
+VBGLR3DECL(void) VbglR3GuestCtrlProcStartupInfoFree(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo)
+{
+    if (!pStartupInfo)
+        return;
+
+    VbglR3GuestCtrlProcStartupInfoDestroy(pStartupInfo);
+
+    RTMemFree(pStartupInfo);
+    pStartupInfo = NULL;
+}
+
+/**
+ * Duplicates a process startup info.
+ *
+ * @returns Duplicated process startup info on success, or NULL on error.
+ * @param   pStartupInfo        Process startup info to duplicate.
+ */
+VBGLR3DECL(PVBGLR3GUESTCTRLPROCSTARTUPINFO) VbglR3GuestCtrlProcStartupInfoDup(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo)
+{
+    AssertPtrReturn(pStartupInfo, NULL);
+
+    PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfoDup = (PVBGLR3GUESTCTRLPROCSTARTUPINFO)
+                                                            RTMemDup(pStartupInfo, sizeof(VBGLR3GUESTCTRLPROCSTARTUPINFO));
+    if (pStartupInfoDup)
+    {
+        do
+        {
+            pStartupInfoDup->pszCmd      = NULL;
+            pStartupInfoDup->pszArgs     = NULL;
+            pStartupInfoDup->pszEnv      = NULL;
+            pStartupInfoDup->pszUser     = NULL;
+            pStartupInfoDup->pszPassword = NULL;
+            pStartupInfoDup->pszDomain   = NULL;
+
+#define DUP_STR(a_Str) \
+    if (pStartupInfo->cb##a_Str) \
+    { \
+        pStartupInfoDup->psz##a_Str = (char *)RTStrDup(pStartupInfo->psz##a_Str); \
+        AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
+        pStartupInfoDup->cb##a_Str  = (uint32_t)strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
+    }
+
+#define DUP_MEM(a_Str) \
+    if (pStartupInfo->cb##a_Str) \
+    { \
+        pStartupInfoDup->psz##a_Str = (char *)RTMemDup(pStartupInfo->psz##a_Str, pStartupInfo->cb##a_Str); \
+        AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
+        pStartupInfoDup->cb##a_Str  = (uint32_t)pStartupInfo->cb##a_Str; \
+    }
+
+            DUP_STR(Cmd);
+            DUP_MEM(Args);
+            DUP_MEM(Env);
+            DUP_STR(User);
+            DUP_STR(Password);
+            DUP_STR(Domain);
+
+#undef DUP_STR
+#undef DUP_MEM
+
+            return pStartupInfoDup;
+
+        } while (0); /* To use break macros above. */
+
+        VbglR3GuestCtrlProcStartupInfoFree(pStartupInfoDup);
+    }
+
+    return NULL;
+}
 
 /**
  * Retrieves a HOST_EXEC_CMD message.
  *
- * @todo Move the parameters in an own struct!
+ * @returns VBox status code.
+ * @param   pCtx                Guest control command context to use.
+ * @param   ppStartupInfo       Where to store the allocated session startup info.
+ *                              Needs to be free'd by VbglR3GuestCtrlProcStartupInfoFree().
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
-                                            char     *pszCmd,         uint32_t  cbCmd,
-                                            uint32_t *pfFlags,
-                                            char     *pszArgs,        uint32_t  cbArgs,     uint32_t *pcArgs,
-                                            char     *pszEnv,         uint32_t *pcbEnv,     uint32_t *pcEnvVars,
-                                            char     *pszUser,        uint32_t  cbUser,
-                                            char     *pszPassword,    uint32_t  cbPassword,
-                                            uint32_t *puTimeoutMS,
-                                            uint32_t *puPriority,
-                                            uint64_t *puAffinity,     uint32_t  cbAffinity, uint32_t *pcAffinity)
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3GUESTCTRLPROCSTARTUPINFO *ppStartupInfo)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppStartupInfo, VERR_INVALID_POINTER);
 
-    AssertPtrReturn(pszCmd, VERR_INVALID_POINTER);
-    AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszArgs, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcArgs, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszEnv, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbEnv, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcEnvVars, VERR_INVALID_POINTER);
-    AssertPtrReturn(puTimeoutMS, VERR_INVALID_POINTER);
+    PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo
+        = (PVBGLR3GUESTCTRLPROCSTARTUPINFO)RTMemAlloc(sizeof(VBGLR3GUESTCTRLPROCSTARTUPINFO));
+    if (!pStartupInfo)
+        return VERR_NO_MEMORY;
 
-    int rc;
+    int rc = VbglR3GuestCtrlProcStartupInfoInit(pStartupInfo);
+    if (RT_FAILURE(rc))
+    {
+        VbglR3GuestCtrlProcStartupInfoFree(pStartupInfo);
+        return rc;
+    }
+
+    unsigned cRetries = 0;
+    unsigned cGrowthFactor = 2;
+
     do
     {
         HGCMMsgProcExec Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_EXEC_CMD);
-        VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
+        VbglHGCMParmPtrSet(&Msg.cmd, pStartupInfo->pszCmd, pStartupInfo->cbCmd);
         VbglHGCMParmUInt32Set(&Msg.flags, 0);
         VbglHGCMParmUInt32Set(&Msg.num_args, 0);
-        VbglHGCMParmPtrSet(&Msg.args, pszArgs, cbArgs);
+        VbglHGCMParmPtrSet(&Msg.args, pStartupInfo->pszArgs, pStartupInfo->cbArgs);
         VbglHGCMParmUInt32Set(&Msg.num_env, 0);
         VbglHGCMParmUInt32Set(&Msg.cb_env, 0);
-        VbglHGCMParmPtrSet(&Msg.env, pszEnv, *pcbEnv);
+        VbglHGCMParmPtrSet(&Msg.env, pStartupInfo->pszEnv, pStartupInfo->cbEnv);
         if (pCtx->uProtocol < 2)
         {
-            AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
-            AssertReturn(cbUser, VERR_INVALID_PARAMETER);
-            AssertPtrReturn(pszPassword, VERR_INVALID_POINTER);
-            AssertReturn(pszPassword, VERR_INVALID_PARAMETER);
-
-            VbglHGCMParmPtrSet(&Msg.u.v1.username, pszUser, cbUser);
-            VbglHGCMParmPtrSet(&Msg.u.v1.password, pszPassword, cbPassword);
+            VbglHGCMParmPtrSet(&Msg.u.v1.username, pStartupInfo->pszUser, pStartupInfo->cbUser);
+            VbglHGCMParmPtrSet(&Msg.u.v1.password, pStartupInfo->pszPassword, pStartupInfo->cbPassword);
             VbglHGCMParmUInt32Set(&Msg.u.v1.timeout, 0);
         }
         else
         {
-            AssertPtrReturn(puAffinity, VERR_INVALID_POINTER);
-            AssertReturn(cbAffinity, VERR_INVALID_PARAMETER);
-
             VbglHGCMParmUInt32Set(&Msg.u.v2.timeout, 0);
             VbglHGCMParmUInt32Set(&Msg.u.v2.priority, 0);
             VbglHGCMParmUInt32Set(&Msg.u.v2.num_affinity, 0);
-            VbglHGCMParmPtrSet(&Msg.u.v2.affinity, puAffinity, cbAffinity);
+            VbglHGCMParmPtrSet(&Msg.u.v2.affinity, pStartupInfo->uAffinity, sizeof(pStartupInfo->uAffinity));
         }
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
+        {
+            if (   rc == VERR_BUFFER_OVERFLOW
+                && cRetries++ < 4)
+            {
+#define GROW_STR(a_Str, a_cbMax) \
+        pStartupInfo->psz##a_Str = (char *)RTMemRealloc(pStartupInfo->psz##a_Str, \
+           RT_MAX(pStartupInfo->cb##a_Str * cGrowthFactor, a_cbMax)); \
+        AssertPtrBreakStmt(pStartupInfo->psz##a_Str, VERR_NO_MEMORY); \
+        pStartupInfo->cb##a_Str  = RT_MAX(pStartupInfo->cb##a_Str * cGrowthFactor, a_cbMax);
+
+                GROW_STR(Cmd , GUESTPROCESS_MAX_CMD_LEN);
+                GROW_STR(Args, GUESTPROCESS_MAX_ARGS_LEN);
+                GROW_STR(Env,  GUESTPROCESS_MAX_ENV_LEN);
+
+#undef GROW_STR
+                cGrowthFactor *= cGrowthFactor;
+            }
+            else
+                break;
+        }
+        else
         {
             Msg.context.GetUInt32(&pCtx->uContextID);
-            Msg.flags.GetUInt32(pfFlags);
-            Msg.num_args.GetUInt32(pcArgs);
-            Msg.num_env.GetUInt32(pcEnvVars);
-            Msg.cb_env.GetUInt32(pcbEnv);
+            Msg.flags.GetUInt32(&pStartupInfo->fFlags);
+            Msg.num_args.GetUInt32(&pStartupInfo->cArgs);
+            Msg.num_env.GetUInt32(&pStartupInfo->cEnvVars);
+            Msg.cb_env.GetUInt32(&pStartupInfo->cbEnv);
             if (pCtx->uProtocol < 2)
-                Msg.u.v1.timeout.GetUInt32(puTimeoutMS);
+                Msg.u.v1.timeout.GetUInt32(&pStartupInfo->uTimeLimitMS);
             else
             {
-                Msg.u.v2.timeout.GetUInt32(puTimeoutMS);
-                Msg.u.v2.priority.GetUInt32(puPriority);
-                Msg.u.v2.num_affinity.GetUInt32(pcAffinity);
+                Msg.u.v2.timeout.GetUInt32(&pStartupInfo->uTimeLimitMS);
+                Msg.u.v2.priority.GetUInt32(&pStartupInfo->uPriority);
+                Msg.u.v2.num_affinity.GetUInt32(&pStartupInfo->cAffinity);
             }
         }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppStartupInfo = pStartupInfo;
+    }
+    else
+        VbglR3GuestCtrlProcStartupInfoFree(pStartupInfo);
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
 
 /**
  * Allocates and gets host data, based on the message id.

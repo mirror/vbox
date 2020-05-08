@@ -414,34 +414,25 @@ static int vgsvcGstCtrlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
     /*
      * Retrieve the message parameters.
      */
-    VBOXSERVICECTRLSESSIONSTARTUPINFO startupInfo;
-    int rc = VgsvcGstCtrlSessionStartupInfoInit(&startupInfo);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = VbglR3GuestCtrlSessionGetOpen(pHostCtx,
-                                       &startupInfo.uProtocol,
-                                       startupInfo.pszUser,     startupInfo.cbUser,
-                                       startupInfo.pszPassword, startupInfo.cbPassword,
-                                       startupInfo.pszDomain,   startupInfo.cbDomain,
-                                       &startupInfo.fFlags,    &startupInfo.uSessionID);
+    PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo;
+    int rc = VbglR3GuestCtrlSessionGetOpen(pHostCtx, &pStartupInfo);
     if (RT_SUCCESS(rc))
     {
         /*
          * Flat out refuse to work with protocol v1 hosts.
          */
-        if (startupInfo.uProtocol == 2)
+        if (pStartupInfo->uProtocol == 2)
         {
-            pHostCtx->uProtocol = startupInfo.uProtocol;
+            pHostCtx->uProtocol = pStartupInfo->uProtocol;
             VGSvcVerbose(3, "Client ID=%RU32 now is using protocol %RU32\n", pHostCtx->uClientID, pHostCtx->uProtocol);
 
 /** @todo Someone explain why this code isn't in this file too?  v1 support? */
-            rc = VGSvcGstCtrlSessionThreadCreate(&g_lstControlSessionThreads, &startupInfo, NULL /* ppSessionThread */);
+            rc = VGSvcGstCtrlSessionThreadCreate(&g_lstControlSessionThreads, pStartupInfo, NULL /* ppSessionThread */);
             /* Report failures to the host (successes are taken care of by the session thread). */
         }
         else
         {
-            VGSvcError("The host wants to use protocol v%u, we only support v2!\n", startupInfo.uProtocol);
+            VGSvcError("The host wants to use protocol v%u, we only support v2!\n", pStartupInfo->uProtocol);
             rc = VERR_VERSION_MISMATCH;
         }
         if (RT_FAILURE(rc))
@@ -457,7 +448,8 @@ static int vgsvcGstCtrlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
         VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
     }
 
-    VgsvcGstCtrlSessionStartupInfoDestroy(&startupInfo);
+    VbglR3GuestCtrlSessionStartupInfoFree(pStartupInfo);
+    pStartupInfo = NULL;
 
     VGSvcVerbose(3, "Opening a new guest session returned rc=%Rrc\n", rc);
     return rc;

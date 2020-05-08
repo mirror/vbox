@@ -134,14 +134,27 @@ enum eProcessStatus
 #define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000003)
 /** @} */
 
+/** @name Defines for default (initial) guest process buffer lengths.
+ * Note: These defaults were the maximum values before; so be careful when raising those in order to
+ *       not break running with older Guest Additions.
+ * @{
+ */
+#define GUESTPROCESS_DEFAULT_CMD_LEN        _1K
+#define GUESTPROCESS_DEFAULT_ARGS_LEN       _1K
+#define GUESTPROCESS_DEFAULT_ENV_LEN        _64K
+/** @} */
+
 /** @name Defines for maximum guest process buffer lengths.
  * @{
  */
-#define GUESTPROCESS_MAX_CMD_LEN            _1K
-#define GUESTPROCESS_MAX_ARGS_LEN           _1K
-#define GUESTPROCESS_MAX_ENV_LEN            _64K
+#define GUESTPROCESS_MAX_CMD_LEN            _1M
+#define GUESTPROCESS_MAX_ARGS_LEN           _2M
+#define GUESTPROCESS_MAX_ENV_LEN            _4M
+/** Deprecated; only used for < VBox 4.3 hosts. */
 #define GUESTPROCESS_MAX_USER_LEN           128
+/** Deprecated; only used for < VBox 4.3 hosts. */
 #define GUESTPROCESS_MAX_PASSWORD_LEN       128
+/** Deprecated; only used for < VBox 4.3 hosts. */
 #define GUESTPROCESS_MAX_DOMAIN_LEN         256
 /** @} */
 
