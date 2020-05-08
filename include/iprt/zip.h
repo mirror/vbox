@@ -310,7 +310,7 @@ typedef enum RTZIPTARFORMAT
  *                              written.  The reference is not consumed, instead
  *                              another one is retained.
  * @param   enmFormat           The desired output format.
- * @param   fFlags              RTZIPTAR_C_XXX.
+ * @param   fFlags              RTZIPTAR_C_XXX, except RTZIPTAR_C_UPDATE.
  * @param   phVfsFss            Where to return the handle to the TAR
  *                              filesystem stream.
  */
@@ -328,6 +328,23 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
 /** Valid bits. */
 #define RTZIPTAR_C_VALID_MASK       UINT32_C(0x00000003)
 /** @} */
+
+/**
+ * Opens a TAR filesystem stream for the purpose of create a new TAR archive or
+ * updating an existing one.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hVfsFileOut         The TAR file handle, i.e. where the tar stuff is
+ *                              written and optionally read/update.  The
+ *                              reference is not consumed, instead another one
+ *                              is retained.
+ * @param   enmFormat           The desired output format.
+ * @param   fFlags              RTZIPTAR_C_XXX.
+ * @param   phVfsFss            Where to return the handle to the TAR
+ *                              filesystem stream.
+ */
+RTDECL(int) RTZipTarFsStreamForFile(RTVFSFILE hVfsFile, RTZIPTARFORMAT enmFormat, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
 
 /**
  * Set the owner to store the archive entries with.
