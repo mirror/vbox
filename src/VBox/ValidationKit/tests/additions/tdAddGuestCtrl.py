@@ -2985,7 +2985,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             atExec.append([ tdTestExec(sCmd = sShell, asArgs = [ sShell, sShellOpt, 'exit %s' % iExitCode ]),
                             tdTestResultExec(fRc = True, iExitCode = iExitCode) ]);
 
-        if sVBoxControl:
+        if  sVBoxControl \
+        and self.oTstDrv.fpApiVer >= 6.0: # Investigate with this doesn't work on (<) 5.2.
             # Paths with spaces on windows.
             atExec.append([ tdTestExec(sCmd = sVBoxControl, asArgs = [ sVBoxControl, 'version' ],
                                        afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut,
