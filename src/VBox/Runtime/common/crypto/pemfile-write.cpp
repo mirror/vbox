@@ -87,7 +87,8 @@ RTDECL(size_t) RTCrPemWriteBlob(PFNRTSTROUTPUT pfnOutput, void *pvUser,
         char   szBlock[0x1060];
         size_t cbBlock = RT_MIN(cbContent, cbMaxBlock);
         size_t cchBlock = 0;
-        int rc = RTBase64Encode(pvContent, cbBlock, szBlock, sizeof(szBlock), &cchBlock);
+        int rc = RTBase64EncodeEx(pvContent, cbBlock, RTBASE64_FLAGS_EOL_LF,
+                                  szBlock, sizeof(szBlock), &cchBlock);
         AssertRC(rc);
         szBlock[cchBlock++] = '\n';
         szBlock[cchBlock]   = '\0';
@@ -136,7 +137,8 @@ static DECLCALLBACK(int) rtCrPemWriteAsn1Callback(const void *pvBuf, size_t cbTo
         Assert(offDst + cbDst == sizeof(pThis->abBlock));
 
         size_t cchBlock = 0;
-        int rc = RTBase64Encode(pThis->abBlock, sizeof(pThis->abBlock), pThis->szBlock, sizeof(pThis->szBlock), &cchBlock);
+        int rc = RTBase64EncodeEx(pThis->abBlock, sizeof(pThis->abBlock), RTBASE64_FLAGS_EOL_LF,
+                                  pThis->szBlock, sizeof(pThis->szBlock), &cchBlock);
         AssertRC(rc);
         pThis->szBlock[cchBlock++] = '\n';
         pThis->szBlock[cchBlock]   = '\0';
@@ -189,7 +191,8 @@ RTDECL(ssize_t) RTCrPemWriteAsn1(PFNRTSTROUTPUT pfnOutput, void *pvUser, PRTASN1
     if (This.cbPending)
     {
         size_t cchBlock = 0;
-        rc = RTBase64Encode(This.abBlock, This.cbPending, This.szBlock, sizeof(This.szBlock), &cchBlock);
+        rc = RTBase64EncodeEx(This.abBlock, This.cbPending, RTBASE64_FLAGS_EOL_LF,
+                              This.szBlock, sizeof(This.szBlock), &cchBlock);
         AssertRC(rc);
         This.szBlock[cchBlock++] = '\n';
         This.szBlock[cchBlock]   = '\0';
