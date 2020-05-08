@@ -2256,6 +2256,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                     if abBuf:
                                         reporter.log2('Process (PID %d) got %d bytes of %s data (type: %s)'
                                                       % (iPid, len(abBuf), sFdNm, type(abBuf)));
+                                        if isinstance(memoryview) is abBuf: ## @todo Why is this happening?
+                                            abBuf = abBuf.tobytes();
                                         for sLine in abBuf.decode("utf-8").splitlines():
                                             reporter.log('%s: %s' % (sFdNm, sLine));
                                         acbFdOut[iFd] += len(abBuf);
