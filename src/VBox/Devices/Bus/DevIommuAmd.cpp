@@ -3588,7 +3588,6 @@ static void iommuAmdInitDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, 
  * Raises a DEV_TAB_HARDWARE_ERROR event.
  *
  * @param   pDevIns             The IOMMU device instance.
- * @param   uDevId              The device ID.
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtDevTabHwErr     The device table hardware error event.
  * @param   enmEvtType          The device table hardware error event type.
