@@ -371,6 +371,32 @@ static int rtVfsDirFollowSymlinkObjToParent(RTVFSDIRINTERNAL **ppVfsParentDir, R
 
 
 
+/**
+ * Translates a RTVFSOBJTYPE value into a string.
+ *
+ * @returns Pointer to readonly name.
+ * @param   enmType             The object type to name.
+ */
+RTDECL(const char *) RTVfsTypeName(RTVFSOBJTYPE enmType)
+{
+    switch (enmType)
+    {
+        case RTVFSOBJTYPE_INVALID:      return "invalid";
+        case RTVFSOBJTYPE_BASE:         return "base";
+        case RTVFSOBJTYPE_VFS:          return "VFS";
+        case RTVFSOBJTYPE_FS_STREAM:    return "FS stream";
+        case RTVFSOBJTYPE_IO_STREAM:    return "I/O stream";
+        case RTVFSOBJTYPE_DIR:          return "directory";
+        case RTVFSOBJTYPE_FILE:         return "file";
+        case RTVFSOBJTYPE_SYMLINK:      return "symlink";
+        case RTVFSOBJTYPE_END:          return "end";
+        case RTVFSOBJTYPE_32BIT_HACK:
+            break;
+    }
+    return "unknown";
+}
+
+
 /*
  *
  *  V F S   L o c k   A b s t r a c t i o n

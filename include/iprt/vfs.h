@@ -91,6 +91,14 @@ typedef enum RTVFSOBJTYPE
 /** Pointer to a VFS object type. */
 typedef RTVFSOBJTYPE *PRTVFSOBJTYPE;
 
+/**
+ * Translates a RTVFSOBJTYPE value into a string.
+ *
+ * @returns Pointer to readonly name.
+ * @param   enmType             The object type to name.
+ */
+RTDECL(const char *) RTVfsTypeName(RTVFSOBJTYPE enmType);
+
 
 
 /** @name RTVfsCreate flags

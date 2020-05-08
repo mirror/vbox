@@ -2829,6 +2829,7 @@
 # define RTVfsSymlinkSetOwner                           RT_MANGLER(RTVfsSymlinkSetOwner)
 # define RTVfsSymlinkSetTimes                           RT_MANGLER(RTVfsSymlinkSetTimes)
 # define RTVfsSymlinkToPrivate                          RT_MANGLER(RTVfsSymlinkToPrivate)
+# define RTVfsTypeName                                  RT_MANGLER(RTVfsTypeName)
 # define RTVfsUtilDummyPollOne                          RT_MANGLER(RTVfsUtilDummyPollOne)
 # define RTVfsUtilPumpIoStreams                         RT_MANGLER(RTVfsUtilPumpIoStreams)
 # define RTVfsCreateProgressForFile                     RT_MANGLER(RTVfsCreateProgressForFile)
