@@ -666,6 +666,23 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionCancelPrepared(uint32_t idClient, uint32_t
 
 
 /**
+ * Invalidates the internal state because the (VM) session has been changed (i.e. restored).
+ *
+ * @returns VBox status code.
+ * @param   idClient                Client ID to use for invalidating state.
+ * @param   idNewControlSession     New control session ID. Currently unused.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionHasChanged(uint32_t idClient, uint64_t idNewControlSession)
+{
+    RT_NOREF(idNewControlSession);
+
+    vbglR3GuestCtrlDetectPeekGetCancelSupport(idClient);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Asks a specific guest session to close.
  *
  * @return  IPRT status code.
