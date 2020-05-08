@@ -52,7 +52,11 @@ RT_C_DECLS_BEGIN
 /** Insert line breaks into encoded string.
  * The size of the end-of-line marker is that that of the host platform.
  */
-#define RTBASE64_FLAGS_NO_LINE_BREAKS RT_BIT_32(0)
+#define RTBASE64_FLAGS_EOL_NATIVE       UINT32_C(0) /**< Use native newlines. */
+#define RTBASE64_FLAGS_NO_LINE_BREAKS   UINT32_C(1) /**< No newlines.  */
+#define RTBASE64_FLAGS_EOL_LF           UINT32_C(2) /**< Use UNIX-style newlines. */
+#define RTBASE64_FLAGS_EOL_CRLF         UINT32_C(3) /**< Use DOS-style newlines. */
+#define RTBASE64_FLAGS_EOL_STYLE_MASK   UINT32_C(3) /**< End-of-line style mask. */
 /** @} */
 
 

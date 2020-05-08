@@ -82,6 +82,25 @@ static const uint8_t    g_au8CharToVal[256] =
 /** Value to Base64 character. (RFC 2045) */
 static const char       g_szValToChar[64+1] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+/** The end-of-line lengths (indexed by style flag value). */
+static const size_t     g_acchEolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1] =
+{
+    /*[RTBASE64_FLAGS_EOL_NATIVE    ]:*/ RTBASE64_EOL_SIZE,
+    /*[RTBASE64_FLAGS_NO_LINE_BREAKS]:*/ 0,
+    /*[RTBASE64_FLAGS_EOL_LF        ]:*/ 1,
+    /*[RTBASE64_FLAGS_EOL_CRLF      ]:*/ 2
+};
+
+/** The end-of-line characters (zero, one or two). */
+static const char       g_aachEolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1][2] =
+{
+    /*[RTBASE64_FLAGS_EOL_NATIVE    ]:*/ { RTBASE64_EOL_SIZE == 1 ? '\n' : '\n', RTBASE64_EOL_SIZE == 1 ? '\n' : '\0', },
+    /*[RTBASE64_FLAGS_NO_LINE_BREAKS]:*/ { '\0', '\0' },
+    /*[RTBASE64_FLAGS_EOL_LF        ]:*/ { '\n', '\0' },
+    /*[RTBASE64_FLAGS_EOL_CRLF      ]:*/ { '\r', '\n' },
+};
+
+
 
 #ifdef RT_STRICT
 /**
@@ -420,6 +439,8 @@ RT_EXPORT_SYMBOL(RTBase64EncodedLength);
  */
 RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags)
 {
+    size_t const cchEol = g_acchEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
+
     if (cbData * 8 / 8 != cbData)
     {
         AssertReturn(sizeof(size_t) == sizeof(uint64_t), ~(size_t)0);
@@ -427,9 +448,7 @@ RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags)
         while (cch % 24)
             cch += 8;
         cch /= 6;
-
-        if ((fFlags & RTBASE64_FLAGS_NO_LINE_BREAKS) == 0) /* add EOLs? */
-            cch += ((cch - 1) / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
+        cch += ((cch - 1) / RTBASE64_LINE_LEN) * cchEol;
         return cch;
     }
 
@@ -437,9 +456,7 @@ RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags)
     while (cch % 24)
         cch += 8;
     cch /= 6;
-
-    if ((fFlags & RTBASE64_FLAGS_NO_LINE_BREAKS) == 0) /* add EOLs? */
-        cch += ((cch - 1) / RTBASE64_LINE_LEN) * RTBASE64_EOL_SIZE;
+    cch += ((cch - 1) / RTBASE64_LINE_LEN) * cchEol;
     return cch;
 }
 RT_EXPORT_SYMBOL(RTBase64EncodedLengthEx);
@@ -485,6 +502,11 @@ RT_EXPORT_SYMBOL(RTBase64Encode);
 RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
                              char *pszBuf, size_t cbBuf, size_t *pcchActual)
 {
+    /* Expand the EOL style flags: */
+    size_t const    cchEol = g_acchEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
+    char const      chEol0 = g_aachEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][0];
+    char const      chEol1 = g_aachEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][1];
+
     /*
      * Process whole "trios" of input data.
      */
@@ -514,17 +536,17 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
         cbData -= 3;
         pbSrc  += 3;
 
-        if ((fFlags & RTBASE64_FLAGS_NO_LINE_BREAKS) == 0) /* add EOLs? */
+        if (cchEol > 0)
         {
             /* deal out end-of-line */
             if (cbBuf == cbLineFeed && cbData)
             {
-                if (cbBuf < RTBASE64_EOL_SIZE + 1)
+                if (cbBuf < cchEol + 1)
                     return VERR_BUFFER_OVERFLOW;
-                cbBuf -= RTBASE64_EOL_SIZE;
-                if (RTBASE64_EOL_SIZE == 2)
-                    *pchDst++ = '\r';
-                *pchDst++ = '\n';
+                cbBuf -= cchEol;
+                *pchDst++ = chEol0;
+                if (chEol1)
+                    *pchDst++ = chEol1;
                 cbLineFeed = cbBuf - RTBASE64_LINE_LEN;
             }
         }
