@@ -45,6 +45,7 @@
         <arg choice="plain">--private-key-password-file=<replaceable>password-file</replaceable></arg>
         <arg choice="plain">--private-key-password=<replaceable>password</replaceable></arg>
       </group>
+      <arg>--digest-type=<replaceable>type</replaceable></arg>
       <group>
         <arg choice="plain">--pkcs7</arg>
         <arg choice="plain">--no-pkcs7</arg>
@@ -88,6 +89,11 @@
       <varlistentry>
         <term><option>--private-key-password=<replaceable>password</replaceable></option></term>
         <listitem><para>The private key password. <!-- add warning about visibility --> </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--digest-type=<replaceable>type</replaceable></option></term>
+        <listitem><para>Select the cryptographic digest algorithm to use in the
+          signing. Possible values: SHA-256 (default), SHA-512 and SHA-1.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--pkcs7</option>, <option>--no-pkcs7</option></term>

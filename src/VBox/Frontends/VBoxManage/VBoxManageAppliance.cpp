@@ -1998,24 +1998,23 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
 /**
  * Performs the OVA signing, producing an in-memory cert-file.
  */
-static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKey,
+static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKey, RTDIGESTTYPE enmDigestType,
                            const char *pszManifestName, RTVFSFILE hVfsFileManifest,
                            bool fPkcs7, unsigned cIntermediateCerts, const char **papszIntermediateCerts,
                            PRTERRINFOSTATIC pErrInfo, PRTVFSFILE phVfsFileSignature)
 {
     /*
-     * We currently hardcode the digest algorithm to SHA-256.
+     * Instantiate the digest algorithm.
      */
-    /** @todo fall back on SHA-1 if the key is too small for SHA-256. */
+    /** @todo fall back on SHA-1 if the key is too small for SHA-256 or SHA-512? */
     PCRTASN1OBJID const pObjId  = &pCertificate->TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm;
     RTCRDIGEST          hDigest = NIL_RTCRDIGEST;
-    int rc = RTCrDigestCreateByType(&hDigest, RTDIGESTTYPE_SHA256);
+    int rc = RTCrDigestCreateByType(&hDigest, enmDigestType);
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "Failed to create digest for %s: %Rrc", pObjId->szObjId, rc);
 
     /* Figure out the digest type name for the .cert file: */
-    RTDIGESTTYPE const enmDigestType = RTCrDigestGetType(hDigest);
-    const char        *pszDigestType;
+    const char *pszDigestType;
     switch (enmDigestType)
     {
         case RTDIGESTTYPE_SHA1:         pszDigestType = "SHA1"; break;
@@ -2134,6 +2133,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
         { "--private-key",              'k', RTGETOPT_REQ_STRING },
         { "--private-key-password",     'p', RTGETOPT_REQ_STRING },
         { "--private-key-password-file",'P', RTGETOPT_REQ_STRING },
+        { "--digest-type",              'd', RTGETOPT_REQ_STRING },
         { "--pkcs7",                    '7', RTGETOPT_REQ_NOTHING },
         { "--no-pkcs7",                 'n', RTGETOPT_REQ_NOTHING },
         { "--intermediate-cert-file",   'i', RTGETOPT_REQ_STRING },
@@ -2147,17 +2147,17 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
     int rc = RTGetOptInit(&GetState, arg->argc, arg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
-    const char *pszOva              = NULL;
-    const char *pszCertificate      = NULL;
-    const char *pszPrivateKey       = NULL;
-    Utf8Str     strPrivateKeyPassword;
-    bool        fPkcs7              = false;
-    unsigned    cIntermediateCerts  = 0;
-    const char *apszIntermediateCerts[32];
-    bool        fReSign             = false;
-    unsigned    iVerbosity          = 1;
-
-    bool        fDryRun             = false;
+    const char     *pszOva              = NULL;
+    const char     *pszCertificate      = NULL;
+    const char     *pszPrivateKey       = NULL;
+    Utf8Str         strPrivateKeyPassword;
+    RTDIGESTTYPE    enmDigestType       = RTDIGESTTYPE_SHA256;
+    bool            fPkcs7              = false;
+    unsigned        cIntermediateCerts  = 0;
+    const char     *apszIntermediateCerts[32];
+    bool            fReSign             = false;
+    unsigned        iVerbosity          = 1;
+    bool            fDryRun             = false;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -2188,6 +2188,20 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                     break;
                 return rcExit;
             }
+
+            case 'd':
+                if (   RTStrICmp(ValueUnion.psz, "sha1") == 0
+                    || RTStrICmp(ValueUnion.psz, "sha-1") == 0)
+                    enmDigestType = RTDIGESTTYPE_SHA1;
+                else if (   RTStrICmp(ValueUnion.psz, "sha256") == 0
+                         || RTStrICmp(ValueUnion.psz, "sha-256") == 0)
+                    enmDigestType = RTDIGESTTYPE_SHA256;
+                else if (   RTStrICmp(ValueUnion.psz, "sha512") == 0
+                         || RTStrICmp(ValueUnion.psz, "sha-512") == 0)
+                    enmDigestType = RTDIGESTTYPE_SHA512;
+                else
+                    return RTMsgErrorExitFailure("Unknown digest type: %s", ValueUnion.psz);
+                break;
 
             case '7':
                 fPkcs7 = true;
@@ -2281,9 +2295,8 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
              * Do the signing and create the signature file.
              */
             RTVFSFILE hVfsFileSignature = NIL_RTVFSFILE;
-            rc = doTheOvaSigning(&Certificate, hPrivateKey, strManifestName.c_str(), hVfsFileManifest,
-                                 fPkcs7, cIntermediateCerts, apszIntermediateCerts,
-                                 &ErrInfo, &hVfsFileSignature);
+            rc = doTheOvaSigning(&Certificate, hPrivateKey, enmDigestType, strManifestName.c_str(), hVfsFileManifest,
+                                 fPkcs7, cIntermediateCerts, apszIntermediateCerts, &ErrInfo, &hVfsFileSignature);
 
             /*
              * Construct the signature filename:
