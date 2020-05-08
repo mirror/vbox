@@ -1419,8 +1419,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         # The tests. Must-succeed tests should be first.
         atTests = [
-            ( True,  self.prepareGuestForTesting,           None,               'Preparations',),
             ( True,  self.prepareGuestForDebugging,         None,               'Manaul Debugging',),
+            ( True,  self.prepareGuestForTesting,           None,               'Preparations',),
             ( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
             ( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
             ( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
