@@ -478,7 +478,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_MMIO_REGION_SIZE                      _16K
 /** Number of device table segments supported (power of 2). */
 #define IOMMU_MAX_DEV_TAB_SEGMENTS                  3
-/** Maximum number of host address translation levels supported. */
+/** Maximum host address translation level supported (inclusive). */
 #define IOMMU_MAX_HOST_PT_LEVEL                     6
 /** The IOTLB entry magic. */
 #define IOMMU_IOTLBE_MAGIC                          0x10acce55
@@ -2102,7 +2102,7 @@ typedef enum EVT_IO_PAGE_FAULT_TYPE_T
     kIoPageFaultType_DteRsvdPagingMode = 0,
     kIoPageFaultType_PteInvalidPageSize,
     kIoPageFaultType_PteInvalidLvlEncoding,
-    kIoPageFaultType_InvalidSkippedPageLvl,
+    kIoPageFaultType_SkippedLevelIovaNotZero,
     kIoPageFaultType_PteRsvdNotZero,
     kIoPageFaultType_PteValidNotSet,
     kIoPageFaultType_DteTranslationDisabled,
@@ -3782,7 +3782,7 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
         case kIoPageFaultType_DteRsvdPagingMode:
         case kIoPageFaultType_PteInvalidPageSize:
         case kIoPageFaultType_PteInvalidLvlEncoding:
-        case kIoPageFaultType_InvalidSkippedPageLvl:
+        case kIoPageFaultType_SkippedLevelIovaNotZero:
         case kIoPageFaultType_PteRsvdNotZero:
         case kIoPageFaultType_PteValidNotSet:
         case kIoPageFaultType_DteTranslationDisabled:
@@ -4038,23 +4038,33 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
+    /* The virtual address bits indexing table. */
+    static uint8_t const  s_acIovaLevelShifts[] = { 0, 12, 21, 30, 39, 48, 57, 0 };
+    static uint64_t const s_auIovaLevelMasks[]  = { UINT64_C(0x0000000000000000),
+                                                    UINT64_C(0x00000000001ff000),
+                                                    UINT64_C(0x000000003fe00000),
+                                                    UINT64_C(0x0000007fc0000000),
+                                                    UINT64_C(0x0000ff8000000000),
+                                                    UINT64_C(0x01ff000000000000),
+                                                    UINT64_C(0xfe00000000000000),
+                                                    UINT64_C(0x0000000000000000) };
+    AssertCompile(RT_ELEMENTS(s_acIovaLevelShifts) == RT_ELEMENTS(s_auIovaLevelMasks));
+    AssertCompile(RT_ELEMENTS(s_acIovaLevelShifts) > IOMMU_MAX_HOST_PT_LEVEL);
+
     /* Traverse the I/O page table starting with the page directory in the DTE. */
     IOPTENTITY_T PtEntity;
-    PtEntity.u64   = pDte->au64[0];
+    PtEntity.u64 = pDte->au64[0];
     for (;;)
     {
-        /* The virtual address bits indexing table. */
-        static uint8_t const s_acIovaLvlShifts[] = { 0, 12, 21, 30, 39, 48, 57, 0 };
-
-        /* Figure out the system physical address of the page table at the next level. */
+        /* Figure out the system physical address of the page table at the current level. */
         uint8_t const uLevel = PtEntity.n.u3NextLevel;
-        Assert(uLevel > 0 && uLevel < RT_ELEMENTS(s_acIovaLvlShifts));
+        Assert(uLevel > 0 && uLevel < RT_ELEMENTS(s_acIovaLevelShifts));
         Assert(uLevel <= IOMMU_MAX_HOST_PT_LEVEL);
-        uint16_t const idxPte         = (uIova >> s_acIovaLvlShifts[uLevel]) & UINT64_C(0x1ff);
+        uint16_t const idxPte         = (uIova >> s_acIovaLevelShifts[uLevel]) & UINT64_C(0x1ff);
         uint64_t const offPte         = idxPte << 3;
         RTGCPHYS const GCPhysPtEntity = (PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK) + offPte;
 
-        /* Read the page table entity at the next level. */
+        /* Read the page table entity at the current level. */
         int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysPtEntity, &PtEntity.u64, sizeof(PtEntity));
         if (RT_FAILURE(rc))
         {
@@ -4066,7 +4076,9 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
         }
 
         /* Check present bit. */
-        if (!PtEntity.n.u1Present)
+        if (PtEntity.n.u1Present)
+        { /* likely */ }
+        else
         {
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
@@ -4077,7 +4089,9 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
 
         /* Check permission bits. */
         uint8_t const fPtePerm  = (PtEntity.u64 >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
-        if ((fAccess & fPtePerm) != fAccess)
+        if ((fAccess & fPtePerm) == fAccess)
+        { /* likely */ }
+        else
         {
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
@@ -4086,21 +4100,24 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
+        /* If this is a PTE, we're at the final level and we're done. */
         uint8_t const uNextLevel = PtEntity.n.u3NextLevel;
-        bool const fIsPte = RT_BOOL(uNextLevel == 0 || uNextLevel == 7);
-        if (fIsPte)
+        if (   uNextLevel == 0
+            || uNextLevel == 7)
         {
             /** @todo IOMMU: Compute final SPA and return. */
             return VERR_NOT_IMPLEMENTED;
         }
 
-        /* Check level encoding of the PDE. */
+        /* Validate the next level encoding of the PDE. */
 #if IOMMU_MAX_HOST_PT_LEVEL < 6
-        if (uNextLevel > IOMMU_MAX_HOST_PT_LEVEL)
+        if (uNextLevel <= IOMMU_MAX_HOST_PT_LEVEL)
+        { /* likely */ }
+        else
         {
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
-                                         enmOp, &EvtIoPageFault);
+                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
                                           kIoPageFaultType_PteInvalidLvlEncoding);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
@@ -4109,7 +4126,37 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
         Assert(uNextLevel <= IOMMU_MAX_HOST_PT_LEVEL);
 #endif
 
-        /** @todo IOMMU: rest of page walk.   */
+        /* Validate level transition. */
+        if (uNextLevel < uLevel)
+        { /* likely */ }
+        else
+        {
+            EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
+            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                          kIoPageFaultType_PteInvalidLvlEncoding);
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+        }
+
+        /* Ensure IOVA bits of skipped levels are zero. */
+        Assert(uLevel > 0);
+        uint64_t uIovaSkipMask = 0;
+        for (unsigned idxLevel = uLevel - 1; idxLevel > uNextLevel; idxLevel--)
+            uIovaSkipMask |= s_auIovaLevelMasks[idxLevel];
+        if (!(uIova & uIovaSkipMask))
+        { /* likely */ }
+        else
+        {
+            EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
+            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                          kIoPageFaultType_SkippedLevelIovaNotZero);
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+        }
+
+        /* Continue with traversing the page directory at this level. */
     }
 
     return VERR_NOT_IMPLEMENTED;
