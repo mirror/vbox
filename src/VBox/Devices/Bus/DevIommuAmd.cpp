@@ -4058,21 +4058,23 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
     {
         /* Figure out the system physical address of the page table at the current level. */
         uint8_t const uLevel = PtEntity.n.u3NextLevel;
-        Assert(uLevel > 0 && uLevel < RT_ELEMENTS(s_acIovaLevelShifts));
-        Assert(uLevel <= IOMMU_MAX_HOST_PT_LEVEL);
-        uint16_t const idxPte         = (uIova >> s_acIovaLevelShifts[uLevel]) & UINT64_C(0x1ff);
-        uint64_t const offPte         = idxPte << 3;
-        RTGCPHYS const GCPhysPtEntity = (PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK) + offPte;
 
         /* Read the page table entity at the current level. */
-        int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysPtEntity, &PtEntity.u64, sizeof(PtEntity));
-        if (RT_FAILURE(rc))
         {
-            Log((IOMMU_LOG_PFX ": Failed to read page table entry at %#RGp. rc=%Rrc -> PageTabHwError\n", GCPhysPtEntity, rc));
-            EVT_PAGE_TAB_HW_ERR_T EvtPageTabHwErr;
-            iommuAmdInitPageTabHwErrorEvent(uDevId, pDte->n.u16DomainId, GCPhysPtEntity, enmOp, &EvtPageTabHwErr);
-            iommuAmdRaisePageTabHwErrorEvent(pDevIns, enmOp, &EvtPageTabHwErr, kHwErrType_TargetAbort);
-            return VERR_IOMMU_IPE_2;
+            Assert(uLevel > 0 && uLevel < RT_ELEMENTS(s_acIovaLevelShifts));
+            Assert(uLevel <= IOMMU_MAX_HOST_PT_LEVEL);
+            uint16_t const idxPte         = (uIova >> s_acIovaLevelShifts[uLevel]) & UINT64_C(0x1ff);
+            uint64_t const offPte         = idxPte << 3;
+            RTGCPHYS const GCPhysPtEntity = (PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK) + offPte;
+            int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysPtEntity, &PtEntity.u64, sizeof(PtEntity));
+            if (RT_FAILURE(rc))
+            {
+                Log((IOMMU_LOG_PFX ": Failed to read page table entry at %#RGp. rc=%Rrc -> PageTabHwError\n", GCPhysPtEntity, rc));
+                EVT_PAGE_TAB_HW_ERR_T EvtPageTabHwErr;
+                iommuAmdInitPageTabHwErrorEvent(uDevId, pDte->n.u16DomainId, GCPhysPtEntity, enmOp, &EvtPageTabHwErr);
+                iommuAmdRaisePageTabHwErrorEvent(pDevIns, enmOp, &EvtPageTabHwErr, kHwErrType_TargetAbort);
+                return VERR_IOMMU_IPE_2;
+            }
         }
 
         /* Check present bit. */
@@ -4102,11 +4104,39 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
 
         /* If this is a PTE, we're at the final level and we're done. */
         uint8_t const uNextLevel = PtEntity.n.u3NextLevel;
-        if (   uNextLevel == 0
-            || uNextLevel == 7)
+        if (uNextLevel == 0)
         {
-            /** @todo IOMMU: Compute final SPA and return. */
-            return VERR_NOT_IMPLEMENTED;
+            /* The page size of the translation is the default (4K). */
+            pIotlbe->GCPhysSpa = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
+            pIotlbe->cShift    = X86_PAGE_4K_SHIFT;
+            pIotlbe->fIoPerm   = fPtePerm;
+            return VINF_SUCCESS;
+        }
+        if (uNextLevel == 7)
+        {
+            /* The default page size of the translation is overriden. */
+            RTGCPHYS const GCPhysPte = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
+            uint8_t        cShift    = X86_PAGE_4K_SHIFT;
+            while (GCPhysPte & RT_BIT_64(cShift++))
+                ;
+
+            /* The page size must be larger than the default size and lower than the default size of the higher level. */
+            Assert(uLevel < IOMMU_MAX_HOST_PT_LEVEL);   /* PTE at level 6 handled outside the loop, uLevel should be <= 5. */
+            if (   cShift > s_acIovaLevelShifts[uLevel]
+                && cShift < s_acIovaLevelShifts[uLevel + 1])
+            {
+                pIotlbe->GCPhysSpa = GCPhysPte;
+                pIotlbe->cShift    = cShift;
+                pIotlbe->fIoPerm   = fPtePerm;
+                return VINF_SUCCESS;
+            }
+
+            EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
+                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
+            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                          kIoPageFaultType_PteInvalidPageSize);
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
         /* Validate the next level encoding of the PDE. */
