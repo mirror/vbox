@@ -316,13 +316,19 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
             # Check the additionsVersion attribute. It must not be empty.
             reporter.testStart('IGuest::additionsVersion');
-            fRc = self.testIGuest_additionsVersion(oGuest);
+            fRc = self.testIGuest_additionsVersion(oGuest) and fRc;
             reporter.testDone();
 
             # Check Guest Additions facilities
             reporter.testStart('IGuest::getFacilityStatus');
-            fRc = self.testIGuest_getFacilityStatus(oTestVm, oGuest);
+            fRc = self.testIGuest_getFacilityStatus(oTestVm, oGuest) and fRc;
             reporter.testDone();
+
+            # Do a bit of diagnosis on error.
+            if not fRc:
+                if oTestVm.isLinux():
+                    oTxsSession.syncExec('/bin/ps', ('/bin/ps', '-a', '-u', '-x'), fIgnoreErrors = True);
+                    oTxsSession.syncExec('bin/dmesg', ('/bin/dmesg'), fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
 
