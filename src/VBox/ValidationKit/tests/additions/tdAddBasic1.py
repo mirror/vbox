@@ -327,8 +327,14 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             # Do a bit of diagnosis on error.
             if not fRc:
                 if oTestVm.isLinux():
+                    reporter.log('Boot log:');
+                    oTxsSession.syncExec('/bin/journalctl', ('/bin/journalctl', '-b'), fIgnoreErrors = True);
+                    reporter.log('Loaded processes:');
                     oTxsSession.syncExec('/bin/ps', ('/bin/ps', '-a', '-u', '-x'), fIgnoreErrors = True);
-                    oTxsSession.syncExec('bin/dmesg', ('/bin/dmesg'), fIgnoreErrors = True);
+                    reporter.log('Kernel messages:');
+                    oTxsSession.syncExec('/bin/dmesg', ('/bin/dmesg'), fIgnoreErrors = True);
+                    reporter.log('Loaded modules:');
+                    oTxsSession.syncExec('/sbin/lsmod', ('/sbin/lsmod'), fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
 
