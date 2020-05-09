@@ -4281,7 +4281,7 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
 
                 uint64_t const cbPhysPage = UINT64_C(1) << Iotlbe.cShift;
                 cbChecked += cbPhysPage;
-                if (cbAccess <= cbChecked)
+                if (cbChecked >= cbAccess)
                     break;
                 uBaseIova += cbPhysPage;
             }
