@@ -2974,10 +2974,12 @@
 #define VERR_IOMMU_IPE_1                            (-7201)
 /** Internal processing error \#2 in the IOMMU device code. */
 #define VERR_IOMMU_IPE_2                            (-7202)
+/** Internal processing error \#3 in the IOMMU device code. */
+#define VERR_IOMMU_IPE_3                            (-7203)
 /** Address translation failed. */
-#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7203)
+#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7204)
 /** Access denied for the address. */
-#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7204)
+#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7205)
 /** @} */
 
 /* SED-END */
