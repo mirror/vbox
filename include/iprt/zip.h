@@ -335,7 +335,7 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
  *
  * @returns IPRT status code.
  *
- * @param   hVfsFileOut         The TAR file handle, i.e. where the tar stuff is
+ * @param   hVfsFile            The TAR file handle, i.e. where the tar stuff is
  *                              written and optionally read/update.  The
  *                              reference is not consumed, instead another one
  *                              is retained.
