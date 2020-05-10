@@ -90,7 +90,7 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
     size_t const cbResultBuf = *pcbResult;
     *pcbResult = 0;
     AssertReturn(!(fFlags & ~RTCRPKCS7SIGN_SD_F_VALID_MASK), VERR_INVALID_FLAGS);
-#if defined(IPRT_WITH_OPENSSL) && (OPENSSL_VERSION_NUMBER > 0x10000000L) /* 0.9.8 doesn't seem to have EVP_PKEY_CTX_set_signature_md. */
+#if defined(IPRT_WITH_OPENSSL)
     AssertReturn((int)cbData >= 0 && (unsigned)cbData == cbData, VERR_TOO_MUCH_DATA);
 
     /*
@@ -118,7 +118,7 @@ RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE
                 /*
                  * Create a BIO for the data buffer.
                  */
-                BIO *pOsslData = BIO_new_mem_buf(pvData, (int)cbData);
+                BIO *pOsslData = BIO_new_mem_buf((void *)pvData, (int)cbData);
                 if (pOsslData)
                 {
                     /*
