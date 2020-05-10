@@ -1,4 +1,4 @@
-# $Id: Config.kmk 128585 2019-02-01 16:18:33Z aeichner $
+# $Id$
 ## @file
 # OpenSSL kBuild Configuration file.
 #
