@@ -4265,16 +4265,17 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         IOTLBE_T Iotlbe;
         iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /* cShift */, IOMMU_IO_PERM_NONE, &Iotlbe);
 
-        uint64_t cbChecked = 0;
-        uint64_t uBaseIova = uIova & X86_PAGE_4K_BASE_MASK;
+        uint64_t uBaseIova   = uIova & X86_PAGE_4K_BASE_MASK;
+        uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
+        uint64_t cbRemaining = cbAccess;
         for (;;)
         {
-            /* Walk the I/O page tables to translate and get permission bits for the IOVA access. */
+            /* Walk the I/O page tables to translate the IOVA and check permission for the access. */
             rc = iommuAmdWalkIoPageTables(pDevIns, uDevId, uBaseIova, fAccess, &Dte, enmOp, &Iotlbe);
             if (RT_SUCCESS(rc))
             {
-                /* Record the translated base address (before continuing to check permission bits of any subsequent pages). */
-                if (cbChecked == 0)
+                /* Store the translated base address before continuing to check permissions for any more pages. */
+                if (cbRemaining == cbAccess)
                 {
                     RTGCPHYS const offSpa = ~(UINT64_C(0xffffffffffffffff) << Iotlbe.cShift);
                     *pGCPhysSpa = Iotlbe.GCPhysSpa | offSpa;
@@ -4283,15 +4284,19 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
                 /** @todo IOMMU: Split large pages into 4K IOTLB entries and add to IOTLB cache. */
 
                 uint64_t const cbPhysPage = UINT64_C(1) << Iotlbe.cShift;
-                cbChecked += cbPhysPage;        /** @todo IOMMU: We need to consider the offset here. */
-                if (cbChecked >= cbAccess)
+                if (cbRemaining > cbPhysPage - offIova)
+                {
+                    cbRemaining -= (cbPhysPage - offIova);
+                    uBaseIova   += cbPhysPage;
+                    offIova      = 0;
+                }
+                else
                     break;
-                uBaseIova += cbPhysPage;
             }
             else
             {
-                Log((IOMMU_LOG_PFX ": I/O page table walk failed. uIova=%#RX64 uBaseIova=%#RX64 fAccess=%u rc=%Rrc\n",
-                     uIova, uBaseIova, fAccess, rc));
+                Log((IOMMU_LOG_PFX ": I/O page table walk failed. uIova=%#RX64 uBaseIova=%#RX64 fAccess=%u rc=%Rrc\n", uIova,
+                     uBaseIova, fAccess, rc));
                 *pGCPhysSpa = NIL_RTGCPHYS;
                 return rc;
             }
