@@ -223,6 +223,9 @@ RTDECL(const char *) RTCrPemFindFirstSectionInContent(void const *pvContent, siz
 RTDECL(size_t) RTCrPemWriteBlob(PFNRTSTROUTPUT pfnOutput, void *pvUser,
                                 const void *pvContent, size_t cbContent, const char *pszMarker);
 
+RTDECL(ssize_t) RTCrPemWriteBlobToVfsIoStrm(RTVFSIOSTREAM hVfsIos, const void *pvContent, size_t cbContent, const char *pszMarker);
+RTDECL(ssize_t) RTCrPemWriteBlobToVfsFile(RTVFSFILE hVfsFile, const void *pvContent, size_t cbContent, const char *pszMarker);
+
 /**
  * PEM formatter for a generic ASN.1 structure.
  *

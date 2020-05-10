@@ -33,6 +33,8 @@
 #ifdef IPRT_WITH_OPENSSL    /* Whole file. */
 # include <iprt/err.h>
 # include <iprt/string.h>
+# include <iprt/mem.h>
+# include <iprt/asn1.h>
 
 # include "internal/iprt-openssl.h"
 # include <openssl/x509.h>
@@ -63,24 +65,83 @@ DECLHIDDEN(int) rtCrOpenSslErrInfoCallback(const char *pach, size_t cch, void *p
 }
 
 
-DECLHIDDEN(int) rtCrOpenSslAddX509CertToStack(void *pvOsslStack, PCRTCRX509CERTIFICATE pCert)
+DECLHIDDEN(int) rtCrOpenSslConvertX509Cert(void **ppvOsslCert, PCRTCRX509CERTIFICATE pCert, PRTERRINFO pErrInfo)
 {
-    int                  rc;
-    const unsigned char *pabEncoded = (const unsigned char *)RTASN1CORE_GET_RAW_ASN1_PTR(&pCert->SeqCore.Asn1Core);
-    uint32_t             cbEncoded  = RTASN1CORE_GET_RAW_ASN1_SIZE(&pCert->SeqCore.Asn1Core);
-    X509                *pOsslCert  = NULL;
-    if (d2i_X509(&pOsslCert, &pabEncoded, cbEncoded) == pOsslCert)
+    const unsigned char *pabEncoded;
+
+    /*
+     * ASSUME that if the certificate has data pointers, it's been parsed out
+     * of a binary blob and we can safely access that here.
+     */
+    if (pCert->SeqCore.Asn1Core.uData.pv)
+    {
+        pabEncoded = (const unsigned char *)RTASN1CORE_GET_RAW_ASN1_PTR(&pCert->SeqCore.Asn1Core);
+        uint32_t cbEncoded  = RTASN1CORE_GET_RAW_ASN1_SIZE(&pCert->SeqCore.Asn1Core);
+        X509    *pOsslCert  = NULL;
+        if (d2i_X509(&pOsslCert, &pabEncoded, cbEncoded) == pOsslCert)
+        {
+            *ppvOsslCert = pOsslCert;
+            return VINF_SUCCESS;
+        }
+    }
+    /*
+     * Otherwise, we'll have to encode it into a temporary buffer that openssl
+     * can decode into its structures.
+     */
+    else
+    {
+        PRTASN1CORE pNonConstCore = (PRTASN1CORE)&pCert->SeqCore.Asn1Core;
+        uint32_t    cbEncoded     = 0;
+        int rc = RTAsn1EncodePrepare(pNonConstCore, RTASN1ENCODE_F_DER, &cbEncoded, pErrInfo);
+        AssertRCReturn(rc, rc);
+
+        void * const pvEncoded = RTMemTmpAllocZ(cbEncoded);
+        AssertReturn(pvEncoded, VERR_NO_TMP_MEMORY);
+
+        rc = RTAsn1EncodeToBuffer(pNonConstCore, RTASN1ENCODE_F_DER, pvEncoded, cbEncoded, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+            pabEncoded = (const unsigned char *)pvEncoded;
+            X509 *pOsslCert = NULL;
+            if (d2i_X509(&pOsslCert, &pabEncoded, cbEncoded) == pOsslCert)
+            {
+                *ppvOsslCert = pOsslCert;
+                RTMemTmpFree(pvEncoded);
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            RTMemTmpFree(pvEncoded);
+            return rc;
+        }
+    }
+
+    *ppvOsslCert = NULL;
+    return RTErrInfoSet(pErrInfo, VERR_CR_X509_OSSL_D2I_FAILED, "d2i_X509");
+}
+
+
+DECLHIDDEN(void) rtCrOpenSslFreeConvertedX509Cert(void *pvOsslCert)
+{
+    X509_free((X509 *)pvOsslCert);
+}
+
+
+DECLHIDDEN(int) rtCrOpenSslAddX509CertToStack(void *pvOsslStack, PCRTCRX509CERTIFICATE pCert, PRTERRINFO pErrInfo)
+{
+    X509 *pOsslCert = NULL;
+    int rc = rtCrOpenSslConvertX509Cert((void **)&pOsslCert, pCert, pErrInfo);
+    if (RT_SUCCESS(rc))
     {
         if (sk_X509_push((STACK_OF(X509) *)pvOsslStack, pOsslCert))
             rc = VINF_SUCCESS;
         else
         {
-            rc = VERR_NO_MEMORY;
-            X509_free(pOsslCert);
+            rtCrOpenSslFreeConvertedX509Cert(pOsslCert);
+            rc = RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "sk_X509_push");
         }
     }
-    else
-        rc = VERR_CR_X509_OSSL_D2I_FAILED;
     return rc;
 }
 

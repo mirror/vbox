@@ -560,7 +560,7 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
 /** Same as RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT for the MS
  *  timestamp counter sigantures. */
 #define RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT     RT_BIT_32(1)
-/** Only use signging time attributes from counter signatures. */
+/** Only use signing time attributes from counter signatures. */
 #define RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY    RT_BIT_32(2)
 /** Don't validate the counter signature containing the signing time, just use
  * it unverified.  This is useful if we don't necessarily have the root
@@ -582,6 +582,21 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
  * @internal  */
 #define RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE                      RT_BIT_32(31)
 /** @} */
+
+
+/** @name RTCRPKCS7SIGN_SD_F_XXX - Flags for RTCrPkcs7SimpleSign.
+ * @{ */
+/** Detached data. */
+#define RTCRPKCS7SIGN_SD_F_DEATCHED      RT_BIT_32(0)
+/** No SMIME capabilities attribute. */
+#define RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP  RT_BIT_32(1)
+/** Valid flag mask.   */
+#define RTCRPKCS7SIGN_SD_F_VALID_MASK    UINT32_C(0x00000003)
+/** @} */
+
+RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE pSigner, RTCRKEY hPrivateKey,
+                                          void const *pvData, size_t cbData, RTCRSTORE hAdditionalCerts,
+                                          void *pvResult, size_t *pcbResult, PRTERRINFO pErrInfo);
 
 /** @} */
 
