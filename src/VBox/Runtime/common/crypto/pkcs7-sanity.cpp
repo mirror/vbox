@@ -71,7 +71,8 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_UNKNOWN_DIGEST_ALGORITHM,
                                      "%s: SignedData.DigestAlgorithms[%i] is not known: %s",
                                      pszErrorTag, i, pSignedData->DigestAlgorithms.papItems[i]->Algorithm.szObjId);
-            if (pSignedData->DigestAlgorithms.papItems[i]->Parameters.enmType != RTASN1TYPE_NULL)
+            if (   pSignedData->DigestAlgorithms.papItems[i]->Parameters.enmType != RTASN1TYPE_NULL
+                && pSignedData->DigestAlgorithms.papItems[i]->Parameters.enmType != RTASN1TYPE_NOT_PRESENT)
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_DIGEST_PARAMS_NOT_IMPL,
                                      "%s: SignedData.DigestAlgorithms[%i] has parameters: tag=%u",
                                      pszErrorTag, i, pSignedData->DigestAlgorithms.papItems[i]->Parameters.u.Core.uTag);
