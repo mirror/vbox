@@ -2097,7 +2097,7 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
                 }
             }
             else
-                RTMsgError("RTCrStoreCreateInMem failed: %Rrc%", rc);
+                RTMsgError("RTCrStoreCreateInMem failed: %Rrc", rc);
         }
         if (RT_SUCCESS(rc))
         {
