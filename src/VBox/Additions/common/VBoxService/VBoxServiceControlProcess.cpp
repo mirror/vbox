@@ -533,7 +533,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
     VGSvcVerbose(2, "[PID %RU32]: Process '%s' started, CID=%u, User=%s, cMsTimeout=%RU32\n",
                        pProcess->uPID, pProcess->pStartupInfo->pszCmd, pProcess->uContextID,
                        pProcess->pStartupInfo->pszUser, pProcess->pStartupInfo->uTimeLimitMS);
-    VBGLR3GUESTCTRLCMDCTX ctxStart = { g_idControlSvcClient, pProcess->uContextID };
+    VBGLR3GUESTCTRLCMDCTX ctxStart = { g_idControlSvcClient, pProcess->uContextID, 0 /* uProtocol */, 0 /* uNumParms */ };
     rc = VbglR3GuestCtrlProcCbStatus(&ctxStart,
                                      pProcess->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
                                      NULL /* pvData */, 0 /* cbData */);
@@ -849,7 +849,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
         }
         else
             VGSvcVerbose(1, "[PID %RU32]: Handling process status %u not implemented\n", pProcess->uPID, ProcessStatus.enmReason);
-        VBGLR3GUESTCTRLCMDCTX ctxEnd = { g_idControlSvcClient, pProcess->uContextID };
+        VBGLR3GUESTCTRLCMDCTX ctxEnd = { g_idControlSvcClient, pProcess->uContextID, 0 /* uProtocol */, 0 /* uNumParms */ };
         VGSvcVerbose(2, "[PID %RU32]: Ended, ClientID=%u, CID=%u, Status=%u, Flags=0x%x\n",
                      pProcess->uPID, ctxEnd.uClientID, pProcess->uContextID, uStatus, fFlags);
 
@@ -1746,7 +1746,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
 
     if (RT_FAILURE(rc))
     {
-        VBGLR3GUESTCTRLCMDCTX ctx = { g_idControlSvcClient, pProcess->uContextID };
+        VBGLR3GUESTCTRLCMDCTX ctx = { g_idControlSvcClient, pProcess->uContextID, 0 /* uProtocol */, 0 /* uNumParms */ };
         int rc2 = VbglR3GuestCtrlProcCbStatus(&ctx,
                                               pProcess->uPID, PROC_STS_ERROR, rc,
                                               NULL /* pvData */, 0 /* cbData */);

@@ -1883,7 +1883,8 @@ static int vbsvcAutomounterUnmount(const char *pszMountPoint, const char *pszNam
         if (rc2 == 0)
         {
             /* Remove the mount directory if not directly under the root dir. */
-            RTPATHPARSED Parsed = { 0 };
+            RTPATHPARSED Parsed;
+            RT_ZERO(Parsed);
             RTPathParse(pszMountPoint, &Parsed, sizeof(Parsed), RTPATH_STR_F_STYLE_HOST);
             if (Parsed.cComps >= 3)
                 RTDirRemove(pszMountPoint);

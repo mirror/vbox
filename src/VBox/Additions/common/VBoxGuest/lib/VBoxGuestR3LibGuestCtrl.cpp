@@ -830,7 +830,7 @@ VBGLR3DECL(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO) VbglR3GuestCtrlSessionStartupInfo
     { \
         pStartupInfoDup->psz##a_Str = (char *)RTStrDup(pStartupInfo->psz##a_Str); \
         AssertPtrBreak(pStartupInfoDup->psz##a_Str); \
-        pStartupInfoDup->cb##a_Str  = strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
+        pStartupInfoDup->cb##a_Str  = (uint32_t)strlen(pStartupInfoDup->psz##a_Str) + 1 /* Include terminator */; \
     }
             DUP_STR(User);
             DUP_STR(Password);
