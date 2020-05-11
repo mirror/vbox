@@ -157,6 +157,8 @@ RTDECL(const char *) RTCrPkixGetCiperOidFromSignatureAlgorithm(PCRTASN1OBJID pAl
 #define RTCR_PKCS1_SHA384_WITH_RSA_OID              "1.2.840.113549.1.1.12"
 #define RTCR_PKCS1_SHA512_WITH_RSA_OID              "1.2.840.113549.1.1.13"
 #define RTCR_PKCS1_SHA224_WITH_RSA_OID              "1.2.840.113549.1.1.14"
+#define RTCR_PKCS1_SHA512T224_WITH_RSA_OID          "1.2.840.113549.1.1.15"
+#define RTCR_PKCS1_SHA512T256_WITH_RSA_OID          "1.2.840.113549.1.1.16"
 /** @}  */
 
 

@@ -518,6 +518,7 @@ static DECLCALLBACK(int) rtCrDigestSha512t224_Init(void *pvState, void *pvOpaque
 /** SHA-512/224 alias ODIs. */
 static const char * const g_apszSha512t224Aliases[] =
 {
+    RTCR_PKCS1_SHA512T224_WITH_RSA_OID,
     NULL
 };
 
@@ -573,6 +574,7 @@ static DECLCALLBACK(int) rtCrDigestSha512t256_Init(void *pvState, void *pvOpaque
 /** SHA-512/256 alias ODIs. */
 static const char * const g_apszSha512t256Aliases[] =
 {
+    RTCR_PKCS1_SHA512T256_WITH_RSA_OID,
     NULL
 };
 
