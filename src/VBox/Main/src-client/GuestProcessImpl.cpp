@@ -1112,8 +1112,8 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
     }
 
     /* Prepare environment.  The guest service dislikes the empty string at the end, so drop it. */
-    size_t  cbEnvBlock = 0; /* Shut up MSVC. */
-    char   *pszzEnvBlock;
+    size_t  cbEnvBlock   = 0;    /* Shut up MSVC. */
+    char   *pszzEnvBlock = NULL; /* Ditto. */
     if (RT_SUCCESS(vrc))
         vrc = mData.mProcess.mEnvironmentChanges.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
     if (RT_SUCCESS(vrc))
@@ -1128,6 +1128,7 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
     {
         Assert(cbEnvBlock > 0);
         cbEnvBlock--;
+        AssertPtr(pszzEnvBlock);
 
         /* Prepare HGCM call. */
         VBOXHGCMSVCPARM paParms[16];
@@ -1176,8 +1177,12 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
             int rc2 = i_setProcessStatus(ProcessStatus_Error, vrc);
             AssertRC(rc2);
         }
+    }
 
+    if (pszzEnvBlock)
+    {
         mData.mProcess.mEnvironmentChanges.freeUtf8Block(pszzEnvBlock);
+        pszzEnvBlock = NULL;
     }
 
     RTStrFree(pszArgs);
