@@ -2202,6 +2202,25 @@ typedef enum IOMMUOP
 AssertCompileSize(IOMMUOP, 4);
 
 /**
+ * I/O page walk result.
+ */
+typedef struct
+{
+    /** The translated system physical address. */
+    RTGCPHYS        GCPhysSpa;
+    /** The number of offset bits in the system physical address. */
+    uint8_t         cShift;
+    /** The I/O permissions allowed by the translation (IOMMU_IO_PERM_XXX). */
+    uint8_t         fIoPerm;
+    /** Padding. */
+    uint8_t         abPadding[2];
+} IOWALKRESULT;
+/** Pointer to an I/O walk result struct. */
+typedef IOWALKRESULT *PIOWALKRESULT;
+/** Pointer to a const I/O walk result struct. */
+typedef IOWALKRESULT *PCIOWALKRESULT;
+
+/**
  * IOMMU I/O TLB Entry.
  * @note Update iommuAmdInitIotlbe() when changes are made.
  */
@@ -3604,7 +3623,7 @@ static void iommuAmdInitDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, 
     memset(pEvtDevTabHwErr, 0, sizeof(*pEvtDevTabHwErr));
     pEvtDevTabHwErr->n.u16DevId      = uDevId;
     pEvtDevTabHwErr->n.u1Intr        = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
-    /** @todo r=ramshankar: Any other transaction type that can set read/write bit? */
+    /** @todo IOMMU: Any other transaction type that can set read/write bit? */
     pEvtDevTabHwErr->n.u1ReadWrite   = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
     pEvtDevTabHwErr->n.u1Translation = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
     pEvtDevTabHwErr->n.u2Type        = enmOp == IOMMUOP_CMD ? HWEVTTYPE_DATA_ERROR : HWEVTTYPE_TARGET_ABORT;
@@ -3958,27 +3977,26 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
 
 
 /**
- * Walks the I/O page table(s) to translate the I/O virtual address to a system
+ * Walks the I/O page table to translate the I/O virtual address to a system
  * physical address.
  *
  * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   uIova       The I/O virtual address to translate. Must be 4K aligned!
- * @param   uDevId      The device ID.
- * @param   fAccess     The access permissions (IOMMU_IO_PERM_XXX). This is the
- *                      permissions for the access being made.
- * @param   pDte        The device table entry.
- * @param   enmOp       The IOMMU operation being performed.
- * @param   pIotlbe     The IOTLB entry to update with the results of the
- *                      translation.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   uIova           The I/O virtual address to translate. Must be 4K aligned.
+ * @param   uDevId          The device ID.
+ * @param   fAccess         The access permissions (IOMMU_IO_PERM_XXX). This is the
+ *                          permissions for the access being made.
+ * @param   pDte            The device table entry.
+ * @param   enmOp           The IOMMU operation being performed.
+ * @param   pWalkResult     Where to store the results of the I/O page walk. This is
+ *                          only updated when VINF_SUCCESS is returned.
  *
  * @thread  Any.
  */
-static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fAccess, PCDTE_T pDte,
-                                    IOMMUOP enmOp, PIOTLBE_T pIotlbe)
+static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, uint8_t fAccess, PCDTE_T pDte,
+                                   IOMMUOP enmOp, PIOWALKRESULT pWalkResult)
 {
     Assert(pDte->n.u1Valid);
-    /* The input I/O virtual address must be 4K page aligned. */
     Assert(!(uIova & X86_PAGE_4K_OFFSET_MASK));
 
     /* If the translation is not valid, raise an I/O page fault. */
@@ -4001,7 +4019,9 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
 
     /* If the root page table level is 0, translation is skipped and access is controlled by the permission bits. */
     uint8_t const uMaxLevel = pDte->n.u3Mode;
-    if (uMaxLevel == 0)
+    if (uMaxLevel != 0)
+    { /* likely */ }
+    else
     {
         uint8_t const fDtePerm = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
         if ((fAccess & fDtePerm) != fAccess)
@@ -4009,12 +4029,16 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
             Log((IOMMU_LOG_PFX ": Access denied for IOVA (%#RX64). fAccess=%#x fDtePerm=%#x\n", uIova, fAccess, fDtePerm));
             return VERR_IOMMU_ADDR_ACCESS_DENIED;
         }
-        iommuAmdUpdateIotlbe(uIova, 0 /* cShift */, fDtePerm, pIotlbe);
+        pWalkResult->GCPhysSpa = uIova;
+        pWalkResult->cShift    = 0;
+        pWalkResult->fIoPerm   = fDtePerm;
         return VINF_SUCCESS;
     }
 
     /* If the root page table level exceeds the allowed host-address translation level, page walk is terminated. */
-    if (uMaxLevel > IOMMU_MAX_HOST_PT_LEVEL)
+    if (uMaxLevel <= IOMMU_MAX_HOST_PT_LEVEL)
+    { /* likely */ }
+    else
     {
         /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
          *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
@@ -4029,7 +4053,9 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
 
     /* Check permissions bits of the root page table. */
     uint8_t const fPtePerm  = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
-    if ((fAccess & fPtePerm) != fAccess)
+    if ((fAccess & fPtePerm) == fAccess)
+    { /* likely */ }
+    else
     {
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
@@ -4038,9 +4064,11 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
-    /** @todo IOMMU: Split the rest of this into a separate function called
-     *        iommuAmdWalkIoPageDirectory() and call it for multi-page accesses. We can
-     *        avoid re-checking the DTE root-page table entry every time. */
+    /** @todo r=ramshankar: IOMMU: Consider splitting the rest of this into a separate
+     *        function called iommuAmdWalkIoPageDirectory() and call it for multi-page
+     *        accesses from the 2nd page. We can avoid re-checking the DTE root-page
+     *        table entry every time. Not sure if it's worth optimizing that case now
+     *        or if at all. */
 
     /* The virtual address bits indexing table. */
     static uint8_t const  s_acIovaLevelShifts[] = { 0, 12, 21, 30, 39, 48, 57, 0 };
@@ -4111,9 +4139,9 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
         if (uNextLevel == 0)
         {
             /* The page size of the translation is the default (4K). */
-            pIotlbe->GCPhysSpa = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
-            pIotlbe->cShift    = X86_PAGE_4K_SHIFT;
-            pIotlbe->fIoPerm   = fPtePerm;
+            pWalkResult->GCPhysSpa = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
+            pWalkResult->cShift    = X86_PAGE_4K_SHIFT;
+            pWalkResult->fIoPerm   = fPtePerm;
             return VINF_SUCCESS;
         }
         if (uNextLevel == 7)
@@ -4129,9 +4157,9 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
             if (   cShift > s_acIovaLevelShifts[uLevel]
                 && cShift < s_acIovaLevelShifts[uLevel + 1])
             {
-                pIotlbe->GCPhysSpa = GCPhysPte;
-                pIotlbe->cShift    = cShift;
-                pIotlbe->fIoPerm   = fPtePerm;
+                pWalkResult->GCPhysSpa = GCPhysPte;
+                pWalkResult->cShift    = cShift;
+                pWalkResult->fIoPerm   = fPtePerm;
                 return VINF_SUCCESS;
             }
 
@@ -4199,7 +4227,7 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
 
 
 /**
- * Looks up an I/O virtual address from the device table(s).
+ * Looks up an I/O virtual address from the device table.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU instance data.
@@ -4215,8 +4243,8 @@ static int iommuAmdWalkIoPageTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_
  *
  * @thread  Any.
  */
-static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
-                                      IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa)
+static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbAccess, uint8_t fAccess,
+                                     IOMMUOP enmOp, PRTGCPHYS pGCPhysSpa)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
@@ -4230,6 +4258,7 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         { /* likely */ }
         else
         {
+            /** @todo IOMMU: Add to IOLTB cache. */
             *pGCPhysSpa = uIova;
             return VINF_SUCCESS;
         }
@@ -4255,6 +4284,7 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         { /* likely */ }
         else
         {
+            /** @todo IOMMU: Add to IOLTB cache. */
             *pGCPhysSpa = uIova;
             return VINF_SUCCESS;
         }
@@ -4262,28 +4292,26 @@ static int iommuAmdLookupDeviceTables(PPDMDEVINS pDevIns, uint16_t uDevId, uint6
         /** @todo IOMMU: Perhaps do the <= 4K access case first, if the generic loop
          *        below gets too expensive and when we have iommuAmdWalkIoPageDirectory. */
 
-        IOTLBE_T Iotlbe;
-        iommuAmdInitIotlbe(NIL_RTGCPHYS, 0 /* cShift */, IOMMU_IO_PERM_NONE, &Iotlbe);
-
         uint64_t uBaseIova   = uIova & X86_PAGE_4K_BASE_MASK;
         uint64_t offIova     = uIova & X86_PAGE_4K_OFFSET_MASK;
         uint64_t cbRemaining = cbAccess;
         for (;;)
         {
             /* Walk the I/O page tables to translate the IOVA and check permission for the access. */
-            rc = iommuAmdWalkIoPageTables(pDevIns, uDevId, uBaseIova, fAccess, &Dte, enmOp, &Iotlbe);
+            IOWALKRESULT WalkResult;
+            rc = iommuAmdWalkIoPageTable(pDevIns, uDevId, uBaseIova, fAccess, &Dte, enmOp, &WalkResult);
             if (RT_SUCCESS(rc))
             {
+                /** @todo IOMMU: Split large pages into 4K IOTLB entries and add to IOTLB cache. */
+
                 /* Store the translated base address before continuing to check permissions for any more pages. */
                 if (cbRemaining == cbAccess)
                 {
-                    RTGCPHYS const offSpa = ~(UINT64_C(0xffffffffffffffff) << Iotlbe.cShift);
-                    *pGCPhysSpa = Iotlbe.GCPhysSpa | offSpa;
+                    RTGCPHYS const offSpa = ~(UINT64_C(0xffffffffffffffff) << WalkResult.cShift);
+                    *pGCPhysSpa = WalkResult.GCPhysSpa | offSpa;
                 }
 
-                /** @todo IOMMU: Split large pages into 4K IOTLB entries and add to IOTLB cache. */
-
-                uint64_t const cbPhysPage = UINT64_C(1) << Iotlbe.cShift;
+                uint64_t const cbPhysPage = UINT64_C(1) << WalkResult.cShift;
                 if (cbRemaining > cbPhysPage - offIova)
                 {
                     cbRemaining -= (cbPhysPage - offIova);
@@ -4336,8 +4364,8 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
     {
         /** @todo IOMMU: IOTLB cache lookup. */
 
-        /* Lookup the IOVA from the device tables. */
-        return iommuAmdLookupDeviceTables(pDevIns, uDevId, uIova, cbRead, IOMMU_IO_PERM_READ, IOMMUOP_MEM_READ, pGCPhysSpa);
+        /* Lookup the IOVA from the device table. */
+        return iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbRead, IOMMU_IO_PERM_READ, IOMMUOP_MEM_READ, pGCPhysSpa);
     }
 
     *pGCPhysSpa = uIova;
@@ -4359,8 +4387,24 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
  */
 static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite, PRTGCPHYS pGCPhysSpa)
 {
-    RT_NOREF(pDevIns, uDevId, uIova, cbWrite, pGCPhysSpa);
-    return VERR_NOT_IMPLEMENTED;
+    Assert(pDevIns);
+    Assert(pGCPhysSpa);
+    Assert(cbWrite > 0);
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+
+    /* Addresses are forwarded without translation when the IOMMU is disabled. */
+    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+    if (Ctrl.n.u1IommuEn)
+    {
+        /** @todo IOMMU: IOTLB cache lookup. */
+
+        /* Lookup the IOVA from the device table. */
+        return iommuAmdLookupDeviceTable(pDevIns, uDevId, uIova, cbWrite, IOMMU_IO_PERM_WRITE, IOMMUOP_MEM_WRITE, pGCPhysSpa);
+    }
+
+    *pGCPhysSpa = uIova;
+    return VINF_SUCCESS;
 }
 
 
