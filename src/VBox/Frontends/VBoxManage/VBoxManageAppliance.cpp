@@ -2048,7 +2048,7 @@ static int doCheckPkcs7Signature(void const *pvSignature, size_t cbSignature, PC
  * Creates a PKCS\#7 signature and appends it to the signature file in PEM
  * format.
  */
-static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKey,
+static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKey, RTDIGESTTYPE enmDigestType,
                                unsigned cIntermediateCerts, const char **papszIntermediateCerts, RTVFSFILE hVfsFileManifest,
                                unsigned iVerbosity, PRTERRINFOSTATIC pErrInfo, RTVFSFILE hVfsFileSignature)
 {
@@ -2106,7 +2106,7 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
              */
             size_t cbResult = 0;
             rc = RTCrPkcs7SimpleSignSignedData(RTCRPKCS7SIGN_SD_F_DEATCHED | RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP,
-                                               pCertificate, hPrivateKey, pvManifest, (size_t)cbManifest,
+                                               pCertificate, hPrivateKey, pvManifest, (size_t)cbManifest, enmDigestType,
                                                hIntermediateCerts, NULL /*pvResult*/, &cbResult, RTErrInfoInitStatic(pErrInfo));
             if (rc == VERR_BUFFER_OVERFLOW)
             {
@@ -2117,8 +2117,8 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
                 if (pvResult)
                 {
                     rc = RTCrPkcs7SimpleSignSignedData(RTCRPKCS7SIGN_SD_F_DEATCHED | RTCRPKCS7SIGN_SD_F_NO_SMIME_CAP,
-                                                       pCertificate, hPrivateKey, pvManifest, (size_t)cbManifest,
-                                                       NIL_RTCRSTORE, pvResult, &cbResult, RTErrInfoInitStatic(pErrInfo));
+                                                       pCertificate, hPrivateKey, pvManifest, (size_t)cbManifest, enmDigestType,
+                                                       hIntermediateCerts, pvResult, &cbResult, RTErrInfoInitStatic(pErrInfo));
                     if (RT_SUCCESS(rc))
                     {
                         /*
@@ -2164,24 +2164,50 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                            PRTERRINFOSTATIC pErrInfo, PRTVFSFILE phVfsFileSignature)
 {
     /*
-     * Instantiate the digest algorithm.
+     * Determine the digest types, preferring SHA-256 for the OVA signature
+     * and SHA-512 for the PKCS#7/CMS one.  Try use different hashes for the two.
      */
-    /** @todo fall back on SHA-1 if the key is too small for SHA-256 or SHA-512? */
-    PCRTASN1OBJID const pObjId  = &pCertificate->TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm;
-    RTCRDIGEST          hDigest = NIL_RTCRDIGEST;
-    int rc = RTCrDigestCreateByType(&hDigest, enmDigestType);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorRc(rc, "Failed to create digest for %s: %Rrc", pObjId->szObjId, rc);
+    if (enmDigestType == RTDIGESTTYPE_UNKNOWN)
+    {
+        if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA256, NULL))
+            enmDigestType = RTDIGESTTYPE_SHA256;
+        else
+            enmDigestType = RTDIGESTTYPE_SHA1;
+    }
 
-    /* Figure out the digest type name for the .cert file: */
+    RTDIGESTTYPE enmPkcs7DigestType;
+    if (   enmDigestType == RTDIGESTTYPE_SHA1
+        || enmDigestType == RTDIGESTTYPE_SHA256
+        || enmDigestType == RTDIGESTTYPE_SHA224)
+    {
+        /* Use a SHA-512 variant: */
+        if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA512, NULL))
+            enmPkcs7DigestType = RTDIGESTTYPE_SHA512;
+        else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA384, NULL))
+            enmPkcs7DigestType = RTDIGESTTYPE_SHA384;
+        /// @todo openssl misses these in check_padding_md() in rsa_pmeth.c, causing
+        /// failure in EVP_PKEY_CTX_set_signature_md() and CMS_final().
+        //else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA512T256, NULL))
+        //    enmPkcs7DigestType = RTDIGESTTYPE_SHA512T256;
+        //else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA512T224, NULL))
+        //    enmPkcs7DigestType = RTDIGESTTYPE_SHA512T224;
+        else
+            enmPkcs7DigestType = RTDIGESTTYPE_SHA1;
+    }
+    else /* The .cert file uses SHA-512, pick SHA-256 for diversity. */
+        enmPkcs7DigestType = RTDIGESTTYPE_SHA256;
+
+    /*
+     * Figure the string name for the .cert file.
+     */
     const char *pszDigestType;
     switch (enmDigestType)
     {
         case RTDIGESTTYPE_SHA1:         pszDigestType = "SHA1"; break;
         case RTDIGESTTYPE_SHA256:       pszDigestType = "SHA256"; break;
+        case RTDIGESTTYPE_SHA224:       pszDigestType = "SHA224"; break;
         case RTDIGESTTYPE_SHA512:       pszDigestType = "SHA512"; break;
         default:
-            RTCrDigestRelease(hDigest);
             return RTMsgErrorRc(VERR_INVALID_PARAMETER,
                                 "Unsupported digest type: %s", RTCrDigestTypeToName(enmDigestType));
     }
@@ -2189,6 +2215,11 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
     /*
      * Digest the manifest file.
      */
+    RTCRDIGEST hDigest = NIL_RTCRDIGEST;
+    int rc = RTCrDigestCreateByType(&hDigest, enmDigestType);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorRc(rc, "Failed to create digest for %s: %Rrc", RTCrDigestTypeToName(enmDigestType), rc);
+
     rc = RTCrDigestUpdateFromVfsFile(hDigest, hVfsFileManifest, true /*fRewindFile*/);
     if (RT_SUCCESS(rc))
         rc = RTCrDigestFinal(hDigest, NULL, 0);
@@ -2240,9 +2271,9 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                                 if (RT_SUCCESS(rc))
                                 {
                                     if (fPkcs7)
-                                        rc = doAddPkcs7Signature(pCertificate, hPrivateKey, cIntermediateCerts,
-                                                                 papszIntermediateCerts, hVfsFileManifest, iVerbosity,
-                                                                 pErrInfo, hVfsFileSignature);
+                                        rc = doAddPkcs7Signature(pCertificate, hPrivateKey, enmPkcs7DigestType,
+                                                                 cIntermediateCerts, papszIntermediateCerts, hVfsFileManifest,
+                                                                 iVerbosity, pErrInfo, hVfsFileSignature);
                                     if (RT_SUCCESS(rc))
                                     {
                                         /*
@@ -2315,7 +2346,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
     const char     *pszCertificate      = NULL;
     const char     *pszPrivateKey       = NULL;
     Utf8Str         strPrivateKeyPassword;
-    RTDIGESTTYPE    enmDigestType       = RTDIGESTTYPE_SHA256;
+    RTDIGESTTYPE    enmDigestType       = RTDIGESTTYPE_UNKNOWN;
     bool            fPkcs7              = false;
     unsigned        cIntermediateCerts  = 0;
     const char     *apszIntermediateCerts[32];
