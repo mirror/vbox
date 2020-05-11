@@ -10289,7 +10289,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
-            if (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) != i8Imm)
+            if (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) != i8Imm) /** @todo Harmfull to windows 3.11 for workgroups and such. Make optional. */
             {
                 IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
                 IEM_MC_IF_CX_IS_NZ() {
