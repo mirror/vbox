@@ -335,14 +335,18 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	info->apertures->ranges[0].base = pci_resource_start(dev->pdev, 0);
 	info->apertures->ranges[0].size = pci_resource_len(dev->pdev, 0);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0) || defined(RHEL_82)
+        /*
+         * The corresponding 5.2-rc1 Linux DRM kernel changes have been
+         * also backported to older RedHat based 4.18.0 Linux kernels.
+         */
 	drm_fb_helper_fill_info(info, &fbdev->helper, sizes);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_72)) && !defined(RHEL_82)
 	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->format->depth);
 #else
 	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->depth);
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) && !defined(RHEL_82)
 	drm_fb_helper_fill_var(info, &fbdev->helper, sizes->fb_width,
 			       sizes->fb_height);
 #endif

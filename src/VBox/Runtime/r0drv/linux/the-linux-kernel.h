@@ -475,6 +475,9 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv);
 # if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 1)
 #  define RHEL_81
 # endif
+# if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 2)
+#  define RHEL_82
+# endif
 #endif
 
 #endif /* !IPRT_INCLUDED_SRC_r0drv_linux_the_linux_kernel_h */
