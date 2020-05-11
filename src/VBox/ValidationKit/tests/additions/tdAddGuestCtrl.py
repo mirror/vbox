@@ -2256,12 +2256,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                     if abBuf:
                                         reporter.log2('Process (PID %d) got %d bytes of %s data (type: %s)'
                                                       % (iPid, len(abBuf), sFdNm, type(abBuf)));
-                                        if isinstance(abBuf, str):
-                                            pass;
+                                        sBuf = '';
                                         if sys.version_info >= (2, 7):
                                             if isinstance(abBuf, memoryview): ## @todo Why is this happening?
                                                 abBuf = abBuf.tobytes();
-                                        for sLine in abBuf.decode("utf-8").splitlines():
+                                                sBuf  = abBuf.decode("utf-8");
+                                        if isinstance(abBuf, buffer):
+                                            sBuf = abBuf;
+                                        for sLine in sBuf.splitlines():
                                             reporter.log('%s: %s' % (sFdNm, sLine));
                                         acbFdOut[iFd] += len(abBuf);
                                         oTest.sBuf     = abBuf; ## @todo Figure out how to uniform + append!
