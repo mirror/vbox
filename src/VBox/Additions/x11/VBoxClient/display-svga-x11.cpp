@@ -1219,18 +1219,17 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     bool fAck = false;
     bool fFirstRun = true;
     if (!init())
-        return VINF_SUCCESS;
+        return VERR_NOT_AVAILABLE;
     static struct VMMDevDisplayDef aMonitors[VMW_MAX_HEADS];
 
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
         VBClLogFatalError("Failed to request display change events, rc=%Rrc\n", rc);
     rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
-    if (rc == VERR_RESOURCE_BUSY)  /* Someone else has already acquired it. */
-        return VINF_SUCCESS;
     if (RT_FAILURE(rc))
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
-
+    if (rc == VERR_RESOURCE_BUSY)  /* Someone else has already acquired it. */
+        return VERR_RESOURCE_BUSY;
     for (;;)
     {
         struct VMMDevDisplayDef aDisplays[VMW_MAX_HEADS];
