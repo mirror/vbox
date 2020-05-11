@@ -2678,26 +2678,28 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid)
 
                 LogFunc(("Remove all dependencies for surface sid=%u\n", sid));
 
-                uint32_t            surfaceFlags = pSurface->surfaceFlags;
-                SVGA3dSurfaceFormat format = pSurface->format;
-                SVGA3dSurfaceFace   face[SVGA3D_MAX_SURFACE_FACES];
-                uint32_t            multisampleCount = pSurface->multiSampleCount;
-                SVGA3dTextureFilter autogenFilter = pSurface->autogenFilter;
-                SVGA3dSize         *pMipLevelSize;
-                uint32_t            cFaces = pSurface->cFaces;
+                uint32_t const              surfaceFlags     = pSurface->surfaceFlags;
+                SVGA3dSurfaceFormat const   format           = pSurface->format;
+                uint32_t const              multisampleCount = pSurface->multiSampleCount;
+                SVGA3dTextureFilter const   autogenFilter    = pSurface->autogenFilter;
+                uint32_t const              cFaces           = pSurface->cFaces;
+                uint32_t const              cMipLevels       = pSurface->faces[0].numMipLevels;
 
-                pMipLevelSize = (SVGA3dSize *)RTMemAllocZ(pSurface->faces[0].numMipLevels * pSurface->cFaces * sizeof(SVGA3dSize));
+                SVGA3dSize *pMipLevelSize = (SVGA3dSize *)RTMemAllocZ(cMipLevels * cFaces * sizeof(SVGA3dSize));
                 AssertReturn(pMipLevelSize, VERR_NO_MEMORY);
 
-                for (uint32_t face=0; face < pSurface->cFaces; face++)
+                for (uint32_t face = 0; face < pSurface->cFaces; face++)
                 {
-                    for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
+                    for (uint32_t i = 0; i < cMipLevels; i++)
                     {
-                        uint32_t idx = i + face * pSurface->faces[0].numMipLevels;
+                        uint32_t idx = i + face * cMipLevels;
                         memcpy(&pMipLevelSize[idx], &pSurface->paMipmapLevels[idx].mipmapSize, sizeof(SVGA3dSize));
                     }
                 }
-                memcpy(face, pSurface->faces, sizeof(pSurface->faces));
+
+                SVGA3dSurfaceFace aFaces[SVGA3D_MAX_SURFACE_FACES];
+                AssertCompile(sizeof(aFaces) == sizeof(pSurface->faces));
+                memcpy(aFaces, pSurface->faces, sizeof(pSurface->faces));
 
                 /* Recreate the surface with the original settings; destroys the contents, but that seems fairly safe since the context is also destroyed. */
 #ifdef DEBUG_sunlover
@@ -2708,8 +2710,8 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid)
                 rc = vmsvga3dSurfaceDestroy(pThisCC, sid);
                 AssertRC(rc);
 
-                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surfaceFlags, format, face, multisampleCount, autogenFilter,
-                                           face[0].numMipLevels * cFaces, pMipLevelSize);
+                rc = vmsvga3dSurfaceDefine(pThisCC, sid, surfaceFlags, format, aFaces, multisampleCount, autogenFilter,
+                                           cMipLevels * cFaces, pMipLevelSize);
                 AssertRC(rc);
 
                 Assert(!pSurface->u.pSurface);
@@ -3984,8 +3986,8 @@ int vmsvga3dSetRenderTarget(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRenderTarge
                      || pRenderTarget->formatD3D == D3DFMT_D16))
             {
                 LogFunc(("Creating stencil surface as texture!\n"));
-                int rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
-                AssertRC(rc);   /* non-fatal, will use CreateDepthStencilSurface */
+                int rc2 = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
+                AssertRC(rc2);   /* non-fatal, will use CreateDepthStencilSurface */
             }
 
             if (!pRenderTarget->fStencilAsTexture)
@@ -4098,7 +4100,7 @@ int vmsvga3dSetRenderTarget(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRenderTarge
             if (!pRenderTarget->u.pTexture)
             {
                 LogFunc(("Create texture to be used as render target; sid=%u type=%d format=%d -> create texture\n", target.sid, pRenderTarget->surfaceFlags, pRenderTarget->format));
-                int rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
+                rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
                 AssertRCReturn(rc, rc);
             }
 
@@ -5188,20 +5190,20 @@ int vmsvga3dDrawPrimitives(PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertex
     else
     {
         /* Create and set the vertex declaration. */
-        IDirect3DVertexDeclaration9 *pVertexDecl;
-        hr = pContext->pDevice->CreateVertexDeclaration(&aVertexElements[0], &pVertexDecl);
+        IDirect3DVertexDeclaration9 *pVertexDecl0;
+        hr = pContext->pDevice->CreateVertexDeclaration(&aVertexElements[0], &pVertexDecl0);
         AssertMsgReturn(hr == D3D_OK, ("CreateVertexDeclaration failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-        hr = pContext->pDevice->SetVertexDeclaration(pVertexDecl);
+        hr = pContext->pDevice->SetVertexDeclaration(pVertexDecl0);
         AssertMsgReturnStmt(hr == D3D_OK, ("SetVertexDeclaration failed with %x\n", hr),
-                            D3D_RELEASE(pVertexDecl),
+                            D3D_RELEASE(pVertexDecl0),
                             VERR_INTERNAL_ERROR);
 
         /* The new vertex declaration has been successfully set. Delete the old one. */
         D3D_RELEASE(pContext->d3dState.pVertexDecl);
 
         /* Remember the new vertext declaration. */
-        pContext->d3dState.pVertexDecl = pVertexDecl;
+        pContext->d3dState.pVertexDecl = pVertexDecl0;
         pContext->d3dState.cVertexElements = numVertexDecls + 1;
         memcpy(pContext->d3dState.aVertexElements,
                aVertexElements,
