@@ -1062,16 +1062,6 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
     if (cArgs >= 128*1024)
         return VERR_BUFFER_OVERFLOW;
 
-    Guest *pGuest = mSession->i_getParent();
-    AssertPtr(pGuest);
-
-    const uint64_t fGuestControlFeatures0 = pGuest->i_getGuestControlFeatures0();
-
-    /* If the guest does not support dynamic sizes, make sure that we check limits here. */
-    if (   !(fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_DYNAMIC_SIZES)
-        &&  mData.mProcess.mExecutable.length() + 1 /* Include termination */ > GUESTPROCESS_DEFAULT_CMD_LEN)
-        return VERR_BUFFER_OVERFLOW;
-
     size_t cbArgs = 0;
     char *pszArgs = NULL;
     int vrc = VINF_SUCCESS;
@@ -1087,6 +1077,11 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
         }
         papszArgv[cArgs] = NULL;
 
+        Guest *pGuest = mSession->i_getParent();
+        AssertPtr(pGuest);
+
+        const uint64_t fGuestControlFeatures0 = pGuest->i_getGuestControlFeatures0();
+
         /* If the Guest Additions don't support using argv[0] correctly (< 6.1.x), don't supply it. */
         if (!(fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0))
             vrc = RTGetOptArgvToString(&pszArgs, papszArgv + 1, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
@@ -1098,32 +1093,16 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
             return vrc;
 
         /* Note! No direct returns after this. */
-
-        /* Calculate arguments size (in bytes). */
-        AssertPtr(pszArgs);
-        cbArgs = strlen(pszArgs) + 1; /* Include terminating zero. */
-
-        /* If the guest does not support dynamic sizes, make sure that we check limits here. */
-        if (   !(fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_DYNAMIC_SIZES)
-            && cbArgs > GUESTPROCESS_DEFAULT_ARGS_LEN)
-        {
-            vrc = VERR_BUFFER_OVERFLOW;
-        }
     }
+
+    /* Calculate arguments size (in bytes). */
+    AssertPtr(pszArgs);
+    cbArgs = strlen(pszArgs) + 1; /* Include terminating zero. */
 
     /* Prepare environment.  The guest service dislikes the empty string at the end, so drop it. */
     size_t  cbEnvBlock   = 0;    /* Shut up MSVC. */
     char   *pszzEnvBlock = NULL; /* Ditto. */
-    if (RT_SUCCESS(vrc))
-        vrc = mData.mProcess.mEnvironmentChanges.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
-    if (RT_SUCCESS(vrc))
-    {
-        /* If the guest does not support dynamic sizes, make sure that we check limits here. */
-        if (   !(fGuestControlFeatures0 & VBOX_GUESTCTRL_GF_0_PROCESS_DYNAMIC_SIZES)
-            && cbEnvBlock > GUESTPROCESS_DEFAULT_ENV_LEN)
-            vrc = VERR_BUFFER_OVERFLOW;
-    }
-
+    vrc = mData.mProcess.mEnvironmentChanges.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
     if (RT_SUCCESS(vrc))
     {
         Assert(cbEnvBlock > 0);
@@ -1177,12 +1156,8 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
             int rc2 = i_setProcessStatus(ProcessStatus_Error, vrc);
             AssertRC(rc2);
         }
-    }
 
-    if (pszzEnvBlock)
-    {
         mData.mProcess.mEnvironmentChanges.freeUtf8Block(pszzEnvBlock);
-        pszzEnvBlock = NULL;
     }
 
     RTStrFree(pszArgs);
