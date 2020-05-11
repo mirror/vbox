@@ -280,11 +280,12 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             # Run FsPerf:
             reporter.log2('Starting guest FsPerf (%s)...' % (asArgs,));
             sFsPerfPath = self._locateGstFsPerf(oTxsSession);
-            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 30 * 60 * 1000, sFsPerfPath, asArgs);
+            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 30 * 60 * 1000, sFsPerfPath, asArgs,
+                                          fCheckSessionStatus = True);
             reporter.log2('FsPerf -> %s' % (fRc,));
             if not fRc:
                 # Do a bit of diagnosis to find out why this failed.
-                if     not  oTestVm.isWindows() \
+                if     not oTestVm.isWindows() \
                    and not oTestVm.isOS2():
                     oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", sFsPerfPath), fIgnoreErrors = True);
                     oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "-R", "/opt"), fIgnoreErrors = True);
