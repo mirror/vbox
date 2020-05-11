@@ -254,5 +254,3 @@ RTDECL(ssize_t) RTCrPemWriteAsn1ToVfsFile(RTVFSFILE hVfsFile, PRTASN1CORE pRoot,
     RTVfsIoStrmRelease(hVfsIos);
     return cchRet;
 }
-
-
