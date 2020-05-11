@@ -595,8 +595,8 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
 /** @} */
 
 RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE pSigner, RTCRKEY hPrivateKey,
-                                          void const *pvData, size_t cbData, RTCRSTORE hAdditionalCerts,
-                                          void *pvResult, size_t *pcbResult, PRTERRINFO pErrInfo);
+                                          void const *pvData, size_t cbData, RTDIGESTTYPE enmDigestType,
+                                          RTCRSTORE hAdditionalCerts, void *pvResult, size_t *pcbResult, PRTERRINFO pErrInfo);
 
 /** @} */
 

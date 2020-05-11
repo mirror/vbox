@@ -35,6 +35,7 @@
 # include <iprt/string.h>
 # include <iprt/mem.h>
 # include <iprt/asn1.h>
+# include <iprt/crypto/digest.h>
 
 # include "internal/iprt-openssl.h"
 # include <openssl/x509.h>
@@ -143,6 +144,28 @@ DECLHIDDEN(int) rtCrOpenSslAddX509CertToStack(void *pvOsslStack, PCRTCRX509CERTI
         }
     }
     return rc;
+}
+
+
+DECLHIDDEN(const void /*EVP_MD*/ *) rtCrOpenSslConvertDigestType(RTDIGESTTYPE enmDigestType, PRTERRINFO pErrInfo)
+{
+    const char *pszAlgoObjId = RTCrDigestTypeToAlgorithmOid(enmDigestType);
+    AssertReturnStmt(pszAlgoObjId, RTErrInfoSetF(pErrInfo, VERR_INVALID_PARAMETER, "Invalid type: %d", enmDigestType), NULL);
+
+    int iAlgoNid = OBJ_txt2nid(pszAlgoObjId);
+    AssertReturnStmt(iAlgoNid != NID_undef,
+                     RTErrInfoSetF(pErrInfo, VERR_CR_DIGEST_OSSL_DIGEST_INIT_ERROR,
+                                   "OpenSSL does not know: %s (%s)", pszAlgoObjId, RTCrDigestTypeToName(enmDigestType)),
+                     NULL);
+
+    const char   *pszAlgoSn  = OBJ_nid2sn(iAlgoNid);
+    const EVP_MD *pEvpMdType = EVP_get_digestbyname(pszAlgoSn);
+    AssertReturnStmt(pEvpMdType,
+                     RTErrInfoSetF(pErrInfo, VERR_CR_DIGEST_OSSL_DIGEST_INIT_ERROR, "OpenSSL/EVP does not know: %d (%s; %s; %s)",
+                                   iAlgoNid, pszAlgoSn, pszAlgoSn, RTCrDigestTypeToName(enmDigestType)),
+                     NULL);
+
+    return pEvpMdType;
 }
 
 #endif /* IPRT_WITH_OPENSSL */

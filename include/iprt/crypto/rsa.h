@@ -61,6 +61,9 @@ typedef RTCRRSAPUBLICKEY *PRTCRRSAPUBLICKEY;
 typedef RTCRRSAPUBLICKEY const *PCRTCRRSAPUBLICKEY;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTCRRSAPUBLICKEY, RTDECL, RTCrRsaPublicKey, SeqCore.Asn1Core);
 
+RTDECL(bool) RTCrRsaPublicKey_CanHandleDigestType(PCRTCRRSAPUBLICKEY pRsaPublicKey, RTDIGESTTYPE enmDigestType,
+                                                  PRTERRINFO pErrInfo);
+
 
 /**
  * RSA other prime info (ASN.1 IPRT representation).
@@ -122,6 +125,9 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRRSAPRIVATEKEY, RTDECL, RTCrRsaPrivateKey, Seq
 #define RTCRRSAPRIVATEKEY_VERSION_TWO_PRIME     0
 #define RTCRRSAPRIVATEKEY_VERSION_MULTI         1
 /** @}  */
+
+RTDECL(bool) RTCrRsaPrivateKey_CanHandleDigestType(PCRTCRRSAPRIVATEKEY pRsaPrivateKey, RTDIGESTTYPE enmDigestType,
+                                                   PRTERRINFO pErrInfo);
 
 
 /**

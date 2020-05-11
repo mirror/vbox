@@ -31,8 +31,11 @@
 #include "internal/iprt.h"
 #include <iprt/crypto/pkix.h>
 
-#include <iprt/errcore.h>
+#include <iprt/asn1.h>
+#include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/crypto/rsa.h>
 
 #ifdef IPRT_WITH_OPENSSL
 # include "internal/iprt-openssl.h"
@@ -89,5 +92,52 @@ RTDECL(const char *) RTCrPkixGetCiperOidFromSignatureAlgorithm(PCRTASN1OBJID pAl
 
 
     return NULL;
+}
+
+
+RTDECL(bool) RTCrPkixPubKeyCanHandleDigestType(PCRTCRX509SUBJECTPUBLICKEYINFO pPublicKeyInfo, RTDIGESTTYPE enmDigestType,
+                                               PRTERRINFO pErrInfo)
+{
+    bool fRc = false;
+    if (RTCrX509SubjectPublicKeyInfo_IsPresent(pPublicKeyInfo))
+    {
+        void const * const  pvKeyBits = RTASN1BITSTRING_GET_BIT0_PTR(&pPublicKeyInfo->SubjectPublicKey);
+        uint32_t const      cbKeyBits = RTASN1BITSTRING_GET_BYTE_SIZE(&pPublicKeyInfo->SubjectPublicKey);
+        RTASN1CURSORPRIMARY PrimaryCursor;
+        union
+        {
+            RTCRRSAPUBLICKEY    RsaPublicKey;
+        } u;
+
+        if (RTAsn1ObjId_CompareWithString(&pPublicKeyInfo->Algorithm.Algorithm, RTCR_PKCS1_RSA_OID) == 0)
+        {
+            /*
+             * RSA.
+             */
+            RTAsn1CursorInitPrimary(&PrimaryCursor, pvKeyBits, cbKeyBits, pErrInfo, &g_RTAsn1DefaultAllocator,
+                                    RTASN1CURSOR_FLAGS_DER, "rsa");
+
+            RT_ZERO(u.RsaPublicKey);
+            int rc = RTCrRsaPublicKey_DecodeAsn1(&PrimaryCursor.Cursor, 0, &u.RsaPublicKey, "PublicKey");
+            if (RT_SUCCESS(rc))
+                fRc = RTCrRsaPublicKey_CanHandleDigestType(&u.RsaPublicKey, enmDigestType, pErrInfo);
+            RTCrRsaPublicKey_Delete(&u.RsaPublicKey);
+        }
+        else
+        {
+            RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_CIPHER_ALGO_NOT_KNOWN, "%s", pPublicKeyInfo->Algorithm.Algorithm.szObjId);
+            AssertMsgFailed(("unknown key algorithm: %s\n", pPublicKeyInfo->Algorithm.Algorithm.szObjId));
+            fRc = true;
+        }
+    }
+    return fRc;
+}
+
+
+RTDECL(bool) RTCrPkixCanCertHandleDigestType(PCRTCRX509CERTIFICATE pCertificate, RTDIGESTTYPE enmDigestType, PRTERRINFO pErrInfo)
+{
+    if (RTCrX509Certificate_IsPresent(pCertificate))
+        return RTCrPkixPubKeyCanHandleDigestType(&pCertificate->TbsCertificate.SubjectPublicKeyInfo, enmDigestType, pErrInfo);
+    return false;
 }
 

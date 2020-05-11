@@ -80,36 +80,44 @@ typedef RTCRPKIXSIGNATURERSA *PRTCRPKIXSIGNATURERSA;
 /** @name Pre-encoded DigestInfo DER sequences.
  * @{ */
 static const uint8_t g_abMd2[] =
-{/* {          {          1.2.840.113549.2.2 (MD2),                          NULL },    hash octet-string } */
-    0x30,0x20, 0x30,0x0c, 0x06,0x08,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x02,0x02, 0x05,0x00, 0x04,0x10
+{/* {          {          1.2.840.113549.2.2 (MD2),                                 NULL },     hash octet-string } */
+    0x30,0x20, 0x30,0x0c, 0x06,0x08,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x02,0x02,        0x05,0x00,  0x04,0x10
 };
 static const uint8_t g_abMd4[] =
-{/* {          {          1.2.840.113549.2.4 (MD4),                          NULL },    hash octet-string } */
-    0x30,0x20, 0x30,0x0c, 0x06,0x08,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x02,0x04, 0x05,0x00, 0x04,0x10
+{/* {          {          1.2.840.113549.2.4 (MD4),                                 NULL },     hash octet-string } */
+    0x30,0x20, 0x30,0x0c, 0x06,0x08,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x02,0x04,        0x05,0x00,  0x04,0x10
 };
 static const uint8_t g_abMd5[] =
-{/* {          {          1.2.840.113549.2.5 (MD5),                          NULL },    hash octet-string } */
-    0x30,0x20, 0x30,0x0c, 0x06,0x08,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x02,0x05, 0x05,0x00, 0x04,0x10
+{/* {          {          1.2.840.113549.2.5 (MD5),                                 NULL },     hash octet-string } */
+    0x30,0x20, 0x30,0x0c, 0x06,0x08,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x02,0x05,        0x05,0x00,  0x04,0x10
 };
 static const uint8_t g_abSha1[] =
-{/* {          {          1.3.14.3.2.26 (SHA-1),              NULL },    hash octet-string } */
-    0x30,0x21, 0x30,0x09, 0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a, 0x05,0x00, 0x04,0x14
+{/* {          {          1.3.14.3.2.26 (SHA-1),                                    NULL },     hash octet-string } */
+    0x30,0x21, 0x30,0x09, 0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a,                       0x05,0x00,  0x04,0x14
 };
 static const uint8_t g_abSha256[] =
-{/* {          {          2.16.840.1.101.3.4.2.1 (SHA-256),                       NULL },    hash octet-string } */
-    0x30,0x31, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x01, 0x05,0x00, 0x04,0x20
+{/* {          {          2.16.840.1.101.3.4.2.1 (SHA-256),                         NULL },     hash octet-string } */
+    0x30,0x31, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x01,   0x05,0x00,  0x04,0x20
 };
 static const uint8_t g_abSha384[] =
-{/* {          {          2.16.840.1.101.3.4.2.2 (SHA-384),                       NULL },    hash octet-string } */
-    0x30,0x41, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x02, 0x05,0x00, 0x04,0x30
+{/* {          {          2.16.840.1.101.3.4.2.2 (SHA-384),                         NULL },     hash octet-string } */
+    0x30,0x41, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x02,   0x05,0x00,  0x04,0x30
 };
 static const uint8_t g_abSha512[] =
-{/* {          {          2.16.840.1.101.3.4.2.3 (SHA-512),                       NULL },    hash octet-string } */
-    0x30,0x51, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x03, 0x05,0x00, 0x04,0x40
+{/* {          {          2.16.840.1.101.3.4.2.3 (SHA-512),                         NULL },     hash octet-string } */
+    0x30,0x51, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x03,   0x05,0x00,  0x04,0x40
 };
 static const uint8_t g_abSha224[] =
-{/* {          {          2.16.840.1.101.3.4.2.4 (SHA-224),                       NULL },    hash octet-string } */
-    0x30,0x2d, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x04, 0x05,0x00, 0x04,0x1c
+{/* {          {          2.16.840.1.101.3.4.2.4 (SHA-224),                         NULL },     hash octet-string } */
+    0x30,0x2d, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x04,   0x05,0x00,  0x04,0x1c
+};
+static const uint8_t g_abSha512T224[] =
+{/* {          {          2.16.840.1.101.3.4.2.5 (SHA-512T224),                     NULL },     hash octet-string } */
+    0x30,0x2d, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x05,   0x05,0x00,  0x04,0x1c
+};
+static const uint8_t g_abSha512T256[] =
+{/* {          {          2.16.840.1.101.3.4.2.6 (SHA-512T256),                     NULL },     hash octet-string } */
+    0x30,0x31, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x06,   0x05,0x00,  0x04,0x20
 };
 /** @} */
 
@@ -121,14 +129,16 @@ static struct
     size_t          cb;
 } const g_aDigestInfos[] =
 {
-    { RTDIGESTTYPE_MD2,     g_abMd2,    sizeof(g_abMd2) },
-    { RTDIGESTTYPE_MD4,     g_abMd4,    sizeof(g_abMd4) },
-    { RTDIGESTTYPE_MD5,     g_abMd5,    sizeof(g_abMd5) },
-    { RTDIGESTTYPE_SHA1,    g_abSha1,   sizeof(g_abSha1) },
-    { RTDIGESTTYPE_SHA256,  g_abSha256, sizeof(g_abSha256) },
-    { RTDIGESTTYPE_SHA384,  g_abSha384, sizeof(g_abSha384) },
-    { RTDIGESTTYPE_SHA512,  g_abSha512, sizeof(g_abSha512) },
-    { RTDIGESTTYPE_SHA224,  g_abSha224, sizeof(g_abSha224) },
+    { RTDIGESTTYPE_SHA1,        g_abSha1,       sizeof(g_abSha1) },
+    { RTDIGESTTYPE_SHA256,      g_abSha256,     sizeof(g_abSha256) },
+    { RTDIGESTTYPE_SHA512,      g_abSha512,     sizeof(g_abSha512) },
+    { RTDIGESTTYPE_MD2,         g_abMd2,        sizeof(g_abMd2) },
+    { RTDIGESTTYPE_MD4,         g_abMd4,        sizeof(g_abMd4) },
+    { RTDIGESTTYPE_MD5,         g_abMd5,        sizeof(g_abMd5) },
+    { RTDIGESTTYPE_SHA384,      g_abSha384,     sizeof(g_abSha384) },
+    { RTDIGESTTYPE_SHA224,      g_abSha224,     sizeof(g_abSha224) },
+    { RTDIGESTTYPE_SHA512T224,  g_abSha512T224, sizeof(g_abSha512T224)},
+    { RTDIGESTTYPE_SHA512T256,  g_abSha512T256, sizeof(g_abSha512T256)},
 };
 
 
@@ -462,4 +472,54 @@ DECL_HIDDEN_CONST(RTCRPKIXSIGNATUREDESC const) g_rtCrPkixSigningHashWithRsaDesc 
     rtCrPkixSignatureRsa_Verify,
     rtCrPkixSignatureRsa_Sign,
 };
+
+
+/**
+ * Worker for RTCrRsaPublicKey_CanHandleDigestType and
+ * RTCrRsaPrivateKey_CanHandleDigestType.
+ *
+ * We implement these two functions here because we've already got the
+ * DigestInfo sizes nicely lined up here.
+ */
+static bool rtCrRsa_CanHandleDigestType(int32_t cModulusBits, RTDIGESTTYPE enmDigestType, PRTERRINFO pErrInfo)
+{
+    /*
+     * ASSUME EMSA-PKCS1-v1_5 padding scheme (RFC-8017 section 9.2):
+     *     - 11 byte padding prefix (00, 01, 8 times ff)
+     *     - digest info der sequence for rsaWithXxxxEncryption
+     *     - the hash value.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aDigestInfos); i++)
+        if (g_aDigestInfos[i].enmDigest == enmDigestType)
+        {
+            size_t const cbHash = RTCrDigestTypeToHashSize(enmDigestType);
+            AssertBreak(cbHash > 0);
+
+            size_t cbMsg = 11 + g_aDigestInfos[i].cb + cbHash;
+            if ((ssize_t)cbMsg <= cModulusBits / 8)
+                return true;
+            RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_INVALID_SIGNATURE_LENGTH, "cModulusBits=%d cbMsg=%u", cModulusBits, cbMsg);
+            return false;
+        }
+    RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_UNKNOWN_DIGEST_TYPE, "%s", RTCrDigestTypeToName(enmDigestType));
+    return false;
+}
+
+
+RTDECL(bool) RTCrRsaPublicKey_CanHandleDigestType(PCRTCRRSAPUBLICKEY pRsaPublicKey, RTDIGESTTYPE enmDigestType,
+                                                  PRTERRINFO pErrInfo)
+{
+    if (RTCrRsaPublicKey_IsPresent(pRsaPublicKey))
+        return rtCrRsa_CanHandleDigestType(RTAsn1Integer_UnsignedLastBit(&pRsaPublicKey->Modulus) + 1, enmDigestType, pErrInfo);
+    return false;
+}
+
+
+RTDECL(bool) RTCrRsaPrivateKey_CanHandleDigestType(PCRTCRRSAPRIVATEKEY pRsaPrivateKey, RTDIGESTTYPE enmDigestType,
+                                                   PRTERRINFO pErrInfo)
+{
+    if (RTCrRsaPrivateKey_IsPresent(pRsaPrivateKey))
+        return rtCrRsa_CanHandleDigestType(RTAsn1Integer_UnsignedLastBit(&pRsaPrivateKey->Modulus) + 1, enmDigestType, pErrInfo);
+    return false;
+}
 

@@ -171,6 +171,16 @@ RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestOidAndEncryptedDigestOid(co
         if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA224_WITH_RSA))
             return 0;
     }
+    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224))
+    {
+        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224_WITH_RSA))
+            return 0;
+    }
+    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256))
+    {
+        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA))
+            return 0;
+    }
     else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
     {
         /* ?? */
@@ -218,6 +228,12 @@ RTDECL(const char *) RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOi
         if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA224)
             || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA224_WITH_RSA))
             return RTCRX509ALGORITHMIDENTIFIERID_SHA224_WITH_RSA;
+        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224)
+            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224_WITH_RSA))
+            return RTCRX509ALGORITHMIDENTIFIERID_SHA512T224_WITH_RSA;
+        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256)
+            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA))
+            return RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA;
 
         /* if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
             return ???; */
