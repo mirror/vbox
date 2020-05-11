@@ -653,8 +653,29 @@ static bool callVMWCTRL(struct RANDROUTPUT *paOutputs)
     free(extents);
 }
 
+/**
+ * Tries to determine if the session parenting this process is of X11.
+ */
+static bool isX11()
+{
+    char* pSessionType;
+    pSessionType = getenv("XDG_SESSION_TYPE");
+    if (pSessionType != NULL)
+    {
+        if (RTStrIStartsWith(pSessionType, "x11"))
+            return true;
+    }
+    return false;
+}
+
 static bool init()
 {
+    if (!isX11())
+    {
+        VBClLogFatalError("The parent session seems to be non-X11. Exiting...\n");
+        VBClLogInfo("This service needs X display server for resizing and multi monitor handling to work\n");
+        return false;
+    }
     x11Connect();
     if (x11Context.pDisplay == NULL)
         return false;
