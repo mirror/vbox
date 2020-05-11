@@ -562,14 +562,10 @@ static void monitorRandREvents()
     switch (eventTypeOffset)
     {
         case RRScreenChangeNotify:
-            VBClLogInfo("RRScreenChangeNotify\n");
+            VBClLogInfo("RRScreenChangeNotify event received\n");
             queryMonitorPositions();
             break;
-        case RRNotify:
-            VBClLogInfo("RRNotify\n");
-            break;
         default:
-            VBClLogInfo("Unknown RR event: %d\n", event.type);
             break;
     }
 }
@@ -807,11 +803,9 @@ static void x11Connect()
     x11Context.fWmwareCtrlExtention = XQueryExtension(x11Context.pDisplay, "VMWARE_CTRL",
                                                       &x11Context.hVMWCtrlMajorOpCode, &dummy, &dummy);
     if (!x11Context.fWmwareCtrlExtention)
-        VBClLogError("VMWARE's ctrl extension is not available!\n");
+        VBClLogError("VMWARE's ctrl extension is not available! Multi monitor management is not possible\n");
     else
-    {
         VBClLogInfo("VMWARE's ctrl extension is available. Major Opcode is %d.\n", x11Context.hVMWCtrlMajorOpCode);
-    }
 
     /* Check Xrandr stuff. */
     bool fSuccess = false;
@@ -839,10 +833,6 @@ static void x11Connect()
     }
     x11Context.rootWindow = DefaultRootWindow(x11Context.pDisplay);
     x11Context.hEventMask = RRScreenChangeNotifyMask;
-    if (x11Context.hRandRMinor >= 2)
-        x11Context.hEventMask |= RRCrtcChangeNotifyMask
-                               | RROutputChangeNotifyMask
-                               | RROutputPropertyNotifyMask;
 
     /* Select the XEvent types we want to listen to. */
 #ifdef WITH_DISTRO_XRAND_XINERAMA
