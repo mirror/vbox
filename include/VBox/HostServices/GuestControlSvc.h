@@ -695,6 +695,9 @@ enum GUEST_FILE_SEEKTYPE
  * @sa    VBOX_GUESTCTRL_HF_0_PROCESS_ARGV0
  * @since 6.1.6  */
 #define VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0           RT_BIT_64(1)
+/** Supports passing cmd / arguments / environment blocks bigger than
+ *  GUESTPROCESS_DEFAULT_CMD_LEN / GUESTPROCESS_DEFAULT_ARGS_LEN / GUESTPROCESS_DEFAULT_ENV_LEN (bytes, in total). */
+#define VBOX_GUESTCTRL_GF_0_PROCESS_DYNAMIC_SIZES   RT_BIT_64(2)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
 #define VBOX_GUESTCTRL_GF_1_MUST_BE_ONE             RT_BIT_64(63)
