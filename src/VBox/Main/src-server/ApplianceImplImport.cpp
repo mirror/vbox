@@ -2590,8 +2590,8 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
     vrc = RTManifestReadStandardEx(m->hTheirManifest, hVfsIos, szErr, sizeof(szErr));
     RTVfsIoStrmRelease(hVfsIos);
     if (RT_FAILURE(vrc))
-        throw setErrorVrc(vrc, tr("Failed to parse manifest file '%s' for '%s' (%Rrc): %s"),
-                          pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, szErr);
+        return setErrorVrc(vrc, tr("Failed to parse manifest file '%s' for '%s' (%Rrc): %s"),
+                           pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, szErr);
 
     /*
      * Check which digest files are used.
