@@ -499,7 +499,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             ## @todo VBoxClient does not have facility statuses implemented yet.
             eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Userland;
 
-        return self.waitForGuestAdditionsRunLevel(oSession, oGuest, 60 * 1000, eExpectedRunLevel);
+        return self.waitForGuestAdditionsRunLevel(oSession, oGuest, 5 * 60 * 1000, eExpectedRunLevel);
 
     def testIGuest_additionsVersion(self, oGuest):
         """
