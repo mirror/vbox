@@ -1112,7 +1112,7 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
     }
 
     /* Prepare environment.  The guest service dislikes the empty string at the end, so drop it. */
-    size_t  cbEnvBlock;
+    size_t  cbEnvBlock = 0; /* Shut up MSVC. */
     char   *pszzEnvBlock;
     if (RT_SUCCESS(vrc))
         vrc = mData.mProcess.mEnvironmentChanges.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
