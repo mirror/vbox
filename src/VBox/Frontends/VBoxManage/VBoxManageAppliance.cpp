@@ -1840,7 +1840,7 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
      */
     if (iVerbosity >= 2)
         RTMsgInfo("Scanning OVA '%s' for a manifest and signature...", pszOva);
-    enum { kScanning, kSeenManifest, kSeenSignature } enmState = kScanning;
+    char *pszSignatureName = NULL;
     for (;;)
     {
         /*
@@ -1870,13 +1870,14 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
             && RTStrICmpAscii(pszSuffix, ".mf") == 0
             && (enmType == RTVFSOBJTYPE_IO_STREAM || enmType == RTVFSOBJTYPE_FILE))
         {
-            if (   enmState >= kSeenManifest
-                || *phVfsManifest != NIL_RTVFSFILE /* paranoia */)
+            if (*phVfsManifest != NIL_RTVFSFILE)
                 rc = RTMsgErrorRc(VERR_DUPLICATE, "OVA contains multiple manifests! first: %s  second: %s",
                                   pStrManifestName->c_str(), pszName);
+            else if (pszSignatureName)
+                rc = RTMsgErrorRc(VERR_WRONG_ORDER, "Unsupported OVA file ordering! Signature file ('%s') as succeeded by '%s'.",
+                                  pszSignatureName, pszName);
             else
             {
-                enmState = kSeenManifest;
                 if (iVerbosity >= 2)
                     RTMsgInfo("Found manifest file: %s", pszName);
                 rc = pStrManifestName->assignNoThrow(pszName);
@@ -1897,20 +1898,21 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
                  && RTStrICmpAscii(pszSuffix, ".cert") == 0
                  && (enmType == RTVFSOBJTYPE_IO_STREAM || enmType == RTVFSOBJTYPE_FILE))
         {
-            if (   enmState >= kSeenSignature
-                || *phVfsOldSignature != NIL_RTVFSOBJ /* paranoia */)
+            if (*phVfsOldSignature != NIL_RTVFSOBJ)
                 rc = RTMsgErrorRc(VERR_WRONG_ORDER, "Multiple signature files! (%s)", pszName);
             else
             {
-                enmState = kSeenSignature;
                 if (iVerbosity >= 2)
                     RTMsgInfo("Found existing signature file: %s", pszName);
+                pszSignatureName   = pszName;
                 *phVfsOldSignature = hVfsObj;
+                pszName = NULL;
                 hVfsObj = NIL_RTVFSOBJ;
             }
         }
-        else if (enmState >= kSeenManifest)
-            rc = RTMsgErrorRc(VERR_WRONG_ORDER, "Invalid OVA file ordering! (%s)", pszName);
+        else if (pszSignatureName)
+            rc = RTMsgErrorRc(VERR_WRONG_ORDER, "Unsupported OVA file ordering! Signature file ('%s') as succeeded by '%s'.",
+                              pszSignatureName, pszName);
 
         /*
          * Release the current object and string.
@@ -1928,8 +1930,10 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
         rc = RTMsgErrorRc(VERR_NOT_FOUND, "The OVA contains no manifest and cannot be signed!");
     else if (RT_SUCCESS(rc) && *phVfsOldSignature != NIL_RTVFSOBJ && !fReSign)
         rc = RTMsgErrorRc(VERR_ALREADY_EXISTS,
-                          "The OVA is already signed! (Use the --force option to force re-signing it.)");
+                          "The OVA is already signed ('%s')! (Use the --force option to force re-signing it.)",
+                          pszSignatureName);
 
+    RTStrFree(pszSignatureName);
     return rc;
 }
 
@@ -1942,9 +1946,12 @@ static int openOvaAndGetManifestAndOldSignature(const char *pszOva, unsigned iVe
  * replaced.  The open function has already made sure there isn't anything
  * following the .cert file in that case.
  */
-static int updateTheOvaSignature(RTVFSFSSTREAM hVfsFssOva, const char *pszOva,
-                                 const char *pszSignatureName, RTVFSFILE hVfsFileSignature, RTVFSOBJ hVfsOldSignature)
+static int updateTheOvaSignature(RTVFSFSSTREAM hVfsFssOva, const char *pszOva, const char *pszSignatureName,
+                                 RTVFSFILE hVfsFileSignature, RTVFSOBJ hVfsOldSignature, unsigned iVerbosity)
 {
+    if (iVerbosity > 1)
+        RTMsgInfo("Writing '%s' to the OVA...", pszSignatureName);
+
     /*
      * Truncate the file at the old signature, if present.
      */
@@ -2128,7 +2135,8 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
                         if (RT_SUCCESS(rc))
                         {
                             if (iVerbosity > 1)
-                                RTMsgInfo("Created PKCS#7/CMS signature: %zu bytes.", cbResult);
+                                RTMsgInfo("Created PKCS#7/CMS signature: %zu bytes, %s.",
+                                          cbResult, RTCrDigestTypeToName(enmDigestType));
 
                             /*
                              * Try decode and verify the signature.
@@ -2175,6 +2183,7 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
             enmDigestType = RTDIGESTTYPE_SHA1;
     }
 
+    /** @todo Use SHA-3 instead, better diversity. @bugref{9734} */
     RTDIGESTTYPE enmPkcs7DigestType;
     if (   enmDigestType == RTDIGESTTYPE_SHA1
         || enmDigestType == RTDIGESTTYPE_SHA256
@@ -2243,6 +2252,9 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                                               pvSignature, &cbSignature, RTErrInfoInitStatic(pErrInfo));
                 if (RT_SUCCESS(rc))
                 {
+                    if (iVerbosity > 1)
+                        RTMsgInfo("Created OVA signature: %zu bytes, %s", cbSignature, RTCrDigestTypeToName(enmDigestType));
+
                     /*
                      * Verify the signature using the certificate to make sure we've
                      * been given the right private key.
@@ -2252,8 +2264,8 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                                                                           RTErrInfoInitStatic(pErrInfo));
                     if (RT_SUCCESS(rc))
                     {
-                        if (iVerbosity > 0)
-                            RTMsgInfo("Created OVA signature: %zu bytes, %s", cbSignature, RTCrDigestTypeToName(enmDigestType));
+                        if (iVerbosity > 2)
+                            RTMsgInfo("  Successfully decoded and verified the OVA signature.\n");
 
                         /*
                          * Create the output file.
@@ -2330,7 +2342,9 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
         { "--private-key-password-file",'P', RTGETOPT_REQ_STRING },
         { "--digest-type",              'd', RTGETOPT_REQ_STRING },
         { "--pkcs7",                    '7', RTGETOPT_REQ_NOTHING },
+        { "--cms",                      '7', RTGETOPT_REQ_NOTHING },
         { "--no-pkcs7",                 'n', RTGETOPT_REQ_NOTHING },
+        { "--no-cms",                   'n', RTGETOPT_REQ_NOTHING },
         { "--intermediate-cert-file",   'i', RTGETOPT_REQ_STRING },
         { "--force",                    'f', RTGETOPT_REQ_NOTHING },
         { "--verbose",                  'v', RTGETOPT_REQ_NOTHING },
@@ -2347,7 +2361,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
     const char     *pszPrivateKey       = NULL;
     Utf8Str         strPrivateKeyPassword;
     RTDIGESTTYPE    enmDigestType       = RTDIGESTTYPE_UNKNOWN;
-    bool            fPkcs7              = false;
+    bool            fPkcs7              = true;
     unsigned        cIntermediateCerts  = 0;
     const char     *apszIntermediateCerts[32];
     bool            fReSign             = false;
@@ -2411,6 +2425,7 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                     return RTMsgErrorExitFailure("Too many intermediate certificates: max %zu",
                                                  RT_ELEMENTS(apszIntermediateCerts));
                 apszIntermediateCerts[cIntermediateCerts++] = ValueUnion.psz;
+                fPkcs7 = true;
                 break;
 
             case 'f':
@@ -2507,7 +2522,10 @@ RTEXITCODE handleSignAppliance(HandlerArg *arg)
                     /*
                      * Update the OVA.
                      */
-                    rc = updateTheOvaSignature(hVfsFssOva, pszOva, strSignatureName.c_str(), hVfsFileSignature, hVfsOldSignature);
+                    rc = updateTheOvaSignature(hVfsFssOva, pszOva, strSignatureName.c_str(),
+                                               hVfsFileSignature, hVfsOldSignature, iVerbosity);
+                    if (RT_SUCCESS(rc) && iVerbosity > 0)
+                        RTMsgInfo("Successfully signed '%s'.", pszOva);
                 }
             }
             RTCrKeyRelease(hPrivateKey);

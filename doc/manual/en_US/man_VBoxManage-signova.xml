@@ -92,37 +92,40 @@
       </varlistentry>
       <varlistentry>
         <term><option>--digest-type=<replaceable>type</replaceable></option></term>
-        <listitem><para>Select the cryptographic digest algorithm to use in the
-          signing. Possible values: SHA-256 (default), SHA-512 and SHA-1.</para></listitem>
+        <listitem>
+          <para>Select the cryptographic digest algorithm to use in the
+            signing. Possible values: SHA-256 (default), SHA-512 and SHA-1.</para>
+          <para>Some older versions of OVFTool and other VMware produces may
+            require <option>--digest-type=sha-1</option> to accept the OVA.</para>
+          </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--pkcs7</option>, <option>--no-pkcs7</option></term>
-        <listitem><para>Enables or disables (default) the creation of an additional
-          PKCS#7 signature.</para></listitem>
+        <listitem><para>Enables or disables the creation of an additional
+          PKCS#7/CMS signature.  This is enabled by default.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--intermediate-cert=<replaceable>file</replaceable></option></term>
         <listitem><para>File containing an intermediary certificate that should be
-          included in the optional PKCS#7 signature.  Like the others, the file can
+          included in the optional PKCS#7/CMS signature.  Like the others, the file can
           either be in PEM or DER format.  This option can be repeated to add
-          multiple intermediate certificates.</para></listitem>
+          multiple intermediate certificates.  This option implies the
+          <option>--pkcs7</option> option.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--force</option></term>
         <listitem><para>Overwrite existing signature if present.  The default
           behaviour is to fail if the OVA is already signed.</para></listitem>
       </varlistentry>
-
+      <varlistentry>
+        <term><option>--dry-run</option></term>
+        <listitem><para>Do not actually modify the OVA, just test-run the signing operation.</para></listitem>
+      </varlistentry>
       <varlistentry>
         <term><option>-v</option>, <option>--verbose</option>, <option>-q</option>, <option>--quiet</option></term>
         <listitem><para>Controls the verbositity of the command execution.  The
-          <option>--verbose</option> can be used multiple times to get more output.
+          <option>--verbose</option> option can be used multiple times to get more output.
           </para></listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><option>--out-cert</option>, <option>--dry-run</option></term>
-        <listitem><para>Debugging options that could be removed at any time.</para></listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
