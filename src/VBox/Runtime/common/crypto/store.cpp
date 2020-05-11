@@ -342,7 +342,8 @@ RTDECL(int) RTCrStoreConvertToOpenSslCertStore(RTCRSTORE hStore, uint32_t fFlags
                 if (!pCertCtx)
                     break;
 
-                if (pCertCtx->fFlags & RTCRCERTCTX_F_ENC_X509_DER)
+                if (   (pCertCtx->fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER
+                    && pCertCtx->cbEncoded > 0)
                 {
                     X509 *pOsslCert = NULL;
                     const unsigned char *pabEncoded = (const unsigned char *)pCertCtx->pabEncoded;
@@ -397,7 +398,8 @@ RTDECL(int) RTCrStoreConvertToOpenSslCertStack(RTCRSTORE hStore, uint32_t fFlags
                 if (!pCertCtx)
                     break;
 
-                if (pCertCtx->fFlags & RTCRCERTCTX_F_ENC_X509_DER)
+                if (   (pCertCtx->fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER
+                    && pCertCtx->cbEncoded > 0)
                 {
                     X509 *pOsslCert = NULL;
                     const unsigned char *pabEncoded = (const unsigned char *)pCertCtx->pabEncoded;
