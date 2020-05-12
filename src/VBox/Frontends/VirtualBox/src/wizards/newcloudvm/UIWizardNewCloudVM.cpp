@@ -162,7 +162,7 @@ bool UIWizardNewCloudVM::createCloudVM()
 
         /* Check whether VM really added: */
         if (comMachine.isNotNull())
-            uiCommon().notifyCloudMachineRegistered(field("destination").toString(),
+            uiCommon().notifyCloudMachineRegistered(field("location").toString(),
                                                     field("profileName").toString(),
                                                     comMachine.GetId(),
                                                     true /* registered */);

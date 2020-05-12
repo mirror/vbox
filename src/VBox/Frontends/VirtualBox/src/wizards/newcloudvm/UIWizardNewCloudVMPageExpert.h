@@ -34,7 +34,7 @@ class UIWizardNewCloudVMPageExpert : public UIWizardPage,
                                      public UIWizardNewCloudVMPage2
 {
     Q_OBJECT;
-    Q_PROPERTY(QString destination READ destination);
+    Q_PROPERTY(QString location READ location);
     Q_PROPERTY(QString profileName READ profileName);
 
 public:
@@ -64,8 +64,8 @@ protected:
 
 private slots:
 
-    /** Handles change in destination combo-box. */
-    void sltHandleDestinationChange();
+    /** Handles change in location combo-box. */
+    void sltHandleLocationChange();
 
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();
@@ -80,8 +80,8 @@ private slots:
 
 private:
 
-    /** Holds the destination container instance. */
-    QGroupBox *m_pCntDestination;
+    /** Holds the location container instance. */
+    QGroupBox *m_pCntLocation;
     /** Holds the settings container instance. */
     QGroupBox *m_pSettingsCnt;
 };

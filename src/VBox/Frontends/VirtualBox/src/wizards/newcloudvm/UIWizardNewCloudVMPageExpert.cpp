@@ -34,31 +34,31 @@
 
 UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
     : UIWizardNewCloudVMPage2(fFullWizard)
-    , m_pCntDestination(0)
+    , m_pCntLocation(0)
     , m_pSettingsCnt(0)
 {
     /* Create main layout: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
     if (pMainLayout)
     {
-        /* Create destination container: */
-        m_pCntDestination = new QGroupBox(this);
-        if (m_pCntDestination)
+        /* Create location container: */
+        m_pCntLocation = new QGroupBox(this);
+        if (m_pCntLocation)
         {
-            /* There is no destination table in short wizard form: */
+            /* There is no location table in short wizard form: */
             if (!m_fFullWizard)
-                m_pCntDestination->setVisible(false);
+                m_pCntLocation->setVisible(false);
 
-            /* Create destination layout: */
-            m_pDestinationLayout = new QGridLayout(m_pCntDestination);
-            if (m_pDestinationLayout)
+            /* Create location layout: */
+            m_pLocationLayout = new QGridLayout(m_pCntLocation);
+            if (m_pLocationLayout)
             {
-                /* Create destination selector: */
-                m_pDestinationComboBox = new QIComboBox(m_pCntDestination);
-                if (m_pDestinationComboBox)
+                /* Create location selector: */
+                m_pLocationComboBox = new QIComboBox(m_pCntLocation);
+                if (m_pLocationComboBox)
                 {
                     /* Add into layout: */
-                    m_pDestinationLayout->addWidget(m_pDestinationComboBox, 0, 0);
+                    m_pLocationLayout->addWidget(m_pLocationComboBox, 0, 0);
                 }
 
                 /* Create cloud container layout: */
@@ -76,14 +76,14 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                         pSubLayout->setSpacing(1);
 
                         /* Create account combo-box: */
-                        m_pAccountComboBox = new QIComboBox(m_pCntDestination);
+                        m_pAccountComboBox = new QIComboBox(m_pCntLocation);
                         if (m_pAccountComboBox)
                         {
                             /* Add into layout: */
                             pSubLayout->addWidget(m_pAccountComboBox);
                         }
                         /* Create account tool-button: */
-                        m_pAccountToolButton = new QIToolButton(m_pCntDestination);
+                        m_pAccountToolButton = new QIToolButton(m_pCntLocation);
                         if (m_pAccountToolButton)
                         {
                             m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
@@ -98,7 +98,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                     }
 
                     /* Create profile property table: */
-                    m_pAccountPropertyTable = new QTableWidget(m_pCntDestination);
+                    m_pAccountPropertyTable = new QTableWidget(m_pCntLocation);
                     if (m_pAccountPropertyTable)
                     {
                         const QFontMetrics fm(m_pAccountPropertyTable->font());
@@ -118,7 +118,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                     }
 
                     /* Create profile instances table: */
-                    m_pAccountImageList = new QListWidget(m_pCntDestination);
+                    m_pAccountImageList = new QListWidget(m_pCntLocation);
                     if (m_pAccountImageList)
                     {
                         const QFontMetrics fm(m_pAccountImageList->font());
@@ -135,12 +135,12 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                     }
 
                     /* Add into layout: */
-                    m_pDestinationLayout->addLayout(m_pCloudContainerLayout, 1, 0);
+                    m_pLocationLayout->addLayout(m_pCloudContainerLayout, 1, 0);
                 }
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pCntDestination);
+            pMainLayout->addWidget(m_pCntLocation);
         }
 
         /* Create settings container: */
@@ -175,9 +175,9 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
     /* Setup connections: */
     if (gpManager)
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardNewCloudVMPageExpert::sltHandleDestinationChange);
-    connect(m_pDestinationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-            this, &UIWizardNewCloudVMPageExpert::sltHandleDestinationChange);
+                this, &UIWizardNewCloudVMPageExpert::sltHandleLocationChange);
+    connect(m_pLocationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+            this, &UIWizardNewCloudVMPageExpert::sltHandleLocationChange);
     connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
@@ -186,7 +186,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             this, &UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange);
 
     /* Register fields: */
-    registerField("destination", this, "destination");
+    registerField("location", this, "location");
     registerField("profileName", this, "profileName");
 }
 
@@ -212,22 +212,22 @@ bool UIWizardNewCloudVMPageExpert::event(QEvent *pEvent)
 
 void UIWizardNewCloudVMPageExpert::retranslateUi()
 {
-    /* Translate destination container: */
-    m_pCntDestination->setTitle(UIWizardNewCloudVM::tr("Destination"));
+    /* Translate location container: */
+    m_pCntLocation->setTitle(UIWizardNewCloudVM::tr("Location"));
 
-    /* Translate received values of Destination combo-box.
+    /* Translate received values of Location combo-box.
      * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pDestinationComboBox->count(); ++i)
+    for (int i = 0; i < m_pLocationComboBox->count(); ++i)
     {
-        m_pDestinationComboBox->setItemText(i, m_pDestinationComboBox->itemData(i, DestinationData_Name).toString());
-        m_pDestinationComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
+        m_pLocationComboBox->setItemText(i, m_pLocationComboBox->itemData(i, LocationData_Name).toString());
+        m_pLocationComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
     }
 
     /* Translate settings container: */
     m_pSettingsCnt->setTitle(UIWizardNewCloudVM::tr("Settings"));
 
     /* Update tool-tips: */
-    updateDestinationComboToolTip();
+    updateLocationComboToolTip();
     updateAccountPropertyTableToolTips();
 }
 
@@ -238,10 +238,10 @@ void UIWizardNewCloudVMPageExpert::initializePage()
     {
         if (m_fFullWizard)
         {
-            /* Populate destinations: */
-            populateDestinations();
+            /* Populate locations: */
+            populateLocations();
             /* Choose one of them, asynchronously: */
-            QMetaObject::invokeMethod(this, "sltHandleDestinationChange", Qt::QueuedConnection);
+            QMetaObject::invokeMethod(this, "sltHandleLocationChange", Qt::QueuedConnection);
         }
         else
         {
@@ -309,10 +309,10 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
     return fResult;
 }
 
-void UIWizardNewCloudVMPageExpert::sltHandleDestinationChange()
+void UIWizardNewCloudVMPageExpert::sltHandleLocationChange()
 {
     /* Update tool-tip: */
-    updateDestinationComboToolTip();
+    updateLocationComboToolTip();
 
     /* Make image list focused by default: */
     m_pAccountImageList->setFocus();

@@ -42,12 +42,12 @@ class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
 
-/** Destination combo data fields. */
+/** Location combo data fields. */
 enum
 {
-    DestinationData_ID              = Qt::UserRole + 1,
-    DestinationData_Name            = Qt::UserRole + 2,
-    DestinationData_ShortName       = Qt::UserRole + 3
+    LocationData_ID              = Qt::UserRole + 1,
+    LocationData_Name            = Qt::UserRole + 2,
+    LocationData_ShortName       = Qt::UserRole + 3
 };
 
 /** Account combo data fields. */
@@ -64,8 +64,8 @@ protected:
     /** Constructs 1st page base. */
     UIWizardNewCloudVMPage1();
 
-    /** Populates destinations. */
-    void populateDestinations();
+    /** Populates locations. */
+    void populateLocations();
     /** Populates accounts. */
     void populateAccounts();
     /** Populates account properties. */
@@ -75,19 +75,19 @@ protected:
     /** Populates form properties. */
     void populateFormProperties();
 
-    /** Updates destination combo tool-tips. */
-    void updateDestinationComboToolTip();
+    /** Updates location combo tool-tips. */
+    void updateLocationComboToolTip();
     /** Updates account property table tool-tips. */
     void updateAccountPropertyTableToolTips();
     /** Adjusts account property table. */
     void adjustAccountPropertyTable();
 
-    /** Defines @a strDestination. */
-    void setDestination(const QString &strDestination);
-    /** Returns destination. */
-    QString destination() const;
-    /** Returns destination ID. */
-    QUuid destinationId() const;
+    /** Defines @a strLocation. */
+    void setLocation(const QString &strLocation);
+    /** Returns location. */
+    QString location() const;
+    /** Returns location ID. */
+    QUuid locationId() const;
 
     /** Returns profile name. */
     QString profileName() const;
@@ -119,12 +119,12 @@ protected:
     /** Holds the Cloud Profile object reference. */
     CCloudProfile          m_comCloudProfile;
 
-    /** Holds the destination layout instance. */
-    QGridLayout *m_pDestinationLayout;
-    /** Holds the destination type label instance. */
-    QLabel      *m_pDestinationLabel;
-    /** Holds the destination type combo-box instance. */
-    QIComboBox  *m_pDestinationComboBox;
+    /** Holds the location layout instance. */
+    QGridLayout *m_pLocationLayout;
+    /** Holds the location type label instance. */
+    QLabel      *m_pLocationLabel;
+    /** Holds the location type combo-box instance. */
+    QIComboBox  *m_pLocationComboBox;
 
     /** Holds the cloud container layout instance. */
     QGridLayout  *m_pCloudContainerLayout;
@@ -146,7 +146,7 @@ protected:
 class UIWizardNewCloudVMPageBasic1 : public UIWizardPage, public UIWizardNewCloudVMPage1
 {
     Q_OBJECT;
-    Q_PROPERTY(QString destination READ destination);
+    Q_PROPERTY(QString location READ location);
     Q_PROPERTY(QString profileName READ profileName);
 
 public:
@@ -176,8 +176,8 @@ protected:
 
 private slots:
 
-    /** Handles change in destination combo-box. */
-    void sltHandleDestinationChange();
+    /** Handles change in location combo-box. */
+    void sltHandleLocationChange();
 
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();

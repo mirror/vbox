@@ -44,9 +44,9 @@
 
 UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1()
     : m_fPolished(false)
-    , m_pDestinationLayout(0)
-    , m_pDestinationLabel(0)
-    , m_pDestinationComboBox(0)
+    , m_pLocationLayout(0)
+    , m_pLocationLabel(0)
+    , m_pLocationComboBox(0)
     , m_pCloudContainerLayout(0)
     , m_pAccountLabel(0)
     , m_pAccountComboBox(0)
@@ -57,12 +57,12 @@ UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1()
 {
 }
 
-void UIWizardNewCloudVMPage1::populateDestinations()
+void UIWizardNewCloudVMPage1::populateLocations()
 {
     /* To be executed just once, so combo should be empty: */
-    AssertReturnVoid(m_pDestinationComboBox->count() == 0);
+    AssertReturnVoid(m_pLocationComboBox->count() == 0);
 
-    /* Do we have OCI destination? */
+    /* Do we have OCI location? */
     bool fOCIPresent = false;
 
     /* Main API request sequence, can be interrupted after any step: */
@@ -93,11 +93,11 @@ void UIWizardNewCloudVMPage1::populateDestinations()
                 continue;
 
             /* Compose empty item, fill it's data: */
-            m_pDestinationComboBox->addItem(QString());
-            m_pDestinationComboBox->setItemData(m_pDestinationComboBox->count() - 1, comProvider.GetId(),        DestinationData_ID);
-            m_pDestinationComboBox->setItemData(m_pDestinationComboBox->count() - 1, comProvider.GetName(),      DestinationData_Name);
-            m_pDestinationComboBox->setItemData(m_pDestinationComboBox->count() - 1, comProvider.GetShortName(), DestinationData_ShortName);
-            if (m_pDestinationComboBox->itemData(m_pDestinationComboBox->count() - 1, DestinationData_ShortName).toString() == "OCI")
+            m_pLocationComboBox->addItem(QString());
+            m_pLocationComboBox->setItemData(m_pLocationComboBox->count() - 1, comProvider.GetId(),        LocationData_ID);
+            m_pLocationComboBox->setItemData(m_pLocationComboBox->count() - 1, comProvider.GetName(),      LocationData_Name);
+            m_pLocationComboBox->setItemData(m_pLocationComboBox->count() - 1, comProvider.GetShortName(), LocationData_ShortName);
+            if (m_pLocationComboBox->itemData(m_pLocationComboBox->count() - 1, LocationData_ShortName).toString() == "OCI")
                 fOCIPresent = true;
         }
     }
@@ -105,7 +105,7 @@ void UIWizardNewCloudVMPage1::populateDestinations()
 
     /* Set default: */
     if (fOCIPresent)
-        setDestination("OCI");
+        setLocation("OCI");
 }
 
 void UIWizardNewCloudVMPage1::populateAccounts()
@@ -124,16 +124,16 @@ void UIWizardNewCloudVMPage1::populateAccounts()
     m_comCloudProvider = CCloudProvider();
 
     /* If provider chosen: */
-    if (!destinationId().isNull())
+    if (!locationId().isNull())
     {
         /* Main API request sequence, can be interrupted after any step: */
         do
         {
             /* (Re)initialize Cloud Provider: */
-            m_comCloudProvider = m_comCloudProviderManager.GetProviderById(destinationId());
+            m_comCloudProvider = m_comCloudProviderManager.GetProviderById(locationId());
             if (!m_comCloudProviderManager.isOk())
             {
-                msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, destinationId());
+                msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, locationId());
                 break;
             }
 
@@ -404,14 +404,14 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
     }
 }
 
-void UIWizardNewCloudVMPage1::updateDestinationComboToolTip()
+void UIWizardNewCloudVMPage1::updateLocationComboToolTip()
 {
-    const int iCurrentIndex = m_pDestinationComboBox->currentIndex();
+    const int iCurrentIndex = m_pLocationComboBox->currentIndex();
     if (iCurrentIndex != -1)
     {
-        const QString strCurrentToolTip = m_pDestinationComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+        const QString strCurrentToolTip = m_pLocationComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
         AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
-        m_pDestinationComboBox->setToolTip(strCurrentToolTip);
+        m_pLocationComboBox->setToolTip(strCurrentToolTip);
     }
 }
 
@@ -447,23 +447,23 @@ void UIWizardNewCloudVMPage1::adjustAccountPropertyTable()
     m_pAccountPropertyTable->horizontalHeader()->setStretchLastSection(true);
 }
 
-void UIWizardNewCloudVMPage1::setDestination(const QString &strDestination)
+void UIWizardNewCloudVMPage1::setLocation(const QString &strLocation)
 {
-    const int iIndex = m_pDestinationComboBox->findData(strDestination, DestinationData_ShortName);
+    const int iIndex = m_pLocationComboBox->findData(strLocation, LocationData_ShortName);
     AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pDestinationComboBox->setCurrentIndex(iIndex);
+    m_pLocationComboBox->setCurrentIndex(iIndex);
 }
 
-QString UIWizardNewCloudVMPage1::destination() const
+QString UIWizardNewCloudVMPage1::location() const
 {
-    const int iIndex = m_pDestinationComboBox->currentIndex();
-    return m_pDestinationComboBox->itemData(iIndex, DestinationData_ShortName).toString();
+    const int iIndex = m_pLocationComboBox->currentIndex();
+    return m_pLocationComboBox->itemData(iIndex, LocationData_ShortName).toString();
 }
 
-QUuid UIWizardNewCloudVMPage1::destinationId() const
+QUuid UIWizardNewCloudVMPage1::locationId() const
 {
-    const int iIndex = m_pDestinationComboBox->currentIndex();
-    return m_pDestinationComboBox->itemData(iIndex, DestinationData_ID).toUuid();
+    const int iIndex = m_pLocationComboBox->currentIndex();
+    return m_pLocationComboBox->itemData(iIndex, LocationData_ID).toUuid();
 }
 
 QString UIWizardNewCloudVMPage1::profileName() const
@@ -529,28 +529,28 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             pMainLayout->addWidget(m_pLabelMain);
         }
 
-        /* Create destination layout: */
-        m_pDestinationLayout = new QGridLayout;
-        if (m_pDestinationLayout)
+        /* Create location layout: */
+        m_pLocationLayout = new QGridLayout;
+        if (m_pLocationLayout)
         {
-            m_pDestinationLayout->setColumnStretch(0, 0);
-            m_pDestinationLayout->setColumnStretch(1, 1);
+            m_pLocationLayout->setColumnStretch(0, 0);
+            m_pLocationLayout->setColumnStretch(1, 1);
 
-            /* Create destination label: */
-            m_pDestinationLabel = new QLabel(this);
-            if (m_pDestinationLabel)
+            /* Create location label: */
+            m_pLocationLabel = new QLabel(this);
+            if (m_pLocationLabel)
             {
                 /* Add into layout: */
-                m_pDestinationLayout->addWidget(m_pDestinationLabel, 0, 0, Qt::AlignRight);
+                m_pLocationLayout->addWidget(m_pLocationLabel, 0, 0, Qt::AlignRight);
             }
-            /* Create destination selector: */
-            m_pDestinationComboBox = new QIComboBox(this);
-            if (m_pDestinationComboBox)
+            /* Create location selector: */
+            m_pLocationComboBox = new QIComboBox(this);
+            if (m_pLocationComboBox)
             {
-                m_pDestinationLabel->setBuddy(m_pDestinationComboBox);
+                m_pLocationLabel->setBuddy(m_pLocationComboBox);
 
                 /* Add into layout: */
-                m_pDestinationLayout->addWidget(m_pDestinationComboBox, 0, 1);
+                m_pLocationLayout->addWidget(m_pLocationComboBox, 0, 1);
             }
 
             /* Create description label: */
@@ -558,11 +558,11 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             if (m_pLabelDescription)
             {
                 /* Add into layout: */
-                m_pDestinationLayout->addWidget(m_pLabelDescription, 1, 0, 1, 2);
+                m_pLocationLayout->addWidget(m_pLabelDescription, 1, 0, 1, 2);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pDestinationLayout);
+            pMainLayout->addLayout(m_pLocationLayout);
         }
 
         /* Create cloud container layout: */
@@ -666,9 +666,9 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
     /* Setup connections: */
     if (gpManager)
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardNewCloudVMPageBasic1::sltHandleDestinationChange);
-    connect(m_pDestinationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-            this, &UIWizardNewCloudVMPageBasic1::sltHandleDestinationChange);
+                this, &UIWizardNewCloudVMPageBasic1::sltHandleLocationChange);
+    connect(m_pLocationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+            this, &UIWizardNewCloudVMPageBasic1::sltHandleLocationChange);
     connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
@@ -677,7 +677,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             this, &UIWizardNewCloudVMPageBasic1::completeChanged);
 
     /* Register fields: */
-    registerField("destination", this, "destination");
+    registerField("location", this, "location");
     registerField("profileName", this, "profileName");
 }
 
@@ -704,20 +704,20 @@ bool UIWizardNewCloudVMPageBasic1::event(QEvent *pEvent)
 void UIWizardNewCloudVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewCloudVM::tr("Destination to create"));
+    setTitle(UIWizardNewCloudVM::tr("Location to create"));
 
     /* Translate main label: */
-    m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the destination to create cloud virtual machine in.  This can "
+    m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the location to create cloud virtual machine in.  This can "
                                                  "be one of known cloud service providers below."));
 
-    /* Translate destination label: */
-    m_pDestinationLabel->setText(UIWizardNewCloudVM::tr("&Destination:"));
-    /* Translate received values of Destination combo-box.
+    /* Translate location label: */
+    m_pLocationLabel->setText(UIWizardNewCloudVM::tr("&Location:"));
+    /* Translate received values of Location combo-box.
      * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pDestinationComboBox->count(); ++i)
+    for (int i = 0; i < m_pLocationComboBox->count(); ++i)
     {
-        m_pDestinationComboBox->setItemText(i, m_pDestinationComboBox->itemData(i, DestinationData_Name).toString());
-        m_pDestinationComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
+        m_pLocationComboBox->setItemText(i, m_pLocationComboBox->itemData(i, LocationData_Name).toString());
+        m_pLocationComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
     }
 
     /* Translate description label: */
@@ -732,17 +732,17 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
-    labels << m_pDestinationLabel;
+    labels << m_pLocationLabel;
     labels << m_pAccountLabel;
     labels << m_pAccountImageLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
-    m_pDestinationLayout->setColumnMinimumWidth(0, iMaxWidth);
+    m_pLocationLayout->setColumnMinimumWidth(0, iMaxWidth);
     m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
 
     /* Update tool-tips: */
-    updateDestinationComboToolTip();
+    updateLocationComboToolTip();
     updateAccountPropertyTableToolTips();
 }
 
@@ -751,10 +751,10 @@ void UIWizardNewCloudVMPageBasic1::initializePage()
     /* If wasn't polished yet: */
     if (!m_fPolished)
     {
-        /* Populate destinations: */
-        populateDestinations();
+        /* Populate locations: */
+        populateLocations();
         /* Choose one of them, asynchronously: */
-        QMetaObject::invokeMethod(this, "sltHandleDestinationChange", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, "sltHandleLocationChange", Qt::QueuedConnection);
         m_fPolished = true;
     }
 
@@ -790,10 +790,10 @@ bool UIWizardNewCloudVMPageBasic1::validatePage()
     return fResult;
 }
 
-void UIWizardNewCloudVMPageBasic1::sltHandleDestinationChange()
+void UIWizardNewCloudVMPageBasic1::sltHandleLocationChange()
 {
     /* Update tool-tip: */
-    updateDestinationComboToolTip();
+    updateLocationComboToolTip();
 
     /* Make image list focused by default: */
     m_pAccountImageList->setFocus();
