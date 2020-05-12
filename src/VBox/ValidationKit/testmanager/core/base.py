@@ -629,7 +629,7 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         elif len(sValue) >= 19 + 3:
             oRes = re.match(r'^.*[+-](\d\d):(\d\d)$', sValue);
             if oRes is not None:
-                if int(oRes.group(6)) > 12 or int(oRes.group(7)) >= 60:
+                if int(oRes.group(1)) > 12 or int(oRes.group(2)) >= 60:
                     return (sValue, 'Invalid timezone offset.');
                 sStripped = sValue[:-6];
             else:
