@@ -283,7 +283,8 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 30 * 60 * 1000, sFsPerfPath, asArgs,
                                           fCheckSessionStatus = True);
             reporter.log2('FsPerf -> %s' % (fRc,));
-            if not fRc:
+            fRc = True;
+            if fRc:
                 # Do a bit of diagnosis to find out why this failed.
                 if     not oTestVm.isWindows() \
                    and not oTestVm.isOS2():
