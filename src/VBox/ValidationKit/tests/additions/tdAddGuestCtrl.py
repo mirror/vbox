@@ -2262,7 +2262,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                                 abBuf = abBuf.tobytes();
                                                 sBuf  = abBuf.decode("utf-8");
                                         if isinstance(abBuf, buffer):
-                                            sBuf = abBuf;
+                                            sBuf = str(abBuf);
                                         for sLine in sBuf.splitlines():
                                             reporter.log('%s: %s' % (sFdNm, sLine));
                                         acbFdOut[iFd] += len(abBuf);
