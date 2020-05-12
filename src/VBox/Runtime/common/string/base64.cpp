@@ -506,6 +506,7 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
     size_t const    cchEol = g_acchEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
     char const      chEol0 = g_aachEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][0];
     char const      chEol1 = g_aachEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][1];
+    Assert(cchEol == (chEol0 != '\0' ? 1U : 0U) + (chEol1 != '\0' ? 1U : 0U));
 
     /*
      * Process whole "trios" of input data.
