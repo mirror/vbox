@@ -27111,6 +27111,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <!-- quick hack -->
+    <method name="listBootVolumes" const="yes">
+      <desc>
+        Returns the list of boot volumes in the Cloud.
+      </desc>
+      <param name="returnNames" type="IStringArray" dir="out">
+        <desc>Boot volume names.</desc>
+      </param>
+      <param name="returnIds" type="IStringArray" dir="out">
+        <desc>Boot volume ids.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
     <method name="getInstanceInfo" const="yes">
       <desc>
         Returns the information about an instance in the Cloud.
