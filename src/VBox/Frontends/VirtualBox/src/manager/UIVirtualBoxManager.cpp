@@ -712,7 +712,7 @@ void UIVirtualBoxManager::sltPerformMachineMove()
         if (comMachine.isOk() && comProgress.isNotNull())
         {
             /* Show machine move progress: */
-            msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_clone_90px.png");
+            msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_dnd_hg_90px.png");
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                 msgCenter().cannotMoveMachine(comProgress, comMachine.GetName());
         }
@@ -830,7 +830,7 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
         }
 
         /* Show terminate cloud instance progress: */
-        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png"); /// @todo use proper icon
+        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             msgCenter().cannotTerminateCloudInstance(comProgress, strName);
     }
@@ -1066,7 +1066,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
             else
             {
                 /* Show machine ACPI shutdown progress: */
-                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
+                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png", 0, 0);
                 if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                     msgCenter().cannotACPIShutdownCloudMachine(comProgress, pItem->name());
                 /* Update info in any case: */
@@ -1139,7 +1139,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
             else
             {
                 /* Show machine power down progress: */
-                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
+                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png", 0, 0);
                 if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                     msgCenter().cannotPowerDownCloudMachine(comProgress, pItem->name());
                 /* Update info in any case: */
