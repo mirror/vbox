@@ -94,7 +94,7 @@ static const size_t     g_acchEolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1] =
 /** The end-of-line characters (zero, one or two). */
 static const char       g_aachEolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1][2] =
 {
-    /*[RTBASE64_FLAGS_EOL_NATIVE    ]:*/ { RTBASE64_EOL_SIZE == 1 ? '\n' : '\n', RTBASE64_EOL_SIZE == 1 ? '\n' : '\0', },
+    /*[RTBASE64_FLAGS_EOL_NATIVE    ]:*/ { RTBASE64_EOL_SIZE == 1 ? '\n' : '\r', RTBASE64_EOL_SIZE == 1 ? '\0' : '\n', },
     /*[RTBASE64_FLAGS_NO_LINE_BREAKS]:*/ { '\0', '\0' },
     /*[RTBASE64_FLAGS_EOL_LF        ]:*/ { '\n', '\0' },
     /*[RTBASE64_FLAGS_EOL_CRLF      ]:*/ { '\r', '\n' },
