@@ -280,10 +280,34 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             # Run FsPerf:
             reporter.log2('Starting guest FsPerf (%s)...' % (asArgs,));
             sFsPerfPath = self._locateGstFsPerf(oTxsSession);
-            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 30 * 60 * 1000, sFsPerfPath, asArgs,
+
+            ## @todo For some odd reason the combined GA/VaKit .ISO (by IPRT/fs/isomakercmd)
+            #        sometimes (?) contains FsPerf as non-executable (-r--r--r-- 1 root root) on Linux.
+            #
+            #        So work around this for now by copying the desired FsPerf binary to the temp directory,
+            #        make it executable and execute it from there.
+            fISOMakerCmdIsBuggy = oTestVm.isLinux();
+            if fISOMakerCmdIsBuggy:
+                if oTestVm.isWindows() \
+                or oTestVm.isOS2():
+                    sFsPerfPathTemp = "C:\\Temp\\";
+                    sCopy           = "cmd.exe";
+                    sCopyArgs       = ( "/C", "copy", "/Y" );
+                else:
+                    sFsPerfPathTemp = "/var/tmp/";
+                    sCopy           = "cp";
+                    sCopyArgs       = ( "-a", "-v" );
+                sFsPerfPathTemp += "FsPerf${EXESUFF}";
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Copying FsPerf', 60 * 1000,
+                                              sCopy, ( sCopy, sCopyArgs, sFsPerfPath, sFsPerfPathTemp ),
+                                              fCheckSessionStatus = True);
+                fRc = fRc and oTxsSession.syncChMod(sFsPerfPathTemp, 0o755);
+                if fRc:
+                    sFsPerfPath = sFsPerfPathTemp;
+
+            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Running FsPerf', 30 * 60 * 1000, sFsPerfPath, asArgs,
                                           fCheckSessionStatus = True);
             reporter.log2('FsPerf -> %s' % (fRc,));
-            fRc = True;
             if fRc:
                 # Do a bit of diagnosis to find out why this failed.
                 if     not oTestVm.isWindows() \
