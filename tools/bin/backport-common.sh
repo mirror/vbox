@@ -162,6 +162,8 @@ do
             echo "    The backport destination directory. default: script location"
             echo "  --branch <ver>"
             echo "    The name of the branch being backported to. default: auto"
+            echo "  --debug"
+            echo "    Enables verbose output."
             echo "  --first-rev, --first, -1"
             echo "    Merge only: Check that the branch does not have any pending changes."
             echo "  --force"
