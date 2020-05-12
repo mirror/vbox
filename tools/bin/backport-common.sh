@@ -73,6 +73,7 @@ MY_REVISION_COUNT=0
 MY_EXTRA_ARGS=
 MY_DEBUG=
 MY_FORCE=
+MY_SHOW_DIFF=
 
 while test $# -ge 1;
 do
@@ -137,6 +138,10 @@ do
             MY_UPDATE_FIRST=1
             ;;
 
+        --show-diff)
+            MY_SHOW_DIFF=1
+            ;;
+
         --extra)
             if test $# -eq 0; then
                 echo "error: missing --extra argument." 1>&2
@@ -168,6 +173,8 @@ do
             echo "    Merge only: Check that the branch does not have any pending changes."
             echo "  --force"
             echo "    Forces backporting, regardless of ancestry. Use with caution!"
+            echo "  --show-diff"
+            echo "    Shows unified diff before backporting."
             echo "  --update-first, --update, -u"
             echo "    Merge only: Update the branch before merging."
             echo "  --extra <svn-arg>"

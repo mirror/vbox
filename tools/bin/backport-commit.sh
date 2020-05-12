@@ -96,6 +96,14 @@ fi
 #
 # Do the committing.
 #
+if [ -n "${MY_SHOW_DIFF}" ]; then
+    echo "***"
+    echo "*** Diff:"
+    "${MY_SVN}" diff --internal-diff
+    echo "*** end diff ***"
+    echo "***"
+    echo ""
+fi
 echo "***"
 echo "*** Commit message:"
 "${MY_CAT}" "${MY_MSG_FILE}"
@@ -129,4 +137,3 @@ for MY_IGNORE in 1 2 3; do
     esac
 done
 exit 1;
-
