@@ -72,6 +72,7 @@ MY_REVISIONS=
 MY_REVISION_COUNT=0
 MY_EXTRA_ARGS=
 MY_DEBUG=
+MY_FORCE=
 
 while test $# -ge 1;
 do
@@ -128,6 +129,10 @@ do
             MY_FIRST_REV=1
             ;;
 
+        --force)
+            MY_FORCE=1
+            ;;
+
         --update-first|--update|-u)
             MY_UPDATE_FIRST=1
             ;;
@@ -159,6 +164,8 @@ do
             echo "    The name of the branch being backported to. default: auto"
             echo "  --first-rev, --first, -1"
             echo "    Merge only: Check that the branch does not have any pending changes."
+            echo "  --force"
+            echo "    Forces backporting, regardless of ancestry. Use with caution!"
             echo "  --update-first, --update, -u"
             echo "    Merge only: Update the branch before merging."
             echo "  --extra <svn-arg>"
@@ -212,4 +219,3 @@ if test -z "${MY_REVISIONS}"; then
     echo "error: No revisions specified" 1>&2;
     exit 2;
 fi
-
