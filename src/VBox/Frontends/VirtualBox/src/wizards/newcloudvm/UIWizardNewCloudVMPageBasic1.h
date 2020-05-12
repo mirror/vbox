@@ -70,8 +70,8 @@ protected:
     void populateAccounts();
     /** Populates account properties. */
     void populateAccountProperties();
-    /** Populates account images. */
-    void populateAccountImages();
+    /** Populates source images. */
+    void populateSourceImages();
     /** Populates form properties. */
     void populateFormProperties();
 
@@ -136,10 +136,10 @@ protected:
     QIToolButton *m_pAccountToolButton;
     /** Holds the account property table instance. */
     QTableWidget *m_pAccountPropertyTable;
-    /** Holds the account image label instance. */
-    QLabel       *m_pAccountImageLabel;
-    /** Holds the account image list instance. */
-    QListWidget  *m_pAccountImageList;
+    /** Holds the source image label instance. */
+    QLabel       *m_pSourceImageLabel;
+    /** Holds the source image list instance. */
+    QListWidget  *m_pSourceImageList;
 };
 
 /** UIWizardPage extension for 1st page of the New Cloud VM wizard, extends UIWizardNewCloudVMPage1 as well. */

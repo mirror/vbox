@@ -117,21 +117,21 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                         m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 0);
                     }
 
-                    /* Create profile instances table: */
-                    m_pAccountImageList = new QListWidget(m_pCntLocation);
-                    if (m_pAccountImageList)
+                    /* Create source image list: */
+                    m_pSourceImageList = new QListWidget(m_pCntLocation);
+                    if (m_pSourceImageList)
                     {
-                        const QFontMetrics fm(m_pAccountImageList->font());
+                        const QFontMetrics fm(m_pSourceImageList->font());
                         const int iFontWidth = fm.width('x');
                         const int iTotalWidth = 50 * iFontWidth;
                         const int iFontHeight = fm.height();
                         const int iTotalHeight = 4 * iFontHeight;
-                        m_pAccountImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                        //m_pAccountImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pAccountImageList->setAlternatingRowColors(true);
+                        m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                        //m_pSourceImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                        m_pSourceImageList->setAlternatingRowColors(true);
 
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountImageList, 2, 0);
+                        m_pCloudContainerLayout->addWidget(m_pSourceImageList, 2, 0);
                     }
 
                     /* Add into layout: */
@@ -182,7 +182,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             this, &UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick);
-    connect(m_pAccountImageList, &QListWidget::currentRowChanged,
+    connect(m_pSourceImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange);
 
     /* Register fields: */
@@ -315,12 +315,12 @@ void UIWizardNewCloudVMPageExpert::sltHandleLocationChange()
     updateLocationComboToolTip();
 
     /* Make image list focused by default: */
-    m_pAccountImageList->setFocus();
+    m_pSourceImageList->setFocus();
 
     /* Refresh required settings: */
     populateAccounts();
     populateAccountProperties();
-    populateAccountImages();
+    populateSourceImages();
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
@@ -330,7 +330,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
-    populateAccountImages();
+    populateSourceImages();
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();

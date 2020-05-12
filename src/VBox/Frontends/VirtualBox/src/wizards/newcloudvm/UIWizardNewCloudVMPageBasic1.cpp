@@ -52,8 +52,8 @@ UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1()
     , m_pAccountComboBox(0)
     , m_pAccountToolButton(0)
     , m_pAccountPropertyTable(0)
-    , m_pAccountImageLabel(0)
-    , m_pAccountImageList(0)
+    , m_pSourceImageLabel(0)
+    , m_pSourceImageList(0)
 {
 }
 
@@ -268,13 +268,13 @@ void UIWizardNewCloudVMPage1::populateAccountProperties()
     m_pAccountPropertyTable->blockSignals(false);
 }
 
-void UIWizardNewCloudVMPage1::populateAccountImages()
+void UIWizardNewCloudVMPage1::populateSourceImages()
 {
     /* Block signals while updating: */
-    m_pAccountImageList->blockSignals(true);
+    m_pSourceImageList->blockSignals(true);
 
     /* Clear list initially: */
-    m_pAccountImageList->clear();
+    m_pSourceImageList->clear();
     /* Clear Cloud Client: */
     setClient(CCloudClient());
 
@@ -325,7 +325,7 @@ void UIWizardNewCloudVMPage1::populateAccountImages()
             for (int i = 0; i < names.size(); ++i)
             {
                 /* Create list item: */
-                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pAccountImageList);
+                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pSourceImageList);
                 if (pItem)
                 {
                     pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
@@ -334,14 +334,14 @@ void UIWizardNewCloudVMPage1::populateAccountImages()
             }
 
             /* Choose the 1st one by default if possible: */
-            if (m_pAccountImageList->count())
-                m_pAccountImageList->setCurrentRow(0);
+            if (m_pSourceImageList->count())
+                m_pSourceImageList->setCurrentRow(0);
         }
         while (0);
     }
 
     /* Unblock signals after update: */
-    m_pAccountImageList->blockSignals(false);
+    m_pSourceImageList->blockSignals(false);
 }
 
 void UIWizardNewCloudVMPage1::populateFormProperties()
@@ -474,7 +474,7 @@ QString UIWizardNewCloudVMPage1::profileName() const
 
 QString UIWizardNewCloudVMPage1::imageId() const
 {
-    QListWidgetItem *pItem = m_pAccountImageList->currentItem();
+    QListWidgetItem *pItem = m_pSourceImageList->currentItem();
     return pItem ? pItem->data(Qt::UserRole).toString() : QString();
 }
 
@@ -583,11 +583,11 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 m_pCloudContainerLayout->addWidget(m_pAccountLabel, 0, 0, Qt::AlignRight);
             }
             /* Create sub-layout: */
-            QHBoxLayout *pSubLayout = new QHBoxLayout;
-            if (pSubLayout)
+            QHBoxLayout *pAccountLayout = new QHBoxLayout;
+            if (pAccountLayout)
             {
-                pSubLayout->setContentsMargins(0, 0, 0, 0);
-                pSubLayout->setSpacing(1);
+                pAccountLayout->setContentsMargins(0, 0, 0, 0);
+                pAccountLayout->setSpacing(1);
 
                 /* Create account combo-box: */
                 m_pAccountComboBox = new QIComboBox(this);
@@ -596,7 +596,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                     m_pAccountLabel->setBuddy(m_pAccountComboBox);
 
                     /* Add into layout: */
-                    pSubLayout->addWidget(m_pAccountComboBox);
+                    pAccountLayout->addWidget(m_pAccountComboBox);
                 }
                 /* Create account tool-button: */
                 m_pAccountToolButton = new QIToolButton(this);
@@ -606,11 +606,11 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                                                                       ":/cloud_profile_manager_disabled_16px.png"));
 
                     /* Add into layout: */
-                    pSubLayout->addWidget(m_pAccountToolButton);
+                    pAccountLayout->addWidget(m_pAccountToolButton);
                 }
 
                 /* Add into layout: */
-                m_pCloudContainerLayout->addLayout(pSubLayout, 0, 1);
+                m_pCloudContainerLayout->addLayout(pAccountLayout, 0, 1);
             }
 
             /* Create profile property table: */
@@ -633,29 +633,29 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 1);
             }
 
-            /* Create account instance label: */
-            m_pAccountImageLabel = new QLabel(this);
-            if (m_pAccountImageLabel)
+            /* Create source image label: */
+            m_pSourceImageLabel = new QLabel(this);
+            if (m_pSourceImageLabel)
             {
                 /* Add into layout: */
-                m_pCloudContainerLayout->addWidget(m_pAccountImageLabel, 2, 0, Qt::AlignRight);
+                m_pCloudContainerLayout->addWidget(m_pSourceImageLabel, 2, 0, Qt::AlignRight);
             }
-            /* Create profile instances table: */
-            m_pAccountImageList = new QListWidget(this);
-            if (m_pAccountImageList)
+            /* Create source image list: */
+            m_pSourceImageList = new QListWidget(this);
+            if (m_pSourceImageList)
             {
-                m_pAccountImageLabel->setBuddy(m_pAccountImageLabel);
-                const QFontMetrics fm(m_pAccountImageList->font());
+                m_pSourceImageLabel->setBuddy(m_pSourceImageList);
+                const QFontMetrics fm(m_pSourceImageList->font());
                 const int iFontWidth = fm.width('x');
                 const int iTotalWidth = 50 * iFontWidth;
                 const int iFontHeight = fm.height();
                 const int iTotalHeight = 4 * iFontHeight;
-                m_pAccountImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                //m_pAccountImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                m_pAccountImageList->setAlternatingRowColors(true);
+                m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                //m_pSourceImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                m_pSourceImageList->setAlternatingRowColors(true);
 
                 /* Add into layout: */
-                m_pCloudContainerLayout->addWidget(m_pAccountImageList, 2, 1, 2, 1);
+                m_pCloudContainerLayout->addWidget(m_pSourceImageList, 2, 1, 2, 1);
             }
 
             /* Add into layout: */
@@ -673,7 +673,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountButtonClick);
-    connect(m_pAccountImageList, &QListWidget::currentRowChanged,
+    connect(m_pSourceImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageBasic1::completeChanged);
 
     /* Register fields: */
@@ -728,13 +728,13 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
 
     /* Translate cloud stuff: */
     m_pAccountLabel->setText(UIWizardNewCloudVM::tr("&Account:"));
-    m_pAccountImageLabel->setText(UIWizardNewCloudVM::tr("&Images:"));
+    m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
     labels << m_pLocationLabel;
     labels << m_pAccountLabel;
-    labels << m_pAccountImageLabel;
+    labels << m_pSourceImageLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
@@ -796,12 +796,12 @@ void UIWizardNewCloudVMPageBasic1::sltHandleLocationChange()
     updateLocationComboToolTip();
 
     /* Make image list focused by default: */
-    m_pAccountImageList->setFocus();
+    m_pSourceImageList->setFocus();
 
     /* Refresh required settings: */
     populateAccounts();
     populateAccountProperties();
-    populateAccountImages();
+    populateSourceImages();
     emit completeChanged();
 }
 
@@ -809,7 +809,7 @@ void UIWizardNewCloudVMPageBasic1::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
-    populateAccountImages();
+    populateSourceImages();
     emit completeChanged();
 }
 
