@@ -45,97 +45,86 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
         m_pCntLocation = new QGroupBox(this);
         if (m_pCntLocation)
         {
-            /* There is no location table in short wizard form: */
+            /* There is no location container in short wizard form: */
             if (!m_fFullWizard)
                 m_pCntLocation->setVisible(false);
 
             /* Create location layout: */
-            m_pLocationLayout = new QGridLayout(m_pCntLocation);
-            if (m_pLocationLayout)
+            QVBoxLayout *pLocationLayout = new QVBoxLayout(m_pCntLocation);
+            if (pLocationLayout)
             {
-                /* Create location selector: */
+                /* Create location combo-box: */
                 m_pLocationComboBox = new QIComboBox(m_pCntLocation);
                 if (m_pLocationComboBox)
                 {
                     /* Add into layout: */
-                    m_pLocationLayout->addWidget(m_pLocationComboBox, 0, 0);
+                    pLocationLayout->addWidget(m_pLocationComboBox);
                 }
 
-                /* Create cloud container layout: */
-                m_pCloudContainerLayout = new QGridLayout;
-                if (m_pCloudContainerLayout)
+                /* Create account layout: */
+                QHBoxLayout *pAccountLayout = new QHBoxLayout;
+                if (pAccountLayout)
                 {
-                    m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
-                    m_pCloudContainerLayout->setRowStretch(3, 1);
+                    pAccountLayout->setContentsMargins(0, 0, 0, 0);
+                    pAccountLayout->setSpacing(1);
 
-                    /* Create sub-layout: */
-                    QHBoxLayout *pSubLayout = new QHBoxLayout;
-                    if (pSubLayout)
+                    /* Create account combo-box: */
+                    m_pAccountComboBox = new QIComboBox(m_pCntLocation);
+                    if (m_pAccountComboBox)
                     {
-                        pSubLayout->setContentsMargins(0, 0, 0, 0);
-                        pSubLayout->setSpacing(1);
-
-                        /* Create account combo-box: */
-                        m_pAccountComboBox = new QIComboBox(m_pCntLocation);
-                        if (m_pAccountComboBox)
-                        {
-                            /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountComboBox);
-                        }
-                        /* Create account tool-button: */
-                        m_pAccountToolButton = new QIToolButton(m_pCntLocation);
-                        if (m_pAccountToolButton)
-                        {
-                            m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
-                                                                              ":/cloud_profile_manager_disabled_16px.png"));
-
-                            /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountToolButton);
-                        }
-
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addLayout(pSubLayout, 0, 0);
+                        pAccountLayout->addWidget(m_pAccountComboBox);
                     }
-
-                    /* Create profile property table: */
-                    m_pAccountPropertyTable = new QTableWidget(m_pCntLocation);
-                    if (m_pAccountPropertyTable)
+                    /* Create account tool-button: */
+                    m_pAccountToolButton = new QIToolButton(m_pCntLocation);
+                    if (m_pAccountToolButton)
                     {
-                        const QFontMetrics fm(m_pAccountPropertyTable->font());
-                        const int iFontWidth = fm.width('x');
-                        const int iTotalWidth = 50 * iFontWidth;
-                        const int iFontHeight = fm.height();
-                        const int iTotalHeight = 4 * iFontHeight;
-                        m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                        //m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pAccountPropertyTable->setAlternatingRowColors(true);
-                        m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
-                        m_pAccountPropertyTable->verticalHeader()->setVisible(false);
-                        m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+                        m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                                                                          ":/cloud_profile_manager_disabled_16px.png"));
 
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 0);
-                    }
-
-                    /* Create source image list: */
-                    m_pSourceImageList = new QListWidget(m_pCntLocation);
-                    if (m_pSourceImageList)
-                    {
-                        const QFontMetrics fm(m_pSourceImageList->font());
-                        const int iFontWidth = fm.width('x');
-                        const int iTotalWidth = 50 * iFontWidth;
-                        const int iFontHeight = fm.height();
-                        const int iTotalHeight = 4 * iFontHeight;
-                        m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                        //m_pSourceImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pSourceImageList->setAlternatingRowColors(true);
-
-                        /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pSourceImageList, 2, 0);
+                        pAccountLayout->addWidget(m_pAccountToolButton);
                     }
 
                     /* Add into layout: */
-                    m_pLocationLayout->addLayout(m_pCloudContainerLayout, 1, 0);
+                    pLocationLayout->addLayout(pAccountLayout);
+                }
+
+                /* Create account property table: */
+                m_pAccountPropertyTable = new QTableWidget(m_pCntLocation);
+                if (m_pAccountPropertyTable)
+                {
+                    const QFontMetrics fm(m_pAccountPropertyTable->font());
+                    const int iFontWidth = fm.width('x');
+                    const int iTotalWidth = 50 * iFontWidth;
+                    const int iFontHeight = fm.height();
+                    const int iTotalHeight = 4 * iFontHeight;
+                    m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                    //m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                    m_pAccountPropertyTable->setAlternatingRowColors(true);
+                    m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
+                    m_pAccountPropertyTable->verticalHeader()->setVisible(false);
+                    m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+                    /* Add into layout: */
+                    pLocationLayout->addWidget(m_pAccountPropertyTable);
+                }
+
+                /* Create source image list: */
+                m_pSourceImageList = new QListWidget(m_pCntLocation);
+                if (m_pSourceImageList)
+                {
+                    const QFontMetrics fm(m_pSourceImageList->font());
+                    const int iFontWidth = fm.width('x');
+                    const int iTotalWidth = 50 * iFontWidth;
+                    const int iFontHeight = fm.height();
+                    const int iTotalHeight = 4 * iFontHeight;
+                    m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                    //m_pSourceImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                    m_pSourceImageList->setAlternatingRowColors(true);
+
+                    /* Add into layout: */
+                    pLocationLayout->addWidget(m_pSourceImageList);
                 }
             }
 
@@ -147,9 +136,9 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
         m_pSettingsCnt = new QGroupBox(this);
         if (m_pSettingsCnt)
         {
-            /* Create form editor layout: */
-            QVBoxLayout *pFormEditorLayout = new QVBoxLayout(m_pSettingsCnt);
-            if (pFormEditorLayout)
+            /* Create settings layout: */
+            QVBoxLayout *pSettingsLayout = new QVBoxLayout(m_pSettingsCnt);
+            if (pSettingsLayout)
             {
                 /* Create form editor widget: */
                 m_pFormEditor = new UIFormEditorWidget(m_pSettingsCnt);
@@ -163,7 +152,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                         m_pFormEditor->setMinimumHeight(8 * iDefaultSectionHeight);
 
                     /* Add into layout: */
-                    pFormEditorLayout->addWidget(m_pFormEditor);
+                    pSettingsLayout->addWidget(m_pFormEditor);
                 }
             }
 

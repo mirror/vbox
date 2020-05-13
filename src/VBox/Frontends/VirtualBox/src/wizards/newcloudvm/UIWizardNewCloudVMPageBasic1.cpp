@@ -44,10 +44,8 @@
 
 UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1()
     : m_fPolished(false)
-    , m_pLocationLayout(0)
     , m_pLocationLabel(0)
     , m_pLocationComboBox(0)
-    , m_pCloudContainerLayout(0)
     , m_pAccountLabel(0)
     , m_pAccountComboBox(0)
     , m_pAccountToolButton(0)
@@ -515,7 +513,9 @@ CVirtualSystemDescriptionForm UIWizardNewCloudVMPage1::vsdForm() const
 
 UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
     : m_pLabelMain(0)
+    , m_pLocationLayout(0)
     , m_pLabelDescription(0)
+    , m_pOptionsLayout(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -533,6 +533,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
         m_pLocationLayout = new QGridLayout;
         if (m_pLocationLayout)
         {
+            m_pLocationLayout->setContentsMargins(0, 0, 0, 0);
             m_pLocationLayout->setColumnStretch(0, 0);
             m_pLocationLayout->setColumnStretch(1, 1);
 
@@ -543,7 +544,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 /* Add into layout: */
                 m_pLocationLayout->addWidget(m_pLocationLabel, 0, 0, Qt::AlignRight);
             }
-            /* Create location selector: */
+            /* Create location combo-box: */
             m_pLocationComboBox = new QIComboBox(this);
             if (m_pLocationComboBox)
             {
@@ -553,36 +554,36 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 m_pLocationLayout->addWidget(m_pLocationComboBox, 0, 1);
             }
 
-            /* Create description label: */
-            m_pLabelDescription = new QIRichTextLabel(this);
-            if (m_pLabelDescription)
-            {
-                /* Add into layout: */
-                m_pLocationLayout->addWidget(m_pLabelDescription, 1, 0, 1, 2);
-            }
-
             /* Add into layout: */
             pMainLayout->addLayout(m_pLocationLayout);
         }
 
-        /* Create cloud container layout: */
-        m_pCloudContainerLayout = new QGridLayout;
-        if (m_pCloudContainerLayout)
+        /* Create description label: */
+        m_pLabelDescription = new QIRichTextLabel(this);
+        if (m_pLabelDescription)
         {
-            m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
-            m_pCloudContainerLayout->setColumnStretch(0, 0);
-            m_pCloudContainerLayout->setColumnStretch(1, 1);
-            m_pCloudContainerLayout->setRowStretch(2, 0);
-            m_pCloudContainerLayout->setRowStretch(3, 1);
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabelDescription);
+        }
+
+        /* Create options layout: */
+        m_pOptionsLayout = new QGridLayout;
+        if (m_pOptionsLayout)
+        {
+            m_pOptionsLayout->setContentsMargins(0, 0, 0, 0);
+            m_pOptionsLayout->setColumnStretch(0, 0);
+            m_pOptionsLayout->setColumnStretch(1, 1);
+            m_pOptionsLayout->setRowStretch(2, 0);
+            m_pOptionsLayout->setRowStretch(3, 1);
 
             /* Create account label: */
             m_pAccountLabel = new QLabel(this);
             if (m_pAccountLabel)
             {
                 /* Add into layout: */
-                m_pCloudContainerLayout->addWidget(m_pAccountLabel, 0, 0, Qt::AlignRight);
+                m_pOptionsLayout->addWidget(m_pAccountLabel, 0, 0, Qt::AlignRight);
             }
-            /* Create sub-layout: */
+            /* Create account layout: */
             QHBoxLayout *pAccountLayout = new QHBoxLayout;
             if (pAccountLayout)
             {
@@ -610,10 +611,10 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 }
 
                 /* Add into layout: */
-                m_pCloudContainerLayout->addLayout(pAccountLayout, 0, 1);
+                m_pOptionsLayout->addLayout(pAccountLayout, 0, 1);
             }
 
-            /* Create profile property table: */
+            /* Create account property table: */
             m_pAccountPropertyTable = new QTableWidget(this);
             if (m_pAccountPropertyTable)
             {
@@ -630,7 +631,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
                 /* Add into layout: */
-                m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 1);
+                m_pOptionsLayout->addWidget(m_pAccountPropertyTable, 1, 1);
             }
 
             /* Create source image label: */
@@ -638,7 +639,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             if (m_pSourceImageLabel)
             {
                 /* Add into layout: */
-                m_pCloudContainerLayout->addWidget(m_pSourceImageLabel, 2, 0, Qt::AlignRight);
+                m_pOptionsLayout->addWidget(m_pSourceImageLabel, 2, 0, Qt::AlignRight);
             }
             /* Create source image list: */
             m_pSourceImageList = new QListWidget(this);
@@ -655,11 +656,11 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 m_pSourceImageList->setAlternatingRowColors(true);
 
                 /* Add into layout: */
-                m_pCloudContainerLayout->addWidget(m_pSourceImageList, 2, 1, 2, 1);
+                m_pOptionsLayout->addWidget(m_pSourceImageList, 2, 1, 2, 1);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pCloudContainerLayout);
+            pMainLayout->addLayout(m_pOptionsLayout);
         }
     }
 
@@ -739,7 +740,7 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
     m_pLocationLayout->setColumnMinimumWidth(0, iMaxWidth);
-    m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
+    m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
 
     /* Update tool-tips: */
     updateLocationComboToolTip();
