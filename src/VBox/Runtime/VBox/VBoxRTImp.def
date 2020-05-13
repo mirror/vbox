@@ -685,10 +685,18 @@ EXPORTS
     RTBase64DecodeEx
     RTBase64DecodedSize
     RTBase64DecodedSizeEx
+    RTBase64DecodeUtf16
+    RTBase64DecodeUtf16Ex
+    RTBase64DecodedUtf16Size
+    RTBase64DecodedUtf16SizeEx
     RTBase64Encode
     RTBase64EncodeEx
     RTBase64EncodedLength
     RTBase64EncodedLengthEx
+    RTBase64EncodeUtf16
+    RTBase64EncodeUtf16Ex
+    RTBase64EncodedUtf16Length
+    RTBase64EncodedUtf16LengthEx
     RTBigNumAdd
     RTBigNumAssign
     RTBigNumBitWidth
