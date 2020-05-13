@@ -660,6 +660,20 @@ public:
     Bstr &erase(size_t offStart = 0, size_t cwcLength = RTSTR_MAX) RT_NOEXCEPT;
 
 
+    /** @name BASE64 related methods
+     * @{ */
+    /**
+     * Encodes the give data as BASE64.
+     *
+     * @returns S_OK or E_OUTOFMEMORY.
+     * @param   pvData          Pointer to the data to encode.
+     * @param   cbData          Number of bytes to encode.
+     * @param   fLineBreaks     Whether to add line breaks (true) or just encode it
+     *                          as a continuous string.
+     */
+    HRESULT base64Encode(const void *pvData, size_t cbData, bool fLineBreaks = false);
+    /** @} */
+
 #if defined(VBOX_WITH_XPCOM)
     /**
      *  Returns a pointer to the raw member UTF-16 string. If the member string is empty,
