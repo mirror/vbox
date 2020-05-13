@@ -288,19 +288,18 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             #        make it executable and execute it from there.
             fISOMakerCmdIsBuggy = oTestVm.isLinux();
             if fISOMakerCmdIsBuggy:
+                sFsPerfImage = "FsPerf${EXESUFF}";
                 if oTestVm.isWindows() \
                 or oTestVm.isOS2():
-                    sFsPerfPathTemp = "C:\\Temp\\";
-                    sCopy           = "cmd.exe";
-                    sCopyArgs       = ( "/C", "copy", "/Y" );
+                    sFsPerfPathTemp = "C:\\Temp\\" + sFsPerfImage;
+                    sCopy           = "C:\\Windows\\System32\\cmd.exe";
+                    sCopyArgs       = ( sCopy, "/C", "copy", "/Y",  sFsPerfPath, sFsPerfPathTemp );
                 else:
-                    sFsPerfPathTemp = "/var/tmp/";
-                    sCopy           = "cp";
-                    sCopyArgs       = ( "-a", "-v" );
-                sFsPerfPathTemp += "FsPerf${EXESUFF}";
+                    sFsPerfPathTemp = "/var/tmp/" + sFsPerfImage;
+                    sCopy           = "/bin/cp";
+                    sCopyArgs       = ( sCopy, "-a", "-v", sFsPerfPath, sFsPerfPathTemp );
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Copying FsPerf', 60 * 1000,
-                                              sCopy, ( sCopy, sCopyArgs, sFsPerfPath, sFsPerfPathTemp ),
-                                              fCheckSessionStatus = True);
+                                              sCopy, sCopyArgs, fCheckSessionStatus = True);
                 fRc = fRc and oTxsSession.syncChMod(sFsPerfPathTemp, 0o755);
                 if fRc:
                     sFsPerfPath = sFsPerfPathTemp;
