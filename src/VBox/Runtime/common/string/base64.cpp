@@ -415,13 +415,6 @@ RTDECL(int) RTBase64Decode(const char *pszString, void *pvData, size_t cbData, s
 RT_EXPORT_SYMBOL(RTBase64Decode);
 
 
-/**
- * Calculates the length of the Base64 encoding of a given number of bytes of
- * data produced by RTBase64Encode().
- *
- * @returns The Base64 string length.
- * @param   cbData      The number of bytes to encode.
- */
 RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
 {
     return RTBase64EncodedLengthEx(cbData, 0);
@@ -429,14 +422,6 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
 RT_EXPORT_SYMBOL(RTBase64EncodedLength);
 
 
-/**
- * Calculates the length of the Base64 encoding of a given number of bytes of
- * data produced by RTBase64EncodeEx() with the same @a fFlags.
- *
- * @returns The Base64 string length.
- * @param   cbData      The number of bytes to encode.
- * @param   fFlags      Flags, any combination of the RTBASE64_FLAGS \#defines.
- */
 RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags)
 {
     size_t const cchEol = g_acchEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
@@ -462,22 +447,6 @@ RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags)
 RT_EXPORT_SYMBOL(RTBase64EncodedLengthEx);
 
 
-/**
- * Encodes the specifed data into a Base64 string, the caller supplies the
- * output buffer.
- *
- * This is equivalent to calling RTBase64EncodeEx() with no flags.
- *
- * @returns IRPT status code.
- * @retval  VERR_BUFFER_OVERFLOW if the output buffer is too small. The buffer
- *          may contain an invalid Base64 string.
- *
- * @param   pvData      The data to encode.
- * @param   cbData      The number of bytes to encode.
- * @param   pszBuf      Where to put the Base64 string.
- * @param   cbBuf       The size of the output buffer, including the terminator.
- * @param   pcchActual  The actual number of characters returned.
- */
 RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size_t cbBuf, size_t *pcchActual)
 {
     return RTBase64EncodeEx(pvData, cbData, 0, pszBuf, cbBuf, pcchActual);
@@ -485,19 +454,10 @@ RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size
 RT_EXPORT_SYMBOL(RTBase64Encode);
 
 
-/**
- * Encodes the specifed data into a Base64 string, the caller supplies the
- * output buffer.
- *
- * @returns IRPT status code.
- * @retval  VERR_BUFFER_OVERFLOW if the output buffer is too small. The buffer
- *          may contain an invalid Base64 string.
- *
- * @param   pvData      The data to encode.
- * @param   cbData      The number of bytes to encode.
- * @param   pszBuf      Where to put the Base64 string.
- * @param   cbBuf       The size of the output buffer, including the terminator.
- * @param   pcchActual  The actual number of characters returned.
+/*
+ * Please note that RTBase64EncodeUtf16Ex contains an almost exact copy of
+ * this code, just using different output character type and variable prefixes.
+ * So, all fixes must be applied to both versions of the code.
  */
 RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
                              char *pszBuf, size_t cbBuf, size_t *pcchActual)
@@ -514,7 +474,7 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
     uint8_t         u8A;
     uint8_t         u8B;
     uint8_t         u8C;
-    size_t          cbLineFeed = cbBuf - RTBASE64_LINE_LEN;
+    size_t          cbLineFeed = cchEol ? cbBuf - RTBASE64_LINE_LEN : ~(size_t)0;
     const uint8_t  *pbSrc      = (const uint8_t *)pvData;
     char           *pchDst     = pszBuf;
     while (cbData >= 3)
@@ -537,19 +497,16 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
         cbData -= 3;
         pbSrc  += 3;
 
-        if (cchEol > 0)
+        /* deal out end-of-line */
+        if (cbBuf == cbLineFeed && cbData && cchEol)
         {
-            /* deal out end-of-line */
-            if (cbBuf == cbLineFeed && cbData)
-            {
-                if (cbBuf < cchEol + 1)
-                    return VERR_BUFFER_OVERFLOW;
-                cbBuf -= cchEol;
-                *pchDst++ = chEol0;
-                if (chEol1)
-                    *pchDst++ = chEol1;
-                cbLineFeed = cbBuf - RTBASE64_LINE_LEN;
-            }
+            if (cbBuf < cchEol + 1)
+                return VERR_BUFFER_OVERFLOW;
+            cbBuf -= cchEol;
+            *pchDst++ = chEol0;
+            if (chEol1)
+                *pchDst++ = chEol1;
+            cbLineFeed = cbBuf - RTBASE64_LINE_LEN;
         }
     }
 
@@ -588,3 +545,118 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTBase64EncodeEx);
+
+
+/*
+ * Please note that RTBase64EncodeEx contains an almost exact copy of
+ * this code, just using different output character type and variable prefixes.
+ * So, all fixes must be applied to both versions of the code.
+ */
+RTDECL(int) RTBase64EncodeUtf16Ex(const void *pvData, size_t cbData, uint32_t fFlags,
+                                  PRTUTF16 pwszBuf, size_t cwcBuf, size_t *pcwcActual)
+{
+    /* Expand the EOL style flags: */
+    size_t const    cchEol = g_acchEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
+    char const      chEol0 = g_aachEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][0];
+    char const      chEol1 = g_aachEolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][1];
+    Assert(cchEol == (chEol0 != '\0' ? 1U : 0U) + (chEol1 != '\0' ? 1U : 0U));
+
+    /*
+     * Process whole "trios" of input data.
+     */
+    uint8_t         u8A;
+    uint8_t         u8B;
+    uint8_t         u8C;
+    size_t          cwcLineFeed = cchEol ? cwcBuf - RTBASE64_LINE_LEN : ~(size_t)0;
+    const uint8_t  *pbSrc       = (const uint8_t *)pvData;
+    PRTUTF16        pwcDst      = pwszBuf;
+    while (cbData >= 3)
+    {
+        if (cwcBuf < 4 + 1)
+            return VERR_BUFFER_OVERFLOW;
+
+        /* encode */
+        u8A = pbSrc[0];
+        pwcDst[0] = g_szValToChar[u8A >> 2];
+        u8B = pbSrc[1];
+        pwcDst[1] = g_szValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
+        u8C = pbSrc[2];
+        pwcDst[2] = g_szValToChar[((u8B << 2) & 0x3f) | (u8C >> 6)];
+        pwcDst[3] = g_szValToChar[u8C & 0x3f];
+
+        /* advance */
+        cwcBuf -= 4;
+        pwcDst += 4;
+        cbData -= 3;
+        pbSrc  += 3;
+
+        /* deal out end-of-line */
+        if (cwcBuf == cwcLineFeed && cbData && cchEol)
+        {
+            if (cwcBuf < cchEol + 1)
+                return VERR_BUFFER_OVERFLOW;
+            cwcBuf -= cchEol;
+            *pwcDst++ = chEol0;
+            if (chEol1)
+                *pwcDst++ = chEol1;
+            cwcLineFeed = cwcBuf - RTBASE64_LINE_LEN;
+        }
+    }
+
+    /*
+     * Deal with the odd bytes and string termination.
+     */
+    if (cbData)
+    {
+        if (cwcBuf < 4 + 1)
+            return VERR_BUFFER_OVERFLOW;
+        switch (cbData)
+        {
+            case 1:
+                u8A = pbSrc[0];
+                pwcDst[0] = g_szValToChar[u8A >> 2];
+                pwcDst[1] = g_szValToChar[(u8A << 4) & 0x3f];
+                pwcDst[2] = '=';
+                pwcDst[3] = '=';
+                break;
+            case 2:
+                u8A = pbSrc[0];
+                pwcDst[0] = g_szValToChar[u8A >> 2];
+                u8B = pbSrc[1];
+                pwcDst[1] = g_szValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
+                pwcDst[2] = g_szValToChar[(u8B << 2) & 0x3f];
+                pwcDst[3] = '=';
+                break;
+        }
+        pwcDst += 4;
+    }
+
+    *pwcDst = '\0';
+
+    if (pcwcActual)
+        *pcwcActual = pwcDst - pwszBuf;
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTBase64EncodeUtf16Ex);
+
+
+RTDECL(int) RTBase64EncodeUtf16(const void *pvData, size_t cbData, PRTUTF16 pwszBuf, size_t cwcBuf, size_t *pcwcActual)
+{
+    return RTBase64EncodeUtf16Ex(pvData, cbData, 0, pwszBuf, cwcBuf, pcwcActual);
+}
+RT_EXPORT_SYMBOL(RTBase64EncodeUtf16);
+
+
+RTDECL(size_t) RTBase64EncodedUtf16Length(size_t cbData)
+{
+    return RTBase64EncodedLengthEx(cbData, 0);
+}
+RT_EXPORT_SYMBOL(RTBase64EncodedUtf16Length);
+
+
+RTDECL(size_t) RTBase64EncodedUtf16LengthEx(size_t cbData, uint32_t fFlags)
+{
+    return RTBase64EncodedLengthEx(cbData, fFlags);
+}
+RT_EXPORT_SYMBOL(RTBase64EncodedUtf16LengthEx);
+

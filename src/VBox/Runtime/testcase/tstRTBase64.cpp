@@ -35,6 +35,7 @@
 #include <iprt/stdarg.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/test.h>
 
 
@@ -57,7 +58,11 @@ static void tstBase64(const void *pvData, size_t cbData,
                       const char *pszEnc, size_t cchEnc,
                       int fTextData, int fNormalEnc)
 {
-    char    szOut[0x10000];
+    union
+    {
+        char    szOut[0x10000];
+        RTUTF16 wszOut[0x10000];
+    };
     size_t  cchOut = 0;
 
     /*
@@ -102,6 +107,28 @@ static void tstBase64(const void *pvData, size_t cbData,
                       cchOut2, cchOut);
 
     /** @todo negative testing. */
+
+    /*
+     * Same as above, but using the UTF-16 variant of the code.
+     */
+
+    /* Decoding: later */
+
+    /* Encoding UTF-16: */
+    memset(wszOut, 0xaa, sizeof(wszOut));
+    wszOut[sizeof(wszOut) / sizeof(wszOut[0]) - 1] = '\0';
+    size_t cwcOut = 0;
+    rc = RTBase64EncodeUtf16(pvData, cbData, wszOut, cchEnc + 1, &cwcOut);
+    if (RT_FAILURE(rc))
+        RTTestIFailed("RTBase64EncodeUtf16 -> %Rrc\n", rc);
+    else if (fNormalEnc && cwcOut != cchEnc)
+        RTTestIFailed("RTBase64EncodeUtf16 returned %zu bytes, expected %zu.\n", cwcOut, cchEnc);
+    else if (fNormalEnc && RTUtf16CmpUtf8(wszOut, pszEnc))
+        RTTestIFailed("RTBase64EncodeUtf16 returned:\n%s\nexpected:\n%s\n", wszOut, pszEnc);
+
+    size_t cwcOut2 = RTBase64EncodedUtf16Length(cbData);
+    if (cwcOut != cwcOut2)
+        RTTestIFailed("RTBase64EncodedLength returned %zu RTUTF16 units, expected %zu.\n", cwcOut2, cwcOut);
 }
 
 
@@ -181,11 +208,15 @@ int main()
         s_abData4[i] = i % 256;
     for (size_t cbSrc = 1; cbSrc <= sizeof(s_abData4); cbSrc++)
     {
-        char szEnc[49152];
+        union
+        {
+            char    szEnc[49152];
+            RTUTF16 wszEnc[49152];
+        };
         memset(szEnc, '\0', sizeof(szEnc));
         size_t cchEnc = RTBase64EncodedLength(cbSrc);
         if (cchEnc >= sizeof(szEnc))
-            RTTestIFailed("RTBase64EncodedLength(%zu) returned %zu bytes, too big\n", cbSrc, cchEnc);
+            RTTestIFailed("RTBase64EncodedLength(%zu) returned %zu bytes - too big\n", cbSrc, cchEnc);
         size_t cchOut = 0;
         rc = RTBase64Encode(s_abData4, cbSrc, szEnc, cchEnc, &cchOut);
         if (rc != VERR_BUFFER_OVERFLOW)
@@ -196,10 +227,31 @@ int main()
         if (cchOut != cchEnc)
             RTTestIFailed("RTBase64EncodedLength(%zu) returned %zu bytes, expected %zu.\n",
                           cbSrc, cchEnc, cchOut);
-        if (szEnc[cchOut + 1] != '\0')
+        if (szEnc[cchOut] != '\0')
             RTTestIFailed("RTBase64Encode(,%zu,) returned string which is not zero terminated\n", cbSrc);
         if (strlen(szEnc) != cchOut)
             RTTestIFailed("RTBase64Encode(,%zu,) returned incorrect string, length %lu\n", cbSrc, cchOut);
+
+        /* Ditto for UTF-16: */
+        memset(wszEnc, '\0', sizeof(wszEnc));
+        size_t cwcEnc = RTBase64EncodedUtf16Length(cbSrc);
+        if (cwcEnc >= RT_ELEMENTS(wszEnc))
+            RTTestIFailed("RTBase64EncodedUtf16Length(%zu) returned %zu RTUTF16 units - too big\n", cbSrc, cwcEnc);
+        size_t cwcOut = 0;
+        rc = RTBase64EncodeUtf16(s_abData4, cbSrc, wszEnc, cwcEnc, &cwcOut);
+        if (rc != VERR_BUFFER_OVERFLOW)
+            RTTestIFailed("RTBase64EncodeUtf16(,%zu,) has no buffer overflow with too small buffer -> %Rrc\n", cbSrc, rc);
+        cwcOut = ~(size_t)0;
+        rc = RTBase64EncodeUtf16(s_abData4, cbSrc, wszEnc, cwcEnc + 1, &cwcOut);
+        if (RT_FAILURE(rc))
+            RTTestIFailed("RTBase64EncodeUtf16 -> %Rrc\n", rc);
+        if (cchOut != cchEnc)
+            RTTestIFailed("RTBase64EncodedUtf16Length(%zu) returned %zu bytes, expected %zu.\n",
+                          cbSrc, cwcEnc, cwcOut);
+        if (wszEnc[cwcOut] != '\0')
+            RTTestIFailed("RTBase64EncodeUtf16(,%zu,) returned string which is not zero terminated\n", cbSrc);
+        if (RTUtf16Len(wszEnc) != cwcOut)
+            RTTestIFailed("RTBase64EncodeUtf16(,%zu,) returned incorrect string, length %lu\n", cbSrc, cwcOut);
     }
 
     /*

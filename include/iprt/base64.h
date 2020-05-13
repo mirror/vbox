@@ -142,20 +142,41 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
  * Calculates the length of the Base64 encoding of a given number of bytes of
  * data produced by RTBase64Encode().
  *
- * @returns The Base64 string length.
+ * @returns The Base64 string length, excluding the terminator.
  * @param   cbData      The number of bytes to encode.
  */
 RTDECL(size_t) RTBase64EncodedLength(size_t cbData);
 
 /**
+ * Calculates the UTF-16 length of the Base64 encoding of a given number of
+ * bytes of data produced by RTBase64EncodeUtf16().
+ *
+ * @returns The Base64 UTF-16 string length (in RTUTF16 units), excluding the
+ *          terminator.
+ * @param   cbData      The number of bytes to encode.
+ */
+RTDECL(size_t) RTBase64EncodedUtf16Length(size_t cbData);
+
+/**
  * Calculates the length of the Base64 encoding of a given number of bytes of
  * data produced by RTBase64EncodeEx() with the same @a fFlags.
  *
- * @returns The Base64 string length.
+ * @returns The Base64 string length, excluding the terminator.
  * @param   cbData      The number of bytes to encode.
  * @param   fFlags      Flags, any combination of the RTBASE64_FLAGS \#defines.
  */
 RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags);
+
+/**
+ * Calculates the UTF-16 length of the Base64 encoding of a given number of
+ * bytes of data produced by RTBase64EncodeUtf16Ex() with the same @a fFlags.
+ *
+ * @returns The Base64 UTF-16 string length (in RTUTF16 units), excluding the
+ *          terminator.
+ * @param   cbData      The number of bytes to encode.
+ * @param   fFlags      Flags, any combination of the RTBASE64_FLAGS \#defines.
+ */
+RTDECL(size_t) RTBase64EncodedUtf16LengthEx(size_t cbData, uint32_t fFlags);
 
 /**
  * Encodes the specifed data into a Base64 string, the caller supplies the
@@ -176,6 +197,26 @@ RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags);
 RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size_t cbBuf, size_t *pcchActual);
 
 /**
+ * Encodes the specifed data into a Base64 UTF-16 string, the caller supplies
+ * the output buffer.
+ *
+ * This is equivalent to calling RTBase64EncodeUtf16Ex() with no flags.
+ *
+ * @returns IRPT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the output buffer is too small. The buffer
+ *          may contain an invalid Base64 string.
+ *
+ * @param   pvData      The data to encode.
+ * @param   cbData      The number of bytes to encode.
+ * @param   pwszBuf     Where to put the Base64 UTF-16 string.
+ * @param   cwcBuf      The size of the output buffer in RTUTF16 units,
+ *                      including the terminator.
+ * @param   pcwcActual  The actual number of characters returned (excluding the
+ *                      terminator).  Optional.
+ */
+RTDECL(int) RTBase64EncodeUtf16(const void *pvData, size_t cbData, PRTUTF16 pwszBuf, size_t cwcBuf, size_t *pcwcActual);
+
+/**
  * Encodes the specifed data into a Base64 string, the caller supplies the
  * output buffer.
  *
@@ -188,10 +229,32 @@ RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size
  * @param   fFlags      Flags, any combination of the RTBASE64_FLAGS \#defines.
  * @param   pszBuf      Where to put the Base64 string.
  * @param   cbBuf       The size of the output buffer, including the terminator.
- * @param   pcchActual  The actual number of characters returned.
+ * @param   pcchActual  The actual number of characters returned (excluding the
+ *                      terminator).  Optional.
  */
 RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
                              char *pszBuf, size_t cbBuf, size_t *pcchActual);
+
+/**
+ * Encodes the specifed data into a Base64 UTF-16 string, the caller supplies
+ * the output buffer.
+ *
+ * @returns IRPT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the output buffer is too small. The buffer
+ *          may contain an invalid Base64 string.
+ *
+ * @param   pvData      The data to encode.
+ * @param   cbData      The number of bytes to encode.
+ * @param   fFlags      Flags, any combination of the RTBASE64_FLAGS \#defines.
+ * @param   pwszBuf     Where to put the Base64 UTF-16 string.
+ * @param   cwcBuf      The size of the output buffer in RTUTF16 units,
+ *                      including the terminator.
+ * @param   pcwcActual  The actual number of characters returned (excluding the
+ *                      terminator).  Optional.
+ */
+RTDECL(int) RTBase64EncodeUtf16Ex(const void *pvData, size_t cbData, uint32_t fFlags,
+                                  PRTUTF16 pwszBuf, size_t cwcBuf, size_t *pcwcActual);
+
 
 /** @}  */
 
