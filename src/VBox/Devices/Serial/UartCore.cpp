@@ -1500,7 +1500,9 @@ static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER
     PUARTCORE   pThis   = pThisCC->pShared;
     RT_NOREF(pTimer);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED); /** @todo r=bird: You already own this crit sect, don't you?!? */
+    VBOXSTRICTRC rc1 = PDMDevHlpTimerLockClock2(pDevIns, pThis->hTimerRcvFifoTimeout, &pThis->CritSect,
+                                                VINF_SUCCESS /* must get it */);
+    AssertRCReturnVoid(VBOXSTRICTRC_VAL(rc1));
 
     if (pThis->FifoRecv.cbUsed < pThis->FifoRecv.cbItl)
     {
@@ -1508,7 +1510,7 @@ static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER
         uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
 
-    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+    PDMDevHlpTimerUnlockClock2(pDevIns, pThis->hTimerRcvFifoTimeout, &pThis->CritSect);
 }
 
 /**
@@ -1521,7 +1523,9 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
     PUARTCORE   pThis   = pThisCC->pShared;
     RT_NOREF(pTimer);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED); /** @todo r=bird: You already own this crit sect, don't you?!? */
+    VBOXSTRICTRC rc1 = PDMDevHlpTimerLockClock2(pDevIns, pThis->hTimerTxUnconnected, &pThis->CritSect,
+                                                VINF_SUCCESS /* must get it */);
+    AssertRCReturnVoid(VBOXSTRICTRC_VAL(rc1));
 
     uint8_t bVal = 0;
     size_t cbRead = 0;
@@ -1569,7 +1573,7 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
         UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_TEMT);
     }
 
-    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+    PDMDevHlpTimerUnlockClock2(pDevIns, pThis->hTimerTxUnconnected, &pThis->CritSect);
 }
 
 
@@ -2055,23 +2059,17 @@ DECLHIDDEN(int) uartR3Init(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThi
     /*
      * Create the receive FIFO character timeout indicator timer.
      */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, uartR3RcvFifoTimeoutTimer, pThisCC,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, uartR3RcvFifoTimeoutTimer, pThisCC,
                               TMTIMER_FLAGS_NO_CRIT_SECT, "UART Rcv FIFO Timer",
                               &pThis->hTimerRcvFifoTimeout);
-    AssertRCReturn(rc, rc);
-
-    rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTimerRcvFifoTimeout, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
     /*
      * Create the transmit timer when no device is connected.
      */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, uartR3TxUnconnectedTimer, pThisCC,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, uartR3TxUnconnectedTimer, pThisCC,
                               TMTIMER_FLAGS_NO_CRIT_SECT, "UART TX uncon. Timer",
                               &pThis->hTimerTxUnconnected);
-    AssertRCReturn(rc, rc);
-
-    rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTimerTxUnconnected, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
     uartR3Reset(pDevIns, pThis, pThisCC);
