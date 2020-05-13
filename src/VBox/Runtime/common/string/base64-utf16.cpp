@@ -48,8 +48,8 @@
 /** Translates the given character. */
 DECL_FORCE_INLINE(uint8_t) rtBase64TranslateUtf16(RTUTF16 wc)
 {
-    if (wc < RT_ELEMENTS(g_au8RTBase64CharToVal))
-        return g_au8RTBase64CharToVal[wc];
+    if (wc < RT_ELEMENTS(g_au8rtBase64CharToVal))
+        return g_au8rtBase64CharToVal[wc];
     if (RTUniCpIsSpace(wc))
         return BASE64_SPACE;
     return BASE64_INVALID;
@@ -61,13 +61,13 @@ DECL_FORCE_INLINE(uint8_t) rtBase64TranslateNextUtf16(PCRTUTF16 pwszString, size
 {
     if (cwcStringMax > 0)
         return rtBase64TranslateUtf16(*pwszString);
-    return BASE64_INVALID;
+    return BASE64_NULL;
 }
 
 
 /*
  * Mostly the same as RTBase64DecodedSizeEx, except for the wider character
- * type and therefore more careful handling of g_szRTBase64ValToChar and additional
+ * type and therefore more careful handling of g_szrtBase64ValToChar and additional
  * space characters.  Fixes must be applied to both copies of the code.
  */
 RTDECL(ssize_t) RTBase64DecodedUtf16SizeEx(PCRTUTF16 pwszString, size_t cwcStringMax, PRTUTF16 *ppwszEnd)
@@ -80,12 +80,10 @@ RTDECL(ssize_t) RTBase64DecodedUtf16SizeEx(PCRTUTF16 pwszString, size_t cwcStrin
      * Walk the string until a non-encoded or non-space character is encountered.
      */
     uint32_t    c6Bits = 0;
-    uint8_t     u8     = BASE64_INVALID;
-    RTUTF16     wc     = 0;
+    uint8_t     u8;
 
-    while (cwcStringMax > 0 && (wc = *pwszString))
+    while ((u8 = rtBase64TranslateNextUtf16(pwszString, cwcStringMax)) != BASE64_NULL)
     {
-        u8 = rtBase64TranslateUtf16(wc);
         if (u8 < 64)
             c6Bits++;
         else if (RT_UNLIKELY(u8 != BASE64_SPACE))
@@ -107,9 +105,8 @@ RTDECL(ssize_t) RTBase64DecodedUtf16SizeEx(PCRTUTF16 pwszString, size_t cwcStrin
         c6Bits++;
         pwszString++;
         cwcStringMax--;
-        while (cwcStringMax > 0 && (wc = *pwszString))
+        while ((u8 = rtBase64TranslateNextUtf16(pwszString, cwcStringMax)) != BASE64_NULL)
         {
-            u8 = rtBase64TranslateUtf16(wc);
             if (u8 != BASE64_SPACE)
             {
                 if (u8 != BASE64_PAD)
@@ -128,9 +125,8 @@ RTDECL(ssize_t) RTBase64DecodedUtf16SizeEx(PCRTUTF16 pwszString, size_t cwcStrin
      * Invalid char and no where to indicate where the
      * Base64 text ends? Return failure.
      */
-    if (    u8 == BASE64_INVALID
-        &&  !ppwszEnd
-        &&  wc)
+    if (   u8 == BASE64_INVALID
+        && !ppwszEnd)
         return -1;
 
     /*
@@ -164,7 +160,6 @@ RTDECL(int) RTBase64DecodeUtf16Ex(PCRTUTF16 pwszString, size_t cwcStringMax, voi
     uint8_t    *pbData    = (uint8_t *)pvData;
     uint8_t     u8;
     unsigned    c6Bits    = 0;
-    AssertCompile(sizeof(char) == sizeof(uint8_t));
 
     for (;;)
     {
@@ -240,10 +235,8 @@ RTDECL(int) RTBase64DecodeUtf16Ex(PCRTUTF16 pwszString, size_t cwcStringMax, voi
         cbPad = 1;
         pwszString++;
         cwcStringMax--;
-        RTUTF16 wc;
-        while (cwcStringMax > 0 && (wc = *pwszString))
+        while ((u8 = rtBase64TranslateNextUtf16(pwszString, cwcStringMax)) != BASE64_NULL)
         {
-            u8 = rtBase64TranslateUtf16(wc);
             if (u8 != BASE64_SPACE)
             {
                 if (u8 != BASE64_PAD)
@@ -261,10 +254,8 @@ RTDECL(int) RTBase64DecodeUtf16Ex(PCRTUTF16 pwszString, size_t cwcStringMax, voi
      * Invalid char and no where to indicate where the
      * Base64 text ends? Return failure.
      */
-    if (    u8 == BASE64_INVALID
-        &&  !ppwszEnd
-        &&  cwcStringMax != 0
-        &&  *pwszString != '\0')
+    if (   u8 == BASE64_INVALID
+        && !ppwszEnd)
         return VERR_INVALID_BASE64_ENCODING;
 
     /*
@@ -360,9 +351,9 @@ RTDECL(int) RTBase64EncodeUtf16Ex(const void *pvData, size_t cbData, uint32_t fF
                                   PRTUTF16 pwszBuf, size_t cwcBuf, size_t *pcwcActual)
 {
     /* Expand the EOL style flags: */
-    size_t const    cchEol = g_acchRTBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
-    char const      chEol0 = g_aachRTBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][0];
-    char const      chEol1 = g_aachRTBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][1];
+    size_t const    cchEol = g_acchrtBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
+    char const      chEol0 = g_aachrtBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][0];
+    char const      chEol1 = g_aachrtBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][1];
     Assert(cchEol == (chEol0 != '\0' ? 1U : 0U) + (chEol1 != '\0' ? 1U : 0U));
 
     /*
@@ -381,12 +372,12 @@ RTDECL(int) RTBase64EncodeUtf16Ex(const void *pvData, size_t cbData, uint32_t fF
 
         /* encode */
         u8A = pbSrc[0];
-        pwcDst[0] = g_szRTBase64ValToChar[u8A >> 2];
+        pwcDst[0] = g_szrtBase64ValToChar[u8A >> 2];
         u8B = pbSrc[1];
-        pwcDst[1] = g_szRTBase64ValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
+        pwcDst[1] = g_szrtBase64ValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
         u8C = pbSrc[2];
-        pwcDst[2] = g_szRTBase64ValToChar[((u8B << 2) & 0x3f) | (u8C >> 6)];
-        pwcDst[3] = g_szRTBase64ValToChar[u8C & 0x3f];
+        pwcDst[2] = g_szrtBase64ValToChar[((u8B << 2) & 0x3f) | (u8C >> 6)];
+        pwcDst[3] = g_szrtBase64ValToChar[u8C & 0x3f];
 
         /* advance */
         cwcBuf -= 4;
@@ -418,17 +409,17 @@ RTDECL(int) RTBase64EncodeUtf16Ex(const void *pvData, size_t cbData, uint32_t fF
         {
             case 1:
                 u8A = pbSrc[0];
-                pwcDst[0] = g_szRTBase64ValToChar[u8A >> 2];
-                pwcDst[1] = g_szRTBase64ValToChar[(u8A << 4) & 0x3f];
+                pwcDst[0] = g_szrtBase64ValToChar[u8A >> 2];
+                pwcDst[1] = g_szrtBase64ValToChar[(u8A << 4) & 0x3f];
                 pwcDst[2] = '=';
                 pwcDst[3] = '=';
                 break;
             case 2:
                 u8A = pbSrc[0];
-                pwcDst[0] = g_szRTBase64ValToChar[u8A >> 2];
+                pwcDst[0] = g_szrtBase64ValToChar[u8A >> 2];
                 u8B = pbSrc[1];
-                pwcDst[1] = g_szRTBase64ValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
-                pwcDst[2] = g_szRTBase64ValToChar[(u8B << 2) & 0x3f];
+                pwcDst[1] = g_szrtBase64ValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
+                pwcDst[2] = g_szrtBase64ValToChar[(u8B << 2) & 0x3f];
                 pwcDst[3] = '=';
                 break;
         }

@@ -31,10 +31,11 @@
 /** The line length used for encoding. */
 #define RTBASE64_LINE_LEN   64
 
-/** @name Special g_au8RTBase64CharToVal values
+/** @name Special g_au8rtBase64CharToVal values
  * @{ */
 #define BASE64_SPACE        0xc0
 #define BASE64_PAD          0xe0
+#define BASE64_NULL         0xfe
 #define BASE64_INVALID      0xff
 /** @} */
 
@@ -42,10 +43,10 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-extern DECLHIDDEN(const uint8_t)    g_au8RTBase64CharToVal[256];
-extern DECLHIDDEN(const char)       g_szRTBase64ValToChar[64+1];
-extern DECLHIDDEN(const size_t)     g_acchRTBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1];
-extern DECLHIDDEN(const char)       g_aachRTBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1][2];
+extern DECLHIDDEN(const uint8_t)    g_au8rtBase64CharToVal[256];
+extern DECLHIDDEN(const char)       g_szrtBase64ValToChar[64+1];
+extern DECLHIDDEN(const size_t)     g_acchrtBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1];
+extern DECLHIDDEN(const char)       g_aachrtBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1][2];
 
 
 /*********************************************************************************************************************************

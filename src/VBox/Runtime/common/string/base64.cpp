@@ -50,9 +50,9 @@
 *********************************************************************************************************************************/
 /** Base64 character to value. (RFC 2045)
  * ASSUMES ASCII / UTF-8. */
-DECL_HIDDEN_CONST(const uint8_t)    g_au8RTBase64CharToVal[256] =
+DECL_HIDDEN_CONST(const uint8_t)    g_au8rtBase64CharToVal[256] =
 {
-    0xff, 0xff, 0xff, 0xff,   0xff, 0xff, 0xff, 0xff,   0xff, 0xc0, 0xc0, 0xc0,   0xc0, 0xc0, 0xff, 0xff, /* 0x00..0x0f */
+    0xfe, 0xff, 0xff, 0xff,   0xff, 0xff, 0xff, 0xff,   0xff, 0xc0, 0xc0, 0xc0,   0xc0, 0xc0, 0xff, 0xff, /* 0x00..0x0f */
     0xff, 0xff, 0xff, 0xff,   0xff, 0xff, 0xff, 0xff,   0xff, 0xff, 0xff, 0xff,   0xff, 0xff, 0xff, 0xff, /* 0x10..0x1f */
     0xc0, 0xff, 0xff, 0xff,   0xff, 0xff, 0xff, 0xff,   0xff, 0xff, 0xff,   62,   0xff, 0xff, 0xff,   63, /* 0x20..0x2f */
       52,   53,   54,   55,     56,   57,   58,   59,     60,   61, 0xff, 0xff,   0xff, 0xe0, 0xff, 0xff, /* 0x30..0x3f */
@@ -71,10 +71,10 @@ DECL_HIDDEN_CONST(const uint8_t)    g_au8RTBase64CharToVal[256] =
 };
 
 /** Value to Base64 character. (RFC 2045) */
-DECL_HIDDEN_CONST(const char)   g_szRTBase64ValToChar[64+1] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+DECL_HIDDEN_CONST(const char)   g_szrtBase64ValToChar[64+1] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /** The end-of-line lengths (indexed by style flag value). */
-DECL_HIDDEN_CONST(const size_t) g_acchRTBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1] =
+DECL_HIDDEN_CONST(const size_t) g_acchrtBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1] =
 {
     /*[RTBASE64_FLAGS_EOL_NATIVE    ]:*/ RTBASE64_EOL_SIZE,
     /*[RTBASE64_FLAGS_NO_LINE_BREAKS]:*/ 0,
@@ -83,7 +83,7 @@ DECL_HIDDEN_CONST(const size_t) g_acchRTBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE
 };
 
 /** The end-of-line characters (zero, one or two). */
-DECL_HIDDEN_CONST(const char)   g_aachRTBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1][2] =
+DECL_HIDDEN_CONST(const char)   g_aachrtBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1][2] =
 {
     /*[RTBASE64_FLAGS_EOL_NATIVE    ]:*/ { RTBASE64_EOL_SIZE == 1 ? '\n' : '\r', RTBASE64_EOL_SIZE == 1 ? '\0' : '\n', },
     /*[RTBASE64_FLAGS_NO_LINE_BREAKS]:*/ { '\0', '\0' },
@@ -104,14 +104,14 @@ DECLHIDDEN(void) rtBase64Sanity(void)
     {
         for (unsigned i = 0; i < 64; i++)
         {
-            unsigned ch = g_szRTBase64ValToChar[i];
+            unsigned ch = g_szrtBase64ValToChar[i];
             Assert(ch);
-            Assert(g_au8RTBase64CharToVal[ch] == i);
+            Assert(g_au8rtBase64CharToVal[ch] == i);
         }
 
         for (unsigned i = 0; i < 256; i++)
         {
-            uint8_t u8 = g_au8RTBase64CharToVal[i];
+            uint8_t u8 = g_au8rtBase64CharToVal[i];
             Assert(   (     u8 == BASE64_INVALID
                        &&   !RT_C_IS_ALNUM(i)
                        &&   !RT_C_IS_SPACE(i))
@@ -120,12 +120,25 @@ DECLHIDDEN(void) rtBase64Sanity(void)
                    || (     u8 == BASE64_SPACE
                        &&   RT_C_IS_SPACE(i))
                    || (     u8 < 64
-                       &&   (unsigned)g_szRTBase64ValToChar[u8] == i));
+                       &&   (unsigned)g_szrtBase64ValToChar[u8] == i)
+                   || (     u8 == BASE64_NULL
+                       &&   i  == 0) );
         }
         ASMAtomicWriteBool(&s_fSane, true);
     }
 }
 #endif /* RT_STRICT */
+
+
+
+/** Fetched the next character in the string and translates it. */
+DECL_FORCE_INLINE(uint8_t) rtBase64TranslateNext(const char *pszString, size_t cchStringMax)
+{
+    AssertCompile(sizeof(unsigned char) == sizeof(uint8_t));
+    if (cchStringMax > 0)
+        return g_au8rtBase64CharToVal[(unsigned char)*pszString];
+    return BASE64_NULL;
+}
 
 
 /*
@@ -142,13 +155,10 @@ RTDECL(ssize_t) RTBase64DecodedSizeEx(const char *pszString, size_t cchStringMax
      * Walk the string until a non-encoded or non-space character is encountered.
      */
     uint32_t    c6Bits = 0;
-    uint8_t     u8     = BASE64_INVALID;
-    unsigned    ch     = 0;
-    AssertCompile(sizeof(char) == sizeof(uint8_t));
+    uint8_t     u8;
 
-    while (cchStringMax > 0 && (ch = *pszString))
+    while ((u8 = rtBase64TranslateNext(pszString, cchStringMax)) != BASE64_NULL)
     {
-        u8 = g_au8RTBase64CharToVal[ch];
         if (u8 < 64)
             c6Bits++;
         else if (RT_UNLIKELY(u8 != BASE64_SPACE))
@@ -170,9 +180,8 @@ RTDECL(ssize_t) RTBase64DecodedSizeEx(const char *pszString, size_t cchStringMax
         c6Bits++;
         pszString++;
         cchStringMax--;
-        while (cchStringMax > 0 && (ch = *pszString))
+        while ((u8 = rtBase64TranslateNext(pszString, cchStringMax)) != BASE64_NULL)
         {
-            u8 = g_au8RTBase64CharToVal[ch];
             if (u8 != BASE64_SPACE)
             {
                 if (u8 != BASE64_PAD)
@@ -191,9 +200,8 @@ RTDECL(ssize_t) RTBase64DecodedSizeEx(const char *pszString, size_t cchStringMax
      * Invalid char and no where to indicate where the
      * Base64 text ends? Return failure.
      */
-    if (    u8 == BASE64_INVALID
-        &&  !ppszEnd
-        &&  ch)
+    if (   u8 == BASE64_INVALID
+        && !ppszEnd)
         return -1;
 
     /*
@@ -225,15 +233,13 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
      */
     uint8_t     u8Trio[3] = { 0, 0, 0 }; /* shuts up gcc */
     uint8_t    *pbData    = (uint8_t *)pvData;
-    unsigned    ch;
     uint8_t     u8;
     unsigned    c6Bits    = 0;
-    AssertCompile(sizeof(char) == sizeof(uint8_t));
 
     for (;;)
     {
         /* The first 6-bit group. */
-        while ((u8 = g_au8RTBase64CharToVal[ch = cchStringMax > 0 ? (uint8_t)*pszString : 0]) == BASE64_SPACE)
+        while ((u8 = rtBase64TranslateNext(pszString, cchStringMax)) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -245,7 +251,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
         cchStringMax--;
 
         /* The second 6-bit group. */
-        while ((u8 = g_au8RTBase64CharToVal[ch = cchStringMax > 0 ? (uint8_t)*pszString : 0]) == BASE64_SPACE)
+        while ((u8 = rtBase64TranslateNext(pszString, cchStringMax)) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -259,7 +265,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
 
         /* The third 6-bit group. */
         u8 = BASE64_INVALID;
-        while ((u8 = g_au8RTBase64CharToVal[ch = cchStringMax > 0 ? (uint8_t)*pszString : 0]) == BASE64_SPACE)
+        while ((u8 = rtBase64TranslateNext(pszString, cchStringMax)) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -273,7 +279,7 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
 
         /* The fourth 6-bit group. */
         u8 = BASE64_INVALID;
-        while ((u8 = g_au8RTBase64CharToVal[ch = cchStringMax > 0 ? (uint8_t)*pszString : 0]) == BASE64_SPACE)
+        while ((u8 = rtBase64TranslateNext(pszString, cchStringMax)) == BASE64_SPACE)
             pszString++, cchStringMax--;
         if (u8 >= 64)
         {
@@ -304,9 +310,8 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
         cbPad = 1;
         pszString++;
         cchStringMax--;
-        while (cchStringMax > 0 && (ch = (uint8_t)*pszString))
+        while ((u8 = rtBase64TranslateNext(pszString, cchStringMax)) != BASE64_NULL)
         {
-            u8 = g_au8RTBase64CharToVal[ch];
             if (u8 != BASE64_SPACE)
             {
                 if (u8 != BASE64_PAD)
@@ -324,9 +329,8 @@ RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *p
      * Invalid char and no where to indicate where the
      * Base64 text ends? Return failure.
      */
-    if (    u8 == BASE64_INVALID
-        &&  !ppszEnd
-        &&  ch != '\0')
+    if (   u8 == BASE64_INVALID
+        && !ppszEnd)
         return VERR_INVALID_BASE64_ENCODING;
 
     /*
@@ -401,7 +405,7 @@ RT_EXPORT_SYMBOL(RTBase64EncodedLength);
 
 RTDECL(size_t) RTBase64EncodedLengthEx(size_t cbData, uint32_t fFlags)
 {
-    size_t const cchEol = g_acchRTBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
+    size_t const cchEol = g_acchrtBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
 
     if (cbData * 8 / 8 != cbData)
     {
@@ -440,9 +444,9 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
                              char *pszBuf, size_t cbBuf, size_t *pcchActual)
 {
     /* Expand the EOL style flags: */
-    size_t const    cchEol = g_acchRTBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
-    char const      chEol0 = g_aachRTBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][0];
-    char const      chEol1 = g_aachRTBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][1];
+    size_t const    cchEol = g_acchrtBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK];
+    char const      chEol0 = g_aachrtBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][0];
+    char const      chEol1 = g_aachrtBase64EolStyles[fFlags & RTBASE64_FLAGS_EOL_STYLE_MASK][1];
     Assert(cchEol == (chEol0 != '\0' ? 1U : 0U) + (chEol1 != '\0' ? 1U : 0U));
 
     /*
@@ -461,12 +465,12 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
 
         /* encode */
         u8A = pbSrc[0];
-        pchDst[0] = g_szRTBase64ValToChar[u8A >> 2];
+        pchDst[0] = g_szrtBase64ValToChar[u8A >> 2];
         u8B = pbSrc[1];
-        pchDst[1] = g_szRTBase64ValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
+        pchDst[1] = g_szrtBase64ValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
         u8C = pbSrc[2];
-        pchDst[2] = g_szRTBase64ValToChar[((u8B << 2) & 0x3f) | (u8C >> 6)];
-        pchDst[3] = g_szRTBase64ValToChar[u8C & 0x3f];
+        pchDst[2] = g_szrtBase64ValToChar[((u8B << 2) & 0x3f) | (u8C >> 6)];
+        pchDst[3] = g_szrtBase64ValToChar[u8C & 0x3f];
 
         /* advance */
         cbBuf  -= 4;
@@ -498,17 +502,17 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
         {
             case 1:
                 u8A = pbSrc[0];
-                pchDst[0] = g_szRTBase64ValToChar[u8A >> 2];
-                pchDst[1] = g_szRTBase64ValToChar[(u8A << 4) & 0x3f];
+                pchDst[0] = g_szrtBase64ValToChar[u8A >> 2];
+                pchDst[1] = g_szrtBase64ValToChar[(u8A << 4) & 0x3f];
                 pchDst[2] = '=';
                 pchDst[3] = '=';
                 break;
             case 2:
                 u8A = pbSrc[0];
-                pchDst[0] = g_szRTBase64ValToChar[u8A >> 2];
+                pchDst[0] = g_szrtBase64ValToChar[u8A >> 2];
                 u8B = pbSrc[1];
-                pchDst[1] = g_szRTBase64ValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
-                pchDst[2] = g_szRTBase64ValToChar[(u8B << 2) & 0x3f];
+                pchDst[1] = g_szrtBase64ValToChar[((u8A << 4) & 0x3f) | (u8B >> 4)];
+                pchDst[2] = g_szrtBase64ValToChar[(u8B << 2) & 0x3f];
                 pchDst[3] = '=';
                 break;
         }
