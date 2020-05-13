@@ -485,12 +485,13 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 /**
- * Acquires the IOMMU PDM lock or returns @a a_rcBusy if it's busy.
+ * Acquires the IOMMU PDM lock.
+ * This will make a long jump to ring-3 to acquire the lock if necessary.
  */
-#define IOMMU_LOCK_RET(a_pDevIns, a_pThis, a_rcBusy)  \
+#define IOMMU_LOCK(a_pDevIns, a_pThis)  \
     do { \
         NOREF(pThis); \
-        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo), (a_rcBusy)); \
+        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo), VINF_SUCCESS); \
         if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
         { /* likely */ } \
         else \
@@ -511,6 +512,14 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_ASSERT_LOCKED(a_pDevIns) \
     do { \
         Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo))); \
+    }  while (0)
+
+/**
+ * Asserts that the critsect is not owned by this thread.
+ */
+#define IOMMU_ASSERT_NOT_LOCKED(a_pDevIns) \
+    do { \
+        Assert(!PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo))); \
     }  while (0)
 
 /**
@@ -756,6 +765,11 @@ typedef union
     uint64_t    au64[2];
 } CMD_GENERIC_T;
 AssertCompileSize(CMD_GENERIC_T, 16);
+/** Pointer to a generic command buffer entry. */
+typedef CMD_GENERIC_T *PCMD_GENERIC_T;
+/** Pointer to a const generic command buffer entry. */
+typedef CMD_GENERIC_T const *PCCMD_GENERIC_T;
+
 /** Number of bits to shift the byte offset of a command in the command buffer to
  *  get its index. */
 #define IOMMU_CMD_GENERIC_SHIFT   4
@@ -1371,7 +1385,8 @@ typedef union
     uint64_t    u64;
 } IOMMU_CTRL_T;
 AssertCompileSize(IOMMU_CTRL_T, 8);
-#define IOMMU_CTRL_VALID_MASK       UINT64_C(0x004defffffffffff)
+#define IOMMU_CTRL_VALID_MASK           UINT64_C(0x004defffffffffff)
+#define IOMMU_CTRL_CMD_BUF_EN_MASK      UINT64_C(0x0000000000001001)
 
 /**
  * IOMMU Exclusion Base Register (MMIO).
@@ -2253,6 +2268,16 @@ typedef struct IOMMU
     uint32_t                    idxIommu;
     /** Alignment padding. */
     uint32_t                    uPadding0;
+
+    /** Whether the command thread is sleeping. */
+    bool volatile               fCmdThreadSleeping;
+    /** Alignment padding. */
+    uint8_t                     afPadding0[3];
+    /** Whether the command thread has been signaled for wake up. */
+    bool volatile               fCmdThreadSignaled;
+    /** Alignment padding. */
+    uint8_t                     afPadding1[3];
+
     /** The event semaphore the command thread waits on. */
     SUPSEMEVENT                 hEvtCmdThread;
     /** The MMIO handle. */
@@ -2382,6 +2407,8 @@ typedef struct IOMMU
 typedef struct IOMMU *PIOMMU;
 /** Pointer to the const IOMMU device state. */
 typedef const struct IOMMU *PCIOMMU;
+AssertCompileMemberAlignment(IOMMU, fCmdThreadSleeping, 4);
+AssertCompileMemberAlignment(IOMMU, fCmdThreadSignaled, 4);
 AssertCompileMemberAlignment(IOMMU, hEvtCmdThread, 8);
 AssertCompileMemberAlignment(IOMMU, hMmio, 8);
 AssertCompileMemberAlignment(IOMMU, IommuBar, 8);
@@ -2392,11 +2419,11 @@ AssertCompileMemberAlignment(IOMMU, IommuBar, 8);
 typedef struct IOMMUR3
 {
     /** Device instance. */
-    PPDMDEVINSR3            pDevInsR3;
+    PPDMDEVINSR3                pDevInsR3;
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPR3         pIommuHlpR3;
+    PCPDMIOMMUHLPR3             pIommuHlpR3;
     /** The command thread handle. */
-    R3PTRTYPE(PPDMTHREAD)   pCmdThread;
+    R3PTRTYPE(PPDMTHREAD)       pCmdThread;
 } IOMMUR3;
 /** Pointer to the ring-3 IOMMU device state. */
 typedef IOMMUR3 *PIOMMUR3;
@@ -2407,9 +2434,9 @@ typedef IOMMUR3 *PIOMMUR3;
 typedef struct IOMMUR0
 {
     /** Device instance. */
-    PPDMDEVINSR0            pDevInsR0;
+    PPDMDEVINSR0                pDevInsR0;
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPR0         pIommuHlpR0;
+    PCPDMIOMMUHLPR0             pIommuHlpR0;
 } IOMMUR0;
 /** Pointer to the ring-0 IOMMU device state. */
 typedef IOMMUR0 *PIOMMUR0;
@@ -2420,9 +2447,9 @@ typedef IOMMUR0 *PIOMMUR0;
 typedef struct IOMMURC
 {
     /** Device instance. */
-    PPDMDEVINSR0            pDevInsRC;
+    PPDMDEVINSR0                pDevInsRC;
     /** The IOMMU helpers. */
-    PCPDMIOMMUHLPRC         pIommuHlpRC;
+    PCPDMIOMMUHLPRC             pIommuHlpRC;
 } IOMMURC;
 /** Pointer to the raw-mode IOMMU device state. */
 typedef IOMMURC *PIOMMURC;
@@ -2523,8 +2550,8 @@ static uint32_t iommuAmdGetCmdBufEntryCount(PIOMMU pThis)
     if (idxTail >= idxHead)
         return idxTail - idxHead;
 
-    uint32_t const cMaxEvts = iommuAmdGetBufMaxEntries(pThis->CmdBufBaseAddr.n.u4Len);
-    return cMaxEvts - idxHead + idxTail;
+    uint32_t const cMaxCmds = iommuAmdGetBufMaxEntries(pThis->CmdBufBaseAddr.n.u4Len);
+    return cMaxCmds - idxHead + idxTail;
 }
 
 
@@ -2574,30 +2601,19 @@ static void iommuAmdSetPciTargetAbort(PPDMDEVINS pDevIns)
 
 
 /**
- * The IOMMU command thread.
+ * Wakes up the command thread if there are commands to be processed or if
+ * processing is requested to be stopped by software.
  *
- * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
- * @param   pThread     The command thread.
  */
-static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+static void iommuAmdCmdThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 {
-    RT_NOREF(pDevIns, pThread);
-}
+    IOMMU_ASSERT_LOCKED(pDevIns);
 
-
-/**
- * Unblocks the command thread so it can respond to a state change.
- *
- * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   pThread     The command thread.
- */
-static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    RT_NOREF(pThread);
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
+    if (   !ASMAtomicXchgBool(&pThis->fCmdThreadSignaled, true)
+        &&  ASMAtomicReadBool(&pThis->fCmdThreadSleeping))
+        PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
 }
 
 
@@ -2729,10 +2745,17 @@ static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iR
     IOMMU_CTRL_T NewCtrl;
     NewCtrl.u64 = u64Value;
 
+    /* Update the register. */
+    ASMAtomicWriteU64(&pThis->Ctrl.u64, NewCtrl.u64);
+
     /* Enable or disable event logging when the bit transitions. */
-    if (OldCtrl.n.u1EvtLogEn != NewCtrl.n.u1EvtLogEn)
+    bool const fNewIommuEn  = NewCtrl.n.u1IommuEn;
+    bool const fOldEvtLogEn = OldCtrl.n.u1EvtLogEn;
+    bool const fNewEvtLogEn = NewCtrl.n.u1EvtLogEn;
+    if (fOldEvtLogEn != fNewEvtLogEn)
     {
-        if (NewCtrl.n.u1EvtLogEn)
+        if (   fNewIommuEn
+            && fNewEvtLogEn)
         {
             ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_EVT_LOG_OVERFLOW);
             ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_EVT_LOG_RUNNING);
@@ -2741,26 +2764,19 @@ static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iR
             ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_EVT_LOG_RUNNING);
     }
 
-    /* Update the register. */
-    ASMAtomicWriteU64(&pThis->Ctrl.u64, NewCtrl.u64);
-
     /* Enable or disable command buffer processing when the bit transitions. */
-    if (OldCtrl.n.u1CmdBufEn != NewCtrl.n.u1CmdBufEn)
+    bool const fOldCmdBufEn = OldCtrl.n.u1CmdBufEn;
+    bool const fNewCmdBufEn = NewCtrl.n.u1CmdBufEn;
+    if (fOldCmdBufEn != fNewCmdBufEn)
     {
-        if (NewCtrl.n.u1CmdBufEn)
-        {
+        if (   fNewIommuEn
+            && fNewCmdBufEn)
             ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_CMD_BUF_RUNNING);
-
-            /* If the command buffer isn't empty, kick the command thread to start processing commands. */
-            if (pThis->CmdBufTailPtr.n.off != pThis->CmdBufHeadPtr.n.off)
-                PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
-        }
         else
-        {
             ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
-            /* Kick the command thread to stop processing commands. */
-            PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
-        }
+
+        /* Wake up the command thread to start or stop processing commands. */
+        iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
     }
 }
 
@@ -2969,6 +2985,8 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
     /* Update the register. */
     pThis->CmdBufHeadPtr.au32[0] = offBuf;
 
+    iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
+
     LogFlow((IOMMU_LOG_PFX ": Set CmdBufHeadPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
@@ -3008,6 +3026,8 @@ static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * bounds (which we do by masking bits above) it should be sufficient.
      */
     pThis->CmdBufTailPtr.au32[0] = offBuf;
+
+    iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
 
     LogFlow((IOMMU_LOG_PFX ": Set CmdBufTailPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
@@ -3481,11 +3501,11 @@ static void iommuAmdClearMsiInterrupt(PPDMDEVINS pDevIns)
 static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
 
-    /** @todo IOMMU: Consider locking here.  */
+    IOMMU_LOCK(pDevIns, pThis);
 
     /* Check if event logging is active and the log has not overflowed. */
+    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
     if (   Status.n.u1EvtLogRunning
         && !Status.n.u1EvtOverflow)
     {
@@ -3530,6 +3550,8 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
                 iommuAmdRaiseMsiInterrupt(pDevIns);
         }
     }
+
+    IOMMU_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -4443,6 +4465,152 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
 
 
 # ifdef IN_RING3
+
+/**
+ * Processes an IOMMU command.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pCmd        The command to process.
+ */
+static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd)
+{
+    IOMMU_ASSERT_NOT_LOCKED(pDevIns);
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    uint8_t const bCmd = pCmd->n.u4Opcode;
+    switch (bCmd)
+    {
+        case IOMMU_CMD_COMPLETION_WAIT:
+        case IOMMU_CMD_INV_DEV_TAB_ENTRY:
+        case IOMMU_CMD_INV_IOMMU_PAGES:
+        case IOMMU_CMD_INV_IOTLB_PAGES:
+        case IOMMU_CMD_INV_INTR_TABLE:
+        case IOMMU_CMD_PREFETCH_IOMMU_PAGES:
+        case IOMMU_CMD_COMPLETE_PPR_REQ:
+        case IOMMU_CMD_INV_IOMMU_ALL:
+        {
+            NOREF(pThis);
+            return VERR_NOT_IMPLEMENTED;
+        }
+
+        default:
+            break;
+    }
+
+    Log((IOMMU_LOG_PFX ": Invalid/Unrecognized command opcode %u (%#x)\n", bCmd, bCmd));
+    return VERR_INVALID_FUNCTION;
+}
+
+
+/**
+ * The IOMMU command thread.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pThread     The command thread.
+ */
+static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        /*
+         * Sleep perpetually until we are woken up to process commands.
+         */
+        {
+            ASMAtomicWriteBool(&pThis->fCmdThreadSleeping, true);
+            bool fSignaled = ASMAtomicXchgBool(&pThis->fCmdThreadSignaled, false);
+            if (!fSignaled)
+            {
+                Assert(ASMAtomicReadBool(&pThis->fCmdThreadSleeping));
+                int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtCmdThread, RT_INDEFINITE_WAIT);
+                AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
+                if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+                    break;
+                LogFlowFunc(("Woken up with rc=%Rrc\n", rc));
+                ASMAtomicWriteBool(&pThis->fCmdThreadSignaled, false);
+            }
+            ASMAtomicWriteBool(&pThis->fCmdThreadSleeping, false);
+        }
+
+        /*
+         * Fetch and process IOMMU commands.
+         */
+        /** @todo r=ramshankar: This employs a simplistic method of fetching commands (one
+         *        at a time) and is expensive due to calls to PGM for fetching guest memory.
+         *        We could optimize by fetching a bunch of commands at a time reducing
+         *        number of calls to PGM. In the longer run we could lock the memory and
+         *        mappings and accessing them directly. */
+        IOMMU_STATUS_T Status = iommuAmdGetStatus(pThis);
+        if (Status.n.u1CmdBufRunning)
+        {
+            IOMMU_LOCK(pDevIns, pThis);
+
+            uint32_t const cbCmdBuf = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+            uint32_t offHead = pThis->CmdBufHeadPtr.n.off;
+            Assert(!(offHead & ~IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK));
+            while (offHead != pThis->CmdBufTailPtr.n.off)
+            {
+                /* Fetch the command from guest memory. */
+                CMD_GENERIC_T Cmd;
+                RTGCPHYS const GCPhysCmd = (pThis->CmdBufBaseAddr.n.u40Base << X86_PAGE_4K_SHIFT) + offHead;
+                int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCmd, &Cmd, sizeof(Cmd));
+                if (RT_SUCCESS(rc))
+                {
+                    /* Increment the command buffer head pointer. */
+                    offHead = (offHead + sizeof(CMD_GENERIC_T)) % cbCmdBuf;
+                    pThis->CmdBufHeadPtr.n.off = offHead;
+
+                    /* Process the fetched command. */
+                    IOMMU_UNLOCK(pDevIns, pThis);
+                    rc = iommuAmdR3ProcessCmd(pDevIns, &Cmd);
+                    IOMMU_LOCK(pDevIns, pThis);
+                    if (RT_SUCCESS(rc))
+                    { /* likely */ }
+                    else
+                    {
+                        /** @todo IOMMU: Raise illegal command error. */
+                        /* Stop command processing. */
+                        ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
+                        break;
+                    }
+                }
+                else
+                {
+                    /** @todo IOMMU: Raise command hardware error. */
+                    /* Stop command processing. */
+                    ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
+                    break;
+                }
+            }
+
+            IOMMU_UNLOCK(pDevIns, pThis);
+        }
+    }
+}
+
+
+/**
+ * Wakes up the command thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pThread     The command thread.
+ */
+static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    RT_NOREF(pThread);
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
+}
+
+
 /**
  * @callback_method_impl{FNPCICONFIGREAD}
  */
@@ -4482,7 +4650,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
         }
     }
 
-    IOMMU_LOCK_RET(pDevIns, pThis, VERR_IGNORED);
+    IOMMU_LOCK(pDevIns, pThis);
 
     VBOXSTRICTRC rcStrict;
     switch (uAddress)
@@ -4526,7 +4694,6 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
             u32Value |= RT_BIT(23);     /* 64-bit MSI addressess must always be enabled for IOMMU. */
             RT_FALL_THRU();
         }
-
         default:
         {
             rcStrict = PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
