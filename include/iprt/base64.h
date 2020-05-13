@@ -112,7 +112,7 @@ RTDECL(ssize_t) RTBase64DecodedSizeEx(const char *pszString, size_t cchStringMax
  *                          following the Base64 encoded text block. If
  *                          NULL the entire string is assumed to be Base64.
  */
-RTDECL(ssize_t) RTBase64DecodedSizeUtf16Ex(PCRTUTF16 pwszString, size_t cwcStringMax, PRTUTF16 *ppwszEnd);
+RTDECL(ssize_t) RTBase64DecodedUtf16SizeEx(PCRTUTF16 pwszString, size_t cwcStringMax, PRTUTF16 *ppwszEnd);
 
 /**
  * Decodes a Base64 encoded string into the buffer supplied by the caller.
