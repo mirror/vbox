@@ -82,6 +82,8 @@ private:
 
     /** Holds the location container instance. */
     QGroupBox *m_pCntLocation;
+    /** Holds the source container instance. */
+    QGroupBox *m_pCntSource;
     /** Holds the settings container instance. */
     QGroupBox *m_pSettingsCnt;
 };

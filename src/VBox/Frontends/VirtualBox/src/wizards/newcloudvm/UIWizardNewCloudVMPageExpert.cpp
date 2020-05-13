@@ -35,10 +35,11 @@
 UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
     : UIWizardNewCloudVMPage2(fFullWizard)
     , m_pCntLocation(0)
+    , m_pCntSource(0)
     , m_pSettingsCnt(0)
 {
     /* Create main layout: */
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
+    QGridLayout *pMainLayout = new QGridLayout(this);
     if (pMainLayout)
     {
         /* Create location container: */
@@ -109,9 +110,26 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                     /* Add into layout: */
                     pLocationLayout->addWidget(m_pAccountPropertyTable);
                 }
+            }
 
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pCntLocation, 0, 0);
+        }
+
+        /* Create source container: */
+        m_pCntSource = new QGroupBox(this);
+        if (m_pCntSource)
+        {
+            /* There is no source table in short wizard form: */
+            if (!m_fFullWizard)
+                m_pCntSource->setVisible(false);
+
+            /* Create source layout: */
+            QVBoxLayout *pSourceLayout = new QVBoxLayout(m_pCntSource);
+            if (pSourceLayout)
+            {
                 /* Create source image list: */
-                m_pSourceImageList = new QListWidget(m_pCntLocation);
+                m_pSourceImageList = new QListWidget(m_pCntSource);
                 if (m_pSourceImageList)
                 {
                     const QFontMetrics fm(m_pSourceImageList->font());
@@ -124,12 +142,12 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                     m_pSourceImageList->setAlternatingRowColors(true);
 
                     /* Add into layout: */
-                    pLocationLayout->addWidget(m_pSourceImageList);
+                    pSourceLayout->addWidget(m_pSourceImageList);
                 }
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pCntLocation);
+            pMainLayout->addWidget(m_pCntSource, 1, 0);
         }
 
         /* Create settings container: */
@@ -157,7 +175,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pSettingsCnt);
+            pMainLayout->addWidget(m_pSettingsCnt, 0, 1, 2, 1);
         }
     }
 
@@ -211,6 +229,9 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
         m_pLocationComboBox->setItemText(i, m_pLocationComboBox->itemData(i, LocationData_Name).toString());
         m_pLocationComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
     }
+
+    /* Translate source container: */
+    m_pCntSource->setTitle(UIWizardNewCloudVM::tr("Source"));
 
     /* Translate settings container: */
     m_pSettingsCnt->setTitle(UIWizardNewCloudVM::tr("Settings"));
