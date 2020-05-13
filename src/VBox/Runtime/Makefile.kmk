@@ -608,6 +608,7 @@ RuntimeR3_SOURCES       = \
 	common/string/RTUtf16NLenEx.cpp \
 	common/string/RTUtf16PrintHexBytes.cpp \
 	common/string/base64.cpp \
+	common/string/base64-utf16.cpp \
 	common/string/simplepattern.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \

@@ -112,8 +112,6 @@ static void tstBase64(const void *pvData, size_t cbData,
      * Same as above, but using the UTF-16 variant of the code.
      */
 
-    /* Decoding: later */
-
     /* Encoding UTF-16: */
     memset(wszOut, 0xaa, sizeof(wszOut));
     wszOut[sizeof(wszOut) / sizeof(wszOut[0]) - 1] = '\0';
@@ -129,6 +127,29 @@ static void tstBase64(const void *pvData, size_t cbData,
     size_t cwcOut2 = RTBase64EncodedUtf16Length(cbData);
     if (cwcOut != cwcOut2)
         RTTestIFailed("RTBase64EncodedLength returned %zu RTUTF16 units, expected %zu.\n", cwcOut2, cwcOut);
+
+    /* Decoding UTF-16: */
+    PRTUTF16 pwszEnc = NULL;
+    RTTESTI_CHECK_RC_OK_RETV(RTStrToUtf16(pszEnc, &pwszEnc));
+
+    rc = RTBase64DecodeUtf16(pwszEnc, szOut, cbData, &cchOut, NULL);
+    if (RT_FAILURE(rc))
+        RTTestIFailed("RTBase64DecodeUtf16 -> %Rrc", rc);
+    else if (cchOut != cbData)
+        RTTestIFailed("RTBase64DecodeUtf16 returned %zu bytes, expected %zu.", cchOut, cbData);
+    else if (memcmp(szOut, pvData, cchOut))
+    {
+        if (fTextData)
+            RTTestIFailed("RTBase64Decode returned:\n%.*s\nexpected:\n%s\n", (int)cchOut, szOut, pvData);
+        else
+            RTTestIFailed("RTBase64Decode return mismatching output\n");
+    }
+
+    cchOut = RTBase64DecodedUtf16Size(pwszEnc, NULL);
+    if (cchOut != cbData)
+        RTTestIFailed("RTBase64DecodedUtf16Size returned %zu bytes, expected %zu.\n", cchOut, cbData);
+
+    RTUtf16Free(pwszEnc);
 }
 
 

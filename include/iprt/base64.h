@@ -73,6 +73,18 @@ RT_C_DECLS_BEGIN
 RTDECL(ssize_t) RTBase64DecodedSize(const char *pszString, char **ppszEnd);
 
 /**
+ * Calculates the decoded data size for a Base64 encoded UTF-16 string.
+ *
+ * @returns The length in bytes. -1 if the encoding is bad.
+ *
+ * @param   pwszString      The Base64 encoded UTF-16 string.
+ * @param   ppwszEnd        If not NULL, this will point to the first char
+ *                          following the Base64 encoded text block. If
+ *                          NULL the entire string is assumed to be Base64.
+ */
+RTDECL(ssize_t) RTBase64DecodedUtf16Size(PCRTUTF16 pwszString, PRTUTF16 *ppwszEnd);
+
+/**
  * Calculates the decoded data size for a Base64 encoded string.
  *
  * @returns The length in bytes. -1 if the encoding is bad.
@@ -86,6 +98,21 @@ RTDECL(ssize_t) RTBase64DecodedSize(const char *pszString, char **ppszEnd);
  *                          NULL the entire string is assumed to be Base64.
  */
 RTDECL(ssize_t) RTBase64DecodedSizeEx(const char *pszString, size_t cchStringMax, char **ppszEnd);
+
+/**
+ * Calculates the decoded data size for a Base64 encoded UTF-16 string.
+ *
+ * @returns The length in bytes. -1 if the encoding is bad.
+ *
+ * @param   pwszString      The Base64 encoded UTF-16 string.
+ * @param   cwcStringMax    The max length to decode in RTUTF16 units, use
+ *                          RTSTR_MAX if the length of @a pwszString is not
+ *                          known and it is really zero terminated.
+ * @param   ppwszEnd        If not NULL, this will point to the first char
+ *                          following the Base64 encoded text block. If
+ *                          NULL the entire string is assumed to be Base64.
+ */
+RTDECL(ssize_t) RTBase64DecodedSizeUtf16Ex(PCRTUTF16 pwszString, size_t cwcStringMax, PRTUTF16 *ppwszEnd);
 
 /**
  * Decodes a Base64 encoded string into the buffer supplied by the caller.
@@ -109,6 +136,30 @@ RTDECL(ssize_t) RTBase64DecodedSizeEx(const char *pszString, size_t cchStringMax
  *                          of the Base64 encoded data.
  */
 RTDECL(int) RTBase64Decode(const char *pszString, void *pvData, size_t cbData, size_t *pcbActual, char **ppszEnd);
+
+/**
+ * Decodes a Base64 encoded UTF-16 string into the buffer supplied by the
+ * caller.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small. pcbActual will not
+ *          be set, nor will ppszEnd.
+ * @retval  VERR_INVALID_BASE64_ENCODING if the encoding is wrong.
+ *
+ * @param   pwszString      The Base64 UTF-16 string. Whether the entire string
+ *                          or just the start of the string is in Base64 depends
+ *                          on whether ppwszEnd is specified or not.
+ * @param   pvData          Where to store the decoded data.
+ * @param   cbData          The size of the output buffer that pvData points to.
+ * @param   pcbActual       Where to store the actual number of bytes returned.
+ *                          Optional.
+ * @param   ppwszEnd        Indicates that the string may contain other stuff
+ *                          after the Base64 encoded data when not NULL. Will
+ *                          be set to point to the first char that's not part of
+ *                          the encoding. If NULL the entire string must be part
+ *                          of the Base64 encoded data.
+ */
+RTDECL(int) RTBase64DecodeUtf16(PCRTUTF16 pwszString, void *pvData, size_t cbData, size_t *pcbActual, PRTUTF16 *ppwszEnd);
 
 /**
  * Decodes a Base64 encoded string into the buffer supplied by the caller.
@@ -136,6 +187,34 @@ RTDECL(int) RTBase64Decode(const char *pszString, void *pvData, size_t cbData, s
  */
 RTDECL(int) RTBase64DecodeEx(const char *pszString, size_t cchStringMax, void *pvData, size_t cbData,
                              size_t *pcbActual, char **ppszEnd);
+
+/**
+ * Decodes a Base64 encoded UTF-16 string into the buffer supplied by the
+ * caller.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small. pcbActual will not
+ *          be set, nor will ppszEnd.
+ * @retval  VERR_INVALID_BASE64_ENCODING if the encoding is wrong.
+ *
+ * @param   pwszString      The Base64 UTF-16 string. Whether the entire string
+ *                          or just the start of the string is in Base64 depends
+ *                          on whether ppszEnd is specified or not.
+ * @param   cwcStringMax    The max length to decode in RTUTF16 units, use
+ *                          RTSTR_MAX if the length of @a pwszString is not
+ *                          known and it is really zero terminated.
+ * @param   pvData          Where to store the decoded data.
+ * @param   cbData          The size of the output buffer that pvData points to.
+ * @param   pcbActual       Where to store the actual number of bytes returned.
+ *                          Optional.
+ * @param   ppwszEnd        Indicates that the string may contain other stuff
+ *                          after the Base64 encoded data when not NULL. Will
+ *                          be set to point to the first char that's not part of
+ *                          the encoding. If NULL the entire string must be part
+ *                          of the Base64 encoded data.
+ */
+RTDECL(int) RTBase64DecodeUtf16Ex(PCRTUTF16 pwszString, size_t cwcStringMax, void *pvData, size_t cbData,
+                                  size_t *pcbActual, PRTUTF16 *ppwszEnd);
 
 
 /**
