@@ -24,6 +24,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef IPRT_INCLUDED_SRC_common_string_base64_h
+#define IPRT_INCLUDED_SRC_common_string_base64_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -82,3 +88,4 @@ DECLINLINE(ssize_t) rtBase64DecodedSizeRecalc(uint32_t c6Bits, unsigned cbPad)
    return cb;
 }
 
+#endif /* !IPRT_INCLUDED_SRC_common_string_base64_h */
