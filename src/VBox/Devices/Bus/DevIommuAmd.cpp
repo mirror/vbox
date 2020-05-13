@@ -488,9 +488,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
  * Acquires the IOMMU PDM lock.
  * This will make a long jump to ring-3 to acquire the lock if necessary.
  */
-#define IOMMU_LOCK(a_pDevIns, a_pThis)  \
+#define IOMMU_LOCK(a_pDevIns)  \
     do { \
-        NOREF(pThis); \
         int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo), VINF_SUCCESS); \
         if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
         { /* likely */ } \
@@ -499,12 +498,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
     } while (0)
 
 /**
- * Acquires the IOMMU PDM lock (no return, only asserts on failure).
+ * Acquires the IOMMU PDM lock (asserts on failure rather than returning an error).
  * This will make a long jump to ring-3 to acquire the lock if necessary.
  */
-#define IOMMU_LOCK_NORET(a_pDevIns, a_pThis)  \
+#define IOMMU_LOCK_NORET(a_pDevIns)  \
     do { \
-        NOREF(pThis); \
         int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo), VINF_SUCCESS); \
         AssertRC(rcLock); \
     } while (0)
@@ -512,7 +510,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /**
  * Releases the IOMMU PDM lock.
  */
-#define IOMMU_UNLOCK(a_pDevIns, a_pThis) \
+#define IOMMU_UNLOCK(a_pDevIns) \
     do { \
         PDMDevHlpCritSectLeave((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo)); \
     } while (0)
@@ -3544,7 +3542,7 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
-    IOMMU_LOCK(pDevIns, pThis);
+    IOMMU_ASSERT_LOCKED(pDevIns);
 
     /* Check if event logging is active and the log has not overflowed. */
     IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
@@ -3592,8 +3590,6 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
                 iommuAmdRaiseMsiInterrupt(pDevIns);
         }
     }
-
-    IOMMU_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -3607,8 +3603,9 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
  */
 static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
+    IOMMU_ASSERT_LOCKED(pDevIns);
+
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    IOMMU_LOCK_NORET(pDevIns, pThis);
     if (pThis->ExtFeat.n.u1HwErrorSup)
     {
         if (pThis->HwEvtStatus.n.u1Valid)
@@ -3618,7 +3615,6 @@ static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
         pThis->HwEvtLo     = RT_MAKE_U64(pEvent->au32[2], pEvent->au32[3]);
         Assert(pThis->HwEvtHi.n.u4EvtCode == IOMMU_EVT_DEV_TAB_HW_ERROR);
     }
-    IOMMU_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -3638,7 +3634,7 @@ static void iommuAmdInitPageTabHwErrorEvent(uint16_t uDevId, uint16_t uDomainId,
     memset(pEvtPageTabHwErr, 0, sizeof(*pEvtPageTabHwErr));
     pEvtPageTabHwErr->n.u16DevId           = uDevId;
     pEvtPageTabHwErr->n.u16DomainOrPasidLo = uDomainId;
-    //pEvtPageTabHwErr->n.u1GuestOrNested  = 0;
+    pEvtPageTabHwErr->n.u1GuestOrNested    = 0;
     pEvtPageTabHwErr->n.u1Interrupt        = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
     pEvtPageTabHwErr->n.u1ReadWrite        = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
     pEvtPageTabHwErr->n.u1Translation      = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
@@ -3655,6 +3651,8 @@ static void iommuAmdInitPageTabHwErrorEvent(uint16_t uDevId, uint16_t uDomainId,
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtPageTabHwErr    The page table hardware error event.
  * @param   enmEvtType          The hardware error event type.
+ *
+ * @thread  Any.
  */
 static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_PAGE_TAB_HW_ERR_T pEvtPageTabHwErr,
                                              EVT_HW_ERR_TYPE_T enmEvtType)
@@ -3662,10 +3660,14 @@ static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, 
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_PAGE_TAB_HW_ERR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtPageTabHwErr;
 
+    IOMMU_LOCK_NORET(pDevIns);
+
     iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
     iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
+
+    IOMMU_UNLOCK(pDevIns);
 
     Log((IOMMU_LOG_PFX ": Raised PAGE_TAB_HARDWARE_ERROR. uDevId=%#x uDomainId=%#x GCPhysPtEntity=%#RGp enmOp=%u enmType=%u\n",
          pEvtPageTabHwErr->n.u16DevId, pEvtPageTabHwErr->n.u16DomainOrPasidLo, pEvtPageTabHwErr->n.u64Addr, enmOp, enmEvtType));
@@ -3695,15 +3697,21 @@ static void iommuAmdInitCmdHwErrorEvent(RTGCPHYS GCPhysCmd, HWEVTTYPE enmHwErrTy
  * @param   pDevIns         The IOMMU device instance.
  * @param   pEvtCmdHwErr    The command hardware error event.
  * @param   enmEvtType      The hardware error event type.
+ *
+ * @thread  Any.
  */
 static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T pEvtCmdHwErr, EVT_HW_ERR_TYPE_T enmEvtType)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_CMD_HW_ERR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtCmdHwErr;
 
+    IOMMU_LOCK_NORET(pDevIns);
+
     iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
     iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
     iommuAmdHaltCmdProcessing(pDevIns);
+
+    IOMMU_UNLOCK(pDevIns);
 
     Log((IOMMU_LOG_PFX ": Raised COMMAND_HARDWARE_ERROR. GCPhysCmd=%#RGp enmType=%u\n", pEvtCmdHwErr->n.u64Addr, enmEvtType));
     NOREF(enmEvtType);
@@ -3741,16 +3749,23 @@ static void iommuAmdInitDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, 
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtDevTabHwErr     The device table hardware error event.
  * @param   enmEvtType          The hardware error event type.
+ *
+ * @thread  Any.
  */
 static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr,
                                             EVT_HW_ERR_TYPE_T enmEvtType)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_DEV_TAB_HW_ERROR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtDevTabHwErr;
+
+    IOMMU_LOCK_NORET(pDevIns);
+
     iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
     iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
+
+    IOMMU_UNLOCK(pDevIns);
 
     Log((IOMMU_LOG_PFX ": Raised DEV_TAB_HARDWARE_ERROR. uDevId=%#x GCPhysDte=%#RGp enmOp=%u enmType=%u\n",
          pEvtDevTabHwErr->n.u16DevId, pEvtDevTabHwErr->n.u64Addr, enmOp, enmEvtType));
@@ -3793,15 +3808,22 @@ static void iommuAmdInitIllegalDteEvent(uint16_t uDevId, uint64_t uIova, bool fR
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pEvtIllegalDte  The illegal device table entry event.
  * @param   enmEvtType      The illegal DTE event type.
+ *
+ * @thread  Any.
  */
 static void iommuAmdRaiseIllegalDteEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PCEVT_ILLEGAL_DTE_T pEvtIllegalDte,
                                          EVT_ILLEGAL_DTE_TYPE_T enmEvtType)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_ILLEGAL_DTE_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIllegalDte;
+
+    IOMMU_LOCK_NORET(pDevIns);
+
     iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
     if (enmOp != IOMMUOP_CMD)
         iommuAmdSetPciTargetAbort(pDevIns);
+
+    IOMMU_UNLOCK(pDevIns);
 
     Log((IOMMU_LOG_PFX ": Raised ILLEGAL_DTE_EVENT. uDevId=%#x uIova=%#RX64 enmOp=%u enmEvtType=%u\n", pEvtIllegalDte->n.u16DevId,
          pEvtIllegalDte->n.u64Addr, enmOp, enmEvtType));
@@ -3866,6 +3888,8 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_IO_PAGE_FAULT_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIoPageFault;
+
+    IOMMU_LOCK_NORET(pDevIns);
 
     bool fSuppressEvtLogging = false;
     if (   enmOp == IOMMUOP_MEM_READ
@@ -3966,6 +3990,8 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
             break;
         }
     }
+
+    IOMMU_UNLOCK(pDevIns);
 }
 
 
@@ -4629,7 +4655,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
         IOMMU_STATUS_T Status = iommuAmdGetStatus(pThis);
         if (Status.u64 & IOMMU_STATUS_CMD_BUF_RUNNING)
         {
-            IOMMU_LOCK(pDevIns, pThis);
+            IOMMU_LOCK(pDevIns);
 
             uint32_t const cbCmdBuf = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
             uint32_t offHead = pThis->CmdBufHeadPtr.n.off;
@@ -4647,9 +4673,9 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     pThis->CmdBufHeadPtr.n.off = offHead;
 
                     /* Process the fetched command. */
-                    IOMMU_UNLOCK(pDevIns, pThis);
+                    IOMMU_UNLOCK(pDevIns);
                     rc = iommuAmdR3ProcessCmd(pDevIns, &Cmd);
-                    IOMMU_LOCK(pDevIns, pThis);
+                    IOMMU_LOCK(pDevIns);
                     if (RT_SUCCESS(rc))
                     { /* likely */ }
                     else
@@ -4664,13 +4690,13 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                 {
                     /* Reporting this as a "data error". Maybe target abort is more appropriate? */
                     EVT_CMD_HW_ERR_T EvtCmdHwErr;
-                    iommuAmdInitCmdHwErrorEvent(GCPhysCmd, HWEVTTYPE_DATA_ERROR, & EvtCmdHwErr);
+                    iommuAmdInitCmdHwErrorEvent(GCPhysCmd, HWEVTTYPE_DATA_ERROR, &EvtCmdHwErr);
                     iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr, kHwErrType_PoisonedData);
                     break;
                 }
             }
 
-            IOMMU_UNLOCK(pDevIns, pThis);
+            IOMMU_UNLOCK(pDevIns);
         }
     }
 }
@@ -4731,7 +4757,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
         }
     }
 
-    IOMMU_LOCK(pDevIns, pThis);
+    IOMMU_LOCK(pDevIns);
 
     VBOXSTRICTRC rcStrict;
     switch (uAddress)
@@ -4782,7 +4808,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
         }
     }
 
-    IOMMU_UNLOCK(pDevIns, pThis);
+    IOMMU_UNLOCK(pDevIns);
 
     Log3((IOMMU_LOG_PFX ": PCI config write: %#x -> To %#x (%u) %Rrc\n", u32Value, uAddress, cb, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
