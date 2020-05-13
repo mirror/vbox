@@ -26790,7 +26790,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="powerUp">
       <desc>
-        Start cloud virual machine execution.
+        Start cloud virtual machine execution.
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>
@@ -26801,7 +26801,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="reboot">
       <desc>
-        Reboot cloud virual machine.
+        Reboot cloud virtual machine.
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>
@@ -26812,7 +26812,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="shutdown">
       <desc>
-        Shutdown cloud virual machine.
+        Shutdown cloud virtual machine.
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>
