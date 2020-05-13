@@ -4077,7 +4077,10 @@
 /*
  * Unstable variables (alphabetical order):
  */
-/* none */
+# define g_au8RTBase64CharToVal                         RT_MANGLING(g_au8RTBase64CharToVal)
+# define g_szRTBase64ValToChar                          RT_MANGLING(g_szRTBase64ValToChar)
+# define g_acchRTBase64EolStyles                        RT_MANGLING(g_acchRTBase64EolStyles)
+# define g_aachRTBase64EolStyles                        RT_MANGLING(g_aachRTBase64EolStyles)
 
 #endif /* !DOXYGEN_RUNNING */
 
