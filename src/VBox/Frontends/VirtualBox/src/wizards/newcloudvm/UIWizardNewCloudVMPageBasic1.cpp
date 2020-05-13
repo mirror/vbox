@@ -20,6 +20,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QTabBar>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -51,6 +52,7 @@ UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1()
     , m_pAccountToolButton(0)
     , m_pAccountPropertyTable(0)
     , m_pSourceImageLabel(0)
+    , m_pSourceTabBar(0)
     , m_pSourceImageList(0)
 {
 }
@@ -300,8 +302,25 @@ void UIWizardNewCloudVMPage1::populateSourceImages()
             const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
                                                              << KCloudImageState_Available;
 
-            /* Ask for cloud custom images: */
-            CProgress comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
+            /* Depending on current source tab-bar index: */
+            CProgress comProgress;
+            switch (m_pSourceTabBar->currentIndex())
+            {
+                case 0:
+                {
+                    /* Ask for cloud boot-volumes: */
+                    comProgress = comCloudClient.ListBootVolumes(comNames, comIDs);
+                    break;
+                }
+                case 1:
+                {
+                    /* Ask for cloud images: */
+                    comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
+                    break;
+                }
+                default:
+                    break;
+            }
             if (!comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
@@ -386,8 +405,24 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
             /* Remember Virtual System Description: */
             setVSD(comVSD);
 
-            /* Add image id to virtual system description: */
-            comVSD.AddDescription(KVirtualSystemDescriptionType_CloudImageId, imageId(), QString());
+            /* Depending on current source tab-bar index: */
+            switch (m_pSourceTabBar->currentIndex())
+            {
+                case 0:
+                {
+                    /* Add boot-volume id to virtual system description: */
+                    comVSD.AddDescription(KVirtualSystemDescriptionType_CloudBootVolumeId, imageId(), QString());
+                    break;
+                }
+                case 1:
+                {
+                    /* Add image id to virtual system description: */
+                    comVSD.AddDescription(KVirtualSystemDescriptionType_CloudImageId, imageId(), QString());
+                    break;
+                }
+                default:
+                    break;
+            }
             if (!comVSD.isOk())
             {
                 msgCenter().cannotAddVirtualSystemDescriptionValue(comVSD);
@@ -640,22 +675,46 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
                 /* Add into layout: */
                 m_pOptionsLayout->addWidget(m_pSourceImageLabel, 2, 0, Qt::AlignRight);
             }
-            /* Create source image list: */
-            m_pSourceImageList = new QListWidget(this);
-            if (m_pSourceImageList)
+            /* Create source image layout: */
+            QVBoxLayout *pSourceImageLayout = new QVBoxLayout;
+            if (pSourceImageLayout)
             {
-                m_pSourceImageLabel->setBuddy(m_pSourceImageList);
-                const QFontMetrics fm(m_pSourceImageList->font());
-                const int iFontWidth = fm.width('x');
-                const int iTotalWidth = 50 * iFontWidth;
-                const int iFontHeight = fm.height();
-                const int iTotalHeight = 4 * iFontHeight;
-                m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                //m_pSourceImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                m_pSourceImageList->setAlternatingRowColors(true);
+                pSourceImageLayout->setSpacing(0);
+                pSourceImageLayout->setContentsMargins(0, 0, 0, 0);
+
+                /* Create source tab-bar: */
+                m_pSourceTabBar = new QTabBar(this);
+                if (m_pSourceTabBar)
+                {
+                    m_pSourceTabBar->addTab(QString());
+                    m_pSourceTabBar->addTab(QString());
+                    connect(m_pSourceTabBar, &QTabBar::currentChanged,
+                            this, &UIWizardNewCloudVMPageBasic1::sltHandleSourceChange);
+
+                    /* Add into layout: */
+                    pSourceImageLayout->addWidget(m_pSourceTabBar);
+                }
+
+                /* Create source image list: */
+                m_pSourceImageList = new QListWidget(this);
+                if (m_pSourceImageList)
+                {
+                    m_pSourceImageLabel->setBuddy(m_pSourceImageList);
+                    const QFontMetrics fm(m_pSourceImageList->font());
+                    const int iFontWidth = fm.width('x');
+                    const int iTotalWidth = 50 * iFontWidth;
+                    const int iFontHeight = fm.height();
+                    const int iTotalHeight = 4 * iFontHeight;
+                    m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                    //m_pSourceImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                    m_pSourceImageList->setAlternatingRowColors(true);
+
+                    /* Add into layout: */
+                    pSourceImageLayout->addWidget(m_pSourceImageList);
+                }
 
                 /* Add into layout: */
-                m_pOptionsLayout->addWidget(m_pSourceImageList, 2, 1, 2, 1);
+                m_pOptionsLayout->addLayout(pSourceImageLayout, 2, 1, 2, 1);
             }
 
             /* Add into layout: */
@@ -729,6 +788,10 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
     /* Translate cloud stuff: */
     m_pAccountLabel->setText(UIWizardNewCloudVM::tr("&Account:"));
     m_pSourceImageLabel->setText(UIWizardNewCloudVM::tr("&Source:"));
+
+    /* Translate source tab-bar: */
+    m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Boot Volumes"));
+    m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Images"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
@@ -818,4 +881,11 @@ void UIWizardNewCloudVMPageBasic1::sltHandleAccountButtonClick()
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
+}
+
+void UIWizardNewCloudVMPageBasic1::sltHandleSourceChange()
+{
+    /* Refresh required settings: */
+    populateSourceImages();
+    emit completeChanged();
 }

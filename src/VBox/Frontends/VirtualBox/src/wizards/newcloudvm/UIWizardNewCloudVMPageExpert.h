@@ -72,6 +72,9 @@ private slots:
     /** Handles account tool-button click. */
     void sltHandleAccountButtonClick();
 
+    /** Handles change in source tab-bar. */
+    void sltHandleSourceChange();
+
     /** Handles change in instance list. */
     void sltHandleInstanceListChange();
 

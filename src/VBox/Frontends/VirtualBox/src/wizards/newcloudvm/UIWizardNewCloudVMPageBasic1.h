@@ -37,6 +37,7 @@
 class QGridLayout;
 class QLabel;
 class QListWidget;
+class QTabBar;
 class QTableWidget;
 class QIComboBox;
 class QIRichTextLabel;
@@ -134,6 +135,8 @@ protected:
     QTableWidget *m_pAccountPropertyTable;
     /** Holds the source image label instance. */
     QLabel       *m_pSourceImageLabel;
+    /** Holds the source tab-bar instance. */
+    QTabBar      *m_pSourceTabBar;
     /** Holds the source image list instance. */
     QListWidget  *m_pSourceImageList;
 };
@@ -180,6 +183,9 @@ private slots:
 
     /** Handles account tool-button click. */
     void sltHandleAccountButtonClick();
+
+    /** Handles change in source tab-bar. */
+    void sltHandleSourceChange();
 
 private:
 

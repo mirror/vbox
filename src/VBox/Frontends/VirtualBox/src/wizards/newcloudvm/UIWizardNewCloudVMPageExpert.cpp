@@ -19,6 +19,7 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QListWidget>
+#include <QTabBar>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -42,6 +43,9 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
     QGridLayout *pMainLayout = new QGridLayout(this);
     if (pMainLayout)
     {
+        pMainLayout->setRowStretch(0, 0);
+        pMainLayout->setRowStretch(1, 1);
+
         /* Create location container: */
         m_pCntLocation = new QGroupBox(this);
         if (m_pCntLocation)
@@ -128,6 +132,21 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             QVBoxLayout *pSourceLayout = new QVBoxLayout(m_pCntSource);
             if (pSourceLayout)
             {
+                pSourceLayout->setSpacing(0);
+
+                /* Create source tab-bar: */
+                m_pSourceTabBar = new QTabBar(this);
+                if (m_pSourceTabBar)
+                {
+                    m_pSourceTabBar->addTab(QString());
+                    m_pSourceTabBar->addTab(QString());
+                    connect(m_pSourceTabBar, &QTabBar::currentChanged,
+                            this, &UIWizardNewCloudVMPageExpert::sltHandleSourceChange);
+
+                    /* Add into layout: */
+                    pSourceLayout->addWidget(m_pSourceTabBar);
+                }
+
                 /* Create source image list: */
                 m_pSourceImageList = new QListWidget(m_pCntSource);
                 if (m_pSourceImageList)
@@ -232,6 +251,10 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
 
     /* Translate source container: */
     m_pCntSource->setTitle(UIWizardNewCloudVM::tr("Source"));
+
+    /* Translate source tab-bar: */
+    m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Boot Volumes"));
+    m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Images"));
 
     /* Translate settings container: */
     m_pSettingsCnt->setTitle(UIWizardNewCloudVM::tr("Settings"));
@@ -351,6 +374,15 @@ void UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick()
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
+}
+
+void UIWizardNewCloudVMPageExpert::sltHandleSourceChange()
+{
+    /* Refresh required settings: */
+    populateSourceImages();
+    populateFormProperties();
+    refreshFormPropertiesTable();
+    emit completeChanged();
 }
 
 void UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange()
