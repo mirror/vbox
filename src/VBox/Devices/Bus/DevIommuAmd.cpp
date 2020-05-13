@@ -499,6 +499,17 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
     } while (0)
 
 /**
+ * Acquires the IOMMU PDM lock (no return, only asserts on failure).
+ * This will make a long jump to ring-3 to acquire the lock if necessary.
+ */
+#define IOMMU_LOCK_NORET(a_pDevIns, a_pThis)  \
+    do { \
+        NOREF(pThis); \
+        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), (a_pDevIns)->CTX_SUFF(pCritSectRo), VINF_SUCCESS); \
+        AssertRC(rcLock); \
+    } while (0)
+
+/**
  * Releases the IOMMU PDM lock.
  */
 #define IOMMU_UNLOCK(a_pDevIns, a_pThis) \
@@ -994,6 +1005,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    au64[2];
 } EVT_ILLEGAL_DTE_T;
 AssertCompileSize(EVT_ILLEGAL_DTE_T, 16);
 /** Pointer to an illegal device table entry event. */
@@ -1027,6 +1040,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    au64[2];
 } EVT_IO_PAGE_FAULT_T;
 AssertCompileSize(EVT_IO_PAGE_FAULT_T, 16);
 /** Pointer to an I/O page fault event. */
@@ -1058,6 +1073,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    au64[2];
 } EVT_DEV_TAB_HW_ERROR_T;
 AssertCompileSize(EVT_DEV_TAB_HW_ERROR_T, 16);
 /** Pointer to a device table hardware error event. */
@@ -1093,13 +1110,14 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[4];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    au64[2];
 } EVT_PAGE_TAB_HW_ERR_T;
 AssertCompileSize(EVT_PAGE_TAB_HW_ERR_T, 16);
 /** Pointer to a page table hardware error event. */
 typedef EVT_PAGE_TAB_HW_ERR_T *PEVT_PAGE_TAB_HW_ERR_T;
 /** Pointer to a const page table hardware error event. */
 typedef EVT_PAGE_TAB_HW_ERR_T const *PCEVT_PAGE_TAB_HW_ERR_T;
-
 
 /**
  * Event Log Entry: ILLEGAL_COMMAND_ERROR.
@@ -1118,6 +1136,8 @@ typedef union
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[4];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    au64[2];
 } EVT_ILLEGAL_CMD_ERR_T;
 AssertCompileSize(EVT_ILLEGAL_CMD_ERR_T, 16);
 
@@ -1129,15 +1149,23 @@ typedef union
 {
     struct
     {
-        uint32_t    u32Rsvd0;           /**< Bits 31:0  - Reserved. */
-        uint32_t    u4Rsvd0 : 4;        /**< Bits 35:32 - Reserved. */
-        uint32_t    u28AddrLo : 28;     /**< Bits 63:36 - Address: SPA of the attempted access (Lo). */
-        uint32_t    u32AddrHi;          /**< Bits 95:64 - Address: SPA of the attempted access (Hi). */
+        uint32_t    u32Rsvd0;           /**< Bits 31:0   - Reserved. */
+        uint32_t    u25Rsvd1 : 25;      /**< Bits 56:32  - Reserved. */
+        uint32_t    u2Type : 2;         /**< Bits 58:57  - Type: The type of hardware error. */
+        uint32_t    u1Rsvd1 : 1;        /**< Bit  59     - Reserved. */
+        uint32_t    u4EvtCode : 4;      /**< Bits 63:60  - Event code. */
+        uint64_t    u64Addr;            /**< Bits 128:64 - Address: SPA of the attempted access. */
     } n;
     /** The 32-bit unsigned integer view. */
-    uint32_t    au32[3];
-} EVT_CMD_HW_ERROR_T;
-AssertCompileSize(EVT_CMD_HW_ERROR_T, 12);
+    uint32_t    au32[4];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    au64[2];
+} EVT_CMD_HW_ERR_T;
+AssertCompileSize(EVT_CMD_HW_ERR_T, 16);
+/** Pointer to a command hardware error event. */
+typedef EVT_CMD_HW_ERR_T *PEVT_CMD_HW_ERR_T;
+/** Pointer to a const command hardware error event. */
+typedef EVT_CMD_HW_ERR_T const *PCEVT_CMD_HW_ERR_T;
 
 /**
  * Event Log Entry: IOTLB_INV_TIMEOUT.
@@ -2601,6 +2629,20 @@ static void iommuAmdSetPciTargetAbort(PPDMDEVINS pDevIns)
 
 
 /**
+ * Halts command processing.
+ *
+ * @param   pDevIns     The IOMMU device instance.
+ */
+static void iommuAmdHaltCmdProcessing(PPDMDEVINS pDevIns)
+{
+    IOMMU_ASSERT_LOCKED(pDevIns);
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
+}
+
+
+/**
  * Wakes up the command thread if there are commands to be processed or if
  * processing is requested to be stopped by software.
  *
@@ -3565,8 +3607,8 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
  */
 static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
 {
-    /** @todo IOMMU: We should probably lock the device here */
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_LOCK_NORET(pDevIns, pThis);
     if (pThis->ExtFeat.n.u1HwErrorSup)
     {
         if (pThis->HwEvtStatus.n.u1Valid)
@@ -3576,6 +3618,7 @@ static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
         pThis->HwEvtLo     = RT_MAKE_U64(pEvent->au32[2], pEvent->au32[3]);
         Assert(pThis->HwEvtHi.n.u4EvtCode == IOMMU_EVT_DEV_TAB_HW_ERROR);
     }
+    IOMMU_UNLOCK(pDevIns, pThis);
 }
 
 
@@ -3599,7 +3642,7 @@ static void iommuAmdInitPageTabHwErrorEvent(uint16_t uDevId, uint16_t uDomainId,
     pEvtPageTabHwErr->n.u1Interrupt        = RT_BOOL(enmOp == IOMMUOP_INTR_REQ);
     pEvtPageTabHwErr->n.u1ReadWrite        = RT_BOOL(enmOp == IOMMUOP_MEM_WRITE);
     pEvtPageTabHwErr->n.u1Translation      = RT_BOOL(enmOp == IOMMUOP_TRANSLATE_REQ);
-    pEvtPageTabHwErr->n.u2Type             = enmOp == IOMMUOP_CMD ? HWEVTTYPE_DATA_ERROR : HWEVTTYPE_TARGET_ABORT;;
+    pEvtPageTabHwErr->n.u2Type             = enmOp == IOMMUOP_CMD ? HWEVTTYPE_DATA_ERROR : HWEVTTYPE_TARGET_ABORT;
     pEvtPageTabHwErr->n.u4EvtCode          = IOMMU_EVT_PAGE_TAB_HW_ERROR;
     pEvtPageTabHwErr->n.u64Addr            = GCPhysPtEntity;
 }
@@ -3626,6 +3669,43 @@ static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, 
 
     Log((IOMMU_LOG_PFX ": Raised PAGE_TAB_HARDWARE_ERROR. uDevId=%#x uDomainId=%#x GCPhysPtEntity=%#RGp enmOp=%u enmType=%u\n",
          pEvtPageTabHwErr->n.u16DevId, pEvtPageTabHwErr->n.u16DomainOrPasidLo, pEvtPageTabHwErr->n.u64Addr, enmOp, enmEvtType));
+    NOREF(enmEvtType);
+}
+
+
+/**
+ * Initializes a COMMAND_HARDWARE_ERROR event.
+ *
+ * @param   GCPhysCmd       The system physical address of the command that caused
+ *                          the error.
+ * @param   pEvtCmdHwErr    Where to store the initialized event.
+ */
+static void iommuAmdInitCmdHwErrorEvent(RTGCPHYS GCPhysCmd, HWEVTTYPE enmHwErrType, PEVT_CMD_HW_ERR_T pEvtCmdHwErr)
+{
+    memset(pEvtCmdHwErr, 0, sizeof(*pEvtCmdHwErr));
+    pEvtCmdHwErr->n.u2Type    = enmHwErrType;
+    pEvtCmdHwErr->n.u4EvtCode = IOMMU_EVT_COMMAND_HW_ERROR;
+    pEvtCmdHwErr->n.u64Addr   = GCPhysCmd;
+}
+
+
+/**
+ * Raises a COMMAND_HARDWARE_ERROR event.
+ *
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   pEvtCmdHwErr    The command hardware error event.
+ * @param   enmEvtType      The hardware error event type.
+ */
+static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T pEvtCmdHwErr, EVT_HW_ERR_TYPE_T enmEvtType)
+{
+    AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_CMD_HW_ERR_T));
+    PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtCmdHwErr;
+
+    iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
+    iommuAmdHaltCmdProcessing(pDevIns);
+
+    Log((IOMMU_LOG_PFX ": Raised COMMAND_HARDWARE_ERROR. GCPhysCmd=%#RGp enmType=%u\n", pEvtCmdHwErr->n.u64Addr, enmEvtType));
     NOREF(enmEvtType);
 }
 
@@ -4547,7 +4627,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
          *        number of calls to PGM. In the longer run we could lock the memory and
          *        mappings and accessing them directly. */
         IOMMU_STATUS_T Status = iommuAmdGetStatus(pThis);
-        if (Status.n.u1CmdBufRunning)
+        if (Status.u64 & IOMMU_STATUS_CMD_BUF_RUNNING)
         {
             IOMMU_LOCK(pDevIns, pThis);
 
@@ -4582,9 +4662,10 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                 }
                 else
                 {
-                    /** @todo IOMMU: Raise command hardware error. */
-                    /* Stop command processing. */
-                    ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
+                    /* Reporting this as a "data error". Maybe target abort is more appropriate? */
+                    EVT_CMD_HW_ERR_T EvtCmdHwErr;
+                    iommuAmdInitCmdHwErrorEvent(GCPhysCmd, HWEVTTYPE_DATA_ERROR, & EvtCmdHwErr);
+                    iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr, kHwErrType_PoisonedData);
                     break;
                 }
             }
