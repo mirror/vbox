@@ -1989,11 +1989,79 @@ static int updateTheOvaSignature(RTVFSFSSTREAM hVfsFssOva, const char *pszOva, c
 
 
 /**
+ * Worker for doCheckPkcs7Signature.
+ */
+static int doCheckPkcs7SignatureWorker(PRTCRPKCS7CONTENTINFO pContentInfo, void const *pvManifest, size_t cbManifest,
+                                       unsigned iVerbosity, const char *pszTag, PRTERRINFOSTATIC pErrInfo)
+{
+    int rc;
+
+    /*
+     * It must be signedData.
+     */
+    if (RTCrPkcs7ContentInfo_IsSignedData(pContentInfo))
+    {
+        PRTCRPKCS7SIGNEDDATA pSignedData = pContentInfo->u.pSignedData;
+
+        /*
+         * Inside the signedData there must be just 'data'.
+         */
+        if (!strcmp(pSignedData->ContentInfo.ContentType.szObjId, RTCR_PKCS7_DATA_OID))
+        {
+            /*
+             * Check that things add up.
+             */
+            rc = RTCrPkcs7SignedData_CheckSanity(pSignedData,
+                                                 RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH
+                                                 | RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT,
+                                                 RTErrInfoInitStatic(pErrInfo), "SD");
+            if (RT_SUCCESS(rc))
+            {
+                if (iVerbosity > 2 && pszTag == NULL)
+                    RTMsgInfo("  Successfully decoded the PKCS#7/CMS signature...");
+
+                /*
+                 * Check that we can verify the signed data, but skip certificate validate as
+                 * we probably don't necessarily have the correct root certs handy here.
+                 */
+                RTTIMESPEC Now;
+                rc = RTCrPkcs7VerifySignedDataWithExternalData(pContentInfo, RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS,
+                                                               NIL_RTCRSTORE /*hAdditionalCerts*/,
+                                                               NIL_RTCRSTORE /*hTrustedCerts*/,
+                                                               RTTimeNow(&Now),
+                                                               NULL /*pfnVerifyCert*/, NULL /*pvUser*/,
+                                                               pvManifest, cbManifest, RTErrInfoInitStatic(pErrInfo));
+                if (RT_SUCCESS(rc))
+                {
+                    if (iVerbosity > 1 && pszTag != NULL)
+                        RTMsgInfo("  Successfully verified the PKCS#7/CMS signature");
+                }
+                else
+                    rc = RTMsgErrorRc(rc, "Failed to verify the PKCS#7/CMS signature: %Rrc%RTeim", rc, &pErrInfo->Core);
+            }
+            else
+                RTMsgError("RTCrPkcs7SignedData_CheckSanity failed on PKCS#7/CMS signature: %Rrc%RTeim",
+                           rc, &pErrInfo->Core);
+
+        }
+        else
+            rc = RTMsgErrorRc(VERR_WRONG_TYPE, "PKCS#7/CMS signature inner ContentType isn't 'data' but: %s",
+                              pSignedData->ContentInfo.ContentType.szObjId);
+    }
+    else
+        rc = RTMsgErrorRc(VERR_WRONG_TYPE, "PKCS#7/CMD signature is not 'signedData': %s", pContentInfo->ContentType.szObjId);
+    return rc;
+}
+
+/**
  * For testing the decoding side.
  */
 static int doCheckPkcs7Signature(void const *pvSignature, size_t cbSignature, PCRTCRX509CERTIFICATE pCertificate,
-                                 RTCRSTORE hIntermediateCerts, unsigned iVerbosity, PRTERRINFOSTATIC pErrInfo)
+                                 RTCRSTORE hIntermediateCerts, void const *pvManifest, size_t cbManifest,
+                                 unsigned iVerbosity, PRTERRINFOSTATIC pErrInfo)
 {
+    RT_NOREF(pCertificate, hIntermediateCerts);
+
     RTASN1CURSORPRIMARY PrimaryCursor;
     RTAsn1CursorInitPrimary(&PrimaryCursor, pvSignature, (uint32_t)cbSignature, RTErrInfoInitStatic(pErrInfo),
                             &g_RTAsn1DefaultAllocator, 0, "Signature");
@@ -2006,42 +2074,23 @@ static int doCheckPkcs7Signature(void const *pvSignature, size_t cbSignature, PC
         if (iVerbosity > 5)
             RTAsn1Dump(&ContentInfo.SeqCore.Asn1Core, 0 /*fFlags*/, 0 /*uLevel*/, RTStrmDumpPrintfV, g_pStdOut);
 
-        /*
-         * It must be signedData.
-         */
-        if (RTCrPkcs7ContentInfo_IsSignedData(&ContentInfo))
+        rc = doCheckPkcs7SignatureWorker(&ContentInfo, pvManifest, cbManifest, iVerbosity, NULL, pErrInfo);
+        if (RT_SUCCESS(rc))
         {
-            PRTCRPKCS7SIGNEDDATA pSignedData = ContentInfo.u.pSignedData;
-
             /*
-             * Inside the signedData there must be just 'data'.
+             * Clone it and repeat.  This is to catch IPRT paths assuming
+             * that encoded data is always on hand.
              */
-            if (!strcmp(pSignedData->ContentInfo.ContentType.szObjId, RTCR_PKCS7_DATA_OID))
+            RTCRPKCS7CONTENTINFO ContentInfo2;
+            rc = RTCrPkcs7ContentInfo_Clone(&ContentInfo2, &ContentInfo, &g_RTAsn1DefaultAllocator);
+            if (RT_SUCCESS(rc))
             {
-                /*
-                 * Check that things add up.
-                 */
-                rc = RTCrPkcs7SignedData_CheckSanity(pSignedData,
-                                                     RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH
-                                                     | RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT,
-                                                     RTErrInfoInitStatic(pErrInfo), "SD");
-                if (RT_SUCCESS(rc))
-                {
-                    if (iVerbosity > 2)
-                        RTMsgInfo("  Successfully decoded the PKCS#7/CMS signature...");
-                    RT_NOREF(pCertificate, hIntermediateCerts);
-                }
-                else
-                    RTMsgError("RTCrPkcs7SignedData_CheckSanity failed on PKCS#7/CMS signature: %Rrc%RTeim",
-                               rc, &pErrInfo->Core);
-
+                rc = doCheckPkcs7SignatureWorker(&ContentInfo2, pvManifest, cbManifest, iVerbosity, "cloned", pErrInfo);
+                RTCrPkcs7ContentInfo_Delete(&ContentInfo2);
             }
             else
-                rc = RTMsgErrorRc(VERR_WRONG_TYPE, "PKCS#7/CMS signature inner ContentType isn't 'data' but: %s",
-                                  pSignedData->ContentInfo.ContentType.szObjId);
+                rc = RTMsgErrorRc(rc, "RTCrPkcs7ContentInfo_Clone failed: %Rrc", rc);
         }
-        else
-            rc = RTMsgErrorRc(VERR_WRONG_TYPE, "PKCS#7/CMD signature is not 'signedData': %s", ContentInfo.ContentType.szObjId);
     }
     else
         RTMsgError("RTCrPkcs7ContentInfo_DecodeAsn1 failed to decode PKCS#7/CMS signature: %Rrc%RTemi", rc, &pErrInfo->Core);
@@ -2062,7 +2111,7 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
     /*
      * Add a blank line, just for good measure.
      */
-    int rc = RTVfsFileWrite(hVfsFileManifest, " ", 1, NULL);
+    int rc = RTVfsFileWrite(hVfsFileSignature, " ", 1, NULL);
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "RTVfsFileWrite/signature: %Rrc", rc);
 
@@ -2142,7 +2191,7 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
                              * Try decode and verify the signature.
                              */
                             rc = doCheckPkcs7Signature(pvResult, cbResult, pCertificate, hIntermediateCerts,
-                                                       iVerbosity, pErrInfo);
+                                                       pvManifest, (size_t)cbManifest, iVerbosity, pErrInfo);
                         }
                         else
                             RTMsgError("RTCrPemWriteBlobToVfsFile failed: %Rrc", rc);
