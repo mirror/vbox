@@ -3574,6 +3574,8 @@ class TestDriver(base.TestDriver):                                              
                                  ('C:\\WINNT\\System32\\cmd.exe', '/C', 'dir', '${CDROM}'),
                                  fIgnoreErrors = True);
 
+            reporter.log('txsCdWait: Listing media directory:');
+            oTxsSession.syncExec('/bin/ls', ('/bin/ls', '-l', '-a', '-R', '/media'), fIgnoreErrors = True);
             reporter.log('txsCdWait: Listing mount points / drives:');
             oTxsSession.syncExec('/bin/mount', ('/bin/mount',), fIgnoreErrors = True);
             oTxsSession.syncExec('/bin/cat', ('/bin/cat', '/etc/fstab'), fIgnoreErrors = True);
