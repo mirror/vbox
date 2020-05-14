@@ -396,6 +396,7 @@ RuntimeR3_SOURCES       = \
 	common/crypto/pemfile-write.cpp \
 	common/crypto/pkcs7-asn1-decoder.cpp \
 	common/crypto/pkcs7-core.cpp \
+	common/crypto/pkcs7-file.cpp \
 	common/crypto/pkcs7-init.cpp \
 	common/crypto/pkcs7-sanity.cpp \
 	common/crypto/pkcs7-sign.cpp \

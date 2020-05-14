@@ -181,6 +181,24 @@ RTDECL(PCRTCRCERTCTX) RTCrStoreCertByIssuerAndSerialNo(RTCRSTORE hStore, PCRTCRX
 RTDECL(int) RTCrStoreCertAddEncoded(RTCRSTORE hStore, uint32_t fFlags, void const *pvSrc, size_t cbSrc, PRTERRINFO pErrInfo);
 
 /**
+ * Add an X.509 packaged certificate to the store.
+ *
+ * @returns IPRT status code.
+ * @retval  VWRN_ALREADY_EXISTS if the certificate is already present and
+ *          RTCRCERTCTX_F_ADD_IF_NOT_FOUND was specified.
+ * @retval  VERR_WRITE_PROTECT if the store doesn't support adding.
+ * @param   hStore              The store to add the certificate to.
+ * @param   fFlags              RTCRCERTCTX_F_XXX. Encoding must is optional,
+ *                              but must be RTCRCERTCTX_F_ENC_X509_DER if given.
+ *                              RTCRCERTCTX_F_ADD_IF_NOT_FOUND is supported.
+ * @param   pCertificate        The certificate to add.  We may have to encode
+ *                              it, thus not const.
+ * @param   pErrInfo            Where to return additional error/warning info.
+ *                              Optional.
+ */
+RTDECL(int) RTCrStoreCertAddX509(RTCRSTORE hStore, uint32_t fFlags, PRTCRX509CERTIFICATE pCertificate, PRTERRINFO pErrInfo);
+
+/**
  * Adds certificates from files in the specified directory.
  *
  * @returns IPRT status code.  Even when RTCRCERTCTX_F_ADD_CONTINUE_ON_ERROR is

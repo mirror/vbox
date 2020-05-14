@@ -69,57 +69,25 @@ DECLHIDDEN(int) rtCrOpenSslErrInfoCallback(const char *pach, size_t cch, void *p
 DECLHIDDEN(int) rtCrOpenSslConvertX509Cert(void **ppvOsslCert, PCRTCRX509CERTIFICATE pCert, PRTERRINFO pErrInfo)
 {
     const unsigned char *pabEncoded;
-
-    /*
-     * ASSUME that if the certificate has data pointers, it's been parsed out
-     * of a binary blob and we can safely access that here.
-     */
-    if (pCert->SeqCore.Asn1Core.uData.pv)
+    uint32_t             cbEncoded;
+    void                *pvFree;
+    int rc = RTAsn1EncodeQueryRawBits(RTCrX509Certificate_GetAsn1Core(pCert),
+                                      (const uint8_t **)&pabEncoded, &cbEncoded, &pvFree, pErrInfo);
+    if (RT_SUCCESS(rc))
     {
-        pabEncoded = (const unsigned char *)RTASN1CORE_GET_RAW_ASN1_PTR(&pCert->SeqCore.Asn1Core);
-        uint32_t cbEncoded  = RTASN1CORE_GET_RAW_ASN1_SIZE(&pCert->SeqCore.Asn1Core);
-        X509    *pOsslCert  = NULL;
-        if (d2i_X509(&pOsslCert, &pabEncoded, cbEncoded) == pOsslCert)
+        X509 *pOsslCert = NULL;
+        X509 *pOsslCertRet = d2i_X509(&pOsslCert, &pabEncoded, cbEncoded);
+        RTMemTmpFree(pvFree);
+        if (pOsslCertRet == pOsslCert)
         {
             *ppvOsslCert = pOsslCert;
             return VINF_SUCCESS;
         }
+        rc = RTErrInfoSet(pErrInfo, VERR_CR_X509_OSSL_D2I_FAILED, "d2i_X509");
+
     }
-    /*
-     * Otherwise, we'll have to encode it into a temporary buffer that openssl
-     * can decode into its structures.
-     */
-    else
-    {
-        PRTASN1CORE pNonConstCore = (PRTASN1CORE)&pCert->SeqCore.Asn1Core;
-        uint32_t    cbEncoded     = 0;
-        int rc = RTAsn1EncodePrepare(pNonConstCore, RTASN1ENCODE_F_DER, &cbEncoded, pErrInfo);
-        AssertRCReturn(rc, rc);
-
-        void * const pvEncoded = RTMemTmpAllocZ(cbEncoded);
-        AssertReturn(pvEncoded, VERR_NO_TMP_MEMORY);
-
-        rc = RTAsn1EncodeToBuffer(pNonConstCore, RTASN1ENCODE_F_DER, pvEncoded, cbEncoded, pErrInfo);
-        if (RT_SUCCESS(rc))
-        {
-            pabEncoded = (const unsigned char *)pvEncoded;
-            X509 *pOsslCert = NULL;
-            if (d2i_X509(&pOsslCert, &pabEncoded, cbEncoded) == pOsslCert)
-            {
-                *ppvOsslCert = pOsslCert;
-                RTMemTmpFree(pvEncoded);
-                return VINF_SUCCESS;
-            }
-        }
-        else
-        {
-            RTMemTmpFree(pvEncoded);
-            return rc;
-        }
-    }
-
     *ppvOsslCert = NULL;
-    return RTErrInfoSet(pErrInfo, VERR_CR_X509_OSSL_D2I_FAILED, "d2i_X509");
+    return rc;
 }
 
 

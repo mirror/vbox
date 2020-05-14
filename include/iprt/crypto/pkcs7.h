@@ -430,6 +430,22 @@ RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRPKCS7SETOFSIGNEDDATA, RTCRPKCS7SI
 #define RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT RT_BIT_32(2)
 /** @} */
 
+/** PKCS\#7/CMS (content info) markers. */
+extern RTDATADECL(RTCRPEMMARKER const) g_aRTCrPkcs7Markers[];
+/** Number of entries in g_aRTCrPkcs7Markers. */
+extern RTDATADECL(uint32_t const)      g_cRTCrPkcs7Markers;
+
+/** @name Flags for RTCrPkcs7ContentInfo_ReadFromBuffer
+ * @{ */
+/** Only allow PEM certificates, not binary ones.
+ * @sa RTCRPEMREADFILE_F_ONLY_PEM  */
+#define RTCRPKCS7_READ_F_PEM_ONLY        RT_BIT(1)
+/** @} */
+
+RTDECL(int) RTCrPkcs7_ReadFromBuffer(PRTCRPKCS7CONTENTINFO pContentInfo, const void *pvBuf, size_t cbBuf,
+                                     uint32_t fFlags, PCRTASN1ALLOCATORVTABLE pAllocator,
+                                     bool *pfCmsLabeled, PRTERRINFO pErrInfo, const char *pszErrorTag);
+
 
 /**
  * PKCS \#7 DigestInfo (IPRT representation).
@@ -551,14 +567,15 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
                                                       PFNRTCRPKCS7VERIFYCERTCALLBACK pfnVerifyCert, void *pvUser,
                                                       void const *pvData, size_t cbData, PRTERRINFO pErrInfo);
 
-/** @name RTCRPKCS7VERIFY_SD_F_XXX - Flags for RTCrPkcs7VerifySignedData
+/** @name RTCRPKCS7VERIFY_SD_F_XXX - Flags for RTCrPkcs7VerifySignedData and
+ *                                   RTCrPkcs7VerifySignedDataWithExternalData
  * @{ */
 /** Always use the signing time attribute if present, requiring it to be
  * verified as valid.  The default behavior is to ignore unverifiable
  * signing time attributes and use the @a pValidationTime instead. */
 #define RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT     RT_BIT_32(0)
 /** Same as RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT for the MS
- *  timestamp counter sigantures. */
+ *  timestamp counter signatures. */
 #define RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT     RT_BIT_32(1)
 /** Only use signing time attributes from counter signatures. */
 #define RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY    RT_BIT_32(2)
@@ -576,6 +593,9 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
  * usage bit present.  This is used for recursivly verifying MS timestamp
  * signatures. */
 #define RTCRPKCS7VERIFY_SD_F_USAGE_TIMESTAMPING                     RT_BIT_32(6)
+/** Skip the verification of the certificate trust paths, taking all
+ * certificates to be trustworthy. */
+#define RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS                        RT_BIT_32(7)
 
 /** Indicates internally that we're validating a counter signature and should
  * use different rules when checking out the authenticated attributes.
@@ -583,6 +603,10 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
 #define RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE                      RT_BIT_32(31)
 /** @} */
 
+
+RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE pSigner, RTCRKEY hPrivateKey,
+                                          void const *pvData, size_t cbData, RTDIGESTTYPE enmDigestType,
+                                          RTCRSTORE hAdditionalCerts, void *pvResult, size_t *pcbResult, PRTERRINFO pErrInfo);
 
 /** @name RTCRPKCS7SIGN_SD_F_XXX - Flags for RTCrPkcs7SimpleSign.
  * @{ */
@@ -593,10 +617,6 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
 /** Valid flag mask.   */
 #define RTCRPKCS7SIGN_SD_F_VALID_MASK    UINT32_C(0x00000003)
 /** @} */
-
-RTDECL(int) RTCrPkcs7SimpleSignSignedData(uint32_t fFlags, PCRTCRX509CERTIFICATE pSigner, RTCRKEY hPrivateKey,
-                                          void const *pvData, size_t cbData, RTDIGESTTYPE enmDigestType,
-                                          RTCRSTORE hAdditionalCerts, void *pvResult, size_t *pcbResult, PRTERRINFO pErrInfo);
 
 /** @} */
 

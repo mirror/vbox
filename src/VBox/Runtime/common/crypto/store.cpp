@@ -36,6 +36,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
+#include <iprt/crypto/pkcs7.h>
 #include <iprt/crypto/x509.h>
 
 #ifdef IPRT_WITH_OPENSSL
@@ -187,6 +188,80 @@ RTDECL(int) RTCrStoreCertAddEncoded(RTCRSTORE hStore, uint32_t fFlags, void cons
     return rc;
 }
 
+
+RTDECL(int) RTCrStoreCertAddX509(RTCRSTORE hStore, uint32_t fFlags, PRTCRX509CERTIFICATE pCertificate, PRTERRINFO pErrInfo)
+{
+    /*
+     * Validate.
+     */
+    PRTCRSTOREINT pThis = (PRTCRSTOREINT)hStore;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTCRSTOREINT_MAGIC, VERR_INVALID_HANDLE);
+
+    AssertPtrReturn(pCertificate, VERR_INVALID_POINTER);
+    AssertReturn(RTCrX509Certificate_IsPresent(pCertificate), VERR_INVALID_PARAMETER);
+    int rc = RTCrX509Certificate_CheckSanity(pCertificate, 0, pErrInfo, "Cert");
+    AssertRCReturn(rc, rc);
+
+    AssertReturn(!(fFlags & ~(RTCRCERTCTX_F_ADD_IF_NOT_FOUND | RTCRCERTCTX_F_ENC_MASK)), VERR_INVALID_FLAGS);
+    AssertCompile(RTCRCERTCTX_F_ENC_X509_DER == 0);
+    AssertMsgReturn((fFlags & RTCRCERTCTX_F_ENC_MASK) == RTCRCERTCTX_F_ENC_X509_DER,
+                    ("Invalid encoding: %#x\n", fFlags), VERR_INVALID_FLAGS);
+
+    /*
+     * Encode and add it using pfnCertAddEncoded.
+     */
+    if (pThis->pProvider->pfnCertAddEncoded)
+    {
+        PRTASN1CORE pCore     = RTCrX509Certificate_GetAsn1Core(pCertificate);
+        uint32_t    cbEncoded = 0;
+        rc = RTAsn1EncodePrepare(pCore, RTASN1ENCODE_F_DER, &cbEncoded, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+            uint8_t * const pbEncoded = (uint8_t *)RTMemTmpAllocZ(cbEncoded);
+            if (pbEncoded)
+            {
+                rc = RTAsn1EncodeToBuffer(pCore, RTASN1ENCODE_F_DER, pbEncoded, cbEncoded, pErrInfo);
+                if (RT_SUCCESS(rc))
+                    rc = pThis->pProvider->pfnCertAddEncoded(pThis->pvProvider, fFlags, pbEncoded, cbEncoded, pErrInfo);
+                RTMemTmpFree(pbEncoded);
+            }
+            else
+                rc = VERR_NO_TMP_MEMORY;
+        }
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
+
+    return rc;
+}
+
+
+RTDECL(int) RTCrStoreCertAddPkcs7(RTCRSTORE hStore, uint32_t fFlags, PRTCRPKCS7CERT pCertificate, PRTERRINFO pErrInfo)
+{
+    AssertPtrReturn(pCertificate, VERR_INVALID_POINTER);
+    AssertReturn(RTCrPkcs7Cert_IsPresent(pCertificate), VERR_INVALID_PARAMETER);
+    switch (pCertificate->enmChoice)
+    {
+        case RTCRPKCS7CERTCHOICE_X509:
+            return RTCrStoreCertAddX509(hStore, fFlags, pCertificate->u.pX509Cert, pErrInfo);
+
+        case RTCRPKCS7CERTCHOICE_EXTENDED_PKCS6:
+            return RTErrInfoSetF(pErrInfo, VERR_NOT_IMPLEMENTED, "RTCrStoreCertAddPkcs7 does not implement EXTENDED_PKCS6");
+        case RTCRPKCS7CERTCHOICE_AC_V1:
+            return RTErrInfoSetF(pErrInfo, VERR_NOT_IMPLEMENTED, "RTCrStoreCertAddPkcs7 does not implement AC_V1");
+        case RTCRPKCS7CERTCHOICE_AC_V2:
+            return RTErrInfoSetF(pErrInfo, VERR_NOT_IMPLEMENTED, "RTCrStoreCertAddPkcs7 does not implement AC_V2");
+        case RTCRPKCS7CERTCHOICE_OTHER:
+            return RTErrInfoSetF(pErrInfo, VERR_NOT_IMPLEMENTED, "RTCrStoreCertAddPkcs7 does not implement OTHER");
+        case RTCRPKCS7CERTCHOICE_END:
+        case RTCRPKCS7CERTCHOICE_INVALID:
+        case RTCRPKCS7CERTCHOICE_32BIT_HACK:
+            break;
+        /* no default */
+    }
+    return RTErrInfoSetF(pErrInfo, VERR_INVALID_PARAMETER, "Invalid RTCRPKCS7CERT enmChoice value: %d", pCertificate->enmChoice);
+}
 
 
 /*

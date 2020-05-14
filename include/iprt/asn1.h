@@ -1630,6 +1630,28 @@ RTDECL(int) RTAsn1EncodeWrite(PCRTASN1CORE pRoot, uint32_t fFlags, FNRTASN1ENCOD
  */
 RTDECL(int) RTAsn1EncodeToBuffer(PCRTASN1CORE pRoot, uint32_t fFlags, void *pvBuf, size_t cbBuf, PRTERRINFO pErrInfo);
 
+/**
+ * Helper for when DER encoded ASN.1 is needed for something.
+ *
+ * Handy when interfacing with OpenSSL and the many d2i_Xxxxx OpenSSL functions,
+ * but also handy when structures needs to be digested or similar during signing
+ * or verification.
+ *
+ * We sometimes can use the data we've decoded directly, but often we have
+ * encode it into a temporary heap buffer.
+ *
+ * @returns IPRT status code, details in @a pErrInfo if present.
+ * @param   pRoot       The ASN.1 root of the structure to be passed to OpenSSL.
+ * @param   ppbRaw      Where to return the pointer to raw encoded data.
+ * @param   pcbRaw      Where to return the size of the raw encoded data.
+ * @param   ppvFree     Where to return what to pass to RTMemTmpFree, i.e. NULL
+ *                      if we use the previously decoded data directly and
+ *                      non-NULL if we had to allocate heap and encode it.
+ * @param   pErrInfo    Where to return details about encoding issues. Optional.
+ */
+RTDECL(int) RTAsn1EncodeQueryRawBits(PRTASN1CORE pRoot, const uint8_t **ppbRaw, uint32_t *pcbRaw,
+                                     void **ppvFree, PRTERRINFO pErrInfo);
+
 /** @} */
 
 

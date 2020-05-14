@@ -88,33 +88,15 @@ RTDECL(int) RTCrX509Certificate_VerifySignature(PCRTCRX509CERTIFICATE pThis, PCR
      * that it's already in DER encoding and only does this if there the
      * encoded bits are missing.
      */
-    if (   pThis->TbsCertificate.SeqCore.Asn1Core.uData.pu8
-        && pThis->TbsCertificate.SeqCore.Asn1Core.cb > 0)
-        rc = RTCrPkixPubKeyVerifySignature(&pThis->SignatureAlgorithm.Algorithm, hPubKey, pParameters, &pThis->SignatureValue,
-                                           RTASN1CORE_GET_RAW_ASN1_PTR(&pThis->TbsCertificate.SeqCore.Asn1Core),
-                                           RTASN1CORE_GET_RAW_ASN1_SIZE(&pThis->TbsCertificate.SeqCore.Asn1Core),
-                                           pErrInfo);
-    else
+    const uint8_t  *pbRaw;
+    uint32_t        cbRaw;
+    void           *pvFree = NULL;
+    rc = RTAsn1EncodeQueryRawBits(RTCrX509TbsCertificate_GetAsn1Core(&pThis->TbsCertificate), &pbRaw, &cbRaw, &pvFree, pErrInfo);
+    if (RT_SUCCESS(rc))
     {
-        uint32_t cbEncoded;
-        rc = RTAsn1EncodePrepare((PRTASN1CORE)&pThis->TbsCertificate.SeqCore.Asn1Core, RTASN1ENCODE_F_DER, &cbEncoded, pErrInfo);
-        if (RT_SUCCESS(rc))
-        {
-            void *pvTbsBits = RTMemTmpAlloc(cbEncoded);
-            if (pvTbsBits)
-            {
-                rc = RTAsn1EncodeToBuffer(&pThis->TbsCertificate.SeqCore.Asn1Core, RTASN1ENCODE_F_DER,
-                                          pvTbsBits, cbEncoded, pErrInfo);
-                if (RT_SUCCESS(rc))
-                    rc = RTCrPkixPubKeyVerifySignature(&pThis->SignatureAlgorithm.Algorithm, hPubKey, pParameters,
-                                                       &pThis->SignatureValue, pvTbsBits, cbEncoded, pErrInfo);
-                else
-                    AssertRC(rc);
-                RTMemTmpFree(pvTbsBits);
-            }
-            else
-                rc = VERR_NO_TMP_MEMORY;
-        }
+        rc = RTCrPkixPubKeyVerifySignature(&pThis->SignatureAlgorithm.Algorithm, hPubKey, pParameters, &pThis->SignatureValue,
+                                           pbRaw, cbRaw, pErrInfo);
+        RTMemTmpFree(pvFree);
     }
 
     /* Free the public key. */
