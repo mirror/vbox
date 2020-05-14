@@ -507,10 +507,12 @@ void UIChooserAbstractModel::prepare()
 
 void UIChooserAbstractModel::prepareConnections()
 {
+#ifdef VBOX_GUI_WITH_CLOUD_VMS
     /* Setup temporary connections,
      * this is to be replaced by corresponding Main API event later. */
     connect(&uiCommon(), &UICommon::sigCloudMachineRegistered,
             this, &UIChooserAbstractModel::sltCloudMachineRegistered);
+#endif
 
     /* Setup global connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
