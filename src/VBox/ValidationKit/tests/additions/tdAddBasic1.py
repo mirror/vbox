@@ -196,9 +196,11 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             self.sFileCdWait = 'VBoxLinuxAdditions.run';
 
         self.logVmInfo(oVM);
+        reporter.testStart('Waiting for TXS + CD (%s)' % (self.sFileCdWait,));
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
                                                                   cMsCdWait = 5 * 60 * 1000,
                                                                   sFileCdWait = self.sFileCdWait);
+        reporter.testDone();
         if oSession is not None:
             self.addTask(oTxsSession);
             # Do the testing.
