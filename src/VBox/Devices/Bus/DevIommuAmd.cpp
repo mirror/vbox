@@ -1128,9 +1128,7 @@ typedef union
         uint32_t    u32Rsvd0;           /**< Bits 31:0   - Reserved. */
         uint32_t    u28Rsvd0 : 28;      /**< Bits 47:32  - Reserved. */
         uint32_t    u4EvtCode : 4;      /**< Bits 63:60  - Event code. */
-        uint32_t    u4Rsvd0 : 4;        /**< Bits 67:64  - Reserved. */
-        uint32_t    u28AddrLo : 28;     /**< Bits 95:68  - Address: SPA of the invalid command (Lo). */
-        uint32_t    u32AddrHi;          /**< Bits 127:96 - Address: SPA of the invalid command (Hi). */
+        uint64_t    u64Addr;            /**< Bits 127:64 - Address: SPA of the invalid command. */
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[4];
@@ -1138,6 +1136,10 @@ typedef union
     uint64_t    au64[2];
 } EVT_ILLEGAL_CMD_ERR_T;
 AssertCompileSize(EVT_ILLEGAL_CMD_ERR_T, 16);
+/** Pointer to an illegal command error event. */
+typedef EVT_ILLEGAL_CMD_ERR_T *PEVT_ILLEGAL_CMD_ERR_T;
+/** Pointer to a const illegal command error event. */
+typedef EVT_ILLEGAL_CMD_ERR_T const *PCEVT_ILLEGAL_CMD_ERR_T;
 
 /**
  * Event Log Entry: COMMAND_HARDWARE_ERROR.
@@ -2184,6 +2186,8 @@ typedef enum EVT_ILLEGAL_CMD_ERR_TYPE_T
     kIllegalCmdErrType_CmdNotSupported,
     kIllegalCmdErrType_IotlbNotSupported
 } EVT_ILLEGAL_CMD_ERR_TYPE_T;
+/** Pointer to an illegal command error event type. */
+typedef EVT_ILLEGAL_CMD_ERR_TYPE_T *PEVT_ILLEGAL_CMD_ERR_TYPE_T;
 
 /**
  * IOTLB_INV_TIMEOUT Event Types.
@@ -2538,7 +2542,7 @@ DECLINLINE(uint32_t) iommuAmdGetBufMaxEntries(uint8_t uEncodedLen)
  * @returns The length of the buffer in bytes.
  * @param   uEncodedLen     The length (power-of-2 encoded).
  */
-DECLINLINE(uint32_t) iommuAmdGetBufLength(uint8_t uEncodedLen)
+DECLINLINE(uint32_t) iommuAmdGetTotalBufLength(uint8_t uEncodedLen)
 {
     Assert(uEncodedLen > 7);
     return (2 << (uEncodedLen - 1)) << 4;
@@ -3013,7 +3017,7 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * In our emulation, we ignore the write entirely.
      */
     uint32_t const offBuf = u64Value & IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK;
-    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+    uint32_t const cbBuf  = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
     Assert(cbBuf <= _512K);
     if (offBuf >= cbBuf)
     {
@@ -3045,7 +3049,7 @@ static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
      */
     uint32_t const offBuf = u64Value & IOMMU_CMD_BUF_TAIL_PTR_VALID_MASK;
-    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+    uint32_t const cbBuf  = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
     Assert(cbBuf <= _512K);
     if (offBuf >= cbBuf)
     {
@@ -3087,7 +3091,7 @@ static VBOXSTRICTRC iommuAmdEvtLogHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * See AMD IOMMU spec. 3.3.13 "Command and Event Log Pointer Registers".
      */
     uint32_t const offBuf = u64Value & IOMMU_EVT_LOG_HEAD_PTR_VALID_MASK;
-    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->EvtLogBaseAddr.n.u4Len);
+    uint32_t const cbBuf  = iommuAmdGetTotalBufLength(pThis->EvtLogBaseAddr.n.u4Len);
     Assert(cbBuf <= _512K);
     if (offBuf >= cbBuf)
     {
@@ -3129,7 +3133,7 @@ static VBOXSTRICTRC iommuAmdEvtLogTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
      * In our emulation, we ignore the write entirely.
      */
     uint32_t const offBuf = u64Value & IOMMU_EVT_LOG_TAIL_PTR_VALID_MASK;
-    uint32_t const cbBuf  = iommuAmdGetBufLength(pThis->EvtLogBaseAddr.n.u4Len);
+    uint32_t const cbBuf  = iommuAmdGetTotalBufLength(pThis->EvtLogBaseAddr.n.u4Len);
     Assert(cbBuf <= _512K);
     if (offBuf >= cbBuf)
     {
@@ -3568,7 +3572,7 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
                 Log((IOMMU_LOG_PFX ": Failed to write event log entry at %#RGp. rc=%Rrc\n", GCPhysEvtLogEntry, rc));
 
             /* Increment the event log tail pointer. */
-            uint32_t const cbEvtLog = iommuAmdGetBufLength(pThis->EvtLogBaseAddr.n.u4Len);
+            uint32_t const cbEvtLog = iommuAmdGetTotalBufLength(pThis->EvtLogBaseAddr.n.u4Len);
             pThis->EvtLogTailPtr.n.off = (offEvt + cbEvt) % cbEvtLog;
 
             /* Indicate that an event log entry was written. */
@@ -3774,6 +3778,47 @@ static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, P
 
 
 /**
+ * Initializes an ILLEGAL_COMMAND_ERROR event.
+ *
+ * @param   GCPhysCmd       The system physical address of the failed command
+ *                          access.
+ * @param   pEvtIllegalCmd  Where to store the initialized event.
+ */
+static void iommuAmdInitIllegalCmdEvent(RTGCPHYS GCPhysCmd, PEVT_ILLEGAL_CMD_ERR_T pEvtIllegalCmd)
+{
+    Assert(!(GCPhysCmd & UINT64_C(0xf)));
+    memset(pEvtIllegalCmd, 0, sizeof(*pEvtIllegalCmd));
+    pEvtIllegalCmd->n.u4EvtCode = IOMMU_EVT_ILLEGAL_CMD_ERROR;
+    pEvtIllegalCmd->n.u64Addr   = GCPhysCmd;
+}
+
+
+/**
+ * Raises an ILLEGAL_COMMAND_ERROR event.
+ *
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   pEvtIllegalCmd  The illegal command error event.
+ * @param   enmEvtType      The illegal command error event type.
+ */
+static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_ERR_T pEvtIllegalCmd,
+                                         EVT_ILLEGAL_CMD_ERR_TYPE_T enmEvtType)
+{
+    AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_ILLEGAL_DTE_T));
+    PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIllegalCmd;
+
+    IOMMU_LOCK_NORET(pDevIns);
+
+    iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
+    iommuAmdHaltCmdProcessing(pDevIns);
+
+    IOMMU_UNLOCK(pDevIns);
+
+    Log((IOMMU_LOG_PFX ": Raised ILLEGAL_COMMAND_ERROR. GCPhysCmd=%#RGp enmType=%u\n", pEvtIllegalCmd->n.u64Addr, enmEvtType));
+    NOREF(enmEvtType);
+}
+
+
+/**
  * Initializes an ILLEGAL_DEV_TABLE_ENTRY event.
  *
  * @param   uDevId          The device ID.
@@ -3807,7 +3852,7 @@ static void iommuAmdInitIllegalDteEvent(uint16_t uDevId, uint64_t uIova, bool fR
  * @param   pDevIns         The IOMMU instance data.
  * @param   enmOp           The IOMMU operation being performed.
  * @param   pEvtIllegalDte  The illegal device table entry event.
- * @param   enmEvtType      The illegal DTE event type.
+ * @param   enmEvtType      The illegal device table entry event type.
  *
  * @thread  Any.
  */
@@ -4576,10 +4621,12 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
  * Processes an IOMMU command.
  *
  * @returns VBox status code.
- * @param   pDevIns     The IOMMU device instance.
- * @param   pCmd        The command to process.
+ * @param   pDevIns         The IOMMU device instance.
+ * @param   pCmd            The command to process.
+ * @param   penmEvtType     Where to store the illegal command error event type in
+ *                          case of failures.
  */
-static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd)
+static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, PEVT_ILLEGAL_CMD_ERR_TYPE_T penmEvtType)
 {
     IOMMU_ASSERT_NOT_LOCKED(pDevIns);
 
@@ -4605,6 +4652,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd)
     }
 
     Log((IOMMU_LOG_PFX ": Invalid/Unrecognized command opcode %u (%#x)\n", bCmd, bCmd));
+    *penmEvtType = kIllegalCmdErrType_CmdNotSupported;
     return VERR_INVALID_FUNCTION;
 }
 
@@ -4657,12 +4705,14 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
         {
             IOMMU_LOCK(pDevIns);
 
-            uint32_t const cbCmdBuf = iommuAmdGetBufLength(pThis->CmdBufBaseAddr.n.u4Len);
+            /* Get the offset we need to read the command from memory (circular buffer offset). */
+            uint32_t const cbCmdBuf = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
             uint32_t offHead = pThis->CmdBufHeadPtr.n.off;
             Assert(!(offHead & ~IOMMU_CMD_BUF_HEAD_PTR_VALID_MASK));
+            Assert(offHead < cbCmdBuf);
             while (offHead != pThis->CmdBufTailPtr.n.off)
             {
-                /* Fetch the command from guest memory. */
+                /* Read the command from memory. */
                 CMD_GENERIC_T Cmd;
                 RTGCPHYS const GCPhysCmd = (pThis->CmdBufBaseAddr.n.u40Base << X86_PAGE_4K_SHIFT) + offHead;
                 int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCmd, &Cmd, sizeof(Cmd));
@@ -4673,16 +4723,17 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     pThis->CmdBufHeadPtr.n.off = offHead;
 
                     /* Process the fetched command. */
+                    EVT_ILLEGAL_CMD_ERR_TYPE_T enmEvtType;
                     IOMMU_UNLOCK(pDevIns);
-                    rc = iommuAmdR3ProcessCmd(pDevIns, &Cmd);
+                    rc = iommuAmdR3ProcessCmd(pDevIns, &Cmd, &enmEvtType);
                     IOMMU_LOCK(pDevIns);
                     if (RT_SUCCESS(rc))
                     { /* likely */ }
                     else
                     {
-                        /** @todo IOMMU: Raise illegal command error. */
-                        /* Stop command processing. */
-                        ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
+                        EVT_ILLEGAL_CMD_ERR_T EvtIllegalCmdErr;
+                        iommuAmdInitIllegalCmdEvent(GCPhysCmd, &EvtIllegalCmdErr);
+                        iommuAmdRaiseIllegalCmdEvent(pDevIns, &EvtIllegalCmdErr, enmEvtType);
                         break;
                     }
                 }
@@ -4845,7 +4896,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         CMD_BUF_BAR_T const CmdBufBar = pThis->CmdBufBaseAddr;
         uint8_t const  uEncodedLen = CmdBufBar.n.u4Len;
         uint32_t const cEntries    = iommuAmdGetBufMaxEntries(uEncodedLen);
-        uint32_t const cbBuffer    = iommuAmdGetBufLength(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetTotalBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  Command buffer BAR                      = %#RX64\n", CmdBufBar.u64);
         if (fVerbose)
         {
@@ -4859,7 +4910,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         EVT_LOG_BAR_T const EvtLogBar = pThis->EvtLogBaseAddr;
         uint8_t const  uEncodedLen = EvtLogBar.n.u4Len;
         uint32_t const cEntries    = iommuAmdGetBufMaxEntries(uEncodedLen);
-        uint32_t const cbBuffer    = iommuAmdGetBufLength(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetTotalBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  Event log BAR                           = %#RX64\n", EvtLogBar.u64);
         if (fVerbose)
         {
@@ -4981,7 +5032,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         PPR_LOG_BAR_T PprLogBar = pThis->PprLogBaseAddr;
         uint8_t const  uEncodedLen = PprLogBar.n.u4Len;
         uint32_t const cEntries    = iommuAmdGetBufMaxEntries(uEncodedLen);
-        uint32_t const cbBuffer    = iommuAmdGetBufLength(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetTotalBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  PPR Log BAR                             = %#RX64\n",   PprLogBar.u64);
         if (fVerbose)
         {
@@ -5017,7 +5068,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         GALOG_BAR_T const GALogBar = pThis->GALogBaseAddr;
         uint8_t const  uEncodedLen = GALogBar.n.u4Len;
         uint32_t const cEntries    = iommuAmdGetBufMaxEntries(uEncodedLen);
-        uint32_t const cbBuffer    = iommuAmdGetBufLength(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetTotalBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  Guest Log BAR                           = %#RX64\n",    GALogBar.u64);
         if (fVerbose)
         {
@@ -5038,7 +5089,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         PPR_LOG_B_BAR_T PprLogBBar = pThis->PprLogBBaseAddr;
         uint8_t const uEncodedLen  = PprLogBBar.n.u4Len;
         uint32_t const cEntries    = iommuAmdGetBufMaxEntries(uEncodedLen);
-        uint32_t const cbBuffer    = iommuAmdGetBufLength(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetTotalBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  PPR Log B BAR                           = %#RX64\n",   PprLogBBar.u64);
         if (fVerbose)
         {
@@ -5052,7 +5103,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         EVT_LOG_B_BAR_T EvtLogBBar = pThis->EvtLogBBaseAddr;
         uint8_t const  uEncodedLen = EvtLogBBar.n.u4Len;
         uint32_t const cEntries    = iommuAmdGetBufMaxEntries(uEncodedLen);
-        uint32_t const cbBuffer    = iommuAmdGetBufLength(uEncodedLen);
+        uint32_t const cbBuffer    = iommuAmdGetTotalBufLength(uEncodedLen);
         pHlp->pfnPrintf(pHlp, "  Event Log B BAR                         = %#RX64\n",   EvtLogBBar.u64);
         if (fVerbose)
         {
