@@ -1667,8 +1667,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorToolsGlobalShowVMResourceMonitor(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png",
-                         ":/cloud_profile_manager_disabled_24px.png", ":/cloud_profile_manager_disabled_16px.png")
+                         ":/resouces_monitor_24px.png", ":/resouces_monitor_16px.png",
+                         ":/resouces_monitor_disabled_24px.png", ":/resouces_monitor_disabled_16px.png")
     {}
 
 protected:
@@ -2858,7 +2858,7 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorVMResourceMonitorToggleColumns(UIActionPool *pParent)
         : UIActionMenu(pParent,
-                       ":/cloud_profile_try_32px.png", ":/cloud_profile_try_16px.png")
+                       ":/resources_monitor_columns_32px.png", ":/resources_monitor_columns_16px.png")
     {}
 
 protected:

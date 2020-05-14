@@ -507,7 +507,7 @@ void UIToolsModel::prepareItems()
 
     /* VM Resource Monitor: */
     m_items << new UIToolsItem(scene(), UIToolClass_Global, UIToolType_VMResourceMonitor, QString(),
-                               UIIconPool::iconSet(":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_disabled_24px.png"));
+                               UIIconPool::iconSet(":/resources_monitor_24px.png", ":/resources_monitor_disabled_24px.png"));
 
     /* Details: */
     m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Details, QString(),
