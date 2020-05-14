@@ -802,8 +802,13 @@ typedef union
     } n;
     /** The 64-bit unsigned integer view. */
     uint64_t    au64[2];
-} CMD_COMPLETION_WAIT_T;
-AssertCompileSize(CMD_COMPLETION_WAIT_T, 16);
+} CMD_COMWAIT_T;
+AssertCompileSize(CMD_COMWAIT_T, 16);
+/** Pointer to a completion wait command. */
+typedef CMD_COMWAIT_T *PCMD_COMWAIT_T;
+/** Pointer to a const completion wait command. */
+typedef CMD_COMWAIT_T const *PCCMD_COMWAIT_T;
+#define IOMMU_CMD_COM_WAIT_QWORD_0_VALID_MASK        UINT64_C(0xf00fffffffffffff)
 
 /**
  * Command: INVALIDATE_DEVTAB_ENTRY.
@@ -2165,18 +2170,6 @@ typedef enum EVT_IO_PAGE_FAULT_TYPE_T
 } EVT_IO_PAGE_FAULT_TYPE_T;
 
 /**
- * DEV_TAB_HARDWARE_ERROR, PAGE_TAB_HARDWARE_ERROR and COMMAND_HARDWARE_ERROR Event
- * Types.
- * In accordance with the AMD spec.
- */
-typedef enum EVT_HW_ERR_TYPE_T
-{
-    kHwErrType_MasterAbort = 0,
-    kHwErrType_TargetAbort,
-    kHwErrType_PoisonedData
-} EVT_HW_ERR_TYPE_T;
-
-/**
  * ILLEGAL_COMMAND_ERROR Event Types.
  * In accordance with the AMD spec.
  */
@@ -2585,7 +2578,7 @@ static uint32_t iommuAmdGetCmdBufEntryCount(PIOMMU pThis)
 }
 
 
-DECLINLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
+DECL_FORCE_INLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
 {
     IOMMU_STATUS_T Status;
     Status.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Status.u64);
@@ -2593,7 +2586,7 @@ DECLINLINE(IOMMU_STATUS_T) iommuAmdGetStatus(PCIOMMU pThis)
 }
 
 
-DECLINLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
+DECL_FORCE_INLINE(IOMMU_CTRL_T) iommuAmdGetCtrl(PCIOMMU pThis)
 {
     IOMMU_CTRL_T Ctrl;
     Ctrl.u64 = ASMAtomicReadU64((volatile uint64_t *)&pThis->Ctrl.u64);
@@ -3654,12 +3647,10 @@ static void iommuAmdInitPageTabHwErrorEvent(uint16_t uDevId, uint16_t uDomainId,
  * @param   pDevIns             The IOMMU device instance.
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtPageTabHwErr    The page table hardware error event.
- * @param   enmEvtType          The hardware error event type.
  *
  * @thread  Any.
  */
-static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_PAGE_TAB_HW_ERR_T pEvtPageTabHwErr,
-                                             EVT_HW_ERR_TYPE_T enmEvtType)
+static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_PAGE_TAB_HW_ERR_T pEvtPageTabHwErr)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_PAGE_TAB_HW_ERR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtPageTabHwErr;
@@ -3673,25 +3664,24 @@ static void iommuAmdRaisePageTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, 
 
     IOMMU_UNLOCK(pDevIns);
 
-    Log((IOMMU_LOG_PFX ": Raised PAGE_TAB_HARDWARE_ERROR. uDevId=%#x uDomainId=%#x GCPhysPtEntity=%#RGp enmOp=%u enmType=%u\n",
-         pEvtPageTabHwErr->n.u16DevId, pEvtPageTabHwErr->n.u16DomainOrPasidLo, pEvtPageTabHwErr->n.u64Addr, enmOp, enmEvtType));
-    NOREF(enmEvtType);
+    Log((IOMMU_LOG_PFX ": Raised PAGE_TAB_HARDWARE_ERROR. uDevId=%#x uDomainId=%#x GCPhysPtEntity=%#RGp enmOp=%u u2Type=%u\n",
+         pEvtPageTabHwErr->n.u16DevId, pEvtPageTabHwErr->n.u16DomainOrPasidLo, pEvtPageTabHwErr->n.u64Addr, enmOp,
+         pEvtPageTabHwErr->n.u2Type));
 }
 
 
 /**
  * Initializes a COMMAND_HARDWARE_ERROR event.
  *
- * @param   GCPhysCmd       The system physical address of the command that caused
- *                          the error.
+ * @param   GCPhysAddr      The system physical address the IOMMU attempted to access.
  * @param   pEvtCmdHwErr    Where to store the initialized event.
  */
-static void iommuAmdInitCmdHwErrorEvent(RTGCPHYS GCPhysCmd, HWEVTTYPE enmHwErrType, PEVT_CMD_HW_ERR_T pEvtCmdHwErr)
+static void iommuAmdInitCmdHwErrorEvent(RTGCPHYS GCPhysAddr, PEVT_CMD_HW_ERR_T pEvtCmdHwErr)
 {
     memset(pEvtCmdHwErr, 0, sizeof(*pEvtCmdHwErr));
-    pEvtCmdHwErr->n.u2Type    = enmHwErrType;
+    pEvtCmdHwErr->n.u2Type    = HWEVTTYPE_DATA_ERROR;
     pEvtCmdHwErr->n.u4EvtCode = IOMMU_EVT_COMMAND_HW_ERROR;
-    pEvtCmdHwErr->n.u64Addr   = GCPhysCmd;
+    pEvtCmdHwErr->n.u64Addr   = GCPhysAddr;
 }
 
 
@@ -3700,11 +3690,10 @@ static void iommuAmdInitCmdHwErrorEvent(RTGCPHYS GCPhysCmd, HWEVTTYPE enmHwErrTy
  *
  * @param   pDevIns         The IOMMU device instance.
  * @param   pEvtCmdHwErr    The command hardware error event.
- * @param   enmEvtType      The hardware error event type.
  *
  * @thread  Any.
  */
-static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T pEvtCmdHwErr, EVT_HW_ERR_TYPE_T enmEvtType)
+static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T pEvtCmdHwErr)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_CMD_HW_ERR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtCmdHwErr;
@@ -3717,8 +3706,8 @@ static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T 
 
     IOMMU_UNLOCK(pDevIns);
 
-    Log((IOMMU_LOG_PFX ": Raised COMMAND_HARDWARE_ERROR. GCPhysCmd=%#RGp enmType=%u\n", pEvtCmdHwErr->n.u64Addr, enmEvtType));
-    NOREF(enmEvtType);
+    Log((IOMMU_LOG_PFX ": Raised COMMAND_HARDWARE_ERROR. GCPhysCmd=%#RGp u2Type=%u\n", pEvtCmdHwErr->n.u64Addr,
+         pEvtCmdHwErr->n.u2Type));
 }
 
 
@@ -3752,12 +3741,10 @@ static void iommuAmdInitDevTabHwErrorEvent(uint16_t uDevId, RTGCPHYS GCPhysDte, 
  * @param   pDevIns             The IOMMU device instance.
  * @param   enmOp               The IOMMU operation being performed.
  * @param   pEvtDevTabHwErr     The device table hardware error event.
- * @param   enmEvtType          The hardware error event type.
  *
  * @thread  Any.
  */
-static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr,
-                                            EVT_HW_ERR_TYPE_T enmEvtType)
+static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, PEVT_DEV_TAB_HW_ERROR_T pEvtDevTabHwErr)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_DEV_TAB_HW_ERROR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtDevTabHwErr;
@@ -3771,9 +3758,8 @@ static void iommuAmdRaiseDevTabHwErrorEvent(PPDMDEVINS pDevIns, IOMMUOP enmOp, P
 
     IOMMU_UNLOCK(pDevIns);
 
-    Log((IOMMU_LOG_PFX ": Raised DEV_TAB_HARDWARE_ERROR. uDevId=%#x GCPhysDte=%#RGp enmOp=%u enmType=%u\n",
-         pEvtDevTabHwErr->n.u16DevId, pEvtDevTabHwErr->n.u64Addr, enmOp, enmEvtType));
-    NOREF(enmEvtType);
+    Log((IOMMU_LOG_PFX ": Raised DEV_TAB_HARDWARE_ERROR. uDevId=%#x GCPhysDte=%#RGp enmOp=%u u2Type=%u\n",
+         pEvtDevTabHwErr->n.u16DevId, pEvtDevTabHwErr->n.u64Addr, enmOp, pEvtDevTabHwErr->n.u2Type));
 }
 
 
@@ -4141,7 +4127,7 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
 
         EVT_DEV_TAB_HW_ERROR_T EvtDevTabHwErr;
         iommuAmdInitDevTabHwErrorEvent(uDevId, GCPhysDte, enmOp, &EvtDevTabHwErr);
-        iommuAmdRaiseDevTabHwErrorEvent(pDevIns, enmOp, &EvtDevTabHwErr, kHwErrType_TargetAbort);
+        iommuAmdRaiseDevTabHwErrorEvent(pDevIns, enmOp, &EvtDevTabHwErr);
         return VERR_IOMMU_IPE_1;
     }
 
@@ -4277,7 +4263,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
                 Log((IOMMU_LOG_PFX ": Failed to read page table entry at %#RGp. rc=%Rrc -> PageTabHwError\n", GCPhysPtEntity, rc));
                 EVT_PAGE_TAB_HW_ERR_T EvtPageTabHwErr;
                 iommuAmdInitPageTabHwErrorEvent(uDevId, pDte->n.u16DomainId, GCPhysPtEntity, enmOp, &EvtPageTabHwErr);
-                iommuAmdRaisePageTabHwErrorEvent(pDevIns, enmOp, &EvtPageTabHwErr, kHwErrType_TargetAbort);
+                iommuAmdRaisePageTabHwErrorEvent(pDevIns, enmOp, &EvtPageTabHwErr);
                 return VERR_IOMMU_IPE_2;
             }
         }
@@ -4622,19 +4608,71 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
+ * @param   GCPhysCmd       The system physical address of the command.
  * @param   pCmd            The command to process.
- * @param   penmEvtType     Where to store the illegal command error event type in
- *                          case of failures.
+ *
+ * @thread  Command thread.
  */
-static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, PEVT_ILLEGAL_CMD_ERR_TYPE_T penmEvtType)
+static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCmd, PCCMD_GENERIC_T pCmd)
 {
     IOMMU_ASSERT_NOT_LOCKED(pDevIns);
+
+    EVT_ILLEGAL_CMD_ERR_T EvtIllegalCmdErr;
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     uint8_t const bCmd = pCmd->n.u4Opcode;
     switch (bCmd)
     {
         case IOMMU_CMD_COMPLETION_WAIT:
+        {
+            PCCMD_COMWAIT_T pCmdComWait = (PCCMD_COMWAIT_T)pCmd;
+            AssertCompile(sizeof(*pCmdComWait) == sizeof(*pCmd));
+
+            /* Validate reserved bits in the command. */
+            if (!(pCmdComWait->au64[0] & ~IOMMU_CMD_COM_WAIT_QWORD_0_VALID_MASK))
+            {
+                /* If Completion Store is requested, write the Store Data to the specified Store Address.*/
+                if (pCmdComWait->n.u1Store)
+                {
+                    RTGCPHYS const GCPhysStore = RT_MAKE_U64(pCmdComWait->n.u29StoreAddrLo << 3, pCmdComWait->n.u20StoreAddrHi);
+                    uint64_t const u64Data     = pCmdComWait->n.u64StoreData;
+
+                    int rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhysStore, &u64Data, sizeof(u64Data));
+                    if (RT_FAILURE(rc))
+                    {
+                        EVT_CMD_HW_ERR_T EvtCmdHwErr;
+                        iommuAmdInitCmdHwErrorEvent(GCPhysStore, &EvtCmdHwErr);
+                        iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr);
+                        Log((IOMMU_LOG_PFX ": Failed to write StoreData (%#RX64) to %#RGp. rc=%Rrc\n", u64Data, GCPhysStore, rc));
+                        return rc;
+                    }
+                }
+
+                /* If command completion interrupt is requested, honor it. */
+                if (pCmdComWait->n.u1Interrupt)
+                {
+                    IOMMU_LOCK(pDevIns);
+                    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+                    if (Ctrl.n.u1CompWaitIntrEn)
+                    {
+                        /* Indicate that this command completed. */
+                        ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
+
+                        /* Check and signal an interrupt if software wants to receive one when this command completes. */
+                        IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+                        if (Ctrl.n.u1CompWaitIntrEn)
+                            iommuAmdRaiseMsiInterrupt(pDevIns);
+                    }
+                    IOMMU_UNLOCK(pDevIns);
+                }
+                return VINF_SUCCESS;
+            }
+
+            iommuAmdInitIllegalCmdEvent(GCPhysCmd, &EvtIllegalCmdErr);
+            iommuAmdRaiseIllegalCmdEvent(pDevIns, &EvtIllegalCmdErr, kIllegalCmdErrType_RsvdNotZero);
+            return VERR_INVALID_FUNCTION;
+        }
+
         case IOMMU_CMD_INV_DEV_TAB_ENTRY:
         case IOMMU_CMD_INV_IOMMU_PAGES:
         case IOMMU_CMD_INV_IOTLB_PAGES:
@@ -4651,9 +4689,8 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, PEVT_I
             break;
     }
 
-    Log((IOMMU_LOG_PFX ": Invalid/Unrecognized command opcode %u (%#x)\n", bCmd, bCmd));
-    *penmEvtType = kIllegalCmdErrType_CmdNotSupported;
-    return VERR_INVALID_FUNCTION;
+    Log((IOMMU_LOG_PFX ": Unrecognized or unsupported command opcode %u (%#x)\n", bCmd, bCmd));
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -4700,11 +4737,11 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
          *        We could optimize by fetching a bunch of commands at a time reducing
          *        number of calls to PGM. In the longer run we could lock the memory and
          *        mappings and accessing them directly. */
-        IOMMU_STATUS_T Status = iommuAmdGetStatus(pThis);
+        IOMMU_LOCK(pDevIns);
+
+        IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
         if (Status.u64 & IOMMU_STATUS_CMD_BUF_RUNNING)
         {
-            IOMMU_LOCK(pDevIns);
-
             /* Get the offset we need to read the command from memory (circular buffer offset). */
             uint32_t const cbCmdBuf = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
             uint32_t offHead = pThis->CmdBufHeadPtr.n.off;
@@ -4723,33 +4760,27 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     pThis->CmdBufHeadPtr.n.off = offHead;
 
                     /* Process the fetched command. */
-                    EVT_ILLEGAL_CMD_ERR_TYPE_T enmEvtType;
                     IOMMU_UNLOCK(pDevIns);
-                    rc = iommuAmdR3ProcessCmd(pDevIns, &Cmd, &enmEvtType);
+                    rc = iommuAmdR3ProcessCmd(pDevIns, GCPhysCmd, &Cmd);
                     IOMMU_LOCK(pDevIns);
-                    if (RT_SUCCESS(rc))
-                    { /* likely */ }
-                    else
-                    {
-                        EVT_ILLEGAL_CMD_ERR_T EvtIllegalCmdErr;
-                        iommuAmdInitIllegalCmdEvent(GCPhysCmd, &EvtIllegalCmdErr);
-                        iommuAmdRaiseIllegalCmdEvent(pDevIns, &EvtIllegalCmdErr, enmEvtType);
+                    if (RT_FAILURE(rc))
                         break;
-                    }
                 }
                 else
                 {
-                    /* Reporting this as a "data error". Maybe target abort is more appropriate? */
                     EVT_CMD_HW_ERR_T EvtCmdHwErr;
-                    iommuAmdInitCmdHwErrorEvent(GCPhysCmd, HWEVTTYPE_DATA_ERROR, &EvtCmdHwErr);
-                    iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr, kHwErrType_PoisonedData);
+                    iommuAmdInitCmdHwErrorEvent(GCPhysCmd, &EvtCmdHwErr);
+                    iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr);
                     break;
                 }
             }
-
-            IOMMU_UNLOCK(pDevIns);
         }
+
+        IOMMU_UNLOCK(pDevIns);
     }
+
+    LogFlow((IOMMU_LOG_PFX ": Command thread terminating\n"));
+    return VINF_SUCCESS;
 }
 
 
