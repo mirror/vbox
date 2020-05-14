@@ -4677,7 +4677,22 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCmd, PCCMD_GE
         case IOMMU_CMD_INV_IOMMU_PAGES:
         case IOMMU_CMD_INV_IOTLB_PAGES:
         case IOMMU_CMD_INV_INTR_TABLE:
+        {
+            return VERR_NOT_IMPLEMENTED;
+        }
+
         case IOMMU_CMD_PREFETCH_IOMMU_PAGES:
+        {
+            if (pThis->ExtFeat.n.u1PrefetchSup)
+            {
+                /** @todo IOMMU: Implement prefetch. */
+                return VINF_SUCCESS;
+            }
+            iommuAmdInitIllegalCmdEvent(GCPhysCmd, &EvtIllegalCmdErr);
+            iommuAmdRaiseIllegalCmdEvent(pDevIns, &EvtIllegalCmdErr, kIllegalCmdErrType_CmdNotSupported);
+            return VERR_INVALID_FUNCTION;
+        }
+
         case IOMMU_CMD_COMPLETE_PPR_REQ:
         case IOMMU_CMD_INV_IOMMU_ALL:
         {
@@ -5505,10 +5520,6 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->EvtLogBBaseAddr.u64       = 0;
     pThis->EvtLogBBaseAddr.n.u4Len   = 8;
 
-    pThis->DevSpecificFeat.u64       = 0;
-    pThis->DevSpecificCtrl.u64       = 0;
-    pThis->DevSpecificStatus.u64     = 0;
-
     pThis->MsiMiscInfo.u64           = 0;
     pThis->PerfOptCtrl.u32           = 0;
 
@@ -5795,6 +5806,10 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->ExtFeat.n.u1ForcePhysDstSup       = 0;
 
     pThis->RsvdReg = 0;
+
+    pThis->DevSpecificFeat.u64   = 0;
+    pThis->DevSpecificCtrl.u64   = 0;
+    pThis->DevSpecificStatus.u64 = 0;
 
     /*
      * Initialize parts of the IOMMU state as it would during reset.
