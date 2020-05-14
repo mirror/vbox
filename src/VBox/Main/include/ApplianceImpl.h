@@ -171,6 +171,8 @@ private:
     HRESULT i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hIosMf, const char *pszSubFileNm);
     HRESULT i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hIosCert, const char *pszSubFileNm);
     HRESULT i_readTailProcessing(TaskOVF *pTask);
+    HRESULT i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo);
+    HRESULT i_readTailProcessingGetManifestData(void **ppvData, size_t *pcbData);
     HRESULT i_gettingCloudData(TaskCloud *pTask);
 
     /** @}  */

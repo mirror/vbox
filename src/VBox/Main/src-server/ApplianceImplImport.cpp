@@ -2651,7 +2651,7 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
 
     /*
      * Parse the signing certificate. Unlike the manifest parser we use below,
-     * this API ignores parse of the file that aren't relevant.
+     * this API ignores parts of the file that aren't relevant.
      */
     RTERRINFOSTATIC StaticErrInfo;
     vrc = RTCrX509Certificate_ReadFromBuffer(&m->SignerCert, pvSignature, cbSignature,
@@ -2680,6 +2680,7 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
                                    pTask->locInfo.strPath.c_str(), pszSubFileNm));
             pszSplit = (char *)pvSignature + cbSignature;
         }
+        char const chSaved = *pszSplit;
         *pszSplit = '\0';
 
         /*
@@ -2757,6 +2758,22 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
         }
         else
             hrc = E_OUTOFMEMORY;
+
+        /*
+         * Look for the additional for PKCS#7/CMS signature we produce when we sign stuff.
+         */
+        if (SUCCEEDED(hrc))
+        {
+            *pszSplit = chSaved;
+            vrc = RTCrPkcs7_ReadFromBuffer(&m->ContentInfo, pvSignature, cbSignature, RTCRPKCS7_READ_F_PEM_ONLY,
+                                           &g_RTAsn1DefaultAllocator, NULL /*pfCmsLabeled*/,
+                                           RTErrInfoInitStatic(&StaticErrInfo), pszSubFileNm);
+            if (RT_SUCCESS(vrc))
+                m->fContentInfoLoaded = true;
+            else if (vrc != VERR_NOT_FOUND)
+                hrc = setErrorVrc(vrc, tr("Error reading the PKCS#7/CMS signature from '%s' for '%s' (%Rrc): %s"),
+                                  pszSubFileNm, pTask->locInfo.strPath.c_str(), vrc, StaticErrInfo.Core.pszMsg);
+        }
     }
     else if (vrc == VERR_NOT_FOUND || vrc == VERR_EOF)
         hrc = setErrorBoth(E_FAIL, vrc, tr("Malformed .cert-file for '%s': Signer's certificate not found (%Rrc)"),
@@ -2783,9 +2800,17 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
     /*
      * Parse and validate the signature file.
      *
-     * The signature file has two parts, manifest part and a PEM encoded
-     * certificate.  The former contains an entry for the manifest file with a
-     * digest that is encrypted with the certificate in the latter part.
+     * The signature file nominally has two parts, manifest part and a PEM
+     * encoded certificate.  The former contains an entry for the manifest file
+     * with a digest that is encrypted with the certificate in the latter part.
+     *
+     * When an appliance is signed by VirtualBox, a PKCS#7/CMS signedData part
+     * is added by default, supplying more info than the bits mandated by the
+     * OVF specs.  We will validate both the signedData and the standard OVF
+     * signature.  Another requirement is that the first signedData signer
+     * uses the same certificate as the regular OVF signature, allowing us to
+     * only do path building for the signedData with the additional info it
+     * ships with.
      */
     if (m->pbSignedDigest)
     {
@@ -2836,9 +2861,17 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
             hrc = setErrorVrc(vrc, tr("RTCrDigestCreateByType failed: %Rrc"), vrc);
 
         /*
+         * If we have a PKCS#7/CMS signature, validate it and check that the
+         * certificate matches the first signerInfo entry.
+         */
+        HRESULT hrc2 = i_readTailProcessingSignedData(&StaticErrInfo);
+        if (FAILED(hrc2) && SUCCEEDED(hrc))
+            hrc = hrc2;
+
+        /*
          * Validate the certificate.
          *
-         * We don't fail here on if we cannot validate the certificate, we postpone
+         * We don't fail here if we cannot validate the certificate, we postpone
          * that till the import stage, so that we can allow the user to ignore it.
          *
          * The certificate validity time is deliberately left as warnings as the
@@ -2869,7 +2902,7 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
         Assert(m->strCertError.isEmpty());
         Assert(m->fCertificateIsSelfSigned == RTCrX509Certificate_IsSelfSigned(&m->SignerCert));
 
-        HRESULT hrc2 = S_OK;
+        hrc2 = S_OK;
         if (m->fCertificateIsSelfSigned)
         {
             /*
@@ -2903,11 +2936,10 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
             }
             else
             {
-                try { m->strCertError = Utf8StrFmt(tr("Verification of the self signed certificate failed (%Rrc, %s)"),
-                                                   vrc, StaticErrInfo.Core.pszMsg); }
-                catch (...) { AssertFailed(); }
-                i_addWarning(tr("Verification of the self signed certificate used to sign '%s' failed (%Rrc): %s"),
-                             pTask->locInfo.strPath.c_str(), vrc, StaticErrInfo.Core.pszMsg);
+                m->strCertError.printfNoThrow(tr("Verification of the self signed certificate failed (%Rrc%#RTeim)"),
+                                              vrc, &StaticErrInfo.Core);
+                i_addWarning(tr("Verification of the self signed certificate used to sign '%s' failed (%Rrc)%RTeim"),
+                             pTask->locInfo.strPath.c_str(), vrc, &StaticErrInfo.Core);
             }
         }
         else
@@ -3035,6 +3067,126 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
     return S_OK;
 }
 
+///** @callback_method_impl{FNRTCRPKCS7VERIFYCERTCALLBACK, Dummy.}   */
+//static DECLCALLBACK(int) applianceVerifyCertDummyCallback(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
+//                                                          uint32_t fFlags, void *pvUser, PRTERRINFO pErrInfo)
+//{
+//    RT_NOREF(pCert, hCertPaths, fFlags, pvUser, pErrInfo);
+//    return VINF_SUCCESS;
+//}
+
+/**
+ * Reads hMemFileTheirManifest into a memory buffer so it can be passed to
+ * RTCrPkcs7VerifySignedDataWithExternalData.
+ *
+ * Use RTMemTmpFree to free the memory.
+ */
+HRESULT Appliance::i_readTailProcessingGetManifestData(void **ppvData, size_t *pcbData)
+{
+    uint64_t cbData;
+    int vrc = RTVfsFileQuerySize(m->hMemFileTheirManifest, &cbData);
+    AssertRCReturn(vrc, setErrorVrc(vrc, "RTVfsFileQuerySize"));
+
+    void *pvData = RTMemTmpAllocZ((size_t)cbData);
+    AssertPtrReturn(pvData, E_OUTOFMEMORY);
+
+    vrc = RTVfsFileReadAt(m->hMemFileTheirManifest, 0, pvData, (size_t)cbData, NULL);
+    AssertRCReturnStmt(vrc, RTMemTmpFree(pvData), setErrorVrc(vrc, "RTVfsFileReadAt"));
+
+    *pcbData = (size_t)cbData;
+    *ppvData = pvData;
+    return S_OK;
+}
+
+/**
+ * Worker for i_readTailProcessing that validates the signedData.
+ *
+ * If we have a PKCS#7/CMS signature:
+ *      - validate it
+ *      - check that the OVF certificate matches the first signerInfo entry
+ *      - verify the signature, but leave the certificate path validation for
+ *        later.
+ *
+ * @param   pErrInfo    Static error info buffer (not for returning, just for
+ *                      avoiding wasting stack).
+ * @returns COM status.
+ * @throws  Nothing!
+ */
+HRESULT Appliance::i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo)
+{
+    m->fContentInfoValid          = false;
+    m->fContentInfoSameCert       = false;
+    m->fContentInfoValidSignature = false;
+
+    if (!m->fContentInfoLoaded)
+        return S_OK;
+
+    /*
+     * Validate it.
+     */
+    HRESULT hrc = S_OK;
+    PCRTCRPKCS7SIGNEDDATA pSignedData = m->ContentInfo.u.pSignedData;
+    if (!RTCrPkcs7ContentInfo_IsSignedData(&m->ContentInfo))
+        i_addWarning(tr("Invalid PKCS#7/CMS type: %s, expected %s (signedData)"),
+                     m->ContentInfo.ContentType.szObjId, RTCRPKCS7SIGNEDDATA_OID);
+    else if (RTAsn1ObjId_CompareWithString(&pSignedData->ContentInfo.ContentType, RTCR_PKCS7_DATA_OID) != 0)
+        i_addWarning(tr("Invalid PKCS#7/CMS inner type: %s, expected %s (data)"),
+                     pSignedData->ContentInfo.ContentType.szObjId, RTCR_PKCS7_DATA_OID);
+    else if (RTAsn1OctetString_IsPresent(&pSignedData->ContentInfo.Content))
+        i_addWarning(tr("Invalid PKCS#7/CMS data: embedded (%u bytes), expected external"),
+                     pSignedData->ContentInfo.Content.Asn1Core.cb);
+    else if (pSignedData->SignerInfos.cItems == 0)
+        i_addWarning(tr("Invalid PKCS#7/CMS: No signers"));
+    else
+    {
+        m->fContentInfoValid = true;
+
+        /*
+         * Same certificate as the OVF signature?
+         */
+        PCRTCRPKCS7SIGNERINFO pSignerInfo = pSignedData->SignerInfos.papItems[0];
+        if (   RTCrX509Name_Compare(&pSignerInfo->IssuerAndSerialNumber.Name, &m->SignerCert.TbsCertificate.Issuer) == 0
+            && RTAsn1Integer_Compare(&pSignerInfo->IssuerAndSerialNumber.SerialNumber,
+                                     &m->SignerCert.TbsCertificate.SerialNumber) == 0)
+            m->fContentInfoSameCert = true;
+        else
+            i_addWarning(tr("Invalid PKCS#7/CMS: Using a different certificate"));
+
+        /*
+         * Then perform a validation of the signatures, but first without
+         * validating the certificate trust paths yet.
+         */
+        RTCRSTORE hTrustedCerts = NIL_RTCRSTORE;
+        int vrc = RTCrStoreCreateInMem(&hTrustedCerts, 1);
+        AssertRCReturn(vrc, setErrorVrc(vrc, tr("RTCrStoreCreateInMem failed: %Rrc"), vrc));
+
+        vrc = RTCrStoreCertAddX509(hTrustedCerts, 0, &m->SignerCert, RTErrInfoInitStatic(pErrInfo));
+        if (RT_SUCCESS(vrc))
+        {
+            void  *pvData = NULL;
+            size_t cbData = 0;
+            hrc = i_readTailProcessingGetManifestData(&pvData, &cbData);
+            if (SUCCEEDED(hrc))
+            {
+                RTTIMESPEC Now;
+                vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS,
+                                                                NIL_RTCRSTORE /*hAdditionalCerts*/, hTrustedCerts,
+                                                                RTTimeNow(&Now), NULL /*pfnVerifyCert*/, NULL /*pvUser*/,
+                                                                pvData, cbData, RTErrInfoInitStatic(pErrInfo));
+                if (RT_SUCCESS(vrc))
+                    m->fContentInfoValidSignature = true;
+                else
+                    i_addWarning(tr("Failed to validate PKCS#7/CMS signature: %Rrc%RTeim"), vrc, &pErrInfo->Core);
+                RTMemTmpFree(pvData);
+            }
+        }
+        else
+            hrc = setErrorVrc(vrc, tr("RTCrStoreCertAddX509 failed: %Rrc%RTeim"), vrc, &pErrInfo->Core);
+        RTCrStoreRelease(hTrustedCerts);
+    }
+
+    return hrc;
+}
 
 
 /*******************************************************************************
