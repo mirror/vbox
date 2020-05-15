@@ -233,7 +233,10 @@ void D3D9Test::parseCmdLine(LPSTR lpCmdLine)
     /* First number is the render id. */
     miRenderId = atoi(p);
 
-    while (*p == ' ' || ('0' <= *p && *p <= '9'))
+    while ('0' <= *p && *p <= '9')
+        ++p;
+
+    while (*p == ' ')
         ++p;
 
     if (!*p)
@@ -307,7 +310,6 @@ int D3D9Test::Run()
                 if (msg.wParam == ' ')
                 {
                     fDoRender = TRUE;
-                    dt = fFirst ? 0.0f : 0.1f; /* 0.1 second increment per step. */
                 }
             }
         }
@@ -318,6 +320,7 @@ int D3D9Test::Run()
 
         if (fDoRender)
         {
+            dt = fFirst ? 0.0f : 0.1f; /* 0.1 second increment per step. */
             if (mpRender)
             {
                 mpRender->TimeAdvance(dt);
