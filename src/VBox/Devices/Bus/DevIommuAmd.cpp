@@ -2182,19 +2182,6 @@ typedef enum EVT_IO_PAGE_FAULT_TYPE_T
 } EVT_IO_PAGE_FAULT_TYPE_T;
 
 /**
- * ILLEGAL_COMMAND_ERROR Event Types.
- * In accordance with the AMD spec.
- */
-typedef enum EVT_ILLEGAL_CMD_ERR_TYPE_T
-{
-    kIllegalCmdErrType_RsvdNotZero = 0,
-    kIllegalCmdErrType_CmdNotSupported,
-    kIllegalCmdErrType_IotlbNotSupported
-} EVT_ILLEGAL_CMD_ERR_TYPE_T;
-/** Pointer to an illegal command error event type. */
-typedef EVT_ILLEGAL_CMD_ERR_TYPE_T *PEVT_ILLEGAL_CMD_ERR_TYPE_T;
-
-/**
  * IOTLB_INV_TIMEOUT Event Types.
  * In accordance with the AMD spec.
  */
@@ -3345,8 +3332,8 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
     Assert(off < IOMMU_MMIO_REGION_SIZE);
     Assert(!(off & 7) || !(off & 3));
 
-    PIOMMU     pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PIOMMU      pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
     /** @todo IOMMU: fine-grained locking? */
@@ -3783,10 +3770,8 @@ static void iommuAmdInitIllegalCmdEvent(RTGCPHYS GCPhysCmd, PEVT_ILLEGAL_CMD_ERR
  *
  * @param   pDevIns         The IOMMU device instance.
  * @param   pEvtIllegalCmd  The illegal command error event.
- * @param   enmEvtType      The illegal command error event type.
  */
-static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_ERR_T pEvtIllegalCmd,
-                                         EVT_ILLEGAL_CMD_ERR_TYPE_T enmEvtType)
+static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_ERR_T pEvtIllegalCmd)
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_ILLEGAL_DTE_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIllegalCmd;
@@ -3799,8 +3784,7 @@ static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_E
 
     IOMMU_UNLOCK(pDevIns);
 
-    Log((IOMMU_LOG_PFX ": Raised ILLEGAL_COMMAND_ERROR. GCPhysCmd=%#RGp enmType=%u\n", pEvtIllegalCmd->n.u64Addr, enmEvtType));
-    NOREF(enmEvtType);
+    Log((IOMMU_LOG_PFX ": Raised ILLEGAL_COMMAND_ERROR. Addr=%#RGp\n", pEvtIllegalCmd->n.u64Addr));
 }
 
 
@@ -4608,16 +4592,15 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
  *
  * @returns VBox status code.
  * @param   pDevIns         The IOMMU device instance.
- * @param   GCPhysCmd       The system physical address of the command.
  * @param   pCmd            The command to process.
+ * @param   GCPhysCmd       The system physical address of the command.
+ * @param   pEvtError       Where to store the error event in case of failures.
  *
  * @thread  Command thread.
  */
-static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCmd, PCCMD_GENERIC_T pCmd)
+static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPHYS GCPhysCmd, PEVT_GENERIC_T pEvtError)
 {
     IOMMU_ASSERT_NOT_LOCKED(pDevIns);
-
-    EVT_ILLEGAL_CMD_ERR_T EvtIllegalCmdErr;
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     uint8_t const bCmd = pCmd->n.u4Opcode;
@@ -4631,24 +4614,22 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCmd, PCCMD_GE
             /* Validate reserved bits in the command. */
             if (!(pCmdComWait->au64[0] & ~IOMMU_CMD_COM_WAIT_QWORD_0_VALID_MASK))
             {
-                /* If Completion Store is requested, write the Store Data to the specified Store Address.*/
+                /* If Completion Store is requested, write the StoreData to the specified address.*/
                 if (pCmdComWait->n.u1Store)
                 {
                     RTGCPHYS const GCPhysStore = RT_MAKE_U64(pCmdComWait->n.u29StoreAddrLo << 3, pCmdComWait->n.u20StoreAddrHi);
                     uint64_t const u64Data     = pCmdComWait->n.u64StoreData;
-
                     int rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhysStore, &u64Data, sizeof(u64Data));
                     if (RT_FAILURE(rc))
                     {
-                        EVT_CMD_HW_ERR_T EvtCmdHwErr;
-                        iommuAmdInitCmdHwErrorEvent(GCPhysStore, &EvtCmdHwErr);
-                        iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr);
-                        Log((IOMMU_LOG_PFX ": Failed to write StoreData (%#RX64) to %#RGp. rc=%Rrc\n", u64Data, GCPhysStore, rc));
-                        return rc;
+                        Log((IOMMU_LOG_PFX ": Cmd(%#x): Failed to write StoreData (%#RX64) to %#RGp, rc=%Rrc\n", bCmd, u64Data,
+                             GCPhysStore, rc));
+                        iommuAmdInitCmdHwErrorEvent(GCPhysStore, (PEVT_CMD_HW_ERR_T)pEvtError);
+                        return VERR_IOMMU_CMD_HW_ERROR;
                     }
                 }
 
-                /* If command completion interrupt is requested, honor it. */
+                /* If command completion interrupt is requested, raise an interrupt. */
                 if (pCmdComWait->n.u1Interrupt)
                 {
                     IOMMU_LOCK(pDevIns);
@@ -4667,45 +4648,77 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCmd, PCCMD_GE
                 }
                 return VINF_SUCCESS;
             }
-
-            iommuAmdInitIllegalCmdEvent(GCPhysCmd, &EvtIllegalCmdErr);
-            iommuAmdRaiseIllegalCmdEvent(pDevIns, &EvtIllegalCmdErr, kIllegalCmdErrType_RsvdNotZero);
-            return VERR_INVALID_FUNCTION;
+            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            return VERR_IOMMU_CMD_INVALID_FORMAT;
         }
 
         case IOMMU_CMD_INV_DEV_TAB_ENTRY:
+        {
+            /** @todo IOMMU: Implement this once we implement IOTLB. Pretend success until
+             *        then. */
+            return VINF_SUCCESS;
+        }
+
         case IOMMU_CMD_INV_IOMMU_PAGES:
+        {
+            /** @todo IOMMU: Implement this once we implement IOTLB. Pretend success until
+             *        then. */
+            return VINF_SUCCESS;
+        }
+
         case IOMMU_CMD_INV_IOTLB_PAGES:
+        {
+            uint32_t const uCapHdr = PDMPciDevGetDWord(pDevIns->apPciDevs[0], IOMMU_PCI_OFF_CAP_HDR);
+            if (RT_BF_GET(uCapHdr, IOMMU_BF_CAPHDR_IOTLB_SUP))
+            {
+                /** @todo IOMMU: Implement remote IOTLB invalidation. */
+                return VERR_NOT_IMPLEMENTED;
+            }
+            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            return VERR_IOMMU_CMD_NOT_SUPPORTED;
+        }
+
         case IOMMU_CMD_INV_INTR_TABLE:
         {
-            return VERR_NOT_IMPLEMENTED;
+            /** @todo IOMMU: Implement this once we implement IOTLB. Pretend success until
+             *        then. */
+            return VINF_SUCCESS;
         }
 
         case IOMMU_CMD_PREFETCH_IOMMU_PAGES:
         {
             if (pThis->ExtFeat.n.u1PrefetchSup)
             {
-                /** @todo IOMMU: Implement prefetch. */
+                /** @todo IOMMU: Implement prefetch. Pretend success until then. */
                 return VINF_SUCCESS;
             }
-            iommuAmdInitIllegalCmdEvent(GCPhysCmd, &EvtIllegalCmdErr);
-            iommuAmdRaiseIllegalCmdEvent(pDevIns, &EvtIllegalCmdErr, kIllegalCmdErrType_CmdNotSupported);
-            return VERR_INVALID_FUNCTION;
+            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            return VERR_IOMMU_CMD_NOT_SUPPORTED;
         }
 
         case IOMMU_CMD_COMPLETE_PPR_REQ:
-        case IOMMU_CMD_INV_IOMMU_ALL:
         {
-            NOREF(pThis);
-            return VERR_NOT_IMPLEMENTED;
+            /* We don't support PPR requests yet. */
+            Assert(!pThis->ExtFeat.n.u1PprSup);
+            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            return VERR_IOMMU_CMD_NOT_SUPPORTED;
         }
 
-        default:
-            break;
+        case IOMMU_CMD_INV_IOMMU_ALL:
+        {
+            if (pThis->ExtFeat.n.u1InvAllSup)
+            {
+                /** @todo IOMMU: Invalidate all. Pretend success until then. */
+                return VINF_SUCCESS;
+            }
+            iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+            return VERR_IOMMU_CMD_NOT_SUPPORTED;
+        }
     }
 
-    Log((IOMMU_LOG_PFX ": Unrecognized or unsupported command opcode %u (%#x)\n", bCmd, bCmd));
-    return VERR_NOT_SUPPORTED;
+    Log((IOMMU_LOG_PFX ": Cmd(%#x): Unrecognized\n", bCmd));
+    iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
+    return VERR_IOMMU_CMD_NOT_SUPPORTED;
 }
 
 
@@ -4775,11 +4788,19 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     pThis->CmdBufHeadPtr.n.off = offHead;
 
                     /* Process the fetched command. */
+                    EVT_GENERIC_T EvtError;
                     IOMMU_UNLOCK(pDevIns);
-                    rc = iommuAmdR3ProcessCmd(pDevIns, GCPhysCmd, &Cmd);
+                    rc = iommuAmdR3ProcessCmd(pDevIns, &Cmd, GCPhysCmd, &EvtError);
                     IOMMU_LOCK(pDevIns);
                     if (RT_FAILURE(rc))
+                    {
+                        if (   rc == VERR_IOMMU_CMD_NOT_SUPPORTED
+                            || rc == VERR_IOMMU_CMD_INVALID_FORMAT)
+                            iommuAmdRaiseIllegalCmdEvent(pDevIns, (PCEVT_ILLEGAL_CMD_ERR_T)&EvtError);
+                        else if (rc == VERR_IOMMU_CMD_HW_ERROR)
+                            iommuAmdRaiseCmdHwErrorEvent(pDevIns, (PCEVT_CMD_HW_ERR_T)&EvtError);
                         break;
+                    }
                 }
                 else
                 {
@@ -4918,7 +4939,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
 static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PCIOMMU    pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
     LogFlow((IOMMU_LOG_PFX ": iommuAmdR3DbgInfo: pThis=%p pszArgs=%s\n", pThis, pszArgs));
