@@ -482,6 +482,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_MAX_HOST_PT_LEVEL                     6
 /** The IOTLB entry magic. */
 #define IOMMU_IOTLBE_MAGIC                          0x10acce55
+/** The device-specific feature major revision. */
+#define IOMMU_DEVSPEC_FEAT_MAJOR_VERSION            0x1
+/** The device-specific feature minor revision. */
+#define IOMMU_DEVSPEC_FEAT_MINOR_VERSION            0x0
+/** The device-specific control major revision. */
+#define IOMMU_DEVSPEC_CTRL_MAJOR_VERSION            0x1
+/** The device-specific control minor revision. */
+#define IOMMU_DEVSPEC_CTRL_MINOR_VERSION            0x0
+/** The device-specific status major revision. */
+#define IOMMU_DEVSPEC_STATUS_MAJOR_VERSION          0x1
+/** The device-specific status minor revision. */
+#define IOMMU_DEVSPEC_STATUS_MINOR_VERSION          0x0
 /** @} */
 
 /**
@@ -5808,8 +5820,16 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->RsvdReg = 0;
 
     pThis->DevSpecificFeat.u64   = 0;
-    pThis->DevSpecificCtrl.u64   = 0;
+    pThis->DevSpecificFeat.n.u4RevMajor = IOMMU_DEVSPEC_FEAT_MAJOR_VERSION;
+    pThis->DevSpecificFeat.n.u4RevMinor = IOMMU_DEVSPEC_FEAT_MINOR_VERSION;
+
+    pThis->DevSpecificCtrl.u64 = 0;
+    pThis->DevSpecificCtrl.n.u4RevMajor = IOMMU_DEVSPEC_CTRL_MAJOR_VERSION;
+    pThis->DevSpecificCtrl.n.u4RevMinor = IOMMU_DEVSPEC_CTRL_MINOR_VERSION;
+
     pThis->DevSpecificStatus.u64 = 0;
+    pThis->DevSpecificStatus.n.u4RevMajor = IOMMU_DEVSPEC_STATUS_MAJOR_VERSION;
+    pThis->DevSpecificStatus.n.u4RevMinor = IOMMU_DEVSPEC_STATUS_MINOR_VERSION;
 
     /*
      * Initialize parts of the IOMMU state as it would during reset.
