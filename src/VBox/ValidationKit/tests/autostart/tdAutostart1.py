@@ -189,7 +189,7 @@ class tdAutostartOs(object):
                 asFiles = (s for s in asFiles
                            if oRegExp.match(os.path.basename(s))
                            and os.path.exists(sTestBuildDir + '/' + s));
-                asFiles = sorted(asFiles, reverse = True, 
+                asFiles = sorted(asFiles, reverse = True,
                                  key = lambda s, sTstBuildDir = sTestBuildDir: os.path.getmtime(os.path.join(sTstBuildDir, s)));
                 if asFiles:
                     return sTestBuildDir + '/' + asFiles[0];
