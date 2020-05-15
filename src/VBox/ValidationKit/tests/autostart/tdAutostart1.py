@@ -174,23 +174,26 @@ class tdAutostartOs(object):
         self.fpApiVer = fpApiVer;
         self.sGuestAdditionsIso = sGuestAdditionsIso;
 
-    def _findFile(self, sRegExp, sTestBuildDir):
+    def _findFile(self, sRegExp, asTestBuildDirs):
         """
-        Returns a filepath based on the given regex and path to look into
+        Returns a filepath based on the given regex and paths to look into
         or None if no matching file is found.
         """
 
         oRegExp = re.compile(sRegExp);
-
-        #return most recent file if there are several ones matching the pattern
-        asFiles = [s for s in os.listdir(sTestBuildDir)
-                   if os.path.isfile(os.path.join(sTestBuildDir, s))];
-        asFiles = (s for s in asFiles
-                   if oRegExp.match(os.path.basename(s))
-                   and os.path.exists(sTestBuildDir + '/' + s));
-        asFiles = sorted(asFiles, reverse = True, key = lambda s: os.path.getmtime(os.path.join(sTestBuildDir, s)));
-        if asFiles:
-            return sTestBuildDir + '/' + asFiles[0];
+        for sTestBuildDir in asTestBuildDirs:
+            try:
+                #return most recent file if there are several ones matching the pattern
+                asFiles = [s for s in os.listdir(sTestBuildDir)
+                           if os.path.isfile(os.path.join(sTestBuildDir, s))];
+                asFiles = (s for s in asFiles
+                           if oRegExp.match(os.path.basename(s))
+                           and os.path.exists(sTestBuildDir + '/' + s));
+                asFiles = sorted(asFiles, reverse = True, key = lambda s: os.path.getmtime(os.path.join(sTestBuildDir, s)));
+                if asFiles:
+                    return sTestBuildDir + '/' + asFiles[0];
+            except:
+                pass;
 
         reporter.error('Failed to find a file matching "%s" in %s.' % (sRegExp, sTestBuildDir));
         return None;
@@ -546,9 +549,9 @@ class tdAutostartOsLinux(tdAutostartOs):
     Autostart support methods for Linux guests.
     """
 
-    def __init__(self, oTestDriver, sTestBuildDir, fpApiVer, sGuestAdditionsIso):
+    def __init__(self, oTestDriver, asTestBuildDirs, fpApiVer, sGuestAdditionsIso):
         tdAutostartOs.__init__(self, oTestDriver, fpApiVer, sGuestAdditionsIso);
-        self.sTestBuild = self._findFile('^VirtualBox-.*\\.run$', sTestBuildDir);
+        self.sTestBuild = self._findFile('^VirtualBox-.*\\.run$', asTestBuildDirs);
         if not self.sTestBuild:
             raise base.GenError("VirtualBox install package not found");
 
@@ -864,9 +867,9 @@ class tdAutostartOsWin(tdAutostartOs):
     Autostart support methods for Windows guests.
     """
 
-    def __init__(self, oTestDriver, sTestBuildDir, fpApiVer, sGuestAdditionsIso):
+    def __init__(self, oTestDriver, asTestBuildDirs, fpApiVer, sGuestAdditionsIso):
         tdAutostartOs.__init__(self, oTestDriver, fpApiVer, sGuestAdditionsIso);
-        self.sTestBuild = self._findFile('^VirtualBox-.*\\.(exe|msi)$', sTestBuildDir);
+        self.sTestBuild = self._findFile('^VirtualBox-.*\\.(exe|msi)$', asTestBuildDirs);
         if not self.sTestBuild:
             raise base.GenError("VirtualBox install package not found");
         return;
@@ -1204,7 +1207,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         self.asTestVMsDef       = [self.ksOsWindows, self.ksOsLinux];
         self.asTestVMs          = self.asTestVMsDef;
         self.asSkipVMs          = [];
-        self.sTestBuildDir      = None; #'D:/AlexD/TestBox/TestAdditionalFiles';
+        self.asTestBuildDirs      = None; #'D:/AlexD/TestBox/TestAdditionalFiles';
         self.sGuestAdditionsIso = None; #'D:/AlexD/TestBox/TestAdditionalFiles/VBoxGuestAdditions_6.1.2.iso';
 
     #
@@ -1214,10 +1217,10 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         rc = vbox.TestDriver.showUsage(self);
         reporter.log('');
         reporter.log('tdAutostart Options:');
-        reporter.log('  --test-build-dir <path>');
-        reporter.log('      The directory with VirtualBox distros. The option is mandatory');
+        reporter.log('  --test-build-dirs <path1[,path2[,...]]>');
+        reporter.log('      The list of directories with VirtualBox distros. The option is mandatory');
         reporter.log('      without any default value. The test raises an exception if the');
-        reporter.log('      option is not specified.');
+        reporter.log('      option is not specified. At least, one directory should be pointed.');
         reporter.log('  --guest-additions-iso <path/to/iso>');
         reporter.log('      The path to fresh VirtualBox Guest Additions iso. The option is');
         reporter.log('      mandatory without any default value. The test raises an exception');
@@ -1231,10 +1234,10 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         return rc;
 
     def parseOption(self, asArgs, iArg): # pylint: disable=too-many-branches,too-many-statements
-        if asArgs[iArg] == '--test-build-dir':
+        if asArgs[iArg] == '--test-build-dirs':
             iArg += 1;
-            if iArg >= len(asArgs): raise base.InvalidOption('The "--test-build-dir" takes a path argument');
-            self.sTestBuildDir = asArgs[iArg];
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--test-build-dirs" takes a paths argument');
+            self.asTestBuildDirs = asArgs[iArg].split(',');
         elif asArgs[iArg] == '--guest-additions-iso':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--guest-additions-iso" takes a path or url to iso argument');
@@ -1260,8 +1263,8 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
 
     def completeOptions(self):
         # Remove skipped VMs from the test list.
-        if self.sTestBuildDir is None:
-            raise base.InvalidOption('--test-build-dir is not specified')
+        if self.asTestBuildDirs is None:
+            raise base.InvalidOption('--test-build-dirs is not specified')
         if self.sGuestAdditionsIso is None:
             raise base.InvalidOption('--guest-additions-iso is not specified')
 
@@ -1366,16 +1369,16 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
 
         oGuestOsHlp = None              # type: tdAutostartOs
         if sVmName == self.ksOsLinux:
-            oGuestOsHlp = tdAutostartOsLinux(self, self.sTestBuildDir, self.fpApiVer, # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsLinux(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
                                              self.sGuestAdditionsIso);
         elif sVmName == self.ksOsSolaris:
-            oGuestOsHlp = tdAutostartOsSolaris(self, self.sTestBuildDir, self.fpApiVer, # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsSolaris(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
                                                self.sGuestAdditionsIso);
         elif sVmName == self.ksOsDarwin:
-            oGuestOsHlp = tdAutostartOsDarwin(self, self.sTestBuildDir, self.fpApiVer, # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsDarwin(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
                                               self.sGuestAdditionsIso);
         elif sVmName == self.ksOsWindows:
-            oGuestOsHlp = tdAutostartOsWin(self, self.sTestBuildDir, self.fpApiVer, # pylint: disable=redefined-variable-type
+            oGuestOsHlp = tdAutostartOsWin(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
                                            self.sGuestAdditionsIso);
 
         sTestUserAllow = 'test1';
