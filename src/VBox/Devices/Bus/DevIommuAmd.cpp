@@ -4796,9 +4796,15 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                     {
                         if (   rc == VERR_IOMMU_CMD_NOT_SUPPORTED
                             || rc == VERR_IOMMU_CMD_INVALID_FORMAT)
+                        {
+                            Assert(EvtError.n.u4EvtCode == IOMMU_EVT_ILLEGAL_CMD_ERROR);
                             iommuAmdRaiseIllegalCmdEvent(pDevIns, (PCEVT_ILLEGAL_CMD_ERR_T)&EvtError);
+                        }
                         else if (rc == VERR_IOMMU_CMD_HW_ERROR)
+                        {
+                            Assert(EvtError.n.u4EvtCode == IOMMU_EVT_COMMAND_HW_ERROR);
                             iommuAmdRaiseCmdHwErrorEvent(pDevIns, (PCEVT_CMD_HW_ERR_T)&EvtError);
+                        }
                         break;
                     }
                 }
