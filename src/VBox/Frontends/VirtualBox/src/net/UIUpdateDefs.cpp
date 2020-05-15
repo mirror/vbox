@@ -81,13 +81,13 @@ VBoxUpdateData::VBoxUpdateData(PeriodType enmPeriodIndex, BranchType enmBranchIn
 
 bool VBoxUpdateData::isNoNeedToCheck() const
 {
-    /* Return 'false' if Period == Never: */
+    /* No need to check if Period == Never: */
     return m_enmPeriodIndex == PeriodNever;
 }
 
 bool VBoxUpdateData::isNeedToCheck() const
 {
-    /* Return 'false' if Period == Never: */
+    /* Return 'false' if there is no need to check: */
     if (isNoNeedToCheck())
         return false;
 
