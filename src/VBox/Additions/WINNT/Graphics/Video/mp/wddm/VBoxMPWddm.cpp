@@ -3465,6 +3465,7 @@ DxgkDdiEscape(
 
                     vboxWddmDisplaySettingsCheckPos(pDevExt, i);
                 }
+                Status = STATUS_SUCCESS;
                 break;
             }
             default:
