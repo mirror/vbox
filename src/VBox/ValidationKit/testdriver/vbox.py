@@ -3563,27 +3563,27 @@ class TestDriver(base.TestDriver):                                              
         if not fRc:
             # Do some diagnosis to find out why this failed.
             ## @todo Identify guest OS type and only run one of the following commands.
+            fIsNotWindows = True;
             reporter.log('txsCdWait: Listing root contents of ${CDROM}:');
-            oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "${CDROM}"), fIgnoreErrors = True);
-            # ASSUMES that we always install Windows on drive C right now.
-            sWinDir = "C:\\Windows\\System32\\";
-            oTxsSession.syncExec(sWinDir + " cmd.exe",
-                                 ('cmd.exe', '/C', 'dir', '${CDROM}'),
-                                 fIgnoreErrors = True);
-            oTxsSession.syncExec('C:\\WINNT\\System32\\cmd.exe',
-                                 ('C:\\WINNT\\System32\\cmd.exe', '/C', 'dir', '${CDROM}'),
-                                 fIgnoreErrors = True);
-
-            reporter.log('txsCdWait: Listing media directory:');
-            oTxsSession.syncExec('/bin/ls', ('/bin/ls', '-l', '-a', '-R', '/media'), fIgnoreErrors = True);
-            reporter.log('txsCdWait: Listing mount points / drives:');
-            oTxsSession.syncExec('/bin/mount', ('/bin/mount',), fIgnoreErrors = True);
-            oTxsSession.syncExec('/bin/cat', ('/bin/cat', '/etc/fstab'), fIgnoreErrors = True);
-            # Should work since WinXP Pro.
-            oTxsSession.syncExec(sWinDir + "wbem\\WMIC.exe",
-                                 ("WMIC.exe", "logicaldisk", "get",
-                                  "deviceid, volumename, description"),
-                                 fIgnoreErrors = True);
+            if fIsNotWindows:
+                oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "${CDROM}"), fIgnoreErrors = True);
+                reporter.log('txsCdWait: Listing media directory:');
+                oTxsSession.syncExec('/bin/ls', ('/bin/ls', '-l', '-a', '-R', '/media'), fIgnoreErrors = True);
+                reporter.log('txsCdWait: Listing mount points / drives:');
+                oTxsSession.syncExec('/bin/mount', ('/bin/mount',), fIgnoreErrors = True);
+                oTxsSession.syncExec('/bin/cat', ('/bin/cat', '/etc/fstab'), fIgnoreErrors = True);
+                oTxsSession.syncExec('/bin/dmesg', ('/bin/dmesg',), fIgnoreErrors = True);
+            else:
+                # ASSUMES that we always install Windows on drive C right now.
+                sWinDir = "C:\\Windows\\System32\\";
+                # Should work since WinXP Pro.
+                oTxsSession.syncExec(sWinDir + "wbem\\WMIC.exe",
+                                     ("WMIC.exe", "logicaldisk", "get",
+                                      "deviceid, volumename, description"),
+                                     fIgnoreErrors = True);
+                oTxsSession.syncExec(sWinDir + " cmd.exe",
+                                     ('cmd.exe', '/C', 'dir', '${CDROM}'),
+                                     fIgnoreErrors = True);
 
         if fRemoveTxs:
             self.removeTask(oTxsSession);
