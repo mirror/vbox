@@ -2636,20 +2636,6 @@ static void iommuAmdSetPciTargetAbort(PPDMDEVINS pDevIns)
 
 
 /**
- * Halts command processing.
- *
- * @param   pDevIns     The IOMMU device instance.
- */
-static void iommuAmdHaltCmdProcessing(PPDMDEVINS pDevIns)
-{
-    IOMMU_ASSERT_LOCKED(pDevIns);
-
-    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
-}
-
-
-/**
  * Wakes up the command thread if there are commands to be processed or if
  * processing is requested to be stopped by software.
  *
@@ -3709,12 +3695,13 @@ static void iommuAmdRaiseCmdHwErrorEvent(PPDMDEVINS pDevIns, PCEVT_CMD_HW_ERR_T 
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_CMD_HW_ERR_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtCmdHwErr;
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
     IOMMU_LOCK_NORET(pDevIns);
 
     iommuAmdSetHwError(pDevIns, (PCEVT_GENERIC_T)pEvent);
     iommuAmdWriteEvtLogEntry(pDevIns, (PCEVT_GENERIC_T)pEvent);
-    iommuAmdHaltCmdProcessing(pDevIns);
+    ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
 
     IOMMU_UNLOCK(pDevIns);
 
@@ -3803,11 +3790,12 @@ static void iommuAmdRaiseIllegalCmdEvent(PPDMDEVINS pDevIns, PCEVT_ILLEGAL_CMD_E
 {
     AssertCompile(sizeof(EVT_GENERIC_T) == sizeof(EVT_ILLEGAL_DTE_T));
     PCEVT_GENERIC_T pEvent = (PCEVT_GENERIC_T)pEvtIllegalCmd;
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
     IOMMU_LOCK_NORET(pDevIns);
 
     iommuAmdWriteEvtLogEntry(pDevIns, pEvent);
-    iommuAmdHaltCmdProcessing(pDevIns);
+    ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
 
     IOMMU_UNLOCK(pDevIns);
 
@@ -4767,7 +4755,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
         IOMMU_LOCK(pDevIns);
 
         IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
-        if (Status.u64 & IOMMU_STATUS_CMD_BUF_RUNNING)
+        if (Status.n.u1CmdBufRunning)
         {
             /* Get the offset we need to read the command from memory (circular buffer offset). */
             uint32_t const cbCmdBuf = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
