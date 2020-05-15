@@ -710,7 +710,7 @@ typedef union
 AssertCompileSize(IOPDE_T, 8);
 
 /**
- * I/O Page Table Entry/Entity.
+ * I/O Page Table Entity.
  * In accordance with the AMD spec.
  *
  * This a common subset of an DTE.au64[0], PTE and PDE.
@@ -2259,23 +2259,18 @@ typedef IOWALKRESULT *PCIOWALKRESULT;
 
 /**
  * IOMMU I/O TLB Entry.
- * @note Update iommuAmdInitIotlbe() when changes are made.
+ * Keep this as small and aligned as possible.
  */
 typedef struct
 {
-    /** Magic (IOMMU_IOTLBE_MAGIC). */
-    uint32_t        uMagic;
-    /** Reserved for future (eviction hints?). */
-    uint16_t        uRsvd0;
-    /** The I/O access permissions (IOMMU_IO_PERM_XXX). */
-    uint8_t         fIoPerm;
-    /** The number of offset bits in the system physical address. */
-    uint8_t         cShift;
     /** The translated system physical address (SPA) of the page. */
     RTGCPHYS        GCPhysSpa;
+    /** The I/O access permissions (IOMMU_IO_PERM_XXX). */
+    uint8_t         fIoPerm;
+    /** Alignment padding. */
+    uint8_t         afPadding[7];
 } IOTLBE_T;
-AssertCompileSizeAlignment(IOTLBE_T, 8);
-AssertCompileMemberAlignment(IOTLBE_T, GCPhysSpa, 8);
+AssertCompileSize(IOTLBE_T, 16);
 /** Pointer to an IOMMU I/O TLB entry struct. */
 typedef IOTLBE_T *PIOTLBE_T;
 /** Pointer to a const IOMMU I/O TLB entry struct. */
@@ -4007,41 +4002,6 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
     }
 
     IOMMU_UNLOCK(pDevIns);
-}
-
-
-/**
- * Initializes an IOTLB entry.
- *
- * @param   GCPhysSpa   The translated system physical address.
- * @param   cShift      The number of offset bits in the system physical address.
- * @param   fIoPerm     The I/O access permissions (IOMMU_IO_PERM_XXX).
- * @param   pIotlbe     Where to store the initialized IOTLB entry.
- */
-static void iommuAmdInitIotlbe(RTGCPHYS GCPhysSpa, uint8_t cShift, uint8_t fIoPerm, PIOTLBE_T pIotlbe)
-{
-    pIotlbe->uMagic    = IOMMU_IOTLBE_MAGIC;
-    pIotlbe->uRsvd0    = 0;
-    pIotlbe->fIoPerm   = fIoPerm;
-    pIotlbe->cShift    = cShift;
-    pIotlbe->GCPhysSpa = GCPhysSpa;
-}
-
-
-/**
- * Updates an IOTLB entry.
- *
- * @param   GCPhysSpa   The translated system physical address.
- * @param   cShift      The number of offset bits in the system physical address.
- * @param   fIoPerm     The I/O access permissions (IOMMU_IO_PERM_XXX).
- * @param   pIotlbe     The IOTLB entry to update.
- */
-static void iommuAmdUpdateIotlbe(RTGCPHYS GCPhysSpa, uint8_t cShift, uint8_t fIoPerm, PIOTLBE_T pIotlbe)
-{
-    Assert(pIotlbe->uMagic == IOMMU_IOTLBE_MAGIC);
-    pIotlbe->fIoPerm   = fIoPerm;
-    pIotlbe->cShift    = cShift;
-    pIotlbe->GCPhysSpa = GCPhysSpa;
 }
 
 
