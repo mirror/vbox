@@ -56,7 +56,7 @@ struct MyError
             com::ProgressErrorInfo info(pProgress);
             com::GluePrintErrorInfo(info);
         }
-        else if (rc)
+        else if (rc != S_OK)
         {
             com::ErrorInfo info;
             if (!info.isFullAvailable() && !info.isBasicAvailable())
