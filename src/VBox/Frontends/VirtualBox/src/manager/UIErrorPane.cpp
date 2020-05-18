@@ -16,102 +16,43 @@
  */
 
 /* Qt includes: */
-#include <QAction>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QStyle>
 #include <QTextBrowser>
-#include <QToolButton>
 #include <QVBoxLayout>
 
-/* GUI includes */
-#include "QIWithRetranslateUI.h"
+/* GUI includes: */
 #include "UIErrorPane.h"
 
-/* Other VBox includes: */
-#include <iprt/assert.h>
 
-
-UIErrorPane::UIErrorPane(QAction *pRefreshAction /* = 0 */, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pActionRefresh(pRefreshAction)
-    , m_pButtonRefresh(0)
+UIErrorPane::UIErrorPane(QWidget *pParent /* = 0 */)
+    : QWidget(pParent)
     , m_pBrowserDetails(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 void UIErrorPane::setErrorDetails(const QString &strDetails)
 {
-    /* Define error details: */
+    /* Redirect to details browser: */
     m_pBrowserDetails->setText(strDetails);
-}
-
-void UIErrorPane::retranslateUi()
-{
-    /* Translate refresh button: */
-    if (m_pActionRefresh && m_pButtonRefresh)
-    {
-        m_pButtonRefresh->setText(m_pActionRefresh->text());
-        m_pButtonRefresh->setIcon(m_pActionRefresh->icon());
-        m_pButtonRefresh->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    }
 }
 
 void UIErrorPane::prepare()
 {
-    /* Create main layout: */
+    /* Prepare main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     if (pMainLayout)
     {
-        /* Configure layout: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
 
-        /* Create details browser: */
+        /* Prepare details browser: */
         m_pBrowserDetails = new QTextBrowser;
         if (m_pBrowserDetails)
         {
-            /* Configure browser: */
             m_pBrowserDetails->setFocusPolicy(Qt::StrongFocus);
             m_pBrowserDetails->document()->setDefaultStyleSheet("a { text-decoration: none; }");
 
             /* Add into layout: */
             pMainLayout->addWidget(m_pBrowserDetails);
         }
-
-        /* If refresh action was set: */
-        if (m_pActionRefresh)
-        {
-            /* Create Refresh button layout: */
-            QHBoxLayout *pButtonLayout = new QHBoxLayout;
-            if (pButtonLayout)
-            {
-                /* Add stretch first: */
-                pButtonLayout->addStretch();
-
-                /* Create refresh button: */
-                m_pButtonRefresh = new QToolButton;
-                if (m_pButtonRefresh)
-                {
-                    /* Configure button: */
-                    m_pButtonRefresh->setFocusPolicy(Qt::StrongFocus);
-                    connect(m_pButtonRefresh, &QToolButton::clicked,
-                            m_pActionRefresh, &QAction::triggered);
-
-                    /* Add into layout: */
-                    pButtonLayout->addWidget(m_pButtonRefresh);
-                }
-            }
-
-            /* Add into layout: */
-            pMainLayout->addLayout(pButtonLayout);
-        }
-
-        /* Add stretch finally: */
-        pMainLayout->addStretch();
     }
-
-    /* Retranslate finally: */
-    retranslateUi();
 }

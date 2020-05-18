@@ -24,45 +24,27 @@
 /* Qt includes: */
 #include <QWidget>
 
-/* GUI includes: */
-#include "QIWithRetranslateUI.h"
-
 /* Forward declarations: */
-class QAction;
-class QString;
 class QTextBrowser;
-class QToolButton;
 
-
-/** QWidget subclass representing error pane reflecting information
-  * about currently chosen inaccessible VM and allowing to operate over it. */
-class UIErrorPane : public QIWithRetranslateUI<QWidget>
+/** QWidget subclass representing error pane reflecting
+  * information about currently chosen inaccessible VM. */
+class UIErrorPane : public QWidget
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs error pane passing @a pParent to the base-class.
-      * @param  pRefreshAction  Brings the refresh action reference. */
-    UIErrorPane(QAction *pRefreshAction = 0, QWidget *pParent = 0);
+    /** Constructs error pane passing @a pParent to the base-class. */
+    UIErrorPane(QWidget *pParent = 0);
 
     /** Defines error @a strDetails. */
     void setErrorDetails(const QString &strDetails);
-
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
 
 private:
 
     /** Prepares all. */
     void prepare();
-
-    /** Holds the Refresh action refrence. */
-    QAction     *m_pActionRefresh;
-    /** Holds the VM refresh button instance. */
-    QToolButton *m_pButtonRefresh;
 
     /** Holds the text-browser instance. */
     QTextBrowser *m_pBrowserDetails;
