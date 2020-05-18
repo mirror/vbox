@@ -527,7 +527,7 @@ const char *g_pcszIUnknown = "IUnknown";
       <xsl:text>            break;&#10;</xsl:text>
       <xsl:text>        }&#10;</xsl:text>
       <xsl:value-of select="concat('        const WSDLT_ID &amp;idThis = ', $structprefix, $G_nameObjectRefEncoded, ';&#10;')" />
-      <xsl:value-of select="'        if ((rc = findComPtrFromId(soap, idThis, pObj, false)))&#10;'" />
+      <xsl:value-of select="'        if ((rc = findComPtrFromId(soap, idThis, pObj, false)) != S_OK)&#10;'" />
       <xsl:text>            break;&#10;</xsl:text>
     </xsl:when>
   </xsl:choose>
@@ -579,7 +579,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="$type='$unknown'">
           <xsl:value-of select="'    ComPtr&lt;IUnknown&gt; tmpObject;'" />
           <xsl:call-template name="emitNewlineIndent8" />
-          <xsl:value-of select="concat('    if ((rc = findComPtrFromId(soap, ', $structprefix, $name, '[i], tmpObject, true)))')" />
+          <xsl:value-of select="concat('    if ((rc = findComPtrFromId(soap, ', $structprefix, $name, '[i], tmpObject, true)) != S_OK)')" />
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:text>        break;</xsl:text>
           <xsl:call-template name="emitNewlineIndent8" />
@@ -588,7 +588,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
           <xsl:value-of select="concat('    ComPtr&lt;', $type, '&gt; tmpObject;')" />
           <xsl:call-template name="emitNewlineIndent8" />
-          <xsl:value-of select="concat('    if ((rc = findComPtrFromId(soap, ', $structprefix, $name, '[i], tmpObject, true)))')" />
+          <xsl:value-of select="concat('    if ((rc = findComPtrFromId(soap, ', $structprefix, $name, '[i], tmpObject, true)) != S_OK)')" />
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:text>        break;</xsl:text>
           <xsl:call-template name="emitNewlineIndent8" />
@@ -646,7 +646,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="$type='$unknown'">
           <xsl:value-of select="concat(' comcall_', $name, ';')" />
           <xsl:call-template name="emitNewlineIndent8" />
-          <xsl:value-of select="concat('if ((rc = findComPtrFromId(soap, ', $structprefix, $name, ', comcall_', $name,', true)))')" />
+          <xsl:value-of select="concat('if ((rc = findComPtrFromId(soap, ', $structprefix, $name, ', comcall_', $name,', true)) != S_OK)')" />
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:text>    break</xsl:text>
         </xsl:when>
@@ -664,7 +664,7 @@ const char *g_pcszIUnknown = "IUnknown";
             <xsl:when test="($wsmap='managed')">
               <xsl:value-of select="concat(' comcall_', $name, ';')" />
               <xsl:call-template name="emitNewlineIndent8" />
-              <xsl:value-of select="concat('if ((rc = findComPtrFromId(soap, ', $structprefix, $name, ', comcall_', $name,', true)))')" />
+              <xsl:value-of select="concat('if ((rc = findComPtrFromId(soap, ', $structprefix, $name, ', comcall_', $name,', true)) != S_OK)')" />
               <xsl:call-template name="emitNewlineIndent8" />
               <xsl:text>    break</xsl:text>
             </xsl:when>

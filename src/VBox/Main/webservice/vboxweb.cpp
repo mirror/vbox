@@ -2326,28 +2326,27 @@ int __vbox__IManagedObjectRef_USCORErelease(
     _vbox__IManagedObjectRef_USCOREreleaseResponse *resp)
 {
     RT_NOREF(resp);
-    HRESULT rc = S_OK;
+    HRESULT rc;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
-    do
     {
         // findRefFromId and the delete call below require the lock
         util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
         ManagedObjectRef *pRef;
-        if ((rc = ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false)))
+        rc = ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false);
+        if (rc == S_OK)
         {
-            RaiseSoapInvalidObjectFault(soap, req->_USCOREthis);
-            break;
+            WEBDEBUG(("   found reference; deleting!\n"));
+            // this removes the object from all stacks; since
+            // there's a ComPtr<> hidden inside the reference,
+            // this should also invoke Release() on the COM
+            // object
+            delete pRef;
         }
-
-        WEBDEBUG(("   found reference; deleting!\n"));
-        // this removes the object from all stacks; since
-        // there's a ComPtr<> hidden inside the reference,
-        // this should also invoke Release() on the COM
-        // object
-        delete pRef;
-    } while (0);
+        else
+            RaiseSoapInvalidObjectFault(soap, req->_USCOREthis);
+    }
 
     WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
     if (FAILED(rc))
