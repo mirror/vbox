@@ -698,7 +698,6 @@ public:
      *
      * @returns The length in bytes. -1 if the encoding is bad.
      *
-     * @param   pwszString      The Base64 encoded UTF-16 string.
      * @param   ppwszEnd        If not NULL, this will point to the first char
      *                          following the Base64 encoded text block. If
      *                          NULL the entire string is assumed to be Base64.
