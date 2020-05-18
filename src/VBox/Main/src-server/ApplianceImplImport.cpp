@@ -2902,146 +2902,42 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
         Assert(m->strCertError.isEmpty());
         Assert(m->fCertificateIsSelfSigned == RTCrX509Certificate_IsSelfSigned(&m->SignerCert));
 
+        /* We'll always needs the trusted cert store. */
         hrc2 = S_OK;
-        if (m->fCertificateIsSelfSigned)
+        RTCRSTORE hTrustedCerts;
+        vrc = RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts(&hTrustedCerts, RTErrInfoInitStatic(&StaticErrInfo));
+        if (RT_SUCCESS(vrc))
         {
-            /*
-             * It's a self signed certificate.  We assume the frontend will
-             * present this fact to the user and give a choice whether this
-             * is acceptible.  But, first make sure it makes internal sense.
-             */
-            m->fCertificateMissingPath = true; /** @todo need to check if the certificate is trusted by the system! */
-            vrc = RTCrX509Certificate_VerifySignatureSelfSigned(&m->SignerCert, RTErrInfoInitStatic(&StaticErrInfo));
-            if (RT_SUCCESS(vrc))
+            /* If we don't have a PKCS7/CMS signature or if it uses a different
+               certificate, we try our best to validate the OVF certificate. */
+            if (!m->fContentInfoOkay || !m->fContentInfoSameCert)
             {
-                m->fCertificateValid = true;
-
-                /* Check whether the certificate is currently valid, just warn if not. */
-                RTTIMESPEC Now;
-                if (RTCrX509Validity_IsValidAtTimeSpec(&m->SignerCert.TbsCertificate.Validity, RTTimeNow(&Now)))
-                {
-                    m->fCertificateValidTime = true;
-                    i_addWarning(tr("A self signed certificate was used to sign '%s'"), pTask->locInfo.strPath.c_str());
-                }
+                if (m->fCertificateIsSelfSigned)
+                    hrc2 = i_readTailProcessingVerifySelfSignedOvfCert(pTask, hTrustedCerts, &StaticErrInfo);
                 else
-                    i_addWarning(tr("Self signed certificate used to sign '%s' is not currently valid"),
-                                 pTask->locInfo.strPath.c_str());
+                    hrc2 = i_readTailProcessingVerifyIssuedOvfCert(pTask, hTrustedCerts, &StaticErrInfo);
+            }
 
-                /* Just warn if it's not a CA. Self-signed certificates are
-                   hardly trustworthy to start with without the user's consent. */
-                if (   !m->SignerCert.TbsCertificate.T3.pBasicConstraints
-                    || !m->SignerCert.TbsCertificate.T3.pBasicConstraints->CA.fValue)
-                    i_addWarning(tr("Self signed certificate used to sign '%s' is not marked as certificate authority (CA)"),
-                                 pTask->locInfo.strPath.c_str());
-            }
-            else
+            /* If there is a PKCS7/CMS signature, we always verify its certificates. */
+            if (m->fContentInfoOkay)
             {
-                m->strCertError.printfNoThrow(tr("Verification of the self signed certificate failed (%Rrc%#RTeim)"),
-                                              vrc, &StaticErrInfo.Core);
-                i_addWarning(tr("Verification of the self signed certificate used to sign '%s' failed (%Rrc)%RTeim"),
-                             pTask->locInfo.strPath.c_str(), vrc, &StaticErrInfo.Core);
+                void  *pvData = NULL;
+                size_t cbData = 0;
+                HRESULT hrc3 = i_readTailProcessingGetManifestData(&pvData, &cbData);
+                if (SUCCEEDED(hrc3))
+                {
+                    hrc3 = i_readTailProcessingVerifyContentInfoCerts(pvData, cbData, hTrustedCerts, &StaticErrInfo);
+                    RTMemTmpFree(pvData);
+                }
+                if (FAILED(hrc3) && SUCCEEDED(hrc2))
+                    hrc2 = hrc3;
             }
+            RTCrStoreRelease(hTrustedCerts);
         }
         else
-        {
-            /*
-             * The certificate is not self-signed.  Use the system certificate
-             * stores to try build a path that validates successfully.
-             */
-            RTCRX509CERTPATHS hCertPaths;
-            vrc = RTCrX509CertPathsCreate(&hCertPaths, &m->SignerCert);
-            if (RT_SUCCESS(vrc))
-            {
-                /* Get trusted certificates from the system and add them to the path finding mission. */
-                RTCRSTORE hTrustedCerts;
-                vrc = RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts(&hTrustedCerts,
-                                                                               RTErrInfoInitStatic(&StaticErrInfo));
-                if (RT_SUCCESS(vrc))
-                {
-                    vrc = RTCrX509CertPathsSetTrustedStore(hCertPaths, hTrustedCerts);
-                    if (RT_FAILURE(vrc))
-                        hrc2 = setErrorBoth(E_FAIL, vrc, tr("RTCrX509CertPathsSetTrustedStore failed (%Rrc)"), vrc);
-                    RTCrStoreRelease(hTrustedCerts);
-                }
-                else
-                    hrc2 = setErrorBoth(E_FAIL, vrc,
-                                        tr("Failed to query trusted CAs and Certificates from the system and for the current user (%Rrc, %s)"),
-                                        vrc, StaticErrInfo.Core.pszMsg);
-
-                /* Add untrusted intermediate certificates. */
-                if (RT_SUCCESS(vrc))
-                {
-                    /// @todo RTCrX509CertPathsSetUntrustedStore(hCertPaths, hAdditionalCerts);
-                    /// By scanning for additional certificates in the .cert file?  It would be
-                    /// convenient to be able to supply intermediate certificates for the user,
-                    /// right?  Or would that be unacceptable as it may weaken security?
-                    ///
-                    /// Anyway, we should look for intermediate certificates on the system, at
-                    /// least.
-                }
-                if (RT_SUCCESS(vrc))
-                {
-                    /*
-                     * Do the building and verification of certificate paths.
-                     */
-                    vrc = RTCrX509CertPathsBuild(hCertPaths, RTErrInfoInitStatic(&StaticErrInfo));
-                    if (RT_SUCCESS(vrc))
-                    {
-                        vrc = RTCrX509CertPathsValidateAll(hCertPaths, NULL, RTErrInfoInitStatic(&StaticErrInfo));
-                        if (RT_SUCCESS(vrc))
-                        {
-                            /*
-                             * Mark the certificate as good.
-                             */
-                            /** @todo check the certificate purpose? If so, share with self-signed. */
-                            m->fCertificateValid = true;
-                            m->fCertificateMissingPath = false;
-
-                            /*
-                             * We add a warning if the certificate path isn't valid at the current
-                             * time.  Since the time is only considered during path validation and we
-                             * can repeat the validation process (but not building), it's easy to check.
-                             */
-                            RTTIMESPEC Now;
-                            vrc = RTCrX509CertPathsSetValidTimeSpec(hCertPaths, RTTimeNow(&Now));
-                            if (RT_SUCCESS(vrc))
-                            {
-                                vrc = RTCrX509CertPathsValidateAll(hCertPaths, NULL, RTErrInfoInitStatic(&StaticErrInfo));
-                                if (RT_SUCCESS(vrc))
-                                    m->fCertificateValidTime = true;
-                                else
-                                    i_addWarning(tr("The certificate used to sign '%s' (or a certificate in the path) is not currently valid (%Rrc)"),
-                                                 pTask->locInfo.strPath.c_str(), vrc);
-                            }
-                            else
-                                hrc2 = setErrorVrc(vrc, "RTCrX509CertPathsSetValidTimeSpec failed: %Rrc", vrc);
-                        }
-                        else if (vrc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS)
-                        {
-                            m->fCertificateValid = true;
-                            i_addWarning(tr("No trusted certificate paths"));
-
-                            /* Add another warning if the pathless certificate is not valid at present. */
-                            RTTIMESPEC Now;
-                            if (RTCrX509Validity_IsValidAtTimeSpec(&m->SignerCert.TbsCertificate.Validity, RTTimeNow(&Now)))
-                                m->fCertificateValidTime = true;
-                            else
-                                i_addWarning(tr("The certificate used to sign '%s' is not currently valid"),
-                                             pTask->locInfo.strPath.c_str());
-                        }
-                        else
-                            hrc2 = setErrorBoth(E_FAIL, vrc, tr("Certificate path validation failed (%Rrc, %s)"),
-                                                vrc, StaticErrInfo.Core.pszMsg);
-                    }
-                    else
-                        hrc2 = setErrorBoth(E_FAIL, vrc, tr("Certificate path building failed (%Rrc, %s)"),
-                                            vrc, StaticErrInfo.Core.pszMsg);
-                }
-                RTCrX509CertPathsRelease(hCertPaths);
-            }
-            else
-                hrc2 = setErrorVrc(vrc, tr("RTCrX509CertPathsCreate failed: %Rrc"), vrc);
-        }
+            hrc2 = setErrorBoth(E_FAIL, vrc,
+                                tr("Failed to query trusted CAs and Certificates from the system and for the current user (%Rrc%RTeim)"),
+                                vrc, &StaticErrInfo.Core);
 
         /* Merge statuses from signature and certificate validation, prefering the signature one. */
         if (SUCCEEDED(hrc) && FAILED(hrc2))
@@ -3053,6 +2949,7 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
     /** @todo provide details about the signatory, signature, etc.  */
     if (m->fSignerCertLoaded)
     {
+        /** @todo PKCS7/CMS certs too */
         m->ptrCertificateInfo.createObject();
         m->ptrCertificateInfo->initCertificate(&m->SignerCert,
                                                m->fCertificateValid && !m->fCertificateMissingPath,
@@ -3066,14 +2963,6 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
     NOREF(pTask);
     return S_OK;
 }
-
-///** @callback_method_impl{FNRTCRPKCS7VERIFYCERTCALLBACK, Dummy.}   */
-//static DECLCALLBACK(int) applianceVerifyCertDummyCallback(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
-//                                                          uint32_t fFlags, void *pvUser, PRTERRINFO pErrInfo)
-//{
-//    RT_NOREF(pCert, hCertPaths, fFlags, pvUser, pErrInfo);
-//    return VINF_SUCCESS;
-//}
 
 /**
  * Reads hMemFileTheirManifest into a memory buffer so it can be passed to
@@ -3114,7 +3003,7 @@ HRESULT Appliance::i_readTailProcessingGetManifestData(void **ppvData, size_t *p
  */
 HRESULT Appliance::i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo)
 {
-    m->fContentInfoValid          = false;
+    m->fContentInfoOkay           = false;
     m->fContentInfoSameCert       = false;
     m->fContentInfoValidSignature = false;
 
@@ -3139,7 +3028,7 @@ HRESULT Appliance::i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo)
         i_addWarning(tr("Invalid PKCS#7/CMS: No signers"));
     else
     {
-        m->fContentInfoValid = true;
+        m->fContentInfoOkay = true;
 
         /*
          * Same certificate as the OVF signature?
@@ -3187,6 +3076,384 @@ HRESULT Appliance::i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo)
 
     return hrc;
 }
+
+
+/**
+ * Worker for i_readTailProcessing that verifies a self signed certificate when
+ * no PKCS\#7/CMS signature using the same certificate is present.
+ */
+HRESULT Appliance::i_readTailProcessingVerifySelfSignedOvfCert(TaskOVF *pTask, RTCRSTORE hTrustedStore, PRTERRINFOSTATIC pErrInfo)
+{
+    /*
+     * It's a self signed certificate.  We assume the frontend will
+     * present this fact to the user and give a choice whether this
+     * is acceptable.  But, first make sure it makes internal sense.
+     */
+    m->fCertificateMissingPath = true;
+    PCRTCRCERTCTX pCertCtx = RTCrStoreCertByIssuerAndSerialNo(hTrustedStore, &m->SignerCert.TbsCertificate.Issuer,
+                                                              &m->SignerCert.TbsCertificate.SerialNumber);
+    if (pCertCtx)
+    {
+        if (pCertCtx->pCert && RTCrX509Certificate_Compare(pCertCtx->pCert, &m->SignerCert) == 0)
+            m->fCertificateMissingPath = true;
+        RTCrCertCtxRelease(pCertCtx);
+    }
+
+    int vrc = RTCrX509Certificate_VerifySignatureSelfSigned(&m->SignerCert, RTErrInfoInitStatic(pErrInfo));
+    if (RT_SUCCESS(vrc))
+    {
+        m->fCertificateValid = true;
+
+        /* Check whether the certificate is currently valid, just warn if not. */
+        RTTIMESPEC Now;
+        m->fCertificateValidTime = RTCrX509Validity_IsValidAtTimeSpec(&m->SignerCert.TbsCertificate.Validity, RTTimeNow(&Now));
+        if (m->fCertificateValidTime)
+        {
+            m->fCertificateValidTime = true;
+            i_addWarning(tr("A self signed certificate was used to sign '%s'"), pTask->locInfo.strPath.c_str());
+        }
+        else
+            i_addWarning(tr("Self signed certificate used to sign '%s' is not currently valid"),
+                         pTask->locInfo.strPath.c_str());
+    }
+    else
+    {
+        m->strCertError.printfNoThrow(tr("Verification of the self signed certificate failed (%Rrc%#RTeim)"),
+                                      vrc, &pErrInfo->Core);
+        i_addWarning(tr("Verification of the self signed certificate used to sign '%s' failed (%Rrc)%RTeim"),
+                     pTask->locInfo.strPath.c_str(), vrc, &pErrInfo->Core);
+    }
+
+    /* Just warn if it's not a CA. Self-signed certificates are
+       hardly trustworthy to start with without the user's consent. */
+    if (   !m->SignerCert.TbsCertificate.T3.pBasicConstraints
+        || !m->SignerCert.TbsCertificate.T3.pBasicConstraints->CA.fValue)
+        i_addWarning(tr("Self signed certificate used to sign '%s' is not marked as certificate authority (CA)"),
+                     pTask->locInfo.strPath.c_str());
+
+    return S_OK;
+}
+
+/**
+ * Worker for i_readTailProcessing that verfies a non-self-issued OVF
+ * certificate when no PKCS\#7/CMS signature using the same certificate is
+ * present.
+ */
+HRESULT Appliance::i_readTailProcessingVerifyIssuedOvfCert(TaskOVF *pTask, RTCRSTORE hTrustedStore, PRTERRINFOSTATIC pErrInfo)
+{
+    /*
+     * The certificate is not self-signed.  Use the system certificate
+     * stores to try build a path that validates successfully.
+     */
+    HRESULT hrc = S_OK;
+    RTCRX509CERTPATHS hCertPaths;
+    int vrc = RTCrX509CertPathsCreate(&hCertPaths, &m->SignerCert);
+    if (RT_SUCCESS(vrc))
+    {
+        /* Get trusted certificates from the system and add them to the path finding mission. */
+        vrc = RTCrX509CertPathsSetTrustedStore(hCertPaths, hTrustedStore);
+        if (RT_FAILURE(vrc))
+            hrc = setErrorBoth(E_FAIL, vrc, tr("RTCrX509CertPathsSetTrustedStore failed (%Rrc)"), vrc);
+
+        /* Add untrusted intermediate certificates. */
+        if (RT_SUCCESS(vrc))
+        {
+            /// @todo RTCrX509CertPathsSetUntrustedStore(hCertPaths, hAdditionalCerts);
+            /// We should look for intermediate certificates on the system, at least.
+        }
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Do the building and verification of certificate paths.
+             */
+            vrc = RTCrX509CertPathsBuild(hCertPaths, RTErrInfoInitStatic(pErrInfo));
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTCrX509CertPathsValidateAll(hCertPaths, NULL, RTErrInfoInitStatic(pErrInfo));
+                if (RT_SUCCESS(vrc))
+                {
+                    /*
+                     * Mark the certificate as good.
+                     */
+                    /** @todo check the certificate purpose? If so, share with self-signed. */
+                    m->fCertificateValid = true;
+                    m->fCertificateMissingPath = false;
+
+                    /*
+                     * We add a warning if the certificate path isn't valid at the current
+                     * time.  Since the time is only considered during path validation and we
+                     * can repeat the validation process (but not building), it's easy to check.
+                     */
+                    RTTIMESPEC Now;
+                    vrc = RTCrX509CertPathsSetValidTimeSpec(hCertPaths, RTTimeNow(&Now));
+                    if (RT_SUCCESS(vrc))
+                    {
+                        vrc = RTCrX509CertPathsValidateAll(hCertPaths, NULL, RTErrInfoInitStatic(pErrInfo));
+                        if (RT_SUCCESS(vrc))
+                            m->fCertificateValidTime = true;
+                        else
+                            i_addWarning(tr("The certificate used to sign '%s' (or a certificate in the path) is not currently valid (%Rrc)"),
+                                         pTask->locInfo.strPath.c_str(), vrc);
+                    }
+                    else
+                        hrc = setErrorVrc(vrc, "RTCrX509CertPathsSetValidTimeSpec failed: %Rrc", vrc);
+                }
+                else if (vrc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS)
+                {
+                    m->fCertificateValid = true;
+                    i_addWarning(tr("No trusted certificate paths"));
+
+                    /* Add another warning if the pathless certificate is not valid at present. */
+                    RTTIMESPEC Now;
+                    if (RTCrX509Validity_IsValidAtTimeSpec(&m->SignerCert.TbsCertificate.Validity, RTTimeNow(&Now)))
+                        m->fCertificateValidTime = true;
+                    else
+                        i_addWarning(tr("The certificate used to sign '%s' is not currently valid"),
+                                     pTask->locInfo.strPath.c_str());
+                }
+                else
+                    hrc = setErrorBoth(E_FAIL, vrc, tr("Certificate path validation failed (%Rrc%RTeim)"), vrc, &pErrInfo->Core);
+            }
+            else
+                hrc = setErrorBoth(E_FAIL, vrc, tr("Certificate path building failed (%Rrc%RTeim)"), vrc, &pErrInfo->Core);
+        }
+        RTCrX509CertPathsRelease(hCertPaths);
+    }
+    else
+        hrc = setErrorVrc(vrc, tr("RTCrX509CertPathsCreate failed: %Rrc"), vrc);
+    return hrc;
+}
+
+/**
+ * Helper for i_readTailProcessingVerifySignerInfo that reports a verfication
+ * failure.
+ *
+ * @returns S_OK
+ */
+HRESULT Appliance::i_readTailProcessingVerifyContentInfoFailOne(const char *pszSignature, int vrc, PRTERRINFOSTATIC pErrInfo)
+{
+    i_addWarning(tr("%s verification failed: %Rrc%RTeim"), pszSignature, vrc, &pErrInfo->Core);
+    if (m->strCertError.isEmpty())
+        m->strCertError.printfNoThrow(tr("%s verification failed: %Rrc%RTeim"), pszSignature, vrc, &pErrInfo->Core);
+    return S_OK;
+}
+
+/**
+ * Worker for i_readTailProcessingVerifyContentInfoCerts that analyzes why the
+ * standard verification of a signer info entry failed (@a vrc & @a pErrInfo).
+ *
+ * There are a couple of things we might want try to investigate deeper here:
+ *      1. Untrusted signing certificate, often self-signed.
+ *      2. Untrusted timstamp signing certificate.
+ *      3. Certificate not valid at the current time and there isn't a
+ *         timestamp counter signature.
+ *
+ * That said, it is difficult to get an accurate fix and report on the
+ * issues here since there are a number of error sources, so just try identify
+ * the more typical cases.
+ *
+ * @note Caller cleans up *phTrustedStore2 if not NIL.
+ */
+HRESULT Appliance::i_readTailProcessingVerifyAnalyzeSignerInfo(void const *pvData, size_t cbData, RTCRSTORE hTrustedStore,
+                                                               uint32_t iSigner, PRTTIMESPEC pNow, int vrc,
+                                                               PRTERRINFOSTATIC pErrInfo, PRTCRSTORE phTrustedStore2)
+{
+    PRTCRPKCS7SIGNEDDATA const pSignedData = m->ContentInfo.u.pSignedData;
+    PRTCRPKCS7SIGNERINFO const pSigner     = pSignedData->SignerInfos.papItems[iSigner];
+
+    /*
+     * Error/warning message prefix:
+     */
+    const char *pszSignature;
+    if (iSigner == 0 && m->fContentInfoSameCert)
+        pszSignature = tr("OVF & PKCS#7/CMS signature");
+    else
+        pszSignature = tr("PKCS#7/CMS signature");
+    char szSignatureBuf[64];
+    if (pSignedData->SignerInfos.cItems > 1)
+    {
+        RTStrPrintf(szSignatureBuf, sizeof(szSignatureBuf), tr("%s #%u"), pszSignature, iSigner + 1);
+        pszSignature = szSignatureBuf;
+    }
+
+    /*
+     * Don't try handle weird stuff:
+     */
+    /** @todo Are there more statuses we can deal with here? */
+    if (   vrc != VERR_CR_X509_CPV_NOT_VALID_AT_TIME
+        && vrc != VERR_CR_X509_NO_TRUST_ANCHOR)
+        return i_readTailProcessingVerifyContentInfoFailOne(pszSignature, vrc, pErrInfo);
+
+    /*
+     * Find the signing certificate.
+     * We require the certificate to be included in the signed data here.
+     */
+    PCRTCRX509CERTIFICATE pSigningCert;
+    pSigningCert = RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(&pSignedData->Certificates,
+                                                                       &pSigner->IssuerAndSerialNumber.Name,
+                                                                       &pSigner->IssuerAndSerialNumber.SerialNumber);
+    if (!pSigningCert)
+    {
+        i_addWarning(tr("PKCS#7/CMS signature #%u does not include the signing certificate"), iSigner + 1);
+        if (m->strCertError.isEmpty())
+            m->strCertError.printfNoThrow(tr("PKCS#7/CMS signature #%u does not include the signing certificate"), iSigner + 1);
+        return S_OK;
+    }
+
+    PCRTCRCERTCTX const pCertCtxTrusted = RTCrStoreCertByIssuerAndSerialNo(hTrustedStore, &pSigner->IssuerAndSerialNumber.Name,
+                                                                           &pSigner->IssuerAndSerialNumber.SerialNumber);
+    bool const          fSelfSigned     = RTCrX509Certificate_IsSelfSigned(pSigningCert);
+
+    /*
+     * Add warning about untrusted self-signed certificate:
+     */
+    if (fSelfSigned && !pCertCtxTrusted)
+        i_addWarning(tr("%s: Untrusted self-signed certificate"), pszSignature);
+
+    /*
+     * Start by eliminating signing time issues (2 + 3) first as primary problem.
+     * Keep the error info and status for later failures.
+     */
+    char szTime[RTTIME_STR_LEN];
+    RTTIMESPEC Now2 = *pNow;
+    vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED
+                                                    | RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
+                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                    hTrustedStore, &Now2, NULL, NULL,
+                                                    pvData, cbData, RTErrInfoInitStatic(pErrInfo));
+    if (RT_SUCCESS(vrc))
+    {
+        /* Okay, is it an untrusted time signing certificate or just signing time in general? */
+        RTTIMESPEC Now3 = *pNow;
+        vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED
+                                                        | RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                        | RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
+                                                        | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                        hTrustedStore, &Now3, NULL, NULL, pvData, cbData, NULL);
+        if (RT_SUCCESS(vrc))
+            i_addWarning(tr("%s: Untrusted timestamp (%s)"), pszSignature, RTTimeSpecToString(&Now3, szTime, sizeof(szTime)));
+        else
+            i_addWarning(tr("%s: Not valid at current time, but validates fine for untrusted signing time (%s)"),
+                         pszSignature, RTTimeSpecToString(&Now2, szTime, sizeof(szTime)));
+        return S_OK;
+    }
+
+    /* If we've got a trusted signing certificate (unlikely, but whatever), we can stop already.
+       If we haven't got a self-signed certificate, stop too as messaging becomes complicated otherwise. */
+    if (pCertCtxTrusted || !fSelfSigned)
+        return i_readTailProcessingVerifyContentInfoFailOne(pszSignature, vrc, pErrInfo);
+
+    int const vrcErrInfo = vrc;
+
+    /*
+     * Create a new trust store that includes the signing certificate
+     * to see what that changes.
+     */
+    vrc = RTCrStoreCreateInMemEx(phTrustedStore2, 1, hTrustedStore);
+    AssertRCReturn(vrc, setErrorVrc(vrc, "RTCrStoreCreateInMemEx"));
+    vrc = RTCrStoreCertAddX509(*phTrustedStore2, 0, (PRTCRX509CERTIFICATE)pSigningCert, NULL);
+    AssertRCReturn(vrc, setErrorVrc(vrc, "RTCrStoreCertAddX509/%u", iSigner));
+
+    vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo,
+                                                    RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                    *phTrustedStore2, pNow, NULL, NULL, pvData, cbData, NULL);
+    if (RT_SUCCESS(vrc))
+    {
+        if (!fSelfSigned)
+            i_readTailProcessingVerifyContentInfoFailOne(pszSignature, vrcErrInfo, pErrInfo);
+        return S_OK;
+    }
+
+    /*
+     * Time problems too?  Repeat what we did above, but with the modified trust store.
+     */
+    Now2 = *pNow;
+    vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED
+                                                    | RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
+                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                    *phTrustedStore2, pNow, NULL, NULL, pvData, cbData, NULL);
+    if (RT_SUCCESS(vrc))
+    {
+        /* Okay, is it an untrusted time signing certificate or just signing time in general? */
+        RTTIMESPEC Now3 = *pNow;
+        vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED
+                                                        | RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                        | RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
+                                                        | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                        *phTrustedStore2, &Now3, NULL, NULL, pvData, cbData, NULL);
+        if (RT_SUCCESS(vrc))
+            i_addWarning(tr("%s: Untrusted timestamp (%s)"), pszSignature, RTTimeSpecToString(&Now3, szTime, sizeof(szTime)));
+        else
+            i_addWarning(tr("%s: Not valid at current time, but validates fine for untrusted signing time (%s)"),
+                         pszSignature, RTTimeSpecToString(&Now2, szTime, sizeof(szTime)));
+    }
+    else
+        i_readTailProcessingVerifyContentInfoFailOne(pszSignature, vrcErrInfo, pErrInfo);
+
+    return S_OK;
+}
+
+/**
+ * Verify the signing certificates used to sign the PKCS\#7/CMS signature.
+ *
+ * ASSUMES that we've previously verified the PKCS\#7/CMS stuff in
+ * trust-all-certs-without-question mode and it's just the certificate
+ * validation that can fail now.
+ */
+HRESULT Appliance::i_readTailProcessingVerifyContentInfoCerts(void const *pvData, size_t cbData,
+                                                              RTCRSTORE hTrustedStore, PRTERRINFOSTATIC pErrInfo)
+{
+    /*
+     * Just do a run and see what happens (note we've already verified
+     * the data signatures, which just leaves certificates and paths).
+     */
+    RTTIMESPEC Now;
+    int vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo,
+                                                        RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY,
+                                                        NIL_RTCRSTORE /*hAdditionalCerts*/, hTrustedStore,
+                                                        RTTimeNow(&Now), NULL /*pfnVerifyCert*/, NULL /*pvUser*/,
+                                                        pvData, cbData, RTErrInfoInitStatic(pErrInfo));
+    if (RT_SUCCESS(vrc))
+        m->fContentInfoVerifiedOkay = true;
+    else
+    {
+        /*
+         * Deal with each of the signatures separately to try figure out
+         * more exactly what's going wrong.
+         */
+        uint32_t             cVerifiedOkay = 0;
+        PRTCRPKCS7SIGNEDDATA pSignedData   = m->ContentInfo.u.pSignedData;
+        for (uint32_t iSigner = 0; iSigner < pSignedData->SignerInfos.cItems; iSigner++)
+        {
+            vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo,
+                                                            RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                            | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner),
+                                                            NIL_RTCRSTORE /*hAdditionalCerts*/, hTrustedStore,
+                                                            &Now, NULL /*pfnVerifyCert*/, NULL /*pvUser*/,
+                                                            pvData, cbData, RTErrInfoInitStatic(pErrInfo));
+            if (RT_SUCCESS(vrc))
+                cVerifiedOkay++;
+            else
+            {
+                RTCRSTORE hTrustedStore2 = NIL_RTCRSTORE;
+                HRESULT hrc = i_readTailProcessingVerifyAnalyzeSignerInfo(pvData, cbData, hTrustedStore, iSigner, &Now,
+                                                                          vrc, pErrInfo, &hTrustedStore2);
+                RTCrStoreRelease(hTrustedStore2);
+                if (FAILED(hrc))
+                    return hrc;
+            }
+        }
+
+        if (   pSignedData->SignerInfos.cItems > 1
+            && pSignedData->SignerInfos.cItems != cVerifiedOkay)
+            i_addWarning(tr("%u out of %u PKCS#7/CMS signatures verfified okay"),
+                         cVerifiedOkay, pSignedData->SignerInfos.cItems);
+    }
+
+    return S_OK;
+}
+
 
 
 /*******************************************************************************

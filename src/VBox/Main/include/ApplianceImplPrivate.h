@@ -89,7 +89,7 @@ struct Appliance::Data
       , cbSignedDigest(0)
       , enmSignedDigestType(RTDIGESTTYPE_INVALID)
       , fContentInfoLoaded(false)
-      , fContentInfoValid(false)
+      , fContentInfoOkay(false)
       , fContentInfoSameCert(false)
       , fContentInfoValidSignature(false)
       , fExportISOImages(false)
@@ -230,14 +230,18 @@ struct Appliance::Data
     RTCRPKCS7CONTENTINFO ContentInfo;
     /** Set if the ContentInfo member contains usable data. */
     bool                fContentInfoLoaded;
-    /** Set if the ContentInfo member validated okay (says nothing about the
-     *  signature or certificates within it). */
-    bool                fContentInfoValid;
-    /** Set if the ContentInfo member is using the SignerCert too. */
+    /** Set by read() if the ContentInfo member checked out okay (says nothing about
+     *  the signature or certificates within it). */
+    bool                fContentInfoOkay;
+    /** Set by read() if the ContentInfo member is using the SignerCert too. */
     bool                fContentInfoSameCert;
-    /** Set if the ContentInfo member contains a valid signature (not saying
-     * anything about valid signing certificates). */
+    /** Set by read() if the ContentInfo member contains valid signatures (not
+     * saying anything about valid signing certificates). */
     bool                fContentInfoValidSignature;
+    /** Set by read() if we've already verified the signed data signature(s). */
+    bool                fContentInfoDoneVerification;
+
+    bool                fContentInfoVerifiedOkay;
     /** @} */
 
     bool                fExportISOImages;// when 1 the ISO images are exported

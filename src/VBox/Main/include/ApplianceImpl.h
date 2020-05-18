@@ -171,10 +171,18 @@ private:
     HRESULT i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hIosMf, const char *pszSubFileNm);
     HRESULT i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hIosCert, const char *pszSubFileNm);
     HRESULT i_readTailProcessing(TaskOVF *pTask);
-    HRESULT i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo);
     HRESULT i_readTailProcessingGetManifestData(void **ppvData, size_t *pcbData);
-    HRESULT i_gettingCloudData(TaskCloud *pTask);
+    HRESULT i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo);
+    HRESULT i_readTailProcessingVerifySelfSignedOvfCert(TaskOVF *pTask, RTCRSTORE hTrustedCerts, PRTERRINFOSTATIC pErrInfo);
+    HRESULT i_readTailProcessingVerifyIssuedOvfCert(TaskOVF *pTask, RTCRSTORE hTrustedStore, PRTERRINFOSTATIC pErrInfo);
+    HRESULT i_readTailProcessingVerifyContentInfoCerts(void const *pvData, size_t cbData,
+                                                       RTCRSTORE hTrustedStore, PRTERRINFOSTATIC pErrInfo);
+    HRESULT i_readTailProcessingVerifyAnalyzeSignerInfo(void const *pvData, size_t cbData, RTCRSTORE hTrustedStore,
+                                                        uint32_t iSigner, PRTTIMESPEC pNow, int vrc,
+                                                        PRTERRINFOSTATIC pErrInfo, PRTCRSTORE phTrustedStore2);
+    HRESULT i_readTailProcessingVerifyContentInfoFailOne(const char *pszSignature, int vrc, PRTERRINFOSTATIC pErrInfo);
 
+    HRESULT i_gettingCloudData(TaskCloud *pTask);
     /** @}  */
 
     /** @name Import stuff
