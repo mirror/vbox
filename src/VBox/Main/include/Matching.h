@@ -81,6 +81,9 @@ protected:
 
 class ParsedIntervalFilter_base : public ParsedFilter_base
 {
+public:
+    virtual ~ParsedIntervalFilter_base() { /* Make VC++ 14.2 happy */ }
+
 protected:
 
     enum Mode { Single, Start, End };

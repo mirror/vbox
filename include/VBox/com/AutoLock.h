@@ -248,6 +248,7 @@ private:
 class Lockable
 {
 public:
+    virtual ~Lockable() { } /* To make VC++ 2019 happy. */
 
     /**
      * Returns a pointer to a LockHandle used by AutoWriteLock/AutoReadLock

@@ -107,6 +107,7 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 class ConsoleMouseInterface
 {
 public:
+    virtual ~ConsoleMouseInterface() { }
     virtual VMMDevMouseInterface  *i_getVMMDevMouseInterface(){return NULL;}
     virtual DisplayMouseInterface *i_getDisplayMouseInterface(){return NULL;}
     virtual void i_onMouseCapabilityChange(BOOL supportsAbsolute,

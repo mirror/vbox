@@ -31,6 +31,7 @@ class Console;
 class VMMDevMouseInterface
 {
 public:
+    virtual ~VMMDevMouseInterface() { /* Make VC++ 19.2 happy. */ }
     virtual PPDMIVMMDEVPORT getVMMDevPort() = 0;
 };
 

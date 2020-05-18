@@ -119,6 +119,7 @@ typedef struct VIDEOACCEL
 class DisplayMouseInterface
 {
 public:
+    virtual ~DisplayMouseInterface() { }
     virtual HRESULT i_getScreenResolution(ULONG cScreen, ULONG *pcx,
                                           ULONG *pcy, ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin) = 0;
     virtual void i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
