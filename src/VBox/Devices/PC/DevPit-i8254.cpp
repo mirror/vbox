@@ -1111,8 +1111,7 @@ static DECLCALLBACK(int) pitR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 /* -=-=-=-=-=- Timer -=-=-=-=-=- */
 
 /**
- * @callback_method_impl{FNTMTIMERDEV}
- * @param   pvUser          Pointer to the PIT channel state.
+ * @callback_method_impl{FNTMTIMERDEV, User argument points to the PIT channel state.}
  */
 static DECLCALLBACK(void) pitR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {

@@ -346,7 +346,6 @@ static int pic_update_irq(PPDMDEVINS pDevIns, PDEVPIC pThis, PDEVPICCC pThisCC)
  * Set the an IRQ.
  *
  * @param   pDevIns         Device instance of the PICs.
- * @param   pDevIns
  * @param   iIrq            IRQ number to set.
  * @param   iLevel          IRQ level.
  * @param   uTagSrc         The IRQ tag and source ID (for tracing).
