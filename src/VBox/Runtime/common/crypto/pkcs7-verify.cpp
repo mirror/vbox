@@ -440,7 +440,7 @@ static int rtCrPkcs7VerifySignerInfo(PCRTCRPKCS7SIGNERINFO pSignerInfo, PCRTCRPK
      */
     int rc = VINF_SUCCESS;
     if (   (   hSignerCertSrc == NIL_RTCRSTORE
-            || hSignerCertSrc != hTrustedCerts)
+            || hSignerCertSrc != hTrustedCerts ) /** @todo 'hSignerCertSrc != hTrustedCerts' ain't making sense wrt pValidationTime */
         && !(fFlags & RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS) )
     {
         RTCRX509CERTPATHS hCertPaths;
@@ -658,12 +658,20 @@ static int rtCrPkcs7VerifySignedDataEx(PCRTCRPKCS7CONTENTINFO pContentInfo, uint
         if (RT_SUCCESS(rc))
         {
             /*
-             * Validate the signed infos.
+             * Validate the signed infos.  The flags may select one particular entry.
              */
+            RTTIMESPEC const GivenValidationTime = *pValidationTime;
             uint32_t fPrimaryVccFlags = !(fFlags & RTCRPKCS7VERIFY_SD_F_USAGE_TIMESTAMPING)
                                       ? RTCRPKCS7VCC_F_SIGNED_DATA : RTCRPKCS7VCC_F_TIMESTAMP;
+            uint32_t cItems           = pSignedData->SignerInfos.cItems;
+            i                         = 0;
+            if (fFlags & RTCRPKCS7VERIFY_SD_F_HAS_SIGNER_INDEX)
+            {
+                i      = (fFlags & RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_MASK) >> RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_SHIFT;
+                cItems = RT_MIN(cItems, i + 1);
+            }
             rc = VERR_CR_PKCS7_NO_SIGNER_INFOS;
-            for (i = 0; i < pSignedData->SignerInfos.cItems; i++)
+            for (; i < cItems; i++)
             {
                 PCRTCRPKCS7SIGNERINFO   pSignerInfo = pSignedData->SignerInfos.papItems[i];
                 RTCRDIGEST              hThisDigest = NIL_RTCRDIGEST; /* (gcc maybe incredible stupid.) */
@@ -698,7 +706,8 @@ static int rtCrPkcs7VerifySignedDataEx(PCRTCRPKCS7CONTENTINFO pContentInfo, uint
                         {
                             rc = VINF_SUCCESS;
                             if (!(fFlags & RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED))
-                                rc = rtCrPkcs7VerifyCounterSignerInfo(pSigningTimeSigner, pSignerInfo, pSignedData, fFlags,
+                                rc = rtCrPkcs7VerifyCounterSignerInfo(pSigningTimeSigner, pSignerInfo, pSignedData,
+                                                                      fFlags & ~RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME,
                                                                       hAdditionalCerts, hTrustedCerts, &ThisValidationTime,
                                                                       pfnVerifyCert, RTCRPKCS7VCC_F_TIMESTAMP, pvUser, pErrInfo);
                             if (RT_SUCCESS(rc))
@@ -708,6 +717,8 @@ static int rtCrPkcs7VerifySignedDataEx(PCRTCRPKCS7CONTENTINFO pContentInfo, uint
                         }
                         fDone = RT_SUCCESS(rc)
                              || (fFlags & RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT);
+                        if ((fFlags & RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME) && fDone)
+                            *(PRTTIMESPEC)pValidationTime = ThisValidationTime;
                     }
                     else
                     {
@@ -742,6 +753,8 @@ static int rtCrPkcs7VerifySignedDataEx(PCRTCRPKCS7CONTENTINFO pContentInfo, uint
                                                                pfnVerifyCert, fPrimaryVccFlags, pvUser, pErrInfo);
                             fDone = RT_SUCCESS(rc)
                                  || (fFlags & RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT);
+                            if ((fFlags & RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME) && fDone)
+                                *(PRTTIMESPEC)pValidationTime = ThisValidationTime;
                         }
                         else
                         {
@@ -757,7 +770,7 @@ static int rtCrPkcs7VerifySignedDataEx(PCRTCRPKCS7CONTENTINFO pContentInfo, uint
                  */
                 if (!fDone)
                     rc = rtCrPkcs7VerifySignerInfo(pSignerInfo, pSignedData, hThisDigest, fFlags, hAdditionalCerts, hTrustedCerts,
-                                                   pValidationTime, pfnVerifyCert, fPrimaryVccFlags, pvUser, pErrInfo);
+                                                   &GivenValidationTime, pfnVerifyCert, fPrimaryVccFlags, pvUser, pErrInfo);
                 RTCrDigestRelease(hThisDigest);
                 if (RT_FAILURE(rc))
                     break;
@@ -784,6 +797,10 @@ static int rtCrPkcs7VerifySignedDataEx(PCRTCRPKCS7CONTENTINFO pContentInfo, uint
     /** @todo figure out how to verify MS timstamp signatures using OpenSSL. */
     if (fFlags & RTCRPKCS7VERIFY_SD_F_USAGE_TIMESTAMPING)
         return rc;
+    /** @todo figure out if we can verify just one signer info item using OpenSSL. */
+    if (!(fFlags & RTCRPKCS7VERIFY_SD_F_HAS_SIGNER_INDEX) && pSignedData->SignerInfos.cItems > 1)
+        return rc;
+
     int rcOssl = rtCrPkcs7VerifySignedDataUsingOpenSsl(pContentInfo, fFlags, hAdditionalCerts, hTrustedCerts,
                                                        pvContent, cbContent, RT_SUCCESS(rc) ? pErrInfo : NULL);
     if (RT_SUCCESS(rcOssl) && RT_SUCCESS(rc))

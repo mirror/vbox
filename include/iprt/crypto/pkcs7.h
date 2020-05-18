@@ -526,6 +526,9 @@ RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, 
  * @param   pValidationTime     The time we're supposed to validate the
  *                              certificates chains at.  Ignored for signatures
  *                              with valid signing time attributes.
+ *                              When RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
+ *                              is set, this is updated to the actual validation
+ *                              time used.
  * @param   pfnVerifyCert       Callback for checking that a certificate used
  *                              for signing the data is suitable.
  * @param   pvUser              User argument for the callback.
@@ -553,6 +556,9 @@ RTDECL(int) RTCrPkcs7VerifySignedData(PCRTCRPKCS7CONTENTINFO pContentInfo, uint3
  * @param   pValidationTime     The time we're supposed to validate the
  *                              certificates chains at.  Ignored for signatures
  *                              with valid signing time attributes.
+ *                              When RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
+ *                              is set, this is updated to the actual validation
+ *                              time used.
  * @param   pfnVerifyCert       Callback for checking that a certificate used
  *                              for signing the data is suitable.
  * @param   pvUser              User argument for the callback.
@@ -596,6 +602,25 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
 /** Skip the verification of the certificate trust paths, taking all
  * certificates to be trustworthy. */
 #define RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS                        RT_BIT_32(7)
+/** Update @a pValidationTime with the actual validation time used.
+ * This requires RTCRPKCS7VERIFY_SD_F_HAS_SIGNER_INDEX to get a consistent
+ * result.  And yeah, it unconst the parameter, which is patently ugly. */
+#define RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME                 RT_BIT_32(8)
+
+/** This can be used to only verify one given signer info.
+ * Max index value is 15.  */
+#define RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(a_idxSignerInfo) \
+    (  RTCRPKCS7VERIFY_SD_F_HAS_SIGNER_INDEX \
+     | (((a_idxSignerInfo) & RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_MAX) << RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_SHIFT) )
+/** Has a valid value in RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_MASK. */
+#define RTCRPKCS7VERIFY_SD_F_HAS_SIGNER_INDEX                       RT_BIT_32(23)
+/** Signer index shift value. */
+#define RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_SHIFT                     24
+/** Signer index mask. */
+#define RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_MASK                      UINT32_C(0x0f000000)
+/** Max signer index value (inclusive). */
+#define RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_MAX \
+    (RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_MASK >> RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX_SHIFT)
 
 /** Indicates internally that we're validating a counter signature and should
  * use different rules when checking out the authenticated attributes.
