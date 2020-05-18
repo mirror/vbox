@@ -161,6 +161,7 @@ typedef RTCRSTOREPROVIDER const *PCRTCRSTOREPROVIDER;
 
 
 DECLHIDDEN(int) rtCrStoreCreate(PCRTCRSTOREPROVIDER pProvider, void *pvProvider, PRTCRSTORE phStore);
+DECLHIDDEN(PCRTCRSTOREPROVIDER) rtCrStoreGetProvider(RTCRSTORE hStore, void **ppvProvider);
 
 #endif /* !IPRT_INCLUDED_SRC_common_crypto_store_internal_h */
 

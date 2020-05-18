@@ -85,6 +85,13 @@ typedef struct RTCRSTOREINMEM
     uint32_t                cCertsAlloc;
     /** Array of certificates. */
     PRTCRSTOREINMEMCERT    *papCerts;
+
+    /** Parent store. */
+    RTCRSTORE               hParentStore;
+    /** The parent store callback table. */
+    PCRTCRSTOREPROVIDER     pParentProvider;
+    /** The parent store provider callback argument. */
+    void                   *pvParentProvider;
 } RTCRSTOREINMEM;
 /** Pointer to an in-memory crypto store. */
 typedef RTCRSTOREINMEM *PRTCRSTOREINMEM;
@@ -219,6 +226,13 @@ static DECLCALLBACK(void) rtCrStoreInMem_DestroyStore(void *pvProvider)
 
     RTMemFree(pThis->papCerts);
     pThis->papCerts = NULL;
+
+    if (pThis->hParentStore != NIL_RTCRSTORE)
+    {
+        RTCrStoreRelease(pThis->hParentStore);
+        pThis->hParentStore = NIL_RTCRSTORE;
+    }
+
     RTMemFree(pThis);
 }
 
@@ -248,29 +262,57 @@ static DECLCALLBACK(int) rtCrStoreInMem_CertFindAll(void *pvProvider, PRTCRSTORE
 static DECLCALLBACK(PCRTCRCERTCTX) rtCrStoreInMem_CertSearchNext(void *pvProvider, PRTCRSTORECERTSEARCH pSearch)
 {
     PRTCRSTOREINMEM pThis = (PRTCRSTOREINMEM)pvProvider;
-    AssertReturn(pSearch->auOpaque[0] == ~(uintptr_t)pvProvider, NULL);
-
-    uintptr_t i = pSearch->auOpaque[1];
-    if (i < pThis->cCerts)
+    if (pSearch->auOpaque[0] == ~(uintptr_t)pvProvider)
     {
-        pSearch->auOpaque[1] = i + 1;
-        PRTCRCERTCTXINT pCertCtx = &pThis->papCerts[i]->Core;
-        ASMAtomicIncU32(&pCertCtx->cRefs);
-        return &pCertCtx->Public;
+        uintptr_t i = pSearch->auOpaque[1];
+        if (i < pThis->cCerts)
+        {
+            pSearch->auOpaque[1] = i + 1;
+            PRTCRCERTCTXINT pCertCtx = &pThis->papCerts[i]->Core;
+            ASMAtomicIncU32(&pCertCtx->cRefs);
+            return &pCertCtx->Public;
+        }
+
+        /* Do we have a parent store to search? */
+        if (pThis->hParentStore == NIL_RTCRSTORE)
+            return NULL; /* no */
+        if (   !pThis->pParentProvider->pfnCertFindAll
+            || !pThis->pParentProvider->pfnCertSearchNext)
+            return NULL;
+
+        RTCRSTORECERTSEARCH const SavedSearch = *pSearch;
+        int rc = pThis->pParentProvider->pfnCertFindAll(pThis->pvParentProvider, pSearch);
+        AssertRCReturnStmt(rc, *pSearch = SavedSearch, NULL);
+
+        /* Restore the store.cpp specifics: */
+        AssertCompile(RT_ELEMENTS(SavedSearch.auOpaque) == 4);
+        pSearch->auOpaque[2] = SavedSearch.auOpaque[2];
+        pSearch->auOpaque[3] = SavedSearch.auOpaque[3];
     }
-    return NULL;
+
+    AssertReturn(pThis->pParentProvider, NULL);
+    AssertReturn(pThis->pParentProvider->pfnCertSearchNext, NULL);
+    return pThis->pParentProvider->pfnCertSearchNext(pThis->pvParentProvider, pSearch);
 }
 
 
 /** @interface_method_impl{RTCRSTOREPROVIDER,pfnCertSearchDestroy} */
 static DECLCALLBACK(void) rtCrStoreInMem_CertSearchDestroy(void *pvProvider, PRTCRSTORECERTSEARCH pSearch)
 {
-    NOREF(pvProvider);
-    AssertReturnVoid(pSearch->auOpaque[0] == ~(uintptr_t)pvProvider);
-    pSearch->auOpaque[0] = 0;
-    pSearch->auOpaque[1] = 0;
-    pSearch->auOpaque[2] = 0;
-    pSearch->auOpaque[3] = 0;
+    PRTCRSTOREINMEM pThis = (PRTCRSTOREINMEM)pvProvider;
+    if (pSearch->auOpaque[0] == ~(uintptr_t)pvProvider)
+    {
+        pSearch->auOpaque[0] = 0;
+        pSearch->auOpaque[1] = 0;
+        pSearch->auOpaque[2] = 0;
+        pSearch->auOpaque[3] = 0;
+    }
+    else
+    {
+        AssertReturnVoid(pThis->pParentProvider);
+        AssertReturnVoid(pThis->pParentProvider->pfnCertSearchDestroy);
+        pThis->pParentProvider->pfnCertSearchDestroy(pThis->pvParentProvider, pSearch);
+    }
 }
 
 
@@ -346,27 +388,47 @@ static RTCRSTOREPROVIDER const g_rtCrStoreInMemProvider =
  *
  * @returns IPRT status code.
  * @param   ppStore         Where to return the store instance.
+ * @param   hParentStore    Optional parent store.  Consums reference on
+ *                          success.
  */
-static int rtCrStoreInMemCreateInternal(PRTCRSTOREINMEM *ppStore)
+static int rtCrStoreInMemCreateInternal(PRTCRSTOREINMEM *ppStore, RTCRSTORE hParentStore)
 {
     PRTCRSTOREINMEM pStore = (PRTCRSTOREINMEM)RTMemAlloc(sizeof(*pStore));
     if (pStore)
     {
-        pStore->cCerts      = 0;
-        pStore->cCertsAlloc = 0;
-        pStore->papCerts    = NULL;
+        pStore->cCerts           = 0;
+        pStore->cCertsAlloc      = 0;
+        pStore->papCerts         = NULL;
+        pStore->hParentStore     = hParentStore;
+        pStore->pParentProvider  = NULL;
+        pStore->pvParentProvider = NULL;
         *ppStore = pStore;
-        return VINF_SUCCESS;
+        if (hParentStore == NIL_RTCRSTORE)
+            return VINF_SUCCESS;
+        if (~(uintptr_t)hParentStore != ~(uintptr_t)pStore)
+        {
+            pStore->pParentProvider = rtCrStoreGetProvider(hParentStore, &pStore->pvParentProvider);
+            if (pStore->pParentProvider)
+                return VINF_SUCCESS;
+            AssertFailed();
+        }
+        RTMemFree(pStore);
     }
     *ppStore = NULL; /* shut up gcc-maybe-pita warning. */
     return VERR_NO_MEMORY;
 }
 
 
-RTDECL(int) RTCrStoreCreateInMem(PRTCRSTORE phStore, uint32_t cSizeHint)
+RTDECL(int) RTCrStoreCreateInMemEx(PRTCRSTORE phStore, uint32_t cSizeHint, RTCRSTORE hParentStore)
 {
+    if (hParentStore != NIL_RTCRSTORE)
+    {
+        uint32_t cRefs = RTCrStoreRetain(hParentStore);
+        AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+    }
+
     PRTCRSTOREINMEM pStore;
-    int rc = rtCrStoreInMemCreateInternal(&pStore);
+    int rc = rtCrStoreInMemCreateInternal(&pStore, hParentStore);
     if (RT_SUCCESS(rc))
     {
         if (cSizeHint)
@@ -379,7 +441,16 @@ RTDECL(int) RTCrStoreCreateInMem(PRTCRSTORE phStore, uint32_t cSizeHint)
         }
         RTMemFree(pStore);
     }
+
+    RTCrStoreRelease(hParentStore);
     return rc;
+}
+RT_EXPORT_SYMBOL(RTCrStoreCreateInMemEx);
+
+
+RTDECL(int) RTCrStoreCreateInMem(PRTCRSTORE phStore, uint32_t cSizeHint)
+{
+    return RTCrStoreCreateInMemEx(phStore, cSizeHint, NIL_RTCRSTORE);
 }
 RT_EXPORT_SYMBOL(RTCrStoreCreateInMem);
 

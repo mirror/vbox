@@ -158,6 +158,7 @@ RTDECL(int) RTCrStoreCreateSnapshotById(PRTCRSTORE phStore, RTCRSTOREID enmStore
 RTDECL(int) RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts(PRTCRSTORE phStore, PRTERRINFO pErrInfo);
 
 RTDECL(int) RTCrStoreCreateInMem(PRTCRSTORE phStore, uint32_t cSizeHint);
+RTDECL(int) RTCrStoreCreateInMemEx(PRTCRSTORE phStore, uint32_t cSizeHint, RTCRSTORE hParentStore);
 
 RTDECL(uint32_t) RTCrStoreRetain(RTCRSTORE hStore);
 RTDECL(uint32_t) RTCrStoreRelease(RTCRSTORE hStore);

@@ -3870,6 +3870,7 @@
 # define RTCrStoreRelease                               RT_MANGLER(RTCrStoreRelease)
 # define RTCrStoreRetain                                RT_MANGLER(RTCrStoreRetain)
 # define RTCrStoreCreateInMem                           RT_MANGLER(RTCrStoreCreateInMem)
+# define RTCrStoreCreateInMemEx                         RT_MANGLER(RTCrStoreCreateInMemEx)
 # define RTCrStoreCreateSnapshotById                    RT_MANGLER(RTCrStoreCreateSnapshotById)
 # define RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts RT_MANGLER(RTCrStoreCreateSnapshotOfUserAndSystemTrustedCAsAndCerts)
 # define RTCrStoreCertAddFromDir                        RT_MANGLER(RTCrStoreCertAddFromDir)

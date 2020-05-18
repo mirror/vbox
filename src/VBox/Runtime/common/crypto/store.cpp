@@ -97,6 +97,18 @@ DECLHIDDEN(int) rtCrStoreCreate(PCRTCRSTOREPROVIDER pProvider, void *pvProvider,
 }
 
 
+/**
+ * For the parent forwarding of the in-memory store.
+ */
+DECLHIDDEN(PCRTCRSTOREPROVIDER) rtCrStoreGetProvider(RTCRSTORE hStore, void **ppvProvider)
+{
+    PRTCRSTOREINT pThis = (PRTCRSTOREINT)hStore;
+    AssertPtrReturn(pThis, NULL);
+    AssertReturn(pThis->u32Magic == RTCRSTOREINT_MAGIC, NULL);
+    *ppvProvider = pThis->pvProvider;
+    return pThis->pProvider;
+}
+
 
 RTDECL(uint32_t) RTCrStoreRetain(RTCRSTORE hStore)
 {
