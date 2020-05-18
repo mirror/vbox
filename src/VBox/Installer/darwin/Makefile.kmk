@@ -905,6 +905,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/OSXFuseCore.pkg: \
 	$(call MSG_TOOL,Preparing FUSE for macOS core package,,,$@)
 	@# Cleanup any previously failed attempts.
 	sudo rm -Rf $@
+	$(MKDIR) -p $(@D)
 	pkgutil --flatten $(VBOX_PATH_FUSE_CORE_PKG) $@
 endif
 
