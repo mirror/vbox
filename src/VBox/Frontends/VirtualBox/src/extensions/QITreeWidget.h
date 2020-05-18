@@ -35,7 +35,8 @@ class QITreeWidget;
  *  tree items. */
 class SHARED_LIBRARY_STUFF QITreeWidgetItemFilter
 {
- public:
+public:
+    virtual ~QITreeWidgetItemFilter() { /* Make VC++ 19.2 happy. */ }
     virtual bool operator()(QTreeWidgetItem*) const
     {
         return true;
