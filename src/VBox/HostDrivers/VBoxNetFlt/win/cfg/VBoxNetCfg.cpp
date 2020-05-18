@@ -40,7 +40,7 @@
 #include <string.h>
 
 #include <Wbemidl.h>
-#include <comdef.h>
+#include <comutil.h>
 
 #include <iprt/win/winsock2.h>
 #include <iprt/win/ws2tcpip.h>
@@ -913,14 +913,16 @@ public:
     template <class I>
     class NoAddRefRelease : public I
     {
-        private:
-#if !defined (VBOX_WITH_XPCOM)
-            STDMETHOD_(ULONG, AddRef)() = 0;
-            STDMETHOD_(ULONG, Release)() = 0;
-#else /* !defined (VBOX_WITH_XPCOM) */
-            NS_IMETHOD_(nsrefcnt) AddRef(void) = 0;
-            NS_IMETHOD_(nsrefcnt) Release(void) = 0;
-#endif /* !defined (VBOX_WITH_XPCOM) */
+    public:
+        virtual ~NoAddRefRelease() { /* Make VC++ 19.2 happy. */ }
+    private:
+#ifndef VBOX_WITH_XPCOM
+        STDMETHOD_(ULONG, AddRef)() = 0;
+        STDMETHOD_(ULONG, Release)() = 0;
+#else
+        NS_IMETHOD_(nsrefcnt) AddRef(void) = 0;
+        NS_IMETHOD_(nsrefcnt) Release(void) = 0;
+#endif
     };
 
 protected:
