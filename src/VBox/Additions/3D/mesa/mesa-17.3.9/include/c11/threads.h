@@ -31,7 +31,13 @@
 
 #include <time.h>
 #ifdef _MSC_VER
+# if _MSC_VER >= 1920       /* VBox: VC++ 19.2 / 2019 - The header moved */
+struct xtime;               /* VBox: VC++ 19.2 dropped the typedef and seems */
+typedef struct xtime xtime; /* VBox: to ASSUME the only C++ usage. Sigh. */
+#  include <xtimec.h>       /* VBox */
+# else                      /* VBox */
 #include <thr/xtimec.h>  // for xtime
+# endif                     /* VBox */
 #endif
 
 #ifndef TIME_UTC
