@@ -4086,7 +4086,7 @@ HRESULT VirtualBox::i_findMachineByName(const Utf8Str &aName,
     {
         ComObjPtr<Machine> &pMachine = *it;
         AutoCaller machCaller(pMachine);
-        if (machCaller.rc())
+        if (!machCaller.isOk())
             continue;       // we can't ask inaccessible machines for their names
 
         AutoReadLock machLock(pMachine COMMA_LOCKVAL_SRC_POS);

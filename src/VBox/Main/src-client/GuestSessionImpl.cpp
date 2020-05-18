@@ -2584,7 +2584,7 @@ inline int GuestSession::i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *
     {
         ComObjPtr<GuestProcess> pCurProc = itProcs->second;
         AutoCaller procCaller(pCurProc);
-        if (procCaller.rc())
+        if (!procCaller.isOk())
             return VERR_COM_INVALID_OBJECT_STATE;
 
         ULONG uCurPID;
