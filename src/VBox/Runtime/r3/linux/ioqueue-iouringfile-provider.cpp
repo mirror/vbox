@@ -252,8 +252,7 @@ typedef LNXIOURINGPARAMS *PLNXIOURINGPARAMS;
 typedef const LNXIOURINGPARAMS *PCLNXIOURINGPARAMS;
 
 
-/**
- * @name LNXIOURINGSQE::u8Opc defined opcodes.
+/** @name LNXIOURINGSQE::u8Opc defined opcodes.
  * @{ */
 /** Opcode to profile the interface, does nothing. */
 #define LNX_IOURING_OPC_NOP             0
@@ -280,16 +279,14 @@ typedef const LNXIOURINGPARAMS *PCLNXIOURINGPARAMS;
 /** @} */
 
 
-/**
- * @name Additional flags for LNX_IOURING_OPC_FSYNC requests.
+/** @name Additional flags for LNX_IOURING_OPC_FSYNC requests.
  * @{ */
 /** Sync userdata as well instead of metadata only. */
 #define LNX_IOURING_OPC_FSYNC_DATASYNC  RT_BIT_32(0)
 /** @} */
 
 
-/**
- * @name Flags for the LNX_IOURING_SYSCALL_SETUP syscall.
+/** @name Flags for the LNX_IOURING_SYSCALL_SETUP syscall.
  * @{ */
 /** The I/O context is polled. */
 #define LNX_IOURING_SETUP_F_IOPOLL      RT_BIT_32(0)
@@ -300,8 +297,7 @@ typedef const LNXIOURINGPARAMS *PCLNXIOURINGPARAMS;
 /** @} */
 
 
-/**
- * @name Flags for LNXIOURINGSQE::u8Flags.
+/** @name Flags for LNXIOURINGSQE::u8Flags.
  * @{ */
 /** The file descriptor was registered before use. */
 #define LNX_IOURING_SQE_F_FIXED_FILE    RT_BIT(0)
@@ -312,8 +308,7 @@ typedef const LNXIOURINGPARAMS *PCLNXIOURINGPARAMS;
 /** @} */
 
 
-/**
- * @name Magic mmap offsets to map submission and completion queues.
+/** @name Magic mmap offsets to map submission and completion queues.
  * @{ */
 /** Used to map the submission queue. */
 #define LNX_IOURING_MMAP_OFF_SQ         UINT64_C(0)
@@ -324,17 +319,15 @@ typedef const LNXIOURINGPARAMS *PCLNXIOURINGPARAMS;
 /** @} */
 
 
-/**
- * @name Flags used for the SQ ring structure.
+/** @name Flags used for the SQ ring structure.
  * @{ */
 /** The kernel thread needs a io_uring_enter() wakeup to continue processing requests. */
 #define LNX_IOURING_SQ_RING_F_NEED_WAKEUP           RT_BIT_32(0)
 /** @} */
 
 
-/**
- * @name Flags for the LNX_IOURING_SYSCALL_ENTER syscall.
- * { */
+/** @name Flags for the LNX_IOURING_SYSCALL_ENTER syscall.
+ * @{ */
 /** Retrieve completion events for the completion queue. */
 #define LNX_IOURING_ENTER_F_GETEVENTS               RT_BIT_32(0)
 /** Wakes the suspended kernel thread processing the requests. */
@@ -342,9 +335,8 @@ typedef const LNXIOURINGPARAMS *PCLNXIOURINGPARAMS;
 /** @} */
 
 
-/**
- * @name Opcodes for the LNX_IOURING_SYSCALL_REGISTER syscall.
- * { */
+/** @name Opcodes for the LNX_IOURING_SYSCALL_REGISTER syscall.
+ * @{ */
 /** Register a fixed set of buffers. */
 #define LNX_IOURING_REGISTER_OPC_BUFFERS_REGISTER   0
 /** Unregisters a fixed set of buffers registered previously. */
