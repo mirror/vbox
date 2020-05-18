@@ -17,7 +17,6 @@
 
 #include "VBox/com/string.h"
 
-#include <iprt/base64.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/path.h>
@@ -228,20 +227,6 @@ int Bstr::compareUtf8(const char *a_pszRight, CaseSensitivity a_enmCase /*= Case
 
         return ucLeft < ucRight ? -1 : 1;
     }
-}
-
-HRESULT Bstr::base64Encode(const void *pvData, size_t cbData, bool fLineBreaks /*= false*/)
-{
-    uint32_t const fFlags     = fLineBreaks ? RTBASE64_FLAGS_EOL_LF : RTBASE64_FLAGS_NO_LINE_BREAKS;
-    size_t         cwcEncoded = RTBase64EncodedUtf16LengthEx(cbData, fFlags);
-    HRESULT hrc = reserveNoThrow(cwcEncoded + 1);
-    if (SUCCEEDED(hrc))
-    {
-        int vrc = RTBase64EncodeUtf16Ex(pvData, cbData, fFlags, mutableRaw(), cwcEncoded, &cwcEncoded);
-        AssertRCReturnStmt(vrc, setNull(), E_FAIL);
-        hrc = joltNoThrow(cwcEncoded);
-    }
-    return hrc;
 }
 
 

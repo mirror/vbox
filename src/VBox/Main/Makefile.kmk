@@ -1205,6 +1205,7 @@ VBoxCOM_SOURCES         = \
 	glue/GetVBoxUserHomeDirectory.cpp \
 	glue/initterm.cpp \
 	glue/string.cpp \
+	glue/string-base64.cpp \
 	glue/AutoLock.cpp \
 	glue/EventQueue.cpp \
 	glue/NativeEventQueue.cpp \

@@ -663,15 +663,48 @@ public:
     /** @name BASE64 related methods
      * @{ */
     /**
-     * Encodes the give data as BASE64.
+     * Encodes the given data as BASE64.
      *
      * @returns S_OK or E_OUTOFMEMORY.
      * @param   pvData          Pointer to the data to encode.
      * @param   cbData          Number of bytes to encode.
      * @param   fLineBreaks     Whether to add line breaks (true) or just encode it
      *                          as a continuous string.
+     * @sa RTBase64EncodeUtf16
      */
     HRESULT base64Encode(const void *pvData, size_t cbData, bool fLineBreaks = false);
+
+    /**
+     * Decodes the string as BASE64.
+     *
+     * @returns IPRT status code, see RTBase64DecodeUtf16Ex.
+     * @param   pvData          Where to return the decoded bytes.
+     * @param   cbData          Size of the @a pvData return buffer.
+     * @param   pcbActual       Where to return number of bytes actually decoded.
+     *                          This is optional and if not specified, the request
+     *                          will fail unless @a cbData matches the data size
+     *                          exactly.
+     * @param   ppwszEnd        Where to return pointer to the first non-base64
+     *                          character following the encoded data.  This is
+     *                          optional and if NULL, the request will fail if there
+     *                          are anything trailing the encoded bytes in the
+     *                          string.
+     * @sa base64DecodedSize, RTBase64DecodeUtf16
+     */
+    int base64Decode(void *pvData, size_t cbData, size_t *pcbActual = NULL, PRTUTF16 *ppwszEnd = NULL);
+
+    /**
+     * Determins the size of the BASE64 encoded data in the string.
+     *
+     * @returns The length in bytes. -1 if the encoding is bad.
+     *
+     * @param   pwszString      The Base64 encoded UTF-16 string.
+     * @param   ppwszEnd        If not NULL, this will point to the first char
+     *                          following the Base64 encoded text block. If
+     *                          NULL the entire string is assumed to be Base64.
+     * @sa      base64Decode, RTBase64DecodedUtf16Size
+     */
+    ssize_t base64DecodedSize(PRTUTF16 *ppwszEnd = NULL);
     /** @} */
 
 #if defined(VBOX_WITH_XPCOM)
