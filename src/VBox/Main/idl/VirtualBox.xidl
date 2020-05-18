@@ -26882,7 +26882,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="0eb97f1a-8a78-11ea-9915-2b38b433c62b"
+    uuid="5b047402-9648-11ea-9aa2-2f60bdea83dd"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
@@ -27091,6 +27091,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="listSourceInstances" const="yes">
+      <desc>
+        Returns the list of instances in the cloud that can be
+        added/adopted as VirtualBox cloud machines.
+      </desc>
+      <param name="returnNames" type="IStringArray" dir="out">
+        <desc>Instance names.</desc>
+      </param>
+      <param name="returnIds" type="IStringArray" dir="out">
+        <desc>Instance idss.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
     <method name="listImages" const="yes">
       <desc>
         Returns the list of the images in the Cloud.
@@ -27115,6 +27133,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="listBootVolumes" const="yes">
       <desc>
         Returns the list of boot volumes in the Cloud.
+      </desc>
+      <param name="returnNames" type="IStringArray" dir="out">
+        <desc>Boot volume names.</desc>
+      </param>
+      <param name="returnIds" type="IStringArray" dir="out">
+        <desc>Boot volume ids.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="listSourceBootVolumes" const="yes">
+      <desc>
+        Returns the list of boot volumes in the cloud that can be
+        added/adopted as VirtualBox cloud machines.
       </desc>
       <param name="returnNames" type="IStringArray" dir="out">
         <desc>Boot volume names.</desc>
