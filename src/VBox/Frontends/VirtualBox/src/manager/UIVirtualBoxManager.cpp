@@ -2354,7 +2354,9 @@ bool UIVirtualBoxManager::isAtLeastOneItemCanBeStartedOrShown(const QList<UIVirt
 bool UIVirtualBoxManager::isAtLeastOneItemDiscardable(const QList<UIVirtualMachineItem*> &items)
 {
     foreach (UIVirtualMachineItem *pItem, items)
-        if (pItem->isItemSaved() && pItem->isItemEditable())
+        if (   (   pItem->isItemSaved()
+                || pItem->itemType() == UIVirtualMachineItemType_CloudReal)
+            && pItem->isItemEditable())
             return true;
     return false;
 }
