@@ -295,26 +295,23 @@ void UIWizardNewCloudVMPage1::populateSourceImages()
             /* Remember Cloud Client: */
             setClient(comCloudClient);
 
-            /* Gather image names, ids and states.
-             * Currently we are interested in Available images only. */
+            /* Gather source names and ids, depending on current source tab-bar index: */
             CStringArray comNames;
             CStringArray comIDs;
-            const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
-                                                             << KCloudImageState_Available;
-
-            /* Depending on current source tab-bar index: */
             CProgress comProgress;
             switch (m_pSourceTabBar->currentIndex())
             {
                 case 0:
                 {
-                    /* Ask for cloud boot-volumes: */
-                    comProgress = comCloudClient.ListBootVolumes(comNames, comIDs);
+                    /* Ask for cloud boot-volumes, currently we are interested in Source boot-volumes only: */
+                    comProgress = comCloudClient.ListSourceBootVolumes(comNames, comIDs);
                     break;
                 }
                 case 1:
                 {
-                    /* Ask for cloud images: */
+                    /* Ask for cloud images, currently we are interested in Available images only: */
+                    const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
+                                                                     << KCloudImageState_Available;
                     comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
                     break;
                 }
