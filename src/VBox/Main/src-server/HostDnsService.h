@@ -26,6 +26,7 @@
 #include <iprt/cpp/lock.h>
 
 #include <list>
+#include <string>
 #include <vector>
 
 typedef std::list<com::Utf8Str> Utf8StrList;

@@ -49,21 +49,20 @@
 #include "ThreadTask.h"
 
 #ifdef VBOX_WITH_NETFLT
-#include <Wbemidl.h>
-#include <comdef.h>
+# include <Wbemidl.h>
 
-#include "svchlp.h"
+# include "svchlp.h"
 
-#include <shellapi.h>
-#define INITGUID
-#include <guiddef.h>
-#include <devguid.h>
-#include <iprt/win/objbase.h>
-#include <iprt/win/setupapi.h>
-#include <iprt/win/shlobj.h>
-#include <cfgmgr32.h>
+# include <shellapi.h>
+# define INITGUID
+# include <guiddef.h>
+# include <devguid.h>
+# include <iprt/win/objbase.h>
+# include <iprt/win/setupapi.h>
+# include <iprt/win/shlobj.h>
+# include <cfgmgr32.h>
 
-#define VBOX_APP_NAME L"VirtualBox"
+# define VBOX_APP_NAME L"VirtualBox"
 
 static int getDefaultInterfaceIndex()
 {
