@@ -476,7 +476,7 @@ DECLHIDDEN(int) vdQueryImageBackend(uint32_t idx, PCVDIMAGEBACKEND *ppBackend)
  */
 DECLHIDDEN(int) vdFindImageBackend(const char *pszBackend, PCVDIMAGEBACKEND *ppBackend)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NOT_FOUND;
     PCVDIMAGEBACKEND pBackend = NULL;
 
     if (!g_apBackends)
@@ -487,6 +487,7 @@ DECLHIDDEN(int) vdFindImageBackend(const char *pszBackend, PCVDIMAGEBACKEND *ppB
         if (!RTStrICmp(pszBackend, g_apBackends[i]->pszBackendName))
         {
             pBackend = g_apBackends[i];
+            rc = VINF_SUCCESS;
             break;
         }
     }
@@ -531,7 +532,7 @@ DECLHIDDEN(int) vdQueryCacheBackend(uint32_t idx, PCVDCACHEBACKEND *ppBackend)
  */
 DECLHIDDEN(int) vdFindCacheBackend(const char *pszBackend, PCVDCACHEBACKEND *ppBackend)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NOT_FOUND;
     PCVDCACHEBACKEND pBackend = NULL;
 
     if (!g_apCacheBackends)
@@ -542,6 +543,7 @@ DECLHIDDEN(int) vdFindCacheBackend(const char *pszBackend, PCVDCACHEBACKEND *ppB
         if (!RTStrICmp(pszBackend, g_apCacheBackends[i]->pszBackendName))
         {
             pBackend = g_apCacheBackends[i];
+            rc = VINF_SUCCESS;
             break;
         }
     }
@@ -587,7 +589,7 @@ DECLHIDDEN(int) vdQueryFilterBackend(uint32_t idx, PCVDFILTERBACKEND *ppBackend)
  */
 DECLHIDDEN(int) vdFindFilterBackend(const char *pszFilter, PCVDFILTERBACKEND *ppBackend)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NOT_FOUND;
     PCVDFILTERBACKEND pBackend = NULL;
 
     for (unsigned i = 0; i < g_cFilterBackends; i++)
@@ -595,6 +597,7 @@ DECLHIDDEN(int) vdFindFilterBackend(const char *pszFilter, PCVDFILTERBACKEND *pp
         if (!RTStrICmp(pszFilter, g_apFilterBackends[i]->pszBackendName))
         {
             pBackend = g_apFilterBackends[i];
+            rc = VINF_SUCCESS;
             break;
         }
     }
