@@ -2471,7 +2471,7 @@ bool UICommon::launchMachine(CCloudMachine &comMachine)
     }
 
     /* Show machine power up progress: */
-    msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_start_90px.png");
+    msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_start_90px.png", 0, 0);
     if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
     {
         msgCenter().cannotPowerUpCloudMachine(comProgress, strName);
