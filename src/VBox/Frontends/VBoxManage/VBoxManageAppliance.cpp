@@ -402,9 +402,10 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 /* Check presence of cloudprofile and cloudinstanceid in the map.
                  * If there isn't the exception is triggered. It's standard std:map logic.*/
                 ArgsMap a = mapArgsMapsPerVsys[ulCurVsys];
-                a.at("cloudprofile");
-                a.at("cloudinstanceid");
-            } catch (...)
+                (void)a.at("cloudprofile");
+                (void)a.at("cloudinstanceid");
+            }
+            catch (...)
             {
                 return errorSyntax(USAGE_IMPORTAPPLIANCE, "Not enough arguments for import from the Cloud.");
             }
