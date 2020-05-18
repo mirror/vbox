@@ -2158,6 +2158,18 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 
+/** @name Flags for the guest physical read/write helpers
+ * @{ */
+/** Default flag with no indication whether the data is processed by the device or just passed through. */
+#define PDM_DEVHLP_PHYS_RW_F_DEFAULT        UINT32_C(0x00000000)
+/** The data is user data which is just passed through between the guest and the source or destination and not processed
+ * by the device in any way. */
+#define PDM_DEVHLP_PHYS_RW_F_DATA_USER      RT_BIT_32(0)
+/** The data is metadata and being processed by the device in some way. */
+#define PDM_DEVHLP_PHYS_RW_F_DATA_META      RT_BIT_32(1)
+/** @} */
+
+
 #ifdef IN_RING3
 
 /** @name Special values for PDMDEVHLPR3::pfnPCIRegister parameters.
@@ -2786,9 +2798,10 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhys              Physical address start reading from.
      * @param   pvBuf               Where to put the read bits.
      * @param   cbRead              How many bytes to read.
+     * @param   fFlags              Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLR3CALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags));
 
     /**
      * Write to physical memory.
@@ -2798,9 +2811,10 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhys              Physical address to write to.
      * @param   pvBuf               What to write.
      * @param   cbWrite             How many bytes to write.
+     * @param   fFlags              Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLR3CALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags));
 
     /**
      * Requests the mapping of a guest page into ring-3.
@@ -3244,9 +3258,10 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhys              Physical address start reading from.
      * @param   pvBuf               Where to put the read bits.
      * @param   cbRead              How many bytes to read.
+     * @param   fFlags              Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags));
 
     /**
      * Bus master physical memory write.
@@ -3259,9 +3274,10 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhys              Physical address to write to.
      * @param   pvBuf               What to write.
      * @param   cbWrite             How many bytes to write.
+     * @param   fFlags              Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags));
 
     /**
      * Sets the IRQ for the given PCI device.
@@ -4355,10 +4371,11 @@ typedef struct PDMDEVHLPRC
      * @param   GCPhys              Physical address start reading from.
      * @param   pvBuf               Where to put the read bits.
      * @param   cbRead              How many bytes to read.
+     * @param   fFlags              Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
     DECLRCCALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
-                                              void *pvBuf, size_t cbRead));
+                                              void *pvBuf, size_t cbRead, uint32_t fFlags));
 
     /**
      * Bus master physical memory write from the given PCI device.
@@ -4371,10 +4388,11 @@ typedef struct PDMDEVHLPRC
      * @param   GCPhys              Physical address to write to.
      * @param   pvBuf               What to write.
      * @param   cbWrite             How many bytes to write.
+     * @param   fFlags              Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
     DECLRCCALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
-                                               const void *pvBuf, size_t cbWrite));
+                                               const void *pvBuf, size_t cbWrite, uint32_t fFlags));
 
     /**
      * Set the IRQ for the given PCI device.
@@ -4416,8 +4434,9 @@ typedef struct PDMDEVHLPRC
      * @param   GCPhys          Physical address start reading from.
      * @param   pvBuf           Where to put the read bits.
      * @param   cbRead          How many bytes to read.
+     * @param   fFlags          Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      */
-    DECLRCCALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLRCCALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags));
 
     /**
      * Write to physical memory.
@@ -4427,8 +4446,9 @@ typedef struct PDMDEVHLPRC
      * @param   GCPhys          Physical address to write to.
      * @param   pvBuf           What to write.
      * @param   cbWrite         How many bytes to write.
+     * @param   fFlags          Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      */
-    DECLRCCALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLRCCALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags));
 
     /**
      * Checks if the Gate A20 is enabled or not.
@@ -4801,10 +4821,11 @@ typedef struct PDMDEVHLPR0
      * @param   GCPhys              Physical address start reading from.
      * @param   pvBuf               Where to put the read bits.
      * @param   cbRead              How many bytes to read.
+     * @param   fFlags              Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
     DECLR0CALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
-                                              void *pvBuf, size_t cbRead));
+                                              void *pvBuf, size_t cbRead, uint32_t fFlags));
 
     /**
      * Bus master physical memory write from the given PCI device.
@@ -4817,10 +4838,11 @@ typedef struct PDMDEVHLPR0
      * @param   GCPhys              Physical address to write to.
      * @param   pvBuf               What to write.
      * @param   cbWrite             How many bytes to write.
+     * @param   fFlags              Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      * @thread  Any thread, but the call may involve the emulation thread.
      */
     DECLR0CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
-                                               const void *pvBuf, size_t cbWrite));
+                                               const void *pvBuf, size_t cbWrite, uint32_t fFlags));
 
     /**
      * Set the IRQ for the given PCI device.
@@ -4862,8 +4884,9 @@ typedef struct PDMDEVHLPR0
      * @param   GCPhys          Physical address start reading from.
      * @param   pvBuf           Where to put the read bits.
      * @param   cbRead          How many bytes to read.
+     * @param   fFlags          Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      */
-    DECLR0CALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLR0CALLBACKMEMBER(int, pfnPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags));
 
     /**
      * Write to physical memory.
@@ -4873,8 +4896,9 @@ typedef struct PDMDEVHLPR0
      * @param   GCPhys          Physical address to write to.
      * @param   pvBuf           What to write.
      * @param   cbWrite         How many bytes to write.
+     * @param   fFlags          Combination of PDM_DEVHLP_PHYS_RW_F_XXX.
      */
-    DECLR0CALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLR0CALLBACKMEMBER(int, pfnPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags));
 
     /**
      * Checks if the Gate A20 is enabled or not.
@@ -6290,19 +6314,93 @@ DECLINLINE(PRTTIMESPEC) PDMDevHlpTMUtcNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 #endif
 
 /**
- * @copydoc PDMDEVHLPR3::pfnPhysRead
+ * Read physical memory - unknown data usage.
+ *
+ * @returns VINF_SUCCESS (for now).
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address start reading from.
+ * @param   pvBuf               Where to put the read bits.
+ * @param   cbRead              How many bytes to read.
+ * @thread  Any thread, but the call may involve the emulation thread.
  */
 DECLINLINE(int) PDMDevHlpPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DEFAULT);
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnPhysWrite
+ * Write to physical memory - unknown data usage.
+ *
+ * @returns VINF_SUCCESS for now, and later maybe VERR_EM_MEMORY.
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address to write to.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How many bytes to write.
+ * @thread  Any thread, but the call may involve the emulation thread.
  */
 DECLINLINE(int) PDMDevHlpPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DEFAULT);
+}
+
+/**
+ * Read physical memory - reads meta data processed by the device.
+ *
+ * @returns VINF_SUCCESS (for now).
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address start reading from.
+ * @param   pvBuf               Where to put the read bits.
+ * @param   cbRead              How many bytes to read.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPhysReadMeta(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DATA_META);
+}
+
+/**
+ * Write to physical memory - written data was created/altered by the device.
+ *
+ * @returns VINF_SUCCESS for now, and later maybe VERR_EM_MEMORY.
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address to write to.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How many bytes to write.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPhysWriteMeta(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DATA_META);
+}
+
+/**
+ * Read physical memory - read data will not be touched by the device.
+ *
+ * @returns VINF_SUCCESS (for now).
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address start reading from.
+ * @param   pvBuf               Where to put the read bits.
+ * @param   cbRead              How many bytes to read.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPhysReadUser(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DATA_USER);
+}
+
+/**
+ * Write to physical memory - written data was not touched/created by the device.
+ *
+ * @returns VINF_SUCCESS for now, and later maybe VERR_EM_MEMORY.
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address to write to.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How many bytes to write.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPhysWriteUser(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DATA_USER);
 }
 
 #ifdef IN_RING3
@@ -6888,15 +6986,127 @@ DECLINLINE(VBOXSTRICTRC) PDMDevHlpPCIConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV 
  */
 DECLINLINE(int) PDMDevHlpPCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, NULL, GCPhys, pvBuf, cbRead);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, NULL, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DEFAULT);
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnPCIPhysRead
+ * Bus master physical memory read - unknown data usage.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_READ_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   pPciDev             The PCI device structure.  If NULL the default
+ *                              PCI device for this device instance is used.
+ * @param   GCPhys              Physical address start reading from.
+ * @param   pvBuf               Where to put the read bits.
+ * @param   cbRead              How many bytes to read.
+ * @thread  Any thread, but the call may involve the emulation thread.
  */
 DECLINLINE(int) PDMDevHlpPCIPhysReadEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DEFAULT);
+}
+
+/**
+ * Bus master physical memory read from the default PCI device.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_READ_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address start reading from.
+ * @param   pvBuf               Where to put the read bits.
+ * @param   cbRead              How many bytes to read.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysReadMeta(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, NULL, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DATA_META);
+}
+
+/**
+ * Bus master physical memory read - reads meta data processed by the device.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_READ_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   pPciDev             The PCI device structure.  If NULL the default
+ *                              PCI device for this device instance is used.
+ * @param   GCPhys              Physical address start reading from.
+ * @param   pvBuf               Where to put the read bits.
+ * @param   cbRead              How many bytes to read.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysReadMetaEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DATA_META);
+}
+
+/**
+ * Bus master physical memory read from the default PCI device - read data will not be touched by the device.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_READ_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address start reading from.
+ * @param   pvBuf               Where to put the read bits.
+ * @param   cbRead              How many bytes to read.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysReadUser(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, NULL, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DATA_USER);
+}
+
+/**
+ * Bus master physical memory read - read data will not be touched by the device.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_READ_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   pPciDev             The PCI device structure.  If NULL the default
+ *                              PCI device for this device instance is used.
+ * @param   GCPhys              Physical address start reading from.
+ * @param   pvBuf               Where to put the read bits.
+ * @param   cbRead              How many bytes to read.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysReadUserEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, pPciDev, GCPhys, pvBuf, cbRead, PDM_DEVHLP_PHYS_RW_F_DATA_USER);
+}
+
+/**
+ * Bus master physical memory write from the default PCI device - unknown data usage.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_WRITE_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address to write to.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How many bytes to write.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, NULL, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DEFAULT);
+}
+
+/**
+ * Bus master physical memory write - unknown data usage.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_WRITE_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   pPciDev             The PCI device structure.  If NULL the default
+ *                              PCI device for this device instance is used.
+ * @param   GCPhys              Physical address to write to.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How many bytes to write.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysWriteEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DEFAULT);
 }
 
 /**
@@ -6910,17 +7120,61 @@ DECLINLINE(int) PDMDevHlpPCIPhysReadEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, R
  * @param   cbWrite             How many bytes to write.
  * @thread  Any thread, but the call may involve the emulation thread.
  */
-DECLINLINE(int) PDMDevHlpPCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+DECLINLINE(int) PDMDevHlpPCIPhysWriteMeta(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, NULL, GCPhys, pvBuf, cbWrite);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, NULL, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DATA_META);
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnPCIPhysWrite
+ * Bus master physical memory write - written data was created/altered by the device.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_WRITE_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   pPciDev             The PCI device structure.  If NULL the default
+ *                              PCI device for this device instance is used.
+ * @param   GCPhys              Physical address to write to.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How many bytes to write.
+ * @thread  Any thread, but the call may involve the emulation thread.
  */
-DECLINLINE(int) PDMDevHlpPCIPhysWriteEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+DECLINLINE(int) PDMDevHlpPCIPhysWriteMetaEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DATA_META);
+}
+
+/**
+ * Bus master physical memory write from the default PCI device.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_WRITE_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   GCPhys              Physical address to write to.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How many bytes to write.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysWriteUser(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, NULL, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DATA_USER);
+}
+
+/**
+ * Bus master physical memory write - written data was not touched/created by the device.
+ *
+ * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_WRITE_BM_DISABLED, later maybe
+ *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+ * @param   pDevIns             The device instance.
+ * @param   pPciDev             The PCI device structure.  If NULL the default
+ *                              PCI device for this device instance is used.
+ * @param   GCPhys              Physical address to write to.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How many bytes to write.
+ * @thread  Any thread, but the call may involve the emulation thread.
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysWriteUserEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, pPciDev, GCPhys, pvBuf, cbWrite, PDM_DEVHLP_PHYS_RW_F_DATA_USER);
 }
 
 /**
