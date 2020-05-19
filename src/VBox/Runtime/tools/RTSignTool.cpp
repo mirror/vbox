@@ -1274,7 +1274,7 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
                                                       void *pvUser, PRTERRINFO pErrInfo)
 {
     VERIFYEXESTATE *pState = (VERIFYEXESTATE *)pvUser;
-    uint32_t        cPaths = hCertPaths != NIL_RTCRX509CERTPATHS ? RTCrX509CertPathsGetPathCount(hCertPaths) : 0;
+    uint32_t        cPaths = RTCrX509CertPathsGetPathCount(hCertPaths);
 
     /*
      * Dump all the paths.
@@ -1435,14 +1435,16 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE 
                 return RTCrPkcs7VerifySignedDataWithExternalData(pContentInfo,
                                                                  RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
                                                                  | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
-                                                                 | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT,
+                                                                 | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT
+                                                                 | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS,
                                                                  pState->hAdditionalStore, pState->hRootStore, &ValidationTime,
                                                                  VerifyExecCertVerifyCallback, pState,
                                                                  pvExternalData, cbExternalData, pErrInfo);
             return RTCrPkcs7VerifySignedData(pContentInfo,
                                              RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
                                              | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
-                                             | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT,
+                                             | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT
+                                             | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS,
                                              pState->hAdditionalStore, pState->hRootStore, &ValidationTime,
                                              VerifyExecCertVerifyCallback, pState, pErrInfo);
         }

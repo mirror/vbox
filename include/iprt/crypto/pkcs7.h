@@ -606,6 +606,8 @@ RTDECL(int) RTCrPkcs7VerifySignedDataWithExternalData(PCRTCRPKCS7CONTENTINFO pCo
  * This requires RTCRPKCS7VERIFY_SD_F_HAS_SIGNER_INDEX to get a consistent
  * result.  And yeah, it unconst the parameter, which is patently ugly. */
 #define RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME                 RT_BIT_32(8)
+/** Check trust anchors (@sa RTCrX509CertPathsSetTrustAnchorChecks). */
+#define RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS                    RT_BIT_32(9)
 
 /** This can be used to only verify one given signer info.
  * Max index value is 15.  */

@@ -408,22 +408,16 @@ static int rtCrPkcs7VerifySignerInfo(PCRTCRPKCS7SIGNERINFO pSignerInfo, PCRTCRPK
      */
     PCRTCRCERTCTX           pSignerCertCtx = NULL;
     PCRTCRX509CERTIFICATE   pSignerCert = NULL;
-    RTCRSTORE               hSignerCertSrc = hTrustedCerts;
-    if (hSignerCertSrc != NIL_RTCRSTORE)
-        pSignerCertCtx = RTCrStoreCertByIssuerAndSerialNo(hSignerCertSrc, &pSignerInfo->IssuerAndSerialNumber.Name,
+    if (hTrustedCerts != NIL_RTCRSTORE)
+        pSignerCertCtx = RTCrStoreCertByIssuerAndSerialNo(hTrustedCerts, &pSignerInfo->IssuerAndSerialNumber.Name,
                                                           &pSignerInfo->IssuerAndSerialNumber.SerialNumber);
-    if (!pSignerCertCtx)
-    {
-        hSignerCertSrc = hAdditionalCerts;
-        if (hSignerCertSrc != NIL_RTCRSTORE)
-            pSignerCertCtx = RTCrStoreCertByIssuerAndSerialNo(hSignerCertSrc, &pSignerInfo->IssuerAndSerialNumber.Name,
-                                                              &pSignerInfo->IssuerAndSerialNumber.SerialNumber);
-    }
+    if (!pSignerCertCtx && hAdditionalCerts != NIL_RTCRSTORE)
+        pSignerCertCtx = RTCrStoreCertByIssuerAndSerialNo(hAdditionalCerts, &pSignerInfo->IssuerAndSerialNumber.Name,
+                                                          &pSignerInfo->IssuerAndSerialNumber.SerialNumber);
     if (pSignerCertCtx)
         pSignerCert = pSignerCertCtx->pCert;
     else
     {
-        hSignerCertSrc = NULL;
         pSignerCert = RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(&pSignedData->Certificates,
                                                                           &pSignerInfo->IssuerAndSerialNumber.Name,
                                                                           &pSignerInfo->IssuerAndSerialNumber.SerialNumber);
@@ -435,14 +429,17 @@ static int rtCrPkcs7VerifySignerInfo(PCRTCRPKCS7SIGNERINFO pSignerInfo, PCRTCRPK
     }
 
     /*
-     * If not a trusted certificate, we'll have to build certificate paths
-     * and verify them.  If no valid paths are found, this step will fail.
+     * Unless caller requesed all certificates to be trusted fully, we always
+     * pass it on to the certificate path builder so it can do the requested
+     * checks on trust anchors.   (We didn't used to do this as the path
+     * builder could handle trusted targets.  A benefit here is that
+     * pfnVerifyCert can assume a hCertPaths now, and get the validation time
+     * from it if it wants it.)
+     *
+     * If no valid paths are found, this step will fail.
      */
-    int rc = VINF_SUCCESS;
-    if (   /*(   hSignerCertSrc == NIL_RTCRSTORE
-            || hSignerCertSrc != hTrustedCerts )
-        &&*/ /** @todo 'hSignerCertSrc != hTrustedCerts' ain't making sense wrt pValidationTime */
-        !(fFlags & RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS) )
+    int rc;
+    if (!(fFlags & RTCRPKCS7VERIFY_SD_F_TRUST_ALL_CERTS))
     {
         RTCRX509CERTPATHS hCertPaths;
         rc = RTCrX509CertPathsCreate(&hCertPaths, pSignerCert);
@@ -455,6 +452,8 @@ static int rtCrPkcs7VerifySignerInfo(PCRTCRPKCS7SIGNERINFO pSignerInfo, PCRTCRPK
                 rc = RTCrX509CertPathsSetUntrustedStore(hCertPaths, hAdditionalCerts);
             if (pSignedData->Certificates.cItems > 0 && RT_SUCCESS(rc))
                 rc = RTCrX509CertPathsSetUntrustedSet(hCertPaths, &pSignedData->Certificates);
+            if ((fFlags & RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS) && RT_SUCCESS(rc))
+                rc = RTCrX509CertPathsSetTrustAnchorChecks(hCertPaths, true /*fEnable*/);
             if (RT_SUCCESS(rc))
             {
                 rc = RTCrX509CertPathsBuild(hCertPaths, pErrInfo);
