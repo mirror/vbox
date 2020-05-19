@@ -27,6 +27,12 @@
 
 #include "GaDdi.h"
 
+#include <iprt/cdefs.h>
+#pragma warning(push)
+#if RT_MSC_PREREQ(RT_MSC_VER_VC142)
+# pragma warning(disable: 5204) /* warning C5204: 'IGaDirect3DDevice9Ex': class has virtual functions, but its trivial destructor is not virtual; instances of objects derived from this class may not be destructed correctly */
+#endif
+
 class IGalliumStack;
 struct ID3DAdapter9;
 
@@ -79,6 +85,8 @@ class IGalliumStack: public IUnknown
         STDMETHOD_(uint32_t, GaDrvGetSurfaceId)(struct pipe_screen *pScreen, struct pipe_resource *pResource) PURE;
         STDMETHOD_(void, GaDrvContextFlush)(struct pipe_context *pPipeContext) PURE;
 };
+
+#pragma warning(pop)
 
 
 HRESULT GalliumStackCreate(IGalliumStack **ppOut);
