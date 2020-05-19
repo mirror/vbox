@@ -294,16 +294,12 @@ void UIWizardAddCloudVMPage1::populateAccountInstances()
             /* Remember Cloud Client: */
             setClient(comCloudClient);
 
-            /* Gather instance names, ids and states.
-             * Currently we are interested in Running and Stopped instances only. */
+            /* Gather instance names and ids: */
             CStringArray comNames;
             CStringArray comIDs;
-            const QVector<KCloudMachineState> cloudMachineStates  = QVector<KCloudMachineState>()
-                                                                 << KCloudMachineState_Running
-                                                                 << KCloudMachineState_Stopped;
 
             /* Ask for cloud instances: */
-            CProgress comProgress = comCloudClient.ListInstances(cloudMachineStates, comNames, comIDs);
+            CProgress comProgress = comCloudClient.ListSourceInstances(comNames, comIDs);
             if (!comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
