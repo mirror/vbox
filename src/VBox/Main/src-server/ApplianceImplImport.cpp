@@ -3318,7 +3318,8 @@ HRESULT Appliance::i_readTailProcessingVerifyAnalyzeSignerInfo(void const *pvDat
     RTTIMESPEC Now2 = *pNow;
     vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED
                                                     | RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
-                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner)
+                                                    | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS, NIL_RTCRSTORE,
                                                     hTrustedStore, &Now2, NULL, NULL,
                                                     pvData, cbData, RTErrInfoInitStatic(pErrInfo));
     if (RT_SUCCESS(vrc))
@@ -3328,7 +3329,8 @@ HRESULT Appliance::i_readTailProcessingVerifyAnalyzeSignerInfo(void const *pvDat
         vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED
                                                         | RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
                                                         | RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
-                                                        | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                        | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner)
+                                                        | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS, NIL_RTCRSTORE,
                                                         hTrustedStore, &Now3, NULL, NULL, pvData, cbData, NULL);
         if (RT_SUCCESS(vrc))
             i_addWarning(tr("%s: Untrusted timestamp (%s)"), pszSignature, RTTimeSpecToString(&Now3, szTime, sizeof(szTime)));
@@ -3356,7 +3358,8 @@ HRESULT Appliance::i_readTailProcessingVerifyAnalyzeSignerInfo(void const *pvDat
 
     vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo,
                                                     RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
-                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner)
+                                                    | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS, NIL_RTCRSTORE,
                                                     *phTrustedStore2, pNow, NULL, NULL, pvData, cbData, NULL);
     if (RT_SUCCESS(vrc))
     {
@@ -3371,7 +3374,8 @@ HRESULT Appliance::i_readTailProcessingVerifyAnalyzeSignerInfo(void const *pvDat
     Now2 = *pNow;
     vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED
                                                     | RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
-                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                    | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner)
+                                                    | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS, NIL_RTCRSTORE,
                                                     *phTrustedStore2, pNow, NULL, NULL, pvData, cbData, NULL);
     if (RT_SUCCESS(vrc))
     {
@@ -3380,7 +3384,8 @@ HRESULT Appliance::i_readTailProcessingVerifyAnalyzeSignerInfo(void const *pvDat
         vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo, RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED
                                                         | RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
                                                         | RTCRPKCS7VERIFY_SD_F_UPDATE_VALIDATION_TIME
-                                                        | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner), NIL_RTCRSTORE,
+                                                        | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner)
+                                                        | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS, NIL_RTCRSTORE,
                                                         *phTrustedStore2, &Now3, NULL, NULL, pvData, cbData, NULL);
         if (RT_SUCCESS(vrc))
             i_addWarning(tr("%s: Untrusted timestamp (%s)"), pszSignature, RTTimeSpecToString(&Now3, szTime, sizeof(szTime)));
@@ -3410,7 +3415,8 @@ HRESULT Appliance::i_readTailProcessingVerifyContentInfoCerts(void const *pvData
      */
     RTTIMESPEC Now;
     int vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo,
-                                                        RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY,
+                                                          RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                                        | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS,
                                                         NIL_RTCRSTORE /*hAdditionalCerts*/, hTrustedStore,
                                                         RTTimeNow(&Now), NULL /*pfnVerifyCert*/, NULL /*pvUser*/,
                                                         pvData, cbData, RTErrInfoInitStatic(pErrInfo));
@@ -3428,7 +3434,8 @@ HRESULT Appliance::i_readTailProcessingVerifyContentInfoCerts(void const *pvData
         {
             vrc = RTCrPkcs7VerifySignedDataWithExternalData(&m->ContentInfo,
                                                             RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
-                                                            | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner),
+                                                            | RTCRPKCS7VERIFY_SD_F_SIGNER_INDEX(iSigner)
+                                                            | RTCRPKCS7VERIFY_SD_F_CHECK_TRUST_ANCHORS,
                                                             NIL_RTCRSTORE /*hAdditionalCerts*/, hTrustedStore,
                                                             &Now, NULL /*pfnVerifyCert*/, NULL /*pvUser*/,
                                                             pvData, cbData, RTErrInfoInitStatic(pErrInfo));
