@@ -569,7 +569,8 @@ typedef VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
 
 
 /**
- * @callback_method_impl{VIRTIOCORER0,pfnQueueNotified}
+ * callback_method_impl{VIRTIOCORER0,pfnQueueNotified}
+ * @todo this causes burn if I prefix with at-sign. This callback is in VIRTIOCORER0 and VIRTIOCORER3
  */
 static DECLCALLBACK(void) virtioScsiNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t qIdx)
 {
