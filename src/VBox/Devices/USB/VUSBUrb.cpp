@@ -610,11 +610,11 @@ static PVUSBCTRLEXTRA vusbMsgAllocExtraData(PVUSBURB pUrb)
 {
 /** @todo reuse these? */
     PVUSBCTRLEXTRA pExtra;
-#if 0
-    const size_t cbMax = sizeof(pExtra->Urb.abData) + sizeof(VUSBSETUP);
-#else
-    const size_t cbMax = sizeof(VUSBSETUP);
-#endif
+    /* The initial allocation tries to balance wasted memory versus the need to re-allocate
+     * the message data. Experience shows that an 8K initial allocation in practice never needs
+     * to be expanded but almost certainly wastes 4K or more memory.
+     */
+    const size_t cbMax = _2K + sizeof(VUSBSETUP);
     pExtra = (PVUSBCTRLEXTRA)RTMemAllocZ(RT_UOFFSETOF_DYN(VUSBCTRLEXTRA, Urb.abData[cbMax]));
     if (pExtra)
     {
