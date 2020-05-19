@@ -172,6 +172,7 @@ class tdUnitTest1(vbox.TestDriver):
         'tstTestCallTemplates': '',                     # some strange xpcom18a4 test, segfaults
         'testcase/tstRTFilesystem': '',                 # parameters required
         'testcase/tstRTDvm': '',                        # parameters required
+        'tstSSLCertDownloads': '',                      # Obsolete.
         # later
         'testcase/tstIntNetR0': '',                     # RTSPINLOCK_FLAGS_INTERRUPT_SAFE == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE
         # slow stuff
