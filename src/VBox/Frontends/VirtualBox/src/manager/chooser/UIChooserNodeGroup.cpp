@@ -208,7 +208,12 @@ void UIChooserNodeGroup::setName(const QString &strName)
 void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
 {
     /* If we are searching for the group-node: */
-    if (iItemSearchFlags & UIChooserItemSearchFlag_Group)
+    if (   (   iItemSearchFlags & UIChooserItemSearchFlag_LocalGroup
+            && groupType() == UIChooserNodeGroupType_Local)
+        || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProvider
+            && groupType() == UIChooserNodeGroupType_Provider)
+        || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProfile
+            && groupType() == UIChooserNodeGroupType_Profile))
     {
         /* If the search term is empty we just add the node to the matched list: */
         if (strSearchTerm.isEmpty())

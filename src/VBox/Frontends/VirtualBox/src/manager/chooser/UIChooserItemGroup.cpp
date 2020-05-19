@@ -491,7 +491,12 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
 UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
 {
     /* Are we searching among group-items? */
-    if (iItemSearchFlags & UIChooserItemSearchFlag_Group)
+    if (   (   iItemSearchFlags & UIChooserItemSearchFlag_LocalGroup
+            && nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local)
+        || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProvider
+            && nodeToGroupType()->groupType() == UIChooserNodeGroupType_Provider)
+        || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProfile
+            && nodeToGroupType()->groupType() == UIChooserNodeGroupType_Profile))
     {
         /* Are we searching by the exact ID? */
         if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)

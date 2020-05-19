@@ -50,11 +50,13 @@ enum UIChooserNodeGroupType
 /** UIChooserItem search flags. */
 enum UIChooserItemSearchFlag
 {
-    UIChooserItemSearchFlag_Machine   = RT_BIT(0),
-    UIChooserItemSearchFlag_Global    = RT_BIT(1),
-    UIChooserItemSearchFlag_Group     = RT_BIT(2),
-    UIChooserItemSearchFlag_ExactId   = RT_BIT(3),
-    UIChooserItemSearchFlag_ExactName = RT_BIT(4)
+    UIChooserItemSearchFlag_Global        = RT_BIT(0),
+    UIChooserItemSearchFlag_Machine       = RT_BIT(1),
+    UIChooserItemSearchFlag_LocalGroup    = RT_BIT(2),
+    UIChooserItemSearchFlag_CloudProvider = RT_BIT(3),
+    UIChooserItemSearchFlag_CloudProfile  = RT_BIT(4),
+    UIChooserItemSearchFlag_ExactId       = RT_BIT(5),
+    UIChooserItemSearchFlag_ExactName     = RT_BIT(6)
 };
 
 

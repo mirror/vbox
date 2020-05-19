@@ -357,7 +357,7 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     const QString strGroupName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
     /* Search for corresponding profile node: */
     QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strGroupName, UIChooserItemSearchFlag_Group | UIChooserItemSearchFlag_ExactId, profileNodes);
+    invisibleRoot()->searchForNodes(strGroupName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
     /* Acquire corresponding profile node: */
     AssertReturnVoid(!profileNodes.isEmpty());
     UIChooserNodeGroup *pProfileNode = profileNodes.first()->toGroupNode();
@@ -443,7 +443,7 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     /* Search for profile node: */
     const QString strProfileNodeName = QString("/%1/%2").arg(pAcquiringTask->providerShortName(), pAcquiringTask->profileName());
     QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_Group | UIChooserItemSearchFlag_ExactId, profileNodes);
+    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
     UIChooserNode *pProfileNode = profileNodes.value(0);
     AssertPtrReturnVoid(pProfileNode);
 
