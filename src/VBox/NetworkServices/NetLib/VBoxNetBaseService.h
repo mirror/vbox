@@ -27,14 +27,15 @@
 class VBoxNetHlpUDPService
 {
 public:
-virtual int                 hlpUDPBroadcast(unsigned uSrcPort, unsigned uDstPort,
-                                        void const *pvData, size_t cbData) const = 0;
+    virtual ~VBoxNetHlpUDPService() { /* Make VC++ 19.2 happy. */ }
+    virtual int hlpUDPBroadcast(unsigned uSrcPort, unsigned uDstPort, void const *pvData, size_t cbData) const = 0;
 };
 
 
 class VBoxNetLockee
 {
 public:
+    virtual ~VBoxNetLockee() { /* Make VC++ 19.2 happy. */ }
     virtual int  syncEnter() = 0;
     virtual int  syncLeave() = 0;
 };
@@ -43,7 +44,7 @@ public:
 class VBoxNetALock
 {
 public:
-    VBoxNetALock(VBoxNetLockee *a_lck):m_lck(a_lck)
+    VBoxNetALock(VBoxNetLockee *a_lck) : m_lck(a_lck)
     {
         if (m_lck)
             m_lck->syncEnter();
@@ -60,7 +61,7 @@ private:
 };
 
 # ifndef BASE_SERVICES_ONLY
-class VBoxNetBaseService: public VBoxNetHlpUDPService, public VBoxNetLockee
+class VBoxNetBaseService : public VBoxNetHlpUDPService, public VBoxNetLockee
 {
 public:
     VBoxNetBaseService(const std::string& aName, const std::string& aNetworkName);

@@ -84,14 +84,15 @@ int hostDnsDomain(const ComHostPtr&, std::string& domainStr);
 
 class NATNetworkEventAdapter
 {
-    public:
+public:
+    virtual ~NATNetworkEventAdapter() { /* Make VC++ 19.2 happy. */ }
     virtual HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent) = 0;
 };
 
 
 class NATNetworkListener
 {
-    public:
+public:
     NATNetworkListener():m_pNAT(NULL){}
 
     HRESULT init(NATNetworkEventAdapter *pNAT)
@@ -118,7 +119,7 @@ class NATNetworkListener
             return E_FAIL;
     }
 
-    private:
+private:
     NATNetworkEventAdapter *m_pNAT;
 };
 typedef ListenerImpl<NATNetworkListener, NATNetworkEventAdapter*> NATNetworkListenerImpl;
