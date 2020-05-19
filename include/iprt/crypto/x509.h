@@ -1126,6 +1126,7 @@ RTDECL(int) RTCrX509CertPathsSetUntrustedArray(RTCRX509CERTPATHS hCertPaths, PCR
 RTDECL(int) RTCrX509CertPathsSetUntrustedSet(RTCRX509CERTPATHS hCertPaths, struct RTCRPKCS7SETOFCERTS const *pSetOfCerts);
 RTDECL(int) RTCrX509CertPathsSetValidTime(RTCRX509CERTPATHS hCertPaths, PCRTTIME pTime);
 RTDECL(int) RTCrX509CertPathsSetValidTimeSpec(RTCRX509CERTPATHS hCertPaths, PCRTTIMESPEC pTimeSpec);
+RTDECL(int) RTCrX509CertPathsSetTrustAnchorChecks(RTCRX509CERTPATHS hCertPaths, bool fEnable);
 RTDECL(int) RTCrX509CertPathsCreateEx(PRTCRX509CERTPATHS phCertPaths, PCRTCRX509CERTIFICATE pTarget, RTCRSTORE hTrustedStore,
                                       RTCRSTORE hUntrustedStore, PCRTCRX509CERTIFICATE paUntrustedCerts, uint32_t cUntrustedCerts,
                                       PCRTTIMESPEC pValidTime);

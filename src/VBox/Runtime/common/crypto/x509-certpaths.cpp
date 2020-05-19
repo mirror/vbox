@@ -286,9 +286,13 @@ typedef RTCRX509CERTPATHSINT *PRTCRX509CERTPATHSINT;
 
 /** @name RTCRX509CERTPATHSINT_F_XXX - Certificate path build flags.
  * @{ */
-#define RTCRX509CERTPATHSINT_F_VALID_TIME                    RT_BIT_32(0)
-#define RTCRX509CERTPATHSINT_F_ELIMINATE_UNTRUSTED_PATHS     RT_BIT_32(1)
-#define RTCRX509CERTPATHSINT_F_VALID_MASK                    UINT32_C(0x00000003)
+#define RTCRX509CERTPATHSINT_F_VALID_TIME                   RT_BIT_32(0)
+#define RTCRX509CERTPATHSINT_F_ELIMINATE_UNTRUSTED_PATHS    RT_BIT_32(1)
+/** Whether checking the trust anchor signature (if self signed) and
+ * that it is valid at the verification time, also require it to be a CA if not
+ * leaf node. */
+#define RTCRX509CERTPATHSINT_F_CHECK_TRUST_ANCHOR           RT_BIT_32(2)
+#define RTCRX509CERTPATHSINT_F_VALID_MASK                   UINT32_C(0x00000007)
 /** @} */
 
 
@@ -498,6 +502,20 @@ RTDECL(int) RTCrX509CertPathsSetValidTimeSpec(RTCRX509CERTPATHS hCertPaths, PCRT
 }
 
 
+RTDECL(int) RTCrX509CertPathsSetTrustAnchorChecks(RTCRX509CERTPATHS hCertPaths, bool fEnable)
+{
+    PRTCRX509CERTPATHSINT pThis = hCertPaths;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTCRX509CERTPATHSINT_MAGIC, VERR_INVALID_HANDLE);
+
+    if (fEnable)
+        pThis->fFlags |= RTCRX509CERTPATHSINT_F_CHECK_TRUST_ANCHOR;
+    else
+        pThis->fFlags &= ~RTCRX509CERTPATHSINT_F_CHECK_TRUST_ANCHOR;
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(int) RTCrX509CertPathsCreateEx(PRTCRX509CERTPATHS phCertPaths, PCRTCRX509CERTIFICATE pTarget, RTCRSTORE hTrustedStore,
                                       RTCRSTORE hUntrustedStore, PCRTCRX509CERTIFICATE paUntrustedCerts, uint32_t cUntrustedCerts,
                                       PCRTTIMESPEC pValidTime)
@@ -610,7 +628,17 @@ static void rtCrX509CertPathsAddIssuer(PRTCRX509CERTPATHSINT pThis, PRTCRX509CER
             Assert(pTmpNode->pCert);
             if (   pTmpNode->pCert == pCert
                 || RTCrX509Certificate_Compare(pTmpNode->pCert, pCert) == 0)
+            {
+                /* If target and the source it trusted, upgrade the source so we can successfully verify single node 'paths'. */
+                if (   RTCRX509CERTPATHNODE_SRC_IS_TRUSTED(uSrc)
+                    && pTmpNode == pParent
+                    && pTmpNode->uSrc == RTCRX509CERTPATHNODE_SRC_TARGET)
+                {
+                    AssertReturnVoid(!pTmpNode->pParent);
+                    pTmpNode->uSrc = uSrc;
+                }
                 return;
+            }
             pTmpNode = pTmpNode->pParent;
         }
 
@@ -1938,7 +1966,6 @@ static void rtCrX509CpvCleanup(PRTCRX509CERTPATHSINT pThis)
 }
 
 
-
 /**
  * Initializes the state.
  *
@@ -2013,6 +2040,74 @@ static void rtCrX509CpvInit(PRTCRX509CERTPATHSINT pThis, PRTCRX509CERTPATHNODE p
     if (   !RTASN1CORE_IS_PRESENT(&pThis->v.pWorkingPublicKeyParameters->u.Core)
         || pThis->v.pWorkingPublicKeyParameters->enmType == RTASN1TYPE_NULL)
         pThis->v.pWorkingPublicKeyParameters = NULL;
+}
+
+
+/**
+ * This does basic trust anchor checks (similar to 6.1.3.a) before starting on
+ * the RFC-5280 algorithm.
+ */
+static bool rtCrX509CpvMaybeCheckTrustAnchor(PRTCRX509CERTPATHSINT pThis, PRTCRX509CERTPATHNODE pTrustAnchor)
+{
+    /*
+     * This is optional (not part of RFC-5280) and we need a full certificate
+     * structure to do it.
+     */
+    if (!(pThis->fFlags & RTCRX509CERTPATHSINT_F_CHECK_TRUST_ANCHOR))
+        return true;
+
+    PCRTCRX509CERTIFICATE const pCert = pTrustAnchor->pCert;
+    if (!pCert)
+        return true;
+
+    /*
+     * Verify the certificate signature if self-signed.
+     */
+    if (RTCrX509Certificate_IsSelfSigned(pCert))
+    {
+        int rc = RTCrX509Certificate_VerifySignature(pCert, pThis->v.pWorkingPublicKeyAlgorithm,
+                                                     pThis->v.pWorkingPublicKeyParameters, pThis->v.pWorkingPublicKey,
+                                                     pThis->pErrInfo);
+        if (RT_FAILURE(rc))
+        {
+            pThis->rc = rc;
+            return false;
+        }
+    }
+
+    /*
+     * Verify that the certificate is valid at the specified time.
+     */
+    AssertCompile(sizeof(pThis->szTmp) >= 36 * 3);
+    if (   (pThis->fFlags & RTCRX509CERTPATHSINT_F_VALID_TIME)
+        && !RTCrX509Validity_IsValidAtTimeSpec(&pCert->TbsCertificate.Validity, &pThis->ValidTime))
+        return rtCrX509CpvFailed(pThis, VERR_CR_X509_CPV_NOT_VALID_AT_TIME,
+                                 "Certificate is not valid (ValidTime=%s Validity=[%s...%s])",
+                                 RTTimeSpecToString(&pThis->ValidTime, &pThis->szTmp[0], 36),
+                                 RTTimeToString(&pCert->TbsCertificate.Validity.NotBefore.Time, &pThis->szTmp[36], 36),
+                                 RTTimeToString(&pCert->TbsCertificate.Validity.NotAfter.Time,  &pThis->szTmp[2*36], 36) );
+
+    /*
+     * Verified that the certficiate is not revoked.
+     */
+    /** @todo rainy day. */
+
+    /*
+     * If non-leaf certificate CA must be set, if basic constraints are present.
+     */
+    if (pTrustAnchor->pParent)
+    {
+        if (RTAsn1Integer_UnsignedCompareWithU32(&pTrustAnchor->pCert->TbsCertificate.T0.Version, RTCRX509TBSCERTIFICATE_V3) != 0)
+            return rtCrX509CpvFailed(pThis, VERR_CR_X509_CPV_NOT_V3_CERT,
+                                     "Only version 3 TA certificates are supported (Version=%llu)",
+                                     pTrustAnchor->pCert->TbsCertificate.T0.Version.uValue);
+        PCRTCRX509BASICCONSTRAINTS pBasicConstraints = pTrustAnchor->pCert->TbsCertificate.T3.pBasicConstraints;
+        if (pBasicConstraints && !pBasicConstraints->CA.fValue)
+            return rtCrX509CpvFailed(pThis, VERR_CR_X509_CPV_NOT_CA_CERT,
+                                     "Trust anchor certificate is not marked as a CA");
+    }
+
+    return true;
 }
 
 
@@ -2532,17 +2627,29 @@ static bool rtCrX509CpvWrapUp(PRTCRX509CERTPATHSINT pThis, PRTCRX509CERTPATHNODE
 static bool rtCrX509CpvOneWorker(PRTCRX509CERTPATHSINT pThis, PRTCRX509CERTPATHNODE pTrustAnchor)
 {
     /*
-     * Special case, target certificate is trusted.
-     */
-    if (!pTrustAnchor->pParent)
-        return rtCrX509CpvFailed(pThis, VERR_CR_X509_CERTPATHS_INTERNAL_ERROR, "Target certificate is trusted.");
-
-    /*
-     * Normal processing.
+     * Init.
      */
     rtCrX509CpvInit(pThis, pTrustAnchor);
     if (RT_SUCCESS(pThis->rc))
     {
+        /*
+         * Maybe do some trust anchor checks.
+         */
+        if (!rtCrX509CpvMaybeCheckTrustAnchor(pThis, pTrustAnchor))
+        {
+            AssertStmt(RT_FAILURE_NP(pThis->rc), pThis->rc = VERR_CR_X509_CERTPATHS_INTERNAL_ERROR);
+            return false;
+        }
+
+        /*
+         * Special case, target certificate is trusted.
+         */
+        if (!pTrustAnchor->pParent)
+            return true; /* rtCrX509CpvWrapUp should not be needed here. */
+
+        /*
+         * Normal processing.
+         */
         PRTCRX509CERTPATHNODE   pNode = pTrustAnchor->pParent;
         uint32_t                iNode = pThis->v.iNode = 1; /* We count to cNode (inclusive).  Same a validation tree depth. */
         while (pNode && RT_SUCCESS(pThis->rc))

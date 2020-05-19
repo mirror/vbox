@@ -3602,6 +3602,7 @@
 # define RTCrX509CertPathsRelease                       RT_MANGLER(RTCrX509CertPathsRelease)
 # define RTCrX509CertPathsRetain                        RT_MANGLER(RTCrX509CertPathsRetain)
 # define RTCrX509CertPathsSetTrustedStore               RT_MANGLER(RTCrX509CertPathsSetTrustedStore)
+# define RTCrX509CertPathsSetTrustAnchorChecks          RT_MANGLER(RTCrX509CertPathsSetTrustAnchorChecks)
 # define RTCrX509CertPathsSetUntrustedArray             RT_MANGLER(RTCrX509CertPathsSetUntrustedArray)
 # define RTCrX509CertPathsSetUntrustedSet               RT_MANGLER(RTCrX509CertPathsSetUntrustedSet)
 # define RTCrX509CertPathsSetUntrustedStore             RT_MANGLER(RTCrX509CertPathsSetUntrustedStore)
