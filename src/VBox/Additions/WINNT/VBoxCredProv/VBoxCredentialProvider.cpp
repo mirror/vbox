@@ -82,9 +82,14 @@ interface VBoxCredProvSensLogon : public ISensLogon
 {
 public:
 
-    VBoxCredProvSensLogon(void) :
-        m_cRefs(1)
+    VBoxCredProvSensLogon(void)
+        : m_cRefs(1)
     {
+    }
+
+    virtual ~VBoxCredProvSensLogon()
+    {
+        /* Make VC++ 19.2 happy. */
     }
 
     STDMETHODIMP QueryInterface(REFIID interfaceID, void **ppvInterface)
