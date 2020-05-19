@@ -147,7 +147,7 @@ typedef struct vusb_ctrl_extra
      * accommodate any larger request (unlikely). */
     uint32_t            cbMax;
     /** VUSB internal data for the extra URB. */
-    VUSBURBVUSBINT      vUsbExtra;
+    VUSBURBVUSBINT      VUsbExtra;
     /** The message URB. */
     VUSBURB             Urb;
 } VUSBCTRLEXTRA, *PVUSBCTRLEXTRA;
