@@ -117,25 +117,25 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  ifdef PATH_TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST
 InstallExternalLibs_SOURCES += \
 	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT)/), \
-		$(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CPP_DLLS)) \
+		$(TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CPP_DLLS)) \
 	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll)) \
 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll))=>testcase/$(qnotdir ,$(redistdll)))
   ifdef VBOX_WITH_32_ON_64_MAIN_API
 InstallExternalLibs_SOURCES += \
 	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT)/), \
-		$(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CPP_DLLS)) \
+		$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS)) \
 	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
   endif
   ifeq ($(VBOX_VCC_CRT_TYPE),d)
 InstallExternalLibs_SOURCES += \
 	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL)_REDIST_DEBUG_CRT)/), \
-		$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CPP_DLLS)))) \
+		$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CPP_DLLS)))) \
 	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll)) \
 	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll))=>testcase/$(qnotdir ,$(redistdll)))
    ifdef VBOX_WITH_32_ON_64_MAIN_API
 InstallExternalLibs_SOURCES += \
 	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_DEBUG_CRT)/), \
-		$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST_CPP_DLLS)))) \
+		$(addsuffix d.dll,$(basename $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS)))) \
 	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
    endif
   endif
