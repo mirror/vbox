@@ -1897,23 +1897,6 @@ endif
 
 
 #
-# Testcase for SSL certificate downloading.
-#
-if defined(VBOX_WITH_TESTCASES) && defined(VBOX_GUI_WITH_NETWORK_MANAGER)
- PROGRAMS += tstSSLCertDownloads
- tstSSLCertDownloads_TEMPLATE   = VBOXQTGUIEXE
- tstSSLCertDownloads_USES       = qt5
- tstSSLCertDownloads_QTTOOL     = QT5
- tstSSLCertDownloads_QT_MODULES = Core Gui
- tstSSLCertDownloads_DEFS = VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
- tstSSLCertDownloads_INCS = \
- 	$(VBOX_GUI_INC_DIRS)
- tstSSLCertDownloads_SOURCES = \
- 	src/net/tstSSLCertDownloads.cpp
-endif
-
-
-#
 # Doxygen documentation.
 #
 QTGUI_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/qtgui
