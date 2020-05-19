@@ -70,6 +70,8 @@ static volatile bool g_fInitialized = false;
 # include "vcc-fakes-kernel32-100.h"
 #elif defined(VCC_FAKES_TARGET_VCC141)
 # include "vcc-fakes-kernel32-141.h"
+#elif defined(VCC_FAKES_TARGET_VCC142)
+# include "vcc-fakes-kernel32-141.h"
 #else
 # error "Port me!"
 #endif
@@ -837,6 +839,8 @@ DECLASM(void) FakeResolve_kernel32(void)
 #ifdef VCC_FAKES_TARGET_VCC100
 # include "vcc-fakes-kernel32-100.h"
 #elif defined(VCC_FAKES_TARGET_VCC141)
+# include "vcc-fakes-kernel32-141.h"
+#elif defined(VCC_FAKES_TARGET_VCC142)
 # include "vcc-fakes-kernel32-141.h"
 #else
 # error "Port me!"
