@@ -1621,11 +1621,13 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
 *   Sending evnets
 *********************************************************************************************************************************/
 
+/* @todo Figure out how to implement this with R0 changes. Not used by current linux driver */
+#if 0
 DECLINLINE(void) virtioScsiR3ReportEventsMissed(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t uTarget)
 {
     virtioScsiR3SendEvent(pDevIns, pThis, uTarget, VIRTIOSCSI_T_NO_EVENT | VIRTIOSCSI_T_EVENTS_MISSED, 0);
 }
-
+#endif
 
 #if 0
 /* SUBSCRIBABLE EVENT - not sure when to call this or how to detect when media is added or removed
