@@ -654,23 +654,29 @@ static bool callVMWCTRL(struct RANDROUTPUT *paOutputs)
 }
 
 /**
- * Tries to determine if the session parenting this process is of X11.
+ * Tries to determine if the session parenting this process is of Xwayland.
+ * NB: XDG_SESSION_TYPE is a systemd(1) environment variable and is unlikely
+ * set in non-systemd environments or remote logins.
+ * Therefore we check the Wayland specific display environment variable first.
  */
-static bool isX11()
+static bool isXwayland(void)
 {
-    char* pSessionType;
+    const char *const pDisplayType = getenv("WAYLAND_DISPLAY");
+    const char *pSessionType;
+
+    if (pDisplayType != NULL) {
+        return true;
+    }
     pSessionType = getenv("XDG_SESSION_TYPE");
-    if (pSessionType != NULL)
-    {
-        if (RTStrIStartsWith(pSessionType, "x11"))
-            return true;
+    if ((pSessionType != NULL) && (RTStrIStartsWith(pSessionType, "wayland"))) {
+        return true;
     }
     return false;
 }
 
 static bool init()
 {
-    if (!isX11())
+    if (isXwayland())
     {
         VBClLogFatalError("The parent session seems to be non-X11. Exiting...\n");
         VBClLogInfo("This service needs X display server for resizing and multi monitor handling to work\n");
