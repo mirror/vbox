@@ -135,7 +135,7 @@ QString UIChooserNodeMachine::description() const
     return m_strDescription;
 }
 
-QString UIChooserNodeMachine::definition() const
+QString UIChooserNodeMachine::definition(bool) const
 {
     return QString("m=%1").arg(UIChooserAbstractModel::toOldStyleUuid(id()));
 }

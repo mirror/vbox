@@ -58,8 +58,12 @@ public:
     virtual QString fullName() const /* override */;
     /** Returns item description. */
     virtual QString description() const /* override */;
-    /** Returns item definition. */
-    virtual QString definition() const /* override */;
+    /** Returns item definition.
+      * @param  fFull  Brings whether full definition is required
+      *                which is used while saving group definitions,
+      *                otherwise short definition will be returned,
+      *                which is used while saving last chosen node. */
+    virtual QString definition(bool fFull = false) const /* override */;
 
     /** Returns whether there are children of certain @a enmType. */
     virtual bool hasNodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const /* override */;

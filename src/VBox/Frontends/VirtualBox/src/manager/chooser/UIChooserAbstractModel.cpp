@@ -940,14 +940,17 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     /* Iterate over all the global-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Global))
     {
-        const QString strGlobalDescriptor(pNode->isFavorite() ? "nf" : "n");
-        orders[strExtraDataKey] << QString("%1=GLOBAL").arg(strGlobalDescriptor);
+        /* Append node definition: */
+        AssertPtrReturnVoid(pNode);
+        orders[strExtraDataKey] << pNode->definition(true /* full */);
     }
     /* Iterate over all the group-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Group))
     {
-        const QString strGroupDescriptor(pNode->toGroupNode()->isOpened() ? "go" : "gc");
-        orders[strExtraDataKey] << QString("%1=%2").arg(strGroupDescriptor, pNode->name());
+        /* Append node definition: */
+        AssertPtrReturnVoid(pNode);
+        orders[strExtraDataKey] << pNode->definition(true /* full */);
+        /* Go recursively through children: */
         gatherGroupOrders(orders, pNode);
     }
     /* Iterate over all the machine-nodes: */
@@ -957,10 +960,10 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
         AssertPtrReturnVoid(pNode);
         UIChooserNodeMachine *pMachineNode = pNode->toMachineNode();
         AssertPtrReturnVoid(pMachineNode);
-        /* Make sure it's local or real cloud machine node exactly: */
+        /* Append node definition, make sure it's local or real cloud machine node only: */
         if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
             || pMachineNode->cacheType() == UIVirtualMachineItemType_CloudReal)
-            orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pMachineNode->id()));
+            orders[strExtraDataKey] << pNode->definition(true /* full */);
     }
 }
 

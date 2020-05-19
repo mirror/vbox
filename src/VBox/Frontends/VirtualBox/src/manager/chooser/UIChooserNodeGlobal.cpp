@@ -74,9 +74,11 @@ QString UIChooserNodeGlobal::description() const
     return name();
 }
 
-QString UIChooserNodeGlobal::definition() const
+QString UIChooserNodeGlobal::definition(bool fFull /* = false */) const
 {
-    return QString("n=%1").arg("GLOBAL");
+    return   fFull
+           ? QString("n%1=%2").arg(isFavorite() ? "f" : "").arg("GLOBAL")
+           : QString("n=%1").arg("GLOBAL");
 }
 
 bool UIChooserNodeGlobal::hasNodes(UIChooserNodeType enmType /* = UIChooserNodeType_Any */) const

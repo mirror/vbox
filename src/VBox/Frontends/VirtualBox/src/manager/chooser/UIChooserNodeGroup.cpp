@@ -104,9 +104,11 @@ QString UIChooserNodeGroup::description() const
     return m_strDescription;
 }
 
-QString UIChooserNodeGroup::definition() const
+QString UIChooserNodeGroup::definition(bool fFull /* = false */) const
 {
-    return QString("g=%1").arg(fullName());
+    return   fFull
+           ? QString("g%1=%2").arg(isOpened() ? "o" : "").arg(name())
+           : QString("g=%1").arg(fullName());
 }
 
 bool UIChooserNodeGroup::hasNodes(UIChooserNodeType enmType /* = UIChooserNodeType_Any */) const
