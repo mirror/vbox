@@ -137,7 +137,8 @@ QString UIChooserNodeMachine::description() const
 
 QString UIChooserNodeMachine::definition(bool) const
 {
-    return QString("m=%1").arg(UIChooserAbstractModel::toOldStyleUuid(id()));
+    const QString strNodePrefix = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_MachinePrefix);
+    return QString("%1=%2").arg(strNodePrefix).arg(UIChooserAbstractModel::toOldStyleUuid(id()));
 }
 
 bool UIChooserNodeMachine::hasNodes(UIChooserNodeType enmType /* = UIChooserNodeType_Any */) const

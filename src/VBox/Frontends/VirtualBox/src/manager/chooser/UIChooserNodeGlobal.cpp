@@ -16,6 +16,7 @@
  */
 
 /* GUI includes: */
+#include "UIChooserAbstractModel.h"
 #include "UIChooserNodeGlobal.h"
 
 /* Other VBox includes: */
@@ -76,9 +77,12 @@ QString UIChooserNodeGlobal::description() const
 
 QString UIChooserNodeGlobal::definition(bool fFull /* = false */) const
 {
+    const QString strNodePrefix = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GlobalPrefix);
+    const QString strNodeOptionFavorite = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GlobalOptionFavorite);
+    const QString strNodeValueDefault = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GlobalValueDefault);
     return   fFull
-           ? QString("n%1=%2").arg(isFavorite() ? "f" : "").arg("GLOBAL")
-           : QString("n=%1").arg("GLOBAL");
+           ? QString("%1%2=%3").arg(strNodePrefix).arg(isFavorite() ? strNodeOptionFavorite : "").arg(strNodeValueDefault)
+           : QString("%1=%2").arg(strNodePrefix).arg(strNodeValueDefault);
 }
 
 bool UIChooserNodeGlobal::hasNodes(UIChooserNodeType enmType /* = UIChooserNodeType_Any */) const
