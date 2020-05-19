@@ -244,6 +244,8 @@ DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
 }
 #endif
 
+
+#ifdef IN_RING3
 DECLINLINE(uint16_t) virtioReadUsedRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t fFlags = 0;
@@ -254,7 +256,6 @@ DECLINLINE(uint16_t) virtioReadUsedRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
     return fFlags;
 }
 
-#ifdef IN_RING3
 DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t uAvailEventIdx)
 {
     /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
