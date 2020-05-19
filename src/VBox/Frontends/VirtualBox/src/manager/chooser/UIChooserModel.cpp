@@ -761,8 +761,8 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
     /* Restore selection if there was some item before: */
     if (!strDefinition.isNull())
         setSelectedItem(strDefinition);
-    /* Else make sure at least one item selected: */
-    else
+    /* Make sure at least one item selected: */
+    if (!currentItem())
         makeSureAtLeastOneItemSelected();
 }
 
