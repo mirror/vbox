@@ -701,6 +701,9 @@ static uint8_t virtioScsiEstimateCdbLen(uint8_t uCmd, uint8_t cbMax)
 
 #endif /* LOG_ENABLED */
 
+
+/* @todo Figure out how to implement this with R0 changes. Not used by current linux driver */
+#if 0
 static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEventType, uint32_t uReason)
 {
     switch (uEventType)
@@ -781,6 +784,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
 
     return rc;
 }
+#endif
 
 /** Internal worker. */
 static void virtioScsiR3FreeReq(PVIRTIOSCSITARGET pTarget, PVIRTIOSCSIREQ pReq)
