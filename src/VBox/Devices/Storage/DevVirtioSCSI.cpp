@@ -342,6 +342,8 @@ AssertCompile(sizeof(VIRTIO_SCSI_CTRL_UNION_T) == 24); /* VIRTIOSCSI_CTRL_T forc
 typedef struct VIRTIOSCSIWORKER
 {
     SUPSEMEVENT                     hEvtProcess;                /**< handle of associated sleep/wake-up semaphore      */
+    bool volatile                   fSleeping;                  /**< Flags whether worker thread is sleeping or not    */
+    bool volatile                   fNotified;                  /**< Flags whether worker thread notified              */
 } VIRTIOSCSIWORKER;
 /** Pointer to a VirtIO SCSI worker. */
 typedef VIRTIOSCSIWORKER *PVIRTIOSCSIWORKER;
@@ -352,8 +354,6 @@ typedef VIRTIOSCSIWORKER *PVIRTIOSCSIWORKER;
 typedef struct VIRTIOSCSIWORKERR3
 {
     R3PTRTYPE(PPDMTHREAD)           pThread;                    /**< pointer to worker thread's handle                 */
-    bool volatile                   fSleeping;                  /**< Flags whether worker thread is sleeping or not    */
-    bool volatile                   fNotified;                  /**< Flags whether worker thread notified              */
     uint16_t                        auRedoDescs[VIRTQ_MAX_SIZE];/**< List of previously suspended reqs to re-submit    */
     uint16_t                        cRedoDescs;                 /**< Number of redo desc chain head desc idxes in list */
 } VIRTIOSCSIWORKERR3;
@@ -566,6 +566,47 @@ typedef struct VIRTIOSCSIREQ
     uint8_t                        uStatus;                     /**< SCSI status code                                  */
 } VIRTIOSCSIREQ;
 typedef VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
+
+
+/**
+ * @callback_method_impl{VIRTIOCORER0,pfnQueueNotified}
+ */
+static DECLCALLBACK(void) virtioScsiNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t qIdx)
+{
+
+    RT_NOREF(pVirtio);
+    PVIRTIOSCSI pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    AssertReturnVoid(qIdx < VIRTIOSCSI_QUEUE_CNT);
+    PVIRTIOSCSIWORKER pWorker = &pThis->aWorkers[qIdx];
+
+#if defined (IN_RING3) && defined (LOG_ENABLED)
+   RTLogFlush(NULL);
+#endif
+
+    if (qIdx == CONTROLQ_IDX || IS_REQ_QUEUE(qIdx))
+    {
+        Log6Func(("%s has available data\n", VIRTQNAME(qIdx)));
+        /* Wake queue's worker thread up if sleeping */
+        if (!ASMAtomicXchgBool(&pWorker->fNotified, true))
+        {
+            if (ASMAtomicReadBool(&pWorker->fSleeping))
+            {
+                Log6Func(("waking %s worker.\n", VIRTQNAME(qIdx)));
+                int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pWorker->hEvtProcess);
+                AssertRC(rc);
+            }
+        }
+    }
+    else if (qIdx == EVENTQ_IDX)
+    {
+        Log3Func(("Driver queued buffer(s) to %s\n", VIRTQNAME(qIdx)));
+//        if (ASMAtomicXchgBool(&pThis->fEventsMissed, false))
+//            virtioScsiR3ReportEventsMissed(pDevIns, pThis, 0);
+    }
+    else
+        LogFunc(("Unexpected queue idx (ignoring): %d\n", qIdx));
+}
 
 
 #ifdef IN_RING3 /* spans most of the file, at the moment. */
@@ -1508,12 +1549,12 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
         if (!pWorkerR3->cRedoDescs && virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, qIdx))
         {
             /* Atomic interlocks avoid missing alarm while going to sleep & notifier waking the awoken */
-            ASMAtomicWriteBool(&pWorkerR3->fSleeping, true);
-            bool fNotificationSent = ASMAtomicXchgBool(&pWorkerR3->fNotified, false);
+            ASMAtomicWriteBool(&pWorker->fSleeping, true);
+            bool fNotificationSent = ASMAtomicXchgBool(&pWorker->fNotified, false);
             if (!fNotificationSent)
             {
                 Log6Func(("%s worker sleeping...\n", VIRTQNAME(qIdx)));
-                Assert(ASMAtomicReadBool(&pWorkerR3->fSleeping));
+                Assert(ASMAtomicReadBool(&pWorker->fSleeping));
                 int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pWorker->hEvtProcess, RT_INDEFINITE_WAIT);
                 AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
                 if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
@@ -1521,9 +1562,9 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                 if (rc == VERR_INTERRUPTED)
                     continue;
                 Log6Func(("%s worker woken\n", VIRTQNAME(qIdx)));
-                ASMAtomicWriteBool(&pWorkerR3->fNotified, false);
+                ASMAtomicWriteBool(&pWorker->fNotified, false);
             }
-            ASMAtomicWriteBool(&pWorkerR3->fSleeping, false);
+            ASMAtomicWriteBool(&pWorker->fSleeping, false);
         }
 
         if (!pThis->afQueueAttached[qIdx])
@@ -1623,46 +1664,6 @@ DECLINLINE(void) virtioScsiR3ReportTargetAdded(PDMDEVINS pDevInsPVIRTIOSCSI pThi
 }
 
 #endif
-
-/**
- * @callback_method_impl{VIRTIOCORER3,pfnQueueNotified}
- */
-static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint16_t qIdx)
-{
-    PVIRTIOSCSI         pThis     = RT_FROM_MEMBER(pVirtio, VIRTIOSCSI, Virtio);
-    PVIRTIOSCSICC       pThisCC   = RT_FROM_MEMBER(pVirtioCC, VIRTIOSCSICC, Virtio);
-    PPDMDEVINS          pDevIns   = pThisCC->pDevIns;
-    AssertReturnVoid(qIdx < VIRTIOSCSI_QUEUE_CNT);
-    PVIRTIOSCSIWORKER   pWorker   = &pThis->aWorkers[qIdx];
-    PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[qIdx];
-
-#ifdef LOG_ENABLED
-    RTLogFlush(NULL);
-#endif
-
-    if (qIdx == CONTROLQ_IDX || IS_REQ_QUEUE(qIdx))
-    {
-        Log6Func(("%s has available data\n", VIRTQNAME(qIdx)));
-        /* Wake queue's worker thread up if sleeping */
-        if (!ASMAtomicXchgBool(&pWorkerR3->fNotified, true))
-        {
-            if (ASMAtomicReadBool(&pWorkerR3->fSleeping))
-            {
-                Log6Func(("waking %s worker.\n", VIRTQNAME(qIdx)));
-                int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pWorker->hEvtProcess);
-                AssertRC(rc);
-            }
-        }
-    }
-    else if (qIdx == EVENTQ_IDX)
-    {
-        Log3Func(("Driver queued buffer(s) to %s\n", VIRTQNAME(qIdx)));
-        if (ASMAtomicXchgBool(&pThis->fEventsMissed, false))
-            virtioScsiR3ReportEventsMissed(pDevIns, pThis, 0);
-    }
-    else
-        LogFunc(("Unexpected queue idx (ignoring): %d\n", qIdx));
-}
 
 /**
  * @callback_method_impl{VIRTIOCORER3,pfnStatusChanged}
@@ -2319,7 +2320,7 @@ static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
      */
     for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
     {
-        if (ASMAtomicReadBool(&pThisCC->aWorkers[qIdx].fSleeping))
+        if (ASMAtomicReadBool(&pThis->aWorkers[qIdx].fSleeping))
         {
             Log6Func(("waking %s worker.\n", VIRTQNAME(qIdx)));
             int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[qIdx].hEvtProcess);
@@ -2435,6 +2436,7 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
      * Quick initialization of the state data, making sure that the destructor always works.
      */
     pThisCC->pDevIns = pDevIns;
+//    pDevIns->pVirtio = &pThis->Virtio;
 
     LogFunc(("PDM device instance: %d\n", iInstance));
     RTStrPrintf(pThis->szInstance, sizeof(pThis->szInstance), "VIRTIOSCSI%d", iInstance);
@@ -2480,8 +2482,8 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     pThis->virtioScsiConfig.uMaxLun         = VIRTIOSCSI_MAX_LUN;
 
     /* Initialize the generic Virtio core: */
+    pThisCC->Virtio.pfnQueueNotified        = virtioScsiNotified;
     pThisCC->Virtio.pfnStatusChanged        = virtioScsiR3StatusChanged;
-    pThisCC->Virtio.pfnQueueNotified        = virtioScsiR3Notified;
     pThisCC->Virtio.pfnDevCapRead           = virtioScsiR3DevCapRead;
     pThisCC->Virtio.pfnDevCapWrite          = virtioScsiR3DevCapWrite;
 
@@ -2641,10 +2643,13 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
 static DECLCALLBACK(int) virtioScsiRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+
     PVIRTIOSCSI   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
 
-    return virtioCoreRZInit(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
+
+    pThisCC->Virtio.pfnQueueNotified = virtioScsiNotified;
+    return virtioCoreRZInit(pDevIns, &pThis->Virtio);
 }
 
 #endif /* !IN_RING3 */

@@ -80,7 +80,7 @@ typedef PVIRTIOSGSEG *PPVIRTIOSGSEG;
 
 typedef struct VIRTIOSGBUF
 {
-    PVIRTIOSGSEG paSegs;                                       /**< Pointer to the scatter/gather array       */
+    PVIRTIOSGSEG paSegs;                                        /**< Pointer to the scatter/gather array       */
     unsigned  cSegs;                                            /**< Number of segments                        */
     unsigned  idxSeg;                                           /**< Current segment we are in                 */
     /** @todo r=bird: s/gcPhys/GCPhys/g as this is how we write it everywhere. */
@@ -250,7 +250,8 @@ typedef struct VIRTIO_PCI_CAP_LOCATIONS_T
 typedef struct VIRTIOCORE
 {
     char                        szInstance[16];                     /**< Instance name, e.g. "VIRTIOSCSI0"         */
-    PPDMDEVINS                  pDevIns;                            /**< Client device instance                    */
+    PPDMDEVINS                  pDevInsR0;                          /**< Client device instance                    */
+    PPDMDEVINS                  pDevInsR3;                          /**< Client device instance                    */
     RTGCPHYS                    aGCPhysQueueDesc[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
     RTGCPHYS                    aGCPhysQueueAvail[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
     RTGCPHYS                    aGCPhysQueueUsed[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q used structs   GUEST */
@@ -296,6 +297,8 @@ typedef struct VIRTIOCORE
     /** @} */
 } VIRTIOCORE;
 
+#define MAX_NAME 64
+
 
 /**
  * The core/common state of the VirtIO PCI devices, ring-3 edition.
@@ -314,16 +317,6 @@ typedef struct VIRTIOCORER3
      *                     valid)
      */
     DECLCALLBACKMEMBER(void, pfnStatusChanged)(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint32_t fDriverOk);
-
-    /**
-     * When guest-to-host queue notifications are enabled, the guest driver notifies the host
-     * that the avail queue has buffers, and this callback informs the client.
-     *
-     * @param   pVirtio    Pointer to the shared virtio state.
-     * @param   pVirtioCC  Pointer to the ring-3 virtio state.
-     * @param   idxQueue   Index of the notified queue
-     */
-    DECLCALLBACKMEMBER(void, pfnQueueNotified)(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint16_t idxQueue);
 
     /**
      * Implementation-specific client callback to access VirtIO Device-specific capabilities
@@ -346,7 +339,20 @@ typedef struct VIRTIOCORER3
      * @param   cbToWrite  Number of bytes to write.
      */
     DECLCALLBACKMEMBER(int,  pfnDevCapWrite)(PPDMDEVINS pDevIns, uint32_t offCap, const void *pvBuf, uint32_t cbWrite);
+
+
+    /**
+     * When guest-to-host queue notifications are enabled, the guest driver notifies the host
+     * that the avail queue has buffers, and this callback informs the client.
+     *
+     * @param   pVirtio    Pointer to the shared virtio state.
+     * @param   pVirtioCC  Pointer to the ring-3 virtio state.
+     * @param   idxQueue   Index of the notified queue
+     */
+    DECLCALLBACKMEMBER(void, pfnQueueNotified)(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
+
     /** @} */
+
 
     R3PTRTYPE(PVIRTIO_PCI_CFG_CAP_T)    pPciCfgCap;                 /**< Pointer to struct in the PCI configuration area. */
     R3PTRTYPE(PVIRTIO_PCI_NOTIFY_CAP_T) pNotifyCap;                 /**< Pointer to struct in the PCI configuration area. */
@@ -358,6 +364,7 @@ typedef struct VIRTIOCORER3
     R3PTRTYPE(uint8_t *)        pbDevSpecificCfg;                   /**< Pointer to client's struct                */
     R3PTRTYPE(uint8_t *)        pbPrevDevSpecificCfg;               /**< Previous read dev-specific cfg of client  */
     bool                        fGenUpdatePending;                  /**< If set, update cfg gen after driver reads */
+    char                        pcszMmioName[MAX_NAME];             /**< MMIO mapping name                         */
 } VIRTIOCORER3;
 
 
@@ -366,7 +373,17 @@ typedef struct VIRTIOCORER3
  */
 typedef struct VIRTIOCORER0
 {
-    uint64_t                    uUnusedAtTheMoment;
+
+    /**
+     * When guest-to-host queue notifications are enabled, the guest driver notifies the host
+     * that the avail queue has buffers, and this callback informs the client.
+     *
+     * @param   pVirtio    Pointer to the shared virtio state.
+     * @param   pVirtioCC  Pointer to the ring-3 virtio state.
+     * @param   idxQueue   Index of the notified queue
+     */
+    DECLCALLBACKMEMBER(void, pfnQueueNotified)(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
+
 } VIRTIOCORER0;
 
 
@@ -510,7 +527,7 @@ void     virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED en
 void     virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
 int      virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
                       const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
-int      virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
+int      virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
 const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState);
 
 /** @} */

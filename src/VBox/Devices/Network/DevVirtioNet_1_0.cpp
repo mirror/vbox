@@ -30,24 +30,23 @@
 //#define LOG_GROUP LOG_GROUP_DRV_NET
 #define LOG_GROUP LOG_GROUP_DEV_VIRTIO
 #define VIRTIONET_WITH_GSO
-#include <iprt/types.h>
 
+#include <iprt/types.h>
+#include <iprt/errcore.h>
+#include <iprt/assert.h>
+#include <iprt/string.h>
+
+#include <VBox/sup.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmnetifs.h>
 #include <VBox/msi.h>
 #include <VBox/version.h>
-//#include <VBox/asm.h>
 #include <VBox/log.h>
-#include <iprt/errcore.h>
-#include <iprt/assert.h>
-#include <iprt/string.h>
-#include <VBox/sup.h>
+
 #ifdef IN_RING3
-#include <VBox/VBoxPktDmp.h>
-#endif
-#ifdef IN_RING3
+# include <VBox/VBoxPktDmp.h>
 # include <iprt/alloc.h>
 # include <iprt/memcache.h>
 # include <iprt/semaphore.h>
@@ -60,7 +59,7 @@
 #include "VBoxDD.h"
 
 /* After debugging single instance case, restore instance name logging */
-#define INSTANCE(pState) (char *)(pState->szInstanceName ? "" : "") // Avoid requiring RT_NOREF in some funcs
+#define INSTANCE(pState) (char *)(pState->szInstanceName ? pState->szInstanceName : "") // Avoid requiring RT_NOREF in some funcs
 
 #define VIRTIONET_SAVED_STATE_VERSION          UINT32_C(1)
 #define VIRTIONET_MAX_QPAIRS                   1
@@ -98,6 +97,22 @@
 #define CTRLQIDX          (FEATURE_ENABLED(MQ) ? ((VIRTIONET_MAX_QPAIRS - 1) * 2 + 2) : 2)
 
 #define LUN0    0
+
+#ifdef USING_CRITICAL_SECTION
+#  define ENTER_CRITICAL_SECTION \
+        do { \
+            int rc = virtioNetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY); \
+            AssertRCReturnVoid(rc); \
+            RT_NOREF(rc);
+        } while(0)
+#  define LEAVE_CRITICAL_SECTION \
+        do { \
+            virtioNetR3CsLeave(pDevIns, pThis); \
+        } while(0)
+#else
+#   define ENTER_CRITICAL_SECTION do { } while(0)
+#   define LEAVE_CRITICAL_SECTION do { } while(0)
+#endif
 
 /*
  * Glossary of networking acronyms used in the following bit definitions:
@@ -293,6 +308,8 @@ uint64_t    uOffloads;                                          /**< offloads   
 typedef struct VIRTIONETWORKER
 {
     SUPSEMEVENT                     hEvtProcess;                /**< handle of associated sleep/wake-up semaphore      */
+    bool volatile                   fSleeping;                  /**< Flags whether worker thread is sleeping or not    */
+    bool volatile                   fNotified;                  /**< Flags whether worker thread notified              */
 } VIRTIONETWORKER;
 /** Pointer to a VirtIO SCSI worker. */
 typedef VIRTIONETWORKER *PVIRTIONETWORKER;
@@ -303,8 +320,6 @@ typedef VIRTIONETWORKER *PVIRTIONETWORKER;
 typedef struct VIRTIONETWORKERR3
 {
     R3PTRTYPE(PPDMTHREAD)           pThread;                    /**< pointer to worker thread's handle                 */
-    bool volatile                   fSleeping;                  /**< Flags whether worker thread is sleeping or not    */
-    bool volatile                   fNotified;                  /**< Flags whether worker thread notified              */
     uint16_t                        idxQueue;                   /**< Index of associated queue                         */
 } VIRTIONETWORKERR3;
 /** Pointer to a VirtIO SCSI worker. */
@@ -529,6 +544,66 @@ typedef CTX_SUFF(VIRTIONET) VIRTIONETCC;
  * Pointer to the instance data for the current context. */
 typedef CTX_SUFF(PVIRTIONET) PVIRTIONETCC;
 
+/**
+ * Wakeup the RX thread.
+ */
+static void virtioNetWakeupRxBufWaiter(PPDMDEVINS pDevIns)
+{
+    PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
+
+    AssertReturnVoid(pThis->hEventRxDescAvail != NIL_SUPSEMEVENT);
+
+    STAM_COUNTER_INC(&pThis->StatRxOverflowWakeup);
+
+    Log10Func(("%s Waking downstream driver's Rx buf waiter thread\n", INSTANCE(pThis)));
+    int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEventRxDescAvail);
+    AssertRC(rc);
+}
+
+/**
+ * @callback_method_impl{VIRTIOCORER0,pfnQueueNotified}
+ */
+static DECLCALLBACK(void) virtioNetQueueNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
+{
+    RT_NOREF(pVirtio);
+    PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
+
+    uint16_t idxWorker;
+    if (idxQueue == CTRLQIDX)
+        idxWorker = pThis->cWorkers - 1;
+    else
+        idxWorker = idxQueue / 2;
+
+    PVIRTIONETWORKER pWorker = &pThis->aWorkers[idxWorker];
+    AssertReturnVoid(idxQueue < pThis->cVirtQueues);
+
+#if defined (IN_RING3) && defined (LOG_ENABLED)
+     RTLogFlush(NULL);
+#endif
+
+    Log10Func(("%s %s has available buffers\n", INSTANCE(pThis), VIRTQNAME(idxQueue)));
+
+    if (IS_RX_QUEUE(idxQueue))
+    {
+        Log10Func(("%s Receive buffers have been added, waking Rx thread.\n",
+            INSTANCE(pThis)));
+        virtioNetWakeupRxBufWaiter(pDevIns);
+    }
+    else
+    {
+        /* Wake queue's worker thread up if sleeping (e.g. a Tx queue, or the control queue */
+        if (!ASMAtomicXchgBool(&pWorker->fNotified, true))
+        {
+            if (ASMAtomicReadBool(&pWorker->fSleeping))
+            {
+                Log10Func(("%s waking %s worker.\n", INSTANCE(pThis), VIRTQNAME(idxQueue)));
+                int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pWorker->hEvtProcess);
+                AssertRC(rc);
+            }
+        }
+    }
+}
+
 #ifdef IN_RING3 /* spans most of the file, at the moment. */
 
 /**
@@ -541,21 +616,6 @@ static DECLCALLBACK(int) virtioNetR3WakeupWorker(PPDMDEVINS pDevIns, PPDMTHREAD 
     return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[(uintptr_t)pThread->pvUser].hEvtProcess);
 }
 
-/**
- * Wakeup the RX thread.
- */
-static void virtioNetR3WakeupRxBufWaiter(PPDMDEVINS pDevIns)
-{
-    PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
-
-    AssertReturnVoid(pThis->hEventRxDescAvail != NIL_SUPSEMEVENT);
-
-    STAM_COUNTER_INC(&pThis->StatRxOverflowWakeup);
-
-    Log10Func(("%s Waking downstream driver's Rx buf waiter thread\n", INSTANCE(pThis)));
-    int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEventRxDescAvail);
-    AssertRC(rc);
-}
 
 DECLINLINE(void) virtioNetR3SetVirtqNames(PVIRTIONET pThis)
 {
@@ -1032,7 +1092,7 @@ static void virtioNetR3QuiesceDevice(PPDMDEVINS pDevIns, VIRTIOVMSTATECHANGED en
      * Wake downstream network driver thread that's waiting for Rx buffers to be available
      * to tell it that's going to happen...
      */
-    virtioNetR3WakeupRxBufWaiter(pDevIns);
+    virtioNetWakeupRxBufWaiter(pDevIns);
 
     PDMDevHlpSetAsyncNotification(pDevIns, virtioNetR3DeviceQuiesced);
 
@@ -1067,7 +1127,7 @@ static DECLCALLBACK(void) virtioNetR3SuspendOrPowerOff(PPDMDEVINS pDevIns, VIRTI
     RT_NOREF2(pThis, pThisCC);
 
     virtioNetR3QuiesceDevice(pDevIns, enmType);
-    virtioNetR3WakeupRxBufWaiter(pDevIns);
+    virtioNetWakeupRxBufWaiter(pDevIns);
 }
 
 /**
@@ -2157,7 +2217,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
         }
     }
 
-    int cPkts = virtioCoreR3QueuePendingCount(pVirtio->pDevIns, pVirtio, idxTxQueue);
+    int cPkts = virtioCoreR3QueuePendingCount(pVirtio->pDevInsR3, pVirtio, idxTxQueue);
     if (!cPkts)
     {
         LogFunc(("%s No packets to send found on %s\n", INSTANCE(pThis), VIRTQNAME(idxTxQueue)));
@@ -2174,7 +2234,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
 
     int rc;
     PVIRTIO_DESC_CHAIN_T pDescChain = NULL;
-    while ((rc = virtioCoreR3QueuePeek(pVirtio->pDevIns, pVirtio, idxTxQueue, &pDescChain)) == VINF_SUCCESS)
+    while ((rc = virtioCoreR3QueuePeek(pVirtio->pDevInsR3, pVirtio, idxTxQueue, &pDescChain)) == VINF_SUCCESS)
     {
         Log10Func(("%s fetched descriptor chain from %s\n", INSTANCE(pThis), VIRTQNAME(idxTxQueue)));
 
@@ -2204,7 +2264,6 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
             PPDMNETWORKGSO pGso = virtioNetR3SetupGsoCtx(&Gso, &PktHdr);
             uint64_t uOffset;
 
-            /** @todo Optimize away the extra copying! (lazy bird) */
             PPDMSCATTERGATHER pSgBufToPdmLeafDevice;
             rc = pThisCC->pDrv->pfnAllocBuf(pThisCC->pDrv, uSize, pGso, &pSgBufToPdmLeafDevice);
             if (RT_SUCCESS(rc))
@@ -2264,10 +2323,10 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
             virtioCoreR3QueueSkip(pVirtio, idxTxQueue);
 
             /* No data to return to guest, but call is needed put elem (e.g. desc chain) on used ring */
-            virtioCoreR3QueuePut(pVirtio->pDevIns, pVirtio, idxTxQueue, NULL, pDescChain, false);
+            virtioCoreR3QueuePut(pVirtio->pDevInsR3, pVirtio, idxTxQueue, NULL, pDescChain, false);
 
             /* Update used ring idx and notify guest that we've transmitted the data it sent */
-            virtioCoreQueueSync(pVirtio->pDevIns, pVirtio, idxTxQueue, false);
+            virtioCoreQueueSync(pVirtio->pDevInsR3, pVirtio, idxTxQueue, false);
         }
 
         virtioCoreR3DescChainRelease(pVirtio, pDescChain);
@@ -2299,52 +2358,6 @@ static DECLCALLBACK(void) virtioNetR3NetworkDown_XmitPending(PPDMINETWORKDOWN pI
 }
 
 /**
- * @callback_method_impl{VIRTIOCORER3,pfnQueueNotified}
- */
-static DECLCALLBACK(void) virtioNetR3QueueNotified(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint16_t idxQueue)
-{
-    PVIRTIONET         pThis     = RT_FROM_MEMBER(pVirtio, VIRTIONET, Virtio);
-    PVIRTIONETCC       pThisCC   = RT_FROM_MEMBER(pVirtioCC, VIRTIONETCC, Virtio);
-    PPDMDEVINS         pDevIns   = pThisCC->pDevIns;
-
-    uint16_t idxWorker;
-    if (idxQueue == CTRLQIDX)
-        idxWorker = pThis->cWorkers - 1;
-    else
-        idxWorker = idxQueue / 2;
-
-    PVIRTIONETWORKER   pWorker   = &pThis->aWorkers[idxWorker];
-    PVIRTIONETWORKERR3 pWorkerR3 = &pThisCC->aWorkers[idxWorker];
-    AssertReturnVoid(idxQueue < pThis->cVirtQueues);
-
-#ifdef LOG_ENABLED
-    RTLogFlush(NULL);
-#endif
-
-    Log10Func(("%s %s has available buffers\n", INSTANCE(pThis), VIRTQNAME(idxQueue)));
-
-    if (IS_RX_QUEUE(idxQueue))
-    {
-        Log10Func(("%s Receive buffers have been added, waking Rx thread.\n",
-            INSTANCE(pThis)));
-        virtioNetR3WakeupRxBufWaiter(pDevIns);
-    }
-    else
-    {
-        /* Wake queue's worker thread up if sleeping (e.g. a Tx queue, or the control queue */
-        if (!ASMAtomicXchgBool(&pWorkerR3->fNotified, true))
-        {
-            if (ASMAtomicReadBool(&pWorkerR3->fSleeping))
-            {
-                Log10Func(("%s waking %s worker.\n", INSTANCE(pThis), VIRTQNAME(idxQueue)));
-                int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pWorker->hEvtProcess);
-                AssertRC(rc);
-            }
-        }
-    }
-}
-
-/**
  * @callback_method_impl{FNPDMTHREADDEV}
  */
 static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
@@ -2366,15 +2379,14 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
     {
         if (virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, idxQueue))
         {
-            virtioCoreQueueSetNotify(&pThis->Virtio, idxQueue, true);
             /* Atomic interlocks avoid missing alarm while going to sleep & notifier waking the awoken */
-            ASMAtomicWriteBool(&pWorkerR3->fSleeping, true);
-            bool fNotificationSent = ASMAtomicXchgBool(&pWorkerR3->fNotified, false);
+            virtioCoreQueueSetNotify(&pThis->Virtio, idxQueue, true);
+            ASMAtomicWriteBool(&pWorker->fSleeping, true);
+            bool fNotificationSent = ASMAtomicXchgBool(&pWorker->fNotified, false);
             if (!fNotificationSent)
             {
-                virtioCoreQueueSetNotify(&pThis->Virtio, idxQueue, true);
                 Log10Func(("%s %s worker sleeping...\n", INSTANCE(pThis), VIRTQNAME(idxQueue)));
-                Assert(ASMAtomicReadBool(&pWorkerR3->fSleeping));
+                Assert(ASMAtomicReadBool(&pWorker->fSleeping));
                 int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pWorker->hEvtProcess, RT_INDEFINITE_WAIT);
                 STAM_COUNTER_INC(&pThis->StatTransmitByThread);
                 AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
@@ -2386,9 +2398,9 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
                     continue;
                 }
                 Log10Func(("%s %s worker woken\n", INSTANCE(pThis), VIRTQNAME(idxQueue)));
-                ASMAtomicWriteBool(&pWorkerR3->fNotified, false);
+                ASMAtomicWriteBool(&pWorker->fNotified, false);
             }
-            ASMAtomicWriteBool(&pWorkerR3->fSleeping, false);
+            ASMAtomicWriteBool(&pWorker->fSleeping, false);
             virtioCoreQueueSetNotify(&pThis->Virtio, idxQueue, false);
         }
 
@@ -2413,12 +2425,12 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
              {
                  Log10Func(("%s Notified of data to transmit\n", INSTANCE(pThis)));
                  virtioNetR3TransmitPendingPackets(pDevIns, pThis, pThisCC,
-                                                   idxQueue, true /* fOnWorkerThread */);
+                                                   idxQueue, false /* fOnWorkerThread */);
              }
 
              /* Rx queues aren't handled by our worker threads. Instead, the PDM network
               * leaf driver invokes PDMINETWORKDOWN.pfnWaitReceiveAvail() callback,
-              * which waits until notified directly by virtioNetR3QueueNotified()
+              * which waits until notified directly by virtioNetQueueNotified()
               * that guest IN buffers have been added to receive virt queue.
               */
         }
@@ -2426,6 +2438,7 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
     return VINF_SUCCESS;
 }
 
+#ifdef USING_CRITICAL_SECTION
 DECLINLINE(int) virtioNetR3CsEnter(PPDMDEVINS pDevIns, PVIRTIONET pThis, int rcBusy)
 {
     RT_NOREF(pDevIns, pThis, rcBusy);
@@ -2439,7 +2452,7 @@ DECLINLINE(void) virtioNetR3CsLeave(PPDMDEVINS pDevIns, PVIRTIONET pThis)
     RT_NOREF(pDevIns, pThis);
     LogFunc(("%s CS unimplemented. What does the critical section protect in orig driver??", INSTANCE(pThis)));
 }
-
+#endif /* USING_CRITICAL_SECTION */
 
 /**
  * @callback_method_impl{FNTMTIMERDEV, Link Up Timer handler.}
@@ -2450,14 +2463,13 @@ static DECLCALLBACK(void) virtioNetR3LinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pT
     PVIRTIONETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
     RT_NOREF(pTimer, pvUser);
 
-    int rc = virtioNetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY);
-    AssertRCReturnVoid(rc);
+    ENTER_CRITICAL_SECTION;
 
     SET_LINK_UP(pThis);
 
-    virtioNetR3WakeupRxBufWaiter(pDevIns);
+    virtioNetWakeupRxBufWaiter(pDevIns);
 
-    virtioNetR3CsLeave(pDevIns, pThis);
+    LEAVE_CRITICAL_SECTION;
 
     LogFunc(("%s Link is up\n", INSTANCE(pThis)));
 
@@ -2645,8 +2657,8 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
         {
             (void) virtioCoreR3QueueAttach(&pThis->Virtio, idxQueue, VIRTQNAME(idxQueue));
             pThis->afQueueAttached[idxQueue] = true;
-            virtioCoreQueueIsEmpty(pThisCC->pDevIns, &pThis->Virtio, idxQueue);
-            virtioCoreQueueSetNotify(&pThis->Virtio, idxQueue, true);
+            if (virtioCoreQueueIsEmpty(pThisCC->pDevIns, &pThis->Virtio, idxQueue))
+                virtioCoreQueueSetNotify(&pThis->Virtio, idxQueue, true);
         }
     }
     else
@@ -2694,8 +2706,9 @@ static DECLCALLBACK(void) virtioNetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, u
     Log7Func(("%s\n", INSTANCE(pThis)));
     AssertLogRelReturnVoid(iLUN == 0);
 
-    int rc = virtioNetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY);
-    AssertMsgRCReturnVoid(rc, ("Failed to enter critical section"));
+    ENTER_CRITICAL_SECTION;
+
+    RT_NOREF(pThis);
 
     /*
      * Zero important members.
@@ -2703,7 +2716,7 @@ static DECLCALLBACK(void) virtioNetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, u
     pThisCC->pDrvBase = NULL;
     pThisCC->pDrv     = NULL;
 
-    virtioNetR3CsLeave(pDevIns, pThis);
+    LEAVE_CRITICAL_SECTION;
 }
 
 /**
@@ -2722,10 +2735,11 @@ static DECLCALLBACK(int) virtioNetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    int rc = virtioNetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY);
-    AssertMsgRCReturn(rc, ("Failed to enter critical section"), rc);
+    ENTER_CRITICAL_SECTION;
 
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pDevIns->IBase, &pThisCC->pDrvBase, "Network Port");
+    RT_NOREF(pThis);
+
+    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pDevIns->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
         pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
@@ -2736,7 +2750,7 @@ static DECLCALLBACK(int) virtioNetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
                     Log(("%s No attached driver!\n", INSTANCE(pThis)));
 
-    virtioNetR3CsLeave(pDevIns, pThis);
+    LEAVE_CRITICAL_SECTION;
     return rc;
 
     AssertRelease(!pThisCC->pDrvBase);
@@ -2811,7 +2825,6 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
      */
     Log7Func(("PDM device instance: %d\n", iInstance));
 
-
     RTStrPrintf(pThis->szInstanceName, sizeof(pThis->szInstanceName), "VIRTIONET", iInstance);
 
     pThisCC->pDevIns     = pDevIns;
@@ -2863,6 +2876,9 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     /* Copy the MAC address configured for the VM to the MMIO accessible Virtio dev-specific config area */
     memcpy(pThis->virtioNetConfig.uMacAddress.au8, pThis->macConfigured.au8, sizeof(pThis->virtioNetConfig.uMacAddress)); /* TBD */
 
+
+    LogFunc(("RC=%RTbool R0=%RTbool\n", pDevIns->fRCEnabled, pDevIns->fR0Enabled));
+
     /*
      * Do core virtio initialization.
      */
@@ -2876,8 +2892,8 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
 #endif
 
     /* Initialize the generic Virtio core: */
+    pThisCC->Virtio.pfnQueueNotified        = virtioNetQueueNotified;
     pThisCC->Virtio.pfnStatusChanged        = virtioNetR3StatusChanged;
-    pThisCC->Virtio.pfnQueueNotified        = virtioNetR3QueueNotified;
     pThisCC->Virtio.pfnDevCapRead           = virtioNetR3DevCapRead;
     pThisCC->Virtio.pfnDevCapWrite          = virtioNetR3DevCapWrite;
 
@@ -3013,26 +3029,21 @@ static DECLCALLBACK(int) virtioNetRZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PVIRTIONET   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     PVIRTIONETCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIONETCC);
-
-LogRelFunc(("\n"));
-    return virtioCoreRZInit(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
+    pThisCC->Virtio.pfnQueueNotified = virtioNetQueueNotified;
+    return virtioCoreRZInit(pDevIns, &pThis->Virtio);
 }
 
 #endif /* !IN_RING3 */
-
-
 
 /**
  * The device registration structure.
  */
 const PDMDEVREG g_DeviceVirtioNet_1_0 =
 {
-    /* .uVersion = */             PDM_DEVREG_VERSION,
+    /* .uVersion = */               PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "virtio-net-1-dot-0",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE | PDM_DEVREG_FLAGS_RZ
-                                    | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION
-                                    | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE | PDM_DEVREG_FLAGS_RZ,
     /* .fClass = */                 PDM_DEVREG_CLASS_NETWORK,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
