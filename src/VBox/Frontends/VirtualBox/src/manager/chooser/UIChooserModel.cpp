@@ -220,13 +220,27 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
     UIChooserItem *pItem = 0;
     const QString strItemType = strDefinition.section('=', 0, 0);
     const QString strItemDescriptor = strDefinition.section('=', 1, -1);
-    /* Its a group-item definition? */
-    if (strItemType == definitionOption(NodeDef_GroupPrefix))
+    /* Its a local group-item definition? */
+    if (strItemType == definitionOption(NodeDef_GroupPrefixLocal))
     {
         /* Search for group-item with passed descriptor (name): */
         pItem = root()->searchForItem(strItemDescriptor,
                                       UIChooserItemSearchFlag_LocalGroup |
+                                      UIChooserItemSearchFlag_ExactId);
+    }
+    /* Its a provider group-item definition? */
+    else if (strItemType == definitionOption(NodeDef_GroupPrefixProvider))
+    {
+        /* Search for group-item with passed descriptor (name): */
+        pItem = root()->searchForItem(strItemDescriptor,
                                       UIChooserItemSearchFlag_CloudProvider |
+                                      UIChooserItemSearchFlag_ExactId);
+    }
+    /* Its a profile group-item definition? */
+    else if (strItemType == definitionOption(NodeDef_GroupPrefixProfile))
+    {
+        /* Search for group-item with passed descriptor (name): */
+        pItem = root()->searchForItem(strItemDescriptor,
                                       UIChooserItemSearchFlag_CloudProfile |
                                       UIChooserItemSearchFlag_ExactId);
     }

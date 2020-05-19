@@ -327,7 +327,9 @@ QString UIChooserAbstractModel::definitionOption(NodeDef enmOption)
         /* Machine nodes: */
         case NodeDef_MachinePrefix:        return "m";
         /* Group nodes: */
-        case NodeDef_GroupPrefix:          return "g";
+        case NodeDef_GroupPrefixLocal:     return "g";
+        case NodeDef_GroupPrefixProvider:  return "p";
+        case NodeDef_GroupPrefixProfile:   return "a";
         case NodeDef_GroupOptionOpened:    return "o";
     }
     return QString();
@@ -716,9 +718,14 @@ bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
         return false;
 
     /* Prepare required group definition reg-exp: */
-    const QString strNodePrefix = definitionOption(NodeDef_GroupPrefix);
+    const QString strNodePrefixLocal = definitionOption(NodeDef_GroupPrefixLocal);
+    const QString strNodePrefixProvider = definitionOption(NodeDef_GroupPrefixProvider);
+    const QString strNodePrefixProfile = definitionOption(NodeDef_GroupPrefixProfile);
     const QString strNodeOptionOpened = definitionOption(NodeDef_GroupOptionOpened);
-    const QString strDefinitionTemplate = QString("%1(\\S)*=%2").arg(strNodePrefix, strName);
+    const QString strDefinitionTemplate = QString("[%1%2%3](\\S)*=%4").arg(strNodePrefixLocal,
+                                                                           strNodePrefixProvider,
+                                                                           strNodePrefixProfile,
+                                                                           strName);
     const QRegExp definitionRegExp(strDefinitionTemplate);
     /* For each the group definition: */
     foreach (const QString &strDefinition, definitions)

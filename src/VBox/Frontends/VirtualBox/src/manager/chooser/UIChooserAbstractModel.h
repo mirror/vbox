@@ -71,7 +71,9 @@ public:
         NodeDef_GlobalOptionFavorite,
         NodeDef_GlobalValueDefault,
         NodeDef_MachinePrefix,
-        NodeDef_GroupPrefix,
+        NodeDef_GroupPrefixLocal,
+        NodeDef_GroupPrefixProvider,
+        NodeDef_GroupPrefixProfile,
         NodeDef_GroupOptionOpened,
     };
 
