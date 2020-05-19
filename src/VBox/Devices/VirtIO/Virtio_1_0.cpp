@@ -1459,9 +1459,9 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
         if (fWrite) /* Guest WRITE pCommonCfg->uDeviceStatus */
         {
             uint8_t const fNewStatus = *(uint8_t *)pv;
-            Log7Func(("Guest wrote uDeviceStatus ................ (", fNewStatus ^ pVirtio->uDeviceStatus));
+            Log7Func(("Guest wrote uDeviceStatus ................ ("));
             if (LogIs7Enabled())
-                virtioLogDeviceStatus(fNewStatus);
+                virtioLogDeviceStatus(fNewStatus ^ pVirtio->uDeviceStatus);
             Log7((")\n"));
 
             /* If the status changed or we were reset, we need to go to ring-3 as
