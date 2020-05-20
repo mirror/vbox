@@ -1862,7 +1862,10 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
     }
 
     if (pThisCC->pDrv && fPromiscChanged)
-        pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, pThis->fPromiscuous | pThis->fAllMulticast);
+        if (pThis->fPromiscuous | pThis->fAllMulticast)
+            pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, true);
+        else
+            pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, false);
 
     return VIRTIONET_OK;
 }

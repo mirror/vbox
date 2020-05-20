@@ -880,7 +880,7 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
  * @returns VINF_SUCCESS
  */
 static int virtioScsiR3ReqErr4(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC, uint16_t qIdx,
-                               PVIRTIO_DESC_CHAIN_T pDescChain, uint32_t cbResidual, uint8_t bStatus, uint8_t bResponse,
+                               PVIRTIO_DESC_CHAIN_T pDescChain, size_t cbResidual, uint8_t bStatus, uint8_t bResponse,
                                uint8_t *pbSense, size_t cbSense, size_t cbSenseCfg)
 {
     REQ_RESP_HDR_T RespHdr;
@@ -1194,8 +1194,8 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         /* Force rejection. */ /** @todo figure out right way to handle. Note this is a very
          * vague and confusing part of the VirtIO spec (which deviates from the SCSI standard).
          * I have not been able to determine how to implement this properly.  I've checked the
-         * source code of Guest drivers, so far, and none I've found use it. If logs show
-         * this warning implementing it can be re-visited */
+         * source code of Guest drivers, and so far none seem to use it. If logs show
+         * this warning, implementing it can be re-visited */
         uScsiLun = 0xff;
     }
     else
