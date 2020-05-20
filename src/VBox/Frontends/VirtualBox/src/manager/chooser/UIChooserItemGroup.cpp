@@ -938,7 +938,13 @@ void UIChooserItemGroup::sltNameEditingFinished()
     /* Enumerate all the group names: */
     QStringList groupNames;
     foreach (UIChooserItem *pItem, parentItem()->items(UIChooserNodeType_Group))
-        groupNames << pItem->name();
+    {
+        AssertPtrReturnVoid(pItem);
+        UIChooserItemGroup *pGroupItem = pItem->toGroupItem();
+        AssertPtrReturnVoid(pGroupItem);
+        if (pGroupItem->groupType() == UIChooserNodeGroupType_Local)
+            groupNames << pItem->name();
+    }
     /* If proposed name is empty or not unique, reject it: */
     QString strNewName = m_pNameEditorWidget->text().trimmed();
     if (strNewName.isEmpty() || groupNames.contains(strNewName))
