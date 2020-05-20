@@ -90,7 +90,7 @@ bool UIWizardAddCloudVM::addCloudVMs()
         else
         {
             /* Show "Add cloud machine" progress: */
-            msgCenter().showModalProgressDialog(comProgress, tr("Add cloud machine ..."),
+            msgCenter().showModalProgressDialog(comProgress, QString(),
                                                 ":/progress_new_cloud_vm_90px.png", this, 0);
             /* Check for canceled progress: */
             if (comProgress.GetCanceled())

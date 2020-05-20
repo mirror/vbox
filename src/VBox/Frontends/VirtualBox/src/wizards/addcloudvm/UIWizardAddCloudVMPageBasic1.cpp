@@ -307,7 +307,7 @@ void UIWizardAddCloudVMPage1::populateAccountInstances()
             }
 
             /* Show "Acquire cloud instances" progress: */
-            msgCenter().showModalProgressDialog(comProgress, UIWizardAddCloudVM::tr("Acquire cloud instances ..."),
+            msgCenter().showModalProgressDialog(comProgress, QString(),
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
