@@ -965,19 +965,17 @@ static DECLCALLBACK(int) supHardNtViCertVerifyCallback(PCRTCRX509CERTIFICATE pCe
      * callback, it must be because of the build certificate.  We trust the
      * build certificate without any second thoughts.
      */
-    if (hCertPaths == NIL_RTCRX509CERTPATHS)
+    if (RTCrX509Certificate_Compare(pCert, &g_BuildX509Cert) == 0)
     {
-        if (RTCrX509Certificate_Compare(pCert, &g_BuildX509Cert) == 0) /* healthy paranoia */
-            return VINF_SUCCESS;
-        int rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_NOT_BUILD_CERT_IPE, "Not valid kernel code signature (fFlags=%#x).", fFlags);
-        if (pErrInfo)
-        {
-            RTErrInfoAdd(pErrInfo, rc, "\n\nExe cert:\n");
-            RTAsn1Dump(&pCert->SeqCore.Asn1Core, 0 /*fFlags*/, 0 /*uLevel*/, supHardNtViAsn1DumpToErrInfo, pErrInfo);
-            RTErrInfoAdd(pErrInfo, rc, "\n\nBuild cert:\n");
-            RTAsn1Dump(&g_BuildX509Cert.SeqCore.Asn1Core, 0 /*fFlags*/, 0 /*uLevel*/, supHardNtViAsn1DumpToErrInfo, pErrInfo);
-        }
-        return rc;
+#ifdef VBOX_STRICT
+        Assert(RTCrX509CertPathsGetPathCount(hCertPaths) == 1);
+        bool     fTrusted = false;
+        uint32_t cNodes = UINT32_MAX;
+        int      rcVerify = -1;
+        int rc = RTCrX509CertPathsQueryPathInfo(hCertPaths, 0, &fTrusted, &cNodes, NULL, NULL, NULL, NULL, &rcVerify);
+        AssertRC(rc); AssertRC(rcVerify); Assert(fTrusted); Assert(cNodes == 1);
+#endif
+        return VINF_SUCCESS;
     }
 
     /*
