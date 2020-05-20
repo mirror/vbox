@@ -855,14 +855,23 @@ int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, U
     switch (enmType)
     {
         case UIChooserNodeType_Group:
-            strDefinitionTemplateShort = QString("^g(\\S)*=");
-            strDefinitionTemplateFull = QString("^g(\\S)*=%1$").arg(strName);
+        {
+            const QString strNodePrefixLocal = definitionOption(NodeDef_GroupPrefixLocal);
+            const QString strNodePrefixProvider = definitionOption(NodeDef_GroupPrefixProvider);
+            const QString strNodePrefixProfile = definitionOption(NodeDef_GroupPrefixProfile);
+            strDefinitionTemplateShort = QString("^[%1%2%3](\\S)*=").arg(strNodePrefixLocal, strNodePrefixProvider, strNodePrefixProfile);
+            strDefinitionTemplateFull = QString("^[%1%2%3](\\S)*=%4$").arg(strNodePrefixLocal, strNodePrefixProvider, strNodePrefixProfile, strName);
             break;
+        }
         case UIChooserNodeType_Machine:
-            strDefinitionTemplateShort = QString("^m=");
-            strDefinitionTemplateFull = QString("^m=%1$").arg(strName);
+        {
+            const QString strNodePrefix = definitionOption(NodeDef_MachinePrefix);
+            strDefinitionTemplateShort = QString("^%1=").arg(strNodePrefix);
+            strDefinitionTemplateFull = QString("^%1=%2$").arg(strNodePrefix, strName);
             break;
-        default: return -1;
+        }
+        default:
+            return -1;
     }
     QRegExp definitionRegExpShort(strDefinitionTemplateShort);
     QRegExp definitionRegExpFull(strDefinitionTemplateFull);
