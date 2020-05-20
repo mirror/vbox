@@ -161,6 +161,7 @@ static bool ReadAtRva(MYIMAGE *pThis, uint32_t uRva, void *pvBuf, size_t cbToRea
             cbToRead -= cbThis;
             if (!cbToRead)
                 return true;
+            uRva += cbThis;
             pvBuf = (uint8_t *)pvBuf + cbThis;
         }
 
