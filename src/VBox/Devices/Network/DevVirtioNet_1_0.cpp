@@ -1862,10 +1862,16 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
     }
 
     if (pThisCC->pDrv && fPromiscChanged)
+    {
         if (pThis->fPromiscuous | pThis->fAllMulticast)
+        {
             pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, true);
+        }
         else
+        {
             pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, false);
+        }
+    }
 
     return VIRTIONET_OK;
 }
@@ -2752,7 +2758,6 @@ static DECLCALLBACK(int) virtioNetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
 
     RT_NOREF(pThis);
 
-//    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pDevIns->IBase, &pThisCC->pDrvBase, "Network Port");
     int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
@@ -2765,8 +2770,6 @@ static DECLCALLBACK(int) virtioNetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
                     Log(("%s No attached driver!\n", INSTANCE(pThis)));
 
     LEAVE_CRITICAL_SECTION;
-    return rc;
-
     AssertRelease(!pThisCC->pDrvBase);
     return rc;
 }
