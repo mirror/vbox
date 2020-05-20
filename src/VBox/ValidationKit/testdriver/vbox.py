@@ -3573,6 +3573,13 @@ class TestDriver(base.TestDriver):                                              
                 oTxsSession.syncExec('/bin/mount', ('/bin/mount',), fIgnoreErrors = True);
                 oTxsSession.syncExec('/bin/cat', ('/bin/cat', '/etc/fstab'), fIgnoreErrors = True);
                 oTxsSession.syncExec('/bin/dmesg', ('/bin/dmesg',), fIgnoreErrors = True);
+                oTxsSession.syncExec('/usr/bin/lshw', ('/usr/bin/lshw', '-c', 'disk'), fIgnoreErrors = True);
+                reporter.log('txsCdWait: Mounting manually ...');
+                for _ in range(3):
+                    oTxsSession.syncExec('/bin/mount', ('/bin/mount', '/dev/sr0', '${CDROM}'), fIgnoreErrors = True);
+                    time.sleep(5);
+                reporter.log('txsCdWait: Re-Listing media directory:');
+                oTxsSession.syncExec('/bin/ls', ('/bin/ls', '-l', '-a', '-R', '/media'), fIgnoreErrors = True);
             else:
                 # ASSUMES that we always install Windows on drive C right now.
                 sWinDir = "C:\\Windows\\System32\\";
