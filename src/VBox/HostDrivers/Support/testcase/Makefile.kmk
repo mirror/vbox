@@ -108,7 +108,11 @@ ifdef VBOX_WITH_TESTCASES
 endif
 
 tstGIP-2Hardened_TEMPLATE = VBoxR3HardenedTstExe
-tstGIP-2Hardened_DEFS = PROGRAM_NAME_STR=\"tstGIP-2\"
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ tstGIP-2Hardened_DEFS = PROGRAM_NAME_STR="tstGIP-2"
+else
+ tstGIP-2Hardened_DEFS = PROGRAM_NAME_STR=\"tstGIP-2\"
+endif
 tstGIP-2Hardened_SOURCES = ../SUPR3HardenedMainTemplateTestcase.cpp
 tstGIP-2Hardened_NAME = tstGIP-2
 

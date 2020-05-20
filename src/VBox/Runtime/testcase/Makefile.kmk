@@ -772,7 +772,11 @@ endif
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0DbgKrnlInfoDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0DbgKrnlInfoDriverHardened_NAME = tstRTR0DbgKrnlInfoDriver
- tstRTR0DbgKrnlInfoDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0DbgKrnlInfoDriver\"
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  tstRTR0DbgKrnlInfoDriverHardened_DEFS = PROGRAM_NAME_STR="tstRTR0DbgKrnlInfoDriver"
+ else
+  tstRTR0DbgKrnlInfoDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0DbgKrnlInfoDriver\"
+ endif
  tstRTR0DbgKrnlInfoDriverHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
  tstRTR0DbgKrnlInfoDriver_TEMPLATE = VBoxR3HardenedTstDll
 else
@@ -794,7 +798,11 @@ endif
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0MemUserKernelDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0MemUserKernelDriverHardened_NAME = tstRTR0MemUserKernelDriver
- tstRTR0MemUserKernelDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0MemUserKernelDriver\"
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  tstRTR0MemUserKernelDriverHardened_DEFS = PROGRAM_NAME_STR="tstRTR0MemUserKernelDriver"
+ else
+  tstRTR0MemUserKernelDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0MemUserKernelDriver\"
+ endif
  tstRTR0MemUserKernelDriverHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
  tstRTR0MemUserKernelDriver_TEMPLATE = VBoxR3HardenedTstDll
 else
@@ -815,7 +823,11 @@ endif
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0SemMutexDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0SemMutexDriverHardened_NAME = tstRTR0SemMutexDriver
- tstRTR0SemMutexDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0SemMutexDriver\"
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  tstRTR0SemMutexDriverHardened_DEFS = PROGRAM_NAME_STR="tstRTR0SemMutexDriver"
+ else
+  tstRTR0SemMutexDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0SemMutexDriver\"
+ endif
  tstRTR0SemMutexDriverHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
  tstRTR0SemMutexDriver_TEMPLATE = VBoxR3HardenedTstDll
 else
@@ -836,7 +848,11 @@ endif
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0ThreadDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0ThreadDriverHardened_NAME = tstRTR0ThreadDriver
- tstRTR0ThreadDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0ThreadDriver\"
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  tstRTR0ThreadDriverHardened_DEFS = PROGRAM_NAME_STR="tstRTR0ThreadDriver"
+ else
+  tstRTR0ThreadDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0ThreadDriver\"
+ endif
  tstRTR0ThreadDriverHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
  tstRTR0ThreadDriver_TEMPLATE = VBoxR3HardenedTstDll
 else
@@ -857,7 +873,11 @@ endif
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0TimerDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0TimerDriverHardened_NAME = tstRTR0TimerDriver
- tstRTR0TimerDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0TimerDriver\"
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  tstRTR0TimerDriverHardened_DEFS = PROGRAM_NAME_STR="tstRTR0TimerDriver"
+ else
+  tstRTR0TimerDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0TimerDriver\"
+ endif
  tstRTR0TimerDriverHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
  tstRTR0TimerDriver_TEMPLATE = VBoxR3HardenedTstDll
 else
@@ -878,7 +898,11 @@ endif
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0ThreadPreemptionDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0ThreadPreemptionDriverHardened_NAME = tstRTR0ThreadPreemptionDriver
- tstRTR0ThreadPreemptionDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0ThreadPreemptionDriver\"
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  tstRTR0ThreadPreemptionDriverHardened_DEFS = PROGRAM_NAME_STR="tstRTR0ThreadPreemptionDriver"
+ else
+  tstRTR0ThreadPreemptionDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0ThreadPreemptionDriver\"
+ endif
  tstRTR0ThreadPreemptionDriverHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
  tstRTR0ThreadPreemptionDriver_TEMPLATE = VBoxR3HardenedTstDll
 else

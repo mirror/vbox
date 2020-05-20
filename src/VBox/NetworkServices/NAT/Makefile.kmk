@@ -36,7 +36,11 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
 PROGRAMS += VBoxNetNATHardened
 VBoxNetNATHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VBoxNetNATHardened_NAME     = VBoxNetNAT
+  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+VBoxNetNATHardened_DEFS     = SERVICE_NAME="VBoxNetNAT"
+  else
 VBoxNetNATHardened_DEFS     = SERVICE_NAME=\"VBoxNetNAT\"
+  endif
 VBoxNetNATHardened_SOURCES  = VBoxNetNATHardened.cpp
 VBoxNetNATHardened_LDFLAGS.win = /SUBSYSTEM:windows
 $(call VBOX_SET_VER_INFO_EXE,VBoxNetNATHardened,VirtualBox NAT Engine,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
