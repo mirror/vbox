@@ -21,6 +21,7 @@
 # Marker.
 VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 
+VBOX_WITH_VIRTIO_NET_1_0              = 1
 
 #
 # kBuild stuff
