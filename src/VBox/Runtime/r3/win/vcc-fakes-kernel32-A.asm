@@ -34,6 +34,8 @@ GLOBALNAME vcc100_kernel32_fakes_asm
 
 %ifdef VCC_FAKES_TARGET_VCC100
  %include "vcc-fakes-kernel32-100.h"
+%elifdef VCC_FAKES_TARGET_VCC140
+ %include "vcc-fakes-kernel32-141.h"
 %elifdef VCC_FAKES_TARGET_VCC141
  %include "vcc-fakes-kernel32-141.h"
 %elifdef VCC_FAKES_TARGET_VCC142

@@ -68,6 +68,8 @@ static volatile bool g_fInitialized = false;
 #define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cb) DECLARE_FUNCTION_POINTER(a_Name, a_cb)
 #ifdef VCC_FAKES_TARGET_VCC100
 # include "vcc-fakes-kernel32-100.h"
+#elif defined(VCC_FAKES_TARGET_VCC140)
+# include "vcc-fakes-kernel32-141.h"
 #elif defined(VCC_FAKES_TARGET_VCC141)
 # include "vcc-fakes-kernel32-141.h"
 #elif defined(VCC_FAKES_TARGET_VCC142)
@@ -380,7 +382,7 @@ DECL_KERNEL32(ULONGLONG) Fake_VerSetConditionMask(ULONGLONG fConditionMask, DWOR
 }
 
 
-#if VCC_FAKES_TARGET >= 141
+#if VCC_FAKES_TARGET >= 140
 /** @since 5.0 (windows 2000) */
 DECL_KERNEL32(BOOL) Fake_GetModuleHandleExW(DWORD dwFlags, LPCWSTR pwszModuleName, HMODULE *phModule)
 {
@@ -424,7 +426,7 @@ DECL_KERNEL32(BOOL) Fake_GetModuleHandleExW(DWORD dwFlags, LPCWSTR pwszModuleNam
 #endif /* VCC_FAKES_TARGET >= 141 */
 
 
-#if VCC_FAKES_TARGET >= 141
+#if VCC_FAKES_TARGET >= 140
 /** @since 5.0 (windows 2000) */
 DECL_KERNEL32(BOOL) Fake_SetFilePointerEx(HANDLE hFile, LARGE_INTEGER offDistanceToMove,
                                           PLARGE_INTEGER pNewFilePointer, DWORD dwMoveMethod)
@@ -475,10 +477,10 @@ DECL_KERNEL32(BOOL) Fake_SetFilePointerEx(HANDLE hFile, LARGE_INTEGER offDistanc
     }
     return FakeSetLastErrorFromNtStatus(rcNt);
 }
-#endif /* VCC_FAKES_TARGET >= 141 */
+#endif /* VCC_FAKES_TARGET >= 140 */
 
 
-#if VCC_FAKES_TARGET >= 141
+#if VCC_FAKES_TARGET >= 140
 /** @since 5.0 (windows 2000) */
 DECL_KERNEL32(BOOL) Fake_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER pcbFile)
 {
@@ -492,7 +494,7 @@ DECL_KERNEL32(BOOL) Fake_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER pcbFile)
     }
     return FakeSetLastErrorFromNtStatus(rcNt);
 }
-#endif /* VCC_FAKES_TARGET >= 141 */
+#endif /* VCC_FAKES_TARGET >= 140 */
 
 
 
@@ -501,7 +503,7 @@ DECL_KERNEL32(BOOL) Fake_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER pcbFile)
  * NT 3.51 stuff.
  */
 
-#if VCC_FAKES_TARGET >= 141
+#if VCC_FAKES_TARGET >= 140
 /** @since 4.0 */
 DECL_KERNEL32(HANDLE) Fake_FindFirstFileExW(LPCWSTR pwszFileName, FINDEX_INFO_LEVELS enmInfoLevel, LPVOID pvFindFileData,
                                             FINDEX_SEARCH_OPS enmSearchOp, LPVOID pvSearchFilter, DWORD dwAdditionalFlags)
@@ -517,7 +519,7 @@ DECL_KERNEL32(HANDLE) Fake_FindFirstFileExW(LPCWSTR pwszFileName, FINDEX_INFO_LE
 
     return FindFirstFileW(pwszFileName, (WIN32_FIND_DATAW *)pvFindFileData);
 }
-#endif /* VCC_FAKES_TARGET >= 141 */
+#endif /* VCC_FAKES_TARGET >= 140 */
 
 
 DECL_KERNEL32(BOOL) Fake_IsProcessorFeaturePresent(DWORD enmProcessorFeature)
@@ -553,7 +555,7 @@ DECL_KERNEL32(BOOL) Fake_CancelIo(HANDLE hHandle)
  * NT 3.50 stuff.
  */
 
-#if VCC_FAKES_TARGET >= 141
+#if VCC_FAKES_TARGET >= 140
 /** @since 3.51 */
 DECL_KERNEL32(VOID) Fake_FreeLibraryAndExitThread(HMODULE hLibModule, DWORD dwExitCode)
 {
@@ -561,7 +563,7 @@ DECL_KERNEL32(VOID) Fake_FreeLibraryAndExitThread(HMODULE hLibModule, DWORD dwEx
         FreeModule(hLibModule);
     ExitThread(dwExitCode);
 }
-#endif /* VCC_FAKES_TARGET >= 141 */
+#endif /* VCC_FAKES_TARGET >= 140 */
 
 
 DECL_KERNEL32(BOOL) Fake_IsDebuggerPresent(VOID)
@@ -733,7 +735,7 @@ DECL_KERNEL32(int) Fake_GetLocaleInfoA(LCID idLocale, LCTYPE enmType, LPSTR pDat
 }
 
 
-#if VCC_FAKES_TARGET >= 141
+#if VCC_FAKES_TARGET >= 140
 /** @since 3.51 */
 DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesW(LOCALE_ENUMPROCW pfnLocaleEnum, DWORD dwFlags)
 {
@@ -741,7 +743,7 @@ DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesW(LOCALE_ENUMPROCW pfnLocaleEnum, DWOR
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
-#endif /* VCC_FAKES_TARGET >= 141 */
+#endif /* VCC_FAKES_TARGET >= 140 */
 
 
 DECL_KERNEL32(BOOL) Fake_EnumSystemLocalesA(LOCALE_ENUMPROCA pfnCallback, DWORD fFlags)
@@ -838,6 +840,8 @@ DECLASM(void) FakeResolve_kernel32(void)
 #define MAKE_IMPORT_ENTRY(a_uMajorVer, a_uMinorVer, a_Name, a_cb) RESOLVE_IMPORT(a_uMajorVer, a_uMinorVer, a_Name, a_cb)
 #ifdef VCC_FAKES_TARGET_VCC100
 # include "vcc-fakes-kernel32-100.h"
+#elif defined(VCC_FAKES_TARGET_VCC140)
+# include "vcc-fakes-kernel32-141.h"
 #elif defined(VCC_FAKES_TARGET_VCC141)
 # include "vcc-fakes-kernel32-141.h"
 #elif defined(VCC_FAKES_TARGET_VCC142)
