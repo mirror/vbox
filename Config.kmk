@@ -21,6 +21,7 @@
 # Marker.
 VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 
+VBOX_WITH_VIRTIO_NET_1_0              = 1
 
 #
 # kBuild stuff
@@ -303,8 +304,8 @@ VBOX_SUPPORTED_HOST_ARCHS := amd64
 #
 # The VirtualBox Configuration Defaults.
 #
-# We try to document all the build configuration options here, thing which
-# aren't enabled by default is left commented out just to show that they
+# We try to document all the build configuration options here, things which
+# aren't enabled by default are left commented out just to show that they
 # exist and which value they should have (usually 1, but anyway).
 #
 
@@ -1679,7 +1680,7 @@ if1of ($(VBOX_VCC_TOOL_STEM), VCC140 VCC141 VCC142)
 endif
 
 #
-# Default too nonsense.
+# Default tool nonsense.
 #
 ## @todo Remove the default tool crap here!
 TOOL = $(VBOX_GCC_TOOL)

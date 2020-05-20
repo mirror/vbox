@@ -716,8 +716,8 @@ DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis)
     char *cp = pszBuf;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aFeatures); ++i)
     {
-        bool isOffered = fFeaturesOfferedMask & s_aFeatures[i].fFeatureBit;
-        bool isNegotiated = pThis->fNegotiatedFeatures & s_aFeatures[i].fFeatureBit;
+        uint64_t isOffered = fFeaturesOfferedMask & s_aFeatures[i].fFeatureBit;
+        uint64_t isNegotiated = pThis->fNegotiatedFeatures & s_aFeatures[i].fFeatureBit;
         cp += RTStrPrintf(cp, cbBuf - (cp - pszBuf), "        %s       %s   %s",
                           isOffered ? "+" : "-", isNegotiated ? "x" : " ", s_aFeatures[i].pcszDesc);
     }
@@ -786,9 +786,8 @@ DECLINLINE(bool) virtioNetValidateRequiredFeatures(uint32_t fFeatures)
              && (   offConfig == RT_UOFFSETOF(VIRTIONET_CONFIG_T, member) \
                  || offConfig == RT_UOFFSETOF(VIRTIONET_CONFIG_T, member) + sizeof(uint32_t)) \
              && cb == sizeof(uint32_t)) \
-         || (   offConfig >= RT_UOFFSETOF(VIRTIONET_CONFIG_T, member) \
-             && offConfig + cb <= RT_UOFFSETOF(VIRTIONET_CONFIG_T, member) \
-                                + RT_SIZEOFMEMB(VIRTIONET_CONFIG_T, member)) )
+         || (offConfig + cb <= RT_UOFFSETOF(VIRTIONET_CONFIG_T, member) \
+                             + RT_SIZEOFMEMB(VIRTIONET_CONFIG_T, member)) )
 
 #ifdef LOG_ENABLED
 # define LOG_NET_CONFIG_ACCESSOR(member) \
@@ -1578,7 +1577,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
             }
 
             /* Append remaining Rx pkt or as much current desc chain has room for */
-            uint32_t cbCropped = RT_MIN(cb, cbDescChainLeft);
+            size_t cbCropped = RT_MIN(cb, cbDescChainLeft);
             paVirtSegsToGuest[cSegs].cbSeg = cbCropped;
             paVirtSegsToGuest[cSegs].pvSeg = ((uint8_t *)pvBuf) + uOffset;
             cbDescChainLeft -= cbCropped;
@@ -1792,7 +1791,7 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterf
 static void virtioNetR3PullChain(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO_DESC_CHAIN_T pDescChain, void *pv, uint16_t cb)
 {
     uint8_t *pb = (uint8_t *)pv;
-    uint16_t cbLim = RT_MIN(pDescChain->cbPhysSend, cb);
+    size_t cbLim = RT_MIN(pDescChain->cbPhysSend, cb);
     while (cbLim)
     {
         size_t cbSeg = cbLim;
