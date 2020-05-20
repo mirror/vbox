@@ -404,33 +404,11 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
  	$(VBOX_PATH_RUNTIME_SRC)/win/RTErrConvertFromWin32.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/win/errmsgwin.cpp
 
- # Add necessary compiler specific files from libcmt.lib and the lib dir.
+ # Add necessary compiler specific files from the compiler lib dir.
  ifeq ($(KBUILD_TARGET),win)
-   SUPR3HardenedStatic_VBOX_LIBC_OBJS = chkstk.obj
-   ifeq ($(KBUILD_TARGET_ARCH),x86)
-    SUPR3HardenedStatic_VBOX_LIBC_OBJS += \
-    	alloca16.obj \
-    	ulldiv.obj \
-    	ulldvrm.obj \
-    	ullrem.obj \
-    	ullshr.obj \
-    	lldiv.obj \
-    	lldvrm.obj \
-    	llmul.obj \
-    	llrem.obj \
-    	llshl.obj \
-    	llshr.obj \
-    	rotl.obj \
-    	rotr.obj
-   endif
-  SUPR3HardenedStatic_SOURCES.win += $(addprefix $(SUPR3HardenedStatic_0_OUTDIR)/,$(SUPR3HardenedStatic_VBOX_LIBC_OBJS))
-
-  $(addprefix $$(SUPR3HardenedStatic_0_OUTDIR)/,$(SUPR3HardenedStatic_VBOX_LIBC_OBJS)): \
-		$$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.$(KBUILD_TARGET_ARCH))_LIB)/libcmt.lib | $$(dir $$@)
-	$(TOOL_$(TEMPLATE_VBOXR3HARDENEDEXE_TOOL.win.$(KBUILD_TARGET_ARCH))_AR) "$<" \
-		/EXTRACT:`$(TOOL_$(TEMPLATE_VBOXR3HARDENEDEXE_TOOL.win.$(KBUILD_TARGET_ARCH))_AR) "$<" /LIST \
-		          | $(SED_EXT) -n -e '/[\\/:]$(notdir $@)/p'` \
-		"/OUT:$@"
+  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
+  SUPR3HardenedStatic_SOURCES.win += \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/chkstk.obj
  endif
 endif
 
