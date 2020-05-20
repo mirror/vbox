@@ -1060,8 +1060,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
  * more virtioCoreR3QueuePut() calls to inform the guest driver there is data in the queue.
  * Explicit notifications (e.g. interrupt or MSI-X) will be sent to the guest,
  * depending on VirtIO features negotiated and conditions, otherwise the guest
- * will detect the update by polling. (see VirtIO 1.0
- * specification, Section 2.4 "Virtqueues").
+ * will detect the update by polling. (see VirtIO 1.0 specification, Section 2.4 "Virtqueues").
  *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
@@ -1134,7 +1133,12 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
 
-    AssertMsgReturnVoid(IS_DRIVER_OK(pVirtio), ("Guest driver not in ready state.\n"));
+    if (!IS_DRIVER_OK(pVirtio))
+    {
+        LogFunc(("Guest driver not in ready state.\n"));
+        return;
+    }
+//    AssertMsgReturnVoid(IS_DRIVER_OK(pVirtio), ("Guest driver not in ready state.\n"));
     if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
     {
         if (pVirtq->fEventThresholdReached)
@@ -2059,7 +2063,7 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
      *
      * VirtIO 1.0 spec says 8-bit, unaligned in MMIO space. Example/diagram
      * of spec shows it as a 32-bit field with upper bits 'reserved'
-     * Will take spec words more literally than the diagram for now.
+     * Will take spec's words more literally than the diagram for now.
      */
     pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
