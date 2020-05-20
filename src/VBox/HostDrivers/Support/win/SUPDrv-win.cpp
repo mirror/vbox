@@ -508,9 +508,9 @@ static NTSTATUS vboxdrvNtCreateDevices(PDRIVER_OBJECT pDrvObj)
 
                         if (NT_SUCCESS(rcNt))
                         {
-                            PSUPDRVDEVEXTERRORINFO pDevExtStub = (PSUPDRVDEVEXTERRORINFO)g_pDevObjStub->DeviceExtension;
-                            pDevExtStub->Common.pMainDrvExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
-                            pDevExtStub->Common.u32Cookie   = SUPDRVDEVEXTERRORINFO_COOKIE;
+                            PSUPDRVDEVEXTERRORINFO pDevExtErrInf = (PSUPDRVDEVEXTERRORINFO)g_pDevObjStub->DeviceExtension;
+                            pDevExtErrInf->Common.pMainDrvExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
+                            pDevExtErrInf->Common.u32Cookie   = SUPDRVDEVEXTERRORINFO_COOKIE;
 
 #endif
                             /* Done. */
@@ -3170,7 +3170,7 @@ static POBJECT_TYPE supdrvNtProtectGetAlpcPortObjectType(uint32_t uSessionId, co
             rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), szTmp);
             AssertRCSuccess(rc);
 
-            bool fDone = supdrvNtProtectGetAlpcPortObjectType2(wszPortNm, &pObjType);
+            fDone = supdrvNtProtectGetAlpcPortObjectType2(wszPortNm, &pObjType);
             if (!fDone)
             {
                 wszPortNm[offRand] = '\0';
@@ -4733,7 +4733,7 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
         if (pHandleInfo->UniqueProcessId == idLastDebugger)
             continue;
         PEPROCESS pDbgProc;
-        NTSTATUS rcNt = PsLookupProcessByProcessId(pHandleInfo->UniqueProcessId, &pDbgProc);
+        rcNt = PsLookupProcessByProcessId(pHandleInfo->UniqueProcessId, &pDbgProc);
         if (NT_SUCCESS(rcNt))
         {
             bool fIsDebugger = supdrvNtProtectIsWhitelistedDebugger(pDbgProc);

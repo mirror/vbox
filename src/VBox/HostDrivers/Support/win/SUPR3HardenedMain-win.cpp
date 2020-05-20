@@ -4345,7 +4345,7 @@ static void supR3HardNtChildSetUpChildInit(PSUPR3HARDNTCHILD pThis)
            export for it.  Unfortunately, it is not yet loaded into the child, so we have to
            assume same location as in the parent (safe): */
         PSUPHNTLDRCACHEENTRY pLdrEntryKernel32;
-        int rc = supHardNtLdrCacheOpen("kernel32.dll", &pLdrEntryKernel32, NULL /*pErrInfo*/);
+        rc = supHardNtLdrCacheOpen("kernel32.dll", &pLdrEntryKernel32, NULL /*pErrInfo*/);
         if (RT_FAILURE(rc))
             supR3HardenedWinKillChild(pThis, "supR3HardenedWinSetupChildInit", rc,
                                       "supHardNtLdrCacheOpen failed on KERNEL32: %Rrc\n", rc);
@@ -4541,12 +4541,12 @@ static void supR3HardNtChildFindNtdll(PSUPR3HARDNTCHILD pThis)
                     UNICODE_STRING UniStr;
                     uint8_t abPadding[4096];
                 } uBuf;
-                NTSTATUS rcNt = NtQueryVirtualMemory(pThis->hProcess,
-                                                     MemInfo.BaseAddress,
-                                                     MemorySectionName,
-                                                     &uBuf,
-                                                     sizeof(uBuf) - sizeof(WCHAR),
-                                                     &cbActual);
+                rcNt = NtQueryVirtualMemory(pThis->hProcess,
+                                            MemInfo.BaseAddress,
+                                            MemorySectionName,
+                                            &uBuf,
+                                            sizeof(uBuf) - sizeof(WCHAR),
+                                            &cbActual);
                 if (NT_SUCCESS(rcNt))
                 {
                     uBuf.UniStr.Buffer[uBuf.UniStr.Length / sizeof(WCHAR)] = '\0';
@@ -6017,7 +6017,7 @@ static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, PRTUTF16 pwszFileVersio
         /*
          * Print basic file information available via NtQueryInformationFile.
          */
-        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
         rcNt = NtQueryInformationFile(hFile, &Ios, &u.BasicInfo, sizeof(u.BasicInfo), FileBasicInformation);
         if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
         {
@@ -6030,6 +6030,7 @@ static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, PRTUTF16 pwszFileVersio
         else
             SUP_DPRINTF(("    FileBasicInformation -> %#x %#x\n", rcNt, Ios.Status));
 
+        RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
         rcNt = NtQueryInformationFile(hFile, &Ios, &u.StdInfo, sizeof(u.StdInfo), FileStandardInformation);
         if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
             SUP_DPRINTF(("    Size:            %#llx\n", u.StdInfo.EndOfFile.QuadPart));
@@ -6040,6 +6041,7 @@ static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, PRTUTF16 pwszFileVersio
          * Read the image header and extract the timestamp and other useful info.
          */
         RT_ZERO(u);
+        RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
         LARGE_INTEGER offRead;
         offRead.QuadPart = 0;
         rcNt = NtReadFile(hFile, NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/, &Ios,
@@ -6101,6 +6103,7 @@ static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, PRTUTF16 pwszFileVersio
                         }
                         if (offRead.QuadPart > 0)
                         {
+                            RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
                             RT_ZERO(u);
                             rcNt = NtReadFile(hFile, NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/, &Ios,
                                               &u, (ULONG)sizeof(u), &offRead, NULL);
