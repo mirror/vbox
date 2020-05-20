@@ -1,9 +1,9 @@
 /** @file
- * Safe way to include Dbghelp.h.
+ * Safe way to include endpointvolume.h.
  */
 
 /*
- * Copyright (C) 2020 Oracle Corporation
+ * Copyright (C) 2016-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,29 +23,25 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_win_dbghelp_h
-#define IPRT_INCLUDED_win_dbghelp_h
+#ifndef IPRT_INCLUDED_win_endpointvolume_h
+#define IPRT_INCLUDED_win_endpointvolume_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 #ifdef _MSC_VER
-/*
- * Unfortunately, the Windows.h file in SDK 7.1 is not clean wrt warning C4091 with VCC140+:
- *      Dbghelp.h(1540): warning C4091: 'typedef ': ignored on left of '<unnamed-enum-hdBase>' when no variable is declared
- *      Dbghelp.h(3056): warning C4091: 'typedef ': ignored on left of '<unnamed-enum-sfImage>' when no variable is declared
- */
 # pragma warning(push)
+# pragma warning(disable: 4201)
 # if _MSC_VER >= 1900 /*RT_MSC_VER_VC140*/
-#  pragma warning(disable:4091)
+#  pragma warning(disable: 4091) /* v7.1\include\ksmedia.h(4356): warning C4091: 'typedef ': ignored on left of '<unnamed-enum-KSEVENT_DYNAMIC_FORMAT_CHANGE>' when no variable is declared */
 # endif
 #endif
 
-#include <Dbghelp.h>
+#include <endpointvolume.h>
 
 #ifdef _MSC_VER
 # pragma warning(pop)
 #endif
 
-#endif /* !IPRT_INCLUDED_win_dbghelp_h */
+#endif /* !IPRT_INCLUDED_win_endpointvolume_h */
 

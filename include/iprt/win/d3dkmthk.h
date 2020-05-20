@@ -31,7 +31,7 @@
 
 #ifdef _MSC_VER
 # pragma warning(push)
-# if _MSC_VER >= 1910 /*RT_MSC_VER_VC141*/
+# if _MSC_VER >= 1900 /*RT_MSC_VER_VC140*/
 #  pragma warning(disable:4255) /* d3dkmthk.h(2061): warning C4255: 'PFND3DKMT_CHECKEXCLUSIVEOWNERSHIP': no function prototype given: converting '()' to '(void)' */
 # endif
 #endif
