@@ -205,6 +205,25 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                  fIgnoreErrors = True);
             reporter.testDone();
 
+            reporter.testStart('Enabling udev monitoring ...');
+            sUdevMonitorServiceContent = \
+                '[Unit]\n' \
+                'Description=udev Monitoring\n' \
+                'DefaultDependencies=no\n' \
+                'Wants=systemd-udevd.service\n' \
+                'After=systemd-udevd-control.socket systemd-udevd-kernel.socket\n' \
+                'Before=sysinit.target systemd-udev-trigger.service\n' \
+                '[Service]\n' \
+                'Type=simple\n' \
+                'ExecStart=/usr/bin/sh -c "/usr/sbin/udevadm monitor --udev --env > /tmp/udev_monitor.log\n' \
+                '[Install]\n' \
+                'WantedBy=sysinit.target';
+            sUdevMonitorServiceFile = '/etc/systemd/system/systemd-udev-monitor.service';
+            oTxsSession.syncUploadString(sUdevMonitorServiceContent, sUdevMonitorServiceFile, 0o644);
+            oTxsSession.syncExec("/bin/systemctl", ("/bin/systemctl", "enable", "systemd-udev-monitor.service"),
+                                 fIgnoreErrors = True);
+            reporter.testDone();
+
         reporter.testStart('Waiting for TXS + CD (%s)' % (self.sFileCdWait,));
         if oTestVm.isLinux():
             (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oTestVm.sVmName, fCdWait = True,
@@ -215,6 +234,10 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                                                       cMsCdWait = 5 * 60 * 1000,
                                                                       sFileCdWait = self.sFileCdWait);
         reporter.testDone();
+
+        if oTestVm.isLinux():
+            asLogFiles = [ '/tmp/udev_monitor.log' ];
+            self.txsDownloadFiles(oSession, oTxsSession, asLogFiles, fIgnoreErrors = True);
 
         if oSession is not None:
             self.addTask(oTxsSession);
