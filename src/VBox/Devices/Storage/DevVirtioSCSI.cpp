@@ -817,7 +817,7 @@ static void virtioScsiR3FreeReq(PVIRTIOSCSITARGET pTarget, PVIRTIOSCSIREQ pReq)
  */
 static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC, uint16_t qIdx,
                               PVIRTIO_DESC_CHAIN_T pDescChain, REQ_RESP_HDR_T *pRespHdr, uint8_t *pbSense,
-                              uint32_t cbSenseCfg)
+                              size_t cbSenseCfg)
 {
     Log2Func(("   status: %s    response: %s\n",
               SCSIStatusText(pRespHdr->uStatus), virtioGetReqRespText(pRespHdr->uResponse)));
@@ -884,7 +884,7 @@ static int virtioScsiR3ReqErr4(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCS
                                uint8_t *pbSense, size_t cbSense, size_t cbSenseCfg)
 {
     REQ_RESP_HDR_T RespHdr;
-    RespHdr.cbSenseLen       = cbSense;
+    RespHdr.cbSenseLen       = cbSense & UINT32_MAX;
     RespHdr.uResidual        = cbResidual;
     RespHdr.uStatusQualifier = 0;
     RespHdr.uStatus          = bStatus;
@@ -1010,7 +1010,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         respHdr.cbSenseLen = sizeof(abSense);
         respHdr.uStatus    = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse  = VIRTIOSCSI_S_OVERRUN;
-        respHdr.uResidual  = pReq->cbDataIn;
+        respHdr.uResidual  = pReq->cbDataIn & UINT32_MAX;
 
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, pReq->qIdx, pReq->pDescChain, &respHdr, abSense,
                            RT_MIN(pThis->virtioScsiConfig.uSenseSize, VIRTIOSCSI_SENSE_SIZE_MAX));
