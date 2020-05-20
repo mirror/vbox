@@ -193,7 +193,7 @@ void UIChooserAbstractModel::deinit()
     saveGroupOrders();
 
     /* Make sure all saving steps complete: */
-    makeSureGroupDefinitionsSaveIsFinished();
+    makeSureGroupSettingsSaveIsFinished();
     makeSureGroupOrdersSaveIsFinished();
 
     /* Delete tree: */
@@ -305,7 +305,7 @@ void UIChooserAbstractModel::saveGroups()
 
 bool UIChooserAbstractModel::isGroupSavingInProgress() const
 {
-    return    UIThreadGroupDefinitionSave::instance()
+    return    UIThreadGroupSettingsSave::instance()
            || UIThreadGroupOrderSave::instance();
 }
 
@@ -468,7 +468,7 @@ void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
 
 void UIChooserAbstractModel::sltStartGroupSaving()
 {
-    saveGroupDefinitions();
+    saveGroupSettings();
     saveGroupOrders();
 }
 
@@ -525,9 +525,9 @@ void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
     emit sigCloudMachineStateChange(pCache->id());
 }
 
-void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()
+void UIChooserAbstractModel::sltGroupSettingsSaveComplete()
 {
-    makeSureGroupDefinitionsSaveIsFinished();
+    makeSureGroupSettingsSaveIsFinished();
     emit sigGroupSavingStateChanged();
 }
 
@@ -612,7 +612,7 @@ void UIChooserAbstractModel::addLocalMachineIntoTheTree(const CMachine &comMachi
                         strName.toUtf8().constData(), strGroup.toUtf8().constData()));
             createLocalMachineNode(getLocalGroupNode(strGroup, invisibleRoot(), fMakeItVisible), comMachine);
         }
-        /* Update group definitions: */
+        /* Update group settings: */
         m_groups[toOldStyleUuid(uId)] = groupList;
     }
     /* Inaccessible machine: */
@@ -647,7 +647,7 @@ void UIChooserAbstractModel::addCloudMachineIntoTheTree(const QString &strGroup,
                 strName.toUtf8().constData(), strGroup.toUtf8().constData()));
     /* Create machine-item with found group-item as parent: */
     createCloudMachineNode(getCloudGroupNode(strGroup, invisibleRoot(), fMakeItVisible), comMachine);
-    /* Update group definitions: */
+    /* Update group settings: */
     const QStringList groupList(strGroup);
     m_groups[toOldStyleUuid(uId)] = groupList;
 }
@@ -991,23 +991,23 @@ void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, 
     }
 }
 
-void UIChooserAbstractModel::saveGroupDefinitions()
+void UIChooserAbstractModel::saveGroupSettings()
 {
-    /* Make sure there is no group save activity: */
-    if (UIThreadGroupDefinitionSave::instance())
+    /* Make sure there is no group settings saving activity: */
+    if (UIThreadGroupSettingsSave::instance())
         return;
 
     /* Prepare full group map: */
     QMap<QString, QStringList> groups;
-    gatherGroupDefinitions(groups, invisibleRoot());
+    gatherGroupSettings(groups, invisibleRoot());
 
     /* Save information in other thread: */
-    UIThreadGroupDefinitionSave::prepare();
+    UIThreadGroupSettingsSave::prepare();
     emit sigGroupSavingStateChanged();
-    connect(UIThreadGroupDefinitionSave::instance(), &UIThreadGroupDefinitionSave::sigReload,
+    connect(UIThreadGroupSettingsSave::instance(), &UIThreadGroupSettingsSave::sigReload,
             this, &UIChooserAbstractModel::sltReloadMachine);
-    UIThreadGroupDefinitionSave::instance()->configure(this, m_groups, groups);
-    UIThreadGroupDefinitionSave::instance()->start();
+    UIThreadGroupSettingsSave::instance()->configure(this, m_groups, groups);
+    UIThreadGroupSettingsSave::instance()->start();
     m_groups = groups;
 }
 
@@ -1028,8 +1028,8 @@ void UIChooserAbstractModel::saveGroupOrders()
     UIThreadGroupOrderSave::instance()->start();
 }
 
-void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &definitions,
-                                                    UIChooserNode *pParentGroup)
+void UIChooserAbstractModel::gatherGroupSettings(QMap<QString, QStringList> &settings,
+                                                 UIChooserNode *pParentGroup)
 {
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
@@ -1041,11 +1041,11 @@ void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &
         /* Make sure it's local machine node exactly and it's accessible: */
         if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
             && pMachineNode->accessible())
-            definitions[toOldStyleUuid(pMachineNode->id())] << pParentGroup->fullName();
+            settings[toOldStyleUuid(pMachineNode->id())] << pParentGroup->fullName();
     }
     /* Iterate over all the group-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Group))
-        gatherGroupDefinitions(definitions, pNode);
+        gatherGroupSettings(settings, pNode);
 }
 
 void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
@@ -1083,11 +1083,11 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     }
 }
 
-void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()
+void UIChooserAbstractModel::makeSureGroupSettingsSaveIsFinished()
 {
     /* Cleanup if necessary: */
-    if (UIThreadGroupDefinitionSave::instance())
-        UIThreadGroupDefinitionSave::cleanup();
+    if (UIThreadGroupSettingsSave::instance())
+        UIThreadGroupSettingsSave::cleanup();
 }
 
 void UIChooserAbstractModel::makeSureGroupOrdersSaveIsFinished()
@@ -1099,70 +1099,70 @@ void UIChooserAbstractModel::makeSureGroupOrdersSaveIsFinished()
 
 
 /*********************************************************************************************************************************
-*   Class UIThreadGroupDefinitionSave implementation.                                                                            *
+*   Class UIThreadGroupSettingsSave implementation.                                                                              *
 *********************************************************************************************************************************/
 
 /* static */
-UIThreadGroupDefinitionSave *UIThreadGroupDefinitionSave::s_pInstance = 0;
+UIThreadGroupSettingsSave *UIThreadGroupSettingsSave::s_pInstance = 0;
 
 /* static */
-UIThreadGroupDefinitionSave *UIThreadGroupDefinitionSave::instance()
+UIThreadGroupSettingsSave *UIThreadGroupSettingsSave::instance()
 {
     return s_pInstance;
 }
 
 /* static */
-void UIThreadGroupDefinitionSave::prepare()
+void UIThreadGroupSettingsSave::prepare()
 {
-    /* Make sure instance not prepared: */
+    /* Make sure instance is not prepared: */
     if (s_pInstance)
         return;
 
     /* Crate instance: */
-    new UIThreadGroupDefinitionSave;
+    new UIThreadGroupSettingsSave;
 }
 
 /* static */
-void UIThreadGroupDefinitionSave::cleanup()
+void UIThreadGroupSettingsSave::cleanup()
 {
-    /* Make sure instance prepared: */
+    /* Make sure instance is prepared: */
     if (!s_pInstance)
         return;
 
-    /* Crate instance: */
+    /* Delete instance: */
     delete s_pInstance;
 }
 
-void UIThreadGroupDefinitionSave::configure(QObject *pParent,
-                                            const QMap<QString, QStringList> &oldLists,
-                                            const QMap<QString, QStringList> &newLists)
+void UIThreadGroupSettingsSave::configure(QObject *pParent,
+                                          const QMap<QString, QStringList> &oldLists,
+                                          const QMap<QString, QStringList> &newLists)
 {
     m_oldLists = oldLists;
     m_newLists = newLists;
     UIChooserAbstractModel* pChooserAbstractModel = qobject_cast<UIChooserAbstractModel*>(pParent);
     AssertPtrReturnVoid(pChooserAbstractModel);
     {
-        connect(this, &UIThreadGroupDefinitionSave::sigComplete,
-                pChooserAbstractModel, &UIChooserAbstractModel::sltGroupDefinitionsSaveComplete);
+        connect(this, &UIThreadGroupSettingsSave::sigComplete,
+                pChooserAbstractModel, &UIChooserAbstractModel::sltGroupSettingsSaveComplete);
     }
 }
 
-UIThreadGroupDefinitionSave::UIThreadGroupDefinitionSave()
+UIThreadGroupSettingsSave::UIThreadGroupSettingsSave()
 {
     /* Assign instance: */
     s_pInstance = this;
 }
 
-UIThreadGroupDefinitionSave::~UIThreadGroupDefinitionSave()
+UIThreadGroupSettingsSave::~UIThreadGroupSettingsSave()
 {
-    /* Wait: */
+    /* Make sure thread work is complete: */
     wait();
 
     /* Erase instance: */
     s_pInstance = 0;
 }
 
-void UIThreadGroupDefinitionSave::run()
+void UIThreadGroupSettingsSave::run()
 {
     /* COM prepare: */
     COMBase::InitializeCOM(false);
@@ -1184,42 +1184,42 @@ void UIThreadGroupDefinitionSave::run()
          * Every of them is mandatory in order to continue
          * with common cleanup in case of failure.
          * We have to simulate a try-catch block. */
-        CSession session;
-        CMachine machine;
+        CSession comSession;
+        CMachine comMachine;
         do
         {
             /* 1. Open session: */
-            session = uiCommon().openSession(QUuid(strId));
-            if (session.isNull())
+            comSession = uiCommon().openSession(QUuid(strId));
+            if (comSession.isNull())
                 break;
 
             /* 2. Get session machine: */
-            machine = session.GetMachine();
-            if (machine.isNull())
+            comMachine = comSession.GetMachine();
+            if (comMachine.isNull())
                 break;
 
             /* 3. Set new groups: */
-            machine.SetGroups(newGroupList.toVector());
-            if (!machine.isOk())
+            comMachine.SetGroups(newGroupList.toVector());
+            if (!comMachine.isOk())
             {
-                msgCenter().cannotSetGroups(machine);
+                msgCenter().cannotSetGroups(comMachine);
                 break;
             }
 
             /* 4. Save settings: */
-            machine.SaveSettings();
-            if (!machine.isOk())
+            comMachine.SaveSettings();
+            if (!comMachine.isOk())
             {
-                msgCenter().cannotSaveMachineSettings(machine);
+                msgCenter().cannotSaveMachineSettings(comMachine);
                 break;
             }
         } while (0);
 
         /* Cleanup if necessary: */
-        if (machine.isNull() || !machine.isOk())
+        if (comMachine.isNull() || !comMachine.isOk())
             emit sigReload(QUuid(strId));
-        if (!session.isNull())
-            session.UnlockMachine();
+        if (!comSession.isNull())
+            comSession.UnlockMachine();
     }
 
     /* Notify listeners about completeness: */

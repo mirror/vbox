@@ -127,8 +127,8 @@ public slots:
 
     /** @name Group saving stuff.
       * @{ */
-        /** Handles group definition saving complete. */
-        void sltGroupDefinitionsSaveComplete();
+        /** Handles group settings saving complete. */
+        void sltGroupSettingsSaveComplete();
         /** Handles group order saving complete. */
         void sltGroupOrdersSaveComplete();
     /** @} */
@@ -224,18 +224,18 @@ private:
 
     /** @name Group saving stuff.
       * @{ */
-        /** Saves group definitions. */
-        void saveGroupDefinitions();
+        /** Saves group settings. */
+        void saveGroupSettings();
         /** Saves group orders. */
         void saveGroupOrders();
 
-        /** Gathers group @a definitions of @a pParentGroup. */
-        void gatherGroupDefinitions(QMap<QString, QStringList> &definitions, UIChooserNode *pParentGroup);
+        /** Gathers group @a settings of @a pParentGroup. */
+        void gatherGroupSettings(QMap<QString, QStringList> &settings, UIChooserNode *pParentGroup);
         /** Gathers group @a orders of @a pParentGroup. */
         void gatherGroupOrders(QMap<QString, QStringList> &orders, UIChooserNode *pParentGroup);
 
-        /** Makes sure group definitions saving is finished. */
-        void makeSureGroupDefinitionsSaveIsFinished();
+        /** Makes sure group settings saving is finished. */
+        void makeSureGroupSettingsSaveIsFinished();
         /** Makes sure group orders saving is finished. */
         void makeSureGroupOrdersSaveIsFinished();
     /** @} */
@@ -260,14 +260,14 @@ private:
 
     /** @name Group saving stuff.
       * @{ */
-        /** Holds the consolidated map of group definitions/orders. */
+        /** Holds the consolidated map of group settings/orders. */
         QMap<QString, QStringList>  m_groups;
     /** @} */
 };
 
 
-/** QThread subclass allowing to save group definitions asynchronously. */
-class UIThreadGroupDefinitionSave : public QThread
+/** QThread subclass allowing to save group settings asynchronously. */
+class UIThreadGroupSettingsSave : public QThread
 {
     Q_OBJECT;
 
@@ -281,36 +281,36 @@ signals:
 
 public:
 
-    /** Returns group saving thread instance. */
-    static UIThreadGroupDefinitionSave* instance();
-    /** Prepares group saving thread instance. */
+    /** Returns group settings saving thread instance. */
+    static UIThreadGroupSettingsSave *instance();
+    /** Prepares group settings saving thread instance. */
     static void prepare();
-    /** Cleanups group saving thread instance. */
+    /** Cleanups group settings saving thread instance. */
     static void cleanup();
 
-    /** Configures @a groups saving thread with corresponding @a pListener.
-      * @param  oldLists  Brings the old definition list to be compared.
-      * @param  newLists  Brings the new definition list to be saved. */
+    /** Configures @a group settings saving thread with corresponding @a pListener.
+      * @param  oldLists  Brings the old settings list to be compared.
+      * @param  newLists  Brings the new settings list to be saved. */
     void configure(QObject *pParent,
                    const QMap<QString, QStringList> &oldLists,
                    const QMap<QString, QStringList> &newLists);
 
 protected:
 
-    /** Constructs group saving thread. */
-    UIThreadGroupDefinitionSave();
-    /** Destructs group saving thread. */
-    virtual ~UIThreadGroupDefinitionSave() /* override */;
+    /** Constructs group settings saving thread. */
+    UIThreadGroupSettingsSave();
+    /** Destructs group settings saving thread. */
+    virtual ~UIThreadGroupSettingsSave() /* override */;
 
     /** Contains a thread task to be executed. */
     void run();
 
     /** Holds the singleton instance. */
-    static UIThreadGroupDefinitionSave *s_pInstance;
+    static UIThreadGroupSettingsSave *s_pInstance;
 
-    /** Holds the map of group definitions to be compared. */
+    /** Holds the map of group settings to be compared. */
     QMap<QString, QStringList> m_oldLists;
-    /** Holds the map of group definitions to be saved. */
+    /** Holds the map of group settings to be saved. */
     QMap<QString, QStringList> m_newLists;
 };
 
