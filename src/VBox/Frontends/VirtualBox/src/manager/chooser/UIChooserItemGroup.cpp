@@ -729,10 +729,12 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
             /* Allow finally: */
             return true;
         }
-        /* For cloud items: */
+        /* For profiles inside provider and providers inside root group: */
         else
-        if (   groupType() == UIChooserNodeGroupType_Provider
-            && pGroupItem->groupType() == UIChooserNodeGroupType_Profile)
+        if (   (   groupType() == UIChooserNodeGroupType_Provider
+                && pGroupItem->groupType() == UIChooserNodeGroupType_Profile)
+            || (   groupType() == UIChooserNodeGroupType_Local
+                   && pGroupItem->groupType() == UIChooserNodeGroupType_Provider))
         {
             /* Make sure passed item is ours: */
             return m_groupItems.contains(pItem);
