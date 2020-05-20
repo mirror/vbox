@@ -675,10 +675,9 @@ void virtioNetDumpGcPhysRxBuf(PPDMDEVINS pDevIns, PVIRTIONET_PKT_HDR_T pRxPktHdr
 #endif
 }
 
-
+#ifdef LOG_ENABLED
 DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis)
 {
-#ifdef LOG_ENABLED
     static struct
     {
         uint64_t fFeatureBit;
@@ -726,12 +725,8 @@ DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis)
           "    -------  --------  -------              -----------\n"
           "%s\n", pszBuf));
     RTMemFree(pszBuf);
-
-#else  /* !LOG_ENABLED */
-    RT_NOREF(pThis);
-#endif /* !LOG_ENABLED */
 }
-
+#endif
 /*
  * Checks whether negotiated features have required flag combinations.
  * See VirtIO 1.0 specification, Section 5.1.3.1 */
@@ -1544,7 +1539,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
                             virtioCoreR3DescChainRelease(&pThis->Virtio, pDescChain),
                             VERR_INTERNAL_ERROR);
 
-        uint32_t cbDescChainLeft = pDescChain->cbPhysReturn;
+        size_t cbDescChainLeft = pDescChain->cbPhysReturn;
         uint8_t  cbHdr = sizeof(VIRTIONET_PKT_HDR_T);
 
         /* Fill the Guest Rx buffer with data received from the interface */
@@ -1743,7 +1738,7 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_ReceiveGso(PPDMINETWORKDOWN pInt
         }
         if (!uFeatures)
         {
-            Log2Func(("GSO type (0x%x) not supported\n", INSTANCE(pThis), pGso->u8Type));
+            Log2Func(("%s GSO type (0x%x) not supported\n", INSTANCE(pThis), pGso->u8Type));
             return VERR_NOT_SUPPORTED;
         }
     }
@@ -1788,7 +1783,7 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterf
 }
 
 /* Read physical bytes from the out segment(s) of descriptor chain */
-static void virtioNetR3PullChain(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO_DESC_CHAIN_T pDescChain, void *pv, uint16_t cb)
+static void virtioNetR3PullChain(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO_DESC_CHAIN_T pDescChain, void *pv, size_t cb)
 {
     uint8_t *pb = (uint8_t *)pv;
     size_t cbLim = RT_MIN(pDescChain->cbPhysSend, cb);
@@ -1834,7 +1829,7 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
     }
 
     uint8_t fOn, fPromiscChanged = false;
-    virtioNetR3PullChain(pDevIns, pThis, pDescChain, &fOn, RT_MIN(pDescChain->cbPhysSend, sizeof(fOn)));
+    virtioNetR3PullChain(pDevIns, pThis, pDescChain, &fOn, (size_t)RT_MIN(pDescChain->cbPhysSend, sizeof(fOn)));
 
     switch(pCtrlPktHdr->uCmd)
     {
@@ -2844,7 +2839,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
      */
     Log7Func(("PDM device instance: %d\n", iInstance));
 
-    RTStrPrintf(pThis->szInstanceName, sizeof(pThis->szInstanceName), "VIRTIONET", iInstance);
+    RTStrPrintf(pThis->szInstanceName, sizeof(pThis->szInstanceName), "VIRTIONET%d", iInstance);
 
     pThisCC->pDevIns     = pDevIns;
 

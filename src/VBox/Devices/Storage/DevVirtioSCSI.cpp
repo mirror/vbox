@@ -1214,7 +1214,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
      */
     uint32_t const offDataOut = sizeof(REQ_CMD_HDR_T)  + cbCdb;
     uint32_t const offDataIn  = sizeof(REQ_RESP_HDR_T) + cbSenseCfg;
-    uint32_t const cbDataOut  = pDescChain->cbPhysSend - offDataOut;
+    size_t   const cbDataOut  = pDescChain->cbPhysSend - offDataOut;
     /** @todo r=bird: Validate cbPhysReturn properly? I've just RT_MAX'ed it for now. */
     uint32_t const cbDataIn   = RT_MAX(pDescChain->cbPhysReturn, offDataIn) - offDataIn;
     Assert(offDataOut <= UINT16_MAX);
