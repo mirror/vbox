@@ -201,7 +201,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             reporter.testStart('Enabling udev logging ...');
             oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False,
                                                                       cMsCdWait = 5 * 60 * 1000);
-            oTxsSession.syncExec("/bin/sed", ("/bin/sed", "-i", "'s/.*udev_log.*/udev_log=\"debug\"/'", "/etc/udev/udev.conf"), 
+            oTxsSession.syncExec("/bin/sed", ("/bin/sed", "-i", "'s/.*udev_log.*/udev_log=\"debug\"/'", "/etc/udev/udev.conf"),
                                  fIgnoreErrors = True);
             reporter.testDone();
 
@@ -226,7 +226,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         reporter.testStart('Waiting for TXS + CD (%s)' % (self.sFileCdWait,));
         if oTestVm.isLinux():
-            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oTestVm.sVmName, fCdWait = True,
+            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, fCdWait = True,
                                                                   cMsCdWait = 5 * 60 * 1000,
                                                                   sFileCdWait = self.sFileCdWait);
         else:
