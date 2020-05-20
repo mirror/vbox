@@ -1211,11 +1211,17 @@ class FileWrapper(object):
 
     def write(self, sText):
         """file.write"""
-        if isinstance(sText, array.array):
-            try:
-                sText = sText.tostring();
-            except:
-                pass;
+        if not utils.isString(sText):
+            if isinstance(sText, array.array):
+                try:
+                    sText = sText.tostring();
+                except:
+                    pass;
+            if hasattr(sText, 'decode'):
+                try:
+                    sText = sText.decode('utf-8', 'ignore');
+                except:
+                    pass;
         g_oLock.acquire();
         try:
             sTsPrf  = utils.getTimePrefix();
@@ -1270,7 +1276,7 @@ class FileWrapperTestPipe(object):
             if isinstance(sText, array.array):
                 try:    sText = sText.tostring();
                 except: pass;
-            if not utils.isString(sText) and hasattr(sText, 'decode'):
+            if hasattr(sText, 'decode'):
                 try:    sText = sText.decode('utf-8', 'ignore');
                 except: pass;
 
