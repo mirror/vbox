@@ -394,7 +394,6 @@ typedef struct VIRTIONET
     /** Quiescing I/O activity flag */
     uint8_t                 fQuiescing;
 
-
     /** Promiscuous mode -- RX filter accepts all packets. */
     uint8_t                 fPromiscuous;
 
