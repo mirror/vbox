@@ -1516,7 +1516,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
     uint8_t fAddPktHdr = true;
     RTGCPHYS gcPhysPktHdrNumBuffers = 0;
     uint16_t cDescs;
-    uint32_t uOffset;
+    uint64_t uOffset;
     for (cDescs = uOffset = 0; uOffset < cb; )
     {
         PVIRTIO_DESC_CHAIN_T pDescChain = NULL;
@@ -1863,8 +1863,8 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
 
     if (pThisCC->pDrv && fPromiscChanged)
     {
-        uint8_t fPromiscuous = pThis->fPromiscuous | pThis->fAllMulticast;
-        pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, fPromiscuous);
+        bool fPromiscuous = pThis->fPromiscuous | pThis->fAllMulticast;
+        pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, (uint8_t)fPromiscuous);
     }
 
     return VIRTIONET_OK;
@@ -1951,7 +1951,7 @@ static uint8_t virtioNetR3CtrlVlan(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO
     RT_NOREF(pThisCC);
 
     uint16_t uVlanId;
-    uint16_t cbRemaining = pDescChain->cbPhysSend - sizeof(*pCtrlPktHdr);
+    size_t cbRemaining = pDescChain->cbPhysSend - sizeof(*pCtrlPktHdr);
     AssertMsgReturn(cbRemaining > sizeof(uVlanId),
         ("DESC chain too small for VIRTIO_NET_CTRL_VLAN cmd processing"), VIRTIONET_ERROR);
     virtioNetR3PullChain(pDevIns, pThis, pDescChain, &uVlanId, sizeof(uVlanId));
@@ -2238,7 +2238,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
         uint32_t cSegsFromGuest = pSgPhysSend->cSegs;
 
         VIRTIONET_PKT_HDR_T PktHdr;
-        uint32_t uSize = 0;
+        size_t uSize = 0;
 
         Assert(paSegsFromGuest[0].cbSeg >= sizeof(PktHdr));
 

@@ -555,8 +555,8 @@ typedef struct VIRTIOSCSIREQ
     PVIRTIOSCSITARGET              pTarget;                     /**< Target                                            */
     uint16_t                       qIdx;                        /**< Index of queue this request arrived on            */
     PVIRTIO_DESC_CHAIN_T           pDescChain;                  /**< Prepared desc chain pulled from virtq avail ring  */
-    uint32_t                       cbDataIn;                    /**< size of dataout buffer                            */
-    uint32_t                       cbDataOut;                   /**< size of dataout buffer                            */
+    size_t                         cbDataIn;                    /**< size of dataout buffer                            */
+    size_t                         cbDataOut;                   /**< size of dataout buffer                            */
     uint16_t                       uDataInOff;                  /**< Fixed size of respHdr + sense (precede datain)    */
     uint16_t                       uDataOutOff;                 /**< Fixed size of respHdr + sense (precede datain)    */
     uint32_t                       cbSenseAlloc;                /**< Size of sense buffer                              */
@@ -881,7 +881,7 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
  */
 static int virtioScsiR3ReqErr4(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC pThisCC, uint16_t qIdx,
                                PVIRTIO_DESC_CHAIN_T pDescChain, uint32_t cbResidual, uint8_t bStatus, uint8_t bResponse,
-                               uint8_t *pbSense, uint32_t cbSense, uint32_t cbSenseCfg)
+                               uint8_t *pbSense, size_t cbSense, size_t cbSenseCfg)
 {
     REQ_RESP_HDR_T RespHdr;
     RespHdr.cbSenseLen       = cbSense;
@@ -1216,7 +1216,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     uint32_t const offDataIn  = sizeof(REQ_RESP_HDR_T) + cbSenseCfg;
     size_t   const cbDataOut  = pDescChain->cbPhysSend - offDataOut;
     /** @todo r=bird: Validate cbPhysReturn properly? I've just RT_MAX'ed it for now. */
-    uint32_t const cbDataIn   = RT_MAX(pDescChain->cbPhysReturn, offDataIn) - offDataIn;
+    size_t   const cbDataIn   = RT_MAX(pDescChain->cbPhysReturn, offDataIn) - offDataIn;
     Assert(offDataOut <= UINT16_MAX);
     Assert(offDataIn  <= UINT16_MAX);
 
