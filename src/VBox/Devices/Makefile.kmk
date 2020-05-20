@@ -1481,7 +1481,7 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects 
  TEMPLATE_VBoxSVGA3D         := VBoxSVGA3D
  TEMPLATE_VBoxSVGA3D_EXTENDS := $(if-expr "$(KBUILD_TARGET)" == "darwin" && !defined(VBOX_WITH_NEW_XCODE),VBoxR3DllOsX107,VBOXR3)
  TEMPLATE_VBoxSVGA3D_CFLAGS      = $(filter-out -pedantic -Wstrict-prototypes,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CFLAGS))
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   # -wd4777: glsl_shader.c(1542): warning C4777: 'sprintf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 2 has type 'DWORD'
   TEMPLATE_VBoxSVGA3D_CFLAGS.win = $(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CFLAGS.win) \
   	-wd4777

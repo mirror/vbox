@@ -3190,7 +3190,7 @@ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
  VBOX_VCC_WARN_ALL += -wd4350 -wd4435
  VBOX_VCC120_WARN_ALL := $(VBOX_VCC_WARN_ALL)
 endif
-if1of ($(VBOX_VCC_TOOL_STEM), VCC141 VCC142)
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  #    -wd5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
  #    -wd5039: 'RTStrSpaceDestroy': pointer or reference to potentially throwing function passed to extern C function under -EHc. Undefined behavior may occur if this function throws an exception.
  #    -wd4464: relative include path contains '..'  (iprt/nocrt/compiler.msc.h)
@@ -4051,6 +4051,7 @@ if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
 	$(call MSG_TOOL,SIGNTOOL,,$<,$@)
 	$(RM) -f -- "$@"
 	$(CP) -- "$(quote-sh-dq $<)" "$@"
+	$(CHMOD) a+rw -- "$@"
 	$(VBOX_VCC_EDITBIN) /LargeAddressAware /DynamicBase /NxCompat /Release /IntegrityCheck \
 		/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		"$@"
@@ -4072,6 +4073,7 @@ ifndef $(1)_VBOX_RE_SIGNED_$(n)
 	$(call MSG_TOOL,SIGNTOOL,,$<,$@)
 	$(RM) -f -- "$@"
 	$(CP) -- "$<" "$@"
+	$(CHMOD) a+rw -- "$@"
 	$(VBOX_VCC_EDITBIN) /LargeAddressAware /DynamicBase /NxCompat /Release /IntegrityCheck \
 		/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		"$@"
@@ -4703,7 +4705,7 @@ endif
 
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_TOOL               = $(VBOX_VCC_TOOL)
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141" # for stddef.h
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140" # for stddef.h ## @todo 8489: check if still needed
   TEMPLATE_VBOXR0DRV_SDKS              = WINSDK10-UCRT-INCS
  endif
  TEMPLATE_VBOXR0DRV_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
@@ -5222,7 +5224,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR3EXE_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBOXR3EXE_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
  TEMPLATE_VBOXR3EXE_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXR3EXE_SDKS              = ReorderCompilerIncs WINSDK10-UCRT $(VBOX_WINPSDK)
  else
   TEMPLATE_VBOXR3EXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK)
@@ -5257,7 +5259,7 @@ ifeq ($(KBUILD_TARGET),win)
    TEMPLATE_VBOXR3EXE_LDFLAGS         += -IntegrityCheck
  endif
 
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXR3EXE_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
@@ -5530,7 +5532,7 @@ TEMPLATE_VBOXR3STATIC                  = VBox Static Ring 3 EXE
 TEMPLATE_VBOXR3STATIC_EXTENDS          = VBOXR3EXE
 TEMPLATE_VBOXR3STATIC_DEFS             = IN_RT_STATIC IN_RT_R3 IN_SUP_STATIC $(TEMPLATE_VBOXR3EXE_DEFS)
 ifeq ($(KBUILD_TARGET),win)
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXR3STATIC_SDKS           = $(subst WINSDK10-UCRT, WINSDK10-UCRT-STATIC,$(TEMPLATE_VBOXR3EXE_SDKS))
  endif
  TEMPLATE_VBOXR3STATIC_CFLAGS          = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE) -Gy
@@ -5550,7 +5552,7 @@ ifeq ($(KBUILD_TARGET),win)
 	/DISALLOWLIB:vcruntimed.lib \
 	/DISALLOWLIB:ucrt.lib \
 	/DISALLOWLIB:ucrtd.lib
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXR3STATIC_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
@@ -6220,7 +6222,7 @@ ifeq ($(KBUILD_TARGET),win)
  #TEMPLATE_VBOXMAINEXE_TOOL               = $(VBOX_VCC_TOOL)
  TEMPLATE_VBOXMAINEXE_TOOL.win.x86       = $(VBOX_VCC_TOOL_STEM)X86
  TEMPLATE_VBOXMAINEXE_TOOL.win.amd64     = $(VBOX_VCC_TOOL_STEM)AMD64
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs WINSDK10-UCRT $(VBOX_WINPSDK) $(VBOX_WINDDK)
  else
   TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
@@ -6266,7 +6268,7 @@ ifeq ($(KBUILD_TARGET),win)
  endif
  TEMPLATE_VBOXMAINEXE_LIBS               = \
 	$(LIB_RUNTIME)
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/vcruntime$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
@@ -6835,7 +6837,7 @@ ifdef VBOX_WITH_QTGUI
  ifeq ($(KBUILD_TARGET),win)
   # Note! No use of VBOX_VCC_CRT_TYPE here yet as it requires a /MDd build of Qt as well.
   TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_VCC_TOOL)
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
    TEMPLATE_VBOXQTGUIEXE_SDKS = WINSDK10-UCRT
   endif
   TEMPLATE_VBOXQTGUIEXE_DEFS += \
@@ -6855,7 +6857,7 @@ ifdef VBOX_WITH_QTGUI
    #   -wd4619: qvectro.h(305 : warning C4619: #pragma warning : there is no warning number '4345'
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4619
   endif
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
    #   -wd4774: string(530): warning C4774: '_scprintf' : format string expected in argument 1 is not a string literal
    #   -wd4456: UICommon.cpp(1471): warning C4456: declaration of '_container_' hides previous local declaration  [nested foreach]
    #   -wd4458: UISettingsDialogSpecific.cpp(416): warning C4458: declaration of 'data' hides class member
@@ -6878,7 +6880,7 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -IntegrityCheck
   endif
   TEMPLATE_VBOXQTGUIEXE_SDKS += $(VBOX_WINPSDK)
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
    TEMPLATE_VBOXQTGUIEXE_LIBS = \
    	$(VBOX_LIBS_QT) \
    	$(LIB_RUNTIME) \
@@ -7105,7 +7107,7 @@ else
 endif
 ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_TOOL              := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs WINSDK10-UCRT-STATIC $(VBOX_WINPSDK)
  else
   TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs $(VBOX_WINPSDK)
@@ -7143,7 +7145,7 @@ ifeq ($(KBUILD_HOST),win)
 	/DISALLOWLIB:vcruntimed.lib \
 	/DISALLOWLIB:ucrt.lib \
 	/DISALLOWLIB:ucrtd.lib
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBoxBldProg_LIBS               = \
   	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
@@ -7347,7 +7349,7 @@ endif
 TEMPLATE_VBOXGUESTR3EXE           = VBox Guest Program
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXGUESTR3EXE_EXTENDS  = VBOXR3EXE
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXGUESTR3EXE_SDKS     = ReorderCompilerIncs WINSDK10-UCRT-STATIC $(VBOX_WINPSDK_GST) VBOX_NTDLL
  else
   TEMPLATE_VBOXGUESTR3EXE_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK_GST) VBOX_NTDLL
@@ -7364,7 +7366,7 @@ ifeq ($(KBUILD_TARGET),win)
 	/DISALLOWLIB:msvcprt$(VBOX_VCC_CRT_TYPE).lib \
 	/DISALLOWLIB:vcruntime$(VBOX_VCC_CRT_TYPE).lib \
 	/DISALLOWLIB:ucrt$(VBOX_VCC_CRT_TYPE).lib
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXGUESTR3EXE_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \

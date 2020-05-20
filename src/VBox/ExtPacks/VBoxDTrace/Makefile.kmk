@@ -64,7 +64,7 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  TEMPLATE_VBoxR3ExtPackDTrace_EXTENDS = VBoxR3ExtPack
  TEMPLATE_VBoxR3ExtPackDTrace_INST = $(INST_EXTPACK_VBOXDTRACE)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
  TEMPLATE_VBoxR3ExtPackDTrace_DEFS = $(TEMPLATE_VBoxR3ExtPack_DEFS) VBOX_IN_DTRACE_EXTPACK
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC141"
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   # -wd4456: declaration of 'rval' hides previous local declaration
   # -wd4477: 'fprintf' : format string '%02lu' requires an argument of type 'unsigned long', but variadic argument 1 has type 'ulong_t'
   # -wd4457: warning C4457: declaration of 'arg' hides function parameter
