@@ -34,7 +34,7 @@
 #if !defined(_MT) && !defined(_DLL) && _MSC_VER < 1400
 # define errno msvcrt_errno
 #endif
-#if _MSC_VER >= 1910
+#if _MSC_VER >= 1900
 # include <vcruntime.h>
 #else
 # include <../include/stddef.h>

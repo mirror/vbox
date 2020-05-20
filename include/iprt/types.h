@@ -185,7 +185,7 @@ RT_C_DECLS_END
 #  undef true
 #  undef bool
 
-# elif !defined(DOXYGEN_RUNNING) && RT_MSC_PREREQ(RT_MSC_VER_VC141) && defined(RT_OS_AGNOSTIC)
+# elif !defined(DOXYGEN_RUNNING) && RT_MSC_PREREQ(RT_MSC_VER_VC140) && defined(RT_OS_AGNOSTIC)
     /* Try avoid needing the UCRT just for stddef.h and sys/types.h. */
     /** @todo refine the RT_OS_AGNOSTIC test? */
 #  include <vcruntime.h>
