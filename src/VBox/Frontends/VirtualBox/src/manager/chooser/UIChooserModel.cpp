@@ -221,7 +221,7 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
     const QString strItemType = strDefinition.section('=', 0, 0);
     const QString strItemDescriptor = strDefinition.section('=', 1, -1);
     /* Its a local group-item definition? */
-    if (strItemType == definitionOption(NodeDef_GroupPrefixLocal))
+    if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Local))
     {
         /* Search for group-item with passed descriptor (name): */
         pItem = root()->searchForItem(strItemDescriptor,
@@ -229,7 +229,7 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
                                       UIChooserItemSearchFlag_ExactId);
     }
     /* Its a provider group-item definition? */
-    else if (strItemType == definitionOption(NodeDef_GroupPrefixProvider))
+    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Provider))
     {
         /* Search for group-item with passed descriptor (name): */
         pItem = root()->searchForItem(strItemDescriptor,
@@ -237,7 +237,7 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
                                       UIChooserItemSearchFlag_ExactId);
     }
     /* Its a profile group-item definition? */
-    else if (strItemType == definitionOption(NodeDef_GroupPrefixProfile))
+    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Profile))
     {
         /* Search for group-item with passed descriptor (name): */
         pItem = root()->searchForItem(strItemDescriptor,
@@ -245,7 +245,7 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
                                       UIChooserItemSearchFlag_ExactId);
     }
     /* Its a global-item definition? */
-    else if (strItemType == definitionOption(NodeDef_GlobalPrefix))
+    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Global))
     {
         /* Search for global-item with required name: */
         pItem = root()->searchForItem(strItemDescriptor,
@@ -253,7 +253,7 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
                                       UIChooserItemSearchFlag_ExactName);
     }
     /* Its a machine-item definition? */
-    else if (strItemType == definitionOption(NodeDef_MachinePrefix))
+    else if (strItemType == prefixToString(UIChooserNodeDataPrefixType_Machine))
     {
         /* Search for machine-item with required ID: */
         pItem = root()->searchForItem(strItemDescriptor,

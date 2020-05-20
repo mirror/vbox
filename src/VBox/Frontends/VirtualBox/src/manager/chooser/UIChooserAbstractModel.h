@@ -64,19 +64,6 @@ signals:
 
 public:
 
-    /** Extra-data node definition option types. */
-    enum NodeDef
-    {
-        NodeDef_GlobalPrefix,
-        NodeDef_GlobalOptionFavorite,
-        NodeDef_GlobalValueDefault,
-        NodeDef_MachinePrefix,
-        NodeDef_GroupPrefixLocal,
-        NodeDef_GroupPrefixProvider,
-        NodeDef_GroupPrefixProfile,
-        NodeDef_GroupOptionOpened,
-    };
-
     /** Constructs abstract Chooser-model passing @a pParent to the base-class. */
     UIChooserAbstractModel(UIChooser *pParent);
 
@@ -122,8 +109,12 @@ public:
           * @note  Required for backward compatibility after QString=>QUuid change. */
         static QString toOldStyleUuid(const QUuid &uId);
 
-        /** Returns extra-data node definition option of certain @a enmType. */
-        static QString definitionOption(NodeDef enmType);
+        /** Returns node extra-data prefix of certain @a enmType. */
+        static QString prefixToString(UIChooserNodeDataPrefixType enmType);
+        /** Returns node extra-data option of certain @a enmType. */
+        static QString optionToString(UIChooserNodeDataOptionType enmType);
+        /** Returns node extra-data value of certain @a enmType. */
+        static QString valueToString(UIChooserNodeDataValueType enmType);
     /** @} */
 
 public slots:

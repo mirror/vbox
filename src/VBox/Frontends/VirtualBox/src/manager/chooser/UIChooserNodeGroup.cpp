@@ -111,18 +111,18 @@ QString UIChooserNodeGroup::definition(bool fFull /* = false */) const
     switch (groupType())
     {
         case UIChooserNodeGroupType_Local:
-            strNodePrefix = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GroupPrefixLocal);
+            strNodePrefix = UIChooserAbstractModel::prefixToString(UIChooserNodeDataPrefixType_Local);
             break;
         case UIChooserNodeGroupType_Provider:
-            strNodePrefix = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GroupPrefixProvider);
+            strNodePrefix = UIChooserAbstractModel::prefixToString(UIChooserNodeDataPrefixType_Provider);
             break;
         case UIChooserNodeGroupType_Profile:
-            strNodePrefix = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GroupPrefixProfile);
+            strNodePrefix = UIChooserAbstractModel::prefixToString(UIChooserNodeDataPrefixType_Profile);
             break;
         default:
             AssertFailedReturn(QString());
     }
-    const QString strNodeOptionOpened = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GroupOptionOpened);
+    const QString strNodeOptionOpened = UIChooserAbstractModel::optionToString(UIChooserNodeDataOptionType_GroupOpened);
     return   fFull
            ? QString("%1%2=%3").arg(strNodePrefix).arg(isOpened() ? strNodeOptionOpened : "").arg(name())
            : QString("%1=%2").arg(strNodePrefix).arg(fullName());

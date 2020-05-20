@@ -316,21 +316,42 @@ QString UIChooserAbstractModel::toOldStyleUuid(const QUuid &uId)
 }
 
 /* static */
-QString UIChooserAbstractModel::definitionOption(NodeDef enmOption)
+QString UIChooserAbstractModel::prefixToString(UIChooserNodeDataPrefixType enmType)
 {
-    switch (enmOption)
+    switch (enmType)
     {
         /* Global nodes: */
-        case NodeDef_GlobalPrefix:         return "n";
-        case NodeDef_GlobalOptionFavorite: return "f";
-        case NodeDef_GlobalValueDefault:   return "GLOBAL";
+        case UIChooserNodeDataPrefixType_Global:        return "n";
         /* Machine nodes: */
-        case NodeDef_MachinePrefix:        return "m";
+        case UIChooserNodeDataPrefixType_Machine:       return "m";
         /* Group nodes: */
-        case NodeDef_GroupPrefixLocal:     return "g";
-        case NodeDef_GroupPrefixProvider:  return "p";
-        case NodeDef_GroupPrefixProfile:   return "a";
-        case NodeDef_GroupOptionOpened:    return "o";
+        case UIChooserNodeDataPrefixType_Local:    return "g";
+        case UIChooserNodeDataPrefixType_Provider: return "p";
+        case UIChooserNodeDataPrefixType_Profile:  return "a";
+    }
+    return QString();
+}
+
+/* static */
+QString UIChooserAbstractModel::optionToString(UIChooserNodeDataOptionType enmType)
+{
+    switch (enmType)
+    {
+        /* Global nodes: */
+        case UIChooserNodeDataOptionType_GlobalFavorite: return "f";
+        /* Group nodes: */
+        case UIChooserNodeDataOptionType_GroupOpened:    return "o";
+    }
+    return QString();
+}
+
+/* static */
+QString UIChooserAbstractModel::valueToString(UIChooserNodeDataValueType enmType)
+{
+    switch (enmType)
+    {
+        /* Global nodes: */
+        case UIChooserNodeDataValueType_GlobalDefault: return "GLOBAL";
     }
     return QString();
 }
@@ -725,10 +746,10 @@ bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
         return false;
 
     /* Prepare required group definition reg-exp: */
-    const QString strNodePrefixLocal = definitionOption(NodeDef_GroupPrefixLocal);
-    const QString strNodePrefixProvider = definitionOption(NodeDef_GroupPrefixProvider);
-    const QString strNodePrefixProfile = definitionOption(NodeDef_GroupPrefixProfile);
-    const QString strNodeOptionOpened = definitionOption(NodeDef_GroupOptionOpened);
+    const QString strNodePrefixLocal = prefixToString(UIChooserNodeDataPrefixType_Local);
+    const QString strNodePrefixProvider = prefixToString(UIChooserNodeDataPrefixType_Provider);
+    const QString strNodePrefixProfile = prefixToString(UIChooserNodeDataPrefixType_Profile);
+    const QString strNodeOptionOpened = optionToString(UIChooserNodeDataOptionType_GroupOpened);
     const QString strDefinitionTemplate = QString("[%1%2%3](\\S)*=%4").arg(strNodePrefixLocal,
                                                                            strNodePrefixProvider,
                                                                            strNodePrefixProfile,
@@ -777,9 +798,9 @@ bool UIChooserAbstractModel::isGlobalNodeFavorite(UIChooserNode *pParentNode) co
         return false;
 
     /* Prepare required group definition reg-exp: */
-    const QString strNodePrefix = definitionOption(NodeDef_GlobalPrefix);
-    const QString strNodeOptionFavorite = definitionOption(NodeDef_GlobalOptionFavorite);
-    const QString strNodeValueDefault = definitionOption(NodeDef_GlobalValueDefault);
+    const QString strNodePrefix = prefixToString(UIChooserNodeDataPrefixType_Global);
+    const QString strNodeOptionFavorite = optionToString(UIChooserNodeDataOptionType_GlobalFavorite);
+    const QString strNodeValueDefault = valueToString(UIChooserNodeDataValueType_GlobalDefault);
     const QString strDefinitionTemplate = QString("%1(\\S)*=%2").arg(strNodePrefix, strNodeValueDefault);
     const QRegExp definitionRegExp(strDefinitionTemplate);
     /* For each the group definition: */
@@ -856,16 +877,16 @@ int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, U
     {
         case UIChooserNodeType_Group:
         {
-            const QString strNodePrefixLocal = definitionOption(NodeDef_GroupPrefixLocal);
-            const QString strNodePrefixProvider = definitionOption(NodeDef_GroupPrefixProvider);
-            const QString strNodePrefixProfile = definitionOption(NodeDef_GroupPrefixProfile);
+            const QString strNodePrefixLocal = prefixToString(UIChooserNodeDataPrefixType_Local);
+            const QString strNodePrefixProvider = prefixToString(UIChooserNodeDataPrefixType_Provider);
+            const QString strNodePrefixProfile = prefixToString(UIChooserNodeDataPrefixType_Profile);
             strDefinitionTemplateShort = QString("^[%1%2%3](\\S)*=").arg(strNodePrefixLocal, strNodePrefixProvider, strNodePrefixProfile);
             strDefinitionTemplateFull = QString("^[%1%2%3](\\S)*=%4$").arg(strNodePrefixLocal, strNodePrefixProvider, strNodePrefixProfile, strName);
             break;
         }
         case UIChooserNodeType_Machine:
         {
-            const QString strNodePrefix = definitionOption(NodeDef_MachinePrefix);
+            const QString strNodePrefix = prefixToString(UIChooserNodeDataPrefixType_Machine);
             strDefinitionTemplateShort = QString("^%1=").arg(strNodePrefix);
             strDefinitionTemplateFull = QString("^%1=%2$").arg(strNodePrefix, strName);
             break;

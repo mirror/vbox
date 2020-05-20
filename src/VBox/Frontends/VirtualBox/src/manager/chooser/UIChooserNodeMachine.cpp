@@ -137,7 +137,7 @@ QString UIChooserNodeMachine::description() const
 
 QString UIChooserNodeMachine::definition(bool) const
 {
-    const QString strNodePrefix = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_MachinePrefix);
+    const QString strNodePrefix = UIChooserAbstractModel::prefixToString(UIChooserNodeDataPrefixType_Machine);
     return QString("%1=%2").arg(strNodePrefix).arg(UIChooserAbstractModel::toOldStyleUuid(id()));
 }
 

@@ -48,6 +48,32 @@ enum UIChooserNodeGroupType
 };
 
 
+/** UIChooserNode extra-data prefix types. */
+enum UIChooserNodeDataPrefixType
+{
+    UIChooserNodeDataPrefixType_Global,
+    UIChooserNodeDataPrefixType_Machine,
+    UIChooserNodeDataPrefixType_Local,
+    UIChooserNodeDataPrefixType_Provider,
+    UIChooserNodeDataPrefixType_Profile
+};
+
+
+/** UIChooserNode extra-data option types. */
+enum UIChooserNodeDataOptionType
+{
+    UIChooserNodeDataOptionType_GlobalFavorite,
+    UIChooserNodeDataOptionType_GroupOpened
+};
+
+
+/** UIChooserNode extra-data value types. */
+enum UIChooserNodeDataValueType
+{
+    UIChooserNodeDataValueType_GlobalDefault
+};
+
+
 /** UIChooserItem search flags. */
 enum UIChooserItemSearchFlag
 {
