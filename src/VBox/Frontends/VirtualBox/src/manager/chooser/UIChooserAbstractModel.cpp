@@ -135,7 +135,7 @@ void UIChooserAbstractModel::init()
                 new UIChooserNodeGroup(invisibleRoot() /* parent */,
                                        false /* favorite */,
                                        getDesiredNodePosition(invisibleRoot(),
-                                                              UIChooserNodeType_Group,
+                                                              UIChooserNodeDataPrefixType_Provider,
                                                               strProviderShortName),
                                        strProviderShortName,
                                        UIChooserNodeGroupType_Provider,
@@ -159,7 +159,7 @@ void UIChooserAbstractModel::init()
                     new UIChooserNodeGroup(pProviderNode /* parent */,
                                            false /* favorite */,
                                            getDesiredNodePosition(pProviderNode,
-                                                                  UIChooserNodeType_Group,
+                                                                  UIChooserNodeDataPrefixType_Profile,
                                                                   strProfileName),
                                            strProfileName,
                                            UIChooserNodeGroupType_Profile,
@@ -691,7 +691,9 @@ UIChooserNode *UIChooserAbstractModel::getLocalGroupNode(const QString &strName,
     UIChooserNodeGroup *pNewGroupNode =
         new UIChooserNodeGroup(pParentNode,
                                false /* favorite */,
-                               getDesiredNodePosition(pParentNode, UIChooserNodeType_Group, strSecondSubName),
+                               getDesiredNodePosition(pParentNode,
+                                                      UIChooserNodeDataPrefixType_Local,
+                                                      strSecondSubName),
                                strSecondSubName,
                                UIChooserNodeGroupType_Local,
                                fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode, strSecondSubName));
@@ -820,12 +822,14 @@ bool UIChooserAbstractModel::isGlobalNodeFavorite(UIChooserNode *pParentNode) co
     return false;
 }
 
-int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, UIChooserNodeType enmType, const QString &strName)
+int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode,
+                                                   UIChooserNodeDataPrefixType enmDataType,
+                                                   const QString &strName)
 {
     /* End of list (by default)? */
     int iNewNodeDesiredPosition = -1;
     /* Which position should be new node placed by definitions: */
-    int iNewNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmType, strName);
+    const int iNewNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmDataType, strName);
 
     /* If some position wanted: */
     if (iNewNodeDefinitionPosition != -1)
@@ -833,18 +837,51 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, U
         /* Start of list if some definition present: */
         iNewNodeDesiredPosition = 0;
         /* We have to check all the existing node positions: */
-        QList<UIChooserNode*> nodes = pParentNode->nodes(enmType);
+        UIChooserNodeType enmType = UIChooserNodeType_Any;
+        switch (enmDataType)
+        {
+            case UIChooserNodeDataPrefixType_Global:   enmType = UIChooserNodeType_Global; break;
+            case UIChooserNodeDataPrefixType_Machine:  enmType = UIChooserNodeType_Machine; break;
+            case UIChooserNodeDataPrefixType_Local:
+            case UIChooserNodeDataPrefixType_Provider:
+            case UIChooserNodeDataPrefixType_Profile:  enmType = UIChooserNodeType_Group; break;
+        }
+        const QList<UIChooserNode*> nodes = pParentNode->nodes(enmType);
         for (int i = nodes.size() - 1; i >= 0; --i)
         {
             /* Get current node: */
             UIChooserNode *pNode = nodes.at(i);
             AssertPtrReturn(pNode, iNewNodeDesiredPosition);
             /* Which position should be current node placed by definitions? */
-            QString strDefinitionName = pNode->type() == UIChooserNodeType_Group ? pNode->name()
-                                      : pNode->type() == UIChooserNodeType_Machine ? toOldStyleUuid(pNode->toMachineNode()->id())
-                                      : QString();
-            AssertReturn(!strDefinitionName.isEmpty(), iNewNodeDesiredPosition);
-            int iNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmType, strDefinitionName);
+            UIChooserNodeDataPrefixType enmNodeDataType = UIChooserNodeDataPrefixType_Global;
+            QString strDefinitionName;
+            switch (pNode->type())
+            {
+                case UIChooserNodeType_Machine:
+                {
+                    enmNodeDataType = UIChooserNodeDataPrefixType_Machine;
+                    strDefinitionName = toOldStyleUuid(pNode->toMachineNode()->id());
+                    break;
+                }
+                case UIChooserNodeType_Group:
+                {
+                    /* Cast to group node: */
+                    UIChooserNodeGroup *pGroupNode = pNode->toGroupNode();
+                    AssertPtrReturn(pGroupNode, iNewNodeDesiredPosition);
+                    switch (pGroupNode->groupType())
+                    {
+                        case UIChooserNodeGroupType_Local:    enmNodeDataType = UIChooserNodeDataPrefixType_Local; break;
+                        case UIChooserNodeGroupType_Provider: enmNodeDataType = UIChooserNodeDataPrefixType_Provider; break;
+                        case UIChooserNodeGroupType_Profile:  enmNodeDataType = UIChooserNodeDataPrefixType_Profile; break;
+                        default: break;
+                    }
+                    strDefinitionName = pNode->name();
+                    break;
+                }
+                default:
+                    break;
+            }
+            const int iNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmNodeDataType, strDefinitionName);
             /* If some position wanted: */
             if (iNodeDefinitionPosition != -1)
             {
@@ -862,7 +899,7 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, U
     return iNewNodeDesiredPosition;
 }
 
-int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, UIChooserNodeType enmType, const QString &strName)
+int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, UIChooserNodeDataPrefixType enmDataType, const QString &strName)
 {
     /* Read group definitions: */
     const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
@@ -873,22 +910,34 @@ int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, U
     /* Prepare definition reg-exp: */
     QString strDefinitionTemplateShort;
     QString strDefinitionTemplateFull;
-    switch (enmType)
+    const QString strNodePrefixLocal = prefixToString(UIChooserNodeDataPrefixType_Local);
+    const QString strNodePrefixProvider = prefixToString(UIChooserNodeDataPrefixType_Provider);
+    const QString strNodePrefixProfile = prefixToString(UIChooserNodeDataPrefixType_Profile);
+    const QString strNodePrefixMachine = prefixToString(UIChooserNodeDataPrefixType_Machine);
+    switch (enmDataType)
     {
-        case UIChooserNodeType_Group:
+        case UIChooserNodeDataPrefixType_Local:
         {
-            const QString strNodePrefixLocal = prefixToString(UIChooserNodeDataPrefixType_Local);
-            const QString strNodePrefixProvider = prefixToString(UIChooserNodeDataPrefixType_Provider);
-            const QString strNodePrefixProfile = prefixToString(UIChooserNodeDataPrefixType_Profile);
             strDefinitionTemplateShort = QString("^[%1%2%3](\\S)*=").arg(strNodePrefixLocal, strNodePrefixProvider, strNodePrefixProfile);
-            strDefinitionTemplateFull = QString("^[%1%2%3](\\S)*=%4$").arg(strNodePrefixLocal, strNodePrefixProvider, strNodePrefixProfile, strName);
+            strDefinitionTemplateFull = QString("^%1(\\S)*=%2$").arg(strNodePrefixLocal, strName);
             break;
         }
-        case UIChooserNodeType_Machine:
+        case UIChooserNodeDataPrefixType_Provider:
         {
-            const QString strNodePrefix = prefixToString(UIChooserNodeDataPrefixType_Machine);
-            strDefinitionTemplateShort = QString("^%1=").arg(strNodePrefix);
-            strDefinitionTemplateFull = QString("^%1=%2$").arg(strNodePrefix, strName);
+            strDefinitionTemplateShort = QString("^[%1%2%3](\\S)*=").arg(strNodePrefixLocal, strNodePrefixProvider, strNodePrefixProfile);
+            strDefinitionTemplateFull = QString("^%1(\\S)*=%2$").arg(strNodePrefixProvider, strName);
+            break;
+        }
+        case UIChooserNodeDataPrefixType_Profile:
+        {
+            strDefinitionTemplateShort = QString("^[%1%2%3](\\S)*=").arg(strNodePrefixLocal, strNodePrefixProvider, strNodePrefixProfile);
+            strDefinitionTemplateFull = QString("^%1(\\S)*=%2$").arg(strNodePrefixProfile, strName);
+            break;
+        }
+        case UIChooserNodeDataPrefixType_Machine:
+        {
+            strDefinitionTemplateShort = QString("^%1=").arg(strNodePrefixMachine);
+            strDefinitionTemplateFull = QString("^%1=%2$").arg(strNodePrefixMachine, strName);
             break;
         }
         default:
@@ -920,7 +969,7 @@ void UIChooserAbstractModel::createLocalMachineNode(UIChooserNode *pParentNode, 
     new UIChooserNodeMachine(pParentNode,
                              false /* favorite */,
                              getDesiredNodePosition(pParentNode,
-                                                    UIChooserNodeType_Machine,
+                                                    UIChooserNodeDataPrefixType_Machine,
                                                     toOldStyleUuid(comMachine.GetId())),
                              comMachine);
 }
@@ -930,7 +979,7 @@ void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, 
     UIChooserNodeMachine *pNode = new UIChooserNodeMachine(pParentNode,
                                                            false /* favorite */,
                                                            getDesiredNodePosition(pParentNode,
-                                                                                  UIChooserNodeType_Machine,
+                                                                                  UIChooserNodeDataPrefixType_Machine,
                                                                                   toOldStyleUuid(comMachine.GetId())),
                                                            comMachine);
     /* Request for async node update if necessary: */
