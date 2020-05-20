@@ -34,7 +34,7 @@
     }
 
 #ifndef DOXYGEN_RUNNING
-# if RT_MSC_PREREQ(RT_MSC_VER_VC141)
+# if RT_MSC_PREREQ(RT_MSC_VER_VC140)
 /* VBoxMPIOCTL.cpp(80): warning C4457: declaration of 'pRequestedAddress' hides function parameter (caused by VBOXMPIOCTL_HIDE) */
 #  pragma warning(disable:4457 )
 # endif
