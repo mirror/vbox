@@ -100,8 +100,8 @@ public:
 
     /** @name Group saving stuff.
       * @{ */
-        /** Commands to save group settings. */
-        void saveGroupSettings();
+        /** Commands to save groups. */
+        void saveGroups();
         /** Returns whether group saving is in progress. */
         bool isGroupSavingInProgress() const;
 

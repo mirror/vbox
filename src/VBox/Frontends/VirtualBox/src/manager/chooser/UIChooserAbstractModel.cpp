@@ -298,7 +298,7 @@ QList<UIChooserNode*> UIChooserAbstractModel::searchResult() const
     return m_searchResults;
 }
 
-void UIChooserAbstractModel::saveGroupSettings()
+void UIChooserAbstractModel::saveGroups()
 {
     emit sigStartGroupSaving();
 }

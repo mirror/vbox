@@ -390,5 +390,5 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemSh
     model()->updateNavigationItemList();
     model()->updateLayout();
     model()->setSelectedItem(pShiftedItem);
-    model()->saveGroupSettings();
+    model()->saveGroups();
 }

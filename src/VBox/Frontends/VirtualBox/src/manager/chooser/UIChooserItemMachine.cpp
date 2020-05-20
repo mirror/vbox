@@ -494,7 +494,7 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
                 pModel->updateNavigationItemList();
                 pModel->updateLayout();
                 pModel->setSelectedItem(pNewGroupItem);
-                pModel->saveGroupSettings();
+                pModel->saveGroups();
                 break;
             }
             default:

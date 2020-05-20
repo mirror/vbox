@@ -839,7 +839,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 pModel->updateNavigationItemList();
                 pModel->updateLayout();
                 pModel->setSelectedItem(pNewGroupItem);
-                pModel->saveGroupSettings();
+                pModel->saveGroups();
                 break;
             }
             default:
@@ -893,7 +893,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 pModel->updateNavigationItemList();
                 pModel->updateLayout();
                 pModel->setSelectedItem(pNewMachineItem);
-                pModel->saveGroupSettings();
+                pModel->saveGroups();
                 break;
             }
             default:
@@ -956,7 +956,7 @@ void UIChooserItemGroup::sltNameEditingFinished()
 
     /* Set new name, save settings: */
     nodeToGroupType()->setName(strNewName);
-    model()->saveGroupSettings();
+    model()->saveGroups();
 }
 
 void UIChooserItemGroup::sltGroupToggleStart()
