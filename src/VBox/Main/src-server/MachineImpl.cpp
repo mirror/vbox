@@ -3039,12 +3039,12 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
 #if defined(VBOX_WITH_HARDENING) && defined(RT_OS_WINDOWS)
             /* Hardened windows builds spawns three processes when a VM is
                launched, the 3rd one is the one that will end up here.  */
-            RTPROCESS ppid;
-            int rc = RTProcQueryParent(pid, &ppid);
-            if (RT_SUCCESS(rc))
-                rc = RTProcQueryParent(ppid, &ppid);
-            if (   (RT_SUCCESS(rc) && mData->mSession.mPID == ppid)
-                || rc == VERR_ACCESS_DENIED)
+            RTPROCESS pidParent;
+            int vrc = RTProcQueryParent(pid, &pidParent);
+            if (RT_SUCCESS(vrc))
+                vrc = RTProcQueryParent(pidParent, &pidParent);
+            if (   (RT_SUCCESS(vrc) && mData->mSession.mPID == pidParent)
+                || vrc == VERR_ACCESS_DENIED)
             {
                 LogFlowThisFunc(("mSession.mPID => %d(%#x) - windows hardening stub\n", mData->mSession.mPID, pid));
                 mData->mSession.mPID = pid;
