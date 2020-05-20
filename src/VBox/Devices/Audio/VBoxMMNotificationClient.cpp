@@ -19,19 +19,10 @@
 #include "VBoxMMNotificationClient.h"
 
 #include <iprt/win/windows.h>
-
-#pragma warning(push)
-#pragma warning(disable: 4201)
-#ifndef DOXYGEN_RUNNING
-# if RT_MSC_PREREQ(RT_MSC_VER_VC141)
-#  pragma warning(disable: 4091) /* v7.1\include\ksmedia.h(4356): warning C4091: 'typedef ': ignored on left of '<unnamed-enum-KSEVENT_DYNAMIC_FORMAT_CHANGE>' when no variable is declared */
-# endif
-#endif
 #include <mmdeviceapi.h>
-#include <endpointvolume.h>
-#pragma warning(pop)
+#include <iprt/win/endpointvolume.h>
 
-#ifdef LOG_GROUP
+#ifdef LOG_GROUP  /** @todo r=bird: wtf? Put it before all other includes like you're supposed to. */
 # undef LOG_GROUP
 #endif
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
