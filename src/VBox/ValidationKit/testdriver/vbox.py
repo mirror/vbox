@@ -3545,7 +3545,6 @@ class TestDriver(base.TestDriver):                                              
                     reporter.error('txsCdWait: timed out');
                     fRc = False;
                     break;
-
                 # delay.
                 self.sleep(1);
 
@@ -3566,6 +3565,9 @@ class TestDriver(base.TestDriver):                                              
             fIsNotWindows = True;
             reporter.log('txsCdWait: Listing root contents of ${CDROM}:');
             if fIsNotWindows:
+                reporter.log('txsCdWait: Tiggering udevadm ...');
+                oTxsSession.syncExec("/sbin/udevadm", ("/sbin/udevadm", "trigger", "--verbose"), fIgnoreErrors = True);
+                time.sleep(15);
                 oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "${CDROM}"), fIgnoreErrors = True);
                 reporter.log('txsCdWait: Listing media directory:');
                 oTxsSession.syncExec('/bin/ls', ('/bin/ls', '-l', '-a', '-R', '/media'), fIgnoreErrors = True);
