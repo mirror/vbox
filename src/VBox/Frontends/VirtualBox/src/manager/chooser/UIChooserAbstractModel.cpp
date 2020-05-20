@@ -188,13 +188,13 @@ void UIChooserAbstractModel::deinit()
     // WORKAROUND:
     // Currently we are not saving group descriptors
     // (which reflecting group toggle-state) on-the-fly,
-    // so for now we are additionally save group orders
+    // so for now we are additionally save group definitions
     // when exiting application:
-    saveGroupOrders();
+    saveGroupDefinitions();
 
     /* Make sure all saving steps complete: */
     makeSureGroupSettingsSaveIsFinished();
-    makeSureGroupOrdersSaveIsFinished();
+    makeSureGroupDefinitionsSaveIsFinished();
 
     /* Delete tree: */
     delete m_pInvisibleRootNode;
@@ -306,7 +306,7 @@ void UIChooserAbstractModel::saveGroups()
 bool UIChooserAbstractModel::isGroupSavingInProgress() const
 {
     return    UIThreadGroupSettingsSave::instance()
-           || UIThreadGroupOrderSave::instance();
+           || UIThreadGroupDefinitionsSave::instance();
 }
 
 /* static */
@@ -469,7 +469,7 @@ void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
 void UIChooserAbstractModel::sltStartGroupSaving()
 {
     saveGroupSettings();
-    saveGroupOrders();
+    saveGroupDefinitions();
 }
 
 void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
@@ -531,9 +531,9 @@ void UIChooserAbstractModel::sltGroupSettingsSaveComplete()
     emit sigGroupSavingStateChanged();
 }
 
-void UIChooserAbstractModel::sltGroupOrdersSaveComplete()
+void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()
 {
-    makeSureGroupOrdersSaveIsFinished();
+    makeSureGroupDefinitionsSaveIsFinished();
     emit sigGroupSavingStateChanged();
 }
 
@@ -1011,21 +1011,21 @@ void UIChooserAbstractModel::saveGroupSettings()
     m_groups = groups;
 }
 
-void UIChooserAbstractModel::saveGroupOrders()
+void UIChooserAbstractModel::saveGroupDefinitions()
 {
-    /* Make sure there is no group save activity: */
-    if (UIThreadGroupOrderSave::instance())
+    /* Make sure there is no group definitions save activity: */
+    if (UIThreadGroupDefinitionsSave::instance())
         return;
 
     /* Prepare full group map: */
     QMap<QString, QStringList> groups;
-    gatherGroupOrders(groups, invisibleRoot());
+    gatherGroupDefinitions(groups, invisibleRoot());
 
     /* Save information in other thread: */
-    UIThreadGroupOrderSave::prepare();
+    UIThreadGroupDefinitionsSave::prepare();
     emit sigGroupSavingStateChanged();
-    UIThreadGroupOrderSave::instance()->configure(this, groups);
-    UIThreadGroupOrderSave::instance()->start();
+    UIThreadGroupDefinitionsSave::instance()->configure(this, groups);
+    UIThreadGroupDefinitionsSave::instance()->start();
 }
 
 void UIChooserAbstractModel::gatherGroupSettings(QMap<QString, QStringList> &settings,
@@ -1048,8 +1048,8 @@ void UIChooserAbstractModel::gatherGroupSettings(QMap<QString, QStringList> &set
         gatherGroupSettings(settings, pNode);
 }
 
-void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
-                                               UIChooserNode *pParentGroup)
+void UIChooserAbstractModel::gatherGroupDefinitions(QMap<QString, QStringList> &definitions,
+                                                    UIChooserNode *pParentGroup)
 {
     /* Prepare extra-data key for current group: */
     const QString strExtraDataKey = pParentGroup->fullName();
@@ -1058,16 +1058,16 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
     {
         /* Append node definition: */
         AssertPtrReturnVoid(pNode);
-        orders[strExtraDataKey] << pNode->definition(true /* full */);
+        definitions[strExtraDataKey] << pNode->definition(true /* full */);
     }
     /* Iterate over all the group-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Group))
     {
         /* Append node definition: */
         AssertPtrReturnVoid(pNode);
-        orders[strExtraDataKey] << pNode->definition(true /* full */);
+        definitions[strExtraDataKey] << pNode->definition(true /* full */);
         /* Go recursively through children: */
-        gatherGroupOrders(orders, pNode);
+        gatherGroupDefinitions(definitions, pNode);
     }
     /* Iterate over all the machine-nodes: */
     foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserNodeType_Machine))
@@ -1079,7 +1079,7 @@ void UIChooserAbstractModel::gatherGroupOrders(QMap<QString, QStringList> &order
         /* Append node definition, make sure it's local or real cloud machine node only: */
         if (   pMachineNode->cacheType() == UIVirtualMachineItemType_Local
             || pMachineNode->cacheType() == UIVirtualMachineItemType_CloudReal)
-            orders[strExtraDataKey] << pNode->definition(true /* full */);
+            definitions[strExtraDataKey] << pNode->definition(true /* full */);
     }
 }
 
@@ -1090,11 +1090,11 @@ void UIChooserAbstractModel::makeSureGroupSettingsSaveIsFinished()
         UIThreadGroupSettingsSave::cleanup();
 }
 
-void UIChooserAbstractModel::makeSureGroupOrdersSaveIsFinished()
+void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()
 {
     /* Cleanup if necessary: */
-    if (UIThreadGroupOrderSave::instance())
-        UIThreadGroupOrderSave::cleanup();
+    if (UIThreadGroupDefinitionsSave::instance())
+        UIThreadGroupDefinitionsSave::cleanup();
 }
 
 
@@ -1139,7 +1139,7 @@ void UIThreadGroupSettingsSave::configure(QObject *pParent,
 {
     m_oldLists = oldLists;
     m_newLists = newLists;
-    UIChooserAbstractModel* pChooserAbstractModel = qobject_cast<UIChooserAbstractModel*>(pParent);
+    UIChooserAbstractModel *pChooserAbstractModel = qobject_cast<UIChooserAbstractModel*>(pParent);
     AssertPtrReturnVoid(pChooserAbstractModel);
     {
         connect(this, &UIThreadGroupSettingsSave::sigComplete,
@@ -1231,68 +1231,68 @@ void UIThreadGroupSettingsSave::run()
 
 
 /*********************************************************************************************************************************
-*   Class UIThreadGroupOrderSave implementation.                                                                                 *
+*   Class UIThreadGroupDefinitionsSave implementation.                                                                           *
 *********************************************************************************************************************************/
 
 /* static */
-UIThreadGroupOrderSave *UIThreadGroupOrderSave::s_pInstance = 0;
+UIThreadGroupDefinitionsSave *UIThreadGroupDefinitionsSave::s_pInstance = 0;
 
 /* static */
-UIThreadGroupOrderSave *UIThreadGroupOrderSave::instance()
+UIThreadGroupDefinitionsSave *UIThreadGroupDefinitionsSave::instance()
 {
     return s_pInstance;
 }
 
 /* static */
-void UIThreadGroupOrderSave::prepare()
+void UIThreadGroupDefinitionsSave::prepare()
 {
-    /* Make sure instance not prepared: */
+    /* Make sure instance is not prepared: */
     if (s_pInstance)
         return;
 
     /* Crate instance: */
-    new UIThreadGroupOrderSave;
+    new UIThreadGroupDefinitionsSave;
 }
 
 /* static */
-void UIThreadGroupOrderSave::cleanup()
+void UIThreadGroupDefinitionsSave::cleanup()
 {
-    /* Make sure instance prepared: */
+    /* Make sure instance is prepared: */
     if (!s_pInstance)
         return;
 
-    /* Crate instance: */
+    /* Delete instance: */
     delete s_pInstance;
 }
 
-void UIThreadGroupOrderSave::configure(QObject *pParent,
-                                       const QMap<QString, QStringList> &groups)
+void UIThreadGroupDefinitionsSave::configure(QObject *pParent,
+                                             const QMap<QString, QStringList> &groups)
 {
-    m_groups = groups;
+    m_lists = groups;
     UIChooserAbstractModel *pChooserAbstractModel = qobject_cast<UIChooserAbstractModel*>(pParent);
     AssertPtrReturnVoid(pChooserAbstractModel);
     {
-        connect(this, &UIThreadGroupOrderSave::sigComplete,
-                pChooserAbstractModel, &UIChooserAbstractModel::sltGroupOrdersSaveComplete);
+        connect(this, &UIThreadGroupDefinitionsSave::sigComplete,
+                pChooserAbstractModel, &UIChooserAbstractModel::sltGroupDefinitionsSaveComplete);
     }
 }
 
-UIThreadGroupOrderSave::UIThreadGroupOrderSave()
+UIThreadGroupDefinitionsSave::UIThreadGroupDefinitionsSave()
 {
     /* Assign instance: */
     s_pInstance = this;
 }
 
-UIThreadGroupOrderSave::~UIThreadGroupOrderSave()
+UIThreadGroupDefinitionsSave::~UIThreadGroupDefinitionsSave()
 {
-    /* Wait: */
+    /* Make sure thread work is complete: */
     wait();
 
     /* Erase instance: */
     s_pInstance = 0;
 }
 
-void UIThreadGroupOrderSave::run()
+void UIThreadGroupDefinitionsSave::run()
 {
     /* COM prepare: */
     COMBase::InitializeCOM(false);
@@ -1300,8 +1300,8 @@ void UIThreadGroupOrderSave::run()
     /* Clear all the extra-data records related to group definitions: */
     gEDataManager->clearSelectorWindowGroupsDefinitions();
     /* For every particular group definition: */
-    foreach (const QString &strId, m_groups.keys())
-        gEDataManager->setSelectorWindowGroupsDefinitions(strId, m_groups[strId]);
+    foreach (const QString &strId, m_lists.keys())
+        gEDataManager->setSelectorWindowGroupsDefinitions(strId, m_lists[strId]);
 
     /* Notify listeners about completeness: */
     emit sigComplete();

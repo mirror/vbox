@@ -129,8 +129,8 @@ public slots:
       * @{ */
         /** Handles group settings saving complete. */
         void sltGroupSettingsSaveComplete();
-        /** Handles group order saving complete. */
-        void sltGroupOrdersSaveComplete();
+        /** Handles group definitions saving complete. */
+        void sltGroupDefinitionsSaveComplete();
     /** @} */
 
 protected slots:
@@ -226,18 +226,18 @@ private:
       * @{ */
         /** Saves group settings. */
         void saveGroupSettings();
-        /** Saves group orders. */
-        void saveGroupOrders();
+        /** Saves group definitions. */
+        void saveGroupDefinitions();
 
         /** Gathers group @a settings of @a pParentGroup. */
         void gatherGroupSettings(QMap<QString, QStringList> &settings, UIChooserNode *pParentGroup);
-        /** Gathers group @a orders of @a pParentGroup. */
-        void gatherGroupOrders(QMap<QString, QStringList> &orders, UIChooserNode *pParentGroup);
+        /** Gathers group @a definitions of @a pParentGroup. */
+        void gatherGroupDefinitions(QMap<QString, QStringList> &definitions, UIChooserNode *pParentGroup);
 
         /** Makes sure group settings saving is finished. */
         void makeSureGroupSettingsSaveIsFinished();
-        /** Makes sure group orders saving is finished. */
-        void makeSureGroupOrdersSaveIsFinished();
+        /** Makes sure group definitions saving is finished. */
+        void makeSureGroupDefinitionsSaveIsFinished();
     /** @} */
 
     /** @name General stuff.
@@ -260,7 +260,7 @@ private:
 
     /** @name Group saving stuff.
       * @{ */
-        /** Holds the consolidated map of group settings/orders. */
+        /** Holds the consolidated map of group settings/definitions. */
         QMap<QString, QStringList>  m_groups;
     /** @} */
 };
@@ -315,8 +315,8 @@ protected:
 };
 
 
-/** QThread subclass allowing to save group order asynchronously. */
-class UIThreadGroupOrderSave : public QThread
+/** QThread subclass allowing to save group definitions asynchronously. */
+class UIThreadGroupDefinitionsSave : public QThread
 {
     Q_OBJECT;
 
@@ -327,33 +327,33 @@ signals:
 
 public:
 
-    /** Returns group saving thread instance. */
-    static UIThreadGroupOrderSave *instance();
-    /** Prepares group saving thread instance. */
+    /** Returns group definitions saving thread instance. */
+    static UIThreadGroupDefinitionsSave *instance();
+    /** Prepares group definitions saving thread instance. */
     static void prepare();
-    /** Cleanups group saving thread instance. */
+    /** Cleanups group definitions saving thread instance. */
     static void cleanup();
 
-    /** Configures group saving thread with corresponding @a pListener.
-      * @param  groups  Brings the groups to be saved. */
+    /** Configures group definitions saving thread with corresponding @a pListener.
+      * @param  lists  Brings definitions lists to be saved. */
     void configure(QObject *pListener,
-                   const QMap<QString, QStringList> &groups);
+                   const QMap<QString, QStringList> &lists);
 
 protected:
 
-    /** Constructs group saving thread. */
-    UIThreadGroupOrderSave();
-    /** Destructs group saving thread. */
-    virtual ~UIThreadGroupOrderSave() /* override */;
+    /** Constructs group definitions saving thread. */
+    UIThreadGroupDefinitionsSave();
+    /** Destructs group definitions saving thread. */
+    virtual ~UIThreadGroupDefinitionsSave() /* override */;
 
     /** Contains a thread task to be executed. */
     virtual void run() /* override */;
 
     /** Holds the singleton instance. */
-    static UIThreadGroupOrderSave *s_pInstance;
+    static UIThreadGroupDefinitionsSave *s_pInstance;
 
-    /** Holds the map of groups to be saved. */
-    QMap<QString, QStringList>  m_groups;
+    /** Holds the map of group definitions to be saved. */
+    QMap<QString, QStringList>  m_lists;
 };
 
 
