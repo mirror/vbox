@@ -3575,7 +3575,9 @@ class TestDriver(base.TestDriver):                                              
                 oTxsSession.syncExec('/bin/dmesg', ('/bin/dmesg',), fIgnoreErrors = True);
                 oTxsSession.syncExec('/usr/bin/lshw', ('/usr/bin/lshw', '-c', 'disk'), fIgnoreErrors = True);
                 oTxsSession.syncExec('/bin/journalctl',
-                                     ('/bin/journalctl', '-x', '/usr/lib/udisks2/udisksd'), fIgnoreErrors = True);
+                                     ('/bin/journalctl', '-x', '-b'), fIgnoreErrors = True);
+                oTxsSession.syncExec('/bin/journalctl',
+                                     ('/bin/journalctl', '-x', '-b', '/usr/lib/udisks2/udisksd'), fIgnoreErrors = True);
                 oTxsSession.syncExec('/usr/bin/udisksctl',
                                      ('/usr/bin/udisksctl', 'info', '-b', '/dev/sr0'), fIgnoreErrors = True);
                 reporter.log('txsCdWait: Mounting manually ...');
