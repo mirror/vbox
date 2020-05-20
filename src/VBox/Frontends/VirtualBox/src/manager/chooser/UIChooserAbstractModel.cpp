@@ -649,12 +649,15 @@ UIChooserNode *UIChooserAbstractModel::getLocalGroupNode(const QString &strName,
         /* Make sure first-suffix is NOT empty: */
         AssertMsg(!strFirstSuffix.isEmpty(), ("Invalid group name!"));
         /* Trying to get group node among our children: */
-        foreach (UIChooserNode *pGroupNode, pParentNode->nodes(UIChooserNodeType_Group))
+        foreach (UIChooserNode *pNode, pParentNode->nodes(UIChooserNodeType_Group))
         {
-            if (   pGroupNode->toGroupNode()->groupType() == UIChooserNodeGroupType_Local
-                && pGroupNode->name() == strSecondSubName)
+            AssertPtrReturn(pNode, 0);
+            UIChooserNodeGroup *pGroupNode = pNode->toGroupNode();
+            AssertPtrReturn(pGroupNode, 0);
+            if (   pGroupNode->groupType() == UIChooserNodeGroupType_Local
+                && pNode->name() == strSecondSubName)
             {
-                UIChooserNode *pFoundNode = getLocalGroupNode(strFirstSuffix, pGroupNode, fAllGroupsOpened);
+                UIChooserNode *pFoundNode = getLocalGroupNode(strFirstSuffix, pNode, fAllGroupsOpened);
                 if (UIChooserNodeGroup *pFoundGroupNode = pFoundNode->toGroupNode())
                     if (fAllGroupsOpened && pFoundGroupNode->isClosed())
                         pFoundGroupNode->open();
@@ -691,12 +694,16 @@ UIChooserNode *UIChooserAbstractModel::getCloudGroupNode(const QString &strName,
         /* Make sure first-suffix is NOT empty: */
         AssertMsg(!strFirstSuffix.isEmpty(), ("Invalid group name!"));
         /* Trying to get group node among our children: */
-        foreach (UIChooserNode *pGroupNode, pParentNode->nodes(UIChooserNodeType_Group))
+        foreach (UIChooserNode *pNode, pParentNode->nodes(UIChooserNodeType_Group))
         {
-            if (   pGroupNode->toGroupNode()->groupType() != UIChooserNodeGroupType_Local
-                && pGroupNode->name() == strSecondSubName)
+            AssertPtrReturn(pNode, 0);
+            UIChooserNodeGroup *pGroupNode = pNode->toGroupNode();
+            AssertPtrReturn(pGroupNode, 0);
+            if (   (   pGroupNode->groupType() == UIChooserNodeGroupType_Provider
+                    || pGroupNode->groupType() == UIChooserNodeGroupType_Profile)
+                && pNode->name() == strSecondSubName)
             {
-                UIChooserNode *pFoundNode = getCloudGroupNode(strFirstSuffix, pGroupNode, fAllGroupsOpened);
+                UIChooserNode *pFoundNode = getCloudGroupNode(strFirstSuffix, pNode, fAllGroupsOpened);
                 if (UIChooserNodeGroup *pFoundGroupNode = pFoundNode->toGroupNode())
                     if (fAllGroupsOpened && pFoundGroupNode->isClosed())
                         pFoundGroupNode->open();

@@ -119,6 +119,8 @@ QString UIChooserNodeGroup::definition(bool fFull /* = false */) const
         case UIChooserNodeGroupType_Profile:
             strNodePrefix = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GroupPrefixProfile);
             break;
+        default:
+            AssertFailedReturn(QString());
     }
     const QString strNodeOptionOpened = UIChooserAbstractModel::definitionOption(UIChooserAbstractModel::NodeDef_GroupOptionOpened);
     return   fFull

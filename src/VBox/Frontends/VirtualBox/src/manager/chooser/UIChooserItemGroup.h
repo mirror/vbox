@@ -73,6 +73,9 @@ public:
         /** Returns group node reference. */
         UIChooserNodeGroup *nodeToGroupType() const;
 
+        /** Returns group node type. */
+        UIChooserNodeGroupType groupType() const;
+
         /** Returns whether group is closed. */
         bool isClosed() const;
         /** Closes group in @a fAnimated way if requested. */

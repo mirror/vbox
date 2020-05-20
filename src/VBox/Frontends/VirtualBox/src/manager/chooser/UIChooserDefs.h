@@ -41,6 +41,7 @@ enum UIChooserNodeType
 /** UIChooserNodeGroup types. */
 enum UIChooserNodeGroupType
 {
+    UIChooserNodeGroupType_Invalid,
     UIChooserNodeGroupType_Local,
     UIChooserNodeGroupType_Provider,
     UIChooserNodeGroupType_Profile

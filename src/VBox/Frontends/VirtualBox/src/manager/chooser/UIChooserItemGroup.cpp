@@ -94,6 +94,11 @@ UIChooserNodeGroup *UIChooserItemGroup::nodeToGroupType() const
     return node() ? node()->toGroupNode() : 0;
 }
 
+UIChooserNodeGroupType UIChooserItemGroup::groupType() const
+{
+    return nodeToGroupType() ? nodeToGroupType()->groupType() : UIChooserNodeGroupType_Invalid;
+}
+
 bool UIChooserItemGroup::isClosed() const
 {
     return nodeToGroupType()->isClosed() && !isRoot();
@@ -492,11 +497,11 @@ UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, in
 {
     /* Are we searching among group-items? */
     if (   (   iItemSearchFlags & UIChooserItemSearchFlag_LocalGroup
-            && nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local)
+            && groupType() == UIChooserNodeGroupType_Local)
         || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProvider
-            && nodeToGroupType()->groupType() == UIChooserNodeGroupType_Provider)
+            && groupType() == UIChooserNodeGroupType_Provider)
         || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProfile
-            && nodeToGroupType()->groupType() == UIChooserNodeGroupType_Profile))
+            && groupType() == UIChooserNodeGroupType_Profile))
     {
         /* Are we searching by the exact ID? */
         if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)
@@ -702,8 +707,8 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         AssertPtrReturn(pGroupItem, false);
 
         /* For local items: */
-        if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local
-            && pGroupItem->nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local)
+        if (   groupType() == UIChooserNodeGroupType_Local
+            && pGroupItem->groupType() == UIChooserNodeGroupType_Local)
         {
             /* Make sure passed machine isn't immutable within own group: */
             if (   pGroupItem->isContainsLockedMachine()
@@ -726,8 +731,8 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         }
         /* For cloud items: */
         else
-        if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Provider
-            && pGroupItem->nodeToGroupType()->groupType() == UIChooserNodeGroupType_Profile)
+        if (   groupType() == UIChooserNodeGroupType_Provider
+            && pGroupItem->groupType() == UIChooserNodeGroupType_Profile)
         {
             /* Make sure passed item is ours: */
             return m_groupItems.contains(pItem);
@@ -744,7 +749,7 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         AssertPtrReturn(pMachineItem, false);
 
         /* For local items: */
-        if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Local
+        if (   groupType() == UIChooserNodeGroupType_Local
             && pMachineItem->cacheType() == UIVirtualMachineItemType_Local)
         {
             /* Make sure passed machine isn't immutable within own group: */
@@ -769,7 +774,7 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UICh
         }
         /* For cloud items: */
         else
-        if (   nodeToGroupType()->groupType() == UIChooserNodeGroupType_Profile
+        if (   groupType() == UIChooserNodeGroupType_Profile
             && pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
         {
             /* Make sure passed item is ours: */

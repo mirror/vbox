@@ -361,13 +361,13 @@ bool UIChooserModel::isSingleGroupSelected() const
 bool UIChooserModel::isSingleLocalGroupSelected() const
 {
     return    isSingleGroupSelected()
-           && firstSelectedItem()->node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Local;
+           && firstSelectedItem()->toGroupItem()->groupType() == UIChooserNodeGroupType_Local;
 }
 
 bool UIChooserModel::isSingleCloudProfileGroupSelected() const
 {
     return    isSingleGroupSelected()
-           && firstSelectedItem()->node()->toGroupNode()->groupType() == UIChooserNodeGroupType_Profile;
+           && firstSelectedItem()->toGroupItem()->groupType() == UIChooserNodeGroupType_Profile;
 }
 
 bool UIChooserModel::isAllItemsOfOneGroupSelected() const
