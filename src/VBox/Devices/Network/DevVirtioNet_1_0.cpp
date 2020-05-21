@@ -170,10 +170,7 @@
     | VIRTIONET_F_CTRL_RX               \
     | VIRTIONET_F_CTRL_VLAN             \
     | VIRTIONET_HOST_FEATURES_GSO       \
-    | VIRTIONET_F_MRG_RXBUF             \
-    | VIRTIO_F_EVENT_IDX  /** @todo  Trying this experimentally as potential workaround for bug
-                           *         where virtio seems to expect interrupt for Rx/Used even though
-                           *         its set the used ring flag in the Rx queue to skip the notification by device */
+    | VIRTIONET_F_MRG_RXBUF
 
 #define PCI_DEVICE_ID_VIRTIONET_HOST               0x1041      /**< Informs guest driver of type of VirtIO device   */
 #define PCI_CLASS_BASE_NETWORK_CONTROLLER          0x02        /**< PCI Network device class                        */
@@ -636,16 +633,17 @@ DECLINLINE(void) virtioNetR3SetVirtqNames(PVIRTIONET pThis)
  */
 DECLINLINE(void) virtioNetR3PacketDump(PVIRTIONET pThis, const uint8_t *pbPacket, size_t cb, const char *pszText)
 {
-//    if (!LogIs12Enabled())
-//        return;
+    if (!LogIs12Enabled())
+        return;
 
     vboxEthPacketDump(INSTANCE(pThis), pszText, pbPacket, (uint32_t)cb);
 }
 
+#ifdef LOG_ENABLED
+
 void virtioNetDumpGcPhysRxBuf(PPDMDEVINS pDevIns, PVIRTIONET_PKT_HDR_T pRxPktHdr,
                      uint16_t cDescs, uint8_t *pvBuf, uint16_t cb, RTGCPHYS gcPhysRxBuf, uint8_t cbRxBuf)
 {
-#ifdef LOG_ENABLED
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
     pRxPktHdr->uNumBuffers = cDescs;
     if (pRxPktHdr)
@@ -669,12 +667,8 @@ void virtioNetDumpGcPhysRxBuf(PPDMDEVINS pDevIns, PVIRTIONET_PKT_HDR_T pRxPktHdr
     LogFunc((". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .\n"));
     virtioCoreGcPhysHexDump(pDevIns, gcPhysRxBuf, cbRxBuf, 0, "Phys Mem Dump of Rx pkt");
     LogFunc(("-------------------------------------------------------------------\n"));
-#else
-    RT_NOREF7(pDevIns, pRxPktHdr, cDescs, pvBuf, cb, gcPhysRxBuf, cbRxBuf);
-#endif
 }
 
-#ifdef LOG_ENABLED
 DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis)
 {
     static struct
@@ -725,7 +719,7 @@ DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis)
           "%s\n", pszBuf));
     RTMemFree(pszBuf);
 }
-#endif
+#endif /* LOG_ENABLED */
 /*
  * Checks whether negotiated features have required flag combinations.
  * See VirtIO 1.0 specification, Section 5.1.3.1 */

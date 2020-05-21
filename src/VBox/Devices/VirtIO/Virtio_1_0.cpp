@@ -67,6 +67,18 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+
+
+/** @name virtq related flags
+ * @{ */
+#define VIRTQ_DESC_F_NEXT                               1        /**< Indicates this descriptor chains to next  */
+#define VIRTQ_DESC_F_WRITE                              2        /**< Marks buffer as write-only (default ro)   */
+#define VIRTQ_DESC_F_INDIRECT                           4        /**< Buffer is list of buffer descriptors      */
+
+#define VIRTQ_USED_F_NO_NOTIFY                          1        /**< Dev to Drv: Don't notify when buf added   */
+#define VIRTQ_AVAIL_F_NO_INTERRUPT                      1        /**< Drv to Dev: Don't notify when buf eaten   */
+/** @} */
+
 /**
  * virtq related structs
  * (struct names follow VirtIO 1.0 spec, typedef use VBox style)
@@ -81,7 +93,7 @@ typedef struct virtq_desc
 
 typedef struct virtq_avail
 {
-    uint16_t  fFlags;                                            /**< flags      avail ring drv to dev flags    */
+    uint16_t  fFlags;                                            /**< flags      avail ring guest-to-host flags */
     uint16_t  uIdx;                                              /**< idx        Index of next free ring slot   */
     uint16_t  auRing[RT_FLEXIBLE_ARRAY];                         /**< ring       Ring: avail drv to dev bufs    */
     /* uint16_t  uUsedEventIdx;                                     - used_event (if VIRTQ_USED_F_EVENT_IDX)    */
@@ -188,7 +200,7 @@ DECLINLINE(bool) virtqIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t 
 
 DECLINLINE(uint16_t) virtioReadAvailRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
-    uint16_t fFlags;
+    uint16_t fFlags = 0;
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPCIPhysRead(pDevIns,
                       pVirtio->aGCPhysQueueAvail[idxQueue] + RT_UOFFSETOF(VIRTQ_AVAIL_T, fFlags),
@@ -1138,13 +1150,13 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
         LogFunc(("Guest driver not in ready state.\n"));
         return;
     }
-//    AssertMsgReturnVoid(IS_DRIVER_OK(pVirtio), ("Guest driver not in ready state.\n"));
+
     if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
     {
         if (pVirtq->fEventThresholdReached)
         {
 #ifdef IN_RING3
-        Log6Func(("...kicking guest %s, VIRTIO_F_EVENT_IDX set and threshold (%d) reached\n",
+            Log6Func(("...kicking guest %s, VIRTIO_F_EVENT_IDX set and threshold (%d) reached\n",
                    VIRTQNAME(pVirtio, idxQueue), (uint16_t)virtioReadAvailUsedEvent(pDevIns, pVirtio, idxQueue)));
 #endif
             virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue], fForce);
