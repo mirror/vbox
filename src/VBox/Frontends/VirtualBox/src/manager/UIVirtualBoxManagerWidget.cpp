@@ -60,6 +60,16 @@ UIVirtualBoxManagerWidget::~UIVirtualBoxManagerWidget()
     cleanup();
 }
 
+UIVirtualMachineItem *UIVirtualBoxManagerWidget::currentItem() const
+{
+    return m_pPaneChooser->currentItem();
+}
+
+QList<UIVirtualMachineItem*> UIVirtualBoxManagerWidget::currentItems() const
+{
+    return m_pPaneChooser->currentItems();
+}
+
 bool UIVirtualBoxManagerWidget::isGroupItemSelected() const
 {
     return m_pPaneChooser->isGroupItemSelected();
@@ -75,26 +85,6 @@ bool UIVirtualBoxManagerWidget::isMachineItemSelected() const
     return m_pPaneChooser->isMachineItemSelected();
 }
 
-UIVirtualMachineItem *UIVirtualBoxManagerWidget::currentItem() const
-{
-    return m_pPaneChooser->currentItem();
-}
-
-QList<UIVirtualMachineItem*> UIVirtualBoxManagerWidget::currentItems() const
-{
-    return m_pPaneChooser->currentItems();
-}
-
-bool UIVirtualBoxManagerWidget::isGroupSavingInProgress() const
-{
-    return m_pPaneChooser->isGroupSavingInProgress();
-}
-
-bool UIVirtualBoxManagerWidget::isAllItemsOfOneGroupSelected() const
-{
-    return m_pPaneChooser->isAllItemsOfOneGroupSelected();
-}
-
 bool UIVirtualBoxManagerWidget::isSingleGroupSelected() const
 {
     return m_pPaneChooser->isSingleGroupSelected();
@@ -108,6 +98,16 @@ bool UIVirtualBoxManagerWidget::isSingleLocalGroupSelected() const
 bool UIVirtualBoxManagerWidget::isSingleCloudProfileGroupSelected() const
 {
     return m_pPaneChooser->isSingleCloudProfileGroupSelected();
+}
+
+bool UIVirtualBoxManagerWidget::isAllItemsOfOneGroupSelected() const
+{
+    return m_pPaneChooser->isAllItemsOfOneGroupSelected();
+}
+
+bool UIVirtualBoxManagerWidget::isGroupSavingInProgress() const
+{
+    return m_pPaneChooser->isGroupSavingInProgress();
 }
 
 void UIVirtualBoxManagerWidget::setToolsType(UIToolType enmType)

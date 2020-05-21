@@ -116,7 +116,7 @@ public:
         bool isSingleLocalGroupSelected() const;
         /** Returns whether single cloud profile group is selected. */
         bool isSingleCloudProfileGroupSelected() const;
-        /** Returns whether all machine items of one group is selected. */
+        /** Returns whether all items of one group are selected. */
         bool isAllItemsOfOneGroupSelected() const;
     /** @} */
 

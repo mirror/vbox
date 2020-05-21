@@ -57,30 +57,42 @@ class UIVirtualBoxManagerWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    /** Notifies about Chooser-pane index change. */
-    void sigChooserPaneIndexChange();
-    /** Notifies about Chooser-pane group saving change. */
-    void sigGroupSavingStateChanged();
-
-    /** Notifies aboud Details-pane link clicked. */
-    void sigMachineSettingsLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &uId);
-
-    /** Notifies about Tool type change. */
-    void sigToolTypeChange();
-
-    /** Notifies listeners about Cloud Profile Manager change. */
-    void sigCloudProfileManagerChange();
-
-    /** Notifies listeners about current Snapshots pane item change. */
-    void sigCurrentSnapshotItemChange();
-
-    /** Notifies about state change for cloud machine with certain @a uId. */
-    void sigCloudMachineStateChange(const QUuid &uId);
-
-    /** @name Action stuff.
+    /** @name Chooser pane stuff.
       * @{ */
+        /** Notifies about Chooser-pane index change. */
+        void sigChooserPaneIndexChange();
+        /** Notifies about Chooser-pane group saving change. */
+        void sigGroupSavingStateChanged();
+
+        /** Notifies about state change for cloud machine with certain @a uId. */
+        void sigCloudMachineStateChange(const QUuid &uId);
+
         /** Notify listeners about start or show request. */
         void sigStartOrShowRequest();
+    /** @} */
+
+    /** @name Tools pane stuff.
+      * @{ */
+        /** Notifies about Tool type change. */
+        void sigToolTypeChange();
+    /** @} */
+
+    /** @name Tools / Cloud Profile Manager stuff.
+      * @{ */
+        /** Notifies listeners about Cloud Profile Manager change. */
+        void sigCloudProfileManagerChange();
+    /** @} */
+
+    /** @name Tools / Details pane stuff.
+      * @{ */
+        /** Notifies aboud Details-pane link clicked. */
+        void sigMachineSettingsLinkClicked(const QString &strCategory, const QString &strControl, const QUuid &uId);
+    /** @} */
+
+    /** @name Tools / Snapshots pane stuff.
+      * @{ */
+        /** Notifies listeners about current Snapshots pane item change. */
+        void sigCurrentSnapshotItemChange();
     /** @} */
 
 public:
@@ -94,29 +106,37 @@ public:
       * @{ */
         /** Returns the action-pool instance. */
         UIActionPool *actionPool() const { return m_pActionPool; }
+    /** @} */
 
-        /** Returns whether group current-item is selected. */
-        bool isGroupItemSelected() const;
-        /** Returns whether global current-item is selected. */
-        bool isGlobalItemSelected() const;
-        /** Returns whether machine current-item is selected. */
-        bool isMachineItemSelected() const;
+    /** @name Chooser pane stuff.
+      * @{ */
         /** Returns current-item. */
         UIVirtualMachineItem *currentItem() const;
         /** Returns a list of current-items. */
         QList<UIVirtualMachineItem*> currentItems() const;
 
-        /** Returns whether group saving is in progress. */
-        bool isGroupSavingInProgress() const;
-        /** Returns whether all items of one group is selected. */
-        bool isAllItemsOfOneGroupSelected() const;
+        /** Returns whether group item is selected. */
+        bool isGroupItemSelected() const;
+        /** Returns whether global item is selected. */
+        bool isGlobalItemSelected() const;
+        /** Returns whether machine item is selected. */
+        bool isMachineItemSelected() const;
+
         /** Returns whether single group is selected. */
         bool isSingleGroupSelected() const;
         /** Returns whether single local group is selected. */
         bool isSingleLocalGroupSelected() const;
         /** Returns whether single cloud profile group is selected. */
         bool isSingleCloudProfileGroupSelected() const;
+        /** Returns whether all items of one group are selected. */
+        bool isAllItemsOfOneGroupSelected() const;
 
+        /** Returns whether group saving is in progress. */
+        bool isGroupSavingInProgress() const;
+    /** @} */
+
+    /** @name Tools pane stuff.
+      * @{ */
         /** Defines tools @a enmType. */
         void setToolsType(UIToolType enmType);
         /** Returns tools type. */
@@ -140,7 +160,7 @@ public:
         void closeMachineTool(UIToolType enmType);
     /** @} */
 
-    /** @name Snapshot pane stuff.
+    /** @name Tools / Snapshot pane stuff.
       * @{ */
         /** Returns whether current-state item of Snapshot pane is selected. */
         bool isCurrentStateItemSelected() const;
@@ -148,7 +168,7 @@ public:
 
 public slots:
 
-    /** @name Common stuff.
+    /** @name Chooser pane stuff.
       * @{ */
         /** Handles context-menu request for passed @a position. */
         void sltHandleContextMenuRequest(const QPoint &position);
@@ -164,7 +184,7 @@ protected:
 
 private slots:
 
-    /** @name Common stuff.
+    /** @name Chooser pane stuff.
       * @{ */
         /** Handles signal about Chooser-pane index change. */
         void sltHandleChooserPaneIndexChange();
@@ -180,7 +200,7 @@ private slots:
         void sltHandleCloudMachineStateChange(const QUuid &uId);
     /** @} */
 
-    /** @name Tools stuff.
+    /** @name Tools pane stuff.
       * @{ */
         /** Handles tool menu request. */
         void sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position);
@@ -215,7 +235,7 @@ private:
         void cleanup();
     /** @} */
 
-    /** @name Common stuff.
+    /** @name Tools / Common stuff.
       * @{ */
         /** Recaches current item information.
           * @param  fDontRaiseErrorPane  Brings whether we should not raise error-pane. */
