@@ -21,9 +21,6 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QThread>
-
 /* GUI includes: */
 #include "UIChooserDefs.h"
 
@@ -37,7 +34,6 @@ class UIChooserNode;
 class UITask;
 class CCloudMachine;
 class CMachine;
-
 
 /** QObject extension used as VM Chooser-pane abstract model.
   * This class is used to load/save a tree of abstract invisible
@@ -267,97 +263,5 @@ private:
         QMap<QString, QStringList>  m_groups;
     /** @} */
 };
-
-
-/** QThread subclass allowing to save group settings asynchronously. */
-class UIThreadGroupSettingsSave : public QThread
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies about machine with certain @a uMachineId to be reloaded. */
-    void sigReload(const QUuid &uMachineId);
-
-    /** Notifies about task is complete. */
-    void sigComplete();
-
-public:
-
-    /** Returns group settings saving thread instance. */
-    static UIThreadGroupSettingsSave *instance();
-    /** Prepares group settings saving thread instance. */
-    static void prepare();
-    /** Cleanups group settings saving thread instance. */
-    static void cleanup();
-
-    /** Configures @a group settings saving thread with corresponding @a pListener.
-      * @param  oldLists  Brings the old settings list to be compared.
-      * @param  newLists  Brings the new settings list to be saved. */
-    void configure(QObject *pParent,
-                   const QMap<QString, QStringList> &oldLists,
-                   const QMap<QString, QStringList> &newLists);
-
-protected:
-
-    /** Constructs group settings saving thread. */
-    UIThreadGroupSettingsSave();
-    /** Destructs group settings saving thread. */
-    virtual ~UIThreadGroupSettingsSave() /* override */;
-
-    /** Contains a thread task to be executed. */
-    void run();
-
-    /** Holds the singleton instance. */
-    static UIThreadGroupSettingsSave *s_pInstance;
-
-    /** Holds the map of group settings to be compared. */
-    QMap<QString, QStringList> m_oldLists;
-    /** Holds the map of group settings to be saved. */
-    QMap<QString, QStringList> m_newLists;
-};
-
-
-/** QThread subclass allowing to save group definitions asynchronously. */
-class UIThreadGroupDefinitionsSave : public QThread
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies about task is complete. */
-    void sigComplete();
-
-public:
-
-    /** Returns group definitions saving thread instance. */
-    static UIThreadGroupDefinitionsSave *instance();
-    /** Prepares group definitions saving thread instance. */
-    static void prepare();
-    /** Cleanups group definitions saving thread instance. */
-    static void cleanup();
-
-    /** Configures group definitions saving thread with corresponding @a pListener.
-      * @param  lists  Brings definitions lists to be saved. */
-    void configure(QObject *pListener,
-                   const QMap<QString, QStringList> &lists);
-
-protected:
-
-    /** Constructs group definitions saving thread. */
-    UIThreadGroupDefinitionsSave();
-    /** Destructs group definitions saving thread. */
-    virtual ~UIThreadGroupDefinitionsSave() /* override */;
-
-    /** Contains a thread task to be executed. */
-    virtual void run() /* override */;
-
-    /** Holds the singleton instance. */
-    static UIThreadGroupDefinitionsSave *s_pInstance;
-
-    /** Holds the map of group definitions to be saved. */
-    QMap<QString, QStringList>  m_lists;
-};
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserAbstractModel_h */

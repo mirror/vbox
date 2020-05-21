@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QThread>
+
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIChooser.h"
@@ -39,6 +42,310 @@
 
 /* Type defs: */
 typedef QSet<QString> UIStringSet;
+
+
+/** QThread subclass allowing to save group settings asynchronously. */
+class UIThreadGroupSettingsSave : public QThread
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies about machine with certain @a uMachineId to be reloaded. */
+    void sigReload(const QUuid &uMachineId);
+
+    /** Notifies about task is complete. */
+    void sigComplete();
+
+public:
+
+    /** Returns group settings saving thread instance. */
+    static UIThreadGroupSettingsSave *instance();
+    /** Prepares group settings saving thread instance. */
+    static void prepare();
+    /** Cleanups group settings saving thread instance. */
+    static void cleanup();
+
+    /** Configures @a group settings saving thread with corresponding @a pListener.
+      * @param  oldLists  Brings the old settings list to be compared.
+      * @param  newLists  Brings the new settings list to be saved. */
+    void configure(QObject *pParent,
+                   const QMap<QString, QStringList> &oldLists,
+                   const QMap<QString, QStringList> &newLists);
+
+protected:
+
+    /** Constructs group settings saving thread. */
+    UIThreadGroupSettingsSave();
+    /** Destructs group settings saving thread. */
+    virtual ~UIThreadGroupSettingsSave() /* override */;
+
+    /** Contains a thread task to be executed. */
+    void run();
+
+    /** Holds the singleton instance. */
+    static UIThreadGroupSettingsSave *s_pInstance;
+
+    /** Holds the map of group settings to be compared. */
+    QMap<QString, QStringList> m_oldLists;
+    /** Holds the map of group settings to be saved. */
+    QMap<QString, QStringList> m_newLists;
+};
+
+
+/** QThread subclass allowing to save group definitions asynchronously. */
+class UIThreadGroupDefinitionsSave : public QThread
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies about task is complete. */
+    void sigComplete();
+
+public:
+
+    /** Returns group definitions saving thread instance. */
+    static UIThreadGroupDefinitionsSave *instance();
+    /** Prepares group definitions saving thread instance. */
+    static void prepare();
+    /** Cleanups group definitions saving thread instance. */
+    static void cleanup();
+
+    /** Configures group definitions saving thread with corresponding @a pListener.
+      * @param  lists  Brings definitions lists to be saved. */
+    void configure(QObject *pListener,
+                   const QMap<QString, QStringList> &lists);
+
+protected:
+
+    /** Constructs group definitions saving thread. */
+    UIThreadGroupDefinitionsSave();
+    /** Destructs group definitions saving thread. */
+    virtual ~UIThreadGroupDefinitionsSave() /* override */;
+
+    /** Contains a thread task to be executed. */
+    virtual void run() /* override */;
+
+    /** Holds the singleton instance. */
+    static UIThreadGroupDefinitionsSave *s_pInstance;
+
+    /** Holds the map of group definitions to be saved. */
+    QMap<QString, QStringList>  m_lists;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIThreadGroupSettingsSave implementation.                                                                              *
+*********************************************************************************************************************************/
+
+/* static */
+UIThreadGroupSettingsSave *UIThreadGroupSettingsSave::s_pInstance = 0;
+
+/* static */
+UIThreadGroupSettingsSave *UIThreadGroupSettingsSave::instance()
+{
+    return s_pInstance;
+}
+
+/* static */
+void UIThreadGroupSettingsSave::prepare()
+{
+    /* Make sure instance is not prepared: */
+    if (s_pInstance)
+        return;
+
+    /* Crate instance: */
+    new UIThreadGroupSettingsSave;
+}
+
+/* static */
+void UIThreadGroupSettingsSave::cleanup()
+{
+    /* Make sure instance is prepared: */
+    if (!s_pInstance)
+        return;
+
+    /* Delete instance: */
+    delete s_pInstance;
+}
+
+void UIThreadGroupSettingsSave::configure(QObject *pParent,
+                                          const QMap<QString, QStringList> &oldLists,
+                                          const QMap<QString, QStringList> &newLists)
+{
+    m_oldLists = oldLists;
+    m_newLists = newLists;
+    UIChooserAbstractModel *pChooserAbstractModel = qobject_cast<UIChooserAbstractModel*>(pParent);
+    AssertPtrReturnVoid(pChooserAbstractModel);
+    {
+        connect(this, &UIThreadGroupSettingsSave::sigComplete,
+                pChooserAbstractModel, &UIChooserAbstractModel::sltGroupSettingsSaveComplete);
+    }
+}
+
+UIThreadGroupSettingsSave::UIThreadGroupSettingsSave()
+{
+    /* Assign instance: */
+    s_pInstance = this;
+}
+
+UIThreadGroupSettingsSave::~UIThreadGroupSettingsSave()
+{
+    /* Make sure thread work is complete: */
+    wait();
+
+    /* Erase instance: */
+    s_pInstance = 0;
+}
+
+void UIThreadGroupSettingsSave::run()
+{
+    /* COM prepare: */
+    COMBase::InitializeCOM(false);
+
+    /* For every particular machine ID: */
+    foreach (const QString &strId, m_newLists.keys())
+    {
+        /* Get new group list/set: */
+        const QStringList &newGroupList = m_newLists.value(strId);
+        const UIStringSet &newGroupSet = UIStringSet::fromList(newGroupList);
+        /* Get old group list/set: */
+        const QStringList &oldGroupList = m_oldLists.value(strId);
+        const UIStringSet &oldGroupSet = UIStringSet::fromList(oldGroupList);
+        /* Make sure group set changed: */
+        if (newGroupSet == oldGroupSet)
+            continue;
+
+        /* The next steps are subsequent.
+         * Every of them is mandatory in order to continue
+         * with common cleanup in case of failure.
+         * We have to simulate a try-catch block. */
+        CSession comSession;
+        CMachine comMachine;
+        do
+        {
+            /* 1. Open session: */
+            comSession = uiCommon().openSession(QUuid(strId));
+            if (comSession.isNull())
+                break;
+
+            /* 2. Get session machine: */
+            comMachine = comSession.GetMachine();
+            if (comMachine.isNull())
+                break;
+
+            /* 3. Set new groups: */
+            comMachine.SetGroups(newGroupList.toVector());
+            if (!comMachine.isOk())
+            {
+                msgCenter().cannotSetGroups(comMachine);
+                break;
+            }
+
+            /* 4. Save settings: */
+            comMachine.SaveSettings();
+            if (!comMachine.isOk())
+            {
+                msgCenter().cannotSaveMachineSettings(comMachine);
+                break;
+            }
+        } while (0);
+
+        /* Cleanup if necessary: */
+        if (comMachine.isNull() || !comMachine.isOk())
+            emit sigReload(QUuid(strId));
+        if (!comSession.isNull())
+            comSession.UnlockMachine();
+    }
+
+    /* Notify listeners about completeness: */
+    emit sigComplete();
+
+    /* COM cleanup: */
+    COMBase::CleanupCOM();
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIThreadGroupDefinitionsSave implementation.                                                                           *
+*********************************************************************************************************************************/
+
+/* static */
+UIThreadGroupDefinitionsSave *UIThreadGroupDefinitionsSave::s_pInstance = 0;
+
+/* static */
+UIThreadGroupDefinitionsSave *UIThreadGroupDefinitionsSave::instance()
+{
+    return s_pInstance;
+}
+
+/* static */
+void UIThreadGroupDefinitionsSave::prepare()
+{
+    /* Make sure instance is not prepared: */
+    if (s_pInstance)
+        return;
+
+    /* Crate instance: */
+    new UIThreadGroupDefinitionsSave;
+}
+
+/* static */
+void UIThreadGroupDefinitionsSave::cleanup()
+{
+    /* Make sure instance is prepared: */
+    if (!s_pInstance)
+        return;
+
+    /* Delete instance: */
+    delete s_pInstance;
+}
+
+void UIThreadGroupDefinitionsSave::configure(QObject *pParent,
+                                             const QMap<QString, QStringList> &groups)
+{
+    m_lists = groups;
+    UIChooserAbstractModel *pChooserAbstractModel = qobject_cast<UIChooserAbstractModel*>(pParent);
+    AssertPtrReturnVoid(pChooserAbstractModel);
+    {
+        connect(this, &UIThreadGroupDefinitionsSave::sigComplete,
+                pChooserAbstractModel, &UIChooserAbstractModel::sltGroupDefinitionsSaveComplete);
+    }
+}
+
+UIThreadGroupDefinitionsSave::UIThreadGroupDefinitionsSave()
+{
+    /* Assign instance: */
+    s_pInstance = this;
+}
+
+UIThreadGroupDefinitionsSave::~UIThreadGroupDefinitionsSave()
+{
+    /* Make sure thread work is complete: */
+    wait();
+
+    /* Erase instance: */
+    s_pInstance = 0;
+}
+
+void UIThreadGroupDefinitionsSave::run()
+{
+    /* COM prepare: */
+    COMBase::InitializeCOM(false);
+
+    /* Clear all the extra-data records related to group definitions: */
+    gEDataManager->clearSelectorWindowGroupsDefinitions();
+    /* For every particular group definition: */
+    foreach (const QString &strId, m_lists.keys())
+        gEDataManager->setSelectorWindowGroupsDefinitions(strId, m_lists[strId]);
+
+    /* Notify listeners about completeness: */
+    emit sigComplete();
+
+    /* COM cleanup: */
+    COMBase::CleanupCOM();
+}
 
 
 /*********************************************************************************************************************************
@@ -1099,214 +1406,4 @@ void UIChooserAbstractModel::makeSureGroupDefinitionsSaveIsFinished()
 }
 
 
-/*********************************************************************************************************************************
-*   Class UIThreadGroupSettingsSave implementation.                                                                              *
-*********************************************************************************************************************************/
-
-/* static */
-UIThreadGroupSettingsSave *UIThreadGroupSettingsSave::s_pInstance = 0;
-
-/* static */
-UIThreadGroupSettingsSave *UIThreadGroupSettingsSave::instance()
-{
-    return s_pInstance;
-}
-
-/* static */
-void UIThreadGroupSettingsSave::prepare()
-{
-    /* Make sure instance is not prepared: */
-    if (s_pInstance)
-        return;
-
-    /* Crate instance: */
-    new UIThreadGroupSettingsSave;
-}
-
-/* static */
-void UIThreadGroupSettingsSave::cleanup()
-{
-    /* Make sure instance is prepared: */
-    if (!s_pInstance)
-        return;
-
-    /* Delete instance: */
-    delete s_pInstance;
-}
-
-void UIThreadGroupSettingsSave::configure(QObject *pParent,
-                                          const QMap<QString, QStringList> &oldLists,
-                                          const QMap<QString, QStringList> &newLists)
-{
-    m_oldLists = oldLists;
-    m_newLists = newLists;
-    UIChooserAbstractModel *pChooserAbstractModel = qobject_cast<UIChooserAbstractModel*>(pParent);
-    AssertPtrReturnVoid(pChooserAbstractModel);
-    {
-        connect(this, &UIThreadGroupSettingsSave::sigComplete,
-                pChooserAbstractModel, &UIChooserAbstractModel::sltGroupSettingsSaveComplete);
-    }
-}
-
-UIThreadGroupSettingsSave::UIThreadGroupSettingsSave()
-{
-    /* Assign instance: */
-    s_pInstance = this;
-}
-
-UIThreadGroupSettingsSave::~UIThreadGroupSettingsSave()
-{
-    /* Make sure thread work is complete: */
-    wait();
-
-    /* Erase instance: */
-    s_pInstance = 0;
-}
-
-void UIThreadGroupSettingsSave::run()
-{
-    /* COM prepare: */
-    COMBase::InitializeCOM(false);
-
-    /* For every particular machine ID: */
-    foreach (const QString &strId, m_newLists.keys())
-    {
-        /* Get new group list/set: */
-        const QStringList &newGroupList = m_newLists.value(strId);
-        const UIStringSet &newGroupSet = UIStringSet::fromList(newGroupList);
-        /* Get old group list/set: */
-        const QStringList &oldGroupList = m_oldLists.value(strId);
-        const UIStringSet &oldGroupSet = UIStringSet::fromList(oldGroupList);
-        /* Make sure group set changed: */
-        if (newGroupSet == oldGroupSet)
-            continue;
-
-        /* The next steps are subsequent.
-         * Every of them is mandatory in order to continue
-         * with common cleanup in case of failure.
-         * We have to simulate a try-catch block. */
-        CSession comSession;
-        CMachine comMachine;
-        do
-        {
-            /* 1. Open session: */
-            comSession = uiCommon().openSession(QUuid(strId));
-            if (comSession.isNull())
-                break;
-
-            /* 2. Get session machine: */
-            comMachine = comSession.GetMachine();
-            if (comMachine.isNull())
-                break;
-
-            /* 3. Set new groups: */
-            comMachine.SetGroups(newGroupList.toVector());
-            if (!comMachine.isOk())
-            {
-                msgCenter().cannotSetGroups(comMachine);
-                break;
-            }
-
-            /* 4. Save settings: */
-            comMachine.SaveSettings();
-            if (!comMachine.isOk())
-            {
-                msgCenter().cannotSaveMachineSettings(comMachine);
-                break;
-            }
-        } while (0);
-
-        /* Cleanup if necessary: */
-        if (comMachine.isNull() || !comMachine.isOk())
-            emit sigReload(QUuid(strId));
-        if (!comSession.isNull())
-            comSession.UnlockMachine();
-    }
-
-    /* Notify listeners about completeness: */
-    emit sigComplete();
-
-    /* COM cleanup: */
-    COMBase::CleanupCOM();
-}
-
-
-/*********************************************************************************************************************************
-*   Class UIThreadGroupDefinitionsSave implementation.                                                                           *
-*********************************************************************************************************************************/
-
-/* static */
-UIThreadGroupDefinitionsSave *UIThreadGroupDefinitionsSave::s_pInstance = 0;
-
-/* static */
-UIThreadGroupDefinitionsSave *UIThreadGroupDefinitionsSave::instance()
-{
-    return s_pInstance;
-}
-
-/* static */
-void UIThreadGroupDefinitionsSave::prepare()
-{
-    /* Make sure instance is not prepared: */
-    if (s_pInstance)
-        return;
-
-    /* Crate instance: */
-    new UIThreadGroupDefinitionsSave;
-}
-
-/* static */
-void UIThreadGroupDefinitionsSave::cleanup()
-{
-    /* Make sure instance is prepared: */
-    if (!s_pInstance)
-        return;
-
-    /* Delete instance: */
-    delete s_pInstance;
-}
-
-void UIThreadGroupDefinitionsSave::configure(QObject *pParent,
-                                             const QMap<QString, QStringList> &groups)
-{
-    m_lists = groups;
-    UIChooserAbstractModel *pChooserAbstractModel = qobject_cast<UIChooserAbstractModel*>(pParent);
-    AssertPtrReturnVoid(pChooserAbstractModel);
-    {
-        connect(this, &UIThreadGroupDefinitionsSave::sigComplete,
-                pChooserAbstractModel, &UIChooserAbstractModel::sltGroupDefinitionsSaveComplete);
-    }
-}
-
-UIThreadGroupDefinitionsSave::UIThreadGroupDefinitionsSave()
-{
-    /* Assign instance: */
-    s_pInstance = this;
-}
-
-UIThreadGroupDefinitionsSave::~UIThreadGroupDefinitionsSave()
-{
-    /* Make sure thread work is complete: */
-    wait();
-
-    /* Erase instance: */
-    s_pInstance = 0;
-}
-
-void UIThreadGroupDefinitionsSave::run()
-{
-    /* COM prepare: */
-    COMBase::InitializeCOM(false);
-
-    /* Clear all the extra-data records related to group definitions: */
-    gEDataManager->clearSelectorWindowGroupsDefinitions();
-    /* For every particular group definition: */
-    foreach (const QString &strId, m_lists.keys())
-        gEDataManager->setSelectorWindowGroupsDefinitions(strId, m_lists[strId]);
-
-    /* Notify listeners about completeness: */
-    emit sigComplete();
-
-    /* COM cleanup: */
-    COMBase::CleanupCOM();
-}
+#include "UIChooserAbstractModel.moc"
