@@ -69,6 +69,12 @@ signals:
         void sigGroupSavingStateChanged();
     /** @} */
 
+    /** @name Action stuff.
+      * @{ */
+        /** Notify listeners about start or show request. */
+        void sigStartOrShowRequest();
+    /** @} */
+
 public:
 
     /** Constructs Chooser-pane passing @a pParent to the base-class. */

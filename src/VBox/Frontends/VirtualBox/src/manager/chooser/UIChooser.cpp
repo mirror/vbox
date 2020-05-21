@@ -192,6 +192,8 @@ void UIChooser::prepareConnections()
             this, &UIChooser::sltToolMenuRequested);
     connect(model(), &UIChooserModel::sigCloudMachineStateChange,
             this, &UIChooser::sigCloudMachineStateChange);
+    connect(model(), &UIChooserModel::sigStartOrShowRequest,
+            this, &UIChooser::sigStartOrShowRequest);
 
     /* Chooser-view connections: */
     connect(view(), &UIChooserView::sigResized,
@@ -232,6 +234,8 @@ void UIChooser::cleanupConnections()
                this, &UIChooser::sltToolMenuRequested);
     disconnect(model(), &UIChooserModel::sigCloudMachineStateChange,
                this, &UIChooser::sigCloudMachineStateChange);
+    disconnect(model(), &UIChooserModel::sigStartOrShowRequest,
+               this, &UIChooser::sigStartOrShowRequest);
 
     /* Chooser-view connections: */
     disconnect(view(), &UIChooserView::sigResized,

@@ -89,6 +89,12 @@ signals:
         void sigRootItemMinimumWidthHintChanged(int iHint);
     /** @} */
 
+    /** @name Action stuff.
+      * @{ */
+        /** Notify listeners about start or show request. */
+        void sigStartOrShowRequest();
+    /** @} */
+
 public:
 
     /** Constructs Chooser-model passing @a pParent to the base-class. */
@@ -209,8 +215,8 @@ public:
         /** Starts editing group name. */
         void startEditingGroupItemName();
 
-        /** Activates machine item. */
-        void activateMachineItem();
+        /** Starts or shows selected items. */
+        void startOrShowSelectedItems();
 
         /** Defines current @a pDragObject. */
         void setCurrentDragObject(QDrag *pDragObject);

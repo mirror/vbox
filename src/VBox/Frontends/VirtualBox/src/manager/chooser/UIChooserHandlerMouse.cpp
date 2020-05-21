@@ -212,8 +212,8 @@ bool UIChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pEv
                 /* Or a machine one? */
                 else if (pItemUnderMouse->type() == UIChooserNodeType_Machine)
                 {
-                    /* Activate machine-item: */
-                    model()->activateMachineItem();
+                    /* Start or show selected items: */
+                    model()->startOrShowSelectedItems();
                 }
                 break;
             }

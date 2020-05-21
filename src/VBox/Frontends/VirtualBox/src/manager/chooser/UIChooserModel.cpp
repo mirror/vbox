@@ -559,9 +559,9 @@ void UIChooserModel::startEditingGroupItemName()
     sltEditGroupName();
 }
 
-void UIChooserModel::activateMachineItem()
+void UIChooserModel::startOrShowSelectedItems()
 {
-    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->activate(QAction::Trigger);
+    emit sigStartOrShowRequest();
 }
 
 void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)

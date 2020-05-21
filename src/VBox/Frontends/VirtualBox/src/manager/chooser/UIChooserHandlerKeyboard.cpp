@@ -267,8 +267,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             if (   model()->currentItem()->type() == UIChooserNodeType_Group
                 || model()->currentItem()->type() == UIChooserNodeType_Machine)
             {
-                /* Activate item: */
-                model()->activateMachineItem();
+                /* Start or show selected items: */
+                model()->startOrShowSelectedItems();
                 /* And filter out that event: */
                 return true;
             }

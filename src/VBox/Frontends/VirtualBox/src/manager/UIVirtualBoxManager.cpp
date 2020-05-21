@@ -1462,6 +1462,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltOpenMachineSettingsDialog);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
             this, &UIVirtualBoxManager::sltHandleToolTypeChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigStartOrShowRequest,
+            this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
     connect(menuBar(), &QMenuBar::customContextMenuRequested,
             m_pWidget, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
 

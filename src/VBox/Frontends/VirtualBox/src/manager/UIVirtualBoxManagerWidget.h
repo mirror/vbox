@@ -77,6 +77,12 @@ signals:
     /** Notifies about state change for cloud machine with certain @a uId. */
     void sigCloudMachineStateChange(const QUuid &uId);
 
+    /** @name Action stuff.
+      * @{ */
+        /** Notify listeners about start or show request. */
+        void sigStartOrShowRequest();
+    /** @} */
+
 public:
 
     /** Constructs VirtualBox Manager widget. */

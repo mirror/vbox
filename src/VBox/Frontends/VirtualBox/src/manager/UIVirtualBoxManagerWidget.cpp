@@ -446,9 +446,6 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
             m_pPaneChooser = new UIChooser(this);
             if (m_pPaneChooser)
             {
-                /* Configure Chooser-pane: */
-                connect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,
-                        this, &UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange);
                 /* Add into splitter: */
                 m_pSplitter->addWidget(m_pPaneChooser);
             }
@@ -593,6 +590,10 @@ void UIVirtualBoxManagerWidget::prepareConnections()
             this, &UIVirtualBoxManagerWidget::sigGroupSavingStateChanged);
     connect(m_pPaneChooser, &UIChooser::sigToolMenuRequested,
             this, &UIVirtualBoxManagerWidget::sltHandleToolMenuRequested);
+    connect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,
+            this, &UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange);
+    connect(m_pPaneChooser, &UIChooser::sigStartOrShowRequest,
+            this, &UIVirtualBoxManagerWidget::sigStartOrShowRequest);
 
     /* Details-pane connections: */
     connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigLinkClicked,
@@ -841,6 +842,10 @@ void UIVirtualBoxManagerWidget::cleanupConnections()
                this, &UIVirtualBoxManagerWidget::sigGroupSavingStateChanged);
     disconnect(m_pPaneChooser, &UIChooser::sigToolMenuRequested,
                this, &UIVirtualBoxManagerWidget::sltHandleToolMenuRequested);
+    disconnect(m_pPaneChooser, &UIChooser::sigCloudMachineStateChange,
+               this, &UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange);
+    disconnect(m_pPaneChooser, &UIChooser::sigStartOrShowRequest,
+               this, &UIVirtualBoxManagerWidget::sigStartOrShowRequest);
 
     /* Details-pane connections: */
     disconnect(m_pPaneToolsMachine, &UIToolPaneMachine::sigLinkClicked,
