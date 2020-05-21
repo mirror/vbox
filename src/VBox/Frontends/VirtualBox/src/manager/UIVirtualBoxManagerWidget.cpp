@@ -110,6 +110,11 @@ bool UIVirtualBoxManagerWidget::isGroupSavingInProgress() const
     return m_pPaneChooser->isGroupSavingInProgress();
 }
 
+void UIVirtualBoxManagerWidget::openGroupNameEditor()
+{
+    m_pPaneChooser->openGroupNameEditor();
+}
+
 void UIVirtualBoxManagerWidget::setToolsType(UIToolType enmType)
 {
     m_pPaneTools->setToolsType(enmType);

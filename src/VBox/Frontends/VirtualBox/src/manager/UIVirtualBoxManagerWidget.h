@@ -133,6 +133,9 @@ public:
 
         /** Returns whether group saving is in progress. */
         bool isGroupSavingInProgress() const;
+
+        /** Opens group name editor. */
+        void openGroupNameEditor();
     /** @} */
 
     /** @name Tools pane stuff.

@@ -106,6 +106,12 @@ bool UIChooser::isGroupSavingInProgress() const
     return model()->isGroupSavingInProgress();
 }
 
+void UIChooser::openGroupNameEditor()
+{
+    AssertPtrReturnVoid(model());
+    model()->startEditingSelectedGroupItemName();
+}
+
 void UIChooser::sltHandleToolbarResize(const QSize &newSize)
 {
     /* Pass height to a model: */

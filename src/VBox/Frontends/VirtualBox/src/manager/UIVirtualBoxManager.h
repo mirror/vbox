@@ -187,6 +187,9 @@ private slots:
         /** Handles call to open add machine dialog. */
         void sltOpenAddMachineDialog();
 
+        /** Handles call to open group name editor. */
+        void sltOpenGroupNameEditor();
+
         /** Handles call to open Machine Settings dialog.
           * @param strCategory can bring the settings category to start from.
           * @param strControl  can bring the widget of the page to focus.

@@ -126,6 +126,12 @@ public:
         bool isGroupSavingInProgress() const;
     /** @} */
 
+    /** @name Action handling stuff.
+      * @{ */
+        /** Opens group name editor. */
+        void openGroupNameEditor();
+    /** @} */
+
 public slots:
 
     /** @name General stuff.

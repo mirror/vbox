@@ -212,8 +212,8 @@ public:
         /** Returns the root instance. */
         UIChooserItem *root() const;
 
-        /** Starts editing group name. */
-        void startEditingGroupItemName();
+        /** Starts editing selected group item name. */
+        void startEditingSelectedGroupItemName();
 
         /** Starts or shows selected items. */
         void startOrShowSelectedItems();
@@ -288,8 +288,6 @@ private slots:
 
     /** @name Children stuff.
       * @{ */
-        /** Handles group rename request. */
-        void sltEditGroupName();
         /** Handles group sort request. */
         void sltSortGroup();
         /** Handles group destroy request. */

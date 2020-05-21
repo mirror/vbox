@@ -252,8 +252,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             /* If this item is of group type: */
             if (model()->currentItem()->type() == UIChooserNodeType_Group)
             {
-                /* Start embedded editing of current-item: */
-                model()->startEditingGroupItemName();
+                /* Start editing selected group item name: */
+                model()->startEditingSelectedGroupItemName();
                 /* Filter that event out: */
                 return true;
             }
