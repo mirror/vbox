@@ -433,27 +433,6 @@ FunctionEnd
 !insertmacro AbortShutdown ""
 !insertmacro AbortShutdown "un."
 
-!macro CheckForWDDMCapability un
-Function ${un}CheckForWDDMCapability
-
-!if $%VBOX_WITH_WDDM% == "1"
-  ; By default use the WDDM driver on Vista+
-  ${If}   $g_strWinVersion == "Vista"
-  ${OrIf} $g_strWinVersion == "7"
-  ${OrIf} $g_strWinVersion == "8"
-  ${OrIf} $g_strWinVersion == "8_1"
-  ${OrIf} $g_strWinVersion == "10"
-    StrCpy $g_bWithWDDM "true"
-    StrCpy $g_bCapWDDM "true"
-    ${LogVerbose} "OS is WDDM driver capable"
-  ${EndIf}
-!endif
-
-FunctionEnd
-!macroend
-!insertmacro CheckForWDDMCapability ""
-!insertmacro CheckForWDDMCapability "un."
-
 !macro CheckForCapabilities un
 Function ${un}CheckForCapabilities
 
@@ -471,8 +450,27 @@ Function ${un}CheckForCapabilities
     ${LogVerbose}  "OS has a DLL cache"
   ${EndIf}
 
-  ; Check whether this OS is capable of handling WDDM drivers
-  Call ${un}CheckForWDDMCapability
+  ${If}   $g_strWinVersion == "2000"
+  ${OrIf} $g_strWinVersion == "XP"
+  ${OrIf} $g_strWinVersion == "2003"
+  ${OrIf} $g_strWinVersion == "Vista"
+  ${OrIf} $g_strWinVersion == "7"
+    StrCpy $g_bCapXPDM "true"
+    ${LogVerbose} "OS is XPDM driver capable"
+  ${EndIf}
+
+!if $%VBOX_WITH_WDDM% == "1"
+  ; By default use the WDDM driver on Vista+
+  ${If}   $g_strWinVersion == "Vista"
+  ${OrIf} $g_strWinVersion == "7"
+  ${OrIf} $g_strWinVersion == "8"
+  ${OrIf} $g_strWinVersion == "8_1"
+  ${OrIf} $g_strWinVersion == "10"
+    StrCpy $g_bWithWDDM "true"
+    StrCpy $g_bCapWDDM "true"
+    ${LogVerbose} "OS is WDDM driver capable"
+  ${EndIf}
+!endif
 
   Pop $0
 
@@ -861,6 +859,10 @@ FunctionEnd
 ;
 !macro RestoreFilesDirect3D un
 Function ${un}RestoreFilesDirect3D
+  ${If}  $g_bCapXPDM != "true"
+      ${LogVerbose} "RestoreFilesDirect3D: XPDM is not supported"
+      Return
+  ${EndIf}
 
   Push $0
 
