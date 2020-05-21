@@ -93,7 +93,8 @@ enum UIActionIndexST
     UIActionIndexST_M_Machine_S_Move,
     UIActionIndexST_M_Machine_S_ExportToOCI,
     UIActionIndexST_M_Machine_S_Remove,
-    UIActionIndexST_M_Machine_S_AddGroup,
+    UIActionIndexST_M_Machine_M_MoveToGroup,
+    UIActionIndexST_M_Machine_M_MoveToGroup_S_New,
     UIActionIndexST_M_Machine_M_StartOrShow,
     UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal,
     UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless,
@@ -203,6 +204,8 @@ protected:
     void updateMenuGroup();
     /** Updates 'Machine' menu. */
     void updateMenuMachine();
+    /** Updates 'Machine' / 'Move to Group' menu. */
+    void updateMenuMachineMoveToGroup();
     /** Updates 'Group' / 'Start or Show' menu. */
     void updateMenuGroupStartOrShow();
     /** Updates 'Machine' / 'Start or Show' menu. */

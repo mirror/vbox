@@ -622,15 +622,36 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Perform Group Machines' action class. */
-class UIActionSimpleSelectorMachinePerformGroup : public UIActionSimple
+/** Menu action extension, used as 'Move to Group' menu class. */
+class UIActionMenuSelectorMachineMoveToGroup : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformGroup(UIActionPool *pParent)
+    UIActionMenuSelectorMachineMoveToGroup(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Move to Gro&up"));
+    }
+};
+
+/** Simple action extension, used as 'Move to Group => New' action class. */
+class UIActionSimpleSelectorMachineMoveToGroupNew : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorMachineMoveToGroupNew(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png")
     {}
 
@@ -645,7 +666,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "Gro&up"));
+        setName(QApplication::translate("UIActionPool", "&New"));
         setStatusTip(QApplication::translate("UIActionPool", "Add new group based on selected virtual machines"));
     }
 };
@@ -2941,7 +2962,8 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_Move] = new UIActionSimpleSelectorMachinePerformMove(this);
     m_pool[UIActionIndexST_M_Machine_S_ExportToOCI] = new UIActionSimpleSelectorMachinePerformExportToOCI(this);
     m_pool[UIActionIndexST_M_Machine_S_Remove] = new UIActionSimpleSelectorMachinePerformRemove(this);
-    m_pool[UIActionIndexST_M_Machine_S_AddGroup] = new UIActionSimpleSelectorMachinePerformGroup(this);
+    m_pool[UIActionIndexST_M_Machine_M_MoveToGroup] = new UIActionMenuSelectorMachineMoveToGroup(this);
+    m_pool[UIActionIndexST_M_Machine_M_MoveToGroup_S_New] = new UIActionSimpleSelectorMachineMoveToGroupNew(this);
     m_pool[UIActionIndexST_M_Machine_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
     m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
     m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless] = new UIActionSimpleSelectorCommonPerformStartHeadless(this);
@@ -3032,6 +3054,7 @@ void UIActionPoolManager::preparePool()
     m_menuUpdateHandlers[UIActionIndexST_M_Welcome].ptfm =               &UIActionPoolManager::updateMenuWelcome;
     m_menuUpdateHandlers[UIActionIndexST_M_Group].ptfm =                 &UIActionPoolManager::updateMenuGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine].ptfm =               &UIActionPoolManager::updateMenuMachine;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup].ptfm = &UIActionPoolManager::updateMenuMachineMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_StartOrShow].ptfm =   &UIActionPoolManager::updateMenuGroupStartOrShow;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_StartOrShow].ptfm = &UIActionPoolManager::updateMenuMachineStartOrShow;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close].ptfm =         &UIActionPoolManager::updateMenuGroupClose;
@@ -3094,6 +3117,8 @@ void UIActionPoolManager::updateMenus()
     addMenu(m_mainMenus, action(UIActionIndexST_M_Machine));
     updateMenuMachine();
 
+    /* 'Machine' / 'Move to Group' menu: */
+    updateMenuMachineMoveToGroup();
     /* 'Group' / 'Start or Show' menu: */
     updateMenuGroupStartOrShow();
     /* 'Machine' / 'Start or Show' menu: */
@@ -3302,7 +3327,7 @@ void UIActionPoolManager::updateMenuMachine()
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_Move));
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_ExportToOCI));
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_Remove));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_AddGroup));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_MoveToGroup));
     pMenu->addSeparator();
     pMenu->addAction(action(UIActionIndexST_M_Machine_M_StartOrShow));
     pMenu->addAction(action(UIActionIndexST_M_Machine_T_Pause));
@@ -3323,6 +3348,21 @@ void UIActionPoolManager::updateMenuMachine()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Machine);
+}
+
+void UIActionPoolManager::updateMenuMachineMoveToGroup()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_MoveToGroup)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Populate 'Machine' / 'Move to Group' menu: */
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New));
+
+    /* Mark menu as valid (for now): */
+    m_invalidations.remove(UIActionIndexST_M_Machine_M_MoveToGroup);
 }
 
 void UIActionPoolManager::updateMenuGroupStartOrShow()
@@ -3692,7 +3732,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_S_Move)
                     << action(UIActionIndexST_M_Machine_S_ExportToOCI)
                     << action(UIActionIndexST_M_Machine_S_Remove)
-                    << action(UIActionIndexST_M_Machine_S_AddGroup)
+                    << action(UIActionIndexST_M_Machine_M_MoveToGroup)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow)
                     << action(UIActionIndexST_M_Machine_T_Pause)
                     << action(UIActionIndexST_M_Machine_S_Reset)
@@ -3702,6 +3742,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_S_ShowInFileManager)
                     << action(UIActionIndexST_M_Machine_S_CreateShortcut)
                     << action(UIActionIndexST_M_Machine_S_SortParent)
+                    << action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable)

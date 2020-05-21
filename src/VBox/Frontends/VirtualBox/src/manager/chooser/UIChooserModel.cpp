@@ -975,7 +975,7 @@ void UIChooserModel::sltCreateNewMachine()
 void UIChooserModel::sltGroupSelectedMachines()
 {
     /* Check if action is enabled: */
-    if (!actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup)->isEnabled())
+    if (!actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New)->isEnabled())
         return;
 
     /* Create new group node in the current root: */
@@ -1354,7 +1354,7 @@ void UIChooserModel::prepareContextMenu()
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI));
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup));
+        m_pContextMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup)->menu());
         m_pContextMenuMachine->addSeparator();
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
@@ -1394,7 +1394,7 @@ void UIChooserModel::prepareConnections()
             this, &UIChooserModel::sltUngroupSelectedGroup);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Remove), &UIAction::triggered,
             this, &UIChooserModel::sltRemoveSelectedMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New), &UIAction::triggered,
             this, &UIChooserModel::sltGroupSelectedMachines);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), &UIAction::triggered,
             this, &UIChooserModel::sltPerformRefreshAction);

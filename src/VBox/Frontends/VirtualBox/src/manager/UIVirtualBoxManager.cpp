@@ -1888,7 +1888,8 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_S_Move)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Move, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_ExportToOCI, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Remove)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Remove, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_AddGroup, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_MoveToGroup, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_MoveToGroup_S_New, items));
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_T_Pause, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Reset)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Reset, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Discard)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Discard, items));
@@ -2096,7 +2097,8 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
             return !isGroupSavingInProgress() &&
                    isAtLeastOneItemRemovable(items);
         }
-        case UIActionIndexST_M_Machine_S_AddGroup:
+        case UIActionIndexST_M_Machine_M_MoveToGroup:
+        case UIActionIndexST_M_Machine_M_MoveToGroup_S_New:
         {
             return !isGroupSavingInProgress() &&
                    !isAllItemsOfOneGroupSelected() &&
