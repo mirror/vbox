@@ -1284,6 +1284,22 @@ typedef struct PDMIOMMUREGR0
     DECLR0CALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite,
                                            PRTGCPHYS pGCPhysSpa));
 
+    /**
+     * Performs an interrupt remap request through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDevId      The device identifier (bus, device, function).
+     * @param   GCPhysIn    The source MSI address.
+     * @param   uDataIn     The source MSI data.
+     * @param   pGCPhysOut  Where to store the remapped MSI address.
+     * @param   puDataOut   Where to store the remapped MSI data.
+     *
+     * @thread  Any.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+                                           PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
+
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
 } PDMIOMMUREGR0;
@@ -1335,6 +1351,22 @@ typedef struct PDMIOMMUREGRC
     DECLRCCALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite,
                                            PRTGCPHYS pGCPhysSpa));
 
+    /**
+     * Performs an interrupt remap request through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDevId      The device identifier (bus, device, function).
+     * @param   GCPhysIn    The source MSI address.
+     * @param   uDataIn     The source MSI data.
+     * @param   pGCPhysOut  Where to store the remapped MSI address.
+     * @param   puDataOut   Where to store the remapped MSI data.
+     *
+     * @thread  Any.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+                                           PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
+
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
 } PDMIOMMUREGRC;
@@ -1385,6 +1417,22 @@ typedef struct PDMIOMMUREGR3
      */
     DECLR3CALLBACKMEMBER(int, pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite,
                                            PRTGCPHYS pGCPhysSpa));
+
+    /**
+     * Performs an interrupt remap request through the IOMMU.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The IOMMU device instance.
+     * @param   uDevId      The device identifier (bus, device, function).
+     * @param   GCPhysIn    The source MSI address.
+     * @param   uDataIn     The source MSI data.
+     * @param   pGCPhysOut  Where to store the remapped MSI address.
+     * @param   puDataOut   Where to store the remapped MSI data.
+     *
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+                                           PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;

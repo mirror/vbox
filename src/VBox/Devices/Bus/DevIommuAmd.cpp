@@ -2265,10 +2265,14 @@ typedef struct
 {
     /** The translated system physical address (SPA) of the page. */
     RTGCPHYS        GCPhysSpa;
+    /** The index of the 4K page within a large page. */
+    uint32_t        idxSubPage;
     /** The I/O access permissions (IOMMU_IO_PERM_XXX). */
     uint8_t         fIoPerm;
+    /** The number of offset bits in the translation indicating page size. */
+    uint8_t         cShift;
     /** Alignment padding. */
-    uint8_t         afPadding[7];
+    uint8_t         afPadding[2];
 } IOTLBE_T;
 AssertCompileSize(IOTLBE_T, 16);
 /** Pointer to an IOMMU I/O TLB entry struct. */
@@ -4512,6 +4516,25 @@ static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t 
 
 
 /**
+ * Interrupt remap request from a device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   uDevId      The device ID (bus, device, function).
+ * @param   GCPhysIn    The source MSI address.
+ * @param   uDataIn     The source MSI data.
+ * @param   pGCPhysOut  Where to store the remapped MSI address.
+ * @param   puDataOut   Where to store the remapped MSI data.
+ */
+static int iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+                                  PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
+{
+    RT_NOREF(pDevIns, uDevId, GCPhysIn, uDataIn, pGCPhysOut, puDataOut);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
  * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
 static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
@@ -4543,7 +4566,6 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
 
     return rcStrict;
 }
-
 
 # ifdef IN_RING3
 
@@ -5602,6 +5624,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     IommuReg.u32Version  = PDM_IOMMUREGCC_VERSION;
     IommuReg.pfnMemRead  = iommuAmdDeviceMemRead;
     IommuReg.pfnMemWrite = iommuAmdDeviceMemWrite;
+    IommuReg.pfnMsiRemap = iommuAmdDeviceMsiRemap;
     IommuReg.u32TheEnd   = PDM_IOMMUREGCC_VERSION;
     rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
     if (RT_FAILURE(rc))
@@ -5839,6 +5862,7 @@ static DECLCALLBACK(int) iommuAmdRZConstruct(PPDMDEVINS pDevIns)
     IommuReg.idxIommu    = pThis->idxIommu;
     IommuReg.pfnMemRead  = iommuAmdDeviceMemRead;
     IommuReg.pfnMemWrite = iommuAmdDeviceMemWrite;
+    IommuReg.pfnMsiRemap = iommuAmdDeviceMsiRemap;
     IommuReg.u32TheEnd   = PDM_IOMMUREGCC_VERSION;
     rc = PDMDevHlpIommuSetUpContext(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp));
     AssertRCReturn(rc, rc);

@@ -3347,7 +3347,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     AssertMsgReturn(pIommuReg->u32Version == PDM_IOMMUREGR3_VERSION,
                     ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32Version, PDM_IOMMUREGR3_VERSION),
                     VERR_INVALID_PARAMETER);
-    /** @todo IOMMU: Validate other parameters, see also tstDevicePdmDevHlp.cpp. */
+    AssertPtrReturn(pIommuReg->pfnMemRead, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMemWrite, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMsiRemap, VERR_INVALID_POINTER);
     AssertMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREGR3_VERSION,
                     ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32TheEnd, PDM_IOMMUREGR3_VERSION),
                     VERR_INVALID_PARAMETER);
@@ -3361,12 +3363,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
      * The IOMMU at the root complex is the one at 0.
      */
     unsigned idxIommu = 0;
+#if 0
     for (idxIommu = 0; idxIommu < RT_ELEMENTS(pVM->pdm.s.aIommus); idxIommu++)
         if (!pVM->pdm.s.aIommus[idxIommu].pDevInsR3)
             break;
     AssertLogRelMsgReturn(idxIommu < RT_ELEMENTS(pVM->pdm.s.aIommus),
                           ("Too many IOMMUs. Max=%u\n", RT_ELEMENTS(pVM->pdm.s.aIommus)),
                           VERR_OUT_OF_RESOURCES);
+#else
+    /* Currently we support only a single IOMMU. */
+    AssertMsgReturn(!pVM->pdm.s.aIommus[0].pDevInsR3,
+                    ("%s/%u: Only one IOMMU device is supported!\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                    VERR_ALREADY_EXISTS);
+#endif
     PPDMIOMMU pIommu = &pVM->pdm.s.aIommus[idxIommu];
 
     /*
@@ -3376,6 +3385,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     pIommu->pDevInsR3   = pDevIns;
     pIommu->pfnMemRead  = pIommuReg->pfnMemRead;
     pIommu->pfnMemWrite = pIommuReg->pfnMemWrite;
+    pIommu->pfnMsiRemap = pIommuReg->pfnMsiRemap;
     Log(("PDM: Registered IOMMU device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
 
     /* Set the helper pointer and return. */

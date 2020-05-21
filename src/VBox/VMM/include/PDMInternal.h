@@ -634,6 +634,9 @@ typedef struct PDMIOMMU
     /** @copydoc PDMIOMMUREGR3::pfnMemWrite */
     DECLR3CALLBACKMEMBER(int,   pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbWrite,
                                              PRTGCPHYS pGCPhysSpa));
+    /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
+    DECLR3CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+                                             PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
 } PDMIOMMU;
 
 
@@ -654,6 +657,9 @@ typedef struct PDMIOMMUR0
     /** @copydoc PDMIOMMUREGR3::pfnMemWrite */
     DECLR0CALLBACKMEMBER(int,   pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbWrite,
                                              PRTGCPHYS pGCPhysSpa));
+    /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
+    DECLR0CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+                                             PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
 } PDMIOMMUR0;
 /** Pointer to a ring-0 IOMMU data. */
 typedef PDMIOMMUR0 *PPDMIOMMUR0;

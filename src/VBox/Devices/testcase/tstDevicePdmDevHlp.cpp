@@ -4655,9 +4655,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_IommuRegister(PPDMDEVINS pDevIns, PPDMIOMMU
     AssertMsgReturn(pIommuReg->u32Version == PDM_IOMMUREGR3_VERSION,
                     ("%s/%d: u32Version=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32Version, PDM_IOMMUREGR3_VERSION),
                     VERR_INVALID_PARAMETER);
-
-    /** @todo IOMMU: Validate other parameters */
-
+    AssertPtrReturn(pIommuReg->pfnMemRead, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMemWrite, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMsiRemap, VERR_INVALID_POINTER);
     AssertMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREGR3_VERSION,
                     ("%s/%d: u32TheEnd=%#x expected %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, pIommuReg->u32TheEnd, PDM_IOMMUREGR3_VERSION),
                     VERR_INVALID_PARAMETER);
