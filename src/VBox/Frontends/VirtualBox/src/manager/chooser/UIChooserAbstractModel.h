@@ -202,14 +202,17 @@ private:
           * @param  fAllGroupsOpened  Brings whether we should open all the groups till the required one. */
         UIChooserNode *getCloudGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
 
-        /** Returns whether group node with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
-        bool shouldGroupNodeBeOpened(UIChooserNode *pParentNode, const QString &strName);
+        /** Returns whether group node * with specified @a enmDataType and @a strName should be opened,
+          * searching starting from the passed @a pParentNode. */
+        bool shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
+                                     UIChooserNodeDataPrefixType enmDataType,
+                                     const QString &strName) const;
+        /** Returns whether global node should be favorite,
+          * searching starting from the passed @a pParentNode. */
+        bool shouldGlobalNodeBeFavorite(UIChooserNode *pParentNode) const;
 
         /** Wipes out empty groups starting from @a pParentItem. */
         void wipeOutEmptyGroupsStartingFrom(UIChooserNode *pParentNode);
-
-        /** Returns whether global node within the @a pParentNode is favorite. */
-        bool isGlobalNodeFavorite(UIChooserNode *pParentNode) const;
 
         /** Acquires desired position for a child of @a pParentNode with specified @a enmDataType and @a strName. */
         int getDesiredNodePosition(UIChooserNode *pParentNode, UIChooserNodeDataPrefixType enmDataType, const QString &strName);

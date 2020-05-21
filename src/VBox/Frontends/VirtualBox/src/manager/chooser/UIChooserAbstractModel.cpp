@@ -69,7 +69,7 @@ void UIChooserAbstractModel::init()
 
         /* Create global node: */
         new UIChooserNodeGlobal(invisibleRoot() /* parent */,
-                                isGlobalNodeFavorite(invisibleRoot()),
+                                shouldGlobalNodeBeFavorite(invisibleRoot()),
                                 0 /* position */,
                                 QString() /* tip */);
 
@@ -140,6 +140,7 @@ void UIChooserAbstractModel::init()
                                        strProviderShortName,
                                        UIChooserNodeGroupType_Provider,
                                        shouldGroupNodeBeOpened(invisibleRoot(),
+                                                               UIChooserNodeDataPrefixType_Provider,
                                                                strProviderShortName));
 
             /* Iterate through provider's profiles: */
@@ -164,6 +165,7 @@ void UIChooserAbstractModel::init()
                                            strProfileName,
                                            UIChooserNodeGroupType_Profile,
                                            shouldGroupNodeBeOpened(pProviderNode,
+                                                                   UIChooserNodeDataPrefixType_Profile,
                                                                    strProfileName));
 
                 /* Add fake cloud VM item: */
@@ -696,7 +698,9 @@ UIChooserNode *UIChooserAbstractModel::getLocalGroupNode(const QString &strName,
                                                       strSecondSubName),
                                strSecondSubName,
                                UIChooserNodeGroupType_Local,
-                               fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode, strSecondSubName));
+                               fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode,
+                                                                           UIChooserNodeDataPrefixType_Local,
+                                                                           strSecondSubName));
     return strSecondSuffix.isEmpty() ? pNewGroupNode : getLocalGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
 }
 
@@ -739,7 +743,9 @@ UIChooserNode *UIChooserAbstractModel::getCloudGroupNode(const QString &strName,
     AssertFailedReturn(pParentNode);
 }
 
-bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode, const QString &strName)
+bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
+                                                     UIChooserNodeDataPrefixType enmDataType,
+                                                     const QString &strName) const
 {
     /* Read group definitions: */
     const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
@@ -748,14 +754,9 @@ bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
         return false;
 
     /* Prepare required group definition reg-exp: */
-    const QString strNodePrefixLocal = prefixToString(UIChooserNodeDataPrefixType_Local);
-    const QString strNodePrefixProvider = prefixToString(UIChooserNodeDataPrefixType_Provider);
-    const QString strNodePrefixProfile = prefixToString(UIChooserNodeDataPrefixType_Profile);
+    const QString strNodePrefix = prefixToString(enmDataType);
     const QString strNodeOptionOpened = optionToString(UIChooserNodeDataOptionType_GroupOpened);
-    const QString strDefinitionTemplate = QString("[%1%2%3](\\S)*=%4").arg(strNodePrefixLocal,
-                                                                           strNodePrefixProvider,
-                                                                           strNodePrefixProfile,
-                                                                           strName);
+    const QString strDefinitionTemplate = QString("%1(\\S)*=%2").arg(strNodePrefix, strName);
     const QRegExp definitionRegExp(strDefinitionTemplate);
     /* For each the group definition: */
     foreach (const QString &strDefinition, definitions)
@@ -774,24 +775,7 @@ bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode,
     return false;
 }
 
-void UIChooserAbstractModel::wipeOutEmptyGroupsStartingFrom(UIChooserNode *pParent)
-{
-    /* Cleanup all the group-items recursively first: */
-    foreach (UIChooserNode *pNode, pParent->nodes(UIChooserNodeType_Group))
-        wipeOutEmptyGroupsStartingFrom(pNode);
-    /* If parent has no nodes: */
-    if (!pParent->hasNodes())
-    {
-        /* If that is non-root item: */
-        if (!pParent->isRoot())
-        {
-            /* Delete parent node and item: */
-            delete pParent;
-        }
-    }
-}
-
-bool UIChooserAbstractModel::isGlobalNodeFavorite(UIChooserNode *pParentNode) const
+bool UIChooserAbstractModel::shouldGlobalNodeBeFavorite(UIChooserNode *pParentNode) const
 {
     /* Read group definitions: */
     const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
@@ -820,6 +804,23 @@ bool UIChooserAbstractModel::isGlobalNodeFavorite(UIChooserNode *pParentNode) co
 
     /* Return 'false' by default: */
     return false;
+}
+
+void UIChooserAbstractModel::wipeOutEmptyGroupsStartingFrom(UIChooserNode *pParent)
+{
+    /* Cleanup all the group-items recursively first: */
+    foreach (UIChooserNode *pNode, pParent->nodes(UIChooserNodeType_Group))
+        wipeOutEmptyGroupsStartingFrom(pNode);
+    /* If parent has no nodes: */
+    if (!pParent->hasNodes())
+    {
+        /* If that is non-root item: */
+        if (!pParent->isRoot())
+        {
+            /* Delete parent node and item: */
+            delete pParent;
+        }
+    }
 }
 
 int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode,
