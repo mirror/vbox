@@ -1741,14 +1741,23 @@ AssertCompileSize(MSI_CAP_HDR_T, 4);
 
 /**
  * MSI Address Register (PCI + MMIO).
- * In accordance with the AMD spec.
+ * In accordance to the Intel spec.
+ * See Intel spec. 10.11.1 "Message Address Register Format".
+ *
+ * This also conforms to the AMD IOMMU spec. which omits specifying individual
+ * fields but specifies reserved bits.
  */
 typedef union
 {
     struct
     {
-        RT_GCC_EXTENSION uint64_t   u2Rsvd : 2;       /**< Bits 1:0   - Reserved. */
-        RT_GCC_EXTENSION uint64_t   u62MsiAddr : 62;  /**< Bits 31:2  - MsiAddr: MSI Address. */
+        uint32_t   u2Ign0 : 2;          /**< Bits 1:0   - Ignored (read as 0, writes ignored). */
+        uint32_t   u1DestMode : 1;      /**< Bit  2     - DM: Destination Mode. */
+        uint32_t   u1RedirHint : 1;     /**< Bit  3     - RH: Redirection Hint. */
+        uint32_t   u8Rsvd0 : 8;         /**< Bits 11:4  - Reserved. */
+        uint32_t   u8DestId : 8;        /**< Bits 19:12 - Destination Id. */
+        uint32_t   u12Addr : 12;        /**< Bits 31:20 - Address. */
+        uint32_t   u32Rsvd0;            /**< Bits 63:32 - Reserved. */
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    au32[2];
@@ -1756,24 +1765,44 @@ typedef union
     uint64_t    u64;
 } MSI_ADDR_T;
 AssertCompileSize(MSI_ADDR_T, 8);
+/** According to the AMD IOMMU spec. the top 32-bits are not reserved. From a
+ *  PCI/IOMMU standpoint this makes sense. However, when dealing with the CPU side
+ *  of things we might want to ensure the upper bits are reserved. Does x86/x64
+ *  really support a 64-bit MSI address? */
 #define IOMMU_MSI_ADDR_VALID_MASK           UINT64_C(0xfffffffffffffffc)
+/** Pointer to an MSI address register. */
+typedef MSI_ADDR_T *PMSI_ADDR_T;
+/** Pointer to a const MSI address register. */
+typedef MSI_ADDR_T const *PCMSI_ADDR_T;
 
 /**
  * MSI Data Register (PCI + MMIO).
- * In accordance with the AMD spec.
+ * In accordance to the Intel spec.
+ * See Intel spec. 10.11.2 "Message Data Register Format".
+ *
+ * This also conforms to the AMD IOMMU spec. which omits specifying individual
+ * fields but specifies reserved bits.
  */
 typedef union
 {
     struct
     {
-        uint16_t    u16MsiData;     /**< Bits 15:0  - MsiData: MSI Data. */
-        uint16_t    u16Rsvd0;       /**< Bits 31:16 - Reserved. */
+        uint32_t    u8Vector : 8;           /**< Bits 7:0   - Vector. */
+        uint32_t    u3DeliveryMode : 3;     /**< Bits 10:8  - Delivery Mode. */
+        uint32_t    u3Rsvd0 : 3;            /**< Bits 13:11 - Reserved. */
+        uint32_t    u1Level : 1;            /**< Bit  14    - Level. */
+        uint32_t    u1TriggerMode : 1;      /**< Bit  15    - Trigger Mode (0=edge, 1=level). */
+        uint32_t    u16Rsvd0 : 16;          /**< Bits 31:16 - Reserved. */
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t    u32;
 } MSI_DATA_T;
 AssertCompileSize(MSI_DATA_T, 4);
 #define IOMMU_MSI_DATA_VALID_MASK       UINT64_C(0x000000000000ffff)
+/** Pointer to an MSI data register. */
+typedef MSI_DATA_T *PMSI_DATA_T;
+/** Pointer to a const MSI data register. */
+typedef MSI_DATA_T const *PCMSI_DATA_T;
 
 /**
  * MSI Mapping Capability Header Register (PCI + MMIO).
@@ -2045,7 +2074,7 @@ typedef union
 {
     struct
     {
-        uint32_t    u2Rsvd0 : 2;            /**< Bits  2:0  - Reserved. */
+        uint32_t    u2Rsvd0 : 2;            /**< Bits 2:0   - Reserved. */
         uint32_t    u12GALogPtr : 12;       /**< Bits 15:3  - Guest Virtual-APIC Log Head or Tail Pointer. */
         uint32_t    u16Rsvd0 : 16;          /**< Bits 31:16 - Reserved. */
         uint32_t    u32Rsvd0;               /**< Bits 63:32 - Reserved. */
@@ -2279,6 +2308,21 @@ AssertCompileSize(IOTLBE_T, 16);
 typedef IOTLBE_T *PIOTLBE_T;
 /** Pointer to a const IOMMU I/O TLB entry struct. */
 typedef IOTLBE_T const *PCIOTLBE_T;
+
+/**
+ * MSI Message (Address and Data Register Pair).
+ */
+typedef struct
+{
+    /** The MSI Address Register. */
+    MSI_ADDR_T      MsiAddr;
+    /** The MSI Data Register. */
+    MSI_DATA_T      MsiData;
+} MSI_MSG_T;
+/** Pointer to an MSI message struct. */
+typedef MSI_MSG_T *PMSI_MSG_T;
+/** Pointer to a const MSI message struct. */
+typedef MSI_MSG_T const *PCMSI_MSG_T;
 
 /**
  * The shared IOMMU device state.
@@ -4459,6 +4503,7 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
  */
 static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbRead, PRTGCPHYS pGCPhysSpa)
 {
+    /* Validate. */
     Assert(pDevIns);
     Assert(pGCPhysSpa);
     Assert(cbRead > 0);
@@ -4494,6 +4539,7 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
  */
 static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite, PRTGCPHYS pGCPhysSpa)
 {
+    /* Validate. */
     Assert(pDevIns);
     Assert(pGCPhysSpa);
     Assert(cbWrite > 0);
@@ -4529,8 +4575,26 @@ static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t 
 static int iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
                                   PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
 {
-    RT_NOREF(pDevIns, uDevId, GCPhysIn, uDataIn, pGCPhysOut, puDataOut);
-    return VERR_NOT_IMPLEMENTED;
+    /* Validate. */
+    Assert(pDevIns);
+    Assert(pGCPhysOut);
+    Assert(puDataOut);
+
+    /* Remove later. */
+    RT_NOREF(uDevId, GCPhysIn, uDataIn, pGCPhysOut, puDataOut);
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+
+    /* Interrupts are forwarded with remapping when the IOMMU is disabled. */
+    IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
+    if (Ctrl.n.u1IommuEn)
+    {
+        /** @todo IOMMU: iommuAmdLookupIntrTable. */
+    }
+
+    *pGCPhysOut = GCPhysIn;
+    *puDataOut  = uDataIn;
+    return VINF_SUCCESS;
 }
 
 
@@ -5237,7 +5301,13 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         MsiAddr.u64 = RT_MAKE_U64(uMsiAddrLo, uMsiAddrHi);
         pHlp->pfnPrintf(pHlp, "  MSI Address                             = %#RX64\n",   MsiAddr.u64);
         if (fVerbose)
-            pHlp->pfnPrintf(pHlp, "    Address                                 = %#RX64\n", MsiAddr.n.u62MsiAddr);
+        {
+            pHlp->pfnPrintf(pHlp, "    Destination mode                        = %#x\n",    MsiAddr.n.u1DestMode);
+            pHlp->pfnPrintf(pHlp, "    Redirection hint                        = %#x\n",    MsiAddr.n.u1RedirHint);
+            pHlp->pfnPrintf(pHlp, "    Destination Id                          = %#x\n",    MsiAddr.n.u8DestId);
+            pHlp->pfnPrintf(pHlp, "    Address                                 = %#Rx32\n", MsiAddr.n.u12Addr);
+            pHlp->pfnPrintf(pHlp, "    Address (Hi) / Rsvd?                    = %#Rx32\n", MsiAddr.n.u32Rsvd0);
+        }
     }
     /* MSI Data. */
     {
@@ -5245,7 +5315,14 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         MsiData.u32 = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA);
         pHlp->pfnPrintf(pHlp, "  MSI Data                                = %#RX32\n", MsiData.u32);
         if (fVerbose)
-            pHlp->pfnPrintf(pHlp, "    Data                                    = %#x\n",  MsiData.n.u16MsiData);
+        {
+            pHlp->pfnPrintf(pHlp, "    Vector                                  = %#x (%u)\n", MsiData.n.u8Vector,
+                            MsiData.n.u8Vector);
+            pHlp->pfnPrintf(pHlp, "    Delivery mode                           = %#x\n", MsiData.n.u3DeliveryMode);
+            pHlp->pfnPrintf(pHlp, "    Level                                   = %#x\n", MsiData.n.u1Level);
+            pHlp->pfnPrintf(pHlp, "    Trigger mode                            = %s\n",  MsiData.n.u1TriggerMode ?
+                                                                                         "level" : "edge");
+        }
     }
     /* MSI Mapping Capability Header (HyperTransport, reporting all 0s currently). */
     {
