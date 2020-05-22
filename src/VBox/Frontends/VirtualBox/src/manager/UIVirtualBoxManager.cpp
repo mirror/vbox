@@ -47,6 +47,7 @@
 #include "UIWizardExportApp.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardNewCloudVM.h"
+#include "UIWizardNewVM.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIUpdateManager.h"
 #endif
@@ -561,6 +562,49 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
 void UIVirtualBoxManager::sltPerformExit()
 {
     close();
+}
+
+void UIVirtualBoxManager::sltOpenNewMachineWizard()
+{
+    /* Lock the actions preventing cascade calls: */
+    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexST_M_Welcome_S_New)
+                                                         << actionPool()->action(UIActionIndexST_M_Machine_S_New)
+                                                         << actionPool()->action(UIActionIndexST_M_Group_S_New),
+                                       "opened", true);
+    connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
+            this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
+    updateActionsAppearance();
+
+    /* Get first selected item: */
+    UIVirtualMachineItem *pItem = currentItem();
+
+    /* For global item or local machine: */
+    if (   !pItem
+        || pItem->itemType() == UIVirtualMachineItemType_Local)
+    {
+        /* Use the "safe way" to open stack of Mac OS X Sheets: */
+        QWidget *pWizardParent = windowManager().realParentWindow(this);
+        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, m_pWidget->fullGroupName());
+        windowManager().registerNewParent(pWizard, pWizardParent);
+        pWizard->prepare();
+
+        /* Execute wizard: */
+        pWizard->exec();
+        delete pWizard;
+    }
+    /* For cloud machine: */
+    else
+    {
+        /* Use the "safe way" to open stack of Mac OS X Sheets: */
+        QWidget *pWizardParent = windowManager().realParentWindow(this);
+        UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent);
+        windowManager().registerNewParent(pWizard, pWizardParent);
+        pWizard->prepare();
+
+        /* Execute wizard: */
+        pWizard->exec();
+        delete pWizard;
+    }
 }
 
 void UIVirtualBoxManager::sltOpenAddMachineDialog()
@@ -1511,10 +1555,14 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformExit);
 
     /* 'Welcome' menu connections: */
+    connect(actionPool()->action(UIActionIndexST_M_Welcome_S_New), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenNewMachineWizard);
     connect(actionPool()->action(UIActionIndexST_M_Welcome_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
 
     /* 'Group' menu connections: */
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_New), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenNewMachineWizard);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Rename), &UIAction::triggered,
@@ -1539,6 +1587,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformGroupSorting);
 
     /* 'Machine' menu connections: */
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenNewMachineWizard);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), &UIAction::triggered,
@@ -1889,6 +1939,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM)->setEnabled(isActionEnabled(UIActionIndexST_M_File_S_NewCloudVM, items));
 
     /* Enable/disable welcome actions: */
+    actionPool()->action(UIActionIndexST_M_Welcome_S_New)->setEnabled(isActionEnabled(UIActionIndexST_M_Welcome_S_New, items));
     actionPool()->action(UIActionIndexST_M_Welcome_S_Add)->setEnabled(isActionEnabled(UIActionIndexST_M_Welcome_S_Add, items));
 
     /* Enable/disable group actions: */
@@ -2054,6 +2105,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_File_S_ExportAppliance:
         case UIActionIndexST_M_File_S_ImportAppliance:
         case UIActionIndexST_M_File_S_NewCloudVM:
+        case UIActionIndexST_M_Welcome_S_New:
         case UIActionIndexST_M_Welcome_S_Add:
             return true;
         default:

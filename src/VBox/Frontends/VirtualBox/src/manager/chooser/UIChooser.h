@@ -118,6 +118,9 @@ public:
         bool isSingleCloudProfileGroupSelected() const;
         /** Returns whether all items of one group are selected. */
         bool isAllItemsOfOneGroupSelected() const;
+
+        /** Returns full name of currently selected group. */
+        QString fullGroupName() const;
     /** @} */
 
     /** @name Group saving stuff.

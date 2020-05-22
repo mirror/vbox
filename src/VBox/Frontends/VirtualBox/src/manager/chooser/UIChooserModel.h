@@ -174,6 +174,9 @@ public:
         /** Returns whether all machine items of one group is selected. */
         bool isAllItemsOfOneGroupSelected() const;
 
+        /** Returns full name of currently selected group. */
+        QString fullGroupName() const;
+
         /** Finds closest non-selected-item. */
         UIChooserItem *findClosestUnselectedItem() const;
 
@@ -291,8 +294,6 @@ private slots:
 
     /** @name Children stuff.
       * @{ */
-        /** Handles create new machine request. */
-        void sltCreateNewMachine();
         /** Handles group selected machines request. */
         void sltGroupSelectedMachines();
         /** Handles refresh request. */

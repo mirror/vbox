@@ -131,6 +131,9 @@ public:
         /** Returns whether all items of one group are selected. */
         bool isAllItemsOfOneGroupSelected() const;
 
+        /** Returns full name of currently selected group. */
+        QString fullGroupName() const;
+
         /** Returns whether group saving is in progress. */
         bool isGroupSavingInProgress() const;
 

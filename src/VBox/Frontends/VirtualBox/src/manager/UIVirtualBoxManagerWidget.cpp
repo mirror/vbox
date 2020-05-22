@@ -105,6 +105,11 @@ bool UIVirtualBoxManagerWidget::isAllItemsOfOneGroupSelected() const
     return m_pPaneChooser->isAllItemsOfOneGroupSelected();
 }
 
+QString UIVirtualBoxManagerWidget::fullGroupName() const
+{
+    return m_pPaneChooser->fullGroupName();
+}
+
 bool UIVirtualBoxManagerWidget::isGroupSavingInProgress() const
 {
     return m_pPaneChooser->isGroupSavingInProgress();

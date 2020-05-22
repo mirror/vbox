@@ -184,6 +184,8 @@ private slots:
 
     /** @name Machine menu stuff.
       * @{ */
+        /** Handles call to open new machine wizard. */
+        void sltOpenNewMachineWizard();
         /** Handles call to open add machine dialog. */
         void sltOpenAddMachineDialog();
 

@@ -100,6 +100,12 @@ bool UIChooser::isAllItemsOfOneGroupSelected() const
     return model()->isAllItemsOfOneGroupSelected();
 }
 
+QString UIChooser::fullGroupName() const
+{
+    AssertPtrReturn(model(), QString());
+    return model()->fullGroupName();
+}
+
 bool UIChooser::isGroupSavingInProgress() const
 {
     AssertPtrReturn(model(), false);
