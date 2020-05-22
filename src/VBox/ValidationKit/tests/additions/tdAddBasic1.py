@@ -425,7 +425,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
             fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000,
                                                   'reg.exe',
-                                                  (reg.exe', 'add',
+                                                  ('reg.exe', 'add',
                                                    '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
                                                    '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'),
                                                    fCheckSessionStatus = True);
