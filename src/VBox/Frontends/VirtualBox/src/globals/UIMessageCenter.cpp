@@ -629,17 +629,17 @@ void UIMessageCenter::cannotReregisterExistingMachine(const QString &strMachineP
 void UIMessageCenter::cannotResolveCollisionAutomatically(const QString &strCollisionName, const QString &strGroupName) const
 {
     alert(0, MessageType_Error,
-          tr("<p>You are trying to move machine <nobr><b>%1</b></nobr> "
-             "to group <nobr><b>%2</b></nobr> which already have sub-group <nobr><b>%1</b></nobr>.</p>"
-             "<p>Please resolve this name-conflict and try again.</p>")
+          tr("<p>You are trying to move machine <nobr><b>%1</b></nobr> to group "
+             "<nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
+             "<p>Please resolve this name conflict and try again.</p>")
              .arg(strCollisionName, strGroupName));
 }
 
 bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const
 {
     return questionBinary(0, MessageType_Question,
-                          tr("<p>You are trying to move group <nobr><b>%1</b></nobr> "
-                             "to group <nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
+                          tr("<p>You are trying to move group <nobr><b>%1</b></nobr> to group "
+                             "<nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
                              "<p>Would you like to automatically rename it?</p>")
                              .arg(strName, strGroupName),
                           0 /* auto-confirm id */,

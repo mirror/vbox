@@ -130,6 +130,8 @@ public:
       * @{ */
         /** Opens group name editor. */
         void openGroupNameEditor();
+        /** Disbands group. */
+        void disbandGroup();
         /** Performs group sorting. */
         void performGroupSorting();
     /** @} */

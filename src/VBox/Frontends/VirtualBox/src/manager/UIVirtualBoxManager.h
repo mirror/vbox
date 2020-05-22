@@ -189,6 +189,8 @@ private slots:
 
         /** Handles call to open group name editor. */
         void sltOpenGroupNameEditor();
+        /** Handles call to disband group. */
+        void sltDisbandGroup();
 
         /** Handles call to open Machine Settings dialog.
           * @param strCategory can bring the settings category to start from.

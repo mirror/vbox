@@ -112,6 +112,12 @@ void UIChooser::openGroupNameEditor()
     model()->startEditingSelectedGroupItemName();
 }
 
+void UIChooser::disbandGroup()
+{
+    AssertPtrReturnVoid(model());
+    model()->disbandSelectedGroupItem();
+}
+
 void UIChooser::performGroupSorting()
 {
     AssertPtrReturnVoid(model());

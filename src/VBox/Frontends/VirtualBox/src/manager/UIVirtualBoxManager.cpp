@@ -604,6 +604,11 @@ void UIVirtualBoxManager::sltOpenGroupNameEditor()
     m_pWidget->openGroupNameEditor();
 }
 
+void UIVirtualBoxManager::sltDisbandGroup()
+{
+    m_pWidget->disbandGroup();
+}
+
 void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = QString() */,
                                                        QString strControl /* = QString() */,
                                                        const QUuid &uID /* = QString() */)
@@ -1514,6 +1519,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Rename), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenGroupNameEditor);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Remove), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltDisbandGroup);
     connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
     connect(actionPool()->action(UIActionIndexST_M_Group_T_Pause), &UIAction::toggled,

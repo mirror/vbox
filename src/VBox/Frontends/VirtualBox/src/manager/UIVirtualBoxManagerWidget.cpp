@@ -115,6 +115,11 @@ void UIVirtualBoxManagerWidget::openGroupNameEditor()
     m_pPaneChooser->openGroupNameEditor();
 }
 
+void UIVirtualBoxManagerWidget::disbandGroup()
+{
+    m_pPaneChooser->disbandGroup();
+}
+
 void UIVirtualBoxManagerWidget::performGroupSorting()
 {
     m_pPaneChooser->performGroupSorting();

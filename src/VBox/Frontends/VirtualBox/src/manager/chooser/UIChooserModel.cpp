@@ -564,6 +564,99 @@ void UIChooserModel::startEditingSelectedGroupItemName()
     firstSelectedItem()->startEditing();
 }
 
+void UIChooserModel::disbandSelectedGroupItem()
+{
+    /* Only for single selected group: */
+    if (!isSingleGroupSelected())
+        return;
+
+    /* Check if we have collisions with our potential siblings: */
+    UIChooserItem *pCurrentItem = currentItem();
+    UIChooserNode *pCurrentNode = pCurrentItem->node();
+    UIChooserItem *pParentItem = pCurrentItem->parentItem();
+    UIChooserNode *pParentNode = pParentItem->node();
+    QList<UIChooserNode*> childrenToBeRenamed;
+    foreach (UIChooserNode *pChildNode, pCurrentNode->nodes())
+    {
+        const QString strChildName = pChildNode->name();
+        UIChooserNode *pCollisionSibling = 0;
+        foreach (UIChooserNode *pSiblingNode, pParentNode->nodes())
+            if (pSiblingNode != pCurrentNode && pSiblingNode->name() == strChildName)
+            {
+                pCollisionSibling = pSiblingNode;
+                break;
+            }
+        if (pCollisionSibling)
+        {
+            switch (pChildNode->type())
+            {
+                case UIChooserNodeType_Machine:
+                {
+                    msgCenter().cannotResolveCollisionAutomatically(strChildName, pParentNode->name());
+                    return;
+                }
+                case UIChooserNodeType_Group:
+                {
+                    if (!msgCenter().confirmAutomaticCollisionResolve(strChildName, pParentNode->name()))
+                        return;
+                    childrenToBeRenamed << pChildNode;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+    /* Copy all the children into our parent: */
+    QList<UIChooserItem*> ungroupedItems;
+    foreach (UIChooserNode *pNode, pCurrentNode->nodes())
+    {
+        switch (pNode->type())
+        {
+            case UIChooserNodeType_Group:
+            {
+                UIChooserNodeGroup *pGroupNode = new UIChooserNodeGroup(pParentNode,
+                                                                        pNode->toGroupNode(),
+                                                                        pParentNode->nodes().size());
+                UIChooserItemGroup *pGroupItem = new UIChooserItemGroup(pParentItem, pGroupNode);
+                if (childrenToBeRenamed.contains(pNode))
+                    pGroupNode->setName(uniqueGroupName(pParentNode));
+                ungroupedItems << pGroupItem;
+                break;
+            }
+            case UIChooserNodeType_Machine:
+            {
+                UIChooserNodeMachine *pMachineNode = new UIChooserNodeMachine(pParentNode,
+                                                                              pNode->toMachineNode(),
+                                                                              pParentNode->nodes().size());
+                UIChooserItemMachine *pMachineItem = new UIChooserItemMachine(pParentItem, pMachineNode);
+                ungroupedItems << pMachineItem;
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    /* Delete current group: */
+    delete pCurrentNode;
+
+    /* And update model: */
+    updateTreeForMainRoot();
+    if (!ungroupedItems.isEmpty())
+    {
+        setSelectedItems(ungroupedItems);
+        setCurrentItem(firstSelectedItem());
+    }
+    else
+    {
+        setSelectedItem(navigationItems().first());
+        emit sigSelectionInvalidated();
+    }
+    saveGroups();
+}
+
 void UIChooserModel::startOrShowSelectedItems()
 {
     emit sigStartOrShowRequest();
@@ -816,103 +909,6 @@ void UIChooserModel::sltMakeSureCurrentItemVisible()
 void UIChooserModel::sltCurrentItemDestroyed()
 {
     AssertMsgFailed(("Current-item destroyed!"));
-}
-
-void UIChooserModel::sltUngroupSelectedGroup()
-{
-    /* Check if action is enabled: */
-    if (!actionPool()->action(UIActionIndexST_M_Group_S_Remove)->isEnabled())
-        return;
-
-    /* Make sure current-item is of group type! */
-    AssertMsg(currentItem()->type() == UIChooserNodeType_Group, ("This is not group-item!"));
-
-    /* Check if we have collisions with our siblings: */
-    UIChooserItem *pCurrentItem = currentItem();
-    UIChooserNode *pCurrentNode = pCurrentItem->node();
-    UIChooserItem *pParentItem = pCurrentItem->parentItem();
-    UIChooserNode *pParentNode = pParentItem->node();
-    QList<UIChooserNode*> siblings = pParentNode->nodes();
-    QList<UIChooserNode*> toBeRenamed;
-    QList<UIChooserNode*> toBeRemoved;
-    foreach (UIChooserNode *pNode, pCurrentNode->nodes())
-    {
-        QString strItemName = pNode->name();
-        UIChooserNode *pCollisionSibling = 0;
-        foreach (UIChooserNode *pSibling, siblings)
-            if (pSibling != pCurrentNode && pSibling->name() == strItemName)
-                pCollisionSibling = pSibling;
-        if (pCollisionSibling)
-        {
-            if (pNode->type() == UIChooserNodeType_Machine)
-            {
-                if (pCollisionSibling->type() == UIChooserNodeType_Machine)
-                    toBeRemoved << pNode;
-                else if (pCollisionSibling->type() == UIChooserNodeType_Group)
-                {
-                    msgCenter().cannotResolveCollisionAutomatically(strItemName, pParentNode->name());
-                    return;
-                }
-            }
-            else if (pNode->type() == UIChooserNodeType_Group)
-            {
-                if (msgCenter().confirmAutomaticCollisionResolve(strItemName, pParentNode->name()))
-                    toBeRenamed << pNode;
-                else
-                    return;
-            }
-        }
-    }
-
-    /* Copy all the children into our parent: */
-    QList<UIChooserItem*> copiedItems;
-    foreach (UIChooserNode *pNode, pCurrentNode->nodes())
-    {
-        if (toBeRemoved.contains(pNode))
-            continue;
-        switch (pNode->type())
-        {
-            case UIChooserNodeType_Group:
-            {
-                UIChooserNodeGroup *pGroupNode = new UIChooserNodeGroup(pParentNode,
-                                                                        pNode->toGroupNode(),
-                                                                        pParentNode->nodes().size());
-                UIChooserItemGroup *pGroupItem = new UIChooserItemGroup(pParentItem, pGroupNode);
-                if (toBeRenamed.contains(pNode))
-                    pGroupNode->setName(uniqueGroupName(pParentNode));
-                copiedItems << pGroupItem;
-                break;
-            }
-            case UIChooserNodeType_Machine:
-            {
-                UIChooserNodeMachine *pMachineNode = new UIChooserNodeMachine(pParentNode,
-                                                                              pNode->toMachineNode(),
-                                                                              pParentNode->nodes().size());
-                UIChooserItemMachine *pMachineItem = new UIChooserItemMachine(pParentItem, pMachineNode);
-                copiedItems << pMachineItem;
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    /* Delete current group: */
-    delete pCurrentNode;
-
-    /* And update model: */
-    updateTreeForMainRoot();
-    if (!copiedItems.isEmpty())
-    {
-        setSelectedItems(copiedItems);
-        setCurrentItem(firstSelectedItem());
-    }
-    else
-    {
-        setSelectedItem(navigationItems().first());
-        emit sigSelectionInvalidated();
-    }
-    saveGroups();
 }
 
 void UIChooserModel::sltCreateNewMachine()
@@ -1371,8 +1367,6 @@ void UIChooserModel::prepareConnections()
             this, &UIChooserModel::sltCreateNewMachine);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), &UIAction::triggered,
             this, &UIChooserModel::sltCreateNewMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Remove), &UIAction::triggered,
-            this, &UIChooserModel::sltUngroupSelectedGroup);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Remove), &UIAction::triggered,
             this, &UIChooserModel::sltRemoveSelectedMachine);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New), &UIAction::triggered,
