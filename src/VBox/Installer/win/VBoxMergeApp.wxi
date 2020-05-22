@@ -355,20 +355,8 @@
               Source="$(env.PATH_OUT)\bin\Qt5OpenGL$(var.VBOX_QT_INFIX).dll" />
 <?endif?>
 
-<?if $(env.VBOX_VCC_TOOL_STEM) = "VCC100" ?>
-        <!-- MS C/C++ v10.0 Runtime DLL files -->
-        <File Id="file_msvcr100.dll" Name="msvcr100.dll"
-              Source="$(env.PATH_OUT)\bin\msvcr100.dll" />
-        <File Id="file_msvcp100.dll" Name="msvcp100.dll"
-              Source="$(env.PATH_OUT)\bin\msvcp100.dll" />
-<?endif?>
-<?if $(env.VBOX_VCC_TOOL_STEM) = "VCC110" ?>
-        <!-- MS C/C++ v11.0 Runtime DLL files -->
-        <File Id="file_msvcr110.dll" Name="msvcr110.dll"
-              Source="$(env.PATH_OUT)\bin\msvcr110.dll" />
-        <File Id="file_msvcp110.dll" Name="msvcp110.dll"
-              Source="$(env.PATH_OUT)\bin\msvcp110.dll" />
-<?endif?>
+        <!-- Include CRT Dlls (specific to the compiler). -->
+        <?include $(env.PATH_TARGET)\VBoxCrtDlls.wxi ?>
 
         <!-- EFI firmware -->
 <?if $(env.VBOX_WITH_EFIFW_PACKING) = "yes" ?>
@@ -388,7 +376,7 @@
                   Source="$(env.PATH_OUT)\bin\additions\VBoxGuestAdditions.iso" />
     <?endif ?>
 <?endif ?>
-        <!-- Include key for VBox version -->
+        <!-- Include registry key for VBox version -->
         <?include $(env.PATH_TARGET)\VBoxKey.wxi ?>
 
     </Component> <!-- MainBinaries -->
