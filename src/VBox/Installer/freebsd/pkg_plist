@@ -14,6 +14,7 @@ lib/virtualbox/VBoxKeyboard.so
 lib/virtualbox/VBoxManage
 lib/virtualbox/VBoxNetDHCP.so
 lib/virtualbox/VBoxPython.so
+lib/virtualbox/VBoxREM.so
 lib/virtualbox/VBoxRT.so
 lib/virtualbox/VBoxSDL.so
 lib/virtualbox/VBoxSharedFolders.so
@@ -30,6 +31,8 @@ lib/virtualbox/VBoxOGLrenderspu.so
 lib/virtualbox/vboxwebsrv
 lib/virtualbox/rdesktop-vrdp
 lib/virtualbox/VBoxTestOGL
+_VBOX_REM_32BIT_MODULE_
+_VBOX_REM_64BIT_MODULE_
 @mode 4755
 lib/virtualbox/VBoxSDL
 lib/virtualbox/VirtualBox

@@ -310,7 +310,11 @@ $(VBOX_FBSD_INST_OUT_DIR)/pkg_plist: \
 		$(VBOX_PATH_FBSD_INST_SRC)/pkg_plist
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -d $(dir $@)
-	$(QUIET)$(CP) -- "$<" "$@"
+	$(QUIET)$(SED) \
+		-e "s;_VBOX_REM_32BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,);g" \
+		-e "s;_VBOX_REM_64BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,);g" \
+		--output $@ \
+		$<
 ifdef VBOX_WITH_DTRACE
 	$(QUIET)$(APPEND) -n "$@" "@mode 644" \
 		$(addprefix lib/virtualbox/dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
