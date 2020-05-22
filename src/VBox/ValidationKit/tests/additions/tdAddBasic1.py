@@ -424,8 +424,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             # Apply The SetupAPI logging level so that we also get the (most verbose) setupapi.dev.log file.
             ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
             fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000,
-                                                  'c:\\Windows\\System32\\reg.exe',
-                                                  ('c:\\Windows\\System32\\reg.exe', 'add',
+                                                  'reg.exe',
+                                                  (reg.exe', 'add',
                                                    '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
                                                    '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'),
                                                    fCheckSessionStatus = True);
