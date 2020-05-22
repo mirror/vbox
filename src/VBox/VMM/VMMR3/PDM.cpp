@@ -831,6 +831,12 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
             AssertRC(rc2);
         }
 
+        if (pDevIns->Internal.s.paDbgfTraceTrack)
+        {
+            RTMemFree(pDevIns->Internal.s.paDbgfTraceTrack);
+            pDevIns->Internal.s.paDbgfTraceTrack = NULL;
+        }
+
         TMR3TimerDestroyDevice(pVM, pDevIns);
         SSMR3DeregisterDevice(pVM, pDevIns, NULL, 0);
         pdmR3CritSectBothDeleteDevice(pVM, pDevIns);

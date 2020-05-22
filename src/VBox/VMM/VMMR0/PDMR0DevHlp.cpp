@@ -60,7 +60,6 @@ RT_C_DECLS_END
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static bool pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc);
 
 
 /** @name Ring-0 Device Helpers
@@ -1363,6 +1362,107 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     PDM_DEVHLPR0_VERSION
 };
 
+
+#ifdef VBOX_WITH_DBGF_TRACING
+/**
+ * The Ring-0 Device Helper Callbacks - tracing variant.
+ */
+extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlpTracing =
+{
+    PDM_DEVHLPR0_VERSION,
+    pdmR0DevHlpTracing_IoPortSetUpContextEx,
+    pdmR0DevHlpTracing_MmioSetUpContextEx,
+    pdmR0DevHlp_Mmio2SetUpContext,
+    pdmR0DevHlpTracing_PCIPhysRead,
+    pdmR0DevHlpTracing_PCIPhysWrite,
+    pdmR0DevHlpTracing_PCISetIrq,
+    pdmR0DevHlpTracing_ISASetIrq,
+    pdmR0DevHlpTracing_IoApicSendMsi,
+    pdmR0DevHlp_PhysRead,
+    pdmR0DevHlp_PhysWrite,
+    pdmR0DevHlp_A20IsEnabled,
+    pdmR0DevHlp_VMState,
+    pdmR0DevHlp_VMSetError,
+    pdmR0DevHlp_VMSetErrorV,
+    pdmR0DevHlp_VMSetRuntimeError,
+    pdmR0DevHlp_VMSetRuntimeErrorV,
+    pdmR0DevHlp_GetVM,
+    pdmR0DevHlp_GetVMCPU,
+    pdmR0DevHlp_GetCurrentCpuId,
+    pdmR0DevHlp_TimerToPtr,
+    pdmR0DevHlp_TimerFromMicro,
+    pdmR0DevHlp_TimerFromMilli,
+    pdmR0DevHlp_TimerFromNano,
+    pdmR0DevHlp_TimerGet,
+    pdmR0DevHlp_TimerGetFreq,
+    pdmR0DevHlp_TimerGetNano,
+    pdmR0DevHlp_TimerIsActive,
+    pdmR0DevHlp_TimerIsLockOwner,
+    pdmR0DevHlp_TimerLockClock,
+    pdmR0DevHlp_TimerLockClock2,
+    pdmR0DevHlp_TimerSet,
+    pdmR0DevHlp_TimerSetFrequencyHint,
+    pdmR0DevHlp_TimerSetMicro,
+    pdmR0DevHlp_TimerSetMillies,
+    pdmR0DevHlp_TimerSetNano,
+    pdmR0DevHlp_TimerSetRelative,
+    pdmR0DevHlp_TimerStop,
+    pdmR0DevHlp_TimerUnlockClock,
+    pdmR0DevHlp_TimerUnlockClock2,
+    pdmR0DevHlp_TMTimeVirtGet,
+    pdmR0DevHlp_TMTimeVirtGetFreq,
+    pdmR0DevHlp_TMTimeVirtGetNano,
+    pdmR0DevHlp_QueueToPtr,
+    pdmR0DevHlp_QueueAlloc,
+    pdmR0DevHlp_QueueInsert,
+    pdmR0DevHlp_QueueInsertEx,
+    pdmR0DevHlp_QueueFlushIfNecessary,
+    pdmR0DevHlp_TaskTrigger,
+    pdmR0DevHlp_SUPSemEventSignal,
+    pdmR0DevHlp_SUPSemEventWaitNoResume,
+    pdmR0DevHlp_SUPSemEventWaitNsAbsIntr,
+    pdmR0DevHlp_SUPSemEventWaitNsRelIntr,
+    pdmR0DevHlp_SUPSemEventGetResolution,
+    pdmR0DevHlp_SUPSemEventMultiSignal,
+    pdmR0DevHlp_SUPSemEventMultiReset,
+    pdmR0DevHlp_SUPSemEventMultiWaitNoResume,
+    pdmR0DevHlp_SUPSemEventMultiWaitNsAbsIntr,
+    pdmR0DevHlp_SUPSemEventMultiWaitNsRelIntr,
+    pdmR0DevHlp_SUPSemEventMultiGetResolution,
+    pdmR0DevHlp_CritSectGetNop,
+    pdmR0DevHlp_SetDeviceCritSect,
+    pdmR0DevHlp_CritSectEnter,
+    pdmR0DevHlp_CritSectEnterDebug,
+    pdmR0DevHlp_CritSectTryEnter,
+    pdmR0DevHlp_CritSectTryEnterDebug,
+    pdmR0DevHlp_CritSectLeave,
+    pdmR0DevHlp_CritSectIsOwner,
+    pdmR0DevHlp_CritSectIsInitialized,
+    pdmR0DevHlp_CritSectHasWaiters,
+    pdmR0DevHlp_CritSectGetRecursion,
+    pdmR0DevHlp_CritSectScheduleExitEvent,
+    pdmR0DevHlp_DBGFTraceBuf,
+    pdmR0DevHlp_PCIBusSetUpContext,
+    pdmR0DevHlp_IommuSetUpContext,
+    pdmR0DevHlp_PICSetUpContext,
+    pdmR0DevHlp_ApicSetUpContext,
+    pdmR0DevHlp_IoApicSetUpContext,
+    pdmR0DevHlp_HpetSetUpContext,
+    NULL /*pfnReserved1*/,
+    NULL /*pfnReserved2*/,
+    NULL /*pfnReserved3*/,
+    NULL /*pfnReserved4*/,
+    NULL /*pfnReserved5*/,
+    NULL /*pfnReserved6*/,
+    NULL /*pfnReserved7*/,
+    NULL /*pfnReserved8*/,
+    NULL /*pfnReserved9*/,
+    NULL /*pfnReserved10*/,
+    PDM_DEVHLPR0_VERSION
+};
+#endif
+
+
 /** @} */
 
 
@@ -1642,7 +1742,7 @@ extern DECLEXPORT(const PDMPCIRAWHLPR0) g_pdmR0PciRawHlp =
  *
  * @remarks The caller holds the PDM lock.
  */
-static bool pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc)
+DECLHIDDEN(bool) pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     if (RT_LIKELY(    (   pGVM->pdm.s.IoApic.pDevInsR0
                        || !pGVM->pdm.s.IoApic.pDevInsR3)

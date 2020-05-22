@@ -307,6 +307,30 @@ int pdmR3DevInit(PVM pVM)
             }
         }
 
+#ifdef VBOX_WITH_DBGF_TRACING
+        DBGFTRACEREVTSRC hDbgfTraceEvtSrc = NIL_DBGFTRACEREVTSRC;
+        bool fTracingEnabled = false;
+        bool fGCPhysRwAll = false;
+        rc = CFGMR3QueryBoolDef(paDevs[i].pNode, "TracingEnabled", &fTracingEnabled,
+                                false);
+        AssertLogRelRCReturn(rc, rc);
+        if (fTracingEnabled)
+        {
+            rc = CFGMR3QueryBoolDef(paDevs[i].pNode, "TraceAllGstMemRw", &fGCPhysRwAll,
+                                    false);
+            AssertLogRelRCReturn(rc, rc);
+
+            /* Traced devices need to be trusted for now. */
+            if (fTrusted)
+            {
+                rc = DBGFR3TracerRegisterEvtSrc(pVM, pReg->szName, &hDbgfTraceEvtSrc);
+                AssertLogRelRCReturn(rc, rc);
+            }
+            else
+                AssertMsgFailedReturn(("configuration error: Device tracing needs a trusted device\n"), VERR_INCOMPATIBLE_CONFIG);
+        }
+#endif
+
         /* config node */
         PCFGMNODE pConfigNode = CFGMR3GetChild(paDevs[i].pNode, "Config");
         if (!pConfigNode)
@@ -337,23 +361,29 @@ int pdmR3DevInit(PVM pVM)
                                     pReg->pszR0Mod, pReg->szName);
 
             PDMDEVICECREATEREQ Req;
-            Req.Hdr.u32Magic     = SUPVMMR0REQHDR_MAGIC;
-            Req.Hdr.cbReq        = sizeof(Req);
-            Req.pDevInsR3        = NULL;
-            Req.fFlags           = pReg->fFlags;
-            Req.fClass           = pReg->fClass;
-            Req.cMaxInstances    = pReg->cMaxInstances;
-            Req.uSharedVersion   = pReg->uSharedVersion;
-            Req.cbInstanceShared = pReg->cbInstanceShared;
-            Req.cbInstanceR3     = pReg->cbInstanceCC;
-            Req.cbInstanceRC     = pReg->cbInstanceRC;
-            Req.cMaxPciDevices   = pReg->cMaxPciDevices;
-            Req.cMaxMsixVectors  = pReg->cMaxMsixVectors;
-            Req.iInstance        = paDevs[i].iInstance;
-            Req.fRCEnabled       = fRCEnabled;
-            Req.afReserved[0]    = false;
-            Req.afReserved[1]    = false;
-            Req.afReserved[2]    = false;
+            Req.Hdr.u32Magic      = SUPVMMR0REQHDR_MAGIC;
+            Req.Hdr.cbReq         = sizeof(Req);
+            Req.pDevInsR3         = NULL;
+            /** @todo Add tracer id in request so R0 can set up DEVINSR0 properly. */
+            Req.fFlags            = pReg->fFlags;
+            Req.fClass            = pReg->fClass;
+            Req.cMaxInstances     = pReg->cMaxInstances;
+            Req.uSharedVersion    = pReg->uSharedVersion;
+            Req.cbInstanceShared  = pReg->cbInstanceShared;
+            Req.cbInstanceR3      = pReg->cbInstanceCC;
+            Req.cbInstanceRC      = pReg->cbInstanceRC;
+            Req.cMaxPciDevices    = pReg->cMaxPciDevices;
+            Req.cMaxMsixVectors   = pReg->cMaxMsixVectors;
+            Req.iInstance         = paDevs[i].iInstance;
+            Req.fRCEnabled        = fRCEnabled;
+            Req.afReserved[0]     = false;
+            Req.afReserved[1]     = false;
+            Req.afReserved[2]     = false;
+#ifdef VBOX_WITH_DBGF_TRACING
+            Req.hDbgfTracerEvtSrc = hDbgfTraceEvtSrc;
+#else
+            Req.hDbgfTracerEvtSrc = NIL_DBGFTRACEREVTSRC;
+#endif
             rc = RTStrCopy(Req.szDevName, sizeof(Req.szDevName), pReg->szName);
             AssertLogRelRCReturn(rc, rc);
             rc = RTStrCopy(Req.szModName, sizeof(Req.szModName), pReg->pszR0Mod);
@@ -428,6 +458,11 @@ int pdmR3DevInit(PVM pVM)
         //pDevIns->Internal.s.pfnAsyncNotify      = NULL;
         pDevIns->Internal.s.pCfgHandle          = paDevs[i].pNode;
         pDevIns->Internal.s.pVMR3               = pVM;
+#ifdef VBOX_WITH_DBGF_TRACING
+        pDevIns->Internal.s.hDbgfTraceEvtSrc    = hDbgfTraceEvtSrc;
+#else
+        pDevIns->Internal.s.hDbgfTraceEvtSrc    = NIL_DBGFTRACEREVTSRC;
+#endif
         //pDevIns->Internal.s.pHeadPciDevR3       = NULL;
         pDevIns->Internal.s.fIntFlags          |= PDMDEVINSINT_FLAGS_SUSPENDED;
         //pDevIns->Internal.s.uLastIrqTag         = 0;
@@ -478,6 +513,29 @@ int pdmR3DevInit(PVM pVM)
             paDevs[i].pDev->cInstances--;
             return rc == VERR_VERSION_MISMATCH ? VERR_PDM_DEVICE_VERSION_MISMATCH : rc;
         }
+
+#ifdef VBOX_WITH_DBGF_TRACING
+        /*
+         * Allocate memory for the MMIO/IO port registration tracking if DBGF tracing is enabled.
+         */
+        if (hDbgfTraceEvtSrc != NIL_DBGFTRACEREVTSRC)
+        {
+            pDevIns->Internal.s.paDbgfTraceTrack = (PPDMDEVINSDBGFTRACK)RTMemAllocZ(PDM_MAX_DEVICE_DBGF_TRACING_TRACK);
+            if (!pDevIns->Internal.s.paDbgfTraceTrack)
+            {
+                LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_NO_MEMORY));
+                if (VMR3GetErrorCount(pVM->pUVM) == 0)
+                    VMSetError(pVM, rc, RT_SRC_POS, "Failed to construct device '%s' instance #%u",
+                               pDevIns->pReg->szName, pDevIns->iInstance);
+                paDevs[i].pDev->cInstances--;
+                return VERR_NO_MEMORY;
+            }
+
+            pDevIns->Internal.s.idxDbgfTraceTrackNext = 0;
+            pDevIns->Internal.s.cDbgfTraceTrackMax = PDM_MAX_DEVICE_DBGF_TRACING_TRACK / sizeof(PDMDEVINSDBGFTRACK);
+            pDevIns->pHlpR3 = &g_pdmR3DevHlpTracing;
+        }
+#endif
 
         /*
          * Call the ring-0 constructor if applicable.

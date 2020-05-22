@@ -264,6 +264,8 @@ typedef struct PDMDEVICECREATEREQ
     bool                    fRCEnabled;
     /** Explicit padding. */
     bool                    afReserved[3];
+    /** DBGF tracer event source handle if configured. */
+    DBGFTRACEREVTSRC        hDbgfTracerEvtSrc;
 
     /** In: Device name. */
     char                    szDevName[32];

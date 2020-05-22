@@ -139,6 +139,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/PDMBlkCache.cpp \
 	VMMR3/PDMDevice.cpp \
 	VMMR3/PDMDevHlp.cpp \
+	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR3/PDMDevHlpTracing.cpp,) \
 	VMMR3/PDMDevMiscHlp.cpp \
 	VMMR3/PDMDriver.cpp \
 	VMMR3/PDMLdr.cpp \
@@ -507,6 +508,7 @@ VMMR0_SOURCES   = \
 	VMMR0/IOMR0Mmio.cpp \
 	VMMR0/PDMR0Device.cpp \
 	VMMR0/PDMR0DevHlp.cpp \
+	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR0/PDMR0DevHlpTracing.cpp,) \
 	VMMR0/PDMR0Driver.cpp \
 	VMMR0/PGMR0.cpp \
 	VMMR0/PGMR0Pool.cpp \

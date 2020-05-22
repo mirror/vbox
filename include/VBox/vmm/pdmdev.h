@@ -5394,7 +5394,7 @@ typedef struct PDMDEVINSR3
 #ifdef PDMDEVINSINT_DECLARED
         PDMDEVINSINTR3              s;
 #endif
-        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x30 : 0x50];
+        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x40 : 0x90];
     } Internal;
 
     /** Device instance data for ring-3.  The size of this area is defined
@@ -5472,7 +5472,7 @@ typedef struct PDMDEVINSR0
 #ifdef PDMDEVINSINT_DECLARED
         PDMDEVINSINTR0              s;
 #endif
-        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x20 : 0x40];
+        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x40 : 0x80];
     } Internal;
 
     /** Device instance data for ring-0. The size of this area is defined

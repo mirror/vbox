@@ -26,6 +26,7 @@
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vusb.h>
+#include <VBox/vmm/iom.h>
 #include <VBox/vmm/pdmasynccompletion.h>
 #ifdef VBOX_WITH_NETSHAPER
 # include <VBox/vmm/pdmnetshaper.h>
@@ -74,9 +75,11 @@ RT_C_DECLS_BEGIN
 #endif
 
 /** The maximum device instance (total) size, ring-0/raw-mode capable devices. */
-#define PDM_MAX_DEVICE_INSTANCE_SIZE    _4M
+#define PDM_MAX_DEVICE_INSTANCE_SIZE      _4M
 /** The maximum device instance (total) size, ring-3 only devices. */
-#define PDM_MAX_DEVICE_INSTANCE_SIZE_R3 _8M
+#define PDM_MAX_DEVICE_INSTANCE_SIZE_R3   _8M
+/** The maximum size for the DBGF tracing tracking structure allocated for each device. */
+#define PDM_MAX_DEVICE_DBGF_TRACING_TRACK PAGE_SIZE
 
 
 
@@ -129,6 +132,53 @@ typedef enum PDMASYNCCOMPLETIONEPCLASSTYPE
     PDMASYNCCOMPLETIONEPCLASSTYPE_32BIT_HACK = 0x7fffffff
 } PDMASYNCCOMPLETIONEPCLASSTYPE;
 
+
+/**
+ * MMIO/IO port registration tracking structure for DBGF tracing.
+ */
+typedef struct PDMDEVINSDBGFTRACK
+{
+    /** Flag whether this tracks a IO port or MMIO registration. */
+    bool                                fMmio;
+    /** Opaque user data passed during registration. */
+    void                                *pvUser;
+    /** Type dependent data. */
+    union
+    {
+        /** I/O port  registration. */
+        struct
+        {
+            /** IOM I/O port handle. */
+            IOMIOPORTHANDLE             hIoPorts;
+            /** Original OUT handler of the device. */
+            PFNIOMIOPORTNEWOUT          pfnOut;
+            /** Original IN handler of the device. */
+            PFNIOMIOPORTNEWIN           pfnIn;
+            /** Original string OUT handler of the device. */
+            PFNIOMIOPORTNEWOUTSTRING    pfnOutStr;
+            /** Original string IN handler of the device. */
+            PFNIOMIOPORTNEWINSTRING     pfnInStr;
+        } IoPort;
+        /** MMIO registration. */
+        struct
+        {
+            /** IOM MMIO region handle. */
+            IOMMMIOHANDLE               hMmioRegion;
+            /** Original MMIO write handler of the device. */
+            PFNIOMMMIONEWWRITE          pfnWrite;
+            /** Original MMIO read handler of the device. */
+            PFNIOMMMIONEWREAD           pfnRead;
+            /** Original MMIO fill handler of the device. */
+            PFNIOMMMIONEWFILL           pfnFill;
+        } Mmio;
+    } u;
+} PDMDEVINSDBGFTRACK;
+/** Pointer to a MMIO/IO port registration tracking structure. */
+typedef PDMDEVINSDBGFTRACK *PPDMDEVINSDBGFTRACK;
+/** Pointer to a const MMIO/IO port registration tracking structure. */
+typedef const PDMDEVINSDBGFTRACK *PCPDMDEVINSDBGFTRACK;
+
+
 /**
  * Private device instance data, ring-3.
  */
@@ -152,6 +202,14 @@ typedef struct PDMDEVINSINTR3
 
     /** R3 pointer to the VM this instance was created for. */
     PVMR3                           pVMR3;
+    /** DBGF trace event source handle if tracing is configured. */
+    DBGFTRACEREVTSRC                hDbgfTraceEvtSrc;
+    /** Pointer to the base of the page containing the DBGF tracing tracking structures. */
+    PPDMDEVINSDBGFTRACK             paDbgfTraceTrack;
+    /** Index of the next entry to use for tracking. */
+    uint32_t                        idxDbgfTraceTrackNext;
+    /** Maximum number of records fitting into the single page. */
+    uint32_t                        cDbgfTraceTrackMax;
 
     /** Flags, see PDMDEVINSINT_FLAGS_XXX. */
     uint32_t                        fIntFlags;
@@ -177,10 +235,20 @@ typedef struct PDMDEVINSINTR0
     R0PTRTYPE(PDMDEVINSINTR3 *)     pIntR3R0;
     /** Pointer to the ring-0 mapping of the ring-3 instance (for idTracing). */
     R0PTRTYPE(struct PDMDEVINSR3 *) pInsR3R0;
+    /** DBGF trace event source handle if tracing is configured. */
+    DBGFTRACEREVTSRC                hDbgfTraceEvtSrc;
     /** The device instance memory. */
     RTR0MEMOBJ                      hMemObj;
     /** The ring-3 mapping object. */
     RTR0MEMOBJ                      hMapObj;
+    /** The page memory object for tracking MMIO and I/O port registrations when tracing is configured. */
+    RTR0MEMOBJ                      hDbgfTraceObj;
+    /** Pointer to the base of the page containing the DBGF tracing tracking structures. */
+    PPDMDEVINSDBGFTRACK             paDbgfTraceTrack;
+    /** Index of the next entry to use for tracking. */
+    uint32_t                        idxDbgfTraceTrackNext;
+    /** Maximum number of records fitting into the single page. */
+    uint32_t                        cDbgfTraceTrackMax;
     /** Index into PDMR0PERVM::apDevInstances. */
     uint32_t                        idxR0Device;
 } PDMDEVINSINTR0;
@@ -1447,6 +1515,9 @@ typedef PDMUSERPERVM *PPDMUSERPERVM;
 #ifdef IN_RING3
 extern const PDMDRVHLPR3    g_pdmR3DrvHlp;
 extern const PDMDEVHLPR3    g_pdmR3DevHlpTrusted;
+# ifdef VBOX_WITH_DBGF_TRACING
+extern const PDMDEVHLPR3    g_pdmR3DevHlpTracing;
+# endif
 extern const PDMDEVHLPR3    g_pdmR3DevHlpUnTrusted;
 extern const PDMPICHLP      g_pdmR3DevPicHlp;
 extern const PDMIOAPICHLP   g_pdmR3DevIoApicHlp;
@@ -1589,6 +1660,55 @@ void        pdmUnlock(PVMCC pVM);
 void        pdmCritSectRwLeaveSharedQueued(PPDMCRITSECTRW pThis);
 void        pdmCritSectRwLeaveExclQueued(PPDMCRITSECTRW pThis);
 #endif
+
+#if defined IN_RING0
+DECLHIDDEN(bool)               pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc);
+#endif
+
+#ifdef VBOX_WITH_DBGF_TRACING
+# if defined(IN_RING3)
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
+                                                                 uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                                 PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, RTR3PTR pvUser,
+                                                                 const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
+                                                               uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
+                                                               PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
+                                                               void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue);
+# elif defined(IN_RING0)
+DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_IoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
+                                                                       PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                                       PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr,
+                                                                       void *pvUser);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_MmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                                                     PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue);
+# else
+# error "Invalid environment selected"
+# endif
+#endif
+
 
 /** @} */
 
