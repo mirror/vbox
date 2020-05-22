@@ -205,8 +205,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             reporter.testStart('Enabling udev logging ...');
             oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
             reporter.testDone();
-            if oTxsSession: 
-                oTxsSession.syncExec("sed", 
+            if oTxsSession:
+                oTxsSession.syncExec("sed",
                                      ("sed", "-i", "'s/.*udev_log.*/udev_log=\"debug\"/'", "/etc/udev/udev.conf"),
                                      fIgnoreErrors = True);
 
