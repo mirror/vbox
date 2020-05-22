@@ -306,6 +306,19 @@ static int vboxDispIfWddmDcSearchPath(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT srcId,
     return -1;
 }
 
+static int vboxDispIfWddmDcSearchActiveSourcePath(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT srcId)
+{
+    for (UINT i = 0; i < pCfg->cPathInfoArray; ++i)
+    {
+        if (   pCfg->pPathInfoArray[i].sourceInfo.id == srcId
+            && RT_BOOL(pCfg->pPathInfoArray[i].flags & DISPLAYCONFIG_PATH_ACTIVE))
+        {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
 static int vboxDispIfWddmDcSearchActivePath(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT srcId, UINT trgId)
 {
     int idx = vboxDispIfWddmDcSearchPath(pCfg, srcId, trgId);
@@ -1802,27 +1815,30 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
     {
         pDispDef = &paDispDef[i];
 
-        DISPLAYCONFIG_PATH_INFO *pPathInfo;
-        int iPath = vboxDispIfWddmDcSearchPath(&DispCfg, pDispDef->idDisplay, pDispDef->idDisplay);
+        /* Modify the path which the same source and target ids. */
+        int const iPath = vboxDispIfWddmDcSearchPath(&DispCfg, pDispDef->idDisplay, pDispDef->idDisplay);
         if (iPath < 0)
         {
             WARN(("VBoxTray:(WDDM) Unexpected iPath(%d) between src(%d) and tgt(%d)\n", iPath, pDispDef->idDisplay, pDispDef->idDisplay));
             continue;
         }
 
+        /* If the source is used by another active path, then deactivate the path. */
+        int const iActiveSrcPath = vboxDispIfWddmDcSearchActiveSourcePath(&DispCfg, pDispDef->idDisplay);
+        if (iActiveSrcPath >= 0 && iActiveSrcPath != iPath)
+            DispCfg.pPathInfoArray[iActiveSrcPath].flags &= ~DISPLAYCONFIG_PATH_ACTIVE;
+
+        DISPLAYCONFIG_PATH_INFO *pPathInfo = &DispCfg.pPathInfoArray[iPath];
+
         if (!(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
         {
             DISPLAYCONFIG_SOURCE_MODE *pSrcMode;
             DISPLAYCONFIG_TARGET_MODE *pTgtMode;
 
-            pPathInfo = &DispCfg.pPathInfoArray[iPath];
-
             if (pPathInfo->flags & DISPLAYCONFIG_PATH_ACTIVE)
             {
-                UINT iSrcMode, iTgtMode;
-
-                iSrcMode = pPathInfo->sourceInfo.modeInfoIdx;
-                iTgtMode = pPathInfo->targetInfo.modeInfoIdx;
+                UINT iSrcMode = pPathInfo->sourceInfo.modeInfoIdx;
+                UINT iTgtMode = pPathInfo->targetInfo.modeInfoIdx;
 
                 if (iSrcMode >= DispCfg.cModeInfoArray || iTgtMode >= DispCfg.cModeInfoArray)
                 {
@@ -1836,15 +1852,15 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
                 if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_CX)
                 {
                     pSrcMode->width =
-                        pTgtMode->targetVideoSignalInfo.activeSize.cx =
-                        pTgtMode->targetVideoSignalInfo.totalSize.cx = pDispDef->cx;
+                    pTgtMode->targetVideoSignalInfo.activeSize.cx =
+                    pTgtMode->targetVideoSignalInfo.totalSize.cx = pDispDef->cx;
                 }
 
                 if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_CY)
                 {
                     pSrcMode->height =
-                        pTgtMode->targetVideoSignalInfo.activeSize.cy =
-                        pTgtMode->targetVideoSignalInfo.totalSize.cy = pDispDef->cy;
+                    pTgtMode->targetVideoSignalInfo.activeSize.cy =
+                    pTgtMode->targetVideoSignalInfo.totalSize.cy = pDispDef->cy;
                 }
 
                 if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_ORIGIN)
@@ -1870,7 +1886,7 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
                         pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_8BPP;
                         break;
                     default:
-                        LogRel(("VBoxTray: (WDDM) invalid bpp %d, using 32bpp instead\n", pDispDef->cBitsPerPixel));
+                        WARN(("VBoxTray: (WDDM) invalid bpp %d, using 32bpp instead\n", pDispDef->cBitsPerPixel));
                         pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
                         break;
                     }
@@ -1878,52 +1894,120 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
             }
             else
             {
-                DISPLAYCONFIG_MODE_INFO *pModeInfo, *pModeInfoNew;
-
-                pModeInfo = (DISPLAYCONFIG_MODE_INFO *)realloc(DispCfg.pModeInfoArray, (DispCfg.cModeInfoArray + 2) * sizeof(DISPLAYCONFIG_MODE_INFO));
-
-                if (!pModeInfo)
+                /* "The source and target modes for each source and target identifiers can only appear
+                 * in the modeInfoArray array once."
+                 * Try to find the source mode.
+                 */
+                DISPLAYCONFIG_MODE_INFO *pSrcModeInfo = NULL;
+                int iSrcModeInfo = -1;
+                for (UINT j = 0; j < DispCfg.cModeInfoArray; ++j)
                 {
-                    WARN(("VBoxTray:(WDDM) Unable to re-allocate DispCfg.pModeInfoArray\n"));
-                    continue;
+                    if (   DispCfg.pModeInfoArray[j].infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE
+                        && DispCfg.pModeInfoArray[j].id == pDispDef->idDisplay)
+                    {
+                        pSrcModeInfo = &DispCfg.pModeInfoArray[j];
+                        iSrcModeInfo = (int)j;
+                        break;
+                    }
                 }
 
-                DispCfg.pModeInfoArray = pModeInfo;
+                if (pSrcModeInfo == NULL)
+                {
+                    /* No mode yet. Add the new mode to the ModeInfo array. */
+                    DISPLAYCONFIG_MODE_INFO *paModeInfo = (DISPLAYCONFIG_MODE_INFO *)realloc(DispCfg.pModeInfoArray, (DispCfg.cModeInfoArray + 1) * sizeof(DISPLAYCONFIG_MODE_INFO));
+                    if (!paModeInfo)
+                    {
+                        WARN(("VBoxTray:(WDDM) Unable to re-allocate DispCfg.pModeInfoArray\n"));
+                        continue;
+                    }
 
-                *pPathInfo = DispCfg.pPathInfoArray[0];
-                pPathInfo->sourceInfo.id = pDispDef->idDisplay;
-                pPathInfo->targetInfo.id = pDispDef->idDisplay;
+                    DispCfg.pModeInfoArray = paModeInfo;
+                    DispCfg.cModeInfoArray += 1;
 
-                pModeInfoNew = &pModeInfo[DispCfg.cModeInfoArray];
-                pModeInfoNew->infoType = DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE;
-                pModeInfoNew->id = pDispDef->idDisplay;
-                pModeInfoNew->adapterId = pModeInfo[0].adapterId;
-                pSrcMode = &pModeInfoNew->sourceMode;
-                pSrcMode->width  = pDispDef->cx;
-                pSrcMode->height = pDispDef->cy;
-                pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
-                pSrcMode->position.x = pDispDef->xOrigin;
-                pSrcMode->position.y = pDispDef->yOrigin;
-                pPathInfo->sourceInfo.modeInfoIdx = DispCfg.cModeInfoArray;
+                    iSrcModeInfo = DispCfg.cModeInfoArray - 1;
+                    pSrcModeInfo = &DispCfg.pModeInfoArray[iSrcModeInfo];
+                    RT_ZERO(*pSrcModeInfo);
 
-                pModeInfoNew++;
-                pModeInfoNew->infoType = DISPLAYCONFIG_MODE_INFO_TYPE_TARGET;
-                pModeInfoNew->id = pDispDef->idDisplay;
-                pModeInfoNew->adapterId = pModeInfo[0].adapterId;
-                pModeInfoNew->targetMode = pModeInfo[0].targetMode;
-                pTgtMode = &pModeInfoNew->targetMode;
-                pTgtMode->targetVideoSignalInfo.activeSize.cx =
-                    pTgtMode->targetVideoSignalInfo.totalSize.cx = pDispDef->cx;
-                pTgtMode->targetVideoSignalInfo.activeSize.cy =
-                    pTgtMode->targetVideoSignalInfo.totalSize.cy  = pDispDef->cy;
-                pPathInfo->targetInfo.modeInfoIdx = DispCfg.cModeInfoArray + 1;
+                    pSrcModeInfo->infoType  = DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE;
+                    pSrcModeInfo->id        = pDispDef->idDisplay;
+                    pSrcModeInfo->adapterId = DispCfg.pModeInfoArray[0].adapterId;
+                }
 
-                DispCfg.cModeInfoArray += 2;
+                /* Update the source mode information. */
+                if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_CX)
+                {
+                    pSrcModeInfo->sourceMode.width = pDispDef->cx;
+                }
+
+                if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_CY)
+                {
+                    pSrcModeInfo->sourceMode.height = pDispDef->cy;
+                }
+
+                if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_BPP)
+                {
+                    switch (pDispDef->cBitsPerPixel)
+                    {
+                        case 32:
+                            pSrcModeInfo->sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
+                            break;
+                        case 24:
+                            pSrcModeInfo->sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_24BPP;
+                            break;
+                        case 16:
+                            pSrcModeInfo->sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_16BPP;
+                            break;
+                        case 8:
+                            pSrcModeInfo->sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_8BPP;
+                            break;
+                        default:
+                            WARN(("VBoxTray: (WDDM) invalid bpp %d, using 32bpp instead\n", pDispDef->cBitsPerPixel));
+                            pSrcModeInfo->sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
+                            break;
+                    }
+                }
+
+                if (pDispDef->fDisplayFlags & VMMDEV_DISPLAY_ORIGIN)
+                {
+                    pSrcModeInfo->sourceMode.position.x = pDispDef->xOrigin;
+                    pSrcModeInfo->sourceMode.position.y = pDispDef->yOrigin;
+                }
+
+                /* Configure the path information. */
+                Assert(pPathInfo->sourceInfo.id == pDispDef->idDisplay);
+                pPathInfo->sourceInfo.modeInfoIdx = iSrcModeInfo;
+
+                Assert(pPathInfo->targetInfo.id == pDispDef->idDisplay);
+                /* "If the index value is DISPLAYCONFIG_PATH_MODE_IDX_INVALID ..., this indicates
+                 * the mode information is not being specified. It is valid for the path plus source mode ...
+                 * information to be specified for a given path."
+                 */
+                pPathInfo->targetInfo.modeInfoIdx      = DISPLAYCONFIG_PATH_MODE_IDX_INVALID;
+                pPathInfo->targetInfo.outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HD15;
+                pPathInfo->targetInfo.rotation         = DISPLAYCONFIG_ROTATION_IDENTITY;
+                pPathInfo->targetInfo.scaling          = DISPLAYCONFIG_SCALING_PREFERRED;
+                /* "A refresh rate with both the numerator and denominator set to zero indicates that
+                 * the caller does not specify a refresh rate and the operating system should use
+                 * the most optimal refresh rate available. For this case, in a call to the SetDisplayConfig
+                 * function, the caller must set the scanLineOrdering member to the
+                 * DISPLAYCONFIG_SCANLINE_ORDERING_UNSPECIFIED value; otherwise, SetDisplayConfig fails."
+                 *
+                 * If a refresh rate is set to a value, then the resize will fail if miniport driver
+                 * does not support VSync, i.e. with display-only driver on Win8+ (@bugref{8440}).
+                 */
+                pPathInfo->targetInfo.refreshRate.Numerator   = 0;
+                pPathInfo->targetInfo.refreshRate.Denominator = 0;
+                pPathInfo->targetInfo.scanLineOrdering        = DISPLAYCONFIG_SCANLINE_ORDERING_UNSPECIFIED;
+                /* Make sure that "The output can be forced on this target even if a monitor is not detected." */
+                pPathInfo->targetInfo.targetAvailable         = TRUE;
+                pPathInfo->targetInfo.statusFlags             = DISPLAYCONFIG_TARGET_FORCIBLE;
             }
+
+            pPathInfo->flags |= DISPLAYCONFIG_PATH_ACTIVE;
         }
         else
         {
-                DispCfg.pPathInfoArray[iPath].flags &= ~DISPLAYCONFIG_PATH_ACTIVE;
+            pPathInfo->flags &= ~DISPLAYCONFIG_PATH_ACTIVE;
         }
     }
 
