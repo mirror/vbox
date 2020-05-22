@@ -292,11 +292,11 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                 if oTestVm.isWindows() \
                 or oTestVm.isOS2():
                     sFsPerfPathTemp = "C:\\Temp\\" + sFsPerfImage;
-                    sCopy           = "C:\\Windows\\System32\\cmd.exe";
+                    sCopy           = "cmd.exe";
                     sCopyArgs       = ( sCopy, "/C", "copy", "/Y",  sFsPerfPath, sFsPerfPathTemp );
                 else:
                     sFsPerfPathTemp = "/var/tmp/" + sFsPerfImage;
-                    sCopy           = "/bin/cp";
+                    sCopy           = "cp";
                     sCopyArgs       = ( sCopy, "-a", "-v", sFsPerfPath, sFsPerfPathTemp );
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Copying FsPerf', 60 * 1000,
                                               sCopy, sCopyArgs, fCheckSessionStatus = True);
