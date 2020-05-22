@@ -33,6 +33,10 @@ __version__ = "$Revision$"
 import os;
 import sys;
 import uuid;
+if sys.version_info[0] >= 3:
+    from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
+else:
+    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -199,36 +203,39 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         if oTestVm.isLinux():
             reporter.testStart('Enabling udev logging ...');
-            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False,
-                                                                      cMsCdWait = 5 * 60 * 1000);
-            oTxsSession.syncExec("/bin/sed", ("/bin/sed", "-i", "'s/.*udev_log.*/udev_log=\"debug\"/'", "/etc/udev/udev.conf"),
-                                 fIgnoreErrors = True);
+            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
             reporter.testDone();
+            if oTxsSession: 
+                oTxsSession.syncExec("sed", 
+                                     ("sed", "-i", "'s/.*udev_log.*/udev_log=\"debug\"/'", "/etc/udev/udev.conf"),
+                                     fIgnoreErrors = True);
 
-            reporter.testStart('Enabling udev monitoring ...');
-            sUdevMonitorServiceContent = \
-                '[Unit]\n' \
-                'Description=udev Monitoring\n' \
-                'DefaultDependencies=no\n' \
-                'Wants=systemd-udevd.service\n' \
-                'After=systemd-udevd-control.socket systemd-udevd-kernel.socket\n' \
-                'Before=sysinit.target systemd-udev-trigger.service\n' \
-                '[Service]\n' \
-                'Type=simple\n' \
-                'ExecStart=/usr/bin/sh -c "/usr/sbin/udevadm monitor --udev --env > /tmp/udev_monitor.log\n' \
-                '[Install]\n' \
-                'WantedBy=sysinit.target';
-            sUdevMonitorServiceFile = '/etc/systemd/system/systemd-udev-monitor.service';
-            oTxsSession.syncUploadString(sUdevMonitorServiceContent, sUdevMonitorServiceFile, 0o644);
-            oTxsSession.syncExec("/bin/systemctl", ("/bin/systemctl", "enable", "systemd-udev-monitor.service"),
-                                 fIgnoreErrors = True);
-            reporter.testDone();
+                sUDevMonitorLog = '/tmp/udev_monitor.log';
+
+                reporter.testStart('Enabling udev monitoring ...');
+                sUdevSvc = StringIO();
+                sUdevSvc.write('[Unit]\n');
+                sUdevSvc.write('Description=udev Monitoring\n');
+                sUdevSvc.write('DefaultDependencies=no\n');
+                sUdevSvc.write('Wants=systemd-udevd.service\n');
+                sUdevSvc.write('After=systemd-udevd-control.socket systemd-udevd-kernel.socket\n');
+                sUdevSvc.write('Before=sysinit.target systemd-udev-trigger.service\n');
+                sUdevSvc.write('[Service]\n');
+                sUdevSvc.write('Type=simple\n');
+                sUdevSvc.write('ExecStart=/usr/bin/sh -c "/usr/sbin/udevadm monitor --udev --env > ' + sUDevMonitorLog + '\n');
+                sUdevSvc.write('[Install]\n');
+                sUdevSvc.write('WantedBy=sysinit.target');
+                oTxsSession.syncUploadString(sUdevSvc.getvalue(), '/etc/systemd/system/systemd-udev-monitor.service', 0o644,
+                                             fIgnoreErrors = True);
+                oTxsSession.syncExec("systemctl", ("systemctl", "enable", "systemd-udev-monitor.service"),
+                                     fIgnoreErrors = True);
+                reporter.testDone();
 
         reporter.testStart('Waiting for TXS + CD (%s)' % (self.sFileCdWait,));
         if oTestVm.isLinux():
-            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, fCdWait = True,
-                                                                  cMsCdWait = 5 * 60 * 1000,
-                                                                  sFileCdWait = self.sFileCdWait);
+            fRc, oTxsSession = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, fCdWait = True,
+                                                                cMsCdWait = 5 * 60 * 1000,
+                                                                sFileCdWait = self.sFileCdWait);
         else:
             oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
                                                                       cMsCdWait = 5 * 60 * 1000,
@@ -236,7 +243,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         reporter.testDone();
 
         if oTestVm.isLinux():
-            asLogFiles = [ '/tmp/udev_monitor.log' ];
+            asLogFiles = [ sUDevMonitorLog ];
             self.txsDownloadFiles(oSession, oTxsSession, asLogFiles, fIgnoreErrors = True);
 
         if oSession is not None:
