@@ -288,14 +288,12 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             #        make it executable and execute it from there.
             fISOMakerCmdIsBuggy = oTestVm.isLinux();
             if fISOMakerCmdIsBuggy:
-                sFsPerfImage = "FsPerf${EXESUFF}";
+                sFsPerfPathTemp = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'FsPerf${EXESUFF}');
                 if oTestVm.isWindows() \
                 or oTestVm.isOS2():
-                    sFsPerfPathTemp = "C:\\Temp\\" + sFsPerfImage;
-                    sCopy           = "cmd.exe";
+                    sCopy           = self.oTstDrv.getGuestSystemShell();
                     sCopyArgs       = ( sCopy, "/C", "copy", "/Y",  sFsPerfPath, sFsPerfPathTemp );
                 else:
-                    sFsPerfPathTemp = "/var/tmp/" + sFsPerfImage;
                     sCopy           = "cp";
                     sCopyArgs       = ( sCopy, "-a", "-v", sFsPerfPath, sFsPerfPathTemp );
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Copying FsPerf', 60 * 1000,
@@ -311,9 +309,10 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                 # Do a bit of diagnosis to find out why this failed.
                 if     not oTestVm.isWindows() \
                    and not oTestVm.isOS2():
-                    oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", sFsPerfPath), fIgnoreErrors = True);
-                    oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "-R", "/opt"), fIgnoreErrors = True);
-                    oTxsSession.syncExec("/bin/ls", ("/bin/ls", "-al", "-R", "/media/cdrom"), fIgnoreErrors = True);
+                    sCmdLs = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'ls');
+                    oTxsSession.syncExec(sCmdLs, (sCmdLs, "-al", sFsPerfPath), fIgnoreErrors = True);
+                    oTxsSession.syncExec(sCmdLs, (sCmdLs, "-al", "-R", "/opt"), fIgnoreErrors = True);
+                    oTxsSession.syncExec(sCmdLs, (sCmdLs, "-al", "-R", "/media/cdrom"), fIgnoreErrors = True);
 
             sTestDir = os.path.join(sShareHostPath1, 'fstestdir-1');
             if os.path.exists(sTestDir):

@@ -375,13 +375,17 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             if not fRc:
                 if oTestVm.isLinux():
                     reporter.log('Boot log:');
-                    oTxsSession.syncExec('/bin/journalctl', ('/bin/journalctl', '-b'), fIgnoreErrors = True);
+                    sCmdJournalCtl = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'journalctl');
+                    oTxsSession.syncExec(sCmdJournalCtl, (sCmdJournalCtl, '-b'), fIgnoreErrors = True);
                     reporter.log('Loaded processes:');
-                    oTxsSession.syncExec('/bin/ps', ('/bin/ps', '-a', '-u', '-x'), fIgnoreErrors = True);
+                    sCmdPs = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'ps');
+                    oTxsSession.syncExec(sCmdPs, (sCmdPs, '-a', '-u', '-x'), fIgnoreErrors = True);
                     reporter.log('Kernel messages:');
-                    oTxsSession.syncExec('/bin/dmesg', ('/bin/dmesg'), fIgnoreErrors = True);
+                    sCmdDmesg = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'dmesg');
+                    oTxsSession.syncExec(sCmdDmesg, (sCmdDmesg), fIgnoreErrors = True);
                     reporter.log('Loaded modules:');
-                    oTxsSession.syncExec('/sbin/lsmod', ('/sbin/lsmod'), fIgnoreErrors = True);
+                    sCmdLsMod = oTestVm.pathJoin(self.getGuestSystemAdminDir(oTestVm), 'lsmod');
+                    oTxsSession.syncExec(sCmdLsMod, (sCmdLsMod), fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
 
@@ -501,7 +505,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Make sure to add "--nox11" to the makeself wrapper in order to not getting any blocking
         # xterm window spawned.
         fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
-                              '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
+                              self.getGuestSystemShell(oTestVm),
+                              (self.getGuestSystemShell(oTestVm), '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
         if not fRc:
             iRc = self.getAdditionsInstallerResult(oTxsSession);
             # Check for rc == 0 just for completeness.

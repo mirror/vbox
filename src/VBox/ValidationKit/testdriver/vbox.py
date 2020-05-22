@@ -2571,6 +2571,80 @@ class TestDriver(base.TestDriver):                                              
         from testdriver.vboxwrappers import SessionWrapper;
         return SessionWrapper(oSession, oVM, self.oVBox, self.oVBoxMgr, self, False);
 
+    #
+    # Guest locations.
+    #
+
+    @staticmethod
+    def getGuestTempDir(oTestVm):
+        """
+        Helper for finding a temporary directory in the test VM.
+
+        Note! It may be necessary to create it!
+        """
+        if oTestVm.isWindows():
+            return "C:\\Temp";
+        if oTestVm.isOS2():
+            return "C:\\Temp";
+        return '/var/tmp';
+
+    @staticmethod
+    def getGuestSystemDir(oTestVm, sPathPrefix = ''):
+        """
+        Helper for finding a system directory in the test VM that we can play around with.
+        sPathPrefix can be used to specify other directories, such as /usr/local/bin/ or /usr/bin, for instance.
+
+        On Windows this is always the System32 directory, so this function can be used as
+        basis for locating other files in or under that directory.
+        """
+        if oTestVm.isWindows():
+            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
+                return 'C:\\Winnt\\System32';
+            return 'C:\\Windows\\System32';
+        if oTestVm.isOS2():
+            return 'C:\\OS2\\DLL';
+        return sPathPrefix + "/bin";
+
+    @staticmethod
+    def getGuestSystemAdminDir(oTestVm, sPathPrefix = ''):
+        """
+        Helper for finding a system admin directory ("sbin") in the test VM that we can play around with.
+        sPathPrefix can be used to specify other directories, such as /usr/local/sbin/ or /usr/sbin, for instance.
+
+        On Windows this is always the System32 directory, so this function can be used as
+        basis for locating other files in or under that directory.
+        On UNIX-y systems this always is the "sh" shell to guarantee a common shell syntax.
+        """
+        if oTestVm.isWindows():
+            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
+                return 'C:\\Winnt\\System32';
+            return 'C:\\Windows\\System32';
+        if oTestVm.isOS2():
+            return 'C:\\OS2\\DLL'; ## @todo r=andy Not sure here.
+        return sPathPrefix + "/sbin";
+
+    @staticmethod
+    def getGuestSystemShell(oTestVm):
+        """
+        Helper for finding the default system shell in the test VM.
+        """
+        if oTestVm.isWindows():
+            return TestDriver.getGuestSystemDir(oTestVm) + '\\cmd.exe';
+        if oTestVm.isOS2():
+            return TestDriver.getGuestSystemDir(oTestVm) + '\\..\\CMD.EXE';
+        return "/bin/sh";
+
+    @staticmethod
+    def getGuestSystemFileForReading(oTestVm):
+        """
+        Helper for finding a file in the test VM that we can read.
+        """
+        if oTestVm.isWindows():
+            return TestDriver.getGuestSystemDir(oTestVm) + '\\ntdll.dll';
+        if oTestVm.isOS2():
+            return TestDriver.getGuestSystemDir(oTestVm) + '\\DOSCALL1.DLL';
+        return "/bin/sh";
+
     def getVmByName(self, sName):
         """
         Get a test VM by name.  Returns None if not found, logged.

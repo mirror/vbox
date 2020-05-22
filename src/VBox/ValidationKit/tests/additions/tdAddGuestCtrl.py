@@ -1474,61 +1474,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    #
-    # Guest locations.
-    #
-
-    @staticmethod
-    def getGuestTempDir(oTestVm):
-        """
-        Helper for finding a temporary directory in the test VM.
-
-        Note! It may be necessary to create it!
-        """
-        if oTestVm.isWindows():
-            return "C:\\Temp";
-        if oTestVm.isOS2():
-            return "C:\\Temp";
-        return '/var/tmp';
-
-    @staticmethod
-    def getGuestSystemDir(oTestVm):
-        """
-        Helper for finding a system directory in the test VM that we can play around with.
-
-        On Windows this is always the System32 directory, so this function can be used as
-        basis for locating other files in or under that directory.
-        """
-        if oTestVm.isWindows():
-            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
-                return 'C:\\Winnt\\System32';
-            return 'C:\\Windows\\System32';
-        if oTestVm.isOS2():
-            return 'C:\\OS2\\DLL';
-        return "/bin";
-
-    @staticmethod
-    def getGuestSystemShell(oTestVm):
-        """
-        Helper for finding the default system shell in the test VM.
-        """
-        if oTestVm.isWindows():
-            return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\cmd.exe';
-        if oTestVm.isOS2():
-            return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\..\\CMD.EXE';
-        return "/bin/sh";
-
-    @staticmethod
-    def getGuestSystemFileForReading(oTestVm):
-        """
-        Helper for finding a file in the test VM that we can read.
-        """
-        if oTestVm.isWindows():
-            return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\ntdll.dll';
-        if oTestVm.isOS2():
-            return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\DOSCALL1.DLL';
-        return "/bin/sh";
-
     def prepareGuestForDebugging(self, oSession, oTxsSession, oTestVm): # pylint: disable=unused-argument
         """
         Prepares a guest for (manual) debugging.
@@ -1557,9 +1502,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             elif oTestVm.isWindows():
                 reporter.log('Uploading %s ...' % self.oDebug.sImgPath);
                 sFileVBoxServiceHst = self.oDebug.sImgPath;
-                sFileVBoxServiceGst = os.path.join(SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm), 'VBoxService.exe');
+                sFileVBoxServiceGst = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'VBoxService.exe');
                 oTxsSession.syncUploadFile(sFileVBoxServiceHst, sFileVBoxServiceGst);
-                sPathSC = os.path.join(SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm), 'sc.exe');
+                sPathSC = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'sc.exe');
                 oTxsSession.syncExec(sPathSC, (sPathSC, "stop", "VBoxService") );
                 time.sleep(5);
                 oTxsSession.syncExec(sPathSC, (sPathSC, "start", "VBoxService") );
@@ -1586,7 +1531,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         fRc = True;
 
         if oTestVm.isWindows():
-            sPathSC = os.path.join(self.getGuestSystemDir(oTestVm), 'sc.exe');
+            sPathSC = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'sc.exe');
             if fStart is True:
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService with verbose logging', 30 * 1000, \
                                               sPathSC, (sPathSC, 'start', 'VBoxService'));
@@ -1663,14 +1608,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Make sure the temporary directory exists.
         #
-        for sDir in [self.getGuestTempDir(oTestVm), ]:
+        for sDir in [self.oTstDrv.getGuestTempDir(oTestVm), ]:
             if oTxsSession.syncMkDirPath(sDir, 0o777) is not True:
                 return reporter.error('Failed to create directory "%s"!' % (sDir,));
 
         #
         # Enable VBoxService verbose logging.
         #
-        self.oDebug.sVBoxServiceLogPath = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), "VBoxService");
+        self.oDebug.sVBoxServiceLogPath = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), "VBoxService");
         if oTxsSession.syncMkDirPath(self.oDebug.sVBoxServiceLogPath, 0o777) is not True:
             return reporter.error('Failed to create directory "%s"!' % (self.oDebug.sVBoxServiceLogPath,));
         sPathLogFile = oTestVm.pathJoin(self.oDebug.sVBoxServiceLogPath, 'VBoxService.log');
@@ -1678,8 +1623,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         reporter.log('VBoxService logs will be stored in "%s"' % (self.oDebug.sVBoxServiceLogPath,));
 
         if oTestVm.isWindows():
-            sPathRegExe         = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
-            sPathVBoxServiceExe = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'VBoxService.exe');
+            sPathRegExe         = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'reg.exe');
+            sPathVBoxServiceExe = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'VBoxService.exe');
             sImagePath          = '%s -vvvv --logfile %s' % (sPathVBoxServiceExe, sPathLogFile);
             self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging (via registry)', 30 * 1000,
                                     sPathRegExe,
@@ -1699,7 +1644,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Note! Make sure we don't run into too-long-path issues when using
         #       the test files on the host if.
         #
-        cchGst = len(self.getGuestTempDir(oTestVm)) + 1 + len('addgst-1') + 1;
+        cchGst = len(self.oTstDrv.getGuestTempDir(oTestVm)) + 1 + len('addgst-1') + 1;
         cchHst = len(self.oTstDrv.sScratchPath) + 1 + len('copyto/addgst-1') + 1;
         cchMaxPath = 230;
         if cchHst > cchGst:
@@ -1709,7 +1654,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             asCompatibleWith = [ 'win' ];
         self.oTestFiles = vboxtestfileset.TestFileSet(oTestVm,
-                                                      self.getGuestTempDir(oTestVm), 'addgst-1',
+                                                      self.oTstDrv.getGuestTempDir(oTestVm), 'addgst-1',
                                                       cchMaxPath = cchMaxPath, asCompatibleWith = asCompatibleWith);
         return self.oTestFiles.upload(oTxsSession, self.oTstDrv);
 
@@ -2566,7 +2511,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         # Find a file to play around with:
-        sFile = self.getGuestSystemFileForReading(oTestVm);
+        sFile = self.oTstDrv.getGuestSystemFileForReading(oTestVm);
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
@@ -2704,7 +2649,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests the guest session process reference handling.
         """
 
-        sCmd = self.getGuestSystemShell(oTestVm);
+        sCmd = self.oTstDrv.getGuestSystemShell(oTestVm);
         asArgs = [sCmd,];
 
         # Use credential defaults.
@@ -2759,9 +2704,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Fire off non-stale processes and wait for termination.
             #
             if oTestVm.isWindows() or oTestVm.isOS2():
-                asArgs = [ sCmd, '/C', 'dir', '/S', self.getGuestSystemDir(oTestVm), ];
+                asArgs = [ sCmd, '/C', 'dir', '/S', self.oTstDrv.getGuestSystemDir(oTestVm), ];
             else:
-                asArgs = [ sCmd, '-c', 'ls -la ' + self.getGuestSystemDir(oTestVm), ];
+                asArgs = [ sCmd, '-c', 'ls -la ' + self.oTstDrv.getGuestSystemDir(oTestVm), ];
             reporter.log2('Starting non-stale processes...');
             aoProcesses = [];
             for i in xrange(0, cStaleProcs):
@@ -2851,16 +2796,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         # Paths:
         sVBoxControl    = None; ## @todo Get path of installed Guest Additions. Later.
-        sShell          = self.getGuestSystemShell(oTestVm);
+        sShell          = self.oTstDrv.getGuestSystemShell(oTestVm);
         sShellOpt       = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
-        sSystemDir      = self.getGuestSystemDir(oTestVm);
-        sFileForReading = self.getGuestSystemFileForReading(oTestVm);
+        sSystemDir      = self.oTstDrv.getGuestSystemDir(oTestVm);
+        sFileForReading = self.oTstDrv.getGuestSystemFileForReading(oTestVm);
         if oTestVm.isWindows() or oTestVm.isOS2():
-            sImageOut = self.getGuestSystemShell(oTestVm);
+            sImageOut = self.oTstDrv.getGuestSystemShell(oTestVm);
             if oTestVm.isWindows():
                 sVBoxControl = "C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\VBoxControl.exe";
         else:
-            sImageOut = "/bin/ls";
+            sImageOut = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'ls');
             if oTestVm.isLinux(): ## @todo check solaris and darwin.
                 sVBoxControl = "/usr/bin/VBoxControl"; # Symlink
 
@@ -3004,7 +2949,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             or oTestVm.isOS2():
                 sEcho = sShell;
             else:
-                sEcho       = "/bin/echo";
+                sEcho       = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'echo');
                 # The suffix acts as an indicator / beacon to see if the actual (random) args were received fully.
                 sEchoSuffix = "-n";
 
@@ -3170,7 +3115,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Create a process.
         #
-        sImage = self.getGuestSystemShell(oTestVm);
+        sImage = self.oTstDrv.getGuestSystemShell(oTestVm);
         asArgs  = [ sImage, ];
         aEnv    = [];
         afFlags = [];
@@ -3244,7 +3189,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests handling of timeouts of started guest processes.
         """
 
-        sShell = self.getGuestSystemShell(oTestVm);
+        sShell = self.oTstDrv.getGuestSystemShell(oTestVm);
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
@@ -3366,7 +3311,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests creation of guest directories.
         """
 
-        sScratch = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'testGuestCtrlDirCreate');
+        sScratch = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), 'testGuestCtrlDirCreate');
 
         atTests = [
             # Invalid stuff.
@@ -3395,9 +3340,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             ]);
         atTests.extend([
             # Existing directories and files.
-            [ tdTestDirCreate(sDirectory = self.getGuestSystemDir(oTestVm) ), tdTestResultFailure() ],
-            [ tdTestDirCreate(sDirectory = self.getGuestSystemShell(oTestVm) ), tdTestResultFailure() ],
-            [ tdTestDirCreate(sDirectory = self.getGuestSystemFileForReading(oTestVm) ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = self.oTstDrv.getGuestSystemDir(oTestVm) ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = self.oTstDrv.getGuestSystemShell(oTestVm) ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = self.oTstDrv.getGuestSystemFileForReading(oTestVm) ), tdTestResultFailure() ],
             # Creating directories.
             [ tdTestDirCreate(sDirectory = sScratch ), tdTestResultSuccess() ],
             [ tdTestDirCreate(sDirectory = oTestVm.pathJoin(sScratch, 'foo', 'bar', 'baz'),
@@ -3442,7 +3387,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests creation of temporary directories.
         """
 
-        sSystemDir = self.getGuestSystemDir(oTestVm);
+        sSystemDir = self.oTstDrv.getGuestSystemDir(oTestVm);
         atTests = [
             # Invalid stuff (template must have one or more trailin 'X'es (upper case only), or a cluster of three or more).
             [ tdTestDirCreateTemp(sDirectory = ''), tdTestResultFailure() ],
@@ -3455,16 +3400,20 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             [ tdTestDirCreateTemp(sTemplate = 'X,so', sDirectory = 'pointless test', fMode = 0o700), tdTestResultFailure() ],
             # Non-existing stuff.
             [ tdTestDirCreateTemp(sTemplate = 'XXXXXXX',
-                                  sDirectory = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'non', 'existing')),
+                                  sDirectory = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), 'non', 'existing')),
                                   tdTestResultFailure() ],
             # Working stuff:
-            [ tdTestDirCreateTemp(sTemplate = 'X', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
-            [ tdTestDirCreateTemp(sTemplate = 'XX', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
-            [ tdTestDirCreateTemp(sTemplate = 'XXX', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
-            [ tdTestDirCreateTemp(sTemplate = 'XXXXXXX', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
-            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
-            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
-            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'X', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'XX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'XXX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'XXXXXXX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)),
+              tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)),
+              tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)),
+              tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)),
+               tdTestResultFailure() ],
             ## @todo test fSecure and pass weird fMode values once these parameters are implemented in the API.
         ];
 
@@ -3525,7 +3474,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests opening and reading (enumerating) guest directories.
         """
 
-        sSystemDir = self.getGuestSystemDir(oTestVm);
+        sSystemDir = self.oTstDrv.getGuestSystemDir(oTestVm);
         atTests = [
             # Invalid stuff.
             [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead() ],
@@ -3776,8 +3725,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             tdTestSessionEx([
                 tdStepStatDir('.'),
                 tdStepStatDir('..'),
-                tdStepStatDir(self.getGuestTempDir(oTestVm)),
-                tdStepStatDir(self.getGuestSystemDir(oTestVm)),
+                tdStepStatDir(self.oTstDrv.getGuestTempDir(oTestVm)),
+                tdStepStatDir(self.oTstDrv.getGuestSystemDir(oTestVm)),
                 tdStepStatDirEx(self.oTestFiles.oRoot),
                 tdStepStatDirEx(self.oTestFiles.oEmptyDir),
                 tdStepStatDirEx(self.oTestFiles.oTreeDir),
@@ -3787,8 +3736,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
                 tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
                 tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
-                tdStepStatFile(self.getGuestSystemFileForReading(oTestVm)),
-                tdStepStatFile(self.getGuestSystemShell(oTestVm)),
+                tdStepStatFile(self.oTstDrv.getGuestSystemFileForReading(oTestVm)),
+                tdStepStatFile(self.oTstDrv.getGuestSystemShell(oTestVm)),
                 tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
                 tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
                 tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
@@ -3799,7 +3748,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
 
         # None existing stuff.
-        sSysDir = self.getGuestSystemDir(oTestVm);
+        sSysDir = self.oTstDrv.getGuestSystemDir(oTestVm);
         sSep    = oTestVm.pathSep();
         aoTests += [
             tdTestSessionEx([
@@ -3907,8 +3856,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Paths.
         #
-        sTempDir        = self.getGuestTempDir(oTestVm);
-        sFileForReading = self.getGuestSystemFileForReading(oTestVm);
+        sTempDir        = self.oTstDrv.getGuestTempDir(oTestVm);
+        sFileForReading = self.oTstDrv.getGuestSystemFileForReading(oTestVm);
         asFiles = [
             oTestVm.pathJoin(sTempDir, 'file-open-0'),
             oTestVm.pathJoin(sTempDir, 'file-open-1'),
@@ -3952,8 +3901,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if self.oTstDrv.fpApiVer > 5.2: # Fixed since 6.0.
             atTests.extend([
                 # Wrong type:
-                [ tdTestFileOpen(sFile = self.getGuestTempDir(oTestVm)),                                tdTestResultFailure() ],
-                [ tdTestFileOpen(sFile = self.getGuestSystemDir(oTestVm)),                              tdTestResultFailure() ],
+                [ tdTestFileOpen(sFile = self.oTstDrv.getGuestTempDir(oTestVm)),                        tdTestResultFailure() ],
+                [ tdTestFileOpen(sFile = self.oTstDrv.getGuestSystemDir(oTestVm)),                      tdTestResultFailure() ],
             ]);
         atTests.extend([
             # O_EXCL and such:
@@ -4421,7 +4370,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # The test file and its content.
         #
-        sFile     = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'gctrl-write-1');
+        sFile     = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), 'gctrl-write-1');
         abContent = bytearray(0);
 
         #
@@ -4520,14 +4469,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sScratchNonEmptyDirHst  = self.oTestFiles.chooseRandomDirFromTree().buildPath(sScratchHst, os.path.sep);
         sScratchTreeDirHst      = os.path.join(sScratchTestFilesHst, self.oTestFiles.oTreeDir.sName);
 
-        sScratchGst             = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'copyto');
+        sScratchGst             = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), 'copyto');
         sScratchDstDir1Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir1');
         sScratchDstDir2Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir2');
         sScratchDstDir3Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir3');
         sScratchDstDir4Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir4');
-        #sScratchGstNotExist     = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'no-such-file-or-directory');
+        #sScratchGstNotExist     = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), 'no-such-file-or-directory');
         sScratchHstNotExist     = os.path.join(self.oTstDrv.sScratchPath,         'no-such-file-or-directory');
-        sScratchGstPathNotFound = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'no-such-directory', 'or-file');
+        sScratchGstPathNotFound = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), 'no-such-directory', 'or-file');
         #sScratchHstPathNotFound = os.path.join(self.oTstDrv.sScratchPath,         'no-such-directory', 'or-file');
 
         if oTestVm.isWindows() or oTestVm.isOS2():
@@ -5137,7 +5086,7 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         aWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
         _ = oGuestSession.waitForArray(aWaitFor, 30 * 1000);
 
-        sCmd = SubTstDrvAddGuestCtrl.getGuestSystemShell(oTestVm);
+        sCmd = self.getGuestSystemShell(oTestVm);
         asArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
         aEnv = [];
         afFlags = [];
