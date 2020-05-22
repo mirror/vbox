@@ -112,8 +112,12 @@ endif
 
 # The compiler runtime DLLs.
 ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
- include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
- include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
+ ifndef TOOL_$(VBOX_VCC_TOOL)
+  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
+ endif
+ ifndef TOOL_$(VBOX_VCC_TOOL_STEM)X86
+  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
+ endif
  ifdef PATH_TOOL_$(VBOX_VCC_TOOL_STEM)_REDIST
 InstallExternalLibs_SOURCES += \
 	$(foreachfile redistdll, $(qaddprefix ,$(requote unq,$(PATH_TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT)/), \
