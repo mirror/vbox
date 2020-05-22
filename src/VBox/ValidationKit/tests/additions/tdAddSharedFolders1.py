@@ -304,7 +304,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                 if fRc:
                     sFsPerfPath = sFsPerfPathTemp;
 
-            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Running FsPerf', 30 * 60 * 1000, sFsPerfPath, asArgs,
+            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Running FsPerf', 90 * 60 * 1000, sFsPerfPath, asArgs,
                                           fCheckSessionStatus = True);
             reporter.log2('FsPerf -> %s' % (fRc,));
             if fRc:
