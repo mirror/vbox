@@ -935,19 +935,19 @@ void UIChooserItemGroup::sltNameEditingFinished()
     /* Close name-editor: */
     m_pNameEditorWidget->close();
 
-    /* Enumerate all the group names: */
-    QStringList groupNames;
-    foreach (UIChooserItem *pItem, parentItem()->items(UIChooserNodeType_Group))
+    /* Enumerate all the used machine and group names: */
+    QStringList usedNames;
+    foreach (UIChooserItem *pItem, parentItem()->items())
     {
         AssertPtrReturnVoid(pItem);
-        UIChooserItemGroup *pGroupItem = pItem->toGroupItem();
-        AssertPtrReturnVoid(pGroupItem);
-        if (pGroupItem->groupType() == UIChooserNodeGroupType_Local)
-            groupNames << pItem->name();
+        if (   pItem->type() == UIChooserNodeType_Machine
+            || (   pItem->type() == UIChooserNodeType_Group
+                && pItem->toGroupItem()->groupType() == UIChooserNodeGroupType_Local))
+            usedNames << pItem->name();
     }
     /* If proposed name is empty or not unique, reject it: */
     QString strNewName = m_pNameEditorWidget->text().trimmed();
-    if (strNewName.isEmpty() || groupNames.contains(strNewName))
+    if (strNewName.isEmpty() || usedNames.contains(strNewName))
         return;
 
     /* We should replace forbidden symbols
