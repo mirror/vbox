@@ -285,8 +285,10 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** The ICH AC'97 (Intel) controller. */
+/** The ICH AC'97 (Intel) controller (shared). */
 typedef struct AC97STATE *PAC97STATE;
+/** The ICH AC'97 (Intel) controller (ring-3). */
+typedef struct AC97STATER3 *PAC97STATER3;
 
 /**
  * Buffer Descriptor List Entry (BDLE).
@@ -456,8 +458,14 @@ typedef AC97STREAMR3 *PAC97STREAMR3;
  */
 typedef struct AC97STREAMTHREADCTX
 {
+    /** The AC'97 device state (shared). */
     PAC97STATE              pThis;
+    /** The AC'97 device state (ring-3). */
+    PAC97STATER3            pThisCC;
+    /** The AC'97 stream state (shared). */
     PAC97STREAM             pStream;
+    /** The AC'97 stream state (ring-3). */
+    PAC97STREAMR3           pStreamCC;
 } AC97STREAMTHREADCTX;
 /** Pointer to the context for an async I/O thread. */
 typedef AC97STREAMTHREADCTX *PAC97STREAMTHREADCTX;
@@ -687,10 +695,10 @@ static void               ichac97R3MixerRemoveDrvStreams(PAC97STATER3 pThisCC, P
                                                          PDMAUDIODSTSRCUNION dstSrc);
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-static int                ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream);
-static int                ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream);
-static void               ichac97R3StreamAsyncIOLock(PAC97STREAM pStream);
-static void               ichac97R3StreamAsyncIOUnlock(PAC97STREAM pStream);
+static int                ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC);
+static int                ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAMR3 pStreamCC);
+static void               ichac97R3StreamAsyncIOLock(PAC97STREAMR3 pStreamCC);
+static void               ichac97R3StreamAsyncIOUnlock(PAC97STREAMR3 pStreamCC);
 /*static void               ichac97R3StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable); Unused */
 # endif
 
@@ -970,9 +978,9 @@ static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STATER3 pThisCC,
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     if (fEnable)
-        rc = ichac97R3StreamAsyncIOCreate(pThis, pStream);
+        rc = ichac97R3StreamAsyncIOCreate(pThis, pThisCC, pStream, pStreamCC);
     if (RT_SUCCESS(rc))
-        ichac97R3StreamAsyncIOLock(pStream);
+        ichac97R3StreamAsyncIOLock(pStreamCC);
 # endif
 
     if (fEnable)
@@ -1012,7 +1020,7 @@ static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STATER3 pThisCC,
     }
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-    ichac97R3StreamAsyncIOUnlock(pStream);
+    ichac97R3StreamAsyncIOUnlock(pStreamCC);
 # endif
 
     /* Make sure to leave the lock before (eventually) starting the timer. */
@@ -1132,7 +1140,7 @@ static void ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream, PAC97S
     AssertRC(rc2);
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-    rc2 = ichac97R3StreamAsyncIODestroy(pThis, pStream);
+    rc2 = ichac97R3StreamAsyncIODestroy(pThis, pStreamCC);
     AssertRC(rc2);
 # else
     RT_NOREF(pThis);
@@ -1332,18 +1340,20 @@ static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void
     PAC97STATE pThis = pCtx->pThis;
     AssertPtr(pThis);
 
+    PAC97STATER3 pThisCC = pCtx->pThisCC;
+    AssertPtr(pThisCC);
+
     PAC97STREAM pStream = pCtx->pStream;
     AssertPtr(pStream);
 
-    PAC97STREAMSTATEAIO pAIO = &pCtx->pStreamCC->State.AIO;
+    PAC97STREAMR3 pStreamCC = pCtx->pStreamCC;
+    AssertPtr(pStreamCC);
+
+    PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
 
     ASMAtomicXchgBool(&pAIO->fStarted, true);
 
     RTThreadUserSignal(hThreadSelf);
-
-    /** @todo r=bird: What wasn't mentioned by the original author of this
-     *        code, is that pCtx is now invalid as it must be assumed to be out
-     *        of scope in the parent thread.  It is a 'ing stack object! */
 
     LogFunc(("[SD%RU8] Started\n", pStream->u8SD));
 
@@ -1367,7 +1377,7 @@ static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void
                 continue;
             }
 
-            ichac97R3StreamUpdate(pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fInTimer */);
+            ichac97R3StreamUpdate(pThisCC->pDevIns, pThis, pThisCC, pStream, pStreamCC, false /* fInTimer */);
 
             int rc3 = RTCritSectLeave(&pAIO->CritSect);
             AssertRC(rc3);
@@ -1380,6 +1390,9 @@ static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void
 
     ASMAtomicXchgBool(&pAIO->fStarted, false);
 
+    RTMemFree(pCtx);
+    pCtx = NULL;
+
     return VINF_SUCCESS;
 }
 
@@ -1387,10 +1400,12 @@ static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void
  * Creates the async I/O thread for a specific AC'97 audio stream.
  *
  * @returns IPRT status code.
- * @param   pThis               The shared AC'97 state.
- * @param   pStream             AC'97 audio stream to create the async I/O thread for.
+ * @param   pThis               The shared AC'97 state (shared).
+ * @param   pThisCC             The shared AC'97 state (ring-3).
+ * @param   pStream             AC'97 audio stream to create the async I/O thread for (shared).
+ * @param   pStreamCC           AC'97 audio stream to create the async I/O thread for (ring-3).
  */
-static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream)
+static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STATER3 pThisCC, PAC97STREAM pStream, PAC97STREAMR3 pStreamCC)
 {
     PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
 
@@ -1407,36 +1422,34 @@ static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream)
             rc = RTCritSectInit(&pAIO->CritSect);
             if (RT_SUCCESS(rc))
             {
-/** @todo r=bird: Why is Ctx on the stack?  There is no mention of this in
- *        the thread structure.  Besides, you only wait 10seconds, if the
- *        host is totally overloaded, it may go out of scope before the new
- *        thread has finished with it and it will like crash and burn.
- *
- *        Also, there is RTThreadCreateF for giving threads complicated
- *        names.
- *
+/** @todo r=bird:
  *        Why aren't this code using the PDM threads (PDMDevHlpThreadCreate)?
  *        They would help you with managing stuff like VM suspending, resuming
  *        and powering off.
  *
  *        Finally, just create the threads at construction time. */
-                AC97STREAMTHREADCTX Ctx = { pThis, pStream };
-# error "Busted code! Do not pass a structure living on the parent stack to the poor thread!"
+                PAC97STREAMTHREADCTX pCtx = (PAC97STREAMTHREADCTX)RTMemAllocZ(sizeof(AC97STREAMTHREADCTX));
+                if (pCtx)
+                {
+                    pCtx->pStream   = pStream;
+                    pCtx->pStreamCC = pStreamCC;
+                    pCtx->pThis     = pThis;
+                    pCtx->pThisCC   = pThisCC;
 
-                char szThreadName[64];
-                RTStrPrintf2(szThreadName, sizeof(szThreadName), "ac97AIO%RU8", pStream->u8SD);
-
-                rc = RTThreadCreate(&pAIO->Thread, ichac97R3StreamAsyncIOThread, &Ctx,
-                                    0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
-                if (RT_SUCCESS(rc))
-                    rc = RTThreadUserWait(pAIO->Thread, 10 * 1000 /* 10s timeout */);
+                    rc = RTThreadCreateF(&pAIO->Thread, ichac97R3StreamAsyncIOThread, pCtx,
+                                         0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ac97AIO%RU8", pStreamCC->u8SD);
+                    if (RT_SUCCESS(rc))
+                        rc = RTThreadUserWait(pAIO->Thread, 30 * 1000 /* 30s timeout */);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
             }
         }
     }
     else
         rc = VINF_SUCCESS;
 
-    LogFunc(("[SD%RU8] Returning %Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] Returning %Rrc\n", pStreamCC->u8SD, rc));
     return rc;
 }
 
@@ -1447,7 +1460,7 @@ static int ichac97R3StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream)
  * @param   pStreamCC             The AC'97 stream to notify async I/O thread
  *                                for (ring-3).
  */
-static int ichac97R3StreamAsyncIONotify(PAC97STREAM pStreamCC)
+static int ichac97R3StreamAsyncIONotify(PAC97STREAMR3 pStreamCC)
 {
     LogFunc(("[SD%RU8]\n", pStreamCC->u8SD));
     return RTSemEventSignal(pStreamCC->State.AIO.Event);
@@ -1458,18 +1471,20 @@ static int ichac97R3StreamAsyncIONotify(PAC97STREAM pStreamCC)
  *
  * @returns IPRT status code.
  * @param   pThis               The shared AC'97 state.
- * @param   pStream             AC'97 audio stream to destroy the async I/O thread for.
+ * @param   pStreamCC           AC'97 audio stream to destroy the async I/O thread for.
  */
-static int ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream)
+static int ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAMR3 pStreamR3)
 {
-    PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
+    RT_NOREF(pThis);
+
+    PAC97STREAMSTATEAIO pAIO = &pStreamR3->State.AIO;
 
     if (!ASMAtomicReadBool(&pAIO->fStarted))
         return VINF_SUCCESS;
 
     ASMAtomicWriteBool(&pAIO->fShutdown, true);
 
-    int rc = ichac97R3StreamAsyncIONotify(pStreamCC);
+    int rc = ichac97R3StreamAsyncIONotify(pStreamR3);
     AssertRC(rc);
 
     int rcThread;
@@ -1489,16 +1504,16 @@ static int ichac97R3StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream)
         pAIO->fEnabled  = false;
     }
 
-    LogFunc(("[SD%RU8] Returning %Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] Returning %Rrc\n", pStreamR3->u8SD, rc));
     return rc;
 }
 
 /**
  * Locks the async I/O thread of a specific AC'97 audio stream.
  *
- * @param   pStream             AC'97 stream to lock async I/O thread for.
+ * @param   pStreamCC           AC'97 stream to lock async I/O thread for.
  */
-static void ichac97R3StreamAsyncIOLock(PAC97STREAM pStream)
+static void ichac97R3StreamAsyncIOLock(PAC97STREAMR3 pStreamCC)
 {
     PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
 
@@ -1512,9 +1527,9 @@ static void ichac97R3StreamAsyncIOLock(PAC97STREAM pStream)
 /**
  * Unlocks the async I/O thread of a specific AC'97 audio stream.
  *
- * @param   pStream             AC'97 stream to unlock async I/O thread for.
+ * @param   pStreamCC           AC'97 stream to unlock async I/O thread for.
  */
-static void ichac97R3StreamAsyncIOUnlock(PAC97STREAM pStream)
+static void ichac97R3StreamAsyncIOUnlock(PAC97STREAMR3 pStreamCC)
 {
     PAC97STREAMSTATEAIO pAIO = &pStreamCC->State.AIO;
 
