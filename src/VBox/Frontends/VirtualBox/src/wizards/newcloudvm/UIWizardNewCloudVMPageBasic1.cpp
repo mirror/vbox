@@ -326,6 +326,11 @@ void UIWizardNewCloudVMPage1::populateSourceImages()
 
             /* Show "Acquire cloud images" progress: */
             msgCenter().showModalProgressDialog(comProgress, QString(), ":/progress_reading_appliance_90px.png", 0, 0);
+            if (comProgress.GetCanceled())
+            {
+                wizardImp()->reject();
+                break;
+            }
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
                 msgCenter().cannotAcquireCloudClientParameter(comProgress);
