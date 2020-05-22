@@ -608,6 +608,8 @@ $(if-expr "$(lang)" != "en_US",, \
 				$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
 				$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,) \
 				$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
+				$(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls.wxi \
+				$(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls32.wxi \
 				$(VBOX_WIN_INST_OUT_DIR)/VBoxUnattendedTemplateComponent.wxi \
 				$(if $(VBOX_WITH_QTGUI),$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi) \
 				$(VBOX_MSI_DEPENDENCIES)) \
@@ -764,6 +766,8 @@ $(if-expr "$(lang)" != "en_US",, \
 		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
 		$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,) \
 		$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
+		$(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls.wxi \
+		$(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls32.wxi \
 		$(VBOX_WIN_INST_OUT_DIR)/VBoxUnattendedTemplateComponent.wxi \
 		$(if $(VBOX_WITH_QTGUI),$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi) \
 		$(VBOX_MSI_DEPENDENCIES) \
@@ -943,6 +947,41 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi: $(PATH_SUB_CURRENT)/VBoxKey.wxi $(VBOX_VER
 		-e 's/%VER_EXT%/$(VBOX_VERSION_STRING)/' \
 		--output $@ $<
 
+#
+# Generate the list of CRT DLLs.
+#
+ifndef TOOL_$(VBOX_VCC_TOOL)
+ include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk
+endif
+$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls.wxi)
+$(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls.wxi: | $$(dir $$@)
+	$(APPEND) -t -n $@ \
+		'<?xml version="1.0" ?>' \
+		'<Include>' \
+		$(foreach dll \
+		,$(if-expr "$(VBOX_VCC_TOOL_STEM)"=="VCC110",msvcr100.dll msvcp100.dll \
+		  ,$(if-expr "$(VBOX_VCC_TOOL_STEM)"=="VCC111",msvcr110.dll msvcp110.dll \
+                   ,$(TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CPP_DLLS))) \
+               ,'<File Id="file_$(dll)" Name="$(dll)" Source="$$(env.PATH_OUT)\bin\$(dll)" />') \
+		'</Include>'
+
+#
+# Generate the list of 32-bit CRT DLLs.
+#
+ifndef TOOL_$(VBOX_VCC_TOOL_STEM)X86
+ include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
+endif
+$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls32.wxi)
+$(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls32.wxi: | $$(dir $$@)
+	$(APPEND) -t -n $@ \
+		'<?xml version="1.0" ?>' \
+		'<Include>' \
+		$(foreach dll \
+		,$(if-expr "$(VBOX_VCC_TOOL_STEM)"=="VCC110",msvcr100.dll msvcp100.dll \
+		  ,$(if-expr "$(VBOX_VCC_TOOL_STEM)"=="VCC111",msvcr110.dll msvcp110.dll \
+                   ,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS))) \
+               ,'<File Id="file_$(dll)_x86" Name="$(dll)" Source="$$(env.PATH_OUT)\bin\x86\$(dll)" disk="$$(var.Property_DiskIdCommon)" />') \
+		'</Include>'
 #
 # Generate the list of unattended template script files.
 #
