@@ -980,7 +980,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls32.wxi: | $$(dir $$@)
 		,$(if-expr "$(VBOX_VCC_TOOL_STEM)"=="VCC100",msvcr100.dll msvcp100.dll \
 		  ,$(if-expr "$(VBOX_VCC_TOOL_STEM)"=="VCC110",msvcr110.dll msvcp110.dll \
                    ,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS))) \
-               ,'  <File Id="file_$(dll)_x86" Name="$(dll)" Source="$$(env.PATH_OUT)\bin\x86\$(dll)" disk="$$(var.Property_DiskIdCommon)" />') \
+               ,'  <File Id="file_$(dll)_x86" Name="$(dll)" Source="$$(env.PATH_OUT)\bin\x86\$(dll)" DiskId="$$(var.Property_DiskIdCommon)" />') \
 		'</Include>'
 #
 # Generate the list of unattended template script files.
