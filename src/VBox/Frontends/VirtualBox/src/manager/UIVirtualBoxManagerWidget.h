@@ -136,6 +136,8 @@ public:
 
         /** Opens group name editor. */
         void openGroupNameEditor();
+        /** Performs group sorting. */
+        void performGroupSorting();
     /** @} */
 
     /** @name Tools pane stuff.

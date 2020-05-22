@@ -112,6 +112,12 @@ void UIChooser::openGroupNameEditor()
     model()->startEditingSelectedGroupItemName();
 }
 
+void UIChooser::performGroupSorting()
+{
+    AssertPtrReturnVoid(model());
+    model()->sortSelectedGroupItem();
+}
+
 void UIChooser::sltHandleToolbarResize(const QSize &newSize)
 {
     /* Pass height to a model: */

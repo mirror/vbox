@@ -115,6 +115,11 @@ void UIVirtualBoxManagerWidget::openGroupNameEditor()
     m_pPaneChooser->openGroupNameEditor();
 }
 
+void UIVirtualBoxManagerWidget::performGroupSorting()
+{
+    m_pPaneChooser->performGroupSorting();
+}
+
 void UIVirtualBoxManagerWidget::setToolsType(UIToolType enmType)
 {
     m_pPaneTools->setToolsType(enmType);

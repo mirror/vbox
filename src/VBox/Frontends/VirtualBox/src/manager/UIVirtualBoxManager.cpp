@@ -1302,6 +1302,11 @@ void UIVirtualBoxManager::sltPerformCreateMachineShortcut()
     }
 }
 
+void UIVirtualBoxManager::sltPerformGroupSorting()
+{
+    m_pWidget->performGroupSorting();
+}
+
 void UIVirtualBoxManager::sltGroupCloseMenuAboutToShow()
 {
     /* Get selected items: */
@@ -1523,6 +1528,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltShowMachineInFileManager);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCreateMachineShortcut);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Sort), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformGroupSorting);
 
     /* 'Machine' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Add), &UIAction::triggered,
@@ -1549,6 +1556,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltShowMachineInFileManager);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCreateMachineShortcut);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformGroupSorting);
 
     /* 'Group/Start or Show' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal), &UIAction::triggered,

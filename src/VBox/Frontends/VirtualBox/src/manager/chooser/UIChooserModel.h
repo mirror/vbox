@@ -214,9 +214,10 @@ public:
 
         /** Starts editing selected group item name. */
         void startEditingSelectedGroupItemName();
-
         /** Starts or shows selected items. */
         void startOrShowSelectedItems();
+        /** Sorts selected [parent] group item. */
+        void sortSelectedGroupItem();
 
         /** Defines current @a pDragObject. */
         void setCurrentDragObject(QDrag *pDragObject);
@@ -288,8 +289,6 @@ private slots:
 
     /** @name Children stuff.
       * @{ */
-        /** Handles group sort request. */
-        void sltSortGroup();
         /** Handles group destroy request. */
         void sltUngroupSelectedGroup();
 
@@ -297,8 +296,6 @@ private slots:
         void sltCreateNewMachine();
         /** Handles group selected machines request. */
         void sltGroupSelectedMachines();
-        /** Handles sort parent group request. */
-        void sltSortParentGroup();
         /** Handles refresh request. */
         void sltPerformRefreshAction();
         /** Handles remove selected machine request. */

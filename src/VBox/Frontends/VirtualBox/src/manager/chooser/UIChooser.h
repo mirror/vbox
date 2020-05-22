@@ -130,6 +130,8 @@ public:
       * @{ */
         /** Opens group name editor. */
         void openGroupNameEditor();
+        /** Performs group sorting. */
+        void performGroupSorting();
     /** @} */
 
 public slots:

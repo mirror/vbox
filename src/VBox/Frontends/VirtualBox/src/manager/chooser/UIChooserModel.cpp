@@ -569,6 +569,29 @@ void UIChooserModel::startOrShowSelectedItems()
     emit sigStartOrShowRequest();
 }
 
+void UIChooserModel::sortSelectedGroupItem()
+{
+    /* For single selected group, sort first selected item children: */
+    if (isSingleGroupSelected())
+        firstSelectedItem()->node()->sortNodes();
+    /* Otherwise, sort first selected item neighbors: */
+    else
+        firstSelectedItem()->parentItem()->node()->sortNodes();
+
+    /* Remember first selected item definition: */
+    const QString strDefinition = firstSelectedItem() ? firstSelectedItem()->definition() : QString();
+
+    /* Rebuild tree for main root: */
+    buildTreeForMainRoot();
+
+    /* Restore selection if there was some item before: */
+    if (!strDefinition.isNull())
+        setSelectedItem(strDefinition);
+    /* Else make sure at least one item selected: */
+    else
+        makeSureAtLeastOneItemSelected();
+}
+
 void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)
 {
     /* Make sure real focus unset: */
@@ -795,22 +818,6 @@ void UIChooserModel::sltCurrentItemDestroyed()
     AssertMsgFailed(("Current-item destroyed!"));
 }
 
-void UIChooserModel::sltSortGroup()
-{
-    /* Check if action is enabled: */
-    if (!actionPool()->action(UIActionIndexST_M_Group_S_Sort)->isEnabled())
-        return;
-    /* Only for single selected group: */
-    if (!isSingleGroupSelected())
-        return;
-
-    /* Sort nodes: */
-    firstSelectedItem()->node()->sortNodes();
-
-    /* Rebuild tree for main root: */
-    buildTreeForMainRoot();
-}
-
 void UIChooserModel::sltUngroupSelectedGroup()
 {
     /* Check if action is enabled: */
@@ -1025,22 +1032,6 @@ void UIChooserModel::sltGroupSelectedMachines()
     updateTreeForMainRoot();
     setSelectedItem(pNewGroupItem);
     saveGroups();
-}
-
-void UIChooserModel::sltSortParentGroup()
-{
-    /* Check if action is enabled: */
-    if (!actionPool()->action(UIActionIndexST_M_Machine_S_SortParent)->isEnabled())
-        return;
-    /* Only if some item selected: */
-    if (!firstSelectedItem())
-        return;
-
-    /* Sort nodes: */
-    firstSelectedItem()->parentItem()->node()->sortNodes();
-
-    /* Rebuild tree for main root: */
-    buildTreeForMainRoot();
 }
 
 void UIChooserModel::sltPerformRefreshAction()
@@ -1390,10 +1381,6 @@ void UIChooserModel::prepareConnections()
             this, &UIChooserModel::sltPerformRefreshAction);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh), &UIAction::triggered,
             this, &UIChooserModel::sltPerformRefreshAction);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent), &UIAction::triggered,
-            this, &UIChooserModel::sltSortParentGroup);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Sort), &UIAction::triggered,
-            this, &UIChooserModel::sltSortGroup);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Search), &UIAction::triggered,
             this, &UIChooserModel::sltShowHideSearchWidget);
 }

@@ -247,6 +247,9 @@ private slots:
         /** Handles call to create machine shortcut. */
         void sltPerformCreateMachineShortcut();
 
+        /** Handles call to sort group. */
+        void sltPerformGroupSorting();
+
         /** Handles call to show group Close menu. */
         void sltGroupCloseMenuAboutToShow();
         /** Handles call to show machine Close menu. */
