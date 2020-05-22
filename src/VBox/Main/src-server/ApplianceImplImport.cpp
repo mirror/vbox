@@ -1430,7 +1430,13 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 /* what to do? create a new name from the old one with some suffix? */
                 com::Guid newId;
                 newId.create();
-                strVMName.append("__").append(newId.toString());
+                /*
+                 * GUID has the string form "00000000-0000-0000-0000-00000000000".
+                 * Find the last part and append only it. The last 12 characters.
+                 */
+                const char* cpLast = strrchr(newId.toString().c_str(), '-');
+                strVMName.append("__").append(cpLast+1);
+
                 vsd->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
                 vsd->AddDescription(VirtualSystemDescriptionType_Name,
                                     Bstr(strVMName).raw(),
