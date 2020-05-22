@@ -68,6 +68,9 @@ endif
 ifdef VBOX_WITH_IOMMU_AMD
 VBoxVMM_DEFS    += VBOX_WITH_IOMMU_AMD
 endif
+ifdef VBOX_WITH_DBGF_TRACING
+VBoxVMM_DEFS    += VBOX_WITH_DBGF_TRACING
+endif
 ifdef VBOX_WITH_RAW_MODE
 VBoxVMM_DEFS    += VBOX_WITH_RAW_MODE VBOX_WITH_RAW_MODE_NOT_R0
 endif
@@ -111,6 +114,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/DBGFStack.cpp \
 	VMMR3/DBGFR3Flow.cpp \
 	VMMR3/DBGFR3Trace.cpp \
+	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR3/DBGFR3Tracer.cpp,) \
 	VMMR3/DBGFR3Type.cpp \
 	VMMR3/EM.cpp \
 	VMMR3/EMR3Dbg.cpp \
@@ -176,6 +180,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
 	VMMAll/DBGFAll.cpp \
+	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMAll/DBGFAllTracer.cpp,) \
 	VMMAll/HMAll.cpp \
 	VMMAll/HMSVMAll.cpp \
 	VMMAll/HMVMXAll.cpp \
@@ -486,6 +491,7 @@ VMMR0_SOURCES   = \
 	VBoxVMM.d \
 	VMMR0/CPUMR0.cpp \
 	VMMR0/CPUMR0A.asm \
+	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR0/DBGFR0Tracer.cpp,) \
 	VMMR0/GIMR0.cpp \
 	VMMR0/GIMR0Hv.cpp \
 	VMMR0/GIMR0Kvm.cpp \
@@ -514,6 +520,7 @@ VMMR0_SOURCES   = \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
 	VMMAll/DBGFAll.cpp \
+	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMAll/DBGFAllTracer.cpp,) \
 	VMMAll/EMAll.cpp \
 	VMMAll/GIMAll.cpp \
 	VMMAll/GIMAllHv.cpp \

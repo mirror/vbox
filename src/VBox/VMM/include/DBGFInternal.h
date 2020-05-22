@@ -31,6 +31,7 @@
 #include <iprt/string.h>
 #include <iprt/avl.h>
 #include <iprt/dbg.h>
+#include <iprt/tracelog.h>
 #include <VBox/vmm/dbgf.h>
 
 
@@ -40,6 +41,407 @@
  * @internal
  * @{
  */
+
+/** The maximum tracer instance (total) size, ring-0/raw-mode capable tracers. */
+#define DBGF_MAX_TRACER_INSTANCE_SIZE    _8M
+/** The maximum tracers instance (total) size, ring-3 only tracers. */
+#define DBGF_MAX_TRACER_INSTANCE_SIZE_R3 _16M
+/** Event ringbuffer header size. */
+#define DBGF_TRACER_EVT_HDR_SZ           (32)
+/** Event ringbuffer payload size. */
+#define DBGF_TRACER_EVT_PAYLOAD_SZ       (32)
+/** Event ringbuffer entry size. */
+#define DBGF_TRACER_EVT_SZ               (DBGF_TRACER_EVT_HDR_SZ + DBGF_TRACER_EVT_PAYLOAD_SZ)
+
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+
+/**
+ * Event entry types.
+ */
+typedef enum DBGFTRACEREVT
+{
+    /** Invalid type. */
+    DBGFTRACEREVT_INVALID = 0,
+    /** MMIO map region event. */
+    DBGFTRACEREVT_MMIO_MAP,
+    /** MMIO unmap region event. */
+    DBGFTRACEREVT_MMIO_UNMAP,
+    /** MMIO read event. */
+    DBGFTRACEREVT_MMIO_READ,
+    /** MMIO write event. */
+    DBGFTRACEREVT_MMIO_WRITE,
+    /** MMIO fill event. */
+    DBGFTRACEREVT_MMIO_FILL,
+    /** I/O port map event. */
+    DBGFTRACEREVT_IOPORT_MAP,
+    /** I/O port unmap event. */
+    DBGFTRACEREVT_IOPORT_UNMAP,
+    /** I/O port read event. */
+    DBGFTRACEREVT_IOPORT_READ,
+    /** I/O port write event. */
+    DBGFTRACEREVT_IOPORT_WRITE,
+    /** IRQ event. */
+    DBGFTRACEREVT_IRQ,
+    /** I/O APIC MSI event. */
+    DBGFTRACEREVT_IOAPIC_MSI,
+    /** Read from guest physical memory. */
+    DBGFTRACEREVT_GCPHYS_READ,
+    /** Write to guest physical memory. */
+    DBGFTRACEREVT_GCPHYS_WRITE,
+    /** 32bit hack. */
+    DBGFTRACEREVT_32BIT_HACK
+} DBGFTRACEREVT;
+/** Pointer to a trace event entry type. */
+typedef DBGFTRACEREVT *PDBGFTRACEREVT;
+
+
+/**
+ * MMIO region map event.
+ */
+typedef struct DBGFTRACEREVTMMIOMAP
+{
+    /** Unique region handle for the event source. */
+    uint64_t                                hMmioRegion;
+    /** The base guest physical address of the MMIO region. */
+    RTGCPHYS                                GCPhysMmioBase;
+    /** Padding to 32byte. */
+    uint64_t                                au64Pad0[2];
+} DBGFTRACEREVTMMIOMAP;
+/** Pointer to a MMIO map event. */
+typedef DBGFTRACEREVTMMIOMAP *PDBGFTRACEREVTMMIOMAP;
+/** Pointer to a const MMIO map event. */
+typedef const DBGFTRACEREVTMMIOMAP *PCDBGFTRACEREVTMMIOMAP;
+
+AssertCompileSize(DBGFTRACEREVTMMIOMAP, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * MMIO region unmap event.
+ */
+typedef struct DBGFTRACEREVTMMIOUNMAP
+{
+    /** Unique region handle for the event source. */
+    uint64_t                                hMmioRegion;
+    /** Padding to 32byte. */
+    uint64_t                                au64Pad0[3];
+} DBGFTRACEREVTMMIOUNMAP;
+/** Pointer to a MMIO map event. */
+typedef DBGFTRACEREVTMMIOUNMAP *PDBGFTRACEREVTMMIOUNMAP;
+/** Pointer to a const MMIO map event. */
+typedef const DBGFTRACEREVTMMIOUNMAP *PCDBGFTRACEREVTMMIOUNMAP;
+
+AssertCompileSize(DBGFTRACEREVTMMIOUNMAP, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * MMIO event.
+ */
+typedef struct DBGFTRACEREVTMMIO
+{
+    /** Unique region handle for the event source. */
+    uint64_t                                hMmioRegion;
+    /** Offset into the region the access happened. */
+    RTGCPHYS                                offMmio;
+    /** Number of bytes transfered (the direction is in the event header). */
+    uint64_t                                cbXfer;
+    /** The value transfered. */
+    uint64_t                                u64Val;
+} DBGFTRACEREVTMMIO;
+/** Pointer to a MMIO event. */
+typedef DBGFTRACEREVTMMIO *PDBGFTRACEREVTMMIO;
+/** Pointer to a const MMIO event. */
+typedef const DBGFTRACEREVTMMIO *PCDBGFTRACEREVTMMIO;
+
+AssertCompileSize(DBGFTRACEREVTMMIO, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * MMIO fill event.
+ */
+typedef struct DBGFTRACEREVTMMIOFILL
+{
+    /** Unique region handle for the event source. */
+    uint64_t                                hMmioRegion;
+    /** Offset into the region the access happened. */
+    RTGCPHYS                                offMmio;
+    /** Item size in bytes. */
+    uint32_t                                cbItem;
+    /** Amount of items being filled. */
+    uint32_t                                cItems;
+    /** The fill value. */
+    uint32_t                                u32Item;
+    /** Padding to 32bytes. */
+    uint32_t                                u32Pad0;
+} DBGFTRACEREVTMMIOFILL;
+/** Pointer to a MMIO event. */
+typedef DBGFTRACEREVTMMIOFILL *PDBGFTRACEREVTMMIOFILL;
+/** Pointer to a const MMIO event. */
+typedef const DBGFTRACEREVTMMIOFILL *PCDBGFTRACEREVTMMIOFILL;
+
+AssertCompileSize(DBGFTRACEREVTMMIOFILL, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * I/O port region map event.
+ */
+typedef struct DBGFTRACEREVTIOPORTMAP
+{
+    /** Unique I/O port region handle for the event source. */
+    uint64_t                                hIoPorts;
+    /** The base I/O port for the region. */
+    RTIOPORT                                IoPortBase;
+    /** Padding to 32byte. */
+    uint16_t                                au16Pad0[11];
+} DBGFTRACEREVTIOPORTMAP;
+/** Pointer to a MMIO map event. */
+typedef DBGFTRACEREVTIOPORTMAP *PDBGFTRACEREVTIOPORTMAP;
+/** Pointer to a const MMIO map event. */
+typedef const DBGFTRACEREVTIOPORTMAP *PCDBGFTRACEREVTIOPORTMAP;
+
+AssertCompileSize(DBGFTRACEREVTIOPORTMAP, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * MMIO region unmap event.
+ */
+typedef struct DBGFTRACEREVTIOPORTUNMAP
+{
+    /** Unique region handle for the event source. */
+    uint64_t                                hIoPorts;
+    /** Padding to 32byte. */
+    uint64_t                                au64Pad0[3];
+} DBGFTRACEREVTIOPORTUNMAP;
+/** Pointer to a MMIO map event. */
+typedef DBGFTRACEREVTIOPORTUNMAP *PDBGFTRACEREVTIOPORTUNMAP;
+/** Pointer to a const MMIO map event. */
+typedef const DBGFTRACEREVTIOPORTUNMAP *PCDBGFTRACEREVTIOPORTUNMAP;
+
+AssertCompileSize(DBGFTRACEREVTIOPORTUNMAP, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * I/O port event.
+ */
+typedef struct DBGFTRACEREVTIOPORT
+{
+    /** Unique region handle for the event source. */
+    uint64_t                                hIoPorts;
+    /** Offset into the I/O port region. */
+    RTIOPORT                                offPort;
+    /** 8 byte alignment. */
+    uint8_t                                 abPad0[6];
+    /** Number of bytes transfered (the direction is in the event header). */
+    uint64_t                                cbXfer;
+    /** The value transfered. */
+    uint32_t                                u32Val;
+    /** Padding to 32bytes. */
+    uint8_t                                 abPad1[4];
+} DBGFTRACEREVTIOPORT;
+/** Pointer to a MMIO event. */
+typedef DBGFTRACEREVTIOPORT *PDBGFTRACEREVTIOPORT;
+/** Pointer to a const MMIO event. */
+typedef const DBGFTRACEREVTIOPORT *PCDBGFTRACEREVTIOPORT;
+
+AssertCompileSize(DBGFTRACEREVTIOPORT, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * IRQ event.
+ */
+typedef struct DBGFTRACEREVTIRQ
+{
+    /** The IRQ line. */
+    int32_t                                 iIrq;
+    /** IRQ level flags. */
+    int32_t                                 fIrqLvl;
+    /** Padding to 32bytes. */
+    uint32_t                                au32Pad0[6];
+} DBGFTRACEREVTIRQ;
+/** Pointer to a MMIO event. */
+typedef DBGFTRACEREVTIRQ *PDBGFTRACEREVTIRQ;
+/** Pointer to a const MMIO event. */
+typedef const DBGFTRACEREVTIRQ *PCDBGFTRACEREVTIRQ;
+
+AssertCompileSize(DBGFTRACEREVTIRQ, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * I/O APIC MSI event.
+ */
+typedef struct DBGFTRACEREVTIOAPICMSI
+{
+    /** The guest physical address being written. */
+    RTGCPHYS                                GCPhys;
+    /** The value being written. */
+    uint32_t                                u32Val;
+    /** Padding to 32bytes. */
+    uint32_t                                au32Pad0[5];
+} DBGFTRACEREVTIOAPICMSI;
+/** Pointer to a MMIO event. */
+typedef DBGFTRACEREVTIOAPICMSI *PDBGFTRACEREVTIOAPICMSI;
+/** Pointer to a const MMIO event. */
+typedef const DBGFTRACEREVTIOAPICMSI *PCDBGFTRACEREVTIOAPICMSI;
+
+AssertCompileSize(DBGFTRACEREVTIOAPICMSI, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * Guest physical memory transfer.
+ */
+typedef struct DBGFTRACEREVTGCPHYS
+{
+    /** Guest physical address of the access. */
+    RTGCPHYS                                GCPhys;
+    /** Number of bytes transfered (the direction is in the event header).
+     * If the number is small enough to fit into the remaining space of the entry
+     * it is stored here, otherwise it will be stored in the next entry (and following
+     * entries). */
+    uint64_t                                cbXfer;
+    /** Guest data being transfered. */
+    uint8_t                                 abData[16];
+} DBGFTRACEREVTGCPHYS;
+/** Pointer to a guest physical memory transfer event. */
+typedef DBGFTRACEREVTGCPHYS *PDBGFTRACEREVTGCPHYS;
+/** Pointer to a const uest physical memory transfer event. */
+typedef const DBGFTRACEREVTGCPHYS *PCDBGFTRACEREVTGCPHYS;
+
+AssertCompileSize(DBGFTRACEREVTGCPHYS, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * A trace event header in the shared ring buffer.
+ */
+typedef struct DBGFTRACEREVTHDR
+{
+    /** Event ID. */
+    volatile uint64_t                       idEvt;
+    /** The previous event ID this one links to,
+     * DBGF_TRACER_EVT_HDR_ID_INVALID if it links to no other event. */
+    uint64_t                                idEvtPrev;
+    /** Event source. */
+    DBGFTRACEREVTSRC                        hEvtSrc;
+    /** The event entry type. */
+    DBGFTRACEREVT                           enmEvt;
+    /** Flags for this event. */
+    uint32_t                                fFlags;
+} DBGFTRACEREVTHDR;
+/** Pointer to a trace event header. */
+typedef DBGFTRACEREVTHDR *PDBGFTRACEREVTHDR;
+/** Pointer to a const trace event header. */
+typedef const DBGFTRACEREVTHDR *PCDBGFTRACEREVTHDR;
+
+AssertCompileSize(DBGFTRACEREVTHDR, DBGF_TRACER_EVT_HDR_SZ);
+
+/** Invalid event ID, this is always set by the flush thread after processing one entry
+ * so the producers know when they are about to overwrite not yet processed entries in the ring buffer. */
+#define DBGF_TRACER_EVT_HDR_ID_INVALID      UINT64_C(0xffffffffffffffff)
+
+/** The event came from R0. */
+#define DBGF_TRACER_EVT_HDR_F_R0            RT_BIT(0)
+
+/** Default event header tracer flags. */
+#ifdef IN_RING0
+# define DBGF_TRACER_EVT_HDR_F_DEFAULT      DBGF_TRACER_EVT_HDR_F_R0
+#else
+# define DBGF_TRACER_EVT_HDR_F_DEFAULT      (0)
+#endif
+
+
+/**
+ * Tracer instance data, shared structure.
+ */
+typedef struct DBGFTRACERSHARED
+{
+    /** The global event ID counter, monotonically increasing.
+     * Accessed by all threads causing a trace event. */
+    volatile uint64_t                       idEvt;
+    /** The SUP event semaphore for poking the flush thread. */
+    SUPSEMEVENT                             hSupSemEvtFlush;
+    /** Ring buffer size. */
+    size_t                                  cbRingBuf;
+    /** Flag whether there are events in the ring buffer to get processed. */
+    volatile bool                           fEvtsWaiting;
+    /** Flag whether the flush thread is actively running or was kicked. */
+    volatile bool                           fFlushThrdActive;
+    /** Padding to a 64byte alignment. */
+    uint8_t                                 abAlignment0[32];
+} DBGFTRACERSHARED;
+/** Pointer to the shared tarcer instance data. */
+typedef DBGFTRACERSHARED *PDBGFTRACERSHARED;
+
+AssertCompileSizeAlignment(DBGFTRACERSHARED, 64);
+
+
+/**
+ * Tracer instance data, ring-3
+ */
+typedef struct DBGFTRACERINSR3
+{
+    /** Pointer to the next instance.
+     * (Head is pointed to by PDM::pTracerInstances.) */
+    R3PTRTYPE(struct DBGFTRACERINSR3 *)     pNextR3;
+    /** R3 pointer to the VM this instance was created for. */
+    PVMR3                                   pVMR3;
+    /** Tracer instance number. */
+    uint32_t                                idTracer;
+    /** Flag whether the tracer has the R0 part enabled. */
+    bool                                    fR0Enabled;
+    /** Flag whether the tracer flush thread should shut down. */
+    volatile bool                           fShutdown;
+    /** Padding. */
+    bool                                    afPad0[6];
+    /** Next event source ID to return for a source registration. */
+    volatile DBGFTRACEREVTSRC               hEvtSrcNext;
+    /** Pointer to the shared tracer instance data. */
+    R3PTRTYPE(PDBGFTRACERSHARED)            pSharedR3;
+    /** The I/O thread writing the log from the shared event ringbuffer. */
+    RTTHREAD                                hThrdFlush;
+    /** Pointer to the start of the ring buffer. */
+    R3PTRTYPE(uint8_t *)                    pbRingBufR3;
+    /** The last processed event ID. */
+    uint64_t                                idEvtLast;
+    /** The trace log writer handle. */
+    RTTRACELOGWR                            hTraceLog;
+} DBGFTRACERINSR3;
+/** Pointer to a tarcer instance - Ring-3 Ptr. */
+typedef R3PTRTYPE(DBGFTRACERINSR3 *) PDBGFTRACERINSR3;
+
+
+/**
+ * Private tracer instance data, ring-0
+ */
+typedef struct DBGFTRACERINSR0
+{
+    /** Pointer to the VM this instance was created for. */
+    R0PTRTYPE(PGVM)                         pGVM;
+    /** The tracer instance memory. */
+    RTR0MEMOBJ                              hMemObj;
+    /** The ring-3 mapping object. */
+    RTR0MEMOBJ                              hMapObj;
+    /** Pointer to the shared tracer instance data. */
+    R0PTRTYPE(PDBGFTRACERSHARED)            pSharedR0;
+    /** Size of the ring buffer in bytes, kept here so R3 can not manipulate the ring buffer
+     * size afterwards to trick R0 into doing something harmful. */
+    size_t                                  cbRingBuf;
+    /** Pointer to the start of the ring buffer. */
+    R0PTRTYPE(uint8_t *)                    pbRingBufR0;
+} DBGFTRACERINSR0;
+/** Pointer to a VM - Ring-0 Ptr. */
+typedef R0PTRTYPE(DBGFTRACERINSR0 *) PDBGFTRACERINSR0;
+
+
+/**
+ * Private device instance data, raw-mode
+ */
+typedef struct DBGFTRACERINSRC
+{
+    /** Pointer to the VM this instance was created for. */
+    RGPTRTYPE(PVM)                          pVMRC;
+} DBGFTRACERINSRC;
 
 
 /** VMM Debugger Command. */
@@ -481,6 +883,15 @@ typedef DBGFCPU *PDBGFCPU;
 struct DBGFOSEMTWRAPPER;
 
 /**
+ * DBGF data kept in the ring-0 GVM.
+ */
+typedef struct DBGFR0PERVM
+{
+    /** Pointer to the tracer instance if enabled. */
+    R0PTRTYPE(struct DBGFTRACERINSR0 *) pTracerR0;
+} DBGFR0PERVM;
+
+/**
  * The DBGF data kept in the UVM.
  */
 typedef struct DBGFUSERPERVM
@@ -529,6 +940,9 @@ typedef struct DBGFUSERPERVM
     /** List of registered info handlers. */
     R3PTRTYPE(PDBGFINFO)        pInfoFirst;
 
+    /** The configured tracer. */
+    PDBGFTRACERINSR3            pTracerR3;
+
     /** The type database lock. */
     RTSEMRW                     hTypeDbLock;
     /** String space for looking up types.  (Protected by hTypeDbLock.) */
@@ -576,6 +990,8 @@ DECLHIDDEN(void) dbgfR3TypeTerm(PUVM pUVM);
 int  dbgfR3PlugInInit(PUVM pUVM);
 void dbgfR3PlugInTerm(PUVM pUVM);
 int  dbgfR3BugCheckInit(PVM pVM);
+DECLHIDDEN(int) dbgfR3TracerInit(PVM pVM);
+DECLHIDDEN(void) dbgfR3TracerTerm(PVM pVM);
 
 /**
  * DBGF disassembler state (substate of DISSTATE).

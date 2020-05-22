@@ -55,6 +55,35 @@ VMMRZ_INT_DECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
 #endif
 
 
+/** @defgroup grp_dbgf_r0  The R0 DBGF API
+ * @{
+ */
+/**
+ * Request buffer for DBGFR0TracerCreateReqHandler / VMMR0_DO_DBGF_TRACER_CREATE.
+ * @see DBGFR0TracerCreateReqHandler.
+ */
+typedef struct DBGFTRACERCREATEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR          Hdr;
+    /** Out: Where to return the address of the ring-3 tracer instance. */
+    PDBGFTRACERINSR3        pTracerInsR3;
+
+    /** Number of bytes for the shared event ring buffer. */
+    uint32_t                cbRingBuf;
+
+    /** Set if the raw-mode component is desired. */
+    bool                    fRCEnabled;
+    /** Explicit padding. */
+    bool                    afReserved[3];
+
+} DBGFTRACERCREATEREQ;
+/** Pointer to a DBGFR0TracerCreate / VMMR0_DO_DBGF_TRACER_CREATE request buffer. */
+typedef DBGFTRACERCREATEREQ *PDBGFTRACERCREATEREQ;
+
+VMMR0_INT_DECL(int) DBGFR0TracerCreateReqHandler(PGVM pGVM, PDBGFTRACERCREATEREQ pReq);
+/** @} */
+
 
 #ifdef IN_RING3
 
@@ -2788,8 +2817,30 @@ VMMR3DECL(int)               DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, s
 /** @} */
 #endif /* IN_RING3 */
 
+
+/** @defgroup grp_dbgf_tracer  DBGF event tracing.
+ * @{ */
+#ifdef IN_RING3
+VMMR3_INT_DECL(int) DBGFR3TracerRegisterEvtSrc(PVM pVM, const char *pszName, PDBGFTRACEREVTSRC phEvtSrc);
+VMMR3_INT_DECL(int) DBGFR3TracerDeregisterEvtSrc(PVM pVM, DBGFTRACEREVTSRC hEvtSrc);
+#endif
+
+VMM_INT_DECL(int)   DBGFTracerEvtMmioMap(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTGCPHYS GCPhysMmio);
+VMM_INT_DECL(int)   DBGFTracerEvtMmioUnmap(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion);
+VMM_INT_DECL(int)   DBGFTracerEvtMmioRead(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTGCPHYS offMmio, const void *pvVal, size_t cbVal);
+VMM_INT_DECL(int)   DBGFTracerEvtMmioWrite(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTGCPHYS offMmio, const void *pvVal, size_t cbVal);
+VMM_INT_DECL(int)   DBGFTracerEvtMmioFill(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTGCPHYS offMmio, uint32_t u32Item, uint32_t cbItem, uint32_t cItems);
+VMM_INT_DECL(int)   DBGFTracerEvtIoPortMap(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT IoPortBase);
+VMM_INT_DECL(int)   DBGFTracerEvtIoPortUnmap(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts);
+VMM_INT_DECL(int)   DBGFTracerEvtIoPortRead(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT offPort, const void *pvVal, size_t cbVal);
+VMM_INT_DECL(int)   DBGFTracerEvtIoPortWrite(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT offPort, const void *pvVal, size_t cbVal);
+VMM_INT_DECL(int)   DBGFTracerEvtIrq(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, int32_t iIrq, int32_t fIrqLvl);
+VMM_INT_DECL(int)   DBGFTracerEvtIoApicMsi(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, RTGCPHYS GCPhys, uint32_t u32Val);
+VMM_INT_DECL(int)   DBGFTracerEvtGCPhysRead(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, RTGCPHYS GCPhys, const void *pvBuf, size_t cbRead);
+VMM_INT_DECL(int)   DBGFTracerEvtGCPhysWrite(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
 /** @} */
 
+/** @} */
 
 RT_C_DECLS_END
 

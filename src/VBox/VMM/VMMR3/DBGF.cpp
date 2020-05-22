@@ -185,7 +185,13 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
                                 rc = dbgfR3BugCheckInit(pVM);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    return VINF_SUCCESS;
+#ifdef VBOX_WITH_DBGF_TRACING
+                                    rc = dbgfR3TracerInit(pVM);
+#endif
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        return VINF_SUCCESS;
+                                    }
                                 }
                                 dbgfR3PlugInTerm(pUVM);
                             }
@@ -215,6 +221,9 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 {
     PUVM pUVM = pVM->pUVM;
 
+#ifdef VBOX_WITH_DBGF_TRACING
+    dbgfR3TracerTerm(pVM);
+#endif
     dbgfR3OSTermPart1(pUVM);
     dbgfR3PlugInTerm(pUVM);
     dbgfR3OSTermPart2(pUVM);

@@ -320,6 +320,8 @@
 #define VERR_DBGF_STACK_IPE_2               (-1219)
 /** No trace buffer available, please change the VM config. */
 #define VERR_DBGF_NO_TRACE_BUFFER           (-1220)
+/** Internal processing error \#1 in the DBGF event tracing code. */
+#define VERR_DBGF_TRACER_IPE_1              (-1221)
 /** @} */
 
 

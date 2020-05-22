@@ -426,6 +426,11 @@ typedef enum VMMR0OPERATION
     /** Official call we use for testing Ring-0 APIs. */
     VMMR0_DO_TESTS = 704,
 
+    /** Call DBGFR0TraceCreateReqHandler. */
+    VMMR0_DO_DBGF_TRACER_CREATE = 710,
+    /** Call DBGFR0TraceCallReqHandler. */
+    VMMR0_DO_DBGF_TRACER_CALL_REQ_HANDLER,
+
     /** The usual 32-bit type blow up. */
     VMMR0_DO_32BIT_HACK = 0x7fffffff
 } VMMR0OPERATION;

@@ -497,6 +497,29 @@ typedef struct CPUMSELREG *PCPUMSELREGHID;
  * @deprecated Replaced by PCCPUMSELREG  */
 typedef const struct CPUMSELREG *PCCPUMSELREGHID;
 
+/** A cross context DBGF tracer event source handle. */
+typedef uint64_t                DBGFTRACEREVTSRC;
+/** Pointer to a cross context DBGF tracer event source handle. */
+typedef DBGFTRACEREVTSRC        *PDBGFTRACEREVTSRC;
+/** A NIL DBGF tracer event source handle. */
+#define NIL_DBGFTRACEREVTSRC    ((uint64_t)UINT64_MAX)
+
+/** Pointer to a DBGF tracer instance for the current context. */
+#ifdef IN_RING3
+typedef struct DBGFTRACERINSR3 *PDBGFTRACERINSCC;
+#elif defined(IN_RING0) || defined(DOXYGEN_RUNNING)
+typedef struct DBGFTRACERINSR0 *PDBGFTRACERINSCC;
+#else
+typedef struct DBGFTRACERINSRC *PDBGFTRACERINSCC;
+#endif
+/** Pointer to a pointer a DBGF tracer instance for the current context. */
+typedef PDBGFTRACERINSCC *PPDBGFTRACERINSCC;
+/** R3 pointer to a DBGF tracer instance. */
+typedef R3PTRTYPE(struct DBGFTRACERINSR3 *) PDBGFTRACERINSR3;
+/** R0 pointer to a DBGF tracer instance. */
+typedef R0PTRTYPE(struct DBGFTRACERINSR0 *) PDBGFTRACERINSR0;
+/** RC pointer to a DBGF tracer instance. */
+typedef RCPTRTYPE(struct DBGFTRACERINSRC *) PDBGFTRACERINSRC;
 /** @} */
 
 
