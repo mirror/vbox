@@ -2567,8 +2567,9 @@ static DECLCALLBACK(int) vdiResize(void *pBackendData, uint64_t cbSize,
     else if (cbSize > getImageDiskSize(&pImage->Header))
     {
         unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header); /** < Blocks currently allocated, doesn't change during resize */
-        uint32_t cBlocksNew = cbSize / getImageBlockSize(&pImage->Header);    /** < New number of blocks in the image after the resize */
-        if (cbSize % getImageBlockSize(&pImage->Header))
+        unsigned const cbBlock = RT_MAX(getImageBlockSize(&pImage->Header), 1);
+        uint32_t cBlocksNew = cbSize / cbBlock;                               /** < New number of blocks in the image after the resize */
+        if (cbSize % cbBlock)
             cBlocksNew++;
 
         uint32_t cBlocksOld      = getImageBlocks(&pImage->Header);           /** < Number of blocks before the resize. */
@@ -2581,8 +2582,8 @@ static DECLCALLBACK(int) vdiResize(void *pBackendData, uint64_t cbSize,
             {
                 /* Calculate how many sectors need to be relocated. */
                 uint64_t cbOverlapping = offStartDataNew - pImage->offStartData;
-                unsigned cBlocksReloc = cbOverlapping / getImageBlockSize(&pImage->Header);
-                if (cbOverlapping % getImageBlockSize(&pImage->Header))
+                unsigned cBlocksReloc = cbOverlapping / cbBlock;
+                if (cbOverlapping % cbBlock)
                     cBlocksReloc++;
 
                 /* Since only full blocks can be relocated the new data start is
@@ -2798,11 +2799,10 @@ static DECLCALLBACK(int) vdiDiscard(void *pBackendData, PVDIOCTX pIoCtx,
 
         if (IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
         {
+            unsigned const cbBlock = RT_MAX(getImageBlockSize(&pImage->Header), 1);
+            size_t const cbPreAllocated = offDiscard % cbBlock;
+            size_t const cbPostAllocated = getImageBlockSize(&pImage->Header) - cbDiscard - cbPreAllocated;
             uint8_t *pbBlockData;
-            size_t cbPreAllocated, cbPostAllocated;
-
-            cbPreAllocated = offDiscard % getImageBlockSize(&pImage->Header);
-            cbPostAllocated = getImageBlockSize(&pImage->Header) - cbDiscard - cbPreAllocated;
 
             /* Read the block data. */
             pvBlock = RTMemAlloc(pImage->cbTotalBlockData);
