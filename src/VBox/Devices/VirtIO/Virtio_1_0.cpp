@@ -128,8 +128,8 @@ const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState)
 
 /* Internal Functions */
 
-static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce);
-static int  virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uVec, bool fForce);
+static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
+static int  virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uVec);
 
 /** @name Internal queue operations
  * @{ */
@@ -811,7 +811,7 @@ uint32_t virtioCoreR3DescChainRelease(PVIRTIOCORE pVirtio, PVIRTIO_DESC_CHAIN_T 
  */
 void virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio)
 {
-    virtioKick(pVirtio->pDevInsR3, pVirtio, VIRTIO_ISR_DEVICE_CONFIG, pVirtio->uMsixConfig, false);
+    virtioKick(pVirtio->pDevInsR3, pVirtio, VIRTIO_ISR_DEVICE_CONFIG, pVirtio->uMsixConfig);
 }
 
 /**
@@ -849,7 +849,7 @@ void virtioCoreResetAll(PVIRTIOCORE pVirtio)
     if (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
     {
         pVirtio->fGenUpdatePending = true;
-        virtioKick(pVirtio->pDevInsR3, pVirtio, VIRTIO_ISR_DEVICE_CONFIG, pVirtio->uMsixConfig, false /* fForce */);
+        virtioKick(pVirtio->pDevInsR3, pVirtio, VIRTIO_ISR_DEVICE_CONFIG, pVirtio->uMsixConfig);
     }
 }
 /**
@@ -1077,13 +1077,12 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   idxQueue    Queue number
- * @param   fForce      Force guest notification even if VIRTQ_USED_F_NO_NOTIFY is set
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS       Success
  * @retval  VERR_INVALID_STATE VirtIO not in ready state
  */
-int virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce)
+int virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     Assert(idxQueue        < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
@@ -1095,7 +1094,7 @@ int virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQue
               VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue), pVirtq->uUsedIdx));
 
     virtioWriteUsedRingIdx(pDevIns, pVirtio, idxQueue, pVirtq->uUsedIdx);
-    virtioNotifyGuestDriver(pDevIns, pVirtio, idxQueue, fForce);
+    virtioNotifyGuestDriver(pDevIns, pVirtio, idxQueue);
 
     return VINF_SUCCESS;
 }
@@ -1133,13 +1132,8 @@ static void virtioQueueNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   idxQueue    Queue to check for guest interrupt handling preference
- * @param   fForce      Overrides idxQueue, forcing notification regardless of driver's
- *                      notification preferences. This is a safeguard to prevent
- *                      stalls upon resuming the VM. VirtIO 1.0 specification Section 4.1.5.5
- *                      indicates spurious interrupts are harmless to guest driver's state,
- *                      as they only cause the guest driver to [re]scan queues for work to do.
  */
-static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce)
+static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
 
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
@@ -1159,7 +1153,7 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
             Log6Func(("...kicking guest %s, VIRTIO_F_EVENT_IDX set and threshold (%d) reached\n",
                    VIRTQNAME(pVirtio, idxQueue), (uint16_t)virtioReadAvailUsedEvent(pDevIns, pVirtio, idxQueue)));
 #endif
-            virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue], fForce);
+            virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue]);
             pVirtq->fEventThresholdReached = false;
             return;
         }
@@ -1171,11 +1165,9 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
     else
     {
         /** If guest driver hasn't suppressed interrupts, interrupt  */
-        if (fForce || !(virtioReadAvailRingFlags(pDevIns, pVirtio, idxQueue) & VIRTQ_AVAIL_F_NO_INTERRUPT))
+        if (!(virtioReadAvailRingFlags(pDevIns, pVirtio, idxQueue) & VIRTQ_AVAIL_F_NO_INTERRUPT))
         {
-            if (fForce)
-                Log6Func(("... kicking guest, queue %s, because force flag set\n", VIRTQNAME(pVirtio, idxQueue)));
-            virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue], fForce);
+            virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[idxQueue]);
             return;
         }
         Log6Func(("...skipping interrupt, queue %s, Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n",
@@ -1190,13 +1182,9 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   uCause      Interrupt cause bit mask to set in PCI ISR port.
  * @param   uVec        MSI-X vector, if enabled
- * @param   uForce      True of out-of-band
  */
-static int virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uMsixVector, bool fForce)
+static int virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uMsixVector)
 {
-    if (fForce)
-        Log6Func(("reason: forced\n"));
-    else
     if (uCause == VIRTIO_ISR_VIRTQ_INTERRUPT)
         Log6Func(("reason: buffer added to 'used' ring.\n"));
     else
@@ -1907,7 +1895,7 @@ void virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmSta
         case kvirtIoVmStateChangedPowerOff:
             break;
         case kvirtIoVmStateChangedResume:
-            virtioNotifyGuestDriver(pVirtio->pDevInsR3, pVirtio, 0 /* idxQueue */, true /* fForce */);
+            virtioNotifyGuestDriver(pVirtio->pDevInsR3, pVirtio, 0 /* idxQueue */);
             break;
         default:
             LogRelFunc(("Bad enum value"));

@@ -401,17 +401,6 @@ typedef struct VIRTIOCORERC
 typedef CTX_SUFF(VIRTIOCORE) VIRTIOCORECC;
 
 
-/** @name virtq related flags
- * @{ */
-#define VIRTQ_DESC_F_NEXT                               1        /**< Indicates this descriptor chains to next  */
-#define VIRTQ_DESC_F_WRITE                              2        /**< Marks buffer as write-only (default ro)   */
-#define VIRTQ_DESC_F_INDIRECT                           4        /**< Buffer is list of buffer descriptors      */
-
-#define VIRTQ_USED_F_NO_NOTIFY                          1        /**< Dev to Drv: Don't notify when buf added   */
-#define VIRTQ_AVAIL_F_NO_INTERRUPT                      1        /**< Drv to Dev: Don't notify when buf eaten   */
-/** @} */
-
-
 /** @name API for VirtIO parent device
  * @{ */
 
@@ -434,7 +423,7 @@ int  virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQ
                           PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
 
 int  virtioCoreR3QueuePendingCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
-int  virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce);
+int  virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
 bool virtioCoreQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
 void virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
 void virtioCoreQueueSetNotify(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);

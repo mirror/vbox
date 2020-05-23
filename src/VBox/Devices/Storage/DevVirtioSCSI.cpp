@@ -850,7 +850,7 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
     virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &ReqSgBuf, pDescChain, true /* fFence */);
-    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx, false);
+    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx);
 
     if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
         PDMDevHlpAsyncNotificationCompleted(pDevIns);
@@ -1039,7 +1039,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                         VERR_BUFFER_OVERFLOW);
 
         virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, pReq->qIdx, &ReqSgBuf, pReq->pDescChain, true /* fFence TBD */);
-        virtioCoreQueueSync(pDevIns, &pThis->Virtio, pReq->qIdx, false);
+        virtioCoreQueueSync(pDevIns, &pThis->Virtio, pReq->qIdx);
 
         Log2(("-----------------------------------------------------------------------------------------\n"));
     }
@@ -1524,7 +1524,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     RTSgBufInit(&ReqSgBuf, aReqSegs, cSegs);
 
     virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &ReqSgBuf, pDescChain, true /*fFence*/);
-    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx, false);
+    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx);
 
     return VINF_SUCCESS;
 }
