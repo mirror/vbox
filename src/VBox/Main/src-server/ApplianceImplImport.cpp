@@ -1427,6 +1427,14 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             hrc = mVirtualBox->FindMachine(Bstr(strVMName.c_str()).raw(), machine.asOutParam());
             if (SUCCEEDED(hrc))
             {
+                /** @todo r=bird: Please try find a less convoluted way of adding some random
+                 *        number to the name, we've got RTRandU64() for instance which you
+                 *        could combine with strVMName.appendPrintfNoThrow.
+                 *
+                 *        The code below is also accessing heap after it has been freed.
+                 *        Guid.toString() returns a Utf8Str object which expires and is deleted
+                 *        once strrchr returns.
+                 */
                 /* what to do? create a new name from the old one with some suffix? */
                 com::Guid newId;
                 newId.create();
