@@ -1648,7 +1648,11 @@ endif
 # Decide which Visual C++ compiler version we're using by default.
 #
 ifndef VBOX_VCC_TOOL_STEM
- VBOX_VCC_TOOL_STEM := VCC100
+ ifdef VBOX_WITH_NEW_VCC
+  VBOX_VCC_TOOL_STEM := VCC142
+ else
+  VBOX_VCC_TOOL_STEM := VCC100
+ endif
 else ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120 VCC140 VCC141 VCC142)
  $(error VBox: VBOX_VCC_TOOL_STEM='$(VBOX_VCC_TOOL_STEM)' is not supported, only VCC100, VCC110, VCC120, VCC140, VCC141, VCC142 are)
 endif
