@@ -6340,17 +6340,18 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Td_Rd, uint8_t, iTrReg, uint8_t, iGReg)
     /*
      * Read the new value from the source register.
      */
-    uint64_t uNewDrX;
+    uint64_t uNewTrX;
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
-        uNewDrX = iemGRegFetchU64(pVCpu, iGReg);
+        uNewTrX = iemGRegFetchU64(pVCpu, iGReg);
     else
-        uNewDrX = iemGRegFetchU32(pVCpu, iGReg);
+        uNewTrX = iemGRegFetchU32(pVCpu, iGReg);
 
     /*
      * Here we would do the actual setting if this weren't a dummy implementation.
      * This is currently a dummy implementation that only exists to prevent
      * old debuggers like WDEB386 or OS/2 KDB from crashing.
      */
+    RT_NOREF(uNewTrX);
 
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
