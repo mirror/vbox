@@ -2215,9 +2215,14 @@ FNIEMOP_DEF(iemOp_mov_Dd_Rd)
 FNIEMOP_DEF(iemOp_mov_Rd_Td)
 {
     IEMOP_MNEMONIC(mov_Rd_Td, "mov Rd,Td");
-    /** @todo works on 386 and 486. */
-    /* The RM byte is not considered, see testcase. */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    IEMOP_HLP_MIN_386();
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    if (RT_LIKELY(IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_PENTIUM))
+        return IEMOP_RAISE_INVALID_OPCODE();
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_mov_Rd_Td,
+                                   (X86_MODRM_RM_MASK & bRm) | pVCpu->iem.s.uRexB,
+                                   ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK));
 }
 
 
@@ -2225,9 +2230,14 @@ FNIEMOP_DEF(iemOp_mov_Rd_Td)
 FNIEMOP_DEF(iemOp_mov_Td_Rd)
 {
     IEMOP_MNEMONIC(mov_Td_Rd, "mov Td,Rd");
-    /** @todo works on 386 and 486. */
-    /* The RM byte is not considered, see testcase. */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    IEMOP_HLP_MIN_386();
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    if (RT_LIKELY(IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_PENTIUM))
+        return IEMOP_RAISE_INVALID_OPCODE();
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_mov_Td_Rd,
+                                   ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK),
+                                   (X86_MODRM_RM_MASK & bRm) | pVCpu->iem.s.uRexB);
 }
 
 

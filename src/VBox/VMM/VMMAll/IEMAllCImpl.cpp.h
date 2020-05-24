@@ -6262,6 +6262,102 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
 
 
 /**
+ * Implements mov GReg,TRx.
+ *
+ * @param   iGReg           The general register to store the
+ *                          TRx value in.
+ * @param   iTrReg          The TRx register to read (6/7).
+ */
+IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Td, uint8_t, iGReg, uint8_t, iTrReg)
+{
+    /*
+     * Check preconditions. NB: This instruction is 386/486 only.
+     */
+
+    /* Raise GPs. */
+    if (pVCpu->iem.s.uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
+
+    if (iTrReg < 6 || iTrReg > 7)
+    {
+        /** @todo Do Intel CPUs reject this or are the TRs aliased? */
+        Log(("mov r%u,tr%u: invalid register -> #GP(0)\n", iGReg, iTrReg));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /*
+     * Read the test register and store it in the specified general register.
+     * This is currently a dummy implementation that only exists to satisfy
+     * old debuggers like WDEB386 or OS/2 KDB which unconditionally read the
+     * TR6/TR7 registers. Software which actually depends on the TR values
+     * (different on 386/486) is exceedingly rare.
+     */
+    uint64_t trX;
+    switch (iTrReg)
+    {
+        case 6:
+            trX = 0;    /* Currently a dummy. */
+            break;
+        case 7:
+            trX = 0;    /* Currently a dummy. */
+            break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* call checks */
+    }
+
+    *(uint64_t *)iemGRegRef(pVCpu, iGReg) = (uint32_t)trX;
+
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements mov TRx,GReg.
+ *
+ * @param   iTrReg          The TRx register to write (valid).
+ * @param   iGReg           The general register to load the TRx
+ *                          value from.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_mov_Td_Rd, uint8_t, iTrReg, uint8_t, iGReg)
+{
+    /*
+     * Check preconditions. NB: This instruction is 386/486 only.
+     */
+
+    /* Raise GPs. */
+    if (pVCpu->iem.s.uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
+
+    if (iTrReg < 6 || iTrReg > 7)
+    {
+        /** @todo Do Intel CPUs reject this or are the TRs aliased? */
+        Log(("mov r%u,tr%u: invalid register -> #GP(0)\n", iGReg, iTrReg));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /*
+     * Read the new value from the source register.
+     */
+    uint64_t uNewDrX;
+    if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+        uNewDrX = iemGRegFetchU64(pVCpu, iGReg);
+    else
+        uNewDrX = iemGRegFetchU32(pVCpu, iGReg);
+
+    /*
+     * Here we would do the actual setting if this weren't a dummy implementation.
+     * This is currently a dummy implementation that only exists to prevent
+     * old debuggers like WDEB386 or OS/2 KDB from crashing.
+     */
+
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Implements 'INVLPG m'.
  *
  * @param   GCPtrPage       The effective address of the page to invalidate.
