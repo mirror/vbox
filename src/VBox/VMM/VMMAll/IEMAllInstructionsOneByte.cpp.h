@@ -10285,62 +10285,73 @@ FNIEMOP_DEF(iemOp_loop_Jb)
     /** @todo Check out the #GP case if EIP < CS.Base or EIP > CS.Limit when
      * using the 32-bit operand size override.  How can that be restarted?  See
      * weird pseudo code in intel manual. */
+
+    /** NB: At least Windows for Workgroups 3.11 (NDIS.386) and Windows 95 (NDIS.VXD, IOS)
+     * use LOOP $-2 to implement NdisStallExecution and other CPU stall APIs. Shortcutting
+     * the loop causes guest crashes, but when logging it's nice to skip a few million
+     * lines of useless output. */
+#if defined(LOG_ENABLED)
+    if ((LogIs3Enabled() || LogIs4Enabled()) && (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) == i8Imm))
+        switch (pVCpu->iem.s.enmEffAddrMode)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(0,0);
+                IEM_MC_STORE_GREG_U16_CONST(X86_GREG_xCX, 0);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(0,0);
+                IEM_MC_STORE_GREG_U32_CONST(X86_GREG_xCX, 0);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(0,0);
+                IEM_MC_STORE_GREG_U64_CONST(X86_GREG_xCX, 0);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+#endif
+
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
-            if (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) != i8Imm) /** @todo Harmfull to windows 3.11 for workgroups and such. Make optional. */
-            {
-                IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
-                IEM_MC_IF_CX_IS_NZ() {
-                    IEM_MC_REL_JMP_S8(i8Imm);
-                } IEM_MC_ELSE() {
-                    IEM_MC_ADVANCE_RIP();
-                } IEM_MC_ENDIF();
-            }
-            else
-            {
-                IEM_MC_STORE_GREG_U16_CONST(X86_GREG_xCX, 0);
+
+            IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
+            IEM_MC_IF_CX_IS_NZ() {
+                IEM_MC_REL_JMP_S8(i8Imm);
+            } IEM_MC_ELSE() {
                 IEM_MC_ADVANCE_RIP();
-            }
+            } IEM_MC_ENDIF();
             IEM_MC_END();
             return VINF_SUCCESS;
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,0);
-            if (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) != i8Imm)
-            {
-                IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
-                IEM_MC_IF_ECX_IS_NZ() {
-                    IEM_MC_REL_JMP_S8(i8Imm);
-                } IEM_MC_ELSE() {
-                    IEM_MC_ADVANCE_RIP();
-                } IEM_MC_ENDIF();
-            }
-            else
-            {
-                IEM_MC_STORE_GREG_U32_CONST(X86_GREG_xCX, 0);
+            IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
+            IEM_MC_IF_ECX_IS_NZ() {
+                IEM_MC_REL_JMP_S8(i8Imm);
+            } IEM_MC_ELSE() {
                 IEM_MC_ADVANCE_RIP();
-            }
+            } IEM_MC_ENDIF();
             IEM_MC_END();
             return VINF_SUCCESS;
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,0);
-            if (-(int8_t)IEM_GET_INSTR_LEN(pVCpu) != i8Imm)
-            {
-                IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
-                IEM_MC_IF_RCX_IS_NZ() {
-                    IEM_MC_REL_JMP_S8(i8Imm);
-                } IEM_MC_ELSE() {
-                    IEM_MC_ADVANCE_RIP();
-                } IEM_MC_ENDIF();
-            }
-            else
-            {
-                IEM_MC_STORE_GREG_U64_CONST(X86_GREG_xCX, 0);
+            IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
+            IEM_MC_IF_RCX_IS_NZ() {
+                IEM_MC_REL_JMP_S8(i8Imm);
+            } IEM_MC_ELSE() {
                 IEM_MC_ADVANCE_RIP();
-            }
+            } IEM_MC_ENDIF();
             IEM_MC_END();
             return VINF_SUCCESS;
 
