@@ -575,10 +575,17 @@ void UIMachineView::sltMachineStateChanged()
                 && (   state           != KMachineState_TeleportingPausedVM
                     || m_previousState != KMachineState_Teleporting))
             {
-                /* Take live pause-pixmap: */
-                takePausePixmapLive();
-                /* Fully repaint to pick up pause-pixmap: */
-                viewport()->update();
+                // WORKAROUND:
+                // We can't take pause pixmap if actual state is Saving, this produces
+                // a lock and GUI will be frozen until SaveState call is complete...
+                const KMachineState enmActualState = machine().GetState();
+                if (enmActualState != KMachineState_Saving)
+                {
+                    /* Take live pause-pixmap: */
+                    takePausePixmapLive();
+                    /* Fully repaint to pick up pause-pixmap: */
+                    viewport()->update();
+                }
             }
             break;
         }
