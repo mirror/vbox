@@ -28,11 +28,15 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 
+#include <iprt/semaphore.h>
 #include <iprt/time.h>
 
 #include <map>
 #include <vector>
 
+
+/** Event semaphore we're using for notification. */
+extern RTSEMEVENT g_SemEventGuestCtrlCanceled;
 
 
 /*
@@ -504,6 +508,60 @@ STDMETHODIMP GuestEventListener::HandleEvent(VBoxEventType_T aType, IEvent *aEve
                 }
 
             } while (0);
+            break;
+        }
+
+        default:
+            AssertFailed();
+    }
+
+    return S_OK;
+}
+
+/*
+ * GuestAdditionsRunlevelListener
+ * GuestAdditionsRunlevelListener
+ * GuestAdditionsRunlevelListener
+ */
+
+GuestAdditionsRunlevelListener::GuestAdditionsRunlevelListener(AdditionsRunLevelType_T enmRunLevel)
+    : mRunLevelTarget(enmRunLevel)
+{
+}
+
+GuestAdditionsRunlevelListener::~GuestAdditionsRunlevelListener(void)
+{
+}
+
+void GuestAdditionsRunlevelListener::uninit(void)
+{
+}
+
+STDMETHODIMP GuestAdditionsRunlevelListener::HandleEvent(VBoxEventType_T aType, IEvent *aEvent)
+{
+    Assert(mRunLevelTarget != AdditionsRunLevelType_None);
+
+    HRESULT rc;
+
+    switch (aType)
+    {
+        case VBoxEventType_OnGuestAdditionsStatusChanged:
+        {
+            ComPtr<IGuestAdditionsStatusChangedEvent> pEvent = aEvent;
+            Assert(!pEvent.isNull());
+
+            AdditionsRunLevelType_T RunLevelCur = AdditionsRunLevelType_None;
+            CHECK_ERROR_BREAK(pEvent, COMGETTER(RunLevel)(&RunLevelCur));
+
+            if (mfVerbose)
+                RTPrintf("Reached run level %RU32\n", RunLevelCur);
+
+            if (RunLevelCur == mRunLevelTarget)
+            {
+                int vrc = RTSemEventSignal(g_SemEventGuestCtrlCanceled);
+                AssertRC(vrc);
+            }
+
             break;
         }
 

@@ -43,6 +43,7 @@
 #include <iprt/list.h>
 #include <iprt/path.h>
 #include <iprt/process.h> /* For RTProcSelf(). */
+#include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/vfs.h>
 
@@ -103,6 +104,9 @@ using namespace com;
 /** Set by the signal handler when current guest control
  *  action shall be aborted. */
 static volatile bool g_fGuestCtrlCanceled = false;
+/** Event semaphore used for wait notifications.
+ *  Also being used for the listener implementations in VBoxManageGuestCtrlListener.cpp. */
+       RTSEMEVENT    g_SemEventGuestCtrlCanceled = NIL_RTSEMEVENT;
 
 
 /*********************************************************************************************************************************
@@ -115,7 +119,7 @@ VBOX_LISTENER_DECLARE(GuestFileEventListenerImpl)
 VBOX_LISTENER_DECLARE(GuestProcessEventListenerImpl)
 VBOX_LISTENER_DECLARE(GuestSessionEventListenerImpl)
 VBOX_LISTENER_DECLARE(GuestEventListenerImpl)
-
+VBOX_LISTENER_DECLARE(GuestAdditionsRunlevelListener)
 
 /**
  * Definition of a guestcontrol command, with handler and various flags.
@@ -236,7 +240,8 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                                 | HELP_SCOPE_GSTCTRL_CLOSEPROCESS
                                 | HELP_SCOPE_GSTCTRL_CLOSESESSION
                                 | HELP_SCOPE_GSTCTRL_UPDATEGA
-                                | HELP_SCOPE_GSTCTRL_WATCH;
+                                | HELP_SCOPE_GSTCTRL_WATCH
+                                | HELP_SCOPE_GSTCTRL_WAITRUNLEVEL;
 
     /*                0         1         2         3         4         5         6         7         8XXXXXXXXXX */
     /*                0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 */
@@ -357,7 +362,12 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                      "\n");
         if (fSubcommandScope & HELP_SCOPE_GSTCTRL_WATCH)
             RTStrmPrintf(pStrm,
-                     "                              watch [common-options]\n"
+                     "                              watch [--timeout <msec>] [common-options]\n"
+                     "\n");
+        if (fSubcommandScope & HELP_SCOPE_GSTCTRL_WAITRUNLEVEL)
+            RTStrmPrintf(pStrm,
+                     "                              waitrunlevel [--timeout <msec>] [common-options]\n"
+                     "                              <system|userland|desktop>\n"
                      "\n");
     }
 }
@@ -426,6 +436,10 @@ static int gctlSignalHandlerInstall(void)
     signal(SIGBREAK, gctlSignalHandler);
 # endif
 #endif
+
+    if (RT_SUCCESS(rc))
+        rc = RTSemEventCreate(&g_SemEventGuestCtrlCanceled);
+
     return rc;
 }
 
@@ -449,6 +463,12 @@ static int gctlSignalHandlerUninstall(void)
     signal(SIGBREAK, SIG_DFL);
 # endif
 #endif
+
+    if (g_SemEventGuestCtrlCanceled != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(g_SemEventGuestCtrlCanceled);
+        g_SemEventGuestCtrlCanceled = NIL_RTSEMEVENT;
+    }
     return rc;
 }
 
@@ -2652,23 +2672,145 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
     return rcExit;
 }
 
+/**
+ * Waits for a Guest Additions run level being reached.
+ *
+ * @returns VBox status code.
+ *          Returns VERR_CANCELLED if waiting for cancelled due to signal handling, e.g. when CTRL+C or some sort was pressed.
+ * @param   pCtx                The guest control command context.
+ * @param   enmRunLevel         Run level to wait for.
+ * @param   cMsTimeout          Timeout (in ms) for waiting.
+ */
+static int gctlWaitForRunLevel(PGCTLCMDCTX pCtx, AdditionsRunLevelType_T enmRunLevel, RTMSINTERVAL cMsTimeout)
+{
+    int vrc;
+
+    try
+    {
+        HRESULT rc = S_OK;
+        /** Whether we need to actually wait for the run level or if we already reached it. */
+        bool fWait;
+
+        /* Install an event handler first to catch any runlevel changes. */
+        ComObjPtr<GuestAdditionsRunlevelListenerImpl> pGuestListener;
+        do
+        {
+            /* Listener creation. */
+            pGuestListener.createObject();
+            pGuestListener->init(new GuestAdditionsRunlevelListener(enmRunLevel));
+
+            /* Register for IGuest events. */
+            ComPtr<IEventSource> es;
+            CHECK_ERROR_BREAK(pCtx->pGuest, COMGETTER(EventSource)(es.asOutParam()));
+            com::SafeArray<VBoxEventType_T> eventTypes;
+            eventTypes.push_back(VBoxEventType_OnGuestAdditionsStatusChanged);
+            CHECK_ERROR_BREAK(es, RegisterListener(pGuestListener, ComSafeArrayAsInParam(eventTypes),
+                                                   true /* Active listener */));
+
+            AdditionsRunLevelType_T enmRunLevelCur = AdditionsRunLevelType_None;
+            CHECK_ERROR_BREAK(pCtx->pGuest, COMGETTER(AdditionsRunLevel)(&enmRunLevelCur));
+            fWait = enmRunLevelCur != enmRunLevel;
+
+            if (pCtx->cVerbose)
+                RTPrintf("Current run level is %RU32\n", enmRunLevelCur);
+
+        } while (0);
+
+        if (fWait)
+        {
+            if (pCtx->cVerbose)
+                RTPrintf("Waiting for run level %RU32 ...\n", enmRunLevel);
+
+            RTMSINTERVAL tsStart = RTTimeMilliTS();
+            while (RTTimeMilliTS() - tsStart < cMsTimeout)
+            {
+                /* Wait for the global signal semaphore getting signalled. */
+                vrc = RTSemEventWait(g_SemEventGuestCtrlCanceled, 100 /* ms */);
+                if (RT_FAILURE(vrc))
+                {
+                    if (vrc == VERR_TIMEOUT)
+                        continue;
+                    else
+                    {
+                        RTPrintf("Waiting failed with %Rrc\n", vrc);
+                        break;
+                    }
+                }
+                else if (pCtx->cVerbose)
+                {
+                    RTPrintf("Run level %RU32 reached\n", enmRunLevel);
+                    break;
+                }
+
+                NativeEventQueue::getMainEventQueue()->processEventQueue(0);
+            }
+
+            if (   vrc == VERR_TIMEOUT
+                && pCtx->cVerbose)
+                RTPrintf("Run level %RU32 not reached within time\n", enmRunLevel);
+        }
+
+        if (!pGuestListener.isNull())
+        {
+            /* Guest callback unregistration. */
+            ComPtr<IEventSource> pES;
+            CHECK_ERROR(pCtx->pGuest, COMGETTER(EventSource)(pES.asOutParam()));
+            if (!pES.isNull())
+                CHECK_ERROR(pES, UnregisterListener(pGuestListener));
+            pGuestListener.setNull();
+        }
+
+        if (g_fGuestCtrlCanceled)
+            vrc = VERR_CANCELLED;
+    }
+    catch (std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    return vrc;
+}
+
 static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
-    /*
-     * Check the syntax.  We can deduce the correct syntax from the number of
-     * arguments.
-     */
-    Utf8Str strSource;
+    /** Timeout to wait for the whole updating procedure to complete. */
+    uint32_t                cMsTimeout = RT_INDEFINITE_WAIT;
+    /** Source path to .ISO Guest Additions file to use. */
+    Utf8Str                 strSource;
     com::SafeArray<IN_BSTR> aArgs;
-    bool fWaitStartOnly = false;
+    /* Whether to reboot the guest automatically when the update process has finished successfully. */
+    bool fRebootOnFinish = false;
+    /* Whether to only wait for getting the update process started instead of waiting until it finishes. */
+    bool fWaitStartOnly  = false;
+    /* Whether to wait for the VM being ready to start the update. Needs Guest Additions facility reporting. */
+    bool fWaitReady      = false;
+    /* Whether to verify if the Guest Additions were successfully updated on the guest. */
+    bool fVerify         = false;
+
+    /*
+     * Parse arguments.
+     */
+    enum KGSTCTRLUPDATEADDITIONSOPT
+    {
+        KGSTCTRLUPDATEADDITIONSOPT_REBOOT = 1000,
+        KGSTCTRLUPDATEADDITIONSOPT_SOURCE,
+        KGSTCTRLUPDATEADDITIONSOPT_TIMEOUT,
+        KGSTCTRLUPDATEADDITIONSOPT_VERIFY,
+        KGSTCTRLUPDATEADDITIONSOPT_WAITREADY,
+        KGSTCTRLUPDATEADDITIONSOPT_WAITSTART
+    };
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
-        { "--source",              's',         RTGETOPT_REQ_STRING  },
-        { "--wait-start",          'w',         RTGETOPT_REQ_NOTHING }
+        { "--reboot",              KGSTCTRLUPDATEADDITIONSOPT_REBOOT,           RTGETOPT_REQ_NOTHING },
+        { "--source",              KGSTCTRLUPDATEADDITIONSOPT_SOURCE,           RTGETOPT_REQ_STRING  },
+        { "--timeout",             KGSTCTRLUPDATEADDITIONSOPT_TIMEOUT,          RTGETOPT_REQ_UINT32 },
+        { "--verify",              KGSTCTRLUPDATEADDITIONSOPT_VERIFY,           RTGETOPT_REQ_NOTHING },
+        { "--wait-ready",          KGSTCTRLUPDATEADDITIONSOPT_WAITREADY,        RTGETOPT_REQ_NOTHING },
+        { "--wait-start",          KGSTCTRLUPDATEADDITIONSOPT_WAITSTART,        RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
@@ -2684,14 +2826,26 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
         {
             GCTLCMD_COMMON_OPTION_CASES(pCtx, ch, &ValueUnion);
 
-            case 's':
+            case KGSTCTRLUPDATEADDITIONSOPT_REBOOT:
+                fRebootOnFinish = true;
+                break;
+
+            case KGSTCTRLUPDATEADDITIONSOPT_SOURCE:
                 vrc = RTPathAbsCxx(strSource, ValueUnion.psz);
                 if (RT_FAILURE(vrc))
                     return RTMsgErrorExitFailure("RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
                 break;
 
-            case 'w':
+            case KGSTCTRLUPDATEADDITIONSOPT_WAITSTART:
                 fWaitStartOnly = true;
+                break;
+
+            case KGSTCTRLUPDATEADDITIONSOPT_WAITREADY:
+                fWaitReady = true;
+                break;
+
+            case KGSTCTRLUPDATEADDITIONSOPT_VERIFY:
+                fVerify = true;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -2732,50 +2886,249 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
         vrc = VERR_FILE_NOT_FOUND;
     }
 
+
+
+#if 0
+        ComPtr<IGuest> guest;
+        rc = pConsole->COMGETTER(Guest)(guest.asOutParam());
+        if (SUCCEEDED(rc) && !guest.isNull())
+        {
+            SHOW_STRING_PROP_NOT_EMPTY(guest, OSTypeId, "GuestOSType", "OS type:");
+
+            AdditionsRunLevelType_T guestRunLevel; /** @todo Add a runlevel-to-string (e.g. 0 = "None") method? */
+            rc = guest->COMGETTER(AdditionsRunLevel)(&guestRunLevel);
+            if (SUCCEEDED(rc))
+                SHOW_ULONG_VALUE("GuestAdditionsRunLevel", "Additions run level:", (ULONG)guestRunLevel, "");
+
+            Bstr guestString;
+            rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
+            if (   SUCCEEDED(rc)
+                && !guestString.isEmpty())
+            {
+                ULONG uRevision;
+                rc = guest->COMGETTER(AdditionsRevision)(&uRevision);
+                if (FAILED(rc))
+                    uRevision = 0;
+                RTStrPrintf(szValue, sizeof(szValue), "%ls r%u", guestString.raw(), uRevision);
+                SHOW_UTF8_STRING("GuestAdditionsVersion", "Additions version:", szValue);
+            }
+#endif
+
     if (RT_SUCCESS(vrc))
     {
         if (pCtx->cVerbose)
             RTPrintf("Using source: %s\n", strSource.c_str());
 
-
         RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
         if (rcExit != RTEXITCODE_SUCCESS)
             return rcExit;
 
-
-        com::SafeArray<AdditionsUpdateFlag_T> aUpdateFlags;
-        if (fWaitStartOnly)
+        if (fWaitReady)
         {
-            aUpdateFlags.push_back(AdditionsUpdateFlag_WaitForUpdateStartOnly);
             if (pCtx->cVerbose)
-                RTPrintf("Preparing and waiting for Guest Additions installer to start ...\n");
+                RTPrintf("Waiting for current Guest Additions inside VM getting ready for updating ...\n");
+
+            const uint64_t uTsStart = RTTimeMilliTS();
+            vrc = gctlWaitForRunLevel(pCtx, AdditionsRunLevelType_Userland, cMsTimeout);
+            if (RT_SUCCESS(vrc))
+                cMsTimeout = cMsTimeout != RT_INDEFINITE_WAIT ? cMsTimeout - (RTTimeMilliTS() - uTsStart) : cMsTimeout;
         }
 
-        ComPtr<IProgress> pProgress;
-        CHECK_ERROR(pCtx->pGuest, UpdateGuestAdditions(Bstr(strSource).raw(),
-                                                       ComSafeArrayAsInParam(aArgs),
-                                                       /* Wait for whole update process to complete. */
-                                                       ComSafeArrayAsInParam(aUpdateFlags),
-                                                       pProgress.asOutParam()));
-        if (FAILED(rc))
-            vrc = gctlPrintError(pCtx->pGuest, COM_IIDOF(IGuest));
-        else
+        if (RT_SUCCESS(vrc))
         {
-            if (pCtx->cVerbose)
-                rc = showProgress(pProgress);
-            else
-                rc = pProgress->WaitForCompletion(-1 /* No timeout */);
-
-            if (SUCCEEDED(rc))
-                CHECK_PROGRESS_ERROR(pProgress, ("Guest additions update failed"));
-            vrc = gctlPrintProgressError(pProgress);
-            if (RT_SUCCESS(vrc))
+            /* Get current Guest Additions version / revision. */
+            Bstr  strGstVerCur;
+            ULONG uGstRevCur   = 0;
+            rc = pCtx->pGuest->COMGETTER(AdditionsVersion)(strGstVerCur.asOutParam());
+            if (   SUCCEEDED(rc)
+                && !strGstVerCur.isEmpty())
             {
-                RTPrintf("Guest Additions update successful.\n");
-                RTPrintf("The guest needs to be restarted in order to make use of the updated Guest Additions.\n");
+                rc = pCtx->pGuest->COMGETTER(AdditionsRevision)(&uGstRevCur);
+                if (SUCCEEDED(rc))
+                {
+                    if (pCtx->cVerbose)
+                        RTPrintf("Guest Additions %lsr%RU64 currently installed, waiting for Guest Additions installer to start ...\n",
+                                 strGstVerCur.raw(), uGstRevCur);
+                }
+            }
+
+            com::SafeArray<AdditionsUpdateFlag_T> aUpdateFlags;
+            if (fWaitStartOnly)
+                aUpdateFlags.push_back(AdditionsUpdateFlag_WaitForUpdateStartOnly);
+
+            ComPtr<IProgress> pProgress;
+            CHECK_ERROR(pCtx->pGuest, UpdateGuestAdditions(Bstr(strSource).raw(),
+                                                           ComSafeArrayAsInParam(aArgs),
+                                                           ComSafeArrayAsInParam(aUpdateFlags),
+                                                           pProgress.asOutParam()));
+            if (FAILED(rc))
+                vrc = gctlPrintError(pCtx->pGuest, COM_IIDOF(IGuest));
+            else
+            {
+                if (pCtx->cVerbose)
+                    rc = showProgress(pProgress);
+                else
+                    rc = pProgress->WaitForCompletion((int32_t)cMsTimeout);
+
+                if (SUCCEEDED(rc))
+                    CHECK_PROGRESS_ERROR(pProgress, ("Guest Additions update failed"));
+                vrc = gctlPrintProgressError(pProgress);
+                if (RT_SUCCESS(vrc))
+                {
+                    if (pCtx->cVerbose)
+                        RTPrintf("Guest Additions update successful.\n");
+
+                    if (fRebootOnFinish)
+                    {
+                        /** @todo Implement this. */
+                        vrc = VERR_NOT_IMPLEMENTED;
+
+                        if (RT_SUCCESS(vrc))
+                        {
+                            if (pCtx->cVerbose)
+                                RTPrintf("Rebooting guest ...\n");
+                        }
+
+                        if (RT_SUCCESS(vrc))
+                        {
+                            if (fWaitReady)
+                            {
+                                if (pCtx->cVerbose)
+                                    RTPrintf("Waiting for new Guest Additions inside VM getting ready ...\n");
+
+                                vrc = gctlWaitForRunLevel(pCtx, AdditionsRunLevelType_Userland, cMsTimeout);
+                                if (RT_SUCCESS(vrc))
+                                {
+                                    if (fVerify)
+                                    {
+                                        if (pCtx->cVerbose)
+                                            RTPrintf("Verifying Guest Additions update ...\n");
+
+                                        /* Get new Guest Additions version / revision. */
+                                        Bstr strGstVerNew;
+                                        ULONG uGstRevNew   = 0;
+                                        rc = pCtx->pGuest->COMGETTER(AdditionsVersion)(strGstVerNew.asOutParam());
+                                        if (   SUCCEEDED(rc)
+                                            && !strGstVerNew.isEmpty())
+                                        {
+                                            rc = pCtx->pGuest->COMGETTER(AdditionsRevision)(&uGstRevNew);
+                                            if (FAILED(rc))
+                                                uGstRevNew = 0;
+                                        }
+
+                                        /** @todo Do more verification here. */
+                                        vrc = uGstRevNew > uGstRevCur ? VINF_SUCCESS : VERR_NO_CHANGE;
+
+                                        if (pCtx->cVerbose)
+                                        {
+                                            RTPrintf("Old Guest Additions: %ls%RU64\n", strGstVerCur.raw(), uGstRevCur);
+                                            RTPrintf("New Guest Additions: %ls%RU64\n", strGstVerNew.raw(), uGstRevNew);
+
+                                            if (RT_FAILURE(vrc))
+                                            {
+                                                RTPrintf("\nError updating Guest Additions, please check guest installer log\n");
+                                            }
+                                            else
+                                            {
+                                                if (uGstRevNew < uGstRevCur)
+                                                    RTPrintf("\nWARNING: Guest Additions were downgraded\n");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else if (pCtx->cVerbose)
+                                RTPrintf("The guest needs to be restarted in order to make use of the updated Guest Additions.\n");
+                        }
+                    }
+                }
             }
         }
     }
+
+    return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+/**
+ * Returns a Guest Additions run level from a string.
+ *
+ * @returns Run level if found, or AdditionsRunLevelType_None if not found / invalid.
+ * @param   pcszStr             String to return run level for.
+ */
+static AdditionsRunLevelType_T gctlGetRunLevelFromStr(const char *pcszStr)
+{
+    AssertPtrReturn(pcszStr, AdditionsRunLevelType_None);
+
+    if      (RTStrICmp(pcszStr, "system")   == 0) return AdditionsRunLevelType_System;
+    else if (RTStrICmp(pcszStr, "userland") == 0) return AdditionsRunLevelType_Userland;
+    else if (RTStrICmp(pcszStr, "desktop") == 0)  return AdditionsRunLevelType_Desktop;
+
+    return AdditionsRunLevelType_None;
+}
+
+static DECLCALLBACK(RTEXITCODE) gctlHandleWaitRunLevel(PGCTLCMDCTX pCtx, int argc, char **argv)
+{
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
+
+    /** Timeout to wait for run level being reached.
+     *  By default we wait until it's reached. */
+    uint32_t cMsTimeout = RT_INDEFINITE_WAIT;
+
+    /*
+     * Parse arguments.
+     */
+    enum KGSTCTRLWAITRUNLEVELOPT
+    {
+        KGSTCTRLWAITRUNLEVELOPT_TIMEOUT = 1000
+    };
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        GCTLCMD_COMMON_OPTION_DEFS()
+        { "--timeout",             KGSTCTRLWAITRUNLEVELOPT_TIMEOUT,          RTGETOPT_REQ_UINT32 }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    AdditionsRunLevelType_T enmRunLevel = AdditionsRunLevelType_None;
+
+    int vrc = VINF_SUCCESS;
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+           && RT_SUCCESS(vrc))
+    {
+        switch (ch)
+        {
+            GCTLCMD_COMMON_OPTION_CASES(pCtx, ch, &ValueUnion);
+
+            case KGSTCTRLWAITRUNLEVELOPT_TIMEOUT:
+                cMsTimeout = ValueUnion.u32;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                enmRunLevel = gctlGetRunLevelFromStr(ValueUnion.psz);
+                if (enmRunLevel == AdditionsRunLevelType_None)
+                    return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_WAITRUNLEVEL,
+                                         "Invalid run level specified. Valid values are: system, userland, desktop");
+                break;
+            }
+
+            default:
+                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_WAITRUNLEVEL, ch, &ValueUnion);
+        }
+    }
+
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+
+    if (enmRunLevel == AdditionsRunLevelType_None)
+        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_WAITRUNLEVEL, "Missing run level to wait for");
+
+    vrc = gctlWaitForRunLevel(pCtx, enmRunLevel, cMsTimeout);
 
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -3256,7 +3609,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
+        { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  }
     };
+
+    uint32_t cMsTimeout = RT_INDEFINITE_WAIT;
 
     int ch;
     RTGETOPTUNION ValueUnion;
@@ -3269,6 +3625,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
         switch (ch)
         {
             GCTLCMD_COMMON_OPTION_CASES(pCtx, ch, &ValueUnion);
+
+            case 't': /* Timeout */
+                cMsTimeout = ValueUnion.u32;
+                break;
 
             case VINF_GETOPT_NOT_OPTION:
             default:
@@ -3310,17 +3670,15 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
         if (pCtx->cVerbose)
             RTPrintf("Waiting for events ...\n");
 
-/** @todo r=bird: This are-we-there-yet approach to things could easily be
- *        replaced by a global event semaphore that gets signalled from the
- *        signal handler and the callback event.  Please fix! */
-        while (!g_fGuestCtrlCanceled)
+        /* Wait for the global signal semaphore getting signalled. */
+        int vrc = RTSemEventWait(g_SemEventGuestCtrlCanceled, cMsTimeout);
+        if (vrc == VERR_TIMEOUT)
         {
-            /** @todo Timeout handling (see above)? */
-            RTThreadSleep(10);
+            if (pCtx->cVerbose)
+                RTPrintf("Waiting done\n");
         }
-
-        if (pCtx->cVerbose)
-            RTPrintf("Signal caught, exiting ...\n");
+        else if (RT_FAILURE(vrc))
+            RTPrintf("Waiting failed with %Rrc\n", vrc);
 
         if (!pGuestListener.isNull())
         {
@@ -3360,45 +3718,48 @@ RTEXITCODE handleGuestControl(HandlerArg *pArg)
      */
     static const GCTLCMDDEF s_aCmdDefs[] =
     {
-        { "run",                gctlHandleRun,              HELP_SCOPE_GSTCTRL_RUN,       0, },
-        { "start",              gctlHandleStart,            HELP_SCOPE_GSTCTRL_START,     0, },
-        { "copyfrom",           gctlHandleCopyFrom,         HELP_SCOPE_GSTCTRL_COPYFROM,  0, },
-        { "copyto",             gctlHandleCopyTo,           HELP_SCOPE_GSTCTRL_COPYTO,    0, },
+        { "run",                gctlHandleRun,              HELP_SCOPE_GSTCTRL_RUN,       0 },
+        { "start",              gctlHandleStart,            HELP_SCOPE_GSTCTRL_START,     0 },
+        { "copyfrom",           gctlHandleCopyFrom,         HELP_SCOPE_GSTCTRL_COPYFROM,  0 },
+        { "copyto",             gctlHandleCopyTo,           HELP_SCOPE_GSTCTRL_COPYTO,    0 },
 
-        { "mkdir",              gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0, },
-        { "md",                 gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0, },
-        { "createdirectory",    gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0, },
-        { "createdir",          gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0, },
+        { "mkdir",              gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0 },
+        { "md",                 gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0 },
+        { "createdirectory",    gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0 },
+        { "createdir",          gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0 },
 
-        { "rmdir",              gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0, },
-        { "removedir",          gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0, },
-        { "removedirectory",    gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0, },
+        { "rmdir",              gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0 },
+        { "removedir",          gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0 },
+        { "removedirectory",    gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0 },
 
-        { "rm",                 gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0, },
-        { "removefile",         gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0, },
-        { "erase",              gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0, },
-        { "del",                gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0, },
-        { "delete",             gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0, },
+        { "rm",                 gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
+        { "removefile",         gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
+        { "erase",              gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
+        { "del",                gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
+        { "delete",             gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
 
-        { "mv",                 gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0, },
-        { "move",               gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0, },
-        { "ren",                gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0, },
-        { "rename",             gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0, },
+        { "mv",                 gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0 },
+        { "move",               gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0 },
+        { "ren",                gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0 },
+        { "rename",             gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0 },
 
-        { "mktemp",             gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0, },
-        { "createtemp",         gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0, },
-        { "createtemporary",    gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0, },
+        { "mktemp",             gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0 },
+        { "createtemp",         gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0 },
+        { "createtemporary",    gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0 },
 
-        { "stat",               gctlHandleStat,             HELP_SCOPE_GSTCTRL_STAT,      0, },
+        { "stat",               gctlHandleStat,             HELP_SCOPE_GSTCTRL_STAT,      0 },
 
-        { "closeprocess",       gctlHandleCloseProcess,     HELP_SCOPE_GSTCTRL_CLOSEPROCESS, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER, },
-        { "closesession",       gctlHandleCloseSession,     HELP_SCOPE_GSTCTRL_CLOSESESSION, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER, },
-        { "list",               gctlHandleList,             HELP_SCOPE_GSTCTRL_LIST,         GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER, },
-        { "watch",              gctlHandleWatch,            HELP_SCOPE_GSTCTRL_WATCH,        GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER, },
+        { "closeprocess",       gctlHandleCloseProcess,     HELP_SCOPE_GSTCTRL_CLOSEPROCESS, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
+        { "closesession",       gctlHandleCloseSession,     HELP_SCOPE_GSTCTRL_CLOSESESSION, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
+        { "list",               gctlHandleList,             HELP_SCOPE_GSTCTRL_LIST,         GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
+        { "watch",              gctlHandleWatch,            HELP_SCOPE_GSTCTRL_WATCH,        GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
 
-        {"updateguestadditions",gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER, },
-        { "updateadditions",    gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER, },
-        { "updatega",           gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER, },
+        {"updateguestadditions",gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        { "updateadditions",    gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        { "updatega",           gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
+
+        { "waitrunlevel",       gctlHandleWaitRunLevel,     HELP_SCOPE_GSTCTRL_WAITRUNLEVEL, GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        { "waitforrunlevel",    gctlHandleWaitRunLevel,     HELP_SCOPE_GSTCTRL_WAITRUNLEVEL, GCTLCMDCTX_F_SESSION_ANONYMOUS },
     };
 
     /*
