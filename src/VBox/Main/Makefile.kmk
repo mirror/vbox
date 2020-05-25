@@ -47,11 +47,15 @@ endif
 VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
 
 ifdef VBOX_ONLY_SDK
- # I'm Evil! Dr. Evil.
- VBoxCOM_0_OUTDIR = $(PATH_TARGET)/VBoxCOM
+ # HACK ALERT! VBoxCOM is skipped, but its output dir is referenced a lot. So, define it.
+ VBoxCOM_0_OUTDIR := $(call TARGET_PATH,VBoxCOM)
  BLDDIRS += $(VBoxCOM_0_OUTDIR) $(PATH_STAGE_BIN)/components
- include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk # For the idl /cpp statement.
- include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk
+ ifndef TOOL_$(VBOX_VCC_TOOL)
+  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL).kmk # For the idl /cpp statement.
+ endif
+ ifndef SDK_$(VBOX_WINPSDK)
+  include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk
+ endif
 endif # !VBOX_ONLY_SDK
 
 
@@ -1419,10 +1423,12 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_XPCOM_i.c: $(VBOX_PATH_MAIN_SRC)/idl/xpidl_iid.xs
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
 
-##
-# Edits $1 and adding #pragma directives for disabling warnings windows.h causes.
-# @param 1     The name of the file to edit.
-define def_VBoxMainDisableMscWarnings
+if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
+
+ ##
+ # Edits $1 and adding #pragma directives for disabling warnings windows.h causes.
+ # @param 1     The name of the file to edit.
+ define def_VBoxMainDisableMscWarnings
 	$(QUIET)$(MV) -f "$1" "$1.tmp"
 	$(QUIET)$(APPEND) -nt "$1" \
 		'#pragma warning(push) /* -Wall and windows.h */' \
@@ -1438,17 +1444,17 @@ define def_VBoxMainDisableMscWarnings
                ''
 	$(QUIET)$(RM) -f "$1.tmp"
 
-endef
+ endef
 
-# Note! Because we've got a different proxy stub DLL for pre windows 7 64-bit hosts, we target windows 7 for AMD64.
-#       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
-# Note! We're checking for win.amd64 below when setting the target because of the SDK build which happens on linux.amd64
-#       but with a 32-bit Wine.
-$(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c)
-$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
-$(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM_0_OUTDIR)/dlldata.c,) \
-+ $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
-+ $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+ # Note! Because we've got a different proxy stub DLL for pre windows 7 64-bit hosts, we target windows 7 for AMD64.
+ #       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
+ # Note! We're checking for win.amd64 below when setting the target because of the SDK build which happens on linux.amd64
+ #       but with a 32-bit Wine.
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c)
+ $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
+ $(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM_0_OUTDIR)/dlldata.c,) \
+ + $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
+ + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo /W4 \
 		/env $(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" ,amd64,win32) \
@@ -1462,17 +1468,17 @@ $(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBox
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c)
 
-if defined(VBOX_WITH_MIDL_PROXY_STUB)
-# -Windows Server 2003 AMD64 SP1 does not like the result when using '/protocol all' and '/target NT51'.
-# -Vista AMD64 SP1 and Windows Server 2008 AMD64 seems to have some objections as well, but it seemed
-#  that using an older MIDL compiler (v7.00.0499 instead of v7.00.0555) helps. But the W2K3 fix also works.
-# To avoid 32-bit vs. 64-bit differences, we do the same for 32-bit windows versions.
-$(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c)
-$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
-+ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c\
-+ $(VBoxCOM_0_OUTDIR)/legacy/dlldata.c \
-+ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h \
-+ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+ if defined(VBOX_WITH_MIDL_PROXY_STUB)
+  # -Windows Server 2003 AMD64 SP1 does not like the result when using '/protocol all' and '/target NT51'.
+  # -Vista AMD64 SP1 and Windows Server 2008 AMD64 seems to have some objections as well, but it seemed
+  #  that using an older MIDL compiler (v7.00.0499 instead of v7.00.0555) helps. But the W2K3 fix also works.
+  # To avoid 32-bit vs. 64-bit differences, we do the same for 32-bit windows versions.
+  $(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c)
+  $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
+  + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c\
+  + $(VBoxCOM_0_OUTDIR)/legacy/dlldata.c \
+  + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h \
+  + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo /W4 \
 		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" \
@@ -1486,15 +1492,15 @@ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c)
-endif
+ endif
 
-# The XP targetted 32-bit proxy stub works with all versions of windows (the
-# issues leading to the VBoxProxyStubLegacy.dll are only on 64-bit windows).
-$(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
-$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
-$(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c,) \
-+ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
-+ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+ # The XP targetted 32-bit proxy stub works with all versions of windows (the
+ # issues leading to the VBoxProxyStubLegacy.dll are only on 64-bit windows).
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
+ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
+ $(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c,) \
+ + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
+ + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_MIDL_REDIRECT_X86) $(VBOX_WIN_MIDL) /nologo /W4 \
 		/env win32 /target NT51 /robust /protocol all  \
@@ -1507,6 +1513,8 @@ $(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c)
+
+endif # defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 
 #
 # Translation stuff
