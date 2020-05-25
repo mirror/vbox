@@ -1591,13 +1591,20 @@ int19_relocated:
 ; interrupt vectors need to be reset, otherwise strange things may happen.
 ; The approach used is faking a warm reboot (which just skips showing the
 ; logo), which is a bit more than what we need, but hey, it's fast.
-                mov     bp, sp
-                mov     ax, [bp+2]      ; TODO: redundant? address via sp?
-                cmp     ax, BIOSSEG     ; check caller's segment
-                jz      bios_initiated_boot
-
+;
+; Initially we checked if the caller is in the F000h segment, i.e. the
+; system BIOS. But option ROMs can also legitimately invoke INT 19h so
+; we need different heuristics.
                 xor     ax, ax
                 mov     ds, ax
+                mov     es, ax
+                cld
+                ; Check if the boot sector area is untouched
+                mov     cx, 256
+                mov     di, 7C00h
+                repe scasw
+                jcxz    bios_initiated_boot
+
                 mov     ax, 1234h
                 mov     ds:[472], ax
                 jmp     post
