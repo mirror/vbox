@@ -207,7 +207,7 @@ private slots:
         /** Handles call to open Clone Machine wizard. */
         void sltOpenCloneMachineWizard();
 
-        /** Handles the Move Machine action. */
+        /** Handles call to move machine. */
         void sltPerformMachineMove();
 
         /** Handles call to start or show machine. */

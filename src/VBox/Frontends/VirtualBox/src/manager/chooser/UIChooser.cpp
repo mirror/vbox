@@ -124,7 +124,7 @@ void UIChooser::disbandGroup()
     model()->disbandSelectedGroupItem();
 }
 
-void UIChooser::performGroupSorting()
+void UIChooser::sortGroup()
 {
     AssertPtrReturnVoid(model());
     model()->sortSelectedGroupItem();

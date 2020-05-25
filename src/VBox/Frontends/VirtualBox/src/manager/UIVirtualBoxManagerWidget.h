@@ -141,8 +141,8 @@ public:
         void openGroupNameEditor();
         /** Disbands group. */
         void disbandGroup();
-        /** Performs group sorting. */
-        void performGroupSorting();
+        /** Sorts group. */
+        void sortGroup();
     /** @} */
 
     /** @name Tools pane stuff.

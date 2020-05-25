@@ -125,9 +125,9 @@ void UIVirtualBoxManagerWidget::disbandGroup()
     m_pPaneChooser->disbandGroup();
 }
 
-void UIVirtualBoxManagerWidget::performGroupSorting()
+void UIVirtualBoxManagerWidget::sortGroup()
 {
-    m_pPaneChooser->performGroupSorting();
+    m_pPaneChooser->sortGroup();
 }
 
 void UIVirtualBoxManagerWidget::setToolsType(UIToolType enmType)

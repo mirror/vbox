@@ -1353,7 +1353,7 @@ void UIVirtualBoxManager::sltPerformCreateMachineShortcut()
 
 void UIVirtualBoxManager::sltPerformGroupSorting()
 {
-    m_pWidget->performGroupSorting();
+    m_pWidget->sortGroup();
 }
 
 void UIVirtualBoxManager::sltGroupCloseMenuAboutToShow()
