@@ -1494,13 +1494,14 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c)
  endif
 
- # The XP targetted 32-bit proxy stub works with all versions of windows (the
- # issues leading to the VBoxProxyStubLegacy.dll are only on 64-bit windows).
- $(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
- $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
- $(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c,) \
- + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
- + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+ if defined(VBOX_WITH_32_ON_64_MAIN_API) && !defined(VBOX_ONLY_EXTPACKS)
+  # The XP targetted 32-bit proxy stub works with all versions of windows (the
+  # issues leading to the VBoxProxyStubLegacy.dll are only on 64-bit windows).
+  $(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
+  $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
+  $(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c,) \
+  + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
+  + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_MIDL_REDIRECT_X86) $(VBOX_WIN_MIDL) /nologo /W4 \
 		/env win32 /target NT51 /robust /protocol all  \
@@ -1513,6 +1514,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c)
+  endif
 
 endif # defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 
