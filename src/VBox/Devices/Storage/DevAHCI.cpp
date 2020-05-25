@@ -2740,7 +2740,7 @@ static int ahciPostFisIntoMemory(PPDMDEVINS pDevIns, PAHCIPORT pAhciPort, unsign
 
         /* Post the FIS into memory. */
         ahciLog(("%s: PDMDevHlpPCIPhysWrite GCPhysAddrRecFis=%RGp cbFis=%u\n", __FUNCTION__, GCPhysAddrRecFis, cbFis));
-        PDMDevHlpPCIPhysWrite(pDevIns, GCPhysAddrRecFis, pCmdFis, cbFis);
+        PDMDevHlpPCIPhysWriteMeta(pDevIns, GCPhysAddrRecFis, pCmdFis, cbFis);
     }
 
     return rc;
@@ -3302,7 +3302,7 @@ static DECLCALLBACK(void) ahciR3CopyBufferToGuestWorker(PPDMDEVINS pDevIns, RTGC
         void *pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
 
         AssertPtr(pvSeg);
-        PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvSeg, cbSeg);
+        PDMDevHlpPCIPhysWriteUser(pDevIns, GCPhys, pvSeg, cbSeg);
         GCPhys += cbSeg;
         cbCopy -= cbSeg;
     }
@@ -3342,8 +3342,8 @@ static size_t ahciR3PrdtlWalk(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
                                    ? cPrdtlEntries
                                    : RT_ELEMENTS(aPrdtlEntries);
 
-        PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0],
-                          cPrdtlEntriesRead * sizeof(SGLEntry));
+        PDMDevHlpPhysReadMeta(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0],
+                              cPrdtlEntriesRead * sizeof(SGLEntry));
 
         for (uint32_t i = 0; (i < cPrdtlEntriesRead) && cbCopy; i++)
         {
@@ -3438,7 +3438,7 @@ static int ahciR3PrdtQuerySize(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, size_t *pc
         SGLEntry aPrdtlEntries[32];
         uint32_t const cPrdtlEntriesRead = RT_MIN(cPrdtlEntries,  RT_ELEMENTS(aPrdtlEntries));
 
-        PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
+        PDMDevHlpPhysReadMeta(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
 
         for (uint32_t i = 0; i < cPrdtlEntriesRead; i++)
             cbPrdt += (aPrdtlEntries[i].u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
@@ -3503,7 +3503,7 @@ static int ahciTrimRangesCreate(PPDMDEVINS pDevIns, PAHCIPORT pAhciPort, PAHCIRE
         uint32_t cPrdtlEntriesRead = RT_MIN(cPrdtlEntries, RT_ELEMENTS(aPrdtlEntries));
 
         rc = VINF_SUCCESS;
-        PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
+        PDMDevHlpPhysReadMeta(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
 
         for (uint32_t i = 0; i < cPrdtlEntriesRead && idxRange < cRanges; i++)
         {
@@ -3513,7 +3513,7 @@ static int ahciTrimRangesCreate(PPDMDEVINS pDevIns, PAHCIPORT pAhciPort, PAHCIRE
             cbThisCopy = RT_MIN(cbThisCopy, sizeof(aRanges));
 
             /* Copy into buffer. */
-            PDMDevHlpPhysRead(pDevIns, GCPhysAddrDataBase, aRanges, cbThisCopy);
+            PDMDevHlpPhysReadMeta(pDevIns, GCPhysAddrDataBase, aRanges, cbThisCopy);
 
             for (unsigned idxRangeSrc = 0; idxRangeSrc < RT_ELEMENTS(aRanges) && idxRange < cRanges; idxRangeSrc++)
             {
@@ -3694,8 +3694,8 @@ static bool ahciR3TransferComplete(PPDMDEVINS pDevIns, PAHCI pThis, PAHCICC pThi
             else
                 u32PRDBC = (uint32_t)pAhciReq->cbTransfer;
 
-            PDMDevHlpPCIPhysWrite(pDevIns, pAhciReq->GCPhysCmdHdrAddr + RT_UOFFSETOF(CmdHdr, u32PRDBC),
-                                  &u32PRDBC, sizeof(u32PRDBC));
+            PDMDevHlpPCIPhysWriteMeta(pDevIns, pAhciReq->GCPhysCmdHdrAddr + RT_UOFFSETOF(CmdHdr, u32PRDBC),
+                                      &u32PRDBC, sizeof(u32PRDBC));
 
             if (pAhciReq->fFlags & AHCI_REQ_OVERFLOW)
             {
@@ -3850,7 +3850,7 @@ static DECLCALLBACK(int) ahciR3IoReqQueryBuf(PPDMIMEDIAEXPORT pInterface, PDMMED
         RTGCPHYS GCPhysPrdt = pIoReq->GCPhysPrdtl;
         SGLEntry PrdtEntry;
 
-        PDMDevHlpPhysRead(pDevIns, GCPhysPrdt, &PrdtEntry, sizeof(SGLEntry));
+        PDMDevHlpPhysReadMeta(pDevIns, GCPhysPrdt, &PrdtEntry, sizeof(SGLEntry));
 
         RTGCPHYS GCPhysAddrDataBase = AHCI_RTGCPHYS_FROM_U32(PrdtEntry.u32DBAUp, PrdtEntry.u32DBA);
         uint32_t cbData = (PrdtEntry.u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
@@ -4269,7 +4269,7 @@ static bool ahciPortTaskGetCommandFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT
     pAhciReq->GCPhysCmdHdrAddr = pAhciPort->GCPhysAddrClb + pAhciReq->uTag * sizeof(CmdHdr);
     LogFlow(("%s: PDMDevHlpPhysRead GCPhysAddrCmdLst=%RGp cbCmdHdr=%u\n", __FUNCTION__,
              pAhciReq->GCPhysCmdHdrAddr, sizeof(CmdHdr)));
-    PDMDevHlpPhysRead(pDevIns, pAhciReq->GCPhysCmdHdrAddr, &cmdHdr, sizeof(CmdHdr));
+    PDMDevHlpPhysReadMeta(pDevIns, pAhciReq->GCPhysCmdHdrAddr, &cmdHdr, sizeof(CmdHdr));
 
 #ifdef LOG_ENABLED
     /* Print some infos about the command header. */
@@ -4284,7 +4284,7 @@ static bool ahciPortTaskGetCommandFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT
 
     /* Read the command Fis. */
     LogFlow(("%s: PDMDevHlpPhysRead GCPhysAddrCmdTbl=%RGp cbCmdFis=%u\n", __FUNCTION__, GCPhysAddrCmdTbl, AHCI_CMDFIS_TYPE_H2D_SIZE));
-    PDMDevHlpPhysRead(pDevIns, GCPhysAddrCmdTbl, &pAhciReq->cmdFis[0], AHCI_CMDFIS_TYPE_H2D_SIZE);
+    PDMDevHlpPhysReadMeta(pDevIns, GCPhysAddrCmdTbl, &pAhciReq->cmdFis[0], AHCI_CMDFIS_TYPE_H2D_SIZE);
 
     AssertMsgReturn(pAhciReq->cmdFis[AHCI_CMDFIS_TYPE] == AHCI_CMDFIS_TYPE_H2D,
                     ("This is not a command FIS\n"),
@@ -4297,7 +4297,7 @@ static bool ahciPortTaskGetCommandFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT
     if (cmdHdr.u32DescInf & AHCI_CMDHDR_A)
     {
         GCPhysAddrCmdTbl += AHCI_CMDHDR_ACMD_OFFSET;
-        PDMDevHlpPhysRead(pDevIns, GCPhysAddrCmdTbl, &pAhciReq->aATAPICmd[0], ATAPI_PACKET_SIZE);
+        PDMDevHlpPhysReadMeta(pDevIns, GCPhysAddrCmdTbl, &pAhciReq->aATAPICmd[0], ATAPI_PACKET_SIZE);
     }
 
     /* We "received" the FIS. Clear the BSY bit in regTFD. */
@@ -4327,7 +4327,7 @@ static bool ahciPortTaskGetCommandFis(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT
         SGLEntry SGEntry;
 
         ahciLog(("Entry %u at address %RGp\n", i, GCPhysPrdtl));
-        PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &SGEntry, sizeof(SGLEntry));
+        PDMDevHlpPhysReadMeta(pDevIns, GCPhysPrdtl, &SGEntry, sizeof(SGLEntry));
 
         RTGCPHYS GCPhysDataAddr = AHCI_RTGCPHYS_FROM_U32(SGEntry.u32DBAUp, SGEntry.u32DBA);
         ahciLog(("GCPhysAddr=%RGp Size=%u\n", GCPhysDataAddr, SGEntry.u32DescInf & SGLENTRY_DESCINF_DBC));
