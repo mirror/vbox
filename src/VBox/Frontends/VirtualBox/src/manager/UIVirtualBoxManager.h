@@ -248,6 +248,9 @@ private slots:
         /** Handles call to close machine Log Viewer window. */
         void sltCloseLogViewerWindow();
 
+        /** Handles call to refresh machine. */
+        void sltPerformRefreshMachine();
+
         /** Handles call to show machine in File Manager. */
         void sltShowMachineInFileManager();
 

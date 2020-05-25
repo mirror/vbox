@@ -143,6 +143,8 @@ public:
         void disbandGroup();
         /** Moves machine to a new group. */
         void moveMachineToNewGroup();
+        /** Refreshes machine. */
+        void refreshMachine();
         /** Sorts group. */
         void sortGroup();
     /** @} */

@@ -130,6 +130,12 @@ void UIChooser::moveMachineToNewGroup()
     model()->moveSelectedMachineItemsToNewGroupItem();
 }
 
+void UIChooser::refreshMachine()
+{
+    AssertPtrReturnVoid(model());
+    model()->refreshSelectedMachineItems();
+}
+
 void UIChooser::sortGroup()
 {
     AssertPtrReturnVoid(model());

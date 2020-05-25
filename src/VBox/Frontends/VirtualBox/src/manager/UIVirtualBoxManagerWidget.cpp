@@ -130,6 +130,11 @@ void UIVirtualBoxManagerWidget::moveMachineToNewGroup()
     m_pPaneChooser->moveMachineToNewGroup();
 }
 
+void UIVirtualBoxManagerWidget::refreshMachine()
+{
+    m_pPaneChooser->refreshMachine();
+}
+
 void UIVirtualBoxManagerWidget::sortGroup()
 {
     m_pPaneChooser->sortGroup();

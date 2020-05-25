@@ -726,6 +726,78 @@ void UIChooserModel::startOrShowSelectedItems()
     emit sigStartOrShowRequest();
 }
 
+void UIChooserModel::refreshSelectedMachineItems()
+{
+    /* Gather list of current unique inaccessible machine-items: */
+    QList<UIChooserItemMachine*> inaccessibleMachineItemList;
+    UIChooserItemMachine::enumerateMachineItems(selectedItems(), inaccessibleMachineItemList,
+                                                UIChooserItemMachineEnumerationFlag_Unique |
+                                                UIChooserItemMachineEnumerationFlag_Inaccessible);
+
+    /* Prepare item to be selected: */
+    UIChooserItem *pSelectedItem = 0;
+
+    /* For each machine-item: */
+    foreach (UIChooserItemMachine *pItem, inaccessibleMachineItemList)
+    {
+        AssertPtrReturnVoid(pItem);
+        switch (pItem->cacheType())
+        {
+            case UIVirtualMachineItemType_Local:
+            {
+                /* Recache: */
+                pItem->recache();
+
+                /* Became accessible? */
+                if (pItem->accessible())
+                {
+                    /* Acquire machine ID: */
+                    const QUuid uId = pItem->id();
+                    /* Reload this machine: */
+                    sltReloadMachine(uId);
+                    /* Select first of reloaded items: */
+                    if (!pSelectedItem)
+                        pSelectedItem = root()->searchForItem(uId.toString(),
+                                                              UIChooserItemSearchFlag_Machine |
+                                                              UIChooserItemSearchFlag_ExactId);
+                }
+
+                break;
+            }
+            case UIVirtualMachineItemType_CloudFake:
+            {
+                /* Create list cloud machines task: */
+                UIChooserItem *pParent = pItem->parentItem();
+                AssertPtrReturnVoid(pParent);
+                UIChooserItem *pParentOfParent = pParent->parentItem();
+                AssertPtrReturnVoid(pParentOfParent);
+                UITaskCloudListMachines *pTask = new UITaskCloudListMachines(pParentOfParent->name(),
+                                                                             pParent->name());
+                AssertPtrReturnVoid(pTask);
+                uiCommon().threadPoolCloud()->enqueueTask(pTask);
+
+                break;
+            }
+            case UIVirtualMachineItemType_CloudReal:
+            {
+                /* Much more simple than for local items, we are not reloading them, just refreshing: */
+                pItem->cache()->toCloud()->updateInfoAsync(false /* delayed */);
+
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    /* Some item to be selected? */
+    if (pSelectedItem)
+    {
+        pSelectedItem->makeSureItsVisible();
+        setSelectedItem(pSelectedItem);
+    }
+}
+
 void UIChooserModel::sortSelectedGroupItem()
 {
     /* For single selected group, sort first selected item children: */
@@ -973,82 +1045,6 @@ void UIChooserModel::sltMakeSureCurrentItemVisible()
 void UIChooserModel::sltCurrentItemDestroyed()
 {
     AssertMsgFailed(("Current-item destroyed!"));
-}
-
-void UIChooserModel::sltPerformRefreshAction()
-{
-    /* Check if action is enabled: */
-    if (!actionPool()->action(UIActionIndexST_M_Group_S_Refresh)->isEnabled())
-        return;
-
-    /* Gather list of current unique inaccessible machine-items: */
-    QList<UIChooserItemMachine*> inaccessibleMachineItemList;
-    UIChooserItemMachine::enumerateMachineItems(selectedItems(), inaccessibleMachineItemList,
-                                                UIChooserItemMachineEnumerationFlag_Unique |
-                                                UIChooserItemMachineEnumerationFlag_Inaccessible);
-
-    /* Prepare item to be selected: */
-    UIChooserItem *pSelectedItem = 0;
-
-    /* For each machine-item: */
-    foreach (UIChooserItemMachine *pItem, inaccessibleMachineItemList)
-    {
-        AssertPtrReturnVoid(pItem);
-        switch (pItem->cacheType())
-        {
-            case UIVirtualMachineItemType_Local:
-            {
-                /* Recache: */
-                pItem->recache();
-
-                /* Became accessible? */
-                if (pItem->accessible())
-                {
-                    /* Acquire machine ID: */
-                    const QUuid uId = pItem->id();
-                    /* Reload this machine: */
-                    sltReloadMachine(uId);
-                    /* Select first of reloaded items: */
-                    if (!pSelectedItem)
-                        pSelectedItem = root()->searchForItem(uId.toString(),
-                                                              UIChooserItemSearchFlag_Machine |
-                                                              UIChooserItemSearchFlag_ExactId);
-                }
-
-                break;
-            }
-            case UIVirtualMachineItemType_CloudFake:
-            {
-                /* Create list cloud machines task: */
-                UIChooserItem *pParent = pItem->parentItem();
-                AssertPtrReturnVoid(pParent);
-                UIChooserItem *pParentOfParent = pParent->parentItem();
-                AssertPtrReturnVoid(pParentOfParent);
-                UITaskCloudListMachines *pTask = new UITaskCloudListMachines(pParentOfParent->name(),
-                                                                             pParent->name());
-                AssertPtrReturnVoid(pTask);
-                uiCommon().threadPoolCloud()->enqueueTask(pTask);
-
-                break;
-            }
-            case UIVirtualMachineItemType_CloudReal:
-            {
-                /* Much more simple than for local items, we are not reloading them, just refreshing: */
-                pItem->cache()->toCloud()->updateInfoAsync(false /* delayed */);
-
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    /* Some item to be selected? */
-    if (pSelectedItem)
-    {
-        pSelectedItem->makeSureItsVisible();
-        setSelectedItem(pSelectedItem);
-    }
 }
 
 void UIChooserModel::sltRemoveSelectedMachine()
@@ -1308,10 +1304,6 @@ void UIChooserModel::prepareConnections()
     /* Setup action connections: */
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Remove), &UIAction::triggered,
             this, &UIChooserModel::sltRemoveSelectedMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), &UIAction::triggered,
-            this, &UIChooserModel::sltPerformRefreshAction);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh), &UIAction::triggered,
-            this, &UIChooserModel::sltPerformRefreshAction);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Search), &UIAction::triggered,
             this, &UIChooserModel::sltShowHideSearchWidget);
 }

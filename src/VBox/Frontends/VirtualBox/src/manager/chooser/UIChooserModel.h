@@ -223,6 +223,8 @@ public:
         void moveSelectedMachineItemsToNewGroupItem();
         /** Starts or shows selected items. */
         void startOrShowSelectedItems();
+        /** Refreshes selected machine items. */
+        void refreshSelectedMachineItems();
         /** Sorts selected [parent] group item. */
         void sortSelectedGroupItem();
 
@@ -296,8 +298,6 @@ private slots:
 
     /** @name Children stuff.
       * @{ */
-        /** Handles refresh request. */
-        void sltPerformRefreshAction();
         /** Handles remove selected machine request. */
         void sltRemoveSelectedMachine();
 
