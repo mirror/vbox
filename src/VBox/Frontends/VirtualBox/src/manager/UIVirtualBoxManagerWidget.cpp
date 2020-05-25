@@ -125,6 +125,11 @@ void UIVirtualBoxManagerWidget::disbandGroup()
     m_pPaneChooser->disbandGroup();
 }
 
+void UIVirtualBoxManagerWidget::removeMachine()
+{
+    m_pPaneChooser->removeMachine();
+}
+
 void UIVirtualBoxManagerWidget::moveMachineToNewGroup()
 {
     m_pPaneChooser->moveMachineToNewGroup();

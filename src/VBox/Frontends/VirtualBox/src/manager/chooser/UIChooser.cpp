@@ -124,6 +124,12 @@ void UIChooser::disbandGroup()
     model()->disbandSelectedGroupItem();
 }
 
+void UIChooser::removeMachine()
+{
+    AssertPtrReturnVoid(model());
+    model()->removeSelectedMachineItems();
+}
+
 void UIChooser::moveMachineToNewGroup()
 {
     AssertPtrReturnVoid(model());

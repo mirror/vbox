@@ -776,6 +776,11 @@ void UIVirtualBoxManager::sltPerformMachineMove()
     comSession.UnlockMachine();
 }
 
+void UIVirtualBoxManager::sltPerformMachineRemove()
+{
+    m_pWidget->removeMachine();
+}
+
 void UIVirtualBoxManager::sltPerformMachineMoveToNewGroup()
 {
     m_pWidget->moveMachineToNewGroup();
@@ -1611,6 +1616,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformMachineMove);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenExportApplianceWizard);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Remove), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformMachineRemove);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformMachineMoveToNewGroup);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), &UIAction::triggered,

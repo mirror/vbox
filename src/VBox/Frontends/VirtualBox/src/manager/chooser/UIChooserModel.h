@@ -219,6 +219,8 @@ public:
         void startEditingSelectedGroupItemName();
         /** Disbands selected group item. */
         void disbandSelectedGroupItem();
+        /** Removes selected machine items. */
+        void removeSelectedMachineItems();
         /** Moves selected machine items to new group item. */
         void moveSelectedMachineItemsToNewGroupItem();
         /** Starts or shows selected items. */
@@ -298,9 +300,6 @@ private slots:
 
     /** @name Children stuff.
       * @{ */
-        /** Handles remove selected machine request. */
-        void sltRemoveSelectedMachine();
-
         /** Handles D&D scrolling. */
         void sltStartScrolling();
         /** Handles D&D object destruction. */
