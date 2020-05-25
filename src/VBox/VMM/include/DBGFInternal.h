@@ -377,6 +377,30 @@ AssertCompileSizeAlignment(DBGFTRACERSHARED, 64);
 
 
 /**
+ * Guest memory read/write data aggregation.
+ */
+typedef struct DBGFTRACERGCPHYSRWAGG
+{
+    /** The event ID which started the aggregation (used for the group ID when writing out the event). */
+    uint64_t                                idEvtStart;
+    /** The previous event ID used to link all the chunks together. */
+    uint64_t                                idEvtPrev;
+    /** Number of bytes being transfered. */
+    size_t                                  cbXfer;
+    /** Amount of data left to aggregate before it can be written. */
+    size_t                                  cbLeft;
+    /** Amount of bytes allocated. */
+    size_t                                  cbBufMax;
+    /** Offset into the buffer to write next. */
+    size_t                                  offBuf;
+    /** Pointer to the allocated buffer. */
+    uint8_t                                 *pbBuf;
+} DBGFTRACERGCPHYSRWAGG;
+/** Pointer to a guest memory read/write data aggregation structure. */
+typedef DBGFTRACERGCPHYSRWAGG *PDBGFTRACERGCPHYSRWAGG;
+
+
+/**
  * Tracer instance data, ring-3
  */
 typedef struct DBGFTRACERINSR3
@@ -406,6 +430,9 @@ typedef struct DBGFTRACERINSR3
     uint64_t                                idEvtLast;
     /** The trace log writer handle. */
     RTTRACELOGWR                            hTraceLog;
+    /** Guest memory data aggregation structures to track
+     * currently pending guest memory reads/writes. */
+    DBGFTRACERGCPHYSRWAGG                   aGstMemRwData[10];
 } DBGFTRACERINSR3;
 /** Pointer to a tarcer instance - Ring-3 Ptr. */
 typedef R3PTRTYPE(DBGFTRACERINSR3 *) PDBGFTRACERINSR3;

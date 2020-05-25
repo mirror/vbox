@@ -93,6 +93,9 @@ static int dbgfTracerEvtPostEx(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBGFTRACEREV
                                DBGFTRACEREVT enmTraceEvt, uint64_t idEvtPrev, const void *pvEvtDesc,
                                size_t cbEvtDesc, uint64_t *pidEvt)
 {
+    LogFlowFunc(("pVM=%p pThisCC=%p hEvtSrc=%llu enmTraceEvt=%u idEvtPrev=%llu pvEvtDesc=%p cbEvtDesc=%zu pidEvt=%p\n",
+                 pVM, pThisCC, hEvtSrc, enmTraceEvt, idEvtPrev, pvEvtDesc, cbEvtDesc, pidEvt));
+
     PDBGFTRACERSHARED pSharedCC = pThisCC->CTX_SUFF(pShared);
     size_t cRingBufEvts = dbgfTracerGetRingBufSz(pThisCC) / DBGF_TRACER_EVT_SZ;
     AssertReturn(cRingBufEvts, VERR_DBGF_TRACER_IPE_1);
@@ -108,6 +111,7 @@ static int dbgfTracerEvtPostEx(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBGFTRACEREV
         /** @todo The event ring buffer is full and we need to go back (from R0 to R3) and wait for the flusher thread to
          * get its act together.
          */
+        AssertMsgFailed(("Flush thread can't keep up with event amount!\n"));
     }
 
     /* Write the event and kick the flush thread if necessary. */
