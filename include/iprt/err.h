@@ -2727,6 +2727,17 @@
 #define VERR_FTP_CLIENT_LIMIT_REACHED                           (-26406)
 /** @} */
 
+
+/** @name Trace Log status codes.
+ * @{ */
+/** The trace log is malformed. */
+#define VERR_TRACELOG_READER_MALFORMED_LOG                      (-26600)
+/** The trace log version is not supported. */
+#define VERR_TRACELOG_READER_LOG_UNSUPPORTED                    (-26601)
+/** The trace log reader iterator reached the end of the event list. */
+#define VERR_TRACELOG_READER_ITERATOR_END                       (-26602)
+/** @} */
+
 /* SED-END */
 
 /** @} */
