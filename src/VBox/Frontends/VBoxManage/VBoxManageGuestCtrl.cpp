@@ -2780,13 +2780,13 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
     /** Source path to .ISO Guest Additions file to use. */
     Utf8Str                 strSource;
     com::SafeArray<IN_BSTR> aArgs;
-    /* Whether to reboot the guest automatically when the update process has finished successfully. */
+    /** Whether to reboot the guest automatically when the update process has finished successfully. */
     bool fRebootOnFinish = false;
-    /* Whether to only wait for getting the update process started instead of waiting until it finishes. */
+    /** Whether to only wait for getting the update process started instead of waiting until it finishes. */
     bool fWaitStartOnly  = false;
-    /* Whether to wait for the VM being ready to start the update. Needs Guest Additions facility reporting. */
+    /** Whether to wait for the VM being ready to start the update. Needs Guest Additions facility reporting. */
     bool fWaitReady      = false;
-    /* Whether to verify if the Guest Additions were successfully updated on the guest. */
+    /** Whether to verify if the Guest Additions were successfully updated on the guest. */
     bool fVerify         = false;
 
     /*
