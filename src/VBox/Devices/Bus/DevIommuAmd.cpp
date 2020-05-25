@@ -442,6 +442,16 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define SYSMGTTYPE_DMA_ALLOW                        (3)
 /** @} */
 
+/** @name IOMMU_INTR_CTRL_XX: DTE::IntCtl field values.
+ * These are control bits for handling fixed and arbitrated interrupts.
+ * In accordance with the AMD spec.
+ * @{ */
+#define IOMMU_INTR_CTRL_TARGET_ABORT                (0)
+#define IOMMU_INTR_CTRL_FWD_UNMAPPED                (1)
+#define IOMMU_INTR_CTRL_REMAP                       (2)
+#define IOMMU_INTR_CTRL_RSVD                        (3)
+/** @} */
+
 /**
  * @name IOMMU Control Register Bits.
  * In accordance with the AMD spec.
@@ -1770,6 +1780,7 @@ AssertCompileSize(MSI_ADDR_T, 8);
  *  of things we might want to ensure the upper bits are reserved. Does x86/x64
  *  really support a 64-bit MSI address? */
 #define IOMMU_MSI_ADDR_VALID_MASK           UINT64_C(0xfffffffffffffffc)
+#define IOMMU_MSI_ADDR_ADDR_MASK            UINT64_C(0x00000000fff00000)
 /** Pointer to an MSI address register. */
 typedef MSI_ADDR_T *PMSI_ADDR_T;
 /** Pointer to a const MSI address register. */
@@ -4562,6 +4573,201 @@ static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t 
 
 
 /**
+ * Reads an interrupt remapping table entry from guest memory given its DTE.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU device instance.
+ * @param   pDte        The device table entry.
+ * @param   enmOp       The IOMMU operation being performed.
+ * @param   pIrte       Where to store the interrupt remapping table entry.
+ *
+ * @thread  Any.
+ */
+static int iommuAmdReadIrte(PPDMDEVINS pDevIns, PCDTE_T pDte, IOMMUOP enmOp, IRTE_T pIrte)
+{
+    RT_NOREF(pDevIns, pDte, enmOp, pIrte);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Remap the interrupt from the appropriate IRTE.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU instance data.
+ * @param   GCPhysIn    The source MSI address.
+ * @param   uDataIn     The source MSI data.
+ * @param   enmOp       The IOMMU operation being performed.
+ * @param   pGCPhysOut  Where to store the remapped MSI address.
+ * @param   puDataOut   Where to store the remapped MSI data.
+ *
+ * @thread  Any.
+ */
+static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysIn, uint32_t uDataIn, IOMMUOP enmOp,
+                             PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
+{
+    RT_NOREF(pDevIns, GCPhysIn, uDataIn, enmOp, pGCPhysOut, puDataOut);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Looks up an MSI interrupt from the interrupt remapping table.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The IOMMU instance data.
+ * @param   uDevId      The device ID.
+ * @param   GCPhysIn    The source MSI address.
+ * @param   uDataIn     The source MSI data.
+ * @param   enmOp       The IOMMU operation being performed.
+ * @param   pGCPhysOut  Where to store the remapped MSI address.
+ * @param   puDataOut   Where to store the remapped MSI data.
+ *
+ * @thread  Any.
+ */
+static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn, IOMMUOP enmOp,
+                                   PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
+{
+    /* Read the device table entry from memory. */
+    DTE_T Dte;
+    int rc = iommuAmdReadDte(pDevIns, uDevId, enmOp, &Dte);
+    if (RT_SUCCESS(rc))
+    {
+        /* If the DTE is not valid, all interrupts are forwarded without remapping. */
+        if (Dte.n.u1IntrMapValid)
+        {
+            /* Validate bits 255:128 of the device table entry when DTE.IV is 1. */
+            uint64_t const fRsvd0 = Dte.au64[2] & ~IOMMU_DTE_QWORD_2_VALID_MASK;
+            uint64_t const fRsvd1 = Dte.au64[3] & ~IOMMU_DTE_QWORD_3_VALID_MASK;
+            if (RT_LIKELY(   !fRsvd0
+                          && !fRsvd1))
+            { /* likely */ }
+            else
+            {
+                Log((IOMMU_LOG_PFX ": Invalid reserved bits in DTE (u64[2]=%#RX64 u64[3]=%#RX64) -> Illegal DTE\n", fRsvd0,
+                     fRsvd1));
+                EVT_ILLEGAL_DTE_T Event;
+                iommuAmdInitIllegalDteEvent(uDevId, GCPhysIn, true /* fRsvdNotZero */, enmOp, &Event);
+                iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
+                return VERR_IOMMU_INTR_REMAP_FAILED;
+            }
+
+            /** @todo IOMMU: Figure out how we'll redirect LINT0 and LINT1 legacy PIC
+             *        interrupts here. */
+
+            /*
+             * Validate the MSI source address.
+             *
+             * 64-bit MSIs are supported by the PCI and AMD IOMMU spec. However as far as the
+             * CPU is concerned, the MSI region is fixed and we must ensure no other device
+             * claims the region as I/O space.
+             *
+             * See PCI spec. 6.1.4. "Message Signaled Interrupt (MSI) Support".
+             * See AMD IOMMU spec. 2.8 "IOMMU Interrupt Support".
+             * See Intel spec. 10.11.1 "Message Address Register Format".
+             */
+            MSI_ADDR_T MsiAddrIn;
+            MsiAddrIn.u64 = GCPhysIn;
+            if ((MsiAddrIn.u64 & IOMMU_MSI_ADDR_ADDR_MASK) == VBOX_MSI_ADDR_BASE)
+            {
+                MSI_DATA_T MsiDataIn;
+                MsiDataIn.u32 = uDataIn;
+
+                /*
+                 * The IOMMU remaps fixed and arbitrated interrupts using the IRTE.
+                 * See AMD IOMMU spec. "2.2.5.1 Interrupt Remapping Tables, Guest Virtual APIC Not Enabled".
+                 */
+                uint8_t const u8DeliveryMode = MsiDataIn.n.u3DeliveryMode;
+                bool fPassThru = false;
+                switch (u8DeliveryMode)
+                {
+                    case VBOX_MSI_DELIVERY_MODE_FIXED:
+                    case VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO:
+                    {
+                        uint8_t const uIntrCtrl = Dte.n.u2IntrCtrl;
+                        if (uIntrCtrl == IOMMU_INTR_CTRL_TARGET_ABORT)
+                        {
+                            Log((IOMMU_LOG_PFX ": IntCtl=0: Target aborting fixed/arbitrated interrupt -> Target abort\n"));
+                            iommuAmdSetPciTargetAbort(pDevIns);
+                            return VINF_SUCCESS;
+                        }
+
+                        if (uIntrCtrl == IOMMU_INTR_CTRL_FWD_UNMAPPED)
+                        {
+                            fPassThru = true;
+                            break;
+                        }
+
+                        if (uIntrCtrl == IOMMU_INTR_CTRL_REMAP)
+                        {
+                            /*
+                             * We don't support guest interrupt remapping yet. When we do, we'll need to
+                             * check Ctrl.u1GstVirtApicEn and use the guest Virtual APIC Table Root Pointer
+                             * in the DTE rather than the Interrupt Root Table Pointer. Since the caller
+                             * already reads the control register, add that as a parameter when we eventually
+                             * support guest interrupt remapping. For now, just assert.
+                             */
+                            PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+                            Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
+                            NOREF(pThis);
+
+                            return iommuAmdRemapIntr(pDevIns, GCPhysIn, uDataIn, enmOp, pGCPhysOut, puDataOut);
+                        }
+
+                        /* Paranoia. */
+                        Assert(uIntrCtrl == IOMMU_INTR_CTRL_RSVD);
+
+                        Log((IOMMU_LOG_PFX ":IntCtl mode invalid %#x -> Illegal DTE", uIntrCtrl));
+                        EVT_ILLEGAL_DTE_T Event;
+                        iommuAmdInitIllegalDteEvent(uDevId, GCPhysIn, true /* fRsvdNotZero */, enmOp, &Event);
+                        iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntCtl);
+                        return VERR_IOMMU_INTR_REMAP_FAILED;
+                    }
+
+                    /* SMIs are passed through unmapped. We don't implement SMI filters. */
+                    case VBOX_MSI_DELIVERY_MODE_SMI:        fPassThru = true;                   break;
+                    case VBOX_MSI_DELIVERY_MODE_NMI:        fPassThru = Dte.n.u1NmiPassthru;    break;
+                    case VBOX_MSI_DELIVERY_MODE_INIT:       fPassThru = Dte.n.u1InitPassthru;   break;
+                    case VBOX_MSI_DELIVERY_MODE_EXT_INT:    fPassThru = Dte.n.u1ExtIntPassthru; break;
+                    default:
+                    {
+                        Log((IOMMU_LOG_PFX ":MSI data delivery mode invalid %#x -> Target abort", u8DeliveryMode));
+                        iommuAmdSetPciTargetAbort(pDevIns);
+                        return VERR_IOMMU_INTR_REMAP_FAILED;
+                    }
+                }
+
+                if (fPassThru)
+                {
+                    *pGCPhysOut = GCPhysIn;
+                    *puDataOut  = uDataIn;
+                    return VINF_SUCCESS;
+                }
+
+                iommuAmdSetPciTargetAbort(pDevIns);
+                return VERR_IOMMU_INTR_REMAP_FAILED;
+            }
+            else
+            {
+                Log((IOMMU_LOG_PFX ":MSI address region invalid %#RX64.", MsiAddrIn.u64));
+                return VERR_IOMMU_INTR_REMAP_FAILED;
+            }
+        }
+        else
+        {
+            /** @todo IOMMU: Add to interrupt remapping cache. */
+            *pGCPhysOut = GCPhysIn;
+            *puDataOut  = uDataIn;
+            return VINF_SUCCESS;
+        }
+    }
+
+    Log((IOMMU_LOG_PFX ": Failed to read device table entry. uDevId=%#x rc=%Rrc\n", uDevId, rc));
+    return VERR_IOMMU_INTR_REMAP_FAILED;
+}
+
+
+/**
  * Interrupt remap request from a device.
  *
  * @returns VBox status code.
@@ -4589,7 +4795,9 @@ static int iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS 
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
     if (Ctrl.n.u1IommuEn)
     {
-        /** @todo IOMMU: iommuAmdLookupIntrTable. */
+        /** @todo Cache? */
+
+        return iommuAmdLookupIntrTable(pDevIns, uDevId, GCPhysIn, uDataIn, IOMMUOP_INTR_REQ, pGCPhysOut, puDataOut);
     }
 
     *pGCPhysOut = GCPhysIn;

@@ -53,6 +53,18 @@
 #define  VBOX_MSI_DATA_TRIGGER_LEVEL         (1 << VBOX_MSI_DATA_TRIGGER_SHIFT)
 
 /**
+ * MSI Interrupt Delivery modes.
+ * In accordance with the Intel spec.
+ * See Intel spec. "10.11.2 Message Data Register Format".
+ */
+#define VBOX_MSI_DELIVERY_MODE_FIXED         (0)
+#define VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO   (1)
+#define VBOX_MSI_DELIVERY_MODE_SMI           (2)
+#define VBOX_MSI_DELIVERY_MODE_NMI           (4)
+#define VBOX_MSI_DELIVERY_MODE_INIT          (5)
+#define VBOX_MSI_DELIVERY_MODE_EXT_INT       (7)
+
+/**
  * MSI region, actually same as LAPIC MMIO region, but listens on bus,
  * not CPU, accesses.
  */

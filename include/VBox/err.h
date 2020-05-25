@@ -2982,12 +2982,14 @@
 #define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7204)
 /** Access denied for the address. */
 #define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7205)
+/** Remapping failed for the interrupt. */
+#define VERR_IOMMU_INTR_REMAP_FAILED                (-7206)
 /** Internal error - Command not supported. */
-#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7206)
+#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7207)
 /** Internal error - Command format (or reserved bits) invalid. */
-#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7207)
+#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7208)
 /** Internal error - Command hardware failure. */
-#define VERR_IOMMU_CMD_HW_ERROR                     (-7208)
+#define VERR_IOMMU_CMD_HW_ERROR                     (-7209)
 /** @} */
 
 /* SED-END */
