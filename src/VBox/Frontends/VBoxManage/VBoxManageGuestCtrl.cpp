@@ -2721,6 +2721,8 @@ static int gctlWaitForRunLevel(PGCTLCMDCTX pCtx, AdditionsRunLevelType_T enmRunL
             if (pCtx->cVerbose)
                 RTPrintf("Waiting for run level %RU32 ...\n", enmRunLevel);
 
+            vrc = VINF_SUCCESS; /* Shut up MSVC. */
+
             RTMSINTERVAL tsStart = RTTimeMilliTS();
             while (RTTimeMilliTS() - tsStart < cMsTimeout)
             {
