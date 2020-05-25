@@ -120,6 +120,7 @@ Windows Installation
 9. Import the right service setup (see connection type above):
      nat)   start C:\Apps\vboxtxs-nat.reg
      other) start C:\Apps\vboxtxs.reg
+10. Make sure that the CD-ROM location is assigned to D: (via "Disk Management").
 11. reboot / done
 12. Do test.
 
