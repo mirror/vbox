@@ -837,6 +837,14 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
             pDevIns->Internal.s.paDbgfTraceTrack = NULL;
         }
 
+#ifdef VBOX_WITH_DBGF_TRACING
+        if (pDevIns->Internal.s.hDbgfTraceEvtSrc != NIL_DBGFTRACEREVTSRC)
+        {
+            DBGFR3TracerDeregisterEvtSrc(pVM, pDevIns->Internal.s.hDbgfTraceEvtSrc);
+            pDevIns->Internal.s.hDbgfTraceEvtSrc = NIL_DBGFTRACEREVTSRC;
+        }
+#endif
+
         TMR3TimerDestroyDevice(pVM, pDevIns);
         SSMR3DeregisterDevice(pVM, pDevIns, NULL, 0);
         pdmR3CritSectBothDeleteDevice(pVM, pDevIns);
