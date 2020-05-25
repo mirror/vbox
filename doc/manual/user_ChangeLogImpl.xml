@@ -48,6 +48,16 @@ technical terms if no non-technical ones are clear enough.
           of Guest Additions for Linux guests</para>
       </listitem>
 
+      <listitem>
+        <para>Guest Control: Implemented ability to wait for the guest when
+          updating Guest Additions via VBoxManage</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: Added Guest Control "waitrunlevel" sub-command to
+          make it possible to wait for a guest to reach a certain run level</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
