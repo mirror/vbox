@@ -190,7 +190,7 @@ struct DisplayModeR {
 static void x11Connect();
 static int determineOutputCount();
 
-#define checkFunctionPtr(pFunction)                                     \
+#define checkFunctionPtrReturn(pFunction)                               \
     do{                                                                 \
         if (!pFunction)                                                 \
         {                                                               \
@@ -198,6 +198,14 @@ static int determineOutputCount();
             dlclose(x11Context.pRandLibraryHandle);                     \
             x11Context.pRandLibraryHandle = NULL;                       \
             return VERR_NOT_FOUND;                                      \
+        }                                                               \
+    }while(0)
+
+#define checkFunctionPtr(pFunction)                                     \
+    do{                                                                 \
+        if (!pFunction)                                                 \
+        {                                                               \
+            VBClLogFatalError("Could not find symbol address\n");       \
         }                                                               \
     }while(0)
 
@@ -732,55 +740,56 @@ static int openLibRandR()
     }
 
     *(void **)(&x11Context.pXRRSelectInput) = dlsym(x11Context.pRandLibraryHandle, "XRRSelectInput");
-    checkFunctionPtr(x11Context.pXRRSelectInput);
+    checkFunctionPtrReturn(x11Context.pXRRSelectInput);
 
     *(void **)(&x11Context.pXRRQueryExtension) = dlsym(x11Context.pRandLibraryHandle, "XRRQueryExtension");
-    checkFunctionPtr(x11Context.pXRRQueryExtension);
+    checkFunctionPtrReturn(x11Context.pXRRQueryExtension);
 
     *(void **)(&x11Context.pXRRQueryVersion) = dlsym(x11Context.pRandLibraryHandle, "XRRQueryVersion");
-    checkFunctionPtr(x11Context.pXRRQueryVersion);
+    checkFunctionPtrReturn(x11Context.pXRRQueryVersion);
 
+    /* Don't bail out when XRRGetMonitors XRRFreeMonitors are missing as in Oracle Solaris 10. It is not crucial esp. for single monitor. */
     *(void **)(&x11Context.pXRRGetMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRGetMonitors");
     checkFunctionPtr(x11Context.pXRRGetMonitors);
-
-    *(void **)(&x11Context.pXRRGetScreenResources) = dlsym(x11Context.pRandLibraryHandle, "XRRGetScreenResources");
-    checkFunctionPtr(x11Context.pXRRGetScreenResources);
-
-    *(void **)(&x11Context.pXRRSetCrtcConfig) = dlsym(x11Context.pRandLibraryHandle, "XRRSetCrtcConfig");
-    checkFunctionPtr(x11Context.pXRRSetCrtcConfig);
 
     *(void **)(&x11Context.pXRRFreeMonitors) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeMonitors");
     checkFunctionPtr(x11Context.pXRRFreeMonitors);
 
+    *(void **)(&x11Context.pXRRGetScreenResources) = dlsym(x11Context.pRandLibraryHandle, "XRRGetScreenResources");
+    checkFunctionPtrReturn(x11Context.pXRRGetScreenResources);
+
+    *(void **)(&x11Context.pXRRSetCrtcConfig) = dlsym(x11Context.pRandLibraryHandle, "XRRSetCrtcConfig");
+    checkFunctionPtrReturn(x11Context.pXRRSetCrtcConfig);
+
     *(void **)(&x11Context.pXRRFreeScreenResources) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeScreenResources");
-    checkFunctionPtr(x11Context.pXRRFreeMonitors);
+    checkFunctionPtrReturn(x11Context.pXRRFreeScreenResources);
 
     *(void **)(&x11Context.pXRRFreeModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeModeInfo");
-    checkFunctionPtr(x11Context.pXRRFreeModeInfo);
+    checkFunctionPtrReturn(x11Context.pXRRFreeModeInfo);
 
     *(void **)(&x11Context.pXRRFreeOutputInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeOutputInfo");
-    checkFunctionPtr(x11Context.pXRRFreeOutputInfo);
+    checkFunctionPtrReturn(x11Context.pXRRFreeOutputInfo);
 
     *(void **)(&x11Context.pXRRSetScreenSize) = dlsym(x11Context.pRandLibraryHandle, "XRRSetScreenSize");
-    checkFunctionPtr(x11Context.pXRRSetScreenSize);
+    checkFunctionPtrReturn(x11Context.pXRRSetScreenSize);
 
     *(void **)(&x11Context.pXRRUpdateConfiguration) = dlsym(x11Context.pRandLibraryHandle, "XRRUpdateConfiguration");
-    checkFunctionPtr(x11Context.pXRRUpdateConfiguration);
+    checkFunctionPtrReturn(x11Context.pXRRUpdateConfiguration);
 
     *(void **)(&x11Context.pXRRAllocModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRAllocModeInfo");
-    checkFunctionPtr(x11Context.pXRRAllocModeInfo);
+    checkFunctionPtrReturn(x11Context.pXRRAllocModeInfo);
 
     *(void **)(&x11Context.pXRRCreateMode) = dlsym(x11Context.pRandLibraryHandle, "XRRCreateMode");
-    checkFunctionPtr(x11Context.pXRRCreateMode);
+    checkFunctionPtrReturn(x11Context.pXRRCreateMode);
 
     *(void **)(&x11Context.pXRRGetOutputInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRGetOutputInfo");
-    checkFunctionPtr(x11Context.pXRRGetOutputInfo);
+    checkFunctionPtrReturn(x11Context.pXRRGetOutputInfo);
 
     *(void **)(&x11Context.pXRRGetCrtcInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRGetCrtcInfo");
-    checkFunctionPtr(x11Context.pXRRGetCrtcInfo);
+    checkFunctionPtrReturn(x11Context.pXRRGetCrtcInfo);
 
     *(void **)(&x11Context.pXRRAddOutputMode) = dlsym(x11Context.pRandLibraryHandle, "XRRAddOutputMode");
-    checkFunctionPtr(x11Context.pXRRAddOutputMode);
+    checkFunctionPtrReturn(x11Context.pXRRAddOutputMode);
 
     return VINF_SUCCESS;
 }
