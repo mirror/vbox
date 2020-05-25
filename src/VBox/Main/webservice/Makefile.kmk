@@ -640,12 +640,11 @@ if defined(VBOX_ONLY_SDK) && ("$(KBUILD_TARGET)" != "win" || defined(VBOX_FORCE_
  endef
 
  VBOXWEB_OTHERS               +=  \
-	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_GLUE_PYTHON),)       \
-	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_WS_PYTHON),)         \
-	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_WS_PYTHON_TYPES),)   \
-	$(if $(VBOX_WITH_PERL),$(VBOXWEB_WS_PERL),)             \
-	$(if $(VBOX_WITH_PHP),$(VBOXWEB_WS_PHP),)               \
-	$(PATH_ROOT)
+	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_GLUE_PYTHON),) \
+	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_WS_PYTHON),) \
+	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_WS_PYTHON_TYPES),) \
+	$(if $(VBOX_WITH_PERL),$(VBOXWEB_WS_PERL),) \
+	$(if $(VBOX_WITH_PHP),$(VBOXWEB_WS_PHP),)
 
 
  #
@@ -655,8 +654,8 @@ if defined(VBOX_ONLY_SDK) && ("$(KBUILD_TARGET)" != "win" || defined(VBOX_FORCE_
  vboxwebinst_INST = $(INST_SDK)bindings/webservice/
  vboxwebinst_MODE = a+rx,u+w
  vboxwebinst_SOURCES = \
-	$(if $(VBOX_WITH_PERL),samples/perl/clienttest.pl=>perl/samples/clienttest.pl,) \
-	$(if $(VBOX_WITH_PHP),samples/php/clienttest.php=>php/samples/clienttest.php,) \
+	$(if   $(VBOX_WITH_PERL),samples/perl/clienttest.pl=>perl/samples/clienttest.pl,) \
+	$(if    $(VBOX_WITH_PHP),samples/php/clienttest.php=>php/samples/clienttest.php,) \
 	$(if $(VBOX_WITH_PYTHON),samples/python/clienttest.py=>python/samples/clienttest.py,)
 
  INSTALLS += vboxwebinst_nox
@@ -946,3 +945,4 @@ $(VBOXWEB_METRICSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/java/jax-ws/metrictest.
 endif # VBOX_ONLY_SDK
 
 include $(FILE_KBUILD_SUB_FOOTER)
+
