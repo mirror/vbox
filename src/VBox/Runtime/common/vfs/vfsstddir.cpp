@@ -74,6 +74,7 @@ typedef struct RTVFSSTDSYMLINK
     /** Pointer to the VFS directory where the symbolic link lives . */
     PRTVFSSTDDIR    pDir;
     /** The symbolic link name. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char            szSymlink[RT_FLEXIBLE_ARRAY];
 } RTVFSSTDSYMLINK;
 /** Pointer to the private data of a standard symbolic link. */

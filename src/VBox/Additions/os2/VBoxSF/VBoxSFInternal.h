@@ -86,6 +86,7 @@ typedef struct VBOXSFFOLDER
     /** The length of the folder name. */
     uint8_t             cchName;
     /** The shared folder name.  If there is a tag it follows as a second string. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char                szName[RT_FLEXIBLE_ARRAY];
 } VBOXSFFOLDER;
 /** Pointer to a shared folder. */

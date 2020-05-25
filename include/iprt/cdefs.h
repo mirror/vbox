@@ -2543,6 +2543,9 @@
  * What to up inside the square brackets when declaring a structure member
  * with a flexible size.
  *
+ * @note    RT_FLEXIBLE_ARRAY_EXTENSION must always preceed the type, unless
+ *          it's C-only code.
+ *
  * @note    Use RT_UOFFSETOF() to calculate the structure size.
  *
  * @note    Never to a sizeof() on the structure or member!
@@ -2558,7 +2561,9 @@
  * @sa      RT_FLEXIBLE_ARRAY_NESTED, RT_FLEXIBLE_ARRAY_IN_UNION
  */
 #if RT_MSC_PREREQ(RT_MSC_VER_VS2005) /** @todo Probably much much earlier. */ \
- || (defined(__cplusplus) && RT_GNUC_PREREQ(6, 1) && !RT_GNUC_PREREQ(7, 0)) /* gcc-7 warns again */\
+ || (defined(__cplusplus) && (   RT_GNUC_PREREQ(6, 1) \
+                              && (  !RT_GNUC_PREREQ(7, 0) /* gcc-7 warns again */ \
+                                  || RT_GNUC_PREREQ(10, 0) /* gcc-10 works with __extension__, the ones in between needs testing */ ))) \
  || defined(__WATCOMC__) /* openwatcom 1.9 supports it, we don't care about older atm. */ \
  || RT_CLANG_PREREQ_EX(3, 4, 0) /* Only tested clang v3.4, support is probably older. */
 # define RT_FLEXIBLE_ARRAY
@@ -2573,6 +2578,16 @@
 # endif
 #else
 # define RT_FLEXIBLE_ARRAY                      1
+#endif
+
+/** @def RT_FLEXIBLE_ARRAY_EXTENSION
+ * A trick to make GNU C++ quietly accept flexible arrays in C++ code when
+ * pedantic warnings are enabled.  Put this on the line before the flexible
+ * array. */
+#if (RT_GNUC_PREREQ(10, 0) && defined(__cplusplus)) || defined(DOXGYEN_RUNNING)
+# define RT_FLEXIBLE_ARRAY_EXTENSION            RT_GCC_EXTENSION
+#else
+# define RT_FLEXIBLE_ARRAY_EXTENSION
 #endif
 
 /** @def RT_FLEXIBLE_ARRAY_NESTED

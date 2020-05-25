@@ -127,7 +127,8 @@ typedef struct RTHTTPHEADER
     /** The value offset. */
     uint32_t            offValue;
     /** The full header field. */
-    char                szData[RT_FLEXIBLE_ARRAY];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    RT_GCC_EXTENSION char szData[RT_FLEXIBLE_ARRAY];
 } RTHTTPHEADER;
 /** Pointer to a HTTP header. */
 typedef RTHTTPHEADER *PRTHTTPHEADER;

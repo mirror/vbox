@@ -147,6 +147,7 @@ typedef struct RTCRAPLCSSUPERBLOB
     /** Number of slots.  Big endian. */
     uint32_t            cSlots;
     /** Slots. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     RTCRAPLCSBLOBSLOT   aSlots[RT_FLEXIBLE_ARRAY];
 } RTCRAPLCSSUPERBLOB;
 AssertCompileMemberOffset(RTCRAPLCSSUPERBLOB, aSlots, 12);

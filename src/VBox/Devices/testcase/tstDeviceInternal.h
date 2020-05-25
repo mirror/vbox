@@ -130,6 +130,7 @@ typedef struct TSTDEVMMHEAPALLOC
     /** Size of the allocation. */
     size_t                          cbAlloc;
     /** Start of the real allocation. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t                         abAlloc[RT_FLEXIBLE_ARRAY];
 } TSTDEVMMHEAPALLOC;
 /** Pointer to a MM Heap allocation. */

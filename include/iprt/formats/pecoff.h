@@ -720,7 +720,8 @@ typedef struct IMAGE_UNWIND_INFO
     /** Scaled frame register offset. */
     RT_GCC_EXTENSION uint8_t    FrameOffset : 4;
     /** Unwind opcodes. */
-    IMAGE_UNWIND_CODE   aOpcodes[RT_FLEXIBLE_ARRAY];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    IMAGE_UNWIND_CODE           aOpcodes[RT_FLEXIBLE_ARRAY];
 } IMAGE_UNWIND_INFO;
 AssertCompileMemberOffset(IMAGE_UNWIND_INFO, aOpcodes, 4);
 typedef IMAGE_UNWIND_INFO *PIMAGE_UNWIND_INFO;

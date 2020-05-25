@@ -740,6 +740,7 @@ typedef struct RTPATHPARSED
      * @note Don't try figure the end of the input path by adding up off and cch
      *       of the last component.  If RTPATH_PROP_DIR_SLASH is set, there may
      *       be one or more trailing slashes that are unaccounted for! */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     struct
     {
         /** The offset of the component. */
@@ -832,6 +833,7 @@ typedef struct RTPATHSPLIT
      * present. */
     const char *pszSuffix;
     /** Array of component strings (variable size). */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char       *apszComps[RT_FLEXIBLE_ARRAY];
 } RTPATHSPLIT;
 /** Pointer to a split path buffer. */

@@ -380,6 +380,7 @@ typedef struct NTFSATLISTENTRY
     /** 0x18: Attribute instance number.  Unique within the MFT record. */
     uint16_t            idAttrib;
     /** 0x1a: Maybe where the attribute name starts. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     RTUTF16             wszName[RT_FLEXIBLE_ARRAY];
 } NTFSATLISTENTRY;
 AssertCompileMemberOffset(NTFSATLISTENTRY, idAttrib, 0x18);
@@ -498,6 +499,7 @@ typedef struct NTFSATFILENAME
     /** 0x41: Filename type (NTFS_FILENAME_T_XXX). */
     uint8_t             fFilenameType;
     /** 0x42: The filename. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     RTUTF16             wszFilename[RT_FLEXIBLE_ARRAY];
 } NTFSATFILENAME;
 AssertCompileMemberOffset(NTFSATFILENAME, cbData, 0x30);

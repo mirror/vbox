@@ -95,6 +95,7 @@ typedef struct virtq_avail
 {
     uint16_t  fFlags;                                            /**< flags      avail ring guest-to-host flags */
     uint16_t  uIdx;                                              /**< idx        Index of next free ring slot   */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint16_t  auRing[RT_FLEXIBLE_ARRAY];                         /**< ring       Ring: avail drv to dev bufs    */
     /* uint16_t  uUsedEventIdx;                                     - used_event (if VIRTQ_USED_F_EVENT_IDX)    */
 } VIRTQ_AVAIL_T, *PVIRTQ_AVAIL_T;
@@ -109,6 +110,7 @@ typedef struct virt_used
 {
     uint16_t  fFlags;                                            /**< flags       used ring host-to-guest flags */
     uint16_t  uIdx;                                              /**< idx         Index of next ring slot       */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     VIRTQ_USED_ELEM_T aRing[RT_FLEXIBLE_ARRAY];                  /**< ring        Ring: used dev to drv bufs    */
     /* uint16_t  uAvailEventIdx;                                    - avail_event if (VIRTQ_USED_F_EVENT_IDX)   */
 } VIRTQ_USED_T, *PVIRTQ_USED_T;

@@ -35,6 +35,7 @@
 # include <iprt/assertcompile.h>
 #else
 # define RT_FLEXIBLE_ARRAY
+# define RT_FLEXIBLE_ARRAY_EXTENSION
 # define AssertCompile(expr)
 # define AssertCompileSize(type, size)
 # define AssertCompileMemberOffset(type, member, off)
@@ -497,6 +498,7 @@ typedef struct
     HV_MAP_GPA_FLAGS    MapFlags;
     uint32_t            u32ExplicitPadding;
     /* The repeating part: */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     HV_SPA_PAGE_NUMBER  PageList[RT_FLEXIBLE_ARRAY];
 } HV_INPUT_MAP_GPA_PAGES;
 AssertCompileMemberOffset(HV_INPUT_MAP_GPA_PAGES, PageList, 24);
@@ -520,6 +522,7 @@ typedef struct
     HV_MAP_GPA_FLAGS    MapFlags;
     uint32_t            u32ExplicitPadding;
     /* The repeating part: */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     HV_GPA_MAPPING      PageList[RT_FLEXIBLE_ARRAY];
 } HV_INPUT_MAP_SPARSE_GPA_PAGES;
 AssertCompileMemberOffset(HV_INPUT_MAP_SPARSE_GPA_PAGES, PageList, 16);
@@ -1233,6 +1236,7 @@ typedef struct
     /** Was this introduced after v2? Dunno what it it really is. */
     uint32_t            fFlags;
     /* The repeating part: */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     HV_REGISTER_NAME    Names[RT_FLEXIBLE_ARRAY];
 } HV_INPUT_GET_VP_REGISTERS;
 AssertCompileMemberOffset(HV_INPUT_GET_VP_REGISTERS, Names, 16);
@@ -1267,6 +1271,7 @@ typedef struct
     HV_VP_INDEX         VpIndex;
     uint32_t            RsvdZ;
     /* The repeating part: */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     HV_REGISTER_ASSOC   Elements[RT_FLEXIBLE_ARRAY];
 } HV_INPUT_SET_VP_REGISTERS;
 AssertCompileMemberOffset(HV_INPUT_SET_VP_REGISTERS, Elements, 16);

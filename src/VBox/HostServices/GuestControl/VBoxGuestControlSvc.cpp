@@ -842,6 +842,7 @@ typedef struct GstCtrlPreparedSession
     /** The key size. */
     uint32_t    cbKey;
     /** The key bytes. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t     abKey[RT_FLEXIBLE_ARRAY];
 } GstCtrlPreparedSession;
 

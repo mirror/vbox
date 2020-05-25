@@ -238,6 +238,7 @@ typedef struct ISO9660PATHREC
      * @note Endianess depends on table.  */
     uint16_t            idParentRec;
     /** 0x08: Directory identifier (d-characters or d1-characters). */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char                achDirId[RT_FLEXIBLE_ARRAY];
     /* There will be a zero padding byte following if the directory identifier length is odd. */
 } ISO9660PATHREC;
@@ -290,6 +291,7 @@ typedef struct ISO9660EXATTRREC
     /** 0x0f6: Length of the application use field. */
     ISO9660U16          cbAppUse;
     /** 0x0fa: Variable sized application use field. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t             abAppUse[RT_FLEXIBLE_ARRAY];
     /* This is followed by escape sequences with length given by cbEscapeSequnces. */
 } ISO9660EXATTRREC;

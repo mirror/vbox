@@ -243,6 +243,7 @@ typedef struct PDMPCIDEV
      * followed by a MSI-X state area. */
     uint8_t                 abConfig[4096];
     /** The MSI-X state data.  Optional. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t                 abMsixState[RT_FLEXIBLE_ARRAY];
 } PDMPCIDEV;
 #ifdef PDMPCIDEVINT_DECLARED

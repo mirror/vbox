@@ -156,6 +156,7 @@ typedef struct KLDRMODLX
     /** Number of segments in aSegments. */
     uint32_t                cSegments;
     /** Segment info. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     RTLDRSEG                aSegments[RT_FLEXIBLE_ARRAY];
 } KLDRMODLX, *PKLDRMODLX;
 

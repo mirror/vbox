@@ -104,6 +104,7 @@ typedef struct RTFTPDIRENTRY
     /** The length of szName. */
     size_t      cchName;
     /** The entry name. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char        szName[RT_FLEXIBLE_ARRAY];
 } RTFTPDIRENTRY;
 /** Pointer to a FTP directory entry. */

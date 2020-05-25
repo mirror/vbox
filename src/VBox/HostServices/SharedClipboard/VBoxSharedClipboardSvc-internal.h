@@ -56,6 +56,7 @@ typedef struct _SHCLCLIENTMSG
     /** Number of stored parameters in aParms. */
     uint32_t            cParms;
     /** HGCM parameters. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     VBOXHGCMSVCPARM     aParms[RT_FLEXIBLE_ARRAY];
 } SHCLCLIENTMSG;
 /** Pointer to a queue message for the guest.   */

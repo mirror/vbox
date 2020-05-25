@@ -319,6 +319,7 @@ typedef struct RTFSFATCLUSTERMAPCACHE
     /** The cache name. */
     const char             *pszName;
     /** Cache entries. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     RTFSFATCLUSTERMAPENTRY  aEntries[RT_FLEXIBLE_ARRAY];
 } RTFSFATCLUSTERMAPCACHE;
 /** Pointer to a FAT linear metadata cache. */

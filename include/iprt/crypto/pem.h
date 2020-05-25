@@ -89,6 +89,7 @@ typedef struct RTCRPEMFIELD
     /** The field name length. */
     size_t              cchName;
     /** The field name. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char                szName[RT_FLEXIBLE_ARRAY];
 } RTCRPEMFIELD;
 /** Pointer to a PEM field. */

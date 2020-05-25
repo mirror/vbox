@@ -257,6 +257,7 @@ typedef struct RTFSISOMAKERNAME
     /** The name length. */
     uint16_t                cchName;
     /** The name. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char                    szName[RT_FLEXIBLE_ARRAY];
 } RTFSISOMAKERNAME;
 
@@ -447,6 +448,7 @@ typedef struct RTFSISOMAKERSYMLINK
     /** The symbolic link target length. */
     uint16_t                cchTarget;
     /** The symbolic link target. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     char                    szTarget[RT_FLEXIBLE_ARRAY];
 } RTFSISOMAKERSYMLINK;
 /** Pointer to an ISO maker directory object.  */

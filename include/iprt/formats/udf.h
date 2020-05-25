@@ -791,6 +791,7 @@ typedef struct UDFLOGICALVOLUMEDESC
     UDFEXTENTAD     IntegritySeqExtent;
     /** 0x1b8: Partition maps (length given by @a cbMapTable), data format is
      * defined by UDFPARTMAPHDR, UDFPARTMAPTYPE1 and UDFPARTMAPTYPE2. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t         abPartitionMaps[RT_FLEXIBLE_ARRAY];
 } UDFLOGICALVOLUMEDESC;
 AssertCompileMemberOffset(UDFLOGICALVOLUMEDESC, abPartitionMaps, 0x1b8);
@@ -924,6 +925,7 @@ typedef struct UDFUNALLOCATEDSPACEDESC
     /** 0x14: Number of allocation descriptors in the array below. */
     uint32_t        cAllocationDescriptors;
     /** 0x18: Allocation descriptors (variable length). */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     UDFEXTENTAD     aAllocationDescriptors[RT_FLEXIBLE_ARRAY];
 } UDFUNALLOCATEDSPACEDESC;
 AssertCompileMemberOffset(UDFUNALLOCATEDSPACEDESC, aAllocationDescriptors, 0x18);
@@ -974,6 +976,7 @@ typedef struct UDFLOGICALVOLINTEGRITYDESC
      * Following these tables there are @a cbImplementationUse bytes of space for
      * the implementation to use.
      */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint32_t        aTables[RT_FLEXIBLE_ARRAY];
 } UDFLOGICALVOLINTEGRITYDESC;
 AssertCompileMemberOffset(UDFLOGICALVOLINTEGRITYDESC, cbImplementationUse, 0x2c);
@@ -1074,6 +1077,7 @@ typedef struct UDFFILEIDDESC
      * implementation use field with length given by @a cbImplementationUse.
      * After that is a d-string field with the name of the file, length
      * specified by @a cbName. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t         abImplementationUse[RT_FLEXIBLE_ARRAY];
 } UDFFILEIDDESC;
 AssertCompileMemberOffset(UDFFILEIDDESC, fFlags,              0x12);
@@ -1357,6 +1361,7 @@ typedef struct UDFFILEENTRY
     uint32_t        cbAllocDescs;
     /** 0xb0: Two variable sized fields.  First @a cbExtAttribs bytes of extended
      *  attributes, then @a cbAllocDescs bytes of allocation descriptors. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t         abExtAttribs[RT_FLEXIBLE_ARRAY];
 } UDFFILEENTRY;
 AssertCompileMemberOffset(UDFFILEENTRY, abExtAttribs, 0xb0);
@@ -1970,6 +1975,7 @@ typedef struct UDFSPACEBITMAPDESC
     /** 0x14: The bitmap size in bytes. */
     uint32_t        cbBitmap;
     /** 0x18: The bitmap. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t         abBitmap[RT_FLEXIBLE_ARRAY];
 } UDFSPACEBITMAPDESC;
 AssertCompileMemberOffset(UDFSPACEBITMAPDESC, abBitmap, 0x18);
@@ -1999,6 +2005,7 @@ typedef struct UDFPARTITIONINTEGRITYDESC
     /** 0x0e0: Implementation identifier. */
     UDFENTITYID     idImplementation;
     /** 0x100: Implementation use data. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t         abImplementationUse[RT_FLEXIBLE_ARRAY];
 } UDFPARTITIONINTEGRITYDESC;
 AssertCompileMemberOffset(UDFPARTITIONINTEGRITYDESC, abImplementationUse, 0x100);
@@ -2066,6 +2073,7 @@ typedef struct UDFEXFILEENTRY
     uint32_t        cbAllocDescs;
     /** 0xd8: Two variable sized fields.  First @a cbExtAttribs bytes of extended
      *  attributes, then @a cbAllocDescs bytes of allocation descriptors. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
     uint8_t         abExtAttribs[RT_FLEXIBLE_ARRAY];
 } UDFEXFILEENTRY;
 AssertCompileMemberOffset(UDFEXFILEENTRY, abExtAttribs, 0xd8);
