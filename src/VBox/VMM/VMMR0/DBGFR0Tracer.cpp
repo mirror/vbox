@@ -26,10 +26,10 @@
 #include <VBox/vmm/vmm.h>
 
 #include <VBox/log.h>
-#include <VBox/errcore.h>
 #include <VBox/sup.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/errcore.h>
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
