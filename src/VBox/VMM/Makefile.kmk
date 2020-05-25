@@ -71,9 +71,6 @@ endif
 ifdef VBOX_WITH_DBGF_TRACING
 VBoxVMM_DEFS    += VBOX_WITH_DBGF_TRACING
 endif
-ifdef VBOX_WITH_RAW_MODE
-VBoxVMM_DEFS    += VBOX_WITH_RAW_MODE VBOX_WITH_RAW_MODE_NOT_R0
-endif
 ifdef VBOX_WITH_VMM_R0_SWITCH_STACK
 VBoxVMM_DEFS    += VMM_R0_SWITCH_STACK
 endif
@@ -84,7 +81,6 @@ VBoxVMM_DEFS.darwin = VMM_R0_SWITCH_STACK
 
 VBoxVMM_INCS     = \
 	include \
-	$(if-expr defined(VBOX_WITH_RAW_MODE),PATM,) \
 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs
 VBoxVMM_ASINCS   = .
 
@@ -168,15 +164,6 @@ VBoxVMM_SOURCES  = \
 	VMMR3/VMMGuruMeditation.cpp \
 	VMMR3/VMMTests.cpp \
 	VMMR3/HM.cpp \
-	$(if-expr defined(VBOX_WITH_RAW_MODE), \
-	VMMR3/CSAM.cpp \
-	VMMR3/PATM.cpp \
-	VMMR3/PATMPatch.cpp \
-	VMMR3/PATMGuest.cpp \
-	VMMR3/PATMA.asm \
-	VMMR3/PATMSSM.cpp \
-	VMMR3/PATMR3Dbg.cpp \
-       ,) \
 	VMMAll/APICAll.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
@@ -216,11 +203,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/TRPMAll.cpp \
 	VMMAll/VMAll.cpp \
 	VMMAll/VMMAll.cpp \
-	VMMAll/VMMAllA.asm \
-	$(if-expr defined(VBOX_WITH_RAW_MODE), \
-	VMMAll/CSAMAll.cpp \
-	VMMAll/PATMAll.cpp \
-	,)
+	VMMAll/VMMAllA.asm
 ifdef VBOX_WITH_VUSB
 VBoxVMM_SOURCES += VMMR3/PDMUsb.cpp
 endif
@@ -470,9 +453,6 @@ VMMR0_DEFS     += VBOX_WITH_IOMMU_AMD
  ifdef VBOX_WITH_DBGF_TRACING
 VMMR0_DEFS     += VBOX_WITH_DBGF_TRACING
  endif
- ifdef VBOX_WITH_RAW_MODE
-VMMR0_DEFS     += VBOX_WITH_RAW_MODE
- endif
  ifdef VBOX_WITH_VMM_R0_SWITCH_STACK
 VMMR0_DEFS     += VMM_R0_SWITCH_STACK
  endif
@@ -488,7 +468,6 @@ VMMR0_CXXFLAGS += -Wunused -Wunused-variable -Wno-unused-parameter
 
 VMMR0_INCS      = \
 	include \
-	$(if-expr defined(VBOX_WITH_RAW_MODE),PATM,) \
 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs
 
 VMMR0_SOURCES   = \
