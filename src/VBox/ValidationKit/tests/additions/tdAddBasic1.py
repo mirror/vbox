@@ -419,20 +419,20 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         #
         asLogFiles = [];
         fHaveSetupApiDevLog = False;
-        if oTestVm.sKind in ('WindowsNT4',):
-            sWinDir = 'C:/WinNT/';
-        else:
-            sWinDir = 'C:/Windows/';
-            asLogFiles = [sWinDir + 'setupapi.log', sWinDir + 'setupact.log', sWinDir + 'setuperr.log'];
+        sWinDir = self.getGuestWinDir(oTestVm);
+        asLogFiles = [ oTestVm.pathJoin(sWinDir, 'setupapi.log'),
+                       oTestVm.pathJoin(sWinDir, 'setupact.log'),
+                       oTestVm.pathJoin(sWinDir, 'setuperr.log') ];
 
-            # Apply The SetupAPI logging level so that we also get the (most verbose) setupapi.dev.log file.
-            ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
-            fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000,
-                                                  'reg.exe',
-                                                  ('reg.exe', 'add',
-                                                   '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
-                                                   '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'),
-                                                   fCheckSessionStatus = True);
+        # Apply The SetupAPI logging level so that we also get the (most verbose) setupapi.dev.log file.
+        ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
+        sRegExe = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
+        fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000,
+                                              sRegExe,
+                                              (sRegExe, 'add',
+                                               '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
+                                               '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'),
+                                               fCheckSessionStatus = True);
 
         for sFile in asLogFiles:
             self.txsRmFile(oSession, oTxsSession, sFile, 10 * 1000, fIgnoreErrors = True);

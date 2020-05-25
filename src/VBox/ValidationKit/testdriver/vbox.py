@@ -2598,9 +2598,7 @@ class TestDriver(base.TestDriver):                                              
         basis for locating other files in or under that directory.
         """
         if oTestVm.isWindows():
-            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
-                return 'C:\\Winnt\\System32';
-            return 'C:\\Windows\\System32';
+            return oTestVm.pathJoin(TestDriver.getGuestWinDir(oTestVm), 'System32');
         if oTestVm.isOS2():
             return 'C:\\OS2\\DLL';
         return sPathPrefix + "/bin";
@@ -2616,12 +2614,27 @@ class TestDriver(base.TestDriver):                                              
         On UNIX-y systems this always is the "sh" shell to guarantee a common shell syntax.
         """
         if oTestVm.isWindows():
-            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
-                return 'C:\\Winnt\\System32';
-            return 'C:\\Windows\\System32';
+            return oTestVm.pathJoin(TestDriver.getGuestWinDir(oTestVm), 'System32');
         if oTestVm.isOS2():
             return 'C:\\OS2\\DLL'; ## @todo r=andy Not sure here.
         return sPathPrefix + "/sbin";
+
+    @staticmethod
+    def getGuestWinDir(oTestVm):
+        """
+        Helper for finding the Windows directory in the test VM that we can play around with.
+        ASSUMES that we always install Windows on drive C.
+
+        Returns the Windows directory, or an empty string when executed on a non-Windows guest (asserts).
+        """
+        sWinDir = '';
+        if oTestVm.isWindows():
+            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
+                sWinDir = 'C:/WinNT/';
+            else:
+                sWinDir = 'C:/Windows/';
+        assert sWinDir != '', 'Retrieving Windows directory for non-Windows OS';
+        return sWinDir;
 
     @staticmethod
     def getGuestSystemShell(oTestVm):
