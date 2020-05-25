@@ -141,6 +141,8 @@ public:
         void openGroupNameEditor();
         /** Disbands group. */
         void disbandGroup();
+        /** Moves machine to a new group. */
+        void moveMachineToNewGroup();
         /** Sorts group. */
         void sortGroup();
     /** @} */

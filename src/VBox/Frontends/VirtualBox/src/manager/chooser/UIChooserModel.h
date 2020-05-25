@@ -219,6 +219,8 @@ public:
         void startEditingSelectedGroupItemName();
         /** Disbands selected group item. */
         void disbandSelectedGroupItem();
+        /** Moves selected machine items to new group item. */
+        void moveSelectedMachineItemsToNewGroupItem();
         /** Starts or shows selected items. */
         void startOrShowSelectedItems();
         /** Sorts selected [parent] group item. */
@@ -294,8 +296,6 @@ private slots:
 
     /** @name Children stuff.
       * @{ */
-        /** Handles group selected machines request. */
-        void sltGroupSelectedMachines();
         /** Handles refresh request. */
         void sltPerformRefreshAction();
         /** Handles remove selected machine request. */

@@ -210,6 +210,9 @@ private slots:
         /** Handles call to move machine. */
         void sltPerformMachineMove();
 
+        /** Handles call to move machine to a new group. */
+        void sltPerformMachineMoveToNewGroup();
+
         /** Handles call to start or show machine. */
         void sltPerformStartOrShowMachine();
         /** Handles call to start machine in normal mode. */

@@ -662,6 +662,65 @@ void UIChooserModel::disbandSelectedGroupItem()
     saveGroups();
 }
 
+void UIChooserModel::moveSelectedMachineItemsToNewGroupItem()
+{
+    /* Create new group node in the current root: */
+    UIChooserNodeGroup *pNewGroupNode = new UIChooserNodeGroup(invisibleRoot(),
+                                                               false /* favorite */,
+                                                               invisibleRoot()->nodes().size() /* position */,
+                                                               uniqueGroupName(invisibleRoot()),
+                                                               UIChooserNodeGroupType_Local,
+                                                               true /* opened */);
+    UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(root(), pNewGroupNode);
+
+    /* For each of currently selected-items: */
+    QStringList busyGroupNames;
+    QStringList busyMachineNames;
+    foreach (UIChooserItem *pItem, selectedItems())
+    {
+        /* For each of known types: */
+        switch (pItem->type())
+        {
+            case UIChooserNodeType_Group:
+            {
+                /* Avoid name collisions: */
+                if (busyGroupNames.contains(pItem->name()))
+                    break;
+                /* Add name to busy: */
+                busyGroupNames << pItem->name();
+                /* Copy or move group-item: */
+                UIChooserNodeGroup *pNewGroupSubNode = new UIChooserNodeGroup(pNewGroupNode,
+                                                                              pItem->node()->toGroupNode(),
+                                                                              pNewGroupNode->nodes().size());
+                new UIChooserItemGroup(pNewGroupItem, pNewGroupSubNode);
+                delete pItem->node();
+                break;
+            }
+            case UIChooserNodeType_Machine:
+            {
+                /* Avoid name collisions: */
+                if (busyMachineNames.contains(pItem->name()))
+                    break;
+                /* Add name to busy: */
+                busyMachineNames << pItem->name();
+                /* Copy or move machine-item: */
+                UIChooserNodeMachine *pNewMachineSubNode = new UIChooserNodeMachine(pNewGroupNode,
+                                                                                    pItem->node()->toMachineNode(),
+                                                                                    pNewGroupNode->nodes().size());
+                new UIChooserItemMachine(pNewGroupItem, pNewMachineSubNode);
+                delete pItem->node();
+                break;
+            }
+        }
+    }
+
+    /* Update model: */
+    wipeOutEmptyGroups();
+    updateTreeForMainRoot();
+    setSelectedItem(pNewGroupItem);
+    saveGroups();
+}
+
 void UIChooserModel::startOrShowSelectedItems()
 {
     emit sigStartOrShowRequest();
@@ -914,69 +973,6 @@ void UIChooserModel::sltMakeSureCurrentItemVisible()
 void UIChooserModel::sltCurrentItemDestroyed()
 {
     AssertMsgFailed(("Current-item destroyed!"));
-}
-
-void UIChooserModel::sltGroupSelectedMachines()
-{
-    /* Check if action is enabled: */
-    if (!actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New)->isEnabled())
-        return;
-
-    /* Create new group node in the current root: */
-    UIChooserNodeGroup *pNewGroupNode = new UIChooserNodeGroup(invisibleRoot(),
-                                                               false /* favorite */,
-                                                               invisibleRoot()->nodes().size() /* position */,
-                                                               uniqueGroupName(invisibleRoot()),
-                                                               UIChooserNodeGroupType_Local,
-                                                               true /* opened */);
-    UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(root(), pNewGroupNode);
-
-    /* Enumerate all the currently selected-items: */
-    QStringList busyGroupNames;
-    QStringList busyMachineNames;
-    foreach (UIChooserItem *pItem, selectedItems())
-    {
-        /* For each of known types: */
-        switch (pItem->type())
-        {
-            case UIChooserNodeType_Group:
-            {
-                /* Avoid name collisions: */
-                if (busyGroupNames.contains(pItem->name()))
-                    break;
-                /* Add name to busy: */
-                busyGroupNames << pItem->name();
-                /* Copy or move group-item: */
-                UIChooserNodeGroup *pNewGroupSubNode = new UIChooserNodeGroup(pNewGroupNode,
-                                                                              pItem->node()->toGroupNode(),
-                                                                              pNewGroupNode->nodes().size());
-                new UIChooserItemGroup(pNewGroupItem, pNewGroupSubNode);
-                delete pItem->node();
-                break;
-            }
-            case UIChooserNodeType_Machine:
-            {
-                /* Avoid name collisions: */
-                if (busyMachineNames.contains(pItem->name()))
-                    break;
-                /* Add name to busy: */
-                busyMachineNames << pItem->name();
-                /* Copy or move machine-item: */
-                UIChooserNodeMachine *pNewMachineSubNode = new UIChooserNodeMachine(pNewGroupNode,
-                                                                                    pItem->node()->toMachineNode(),
-                                                                                    pNewGroupNode->nodes().size());
-                new UIChooserItemMachine(pNewGroupItem, pNewMachineSubNode);
-                delete pItem->node();
-                break;
-            }
-        }
-    }
-
-    /* Update model: */
-    wipeOutEmptyGroups();
-    updateTreeForMainRoot();
-    setSelectedItem(pNewGroupItem);
-    saveGroups();
 }
 
 void UIChooserModel::sltPerformRefreshAction()
@@ -1312,8 +1308,6 @@ void UIChooserModel::prepareConnections()
     /* Setup action connections: */
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Remove), &UIAction::triggered,
             this, &UIChooserModel::sltRemoveSelectedMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New), &UIAction::triggered,
-            this, &UIChooserModel::sltGroupSelectedMachines);
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), &UIAction::triggered,
             this, &UIChooserModel::sltPerformRefreshAction);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh), &UIAction::triggered,
