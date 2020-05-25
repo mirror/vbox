@@ -2563,7 +2563,7 @@
 #if RT_MSC_PREREQ(RT_MSC_VER_VS2005) /** @todo Probably much much earlier. */ \
  || (defined(__cplusplus) && (   RT_GNUC_PREREQ(6, 1) \
                               && (  !RT_GNUC_PREREQ(7, 0) /* gcc-7 warns again */ \
-                                  || RT_GNUC_PREREQ(9, 0) /* gcc-9 works with __extension__, the ones in between needs testing */ ))) \
+                                  || RT_GNUC_PREREQ(8, 0) /* gcc-8 works with __extension__, the ones in between needs testing */ ))) \
  || defined(__WATCOMC__) /* openwatcom 1.9 supports it, we don't care about older atm. */ \
  || RT_CLANG_PREREQ_EX(3, 4, 0) /* Only tested clang v3.4, support is probably older. */
 # define RT_FLEXIBLE_ARRAY
@@ -2584,7 +2584,7 @@
  * A trick to make GNU C++ quietly accept flexible arrays in C++ code when
  * pedantic warnings are enabled.  Put this on the line before the flexible
  * array. */
-#if (RT_GNUC_PREREQ(9, 0) && defined(__cplusplus)) || defined(DOXGYEN_RUNNING)
+#if (RT_GNUC_PREREQ(8, 0) && defined(__cplusplus)) || defined(DOXGYEN_RUNNING)
 # define RT_FLEXIBLE_ARRAY_EXTENSION            RT_GCC_EXTENSION
 #else
 # define RT_FLEXIBLE_ARRAY_EXTENSION
