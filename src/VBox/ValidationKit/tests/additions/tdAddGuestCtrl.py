@@ -2948,6 +2948,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if oTestVm.isWindows() \
             or oTestVm.isOS2():
                 sEcho = sShell;
+                sEchoSuffix = '';
             else:
                 sEcho       = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'echo');
                 # The suffix acts as an indicator / beacon to see if the actual (random) args were received fully.
