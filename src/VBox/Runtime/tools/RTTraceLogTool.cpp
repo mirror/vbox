@@ -291,10 +291,13 @@ int main(int argc, char **argv)
                                         case RTTRACELOGTYPE_INT64:
                                             RTMsgInfo("    %s: %lld\n", Val.pItemDesc->pszName, Val.u.i64);
                                             break;
+                                        case RTTRACELOGTYPE_RAWDATA:
+                                            RTMsgInfo("    %s:\n"
+                                                      "%.*Rhxd\n", Val.pItemDesc->pszName, Val.u.RawData.cb, Val.u.RawData.pb);
+                                            break;
                                         case RTTRACELOGTYPE_FLOAT32:
                                         case RTTRACELOGTYPE_FLOAT64:
-                                        case RTTRACELOGTYPE_RAWDATA:
-                                            RTMsgInfo("    %s: Float32, Float64 and raw data not supported yet\n", Val.pItemDesc->pszName);
+                                            RTMsgInfo("    %s: Float32 and Float64 data not supported yet\n", Val.pItemDesc->pszName);
                                             break;
                                         case RTTRACELOGTYPE_POINTER:
                                             RTMsgInfo("    %s: %#llx\n", Val.pItemDesc->pszName, Val.u.uPtr);
