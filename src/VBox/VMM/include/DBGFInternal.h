@@ -66,6 +66,10 @@ typedef enum DBGFTRACEREVT
 {
     /** Invalid type. */
     DBGFTRACEREVT_INVALID = 0,
+    /** Register event source event. */
+    DBGFTRACEREVT_SRC_REGISTER,
+    /** Deregister event source event. */
+    DBGFTRACEREVT_SRC_DEREGISTER,
     /** MMIO map region event. */
     DBGFTRACEREVT_MMIO_MAP,
     /** MMIO unmap region event. */
@@ -470,6 +474,12 @@ typedef struct DBGFTRACERINSRC
     RGPTRTYPE(PVM)                          pVMRC;
 } DBGFTRACERINSRC;
 
+
+#ifdef IN_RING3
+DECLHIDDEN(int) dbgfTracerR3EvtPostSingle(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBGFTRACEREVTSRC hEvtSrc,
+                                          DBGFTRACEREVT enmTraceEvt, const void *pvEvtDesc, size_t cbEvtDesc,
+                                          uint64_t *pidEvt);
+#endif
 
 /** VMM Debugger Command. */
 typedef enum DBGFCMD

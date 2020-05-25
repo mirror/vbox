@@ -54,6 +54,26 @@
 *********************************************************************************************************************************/
 /** The event descriptors written to the trace log. */
 
+static const RTTRACELOGEVTDESC g_EvtSrcRegisterEvtDesc =
+{
+    "EvtSrc.Register",
+    "An event soruce was registered",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    0,
+    NULL
+};
+
+
+static const RTTRACELOGEVTDESC g_EvtSrcDeregisterEvtDesc =
+{
+    "EvtSrc.Deregister",
+    "An event soruce was de-registered",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    0,
+    NULL
+};
+
+
 static const RTTRACELOGEVTITEMDESC g_DevMmioMapEvtItems[] =
 {
     {"hMmioRegion",    "The MMIO region handle being mapped",                   RTTRACELOGTYPE_UINT64,  0},
@@ -443,11 +463,23 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
 
     switch (pEvtHdr->enmEvt)
     {
+        case DBGFTRACEREVT_SRC_REGISTER:
+        {
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_EvtSrcRegisterEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_START,
+                                     pEvtHdr->hEvtSrc, 0 /*uParentGrpId*/);
+            break;
+        }
+        case DBGFTRACEREVT_SRC_DEREGISTER:
+        {
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_EvtSrcDeregisterEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+                                     pEvtHdr->hEvtSrc, 0 /*uParentGrpId*/);
+            break;
+        }
         case DBGFTRACEREVT_MMIO_MAP:
         {
             PCDBGFTRACEREVTMMIOMAP pEvtMmioMap = (PCDBGFTRACEREVTMMIOMAP)(pEvtHdr + 1);
 
-            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevMmioMapEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevMmioMapEvtDesc, 0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtMmioMap->hMmioRegion, pEvtMmioMap->GCPhysMmioBase);
             break;
         }
@@ -455,7 +487,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
         {
             PCDBGFTRACEREVTMMIOUNMAP pEvtMmioUnmap = (PCDBGFTRACEREVTMMIOUNMAP)(pEvtHdr + 1);
 
-            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevMmioUnmapEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevMmioUnmapEvtDesc, 0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtMmioUnmap->hMmioRegion);
             break;
         }
@@ -468,7 +500,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
                                        pEvtHdr->enmEvt == DBGFTRACEREVT_MMIO_READ
                                      ? &g_DevMmioReadEvtDesc
                                      : &g_DevMmioWriteEvtDesc,
-                                     RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+                                     0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtMmioRw->hMmioRegion, pEvtMmioRw->offMmio,
                                      pEvtMmioRw->cbXfer, pEvtMmioRw->u64Val);
             break;
@@ -477,8 +509,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
         {
             PCDBGFTRACEREVTMMIOFILL pEvtMmioFill = (PCDBGFTRACEREVTMMIOFILL)(pEvtHdr + 1);
 
-            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevMmioFillEvtDesc,
-                                     RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevMmioFillEvtDesc, 0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtMmioFill->hMmioRegion, pEvtMmioFill->offMmio,
                                      pEvtMmioFill->cbItem, pEvtMmioFill->cItems, pEvtMmioFill->u32Item);
             break;
@@ -487,7 +518,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
         {
             PCDBGFTRACEREVTIOPORTMAP pEvtIoPortMap = (PCDBGFTRACEREVTIOPORTMAP)(pEvtHdr + 1);
 
-            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevIoPortMapEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevIoPortMapEvtDesc, 0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtIoPortMap->hIoPorts, pEvtIoPortMap->IoPortBase);
             break;
         }
@@ -495,7 +526,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
         {
             PCDBGFTRACEREVTIOPORTUNMAP pEvtIoPortUnmap = (PCDBGFTRACEREVTIOPORTUNMAP)(pEvtHdr + 1);
 
-            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevIoPortUnmapEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevIoPortUnmapEvtDesc, 0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtIoPortUnmap->hIoPorts);
             break;
         }
@@ -508,7 +539,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
                                        pEvtHdr->enmEvt == DBGFTRACEREVT_IOPORT_READ
                                      ? &g_DevIoPortReadEvtDesc
                                      : &g_DevIoPortWriteEvtDesc,
-                                     RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+                                     0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtIoPortRw->hIoPorts, pEvtIoPortRw->offPort,
                                      pEvtIoPortRw->cbXfer, pEvtIoPortRw->u32Val);
             break;
@@ -517,9 +548,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
         {
             PCDBGFTRACEREVTIRQ pEvtIrq = (PCDBGFTRACEREVTIRQ)(pEvtHdr + 1);
 
-            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog,
-                                     &g_DevIrqEvtDesc,
-                                     RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevIrqEvtDesc, 0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtIrq->iIrq, pEvtIrq->fIrqLvl);
             break;
         }
@@ -527,9 +556,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
         {
             PCDBGFTRACEREVTIOAPICMSI pEvtIoApicMsi = (PCDBGFTRACEREVTIOAPICMSI)(pEvtHdr + 1);
 
-            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog,
-                                     &g_DevIrqEvtDesc,
-                                     RTTRACELOG_WR_ADD_EVT_F_GRP_START | RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevIrqEvtDesc, 0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtIoApicMsi->GCPhys, pEvtIoApicMsi->u32Val);
             break;
         }
@@ -892,8 +919,14 @@ VMMR3_INT_DECL(int) DBGFR3TracerRegisterEvtSrc(PVM pVM, const char *pszName, PDB
     PUVM pUVM = pVM->pUVM;
     PDBGFTRACERINSR3 pThis = pUVM->dbgf.s.pTracerR3;
 
-    *phEvtSrc = pThis->hEvtSrcNext++;
-    return VINF_SUCCESS;
+    DBGFTRACEREVTSRC hEvtSrc = ASMAtomicIncU64((volatile uint64_t *)&pThis->hEvtSrcNext) - 1;
+
+    int rc = dbgfTracerR3EvtPostSingle(pVM, pThis, hEvtSrc, DBGFTRACEREVT_SRC_REGISTER,
+                                       NULL /*pvEvtDesc*/, 0 /*cbEvtDesc*/, NULL /*pidEvt*/);
+    if (RT_SUCCESS(rc))
+        *phEvtSrc = hEvtSrc;
+
+    return rc;
 }
 
 
@@ -909,7 +942,9 @@ VMMR3_INT_DECL(int) DBGFR3TracerDeregisterEvtSrc(PVM pVM, DBGFTRACEREVTSRC hEvtS
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertReturn(hEvtSrc != NIL_DBGFTRACEREVTSRC, VERR_INVALID_HANDLE);
 
-    /** @todo Leave an event that the source deregistered. */
-    return VINF_SUCCESS;
+    PUVM pUVM = pVM->pUVM;
+    PDBGFTRACERINSR3 pThis = pUVM->dbgf.s.pTracerR3;
+    return dbgfTracerR3EvtPostSingle(pVM, pThis, hEvtSrc, DBGFTRACEREVT_SRC_DEREGISTER,
+                                     NULL /*pvEvtDesc*/, 0 /*cbEvtDesc*/, NULL /*pidEvt*/);
 }
 

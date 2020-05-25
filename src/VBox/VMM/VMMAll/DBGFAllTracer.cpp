@@ -154,6 +154,29 @@ DECLINLINE(int) dbgfTracerEvtPostSingle(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBG
 }
 
 
+#ifdef IN_RING3
+/**
+ * Posts a single event descriptor to the ring buffer of the given tracer instance - R3 only variant
+ * (used for the register/deregister event source events currently).
+ *
+ * @returns VBox status code.
+ * @param   pVM                     The current context VM instance data.
+ * @param   pThisCC                 The event tracer instance current context data.
+ * @param   hEvtSrc                 The event source for the posted event.
+ * @param   enmTraceEvt             The trace event type posted.
+ * @param   pvEvtDesc               The event descriptor to copy after the header.
+ * @param   cbEvtDesc               Event descriptor size in bytes.
+ * @param   pidEvt                  Where to store the assigned event ID, optional.
+ */
+DECLHIDDEN(int) dbgfTracerR3EvtPostSingle(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBGFTRACEREVTSRC hEvtSrc,
+                                          DBGFTRACEREVT enmTraceEvt, const void *pvEvtDesc, size_t cbEvtDesc,
+                                          uint64_t *pidEvt)
+{
+    return dbgfTracerEvtPostEx(pVM, pThisCC, hEvtSrc, enmTraceEvt, DBGF_TRACER_EVT_HDR_ID_INVALID,
+                               pvEvtDesc, cbEvtDesc, pidEvt);
+}
+#endif
+
 /**
  * Copies the given MMIO value into the event descriptor based on the given size.
  *
