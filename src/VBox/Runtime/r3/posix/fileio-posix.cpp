@@ -730,7 +730,7 @@ RTR3DECL(int) RTFileQuerySize(RTFILE hFile, uint64_t *pcbSize)
 
 #else
         /* PORTME! Avoid this path when possible. */
-        uint64_t offSaved;
+        uint64_t offSaved = UINT64_MAX;
         int rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offSaved);
         if (RT_SUCCESS(rc))
         {
@@ -750,7 +750,7 @@ RTR3DECL(int) RTFileQueryMaxSizeEx(RTFILE hFile, PRTFOFF pcbMax)
     /*
      * Save the current location
      */
-    uint64_t offOld;
+    uint64_t offOld = UINT64_MAX;
     int rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offOld);
     if (RT_FAILURE(rc))
         return rc;
