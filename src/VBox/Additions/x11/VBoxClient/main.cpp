@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #include <sys/wait.h>
 #include <stdlib.h>       /* For exit */
+#include <signal.h>
 #include <X11/Xlib.h>
 #include "product-generated.h"
 #include <iprt/buildconfig.h>
