@@ -2296,6 +2296,8 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
         /*
          * On Windows 10 the ImageBase member of the optional header is sometimes
          * updated with the actual load address and sometimes not.
+         * On older windows versions (builds <= 9200?), a user mode address is
+         * sometimes found in the image base field after upgrading to VC++ 14.2.
          */
         uint32_t const  offNtHdrs = *(uint16_t *)pbImageBits == IMAGE_DOS_SIGNATURE
                                   ? ((IMAGE_DOS_HEADER const *)pbImageBits)->e_lfanew
@@ -2307,8 +2309,6 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
         uint32_t const  offImageBase = offNtHdrs + RT_UOFFSETOF(IMAGE_NT_HEADERS, OptionalHeader.ImageBase);
         uint32_t const  cbImageBase  = RT_SIZEOFMEMB(IMAGE_NT_HEADERS, OptionalHeader.ImageBase);
         if (   pNtHdrsNtLd->OptionalHeader.ImageBase != pNtHdrsIprt->OptionalHeader.ImageBase
-            && (   pNtHdrsNtLd->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage
-                || pNtHdrsIprt->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage)
             && pNtHdrsIprt->Signature == IMAGE_NT_SIGNATURE
             && pNtHdrsIprt->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR_MAGIC
             && !memcmp(pImage->pvImage, pbImageBits, offImageBase)
@@ -2337,9 +2337,7 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             ExcludeRegions.cRegions = 0;
 
             /* ImageBase: */
-            if (   pNtHdrsNtLd->OptionalHeader.ImageBase != pNtHdrsIprt->OptionalHeader.ImageBase
-                && (   pNtHdrsNtLd->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage
-                    || pNtHdrsIprt->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage) )
+            if (pNtHdrsNtLd->OptionalHeader.ImageBase != pNtHdrsIprt->OptionalHeader.ImageBase)
                 supdrvNtAddExclRegion(&ExcludeRegions, offImageBase, cbImageBase);
 
             /* Imports: */
