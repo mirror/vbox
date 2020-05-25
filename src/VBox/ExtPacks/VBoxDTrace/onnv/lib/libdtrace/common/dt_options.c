@@ -57,6 +57,9 @@
 # include <stdlib.h>
 # include <iprt/err.h>
 
+# if RT_GNUC_PREREQ(10, 0)
+#  pragma GCC diagnostic ignored "-Walloca-larger-than="
+# endif
 #endif /* VBOX */
 
 #include <dt_impl.h>
