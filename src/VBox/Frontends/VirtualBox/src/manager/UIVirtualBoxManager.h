@@ -263,6 +263,9 @@ private slots:
         /** Handles call to sort group. */
         void sltPerformGroupSorting();
 
+        /** Handles call to toggle machine search widget visibility to be @a fVisible. */
+        void sltPerformMachineSearchWidgetVisibilityToggling(bool fVisible);
+
         /** Handles call to show group Close menu. */
         void sltGroupCloseMenuAboutToShow();
         /** Handles call to show machine Close menu. */

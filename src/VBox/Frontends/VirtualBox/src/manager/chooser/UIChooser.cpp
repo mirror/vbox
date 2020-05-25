@@ -148,6 +148,12 @@ void UIChooser::sortGroup()
     model()->sortSelectedGroupItem();
 }
 
+void UIChooser::setMachineSearchWidgetVisibility(bool fVisible)
+{
+    AssertPtrReturnVoid(view());
+    view()->setSearchWidgetVisible(fVisible);
+}
+
 void UIChooser::sltHandleToolbarResize(const QSize &newSize)
 {
     /* Pass height to a model: */
@@ -240,6 +246,8 @@ void UIChooser::prepareConnections()
     /* Chooser-view connections: */
     connect(view(), &UIChooserView::sigResized,
             model(), &UIChooserModel::sltHandleViewResized);
+    connect(view(), &UIChooserView::sigSearchWidgetVisibilityChanged,
+            this, &UIChooser::sigMachineSearchWidgetVisibilityChanged);
 }
 
 void UIChooser::initModel()
@@ -282,6 +290,8 @@ void UIChooser::cleanupConnections()
     /* Chooser-view connections: */
     disconnect(view(), &UIChooserView::sigResized,
                model(), &UIChooserModel::sltHandleViewResized);
+    disconnect(view(), &UIChooserView::sigSearchWidgetVisibilityChanged,
+               this, &UIChooser::sigMachineSearchWidgetVisibilityChanged);
 }
 
 void UIChooser::cleanup()

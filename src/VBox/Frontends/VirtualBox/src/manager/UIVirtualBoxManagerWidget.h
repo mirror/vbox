@@ -69,6 +69,8 @@ signals:
 
         /** Notify listeners about start or show request. */
         void sigStartOrShowRequest();
+        /** Notifies listeners about machine search widget visibility changed to @a fVisible. */
+        void sigMachineSearchWidgetVisibilityChanged(bool fVisible);
     /** @} */
 
     /** @name Tools pane stuff.
@@ -149,6 +151,8 @@ public:
         void refreshMachine();
         /** Sorts group. */
         void sortGroup();
+        /** Toggle machine search widget to be @a fVisible. */
+        void setMachineSearchWidgetVisibility(bool fVisible);
     /** @} */
 
     /** @name Tools pane stuff.

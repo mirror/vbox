@@ -145,6 +145,11 @@ void UIVirtualBoxManagerWidget::sortGroup()
     m_pPaneChooser->sortGroup();
 }
 
+void UIVirtualBoxManagerWidget::setMachineSearchWidgetVisibility(bool fVisible)
+{
+    m_pPaneChooser->setMachineSearchWidgetVisibility(fVisible);
+}
+
 void UIVirtualBoxManagerWidget::setToolsType(UIToolType enmType)
 {
     m_pPaneTools->setToolsType(enmType);
@@ -629,6 +634,8 @@ void UIVirtualBoxManagerWidget::prepareConnections()
             this, &UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange);
     connect(m_pPaneChooser, &UIChooser::sigStartOrShowRequest,
             this, &UIVirtualBoxManagerWidget::sigStartOrShowRequest);
+    connect(m_pPaneChooser, &UIChooser::sigMachineSearchWidgetVisibilityChanged,
+            this, &UIVirtualBoxManagerWidget::sigMachineSearchWidgetVisibilityChanged);
 
     /* Details-pane connections: */
     connect(m_pPaneToolsMachine, &UIToolPaneMachine::sigLinkClicked,
@@ -881,6 +888,8 @@ void UIVirtualBoxManagerWidget::cleanupConnections()
                this, &UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange);
     disconnect(m_pPaneChooser, &UIChooser::sigStartOrShowRequest,
                this, &UIVirtualBoxManagerWidget::sigStartOrShowRequest);
+    disconnect(m_pPaneChooser, &UIChooser::sigMachineSearchWidgetVisibilityChanged,
+               this, &UIVirtualBoxManagerWidget::sigMachineSearchWidgetVisibilityChanged);
 
     /* Details-pane connections: */
     disconnect(m_pPaneToolsMachine, &UIToolPaneMachine::sigLinkClicked,

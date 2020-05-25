@@ -39,6 +39,9 @@ signals:
     /** Notifies listeners about resize. */
     void sigResized();
 
+    /** Notifies listeners about search widget visibility changed to @a fVisible. */
+    void sigSearchWidgetVisibilityChanged(bool fVisible);
+
 public:
 
     /** Constructs a chooser-view passing @a pParent to the base-class.

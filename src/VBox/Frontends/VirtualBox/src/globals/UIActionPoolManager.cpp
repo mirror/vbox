@@ -884,16 +884,18 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Machine Search' action class. */
-class UIActionSimpleSelectorMachinePerformSearch : public UIActionSimple
+/** Toggle action extension, used as 'Search' action class. */
+class UIActionToggleSelectorMachineToggleSearch : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformSearch(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/search_16px.png", ":/search_16px.png")
+    UIActionToggleSelectorMachineToggleSearch(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/search_16px.png", ":/search_16px.png",
+                         ":/search_16px.png", ":/search_16px.png") /// @todo use icons with check-boxes
     {}
 
 protected:
@@ -1871,6 +1873,7 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        /// @todo use icons with check-boxes
         setIcon(UIIconPool::iconSetFull(":/snapshot_show_details_32px.png", ":/snapshot_show_details_16px.png",
                                         ":/snapshot_show_details_disabled_32px.png", ":/snapshot_show_details_disabled_16px.png"));
     }
@@ -2251,6 +2254,7 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        /// @todo use icons with check-boxes
         setIcon(0, UIIconPool::iconSetFull(":/hd_modify_32px.png",          ":/hd_modify_16px.png",
                                            ":/hd_modify_disabled_32px.png", ":/hd_modify_disabled_16px.png"));
         setIcon(1, UIIconPool::iconSetFull(":/cd_modify_32px.png",          ":/cd_modify_16px.png",
@@ -2296,6 +2300,7 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        /// @todo use icons with check-boxes
         setIcon(0, UIIconPool::iconSetFull(":/hd_search_32px.png",          ":/hd_search_16px.png",
                                            ":/hd_search_disabled_32px.png", ":/hd_search_disabled_16px.png"));
         setIcon(1, UIIconPool::iconSetFull(":/cd_search_32px.png",          ":/cd_search_16px.png",
@@ -2492,6 +2497,7 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        /// @todo use icons with check-boxes
         setIcon(UIIconPool::iconSetFull(":/host_iface_edit_32px.png",          ":/host_iface_edit_16px.png",
                                         ":/host_iface_edit_disabled_32px.png", ":/host_iface_edit_disabled_16px.png"));
     }
@@ -2728,6 +2734,7 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        /// @todo use icons with check-boxes
         setIcon(UIIconPool::iconSetFull(":/cloud_profile_edit_32px.png",          ":/cloud_profile_edit_16px.png",
                                         ":/cloud_profile_edit_disabled_32px.png", ":/cloud_profile_edit_disabled_16px.png"));
     }
@@ -2985,7 +2992,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
     m_pool[UIActionIndexST_M_Machine_S_CreateShortcut] = new UIActionSimpleSelectorCommonPerformCreateShortcut(this);
     m_pool[UIActionIndexST_M_Machine_S_SortParent] = new UIActionSimpleSelectorMachinePerformSortParent(this);
-    m_pool[UIActionIndexST_M_Machine_S_Search] = new UIActionSimpleSelectorMachinePerformSearch(this);
+    m_pool[UIActionIndexST_M_Machine_T_Search] = new UIActionToggleSelectorMachineToggleSearch(this);
 
     /* Global Tools actions: */
     m_pool[UIActionIndexST_M_Tools_M_Global] = new UIActionMenuSelectorToolsGlobal(this);
@@ -3344,7 +3351,7 @@ void UIActionPoolManager::updateMenuMachine()
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_CreateShortcut));
     pMenu->addSeparator();
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_SortParent));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Search));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_T_Search));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Machine);

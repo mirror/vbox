@@ -1164,18 +1164,11 @@ void UIChooserModel::sltCurrentDragObjectDestroyed()
     root()->resetDragToken();
 }
 
-void UIChooserModel::sltShowHideSearchWidget()
-{
-    if (view())
-        setSearchWidgetVisible(!view()->isSearchWidgetVisible());
-}
-
 void UIChooserModel::prepare()
 {
     prepareScene();
     prepareContextMenu();
     prepareHandlers();
-    prepareConnections();
 }
 
 void UIChooserModel::prepareScene()
@@ -1283,7 +1276,7 @@ void UIChooserModel::prepareContextMenu()
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
         m_pContextMenuMachine->addSeparator();
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Search));
+        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
     }
 }
 
@@ -1291,13 +1284,6 @@ void UIChooserModel::prepareHandlers()
 {
     m_pMouseHandler = new UIChooserHandlerMouse(this);
     m_pKeyboardHandler = new UIChooserHandlerKeyboard(this);
-}
-
-void UIChooserModel::prepareConnections()
-{
-    /* Setup action connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Search), &UIAction::triggered,
-            this, &UIChooserModel::sltShowHideSearchWidget);
 }
 
 void UIChooserModel::loadLastSelectedItem()

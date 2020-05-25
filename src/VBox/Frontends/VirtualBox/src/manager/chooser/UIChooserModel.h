@@ -304,9 +304,6 @@ private slots:
         void sltStartScrolling();
         /** Handles D&D object destruction. */
         void sltCurrentDragObjectDestroyed();
-
-        /** Handles machine search widget show/hide request. */
-        void sltShowHideSearchWidget();
     /** @} */
 
 private:
@@ -321,8 +318,6 @@ private:
         void prepareContextMenu();
         /** Prepares handlers. */
         void prepareHandlers();
-        /** Prepares connections. */
-        void prepareConnections();
         /** Loads last selected-items. */
         void loadLastSelectedItem();
 

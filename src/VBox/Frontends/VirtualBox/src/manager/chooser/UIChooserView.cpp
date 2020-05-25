@@ -128,6 +128,9 @@ void UIChooserView::setSearchWidgetVisible(bool fVisible)
     /* Set widget visibility state: */
     m_pSearchWidget->setVisible(fVisible);
 
+    /* Notify listeners: */
+    emit sigSearchWidgetVisibilityChanged(fVisible);
+
     /* Update geometry if widget is visible: */
     if (m_pSearchWidget->isVisible())
         updateSearchWidgetGeometry();

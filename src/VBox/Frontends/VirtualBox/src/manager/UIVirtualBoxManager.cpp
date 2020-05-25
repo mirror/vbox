@@ -1371,6 +1371,11 @@ void UIVirtualBoxManager::sltPerformGroupSorting()
     m_pWidget->sortGroup();
 }
 
+void UIVirtualBoxManager::sltPerformMachineSearchWidgetVisibilityToggling(bool fVisible)
+{
+    m_pWidget->setMachineSearchWidgetVisibility(fVisible);
+}
+
 void UIVirtualBoxManager::sltGroupCloseMenuAboutToShow()
 {
     /* Get selected items: */
@@ -1638,6 +1643,10 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformCreateMachineShortcut);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformGroupSorting);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_T_Search), &UIAction::toggled,
+            this, &UIVirtualBoxManager::sltPerformMachineSearchWidgetVisibilityToggling);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSearchWidgetVisibilityChanged,
+            actionPool()->action(UIActionIndexST_M_Machine_T_Search), &QAction::setChecked);
 
     /* 'Group/Start or Show' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal), &UIAction::triggered,
