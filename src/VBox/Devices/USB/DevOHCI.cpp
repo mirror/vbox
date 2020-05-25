@@ -1311,7 +1311,16 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
 DECLINLINE(void) ohciR3PhysRead(PPDMDEVINS pDevIns, uint32_t Addr, void *pvBuf, size_t cbBuf)
 {
     if (cbBuf)
-        PDMDevHlpPhysRead(pDevIns, Addr, pvBuf, cbBuf);
+        PDMDevHlpPhysReadUser(pDevIns, Addr, pvBuf, cbBuf);
+}
+
+/**
+ * Reads physical memory - metadata.
+ */
+DECLINLINE(void) ohciR3PhysReadMeta(PPDMDEVINS pDevIns, uint32_t Addr, void *pvBuf, size_t cbBuf)
+{
+    if (cbBuf)
+        PDMDevHlpPhysReadMeta(pDevIns, Addr, pvBuf, cbBuf);
 }
 
 /**
@@ -1320,7 +1329,16 @@ DECLINLINE(void) ohciR3PhysRead(PPDMDEVINS pDevIns, uint32_t Addr, void *pvBuf, 
 DECLINLINE(void) ohciR3PhysWrite(PPDMDEVINS pDevIns, uint32_t Addr, const void *pvBuf, size_t cbBuf)
 {
     if (cbBuf)
-        PDMDevHlpPCIPhysWrite(pDevIns, Addr, pvBuf, cbBuf);
+        PDMDevHlpPCIPhysWriteUser(pDevIns, Addr, pvBuf, cbBuf);
+}
+
+/**
+ * Writes physical memory - metadata.
+ */
+DECLINLINE(void) ohciR3PhysWriteMeta(PPDMDEVINS pDevIns, uint32_t Addr, const void *pvBuf, size_t cbBuf)
+{
+    if (cbBuf)
+        PDMDevHlpPCIPhysWriteMeta(pDevIns, Addr, pvBuf, cbBuf);
 }
 
 /**
@@ -1328,7 +1346,7 @@ DECLINLINE(void) ohciR3PhysWrite(PPDMDEVINS pDevIns, uint32_t Addr, const void *
  */
 DECLINLINE(void) ohciR3GetDWords(PPDMDEVINS pDevIns, uint32_t Addr, uint32_t *pau32s, int c32s)
 {
-    ohciR3PhysRead(pDevIns, Addr, pau32s, c32s * sizeof(uint32_t));
+    ohciR3PhysReadMeta(pDevIns, Addr, pau32s, c32s * sizeof(uint32_t));
 # ifndef RT_LITTLE_ENDIAN
     for(int i = 0; i < c32s; i++)
         pau32s[i] = RT_H2LE_U32(pau32s[i]);
@@ -1341,12 +1359,12 @@ DECLINLINE(void) ohciR3GetDWords(PPDMDEVINS pDevIns, uint32_t Addr, uint32_t *pa
 DECLINLINE(void) ohciR3PutDWords(PPDMDEVINS pDevIns, uint32_t Addr, const uint32_t *pau32s, int cu32s)
 {
 # ifdef RT_LITTLE_ENDIAN
-    ohciR3PhysWrite(pDevIns, Addr, pau32s, cu32s << 2);
+    ohciR3PhysWriteMeta(pDevIns, Addr, pau32s, cu32s << 2);
 # else
     for (int i = 0; i < c32s; i++, pau32s++, Addr += sizeof(*pau32s))
     {
         uint32_t u32Tmp = RT_H2LE_U32(*pau32s);
-        ohciR3PhysWrite(pDevIns, Addr, (uint8_t *)&u32Tmp, sizeof(u32Tmp));
+        ohciR3PhysWriteMeta(pDevIns, Addr, (uint8_t *)&u32Tmp, sizeof(u32Tmp));
     }
 # endif
 }
@@ -4039,7 +4057,7 @@ static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
     }
 
     Log3(("ohci: Updating HCCA on frame %#x\n", pThis->HcFmNumber));
-    ohciR3PhysWrite(pDevIns, pThis->hcca + OHCI_HCCA_OFS, (uint8_t *)&hcca, sizeof(hcca));
+    ohciR3PhysWriteMeta(pDevIns, pThis->hcca + OHCI_HCCA_OFS, (uint8_t *)&hcca, sizeof(hcca));
     if (fWriteDoneHeadInterrupt)
         ohciR3SetInterrupt(pDevIns, pThis, OHCI_INTR_WRITE_DONE_HEAD);
     RT_NOREF(pThisCC);
