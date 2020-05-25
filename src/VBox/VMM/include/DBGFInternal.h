@@ -43,9 +43,9 @@
  */
 
 /** The maximum tracer instance (total) size, ring-0/raw-mode capable tracers. */
-#define DBGF_MAX_TRACER_INSTANCE_SIZE    _8M
+#define DBGF_MAX_TRACER_INSTANCE_SIZE    _512M
 /** The maximum tracers instance (total) size, ring-3 only tracers. */
-#define DBGF_MAX_TRACER_INSTANCE_SIZE_R3 _16M
+#define DBGF_MAX_TRACER_INSTANCE_SIZE_R3 _1G
 /** Event ringbuffer header size. */
 #define DBGF_TRACER_EVT_HDR_SZ           (32)
 /** Event ringbuffer payload size. */
