@@ -2683,7 +2683,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
  */
 static int gctlWaitForRunLevel(PGCTLCMDCTX pCtx, AdditionsRunLevelType_T enmRunLevel, RTMSINTERVAL cMsTimeout)
 {
-    int vrc;
+    int vrc = VINF_SUCCESS; /* Shut up MSVC. */
 
     try
     {
@@ -2720,8 +2720,6 @@ static int gctlWaitForRunLevel(PGCTLCMDCTX pCtx, AdditionsRunLevelType_T enmRunL
         {
             if (pCtx->cVerbose)
                 RTPrintf("Waiting for run level %RU32 ...\n", enmRunLevel);
-
-            vrc = VINF_SUCCESS; /* Shut up MSVC. */
 
             RTMSINTERVAL tsStart = RTTimeMilliTS();
             while (RTTimeMilliTS() - tsStart < cMsTimeout)
