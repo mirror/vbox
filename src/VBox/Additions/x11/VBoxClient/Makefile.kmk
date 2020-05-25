@@ -25,7 +25,6 @@ VBOX_WITH_DISTRO_XRAND_XINERAMA=
 # VBoxClient - clipboard and seamless.
 #
 PROGRAMS += VBoxClient
-PROGRAMS += VBoxWaylandClient
 
 VBoxClient_TEMPLATE = NewVBoxGuestR3Exe
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
@@ -40,30 +39,27 @@ VBoxClient_INCS += ../x11include/panoramiXproto-1.1
 VBoxClient_INCS += ../x11include/libXrandr-1.5.2
 VBoxClient_INCS += ../x11include/randrproto-1.6.0
 VBoxClient_SOURCES = \
-        main.cpp \
-        display-svga.cpp \
-        display-svga-x11.cpp \
-        seamless.cpp \
-        seamless-x11.cpp \
-        hostversion.cpp
-
-VBoxWaylandClient_SOURCES = \
-        display-wayland.cpp
+	main.cpp \
+	display-svga.cpp \
+	display-svga-x11.cpp \
+	seamless.cpp \
+	seamless-x11.cpp \
+	hostversion.cpp
 
 VBoxClient_SOURCES.linux = \
-        chk_stubs.c
+	chk_stubs.c
 VBoxClient_LIBPATH = \
-        $(VBOX_LIBPATH32_X11)
+	$(VBOX_LIBPATH32_X11)
 VBoxClient_LIBS.freebsd = \
-        iconv
+	iconv
 VBoxClient_LIBS.linux = \
-        dl
+	dl
 VBoxClient_LIBS.netbsd = \
-        crypt
+	crypt
 VBoxClient_LIBS.solaris = \
-        dl
+	dl
 VBoxClient_LIBS = \
-        X11 Xt Xext Xmu
+	X11 Xt Xext Xmu
 ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
  VBoxClient_DEFS += WITH_DISTRO_XRAND_XINERAMA
  VBoxClient_LIBS += Xrandr
@@ -71,13 +67,13 @@ endif
 
 # XXX: -L comes from the template, but not rpath
 VBoxClient_LDFLAGS.netbsd = \
-        -Wl,-rpath /usr/X11R7/lib
+	-Wl,-rpath /usr/X11R7/lib
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  ifdef VBOX_DND_WITH_XTEST
  VBoxClient_DEFS += VBOX_DND_WITH_XTEST
  VBoxClient_LIBS += \
-        Xtst
+	Xtst
  endif
 endif
 
@@ -86,7 +82,7 @@ endif
 # how else to do that without recompiling or implementing our own memcpy.
 ifeq ($(KBUILD_TARGET),linux)
 VBoxClient_LDFLAGS.amd64 += \
-        -Wl,--wrap=memcpy
+	-Wl,--wrap=memcpy
 endif
 
 ifdef VBOX_WITH_GUEST_PROPS
@@ -95,37 +91,37 @@ endif
 
 ifdef VBOX_WITH_DRAG_AND_DROP
 VBoxClient_DEFS += \
-        VBOX_WITH_DRAG_AND_DROP \
-        $(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
+	VBOX_WITH_DRAG_AND_DROP \
+	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
 VBoxClient_SOURCES += \
-        draganddrop.cpp
+	draganddrop.cpp
 VBoxClient_LIBS     += \
-        $(VBOX_LIB_VBGL_R3) \
-        $(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
+	$(VBOX_LIB_VBGL_R3) \
+	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
 endif
 
 ifdef VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_DEFS += \
-        VBOX_WITH_SHARED_CLIPBOARD \
-        $(if $(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS),VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS,)
+	VBOX_WITH_SHARED_CLIPBOARD \
+	$(if $(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS),VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS,)
  VBoxClient_SOURCES += \
-        $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
-        $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
-        clipboard.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
+	clipboard.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_GUEST
   VBoxClient_SOURCES += \
-        $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
-        $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
   ifdef VBOX_WITH_SHARED_CLIPBOARD_FUSE
    VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_FUSE
    # @todo Make this dynamic loading more generic.
    VBoxClient_SOURCES += \
-        $(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount/fuse.cpp \
-        clipboard-fuse.cpp
+	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount/fuse.cpp \
+	clipboard-fuse.cpp
    # @todo Ditto.
    VBoxClient_INCS    += \
-        $(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount
+	$(PATH_ROOT)/src/VBox/ImageMounter/vboximg-mount
   endif
  endif
 endif
@@ -149,8 +145,8 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   TESTING  += $(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto
 $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
        $$(tstSeamlessX11-auto_1_STAGE_TARGET)
-        export VBOX_LOG_DEST=nofile; $(tstSeamlessX11-auto_1_STAGE_TARGET) quiet
-        $(QUIET)$(APPEND) -t "$@" "done"
+	export VBOX_LOG_DEST=nofile; $(tstSeamlessX11-auto_1_STAGE_TARGET) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
 
   #
   # Additional testcase designed to be run manually, which initiates and starts the Linux
