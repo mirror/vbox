@@ -1084,7 +1084,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
     {
         cbCopied = RT_MIN(pSgBuf->cbSegLeft,  pSgPhysReturn->cbSegLeft);
         Assert(cbCopied > 0);
-        PDMDevHlpPCIPhysWrite(pDevIns, pSgPhysReturn->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
+        PDMDevHlpPCIPhysWriteUser(pDevIns, pSgPhysReturn->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
         RTSgBufAdvance(pSgBuf, cbCopied);
         virtioCoreSgBufAdvance(pSgPhysReturn, cbCopied);
         cbRemain -= cbCopied;
@@ -1122,7 +1122,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface,
     {
         cbCopied = RT_MIN(pSgBuf->cbSegLeft, pSgPhysSend->cbSegLeft);
         Assert(cbCopied > 0);
-        PDMDevHlpPCIPhysRead(pDevIns, pSgPhysSend->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
+        PDMDevHlpPCIPhysReadUser(pDevIns, pSgPhysSend->gcPhysCur, pSgBuf->pvSegCur, cbCopied);
         RTSgBufAdvance(pSgBuf, cbCopied);
         virtioCoreSgBufAdvance(pSgPhysSend, cbCopied);
         cbRemain -= cbCopied;
@@ -1179,7 +1179,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     {
         size_t cbSeg = cbReqHdr - offReq;
         RTGCPHYS GCPhys = virtioCoreSgBufGetNextSegment(pDescChain->pSgPhysSend, &cbSeg);
-        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, &VirtqReq.ab[offReq], cbSeg);
+        PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhys, &VirtqReq.ab[offReq], cbSeg);
         offReq += cbSeg;
     }
 
@@ -1372,7 +1372,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     {
         size_t cbSeg = cbCtrl - offCtrl;
         RTGCPHYS GCPhys = virtioCoreSgBufGetNextSegment(pDescChain->pSgPhysSend, &cbSeg);
-        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, &ScsiCtrlUnion.ab[offCtrl], cbSeg);
+        PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhys, &ScsiCtrlUnion.ab[offCtrl], cbSeg);
         offCtrl += cbSeg;
     }
 
@@ -2623,12 +2623,13 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     /*
      * Status driver (optional).
      */
-    PPDMIBASE pUpBase;
+    PPDMIBASE pUpBase = NULL;
     AssertCompile(PDM_STATUS_LUN >= VIRTIOSCSI_MAX_TARGETS);
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThisCC->IBase, &pUpBase, "Status Port");
     if (RT_FAILURE(rc) && rc != VERR_PDM_NO_ATTACHED_DRIVER)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
-    pThisCC->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pUpBase, PDMIMEDIANOTIFY);
+    if (RT_SUCCESS(rc) && pUpBase)
+        pThisCC->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pUpBase, PDMIMEDIANOTIFY);
 
 
     /*

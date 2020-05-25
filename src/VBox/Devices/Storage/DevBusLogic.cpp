@@ -1232,7 +1232,7 @@ static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fS
 }
 
 /**
- * Memory write helper to handle PCI/ISA differences.
+ * Memory write helper to handle PCI/ISA differences - metadata writes.
  *
  * @returns nothing.
  * @param   pDevIns     The device instance.
@@ -1241,15 +1241,33 @@ static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fS
  * @param   pvBuf       Host side buffer address
  * @param   cbWrite     Number of bytes to write
  */
-static void blPhysWrite(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+static void blPhysWriteMeta(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     if (!pThis->uIsaIrq)
-        PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+        PDMDevHlpPCIPhysWriteMeta(pDevIns, GCPhys, pvBuf, cbWrite);
     else
-        PDMDevHlpPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+        PDMDevHlpPhysWriteMeta(pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
 #if defined(IN_RING3)
+
+/**
+ * Memory write helper to handle PCI/ISA differences - userdata writes.
+ *
+ * @returns nothing.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       Pointer to the shared BusLogic instance data.
+ * @param   GCPhys      Guest physical memory address
+ * @param   pvBuf       Host side buffer address
+ * @param   cbWrite     Number of bytes to write
+ */
+static void blPhysWriteUser(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    if (!pThis->uIsaIrq)
+        PDMDevHlpPCIPhysWriteUser(pDevIns, GCPhys, pvBuf, cbWrite);
+    else
+        PDMDevHlpPhysWriteUser(pDevIns, GCPhys, pvBuf, cbWrite);
+}
 
 /**
  * Initiates a hard reset which was issued from the guest.
@@ -1317,13 +1335,13 @@ static void buslogicR3SendIncomingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pThis, R
         pCCBGuest->c.uHostAdapterStatus = uHostAdapterStatus;
         pCCBGuest->c.uDeviceStatus      = uDeviceStatus;
         /* Rewrite CCB up to the CDB; perhaps more than necessary. */
-        blPhysWrite(pDevIns, pThis, GCPhysAddrCCB, pCCBGuest, RT_UOFFSETOF(CCBC, abCDB));
+        blPhysWriteMeta(pDevIns, pThis, GCPhysAddrCCB, pCCBGuest, RT_UOFFSETOF(CCBC, abCDB));
     }
 
 # ifdef RT_STRICT
     uint8_t     uCode;
     unsigned    uCodeOffs = pThis->fMbxIs24Bit ? RT_OFFSETOF(Mailbox24, uCmdState) : RT_OFFSETOF(Mailbox32, u.out.uActionCode);
-    PDMDevHlpPhysRead(pDevIns, GCPhysAddrMailboxIncoming + uCodeOffs, &uCode, sizeof(uCode));
+    PDMDevHlpPhysReadMeta(pDevIns, GCPhysAddrMailboxIncoming + uCodeOffs, &uCode, sizeof(uCode));
     Assert(uCode == BUSLOGIC_MAILBOX_INCOMING_COMPLETION_FREE);
 # endif
 
@@ -1335,12 +1353,12 @@ static void buslogicR3SendIncomingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pThis, R
         Mbx24.uCmdState = MbxIn.u.in.uCompletionCode;
         U32_TO_ADDR(Mbx24.aPhysAddrCCB, MbxIn.u32PhysAddrCCB);
         Log(("24-bit mailbox: completion code=%u, CCB at %RGp\n", Mbx24.uCmdState, (RTGCPHYS)ADDR_TO_U32(Mbx24.aPhysAddrCCB)));
-        blPhysWrite(pDevIns, pThis, GCPhysAddrMailboxIncoming, &Mbx24, sizeof(Mailbox24));
+        blPhysWriteMeta(pDevIns, pThis, GCPhysAddrMailboxIncoming, &Mbx24, sizeof(Mailbox24));
     }
     else
     {
         Log(("32-bit mailbox: completion code=%u, CCB at %RGp\n", MbxIn.u.in.uCompletionCode, GCPhysAddrCCB));
-        blPhysWrite(pDevIns, pThis, GCPhysAddrMailboxIncoming, &MbxIn, sizeof(Mailbox32));
+        blPhysWriteMeta(pDevIns, pThis, GCPhysAddrMailboxIncoming, &MbxIn, sizeof(Mailbox32));
     }
 
     /* Advance to next mailbox position. */
@@ -1444,7 +1462,7 @@ static void buslogicR3ReadSGEntries(PPDMDEVINS pDevIns, bool fIs24Bit, RTGCPHYS 
         Assert(cEntries <= RT_ELEMENTS(aSGE24));
 
         Log2(("Converting %u 24-bit S/G entries to 32-bit\n", cEntries));
-        PDMDevHlpPhysRead(pDevIns, GCSGList, &aSGE24, cEntries * sizeof(SGE24));
+        PDMDevHlpPhysReadMeta(pDevIns, GCSGList, &aSGE24, cEntries * sizeof(SGE24));
         for (uint32_t i = 0; i < cEntries; ++i)
         {
             pSGEList[i].cbSegment              = LEN_TO_U32(aSGE24[i].acbSegment);
@@ -1452,7 +1470,7 @@ static void buslogicR3ReadSGEntries(PPDMDEVINS pDevIns, bool fIs24Bit, RTGCPHYS 
         }
     }
     else
-        PDMDevHlpPhysRead(pDevIns, GCSGList, pSGEList, cEntries * sizeof(SGE32));
+        PDMDevHlpPhysReadMeta(pDevIns, GCSGList, pSGEList, cEntries * sizeof(SGE32));
 }
 
 /**
@@ -1560,7 +1578,7 @@ static DECLCALLBACK(void) buslogicR3CopyBufferFromGuestWorker(PPDMDEVINS pDevIns
         void *pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
 
         AssertPtr(pvSeg);
-        PDMDevHlpPhysRead(pDevIns, GCPhys, pvSeg, cbSeg);
+        PDMDevHlpPhysReadUser(pDevIns, GCPhys, pvSeg, cbSeg);
         GCPhys += cbSeg;
         cbCopy -= cbSeg;
     }
@@ -1585,7 +1603,7 @@ static DECLCALLBACK(void) buslogicR3CopyBufferToGuestWorker(PPDMDEVINS pDevIns, 
         void *pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
 
         AssertPtr(pvSeg);
-        blPhysWrite(pDevIns, pThis, GCPhys, pvSeg, cbSeg);
+        blPhysWriteUser(pDevIns, pThis, GCPhys, pvSeg, cbSeg);
         GCPhys += cbSeg;
         cbCopy -= cbSeg;
     }
@@ -1790,7 +1808,7 @@ static void buslogicR3SenseBufferFree(PBUSLOGICREQ pReq, bool fCopy)
             GCPhysAddrSenseBuffer = pReq->CCBGuest.n.u32PhysAddrSenseData;
 
         Log3(("%s: sense buffer: %.*Rhxs\n", __FUNCTION__, cbSenseBuffer, pReq->pbSenseBuffer));
-        blPhysWrite(pDevIns, pThis, GCPhysAddrSenseBuffer, pReq->pbSenseBuffer, cbSenseBuffer);
+        blPhysWriteMeta(pDevIns, pThis, GCPhysAddrSenseBuffer, pReq->pbSenseBuffer, cbSenseBuffer);
     }
 
     RTMemFree(pReq->pbSenseBuffer);
@@ -2317,8 +2335,8 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             addr.lo  = pThis->aCommandBuffer[2];
             GCPhysFifoBuf = (RTGCPHYS)ADDR_TO_U32(addr);
             Log(("Write busmaster FIFO at: %04X\n", ADDR_TO_U32(addr)));
-            PDMDevHlpPhysRead(pDevIns, GCPhysFifoBuf,
-                              &pThis->LocalRam.u8View[64], 64);
+            PDMDevHlpPhysReadMeta(pDevIns, GCPhysFifoBuf,
+                                  &pThis->LocalRam.u8View[64], 64);
             break;
         }
         case BUSLOGICCOMMAND_READ_BUSMASTER_CHIP_FIFO:
@@ -2332,7 +2350,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             addr.lo  = pThis->aCommandBuffer[2];
             GCPhysFifoBuf = (RTGCPHYS)ADDR_TO_U32(addr);
             Log(("Read busmaster FIFO at: %04X\n", ADDR_TO_U32(addr)));
-            blPhysWrite(pDevIns, pThis, GCPhysFifoBuf, &pThis->LocalRam.u8View[64], 64);
+            blPhysWriteMeta(pDevIns, pThis, GCPhysFifoBuf, &pThis->LocalRam.u8View[64], 64);
             break;
         }
         default:
@@ -3171,8 +3189,7 @@ static int buslogicR3DeviceSCSIRequestSetup(PPDMDEVINS pDevIns, PBUSLOGIC pThis,
 
     /* Fetch the CCB from guest memory. */
     /** @todo How much do we really have to read? */
-    PDMDevHlpPhysRead(pDevIns, GCPhysAddrCCB,
-                      &CCBGuest, sizeof(CCB32));
+    PDMDevHlpPhysReadMeta(pDevIns, GCPhysAddrCCB, &CCBGuest, sizeof(CCB32));
 
     uTargetIdCCB = pThis->fMbxIs24Bit ? CCBGuest.o.uTargetId : CCBGuest.n.uTargetId;
     if (RT_LIKELY(uTargetIdCCB < RT_ELEMENTS(pThisCC->aDeviceStates)))
@@ -3256,8 +3273,7 @@ static int buslogicR3DeviceSCSIRequestAbort(PPDMDEVINS pDevIns, PBUSLOGIC pThis,
     uint8_t  uTargetIdCCB;
     CCBU     CCBGuest;
 
-    PDMDevHlpPhysRead(pDevIns, GCPhysAddrCCB,
-                      &CCBGuest, sizeof(CCB32));
+    PDMDevHlpPhysReadMeta(pDevIns, GCPhysAddrCCB, &CCBGuest, sizeof(CCB32));
 
     uTargetIdCCB = pThis->fMbxIs24Bit ? CCBGuest.o.uTargetId : CCBGuest.n.uTargetId;
     if (RT_LIKELY(uTargetIdCCB < RT_ELEMENTS(pThis->afDevicePresent)))
@@ -3292,14 +3308,14 @@ static RTGCPHYS buslogicR3ReadOutgoingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pThi
         Mailbox24   Mbx24;
 
         GCMailbox = pThis->GCPhysAddrMailboxOutgoingBase + (pThis->uMailboxOutgoingPositionCurrent * sizeof(Mailbox24));
-        PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
+        PDMDevHlpPhysReadMeta(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
         pMbx->u32PhysAddrCCB    = ADDR_TO_U32(Mbx24.aPhysAddrCCB);
         pMbx->u.out.uActionCode = Mbx24.uCmdState;
     }
     else
     {
         GCMailbox = pThis->GCPhysAddrMailboxOutgoingBase + (pThis->uMailboxOutgoingPositionCurrent * sizeof(Mailbox32));
-        PDMDevHlpPhysRead(pDevIns, GCMailbox, pMbx, sizeof(Mailbox32));
+        PDMDevHlpPhysReadMeta(pDevIns, GCMailbox, pMbx, sizeof(Mailbox32));
     }
 
     return GCMailbox;
@@ -3360,7 +3376,7 @@ static int buslogicR3ProcessMailboxNext(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBU
     /* We got the mailbox, mark it as free in the guest. */
     uint8_t uActionCode = BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE;
     unsigned uCodeOffs = pThis->fMbxIs24Bit ? RT_OFFSETOF(Mailbox24, uCmdState) : RT_OFFSETOF(Mailbox32, u.out.uActionCode);
-    blPhysWrite(pDevIns, pThis, GCPhysAddrMailboxCurrent + uCodeOffs, &uActionCode, sizeof(uActionCode));
+    blPhysWriteMeta(pDevIns, pThis, GCPhysAddrMailboxCurrent + uCodeOffs, &uActionCode, sizeof(uActionCode));
 
     if (MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND)
         rc = buslogicR3DeviceSCSIRequestSetup(pDevIns, pThis, pThisCC, (RTGCPHYS)MailboxGuest.u32PhysAddrCCB);
@@ -3822,7 +3838,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (24-bit) at %06X:\n", GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
-                PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
+                PDMDevHlpPhysReadMeta(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
                 pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %06X action code %02X", i, ADDR_TO_U32(Mbx24.aPhysAddrCCB), Mbx24.uCmdState);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
                 GCMailbox += sizeof(Mailbox24);
@@ -3833,7 +3849,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             pHlp->pfnPrintf(pHlp, " Incoming mailbox entries (24-bit) at %06X:\n", GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
-                PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
+                PDMDevHlpPhysReadMeta(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
                 pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %06X completion code %02X", i, ADDR_TO_U32(Mbx24.aPhysAddrCCB), Mbx24.uCmdState);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxIncomingPositionCurrent == i ? " *" : "");
                 GCMailbox += sizeof(Mailbox24);
@@ -3849,7 +3865,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (32-bit) at %08X:\n", (uint32_t)GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
-                PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx32, sizeof(Mailbox32));
+                PDMDevHlpPhysReadMeta(pDevIns, GCMailbox, &Mbx32, sizeof(Mailbox32));
                 pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %08X action code %02X", i, Mbx32.u32PhysAddrCCB, Mbx32.u.out.uActionCode);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
                 GCMailbox += sizeof(Mailbox32);
@@ -3860,7 +3876,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             pHlp->pfnPrintf(pHlp, " Incoming mailbox entries (32-bit) at %08X:\n", (uint32_t)GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
-                PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx32, sizeof(Mailbox32));
+                PDMDevHlpPhysReadMeta(pDevIns, GCMailbox, &Mbx32, sizeof(Mailbox32));
                 pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %08X completion code %02X BTSTAT %02X SDSTAT %02X", i,
                                 Mbx32.u32PhysAddrCCB, Mbx32.u.in.uCompletionCode, Mbx32.u.in.uHostAdapterStatus, Mbx32.u.in.uTargetDeviceStatus);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxIncomingPositionCurrent == i ? " *" : "");
