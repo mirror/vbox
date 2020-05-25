@@ -2845,7 +2845,8 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
                 break;
 
             case KGSTCTRLUPDATEADDITIONSOPT_VERIFY:
-                fVerify = true;
+                fVerify         = true;
+                fRebootOnFinish = true; /* Verification needs a mandatory reboot after successful update. */
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
