@@ -1060,12 +1060,18 @@ static DECLCALLBACK(int) rtTraceLogRdrEvtDataRecvd(PRTTRACELOGRDRINT pThis, RTTR
         size_t cb = 0;
         if (pThis->cbTypeSize == 4)
         {
-            cb = RT_BSWAP_U32(*(uint32_t *)pbData);
+            if (pThis->fConvEndianess)
+                cb = RT_BSWAP_U32(*(uint32_t *)pbData);
+            else
+                cb = *(uint32_t *)pbData;
             pbData += 4;
         }
         else if (pThis->cbTypeSize == 8)
         {
-            cb = RT_BSWAP_U64(*(uint64_t *)pbData);
+            if (pThis->fConvEndianess)
+                cb = RT_BSWAP_U64(*(uint64_t *)pbData);
+            else
+                cb = *(uint64_t *)pbData;
             pbData += 8;
         }
         else
