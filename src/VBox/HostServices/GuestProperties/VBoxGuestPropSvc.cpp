@@ -1290,7 +1290,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t nsTimestamp)
     CallList::iterator it = mGuestWaiters.begin();
     if (it != mGuestWaiters.end())
     {
-        const char *pszPatterns;
+        const char *pszPatterns = NULL;
         uint32_t    cchPatterns;
         HGCMSvcGetCStr(&it->mParms[0], &pszPatterns, &cchPatterns);
 

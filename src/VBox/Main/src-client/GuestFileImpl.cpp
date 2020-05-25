@@ -442,6 +442,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
     int idx = 1; /* Current parameter index. */
     CALLBACKDATA_FILE_NOTIFY dataCb;
+    RT_ZERO(dataCb);
     /* pSvcCb->mpaParms[0] always contains the context ID. */
     HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.uType);
     HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.rc);
