@@ -615,7 +615,7 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
     };
 
     @staticmethod
-    def validateTs(sValue, aoNilValues = tuple([None, '']), fAllowNull = True):
+    def validateTs(sValue, aoNilValues = tuple([None, '']), fAllowNull = True, fRelative = False):
         """ Validates a timestamp field. """
         if sValue in aoNilValues:
             return (sValue, None if fAllowNull else 'Mandatory.');
@@ -652,7 +652,7 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
                 iDay   = int(oRes.group(3));
                 iHour  = int(oRes.group(4));
                 iSec   = int(oRes.group(5));
-                if iMonth > 12 or iMonth <= 0:
+                if iMonth > 12 or (iMonth <= 0 and not fRelative):
                     sError = 'Invalid timestamp month.';
                 elif iDay > acDaysOfMonth[iMonth - 1]:
                     sError = 'Invalid timestamp day-of-month (%02d has %d days).' % (iMonth, acDaysOfMonth[iMonth - 1]);

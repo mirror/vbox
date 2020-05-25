@@ -633,7 +633,7 @@ class WuiDispatcherBase(object):
         # Relative timestamp. Validate and convert it to a fixed timestamp.
         #
         chSign = sValue[0];
-        (sValue, sError) = ModelDataBase.validateTs(sValue[1:]);
+        (sValue, sError) = ModelDataBase.validateTs(sValue[1:], fRelative = True);
         if sError is not None:
             raise WuiException('%s parameter "%s" ("%s") is invalid: %s' % (self._sAction, sName, sValue, sError));
         if sValue[-6] in ['-', '+']:
