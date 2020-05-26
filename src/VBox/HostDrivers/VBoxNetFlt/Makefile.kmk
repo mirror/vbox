@@ -400,7 +400,7 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
 + $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.tlb: \
 		$(PATH_SUB_CURRENT)/win/nobj/VBoxNetFltNobjT.idl \
 		| $$(dir $$@)
-ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ifdef KMK_WITH_QUOTING
 	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNobj_0_OUTDIR)) \
 		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
@@ -410,7 +410,7 @@ else
 	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNobj_0_OUTDIR)) \
 		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
-		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_$(VBOX_WINDDK)_INCS))) \
+		$(foreach incdir, $(SDK_$(VBOX_WINDDK)_INCS),/I $(call VBOX_FN_MAKE_WIN_PATH,$(incdir)) ) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 endif
 
