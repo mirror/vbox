@@ -217,7 +217,7 @@ endif # VBOX_WITH_RAW_MODE
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstGlobalConfigHardened_TEMPLATE = VBoxR3HardenedTstExe
 tstGlobalConfigHardened_NAME     = tstGlobalConfig
- ifdef KMK_WITH_QUOTING
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstGlobalConfigHardened_DEFS     = PROGRAM_NAME_STR="tstGlobalConfig"
  else
 tstGlobalConfigHardened_DEFS     = PROGRAM_NAME_STR=\"tstGlobalConfig\"
@@ -249,7 +249,7 @@ endif
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstMMHyperHeapHardened_TEMPLATE = VBoxR3HardenedTstExe
 tstMMHyperHeapHardened_NAME     = tstMMHyperHeap
- ifdef KMK_WITH_QUOTING
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstMMHyperHeapHardened_DEFS     = PROGRAM_NAME_STR="tstMMHyperHeap"
  else
 tstMMHyperHeapHardened_DEFS     = PROGRAM_NAME_STR=\"tstMMHyperHeap\"
@@ -278,7 +278,7 @@ tstSSM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstCFGMHardened_TEMPLATE = VBoxR3HardenedTstExe
 tstCFGMHardened_NAME     = tstCFGM
- ifdef KMK_WITH_QUOTING
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstCFGMHardened_DEFS     = PROGRAM_NAME_STR="tstCFGM"
  else
 tstCFGMHardened_DEFS     = PROGRAM_NAME_STR=\"tstCFGM\"
@@ -320,7 +320,7 @@ tstVMMR0CallHost-2_DEFS = VMM_R0_SWITCH_STACK
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstVMREQHardened_TEMPLATE = VBOXR3HARDENEDEXE
 tstVMREQHardened_NAME     = tstVMREQ
- ifdef KMK_WITH_QUOTING
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstVMREQHardened_DEFS     = PROGRAM_NAME_STR="tstVMREQ"
  else
 tstVMREQHardened_DEFS     = PROGRAM_NAME_STR=\"tstVMREQ\"
@@ -340,7 +340,7 @@ tstVMREQ_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstAnimateHardened_TEMPLATE = VBOXR3HARDENEDEXE
 tstAnimateHardened_NAME     = tstAnimate
- ifdef KMK_WITH_QUOTING
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstAnimateHardened_DEFS     = PROGRAM_NAME_STR="tstAnimate"
  else
 tstAnimateHardened_DEFS     = PROGRAM_NAME_STR=\"tstAnimate\"
@@ -371,7 +371,7 @@ ifdef VBOX_WITH_RAW_MODE
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstVMMHardened_TEMPLATE = VBOXR3HARDENEDEXE
 tstVMMHardened_NAME     = tstVMM
- ifdef KMK_WITH_QUOTING
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstVMMHardened_DEFS     = PROGRAM_NAME_STR="tstVMM"
  else
 tstVMMHardened_DEFS     = PROGRAM_NAME_STR=\"tstVMM\"
@@ -404,7 +404,7 @@ tstVMMFork_LIBS        = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstMicroHardened_TEMPLATE = VBOXR3HARDENEDEXE
 tstMicroHardened_NAME     = tstMicro
- ifdef KMK_WITH_QUOTING
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstMicroHardened_DEFS     = PROGRAM_NAME_STR="tstMicro"
  else
 tstMicroHardened_DEFS     = PROGRAM_NAME_STR=\"tstMicro\"
@@ -471,7 +471,7 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstPDMAsyncCompletionHardened_TEMPLATE = VBOXR3HARDENEDEXE
 tstPDMAsyncCompletionHardened_NAME     = tstPDMAsyncCompletion
-  ifdef KMK_WITH_QUOTING
+  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstPDMAsyncCompletionHardened_DEFS     = PROGRAM_NAME_STR="tstPDMAsyncCompletion"
   else
 tstPDMAsyncCompletionHardened_DEFS     = PROGRAM_NAME_STR=\"tstPDMAsyncCompletion\"
@@ -492,7 +492,7 @@ tstPDMAsyncCompletion_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstPDMAsyncCompletionStressHardened_TEMPLATE = VBOXR3HARDENEDEXE
 tstPDMAsyncCompletionStressHardened_NAME     = tstPDMAsyncCompletionStress
-  ifdef KMK_WITH_QUOTING
+  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 tstPDMAsyncCompletionStressHardened_DEFS     = PROGRAM_NAME_STR="tstPDMAsyncCompletionStress"
   else
 tstPDMAsyncCompletionStressHardened_DEFS     = PROGRAM_NAME_STR=\"tstPDMAsyncCompletionStress\"

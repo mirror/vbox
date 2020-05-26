@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += TestExecService
 TestExecService_TEMPLATE = VBoxValidationKitR3
-ifdef KMK_WITH_QUOTING
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 TestExecService_DEFS = \
 	KBUILD_TARGET="$(KBUILD_TARGET)" \
 	KBUILD_TARGET_ARCH="$(KBUILD_TARGET_ARCH)"

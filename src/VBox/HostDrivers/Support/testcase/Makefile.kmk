@@ -108,7 +108,7 @@ ifdef VBOX_WITH_TESTCASES
 endif
 
 tstGIP-2Hardened_TEMPLATE = VBoxR3HardenedTstExe
-ifdef KMK_WITH_QUOTING
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
  tstGIP-2Hardened_DEFS = PROGRAM_NAME_STR="tstGIP-2"
 else
  tstGIP-2Hardened_DEFS = PROGRAM_NAME_STR=\"tstGIP-2\"

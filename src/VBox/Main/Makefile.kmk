@@ -1244,7 +1244,7 @@ else # !win
 	glue/xpcom/helpers.cpp
 endif # !win
 
-ifdef KMK_WITH_QUOTING
+ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
 glue/VBoxLogRelCreate.cpp_DEFS = KBUILD_TYPE="$(KBUILD_TYPE)"
 else
 glue/VBoxLogRelCreate.cpp_DEFS = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
@@ -1312,7 +1312,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  #
  DLLS += VBoxProxyStub
  VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
- ifdef KMK_WITH_QUOTING
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
   VBoxProxyStub_DEFS   := REGISTER_PROXY_DLL PROXY_CLSID_IS=$(quote $(VBOX_MIDL_PROXY_CLSID_IS))
  else
   VBoxProxyStub_DEFS   := REGISTER_PROXY_DLL PROXY_CLSID_IS="$(VBOX_MIDL_PROXY_CLSID_IS)"
