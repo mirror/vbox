@@ -767,6 +767,22 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             }
                             break;
 
+                        case VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI:
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2u: VirtioSCSI controller, type %ls -- disabled\n",
+                                         a,
+                                         aVBoxValues[a]);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2u: VirtioSCSI controller, type %ls"
+                                        "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
+                                        a,
+                                        aVBoxValues[a],
+                                        i, a);
+                            break;
+
                         case VirtualSystemDescriptionType_HardDiskImage:
                             if (fIgnoreThis)
                             {
