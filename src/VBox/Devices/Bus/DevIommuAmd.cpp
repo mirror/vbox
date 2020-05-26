@@ -668,6 +668,9 @@ typedef DTE_T const *PCDTE_T;
 #define IOMMU_DTE_QWORD_2_VALID_MASK            UINT64_C(0xf70fffffffffffff)
 #define IOMMU_DTE_QWORD_3_VALID_MASK            UINT64_C(0xffc0000000000000)
 
+/* Mask of the interrupt table root pointer. */
+#define IOMMU_DTE_IRTE_ROOT_PTR_MASK            UINT64_C(0x000fffffffffff80)
+
 /**
  * I/O Page Translation Entry.
  * In accordance with the AMD spec.
@@ -774,6 +777,8 @@ typedef union
     uint32_t        u32;
 } IRTE_T;
 AssertCompileSize(IRTE_T, 4);
+/** The number of bits to shift the IRTE offset to get the IRTE. */
+#define IOMMU_IRTE_SIZE_SHIFT   (2)
 /** Pointer to an IRTE_T struct. */
 typedef IRTE_T *PIRTE_T;
 /** Pointer to a const IRTE_T struct. */
@@ -1809,7 +1814,11 @@ typedef union
     uint32_t    u32;
 } MSI_DATA_T;
 AssertCompileSize(MSI_DATA_T, 4);
-#define IOMMU_MSI_DATA_VALID_MASK       UINT64_C(0x000000000000ffff)
+#define IOMMU_MSI_DATA_VALID_MASK           UINT64_C(0x000000000000ffff)
+/** The IRTE offset corresponds directly to bits 10:0 of the originating MSI
+ *  interrupt message. See AMD IOMMU spec. 2.2.5 "Interrupt Remapping Tables". */
+#define IOMMU_MSI_DATA_IRTE_OFFSET_MASK     UINT32_C(0x000007ff)
+
 /** Pointer to an MSI data register. */
 typedef MSI_DATA_T *PMSI_DATA_T;
 /** Pointer to a const MSI data register. */
@@ -2187,7 +2196,7 @@ typedef PPR_LOG_OVERFLOW_EARLY_T        PPR_LOG_B_OVERFLOW_EARLY_T;
 typedef enum EVT_ILLEGAL_DTE_TYPE_T
 {
     kIllegalDteType_RsvdNotZero = 0,
-    kIllegalDteType_RsvdIntTab,
+    kIllegalDteType_RsvdIntTabLen,
     kIllegalDteType_RsvdIoCtl,
     kIllegalDteType_RsvdIntCtl
 } EVT_ILLEGAL_DTE_TYPE_T;
@@ -4134,6 +4143,7 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
         return VERR_IOMMU_IPE_1;
     }
 
+
     return rc;
 }
 
@@ -4171,6 +4181,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
          *        places in the spec. it seems early page walk terminations (starting with
          *        the DTE) return the state computed so far and raises an I/O page fault. So
          *        returning an invalid translation rather than skipping translation. */
+        Log((IOMMU_LOG_PFX ": Translation valid bit not set -> IOPF"));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4205,6 +4216,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
          *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
          *        I'm just going with I/O page fault. */
+        Log((IOMMU_LOG_PFX ": Invalid root page table level %#x -> IOPF", uMaxLevel));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4219,6 +4231,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
     { /* likely */ }
     else
     {
+        Log((IOMMU_LOG_PFX ": Permission denied (fAccess=%#x fPtePerm=%#x) -> IOPF", fAccess, fPtePerm));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4276,6 +4289,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
+            Log((IOMMU_LOG_PFX ": Page table entry not present -> IOPF", fAccess, fPtePerm));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4289,6 +4303,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
+            Log((IOMMU_LOG_PFX ": Page table entry permission denied (fAccess=%#x fPtePerm=%#x) -> IOPF", fAccess, fPtePerm));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4325,6 +4340,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
                 return VINF_SUCCESS;
             }
 
+            Log((IOMMU_LOG_PFX ": Page size invalid cShift=%#x -> IOPF", cShift));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4339,6 +4355,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
+            Log((IOMMU_LOG_PFX ": Next level of PDE invalid uNextLevel=%#x -> IOPF", uNextLevel));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4355,6 +4372,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
+            Log((IOMMU_LOG_PFX ": Next level (%#x) must be less than the current level (%#x) -> IOPF", uNextLevel, uLevel));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4372,6 +4390,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
+            Log((IOMMU_LOG_PFX ": IOVA of skipped levels are not zero %#RX64 (SkipMask=%#RX64) -> IOPF", uIova, uIovaSkipMask));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4577,24 +4596,58 @@ static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t 
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
+ * @param   uDevId      The device ID.
  * @param   pDte        The device table entry.
+ * @param   GCPhysIn    The source MSI address.
+ * @param   uDataIn     The source MSI data.
  * @param   enmOp       The IOMMU operation being performed.
  * @param   pIrte       Where to store the interrupt remapping table entry.
  *
  * @thread  Any.
  */
-static int iommuAmdReadIrte(PPDMDEVINS pDevIns, PCDTE_T pDte, IOMMUOP enmOp, IRTE_T pIrte)
+static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+                            IOMMUOP enmOp, PIRTE_T pIrte)
 {
-    RT_NOREF(pDevIns, pDte, enmOp, pIrte);
-    return VERR_NOT_IMPLEMENTED;
+    RTGCPHYS const GCPhysIntrTable = pDte->au64[2] & IOMMU_DTE_IRTE_ROOT_PTR_MASK;
+    uint16_t const offIrte         = (uDataIn & IOMMU_MSI_DATA_IRTE_OFFSET_MASK) << IOMMU_IRTE_SIZE_SHIFT;
+    RTGCPHYS const GCPhysIrte      = GCPhysIntrTable + offIrte;
+
+    /* Ensure the IRTE offset is within the specified table size. */
+    Assert(pDte->n.u4IntrTableLength < 12);
+    if (offIrte < (1 << pDte->n.u4IntrTableLength) << IOMMU_IRTE_SIZE_SHIFT)
+    { /* likely */ }
+    else
+    {
+        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, false /* fPresent */, false /* fRsvdNotZero */,
+                                     false /* fPermDenied */, enmOp, &EvtIoPageFault);
+        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, NULL /* pIrte */, enmOp, &EvtIoPageFault,
+                                      kIoPageFaultType_IrteAddrInvalid);
+        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
+    }
+
+    /* Read the IRTE from memory. */
+    Assert(!(GCPhysIrte & 3));
+    int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysIrte, pIrte, sizeof(*pIrte));
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+
+    /** @todo r=ramshankar: The IOMMU spec. does not tell what kind of error is
+     *        reported in this situation. Is it an I/O page fault or a device table
+     *        hardware error? There's no interrupt table hardware error event, but
+     *        it's unclear what we should do here. */
+    Log((IOMMU_LOG_PFX ": Failed to read interrupt table entry at %#RGp. rc=%Rrc -> ???\n", GCPhysIrte, rc));
+    return VERR_IOMMU_IPE_4;
 }
 
 
 /**
- * Remap the interrupt from the appropriate IRTE.
+ * Remap the interrupt using the interrupt remapping table.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU instance data.
+ * @param   uDevId      The device ID.
+ * @param   pDte        The device table entry.
  * @param   GCPhysIn    The source MSI address.
  * @param   uDataIn     The source MSI data.
  * @param   enmOp       The IOMMU operation being performed.
@@ -4603,11 +4656,21 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, PCDTE_T pDte, IOMMUOP enmOp, IRT
  *
  * @thread  Any.
  */
-static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, RTGCPHYS GCPhysIn, uint32_t uDataIn, IOMMUOP enmOp,
-                             PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
+static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
+                             IOMMUOP enmOp, PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
 {
-    RT_NOREF(pDevIns, GCPhysIn, uDataIn, enmOp, pGCPhysOut, puDataOut);
-    return VERR_NOT_IMPLEMENTED;
+    Assert(pDte->n.u2IntrCtrl == IOMMU_INTR_CTRL_REMAP);
+
+    IRTE_T Irte;
+    int rc = iommuAmdReadIrte(pDevIns, uDevId, pDte, GCPhysIn, uDataIn, enmOp, &Irte);
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo Remap. */
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    RT_NOREF(pGCPhysOut, puDataOut);
+    return rc;
 }
 
 
@@ -4700,6 +4763,19 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
 
                         if (uIntrCtrl == IOMMU_INTR_CTRL_REMAP)
                         {
+                            /* Validate the encoded interrupt table length when IntCtl specifies remapping. */
+                            uint32_t const uIntTabLen = Dte.n.u4IntrTableLength;
+                            if (Dte.n.u4IntrTableLength < 12)
+                            { /* likely */ }
+                            else
+                            {
+                                Log((IOMMU_LOG_PFX ": Invalid interrupt table length %#x -> Illegal DTE\n", uIntTabLen));
+                                EVT_ILLEGAL_DTE_T Event;
+                                iommuAmdInitIllegalDteEvent(uDevId, GCPhysIn, false /* fRsvdNotZero */, enmOp, &Event);
+                                iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntTabLen);
+                                return VERR_IOMMU_INTR_REMAP_FAILED;
+                            }
+
                             /*
                              * We don't support guest interrupt remapping yet. When we do, we'll need to
                              * check Ctrl.u1GstVirtApicEn and use the guest Virtual APIC Table Root Pointer
@@ -4711,7 +4787,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
                             Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
                             NOREF(pThis);
 
-                            return iommuAmdRemapIntr(pDevIns, GCPhysIn, uDataIn, enmOp, pGCPhysOut, puDataOut);
+                            return iommuAmdRemapIntr(pDevIns, uDevId, &Dte, GCPhysIn, uDataIn, enmOp, pGCPhysOut, puDataOut);
                         }
 
                         /* Paranoia. */
