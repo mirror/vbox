@@ -364,6 +364,13 @@ void UIVirtualBoxManager::sltHandleStateChange(const QUuid &)
     updateActionsAppearance();
 }
 
+void UIVirtualBoxManager::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)
+{
+    /* Update if there is update-handler: */
+    if (m_menuUpdateHandlers.contains(iIndex))
+        (this->*(m_menuUpdateHandlers.value(iIndex)))(pMenu);
+}
+
 void UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow()
 {
     /* First check if instance of widget opened the embedded way: */
@@ -1376,24 +1383,6 @@ void UIVirtualBoxManager::sltPerformMachineSearchWidgetVisibilityToggling(bool f
     m_pWidget->setMachineSearchWidgetVisibility(fVisible);
 }
 
-void UIVirtualBoxManager::sltGroupCloseMenuAboutToShow()
-{
-    /* Get selected items: */
-    QList<UIVirtualMachineItem*> items = currentItems();
-    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-
-    actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_Shutdown, items));
-}
-
-void UIVirtualBoxManager::sltMachineCloseMenuAboutToShow()
-{
-    /* Get selected items: */
-    QList<UIVirtualMachineItem*> items = currentItems();
-    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-
-    actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
-}
-
 void UIVirtualBoxManager::prepare()
 {
 #ifdef VBOX_WS_X11
@@ -1477,6 +1466,10 @@ void UIVirtualBoxManager::prepareMenuBar()
     /* Create action-pool: */
     m_pActionPool = UIActionPool::create(UIActionPoolType_Manager);
 
+    /* Prepare menu update-handlers: */
+    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close] = &UIVirtualBoxManager::updateMenuGroupClose;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close] = &UIVirtualBoxManager::updateMenuMachineClose;
+
     /* Build menu-bar: */
     foreach (QMenu *pMenu, actionPool()->menus())
     {
@@ -1548,6 +1541,9 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltHandleStateChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
             this, &UIVirtualBoxManager::sltHandleStateChange);
+
+    /* General action-pool connections: */
+    connect(actionPool(), &UIActionPool::sigNotifyAboutMenuPrepare, this, &UIVirtualBoxManager::sltHandleMenuPrepare);
 
     /* 'File' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager), &UIAction::triggered,
@@ -1662,8 +1658,6 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformStartMachineDetachable);
 
     /* 'Group/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu(), &UIMenu::aboutToShow,
-            this, &UIVirtualBoxManager::sltGroupCloseMenuAboutToShow);
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState), &UIAction::triggered,
@@ -1674,8 +1668,6 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 
     /* 'Machine/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu(), &UIMenu::aboutToShow,
-            this, &UIVirtualBoxManager::sltMachineCloseMenuAboutToShow);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState), &UIAction::triggered,
@@ -1904,6 +1896,24 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
             }
         }
     }
+}
+
+void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
+{
+    /* Get selected items: */
+    QList<UIVirtualMachineItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_Shutdown, items));
+}
+
+void UIVirtualBoxManager::updateMenuMachineClose(QMenu *)
+{
+    /* Get selected items: */
+    QList<UIVirtualMachineItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
 }
 
 void UIVirtualBoxManager::updateActionsVisibility()

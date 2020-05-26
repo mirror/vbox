@@ -48,6 +48,9 @@ class UIVirtualBoxManager : public QMainWindowWithRestorableGeometryAndRetransla
 {
     Q_OBJECT;
 
+    /** Pointer to menu update-handler for this class: */
+    typedef void (UIVirtualBoxManager::*MenuUpdateHandler)(QMenu *pMenu);
+
 signals:
 
     /** Notifies listeners about this window remapped to another screen. */
@@ -141,6 +144,12 @@ private slots:
       * @{ */
         /** Handles CVirtualBox event about state change for machine with @a uID. */
         void sltHandleStateChange(const QUuid &uID);
+    /** @} */
+
+    /** @name Action-pool stuff.
+      * @{ */
+        /** Handle menu prepare. */
+        void sltHandleMenuPrepare(int iIndex, QMenu *pMenu);
     /** @} */
 
     /** @name File menu stuff.
@@ -265,11 +274,6 @@ private slots:
 
         /** Handles call to toggle machine search widget visibility to be @a fVisible. */
         void sltPerformMachineSearchWidgetVisibilityToggling(bool fVisible);
-
-        /** Handles call to show group Close menu. */
-        void sltGroupCloseMenuAboutToShow();
-        /** Handles call to show machine Close menu. */
-        void sltMachineCloseMenuAboutToShow();
     /** @} */
 
 private:
@@ -338,6 +342,11 @@ private:
 
     /** @name Action update stuff.
       * @{ */
+        /** Updates 'Group' : 'Close' menu. */
+        void updateMenuGroupClose(QMenu *pMenu);
+        /** Updates 'Machine' : 'Close' menu. */
+        void updateMenuMachineClose(QMenu *pMenu);
+
         /** Performs update of actions visibility. */
         void updateActionsVisibility();
         /** Performs update of actions appearance. */
@@ -385,6 +394,8 @@ private:
 
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
+    /** Holds the map of menu update-handlers. */
+    QMap<int, MenuUpdateHandler> m_menuUpdateHandlers;
 
     /** Holds the Virtual Media Manager window instance. */
     QIManagerDialog *m_pManagerVirtualMedia;
