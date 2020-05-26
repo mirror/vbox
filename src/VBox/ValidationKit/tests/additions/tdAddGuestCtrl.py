@@ -1934,10 +1934,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 cFiles  += aSubResult[2];
                 cOthers += aSubResult[3];
             elif eType is vboxcon.FsObjType_File:
-                reporter.log2('  File "%s"' % oFsObjInfo.name);
+                reporter.log4('  File "%s"' % oFsObjInfo.name);
                 cFiles += 1;
             elif eType is vboxcon.FsObjType_Symlink:
-                reporter.log2('  Symlink "%s" -- not tested yet' % oFsObjInfo.name);
+                reporter.log4('  Symlink "%s" -- not tested yet' % oFsObjInfo.name);
                 cOthers += 1;
             elif    oTestVm.isWindows() \
                  or oTestVm.isOS2() \
@@ -2097,7 +2097,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             fRc = reporter.error('Test #%d (%s) failed: Got %s, expected %s' % (i, oTest.asArgs, fRcExec, oRes.fRc));
         return fRc;
 
-    def gctrlExecute(self, oTest, oGuestSession, fIsError):
+    def gctrlExecute(self, oTest, oGuestSession, fIsError):                     # pylint: disable=too-many-statements
         """
         Helper function to execute a program on a guest, specified in the current test.
 
@@ -2124,8 +2124,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Start the process:
         #
-        reporter.log2('Executing sCmd=%s, afFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
-                      % (oTest.sCmd, oTest.afFlags, oTest.timeoutMS, oTest.asArgs, oTest.aEnv,));
+        reporter.log2('Executing sCmd=%s, afFlags=%s, timeoutMS=%d, asEnv=%s'
+                      % (oTest.sCmd, oTest.afFlags, oTest.timeoutMS, oTest.aEnv,));
+
+        # Don't be too noisy by default when testing reeeeeeally long arguments.
+        if len(oTest.asArgs) <= 64:
+            reporter.log2('asArgs=%s' % (oTest.asArgs,));
+        else:
+            reporter.log4('asArgs=%s' % (oTest.asArgs,));
+
         try:
             oProcess = oGuestSession.processCreate(oTest.sCmd,
                                                    oTest.asArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.asArgs[1:],
@@ -2204,15 +2211,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                     if abBuf:
                                         reporter.log2('Process (PID %d) got %d bytes of %s data (type: %s)'
                                                       % (iPid, len(abBuf), sFdNm, type(abBuf)));
-                                        sBuf = '';
-                                        if sys.version_info >= (2, 7):
-                                            if isinstance(abBuf, memoryview): ## @todo Why is this happening?
-                                                abBuf = abBuf.tobytes();
-                                                sBuf  = abBuf.decode("utf-8");
-                                        if isinstance(abBuf, buffer):
-                                            sBuf = str(abBuf);
-                                        for sLine in sBuf.splitlines():
-                                            reporter.log('%s: %s' % (sFdNm, sLine));
+                                        if reporter.getVerbosity() >= 4:
+                                            sBuf = '';
+                                            if sys.version_info >= (2, 7):
+                                                if isinstance(abBuf, memoryview): ## @todo Why is this happening?
+                                                    abBuf = abBuf.tobytes();
+                                                    sBuf  = abBuf.decode("utf-8");
+                                            if isinstance(abBuf, buffer):
+                                                sBuf = str(abBuf);
+                                            for sLine in sBuf.splitlines():
+                                                reporter.log4('%s: %s' % (sFdNm, sLine));
                                         acbFdOut[iFd] += len(abBuf);
                                         oTest.sBuf     = abBuf; ## @todo Figure out how to uniform + append!
 
