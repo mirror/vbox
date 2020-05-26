@@ -1453,8 +1453,9 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             if (SUCCEEDED(hrc))
             {
                 /* what to do? create a new name from the old one with some suffix? */
-                uint64_t suff = RTRandU64();
-                strVMName.append("__").appendPrintfNoThrow("%ul", suff);
+                uint64_t uRndSuff = RTRandU64();
+                vrc = strVMName.appendPrintfNoThrow("__%RU64", uRndSuff);
+                AssertRCBreakStmt(vrc, hrc = E_OUTOFMEMORY);
 
                 vsd->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
                 vsd->AddDescription(VirtualSystemDescriptionType_Name,
@@ -1545,12 +1546,13 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     }
 
 
-    HRESULT original_hrc = hrc;//save the original result
-
     /* In any case we delete the cloud leavings which may exist after the first phase (cloud phase).
      * Should they be deleted in the OCICloudClient::importInstance()?
      * Because deleting them here is not easy as it in the importInstance(). */
     {
+        ErrorInfoKeeper eik;    /* save the error info */
+        HRESULT const hrcSaved = hrc;
+
         GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
         if (aVBoxValues.size() == 0)
             hrc = setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud cleanup action - the instance wasn't found"), __FUNCTION__);
@@ -1579,11 +1581,19 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         /* Because during the cleanup phase the hrc may have the good result
          * Thus we restore the original error in the case when the cleanup phase was successful
          * Otherwise we return not the original error but the last error in the cleanup phase */
-         hrc = original_hrc;
+        /** @todo r=bird: do this conditionally perhaps?
+         * if (FAILED(hrcSaved))
+         *     hrc = hrcSaved;
+         * else
+         *     eik.forget();
+         */
+        hrc = hrcSaved;
     }
 
     if (FAILED(hrc))
     {
+        /** @todo r=bird: Using heap to keep a readonly C-string is a real wonderful
+         *        way to doing things. */
         Utf8Str generalRollBackErrorMessage("Rollback action for Import Cloud operation failed. "
                                             "Some leavings may exist on the local disk or in the Cloud.");
         /*
@@ -1596,9 +1606,12 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
          * 1. The downloaded object, so just check the presence and delete it if one exists
          */
 
-        {
+        { /** @todo r=bird: Pointless {}. */
             if (!fKeepDownloadedObject)
             {
+                ErrorInfoKeeper eik;    /* save the error info */
+                HRESULT const hrcSaved = hrc;
+
                 /* small explanation here, the image here points out to the whole downloaded object (not to the image only)
                  * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
                 GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
@@ -1621,13 +1634,13 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             LogRel(("%s: Rollback action - the object %s has been deleted\n", __FUNCTION__, vsdData.c_str()));
                     }
                 }
+
+                /* Because during the rollback phase the hrc may have the good result
+                 * Thus we restore the original error in the case when the rollback phase was successful
+                 * Otherwise we return not the original error but the last error in the rollback phase */
+                hrc = hrcSaved;
             }
         }
-
-        /* Because during the rollback phase the hrc may have the good result
-         * Thus we restore the original error in the case when the rollback phase was successful
-         * Otherwise we return not the original error but the last error in the rollback phase */
-         hrc = original_hrc;
     }
     else
     {
