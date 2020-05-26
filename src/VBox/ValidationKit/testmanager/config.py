@@ -147,6 +147,49 @@ g_kcMaxUploads          = 256;
 ## @}
 
 
+## @name Bug Trackers and VCS reference tags.
+## @{
+class BugTrackerConfig(object):
+    """ Bug tracker config """
+    def __init__(self, sDbId, sName, sBugUrl, asCommitTags):
+        assert len(sDbId) == 4;
+        self.sDbId        = sDbId;
+        self.sName        = sName;
+        self.sBugUrl      = sBugUrl;
+        self.asCommitTags = asCommitTags;
+
+## The key is the database table
+g_kaBugTrackers = {
+    'xtrk': BugTrackerConfig('xtrk', 'xTracker',        'https://linserv.de.oracle.com/vbox/xTracker/index.php?bug=',
+                             ['bugref:',    '@bugref{',    'bugef:', 'bugrf:', ], ),
+    'bgdb': BugTrackerConfig('bgdb', 'BugDB',           'https://bug.oraclecorp.com/pls/bug/webbug_edit.edit_info_top?rptno=',
+                             ['bugdbref:',  '@bugdbref{',  'bugdb:', ], ),
+    'vorg': BugTrackerConfig('vorg', 'External Trac',   'https://www.virtualbox.org/ticket/',
+                             ['ticketref:', '@ticketref{', 'ticket:', ], ),
+};
+## @}
+
+
+
+## @name Virtual Sheriff email alerts
+## @{
+
+## SMTP server host name.
+g_ksSmtpHost            = 'internal-mail-router.oracle.com';
+## SMTP server port number.
+g_kcSmtpPort            = 25;
+## Default email 'From' for email alert.
+g_ksAlertFrom           = 'vsheriff@oracle.com';
+## Subject for email alert.
+g_ksAlertSubject        = 'Virtual Test Sheriff Alert';
+## List of users to send alerts.
+g_asAlertList           = ['lelik', 'werner'];
+## iLOM password.
+g_ksLomPassword         = 'password';
+
+## @}
+
+
 ## @name Partial Database Dump
 ## @{
 
@@ -206,20 +249,3 @@ g_kfProfileIndex        = False;
 g_ksTestBoxDispXpctLog  = '/tmp/testmanager-testboxdisp-xcpt.log'
 ## @}
 
-## @name Virtual Sheriff email alerts
-## @{
-
-## SMTP server host name.
-g_ksSmtpHost            = 'internal-mail-router.oracle.com';
-## SMTP server port number.
-g_kcSmtpPort            = 25;
-## Default email 'From' for email alert.
-g_ksAlertFrom           = 'vsheriff@oracle.com';
-## Subject for email alert.
-g_ksAlertSubject        = 'Virtual Test Sheriff Alert';
-## List of users to send alerts.
-g_asAlertList           = ['lelik', 'werner'];
-## iLOM password.
-g_ksLomPassword         = 'password';
-
-## @}
