@@ -25,7 +25,7 @@ VBOX_WITH_DISTRO_XRAND_XINERAMA=
 # VBoxClient - clipboard and seamless.
 #
 PROGRAMS += VBoxClient
-PROGRAMS += VBoxWaylandClient
+PROGRAMS += VBoxDRMClient
 
 VBoxClient_TEMPLATE = NewVBoxGuestR3Exe
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
@@ -47,10 +47,10 @@ VBoxClient_SOURCES = \
 	logging.cpp \
 	hostversion.cpp
 
-VBoxWaylandClient_TEMPLATE = NewVBoxGuestR3Exe
-VBoxWaylandClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
-VBoxWaylandClient_SOURCES = \
-    display-wayland.cpp \
+VBoxDRMClient_TEMPLATE = NewVBoxGuestR3Exe
+VBoxDRMClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+VBoxDRMClient_SOURCES = \
+    display-drm.cpp \
     logging.cpp
 
 
