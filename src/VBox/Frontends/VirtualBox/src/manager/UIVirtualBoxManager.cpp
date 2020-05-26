@@ -1505,19 +1505,10 @@ void UIVirtualBoxManager::prepareStatusBar()
 
 void UIVirtualBoxManager::prepareWidgets()
 {
-    /* Create central-widget: */
+    /* Prepare central-widget: */
     m_pWidget = new UIVirtualBoxManagerWidget(this);
     if (m_pWidget)
-    {
-        /* Configure central-widget: */
-        connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCloudProfileManagerChange,
-                this, &UIVirtualBoxManager::sigCloudProfileManagerChange);
-        connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,
-                this, &UIVirtualBoxManager::sltCurrentSnapshotItemChange);
-        connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCloudMachineStateChange,
-                this, &UIVirtualBoxManager::sltHandleCloudMachineStateChange);
         setCentralWidget(m_pWidget);
-    }
 }
 
 void UIVirtualBoxManager::prepareConnections()
@@ -1537,12 +1528,18 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltHandleChooserPaneIndexChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigGroupSavingStateChanged,
             this, &UIVirtualBoxManager::sltHandleGroupSavingProgressChange);
-    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked,
-            this, &UIVirtualBoxManager::sltOpenMachineSettingsDialog);
-    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
-            this, &UIVirtualBoxManager::sltHandleToolTypeChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigStartOrShowRequest,
             this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCloudMachineStateChange,
+            this, &UIVirtualBoxManager::sltHandleCloudMachineStateChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
+            this, &UIVirtualBoxManager::sltHandleToolTypeChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCloudProfileManagerChange,
+            this, &UIVirtualBoxManager::sigCloudProfileManagerChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSettingsLinkClicked,
+            this, &UIVirtualBoxManager::sltOpenMachineSettingsDialog);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,
+            this, &UIVirtualBoxManager::sltCurrentSnapshotItemChange);
     connect(menuBar(), &QMenuBar::customContextMenuRequested,
             m_pWidget, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
 
