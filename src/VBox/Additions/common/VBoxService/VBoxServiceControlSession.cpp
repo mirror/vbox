@@ -1022,7 +1022,8 @@ static int vgsvcGstCtrlSessionHandleShutdown(PVBOXSERVICECTRLSESSION pSession, P
                                   fAction | RTSYSTEM_SHUTDOWN_PLANNED,
                                   "VBoxService");
             if (RT_FAILURE(rc))
-                VGSvcError("%s system failed with %Rrc\n", (fAction & RTSYSTEM_SHUTDOWN_REBOOT) ? "Rebooting" : "Shuting down");
+                VGSvcError("%s system failed with %Rrc\n",
+                           (fAction & RTSYSTEM_SHUTDOWN_REBOOT) ? "Rebooting" : "Shuting down", rc);
         }
     }
     else
