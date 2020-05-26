@@ -590,8 +590,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         fRc = True;
 
         try:
-            eStatus, _ = oGuest.getFacilityStatus(eFacilityType);
-            reporter.log3('%s -> %s' % (sDesc, eStatus,));
+            eStatus, tsLastUpdatedMs = oGuest.getFacilityStatus(eFacilityType);
         except:
             if fMustSucceed:
                 reporter.errorXcpt('Getting facility status for "%s" failed' % (sDesc,));
@@ -616,11 +615,14 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             elif eStatus == vboxcon.AdditionsFacilityStatus_Failed:
                 sStatus = "FAILED";
                 fRc = not fMustSucceed;
-            else:
+            elif eStatus == vboxcon.AdditionsFacilityStatus_Unknown:
                 sStatus = "UNKNOWN";
                 fRc = not fMustSucceed;
+            else:
+                sStatus = "???";
+                fRc = not fMustSucceed;
 
-        reporter.log('Guest Additions facility "%s": %s' % (sDesc, sStatus));
+        reporter.log('Guest Additions facility "%s": %s (last updated: %sms)' % (sDesc, sStatus, str(tsLastUpdatedMs)));
         if      fMustSucceed \
         and not fRc:
             reporter.error('Guest Additions facility "%s" did not report expected status (is "%s")' % (sDesc, sStatus));
