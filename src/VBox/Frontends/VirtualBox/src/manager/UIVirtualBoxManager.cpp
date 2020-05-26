@@ -793,6 +793,14 @@ void UIVirtualBoxManager::sltPerformMachineMoveToNewGroup()
     m_pWidget->moveMachineToGroup();
 }
 
+void UIVirtualBoxManager::sltPerformMachineMoveToSpecificGroup()
+{
+    AssertPtrReturnVoid(sender());
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertPtrReturnVoid(pAction);
+    m_pWidget->moveMachineToGroup(pAction->text());
+}
+
 void UIVirtualBoxManager::sltPerformStartOrShowMachine()
 {
     /* Start selected VMs in corresponding mode: */
@@ -1468,6 +1476,7 @@ void UIVirtualBoxManager::prepareMenuBar()
 
     /* Prepare menu update-handlers: */
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close] = &UIVirtualBoxManager::updateMenuGroupClose;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuMachineMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close] = &UIVirtualBoxManager::updateMenuMachineClose;
 
     /* Build menu-bar: */
@@ -1907,6 +1916,19 @@ void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
     actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_Shutdown, items));
 }
 
+void UIVirtualBoxManager::updateMenuMachineMoveToGroup(QMenu *pMenu)
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+
+    const QStringList groups = m_pWidget->possibleGroupsForMachineToMove(pItem->id());
+    if (!groups.isEmpty())
+        pMenu->addSeparator();
+    foreach (const QString &strGroupName, groups)
+        pMenu->addAction(strGroupName, this, &UIVirtualBoxManager::sltPerformMachineMoveToSpecificGroup);
+}
+
 void UIVirtualBoxManager::updateMenuMachineClose(QMenu *)
 {
     /* Get selected items: */
@@ -2217,7 +2239,6 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Machine_M_MoveToGroup_S_New:
         {
             return !isGroupSavingInProgress() &&
-                   !isAllItemsOfOneGroupSelected() &&
                    isItemsLocal(items) &&
                    isItemsPoweredOff(items);
         }

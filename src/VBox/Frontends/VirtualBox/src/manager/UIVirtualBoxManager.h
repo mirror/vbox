@@ -224,6 +224,8 @@ private slots:
 
         /** Handles call to move machine to a new group. */
         void sltPerformMachineMoveToNewGroup();
+        /** Handles call to move machine to a specific group. */
+        void sltPerformMachineMoveToSpecificGroup();
 
         /** Handles call to start or show machine. */
         void sltPerformStartOrShowMachine();
@@ -344,6 +346,8 @@ private:
       * @{ */
         /** Updates 'Group' : 'Close' menu. */
         void updateMenuGroupClose(QMenu *pMenu);
+        /** Updates 'Machine' : 'Move to Group' menu. */
+        void updateMenuMachineMoveToGroup(QMenu *pMenu);
         /** Updates 'Machine' : 'Close' menu. */
         void updateMenuMachineClose(QMenu *pMenu);
 

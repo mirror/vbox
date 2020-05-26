@@ -652,7 +652,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorMachineMoveToGroupNew(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png")
+        : UIActionSimple(pParent)
     {}
 
 protected:
@@ -666,7 +666,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&New"));
+        setName(QApplication::translate("UIActionPool", "[New]"));
         setStatusTip(QApplication::translate("UIActionPool", "Add new group based on selected virtual machines"));
     }
 };
@@ -3368,8 +3368,7 @@ void UIActionPoolManager::updateMenuMachineMoveToGroup()
     /* Populate 'Machine' / 'Move to Group' menu: */
     pMenu->addAction(action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New));
 
-    /* Mark menu as valid (for now): */
-    m_invalidations.remove(UIActionIndexST_M_Machine_M_MoveToGroup);
+    /* This menu always remains invalid.. */
 }
 
 void UIActionPoolManager::updateMenuGroupStartOrShow()

@@ -135,6 +135,11 @@ void UIVirtualBoxManagerWidget::moveMachineToGroup(const QString &strName /* = Q
     m_pPaneChooser->moveMachineToGroup(strName);
 }
 
+QStringList UIVirtualBoxManagerWidget::possibleGroupsForMachineToMove(const QUuid &uId)
+{
+    return m_pPaneChooser->possibleGroupsForMachineToMove(uId);
+}
+
 void UIVirtualBoxManagerWidget::refreshMachine()
 {
     m_pPaneChooser->refreshMachine();
