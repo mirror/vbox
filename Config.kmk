@@ -1677,13 +1677,6 @@ ifndef VBOX_NEWER_VCC_TOOL
 endif
 
 #
-# Temporary measure while kBuild / tools updates their define quoting.
-#
-if1of ($(VBOX_VCC_TOOL_STEM), VCC140 VCC141 VCC142)
- VBOX_WITH_AUTOMATIC_DEFS_QUOTING = 1
-endif
-
-#
 # Default tool nonsense.
 #
 ## @todo Remove the default tool crap here!
@@ -1760,35 +1753,35 @@ endif
 # Quoted strings should not be passed to the assemblers since they might not
 # subscribe to C preprocessing semantics.
 ifdef VBOX_PATH_APP_PRIVATE
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ ifdef KMK_WITH_QUOTING
   CDEFS += RTPATH_APP_PRIVATE="$(VBOX_PATH_APP_PRIVATE)"
  else
   CDEFS += RTPATH_APP_PRIVATE=\"$(VBOX_PATH_APP_PRIVATE)\"
  endif
 endif
 ifdef VBOX_PATH_APP_PRIVATE_ARCH
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ ifdef KMK_WITH_QUOTING
   CDEFS += RTPATH_APP_PRIVATE_ARCH="$(VBOX_PATH_APP_PRIVATE_ARCH)"
  else
   CDEFS += RTPATH_APP_PRIVATE_ARCH=\"$(VBOX_PATH_APP_PRIVATE_ARCH)\"
  endif
 endif
 ifdef VBOX_PATH_APP_PRIVATE_ARCH_TOP
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ ifdef KMK_WITH_QUOTING
   CDEFS += RTPATH_APP_PRIVATE_ARCH_TOP="$(VBOX_PATH_APP_PRIVATE_ARCH_TOP)"
  else
   CDEFS += RTPATH_APP_PRIVATE_ARCH_TOP=\"$(VBOX_PATH_APP_PRIVATE_ARCH_TOP)\"
  endif
 endif
 ifdef VBOX_PATH_SHARED_LIBS
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ ifdef KMK_WITH_QUOTING
   CDEFS += RTPATH_SHARED_LIBS="$(VBOX_PATH_SHARED_LIBS)"
  else
   CDEFS += RTPATH_SHARED_LIBS=\"$(VBOX_PATH_SHARED_LIBS)\"
  endif
 endif
 ifdef VBOX_PATH_APP_DOCS
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ ifdef KMK_WITH_QUOTING
  CDEFS += RTPATH_APP_DOCS="$(VBOX_PATH_APP_DOCS)"
  else
  CDEFS += RTPATH_APP_DOCS=\"$(VBOX_PATH_APP_DOCS)\"

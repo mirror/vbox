@@ -1304,7 +1304,7 @@ endif
    PROGRAMS += tstIntNetHardened-1
    tstIntNetHardened-1_TEMPLATE = VBoxR3HardenedTstExe
    tstIntNetHardened-1_NAME     = tstIntNet-1
-   ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+   ifdef KMK_WITH_QUOTING
     tstIntNetHardened-1_DEFS    = PROGRAM_NAME_STR="tstIntNet-1"
    else
     tstIntNetHardened-1_DEFS    = PROGRAM_NAME_STR=\"tstIntNet-1\"
@@ -1510,7 +1510,7 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects 
  	IN_vmsvgashader_STATIC \
  	IN_VMSVGA3D \
  	VBOX_WINE_WITH_IPRT
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ ifdef KMK_WITH_QUOTING
  VBoxSVGA3D_DEFS        += \
  	WINE_UNICODE_API= \
  	DLLDIR="" \

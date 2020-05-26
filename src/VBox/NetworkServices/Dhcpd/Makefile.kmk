@@ -49,7 +49,7 @@ endif
 # (current dir is for for lwipopts.h)
 VBoxNetDHCP_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
 
-ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+ifdef KMK_WITH_QUOTING
 VBoxNetDHCP_DEFS      = KBUILD_TYPE="$(KBUILD_TYPE)"
 else
 VBoxNetDHCP_DEFS      = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
