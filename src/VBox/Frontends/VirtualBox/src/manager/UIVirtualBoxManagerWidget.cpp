@@ -130,9 +130,9 @@ void UIVirtualBoxManagerWidget::removeMachine()
     m_pPaneChooser->removeMachine();
 }
 
-void UIVirtualBoxManagerWidget::moveMachineToNewGroup()
+void UIVirtualBoxManagerWidget::moveMachineToGroup(const QString &strName /* = QString() */)
 {
-    m_pPaneChooser->moveMachineToNewGroup();
+    m_pPaneChooser->moveMachineToGroup(strName);
 }
 
 void UIVirtualBoxManagerWidget::refreshMachine()

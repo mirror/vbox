@@ -130,10 +130,10 @@ void UIChooser::removeMachine()
     model()->removeSelectedMachineItems();
 }
 
-void UIChooser::moveMachineToNewGroup()
+void UIChooser::moveMachineToGroup(const QString &strName)
 {
     AssertPtrReturnVoid(model());
-    model()->moveSelectedMachineItemsToNewGroupItem();
+    model()->moveSelectedMachineItemsToGroupItem(strName);
 }
 
 void UIChooser::refreshMachine()

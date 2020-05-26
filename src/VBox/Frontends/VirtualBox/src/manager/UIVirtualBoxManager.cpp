@@ -790,7 +790,7 @@ void UIVirtualBoxManager::sltPerformMachineRemove()
 
 void UIVirtualBoxManager::sltPerformMachineMoveToNewGroup()
 {
-    m_pWidget->moveMachineToNewGroup();
+    m_pWidget->moveMachineToGroup();
 }
 
 void UIVirtualBoxManager::sltPerformStartOrShowMachine()

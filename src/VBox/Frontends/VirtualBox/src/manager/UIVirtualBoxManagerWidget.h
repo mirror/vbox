@@ -145,8 +145,8 @@ public:
         void disbandGroup();
         /** Removes machine. */
         void removeMachine();
-        /** Moves machine to a new group. */
-        void moveMachineToNewGroup();
+        /** Moves machine to a group with certain @a strName. */
+        void moveMachineToGroup(const QString &strName = QString());
         /** Refreshes machine. */
         void refreshMachine();
         /** Sorts group. */

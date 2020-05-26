@@ -221,8 +221,11 @@ public:
         void disbandSelectedGroupItem();
         /** Removes selected machine items. */
         void removeSelectedMachineItems();
-        /** Moves selected machine items to new group item. */
-        void moveSelectedMachineItemsToNewGroupItem();
+        /** Moves selected machine items to group item.
+          * @param  strName  Holds the group item name to move items to, if
+          *                  that name isn't specified, new top-level group
+          *                  item will be created. */
+        void moveSelectedMachineItemsToGroupItem(const QString &strName);
         /** Starts or shows selected items. */
         void startOrShowSelectedItems();
         /** Refreshes selected machine items. */
