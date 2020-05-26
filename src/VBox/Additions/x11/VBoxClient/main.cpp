@@ -47,7 +47,6 @@
 #define VBOXCLIENT_OPT_DRAGANDDROP          VBOXCLIENT_OPT_SERVICES + 2
 #define VBOXCLIENT_OPT_SEAMLESS             VBOXCLIENT_OPT_SERVICES + 3
 #define VBOXCLIENT_OPT_VMSVGA               VBOXCLIENT_OPT_SERVICES + 4
-#define VBOXCLIENT_OPT_VMSVGA_X11           VBOXCLIENT_OPT_SERVICES + 5
 
 
 /*********************************************************************************************************************************
@@ -174,7 +173,7 @@ static void vboxClientUsage(const char *pcszFileName)
              "--checkhostversion|"
 #endif
              "--seamless|"
-             "--vmsvga|--vmsvga-x11"
+             "--vmsvga"
              "[-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Starts the VirtualBox DRM/X Window System guest services.\n\n");
     RTPrintf("Options:\n");
@@ -188,8 +187,7 @@ static void vboxClientUsage(const char *pcszFileName)
     RTPrintf("  --checkhostversion starts the host version notifier service\n");
 #endif
     RTPrintf("  --seamless         starts the seamless windows service\n");
-    RTPrintf("  --vmsvga           starts VMSVGA dynamic resizing for DRM\n");
-    RTPrintf("  --vmsvga-x11       starts VMSVGA dynamic resizing for X11\n");
+    RTPrintf("  --vmsvga           starts VMSVGA dynamic resizing for x11/Wayland guests\n");
     RTPrintf("  -f, --foreground   run in the foreground (no daemonizing)\n");
     RTPrintf("  -d, --nodaemon     continues running as a system service\n");
     RTPrintf("  -h, --help         shows this help text\n");
@@ -251,7 +249,6 @@ int main(int argc, char *argv[])
 #endif
         { "--seamless",                     VBOXCLIENT_OPT_SEAMLESS,                  RTGETOPT_REQ_NOTHING },
         { "--vmsvga",                       VBOXCLIENT_OPT_VMSVGA,                    RTGETOPT_REQ_NOTHING },
-        { "--vmsvga-x11",                   VBOXCLIENT_OPT_VMSVGA_X11,                RTGETOPT_REQ_NOTHING }
     };
 
     int                     ch;
@@ -350,14 +347,6 @@ int main(int argc, char *argv[])
             }
 
             case VBOXCLIENT_OPT_VMSVGA:
-            {
-                if (g_pService)
-                    return vbclSyntaxOnlyOneService();
-                g_pService = VBClDisplaySVGAService();
-                break;
-            }
-
-            case VBOXCLIENT_OPT_VMSVGA_X11:
             {
                 if (g_pService)
                     return vbclSyntaxOnlyOneService();

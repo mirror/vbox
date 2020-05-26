@@ -48,6 +48,7 @@
 
 #include <stdio.h>
 
+
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
  *  context structure. */
@@ -62,6 +63,11 @@
 #endif
 
 #define DRM_DRIVER_NAME "vmwgfx"
+
+/** Counter of how often our daemon has been respawned. */
+unsigned      g_cRespawn = 0;
+/** Logging verbosity level. */
+unsigned      g_cVerbosity = 0;
 
 /** DRM version structure. */
 struct DRMVERSION
@@ -166,20 +172,8 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
         VBClLogFatalError("Failure updating layout, rc=%Rrc\n", rc);
 }
 
-static const char *getName()
+int main()
 {
-    return "Display SVGA";
-}
-
-static const char *getPidFilePath()
-{
-    return ".vboxclient-display-svga.pid";
-}
-
-static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
-{
-    (void)ppInterface;
-    (void)fDaemonised;
     struct DRMCONTEXT drmContext = { NIL_RTFILE };
     static struct VMMDevDisplayDef aMonitors[VMW_MAX_HEADS];
     int rc;
@@ -198,6 +192,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         return VINF_SUCCESS;
     if (RT_FAILURE(rc))
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
+
     for (;;)
     {
         uint32_t events;
@@ -261,18 +256,5 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         if (RT_FAILURE(rc))
             VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
     }
-}
-
-static struct VBCLSERVICE interface =
-{
-    getName,
-    getPidFilePath,
-    VBClServiceDefaultHandler, /* Init */
-    run,
-    VBClServiceDefaultCleanup
-}, *pInterface = &interface;
-
-struct VBCLSERVICE **VBClDisplaySVGAService()
-{
-    return &pInterface;
+    return 0;
 }

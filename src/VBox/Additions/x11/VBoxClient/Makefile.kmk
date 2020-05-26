@@ -25,6 +25,7 @@ VBOX_WITH_DISTRO_XRAND_XINERAMA=
 # VBoxClient - clipboard and seamless.
 #
 PROGRAMS += VBoxClient
+PROGRAMS += VBoxWaylandClient
 
 VBoxClient_TEMPLATE = NewVBoxGuestR3Exe
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
@@ -40,12 +41,18 @@ VBoxClient_INCS += ../x11include/libXrandr-1.5.2
 VBoxClient_INCS += ../x11include/randrproto-1.6.0
 VBoxClient_SOURCES = \
 	main.cpp \
-	display-svga.cpp \
 	display-svga-x11.cpp \
 	seamless.cpp \
 	seamless-x11.cpp \
 	logging.cpp \
 	hostversion.cpp
+
+VBoxWaylandClient_TEMPLATE = NewVBoxGuestR3Exe
+VBoxWaylandClient_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+VBoxWaylandClient_SOURCES = \
+    display-wayland.cpp \
+    logging.cpp
+
 
 VBoxClient_SOURCES.linux = \
 	chk_stubs.c
