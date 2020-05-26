@@ -768,6 +768,7 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
     /* For each of currently selected-items: */
     QStringList busyGroupNames;
     QStringList busyMachineNames;
+    QList<UIChooserItem*> copiedItems;
     foreach (UIChooserItem *pItem, selectedItems())
     {
         /* For each of known types: */
@@ -784,7 +785,7 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
                 UIChooserNodeGroup *pNewGroupSubNode = new UIChooserNodeGroup(pTargetGroupNode,
                                                                               pItem->node()->toGroupNode(),
                                                                               pTargetGroupNode->nodes().size());
-                new UIChooserItemGroup(pTargetGroupItem, pNewGroupSubNode);
+                copiedItems << new UIChooserItemGroup(pTargetGroupItem, pNewGroupSubNode);
                 delete pItem->node();
                 break;
             }
@@ -799,7 +800,7 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
                 UIChooserNodeMachine *pNewMachineSubNode = new UIChooserNodeMachine(pTargetGroupNode,
                                                                                     pItem->node()->toMachineNode(),
                                                                                     pTargetGroupNode->nodes().size());
-                new UIChooserItemMachine(pTargetGroupItem, pNewMachineSubNode);
+                copiedItems << new UIChooserItemMachine(pTargetGroupItem, pNewMachineSubNode);
                 delete pItem->node();
                 break;
             }
@@ -809,7 +810,29 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
     /* Update model: */
     wipeOutEmptyGroups();
     updateTreeForMainRoot();
-    setSelectedItem(pTargetGroupItem);
+
+    /* Check if we can select copied items: */
+    QList<UIChooserItem*> itemsToSelect;
+    foreach (UIChooserItem *pCopiedItem, copiedItems)
+        if (navigationItems().contains(pCopiedItem))
+            itemsToSelect << pCopiedItem;
+    if (!itemsToSelect.isEmpty())
+    {
+        setSelectedItems(itemsToSelect);
+        setCurrentItem(firstSelectedItem());
+    }
+    else
+    {
+        /* Otherwise check if we can select one of our parents: */
+        UIChooserItem *pItemToSelect = pTargetGroupItem;
+        while (   !navigationItems().contains(pItemToSelect)
+               && pItemToSelect->parentItem() != root())
+            pItemToSelect = pItemToSelect->parentItem();
+        if (navigationItems().contains(pItemToSelect))
+            setSelectedItem(pItemToSelect);
+    }
+
+    /* Save groups finally: */
     saveGroups();
 }
 
