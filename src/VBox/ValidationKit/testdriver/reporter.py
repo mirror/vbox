@@ -160,6 +160,14 @@ class ReporterBase(object):
         """Increases the debug level."""
         self.iDebug += 1;
 
+    def getVerbosity(self):
+        """Returns the current verbosity level."""
+        return self.iVerbose;
+
+    def getDebug(self):
+        """Returns the current debug level."""
+        return self.iDebug;
+
     def appendToProcessName(self, sAppend):
         """
         Appends sAppend to the base process name.
@@ -1639,6 +1647,14 @@ def incVerbosity():
 def incDebug():
     """Increases the debug level."""
     return g_oReporter.incDebug()
+
+def getVerbosity():
+    """Returns the current verbosity level."""
+    return g_oReporter.getVerbosity()
+
+def getDebug():
+    """Returns the current debug level."""
+    return g_oReporter.getDebug()
 
 def appendToProcessName(sAppend):
     """
