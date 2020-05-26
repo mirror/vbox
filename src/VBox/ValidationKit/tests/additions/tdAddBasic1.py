@@ -594,7 +594,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             reporter.log3('%s -> %s' % (sDesc, eStatus,));
         except:
             if fMustSucceed:
-                reporter.errorXcpt('Getting facility status for %s failed' % (eFacilityType,));
+                reporter.errorXcpt('Getting facility status for "%s" failed' % (sDesc,));
                 fRc = False;
         else:
             if eStatus == vboxcon.AdditionsFacilityStatus_Inactive:
