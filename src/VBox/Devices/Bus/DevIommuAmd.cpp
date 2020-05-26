@@ -767,9 +767,9 @@ typedef union
         uint32_t    u1SuppressPf : 1;       /**< Bit  1     - SupIOPF: Supress I/O Page Fault. */
         uint32_t    u3IntrType : 1;         /**< Bits 4:2   - IntType: Interrupt Type. */
         uint32_t    u1ReqEoi : 1;           /**< Bit  5     - RqEoi: Request EOI. */
-        uint32_t    u1DstMode : 1;          /**< Bit  6     - DM: Destination Mode. */
+        uint32_t    u1DestMode : 1;         /**< Bit  6     - DM: Destination Mode. */
         uint32_t    u1GuestMode : 1;        /**< Bit  7     - GuestMode. */
-        uint32_t    u8Dst : 8;              /**< Bits 15:8  - Destination. */
+        uint32_t    u8Dest : 8;             /**< Bits 15:8  - Destination. */
         uint32_t    u8Vector : 8;           /**< Bits 23:16 - Vector. */
         uint32_t    u8Rsvd0 : 8;            /**< Bits 31:24 - Reserved. */
     } n;
@@ -4614,7 +4614,7 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
 
     /* Ensure the IRTE offset is within the specified table size. */
     Assert(pDte->n.u4IntrTableLength < 12);
-    if (offIrte < (1 << pDte->n.u4IntrTableLength) << IOMMU_IRTE_SIZE_SHIFT)
+    if (offIrte + sizeof(IRTE_T) <= (1 << pDte->n.u4IntrTableLength) << IOMMU_IRTE_SIZE_SHIFT)
     { /* likely */ }
     else
     {
@@ -4632,10 +4632,10 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
-    /** @todo r=ramshankar: The IOMMU spec. does not tell what kind of error is
-     *        reported in this situation. Is it an I/O page fault or a device table
-     *        hardware error? There's no interrupt table hardware error event, but
-     *        it's unclear what we should do here. */
+    /** @todo The IOMMU spec. does not tell what kind of error is reported in this
+     *        situation. Is it an I/O page fault or a device table hardware error?
+     *        There's no interrupt table hardware error event, but it's unclear what
+     *        we should do here. */
     Log((IOMMU_LOG_PFX ": Failed to read interrupt table entry at %#RGp. rc=%Rrc -> ???\n", GCPhysIrte, rc));
     return VERR_IOMMU_IPE_4;
 }
@@ -4665,7 +4665,37 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
     int rc = iommuAmdReadIrte(pDevIns, uDevId, pDte, GCPhysIn, uDataIn, enmOp, &Irte);
     if (RT_SUCCESS(rc))
     {
-        /** @todo Remap. */
+        if (Irte.n.u1RemapEnable)
+        {
+            if (   !Irte.n.u1GuestMode
+                && Irte.n.u3IntrType < VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
+            {
+                MSI_ADDR_T MsiAddrIn;
+                MsiAddrIn.u64 = GCPhysIn;
+
+                MSI_DATA_T MsiDataIn;
+                MsiDataIn.u32 = uDataIn;
+
+                PMSI_ADDR_T pMsiAddrOut = (PMSI_ADDR_T)pGCPhysOut;
+                PMSI_DATA_T pMsiDataOut = (PMSI_DATA_T)puDataOut;
+
+                /* Preserve all bits from the source MSI address that don't map 1:1 from the IRTE. */
+                pMsiAddrOut->u64 = GCPhysIn;
+                pMsiAddrOut->n.u1DestMode  = Irte.n.u1DestMode;
+                pMsiAddrOut->n.u8DestId    = Irte.n.u8Dest;
+
+                /* Preserve all bits from the source MSI data that don't map 1:1 from the IRTE. */
+                pMsiDataOut->u32 = uDataIn;
+                pMsiDataOut->n.u8Vector = Irte.n.u8Vector;
+                pMsiDataOut->n.u3DeliveryMode = Irte.n.u3IntrType;
+
+                return VINF_SUCCESS;
+            }
+            /** @todo IOMMU: Raise IOPF. */
+            return VERR_NOT_IMPLEMENTED;
+
+        }
+        /** @todo IOMMU: Raise IOPF. */
         return VERR_NOT_IMPLEMENTED;
     }
 
