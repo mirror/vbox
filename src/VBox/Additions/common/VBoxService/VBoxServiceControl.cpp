@@ -246,7 +246,8 @@ static int vgsvcGstCtrlInvalidate(void)
          */
         const uint64_t fGuestFeatures = VBOX_GUESTCTRL_GF_0_SET_SIZE
                                       | VBOX_GUESTCTRL_GF_0_PROCESS_ARGV0
-                                      | VBOX_GUESTCTRL_GF_0_PROCESS_DYNAMIC_SIZES;
+                                      | VBOX_GUESTCTRL_GF_0_PROCESS_DYNAMIC_SIZES
+                                      | VBOX_GUESTCTRL_GF_0_SHUTDOWN;
 
         rc = VbglR3GuestCtrlReportFeatures(g_idControlSvcClient, fGuestFeatures, &g_fControlHostFeatures0);
         if (RT_SUCCESS(rc))

@@ -33,6 +33,7 @@
 #include <iprt/poll.h>
 #include <iprt/process.h>
 #include <iprt/rand.h>
+#include <iprt/system.h> /* For RTShutdown. */
 
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
@@ -989,6 +990,52 @@ static int vgsvcGstCtrlSessionHandlePathUserDocuments(PVBOXSERVICECTRLSESSION pS
 
 
 /**
+ * Handles shutting down / rebooting the guest OS.
+ *
+ * @returns VBox status code.
+ * @param   pSession        Guest session.
+ * @param   pHostCtx        Host context.
+ */
+static int vgsvcGstCtrlSessionHandleShutdown(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
+{
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+
+    /*
+     * Retrieve the request.
+     */
+    uint32_t fAction;
+    int rc = VbglR3GuestCtrlGetShutdown(pHostCtx, &fAction);
+    if (RT_SUCCESS(rc))
+    {
+        VGSvcVerbose(1, "Host requested to %s system ...\n", (fAction & RTSYSTEM_SHUTDOWN_REBOOT) ? "reboot" : "shutdown");
+
+        /* Reply first to the host, in order to avoid host hangs when issuing the guest shutdown. */
+        rc = VbglR3GuestCtrlMsgReply(pHostCtx, VINF_SUCCESS);
+        if (RT_FAILURE(rc))
+        {
+            VGSvcError("Failed to reply to shutdown / reboot request, rc=%Rrc\n", rc);
+        }
+        else
+        {
+            rc = RTSystemShutdown(0 /*cMsDelay*/,
+                                  fAction | RTSYSTEM_SHUTDOWN_PLANNED,
+                                  "VBoxService");
+            if (RT_FAILURE(rc))
+                VGSvcError("%s system failed with %Rrc\n", (fAction & RTSYSTEM_SHUTDOWN_REBOOT) ? "Rebooting" : "Shuting down");
+        }
+    }
+    else
+    {
+        VGSvcError("Error fetching parameters for shutdown / reboot request: %Rrc\n", rc);
+        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
+    }
+
+    return rc;
+}
+
+
+/**
  * Handles getting the user's home directory.
  *
  * @returns VBox status code.
@@ -1411,6 +1458,10 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         case HOST_MSG_PATH_USER_HOME:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathUserHome(pSession, pHostCtx);
+            break;
+
+        case HOST_MSG_SHUTDOWN:
+            rc = vgsvcGstCtrlSessionHandleShutdown(pSession, pHostCtx);
             break;
 
         default: /* Not supported, see next code block. */

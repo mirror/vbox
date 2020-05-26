@@ -1026,6 +1026,35 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
 }
 
 /**
+ * Retrieves a HOST_MSG_SHUTDOWN message.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Guest control command context to use.
+ * @param   pfAction            Where to store the action flags on success.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlGetShutdown(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *pfAction)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
+
+    int rc;
+    do
+    {
+        HGCMMsgShutdown Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_SHUTDOWN);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.action.GetUInt32(pfAction);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+    return rc;
+}
+
+/**
  * Initializes a process startup info, extended version.
  *
  * @returns VBox status code.

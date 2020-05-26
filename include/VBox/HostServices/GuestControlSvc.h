@@ -210,6 +210,10 @@ enum eHostMsg
      * Retrieves the user's home directory.
      */
     HOST_MSG_PATH_USER_HOME,
+    /**
+     * Issues a shutdown / reboot of the guest OS.
+     */
+    HOST_MSG_SHUTDOWN,
 
     /** Blow the type up to 32-bits. */
     HOST_MSG_32BIT_HACK = 0x7fffffff
@@ -247,6 +251,7 @@ DECLINLINE(const char *) GstCtrlHostMsgtoStr(enum eHostMsg enmMsg)
         RT_CASE_RET_STR(HOST_MSG_PATH_RENAME);
         RT_CASE_RET_STR(HOST_MSG_PATH_USER_DOCUMENTS);
         RT_CASE_RET_STR(HOST_MSG_PATH_USER_HOME);
+        RT_CASE_RET_STR(HOST_MSG_SHUTDOWN);
         RT_CASE_RET_STR(HOST_MSG_32BIT_HACK);
     }
     return "Unknown";
@@ -698,6 +703,8 @@ enum GUEST_FILE_SEEKTYPE
 /** Supports passing cmd / arguments / environment blocks bigger than
  *  GUESTPROCESS_DEFAULT_CMD_LEN / GUESTPROCESS_DEFAULT_ARGS_LEN / GUESTPROCESS_DEFAULT_ENV_LEN (bytes, in total). */
 #define VBOX_GUESTCTRL_GF_0_PROCESS_DYNAMIC_SIZES   RT_BIT_64(2)
+/** Supports shutting down / rebooting the guest. */
+#define VBOX_GUESTCTRL_GF_0_SHUTDOWN                RT_BIT_64(3)
 /** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
  * correctly (old hosts might not). */
 #define VBOX_GUESTCTRL_GF_1_MUST_BE_ONE             RT_BIT_64(63)
@@ -872,6 +879,18 @@ typedef struct HGCMMsgPathUserHome
     /** UInt32: Context ID. */
     HGCMFunctionParameter context;
 } HGCMMsgPathUserHome;
+
+/**
+ * Shuts down / reboots the guest.
+ */
+typedef struct HGCMMsgShutdown
+{
+    VBGLIOCHGCMCALL hdr;
+    /** UInt32: Context ID. */
+    HGCMFunctionParameter context;
+    /** UInt32: Action flags. */
+    HGCMFunctionParameter action;
+} HGCMMsgShutdown;
 
 /**
  * Executes a command inside the guest.
