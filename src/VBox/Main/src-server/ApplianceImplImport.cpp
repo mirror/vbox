@@ -562,6 +562,8 @@ HRESULT Appliance::interpret()
             uint16_t cIDEused = 0;
             uint16_t cSATAused = 0; NOREF(cSATAused);
             uint16_t cSCSIused = 0; NOREF(cSCSIused);
+            uint16_t cVIRTIOSCSIused = 0; NOREF(cVIRTIOSCSIused);
+
             ovf::ControllersMap::const_iterator hdcIt;
             /* Iterate through all storage controllers */
             for (hdcIt = vsysThis.mapControllers.begin();
@@ -650,6 +652,28 @@ HRESULT Appliance::interpret()
                                             strControllerID.c_str());
                         ++cSCSIused;
                     break;
+
+                    case ovf::HardDiskController::VIRTIOSCSI:
+                        /* Check for the constrains */
+                        if (cVIRTIOSCSIused < 1)
+                        {
+                            pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI,
+                                                 strControllerID,
+                                                 hdc.strControllerType,
+                                                 "VirtioSCSI");
+                        }
+                        else
+                        {
+                            /* Warn only once */
+                            if (cVIRTIOSCSIused == 1)
+                                i_addWarning(tr("The virtual system \"%s\" requests support for more than one "
+                                                "VirtioSCSI controller, but VirtualBox has support for only one"),
+                                                vsysThis.strName.c_str());
+
+                        }
+                        ++cVIRTIOSCSIused;
+                    break;
+
                 }
             }
 
@@ -3943,6 +3967,12 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
             break;
         }
 
+        case ovf::HardDiskController::VIRTIOSCSI:
+            controllerName = "VirtioSCSI";
+            lControllerPort = (long)ulAddressOnParent;
+            lDevice = (long)0;
+            break;
+
         default: break;
     }
 
@@ -4654,6 +4684,34 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         if (FAILED(rc)) throw rc;
         rc = pController->COMSETTER(ControllerType)(StorageControllerType_LsiLogicSas);
         if (FAILED(rc)) throw rc;
+    }
+
+
+    /* Storage controller VirtioSCSI */
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCVirtioSCSI =
+        vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI);
+    if (vsdeHDCVirtioSCSI.size() > 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                       tr("Too many VirtioSCSI controllers in OVF; import facility only supports one"));
+    if (!vsdeHDCVirtioSCSI.empty())
+    {
+        ComPtr<IStorageController> pController;
+        Utf8Str strName("VirtioSCSI");
+        const Utf8Str &hdcVBox = vsdeHDCVirtioSCSI.front()->strVBoxCurrent;
+        if (hdcVBox == "VirtioSCSI")
+        {
+            rc = pNewMachine->AddStorageController(Bstr(strName).raw(),
+                                                   StorageBus_VirtioSCSI,
+                                                   pController.asOutParam());
+            if (FAILED(rc)) throw rc;
+
+            rc = pController->COMSETTER(ControllerType)(StorageControllerType_VirtioSCSI);
+            if (FAILED(rc)) throw rc;
+        }
+        else
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Invalid VirtioSCSI controller type \"%s\""),
+                           hdcVBox.c_str());
     }
 
     /* Now its time to register the machine before we add any storage devices */

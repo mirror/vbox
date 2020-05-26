@@ -661,6 +661,15 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
 
                             vsys.mapControllers[i.ulInstanceID] = hdc;
                         }
+                        else if ( i.strResourceSubType.compare("VirtioSCSI", RTCString::CaseInsensitive) == 0 )
+                        {
+                            HardDiskController hdc;
+                            hdc.system = HardDiskController::VIRTIOSCSI;
+                            hdc.idController = i.ulInstanceID;
+                            //<rasd:ResourceSubType>VirtioSCSI</rasd:ResourceSubType>
+                            hdc.strControllerType = i.strResourceSubType;
+                            vsys.mapControllers[i.ulInstanceID] = hdc;
+                        }
                         else
                             throw OVFLogicError(N_("Error reading \"%s\": Host resource of type \"Other Storage Device (%d)\" is supported with SATA AHCI controllers only, line %d (subtype:%s)"),
                                                 m_strPath.c_str(),

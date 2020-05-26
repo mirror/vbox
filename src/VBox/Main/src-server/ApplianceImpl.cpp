@@ -1769,6 +1769,7 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::i_findControllerF
             case VirtualSystemDescriptionType_HardDiskControllerIDE:
             case VirtualSystemDescriptionType_HardDiskControllerSATA:
             case VirtualSystemDescriptionType_HardDiskControllerSCSI:
+            case VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI:
             case VirtualSystemDescriptionType_HardDiskControllerSAS:
                 if (d.strRef == strRef)
                     return &d;
