@@ -596,7 +596,7 @@ void UIChooserModel::disbandSelectedGroupItem()
     if (!isSingleGroupSelected())
         return;
 
-    /* Check if we have collisions with our potential siblings: */
+    /* Check if we have collisions between disbandable group children and their potential siblings: */
     UIChooserItem *pCurrentItem = currentItem();
     UIChooserNode *pCurrentNode = pCurrentItem->node();
     UIChooserItem *pParentItem = pCurrentItem->parentItem();
@@ -604,23 +604,36 @@ void UIChooserModel::disbandSelectedGroupItem()
     QList<UIChooserNode*> childrenToBeRenamed;
     foreach (UIChooserNode *pChildNode, pCurrentNode->nodes())
     {
+        /* Acquire disbandable group child name to check for collision with group siblings: */
         const QString strChildName = pChildNode->name();
         UIChooserNode *pCollisionSibling = 0;
+        /* And then compare this child name with all the sibling names: */
         foreach (UIChooserNode *pSiblingNode, pParentNode->nodes())
+        {
+            /* There can't be a collision between local child and cloud provider sibling: */
+            if (   pSiblingNode->type() == UIChooserNodeType_Group
+                && pSiblingNode->toGroupNode()->groupType() == UIChooserNodeGroupType_Provider)
+                continue;
+            /* If sibling isn't disbandable group itself and has name similar to one of group children: */
             if (pSiblingNode != pCurrentNode && pSiblingNode->name() == strChildName)
             {
+                /* We have a collision sibling: */
                 pCollisionSibling = pSiblingNode;
                 break;
             }
+        }
+        /* If there is a collision sibling: */
         if (pCollisionSibling)
         {
             switch (pChildNode->type())
             {
+                /* We can't resolve collision automatically for VMs: */
                 case UIChooserNodeType_Machine:
                 {
                     msgCenter().cannotResolveCollisionAutomatically(strChildName, pParentNode->name());
                     return;
                 }
+                /* But we can do it for VM groups: */
                 case UIChooserNodeType_Group:
                 {
                     if (!msgCenter().confirmAutomaticCollisionResolve(strChildName, pParentNode->name()))
