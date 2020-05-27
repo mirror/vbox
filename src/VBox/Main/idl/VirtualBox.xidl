@@ -4400,7 +4400,7 @@
 
     <attribute name="installGuestAdditions" type="boolean">
       <desc>
-        Indicates whether the guest additions should be installed or not.
+        Indicates whether the Guest Additions should be installed or not.
 
         Setting this to false does not affect additions shipped with the linux
         distribution, only the installation of additions pointed to by
@@ -11633,7 +11633,7 @@
     <const name="Graphics"              value="1100">
       <desc>Guest graphics mode. If not enabled, seamless rendering will not work, resize hints
         are not immediately acted on and guest display resizes are probably not initiated by
-        the guest additions.
+        the Guest Additions.
       </desc>
     </const>
     <const name="MonitorAttach"         value="1101">
@@ -12306,7 +12306,7 @@
     >
     <desc>
       Guest process execution flags.
-      <note>The values are passed to the guest additions, so its not possible
+      <note>The values are passed to the Guest Additions, so its not possible
             to change (move) or reuse values.here. See EXECUTEPROCESSFLAG_XXX
             in GuestControlSvc.h.</note>
     </desc>
@@ -12491,7 +12491,7 @@
     </const>
     <const name="Unknown" value="8">
       <desc>
-        The path style is not known, most likely because the guest additions
+        The path style is not known, most likely because the Guest Additions
         aren't active yet.
       </desc>
     </const>
@@ -13070,7 +13070,7 @@
       available via <link to="IGuestSession::environmentBase"/>.  (One reason
       for why we record changes to a base environment instead of working
       directly on an environment block is that we need to be compatible
-      with older guest additions.  Another reason is that this way it is always
+      with older Guest Additions.  Another reason is that this way it is always
       possible to undo all the changes you've scheduled.)
     </desc>
 
@@ -13122,17 +13122,17 @@
         The base environment of the session.  They are on the "VAR=VALUE" form,
         one array entry per variable.
         <!-- @todo/TODO/FIXME: This doesn't end up in the PDF.
-        <result name="VBOX_E_NOT_SUPPORTED">If the guest additions does not
+        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions does not
           support the session base environment feature.  Support for this was
           introduced with protocol version XXX.</result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">If the guest additions has
+        <result name="VBOX_E_INVALID_OBJECT_STATE">If the Guest Additions has
           yet to report the session base environment.</result> -->
 
-        Access fails with VBOX_E_NOT_SUPPORTED if the guest additions does not
+        Access fails with VBOX_E_NOT_SUPPORTED if the Guest Additions does not
         support the session base environment feature.  Support for this was
         introduced with protocol version XXXX.
 
-        Access fails with VBOX_E_INVALID_OBJECT_STATE if the guest additions
+        Access fails with VBOX_E_INVALID_OBJECT_STATE if the Guest Additions
         has yet to report the session base environment.
       </desc>
     </attribute>
@@ -13590,10 +13590,10 @@
         Gets an environment variable from the session's base environment
         (<link to="IGuestSession::environmentBase"/>).
 
-        <result name="VBOX_E_NOT_SUPPORTED">If the guest additions does not
+        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions does not
           support the session base environment feature.  Support for this was
           introduced with protocol version XXXX.</result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">If the guest additions has
+        <result name="VBOX_E_INVALID_OBJECT_STATE">If the Guest Additions has
           yet to report the session base environment.</result>
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -13614,10 +13614,10 @@
         Checks if the given environment variable exists in the session's base
         environment (<link to="IGuestSession::environmentBase"/>).
 
-        <result name="VBOX_E_NOT_SUPPORTED">If the guest additions does not
+        <result name="VBOX_E_NOT_SUPPORTED">If the Guest Additions does not
           support the session base environment feature.  Support for this was
           introduced with protocol version XXXX.</result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">If the guest additions has
+        <result name="VBOX_E_INVALID_OBJECT_STATE">If the Guest Additions has
           yet to report the session base environment.</result>
       </desc>
       <param name="name" type="wstring" dir="in">
@@ -14191,7 +14191,7 @@
           The changes are applied to the base environment of the impersonated
           guest user (<link to="IGuestSession::environmentBase"/>) when
           creating the process.  (This is done on the guest side of things in
-          order to be compatible with older guest additions.  That is one of
+          order to be compatible with older Guest Additions.  That is one of
           the motivations for not passing in the whole environment here.)
         </desc>
       </param>
@@ -14250,7 +14250,7 @@
           The changes are applied to the base environment of the impersonated
           guest user (<link to="IGuestSession::environmentBase"/>) when
           creating the process.  (This is done on the guest side of things in
-          order to be compatible with older guest additions.  That is one of
+          order to be compatible with older Guest Additions.  That is one of
           the motivations for not passing in the whole environment here.)
         </desc>
       </param>
@@ -14272,7 +14272,7 @@
         <desc>
           Process priority to use for execution, see <link to="ProcessPriority"/>
           for available priority levels.
-          <note>This is silently ignored if not supported by guest additions.</note>
+          <note>This is silently ignored if not supported by Guest Additions.</note>
         </desc>
       </param>
       <param name="affinity" type="long" dir="in" safearray="yes">
@@ -14281,7 +14281,7 @@
           guest CPU numbers the process is allowed to run on.
           <note>
             This is silently ignored if the guest does not support setting the
-            affinity of processes, or if the guest additions does not implemet
+            affinity of processes, or if the Guest Additions does not implemet
             this feature.
           </note>
         </desc>
@@ -14721,7 +14721,7 @@
         The <link to="IFile::seek"/> is used to change this attribute without
         transfering any file data like read and write does.
 
-        <note> This will not always be correct with older guest additions
+        <note> This will not always be correct with older Guest Additions
         (version 5.2.30 and earlier, as well as versions 6.0.0 thru 6.0.8)
         after a calling <link to="IFile::readAt"/> or <link to="IFile::writeAt"/>,
         or after calling <link to="IFile::write"/> on a file in append mode.

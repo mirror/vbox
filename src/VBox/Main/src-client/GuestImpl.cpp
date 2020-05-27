@@ -414,7 +414,7 @@ HRESULT Guest::getAdditionsVersion(com::Utf8Str &aAdditionsVersion)
     else
     {
         /*
-         * If we're running older guest additions (< 3.2.0) try get it from
+         * If we're running older Guest Additions (< 3.2.0) try get it from
          * the guest properties.  Detected switched around Version and
          * Revision in early 3.1.x releases (see r57115).
          */
@@ -461,7 +461,7 @@ HRESULT Guest::getAdditionsRevision(ULONG *aAdditionsRevision)
     else
     {
         /*
-         * If we're running older guest additions (< 3.2.0) try get it from
+         * If we're running older Guest Additions (< 3.2.0) try get it from
          * the guest properties. Detected switched around Version and
          * Revision in early 3.1.x releases (see r57115).
          */

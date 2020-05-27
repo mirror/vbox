@@ -433,7 +433,7 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
         (   cchPlaceholder == sizeof("@@VBOX_COND_" a_szMatch "@@") - 1U \
          && memcmp(pachPlaceholder, "@@VBOX_COND_" a_szMatch "@@", sizeof("@@VBOX_COND_" a_szMatch "@@") - 1U) == 0)
 
-    /* Install guest additions: */
+    /* Install Guest Additions: */
     if (IS_PLACEHOLDER_MATCH("IS_INSTALLING_ADDITIONS"))
         *pfOutputting = mpUnattended->i_getInstallGuestAdditions();
     else if (IS_PLACEHOLDER_MATCH("IS_NOT_INSTALLING_ADDITIONS"))

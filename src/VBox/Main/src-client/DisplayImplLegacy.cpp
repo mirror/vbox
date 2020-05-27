@@ -2,8 +2,8 @@
 /** @file
  * VirtualBox IDisplay implementation, helpers for legacy GAs.
  *
- * Methods and helpers to support old guest additions 3.x or older.
- * This is not used by the current guest additions.
+ * Methods and helpers to support old Guest Additions 3.x or older.
+ * This is not used by the current Guest Additions.
  */
 
 /*

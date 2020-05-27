@@ -302,7 +302,7 @@ HRESULT GuestFile::getOffset(LONG64 *aOffset)
      * confirmation messages are recevied.
      *
      * Note! This will not be accurate with older (< 5.2.32, 6.0.0 - 6.0.9)
-     *       guest additions when using writeAt, readAt or writing to a file
+     *       Guest Additions when using writeAt, readAt or writing to a file
      *       opened in append mode.
      */
     *aOffset = mData.mOffCurrent;

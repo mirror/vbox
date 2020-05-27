@@ -27,7 +27,7 @@
 class Guest;
 
 /**
- * A guest additions facility.
+ * A Guest Additions facility.
  */
 class ATL_NO_VTABLE AdditionsFacility :
     public AdditionsFacilityWrap

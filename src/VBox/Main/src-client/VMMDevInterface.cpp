@@ -230,7 +230,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
     else
     {
         /*
-         * The guest additions was disabled because of a reset
+         * The Guest Additions was disabled because of a reset
          * or driver unload.
          */
         guest->i_setAdditionsInfo(Bstr(), guestInfo->osType); /* Clear interface version + OS type. */
@@ -269,8 +269,8 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, uint3
 }
 
 /**
- * Update the guest additions capabilities.
- * This is called when the guest additions capabilities change. The new capabilities
+ * Update the Guest Additions capabilities.
+ * This is called when the Guest Additions capabilities change. The new capabilities
  * are given and the connector should update its internal state.
  *
  * @param   pInterface          Pointer to this interface.

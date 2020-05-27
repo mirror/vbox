@@ -1239,7 +1239,7 @@ HRESULT Unattended::prepare()
         return setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the installation ISO file '%s'"),
                             mStrIsoPath.c_str());
     if (mfInstallGuestAdditions && !RTFileExists(mStrAdditionsIsoPath.c_str()))
-        return setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the guest additions ISO file '%s'"),
+        return setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the Guest Additions ISO file '%s'"),
                             mStrAdditionsIsoPath.c_str());
     if (mfInstallTestExecService && !RTFileExists(mStrValidationKitIsoPath.c_str()))
         return setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the validation kit ISO file '%s'"),

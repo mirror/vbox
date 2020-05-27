@@ -74,7 +74,7 @@ protected:
      *                              value or is just syntax checking excluded
      *                              template parts.  Intended for voiding triggering
      *                              sanity checks regarding which replacements
-     *                              should be used and not (e.g. no guest additions
+     *                              should be used and not (e.g. no Guest Additions
      *                              path when installing GAs aren't enabled).
      * @param   rValue              Where to return the value.
      * @throws  std::bad_alloc

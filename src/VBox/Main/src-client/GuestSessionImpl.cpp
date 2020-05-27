@@ -480,7 +480,7 @@ HRESULT GuestSession::getEnvironmentBase(std::vector<com::Utf8Str> &aEnvironment
         hrc = Global::vboxStatusCodeToCOM(vrc);
     }
     else if (mData.mProtocolVersion < 99999)
-        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the Guest Additions"));
     else
         hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
 
@@ -2777,7 +2777,7 @@ int GuestSession::i_shutdown(uint32_t fFlags, int *prcGuest)
 int GuestSession::i_determineProtocolVersion(void)
 {
     /*
-     * We currently do this based on the reported guest additions version,
+     * We currently do this based on the reported Guest Additions version,
      * ASSUMING that VBoxService and VBoxDrv are at the same version.
      */
     ComObjPtr<Guest> pGuest = mParent;
@@ -2796,7 +2796,7 @@ int GuestSession::i_determineProtocolVersion(void)
                      VBOX_FULL_VERSION_GET_BUILD(uGaVersion), mData.mProtocolVersion));
 
     /*
-     * Inform the user about outdated guest additions (VM release log).
+     * Inform the user about outdated Guest Additions (VM release log).
      */
     if (mData.mProtocolVersion < 2)
         LogRelMax(3, (tr("Warning: Guest Additions v%u.%u.%u only supports the older guest control protocol version %u.\n"
@@ -3744,7 +3744,7 @@ HRESULT GuestSession::environmentGetBaseVariable(const com::Utf8Str &aName, com:
             hrc = setErrorVrc(vrc);
     }
     else if (mData.mProtocolVersion < 99999)
-        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the Guest Additions"));
     else
         hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
 
@@ -3765,7 +3765,7 @@ HRESULT GuestSession::environmentDoesBaseVariableExist(const com::Utf8Str &aName
         *aExists = mData.mpBaseEnvironment->doesVariableExist(aName);
     }
     else if (mData.mProtocolVersion < 99999)
-        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the Guest Additions"));
     else
         hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
 
