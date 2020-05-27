@@ -4667,39 +4667,56 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
     {
         if (Irte.n.u1RemapEnable)
         {
-            if (   !Irte.n.u1GuestMode
-                && Irte.n.u3IntrType < VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
+            if (!Irte.n.u1GuestMode)
             {
-                MSI_ADDR_T MsiAddrIn;
-                MsiAddrIn.u64 = GCPhysIn;
+                if (Irte.n.u3IntrType < VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
+                {
+                    MSI_ADDR_T MsiAddrIn;
+                    MsiAddrIn.u64 = GCPhysIn;
 
-                MSI_DATA_T MsiDataIn;
-                MsiDataIn.u32 = uDataIn;
+                    MSI_DATA_T MsiDataIn;
+                    MsiDataIn.u32 = uDataIn;
 
-                PMSI_ADDR_T pMsiAddrOut = (PMSI_ADDR_T)pGCPhysOut;
-                PMSI_DATA_T pMsiDataOut = (PMSI_DATA_T)puDataOut;
+                    PMSI_ADDR_T pMsiAddrOut = (PMSI_ADDR_T)pGCPhysOut;
+                    PMSI_DATA_T pMsiDataOut = (PMSI_DATA_T)puDataOut;
 
-                /* Preserve all bits from the source MSI address that don't map 1:1 from the IRTE. */
-                pMsiAddrOut->u64 = GCPhysIn;
-                pMsiAddrOut->n.u1DestMode  = Irte.n.u1DestMode;
-                pMsiAddrOut->n.u8DestId    = Irte.n.u8Dest;
+                    /* Preserve all bits from the source MSI address that don't map 1:1 from the IRTE. */
+                    pMsiAddrOut->u64 = GCPhysIn;
+                    pMsiAddrOut->n.u1DestMode  = Irte.n.u1DestMode;
+                    pMsiAddrOut->n.u8DestId    = Irte.n.u8Dest;
 
-                /* Preserve all bits from the source MSI data that don't map 1:1 from the IRTE. */
-                pMsiDataOut->u32 = uDataIn;
-                pMsiDataOut->n.u8Vector = Irte.n.u8Vector;
-                pMsiDataOut->n.u3DeliveryMode = Irte.n.u3IntrType;
+                    /* Preserve all bits from the source MSI data that don't map 1:1 from the IRTE. */
+                    pMsiDataOut->u32 = uDataIn;
+                    pMsiDataOut->n.u8Vector = Irte.n.u8Vector;
+                    pMsiDataOut->n.u3DeliveryMode = Irte.n.u3IntrType;
 
-                return VINF_SUCCESS;
+                    return VINF_SUCCESS;
+                }
+
+                Log((IOMMU_LOG_PFX ": Interrupt type (%#x) invalid -> IOPF", Irte.n.u3IntrType));
+                EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+                iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, Irte.n.u1RemapEnable, true /* fRsvdNotZero */,
+                                             false /* fPermDenied */, enmOp, &EvtIoPageFault);
+                iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdIntType);
+                return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
             }
-            /** @todo IOMMU: Raise IOPF. */
-            return VERR_NOT_IMPLEMENTED;
 
+            Log((IOMMU_LOG_PFX ": Guest mode not supported -> IOPF"));
+            EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, Irte.n.u1RemapEnable, true /* fRsvdNotZero */,
+                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
+            iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdNotZero);
+            return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
-        /** @todo IOMMU: Raise IOPF. */
-        return VERR_NOT_IMPLEMENTED;
+
+        Log((IOMMU_LOG_PFX ": Remapping disabled -> IOPF"));
+        EVT_IO_PAGE_FAULT_T EvtIoPageFault;
+        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, Irte.n.u1RemapEnable, false /* fRsvdNotZero */,
+                                     false /* fPermDenied */, enmOp, &EvtIoPageFault);
+        iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRemapEn);
+        return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
 
-    RT_NOREF(pGCPhysOut, puDataOut);
     return rc;
 }
 
