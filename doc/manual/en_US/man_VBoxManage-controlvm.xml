@@ -99,6 +99,24 @@
       <arg choice="plain">acpisleepbutton</arg>
     </cmdsynopsis>
 
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-reboot">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">reboot</arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-shutdown">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">shutdown</arg>
+    </cmdsynopsis>
+
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-keyboardputscancode">
       <command>VBoxManage controlvm</command>
       <group choice="req">
@@ -786,6 +804,30 @@
         So long as the VM runs a guest OS that provides ACPI support,
         this command triggers a proper sleep mechanism from within the
         VM.
+      </para>
+    </refsect2>
+    <refsect2 id="vboxmanage-controlvm-reboot">
+      <title>Reboot the guest OS</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> reboot</command>
+        command asks the guest OS to reboot itself.
+      </para>
+      <para>
+        This commands new recent Guest Additions installed.
+      </para>
+    </refsect2>
+    <refsect2 id="vboxmanage-controlvm-shutdown">
+      <title>Shut down the guest OS</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> shutdown</command>
+        command asks the guest OS to halt + shutdown.
+      </para>
+      <para>
+        This commands new recent Guest Additions installed.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-keyboardputscancode">
