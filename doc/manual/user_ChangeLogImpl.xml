@@ -49,8 +49,8 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
-        <para>Guest Control: Implemented ability to wait for the guest when
-          updating Guest Additions via VBoxManage</para>
+        <para>Guest Control: Implemented ability to wait for and/or reboot the
+          guest when updating Guest Additions via VBoxManage</para>
       </listitem>
 
       <listitem>
