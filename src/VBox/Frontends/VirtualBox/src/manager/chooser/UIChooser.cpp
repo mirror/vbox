@@ -142,6 +142,12 @@ QStringList UIChooser::possibleGroupsForMachineToMove(const QUuid &uId)
     return model()->possibleGroupNodeNamesForMachineNodeToMove(uId);
 }
 
+QStringList UIChooser::possibleGroupsForGroupToMove(const QString &strFullName)
+{
+    AssertPtrReturn(model(), QStringList());
+    return model()->possibleGroupNodeNamesForGroupNodeToMove(strFullName);
+}
+
 void UIChooser::refreshMachine()
 {
     AssertPtrReturnVoid(model());

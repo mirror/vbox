@@ -79,8 +79,10 @@ public:
         /** Wipes out empty groups. */
         void wipeOutEmptyGroups();
 
-        /** Returns possible group node names for VM node with passed @a uId to move to. */
+        /** Returns possible group node names for machine node with passed @a uId to move to. */
         QStringList possibleGroupNodeNamesForMachineNodeToMove(const QUuid &uId);
+        /** Returns possible group node names for group node with passed @a strFullName to move to. */
+        QStringList possibleGroupNodeNamesForGroupNodeToMove(const QString &strFullName);
 
         /** Generates unique group name traversing recursively starting from @a pRoot. */
         static QString uniqueGroupName(UIChooserNode *pRoot);

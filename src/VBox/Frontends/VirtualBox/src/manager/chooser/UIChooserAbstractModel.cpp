@@ -527,6 +527,18 @@ QStringList UIChooserAbstractModel::possibleGroupNodeNamesForMachineNodeToMove(c
     return gatherPossibleGroupNodeNames(invisibleRoot(), machineNodes);
 }
 
+QStringList UIChooserAbstractModel::possibleGroupNodeNamesForGroupNodeToMove(const QString &strFullName)
+{
+    /* Search for all the group nodes with passed full-name: */
+    QList<UIChooserNode*> groupNodes;
+    invisibleRoot()->searchForNodes(strFullName,
+                                    UIChooserItemSearchFlag_LocalGroup | UIChooserItemSearchFlag_ExactId,
+                                    groupNodes);
+
+    /* Return group nodes starting from root one: */
+    return gatherPossibleGroupNodeNames(invisibleRoot(), groupNodes);
+}
+
 /* static */
 QString UIChooserAbstractModel::uniqueGroupName(UIChooserNode *pRoot)
 {

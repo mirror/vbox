@@ -147,8 +147,10 @@ public:
         void removeMachine();
         /** Moves machine to a group with certain @a strName. */
         void moveMachineToGroup(const QString &strName = QString());
-        /** Returns possible groups for VM with passed @a uId to move to. */
+        /** Returns possible groups for machine with passed @a uId to move to. */
         QStringList possibleGroupsForMachineToMove(const QUuid &uId);
+        /** Returns possible groups for group with passed @a strFullName to move to. */
+        QStringList possibleGroupsForGroupToMove(const QString &strFullName);
         /** Refreshes machine. */
         void refreshMachine();
         /** Sorts group. */

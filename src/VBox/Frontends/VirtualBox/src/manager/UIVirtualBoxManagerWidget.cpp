@@ -140,6 +140,11 @@ QStringList UIVirtualBoxManagerWidget::possibleGroupsForMachineToMove(const QUui
     return m_pPaneChooser->possibleGroupsForMachineToMove(uId);
 }
 
+QStringList UIVirtualBoxManagerWidget::possibleGroupsForGroupToMove(const QString &strFullName)
+{
+    return m_pPaneChooser->possibleGroupsForGroupToMove(strFullName);
+}
+
 void UIVirtualBoxManagerWidget::refreshMachine()
 {
     m_pPaneChooser->refreshMachine();
