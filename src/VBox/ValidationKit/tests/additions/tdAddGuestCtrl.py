@@ -65,8 +65,10 @@ def limitString(sString, cLimit = 32):
     Useful for toning down logging. By default strings will be shortened at 32 characters.
     """
     if not isinstance(sString, str):
-        return "";
+        sString = str(sString);
     cLen = len(sString);
+    if not cLen:
+        return cLen;
     return (sString[:cLimit] + '...[%d more]' % (cLen - cLimit)) if cLen > cLimit else sString;
 
 class GuestStream(bytearray):
