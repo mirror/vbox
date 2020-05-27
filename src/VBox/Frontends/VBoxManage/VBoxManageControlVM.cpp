@@ -676,6 +676,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         {
             CHECK_ERROR_BREAK(console, SleepButton());
         }
+#ifdef VBOX_WITH_GUEST_CONTROL
         else if (   !strcmp(a->argv[1], "reboot")
                  || !strcmp(a->argv[1], "shutdown")) /* With shutdown we mean gracefully powering off the VM by letting the guest OS do its thing. */
         {
@@ -697,6 +698,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                              fReboot ? "rebooting" : "shutting down");
             }
         }
+#endif
         else if (!strcmp(a->argv[1], "keyboardputscancode"))
         {
             ComPtr<IKeyboard> pKeyboard;

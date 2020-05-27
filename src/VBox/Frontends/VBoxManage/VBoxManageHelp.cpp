@@ -832,7 +832,9 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
         RTStrmPrintf(pStrm,
                            "%s controlvm %s       <uuid|vmname>\n"
                      "                            pause|resume|reset|poweroff|savestate|\n"
+#ifdef VBOX_WITH_GUEST_CONTROL
                      "                            reboot|shutdown|\n"
+#endif
                      "                            acpipowerbutton|acpisleepbutton|\n"
                      "                            keyboardputscancode <hex> [<hex> ...]|\n"
                      "                            keyboardputstring <string1> [<string2> ...]|\n"
