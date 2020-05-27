@@ -4682,12 +4682,12 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
 
                     /* Preserve all bits from the source MSI address that don't map 1:1 from the IRTE. */
                     pMsiAddrOut->u64 = GCPhysIn;
-                    pMsiAddrOut->n.u1DestMode  = Irte.n.u1DestMode;
-                    pMsiAddrOut->n.u8DestId    = Irte.n.u8Dest;
+                    pMsiAddrOut->n.u1DestMode = Irte.n.u1DestMode;
+                    pMsiAddrOut->n.u8DestId   = Irte.n.u8Dest;
 
                     /* Preserve all bits from the source MSI data that don't map 1:1 from the IRTE. */
                     pMsiDataOut->u32 = uDataIn;
-                    pMsiDataOut->n.u8Vector = Irte.n.u8Vector;
+                    pMsiDataOut->n.u8Vector       = Irte.n.u8Vector;
                     pMsiDataOut->n.u3DeliveryMode = Irte.n.u3IntrType;
 
                     return VINF_SUCCESS;
@@ -4813,28 +4813,26 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
                             /* Validate the encoded interrupt table length when IntCtl specifies remapping. */
                             uint32_t const uIntTabLen = Dte.n.u4IntrTableLength;
                             if (Dte.n.u4IntrTableLength < 12)
-                            { /* likely */ }
-                            else
                             {
-                                Log((IOMMU_LOG_PFX ": Invalid interrupt table length %#x -> Illegal DTE\n", uIntTabLen));
-                                EVT_ILLEGAL_DTE_T Event;
-                                iommuAmdInitIllegalDteEvent(uDevId, GCPhysIn, false /* fRsvdNotZero */, enmOp, &Event);
-                                iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntTabLen);
-                                return VERR_IOMMU_INTR_REMAP_FAILED;
+                                /*
+                                 * We don't support guest interrupt remapping yet. When we do, we'll need to
+                                 * check Ctrl.u1GstVirtApicEn and use the guest Virtual APIC Table Root Pointer
+                                 * in the DTE rather than the Interrupt Root Table Pointer. Since the caller
+                                 * already reads the control register, add that as a parameter when we eventually
+                                 * support guest interrupt remapping. For now, just assert.
+                                 */
+                                PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+                                Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
+                                NOREF(pThis);
+
+                                return iommuAmdRemapIntr(pDevIns, uDevId, &Dte, GCPhysIn, uDataIn, enmOp, pGCPhysOut, puDataOut);
                             }
 
-                            /*
-                             * We don't support guest interrupt remapping yet. When we do, we'll need to
-                             * check Ctrl.u1GstVirtApicEn and use the guest Virtual APIC Table Root Pointer
-                             * in the DTE rather than the Interrupt Root Table Pointer. Since the caller
-                             * already reads the control register, add that as a parameter when we eventually
-                             * support guest interrupt remapping. For now, just assert.
-                             */
-                            PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-                            Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
-                            NOREF(pThis);
-
-                            return iommuAmdRemapIntr(pDevIns, uDevId, &Dte, GCPhysIn, uDataIn, enmOp, pGCPhysOut, puDataOut);
+                            Log((IOMMU_LOG_PFX ": Invalid interrupt table length %#x -> Illegal DTE\n", uIntTabLen));
+                            EVT_ILLEGAL_DTE_T Event;
+                            iommuAmdInitIllegalDteEvent(uDevId, GCPhysIn, false /* fRsvdNotZero */, enmOp, &Event);
+                            iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntTabLen);
+                            return VERR_IOMMU_INTR_REMAP_FAILED;
                         }
 
                         /* Paranoia. */
