@@ -521,7 +521,8 @@ HRESULT Guest::shutdown(const std::vector<GuestShutdownFlag_T> &aFlags)
 
     GuestCredentials guestCreds;
 
-    HRESULT hrc;
+    HRESULT hrc = S_OK;
+
     ComObjPtr<GuestSession> pSession;
     int vrc = i_sessionCreate(startupInfo, guestCreds, pSession);
     if (RT_SUCCESS(vrc))
