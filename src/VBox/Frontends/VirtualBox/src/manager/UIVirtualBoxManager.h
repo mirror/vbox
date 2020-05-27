@@ -344,6 +344,8 @@ private:
 
     /** @name Action update stuff.
       * @{ */
+        /** Updates 'Group' : 'Move to Group' menu. */
+        void updateMenuGroupMoveToGroup(QMenu *pMenu);
         /** Updates 'Group' : 'Close' menu. */
         void updateMenuGroupClose(QMenu *pMenu);
         /** Updates 'Machine' : 'Move to Group' menu. */

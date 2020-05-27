@@ -62,6 +62,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Group_S_Add,
     UIActionIndexST_M_Group_S_Rename,
     UIActionIndexST_M_Group_S_Remove,
+    UIActionIndexST_M_Group_M_MoveToGroup,
     UIActionIndexST_M_Group_M_StartOrShow,
     UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal,
     UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless,
@@ -204,6 +205,8 @@ protected:
     void updateMenuGroup();
     /** Updates 'Machine' menu. */
     void updateMenuMachine();
+    /** Updates 'Group' / 'Move to Group' menu. */
+    void updateMenuGroupMoveToGroup();
     /** Updates 'Machine' / 'Move to Group' menu. */
     void updateMenuMachineMoveToGroup();
     /** Updates 'Group' / 'Start or Show' menu. */

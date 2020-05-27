@@ -1475,6 +1475,7 @@ void UIVirtualBoxManager::prepareMenuBar()
     m_pActionPool = UIActionPool::create(UIActionPoolType_Manager);
 
     /* Prepare menu update-handlers: */
+    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuGroupMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close] = &UIVirtualBoxManager::updateMenuGroupClose;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuMachineMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close] = &UIVirtualBoxManager::updateMenuMachineClose;
@@ -1907,6 +1908,15 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
     }
 }
 
+void UIVirtualBoxManager::updateMenuGroupMoveToGroup(QMenu *pMenu)
+{
+    const QStringList groups = m_pWidget->possibleGroupsForGroupToMove(m_pWidget->fullGroupName());
+    if (!groups.isEmpty())
+        pMenu->addSeparator();
+    foreach (const QString &strGroupName, groups)
+        pMenu->addAction(strGroupName, this, &UIVirtualBoxManager::sltPerformMachineMoveToSpecificGroup);
+}
+
 void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
 {
     /* Get selected items: */
@@ -2008,6 +2018,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Group_S_Add)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Add, items));
     actionPool()->action(UIActionIndexST_M_Group_S_Rename)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Rename, items));
     actionPool()->action(UIActionIndexST_M_Group_S_Remove)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Remove, items));
+    actionPool()->action(UIActionIndexST_M_Group_M_MoveToGroup)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_MoveToGroup, items));
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_T_Pause, items));
     actionPool()->action(UIActionIndexST_M_Group_S_Reset)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Reset, items));
     actionPool()->action(UIActionIndexST_M_Group_S_Discard)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Discard, items));
@@ -2235,6 +2246,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
             return !isGroupSavingInProgress() &&
                    isAtLeastOneItemRemovable(items);
         }
+        case UIActionIndexST_M_Group_M_MoveToGroup:
         case UIActionIndexST_M_Machine_M_MoveToGroup:
         case UIActionIndexST_M_Machine_M_MoveToGroup_S_New:
         {

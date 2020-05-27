@@ -1279,6 +1279,7 @@ void UIChooserModel::prepareContextMenu()
         m_pContextMenuGroup->addSeparator();
         m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
         m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
+        m_pContextMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_MoveToGroup)->menu());
         m_pContextMenuGroup->addSeparator();
         m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
         m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));

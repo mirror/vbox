@@ -623,14 +623,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Move to Group' menu class. */
-class UIActionMenuSelectorMachineMoveToGroup : public UIActionMenu
+class UIActionMenuSelectorCommonMoveToGroup : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMachineMoveToGroup(UIActionPool *pParent)
+    UIActionMenuSelectorCommonMoveToGroup(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png")
     {}
 
@@ -2938,6 +2938,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Group_S_Add] = new UIActionSimpleSelectorGroupPerformAddMachine(this);
     m_pool[UIActionIndexST_M_Group_S_Rename] = new UIActionSimpleSelectorGroupPerformRename(this);
     m_pool[UIActionIndexST_M_Group_S_Remove] = new UIActionSimpleSelectorGroupPerformRemove(this);
+    m_pool[UIActionIndexST_M_Group_M_MoveToGroup] = new UIActionMenuSelectorCommonMoveToGroup(this);
     m_pool[UIActionIndexST_M_Group_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
     m_pool[UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
     m_pool[UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless] = new UIActionSimpleSelectorCommonPerformStartHeadless(this);
@@ -2969,7 +2970,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_Move] = new UIActionSimpleSelectorMachinePerformMove(this);
     m_pool[UIActionIndexST_M_Machine_S_ExportToOCI] = new UIActionSimpleSelectorMachinePerformExportToOCI(this);
     m_pool[UIActionIndexST_M_Machine_S_Remove] = new UIActionSimpleSelectorMachinePerformRemove(this);
-    m_pool[UIActionIndexST_M_Machine_M_MoveToGroup] = new UIActionMenuSelectorMachineMoveToGroup(this);
+    m_pool[UIActionIndexST_M_Machine_M_MoveToGroup] = new UIActionMenuSelectorCommonMoveToGroup(this);
     m_pool[UIActionIndexST_M_Machine_M_MoveToGroup_S_New] = new UIActionSimpleSelectorMachineMoveToGroupNew(this);
     m_pool[UIActionIndexST_M_Machine_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
     m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
@@ -3061,6 +3062,7 @@ void UIActionPoolManager::preparePool()
     m_menuUpdateHandlers[UIActionIndexST_M_Welcome].ptfm =               &UIActionPoolManager::updateMenuWelcome;
     m_menuUpdateHandlers[UIActionIndexST_M_Group].ptfm =                 &UIActionPoolManager::updateMenuGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine].ptfm =               &UIActionPoolManager::updateMenuMachine;
+    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_MoveToGroup].ptfm =   &UIActionPoolManager::updateMenuGroupMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup].ptfm = &UIActionPoolManager::updateMenuMachineMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_StartOrShow].ptfm =   &UIActionPoolManager::updateMenuGroupStartOrShow;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_StartOrShow].ptfm = &UIActionPoolManager::updateMenuMachineStartOrShow;
@@ -3296,6 +3298,7 @@ void UIActionPoolManager::updateMenuGroup()
     pMenu->addSeparator();
     pMenu->addAction(action(UIActionIndexST_M_Group_S_Rename));
     pMenu->addAction(action(UIActionIndexST_M_Group_S_Remove));
+    pMenu->addAction(action(UIActionIndexST_M_Group_M_MoveToGroup));
     pMenu->addSeparator();
     pMenu->addAction(action(UIActionIndexST_M_Group_M_StartOrShow));
     pMenu->addAction(action(UIActionIndexST_M_Group_T_Pause));
@@ -3355,6 +3358,17 @@ void UIActionPoolManager::updateMenuMachine()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Machine);
+}
+
+void UIActionPoolManager::updateMenuGroupMoveToGroup()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexST_M_Group_M_MoveToGroup)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* This menu always remains invalid.. */
 }
 
 void UIActionPoolManager::updateMenuMachineMoveToGroup()
@@ -3708,6 +3722,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Group_S_Add)
                     << action(UIActionIndexST_M_Group_S_Rename)
                     << action(UIActionIndexST_M_Group_S_Remove)
+                    << action(UIActionIndexST_M_Group_M_MoveToGroup)
                     << action(UIActionIndexST_M_Group_M_StartOrShow)
                     << action(UIActionIndexST_M_Group_T_Pause)
                     << action(UIActionIndexST_M_Group_S_Reset)
