@@ -26,7 +26,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class UIChooser;
+class UIChooserModel;
 class UIChooserSearchWidget;
 
 /** QIGraphicsView extension used as VM chooser pane view. */
@@ -44,25 +44,30 @@ signals:
 
 public:
 
-    /** Constructs a chooser-view passing @a pParent to the base-class.
+    /** Constructs a Chooser-view passing @a pParent to the base-class.
       * @param  pParent  Brings the chooser container to embed into. */
-    UIChooserView(UIChooser *pParent);
+    UIChooserView(QWidget *pParent);
 
     /** @name General stuff.
       * @{ */
-        /** Returns the chooser reference. */
-        UIChooser *chooser() const { return m_pChooser; }
+        /** Defines @a pChooserModel reference. */
+        void setModel(UIChooserModel *pChooserModel);
+        /** Returns Chooser-model reference. */
+        UIChooserModel *model() const;
     /** @} */
 
     /** @name Search stuff.
       * @{ */
-        /** Returns if the search widget is visible or not. */
+        /** Returns whether search widget visible. */
         bool isSearchWidgetVisible() const;
-        /** Shows/hides wrt. @a fVisible machine search widget. */
+        /** Makes search widget @a fVisible. */
         void setSearchWidgetVisible(bool fVisible);
-        /** Updates the search widget's counts. */
-        void setSearchResultsCount(int iTotalMacthCount, int iCurrentlyScrolledItemIndex);
-        /** Forwards @a strSearchText to the search widget which in turn appends it to the current (if any) search term. */
+        /** Updates search widget's results count.
+          * @param  iTotalMatchCount             Brings total search results count.
+          * @param  iCurrentlyScrolledItemIndex  Brings the item index search currently scrolled to. */
+        void setSearchResultsCount(int iTotalMatchCount, int iCurrentlyScrolledItemIndex);
+        /** Forwards @a strSearchText to the search widget which in
+          * turn appends it to the current (if any) search term. */
         void appendToSearchString(const QString &strSearchText);
     /** @} */
 
@@ -87,11 +92,17 @@ protected:
 
 private slots:
 
-    /** Is connected to search widget's signal for a new search. */
-    void sltRedoSearch(const QString &strSearchTerm, int iItemSearchFlags);
-    /** Is connected to search widget's scroll to next/prev search result signal. */
-    void sltHandleScrollToSearchResult(bool fIsNext);
-    void sltHandleSearchWidgetVisibilityToggle(bool fIsVisible);
+    /** @name Search stuff.
+      * @{ */
+        /** Handles request for a new search.
+          * @param  strSearchTerm  Brings the search term.
+          * @param  iSearchFlags   Brings the item search flags. */
+        void sltRedoSearch(const QString &strSearchTerm, int iSearchFlags);
+        /** Handles request to scroll to @a fNext search result. */
+        void sltHandleScrollToSearchResult(bool fNext);
+        /** Handles request to scroll to make search widget @a fVisible. */
+        void sltHandleSearchWidgetVisibilityToggle(bool fVisible);
+    /** @} */
 
 private:
 
@@ -117,9 +128,13 @@ private:
 
     /** @name General stuff.
       * @{ */
-        /** Holds the chooser pane reference. */
-        UIChooser *m_pChooser;
-        /** Holds the search widget instance reference. */
+        /** Holds the Chooser-model reference. */
+        UIChooserModel *m_pChooserModel;
+    /** @} */
+
+    /** @name Search stuff.
+      * @{ */
+        /** Holds the search widget instance. */
         UIChooserSearchWidget *m_pSearchWidget;
     /** @} */
 

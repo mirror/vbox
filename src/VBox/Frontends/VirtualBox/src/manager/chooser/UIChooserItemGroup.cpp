@@ -567,7 +567,7 @@ void UIChooserItemGroup::updateGeometry()
     /* Special handling for root-groups: */
     if (isRoot())
     {
-        /* Root-group should notify chooser-view if minimum-width-hint was changed: */
+        /* Root-group should notify Chooser-view if minimum-width-hint was changed: */
         const int iMinimumWidthHint = minimumWidthHint();
         if (m_iPreviousMinimumWidthHint != iMinimumWidthHint)
         {
