@@ -436,6 +436,26 @@ UIChooserItem *UIChooserModel::findClosestUnselectedItem() const
     return 0;
 }
 
+void UIChooserModel::makeSureNoItemWithCertainIdIsSelected(const QUuid &uId)
+{
+    /* Look for all nodes with passed uId: */
+    QList<UIChooserNode*> matchedNodes;
+    invisibleRoot()->searchForNodes(uId.toString(),
+                                    UIChooserItemSearchFlag_Machine |
+                                    UIChooserItemSearchFlag_ExactId,
+                                    matchedNodes);
+
+    /* Compose a set of items with passed uId: */
+    QSet<UIChooserItem*> matchedItems;
+    foreach (UIChooserNode *pNode, matchedNodes)
+        if (pNode && pNode->item())
+            matchedItems << pNode->item();
+
+    /* If we have at least one of those items currently selected: */
+    if (selectedItems().toSet().intersects(matchedItems))
+        setSelectedItem(findClosestUnselectedItem());
+}
+
 void UIChooserModel::setCurrentItem(UIChooserItem *pItem)
 {
     /* Make sure real focus unset: */
@@ -1048,6 +1068,10 @@ bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
 
 void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fRegistered)
 {
+    /* Make sure no item with passed uId is selected: */
+    if (!fRegistered)
+        makeSureNoItemWithCertainIdIsSelected(uId);
+
     /* Call to base-class: */
     UIChooserAbstractModel::sltLocalMachineRegistered(uId, fRegistered);
 
@@ -1077,6 +1101,10 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
 void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, const QString &strProfileName,
                                                const QUuid &uId, const bool fRegistered)
 {
+    /* Make sure no item with passed uId is selected: */
+    if (!fRegistered)
+        makeSureNoItemWithCertainIdIsSelected(uId);
+
     /* Call to base-class: */
     UIChooserAbstractModel::sltCloudMachineRegistered(strProviderName, strProfileName, uId, fRegistered);
 
@@ -1597,9 +1625,6 @@ void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
     if (iResultCode == AlertButton_Cancel)
         return;
 
-    /* Change selection to some close by item: */
-    setSelectedItem(findClosestUnselectedItem());
-
     /* For every selected machine: */
     foreach (CMachine comMachine, machines)
     {
@@ -1652,9 +1677,6 @@ void UIChooserModel::unregisterCloudMachines(const QList<CCloudMachine> &machine
     const int iResultCode = msgCenter().confirmCloudMachineRemoval(machines);
     if (iResultCode == AlertButton_Cancel)
         return;
-
-    /* Change selection to some close by item: */
-    setSelectedItem(findClosestUnselectedItem());
 
     /* For every selected machine: */
     foreach (CCloudMachine comMachine, machines)

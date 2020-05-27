@@ -179,6 +179,8 @@ public:
 
         /** Finds closest non-selected-item. */
         UIChooserItem *findClosestUnselectedItem() const;
+        /** Makes sure selection doesn't contain item with certain @a uId. */
+        void makeSureNoItemWithCertainIdIsSelected(const QUuid &uId);
 
         /** Defines current @a pItem. */
         void setCurrentItem(UIChooserItem *pItem);
