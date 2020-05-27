@@ -1205,7 +1205,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.asRsrcs            = None;
-        self.asTestVMsDef       = [self.ksOsWindows, self.ksOsLinux];
+        self.asTestVMsDef       = [self.ksOsLinux, self.ksOsWindows];
         self.asTestVMs          = self.asTestVMsDef;
         self.asSkipVMs          = [];
         self.asTestBuildDirs      = None; #'D:/AlexD/TestBox/TestAdditionalFiles';
@@ -1434,6 +1434,23 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         reporter.testDone();
         return fRc;
 
+    def deleteVM(self, oVM):
+        try:    self.oVBox.unregisterMachine(oVM.id);
+        except: pass;
+        if self.fpApiVer >= 4.0:
+            try:
+                if self.fpApiVer >= 4.3:
+                    oProgress = oVM.deleteConfig([]);
+                else:
+                    oProgress = oVM.delete(None);
+                self.waitOnProgress(oProgress);
+            except:
+                reporter.logXcpt();
+        else:
+            try:    oVM.deleteSettings();
+            except: reporter.logXcpt();
+        return None;
+
     def testAutostartOneCfg(self, sVmName):
         """
         Runs the specified VM thru test #1.
@@ -1462,7 +1479,8 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
             oSession = self.startVmByName(sVmName);
             if oSession is not None:
                 fRc = self.testAutostartRunProgs(oSession, sVmName, oVM);
-                self.terminateVmBySession(oSession)
+                self.terminateVmBySession(oSession);
+                self.deleteVM(oVM);
             else:
                 fRc = False;
         return fRc;
