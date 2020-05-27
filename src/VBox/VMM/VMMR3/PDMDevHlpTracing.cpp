@@ -74,8 +74,12 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlpTracing_IoPortNewInStr(PPDMDEVINS p
     PCPDMDEVINSDBGFTRACK pTrack = (PCPDMDEVINSDBGFTRACK)pvUser;
 
     Assert(!pTrack->fMmio);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    uint32_t cTransfersReq = *pcTransfers;
     VBOXSTRICTRC rcStrict = pTrack->u.IoPort.pfnInStr(pDevIns, pTrack->pvUser, offPort, pbDst, pcTransfers, cb);
-    /** @todo */
+    if (RT_SUCCESS(rcStrict))
+        DBGFTracerEvtIoPortReadStr(pVM, pDevIns->Internal.s.hDbgfTraceEvtSrc, pTrack->u.IoPort.hIoPorts, offPort, pbDst, cb,
+                                   cTransfersReq, cTransfersReq - *pcTransfers);
 
     return rcStrict;
 }
@@ -101,8 +105,12 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlpTracing_IoPortNewOutStr(PPDMDEVINS 
     PCPDMDEVINSDBGFTRACK pTrack = (PCPDMDEVINSDBGFTRACK)pvUser;
 
     Assert(!pTrack->fMmio);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    uint32_t cTransfersReq = *pcTransfers;
     VBOXSTRICTRC rcStrict = pTrack->u.IoPort.pfnOutStr(pDevIns, pTrack->pvUser, offPort, pbSrc, pcTransfers, cb);
-    /** @todo */
+    if (RT_SUCCESS(rcStrict))
+        DBGFTracerEvtIoPortWriteStr(pVM, pDevIns->Internal.s.hDbgfTraceEvtSrc, pTrack->u.IoPort.hIoPorts, offPort, pbSrc, cb,
+                                    cTransfersReq, cTransfersReq - *pcTransfers);
 
     return rcStrict;
 }
