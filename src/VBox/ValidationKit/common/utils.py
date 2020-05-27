@@ -268,7 +268,12 @@ def getHostOsVersion():
                      "11": "El Capitan",
                      "12": "Sierra",
                      "13": "High Sierra",
-                     "14": "Unknown 14", }
+                     "14": "Mojave",
+                     "15": "Catalina",
+                     "16": "Unknown 16",
+                     "17": "Unknown 17",
+                     "18": "Unknown 18",
+                     "19": "Unknown 19", }
         sVersion += ' / OS X ' + sOsxVersion + ' (' + codenames[sOsxVersion.split('.')[1]] + ')'
 
     elif sOs == 'win':
