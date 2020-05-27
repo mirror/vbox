@@ -413,19 +413,23 @@ UIChooserItem *UIChooserModel::findClosestUnselectedItem() const
         int idxAfter  = idxBefore + 2;
         while (idxBefore >= 0 || idxAfter < navigationItems().size())
         {
-            if (idxBefore >= 0)
-            {
-                pItem = navigationItems().at(idxBefore);
-                if (!selectedItems().contains(pItem) && pItem->type() == UIChooserNodeType_Machine)
-                    return pItem;
-                --idxBefore;
-            }
             if (idxAfter < navigationItems().size())
             {
                 pItem = navigationItems().at(idxAfter);
-                if (!selectedItems().contains(pItem) && pItem->type() == UIChooserNodeType_Machine)
+                if (   !selectedItems().contains(pItem)
+                    && (   pItem->type() == UIChooserNodeType_Machine
+                        || pItem->type() == UIChooserNodeType_Global))
                     return pItem;
                 ++idxAfter;
+            }
+            if (idxBefore >= 0)
+            {
+                pItem = navigationItems().at(idxBefore);
+                if (   !selectedItems().contains(pItem)
+                    && (   pItem->type() == UIChooserNodeType_Machine
+                        || pItem->type() == UIChooserNodeType_Global))
+                    return pItem;
+                --idxBefore;
             }
         }
     }
