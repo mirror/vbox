@@ -114,6 +114,7 @@ OTHER_CLEAN += \
 #
 VBOX_LNX_ADD_STRIP_BIN += \
 	VBoxControl \
+	VBoxDRMClient \
 	VBoxClient
 
 VBOX_LNX_ADD_STRIP_SBIN += \

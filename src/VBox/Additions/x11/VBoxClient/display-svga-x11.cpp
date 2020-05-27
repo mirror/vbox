@@ -686,8 +686,11 @@ static bool init()
 {
     if (isXwayland())
     {
-        VBClLogFatalError("The parent session seems to be non-X11. Exiting...\n");
-        VBClLogInfo("This service needs X display server for resizing and multi monitor handling to work\n");
+        VBClLogInfo("The parent session seems to be running on Wayland. Starting DRM client\n");
+        char* argv[] = {NULL};
+        char* env[] = {NULL};
+        execve("./VBoxDRMClient", argv, env);
+        perror("Could not start the DRM Client.");
         return false;
     }
     x11Connect();
