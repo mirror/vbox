@@ -287,6 +287,66 @@ static int dbgfTracerEvtGCPhys(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBGFTRACEREV
 
 
 /**
+ * Handles a I/O port string transfer event.
+ *
+ * @returns VBox status code.
+ * @param   pVM                     The current context VM instance data.
+ * @param   pThisCC                 The event tracer instance current context data.
+ * @param   enmTraceEvt             The trace event type posted.
+ * @param   hEvtSrc                 The event source for the posted event.
+ * @param   hIoPorts                The I/O port region handle for the transfer.
+ * @param   offPort                 The offset into the region where the transfer happened.
+ * @param   pv                      The data being transfered.
+ * @param   cb                      Number of bytes of valid data in the buffer.
+ * @param   cbItem                  Item size in bytes.
+ * @param   cTransfersReq           Number of transfers requested.
+ * @param   cTransfersRet           Number of transfers done.
+ */
+static int dbgfTracerEvtIoPortStr(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBGFTRACEREVT enmTraceEvt, DBGFTRACEREVTSRC hEvtSrc,
+                                  uint64_t hIoPorts, RTIOPORT offPort, const void *pv, size_t cb, size_t cbItem, uint32_t cTransfersReq,
+                                  uint32_t cTransfersRet)
+{
+    /* Fast path for really small transfers where everything fits into the descriptor. */
+    DBGFTRACEREVTIOPORTSTR EvtIoPortStr;
+    EvtIoPortStr.hIoPorts      = hIoPorts;
+    EvtIoPortStr.cbItem        = cbItem;
+    EvtIoPortStr.cTransfersReq = cTransfersReq;
+    EvtIoPortStr.cTransfersRet = cTransfersRet;
+    EvtIoPortStr.offPort       = offPort;
+    if (cb <= sizeof(EvtIoPortStr.abData))
+    {
+        memcpy(&EvtIoPortStr.abData[0], pv, cb);
+        return dbgfTracerEvtPostSingle(pVM, pThisCC, hEvtSrc, enmTraceEvt, &EvtIoPortStr, NULL /*pidEvt*/);
+    }
+
+    /*
+     * Slow path where we have to split the data into multiple entries.
+     * Each one is linked to the previous one by the previous event ID.
+     */
+    const uint8_t *pbBuf = (const uint8_t *)pv;
+    size_t cbLeft = cb;
+    uint64_t idEvtPrev = 0;
+    memcpy(&EvtIoPortStr.abData[0], pbBuf, sizeof(EvtIoPortStr.abData));
+    pbBuf  += sizeof(EvtIoPortStr.abData);
+    cbLeft -= sizeof(EvtIoPortStr.abData);
+
+    int rc = dbgfTracerEvtPostSingle(pVM, pThisCC, hEvtSrc, enmTraceEvt, &EvtIoPortStr, &idEvtPrev);
+    while (   RT_SUCCESS(rc)
+           && cbLeft)
+    {
+        size_t cbThisXfer = RT_MIN(cbLeft, DBGF_TRACER_EVT_PAYLOAD_SZ);
+        rc = dbgfTracerEvtPostEx(pVM, pThisCC, hEvtSrc, enmTraceEvt, idEvtPrev,
+                                 pbBuf, cbThisXfer, &idEvtPrev);
+
+        pbBuf  += cbThisXfer;
+        cbLeft -= cbThisXfer;
+    }
+
+    return rc;
+}
+
+
+/**
  * Registers an MMIO region mapping event for the given event source.
  *
  * @returns VBox status code.
@@ -489,6 +549,30 @@ VMM_INT_DECL(int) DBGFTracerEvtIoPortRead(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, u
 
 
 /**
+ * Registers an I/O region string read event for the given event source.
+ *
+ * @returns VBox status code.
+ * @param   pVM                     The current context VM instance data.
+ * @param   hEvtSrc                 The event source for the posted event.
+ * @param   hIoPorts                The I/O port region handle being read from.
+ * @param   offPort                 The offset into the region where the read happened.
+ * @param   pv                      The data being read.
+ * @param   cb                      Item size in bytes.
+ * @param   cTransfersReq           Number of transfers requested.
+ * @param   cTransfersRet           Number of transfers done.
+ */
+VMM_INT_DECL(int) DBGFTracerEvtIoPortReadStr(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT offPort, const void *pv, size_t cb,
+                                             uint32_t cTransfersReq, uint32_t cTransfersRet)
+{
+    PDBGFTRACERINSCC pThisCC = dbgfTracerGetInstance(pVM);
+    AssertReturn(pThisCC, VERR_DBGF_TRACER_IPE_1);
+
+    return dbgfTracerEvtIoPortStr(pVM, pThisCC, DBGFTRACEREVT_IOPORT_READ_STR, hEvtSrc, hIoPorts, offPort, pv, cTransfersRet * cb,
+                                  cb, cTransfersReq, cTransfersRet);
+}
+
+
+/**
  * Registers an I/O region write event for the given event source.
  *
  * @returns VBox status code.
@@ -512,6 +596,30 @@ VMM_INT_DECL(int) DBGFTracerEvtIoPortWrite(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, 
     dbgfTracerEvtIoPortCopyVal(&EvtIoPort, pvVal, cbVal);
 
     return dbgfTracerEvtPostSingle(pVM, pThisCC, hEvtSrc, DBGFTRACEREVT_IOPORT_WRITE, &EvtIoPort, NULL /*pidEvt*/);
+}
+
+
+/**
+ * Registers an I/O region string write event for the given event source.
+ *
+ * @returns VBox status code.
+ * @param   pVM                     The current context VM instance data.
+ * @param   hEvtSrc                 The event source for the posted event.
+ * @param   hIoPorts                The I/O port region handle being written to.
+ * @param   offPort                 The offset into the region where the write happened.
+ * @param   pv                      The data being written.
+ * @param   cb                      Item size in bytes.
+ * @param   cTransfersReq           Number of transfers requested.
+ * @param   cTransfersRet           Number of transfers done.
+ */
+VMM_INT_DECL(int) DBGFTracerEvtIoPortWriteStr(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT offPort, const void *pv, size_t cb,
+                                              uint32_t cTransfersReq, uint32_t cTransfersRet)
+{
+    PDBGFTRACERINSCC pThisCC = dbgfTracerGetInstance(pVM);
+    AssertReturn(pThisCC, VERR_DBGF_TRACER_IPE_1);
+
+    return dbgfTracerEvtIoPortStr(pVM, pThisCC, DBGFTRACEREVT_IOPORT_WRITE_STR, hEvtSrc, hIoPorts, offPort, pv, cTransfersReq * cb,
+                                  cb, cTransfersReq, cTransfersRet);
 }
 
 

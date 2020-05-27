@@ -184,7 +184,7 @@ static const RTTRACELOGEVTDESC g_DevIoPortUnmapEvtDesc =
 
 static const RTTRACELOGEVTITEMDESC g_DevIoPortRwEvtItems[] =
 {
-    {"hIoPorts",       "The MMIO region handle being unmapped",                 RTTRACELOGTYPE_UINT64,  0},
+    {"hIoPorts",       "The I/O region handle being accessed",                  RTTRACELOGTYPE_UINT64,  0},
     {"offPort",        "The offset in the I/O port region being accessed",      RTTRACELOGTYPE_UINT16,  0},
     {"cbXfer",         "Number of bytes being transfered",                      RTTRACELOGTYPE_UINT64,  0},
     {"u32Val",         "The value read or written",                             RTTRACELOGTYPE_UINT32,  0},
@@ -206,6 +206,34 @@ static const RTTRACELOGEVTDESC g_DevIoPortWriteEvtDesc =
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_DevIoPortRwEvtItems),
     &g_DevIoPortRwEvtItems[0]
+};
+
+
+static const RTTRACELOGEVTITEMDESC g_DevIoPortRwStrEvtItems[] =
+{
+    {"hIoPorts",       "The I/O region handle being accesses",                  RTTRACELOGTYPE_UINT64,  0},
+    {"offPort",        "The offset in the I/O port region being accessed",      RTTRACELOGTYPE_UINT16,  0},
+    {"cbItem",         "Item size for the access",                              RTTRACELOGTYPE_UINT32,  0},
+    {"cTransfersReq",  "Number of transfers requested by the guest",            RTTRACELOGTYPE_UINT32,  0},
+    {"cTransfersRet",  "Number of transfers executed by the device",            RTTRACELOGTYPE_UINT32,  0}
+};
+
+static const RTTRACELOGEVTDESC g_DevIoPortReadStrEvtDesc =
+{
+    "Dev.IoPortReadStr",
+    "I/O port region of a device is being read using REP INS",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    RT_ELEMENTS(g_DevIoPortRwStrEvtItems),
+    &g_DevIoPortRwStrEvtItems[0]
+};
+
+static const RTTRACELOGEVTDESC g_DevIoPortWriteStrEvtDesc =
+{
+    "Dev.IoPortWriteStr",
+    "I/O port region of a device is being written using REP OUTS",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    RT_ELEMENTS(g_DevIoPortRwStrEvtItems),
+    &g_DevIoPortRwStrEvtItems[0]
 };
 
 
@@ -268,18 +296,18 @@ static const RTTRACELOGEVTDESC g_DevGCPhysWriteEvtDesc =
 };
 
 
-static const RTTRACELOGEVTITEMDESC g_DevGCPhysRwDataEvtItems[] =
+static const RTTRACELOGEVTITEMDESC g_DevRwDataEvtItems[] =
 {
     {"abData",        "The data being read/written",                            RTTRACELOGTYPE_RAWDATA,  0}
 };
 
-static const RTTRACELOGEVTDESC g_DevGCPhysRwDataEvtDesc =
+static const RTTRACELOGEVTDESC g_DevRwDataEvtDesc =
 {
-    "Dev.GCPhysRwData",
+    "Dev.RwData",
     "The data being read or written",
     RTTRACELOGEVTSEVERITY_DEBUG,
-    RT_ELEMENTS(g_DevGCPhysRwDataEvtItems),
-    &g_DevGCPhysRwDataEvtItems[0]
+    RT_ELEMENTS(g_DevRwDataEvtItems),
+    &g_DevRwDataEvtItems[0]
 };
 
 
@@ -294,7 +322,7 @@ static const RTTRACELOGEVTDESC g_DevGCPhysRwDataEvtDesc =
  * @returns Pointer to a new aggregation structure or NULL if out of memory.
  * @param   pThis                   The DBGF tracer instance.
  */
-static PDBGFTRACERGCPHYSRWAGG dbgfTracerR3EvtGCPhysRwAggNew(PDBGFTRACERINSR3 pThis)
+static PDBGFTRACERGCPHYSRWAGG dbgfTracerR3EvtRwAggNew(PDBGFTRACERINSR3 pThis)
 {
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aGstMemRwData); i++)
     {
@@ -313,7 +341,7 @@ static PDBGFTRACERGCPHYSRWAGG dbgfTracerR3EvtGCPhysRwAggNew(PDBGFTRACERINSR3 pTh
  * @param   pThis                   The DBGF tracer instance.
  * @param   idEvtPrev               The event ID to look for.
  */
-static PDBGFTRACERGCPHYSRWAGG dbgfTracerR3EvtGCPhysRwAggFind(PDBGFTRACERINSR3 pThis, uint64_t idEvtPrev)
+static PDBGFTRACERGCPHYSRWAGG dbgfTracerR3EvtRwAggFind(PDBGFTRACERINSR3 pThis, uint64_t idEvtPrev)
 {
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aGstMemRwData); i++)
     {
@@ -323,6 +351,69 @@ static PDBGFTRACERGCPHYSRWAGG dbgfTracerR3EvtGCPhysRwAggFind(PDBGFTRACERINSR3 pT
     }
 
     return NULL;
+}
+
+
+/**
+ * Common code for the guest memory and string I/O port read/write events.
+ *
+ * @returns VBox status code.
+ * @param   pThis                   The DBGF tracer instance.
+ * @param   pEvtHdr                 The event header.
+ * @param   cbXfer                  Overall number of bytes of data for this event.
+ * @param   pvData                  Initial data supplied in the event starting the aggregation.
+ * @param   cbData                  Number of initial bytes of data.
+ */
+static int dbgfTracerR3EvtRwStartCommon(PDBGFTRACERINSR3 pThis, PCDBGFTRACEREVTHDR pEvtHdr, size_t cbXfer, const void *pvData, size_t cbData)
+{
+    /* Slow path, find an empty aggregation structure. */
+    int rc = VINF_SUCCESS;
+    PDBGFTRACERGCPHYSRWAGG pDataAgg = dbgfTracerR3EvtRwAggNew(pThis);
+    if (RT_LIKELY(pDataAgg))
+    {
+        /* Initialize it. */
+        pDataAgg->idEvtStart = pEvtHdr->idEvt;
+        pDataAgg->idEvtPrev  = pEvtHdr->idEvt;
+        pDataAgg->cbXfer     = cbXfer;
+        pDataAgg->cbLeft     = pDataAgg->cbXfer;
+        pDataAgg->offBuf     = 0;
+
+        /* Need to reallocate the buffer to hold the complete data? */
+        if (RT_UNLIKELY(pDataAgg->cbBufMax < pDataAgg->cbXfer))
+        {
+            uint8_t *pbBufNew = (uint8_t *)RTMemRealloc(pDataAgg->pbBuf, pDataAgg->cbXfer);
+            if (RT_LIKELY(pbBufNew))
+            {
+                pDataAgg->pbBuf    = pbBufNew;
+                pDataAgg->cbBufMax = pDataAgg->cbXfer;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            memcpy(pDataAgg->pbBuf, pvData, cbData);
+            pDataAgg->offBuf += cbData;
+            pDataAgg->cbLeft -= cbData;
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    if (RT_FAILURE(rc))
+    {
+        LogRelMax(10, ("DBGF: Creating new data aggregation structure for memory read/write failed with %Rrc, trace log will not contain data for this event!\n", rc));
+
+        /* Write out the finish event without any data. */
+        size_t cbEvtData = 0;
+        rc = RTTraceLogWrEvtAdd(pThis->hTraceLog, &g_DevRwDataEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+                                pEvtHdr->idEvt, pEvtHdr->hEvtSrc, NULL, &cbEvtData);
+        if (pDataAgg) /* Reset the aggregation event. */
+            pDataAgg->idEvtStart = DBGF_TRACER_EVT_HDR_ID_INVALID;
+    }
+
+    return rc;
 }
 
 
@@ -351,57 +442,11 @@ static int dbgfTracerR3EvtGCPhysRwStart(PDBGFTRACERINSR3 pThis, PCDBGFTRACEREVTH
         {
             size_t cbEvtData = pEvtGCPhysRw->cbXfer;
 
-            rc = RTTraceLogWrEvtAdd(pThis->hTraceLog, &g_DevGCPhysRwDataEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAdd(pThis->hTraceLog, &g_DevRwDataEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
                                     pEvtHdr->idEvt, pEvtHdr->hEvtSrc, &pEvtGCPhysRw->abData[0], &cbEvtData);
         }
         else
-        {
-            /* Slow path, find an empty aggregation structure. */
-            PDBGFTRACERGCPHYSRWAGG pDataAgg = dbgfTracerR3EvtGCPhysRwAggNew(pThis);
-            if (RT_LIKELY(pDataAgg))
-            {
-                /* Initialize it. */
-                pDataAgg->idEvtStart = pEvtHdr->idEvt;
-                pDataAgg->idEvtPrev  = pEvtHdr->idEvt;
-                pDataAgg->cbXfer     = pEvtGCPhysRw->cbXfer;
-                pDataAgg->cbLeft     = pDataAgg->cbXfer;
-                pDataAgg->offBuf     = 0;
-
-                /* Need to reallocate the buffer to hold the complete data? */
-                if (RT_UNLIKELY(pDataAgg->cbBufMax < pDataAgg->cbXfer))
-                {
-                    uint8_t *pbBufNew = (uint8_t *)RTMemRealloc(pDataAgg->pbBuf, pDataAgg->cbXfer);
-                    if (RT_LIKELY(pbBufNew))
-                    {
-                        pDataAgg->pbBuf    = pbBufNew;
-                        pDataAgg->cbBufMax = pDataAgg->cbXfer;
-                    }
-                    else
-                        rc = VERR_NO_MEMORY;
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                    memcpy(pDataAgg->pbBuf, &pEvtGCPhysRw->abData[0], sizeof(pEvtGCPhysRw->abData));
-                    pDataAgg->offBuf += sizeof(pEvtGCPhysRw->abData);
-                    pDataAgg->cbLeft -= sizeof(pEvtGCPhysRw->abData);
-                }
-            }
-            else
-                rc = VERR_NO_MEMORY;
-
-            if (RT_FAILURE(rc))
-            {
-                LogRelMax(10, ("DBGF: Creating new data aggregation structure for guest memory read/write failed with %Rrc, trace log will not contain data for this event!\n", rc));
-
-                /* Write out the finish event without any data. */
-                size_t cbEvtData = 0;
-                rc = RTTraceLogWrEvtAdd(pThis->hTraceLog, &g_DevGCPhysRwDataEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
-                                        pEvtHdr->idEvt, pEvtHdr->hEvtSrc, NULL, &cbEvtData);
-                if (pDataAgg) /* Reset the aggregation event. */
-                    pDataAgg->idEvtStart = DBGF_TRACER_EVT_HDR_ID_INVALID;
-            }
-        }
+            rc = dbgfTracerR3EvtRwStartCommon(pThis, pEvtHdr, pEvtGCPhysRw->cbXfer, &pEvtGCPhysRw->abData[0], sizeof(pEvtGCPhysRw->abData));
     }
 
     return rc;
@@ -409,17 +454,56 @@ static int dbgfTracerR3EvtGCPhysRwStart(PDBGFTRACERINSR3 pThis, PCDBGFTRACEREVTH
 
 
 /**
- * Continues a previously started guest memory read/write event.
+ * Starts a new I/O port string read/write event.
+ *
+ * @returns VBox status code.
+ * @param   pThis                   The DBGF tracer instance.
+ * @param   pEvtHdr                 The event header.
+ * @param   pEvtIoPortStrRw         The I/O port string read/write event descriptor.
+ * @param   cbXfer                  Number of bytes of valid data for this event.
+ * @param   pEvtDesc                The event descriptor written to the trace log.
+ */
+static int dbgfTracerR3EvtIoPortStrRwStart(PDBGFTRACERINSR3 pThis, PCDBGFTRACEREVTHDR pEvtHdr,
+                                           PCDBGFTRACEREVTIOPORTSTR pEvtIoPortStrRw, size_t cbXfer,
+                                           PCRTTRACELOGEVTDESC pEvtDesc)
+{
+    /* Write out the event header first in any case. */
+    int rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, pEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_START,
+                                 pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtIoPortStrRw->hIoPorts, pEvtIoPortStrRw->offPort,
+                                 pEvtIoPortStrRw->cbItem, pEvtIoPortStrRw->cTransfersReq, pEvtIoPortStrRw->cTransfersRet);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * If the amount of data is small enough to fit into the single event descriptor we can skip allocating
+         * an aggregation tracking structure and write the event containing the complete data out immediately.
+         */
+        if (cbXfer <= sizeof(pEvtIoPortStrRw->abData))
+        {
+            size_t cbEvtData = cbXfer;
+
+            rc = RTTraceLogWrEvtAdd(pThis->hTraceLog, &g_DevRwDataEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+                                    pEvtHdr->idEvt, pEvtHdr->hEvtSrc, &pEvtIoPortStrRw->abData[0], &cbEvtData);
+        }
+        else
+            rc = dbgfTracerR3EvtRwStartCommon(pThis, pEvtHdr, cbXfer, &pEvtIoPortStrRw->abData[0], sizeof(pEvtIoPortStrRw->abData));
+    }
+
+    return rc;
+}
+
+
+/**
+ * Continues a previously started guest memory or string I/O port read/write event.
  *
  * @returns VBox status code.
  * @param   pThis                   The DBGF tracer instance.
  * @param   pEvtHdr                 The event header.
  * @param   pvData                  The data to log.
  */
-static int dbgfTracerR3EvtGCPhysRwContinue(PDBGFTRACERINSR3 pThis, PCDBGFTRACEREVTHDR pEvtHdr, void *pvData)
+static int dbgfTracerR3EvtRwContinue(PDBGFTRACERINSR3 pThis, PCDBGFTRACEREVTHDR pEvtHdr, void *pvData)
 {
     int rc = VINF_SUCCESS;
-    PDBGFTRACERGCPHYSRWAGG pDataAgg = dbgfTracerR3EvtGCPhysRwAggFind(pThis, pEvtHdr->idEvtPrev);
+    PDBGFTRACERGCPHYSRWAGG pDataAgg = dbgfTracerR3EvtRwAggFind(pThis, pEvtHdr->idEvtPrev);
 
     if (RT_LIKELY(pDataAgg))
     {
@@ -432,7 +516,7 @@ static int dbgfTracerR3EvtGCPhysRwContinue(PDBGFTRACERINSR3 pThis, PCDBGFTRACERE
         if (!pDataAgg->cbLeft)
         {
             /* All data aggregated, write it out and reset the structure. */
-            rc = RTTraceLogWrEvtAdd(pThis->hTraceLog, &g_DevGCPhysRwDataEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
+            rc = RTTraceLogWrEvtAdd(pThis->hTraceLog, &g_DevRwDataEvtDesc, RTTRACELOG_WR_ADD_EVT_F_GRP_FINISH,
                                     pDataAgg->idEvtStart, pEvtHdr->hEvtSrc, pDataAgg->pbBuf, &pDataAgg->cbXfer);
             pDataAgg->offBuf     = 0;
             pDataAgg->idEvtStart = DBGF_TRACER_EVT_HDR_ID_INVALID;
@@ -544,6 +628,31 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
                                      pEvtIoPortRw->cbXfer, pEvtIoPortRw->u32Val);
             break;
         }
+        case DBGFTRACEREVT_IOPORT_READ_STR:
+        case DBGFTRACEREVT_IOPORT_WRITE_STR:
+        {
+            PCRTTRACELOGEVTDESC pEvtDesc =   pEvtHdr->enmEvt == DBGFTRACEREVT_IOPORT_WRITE_STR
+                                           ? &g_DevIoPortWriteStrEvtDesc
+                                           : &g_DevIoPortReadStrEvtDesc;
+
+            /* If the previous event ID is invalid this starts a new read/write we have to aggregate all the data for. */
+            if (pEvtHdr->idEvtPrev == DBGF_TRACER_EVT_HDR_ID_INVALID)
+            {
+                PCDBGFTRACEREVTIOPORTSTR pEvtIoPortStrRw = (PCDBGFTRACEREVTIOPORTSTR)(pEvtHdr + 1);
+                size_t cbXfer =   pEvtHdr->enmEvt == DBGFTRACEREVT_IOPORT_WRITE_STR
+                                ? pEvtIoPortStrRw->cTransfersReq * pEvtIoPortStrRw->cbItem
+                                : pEvtIoPortStrRw->cTransfersRet * pEvtIoPortStrRw->cbItem;
+
+                rc = dbgfTracerR3EvtIoPortStrRwStart(pThis, pEvtHdr, pEvtIoPortStrRw, cbXfer, pEvtDesc);
+            }
+            else
+            {
+                /* Continuation of a started read or write, look up the right tracking structure and process the new data. */
+                void *pvData = pEvtHdr + 1;
+                rc = dbgfTracerR3EvtRwContinue(pThis, pEvtHdr, pvData);
+            }
+            break;
+        }
         case DBGFTRACEREVT_IRQ:
         {
             PCDBGFTRACEREVTIRQ pEvtIrq = (PCDBGFTRACEREVTIRQ)(pEvtHdr + 1);
@@ -577,7 +686,7 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
             {
                 /* Continuation of a started read or write, look up the right tracking structure and process the new data. */
                 void *pvData = pEvtHdr + 1;
-                rc = dbgfTracerR3EvtGCPhysRwContinue(pThis, pEvtHdr, pvData);
+                rc = dbgfTracerR3EvtRwContinue(pThis, pEvtHdr, pvData);
             }
             break;
         }

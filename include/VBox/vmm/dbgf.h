@@ -2833,7 +2833,11 @@ VMM_INT_DECL(int)   DBGFTracerEvtMmioFill(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, u
 VMM_INT_DECL(int)   DBGFTracerEvtIoPortMap(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT IoPortBase);
 VMM_INT_DECL(int)   DBGFTracerEvtIoPortUnmap(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts);
 VMM_INT_DECL(int)   DBGFTracerEvtIoPortRead(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT offPort, const void *pvVal, size_t cbVal);
+VMM_INT_DECL(int)   DBGFTracerEvtIoPortReadStr(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT offPort, const void *pv, size_t cb,
+                                               uint32_t cTransfersReq, uint32_t cTransfersRet);
 VMM_INT_DECL(int)   DBGFTracerEvtIoPortWrite(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT offPort, const void *pvVal, size_t cbVal);
+VMM_INT_DECL(int)   DBGFTracerEvtIoPortWriteStr(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hIoPorts, RTIOPORT offPort, const void *pv, size_t cb,
+                                                uint32_t cTransfersReq, uint32_t cTransfersRet);
 VMM_INT_DECL(int)   DBGFTracerEvtIrq(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, int32_t iIrq, int32_t fIrqLvl);
 VMM_INT_DECL(int)   DBGFTracerEvtIoApicMsi(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, RTGCPHYS GCPhys, uint32_t u32Val);
 VMM_INT_DECL(int)   DBGFTracerEvtGCPhysRead(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, RTGCPHYS GCPhys, const void *pvBuf, size_t cbRead);
