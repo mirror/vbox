@@ -59,6 +59,15 @@ if sys.version_info[0] >= 3:
     long = int      # pylint: disable=redefined-builtin,invalid-name
     xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
+def limitString(sString, cLimit = 32):
+    """
+    Returns a string with ellipsis ("...") when exceeding the specified limit.
+    Useful for toning down logging. By default strings will be shortened at 32 characters.
+    """
+    if not isinstance(sString, str):
+        return "";
+    cLen = len(sString);
+    return (sString[:cLimit] + '...[%d more]' % (cLen - cLimit)) if cLen > cLimit else sString;
 
 class GuestStream(bytearray):
     """
@@ -385,7 +394,7 @@ class tdTestRemoveFile(tdTestRemoveBase):
         tdTestRemoveBase.__init__(self, sPath, fRcExpect, oCreds);
 
     def execute(self, oSubTstDrv):
-        reporter.log2('Deleting file "%s" ...' % (self.sPath,));
+        reporter.log2('Deleting file "%s" ...' % (limitString(self.sPath),));
         try:
             if oSubTstDrv.oTstDrv.fpApiVer >= 5.0:
                 self.oGuestSession.fsObjRemove(self.sPath);
@@ -408,7 +417,7 @@ class tdTestRemoveDir(tdTestRemoveBase):
 
     def execute(self, oSubTstDrv):
         _ = oSubTstDrv;
-        reporter.log2('Deleting directory "%s" ...' % (self.sPath,));
+        reporter.log2('Deleting directory "%s" ...' % (limitString(self.sPath),));
         try:
             self.oGuestSession.directoryRemove(self.sPath);
         except:
@@ -429,7 +438,7 @@ class tdTestRemoveTree(tdTestRemoveBase):
         self.fNotExist = fNotExist; # Hack for the ContentOnly scenario where the dir does not exist.
 
     def execute(self, oSubTstDrv):
-        reporter.log2('Deleting tree "%s" ...' % (self.sPath,));
+        reporter.log2('Deleting tree "%s" ...' % (limitString(self.sPath),));
         try:
             oProgress = self.oGuestSession.directoryRemoveRecursive(self.sPath, self.afFlags);
         except:
@@ -1120,7 +1129,7 @@ class tdStepStat(tdSessionStepBase):
         Execute the test step.
         """
         reporter.log2('tdStepStat: sPath=%s enmType=%s hrcExpected=%s fFound=%s fFollowLinks=%s'
-                      % (self.sPath, self.enmType, self.hrcExpected, self.fFound, self.fFollowLinks,));
+                      % (limitString(self.sPath), self.enmType, self.hrcExpected, self.fFound, self.fFollowLinks,));
 
         # Don't execute non-file tests on older VBox version.
         if oTstDrv.fpApiVer >= 5.0 or self.enmType == vboxcon.FsObjType_File or not self.fFound:
@@ -1670,7 +1679,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Do the copying.
         #
-        reporter.log2('Copying guest file "%s" to host "%s"' % (oTest.sSrc, oTest.sDst));
+        reporter.log2('Copying guest file "%s" to host "%s"' % (limitString(oTest.sSrc), limitString(oTest.sDst)));
         try:
             if self.oTstDrv.fpApiVer >= 5.0:
                 oCurProgress = oGuestSession.fileCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.afFlags);
@@ -1766,7 +1775,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Do the copying.
         #
-        reporter.log2('Copying guest dir "%s" to host "%s"' % (oTest.sSrc, oTest.sDst));
+        reporter.log2('Copying guest dir "%s" to host "%s"' % (limitString(oTest.sSrc), limitString(oTest.sDst)));
         try:
             oCurProgress = oGuestSession.directoryCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.afFlags);
         except:
@@ -1799,7 +1808,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         Helper function to copy a single file from the host to the guest.
         """
-        reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (sSrc, sDst, afFlags));
+        reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (limitString(sSrc), limitString(sDst), afFlags));
         try:
             if self.oTstDrv.fpApiVer >= 5.0:
                 oCurProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, afFlags);
@@ -1827,7 +1836,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         Helper function to copy a directory tree from the host to the guest.
         """
-        reporter.log2('Copying host directory "%s" to guest "%s" (flags %s)' % (sSrc, sDst, afFlags));
+        reporter.log2('Copying host directory "%s" to guest "%s" (flags %s)' % (limitString(sSrc), limitString(sDst), afFlags));
         try:
             oCurProgress = oGuestSession.directoryCopyToGuest(sSrc, sDst, afFlags);
         except:
@@ -1852,7 +1861,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         Helper function to create a guest directory specified in the current test.
         """
-        reporter.log2('Creating directory "%s"' % (oTest.sDirectory,));
+        reporter.log2('Creating directory "%s"' % (limitString(oTest.sDirectory),));
         try:
             oGuestSession.directoryCreate(oTest.sDirectory, oTest.fMode, oTest.afFlags);
         except:
@@ -1891,7 +1900,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         cOthers  = 0;    # Other files.
 
         # Open the directory:
-        reporter.log2('Directory="%s", filter="%s", afFlags="%s"' % (sCurDir, sFilter, afFlags));
+        reporter.log2('Directory="%s", filter="%s", afFlags="%s"' % (limitString(sCurDir), sFilter, afFlags));
         try:
             oCurDir = oGuestSession.directoryOpen(sCurDir, sFilter, afFlags);
         except:
@@ -1911,7 +1920,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         reporter.maybeErrXcpt(fIsError, 'Error reading directory "%s":' % (sCurDir,));
                     fRc = False;
                 else:
-                    reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));
+                    reporter.log2('\tNo more directory entries for "%s"' % (limitString(sCurDir),));
                 break;
 
             try:
@@ -1926,7 +1935,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc = reporter.error('Wrong type for "%s": %d, expected %d (Directory)'
                                          % (sName, eType, vboxcon.FsObjType_Directory));
             elif eType == vboxcon.FsObjType_Directory:
-                reporter.log2('  Directory "%s"' % oFsObjInfo.name);
+                reporter.log2('  Directory "%s"' % limitString(oFsObjInfo.name));
                 aSubResult = self.gctrlReadDirTree(oTest, oGuestSession, fIsError,
                                                    oTestVm.pathJoin(sSubDir, sName) if sSubDir else sName);
                 fRc      = aSubResult[0];
@@ -2124,15 +2133,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Start the process:
         #
-        reporter.log2('Executing sCmd=%s, afFlags=%s, timeoutMS=%d, asEnv=%s'
-                      % (oTest.sCmd, oTest.afFlags, oTest.timeoutMS, oTest.aEnv,));
-
-        # Don't be too noisy by default when testing reeeeeeally long arguments.
-        if len(oTest.asArgs) <= 64:
-            reporter.log2('asArgs=%s' % (oTest.asArgs,));
-        else:
-            reporter.log4('asArgs=%s' % (oTest.asArgs,));
-
+        reporter.log2('Executing sCmd=%s, afFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
+                      % (oTest.sCmd, oTest.afFlags, oTest.timeoutMS, limitString(oTest.asArgs), limitString(oTest.aEnv),));
         try:
             oProcess = oGuestSession.processCreate(oTest.sCmd,
                                                    oTest.asArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.asArgs[1:],
@@ -3449,7 +3451,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 else:
                     reporter.logXcpt('Creating temp directory "%s" failed expectedly, skipping:' % (oCurTest.sDirectory,));
             else:
-                reporter.log2('Temporary directory is: "%s"' % (sDirTemp,));
+                reporter.log2('Temporary directory is: "%s"' % (limitString(sDirTemp),));
                 if not sDirTemp:
                     fRc = reporter.error('Resulting directory is empty!');
                 else:
@@ -3471,7 +3473,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     except:
                         fRc = reporter.errorXcpt('sDirTemp="%s"' % (sDirTemp,));
                     else:
-                        reporter.log2('%s: eType=%s (dir=%d)' % (sDirTemp, eType, vboxcon.FsObjType_Directory,));
+                        reporter.log2('%s: eType=%s (dir=%d)' % (limitString(sDirTemp), eType, vboxcon.FsObjType_Directory,));
                         if eType != vboxcon.FsObjType_Directory:
                             fRc = reporter.error('Temporary directory "%s" not created as a directory: eType=%d'
                                                  % (sDirTemp, eType));
@@ -3680,7 +3682,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 #
                 reporter.log('Deleting the file in "%s" ...' % (self.oTestFiles.oManyDir.sPath,));
                 for oFile in self.oTestFiles.oManyDir.aoChildren:
-                    reporter.log2('"%s"' % (oFile.sPath,));
+                    reporter.log2('"%s"' % (limitString(oFile.sPath),));
                     try:
                         if self.oTstDrv.fpApiVer >= 5.0:
                             oCurGuestSession.fsObjRemove(oFile.sPath);
@@ -3794,7 +3796,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for sPath in self.oTestFiles.dPaths:
             oFsObj = self.oTestFiles.dPaths[sPath];
             reporter.log2('testGuestCtrlFileStat: %s sPath=%s'
-                          % ('file' if isinstance(oFsObj, testfileset.TestFile) else 'dir ', oFsObj.sPath,));
+                          % ('file' if isinstance(oFsObj, testfileset.TestFile) else 'dir ', limitString(oFsObj.sPath),));
 
             # Query the information:
             try:
@@ -4099,7 +4101,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Open and read all the files in the test file set.
         #
         for oTestFile in aoExtraFiles + self.oTestFiles.aoFiles: # type: testfileset.TestFile
-            reporter.log2('Test file: %s bytes, "%s" ...' % (oTestFile.cbContent, oTestFile.sPath,));
+            reporter.log2('Test file: %s bytes, "%s" ...' % (oTestFile.cbContent, limitString(oTestFile.sPath),));
 
             #
             # Open it:
@@ -4655,7 +4657,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for (i, tTest) in enumerate(atTests):
             oCurTest = tTest[0]; # tdTestCopyTo
             oCurRes  = tTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sSrc=%s, sDst=%s, afFlags=%s ...' % (i, oCurTest.sSrc, oCurTest.sDst, oCurTest.afFlags));
+            reporter.log('Testing #%d, sSrc=%s, sDst=%s, afFlags=%s ...'
+                         % (i, limitString(oCurTest.sSrc), limitString(oCurTest.sDst), oCurTest.afFlags));
 
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
             fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,));
@@ -4830,7 +4833,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if isinstance(oCurTest, tdTestCopyFrom):
                 reporter.log('Testing #%d, %s: sSrc="%s", sDst="%s", afFlags="%s" ...'
                              % (i, "directory" if isinstance(oCurTest, tdTestCopyFromDir) else "file",
-                                oCurTest.sSrc, oCurTest.sDst, oCurTest.afFlags,));
+                                limitString(oCurTest.sSrc), limitString(oCurTest.sDst), oCurTest.afFlags,));
             else:
                 reporter.log('Testing #%d, tdTestRemoveHostDir "%s"  ...' % (i, oCurTest.sDir,));
             if isinstance(oCurTest, tdTestCopyFromDir) and self.oTstDrv.fpApiVer < 6.0:
