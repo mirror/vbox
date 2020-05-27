@@ -2981,18 +2981,23 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
 
                     if (fRebootOnFinish)
                     {
-                        /** @todo Implement this. */
-                        vrc = VERR_NOT_IMPLEMENTED;
                         if (pCtx->cVerbose)
-                            RTPrintf("Rebooting is not implemented yet, sorry!\n");
-
-                        if (RT_SUCCESS(vrc))
+                            RTPrintf("Rebooting guest ...\n");
+                        com::SafeArray<GuestShutdownFlag_T> aShutdownFlags;
+                        aShutdownFlags.push_back(GuestShutdownFlag_Reboot);
+                        CHECK_ERROR(pCtx->pGuest, Shutdown(ComSafeArrayAsInParam(aShutdownFlags)));
+                        if (FAILED(rc))
                         {
-                            if (pCtx->cVerbose)
-                                RTPrintf("Rebooting guest ...\n");
+                            if (rc == VBOX_E_NOT_SUPPORTED)
+                            {
+                                RTPrintf("Current installed Guest Additions don't support automatic rebooting. "
+                                         "Please reboot manually.\n");
+                                vrc = VERR_NOT_SUPPORTED;
+                            }
+                            else
+                                vrc = gctlPrintError(pCtx->pGuest, COM_IIDOF(IGuest));
                         }
-
-                        if (RT_SUCCESS(vrc))
+                        else
                         {
                             if (fWaitReady)
                             {
