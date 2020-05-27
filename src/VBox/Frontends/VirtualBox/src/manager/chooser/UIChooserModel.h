@@ -360,8 +360,8 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Build tree for main root. */
-        void buildTreeForMainRoot();
+        /** [Re]builds tree for main root, preserves selection if requested. */
+        void buildTreeForMainRoot(bool fPreserveSelection = false);
         /** Update tree for main root. */
         void updateTreeForMainRoot();
 

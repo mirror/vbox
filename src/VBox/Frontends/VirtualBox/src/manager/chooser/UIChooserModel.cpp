@@ -84,7 +84,6 @@ void UIChooserModel::init()
 
     /* Build tree for main root: */
     buildTreeForMainRoot();
-
     /* Load last selected-item: */
     loadLastSelectedItem();
 }
@@ -946,18 +945,8 @@ void UIChooserModel::sortSelectedGroupItem()
     else
         firstSelectedItem()->parentItem()->node()->sortNodes();
 
-    /* Remember first selected item definition: */
-    const QString strDefinition = firstSelectedItem() ? firstSelectedItem()->definition() : QString();
-
     /* Rebuild tree for main root: */
-    buildTreeForMainRoot();
-
-    /* Restore selection if there was some item before: */
-    if (!strDefinition.isNull())
-        setSelectedItem(strDefinition);
-    /* Else make sure at least one item selected: */
-    else
-        makeSureAtLeastOneItemSelected();
+    buildTreeForMainRoot(true /* preserve selection */);
 }
 
 void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)
@@ -1088,8 +1077,7 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
         if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
         {
             /* Rebuild tree for main root: */
-            buildTreeForMainRoot();
-
+            buildTreeForMainRoot(false /* preserve selection */);
             /* Select newly added item: */
             setSelectedItem(root()->searchForItem(uId.toString(),
                                                   UIChooserItemSearchFlag_Machine |
@@ -1111,25 +1099,14 @@ void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, c
     /* Existing VM unregistered? */
     if (!fRegistered)
     {
-        /* Remember first selected item definition: */
-        const QString strDefinition = firstSelectedItem() ? firstSelectedItem()->definition() : QString();
-
         /* Rebuild tree for main root: */
-        buildTreeForMainRoot();
-
-        /* Restore selection if there was some item before: */
-        if (!strDefinition.isNull())
-            setSelectedItem(strDefinition);
-        /* Else make sure at least one item selected: */
-        else
-            makeSureAtLeastOneItemSelected();
+        buildTreeForMainRoot(true /* preserve selection */);
     }
     /* New VM registered? */
     else
     {
         /* Rebuild tree for main root: */
-        buildTreeForMainRoot();
-
+        buildTreeForMainRoot(false /* preserve selection */);
         /* Select newly added item: */
         setSelectedItem(root()->searchForItem(uId.toString(),
                                               UIChooserItemSearchFlag_Machine |
@@ -1146,8 +1123,7 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
     if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
     {
         /* Rebuild tree for main root: */
-        buildTreeForMainRoot();
-
+        buildTreeForMainRoot(false /* preserve selection */);
         /* Select newly added item: */
         setSelectedItem(root()->searchForItem(uId.toString(),
                                               UIChooserItemSearchFlag_Machine |
@@ -1170,18 +1146,8 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
     /* Call to base-class: */
     UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(pTask);
 
-    /* Remember first selected item definition: */
-    const QString strDefinition = firstSelectedItem() ? firstSelectedItem()->definition() : QString();
-
     /* Rebuild tree for main root: */
-    buildTreeForMainRoot();
-
-    /* Restore selection if there was some item before: */
-    if (!strDefinition.isNull())
-        setSelectedItem(strDefinition);
-    /* Make sure at least one item selected: */
-    if (!currentItem())
-        makeSureAtLeastOneItemSelected();
+    buildTreeForMainRoot(true /* preserve selection */);
 }
 
 void UIChooserModel::sltMakeSureCurrentItemVisible()
@@ -1569,8 +1535,13 @@ QList<UIChooserItem*> UIChooserModel::createNavigationItemList(UIChooserItem *pI
     return navigationItems;
 }
 
-void UIChooserModel::buildTreeForMainRoot()
+void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
 {
+    /* Remember first selected item if requested: */
+    QString strSelectedItemDefinition;
+    if (fPreserveSelection && firstSelectedItem())
+        strSelectedItemDefinition = firstSelectedItem()->definition();
+
     /* Cleanup previous tree if exists: */
     delete m_pRoot;
     m_pRoot = 0;
@@ -1584,6 +1555,13 @@ void UIChooserModel::buildTreeForMainRoot()
 
     /* Update tree for main root: */
     updateTreeForMainRoot();
+
+    /* Restore selection if requested: */
+    if (fPreserveSelection)
+    {
+        setSelectedItem(strSelectedItemDefinition);
+        makeSureAtLeastOneItemSelected();
+    }
 }
 
 void UIChooserModel::updateTreeForMainRoot()
