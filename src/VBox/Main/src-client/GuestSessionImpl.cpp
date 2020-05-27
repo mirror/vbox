@@ -2706,6 +2706,67 @@ int GuestSession::i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc
 }
 
 /**
+ * Shuts down (and optionally powers off / reboots) the guest.
+ * Needs supported Guest Additions installed.
+ *
+ * @returns VBox status code. VERR_NOT_SUPPORTED if not supported by Guest Additions.
+ * @param  fFlags               Guest shutdown flags.
+ * @param  prcGuest             Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
+ *                              Any other return code indicates some host side error.
+ */
+int GuestSession::i_shutdown(uint32_t fFlags, int *prcGuest)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    AssertPtrReturn(mParent, VERR_INVALID_POINTER);
+    if (!(mParent->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_SHUTDOWN))
+        return VERR_NOT_SUPPORTED;
+
+    LogRel(("Guest Control: Shutting down guest (flags = %#x) ...\n", fFlags));
+
+    GuestWaitEvent *pEvent = NULL;
+    int vrc = registerWaitEvent(mData.mSession.mID, mData.mObjectID, &pEvent);
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    /* Prepare HGCM call. */
+    VBOXHGCMSVCPARM paParms[2];
+    int i = 0;
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], fFlags);
+
+    alock.release(); /* Drop write lock before sending. */
+
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+
+    vrc = i_sendMessage(HOST_MSG_SHUTDOWN, i, paParms);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = pEvent->Wait(30 * 1000);
+        if (RT_FAILURE(vrc))
+        {
+            if (vrc == VERR_GSTCTL_GUEST_ERROR)
+                rcGuest = pEvent->GuestResult();
+        }
+    }
+
+    if (RT_FAILURE(vrc))
+    {
+        LogRel(("Guest Control: Shutting down guest failed, rc=%Rrc\n",
+                vrc == VERR_GSTCTL_GUEST_ERROR ? rcGuest : vrc));
+
+        if (   vrc == VERR_GSTCTL_GUEST_ERROR
+            && prcGuest)
+            *prcGuest = rcGuest;
+    }
+
+    unregisterWaitEvent(pEvent);
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/**
  * Determines the protocol version (sets mData.mProtocolVersion).
  *
  * This is called from the init method prior to to establishing a guest

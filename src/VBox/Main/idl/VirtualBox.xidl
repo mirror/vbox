@@ -11789,6 +11789,25 @@
   </enum>
 
   <enum
+    name="GuestShutdownFlag"
+    uuid="587309CD-DDDA-4619-82B0-4B764D9D3BC1"
+  >
+    <desc>
+      Guest shutdown flags.
+    </desc>
+
+    <const name="None"                      value="0">
+      <desc>No flag set.</desc>
+    </const>
+    <const name="PowerOff"                  value="1">
+      <desc>Performs a reboot after shutdown.</desc>
+    </const>
+    <const name="Reboot"                    value="2">
+      <desc>Performs a reboot after shutdown.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="GuestSessionStatus"
     uuid="ac2669da-4624-44f2-85b5-0b0bfb8d8673"
     >
@@ -15051,7 +15070,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="13a11514-402e-022e-6180-c3944de3f9c8"
+    uuid="00892186-A4AF-4627-B21F-FC561CE4473C"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="16"
     >
@@ -15318,6 +15337,28 @@
       <param name="sessions" type="IGuestSession" safearray="yes" dir="return">
         <desc>
           Array with all guest sessions found matching the name specified.
+        </desc>
+      </param>
+    </method>
+
+    <method name="shutdown">
+      <desc>
+        Shuts down (and optionally halts and/or reboots) the guest.
+        Needs supported Guest Additions installed.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Guest OS is not supported for shutting down, or the
+          already installed Guest Additions are not supported.
+        </result>
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while shutting down.
+        </result>
+
+      </desc>
+      <param name="flags" type="GuestShutdownFlag" dir="in" safearray="yes">
+        <desc>
+          <link to="GuestShutdownFlag"/> flags.
         </desc>
       </param>
     </method>

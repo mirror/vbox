@@ -337,6 +337,7 @@ public:
     static HRESULT          i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int                     i_setSessionStatus(GuestSessionStatus_T sessionStatus, int sessionRc);
     int                     i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc /*= VINF_SUCCESS */);
+    int                     i_shutdown(uint32_t fFlags, int *prcGuest);
     int                     i_determineProtocolVersion(void);
     int                     i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWaitResult_T &waitResult, int *pGuestRc);
     int                     i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS,

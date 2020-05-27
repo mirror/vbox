@@ -492,6 +492,95 @@ HRESULT Guest::findSession(const com::Utf8Str &aSessionName, std::vector<ComPtr<
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+HRESULT Guest::shutdown(const std::vector<GuestShutdownFlag_T> &aFlags)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+
+    /* Validate flags. */
+    uint32_t fFlags = GuestShutdownFlag_None;
+    if (aFlags.size())
+        for (size_t i = 0; i < aFlags.size(); ++i)
+            fFlags |= aFlags[i];
+
+    const uint32_t fValidFlags = GuestShutdownFlag_None | GuestShutdownFlag_PowerOff | GuestShutdownFlag_Reboot;
+    if (fFlags & ~fValidFlags)
+        return setError(E_INVALIDARG,tr("Unknown flags: flags value %#x, invalid: %#x"), fFlags, fFlags & ~fValidFlags);
+
+    if (   (fFlags & GuestShutdownFlag_PowerOff)
+        && (fFlags & GuestShutdownFlag_Reboot))
+        return setError(E_INVALIDARG, tr("Invalid combination of flags (%#x)"), fFlags);
+
+    /*
+     * Create an anonymous session. This is required to run shutting down / rebooting
+     * the guest with administrative rights.
+     */
+    GuestSessionStartupInfo startupInfo;
+    startupInfo.mName = "Shutting down guest";
+
+    GuestCredentials guestCreds;
+
+    HRESULT hrc;
+    ComObjPtr<GuestSession> pSession;
+    int vrc = i_sessionCreate(startupInfo, guestCreds, pSession);
+    if (RT_SUCCESS(vrc))
+    {
+        Assert(!pSession.isNull());
+
+        int rcGuest = VERR_GSTCTL_GUEST_ERROR;
+        vrc = pSession->i_startSession(&rcGuest);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = pSession->i_shutdown(fFlags, &rcGuest);
+            if (RT_FAILURE(vrc))
+            {
+                switch (vrc)
+                {
+                    case VERR_NOT_SUPPORTED:
+                        hrc = setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc,
+                                           tr("Shutting down not supported by installed Guest Additions"), vrc);
+                        break;
+
+                    default:
+                    {
+                        if (vrc == VERR_GSTCTL_GUEST_ERROR)
+                            vrc = rcGuest;
+                        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not shut down guest: %Rrc"), vrc);
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (vrc == VERR_GSTCTL_GUEST_ERROR)
+                vrc = rcGuest;
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not open guest session: %Rrc"), vrc);
+        }
+    }
+    else
+    {
+        switch (vrc)
+        {
+            case VERR_MAX_PROCS_REACHED:
+                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Maximum number of concurrent guest sessions (%d) reached"),
+                                  VBOX_GUESTCTRL_MAX_SESSIONS);
+                break;
+
+            /** @todo Add more errors here. */
+
+           default:
+                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not create guest session: %Rrc"), vrc);
+                break;
+        }
+    }
+
+    LogFlowFunc(("Returning hrc=%Rhrc\n", hrc));
+    return hrc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
 HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vector<com::Utf8Str> &aArguments,
                                     const std::vector<AdditionsUpdateFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
