@@ -68,7 +68,7 @@ def limitString(sString, cLimit = 32):
         sString = str(sString);
     cLen = len(sString);
     if not cLen:
-        return cLen;
+        return '';
     return (sString[:cLimit] + '...[%d more]' % (cLen - cLimit)) if cLen > cLimit else sString;
 
 class GuestStream(bytearray):
