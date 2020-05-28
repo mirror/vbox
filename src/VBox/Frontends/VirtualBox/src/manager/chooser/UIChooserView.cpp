@@ -231,19 +231,39 @@ void UIChooserView::prepare()
     /* Install Chooser-view accessibility interface factory: */
     QAccessible::installFactory(UIAccessibilityInterfaceForUIChooserView::pFactory);
 
-    /* Prepare palette: */
-    preparePalette();
+    /* Prepare everything: */
+    prepareThis();
+    prepareWidget();
 
-    /* Setup frame: */
+    /* Update everything: */
+    updateSceneRect();
+    updateSearchWidgetGeometry();
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIChooserView::prepareThis()
+{
+    /* Prepare palette: */
+    QPalette pal = qApp->palette();
+    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
+    pal.setColor(QPalette::Base, bodyColor);
+    setPalette(pal);
+
+    /* Prepare frame: */
     setFrameShape(QFrame::NoFrame);
     setFrameShadow(QFrame::Plain);
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
-    /* Setup scroll-bars policy: */
+    /* Prepare scroll-bars policy: */
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+}
 
-    /* Create the search widget (hidden): */
+void UIChooserView::prepareWidget()
+{
+    /* Create the search widget (initially hidden): */
     m_pSearchWidget = new UIChooserSearchWidget(this);
     if (m_pSearchWidget)
     {
@@ -255,22 +275,6 @@ void UIChooserView::prepare()
         connect(m_pSearchWidget, &UIChooserSearchWidget::sigToggleVisibility,
                 this, &UIChooserView::sltHandleSearchWidgetVisibilityToggle);
     }
-
-    /* Update scene rectangle: */
-    updateSceneRect();
-    /* Update the location and size of the search widget: */
-    updateSearchWidgetGeometry();
-
-    /* Apply language settings: */
-    retranslateUi();
-}
-
-void UIChooserView::preparePalette()
-{
-    QPalette pal = qApp->palette();
-    const QColor bodyColor = pal.color(QPalette::Active, QPalette::Midlight).darker(110);
-    pal.setColor(QPalette::Base, bodyColor);
-    setPalette(pal);
 }
 
 void UIChooserView::resizeEvent(QResizeEvent *pEvent)
@@ -280,9 +284,8 @@ void UIChooserView::resizeEvent(QResizeEvent *pEvent)
     /* Notify listeners: */
     emit sigResized();
 
-    /* Update scene rectangle: */
+    /* Update everything: */
     updateSceneRect();
-    /* Update search widget geometry: */
     updateSearchWidgetGeometry();
 }
 
