@@ -81,7 +81,7 @@ protected:
     virtual ~UIThreadGroupSettingsSave() /* override */;
 
     /** Contains a thread task to be executed. */
-    void run();
+    virtual void run() /* override */;
 
     /** Holds the singleton instance. */
     static UIThreadGroupSettingsSave *s_pInstance;
@@ -338,7 +338,7 @@ void UIThreadGroupDefinitionsSave::run()
     gEDataManager->clearSelectorWindowGroupsDefinitions();
     /* For every particular group definition: */
     foreach (const QString &strId, m_lists.keys())
-        gEDataManager->setSelectorWindowGroupsDefinitions(strId, m_lists[strId]);
+        gEDataManager->setSelectorWindowGroupsDefinitions(strId, m_lists.value(strId));
 
     /* Notify listeners about completeness: */
     emit sigComplete();
@@ -524,7 +524,7 @@ QStringList UIChooserAbstractModel::possibleGroupNodeNamesForMachineNodeToMove(c
 {
     /* Search for all the machine nodes with passed ID: */
     QList<UIChooserNode*> machineNodes;
-    invisibleRoot()->searchForNodes(toOldStyleUuid(uId),
+    invisibleRoot()->searchForNodes(uId.toString(),
                                     UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId,
                                     machineNodes);
 
@@ -659,9 +659,9 @@ QString UIChooserAbstractModel::prefixToString(UIChooserNodeDataPrefixType enmTy
     switch (enmType)
     {
         /* Global nodes: */
-        case UIChooserNodeDataPrefixType_Global:        return "n";
+        case UIChooserNodeDataPrefixType_Global:   return "n";
         /* Machine nodes: */
-        case UIChooserNodeDataPrefixType_Machine:       return "m";
+        case UIChooserNodeDataPrefixType_Machine:  return "m";
         /* Group nodes: */
         case UIChooserNodeDataPrefixType_Local:    return "g";
         case UIChooserNodeDataPrefixType_Provider: return "p";
@@ -692,6 +692,25 @@ QString UIChooserAbstractModel::valueToString(UIChooserNodeDataValueType enmType
         case UIChooserNodeDataValueType_GlobalDefault: return "GLOBAL";
     }
     return QString();
+}
+
+void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
+{
+    UIVirtualMachineItem *pCache = qobject_cast<UIVirtualMachineItem*>(sender());
+    AssertPtrReturnVoid(pCache);
+    emit sigCloudMachineStateChange(pCache->id());
+}
+
+void UIChooserAbstractModel::sltGroupSettingsSaveComplete()
+{
+    makeSureGroupSettingsSaveIsFinished();
+    emit sigGroupSavingStateChanged();
+}
+
+void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()
+{
+    makeSureGroupDefinitionsSaveIsFinished();
+    emit sigGroupSavingStateChanged();
 }
 
 void UIChooserAbstractModel::sltLocalMachineStateChanged(const QUuid &uMachineId, const KMachineState)
@@ -732,21 +751,19 @@ void UIChooserAbstractModel::sltLocalMachineRegistered(const QUuid &uMachineId, 
 void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProviderShortName, const QString &strProfileName,
                                                        const QUuid &uMachineId, const bool fRegistered)
 {
-    /* Compose full group name: */
-    const QString strGroupName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
-    /* Search for corresponding profile node: */
+    /* Search for profile node: */
+    const QString strProfileNodeName = QString("/%1/%2").arg(strProviderShortName, strProfileName);
     QList<UIChooserNode*> profileNodes;
-    invisibleRoot()->searchForNodes(strGroupName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    /* Acquire corresponding profile node: */
+    invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
     AssertReturnVoid(!profileNodes.isEmpty());
-    UIChooserNodeGroup *pProfileNode = profileNodes.first()->toGroupNode();
+    UIChooserNode *pProfileNode = profileNodes.first();
     AssertPtrReturnVoid(pProfileNode);
 
     /* Existing VM unregistered? */
     if (!fRegistered)
     {
         /* Remove machine-items with passed id: */
-        invisibleRoot()->removeAllNodes(uMachineId);
+        pProfileNode->removeAllNodes(uMachineId);
 
         /* If there are no items left: */
         if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
@@ -765,14 +782,13 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
     {
         /* Add new machine-item: */
         const CCloudMachine comMachine = cloudMachineById(strProviderShortName, strProfileName, uMachineId);
-        addCloudMachineIntoTheTree(strGroupName, comMachine, true /* make it visible */);
+        addCloudMachineIntoTheTree(strProfileNodeName, comMachine, true /* make it visible */);
 
         /* Search for possible fake node: */
         QList<UIChooserNode*> fakeNodes;
-        pProfileNode->searchForNodes(toOldStyleUuid(QUuid()), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
+        pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
         /* Delete fake node if present: */
-        if (!fakeNodes.isEmpty())
-            delete fakeNodes.first();
+        delete fakeNodes.value(0);
     }
 }
 
@@ -823,24 +839,22 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     const QString strProfileNodeName = QString("/%1/%2").arg(pAcquiringTask->providerShortName(), pAcquiringTask->profileName());
     QList<UIChooserNode*> profileNodes;
     invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    UIChooserNode *pProfileNode = profileNodes.value(0);
+    AssertReturnVoid(!profileNodes.isEmpty());
+    UIChooserNode *pProfileNode = profileNodes.first();
     AssertPtrReturnVoid(pProfileNode);
 
     /* Search for fake node: */
     QList<UIChooserNode*> fakeNodes;
-    pProfileNode->searchForNodes(toOldStyleUuid(QUuid()), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
+    pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
     UIChooserNode *pFakeNode = fakeNodes.value(0);
     AssertPtrReturnVoid(pFakeNode);
-    UIChooserNodeMachine *pFakeMachineNode = pFakeNode->toMachineNode();
-    AssertPtrReturnVoid(pFakeMachineNode);
-    AssertReturnVoid(pFakeMachineNode->cacheType() == UIVirtualMachineItemType_CloudFake);
 
     /* And if we have at least one cloud machine: */
     const QVector<CCloudMachine> machines = pAcquiringTask->result();
     if (!machines.isEmpty())
     {
         /* Remove fake node: */
-        delete pFakeMachineNode;
+        delete pFakeNode;
 
         /* Add real cloud VM nodes: */
         foreach (const CCloudMachine &comCloudMachine, machines)
@@ -849,30 +863,13 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     else
     {
         /* Otherwise toggle and update "Empty" node: */
+        UIChooserNodeMachine *pFakeMachineNode = pFakeNode->toMachineNode();
+        AssertReturnVoid(pFakeMachineNode && pFakeMachineNode->cacheType() == UIVirtualMachineItemType_CloudFake);
         UIVirtualMachineItemCloud *pFakeCloudMachineItem = pFakeMachineNode->cache()->toCloud();
         AssertPtrReturnVoid(pFakeCloudMachineItem);
         pFakeCloudMachineItem->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
         pFakeCloudMachineItem->setFakeCloudItemErrorMessage(pAcquiringTask->errorInfo());
     }
-}
-
-void UIChooserAbstractModel::sltHandleCloudMachineStateChange()
-{
-    UIVirtualMachineItem *pCache = qobject_cast<UIVirtualMachineItem*>(sender());
-    AssertPtrReturnVoid(pCache);
-    emit sigCloudMachineStateChange(pCache->id());
-}
-
-void UIChooserAbstractModel::sltGroupSettingsSaveComplete()
-{
-    makeSureGroupSettingsSaveIsFinished();
-    emit sigGroupSavingStateChanged();
-}
-
-void UIChooserAbstractModel::sltGroupDefinitionsSaveComplete()
-{
-    makeSureGroupDefinitionsSaveIsFinished();
-    emit sigGroupSavingStateChanged();
 }
 
 void UIChooserAbstractModel::prepare()
@@ -928,6 +925,7 @@ void UIChooserAbstractModel::addLocalMachineIntoTheTree(const CMachine &comMachi
     const QUuid uId = comMachine.GetId();
     LogRelFlow(("UIChooserModel: Loading local VM with ID={%s}...\n",
                 toOldStyleUuid(uId).toUtf8().constData()));
+
     /* Is that machine accessible? */
     if (comMachine.GetAccessible())
     {
@@ -977,6 +975,7 @@ void UIChooserAbstractModel::addCloudMachineIntoTheTree(const QString &strGroup,
     const QUuid uId = comMachine.GetId();
     LogRelFlow(("UIChooserModel: Loading cloud VM with ID={%s}...\n",
                 toOldStyleUuid(uId).toUtf8().constData()));
+
     /* Acquire VM name: */
     QString strName = comMachine.GetName();
     if (strName.isEmpty())
@@ -1144,18 +1143,14 @@ bool UIChooserAbstractModel::shouldGlobalNodeBeFavorite(UIChooserNode *pParentNo
 
 void UIChooserAbstractModel::wipeOutEmptyGroupsStartingFrom(UIChooserNode *pParent)
 {
-    /* Cleanup all the group-items recursively first: */
+    /* Cleanup all the group children recursively first: */
     foreach (UIChooserNode *pNode, pParent->nodes(UIChooserNodeType_Group))
         wipeOutEmptyGroupsStartingFrom(pNode);
-    /* If parent has no nodes: */
-    if (!pParent->hasNodes())
+    /* If parent isn't root and has no nodes: */
+    if (!pParent->isRoot() && !pParent->hasNodes())
     {
-        /* If that is non-root item: */
-        if (!pParent->isRoot())
-        {
-            /* Delete parent node and item: */
-            delete pParent;
-        }
+        /* Delete parent node and item: */
+        delete pParent;
     }
 }
 
@@ -1168,7 +1163,7 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode,
     /* Which position should be new node placed by definitions: */
     const int iNewNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmDataType, strName);
 
-    /* If some position wanted: */
+    /* If some position defined: */
     if (iNewNodeDefinitionPosition != -1)
     {
         /* Start of list if some definition present: */
@@ -1218,8 +1213,8 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode,
                 default:
                     break;
             }
+            /* If some position defined: */
             const int iNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmNodeDataType, strDefinitionName);
-            /* If some position wanted: */
             if (iNodeDefinitionPosition != -1)
             {
                 AssertReturn(iNodeDefinitionPosition != iNewNodeDefinitionPosition, iNewNodeDesiredPosition);
@@ -1322,8 +1317,7 @@ void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, 
     /* Request for async node update if necessary: */
     if (!comMachine.GetAccessible())
     {
-        AssertPtrReturnVoid(pNode);
-        AssertReturnVoid(pNode->cacheType() == UIVirtualMachineItemType_CloudReal);
+        AssertReturnVoid(pNode && pNode->cacheType() == UIVirtualMachineItemType_CloudReal);
         pNode->cache()->toCloud()->updateInfoAsync(false /* delayed? */);
     }
 }
