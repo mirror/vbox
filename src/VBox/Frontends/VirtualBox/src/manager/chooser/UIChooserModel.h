@@ -64,34 +64,34 @@ class UIChooserModel : public UIChooserAbstractModel
 
 signals:
 
-    /** @name General stuff.
+    /** @name Tool stuff.
       * @{ */
-        /** Notify listeners about tool menu popup request for certain @a enmClass and @a position. */
+        /** Notifies listeners about tool popup-menu request for certain @a enmClass and @a position. */
         void sigToolMenuRequested(UIToolClass enmClass, const QPoint &position);
     /** @} */
 
     /** @name Selection stuff.
       * @{ */
-        /** Notifies about selection changed. */
+        /** Notifies listeners about selection changed. */
         void sigSelectionChanged();
-        /** Notifies about selection invalidated. */
+        /** Notifies listeners about selection invalidated. */
         void sigSelectionInvalidated();
 
-        /** Notifies about group toggling started. */
+        /** Notifies listeners about group toggling started. */
         void sigToggleStarted();
-        /** Notifies about group toggling finished. */
+        /** Notifies listeners about group toggling finished. */
         void sigToggleFinished();
     /** @} */
 
     /** @name Layout stuff.
       * @{ */
-        /** Notifies about root item minimum width @a iHint changed. */
+        /** Notifies listeners about root item minimum width @a iHint changed. */
         void sigRootItemMinimumWidthHintChanged(int iHint);
     /** @} */
 
     /** @name Action stuff.
       * @{ */
-        /** Notify listeners about start or show request. */
+        /** Notifies listeners about start or show request. */
         void sigStartOrShowRequest();
     /** @} */
 

@@ -230,9 +230,15 @@ void UIChooser::prepareConnections()
     AssertPtrReturnVoid(model());
     AssertPtrReturnVoid(view());
 
-    /* Chooser-model connections: */
+    /* Abstract Chooser-model connections: */
+    connect(model(), &UIChooserModel::sigCloudMachineStateChange,
+            this, &UIChooser::sigCloudMachineStateChange);
     connect(model(), &UIChooserModel::sigGroupSavingStateChanged,
             this, &UIChooser::sigGroupSavingStateChanged);
+
+    /* Chooser-model connections: */
+    connect(model(), &UIChooserModel::sigToolMenuRequested,
+            this, &UIChooser::sltToolMenuRequested);
     connect(model(), &UIChooserModel::sigSelectionChanged,
             this, &UIChooser::sigSelectionChanged);
     connect(model(), &UIChooserModel::sigSelectionInvalidated,
@@ -243,10 +249,6 @@ void UIChooser::prepareConnections()
             this, &UIChooser::sigToggleFinished);
     connect(model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged,
             view(), &UIChooserView::sltMinimumWidthHintChanged);
-    connect(model(), &UIChooserModel::sigToolMenuRequested,
-            this, &UIChooser::sltToolMenuRequested);
-    connect(model(), &UIChooserModel::sigCloudMachineStateChange,
-            this, &UIChooser::sigCloudMachineStateChange);
     connect(model(), &UIChooserModel::sigStartOrShowRequest,
             this, &UIChooser::sigStartOrShowRequest);
 
@@ -274,9 +276,15 @@ void UIChooser::cleanupConnections()
     AssertPtrReturnVoid(model());
     AssertPtrReturnVoid(view());
 
-    /* Chooser-model connections: */
+    /* Abstract Chooser-model connections: */
+    disconnect(model(), &UIChooserModel::sigCloudMachineStateChange,
+               this, &UIChooser::sigCloudMachineStateChange);
     disconnect(model(), &UIChooserModel::sigGroupSavingStateChanged,
                this, &UIChooser::sigGroupSavingStateChanged);
+
+    /* Chooser-model connections: */
+    disconnect(model(), &UIChooserModel::sigToolMenuRequested,
+               this, &UIChooser::sltToolMenuRequested);
     disconnect(model(), &UIChooserModel::sigSelectionChanged,
                this, &UIChooser::sigSelectionChanged);
     disconnect(model(), &UIChooserModel::sigSelectionInvalidated,
@@ -287,10 +295,6 @@ void UIChooser::cleanupConnections()
                this, &UIChooser::sigToggleFinished);
     disconnect(model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged,
                view(), &UIChooserView::sltMinimumWidthHintChanged);
-    disconnect(model(), &UIChooserModel::sigToolMenuRequested,
-               this, &UIChooser::sltToolMenuRequested);
-    disconnect(model(), &UIChooserModel::sigCloudMachineStateChange,
-               this, &UIChooser::sigCloudMachineStateChange);
     disconnect(model(), &UIChooserModel::sigStartOrShowRequest,
                this, &UIChooser::sigStartOrShowRequest);
 

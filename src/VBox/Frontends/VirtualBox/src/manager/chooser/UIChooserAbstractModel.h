@@ -46,7 +46,7 @@ signals:
 
     /** @name Cloud machine stuff.
       * @{ */
-        /** Notifies about state change for cloud machine with certain @a uId. */
+        /** Notifies listeners about state change for cloud machine with certain @a uId. */
         void sigCloudMachineStateChange(const QUuid &uId);
     /** @} */
 
@@ -54,7 +54,7 @@ signals:
       * @{ */
         /** Commands to start group saving. */
         void sigStartGroupSaving();
-        /** Notifies about group saving state changed. */
+        /** Notifies listeners about group saving state changed. */
         void sigGroupSavingStateChanged();
     /** @} */
 

@@ -40,25 +40,9 @@ class UIChooser : public QWidget
 
 signals:
 
-    /** @name General stuff.
-      * @{ */
-        /** Notifies listeners about selection changed. */
-        void sigSelectionChanged();
-        /** Notifies listeners about selection invalidated. */
-        void sigSelectionInvalidated();
-
-        /** Notifies listeners about toggling started. */
-        void sigToggleStarted();
-        /** Notifies listeners about toggling finished. */
-        void sigToggleFinished();
-
-        /** Notifies listeners about tool popup-menu request for certain tool @a enmClass and in specified @a position. */
-        void sigToolMenuRequested(UIToolClass enmClass, const QPoint &position);
-    /** @} */
-
     /** @name Cloud machine stuff.
       * @{ */
-        /** Notifies about state change for cloud machine with certain @a uId. */
+        /** Notifies listeners about state change for cloud machine with certain @a uId. */
         void sigCloudMachineStateChange(const QUuid &uId);
     /** @} */
 
@@ -68,9 +52,28 @@ signals:
         void sigGroupSavingStateChanged();
     /** @} */
 
+    /** @name Tool stuff.
+      * @{ */
+        /** Notifies listeners about tool popup-menu request for certain @a enmClass and @a position. */
+        void sigToolMenuRequested(UIToolClass enmClass, const QPoint &position);
+    /** @} */
+
+    /** @name Selection stuff.
+      * @{ */
+        /** Notifies listeners about selection changed. */
+        void sigSelectionChanged();
+        /** Notifies listeners about selection invalidated. */
+        void sigSelectionInvalidated();
+
+        /** Notifies listeners about group toggling started. */
+        void sigToggleStarted();
+        /** Notifies listeners about group toggling finished. */
+        void sigToggleFinished();
+    /** @} */
+
     /** @name Action stuff.
       * @{ */
-        /** Notify listeners about start or show request. */
+        /** Notifies listeners about start or show request. */
         void sigStartOrShowRequest();
         /** Notifies listeners about machine search widget visibility changed to @a fVisible. */
         void sigMachineSearchWidgetVisibilityChanged(bool fVisible);
