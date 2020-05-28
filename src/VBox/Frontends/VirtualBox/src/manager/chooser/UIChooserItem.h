@@ -107,8 +107,6 @@ public:
 
         /** Returns model reference. */
         UIChooserModel *model() const;
-        /** Returns action-pool reference. */
-        UIActionPool *actionPool() const;
 
         /** Returns whether item is root. */
         bool isRoot() const;

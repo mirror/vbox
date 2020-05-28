@@ -29,7 +29,6 @@
 #include <QDrag>
 
 /* GUI includes: */
-#include "UIChooser.h"
 #include "UIChooserItem.h"
 #include "UIChooserItemGroup.h"
 #include "UIChooserItemGlobal.h"
@@ -90,7 +89,7 @@ public:
         AssertPtrReturn(item(), 0);
 
         /* Return the parent: */
-        return QAccessible::queryAccessibleInterface(item()->model()->chooser()->view());
+        return QAccessible::queryAccessibleInterface(item()->model()->view());
     }
 
     /** Returns the number of children. */
@@ -137,8 +136,8 @@ public:
         /* Now goes the mapping: */
         const QSize   itemSize         = item()->size().toSize();
         const QPointF itemPosInScene   = item()->mapToScene(QPointF(0, 0));
-        const QPoint  itemPosInView    = item()->model()->chooser()->view()->mapFromScene(itemPosInScene);
-        const QPoint  itemPosInScreen  = item()->model()->chooser()->view()->mapToGlobal(itemPosInView);
+        const QPoint  itemPosInView    = item()->model()->view()->mapFromScene(itemPosInScene);
+        const QPoint  itemPosInScreen  = item()->model()->view()->mapToGlobal(itemPosInView);
         const QRect   itemRectInScreen = QRect(itemPosInScreen, itemSize);
         return itemRectInScreen;
     }
@@ -344,11 +343,6 @@ UIChooserModel *UIChooserItem::model() const
     UIChooserModel *pModel = qobject_cast<UIChooserModel*>(QIGraphicsWidget::scene()->parent());
     AssertMsg(pModel, ("Incorrect graphics scene parent set!"));
     return pModel;
-}
-
-UIActionPool *UIChooserItem::actionPool() const
-{
-    return model()->actionPool();
 }
 
 bool UIChooserItem::isRoot() const

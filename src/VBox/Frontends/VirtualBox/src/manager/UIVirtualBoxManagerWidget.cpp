@@ -493,7 +493,7 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
             m_pSplitter->setHandleWidth(1);
 
             /* Create Chooser-pane: */
-            m_pPaneChooser = new UIChooser(this);
+            m_pPaneChooser = new UIChooser(this, actionPool());
             if (m_pPaneChooser)
             {
                 /* Add into splitter: */

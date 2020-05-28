@@ -56,9 +56,9 @@
 typedef QSet<QString> UIStringSet;
 
 
-UIChooserModel:: UIChooserModel(UIChooser *pParent)
+UIChooserModel::UIChooserModel(UIChooser *pParent, UIActionPool *pActionPool)
     : UIChooserAbstractModel(pParent)
-    , m_pChooser(pParent)
+    , m_pActionPool(pActionPool)
     , m_pScene(0)
     , m_pMouseHandler(0)
     , m_pKeyboardHandler(0)
@@ -97,14 +97,9 @@ void UIChooserModel::deinit()
     UIChooserAbstractModel::deinit();
 }
 
-UIChooser *UIChooserModel::chooser() const
-{
-    return m_pChooser;
-}
-
 UIActionPool *UIChooserModel::actionPool() const
 {
-    return chooser() ? chooser()->actionPool() : 0;
+    return m_pActionPool;
 }
 
 QGraphicsScene *UIChooserModel::scene() const
