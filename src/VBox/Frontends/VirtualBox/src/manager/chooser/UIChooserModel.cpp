@@ -688,6 +688,8 @@ void UIChooserModel::disbandSelectedGroupItem()
         setSelectedItem(navigationItems().first());
         emit sigSelectionInvalidated();
     }
+
+    /* Save groups finally: */
     saveGroups();
 }
 
@@ -1591,20 +1593,18 @@ void UIChooserModel::removeItems(const QList<UIChooserItemMachine*> &machineItem
     if (!msgCenter().confirmMachineItemRemoval(names))
         return;
 
-    /* Remove all the passed nodes: */
+    /* Find and select closest unselected item: */
+    setSelectedItem(findClosestUnselectedItem());
+
+    /* Remove nodes of all the passed items: */
     foreach (UIChooserItemMachine *pItem, machineItems)
         delete pItem->node();
 
     /* And update model: */
     wipeOutEmptyGroups();
     updateTreeForMainRoot();
-    if (!navigationItems().isEmpty())
-    {
-        setSelectedItem(navigationItems().first());
-        emit sigSelectionInvalidated();
-    }
-    else
-        clearSelectedItems();
+
+    /* Save groups finally: */
     saveGroups();
 }
 
