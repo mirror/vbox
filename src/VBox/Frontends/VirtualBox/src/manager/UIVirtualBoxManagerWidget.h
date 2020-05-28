@@ -57,6 +57,12 @@ class UIVirtualBoxManagerWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
+    /** @name Tool-bar stuff.
+      * @{ */
+        /* Notifies listeners about tool-bar height change. */
+        void sigToolBarHeightChange(int iHeight);
+    /** @} */
+
     /** @name Chooser pane stuff.
       * @{ */
         /** Notifies about Chooser-pane index change. */
@@ -192,10 +198,10 @@ public:
 
 public slots:
 
-    /** @name Chooser pane stuff.
+    /** @name Tool-bar stuff.
       * @{ */
-        /** Handles context-menu request for passed @a position. */
-        void sltHandleContextMenuRequest(const QPoint &position);
+        /** Handles tool-bar context-menu request for passed @a position. */
+        void sltHandleToolBarContextMenuRequest(const QPoint &position);
     /** @} */
 
 protected:
@@ -207,6 +213,12 @@ protected:
     /** @} */
 
 private slots:
+
+    /** @name Tool-bar stuff.
+      * @{ */
+        /** Handles signal about tool-bar resize to @a newSize. */
+        void sltHandleToolBarResize(const QSize &newSize);
+    /** @} */
 
     /** @name Chooser pane stuff.
       * @{ */

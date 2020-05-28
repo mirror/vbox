@@ -229,7 +229,7 @@ bool UIVirtualBoxManagerWidget::isCurrentStateItemSelected() const
     return m_pPaneToolsMachine->isCurrentStateItemSelected();
 }
 
-void UIVirtualBoxManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
+void UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest(const QPoint &position)
 {
     /* Populate toolbar actions: */
     QList<QAction*> actions;
@@ -276,6 +276,11 @@ void UIVirtualBoxManagerWidget::retranslateUi()
     // after changing the text.
     m_pToolBar->updateLayout();
 #endif
+}
+
+void UIVirtualBoxManagerWidget::sltHandleToolBarResize(const QSize &newSize)
+{
+    emit sigToolBarHeightChange(newSize.height());
 }
 
 void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
@@ -622,12 +627,14 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
 void UIVirtualBoxManagerWidget::prepareConnections()
 {
     /* Tool-bar connections: */
-    connect(m_pToolBar, &UIToolBar::sigResized,
-            m_pPaneChooser, &UIChooser::sltHandleToolbarResize);
     connect(m_pToolBar, &UIToolBar::customContextMenuRequested,
-            this, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
+            this, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
+    connect(m_pToolBar, &UIToolBar::sigResized,
+            this, &UIVirtualBoxManagerWidget::sltHandleToolBarResize);
 
     /* Chooser-pane connections: */
+    connect(this, &UIVirtualBoxManagerWidget::sigToolBarHeightChange,
+            m_pPaneChooser, &UIChooser::setGlobalItemHeightHint);
     connect(m_pPaneChooser, &UIChooser::sigSelectionChanged,
             this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange);
     connect(m_pPaneChooser, &UIChooser::sigSelectionInvalidated,
@@ -876,12 +883,14 @@ void UIVirtualBoxManagerWidget::saveSettings()
 void UIVirtualBoxManagerWidget::cleanupConnections()
 {
     /* Tool-bar connections: */
-    disconnect(m_pToolBar, &UIToolBar::sigResized,
-               m_pPaneChooser, &UIChooser::sltHandleToolbarResize);
     disconnect(m_pToolBar, &UIToolBar::customContextMenuRequested,
-               this, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
+               this, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
+    disconnect(m_pToolBar, &UIToolBar::sigResized,
+               this, &UIVirtualBoxManagerWidget::sltHandleToolBarResize);
 
     /* Chooser-pane connections: */
+    disconnect(this, &UIVirtualBoxManagerWidget::sigToolBarHeightChange,
+               m_pPaneChooser, &UIChooser::setGlobalItemHeightHint);
     disconnect(m_pPaneChooser, &UIChooser::sigSelectionChanged,
                this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange);
     disconnect(m_pPaneChooser, &UIChooser::sigSelectionInvalidated,

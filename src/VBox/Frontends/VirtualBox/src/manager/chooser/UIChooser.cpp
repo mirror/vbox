@@ -39,6 +39,12 @@ UIChooser::~UIChooser()
     cleanup();
 }
 
+bool UIChooser::isGroupSavingInProgress() const
+{
+    AssertPtrReturn(model(), false);
+    return model()->isGroupSavingInProgress();
+}
+
 UIVirtualMachineItem *UIChooser::currentItem() const
 {
     AssertPtrReturn(model(), 0);
@@ -99,12 +105,6 @@ QString UIChooser::fullGroupName() const
     return model()->fullGroupName();
 }
 
-bool UIChooser::isGroupSavingInProgress() const
-{
-    AssertPtrReturn(model(), false);
-    return model()->isGroupSavingInProgress();
-}
-
 void UIChooser::openGroupNameEditor()
 {
     AssertPtrReturnVoid(model());
@@ -159,11 +159,10 @@ void UIChooser::setMachineSearchWidgetVisibility(bool fVisible)
     view()->setSearchWidgetVisible(fVisible);
 }
 
-void UIChooser::sltHandleToolbarResize(const QSize &newSize)
+void UIChooser::setGlobalItemHeightHint(int iHeight)
 {
-    /* Pass height to a model: */
     AssertPtrReturnVoid(model());
-    model()->setGlobalItemHeightHint(newSize.height());
+    model()->setGlobalItemHeightHint(iHeight);
 }
 
 void UIChooser::sltToolMenuRequested(UIToolClass enmClass, const QPoint &position)

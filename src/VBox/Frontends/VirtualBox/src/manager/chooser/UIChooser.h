@@ -98,6 +98,12 @@ public:
         UIChooserView *view() const { return m_pChooserView; }
     /** @} */
 
+    /** @name Group saving stuff.
+      * @{ */
+        /** Returns whether group saving is in progress. */
+        bool isGroupSavingInProgress() const;
+    /** @} */
+
     /** @name Current-item stuff.
       * @{ */
         /** Returns current-item. */
@@ -125,12 +131,6 @@ public:
         QString fullGroupName() const;
     /** @} */
 
-    /** @name Group saving stuff.
-      * @{ */
-        /** Returns whether group saving is in progress. */
-        bool isGroupSavingInProgress() const;
-    /** @} */
-
     /** @name Action handling stuff.
       * @{ */
         /** Opens group name editor. */
@@ -155,10 +155,10 @@ public:
 
 public slots:
 
-    /** @name General stuff.
+    /** @name Layout stuff.
       * @{ */
-        /** Handles toolbar resize to @a newSize. */
-        void sltHandleToolbarResize(const QSize &newSize);
+        /** Defines global item @a iHeight. */
+        void setGlobalItemHeightHint(int iHeight);
     /** @} */
 
 private slots:

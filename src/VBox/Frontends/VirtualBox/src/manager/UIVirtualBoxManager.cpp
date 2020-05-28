@@ -1544,7 +1544,7 @@ void UIVirtualBoxManager::prepareConnections()
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCurrentSnapshotItemChange,
             this, &UIVirtualBoxManager::sltCurrentSnapshotItemChange);
     connect(menuBar(), &QMenuBar::customContextMenuRequested,
-            m_pWidget, &UIVirtualBoxManagerWidget::sltHandleContextMenuRequest);
+            m_pWidget, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
 
     /* Global VBox event handlers: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
