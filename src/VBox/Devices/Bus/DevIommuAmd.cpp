@@ -4762,8 +4762,11 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
 
-            /** @todo IOMMU: Figure out how we'll redirect LINT0 and LINT1 legacy PIC
-             *        interrupts here. */
+            /*
+             * LINT0/LINT1 pins cannot be driven by PCI(e) devices. Perhaps for a Southbridge
+             * that's connected through HyperTransport it might be possible; but for us, it
+             * doesn't seem we need to specially handle these pins.
+             */
 
             /*
              * Validate the MSI source address.
