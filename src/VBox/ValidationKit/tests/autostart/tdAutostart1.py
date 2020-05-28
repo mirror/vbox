@@ -604,6 +604,25 @@ class tdAutostartOsLinux(tdAutostartOs):
         fRc = fRc and self.waitVMisReady(oSession);
         return fRc;
 
+    def powerDownVM(self, oSession):
+        """
+        Power down the VM by calling guest process without wating
+        the VM is really powered off.
+        It helps the terminateBySession to stop the VM without aborting.
+        """
+
+        fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox',
+                                            'vbox', 'password', 10 * 1000, True);
+        if not fRc:
+            return fRc;
+
+        (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Power down the VM',
+                                                  30 * 1000, '/usr/bin/sudo',
+                                                  ['sudo', 'poweroff'],
+                                                  False, True);
+        fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
+        return fRc;
+
     def installAdditions(self, oSession, oVM):
         """
         Install guest additions in the guest.
@@ -923,6 +942,26 @@ class tdAutostartOsWin(tdAutostartOs):
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
 
         fRc = fRc and self.waitVMisReady(oSession);
+        return fRc;
+
+    def powerDownVM(self, oSession):
+        """
+        Power down the VM by calling guest process without wating
+        the VM is really powered off.
+        It helps the terminateBySession to stop the VM without aborting.
+        """
+
+        fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox',
+                                            'vbox', 'password', 10 * 1000, True);
+        if not fRc:
+            return fRc;
+
+        (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Power down the VM',
+                                                  30 * 1000, 'C:\\Windows\\System32\\shutdown.exe',
+                                                  ['C:\\Windows\\System32\\shutdown.exe', '/f',
+                                                   '/s', '/t', '0'],
+                                                  False, True);
+        fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         return fRc;
 
     def installAdditions(self, oSession, oVM):
@@ -1427,6 +1466,10 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
                     reporter.log('Installing VirtualBox in the guest failed');
             else:
                 reporter.log('Creating test users failed');
+
+            try:    oGuestOsHlp.powerDownVM(oSession);
+            except: pass;
+
         else:
             reporter.log('Guest OS helper not created for VM %s' % (sVmName));
             fRc = False;
@@ -1479,7 +1522,8 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
             oSession = self.startVmByName(sVmName);
             if oSession is not None:
                 fRc = self.testAutostartRunProgs(oSession, sVmName, oVM);
-                self.terminateVmBySession(oSession);
+                try:    self.terminateVmBySession(oSession);
+                except: pass;
                 self.deleteVM(oVM);
             else:
                 fRc = False;
