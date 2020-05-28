@@ -3436,7 +3436,6 @@ class TestDriver(base.TestDriver):                                              
         Generic TXS task wrapper which waits both on the TXS and the session tasks.
 
         Returns False on error, logged.
-
         Returns task result on success.
         """
         # All async methods ends with the following two args.
@@ -3542,31 +3541,44 @@ class TestDriver(base.TestDriver):                                              
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncDownloadFile, \
                               (sRemoteFile, sLocalFile, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
-    def txsDownloadFiles(self, oSession, oTxsSession, asFiles, fIgnoreErrors = False):
+    def txsDownloadFiles(self, oSession, oTxsSession, aasFiles, fAddToLog = True, fIgnoreErrors = False):
         """
-        Convenience function to get files from the guest and stores it
-        into the scratch directory for later (manual) review.
+        Convenience function to get files from the guest, storing them in the
+        scratch and adding them to the test result set (optional, but default).
+
+        The aasFiles parameter contains an array of with guest-path + host-path
+        pairs, optionally a file 'kind', description and an alternative upload
+        filename can also be specified.
+
+        Host paths are relative to the scratch directory or they must be given
+        in absolute form.  The guest path should be using guest path style.
 
         Returns True on success.
-
-        Returns False on failure, logged.
+        Returns False on failure (unless fIgnoreErrors is set), logged.
         """
-        fRc = True;
-        for sGstFile in asFiles:
-            sTmpFile = os.path.join(self.sScratchPath, 'tmp-' + os.path.basename(sGstFile));
-            reporter.log2('Downloading file "%s" to "%s" ...' % (sGstFile, sTmpFile));
-            # First try to remove (unlink) an existing temporary file, as we don't truncate the file.
-            try:    os.unlink(sTmpFile);
+        for asEntry in aasFiles:
+            # Unpack:
+            sGstFile     = asEntry[0];
+            sHstFile     = asEntry[1];
+            sKind        = asEntry[2] if len(asEntry) > 2 and asEntry[2] else 'misc/other';
+            sDescription = asEntry[3] if len(asEntry) > 3 and asEntry[3] else '';
+            sAltName     = asEntry[4] if len(asEntry) > 4 and asEntry[4] else None;
+            assert len(asEntry) <= 5 and sGstFile and sHstFile;
+            if not os.path.isabs(sHstFile):
+                sHstFile = os.path.join(self.sScratchPath, sHstFile);
+
+            reporter.log2('Downloading file "%s" to "%s" ...' % (sGstFile, sHstFile,));
+
+            try:    os.unlink(sHstFile); ## @todo txsDownloadFile doesn't truncate the output file.
             except: pass;
-            ## @todo Check for already existing files on the host and create a new
-            #        name for the current file to download.
-            fRc = self.txsDownloadFile(oSession, oTxsSession, sGstFile, sTmpFile, 30 * 1000, fIgnoreErrors);
+
+            fRc = self.txsDownloadFile(oSession, oTxsSession, sGstFile, sHstFile, 30 * 1000, fIgnoreErrors);
             if fRc:
-                reporter.addLogFile(sTmpFile, 'misc/other', 'guest - ' + sGstFile);
+                if fAddToLog:
+                    reporter.addLogFile(sHstFile, sKind, sDescription, sAltName);
             else:
                 if fIgnoreErrors is not True:
-                    reporter.error('error downloading file "%s" to "%s"' % (sGstFile, sTmpFile));
-                    return fRc;
+                    return reporter.error('error downloading file "%s" to "%s"' % (sGstFile, sHstFile));
                 reporter.log('warning: file "%s" was not downloaded, ignoring.' % (sGstFile,));
         return True;
 

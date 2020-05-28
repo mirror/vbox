@@ -192,25 +192,18 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Returns a success indicator on the general test execution. This is not
         the actual test result.
         """
-        fRc = False;
-
-        if oTestVm.isWindows():
-            self.sFileCdWait = 'VBoxWindowsAdditions.exe';
-        elif oTestVm.isLinux():
-            self.sFileCdWait = 'VBoxLinuxAdditions.run';
-
-        self.logVmInfo(oVM);
-
+        # HACK ALERT! HORRIBLE MESS THAT SHOULDN'T BE HERE!
+        aasLogFiles = [ ];
         if oTestVm.isLinux():
             reporter.testStart('Enabling udev logging ...');
             oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
             reporter.testDone();
             if oTxsSession:
-                oTxsSession.syncExec("sed",
-                                     ("sed", "-i", "'s/.*udev_log.*/udev_log=\"debug\"/'", "/etc/udev/udev.conf"),
+                oTxsSession.syncExec("sed", ("sed", "-i", "'s/.*udev_log.*/udev_log=\"debug\"/'", "/etc/udev/udev.conf"),
                                      fIgnoreErrors = True);
 
                 sUDevMonitorLog = '/tmp/udev_monitor.log';
+                aasLogFiles.append((sUDevMonitorLog, 'guest-udev_monitor-%s.log' % (oTestVm.sVmName,),));
 
                 reporter.testStart('Enabling udev monitoring ...');
                 sUdevSvc = StringIO();
@@ -227,9 +220,18 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 sUdevSvc.write('WantedBy=sysinit.target');
                 oTxsSession.syncUploadString(sUdevSvc.getvalue(), '/etc/systemd/system/systemd-udev-monitor.service', 0o644,
                                              fIgnoreErrors = True);
-                oTxsSession.syncExec("systemctl", ("systemctl", "enable", "systemd-udev-monitor.service"),
-                                     fIgnoreErrors = True);
+                oTxsSession.syncExec("systemctl", ("systemctl", "enable", "systemd-udev-monitor.service"), fIgnoreErrors = True);
                 reporter.testDone();
+        # HACK ALERT - END.
+
+        fRc = False;
+
+        self.logVmInfo(oVM);
+
+        if oTestVm.isWindows():
+            self.sFileCdWait = 'VBoxWindowsAdditions.exe';
+        elif oTestVm.isLinux():
+            self.sFileCdWait = 'VBoxLinuxAdditions.run';
 
         reporter.testStart('Waiting for TXS + CD (%s)' % (self.sFileCdWait,));
         if oTestVm.isLinux():
@@ -242,9 +244,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                                                       sFileCdWait = self.sFileCdWait);
         reporter.testDone();
 
-        if oTestVm.isLinux():
-            asLogFiles = [ sUDevMonitorLog ];
-            self.txsDownloadFiles(oSession, oTxsSession, asLogFiles, fIgnoreErrors = True);
+        # More HACK ALERT stuff.
+        if aasLogFiles and oTxsSession:
+            self.txsDownloadFiles(oSession, oTxsSession, aasLogFiles, fIgnoreErrors = True);
 
         if oSession is not None:
             self.addTask(oTxsSession);
@@ -417,12 +419,12 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Note! On some guests the files in question still can be locked by the OS, so ignore
         #       deletion errors from the guest side (e.g. sharing violations) and just continue.
         #
-        asLogFiles = [];
-        fHaveSetupApiDevLog = False;
         sWinDir = self.getGuestWinDir(oTestVm);
-        asLogFiles = [ oTestVm.pathJoin(sWinDir, 'setupapi.log'),
-                       oTestVm.pathJoin(sWinDir, 'setupact.log'),
-                       oTestVm.pathJoin(sWinDir, 'setuperr.log') ];
+        aasLogFiles = [
+            ( oTestVm.pathJoin(sWinDir, 'setupapi.log'), 'ga-setupapi-%s.log' % (oTestVm.sVmName,), ),
+            ( oTestVm.pathJoin(sWinDir, 'setupact.log'), 'ga-setupact-%s.log' % (oTestVm.sVmName,), ),
+            ( oTestVm.pathJoin(sWinDir, 'setuperr.log'), 'ga-setuperr-%s.log' % (oTestVm.sVmName,), ),
+        ];
 
         # Apply The SetupAPI logging level so that we also get the (most verbose) setupapi.dev.log file.
         ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
@@ -434,8 +436,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                                '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'),
                                                fCheckSessionStatus = True);
 
-        for sFile in asLogFiles:
-            self.txsRmFile(oSession, oTxsSession, sFile, 10 * 1000, fIgnoreErrors = True);
+        for sGstFile, _ in aasLogFiles:
+            self.txsRmFile(oSession, oTxsSession, sGstFile, 10 * 1000, fIgnoreErrors = True);
 
         #
         # The actual install.
@@ -446,23 +448,22 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                               ('${CDROM}/VBoxWindowsAdditions.exe', '/S', '/l', '/with_autologon'), fCheckSessionStatus = True);
 
         # Add the Windows Guest Additions installer files to the files we want to download
-        # from the guest.
-        sGuestAddsDir = 'C:/Program Files/Oracle/VirtualBox Guest Additions/';
-        asLogFiles.append(sGuestAddsDir + 'install.log');
-        # Note: There won't be a install_ui.log because of the silent installation.
-        asLogFiles.append(sGuestAddsDir + 'install_drivers.log');
-        asLogFiles.append('C:/Windows/setupapi.log');
+        # from the guest. Note: There won't be a install_ui.log because of the silent installation.
+        sGuestAddsDir = 'C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\';
+        aasLogFiles.append((sGuestAddsDir + 'install.log',           'ga-install-%s.log' % (oTestVm.sVmName,),));
+        aasLogFiles.append((sGuestAddsDir + 'install_drivers.log',   'ga-install_drivers-%s.log' % (oTestVm.sVmName,),));
+        aasLogFiles.append(('C:\\Windows\\setupapi.log',             'ga-setupapi-%s.log' % (oTestVm.sVmName,),));
 
         # Note: setupapi.dev.log only is available since Windows 2000.
         if fHaveSetupApiDevLog:
-            asLogFiles.append('C:/Windows/setupapi.dev.log');
+            aasLogFiles.append(('C:\\Windows\\setupapi.dev.log',     'ga-setupapi.dev-%s.log' % (oTestVm.sVmName,),));
 
         #
         # Download log files.
         # Ignore errors as all files above might not be present (or in different locations)
         # on different Windows guests.
         #
-        self.txsDownloadFiles(oSession, oTxsSession, asLogFiles, fIgnoreErrors = True);
+        self.txsDownloadFiles(oSession, oTxsSession, aasLogFiles, fIgnoreErrors = True);
 
         #
         # Reboot the VM and reconnect the TXS session.
@@ -493,11 +494,6 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         return iRc;
 
     def testLinuxInstallAdditions(self, oSession, oTxsSession, oTestVm):
-        _ = oSession;
-        _ = oTestVm;
-
-        fRc = False;
-
         #
         # The actual install.
         # Also tell the installer to produce the appropriate log files.
@@ -522,9 +518,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Download log files.
         # Ignore errors as all files above might not be present for whatever reason.
         #
-        asLogFile = [];
-        asLogFile.append('/var/log/vboxadd-install.log');
-        self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
+        self.txsDownloadFiles(oSession, oTxsSession,
+                              [('/var/log/vboxadd-install.log', 'vboxadd-install-%s.log' % oTestVm.sName), ],
+                              fIgnoreErrors = True);
 
         # Do the final reboot to get the just installed Guest Additions up and running.
         if fRc:
