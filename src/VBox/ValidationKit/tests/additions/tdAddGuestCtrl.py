@@ -2957,20 +2957,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         # Test very long arguments.
         if self.oTstDrv.fpApiVer >= 6.1:
-            if oTestVm.isWindows() \
-            or oTestVm.isOS2():
-                sEcho = sShell;
-                sEchoSuffix = '';
-            else:
-                sEcho       = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'echo');
-                # The suffix acts as an indicator / beacon to see if the actual (random) args were received fully.
-                sEchoSuffix = "-n";
-
             for _ in xrange(0, 16):
+                if oTestVm.isWindows() \
+                or oTestVm.isOS2():
+                    sCmd   = sShell;
+                    asArgs = [ sShell, sShellOpt, "echo",
+                               self.oTestFiles.generateFilenameEx(128 * 1024, 2048), "--end-marker" ],
+                else:
+                    sCmd   = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'echo');
+                    asArgs = [ sCmd,
+                               self.oTestFiles.generateFilenameEx(128 * 1024, 2048), "--end-marker" ],
                 ## @todo Check limits; on Ubuntu with 256KB IPRT returns VERR_NOT_IMPLEMENTED.
-                atExec.append([ tdTestExec(sCmd = sEcho,
-                                           asArgs = [ sEcho, sShellOpt,
-                                                      self.oTestFiles.generateFilenameEx(128 * 1024, 2048), sEchoSuffix ],
+                atExec.append([ tdTestExec(sCmd, asArgs,
                                            afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut,
                                                        vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                                 tdTestResultExec(fRc = True) ]);
