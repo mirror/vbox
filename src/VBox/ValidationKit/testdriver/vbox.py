@@ -2630,9 +2630,9 @@ class TestDriver(base.TestDriver):                                              
         sWinDir = '';
         if oTestVm.isWindows():
             if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
-                sWinDir = 'C:/WinNT/';
+                sWinDir = 'C:\\WinNT\\';
             else:
-                sWinDir = 'C:/Windows/';
+                sWinDir = 'C:\\Windows\\';
         assert sWinDir != '', 'Retrieving Windows directory for non-Windows OS';
         return sWinDir;
 
