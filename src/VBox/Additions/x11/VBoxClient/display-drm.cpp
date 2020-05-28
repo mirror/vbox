@@ -105,6 +105,11 @@ struct DRMCONTEXT
 
 static void drmConnect(struct DRMCONTEXT *pContext)
 {
+    uid_t guid = getuid();
+    if (setreuid(0, 0) == -1)
+    {
+        perror("setuid failed drm device open.");
+    }
     unsigned i;
     RTFILE hDevice;
 
@@ -144,6 +149,7 @@ static void drmConnect(struct DRMCONTEXT *pContext)
         hDevice = NIL_RTFILE;
     }
     pContext->hDevice = hDevice;
+    setreuid(guid, 0);
 }
 
 /** Preferred screen layout information for DRM_VMW_UPDATE_LAYOUT IoCtl.  The
@@ -162,9 +168,9 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
                          unsigned cHeads)
 {
     uid_t guid = getuid();
-    if (setuid(0) == -1)
+    if (setreuid(0, 0) == -1)
     {
-        perror("setuid failed during drm ioctl.");
+        perror("setuid failed drm device open.");
     }
 
     int rc;
@@ -178,17 +184,11 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
                      &ioctlLayout, sizeof(ioctlLayout), NULL);
     if (RT_FAILURE(rc) && rc != VERR_INVALID_PARAMETER)
         VBClLogFatalError("Failure updating layout, rc=%Rrc\n", rc);
-    setuid(guid);
+    setreuid(guid, 0);
 }
 
 int main(int argc, char *argv[])
 {
-    uid_t guid = getuid();
-    if (setuid(0) == -1)
-    {
-        perror("setuid failed during init.");
-    }
-
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
         return VERR_INVALID_HANDLE;
     }
-    setuid(guid);
+
     for (;;)
     {
         uint32_t events;
