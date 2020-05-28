@@ -1570,6 +1570,10 @@ void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
         setSelectedItem(strSelectedItemDefinition);
         makeSureAtLeastOneItemSelected();
     }
+
+    /* Repeat search if search widget is visible: */
+    if (view() && view()->isSearchWidgetVisible())
+        view()->redoSearch();
 }
 
 void UIChooserModel::updateTreeForMainRoot()

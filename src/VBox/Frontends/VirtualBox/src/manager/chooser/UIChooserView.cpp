@@ -168,6 +168,15 @@ void UIChooserView::appendToSearchString(const QString &strSearchText)
     m_pSearchWidget->appendToSearchString(strSearchText);
 }
 
+void UIChooserView::redoSearch()
+{
+    /* Make sure search widget exists: */
+    AssertPtrReturnVoid(m_pSearchWidget);
+
+    /* Pass request to search widget: */
+    m_pSearchWidget->redoSearch();
+}
+
 void UIChooserView::sltMinimumWidthHintChanged(int iHint)
 {
     /* Is there something changed? */

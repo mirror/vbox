@@ -69,6 +69,8 @@ public:
         /** Forwards @a strSearchText to the search widget which in
           * turn appends it to the current (if any) search term. */
         void appendToSearchString(const QString &strSearchText);
+        /** Repeats the last search again. */
+        void redoSearch();
     /** @} */
 
 public slots:
