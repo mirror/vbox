@@ -41,25 +41,6 @@
 /* Other VBox includes: */
 #include "iprt/assert.h"
 
-UIChooserDisabledItemEffect::UIChooserDisabledItemEffect(int iBlurRadius, QObject *pParent /* = 0 */)
-    :QGraphicsEffect(pParent)
-    , m_iBlurRadius(iBlurRadius)
-{
-}
-
-void UIChooserDisabledItemEffect::draw(QPainter *painter)
-{
-    QPoint offset;
-    QPixmap pixmap;
-    /* Get the original pixmap: */
-    pixmap = sourcePixmap( Qt::LogicalCoordinates, &offset );
-    QImage resultImage;
-    /* Apply our blur and grayscale filters to the original pixmap: */
-    UIImageTools::blurImage(pixmap.toImage(), resultImage, m_iBlurRadius);
-    pixmap.convertFromImage(UIImageTools::toGray(resultImage));
-    /* Use the filtered pixmap: */
-    painter->drawPixmap( offset, pixmap );
-}
 
 /** QAccessibleObject extension used as an accessibility interface for Chooser-view items. */
 class UIAccessibilityInterfaceForUIChooserItem : public QAccessibleObject
@@ -212,6 +193,31 @@ private:
 
 
 /*********************************************************************************************************************************
+*   Class UIChooserDisabledItemEffect implementation.                                                                            *
+*********************************************************************************************************************************/
+
+UIChooserDisabledItemEffect::UIChooserDisabledItemEffect(int iBlurRadius, QObject *pParent /* = 0 */)
+    : QGraphicsEffect(pParent)
+    , m_iBlurRadius(iBlurRadius)
+{
+}
+
+void UIChooserDisabledItemEffect::draw(QPainter *pPainter)
+{
+    QPoint offset;
+    QPixmap pixmap;
+    /* Get the original pixmap: */
+    pixmap = sourcePixmap(Qt::LogicalCoordinates, &offset);
+    QImage resultImage;
+    /* Apply our blur and grayscale filters to the original pixmap: */
+    UIImageTools::blurImage(pixmap.toImage(), resultImage, m_iBlurRadius);
+    pixmap.convertFromImage(UIImageTools::toGray(resultImage));
+    /* Use the filtered pixmap: */
+    pPainter->drawPixmap(offset, pixmap);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIChooserItem implementation.                                                                                          *
 *********************************************************************************************************************************/
 
@@ -310,11 +316,15 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
             /* Start state-machine: */
             m_pHoveringMachine->start();
         }
+
+        /* Allocate the effect instance which we use when the item is marked as disabled: */
+        m_pDisabledEffect = new UIChooserDisabledItemEffect(1 /* Blur Radius */);
+        if (m_pDisabledEffect)
+        {
+            setGraphicsEffect(m_pDisabledEffect);
+            m_pDisabledEffect->setEnabled(node()->isDisabled());
+        }
     }
-    /* Allocate the effect instance which we use when the item is marked as disablec: */
-    m_pDisabledEffect = new UIChooserDisabledItemEffect(1 /* Blur Radius */);
-    setGraphicsEffect(m_pDisabledEffect);
-    m_pDisabledEffect->setEnabled(false);
 }
 
 UIChooserItemGroup *UIChooserItem::toGroupItem()
@@ -401,10 +411,10 @@ void UIChooserItem::setHovered(bool fHovered)
         emit sigHoverLeave();
 }
 
-void UIChooserItem::disableEnableItem(bool fDisabled)
+void UIChooserItem::setDisabledEffect(bool fOn)
 {
     if (m_pDisabledEffect)
-        m_pDisabledEffect->setEnabled(fDisabled);
+        m_pDisabledEffect->setEnabled(fOn);
 }
 
 void UIChooserItem::updateGeometry()

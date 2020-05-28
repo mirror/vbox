@@ -81,5 +81,5 @@ void UIChooserNode::setDisabled(bool fDisabled)
         return;
     m_fDisabled = fDisabled;
     if (m_pItem)
-        m_pItem->disableEnableItem(m_fDisabled);
+        m_pItem->setDisabledEffect(m_fDisabled);
 }

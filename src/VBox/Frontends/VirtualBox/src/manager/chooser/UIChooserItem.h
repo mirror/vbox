@@ -49,18 +49,27 @@ class UIChooserItemMachine;
 class UIChooserModel;
 class UIChooserNode;
 
-/** A simple QGraphicsEffect extension to mark disabled UIChooserItems. Applies blur and gray scale filters. */
+
+/** A simple QGraphicsEffect extension to mark disabled UIChooserItem.
+  * @note Applies blur and gray scale filters. */
 class UIChooserDisabledItemEffect : public QGraphicsEffect
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs blur effect passing @a pParent to the base-class.
+      * @param  iBlurRadius  Brings the blur effect radius. */
     UIChooserDisabledItemEffect(int iBlurRadius, QObject *pParent = 0);
 
 protected:
 
-    virtual void draw(QPainter *painter);
+    /** Draws effect with passed @a pPainter. */
+    virtual void draw(QPainter *pPainter);
+
+private:
+
+    /** Holds the blur effect radius. */
     int m_iBlurRadius;
 };
 
@@ -144,8 +153,8 @@ public:
         /** Installs event-filter for @a pSource object.
           * @note  Base-class implementation does nothing. */
         virtual void installEventFilterHelper(QObject *pSource) { Q_UNUSED(pSource); }
-        /** Enables the visual effect for disabled item. */
-        void disableEnableItem(bool fDisabled);
+        /** Defines whether visual effect for disabled item is @a fOn. */
+        void setDisabledEffect(bool fOn);
     /** @} */
 
     /** @name Children stuff.
@@ -299,22 +308,22 @@ private:
         UIChooserNode *m_pNode;
 
         /** Holds whether item is hovered. */
-        bool                m_fHovered;
+        bool                         m_fHovered;
         /** Holds the hovering animation machine instance. */
-        QStateMachine      *m_pHoveringMachine;
+        QStateMachine               *m_pHoveringMachine;
         /** Holds the forward hovering animation instance. */
-        QPropertyAnimation *m_pHoveringAnimationForward;
+        QPropertyAnimation          *m_pHoveringAnimationForward;
         /** Holds the backward hovering animation instance. */
-        QPropertyAnimation *m_pHoveringAnimationBackward;
+        QPropertyAnimation          *m_pHoveringAnimationBackward;
         /** Holds the animation duration. */
-        int                 m_iAnimationDuration;
+        int                          m_iAnimationDuration;
         /** Holds the default animation value. */
-        int                 m_iDefaultValue;
+        int                          m_iDefaultValue;
         /** Holds the hovered animation value. */
-        int                 m_iHoveredValue;
+        int                          m_iHoveredValue;
         /** Holds the animated value. */
-        int                 m_iAnimatedValue;
-        /** Holds the pointer to blur effect instance. */
+        int                          m_iAnimatedValue;
+        /** Holds the blur effect instance. */
         UIChooserDisabledItemEffect *m_pDisabledEffect;
     /** @} */
 
