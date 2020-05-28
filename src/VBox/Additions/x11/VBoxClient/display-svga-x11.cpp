@@ -684,7 +684,7 @@ static bool isXwayland(void)
 
 static bool init()
 {
-    if (isXwayland())
+    if (1 || isXwayland())
     {
         VBClLogInfo("The parent session seems to be running on Wayland. Starting DRM client\n");
         char* argv[] = {NULL};

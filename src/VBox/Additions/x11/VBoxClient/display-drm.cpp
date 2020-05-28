@@ -45,7 +45,9 @@
 #include <iprt/file.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
-
+#include <iprt/initterm.h>
+#include <iprt/message.h>
+#include <unistd.h>
 #include <stdio.h>
 
 
@@ -159,6 +161,12 @@ AssertCompileSize(struct DRMVMWUPDATELAYOUT, 16);
 static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects,
                          unsigned cHeads)
 {
+    uid_t guid = getuid();
+    if (setuid(0) == -1)
+    {
+        perror("setuid failed during drm ioctl.");
+    }
+
     int rc;
     struct DRMVMWUPDATELAYOUT ioctlLayout;
 
@@ -170,13 +178,27 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
                      &ioctlLayout, sizeof(ioctlLayout), NULL);
     if (RT_FAILURE(rc) && rc != VERR_INVALID_PARAMETER)
         VBClLogFatalError("Failure updating layout, rc=%Rrc\n", rc);
+    setuid(guid);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    uid_t guid = getuid();
+    if (setuid(0) == -1)
+    {
+        perror("setuid failed during init.");
+    }
+
+    int rc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+    rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+        VBClLogFatalError("VbglR3InitUser failed: %Rrc", rc);
+
     struct DRMCONTEXT drmContext = { NIL_RTFILE };
     static struct VMMDevDisplayDef aMonitors[VMW_MAX_HEADS];
-    int rc;
+
     unsigned cEnabledMonitors;
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
@@ -200,6 +222,7 @@ int main()
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
         return VERR_INVALID_HANDLE;
     }
+    setuid(guid);
     for (;;)
     {
         uint32_t events;
