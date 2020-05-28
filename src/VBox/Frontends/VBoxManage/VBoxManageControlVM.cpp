@@ -680,17 +680,25 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (   !strcmp(a->argv[1], "reboot")
                  || !strcmp(a->argv[1], "shutdown")) /* With shutdown we mean gracefully powering off the VM by letting the guest OS do its thing. */
         {
-            ComPtr<IGuest> guest;
-            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
+            ComPtr<IGuest> pGuest;
+            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(pGuest.asOutParam()));
+            if (!pGuest)
+            {
+                RTMsgError("Guest not running");
+                rc = E_FAIL;
+                break;
+            }
 
             const bool fReboot = !strcmp(a->argv[1], "reboot");
 
             com::SafeArray<GuestShutdownFlag_T> aShutdownFlags;
+            aShutdownFlags.resize(1);
+
             if (fReboot)
                 aShutdownFlags.push_back(GuestShutdownFlag_Reboot);
             else
                 aShutdownFlags.push_back(GuestShutdownFlag_PowerOff);
-            CHECK_ERROR(guest, Shutdown(ComSafeArrayAsInParam(aShutdownFlags)));
+            CHECK_ERROR(pGuest, Shutdown(ComSafeArrayAsInParam(aShutdownFlags)));
             if (FAILED(rc))
             {
                 if (rc == VBOX_E_NOT_SUPPORTED)

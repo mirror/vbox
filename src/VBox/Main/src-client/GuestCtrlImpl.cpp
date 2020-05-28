@@ -512,12 +512,14 @@ HRESULT Guest::shutdown(const std::vector<GuestShutdownFlag_T> &aFlags)
         && (fFlags & GuestShutdownFlag_Reboot))
         return setError(E_INVALIDARG, tr("Invalid combination of flags (%#x)"), fFlags);
 
+    Utf8Str strAction = (fFlags & GuestShutdownFlag_Reboot) ? tr("Rebooting") : tr("Shutting down");
+
     /*
      * Create an anonymous session. This is required to run shutting down / rebooting
      * the guest with administrative rights.
      */
     GuestSessionStartupInfo startupInfo;
-    startupInfo.mName = "Shutting down guest";
+    startupInfo.mName = strAction + " guest";
 
     GuestCredentials guestCreds;
 
@@ -540,14 +542,14 @@ HRESULT Guest::shutdown(const std::vector<GuestShutdownFlag_T> &aFlags)
                 {
                     case VERR_NOT_SUPPORTED:
                         hrc = setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc,
-                                           tr("Shutting down not supported by installed Guest Additions"), vrc);
+                                           tr("%s not supported by installed Guest Additions"), strAction.c_str());
                         break;
 
                     default:
                     {
                         if (vrc == VERR_GSTCTL_GUEST_ERROR)
                             vrc = rcGuest;
-                        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not shut down guest: %Rrc"), vrc);
+                        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Error %s guest: %Rrc"), strAction.c_str(), vrc);
                         break;
                     }
                 }
