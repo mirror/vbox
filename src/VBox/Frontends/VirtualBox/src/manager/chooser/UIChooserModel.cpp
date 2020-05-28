@@ -678,16 +678,14 @@ void UIChooserModel::disbandSelectedGroupItem()
 
     /* And update model: */
     updateTreeForMainRoot();
+
+    /* Choose ungrouped items if present: */
     if (!ungroupedItems.isEmpty())
     {
         setSelectedItems(ungroupedItems);
         setCurrentItem(firstSelectedItem());
     }
-    else
-    {
-        setSelectedItem(navigationItems().first());
-        emit sigSelectionInvalidated();
-    }
+    makeSureAtLeastOneItemSelected();
 
     /* Save groups finally: */
     saveGroups();
@@ -1139,9 +1137,7 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
                                               UIChooserItemSearchFlag_Machine |
                                               UIChooserItemSearchFlag_ExactId));
     }
-    /* Else make sure at least one item selected: */
-    else
-        makeSureAtLeastOneItemSelected();
+    makeSureAtLeastOneItemSelected();
 
     /* Notify listeners about selection change: */
     emit sigSelectionChanged();
