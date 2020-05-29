@@ -570,7 +570,6 @@ VBoxSVC_SOURCES = \
 	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \
 	$(if $(VBOX_WITH_CLOUD_NET), \
-	src-server/CloudGateway.cpp \
 	src-server/CloudNetworkImpl.cpp \
 	,) \
 	src-server/GuestOSTypeImpl.cpp \
@@ -1015,6 +1014,12 @@ VBoxC_SOURCES += \
 	src-client/VMMDevInterface.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
+
+# Experimental cloud support
+ifdef VBOX_WITH_CLOUD_NET
+ VBoxC_DEFS += VBOX_WITH_CLOUD_NET
+ VBoxC_SOURCES += src-client/CloudGateway.cpp
+endif
 
 # Audio bits.
 VBoxC_SOURCES += \

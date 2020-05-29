@@ -26732,6 +26732,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
 
+  <interface name="ICloudNetworkEnvironmentInfo" extends="$unknown"
+             uuid="181dfb55-394d-44d3-9edb-af2c4472c40a"
+             wsmap="managed"
+             reservedAttributes="7">
+    <attribute name="tunnelNetworkId" type="wstring" readonly="yes"/>
+  </interface>
+
+
   <interface name="ICloudMachine" extends="$unknown"
              uuid="d8497a14-8fbf-11ea-aa85-2b4d110b053e"
              wsmap="managed"
@@ -26924,7 +26932,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="5b047402-9648-11ea-9aa2-2f60bdea83dd"
+    uuid="5fa3a8db-1c4f-4cda-b8d4-7982ef60fefb"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
@@ -27343,6 +27351,34 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="gatewayInfo" type="ICloudNetworkGatewayInfo" dir="out">
         <desc>Information about the started gateway.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="setupCloudNetworkEnvironment">
+      <param name="tunnelNetworkName" type="wstring" dir="in">
+        <desc>The name of tunnelling network to be created in the Cloud. If this parameter
+          is empty the default value "VirtualBox Tunneling Network" is assumed.</desc>
+      </param>
+      <param name="tunnelNetworkRange" type="wstring" dir="in">
+        <desc>The IP address range of tunnelling network to be created in the Cloud. If this
+          parameter is empty the default value "10.0.0.0/16" is assumed.</desc>
+      </param>
+      <param name="gatewayOsName" type="wstring" dir="in">
+        <desc>The name of the operating system to be used for cloud gateway instances.
+          The default value is "Oracle Linux".</desc>
+      </param>
+      <param name="gatewayOsVersion" type="wstring" dir="in">
+        <desc>The version of the operating system to be used for cloud gateway instances.
+          The default value is "7.8".</desc>
+      </param>
+      <param name="gatewayShape" type="wstring" dir="in">
+        <desc>The shape of cloud gateway instance. The default value is "VM.Standard2.1".</desc>
+      </param>
+      <param name="networkEnvironmentInfo" type="ICloudNetworkEnvironmentInfo" dir="out">
+        <desc>Information about the created network environment.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

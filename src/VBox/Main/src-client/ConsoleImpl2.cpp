@@ -2629,6 +2629,17 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             hrc = networkAdapter->COMGETTER(MACAddress)(macAddr.asOutParam());              H();
             Assert(!macAddr.isEmpty());
             Utf8Str macAddrUtf8 = macAddr;
+#ifdef VBOX_WITH_CLOUD_NET
+            NetworkAttachmentType_T eAttachmentType;
+            hrc = networkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);                 H();
+            if (eAttachmentType == NetworkAttachmentType_Cloud)
+            {
+                mGateways.setLocalMacAddress(macAddrUtf8);
+                /* We'll insert cloud MAC later, when it becomes known. */
+            }
+            else
+            {
+#endif
             char *macStr = (char*)macAddrUtf8.c_str();
             Assert(strlen(macStr) == 12);
             RTMAC Mac;
@@ -2645,7 +2656,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 *pMac++ = (char)(((c1 & 0x0f) << 4) | (c2 & 0x0f));
             }
             InsertConfigBytes(pCfg, "MAC", &Mac, sizeof(Mac));
-
+#ifdef VBOX_WITH_CLOUD_NET
+            }
+#endif
             /*
              * Check if the cable is supposed to be unplugged
              */
@@ -4984,6 +4997,11 @@ int Console::i_configNetwork(const char *pszDevice,
         HRESULT hrc;
         Bstr bstr;
 
+#ifdef VBOX_WITH_CLOUD_NET
+        /* We'll need device's pCfg for cloud attachments */
+        PCFGMNODE pDevCfg = pCfg;
+#endif /* VBOX_WITH_CLOUD_NET */
+
 #define H()         AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
 
         /*
@@ -5822,7 +5840,12 @@ int Console::i_configNetwork(const char *pszDevice,
 #ifdef VBOX_WITH_CLOUD_NET
             case NetworkAttachmentType_Cloud:
             {
-                hrc = aNetworkAdapter->COMGETTER(CloudNetwork)(bstr.asOutParam());       H();
+                ComPtr<ICloudNetwork> network;
+                hrc = aNetworkAdapter->COMGETTER(CloudNetwork)(bstr.asOutParam());            H();
+                hrc = pMachine->COMGETTER(Name)(mGateways.mTargetVM.asOutParam());            H();
+                hrc = virtualBox->FindCloudNetworkByName(bstr.raw(), network.asOutParam());   H();
+                hrc = startGateways(virtualBox, network, mGateways);                          H();
+                InsertConfigBytes(pDevCfg, "MAC", &mGateways.mCloudMacAddress, sizeof(mGateways.mCloudMacAddress));
                 if (!bstr.isEmpty())
                 {
                     InsertConfigString(pLunL0, "Driver", "IntNet");

@@ -648,6 +648,15 @@ void Console::uninit()
         return;
     }
 
+#ifdef VBOX_WITH_CLOUD_NET
+    {
+        ComPtr<IVirtualBox> pVirtualBox;
+        HRESULT rc = mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+        AssertComRC(rc);
+        if (SUCCEEDED(rc) && !pVirtualBox.isNull())
+            stopGateways(pVirtualBox, mGateways);
+    }
+#endif /* VBOX_WITH_CLOUD_NET */
     LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
     if (mVmListener)
     {

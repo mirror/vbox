@@ -2083,6 +2083,97 @@ static RTEXITCODE deleteCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 }
 
 
+static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    RT_NOREF(pCommonOpts);
+    HRESULT hrc = S_OK;
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--gateway-os-name",      'n', RTGETOPT_REQ_STRING },
+        { "--gateway-os-version",   'v', RTGETOPT_REQ_STRING },
+        { "--gateway-shape",        's', RTGETOPT_REQ_STRING },
+        { "--tunnel-network-name",  't', RTGETOPT_REQ_STRING },
+        { "--tunnel-network-range", 'r', RTGETOPT_REQ_STRING },
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    Bstr strGatewayOsName;
+    Bstr strGatewayOsVersion;
+    Bstr strGatewayShape;
+    Bstr strTunnelNetworkName;
+    Bstr strTunnelNetworkRange;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'n':
+                strGatewayOsName=ValueUnion.psz;
+                break;
+            case 'v':
+                strGatewayOsVersion=ValueUnion.psz;
+                break;
+            case 's':
+                strGatewayShape=ValueUnion.psz;
+                break;
+            case 't':
+                strTunnelNetworkName=ValueUnion.psz;
+                break;
+            case 'r':
+                strTunnelNetworkRange=ValueUnion.psz;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    // if (strGatewayOsName.isEmpty())
+    //     return errorArgument("Missing --gateway-os-name parameter");
+    // if (strGatewayOsVersion.isEmpty())
+    //     return errorArgument("Missing --gateway-os-version parameter");
+    // if (strGatewayShape.isEmpty())
+    //     return errorArgument("Missing --gateway-shape parameter");
+    // if (strTunnelNetworkName.isEmpty())
+    //     strTunnelNetworkName = "VirtualBox Tunneling Network";
+
+    ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+
+    ComObjPtr<ICloudClient> oCloudClient;
+    CHECK_ERROR2_RET(hrc, pCloudProfile,
+                     CreateCloudClient(oCloudClient.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+    ComPtr<ICloudNetworkEnvironmentInfo> cloudNetworkEnv;
+    ComPtr<IProgress> progress;
+    CHECK_ERROR2_RET(hrc, oCloudClient,
+                     SetupCloudNetworkEnvironment(strTunnelNetworkName.raw(), strTunnelNetworkRange.raw(),
+                                                  strGatewayOsName.raw(), strGatewayOsVersion.raw(), strGatewayShape.raw(),
+                                                  cloudNetworkEnv.asOutParam(), progress.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Setting up cloud network environment failed"), RTEXITCODE_FAILURE);
+
+    Bstr tunnelNetworkId;
+    hrc = cloudNetworkEnv->COMGETTER(TunnelNetworkId)(tunnelNetworkId.asOutParam());
+    RTPrintf("Cloud network environment was set up successfully. Tunnel network id is: %ls\n", tunnelNetworkId.raw());
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
 static RTEXITCODE handleCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     if (a->argc < 1)
@@ -2093,7 +2184,8 @@ static RTEXITCODE handleCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         { "create",         1000, RTGETOPT_REQ_NOTHING },
         { "info",           1001, RTGETOPT_REQ_NOTHING },
         { "update",         1002, RTGETOPT_REQ_NOTHING },
-        { "delete",         1003, RTGETOPT_REQ_NOTHING }
+        { "delete",         1003, RTGETOPT_REQ_NOTHING },
+        { "setup",          1004, RTGETOPT_REQ_NOTHING }
     };
 
     RTGETOPTSTATE GetState;
@@ -2115,6 +2207,8 @@ static RTEXITCODE handleCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                 return updateCloudNetwork(a, GetState.iNext, pCommonOpts);
             case 1003:
                 return deleteCloudNetwork(a, GetState.iNext, pCommonOpts);
+            case 1004:
+                return setupCloudNetworkEnv(a, GetState.iNext, pCommonOpts);
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
