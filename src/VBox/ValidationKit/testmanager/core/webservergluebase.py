@@ -372,7 +372,7 @@ class WebServerGlueBase(object):
         if self._cchCached > 0:
             self.flush();
 
-        sys.stderr.write('writeRaw: cb=%s\n' % (len(writeRaw),))
+        sys.stderr.write('writeRaw: cb=%s\n' % (len(abChunk),))
         self.oOutputRaw.write(abChunk);
         return True;
 
