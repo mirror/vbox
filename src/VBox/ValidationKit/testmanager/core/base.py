@@ -1099,7 +1099,7 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         return sJson + u' ]';
 
     @staticmethod
-    def datetimeToJson(oDateTime, dOptions = None):
+    def datetimeToJson(oDateTime):
         """ Converts a datetime instance to a JSON string. """
         return '"%s"' % (oDateTime,);
 
@@ -1114,7 +1114,7 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         if isinstance(oValue, (list, tuple, set, frozenset)):
             return ModelDataBase.listToJson(oValue, dOptions);
         if isinstance(oValue, datetime.datetime):
-            return ModelDataBase.datetimeToJson(oValue, dOptions)
+            return ModelDataBase.datetimeToJson(oValue)
         return json.dumps(oValue);
 
     def attribValueToJson(self, sAttr, oValue, dOptions = None):
