@@ -2963,10 +2963,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 if oTestVm.isWindows() \
                 or oTestVm.isOS2():
                     sCmd   = sShell;
-                    asArgs = [ sShell, sShellOpt, "echo", sFileName, "--end-marker" ],
+                    asArgs = [ sShell, sShellOpt, "echo", sFileName, "--end-marker" ]
                 else:
                     sCmd   = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'echo');
-                    asArgs = [ sCmd, sFileName, "--end-marker" ],
+                    asArgs = [ sCmd, sFileName, "--end-marker" ]
                 ## @todo Check limits; on Ubuntu with 256KB IPRT returns VERR_NOT_IMPLEMENTED.
                 atExec.append([ tdTestExec(sCmd, asArgs,
                                            afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut,
