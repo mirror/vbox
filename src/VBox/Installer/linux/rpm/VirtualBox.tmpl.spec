@@ -101,6 +101,9 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
 (export VBOX_INSTALL_PATH=/usr/lib/virtualbox && \
   cd ./sdk/installer && \
   %{vbox_python} ./vboxapisetup.py install --prefix %{_prefix} --root $RPM_BUILD_ROOT)
+  if [ -x /usr/bin/pathfix.py ]; then
+    pathfix.py -pni "%{__python3} %{py3_shbang_opts}" /usr/lib/virtualbox/vboxshell.py
+  fi
 %endif
 rm -rf sdk/installer
 mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
