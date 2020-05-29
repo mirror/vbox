@@ -584,7 +584,7 @@ class tdAutostartOsLinux(tdAutostartOs):
         the VM is really powered off. Also, closes the guest session.
         It helps the terminateBySession to stop the VM without aborting.
         """
-        
+
         if oGuestSession is None:
             return False;
 
@@ -599,7 +599,7 @@ class tdAutostartOsLinux(tdAutostartOs):
         """
         Install guest additions in the guest.
         """
-        
+
         fRc = False;
         # Install Kernel headers, which are required for actually installing the Linux Additions.
         if oVM.OSTypeId.startswith('Debian') \
@@ -761,7 +761,7 @@ class tdAutostartOsLinux(tdAutostartOs):
         Due to the sUser is created whithout password,
         all calls will be perfomed using 'sudo -u sUser'
         """
-        
+
         _ = oSession;
 
         (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Configuring autostart database',
@@ -888,7 +888,7 @@ class tdAutostartOsWin(tdAutostartOs):
         the VM is really powered off. Also, closes the guest session.
         It helps the terminateBySession to stop the VM without aborting.
         """
-        
+
         if oGuestSession is None:
             return False;
 
@@ -963,11 +963,11 @@ class tdAutostartOsWin(tdAutostartOs):
                     # Note: There won't be a install_ui.log because of the silent installation.
                     asLogFiles.append(sGuestAddsDir + 'install_drivers.log');
                     asLogFiles.append('C:/Windows/setupapi.log');
-    
+
                     # Note: setupapi.dev.log only is available since Windows 2000.
                     if fHaveSetupApiDevLog:
                         asLogFiles.append('C:/Windows/setupapi.dev.log');
-    
+
                     #
                     # Download log files.
                     # Ignore errors as all files above might not be present (or in different locations)
@@ -1064,7 +1064,7 @@ class tdAutostartOsWin(tdAutostartOs):
         """
 
         _ = oGuestSession;
-        
+
         fRc, oGuestSession = self.createSession(oSession, 'Session for user: %s' % (sUser,),
                                                 sUser, 'password', 10 * 1000, True);
         if not fRc:
