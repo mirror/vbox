@@ -176,7 +176,7 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><replaceable>info</replaceable></term>
+          <term><replaceable>item</replaceable></term>
           <listitem>
             <para>Name of the info item to display.  The special name
             <option>help</option> will list all the available info items and
