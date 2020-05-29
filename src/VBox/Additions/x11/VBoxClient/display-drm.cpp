@@ -163,9 +163,7 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
 {
     uid_t guid = getuid();
     if (setreuid(0, 0) == -1)
-    {
         perror("setreuid failed during drm ioctl.");
-    }
     int rc;
     struct DRMVMWUPDATELAYOUT ioctlLayout;
 
