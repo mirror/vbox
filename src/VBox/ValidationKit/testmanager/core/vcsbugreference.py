@@ -88,6 +88,24 @@ class VcsBugReferenceData(ModelDataBase):
         return self;
 
 
+class VcsBugReferenceDataEx(VcsBugReferenceData):
+    """
+    Extended version of VcsBugReferenceData that includes the commit details.
+    """
+    def __init__(self):
+        VcsBugReferenceData.__init__(self);
+        self.tsCreated          = None;
+        self.sAuthor            = None;
+        self.sMessage           = None;
+
+    def initFromDbRow(self, aoRow):
+        VcsBugReferenceData.initFromDbRow(self, aoRow);
+        self.tsCreated          = aoRow[4];
+        self.sAuthor            = aoRow[5];
+        self.sMessage           = aoRow[6];
+        return self;
+
+
 class VcsBugReferenceLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     VCS revision <-> bug tracker references database logic.
@@ -181,6 +199,31 @@ LIMIT 1
         if self._oDb.getRowCount() == 0:
             return 0;
         return self._oDb.fetchOne()[0];
+
+    def fetchForBug(self, sBugTracker, lBugNo):
+        """
+        Fetches VCS revisions for a bug.
+
+        Returns an array (list) of VcsBugReferenceDataEx items, empty list if none.
+        Raises exception on error.
+        """
+        self._oDb.execute('''
+SELECT  VcsBugReferences.*,
+        VcsRevisions.tsCreated,
+        VcsRevisions.sAuthor,
+        VcsRevisions.sMessage
+FROM    VcsBugReferences
+LEFT OUTER JOIN VcsRevisions ON (    VcsRevisions.sRepository = VcsBugReferences.sRepository
+                                 AND VcsRevisions.iRevision   = VcsBugReferences.iRevision )
+WHERE   sBugTracker = %s
+    AND lBugNo      = %s
+ORDER BY VcsRevisions.tsCreated, VcsBugReferences.sRepository, VcsBugReferences.iRevision
+''', (sBugTracker, lBugNo,));
+
+        aoRows = [];
+        for _ in range(self._oDb.getRowCount()):
+            aoRows.append(VcsBugReferenceDataEx().initFromDbRow(self._oDb.fetchOne()));
+        return aoRows;
 
 
 #

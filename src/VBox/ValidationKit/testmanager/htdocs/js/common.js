@@ -146,6 +146,125 @@ function isMemberOfArray(aoArray, oMember)
 }
 
 /**
+ * Parses a typical ISO timestamp, returing a Date object, reasonably
+ * forgiving, but will throw weird indexing/conversion errors if the input
+ * is malformed.
+ *
+ * @returns Date object.
+ * @param   sTs             The timestamp to parse.
+ * @sa      parseIsoTimestamp() in utils.py.
+ */
+function parseIsoTimestamp(sTs)
+{
+    /* YYYY-MM-DD */
+    var iYear  = parseInt(sTs.substring(0, 4), 10);
+    console.assert(sTs.charAt(4) == '-');
+    var iMonth = parseInt(sTs.substring(5, 7), 10);
+    console.assert(sTs.charAt(7) == '-');
+    var iDay   = parseInt(sTs.substring(8, 10), 10);
+
+    /* Skip separator */
+    var sTime = sTs.substring(10);
+    while ('Tt \t\n\r'.includes(sTime.charAt(0))) {
+        sTime = sTime.substring(1);
+    }
+
+    /* HH:MM:SS */
+    var iHour = parseInt(sTime.substring(0, 2), 10);
+    console.assert(sTime.charAt(2) == ':');
+    var iMin  = parseInt(sTime.substring(3, 5), 10);
+    console.assert(sTime.charAt(5) == ':');
+    var iSec  = parseInt(sTime.substring(6, 8), 10);
+
+    /* Fraction? */
+    var offTime = 8;
+    var iMicroseconds = 0;
+    if (offTime < sTime.length && '.,'.includes(sTime.charAt(offTime)))
+    {
+        offTime += 1;
+        var cchFraction = 0;
+        while (offTime + cchFraction < sTime.length && '0123456789'.includes(sTime.charAt(offTime + cchFraction)))
+            cchFraction += 1;
+        if (cchFraction > 0)
+        {
+            iMicroseconds = parseInt(sTime.substring(offTime, offTime + cchFraction), 10);
+            offTime += cchFraction;
+            while (cchFraction < 6)
+            {
+                iMicroseconds *= 10;
+                cchFraction += 1;
+            }
+            while (cchFraction > 6)
+            {
+                iMicroseconds = iMicroseconds / 10;
+                cchFraction -= 1;
+            }
+        }
+    }
+    var iMilliseconds = (iMicroseconds + 499) / 1000;
+
+    /* Naive? */
+    var oDate = new Date(Date.UTC(iYear, iMonth, iDay, iHour, iMin, iSec, iMilliseconds));
+    if (offTime >= sTime.length)
+        return oDate;
+
+    /* Zulu? */
+    if (offTime >= sTime.length || 'Zz'.includes(sTime.charAt(offTime)))
+        return oDate;
+
+    /* Some kind of offset afterwards. */
+    var chSign = sTime.charAt(offTime);
+    if ('+-'.includes(chSign))
+    {
+        offTime += 1;
+        var cMinTz = parseInt(sTime.substring(offTime, offTime + 2), 10) * 60;
+        offTime += 2;
+        if (offTime  < sTime.length && sTime.charAt(offTime) == ':')
+            offTime += 1;
+        if (offTime + 2 <= sTime.length)
+        {
+            cMinTz += parseInt(sTime.substring(offTime, offTime + 2), 10);
+            offTime += 2;
+        }
+        console.assert(offTime == sTime.length);
+        if (chSign == '-')
+            cMinTz = -cMinTz;
+
+        return new Date(oDate.getTime() + cMinTz * 60000);
+    }
+    console.assert(false);
+    return oDate;
+}
+
+/**
+ * Escapes special characters to HTML-safe sequences, for element use.
+ *
+ * @returns Escaped string suitable for HTML.
+ * @param   sText               Plain text to escape.
+ */
+function escapeElem(sText)
+{
+    sText = sText.replace(/&/g, '&amp;');
+    sText = sText.replace(/>/g, '&lt;');
+    return  sText.replace(/</g, '&gt;');
+}
+
+/**
+ * Escapes special characters to HTML-safe sequences, for double quoted
+ * attribute use.
+ *
+ * @returns Escaped string suitable for HTML.
+ * @param   sText               Plain text to escape.
+ */
+function escapeAttr(sText)
+{
+    sText = sText.replace(/&/g, '&amp;');
+    sText = sText.replace(/</g, '&lt;');
+    sText = sText.replace(/>/g, '&gt;');
+    return  sText.replace(/"/g, '&quot;');
+}
+
+/**
  * Removes the element with the specified ID.
  */
 function removeHtmlNode(sContainerId)
@@ -691,6 +810,9 @@ function toggleSidebarSize()
  * @{
  */
 
+/** Enables non-iframe tooltip code. */
+var g_fNewTooltips       = true;
+
 /** Where we keep tooltip elements when not displayed. */
 var g_dTooltips          = {};
 var g_oCurrentTooltip    = null;
@@ -901,8 +1023,8 @@ function tooltipReallyShow(oTooltip, oRelTo)
  */
 function tooltipElementOnMouseEnter()
 {
-    //console.log('tooltipElementOnMouseEnter: arguments.length='+arguments.length+' [0]='+arguments[0]);
-    //console.log('ENT: currentTarget='+arguments[0].currentTarget);
+    console.log('tooltipElementOnMouseEnter: arguments.length='+arguments.length+' [0]='+arguments[0]);
+    console.log('ENT: currentTarget='+arguments[0].currentTarget+' id='+arguments[0].currentTarget.id+' class='+arguments[0].currentTarget.className);
     tooltipResetShowTimer();
     tooltipResetHideTimer();
     return true;
@@ -918,8 +1040,27 @@ function tooltipElementOnMouseEnter()
  */
 function tooltipElementOnMouseOut()
 {
-    //console.log('tooltipElementOnMouseOut: arguments.length='+arguments.length+' [0]='+arguments[0]);
-    //console.log('OUT: currentTarget='+arguments[0].currentTarget);
+    var oEvt = arguments[0];
+    console.log('tooltipElementOnMouseOut: arguments.length='+arguments.length+' [0]='+oEvt);
+    console.log('OUT: currentTarget='+oEvt.currentTarget+' id='+oEvt.currentTarget.id+' class='+oEvt.currentTarget.className);
+
+    /* Ignore the event if leaving to a child element. */
+    var oElm = oEvt.toElement || oEvt.relatedTarget;
+    if (oElm != this && oElm)
+    {
+        for (;;)
+        {
+            oElm = oElm.parentNode;
+            if (!oElm || oElm == window)
+                break;
+            if (oElm == this)
+            {
+                console.log('OUT: was to child! - ignore');
+                return false;
+            }
+        }
+    }
+
     tooltipHide();
     return true;
 }
@@ -930,9 +1071,9 @@ function tooltipElementOnMouseOut()
  * This is a little hacky and we're calling it one or three times too many to
  * work around various browser differences too.
  */
-function svnHistoryTooltipOnLoad()
+function svnHistoryTooltipOldOnLoad()
 {
-    //console.log('svnHistoryTooltipOnLoad');
+    //console.log('svnHistoryTooltipOldOnLoad');
 
     /*
      * Resize the tooltip to better fit the content.
@@ -952,7 +1093,7 @@ function svnHistoryTooltipOnLoad()
         oIFrameElement.width            = (cx - cxSpace) + 'px';
         if (cx >= cxNeeded)
         {
-            //console.log('svnHistoryTooltipOnLoad: overflowX -> hidden');
+            //console.log('svnHistoryTooltipOldOnLoad: overflowX -> hidden');
             oIFrameElement.style.overflowX = 'hidden';
         }
         else
@@ -974,7 +1115,7 @@ function svnHistoryTooltipOnLoad()
         oIFrameElement.height            = (cy - cySpace) + 'px';
         if (cy >= cyNeeded)
         {
-            //console.log('svnHistoryTooltipOnLoad: overflowY -> hidden');
+            //console.log('svnHistoryTooltipOldOnLoad: overflowY -> hidden');
             oIFrameElement.style.overflowY = 'hidden';
         }
         else
@@ -984,11 +1125,164 @@ function svnHistoryTooltipOnLoad()
 
         //console.log('cyNeeded='+cyNeeded+' cyMax='+g_oCurrentTooltip.cyMax+' cySpace='+cySpace+' cy='+cy);
         //console.log('oIFrameElement.offsetTop='+oIFrameElement.offsetTop);
-        //console.log('svnHistoryTooltipOnLoad: cx='+cx+'cxMax='+g_oCurrentTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+g_oCurrentTooltip.cyMax);
+        //console.log('svnHistoryTooltipOldOnLoad: cx='+cx+'cxMax='+g_oCurrentTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+g_oCurrentTooltip.cyMax);
 
         tooltipRepositionOnLoad();
     }
     return true;
+}
+
+/**
+ * iframe.onload hook that repositions and resizes the tooltip.
+ *
+ * This is a little hacky and we're calling it one or three times too many to
+ * work around various browser differences too.
+ */
+function svnHistoryTooltipNewOnLoad()
+{
+    //console.log('svnHistoryTooltipNewOnLoad');
+
+    /*
+     * Resize the tooltip to better fit the content.
+     */
+    tooltipRepositionOnLoad(); /* Sets cxMax and cyMax. */
+    oTooltip = g_oCurrentTooltip;
+    if (oTooltip)
+    {
+        var oElmInner = oTooltip.oInnerElm;
+        var cxSpace  = Math.max(oElmInner.offsetLeft * 2, 0); /* simplified */
+        var cySpace  = Math.max(oElmInner.offsetTop  * 2, 0); /* simplified */
+        var cxNeeded = oElmInner.scrollWidth  + cxSpace;
+        var cyNeeded = oElmInner.scrollHeight + cySpace;
+        var cx = Math.min(cxNeeded, oTooltip.cxMax);
+
+        oTooltip.oElm.width = cx + 'px';
+        oElmInner.width     = (cx - cxSpace) + 'px';
+        if (cx >= cxNeeded)
+        {
+            //console.log('svnHistoryTooltipNewOnLoad: overflowX -> hidden');
+            oElmInner.style.overflowX = 'hidden';
+        }
+        else
+        {
+            oElmInner.style.overflowX = 'scroll';
+        }
+
+        var cy = Math.min(cyNeeded, oTooltip.cyMax);
+        if (cyNeeded > oTooltip.cyMax && oTooltip.cyMaxUp > 0)
+        {
+            var cyMove = Math.min(cyNeeded - oTooltip.cyMax, oTooltip.cyMaxUp);
+            oTooltip.cyMax += cyMove;
+            oTooltip.yPos  -= cyMove;
+            oTooltip.oElm.style.top = oTooltip.yPos + 'px';
+            cy = Math.min(cyNeeded, oTooltip.cyMax);
+        }
+
+        oTooltip.oElm.height = cy + 'px';
+        oElmInner.height     = (cy - cySpace) + 'px';
+        if (cy >= cyNeeded)
+        {
+            //console.log('svnHistoryTooltipNewOnLoad: overflowY -> hidden');
+            oElmInner.style.overflowY = 'hidden';
+        }
+        else
+        {
+            oElmInner.style.overflowY = 'scroll';
+        }
+
+        //console.log('cyNeeded='+cyNeeded+' cyMax='+oTooltip.cyMax+' cySpace='+cySpace+' cy='+cy);
+        //console.log('oElmInner.offsetTop='+oElmInner.offsetTop);
+        //console.log('svnHistoryTooltipNewOnLoad: cx='+cx+'cxMax='+oTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+oTooltip.cyMax);
+
+        tooltipRepositionOnLoad();
+    }
+    return true;
+}
+
+
+function svnHistoryTooltipNewOnReadState(oTooltip, oRestReq, oParent)
+{
+    console.log('svnHistoryTooltipNewOnReadState');
+    console.log('svnHistoryTooltipNewOnReadState');
+
+    /*
+     * Check the result and translate it to a javascript object (oResp).
+     */
+    var oResp = null;
+    var sHtml;
+    if (oRestReq.status != 200)
+    {
+        console.log('svnHistoryTooltipNewOnReadState: status=' + oRestReq.status);
+        sHtml = '<p>error: status=' + oRestReq.status + '</p>';
+    }
+    else
+    {
+        try
+        {
+            oResp = JSON.parse(oRestReq.responseText);
+        }
+        catch (oEx)
+        {
+            console.log('JSON.parse threw: ' + oEx.toString());
+            console.log(oRestReq.responseText);
+            sHtml = '<p>error: JSON.parse threw: ' + oEx.toString() + '</p>';
+        }
+    }
+
+    /*
+     * Generate the HTML.
+     *
+     * Note! Make sure the highlighting code in svnHistoryTooltipNewDelayedShow
+     *       continues to work after modifying this code.
+     */
+    if (oResp)
+    {
+        var asDaysOfTheWeek = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ];
+        sHtml = '<div class="tmvcstimeline tmvcstimelinetooltip">\n';
+
+        var aoCommits = oResp.aoCommits;
+        var cCommits  = oResp.aoCommits.length;
+        var iCurDay   = null;
+        var i;
+        for (i = 0; i < cCommits; i++)
+        {
+            var oCommit    = aoCommits[i];
+            var tsCreated  = parseIsoTimestamp(oCommit.tsCreated);
+            var iCommitDay = Math.floor((tsCreated.getTime() + tsCreated.getTimezoneOffset()) / (24 * 60 * 60 * 1000));
+            if (iCurDay === null || iCurDay != iCommitDay)
+            {
+                if (iCurDay !== null)
+                    sHtml += ' </dl>\n';
+                iCurDay = iCommitDay;
+                sHtml += ' <h2>' + tsCreated.toISOString().split('T')[0] + ' ' + asDaysOfTheWeek[tsCreated.getDay()] + '</h2>\n';
+                sHtml += ' <dl>\n';
+            }
+            Date
+
+            var sHighligh = '';
+            if (oCommit.iRevision == oTooltip.iRevision)
+                sHighligh += ' class="tmvcstimeline-highlight"';
+
+            sHtml += '  <dt id="r' + oCommit.iRevision + '"' + sHighligh + '>';
+            sHtml += '<a href="' + oResp.sTracChangesetUrlFmt.replace('%(iRevision)s', oCommit.iRevision.toString());
+            sHtml += '" target="_blank">';
+            sHtml += '<span class="tmvcstimeline-time">' + escapeElem(tsCreated.toLocaleTimeString()) + '</span>'
+            sHtml += ' Changeset <span class="tmvcstimeline-rev">[' + oCommit.iRevision + ']</span>';
+            sHtml += ' by <span class="tmvcstimeline-author">' + escapeElem(oCommit.sAuthor) + '</span>';
+            sHtml += '</a></dt>\n';
+            sHtml += '  <dd' + sHighligh + '>' + escapeElem(oCommit.sMessage) + '</dd>\n';
+        }
+
+        if (iCurDay !== null)
+            sHtml += ' </dl>\n';
+        sHtml += '</div>';
+    }
+
+    console.log('svnHistoryTooltipNewOnReadState: sHtml=' + sHtml);
+    oTooltip.oInnerElm.innerHTML = sHtml;
+
+    tooltipReallyShow(oTooltip, oParent);
+    svnHistoryTooltipNewOnLoad();
 }
 
 /**
@@ -1037,12 +1331,12 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
     var oParent = oEvt.currentTarget;
     //console.log('svnHistoryTooltipShow ' + sRepository);
 
-    function svnHistoryTooltipDelayedShow()
+    function svnHistoryTooltipOldDelayedShow()
     {
         var sSrc;
 
         var oTooltip = g_dTooltips[sKey];
-        //console.log('svnHistoryTooltipDelayedShow ' + sRepository + ' ' + oTooltip);
+        //console.log('svnHistoryTooltipOldDelayedShow ' + sRepository + ' ' + oTooltip);
         if (!oTooltip)
         {
             /*
@@ -1070,7 +1364,7 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
             oIFrameElement.setAttribute('id', sKey + '_iframe');
             oIFrameElement.style.position = 'relative';
             oIFrameElement.onmouseenter   = tooltipElementOnMouseEnter;
-            oIFrameElement.onmouseout     = tooltipElementOnMouseOut;
+            //oIFrameElement.onmouseout     = tooltipElementOnMouseOut;
             oTooltip.oElm.appendChild(oIFrameElement);
             oTooltip.oIFrame = oIFrameElement;
             g_dTooltips[sKey] = oTooltip;
@@ -1081,7 +1375,7 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
                 setTimeout(function(){
                                 /*console.log('iframe/onload');*/
                                 tooltipReallyShow(oTooltip, oParent);
-                                svnHistoryTooltipOnLoad();
+                                svnHistoryTooltipOldOnLoad();
                            }, isBrowserInternetExplorer() ? 256 : 128);
             };
 
@@ -1104,7 +1398,7 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
                 {
                     setTimeout(function() { /* Slight delay to make sure it scrolls before it's shown. */
                                    tooltipReallyShow(oTooltip, oParent);
-                                   svnHistoryTooltipOnLoad();
+                                   svnHistoryTooltipOldOnLoad();
                                }, isBrowserInternetExplorer() ? 256 : 64);
                 }
                 else
@@ -1113,16 +1407,110 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
             else
             {
                 tooltipReallyShow(oTooltip, oParent);
-                svnHistoryTooltipOnLoad();
+                svnHistoryTooltipOldOnLoad();
             }
         }
     }
+
+    function svnHistoryTooltipNewDelayedShow()
+    {
+        var sSrc;
+
+        var oTooltip = g_dTooltips[sKey];
+        console.log('svnHistoryTooltipNewDelayedShow: ' + sRepository + ' ' + oTooltip);
+        if (!oTooltip)
+        {
+            /*
+             * Create a new tooltip element.
+             */
+            console.log('creating ' + sKey);
+
+            var oElm = document.createElement('div');
+            oElm.setAttribute('id', sKey);
+            oElm.className      = 'tmvcstooltipnew';
+            //oElm.setAttribute('style', 'display:none; position: absolute;');
+            oElm.style.display  = 'none';  /* Note! Must stay hidden till loaded, or parent jumps with #rXXXX.*/
+            oElm.style.position = 'absolute';
+            oElm.style.zIndex   = 6001;
+            oElm.onmouseenter   = tooltipElementOnMouseEnter;
+            oElm.onmouseout     = tooltipElementOnMouseOut;
+
+            var oInnerElm = document.createElement('div');
+            oInnerElm.className = 'tooltip-inner';
+            oElm.appendChild(oInnerElm);
+
+            oTooltip = {};
+            oTooltip.oElm      = oElm;
+            oTooltip.oInnerElm = oInnerElm;
+            oTooltip.xPos      = 0;
+            oTooltip.yPos      = 0;
+            oTooltip.cxMax     = 0;
+            oTooltip.cyMax     = 0;
+            oTooltip.cyMaxUp   = 0;
+            oTooltip.xScroll   = 0;
+            oTooltip.yScroll   = 0;
+            oTooltip.iRevision = iRevision;   /**< For  :target/highlighting */
+
+            oRestReq = new XMLHttpRequest();
+            oRestReq.onreadystatechange = function() { svnHistoryTooltipNewOnReadState(oTooltip, this, oParent); }
+            oRestReq.open('GET', sUrlPrefix + 'rest.py?sPath=vcs/changelog/' + sRepository
+                          + '/' + svnHistoryTooltipCalcLastRevision(iRevision) + '/' + g_cTooltipSvnRevisions);
+            oRestReq.setRequestHeader('Content-type', 'application/json');
+
+            document.body.appendChild(oTooltip.oElm);
+            g_dTooltips[sKey] = oTooltip;
+
+            oRestReq.send('');
+        }
+        else
+        {
+            /*
+             * Show the existing one, possibly with different highlighting.
+             * Note! Update this code when changing svnHistoryTooltipNewOnReadState.
+             */
+            if (oTooltip.iRevision != iRevision)
+            {
+                //console.log('Changing revision ' + oTooltip.iRevision + ' -> ' + iRevision);
+                var oElmTimelineDiv = oTooltip.oInnerElm.firstElementChild;
+                var i;
+                for (i = 0; i < oElmTimelineDiv.children.length; i++)
+                {
+                    var oElm = oElmTimelineDiv.children[i];
+                    //console.log('oElm='+oElm+' id='+oElm.id+' nodeName='+oElm.nodeName);
+                    if (oElm.nodeName == 'DL')
+                    {
+                        var iCurRev = iRevision - 64;
+                        var j;
+                        for (j = 0; i < oElm.children.length; i++)
+                        {
+                            var oDlSubElm = oElm.children[i];
+                            //console.log(' oDlSubElm='+oDlSubElm+' id='+oDlSubElm.id+' nodeName='+oDlSubElm.nodeName+' className='+oDlSubElm.className);
+                            if (oDlSubElm.id.length > 2)
+                                iCurRev = parseInt(oDlSubElm.id.substring(1), 10);
+                            if (iCurRev == iRevision)
+                                oDlSubElm.className = 'tmvcstimeline-highlight';
+                            else
+                                oDlSubElm.className = '';
+                        }
+                    }
+                }
+                oTooltip.iRevision = iRevision;
+            }
+
+            tooltipReallyShow(oTooltip, oParent);
+            svnHistoryTooltipNewOnLoad();
+        }
+    }
+
 
     /*
      * Delay the change (in case the mouse moves on).
      */
     tooltipResetShowTimer();
-    g_idTooltipShowTimer = setTimeout(svnHistoryTooltipDelayedShow, 512);
+    if (g_fNewTooltips)
+        g_idTooltipShowTimer = setTimeout(svnHistoryTooltipNewDelayedShow, 512);
+    else
+        g_idTooltipShowTimer = setTimeout(svnHistoryTooltipOldDelayedShow, 512);
 }
 
 /**
@@ -1136,7 +1524,7 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
  */
 function svnHistoryTooltipShow(oEvt, sRepository, iRevision)
 {
-    return svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, '')
+    return svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, '');
 }
 
 /** @} */

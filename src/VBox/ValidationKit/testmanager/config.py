@@ -210,8 +210,8 @@ g_kfDebugDbXcpt         = True;
 
 ## Where to write the glue debug.
 # None indicates apache error log, string indicates a file.
-#g_ksSrcGlueDebugLogDst  = '/tmp/testmanager-srv-glue.log';
-g_ksSrcGlueDebugLogDst  = None;
+#g_ksSrvGlueDebugLogDst  = '/tmp/testmanager-srv-glue.log';
+g_ksSrvGlueDebugLogDst  = None;
 ## Whether to enable CGI trace back in the server glue.
 g_kfSrvGlueCgiTb        = False;
 ## Enables glue debug output.
@@ -222,7 +222,7 @@ g_kfSrvGlueDebugTS      = True;
 g_kfSrvGlueCgiDumpEnv   = False;
 ## Whether to dumping CGI script arguments.
 g_kfSrvGlueCgiDumpArgs  = False;
-## Enables task scheduler debug output to g_ksSrcGlueDebugLogDst.
+## Enables task scheduler debug output to g_ksSrvGlueDebugLogDst.
 g_kfSrvGlueDebugScheduler = False;
 
 ## Enables the SQL trace back.

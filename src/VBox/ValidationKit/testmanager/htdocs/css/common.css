@@ -1154,6 +1154,14 @@ table.tmsqltable tr td:nth-child(4) {
     overflow:   hidden;
 }
 
+.tmvcstooltipnew {
+    padding:    0px;
+    min-width:  50em;
+    overflow:   hidden;
+    border:     0px none;
+    background-color: #f9f9f9;
+}
+
 
 /*
  * Workaround for flickering tooltips in the column bar graphs (see

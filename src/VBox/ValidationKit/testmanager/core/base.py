@@ -32,6 +32,8 @@ __version__ = "$Revision$"
 
 # Standard python imports.
 import copy;
+import datetime;
+import json;
 import re;
 import socket;
 import sys;
@@ -1060,6 +1062,83 @@ class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
         """
         return oDb.formatBindArgs(sQuery, aBindArgs) \
              + ModelDataBase.formatSimpleNowAndPeriod(oDb, tsNow, sPeriodBack, sTablePrefix, sExpCol, sEffCol);
+
+
+    #
+    # JSON
+    #
+
+    @staticmethod
+    def stringToJson(sString):
+        """ Converts a string to a JSON value string. """
+        if not utils.isString(sString):
+            sString = utils.toUnicode(sString);
+            if not utils.isString(sString):
+                sString = str(sString);
+        return json.dumps(sString);
+
+    @staticmethod
+    def dictToJson(dDict, dOptions = None):
+        """ Converts a dictionary to a JSON string. """
+        sJson = u'{ ';
+        for i, oKey in enumerate(dDict):
+            if i > 0:
+                sJson += ', ';
+            sJson += '%s: %s' % (ModelDataBase.stringToJson(oKey),
+                                 ModelDataBase.genericToJson(dDict[oKey], dOptions));
+        return sJson + ' }';
+
+    @staticmethod
+    def listToJson(aoList, dOptions = None):
+        """ Converts list of something to a JSON string. """
+        sJson = u'[ ';
+        for i, oValue in enumerate(aoList):
+            if i > 0:
+                sJson += u', ';
+            sJson += ModelDataBase.genericToJson(oValue, dOptions);
+        return sJson + u' ]';
+
+    @staticmethod
+    def datetimeToJson(oDateTime, dOptions = None):
+        """ Converts a datetime instance to a JSON string. """
+        return '"%s"' % (oDateTime,);
+
+
+    @staticmethod
+    def genericToJson(oValue, dOptions = None):
+        """ Converts a generic object to a JSON string. """
+        if isinstance(oValue, ModelDataBase):
+            return oValue.toJson();
+        if isinstance(oValue, dict):
+            return ModelDataBase.dictToJson(oValue, dOptions);
+        if isinstance(oValue, (list, tuple, set, frozenset)):
+            return ModelDataBase.listToJson(oValue, dOptions);
+        if isinstance(oValue, datetime.datetime):
+            return ModelDataBase.datetimeToJson(oValue, dOptions)
+        return json.dumps(oValue);
+
+    def attribValueToJson(self, sAttr, oValue, dOptions = None):
+        """
+        Converts the attribute value to JSON.
+        Returns JSON (string).
+        """
+        _ = sAttr;
+        return self.genericToJson(oValue, dOptions);
+
+    def toJson(self, dOptions = None):
+        """
+        Converts the object to JSON.
+        Returns JSON (string).
+        """
+        sJson = u'{ ';
+        for iAttr, sAttr in enumerate(self.getDataAttributes()):
+            oValue = getattr(self, sAttr);
+            if iAttr > 0:
+                sJson += ', ';
+            sJson += u'"%s": ' % (sAttr,);
+            sJson += self.attribValueToJson(sAttr, oValue, dOptions);
+        return sJson + u' }';
+
 
     #
     # Sub-classes.
