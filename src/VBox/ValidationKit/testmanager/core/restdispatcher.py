@@ -445,4 +445,3 @@ class RestMain(object): # pylint: disable=too-few-public-methods
 
         return self._dispatchRequestCommon();
 
-
