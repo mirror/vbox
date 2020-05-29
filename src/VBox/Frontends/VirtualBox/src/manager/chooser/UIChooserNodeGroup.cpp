@@ -26,15 +26,14 @@
 
 
 UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
-                                       bool fFavorite,
                                        int iPosition,
+                                       bool fOpened,
                                        const QString &strName,
-                                       UIChooserNodeGroupType enmGroupType,
-                                       bool fOpened)
-    : UIChooserNode(pParent, fFavorite)
+                                       UIChooserNodeGroupType enmGroupType)
+    : UIChooserNode(pParent, false /* favorite */)
+    , m_fOpened(fOpened)
     , m_strName(strName)
     , m_enmGroupType(enmGroupType)
-    , m_fOpened(fOpened)
 {
     /* Add to parent: */
     if (parentNode())
@@ -45,9 +44,9 @@ UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
 }
 
 UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
-                                       UIChooserNodeGroup *pCopyFrom,
-                                       int iPosition)
-    : UIChooserNode(pParent, pCopyFrom->isFavorite())
+                                       int iPosition,
+                                       UIChooserNodeGroup *pCopyFrom)
+    : UIChooserNode(pParent, false /* favorite */)
     , m_strName(pCopyFrom->name())
     , m_enmGroupType(pCopyFrom->groupType())
     , m_fOpened(pCopyFrom->isOpened())
@@ -300,9 +299,9 @@ void UIChooserNodeGroup::retranslateUi()
 void UIChooserNodeGroup::copyContents(UIChooserNodeGroup *pCopyFrom)
 {
     foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Group))
-        new UIChooserNodeGroup(this, pNode->toGroupNode(), m_nodesGroup.size());
+        new UIChooserNodeGroup(this, m_nodesGroup.size(), pNode->toGroupNode());
     foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Global))
-        new UIChooserNodeGlobal(this, pNode->toGlobalNode(), m_nodesGlobal.size());
+        new UIChooserNodeGlobal(this, m_nodesGlobal.size(), pNode->toGlobalNode());
     foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserNodeType_Machine))
-        new UIChooserNodeMachine(this, pNode->toMachineNode(), m_nodesMachine.size());
+        new UIChooserNodeMachine(this, m_nodesMachine.size(), pNode->toMachineNode());
 }

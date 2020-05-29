@@ -43,8 +43,8 @@ signals:
 
 public:
 
-    /** Constructs fake cloud VM item. */
-    UIVirtualMachineItemCloud();
+    /** Constructs fake cloud VM item of certain @a enmState. */
+    UIVirtualMachineItemCloud(UIFakeCloudVirtualMachineItemState enmState);
     /** Constructs real cloud VM item on the basis of taken @a comCloudMachine. */
     UIVirtualMachineItemCloud(const CCloudMachine &comCloudMachine);
     /** Destructs cloud VM item. */

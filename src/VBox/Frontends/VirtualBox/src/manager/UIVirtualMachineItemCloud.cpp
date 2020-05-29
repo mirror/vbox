@@ -34,10 +34,10 @@
 #include "CVirtualBoxErrorInfo.h"
 
 
-UIVirtualMachineItemCloud::UIVirtualMachineItemCloud()
+UIVirtualMachineItemCloud::UIVirtualMachineItemCloud(UIFakeCloudVirtualMachineItemState enmState)
     : UIVirtualMachineItem(UIVirtualMachineItemType_CloudFake)
     , m_enmMachineState(KCloudMachineState_Invalid)
-    , m_enmFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Loading)
+    , m_enmFakeCloudItemState(enmState)
     , m_pTask(0)
 {
     recache();

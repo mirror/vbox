@@ -24,8 +24,8 @@
 
 
 UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
-                                         bool fFavorite,
                                          int iPosition,
+                                         bool fFavorite,
                                          const QString &)
     : UIChooserNode(pParent, fFavorite)
 {
@@ -38,8 +38,8 @@ UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
 }
 
 UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
-                                         UIChooserNodeGlobal *pCopyFrom,
-                                         int iPosition)
+                                         int iPosition,
+                                         UIChooserNodeGlobal *pCopyFrom)
     : UIChooserNode(pParent, pCopyFrom->isFavorite())
 {
     /* Add to parent: */

@@ -465,19 +465,18 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
 
                 /* Group passed item with current-item into the new group: */
                 UIChooserNodeGroup *pNewGroupNode = new UIChooserNodeGroup(parentItem()->node(),
-                                                                           false /* favorite */,
                                                                            parentItem()->node()->nodes().size(),
+                                                                           true /* opened */,
                                                                            UIChooserModel::uniqueGroupName(parentItem()->node()),
-                                                                           parentItem()->node()->toGroupNode()->groupType(),
-                                                                           true /* true */);
+                                                                           parentItem()->node()->toGroupNode()->groupType());
                 UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(parentItem(), pNewGroupNode);
                 UIChooserNodeMachine *pNewMachineNode1 = new UIChooserNodeMachine(pNewGroupNode,
-                                                                                  nodeToMachineType(),
-                                                                                  pNewGroupNode->nodes().size());
+                                                                                  pNewGroupNode->nodes().size(),
+                                                                                  nodeToMachineType());
                 new UIChooserItemMachine(pNewGroupItem, pNewMachineNode1);
                 UIChooserNodeMachine *pNewMachineNode2 = new UIChooserNodeMachine(pNewGroupNode,
-                                                                                  pNode->toMachineNode(),
-                                                                                  pNewGroupNode->nodes().size());
+                                                                                  pNewGroupNode->nodes().size(),
+                                                                                  pNode->toMachineNode());
                 new UIChooserItemMachine(pNewGroupItem, pNewMachineNode2);
 
                 /* If proposed action is 'move': */

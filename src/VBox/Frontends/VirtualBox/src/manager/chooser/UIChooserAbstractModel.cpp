@@ -364,11 +364,10 @@ void UIChooserAbstractModel::init()
 {
     /* Create invisible root group node: */
     m_pInvisibleRootNode = new UIChooserNodeGroup(0 /* parent */,
-                                                  false /* favorite */,
                                                   0 /* position */,
+                                                  true /* opened */,
                                                   QString() /* name */,
-                                                  UIChooserNodeGroupType_Local,
-                                                  true /* opened */);
+                                                  UIChooserNodeGroupType_Local);
     if (invisibleRoot())
     {
         /* Link root to this model: */
@@ -376,8 +375,8 @@ void UIChooserAbstractModel::init()
 
         /* Create global node: */
         new UIChooserNodeGlobal(invisibleRoot() /* parent */,
-                                shouldGlobalNodeBeFavorite(invisibleRoot()),
                                 0 /* position */,
+                                shouldGlobalNodeBeFavorite(invisibleRoot()),
                                 QString() /* tip */);
 
         /* Acquire VBox: */
@@ -445,15 +444,14 @@ void UIChooserAbstractModel::init()
             /* Add provider group node: */
             UIChooserNodeGroup *pProviderNode =
                 new UIChooserNodeGroup(invisibleRoot() /* parent */,
-                                       false /* favorite */,
                                        getDesiredNodePosition(invisibleRoot(),
                                                               UIChooserNodeDataPrefixType_Provider,
                                                               strProviderShortName),
-                                       strProviderShortName,
-                                       UIChooserNodeGroupType_Provider,
                                        shouldGroupNodeBeOpened(invisibleRoot(),
                                                                UIChooserNodeDataPrefixType_Provider,
-                                                               strProviderShortName));
+                                                               strProviderShortName),
+                                       strProviderShortName,
+                                       UIChooserNodeGroupType_Provider);
 
             /* Iterate through provider's profiles: */
             foreach (CCloudProfile comCloudProfile, profiles)
@@ -470,20 +468,19 @@ void UIChooserAbstractModel::init()
                 /* Add profile sub-group node: */
                 UIChooserNodeGroup *pProfileNode =
                     new UIChooserNodeGroup(pProviderNode /* parent */,
-                                           false /* favorite */,
                                            getDesiredNodePosition(pProviderNode,
                                                                   UIChooserNodeDataPrefixType_Profile,
                                                                   strProfileName),
-                                           strProfileName,
-                                           UIChooserNodeGroupType_Profile,
                                            shouldGroupNodeBeOpened(pProviderNode,
                                                                    UIChooserNodeDataPrefixType_Profile,
-                                                                   strProfileName));
+                                                                   strProfileName),
+                                           strProfileName,
+                                           UIChooserNodeGroupType_Profile);
 
                 /* Add fake cloud VM item: */
                 new UIChooserNodeMachine(pProfileNode /* parent */,
-                                         false /* favorite */,
-                                         0 /* position */);
+                                         0 /* position */,
+                                         UIFakeCloudVirtualMachineItemState_Loading);
 
                 /* Create list cloud machines task: */
                 UITaskCloudListMachines *pTask = new UITaskCloudListMachines(strProviderShortName,
@@ -769,12 +766,9 @@ void UIChooserAbstractModel::sltCloudMachineRegistered(const QString &strProvide
         if (pProfileNode->nodes(UIChooserNodeType_Machine).isEmpty())
         {
             /* Add fake cloud VM item: */
-            UIChooserNodeMachine *pFakeNode = new UIChooserNodeMachine(pProfileNode /* parent */,
-                                                                       false /* favorite */,
-                                                                       0 /* position */);
-            AssertPtrReturnVoid(pFakeNode);
-            AssertReturnVoid(pFakeNode->cacheType() == UIVirtualMachineItemType_CloudFake);
-            pFakeNode->cache()->toCloud()->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
+            new UIChooserNodeMachine(pProfileNode /* parent */,
+                                     0 /* position */,
+                                     UIFakeCloudVirtualMachineItemState_Done);
         }
     }
     /* New VM registered? */
@@ -1027,15 +1021,14 @@ UIChooserNode *UIChooserAbstractModel::getLocalGroupNode(const QString &strName,
     /* Found nothing? Creating: */
     UIChooserNodeGroup *pNewGroupNode =
         new UIChooserNodeGroup(pParentNode,
-                               false /* favorite */,
                                getDesiredNodePosition(pParentNode,
                                                       UIChooserNodeDataPrefixType_Local,
                                                       strSecondSubName),
-                               strSecondSubName,
-                               UIChooserNodeGroupType_Local,
                                fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode,
                                                                            UIChooserNodeDataPrefixType_Local,
-                                                                           strSecondSubName));
+                                                                           strSecondSubName),
+                               strSecondSubName,
+                               UIChooserNodeGroupType_Local);
     return strSecondSuffix.isEmpty() ? pNewGroupNode : getLocalGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
 }
 
@@ -1299,7 +1292,6 @@ int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, U
 void UIChooserAbstractModel::createLocalMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine)
 {
     new UIChooserNodeMachine(pParentNode,
-                             false /* favorite */,
                              getDesiredNodePosition(pParentNode,
                                                     UIChooserNodeDataPrefixType_Machine,
                                                     toOldStyleUuid(comMachine.GetId())),
@@ -1309,7 +1301,6 @@ void UIChooserAbstractModel::createLocalMachineNode(UIChooserNode *pParentNode, 
 void UIChooserAbstractModel::createCloudMachineNode(UIChooserNode *pParentNode, const CCloudMachine &comMachine)
 {
     UIChooserNodeMachine *pNode = new UIChooserNodeMachine(pParentNode,
-                                                           false /* favorite */,
                                                            getDesiredNodePosition(pParentNode,
                                                                                   UIChooserNodeDataPrefixType_Machine,
                                                                                   toOldStyleUuid(comMachine.GetId())),

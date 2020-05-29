@@ -39,33 +39,29 @@ class UIChooserNodeMachine : public UIChooserNode
 public:
 
     /** Constructs chooser node for local VM passing @a pParent to the base-class.
-      * @param  fFavorite   Brings whether the node is favorite.
       * @param  iPosition   Brings initial node position.
       * @param  comMachine  Brings COM machine object. */
     UIChooserNodeMachine(UIChooserNode *pParent,
-                         bool fFavorite,
                          int iPosition,
                          const CMachine &comMachine);
     /** Constructs chooser node for real cloud VM passing @a pParent to the base-class.
-      * @param  fFavorite        Brings whether the node is favorite.
       * @param  iPosition        Brings initial node position.
       * @param  comCloudMachine  Brings COM cloud machine object. */
     UIChooserNodeMachine(UIChooserNode *pParent,
-                         bool fFavorite,
                          int iPosition,
                          const CCloudMachine &comCloudMachine);
     /** Constructs chooser node for fake cloud VM passing @a pParent to the base-class.
-      * @param  fFavorite  Brings whether the node is favorite.
-      * @param  iPosition  Brings the initial node position. */
+      * @param  iPosition  Brings the initial node position.
+      * @param  enmState   Brings fake item type. */
     UIChooserNodeMachine(UIChooserNode *pParent,
-                         bool fFavorite,
-                         int iPosition);
+                         int iPosition,
+                         UIFakeCloudVirtualMachineItemState enmState);
     /** Constructs chooser node passing @a pParent to the base-class.
-      * @param  pCopyFrom  Brings the node to copy data from.
-      * @param  iPosition  Brings the initial node position. */
+      * @param  iPosition  Brings the initial node position.
+      * @param  pCopyFrom  Brings the node to copy data from. */
     UIChooserNodeMachine(UIChooserNode *pParent,
-                         UIChooserNodeMachine *pCopyFrom,
-                         int iPosition);
+                         int iPosition,
+                         UIChooserNodeMachine *pCopyFrom);
     /** Destructs chooser node. */
     virtual ~UIChooserNodeMachine() /* override */;
 

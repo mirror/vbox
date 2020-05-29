@@ -651,8 +651,8 @@ void UIChooserModel::disbandSelectedGroupItem()
             case UIChooserNodeType_Group:
             {
                 UIChooserNodeGroup *pGroupNode = new UIChooserNodeGroup(pParentNode,
-                                                                        pNode->toGroupNode(),
-                                                                        pParentNode->nodes().size());
+                                                                        pParentNode->nodes().size(),
+                                                                        pNode->toGroupNode());
                 UIChooserItemGroup *pGroupItem = new UIChooserItemGroup(pParentItem, pGroupNode);
                 if (childrenToBeRenamed.contains(pNode))
                     pGroupNode->setName(uniqueGroupName(pParentNode));
@@ -662,8 +662,8 @@ void UIChooserModel::disbandSelectedGroupItem()
             case UIChooserNodeType_Machine:
             {
                 UIChooserNodeMachine *pMachineNode = new UIChooserNodeMachine(pParentNode,
-                                                                              pNode->toMachineNode(),
-                                                                              pParentNode->nodes().size());
+                                                                              pParentNode->nodes().size(),
+                                                                              pNode->toMachineNode());
                 UIChooserItemMachine *pMachineItem = new UIChooserItemMachine(pParentItem, pMachineNode);
                 ungroupedItems << pMachineItem;
                 break;
@@ -774,11 +774,10 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
     {
         /* Create new group node in the current root: */
         pTargetGroupNode = new UIChooserNodeGroup(invisibleRoot(),
-                                                  false /* favorite */,
                                                   invisibleRoot()->nodes().size() /* position */,
+                                                  true /* opened */,
                                                   uniqueGroupName(invisibleRoot()),
-                                                  UIChooserNodeGroupType_Local,
-                                                  true /* opened */);
+                                                  UIChooserNodeGroupType_Local);
         pTargetGroupItem = new UIChooserItemGroup(root(), pTargetGroupNode);
     }
     else
@@ -814,8 +813,8 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
                 busyGroupNames << pItem->name();
                 /* Copy or move group-item: */
                 UIChooserNodeGroup *pNewGroupSubNode = new UIChooserNodeGroup(pTargetGroupNode,
-                                                                              pItem->node()->toGroupNode(),
-                                                                              pTargetGroupNode->nodes().size());
+                                                                              pTargetGroupNode->nodes().size(),
+                                                                              pItem->node()->toGroupNode());
                 copiedItems << new UIChooserItemGroup(pTargetGroupItem, pNewGroupSubNode);
                 delete pItem->node();
                 break;
@@ -829,8 +828,8 @@ void UIChooserModel::moveSelectedMachineItemsToGroupItem(const QString &strName 
                 busyMachineNames << pItem->name();
                 /* Copy or move machine-item: */
                 UIChooserNodeMachine *pNewMachineSubNode = new UIChooserNodeMachine(pTargetGroupNode,
-                                                                                    pItem->node()->toMachineNode(),
-                                                                                    pTargetGroupNode->nodes().size());
+                                                                                    pTargetGroupNode->nodes().size(),
+                                                                                    pItem->node()->toMachineNode());
                 copiedItems << new UIChooserItemMachine(pTargetGroupItem, pNewMachineSubNode);
                 delete pItem->node();
                 break;
