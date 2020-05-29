@@ -47,9 +47,9 @@ UIChooserNodeGroup::UIChooserNodeGroup(UIChooserNode *pParent,
                                        int iPosition,
                                        UIChooserNodeGroup *pCopyFrom)
     : UIChooserNode(pParent, false /* favorite */)
+    , m_fOpened(pCopyFrom->isOpened())
     , m_strName(pCopyFrom->name())
     , m_enmGroupType(pCopyFrom->groupType())
-    , m_fOpened(pCopyFrom->isOpened())
 {
     /* Add to parent: */
     if (parentNode())
