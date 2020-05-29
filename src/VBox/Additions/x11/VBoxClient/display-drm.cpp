@@ -105,11 +105,6 @@ struct DRMCONTEXT
 
 static void drmConnect(struct DRMCONTEXT *pContext)
 {
-    uid_t guid = getuid();
-    if (setreuid(0, 0) == -1)
-    {
-        perror("setuid failed drm device open.");
-    }
     unsigned i;
     RTFILE hDevice;
 
@@ -149,7 +144,6 @@ static void drmConnect(struct DRMCONTEXT *pContext)
         hDevice = NIL_RTFILE;
     }
     pContext->hDevice = hDevice;
-    setreuid(guid, 0);
 }
 
 /** Preferred screen layout information for DRM_VMW_UPDATE_LAYOUT IoCtl.  The
@@ -170,9 +164,8 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
     uid_t guid = getuid();
     if (setreuid(0, 0) == -1)
     {
-        perror("setuid failed drm device open.");
+        perror("setreuid failed during drm ioctl.");
     }
-
     int rc;
     struct DRMVMWUPDATELAYOUT ioctlLayout;
 
