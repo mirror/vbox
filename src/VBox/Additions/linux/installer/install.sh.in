@@ -615,6 +615,10 @@ EOF
     echo >&2 "  ldconfig"
 fi
 
+# setuid bit of our drm client as drm ioctl calls
+# need to be done by elevated privileges
+chmod 4755 "$INSTALLATION_DIR"/bin/VBoxDRMClient
+
 # And do a final test as to whether the kernel modules were properly created
 # and loaded.  Return 0 if both are true, 1 if the modules could not be built
 # or loaded (except due to already running older modules) and 2 if already
