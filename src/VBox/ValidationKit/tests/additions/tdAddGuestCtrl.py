@@ -2958,15 +2958,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Test very long arguments.
         if self.oTstDrv.fpApiVer >= 6.1:
             for _ in xrange(0, 16):
+                sFileName = str(self.oTestFiles.generateFilenameEx(128 * 1024, 2048));
+                reporter.log2('sFileName=%s, type=%s' % (limitString(sFileName), type(sFileName)));
                 if oTestVm.isWindows() \
                 or oTestVm.isOS2():
                     sCmd   = sShell;
-                    asArgs = [ sShell, sShellOpt, "echo",
-                               str(self.oTestFiles.generateFilenameEx(128 * 1024, 2048)), "--end-marker" ],
+                    asArgs = [ sShell, sShellOpt, "echo", sFileName, "--end-marker" ],
                 else:
                     sCmd   = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'echo');
-                    asArgs = [ sCmd,
-                               str(self.oTestFiles.generateFilenameEx(128 * 1024, 2048)), "--end-marker" ],
+                    asArgs = [ sCmd, sFileName, "--end-marker" ],
                 ## @todo Check limits; on Ubuntu with 256KB IPRT returns VERR_NOT_IMPLEMENTED.
                 atExec.append([ tdTestExec(sCmd, asArgs,
                                            afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut,
