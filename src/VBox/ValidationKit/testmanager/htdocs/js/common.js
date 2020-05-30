@@ -1203,7 +1203,6 @@ function svnHistoryTooltipNewOnLoad()
 function svnHistoryTooltipNewOnReadState(oTooltip, oRestReq, oParent)
 {
     console.log('svnHistoryTooltipNewOnReadState');
-    console.log('svnHistoryTooltipNewOnReadState');
 
     /*
      * Check the result and translate it to a javascript object (oResp).
