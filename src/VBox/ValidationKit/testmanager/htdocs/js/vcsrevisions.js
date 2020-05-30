@@ -24,7 +24,42 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/** Called when we've got the revision data.   */
+
+/**
+ * @internal.
+ */
+function vcsRevisionFormatDate(tsDate)
+{
+    /*return tsDate.toLocaleDateString();*/
+    return tsDate.toISOString().split('T')[0];
+}
+
+/**
+ * @internal.
+ */
+function vcsRevisionFormatTime(tsDate)
+{
+    var sRet = tsDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'} );
+    return sRet.replace(' ', '\u00a0');
+}
+
+/**
+ * Called 'onclick' for the link/button used to show the detailed VCS
+ * revisions.
+ * @internal.
+ */
+function vcsRevisionShowDetails(oElmSource)
+{
+    document.getElementById('vcsrevisions-detailed').style.display = 'block';
+    document.getElementById('vcsrevisions-brief').style.display = 'none';
+    oElmSource.style.display = 'none';
+    return false;
+}
+
+/**
+ * Called when we've got the revision data.
+ * @internal
+ */
 function vcsRevisionsRender(sTestMgr, oElmDst, sBugTracker, oRestReq, sUrl)
 {
     console.log('vcsRevisionsRender: status=' + oRestReq.status + ' readyState=' + oRestReq.readyState + ' url=' + sUrl);
@@ -75,11 +110,16 @@ function vcsRevisionsRender(sTestMgr, oElmDst, sBugTracker, oRestReq, sUrl)
         }
         else
         {
-            sHtml = '<p>';
-
             var aoCommits = oResp.aoCommits;
             var cCommits  = oResp.aoCommits.length;
             var i;
+
+            sHtml = '';
+            /*sHtml = '<a href="#" onclick="return vcsRevisionShowDetails(this);" class="vcsrevisions-show-details">Show full VCS details...</a>\n';*/
+            /*sHtml = '<button onclick="vcsRevisionShowDetails(this);" class="vcsrevisions-show-details">Show full VCS details...</button>\n';*/
+
+            /* Brief view (the default): */
+            sHtml += '<p id="vcsrevisions-brief">';
             for (i = 0; i < cCommits; i++)
             {
                 var oCommit = aoCommits[i];
@@ -87,9 +127,85 @@ function vcsRevisionsRender(sTestMgr, oElmDst, sBugTracker, oRestReq, sUrl)
                 var sTitle  = oCommit.sAuthor + ': ' + oCommit.sMessage;
                 sHtml += ' <a href="' + escapeElem(sUrl) + '" title="' + escapeElem(sTitle) + '">r' + oCommit.iRevision + '</a> \n';
             }
-
             sHtml += '</p>';
+            sHtml += '<a href="#" onclick="return vcsRevisionShowDetails(this);" class="vcsrevisions-show-details-bottom">Show full VCS details...</a>\n';
 
+            /* Details view: */
+            sHtml += '<div id="vcsrevisions-detailed" style="display:none;">\n';
+            var iCurDay = null;
+            if (0)
+            {
+                /* Changelog variant: */
+                for (i = 0; i < cCommits; i++)
+                {
+                    var oCommit    = aoCommits[i];
+                    var tsCreated  = parseIsoTimestamp(oCommit.tsCreated);
+                    var sUrl       = oResp.sTracChangesetUrlFmt.replace('%(sRepository)s', oCommit.sRepository).replace('%(iRevision)s', oCommit.iRevision.toString());
+                    var iCommitDay = Math.floor((tsCreated.getTime() + tsCreated.getTimezoneOffset()) / (24 * 60 * 60 * 1000));
+                    if (iCurDay === null || iCurDay != iCommitDay)
+                    {
+                        if (iCurDay !== null)
+                            sHtml += ' </dl>\n';
+                        iCurDay = iCommitDay;
+                        sHtml += ' <h3>' + vcsRevisionFormatDate(tsCreated) + ' ' + g_kasDaysOfTheWeek[tsCreated.getDay()] + '</h3>\n';
+                        sHtml += ' <dl>\n';
+                    }
+
+                    sHtml += '  <dt id="r' + oCommit.iRevision + '">';
+                    sHtml += '<a href="' + oResp.sTracChangesetUrlFmt.replace('%(iRevision)s', oCommit.iRevision.toString()) + '">';
+                    /*sHtml += '<span class="vcsrevisions-time">' + escapeElem(vcsRevisionFormatTime(tsCreated)) + '</span>'
+                    sHtml += ' Changeset <span class="vcsrevisions-rev">r' + oCommit.iRevision + '</span>';
+                    sHtml += ' by <span class="vcsrevisions-author">' + escapeElem(oCommit.sAuthor) + '</span>'; */
+                    sHtml += '<span class="vcsrevisions-time">' + escapeElem(vcsRevisionFormatTime(tsCreated)) + '</span>';
+                    sHtml += ' - <span class="vcsrevisions-rev">r' + oCommit.iRevision + '</span>';
+                    sHtml += ' - <span class="vcsrevisions-author">' + escapeElem(oCommit.sAuthor) + '</span>';
+                    sHtml += '</a></dt>\n';
+                    sHtml += '  <dd>' + escapeElem(oCommit.sMessage) + '</dd>\n';
+                }
+
+                if (iCurDay !== null)
+                    sHtml += ' </dl>\n';
+            }
+            else
+            {   /* TABLE variant: */
+                sHtml += '<table class="vcsrevisions-table">';
+                var iAlt = 0;
+                for (i = 0; i < cCommits; i++)
+                {
+                    var oCommit    = aoCommits[i];
+                    var tsCreated  = parseIsoTimestamp(oCommit.tsCreated);
+                    var sUrl       = oResp.sTracChangesetUrlFmt.replace('%(sRepository)s', oCommit.sRepository).replace('%(iRevision)s', oCommit.iRevision.toString());
+                    var iCommitDay = Math.floor((tsCreated.getTime() + tsCreated.getTimezoneOffset()) / (24 * 60 * 60 * 1000));
+                    if (iCurDay === null || iCurDay != iCommitDay)
+                    {
+                        iCurDay = iCommitDay;
+                        sHtml += '<tr id="r' + oCommit.iRevision + '"><td colspan="4" class="vcsrevisions-tab-date">';
+                        sHtml += vcsRevisionFormatDate(tsCreated) + ' ' + g_kasDaysOfTheWeek[tsCreated.getDay()];
+                        sHtml += '</td></tr>\n';
+                        sHtml += '<tr>';
+                        iAlt = 0;
+                    }
+                    else
+                        sHtml += '<tr id="r' + oCommit.iRevision + '">';
+                    var sAltCls = '';
+                    var sAltClsStmt = '';
+                    iAlt += 1;
+                    if (iAlt & 1)
+                    {
+                        sAltCls     = ' alt';
+                        sAltClsStmt = ' class="alt"';
+                    }
+                    sHtml += '<td class="vcsrevisions-tab-time'+sAltCls+'"><a href="' + sUrl + '">'
+                           + escapeElem(vcsRevisionFormatTime(tsCreated)) + '</a></td>';
+                    sHtml += '<td'+sAltClsStmt+'><a href="' + sUrl + '" class="vcsrevisions-rev' + sAltCls + '">r'
+                           + oCommit.iRevision + '</a></td>';
+                    sHtml += '<td'+sAltClsStmt+'><a href="' + sUrl + '" class="vcsrevisions-author' + sAltCls + '">'
+                           + escapeElem(oCommit.sAuthor) + '<a></td>';
+                    sHtml += '<td'+sAltClsStmt+'>' + escapeElem(oCommit.sMessage) + '</td></tr>\n';
+                }
+                sHtml += '</table>\n';
+            }
+            sHtml += '</div>\n';
         }
     }
 
@@ -106,7 +222,7 @@ function VcsRevisionsLoad(sTestMgr, oElmDst, sBugTracker, lBugNo)
     oRestReq.onreadystatechange = function() { vcsRevisionsRender(sTestMgr, oElmDst, sBugTracker, this, sUrl); }
     oRestReq.open('GET', sUrl);
     oRestReq.withCredentials = true;
-    //oRestReq.setRequestHeader('Content-type', 'application/json');
+    /*oRestReq.setRequestHeader('Content-type', 'application/json'); - Causes CORS trouble. */
     oRestReq.send();
 }
 

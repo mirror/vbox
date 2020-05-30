@@ -31,6 +31,9 @@
 /** Same as WuiDispatcherBase.ksParamRedirectTo. */
 var g_ksParamRedirectTo = 'RedirectTo';
 
+/** Days of the week in Date() style with Sunday first. */
+var g_kasDaysOfTheWeek = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ];
+
 
 /**
  * Detects the firefox browser.
@@ -1236,7 +1239,6 @@ function svnHistoryTooltipNewOnReadState(oTooltip, oRestReq, oParent)
      */
     if (oResp)
     {
-        var asDaysOfTheWeek = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ];
         sHtml = '<div class="tmvcstimeline tmvcstimelinetooltip">\n';
 
         var aoCommits = oResp.aoCommits;
@@ -1253,7 +1255,7 @@ function svnHistoryTooltipNewOnReadState(oTooltip, oRestReq, oParent)
                 if (iCurDay !== null)
                     sHtml += ' </dl>\n';
                 iCurDay = iCommitDay;
-                sHtml += ' <h2>' + tsCreated.toISOString().split('T')[0] + ' ' + asDaysOfTheWeek[tsCreated.getDay()] + '</h2>\n';
+                sHtml += ' <h2>' + tsCreated.toISOString().split('T')[0] + ' ' + g_kasDaysOfTheWeek[tsCreated.getDay()] + '</h2>\n';
                 sHtml += ' <dl>\n';
             }
             Date
