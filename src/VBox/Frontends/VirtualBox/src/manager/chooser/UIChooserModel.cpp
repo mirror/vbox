@@ -322,8 +322,11 @@ QList<UIVirtualMachineItem*> UIChooserModel::selectedMachineItems() const
 
 void UIChooserModel::makeSureAtLeastOneItemSelected()
 {
+    /* If we have no item selected but at
+     * least one item in the navigation list (global item): */
     if (!firstSelectedItem() && !navigationItems().isEmpty())
     {
+        /* We are choosing it, selection became invalidated: */
         setSelectedItem(navigationItems().first());
         emit sigSelectionInvalidated();
     }
@@ -448,6 +451,10 @@ void UIChooserModel::makeSureNoItemWithCertainIdIsSelected(const QUuid &uId)
     /* If we have at least one of those items currently selected: */
     if (selectedItems().toSet().intersects(matchedItems))
         setSelectedItem(findClosestUnselectedItem());
+
+    /* If global item was chosen, selection became invalidated: */
+    if (firstSelectedItem()->type() == UIChooserNodeType_Global)
+        emit sigSelectionInvalidated();
 }
 
 void UIChooserModel::setCurrentItem(UIChooserItem *pItem)
