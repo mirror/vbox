@@ -54,6 +54,8 @@ public:
 
     /** @name Item stuff.
       * @{ */
+        /** Cleanups set, wiping out machine-item and [cloud]machine information for good. */
+        void clearSet();
         /** Builds set based on passed @a pMachineItem.
           * @param  fFullSet  Brigns whether full set should be built.
           * @param  settings  Brings details related settings. */

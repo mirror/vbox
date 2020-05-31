@@ -88,9 +88,11 @@ void UIDetailsGroup::buildGroup(const QList<UIVirtualMachineItem*> &machineItems
     m_machineItems = filteredItems;
 
     /* Cleanup superflous items: */
-    bool fCleanupPerformed = m_items.size() > m_machineItems.size();
+    const bool fCleanupPerformed = m_items.size() > m_machineItems.size();
     while (m_items.size() > m_machineItems.size())
         delete m_items.last();
+    foreach (UIDetailsItem *pItem, m_items)
+        pItem->toSet()->clearSet();
     if (fCleanupPerformed)
         updateGeometry();
 
