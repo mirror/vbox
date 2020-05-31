@@ -207,7 +207,7 @@ function parseIsoTimestamp(sTs)
     var iMilliseconds = (iMicroseconds + 499) / 1000;
 
     /* Naive? */
-    var oDate = new Date(Date.UTC(iYear, iMonth, iDay, iHour, iMin, iSec, iMilliseconds));
+    var oDate = new Date(Date.UTC(iYear, iMonth - 1, iDay, iHour, iMin, iSec, iMilliseconds));
     if (offTime >= sTime.length)
         return oDate;
 
