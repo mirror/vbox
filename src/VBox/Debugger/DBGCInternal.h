@@ -587,6 +587,9 @@ int     dbgcProcessInput(PDBGC pDbgc, bool fNoExecute);
 void    dbgcDestroy(PDBGC pDbgc);
 
 
+DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags);
+
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/

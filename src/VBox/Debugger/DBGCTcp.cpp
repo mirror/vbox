@@ -30,6 +30,8 @@
 
 #include <iprt/string.h>
 
+#include "DBGCInternal.h"
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -167,6 +169,34 @@ static DECLCALLBACK(int) dbgcTcpBackWrite(PDBGCBACK pBack, const void *pvBuf, si
     return rc;
 }
 
+/**
+ * Write (output) - raw version not converting any newlines.
+ *
+ * @returns VBox status code.
+ * @param   pBack       Pointer to the backend structure supplied by
+ *                      the backend. The backend can use this to find
+ *                      it's instance data.
+ * @param   pvBuf       What to write.
+ * @param   cbBuf       Number of bytes to write.
+ * @param   pcbWritten  Where to store the number of bytes actually written.
+ *                      If NULL the entire buffer must be successfully written.
+ */
+static DECLCALLBACK(int) dbgcTcpBackWriteRaw(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
+{
+    PDBGCTCP pDbgcTcp = DBGCTCP_BACK2DBGCTCP(pBack);
+    if (!pDbgcTcp->fAlive)
+        return VERR_INVALID_HANDLE;
+
+    int rc = RTTcpWrite(pDbgcTcp->Sock, pvBuf, cbBuf);
+    if (RT_FAILURE(rc))
+        pDbgcTcp->fAlive = false;
+
+    if (pcbWritten)
+        *pcbWritten = cbBuf;
+
+    return rc;
+}
+
 /** @copydoc FNDBGCBACKSETREADY */
 static DECLCALLBACK(void) dbgcTcpBackSetReady(PDBGCBACK pBack, bool fReady)
 {
@@ -190,17 +220,30 @@ static DECLCALLBACK(int) dbgcTcpConnection(RTSOCKET Sock, void *pvUser)
 {
     LogFlow(("dbgcTcpConnection: connection! Sock=%d pvUser=%p\n", Sock, pvUser));
 
+    PUVM pUVM = (PUVM)pvUser;
+    PCFGMNODE pKey = CFGMR3GetChild(CFGMR3GetRootU(pUVM), "DBGC");
+    bool fGdbStub = false;
+    int rc = CFGMR3QueryBoolDef(pKey, "GdbStub", &fGdbStub, false);
+    if (RT_FAILURE(rc))
+        return VM_SET_ERROR_U(pUVM, rc, "Configuration error: Failed querying \"DBGC/GdbStub\"");
+
     /*
      * Start the console.
      */
     DBGCTCP    DbgcTcp;
-    DbgcTcp.Back.pfnInput    = dbgcTcpBackInput;
-    DbgcTcp.Back.pfnRead     = dbgcTcpBackRead;
-    DbgcTcp.Back.pfnWrite    = dbgcTcpBackWrite;
-    DbgcTcp.Back.pfnSetReady = dbgcTcpBackSetReady;
+    DbgcTcp.Back.pfnInput     = dbgcTcpBackInput;
+    DbgcTcp.Back.pfnRead      = dbgcTcpBackRead;
+    if (fGdbStub)
+        DbgcTcp.Back.pfnWrite = dbgcTcpBackWriteRaw;
+    else
+        DbgcTcp.Back.pfnWrite = dbgcTcpBackWrite;
+    DbgcTcp.Back.pfnSetReady  = dbgcTcpBackSetReady;
     DbgcTcp.fAlive = true;
     DbgcTcp.Sock   = Sock;
-    int rc = DBGCCreate((PUVM)pvUser, &DbgcTcp.Back, 0);
+    if (fGdbStub)
+        rc = dbgcGdbStubCreate(pUVM, &DbgcTcp.Back, 0);
+    else
+        rc = DBGCCreate(pUVM, &DbgcTcp.Back, 0);
     LogFlow(("dbgcTcpConnection: disconnect rc=%Rrc\n", rc));
     return rc;
 }
