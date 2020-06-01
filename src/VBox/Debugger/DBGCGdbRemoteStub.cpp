@@ -139,10 +139,10 @@ typedef PGDBSTUBCTX *PPGDBSTUBCTX;
  *
  * @returns Status code.
  * @param   pThis               The GDB stub context.
- * @param   pbArgs              Pointer to the arguments.
- * @param   cbArgs              Size of the arguments in bytes.
+ * @param   pbVal               Pointer to the remaining value.
+ * @param   cbVal               Size of the remaining value in bytes.
  */
-typedef DECLCALLBACK(int) FNGDBSTUBQPKTPROC(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs);
+typedef DECLCALLBACK(int) FNGDBSTUBQPKTPROC(PGDBSTUBCTX pThis, const uint8_t *pbVal, size_t cbVal);
 typedef FNGDBSTUBQPKTPROC *PFNGDBSTUBQPKTPROC;
 
 
@@ -367,8 +367,7 @@ DECLINLINE(int) dbgcGdbStubCtxEncodeBinaryAsHex(uint8_t *pbDst, size_t cbDst, vo
  * @returns Status code.
  * @param   pbBuf               The buffer containing the hexstring to convert.
  * @param   cbBuf               Size of the buffer in bytes.
- * @param   pvDst               Where to store the decoded data.
- * @param   cbDst               Maximum buffer sizein bytes.
+ * @param   puVal               Where to store the decoded integer.
  * @param   chSep               The character to stop conversion at.
  * @param   ppbSep              Where to store the pointer in the buffer where the separator was found, optional.
  */
