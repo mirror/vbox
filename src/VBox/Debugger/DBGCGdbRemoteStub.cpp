@@ -108,7 +108,7 @@ typedef struct GDBSTUBCTX
     /** Maximum number of bytes the packet buffer can hold. */
     size_t                      cbPktBufMax;
     /** Current offset into the packet buffer. */
-    uint32_t                    offPktBuf;
+    size_t                      offPktBuf;
     /** The size of the packet (minus the start, end characters and the checksum). */
     uint32_t                    cbPkt;
     /** Pointer to the packet buffer data. */
@@ -292,7 +292,7 @@ static int dbgcGdbStubCtxReplySendBegin(PGDBSTUBCTX pThis)
  *
  * @returns Status code.
  * @param   pThis               The GDB stub context.
- * @param   pbReplyData         The reply data to send.
+ * @param   pvReplyData         The reply data to send.
  * @param   cbReplyData         Size of the reply data in bytes.
  */
 static int dbgcGdbStubCtxReplySendData(PGDBSTUBCTX pThis, const void *pvReplyData, size_t cbReplyData)
@@ -329,7 +329,7 @@ static int dbgcGdbStubCtxReplySendEnd(PGDBSTUBCTX pThis)
  *
  * @returns Status code.
  * @param   pThis               The GDB stub context.
- * @param   pbReplyPkt          The reply packet to send.
+ * @param   pvReplyPkt          The reply packet to send.
  * @param   cbReplyPkt          Size of the reply packet in bytes.
  */
 static int dbgcGdbStubCtxReplySend(PGDBSTUBCTX pThis, const void *pvReplyPkt, size_t cbReplyPkt)
@@ -603,7 +603,7 @@ static int dbgcGdbStubCtxPktProcessQueryTStatus(PGDBSTUBCTX pThis, const uint8_t
 
 
 /**
- * @copydoc{FNGDBSTUBQPKTPROC}
+ * @copydoc FNGDBSTUBQPKTPROC
  */
 static int dbgcGdbStubCtxPktProcessFeatXmlRegs(PGDBSTUBCTX pThis, const uint8_t *pbVal, size_t cbVal)
 {
@@ -783,7 +783,7 @@ static int dbgcGdbStubCtxPktProcessQuerySupported(PGDBSTUBCTX pThis, const uint8
 
 
 /**
- * Sends the reply to a 'qXfer:<object>:read:...' request.
+ * Sends the reply to a 'qXfer:object:read:...' request.
  *
  * @returns Status code.
  * @param   pThis               The GDB stub context.
@@ -809,7 +809,7 @@ static int dbgcGdbStubCtxQueryXferReadReply(PGDBSTUBCTX pThis, uint32_t offRead,
             rc = dbgcGdbStubCtxReplySend(pThis, pThis->pbPktBuf, cbThisRead + 1);
         }
         else
-            rc = dbgcGdbStubCtxReplySendErr(pThis, VERR_NO_MEMORY);
+            rc = dbgcGdbStubCtxReplySendErrSts(pThis, VERR_NO_MEMORY);
     }
     else if (offRead == cbObj)
         rc = dbgcGdbStubCtxReplySend(pThis, "l", sizeof("l") - 1);
@@ -821,15 +821,15 @@ static int dbgcGdbStubCtxQueryXferReadReply(PGDBSTUBCTX pThis, uint32_t offRead,
 
 
 /**
- * Parses the annex:offset,length part of a 'qXfer:<object>:read:...' request.
+ * Parses the annex:offset,length part of a 'qXfer:object:read:...' request.
  *
  * @returns Status code.
- * @param   pbArgs              Start of the arguments beginning with <annex>.
+ * @param   pbArgs              Start of the arguments beginning with annex.
  * @param   cbArgs              Number of bytes remaining for the arguments.
  * @param   ppchAnnex           Where to store the pointer to the beginning of the annex on success.
  * @param   pcchAnnex           Where to store the number of characters for the annex on success.
- * @param   poff                Where to store the offset on success.
- * @param   pcb                 Where to store the length on success.
+ * @param   poffRead            Where to store the offset on success.
+ * @param   pcbRead             Where to store the length on success.
  */
 static int dbgcGdbStubCtxPktProcessQueryXferParseAnnexOffLen(const uint8_t *pbArgs, size_t cbArgs, const char **ppchAnnex, size_t *pcchAnnex,
                                                              uint32_t *poffRead, size_t *pcbRead)
@@ -1455,7 +1455,7 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                 if (RT_SUCCESS(rc))
                 {
                     size_t cbProcessed = pbPktSep - &pThis->pbPktBuf[2];
-                    size_t cbRead = 0;
+                    uint64_t cbRead = 0;
                     rc = dbgcGdbStubCtxParseHexStringAsInteger(pbPktSep + 1, pThis->cbPkt - 1 - cbProcessed - 1, &cbRead, GDBSTUB_PKT_END, NULL);
                     if (RT_SUCCESS(rc))
                     {
@@ -1515,7 +1515,7 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                 if (RT_SUCCESS(rc))
                 {
                     size_t cbProcessed = pbPktSep - &pThis->pbPktBuf[2];
-                    size_t cbWrite = 0;
+                    uint64_t cbWrite = 0;
                     rc = dbgcGdbStubCtxParseHexStringAsInteger(pbPktSep + 1, pThis->cbPkt - 1 - cbProcessed - 1, &cbWrite, ':', &pbPktSep);
                     if (RT_SUCCESS(rc))
                     {
@@ -2165,7 +2165,7 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
  * Run the debugger console.
  *
  * @returns VBox status code.
- * @param   pDbgc   Pointer to the debugger console instance data.
+ * @param   pThis   Pointer to the GDB stub context.
  */
 int dbgcGdbStubRun(PGDBSTUBCTX pThis)
 {
