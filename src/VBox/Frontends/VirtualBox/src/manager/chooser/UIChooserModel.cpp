@@ -320,18 +320,6 @@ QList<UIVirtualMachineItem*> UIChooserModel::selectedMachineItems() const
     return currentMachineList;
 }
 
-void UIChooserModel::makeSureAtLeastOneItemSelected()
-{
-    /* If we have no item selected but at
-     * least one item in the navigation list (global item): */
-    if (!firstSelectedItem() && !navigationItems().isEmpty())
-    {
-        /* We are choosing it, selection became invalidated: */
-        setSelectedItem(navigationItems().first());
-        emit sigSelectionInvalidated();
-    }
-}
-
 bool UIChooserModel::isGroupItemSelected() const
 {
     return firstSelectedItem() && firstSelectedItem()->type() == UIChooserNodeType_Group;
@@ -433,7 +421,7 @@ UIChooserItem *UIChooserModel::findClosestUnselectedItem() const
     return 0;
 }
 
-void UIChooserModel::makeSureNoItemWithCertainIdIsSelected(const QUuid &uId)
+void UIChooserModel::makeSureNoItemWithCertainIdSelected(const QUuid &uId)
 {
     /* Look for all nodes with passed uId: */
     QList<UIChooserNode*> matchedNodes;
@@ -452,9 +440,21 @@ void UIChooserModel::makeSureNoItemWithCertainIdIsSelected(const QUuid &uId)
     if (selectedItems().toSet().intersects(matchedItems))
         setSelectedItem(findClosestUnselectedItem());
 
-    /* If global item was chosen, selection became invalidated: */
+    /* If global item is currently chosen, selection should be invalidated: */
     if (firstSelectedItem()->type() == UIChooserNodeType_Global)
         emit sigSelectionInvalidated();
+}
+
+void UIChooserModel::makeSureAtLeastOneItemSelected()
+{
+    /* If we have no item selected but
+     * at least one in the navigation list (global item): */
+    if (!firstSelectedItem() && !navigationItems().isEmpty())
+    {
+        /* We are choosing it, selection should be invalidated: */
+        setSelectedItem(navigationItems().first());
+        emit sigSelectionInvalidated();
+    }
 }
 
 void UIChooserModel::setCurrentItem(UIChooserItem *pItem)
@@ -1071,9 +1071,9 @@ bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
 
 void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fRegistered)
 {
-    /* Make sure no item with passed uId is selected: */
+    /* Existing VM unregistered => make sure no item with passed uId is selected: */
     if (!fRegistered)
-        makeSureNoItemWithCertainIdIsSelected(uId);
+        makeSureNoItemWithCertainIdSelected(uId);
 
     /* Call to base-class: */
     UIChooserAbstractModel::sltLocalMachineRegistered(uId, fRegistered);
@@ -1103,9 +1103,9 @@ void UIChooserModel::sltLocalMachineRegistered(const QUuid &uId, const bool fReg
 void UIChooserModel::sltCloudMachineRegistered(const QString &strProviderName, const QString &strProfileName,
                                                const QUuid &uId, const bool fRegistered)
 {
-    /* Make sure no item with passed uId is selected: */
+    /* Existing VM unregistered => make sure no item with passed uId is selected: */
     if (!fRegistered)
-        makeSureNoItemWithCertainIdIsSelected(uId);
+        makeSureNoItemWithCertainIdSelected(uId);
 
     /* Call to base-class: */
     UIChooserAbstractModel::sltCloudMachineRegistered(strProviderName, strProfileName, uId, fRegistered);

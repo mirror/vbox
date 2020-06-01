@@ -153,9 +153,6 @@ public:
         /** Returns a list of selected machine items. */
         QList<UIVirtualMachineItem*> selectedMachineItems() const;
 
-        /** Makes sure at least one item selected. */
-        void makeSureAtLeastOneItemSelected();
-
         /** Returns whether group item is selected. */
         bool isGroupItemSelected() const;
         /** Returns whether global item is selected. */
@@ -178,7 +175,9 @@ public:
         /** Finds closest non-selected-item. */
         UIChooserItem *findClosestUnselectedItem() const;
         /** Makes sure selection doesn't contain item with certain @a uId. */
-        void makeSureNoItemWithCertainIdIsSelected(const QUuid &uId);
+        void makeSureNoItemWithCertainIdSelected(const QUuid &uId);
+        /** Makes sure at least one item selected. */
+        void makeSureAtLeastOneItemSelected();
 
         /** Defines current @a pItem. */
         void setCurrentItem(UIChooserItem *pItem);
