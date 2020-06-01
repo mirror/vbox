@@ -194,10 +194,10 @@ int UIChooserNodeMachine::positionOf(UIChooserNode *pNode)
     AssertFailedReturn(0);
 }
 
-void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
+void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iSearchFlags, QList<UIChooserNode*> &matchedItems)
 {
     /* Ignore if we are not searching for the machine-node: */
-    if (!(iItemSearchFlags & UIChooserItemSearchFlag_Machine))
+    if (!(iSearchFlags & UIChooserItemSearchFlag_Machine))
         return;
 
     /* If the search term is empty we just add the node to the matched list: */
@@ -206,13 +206,13 @@ void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iIte
     else
     {
         /* If exact ID flag specified => check node ID:  */
-        if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)
+        if (iSearchFlags & UIChooserItemSearchFlag_ExactId)
         {
             if (id() == QUuid(strSearchTerm))
                 matchedItems << this;
         }
         /* If exact name flag specified => check full node name: */
-        else if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+        else if (iSearchFlags & UIChooserItemSearchFlag_ExactName)
         {
             if (name() == strSearchTerm)
                 matchedItems << this;

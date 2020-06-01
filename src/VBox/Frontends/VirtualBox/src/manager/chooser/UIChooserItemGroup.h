@@ -159,8 +159,8 @@ protected:
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) /* override */;
 
-        /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
-        virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) /* override */;
+        /** Searches for a first child item answering to specified @a strSearchTag and @a iSearchFlags. */
+        virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iSearchFlags) /* override */;
 
         /** Searches for a first machine child item. */
         virtual UIChooserItem *firstMachineItem() /* override */;

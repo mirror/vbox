@@ -511,10 +511,10 @@ void UIChooserModel::updateNavigationItemList()
     m_navigationItems = createNavigationItemList(root());
 }
 
-void UIChooserModel::performSearch(const QString &strSearchTerm, int iItemSearchFlags)
+void UIChooserModel::performSearch(const QString &strSearchTerm, int iSearchFlags)
 {
     /* Call to base-class: */
-    UIChooserAbstractModel::performSearch(strSearchTerm, iItemSearchFlags);
+    UIChooserAbstractModel::performSearch(strSearchTerm, iSearchFlags);
 
     /* Select 1st found item: */
     selectSearchResult(true);

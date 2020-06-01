@@ -101,8 +101,8 @@ public:
     /** Closes this group node. */
     void close() { m_fOpened = false; }
 
-    /** Recursively searches for a children wrt.  @a strSearchTerm and @a iItemSearchFlags and updates the @a matchedItems. */
-    virtual void searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems) /* override */;
+    /** Recursively searches for a children wrt.  @a strSearchTerm and @a iSearchFlags and updates the @a matchedItems. */
+    virtual void searchForNodes(const QString &strSearchTerm, int iSearchFlags, QList<UIChooserNode*> &matchedItems) /* override */;
 
     /** Performs sorting of children nodes. */
     virtual void sortNodes() /* override */;

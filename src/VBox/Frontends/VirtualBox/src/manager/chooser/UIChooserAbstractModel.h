@@ -90,9 +90,9 @@ public:
 
     /** @name Search stuff.
       * @{ */
-        /** Performs a search starting from the m_pInvisibleRootNode. */
-        virtual void performSearch(const QString &strSearchTerm, int iItemSearchFlags);
-        /** Cleans the search result data members and disables item's visual effects.
+        /** Performs a search using @a strSearchTerm and @a iSearchFlags specified. */
+        virtual void performSearch(const QString &strSearchTerm, int iSearchFlags);
+        /** Resets the search result data members and disables item's visual effects.
           * Also returns a list of all nodes which may be utilized by the calling code. */
         virtual QList<UIChooserNode*> resetSearch();
         /** Returns search result. */

@@ -493,25 +493,25 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
     updateGeometry();
 }
 
-UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
+UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, int iSearchFlags)
 {
     /* Are we searching among group-items? */
-    if (   (   iItemSearchFlags & UIChooserItemSearchFlag_LocalGroup
+    if (   (   iSearchFlags & UIChooserItemSearchFlag_LocalGroup
             && groupType() == UIChooserNodeGroupType_Local)
-        || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProvider
+        || (   iSearchFlags & UIChooserItemSearchFlag_CloudProvider
             && groupType() == UIChooserNodeGroupType_Provider)
-        || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProfile
+        || (   iSearchFlags & UIChooserItemSearchFlag_CloudProfile
             && groupType() == UIChooserNodeGroupType_Profile))
     {
         /* Are we searching by the exact ID? */
-        if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)
+        if (iSearchFlags & UIChooserItemSearchFlag_ExactId)
         {
             /* Exact full-name matches? */
             if (fullName() == strSearchTag)
                 return this;
         }
         /* Are we searching by the exact name? */
-        else if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+        else if (iSearchFlags & UIChooserItemSearchFlag_ExactName)
         {
             /* Exact name matches? */
             if (name() == strSearchTag)
@@ -528,13 +528,13 @@ UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, in
 
     /* Search among all the children, but machines first: */
     foreach (UIChooserItem *pItem, items(UIChooserNodeType_Machine))
-        if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
+        if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iSearchFlags))
             return pFoundItem;
     foreach (UIChooserItem *pItem, items(UIChooserNodeType_Global))
-        if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
+        if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iSearchFlags))
             return pFoundItem;
     foreach (UIChooserItem *pItem, items(UIChooserNodeType_Group))
-        if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
+        if (UIChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iSearchFlags))
             return pFoundItem;
 
     /* Found nothing? */

@@ -99,8 +99,8 @@ public:
     /** Returns position of specified node inside this one. */
     virtual int positionOf(UIChooserNode *pNode) /* override */;
 
-    /** Checks if this instance matches to search  wrt. @a strSearchTerm and @a iItemSearchFlags and updates @a matchedItems. */
-    virtual void searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems) /* override */;
+    /** Checks if this instance matches to search  wrt. @a strSearchTerm and @a iSearchFlags and updates @a matchedItems. */
+    virtual void searchForNodes(const QString &strSearchTerm, int iSearchFlags, QList<UIChooserNode*> &matchedItems) /* override */;
 
     /** Performs sorting of children nodes. */
     virtual void sortNodes() /* override */;

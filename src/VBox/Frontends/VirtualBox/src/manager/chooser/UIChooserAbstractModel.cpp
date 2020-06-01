@@ -573,7 +573,7 @@ QString UIChooserAbstractModel::uniqueGroupName(UIChooserNode *pRoot)
     return strResult;
 }
 
-void UIChooserAbstractModel::performSearch(const QString &strSearchTerm, int iItemSearchFlags)
+void UIChooserAbstractModel::performSearch(const QString &strSearchTerm, int iSearchFlags)
 {
     /* Make sure invisible root exists: */
     AssertPtrReturnVoid(invisibleRoot());
@@ -590,13 +590,12 @@ void UIChooserAbstractModel::performSearch(const QString &strSearchTerm, int iIt
         return;
 
     /* Search for all the nodes matching required condition: */
-    invisibleRoot()->searchForNodes(strSearchTerm, iItemSearchFlags, m_searchResults);
+    invisibleRoot()->searchForNodes(strSearchTerm, iSearchFlags, m_searchResults);
 
     /* Assign/reset the disabled flag for required nodes: */
     foreach (UIChooserNode *pNode, nodes)
     {
-        if (!pNode)
-            continue;
+        AssertPtrReturnVoid(pNode);
         pNode->setDisabled(!m_searchResults.contains(pNode));
     }
 }
@@ -609,22 +608,21 @@ QList<UIChooserNode*> UIChooserAbstractModel::resetSearch()
     /* Make sure invisible root exists: */
     AssertPtrReturn(invisibleRoot(), nodes);
 
-    /* Calling UIChooserNode::searchForNodes with an empty search string
+    /* Calling UIChooserNode::searchForNodes with an empty search term
      * returns a list all nodes (of the whole tree) of the required type: */
     invisibleRoot()->searchForNodes(QString(), UIChooserItemSearchFlag_Machine, nodes);
 
     /* Reset the disabled flag of the nodes first: */
     foreach (UIChooserNode *pNode, nodes)
     {
-        if (!pNode)
-            continue;
+        AssertPtrReturn(pNode, nodes);
         pNode->setDisabled(false);
     }
 
     /* Reset the search result related data: */
     m_searchResults.clear();
 
-    /* Return  nodes: */
+    /* Return nodes: */
     return nodes;
 }
 

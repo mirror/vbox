@@ -167,8 +167,8 @@ public:
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) = 0;
 
-        /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
-        virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;
+        /** Searches for a first child item answering to specified @a strSearchTag and @a iSearchFlags. */
+        virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iSearchFlags) = 0;
 
         /** Searches for a first machine child item. */
         virtual UIChooserItem *firstMachineItem() = 0;

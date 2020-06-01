@@ -209,10 +209,10 @@ void UIChooserItemGlobal::removeItem(UIChooserItem *)
     AssertMsgFailed(("Global graphics item do NOT support children!"));
 }
 
-UIChooserItem *UIChooserItemGlobal::searchForItem(const QString &, int iItemSearchFlags)
+UIChooserItem *UIChooserItemGlobal::searchForItem(const QString &, int iSearchFlags)
 {
     /* Ignore if we are not searching for the global-item: */
-    if (!(iItemSearchFlags & UIChooserItemSearchFlag_Global))
+    if (!(iSearchFlags & UIChooserItemSearchFlag_Global))
         return 0;
 
     /* Returning this: */

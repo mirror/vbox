@@ -223,14 +223,14 @@ void UIChooserNodeGroup::setName(const QString &strName)
         item()->updateItem();
 }
 
-void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
+void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iSearchFlags, QList<UIChooserNode*> &matchedItems)
 {
     /* If we are searching for the group-node: */
-    if (   (   iItemSearchFlags & UIChooserItemSearchFlag_LocalGroup
+    if (   (   iSearchFlags & UIChooserItemSearchFlag_LocalGroup
             && groupType() == UIChooserNodeGroupType_Local)
-        || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProvider
+        || (   iSearchFlags & UIChooserItemSearchFlag_CloudProvider
             && groupType() == UIChooserNodeGroupType_Provider)
-        || (   iItemSearchFlags & UIChooserItemSearchFlag_CloudProfile
+        || (   iSearchFlags & UIChooserItemSearchFlag_CloudProfile
             && groupType() == UIChooserNodeGroupType_Profile))
     {
         /* If the search term is empty we just add the node to the matched list: */
@@ -239,13 +239,13 @@ void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemS
         else
         {
             /* If exact ID flag specified => check full node name: */
-            if (iItemSearchFlags & UIChooserItemSearchFlag_ExactId)
+            if (iSearchFlags & UIChooserItemSearchFlag_ExactId)
             {
                 if (fullName() == strSearchTerm)
                     matchedItems << this;
             }
             /* If exact name flag specified => check node name: */
-            else if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+            else if (iSearchFlags & UIChooserItemSearchFlag_ExactName)
             {
                 if (name() == strSearchTerm)
                     matchedItems << this;
@@ -261,11 +261,11 @@ void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemS
 
     /* Search among all the children: */
     foreach (UIChooserNode *pNode, m_nodesGroup)
-        pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
+        pNode->searchForNodes(strSearchTerm, iSearchFlags, matchedItems);
     foreach (UIChooserNode *pNode, m_nodesGlobal)
-        pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
+        pNode->searchForNodes(strSearchTerm, iSearchFlags, matchedItems);
     foreach (UIChooserNode *pNode, m_nodesMachine)
-        pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
+        pNode->searchForNodes(strSearchTerm, iSearchFlags, matchedItems);
 }
 
 void UIChooserNodeGroup::sortNodes()
