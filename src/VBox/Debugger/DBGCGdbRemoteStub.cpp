@@ -110,7 +110,7 @@ typedef struct GDBSTUBCTX
     /** Current offset into the packet buffer. */
     size_t                      offPktBuf;
     /** The size of the packet (minus the start, end characters and the checksum). */
-    uint32_t                    cbPkt;
+    size_t                      cbPkt;
     /** Pointer to the packet buffer data. */
     uint8_t                     *pbPktBuf;
     /** Number of bytes left for the checksum. */
@@ -1872,7 +1872,7 @@ static int dbgcGdbStubCtxPktBufProcessChksum(PGDBSTUBCTX pThis, size_t cbData, s
                           | dbgcGdbStubCtxChrToHex(pThis->pbPktBuf[pThis->offPktBuf + 1]);
 
         uint8_t uSum = 0;
-        for (uint32_t i = 1; i < pThis->cbPkt; i++)
+        for (size_t i = 1; i < pThis->cbPkt; i++)
             uSum += pThis->pbPktBuf[i];
 
         if (uSum == uChkSum)
