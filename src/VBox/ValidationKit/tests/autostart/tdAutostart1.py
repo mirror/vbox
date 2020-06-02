@@ -1153,7 +1153,7 @@ class tdAutostartOsWin(tdAutostartOs):
                                               '--password-file=C:\\ProgramData\\password.cfg'],
                                              False, True);
                 if not fRc:
-                    reporter.error('Install autostart service for user %s failed' % (sVmName, sUser));
+                    reporter.error('Install autostart service for user %s failed' % sUser);
             fRc1 = self.closeSession(oGuestSession, True);
             if not fRc1:
                 reporter.error('Closing session for user %s failed' % sUser);
