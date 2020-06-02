@@ -2121,7 +2121,7 @@ static int composeTemplatePath(const char *pcszTemplate, Bstr& strFullPath)
     return rc;
 }
 
-static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bstr& aGatewayIso, const Bstr& aGuestAdditionsIso)
+static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bstr& aGatewayIso, const Bstr& aGuestAdditionsIso, const Bstr& aProxy)
 {
     /* Check if the image already exists. */
     HRESULT hrc;
@@ -2293,6 +2293,12 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     if (errorOccured(hrc, "Failed to set post install script template for the unattended installer."))
         return hrc;
 
+    if (aProxy.isNotEmpty())
+    {
+        hrc = unattended->COMSETTER(ExtraInstallKernelParameters)(BstrFmt(" ks=cdrom:/ks.cfg proxy=\"%ls\"", aProxy.raw()).raw());
+        if (errorOccured(hrc, "Failed to set post install script template for the unattended installer."))
+            return hrc;
+    }
     hrc = unattended->Prepare();
     if (errorOccured(hrc, "Failed to prepare unattended installation."))
         return hrc;
@@ -2456,7 +2462,8 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
         { "--tunnel-network-name",  't', RTGETOPT_REQ_STRING },
         { "--tunnel-network-range", 'r', RTGETOPT_REQ_STRING },
         { "--guest-additions-iso",  'a', RTGETOPT_REQ_STRING },
-        { "--local-gateway-iso",    'l', RTGETOPT_REQ_STRING }
+        { "--local-gateway-iso",    'l', RTGETOPT_REQ_STRING },
+        { "--proxy",                'p', RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -2470,6 +2477,7 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
     Bstr strTunnelNetworkRange;
     Bstr strLocalGatewayIso;
     Bstr strGuestAdditionsIso;
+    Bstr strProxy;
 
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
@@ -2497,6 +2505,9 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
             case 'a':
                 strGuestAdditionsIso=ValueUnion.psz;
                 break;
+            case 'p':
+                strProxy=ValueUnion.psz;
+                break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
@@ -2514,7 +2525,7 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
 
-    hrc = createLocalGatewayImage(pVirtualBox, strLocalGatewayIso, strGuestAdditionsIso);
+    hrc = createLocalGatewayImage(pVirtualBox, strLocalGatewayIso, strGuestAdditionsIso, strProxy);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
