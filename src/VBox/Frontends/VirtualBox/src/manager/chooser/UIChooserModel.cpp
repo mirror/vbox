@@ -62,9 +62,6 @@ UIChooserModel::UIChooserModel(UIChooser *pParent, UIActionPool *pActionPool)
     , m_pScene(0)
     , m_pMouseHandler(0)
     , m_pKeyboardHandler(0)
-    , m_pContextMenuGlobal(0)
-    , m_pContextMenuGroup(0)
-    , m_pContextMenuMachine(0)
     , m_iCurrentSearchResultIndex(-1)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
@@ -1234,103 +1231,103 @@ void UIChooserModel::prepareScene()
 void UIChooserModel::prepareContextMenu()
 {
     /* Context menu for global(s): */
-    m_pContextMenuGlobal = new QMenu;
-    if (m_pContextMenuGlobal)
+    m_menus[UIChooserNodeType_Global] = new QMenu;
+    if (QMenu *pMenuGlobal = m_menus.value(UIChooserNodeType_Global))
     {
         /* Check if Ext Pack is ready, some of actions my depend on it: */
         CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
         const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
 
 #ifdef VBOX_WS_MAC
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
-        m_pContextMenuGlobal->addSeparator();
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-        m_pContextMenuGlobal->addSeparator();
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
+        pMenuGlobal->addSeparator();
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+        pMenuGlobal->addSeparator();
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM));
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
 # endif
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
         if (fExtPackAccessible)
-            m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+            pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-        m_pContextMenuGlobal->addSeparator();
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM));
-        m_pContextMenuGlobal->addSeparator();
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+        pMenuGlobal->addSeparator();
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM));
+        pMenuGlobal->addSeparator();
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
 # endif
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
         if (fExtPackAccessible)
-            m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+            pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
         if (gEDataManager->applicationUpdateEnabled())
-            m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
+            pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
 # endif
 #endif /* !VBOX_WS_MAC */
     }
 
     /* Context menu for group(s): */
-    m_pContextMenuGroup = new QMenu;
-    if (m_pContextMenuGroup)
+    m_menus[UIChooserNodeType_Group] = new QMenu;
+    if (QMenu *pMenuGroup = m_menus.value(UIChooserNodeType_Group))
     {
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
-        m_pContextMenuGroup->addSeparator();
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
-        m_pContextMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_MoveToGroup)->menu());
-        m_pContextMenuGroup->addSeparator();
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Reset));
-        m_pContextMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
-        m_pContextMenuGroup->addSeparator();
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
-        m_pContextMenuGroup->addSeparator();
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut));
-        m_pContextMenuGroup->addSeparator();
-        m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+        pMenuGroup->addSeparator();
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
+        pMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_MoveToGroup)->menu());
+        pMenuGroup->addSeparator();
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Reset));
+        pMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
+        pMenuGroup->addSeparator();
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+        pMenuGroup->addSeparator();
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut));
+        pMenuGroup->addSeparator();
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
     }
 
     /* Context menu for machine(s): */
-    m_pContextMenuMachine = new QMenu;
-    if (m_pContextMenuMachine)
+    m_menus[UIChooserNodeType_Machine] = new QMenu;
+    if (QMenu *pMenuMachine = m_menus.value(UIChooserNodeType_Machine))
     {
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
-        m_pContextMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup)->menu());
-        m_pContextMenuMachine->addSeparator();
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Reset));
-        m_pContextMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
-        m_pContextMenuMachine->addSeparator();
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
-        m_pContextMenuMachine->addSeparator();
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
-        m_pContextMenuMachine->addSeparator();
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
-        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
+        pMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup)->menu());
+        pMenuMachine->addSeparator();
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Reset));
+        pMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
+        pMenuMachine->addSeparator();
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
+        pMenuMachine->addSeparator();
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
+        pMenuMachine->addSeparator();
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
     }
 }
 
@@ -1380,12 +1377,8 @@ void UIChooserModel::cleanupHandlers()
 
 void UIChooserModel::cleanupContextMenu()
 {
-    delete m_pContextMenuGlobal;
-    m_pContextMenuGlobal = 0;
-    delete m_pContextMenuGroup;
-    m_pContextMenuGroup = 0;
-    delete m_pContextMenuMachine;
-    m_pContextMenuMachine = 0;
+    qDeleteAll(m_menus);
+    m_menus.clear();
 }
 
 void UIChooserModel::cleanupScene()
@@ -1408,44 +1401,44 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
     {
         case QGraphicsSceneContextMenuEvent::Mouse:
         {
-            /* First of all we should look for an item under cursor: */
+            /* Look for an item under cursor: */
             if (QGraphicsItem *pItem = itemAt(pEvent->scenePos()))
             {
-                /* If this item of known type? */
                 switch (pItem->type())
                 {
                     case UIChooserNodeType_Global:
                     {
-                        /* Global context menu for global item cases: */
-                        popupContextMenu(UIGraphicsSelectorContextMenuType_Global, pEvent->screenPos());
-                        return true;
+                        /* Global context menu for all global item cases: */
+                        m_menus.value(UIChooserNodeType_Global)->exec(pEvent->screenPos());
+                        break;
                     }
                     case UIChooserNodeType_Group:
                     {
                         /* Get group-item: */
                         UIChooserItem *pGroupItem = qgraphicsitem_cast<UIChooserItemGroup*>(pItem);
-                        /* Make sure thats not root: */
+                        /* Don't show context menu for root-item: */
                         if (pGroupItem->isRoot())
-                            return false;
-                        /* Is this group-item only the one selected? */
+                            break;
+                        /* Make sure we have group-item selected exclusively: */
                         if (selectedItems().contains(pGroupItem) && selectedItems().size() == 1)
                         {
                             /* Group context menu in that case: */
-                            popupContextMenu(UIGraphicsSelectorContextMenuType_Group, pEvent->screenPos());
-                            return true;
+                            m_menus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
+                            break;
                         }
                     }
                     RT_FALL_THRU();
                     case UIChooserNodeType_Machine:
                     {
                         /* Machine context menu for other Group/Machine cases: */
-                        popupContextMenu(UIGraphicsSelectorContextMenuType_Machine, pEvent->screenPos());
-                        return true;
+                        m_menus.value(UIChooserNodeType_Machine)->exec(pEvent->screenPos());
+                        break;
                     }
                     default:
                         break;
                 }
             }
+            /* Filter out by default: */
             return true;
         }
         case QGraphicsSceneContextMenuEvent::Keyboard:
@@ -1453,36 +1446,36 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
             /* Get first selected-item: */
             if (UIChooserItem *pItem = firstSelectedItem())
             {
-                /* If this item of known type? */
                 switch (pItem->type())
                 {
                     case UIChooserNodeType_Global:
                     {
-                        /* Global context menu for global item cases: */
-                        popupContextMenu(UIGraphicsSelectorContextMenuType_Machine, pEvent->screenPos());
-                        return true;
+                        /* Global context menu for all global item cases: */
+                        m_menus.value(UIChooserNodeType_Global)->exec(pEvent->screenPos());
+                        break;
                     }
                     case UIChooserNodeType_Group:
                     {
-                        /* Is this group-item only the one selected? */
+                        /* Make sure we have group-item selected exclusively: */
                         if (selectedItems().size() == 1)
                         {
                             /* Group context menu in that case: */
-                            popupContextMenu(UIGraphicsSelectorContextMenuType_Group, pEvent->screenPos());
-                            return true;
+                            m_menus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
+                            break;
                         }
                     }
                     RT_FALL_THRU();
                     case UIChooserNodeType_Machine:
                     {
                         /* Machine context menu for other Group/Machine cases: */
-                        popupContextMenu(UIGraphicsSelectorContextMenuType_Machine, pEvent->screenPos());
-                        return true;
+                        m_menus.value(UIChooserNodeType_Machine)->exec(pEvent->screenPos());
+                        break;
                     }
                     default:
                         break;
                 }
             }
+            /* Filter out by default: */
             return true;
         }
         default:
@@ -1490,32 +1483,6 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
     }
     /* Pass others context menu events: */
     return false;
-}
-
-void UIChooserModel::popupContextMenu(UIGraphicsSelectorContextMenuType enmType, QPoint point)
-{
-    /* Which type of context-menu requested? */
-    switch (enmType)
-    {
-        /* For global item? */
-        case UIGraphicsSelectorContextMenuType_Global:
-        {
-            m_pContextMenuGlobal->exec(point);
-            break;
-        }
-        /* For group? */
-        case UIGraphicsSelectorContextMenuType_Group:
-        {
-            m_pContextMenuGroup->exec(point);
-            break;
-        }
-        /* For machine(s)? */
-        case UIGraphicsSelectorContextMenuType_Machine:
-        {
-            m_pContextMenuMachine->exec(point);
-            break;
-        }
-    }
 }
 
 void UIChooserModel::clearRealFocus()

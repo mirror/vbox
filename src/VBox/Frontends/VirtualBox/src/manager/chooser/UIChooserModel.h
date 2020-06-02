@@ -45,16 +45,6 @@ class UIChooserNode;
 class UIChooserView;
 class UIVirtualMachineItem;
 
-
-/** Context-menu types. */
-enum UIGraphicsSelectorContextMenuType
-{
-    UIGraphicsSelectorContextMenuType_Global,
-    UIGraphicsSelectorContextMenuType_Group,
-    UIGraphicsSelectorContextMenuType_Machine
-};
-
-
 /** UIChooserAbstractModel extension used as VM Chooser-pane model.
   * This class is used to operate on tree of visible tree items
   * representing VMs and their groups. */
@@ -339,8 +329,6 @@ private:
       * @{ */
         /** Handles context-menu @a pEvent. */
         bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
-        /** Popups context-menu of certain @a enmType in specified @a point. */
-        void popupContextMenu(UIGraphicsSelectorContextMenuType enmType, QPoint point);
     /** @} */
 
     /** @name Selection stuff.
@@ -388,12 +376,8 @@ private:
         /** Holds the keyboard handler instance. */
         UIChooserHandlerKeyboard *m_pKeyboardHandler;
 
-        /** Holds the global item context menu instance. */
-        QMenu *m_pContextMenuGlobal;
-        /** Holds the group item context menu instance. */
-        QMenu *m_pContextMenuGroup;
-        /** Holds the machine item context menu instance. */
-        QMenu *m_pContextMenuMachine;
+        /** Holds the map of context-menu instances. */
+        QMap<UIChooserNodeType, QMenu*>  m_menus;
     /** @} */
 
     /** @name Selection stuff.
@@ -426,6 +410,5 @@ private:
         bool             m_fIsScrollingInProgress;
     /** @} */
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserModel_h */
