@@ -2295,7 +2295,7 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
 
     if (aProxy.isNotEmpty())
     {
-        hrc = unattended->COMSETTER(ExtraInstallKernelParameters)(BstrFmt(" ks=cdrom:/ks.cfg proxy=\"%ls\"", aProxy.raw()).raw());
+        hrc = unattended->COMSETTER(Proxy)(aProxy.raw());
         if (errorOccured(hrc, "Failed to set post install script template for the unattended installer."))
             return hrc;
     }

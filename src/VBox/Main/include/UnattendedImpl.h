@@ -55,6 +55,7 @@ public:
     Utf8Str const &i_getPassword() const;
     Utf8Str const &i_getFullUserName() const;
     Utf8Str const &i_getProductKey() const;
+    Utf8Str const &i_getProxy() const;
     Utf8Str const &i_getAdditionsIsoPath() const;
     bool           i_getInstallGuestAdditions() const;
     Utf8Str const &i_getValidationKitIsoPath() const;
@@ -121,6 +122,7 @@ private:
     Utf8Str         mStrDetectedOSFlavor;
     RTCList<RTCString, RTCString *> mDetectedOSLanguages; /**< (only relevant for windows at the moment) */
     Utf8Str         mStrDetectedOSHints;
+    Utf8Str         mStrProxy;
     /** @} */
 
     // wrapped IUnattended functions:

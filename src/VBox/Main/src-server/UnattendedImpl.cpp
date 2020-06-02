@@ -2212,7 +2212,7 @@ HRESULT Unattended::setCountry(const com::Utf8Str &aCountry)
 HRESULT Unattended::getProxy(com::Utf8Str &aProxy)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    aProxy = ""; /// @todo turn schema map into string or something.
+    aProxy = mStrProxy; /// @todo turn schema map into string or something.
     return S_OK;
 }
 
@@ -2227,11 +2227,13 @@ HRESULT Unattended::setProxy(const com::Utf8Str &aProxy)
     else if (aProxy.equalsIgnoreCase("none"))
     {
         /* clear proxy config */
+        mStrProxy = "";
     }
     else
     {
-        /* Parse and set proxy config into a schema map or something along those lines. */
-        return E_NOTIMPL;
+        /** @todo Parse and set proxy config into a schema map or something along those lines. */
+        // return E_NOTIMPL;
+        mStrProxy = aProxy;
     }
     return S_OK;
 }
@@ -2542,6 +2544,12 @@ Utf8Str const &Unattended::i_getProductKey() const
 {
     Assert(isReadLockedOnCurrentThread());
     return mStrProductKey;
+}
+
+Utf8Str const &Unattended::i_getProxy() const
+{
+    Assert(isReadLockedOnCurrentThread());
+    return mStrProxy;
 }
 
 Utf8Str const &Unattended::i_getAdditionsIsoPath() const
