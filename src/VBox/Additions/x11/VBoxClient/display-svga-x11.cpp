@@ -55,6 +55,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
@@ -64,7 +65,6 @@
 
 #define MILLIS_PER_INCH (25.4)
 #define DEFAULT_DPI (96.0)
-
 
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
@@ -155,9 +155,7 @@ struct X11CONTEXT
 
 static X11CONTEXT x11Context;
 
-#define MAX_MODE_NAME_LEN 64
-#define MAX_COMMAND_LINE_LEN 512
-#define MAX_MODE_LINE_LEN 512
+#define BUFFER_SIZE 1024
 
 struct RANDROUTPUT
 {
@@ -689,8 +687,13 @@ static bool init()
         VBClLogInfo("The parent session seems to be running on Wayland. Starting DRM client\n");
         char* argv[] = {NULL};
         char* env[] = {NULL};
-        execve("./VBoxDRMClient", argv, env);
-        perror("Could not start the DRM Client.");
+        char szDRMClientPath[BUFFER_SIZE];
+        RTPathExecDir(szDRMClientPath, BUFFER_SIZE);
+        RTPathAppend(szDRMClientPath, BUFFER_SIZE, "VBoxDRMClient");
+        int rc = execve(szDRMClientPath, argv, env);
+        if (rc == -1)
+            VBClLogFatalError("execve for % returns the following error %d %s\n", szDRMClientPath, errno, strerror(errno));
+        /* This is reached only when execve fails. */
         return false;
     }
     x11Connect();
