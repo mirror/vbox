@@ -2189,6 +2189,10 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     if (errorOccured(hrc, "Failed to apply defaults to '%ls'.", strGatewayVM.raw()))
         return hrc;
 
+    hrc = machine->COMSETTER(CPUCount)(2);
+    if (errorOccured(hrc, "Failed to adjust CPU count for '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
     hrc = machine->COMSETTER(MemorySize)(512/*MB*/);
     if (errorOccured(hrc, "Failed to adjust memory size for '%ls'.", strGatewayVM.raw()))
         return hrc;
