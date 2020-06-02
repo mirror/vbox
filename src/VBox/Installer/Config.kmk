@@ -72,6 +72,11 @@ ifdef VBOX_WITH_UNATTENDED
  	debian_postinstall.sh \
  	redhat_postinstall.sh \
  	win_postinstall.cmd
+ ifndef VBOX_OSE
+  VBOX_UNATTENDED_TEMPLATES += \
+ 	lgw_ks.cfg \
+ 	lgw_postinstall.sh
+ endif
 else
  VBOX_UNATTENDED_TEMPLATES :=
 endif

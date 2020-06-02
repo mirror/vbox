@@ -31,6 +31,8 @@
 #include <iprt/file.h>
 #include <VBox/log.h>
 
+#include <iprt/cpp/path.h>
+
 #include "VBoxManage.h"
 
 #include <list>
@@ -2083,6 +2085,364 @@ static RTEXITCODE deleteCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 }
 
 
+static bool errorOccured(HRESULT hrc, const char *pszFormat, ...)
+{
+    if (FAILED(hrc))
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        Utf8Str strError(pszFormat, va);
+        va_end(va);
+        RTStrmPrintf(g_pStdErr, "%s (rc=%x)\n", strError.c_str(), hrc);
+        RTStrmFlush(g_pStdErr);
+        return true;
+    }
+    return false;
+}
+
+
+static int composeTemplatePath(const char *pcszTemplate, Bstr& strFullPath)
+{
+    com::Utf8Str strTemplatePath;
+    int rc = RTPathAppPrivateNoArchCxx(strTemplatePath);
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppendCxx(strTemplatePath, "UnattendedTemplates");
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppendCxx(strTemplatePath, pcszTemplate);
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(g_pStdErr, "Failed to compose path to the unattended installer script templates (%Rrc)", rc);
+        RTStrmFlush(g_pStdErr);
+    }
+    else
+        strFullPath = strTemplatePath;
+
+    return rc;
+}
+
+static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bstr& aGatewayIso, const Bstr& aGuestAdditionsIso)
+{
+    /* Check if the image already exists. */
+    HRESULT hrc;
+
+    Bstr strGatewayVM = "lgw";
+    Bstr strUser = "vbox";          /* @todo Remove?! */
+    Bstr strPassword = "vbox";      /* @todo Remove?! */
+
+    Bstr strInstallerScript;
+    Bstr strPostInstallScript;
+
+    if (RT_FAILURE(composeTemplatePath("lgw_ks.cfg", strInstallerScript)))
+        return E_FAIL;
+    if (RT_FAILURE(composeTemplatePath("lgw_postinstall.sh", strPostInstallScript)))
+        return E_FAIL;
+
+    ComPtr<ISystemProperties> systemProperties;
+    ComPtr<IMedium> hd;
+    Bstr defaultMachineFolder;
+    Bstr guestAdditionsISO;
+    hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    if (errorOccured(hrc, "Failed to obtain system properties."))
+        return hrc;
+    hrc = systemProperties->COMGETTER(DefaultMachineFolder)(defaultMachineFolder.asOutParam());
+    if (errorOccured(hrc, "Failed to obtain default machine folder."))
+        return hrc;
+    if (aGuestAdditionsIso.isEmpty())
+    {
+        hrc = systemProperties->COMGETTER(DefaultAdditionsISO)(guestAdditionsISO.asOutParam());
+        if (errorOccured(hrc, "Failed to obtain default guest additions ISO path."))
+            return hrc;
+        if (guestAdditionsISO.isEmpty())
+        {
+            errorOccured(E_INVALIDARG, "The default guest additions ISO path is empty nor it is provided as --guest-additions-iso parameter. Cannot proceed without it.");
+            return E_INVALIDARG;
+        }
+    }
+    else
+        guestAdditionsISO = aGuestAdditionsIso;
+
+    BstrFmt strGatewayImage("%ls\\gateways\\lgw.vdi", defaultMachineFolder.raw());
+    hrc = virtualBox->OpenMedium(strGatewayImage.raw(), DeviceType_HardDisk, AccessMode_ReadWrite, FALSE, hd.asOutParam());
+    /* If the image is already in place, there is nothing for us to do. */
+    if (SUCCEEDED(hrc))
+    {
+        RTPrintf("Local gateway image already exists, skipping image preparation step.\n");
+        return hrc;
+    }
+
+    RTPrintf("Preparing unattended install of temporary local gateway machine from %ls...\n", aGatewayIso.raw());
+    /* The image does not exist, let's try to open the provided ISO file. */
+    ComPtr<IMedium> iso;
+    hrc = virtualBox->OpenMedium(aGatewayIso.raw(), DeviceType_DVD, AccessMode_ReadOnly, FALSE, iso.asOutParam());
+    if (errorOccured(hrc, "Failed to open %ls.", aGatewayIso.raw()))
+        return hrc;
+
+    ComPtr<IMachine> machine;
+    SafeArray<IN_BSTR> groups;
+    groups.push_back(Bstr("/gateways").mutableRaw());
+    hrc = virtualBox->CreateMachine(NULL, strGatewayVM.raw(), ComSafeArrayAsInParam(groups), Bstr("Oracle_64").raw(), Bstr("").raw(), machine.asOutParam());
+    if (errorOccured(hrc, "Failed to create '%ls'.", strGatewayVM.raw()))
+        return hrc;
+    /* Initial configuration */
+    hrc = machine->ApplyDefaults(NULL);
+    if (errorOccured(hrc, "Failed to apply defaults to '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
+    hrc = machine->COMSETTER(MemorySize)(512/*MB*/);
+    if (errorOccured(hrc, "Failed to adjust memory size for '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
+    /* No need for audio -- disable it. */
+    ComPtr<IAudioAdapter> audioAdapter;
+    hrc = machine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+    if (errorOccured(hrc, "Failed to set attachment type for the second network adapter."))
+        return hrc;
+
+    hrc = audioAdapter->COMSETTER(Enabled)(FALSE);
+    if (errorOccured(hrc, "Failed to disable the audio adapter."))
+        return hrc;
+    audioAdapter.setNull();
+
+    hrc = virtualBox->RegisterMachine(machine);
+    if (errorOccured(hrc, "Failed to register '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
+    hrc = virtualBox->CreateMedium(Bstr("VDI").raw(), strGatewayImage.raw(), AccessMode_ReadWrite, DeviceType_HardDisk, hd.asOutParam());
+    if (errorOccured(hrc, "Failed to create %ls.", strGatewayImage.raw()))
+        return hrc;
+
+    ComPtr<IProgress> progress;
+    com::SafeArray<MediumVariant_T>  mediumVariant;
+    mediumVariant.push_back(MediumVariant_Standard);
+
+    /* Kick off the creation of a dynamic growing disk image with the given capacity. */
+    hrc = hd->CreateBaseStorage(8ll * 1000 * 1000 * 1000 /* 8GB */,
+                                ComSafeArrayAsInParam(mediumVariant),
+                                progress.asOutParam());
+    if (errorOccured(hrc, "Failed to create base storage for local gateway image."))
+        return hrc;
+
+    hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Failed to create base storage for local gateway image."), hrc);
+
+    ComPtr<ISession> session;
+    hrc = session.createInprocObject(CLSID_Session);
+    hrc = machine->LockMachine(session, LockType_Write);
+    if (errorOccured(hrc, "Failed to lock '%ls' for modifications.", strGatewayVM.raw()))
+        return hrc;
+
+    ComPtr<IMachine> sessionMachine;
+    hrc = session->COMGETTER(Machine)(sessionMachine.asOutParam());
+    if (errorOccured(hrc, "Failed to obtain a mutable machine."))
+        return hrc;
+
+    hrc = sessionMachine->AttachDevice(Bstr("SATA").raw(), 0, 0, DeviceType_HardDisk, hd);
+    if (errorOccured(hrc, "Failed to attach HD to '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
+    hrc = sessionMachine->AttachDevice(Bstr("IDE").raw(), 0, 0, DeviceType_DVD, iso);
+    if (errorOccured(hrc, "Failed to attach ISO to '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
+    /* Save settings */
+    hrc = sessionMachine->SaveSettings();
+    if (errorOccured(hrc, "Failed to save '%ls' settings.", strGatewayVM.raw()))
+        return hrc;
+    session->UnlockMachine();
+
+    /* Prepare unattended install */
+    ComPtr<IUnattended> unattended;
+    hrc = virtualBox->CreateUnattendedInstaller(unattended.asOutParam());
+    if (errorOccured(hrc, "Failed to create unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(Machine)(machine);
+    if (errorOccured(hrc, "Failed to set machine for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(IsoPath)(aGatewayIso.raw());
+    if (errorOccured(hrc, "Failed to set machine for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(User)(strUser.raw());
+    if (errorOccured(hrc, "Failed to set user for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(Password)(strPassword.raw());
+    if (errorOccured(hrc, "Failed to set password for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(FullUserName)(strUser.raw());
+    if (errorOccured(hrc, "Failed to set full user name for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(InstallGuestAdditions)(TRUE);
+    if (errorOccured(hrc, "Failed to enable guest addtions for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(AdditionsIsoPath)(guestAdditionsISO.raw());
+    if (errorOccured(hrc, "Failed to set guest addtions ISO path for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(ScriptTemplatePath)(strInstallerScript.raw());
+    if (errorOccured(hrc, "Failed to set script template for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->COMSETTER(PostInstallScriptTemplatePath)(strPostInstallScript.raw());
+    if (errorOccured(hrc, "Failed to set post install script template for the unattended installer."))
+        return hrc;
+
+    hrc = unattended->Prepare();
+    if (errorOccured(hrc, "Failed to prepare unattended installation."))
+        return hrc;
+
+    hrc = unattended->ConstructMedia();
+    if (errorOccured(hrc, "Failed to construct media for unattended installation."))
+        return hrc;
+
+    hrc = unattended->ReconfigureVM();
+    if (errorOccured(hrc, "Failed to reconfigure %ls for unattended installation.", strGatewayVM.raw()))
+        return hrc;
+
+#define SHOW_ATTR(a_Attr, a_szText, a_Type, a_szFmt) do { \
+            a_Type Value; \
+            HRESULT hrc2 = unattended->COMGETTER(a_Attr)(&Value); \
+            if (SUCCEEDED(hrc2)) \
+                RTPrintf("  %32s = " a_szFmt "\n", a_szText, Value); \
+            else \
+                RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
+        } while (0)
+#define SHOW_STR_ATTR(a_Attr, a_szText) do { \
+            Bstr bstrString; \
+            HRESULT hrc2 = unattended->COMGETTER(a_Attr)(bstrString.asOutParam()); \
+            if (SUCCEEDED(hrc2)) \
+                RTPrintf("  %32s = %ls\n", a_szText, bstrString.raw()); \
+            else \
+                RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
+        } while (0)
+
+    SHOW_STR_ATTR(IsoPath,                       "isoPath");
+    SHOW_STR_ATTR(User,                          "user");
+    SHOW_STR_ATTR(Password,                      "password");
+    SHOW_STR_ATTR(FullUserName,                  "fullUserName");
+    SHOW_STR_ATTR(ProductKey,                    "productKey");
+    SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
+    SHOW_ATTR(    InstallGuestAdditions,         "installGuestAdditions",    BOOL, "%RTbool");
+    SHOW_STR_ATTR(ValidationKitIsoPath,          "validationKitIsoPath");
+    SHOW_ATTR(    InstallTestExecService,        "installTestExecService",   BOOL, "%RTbool");
+    SHOW_STR_ATTR(Locale,                        "locale");
+    SHOW_STR_ATTR(Country,                       "country");
+    SHOW_STR_ATTR(TimeZone,                      "timeZone");
+    SHOW_STR_ATTR(Proxy,                         "proxy");
+    SHOW_STR_ATTR(Hostname,                      "hostname");
+    SHOW_STR_ATTR(PackageSelectionAdjustments,   "packageSelectionAdjustments");
+    SHOW_STR_ATTR(AuxiliaryBasePath,             "auxiliaryBasePath");
+    SHOW_ATTR(    ImageIndex,                    "imageIndex",               ULONG, "%u");
+    SHOW_STR_ATTR(ScriptTemplatePath,            "scriptTemplatePath");
+    SHOW_STR_ATTR(PostInstallScriptTemplatePath, "postInstallScriptTemplatePath");
+    SHOW_STR_ATTR(PostInstallCommand,            "postInstallCommand");
+    SHOW_STR_ATTR(ExtraInstallKernelParameters,  "extraInstallKernelParameters");
+    SHOW_STR_ATTR(Language,                      "language");
+    SHOW_STR_ATTR(DetectedOSTypeId,              "detectedOSTypeId");
+    SHOW_STR_ATTR(DetectedOSVersion,             "detectedOSVersion");
+    SHOW_STR_ATTR(DetectedOSFlavor,              "detectedOSFlavor");
+    SHOW_STR_ATTR(DetectedOSLanguages,           "detectedOSLanguages");
+    SHOW_STR_ATTR(DetectedOSHints,               "detectedOSHints");
+
+#undef SHOW_STR_ATTR
+#undef SHOW_ATTR
+
+    /* 'unattended' is no longer needed. */
+    unattended.setNull();
+
+    RTPrintf("Performing unattended install of temporary local gateway...\n");
+
+    hrc = machine->LaunchVMProcess(session, Bstr("gui").raw(), ComSafeArrayNullInParam(), progress.asOutParam());
+    if (errorOccured(hrc, "Failed to launch '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
+    hrc = progress->WaitForCompletion(-1);
+    if (errorOccured(hrc, "Failed to launch '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
+    unsigned i = 0;
+    const char progressChars[] = { '|', '/', '-', '\\'};
+    MachineState machineState;
+    uint64_t u64Started = RTTimeMilliTS();
+    do
+    {
+        RTThreadSleep(1000); /* One second */
+        hrc = machine->COMGETTER(State)(&machineState);
+        if (errorOccured(hrc, "Failed to get machine state."))
+            break;
+        RTPrintf("\r%c", progressChars[i++ % sizeof(progressChars)]);
+        if (machineState == MachineState_Aborted)
+        {
+            errorOccured(E_ABORT, "Temporary local gateway VM has aborted.");
+            return E_ABORT;
+        }
+    }
+    while (machineState != MachineState_PoweredOff && RTTimeMilliTS() - u64Started < 40 * 60 * 1000);
+
+    if (machineState != MachineState_PoweredOff)
+    {
+        errorOccured(E_ABORT, "Timed out (40min) while waiting for unattended install to finish.");
+        return E_ABORT;
+    }
+    /* Machine will still be immutable for a short while after powering off, let's wait a little. */
+    RTThreadSleep(5000); /* Five seconds */
+
+    RTPrintf("\rDone.\n");
+
+    hrc = machine->LockMachine(session, LockType_Write);
+    if (errorOccured(hrc, "Failed to lock '%ls' for modifications.", strGatewayVM.raw()))
+        return hrc;
+
+    RTPrintf("Detaching local gateway image...\n");
+    hrc = session->COMGETTER(Machine)(sessionMachine.asOutParam());
+    if (errorOccured(hrc, "Failed to obtain a mutable machine."))
+        return hrc;
+
+    hrc = sessionMachine->DetachDevice(Bstr("SATA").raw(), 0, 0);
+    if (errorOccured(hrc, "Failed to detach HD to '%ls'.", strGatewayVM.raw()))
+        return hrc;
+
+    /* Remove the image from the media registry. */
+    hd->Close();
+
+    /* Save settings */
+    hrc = sessionMachine->SaveSettings();
+    if (errorOccured(hrc, "Failed to save '%ls' settings.", strGatewayVM.raw()))
+        return hrc;
+    session->UnlockMachine();
+
+#if 0
+    /* @todo Unregistering the temporary VM makes the image mutable again. Find out the way around it! */
+    RTPrintf("Unregistering temporary local gateway machine...\n");
+    SafeIfaceArray<IMedium> media;
+    hrc = machine->Unregister(CleanupMode_DetachAllReturnNone, ComSafeArrayAsOutParam(media));
+    if (errorOccured(hrc, "Failed to unregister '%ls'.", strGatewayVM.raw()))
+        return hrc;
+    hrc = machine->DeleteConfig(ComSafeArrayAsInParam(media), progress.asOutParam());
+    if (errorOccured(hrc, "Failed to delete config for '%ls'.", strGatewayVM.raw()))
+        return hrc;
+    hrc = progress->WaitForCompletion(-1);
+    if (errorOccured(hrc, "Failed to delete config for '%ls'.", strGatewayVM.raw()))
+        return hrc;
+#endif
+
+    RTPrintf("Making local gateway image immutable...\n");
+    hrc = virtualBox->OpenMedium(strGatewayImage.raw(), DeviceType_HardDisk, AccessMode_ReadWrite, FALSE, hd.asOutParam());
+    if (errorOccured(hrc, "Failed to open '%ls'.", strGatewayImage.raw()))
+        return hrc;
+    hd->COMSETTER(Type)(MediumType_Immutable);
+    if (errorOccured(hrc, "Failed to make '%ls' immutable.", strGatewayImage.raw()))
+        return hrc;
+
+    return S_OK;
+}
+
+
 static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     RT_NOREF(pCommonOpts);
@@ -2094,6 +2454,8 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
         { "--gateway-shape",        's', RTGETOPT_REQ_STRING },
         { "--tunnel-network-name",  't', RTGETOPT_REQ_STRING },
         { "--tunnel-network-range", 'r', RTGETOPT_REQ_STRING },
+        { "--guest-additions-iso",  'a', RTGETOPT_REQ_STRING },
+        { "--local-gateway-iso",    'l', RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -2105,6 +2467,8 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
     Bstr strGatewayShape;
     Bstr strTunnelNetworkName;
     Bstr strTunnelNetworkRange;
+    Bstr strLocalGatewayIso;
+    Bstr strGuestAdditionsIso;
 
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
@@ -2126,6 +2490,12 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
             case 'r':
                 strTunnelNetworkRange=ValueUnion.psz;
                 break;
+            case 'l':
+                strLocalGatewayIso=ValueUnion.psz;
+                break;
+            case 'a':
+                strGuestAdditionsIso=ValueUnion.psz;
+                break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
@@ -2138,14 +2508,16 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
-    // if (strGatewayOsName.isEmpty())
-    //     return errorArgument("Missing --gateway-os-name parameter");
-    // if (strGatewayOsVersion.isEmpty())
-    //     return errorArgument("Missing --gateway-os-version parameter");
-    // if (strGatewayShape.isEmpty())
-    //     return errorArgument("Missing --gateway-shape parameter");
-    // if (strTunnelNetworkName.isEmpty())
-    //     strTunnelNetworkName = "VirtualBox Tunneling Network";
+    if (strLocalGatewayIso.isEmpty())
+        return errorArgument("Missing --local-gateway-iso parameter");
+
+    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+
+    hrc = createLocalGatewayImage(pVirtualBox, strLocalGatewayIso, strGuestAdditionsIso);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    RTPrintf("Setting up tunnel network in the cloud...\n");
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -2154,7 +2526,6 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
 
-    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
     ComPtr<ICloudNetworkEnvironmentInfo> cloudNetworkEnv;
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,

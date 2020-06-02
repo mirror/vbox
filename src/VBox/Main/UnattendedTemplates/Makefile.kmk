@@ -42,6 +42,12 @@ ifdef VBOX_WITH_UNATTENDED
  	redhat_postinstall.sh \
  	win_postinstall.cmd
 
+ ifndef VBOX_OSE
+  VBoxUnattendedTemplates_SOURCES += \
+ 	lgw_ks.cfg \
+ 	lgw_postinstall.sh
+ endif
+
 endif # VBOX_WITH_UNATTENDED
 
 include $(FILE_KBUILD_SUB_FOOTER)
