@@ -211,13 +211,15 @@ VBOX_VALIDATIONKIT_JS_SOURCES :=
 
 define def_vbox_validationkit_js_check
 $(eval name:=$(basename $(notdir $(js))))
-$(name).o $(name).obj:: # $(PATH_SUB_CURRENT)/$(js)
+$(name).o $(name).obj: # $(PATH_SUB_CURRENT)/$(js)
 	-$(REDIRECT) -E LC_ALL=C  -C $(dir $(js)) -- $$(VBOX_JSHINT) ./$(notdir $(js)) $$(VBOX_JSHINT_FLAGS)
-jslint:: $(name).o
+jslint: $(name).o
 endef
 
+ifdef VBOX_WITH_JSHINT
 define def_vbox_validationkit_process_js_sources
 $(if-expr $(words $(_SUB_MAKEFILE_STACK)) <= 0, \
 	$(foreach js, $(VBOX_VALIDATIONKIT_JS_SOURCES), $(eval $(def_vbox_validationkit_js_check))),)
 endef
+endif
 
