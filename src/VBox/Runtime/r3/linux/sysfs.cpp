@@ -65,24 +65,21 @@
  * @param   va         The format args.
  */
 static int rtLinuxConstructPathV(char *pszBuf, size_t cchBuf,
-                                     const char *pszPrefix,
-                                     const char *pszFormat, va_list va)
+                                 const char *pszPrefix,
+                                 const char *pszFormat, va_list va)
 {
-    size_t cchPrefix = strlen(pszPrefix);
+    size_t const cchPrefix = strlen(pszPrefix);
     AssertReturn(pszPrefix[cchPrefix - 1] == '/', VERR_INVALID_PARAMETER);
     AssertReturn(cchBuf > cchPrefix + 1, VERR_INVALID_PARAMETER);
 
-    /** @todo While RTStrPrintfV prevents overflows, it doesn't make it easy to
-     *        check for truncations. RTPath should provide some formatters and
-     *        joiners which can take over this rather common task that is
-     *        performed here. */
-    size_t cch = RTStrPrintfV(pszBuf, cchBuf, pszFormat, va);
+    ssize_t cch = RTStrPrintf2V(pszBuf, cchBuf, pszFormat, va);
+    AssertReturn(cch > 0, VERR_BUFFER_OVERFLOW);
+
     if (*pszBuf != '/')
     {
-        AssertReturn(cchBuf >= cch + cchPrefix + 1, VERR_BUFFER_OVERFLOW);
-        memmove(pszBuf + cchPrefix, pszBuf, cch + 1);
+        AssertReturn(cchBuf >= (size_t)cch + cchPrefix + 1, VERR_BUFFER_OVERFLOW);
+        memmove(pszBuf + cchPrefix, pszBuf, (size_t)cch + 1);
         memcpy(pszBuf, pszPrefix, cchPrefix);
-        cch += cchPrefix;
     }
     return VINF_SUCCESS;
 }
