@@ -643,6 +643,9 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#ifdef RT_OS_LINUX
+# include <iprt/linux/sysfs.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -1038,6 +1041,23 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
                 s_fRegisteredCmds = true;
         }
 #endif
+
+#ifdef RT_OS_LINUX
+        /*
+         * Log the /proc/sys/vm/max_map_count value on linux as that is
+         * frequently giving us grief when too low.
+         */
+        int64_t const cGuessNeeded = MMR3PhysGetRamSize(pVM) / _2M + 16384 /*guesstimate*/;
+        int64_t       cMaxMapCount = 0;
+        int rc2 = RTLinuxSysFsReadIntFile(10, &cMaxMapCount, "/proc/sys/vm/max_map_count");
+        LogRel(("PGM: /proc/sys/vm/max_map_count = %RI64 (rc2=%Rrc); cGuessNeeded=%RI64\n", cMaxMapCount, rc2, cGuessNeeded));
+        if (RT_SUCCESS(rc2) && cMaxMapCount < cGuessNeeded)
+            LogRel(("PGM: WARNING!!\n"
+                    "PGM: WARNING!! Please increase /proc/sys/vm/max_map_count to at least %RI64 (or reduce the amount of RAM assigned to the VM)!\n"
+                    "PGM: WARNING!!\n", cMaxMapCount));
+
+#endif
+
         return VINF_SUCCESS;
     }
 
