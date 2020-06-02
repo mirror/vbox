@@ -2127,8 +2127,8 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     HRESULT hrc;
 
     Bstr strGatewayVM = "lgw";
-    Bstr strUser = "vbox";          /* @todo Remove?! */
-    Bstr strPassword = "vbox";      /* @todo Remove?! */
+    Bstr strUser = "vbox";
+    Bstr strPassword = "vbox";
 
     Bstr strInstallerScript;
     Bstr strPostInstallScript;
@@ -2418,7 +2418,7 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     session->UnlockMachine();
 
 #if 0
-    /* @todo Unregistering the temporary VM makes the image mutable again. Find out the way around it! */
+    /** @todo Unregistering the temporary VM makes the image mutable again. Find out the way around it! */
     RTPrintf("Unregistering temporary local gateway machine...\n");
     SafeIfaceArray<IMedium> media;
     hrc = machine->Unregister(CleanupMode_DetachAllReturnNone, ComSafeArrayAsOutParam(media));
