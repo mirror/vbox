@@ -71,6 +71,8 @@
 #define VBOX_MSI_ADDR_BASE                   0xfee00000
 #define VBOX_MSI_ADDR_SIZE                   0x100000
 
+#define VBOX_MSI_ADDR_SHIFT                  20
+
 #define VBOX_MSI_ADDR_DEST_MODE_SHIFT        2
 #define  VBOX_MSI_ADDR_DEST_MODE_PHYSICAL    (0 << VBOX_MSI_ADDR_DEST_MODE_SHIFT)
 #define  VBOX_MSI_ADDR_DEST_MODE_LOGICAL     (1 << VBOX_MSI_ADDR_DEST_MODE_SHIFT)
