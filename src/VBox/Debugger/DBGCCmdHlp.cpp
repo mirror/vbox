@@ -218,7 +218,7 @@ static DECLCALLBACK(size_t) dbgcFormatOutput(void *pvArg, const char *pachChars,
     PDBGC pDbgc = (PDBGC)pvArg;
     if (cbChars)
     {
-        int rc = pDbgc->pBack->pfnWrite(pDbgc->pBack, pachChars, cbChars, NULL);
+        int rc = pDbgc->pfnOutput(pDbgc->pvOutputUser, pachChars, cbChars);
         if (RT_SUCCESS(rc))
             pDbgc->chLastOutput = pachChars[cbChars - 1];
         else

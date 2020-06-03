@@ -125,6 +125,8 @@ typedef struct GDBSTUBCTX
     size_t                      cbTgtXmlDesc;
     /** Flag whether the stub is in extended mode. */
     bool                        fExtendedMode;
+    /** Flag whether was something was output using the 'O' packet since it was reset last. */
+    bool                        fOutput;
 } GDBSTUBCTX;
 /** Pointer to the GDB stub context data. */
 typedef GDBSTUBCTX *PGDBSTUBCTX;
@@ -355,7 +357,7 @@ static int dbgcGdbStubCtxReplySend(PGDBSTUBCTX pThis, const void *pvReplyPkt, si
  * @param   pvSrc               The data to encode.
  * @param   cbSrc               Number of bytes to encode.
  */
-DECLINLINE(int) dbgcGdbStubCtxEncodeBinaryAsHex(uint8_t *pbDst, size_t cbDst, void *pvSrc, size_t cbSrc)
+DECLINLINE(int) dbgcGdbStubCtxEncodeBinaryAsHex(uint8_t *pbDst, size_t cbDst, const void *pvSrc, size_t cbSrc)
 {
     return RTStrPrintHexBytes((char *)pbDst, cbDst, pvSrc, cbSrc, RTSTRPRINTHEXBYTES_F_UPPER);
 }
@@ -1088,45 +1090,6 @@ static int dbgcGdbStubCtxPktProcessQueryXferFeatRead(PGDBSTUBCTX pThis, const ui
 }
 
 
-#if 0
-/**
- * Calls the given command handler and processes the reply.
- *
- * @returns Status code.
- * @param   pThis               The GDB stub context.
- * @param   pCmd                The command to call - NULL if using the generic monitor command received callback in the
- *                              interface callback table.
- * @param   pszArgs             Argument string to call the command with.
- */
-static int gdbStubCtxCmdProcess(PGDBSTUBCTXINT pThis, PCGDBSTUBCMD pCmd, const char *pszArgs)
-{
-    int rc = gdbStubCtxReplySendBegin(pThis);
-    if (rc == GDBSTUB_INF_SUCCESS)
-    {
-        gdbStubOutCtxReset(&pThis->OutCtx);
-        int rcCmd = GDBSTUB_INF_SUCCESS;
-        if (pCmd)
-            rcCmd = pCmd->pfnCmd(pThis, &pThis->OutCtx.Hlp, pszArgs, pThis->pvUser);
-        else
-            rcCmd = pThis->pIf->pfnMonCmd(pThis, &pThis->OutCtx.Hlp, pszArgs, pThis->pvUser);
-        if (rcCmd == GDBSTUB_INF_SUCCESS)
-        {
-            if (!pThis->OutCtx.offScratch) /* No output, just send OK reply. */
-                rc = gdbStubCtxReplySendOkData(pThis);
-            else
-                rc = gdbStubCtxReplySendData(pThis, &pThis->OutCtx.abScratch[0], pThis->OutCtx.offScratch);
-
-            /* Try to finish the reply in case of an error anyway (but we might be completely screwed at this point anyway). */
-            gdbStubCtxReplySendEnd(pThis);
-        }
-        else
-            rc = gdbStubCtxReplySendErrStsData(pThis, rcCmd);
-    }
-
-    return rc;
-}
-
-
 /**
  * Processes the 'Rcmd' query.
  *
@@ -1135,74 +1098,43 @@ static int gdbStubCtxCmdProcess(PGDBSTUBCTXINT pThis, PCGDBSTUBCMD pCmd, const c
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int gdbStubCtxPktProcessQueryRcmd(PGDBSTUBCTXINT pThis, const uint8_t *pbArgs, size_t cbArgs)
+static int dbgcGdbStubCtxPktProcessQueryRcmd(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
-    int rc = GDBSTUB_INF_SUCCESS;
-
     /* Skip the , following the qRcmd start. */
     if (   cbArgs < 1
         || pbArgs[0] != ',')
-        return GDBSTUB_ERR_PROTOCOL_VIOLATION;
-
-    if (!pThis->pIf->paCmds)
-        return GDBSTUB_ERR_NOT_FOUND;
+        return VERR_NET_PROTOCOL_ERROR;
 
     cbArgs--;
     pbArgs++;
 
     /* Decode the command. */
     /** @todo Make this dynamic. */
-    char szCmd[4096];
+    char szCmd[_4K];
+    RT_ZERO(szCmd);
+
     if (cbArgs / 2 >= sizeof(szCmd))
-        return GDBSTUB_ERR_BUFFER_OVERFLOW;
+        return VERR_NET_PROTOCOL_ERROR;
 
     size_t cbDecoded = 0;
-    rc = gdbStubCtxParseHexStringAsByteBuf(pbArgs, cbArgs - 1, &szCmd[0], sizeof(szCmd), &cbDecoded);
-    if (rc == GDBSTUB_INF_SUCCESS)
+    int rc = RTStrConvertHexBytesEx((const char *)pbArgs, &szCmd[0], sizeof(szCmd), 0 /*fFlags*/,
+                                    NULL /* ppszNext */, &cbDecoded);
+    if (rc == VWRN_TRAILING_CHARS)
+        rc = VINF_SUCCESS;
+    if (RT_SUCCESS(rc))
     {
-        const char *pszArgs = NULL;
-
-        cbDecoded /= 2;
         szCmd[cbDecoded] = '\0'; /* Ensure zero termination. */
 
-        /** @todo Sanitize string. */
-
-        /* Look for the first space and take that as the separator between command identifier. */
-        uint8_t *pbDelim = gdbStubCtxMemchr(&szCmd[0], ' ', cbDecoded);
-        if (pbDelim)
-        {
-            *pbDelim = '\0';
-            pszArgs = pbDelim + 1;
-        }
-
-        /* Search for the command. */
-        PCGDBSTUBCMD pCmd = &pThis->pIf->paCmds[0];
-        rc = GDBSTUB_ERR_NOT_FOUND;
-        while (pCmd->pszCmd)
-        {
-            if (!gdbStubStrcmp(pCmd->pszCmd, &szCmd[0]))
-            {
-                rc = gdbStubCtxCmdProcess(pThis, pCmd, pszArgs);
-                break;
-            }
-            pCmd++;
-        }
-
-        if (   rc == GDBSTUB_ERR_NOT_FOUND
-            && pThis->pIf->pfnMonCmd)
-        {
-            /* Restore delimiter. */
-            if (pbDelim)
-                *pbDelim = ' ';
-            rc = gdbStubCtxCmdProcess(pThis, NULL, &szCmd[0]);
-        }
-        else
-            rc = gdbStubCtxReplySendErrSts(pThis, rc); /** @todo Send string. */
+        pThis->fOutput = false;
+        rc = dbgcEvalCommand(&pThis->Dbgc, &szCmd[0], cbDecoded, false /*fNoExecute*/);
+        dbgcGdbStubCtxReplySendOk(pThis);
+        if (   rc != VERR_DBGC_QUIT
+            && rc != VWRN_DBGC_CMD_PENDING)
+            rc = VINF_SUCCESS; /* ignore other statuses */
     }
 
     return rc;
 }
-#endif
 
 
 /**
@@ -1214,7 +1146,7 @@ static const GDBSTUBQPKTPROC g_aQPktProcs[] =
     GDBSTUBQPKTPROC_INIT("TStatus",            dbgcGdbStubCtxPktProcessQueryTStatus),
     GDBSTUBQPKTPROC_INIT("Supported",          dbgcGdbStubCtxPktProcessQuerySupported),
     GDBSTUBQPKTPROC_INIT("Xfer:features:read", dbgcGdbStubCtxPktProcessQueryXferFeatRead),
-    //GDBSTUBQPKTPROC_INIT("Rcmd",               dbgcGdbStubCtxPktProcessQueryRcmd),
+    GDBSTUBQPKTPROC_INIT("Rcmd",               dbgcGdbStubCtxPktProcessQueryRcmd),
 #undef GDBSTUBQPKTPROC_INIT
 };
 
@@ -1980,6 +1912,7 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
     /*
      * Process the event.
      */
+    PDBGC pDbgc = &pThis->Dbgc;
     pThis->Dbgc.pszScratch = &pThis->Dbgc.achInput[0];
     pThis->Dbgc.iArg       = 0;
     int rc = VINF_SUCCESS;
@@ -1995,7 +1928,6 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
         }
 
 
-#if 0
         /*
          * The second part is events which can occur at any time.
          */
@@ -2007,7 +1939,6 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
                 rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
             break;
         }
-#endif
 
         case DBGFEVENT_BREAKPOINT:
         case DBGFEVENT_BREAKPOINT_IO:
@@ -2025,7 +1956,6 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
             break;
         }
 
-#if 0
         case DBGFEVENT_ASSERTION_HYPER:
         {
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
@@ -2068,7 +1998,6 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Invalid command event!\n");
             break;
         }
-#endif
 
         case DBGFEVENT_POWERING_OFF:
         {
@@ -2235,6 +2164,46 @@ int dbgcGdbStubRun(PGDBSTUBCTX pThis)
 
 
 /**
+ * @copdoc{DBGC,pfnOutput}
+ */
+static DECLCALLBACK(int) dbgcOutputGdb(void *pvUser, const char *pachChars, size_t cbChars)
+{
+    PGDBSTUBCTX pThis = (PGDBSTUBCTX)pvUser;
+
+    pThis->fOutput = true;
+    int rc = dbgcGdbStubCtxReplySendBegin(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        uint8_t chConOut = 'O';
+        rc = dbgcGdbStubCtxReplySendData(pThis, &chConOut, sizeof(chConOut));
+        if (RT_SUCCESS(rc))
+        {
+            /* Convert the characters to hex. */
+            const char *pachCur = pachChars;
+
+            while (   cbChars
+                   && RT_SUCCESS(rc))
+            {
+                uint8_t achHex[512 + 1];
+                size_t cbThisSend = RT_MIN((sizeof(achHex) - 1) / 2, cbChars); /* Each character needs two bytes. */
+
+                rc = dbgcGdbStubCtxEncodeBinaryAsHex(&achHex[0], cbThisSend * 2 + 1, pachCur, cbThisSend);
+                if (RT_SUCCESS(rc))
+                    rc = dbgcGdbStubCtxReplySendData(pThis, &achHex[0], cbThisSend * 2);
+
+                pachCur += cbThisSend;
+                cbChars -= cbThisSend;
+            }
+        }
+
+        dbgcGdbStubCtxReplySendEnd(pThis);
+    }
+
+    return rc;
+}
+
+
+/**
  * Creates a GDB stub context instance with the given backend.
  *
  * @returns VBox status code.
@@ -2263,6 +2232,8 @@ static int dbgcGdbStubCtxCreate(PPGDBSTUBCTX ppGdbStubCtx, PDBGCBACK pBack, unsi
      * in DBGCConsole.cpp. Try to keep both functions in sync.
      */
     pThis->Dbgc.pBack            = pBack;
+    pThis->Dbgc.pfnOutput        = dbgcOutputGdb;
+    pThis->Dbgc.pvOutputUser     = pThis;
     pThis->Dbgc.pVM              = NULL;
     pThis->Dbgc.pUVM             = NULL;
     pThis->Dbgc.idCpu            = 0;
@@ -2316,6 +2287,7 @@ static int dbgcGdbStubCtxCreate(PPGDBSTUBCTX ppGdbStubCtx, PDBGCBACK pBack, unsi
     pThis->pachTgtXmlDesc  = NULL;
     pThis->cbTgtXmlDesc    = 0;
     pThis->fExtendedMode   = false;
+    pThis->fOutput         = false;
     dbgcGdbStubCtxReset(pThis);
 
     *ppGdbStubCtx = pThis;
@@ -2384,6 +2356,9 @@ DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
             pThis->Dbgc.pVM   = pVM;
             pThis->Dbgc.pUVM  = pUVM;
             pThis->Dbgc.idCpu = 0;
+            rc = pThis->Dbgc.CmdHlp.pfnPrintf(&pThis->Dbgc.CmdHlp, NULL,
+                                              "Current VM is %08x, CPU #%u\n" /** @todo get and print the VM name! */
+                                              , pThis->Dbgc.pVM, pThis->Dbgc.idCpu);
         }
         else
             rc = pThis->Dbgc.CmdHlp.pfnVBoxError(&pThis->Dbgc.CmdHlp, rc, "When trying to attach to VM %p\n", pThis->Dbgc.pVM);
