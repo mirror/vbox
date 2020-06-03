@@ -458,13 +458,13 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
  * Copies a file from the guest to the host.
  *
  * @return VBox status code. VINF_NO_CHANGE if file was skipped.
- * @param  strSource            Full path of source file on the guest to copy.
- * @param  strDest              Full destination path and file name (host style) to copy file to.
+ * @param  strSrc               Full path of source file on the guest to copy.
+ * @param  strDst               Full destination path and file name (host style) to copy file to.
  * @param  fFileCopyFlags       File copy flags.
  */
-int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags)
+int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &strDst, FileCopyFlag_T fFileCopyFlags)
 {
-    LogFlowThisFunc(("strSource=%s, strDest=%s, enmFileCopyFlags=0x%x\n", strSrc.c_str(), strDest.c_str(), fFileCopyFlags));
+    LogFlowThisFunc(("strSource=%s, strDest=%s, enmFileCopyFlags=0x%x\n", strSrc.c_str(), strDst.c_str(), fFileCopyFlags));
 
     GuestFileOpenInfo srcOpenInfo;
     srcOpenInfo.mFilename     = strSrc;
@@ -536,13 +536,13 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
 
     if (RT_SUCCESS(rc))
     {
-        rc = RTPathQueryInfo(strDest.c_str(), &dstObjInfo, RTFSOBJATTRADD_NOTHING);
+        rc = RTPathQueryInfo(strDst.c_str(), &dstObjInfo, RTFSOBJATTRADD_NOTHING);
         if (RT_SUCCESS(rc))
         {
             if (fFileCopyFlags & FileCopyFlag_NoReplace)
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Host file \"%s\" already exists"), strDest.c_str()));
+                                    Utf8StrFmt(GuestSession::tr("Host file \"%s\" already exists"), strDst.c_str()));
                 rc = VERR_ALREADY_EXISTS;
             }
 
@@ -554,7 +554,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(GuestSession::tr("Host file \"%s\" has same or newer modification date"),
-                                                   strDest.c_str()));
+                                                   strDst.c_str()));
                     fSkip = true;
                 }
             }
@@ -564,7 +564,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
             if (rc != VERR_FILE_NOT_FOUND) /* Destination file does not exist (yet)? */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Host file lookup for \"%s\" failed: %Rrc"),
-                                               strDest.c_str(), rc));
+                                               strDst.c_str(), rc));
         }
     }
 
@@ -582,20 +582,20 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
             if (fFileCopyFlags & FileCopyFlag_NoReplace)
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Host file \"%s\" already exists"), strDest.c_str()));
+                                    Utf8StrFmt(GuestSession::tr("Host file \"%s\" already exists"), strDst.c_str()));
                 rc = VERR_ALREADY_EXISTS;
             }
             else
-                pszDstFile = RTStrDup(strDest.c_str());
+                pszDstFile = RTStrDup(strDst.c_str());
         }
         else if (RTFS_IS_DIRECTORY(dstObjInfo.Attr.fMode))
         {
             /* Build the final file name with destination path (on the host). */
             char szDstPath[RTPATH_MAX];
-            RTStrPrintf2(szDstPath, sizeof(szDstPath), "%s", strDest.c_str());
+            RTStrPrintf2(szDstPath, sizeof(szDstPath), "%s", strDst.c_str());
 
-            if (   !strDest.endsWith("\\")
-                && !strDest.endsWith("/"))
+            if (   !strDst.endsWith("\\")
+                && !strDst.endsWith("/"))
                 RTPathAppend(szDstPath, sizeof(szDstPath), "/"); /* IPRT can handle / on all hosts. */
 
             RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
@@ -608,11 +608,11 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Host file \"%s\" is a symbolic link"),
-                                               strDest.c_str()));
+                                               strDst.c_str()));
                 rc = VERR_IS_A_SYMLINK;
             }
             else
-                pszDstFile = RTStrDup(strDest.c_str());
+                pszDstFile = RTStrDup(strDst.c_str());
         }
         else
         {
@@ -621,7 +621,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         }
     }
     else if (rc == VERR_FILE_NOT_FOUND)
-        pszDstFile = RTStrDup(strDest.c_str());
+        pszDstFile = RTStrDup(strDst.c_str());
 
     if (   RT_SUCCESS(rc)
         || rc == VERR_FILE_NOT_FOUND)
@@ -2578,12 +2578,12 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             bool fOptional = false;
                             if (itFiles->fFlags & ISOFILE_FLAG_OPTIONAL)
                                 fOptional = true;
-                            rc = copyFileToGuest(pSession, hVfsIso, itFiles->strSource, itFiles->strDest, fOptional);
+                            rc = copyFileToGuest(pSession, hVfsIso, itFiles->strSource, itFiles->strDst, fOptional);
                             if (RT_FAILURE(rc))
                             {
                                 hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                          Utf8StrFmt(GuestSession::tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
-                                                                    itFiles->strSource.c_str(), itFiles->strDest.c_str(), rc));
+                                                                    itFiles->strSource.c_str(), itFiles->strDst.c_str(), rc));
                                 break;
                             }
                         }
