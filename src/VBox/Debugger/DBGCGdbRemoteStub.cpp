@@ -1945,6 +1945,37 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
         case DBGFEVENT_BREAKPOINT_MMIO:
         case DBGFEVENT_BREAKPOINT_HYPER:
         {
+            rc = dbgcBpExec(pDbgc, pEvent->u.Bp.iBp);
+            switch (rc)
+            {
+                case VERR_DBGC_BP_NOT_FOUND:
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Unknown breakpoint %u! (%s)\n",
+                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    break;
+
+                case VINF_DBGC_BP_NO_COMMAND:
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Breakpoint %u! (%s)\n",
+                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    break;
+
+                case VINF_BUFFER_OVERFLOW:
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Breakpoint %u! Command too long to execute! (%s)\n",
+                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    break;
+
+                default:
+                    break;
+            }
+            if (RT_SUCCESS(rc) && DBGFR3IsHalted(pDbgc->pUVM))
+            {
+                rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+
+                /* Set the resume flag to ignore the breakpoint when resuming execution. */
+                if (   RT_SUCCESS(rc)
+                    && pEvent->enmType == DBGFEVENT_BREAKPOINT)
+                    rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r eflags.rf = 1");
+            }
+
             rc = dbgcGdbStubCtxReplySendSigTrap(pThis);
             break;
         }
@@ -2164,7 +2195,7 @@ int dbgcGdbStubRun(PGDBSTUBCTX pThis)
 
 
 /**
- * @copydoc{DBGC,pfnOutput}
+ * @copydoc DBGC::pfnOutput
  */
 static DECLCALLBACK(int) dbgcOutputGdb(void *pvUser, const char *pachChars, size_t cbChars)
 {
