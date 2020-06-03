@@ -783,7 +783,7 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uin
      * Parse the message from the physical address.
      * See Intel spec. 10.11.1 "Message Address Register Format".
      */
-    uint8_t const u8DestAddr = (GCPhys & VBOX_MSI_ADDR_DEST_ID_MASK) >> VBOX_MSI_ADDR_DEST_ID_SHIFT;
+    uint8_t const u8DestId   = (GCPhys & VBOX_MSI_ADDR_DEST_ID_MASK) >> VBOX_MSI_ADDR_DEST_ID_SHIFT;
     uint8_t const u8DestMode = (GCPhys >> VBOX_MSI_ADDR_DEST_MODE_SHIFT) & 0x1;
     /** @todo Check if we need to implement Redirection Hint Indicator. */
     /* uint8_t const uRedirectHint  = (GCPhys >> VBOX_MSI_ADDR_REDIRECTION_SHIFT) & 0x1; */
@@ -800,7 +800,7 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uin
      * Deliver to the local APIC via the system/3-wire-APIC bus.
      */
     int rc = pThisCC->pIoApicHlp->pfnApicBusDeliver(pDevIns,
-                                                    u8DestAddr,
+                                                    u8DestId,
                                                     u8DestMode,
                                                     u8DeliveryMode,
                                                     u8Vector,
