@@ -47,6 +47,7 @@ DWORD g_VBoxLogUm = VBOXWDDM_CFG_LOG_UM_BACKDOOR;
 #else
 DWORD g_VBoxLogUm = 0;
 #endif
+DWORD g_RefreshRate = 0;
 
 /* Whether the driver is display-only (no 3D) for Windows 8 or newer guests. */
 DWORD g_VBoxDisplayOnly = 0;
@@ -2327,7 +2328,7 @@ DxgkDdiDescribeAllocation(
     pDescribeAllocation->Height = pAllocation->AllocData.SurfDesc.height;
     pDescribeAllocation->Format = pAllocation->AllocData.SurfDesc.format;
     memset (&pDescribeAllocation->MultisampleMethod, 0, sizeof (pDescribeAllocation->MultisampleMethod));
-    pDescribeAllocation->RefreshRate.Numerator = 60000;
+    pDescribeAllocation->RefreshRate.Numerator = g_RefreshRate * 1000;
     pDescribeAllocation->RefreshRate.Denominator = 1000;
     pDescribeAllocation->PrivateDriverFormatAttribute = 0;
 

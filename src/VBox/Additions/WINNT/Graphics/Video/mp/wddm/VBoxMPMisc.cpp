@@ -1250,6 +1250,14 @@ NTSTATUS vboxWddmDrvCfgInit(PUNICODE_STRING pRegStr)
     if (NT_SUCCESS(Status))
         g_VBoxLogUm = dwValue;
 
+    g_RefreshRate = 0;
+    Status = vboxWddmRegQueryValueDword(hKey, VBOXWDDM_CFG_STR_RATE, &dwValue);
+    if (NT_SUCCESS(Status))
+        g_RefreshRate = dwValue;
+
+    if (g_RefreshRate == 0 || g_RefreshRate > 240)
+        g_RefreshRate = VBOXWDDM_DEFAULT_REFRESH_RATE;
+
     ZwClose(hKey);
 
     return Status;
@@ -1322,8 +1330,8 @@ NTSTATUS VBoxWddmSlEnableVSyncNotification(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnab
         KeQuerySystemTime((PLARGE_INTEGER)&pDevExt->VSyncTime);
 
         LARGE_INTEGER DueTime;
-        DueTime.QuadPart = -166666LL; /* 60 Hz */
-        KeSetTimerEx(&pDevExt->VSyncTimer, DueTime, 16, &pDevExt->VSyncDpc);
+        DueTime.QuadPart = -10000000LL / g_RefreshRate; /* 100ns units per second / Freq Hz */
+        KeSetTimerEx(&pDevExt->VSyncTimer, DueTime, 1000 / g_RefreshRate, &pDevExt->VSyncDpc);
     }
 
     pDevExt->bVSyncTimerEnabled = !!fEnable;
@@ -1355,17 +1363,19 @@ NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pGet
         {
             VSyncTime.QuadPart = VSyncTime.QuadPart - DevVSyncTime.QuadPart;
             /*
-             * Check whether we are in VBlank state or actively drawing a scan line
-             * 10% of the 60Hz are dedicated to VBlank.
+             * Check whether we are in VBlank state or actively drawing a scan line.
+             * 10% of the VSync interval are dedicated to VBlank.
              *
              * Time intervals are in 100ns steps.
              */
             LARGE_INTEGER VSyncPeriod;
-            VSyncPeriod.QuadPart = VSyncTime.QuadPart % 166666LL; /* ASSUMES 60Hz*/
-            if (VSyncPeriod.QuadPart >= 150000LL)
+            VSyncPeriod.QuadPart = VSyncTime.QuadPart % (10000000LL / g_RefreshRate);
+            LARGE_INTEGER VBlankStart;
+            VBlankStart.QuadPart = ((10000000LL / g_RefreshRate) * 9) / 10;
+            if (VSyncPeriod.QuadPart >= VBlankStart.QuadPart)
                 bVBlank = TRUE;
             else
-                curScanLine = (uint32_t)((pTarget->Size.cy * VSyncPeriod.QuadPart) / 150000LL);
+                curScanLine = (uint32_t)((pTarget->Size.cy * VSyncPeriod.QuadPart) / VBlankStart.QuadPart);
         }
 
         pGetScanLine->ScanLine = curScanLine;
@@ -1474,7 +1484,7 @@ void vboxWddmDiToAllocData(PVBOXMP_DEVEXT pDevExt, const DXGK_DISPLAY_INFORMATIO
     pAllocData->SurfDesc.slicePitch = pInfo->Pitch;
     pAllocData->SurfDesc.cbSize = pInfo->Pitch * pInfo->Height;
     pAllocData->SurfDesc.VidPnSourceId = pInfo->TargetId;
-    pAllocData->SurfDesc.RefreshRate.Numerator = 60000;
+    pAllocData->SurfDesc.RefreshRate.Numerator = g_RefreshRate * 1000;
     pAllocData->SurfDesc.RefreshRate.Denominator = 1000;
 
     /* the address here is not a VRAM offset! so convert it to offset */

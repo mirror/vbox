@@ -38,6 +38,8 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include <iprt/avl.h>
 #endif
 
+#define VBOXWDDM_DEFAULT_REFRESH_RATE 60
+
 #ifndef VBOX_WITH_MESA3D
 /* one page size */
 #define VBOXWDDM_C_DMA_BUFFER_SIZE         0x1000
