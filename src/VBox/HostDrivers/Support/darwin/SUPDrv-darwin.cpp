@@ -1460,9 +1460,9 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                 }
             }
             else if (pErrInfo && RTErrInfoIsSet(&pErrInfo->Core))
-                printf("VBoxDrv: RTLdrOpenInMemory(%s) failed: %d - %s\n", pszFilename, rc, pErrInfo->Core.pszMsg);
+                printf("VBoxDrv: RTLdrVerifySignature(%s) failed: %d - %s\n", pszFilename, rc, pErrInfo->Core.pszMsg);
             else
-                printf("VBoxDrv: RTLdrOpenInMemory(%s) failed: %d\n", pszFilename, rc);
+                printf("VBoxDrv: RTLdrVerifySignature(%s) failed: %d\n", pszFilename, rc);
             RTLdrClose(hLdrMod);
         }
         else if (pErrInfo && RTErrInfoIsSet(&pErrInfo->Core))
