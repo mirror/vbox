@@ -65,8 +65,7 @@ public:
 public:
     /** @name Public static internal methods.
      * @{ */
-    static Utf8Str i_guestErrorToString(int guestRc);
-    static HRESULT i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
+    static Utf8Str i_guestErrorToString(int rcGuest, const char *pcszWhat);
     /** @}  */
 
 private:

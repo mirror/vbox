@@ -2638,15 +2638,6 @@ int GuestSession::i_sendMessage(uint32_t uMessage, uint32_t uParms, PVBOXHGCMSVC
     return vrc;
 }
 
-/* static */
-HRESULT GuestSession::i_setErrorExternal(VirtualBoxBase *pInterface, int rcGuest)
-{
-    AssertPtr(pInterface);
-    AssertMsg(RT_FAILURE(rcGuest), ("Guest rc does not indicate a failure when setting error\n"));
-
-    return pInterface->setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, GuestSession::i_guestErrorToString(rcGuest).c_str());
-}
-
 /* Does not do locking; caller is responsible for that! */
 int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int sessionRc)
 {
@@ -3072,8 +3063,10 @@ HRESULT GuestSession::close()
     if (RT_FAILURE(vrc))
     {
         if (vrc == VERR_GSTCTL_GUEST_ERROR)
-            return GuestSession::i_setErrorExternal(this, rcGuest);
-        return setError(VBOX_E_IPRT_ERROR, tr("Closing guest session failed with %Rrc"), vrc);
+            return setErrorExternal(this, tr("Closing guest session failed"),
+                                    GuestErrorInfo(GuestErrorInfo::Type_Session, rcGuest, mData.mSession.mName.c_str()));
+        return setError(VBOX_E_IPRT_ERROR, tr("Closing guest session \"%s\" failed with %Rrc"),
+                        mData.mSession.mName.c_str(), vrc);
     }
 
     return S_OK;
@@ -3172,10 +3165,10 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
             && !fContinueOnErrors)
         {
             if (GuestProcess::i_isGuestError(vrc))
-                return setError(E_FAIL, tr("Unable to query type for source '%s': %s"), (*itSource).c_str(),
-                                           GuestProcess::i_guestErrorToString(rcGuest).c_str());
+                return setErrorExternal(this, tr("Querying type for guest source failed"),
+                                        GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, (*itSource).c_str()));
             else
-                return setError(E_FAIL, tr("Unable to query type for source '%s' (%Rrc)"), (*itSource).c_str(), vrc);
+                return setError(E_FAIL, tr("Querying type for guest source \"%s\" failed: %Rrc"), (*itSource).c_str(), vrc);
         }
 
         Utf8Str strFlags;
@@ -3395,22 +3388,22 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
     if (RT_FAILURE(vrc))
     {
         if (GuestProcess::i_isGuestError(vrc))
-            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest,
-                               tr("Directory creation failed: %s"), GuestDirectory::i_guestErrorToString(rcGuest).c_str());
+            hrc = setErrorExternal(this, tr("Guest directory creation failed"),
+                                   GuestErrorInfo(GuestErrorInfo::Type_Directory, rcGuest, aPath.c_str()));
         else
         {
             switch (vrc)
             {
                 case VERR_INVALID_PARAMETER:
-                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Directory creation failed: Invalid parameters given"));
+                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Guest directory creation failed: Invalid parameters given"));
                     break;
 
                 case VERR_BROKEN_PIPE:
-                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Directory creation failed: Unexpectedly aborted"));
+                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Guest directory creation failed: Unexpectedly aborted"));
                     break;
 
                 default:
-                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Directory creation failed: %Rrc"), vrc);
+                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Guest directory creation failed: %Rrc"), vrc);
                     break;
             }
         }
@@ -3442,11 +3435,12 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+                hrc = setErrorExternal(this, tr("Temporary guest directory creation failed"),
+                                       GuestErrorInfo(GuestErrorInfo::Type_ToolMkTemp, rcGuest, aPath.c_str()));
                 break;
 
             default:
-               hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Temporary directory creation \"%s\" with template \"%s\" failed: %Rrc"),
+               hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Temporary guest directory creation \"%s\" with template \"%s\" failed: %Rrc"),
                                   aPath.c_str(), aTemplateName.c_str(), vrc);
                break;
         }
@@ -3484,8 +3478,8 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
                         *aExists = FALSE;
                         break;
                     default:
-                        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Querying directory existence \"%s\" failed: %s"),
-                                           aPath.c_str(), GuestProcess::i_guestErrorToString(rcGuest).c_str());
+                        hrc = setErrorExternal(this, "Querying directory existence failed",
+                                               GuestErrorInfo(GuestErrorInfo::Type_ToolStat, rcGuest, aPath.c_str()));
                         break;
                 }
                 break;
@@ -3548,16 +3542,17 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
         switch (vrc)
         {
             case VERR_INVALID_PARAMETER:
-               hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Opening directory \"%s\" failed; invalid parameters given"),
+               hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Opening guest directory \"%s\" failed; invalid parameters given"),
                                   aPath.c_str());
                break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hrc = GuestDirectory::i_setErrorExternal(this, rcGuest);
+                hrc = setErrorExternal(this, tr("Opening guest directory failed"),
+                                       GuestErrorInfo(GuestErrorInfo::Type_Directory, rcGuest, aPath.c_str()));
                 break;
 
             default:
-               hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Opening directory \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
+               hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Opening guest directory \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
                break;
         }
     }
@@ -3591,7 +3586,8 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hrc = GuestDirectory::i_setErrorExternal(this, rcGuest);
+                hrc = setErrorExternal(this, tr("Removing guest directory failed"),
+                                       GuestErrorInfo(GuestErrorInfo::Type_Directory, rcGuest, aPath.c_str()));
                 break;
 
             default:
@@ -3670,7 +3666,8 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hrc = GuestFile::i_setErrorExternal(this, rcGuest);
+                hrc = setErrorExternal(this, tr("Recursively removing guest directory failed"),
+                                       GuestErrorInfo(GuestErrorInfo::Type_Directory, rcGuest, aPath.c_str()));
                 break;
 
             default:
@@ -3814,7 +3811,8 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
                     break;
 
                 default:
-                    hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+                    hrc = setErrorExternal(this, tr("Querying guest file existence failed"),
+                                           GuestErrorInfo(GuestErrorInfo::Type_ToolStat, rcGuest, aPath.c_str()));
                     break;
             }
 
@@ -3825,7 +3823,7 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
             break;
 
         default:
-            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Querying file information for \"%s\" failed: %Rrc"),
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Querying guest file information for \"%s\" failed: %Rrc"),
                                aPath.c_str(), vrc);
             break;
     }
@@ -3931,7 +3929,8 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hrc = GuestFile::i_setErrorExternal(this, rcGuest);
+                hrc = setErrorExternal(this, tr("Opening guest file failed"),
+                                       GuestErrorInfo(GuestErrorInfo::Type_File, rcGuest, aPath.c_str()));
                 break;
 
             default:
@@ -3961,9 +3960,11 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
     else
     {
         if (GuestProcess::i_isGuestError(vrc))
-            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+            hrc = setErrorExternal(this, tr("Querying guest file size failed"),
+                                   GuestErrorInfo(GuestErrorInfo::Type_ToolStat, rcGuest, aPath.c_str()));
         else
-            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Querying file size failed: %Rrc"), vrc);
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Querying guest file size of \"%s\" failed: %Rrc"),
+                               vrc, aPath.c_str());
     }
 
     return hrc;
@@ -4001,10 +4002,11 @@ HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlink
                 hrc = S_OK; /* Ignore these vrc values. */
             }
             else
-                hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+                hrc = setErrorExternal(this, tr("Querying guest file existence information failed"),
+                                       GuestErrorInfo(GuestErrorInfo::Type_ToolStat, rcGuest, aPath.c_str()));
         }
         else
-            hrc = setErrorVrc(vrc, tr("Querying file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
+            hrc = setErrorVrc(vrc, tr("Querying guest file existence information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
     }
 
     return hrc;
@@ -4039,9 +4041,10 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
     else
     {
         if (GuestProcess::i_isGuestError(vrc))
-            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+            hrc = setErrorExternal(this, tr("Querying guest file information failed"),
+                                   GuestErrorInfo(GuestErrorInfo::Type_ToolStat, rcGuest, aPath.c_str()));
         else
-            hrc = setErrorVrc(vrc, tr("Querying file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
+            hrc = setErrorVrc(vrc, tr("Querying guest file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
     }
 
     return hrc;
@@ -4063,9 +4066,10 @@ HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
     if (RT_FAILURE(vrc))
     {
         if (GuestProcess::i_isGuestError(vrc))
-            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+            hrc = setErrorExternal(this, tr("Removing guest file failed"),
+                                   GuestErrorInfo(GuestErrorInfo::Type_ToolRm, rcGuest, aPath.c_str()));
         else
-            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Removing file \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Removing guest file \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
     }
 
     return hrc;
@@ -4117,15 +4121,16 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
         {
             case VERR_NOT_SUPPORTED:
                 hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                   tr("Handling renaming guest directories not supported by installed Guest Additions"));
+                                   tr("Handling renaming guest paths not supported by installed Guest Additions"));
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Renaming guest directory failed: %Rrc"), rcGuest);
+                hrc = setErrorExternal(this, tr("Renaming guest path failed"),
+                                       GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, aSource.c_str()));
                 break;
 
             default:
-                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Renaming guest directory \"%s\" failed: %Rrc"),
+                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Renaming guest path \"%s\" failed: %Rrc"),
                                    aSource.c_str(), vrc);
                 break;
         }
@@ -4355,7 +4360,8 @@ HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWait
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hrc = GuestSession::i_setErrorExternal(this, rcGuest);
+                hrc = setErrorExternal(this, tr("Waiting for guest process failed"),
+                                       GuestErrorInfo(GuestErrorInfo::Type_Session, rcGuest, mData.mSession.mName.c_str()));
                 break;
 
             case VERR_TIMEOUT:

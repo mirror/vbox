@@ -603,6 +603,105 @@ public:
     {   return operator=((const GuestEnvironmentBase &)rThat); }
 };
 
+/**
+ * Class for keeping guest error information.
+ */
+class GuestErrorInfo
+{
+public:
+
+    /**
+     * Enumeration for specifying the guest error type.
+     */
+    enum Type
+    {
+        /** Guest error is anonymous. Avoid this. */
+        Type_Anonymous = 0,
+        /** Guest error is from a guest session. */
+        Type_Session,
+        /** Guest error is from a guest process. */
+        Type_Process,
+        /** Guest error is from a guest file object. */
+        Type_File,
+        /** Guest error is from a guest directory object. */
+        Type_Directory,
+        /** Guest error is from a the built-in toolbox "vbox_cat" command. */
+        Type_ToolCat,
+        /** Guest error is from a the built-in toolbox "vbox_ls" command. */
+        Type_ToolLs,
+        /** Guest error is from a the built-in toolbox "vbox_rm" command. */
+        Type_ToolRm,
+        /** Guest error is from a the built-in toolbox "vbox_mkdir" command. */
+        Type_ToolMkDir,
+        /** Guest error is from a the built-in toolbox "vbox_mktemp" command. */
+        Type_ToolMkTemp,
+        /** Guest error is from a the built-in toolbox "vbox_stat" command. */
+        Type_ToolStat,
+        /** The usual 32-bit hack. */
+        Type_32BIT_HACK = 0x7fffffff
+    };
+
+    /**
+     * Initialization constructor.
+     *
+     * @param   eType           Error type to use.
+     * @param   rc              IPRT-style rc to use.
+     * @param   pcszWhat        Subject to use.
+     */
+    GuestErrorInfo(GuestErrorInfo::Type eType, int rc, const char *pcszWhat)
+    {
+        int rc2 = setV(eType, rc, pcszWhat);
+        if (RT_FAILURE(rc2))
+            throw rc2;
+    }
+
+    /**
+     * Returns the (IPRT-style) rc of this error.
+     *
+     * @returns VBox status code.
+     */
+    int getRc(void) const { return mRc; }
+
+    /**
+     * Returns the type of this error.
+     *
+     * @returns Error type.
+     */
+    Type getType(void) const { return mType; }
+
+    /**
+     * Returns the subject of this error.
+     *
+     * @returns Subject as a string.
+     */
+    Utf8Str getWhat(void) const { return mWhat; }
+
+    /**
+     * Sets the error information using a variable arguments list (va_list).
+     *
+     * @returns VBox status code.
+     * @param   eType           Error type to use.
+     * @param   rc              IPRT-style rc to use.
+     * @param   pcszWhat        Subject to use.
+     */
+    int setV(GuestErrorInfo::Type eType, int rc, const char *pcszWhat)
+    {
+        mType = eType;
+        mRc   = rc;
+        mWhat = pcszWhat;
+
+        return VINF_SUCCESS;
+    }
+
+protected:
+
+    /** Error type. */
+    Type    mType;
+    /** IPRT-style error code. */
+    int     mRc;
+    /** Subject string related to this error. */
+    Utf8Str mWhat;
+};
 
 /**
  * Structure for keeping all the relevant guest directory
@@ -1168,9 +1267,14 @@ public:
     int unregisterWaitEvent(GuestWaitEvent *pEvent);
     int waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, VBoxEventType_T *pType, IEvent **ppEvent);
 
+#ifndef VBOX_GUESTCTRL_TEST_CASE
+    HRESULT setErrorExternal(VirtualBoxBase *pInterface, const Utf8Str &strAction, const GuestErrorInfo &guestErrorInfo);
+#endif
+
 public:
 
     static FsObjType_T fileModeToFsObjType(RTFMODE fMode);
+    static Utf8Str getErrorAsString(const GuestErrorInfo &guestErrorInfo);
 
 protected:
 

@@ -60,7 +60,6 @@ public:
      * @{ */
     int             i_closeFile(int *pGuestRc);
     EventSource    *i_getEventSource(void) { return mEventSource; }
-    static Utf8Str  i_guestErrorToString(int guestRc);
     int             i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int             i_onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int             i_openFile(uint32_t uTimeoutMS, int *pGuestRc);
@@ -69,7 +68,6 @@ public:
     int             i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
                                  void* pvData, size_t cbData, size_t* pcbRead);
     int             i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, uint64_t *puOffset);
-    static HRESULT  i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int             i_setFileStatus(FileStatus_T fileStatus, int fileRc);
     int             i_waitForOffsetChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint64_t *puOffset);
     int             i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead);
@@ -77,6 +75,11 @@ public:
     int             i_waitForWrite(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint32_t *pcbWritten);
     int             i_writeData(uint32_t uTimeoutMS, const void *pvData, uint32_t cbData, uint32_t *pcbWritten);
     int             i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS, const void *pvData, uint32_t cbData, uint32_t *pcbWritten);
+    /** @}  */
+
+    /** @name Static helper methods.
+     * @{ */
+    static Utf8Str  i_guestErrorToString(int guestRc, const char *pcszWhat);
     /** @}  */
 
 private:

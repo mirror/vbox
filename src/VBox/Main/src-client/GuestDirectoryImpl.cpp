@@ -222,28 +222,40 @@ int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
     return vrc;
 }
 
+/**
+ * Converts a given guest directory error to a string.
+ *
+ * @returns Error string.
+ * @param   rcGuest             Guest file error to return string for.
+ * @param   pcszWhat            Hint of what was involved when the error occurred.
+ */
 /* static */
-Utf8Str GuestDirectory::i_guestErrorToString(int rcGuest)
+Utf8Str GuestDirectory::i_guestErrorToString(int rcGuest, const char *pcszWhat)
 {
-    Utf8Str strError;
+    AssertPtrReturn(pcszWhat, "");
+
+    Utf8Str strErr;
+
+#define CASE_MSG(a_iRc, a_strFormatString, ...) \
+    case a_iRc: strErr = Utf8StrFmt(a_strFormatString, ##__VA_ARGS__); break;
 
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (rcGuest)
     {
-        case VERR_CANT_CREATE:
-            strError += Utf8StrFmt("Access denied");
-            break;
-
-        case VERR_DIR_NOT_EMPTY:
-            strError += Utf8StrFmt("Not empty");
-            break;
-
+        CASE_MSG(VERR_CANT_CREATE  , tr("Access to guest directory \"%s\" is denied"), pcszWhat);
+        CASE_MSG(VERR_DIR_NOT_EMPTY, tr("Guest directory \"%s\" is not empty"), pcszWhat);
         default:
-            strError += Utf8StrFmt("%Rrc", rcGuest);
+        {
+            char szDefine[80];
+            RTErrQueryDefine(rcGuest, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
+            strErr = Utf8StrFmt("Error %s for guest directory \"%s\" occurred\n", szDefine, pcszWhat);
             break;
+        }
     }
 
-    return strError;
+#undef CASE_MSG
+
+    return strErr;
 }
 
 /**
@@ -383,15 +395,6 @@ int GuestDirectory::i_read(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *prcGuest)
     return rc;
 }
 
-/* static */
-HRESULT GuestDirectory::i_setErrorExternal(VirtualBoxBase *pInterface, int rcGuest)
-{
-    AssertPtr(pInterface);
-    AssertMsg(RT_FAILURE(rcGuest), ("Guest rc does not indicate a failure when setting error\n"));
-
-    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestDirectory::i_guestErrorToString(rcGuest).c_str());
-}
-
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
 HRESULT GuestDirectory::close()
@@ -410,7 +413,8 @@ HRESULT GuestDirectory::close()
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestDirectory::i_setErrorExternal(this, rcGuest);
+                hr = setErrorExternal(this, tr("Closing guest directory failed"),
+                                      GuestErrorInfo(GuestErrorInfo::Type_Directory, rcGuest, mData.mOpenInfo.mPath.c_str()));
                 break;
 
             case VERR_NOT_SUPPORTED:
@@ -420,7 +424,7 @@ HRESULT GuestDirectory::close()
 
             default:
                 hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                  tr("Terminating open guest directory \"%s\" failed: %Rrc"), mData.mOpenInfo.mPath.c_str(), vrc);
+                                  tr("Closing guest directory \"%s\" failed: %Rrc"), mData.mOpenInfo.mPath.c_str(), vrc);
                 break;
         }
     }
@@ -450,27 +454,28 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestDirectory::i_setErrorExternal(this, rcGuest);
+                hr = setErrorExternal(this, tr("Reading guest directory failed"),
+                                      GuestErrorInfo(GuestErrorInfo::Type_ToolLs, rcGuest, mData.mOpenInfo.mPath.c_str()));
                 break;
 
             case VERR_GSTCTL_PROCESS_EXIT_CODE:
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading directory \"%s\" failed: %Rrc"),
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading guest directory \"%s\" failed: %Rrc"),
                                   mData.mOpenInfo.mPath.c_str(), mData.mProcessTool.getRc());
                 break;
 
             case VERR_PATH_NOT_FOUND:
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading directory \"%s\" failed: Path not found"),
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading guest directory \"%s\" failed: Path not found"),
                                   mData.mOpenInfo.mPath.c_str());
                 break;
 
             case VERR_NO_MORE_FILES:
                 /* See SDK reference. */
-                hr = setErrorBoth(VBOX_E_OBJECT_NOT_FOUND, vrc, tr("Reading directory \"%s\" failed: No more entries"),
+                hr = setErrorBoth(VBOX_E_OBJECT_NOT_FOUND, vrc, tr("Reading guest directory \"%s\" failed: No more entries"),
                                   mData.mOpenInfo.mPath.c_str());
                 break;
 
             default:
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading directory \"%s\" returned error: %Rrc\n"),
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading guest directory \"%s\" returned error: %Rrc\n"),
                                   mData.mOpenInfo.mPath.c_str(), vrc);
                 break;
         }

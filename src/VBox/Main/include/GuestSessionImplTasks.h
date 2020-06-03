@@ -203,11 +203,13 @@ protected:
 
     /** @name File handling primitives.
      * @{ */
-    int fileCopyFromGuestInner(ComObjPtr<GuestFile> &srcFile, PRTFILE phDstFile, FileCopyFlag_T fFileCopyFlags,
-                               uint64_t offCopy, uint64_t cbSize);
+    int fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPtr<GuestFile> &srcFile,
+                               const Utf8Str &strDstFile, PRTFILE phDstFile,
+                               FileCopyFlag_T fFileCopyFlags, uint64_t offCopy, uint64_t cbSize);
     int fileCopyFromGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
-    int fileCopyToGuestInner(RTVFSFILE hSrcFile, ComObjPtr<GuestFile> &dstFile, FileCopyFlag_T fFileCopyFlags,
-                             uint64_t offCopy, uint64_t cbSize);
+    int fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE hSrcFile,
+                             const Utf8Str &strDstFile, ComObjPtr<GuestFile> &dstFile,
+                             FileCopyFlag_T fFileCopyFlags, uint64_t offCopy, uint64_t cbSize);
 
     int fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
     /** @}  */
@@ -220,7 +222,7 @@ protected:
     int setProgress(ULONG uPercent);
     int setProgressSuccess(void);
     HRESULT setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg);
-    HRESULT setProgressErrorMsg(HRESULT hrc, int vrc, const char *pszFormat, ...);
+    HRESULT setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg, const GuestErrorInfo &guestErrorInfo);
 
     inline void setTaskDesc(const Utf8Str &strTaskDesc) throw()
     {
