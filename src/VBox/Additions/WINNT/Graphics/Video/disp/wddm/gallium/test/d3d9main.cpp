@@ -17,6 +17,8 @@
 
 #include "d3d9render.h"
 
+#include <stdio.h>
+
 #define D3D9TEST_MAX_DEVICES 2
 
 class D3D9Test : public D3D9DeviceProvider
@@ -38,7 +40,12 @@ private:
     static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     int miRenderId;
-    int miRenderStep;
+    enum
+    {
+        RenderModeStep = 0,
+        RenderModeContinuous = 1,
+        RenderModeFPS = 2
+    } miRenderMode;
     HWND mHwnd;
     IDirect3D9Ex *mpD3D9;
     int mcDevices;
@@ -55,7 +62,7 @@ D3D9Test::D3D9Test()
     mcDevices(1),
     mpRender(0),
     miRenderId(3),
-    miRenderStep(1)
+    miRenderMode(RenderModeStep)
 {
     memset(&mpaDevices, 0, sizeof(mpaDevices));
     memset(&mPP, 0, sizeof(mPP));
@@ -242,8 +249,15 @@ void D3D9Test::parseCmdLine(LPSTR lpCmdLine)
     if (!*p)
          return;
 
-    /* Second number is the step mode. */
-    miRenderStep = atoi(p);
+    /* Second number is the render/step mode. */
+    int i = atoi(p);
+    switch (i)
+    {
+        default:
+        case 0: miRenderMode = RenderModeStep;       break;
+        case 1: miRenderMode = RenderModeContinuous; break;
+        case 2: miRenderMode = RenderModeFPS;        break;
+    }
 }
 
 HRESULT D3D9Test::Init(HINSTANCE hInstance,
@@ -282,10 +296,21 @@ int D3D9Test::Run()
 {
     bool fFirst = true;
     MSG msg;
+
+    LARGE_INTEGER PerfFreq;
+    QueryPerformanceFrequency(&PerfFreq);
+    float const PerfPeriod = 1.0f / PerfFreq.QuadPart; /* Period in seconds. */
+
+    LARGE_INTEGER PrevTS;
+    QueryPerformanceCounter(&PrevTS);
+
+    int cFrames = 0;
+    float elapsed = 0;
+
     do
     {
         BOOL fGotMessage;
-        if (miRenderStep)
+        if (miRenderMode == RenderModeStep)
         {
             fGotMessage = GetMessageA(&msg, 0, 0, 0);
         }
@@ -300,10 +325,8 @@ int D3D9Test::Run()
             DispatchMessageA(&msg);
         }
 
-        float dt = 0.0f; /* Time in seconds since last render step. @todo Measure. */
-
         BOOL fDoRender = FALSE;
-        if (miRenderStep)
+        if (miRenderMode == RenderModeStep)
         {
             if (msg.message == WM_CHAR)
             {
@@ -320,13 +343,35 @@ int D3D9Test::Run()
 
         if (fDoRender)
         {
-            dt = fFirst ? 0.0f : 0.1f; /* 0.1 second increment per step. */
+            LARGE_INTEGER CurrTS;
+            QueryPerformanceCounter(&CurrTS);
+
+            /* Time in seconds since the previous render step. */
+            float dt = fFirst ? 0.0f : (CurrTS.QuadPart - PrevTS.QuadPart) * PerfPeriod;
             if (mpRender)
             {
                 mpRender->TimeAdvance(dt);
                 mpRender->DoRender(this);
                 fFirst = false;
             }
+
+            if (miRenderMode == RenderModeFPS)
+            {
+                ++cFrames;
+                elapsed += dt;
+                if (elapsed > 1.0f)
+                {
+                    float msPerFrame = elapsed * 1000.0f / cFrames;
+                    char sz[256];
+                    _snprintf(sz, sizeof(sz), "D3D9 Test FPS %d Frame Time %fms", cFrames, msPerFrame);
+                    SetWindowTextA(mHwnd, sz);
+
+                    cFrames = 0;
+                    elapsed = 0.0f;
+                }
+            }
+
+            PrevTS = CurrTS;
         }
     } while (msg.message != WM_QUIT);
 
