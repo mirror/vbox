@@ -431,7 +431,6 @@ DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
      * See Intel spec. 10.11.1 "Message Address Register Format".
      * See Intel spec. 10.11.2 "Message Data Register Format".
      */
-    memset(pIntr, 0, sizeof(*pIntr));
     pIntr->u8Dest         = pMsi->MsiAddr.n.u8DestId;
     pIntr->u8DestMode     = pMsi->MsiAddr.n.u1DestMode;
     pIntr->u8RedirHint    = pMsi->MsiAddr.n.u1RedirHint;
@@ -450,7 +449,6 @@ DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
  */
 DECLINLINE(void) ioapicGetMsiFromApicIntr(PCXAPICINTR pIntr, PMSIMSG pMsi)
 {
-    memset(pMsi, 0, sizeof(*pMsi));
     pMsi->MsiAddr.n.u12Addr        = VBOX_MSI_ADDR_BASE >> VBOX_MSI_ADDR_SHIFT;
     pMsi->MsiAddr.n.u8DestId       = pIntr->u8Dest;
     pMsi->MsiAddr.n.u1RedirHint    = pIntr->u8RedirHint;
@@ -861,6 +859,7 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uin
     MsiMsg.MsiData.u32 = uValue;
 
     XAPICINTR ApicIntr;
+    RT_ZERO(ApicIntr);
     ioapicGetApicIntrFromMsi(&MsiMsg, &ApicIntr);
 
     /*
