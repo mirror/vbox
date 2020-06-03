@@ -3338,6 +3338,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             [ tdTestDirCreate(sDirectory = '/' ), tdTestResultFailure() ],
             [ tdTestDirCreate(sDirectory = '/..' ), tdTestResultFailure() ],
             [ tdTestDirCreate(sDirectory = '/../' ), tdTestResultFailure() ],
+            # Format strings. Dangerous.
+            [ tdTestDirCreate(sDirectory = 'foo%sbar%sbaz%d' ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = '%f%%boo%%bar%RI32' ), tdTestResultFailure() ],
         ];
         if oTestVm.isWindows() or oTestVm.isOS2():
             atTests.extend([
