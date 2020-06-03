@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_APIC
 #include "APICInternal.h"
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/vmcc.h>

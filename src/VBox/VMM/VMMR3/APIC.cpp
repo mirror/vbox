@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_APIC
 #include <VBox/log.h>
 #include "APICInternal.h"
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/mm.h>
