@@ -2221,8 +2221,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                                 if isinstance(abBuf, memoryview): ## @todo Why is this happening?
                                                     abBuf = abBuf.tobytes();
                                                     sBuf  = abBuf.decode("utf-8");
-                                            if isinstance(abBuf, buffer):
-                                                sBuf = str(abBuf);
+                                                if isinstance(abBuf, buffer):
+                                                    sBuf = str(abBuf);
                                             for sLine in sBuf.splitlines():
                                                 reporter.log4('%s: %s' % (sFdNm, sLine));
                                         acbFdOut[iFd] += len(abBuf);
