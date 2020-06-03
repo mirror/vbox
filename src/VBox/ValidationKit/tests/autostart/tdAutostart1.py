@@ -555,8 +555,10 @@ class tdAutostartOsLinux(tdAutostartOs):
                                                           30 * 1000, '/sbin/ifconfig',
                                                           ['ifconfig',],
                                                           False, False);
-            if fRc:
-                break;
+                if fRc:
+                    break;
+
+                self.closeSession(oGuestSession, False);
 
             self.oTestDriver.sleep(10);
             cAttempt += 1;
@@ -920,8 +922,10 @@ class tdAutostartOsWin(tdAutostartOs):
                                                           30 * 1000, 'C:\\Windows\\System32\\ipconfig.exe',
                                                           ['C:\\Windows\\System32\\ipconfig.exe',],
                                                           False, False);
-            if fRc:
-                break;
+                if fRc:
+                    break;
+
+                self.closeSession(oGuestSession, False);
 
             self.oTestDriver.sleep(10);
             cAttempt += 1;
