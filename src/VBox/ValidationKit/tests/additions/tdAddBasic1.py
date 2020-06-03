@@ -56,38 +56,6 @@ from tdAddGuestCtrl import SubTstDrvAddGuestCtrl;
 from tdAddSharedFolders1 import SubTstDrvAddSharedFolders1;
 
 
-
-class tdAddBasicConsoleCallbacks(vbox.ConsoleEventHandlerBase):
-    """
-    For catching the Guest Additions change state events.
-    """
-    def __init__(self, dArgs):
-        oTstDrv  = dArgs['oTstDrv'];
-        oVBoxMgr = dArgs['oVBoxMgr']; _ = oVBoxMgr;
-        oGuest   = dArgs['oGuest'];
-
-        vbox.ConsoleEventHandlerBase.__init__(self, dArgs, 'tdAddBasic1');
-        self.oTstDrv  = oTstDrv;
-        self.oGuest   = oGuest;
-
-    def handleEvent(self, oEvt):
-        try:
-            oEvtBase = self.oVBoxMgr.queryInterface(oEvt, 'IEvent');
-            eType = oEvtBase.type;
-        except:
-            reporter.logXcpt();
-            return None;
-        if eType == vboxcon.VBoxEventType_OnAdditionsStateChanged:
-            return self.onAdditionsStateChanged();
-        return None;
-
-    def onAdditionsStateChanged(self):
-        reporter.log('onAdditionsStateChange');
-        self.oTstDrv.fGAStatusCallbackFired = True;
-        self.oTstDrv.eGAStatusCallbackRunlevel = self.oGuest.additionsRunLevel;
-        self.oVBoxMgr.interruptWaitEvents();
-        return None;
-
 class tdAddBasic1(vbox.TestDriver):                                         # pylint: disable=too-many-instance-attributes
     """
     Additions Basics #1.
@@ -107,9 +75,6 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
         self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
-
-        self.fGAStatusCallbackFired    = False;
-        self.eGAStatusCallbackRunlevel = 0;
 
     #
     # Overridden methods.
@@ -288,49 +253,6 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             # Cleanup.
             self.removeTask(oTxsSession);
             self.terminateVmBySession(oSession)
-        return fRc;
-
-    def waitForGuestAdditionsRunLevel(self, oSession, oGuest, cMsTimeout, eRunLevel):
-        """
-        Waits for the Guest Additions to reach a specific run level.
-
-        Returns success status.
-        """
-        # No need to wait as we already reached the run level?
-        eRunLevelCur = oGuest.additionsRunLevel;
-        if eRunLevelCur == eRunLevel:
-            reporter.log('Already reached run level %s' % eRunLevel);
-            return True;
-
-        reporter.log('Waiting for Guest Additions to reach run level %s with %dms (current: %s) ...' %
-                     (eRunLevel, cMsTimeout, eRunLevelCur));
-
-        oConsoleCallbacks = oSession.registerDerivedEventHandler(tdAddBasicConsoleCallbacks, \
-                                                                 {'oTstDrv':self, 'oGuest':oGuest, });
-        fRc = False;
-        if oConsoleCallbacks is not None:
-            tsStart = base.timestampMilli();
-            while base.timestampMilli() - tsStart < cMsTimeout:
-                self.sleep(1); # Do some busy waiting.
-                if self.fGAStatusCallbackFired:
-                    reporter.log('Reached new run level %s after %dms' %
-                                 (self.eGAStatusCallbackRunlevel, base.timestampMilli() - tsStart));
-                    if eRunLevel == self.eGAStatusCallbackRunlevel:
-                        fRc = True;
-                        break;
-                    self.fGAStatusCallbackFired = False;
-            if fRc:
-                reporter.log('Final Guest Additions run level reached after %dms' % (base.timestampMilli() - tsStart));
-            else:
-                reporter.error('Guest Additions run level not reached');
-
-            # cleanup.
-            oConsoleCallbacks.unregister();
-        else:
-            reporter.error('Registering derived event handler failed');
-
-        if not fRc:
-            reporter.log('Waiting for Guest Additions to reach run level %s failed' % (eRunLevel));
         return fRc;
 
     def testInstallAdditions(self, oSession, oTxsSession, oTestVm):
@@ -538,6 +460,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         """
         Do run level tests.
         """
+
+        _ = oGuest;
+
         if oTestVm.isWindows():
             if oTestVm.isLoggedOntoDesktop():
                 eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Desktop;
@@ -547,7 +472,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             ## @todo VBoxClient does not have facility statuses implemented yet.
             eExpectedRunLevel = vboxcon.AdditionsRunLevelType_Userland;
 
-        return self.waitForGuestAdditionsRunLevel(oSession, oGuest, 5 * 60 * 1000, eExpectedRunLevel);
+        return self.waitForGAs(oSession, aenmWaitForRunLevels = [ eExpectedRunLevel ]);
 
     def testIGuest_additionsVersion(self, oGuest):
         """
