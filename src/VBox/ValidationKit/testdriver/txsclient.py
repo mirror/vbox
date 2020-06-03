@@ -279,7 +279,7 @@ class TransportBase(object):
         while len(abMsg) % 16:
             abMsg.append(0);
 
-        reporter.log2('sendMsgInt: op=%s len=%d to=%d' % (sOpcode, len(abMsg), cMsTimeout));
+        reporter.log2('sendMsgInt: op=%s len=%d timeout=%d' % (sOpcode, len(abMsg), cMsTimeout));
         return self.sendBytes(abMsg, cMsTimeout);
 
     def recvMsg(self, cMsTimeout, fNoDataOk = False):
@@ -642,7 +642,7 @@ class Session(TdTaskBase):
 
         rc = self.waitForTask(self.cMsTimeout + 5000);
         if rc is False:
-            reporter.maybeErr(self.fErr, 'asyncToSync: waitForTask failed...');
+            reporter.maybeErr(self.fErr, 'asyncToSync: waitForTask (timeout %d) failed...' % (self.cMsTimeout,));
             self.cancelTask();
             #reporter.log2('asyncToSync(%s): returns False (#2)' % (fnAsync, rc));
             return False;
@@ -1634,7 +1634,7 @@ class Session(TdTaskBase):
 
         Returns timeout in milliseconds.
         """
-        return 30000 + cbFile / 256; # 256 KiB/s (picked out of thin air)
+        return 30000 + cbFile / 32; # 32 KiB/s (picked out of thin air)
 
     @staticmethod
     def calcUploadTimeout(sLocalFile):
