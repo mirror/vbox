@@ -2164,7 +2164,7 @@ int dbgcGdbStubRun(PGDBSTUBCTX pThis)
 
 
 /**
- * @copdoc{DBGC,pfnOutput}
+ * @copydoc{DBGC,pfnOutput}
  */
 static DECLCALLBACK(int) dbgcOutputGdb(void *pvUser, const char *pachChars, size_t cbChars)
 {

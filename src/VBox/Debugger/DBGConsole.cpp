@@ -1089,7 +1089,7 @@ static int dbgcReadConfig(PDBGC pDbgc, PUVM pUVM)
 
 
 /**
- * @copdoc{DBGC,pfnOutput}
+ * @copydoc{DBGC,pfnOutput}
  */
 static DECLCALLBACK(int) dbgcOutputNative(void *pvUser, const char *pachChars, size_t cbChars)
 {
