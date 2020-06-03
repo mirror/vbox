@@ -570,6 +570,23 @@ static bool rtCrX509CertPathsIsSelfIssued(PRTCRX509CERTPATHNODE pNode)
         && RTCrX509Name_MatchByRfc5280(&pNode->pCert->TbsCertificate.Subject, &pNode->pCert->TbsCertificate.Issuer);
 }
 
+/**
+ * Helper for checking whether a certificate is in the trusted store or not.
+ */
+static bool rtCrX509CertPathsIsCertInStore(PRTCRX509CERTPATHNODE pNode, RTCRSTORE hStore)
+{
+    bool fRc = false;
+    PCRTCRCERTCTX pCertCtx = RTCrStoreCertByIssuerAndSerialNo(hStore, &pNode->pCert->TbsCertificate.Issuer,
+                                                              &pNode->pCert->TbsCertificate.SerialNumber);
+    if (pCertCtx)
+    {
+        if (pCertCtx->pCert)
+            fRc = RTCrX509Certificate_Compare(pCertCtx->pCert, pNode->pCert) == 0;
+        RTCrCertCtxRelease(pCertCtx);
+    }
+    return fRc;
+}
+
 /** @}  */
 
 
@@ -578,11 +595,6 @@ static bool rtCrX509CertPathsIsSelfIssued(PRTCRX509CERTPATHNODE pNode)
  * @{
  */
 
-/**
- *
- * @returns
- * @param   pThis               .
- */
 static PRTCRX509CERTPATHNODE rtCrX509CertPathsNewNode(PRTCRX509CERTPATHSINT pThis)
 {
     PRTCRX509CERTPATHNODE pNode = (PRTCRX509CERTPATHNODE)RTMemAllocZ(sizeof(*pNode));
@@ -919,6 +931,15 @@ RTDECL(int) RTCrX509CertPathsBuild(RTCRX509CERTPATHS hCertPaths, PRTERRINFO pErr
         pCur->uDepth = 0;
         pCur->uSrc   = RTCRX509CERTPATHNODE_SRC_TARGET;
 
+        /* Check if the target is trusted and do the upgrade (this is outside the RFC,
+           but this simplifies the path validator usage a lot (less work for the caller)). */
+        if (   pThis->pTrustedCert
+            && RTCrX509Certificate_Compare(pThis->pTrustedCert, pCur->pCert) == 0)
+            pCur->uSrc = RTCRX509CERTPATHNODE_SRC_TRUSTED_CERT;
+        else if (   pThis->hTrustedStore != NIL_RTCRSTORE
+                 && rtCrX509CertPathsIsCertInStore(pCur, pThis->hTrustedStore))
+            pCur->uSrc = RTCRX509CERTPATHNODE_SRC_TRUSTED_STORE;
+
         pThis->pErrInfo = pErrInfo;
 
         /*
@@ -1194,6 +1215,12 @@ static void rtCrX509CertPathsDumpOneWorker(PRTCRX509CERTPATHSINT pThis, uint32_t
                 RTAsn1Dump(&pCurLeaf->pCert->SeqCore.Asn1Core, 0, iIndent, pfnPrintfV, pvUser);
             else if (uVerbosity >= 3)
                 RTAsn1Dump(&pCurLeaf->pCert->TbsCertificate.T3.Extensions.SeqCore.Asn1Core, 0, iIndent, pfnPrintfV, pvUser);
+
+            rtDumpIndent(pfnPrintfV, pvUser, iIndent, "Valid  : %s thru %s\n",
+                         RTTimeToString(&pCurLeaf->pCert->TbsCertificate.Validity.NotBefore.Time,
+                                        pThis->szTmp, sizeof(pThis->szTmp) / 2),
+                         RTTimeToString(&pCurLeaf->pCert->TbsCertificate.Validity.NotAfter.Time,
+                                        &pThis->szTmp[sizeof(pThis->szTmp) / 2], sizeof(pThis->szTmp) / 2) );
         }
         else
         {
