@@ -186,24 +186,22 @@ struct DisplayModeR {
 static void x11Connect();
 static int determineOutputCount();
 
-#define checkFunctionPtrReturn(pFunction)                               \
-    do{                                                                 \
-        if (!pFunction)                                                 \
-        {                                                               \
-            VBClLogFatalError("Could not find symbol address\n");       \
-            dlclose(x11Context.pRandLibraryHandle);                     \
-            x11Context.pRandLibraryHandle = NULL;                       \
-            return VERR_NOT_FOUND;                                      \
-        }                                                               \
-    }while(0)
+#define checkFunctionPtrReturn(pFunction) \
+    do { \
+        if (!pFunction) \
+        { \
+            VBClLogFatalError("Could not find symbol address (%s)\n", #pFunction); \
+            dlclose(x11Context.pRandLibraryHandle); \
+            x11Context.pRandLibraryHandle = NULL; \
+            return VERR_NOT_FOUND; \
+        } \
+    } while (0)
 
-#define checkFunctionPtr(pFunction)                                     \
-    do{                                                                 \
-        if (!pFunction)                                                 \
-        {                                                               \
-            VBClLogFatalError("Could not find symbol address\n");       \
-        }                                                               \
-    }while(0)
+#define checkFunctionPtr(pFunction) \
+    do { \
+        if (!pFunction) \
+            VBClLogFatalError("Could not find symbol address (%s)\n", #pFunction);\
+    } while (0)
 
 
 /** A slightly modified version of the xf86CVTMode function from xf86cvt.c
