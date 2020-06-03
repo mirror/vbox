@@ -134,5 +134,89 @@
 #define VBOX_MSIX_ENTRY_SIZE                  16
 /** @} */
 
+/**
+ * MSI Address Register.
+ * In accordance to the Intel spec.
+ * See Intel spec. 10.11.1 "Message Address Register Format".
+ *
+ * This also conforms to the AMD IOMMU spec. which omits specifying individual
+ * fields but specifies reserved bits.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t   u2Ign0 : 2;          /**< Bits 1:0   - Ignored (read as 0, writes ignored). */
+        uint32_t   u1DestMode : 1;      /**< Bit  2     - DM: Destination Mode. */
+        uint32_t   u1RedirHint : 1;     /**< Bit  3     - RH: Redirection Hint. */
+        uint32_t   u8Rsvd0 : 8;         /**< Bits 11:4  - Reserved. */
+        uint32_t   u8DestId : 8;        /**< Bits 19:12 - Destination Id. */
+        uint32_t   u12Addr : 12;        /**< Bits 31:20 - Address. */
+        uint32_t   u32Rsvd0;            /**< Bits 63:32 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    au32[2];
+    /** The 64-bit unsigned integer view. */
+    uint64_t    u64;
+} MSIADDR;
+AssertCompileSize(MSIADDR, 8);
+/** Pointer to an MSI address register. */
+typedef MSIADDR *PMSIADDR;
+/** Pointer to a const MSI address register. */
+typedef MSIADDR const *PCMSIADDR;
+
+/** Mask of valid bits in the MSI address register. According to the AMD IOMMU spec.
+ *  and presumably the PCI spec., the top 32-bits are not reserved. From a PCI/IOMMU
+ *  standpoint this makes sense. However, when dealing with the CPU side of things
+ *  we might want to ensure the upper bits are reserved. Does x86/x64 really
+ *  support a 64-bit MSI address? */
+#define VBOX_MSI_ADDR_VALID_MASK           UINT64_C(0xfffffffffffffffc)
+#define VBOX_MSI_ADDR_ADDR_MASK            UINT64_C(0x00000000fff00000)
+
+/**
+ * MSI Data Register (PCI + MMIO).
+ * In accordance to the Intel spec.
+ * See Intel spec. 10.11.2 "Message Data Register Format".
+ *
+ * This also conforms to the AMD IOMMU spec. which omits specifying individual
+ * fields but specifies reserved bits.
+ */
+typedef union
+{
+    struct
+    {
+        uint32_t    u8Vector : 8;           /**< Bits 7:0   - Vector. */
+        uint32_t    u3DeliveryMode : 3;     /**< Bits 10:8  - Delivery Mode. */
+        uint32_t    u3Rsvd0 : 3;            /**< Bits 13:11 - Reserved. */
+        uint32_t    u1Level : 1;            /**< Bit  14    - Level. */
+        uint32_t    u1TriggerMode : 1;      /**< Bit  15    - Trigger Mode (0=edge, 1=level). */
+        uint32_t    u16Rsvd0 : 16;          /**< Bits 31:16 - Reserved. */
+    } n;
+    /** The 32-bit unsigned integer view. */
+    uint32_t    u32;
+} MSIDATA;
+AssertCompileSize(MSIDATA, 4);
+/** Pointer to an MSI data register. */
+typedef MSIDATA *PMSIDATA;
+/** Pointer to a const MSI data register. */
+typedef MSIDATA const *PCMSIDATA;
+
+/** Mask of valid bits in the MSI data register. */
+#define VBOX_MSI_DATA_VALID_MASK           UINT64_C(0x000000000000ffff)
+
+/**
+ * MSI Message (Address and Data Register Pair).
+ */
+typedef struct
+{
+    /** The MSI Address Register. */
+    MSIADDR      MsiAddr;
+    /** The MSI Data Register. */
+    MSIDATA      MsiData;
+} MSIMSG;
+/** Pointer to an MSI message struct. */
+typedef MSIMSG *PMSIMSG;
+/** Pointer to a const MSI message struct. */
+typedef MSIMSG const *PCMSIMSG;
 
 #endif /* !VBOX_INCLUDED_msi_h */

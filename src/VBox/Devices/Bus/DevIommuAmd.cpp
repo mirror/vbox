@@ -764,6 +764,10 @@ typedef IRTE_T *PIRTE_T;
 /** Pointer to a const IRTE_T struct. */
 typedef IRTE_T const *PCIRTE_T;
 
+/** The IRTE offset corresponds directly to bits 10:0 of the originating MSI
+ *  interrupt message. See AMD IOMMU spec. 2.2.5 "Interrupt Remapping Tables". */
+#define IOMMU_MSI_DATA_IRTE_OFFSET_MASK     UINT32_C(0x000007ff)
+
 /**
  * Command: Generic Command Buffer Entry.
  * In accordance with the AMD spec.
@@ -1735,76 +1739,6 @@ AssertCompileSize(MSI_CAP_HDR_T, 4);
 #define IOMMU_MSI_CAP_HDR_MSI_EN_MASK       RT_BIT(16)
 
 /**
- * MSI Address Register (PCI + MMIO).
- * In accordance to the Intel spec.
- * See Intel spec. 10.11.1 "Message Address Register Format".
- *
- * This also conforms to the AMD IOMMU spec. which omits specifying individual
- * fields but specifies reserved bits.
- */
-typedef union
-{
-    struct
-    {
-        uint32_t   u2Ign0 : 2;          /**< Bits 1:0   - Ignored (read as 0, writes ignored). */
-        uint32_t   u1DestMode : 1;      /**< Bit  2     - DM: Destination Mode. */
-        uint32_t   u1RedirHint : 1;     /**< Bit  3     - RH: Redirection Hint. */
-        uint32_t   u8Rsvd0 : 8;         /**< Bits 11:4  - Reserved. */
-        uint32_t   u8DestId : 8;        /**< Bits 19:12 - Destination Id. */
-        uint32_t   u12Addr : 12;        /**< Bits 31:20 - Address. */
-        uint32_t   u32Rsvd0;            /**< Bits 63:32 - Reserved. */
-    } n;
-    /** The 32-bit unsigned integer view. */
-    uint32_t    au32[2];
-    /** The 64-bit unsigned integer view. */
-    uint64_t    u64;
-} MSI_ADDR_T;
-AssertCompileSize(MSI_ADDR_T, 8);
-/** According to the AMD IOMMU spec. the top 32-bits are not reserved. From a
- *  PCI/IOMMU standpoint this makes sense. However, when dealing with the CPU side
- *  of things we might want to ensure the upper bits are reserved. Does x86/x64
- *  really support a 64-bit MSI address? */
-#define IOMMU_MSI_ADDR_VALID_MASK           UINT64_C(0xfffffffffffffffc)
-#define IOMMU_MSI_ADDR_ADDR_MASK            UINT64_C(0x00000000fff00000)
-/** Pointer to an MSI address register. */
-typedef MSI_ADDR_T *PMSI_ADDR_T;
-/** Pointer to a const MSI address register. */
-typedef MSI_ADDR_T const *PCMSI_ADDR_T;
-
-/**
- * MSI Data Register (PCI + MMIO).
- * In accordance to the Intel spec.
- * See Intel spec. 10.11.2 "Message Data Register Format".
- *
- * This also conforms to the AMD IOMMU spec. which omits specifying individual
- * fields but specifies reserved bits.
- */
-typedef union
-{
-    struct
-    {
-        uint32_t    u8Vector : 8;           /**< Bits 7:0   - Vector. */
-        uint32_t    u3DeliveryMode : 3;     /**< Bits 10:8  - Delivery Mode. */
-        uint32_t    u3Rsvd0 : 3;            /**< Bits 13:11 - Reserved. */
-        uint32_t    u1Level : 1;            /**< Bit  14    - Level. */
-        uint32_t    u1TriggerMode : 1;      /**< Bit  15    - Trigger Mode (0=edge, 1=level). */
-        uint32_t    u16Rsvd0 : 16;          /**< Bits 31:16 - Reserved. */
-    } n;
-    /** The 32-bit unsigned integer view. */
-    uint32_t    u32;
-} MSI_DATA_T;
-AssertCompileSize(MSI_DATA_T, 4);
-#define IOMMU_MSI_DATA_VALID_MASK           UINT64_C(0x000000000000ffff)
-/** The IRTE offset corresponds directly to bits 10:0 of the originating MSI
- *  interrupt message. See AMD IOMMU spec. 2.2.5 "Interrupt Remapping Tables". */
-#define IOMMU_MSI_DATA_IRTE_OFFSET_MASK     UINT32_C(0x000007ff)
-
-/** Pointer to an MSI data register. */
-typedef MSI_DATA_T *PMSI_DATA_T;
-/** Pointer to a const MSI data register. */
-typedef MSI_DATA_T const *PCMSI_DATA_T;
-
-/**
  * MSI Mapping Capability Header Register (PCI + MMIO).
  * In accordance with the AMD spec.
  */
@@ -2308,21 +2242,6 @@ AssertCompileSize(IOTLBE_T, 16);
 typedef IOTLBE_T *PIOTLBE_T;
 /** Pointer to a const IOMMU I/O TLB entry struct. */
 typedef IOTLBE_T const *PCIOTLBE_T;
-
-/**
- * MSI Message (Address and Data Register Pair).
- */
-typedef struct
-{
-    /** The MSI Address Register. */
-    MSI_ADDR_T      MsiAddr;
-    /** The MSI Data Register. */
-    MSI_DATA_T      MsiData;
-} MSI_MSG_T;
-/** Pointer to an MSI message struct. */
-typedef MSI_MSG_T *PMSI_MSG_T;
-/** Pointer to a const MSI message struct. */
-typedef MSI_MSG_T const *PCMSI_MSG_T;
 
 /**
  * The shared IOMMU device state.
@@ -2982,7 +2901,7 @@ static VBOXSTRICTRC iommuAmdMsiAddrLo_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32
     Assert(!RT_HI_U32(u64Value));
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO, u64Value & IOMMU_MSI_ADDR_VALID_MASK);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO, u64Value & VBOX_MSI_ADDR_VALID_MASK);
     return VINF_SUCCESS;
 }
 
@@ -3009,7 +2928,7 @@ static VBOXSTRICTRC iommuAmdMsiData_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t
     RT_NOREF(pThis, iReg);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA, u64Value & IOMMU_MSI_DATA_VALID_MASK);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA, u64Value & VBOX_MSI_DATA_VALID_MASK);
     return VINF_SUCCESS;
 }
 
@@ -4639,6 +4558,7 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
 static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
                              IOMMUOP enmOp, PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
 {
+    /** @todo Replace GCPhys[Out|In], uData[Out|In] with MSIMSG. */
     Assert(pDte->n.u2IntrCtrl == IOMMU_INTR_CTRL_REMAP);
 
     IRTE_T Irte;
@@ -4651,14 +4571,14 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
             {
                 if (Irte.n.u3IntrType < VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
                 {
-                    MSI_ADDR_T MsiAddrIn;
+                    MSIADDR MsiAddrIn;
                     MsiAddrIn.u64 = GCPhysIn;
 
-                    MSI_DATA_T MsiDataIn;
+                    MSIDATA MsiDataIn;
                     MsiDataIn.u32 = uDataIn;
 
-                    PMSI_ADDR_T pMsiAddrOut = (PMSI_ADDR_T)pGCPhysOut;
-                    PMSI_DATA_T pMsiDataOut = (PMSI_DATA_T)puDataOut;
+                    PMSIADDR pMsiAddrOut = (PMSIADDR)pGCPhysOut;
+                    PMSIDATA pMsiDataOut = (PMSIDATA)puDataOut;
 
                     /* Preserve all bits from the source MSI address that don't map 1:1 from the IRTE. */
                     pMsiAddrOut->u64 = GCPhysIn;
@@ -4759,11 +4679,11 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
              * See AMD IOMMU spec. 2.8 "IOMMU Interrupt Support".
              * See Intel spec. 10.11.1 "Message Address Register Format".
              */
-            MSI_ADDR_T MsiAddrIn;
+            MSIADDR MsiAddrIn;
             MsiAddrIn.u64 = GCPhysIn;
-            if ((MsiAddrIn.u64 & IOMMU_MSI_ADDR_ADDR_MASK) == VBOX_MSI_ADDR_BASE)
+            if ((MsiAddrIn.u64 & VBOX_MSI_ADDR_ADDR_MASK) == VBOX_MSI_ADDR_BASE)
             {
-                MSI_DATA_T MsiDataIn;
+                MSIDATA MsiDataIn;
                 MsiDataIn.u32 = uDataIn;
 
                 /*
@@ -5609,7 +5529,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     {
         uint32_t const uMsiAddrLo = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO);
         uint32_t const uMsiAddrHi = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI);
-        MSI_ADDR_T MsiAddr;
+        MSIADDR MsiAddr;
         MsiAddr.u64 = RT_MAKE_U64(uMsiAddrLo, uMsiAddrHi);
         pHlp->pfnPrintf(pHlp, "  MSI Address                             = %#RX64\n",   MsiAddr.u64);
         if (fVerbose)
@@ -5623,7 +5543,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     }
     /* MSI Data. */
     {
-        MSI_DATA_T MsiData;
+        MSIDATA MsiData;
         MsiData.u32 = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA);
         pHlp->pfnPrintf(pHlp, "  MSI Data                                = %#RX32\n", MsiData.u32);
         if (fVerbose)
