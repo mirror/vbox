@@ -309,6 +309,34 @@ typedef CTX_SUFF(IOAPIC) IOAPICCC;
 typedef CTX_SUFF(PIOAPIC) PIOAPICCC;
 
 
+/**
+ * xAPIC interrupt.
+ */
+typedef struct XAPICINTR
+{
+    /** The interrupt vector. */
+    uint8_t         u8Vector;
+    /** The destination (mask or ID). */
+    uint8_t         u8Dest;
+    /** The destination mode. */
+    uint8_t         u8DestMode;
+    /** Delivery mode. */
+    uint8_t         u8DeliveryMode;
+    /** Trigger mode. */
+    uint8_t         u8TriggerMode;
+    /** Redirection hint. */
+    uint8_t         u8RedirHint;
+    /** Polarity. */
+    uint8_t         u8Polarity;
+    /** Padding. */
+    uint8_t         abPadding0;
+} XAPICINTR;
+/** Pointer to an I/O xAPIC interrupt struct. */
+typedef XAPICINTR *PXAPICINTR;
+/** Pointer to a const xAPIC interrupt struct. */
+typedef XAPICINTR const *PCXAPICINTR;
+
+
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /**
@@ -388,6 +416,54 @@ DECLINLINE(uint32_t) ioapicGetIndex(PCIOAPIC pThis)
     return uValue;
 }
 
+
+/**
+ * Converts an MSI message to an APIC interrupt.
+ *
+ * @param   pMsi    The MSI message to convert.
+ * @param   pIntr   Where to store the APIC interrupt.
+ */
+DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
+{
+    /*
+     * Parse the message from the physical address and data
+     * See Intel spec. 10.11.1 "Message Address Register Format".
+     * See Intel spec. 10.11.2 "Message Data Register Format".
+     */
+    memset(pIntr, 0, sizeof(*pIntr));
+    pIntr->u8Dest         = pMsi->MsiAddr.n.u8DestId;
+    pIntr->u8DestMode     = pMsi->MsiAddr.n.u1DestMode;
+    pIntr->u8RedirHint    = pMsi->MsiAddr.n.u1RedirHint;
+
+    pIntr->u8Vector       = pMsi->MsiData.n.u8Vector;
+    pIntr->u8TriggerMode  = pMsi->MsiData.n.u1TriggerMode;
+    pIntr->u8DeliveryMode = pMsi->MsiData.n.u3DeliveryMode;
+}
+
+#if 0
+/**
+ * Convert an APIC interrupt to an MSI message.
+ *
+ * @param   pIntr   The APIC interrupt to convert.
+ * @param   pMsi    Where to store the MSI message.
+ */
+DECLINLINE(void) ioapicGetMsiFromApicIntr(PCXAPICINTR pIntr, PMSIMSG pMsi)
+{
+    memset(pMsi, 0, sizeof(*pMsi));
+    pMsi->MsiAddr.n.u12Addr        = VBOX_MSI_ADDR_BASE >> VBOX_MSI_ADDR_SHIFT;
+    pMsi->MsiAddr.n.u8DestId       = pIntr->u8Dest;
+    pMsi->MsiAddr.n.u1RedirHint    = pIntr->u8RedirHint;
+    pMsi->MsiAddr.n.u1DestMode     = pIntr->u8DestMode;
+
+    pMsi->MsiData.n.u8Vector       = pIntr->u8Vector;
+    pMsi->MsiData.n.u3DeliveryMode = pIntr->u8DeliveryMode;
+    pMsi->MsiData.n.u1TriggerMode  = pIntr->u8TriggerMode;
+
+    /* pMsi->MsiData.n.u1Level     = ??? */
+    /** @todo r=ramshankar: Level triggered MSIs don't make much sense though
+     *        possible in theory? Maybe document this more explicitly... */
+}
+#endif
 
 /**
  * Signals the next pending interrupt for the specified Redirection Table Entry
@@ -779,33 +855,23 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uin
     PIOAPICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOAPICCC);
     LogFlow(("IOAPIC: ioapicSendMsi: GCPhys=%#RGp uValue=%#RX32\n", GCPhys, uValue));
 
-    /*
-     * Parse the message from the physical address.
-     * See Intel spec. 10.11.1 "Message Address Register Format".
-     */
-    uint8_t const u8DestId   = (GCPhys & VBOX_MSI_ADDR_DEST_ID_MASK) >> VBOX_MSI_ADDR_DEST_ID_SHIFT;
-    uint8_t const u8DestMode = (GCPhys >> VBOX_MSI_ADDR_DEST_MODE_SHIFT) & 0x1;
-    /** @todo Check if we need to implement Redirection Hint Indicator. */
-    /* uint8_t const uRedirectHint  = (GCPhys >> VBOX_MSI_ADDR_REDIRECTION_SHIFT) & 0x1; */
+    MSIMSG MsiMsg;
+    MsiMsg.MsiAddr.u64 = GCPhys;
+    MsiMsg.MsiData.u32 = uValue;
 
-    /*
-     * Parse the message data.
-     * See Intel spec. 10.11.2 "Message Data Register Format".
-     */
-    uint8_t const u8Vector       = (uValue & VBOX_MSI_DATA_VECTOR_MASK)  >> VBOX_MSI_DATA_VECTOR_SHIFT;
-    uint8_t const u8TriggerMode  = (uValue >> VBOX_MSI_DATA_TRIGGER_SHIFT) & 0x1;
-    uint8_t const u8DeliveryMode = (uValue >> VBOX_MSI_DATA_DELIVERY_MODE_SHIFT) & 0x7;
+    XAPICINTR ApicIntr;
+    ioapicGetApicIntrFromMsi(&MsiMsg, &ApicIntr);
 
     /*
      * Deliver to the local APIC via the system/3-wire-APIC bus.
      */
     int rc = pThisCC->pIoApicHlp->pfnApicBusDeliver(pDevIns,
-                                                    u8DestId,
-                                                    u8DestMode,
-                                                    u8DeliveryMode,
-                                                    u8Vector,
+                                                    ApicIntr.u8Dest,
+                                                    ApicIntr.u8DestMode,
+                                                    ApicIntr.u8DeliveryMode,
+                                                    ApicIntr.u8Vector,
                                                     0 /* u8Polarity - N/A */,
-                                                    u8TriggerMode,
+                                                    ApicIntr.u8TriggerMode,
                                                     uTagSrc);
     /* Can't reschedule to R3. */
     Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED); NOREF(rc);
