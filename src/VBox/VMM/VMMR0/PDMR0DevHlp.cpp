@@ -1581,6 +1581,7 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16
         }
     }
 #else
+    RT_NOREF(pDevIns, uDevId);
     *pMsiOut = *pMsiIn;
 #endif
     return VINF_SUCCESS;
