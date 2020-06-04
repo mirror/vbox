@@ -364,11 +364,11 @@ static EFI_STATUS VBoxVgaVideoModeInitExtra(void)
 
   Index = VBoxVgaVideoModeCount - 16;
   VideoMode = &VBoxVgaVideoModes[Index];
-  vmode = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, mode));
+  vmode = in_word(VBE_EXTRA_PORT, cur_info_ofs + OFFSET_OF(ModeInfoListItem, mode));
   while (vmode != VBE_VESA_MODE_END_OF_LIST)
   {
-    xres = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, info.XResolution));
-    yres = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, info.YResolution));
+    xres = in_word(VBE_EXTRA_PORT, cur_info_ofs + OFFSET_OF(ModeInfoListItem, info.XResolution));
+    yres = in_word(VBE_EXTRA_PORT, cur_info_ofs + OFFSET_OF(ModeInfoListItem, info.YResolution));
 
     if (vmode >= VBE_VBOX_MODE_CUSTOM1 && vmode <= VBE_VBOX_MODE_CUSTOM16 && xres && yres && Index < VBoxVgaVideoModeCount) {
       VideoMode->Width = xres;
@@ -381,7 +381,7 @@ static EFI_STATUS VBoxVgaVideoModeInitExtra(void)
     }
 
     cur_info_ofs += sizeof(ModeInfoListItem);
-    vmode = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, mode));
+    vmode = in_word(VBE_EXTRA_PORT, cur_info_ofs + OFFSET_OF(ModeInfoListItem, mode));
   }
   return EFI_SUCCESS;
 }
