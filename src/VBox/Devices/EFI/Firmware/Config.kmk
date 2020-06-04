@@ -70,7 +70,11 @@ endif
 # Note! We're using our own stripped down tools_def.txt: vbox-tools_def.txt.
 #
 ifeq ($(KBUILD_HOST),win)
- VBOX_EFI_TOOL_CHAIN := VS2010
+ ifdef VBOX_WITH_NEW_VCC # ACtually using VS2019, but no config for it, so VS2017 will have to do for now.
+  VBOX_EFI_TOOL_CHAIN := VS2017
+ else
+  VBOX_EFI_TOOL_CHAIN := VS2010
+ endif
 else
  VBOX_EFI_TOOL_CHAIN = GCC48
 endif
@@ -95,6 +99,14 @@ TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4334 # warning C4334: '<<' : result of 
 TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4555 # warning C4555: expression has no effect; expected expression with side-effect
 TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4701 # warning C4701: potentially uninitialized local variable 'save_line' used
 TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4702 # warning C4702: unreachable code
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4456 # antlr\gen.c(3000): warning C4456: declaration of 'f' hides previous local declaration
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4774 # antlr\main.c(1244): warning C4774: 'sprintf' : format string expected in argument 2 is not a string literal
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4703 # antlr\antlr.c(1403) : warning C4703: potentially uninitialized local pointer variable 'p' used
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4477 # dlg\dlg_p.c(874): warning C4477: 'fprintf' : format string '%x' requires an argument of type 'unsigned int', but variadic argument 1 has type '_nfa_node *'
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4313 # dlg\dlg_p.c(874): warning C4313: 'fprintf': '%x' in format string conflicts with argument 1 of type '_nfa_node *'
+TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4459 # antlr\gen.c(756): warning C4459: declaration of 'output' hides global declaration
+endif
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.win)
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4018 # warning C4018: '>' : signed/unsigned mismatch
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4101 # warning C4101: 'LineBuf' : unreferenced local variable
@@ -107,6 +119,11 @@ TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4625 # warning C4625: 'EfiVfrParser' 
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4626 # warning C4626: 'EfiVfrParser' : assignment operator could not be generated because a base class assignment operator is inaccessible
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4701 # warning C4701: potentially uninitialized local variable 'save_line' used
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4702 # warning C4702: unreachable code
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd5204 # Pccts\h\ATokenStream.h(49): warning C5204: 'ANTLRTokenStream': class has virtual functions, but its trivial destructor is not virtual; instances of objects derived from this class may not be destructed correctly
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4774 # Pccts\h\AParser.cpp(653): warning C4774: 'sprintf' : format string expected in argument 2 is not a string literal
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4703 # VfrCompile\VfrFormPkg.cpp(1344) : warning C4703: potentially uninitialized local pointer variable 'pNodeBeforeAdjust' used
+endif
 
 TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBoxBldProg_INCS) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/IndustryStandard \

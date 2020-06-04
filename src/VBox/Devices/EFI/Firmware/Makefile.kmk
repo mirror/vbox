@@ -240,6 +240,17 @@ endif
 #
 # Tools configurations.
 #
+ifeq ($(KBUILD_HOST),win)
+ ifndef TOOL_$(VBOX_VCC_TOOL_STEM)X86
+  include $(PATH_KBUILD)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
+ endif
+ ifndef TOOL_$(VBOX_VCC_TOOL_STEM)AMD64
+  include $(PATH_KBUILD)/tools/$(VBOX_VCC_TOOL_STEM)AMD64.kmk
+ endif
+ ifndef SDK_WINSDK10
+  include $(PATH_KBUILD)/sdk/WINSDK10.kmk
+ endif
+endif
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
 $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
                $(VBOX_PATH_EFI_FIRMWARE)/vbox-tools_def.txt \
@@ -257,27 +268,20 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
 		-e 's,@PATH_VS2010@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
 		-e 's,@PATH_VS2010_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL))/bin/$(subst x86,x86_amd64,$(KBUILD_HOST_ARCH)),' \
                \
+		-e 's,@PATH_VS2017_BIN_HOST@,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_BIN),' \
+		-e 's,@PATH_VS2017_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_BIN),' \
+		-e 's,@PATH_VS2017_X86_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN),' \
+               \
+		-e 's,@PATH_SDK_WINSDK10_BIN@,$(PATH_SDK_WINSDK10_BIN),' \
+               \
 		--output $@ $<
 
-# This may not really need sed, just a plain file copy.
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/build_rule.txt \
 $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt: \
                $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template \
 		$(MAKEFILE) | $$(dir $$@)
 	$(RM) -f -- "$@"
-	$(SED) \
-		-e 's,@VBOX_IASLCMD@,$(VBOX_IASLCMD),' \
-		-e 's,@VBOX_YASMCMD@,$(VBOX_YASMCMD),' \
-		-e 's,@VBOX_NASMCMD@,$(VBOX_NASMCMD),' \
-		-e 's,@KMK@,$(MAKE),' \
-               \
-		-e 's,@VBOX_PATH_PREFIX_GCC32@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
-		-e 's,@VBOX_PATH_PREFIX_GCC64@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
-               \
-		-e 's,@PATH_VS2010@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
-		-e 's,@PATH_VS2010_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL))/bin/$(subst x86,x86_amd64,$(KBUILD_HOST_ARCH)),' \
-               \
-		--output $@ $<
+	$(CP) -f -- "$<" "$@"
 
 
 #
