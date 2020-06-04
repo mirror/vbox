@@ -896,7 +896,7 @@ static int txsDoGetFile(PCTXSPKTHDR pPktHdr)
         return rc;
 
     RTFILE hFile;
-    rc = RTFileOpen(&hFile, pszPath, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
+    rc = RTFileOpen(&hFile, pszPath, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN);
     if (RT_SUCCESS(rc))
     {
         uint32_t uMyCrc32 = RTCrc32Start();
