@@ -73,7 +73,7 @@ static int rtLinuxConstructPathV(char *pszBuf, size_t cchBuf,
     AssertReturn(cchBuf > cchPrefix + 1, VERR_INVALID_PARAMETER);
 
     ssize_t cch = RTStrPrintf2V(pszBuf, cchBuf, pszFormat, va);
-    AssertReturn(cch > 0, VERR_BUFFER_OVERFLOW);
+    AssertReturn(cch >= 0, VERR_BUFFER_OVERFLOW);
 
     if (*pszBuf != '/')
     {
