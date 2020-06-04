@@ -315,12 +315,34 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                     sShellOpt = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
                     reporter.log('Loaded processes:');
                     oTxsSession.syncExec(sShell, (sShell, sShellOpt, "tasklist.exe", "/FO", "CSV"), fIgnoreErrors = True);
-                    reporter.log('Downloading Dr. Watson log ...');
+                    reporter.log('Downloading logs ...');
                     self.txsDownloadFiles(oSession, oTxsSession,
-                                [ ( "C:/Documents and Settings/All Users/Application Data/Microsoft/Dr Watson/drwtsn32.log" ), ],
+                              [ ( self.getGuestVBoxTrayClientLogFile(oTestVm),
+                                  'ga-vboxtrayclient-%s.log' % (oTestVm.sVmName,),),
+                                ( "C:\\Documents and Settings\\All Users\\Application Data\\Microsoft\\Dr Watson\\drwtsn32.log",
+                                  'ga-drwatson-%s.log' % (oTestVm.sVmName,), ),
+                              ],
                                 fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
+
+    def getGuestVBoxTrayClientLogFile(self, oTestVm):
+        """ Gets the path on the guest for the (release) log file of VBoxTray / VBoxClient. """
+        if oTestVm.isWindows():
+            return oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'VBoxTray.log');
+
+        return oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'VBoxClient.log');
+
+    def setGuestEnvVar(self, oSession, oTxsSession, oTestVm, sName, sValue):
+        """ Sets a system-wide environment variable on the guest. Only supports Windows guests so far. """
+        _ = oSession;
+        if oTestVm.isWindows():
+            sPathRegExe   = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
+            self.txsRunTest(oTxsSession, ('Setting system-wide environment variable \"%s\" ...' % (sName,)),
+                            30 * 1000, sPathRegExe,
+                            (sPathRegExe, 'add',
+                             '"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"', '/v',
+                             sName, '/t', 'REG_EXPAND_SZ', '/d', sValue, '/f'));
 
     def testWindowsInstallAdditions(self, oSession, oTxsSession, oTestVm):
         """
@@ -328,9 +350,11 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Since this involves rebooting the guest, we will have to create a new TXS session.
         """
 
-        # Install Dr. Watson as post-mortem debugger.
-        sDrWatson = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'drwtsn32.exe');
-        oTxsSession.syncExec(sDrWatson, (sDrWatson, '-i'), fIgnoreErrors = True);
+        # Set system-wide env vars to enable release logging on some applications.
+        self.setGuestEnvVar(oSession, oTxsSession, oTestVm, 'VBOXTRAY_RELEASE_LOG', 'all.e.l.l2.l3.f');
+        self.setGuestEnvVar(oSession, oTxsSession, oTestVm, 'VBOXTRAY_RELEASE_LOG_FLAGS', 'time thread group append');
+        self.setGuestEnvVar(oSession, oTxsSession, oTestVm, 'VBOXTRAY_RELEASE_LOG_DEST',
+                            ('file=%s' % (self.getGuestVBoxTrayClientLogFile(oTestVm),)));
 
         #
         # Install the public signing key.
