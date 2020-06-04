@@ -42,6 +42,7 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-debugvm.xml \
 	man_VBoxManage-extpack.xml \
 	man_VBoxManage-unattended.xml \
+	man_VBoxManage-cloud.xml \
 	man_VBoxManage-cloudprofile.xml \
 	man_VBoxManage-cloudlist.xml \
 	man_VBoxManage-cloudinstance.xml \
