@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage cloud
+
+    Copyright (C) 2018-2020 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<refentry id="vboxmanage-cloud" lang="en">
+
+  <refentryinfo>
+    <pubdate>$Date$</pubdate>
+    <title>VBoxManage cloud</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-cloud</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-cloud</refname>
+    <refpurpose>Manage the cloud entities</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-cloud-network-setup"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage cloud</command>
+      <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain">network setup</arg>
+      <arg choice="req">--local-gateway-iso=<replaceable>path</replaceable></arg>
+      <arg>--gateway-os-name=<replaceable>string</replaceable></arg>
+      <arg>--gateway-os-version=<replaceable>string</replaceable></arg>
+      <arg>--gateway-shape=<replaceable>string</replaceable></arg>
+      <arg>--tunnel-network-name=<replaceable>string</replaceable></arg>
+      <arg>--tunnel-network-range=<replaceable>string</replaceable></arg>
+      <arg>--guest-additions-iso=<replaceable>path</replaceable></arg>
+      <arg>--proxy=<replaceable>string</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-cloud-network-create">
+      <command>VBoxManage cloud</command>
+      <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain">network create</arg>
+      <arg choice="req">--name=<replaceable>string</replaceable></arg>
+      <arg choice="req">--network-id=<replaceable>string</replaceable></arg>
+      <group>
+        <arg choice="plain">--enable</arg>
+        <arg choice="plain">--disable</arg>
+      </group>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-cloud-network-update">
+      <command>VBoxManage cloud network update</command>
+      <arg choice="req">--name=<replaceable>string</replaceable></arg>
+      <arg>--network-id=<replaceable>string</replaceable></arg>
+      <group>
+        <arg choice="plain">--enable</arg>
+        <arg choice="plain">--disable</arg>
+      </group>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-cloud-network-delete">
+      <command>VBoxManage cloud</command>
+      <arg choice="plain">network delete</arg>
+      <arg choice="req">--name=<replaceable>string</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-cloud-network-info">
+      <command>VBoxManage cloud</command>
+      <arg choice="plain">network info</arg>
+      <arg choice="req">--name=<replaceable>string</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <refsect2 id="vboxmanage-cloud-network-common-options">
+      <title>Common options</title>
+      <remark role="help-scope" condition="GLOBAL"/>
+      <para>The subcommands of <command>cloud</command> implement the standard CRUD operations for a cloud profile.
+        The next common options must be placed between the "cloud" and  the following sub-commands:</para>
+      <variablelist>
+        <varlistentry>
+          <term>--provider=<replaceable>name</replaceable></term>
+          <listitem><para>Short cloud provider name.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>--profile=<replaceable>name</replaceable></term>
+          <listitem><para>Cloud profile name. </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloud-network-setup">
+      <title>cloud network setup</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Set up a cloud network environment for the specified cloud profile.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--local-gateway-iso</option></term><listitem><para>The local path to an installation media for a local gateway.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--gateway-os-name</option></term><listitem><para>The name of OS to use for a cloud gateway.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--gateway-os-version</option></term><listitem><para>The version of OS to use for a cloud gateway.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--gateway-shape</option></term><listitem><para>The instance shape to use for a cloud gateway. </para></listitem>
+        </varlistentry>
+        <varlistentry>
+        <term><option>--tunnel-network-name</option></term><listitem><para>The name of VCN/subnet to use for tunneling.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--tunnel-network-range</option></term><listitem><para>The IP address range to use for tunneling. </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--guest-additions-iso</option></term><listitem><para>The local path to an installation media for VirtualBox guest additions.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--proxy</option></term><listitem><para>The proxy URL to be used in local gateway installation.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloud-network-create">
+      <title>cloud network create</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Create a new cloud network descriptor associated with an existing cloud subnet.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--name</option></term><listitem><para>The name to assign to the cloud network descriptor.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--network-id</option></term><listitem><para>The unique identifier of an existing subnet in the cloud.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--enable</option>, --disable</term>
+          <listitem><para>Whether to enable the network descriptor or disable it.  If not specified,
+            the network will be enabled.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloud-network-update">
+      <title>cloud network update</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Modify an existing cloud network descriptor.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--name</option></term><listitem><para>The name of an existing cloud network descriptor.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--network-id</option></term><listitem><para>The unique identifier of an existing subnet in the cloud.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--enable</option>, --disable</term>
+          <listitem><para>Whether to enable the network descriptor or disable it.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloud-network-delete">
+      <title>cloud network delete</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Delete an existing cloud network descriptor.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--name</option></term><listitem><para>The name of an existing cloud network descriptor.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloud-network-info">
+      <title>cloud network info</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Display information about a cloud network descriptor.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--name</option></term><listitem><para>The name of an existing cloud network descriptor.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+  </refsect1>
+
+</refentry>
+
