@@ -314,11 +314,11 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                     sShell    = self.getGuestSystemShell(oTestVm);
                     sShellOpt = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
                     reporter.log('Loaded processes:');
-                    oTxsSession.syncExec(sShell, (sShell, sShellOpt, "tasklist.exe", "/V"), fIgnoreErrors = True);
+                    oTxsSession.syncExec(sShell, (sShell, sShellOpt, "tasklist.exe", "/FO", "CSV"), fIgnoreErrors = True);
                     reporter.log('Downloading Dr. Watson log ...');
                     self.txsDownloadFiles(oSession, oTxsSession,
-                                    [ "C:/Documents and Settings/All Users/Application Data/Microsoft/Dr Watson/drwtsn32.log" ],
-                                    fIgnoreErrors = True);
+                                [ ( "C:/Documents and Settings/All Users/Application Data/Microsoft/Dr Watson/drwtsn32.log" ), ],
+                                fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
 
