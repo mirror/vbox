@@ -47,6 +47,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h> /* PGMR3HandlerPhysicalTypeRegister() argument types. */
 #include <VBox/err.h>  /* VINF_EM_DBG_STOP, also 120+ source files expecting this. */
+#include <VBox/msi.h>
 #include <iprt/stdarg.h>
 #include <iprt/list.h>
 
@@ -1290,15 +1291,12 @@ typedef struct PDMIOMMUREGR0
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
      * @param   uDevId      The device identifier (bus, device, function).
-     * @param   GCPhysIn    The source MSI address.
-     * @param   uDataIn     The source MSI data.
-     * @param   pGCPhysOut  Where to store the remapped MSI address.
-     * @param   puDataOut   Where to store the remapped MSI data.
+     * @param   pMsiIn      The source MSI.
+     * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLR0CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
-                                           PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
+    DECLR0CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1357,15 +1355,12 @@ typedef struct PDMIOMMUREGRC
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
      * @param   uDevId      The device identifier (bus, device, function).
-     * @param   GCPhysIn    The source MSI address.
-     * @param   uDataIn     The source MSI data.
-     * @param   pGCPhysOut  Where to store the remapped MSI address.
-     * @param   puDataOut   Where to store the remapped MSI data.
+     * @param   pMsiIn      The source MSI.
+     * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLRCCALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
-                                           PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
+    DECLRCCALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1424,15 +1419,12 @@ typedef struct PDMIOMMUREGR3
      * @returns VBox status code.
      * @param   pDevIns     The IOMMU device instance.
      * @param   uDevId      The device identifier (bus, device, function).
-     * @param   GCPhysIn    The source MSI address.
-     * @param   uDataIn     The source MSI data.
-     * @param   pGCPhysOut  Where to store the remapped MSI address.
-     * @param   puDataOut   Where to store the remapped MSI data.
+     * @param   pMsiIn      The source MSI.
+     * @param   pMsiOut     Where to store the remapped MSI.
      *
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
-                                           PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
+    DECLR3CALLBACKMEMBER(int, pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t            u32TheEnd;
@@ -1792,6 +1784,19 @@ typedef struct PDMIOAPICHLP
      */
     DECLCALLBACKMEMBER(void,  pfnUnlock)(PPDMDEVINS pDevIns);
 
+    /**
+     * Private interface between the IOAPIC and IOMMU.
+     *
+     * @returns status code.
+     * @param   pDevIns     Device instance of the IOAPIC.
+     * @param   uDevId      The device ID (bus, device, function) for the source MSI.
+     * @param   pMsiIn      The source MSI.
+     * @param   pMsiOut     Where to store the remapped MSI.
+     *
+     * @sa      iommuAmdDeviceMsiRemap().
+     */
+    DECLCALLBACKMEMBER(int, pfnIommuMsiRemap)(PPDMDEVINS pDevIns, uint16_t uDevIt, PCMSIMSG pMsiIn, PMSIMSG pMsiOut);
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMIOAPICHLP;
@@ -1801,7 +1806,7 @@ typedef PDMIOAPICHLP * PPDMIOAPICHLP;
 typedef const PDMIOAPICHLP * PCPDMIOAPICHLP;
 
 /** Current PDMIOAPICHLP version number. */
-#define PDM_IOAPICHLP_VERSION                   PDM_VERSION_MAKE(0xfff0, 2, 0)
+#define PDM_IOAPICHLP_VERSION                   PDM_VERSION_MAKE(0xfff0, 2, 1)
 
 
 /**

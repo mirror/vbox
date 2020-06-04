@@ -431,13 +431,13 @@ DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
      * See Intel spec. 10.11.1 "Message Address Register Format".
      * See Intel spec. 10.11.2 "Message Data Register Format".
      */
-    pIntr->u8Dest         = pMsi->MsiAddr.n.u8DestId;
-    pIntr->u8DestMode     = pMsi->MsiAddr.n.u1DestMode;
-    pIntr->u8RedirHint    = pMsi->MsiAddr.n.u1RedirHint;
+    pIntr->u8Dest         = pMsi->Addr.n.u8DestId;
+    pIntr->u8DestMode     = pMsi->Addr.n.u1DestMode;
+    pIntr->u8RedirHint    = pMsi->Addr.n.u1RedirHint;
 
-    pIntr->u8Vector       = pMsi->MsiData.n.u8Vector;
-    pIntr->u8TriggerMode  = pMsi->MsiData.n.u1TriggerMode;
-    pIntr->u8DeliveryMode = pMsi->MsiData.n.u3DeliveryMode;
+    pIntr->u8Vector       = pMsi->Data.n.u8Vector;
+    pIntr->u8TriggerMode  = pMsi->Data.n.u1TriggerMode;
+    pIntr->u8DeliveryMode = pMsi->Data.n.u3DeliveryMode;
 }
 
 #if 0
@@ -449,16 +449,16 @@ DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
  */
 DECLINLINE(void) ioapicGetMsiFromApicIntr(PCXAPICINTR pIntr, PMSIMSG pMsi)
 {
-    pMsi->MsiAddr.n.u12Addr        = VBOX_MSI_ADDR_BASE >> VBOX_MSI_ADDR_SHIFT;
-    pMsi->MsiAddr.n.u8DestId       = pIntr->u8Dest;
-    pMsi->MsiAddr.n.u1RedirHint    = pIntr->u8RedirHint;
-    pMsi->MsiAddr.n.u1DestMode     = pIntr->u8DestMode;
+    pMsi->Addr.n.u12Addr        = VBOX_MSI_ADDR_BASE >> VBOX_MSI_ADDR_SHIFT;
+    pMsi->Addr.n.u8DestId       = pIntr->u8Dest;
+    pMsi->Addr.n.u1RedirHint    = pIntr->u8RedirHint;
+    pMsi->Addr.n.u1DestMode     = pIntr->u8DestMode;
 
-    pMsi->MsiData.n.u8Vector       = pIntr->u8Vector;
-    pMsi->MsiData.n.u3DeliveryMode = pIntr->u8DeliveryMode;
-    pMsi->MsiData.n.u1TriggerMode  = pIntr->u8TriggerMode;
+    pMsi->Data.n.u8Vector       = pIntr->u8Vector;
+    pMsi->Data.n.u3DeliveryMode = pIntr->u8DeliveryMode;
+    pMsi->Data.n.u1TriggerMode  = pIntr->u8TriggerMode;
 
-    /* pMsi->MsiData.n.u1Level     = ??? */
+    /* pMsi->Data.n.u1Level     = ??? */
     /** @todo r=ramshankar: Level triggered MSIs don't make much sense though
      *        possible in theory? Maybe document this more explicitly... */
 }
@@ -854,13 +854,13 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uin
     PIOAPICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOAPICCC);
     LogFlow(("IOAPIC: ioapicSendMsi: GCPhys=%#RGp uValue=%#RX32\n", GCPhys, uValue));
 
-    MSIMSG MsiMsg;
-    MsiMsg.MsiAddr.u64 = GCPhys;
-    MsiMsg.MsiData.u32 = uValue;
+    MSIMSG Msi;
+    Msi.Addr.u64 = GCPhys;
+    Msi.Data.u32 = uValue;
 
     XAPICINTR ApicIntr;
     RT_ZERO(ApicIntr);
-    ioapicGetApicIntrFromMsi(&MsiMsg, &ApicIntr);
+    ioapicGetApicIntrFromMsi(&Msi, &ApicIntr);
 
     /*
      * Deliver to the local APIC via the system/3-wire-APIC bus.

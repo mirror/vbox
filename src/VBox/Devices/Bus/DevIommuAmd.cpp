@@ -4547,22 +4547,19 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
  * @param   pDevIns     The IOMMU instance data.
  * @param   uDevId      The device ID.
  * @param   pDte        The device table entry.
- * @param   GCPhysIn    The source MSI address.
- * @param   uDataIn     The source MSI data.
  * @param   enmOp       The IOMMU operation being performed.
- * @param   pGCPhysOut  Where to store the remapped MSI address.
- * @param   puDataOut   Where to store the remapped MSI data.
+ * @param   pMsiIn      The source MSI.
+ * @param   pMsiOut     Where to store the remapped MSI.
  *
  * @thread  Any.
  */
-static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
-                             IOMMUOP enmOp, PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
+static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, IOMMUOP enmOp, PCMSIMSG pMsiIn,
+                             PMSIMSG pMsiOut)
 {
-    /** @todo Replace GCPhys[Out|In], uData[Out|In] with MSIMSG. */
     Assert(pDte->n.u2IntrCtrl == IOMMU_INTR_CTRL_REMAP);
 
     IRTE_T Irte;
-    int rc = iommuAmdReadIrte(pDevIns, uDevId, pDte, GCPhysIn, uDataIn, enmOp, &Irte);
+    int rc = iommuAmdReadIrte(pDevIns, uDevId, pDte, pMsiIn->Addr.u64, pMsiIn->Data.u32, enmOp, &Irte);
     if (RT_SUCCESS(rc))
     {
         if (Irte.n.u1RemapEnable)
@@ -4571,48 +4568,39 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
             {
                 if (Irte.n.u3IntrType < VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
                 {
-                    MSIADDR MsiAddrIn;
-                    MsiAddrIn.u64 = GCPhysIn;
-
-                    MSIDATA MsiDataIn;
-                    MsiDataIn.u32 = uDataIn;
-
-                    PMSIADDR pMsiAddrOut = (PMSIADDR)pGCPhysOut;
-                    PMSIDATA pMsiDataOut = (PMSIDATA)puDataOut;
-
                     /* Preserve all bits from the source MSI address that don't map 1:1 from the IRTE. */
-                    pMsiAddrOut->u64 = GCPhysIn;
-                    pMsiAddrOut->n.u1DestMode = Irte.n.u1DestMode;
-                    pMsiAddrOut->n.u8DestId   = Irte.n.u8Dest;
+                    pMsiOut->Addr.u64 = pMsiIn->Addr.u64;
+                    pMsiOut->Addr.n.u1DestMode = Irte.n.u1DestMode;
+                    pMsiOut->Addr.n.u8DestId   = Irte.n.u8Dest;
 
                     /* Preserve all bits from the source MSI data that don't map 1:1 from the IRTE. */
-                    pMsiDataOut->u32 = uDataIn;
-                    pMsiDataOut->n.u8Vector       = Irte.n.u8Vector;
-                    pMsiDataOut->n.u3DeliveryMode = Irte.n.u3IntrType;
+                    pMsiOut->Data.u32 = pMsiIn->Data.u32;
+                    pMsiOut->Data.n.u8Vector       = Irte.n.u8Vector;
+                    pMsiOut->Data.n.u3DeliveryMode = Irte.n.u3IntrType;
 
                     return VINF_SUCCESS;
                 }
 
                 Log((IOMMU_LOG_PFX ": Interrupt type (%#x) invalid -> IOPF", Irte.n.u3IntrType));
                 EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-                iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, Irte.n.u1RemapEnable, true /* fRsvdNotZero */,
-                                             false /* fPermDenied */, enmOp, &EvtIoPageFault);
+                iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+                                             true /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
                 iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdIntType);
                 return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
             }
 
             Log((IOMMU_LOG_PFX ": Guest mode not supported -> IOPF"));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, Irte.n.u1RemapEnable, true /* fRsvdNotZero */,
-                                         false /* fPermDenied */, enmOp, &EvtIoPageFault);
+            iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+                                         true /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
             iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRsvdNotZero);
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
         Log((IOMMU_LOG_PFX ": Remapping disabled -> IOPF"));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
-        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, Irte.n.u1RemapEnable, false /* fRsvdNotZero */,
-                                     false /* fPermDenied */, enmOp, &EvtIoPageFault);
+        iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
+                                     false /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
         iommuAmdRaiseIoPageFaultEvent(pDevIns, pDte, &Irte, enmOp, &EvtIoPageFault, kIoPageFaultType_IrteRemapEn);
         return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
     }
@@ -4627,16 +4615,13 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU instance data.
  * @param   uDevId      The device ID.
- * @param   GCPhysIn    The source MSI address.
- * @param   uDataIn     The source MSI data.
  * @param   enmOp       The IOMMU operation being performed.
- * @param   pGCPhysOut  Where to store the remapped MSI address.
- * @param   puDataOut   Where to store the remapped MSI data.
+ * @param   pMsiIn      The source MSI.
+ * @param   pMsiOut     Where to store the remapped MSI.
  *
  * @thread  Any.
  */
-static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn, IOMMUOP enmOp,
-                                   PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
+static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     /* Read the device table entry from memory. */
     DTE_T Dte;
@@ -4657,7 +4642,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
                 Log((IOMMU_LOG_PFX ": Invalid reserved bits in DTE (u64[2]=%#RX64 u64[3]=%#RX64) -> Illegal DTE\n", fRsvd0,
                      fRsvd1));
                 EVT_ILLEGAL_DTE_T Event;
-                iommuAmdInitIllegalDteEvent(uDevId, GCPhysIn, true /* fRsvdNotZero */, enmOp, &Event);
+                iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
                 iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdNotZero);
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
@@ -4679,18 +4664,13 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
              * See AMD IOMMU spec. 2.8 "IOMMU Interrupt Support".
              * See Intel spec. 10.11.1 "Message Address Register Format".
              */
-            MSIADDR MsiAddrIn;
-            MsiAddrIn.u64 = GCPhysIn;
-            if ((MsiAddrIn.u64 & VBOX_MSI_ADDR_ADDR_MASK) == VBOX_MSI_ADDR_BASE)
+            if ((pMsiIn->Addr.u64 & VBOX_MSI_ADDR_ADDR_MASK) == VBOX_MSI_ADDR_BASE)
             {
-                MSIDATA MsiDataIn;
-                MsiDataIn.u32 = uDataIn;
-
                 /*
                  * The IOMMU remaps fixed and arbitrated interrupts using the IRTE.
                  * See AMD IOMMU spec. "2.2.5.1 Interrupt Remapping Tables, Guest Virtual APIC Not Enabled".
                  */
-                uint8_t const u8DeliveryMode = MsiDataIn.n.u3DeliveryMode;
+                uint8_t const u8DeliveryMode = pMsiIn->Data.n.u3DeliveryMode;
                 bool fPassThru = false;
                 switch (u8DeliveryMode)
                 {
@@ -4728,12 +4708,12 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
                                 Assert(!pThis->ExtFeat.n.u1GstVirtApicSup);
                                 NOREF(pThis);
 
-                                return iommuAmdRemapIntr(pDevIns, uDevId, &Dte, GCPhysIn, uDataIn, enmOp, pGCPhysOut, puDataOut);
+                                return iommuAmdRemapIntr(pDevIns, uDevId, &Dte, enmOp, pMsiIn, pMsiOut);
                             }
 
                             Log((IOMMU_LOG_PFX ": Invalid interrupt table length %#x -> Illegal DTE\n", uIntTabLen));
                             EVT_ILLEGAL_DTE_T Event;
-                            iommuAmdInitIllegalDteEvent(uDevId, GCPhysIn, false /* fRsvdNotZero */, enmOp, &Event);
+                            iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, false /* fRsvdNotZero */, enmOp, &Event);
                             iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntTabLen);
                             return VERR_IOMMU_INTR_REMAP_FAILED;
                         }
@@ -4743,7 +4723,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
 
                         Log((IOMMU_LOG_PFX ":IntCtl mode invalid %#x -> Illegal DTE", uIntrCtrl));
                         EVT_ILLEGAL_DTE_T Event;
-                        iommuAmdInitIllegalDteEvent(uDevId, GCPhysIn, true /* fRsvdNotZero */, enmOp, &Event);
+                        iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
                         iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntCtl);
                         return VERR_IOMMU_INTR_REMAP_FAILED;
                     }
@@ -4763,8 +4743,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
 
                 if (fPassThru)
                 {
-                    *pGCPhysOut = GCPhysIn;
-                    *puDataOut  = uDataIn;
+                    *pMsiOut = *pMsiIn;
                     return VINF_SUCCESS;
                 }
 
@@ -4773,15 +4752,14 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
             }
             else
             {
-                Log((IOMMU_LOG_PFX ":MSI address region invalid %#RX64.", MsiAddrIn.u64));
+                Log((IOMMU_LOG_PFX ":MSI address region invalid %#RX64.", pMsiIn->Addr.u64));
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
         }
         else
         {
             /** @todo IOMMU: Add to interrupt remapping cache. */
-            *pGCPhysOut = GCPhysIn;
-            *puDataOut  = uDataIn;
+            *pMsiOut = *pMsiIn;
             return VINF_SUCCESS;
         }
     }
@@ -4797,21 +4775,15 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU device instance.
  * @param   uDevId      The device ID (bus, device, function).
- * @param   GCPhysIn    The source MSI address.
- * @param   uDataIn     The source MSI data.
- * @param   pGCPhysOut  Where to store the remapped MSI address.
- * @param   puDataOut   Where to store the remapped MSI data.
+ * @param   pMsiIn      The source MSI.
+ * @param   pMsiOut     Where to store the remapped MSI.
  */
-static int iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
-                                  PRTGCPHYS pGCPhysOut, uint32_t *puDataOut)
+static int iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     /* Validate. */
     Assert(pDevIns);
-    Assert(pGCPhysOut);
-    Assert(puDataOut);
-
-    /* Remove later. */
-    RT_NOREF(uDevId, GCPhysIn, uDataIn, pGCPhysOut, puDataOut);
+    Assert(pMsiIn);
+    Assert(pMsiOut);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
 
@@ -4821,11 +4793,10 @@ static int iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS 
     {
         /** @todo Cache? */
 
-        return iommuAmdLookupIntrTable(pDevIns, uDevId, GCPhysIn, uDataIn, IOMMUOP_INTR_REQ, pGCPhysOut, puDataOut);
+        return iommuAmdLookupIntrTable(pDevIns, uDevId, IOMMUOP_INTR_REQ, pMsiIn, pMsiOut);
     }
 
-    *pGCPhysOut = GCPhysIn;
-    *puDataOut  = uDataIn;
+    *pMsiOut = *pMsiIn;
     return VINF_SUCCESS;
 }
 

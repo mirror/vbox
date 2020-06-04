@@ -212,9 +212,9 @@ typedef MSIDATA const *PCMSIDATA;
 typedef struct
 {
     /** The MSI Address Register. */
-    MSIADDR      MsiAddr;
+    MSIADDR      Addr;
     /** The MSI Data Register. */
-    MSIDATA      MsiData;
+    MSIDATA     Data;
 } MSIMSG;
 /** Pointer to an MSI message struct. */
 typedef MSIMSG *PMSIMSG;

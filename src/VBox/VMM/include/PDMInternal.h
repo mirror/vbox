@@ -38,6 +38,7 @@
 #include <VBox/vmm/pdmcommon.h>
 #include <VBox/vmm/pdmtask.h>
 #include <VBox/sup.h>
+#include <VBox/msi.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #ifdef IN_RING3
@@ -703,8 +704,7 @@ typedef struct PDMIOMMU
     DECLR3CALLBACKMEMBER(int,   pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbWrite,
                                              PRTGCPHYS pGCPhysSpa));
     /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
-    DECLR3CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
-                                             PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
+    DECLR3CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 } PDMIOMMU;
 
 
@@ -726,8 +726,7 @@ typedef struct PDMIOMMUR0
     DECLR0CALLBACKMEMBER(int,   pfnMemWrite,(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uDva, size_t cbWrite,
                                              PRTGCPHYS pGCPhysSpa));
     /** @copydoc PDMIOMMUREGR3::pfnMsiRemap */
-    DECLR0CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, RTGCPHYS GCPhysIn, uint32_t uDataIn,
-                                             PRTGCPHYS pGCPhysOut, uint32_t *puDataOut));
+    DECLR0CALLBACKMEMBER(int,   pfnMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 } PDMIOMMUR0;
 /** Pointer to a ring-0 IOMMU data. */
 typedef PDMIOMMUR0 *PPDMIOMMUR0;

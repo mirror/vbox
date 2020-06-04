@@ -1557,6 +1557,36 @@ static DECLCALLBACK(void) pdmR0IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMIOAPICHLP,pfnIommuMsiRemap} */
+static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0IoApicHlp_IommuMsiRemap: caller='%s'/%d: pMsiIn=(%#RX64, %#RU32)\n", pDevIns->pReg->szName,
+             pDevIns->iInstance, pMsiIn->Addr.u64, pMsiIn->Data.u32));
+
+#ifdef VBOX_WITH_IOMMU_AMD
+    /** @todo IOMMU: Optimize/re-organize things here later. */
+    PGVM        pGVM         = pDevIns->Internal.s.pGVM;
+    PPDMIOMMUR0 pIommu       = &pGVM->pdmr0.s.aIommus[0];
+    PPDMDEVINS  pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+    if (   pDevInsIommu
+        && pDevInsIommu != pDevIns)
+    {
+        int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDevId, pMsiIn, pMsiOut);
+        if (RT_FAILURE(rc))
+        {
+            Log(("pdmR0IoApicHlp_IommuMsiRemap: IOMMU MSI remap failed. uDevId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n",
+                 uDevId, pMsiIn->Addr.u64, pMsiIn->Data.u32, rc));
+            return rc;
+        }
+    }
+#else
+    *pMsiOut = *pMsiIn;
+#endif
+    return VINF_SUCCESS;
+}
+
+
 /**
  * The Ring-0 I/O APIC Helper Callbacks.
  */
@@ -1566,6 +1596,7 @@ extern DECLEXPORT(const PDMIOAPICHLP) g_pdmR0IoApicHlp =
     pdmR0IoApicHlp_ApicBusDeliver,
     pdmR0IoApicHlp_Lock,
     pdmR0IoApicHlp_Unlock,
+    pdmR0IoApicHlp_IommuMsiRemap,
     PDM_IOAPICHLP_VERSION
 };
 
