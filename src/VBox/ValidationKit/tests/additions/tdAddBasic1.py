@@ -310,6 +310,15 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                     reporter.log('Loaded modules:');
                     sCmdLsMod = oTestVm.pathJoin(self.getGuestSystemAdminDir(oTestVm), 'lsmod');
                     oTxsSession.syncExec(sCmdLsMod, (sCmdLsMod), fIgnoreErrors = True);
+                elif oTestVm.isWindows() or oTestVm.isOS2():
+                    sShell    = self.getGuestSystemShell(oTestVm);
+                    sShellOpt = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
+                    reporter.log('Loaded processes:');
+                    oTxsSession.syncExec(sShell, (sShell, sShellOpt, "tasklist.exe", "/V"), fIgnoreErrors = True);
+                    reporter.log('Downloading Dr. Watson log ...');
+                    self.txsDownloadFiles(oSession, oTxsSession,
+                                    [ "C:/Documents and Settings/All Users/Application Data/Microsoft/Dr Watson/drwtsn32.log" ],
+                                    fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
 
@@ -318,6 +327,10 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Installs the Windows guest additions using the test execution service.
         Since this involves rebooting the guest, we will have to create a new TXS session.
         """
+
+        # Install Dr. Watson as post-mortem debugger.
+        sDrWatson = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'drwtsn32.exe');
+        oTxsSession.syncExec(sDrWatson, (sDrWatson, '-i'), fIgnoreErrors = True);
 
         #
         # Install the public signing key.
