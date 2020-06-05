@@ -136,6 +136,7 @@ EXPORTS
     DBGFR3AddrSub
     DBGFR3AsGetConfig
     DBGFR3CpuGetMode
+    DBGFR3CpuGetState
     DBGFR3AddrFromSelOff
     DBGFR3FlowCreate
     DBGFR3FlowRetain

@@ -931,6 +931,7 @@ VMMR3DECL(CPUMMODE)         DBGFR3CpuGetMode(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(VMCPUID)          DBGFR3CpuGetCount(PUVM pUVM);
 VMMR3DECL(bool)             DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(bool)             DBGFR3CpuIsInV86Code(PUVM pUVM, VMCPUID idCpu);
+VMMR3DECL(const char *)     DBGFR3CpuGetState(PUVM pUVM, VMCPUID idCpu);
 #endif
 
 
