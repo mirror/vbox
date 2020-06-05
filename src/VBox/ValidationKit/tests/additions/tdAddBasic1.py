@@ -338,7 +338,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         _ = oSession;
         if oTestVm.isWindows():
             sPathRegExe   = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
-            self.txsRunTest(oTxsSession, ('Setting system-wide environment variable \"%s\" ...' % (sName,)),
+            self.txsRunTest(oTxsSession, ('Set env var \"%s\" ...' % (sName,)),
                             30 * 1000, sPathRegExe,
                             (sPathRegExe, 'add',
                              '"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"', '/v',
