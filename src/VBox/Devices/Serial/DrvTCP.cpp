@@ -90,6 +90,8 @@ typedef struct DRVTCP
     RTTHREAD            ListenThread;
     /** Flag to signal listening thread to shut down. */
     bool volatile       fShutdown;
+    /** Flag to signal whether the thread was woken up from external. */
+    bool volatile       fWokenUp;
 } DRVTCP, *PDRVTCP;
 
 
@@ -141,33 +143,42 @@ static int drvTcpPollerKick(PDRVTCP pThis, uint8_t bReason)
  */
 static int drvTcpWakeupPipeCheckForRequest(PDRVTCP pThis, uint32_t fEvts)
 {
-    uint8_t bReason;
-    size_t cbRead = 0;
-    int rc = RTPipeRead(pThis->hPipeWakeR, &bReason, 1, &cbRead);
-    if (rc == VINF_TRY_AGAIN) /* Nothing there so we are done here. */
-        rc = VINF_SUCCESS;
-    else if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+
+    while (   RT_SUCCESS(rc)
+           || rc == VERR_INTERRUPTED)
     {
-        if (bReason == DRVTCP_WAKEUP_REASON_EXTERNAL)
-            rc = VERR_INTERRUPTED;
-        else if (bReason == DRVTCP_WAKEUP_REASON_NEW_CONNECTION)
+        uint8_t bReason;
+        size_t cbRead = 0;
+        int rc2 = RTPipeRead(pThis->hPipeWakeR, &bReason, 1, &cbRead);
+        if (rc2 == VINF_TRY_AGAIN) /* Nothing there so we are done here. */
+            break;
+        else if (RT_SUCCESS(rc2))
         {
-            Assert(pThis->hTcpSock == NIL_RTSOCKET);
+            if (bReason == DRVTCP_WAKEUP_REASON_EXTERNAL)
+            {
+                ASMAtomicXchgBool(&pThis->fWokenUp, false);
+                rc = VERR_INTERRUPTED;
+            }
+            else if (bReason == DRVTCP_WAKEUP_REASON_NEW_CONNECTION)
+            {
+                Assert(pThis->hTcpSock == NIL_RTSOCKET);
 
-            /* Read the socket handle. */
-            RTSOCKET hTcpSockNew = NIL_RTSOCKET;
-            rc = RTPipeReadBlocking(pThis->hPipeWakeR, &hTcpSockNew, sizeof(hTcpSockNew), NULL);
-            AssertRC(rc);
+                /* Read the socket handle. */
+                RTSOCKET hTcpSockNew = NIL_RTSOCKET;
+                rc = RTPipeReadBlocking(pThis->hPipeWakeR, &hTcpSockNew, sizeof(hTcpSockNew), NULL);
+                AssertRC(rc);
 
-            /* Always include error event. */
-            fEvts |= RTPOLL_EVT_ERROR;
-            rc = RTPollSetAddSocket(pThis->hPollSet, hTcpSockNew,
-                                    fEvts, DRVTCP_POLLSET_ID_SOCKET);
-            if (RT_SUCCESS(rc))
-                pThis->hTcpSock = hTcpSockNew;
+                /* Always include error event. */
+                fEvts |= RTPOLL_EVT_ERROR;
+                rc = RTPollSetAddSocket(pThis->hPollSet, hTcpSockNew,
+                                        fEvts, DRVTCP_POLLSET_ID_SOCKET);
+                if (RT_SUCCESS(rc))
+                    pThis->hTcpSock = hTcpSockNew;
+            }
+            else
+                AssertMsgFailed(("Unknown wakeup reason in pipe %u\n", bReason));
         }
-        else
-            AssertMsgFailed(("Unknown wakeup reason in pipe %u\n", bReason));
     }
 
     return rc;
@@ -288,8 +299,13 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
 /** @interface_method_impl{PDMISTREAM,pfnPollInterrupt} */
 static DECLCALLBACK(int) drvTcpPollInterrupt(PPDMISTREAM pInterface)
 {
+    int rc = VINF_SUCCESS;
     PDRVTCP pThis = RT_FROM_MEMBER(pInterface, DRVTCP, IStream);
-    return drvTcpPollerKick(pThis, DRVTCP_WAKEUP_REASON_EXTERNAL);
+
+    if (!ASMAtomicXchgBool(&pThis->fWokenUp, true))
+        rc = drvTcpPollerKick(pThis, DRVTCP_WAKEUP_REASON_EXTERNAL);
+
+    return rc;
 }
 
 
@@ -554,6 +570,7 @@ static DECLCALLBACK(int) drvTCPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     pThis->ListenThread                 = NIL_RTTHREAD;
     pThis->fShutdown                    = false;
+    pThis->fWokenUp                     = false;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvTCPQueryInterface;
     /* IStream */
