@@ -313,6 +313,8 @@ ifeq ($(KBUILD_HOST),darwin)
   VBOX_WITH_NEW_XCODE = 1
  endif
 endif
+# Select new VC++ on Windows.
+VBOX_WITH_NEW_VCC = 1
 
 ## @name Additions
 ## @{
