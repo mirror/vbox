@@ -598,7 +598,8 @@ int     dbgcRun(PDBGC pDbgc);
 int     dbgcProcessInput(PDBGC pDbgc, bool fNoExecute);
 void    dbgcDestroy(PDBGC pDbgc);
 
-const char *dbgcGetEventCtx(DBGFEVENTCTX enmCtx);
+DECLHIDDEN(const char *) dbgcGetEventCtx(DBGFEVENTCTX enmCtx);
+DECLHIDDEN(PCDBGCSXEVT) dbgcEventLookup(DBGFEVENTTYPE enmType);
 
 DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags);
 

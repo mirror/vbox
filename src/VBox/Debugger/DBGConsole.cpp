@@ -587,7 +587,7 @@ int dbgcProcessInput(PDBGC pDbgc, bool fNoExecute)
  * @returns Read only string.
  * @param   enmCtx          The context.
  */
-const char *dbgcGetEventCtx(DBGFEVENTCTX enmCtx)
+DECLHIDDEN(const char *) dbgcGetEventCtx(DBGFEVENTCTX enmCtx)
 {
     switch (enmCtx)
     {
@@ -611,7 +611,7 @@ const char *dbgcGetEventCtx(DBGFEVENTCTX enmCtx)
  * @returns Pointer to DBGCSXEVT structure if found, otherwise NULL.
  * @param   enmType     The possibly generic event to find the descriptor for.
  */
-static PCDBGCSXEVT dbgcEventLookup(DBGFEVENTTYPE enmType)
+DECLHIDDEN(PCDBGCSXEVT) dbgcEventLookup(DBGFEVENTTYPE enmType)
 {
     uint32_t i = g_cDbgcSxEvents;
     while (i-- > 0)
