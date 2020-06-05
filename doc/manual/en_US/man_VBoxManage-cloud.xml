@@ -51,7 +51,7 @@
       <arg choice="req">--compartment-id=<replaceable>string</replaceable></arg>
       <arg>--state=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
-     
+
     <!-- Cloud instance commands -->
       <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-create" sepchar=" ">
        <command moreinfo="none">VBoxManage cloud</command>
