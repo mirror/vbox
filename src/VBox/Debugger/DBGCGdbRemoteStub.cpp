@@ -1015,7 +1015,7 @@ static int dbgcGdbStubCtxTgtXmlDescCreate(PGDBSTUBCTX pThis)
  * Returns the GDB register descriptor describing the given DBGF register enum.
  *
  * @returns Pointer to the GDB register descriptor or NULL if not found.
- * @param   enmReg              The register to look for.
+ * @param   idxReg              The register to look for.
  */
 static const GDBREGDESC *dbgcGdbStubRegGet(uint32_t idxReg)
 {
