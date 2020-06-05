@@ -666,7 +666,7 @@ class tdAutostartOsLinux(tdAutostartOs):
             #
 
             (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing guest additions',
-                                                      5 * 60 *1000, '/usr/bin/sudo',
+                                                      10 * 60 *1000, '/usr/bin/sudo',
                                                       ['/usr/bin/sudo', '/bin/sh',
                                                        '/media/cdrom/VBoxLinuxAdditions.run'],
                                                       False, True);
@@ -1020,7 +1020,7 @@ class tdAutostartOsWin(tdAutostartOs):
             if oCurProgress is not None:
                 oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTestDriver.oVBoxMgr,
                                                                 self.oTestDriver, "installAdditions");
-                oWrapperProgress.wait();
+                oWrapperProgress.wait(cMsTimeout = 10 * 60 * 1000);
                 if not oWrapperProgress.isSuccess():
                     oWrapperProgress.logResult(fIgnoreErrors = False);
                     fRc = False;
@@ -1535,6 +1535,8 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
             fRc = fRc and oSession.enableVirtEx(True);
             fRc = fRc and oSession.enableNestedPaging(True);
             fRc = fRc and oSession.enableNestedHwVirt(True);
+            # disable 3D until the error is fixed.
+            fRc = fRc and oSession.setAccelerate3DEnabled(False);
             fRc = fRc and oSession.saveSettings();
             fRc = oSession.close() and fRc and True; # pychecker hack.
             oSession = None;
