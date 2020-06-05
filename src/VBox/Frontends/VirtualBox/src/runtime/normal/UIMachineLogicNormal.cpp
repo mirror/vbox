@@ -248,7 +248,7 @@ void UIMachineLogicNormal::sltHandleActionTriggerViewScreenResize(int iIndex, co
 
 void UIMachineLogicNormal::sltHostScreenAvailableAreaChange()
 {
-#ifdef VBOX_WS_X11
+#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /* Prevent handling if fake screen detected: */
     if (gpDesktop->isFakeScreenDetected())
         return;
@@ -257,7 +257,7 @@ void UIMachineLogicNormal::sltHostScreenAvailableAreaChange()
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         if (!pMachineWindow->isMaximized())
             pMachineWindow->restoreCachedGeometry();
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_X11 && !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 
     /* Call to base-class: */
     UIMachineLogic::sltHostScreenAvailableAreaChange();
