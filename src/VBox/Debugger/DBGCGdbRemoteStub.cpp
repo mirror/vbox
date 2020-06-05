@@ -153,6 +153,10 @@ typedef struct GDBSTUBCTX
      * registered with while we only use the BP number form DBGF internally.
      * Means we have to track all registration so we can remove them later on. */
     RTLISTANCHOR                LstTps;
+    /** Flag whether a ThreadInfo query was started. */
+    bool                        fInThrdInfoQuery;
+    /** Next ID to return in the current ThreadInfo query. */
+    VMCPUID                     idCpuNextThrdInfoQuery;
 } GDBSTUBCTX;
 /** Pointer to the GDB stub context data. */
 typedef GDBSTUBCTX *PGDBSTUBCTX;
@@ -581,8 +585,9 @@ static int dbgcGdbStubCtxReplySendErr(PGDBSTUBCTX pThis, uint8_t uErr)
  */
 static int dbgcGdbStubCtxReplySendSigTrap(PGDBSTUBCTX pThis)
 {
-    uint8_t achSigTrap[3] = { 'S', '0', '5' };
-    return dbgcGdbStubCtxReplySend(pThis, &achSigTrap[0], sizeof(achSigTrap));
+    char achReply[32];
+    ssize_t cchStr = RTStrPrintf2(&achReply[0], sizeof(achReply), "T05thread:%02x;", pThis->Dbgc.idCpu + 1);
+    return dbgcGdbStubCtxReplySend(pThis, &achReply[0], cchStr);
 }
 
 
@@ -792,7 +797,7 @@ static int dbgcGdbStubCtxPktProcessQuerySupportedReply(PGDBSTUBCTX pThis)
 {
     /** @todo Enhance. */
     if (pThis->fFeatures & GDBSTUBCTX_FEATURES_F_TGT_DESC)
-        return dbgcGdbStubCtxReplySend(pThis, "qXfer:features:read+", sizeof("qXfer:features:read+") - 1);
+        return dbgcGdbStubCtxReplySend(pThis, "qXfer:features:read+;vContSupported+", sizeof("qXfer:features:read+;vContSupported+") - 1);
 
     return dbgcGdbStubCtxReplySend(pThis, NULL, 0);
 }
@@ -1127,6 +1132,46 @@ static const GDBREGDESC *dbgcGdbStubRegGet(uint32_t idxReg)
 
 
 /**
+ * Processes the 'C' query (query current thread ID).
+ *
+ * @returns Status code.
+ * @param   pThis               The GDB stub context.
+ * @param   pbArgs              Pointer to the start of the arguments in the packet.
+ * @param   cbArgs              Size of arguments in bytes.
+ */
+static int dbgcGdbStubCtxPktProcessQueryThreadId(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+{
+    RT_NOREF(pbArgs, cbArgs);
+
+    int rc = VERR_BUFFER_OVERFLOW;
+    char achReply[32];
+    ssize_t cchStr = RTStrPrintf(&achReply[0], sizeof(achReply), "QC %02x", pThis->Dbgc.idCpu + 1);
+    if (cchStr > 0)
+        rc = dbgcGdbStubCtxReplySend(pThis, &achReply[0], cchStr);
+
+    return rc;
+}
+
+
+/**
+ * Processes the 'Attached' query.
+ *
+ * @returns Status code.
+ * @param   pThis               The GDB stub context.
+ * @param   pbArgs              Pointer to the start of the arguments in the packet.
+ * @param   cbArgs              Size of arguments in bytes.
+ */
+static int dbgcGdbStubCtxPktProcessQueryAttached(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+{
+    RT_NOREF(pbArgs, cbArgs);
+
+    /* We always report attached so that the VM doesn't get killed when GDB quits. */
+    uint8_t bAttached = '1';
+    return dbgcGdbStubCtxReplySend(pThis, &bAttached, sizeof(bAttached));
+}
+
+
+/**
  * Processes the 'Xfer:features:read' query.
  *
  * @returns Status code.
@@ -1233,15 +1278,167 @@ static int dbgcGdbStubCtxPktProcessQueryRcmd(PGDBSTUBCTX pThis, const uint8_t *p
 
 
 /**
+ * Worker for both 'qfThreadInfo' and 'qsThreadInfo'.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The GDB stub context.
+ */
+static int dbgcGdbStubCtxPktProcessQueryThreadInfoWorker(PGDBSTUBCTX pThis)
+{
+    int rc = dbgcGdbStubCtxReplySendBegin(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        uint8_t bReplyStart = { 'm' };
+        rc = dbgcGdbStubCtxReplySendData(pThis, &bReplyStart, sizeof(bReplyStart));
+        if (RT_SUCCESS(rc))
+        {
+            char achReply[32];
+            ssize_t cchStr = RTStrPrintf(&achReply[0], sizeof(achReply), "%02x", pThis->idCpuNextThrdInfoQuery + 1);
+            if (cchStr <= 0)
+                rc = VERR_BUFFER_OVERFLOW;
+
+            if (RT_SUCCESS(rc))
+                rc = dbgcGdbStubCtxReplySendData(pThis, &achReply[0], cchStr);
+            pThis->idCpuNextThrdInfoQuery++;
+        }
+
+        rc = dbgcGdbStubCtxReplySendEnd(pThis);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Processes the 'fThreadInfo' query.
+ *
+ * @returns Status code.
+ * @param   pThis               The GDB stub context.
+ * @param   pbArgs              Pointer to the start of the arguments in the packet.
+ * @param   cbArgs              Size of arguments in bytes.
+ */
+static int dbgcGdbStubCtxPktProcessQueryThreadInfoStart(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+{
+    RT_NOREF(pbArgs, cbArgs);
+
+    pThis->idCpuNextThrdInfoQuery = 0;
+    pThis->fInThrdInfoQuery = true;
+    return dbgcGdbStubCtxPktProcessQueryThreadInfoWorker(pThis);
+}
+
+
+/**
+ * Processes the 'fThreadInfo' query.
+ *
+ * @returns Status code.
+ * @param   pThis               The GDB stub context.
+ * @param   pbArgs              Pointer to the start of the arguments in the packet.
+ * @param   cbArgs              Size of arguments in bytes.
+ */
+static int dbgcGdbStubCtxPktProcessQueryThreadInfoCont(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+{
+    RT_NOREF(pbArgs, cbArgs);
+
+    /* If we are in a thread info query we just send the end of list specifier (all thread IDs where sent previously already). */
+    if (!pThis->fInThrdInfoQuery)
+        return dbgcGdbStubCtxReplySendErrSts(pThis, VERR_NET_PROTOCOL_ERROR);
+
+    VMCPUID cCpus = DBGFR3CpuGetCount(pThis->Dbgc.pUVM);
+    if (pThis->idCpuNextThrdInfoQuery == cCpus)
+    {
+        pThis->fInThrdInfoQuery = false;
+        uint8_t bEoL = 'l';
+        return dbgcGdbStubCtxReplySend(pThis, &bEoL, sizeof(bEoL));
+    }
+
+    return dbgcGdbStubCtxPktProcessQueryThreadInfoWorker(pThis);
+}
+
+
+/**
+ * Processes the 'ThreadExtraInfo' query.
+ *
+ * @returns Status code.
+ * @param   pThis               The GDB stub context.
+ * @param   pbArgs              Pointer to the start of the arguments in the packet.
+ * @param   cbArgs              Size of arguments in bytes.
+ */
+static int dbgcGdbStubCtxPktProcessQueryThreadExtraInfo(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+{
+    /* Skip the , following the qThreadExtraInfo start. */
+    if (   cbArgs < 1
+        || pbArgs[0] != ',')
+        return VERR_NET_PROTOCOL_ERROR;
+
+    cbArgs--;
+    pbArgs++;
+
+    /* We know there is an # character denoting the end so the following must return with VWRN_TRAILING_CHARS. */
+    VMCPUID idCpu;
+    int rc = RTStrToUInt32Ex((const char *)pbArgs, NULL /*ppszNext*/, 16, &idCpu);
+    if (   rc == VWRN_TRAILING_CHARS
+        && idCpu > 0)
+    {
+        idCpu--;
+
+        VMCPUID cCpus = DBGFR3CpuGetCount(pThis->Dbgc.pUVM);
+        if (idCpu < cCpus)
+        {
+            const char *pszCpuState = DBGFR3CpuGetState(pThis->Dbgc.pUVM, idCpu);
+            size_t cchCpuState = strlen(pszCpuState);
+
+            if (!pszCpuState)
+                pszCpuState = "DBGFR3CpuGetState() -> NULL";
+
+            rc = dbgcGdbStubCtxReplySendBegin(pThis);
+            if (RT_SUCCESS(rc))
+            {
+                /* Convert the characters to hex. */
+                const char *pachCur = pszCpuState;
+
+                while (   cchCpuState
+                       && RT_SUCCESS(rc))
+                {
+                    uint8_t achHex[512 + 1];
+                    size_t cbThisSend = RT_MIN((sizeof(achHex) - 1) / 2, cchCpuState); /* Each character needs two bytes. */
+
+                    rc = dbgcGdbStubCtxEncodeBinaryAsHex(&achHex[0], cbThisSend * 2 + 1, pachCur, cbThisSend);
+                    if (RT_SUCCESS(rc))
+                        rc = dbgcGdbStubCtxReplySendData(pThis, &achHex[0], cbThisSend * 2);
+
+                    pachCur     += cbThisSend;
+                    cchCpuState -= cbThisSend;
+                }
+
+                dbgcGdbStubCtxReplySendEnd(pThis);
+            }
+        }
+        else
+            rc = dbgcGdbStubCtxReplySendErrSts(pThis, VERR_NET_PROTOCOL_ERROR);
+    }
+    else if (   RT_SUCCESS(rc)
+             || !idCpu)
+        rc = dbgcGdbStubCtxReplySendErrSts(pThis, VERR_NET_PROTOCOL_ERROR);
+
+    return rc;
+}
+
+
+/**
  * List of supported query packets.
  */
 static const GDBSTUBQPKTPROC g_aQPktProcs[] =
 {
 #define GDBSTUBQPKTPROC_INIT(a_Name, a_pfnProc) { a_Name, sizeof(a_Name) - 1, a_pfnProc }
+    GDBSTUBQPKTPROC_INIT("C",                  dbgcGdbStubCtxPktProcessQueryThreadId),
+    GDBSTUBQPKTPROC_INIT("Attached",           dbgcGdbStubCtxPktProcessQueryAttached),
     GDBSTUBQPKTPROC_INIT("TStatus",            dbgcGdbStubCtxPktProcessQueryTStatus),
     GDBSTUBQPKTPROC_INIT("Supported",          dbgcGdbStubCtxPktProcessQuerySupported),
     GDBSTUBQPKTPROC_INIT("Xfer:features:read", dbgcGdbStubCtxPktProcessQueryXferFeatRead),
     GDBSTUBQPKTPROC_INIT("Rcmd",               dbgcGdbStubCtxPktProcessQueryRcmd),
+    GDBSTUBQPKTPROC_INIT("fThreadInfo",        dbgcGdbStubCtxPktProcessQueryThreadInfoStart),
+    GDBSTUBQPKTPROC_INIT("sThreadInfo",        dbgcGdbStubCtxPktProcessQueryThreadInfoCont),
+    GDBSTUBQPKTPROC_INIT("ThreadExtraInfo",    dbgcGdbStubCtxPktProcessQueryThreadExtraInfo),
 #undef GDBSTUBQPKTPROC_INIT
 };
 
@@ -1380,6 +1577,50 @@ static int dbgcGdbStubCtxPktProcessV(PGDBSTUBCTX pThis, const uint8_t *pbPktRem,
 
 
 /**
+ * Processes a 'H<op><thread-id>' packet, sending the appropriate reply.
+ *
+ * @returns Status code.
+ * @param   pThis               The GDB stub context.
+ * @param   pbPktRem            The remaining packet data (without the 'H').
+ * @param   cbPktRem            Size of the remaining packet in bytes.
+ */
+static int dbgcGdbStubCtxPktProcessH(PGDBSTUBCTX pThis, const uint8_t *pbPktRem, size_t cbPktRem)
+{
+    int rc = VINF_SUCCESS;
+
+    if (*pbPktRem == 'g')
+    {
+        cbPktRem--;
+        pbPktRem++;
+
+        /* We know there is an # character denoting the end so the following must return with VWRN_TRAILING_CHARS. */
+        VMCPUID idCpu;
+        rc = RTStrToUInt32Ex((const char *)pbPktRem, NULL /*ppszNext*/, 16, &idCpu);
+        if (   rc == VWRN_TRAILING_CHARS
+            && idCpu > 0)
+        {
+            idCpu--;
+
+            VMCPUID cCpus = DBGFR3CpuGetCount(pThis->Dbgc.pUVM);
+            if (idCpu < cCpus)
+            {
+                pThis->Dbgc.idCpu = idCpu;
+                rc = dbgcGdbStubCtxReplySendOk(pThis);
+            }
+            else
+                rc = dbgcGdbStubCtxReplySendErrSts(pThis, VERR_NET_PROTOCOL_ERROR);
+        }
+        else
+            rc = dbgcGdbStubCtxReplySendErrSts(pThis, VERR_NET_PROTOCOL_ERROR);
+    }
+    else /* Do not support the 'c' operation for now (will be handled through vCont later on anyway). */
+        rc = dbgcGdbStubCtxReplySend(pThis, NULL, 0);
+
+    return rc;
+}
+
+
+/**
  * Processes a completely received packet.
  *
  * @returns Status code.
@@ -1419,6 +1660,16 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
             {
                 if (DBGFR3IsHalted(pThis->Dbgc.pUVM))
                     DBGFR3Resume(pThis->Dbgc.pUVM);
+                break;
+            }
+            case 'H':
+            {
+                rc = dbgcGdbStubCtxPktProcessH(pThis, &pThis->pbPktBuf[2], pThis->cbPkt - 1);
+                break;
+            }
+            case 'T':
+            {
+                rc = dbgcGdbStubCtxReplySendOk(pThis);
                 break;
             }
             case 'g': /* Read general registers. */
@@ -2150,7 +2401,6 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
             break;
         }
 
-#if 0
         default:
         {
             /*
@@ -2210,23 +2460,6 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
             break;
         }
     }
-
-    /*
-     * Prompt, anyone?
-     */
-    if (fPrintPrompt && RT_SUCCESS(rc))
-    {
-        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
-        pDbgc->fReady = true;
-        if (RT_SUCCESS(rc))
-            pDbgc->pBack->pfnSetReady(pDbgc->pBack, true);
-        pDbgc->cMultiStepsLeft = 0;
-    }
-#else
-        default:
-            break;
-    }
-#endif
 
     return rc;
 }
@@ -2424,13 +2657,14 @@ static int dbgcGdbStubCtxCreate(PPGDBSTUBCTX ppGdbStubCtx, PDBGCBACK pBack, unsi
     dbgcEvalInit();
 
     /* Init the GDB stub specific parts. */
-    pThis->cbPktBufMax     = 0;
-    pThis->pbPktBuf        = NULL;
-    pThis->fFeatures       = GDBSTUBCTX_FEATURES_F_TGT_DESC;
-    pThis->pachTgtXmlDesc  = NULL;
-    pThis->cbTgtXmlDesc    = 0;
-    pThis->fExtendedMode   = false;
-    pThis->fOutput         = false;
+    pThis->cbPktBufMax      = 0;
+    pThis->pbPktBuf         = NULL;
+    pThis->fFeatures        = GDBSTUBCTX_FEATURES_F_TGT_DESC;
+    pThis->pachTgtXmlDesc   = NULL;
+    pThis->cbTgtXmlDesc     = 0;
+    pThis->fExtendedMode    = false;
+    pThis->fOutput          = false;
+    pThis->fInThrdInfoQuery = false;
     RTListInit(&pThis->LstTps);
     dbgcGdbStubCtxReset(pThis);
 
@@ -2500,9 +2734,6 @@ DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
             pThis->Dbgc.pVM   = pVM;
             pThis->Dbgc.pUVM  = pUVM;
             pThis->Dbgc.idCpu = 0;
-            rc = pThis->Dbgc.CmdHlp.pfnPrintf(&pThis->Dbgc.CmdHlp, NULL,
-                                              "Current VM is %08x, CPU #%u\n" /** @todo get and print the VM name! */
-                                              , pThis->Dbgc.pVM, pThis->Dbgc.idCpu);
         }
         else
             rc = pThis->Dbgc.CmdHlp.pfnVBoxError(&pThis->Dbgc.CmdHlp, rc, "When trying to attach to VM %p\n", pThis->Dbgc.pVM);
