@@ -983,11 +983,11 @@ static int dbgcGdbStubCtxTgtXmlDescCreate(PGDBSTUBCTX pThis)
                 if (pReg->pszGroup)
                    cchStr = RTStrPrintf2(pachXmlCur, cbLeft,
                                          "<reg name=\"%s\" bitsize=\"%u\" regnum=\"%u\" type=\"%s\" group=\"%s\"/>\n",
-                                         pReg->pszName, pReg->cBits, pReg->enmReg, pReg->pszType, pReg->pszGroup);
+                                         pReg->pszName, pReg->cBits, i, pReg->pszType, pReg->pszGroup);
                 else
                    cchStr = RTStrPrintf2(pachXmlCur, cbLeft,
                                          "<reg name=\"%s\" bitsize=\"%u\" regnum=\"%u\" type=\"%s\"/>\n",
-                                         pReg->pszName, pReg->cBits, pReg->enmReg, pReg->pszType);
+                                         pReg->pszName, pReg->cBits, i, pReg->pszType);
 
                 if (cchStr > 0)
                 {
@@ -1017,15 +1017,10 @@ static int dbgcGdbStubCtxTgtXmlDescCreate(PGDBSTUBCTX pThis)
  * @returns Pointer to the GDB register descriptor or NULL if not found.
  * @param   enmReg              The register to look for.
  */
-static const GDBREGDESC *dbgcGdbStubRegGet(DBGFREG enmReg)
+static const GDBREGDESC *dbgcGdbStubRegGet(uint32_t idxReg)
 {
-    for (uint32_t i = 0; i < RT_ELEMENTS(g_aGdbRegs); i++)
-    {
-        const struct GDBREGDESC *pReg = &g_aGdbRegs[i];
-
-        if (pReg->enmReg == enmReg)
-            return pReg;
-    }
+    if (RT_LIKELY(idxReg < RT_ELEMENTS(g_aGdbRegs)))
+        return &g_aGdbRegs[idxReg];
 
     return NULL;
 }
@@ -1495,8 +1490,7 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                 {
                     DBGFREGVAL RegVal;
                     DBGFREGVALTYPE enmType;
-                    DBGFREG enmReg = (DBGFREG)uReg;
-                    const GDBREGDESC *pReg = dbgcGdbStubRegGet(enmReg);
+                    const GDBREGDESC *pReg = dbgcGdbStubRegGet(uReg);
                     if (RT_LIKELY(pReg))
                     {
                         rc = DBGFR3RegNmQuery(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, pReg->pszName, &RegVal, &enmType);
@@ -1536,8 +1530,7 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                                                        '=', &pbPktSep);
                 if (RT_SUCCESS(rc))
                 {
-                    DBGFREG enmReg = (DBGFREG)uReg;
-                    const GDBREGDESC *pReg = dbgcGdbStubRegGet(enmReg);
+                    const GDBREGDESC *pReg = dbgcGdbStubRegGet(uReg);
 
                     if (pReg)
                     {
@@ -1672,6 +1665,13 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                 /* This is what the 'harakiri' command is doing. */
                 for (;;)
                     exit(126);
+                break;
+            }
+            case 'D': /* Detach */
+            {
+                rc = dbgcGdbStubCtxReplySendOk(pThis);
+                if (RT_SUCCESS(rc))
+                    rc = VERR_DBGC_QUIT;
                 break;
             }
             default:
