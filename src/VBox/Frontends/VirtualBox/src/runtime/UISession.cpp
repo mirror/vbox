@@ -1125,13 +1125,13 @@ void UISession::prepareConnections()
             this, &UISession::sltHandleHostScreenCountChange);
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenResized,
             this, &UISession::sltHandleHostScreenGeometryChange);
-# ifdef VBOX_WS_X11
+# if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaRecalculated,
             this, &UISession::sltHandleHostScreenAvailableAreaChange);
-# else /* !VBOX_WS_X11 */
+# else /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaResized,
             this, &UISession::sltHandleHostScreenAvailableAreaChange);
-# endif /* !VBOX_WS_X11 */
+# endif /* !VBOX_WS_X11 || VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 #endif /* !VBOX_WS_MAC */
 }
 

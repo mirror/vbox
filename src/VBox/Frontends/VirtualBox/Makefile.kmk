@@ -257,6 +257,7 @@ UICommon_DEFS         += \
 	$(if $(VBOX_WITH_3D_ACCELERATION),VBOX_WITH_3D_ACCELERATION) \
 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \
 	$(if $(VBOX_GUI_WITH_PIDFILE),VBOX_GUI_WITH_PIDFILE) \
+	$(if $(VBOX_GUI_WITH_CUSTOMIZATIONS1),VBOX_GUI_WITH_CUSTOMIZATIONS1) \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE) \
 	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
 ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1055,12 +1056,14 @@ endif
 UICommon_QT_MOCSRCS.darwin += \
 	src/platform/darwin/UIWindowMenuManager.cpp
 
-UICommon_QT_MOCSRCS.linux += \
+ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
+ UICommon_QT_MOCSRCS.linux += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
-UICommon_QT_MOCSRCS.solaris += \
+ UICommon_QT_MOCSRCS.solaris += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
-UICommon_QT_MOCSRCS.freebsd += \
+ UICommon_QT_MOCSRCS.freebsd += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
+endif
 
 
 #

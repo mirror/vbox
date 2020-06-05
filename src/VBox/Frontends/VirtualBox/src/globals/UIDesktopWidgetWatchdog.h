@@ -56,7 +56,7 @@ signals:
     /** Notifies about work-area resize for the host-screen with @a iHostScreenIndex. */
     void sigHostScreenWorkAreaResized(int iHostScreenIndex);
 
-#ifdef VBOX_WS_X11
+#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /** Notifies about work-area recalculated for the host-screen with @a iHostScreenIndex. */
     void sigHostScreenWorkAreaRecalculated(int iHostScreenIndex);
 #endif
@@ -139,7 +139,7 @@ private slots:
     void sltHandleHostScreenWorkAreaResized(const QRect &availableGeometry);
 #endif /* QT_VERSION != 0 */
 
-#ifdef VBOX_WS_X11
+#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /** Handles @a availableGeometry calculation result for the host-screen with @a iHostScreenIndex. */
     void sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry);
 #endif
@@ -154,7 +154,7 @@ private:
     /** Holds the static instance of the desktop-widget watchdog. */
     static UIDesktopWidgetWatchdog *s_pInstance;
 
-#ifdef VBOX_WS_X11
+#if defined(VBOX_WS_X11) && !defined(VBOX_GUI_WITH_CUSTOMIZATIONS1)
     /** Updates host-screen configuration according to new @a cHostScreenCount.
       * @note If cHostScreenCount is equal to -1 we have to acquire it ourselves. */
     void updateHostScreenConfiguration(int cHostScreenCount = -1);
@@ -166,10 +166,10 @@ private:
     void cleanupExistingWorkers();
 
     /** Holds current host-screen available-geometries. */
-    QVector<QRect> m_availableGeometryData;
+    QVector<QRect>    m_availableGeometryData;
     /** Holds current workers determining host-screen available-geometries. */
     QVector<QWidget*> m_availableGeometryWorkers;
-#endif /* VBOX_WS_X11 */
+#endif /* VBOX_WS_X11 && !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 };
 
 /** 'Official' name for the desktop-widget watchdog singleton. */
