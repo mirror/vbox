@@ -1253,7 +1253,10 @@ NTSTATUS vboxWddmDrvCfgInit(PUNICODE_STRING pRegStr)
     g_RefreshRate = 0;
     Status = vboxWddmRegQueryValueDword(hKey, VBOXWDDM_CFG_STR_RATE, &dwValue);
     if (NT_SUCCESS(Status))
+    {
+        LOGREL(("WDDM: Guest refresh rate %u", dwValue));
         g_RefreshRate = dwValue;
+    }
 
     if (g_RefreshRate == 0 || g_RefreshRate > 240)
         g_RefreshRate = VBOXWDDM_DEFAULT_REFRESH_RATE;
