@@ -447,8 +447,6 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
  */
 static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
-    setCurrentCommand(HELP_CMD_CLOUDLIST);
-    setCurrentSubcommand(HELP_SCOPE_CLOUDLIST);
     if (a->argc == iFirst)
     {
         RTPrintf("Empty command parameter list, show help.\n");
@@ -467,15 +465,6 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "help",                1006, RTGETOPT_REQ_NOTHING },
         { "--help",              1007, RTGETOPT_REQ_NOTHING }
     };
-
-//  Bstr bstrProvider(pCommonOpts->provider.pszProviderName);
-//  Bstr bstrProfile(pCommonOpts->profile.pszProfileName);
-//
-//  /* check for required options */
-//  if (bstrProvider.isEmpty())
-//      return errorSyntax(USAGE_S_NEWCMD, "Parameter --provider is required");
-//  if (bstrProfile.isEmpty())
-//      return errorSyntax(USAGE_S_NEWCMD, "Parameter --profile is required");
 
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
@@ -1101,8 +1090,6 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
 
 static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
-    setCurrentCommand(HELP_CMD_CLOUDINSTANCE);
-    setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE);
     if (a->argc == iFirst)
     {
         RTPrintf("Empty command parameter list, show help.\n");
@@ -1737,8 +1724,6 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
 static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
-    setCurrentCommand(HELP_CMD_CLOUDIMAGE);
-    setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE);
     if (a->argc == iFirst)
     {
         RTPrintf("Empty command parameter list, show help.\n");

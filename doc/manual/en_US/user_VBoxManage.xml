@@ -9098,11 +9098,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
 
   <xi:include href="user_man_VBoxManage-cloudprofile.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="user_man_VBoxManage-cloudlist.xml"      xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-  <xi:include href="user_man_VBoxManage-cloudinstance.xml"  xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-  <xi:include href="user_man_VBoxManage-cloudimage.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-cloud.xml"              xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-signova.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 

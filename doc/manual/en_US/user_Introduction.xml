@@ -3748,7 +3748,7 @@
       <para>
         You can also use the <command>VBoxManage cloud
         instance</command> command to create and manage instances on a
-        cloud service. See <xref linkend="vboxmanage-cloudinstance"/>.
+        cloud service. See <xref linkend="vboxmanage-cloud"/>.
       </para>
 
     </sect2>
