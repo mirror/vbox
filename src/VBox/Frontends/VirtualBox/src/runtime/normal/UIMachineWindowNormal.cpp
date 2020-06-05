@@ -365,6 +365,7 @@ void UIMachineWindowNormal::loadSettings()
         m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
     }
 
+#ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
     /* Load window geometry: */
     {
         /* Load extra-data: */
@@ -418,6 +419,7 @@ void UIMachineWindowNormal::loadSettings()
         normalizeGeometry(true /* adjust position */);
 #endif /* !VBOX_WS_X11 */
     }
+#endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
 void UIMachineWindowNormal::saveSettings()
