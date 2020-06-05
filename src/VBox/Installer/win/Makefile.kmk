@@ -463,7 +463,7 @@ $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) && !defined(VBOX_WITH_MSM_INSTALL)
 		$$@ \
 		$$(basename $$@).wixpdb \
 		$$(VBOX_WIN_INST_REPACK_DIR)/2-link-$$(PACKAGE_NAME_LANG).cmd ))
-	kmk_time $(VBOX_PATH_WIX)/light.exe -v -nologo \
+	kmk_time $$(REDIRECT_EXT) -E WIX_TEMP='$$(subst /,\,$$(@D))' -- $(VBOX_PATH_WIX)/light.exe -v -nologo \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
@@ -523,7 +523,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang)_$(KBUILD_TARGET_ARCH).msm: \
 		| $$$$(dir $$$$@)
 	$$(call MSG_L1,Linking installer $$@)
 	$(QUIET)$(RM) -f $$(wildcard $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_BASE)-r*_$(lang).msi)
-	$(VBOX_PATH_WIX)/light.exe -v -nologo \
+	kmk_time $$(REDIRECT_EXT) -E WIX_TEMP='$$(subst /,\,$$(@D))' -- $(VBOX_PATH_WIX)/light.exe -v -nologo \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
