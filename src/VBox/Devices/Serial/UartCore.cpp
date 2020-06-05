@@ -812,6 +812,9 @@ static void uartR3TxQueueCopyFrom(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORE
 static VBOXSTRICTRC uartXmit(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThisCC, uint8_t bVal)
 {
     int rc = VINF_SUCCESS;
+#ifdef IN_RING3
+    bool fNotifyDrv = false;
+#endif
 
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
     {
@@ -830,17 +833,7 @@ static VBOXSTRICTRC uartXmit(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pT
         pThis->fThreEmptyPending = false;
         uartIrqUpdate(pDevIns, pThis, pThisCC);
         if (uartFifoUsedGet(&pThis->FifoXmit) == 1)
-        {
-            if (   pThisCC->pDrvSerial
-                && !(pThis->uRegMcr & UART_REG_MCR_LOOP))
-            {
-                int rc2 = pThisCC->pDrvSerial->pfnDataAvailWrNotify(pThisCC->pDrvSerial);
-                if (RT_FAILURE(rc2))
-                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pDevIns->iInstance, rc2));
-            }
-            else
-                PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
-        }
+            fNotifyDrv = true;
 #endif
     }
     else
@@ -855,20 +848,30 @@ static VBOXSTRICTRC uartXmit(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pT
             UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
             pThis->fThreEmptyPending = false;
             uartIrqUpdate(pDevIns, pThis, pThisCC);
-            if (   pThisCC->pDrvSerial
-                && !(pThis->uRegMcr & UART_REG_MCR_LOOP))
-            {
-                int rc2 = pThisCC->pDrvSerial->pfnDataAvailWrNotify(pThisCC->pDrvSerial);
-                if (RT_FAILURE(rc2))
-                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pDevIns->iInstance, rc2));
-            }
-            else
-                PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+            fNotifyDrv = true;
 #endif
         }
         else
             pThis->uRegThr = bVal;
     }
+
+#ifdef IN_RING3
+    if (fNotifyDrv)
+    {
+        if (   pThisCC->pDrvSerial
+            && !(pThis->uRegMcr & UART_REG_MCR_LOOP))
+        {
+            /* Leave the device critical section before calling into the lower driver. */
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+            int rc2 = pThisCC->pDrvSerial->pfnDataAvailWrNotify(pThisCC->pDrvSerial);
+            if (RT_FAILURE(rc2))
+                LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pDevIns->iInstance, rc2));
+            PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+        }
+        else
+            PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
+    }
+#endif
 
     return rc;
 }
@@ -1500,17 +1503,11 @@ static DECLCALLBACK(void) uartR3RcvFifoTimeoutTimer(PPDMDEVINS pDevIns, PTMTIMER
     PUARTCORE   pThis   = pThisCC->pShared;
     RT_NOREF(pTimer);
 
-    VBOXSTRICTRC rc1 = PDMDevHlpTimerLockClock2(pDevIns, pThis->hTimerRcvFifoTimeout, &pThis->CritSect,
-                                                VINF_SUCCESS /* must get it */);
-    AssertRCReturnVoid(VBOXSTRICTRC_VAL(rc1));
-
     if (pThis->FifoRecv.cbUsed < pThis->FifoRecv.cbItl)
     {
         pThis->fIrqCtiPending = true;
         uartIrqUpdate(pDevIns, pThis, pThisCC);
     }
-
-    PDMDevHlpTimerUnlockClock2(pDevIns, pThis->hTimerRcvFifoTimeout, &pThis->CritSect);
 }
 
 /**
@@ -1939,14 +1936,18 @@ DECLHIDDEN(int) uartR3Attach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pT
             AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", pDevIns->iInstance));
             return VERR_PDM_MISSING_INTERFACE;
         }
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
         uartR3XferReset(pDevIns, pThis, pThisCC);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
         pThisCC->pDrvBase = NULL;
         pThisCC->pDrvSerial = NULL;
         rc = VINF_SUCCESS;
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
         uartR3XferReset(pDevIns, pThis, pThisCC);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         LogRel(("Serial#%d: no unit\n", pDevIns->iInstance));
     }
     else /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
@@ -2059,9 +2060,12 @@ DECLHIDDEN(int) uartR3Init(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pThi
     /*
      * Create the receive FIFO character timeout indicator timer.
      */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, uartR3RcvFifoTimeoutTimer, pThisCC,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, uartR3RcvFifoTimeoutTimer, pThisCC,
                               TMTIMER_FLAGS_NO_CRIT_SECT, "UART Rcv FIFO Timer",
                               &pThis->hTimerRcvFifoTimeout);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTimerRcvFifoTimeout, &pThis->CritSect);
     AssertRCReturn(rc, rc);
 
     /*
