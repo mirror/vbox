@@ -176,8 +176,7 @@ VMMR3DECL(const char *) DBGFR3CpuGetState(PUVM pUVM, VMCPUID idCpu)
     AssertReturn(idCpu < pUVM->pVM->cCpus, NULL);
 
     PVMCPU pVCpu = VMMGetCpuById(pUVM->pVM, idCpu);
-    VMCPUSTATE enmCpuState;
-    ASMAtomicReadSize(&pVCpu->enmState, &enmCpuState);
+    VMCPUSTATE enmCpuState = (VMCPUSTATE)ASMAtomicReadU32((volatile uint32_t *)&pVCpu->enmState);
 
     switch (enmCpuState)
     {
