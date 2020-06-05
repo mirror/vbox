@@ -26741,7 +26741,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <interface name="ICloudMachine" extends="$unknown"
-             uuid="d8497a14-8fbf-11ea-aa85-2b4d110b053e"
+             uuid="8e3b08e6-a605-11ea-9edf-3bfdab40b718"
              wsmap="managed"
              reservedMethods="16" reservedAttributes="8">
     <desc>
@@ -26917,6 +26917,57 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Unregister this cloud machine and delete all its cloud artifacts.
       </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="createConsoleConnection">
+      <param name="sshPublicKey" type="wstring" dir="in">
+        <desc>
+          SSH public key authorized to connect to the console.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="deleteConsoleConnection">
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getSerialConsoleCommand" const="yes">
+      <param name="command" type="IStringArray" dir="out">
+        <desc>
+          String array of length 1 that contains as its only element
+          the shell command to establish ssh connection to the cloud
+          machine serial console.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getVNCConsoleCommand" const="yes">
+      <param name="command" type="IStringArray" dir="out">
+        <desc>
+          String array of length 1 that contains as its only element
+          the shell command to establish ssh port forwarding for the
+          VNC connection to the cloud machine console.
+        </desc>
+      </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>
           Progress object to track the operation completion.
