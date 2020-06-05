@@ -26,6 +26,7 @@
 #include <VBox/vmm/nem.h>   /* NEMR3IsEnabled */
 #include <iprt/cdefs.h>
 #include <iprt/err.h>
+#include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
@@ -97,6 +98,26 @@ typedef enum GDBSTUBRECVSTATE
 
 
 /**
+ * A tracepoint descriptor.
+ */
+typedef struct GDBSTUBTP
+{
+    /** List node for the list of tracepoints. */
+    RTLISTNODE                  NdTps;
+    /** The breakpoint number from the DBGF API. */
+    uint32_t                    iBp;
+    /** The tracepoint type for identification. */
+    GDBSTUBTPTYPE               enmTpType;
+    /** The tracepoint address for identification. */
+    uint64_t                    GdbTgtAddr;
+    /** The tracepoint kind for identification. */
+    uint64_t                    uKind;
+} GDBSTUBTP;
+/** Pointer to a tracepoint. */
+typedef GDBSTUBTP *PGDBSTUBTP;
+
+
+/**
  * GDB stub context data.
  */
 typedef struct GDBSTUBCTX
@@ -127,6 +148,11 @@ typedef struct GDBSTUBCTX
     bool                        fExtendedMode;
     /** Flag whether was something was output using the 'O' packet since it was reset last. */
     bool                        fOutput;
+    /** List of registered trace points.
+     * GDB removes breakpoints/watchpoints using the parameters they were
+     * registered with while we only use the BP number form DBGF internally.
+     * Means we have to track all registration so we can remove them later on. */
+    RTLISTANCHOR                LstTps;
 } GDBSTUBCTX;
 /** Pointer to the GDB stub context data. */
 typedef GDBSTUBCTX *PGDBSTUBCTX;
@@ -223,6 +249,80 @@ typedef const GDBSTUBFEATDESC *PCGDBSTUBFEATDESC;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+
+
+/**
+ * Tries to find a trace point with the given parameters in the list of registered trace points.
+ *
+ * @returns Pointer to the trace point registration record if found or NULL if none was found.
+ * @param   pThis               The GDB stub context.
+ * @param   enmTpType           The trace point type.
+ * @param   GdbTgtAddr          Target address given by GDB.
+ * @param   uKind               Trace point kind.
+ */
+static PGDBSTUBTP dbgcGdbStubTpFind(PGDBSTUBCTX pThis, GDBSTUBTPTYPE enmTpType, uint64_t GdbTgtAddr, uint64_t uKind)
+{
+    PGDBSTUBTP pTpCur = NULL;
+    RTListForEach(&pThis->LstTps, pTpCur, GDBSTUBTP, NdTps)
+    {
+        if (   pTpCur->enmTpType == enmTpType
+            && pTpCur->GdbTgtAddr == GdbTgtAddr
+            && pTpCur->uKind == uKind)
+            return pTpCur;
+    }
+
+    return NULL;
+}
+
+
+/**
+ * Registers a new trace point.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The GDB stub context.
+ * @param   enmTpType           The trace point type.
+ * @param   GdbTgtAddr          Target address given by GDB.
+ * @param   uKind               Trace point kind.
+ * @param   iBp                 The internal DBGF breakpoint ID this trace point was registered with.
+ */
+static int dbgcGdbStubTpRegister(PGDBSTUBCTX pThis, GDBSTUBTPTYPE enmTpType, uint64_t GdbTgtAddr, uint64_t uKind, uint32_t iBp)
+{
+    int rc = VERR_ALREADY_EXISTS;
+
+    /* Can't register a tracepoint with the same parameters twice or we can't decide whom to remove later on. */
+    PGDBSTUBTP pTp = dbgcGdbStubTpFind(pThis, enmTpType, GdbTgtAddr, uKind);
+    if (!pTp)
+    {
+        pTp = (PGDBSTUBTP)RTMemAllocZ(sizeof(*pTp));
+        if (pTp)
+        {
+            pTp->enmTpType  = enmTpType;
+            pTp->GdbTgtAddr = GdbTgtAddr;
+            pTp->uKind      = uKind;
+            pTp->iBp        = iBp;
+            RTListAppend(&pThis->LstTps, &pTp->NdTps);
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Deregisters the given trace point (needs to be unregistered from DBGF by the caller before).
+ *
+ * @returns nothing.
+ * @param   pTp                 The trace point to deregister.
+ */
+static void dbgcGdbStubTpDeregister(PGDBSTUBTP pTp)
+{
+    RTListNodeRemove(&pTp->NdTps);
+    RTMemFree(pTp);
+}
+
 
 /**
  * Converts a given to the hexadecimal value if valid.
@@ -1605,8 +1705,15 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                     {
                         rc = dbgcBpAdd(&pThis->Dbgc, iBp, NULL /*pszCmd*/);
                         if (RT_SUCCESS(rc))
-                            rc = dbgcGdbStubCtxReplySendOk(pThis);
-                        else
+                        {
+                            rc = dbgcGdbStubTpRegister(pThis, enmTpType, GdbTgtTpAddr, uKind, iBp);
+                            if (RT_SUCCESS(rc))
+                                rc = dbgcGdbStubCtxReplySendOk(pThis);
+                            else
+                                dbgcBpDelete(&pThis->Dbgc, iBp);
+                        }
+
+                        if (RT_FAILURE(rc))
                         {
                             DBGFR3BpClear(pThis->Dbgc.pUVM, iBp);
                             rc = dbgcGdbStubCtxReplySendErrSts(pThis, rc);
@@ -1628,18 +1735,23 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                 rc = dbgcGdbStubCtxParseTpPktArgs(&pThis->pbPktBuf[2], pThis->cbPkt - 1, &enmTpType, &GdbTgtTpAddr, &uKind);
                 if (RT_SUCCESS(rc))
                 {
-                    DBGFADDRESS BpAddr;
-                    DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &BpAddr, GdbTgtTpAddr);
+                    PGDBSTUBTP pTp = dbgcGdbStubTpFind(pThis, enmTpType, GdbTgtTpAddr, uKind);
+                    if (pTp)
+                    {
+                        int rc2 = DBGFR3BpClear(pThis->Dbgc.pUVM, pTp->iBp);
+                        if (RT_SUCCESS(rc2) || rc2 == VERR_DBGF_BP_NOT_FOUND)
+                            dbgcBpDelete(&pThis->Dbgc, pTp->iBp);
 
-                    uint32_t iBp = 0; /** @todo Need to keep track which breakpoint number belongs to which breakpoint. */
-                    int rc2 = DBGFR3BpClear(pThis->Dbgc.pUVM, iBp);
-                    if (RT_SUCCESS(rc2) || rc2 == VERR_DBGF_BP_NOT_FOUND)
-                        dbgcBpDelete(&pThis->Dbgc, iBp);
-
-                    if (RT_SUCCESS(rc2))
-                        rc = dbgcGdbStubCtxReplySendOk(pThis);
+                        if (RT_SUCCESS(rc2))
+                        {
+                            dbgcGdbStubTpDeregister(pTp);
+                            rc = dbgcGdbStubCtxReplySendOk(pThis);
+                        }
+                        else
+                            rc = dbgcGdbStubCtxReplySendErrSts(pThis, rc);
+                    }
                     else
-                        rc = dbgcGdbStubCtxReplySendErrSts(pThis, rc);
+                        rc = dbgcGdbStubCtxReplySendErrSts(pThis, VERR_NOT_FOUND);
                 }
                 else
                     rc = dbgcGdbStubCtxReplySendErrSts(pThis, rc);
@@ -2319,6 +2431,7 @@ static int dbgcGdbStubCtxCreate(PPGDBSTUBCTX ppGdbStubCtx, PDBGCBACK pBack, unsi
     pThis->cbTgtXmlDesc    = 0;
     pThis->fExtendedMode   = false;
     pThis->fOutput         = false;
+    RTListInit(&pThis->LstTps);
     dbgcGdbStubCtxReset(pThis);
 
     *ppGdbStubCtx = pThis;
