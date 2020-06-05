@@ -315,6 +315,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                     sShellOpt = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
                     reporter.log('Loaded processes:');
                     oTxsSession.syncExec(sShell, (sShell, sShellOpt, "tasklist.exe", "/FO", "CSV"), fIgnoreErrors = True);
+                    reporter.log('Listing autostart entries:');
+                    oTxsSession.syncExec("wmic.exe", ("wmic.exe", "startup", "get"), fIgnoreErrors = True);
                     reporter.log('Downloading logs ...');
                     self.txsDownloadFiles(oSession, oTxsSession,
                               [ ( self.getGuestVBoxTrayClientLogFile(oTestVm),
