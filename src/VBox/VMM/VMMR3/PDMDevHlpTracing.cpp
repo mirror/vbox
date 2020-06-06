@@ -589,37 +589,5 @@ DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDe
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnIoApicSendMsi} */
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_IoApicSendMsi: caller='%s'/%d: GCPhys=%RGp uValue=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, uValue));
-
-    /*
-     * Validate input.
-     */
-    Assert(GCPhys != 0);
-    Assert(uValue != 0);
-
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-
-    DBGFTracerEvtIoApicMsi(pVM, pDevIns->Internal.s.hDbgfTraceEvtSrc, GCPhys, uValue);
-
-    /*
-     * Do the job.
-     */
-    pdmLock(pVM);
-    uint32_t uTagSrc;
-    pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
-    VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
-
-    PDMIoApicSendMsi(pVM, GCPhys, uValue, uTagSrc);  /* (The API takes the lock recursively.) */
-
-    pdmUnlock(pVM);
-
-    LogFlow(("pdmR3DevHlp_IoApicSendMsi: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
-}
-
-
 /** @} */
 

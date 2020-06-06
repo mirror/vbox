@@ -474,27 +474,5 @@ DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, 
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR0,pfnIoApicSendMsi} */
-DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR0DevHlpTracing_IoApicSendMsi: caller='%s'/%d: GCPhys=%RGp uValue=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, uValue));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-
-    DBGFTracerEvtIoApicMsi(pGVM, pDevIns->Internal.s.hDbgfTraceEvtSrc, GCPhys, uValue);
-
-    uint32_t uTagSrc;
-    pDevIns->Internal.s.pIntR3R0->uLastIrqTag = uTagSrc = pdmCalcIrqTag(pGVM, pDevIns->Internal.s.pInsR3R0->idTracing);
-    VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pGVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
-
-    if (pGVM->pdm.s.IoApic.pDevInsR0)
-        pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
-    else
-        AssertFatalMsgFailed(("Lazy bastards!"));
-
-    LogFlow(("pdmR0DevHlpTracing_IoApicSendMsi: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
-}
-
-
 /** @} */
 
