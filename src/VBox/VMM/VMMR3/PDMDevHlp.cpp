@@ -1964,36 +1964,6 @@ static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iI
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnIoApicSendMsi} */
-static DECLCALLBACK(void) pdmR3DevHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_IoApicSendMsi: caller='%s'/%d: GCPhys=%RGp uValue=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, uValue));
-
-    /*
-     * Validate input.
-     */
-    Assert(GCPhys != 0);
-    Assert(uValue != 0);
-
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-
-    /*
-     * Do the job.
-     */
-    pdmLock(pVM);
-    uint32_t uTagSrc;
-    pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
-    VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
-
-    PDMIoApicSendMsi(pVM, GCPhys, uValue, uTagSrc);  /* (The API takes the lock recursively.) */
-
-    pdmUnlock(pVM);
-
-    LogFlow(("pdmR3DevHlp_IoApicSendMsi: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnDriverAttach} */
 static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
@@ -4213,7 +4183,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
     pdmR3DevHlp_ISASetIrqNoWait,
-    pdmR3DevHlp_IoApicSendMsi,
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_DriverReconfigure,
@@ -5062,7 +5031,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
     pdmR3DevHlp_ISASetIrqNoWait,
-    pdmR3DevHlp_IoApicSendMsi,
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_DriverReconfigure,

@@ -416,7 +416,7 @@ typedef PDMDEVREGR3 *PPDMDEVREGR3;
 /** Const pointer to a PDM Device Structure. */
 typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 /** Current DEVREGR3 version number. */
-#define PDM_DEVREGR3_VERSION                    PDM_VERSION_MAKE(0xffff, 4, 0)
+#define PDM_DEVREGR3_VERSION                    PDM_VERSION_MAKE(0xffff, 5, 0)
 
 
 /** PDM Device Flags.
@@ -640,7 +640,7 @@ typedef PDMDEVREGR0 *PPDMDEVREGR0;
 /** Pointer to a const ring-0 PDM device registration structure. */
 typedef PDMDEVREGR0 const *PCPDMDEVREGR0;
 /** Current DEVREGR0 version number. */
-#define PDM_DEVREGR0_VERSION                    PDM_VERSION_MAKE(0xff80, 1, 0)
+#define PDM_DEVREGR0_VERSION                    PDM_VERSION_MAKE(0xff80, 2, 0)
 
 
 /**
@@ -710,7 +710,7 @@ typedef PDMDEVREGRC *PPDMDEVREGRC;
 /** Pointer to a const raw-mode PDM device registration structure. */
 typedef PDMDEVREGRC const *PCPDMDEVREGRC;
 /** Current DEVREGRC version number. */
-#define PDM_DEVREGRC_VERSION                    PDM_VERSION_MAKE(0xff81, 1, 0)
+#define PDM_DEVREGRC_VERSION                    PDM_VERSION_MAKE(0xff81, 2, 0)
 
 
 
@@ -3379,16 +3379,6 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnISASetIrqNoWait,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
-     * Send an MSI straight to the I/O APIC.
-     *
-     * @param   pDevIns         PCI device instance.
-     * @param   GCPhys          Physical address MSI request was written.
-     * @param   uValue          Value written.
-     * @thread  Any thread, but will involve the emulation thread.
-     */
-    DECLR3CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue));
-
-    /**
      * Attaches a driver (chain) to the device.
      *
      * The first call for a LUN this will serve as a registration of the LUN. The pBaseInterface and
@@ -4470,16 +4460,6 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(void, pfnISASetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
-     * Send an MSI straight to the I/O APIC.
-     *
-     * @param   pDevIns         PCI device instance.
-     * @param   GCPhys          Physical address MSI request was written.
-     * @param   uValue          Value written.
-     * @thread  Any thread, but will involve the emulation thread.
-     */
-    DECLRCCALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue));
-
-    /**
      * Read physical memory.
      *
      * @returns VINF_SUCCESS (for now).
@@ -4918,16 +4898,6 @@ typedef struct PDMDEVHLPR0
      * @thread  Any thread, but will involve the emulation thread.
      */
     DECLR0CALLBACKMEMBER(void, pfnISASetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
-
-    /**
-     * Send an MSI straight to the I/O APIC.
-     *
-     * @param   pDevIns         PCI device instance.
-     * @param   GCPhys          Physical address MSI request was written.
-     * @param   uValue          Value written.
-     * @thread  Any thread, but will involve the emulation thread.
-     */
-    DECLR0CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue));
 
     /**
      * Read physical memory.
@@ -7287,14 +7257,6 @@ DECLINLINE(void) PDMDevHlpISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 DECLINLINE(void) PDMDevHlpISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     pDevIns->CTX_SUFF(pHlp)->pfnISASetIrq(pDevIns, iIrq, iLevel);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnIoApicSendMsi
- */
-DECLINLINE(void) PDMDevHlpIoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue)
-{
-    pDevIns->CTX_SUFF(pHlp)->pfnIoApicSendMsi(pDevIns, GCPhys, uValue);
 }
 
 #ifdef IN_RING3
