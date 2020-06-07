@@ -317,6 +317,10 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                     oTxsSession.syncExec(sShell, (sShell, sShellOpt, "tasklist.exe", "/FO", "CSV"), fIgnoreErrors = True);
                     reporter.log('Listing autostart entries:');
                     oTxsSession.syncExec(sShell, (sShell, sShellOpt, "wmic.exe", "startup", "get"), fIgnoreErrors = True);
+                    reporter.log('Listing autostart entries:');
+                    oTxsSession.syncExec(sShell, (sShell, sShellOpt, "dir",
+                                                  oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'VBox*')),
+                                         fIgnoreErrors = True);
                     reporter.log('Downloading logs ...');
                     self.txsDownloadFiles(oSession, oTxsSession,
                               [ ( self.getGuestVBoxTrayClientLogFile(oTestVm),
