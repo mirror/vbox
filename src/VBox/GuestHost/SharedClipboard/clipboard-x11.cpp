@@ -128,7 +128,8 @@ SHCL_X11_DECL(SHCLX11FMTTABLE) g_aFormats[] =
     /** @todo Anything else we need to add here? */
     /** @todo Add Wayland / Weston support. */
 #endif
-    { "LAST",                               SHCLX11FMT_INVALID,     VBOX_SHCL_FMT_NONE },
+    /** @todo r=aeichner The "LAST" in there was causing tstClipboardGH-X11.cpp:XInternAtom to crash because it was reading out side of the array. */
+    { NULL,                                 SHCLX11FMT_INVALID,     VBOX_SHCL_FMT_NONE },
 };
 
 
@@ -727,7 +728,7 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
     {
         for (i = 0; i < *pcLen; ++i)
         {
-            for (j = 0; j < RT_ELEMENTS(g_aFormats); ++j)
+            for (j = 0; j < RT_ELEMENTS(g_aFormats) - 1; ++j) /** @todo r=aeichner Don't include the last invalid format. */
             {
                 Atom target = XInternAtom(XtDisplay(widget),
                                           g_aFormats[j].pcszAtom, False);
