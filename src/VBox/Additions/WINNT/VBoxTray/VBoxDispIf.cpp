@@ -1772,7 +1772,7 @@ static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, 
 
 BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, const VMMDevDisplayDef *paDispDef)
 {
-    const VMMDevDisplayDef* pDispDef;
+    const VMMDevDisplayDef *pDispDef;
     uint32_t i;
 
     VBOXDISPIF_OP Op;
@@ -1797,11 +1797,16 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
             Size.cx = pDispDef->cx;
             Size.cy = pDispDef->cy;
 
-            vboxDispIfUpdateModesWDDM(&Op, pDispDef->idDisplay, &Size);
+            winEr = vboxDispIfUpdateModesWDDM(&Op, pDispDef->idDisplay, &Size);
+            if (winEr != ERROR_SUCCESS)
+                break;
         }
     }
 
     vboxDispIfOpEnd(&Op);
+
+    if (winEr != ERROR_SUCCESS)
+        return (winEr == ERROR_SUCCESS);
 
     VBOXDISPIF_WDDM_DISPCFG DispCfg;
     winEr = vboxDispIfWddmDcCreate(&DispCfg, QDC_ALL_PATHS);
@@ -2039,154 +2044,6 @@ BOOL VBoxDispIfResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, cons
     }
 
     vboxDispIfWddmDcTerm(&DispCfg);
-
-    return (winEr == ERROR_SUCCESS);
-}
-
-BOOL VBoxDispIfResizeDisplayVista(PCVBOXDISPIF const pIf, uint32_t cDispDef, const VMMDevDisplayDef *paDispDef)
-{
-    const VMMDevDisplayDef* pDispDef;
-    VBOXDISPIF_OP Op;
-    DWORD winEr = ERROR_SUCCESS;
-    uint32_t id;
-    DISPLAY_DEVICE *paDisplayDevices;
-    DEVMODE *paDisplayModes;
-    RECTL *paRects;
-    DWORD DevNum = 0;
-    DWORD DevPrimaryNum = 0;
-    DWORD status;
-    DISPLAY_DEVICE *pDev;
-    DEVMODE *pMode;
-    DWORD cDisplays;
-
-    //    if (!pCtx->fAnyX)
-    //       Width &= 0xFFF8;
-
-    cDisplays = VBoxDisplayGetCount();
-
-    paDisplayDevices = (DISPLAY_DEVICE *)alloca(sizeof(DISPLAY_DEVICE) * cDisplays);
-    paDisplayModes = (DEVMODE *)alloca(sizeof(DEVMODE) * cDisplays);
-    paRects = (RECTL *)alloca(sizeof(RECTL) * cDisplays);
-
-    status = VBoxDisplayGetConfig(cDisplays, &DevPrimaryNum, &DevNum, paDisplayDevices, paDisplayModes);
-    if (status != NO_ERROR)
-    {
-        LogFlowFunc(("ResizeDisplayDevice: VBoxGetDisplayConfig failed, %d\n", status));
-        return FALSE;
-    }
-
-    if (cDisplays != DevNum)
-        LogFlowFunc(("ResizeDisplayDevice: NumDevices(%d) != DevNum(%d)\n", cDisplays, DevNum));
-
-    if (cDisplays != cDispDef)
-    {
-        LogFlowFunc(("ResizeDisplayDevice: cDisplays(%d) != cModeHints(%d)\n", cDisplays, cDispDef));
-        return FALSE;
-    }
-
-    vboxDispIfOpBegin(pIf, &Op);
-    if (winEr != ERROR_SUCCESS)
-    {
-        WARN(("VBoxTray: vboxDispIfOpBegin failed winEr 0x%x", winEr));
-        return (winEr == ERROR_SUCCESS);
-    }
-
-    for (id = 0; id < cDispDef; ++id)
-    {
-        pDispDef = &paDispDef[id];
-
-        if (RT_BOOL(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
-            continue;
-
-        if (   RT_BOOL(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_CX)
-            && RT_BOOL(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_CY))
-        {
-            RTRECTSIZE Size;
-            Size.cx = pDispDef->cx;
-            Size.cy = pDispDef->cy;
-
-            vboxDispIfUpdateModesWDDM(&Op, id, &Size);
-        }
-    }
-
-    vboxDispIfOpEnd(&Op);
-
-    for (id = 0; id < cDispDef; id++)
-    {
-        DEVMODE tempDevMode;
-
-        ZeroMemory (&tempDevMode, sizeof (tempDevMode));
-        tempDevMode.dmSize = sizeof(DEVMODE);
-
-        EnumDisplaySettings((LPSTR)paDisplayDevices[id].DeviceName, 0xffffff, &tempDevMode);
-    }
-
-    for (id = 0; id < cDispDef; ++id)
-    {
-        pDev = &paDisplayDevices[id];
-        pMode = &paDisplayModes[id];
-        pDispDef = &paDispDef[id];
-
-        if (pDev->StateFlags & DISPLAY_DEVICE_ACTIVE)
-        {
-            if (!(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
-            {
-                pMode->dmFields = 0;
-
-                if (pMode->dmPosition.x != pDispDef->xOrigin || pMode->dmPosition.y != pDispDef->yOrigin)
-                {
-                    pMode->dmPosition.x = pDispDef->xOrigin;
-                    pMode->dmPosition.y = pDispDef->yOrigin;
-                    pMode->dmFields |= DM_POSITION;
-                }
-
-                if (pMode->dmBitsPerPel != pDispDef->cBitsPerPixel)
-                {
-                    pMode->dmBitsPerPel = pDispDef->cBitsPerPixel;
-                    pMode->dmFields |= DM_BITSPERPEL;
-                }
-
-                if (pMode->dmPelsWidth != pDispDef->cx)
-                {
-                    pMode->dmPelsWidth = pDispDef->cx;
-                    pMode->dmFields |= DM_PELSWIDTH;
-                }
-
-                if (pMode->dmPelsHeight != pDispDef->cy)
-                {
-                    pMode->dmPelsHeight = pDispDef->cy;
-                    pMode->dmFields |= DM_PELSHEIGHT;
-                }
-
-                if (pMode->dmFields)
-                    status = pIf->modeData.wddm.pfnChangeDisplaySettingsEx((LPSTR)pDev->DeviceName, pMode, NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
-            }
-            else
-            {
-                DEVMODE tmpDevMode;
-
-                ZeroMemory(&tmpDevMode, sizeof(DEVMODE));
-                tmpDevMode.dmSize = sizeof(DEVMODE);
-                tmpDevMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_POSITION | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
-
-                status = pIf->modeData.wddm.pfnChangeDisplaySettingsEx(pDev->DeviceName, &tmpDevMode, NULL, CDS_UPDATEREGISTRY | CDS_NORESET, NULL);
-            }
-        }
-        else
-        {
-            pMode->dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_POSITION | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
-
-            pMode->dmPosition.x = pDispDef->xOrigin;
-            pMode->dmPosition.y = pDispDef->yOrigin;
-            pMode->dmBitsPerPel = pDispDef->cBitsPerPixel;
-            pMode->dmPelsWidth  = pDispDef->cx;
-            pMode->dmPelsHeight = pDispDef->cy;
-
-            status = pIf->modeData.wddm.pfnChangeDisplaySettingsEx((LPSTR)pDev->DeviceName, pMode, NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
-        }
-    }
-
-    pIf->modeData.wddm.pfnChangeDisplaySettingsEx(NULL, NULL, NULL, 0, NULL);
 
     return (winEr == ERROR_SUCCESS);
 }
