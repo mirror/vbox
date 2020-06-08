@@ -430,8 +430,8 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         && (machine().GetGraphicsAdapter().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA))
         storeGuestSizeHint(QSize(iWidth, iHeight));
 
-    LogRelFlow(("GUI: UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d\n",
-                (unsigned long)m_uScreenId, iWidth, iHeight));
+    LogRel2(("GUI: UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d\n",
+             (unsigned long)m_uScreenId, frameBufferSizeNew.width(), frameBufferSizeNew.height()));
 }
 
 void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight)

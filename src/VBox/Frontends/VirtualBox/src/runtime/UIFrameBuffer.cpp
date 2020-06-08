@@ -880,7 +880,7 @@ STDMETHODIMP UIFrameBufferPrivate::VideoModeSupported(ULONG uWidth, ULONG uHeigh
     /* Make sure result pointer is valid: */
     if (!pfSupported)
     {
-        LogRel3(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Invalid pfSupported pointer!\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Invalid pfSupported pointer!\n",
                  (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
         return E_POINTER;
@@ -892,7 +892,7 @@ STDMETHODIMP UIFrameBufferPrivate::VideoModeSupported(ULONG uWidth, ULONG uHeigh
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel3(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Ignored!\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
         /* Unlock access to frame-buffer: */
@@ -913,8 +913,12 @@ STDMETHODIMP UIFrameBufferPrivate::VideoModeSupported(ULONG uWidth, ULONG uHeigh
         && (uHeight > (ULONG)screenSize.height())
         && (uHeight > (ULONG)height()))
         *pfSupported = FALSE;
-    LogRel3(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Supported=%s\n",
-             (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight, *pfSupported ? "TRUE" : "FALSE"));
+    if (*pfSupported)
+       LogRel2(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu is supported\n",
+                (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
+    else
+       LogRel(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu is NOT supported\n",
+               (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
     /* Unlock access to frame-buffer: */
     unlock();
@@ -1187,12 +1191,11 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     /* If source-bitmap invalid: */
     if (m_sourceBitmap.isNull())
     {
-        LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, Using fallback buffer since no source bitmap is provided\n",
-                iWidth, iHeight));
-
         /* Remember new size came from hint: */
         m_iWidth = iWidth;
         m_iHeight = iHeight;
+        LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, Using fallback buffer since no source bitmap is provided\n",
+                m_iWidth, m_iHeight));
 
         /* And recreate fallback buffer: */
         m_image = QImage(m_iWidth, m_iHeight, QImage::Format_RGB32);
@@ -1201,9 +1204,6 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     /* If source-bitmap valid: */
     else
     {
-        LogRel2(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, Directly using source bitmap content\n",
-                 iWidth, iHeight));
-
         /* Acquire source-bitmap attributes: */
         BYTE *pAddress = NULL;
         ULONG ulWidth = 0;
@@ -1222,6 +1222,8 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
         /* Remember new actual size: */
         m_iWidth = (int)ulWidth;
         m_iHeight = (int)ulHeight;
+        LogRel2(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, Directly using source bitmap content\n",
+                 m_iWidth, m_iHeight));
 
         /* Recreate QImage on the basis of source-bitmap content: */
         m_image = QImage(pAddress, m_iWidth, m_iHeight, ulBytesPerLine, QImage::Format_RGB32);
