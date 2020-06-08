@@ -409,7 +409,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 
 #ifdef VBOX_WS_MAC
     /* Update MacOS X dock icon size: */
-    machineLogic()->updateDockIconSize(screenId(), iWidth, iHeight);
+    machineLogic()->updateDockIconSize(screenId(), frameBufferSizeNew.width(), frameBufferSizeNew.height());
 #endif /* VBOX_WS_MAC */
 
     /* Notify frame-buffer resize: */
@@ -428,7 +428,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     if (   !isFullscreenOrSeamless()
         && uisession()->isGuestSupportsGraphics()
         && (machine().GetGraphicsAdapter().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA))
-        storeGuestSizeHint(QSize(iWidth, iHeight));
+        storeGuestSizeHint(frameBufferSizeNew);
 
     LogRel2(("GUI: UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d\n",
              (unsigned long)m_uScreenId, frameBufferSizeNew.width(), frameBufferSizeNew.height()));
