@@ -862,6 +862,8 @@ DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterfac
     PVGASTATE           pThis      = PDMDEVINS_2_DATA(pThisCC->pDevIns, PVGASTATE);
     PVMSVGAR3STATE      pSVGAState = pThisCC->svga.pSvgaR3State;
 
+    AssertReturnVoid(pSVGAState);
+
     /* We assume cPositions is the # of outputs Xserver reports and paPositions is (-1, -1) for disabled monitors. */
     cPositions = RT_MIN(cPositions, RT_ELEMENTS(pSVGAState->aScreens));
     for (uint32_t i = 0; i < cPositions; ++i)
