@@ -53,6 +53,8 @@
 #endif
 #include <VBox/log.h>
 
+#include <VBox/err.h>
+
 /* Default desktop state tracking */
 #include <Wtsapi32.h>
 
