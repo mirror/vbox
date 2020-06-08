@@ -240,7 +240,7 @@ GLPFN void (GLAPIENTRYP pfn_glNormalPointer)(GLenum type, GLsizei stride, const 
 
 GLPFN void (GLAPIENTRYP pfn_glOrtho)(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble nearVal, GLdouble farVal);
 #define glOrtho pfn_glOrtho
- 
+
 GLPFN void (GLAPIENTRYP pfn_glPixelStorei)(GLenum pname, GLint param);
 #define glPixelStorei pfn_glPixelStorei
 
