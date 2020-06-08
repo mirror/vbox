@@ -1113,6 +1113,7 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       CfgPrint "PATH_TOOL_VCC100      := " & g_strPathVCC
       CfgPrint "PATH_TOOL_VCC100X86   := $(PATH_TOOL_VCC100)"
       CfgPrint "PATH_TOOL_VCC100AMD64 := $(PATH_TOOL_VCC100)"
+      CfgPrint "VBOX_WITH_NEW_VCC     :="
       if LogFileExists(strPathVC, "atlmfc/include/atlbase.h") then
          PrintResult "Visual C++ v10 with ATL", g_strPathVCC
       elseif   LogFileExists(g_strPathDDK, "inc/atl71/atlbase.h") _
