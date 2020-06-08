@@ -3397,6 +3397,7 @@ DxgkDdiEscape(
                     return Status;
                 }
 
+                Status = STATUS_SUCCESS;
                 break;
             }
             case VBOXESC_TARGET_CONNECTIVITY:
@@ -3429,6 +3430,7 @@ DxgkDdiEscape(
                 pTarget->fDisabled = !RT_BOOL(pData->fu32Connect & 1);
                 pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY;
 
+                Status = STATUS_SUCCESS;
                 break;
             }
             case VBOXESC_DBGPRINT:
