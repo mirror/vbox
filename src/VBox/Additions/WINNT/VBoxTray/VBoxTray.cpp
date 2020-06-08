@@ -311,13 +311,22 @@ static int vboxTrayServicesStart(PVBOXSERVICEENV pEnv)
 
         if (RT_FAILURE(rc2))
         {
-            LogRel(("Failed to initialize service '%s', rc=%Rrc\n", pSvc->pDesc->pszName, rc2));
-            if (rc2 == VERR_NOT_SUPPORTED)
+            switch (rc2)
             {
-                LogRel(("Service '%s' is not supported on this system\n", pSvc->pDesc->pszName));
-                rc2 = VINF_SUCCESS;
+                case VERR_NOT_SUPPORTED:
+                    LogRel(("Service '%s' is not supported on this system\n", pSvc->pDesc->pszName));
+                    rc2 = VINF_SUCCESS; /* Keep going. */
+                    break;
+
+                case VERR_HGCM_SERVICE_NOT_FOUND:
+                    LogRel(("Service '%s' is not available on the host\n", pSvc->pDesc->pszName));
+                    rc2 = VINF_SUCCESS; /* Keep going. */
+                    break;
+
+                default:
+                    LogRel(("Failed to initialize service '%s', rc=%Rrc\n", pSvc->pDesc->pszName, rc2));
+                    break;
             }
-            /* Keep going. */
         }
         else
         {

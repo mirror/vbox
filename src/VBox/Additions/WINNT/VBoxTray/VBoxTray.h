@@ -90,6 +90,9 @@ typedef struct _VBOXSERVICEDESC
     /**
      * Initializes a service.
      * @returns VBox status code.
+     *          VERR_NOT_SUPPORTED if the service is not supported on this guest system. Logged.
+     *          VERR_HGCM_SERVICE_NOT_FOUND if the service is not available on the host system. Logged.
+     *          Returning any other error will be considered as a fatal error.
      * @param   pEnv
      * @param   ppInstance      Where to return the thread-specific instance data.
      * @todo r=bird: The pEnv type is WRONG!  Please check all your const pointers.
