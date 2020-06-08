@@ -103,6 +103,9 @@ int glLdrGetExtFunctions(PPDMDEVINS pDevIns);
 GLPFN void (GLAPIENTRYP pfn_glAlphaFunc)(GLenum func, GLclampf ref);
 #define glAlphaFunc pfn_glAlphaFunc
 
+GLPFN void (GLAPIENTRYP pfn_glBegin)(GLenum mode);
+#define glBegin pfn_glBegin
+
 GLPFN void (GLAPIENTRYP pfn_glBindTexture)(GLenum target, GLuint texture);
 #define glBindTexture pfn_glBindTexture
 
@@ -162,6 +165,15 @@ GLPFN void (GLAPIENTRYP pfn_glEnable)(GLenum cap);
 
 GLPFN void (GLAPIENTRYP pfn_glEnableClientState)(GLenum array);
 #define glEnableClientState pfn_glEnableClientState
+
+GLPFN void (GLAPIENTRYP pfn_glEnd)(void);
+#define glEnd pfn_glEnd
+
+GLPFN void (GLAPIENTRYP pfn_glFinish)(void);
+#define glFinish pfn_glFinish
+
+GLPFN void (GLAPIENTRYP pfn_glFlush)(void);
+#define glFlush pfn_glFlush
 
 GLPFN void (GLAPIENTRYP pfn_glFogf)(GLenum pname, GLfloat param);
 #define glFogf pfn_glFogf
@@ -226,6 +238,9 @@ GLPFN void (GLAPIENTRYP pfn_glMultMatrixf)(const GLfloat *m);
 GLPFN void (GLAPIENTRYP pfn_glNormalPointer)(GLenum type, GLsizei stride, const void *pointer);
 #define glNormalPointer pfn_glNormalPointer
 
+GLPFN void (GLAPIENTRYP pfn_glOrtho)(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble nearVal, GLdouble farVal);
+#define glOrtho pfn_glOrtho
+ 
 GLPFN void (GLAPIENTRYP pfn_glPixelStorei)(GLenum pname, GLint param);
 #define glPixelStorei pfn_glPixelStorei
 
@@ -265,6 +280,9 @@ GLPFN void (GLAPIENTRYP pfn_glStencilMask)(GLuint mask);
 GLPFN void (GLAPIENTRYP pfn_glStencilOp)(GLenum fail, GLenum zfail, GLenum zpass);
 #define glStencilOp pfn_glStencilOp
 
+GLPFN void (GLAPIENTRYP pfn_glTexCoord2f)(GLfloat s, GLfloat t);
+#define glTexCoord2f pfn_glTexCoord2f
+
 GLPFN void (GLAPIENTRYP pfn_glTexCoordPointer)(GLint size, GLenum type, GLsizei stride, const void *pointer);
 #define glTexCoordPointer pfn_glTexCoordPointer
 
@@ -282,6 +300,9 @@ GLPFN void (GLAPIENTRYP pfn_glTexParameteri)(GLenum target, GLenum pname, GLint 
 
 GLPFN void (GLAPIENTRYP pfn_glTexSubImage2D)(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
 #define glTexSubImage2D pfn_glTexSubImage2D
+
+GLPFN void (GLAPIENTRYP pfn_glVertex2i)(GLint x, GLint y);
+#define glVertex2i pfn_glVertex2i
 
 GLPFN void (GLAPIENTRYP pfn_glVertexPointer)(GLint size, GLenum type, GLsizei stride, const void *pointer);
 #define glVertexPointer pfn_glVertexPointer
@@ -321,8 +342,17 @@ GLPFN BOOL (WINAPI *pfn_wglShareLists)(HGLRC, HGLRC);
 /*
  * GLX
  */
+GLPFN int (* pfn_glXGetFBConfigAttrib)(Display * dpy, GLXFBConfig config, int attribute, int * value);
+#define glXGetFBConfigAttrib pfn_glXGetFBConfigAttrib
+
+GLPFN XVisualInfo * (* pfn_glXGetVisualFromFBConfig)(Display * dpy, GLXFBConfig config);
+#define glXGetVisualFromFBConfig pfn_glXGetVisualFromFBConfig
+
 GLPFN Bool (* pfn_glXQueryVersion)(Display * dpy,  int * major,  int * minor);
 #define glXQueryVersion pfn_glXQueryVersion
+
+GLPFN GLXFBConfig * (* pfn_glXChooseFBConfig)(Display * dpy, int screen, const int * attrib_list, int * nelements);
+#define glXChooseFBConfig pfn_glXChooseFBConfig
 
 GLPFN XVisualInfo* (* pfn_glXChooseVisual)(Display * dpy,  int screen,  int * attribList);
 #define glXChooseVisual pfn_glXChooseVisual
@@ -330,11 +360,17 @@ GLPFN XVisualInfo* (* pfn_glXChooseVisual)(Display * dpy,  int screen,  int * at
 GLPFN GLXContext (* pfn_glXCreateContext)(Display * dpy,  XVisualInfo * vis,  GLXContext shareList,  Bool direct);
 #define glXCreateContext pfn_glXCreateContext
 
+GLPFN GLXPixmap (* pfn_glXCreatePixmap)(Display * dpy, GLXFBConfig config, Pixmap pixmap, const int * attrib_list);
+#define glXCreatePixmap pfn_glXCreatePixmap
+
 GLPFN Bool (* pfn_glXMakeCurrent)(Display * dpy,  GLXDrawable drawable,  GLXContext ctx);
 #define glXMakeCurrent pfn_glXMakeCurrent
 
 GLPFN void (* pfn_glXDestroyContext)(Display * dpy,  GLXContext ctx);
 #define glXDestroyContext pfn_glXDestroyContext
+
+GLPFN void (* pfn_glXDestroyPixmap)(Display * dpy, GLXPixmap Pixmap);
+#define glXDestroyPixmap pfn_glXDestroyPixmap
 
 /*
  * X11
@@ -348,6 +384,9 @@ GLPFN int (* pfn_XCloseDisplay)(Display *display);
 GLPFN Colormap (* pfn_XCreateColormap)(Display *display, Window w, Visual *visual, int alloc);
 #define XCreateColormap pfn_XCreateColormap
 
+GLPFN Pixmap (* pfn_XCreatePixmap)(Display *display, Drawable d, unsigned int width, unsigned int height, unsigned int depth);
+#define XCreatePixmap pfn_XCreatePixmap
+
 GLPFN Window (* pfn_XCreateWindow)(Display *display, Window parent, int x, int y, unsigned int width, unsigned int height,
     unsigned int border_width, int depth, unsigned int window_class, Visual *visual, unsigned long valuemask, XSetWindowAttributes *attributes);
 #define XCreateWindow pfn_XCreateWindow
@@ -357,6 +396,12 @@ GLPFN Window (* pfn_XDefaultRootWindow)(Display *display);
 
 GLPFN int (* pfn_XDestroyWindow)(Display *display, Window w);
 #define XDestroyWindow pfn_XDestroyWindow
+
+GLPFN int (* pfn_XFree)(void *data);
+#define XFree pfn_XFree
+
+GLPFN int (* pfn_XFreePixmap)(Display *display, Pixmap pixmap);
+#define XFreePixmap pfn_XFreePixmap
 
 GLPFN Status (* pfn_XInitThreads)(void);
 #define XInitThreads pfn_XInitThreads
@@ -369,6 +414,12 @@ GLPFN Display *(* pfn_XOpenDisplay)(char *display_name);
 
 GLPFN int (* pfn_XPending)(Display *display);
 #define XPending pfn_XPending
+
+GLPFN int (* (* pfn_XSetErrorHandler)(int (*handler)(Display *, XErrorEvent *)))(Display *, XErrorEvent *);
+#define XSetErrorHandler pfn_XSetErrorHandler
+
+GLPFN int (* pfn_XSync)(Display *display, Bool discard);
+#define XSync pfn_XSync
 
 #endif
 
