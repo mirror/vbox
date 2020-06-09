@@ -57,12 +57,12 @@ private:
 
 D3D9Test::D3D9Test()
     :
+    miRenderId(3),
+    miRenderMode(RenderModeStep),
     mHwnd(0),
     mpD3D9(0),
     mcDevices(1),
-    mpRender(0),
-    miRenderId(3),
-    miRenderMode(RenderModeStep)
+    mpRender(0)
 {
     memset(&mpaDevices, 0, sizeof(mpaDevices));
     memset(&mPP, 0, sizeof(mPP));
