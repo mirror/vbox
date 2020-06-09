@@ -590,12 +590,16 @@ VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATECC pThisCC, uint32_t idScre
 
 void vmsvgaR3ResetScreens(PVGASTATECC pThisCC)
 {
+# ifdef VBOX_WITH_VMSVGA3D
     for (uint32_t idScreen = 0; idScreen < (uint32_t)RT_ELEMENTS(pThisCC->svga.pSvgaR3State->aScreens); ++idScreen)
     {
         VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, idScreen);
         if (pScreen)
             vmsvga3dDestroyScreen(pThisCC, pScreen);
     }
+# else
+    RT_NOREF(pThisCC);
+# endif
 }
 #endif /* IN_RING3 */
 
