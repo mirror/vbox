@@ -1786,7 +1786,7 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setErrorExternal(this, "Reading from guest process failed",
+                hr = setErrorExternal(this, Utf8StrFmt("Reading %RU32 bytes from guest process handle %RU32 failed", aToRead, aHandle),
                                       GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str()));
                 break;
 
@@ -1878,7 +1878,7 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, ProcessWaitResul
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setErrorExternal(this, "Waiting for guest process failed",
+                hr = setErrorExternal(this, Utf8StrFmt("Waiting for guest process (flags %#x) failed", aWaitFor),
                                       GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str()));
                 break;
 
@@ -1932,7 +1932,7 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setErrorExternal(this, "Writing to guest process failed",
+                hr = setErrorExternal(this, Utf8StrFmt("Writing %RU32 bytes (flags %#x) to guest process failed", cbData, aFlags),
                                       GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str()));
                 break;
 
