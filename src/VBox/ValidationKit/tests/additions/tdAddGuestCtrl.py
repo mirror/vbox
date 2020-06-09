@@ -33,6 +33,7 @@ __version__ = "$Revision$"
 import errno
 import os
 import random
+import string
 import struct
 import sys
 import threading
@@ -2981,7 +2982,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                 # Append a random number of arguments with random length.
                 for _ in xrange(0, self.oTestFiles.oRandom.randrange(1, 16)):
-                    asArgs.append(self.oTestFiles.generateFilenameEx((16 * 1024) - len(str(sEndMarker)), 1));
+                    asArgs.append(''.join(random.choice(string.lowercase)
+                                          for _ in range(self.oTestFiles.oRandom.randrange(1, 16 * 1024))));
 
                 asArgs.append(sEndMarker);
 
