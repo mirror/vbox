@@ -126,6 +126,10 @@ typedef struct VMSVGAVIEWPORT
     uint32_t        uAlignment;
 } VMSVGAVIEWPORT;
 
+#ifdef VBOX_WITH_VMSVGA3D
+typedef struct VMSVGAHWSCREEN *PVMSVGAHWSCREEN;
+#endif
+
 /**
  * Screen object state.
  */
@@ -148,6 +152,10 @@ typedef struct VMSVGASCREENOBJECT
     uint32_t    cBpp;
     bool        fDefined;
     bool        fModified;
+#ifdef VBOX_WITH_VMSVGA3D
+    /** Pointer to the HW accelerated (3D) screen data. */
+    R3PTRTYPE(PVMSVGAHWSCREEN) pHwScreen;
+#endif
 } VMSVGASCREENOBJECT;
 
 /** Pointer to the private VMSVGA ring-3 state structure.

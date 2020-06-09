@@ -2792,6 +2792,26 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid)
     return VINF_SUCCESS;
 }
 
+int vmsvga3dBackDefineScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
+{
+    RT_NOREF(pThisCC, pScreen);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int vmsvga3dBackDestroyScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
+{
+    RT_NOREF(pThisCC, pScreen);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int vmsvga3dBackSurfaceBlitToScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen,
+                                    SVGASignedRect destRect, SVGA3dSurfaceImageId srcImage,
+                                    SVGASignedRect srcRect, uint32_t cRects, SVGASignedRect *paRects)
+{
+    RT_NOREF(pThisCC, pScreen, destRect, srcImage, srcRect, cRects, paRects);
+    return VERR_NOT_IMPLEMENTED;
+}
+
 static int vmsvga3dContextTrackUsage(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
 {
 #ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL

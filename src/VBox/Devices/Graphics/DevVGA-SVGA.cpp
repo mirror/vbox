@@ -12,6 +12,7 @@
  *  - LogRel for the usual important stuff.
  *  - LogRel2 for cursor.
  *  - LogRel3 for 3D performance data.
+ *  - LogRel4 for HW accelerated graphics output.
  */
 
 /*
@@ -167,6 +168,11 @@
 # include "DevVGA-SVGA3d.h"
 # ifdef RT_OS_DARWIN
 #  include "DevVGA-SVGA3d-cocoa.h"
+# endif
+# ifdef RT_OS_LINUX
+#  ifdef IN_RING3
+#include "DevVGA-SVGA3d-glLdr.h"
+#  endif
 # endif
 #endif
 
@@ -580,6 +586,16 @@ VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATECC pThisCC, uint32_t idScre
         return &pSVGAState->aScreens[idScreen];
     }
     return NULL;
+}
+
+void vmsvgaR3ResetScreens(PVGASTATECC pThisCC)
+{
+    for (uint32_t idScreen = 0; idScreen < (uint32_t)RT_ELEMENTS(pThisCC->svga.pSvgaR3State->aScreens); ++idScreen)
+    {
+        VMSVGASCREENOBJECT *pScreen = vmsvgaR3GetScreenObject(pThisCC, idScreen);
+        if (pScreen)
+            vmsvga3dDestroyScreen(pThisCC, pScreen);
+    }
 }
 #endif /* IN_RING3 */
 
@@ -3089,6 +3105,7 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
             if (pThis->svga.f3DEnabled)
             {
                 /* The 3d subsystem must be reset from the fifo thread. */
+                vmsvgaR3ResetScreens(pThisCC); /** @todo Also destroy screens on PowerOff. */
                 vmsvga3dReset(pThisCC);
             }
 # endif
@@ -3635,6 +3652,10 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
     PVGASTATER3     pThisCC    = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
     PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
     int             rc;
+
+# ifdef RT_OS_LINUX
+    XInitThreads();
+# endif
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
@@ -4416,6 +4437,10 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
                 pThis->svga.fGFBRegisters = false;
                 vmsvgaR3ChangeMode(pThis, pThisCC);
+
+# ifdef VBOX_WITH_VMSVGA3D
+                vmsvga3dDefineScreen(pThisCC, pScreen);
+# endif
                 break;
             }
 
@@ -4436,6 +4461,9 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                 pScreen->fDefined  = false;
                 pScreen->idScreen  = idScreen;
 
+# ifdef VBOX_WITH_VMSVGA3D
+                vmsvga3dDestroyScreen(pThisCC, pScreen);
+# endif
                 vmsvgaR3ChangeMode(pThis, pThisCC);
                 break;
             }
