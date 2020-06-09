@@ -2983,7 +2983,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                 # Append a random number of arguments with random length.
                 for _ in xrange(0, self.oTestFiles.oRandom.randrange(1, 64)):
-                    asArgs.append(''.join(random.choice(string.lowercase)
+                    asArgs.append(''.join(random.choice(string.ascii_lowercase)
                                           for _ in range(self.oTestFiles.oRandom.randrange(1, 255))));
 
                 asArgs.append(sEndMarker);
