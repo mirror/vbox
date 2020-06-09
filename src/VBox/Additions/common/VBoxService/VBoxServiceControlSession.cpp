@@ -1093,8 +1093,6 @@ static int vgsvcGstCtrlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession, P
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-/** @todo this hardcoded stuff needs redoing.   */
-
     /* Initialize maximum environment block size -- needed as input
      * parameter to retrieve the stuff from the host. On output this then
      * will contain the actual block size. */
@@ -2288,7 +2286,7 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
      */
     char szExeName[RTPATH_MAX];
     char *pszExeName = RTProcGetExecutablePath(szExeName, sizeof(szExeName));
-    AssertReturn(pszExeName, VERR_FILENAME_TOO_LONG);
+    AssertPtrReturn(pszExeName, VERR_FILENAME_TOO_LONG);
 
     char szParmSessionID[32];
     RTStrPrintf(szParmSessionID, sizeof(szParmSessionID), "--session-id=%RU32", pSessionThread->pStartupInfo->uSessionID);
