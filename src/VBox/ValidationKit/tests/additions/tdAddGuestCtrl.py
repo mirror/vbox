@@ -1430,7 +1430,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         # The tests. Must-succeed tests should be first.
         atTests = [
-            ( True,  self.prepareGuestForDebugging,         None,               'Manaul Debugging',),
+            ( True,  self.prepareGuestForDebugging,         None,               'Manual Debugging',),
             ( True,  self.prepareGuestForTesting,           None,               'Preparations',),
             ( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
             ( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
@@ -1493,6 +1493,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if self.oDebug.sImgPath is None: # If no debugging enabled, bail out.
+            reporter.log('Skipping debugging');
             return True
 
         reporter.log('Preparing for debugging ...');
@@ -2957,18 +2958,35 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         # Test very long arguments.
         # Old(er) Windows OSes tend to crash in cmd.exe, so skip this.
+        # Regarding paths:
+        # - We have RTPATH_BIG_MAX (64K)
+        # - MSDN says 32K for CreateFileW()
+        # - On Windows, each path component must not be longer than MAX_PATH (260), see
+        #   https://docs.microsoft.com/en-us/windows/win32/fileio/filesystem-functionality-comparison#limits
         if  self.oTstDrv.fpApiVer >= 6.1 \
         and oTestVm.sKind not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
+            sEndMarker = '--end-marker';
+            if oTestVm.isWindows() \
+            or oTestVm.isOS2():
+                sCmd   = sShell;
+            else:
+                sCmd   = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'echo');
+
             for _ in xrange(0, 16):
-                sFileName = str(self.oTestFiles.generateFilenameEx(128 * 1024, 2048));
-                reporter.log2('sFileName=%s, type=%s' % (limitString(sFileName), type(sFileName)));
                 if oTestVm.isWindows() \
                 or oTestVm.isOS2():
-                    sCmd   = sShell;
-                    asArgs = [ sShell, sShellOpt, "echo", sFileName, "--end-marker" ];
+                    asArgs = [ sShell, sShellOpt, "echo" ];
                 else:
-                    sCmd   = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'echo');
-                    asArgs = [ sCmd, sFileName, "--end-marker" ];
+                    asArgs = [ sCmd ];
+
+                # Append a random number of arguments with random length.
+                for _ in xrange(0, self.oTestFiles.oRandom.randrange(1, 16)):
+                    asArgs.append(self.oTestFiles.generateFilenameEx((16 * 1024) - len(str(sEndMarker)), 1));
+
+                asArgs.append(sEndMarker);
+
+                reporter.log2('asArgs=%s (%d args), type=%s' % (limitString(asArgs), len(asArgs), type(asArgs)));
+
                 ## @todo Check limits; on Ubuntu with 256KB IPRT returns VERR_NOT_IMPLEMENTED.
                 # Use a higher timeout (15 min) than usual for these long checks.
                 atExec.append([ tdTestExec(sCmd, asArgs,
