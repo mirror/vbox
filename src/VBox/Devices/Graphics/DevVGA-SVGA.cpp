@@ -4748,6 +4748,9 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
                         STAM_REL_COUNTER_INC(&pSVGAState->StatR3Cmd3dSurfaceScreen);
 
+                        static uint64_t u64FrameStartNanoTS = 0;
+                        static uint64_t u64ElapsedPerSecNano = 0;
+                        static int cFrames = 0;
                         uint64_t u64NanoTS = 0;
                         if (LogRelIs3Enabled())
                             u64NanoTS = RTTimeNanoTS();
@@ -4758,11 +4761,24 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                         STAM_REL_PROFILE_STOP(&pSVGAState->StatR3Cmd3dBlitSurfaceToScreenProf, a);
                         if (LogRelIs3Enabled())
                         {
+                            uint64_t u64ElapsedNano = RTTimeNanoTS() - u64NanoTS;
+                            u64ElapsedPerSecNano += u64ElapsedNano;
+
                             SVGASignedRect *pFirstRect = cRects ? (SVGASignedRect *)(pCmd + 1) : &pCmd->destRect;
                             LogRel3(("VMSVGA: SURFACE_TO_SCREEN: %d us %d rects %d,%d %dx%d\n",
-                                (RTTimeNanoTS() - u64NanoTS) / 1000ULL, cRects,
+                                (u64ElapsedNano) / 1000ULL, cRects,
                                 pFirstRect->left, pFirstRect->top,
                                 pFirstRect->right - pFirstRect->left, pFirstRect->bottom - pFirstRect->top));
+
+                            ++cFrames;
+                            if (u64NanoTS - u64FrameStartNanoTS >= UINT64_C(1000000000))
+                            {
+                                LogRel3(("VMSVGA: SURFACE_TO_SCREEN: FPS %d, elapsed %llu us\n",
+                                         cFrames, u64ElapsedPerSecNano / 1000ULL));
+                                u64FrameStartNanoTS = u64NanoTS;
+                                cFrames = 0;
+                                u64ElapsedPerSecNano = 0;
+                            }
                         }
                         break;
                     }
