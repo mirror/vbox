@@ -669,10 +669,17 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
     if (RT_SUCCESS(rc))
     {
-        GuestWaitEventPayload payload(dataCb.uType, &dataCb, sizeof(dataCb));
+        try
+        {
+            GuestWaitEventPayload payload(dataCb.uType, &dataCb, sizeof(dataCb));
 
-        /* Ignore rc, as the event to signal might not be there (anymore). */
-        signalWaitEventInternal(pCbCtx, rcGuest, &payload);
+            /* Ignore rc, as the event to signal might not be there (anymore). */
+            signalWaitEventInternal(pCbCtx, rcGuest, &payload);
+        }
+        catch (int rcEx) /* Thrown by GuestWaitEventPayload constructor. */
+        {
+            rc = rcEx;
+        }
     }
 
     LogFlowThisFunc(("uType=%RU32, rcGuest=%Rrc, rc=%Rrc\n", dataCb.uType, rcGuest, rc));

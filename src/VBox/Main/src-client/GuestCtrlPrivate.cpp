@@ -854,8 +854,15 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                     vrc = HGCMSvcGetPv(&pSvcCb->mpaParms[idx++], &dataCb.pvPayload, &dataCb.cbPayload);
                     AssertRCReturn(vrc, vrc);
 
-                    GuestWaitEventPayload evPayload(dataCb.uType, dataCb.pvPayload, dataCb.cbPayload); /* This bugger throws int. */
-                    vrc = signalWaitEventInternal(pCtxCb, dataCb.rc, &evPayload);
+                    try
+                    {
+                        GuestWaitEventPayload evPayload(dataCb.uType, dataCb.pvPayload, dataCb.cbPayload);
+                        vrc = signalWaitEventInternal(pCtxCb, dataCb.rc, &evPayload);
+                    }
+                    catch (int rcEx) /* Thrown by GuestWaitEventPayload constructor. */
+                    {
+                        vrc = rcEx;
+                    }
                 }
                 else
                     vrc = VERR_INVALID_PARAMETER;
