@@ -986,7 +986,12 @@ int vmsvga3dDefineScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
         vmsvga3dBackDestroyScreen(pThisCC, pScreen);
     }
 
-    return vmsvga3dBackDefineScreen(pThisCC, pScreen);
+    int rc = vmsvga3dBackDefineScreen(pThisCC, pScreen);
+    if (RT_SUCCESS(rc))
+    {
+        LogRelMax(1, ("VMSVGA: using accelerated graphics output\n"));
+    }
+    return rc;
 }
 
 int vmsvga3dDestroyScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
