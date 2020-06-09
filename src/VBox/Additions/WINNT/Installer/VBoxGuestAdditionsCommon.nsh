@@ -788,65 +788,6 @@ FunctionEnd
 !macroend
 !define InstallFileVerify "!insertmacro InstallFileVerify"
 
-; Prepares the access rights for replacing
-; a WRP (Windows Resource Protection) protected file
-!macro PrepareWRPFile un
-Function ${un}PrepareWRPFile
-
-  Pop $0
-  Push $1
-
-  ${IfNot} ${FileExists} "$0"
-    ${LogVerbose} "WRP: File $\"$0$\" does not exist, skipping"
-    Return
-  ${EndIf}
-
-  ${Switch} $g_strWinVersion
-    ${Case} "NT4"
-    ${Case} "2000"
-    ${Case} "XP"
-      ${LogVerbose} "WRP: changing ownership or permissions is not required on NT4, 2000, XP."
-    ${Break}
-    ${Default}
-      ${CmdExecute} "$\"$g_strSystemDir\takeown.exe$\" /A /F $\"$0$\"" "true"
-      Pop $1
-      ${LogVerbose} "WRP: Changing ownership for $\"$0$\" returned: $1"
-
-      ${CmdExecute} "icacls.exe $\"$0$\" /grant *S-1-5-32-544:F" "true"
-      Pop $1
-      ${LogVerbose} "WRP: Changing DACL for $\"$0$\" returned: $1"
-
-      Sleep 1000 ; TrustedInstaller needs some time to forget about the file
-  ${EndSwitch}
-
-!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
-  !ifdef WFP_FILE_EXCEPTION
-    VBoxGuestInstallHelper::DisableWFP "$0"
-    Pop $1 ; Get return value (ignored for now)
-    ${LogVerbose} "WRP: Setting WFP exception for $\"$0$\" returned: $1"
-  !endif
-!endif
-
-  Pop $1
-
-FunctionEnd
-!macroend
-!insertmacro PrepareWRPFile ""
-!insertmacro PrepareWRPFile "un."
-
-;
-; Macro for preparing the access rights for replacing
-; a WRP (Windows Resource Protection) protected file.
-; @return  None.
-; @param   Path of file to prepare.
-;
-!macro PrepareWRPFileEx un FileSrc
-  Push $0
-  Push "${FileSrc}"
-  Call ${un}PrepareWRPFile
-  Pop $0
-!macroend
-!define PrepareWRPFileEx "!insertmacro PrepareWRPFileEx"
 
 ; Note: We don't ship modified Direct3D files anymore, but we need to (try to)
 ;       restore the original (backed up) DLLs when upgrading from an old(er)
@@ -878,31 +819,23 @@ Function ${un}RestoreFilesDirect3D
 
   ${LogVerbose} "Restoring original D3D files ..."
 !if $%BUILD_TARGET_ARCH% == "x86"
-  ${PrepareWRPFileEx} "${un}" "$SYSDIR\d3d8.dll"
   ${CopyFileEx} "${un}" "$SYSDIR\msd3d8.dll" "$SYSDIR\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
 !endif
-  ${PrepareWRPFileEx} "${un}" "$SYSDIR\d3d9.dll"
   ${CopyFileEx} "${un}" "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
 
   ${If} $g_bCapDllCache == "true"
 !if $%BUILD_TARGET_ARCH% == "x86"
-    ${PrepareWRPFileEx} "${un}" "$SYSDIR\dllcache\d3d8.dll"
     ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
 !endif
-    ${PrepareWRPFileEx} "${un}" "$SYSDIR\dllcache\d3d9.dll"
     ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
   ${EndIf}
 
 !if $%BUILD_TARGET_ARCH% == "amd64"
-  ${PrepareWRPFileEx} "${un}" "$g_strSysWow64\d3d8.dll"
   ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d8.dll" "$g_strSysWow64\d3d8.dll" "Microsoft Corporation" "x86"
-  ${PrepareWRPFileEx} "${un}" "$g_strSysWow64\d3d9.dll"
   ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d9.dll" "$g_strSysWow64\d3d9.dll" "Microsoft Corporation" "x86"
 
   ${If} $g_bCapDllCache == "true"
-    ${PrepareWRPFileEx} "${un}" "$g_strSysWow64\dllcache\d3d8.dll"
     ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "Microsoft Corporation" "x86"
-    ${PrepareWRPFileEx} "${un}" "$g_strSysWow64\dllcache\d3d9.dll"
     ${CopyFileEx} "${un}" "$g_strSysWow64\dllcache\msd3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "Microsoft Corporation" "x86"
   ${EndIf}
 !endif
