@@ -159,6 +159,7 @@ public:
 #ifdef VBOX_WITH_VIDEOHWACCEL
     int  i_handleVHWACommandProcess(int enmCmd, bool fGuestCmd, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand);
 #endif
+    int  i_handle3DNotifyProcess(VBOX3DNOTIFY *p3DNotify);
 
     int  i_saveVisibleRegion(uint32_t cRect, PRTRECT pRect);
     int  i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
@@ -316,6 +317,8 @@ private:
     static DECLCALLBACK(int)  i_displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, int enmCmd, bool fGuestCmd,
                                                           VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand);
 #endif
+    static DECLCALLBACK(int)  i_display3DNotifyProcess(PPDMIDISPLAYCONNECTOR pInterface,
+                                                       VBOX3DNOTIFY *p3DNotify);
 
 #ifdef VBOX_WITH_HGSMI
     static DECLCALLBACK(int)   i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,

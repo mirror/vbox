@@ -736,6 +736,8 @@ typedef struct PDMIDISPLAYPORT
 #define VBVA_CURSOR_SCREEN_RELATIVE                         RT_BIT(1)
 /** @} */
 
+/** Pointer to a 3D graphics notification. */
+typedef struct VBOX3DNOTIFY VBOX3DNOTIFY;
 /** Pointer to a 2D graphics acceleration command. */
 typedef struct VBOXVHWACMD VBOXVHWACMD;
 /** Pointer to a VBVA command header. */
@@ -1025,9 +1027,19 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVAReportCursorPosition,(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fFlags, uint32_t uScreen, uint32_t x, uint32_t y));
+
+    /**
+     * Process the graphics device HW Acceleration command.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   p3DNotify           Acceleration Command to be processed.
+     * @thread  The graphics device thread: FIFO for the VMSVGA device.
+     */
+    DECLR3CALLBACKMEMBER(int, pfn3DNotifyProcess,(PPDMIDISPLAYCONNECTOR pInterface,
+                                                  VBOX3DNOTIFY *p3DNotify));
 } PDMIDISPLAYCONNECTOR;
 /** PDMIDISPLAYCONNECTOR interface ID. */
-#define PDMIDISPLAYCONNECTOR_IID                "b71dc381-99cc-43de-b459-f1e812e73b65"
+#define PDMIDISPLAYCONNECTOR_IID                "cdd562e4-8030-11ea-8d40-bbc8e146c565"
 
 
 /** Pointer to a secret key interface. */

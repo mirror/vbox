@@ -18919,7 +18919,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
 
       <param name="type" type="unsigned long" dir="in">
-        <desc>event type. Currently only VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA is supported.</desc>
+        <desc>event type. VBOX3D_NOTIFY_TYPE_* in VBoxVideo3D.h</desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">
         <desc>event-specific data, depends on the supplied event type</desc>

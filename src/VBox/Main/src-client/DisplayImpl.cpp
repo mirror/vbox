@@ -42,6 +42,7 @@
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBoxVideo.h>
 #endif
+#include <VBoxVideo3D.h>
 
 #include <VBox/com/array.h>
 
@@ -3141,6 +3142,41 @@ DECLCALLBACK(int) Display::i_displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pIn
 
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+int Display::i_handle3DNotifyProcess(VBOX3DNOTIFY *p3DNotify)
+{
+    unsigned const id = (unsigned)p3DNotify->iDisplay;
+    if (id >= mcMonitors)
+        return VERR_INVALID_PARAMETER;
+
+    ComPtr<IFramebuffer> pFramebuffer;
+    AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
+    pFramebuffer = maFramebuffers[id].pFramebuffer;
+    arlock.release();
+
+    int rc = VINF_SUCCESS;
+
+    if (!pFramebuffer.isNull())
+    {
+        com::SafeArray<BYTE> data;
+        data.initFrom((BYTE *)&p3DNotify->au8Data[0], p3DNotify->cbData);
+
+        HRESULT hr = pFramebuffer->Notify3DEvent((ULONG)p3DNotify->enmNotification, ComSafeArrayAsInParam(data));
+        if (FAILED(hr))
+            rc = VERR_NOT_SUPPORTED;
+    }
+    else
+        rc = VERR_NOT_IMPLEMENTED;
+
+    return rc;
+}
+
+DECLCALLBACK(int) Display::i_display3DNotifyProcess(PPDMIDISPLAYCONNECTOR pInterface,
+                                                    VBOX3DNOTIFY *p3DNotify)
+{
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    return pDrv->pDisplay->i_handle3DNotifyProcess(p3DNotify);
+}
+
 HRESULT Display::notifyScaleFactorChange(ULONG aScreenId, ULONG aScaleFactorWMultiplied, ULONG aScaleFactorHMultiplied)
 {
     RT_NOREF(aScreenId, aScaleFactorWMultiplied, aScaleFactorHMultiplied);
@@ -3721,6 +3757,7 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IConnector.pfnVBVAInputMappingUpdate = Display::i_displayVBVAInputMappingUpdate;
     pThis->IConnector.pfnVBVAReportCursorPosition = Display::i_displayVBVAReportCursorPosition;
 #endif
+    pThis->IConnector.pfn3DNotifyProcess       = Display::i_display3DNotifyProcess;
 
     /*
      * Get the IDisplayPort interface of the above driver/device.
