@@ -767,8 +767,8 @@ VBGLR3DECL(int)  VbglR3GuestCtrlSessionStartupInfoInitEx(PVBGLR3GUESTCTRLSESSION
 VBGLR3DECL(int) VbglR3GuestCtrlSessionStartupInfoInit(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo)
 {
     return VbglR3GuestCtrlSessionStartupInfoInitEx(pStartupInfo,
-                                                   GUESTPROCESS_MAX_USER_LEN, GUESTPROCESS_MAX_PASSWORD_LEN,
-                                                   GUESTPROCESS_MAX_DOMAIN_LEN);
+                                                   GUESTPROCESS_DEFAULT_USER_LEN, GUESTPROCESS_DEFAULT_PASSWORD_LEN,
+                                                   GUESTPROCESS_DEFAULT_DOMAIN_LEN);
 }
 
 /**
@@ -1117,10 +1117,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUP
 VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInit(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo)
 {
     return VbglR3GuestCtrlProcStartupInfoInitEx(pStartupInfo,
-                                                GUESTPROCESS_MAX_CMD_LEN,
-                                                GUESTPROCESS_MAX_USER_LEN,  GUESTPROCESS_MAX_PASSWORD_LEN,
-                                                GUESTPROCESS_MAX_DOMAIN_LEN,
-                                                GUESTPROCESS_MAX_ARGS_LEN, GUESTPROCESS_MAX_ENV_LEN);
+                                                GUESTPROCESS_DEFAULT_CMD_LEN,
+                                                GUESTPROCESS_DEFAULT_USER_LEN     /* Deprecated, now handled via session creation. */,
+                                                GUESTPROCESS_DEFAULT_PASSWORD_LEN /* Ditto. */,
+                                                GUESTPROCESS_DEFAULT_DOMAIN_LEN   /* Ditto. */,
+                                                GUESTPROCESS_DEFAULT_ARGS_LEN, GUESTPROCESS_DEFAULT_ENV_LEN);
 }
 
 /**
@@ -1244,8 +1245,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
         return rc;
     }
 
-    unsigned cRetries = 0;
-    unsigned cGrowthFactor = 2;
+    unsigned       cRetries      = 0;
+    const unsigned cMaxRetries   = 32; /* Should be enough for now. */
+    const unsigned cGrowthFactor = 2;  /* By how much the buffers will grow if they're too small yet. */
 
     do
     {
@@ -1277,7 +1279,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
         if (RT_FAILURE(rc))
         {
             if (   rc == VERR_BUFFER_OVERFLOW
-                && cRetries++ < 4)
+                && cRetries++ < cMaxRetries)
             {
 #define GROW_STR(a_Str, a_cbMax) \
         pStartupInfo->psz##a_Str = (char *)RTMemRealloc(pStartupInfo->psz##a_Str, \
@@ -1290,7 +1292,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
                 GROW_STR(Env,  GUESTPROCESS_MAX_ENV_LEN);
 
 #undef GROW_STR
-                cGrowthFactor *= cGrowthFactor;
             }
             else
                 break;

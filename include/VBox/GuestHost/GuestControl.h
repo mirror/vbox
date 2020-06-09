@@ -141,7 +141,10 @@ enum eProcessStatus
  */
 #define GUESTPROCESS_DEFAULT_CMD_LEN        _1K
 #define GUESTPROCESS_DEFAULT_ARGS_LEN       _1K
-#define GUESTPROCESS_DEFAULT_ENV_LEN        _64K
+#define GUESTPROCESS_DEFAULT_ENV_LEN        _1K
+#define GUESTPROCESS_DEFAULT_USER_LEN       128
+#define GUESTPROCESS_DEFAULT_PASSWORD_LEN   128
+#define GUESTPROCESS_DEFAULT_DOMAIN_LEN     256
 /** @} */
 
 /** @name Defines for maximum guest process buffer lengths.
@@ -150,12 +153,9 @@ enum eProcessStatus
 #define GUESTPROCESS_MAX_CMD_LEN            _1M
 #define GUESTPROCESS_MAX_ARGS_LEN           _2M
 #define GUESTPROCESS_MAX_ENV_LEN            _4M
-/** Deprecated; only used for < VBox 4.3 hosts. */
-#define GUESTPROCESS_MAX_USER_LEN           128
-/** Deprecated; only used for < VBox 4.3 hosts. */
-#define GUESTPROCESS_MAX_PASSWORD_LEN       128
-/** Deprecated; only used for < VBox 4.3 hosts. */
-#define GUESTPROCESS_MAX_DOMAIN_LEN         256
+#define GUESTPROCESS_MAX_USER_LEN           _64K
+#define GUESTPROCESS_MAX_PASSWORD_LEN       _64K
+#define GUESTPROCESS_MAX_DOMAIN_LEN         _64K
 /** @} */
 
 /** @name Internal tools built into VBoxService which are used in order
