@@ -135,6 +135,8 @@ void UIMachineWindow::prepare()
         strWindowName = QString("VirtualBox Machine UUID: %1").arg(uiCommon().managedVMUuid().toString());
     /* Assign WM_CLASS property: */
     UICommon::setWMClass(this, strWindowName, strWindowClass);
+    /* Tell the WM we are well behaved wrt Xwayland keyboard-grabs: */
+    UICommon::setXwaylandMayGrabKeyboardFlag(this);
 #endif
 }
 

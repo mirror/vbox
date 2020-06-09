@@ -2205,6 +2205,12 @@ void UICommon::setWMClass(QWidget *pWidget, const QString &strNameString, const 
     XSetClassHint(QX11Info::display(), pWidget->window()->winId(), &windowClass);
 }
 
+/* static */
+void UICommon::setXwaylandMayGrabKeyboardFlag(QWidget *pWidget)
+{
+    XXSendClientMessage(QX11Info::display(), pWidget->window()->winId(),
+                        "_XWAYLAND_MAY_GRAB_KEYBOARD", 1);
+}
 #endif /* VBOX_WS_X11 */
 
 /* static */

@@ -429,6 +429,11 @@ public:
 
         /** Assigns WM_CLASS property for passed @a pWidget. */
         static void setWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
+        /** Tell the WM we are well behaved wrt Xwayland keyboard-grabs. This will
+          * make the WM turn our grab into a Wayland shortcut inhibition request,
+          * so that e.g. alt+tab will get send to the VM instead of moving the
+          * focus away from the VM. */
+        static void setXwaylandMayGrabKeyboardFlag(QWidget *pWidget);
 #endif /* VBOX_WS_X11 */
 
         /** Assigns minimum @a pSpinBox to correspond to @a cCount digits. */
