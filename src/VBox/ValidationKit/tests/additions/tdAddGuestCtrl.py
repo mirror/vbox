@@ -2957,13 +2957,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                                    vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                             tdTestResultExec(fRc = True) ]);
 
-        # Test very long arguments.
-        # Old(er) Windows OSes tend to crash in cmd.exe, so skip this.
+        # Test very long arguments. Be careful when tweaking this to not break the tests.
         # Regarding paths:
         # - We have RTPATH_BIG_MAX (64K)
         # - MSDN says 32K for CreateFileW()
         # - On Windows, each path component must not be longer than MAX_PATH (260), see
         #   https://docs.microsoft.com/en-us/windows/win32/fileio/filesystem-functionality-comparison#limits
+        #
+        # Old(er) Windows OSes tend to crash in cmd.exe, so skip this on these OSes.
         if  self.oTstDrv.fpApiVer >= 6.1 \
         and oTestVm.sKind not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
             sEndMarker = '--end-marker';
@@ -2981,9 +2982,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     asArgs = [ sCmd ];
 
                 # Append a random number of arguments with random length.
-                for _ in xrange(0, self.oTestFiles.oRandom.randrange(1, 16)):
+                for _ in xrange(0, self.oTestFiles.oRandom.randrange(1, 64)):
                     asArgs.append(''.join(random.choice(string.lowercase)
-                                          for _ in range(self.oTestFiles.oRandom.randrange(1, 16 * 1024))));
+                                          for _ in range(self.oTestFiles.oRandom.randrange(1, 255))));
 
                 asArgs.append(sEndMarker);
 
