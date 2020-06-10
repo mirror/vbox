@@ -1579,8 +1579,10 @@ int18_handler:
                 C_SETUP
                 call    _int18_panic_msg
                 ;; TODO: handle failure better?
+                sti
+stay_here:
                 hlt
-                iret
+                jmp     stay_here
 
 ;;
 ;; INT 19h - boot service - relocated

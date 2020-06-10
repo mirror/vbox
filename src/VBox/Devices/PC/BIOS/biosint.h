@@ -285,6 +285,7 @@ extern  bx_bool     set_enable_a20(bx_bool val);
 #endif
 #ifdef VBOX
 #define BX_INFO(...)    do { put_str(BIOS_PRINTF_INFO, bios_prefix_string); bios_printf(BIOS_PRINTF_INFO, __VA_ARGS__); } while (0)
+#define BX_INFO_CON(...)do { put_str(BIOS_PRINTF_INFO, bios_prefix_string); bios_printf(BIOS_PRINTF_ALL, __VA_ARGS__); } while (0)
 #else /* !VBOX */
 #define BX_INFO(...)    bios_printf(BIOS_PRINTF_INFO, __VA_ARGS__)
 #endif /* !VBOX */

@@ -128,25 +128,11 @@ void set_esi_hi(uint16_t val);
  * 16-bit code. There's no need for separate 16-bit and 32-bit implementation.
  */
 
-/* Output a null-terminated string to a specified port, without the
- * terminating null character.
- */
-static void apm_out_str_asm(uint16_t port, const char *s);
-#pragma aux apm_out_str_asm =   \
-    "mov    al, [bx]"       \
-    "next:"                 \
-    "out    dx, al"         \
-    "inc    bx"             \
-    "mov    al, [bx]"       \
-    "or     al, al"         \
-    "jnz    next"           \
-    parm [dx] [bx] modify exact [ax bx] nomemory;
-
 /* Wrapper to avoid unnecessary inlining. */
-void apm_out_str(const char *s, uint16_t port)
+void apm_out_str(const char *s)
 {
     if (*s)
-        apm_out_str_asm(port, s);
+        out_ctrl_str_asm(VBOX_BIOS_SHUTDOWN_PORT, s);
 }
 
 void BIOSCALL apm_function(sys_regs_t r)
@@ -199,13 +185,13 @@ void BIOSCALL apm_function(sys_regs_t r)
         /// @todo validate current connection state
         switch (CX) {
         case APM_PS_STANDBY:
-            apm_out_str("Standby", VBOX_BIOS_SHUTDOWN_PORT);
+            apm_out_str("Standby");
             break;
         case APM_PS_SUSPEND:
-            apm_out_str("Suspend", VBOX_BIOS_SHUTDOWN_PORT);
+            apm_out_str("Suspend");
             break;
         case APM_PS_OFF:
-            apm_out_str("Shutdown", VBOX_BIOS_SHUTDOWN_PORT);  /* Should not return. */
+            apm_out_str("Shutdown");    /* Should not return. */
             break;
         default:
             SET_AH(APM_ERR_INVAL_PARAM);

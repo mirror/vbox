@@ -154,8 +154,8 @@ typedef struct DEVPCBIOS
 
     /** Boot devices (ordered). */
     DEVPCBIOSBOOT   aenmBootDevice[4];
-    /** Bochs shutdown index. */
-    uint32_t        iShutdown;
+    /** Bochs control string index. */
+    uint32_t        iControl;
     /** Floppy device. */
     char           *pszFDDevice;
     /** Harddisk device. */
@@ -337,19 +337,36 @@ pcbiosIOPortShutdownWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
     if (cb == 1)
     {
         static const unsigned char s_szShutdown[] = "Shutdown";
-        if (   pThis->iShutdown < sizeof(s_szShutdown) /* paranoia */
-            && u32 == s_szShutdown[pThis->iShutdown])
+        static const unsigned char s_szBootfail[] = "Bootfail";
+        AssertCompile(sizeof(s_szShutdown) == sizeof(s_szBootfail));
+
+        if (pThis->iControl < sizeof(s_szShutdown)) /* paranoia */
         {
-            pThis->iShutdown++;
-            if (pThis->iShutdown >= 8)
+            if (u32 == s_szShutdown[pThis->iControl])
             {
-                pThis->iShutdown = 0;
-                LogRel(("PcBios: APM shutdown request\n"));
-                return PDMDevHlpVMPowerOff(pDevIns);
+
+                pThis->iControl++;
+                if (pThis->iControl >= 8)
+                {
+                    pThis->iControl = 0;
+                    LogRel(("PcBios: APM shutdown request\n"));
+                    return PDMDevHlpVMPowerOff(pDevIns);
+                }
             }
+            else if (u32 == s_szBootfail[pThis->iControl])
+            {
+                pThis->iControl++;
+                if (pThis->iControl >= 8)
+                {
+                    pThis->iControl = 0;
+                    LogRel(("PcBios: Boot failure\n"));
+                }
+            }
+            else
+                pThis->iControl = 0;
         }
         else
-            pThis->iShutdown = 0;
+            pThis->iControl = 0;
     }
     /* else: not in use. */
 

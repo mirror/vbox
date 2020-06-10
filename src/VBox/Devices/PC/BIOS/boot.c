@@ -150,7 +150,7 @@ void print_boot_failure(uint8_t cdboot, uint8_t lanboot, uint8_t drive,
 
     if (lastdrive==1) {
         if (reason==0)
-            BX_PANIC("No bootable medium found! System halted.\n");
+            BX_INFO_CON("No bootable medium found! Please insert a bootable medium and reboot.\n");
         else
             BX_PANIC("Could not read from the boot medium! System halted.\n");
     }
