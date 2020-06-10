@@ -3587,6 +3587,10 @@ class TestDriver(base.TestDriver):                                              
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncDownloadString,
                               (sRemoteFile, sEncoding, fIgnoreEncodingErrors, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
+    def txsPackFile(self, oSession, oTxsSession, sRemoteFile, sRemoteSource, cMsTimeout = 30000, fIgnoreErrors = False):
+        return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncPackFile, \
+                              (sRemoteFile, sRemoteSource, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
+
     def txsUnpackFile(self, oSession, oTxsSession, sRemoteFile, sRemoteDir, cMsTimeout = 30000, fIgnoreErrors = False):
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncUnpackFile, \
                               (sRemoteFile, sRemoteDir, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
