@@ -48,7 +48,7 @@ RT_C_DECLS_BEGIN
  * container files, file system sub-trees, file system overlays and other custom
  * filesystem configurations.  It also makes it possible to create filters, like
  * automatically gunzipping a tar.gz file before feeding it to the RTTar API for
- * unpacking - or wise versa.
+ * unpacking - or vice versa.
  *
  * The virtual filesystem APIs are intended to mirror the RTDir, RTFile, RTPath
  * and RTFs APIs pretty closely so that rewriting a piece of code to work with
