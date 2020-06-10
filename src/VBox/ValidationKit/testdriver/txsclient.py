@@ -1260,6 +1260,12 @@ class Session(TdTaskBase):
                 rc = False;
         return rc;
 
+    def taskPackFile(self, sRemoteFile, sRemoteSource):
+        rc = self.sendMsg('PKFILE', (sRemoteFile, sRemoteSource));
+        if rc is True:
+            rc = self.recvAckLogged('PKFILE');
+        return rc;
+
     def taskUnpackFile(self, sRemoteFile, sRemoteDir):
         rc = self.sendMsg('UNPKFILE', (sRemoteFile, sRemoteDir));
         if rc is True:
@@ -1716,6 +1722,21 @@ class Session(TdTaskBase):
         """Synchronous version."""
         return self.asyncToSync(self.asyncDownloadString, sRemoteFile, sEncoding, fIgnoreEncodingErrors,
                                 cMsTimeout, fIgnoreErrors);
+
+    def asyncPackFile(self, sRemoteFile, sRemoteSource, cMsTimeout = 120000, fIgnoreErrors = False):
+        """
+        Initiates a packing file/directory task.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns True on success, False on failure (logged).
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "packFile", self.taskPackFile,
+                              (sRemoteFile, sRemoteSource));
+
+    def syncPackFile(self, sRemoteFile, sRemoteSource, cMsTimeout = 120000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncPackFile, sRemoteFile, sRemoteSource, cMsTimeout, fIgnoreErrors);
 
     def asyncUnpackFile(self, sRemoteFile, sRemoteDir, cMsTimeout = 120000, fIgnoreErrors = False):
         """
