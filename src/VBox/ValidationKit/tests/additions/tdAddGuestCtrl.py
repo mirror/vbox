@@ -1484,6 +1484,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.log('Skipping any remaining tests since the previous one failed.');
                 break;
 
+        # Upload VBoxService logs on failure.
+        if  not fRc \
+        and self.oDebug.sVBoxServiceLogPath:
+            sVBoxServiceLogsTarGz    = 'VBoxServiceLogs-%s.tar.gz' % oTestVm.sVmName;
+            sVBoxServiceLogsTarGzAbs = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), sVBoxServiceLogsTarGz);
+            if self.oTstDrv.txsPackFile(oSession, oTxsSession, \
+                                        sVBoxServiceLogsTarGzAbs, self.oDebug.sVBoxServiceLogPath, fIgnoreErrors = True):
+                self.oTstDrv.txsDownloadFiles(oSession, oTxsSession, [ (sVBoxServiceLogsTarGzAbs, sVBoxServiceLogsTarGz) ], \
+                                              fIgnoreErrors = True);
+
         return (fRc, oTxsSession);
 
     def prepareGuestForDebugging(self, oSession, oTxsSession, oTestVm): # pylint: disable=unused-argument
