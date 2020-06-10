@@ -496,24 +496,6 @@ int pdmR3DevInit(PVM pVM)
             pPrev2->Internal.s.pPerDeviceNextR3 = pDevIns;
         }
 
-        /*
-         * Call the constructor.
-         */
-        paDevs[i].pDev->cInstances++;
-        Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pReg->szName, pDevIns->iInstance));
-        rc = pDevIns->pReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfg);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-            if (VMR3GetErrorCount(pVM->pUVM) == 0)
-                VMSetError(pVM, rc, RT_SRC_POS, "Failed to construct device '%s' instance #%u",
-                           pDevIns->pReg->szName, pDevIns->iInstance);
-            /* Because we're damn lazy, the destructor will be called even if
-               the constructor fails.  So, no unlinking. */
-            paDevs[i].pDev->cInstances--;
-            return rc == VERR_VERSION_MISMATCH ? VERR_PDM_DEVICE_VERSION_MISMATCH : rc;
-        }
-
 #ifdef VBOX_WITH_DBGF_TRACING
         /*
          * Allocate memory for the MMIO/IO port registration tracking if DBGF tracing is enabled.
@@ -536,6 +518,24 @@ int pdmR3DevInit(PVM pVM)
             pDevIns->pHlpR3 = &g_pdmR3DevHlpTracing;
         }
 #endif
+
+        /*
+         * Call the constructor.
+         */
+        paDevs[i].pDev->cInstances++;
+        Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pReg->szName, pDevIns->iInstance));
+        rc = pDevIns->pReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfg);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+            if (VMR3GetErrorCount(pVM->pUVM) == 0)
+                VMSetError(pVM, rc, RT_SRC_POS, "Failed to construct device '%s' instance #%u",
+                           pDevIns->pReg->szName, pDevIns->iInstance);
+            /* Because we're damn lazy, the destructor will be called even if
+               the constructor fails.  So, no unlinking. */
+            paDevs[i].pDev->cInstances--;
+            return rc == VERR_VERSION_MISMATCH ? VERR_PDM_DEVICE_VERSION_MISMATCH : rc;
+        }
 
         /*
          * Call the ring-0 constructor if applicable.
