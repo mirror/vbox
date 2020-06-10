@@ -115,7 +115,8 @@ static int dbgfTracerEvtPostEx(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBGFTRACEREV
     }
 
     /* Write the event and kick the flush thread if necessary. */
-    memcpy(pEvtHdr + 1, pvEvtDesc, cbEvtDesc);
+    if (cbEvtDesc)
+        memcpy(pEvtHdr + 1, pvEvtDesc, cbEvtDesc);
     pEvtHdr->idEvtPrev   = idEvtPrev;
     pEvtHdr->hEvtSrc     = hEvtSrc;
     pEvtHdr->enmEvt      = enmTraceEvt;

@@ -2824,6 +2824,10 @@ VMMR3DECL(int)               DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, s
 #ifdef IN_RING3
 VMMR3_INT_DECL(int) DBGFR3TracerRegisterEvtSrc(PVM pVM, const char *pszName, PDBGFTRACEREVTSRC phEvtSrc);
 VMMR3_INT_DECL(int) DBGFR3TracerDeregisterEvtSrc(PVM pVM, DBGFTRACEREVTSRC hEvtSrc);
+VMMR3_INT_DECL(int) DBGFR3TracerEvtIoPortCreate(PVM pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTIOPORT cPorts, uint32_t fFlags,
+                                                uint32_t iPciRegion);
+VMMR3_INT_DECL(int) DBGFR3TracerEvtMmioCreate(PVM pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTGCPHYS cbRegion, uint32_t fFlags,
+                                              uint32_t iPciRegion);
 #endif
 
 VMM_INT_DECL(int)   DBGFTracerEvtMmioMap(PVMCC pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTGCPHYS GCPhysMmio);

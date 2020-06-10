@@ -195,6 +195,7 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_IoPortCreateEx(PPDMDEVINS pDevI
             pTrack->u.IoPort.pfnOutStr = pfnOutStr;
             pTrack->u.IoPort.pfnInStr  = pfnInStr;
             pDevIns->Internal.s.idxDbgfTraceTrackNext++;
+            DBGFR3TracerEvtIoPortCreate(pVM, pDevIns->Internal.s.hDbgfTraceEvtSrc, *phIoPorts, cPorts, fFlags, iPciRegion);
         }
     }
     else
@@ -275,6 +276,7 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_MmioCreateEx(PPDMDEVINS pDevIns
             pTrack->u.Mmio.pfnRead     = pfnRead;
             pTrack->u.Mmio.pfnFill     = pfnFill;
             pDevIns->Internal.s.idxDbgfTraceTrackNext++;
+            DBGFR3TracerEvtMmioCreate(pVM, pDevIns->Internal.s.hDbgfTraceEvtSrc, *phRegion, cbRegion, fFlags, iPciRegion);
         }
     }
     else

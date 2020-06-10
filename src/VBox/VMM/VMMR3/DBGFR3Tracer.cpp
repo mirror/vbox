@@ -74,6 +74,24 @@ static const RTTRACELOGEVTDESC g_EvtSrcDeregisterEvtDesc =
 };
 
 
+static const RTTRACELOGEVTITEMDESC g_DevMmioCreateEvtItems[] =
+{
+    {"hMmioRegion",    "The MMIO region handle being returned by IOM",          RTTRACELOGTYPE_UINT64,  0},
+    {"cbRegion",       "Size of the MMIO region in bytes",                      RTTRACELOGTYPE_UINT64,  0},
+    {"fIomFlags",      "Flags passed to IOM",                                   RTTRACELOGTYPE_UINT32,  0},
+    {"iPciRegion",     "PCI region used for a PCI device",                      RTTRACELOGTYPE_UINT32,  0},
+};
+
+static const RTTRACELOGEVTDESC g_DevMmioCreateEvtDesc =
+{
+    "Dev.MmioCreate",
+    "MMIO region of a device is being created",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    RT_ELEMENTS(g_DevMmioCreateEvtItems),
+    &g_DevMmioCreateEvtItems[0]
+};
+
+
 static const RTTRACELOGEVTITEMDESC g_DevMmioMapEvtItems[] =
 {
     {"hMmioRegion",    "The MMIO region handle being mapped",                   RTTRACELOGTYPE_UINT64,  0},
@@ -148,6 +166,24 @@ static const RTTRACELOGEVTDESC g_DevMmioFillEvtDesc =
     RTTRACELOGEVTSEVERITY_DEBUG,
     RT_ELEMENTS(g_DevMmioFillEvtItems),
     &g_DevMmioFillEvtItems[0]
+};
+
+
+static const RTTRACELOGEVTITEMDESC g_DevIoPortCreateEvtItems[] =
+{
+    {"hIoPorts",       "The I/O port region handle being returned by IOM",      RTTRACELOGTYPE_UINT64,  0},
+    {"cPorts",         "Size of the region in number of ports",                 RTTRACELOGTYPE_UINT16,  0},
+    {"fIomFlags",      "Flags passed to IOM",                                   RTTRACELOGTYPE_UINT32,  0},
+    {"iPciRegion",     "PCI region used for a PCI device",                      RTTRACELOGTYPE_UINT32,  0},
+};
+
+static const RTTRACELOGEVTDESC g_DevIoPortCreateEvtDesc =
+{
+    "Dev.IoPortCreate",
+    "I/O port region of a device is being created",
+    RTTRACELOGEVTSEVERITY_DEBUG,
+    RT_ELEMENTS(g_DevIoPortCreateEvtItems),
+    &g_DevIoPortCreateEvtItems[0]
 };
 
 
@@ -559,6 +595,15 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
                                      pEvtHdr->hEvtSrc, 0 /*uParentGrpId*/);
             break;
         }
+        case DBGFTRACEREVT_MMIO_REGION_CREATE:
+        {
+            PCDBGFTRACEREVTMMIOCREATE pEvtMmioCreate = (PCDBGFTRACEREVTMMIOCREATE)(pEvtHdr + 1);
+
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevMmioCreateEvtDesc, 0 /*fFlags*/,
+                                     pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtMmioCreate->hMmioRegion, pEvtMmioCreate->cbRegion,
+                                     pEvtMmioCreate->fIomFlags, pEvtMmioCreate->iPciRegion);
+            break;
+        }
         case DBGFTRACEREVT_MMIO_MAP:
         {
             PCDBGFTRACEREVTMMIOMAP pEvtMmioMap = (PCDBGFTRACEREVTMMIOMAP)(pEvtHdr + 1);
@@ -596,6 +641,15 @@ static int dbgfR3TracerEvtProcess(PDBGFTRACERINSR3 pThis, PDBGFTRACEREVTHDR pEvt
             rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevMmioFillEvtDesc, 0 /*fFlags*/,
                                      pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtMmioFill->hMmioRegion, pEvtMmioFill->offMmio,
                                      pEvtMmioFill->cbItem, pEvtMmioFill->cItems, pEvtMmioFill->u32Item);
+            break;
+        }
+        case DBGFTRACEREVT_IOPORT_REGION_CREATE:
+        {
+            PCDBGFTRACEREVTIOPORTCREATE pEvtIoPortCreate = (PCDBGFTRACEREVTIOPORTCREATE)(pEvtHdr + 1);
+
+            rc = RTTraceLogWrEvtAddL(pThis->hTraceLog, &g_DevIoPortCreateEvtDesc, 0 /*fFlags*/,
+                                     pEvtHdr->idEvt, pEvtHdr->hEvtSrc, pEvtIoPortCreate->hIoPorts, pEvtIoPortCreate->cPorts,
+                                     pEvtIoPortCreate->fIomFlags, pEvtIoPortCreate->iPciRegion);
             break;
         }
         case DBGFTRACEREVT_IOPORT_MAP:
@@ -1055,5 +1109,67 @@ VMMR3_INT_DECL(int) DBGFR3TracerDeregisterEvtSrc(PVM pVM, DBGFTRACEREVTSRC hEvtS
     PDBGFTRACERINSR3 pThis = pUVM->dbgf.s.pTracerR3;
     return dbgfTracerR3EvtPostSingle(pVM, pThis, hEvtSrc, DBGFTRACEREVT_SRC_DEREGISTER,
                                      NULL /*pvEvtDesc*/, 0 /*cbEvtDesc*/, NULL /*pidEvt*/);
+}
+
+
+/**
+ * Registers an I/O port region create event for the given event source.
+ *
+ * @returns VBox status code.
+ * @param   pVM                     The current context VM instance data.
+ * @param   hEvtSrc                 The event source for the posted event.
+ * @param   hRegion                 The I/O port region handle returned from IOM.
+ * @param   cPorts                  Number of ports registered.
+ * @param   fFlags                  Flags passed to IOM.
+ * @param   iPciRegion              For a PCI device the region index used for the I/O ports.
+ */
+VMMR3_INT_DECL(int) DBGFR3TracerEvtIoPortCreate(PVM pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTIOPORT cPorts, uint32_t fFlags,
+                                                uint32_t iPciRegion)
+{
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    AssertReturn(hEvtSrc != NIL_DBGFTRACEREVTSRC, VERR_INVALID_HANDLE);
+
+    PUVM pUVM = pVM->pUVM;
+    PDBGFTRACERINSR3 pThis = pUVM->dbgf.s.pTracerR3;
+
+    DBGFTRACEREVTIOPORTCREATE EvtIoPortCreate;
+    RT_ZERO(EvtIoPortCreate);
+    EvtIoPortCreate.hIoPorts   = hRegion;
+    EvtIoPortCreate.cPorts     = cPorts;
+    EvtIoPortCreate.fIomFlags  = fFlags;
+    EvtIoPortCreate.iPciRegion = iPciRegion;
+    return dbgfTracerR3EvtPostSingle(pVM, pThis, hEvtSrc, DBGFTRACEREVT_IOPORT_REGION_CREATE,
+                                     &EvtIoPortCreate, sizeof(EvtIoPortCreate), NULL /*pidEvt*/);
+}
+
+
+/**
+ * Registers an MMIO region create event for the given event source.
+ *
+ * @returns VBox status code.
+ * @param   pVM                     The current context VM instance data.
+ * @param   hEvtSrc                 The event source for the posted event.
+ * @param   hRegion                 The MMIO region handle returned from IOM.
+ * @param   cbRegion                Size of the MMIO region in bytes.
+ * @param   fFlags                  Flags passed to IOM.
+ * @param   iPciRegion              For a PCI device the region index used for the MMIO region.
+ */
+VMMR3_INT_DECL(int) DBGFR3TracerEvtMmioCreate(PVM pVM, DBGFTRACEREVTSRC hEvtSrc, uint64_t hRegion, RTGCPHYS cbRegion, uint32_t fFlags,
+                                              uint32_t iPciRegion)
+{
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    AssertReturn(hEvtSrc != NIL_DBGFTRACEREVTSRC, VERR_INVALID_HANDLE);
+
+    PUVM pUVM = pVM->pUVM;
+    PDBGFTRACERINSR3 pThis = pUVM->dbgf.s.pTracerR3;
+
+    DBGFTRACEREVTMMIOCREATE EvtMmioCreate;
+    RT_ZERO(EvtMmioCreate);
+    EvtMmioCreate.hMmioRegion = hRegion;
+    EvtMmioCreate.cbRegion    = cbRegion;
+    EvtMmioCreate.fIomFlags   = fFlags;
+    EvtMmioCreate.iPciRegion  = iPciRegion;
+    return dbgfTracerR3EvtPostSingle(pVM, pThis, hEvtSrc, DBGFTRACEREVT_MMIO_REGION_CREATE,
+                                     &EvtMmioCreate, sizeof(EvtMmioCreate), NULL /*pidEvt*/);
 }
 

@@ -70,6 +70,8 @@ typedef enum DBGFTRACEREVT
     DBGFTRACEREVT_SRC_REGISTER,
     /** Deregister event source event. */
     DBGFTRACEREVT_SRC_DEREGISTER,
+    /** MMIO region create event. */
+    DBGFTRACEREVT_MMIO_REGION_CREATE,
     /** MMIO map region event. */
     DBGFTRACEREVT_MMIO_MAP,
     /** MMIO unmap region event. */
@@ -80,6 +82,8 @@ typedef enum DBGFTRACEREVT
     DBGFTRACEREVT_MMIO_WRITE,
     /** MMIO fill event. */
     DBGFTRACEREVT_MMIO_FILL,
+    /** I/O port region create event. */
+    DBGFTRACEREVT_IOPORT_REGION_CREATE,
     /** I/O port map event. */
     DBGFTRACEREVT_IOPORT_MAP,
     /** I/O port unmap event. */
@@ -105,6 +109,30 @@ typedef enum DBGFTRACEREVT
 } DBGFTRACEREVT;
 /** Pointer to a trace event entry type. */
 typedef DBGFTRACEREVT *PDBGFTRACEREVT;
+
+
+/**
+ * MMIO region create event.
+ */
+typedef struct DBGFTRACEREVTMMIOCREATE
+{
+    /** Unique region handle for the event source. */
+    uint64_t                                hMmioRegion;
+    /** Size of the region in bytes. */
+    RTGCPHYS                                cbRegion;
+    /** IOM flags passed to the region. */
+    uint32_t                                fIomFlags;
+    /** The PCI region for a PCI device. */
+    uint32_t                                iPciRegion;
+    /** Padding to 32byte. */
+    uint64_t                                u64Pad0;
+} DBGFTRACEREVTMMIOCREATE;
+/** Pointer to a MMIO map event. */
+typedef DBGFTRACEREVTMMIOCREATE *PDBGFTRACEREVTMMIOCREATE;
+/** Pointer to a const MMIO map event. */
+typedef const DBGFTRACEREVTMMIOCREATE *PCDBGFTRACEREVTMMIOCREATE;
+
+AssertCompileSize(DBGFTRACEREVTMMIOCREATE, DBGF_TRACER_EVT_PAYLOAD_SZ);
 
 
 /**
@@ -191,6 +219,32 @@ typedef DBGFTRACEREVTMMIOFILL *PDBGFTRACEREVTMMIOFILL;
 typedef const DBGFTRACEREVTMMIOFILL *PCDBGFTRACEREVTMMIOFILL;
 
 AssertCompileSize(DBGFTRACEREVTMMIOFILL, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * I/O port region create event.
+ */
+typedef struct DBGFTRACEREVTIOPORTCREATE
+{
+    /** Unique I/O port region handle for the event source. */
+    uint64_t                                hIoPorts;
+    /** Number of ports. */
+    RTIOPORT                                cPorts;
+    /** Padding. */
+    uint16_t                                u16Pad0;
+    /** IOM flags passed to the region. */
+    uint32_t                                fIomFlags;
+    /** The PCI region for a PCI device. */
+    uint32_t                                iPciRegion;
+    /** Padding to 32byte. */
+    uint32_t                                u32Pad0[3];
+} DBGFTRACEREVTIOPORTCREATE;
+/** Pointer to a MMIO map event. */
+typedef DBGFTRACEREVTIOPORTCREATE *PDBGFTRACEREVTIOPORTCREATE;
+/** Pointer to a const MMIO map event. */
+typedef const DBGFTRACEREVTIOPORTCREATE *PCDBGFTRACEREVTIOPORTCREATE;
+
+AssertCompileSize(DBGFTRACEREVTIOPORTCREATE, DBGF_TRACER_EVT_PAYLOAD_SZ);
 
 
 /**
