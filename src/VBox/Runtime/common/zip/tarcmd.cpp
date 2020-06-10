@@ -63,6 +63,7 @@
 #define RTZIPTARCMD_OPT_FORMAT              1009
 #define RTZIPTARCMD_OPT_READ_AHEAD          1010
 #define RTZIPTARCMD_OPT_USE_PUSH_FILE       1011
+#define RTZIPTARCMD_OPT_NO_RECURSION        1012
 
 /** File format. */
 typedef enum RTZIPTARCMDFORMAT
@@ -110,6 +111,8 @@ typedef struct RTZIPTARCMDOPS
     bool            fReadAhead;
     /** Use RTVfsFsStrmPushFile instead of RTVfsFsStrmAdd for files. */
     bool            fUsePushFile;
+    /** Whether to handle directories recursively or not. Defaults to \c true. */
+    bool            fRecursive;
     /** The compressor/decompressor method to employ (0, z or j). */
     char            chZipper;
 
@@ -152,6 +155,9 @@ typedef struct RTZIPTARCMDOPS
 /** Pointer to the IPRT tar options. */
 typedef RTZIPTARCMDOPS *PRTZIPTARCMDOPS;
 
+/** The size of the directory entry buffer we're using. */
+#define RTZIPTARCMD_DIRENTRY_BUF_SIZE (sizeof(RTDIRENTRYEX) + RTPATH_MAX)
+
 /**
  * Callback used by rtZipTarDoWithMembers
  *
@@ -183,6 +189,50 @@ static bool rtZipTarCmdIsNameInArray(const char *pszName, const char * const *pa
             return true;
         }
     return false;
+}
+
+
+/**
+ * Queries information about a VFS object.
+ *
+ * @returns VBox status code.
+ * @param   pszSpec             VFS object spec to use.
+ * @param   paObjInfo           Where to store the queried object information.
+ *                              Must at least provide 3 structs, namely for UNIX, UNIX_OWNER and UNIX_GROUP attributes.
+ * @param   cObjInfo            Number of objection information structs handed in.
+ */
+static int rtZipTarCmdQueryObjInfo(const char *pszSpec, PRTFSOBJINFO paObjInfo, unsigned cObjInfo)
+{
+    AssertPtrReturn(paObjInfo, VERR_INVALID_POINTER);
+    AssertReturn(cObjInfo >= 3, VERR_INVALID_PARAMETER);
+
+    RTERRINFOSTATIC ErrInfo;
+    uint32_t        offError;
+    int rc = RTVfsChainQueryInfo(pszSpec, &paObjInfo[0], RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK,
+                                 &offError, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTVfsChainQueryInfo(pszSpec, &paObjInfo[1], RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK,
+                                 &offError, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTVfsChainQueryInfo(pszSpec, &paObjInfo[2], RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK,
+                                     &offError, RTErrInfoInitStatic(&ErrInfo));
+            if (RT_FAILURE(rc))
+                RT_BZERO(&paObjInfo[2], sizeof(RTFSOBJINFO));
+        }
+        else
+        {
+            RT_BZERO(&paObjInfo[1], sizeof(RTFSOBJINFO));
+            RT_BZERO(&paObjInfo[2], sizeof(RTFSOBJINFO));
+        }
+
+        rc = VINF_SUCCESS; /* aObjInfo[1] + aObjInfo[2] are optional. */
+    }
+    else
+        RTVfsChainMsgError("RTVfsChainQueryInfo", pszSpec, rc, offError, &ErrInfo.Core);
+
+    return rc;
 }
 
 
@@ -253,7 +303,131 @@ static RTEXITCODE rtZipTarCmdArchiveFile(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hV
 
 
 /**
- * Archives a directory recursively .
+ * Sub-directory helper for creating archives.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE + printed message.
+ * @param   pOpts           The options.
+ * @param   hVfsFss         The TAR filesystem stream handle.
+ * @param   pszSrc          The directory path or VFS spec.  We append to the
+ *                          buffer as we decend.
+ * @param   cchSrc          The length of the input.
+ * @param   paObjInfo[3]    Array of three FS object info structures.  The first
+ *                          one is always filled with RTFSOBJATTRADD_UNIX info.
+ *                          The next two may contain owner and group names if
+ *                          available.  The three buffers can be reused.
+ * @param   pszDst          The name to archive it the under.  We append to the
+ *                          buffer as we decend.
+ * @param   cchDst          The length of the input.
+ * @param   pDirEntry       Directory entry to use for the directory to handle.
+ * @param   pErrInfo        Error info buffer (saves stack space).
+ */
+static RTEXITCODE rtZipTarCmdArchiveDirSub(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVfsFss,
+                                           char *pszSrc, size_t cchSrc, RTFSOBJINFO paObjInfo[3],
+                                           char pszDst[RTPATH_MAX], size_t cchDst, PRTDIRENTRYEX pDirEntry,
+                                           PRTERRINFOSTATIC pErrInfo)
+{
+    if (pOpts->fVerbose)
+        RTPrintf("%s\n", pszDst);
+
+    uint32_t offError;
+    RTVFSDIR hVfsIoDir;
+    int rc = RTVfsChainOpenDir(pszSrc, 0 /*fFlags*/,
+                               &hVfsIoDir, &offError, RTErrInfoInitStatic(pErrInfo));
+    if (RT_FAILURE(rc))
+        return RTVfsChainMsgErrorExitFailure("RTVfsChainOpenDir", pszSrc, rc, offError, &pErrInfo->Core);
+
+    /* Make sure we've got some room in the path, to save us extra work further down. */
+    if (cchSrc + 3 >= RTPATH_MAX)
+        return RTMsgErrorExitFailure("Source path too long: '%s'\n", pszSrc);
+
+    /* Ensure we've got a trailing slash (there is space for it see above). */
+    if (!RTPATH_IS_SEP(pszSrc[cchSrc - 1]))
+    {
+        pszSrc[cchSrc++] = RTPATH_SLASH;
+        pszSrc[cchSrc]   = '\0';
+    }
+
+    /* Ditto for destination. */
+    if (cchDst + 3 >= RTPATH_MAX)
+        return RTMsgErrorExitFailure("Destination path too long: '%s'\n", pszDst);
+
+    if (!RTPATH_IS_SEP(pszDst[cchDst - 1]))
+    {
+        pszDst[cchDst++] = RTPATH_SLASH;
+        pszDst[cchDst]   = '\0';
+    }
+
+    /*
+     * Process the files and subdirs.
+     */
+    for (;;)
+    {
+        size_t cbDirEntry = RTZIPTARCMD_DIRENTRY_BUF_SIZE;
+        rc = RTVfsDirReadEx(hVfsIoDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX);
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Check length. */
+        if (pDirEntry->cbName + cchSrc + 3 >= RTPATH_MAX)
+        {
+            rc = VERR_BUFFER_OVERFLOW;
+            break;
+        }
+
+        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+        {
+            case RTFS_TYPE_DIRECTORY:
+            {
+                if (RTDirEntryExIsStdDotLink(pDirEntry))
+                    continue;
+
+                if (!pOpts->fRecursive)
+                    continue;
+
+                memcpy(&pszSrc[cchSrc], pDirEntry->szName, pDirEntry->cbName + 1);
+                if (RT_SUCCESS(rc))
+                {
+                    memcpy(&pszDst[cchDst], pDirEntry->szName, pDirEntry->cbName + 1);
+                    rc = rtZipTarCmdArchiveDirSub(pOpts, hVfsFss, pszSrc, cchSrc + pDirEntry->cbName, paObjInfo,
+                                                  pszDst, cchDst + pDirEntry->cbName, pDirEntry, pErrInfo);
+                }
+
+                break;
+            }
+
+            case RTFS_TYPE_FILE:
+            {
+                memcpy(&pszSrc[cchSrc], pDirEntry->szName, pDirEntry->cbName + 1);
+                rc = rtZipTarCmdQueryObjInfo(pszSrc, paObjInfo, 3 /* cObjInfo */);
+                if (RT_SUCCESS(rc))
+                {
+                    memcpy(&pszDst[cchDst], pDirEntry->szName, pDirEntry->cbName + 1);
+                    rc = rtZipTarCmdArchiveFile(pOpts, hVfsFss, pszSrc, paObjInfo, pszDst, pErrInfo);
+                }
+                break;
+            }
+
+            default:
+            {
+                if (pOpts->fVerbose)
+                    RTPrintf("Warning: File system type %#x for '%s' not implemented yet, sorry! Skipping ...\n",
+                             pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK, pDirEntry->szName);
+                break;
+            }
+        }
+    }
+
+    RTVfsDirRelease(hVfsIoDir);
+
+    if (rc != VERR_NO_MORE_FILES)
+        return RTMsgErrorExitFailure("RTVfsDirReadEx failed unexpectedly!");
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Archives a directory recursively.
  *
  * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE + printed message.
  * @param   pOpts           The options.
@@ -274,10 +448,21 @@ static RTEXITCODE rtZipTarCmdArchiveDir(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVf
                                         RTFSOBJINFO paObjInfo[3], char pszDst[RTPATH_MAX], size_t cchDst,
                                         PRTERRINFOSTATIC pErrInfo)
 {
-    RT_NOREF(pOpts, hVfsFss, pszSrc, cchSrc, paObjInfo, pszDst, cchDst, pErrInfo);
-    return RTMsgErrorExitFailure("Adding directories has not yet been implemented! Sorry.");
-}
+    RT_NOREF(cchSrc);
 
+    char szSrcAbs[RTPATH_MAX];
+    int rc = RTPathAbs(pszSrc, szSrcAbs, sizeof(szSrcAbs));
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("RTPathAbs failed on '%s': %Rrc\n", pszSrc, rc);
+
+    union
+    {
+        uint8_t         abPadding[RTZIPTARCMD_DIRENTRY_BUF_SIZE];
+        RTDIRENTRYEX    DirEntry;
+    } uBuf;
+
+    return rtZipTarCmdArchiveDirSub(pOpts, hVfsFss, szSrcAbs, strlen(szSrcAbs), paObjInfo, pszDst, cchDst, &uBuf.DirEntry, pErrInfo);
+}
 
 
 /**
@@ -490,28 +675,11 @@ static RTEXITCODE rtZipTarCreate(PRTZIPTARCMDOPS pOpts)
                     /*
                      * What kind of object is this and what affiliations does it have?
                      */
-                    RTERRINFOSTATIC ErrInfo;
-                    uint32_t        offError;
-                    RTFSOBJINFO     aObjInfo[3];
-                    rc = RTVfsChainQueryInfo(szSrc, &aObjInfo[0], RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK,
-                                             &offError, RTErrInfoInitStatic(&ErrInfo));
+                    RTFSOBJINFO aObjInfo[3];
+                    rc = rtZipTarCmdQueryObjInfo(szSrc, aObjInfo, RT_ELEMENTS(aObjInfo));
                     if (RT_SUCCESS(rc))
                     {
-
-                        rc = RTVfsChainQueryInfo(szSrc, &aObjInfo[1], RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK,
-                                                 &offError, RTErrInfoInitStatic(&ErrInfo));
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = RTVfsChainQueryInfo(szSrc, &aObjInfo[2], RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK,
-                                                     &offError, RTErrInfoInitStatic(&ErrInfo));
-                            if (RT_FAILURE(rc))
-                                RT_ZERO(aObjInfo[2]);
-                        }
-                        else
-                        {
-                            RT_ZERO(aObjInfo[1]);
-                            RT_ZERO(aObjInfo[2]);
-                        }
+                        RTERRINFOSTATIC ErrInfo;
 
                         /*
                          * Process on an object type basis.
@@ -538,7 +706,7 @@ static RTEXITCODE rtZipTarCreate(PRTZIPTARCMDOPS pOpts)
                             rcExit = rcExit2;
                     }
                     else
-                        rcExit = RTVfsChainMsgErrorExitFailure("RTVfsChainQueryInfo", pszFile, rc, offError, &ErrInfo.Core);
+                        rcExit = RTMsgErrorExitFailure("querying object information for '%s' failed (%s)", szSrc, pszFile);
                 }
                 else
                     rcExit = RTMsgErrorExitFailure("archived file name is too long, skipping '%s' (%s)", pszDst, pszFile);
@@ -1505,6 +1673,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
         { "--utc",                  RTZIPTARCMD_OPT_UTC,                RTGETOPT_REQ_NOTHING },
         { "--sparse",               'S',                                RTGETOPT_REQ_NOTHING },
         { "--format",               RTZIPTARCMD_OPT_FORMAT,             RTGETOPT_REQ_STRING },
+        { "--no-recursion",         RTZIPTARCMD_OPT_NO_RECURSION,       RTGETOPT_REQ_NOTHING },
 
         /* IPRT extensions */
         { "--prefix",               RTZIPTARCMD_OPT_PREFIX,             RTGETOPT_REQ_STRING },
@@ -1539,6 +1708,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
     }
 #endif
     Opts.enmTarFormat = RTZIPTARFORMAT_DEFAULT;
+    Opts.fRecursive   = true; /* Recursion is implicit unless otherwise specified. */
 
     RTGETOPTUNION   ValueUnion;
     while (   (rc = RTGetOpt(&GetState, &ValueUnion)) != 0
@@ -1627,6 +1797,10 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
 
             case RTZIPTARCMD_OPT_UTC:
                 Opts.fDisplayUtc = true;
+                break;
+
+            case RTZIPTARCMD_OPT_NO_RECURSION:
+                Opts.fRecursive = false;
                 break;
 
             /* GNU */
