@@ -1179,7 +1179,7 @@ class tdAutostartOsWin(tdAutostartOs):
         if not fRc:
             reporter.error('Create session for user %s failed' % sUser);
         else:
-            
+
             #---- report tasklist for debug purpose -----
             (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
                                                        60 * 1000, 'C:\\Windows\\System32\\tasklist.exe',
@@ -1191,7 +1191,7 @@ class tdAutostartOsWin(tdAutostartOs):
             except:
                 pass;
             #---- end report tasklist for debug purpose -----
-            
+
             (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
                                                        60 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
                                                        ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
@@ -1199,7 +1199,7 @@ class tdAutostartOsWin(tdAutostartOs):
             if not fRc:
                 reporter.error('Checking the VM %s is running for user %s failed' % (sVmName, sUser));
             else:
-                
+
                 bufWrapper = VBoxManageStdOutWrapper();
                 bufWrapper.write(aBuf);
                 fRc = bufWrapper.sVmRunning == sVmName;
