@@ -917,8 +917,7 @@ static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t
      * TCP/IP checksums as long as possible.
      * ASSUMES this only applies to outbound IP packets.
      */
-    if (    (fSrc == INTNETTRUNKDIR_HOST)
-        &&  eProtocol == PF_INET)
+    if (fSrc == INTNETTRUNKDIR_HOST)
     {
         Assert(!pvFrame);
         mbuf_outbound_finalize(pMBuf, eProtocol, sizeof(RTNETETHERHDR));
