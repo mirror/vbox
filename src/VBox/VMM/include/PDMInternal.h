@@ -1686,7 +1686,6 @@ DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, 
 DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
 DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue);
 # elif defined(IN_RING0)
 DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_IoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
                                                                        PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
@@ -1702,7 +1701,6 @@ DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, 
 DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
 DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue);
 # else
 # error "Invalid environment selected"
 # endif

@@ -4528,7 +4528,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlpTracing_PCISetIrqNoWait,
     pdmR3DevHlpTracing_ISASetIrq,
     pdmR3DevHlpTracing_ISASetIrqNoWait,
-    pdmR3DevHlpTracing_IoApicSendMsi,
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_DriverReconfigure,
