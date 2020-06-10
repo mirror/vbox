@@ -445,6 +445,9 @@ RTDECL(RTEXITCODE) RTZipUnzipCmd(unsigned cArgs, char **papszArgs)
         }
     }
 
+    if (!Opts.cFiles)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No input file(s) specified");
+
     RTFOFF cBytes = 0;
     uint32_t cFiles = 0;
     switch (Opts.iOperation)

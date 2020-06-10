@@ -1720,6 +1720,9 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
         Opts.cFiles     = cArgs - GetState.iNext + 1;
     }
 
+    if (!Opts.cFiles)
+        return RTMsgErrorExitFailure("No input file(s) specified");
+
     /*
      * Post proceess the options.
      */
