@@ -1179,13 +1179,27 @@ class tdAutostartOsWin(tdAutostartOs):
         if not fRc:
             reporter.error('Create session for user %s failed' % sUser);
         else:
+            
+            #---- report tasklist for debug purpose -----
             (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
-                                                       30 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
+                                                       60 * 1000, 'C:\\Windows\\System32\\tasklist.exe',
+                                                       ['C:\\Windows\\System32\\tasklist.exe', '/m',
+                                                        'vboxheadless*', '/nh'], True, True);
+            try:
+                sTaskList = str(aBuf);
+                reporter.log("Guest tasks for user %s: %s" % (sUser, sTaskList));
+            except:
+                pass;
+            #---- end report tasklist for debug purpose -----
+            
+            (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
+                                                       60 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
                                                        ['C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
                                                         'list', 'runningvms'], True, True);
             if not fRc:
                 reporter.error('Checking the VM %s is running for user %s failed' % (sVmName, sUser));
             else:
+                
                 bufWrapper = VBoxManageStdOutWrapper();
                 bufWrapper.write(aBuf);
                 fRc = bufWrapper.sVmRunning == sVmName;
@@ -1488,8 +1502,8 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
                             # Reboot the guest
                             (fRc, oGuestSession) = oGuestOsHlp.rebootVMAndCheckReady(oSession, oGuestSession);
                             if fRc is True:
-                                # Fudge factor - Allow the guest to finish starting up.
-                                self.sleep(30);
+                                # Fudge factor - Allow the guest VMs to finish starting up.
+                                self.sleep(60);
                                 fRc = oGuestOsHlp.checkForRunningVM(oSession, oGuestSession, sTestUserAllow, sTestVmName);
                                 if fRc is True:
                                     fRc = oGuestOsHlp.checkForRunningVM(oSession, oGuestSession, sTestUserDeny, sTestVmName);
