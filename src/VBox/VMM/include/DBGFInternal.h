@@ -86,8 +86,12 @@ typedef enum DBGFTRACEREVT
     DBGFTRACEREVT_IOPORT_UNMAP,
     /** I/O port read event. */
     DBGFTRACEREVT_IOPORT_READ,
+    /** I/O port read string event. */
+    DBGFTRACEREVT_IOPORT_READ_STR,
     /** I/O port write event. */
     DBGFTRACEREVT_IOPORT_WRITE,
+    /** I/O port write string event. */
+    DBGFTRACEREVT_IOPORT_WRITE_STR,
     /** IRQ event. */
     DBGFTRACEREVT_IRQ,
     /** I/O APIC MSI event. */
@@ -251,6 +255,32 @@ typedef DBGFTRACEREVTIOPORT *PDBGFTRACEREVTIOPORT;
 typedef const DBGFTRACEREVTIOPORT *PCDBGFTRACEREVTIOPORT;
 
 AssertCompileSize(DBGFTRACEREVTIOPORT, DBGF_TRACER_EVT_PAYLOAD_SZ);
+
+
+/**
+ * I/O port string event.
+ */
+typedef struct DBGFTRACEREVTIOPORTSTR
+{
+    /** Unique region handle for the event source. */
+    uint64_t                                hIoPorts;
+    /** Item size in bytes. */
+    uint32_t                                cbItem;
+    /** Number of transfers requested - for writes this gives the amount of valid data following. */
+    uint32_t                                cTransfersReq;
+    /** Number of transfers done - for reads this gives the amount of valid data following. */
+    uint32_t                                cTransfersRet;
+    /** Offset into the I/O port region. */
+    RTIOPORT                                offPort;
+    /** Data being transfered. */
+    uint8_t                                 abData[10];
+} DBGFTRACEREVTIOPORTSTR;
+/** Pointer to a MMIO event. */
+typedef DBGFTRACEREVTIOPORTSTR *PDBGFTRACEREVTIOPORTSTR;
+/** Pointer to a const MMIO event. */
+typedef const DBGFTRACEREVTIOPORTSTR *PCDBGFTRACEREVTIOPORTSTR;
+
+AssertCompileSize(DBGFTRACEREVTIOPORTSTR, DBGF_TRACER_EVT_PAYLOAD_SZ);
 
 
 /**
