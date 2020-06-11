@@ -32,6 +32,7 @@
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/buildconfig.h>
 #include <iprt/cdrom.h>
 #include <iprt/critsect.h>
 #include <iprt/crc.h>
@@ -59,6 +60,7 @@
 #include <iprt/uuid.h>
 #include <iprt/zip.h>
 
+#include "product-generated.h"
 #include "TestExecServiceInternal.h"
 
 
@@ -1675,6 +1677,25 @@ static int txsDoBye(PCTXSPKTHDR pPktHdr)
 }
 
 /**
+ * Verifies and acknowledges a "VER" request.
+ *
+ * @returns IPRT status code.
+ * @param   pPktHdr             The howdy packet.
+ */
+static int txsDoVer(PCTXSPKTHDR pPktHdr)
+{
+    int rc;
+    if (pPktHdr->cb == sizeof(TXSPKTHDR))
+    {
+        rc = txsReplyRC(pPktHdr, VINF_SUCCESS, "%s r%s %s%s (%s %s)",
+                        RTBldCfgVersion(), RTBldCfgRevisionStr(), KBUILD_TARGET, KBUILD_TARGET_ARCH, __DATE__, __TIME__);
+    }
+    else
+        rc = txsReplyBadSize(pPktHdr, sizeof(TXSPKTHDR));
+    return rc;
+}
+
+/**
  * Verifies and acknowledges a "HOWDY" request.
  *
  * @returns IPRT status code.
@@ -2987,6 +3008,9 @@ static int txsDoExec(PCTXSPKTHDR pPktHdr)
  */
 static RTEXITCODE txsMainLoop(void)
 {
+    RTMsgInfo("Version %s r%s %s%s (%s %s)\n",
+              RTBldCfgVersion(), RTBldCfgRevisionStr(), KBUILD_TARGET, KBUILD_TARGET_ARCH, __DATE__, __TIME__);
+
     if (g_cVerbose > 0)
         RTMsgInfo("txsMainLoop: start...\n");
     RTEXITCODE enmExitCode = RTEXITCODE_SUCCESS;
@@ -3010,6 +3034,8 @@ static RTEXITCODE txsMainLoop(void)
             rc = txsDoHowdy(pPktHdr);
         else if (txsIsSameOpcode(pPktHdr, "BYE     "))
             rc = txsDoBye(pPktHdr);
+        else if (txsIsSameOpcode(pPktHdr, "VER     "))
+            rc = txsDoVer(pPktHdr);
         else if (txsIsSameOpcode(pPktHdr, "UUID    "))
             rc = txsDoUuid(pPktHdr);
         /* Process: */
