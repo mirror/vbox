@@ -36,6 +36,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include "Virtio_1_0.h"
 
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -508,7 +509,7 @@ void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *psz
            if (idx >= cb)
                cbPrint = RTStrPrintf(pszOut, cbRemain, "-- %s", (col + 1) % 8 ? "" : "  ");
            else
-               cbPrint = RTStrPrintf(pszOut, cbRemain, ("%02x %s", pv[idx], (col + 1) % 8 ? "" : "  "));
+               cbPrint = RTStrPrintf(pszOut, cbRemain, "%02x %s", pv[idx], (col + 1) % 8 ? "" : "  ");
             ADJCURSOR(cbPrint);
         }
         for (uint32_t idx = row * 16; idx < row * 16 + 16; idx++)
