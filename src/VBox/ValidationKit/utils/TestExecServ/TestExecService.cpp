@@ -1684,15 +1684,23 @@ static int txsDoBye(PCTXSPKTHDR pPktHdr)
  */
 static int txsDoVer(PCTXSPKTHDR pPktHdr)
 {
-    int rc;
-    if (pPktHdr->cb == sizeof(TXSPKTHDR))
+    if (pPktHdr->cb != sizeof(TXSPKTHDR))
+        return txsReplyBadSize(pPktHdr, sizeof(TXSPKTHDR));
+
+    struct
     {
-        rc = txsReplyRC(pPktHdr, VINF_SUCCESS, "%s r%s %s%s (%s %s)",
-                        RTBldCfgVersion(), RTBldCfgRevisionStr(), KBUILD_TARGET, KBUILD_TARGET_ARCH, __DATE__, __TIME__);
+        TXSPKTHDR   Hdr;
+        char        szVer[96];
+        char        abPadding[TXSPKT_ALIGNMENT];
+    } Pkt;
+
+    if (RTStrPrintf2(Pkt.szVer, sizeof(Pkt.szVer), "%s r%s %s%s (%s %s)",
+                     RTBldCfgVersion(), RTBldCfgRevisionStr(), KBUILD_TARGET, KBUILD_TARGET_ARCH, __DATE__, __TIME__) > 0)
+    {
+        return txsReplyInternal(&Pkt.Hdr, "ACK VER", strlen(Pkt.szVer) + 1);
     }
-    else
-        rc = txsReplyBadSize(pPktHdr, sizeof(TXSPKTHDR));
-    return rc;
+
+    return txsReplyRC(pPktHdr, VERR_BUFFER_OVERFLOW, "RTStrPrintf2");
 }
 
 /**
