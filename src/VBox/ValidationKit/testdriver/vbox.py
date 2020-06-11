@@ -3799,6 +3799,14 @@ class TestDriver(base.TestDriver):                                              
                     fRc = self.txsCdWait(oSession, oTxsSession, cMsCdWait, sFileCdWait);
                     if fRc is not True:
                         reporter.error('startVmAndConnectToTxsViaTcp: txsCdWait failed');
+
+                sVer = self.txsVer(oSession, oTxsSession, cMsTimeout);
+                if sVer is not False:
+                    reporter.log('startVmAndConnectToTxsViaTcp: TestExecService version %s' % (sVer,));
+                else:
+                    reporter.log('startVmAndConnectToTxsViaTcp: Unable to retrieve TestExecService version');
+                    # Not fatal.
+
                 if fRc is True:
                     # Success!
                     return (oSession, oTxsSession);
@@ -3863,6 +3871,13 @@ class TestDriver(base.TestDriver):                                              
                                 fRc = self.txsCdWait(oSession, oTxsSession, cMsCdWait, sFileCdWait);
                                 if fRc is not True:
                                     reporter.error('txsRebootAndReconnectViaTcp: txsCdWait failed');
+
+                            sVer = self.txsVer(oSession, oTxsSession, cMsTimeout);
+                            if sVer is not False:
+                                reporter.log('txsRebootAndReconnectViaTcp: TestExecService version %s' % (sVer,));
+                            else:
+                                reporter.log('txsRebootAndReconnectViaTcp: Unable to retrieve TestExecService version');
+                                # Not fatal.
                         else:
                             reporter.error('txsRebootAndReconnectViaTcp: failed to get UUID (after)');
                     else:
