@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_VBoxFBOverlayCommon_h
-#define FEQT_INCLUDED_SRC_VBoxFBOverlayCommon_h
+#ifndef MAIN_INCLUDED_SRC_src_helper_apps_OpenGLTest_VBoxFBOverlayCommon_h
+#define MAIN_INCLUDED_SRC_src_helper_apps_OpenGLTest_VBoxFBOverlayCommon_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -117,5 +117,5 @@ private:
     VBOXQGLLOG((_p " l(0x%x), u(0x%x)" _s, (_pck)->lower(), (_pck)->upper()));\
     }while(0)
 
-#endif /* !FEQT_INCLUDED_SRC_VBoxFBOverlayCommon_h */
+#endif /* !MAIN_INCLUDED_SRC_src_helper_apps_OpenGLTest_VBoxFBOverlayCommon_h */
 
