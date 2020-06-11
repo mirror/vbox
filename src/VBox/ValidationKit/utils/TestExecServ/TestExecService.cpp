@@ -3062,7 +3062,7 @@ static RTEXITCODE txsMainLoop(void)
             rc = txsDoPutFile(pPktHdr, true /*fHasMode*/);
         else if (txsIsSameOpcode(pPktHdr, "GET FILE"))
             rc = txsDoGetFile(pPktHdr);
-        else if (txsIsSameOpcode(pPktHdr, "PKFILE"))
+        else if (txsIsSameOpcode(pPktHdr, "PKFILE  "))
             rc = txsDoPackFile(pPktHdr);
         else if (txsIsSameOpcode(pPktHdr, "UNPKFILE"))
             rc = txsDoUnpackFile(pPktHdr);
