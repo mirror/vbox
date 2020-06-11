@@ -52,7 +52,7 @@ typedef enum VIRTIOVMSTATECHANGED
   * TEMPORARY NOTE: Some of these values are experimental during development and will likely change.
   */
 #define VIRTIO_MAX_QUEUE_NAME_SIZE          32                   /**< Maximum length of a queue name           */
-#define VIRTQ_MAX_SIZE                      1024                 /**< Max size (# desc elements) of a virtq    */
+#define VIRTQ_MAX_ENTRIES                   1024                 /**< Max size (# desc elements) of a virtq    */
 #define VIRTQ_MAX_CNT                       24                   /**< Max queues we allow guest to create      */
 #define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
 #define VIRTIO_REGION_PCI_CAP               2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
@@ -70,7 +70,7 @@ typedef enum VIRTIOVMSTATECHANGED
 
 typedef struct VIRTIOSGSEG                                      /**< An S/G entry                              */
 {
-    RTGCPHYS gcPhys;                                            /**< Pointer to the segment buffer             */
+    RTGCPHYS GCPhys;                                            /**< Pointer to the segment buffer             */
     size_t  cbSeg;                                              /**< Size of the segment buffer                */
 } VIRTIOSGSEG;
 
@@ -83,8 +83,7 @@ typedef struct VIRTIOSGBUF
     PVIRTIOSGSEG paSegs;                                        /**< Pointer to the scatter/gather array       */
     unsigned  cSegs;                                            /**< Number of segments                        */
     unsigned  idxSeg;                                           /**< Current segment we are in                 */
-    /** @todo r=bird: s/gcPhys/GCPhys/g as this is how we write it everywhere. */
-    RTGCPHYS  gcPhysCur;                                        /**< Ptr to byte within the current seg        */
+    RTGCPHYS  GCPhysCur;                                        /**< Ptr to byte within the current seg        */
     size_t    cbSegLeft;                                        /**< # of bytes left in the current segment    */
 } VIRTIOSGBUF;
 
@@ -109,8 +108,8 @@ typedef struct VIRTIO_DESC_CHAIN
      * @{ */
     VIRTIOSGBUF         SgBufIn;
     VIRTIOSGBUF         SgBufOut;
-    VIRTIOSGSEG         aSegsIn[VIRTQ_MAX_SIZE];
-    VIRTIOSGSEG         aSegsOut[VIRTQ_MAX_SIZE];
+    VIRTIOSGSEG         aSegsIn[VIRTQ_MAX_ENTRIES];
+    VIRTIOSGSEG         aSegsOut[VIRTQ_MAX_ENTRIES];
     /** @} */
 } VIRTIO_DESC_CHAIN_T;
 /** Pointer to a Virtio descriptor chain. */
@@ -187,10 +186,11 @@ typedef struct virtio_pci_cap
  */
 typedef struct VIRTQSTATE
 {
-    char      szVirtqName[32];                                 /**< Dev-specific name of queue                */
-    uint16_t  uAvailIdx;                                       /**< Consumer's position in avail ring         */
-    uint16_t  uUsedIdx;                                        /**< Consumer's position in used ring          */
-    bool      fEventThresholdReached;                          /**< Don't lose track while queueing ahead     */
+    uint16_t  idxQueue;                                          /**< Index of this queue                       */
+    char      szVirtqName[32];                                   /**< Dev-specific name of queue                */
+    uint16_t  uAvailIdxShadow;                                   /**< Consumer's position in avail ring         */
+    uint16_t  uUsedIdxShadow;                                    /**< Consumer's position in used ring          */
+    bool      fVirtqRingEventThreshold;                          /**< Don't lose track while queueing ahead     */
 } VIRTQSTATE, *PVIRTQSTATE;
 
 /**
@@ -273,17 +273,17 @@ typedef struct VIRTIOCORE
 
     /** @name The locations of the capability structures in PCI config space and the BAR.
      * @{ */
-    VIRTIO_PCI_CAP_LOCATIONS_T  LocPciCfgCap;                      /**< VIRTIO_PCI_CFG_CAP_T  */
-    VIRTIO_PCI_CAP_LOCATIONS_T  LocNotifyCap;                      /**< VIRTIO_PCI_NOTIFY_CAP_T */
-    VIRTIO_PCI_CAP_LOCATIONS_T  LocCommonCfgCap;                   /**< VIRTIO_PCI_CAP_T */
-    VIRTIO_PCI_CAP_LOCATIONS_T  LocIsrCap;                         /**< VIRTIO_PCI_CAP_T */
-    VIRTIO_PCI_CAP_LOCATIONS_T  LocDeviceCap;                      /**< VIRTIO_PCI_CAP_T + custom data.  */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocPciCfgCap;                      /**< VIRTIO_PCI_CFG_CAP_T                       */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocNotifyCap;                      /**< VIRTIO_PCI_NOTIFY_CAP_T                    */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocCommonCfgCap;                   /**< VIRTIO_PCI_CAP_T                           */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocIsrCap;                         /**< VIRTIO_PCI_CAP_T                           */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocDeviceCap;                      /**< VIRTIO_PCI_CAP_T + custom data.            */
     /** @} */
 
-    bool                        fGenUpdatePending;                 /**< If set, update cfg gen after driver reads */
-    uint8_t                     uPciCfgDataOff;
-    uint8_t                     uISR;                              /**< Interrupt Status Register.                */
-    uint8_t                     fMsiSupport;
+    bool                        fGenUpdatePending;                 /**< If set, update cfg gen after driver reads  */
+    uint8_t                     uPciCfgDataOff;                    /**< Offset to PCI configuration data area      */
+    uint8_t                     uISR;                              /**< Interrupt Status Register.                 */
+    uint8_t                     fMsiSupport;                       /**< Flag set if using MSI instead of ISR       */
 
     /** The MMIO handle for the PCI capability region (\#2). */
     IOMMMIOHANDLE               hMmioPciCap;
@@ -404,39 +404,41 @@ typedef CTX_SUFF(VIRTIOCORE) VIRTIOCORECC;
 /** @name API for VirtIO parent device
  * @{ */
 
-int  virtioCoreR3QueueAttach(PVIRTIOCORE pVirtio, uint16_t idxQueue, const char *pcszName);
+int      virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
+uint16_t virtioCoreQueueAvailCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
+void     virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnable);
+void     virtioCoreQueueNotifyEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnable);
+void     virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
+void     virtioCoreResetAll(PVIRTIOCORE pVirtio);
+void     virtioCorePrintFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp);
 
-int  virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
-                             uint16_t uHeadIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain);
 uint32_t virtioCoreR3DescChainRetain(PVIRTIO_DESC_CHAIN_T pDescChain);
 uint32_t virtioCoreR3DescChainRelease(PVIRTIOCORE pVirtio, PVIRTIO_DESC_CHAIN_T pDescChain);
+void     virtioCoreR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
+void     virtioCoreR3QueueInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs, int idxQueue);
+int      virtioCoreR3QueueAttach(PVIRTIOCORE pVirtio, uint16_t idxQueue, const char *pcszName);
 
-int  virtioCoreR3QueuePeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
-                           PPVIRTIO_DESC_CHAIN_T ppDescChain);
+int      virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+                                  uint16_t uHeadIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain);
 
-int  virtioCoreR3QueueSkip(PVIRTIOCORE pVirtio, uint16_t idxQueue);
+int      virtioCoreR3QueuePeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+                               PPVIRTIO_DESC_CHAIN_T ppDescChain);
 
-int  virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
-                          PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
+int      virtioCoreR3QueueSkip(PVIRTIOCORE pVirtio, uint16_t idxQueue);
 
-int  virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
-                          PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
+int      virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+                              PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
 
-int  virtioCoreR3QueuePendingCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
-int  virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
-bool virtioCoreQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
-void virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
-void virtioCoreQueueSetNotify(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
-void virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
-void virtioCoreResetAll(PVIRTIOCORE pVirtio);
-void virtioPrintFeatures(VIRTIOCORE *pVirtio);
+int      virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
+                              PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
+
 
 /**
  * Return queue enable state
  *
  * @param   pVirtio     Pointer to the virtio state.
  * @param   idxQueue    Queue number.
- * @param   fEnabled    Flag indicating whether to enable queue or not
+ * @returns   true or false indicating whether to enable queue or not
  */
 DECLINLINE(bool) virtioCoreIsQueueEnabled(PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
@@ -499,8 +501,10 @@ void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint
                                 const void *pv, uint32_t cb, uint32_t uOffset,
                                 int fWrite, int fHasIndex, uint32_t idx);
 
+/* Debug assist functions for consumer device code */
 void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle);
-void virtioCoreGcPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS gcPhys, uint32_t cb, uint32_t uBase, const char *pszTitle);
+void virtioCoreGCPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint16_t cb, uint32_t uBase, const char *pszTitle);
+
 
 void     virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs);
 void     virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf);
@@ -510,6 +514,7 @@ void     virtioCoreSgBufInit(PVIRTIOSGBUF pSgBuf, PVIRTIOSGSEG paSegs, size_t cS
 size_t   virtioCoreSgBufCalcTotalLength(PCVIRTIOSGBUF pGcSgBuf);
 void     virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf);
 size_t   virtioCoreSgBufCalcTotalLength(PVIRTIOSGBUF pGcSgBuf);
+
 int      virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 int      virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 void     virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState);
