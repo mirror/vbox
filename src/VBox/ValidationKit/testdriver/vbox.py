@@ -3485,6 +3485,10 @@ class TestDriver(base.TestDriver):                                              
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncDisconnect,
                               (self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
+    def txsVer(self, oSession, oTxsSession, cMsTimeout = 30000, fIgnoreErrors = False):
+        return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncVer,
+                              (self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
+
     def txsUuid(self, oSession, oTxsSession, cMsTimeout = 30000, fIgnoreErrors = False):
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncUuid,
                               (self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));

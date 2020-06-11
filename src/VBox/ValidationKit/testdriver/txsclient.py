@@ -697,6 +697,24 @@ class Session(TdTaskBase):
         self.oTransport.disconnect();
         return rc;
 
+    def taskVer(self):
+        """Requests version information from TXS"""
+        rc = self.sendMsg("VER");
+        if rc is True:
+            rc = False;
+            cbMsg, sOpcode, abPayload = self.recvReply();
+            if cbMsg is not None:
+                sOpcode = sOpcode.strip();
+                if sOpcode == "ACK VER":
+                    sVer = getSZ(abPayload, 0);
+                    if sVer is not None:
+                        rc = sVer;
+                else:
+                    reporter.maybeErr(self.fErr, 'taskVer got a bad reply: %s' % (sOpcode,));
+            else:
+                reporter.maybeErr(self.fErr, 'taskVer got 3xNone from recvReply.');
+        return rc;
+
     def taskUuid(self):
         """Gets the TXS UUID"""
         rc = self.sendMsg("UUID");
@@ -1331,6 +1349,20 @@ class Session(TdTaskBase):
     def syncDisconnect(self, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
         return self.asyncToSync(self.asyncDisconnect, cMsTimeout, fIgnoreErrors);
+
+    def asyncVer(self, cMsTimeout = 30000, fIgnoreErrors = False):
+        """
+        Initiates a task for getting the TXS version information.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns the version string on success and False on failure.
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "ver", self.taskVer);
+
+    def syncVer(self, cMsTimeout = 30000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncVer, cMsTimeout, fIgnoreErrors);
 
     def asyncUuid(self, cMsTimeout = 30000, fIgnoreErrors = False):
         """
