@@ -238,6 +238,9 @@ DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio,
                           &uIdx, sizeof(uIdx));
 }
 
+
+#ifdef IN_RING3
+
 DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t uIdx = 0;
@@ -247,8 +250,6 @@ DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
                       &uIdx, sizeof(uIdx));
     return uIdx;
 }
-
-#ifdef IN_RING3
 
 DECLINLINE(uint16_t) virtioReadUsedRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
