@@ -660,7 +660,7 @@ HRESULT UnattendedInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecAr
         try
         {
             /*
-             * If we've got additions ISO, add its content to a /vboxadditions dir.
+             * If we've got a Guest Additions ISO, add its content to a /vboxadditions dir.
              */
             if (mpParent->i_getInstallGuestAdditions())
             {
@@ -670,7 +670,7 @@ HRESULT UnattendedInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecAr
             }
 
             /*
-             * If we've got additions ISO, add its content to a /vboxadditions dir.
+             * If we've got a Validation Kit ISO, add its content to a /vboxvalidationkit dir.
              */
             if (mpParent->i_getInstallTestExecService())
             {
