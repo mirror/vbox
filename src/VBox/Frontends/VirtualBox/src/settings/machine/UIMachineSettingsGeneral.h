@@ -47,10 +47,6 @@ public:
     CGuestOSType guestOSType() const;
     /** Returns whether 64bit OS type ID is selected. */
     bool is64BitOSTypeSelected() const;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Returns whether Windows OS type ID is selected. */
-    bool isWindowsOSTypeSelected() const;
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
     /** Defines whether HW virtualization extension is enabled. */
     void setHWVirtExEnabled(bool fEnabled);

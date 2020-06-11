@@ -39,18 +39,8 @@
 #include <VBox/VBoxOGL.h>
 
 
-UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
-                                       , ulong uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                       , bool bAccelerate2DVideo
-#endif
-                                       )
-    : UIMachineView(  pMachineWindow
-                    , uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                    , bAccelerate2DVideo
-#endif
-                    )
+UIMachineViewScale::UIMachineViewScale(UIMachineWindow *pMachineWindow, ulong uScreenId)
+    : UIMachineView(pMachineWindow, uScreenId)
 {
 }
 

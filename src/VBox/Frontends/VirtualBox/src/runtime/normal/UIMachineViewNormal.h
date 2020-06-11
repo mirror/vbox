@@ -31,12 +31,7 @@ class UIMachineViewNormal : public UIMachineView
 protected:
 
     /* Normal machine-view constructor: */
-    UIMachineViewNormal(  UIMachineWindow *pMachineWindow
-                        , ulong uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                        , bool bAccelerate2DVideo
-#endif
-    );
+    UIMachineViewNormal(UIMachineWindow *pMachineWindow, ulong uScreenId);
     /* Normal machine-view destructor: */
     virtual ~UIMachineViewNormal() {}
 

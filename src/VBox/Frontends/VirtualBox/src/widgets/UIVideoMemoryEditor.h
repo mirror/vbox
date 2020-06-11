@@ -74,13 +74,6 @@ public:
     void set3DAccelerationEnabled(bool fEnabled);
 #endif
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Defines whether 2D video acceleration is @a fSupported. */
-    void set2DVideoAccelerationSupported(bool fSupported);
-    /** Defines whether 2D video acceleration is @a fEnabled. */
-    void set2DVideoAccelerationEnabled(bool fEnabled);
-#endif
-
 protected:
 
     /** Handles translation event. */
@@ -121,12 +114,6 @@ private:
     bool                     m_f3DAccelerationSupported;
     /** Holds whether 3D acceleration is enabled. */
     bool                     m_f3DAccelerationEnabled;
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Holds whether 2D video acceleration is supported. */
-    bool                     m_f2DVideoAccelerationSupported;
-    /** Holds whether 2D video acceleration is enabled. */
-    bool                     m_f2DVideoAccelerationEnabled;
 #endif
 
     /** Holds the minimum lower limit of VRAM (MiB). */

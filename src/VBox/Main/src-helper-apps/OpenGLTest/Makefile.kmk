@@ -30,6 +30,19 @@ endif
 VBoxOGLTest_SOURCES.darwin = OpenGLTestDarwin.cpp
 
 #
+# App for testing GL support
+#
+if defined(VBOX_WITH_VIDEOHWACCEL)
+ if1of ($(KBUILD_TARGET), win linux freebsd)
+  LIBRARIES += VBoxOGL2D
+  VBoxOGL2D_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE),VBOXMAINEXE)
+  VBoxOGL2D_DEFS = QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
+  VBoxOGL2D_QT_MODULES += OpenGL
+  VBoxOGL2D_SOURCES = VBoxGLSupportInfo.cpp
+ endif
+endif
+
+#
 # VBoxTestOGL - OpenGL support test app.
 # Note! Doesn't link with VBOX_WITH_DEBUG_VCC_CRT defined because it uses Qt.
 #

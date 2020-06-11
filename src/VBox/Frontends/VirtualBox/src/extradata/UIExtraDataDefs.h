@@ -316,18 +316,6 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_VirtualScreenToHostScreen;
         /** Holds whether automatic mounting/unmounting of guest-screens enabled. */
         SHARED_LIBRARY_STUFF extern const char *GUI_AutomountGuestScreens;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /** Holds whether 2D acceleration should use linear sretch. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_StretchLinear;
-        /** Holds whether 2D acceleration should use YV12 pixel format. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_PixformatYV12;
-        /** Holds whether 2D acceleration should use UYVY pixel format. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_PixformatUYVY;
-        /** Holds whether 2D acceleration should use YUY2 pixel format. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_PixformatYUY2;
-        /** Holds whether 2D acceleration should use AYUV pixel format. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_PixformatAYUV;
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifndef VBOX_WS_MAC
         /** Holds whether mini-toolbar is enabled for full and seamless screens. */
         SHARED_LIBRARY_STUFF extern const char *GUI_ShowMiniToolBar;

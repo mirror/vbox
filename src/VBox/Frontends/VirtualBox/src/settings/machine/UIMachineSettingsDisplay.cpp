@@ -23,7 +23,6 @@
 #include "UIMachineSettingsDisplay.h"
 #include "UIErrorString.h"
 #include "UICommon.h"
-#include "VBox2DHelpers.h"
 
 /* COM includes: */
 #include "CGraphicsAdapter.h"
@@ -48,9 +47,6 @@ struct UIDataSettingsMachineDisplay
         , m_graphicsControllerType(KGraphicsControllerType_Null)
 #ifdef VBOX_WITH_3D_ACCELERATION
         , m_f3dAccelerationEnabled(false)
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        , m_f2dVideoAccelerationEnabled(false)
 #endif
         , m_fRemoteDisplayServerSupported(false)
         , m_fRemoteDisplayServerEnabled(false)
@@ -78,9 +74,6 @@ struct UIDataSettingsMachineDisplay
                && (m_graphicsControllerType == other.m_graphicsControllerType)
 #ifdef VBOX_WITH_3D_ACCELERATION
                && (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled)
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-               && (m_f2dVideoAccelerationEnabled == other.m_f2dVideoAccelerationEnabled)
 #endif
                && (m_fRemoteDisplayServerSupported == other.m_fRemoteDisplayServerSupported)
                && (m_fRemoteDisplayServerEnabled == other.m_fRemoteDisplayServerEnabled)
@@ -247,10 +240,6 @@ struct UIDataSettingsMachineDisplay
     /** Holds whether the 3D acceleration is enabled. */
     bool                     m_f3dAccelerationEnabled;
 #endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Holds whether the 2D video acceleration is enabled. */
-    bool                     m_f2dVideoAccelerationEnabled;
-#endif
     /** Holds whether the remote display server is supported. */
     bool                     m_fRemoteDisplayServerSupported;
     /** Holds whether the remote display server is enabled. */
@@ -290,9 +279,6 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 #ifdef VBOX_WITH_3D_ACCELERATION
     , m_fWddmModeSupported(false)
 #endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    , m_f2DVideoAccelerationSupported(false)
-#endif
     , m_enmGraphicsControllerTypeRecommended(KGraphicsControllerType_Null)
     , m_pCache(0)
 {
@@ -322,12 +308,6 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType comGuestOSType)
     m_fWddmModeSupported = UICommon::isWddmCompatibleOsType(strGuestOSTypeId);
     m_pVideoMemoryEditor->set3DAccelerationSupported(m_fWddmModeSupported);
 #endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* Check if 2D video acceleration supported by the guest OS type: */
-    const QString strGuestOSTypeFamily = m_comGuestOSType.isNotNull() ? m_comGuestOSType.GetFamilyId() : QString();
-    m_f2DVideoAccelerationSupported = strGuestOSTypeFamily == "Windows";
-    m_pVideoMemoryEditor->set2DVideoAccelerationSupported(m_f2DVideoAccelerationSupported);
-#endif
     /* Acquire recommended graphics controller type: */
     m_enmGraphicsControllerTypeRecommended = m_comGuestOSType.GetRecommendedGraphicsController();
 
@@ -341,13 +321,6 @@ bool UIMachineSettingsDisplay::isAcceleration3DSelected() const
     return m_pCheckbox3D->isChecked();
 }
 #endif /* VBOX_WITH_3D_ACCELERATION */
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-bool UIMachineSettingsDisplay::isAcceleration2DVideoSelected() const
-{
-    return m_pCheckbox2DVideo->isChecked();
-}
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 KGraphicsControllerType UIMachineSettingsDisplay::graphicsControllerTypeRecommended() const
 {
@@ -388,9 +361,6 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
         oldDisplayData.m_graphicsControllerType = comGraphics.GetGraphicsControllerType();
 #ifdef VBOX_WITH_3D_ACCELERATION
         oldDisplayData.m_f3dAccelerationEnabled = comGraphics.GetAccelerate3DEnabled();
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        oldDisplayData.m_f2dVideoAccelerationEnabled = comGraphics.GetAccelerate2DVideoEnabled();
 #endif
     }
 
@@ -454,17 +424,11 @@ void UIMachineSettingsDisplay::getFromCache()
 #ifdef VBOX_WITH_3D_ACCELERATION
     m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
 #endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    m_pCheckbox2DVideo->setChecked(oldDisplayData.m_f2dVideoAccelerationEnabled);
-#endif
     /* Push required value to m_pVideoMemoryEditor: */
     sltHandleGuestScreenCountEditorChange();
     sltHandleGraphicsControllerComboChange();
 #ifdef VBOX_WITH_3D_ACCELERATION
     sltHandle3DAccelerationCheckboxChange();
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    sltHandle2DVideoAccelerationCheckboxChange();
 #endif
     // Should be the last one for this tab, since it depends on some of others:
     m_pVideoMemoryEditor->setValue(oldDisplayData.m_iCurrentVRAM);
@@ -523,9 +487,6 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_graphicsControllerType = m_pGraphicsControllerEditor->value();
 #ifdef VBOX_WITH_3D_ACCELERATION
     newDisplayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    newDisplayData.m_f2dVideoAccelerationEnabled = m_pCheckbox2DVideo->isChecked();
 #endif
     /* If remote display server is supported: */
     newDisplayData.m_fRemoteDisplayServerSupported = m_pCache->base().m_fRemoteDisplayServerSupported;
@@ -631,19 +592,6 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                 }
             }
 #endif /* VBOX_WITH_3D_ACCELERATION */
-#ifdef VBOX_WITH_VIDEOHWACCEL
-            /* 2D acceleration video RAM amount test: */
-            else if (m_pCheckbox2DVideo->isChecked() && m_f2DVideoAccelerationSupported)
-            {
-                uNeedBytes += VBox2DHelpers::required2DOffscreenVideoMemory();
-                if ((quint64)m_pVideoMemoryEditor->value() * _1M < uNeedBytes)
-                {
-                    message.second << tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
-                                         "which is the minimum amount required for High Definition Video to be played efficiently.")
-                                         .arg(uiCommon().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
-                }
-            }
-#endif /* VBOX_WITH_VIDEOHWACCEL */
         }
 
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -655,15 +603,6 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                                  "so you will not be able to start the machine.");
         }
 #endif /* VBOX_WITH_3D_ACCELERATION */
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /* 2D video acceleration is available for Windows guests only: */
-        if (m_pCheckbox2DVideo->isChecked() && !m_f2DVideoAccelerationSupported)
-        {
-            message.second << tr("The virtual machine is set up to use Video Stream Acceleration. "
-                                 "As this feature only works with Windows guest systems it will be disabled.");
-        }
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
         /* Graphics controller type test: */
         if (!m_comGuestOSType.isNull())
@@ -818,8 +757,6 @@ void UIMachineSettingsDisplay::polishPage()
 #else
     m_pCheckbox3D->hide();
 #endif
-    m_pCheckbox2DVideo->hide();
-    m_pPlaceholder2DVideo->hide();
 
     /* Polish 'Remote Display' availability: */
     m_pTabWidget->setTabEnabled(1, oldDisplayData.m_fRemoteDisplayServerSupported);
@@ -886,17 +823,6 @@ void UIMachineSettingsDisplay::sltHandle3DAccelerationCheckboxChange()
     revalidate();
 }
 #endif /* VBOX_WITH_3D_ACCELERATION */
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-void UIMachineSettingsDisplay::sltHandle2DVideoAccelerationCheckboxChange()
-{
-    /* Update Video RAM requirements: */
-    m_pVideoMemoryEditor->set2DVideoAccelerationEnabled(m_pCheckbox2DVideo->isChecked());
-
-    /* Revalidate: */
-    revalidate();
-}
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 void UIMachineSettingsDisplay::sltHandleRecordingCheckboxToggle()
 {
@@ -1247,10 +1173,6 @@ void UIMachineSettingsDisplay::prepareConnections()
     connect(m_pCheckbox3D, &QCheckBox::stateChanged,
             this, &UIMachineSettingsDisplay::sltHandle3DAccelerationCheckboxChange);
 #endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    connect(m_pCheckbox2DVideo, &QCheckBox::stateChanged,
-            this, &UIMachineSettingsDisplay::sltHandle2DVideoAccelerationCheckboxChange);
-#endif
 
     /* Configure 'Remote Display' connections: */
     connect(m_pCheckboxRemoteDisplay, &QCheckBox::toggled, this, &UIMachineSettingsDisplay::revalidate);
@@ -1420,14 +1342,6 @@ bool UIMachineSettingsDisplay::saveScreenData()
             if (fSuccess && isMachineOffline() && newDisplayData.m_f3dAccelerationEnabled != oldDisplayData.m_f3dAccelerationEnabled)
             {
                 comGraphics.SetAccelerate3DEnabled(newDisplayData.m_f3dAccelerationEnabled);
-                fSuccess = comGraphics.isOk();
-            }
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-            /* Save whether 2D video acceleration is enabled: */
-            if (fSuccess && isMachineOffline() && newDisplayData.m_f2dVideoAccelerationEnabled != oldDisplayData.m_f2dVideoAccelerationEnabled)
-            {
-                comGraphics.SetAccelerate2DVideoEnabled(newDisplayData.m_f2dVideoAccelerationEnabled);
                 fSuccess = comGraphics.isOk();
             }
 #endif

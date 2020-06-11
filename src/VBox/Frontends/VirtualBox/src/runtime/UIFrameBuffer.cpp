@@ -35,9 +35,6 @@
 #ifdef VBOX_WITH_MASKED_SEAMLESS
 # include "UIMachineWindow.h"
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
-#ifdef VBOX_WITH_VIDEOHWACCEL
-# include "VBoxFBOverlay.h"
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* COM includes: */
 #include "CConsole.h"
@@ -422,22 +419,16 @@ public:
     /** Performs frame-buffer rescaling. */
     virtual void performRescale();
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Performs Video HW Acceleration command. */
-    virtual void doProcessVHWACommand(QEvent*) {}
     /** Handles viewport resize-event. */
     virtual void viewportResized(QResizeEvent*)
     {
-# ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
+#ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
         /* Sync GL widget size with the MachineView widget: */
         /** @todo This can be probably done in a more automated way. */
         if (m_pGLWidget && m_pMachineView)
             m_pGLWidget->resize(m_pMachineView->viewport()->size());
-# endif
+#endif
     }
-    /** Handles viewport scroll-event. */
-    virtual void viewportScrolled(int, int) {}
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
     bool isGLWidgetSupported()
@@ -1075,125 +1066,6 @@ void GLWidget::deleteGuestTexture()
     }
 }
 #endif /* VBOX_GUI_WITH_QTGLFRAMEBUFFER */
-
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-/** UIFrameBufferPrivate reimplementation used to maintain VM display video memory
-  *                      for the case when 2D Video Acceleration is enabled. */
-class VBoxOverlayFrameBuffer : public UIFrameBufferPrivate
-{
-    Q_OBJECT;
-
-public:
-
-    VBoxOverlayFrameBuffer()
-    {
-    }
-
-    virtual HRESULT init(UIMachineView *pView)
-    {
-        mpView = pView;
-        UIFrameBufferPrivate::init(mpView);
-        mOverlay.init(mpView->viewport(), mpView, &(mpView->session()), mpView->screenId()),
-        /* sync with frame-buffer */
-        mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(this), QPoint(mpView->contentsX(), mpView->contentsY()));
-        return S_OK;
-    }
-
-    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand, LONG enmCmd, BOOL fGuestCmd)
-    {
-        UIFrameBufferPrivate::lock();
-        /* Make sure frame-buffer is used: */
-        if (m_fUnused)
-        {
-            LogRel2(("GUI: ProcessVHWACommand: Postponed!\n"));
-            /* Unlock access to frame-buffer: */
-            UIFrameBufferPrivate::unlock();
-            /* tell client to pend ProcessVHWACommand */
-            return E_ACCESSDENIED;
-        }
-
-        int rc = mOverlay.onVHWACommand((struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *)pCommand, enmCmd, fGuestCmd != FALSE);
-        UIFrameBufferPrivate::unlock();
-        if (rc == VINF_CALLBACK_RETURN)
-            return S_OK;
-        if (RT_SUCCESS(rc))
-            return S_FALSE;
-        if (rc == VERR_INVALID_STATE)
-            return E_ACCESSDENIED;
-        return E_FAIL;
-    }
-
-    void doProcessVHWACommand (QEvent * pEvent)
-    {
-        mOverlay.onVHWACommandEvent (pEvent);
-    }
-
-    STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
-                             ULONG aW, ULONG aH)
-    {
-        HRESULT hr = S_OK;
-        UIFrameBufferPrivate::lock();
-        /* Make sure frame-buffer is used: */
-        if (m_fUnused)
-        {
-            LogRel3(("GUI: NotifyUpdate: Ignored!\n"));
-            mOverlay.onNotifyUpdateIgnore (aX, aY, aW, aH);
-            /* Unlock access to frame-buffer: */
-            UIFrameBufferPrivate::unlock();
-            /*can we actually ignore the notify update?*/
-            /* Ignore NotifyUpdate: */
-            return E_FAIL;
-        }
-
-        if (!mOverlay.onNotifyUpdate (aX, aY, aW, aH))
-            hr = UIFrameBufferPrivate::NotifyUpdate (aX, aY, aW, aH);
-        UIFrameBufferPrivate::unlock();
-        return hr;
-    }
-
-    void performResize(int iWidth, int iHeight)
-    {
-        UIFrameBufferPrivate::performResize(iWidth, iHeight);
-        mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
-                QPoint(mpView->contentsX(), mpView->contentsY()));
-    }
-
-    void performRescale()
-    {
-        UIFrameBufferPrivate::performRescale();
-        mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
-                QPoint(mpView->contentsX(), mpView->contentsY()));
-    }
-
-    void viewportResized (QResizeEvent * re)
-    {
-        mOverlay.onViewportResized (re);
-        UIFrameBufferPrivate::viewportResized (re);
-    }
-
-    void viewportScrolled (int dx, int dy)
-    {
-        mOverlay.onViewportScrolled (QPoint(mpView->contentsX(), mpView->contentsY()));
-        UIFrameBufferPrivate::viewportScrolled (dx, dy);
-    }
-
-    void setView(UIMachineView * pView)
-    {
-        /* lock to ensure we do not collide with the EMT thread passing commands to us */
-        UIFrameBufferPrivate::lock();
-        UIFrameBufferPrivate::setView(pView);
-        mpView = pView;
-        mOverlay.updateAttachment(pView ? pView->viewport() : NULL, pView);
-        UIFrameBufferPrivate::unlock();
-    }
-
-private:
-
-    VBoxQGLOverlay mOverlay;
-    UIMachineView *mpView;
-};
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 
 #ifdef VBOX_WITH_XPCOM
@@ -2471,26 +2343,10 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
 }
 
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-UIFrameBuffer::UIFrameBuffer(bool m_fAccelerate2DVideo)
-{
-    if (m_fAccelerate2DVideo)
-    {
-        ComObjPtr<VBoxOverlayFrameBuffer> pFrameBuffer;
-        pFrameBuffer.createObject();
-        m_pFrameBuffer = pFrameBuffer;
-    }
-    else
-    {
-        m_pFrameBuffer.createObject();
-    }
-}
-#else /* !VBOX_WITH_VIDEOHWACCEL */
 UIFrameBuffer::UIFrameBuffer()
 {
     m_pFrameBuffer.createObject();
 }
-#endif /* !VBOX_WITH_VIDEOHWACCEL */
 
 UIFrameBuffer::~UIFrameBuffer()
 {
@@ -2657,21 +2513,9 @@ void UIFrameBuffer::performRescale()
     m_pFrameBuffer->performRescale();
 }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
-{
-    m_pFrameBuffer->doProcessVHWACommand(pEvent);
-}
-
 void UIFrameBuffer::viewportResized(QResizeEvent *pEvent)
 {
     m_pFrameBuffer->viewportResized(pEvent);
 }
-
-void UIFrameBuffer::viewportScrolled(int iX, int iY)
-{
-    m_pFrameBuffer->viewportScrolled(iX, iY);
-}
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #include "UIFrameBuffer.moc"

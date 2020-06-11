@@ -412,11 +412,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration)
     {
         QStringList acceleration;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /* 2D acceleration: */
-        if (comGraphics.GetAccelerate2DVideoEnabled())
-            acceleration << QApplication::translate("UIDetails", "2D Video", "details (display)");
-#endif
         /* 3D acceleration: */
         if (comGraphics.GetAccelerate3DEnabled())
             acceleration << QApplication::translate("UIDetails", "3D", "details (display)");

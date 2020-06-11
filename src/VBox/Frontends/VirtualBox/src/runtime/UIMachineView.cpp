@@ -39,7 +39,6 @@
 #include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UIFrameBuffer.h"
-#include "VBoxFBOverlay.h"
 #ifdef VBOX_WS_MAC
 # include "UICocoaApplication.h"
 # include "DarwinKeyboard.h"
@@ -115,48 +114,22 @@ private:
 
 
 /* static */
-UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
-                                     , ulong uScreenId
-                                     , UIVisualStateType visualStateType
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                     , bool bAccelerate2DVideo
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-                                     )
+UIMachineView* UIMachineView::create(UIMachineWindow *pMachineWindow, ulong uScreenId, UIVisualStateType visualStateType)
 {
     UIMachineView *pMachineView = 0;
     switch (visualStateType)
     {
         case UIVisualStateType_Normal:
-            pMachineView = new UIMachineViewNormal(  pMachineWindow
-                                                   , uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                                   , bAccelerate2DVideo
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-                                                   );
+            pMachineView = new UIMachineViewNormal(pMachineWindow, uScreenId);
             break;
         case UIVisualStateType_Fullscreen:
-            pMachineView = new UIMachineViewFullscreen(  pMachineWindow
-                                                       , uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                                       , bAccelerate2DVideo
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-                                                       );
+            pMachineView = new UIMachineViewFullscreen(pMachineWindow, uScreenId);
             break;
         case UIVisualStateType_Seamless:
-            pMachineView = new UIMachineViewSeamless(  pMachineWindow
-                                                     , uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                                     , bAccelerate2DVideo
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-                                                     );
+            pMachineView = new UIMachineViewSeamless(pMachineWindow, uScreenId);
             break;
         case UIVisualStateType_Scale:
-            pMachineView = new UIMachineViewScale(  pMachineWindow
-                                                  , uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                                  , bAccelerate2DVideo
-#endif
-                                                  );
+            pMachineView = new UIMachineViewScale(pMachineWindow, uScreenId);
             break;
         default:
             break;
@@ -658,12 +631,7 @@ void UIMachineView::sltMousePointerShapeChange()
     emit sigMousePointerShapeChange();
 }
 
-UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
-                             , ulong uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                             , bool bAccelerate2DVideo
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-                             )
+UIMachineView::UIMachineView(UIMachineWindow *pMachineWindow, ulong uScreenId)
     : QAbstractScrollArea(pMachineWindow->centralWidget())
     , m_pMachineWindow(pMachineWindow)
     , m_uScreenId(uScreenId)
@@ -672,9 +640,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_iHostScreenNumber(0)
     , m_maxGuestSizePolicy(MaxGuestResolutionPolicy_Automatic)
     , m_u64MaxGuestSize(0)
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    , m_fAccelerate2DVideo(bAccelerate2DVideo)
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     , m_fIsDraggingFromGuest(false)
 #endif
@@ -725,15 +690,9 @@ void UIMachineView::prepareFrameBuffer()
     /* If we do not: */
     else
     {
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /* Create new frame-buffer: */
-        m_pFrameBuffer = new UIFrameBuffer(m_fAccelerate2DVideo);
-        m_pFrameBuffer->init(this);
-#else /* VBOX_WITH_VIDEOHWACCEL */
         /* Create new frame-buffer: */
         m_pFrameBuffer = new UIFrameBuffer;
         m_pFrameBuffer->init(this);
-#endif /* !VBOX_WITH_VIDEOHWACCEL */
 
         /* Take scaling optimization type into account: */
         m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(uiCommon().managedVMUuid()));
@@ -890,11 +849,6 @@ void UIMachineView::cleanupFrameBuffer()
 
     /* Process pending framebuffer events: */
     QApplication::sendPostedEvents(this, QEvent::MetaCall);
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    if (m_fAccelerate2DVideo)
-        QApplication::sendPostedEvents(this, VHWACommandProcessType);
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
     /* Temporarily detach the framebuffer from IDisplay before detaching
      * from view in order to respect the thread synchonisation logic (see UIFrameBuffer.h).
@@ -1343,12 +1297,7 @@ void UIMachineView::dimImage(QImage &img)
 
 void UIMachineView::scrollContentsBy(int dx, int dy)
 {
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    if (m_pFrameBuffer)
-    {
-        m_pFrameBuffer->viewportScrolled(dx, dy);
-    }
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+    /* Call to base-class: */
     QAbstractScrollArea::scrollContentsBy(dx, dy);
 
     /* Update console's display viewport and 3D overlay: */
@@ -1422,14 +1371,6 @@ bool UIMachineView::event(QEvent *pEvent)
         }
 #endif /* VBOX_WS_MAC */
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        case VHWACommandProcessType:
-        {
-            m_pFrameBuffer->doProcessVHWACommand(pEvent);
-            return true;
-        }
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
         default:
             break;
     }
@@ -1445,11 +1386,10 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                QResizeEvent* pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+                /* Notify framebuffer about viewport resize: */
+                QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
                 if (m_pFrameBuffer)
                     m_pFrameBuffer->viewportResized(pResizeEvent);
-#endif /* VBOX_WITH_VIDEOHWACCEL */
                 /* Update console's display viewport and 3D overlay: */
                 updateViewport();
                 break;

@@ -31,12 +31,7 @@ class UIMachineViewSeamless : public UIMachineView
 protected:
 
     /* Seamless machine-view constructor: */
-    UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
-                          , ulong uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                          , bool bAccelerate2DVideo
-#endif
-    );
+    UIMachineViewSeamless(UIMachineWindow *pMachineWindow, ulong uScreenId);
     /* Seamless machine-view destructor: */
     virtual ~UIMachineViewSeamless() { cleanupSeamless(); }
 

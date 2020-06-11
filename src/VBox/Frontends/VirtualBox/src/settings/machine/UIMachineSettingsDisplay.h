@@ -53,10 +53,6 @@ public:
     /** Returns whether 3D Acceleration is enabled. */
     bool isAcceleration3DSelected() const;
 #endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Returns whether 2D Video Acceleration is enabled. */
-    bool isAcceleration2DVideoSelected() const;
-#endif
 
     /** Returns recommended graphics controller type. */
     KGraphicsControllerType graphicsControllerTypeRecommended() const;
@@ -105,10 +101,6 @@ private slots:
 #ifdef VBOX_WITH_3D_ACCELERATION
     /** Handles 3D Acceleration check-box change. */
     void sltHandle3DAccelerationCheckboxChange();
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Handles 2D Video Acceleration check-box change. */
-    void sltHandle2DVideoAccelerationCheckboxChange();
 #endif
 
     /** Handles recording toggle. */
@@ -175,10 +167,6 @@ private:
 #ifdef VBOX_WITH_3D_ACCELERATION
     /** Holds whether the guest OS supports WDDM. */
     bool          m_fWddmModeSupported;
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Holds whether the guest OS supports 2D Video Acceleration. */
-    bool          m_f2DVideoAccelerationSupported;
 #endif
     /** Holds recommended graphics controller type. */
     KGraphicsControllerType  m_enmGraphicsControllerTypeRecommended;

@@ -548,19 +548,6 @@ public:
         /** Returns whether automatic mounting/unmounting of guest-screens enabled. */
         bool autoMountGuestScreensEnabled(const QUuid &uID);
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /** Returns whether 2D acceleration should use linear sretch. */
-        bool useLinearStretch(const QUuid &uID);
-        /** Returns whether 2D acceleration should use YV12 pixel format. */
-        bool usePixelFormatYV12(const QUuid &uID);
-        /** Returns whether 2D acceleration should use UYVY pixel format. */
-        bool usePixelFormatUYVY(const QUuid &uID);
-        /** Returns whether 2D acceleration should use YUY2 pixel format. */
-        bool usePixelFormatYUY2(const QUuid &uID);
-        /** Returns whether 2D acceleration should use AYUV pixel format. */
-        bool usePixelFormatAYUV(const QUuid &uID);
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
 #ifndef VBOX_WS_MAC
         /** Returns whether mini-toolbar is enabled for full and seamless screens. */
         bool miniToolbarEnabled(const QUuid &uID);

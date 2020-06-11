@@ -1717,11 +1717,6 @@ QString UISnapshotDetailsWidget::displayAccelerationReport(CGraphicsAdapter comG
 {
     /* Prepare report: */
     QStringList aReport;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* 2D Video Acceleration? */
-    if (comGraphics.GetAccelerate2DVideoEnabled())
-        aReport << QApplication::translate("UIDetails", "2D Video", "details (display)");
-#endif
     /* 3D Acceleration? */
     if (comGraphics.GetAccelerate3DEnabled() && uiCommon().is3DAvailable())
         aReport << QApplication::translate("UIDetails", "3D", "details (display)");

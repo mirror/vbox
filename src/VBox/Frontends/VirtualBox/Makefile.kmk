@@ -139,11 +139,6 @@ ifdef VBOX_WITH_DEBUGGER_GUI
   VirtualBox_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
  endif
 endif
-ifdef VBOX_WITH_VIDEOHWACCEL
- VirtualBox_DEFS          += VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
-else ifdef VBOX_GUI_USE_QGL
- VirtualBox_DEFS          += VBOX_GUI_USE_QGL
-endif
 ifdef VBOX_WITH_LIBCURL
  VirtualBox_DEFS          += VBOX_GUI_WITH_NETWORK_MANAGER
  VBOX_GUI_WITH_NETWORK_MANAGER := 1
@@ -210,11 +205,6 @@ ifdef VBOX_WITH_DEBUGGER_GUI
   VirtualBoxVM_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
  endif
 endif
-ifdef VBOX_WITH_VIDEOHWACCEL
- VirtualBoxVM_DEFS          += VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
-else ifdef VBOX_GUI_USE_QGL
- VirtualBoxVM_DEFS          += VBOX_GUI_USE_QGL
-endif
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBoxVM_DEFS          += VBOX_GUI_WITH_QTGLFRAMEBUFFER
 endif
@@ -268,11 +258,6 @@ ifdef VBOX_WITH_DEBUGGER_GUI
  if "$(KBUILD_TYPE)" != "release"
   UICommon_DEFS       += VBOX_WITH_DEBUGGER_GUI_MENU
  endif
-endif
-ifdef VBOX_WITH_VIDEOHWACCEL
- UICommon_DEFS        += VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
-else ifdef VBOX_GUI_USE_QGL
- UICommon_DEFS        += VBOX_GUI_USE_QGL
 endif
 ifdef VBOX_WITH_LIBCURL
  UICommon_DEFS        += VBOX_GUI_WITH_NETWORK_MANAGER
@@ -403,7 +388,7 @@ VirtualBox_LDFLAGS.darwin = \
 	$(if $(VBOX_WITH_HARDENING),,-rpath @executable_path/../MacOS -rpath @executable_path/../Frameworks) \
 	-framework AppKit -framework Carbon -framework IOKit
 
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBox_LDFLAGS.darwin += -framework OpenGL
 endif
 
@@ -441,7 +426,7 @@ VirtualBoxVM_LDFLAGS.darwin = \
 	-rpath @executable_path/../../../../Frameworks) \
 	-framework AppKit -framework Carbon -framework IOKit \
 
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBoxVM_LDFLAGS.darwin += -framework OpenGL
 endif
 
@@ -467,7 +452,8 @@ UICommon_LDFLAGS.darwin = \
 	-framework AppKit \
 	-framework Carbon \
 	-framework IOKit
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  UICommon_LDFLAGS.darwin += -framework OpenGL
 endif
 
@@ -507,7 +493,7 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
 endif
 
 # These are 2D Video Acceleration and 3D Acceleration related libs:
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBox_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
  VirtualBox_LIBS.solaris   += GL
  VirtualBox_LIBS.linux     += GL
@@ -560,7 +546,7 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
 endif
 
 # These are 2D Video Acceleration and 3D Acceleration related libs:
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBoxVM_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
  VirtualBoxVM_LIBS.solaris   += GL
  VirtualBoxVM_LIBS.linux     += GL
@@ -597,7 +583,7 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
 endif
 
 # These are 2D Video Acceleration and 3D Acceleration related libs:
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  UICommon_LIBS.win     += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
  UICommon_LIBS.solaris += GL
  UICommon_LIBS.linux   += GL
@@ -605,11 +591,6 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 endif
 ifdef VBOX_WITH_3D_ACCELERATION
  UICommon_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
-endif
-if defined(VBOX_WITH_VIDEOHWACCEL)
- if1of ($(KBUILD_TARGET), win linux freebsd)
-  UICommon_LIBS += $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB)
- endif
 endif
 
 
@@ -1194,13 +1175,6 @@ endif
 VirtualBox_SOURCES.win += \
 	src/platform/win/UIDesktopServices_win.cpp
 
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
- VirtualBox_SOURCES += \
-	src/VBox2DHelpers.cpp \
-	src/VBoxFBOverlay.cpp \
-	src/VBoxGLSupportInfo.cpp
-endif
-
 $(call VBOX_SET_VER_INFO_EXE,VirtualBox,VirtualBox Manager,$(VBOX_WINDOWS_ICON_FILE))
 
 
@@ -1273,13 +1247,6 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 	src/runtime/UIDnDDataObject_win.cpp \
 	src/runtime/UIDnDEnumFormat_win.cpp
  endif
-endif
-
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
- VirtualBoxVM_SOURCES += \
-	src/VBox2DHelpers.cpp \
-	src/VBoxFBOverlay.cpp \
-	src/VBoxGLSupportInfo.cpp
 endif
 
 VirtualBoxVM_SOURCES.darwin += \
@@ -1500,12 +1467,6 @@ UICommon_SOURCES.darwin += \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
 
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
- UICommon_SOURCES += \
-	src/VBox2DHelpers.cpp \
-	src/VBoxGLSupportInfo.cpp
-endif
-
 
 #
 # VirtualBox Manager Application
@@ -1536,7 +1497,7 @@ VirtualBox_QT_MODULES.solaris += X11Extras
 VirtualBox_QT_MODULES.freebsd += X11Extras
 VirtualBox_QT_MODULES.darwin  += MacExtras
 VirtualBox_QT_MODULES.win     += WinExtras
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBox_QT_MODULES += OpenGL
 endif
 
@@ -1552,7 +1513,7 @@ VirtualBoxVM_QT_MODULES.solaris += X11Extras
 VirtualBoxVM_QT_MODULES.freebsd += X11Extras
 VirtualBoxVM_QT_MODULES.darwin  += MacExtras
 VirtualBoxVM_QT_MODULES.win     += WinExtras
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBoxVM_QT_MODULES += OpenGL
 endif
 
@@ -1568,7 +1529,7 @@ UICommon_QT_MODULES.solaris += X11Extras
 UICommon_QT_MODULES.freebsd += X11Extras
 UICommon_QT_MODULES.darwin  += MacExtras
 UICommon_QT_MODULES.win     += WinExtras
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  UICommon_QT_MODULES += OpenGL
 endif
 
@@ -1600,10 +1561,6 @@ UICommon_SOURCES          += VirtualBox_xml.qrc
 VirtualBox_xml.qrc_RCCFLAGS  = -name BASIC_XML
 UICommon_SOURCES += $(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc
 $(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
- UICommon_SOURCES += VirtualBoxShaders.qrc
- VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
-endif
 
 
 # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts
@@ -1865,21 +1822,6 @@ VirtualBox.app_SOURCES = \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $@ $<
 endif # darwin
-
-#
-# App for testing GL support
-#
-if defined(VBOX_WITH_VIDEOHWACCEL)
- if1of ($(KBUILD_TARGET), win linux freebsd)
-  LIBRARIES += VBoxOGL2D
-  VBoxOGL2D_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE),VBOXMAINEXE)
-  VBoxOGL2D_DEFS = QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
-  VBoxOGL2D_QT_MODULES += OpenGL
-  VBoxOGL2D_SOURCES = \
-	src/VBoxGLSupportInfo.cpp
-  VBoxOGL2D_INCS = include
- endif
-endif
 
 
 #

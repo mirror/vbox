@@ -49,9 +49,6 @@
 #include "UIConsoleEventHandler.h"
 #include "UIFrameBuffer.h"
 #include "UISettingsDialogSpecific.h"
-#ifdef VBOX_WITH_VIDEOHWACCEL
-# include "VBox2DHelpers.h"
-#endif
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -242,13 +239,6 @@ bool UISession::initialize()
 
     /* Load VM settings: */
     loadVMSettings();
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* Log whether 2D video acceleration is enabled: */
-    LogRel(("GUI: 2D video acceleration is %s\n",
-           machine().GetGraphicsAdapter().GetAccelerate2DVideoEnabled() && VBox2DHelpers::isAcceleration2DVideoAvailable()
-           ? "enabled" : "disabled"));
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* Log whether HID LEDs sync is enabled: */
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)

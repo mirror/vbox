@@ -31,12 +31,7 @@ class UIMachineViewScale : public UIMachineView
 protected:
 
     /* Scale machine-view constructor: */
-    UIMachineViewScale(  UIMachineWindow *pMachineWindow
-                       , ulong uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                       , bool bAccelerate2DVideo
-#endif
-    );
+    UIMachineViewScale(UIMachineWindow *pMachineWindow, ulong uScreenId);
     /* Scale machine-view destructor: */
     virtual ~UIMachineViewScale() {}
 

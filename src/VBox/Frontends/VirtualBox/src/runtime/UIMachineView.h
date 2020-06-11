@@ -77,13 +77,7 @@ signals:
 public:
 
     /* Factory function to create machine-view: */
-    static UIMachineView* create(  UIMachineWindow *pMachineWindow
-                                 , ulong uScreenId
-                                 , UIVisualStateType visualStateType
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                 , bool bAccelerate2DVideo
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-    );
+    static UIMachineView* create(UIMachineWindow *pMachineWindow, ulong uScreenId, UIVisualStateType visualStateType);
     /* Factory function to destroy required machine-view: */
     static void destroy(UIMachineView *pMachineView);
 
@@ -144,12 +138,7 @@ protected slots:
 protected:
 
     /* Machine-view constructor: */
-    UIMachineView(  UIMachineWindow *pMachineWindow
-                  , ulong uScreenId
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                  , bool bAccelerate2DVideo
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-    );
+    UIMachineView(UIMachineWindow *pMachineWindow, ulong uScreenId);
     /* Machine-view destructor: */
     virtual ~UIMachineView() {}
 
@@ -375,10 +364,6 @@ protected:
      */
     /** @todo This should be private. */
     volatile uint64_t m_u64MaxGuestSize;
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    bool m_fAccelerate2DVideo : 1;
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
     /** Holds the pause-pixmap. */
     QPixmap m_pausePixmap;

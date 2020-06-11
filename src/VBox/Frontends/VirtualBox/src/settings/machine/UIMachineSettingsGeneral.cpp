@@ -141,14 +141,6 @@ bool UIMachineSettingsGeneral::is64BitOSTypeSelected() const
            : false;
 }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-bool UIMachineSettingsGeneral::isWindowsOSTypeSelected() const
-{
-    AssertPtrReturn(m_pNameAndSystemEditor, false);
-    return m_pNameAndSystemEditor->familyId() == "Windows";
-}
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
 void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
 {
     /* Make sure hardware virtualization extension has changed: */

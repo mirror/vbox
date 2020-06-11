@@ -453,24 +453,15 @@ void UISettingsDialogMachine::saveOwnData()
             qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(MachineSettingsPageType_General));
         UIMachineSettingsSystem *pSystemPage =
             qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(MachineSettingsPageType_System));
-#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_3D_ACCELERATION)
+#ifdef VBOX_WITH_3D_ACCELERATION
         UIMachineSettingsDisplay *pDisplayPage =
             qobject_cast<UIMachineSettingsDisplay*>(m_pSelector->idToPage(MachineSettingsPageType_Display));
-#endif /* VBOX_WITH_VIDEOHWACCEL || VBOX_WITH_3D_ACCELERATION */
+#endif /* VBOX_WITH_3D_ACCELERATION */
 
         /* Guest OS type & VT-x/AMD-V option correlation auto-fix: */
         if (pGeneralPage && pSystemPage &&
             pGeneralPage->is64BitOSTypeSelected() && !pSystemPage->isHWVirtExEnabled())
             m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /* Disable 2D Video Acceleration for non-Windows guests: */
-        if (pGeneralPage && !pGeneralPage->isWindowsOSTypeSelected())
-        {
-            if (pDisplayPage && pDisplayPage->isAcceleration2DVideoSelected())
-                m_machine.GetGraphicsAdapter().SetAccelerate2DVideoEnabled(false);
-        }
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifdef VBOX_WITH_3D_ACCELERATION
         /* Adjust graphics controller type if necessary: */

@@ -62,9 +62,6 @@ namespace UIDefs
 #ifdef VBOX_WS_MAC
         ShowWindowEventType,
 #endif
-#ifdef VBOX_GUI_USE_QGL
-        VHWACommandProcessType,
-#endif
     };
 
     /** Size formatting types. */

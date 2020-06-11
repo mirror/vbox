@@ -39,7 +39,6 @@
 #include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UIVMCloseDialog.h"
-#include "VBox2DHelpers.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -495,22 +494,11 @@ void UIMachineWindow::prepareMainLayout()
 
 void UIMachineWindow::prepareMachineView()
 {
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* Need to force the QGL framebuffer in case 2D Video Acceleration is supported & enabled: */
-    bool bAccelerate2DVideo = machine().GetGraphicsAdapter().GetAccelerate2DVideoEnabled() && VBox2DHelpers::isAcceleration2DVideoAvailable();
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
     /* Get visual-state type: */
     UIVisualStateType visualStateType = machineLogic()->visualStateType();
 
     /* Create machine-view: */
-    m_pMachineView = UIMachineView::create(  this
-                                           , m_uScreenId
-                                           , visualStateType
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                                           , bAccelerate2DVideo
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-                                           );
+    m_pMachineView = UIMachineView::create(this, m_uScreenId, visualStateType);
 
     /* Listen for frame-buffer resize: */
     connect(m_pMachineView, &UIMachineView::sigFrameBufferResize, this, &UIMachineWindow::sigFrameBufferResize);

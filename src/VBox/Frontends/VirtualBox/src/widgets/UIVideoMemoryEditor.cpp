@@ -26,7 +26,6 @@
 #include "QIAdvancedSlider.h"
 #include "UICommon.h"
 #include "UIVideoMemoryEditor.h"
-#include "VBox2DHelpers.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -41,10 +40,6 @@ UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */, bool fWithL
 #ifdef VBOX_WITH_3D_ACCELERATION
     , m_f3DAccelerationSupported(false)
     , m_f3DAccelerationEnabled(false)
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    , m_f2DVideoAccelerationSupported(false)
-    , m_f2DVideoAccelerationEnabled(false)
 #endif
     , m_iMinVRAM(0)
     , m_iMaxVRAM(0)
@@ -139,34 +134,6 @@ void UIVideoMemoryEditor::set3DAccelerationEnabled(bool fEnabled)
     updateRequirements();
 }
 #endif /* VBOX_WITH_3D_ACCELERATION */
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-void UIVideoMemoryEditor::set2DVideoAccelerationSupported(bool fSupported)
-{
-    /* Check if 2D video acceleration really changed: */
-    if (m_f2DVideoAccelerationSupported == fSupported)
-        return;
-
-    /* Remember new 2D video acceleration: */
-    m_f2DVideoAccelerationSupported = fSupported;
-
-    /* Update requirements: */
-    updateRequirements();
-}
-
-void UIVideoMemoryEditor::set2DVideoAccelerationEnabled(bool fEnabled)
-{
-    /* Check if 2D video acceleration really changed: */
-    if (m_f2DVideoAccelerationEnabled == fEnabled)
-        return;
-
-    /* Remember new 2D video acceleration: */
-    m_f2DVideoAccelerationEnabled = fEnabled;
-
-    /* Update requirements: */
-    updateRequirements();
-}
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 void UIVideoMemoryEditor::retranslateUi()
 {
@@ -329,13 +296,6 @@ void UIVideoMemoryEditor::updateRequirements()
         /* No less than 256MB (if possible): */
         if (m_iMaxVRAMVisible < 256 && m_iMaxVRAM >= 256)
             m_iMaxVRAMVisible = 256;
-    }
-#endif
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    if (m_f2DVideoAccelerationEnabled && m_f2DVideoAccelerationSupported)
-    {
-        uNeedMBytes += VBox2DHelpers::required2DOffscreenVideoMemory() / _1M;
     }
 #endif
 

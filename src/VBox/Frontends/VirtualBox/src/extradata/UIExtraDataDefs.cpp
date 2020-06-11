@@ -165,13 +165,6 @@ const char *UIExtraDataDefs::GUI_LastVisibilityStatusForGuestScreen = "GUI/LastV
 const char *UIExtraDataDefs::GUI_LastGuestSizeHint = "GUI/LastGuestSizeHint";
 const char *UIExtraDataDefs::GUI_VirtualScreenToHostScreen = "GUI/VirtualScreenToHostScreen";
 const char *UIExtraDataDefs::GUI_AutomountGuestScreens = "GUI/AutomountGuestScreens";
-#ifdef VBOX_WITH_VIDEOHWACCEL
-const char *UIExtraDataDefs::GUI_Accelerate2D_StretchLinear = "GUI/Accelerate2D/StretchLinear";
-const char *UIExtraDataDefs::GUI_Accelerate2D_PixformatYV12 = "GUI/Accelerate2D/PixformatYV12";
-const char *UIExtraDataDefs::GUI_Accelerate2D_PixformatUYVY = "GUI/Accelerate2D/PixformatUYVY";
-const char *UIExtraDataDefs::GUI_Accelerate2D_PixformatYUY2 = "GUI/Accelerate2D/PixformatYUY2";
-const char *UIExtraDataDefs::GUI_Accelerate2D_PixformatAYUV = "GUI/Accelerate2D/PixformatAYUV";
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifndef VBOX_WS_MAC
 const char *UIExtraDataDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";
 const char *UIExtraDataDefs::GUI_MiniToolBarAutoHide = "GUI/MiniToolBarAutoHide";

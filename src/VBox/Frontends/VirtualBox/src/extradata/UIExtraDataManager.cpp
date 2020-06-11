@@ -1962,11 +1962,6 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* VBOX_WS_X11 */
            << GUI_AutoresizeGuest << GUI_LastVisibilityStatusForGuestScreen << GUI_LastGuestSizeHint
            << GUI_VirtualScreenToHostScreen << GUI_AutomountGuestScreens
-#ifdef VBOX_WITH_VIDEOHWACCEL
-           << GUI_Accelerate2D_StretchLinear
-           << GUI_Accelerate2D_PixformatYV12 << GUI_Accelerate2D_PixformatUYVY
-           << GUI_Accelerate2D_PixformatYUY2 << GUI_Accelerate2D_PixformatAYUV
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifndef VBOX_WS_MAC
            << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
 #endif /* !VBOX_WS_MAC */
@@ -3780,38 +3775,6 @@ bool UIExtraDataManager::autoMountGuestScreensEnabled(const QUuid &uID)
     /* Show only if 'allowed' flag is set: */
     return isFeatureAllowed(GUI_AutomountGuestScreens, uID);
 }
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-bool UIExtraDataManager::useLinearStretch(const QUuid &uID)
-{
-    /* 'True' unless feature restricted: */
-    return !isFeatureRestricted(GUI_Accelerate2D_StretchLinear, uID);
-}
-
-bool UIExtraDataManager::usePixelFormatYV12(const QUuid &uID)
-{
-    /* 'True' unless feature restricted: */
-    return !isFeatureRestricted(GUI_Accelerate2D_PixformatYV12, uID);
-}
-
-bool UIExtraDataManager::usePixelFormatUYVY(const QUuid &uID)
-{
-    /* 'True' unless feature restricted: */
-    return !isFeatureRestricted(GUI_Accelerate2D_PixformatUYVY, uID);
-}
-
-bool UIExtraDataManager::usePixelFormatYUY2(const QUuid &uID)
-{
-    /* 'True' unless feature restricted: */
-    return !isFeatureRestricted(GUI_Accelerate2D_PixformatYUY2, uID);
-}
-
-bool UIExtraDataManager::usePixelFormatAYUV(const QUuid &uID)
-{
-    /* 'True' unless feature restricted: */
-    return !isFeatureRestricted(GUI_Accelerate2D_PixformatAYUV, uID);
-}
-#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifndef VBOX_WS_MAC
 bool UIExtraDataManager::miniToolbarEnabled(const QUuid &uID)
