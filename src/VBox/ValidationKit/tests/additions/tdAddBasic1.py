@@ -123,22 +123,35 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         sGaIso = self.getGuestAdditionsIso();
 
         # On 6.0 we merge the GAs with the ValidationKit so we can get at FsPerf.
-        # Note! Not possible to do a dboule import as both images an '/OS2' dir.
-        #       So, using same dir as with unattended VISOs for the valkit.
+        #
+        # Note1: Not possible to do a double import as both images an '/OS2' dir.
+        #        So, using same dir as with unattended VISOs for the valkit.
+        #
+        # Note2: We need to make sure that we don't change the location of the 
+        #        ValidationKit bits of the combined VISO, as this will break TXS' (TestExecService)
+        #        automatic updating mechanism (uses hardcoded paths, e.g. "{CDROM}/linux/amd64/TestExecService").
+        #
+        ## @todo Find a solution for testing the automatic Guest Additions updates, which also looks at {CDROM}s root.
         if self.fpApiVer >= 6.0 and 'sharedfolders' in self.asTests:
             sGaViso = os.path.join(self.sScratchPath, 'AdditionsAndValKit.viso');
             ## @todo encode as bash cmd line:
             sVisoContent = '--iprt-iso-maker-file-marker-bourne-sh %s ' \
                            '--import-iso \'%s\' ' \
                            '--push-iso \'%s\' ' \
-                           '/vboxvalidationkit=/ ' \
+                           '/vboxadditions=/ ' \
                            '--pop ' \
-                          % (uuid.uuid4(), sGaIso, self.sVBoxValidationKitIso);
-            reporter.log2('Using VISO combining GAs and ValKit "%s": %s' % (sGaViso, sVisoContent));
+                          % (uuid.uuid4(), self.sVBoxValidationKitIso, sGaIso);
+            reporter.log2('Using VISO combining ValKit and GAs "%s": %s' % (sVisoContent, sGaViso));
             oGaViso = open(sGaViso, 'w');
             oGaViso.write(sVisoContent);
             oGaViso.close();
             sGaIso = sGaViso;
+
+            self.sPathGaISO = '${CDROM}/vboxadditions';
+        else:
+            self.sPathGaISO = '${CDROM}';
+
+        reporter.log2('Path to Guest Additions on ISO is "%s"' % self.sPathGaISO);
 
         return self.oTestVmSet.actionConfig(self, eNic0AttachType = eNic0AttachType, sDvdImage = sGaIso);
 
@@ -366,15 +379,18 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Install the public signing key.
         #
         if oTestVm.sKind not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
-            fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000, '${CDROM}/cert/VBoxCertUtil.exe',
-                                  ('${CDROM}/cert/VBoxCertUtil.exe', 'add-trusted-publisher', '${CDROM}/cert/vbox-sha1.cer'),
+            fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000, 
+                                   '%s/cert/VBoxCertUtil.exe' % self.sPathGaISO,
+                                  ('%s/cert/VBoxCertUtil.exe' % self.sPathGaISO, 'add-trusted-publisher', 
+                                   '%s/cert/vbox-sha1.cer'    % self.sPathGaISO),
                                   fCheckSessionStatus = True);
             if not fRc:
                 reporter.error('Error installing SHA1 certificate');
             else:
-                fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000, '${CDROM}/cert/VBoxCertUtil.exe',
-                                      ('${CDROM}/cert/VBoxCertUtil.exe', 'add-trusted-publisher',
-                                       '${CDROM}/cert/vbox-sha256.cer'), fCheckSessionStatus = True);
+                fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000, 
+                                       '%s/cert/VBoxCertUtil.exe' % self.sPathGaISO,
+                                      ('%s/cert/VBoxCertUtil.exe' % self.sPathGaISO, 'add-trusted-publisher',
+                                       '%s/cert/vbox-sha256.cer'  % self.sPathGaISO), fCheckSessionStatus = True);
                 if not fRc:
                     reporter.error('Error installing SHA256 certificate');
 
@@ -409,8 +425,10 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Enable installing the optional auto-logon modules (VBoxGINA/VBoxCredProv).
         # Also tell the installer to produce the appropriate log files.
         #
-        fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000, '${CDROM}/VBoxWindowsAdditions.exe',
-                              ('${CDROM}/VBoxWindowsAdditions.exe', '/S', '/l', '/with_autologon'), fCheckSessionStatus = True);
+        fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000, 
+                               '%s/VBoxWindowsAdditions.exe' % self.sPathGaISO,
+                              ('%s/VBoxWindowsAdditions.exe' % self.sPathGaISO, '/S', '/l', '/with_autologon'), 
+                              fCheckSessionStatus = True);
 
         # Add the Windows Guest Additions installer files to the files we want to download
         # from the guest. Note: There won't be a install_ui.log because of the silent installation.
@@ -467,7 +485,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # xterm window spawned.
         fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
                               self.getGuestSystemShell(oTestVm),
-                              (self.getGuestSystemShell(oTestVm), '${CDROM}/VBoxLinuxAdditions.run', '--nox11'));
+                              (self.getGuestSystemShell(oTestVm), '%s/VBoxLinuxAdditions.run' % self.sPathGaISO, '--nox11'));
         if not fRc:
             iRc = self.getAdditionsInstallerResult(oTxsSession);
             # Check for rc == 0 just for completeness.
