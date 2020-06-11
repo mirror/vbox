@@ -2821,7 +2821,7 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
     LogFunc(("%s worker thread started for %s\n", pThis->szInst, pQueue->szName));
 
  /** @todo Race w/guest enabling/disabling guest notifications cyclically.
-           that causes the controlq activity to hang sporadically. See BugRef #8651, Comment #82 */
+           See BugRef #8651, Comment #82 */
 
     virtioCoreQueueNotifyEnable(&pThis->Virtio, pQueue->idx, true /* fEnable */);
 
