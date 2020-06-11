@@ -1639,7 +1639,7 @@ static int txsDoReboot(PCTXSPKTHDR pPktHdr)
  * Verifies and acknowledges a "UUID" request.
  *
  * @returns IPRT status code.
- * @param   pPktHdr             The howdy packet.
+ * @param   pPktHdr             The UUID packet.
  */
 static int txsDoUuid(PCTXSPKTHDR pPktHdr)
 {
@@ -1663,7 +1663,7 @@ static int txsDoUuid(PCTXSPKTHDR pPktHdr)
  * Verifies and acknowledges a "BYE" request.
  *
  * @returns IPRT status code.
- * @param   pPktHdr             The howdy packet.
+ * @param   pPktHdr             The bye packet.
  */
 static int txsDoBye(PCTXSPKTHDR pPktHdr)
 {
@@ -1680,7 +1680,7 @@ static int txsDoBye(PCTXSPKTHDR pPktHdr)
  * Verifies and acknowledges a "VER" request.
  *
  * @returns IPRT status code.
- * @param   pPktHdr             The howdy packet.
+ * @param   pPktHdr             The version packet.
  */
 static int txsDoVer(PCTXSPKTHDR pPktHdr)
 {
