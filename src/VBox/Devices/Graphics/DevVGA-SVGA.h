@@ -71,6 +71,7 @@
 #define VMSVGA_FIFO_EXTCMD_LOADSTATE                    3
 #define VMSVGA_FIFO_EXTCMD_RESET                        4
 #define VMSVGA_FIFO_EXTCMD_UPDATE_SURFACE_HEAP_BUFFERS  5
+#define VMSVGA_FIFO_EXTCMD_POWEROFF                     6
 
 /** Size of the region to backup when switching into svga mode. */
 #define VMSVGA_VGA_FB_BACKUP_SIZE                       _512K

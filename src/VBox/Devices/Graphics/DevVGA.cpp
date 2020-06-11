@@ -6183,6 +6183,20 @@ static DECLCALLBACK(void) vgaR3PowerOn(PPDMDEVINS pDevIns)
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnPowerOff}
+ */
+static DECLCALLBACK(void) vgaR3PowerOff(PPDMDEVINS pDevIns)
+{
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+    RT_NOREF(pThis, pThisCC);
+# ifdef VBOX_WITH_VMSVGA
+    vmsvgaR3PowerOff(pDevIns);
+# endif
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
 static DECLCALLBACK(void) vgaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
@@ -7438,7 +7452,7 @@ const PDMDEVREG g_DeviceVga =
     /* .pfnDetach = */              vgaDetach,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            NULL,
+    /* .pfnPowerOff = */            vgaR3PowerOff,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,

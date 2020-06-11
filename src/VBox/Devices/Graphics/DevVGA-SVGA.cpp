@@ -3105,14 +3105,23 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
         case VMSVGA_FIFO_EXTCMD_RESET:
             Log(("vmsvgaR3FifoLoop: reset the fifo thread.\n"));
             Assert(pThisCC->svga.pvFIFOExtCmdParam == NULL);
+
+            vmsvgaR3ResetScreens(pThisCC);
 # ifdef VBOX_WITH_VMSVGA3D
             if (pThis->svga.f3DEnabled)
             {
                 /* The 3d subsystem must be reset from the fifo thread. */
-                vmsvgaR3ResetScreens(pThisCC); /** @todo Also destroy screens on PowerOff. */
                 vmsvga3dReset(pThisCC);
             }
 # endif
+            break;
+
+        case VMSVGA_FIFO_EXTCMD_POWEROFF:
+            Log(("vmsvgaR3FifoLoop: power off.\n"));
+            Assert(pThisCC->svga.pvFIFOExtCmdParam == NULL);
+
+            /* The screens must be reset on the FIFO thread, because they may use 3D resources. */
+            vmsvgaR3ResetScreens(pThisCC);
             break;
 
         case VMSVGA_FIFO_EXTCMD_TERMINATE:
@@ -6915,6 +6924,29 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
 # else  /* !VBOX_WITH_VMSVGA3D */
     RT_NOREF(pDevIns);
 # endif /* !VBOX_WITH_VMSVGA3D */
+}
+
+/**
+ * Power Off notification.
+ *
+ * @param   pDevIns     The device instance data.
+ *
+ * @remarks Caller enters the device critical section.
+ */
+DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns)
+{
+    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+
+    /*
+     * Notify the FIFO thread.
+     */
+    if (pThisCC->svga.pFIFOIOThread)
+    {
+        int rc = vmsvgaR3RunExtCmdOnFifoThread(pDevIns, pThis, pThisCC,  VMSVGA_FIFO_EXTCMD_POWEROFF,
+                                               NULL /*pvParam*/, 30000 /*ms*/);
+        AssertLogRelRC(rc);
+    }
 }
 
 #endif /* IN_RING3 */
