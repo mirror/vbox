@@ -209,9 +209,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         self.logVmInfo(oVM);
 
         if oTestVm.isWindows():
-            self.sFileCdWait = 'VBoxWindowsAdditions.exe';
+            self.sFileCdWait = ('%s/VBoxWindowsAdditions.exe' % (self.sPathGaISO,));
         elif oTestVm.isLinux():
-            self.sFileCdWait = 'VBoxLinuxAdditions.run';
+            self.sFileCdWait = ('%s/VBoxLinuxAdditions.run' % (self.sPathGaISO,));
 
         reporter.testStart('Waiting for TXS + CD (%s)' % (self.sFileCdWait,));
         if oTestVm.isLinux():
