@@ -490,7 +490,7 @@ void virtioCorePrintFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp)
 void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle)
 {
 #define ADJCURSOR(cb) pszOut += cb; cbRemain -= cb;
-    int cbPrint = 0, cbRemain = ((cb / 16) + 1) * 80;
+    size_t cbPrint = 0, cbRemain = ((cb / 16) + 1) * 80;
     char *pszBuf = (char *)RTMemAllocZ(cbRemain), *pszOut = pszBuf;
     AssertMsgReturnVoid(pszBuf, ("Out of Memory"));
     if (pszTitle)
@@ -538,7 +538,7 @@ void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *psz
 void virtioCoreGCPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint16_t cb, uint32_t uBase, const char *pszTitle)
 {
 #define ADJCURSOR(cb) pszOut += cb; cbRemain -= cb;
-    int cbPrint = 0, cbRemain = ((cb / 16) + 1) * 80;
+    size_t cbPrint = 0, cbRemain = ((cb / 16) + 1) * 80;
     char *pszBuf = (char *)RTMemAllocZ(cbRemain), *pszOut = pszBuf;
     AssertMsgReturnVoid(pszBuf, ("Out of Memory"));
     if (pszTitle)
@@ -699,7 +699,7 @@ void virtioCoreR3QueueInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
     uint16_t uUsedIdx        = virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue);
     uint16_t uUsedIdxShadow  = pVirtq->uUsedIdxShadow;
 
-    PVIRTIO_DESC_CHAIN_T pDescChain;
+    PVIRTIO_DESC_CHAIN_T pDescChain = NULL;
 
     bool fEmpty = IS_VIRTQ_EMPTY(pDevIns, pVirtio, pVirtq);
 
@@ -1218,9 +1218,8 @@ int virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQue
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[idxQueue],
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
-    Log6Func(("Updating %s used_idx from %u to %u\n",
-              VIRTQNAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue),
-              pVirtq->uUsedIdxShadow));
+    Log6Func(("Updating %s used_idx to %u\n",
+              VIRTQNAME(pVirtio, idxQueue), pVirtq->uUsedIdxShadow));
 
     virtioWriteUsedRingIdx(pDevIns, pVirtio, idxQueue, pVirtq->uUsedIdxShadow);
     virtioCoreNotifyGuestDriver(pDevIns, pVirtio, idxQueue);
