@@ -1718,7 +1718,7 @@ QString UISnapshotDetailsWidget::displayAccelerationReport(CGraphicsAdapter comG
     /* Prepare report: */
     QStringList aReport;
     /* 3D Acceleration? */
-    if (comGraphics.GetAccelerate3DEnabled() && uiCommon().is3DAvailable())
+    if (comGraphics.GetAccelerate3DEnabled())
         aReport << QApplication::translate("UIDetails", "3D", "details (display)");
     /* Compose and return report: */
     return aReport.isEmpty() ? QString() : aReport.join(", ");

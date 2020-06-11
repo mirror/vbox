@@ -309,7 +309,6 @@ UICommon::UICommon(UIType enmType)
     , m_fSettingsPwSet(false)
     , m_fWrappersValid(false)
     , m_fVBoxSVCAvailable(true)
-    , m_i3DAvailable(-1)
     , m_pThreadPool(0)
     , m_pThreadPoolCloud(0)
     , m_pIconPool(0)
@@ -3729,31 +3728,6 @@ void UICommon::doExtPackInstallation(QString const &strFilePath, QString const &
 
     if (pstrExtPackName)
         *pstrExtPackName = strPackName;
-}
-
-bool UICommon::is3DAvailableWorker() const
-{
-    /* Rational is that when starting a text mode guest (like DOS) that does not
-     * have 3D enabled, don't wast the developer's or user's time on launching the
-     * test application when starting the VM or editing it's settings.
-     *
-     * Keep in mind that if we ever end up checking this concurrently on multiple threads,
-     * use a RTONCE construct to serialize the efforts. */
-
-#ifdef VBOX_WITH_3D_ACCELERATION
-    bool fSupported = true;
-#else
-    bool fSupported = false;
-#endif
-    m_i3DAvailable = fSupported;
-    return fSupported;
-}
-
-bool UICommon::is3DAvailable() const
-{
-    if (m_i3DAvailable < 0)
-        return is3DAvailableWorker();
-    return m_i3DAvailable != 0;
 }
 
 #ifdef VBOX_WITH_3D_ACCELERATION

@@ -761,7 +761,7 @@ private:
         }
 
         /* 3D acceleration: */
-        const bool fAcceleration3D = comGraphics.GetAccelerate3DEnabled() && uiCommon().is3DAvailable();
+        const bool fAcceleration3D = comGraphics.GetAccelerate3DEnabled();
         if (fAcceleration3D)
         {
             const QString strAcceleration3D = fAcceleration3D ?

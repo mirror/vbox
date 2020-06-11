@@ -633,11 +633,6 @@ public:
 
     /** @name Display stuff.
      * @{ */
-        /** Inner worker for lazily querying for 3D support. */
-        bool is3DAvailableWorker() const;
-        /** Returns whether 3D is available, runs worker above if necessary. */
-        bool is3DAvailable() const;
-
 #ifdef VBOX_WITH_3D_ACCELERATION
         /** Returns whether guest OS type with passed @a strGuestOSTypeId is WDDM compatible. */
         static bool isWddmCompatibleOsType(const QString &strGuestOSTypeId);
@@ -922,12 +917,6 @@ private:
         QMap<QString, QString>       m_guestOSFamilyDescriptions;
         /** Holds the guest OS types for each family ID. */
         QList<QList<CGuestOSType> >  m_guestOSTypes;
-    /** @} */
-
-    /** @name Display stuff.
-     * @{ */
-        /** Holds whether 3D is available. */
-        mutable int  m_i3DAvailable;
     /** @} */
 
     /** @name Thread stuff.
