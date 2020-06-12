@@ -822,7 +822,7 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
         "Debug Info: %s\n"
         "        (options: [a]ll, [n]et, [f]eatures, [s]tate, [p]ointers, [q]ueues)\n"
         "---------------------------------------------------------------------------\n\n",
-        pThis->szInst, pDevIns->pReg->szName);
+        pThis->szInst);
 
     if (fNone)
         return;
@@ -913,7 +913,7 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
         uint32_t fTransmitting = ASMAtomicReadU32(&pThis->uIsTransmitting);
 
         pHlp->pfnPrintf(pHlp, "    Transmitting: ............. %s\n", fTransmitting ? "true" : "false");
-        pHlp->pfnPrintf(pHlp, "    Quiescing: ................ %s %s\n",
+        pHlp->pfnPrintf(pHlp, "    Quiescing: ................ %s %s%s%s\n",
                 pThis->fQuiescing ? "true" : "false",
                 pThis->fQuiescing ? "(" : "",
                 pThis->fQuiescing ? virtioCoreGetStateChangeText(pThisCC->enmQuiescingFor) : "",
