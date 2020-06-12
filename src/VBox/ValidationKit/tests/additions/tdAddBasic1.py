@@ -73,7 +73,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # The file we're going to use as a beacon to wait if the Guest Additions CD-ROM is ready.
         self.sFileCdWait = '';
         # Path pointing to the Guest Additions on the (V)ISO file.
-        self.sPathGaISO  = '';
+        self.sGstPathGaPrefix = '';
 
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
         self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
@@ -150,11 +150,12 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             oGaViso.close();
             sGaIso = sGaViso;
 
-            self.sPathGaISO = '${CDROM}/vboxadditions';
+            self.sGstPathGaPrefix = 'vboxadditions';
         else:
-            self.sPathGaISO = '${CDROM}';
+            self.sGstPathGaPrefix = '';
 
-        reporter.log2('Path to Guest Additions on ISO is "%s"' % self.sPathGaISO);
+
+        reporter.log2('Path to Guest Additions on ISO is "%s"' % self.sGstPathGaPrefix);
 
         return self.oTestVmSet.actionConfig(self, eNic0AttachType = eNic0AttachType, sDvdImage = sGaIso);
 
@@ -210,9 +211,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         self.logVmInfo(oVM);
 
         if oTestVm.isWindows():
-            self.sFileCdWait = ('%s/VBoxWindowsAdditions.exe' % (self.sPathGaISO,));
+            self.sFileCdWait = ('%s/VBoxWindowsAdditions.exe' % (self.sGstPathGaPrefix,));
         elif oTestVm.isLinux():
-            self.sFileCdWait = ('%s/VBoxLinuxAdditions.run' % (self.sPathGaISO,));
+            self.sFileCdWait = ('%s/VBoxLinuxAdditions.run' % (self.sGstPathGaPrefix,));
 
         reporter.log2('Waiting for TXS + CD: %s' % (self.sFileCdWait,));
 
@@ -385,17 +386,17 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         #
         if oTestVm.sKind not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
             fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000,
-                                   '%s/cert/VBoxCertUtil.exe' % self.sPathGaISO,
-                                  ('%s/cert/VBoxCertUtil.exe' % self.sPathGaISO, 'add-trusted-publisher',
-                                   '%s/cert/vbox-sha1.cer'    % self.sPathGaISO),
+                                   '${CDROM}/%s/cert/VBoxCertUtil.exe' % self.sGstPathGaPrefix,
+                                  ('${CDROM}/%s/cert/VBoxCertUtil.exe' % self.sGstPathGaPrefix, 'add-trusted-publisher',
+                                   '${CDROM}/%s/cert/vbox-sha1.cer'    % self.sGstPathGaPrefix),
                                   fCheckSessionStatus = True);
             if not fRc:
                 reporter.error('Error installing SHA1 certificate');
             else:
                 fRc = self.txsRunTest(oTxsSession, 'VBoxCertUtil.exe', 1 * 60 * 1000,
-                                       '%s/cert/VBoxCertUtil.exe' % self.sPathGaISO,
-                                      ('%s/cert/VBoxCertUtil.exe' % self.sPathGaISO, 'add-trusted-publisher',
-                                       '%s/cert/vbox-sha256.cer'  % self.sPathGaISO), fCheckSessionStatus = True);
+                                       '${CDROM}/%s/cert/VBoxCertUtil.exe' % self.sGstPathGaPrefix,
+                                      ('${CDROM}/%s/cert/VBoxCertUtil.exe' % self.sGstPathGaPrefix, 'add-trusted-publisher',
+                                       '${CDROM}/%s/cert/vbox-sha256.cer'  % self.sGstPathGaPrefix), fCheckSessionStatus = True);
                 if not fRc:
                     reporter.error('Error installing SHA256 certificate');
 
@@ -431,8 +432,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Also tell the installer to produce the appropriate log files.
         #
         fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000,
-                               '%s/VBoxWindowsAdditions.exe' % self.sPathGaISO,
-                              ('%s/VBoxWindowsAdditions.exe' % self.sPathGaISO, '/S', '/l', '/with_autologon'),
+                               '${CDROM}/%s/VBoxWindowsAdditions.exe' % self.sGstPathGaPrefix,
+                              ('${CDROM}/%s/VBoxWindowsAdditions.exe' % self.sGstPathGaPrefix, '/S', '/l', '/with_autologon'),
                               fCheckSessionStatus = True);
 
         # Add the Windows Guest Additions installer files to the files we want to download
@@ -490,7 +491,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # xterm window spawned.
         fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 30 * 60 * 1000,
                               self.getGuestSystemShell(oTestVm),
-                              (self.getGuestSystemShell(oTestVm), '%s/VBoxLinuxAdditions.run' % self.sPathGaISO, '--nox11'));
+                              (self.getGuestSystemShell(oTestVm),
+                              '${CDROM}/%s/VBoxLinuxAdditions.run' % self.sGstPathGaPrefix, '--nox11'));
         if not fRc:
             iRc = self.getAdditionsInstallerResult(oTxsSession);
             # Check for rc == 0 just for completeness.
