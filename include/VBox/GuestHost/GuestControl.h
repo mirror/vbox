@@ -134,6 +134,16 @@ enum eProcessStatus
 #define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000003)
 /** @} */
 
+/** @name SHUTDOWN_FLAG_XXX - Guest shutdown flags.
+ * Must match Main's GuestShutdownFlag_ definitions.
+ * @{
+ */
+#define SHUTDOWN_FLAG_NONE                  UINT32_C(0)
+#define SHUTDOWN_FLAG_POWER_OFF             RT_BIT(0)
+#define SHUTDOWN_FLAG_REBOOT                RT_BIT(1)
+#define SHUTDOWN_FLAG_FORCE                 RT_BIT(2)
+/** @} */
+
 /** @name Defines for default (initial) guest process buffer lengths.
  * Note: These defaults were the maximum values before; so be careful when raising those in order to
  *       not break running with older Guest Additions.
