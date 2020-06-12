@@ -157,8 +157,12 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
+        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
+        Assert(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
+        PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
+
         RTGCPHYS GCPhysOut;
-        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
+        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemRead(pDevInsIommu, uDeviceId, GCPhys, cbRead, &GCPhysOut);
         if (RT_FAILURE(rc))
         {
@@ -205,8 +209,12 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
+        size_t const idxBus = pPciDev->Int.s.idxPdmBus;
+        Assert(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
+        PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
+
         RTGCPHYS GCPhysOut;
-        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pPciDev->Int.s.idxPdmBus, pPciDev->uDevFn);
+        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemWrite(pDevInsIommu, uDeviceId, GCPhys, cbWrite, &GCPhysOut);
         if (RT_FAILURE(rc))
         {
