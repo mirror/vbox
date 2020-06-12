@@ -82,6 +82,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     # Overridden methods.
     #
     def showUsage(self):
+        """ Shows this driver's command line options. """
         rc = vbox.TestDriver.showUsage(self);
         reporter.log('');
         reporter.log('tdAddBasic1 Options:');
