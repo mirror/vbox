@@ -3801,7 +3801,13 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
             && RT_SUCCESS(rc2))
         {
             /* Re-arm the timer for this stream. */
-            ichac97R3TimerSet(pDevIns, pStream, pStreamCC->State.cTransferTicks);
+            /** @todo r=aeichner This causes a VM hang upon saved state resume when NetBSD is used as a guest
+             * Stopping the timer if cTransferTicks is 0 is a workaround but needs further investigation,
+             * see @bugref{9759} for more information. */
+            if (pStreamCC->State.cTransferTicks)
+                ichac97R3TimerSet(pDevIns, pStream, pStreamCC->State.cTransferTicks);
+            else
+                PDMDevHlpTimerStop(pDevIns, pStream->hTimer);
         }
 
         /* Keep going. */
