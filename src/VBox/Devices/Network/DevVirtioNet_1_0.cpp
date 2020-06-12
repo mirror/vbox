@@ -662,7 +662,7 @@ static DECLCALLBACK(void) virtioNetVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE
         }
     }
     else
-        LogRelFunc(("%s unrecognized queue %s (idx=%d) notified\n", pVirtq->szName, idxVirtq));
+        LogRelFunc(("%s unrecognized queue %s (idx=%d) notified\n", pThis->szInst, pVirtq->szName, idxVirtq));
 }
 
 #ifdef IN_RING3 /* spans most of the file, at the moment. */
