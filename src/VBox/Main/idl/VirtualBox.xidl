@@ -11790,7 +11790,7 @@
 
   <enum
     name="GuestShutdownFlag"
-    uuid="587309CD-DDDA-4619-82B0-4B764D9D3BC1"
+    uuid="28D19C9C-5862-4930-B29A-F117712B4864"
   >
     <desc>
       Guest shutdown flags.
@@ -11804,6 +11804,11 @@
     </const>
     <const name="Reboot"                    value="2">
       <desc>Performs a reboot after shutdown.</desc>
+    </const>
+    <const name="Force"                     value="4">
+      <desc>Force the system to shutdown/reboot regardless of objecting
+        application or other stuff. This flag might not be realized on
+        all systems.</desc>
     </const>
   </enum>
 

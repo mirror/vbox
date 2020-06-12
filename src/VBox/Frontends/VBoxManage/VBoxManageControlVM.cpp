@@ -692,12 +692,15 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             const bool fReboot = !strcmp(a->argv[1], "reboot");
 
             com::SafeArray<GuestShutdownFlag_T> aShutdownFlags;
-            aShutdownFlags.resize(1);
-
             if (fReboot)
                 aShutdownFlags.push_back(GuestShutdownFlag_Reboot);
             else
                 aShutdownFlags.push_back(GuestShutdownFlag_PowerOff);
+
+            if (   a->argc >= 3
+                && !strcmp(a->argv[2], "--force"))
+                aShutdownFlags.push_back(GuestShutdownFlag_Force);
+
             CHECK_ERROR(pGuest, Shutdown(ComSafeArrayAsInParam(aShutdownFlags)));
             if (FAILED(rc))
             {
