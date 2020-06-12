@@ -1487,7 +1487,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Upload VBoxService logs on failure.
         if  not fRc \
         and self.oDebug.sVBoxServiceLogPath:
-            sVBoxServiceLogsTarGz    = 'VBoxServiceLogs-%s.tar.gz' % oTestVm.sVmName;
+            sVBoxServiceLogsTarGz    = 'ga-vboxservice-logs-%s.tar.gz' % oTestVm.sVmName;
             sVBoxServiceLogsTarGzAbs = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), sVBoxServiceLogsTarGz);
             if self.oTstDrv.txsPackFile(oSession, oTxsSession, \
                                         sVBoxServiceLogsTarGzAbs, self.oDebug.sVBoxServiceLogPath, fIgnoreErrors = True):
