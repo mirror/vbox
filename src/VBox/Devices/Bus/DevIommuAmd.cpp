@@ -4125,12 +4125,12 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
     }
 
     /* Check permissions bits of the root page table. */
-    uint8_t const fPtePerm  = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
-    if ((fAccess & fPtePerm) == fAccess)
+    uint8_t const fRootPtePerm  = (pDte->au64[0] >> IOMMU_IO_PERM_SHIFT) & IOMMU_IO_PERM_MASK;
+    if ((fAccess & fRootPtePerm) == fAccess)
     { /* likely */ }
     else
     {
-        Log((IOMMU_LOG_PFX ": Permission denied (fAccess=%#x fPtePerm=%#x) -> IOPF", fAccess, fPtePerm));
+        Log((IOMMU_LOG_PFX ": Permission denied (fAccess=%#x fRootPtePerm=%#x) -> IOPF", fAccess, fRootPtePerm));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4188,7 +4188,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
-            Log((IOMMU_LOG_PFX ": Page table entry not present -> IOPF", fAccess, fPtePerm));
+            Log((IOMMU_LOG_PFX ": Page table entry not present -> IOPF"));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -4513,7 +4513,7 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
 
     /* Ensure the IRTE offset is within the specified table size. */
     Assert(pDte->n.u4IntrTableLength < 12);
-    if (offIrte + sizeof(IRTE_T) <= (1 << pDte->n.u4IntrTableLength) << IOMMU_IRTE_SIZE_SHIFT)
+    if (offIrte + sizeof(IRTE_T) <= (1U << pDte->n.u4IntrTableLength) << IOMMU_IRTE_SIZE_SHIFT)
     { /* likely */ }
     else
     {
@@ -4878,23 +4878,20 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                     }
                 }
 
-                /* If command completion interrupt is requested, raise an interrupt. */
+                IOMMU_LOCK(pDevIns);
+
+                /* Indicate that this command has completed. */
+                ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
+
+                /* If the command requests an interrupt and completion wait interrupts are enabled, raise it. */
                 if (pCmdComWait->n.u1Interrupt)
                 {
-                    IOMMU_LOCK(pDevIns);
                     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
                     if (Ctrl.n.u1CompWaitIntrEn)
-                    {
-                        /* Indicate that this command completed. */
-                        ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
-
-                        /* Check and signal an interrupt if software wants to receive one when this command completes. */
-                        IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
-                        if (Ctrl.n.u1CompWaitIntrEn)
-                            iommuAmdRaiseMsiInterrupt(pDevIns);
-                    }
-                    IOMMU_UNLOCK(pDevIns);
+                        iommuAmdRaiseMsiInterrupt(pDevIns);
                 }
+
+                IOMMU_UNLOCK(pDevIns);
                 return VINF_SUCCESS;
             }
             iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
@@ -6068,7 +6065,8 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
     pThis->ExtFeat.n.u1HwErrorSup            = 1;
     pThis->ExtFeat.n.u1PerfCounterSup        = 0;
-    pThis->ExtFeat.n.u2HostAddrTranslateSize = IOMMU_MAX_HOST_PT_LEVEL;
+    AssertCompile((IOMMU_MAX_HOST_PT_LEVEL & 0x3) < 3);
+    pThis->ExtFeat.n.u2HostAddrTranslateSize = (IOMMU_MAX_HOST_PT_LEVEL & 0x3);
     pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup. */
     pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup. */
     pThis->ExtFeat.n.u2SmiFilterSup          = 0;
