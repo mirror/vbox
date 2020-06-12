@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_SRC_VirtIO_Virtio_1_0_h
-#define VBOX_INCLUDED_SRC_VirtIO_Virtio_1_0_h
+#ifndef VBOX_INCLUDED_SRC_VirtIO_VirtioCore_h
+#define VBOX_INCLUDED_SRC_VirtIO_VirtioCore_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -551,7 +551,6 @@ int      virtioCoreR3VirtqBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
 int      virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
                                  PPVIRTQBUF ppVirtqBuf, bool fRemove);
 
-
 /**
  * Fetches a specific descriptor chain using avail ring of indicated queue and converts the descriptor
  * chain into its OUT (to device) and IN to guest components.
@@ -575,7 +574,6 @@ int      virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
  * @retval  VERR_INVALID_STATE   VirtIO not in ready state (asserted).
  * @retval  VERR_NOT_AVAILABLE   If the queue is empty.
  */
-
 int      virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
                                   uint16_t uHeadIdx, PPVIRTQBUF ppVirtqBuf);
 
@@ -613,7 +611,6 @@ int      virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
  * @note    This function will not release any reference to pVirtqBuf.  The
  *          caller must take care of that.
  */
-
 int      virtioCoreR3VirtqBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, PRTSGBUF pSgVirtReturn,
                                  PVIRTQBUF pVirtqBuf, bool fFence);
 
@@ -791,4 +788,4 @@ const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState);
 /** @} */
 
 
-#endif /* !VBOX_INCLUDED_SRC_VirtIO_Virtio_1_0_h */
+#endif /* !VBOX_INCLUDED_SRC_VirtIO_VirtioCore_h */
