@@ -480,7 +480,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDD_DEFS           += VBOX_WITH_VIRTIO
   VBoxDD_SOURCES        += \
  	VirtIO/Virtio.cpp \
-  	VirtIO/Virtio_1_0.cpp \
+  	VirtIO/VirtioCore.cpp \
  	Network/DevVirtioNet.cpp
  endif
 
@@ -969,7 +969,7 @@ endif
    VBoxDDRC_DEFS        += VBOX_WITH_VIRTIO
    VBoxDDRC_SOURCES     += \
   	VirtIO/Virtio.cpp \
-  	VirtIO/Virtio_1_0.cpp \
+  	VirtIO/VirtioCore.cpp \
   	Network/DevVirtioNet.cpp
   endif
 
@@ -1168,7 +1168,7 @@ endif
   VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO
   VBoxDDR0_SOURCES      += \
 	VirtIO/Virtio.cpp \
-  	VirtIO/Virtio_1_0.cpp \
+  	VirtIO/VirtioCore.cpp \
   	Network/DevVirtioNet.cpp
  endif
 
