@@ -51,7 +51,7 @@ typedef enum VIRTIOVMSTATECHANGED
  /**
   * TEMPORARY NOTE: Some of these values are experimental during development and will likely change.
   */
-#define VIRTIO_MAX_QUEUE_NAME_SIZE          32                   /**< Maximum length of a queue name           */
+#define VIRTIO_MAX_VIRTQ_NAME_SIZE          32                   /**< Maximum length of a queue name           */
 #define VIRTQ_MAX_ENTRIES                   1024                 /**< Max size (# desc elements) of a virtq    */
 #define VIRTQ_MAX_CNT                       24                   /**< Max queues we allow guest to create      */
 #define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
@@ -186,7 +186,7 @@ typedef struct virtio_pci_cap
  */
 typedef struct VIRTQSTATE
 {
-    uint16_t  idxQueue;                                          /**< Index of this queue                       */
+    uint16_t  idxVirtq;                                          /**< Index of this queue                       */
     char      szVirtqName[32];                                   /**< Dev-specific name of queue                */
     uint16_t  uAvailIdxShadow;                                   /**< Consumer's position in avail ring         */
     uint16_t  uUsedIdxShadow;                                    /**< Consumer's position in used ring          */
@@ -206,19 +206,19 @@ typedef struct virtio_pci_common_cfg
     uint32_t  uDriverFeaturesSelect;                             /**< RW (driver selects driver features)       */
     uint32_t  uDriverFeatures;                                   /**< RW (driver-accepted device features)      */
     uint16_t  uMsixConfig;                                       /**< RW (driver sets MSI-X config vector)      */
-    uint16_t  uNumQueues;                                        /**< RO (device specifies max queues)          */
+    uint16_t  uNumVirtqs;                                        /**< RO (device specifies max queues)          */
     uint8_t   uDeviceStatus;                                     /**< RW (driver writes device status, 0=reset) */
     uint8_t   uConfigGeneration;                                 /**< RO (device changes when changing configs) */
 
-    /* Per virtqueue fields (as determined by uQueueSelect) */
-    uint16_t  uQueueSelect;                                      /**< RW (selects queue focus for these fields) */
-    uint16_t  uQueueSize;                                        /**< RW (queue size, 0 - 2^n)                  */
-    uint16_t  uQueueMsixVector;                                  /**< RW (driver selects MSI-X queue vector)    */
-    uint16_t  uQueueEnable;                                      /**< RW (driver controls usability of queue)   */
-    uint16_t  uQueueNotifyOff;                                   /**< RO (offset uto virtqueue; see spec)       */
-    uint64_t  aGCPhysQueueDesc;                                  /**< RW (driver writes desc table phys addr)   */
-    uint64_t  aGCPhysQueueAvail;                                 /**< RW (driver writes avail ring phys addr)   */
-    uint64_t  aGCPhysQueueUsed;                                  /**< RW (driver writes used ring  phys addr)   */
+    /* Per virtqueue fields (as determined by uVirtqSelect) */
+    uint16_t  uVirtqSelect;                                      /**< RW (selects queue focus for these fields) */
+    uint16_t  uVirtqSize;                                        /**< RW (queue size, 0 - 2^n)                  */
+    uint16_t  uVirtqMsixVector;                                  /**< RW (driver selects MSI-X queue vector)    */
+    uint16_t  uVirtqEnable;                                      /**< RW (driver controls usability of queue)   */
+    uint16_t  uVirtqNotifyOff;                                   /**< RO (offset uto virtqueue; see spec)       */
+    uint64_t  aGCPhysVirtqDesc;                                  /**< RW (driver writes desc table phys addr)   */
+    uint64_t  aGCPhysVirtqAvail;                                 /**< RW (driver writes avail ring phys addr)   */
+    uint64_t  aGCPhysVirtqUsed;                                  /**< RW (driver writes used ring  phys addr)   */
 } VIRTIO_PCI_COMMON_CFG_T, *PVIRTIO_PCI_COMMON_CFG_T;
 
 typedef struct virtio_pci_notify_cap
@@ -252,14 +252,14 @@ typedef struct VIRTIOCORE
     char                        szInstance[16];                     /**< Instance name, e.g. "VIRTIOSCSI0"         */
     PPDMDEVINS                  pDevInsR0;                          /**< Client device instance                    */
     PPDMDEVINS                  pDevInsR3;                          /**< Client device instance                    */
-    RTGCPHYS                    aGCPhysQueueDesc[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
-    RTGCPHYS                    aGCPhysQueueAvail[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
-    RTGCPHYS                    aGCPhysQueueUsed[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q used structs   GUEST */
-    uint16_t                    uQueueNotifyOff[VIRTQ_MAX_CNT];     /**< (MMIO) per-Q notify offset           HOST */
-    uint16_t                    uQueueMsixVector[VIRTQ_MAX_CNT];    /**< (MMIO) Per-queue vector for MSI-X   GUEST */
-    uint16_t                    uQueueEnable[VIRTQ_MAX_CNT];        /**< (MMIO) Per-queue enable             GUEST */
-    uint16_t                    uQueueSize[VIRTQ_MAX_CNT];          /**< (MMIO) Per-queue size          HOST/GUEST */
-    uint16_t                    uQueueSelect;                       /**< (MMIO) queue selector               GUEST */
+    RTGCPHYS                    aGCPhysVirtqDesc[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
+    RTGCPHYS                    aGCPhysVirtqAvail[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
+    RTGCPHYS                    aGCPhysVirtqUsed[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q used structs   GUEST */
+    uint16_t                    uVirtqNotifyOff[VIRTQ_MAX_CNT];     /**< (MMIO) per-Q notify offset           HOST */
+    uint16_t                    uVirtqMsixVector[VIRTQ_MAX_CNT];    /**< (MMIO) Per-queue vector for MSI-X   GUEST */
+    uint16_t                    uVirtqEnable[VIRTQ_MAX_CNT];        /**< (MMIO) Per-queue enable             GUEST */
+    uint16_t                    uVirtqSize[VIRTQ_MAX_CNT];          /**< (MMIO) Per-queue size          HOST/GUEST */
+    uint16_t                    uVirtqSelect;                       /**< (MMIO) queue selector               GUEST */
     uint16_t                    padding;
     uint64_t                    uDeviceFeatures;                    /**< (MMIO) Host features offered         HOST */
     uint64_t                    uDriverFeatures;                    /**< (MMIO) Host features accepted       GUEST */
@@ -269,7 +269,7 @@ typedef struct VIRTIOCORE
     uint8_t                     uDeviceStatus;                      /**< (MMIO) Device Status                GUEST */
     uint8_t                     uPrevDeviceStatus;                  /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                     uConfigGeneration;                  /**< (MMIO) Device config sequencer       HOST */
-    VIRTQSTATE                  virtqState[VIRTQ_MAX_CNT];          /**< Local impl-specific queue context         */
+    VIRTQSTATE                  aVirtqState[VIRTQ_MAX_CNT];         /**< Local impl-specific queue context         */
 
     /** @name The locations of the capability structures in PCI config space and the BAR.
      * @{ */
@@ -347,9 +347,9 @@ typedef struct VIRTIOCORER3
      *
      * @param   pVirtio    Pointer to the shared virtio state.
      * @param   pVirtioCC  Pointer to the ring-3 virtio state.
-     * @param   idxQueue   Index of the notified queue
+     * @param   idxVirtq   Index of the notified queue
      */
-    DECLCALLBACKMEMBER(void, pfnQueueNotified)(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
+    DECLCALLBACKMEMBER(void, pfnVirtqNotified)(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxVirtq);
 
     /** @} */
 
@@ -380,9 +380,9 @@ typedef struct VIRTIOCORER0
      *
      * @param   pVirtio    Pointer to the shared virtio state.
      * @param   pVirtioCC  Pointer to the ring-3 virtio state.
-     * @param   idxQueue   Index of the notified queue
+     * @param   idxVirtq   Index of the notified queue
      */
-    DECLCALLBACKMEMBER(void, pfnQueueNotified)(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
+    DECLCALLBACKMEMBER(void, pfnVirtqNotified)(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxVirtq);
 
 } VIRTIOCORER0;
 
@@ -404,10 +404,10 @@ typedef CTX_SUFF(VIRTIOCORE) VIRTIOCORECC;
 /** @name API for VirtIO parent device
  * @{ */
 
-int      virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
-uint16_t virtioCoreQueueAvailCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue);
-void     virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnable);
-void     virtioCoreQueueNotifyEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnable);
+int      virtioCoreVirtqSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxVirtq);
+uint16_t virtioCoreVirtqAvailCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxVirtq);
+void     virtioCoreVirtqEnable(PVIRTIOCORE pVirtio, uint16_t idxVirtq, bool fEnable);
+void     virtioCoreVirtqNotifyEnable(PVIRTIOCORE pVirtio, uint16_t idxVirtq, bool fEnable);
 void     virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
 void     virtioCoreResetAll(PVIRTIOCORE pVirtio);
 void     virtioCorePrintFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp);
@@ -415,21 +415,21 @@ void     virtioCorePrintFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp);
 uint32_t virtioCoreR3DescChainRetain(PVIRTIO_DESC_CHAIN_T pDescChain);
 uint32_t virtioCoreR3DescChainRelease(PVIRTIOCORE pVirtio, PVIRTIO_DESC_CHAIN_T pDescChain);
 void     virtioCoreR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
-void     virtioCoreR3QueueInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs, int idxQueue);
-int      virtioCoreR3QueueAttach(PVIRTIOCORE pVirtio, uint16_t idxQueue, const char *pcszName);
+void     virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs, int idxVirtq);
+int      virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t idxVirtq, const char *pcszName);
 
-int      virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+int      virtioCoreR3DescChainGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxVirtq,
                                   uint16_t uHeadIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain);
 
-int      virtioCoreR3QueuePeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+int      virtioCoreR3VirtqPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxVirtq,
                                PPVIRTIO_DESC_CHAIN_T ppDescChain);
 
-int      virtioCoreR3QueueSkip(PVIRTIOCORE pVirtio, uint16_t idxQueue);
+int      virtioCoreR3VirtqSkip(PVIRTIOCORE pVirtio, uint16_t idxVirtq);
 
-int      virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+int      virtioCoreR3VirtqGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxVirtq,
                               PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
 
-int      virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
+int      virtioCoreR3VirtqPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxVirtq, PRTSGBUF pSgVirtReturn,
                               PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
 
 
@@ -437,27 +437,27 @@ int      virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t 
  * Return queue enable state
  *
  * @param   pVirtio     Pointer to the virtio state.
- * @param   idxQueue    Queue number.
+ * @param   idxVirtq    Virtq number.
  * @returns   true or false indicating whether to enable queue or not
  */
-DECLINLINE(bool) virtioCoreIsQueueEnabled(PVIRTIOCORE pVirtio, uint16_t idxQueue)
+DECLINLINE(bool) virtioCoreIsVirtqEnabled(PVIRTIOCORE pVirtio, uint16_t idxVirtq)
 {
-    Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
-    return pVirtio->uQueueEnable[idxQueue] != 0;
+    Assert(idxVirtq < RT_ELEMENTS(pVirtio->aVirtqState));
+    return pVirtio->uVirtqEnable[idxVirtq] != 0;
 }
 
 /**
- * Get name of queue, by idxQueue, assigned at virtioCoreR3QueueAttach()
+ * Get name of queue, by idxVirtq, assigned at virtioCoreR3VirtqAttach()
  *
  * @param   pVirtio     Pointer to the virtio state.
- * @param   idxQueue    Queue number.
+ * @param   idxVirtq    Virtq number.
  *
  * @returns Pointer to read-only queue name.
  */
-DECLINLINE(const char *) virtioCoreQueueGetName(PVIRTIOCORE pVirtio, uint16_t idxQueue)
+DECLINLINE(const char *) virtioCoreVirtqGetName(PVIRTIOCORE pVirtio, uint16_t idxVirtq)
 {
-    Assert((size_t)idxQueue < RT_ELEMENTS(pVirtio->virtqState));
-    return pVirtio->virtqState[idxQueue].szVirtqName;
+    Assert((size_t)idxVirtq < RT_ELEMENTS(pVirtio->aVirtqState));
+    return pVirtio->aVirtqState[idxVirtq].szVirtqName;
 }
 
 /**
@@ -466,18 +466,6 @@ DECLINLINE(const char *) virtioCoreQueueGetName(PVIRTIOCORE pVirtio, uint16_t id
  * @returns Features the guest driver has accepted, finalizing the operational features
  */
 DECLINLINE(uint64_t) virtioCoreGetNegotiatedFeatures(PVIRTIOCORE pVirtio)
-{
-    return pVirtio->uDriverFeatures;
-}
-
-/**
- * Get VirtIO accepted host-side features
- *
- * @returns feature bits selected or 0 if selector out of range.
- *
- * @param   pState          Virtio state
- */
-DECLINLINE(uint64_t) virtioCoreGetAcceptedFeatures(PVIRTIOCORE pVirtio)
 {
     return pVirtio->uDriverFeatures;
 }
