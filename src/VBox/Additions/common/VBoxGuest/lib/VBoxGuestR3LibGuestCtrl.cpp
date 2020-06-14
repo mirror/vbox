@@ -1288,11 +1288,18 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
         AssertPtrBreakStmt(pStartupInfo->psz##a_Str, VERR_NO_MEMORY); \
         pStartupInfo->cb##a_Str  = RT_MAX(pStartupInfo->cb##a_Str * cGrowthFactor, a_cbMax);
 
+                /* We can't tell which parameter doesn't fit, so we have to resize all. */
                 GROW_STR(Cmd , GUESTPROCESS_MAX_CMD_LEN);
                 GROW_STR(Args, GUESTPROCESS_MAX_ARGS_LEN);
                 GROW_STR(Env,  GUESTPROCESS_MAX_ENV_LEN);
 
 #undef GROW_STR
+                LogRel2(("VbglR3GuestCtrlProcGetStart: %Rrc (retry %u, cbCmd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
+                         rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
+
+                /* Only try another round if we can peek for the next bigger size; otherwise bail out on the bottom. */
+                if (g_fVbglR3GuestCtrlHavePeekGetCancel)
+                    continue;
             }
             else
                 break;
