@@ -1353,7 +1353,7 @@ class tdDebugSettings(object):
     """
     def __init__(self, sImgPath = None):
         self.sImgPath = sImgPath;
-        self.sVBoxServiceLogPath = '';
+        self.sGstVBoxServiceLogPath = '';
         self.fNoExit = False;
 
 class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
@@ -1485,13 +1485,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 break;
 
         # Upload VBoxService logs on failure.
-        if  not fRc \
-        and self.oDebug.sVBoxServiceLogPath:
+        if  reporter.testErrorCount() > 0 \
+        and self.oDebug.sGstVBoxServiceLogPath:
             sVBoxServiceLogsTarGz    = 'ga-vboxservice-logs-%s.tar.gz' % oTestVm.sVmName;
-            sVBoxServiceLogsTarGzAbs = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), sVBoxServiceLogsTarGz);
+            sGstVBoxServiceLogsTarGz = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), sVBoxServiceLogsTarGz);
             if self.oTstDrv.txsPackFile(oSession, oTxsSession, \
-                                        sVBoxServiceLogsTarGzAbs, self.oDebug.sVBoxServiceLogPath, fIgnoreErrors = True):
-                self.oTstDrv.txsDownloadFiles(oSession, oTxsSession, [ (sVBoxServiceLogsTarGzAbs, sVBoxServiceLogsTarGz) ], \
+                                        sGstVBoxServiceLogsTarGz, self.oDebug.sGstVBoxServiceLogPath, fIgnoreErrors = True):
+                self.oTstDrv.txsDownloadFiles(oSession, oTxsSession, [ (sGstVBoxServiceLogsTarGz, sVBoxServiceLogsTarGz) ], \
                                               fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
@@ -1638,12 +1638,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Enable VBoxService verbose logging.
         #
-        self.oDebug.sVBoxServiceLogPath = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), "VBoxService");
-        if oTxsSession.syncMkDirPath(self.oDebug.sVBoxServiceLogPath, 0o777) is not True:
-            return reporter.error('Failed to create directory "%s"!' % (self.oDebug.sVBoxServiceLogPath,));
-        sPathLogFile = oTestVm.pathJoin(self.oDebug.sVBoxServiceLogPath, 'VBoxService.log');
+        self.oDebug.sGstVBoxServiceLogPath = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), "VBoxService");
+        if oTxsSession.syncMkDirPath(self.oDebug.sGstVBoxServiceLogPath, 0o777) is not True:
+            return reporter.error('Failed to create directory "%s"!' % (self.oDebug.sGstVBoxServiceLogPath,));
+        sPathLogFile = oTestVm.pathJoin(self.oDebug.sGstVBoxServiceLogPath, 'VBoxService.log');
 
-        reporter.log('VBoxService logs will be stored in "%s"' % (self.oDebug.sVBoxServiceLogPath,));
+        reporter.log('VBoxService logs will be stored in "%s"' % (self.oDebug.sGstVBoxServiceLogPath,));
 
         if oTestVm.isWindows():
             sPathRegExe         = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'reg.exe');
