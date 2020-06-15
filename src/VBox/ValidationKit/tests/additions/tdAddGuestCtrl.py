@@ -1652,7 +1652,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging (via registry)', 30 * 1000,
                                     sPathRegExe,
                                     (sPathRegExe, 'add',
-                                    '"HKLM\\SYSTEM\\CurrentControlSet\\Services\\VBoxService"',
+                                    'HKLM\\SYSTEM\\CurrentControlSet\\Services\\VBoxService',
                                     '/v', 'ImagePath', '/t', 'REG_SZ', '/d', sImagePath, '/f'));
 
             self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
