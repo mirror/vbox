@@ -914,7 +914,7 @@ static int dbgfR3TracerInitR3(PDBGFTRACERINSR3 pThis, const char *pszTraceFilePa
  * @param   ppDbgfTracerR3          Where to store the pointer to the tracer on success.
  */
 DECLHIDDEN(int) dbgfR3TracerCreate(PVM pVM, bool fR0Enabled, const char *pszTraceFilePath,
-                                   size_t cbRingBuf, PDBGFTRACERINSR3 *ppDbgfTracerR3)
+                                   uint32_t cbRingBuf, PDBGFTRACERINSR3 *ppDbgfTracerR3)
 {
     PDBGFTRACERINSR3 pThis = NULL;
 
@@ -1005,11 +1005,11 @@ DECLHIDDEN(int) dbgfR3TracerInit(PVM pVM)
     if (fTracerEnabled)
     {
         bool fR0Enabled;
-        uint64_t cbRingBuf = 0;
+        uint32_t cbRingBuf = 0;
         char *pszTraceFilePath = NULL;
         rc = CFGMR3QueryBoolDef(pDbgfNode, "TracerR0Enabled", &fR0Enabled, false);
         if (RT_SUCCESS(rc))
-            rc = CFGMR3QueryU64Def(pDbgfNode, "TracerRingBufSz", &cbRingBuf, _4M);
+            rc = CFGMR3QueryU32Def(pDbgfNode, "TracerRingBufSz", &cbRingBuf, _4M);
         if (RT_SUCCESS(rc))
             rc = CFGMR3QueryStringAlloc(pDbgfNode, "TracerFilePath", &pszTraceFilePath);
         if (RT_SUCCESS(rc))

@@ -55,8 +55,6 @@ DECLINLINE(PDBGFTRACERINSCC) dbgfTracerGetInstance(PVMCC pVM)
 #else
 # error "No/Invalid context specified"
 #endif
-
-    return NULL;
 }
 
 
@@ -310,7 +308,7 @@ static int dbgfTracerEvtIoPortStr(PVMCC pVM, PDBGFTRACERINSCC pThisCC, DBGFTRACE
     /* Fast path for really small transfers where everything fits into the descriptor. */
     DBGFTRACEREVTIOPORTSTR EvtIoPortStr;
     EvtIoPortStr.hIoPorts      = hIoPorts;
-    EvtIoPortStr.cbItem        = cbItem;
+    EvtIoPortStr.cbItem        = (uint32_t)cbItem;
     EvtIoPortStr.cTransfersReq = cTransfersReq;
     EvtIoPortStr.cTransfersRet = cTransfersRet;
     EvtIoPortStr.offPort       = offPort;

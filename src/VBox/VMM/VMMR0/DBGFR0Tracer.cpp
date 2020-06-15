@@ -55,6 +55,8 @@
  */
 DECLHIDDEN(int) dbgfR0TracerDestroy(PGVM pGVM, PDBGFTRACERINSR0 pTracer)
 {
+    RT_NOREF(pGVM);
+
     /*
      * Free the ring-3 mapping and instance memory.
      */
