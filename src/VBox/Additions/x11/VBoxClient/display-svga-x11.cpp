@@ -649,10 +649,11 @@ static bool callVMWCTRL(struct RANDROUTPUT *paOutputs)
         extents[i].height = hHeight;
         hRunningOffset += hWidth;
     }
-    return VMwareCtrlSetTopology(x11Context.pDisplay, x11Context.hVMWCtrlMajorOpCode,
-                                 DefaultScreen(x11Context.pDisplay),
-                                 extents, x11Context.hOutputCount);
+    bool fResult = VMwareCtrlSetTopology(x11Context.pDisplay, x11Context.hVMWCtrlMajorOpCode,
+                                         DefaultScreen(x11Context.pDisplay),
+                                         extents, x11Context.hOutputCount);
     free(extents);
+    return fResult;
 }
 
 /**
