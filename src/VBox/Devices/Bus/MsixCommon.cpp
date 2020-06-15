@@ -28,7 +28,7 @@
 #include <iprt/assert.h>
 
 #include "MsiCommon.h"
-#include "DevPCIInternal.h"
+#include "DevPciInternal.h"
 #include "PciInline.h"
 
 typedef struct
