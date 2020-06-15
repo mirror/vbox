@@ -756,10 +756,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 endif
 # Enable ballooning
 VBOX_WITH_MEMBALLOON = 1
-# Enable crOpenGL service
-if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
- VBOX_WITH_CROGL = 1
-endif
 # Enable cURL (required for the network part of the GUI)
 VBOX_WITH_LIBCURL = 1
 # Enable Host=>Guest Drag'n'Drop
@@ -1134,7 +1130,6 @@ endif
 
 ifeq ($(KBUILD_TARGET),solaris)
  VBOX_WITH_SECURELABEL=
- VBOX_WITH_OGL=
 endif
 
 ifeq ($(KBUILD_TARGET),win)
@@ -1144,7 +1139,6 @@ endif
 
 ifn1of ($(KBUILD_TARGET_ARCH), x86 amd64)
  VBOX_WITH_ADDITION_DRIVERS=
- VBOX_WITH_CROGL=
  VBOX_WITH_DEBUGGER=
  VBOX_WITH_DOCS=
  VBOX_WITH_EHCI=
@@ -1383,7 +1377,6 @@ endif
 ifdef VBOX_HEADLESS
  VBOX_WITH_QTGUI=
  VBOX_WITH_VBOXSDL=
- VBOX_WITH_OGL=
  VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_VRDP_RDESKTOP=
 endif
@@ -2630,46 +2623,6 @@ VBOX_PATH_X11_ROOT      = $(PATH_ROOT)/src/VBox/Additions/x11/x11include
 VBOX_GRAPHICS_INCS = $(PATH_ROOT)/include/VBox/Graphics
 VBOX_JPEG_INCS     = $(PATH_ROOT)/src/libs/jpeg-9b
 
-
-#
-# crOpenGL related paths and variables.
-#
-ifdef VBOX_WITH_CROGL
- ifdef VBOX_WITH_WDDM
-  VBOX_WITH_CRHGSMI = 1
- endif
-
- VBOX_PATH_CROGL_GLAPI       = $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/glapi_parser
- VBOX_PATH_CROGL_GENFILES    = $(PATH_OBJ)/VBoxOGLgen
- VBOX_PATH_CROGL_INCLUDE     = $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/include
- VBOX_CROGL_API_FILES        = $(VBOX_PATH_CROGL_GLAPI)/apiutil.py $(VBOX_PATH_CROGL_GLAPI)/APIspec.txt
- VBOX_CROGL_PYTHON_ENV       = $(REDIRECT) $(if $1,-E 'PYTHONPATH=$1',) $(if $2,-o '$2',) -0 '$(if $3,$3,/dev/null)' --
-
- if1of ($(KBUILD_HOST), os2 win)
-  VBOX_PATH_CROGL_PYTHON_INCLUDE = $(VBOX_PATH_CROGL_GLAPI);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
- else
-  VBOX_PATH_CROGL_PYTHON_INCLUDE = $(VBOX_PATH_CROGL_GLAPI):$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer:$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
- endif
-
- ifneq ($(KBUILD_TARGET),win)
-  VBOX_LIB_OGL        = $(VBOX_PATH_ADDITIONS)/VBoxOGL$(VBOX_SUFF_DLL)
- endif
-
- if1of ($(KBUILD_TARGET), freebsd linux solaris)
-  ifndef VBOX_USE_SYSTEM_GL_HEADERS
-   VBOX_GL_INCS = \
-        $(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
-        $(VBOX_PATH_X11_ROOT)/mesa-7.2
-  endif
- endif
-
- VBOX_DARWIN_OPENGL_INST     = obj/VBoxOGL/GL/
- VBOX_DARWIN_OPENGL_HEADERS  = gl.h glu.h
- SDK_DARWIN-OPENGL           = Workaround SDK for the darwin OpenGL include directorly layout layout.
- SDK_DARWIN-OPENGL_INCS      = $(PATH_OUT)/obj/VBoxOGL
- SDK_DARWIN-OPENGL_ORDERDEPS = $(addprefix $(PATH_OUT)/obj/VBoxOGL/GL/,$(VBOX_DARWIN_OPENGL_HEADERS))
- ## @todo kBuild: Using INTERMEDIATES doesn't work!
-endif
 
 # The icons to use.
 ifdef VBOX_OSE
