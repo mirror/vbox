@@ -435,35 +435,35 @@ DisplayModeR f86CVTMode(int HDisplay, int VDisplay, float VRefresh /* Herz */, B
 bool VMwareCtrlSetTopology(Display *dpy, int hExtensionMajorOpcode,
                             int screen, xXineramaScreenInfo extents[], int number)
 {
-   xVMwareCtrlSetTopologyReply rep;
-   xVMwareCtrlSetTopologyReq *req;
+    xVMwareCtrlSetTopologyReply rep;
+    xVMwareCtrlSetTopologyReq *req;
 
-   long len;
+    long len;
 
-   LockDisplay(dpy);
+    LockDisplay(dpy);
 
-   GetReq(VMwareCtrlSetTopology, req);
-   req->reqType = hExtensionMajorOpcode;
-   req->VMwareCtrlReqType = X_VMwareCtrlSetTopology;
-   req->screen = screen;
-   req->number = number;
+    GetReq(VMwareCtrlSetTopology, req);
+    req->reqType = hExtensionMajorOpcode;
+    req->VMwareCtrlReqType = X_VMwareCtrlSetTopology;
+    req->screen = screen;
+    req->number = number;
 
-   len = ((long) number) << 1;
-   SetReqLen(req, len, len);
-   len <<= 2;
-   _XSend(dpy, (char *)extents, len);
+    len = ((long) number) << 1;
+    SetReqLen(req, len, len);
+    len <<= 2;
+    _XSend(dpy, (char *)extents, len);
 
-   if (!_XReply(dpy, (xReply *)&rep,
-                (SIZEOF(xVMwareCtrlSetTopologyReply) - SIZEOF(xReply)) >> 2,
-                xFalse))
-   {
-       UnlockDisplay(dpy);
-       SyncHandle();
-       return false;
-   }
-   UnlockDisplay(dpy);
-   SyncHandle();
-   return true;
+    if (!_XReply(dpy, (xReply *)&rep,
+                 (SIZEOF(xVMwareCtrlSetTopologyReply) - SIZEOF(xReply)) >> 2,
+                 xFalse))
+    {
+        UnlockDisplay(dpy);
+        SyncHandle();
+        return false;
+    }
+    UnlockDisplay(dpy);
+    SyncHandle();
+    return true;
 }
 
 /** This function assumes monitors are named as from Virtual1 to VirtualX. */
@@ -1152,9 +1152,12 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
 static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
 {
     XGrabServer(x11Context.pDisplay);
+    /* In 32-bit guests GAs build on our release machines causes an xserver lock during vmware_ctrl extention
+     * if we do the call withing XGrab. So we disabled this call for 32-bit GAs. */
+#if ARCH_BITS != 32
     if (x11Context.fWmwareCtrlExtention)
         callVMWCTRL(paOutputs);
-
+#endif
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     x11Context.pScreenResources = XRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
 #else
@@ -1315,6 +1318,13 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                 if (aOutputs[j].fEnabled)
                     iRunningX += aOutputs[j].width;
             }
+            /* In 32-bit guests GAs build on our release machines causes an xserver lock during vmware_ctrl extention
+               if we do the call withing XGrab. We make the call the said extension only once (to connect the outputs)
+               rather than at each resize iteration. */
+#if ARCH_BITS == 32
+            if (fFirstRun)
+                callVMWCTRL(aOutputs);
+#endif
             setXrandrTopology(aOutputs);
             /* Wait for some seconds and set toplogy again after the boot. In some desktop environments (cinnamon) where
                DE get into our resizing our first resize is reverted by the DE. Sleeping for some secs. helps. Setting
