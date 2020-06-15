@@ -138,7 +138,7 @@
 
 /**
  * MSI Address Register.
- * In accordance to the Intel spec.
+ * In accordance with the Intel spec.
  * See Intel spec. 10.11.1 "Message Address Register Format".
  *
  * This also conforms to the AMD IOMMU spec. which omits specifying individual
@@ -177,7 +177,7 @@ typedef MSIADDR const *PCMSIADDR;
 
 /**
  * MSI Data Register.
- * In accordance to the Intel spec.
+ * In accordance with the Intel spec.
  * See Intel spec. 10.11.2 "Message Data Register Format".
  *
  * This also conforms to the AMD IOMMU spec. which omits specifying individual
