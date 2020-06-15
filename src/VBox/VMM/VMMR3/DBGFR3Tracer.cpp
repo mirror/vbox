@@ -775,7 +775,7 @@ static DECLCALLBACK(int) dbgfR3TracerThreadFlush(RTTHREAD ThreadSelf, void *pvUs
         if (!ASMAtomicXchgBool(&pShared->fEvtsWaiting, false))
         {
             int rc = SUPSemEventWaitNoResume(pSession, pShared->hSupSemEvtFlush, RT_INDEFINITE_WAIT);
-            Assert(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED);
+            Assert(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED); RT_NOREF(rc);
 
             if (RT_UNLIKELY(ASMAtomicReadBool(&pThis->fShutdown)))
                 break;
