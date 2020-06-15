@@ -1274,6 +1274,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
     const unsigned cMaxRetries   = 32; /* Should be enough for now. */
     const unsigned cGrowthFactor = 2;  /* By how much the buffers will grow if they're too small yet. */
 
+    LogRel(("VbglR3GuestCtrlProcGetStart: Start\n"));
+
     do
     {
         HGCMMsgProcExec Msg;
@@ -1303,6 +1305,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_FAILURE(rc))
         {
+            LogRel(("VbglR3GuestCtrlProcGetStart: Got %Rrc\n", rc));
+
             if (   rc == VERR_BUFFER_OVERFLOW
                 && cRetries++ < cMaxRetries)
             {
@@ -1318,8 +1322,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
                 GROW_STR(Env,  GUESTPROCESS_MAX_ENV_LEN);
 
 #undef GROW_STR
-                LogRel2(("VbglR3GuestCtrlProcGetStart: %Rrc (retry %u, cbCmd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
-                         rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
+                LogRel(("VbglR3GuestCtrlProcGetStart: %Rrc (retry %u, cbCmd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
+                        rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
+                LogRel(("g_fVbglR3GuestCtrlHavePeekGetCancel=%d\n", g_fVbglR3GuestCtrlHavePeekGetCancel));
 
                 /* Only try another round if we can peek for the next bigger size; otherwise bail out on the bottom. */
                 if (g_fVbglR3GuestCtrlHavePeekGetCancel)
@@ -1352,6 +1357,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
     }
     else
         VbglR3GuestCtrlProcStartupInfoFree(pStartupInfo);
+
+    LogRel(("VbglR3GuestCtrlProcGetStart: Returning %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
