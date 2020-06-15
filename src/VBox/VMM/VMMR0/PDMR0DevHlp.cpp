@@ -1758,8 +1758,6 @@ extern DECLEXPORT(const PDMPCIRAWHLPR0) g_pdmR0PciRawHlp =
  *
  * @returns true if delivered, false if postponed.
  * @param   pGVM        The global (ring-0) VM structure.
- * @param   uBusDevFn   The bus:device:function of the device initiating the IRQ.
- *                      Can be NIL_PCIBDF.
  * @param   iIrq        The irq.
  * @param   iLevel      The new level.
  * @param   uTagSrc     The IRQ tag and source.
