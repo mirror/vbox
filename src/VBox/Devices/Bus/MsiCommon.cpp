@@ -26,6 +26,7 @@
 
 #include "MsiCommon.h"
 #include "PciInline.h"
+#include "DevPciInternal.h"
 
 
 DECLINLINE(uint16_t) msiGetMessageControl(PPDMPCIDEV pDev)
@@ -329,13 +330,19 @@ void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int iVe
         return;
     }
 
-    RTGCPHYS   GCAddr = msiGetMsiAddress(pDev);
-    uint32_t   u32Value = msiGetMsiData(pDev, iVector);
+    MSIMSG Msi;
+    Msi.Addr.u64 = msiGetMsiAddress(pDev);
+    Msi.Data.u32 = msiGetMsiData(pDev, iVector);
 
     if (puPending)
         *puPending &= ~(1<<iVector);
 
+    PPDMDEVINS pDevInsBus = pPciHlp->pfnGetBusByNo(pDevIns, pDev->Int.s.idxPdmBus);
+    Assert(pDevInsBus);
+    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevInsBus, PDEVPCIBUS);
+    uint16_t const uBusDevFn = PCIBDF_MAKE(pBus->iBus, pDev->uDevFn);
+
     Assert(pPciHlp->pfnIoApicSendMsi != NULL);
-    pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value, uTagSrc);
+    pPciHlp->pfnIoApicSendMsi(pDevIns, uBusDevFn, &Msi, uTagSrc);
 }
 

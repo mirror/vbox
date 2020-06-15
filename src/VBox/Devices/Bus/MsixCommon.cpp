@@ -28,6 +28,7 @@
 #include <iprt/assert.h>
 
 #include "MsiCommon.h"
+#include "DevPCIInternal.h"
 #include "PciInline.h"
 
 typedef struct
@@ -267,10 +268,16 @@ void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int iV
     // clear pending bit
     msixClearPending(pDev, iVector);
 
-    RTGCPHYS   GCAddr = msixGetMsiAddress(pDev, iVector);
-    uint32_t   u32Value = msixGetMsiData(pDev, iVector);
+    MSIMSG Msi;
+    Msi.Addr.u64 = msixGetMsiAddress(pDev, iVector);
+    Msi.Data.u32 = msixGetMsiData(pDev, iVector);
 
-    pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value, uTagSrc);
+    PPDMDEVINS pDevInsBus = pPciHlp->pfnGetBusByNo(pDevIns, pDev->Int.s.idxPdmBus);
+    Assert(pDevInsBus);
+    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevInsBus, PDEVPCIBUS);
+    uint16_t const uBusDevFn = PCIBDF_MAKE(pBus->iBus, pDev->uDevFn);
+
+    pPciHlp->pfnIoApicSendMsi(pDevIns, uBusDevFn, &Msi, uTagSrc);
 }
 
 #ifdef IN_RING3

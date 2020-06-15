@@ -4222,7 +4222,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         }
         if (uNextLevel == 7)
         {
-            /* The default page size of the translation is overriden. */
+            /* The default page size of the translation is overridden. */
             RTGCPHYS const GCPhysPte = PtEntity.u64 & IOMMU_PTENTITY_ADDR_MASK;
             uint8_t        cShift    = X86_PAGE_4K_SHIFT;
             while (GCPhysPte & RT_BIT_64(cShift++))

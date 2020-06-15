@@ -165,6 +165,9 @@ Controller" */
 #define IOAPIC_DIRECT_OFF_DATA                  0x10
 #define IOAPIC_DIRECT_OFF_EOI                   0x40    /* Newer I/O APIC only. */
 
+/** The I/O APIC's Bus:Device:Function. */
+#define IOAPIC_BUS_DEV_FN                       NIL_PCIBDF
+
 /* Use PDM critsect for now for I/O APIC locking, see @bugref{8245#c121}. */
 #define IOAPIC_WITH_PDM_CRITSECT
 #ifdef IOAPIC_WITH_PDM_CRITSECT
@@ -471,13 +474,14 @@ DECLINLINE(void) ioapicGetMsiFromApicIntr(PCXAPICINTR pIntr, PMSIMSG pMsi)
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared I/O APIC device state.
  * @param   pThisCC     The I/O APIC device state for the current context.
+ * @param   uBusDevFn   The bus:device:function of the device initiating the IRQ.
  * @param   idxRte      The index of the RTE (validated).
  *
  * @remarks It is the responsibility of the caller to verify that an interrupt is
  *          pending for the pin corresponding to the RTE before calling this
  *          function.
  */
-static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC pThisCC, uint8_t idxRte)
+static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC pThisCC, PCIBDF uBusDevFn, uint8_t idxRte)
 {
 #ifndef IOAPIC_WITH_PDM_CRITSECT
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
@@ -498,6 +502,10 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
                 return;
             }
         }
+
+        /** @todo IOMMU: Call into the IOMMU on how to remap this interrupt. uBusDevFn
+         *        will be needed then. */
+        NOREF(uBusDevFn);
 
         uint8_t const  u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
         uint8_t const  u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
@@ -621,7 +629,7 @@ static VBOXSTRICTRC ioapicSetRedirTableEntry(PPDMDEVINS pDevIns, PIOAPIC pThis, 
          */
         uint32_t const uPinMask = UINT32_C(1) << idxRte;
         if (pThis->uIrr & uPinMask)
-            ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, idxRte);
+            ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, IOAPIC_BUS_DEV_FN, idxRte);
 
         IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
         LogFlow(("IOAPIC: ioapicSetRedirTableEntry: uIndex=%#RX32 idxRte=%u uValue=%#RX32\n", uIndex, idxRte, uValue));
@@ -736,7 +744,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vec
                  */
                 uint32_t const uPinMask = UINT32_C(1) << idxRte;
                 if (pThis->uIrr & uPinMask)
-                    ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, idxRte);
+                    ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, IOAPIC_BUS_DEV_FN, idxRte);
             }
         }
 
@@ -753,12 +761,12 @@ static DECLCALLBACK(VBOXSTRICTRC) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vec
 /**
  * @interface_method_impl{PDMIOAPICREG,pfnSetIrq}
  */
-static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
+static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc)
 {
-#define IOAPIC_ASSERT_IRQ(a_idxRte, a_PinMask) do { \
+#define IOAPIC_ASSERT_IRQ(a_uBusDevFn, a_idxRte, a_PinMask) do { \
         pThis->au32TagSrc[(a_idxRte)] = !pThis->au32TagSrc[(a_idxRte)] ? uTagSrc : RT_BIT_32(31); \
         pThis->uIrr |= a_PinMask; \
-        ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, (a_idxRte)); \
+        ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, (a_uBusDevFn), (a_idxRte)); \
     } while (0)
 
     PIOAPIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
@@ -802,7 +810,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel,
                  * See ICH9 spec. 13.5.7 "REDIR_TBL: Redirection Table (LPC I/F-D31:F0)".
                  */
                 if (!uPrevIrr)
-                    IOAPIC_ASSERT_IRQ(idxRte, uPinMask);
+                    IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask);
                 else
                 {
                     STAM_COUNTER_INC(&pThis->StatRedundantEdgeIntr);
@@ -826,7 +834,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel,
                     Log2(("IOAPIC: Redundant level-triggered interrupt %#x (%u)\n", idxRte, idxRte));
                 }
 
-                IOAPIC_ASSERT_IRQ(idxRte, uPinMask);
+                IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask);
             }
         }
         else
@@ -837,7 +845,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel,
              * after a flip-flop request. The de-assert is a NOP wrts to signaling an interrupt
              * hence just the assert is done.
              */
-            IOAPIC_ASSERT_IRQ(idxRte, uPinMask);
+            IOAPIC_ASSERT_IRQ(uBusDevFn, idxRte, uPinMask);
         }
 
         IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
@@ -849,18 +857,18 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel,
 /**
  * @interface_method_impl{PDMIOAPICREG,pfnSendMsi}
  */
-static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc)
+static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
     PIOAPICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOAPICCC);
-    LogFlow(("IOAPIC: ioapicSendMsi: GCPhys=%#RGp uValue=%#RX32\n", GCPhys, uValue));
-
-    MSIMSG Msi;
-    Msi.Addr.u64 = GCPhys;
-    Msi.Data.u32 = uValue;
+    LogFlow(("IOAPIC: ioapicSendMsi: uBusDevFn=%#x Addr=%#RX64 Data=%#RX32\n", uBusDevFn, pMsi->Addr.u64, pMsi->Data.u32));
 
     XAPICINTR ApicIntr;
     RT_ZERO(ApicIntr);
-    ioapicGetApicIntrFromMsi(&Msi, &ApicIntr);
+    ioapicGetApicIntrFromMsi(pMsi, &ApicIntr);
+
+    /** @todo IOMMU: Call into the IOMMU to remap the MSI. uBusDevFn will be used
+     *        then. */
+    NOREF(uBusDevFn);
 
     /*
      * Deliver to the local APIC via the system/3-wire-APIC bus.

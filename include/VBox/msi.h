@@ -144,7 +144,7 @@
  * This also conforms to the AMD IOMMU spec. which omits specifying individual
  * fields but specifies reserved bits.
  */
-typedef union
+typedef union MSIADDR
 {
     struct
     {
@@ -176,14 +176,14 @@ typedef MSIADDR const *PCMSIADDR;
 #define VBOX_MSI_ADDR_ADDR_MASK            UINT64_C(0x00000000fff00000)
 
 /**
- * MSI Data Register (PCI + MMIO).
+ * MSI Data Register.
  * In accordance to the Intel spec.
  * See Intel spec. 10.11.2 "Message Data Register Format".
  *
  * This also conforms to the AMD IOMMU spec. which omits specifying individual
  * fields but specifies reserved bits.
  */
-typedef union
+typedef union MSIDATA
 {
     struct
     {
@@ -209,16 +209,12 @@ typedef MSIDATA const *PCMSIDATA;
 /**
  * MSI Message (Address and Data Register Pair).
  */
-typedef struct
+typedef struct MSIMSG
 {
     /** The MSI Address Register. */
     MSIADDR      Addr;
     /** The MSI Data Register. */
     MSIDATA     Data;
 } MSIMSG;
-/** Pointer to an MSI message struct. */
-typedef MSIMSG *PMSIMSG;
-/** Pointer to a const MSI message struct. */
-typedef MSIMSG const *PCMSIMSG;
 
 #endif /* !VBOX_INCLUDED_msi_h */

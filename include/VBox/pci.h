@@ -468,8 +468,11 @@ typedef enum PCIADDRESSSPACE
 #define VBOX_PCI_BUS_MASK           0xff
 /** Make a device+function number.   */
 #define VBOX_PCI_DEVFN_MAKE(a_uPciDevNo, a_uPciFunNo) (((a_uPciDevNo) << VBOX_PCI_DEVFN_DEV_SHIFT) | (a_uPciFunNo))
-/** Make a bus+device+function number. */
-#define VBOX_PCI_BUSDEVFN_MAKE(a_uPciBusNo, a_uPciDevFunNo) (((a_uPciBusNo) << VBOX_PCI_BUS_SHIFT) | (a_uPciDevFunNo))
+
+/** Checks whether the PCIBDF is valid. */
+#define PCIBDF_IS_VALID(a_uBusDevFn)    (!((a_uBusDevFn) & PCI_BDF_F_INVALID))
+/** Make a PCIBDF given the bus and device:function. */
+#define PCIBDF_MAKE(a_uBus, a_uDevFn)   (((a_uBus) << VBOX_PCI_BUS_SHIFT) | (a_uDevFn))
 
 
 #if defined(__cplusplus) && defined(IN_RING3)

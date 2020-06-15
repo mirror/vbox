@@ -245,6 +245,7 @@ static void apic_set_irq(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PDEVPCIBUSCC pBusC
 {
     /* This is only allowed to be called with a pointer to the host bus. */
     AssertMsg(pBus->iBus == 0, ("iBus=%u\n", pBus->iBus));
+    uint16_t const uBusDevFn = PCIBDF_MAKE(pBus->iBus, uDevFn);
 
     if (iAcpiIrq == -1) {
         int apic_irq, apic_level;
@@ -260,7 +261,7 @@ static void apic_set_irq(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PDEVPCIBUSCC pBusC
         apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
         Log3Func(("%s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d\n",
               R3STRING(pPciDev->pszNameR3), irq_num1, iLevel, apic_irq, apic_level, irq_num));
-        pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, apic_irq, apic_level, uTagSrc);
+        pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, uBusDevFn, apic_irq, apic_level, uTagSrc);
 
         if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP) {
             ASMAtomicDecU32(&pGlobals->auPciApicIrqLevels[irq_num]);
@@ -268,12 +269,11 @@ static void apic_set_irq(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PDEVPCIBUSCC pBusC
             apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
             Log3Func(("%s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d (flop)\n",
                   R3STRING(pPciDev->pszNameR3), irq_num1, iLevel, apic_irq, apic_level, irq_num));
-            pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, apic_irq, apic_level, uTagSrc);
+            pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, uBusDevFn, apic_irq, apic_level, uTagSrc);
         }
     } else {
-        Log3Func(("%s: irq_num1=%d level=%d iAcpiIrq=%d\n",
-              R3STRING(pPciDev->pszNameR3), irq_num1, iLevel, iAcpiIrq));
-        pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, iAcpiIrq, iLevel, uTagSrc);
+        Log3Func(("%s: irq_num1=%d level=%d iAcpiIrq=%d\n", R3STRING(pPciDev->pszNameR3), irq_num1, iLevel, iAcpiIrq));
+        pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, uBusDevFn, iAcpiIrq, iLevel, uTagSrc);
     }
 }
 

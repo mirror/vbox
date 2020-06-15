@@ -1033,23 +1033,27 @@ typedef struct PDMPCIHLPRC
      * Set an I/O-APIC IRQ.
      *
      * @param   pDevIns         PCI device instance.
+     * @param   uBusDevFn       The bus:device:function of the device initiating the
+     *                          IRQ. Pass NIL_PCIBDF when it's not a PCI device or
+     *                          interrupt.
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      * @thread  EMT only.
      */
-    DECLRCCALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
+    DECLRCCALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc));
 
     /**
      * Send an MSI.
      *
      * @param   pDevIns         PCI device instance.
-     * @param   GCPhys          Physical address MSI request was written.
-     * @param   uValue          Value written.
+     * @param   uBusDevFn       The bus:device:function of the device initiating the
+     *                          MSI. Cannot be NIL_PCIBDF.
+     * @param   pMsi            The MSI to send.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      * @thread  EMT only.
      */
-    DECLRCCALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
+    DECLRCCALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc));
 
 
     /**
@@ -1087,7 +1091,7 @@ typedef RCPTRTYPE(PDMPCIHLPRC *) PPDMPCIHLPRC;
 typedef RCPTRTYPE(const PDMPCIHLPRC *) PCPDMPCIHLPRC;
 
 /** Current PDMPCIHLPRC version number. */
-#define PDM_PCIHLPRC_VERSION                    PDM_VERSION_MAKE(0xfffd, 3, 0)
+#define PDM_PCIHLPRC_VERSION                    PDM_VERSION_MAKE(0xfffd, 4, 0)
 
 
 /**
@@ -1113,23 +1117,27 @@ typedef struct PDMPCIHLPR0
      * Set an I/O-APIC IRQ.
      *
      * @param   pDevIns         PCI device instance.
+     * @param   uBusDevFn       The bus:device:function of the device initiating the
+     *                          IRQ. Pass NIL_PCIBDF when it's not a PCI device or
+     *                          interrupt.
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      * @thread  EMT only.
      */
-    DECLR0CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
+    DECLR0CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc));
 
     /**
      * Send an MSI.
      *
      * @param   pDevIns         PCI device instance.
-     * @param   GCPhys          Physical address MSI request was written.
-     * @param   uValue          Value written.
+     * @param   uBusDevFn       The bus:device:function of the device initiating the
+     *                          MSI. Cannot be NIL_PCIBDF.
+     * @param   pMsi            The MSI to send.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      * @thread  EMT only.
      */
-    DECLR0CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
+    DECLR0CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc));
 
     /**
      * Acquires the PDM lock.
@@ -1166,7 +1174,7 @@ typedef R0PTRTYPE(PDMPCIHLPR0 *) PPDMPCIHLPR0;
 typedef R0PTRTYPE(const PDMPCIHLPR0 *) PCPDMPCIHLPR0;
 
 /** Current PDMPCIHLPR0 version number. */
-#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 5, 0)
+#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 6, 0)
 
 /**
  * PCI device helpers.
@@ -1190,21 +1198,25 @@ typedef struct PDMPCIHLPR3
      * Set an I/O-APIC IRQ.
      *
      * @param   pDevIns         The PCI device instance.
+     * @param   uBusDevFn       The bus:device:function of the device initiating the
+     *                          IRQ. Pass NIL_PCIBDF when it's not a PCI device or
+     *                          interrupt.
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      */
-    DECLR3CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
+    DECLR3CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc));
 
     /**
      * Send an MSI.
      *
      * @param   pDevIns         PCI device instance.
-     * @param   GCPhys          Physical address MSI request was written.
-     * @param   uValue          Value written.
+     * @param   uBusDevFn       The bus:device:function of the device initiating the
+     *                          MSI. Cannot be NIL_PCIBDF.
+     * @param   pMsi            The MSI to send.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      */
-    DECLR3CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
+    DECLR3CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc));
 
     /**
      * Acquires the PDM lock.
@@ -1241,7 +1253,7 @@ typedef R3PTRTYPE(PDMPCIHLPR3 *) PPDMPCIHLPR3;
 typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 
 /** Current PDMPCIHLPR3 version number. */
-#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 4, 0)
+#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 5, 0)
 
 
 /**
@@ -1694,6 +1706,8 @@ typedef struct PDMIOAPICREG
      * Set an IRQ.
      *
      * @param   pDevIns         Device instance of the I/O APIC.
+     * @param   uBusDevFn       The bus:device:function of the device initiating the
+     *                          IRQ. Can be NIL_PCIBDF.
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
@@ -1701,20 +1715,21 @@ typedef struct PDMIOAPICREG
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLCALLBACKMEMBER(void, pfnSetIrq)(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc);
+    DECLCALLBACKMEMBER(void, pfnSetIrq)(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc);
 
     /**
      * Send a MSI.
      *
      * @param   pDevIns         Device instance of the I/O APIC.
-     * @param   GCPhys          Request address.
-     * @param   uValue          Request value.
+     * @param   uBusDevFn       The bus:device:function of the device initiating the
+     *                          MSI. Cannot be NIL_PCIBDF.
+     * @param   pMsi            The MSI to send.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      *
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLCALLBACKMEMBER(void, pfnSendMsi)(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc);
+    DECLCALLBACKMEMBER(void, pfnSendMsi)(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc);
 
     /**
      * Set the EOI for an interrupt vector.
@@ -1738,7 +1753,7 @@ typedef struct PDMIOAPICREG
 typedef PDMIOAPICREG *PPDMIOAPICREG;
 
 /** Current PDMAPICREG version number. */
-#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 6, 0)
+#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 7, 0)
 
 
 /**

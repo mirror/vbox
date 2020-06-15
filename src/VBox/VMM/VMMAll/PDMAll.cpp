@@ -155,7 +155,7 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
         if (u8Irq == 0)
             u8Irq = 2;
 
-        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level, uTagSrc);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), NIL_PCIBDF, u8Irq, u8Level, uTagSrc);
         rc = VINF_SUCCESS;
     }
 
@@ -172,15 +172,17 @@ VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uT
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   u8Irq       The IRQ line.
+ * @param   uBusDevFn   The bus:device:function of the device initiating the IRQ.
+ *                      Pass NIL_PCIBDF when it's not a PCI device or interrupt.
  * @param   u8Level     The new level.
  * @param   uTagSrc     The IRQ tag and source tracer ID.
  */
-VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
+VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, PCIBDF uBusDevFn, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq));
-        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level, uTagSrc);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), uBusDevFn, u8Irq, u8Level, uTagSrc);
         return VINF_SUCCESS;
     }
     return VERR_PDM_NO_PIC_INSTANCE;
@@ -217,16 +219,18 @@ VMM_INT_DECL(VBOXSTRICTRC) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   GCAddr      Request address.
- * @param   uValue      Request value.
+ * @param   uBusDevFn   The bus:device:function of the device initiating the MSI.
+ *                      Cannot be NIL_PCIBDF.
+ * @param   pMsi        The MSI to send.
  * @param   uTagSrc     The IRQ tag and source tracer ID.
  */
-VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc)
+VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
+    Assert(PCIBDF_IS_VALID(uBusDevFn));
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi));
-        pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), GCAddr, uValue, uTagSrc);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), uBusDevFn, pMsi, uTagSrc);
         return VINF_SUCCESS;
     }
     return VERR_PDM_NO_PIC_INSTANCE;

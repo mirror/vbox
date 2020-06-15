@@ -163,7 +163,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
         PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
 
         RTGCPHYS GCPhysOut;
-        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pBus->iBus, pPciDev->uDevFn);
+        uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemRead(pDevInsIommu, uDeviceId, GCPhys, cbRead, &GCPhysOut);
         if (RT_FAILURE(rc))
         {
@@ -215,7 +215,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
         PPDMPCIBUSR0 pBus = &pGVM->pdmr0.s.aPciBuses[idxBus];
 
         RTGCPHYS GCPhysOut;
-        uint16_t const uDeviceId = VBOX_PCI_BUSDEVFN_MAKE(pBus->iBus, pPciDev->uDevFn);
+        uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemWrite(pDevInsIommu, uDeviceId, GCPhys, cbWrite, &GCPhysOut);
         if (RT_FAILURE(rc))
         {
@@ -1611,14 +1611,14 @@ static DECLCALLBACK(void) pdmR0PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 
 
 /** @interface_method_impl{PDMPCIHLPR0,pfnIoApicSetIrq} */
-static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
+static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Log4(("pdmR0PciHlp_IoApicSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
+    Log4(("pdmR0PciHlp_IoApicSetIrq: uBusDevFn=%#x iIrq=%d iLevel=%d uTagSrc=%#x\n", uBusDevFn, iIrq, iLevel, uTagSrc));
     PGVM pGVM = pDevIns->Internal.s.pGVM;
 
     if (pGVM->pdm.s.IoApic.pDevInsR0)
-        pGVM->pdm.s.IoApic.pfnSetIrqR0(pGVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
+        pGVM->pdm.s.IoApic.pfnSetIrqR0(pGVM->pdm.s.IoApic.pDevInsR0, uBusDevFn, iIrq, iLevel, uTagSrc);
     else if (pGVM->pdm.s.IoApic.pDevInsR3)
     {
         /* queue for ring-3 execution. */
@@ -1627,6 +1627,7 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SET_IRQ;
             pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
+            pTask->u.IoApicSetIRQ.uBusDevFn = uBusDevFn;
             pTask->u.IoApicSetIRQ.iIrq = iIrq;
             pTask->u.IoApicSetIRQ.iLevel = iLevel;
             pTask->u.IoApicSetIRQ.uTagSrc = uTagSrc;
@@ -1640,13 +1641,15 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 
 
 /** @interface_method_impl{PDMPCIHLPR0,pfnIoApicSendMsi} */
-static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc)
+static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Log4(("pdmR0PciHlp_IoApicSendMsi: GCPhys=%p uValue=%d uTagSrc=%#x\n", GCPhys, uValue, uTagSrc));
+    Assert(PCIBDF_IS_VALID(uBusDevFn));
+    Log4(("pdmR0PciHlp_IoApicSendMsi: uBusDevFn=%#x Msi=(Addr:%#RX64 Data:%#RX32) uTagSrc=%#x\n", uBusDevFn, pMsi->Addr.u64,
+          pMsi->Data.u32, uTagSrc));
     PGVM pGVM = pDevIns->Internal.s.pGVM;
     if (pGVM->pdm.s.IoApic.pDevInsR0)
-        pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
+        pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, uBusDevFn, pMsi, uTagSrc);
     else
         AssertFatalMsgFailed(("Lazy bastards!"));
 }
@@ -1755,6 +1758,8 @@ extern DECLEXPORT(const PDMPCIRAWHLPR0) g_pdmR0PciRawHlp =
  *
  * @returns true if delivered, false if postponed.
  * @param   pGVM        The global (ring-0) VM structure.
+ * @param   uBusDevFn   The bus:device:function of the device initiating the IRQ.
+ *                      Can be NIL_PCIBDF.
  * @param   iIrq        The irq.
  * @param   iLevel      The new level.
  * @param   uTagSrc     The IRQ tag and source.
@@ -1771,7 +1776,7 @@ DECLHIDDEN(bool) pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSr
         if (pGVM->pdm.s.Pic.pDevInsR0)
             pGVM->pdm.s.Pic.pfnSetIrqR0(pGVM->pdm.s.Pic.pDevInsR0, iIrq, iLevel, uTagSrc);
         if (pGVM->pdm.s.IoApic.pDevInsR0)
-            pGVM->pdm.s.IoApic.pfnSetIrqR0(pGVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
+            pGVM->pdm.s.IoApic.pfnSetIrqR0(pGVM->pdm.s.IoApic.pDevInsR0, NIL_PCIBDF, iIrq, iLevel, uTagSrc);
         return true;
     }
 
@@ -1781,6 +1786,7 @@ DECLHIDDEN(bool) pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSr
 
     pTask->enmOp = PDMDEVHLPTASKOP_ISA_SET_IRQ;
     pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
+    pTask->u.IsaSetIRQ.uBusDevFn = NIL_PCIBDF;
     pTask->u.IsaSetIRQ.iIrq = iIrq;
     pTask->u.IsaSetIRQ.iLevel = iLevel;
     pTask->u.IsaSetIRQ.uTagSrc = uTagSrc;

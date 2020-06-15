@@ -1200,6 +1200,25 @@ typedef struct VMMDEVSHAREDREGIONDESC
 } VMMDEVSHAREDREGIONDESC;
 
 
+/**
+ * A PCI bus:device:function (BDF) identifier.
+ *
+ * All 16 bits of a BDF are valid according to the PCI spec. We need one extra bit
+ * to determine whether the BDF is valid in interfaces where the BDF may be
+ * optional.
+ */
+typedef uint32_t PCIBDF;
+/** PCIBDF flag: Invalid. */
+#define PCI_BDF_F_INVALID           RT_BIT(31)
+/** Nil PCIBDF value. */
+#define NIL_PCIBDF                  PCI_BDF_F_INVALID
+
+/** Pointer to an MSI message struct. */
+typedef struct MSIMSG *PMSIMSG;
+/** Pointer to a const MSI message struct. */
+typedef const struct MSIMSG *PCMSIMSG;
+
+
 /** @} */
 
 #endif /* !VBOX_INCLUDED_types_h */

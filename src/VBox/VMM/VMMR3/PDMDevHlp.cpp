@@ -1803,7 +1803,7 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
         PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
 
         RTGCPHYS GCPhysOut;
-        uint16_t const uDevId = VBOX_PCI_BUSDEVFN_MAKE(pBus->iBus, pPciDev->uDevFn);
+        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemRead(pDevInsIommu, uDevId, GCPhys, cbRead, &GCPhysOut);
         if (RT_FAILURE(rc))
         {
@@ -1855,7 +1855,7 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
         PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[idxBus];
 
         RTGCPHYS GCPhysOut;
-        uint16_t const uDevId = VBOX_PCI_BUSDEVFN_MAKE(pBus->iBus, pPciDev->uDevFn);
+        uint16_t const uDevId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemWrite(pDevInsIommu, uDevId, GCPhys, cbWrite, &GCPhysOut);
         if (RT_FAILURE(rc))
         {
@@ -5192,8 +5192,11 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
         }
 
         case PDMDEVHLPTASKOP_IOAPIC_SET_IRQ:
-            PDMIoApicSetIrq(pVM, pTask->u.IoApicSetIRQ.iIrq, pTask->u.IoApicSetIRQ.iLevel, pTask->u.IoApicSetIRQ.uTagSrc);
+        {
+            PDMIoApicSetIrq(pVM, pTask->u.IoApicSetIRQ.uBusDevFn, pTask->u.IoApicSetIRQ.iIrq, pTask->u.IoApicSetIRQ.iLevel,
+                            pTask->u.IoApicSetIRQ.uTagSrc);
             break;
+        }
 
         default:
             AssertReleaseMsgFailed(("Invalid operation %d\n", pTask->enmOp));
