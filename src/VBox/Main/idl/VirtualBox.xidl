@@ -4343,7 +4343,7 @@
             installer and allow restarting from the second step.</li>
       </ol>
 
-      Note! Step one is currently not implemented.
+      Note! Step two is currently not implemented.
     </desc>
 
     <attribute name="isoPath" type="wstring">
