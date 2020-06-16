@@ -1313,9 +1313,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
             {
 #define GROW_STR(a_Str, a_cbMax) \
         pStartupInfo->psz##a_Str = (char *)RTMemRealloc(pStartupInfo->psz##a_Str, \
-           RT_MAX(pStartupInfo->cb##a_Str * cGrowthFactor, a_cbMax)); \
+           RT_MIN(pStartupInfo->cb##a_Str * cGrowthFactor, a_cbMax)); \
         AssertPtrBreakStmt(pStartupInfo->psz##a_Str, VERR_NO_MEMORY); \
-        pStartupInfo->cb##a_Str  = RT_MAX(pStartupInfo->cb##a_Str * cGrowthFactor, a_cbMax);
+        pStartupInfo->cb##a_Str  = RT_MIN(pStartupInfo->cb##a_Str * cGrowthFactor, a_cbMax);
 
                 /* We can't tell which parameter doesn't fit, so we have to resize all. */
                 GROW_STR(Cmd , GUESTPROCESS_MAX_CMD_LEN);
