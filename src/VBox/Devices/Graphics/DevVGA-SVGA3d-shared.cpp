@@ -126,25 +126,26 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
 
             if (msg.message == WM_VMSVGA3D_CREATEWINDOW)
             {
-                HWND            hWnd;
-                HWND           *phWnd = (HWND *)msg.wParam;
-                LPCREATESTRUCTW pCS = (LPCREATESTRUCTW)msg.lParam;
-
-                *phWnd = hWnd = CreateWindowExW(pCS->dwExStyle,
+                /* Create a context window with minimal 4x4 size. We will never use the swapchain
+                 * to present the rendered image. Rendered images from the guest will be copied to
+                 * the VMSVGA SCREEN object, which can be either an offscreen render target or
+                 * system memory in the guest VRAM. */
+                HWND *phWnd = (HWND *)msg.wParam;
+                HWND  hWnd;
+                *phWnd = hWnd = CreateWindowExW(WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY,
                                                 VMSVGA3D_WNDCLASSNAME,
-                                                pCS->lpszName,
-                                                pCS->style,
-                                                pCS->x,
-                                                pCS->y,
-                                                pCS->cx,
-                                                pCS->cy,
-                                                pCS->hwndParent,
-                                                pCS->hMenu,
-                                                pCS->hInstance,
-                                                NULL);
-                AssertMsg(hWnd, ("CreateWindowEx %x %ls %ls %x (%d,%d)(%d,%d), %x %x %x error=%x\n", pCS->dwExStyle,
-                                 pCS->lpszName, VMSVGA3D_WNDCLASSNAME, pCS->style, pCS->x, pCS->y, pCS->cx, pCS->cy,
-                                 pCS->hwndParent, pCS->hMenu, pCS->hInstance, GetLastError()));
+                                                NULL /*pwszName*/,
+                                                WS_DISABLED,
+                                                0 /*x*/,
+                                                0 /*y*/,
+                                                4 /*cx*/,
+                                                4 /*cy*/,
+                                                HWND_DESKTOP /*hwndParent*/,
+                                                NULL /*hMenu*/,
+                                                (HINSTANCE)msg.lParam /*hInstance*/,
+                                                NULL /*WM_CREATE param*/);
+                AssertMsg(hWnd, ("CreateWindowEx %ls, WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY, WS_DISABLED, (0,0)(4,4), HWND_DESKTOP hInstance=%p -> error=%x\n",
+                                 VMSVGA3D_WNDCLASSNAME, msg.lParam, GetLastError()));
 
 #ifdef VBOX_STRICT
                 /* Must have a non-zero client rectangle! */
@@ -273,26 +274,7 @@ static LONG WINAPI vmsvga3dWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 int vmsvga3dContextWindowCreate(HINSTANCE hInstance, RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, HWND *pHwnd)
 {
-    /* Create a context window with minimal 4x4 size. We will never use the swapchain
-     * to present the rendered image. Rendered images from the guest will be copied to
-     * the VMSVGA SCREEN object, which can be either an offscreen render target or
-     * system memory in the guest VRAM.
-     */
-    CREATESTRUCTW cs;
-    cs.lpCreateParams   = NULL;
-    cs.hInstance        = hInstance;
-    cs.hMenu            = NULL;
-    cs.hwndParent       = HWND_DESKTOP;
-    cs.cx               = 4;
-    cs.cy               = 4;
-    cs.x                = 0;
-    cs.y                = 0;
-    cs.style            = WS_DISABLED;
-    cs.lpszName         = NULL;
-    cs.lpszClass        = 0;
-    cs.dwExStyle        = WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY;
-
-    return vmsvga3dSendThreadMessage(pWindowThread, WndRequestSem, WM_VMSVGA3D_CREATEWINDOW, (WPARAM)pHwnd, (LPARAM)&cs);
+    return vmsvga3dSendThreadMessage(pWindowThread, WndRequestSem, WM_VMSVGA3D_CREATEWINDOW, (WPARAM)pHwnd, (LPARAM)hInstance);
 }
 
 #endif /* RT_OS_WINDOWS */
