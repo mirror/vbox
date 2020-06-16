@@ -711,11 +711,13 @@ protected slots:
     /** Cleanups all. */
     void cleanup();
 
+#ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
     /** @name Common stuff.
      * @{ */
         /** Handles @a manager request for emergency session shutdown. */
         void sltHandleCommitDataRequest(QSessionManager &manager);
     /** @} */
+#endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 
     /** @name COM stuff.
      * @{ */
