@@ -1271,6 +1271,8 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVMSVGA3DSTATE pState
             PVMSVGA3DCONTEXT pAssociatedContext;
             int rc = vmsvga3dContextFromCid(pState, pSurface->idAssociatedContext, &pAssociatedContext);
             if (RT_SUCCESS(rc))
+                AssertStmt(pAssociatedContext->pDevice, rc = VERR_INTERNAL_ERROR);
+            if (RT_SUCCESS(rc))
             {
                 IDirect3DQuery9 *pQuery;
                 hr = pAssociatedContext->pDevice->CreateQuery(D3DQUERYTYPE_EVENT, &pQuery);
@@ -1510,6 +1512,7 @@ int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSu
         PVMSVGA3DCONTEXT pContextSrc;
         rc = vmsvga3dContextFromCid(pState, cidSrc, &pContextSrc);
         AssertRCReturn(rc, rc);
+        AssertReturn(pContextSrc->pDevice, VERR_INTERNAL_ERROR);
 
         LogFunc(("sid=%u type=%x format=%d -> create dest texture\n", sidDest, pSurfaceDest->surfaceFlags, pSurfaceDest->format));
         rc = vmsvga3dBackCreateTexture(pState, pContextSrc, cidSrc, pSurfaceDest);
@@ -1531,6 +1534,7 @@ int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSu
         PVMSVGA3DCONTEXT pContextSrc;
         rc = vmsvga3dContextFromCid(pState, cidSrc, &pContextSrc);
         AssertRCReturn(rc, rc);
+        AssertReturn(pContextSrc->pDevice, VERR_INTERNAL_ERROR);
 
         /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
         vmsvga3dSurfaceFlush(pSurfaceSrc);
@@ -1682,6 +1686,7 @@ int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSu
 
             rc = vmsvga3dContextFromCid(pState, pSurfaceSrc->idAssociatedContext, &pContext);
             AssertRCReturn(rc, rc);
+            AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
             rc = vmsvga3dGetD3DSurface(pState, pContext, pSurfaceSrc, src.face, src.mipmap, true, &pD3DSurf);
             AssertRCReturn(rc, rc);
@@ -1692,6 +1697,7 @@ int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSu
 
             rc = vmsvga3dContextFromCid(pState, pSurfaceDest->idAssociatedContext, &pContext);
             AssertRCReturn(rc, rc);
+            AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
             rc = vmsvga3dGetD3DSurface(pState, pContext, pSurfaceDest, dest.face, dest.mipmap, true, &pD3DSurf);
             AssertRCReturn(rc, rc);
@@ -2351,6 +2357,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3
     {
         rc = vmsvga3dContextFromCid(pState, pSurface->idAssociatedContext, &pContext);
         AssertRCReturn(rc, rc);
+        AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
         /* Get the surface involved in the transfer. */
         IDirect3DSurface9 *pSurf;
@@ -2521,6 +2528,7 @@ int vmsvga3dGenerateMipmaps(PVGASTATECC pThisCC, uint32_t sid, SVGA3dTextureFilt
         PVMSVGA3DCONTEXT pContext;
         rc = vmsvga3dContextFromCid(pState, cid, &pContext);
         AssertRCReturn(rc, rc);
+        AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
         /* Unknown surface type; turn it into a texture. */
         LogFunc(("unknown src surface sid=%u type=%d format=%d -> create texture\n", sid, pSurface->surfaceFlags, pSurface->format));
@@ -3091,6 +3099,7 @@ int vmsvga3dSetTransform(PVGASTATECC pThisCC, uint32_t cid, SVGA3dTransformType 
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     switch (type)
     {
@@ -3168,6 +3177,7 @@ int vmsvga3dSetZRange(PVGASTATECC pThisCC, uint32_t cid, SVGA3dZRange zRange)
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     pContext->state.zRange = zRange;
     pContext->state.u32UpdateFlags |= VMSVGA3D_UPDATE_ZRANGE;
@@ -3240,6 +3250,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     for (unsigned i = 0; i < cRenderStates; i++)
     {
@@ -3912,6 +3923,7 @@ int vmsvga3dSetRenderTarget(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRenderTarge
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     /* Save for vm state save/restore. */
     pContext->state.aRenderTargets[type] = target.sid;
@@ -4336,6 +4348,7 @@ int vmsvga3dSetTextureState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cTexture
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     for (unsigned i = 0; i < cTextureStates; i++)
     {
@@ -4625,6 +4638,7 @@ int vmsvga3dSetMaterial(PVGASTATECC pThisCC, uint32_t cid, SVGA3dFace face, SVGA
     PVMSVGA3DCONTEXT      pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     AssertReturn((unsigned)face < SVGA3D_FACE_MAX, VERR_INVALID_PARAMETER);
 
@@ -4677,6 +4691,7 @@ int vmsvga3dSetLightData(PVGASTATECC pThisCC, uint32_t cid, uint32_t index, SVGA
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     switch (pData->type)
     {
@@ -4746,6 +4761,7 @@ int vmsvga3dSetLightEnabled(PVGASTATECC pThisCC, uint32_t cid, uint32_t index, u
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     /* Store for vm state save/restore */
     pContext->state.aLightData[index].fEnabled = !!enabled;
@@ -4768,6 +4784,7 @@ int vmsvga3dSetViewPort(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRect *pRect)
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     /* Save for vm state save/restore. */
     pContext->state.RectViewPort = *pRect;
@@ -4800,6 +4817,7 @@ int vmsvga3dSetClipPlane(PVGASTATECC pThisCC, uint32_t cid, uint32_t index, floa
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     /* Store for vm state save/restore. */
     pContext->state.aClipPlane[index].fValid = true;
@@ -4832,6 +4850,7 @@ int vmsvga3dCommandClear(PVGASTATECC pThisCC, uint32_t cid, SVGA3dClearFlag clea
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     PVMSVGA3DSURFACE pRT;
     rc = vmsvga3dSurfaceFromSid(pState, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], &pRT);
@@ -5099,6 +5118,7 @@ int vmsvga3dDrawPrimitives(PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertex
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     HRESULT hr;
 
@@ -5416,6 +5436,7 @@ int vmsvga3dSetScissorRect(PVGASTATECC pThisCC, uint32_t cid, SVGA3dRect *pRect)
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     /* Store for vm state save/restore. */
     pContext->state.u32UpdateFlags |= VMSVGA3D_UPDATE_SCISSORRECT;
@@ -5446,6 +5467,7 @@ int vmsvga3dShaderDefine(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     AssertReturn(shid < SVGA3D_MAX_SHADER_IDS, VERR_INVALID_PARAMETER);
 
@@ -5598,6 +5620,7 @@ int vmsvga3dShaderSet(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext, uint32_t c
     NOREF(pContext);
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     if (type == SVGA3D_SHADERTYPE_VS)
     {
@@ -5666,6 +5689,7 @@ int vmsvga3dShaderSetConst(PVGASTATECC pThisCC, uint32_t cid, uint32_t reg, SVGA
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
+    AssertReturn(pContext->pDevice, VERR_INTERNAL_ERROR);
 
     for (uint32_t i = 0; i < cRegisters; i++)
     {
