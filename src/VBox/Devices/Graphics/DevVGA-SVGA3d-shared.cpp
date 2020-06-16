@@ -44,7 +44,7 @@
 
 
 #ifdef RT_OS_WINDOWS
-# define VMSVGA3D_WNDCLASSNAME  "VMSVGA3DWNDCLS"
+# define VMSVGA3D_WNDCLASSNAME  L"VMSVGA3DWNDCLS"
 
 static LONG WINAPI vmsvga3dWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -84,12 +84,12 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     RT_NOREF(hThreadSelf);
     RTSEMEVENT      WndRequestSem = (RTSEMEVENT)pvUser;
-    WNDCLASSEX      wc;
+    WNDCLASSEXW     wc;
 
     /* Register our own window class. */
     wc.cbSize           = sizeof(wc);
     wc.style            = CS_OWNDC;
-    wc.lpfnWndProc      = (WNDPROC) vmsvga3dWndProc;
+    wc.lpfnWndProc      = (WNDPROC)vmsvga3dWndProc;
     wc.cbClsExtra       = 0;
     wc.cbWndExtra       = 0;
     wc.hInstance        = GetModuleHandle("VBoxDD.dll");    /** @todo hardcoded name.. */
@@ -100,7 +100,7 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
     wc.lpszClassName    = VMSVGA3D_WNDCLASSNAME;
     wc.hIconSm          = NULL;
 
-    if (!RegisterClassEx(&wc))
+    if (!RegisterClassExW(&wc))
     {
         Log(("RegisterClass failed with %x\n", GetLastError()));
         return VERR_INTERNAL_ERROR;
@@ -126,23 +126,33 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
 
             if (msg.message == WM_VMSVGA3D_CREATEWINDOW)
             {
-                HWND          *pHwnd = (HWND *)msg.wParam;
-                LPCREATESTRUCT pCS = (LPCREATESTRUCT) msg.lParam;
+                HWND            hWnd;
+                HWND           *phWnd = (HWND *)msg.wParam;
+                LPCREATESTRUCTW pCS = (LPCREATESTRUCTW)msg.lParam;
 
-                *pHwnd = CreateWindowEx(pCS->dwExStyle,
-                                        VMSVGA3D_WNDCLASSNAME,
-                                        pCS->lpszName,
-                                        pCS->style,
-                                        pCS->x,
-                                        pCS->y,
-                                        pCS->cx,
-                                        pCS->cy,
-                                        pCS->hwndParent,
-                                        pCS->hMenu,
-                                        pCS->hInstance,
-                                        NULL);
-                AssertMsg(*pHwnd, ("CreateWindowEx %x %s %s %x (%d,%d)(%d,%d), %x %x %x error=%x\n", pCS->dwExStyle, pCS->lpszName, VMSVGA3D_WNDCLASSNAME, pCS->style, pCS->x,
-                                    pCS->y, pCS->cx, pCS->cy,pCS->hwndParent, pCS->hMenu, pCS->hInstance, GetLastError()));
+                *phWnd = hWnd = CreateWindowExW(pCS->dwExStyle,
+                                                VMSVGA3D_WNDCLASSNAME,
+                                                pCS->lpszName,
+                                                pCS->style,
+                                                pCS->x,
+                                                pCS->y,
+                                                pCS->cx,
+                                                pCS->cy,
+                                                pCS->hwndParent,
+                                                pCS->hMenu,
+                                                pCS->hInstance,
+                                                NULL);
+                AssertMsg(hWnd, ("CreateWindowEx %x %ls %ls %x (%d,%d)(%d,%d), %x %x %x error=%x\n", pCS->dwExStyle,
+                                 pCS->lpszName, VMSVGA3D_WNDCLASSNAME, pCS->style, pCS->x, pCS->y, pCS->cx, pCS->cy,
+                                 pCS->hwndParent, pCS->hMenu, pCS->hInstance, GetLastError()));
+
+#ifdef VBOX_STRICT
+                /* Must have a non-zero client rectangle! */
+                RECT ClientRect;
+                GetClientRect(hWnd, &ClientRect);
+                Assert(ClientRect.right > ClientRect.left);
+                Assert(ClientRect.bottom > ClientRect.top);
+#endif
 
                 /* Signal to the caller that we're done. */
                 RTSemEventSignal(WndRequestSem);
@@ -158,6 +168,24 @@ DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD hThreadSelf, void *pvUser)
                 RTSemEventSignal(WndRequestSem);
                 continue;
             }
+
+#if 0 /* in case CreateDeviceEx fails again and we want to eliminat wrong-thread. */
+            if (msg.message == WM_VMSVGA3D_CREATE_DEVICE)
+            {
+                VMSVGA3DCREATEDEVICEPARAMS *pParams = (VMSVGA3DCREATEDEVICEPARAMS *)msg.lParam;
+                pParams->hrc = pParams->pState->pD3D9->CreateDeviceEx(D3DADAPTER_DEFAULT,
+                                                                      D3DDEVTYPE_HAL,
+                                                                      pParams->pContext->hwnd,
+                                                                      D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING, //D3DCREATE_HARDWARE_VERTEXPROCESSING,
+                                                                      pParams->pPresParams,
+                                                                      NULL,
+                                                                      &pParams->pContext->pDevice);
+                AssertMsg(pParams->hrc == D3D_OK, ("WM_VMSVGA3D_CREATE_DEVICE: CreateDevice failed with %x\n", pParams->hrc));
+
+                RTSemEventSignal(WndRequestSem);
+                continue;
+            }
+#endif
 
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -178,6 +206,20 @@ static LONG WINAPI vmsvga3dWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 {
     switch (uMsg)
     {
+        case WM_CREATE:
+        {
+            /* Ditch the title bar (caption) to avoid having a zero height
+               client area as that makes IDirect3D9Ex::CreateDeviceEx fail.
+               For the style adjustment to take place, we must apply the
+               SWP_FRAMECHANGED thru SetWindowPos. */
+            LONG flStyle = GetWindowLongW(hwnd, GWL_STYLE);
+            flStyle &= ~WS_CAPTION /* both titlebar and border. Some paranoia: */ | WS_THICKFRAME | WS_SYSMENU;
+            SetWindowLong(hwnd, GWL_STYLE, flStyle);
+            SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                         SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+            break;
+        }
+
         case WM_CLOSE:
             Log7(("vmsvga3dWndProc(%p): WM_CLOSE\n", hwnd));
             break;
@@ -236,7 +278,7 @@ int vmsvga3dContextWindowCreate(HINSTANCE hInstance, RTTHREAD pWindowThread, RTS
      * the VMSVGA SCREEN object, which can be either an offscreen render target or
      * system memory in the guest VRAM.
      */
-    CREATESTRUCT cs;
+    CREATESTRUCTW cs;
     cs.lpCreateParams   = NULL;
     cs.hInstance        = hInstance;
     cs.hMenu            = NULL;
@@ -250,8 +292,7 @@ int vmsvga3dContextWindowCreate(HINSTANCE hInstance, RTTHREAD pWindowThread, RTS
     cs.lpszClass        = 0;
     cs.dwExStyle        = WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY;
 
-    int rc = vmsvga3dSendThreadMessage(pWindowThread, WndRequestSem, WM_VMSVGA3D_CREATEWINDOW, (WPARAM)pHwnd, (LPARAM)&cs);
-    return rc;
+    return vmsvga3dSendThreadMessage(pWindowThread, WndRequestSem, WM_VMSVGA3D_CREATEWINDOW, (WPARAM)pHwnd, (LPARAM)&cs);
 }
 
 #endif /* RT_OS_WINDOWS */

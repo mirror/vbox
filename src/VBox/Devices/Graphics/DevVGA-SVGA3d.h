@@ -117,6 +117,16 @@ int vmsvga3dQueryWait(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t cid, SVGA3d
 # define WM_VMSVGA3D_CREATEWINDOW               (WM_APP+2)
 # define WM_VMSVGA3D_DESTROYWINDOW              (WM_APP+3)
 # define WM_VMSVGA3D_EXIT                       (WM_APP+5)
+# if 0
+#  define WM_VMSVGA3D_CREATE_DEVICE             (WM_APP+6)
+typedef struct VMSVGA3DCREATEDEVICEPARAMS
+{
+    struct VMSVGA3DSTATE   *pState;
+    struct VMSVGA3DCONTEXT *pContext;
+    struct _D3DPRESENT_PARAMETERS_ *pPresParams;
+    HRESULT                 hrc;
+} VMSVGA3DCREATEDEVICEPARAMS;
+# endif
 
 DECLCALLBACK(int) vmsvga3dWindowThread(RTTHREAD ThreadSelf, void *pvUser);
 int vmsvga3dSendThreadMessage(RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, UINT msg, WPARAM wParam, LPARAM lParam);

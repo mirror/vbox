@@ -2563,7 +2563,6 @@ int vmsvga3dContextDefine(PVGASTATECC pThisCC, uint32_t cid)
     int                     rc;
     PVMSVGA3DCONTEXT        pContext;
     HRESULT                 hr;
-    D3DPRESENT_PARAMETERS   PresParam;
     PVMSVGA3DSTATE          pState = pThisCC->svga.p3dState;
 
     Log(("vmsvga3dContextDefine id %x\n", cid));
@@ -2610,6 +2609,7 @@ int vmsvga3dContextDefine(PVGASTATECC pThisCC, uint32_t cid)
     AssertRCReturn(rc, rc);
 
     /* Changed when the function returns. */
+    D3DPRESENT_PARAMETERS PresParam;
     PresParam.BackBufferWidth               = 0;
     PresParam.BackBufferHeight              = 0;
     PresParam.BackBufferFormat              = D3DFMT_UNKNOWN;
@@ -2627,7 +2627,13 @@ int vmsvga3dContextDefine(PVGASTATECC pThisCC, uint32_t cid)
     /** @todo consider using D3DPRESENT_DONOTWAIT so we don't wait for the GPU during Present calls. */
     PresParam.PresentationInterval          = D3DPRESENT_INTERVAL_IMMEDIATE;
 
-#ifdef VBOX_VMSVGA3D_WITH_WINE_OPENGL
+#if 0
+    VMSVGA3DCREATEDEVICEPARAMS Params = { pState, pContext, &PresParam, 0 };
+    rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_CREATE_DEVICE, 0, (LPARAM)&Params);
+    AssertRCReturn(rc, rc);
+    hr = Params.hrc;
+
+#elif defined(VBOX_VMSVGA3D_WITH_WINE_OPENGL)
     hr = pState->pD3D9->CreateDevice(D3DADAPTER_DEFAULT,
                                      D3DDEVTYPE_HAL,
                                      pContext->hwnd,
@@ -2635,6 +2641,9 @@ int vmsvga3dContextDefine(PVGASTATECC pThisCC, uint32_t cid)
                                      &PresParam,
                                      &pContext->pDevice);
 #else
+    /** @todo Docs indicates that we should be using
+     * D3DCREATE_HARDWARE_VERTEXPROCESSING with W10 1607 and higher. 
+     * https://docs.microsoft.com/en-us/windows/win32/direct3d9/d3dcreate */ 
     hr = pState->pD3D9->CreateDeviceEx(D3DADAPTER_DEFAULT,
                                        D3DDEVTYPE_HAL,
                                        pContext->hwnd,
