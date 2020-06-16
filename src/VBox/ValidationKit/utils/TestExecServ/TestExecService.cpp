@@ -552,9 +552,8 @@ static int txsReplaceStringVariables(PCTXSPKTHDR pPktHdr, const char *pszSrc, ch
     size_t  cchNew    = strlen(pszSrc);
     char   *pszNew    = RTStrDup(pszSrc);
     char   *pszDollar = pszNew;
-    while ((pszDollar = strchr(pszDollar, '$')) != NULL)
+    while (pszDollar && (pszDollar = strchr(pszDollar, '$')) != NULL)
     {
-        /** @todo employ $$ as escape sequence here. */
         if (pszDollar[1] == '{')
         {
             char *pszEnd = strchr(&pszDollar[2], '}');
@@ -638,6 +637,8 @@ static int txsReplaceStringVariables(PCTXSPKTHDR pPktHdr, const char *pszSrc, ch
             pszDollar[cchLeft] = '\0';
             cchNew -= 1;
         }
+        else /* No match, move to next char to avoid endless looping. */
+            pszDollar++;
     }
 
     *ppszNew = pszNew;
