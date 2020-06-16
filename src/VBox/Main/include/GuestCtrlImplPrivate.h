@@ -1023,6 +1023,9 @@ public:
 
 protected:
 
+    /** Maximum allowed size the stream buffer can grow to.
+     *  Defaults to 32 MB. */
+    size_t m_cbMax;
     /** Currently allocated size of internal stream buffer. */
     size_t m_cbAllocated;
     /** Currently used size at m_offBuffer. */
@@ -1030,7 +1033,7 @@ protected:
     /** Current byte offset within the internal stream buffer. */
     size_t m_offBuffer;
     /** Internal stream buffer. */
-    BYTE *m_pbBuffer;
+    BYTE  *m_pbBuffer;
 };
 
 class Guest;
