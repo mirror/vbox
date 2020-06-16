@@ -1325,11 +1325,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
 #undef GROW_STR
                 LogRel(("VbglR3GuestCtrlProcGetStart: 2 - %Rrc (retry %u, cbCmd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",
                         rc, cRetries, pStartupInfo->cbCmd, pStartupInfo->cbArgs, pStartupInfo->cbEnv));
-                LogRel(("g_fVbglR3GuestCtrlHavePeekGetCancel=%d\n", g_fVbglR3GuestCtrlHavePeekGetCancel));
-
-                /* Only try another round if we can peek for the next bigger size; otherwise bail out on the bottom. */
-                if (RT_BOOL(g_fVbglR3GuestCtrlHavePeekGetCancel))
-                    continue;
+                LogRel(("g_fVbglR3GuestCtrlHavePeekGetCancel=%RTbool\n", RT_BOOL(g_fVbglR3GuestCtrlHavePeekGetCancel)));
             }
             else
                 break;
@@ -1350,7 +1346,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
                 Msg.u.v2.num_affinity.GetUInt32(&pStartupInfo->cAffinity);
             }
         }
-    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+    } while ((   rc == VERR_INTERRUPTED
+              || rc == VERR_BUFFER_OVERFLOW) && g_fVbglR3GuestCtrlHavePeekGetCancel);
 
     if (RT_SUCCESS(rc))
     {
