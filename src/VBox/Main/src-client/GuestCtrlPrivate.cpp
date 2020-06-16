@@ -522,13 +522,11 @@ int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
 ///////////////////////////////////////////////////////////////////////////////
 
 GuestProcessStream::GuestProcessStream(void)
-    : m_cbAllocated(0),
-      m_cbUsed(0),
-      m_offBuffer(0),
-      m_pbBuffer(NULL)
-{
-
-}
+    : m_cbMax(_32M)
+    , m_cbAllocated(0)
+    , m_cbUsed(0)
+    , m_offBuffer(0)
+    , m_pbBuffer(NULL) { }
 
 GuestProcessStream::~GuestProcessStream(void)
 {
@@ -539,7 +537,7 @@ GuestProcessStream::~GuestProcessStream(void)
  * Adds data to the internal parser buffer. Useful if there
  * are multiple rounds of adding data needed.
  *
- * @return  VBox status code.
+ * @return  VBox status code. Will return VERR_TOO_MUCH_DATA if the buffer's maximum (limit) has been reached.
  * @param   pbData              Pointer to data to add.
  * @param   cbData              Size (in bytes) of data to add.
  */
@@ -578,17 +576,21 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
         /* Do we need to grow the buffer? */
         if (cbData + m_cbUsed > m_cbAllocated)
         {
-/** @todo Put an upper limit on the allocation?   */
             size_t cbAlloc = m_cbUsed + cbData;
-            cbAlloc = RT_ALIGN_Z(cbAlloc, _64K);
-            void *pvNew = RTMemRealloc(m_pbBuffer, cbAlloc);
-            if (pvNew)
+            if (cbAlloc <= m_cbMax)
             {
-                m_pbBuffer = (uint8_t *)pvNew;
-                m_cbAllocated = cbAlloc;
+                cbAlloc = RT_ALIGN_Z(cbAlloc, _64K);
+                void *pvNew = RTMemRealloc(m_pbBuffer, cbAlloc);
+                if (pvNew)
+                {
+                    m_pbBuffer = (uint8_t *)pvNew;
+                    m_cbAllocated = cbAlloc;
+                }
+                else
+                    rc = VERR_NO_MEMORY;
             }
             else
-                rc = VERR_NO_MEMORY;
+                rc = VERR_TOO_MUCH_DATA;
         }
 
         /* Finally, copy the data. */
