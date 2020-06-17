@@ -380,7 +380,7 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
         }
     }
 
-    BYTE byBuf[_64K];
+    BYTE byBuf[_64K]; /** @todo Can we do better here? */
     while (cbToRead)
     {
         uint32_t cbRead;
@@ -403,12 +403,12 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
             break;
         }
 
-        Assert(cbToRead >= cbRead);
+        AssertBreak(cbToRead >= cbRead);
         cbToRead -= cbRead;
 
         /* Update total bytes written to the guest. */
         cbWrittenTotal += cbRead;
-        Assert(cbWrittenTotal <= cbSize);
+        AssertBreak(cbWrittenTotal <= cbSize);
 
         /* Did the user cancel the operation above? */
         if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
@@ -464,7 +464,7 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
  */
 int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &strDst, FileCopyFlag_T fFileCopyFlags)
 {
-    LogFlowThisFunc(("strSource=%s, strDest=%s, enmFileCopyFlags=0x%x\n", strSrc.c_str(), strDst.c_str(), fFileCopyFlags));
+    LogFlowThisFunc(("strSource=%s, strDest=%s, enmFileCopyFlags=%#x\n", strSrc.c_str(), strDst.c_str(), fFileCopyFlags));
 
     GuestFileOpenInfo srcOpenInfo;
     srcOpenInfo.mFilename     = strSrc;
@@ -505,7 +505,8 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
 
             default:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Guest object \"%s\" is not a file"), strSrc.c_str()));
+                                    Utf8StrFmt(GuestSession::tr("Guest object \"%s\" is not a file (is type %#x)"),
+                                               strSrc.c_str(), srcObjData.mType));
                 rc = VERR_NOT_A_FILE;
                 break;
         }
@@ -528,7 +529,6 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
     if (RT_FAILURE(rc))
         return rc;
 
-    char *pszDstFile = NULL;
     RTFSOBJINFO dstObjInfo;
     RT_ZERO(dstObjInfo);
 
@@ -552,9 +552,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
                 RTTimeSpecSetSeconds(&srcModificationTimeTS, srcObjData.mModificationTime);
                 if (RTTimeSpecCompare(&srcModificationTimeTS, &dstObjInfo.ModificationTime) <= 0)
                 {
-                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(GuestSession::tr("Host file \"%s\" has same or newer modification date"),
-                                                   strDst.c_str()));
+                    LogRel2(("Guest Control: Host file \"%s\" has same or newer modification date, skipping", strDst.c_str()));
                     fSkip = true;
                 }
             }
@@ -575,6 +573,8 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         return VINF_SUCCESS;
     }
 
+    char *pszDstFile = NULL;
+
     if (RT_SUCCESS(rc))
     {
         if (RTFS_IS_FILE(dstObjInfo.Attr.fMode))
@@ -592,15 +592,13 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
         {
             /* Build the final file name with destination path (on the host). */
             char szDstPath[RTPATH_MAX];
-            RTStrPrintf2(szDstPath, sizeof(szDstPath), "%s", strDst.c_str());
-
-            if (   !strDst.endsWith("\\")
-                && !strDst.endsWith("/"))
-                RTPathAppend(szDstPath, sizeof(szDstPath), "/"); /* IPRT can handle / on all hosts. */
-
-            RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
-
-            pszDstFile = RTStrDup(szDstPath);
+            rc = RTStrCopy(szDstPath, sizeof(szDstPath), strDst.c_str());
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
+                if (RT_SUCCESS(rc))
+                    pszDstFile = RTStrDup(szDstPath);
+            }
         }
         else if (RTFS_IS_SYMLINK(dstObjInfo.Attr.fMode))
         {
@@ -628,7 +626,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSrc, const Utf8Str &st
     {
         if (!pszDstFile)
         {
-            setProgressErrorMsg(VBOX_E_IPRT_ERROR, Utf8StrFmt(GuestSession::tr("No memory to allocate destination file path")));
+            setProgressErrorMsg(VBOX_E_IPRT_ERROR, Utf8StrFmt(GuestSession::tr("No memory to allocate host file path")));
             rc = VERR_NO_MEMORY;
         }
         else
@@ -1407,7 +1405,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
     if (mDest.isEmpty())
     {
-        strErrorInfo = Utf8StrFmt(GuestSession::tr("Destination must not be empty"));
+        strErrorInfo = Utf8StrFmt(GuestSession::tr("Host destination must not be empty"));
         vrc = VERR_INVALID_PARAMETER;
     }
     else
@@ -1422,7 +1420,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
             if (strSrc.isEmpty())
             {
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source entry must not be empty"));
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Guest source entry must not be empty"));
                 vrc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -1455,7 +1453,12 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             vrc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &rcGuest);
             if (RT_FAILURE(vrc))
             {
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
+                if (vrc == VERR_GSTCTL_GUEST_ERROR)
+                    strErrorInfo = GuestBase::getErrorAsString(GuestSession::tr("Guest file lookup failed"),
+                                                               GuestErrorInfo(GuestErrorInfo::Type_ToolStat, rcGuest, strSrc.c_str()));
+                else
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Guest file lookup for \"%s\" failed: %Rrc"),
+                                              strSrc.c_str(), vrc);
                 break;
             }
 
@@ -1463,7 +1466,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             {
                 if (itSrc->enmType != FsObjType_Directory)
                 {
-                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Guest source is not a file: %s"), strSrc.c_str());
                     vrc = VERR_NOT_A_FILE;
                     break;
                 }
@@ -1472,7 +1475,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             {
                 if (itSrc->enmType != FsObjType_File)
                 {
-                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Guest source is not a directory: %s"), strSrc.c_str());
                     vrc = VERR_NOT_A_DIRECTORY;
                     break;
                 }
@@ -1494,7 +1497,8 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
                 if (RT_FAILURE(vrc))
                 {
                     delete pFsList;
-                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), vrc);
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding guest source '%s' to list: %Rrc"),
+                                              strSrc.c_str(), vrc);
                     break;
                 }
 
