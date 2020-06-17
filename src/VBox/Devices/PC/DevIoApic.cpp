@@ -883,6 +883,7 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
         return;
     }
 #else
+    NOREF(uBusDevFn);
     ioapicGetApicIntrFromMsi(pMsi, &ApicIntr);
 #endif
 
