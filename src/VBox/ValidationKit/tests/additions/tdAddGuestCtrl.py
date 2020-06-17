@@ -1561,6 +1561,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             else:
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
                                               sPathSC, (sPathSC, 'stop', 'VBoxService'));
+        elif oTestVm.isLinux():
+            sPathService = "/usr/sbin/service";
+            if fStart is True:
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService with verbose logging', 30 * 1000, \
+                                              sPathService, (sPathService, 'start', 'vboxadd-service'));
+            else:
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
+                                              sPathService, (sPathService, 'stop', 'vboxadd-service'));
         else:
             reporter.log('Controlling VBoxService not supported for this guest yet');
 
@@ -1645,22 +1653,31 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         reporter.log('VBoxService logs will be stored in "%s"' % (self.oDebug.sGstVBoxServiceLogPath,));
 
+        fRestartVBoxService = False;
         if oTestVm.isWindows():
             sPathRegExe         = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'reg.exe');
             sPathVBoxServiceExe = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'VBoxService.exe');
             sImagePath          = '%s -vvvv --logfile %s' % (sPathVBoxServiceExe, sPathLogFile);
-            self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging (via registry)', 30 * 1000,
-                                    sPathRegExe,
+            fRestartVBoxService = self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging (via registry)',
+                                     30 * 1000,
+                                     sPathRegExe,
                                     (sPathRegExe, 'add',
                                     'HKLM\\SYSTEM\\CurrentControlSet\\Services\\VBoxService',
                                     '/v', 'ImagePath', '/t', 'REG_SZ', '/d', sImagePath, '/f'));
+        elif oTestVm.isLinux():
+            sPathSed = '/bin/sed';
+            fRestartVBoxService = self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging', 30 * 1000,
+                                     sPathSed,
+                                    (sPathSed, '-i', '-e',
+                                     's/\\$1 \\$2 \\$3/\\$1 \\$2 \\$3 -vvvv --logfile \\/tmp\\/VBoxService\\/VBoxService.log/g',
+                                     '/sbin/rcvboxadd-service'));
+        else:
+            reporter.log('Verbose logging for VBoxService not supported for this guest yet');
 
+        if fRestartVBoxService:
             self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
             time.sleep(5);
             self.vboxServiceControl(oTxsSession, oTestVm, fStart = True);
-
-        else:
-            reporter.log('Verbose logging for VBoxService not supported for this guest yet');
 
         #
         # Generate and upload some random files and dirs to the guest.
