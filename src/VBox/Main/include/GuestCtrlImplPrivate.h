@@ -1284,6 +1284,7 @@ public:
 public:
 
     static FsObjType_T fileModeToFsObjType(RTFMODE fMode);
+    static Utf8Str getErrorAsString(const Utf8Str &strAction, const GuestErrorInfo& guestErrorInfo);
     static Utf8Str getErrorAsString(const GuestErrorInfo &guestErrorInfo);
 
 protected:

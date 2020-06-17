@@ -1312,6 +1312,19 @@ int GuestBase::waitForEvent(GuestWaitEvent *pWaitEvt, uint32_t msTimeout, VBoxEv
 
 #ifndef VBOX_GUESTCTRL_TEST_CASE
 /**
+ * Convenience function to return a pre-formatted string using an action description and a guest error information.
+ *
+ * @returns Pre-formatted string with a user-friendly error string.
+ * @param   strAction           Action of when the error occurred.
+ * @param   guestErrorInfo      Related guest error information to use.
+ */
+/* static */ Utf8Str GuestBase::getErrorAsString(const Utf8Str& strAction, const GuestErrorInfo& guestErrorInfo)
+{
+    Assert(strAction.isNotEmpty());
+    return Utf8StrFmt("%s: %s", strAction.c_str(), getErrorAsString(guestErrorInfo).c_str());
+}
+
+/**
  * Returns a user-friendly error message from a given GuestErrorInfo object.
  *
  * @returns Error message string.
