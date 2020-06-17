@@ -236,8 +236,8 @@ Utf8Str GuestDirectory::i_guestErrorToString(int rcGuest, const char *pcszWhat)
 
     Utf8Str strErr;
 
-#define CASE_MSG(a_iRc, a_strFormatString, ...) \
-    case a_iRc: strErr = Utf8StrFmt(a_strFormatString, ##__VA_ARGS__); break;
+#define CASE_MSG(a_iRc, ...) \
+    case a_iRc: strErr = Utf8StrFmt(__VA_ARGS__); break;
 
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (rcGuest)
