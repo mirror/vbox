@@ -4682,7 +4682,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                         {
                             Log((IOMMU_LOG_PFX ": IntCtl=0: Target aborting fixed/arbitrated interrupt -> Target abort\n"));
                             iommuAmdSetPciTargetAbort(pDevIns);
-                            return VINF_SUCCESS;
+                            return VERR_IOMMU_INTR_REMAP_DENIED;
                         }
 
                         if (uIntrCtrl == IOMMU_INTR_CTRL_FWD_UNMAPPED)
@@ -4748,7 +4748,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                 }
 
                 iommuAmdSetPciTargetAbort(pDevIns);
-                return VERR_IOMMU_INTR_REMAP_FAILED;
+                return VERR_IOMMU_INTR_REMAP_DENIED;
             }
             else
             {

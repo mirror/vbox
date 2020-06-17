@@ -2986,12 +2986,14 @@
 #define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7206)
 /** Remapping failed for the interrupt. */
 #define VERR_IOMMU_INTR_REMAP_FAILED                (-7207)
+/** Remapping denied for the interrupt (might have caused a PCI target abort). */
+#define VERR_IOMMU_INTR_REMAP_DENIED                (-7208)
 /** Internal error - Command not supported. */
-#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7208)
+#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7209)
 /** Internal error - Command format (or reserved bits) invalid. */
-#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7209)
+#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7210)
 /** Internal error - Command hardware failure. */
-#define VERR_IOMMU_CMD_HW_ERROR                     (-7210)
+#define VERR_IOMMU_CMD_HW_ERROR                     (-7211)
 /** @} */
 
 /* SED-END */
