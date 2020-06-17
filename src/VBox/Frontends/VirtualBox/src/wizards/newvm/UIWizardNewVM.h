@@ -40,7 +40,8 @@ public:
     {
         Page1,
         Page2,
-        Page3
+        Page3,
+        Page4
     };
 
     /* Page IDs: */
@@ -70,6 +71,11 @@ protected:
     /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasic3;
     friend class UIWizardNewVMPageExpert;
+
+    QString unattendedISOFilePath() const;
+    bool isUnattendedInstallEnabled() const;
+    bool startHeadless() const;
+
 
 private slots:
 

@@ -18,6 +18,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIWizardNewVM.h"
+#include "UIWizardNewVMPageBasic0.h"
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
@@ -67,9 +68,10 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
-            setPage(Page2, new UIWizardNewVMPageBasic2);
-            setPage(Page3, new UIWizardNewVMPageBasic3);
+            setPage(Page1, new UIWizardNewVMPageBasic0);
+            setPage(Page2, new UIWizardNewVMPageBasic1(m_strGroup));
+            setPage(Page3, new UIWizardNewVMPageBasic2);
+            setPage(Page4, new UIWizardNewVMPageBasic3);
             break;
         }
         case WizardMode_Expert:
@@ -454,4 +456,28 @@ QString UIWizardNewVM::getNextControllerName(KStorageBus type)
             break;
     }
     return strControllerName;
+}
+
+QString UIWizardNewVM::unattendedISOFilePath() const
+{
+    QVariant fieldValue = field("ISOFilePath");
+    if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::QString))
+        return QString();
+    return fieldValue.toString();
+}
+
+bool UIWizardNewVM::isUnattendedInstallEnabled() const
+{
+    QVariant fieldValue = field("isUnattendedEnabled");
+    if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::Bool))
+        return false;
+    return fieldValue.toBool();
+}
+
+bool UIWizardNewVM::startHeadless() const
+{
+    QVariant fieldValue = field("startHeadless");
+    if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::Bool))
+        return false;
+    return fieldValue.toBool();
 }

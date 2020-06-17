@@ -597,6 +597,8 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
 
         /* Execute wizard: */
         pWizard->exec();
+
+
         delete pWizard;
     }
     /* For cloud machine: */
