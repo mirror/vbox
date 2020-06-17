@@ -1562,13 +1562,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
                                               sPathSC, (sPathSC, 'stop', 'VBoxService'));
         elif oTestVm.isLinux():
-            sPathService = "/usr/sbin/service";
+            sPathService = "/sbin/rcvboxadd-service";
             if fStart is True:
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService with verbose logging', 30 * 1000, \
-                                              sPathService, (sPathService, 'start', 'vboxadd-service'));
+                                              sPathService, (sPathService, 'start'));
             else:
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
-                                              sPathService, (sPathService, 'stop', 'vboxadd-service'));
+                                              sPathService, (sPathService, 'stop'));
         else:
             reporter.log('Controlling VBoxService not supported for this guest yet');
 
@@ -1627,16 +1627,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         _ = oSession;
 
         #
-        # Wait for VBoxService to come up.
-        #
-        reporter.testStart('Waiting for VBoxService to get started');
-        fRc = self.waitForGuestFacility(oSession, vboxcon.AdditionsFacilityType_VBoxService, "VBoxService",
-                                        vboxcon.AdditionsFacilityStatus_Active);
-        reporter.testDone();
-        if not fRc:
-            return (False, oTxsSession);
-
-        #
         # Make sure the temporary directory exists.
         #
         for sDir in [self.oTstDrv.getGuestTempDir(oTestVm), ]:
@@ -1668,8 +1658,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sPathSed = '/bin/sed';
             fRestartVBoxService = self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging', 30 * 1000,
                                      sPathSed,
-                                    (sPathSed, '-i', '-e',
-                                     's/\\$1 \\$2 \\$3/\\$1 \\$2 \\$3 -vvvv --logfile \\/tmp\\/VBoxService\\/VBoxService.log/g',
+                                    (sPathSed, '-i', '-e', 's/'
+                                     '\\$2 \\$3'
+                                     '/'
+                                     '\\$2 \\$3 -vvvv --logfile \\/var\\/tmp\\/VBoxService\\/VBoxService.log'
+                                     '/g',
                                      '/sbin/rcvboxadd-service'));
         else:
             reporter.log('Verbose logging for VBoxService not supported for this guest yet');
@@ -1678,6 +1671,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
             time.sleep(5);
             self.vboxServiceControl(oTxsSession, oTestVm, fStart = True);
+        else:
+            reporter.testStart('Waiting for VBoxService to get started');
+            fRc = self.waitForGuestFacility(oSession, vboxcon.AdditionsFacilityType_VBoxService, "VBoxService",
+                                            vboxcon.AdditionsFacilityStatus_Active);
+            reporter.testDone();
+            if not fRc:
+                return False;
 
         #
         # Generate and upload some random files and dirs to the guest.
