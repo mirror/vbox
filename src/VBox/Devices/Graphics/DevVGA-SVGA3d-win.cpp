@@ -2642,8 +2642,8 @@ int vmsvga3dContextDefine(PVGASTATECC pThisCC, uint32_t cid)
                                      &pContext->pDevice);
 #else
     /** @todo Docs indicates that we should be using
-     * D3DCREATE_HARDWARE_VERTEXPROCESSING with W10 1607 and higher. 
-     * https://docs.microsoft.com/en-us/windows/win32/direct3d9/d3dcreate */ 
+     * D3DCREATE_HARDWARE_VERTEXPROCESSING with W10 1607 and higher.
+     * https://docs.microsoft.com/en-us/windows/win32/direct3d9/d3dcreate */
     hr = pState->pD3D9->CreateDeviceEx(D3DADAPTER_DEFAULT,
                                        D3DDEVTYPE_HAL,
                                        pContext->hwnd,
