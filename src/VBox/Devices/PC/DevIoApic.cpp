@@ -864,11 +864,27 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
 
     XAPICINTR ApicIntr;
     RT_ZERO(ApicIntr);
-    ioapicGetApicIntrFromMsi(pMsi, &ApicIntr);
 
-    /** @todo IOMMU: Call into the IOMMU to remap the MSI. uBusDevFn will be used
-     *        then. */
-    NOREF(uBusDevFn);
+#ifdef VBOX_WITH_IOMMU_AMD
+    /*
+     * The MSI may need to be remapped (or discarded) if an IOMMU is present.
+     */
+    MSIMSG MsiOut;
+    Assert(PCIBDF_IS_VALID(uBusDevFn));
+    int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, pMsi, &MsiOut);
+    if (RT_SUCCESS(rcRemap))
+        ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+    else
+    {
+        if (rcRemap == VERR_IOMMU_INTR_REMAP_DENIED)
+            Log3(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping denied. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
+        else
+            Log(("IOAPIC: MSI (Addr=%#RX64 Data=%#RX32) remapping failed. rc=%Rrc", pMsi->Addr.u64, pMsi->Data.u32, rcRemap));
+        return;
+    }
+#else
+    ioapicGetApicIntrFromMsi(pMsi, &ApicIntr);
+#endif
 
     /*
      * Deliver to the local APIC via the system/3-wire-APIC bus.
