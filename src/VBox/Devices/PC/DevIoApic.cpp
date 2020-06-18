@@ -443,7 +443,7 @@ DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
     pIntr->u8DeliveryMode = pMsi->Data.n.u3DeliveryMode;
 }
 
-#if 0
+
 /**
  * Convert an APIC interrupt to an MSI message.
  *
@@ -465,7 +465,7 @@ DECLINLINE(void) ioapicGetMsiFromApicIntr(PCXAPICINTR pIntr, PMSIMSG pMsi)
     /** @todo r=ramshankar: Level triggered MSIs don't make much sense though
      *        possible in theory? Maybe document this more explicitly... */
 }
-#endif
+
 
 /**
  * Signals the next pending interrupt for the specified Redirection Table Entry
@@ -487,7 +487,9 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 #endif
 
-    /* Ensure the RTE isn't masked. */
+    /*
+     * Ensure the interrupt isn't masked.
+     */
     uint64_t const u64Rte = pThis->au64RedirTable[idxRte];
     if (!IOAPIC_RTE_IS_MASKED(u64Rte))
     {
@@ -503,31 +505,54 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
             }
         }
 
-        /** @todo IOMMU: Call into the IOMMU on how to remap this interrupt. uBusDevFn
-         *        will be needed then. */
+        XAPICINTR ApicIntr;
+        ApicIntr.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
+        ApicIntr.u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
+        ApicIntr.u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
+        ApicIntr.u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
+        ApicIntr.u8Polarity     = IOAPIC_RTE_GET_POLARITY(u64Rte);
+        ApicIntr.u8TriggerMode  = u8TriggerMode;
+        ApicIntr.u8RedirHint    = 0;
+
+#ifdef VBOX_WITH_IOMMU_AMD
+        /*
+         * The interrupt may need to be remapped (or discarded) if an IOMMU is present.
+         */
+        MSIMSG MsiOut;
+        MSIMSG MsiIn;
+        ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
+        Assert(PCIBDF_IS_VALID(uBusDevFn));
+        int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, &MsiIn, &MsiOut);
+        if (RT_SUCCESS(rcRemap))
+            ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
+        else
+        {
+            if (rcRemap == VERR_IOMMU_INTR_REMAP_DENIED)
+                Log3(("IOAPIC: Interrupt (u8Vector=%#x) remapping denied. rc=%Rrc", ApicIntr.u8Vector, rcRemap));
+            else
+                Log(("IOAPIC: Interrupt (u8Vector=%#x) remapping failed. rc=%Rrc", ApicIntr.u8Vector, rcRemap));
+            return;
+        }
+#else
         NOREF(uBusDevFn);
+#endif
 
-        uint8_t const  u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
-        uint8_t const  u8DeliveryMode = IOAPIC_RTE_GET_DELIVERY_MODE(u64Rte);
-        uint8_t const  u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
-        uint8_t const  u8Polarity     = IOAPIC_RTE_GET_POLARITY(u64Rte);
-        uint8_t const  u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
-        uint32_t const u32TagSrc      = pThis->au32TagSrc[idxRte];
-
+        uint32_t const u32TagSrc = pThis->au32TagSrc[idxRte];
         Log2(("IOAPIC: Signaling %s-triggered interrupt. Dest=%#x DestMode=%s Vector=%#x (%u)\n",
-              u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE ? "edge" : "level", u8Dest,
-              u8DestMode == IOAPIC_RTE_DEST_MODE_PHYSICAL ? "physical" : "logical", u8Vector, u8Vector));
+              ApicIntr.u8TriggerMode == IOAPIC_RTE_TRIGGER_MODE_EDGE ? "edge" : "level", ApicIntr.u8Dest,
+              ApicIntr.u8DestMode == IOAPIC_RTE_DEST_MODE_PHYSICAL ? "physical" : "logical",
+              ApicIntr.u8Vector, ApicIntr.u8Vector));
 
         /*
          * Deliver to the local APIC via the system/3-wire-APIC bus.
          */
         int rc = pThisCC->pIoApicHlp->pfnApicBusDeliver(pDevIns,
-                                                        u8Dest,
-                                                        u8DestMode,
-                                                        u8DeliveryMode,
-                                                        u8Vector,
-                                                        u8Polarity,
-                                                        u8TriggerMode,
+                                                        ApicIntr.u8Dest,
+                                                        ApicIntr.u8DestMode,
+                                                        ApicIntr.u8DeliveryMode,
+                                                        ApicIntr.u8Vector,
+                                                        ApicIntr.u8Polarity,
+                                                        ApicIntr.u8TriggerMode,
                                                         u32TagSrc);
         /* Can't reschedule to R3. */
         Assert(rc == VINF_SUCCESS || rc == VERR_APIC_INTR_DISCARDED);
