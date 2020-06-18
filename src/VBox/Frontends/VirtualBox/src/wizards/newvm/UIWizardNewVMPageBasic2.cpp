@@ -24,34 +24,29 @@
 #include <QSpinBox>
 
 /* GUI includes: */
+#include "QIRichTextLabel.h"
+#include "UIBaseMemoryEditor.h"
+#include "UIBaseMemorySlider.h"
+#include "UICommon.h"
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
-#include "UICommon.h"
-#include "UIBaseMemorySlider.h"
-#include "QIRichTextLabel.h"
 
 
 UIWizardNewVMPage2::UIWizardNewVMPage2()
+    : m_pBaseMemoryEditor(0)
+    , m_pRamLabel(0)
 {
 }
 
-void UIWizardNewVMPage2::onRamSliderValueChanged()
+int UIWizardNewVMPage2::baseMemory() const
 {
-    /* Update 'ram' field editor connected to slider: */
-    m_pRamEditor->blockSignals(true);
-    m_pRamEditor->setValue(m_pRamSlider->value());
-    m_pRamEditor->blockSignals(false);
-}
-
-void UIWizardNewVMPage2::onRamEditorValueChanged()
-{
-    /* Update 'ram' field slider connected to editor: */
-    m_pRamSlider->blockSignals(true);
-    m_pRamSlider->setValue(m_pRamEditor->value());
-    m_pRamSlider->blockSignals(false);
+    if (!m_pBaseMemoryEditor)
+        return 0;
+    return m_pBaseMemoryEditor->value();
 }
 
 UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
+    : m_pLabel(0)
 {
     /* Create widget: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -59,84 +54,33 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
         m_pLabel = new QIRichTextLabel(this);
         QGridLayout *pMemoryLayout = new QGridLayout;
         {
-            m_pRamSlider = new UIBaseMemorySlider(this);
-            {
-                m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                m_pRamSlider->setOrientation(Qt::Horizontal);
-            }
-            m_pRamEditor = new QSpinBox(this);
-            {
-                m_pRamEditor->setMinimum(m_pRamSlider->minimum());
-                m_pRamEditor->setMaximum(m_pRamSlider->maximum());
-                uiCommon().setMinimumWidthAccordingSymbolCount(m_pRamEditor, 5);
-            }
-            m_pRamUnits = new QLabel(this);
-            {
-                m_pRamUnits->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            }
-            m_pRamMin = new QLabel(this);
-            {
-                m_pRamMin->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            }
-            m_pRamMax = new QLabel(this);
-            {
-                m_pRamMax->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            }
-            pMemoryLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
-            pMemoryLayout->addWidget(m_pRamEditor, 0, 3);
-            pMemoryLayout->addWidget(m_pRamUnits, 0, 4);
-            pMemoryLayout->addWidget(m_pRamMin, 1, 0);
-            pMemoryLayout->setColumnStretch(1, 1);
-            pMemoryLayout->addWidget(m_pRamMax, 1, 2);
+            m_pRamLabel = new QLabel;
+            m_pBaseMemoryEditor = new UIBaseMemoryEditor;
+            pMemoryLayout->addWidget(m_pRamLabel, 0, 0, 1, 1, Qt::AlignRight|Qt::AlignTop);
+            pMemoryLayout->addWidget(m_pBaseMemoryEditor, 0, 1, 1, 4);
         }
-        pMainLayout->addWidget(m_pLabel);
+        if (m_pLabel)
+            pMainLayout->addWidget(m_pLabel);
         pMainLayout->addLayout(pMemoryLayout);
         pMainLayout->addStretch();
     }
 
-    /* Setup connections: */
-    connect(m_pRamSlider, &UIBaseMemorySlider::valueChanged,
-            this, &UIWizardNewVMPageBasic2::sltRamSliderValueChanged);
-    connect(m_pRamEditor, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-            this, &UIWizardNewVMPageBasic2::sltRamEditorValueChanged);
 
     /* Register fields: */
-    registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
-}
-
-void UIWizardNewVMPageBasic2::sltRamSliderValueChanged()
-{
-    /* Call to base-class: */
-    onRamSliderValueChanged();
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
-}
-
-void UIWizardNewVMPageBasic2::sltRamEditorValueChanged()
-{
-    /* Call to base-class: */
-    onRamEditorValueChanged();
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
+    registerField("baseMemory", this, "baseMemory");
 }
 
 void UIWizardNewVMPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVM::tr("Memory size"));
+    setTitle(UIWizardNewVM::tr("Virtual Machine Settings"));
 
     /* Translate widgets: */
-    QString strRecommendedRAM = field("type").value<CGuestOSType>().isNull() ?
-                                QString() : QString::number(field("type").value<CGuestOSType>().GetRecommendedRAM());
-    m_pLabel->setText(UIWizardNewVM::tr("<p>Select the amount of memory (RAM) in megabytes "
-                                        "to be allocated to the virtual machine.</p>"
-                                        "<p>The recommended memory size is <b>%1</b> MB.</p>")
-                                        .arg(strRecommendedRAM));
-    m_pRamUnits->setText(UICommon::tr("MB", "size suffix MBytes=1024 KBytes"));
-    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(UICommon::tr("MB", "size suffix MBytes=1024 KBytes")));
-    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(UICommon::tr("MB", "size suffix MBytes=1024 KBytes")));
+    if (m_pLabel)
+        m_pLabel->setText(UIWizardNewVM::tr("<p>You can modify the virtual machine's hardware.</p>"));
+
+    if (m_pRamLabel)
+        m_pRamLabel->setText(UIWizardNewVM::tr("Base Memory:"));
 }
 
 void UIWizardNewVMPageBasic2::initializePage()
@@ -146,16 +90,13 @@ void UIWizardNewVMPageBasic2::initializePage()
 
     /* Get recommended 'ram' field value: */
     CGuestOSType type = field("type").value<CGuestOSType>();
-    m_pRamSlider->setValue(type.GetRecommendedRAM());
-    m_pRamEditor->setValue(type.GetRecommendedRAM());
+    m_pBaseMemoryEditor->setValue(type.GetRecommendedRAM());
 
     /* 'Ram' field should have focus initially: */
-    m_pRamSlider->setFocus();
+    m_pBaseMemoryEditor->setFocus();
 }
 
 bool UIWizardNewVMPageBasic2::isComplete() const
 {
-    /* Make sure 'ram' field feats the bounds: */
-    return m_pRamSlider->value() >= qMax(1, (int)m_pRamSlider->minRAM()) &&
-           m_pRamSlider->value() <= (int)m_pRamSlider->maxRAM();
+    return UIWizardPage::isComplete();
 }

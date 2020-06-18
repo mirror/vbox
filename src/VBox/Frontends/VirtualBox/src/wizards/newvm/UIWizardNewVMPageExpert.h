@@ -42,6 +42,7 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
     Q_PROPERTY(QUuid virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
     Q_PROPERTY(QString virtualDiskLocation READ virtualDiskLocation WRITE setVirtualDiskLocation);
+    Q_PROPERTY(int baseMemory READ baseMemory);
 
 public:
 
@@ -63,8 +64,6 @@ private slots:
     void sltNameChanged(const QString &strNewText);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
-    void sltRamSliderValueChanged();
-    void sltRamEditorValueChanged();
     void sltVirtualDiskSourceChanged();
     void sltGetWithFileOpenDialog();
 

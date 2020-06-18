@@ -26,6 +26,7 @@
 
 /* Forward declarations: */
 class UIBaseMemorySlider;
+class UIBaseMemoryEditor;
 class QSpinBox;
 class QLabel;
 class QIRichTextLabel;
@@ -38,22 +39,18 @@ protected:
     /* Constructor: */
     UIWizardNewVMPage2();
 
-    /* Handlers: */
-    void onRamSliderValueChanged();
-    void onRamEditorValueChanged();
+    int baseMemory() const;
 
     /* Widgets: */
-    UIBaseMemorySlider *m_pRamSlider;
-    QSpinBox *m_pRamEditor;
-    QLabel *m_pRamMin;
-    QLabel *m_pRamMax;
-    QLabel *m_pRamUnits;
+    UIBaseMemoryEditor *m_pBaseMemoryEditor;
+    QLabel *m_pRamLabel;
 };
 
 /* 2nd page of the New Virtual Machine wizard (basic extension): */
 class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
 {
     Q_OBJECT;
+    Q_PROPERTY(int baseMemory READ baseMemory);
 
 public:
 
@@ -61,10 +58,6 @@ public:
     UIWizardNewVMPageBasic2();
 
 private slots:
-
-    /* Handlers: */
-    void sltRamSliderValueChanged();
-    void sltRamEditorValueChanged();
 
 private:
 
@@ -82,4 +75,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h */
-

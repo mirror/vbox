@@ -29,6 +29,7 @@
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UIBaseMemorySlider.h"
+#include "UIBaseMemoryEditor.h"
 #include "UIIconPool.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
@@ -57,35 +58,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
             m_pMemoryCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QGridLayout *pMemoryCntLayout = new QGridLayout(m_pMemoryCnt);
             {
-                m_pRamSlider = new UIBaseMemorySlider(m_pMemoryCnt);
-                {
-                    m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                    m_pRamSlider->setOrientation(Qt::Horizontal);
-                }
-                m_pRamEditor = new QSpinBox(m_pMemoryCnt);
-                {
-                    m_pRamEditor->setMinimum(m_pRamSlider->minimum());
-                    m_pRamEditor->setMaximum(m_pRamSlider->maximum());
-                    uiCommon().setMinimumWidthAccordingSymbolCount(m_pRamEditor, 5);
-                }
-                m_pRamUnits = new QLabel(m_pMemoryCnt);
-                {
-                    m_pRamUnits->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-                }
-                m_pRamMin = new QLabel(m_pMemoryCnt);
-                {
-                    m_pRamMin->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-                }
-                m_pRamMax = new QLabel(m_pMemoryCnt);
-                {
-                    m_pRamMax->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-                }
-                pMemoryCntLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
-                pMemoryCntLayout->addWidget(m_pRamEditor, 0, 3);
-                pMemoryCntLayout->addWidget(m_pRamUnits, 0, 4);
-                pMemoryCntLayout->addWidget(m_pRamMin, 1, 0);
-                pMemoryCntLayout->setColumnStretch(1, 1);
-                pMemoryCntLayout->addWidget(m_pRamMax, 1, 2);
+                m_pBaseMemoryEditor = new UIBaseMemoryEditor;
+                pMemoryCntLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
             }
         }
         m_pDiskCnt = new QGroupBox(this);
@@ -134,10 +108,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
             this, &UIWizardNewVMPageExpert::sltPathChanged);
     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
             this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
-    connect(m_pRamSlider, &UIBaseMemorySlider::valueChanged,
-            this, &UIWizardNewVMPageExpert::sltRamSliderValueChanged);
-    connect(m_pRamEditor, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-            this, &UIWizardNewVMPageExpert::sltRamEditorValueChanged);
     connect(m_pDiskSkip, &QRadioButton::toggled,
             this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
     connect(m_pDiskCreate, &QRadioButton::toggled,
@@ -157,7 +127,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("machineFilePath", this, "machineFilePath");
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
-    registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
+    registerField("baseMemory", this, "baseMemory");
     registerField("virtualDisk", this, "virtualDisk");
     registerField("virtualDiskId", this, "virtualDiskId");
     registerField("virtualDiskLocation", this, "virtualDiskLocation");
@@ -170,8 +140,6 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
 
     /* Fetch recommended RAM value: */
     CGuestOSType type = m_pNameAndSystemEditor->type();
-    m_pRamSlider->setValue(type.GetRecommendedRAM());
-    m_pRamEditor->setValue(type.GetRecommendedRAM());
 
     composeMachineFilePath();
     /* Broadcast complete-change: */
@@ -191,26 +159,7 @@ void UIWizardNewVMPageExpert::sltOsTypeChanged()
 
     /* Fetch recommended RAM value: */
     CGuestOSType type = m_pNameAndSystemEditor->type();
-    m_pRamSlider->setValue(type.GetRecommendedRAM());
-    m_pRamEditor->setValue(type.GetRecommendedRAM());
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
-}
-
-void UIWizardNewVMPageExpert::sltRamSliderValueChanged()
-{
-    /* Call to base-class: */
-    onRamSliderValueChanged();
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
-}
-
-void UIWizardNewVMPageExpert::sltRamEditorValueChanged()
-{
-    /* Call to base-class: */
-    onRamEditorValueChanged();
+    m_pBaseMemoryEditor->setValue(type.GetRecommendedRAM());
 
     /* Broadcast complete-change: */
     emit completeChanged();
@@ -236,9 +185,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
     /* Translate widgets: */
     m_pNameAndSystemCnt->setTitle(UIWizardNewVM::tr("Name and operating system"));
     m_pMemoryCnt->setTitle(UIWizardNewVM::tr("&Memory size"));
-    m_pRamUnits->setText(UICommon::tr("MB", "size suffix MBytes=1024 KBytes"));
-    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(UICommon::tr("MB", "size suffix MBytes=1024 KBytes")));
-    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(UICommon::tr("MB", "size suffix MBytes=1024 KBytes")));
     m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard disk"));
     m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
     m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
@@ -254,9 +200,7 @@ void UIWizardNewVMPageExpert::initializePage()
     /* Get recommended 'ram' field value: */
     CGuestOSType type = field("type").value<CGuestOSType>();
     ULONG recommendedRam = type.GetRecommendedRAM();
-    m_pRamSlider->setValue(recommendedRam);
-    m_pRamEditor->setValue(recommendedRam);
-
+    m_pBaseMemoryEditor->setValue(recommendedRam);
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()
@@ -272,7 +216,6 @@ bool UIWizardNewVMPageExpert::isComplete() const
      * 'ram' field feats the bounds,
      * 'virtualDisk' field feats the rules: */
     return UIWizardPage::isComplete() &&
-           (m_pRamSlider->value() >= qMax(1, (int)m_pRamSlider->minRAM()) && m_pRamSlider->value() <= (int)m_pRamSlider->maxRAM()) &&
            (m_pDiskSkip->isChecked() || !m_pDiskPresent->isChecked() || !uiCommon().medium(m_pDiskSelector->id()).isNull());
 }
 

@@ -131,7 +131,7 @@ bool UIWizardNewVM::createVM()
     /* The newer and less tested way of configuring vms: */
     m_machine.ApplyDefaults(QString());
     /* correct the RAM size. IMachine::applyDefaults may have overwritten the user setting: */
-    m_machine.SetMemorySize(field("ram").toUInt());
+    m_machine.SetMemorySize(field("baseMemory").toUInt());
     /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
     comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
@@ -153,7 +153,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
 
     /* RAM size: */
-    m_machine.SetMemorySize(field("ram").toInt());
+    m_machine.SetMemorySize(field("baseMemory").toInt());
 
     /* Graphics Controller type: */
     comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
