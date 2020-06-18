@@ -116,9 +116,11 @@ bool UIWizardNewVM::createVM()
         /* The First RUN Wizard is to be shown:
          * 1. if we don't attach any virtual hard-drive
          * 2. or attach a new (empty) one.
+         * 3. and if the unattended install is not enabled
          * Usually we are assigning extra-data values through UIExtraDataManager,
          * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it: */
-        if (field("virtualDiskId").toString().isNull() || !field("virtualDisk").value<CMedium>().isNull())
+        if (!isUnattendedInstallEnabled() &&
+            (field("virtualDiskId").toString().isNull() || !field("virtualDisk").value<CMedium>().isNull()))
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
 

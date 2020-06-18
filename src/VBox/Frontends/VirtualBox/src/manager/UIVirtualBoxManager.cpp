@@ -28,6 +28,7 @@
 #include "UICloudNetworkingStuff.h"
 #include "UICloudProfileManager.h"
 #include "UIDesktopServices.h"
+#include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIHostNetworkManager.h"
 #include "UIMedium.h"
@@ -64,6 +65,8 @@
 
 /* COM includes: */
 #include "CSystemProperties.h"
+#include "CUnattended.h"
+#include "CVirtualBoxErrorInfo.h"
 
 /* Other VBox stuff: */
 #include <iprt/buildconfig.h>
@@ -71,6 +74,17 @@
 #ifdef VBOX_WS_X11
 # include <iprt/env.h>
 #endif /* VBOX_WS_X11 */
+
+#define checkUnattendedInstallError(comUnattendedInstaller) \
+    do { \
+        if (!comUnattendedInstaller.isOk())      \
+        { \
+        COMErrorInfo comErrorInfo =  comUnattendedInstaller.errorInfo(); \
+        QString strErrorInfo = UIErrorString::formatErrorInfo(comErrorInfo); \
+        printf("unattended install error %s\n", qPrintable(strErrorInfo)); \
+        return; \
+        } \
+    } while (0)
 
 
 /* static */
@@ -598,8 +612,16 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
         /* Execute wizard: */
         pWizard->exec();
 
+        /* Cache unattended install related info and delete the wizard before handling the unattended install stuff: */
+        bool fUnattendedEnabled = pWizard->isUnattendedInstallEnabled();
+        QUuid uMachineUid = pWizard->createdMachineId();
+        QString strISOPath = pWizard->unattendedISOFilePath();
+        bool fStartHeadless = pWizard->startHeadless();
 
         delete pWizard;
+        /* Handle unattended install stuff: */
+        if (fUnattendedEnabled)
+            startUnattendedInstall(uMachineUid, strISOPath, fStartHeadless);
     }
     /* For cloud machine: */
     else
@@ -1846,6 +1868,37 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
 
     /* Register that machine: */
     comVBox.RegisterMachine(comMachineNew);
+}
+
+void UIVirtualBoxManager::startUnattendedInstall(const QUuid &uMachineUid, const QString &strISOPath, bool fStartHeadless)
+{
+    if (!QFileInfo(strISOPath).exists())
+    {
+        /// @todo Show a relavant error message here
+        return;
+    }
+
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    CUnattended comUnattendedInstaller = comVBox.CreateUnattendedInstaller();
+    AssertMsgReturnVoid(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
+    CMachine comMachine = comVBox.FindMachine(uMachineUid.toString());
+    AssertMsgReturnVoid(!comMachine.isNull(), ("Failed to find CMachine for the uuid %u!\n", uMachineUid));
+
+    comUnattendedInstaller.SetIsoPath(strISOPath);
+    checkUnattendedInstallError(comUnattendedInstaller);
+    comUnattendedInstaller.SetMachine(comMachine);
+    checkUnattendedInstallError(comUnattendedInstaller);
+    comUnattendedInstaller.Prepare();
+    checkUnattendedInstallError(comUnattendedInstaller);
+    comUnattendedInstaller.ConstructMedia();
+    checkUnattendedInstallError(comUnattendedInstaller);
+    comUnattendedInstaller.ReconfigureVM();
+    checkUnattendedInstallError(comUnattendedInstaller);
+
+    UICommon::LaunchMode enmLaunchMode = UICommon::LaunchMode_Default;
+    if (fStartHeadless)
+        enmLaunchMode = UICommon::LaunchMode_Headless;
+    uiCommon().launchMachine(comMachine, enmLaunchMode);
 }
 
 void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode)

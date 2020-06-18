@@ -334,6 +334,8 @@ private:
       * @{ */
         /** Opens add machine dialog specifying initial name with @a strFileName. */
         void openAddMachineDialog(const QString &strFileName = QString());
+       /** Creates an uattended installer and uses that to install guest os to newly created vm. */
+       void startUnattendedInstall(const QUuid &uMachineUid, const QString &strISOPath, bool fStartHeadless);
     /** @} */
 
     /** @name VM launching stuff.

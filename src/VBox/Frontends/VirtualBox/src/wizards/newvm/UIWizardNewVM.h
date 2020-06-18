@@ -58,6 +58,9 @@ public:
 
     /** Returns the Id of newly created VM. */
     QUuid createdMachineId() const { return m_machine.GetId(); }
+    QString unattendedISOFilePath() const;
+    bool isUnattendedInstallEnabled() const;
+    bool startHeadless() const;
 
 protected:
 
@@ -71,11 +74,6 @@ protected:
     /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasic3;
     friend class UIWizardNewVMPageExpert;
-
-    QString unattendedISOFilePath() const;
-    bool isUnattendedInstallEnabled() const;
-    bool startHeadless() const;
-
 
 private slots:
 
