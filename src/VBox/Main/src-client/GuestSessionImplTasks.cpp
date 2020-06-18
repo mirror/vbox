@@ -216,7 +216,10 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
         HRESULT hr2 = mProgress->i_notifyComplete(hr,
                                                   COM_IIDOF(IGuestSession),
                                                   GuestSession::getStaticComponentName(),
-                                                  strMsg.c_str());
+                                                  /* Make sure to hand-in the message via format string to avoid problems
+                                                   * with (file) paths which e.g. contain "%s" and friends. Can happen with
+                                                   * randomly generated Validation Kit stuff. */
+                                                  "%s", strMsg.c_str());
         if (FAILED(hr2))
             return hr2;
     }
