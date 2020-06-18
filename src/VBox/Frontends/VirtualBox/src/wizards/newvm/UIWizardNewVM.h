@@ -57,7 +57,7 @@ public:
     void prepare();
 
     /** Returns the Id of newly created VM. */
-    QUuid createdMachineId() const { return m_machine.GetId(); }
+    QUuid createdMachineId() const;
     QString unattendedISOFilePath() const;
     bool isUnattendedInstallEnabled() const;
     bool startHeadless() const;

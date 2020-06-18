@@ -460,6 +460,13 @@ QString UIWizardNewVM::getNextControllerName(KStorageBus type)
     return strControllerName;
 }
 
+QUuid UIWizardNewVM::createdMachineId() const
+{
+    if (m_machine.isOk())
+        return m_machine.GetId();
+    return QUuid();
+}
+
 QString UIWizardNewVM::unattendedISOFilePath() const
 {
     QVariant fieldValue = field("ISOFilePath");
