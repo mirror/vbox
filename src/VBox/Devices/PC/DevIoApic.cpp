@@ -444,6 +444,7 @@ DECLINLINE(void) ioapicGetApicIntrFromMsi(PCMSIMSG pMsi, PXAPICINTR pIntr)
 }
 
 
+#ifdef VBOX_WITH_IOMMU_AMD
 /**
  * Convert an APIC interrupt to an MSI message.
  *
@@ -465,6 +466,7 @@ DECLINLINE(void) ioapicGetMsiFromApicIntr(PCXAPICINTR pIntr, PMSIMSG pMsi)
     /** @todo r=ramshankar: Level triggered MSIs don't make much sense though
      *        possible in theory? Maybe document this more explicitly... */
 }
+#endif
 
 
 /**
