@@ -3085,7 +3085,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
 
     RTStrPrintf(pThis->szInst, sizeof(pThis->szInst), "VNET%d", iInstance);
 
-    /** todo Remove next line (temporary hack used for less logging clutter for single-instance debugging) */
+    /** @todo Remove next line (temporary hack used for less logging clutter for single-instance debugging) */
     *pThis->szInst = '\0';
 
     pThisCC->pDevIns     = pDevIns;

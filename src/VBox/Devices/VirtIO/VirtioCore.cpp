@@ -1596,7 +1596,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioWrite(PPDMDEVINS pDevIns, void *pvUs
     {
 #ifdef IN_RING3
         /*
-         * Pass this MMIO write access back to the client to handle
+         * Foreward this MMIO write access for client to deal with.
          */
         return pVirtioCC->pfnDevCapWrite(pDevIns, uOffset, pv, cb);
 #else
@@ -2087,14 +2087,14 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     PDMPciDevSetCapabilityList(pPciDev, 0x40);
     PDMPciDevSetStatus(pPciDev, VBOX_PCI_STATUS_CAP_LIST);
 
-    /* Linux drivers/virtio/virtio_pci_modern.c tries to map at least a page for the
-     * 'unknown' device-specific capability without querying the capability to figure
-     *  out size, so pad with an extra page
-     */
     size_t cbSize = RTStrPrintf(pVirtioCC->pcszMmioName, sizeof(pVirtioCC->pcszMmioName), "%s MMIO", pcszInstance);
     if (cbSize <= 0)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: out of memory allocating string")); /* can we put params in this error? */
 
+    /* Note: The Linux driver at drivers/virtio/virtio_pci_modern.c tries to map at least a page for the
+     * 'unknown' device-specific capability without querying the capability to figure
+     *  out size, so pad with an extra page
+     */
     rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, VIRTIO_REGION_PCI_CAP, RT_ALIGN_32(cbRegion + PAGE_SIZE, PAGE_SIZE),
                                         PCI_ADDRESS_SPACE_MEM, virtioMmioWrite, virtioMmioRead, pVirtio,
                                         IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,

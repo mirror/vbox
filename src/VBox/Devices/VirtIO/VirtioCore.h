@@ -125,7 +125,7 @@ typedef struct VIRTIOPCIPARAMS
 } VIRTIOPCIPARAMS, *PVIRTIOPCIPARAMS;
 
 #define VIRTIO_F_VERSION_1                  RT_BIT_64(32)        /**< Required feature bit for 1.0 devices      */
-#define VIRTIO_F_INDIRECT_DESC              RT_BIT_64(28)          /**< Allow descs to point to list of descs   */
+#define VIRTIO_F_INDIRECT_DESC              RT_BIT_64(28)        /**< Allow descs to point to list of descs     */
 #define VIRTIO_F_EVENT_IDX                  RT_BIT_64(29)        /**< Allow notification disable for n elems    */
 #define VIRTIO_F_RING_INDIRECT_DESC         RT_BIT_64(28)        /**< Doc bug: Goes under two names in spec     */
 #define VIRTIO_F_RING_EVENT_IDX             RT_BIT_64(29)        /**< Doc bug: Goes under two names in spec     */
@@ -287,7 +287,6 @@ typedef struct VIRTIOCORE
     uint8_t                     uPciCfgDataOff;                    /**< Offset to PCI configuration data area     */
     uint8_t                     uISR;                              /**< Interrupt Status Register.                */
     uint8_t                     fMsiSupport;                       /**< Flag set if using MSI instead of ISR      */
-
     /** The MMIO handle for the PCI capability region (\#2). */
     IOMMMIOHANDLE               hMmioPciCap;
 
@@ -355,17 +354,17 @@ typedef struct VIRTIOCORER3
 
     /** @} */
 
-    R3PTRTYPE(PVIRTIO_PCI_CFG_CAP_T)    pPciCfgCap;                 /**< Pointer to struct in the PCI configuration area. */
-    R3PTRTYPE(PVIRTIO_PCI_NOTIFY_CAP_T) pNotifyCap;                 /**< Pointer to struct in the PCI configuration area. */
-    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pCommonCfgCap;              /**< Pointer to struct in the PCI configuration area. */
-    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pIsrCap;                    /**< Pointer to struct in the PCI configuration area. */
-    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pDeviceCap;                 /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_CFG_CAP_T)    pPciCfgCap;                /**< Pointer to struct in PCI config area.     */
+    R3PTRTYPE(PVIRTIO_PCI_NOTIFY_CAP_T) pNotifyCap;                /**< Pointer  to struct in PCI config area.    */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pCommonCfgCap;             /**< Pointer to struct in PCI config area.     */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pIsrCap;                   /**< Pointer to struct in PCI config area.     */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pDeviceCap;                /**< Pointer to struct in PCI config area.     */
 
-    uint32_t                    cbDevSpecificCfg;                   /**< Size of client's dev-specific config data */
-    R3PTRTYPE(uint8_t *)        pbDevSpecificCfg;                   /**< Pointer to client's struct                */
-    R3PTRTYPE(uint8_t *)        pbPrevDevSpecificCfg;               /**< Previous read dev-specific cfg of client  */
-    bool                        fGenUpdatePending;                  /**< If set, update cfg gen after driver reads */
-    char                        pcszMmioName[MAX_NAME];             /**< MMIO mapping name                         */
+    uint32_t                    cbDevSpecificCfg;                  /**< Size of client's dev-specific config data */
+    R3PTRTYPE(uint8_t *)        pbDevSpecificCfg;                  /**< Pointer to client's struct                */
+    R3PTRTYPE(uint8_t *)        pbPrevDevSpecificCfg;              /**< Previous read dev-specific cfg of client  */
+    bool                        fGenUpdatePending;                 /**< If set, update cfg gen after driver reads */
+    char                        pcszMmioName[MAX_NAME];            /**< MMIO mapping name                         */
 } VIRTIOCORER3;
 
 /**
