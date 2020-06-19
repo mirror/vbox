@@ -29,6 +29,13 @@ echo *** Environment BEGIN >> %MY_LOG_FILE%
 set >> %MY_LOG_FILE%
 echo *** Environment END >> %MY_LOG_FILE%
 
+@@VBOX_COND_HAS_PROXY@@
+set PROXY=@@VBOX_INSERT_PROXY@@
+set HTTP_PROXY=%PROXY%
+set HTTPS_PROXY=%PROXY%
+echo HTTP proxy is %HTTP_PROXY% >> %MY_LOG_FILE%
+echo HTTPS proxy is %HTTPS_PROXY% >> %MY_LOG_FILE%
+@@VBOX_COND_END@@
 
 @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
 rem
