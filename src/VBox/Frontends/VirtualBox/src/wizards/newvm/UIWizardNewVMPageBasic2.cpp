@@ -34,7 +34,6 @@
 
 UIWizardNewVMPage2::UIWizardNewVMPage2()
     : m_pBaseMemoryEditor(0)
-    , m_pRamLabel(0)
 {
 }
 
@@ -54,9 +53,7 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
         m_pLabel = new QIRichTextLabel(this);
         QGridLayout *pMemoryLayout = new QGridLayout;
         {
-            m_pRamLabel = new QLabel;
-            m_pBaseMemoryEditor = new UIBaseMemoryEditor;
-            pMemoryLayout->addWidget(m_pRamLabel, 0, 0, 1, 1, Qt::AlignRight|Qt::AlignTop);
+            m_pBaseMemoryEditor = new UIBaseMemoryEditor(this, true);
             pMemoryLayout->addWidget(m_pBaseMemoryEditor, 0, 1, 1, 4);
         }
         if (m_pLabel)
@@ -78,9 +75,6 @@ void UIWizardNewVMPageBasic2::retranslateUi()
     /* Translate widgets: */
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("<p>You can modify the virtual machine's hardware.</p>"));
-
-    if (m_pRamLabel)
-        m_pRamLabel->setText(UIWizardNewVM::tr("Base Memory:"));
 }
 
 void UIWizardNewVMPageBasic2::initializePage()

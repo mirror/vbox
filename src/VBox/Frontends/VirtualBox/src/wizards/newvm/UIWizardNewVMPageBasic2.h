@@ -43,7 +43,6 @@ protected:
 
     /* Widgets: */
     UIBaseMemoryEditor *m_pBaseMemoryEditor;
-    QLabel *m_pRamLabel;
 };
 
 /* 2nd page of the New Virtual Machine wizard (basic extension): */
