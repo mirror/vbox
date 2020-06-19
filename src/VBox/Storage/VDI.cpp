@@ -2893,7 +2893,7 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
     int rc;
     PVDINTERFACEERROR pIfError;
     PVDINTERFACEIOINT pIfIo;
-    PVDIOSTORAGE pStorage;
+    PVDIOSTORAGE pStorage = NULL;
     uint64_t cbFile;
     PVDIIMAGEBLOCKPOINTER paBlocks = NULL;
     uint32_t *pu32BlockBitmap = NULL;

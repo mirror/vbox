@@ -2724,7 +2724,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
     int rc;
     PVDINTERFACEERROR pIfError;
     PVDINTERFACEIOINT pIfIo;
-    PVDIOSTORAGE pStorage;
+    PVDIOSTORAGE pStorage = NULL;
     uint64_t cbFile;
     VHDFooter vhdFooter;
     VHDDynamicDiskHeader dynamicDiskHeader;
