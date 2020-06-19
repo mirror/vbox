@@ -46,6 +46,13 @@ int UIWizardNewVMPage2::baseMemory() const
     return m_pBaseMemoryEditor->value();
 }
 
+int UIWizardNewVMPage2::VCPUCount() const
+{
+    if (!m_pVirtualCPUEditor)
+        return 1;
+    return m_pVirtualCPUEditor->value();
+}
+
 UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
     : m_pLabel(0)
 {
@@ -69,6 +76,7 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
 
     /* Register fields: */
     registerField("baseMemory", this, "baseMemory");
+    registerField("VCPUCount", this, "VCPUCount");
 }
 
 void UIWizardNewVMPageBasic2::retranslateUi()
@@ -89,6 +97,7 @@ void UIWizardNewVMPageBasic2::initializePage()
     /* Get recommended 'ram' field value: */
     CGuestOSType type = field("type").value<CGuestOSType>();
     m_pBaseMemoryEditor->setValue(type.GetRecommendedRAM());
+    m_pVirtualCPUEditor->setValue(1);
 
     /* 'Ram' field should have focus initially: */
     m_pBaseMemoryEditor->setFocus();

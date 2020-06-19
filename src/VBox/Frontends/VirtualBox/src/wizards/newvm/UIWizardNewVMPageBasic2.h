@@ -41,6 +41,7 @@ protected:
     UIWizardNewVMPage2();
 
     int baseMemory() const;
+    int VCPUCount() const;
 
     /* Widgets: */
     UIBaseMemoryEditor *m_pBaseMemoryEditor;
@@ -52,6 +53,7 @@ class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
 {
     Q_OBJECT;
     Q_PROPERTY(int baseMemory READ baseMemory);
+    Q_PROPERTY(int VCPUCount READ VCPUCount);
 
 public:
 

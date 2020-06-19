@@ -130,8 +130,9 @@ bool UIWizardNewVM::createVM()
 #else
     /* The newer and less tested way of configuring vms: */
     m_machine.ApplyDefaults(QString());
-    /* correct the RAM size. IMachine::applyDefaults may have overwritten the user setting: */
+    /* Apply user preferences again. IMachine::applyDefaults may have overwritten the user setting: */
     m_machine.SetMemorySize(field("baseMemory").toUInt());
+    m_machine.SetCPUCount(field("VCPUCount").toUInt());
     /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
     comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
@@ -154,6 +155,9 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
 
     /* RAM size: */
     m_machine.SetMemorySize(field("baseMemory").toInt());
+    /* VCPU count: */
+    m_machine.SetCPUCount(field("VCPUCount").toUInt());
+
 
     /* Graphics Controller type: */
     comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
@@ -374,9 +378,11 @@ void UIWizardNewVM::sltHandleWizardCancel()
     {
         case WizardMode_Basic:
         {
-            UIWizardNewVMPageBasic1 *pPage1 = qobject_cast<UIWizardNewVMPageBasic1*> (page(Page1));
-            if (pPage1)
-                pPage1->cleanupMachineFolder(true);
+            UIWizardNewVMPageBasic1 *pPage = qobject_cast<UIWizardNewVMPageBasic1*> (page(Page2));
+            /* Make sure that we were able to find the page that created the folder. */
+            Assert(pPage);
+            if (pPage)
+                pPage->cleanupMachineFolder(true);
             break;
         }
         case WizardMode_Expert:
