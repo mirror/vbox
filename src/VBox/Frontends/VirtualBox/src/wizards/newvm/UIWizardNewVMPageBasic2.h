@@ -27,6 +27,7 @@
 /* Forward declarations: */
 class UIBaseMemorySlider;
 class UIBaseMemoryEditor;
+class UIVirtualCPUEditor;
 class QSpinBox;
 class QLabel;
 class QIRichTextLabel;
@@ -43,6 +44,7 @@ protected:
 
     /* Widgets: */
     UIBaseMemoryEditor *m_pBaseMemoryEditor;
+    UIVirtualCPUEditor *m_pVirtualCPUEditor;
 };
 
 /* 2nd page of the New Virtual Machine wizard (basic extension): */
