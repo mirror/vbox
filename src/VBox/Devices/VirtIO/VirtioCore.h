@@ -213,7 +213,7 @@ typedef struct virtio_pci_common_cfg
     uint8_t   uDeviceStatus;                                     /**< RW (driver writes device status, 0=reset) */
     uint8_t   uConfigGeneration;                                 /**< RO (device changes when changing configs) */
 
-    /* Virtq-specific fields (values reflect (via MMIO0 the queue indicated with uVirtqSelect) */
+    /* Virtq-specific fields (values reflect (via MMIO) info related to queue indicated by uVirtqSelect. */
     uint16_t  uVirtqSelect;                                      /**< RW (selects queue focus for these fields) */
     uint16_t  uVirtqSize;                                        /**< RW (queue size, 0 - 2^n)                  */
     uint16_t  uVirtqMsixVector;                                  /**< RW (driver selects MSI-X queue vector)    */
@@ -491,18 +491,12 @@ void  virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *
 uint16_t virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
 /**
- * Fetches descriptor chain using avail ring of indicated queue and converts the descriptor
- * chain into its OUT (to device) and IN to guest components, but does NOT remove it from
- * the 'avail' queue. I.e. doesn't advance the ring's slot index.  This can be used with
- * virtioCoreVirtqSkip(), which *does* advance the avail index. Together they facilitate
- * mechanism that allows work with a queue'd buffer (descriptor chain). be aborted if
- * necessary, by not advancing the pointer, or, upon success calling the skip function
- * (above) to move to the next element.
+ * This function is identical to virtioCoreR3VirtqAvailBufGet(), except it doesn't 'consume'
+ * the buffer from the avail ring of the virtq. The peek operation becomes identical to a get
+ * operation if virtioCoreR3VirtqAvailRingNext() is called to consume the buffer from the avail ring,
+ * at which point virtioCoreR3VirtqUsedBufPut() must be called to complete the roundtrip
+ * transaction putting the descriptor on the used ring.
  *
- * Additionally it converts the OUT desc chain data to a contiguous virtual
- * memory buffer for easy consumption by the caller. The caller must return the
- * descriptor chain pointer via virtioCoreR3VirtqUsedBufPut() and then call virtioCoreVirtqSyncUsedRing()
- * at some point to return the data to the guest and complete the transaction.
  *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
@@ -519,15 +513,14 @@ int  virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint
                                    PPVIRTQBUF ppVirtqBuf);
 
 /**
- * This function Fetches next buffer (descriptor chain) from the VirtIO "avail" ring of
- * indicated queue and converts the buffer's s/g vectors into OUT (e.g. to host device)
- * and IN (e.g. to guest driver) components.
+ * This functionf fetches the next buffer (descriptor chain) from the VirtIO "avail" ring of
+ * indicated queue, and converts the buf's s/g vectors into OUT (e.g. guest-to-host)
+ * components and and IN (host-to-guest) components.
  *
- * The caller is responsible for GCPhys to HC Virtual Memory conversions and *must*
- * return the virtq buffer using virtioCoreR3VirtqUsedBufPut() to complete the roundtrip
- * virtq transaction if the caller has subsequently called virtioCoreR3VirtqSkip()
- * to advance the pointer in the virtq's avail ring to the next descriptor chain
- * (at which point the peek becomes indistinguishable from a get operation)
+ * The caller is responsible for GCPhys to host virtual memory conversions. If the
+ * virtq buffer being peeked at is "consumed", virtioCoreR3VirtqAvailRingNext() must
+ * be called and in that case virtioCoreR3VirtqUsedBufPut() must be called to
+ * complete the roundtrip virtq transaction.
  *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
@@ -550,14 +543,10 @@ int  virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
  * Fetches a specific descriptor chain using avail ring of indicated queue and converts the descriptor
  * chain into its OUT (to device) and IN to guest components.
  *
- * The caller is responsible for GCPhys to HC Virtual Memory conversions and *must*
+ * The caller is responsible for GCPhys to host virtual memory conversions and *must*
  * return the virtq buffer using virtioCoreR3VirtqUsedBufPut() to complete the roundtrip
  * virtq transaction.
- *
- * At some some point virtioCoreR3VirtqSync() must be called to return data to the guest,
- * completing all the virtioCoreR3VirtqAvailBufGet() and virtioCoreR3VirtqAvailBufPeek()
- * transactions that have accumulated since the last call to virtioCoreR3VirtqSync()
- *
+ * *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   uVirtqNbr   Virtq number
@@ -582,7 +571,11 @@ int  virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
  * the guest and completed by the host. In other words, for the host to send any data to the
  * guest, the guest must provide buffers for the host to fill to the avail ring of the
  * virtq.
- * *
+ *
+ * At some some point virtioCoreR3VirtqUsedRingSync() must be called to return data to the guest,
+ * completing all pending virtioCoreR3VirtqAvailBufPut() transactions that have accumulated since
+ * the last call to virtioCoreR3VirtqUsedRingSync()
+
  * @note This does a write-ahead to the used ring of the guest's queue. The data
  *       written won't be seen by the guest until the next call to virtioCoreVirtqSyncUsedRing()
  *
