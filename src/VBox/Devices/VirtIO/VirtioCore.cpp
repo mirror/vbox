@@ -45,7 +45,7 @@
 #define VIRTQNAME(a_pVirtio, a_uVirtqNbr)    ((a_pVirtio)->aVirtqState[(a_uVirtqNbr)].szVirtqName)
 #define IS_DRIVER_OK(a_pVirtio)             ((a_pVirtio)->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
 #define IS_VIRTQ_EMPTY(pDevIns, pVirtio, pVirtqState) \
-            (virtioCoreVirtqAvailCount(pDevIns, pVirtio, pVirtqState) == 0)
+            (virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, pVirtqState) == 0)
 
 /**
  * This macro returns true if the @a a_offAccess and access length (@a
@@ -275,7 +275,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
 
 #endif
 
-DECLINLINE(uint16_t) virtioCoreVirtqAvailCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTQSTATE pVirtqState)
+DECLINLINE(uint16_t) virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTQSTATE pVirtqState)
 {
     uint16_t uIdx    = virtioReadAvailRingIdx(pDevIns, pVirtio, pVirtqState->uVirtqNbr);
     uint16_t uShadow = pVirtqState->uAvailIdxShadow;
@@ -302,20 +302,20 @@ DECLINLINE(uint16_t) virtioCoreVirtqAvailCount(PPDMDEVINS pDevIns, PVIRTIOCORE p
  * @returns how many entries have been added to ring as a delta of the consumer's
  *          avail index and the queue's guest-side current avail index.
  */
-uint16_t virtioCoreVirtqAvailCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
+uint16_t virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
     if (!IS_DRIVER_OK(pVirtio) || !pVirtio->uVirtqEnable[uVirtqNbr])
     {
         LogRelFunc(("Driver not ready or queue not enabled\n"));
         return 0;
     }
-    return virtioCoreVirtqAvailCount(pDevIns, pVirtio, &pVirtio->aVirtqState[uVirtqNbr]);
+    return virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, &pVirtio->aVirtqState[uVirtqNbr]);
 }
 
 
 /** @} */
 
-void virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
+void virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pGcSgBuf);
     Assert(   (cSegs > 0 && VALID_PTR(paSegs)) || (!cSegs && !paSegs));
@@ -336,7 +336,7 @@ void virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSeg
     }
 }
 
-static RTGCPHYS virtioCoreSgBufGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
+static RTGCPHYS virtioCoreGCPhysChainGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
 {
     size_t cbData;
     RTGCPHYS pGcBuf;
@@ -380,7 +380,7 @@ static RTGCPHYS virtioCoreSgBufGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
     return pGcBuf;
 }
 
-void virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf)
+void virtioCoreGCPhysChainReset(PVIRTIOSGBUF pGcSgBuf)
 {
     AssertPtrReturnVoid(pGcSgBuf);
 
@@ -397,7 +397,7 @@ void virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf)
     }
 }
 
-RTGCPHYS virtioCoreSgBufAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance)
+RTGCPHYS virtioCoreGCPhysChainAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance)
 {
     AssertReturn(pGcSgBuf, 0);
 
@@ -405,7 +405,7 @@ RTGCPHYS virtioCoreSgBufAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance)
     while (cbLeft)
     {
         size_t cbThisAdvance = cbLeft;
-        virtioCoreSgBufGet(pGcSgBuf, &cbThisAdvance);
+        virtioCoreGCPhysChainGet(pGcSgBuf, &cbThisAdvance);
         if (!cbThisAdvance)
             break;
 
@@ -414,7 +414,7 @@ RTGCPHYS virtioCoreSgBufAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance)
     return cbAdvance - cbLeft;
 }
 
-RTGCPHYS virtioCoreSgBufGetNextSegment(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg)
+RTGCPHYS virtioCoreGCPhysChainGetNextSegment(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg)
 {
     AssertReturn(pGcSgBuf, 0);
     AssertPtrReturn(pcbSeg, 0);
@@ -422,10 +422,10 @@ RTGCPHYS virtioCoreSgBufGetNextSegment(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg)
     if (!*pcbSeg)
         *pcbSeg = pGcSgBuf->cbSegLeft;
 
-    return virtioCoreSgBufGet(pGcSgBuf, pcbSeg);
+    return virtioCoreGCPhysChainGet(pGcSgBuf, pcbSeg);
 }
 
-size_t virtioCoreSgBufCalcTotalLength(PVIRTIOSGBUF pGcSgBuf)
+size_t virtioCoreGCPhysChainCalcBufSize(PVIRTIOSGBUF pGcSgBuf)
 {
     size_t   cb = 0;
     unsigned i  = pGcSgBuf->cSegs;
@@ -663,7 +663,7 @@ void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
     int cSendSegs = 0, cReturnSegs = 0;
     if (!fEmpty)
     {
-        virtioCoreR3VirtqBufPeek(pDevIns,  pVirtio, uVirtqNbr, &pVirtqBuf);
+        virtioCoreR3VirtqAvailBufPeek(pDevIns,  pVirtio, uVirtqNbr, &pVirtqBuf);
         cSendSegs   = pVirtqBuf->pSgPhysSend ? pVirtqBuf->pSgPhysSend->cSegs : 0;
         cReturnSegs = pVirtqBuf->pSgPhysReturn ? pVirtqBuf->pSgPhysReturn->cSegs : 0;
     }
@@ -733,7 +733,7 @@ int virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char 
 #ifdef IN_RING3
 
 /** API Function: See header file */
-int virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
+int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
                              uint16_t uHeadIdx, PPVIRTQBUF ppVirtqBuf)
 {
     AssertReturn(ppVirtqBuf, VERR_INVALID_POINTER);
@@ -829,7 +829,7 @@ int virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uV
      */
     if (cSegsIn)
     {
-        virtioCoreSgBufInit(&pVirtqBuf->SgBufIn, paSegsIn, cSegsIn);
+        virtioCoreGCPhysChainInit(&pVirtqBuf->SgBufIn, paSegsIn, cSegsIn);
         pVirtqBuf->pSgPhysReturn = &pVirtqBuf->SgBufIn;
         pVirtqBuf->cbPhysReturn  = cbIn;
         STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsIn, cSegsIn);
@@ -837,7 +837,7 @@ int virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uV
 
     if (cSegsOut)
     {
-        virtioCoreSgBufInit(&pVirtqBuf->SgBufOut, paSegsOut, cSegsOut);
+        virtioCoreGCPhysChainInit(&pVirtqBuf->SgBufOut, paSegsOut, cSegsOut);
         pVirtqBuf->pSgPhysSend   = &pVirtqBuf->SgBufOut;
         pVirtqBuf->cbPhysSend    = cbOut;
         STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsOut, cSegsOut);
@@ -913,14 +913,14 @@ void virtioCoreResetAll(PVIRTIOCORE pVirtio)
 }
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
+int virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
                          PPVIRTQBUF ppVirtqBuf)
 {
-    return virtioCoreR3VirtqBufGet(pDevIns, pVirtio,  uVirtqNbr, ppVirtqBuf, false);
+    return virtioCoreR3VirtqAvailBufGet(pDevIns, pVirtio, uVirtqNbr, ppVirtqBuf, false);
 }
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqBufSkip(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
+int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
     Assert(uVirtqNbr < RT_ELEMENTS(pVirtio->aVirtqState));
     PVIRTQSTATE pVirtqState = &pVirtio->aVirtqState[uVirtqNbr];
@@ -938,7 +938,7 @@ int virtioCoreR3VirtqBufSkip(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 }
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
+int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
                          PPVIRTQBUF ppVirtqBuf, bool fRemove)
 {
     PVIRTQSTATE pVirtqState = &pVirtio->aVirtqState[uVirtqNbr];
@@ -954,12 +954,12 @@ int virtioCoreR3VirtqBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uV
     if (fRemove)
         pVirtqState->uAvailIdxShadow++;
 
-    int rc = virtioCoreR3VirtqBufGet(pDevIns, pVirtio, uVirtqNbr, uHeadIdx, ppVirtqBuf);
+    int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, pVirtio, uVirtqNbr, uHeadIdx, ppVirtqBuf);
     return rc;
 }
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, PRTSGBUF pSgVirtReturn,
+int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, PRTSGBUF pSgVirtReturn,
                             PVIRTQBUF pVirtqBuf, bool fFence)
 {
     Assert(uVirtqNbr < RT_ELEMENTS(pVirtio->aVirtqState));
@@ -980,17 +980,17 @@ int virtioCoreR3VirtqBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uV
 
     if (pSgVirtReturn)
     {
-        size_t cbTarget = virtioCoreSgBufCalcTotalLength(pSgPhysReturn);
+        size_t cbTarget = virtioCoreGCPhysChainCalcBufSize(pSgPhysReturn);
         cbRemain = cbTotal = RTSgBufCalcTotalLength(pSgVirtReturn);
         AssertMsgReturn(cbTarget >= cbRemain, ("No space to write data to phys memory"), VERR_BUFFER_OVERFLOW);
-        virtioCoreSgBufReset(pSgPhysReturn); /* Reset ptr because req data may have already been written */
+        virtioCoreGCPhysChainReset(pSgPhysReturn); /* Reset ptr because req data may have already been written */
         while (cbRemain)
         {
             cbCopy = RT_MIN(pSgVirtReturn->cbSegLeft,  pSgPhysReturn->cbSegLeft);
             Assert(cbCopy > 0);
             PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)pSgPhysReturn->GCPhysCur, pSgVirtReturn->pvSegCur, cbCopy);
             RTSgBufAdvance(pSgVirtReturn, cbCopy);
-            virtioCoreSgBufAdvance(pSgPhysReturn, cbCopy);
+            virtioCoreGCPhysChainAdvance(pSgPhysReturn, cbCopy);
             cbRemain -= cbCopy;
         }
 
@@ -1007,7 +1007,7 @@ int virtioCoreR3VirtqBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uV
 
     /*
      * Place used buffer's descriptor in used ring but don't update used ring's slot index.
-     * That will be done with a subsequent client call to virtioCoreVirtqSync() */
+     * That will be done with a subsequent client call to virtioCoreVirtqSyncUsedRing() */
     virtioWriteUsedElem(pDevIns, pVirtio, uVirtqNbr, pVirtqState->uUsedIdxShadow++, pVirtqBuf->uHeadIdx, (uint32_t)cbTotal);
 
     if (pSgVirtReturn)
@@ -1023,7 +1023,7 @@ int virtioCoreR3VirtqBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uV
 #endif /* IN_RING3 */
 
 /** API function: See Header file  */
-int virtioCoreVirtqSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
+int virtioCoreVirtqSyncUsedRing(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
     Assert(uVirtqNbr < RT_ELEMENTS(pVirtio->aVirtqState));
     PVIRTQSTATE pVirtqState = &pVirtio->aVirtqState[uVirtqNbr];
@@ -1060,7 +1060,7 @@ static void virtioCoreVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
     AssertReturnVoid(uVirtqNbr < RT_ELEMENTS(pVirtio->aVirtqState));
     Log6Func(("%s (desc chains: %u)\n",
         pVirtio->aVirtqState[uVirtqNbr].szVirtqName,
-        virtioCoreVirtqAvailCount(pDevIns, pVirtio, uVirtqNbr)));
+        virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, uVirtqNbr)));
 
     /* Inform client */
     pVirtioCC->pfnVirtqNotified(pDevIns, pVirtio, uVirtqNbr);
@@ -1652,9 +1652,9 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
         struct virtio_pci_cap *pPciCap = &pVirtioCC->pPciCfgCap->pciCap;
         uint32_t uLength = pPciCap->uLength;
 
-        if (   (uLength != 1 && uLength != 2 && uLength != 4)
+        if (  (uLength != 1 && uLength != 2 && uLength != 4)
             || cb != uLength
-            ||  pPciCap->uBar != VIRTIO_REGION_PCI_CAP)
+            || pPciCap->uBar != VIRTIO_REGION_PCI_CAP)
         {
             ASSERT_GUEST_MSG_FAILED(("Guest read virtio_pci_cfg_cap.pci_cfg_data using mismatching config. Ignoring\n"));
             *pu32Value = UINT32_MAX;

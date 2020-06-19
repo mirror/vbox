@@ -73,7 +73,7 @@
 #define FEATURE_OFFERED(feature)  VIRTIONET_HOST_FEATURES_OFFERED & VIRTIONET_F_##feature
 
 #define IS_VIRTQ_EMPTY(pDevIns, pVirtio, uVirtqNbr) \
-            (virtioCoreVirtqAvailCount(pDevIns, pVirtio, uVirtqNbr) == 0)
+            (virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, uVirtqNbr) == 0)
 
 #define SET_LINK_UP(pState) \
             LogFunc(("SET_LINK_UP\n")); \
@@ -217,13 +217,13 @@ typedef struct virtio_net_config
 /* Device operation: Net header packet (VirtIO 1.0, 5.1.6) */
 #pragma pack(1)
 struct virtio_net_pkt_hdr {
-    uint8_t  uFlags;                                           /**< flags                                           */
-    uint8_t  uGsoType;                                         /**< gso_type                                        */
-    uint16_t uHdrLen;                                          /**< hdr_len                                         */
-    uint16_t uGsoSize;                                         /**< gso_size                                        */
-    uint16_t uChksumStart;                                     /**< Chksum_start                                    */
-    uint16_t uChksumOffset;                                    /**< Chksum_offset                                   */
-    uint16_t uNumBuffers;                                      /**< num_buffers                                     */
+    uint8_t  uFlags;                                            /**< flags                                          */
+    uint8_t  uGsoType;                                          /**< gso_type                                       */
+    uint16_t uHdrLen;                                           /**< hdr_len                                        */
+    uint16_t uGsoSize;                                          /**< gso_size                                       */
+    uint16_t uChksumStart;                                      /**< Chksum_start                                   */
+    uint16_t uChksumOffset;                                     /**< Chksum_offset                                  */
+    uint16_t uNumBuffers;                                       /**< num_buffers                                    */
 };
 #pragma pack()
 typedef virtio_net_pkt_hdr VIRTIONETPKTHDR, *PVIRTIONETPKTHDR;
@@ -261,42 +261,42 @@ typedef uint8_t  VIRTIONET_CTRL_MAC_ENTRIES[][6];
 
 /** @name Control virtq: MAC address filtering flags (VirtIO 1.0, 5.1.6.5.2)
  * @{  */
-#define VIRTIONET_CTRL_MAC                          1           /**< Control class: MAC address filtering            */
-#define VIRTIONET_CTRL_MAC_TABLE_SET                0           /**< Set MAC table                                   */
-#define VIRTIONET_CTRL_MAC_ADDR_SET                 1           /**< Set default MAC address                         */
+#define VIRTIONET_CTRL_MAC                          1           /**< Control class: MAC address filtering           */
+#define VIRTIONET_CTRL_MAC_TABLE_SET                0           /**< Set MAC table                                  */
+#define VIRTIONET_CTRL_MAC_ADDR_SET                 1           /**< Set default MAC address                        */
 /** @} */
 
 /** @name Control virtq: MAC address filtering flags (VirtIO 1.0, 5.1.6.5.3)
  * @{  */
-#define VIRTIONET_CTRL_VLAN                         2           /**< Control class: VLAN filtering                   */
-#define VIRTIONET_CTRL_VLAN_ADD                     0           /**< Add VLAN to filter table                        */
-#define VIRTIONET_CTRL_VLAN_DEL                     1           /**< Delete VLAN from filter table                   */
+#define VIRTIONET_CTRL_VLAN                         2           /**< Control class: VLAN filtering                  */
+#define VIRTIONET_CTRL_VLAN_ADD                     0           /**< Add VLAN to filter table                       */
+#define VIRTIONET_CTRL_VLAN_DEL                     1           /**< Delete VLAN from filter table                  */
 /** @} */
 
 /** @name Control virtq: Gratuitous packet sending (VirtIO 1.0, 5.1.6.5.4)
  * @{  */
-#define VIRTIONET_CTRL_ANNOUNCE                     3           /**< Control class: Gratuitous Packet Sending        */
-#define VIRTIONET_CTRL_ANNOUNCE_ACK                 0           /**< Gratuitous Packet Sending ACK                   */
+#define VIRTIONET_CTRL_ANNOUNCE                     3           /**< Control class: Gratuitous Packet Sending       */
+#define VIRTIONET_CTRL_ANNOUNCE_ACK                 0           /**< Gratuitous Packet Sending ACK                  */
 /** @} */
 
 struct virtio_net_ctrl_mq {
-    uint16_t    uVirtqueuePairs;                                /**<  virtqueue_pairs                                */
+    uint16_t    uVirtqueuePairs;                                /**<  virtqueue_pairs                               */
 };
 
 /** @name Control virtq: Receive steering in multiqueue mode (VirtIO 1.0, 5.1.6.5.5)
  * @{  */
-#define VIRTIONET_CTRL_MQ                           4           /**< Control class: Receive steering                 */
-#define VIRTIONET_CTRL_MQ_VQ_PAIRS_SET              0           /**< Set number of TX/RX queues                      */
-#define VIRTIONET_CTRL_MQ_VQ_PAIRS_MIN              1           /**< Minimum number of TX/RX queues                  */
-#define VIRTIONET_CTRL_MQ_VQ_PAIRS_MAX         0x8000           /**< Maximum number of TX/RX queues                  */
+#define VIRTIONET_CTRL_MQ                           4           /**< Control class: Receive steering                */
+#define VIRTIONET_CTRL_MQ_VQ_PAIRS_SET              0           /**< Set number of TX/RX queues                     */
+#define VIRTIONET_CTRL_MQ_VQ_PAIRS_MIN              1           /**< Minimum number of TX/RX queues                 */
+#define VIRTIONET_CTRL_MQ_VQ_PAIRS_MAX         0x8000           /**< Maximum number of TX/RX queues                 */
 /** @} */
 
-uint64_t    uOffloads;                                          /**< offloads                                        */
+uint64_t    uOffloads;                                          /**< offloads                                       */
 
 /** @name Control virtq: Setting Offloads State (VirtIO 1.0, 5.1.6.5.6.1)
  * @{  */
-#define VIRTIO_NET_CTRL_GUEST_OFFLOADS             5            /**< Control class: Offloads state configuration     */
-#define VIRTIO_NET_CTRL_GUEST_OFFLOADS_SET         0            /** Apply new offloads configuration                 */
+#define VIRTIO_NET_CTRL_GUEST_OFFLOADS             5            /**< Control class: Offloads state configuration    */
+#define VIRTIO_NET_CTRL_GUEST_OFFLOADS_SET         0            /** Apply new offloads configuration                */
 /** @} */
 
 /**
@@ -307,14 +307,14 @@ struct VIRTIONETWORKERR3;
 
 typedef struct VIRTIONETVIRTQ
 {
-    struct VIRTIONETWORKER         *pWorker;                    /**< Pointer to R0 worker struct                      */
-    struct VIRTIONETWORKERR3       *pWorkerR3;                  /**< Pointer to R3 worker struct                      */
-    uint16_t                       idx;                         /**< Index of this queue                              */
+    struct VIRTIONETWORKER         *pWorker;                    /**< Pointer to R0 worker struct                    */
+    struct VIRTIONETWORKERR3       *pWorkerR3;                  /**< Pointer to R3 worker struct                    */
+    uint16_t                       idx;                         /**< Index of this queue                            */
     uint16_t                       align;
-    char                           szName[VIRTIO_MAX_VIRTQ_NAME_SIZE]; /**< Virtq name                                */
-    bool                           fCtlVirtq;                   /**< If set this queue is the control queue           */
-    bool                           fHasWorker;                  /**< If set this queue has an associated worker       */
-    bool                           fAttachedToVirtioCore;       /**< Set if queue attached to virtio core             */
+    char                           szName[VIRTIO_MAX_VIRTQ_NAME_SIZE]; /**< Virtq name                              */
+    bool                           fCtlVirtq;                   /**< If set this queue is the control queue         */
+    bool                           fHasWorker;                  /**< If set this queue has an associated worker     */
+    bool                           fAttachedToVirtioCore;       /**< Set if queue attached to virtio core           */
     uint8_t                        pad;
 } VIRTIONETVIRTQ, *PVIRTIONETVIRTQ;
 
@@ -323,12 +323,12 @@ typedef struct VIRTIONETVIRTQ
  */
 typedef struct VIRTIONETWORKER
 {
-    SUPSEMEVENT                     hEvtProcess;                /**< handle of associated sleep/wake-up semaphore      */
-    PVIRTIONETVIRTQ                 pVirtq;                     /**< pointer to queue                                  */
-    uint16_t                        idx;                        /**< Index of this worker                              */
-    bool volatile                   fSleeping;                  /**< Flags whether worker thread is sleeping or not    */
-    bool volatile                   fNotified;                  /**< Flags whether worker thread notified              */
-    bool                            fAssigned;                  /**< Flags whether worker thread has been set up       */
+    SUPSEMEVENT                     hEvtProcess;                /**< handle of associated sleep/wake-up semaphore   */
+    PVIRTIONETVIRTQ                 pVirtq;                     /**< pointer to queue                               */
+    uint16_t                        idx;                        /**< Index of this worker                           */
+    bool volatile                   fSleeping;                  /**< Flags whether worker thread is sleeping or not */
+    bool volatile                   fNotified;                  /**< Flags whether worker thread notified           */
+    bool                            fAssigned;                  /**< Flags whether worker thread has been set up    */
     uint8_t                         pad;
 } VIRTIONETWORKER;
 /** Pointer to a virtio net worker. */
@@ -339,9 +339,9 @@ typedef VIRTIONETWORKER *PVIRTIONETWORKER;
  */
 typedef struct VIRTIONETWORKERR3
 {
-    R3PTRTYPE(PPDMTHREAD)           pThread;                    /**< pointer to worker thread's handle                 */
-    PVIRTIONETVIRTQ                 pVirtq;                     /**< pointer to queue                                  */
-    uint16_t                        idx;                        /**< Index of this worker                              */
+    R3PTRTYPE(PPDMTHREAD)           pThread;                    /**< pointer to worker thread's handle              */
+    PVIRTIONETVIRTQ                 pVirtq;                     /**< pointer to queue                               */
+    uint16_t                        idx;                        /**< Index of this worker                           */
     uint16_t                        pad;
 } VIRTIONETWORKERR3;
 /** Pointer to a virtio net worker. */
@@ -628,12 +628,12 @@ static DECLCALLBACK(void) virtioNetVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE
 
     if (IS_RX_VIRTQ(uVirtqNbr))
     {
-        uint16_t cBufsAvailable = virtioCoreVirtqAvailCount(pDevIns, pVirtio, uVirtqNbr);
+        uint16_t cBufsAvailable = virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, uVirtqNbr);
 
         if (cBufsAvailable)
         {
             Log10Func(("%s %u empty bufs added to %s by guest (notifying leaf device)\n",
-                        pThis->szInst, cBufsAvailable, pVirtq->szName));
+                       pThis->szInst, cBufsAvailable, pVirtq->szName));
             virtioNetWakeupRxBufWaiter(pDevIns);
         }
         else
@@ -883,26 +883,15 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     if (fAll || fPointers)
     {
 
-        pHlp->pfnPrintf(pHlp, "Internal pointers:\n\n");
+        pHlp->pfnPrintf(pHlp, "Internal Pointers:\n\n");
 
-        pHlp->pfnPrintf(pHlp, "    pDevIns ................... %p\n",  pDevIns);
-        pHlp->pfnPrintf(pHlp, "    PVIRTIONET ................ %p\n",  pThis);
-        pHlp->pfnPrintf(pHlp, "    PVIRTIONETCC .............. %p\n", pThisCC);
-        pHlp->pfnPrintf(pHlp, "    pDrvBase .................. %p\n",  pThisCC->pDrvBase);
-        pHlp->pfnPrintf(pHlp, "    pDrv ...................... %p\n",  pThisCC->pDrv);
-        pHlp->pfnPrintf(pHlp, "    pDrv ...................... %p\n",  pThisCC->pDrv);
+        pHlp->pfnPrintf(pHlp, "    pDevIns ................... %p\n",   pDevIns);
+        pHlp->pfnPrintf(pHlp, "    PVIRTIONET ................ %p\n",   pThis);
+        pHlp->pfnPrintf(pHlp, "    PVIRTIONETCC .............. %p\n",   pThisCC);
+        pHlp->pfnPrintf(pHlp, "    pDrvBase .................. %p\n",   pThisCC->pDrvBase);
+        pHlp->pfnPrintf(pHlp, "    pDrv ...................... %p\n",   pThisCC->pDrv);
+        pHlp->pfnPrintf(pHlp, "    pDrv ...................... %p\n",   pThisCC->pDrv);
         pHlp->pfnPrintf(pHlp, "\n");
-        pHlp->pfnPrintf(pHlp, "Misc state\n");
-        pHlp->pfnPrintf(pHlp, "\n");
-        pHlp->pfnPrintf(pHlp, "    fVirtioReady .............. %d\n",  pThis->fVirtioReady);
-        pHlp->pfnPrintf(pHlp, "    fGenUpdatePending ......... %d\n",  pThis->Virtio.fGenUpdatePending);
-        pHlp->pfnPrintf(pHlp, "    fMsiSupport ............... %d\n",  pThis->Virtio.fMsiSupport);
-        pHlp->pfnPrintf(pHlp, "    uConfigGeneration ......... %d\n",  pThis->Virtio.uConfigGeneration);
-        pHlp->pfnPrintf(pHlp, "    uDeviceStatus ............. 0x%x\n", pThis->Virtio.uDeviceStatus);
-        pHlp->pfnPrintf(pHlp, "    cVirtqPairs .,............. %d\n",  pThis->cVirtqPairs);
-        pHlp->pfnPrintf(pHlp, "    cVirtVirtqs .,............. %d\n",  pThis->cVirtVirtqs);
-        pHlp->pfnPrintf(pHlp, "    cWorkers .................. %d\n",  pThis->cWorkers);
-        pHlp->pfnPrintf(pHlp, "    MMIO mapping name ......... %d\n",  pThisCC->Virtio.pcszMmioName);
 
     }
 
@@ -919,6 +908,18 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
                 pThis->fQuiescing ? virtioCoreGetStateChangeText(pThisCC->enmQuiescingFor) : "",
                 pThis->fQuiescing ? ")" : "");
         pHlp->pfnPrintf(pHlp, "    Resetting: ................ %s\n", pThis->fResetting ? "true" : "false");
+        pHlp->pfnPrintf(pHlp, "\n");
+        pHlp->pfnPrintf(pHlp, "Misc state\n");
+        pHlp->pfnPrintf(pHlp, "\n");
+        pHlp->pfnPrintf(pHlp, "    fVirtioReady .............. %d\n",   pThis->fVirtioReady);
+        pHlp->pfnPrintf(pHlp, "    fGenUpdatePending ......... %d\n",   pThis->Virtio.fGenUpdatePending);
+        pHlp->pfnPrintf(pHlp, "    fMsiSupport ............... %d\n",   pThis->Virtio.fMsiSupport);
+        pHlp->pfnPrintf(pHlp, "    uConfigGeneration ......... %d\n",   pThis->Virtio.uConfigGeneration);
+        pHlp->pfnPrintf(pHlp, "    uDeviceStatus ............. 0x%x\n", pThis->Virtio.uDeviceStatus);
+        pHlp->pfnPrintf(pHlp, "    cVirtqPairs .,............. %d\n",   pThis->cVirtqPairs);
+        pHlp->pfnPrintf(pHlp, "    cVirtVirtqs .,............. %d\n",   pThis->cVirtVirtqs);
+        pHlp->pfnPrintf(pHlp, "    cWorkers .................. %d\n",   pThis->cWorkers);
+        pHlp->pfnPrintf(pHlp, "    MMIO mapping name ......... %d\n",   pThisCC->Virtio.pcszMmioName);
         pHlp->pfnPrintf(pHlp, "\n");
     }
 
@@ -1496,9 +1497,9 @@ static int virtioNetR3CheckRxBufsAvail(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVI
 
 static bool virtioNetR3RxBufsAvail(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETVIRTQ *pRxVirtq)
 {
-    for (int uVirtqNbrPair = 0; uVirtqNbrPair < pThis->cVirtqPairs; uVirtqNbrPair++)
+    for (int uVirtqPair = 0; uVirtqPair < pThis->cVirtqPairs; uVirtqPair++)
     {
-        PVIRTIONETVIRTQ pThisRxVirtq = &pThis->aVirtqs[RXQIDX(uVirtqNbrPair)];
+        PVIRTIONETVIRTQ pThisRxVirtq = &pThis->aVirtqs[RXQIDX(uVirtqPair)];
         if (RT_SUCCESS(virtioNetR3CheckRxBufsAvail(pDevIns, pThis, pThisRxVirtq)))
         {
             if (pRxVirtq)
@@ -1550,7 +1551,6 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOW
             LogFunc(("Waken due to failure %Rrc\n", rc));
             RTThreadSleep(1);
         }
-LogFunc(("\n\n\n********** WAKEN!!!!! ********\n\n\n"));
     } while (virtioNetIsOperational(pThis, pDevIns));
 
     STAM_PROFILE_STOP(&pThis->StatRxOverflow, a);
@@ -1742,7 +1742,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
     {
         PVIRTQBUF pVirtqBuf = NULL;
 
-        int rc = virtioCoreR3VirtqBufGet(pDevIns, &pThis->Virtio, pRxVirtq->idx, &pVirtqBuf, true);
+        int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, pRxVirtq->idx, &pVirtqBuf, true);
         AssertMsgReturn(rc == VINF_SUCCESS || rc == VERR_NOT_AVAILABLE, ("%Rrc\n", rc), rc);
 
         /** @todo  Find a better way to deal with this */
@@ -1751,9 +1751,9 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
                             virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf),
                             VERR_INTERNAL_ERROR);
 
-        /* Length of first seg of guest Rx buf should never be less than sizeof(virtio_net_pkt_hdr).
+        /* Length of first seg of guest Rx S/G buf should never be less than sizeof(virtio_net_pkt_hdr).
          * Otherwise code has to become more complicated, e.g. locate & cache seg idx & offset of
-         * virtio_net_header.num_buffers, to defer updating (in GCPhys). Re-visit if needed */
+         * virtio_net_header.num_buffers, to facilitate deferring updating GCPhys memory. Re-visit if needed */
 
         AssertMsgReturnStmt(pVirtqBuf->pSgPhysReturn->paSegs[0].cbSeg >= sizeof(VIRTIONETPKTHDR),
                             ("Desc chain's first seg has insufficient space for pkt header!\n"),
@@ -1776,7 +1776,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
 
                 memcpy(paVirtSegsToGuest[0].pvSeg, rxPktHdr, cbHdr);
 
-                /* Calculate & cache addr of field to update after final value is known, in GCPhys mem */
+                /* Calculate & cache GCPhys addr of field to update after final value is known */
                 GCPhysPktHdrNumBuffers = pVirtqBuf->pSgPhysReturn->paSegs[0].GCPhys
                                          + RT_UOFFSETOF(VIRTIONETPKTHDR, uNumBuffers);
                 fAddPktHdr = false;
@@ -1803,8 +1803,8 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
             RTSgBufInit(pVirtSegBufToGuest, paVirtSegsToGuest, cSegs);
             Log7Func(("Send Rx pkt to guest...\n"));
             STAM_PROFILE_START(&pThis->StatReceiveStore, a);
-            virtioCoreR3VirtqBufPut(pDevIns, &pThis->Virtio, pRxVirtq->idx,
-                                 pVirtSegBufToGuest, pVirtqBuf, true /* fFence */);
+            virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pRxVirtq->idx,
+                                    pVirtSegBufToGuest, pVirtqBuf, true /* fFence */);
             STAM_PROFILE_STOP(&pThis->StatReceiveStore, a);
 
             if (FEATURE_DISABLED(MRG_RXBUF))
@@ -1827,7 +1827,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
                   ("Failure updating descriptor count in pkt hdr in guest physical memory\n"),
                   rc);
 
-    virtioCoreVirtqSync(pDevIns, &pThis->Virtio, pRxVirtq->idx);
+    virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, pRxVirtq->idx);
 
     return VINF_SUCCESS;
 }
@@ -1849,7 +1849,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
  * @thread  RX
  */
 static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC,
-                                const void *pvBuf, size_t cb, PCPDMNETWORKGSO pGso, PVIRTIONETVIRTQ pRxVirtq)
+                                     const void *pvBuf, size_t cb, PCPDMNETWORKGSO pGso, PVIRTIONETVIRTQ pRxVirtq)
 {
     RT_NOREF(pThisCC);
 
@@ -1918,7 +1918,6 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_ReceiveGso(PPDMINETWORKDOWN pInt
     PVIRTIONETCC    pThisCC = RT_FROM_MEMBER(pInterface, VIRTIONETCC, INetworkDown);
     PPDMDEVINS      pDevIns = pThisCC->pDevIns;
     PVIRTIONET      pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
-LogFunc(("\n"));
     if (!pThis->fVirtioReady)
     {
         LogRelFunc(("VirtIO not ready, aborting downstream receive\n"));
@@ -1962,10 +1961,10 @@ LogFunc(("\n"));
     /** @todo If we ever start using more than one Rx/Tx queue pair, is a random queue
               selection algorithm feasible or even necessary to prevent starvation? */
 
-    for (int uVirtqNbrPair = 0; uVirtqNbrPair < pThis->cVirtqPairs; uVirtqNbrPair++)
+    for (int uVirtqPair = 0; uVirtqPair < pThis->cVirtqPairs; uVirtqPair++)
     {
 
-        PVIRTIONETVIRTQ pRxVirtq = &pThis->aVirtqs[RXQIDX(uVirtqNbrPair)];
+        PVIRTIONETVIRTQ pRxVirtq = &pThis->aVirtqs[RXQIDX(uVirtqPair)];
         if (RT_SUCCESS(!virtioNetR3CheckRxBufsAvail(pDevIns, pThis, pRxVirtq)))
         {
             /* Drop packets if VM is not running or cable is disconnected. */
@@ -1999,14 +1998,15 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterf
 }
 
 /* Read physical bytes from the out segment(s) of descriptor chain */
-static void virtioNetR3PullChain(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTQBUF pVirtqBuf, void *pv, size_t cb)
+static void virtqNetR3PullBytesFromVirtqBuf(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTQBUF pVirtqBuf,
+                                              void *pv, size_t cb)
 {
     uint8_t *pb = (uint8_t *)pv;
     size_t cbLim = RT_MIN(pVirtqBuf->cbPhysSend, cb);
     while (cbLim)
     {
         size_t cbSeg = cbLim;
-        RTGCPHYS GCPhys = virtioCoreSgBufGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
+        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
         PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pb, cbSeg);
         pb += cbSeg;
         cbLim -= cbSeg;
@@ -2045,7 +2045,7 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
     }
 
     uint8_t fOn, fPromiscChanged = false;
-    virtioNetR3PullChain(pDevIns, pThis, pVirtqBuf, &fOn, (size_t)RT_MIN(pVirtqBuf->cbPhysSend, sizeof(fOn)));
+    virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &fOn, (size_t)RT_MIN(pVirtqBuf->cbPhysSend, sizeof(fOn)));
 
     switch(pCtrlPktHdr->uCmd)
     {
@@ -2116,7 +2116,7 @@ static uint8_t virtioNetR3CtrlMac(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTION
         {
             /* Set default Rx filter MAC */
             ASSERT_CTRL_ADDR_SET(cbRemaining >= sizeof(VIRTIONET_CTRL_MAC_TABLE_LEN));
-            virtioNetR3PullChain(pDevIns, pThis, pVirtqBuf, &pThis->rxFilterMacDefault, sizeof(VIRTIONET_CTRL_MAC_TABLE_LEN));
+            virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &pThis->rxFilterMacDefault, sizeof(VIRTIONET_CTRL_MAC_TABLE_LEN));
             break;
         }
         case VIRTIONET_CTRL_MAC_TABLE_SET:
@@ -2125,28 +2125,28 @@ static uint8_t virtioNetR3CtrlMac(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTION
 
             /* Load unicast MAC filter table */
             ASSERT_CTRL_TABLE_SET(cbRemaining >= sizeof(cMacs));
-            virtioNetR3PullChain(pDevIns, pThis, pVirtqBuf, &cMacs, sizeof(cMacs));
+            virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &cMacs, sizeof(cMacs));
             cbRemaining -= sizeof(cMacs);
             Log7Func(("%s Guest provided %d unicast MAC Table entries\n", pThis->szInst, cMacs));
             if (cMacs)
             {
                 uint32_t cbMacs = cMacs * sizeof(RTMAC);
                 ASSERT_CTRL_TABLE_SET(cbRemaining >= cbMacs);
-                virtioNetR3PullChain(pDevIns, pThis, pVirtqBuf, &pThis->aMacUnicastFilter, cbMacs);
+                virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &pThis->aMacUnicastFilter, cbMacs);
                 cbRemaining -= cbMacs;
             }
             pThis->cUnicastFilterMacs = cMacs;
 
             /* Load multicast MAC filter table */
             ASSERT_CTRL_TABLE_SET(cbRemaining >= sizeof(cMacs));
-            virtioNetR3PullChain(pDevIns, pThis, pVirtqBuf, &cMacs, sizeof(cMacs));
+            virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &cMacs, sizeof(cMacs));
             cbRemaining -= sizeof(cMacs);
             Log10Func(("%s Guest provided %d multicast MAC Table entries\n", pThis->szInst, cMacs));
             if (cMacs)
             {
                 uint32_t cbMacs = cMacs * sizeof(RTMAC);
                 ASSERT_CTRL_TABLE_SET(cbRemaining >= cbMacs);
-                virtioNetR3PullChain(pDevIns, pThis, pVirtqBuf, &pThis->aMacMulticastFilter, cbMacs);
+                virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &pThis->aMacMulticastFilter, cbMacs);
                 cbRemaining -= cbMacs;
             }
             pThis->cMulticastFilterMacs = cMacs;
@@ -2176,7 +2176,7 @@ static uint8_t virtioNetR3CtrlVlan(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIO
     size_t cbRemaining = pVirtqBuf->cbPhysSend - sizeof(*pCtrlPktHdr);
     AssertMsgReturn(cbRemaining > sizeof(uVlanId),
         ("DESC chain too small for VIRTIO_NET_CTRL_VLAN cmd processing"), VIRTIONET_ERROR);
-    virtioNetR3PullChain(pDevIns, pThis, pVirtqBuf, &uVlanId, sizeof(uVlanId));
+    virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &uVlanId, sizeof(uVlanId));
     AssertMsgReturn(uVlanId > VIRTIONET_MAX_VLAN_ID,
         ("%s VLAN ID out of range (VLAN ID=%u)\n", pThis->szInst, uVlanId), VIRTIONET_ERROR);
     LogFunc(("%s uCommand=%u VLAN ID=%u\n", pThis->szInst, pCtrlPktHdr->uCmd, uVlanId));
@@ -2220,7 +2220,7 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
     AssertMsgReturnVoid(pVirtqBuf->cbPhysSend >= sizeof(VIRTIONET_CTRL_HDR_T),
                         ("DESC chain too small for CTRL pkt header"));
 
-    virtioNetR3PullChain(pDevIns, pThis, pVirtqBuf, pCtrlPktHdr,
+    virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, pCtrlPktHdr,
                          RT_MIN(pVirtqBuf->cbPhysSend, sizeof(VIRTIONET_CTRL_HDR_T)));
 
     Log7Func(("%s CTRL COMMAND: class=%d command=%d\n", pThis->szInst, pCtrlPktHdr->uClass, pCtrlPktHdr->uCmd));
@@ -2284,8 +2284,8 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
 
     RTSgBufInit(pReturnSegBuf, paReturnSegs, cSegs);
 
-    virtioCoreR3VirtqBufPut(pDevIns, &pThis->Virtio, CTRLQIDX, pReturnSegBuf, pVirtqBuf, true /* fFence */);
-    virtioCoreVirtqSync(pDevIns, &pThis->Virtio, CTRLQIDX);
+    virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, CTRLQIDX, pReturnSegBuf, pVirtqBuf, true /* fFence */);
+    virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, CTRLQIDX);
 
     for (int i = 0; i < cSegs; i++)
         RTMemFree(paReturnSegs[i].pvSeg);
@@ -2434,7 +2434,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
         }
     }
 
-    int cPkts = virtioCoreVirtqAvailCount(pVirtio->pDevInsR3, pVirtio, pTxVirtq->idx);
+    int cPkts = virtioCoreVirtqAvailBufCount(pVirtio->pDevInsR3, pVirtio, pTxVirtq->idx);
     if (!cPkts)
     {
         LogFunc(("%s No packets to send found on %s\n", pThis->szInst, pTxVirtq->szName));
@@ -2451,7 +2451,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
 
     int rc;
     PVIRTQBUF pVirtqBuf = NULL;
-    while ((rc = virtioCoreR3VirtqBufPeek(pVirtio->pDevInsR3, pVirtio, pTxVirtq->idx, &pVirtqBuf)) == VINF_SUCCESS)
+    while ((rc = virtioCoreR3VirtqAvailBufPeek(pVirtio->pDevInsR3, pVirtio, pTxVirtq->idx, &pVirtqBuf)) == VINF_SUCCESS)
     {
         Log10Func(("%s fetched descriptor chain from %s\n", pThis->szInst, pTxVirtq->szName));
 
@@ -2483,7 +2483,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
             rc = virtioNetR3ReadHeader(pDevIns, paSegsFromGuest[0].GCPhys, &PktHdr, uSize);
             if (RT_FAILURE(rc))
                 return;
-            virtioCoreSgBufAdvance(pSgPhysSend, sizeof(PktHdr));
+            virtioCoreGCPhysChainAdvance(pSgPhysSend, sizeof(PktHdr));
 
             PDMNETWORKGSO  Gso, *pGso = virtioNetR3SetupGsoCtx(&Gso, &PktHdr);
 
@@ -2508,7 +2508,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
                     PDMDevHlpPCIPhysRead(pDevIns,
                                          (RTGCPHYS)pSgPhysSend->GCPhysCur,
                                          ((uint8_t *)pSgBufToPdmLeafDevice->aSegs[0].pvSeg) + uOffset, cbCopied);
-                    virtioCoreSgBufAdvance(pSgPhysSend, cbCopied);
+                    virtioCoreGCPhysChainAdvance(pSgPhysSend, cbCopied);
                     cbRemain -= cbCopied;
                     uOffset += cbCopied;
                     cbTotal += cbCopied;
@@ -2536,14 +2536,14 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
                 break;
             }
 
-            /* Remove this descriptor chain from the available ring */
-            virtioCoreR3VirtqBufSkip(pVirtio, pTxVirtq->idx);
+            /* Point to next descriptor in avail ring of virtq */
+            virtioCoreR3VirtqAvailBufNext(pVirtio, pTxVirtq->idx);
 
-            /* No data to return to guest, but call is needed put elem (e.g. desc chain) on used ring */
-            virtioCoreR3VirtqBufPut(pVirtio->pDevInsR3, pVirtio, pTxVirtq->idx, NULL, pVirtqBuf, true /* fFence */);
+            /* No data to return to guest, but necessary to put elem (e.g. desc chain head idx) on used ring */
+            virtioCoreR3VirtqUsedBufPut(pVirtio->pDevInsR3, pVirtio, pTxVirtq->idx, NULL, pVirtqBuf, true /* fFence */);
 
             /* Update used ring idx and notify guest that we've transmitted the data it sent */
-            virtioCoreVirtqSync(pVirtio->pDevInsR3, pVirtio, pTxVirtq->idx);
+            virtioCoreVirtqSyncUsedRing(pVirtio->pDevInsR3, pVirtio, pTxVirtq->idx);
         }
 
         virtioCoreR3VirtqBufRelease(pVirtio, pVirtqBuf);
@@ -2771,7 +2771,7 @@ static int virtioNetR3CreateOneWorkerThread(PPDMDEVINS pDevIns, PVIRTIONET pThis
     pWorker->idx       = pWorkerR3->idx      = idxWorker;
     pVirtq->pWorker    = pWorker;
     pVirtq->pWorkerR3  = pWorkerR3;
-    pWorker->fAssigned = true;
+    pWorker->fAssigned = true;  /* Because worker's state held in fixed-size array w/empty slots */
 
     LogFunc(("%s pThread: %p\n", pVirtq->szName, pWorkerR3->pThread));
 
@@ -2793,10 +2793,10 @@ static int virtioNetR3CreateWorkerThreads(PPDMDEVINS pDevIns, PVIRTIONET pThis, 
     pCtlVirtq->fHasWorker = true;
 
     uint16_t idxWorker = CTRLWIDX + 1;
-    for (uint16_t uVirtqNbrPair = 0; uVirtqNbrPair < pThis->cVirtqPairs; uVirtqNbrPair++, idxWorker++)
+    for (uint16_t uVirtqPair = 0; uVirtqPair < pThis->cVirtqPairs; uVirtqPair++, idxWorker++)
     {
-        PVIRTIONETVIRTQ pTxVirtq = &pThis->aVirtqs[TXQIDX(uVirtqNbrPair)];
-        PVIRTIONETVIRTQ pRxVirtq = &pThis->aVirtqs[RXQIDX(uVirtqNbrPair)];
+        PVIRTIONETVIRTQ pTxVirtq = &pThis->aVirtqs[TXQIDX(uVirtqPair)];
+        PVIRTIONETVIRTQ pRxVirtq = &pThis->aVirtqs[RXQIDX(uVirtqPair)];
 
         rc = virtioNetR3CreateOneWorkerThread(pDevIns, pThis, idxWorker, &pThis->aWorkers[idxWorker],
                                               &pThisCC->aWorkers[idxWorker], pTxVirtq);
@@ -2805,7 +2805,7 @@ static int virtioNetR3CreateWorkerThreads(PPDMDEVINS pDevIns, PVIRTIONET pThis, 
         pTxVirtq->fHasWorker = true;
         pRxVirtq->fHasWorker = false;
     }
-    pThis->cWorkers = pThis->cVirtqPairs + 1 /* Control virtq */;
+    pThis->cWorkers = pThis->cVirtqPairs + 1 /* One control virtq */;
     return rc;
 }
 
@@ -2859,7 +2859,7 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
              {
                  Log10Func(("%s %s worker woken. Fetching desc chain\n", pThis->szInst, pVirtq->szName));
                  PVIRTQBUF pVirtqBuf = NULL;
-                 int rc = virtioCoreR3VirtqBufGet(pDevIns, &pThis->Virtio, pVirtq->idx, &pVirtqBuf, true);
+                 int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, pVirtq->idx, &pVirtqBuf, true);
                  if (rc == VERR_NOT_AVAILABLE)
                  {
                     Log10Func(("%s %s worker woken. Nothing found in queue/n", pThis->szInst, pVirtq->szName));
@@ -3085,8 +3085,8 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
 
     RTStrPrintf(pThis->szInst, sizeof(pThis->szInst), "VNET%d", iInstance);
 
-// Temporary for less logging clutter for singled-instance debugging
-*pThis->szInst = '\0';
+    /** todo Remove next line (temporary hack used for less logging clutter for single-instance debugging) */
+    *pThis->szInst = '\0';
 
     pThisCC->pDevIns     = pDevIns;
 
@@ -3143,9 +3143,8 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     LogFunc(("RC=%RTbool R0=%RTbool\n", pDevIns->fRCEnabled, pDevIns->fR0Enabled));
 
     /*
-     * Do core virtio initialization.
+     * Configure Virtio core (generic Virtio queue and infrastructure management) parameters.
      */
-
 #   if FEATURE_OFFERED(STATUS)
         pThis->virtioNetConfig.uStatus = 0;
 #   endif
@@ -3154,7 +3153,6 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
         pThis->virtioNetConfig.uMaxVirtqPairs = VIRTIONET_MAX_QPAIRS;
 #   endif
 
-    /* Initialize the generic Virtio core: */
     pThisCC->Virtio.pfnVirtqNotified        = virtioNetVirtqNotified;
     pThisCC->Virtio.pfnStatusChanged        = virtioNetR3StatusChanged;
     pThisCC->Virtio.pfnDevCapRead           = virtioNetR3DevCapRead;
@@ -3165,22 +3163,16 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     VirtioPciParams.uClassBase              = PCI_CLASS_BASE_NETWORK_CONTROLLER;
     VirtioPciParams.uClassSub               = PCI_CLASS_SUB_NET_ETHERNET_CONTROLLER;
     VirtioPciParams.uClassProg              = PCI_CLASS_PROG_UNSPECIFIED;
-    VirtioPciParams.uSubsystemId            = PCI_DEVICE_ID_VIRTIONET_HOST;  /* VirtIO 1.0 spec allows PCI Device ID here */
+    VirtioPciParams.uSubsystemId            = PCI_DEVICE_ID_VIRTIONET_HOST;  /* VirtIO 1.0 allows PCI Device ID here */
     VirtioPciParams.uInterruptLine          = 0x00;
     VirtioPciParams.uInterruptPin           = 0x01;
 
-    /*
-     * Create the semaphore that will be used to synchronize/throttle
-     * the downstream LUN's Rx waiter thread.
-     */
+    /* Create semaphore used to synchronize/throttle the downstream LUN's Rx waiter thread. */
     rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEventRxDescAvail);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to create event semaphore"));
 
-    /*
-     * Initialize VirtIO core. This will result in a "status changed" callback
-     * when VirtIO is ready, at which time the Rx queue and ctrl queue worker threads will be created.
-     */
+    /* Initialize VirtIO core. (pfnStatusChanged callback when VirtIO and guest are ready) */
     rc = virtioCoreR3Init(pDevIns, &pThis->Virtio, &pThisCC->Virtio, &VirtioPciParams, pThis->szInst,
                           VIRTIONET_HOST_FEATURES_OFFERED,
                           &pThis->virtioNetConfig /*pvDevSpecificCap*/, sizeof(pThis->virtioNetConfig));

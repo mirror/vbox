@@ -107,11 +107,11 @@
  * VirtIO SCSI Host Device device-specific queue indicies.
  * (Note: # of request queues is determined by virtio_scsi_config.num_queues. VirtIO 1.0, 5.6.4)
  */
-#define CONTROLQ_IDX                                0           /**< Spec-defined Index of control queue             */
-#define EVENTQ_IDX                                  1           /**< Spec-defined Index of event queue               */
-#define VIRTQ_REQ_BASE                              2           /**< Spec-defined base index of request queues       */
+#define CONTROLQ_IDX                                0           /**< VirtIO Spec-defined Index of control queue      */
+#define EVENTQ_IDX                                  1           /**< VirtIO Spec-defined Index of event queue        */
+#define VIRTQ_REQ_BASE                              2           /**< VirtIO Spec-defined base index of req. queues   */
 
-#define VIRTQNAME(uVirtqNbr) (pThis->aszVirtqNames[uVirtqNbr])            /**< Macro to get queue name from its index          */
+#define VIRTQNAME(uVirtqNbr) (pThis->aszVirtqNames[uVirtqNbr])  /**< Macro to get queue name from its index          */
 #define CBVIRTQNAME(uVirtqNbr) RTStrNLen(VIRTQNAME(uVirtqNbr), sizeof(VIRTQNAME(uVirtqNbr)))
 
 #define IS_REQ_VIRTQ(uVirtqNbr) (uVirtqNbr >= VIRTQ_REQ_BASE && uVirtqNbr < VIRTIOSCSI_VIRTQ_CNT)
@@ -123,7 +123,7 @@
     ((pMediaExTxDirEnumValue) == PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE)
 
 #define IS_VIRTQ_EMPTY(pDevIns, pVirtio, uVirtqNbr) \
-            (virtioCoreVirtqAvailCount(pDevIns, pVirtio, uVirtqNbr) == 0)
+            (virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, uVirtqNbr) == 0)
 
 
 /*********************************************************************************************************************************
@@ -754,7 +754,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
     }
 
     PVIRTQBUF pVirtqBuf = NULL;
-    int rc = virtioCoreR3VirtqBufGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pVirtqBuf, true);
+    int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pVirtqBuf, true);
     if (rc == VERR_NOT_AVAILABLE)
     {
         LogFunc(("eventq is empty, events missed (driver didn't preload queue)!\n"));
@@ -782,9 +782,9 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
     RTSGBUF ReqSgBuf;
     RTSgBufInit(&ReqSgBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
-    rc = virtioCoreR3VirtqBufPut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pVirtqBuf, true /*fFence*/);
+    rc = virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pVirtqBuf, true /*fFence*/);
     if (rc == VINF_SUCCESS)
-        virtioCoreVirtqSync(pDevIns, &pThis->Virtio, EVENTQ_IDX, false);
+        virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, EVENTQ_IDX, false);
     else
         LogRel(("Error writing control message to guest\n"));
     virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
@@ -852,8 +852,8 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
     if (pThis->fResetting)
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
-    virtioCoreR3VirtqBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /* fFence */);
-    virtioCoreVirtqSync(pDevIns, &pThis->Virtio, uVirtqNbr);
+    virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /* fFence */);
+    virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, uVirtqNbr);
 
     if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
         PDMDevHlpAsyncNotificationCompleted(pDevIns);
@@ -1041,8 +1041,8 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                         cbReqSgBuf, pReq->pVirtqBuf->cbPhysReturn),
                         VERR_BUFFER_OVERFLOW);
 
-        virtioCoreR3VirtqBufPut(pDevIns, &pThis->Virtio, pReq->uVirtqNbr, &ReqSgBuf, pReq->pVirtqBuf, true /* fFence TBD */);
-        virtioCoreVirtqSync(pDevIns, &pThis->Virtio, pReq->uVirtqNbr);
+        virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pReq->uVirtqNbr, &ReqSgBuf, pReq->pVirtqBuf, true /* fFence TBD */);
+        virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, pReq->uVirtqNbr);
 
         Log2(("-----------------------------------------------------------------------------------------\n"));
     }
@@ -1074,14 +1074,14 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
     AssertReturn(pReq->pVirtqBuf, VERR_INVALID_PARAMETER);
 
     PVIRTIOSGBUF pSgPhysReturn = pReq->pVirtqBuf->pSgPhysReturn;
-    virtioCoreSgBufAdvance(pSgPhysReturn, offDst);
+    virtioCoreGCPhysChainAdvance(pSgPhysReturn, offDst);
 
     size_t cbCopied = 0;
     size_t cbRemain = pReq->cbDataIn;
 
     /* Skip past the REQ_RESP_HDR_T and sense code if we're at the start of the buffer. */
     if (!pSgPhysReturn->idxSeg && pSgPhysReturn->cbSegLeft == pSgPhysReturn->paSegs[0].cbSeg)
-        virtioCoreSgBufAdvance(pSgPhysReturn, pReq->uDataInOff);
+        virtioCoreGCPhysChainAdvance(pSgPhysReturn, pReq->uDataInOff);
 
     while (cbRemain)
     {
@@ -1089,7 +1089,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
         Assert(cbCopied > 0);
         PDMDevHlpPCIPhysWriteUser(pDevIns, pSgPhysReturn->GCPhysCur, pSgBuf->pvSegCur, cbCopied);
         RTSgBufAdvance(pSgBuf, cbCopied);
-        virtioCoreSgBufAdvance(pSgPhysReturn, cbCopied);
+        virtioCoreGCPhysChainAdvance(pSgPhysReturn, cbCopied);
         cbRemain -= cbCopied;
     }
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE(); /* needed? */
@@ -1117,7 +1117,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface,
         return VINF_SUCCESS;
 
     PVIRTIOSGBUF pSgPhysSend = pReq->pVirtqBuf->pSgPhysSend;
-    virtioCoreSgBufAdvance(pSgPhysSend, offSrc);
+    virtioCoreGCPhysChainAdvance(pSgPhysSend, offSrc);
 
     size_t cbCopied = 0;
     size_t cbRemain = pReq->cbDataOut;
@@ -1127,7 +1127,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface,
         Assert(cbCopied > 0);
         PDMDevHlpPCIPhysReadUser(pDevIns, pSgPhysSend->GCPhysCur, pSgBuf->pvSegCur, cbCopied);
         RTSgBufAdvance(pSgBuf, cbCopied);
-        virtioCoreSgBufAdvance(pSgPhysSend, cbCopied);
+        virtioCoreGCPhysChainAdvance(pSgPhysSend, cbCopied);
         cbRemain -= cbCopied;
     }
 
@@ -1181,7 +1181,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     for (size_t offReq = 0; offReq < cbReqHdr; )
     {
         size_t cbSeg = cbReqHdr - offReq;
-        RTGCPHYS GCPhys = virtioCoreSgBufGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
+        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
         PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhys, &VirtqReq.ab[offReq], cbSeg);
         offReq += cbSeg;
     }
@@ -1374,7 +1374,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     for (size_t offCtrl = 0; offCtrl < cbCtrl; )
     {
         size_t cbSeg = cbCtrl - offCtrl;
-        RTGCPHYS GCPhys = virtioCoreSgBufGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
+        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
         PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhys, &ScsiCtrlUnion.ab[offCtrl], cbSeg);
         offCtrl += cbSeg;
     }
@@ -1526,8 +1526,8 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     RTSGBUF ReqSgBuf;
     RTSgBufInit(&ReqSgBuf, aReqSegs, cSegs);
 
-    virtioCoreR3VirtqBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /*fFence*/);
-    virtioCoreVirtqSync(pDevIns, &pThis->Virtio, uVirtqNbr);
+    virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /*fFence*/);
+    virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, uVirtqNbr);
 
     return VINF_SUCCESS;
 }
@@ -1589,7 +1589,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
              for (int i = 0; i < pWorkerR3->cRedoDescs; i++)
              {
                   PVIRTQBUF pVirtqBuf;
-                  int rc = virtioCoreR3VirtqBufGet(pDevIns, &pThis->Virtio, uVirtqNbr,
+                  int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, uVirtqNbr,
                                                     pWorkerR3->auRedoDescs[i], &pVirtqBuf);
                   if (RT_FAILURE(rc))
                       LogRel(("Error fetching desc chain to redo, %Rrc", rc));
@@ -1604,7 +1604,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
 
              Log6Func(("fetching next descriptor chain from %s\n", VIRTQNAME(uVirtqNbr)));
              PVIRTQBUF pVirtqBuf = NULL;
-             int rc = virtioCoreR3VirtqBufGet(pDevIns, &pThis->Virtio, uVirtqNbr, &pVirtqBuf, true);
+             int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, uVirtqNbr, &pVirtqBuf, true);
              if (rc == VERR_NOT_AVAILABLE)
              {
                  Log6Func(("Nothing found in %s\n", VIRTQNAME(uVirtqNbr)));
