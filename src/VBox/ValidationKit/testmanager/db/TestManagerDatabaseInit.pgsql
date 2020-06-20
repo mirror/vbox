@@ -1312,6 +1312,7 @@ CREATE TABLE VcsRevisions (
 
     UNIQUE (sRepository, iRevision)
 );
+CREATE INDEX VcsRevisionsByDate ON VcsRevisions (tsCreated DESC);
 
 
 --- @table VcsBugReferences
