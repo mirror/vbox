@@ -3513,7 +3513,9 @@ static int vmsvga3dHwScreenCreate(PVMSVGA3DSTATE pState, unsigned int cWidth, un
      * Create a new GL context, which will be used for copying to the screen pixmap.
      */
 
-    /* FBConfig attributes. */
+    /* FBConfig attributes.
+     * Using TEXTURE_2D because Intel Mesa driver does not seem to support TEXTURE_RECTANGLE for GLX pixmaps.
+     */
     static int const aConfigAttribList[] =
     {
         // GLX_RENDER_TYPE,                 GLX_RGBA_BIT,
@@ -3521,7 +3523,7 @@ static int vmsvga3dHwScreenCreate(PVMSVGA3DSTATE pState, unsigned int cWidth, un
         // GLX_X_RENDERABLE,                True,                   // Render to GLX pixmaps
         GLX_DRAWABLE_TYPE,               GLX_PIXMAP_BIT,         // Must support GLX pixmaps
         GLX_BIND_TO_TEXTURE_RGBA_EXT,    True,                   // Must support GLX_EXT_texture_from_pixmap
-        GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_RECTANGLE_BIT_EXT, // Must support GL_TEXTURE_RECTANGLE for the frontend code
+        GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_2D_BIT_EXT, // Must support GL_TEXTURE_2D for the frontend code
         GLX_DOUBLEBUFFER,                False,                  // No need for double buffering for a pixmap.
         GLX_RED_SIZE,                    8,                      // True color RGB with 8 bits per channel.
         GLX_GREEN_SIZE,                  8,
@@ -3569,9 +3571,9 @@ static int vmsvga3dHwScreenCreate(PVMSVGA3DSTATE pState, unsigned int cWidth, un
             if (!(value & GLX_PIXMAP_BIT))
                 continue;
 
-            /* Pixmap will be used as TEXTURE_RECTANGLE. */
+            /* Pixmap will be used as TEXTURE_2D. */
             glXGetFBConfigAttrib(pState->display, paConfigs[i], GLX_BIND_TO_TEXTURE_TARGETS_EXT, &value);
-            if (!(value & GLX_TEXTURE_RECTANGLE_BIT_EXT))
+            if (!(value & GLX_TEXTURE_2D_BIT_EXT))
                 continue;
 
             /* Need to bind to a texture using GLX_EXT_texture_from_pixmap. */
@@ -3604,7 +3606,7 @@ static int vmsvga3dHwScreenCreate(PVMSVGA3DSTATE pState, unsigned int cWidth, un
 
             static int const aPixmapAttribList[] =
             {
-                GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_RECTANGLE_EXT,
+                GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
                 GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGBA_EXT,
                 GLX_MIPMAP_TEXTURE_EXT, p->fMipmap,
                 None
@@ -3730,6 +3732,7 @@ int vmsvga3dBackDefineScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
     }
     else
     {
+        LogRel4(("VMSVGA: vmsvga3dBackDefineScreen: %Rrc\n", rc));
         vmsvga3dHwScreenDestroy(pState, p);
         RTMemFree(p);
     }

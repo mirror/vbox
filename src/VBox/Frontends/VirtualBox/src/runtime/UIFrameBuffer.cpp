@@ -170,7 +170,7 @@ public:
     void updateGuestImage();
 
     /* The guest texture OpenGL target. */
-    static GLenum const kTextureTarget = GL_TEXTURE_RECTANGLE;
+    static GLenum const kTextureTarget = GL_TEXTURE_2D;
 
     /* The the guest screen source. */
     void setSource(GLWidgetSource *pSource, bool fForce);
@@ -675,7 +675,7 @@ void GLWidgetSourcePixmap::initGuestScreenTexture(int w, int h)
                     // GLX_X_RENDERABLE,                True,                   // Render to GLX pixmaps
                     GLX_DRAWABLE_TYPE,               GLX_PIXMAP_BIT,         // Must support GLX pixmaps
                     GLX_BIND_TO_TEXTURE_RGBA_EXT,    True,                   // Must support GLX_EXT_texture_from_pixmap
-                    GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_RECTANGLE_BIT_EXT, // Must support GL_TEXTURE_RECTANGLE for the frontend code
+                    GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_2D_BIT_EXT, // Must support GL_TEXTURE_2D because the device creates the pixmap as TEXTURE_2D
                     GLX_DOUBLEBUFFER,                False,                  // No need for double buffering for a pixmap.
                     GLX_RED_SIZE,                    8,                      // True color RGB with 8 bits per channel.
                     GLX_GREEN_SIZE,                  8,
@@ -726,7 +726,7 @@ void GLWidgetSourcePixmap::initGuestScreenTexture(int w, int h)
                         /* Found the requested config. */
                         static int const aPixmapAttribList[] =
                         {
-                            GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_RECTANGLE_EXT /* GLX_TEXTURE_2D_EXT */,
+                            GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
                             GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGBA_EXT,
                             None
                         };
@@ -810,7 +810,7 @@ GLWidget::~GLWidget()
 }
 
 /* Whether OpenGL is usable.
- * OpenGL 2.0 and support for GL_TEXTURE_RECTANGLE is required.
+ * OpenGL 2.0 required.
  */
 /* static */ bool GLWidget::isSupported()
 {
@@ -838,15 +838,15 @@ GLWidget::~GLWidget()
     int const ver = verMajor * 10 + verMinor;
 
     /* Check if GL_TEXTURE_RECTANGLE is supported: */
-    bool const fTextureRectangle = contextGL.hasExtension("GL_ARB_texture_rectangle")
-                                || contextGL.hasExtension("GL_NV_texture_rectangle")
-                                || ver >= 31;
+    //bool const fTextureRectangle = contextGL.hasExtension("GL_ARB_texture_rectangle")
+    //                            || contextGL.hasExtension("GL_NV_texture_rectangle")
+    //                            || ver >= 31;
 
     /* Reset the current OpenGL context: */
     contextGL.doneCurrent();
 
     /* Decide if OpenGL support is good enough: */
-    return ver >= 20 && fTextureRectangle;
+    return ver >= 20 /* && fTextureRectangle */;
 }
 
 /** @todo fForce is a bit of a hack. It does not allow to change the HW source to the QImage source,
@@ -985,10 +985,15 @@ void GLWidget::paintGL()
         GLint const h = height();
 
         /* The guest coordinates of the visible guest screen area: */
-        int x1 = m_guestVisibleRect.x();
-        int y1 = m_guestVisibleRect.y();
-        int x2 = x1 + m_guestVisibleRect.width();
-        int y2 = y1 + m_guestVisibleRect.height();
+        float x1 = m_guestVisibleRect.x();
+        float y1 = m_guestVisibleRect.y();
+        float x2 = x1 + m_guestVisibleRect.width();
+        float y2 = y1 + m_guestVisibleRect.height();
+
+        x1 /= (float)m_guestSize.width();
+        y1 /= (float)m_guestSize.height();
+        x2 /= (float)m_guestSize.width();
+        y2 /= (float)m_guestSize.height();
 
         glDisable(GL_DEPTH_TEST); GLCHECK();
         glDisable(GL_CULL_FACE); GLCHECK();
@@ -1003,10 +1008,10 @@ void GLWidget::paintGL()
 
         /* Draw the texture (upside down, because QImage and OpenGL store the bitmap differently): */
         glBegin(GL_QUADS);
-        glTexCoord2i(x1, y1); glVertex2i(0, h);
-        glTexCoord2i(x1, y2); glVertex2i(0, 0);
-        glTexCoord2i(x2, y2); glVertex2i(w, 0);
-        glTexCoord2i(x2, y1); glVertex2i(w, h);
+        glTexCoord2f(x1, y1); glVertex2i(0, h);
+        glTexCoord2f(x1, y2); glVertex2i(0, 0);
+        glTexCoord2f(x2, y2); glVertex2i(w, 0);
+        glTexCoord2f(x2, y1); glVertex2i(w, h);
         glEnd(); GLCHECK();
 
         glBindTexture(kTextureTarget, 0); GLCHECK();
@@ -1040,6 +1045,7 @@ void GLWidget::createGuestTexture()
 
     /* Create a new guest texture, which must be the same size as the guest screen: */
     glGenTextures(1, &m_guestTexture);
+    glEnable(kTextureTarget); GLCHECK();
     glBindTexture(kTextureTarget, m_guestTexture);
     glTexParameteri(kTextureTarget, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(kTextureTarget, GL_TEXTURE_MIN_FILTER, filter);
@@ -1050,6 +1056,7 @@ void GLWidget::createGuestTexture()
 
     glBindTexture(kTextureTarget, 0);
     GLCHECK();
+    glDisable(kTextureTarget); GLCHECK();
 }
 
 void GLWidget::deleteGuestTexture()
