@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic0 class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasicUnattended class implementation.
  */
 
 /*
@@ -29,7 +29,7 @@
 #include "UIFilePathSelector.h"
 #include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
-#include "UIWizardNewVMPageBasic0.h"
+#include "UIWizardNewVMPageBasicUnattended.h"
 #include "UIWizardNewVM.h"
 
 /* COM includes: */
@@ -37,43 +37,43 @@
 #include "CSystemProperties.h"
 
 
-UIWizardNewVMPage0::UIWizardNewVMPage0()
+UIWizardNewVMPageUnattended::UIWizardNewVMPageUnattended()
     : m_pUnattendedCheckBox(0)
     , m_pStartHeadlessCheckBox(0)
     , m_pISOFilePathSelector(0)
 {
 }
 
-QString UIWizardNewVMPage0::ISOFilePath() const
+QString UIWizardNewVMPageUnattended::ISOFilePath() const
 {
     if (!m_pISOFilePathSelector)
         return QString();
     return m_pISOFilePathSelector->path();
 }
 
-bool UIWizardNewVMPage0::isUnattendedEnabled() const
+bool UIWizardNewVMPageUnattended::isUnattendedEnabled() const
 {
     if (!m_pUnattendedCheckBox)
         return false;
     return m_pUnattendedCheckBox->isChecked();
 }
 
-bool UIWizardNewVMPage0::startHeadless() const
+bool UIWizardNewVMPageUnattended::startHeadless() const
 {
     if (!m_pStartHeadlessCheckBox)
         return false;
     return m_pStartHeadlessCheckBox->isChecked();
 }
 
-UIWizardNewVMPageBasic0::UIWizardNewVMPageBasic0()
-    : UIWizardNewVMPage0()
+UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
+    : UIWizardNewVMPageUnattended()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
         m_pUnattendedCheckBox = new QCheckBox;
-        connect(m_pUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageBasic0::sltUnattendedCheckBoxToggle);
+        connect(m_pUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageBasicUnattended::sltUnattendedCheckBoxToggle);
         m_pISOSelectorLabel = new QLabel;
         {
             m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -86,7 +86,7 @@ UIWizardNewVMPageBasic0::UIWizardNewVMPageBasic0()
             m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
             m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
             m_pISOFilePathSelector->setEnabled(false);
-            connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasic0::sltPathChanged);
+            connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasicUnattended::sltPathChanged);
         }
         m_pStartHeadlessCheckBox = new QCheckBox;
         {
@@ -111,14 +111,14 @@ UIWizardNewVMPageBasic0::UIWizardNewVMPageBasic0()
     registerField("startHeadless", this, "startHeadless");
 }
 
-bool UIWizardNewVMPageBasic0::isComplete() const
+bool UIWizardNewVMPageBasicUnattended::isComplete() const
 {
     bool fISOFileOK = checkISOFile();
     //emit completeChanged();
     return fISOFileOK;
 }
 
-void UIWizardNewVMPageBasic0::sltUnattendedCheckBoxToggle(bool fEnabled)
+void UIWizardNewVMPageBasicUnattended::sltUnattendedCheckBoxToggle(bool fEnabled)
 {
     if (m_pISOSelectorLabel)
         m_pISOSelectorLabel->setEnabled(fEnabled);
@@ -129,13 +129,13 @@ void UIWizardNewVMPageBasic0::sltUnattendedCheckBoxToggle(bool fEnabled)
     emit completeChanged();
 }
 
-void UIWizardNewVMPageBasic0::sltPathChanged(const QString &strPath)
+void UIWizardNewVMPageBasicUnattended::sltPathChanged(const QString &strPath)
 {
     Q_UNUSED(strPath);
     emit completeChanged();
 }
 
-void UIWizardNewVMPageBasic0::retranslateUi()
+void UIWizardNewVMPageBasicUnattended::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Unattended Guest OS Install"));
@@ -153,7 +153,7 @@ void UIWizardNewVMPageBasic0::retranslateUi()
     }
 }
 
-bool UIWizardNewVMPageBasic0::checkISOFile() const
+bool UIWizardNewVMPageBasicUnattended::checkISOFile() const
 {
     if (m_pUnattendedCheckBox && m_pUnattendedCheckBox->isChecked())
     {
@@ -164,7 +164,7 @@ bool UIWizardNewVMPageBasic0::checkISOFile() const
     return true;
 }
 
-void UIWizardNewVMPageBasic0::initializePage()
+void UIWizardNewVMPageBasicUnattended::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -172,12 +172,12 @@ void UIWizardNewVMPageBasic0::initializePage()
         m_pUnattendedCheckBox->setFocus();
 }
 
-void UIWizardNewVMPageBasic0::cleanupPage()
+void UIWizardNewVMPageBasicUnattended::cleanupPage()
 {
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardNewVMPageBasic0::validatePage()
+bool UIWizardNewVMPageBasicUnattended::validatePage()
 {
     return checkISOFile();
 }

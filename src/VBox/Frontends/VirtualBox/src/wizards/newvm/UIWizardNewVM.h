@@ -72,7 +72,7 @@ protected:
     bool attachDefaultDevices(const CGuestOSType &comGuestType);
 
     /* Who will be able to create virtual-machine: */
-    friend class UIWizardNewVMPageBasic3;
+    friend class UIWizardNewVMPageBasicDisk;
     friend class UIWizardNewVMPageExpert;
 
 private slots:

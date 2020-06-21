@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageBasicNameType class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicNameType_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicNameType_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -29,12 +29,12 @@ class UINameAndSystemEditor;
 class QIRichTextLabel;
 
 /* 1st page of the New Virtual Machine wizard (base part): */
-class UIWizardNewVMPage1 : public UIWizardPageBase
+class UIWizardNewVMPageNameType : public UIWizardPageBase
 {
 protected:
 
     /* Constructor: */
-    UIWizardNewVMPage1(const QString &strGroup);
+    UIWizardNewVMPageNameType(const QString &strGroup);
 
     /* Handlers: */
     void onNameChanged(QString strNewName);
@@ -81,7 +81,7 @@ private:
 };
 
 /* 1st page of the New Virtual Machine wizard (basic extension): */
-class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
+class UIWizardNewVMPageBasicNameType : public UIWizardPage, public UIWizardNewVMPageNameType
 {
     Q_OBJECT;
     Q_PROPERTY(QString machineFilePath READ machineFilePath WRITE setMachineFilePath);
@@ -91,7 +91,7 @@ class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
 public:
 
     /* Constructor: */
-    UIWizardNewVMPageBasic1(const QString &strGroup);
+    UIWizardNewVMPageBasicNameType(const QString &strGroup);
 
 protected:
 
@@ -121,4 +121,4 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicNameType_h */

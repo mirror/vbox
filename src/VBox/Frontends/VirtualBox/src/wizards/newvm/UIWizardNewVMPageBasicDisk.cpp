@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic3 class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasicDisk class implementation.
  */
 
 /*
@@ -31,14 +31,14 @@
 #include "UIMessageCenter.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMPageBasic3.h"
+#include "UIWizardNewVMPageBasicDisk.h"
 
-UIWizardNewVMPage3::UIWizardNewVMPage3()
+UIWizardNewVMPageDisk::UIWizardNewVMPageDisk()
     : m_fRecommendedNoDisk(false)
 {
 }
 
-void UIWizardNewVMPage3::updateVirtualDiskSource()
+void UIWizardNewVMPageDisk::updateVirtualDiskSource()
 {
     /* Enable/disable controls: */
     m_pDiskSelector->setEnabled(m_pDiskPresent->isChecked());
@@ -59,7 +59,7 @@ void UIWizardNewVMPage3::updateVirtualDiskSource()
     }
 }
 
-void UIWizardNewVMPage3::getWithFileOpenDialog()
+void UIWizardNewVMPageDisk::getWithFileOpenDialog()
 {
     /* Get opened medium id: */
     QUuid uMediumId;
@@ -82,7 +82,7 @@ void UIWizardNewVMPage3::getWithFileOpenDialog()
     }
 }
 
-bool UIWizardNewVMPage3::getWithNewVirtualDiskWizard()
+bool UIWizardNewVMPageDisk::getWithNewVirtualDiskWizard()
 {
     /* Create New Virtual Hard Drive wizard: */
     UISafePointerWizardNewVD pWizard = new UIWizardNewVD(thisImp(),
@@ -104,7 +104,7 @@ bool UIWizardNewVMPage3::getWithNewVirtualDiskWizard()
     return fResult;
 }
 
-void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
+void UIWizardNewVMPageDisk::ensureNewVirtualDiskDeleted()
 {
     /* Make sure virtual-disk valid: */
     if (m_virtualDisk.isNull())
@@ -128,7 +128,7 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
     m_virtualDisk.detach();
 }
 
-UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
+UIWizardNewVMPageBasicDisk::UIWizardNewVMPageBasicDisk()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -167,15 +167,15 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
 
     /* Setup connections: */
     connect(m_pDiskSkip, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
+            this, &UIWizardNewVMPageBasicDisk::sltVirtualDiskSourceChanged);
     connect(m_pDiskCreate, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
+            this, &UIWizardNewVMPageBasicDisk::sltVirtualDiskSourceChanged);
     connect(m_pDiskPresent, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
+            this, &UIWizardNewVMPageBasicDisk::sltVirtualDiskSourceChanged);
     connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
+            this, &UIWizardNewVMPageBasicDisk::sltVirtualDiskSourceChanged);
     connect(m_pVMMButton, &QIToolButton::clicked,
-            this, &UIWizardNewVMPageBasic3::sltGetWithFileOpenDialog);
+            this, &UIWizardNewVMPageBasicDisk::sltGetWithFileOpenDialog);
 
     /* Register classes: */
     qRegisterMetaType<CMedium>();
@@ -186,7 +186,7 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
     registerField("virtualDiskLocation", this, "virtualDiskLocation");
 }
 
-void UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged()
+void UIWizardNewVMPageBasicDisk::sltVirtualDiskSourceChanged()
 {
     /* Call to base-class: */
     updateVirtualDiskSource();
@@ -195,13 +195,13 @@ void UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged()
     emit completeChanged();
 }
 
-void UIWizardNewVMPageBasic3::sltGetWithFileOpenDialog()
+void UIWizardNewVMPageBasicDisk::sltGetWithFileOpenDialog()
 {
     /* Call to base-class: */
     getWithFileOpenDialog();
 }
 
-void UIWizardNewVMPageBasic3::retranslateUi()
+void UIWizardNewVMPageBasicDisk::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Hard disk"));
@@ -222,7 +222,7 @@ void UIWizardNewVMPageBasic3::retranslateUi()
     m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
 }
 
-void UIWizardNewVMPageBasic3::initializePage()
+void UIWizardNewVMPageBasicDisk::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -243,14 +243,14 @@ void UIWizardNewVMPageBasic3::initializePage()
     m_pDiskSelector->setCurrentIndex(0);
 }
 
-void UIWizardNewVMPageBasic3::cleanupPage()
+void UIWizardNewVMPageBasicDisk::cleanupPage()
 {
     /* Call to base-class: */
     ensureNewVirtualDiskDeleted();
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardNewVMPageBasic3::isComplete() const
+bool UIWizardNewVMPageBasicDisk::isComplete() const
 {
     /* Make sure 'virtualDisk' field feats the rules: */
     return m_pDiskSkip->isChecked() ||
@@ -258,7 +258,7 @@ bool UIWizardNewVMPageBasic3::isComplete() const
            !uiCommon().medium(m_pDiskSelector->id()).isNull();
 }
 
-bool UIWizardNewVMPageBasic3::validatePage()
+bool UIWizardNewVMPageBasicDisk::validatePage()
 {
     /* Initial result: */
     bool fResult = true;

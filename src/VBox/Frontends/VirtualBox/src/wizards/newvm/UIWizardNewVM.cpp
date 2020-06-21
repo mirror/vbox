@@ -18,10 +18,10 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMPageBasic0.h"
-#include "UIWizardNewVMPageBasic1.h"
-#include "UIWizardNewVMPageBasic2.h"
-#include "UIWizardNewVMPageBasic3.h"
+#include "UIWizardNewVMPageBasicUnattended.h"
+#include "UIWizardNewVMPageBasicNameType.h"
+#include "UIWizardNewVMPageBasicHardware.h"
+#include "UIWizardNewVMPageBasicDisk.h"
 #include "UIWizardNewVMPageExpert.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
@@ -68,10 +68,10 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewVMPageBasic0);
-            setPage(Page2, new UIWizardNewVMPageBasic1(m_strGroup));
-            setPage(Page3, new UIWizardNewVMPageBasic2);
-            setPage(Page4, new UIWizardNewVMPageBasic3);
+            setPage(Page1, new UIWizardNewVMPageBasicUnattended);
+            setPage(Page2, new UIWizardNewVMPageBasicNameType(m_strGroup));
+            setPage(Page3, new UIWizardNewVMPageBasicHardware);
+            setPage(Page4, new UIWizardNewVMPageBasicDisk);
             break;
         }
         case WizardMode_Expert:
@@ -378,7 +378,7 @@ void UIWizardNewVM::sltHandleWizardCancel()
     {
         case WizardMode_Basic:
         {
-            UIWizardNewVMPageBasic1 *pPage = qobject_cast<UIWizardNewVMPageBasic1*> (page(Page2));
+            UIWizardNewVMPageBasicNameType *pPage = qobject_cast<UIWizardNewVMPageBasicNameType*> (page(Page2));
             /* Make sure that we were able to find the page that created the folder. */
             Assert(pPage);
             if (pPage)

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic1 class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasicNameType class implementation.
  */
 
 /*
@@ -26,7 +26,7 @@
 #include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
-#include "UIWizardNewVMPageBasic1.h"
+#include "UIWizardNewVMPageBasicNameType.h"
 #include "UIWizardNewVM.h"
 
 /* COM includes: */
@@ -173,7 +173,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ot",                   Qt::CaseInsensitive), "Other" },
 };
 
-UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
+UIWizardNewVMPageNameType::UIWizardNewVMPageNameType(const QString &strGroup)
     : m_pNameAndSystemEditor(0)
     , m_strGroup(strGroup)
 
@@ -183,7 +183,7 @@ UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
 }
 
-void UIWizardNewVMPage1::onNameChanged(QString strNewName)
+void UIWizardNewVMPageNameType::onNameChanged(QString strNewName)
 {
     /* Do not forget about achitecture bits, if not yet specified: */
     if (!strNewName.contains("32") && !strNewName.contains("64"))
@@ -203,7 +203,7 @@ void UIWizardNewVMPage1::onNameChanged(QString strNewName)
         }
 }
 
-void UIWizardNewVMPage1::onOsTypeChanged()
+void UIWizardNewVMPageNameType::onOsTypeChanged()
 {
     /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
      * So simply disconnect the text-edit signal. */
@@ -211,7 +211,7 @@ void UIWizardNewVMPage1::onOsTypeChanged()
         m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
 }
 
-void UIWizardNewVMPage1::composeMachineFilePath()
+void UIWizardNewVMPageNameType::composeMachineFilePath()
 {
     if (!m_pNameAndSystemEditor)
         return;
@@ -231,7 +231,7 @@ void UIWizardNewVMPage1::composeMachineFilePath()
     m_strMachineBaseName = fileInfo.completeBaseName();
 }
 
-bool UIWizardNewVMPage1::createMachineFolder()
+bool UIWizardNewVMPageNameType::createMachineFolder()
 {
     if (!m_pNameAndSystemEditor)
         return false;
@@ -269,7 +269,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     return true;
 }
 
-bool UIWizardNewVMPage1::cleanupMachineFolder(bool fWizardCancel /* = false */)
+bool UIWizardNewVMPageNameType::cleanupMachineFolder(bool fWizardCancel /* = false */)
 {
     /* Make sure folder was previosly created: */
     if (m_strCreatedFolder.isEmpty())
@@ -288,38 +288,38 @@ bool UIWizardNewVMPage1::cleanupMachineFolder(bool fWizardCancel /* = false */)
     return true;
 }
 
-QString UIWizardNewVMPage1::machineFilePath() const
+QString UIWizardNewVMPageNameType::machineFilePath() const
 {
     return m_strMachineFilePath;
 }
 
-void UIWizardNewVMPage1::setMachineFilePath(const QString &strMachineFilePath)
+void UIWizardNewVMPageNameType::setMachineFilePath(const QString &strMachineFilePath)
 {
     m_strMachineFilePath = strMachineFilePath;
 }
 
-QString UIWizardNewVMPage1::machineFolder() const
+QString UIWizardNewVMPageNameType::machineFolder() const
 {
     return m_strMachineFolder;
 }
 
-void UIWizardNewVMPage1::setMachineFolder(const QString &strMachineFolder)
+void UIWizardNewVMPageNameType::setMachineFolder(const QString &strMachineFolder)
 {
     m_strMachineFolder = strMachineFolder;
 }
 
-QString UIWizardNewVMPage1::machineBaseName() const
+QString UIWizardNewVMPageNameType::machineBaseName() const
 {
     return m_strMachineBaseName;
 }
 
-void UIWizardNewVMPage1::setMachineBaseName(const QString &strMachineBaseName)
+void UIWizardNewVMPageNameType::setMachineBaseName(const QString &strMachineBaseName)
 {
     m_strMachineBaseName = strMachineBaseName;
 }
 
-UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
-    : UIWizardNewVMPage1(strGroup)
+UIWizardNewVMPageBasicNameType::UIWizardNewVMPageBasicNameType(const QString &strGroup)
+    : UIWizardNewVMPageNameType(strGroup)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -332,9 +332,9 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     }
 
     /* Setup connections: */
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasicNameType::sltNameChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasicNameType::sltPathChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasicNameType::sltOsTypeChanged);
 
     /* Register fields: */
     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
@@ -344,26 +344,26 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     registerField("machineBaseName", this, "machineBaseName");
 }
 
-void UIWizardNewVMPageBasic1::sltNameChanged(const QString &strNewName)
+void UIWizardNewVMPageBasicNameType::sltNameChanged(const QString &strNewName)
 {
     /* Call to base-class: */
     onNameChanged(strNewName);
     composeMachineFilePath();
 }
 
-void UIWizardNewVMPageBasic1::sltPathChanged(const QString &strNewPath)
+void UIWizardNewVMPageBasicNameType::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
     composeMachineFilePath();
 }
 
-void UIWizardNewVMPageBasic1::sltOsTypeChanged()
+void UIWizardNewVMPageBasicNameType::sltOsTypeChanged()
 {
     /* Call to base-class: */
     onOsTypeChanged();
 }
 
-void UIWizardNewVMPageBasic1::retranslateUi()
+void UIWizardNewVMPageBasicNameType::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Name and operating system"));
@@ -375,7 +375,7 @@ void UIWizardNewVMPageBasic1::retranslateUi()
                                         "to identify this machine."));
 }
 
-void UIWizardNewVMPageBasic1::initializePage()
+void UIWizardNewVMPageBasicNameType::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -383,7 +383,7 @@ void UIWizardNewVMPageBasic1::initializePage()
         m_pNameAndSystemEditor->setFocus();
 }
 
-void UIWizardNewVMPageBasic1::cleanupPage()
+void UIWizardNewVMPageBasicNameType::cleanupPage()
 {
     /* Cleanup: */
     cleanupMachineFolder();
@@ -391,7 +391,7 @@ void UIWizardNewVMPageBasic1::cleanupPage()
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardNewVMPageBasic1::validatePage()
+bool UIWizardNewVMPageBasicNameType::validatePage()
 {
     /* Try to create machine folder: */
     return createMachineFolder();

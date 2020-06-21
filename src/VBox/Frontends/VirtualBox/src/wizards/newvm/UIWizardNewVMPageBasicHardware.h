@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic2 class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageBasicHardware class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicHardware_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicHardware_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -33,12 +33,12 @@ class QLabel;
 class QIRichTextLabel;
 
 /* 2nd page of the New Virtual Machine wizard (base part): */
-class UIWizardNewVMPage2 : public UIWizardPageBase
+class UIWizardNewVMPageHardware : public UIWizardPageBase
 {
 protected:
 
     /* Constructor: */
-    UIWizardNewVMPage2();
+    UIWizardNewVMPageHardware();
 
     int baseMemory() const;
     int VCPUCount() const;
@@ -49,7 +49,7 @@ protected:
 };
 
 /* 2nd page of the New Virtual Machine wizard (basic extension): */
-class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
+class UIWizardNewVMPageBasicHardware : public UIWizardPage, public UIWizardNewVMPageHardware
 {
     Q_OBJECT;
     Q_PROPERTY(int baseMemory READ baseMemory);
@@ -58,7 +58,7 @@ class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
 public:
 
     /* Constructor: */
-    UIWizardNewVMPageBasic2();
+    UIWizardNewVMPageBasicHardware();
 
 private slots:
 
@@ -77,4 +77,4 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicHardware_h */

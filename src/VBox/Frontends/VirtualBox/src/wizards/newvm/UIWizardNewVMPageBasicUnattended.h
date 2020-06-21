@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic0 class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageBasicUnattended class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic0_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic0_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicUnattended_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicUnattended_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -32,12 +32,12 @@ class QLabel;
 class UIFilePathSelector;
 
 /* 1st page of the New Virtual Machine wizard (base part): */
-class UIWizardNewVMPage0 : public UIWizardPageBase
+class UIWizardNewVMPageUnattended : public UIWizardPageBase
 {
 protected:
 
     /* Constructor: */
-    UIWizardNewVMPage0();
+    UIWizardNewVMPageUnattended();
 
     QString ISOFilePath() const;
     bool isUnattendedEnabled() const;
@@ -54,7 +54,7 @@ private:
 };
 
 /* 1st page of the New Virtual Machine wizard (basic extension): */
-class UIWizardNewVMPageBasic0 : public UIWizardPage, public UIWizardNewVMPage0
+class UIWizardNewVMPageBasicUnattended : public UIWizardPage, public UIWizardNewVMPageUnattended
 {
     Q_OBJECT;
     Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
@@ -64,7 +64,7 @@ class UIWizardNewVMPageBasic0 : public UIWizardPage, public UIWizardNewVMPage0
 public:
 
     /* Constructor: */
-    UIWizardNewVMPageBasic0();
+    UIWizardNewVMPageBasicUnattended();
     virtual bool isComplete() const; /* override */
 
 protected:
@@ -96,4 +96,4 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic0_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicUnattended_h */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasic2 class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasicHardware class implementation.
  */
 
 /*
@@ -29,31 +29,31 @@
 #include "UIBaseMemorySlider.h"
 #include "UICommon.h"
 #include "UIVirtualCPUEditor.h"
-#include "UIWizardNewVMPageBasic2.h"
+#include "UIWizardNewVMPageBasicHardware.h"
 #include "UIWizardNewVM.h"
 
 
-UIWizardNewVMPage2::UIWizardNewVMPage2()
+UIWizardNewVMPageHardware::UIWizardNewVMPageHardware()
     : m_pBaseMemoryEditor(0)
     , m_pVirtualCPUEditor(0)
 {
 }
 
-int UIWizardNewVMPage2::baseMemory() const
+int UIWizardNewVMPageHardware::baseMemory() const
 {
     if (!m_pBaseMemoryEditor)
         return 0;
     return m_pBaseMemoryEditor->value();
 }
 
-int UIWizardNewVMPage2::VCPUCount() const
+int UIWizardNewVMPageHardware::VCPUCount() const
 {
     if (!m_pVirtualCPUEditor)
         return 1;
     return m_pVirtualCPUEditor->value();
 }
 
-UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
+UIWizardNewVMPageBasicHardware::UIWizardNewVMPageBasicHardware()
     : m_pLabel(0)
 {
     /* Create widget: */
@@ -79,7 +79,7 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
     registerField("VCPUCount", this, "VCPUCount");
 }
 
-void UIWizardNewVMPageBasic2::retranslateUi()
+void UIWizardNewVMPageBasicHardware::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Virtual Machine Settings"));
@@ -89,7 +89,7 @@ void UIWizardNewVMPageBasic2::retranslateUi()
         m_pLabel->setText(UIWizardNewVM::tr("<p>You can modify the virtual machine's hardware.</p>"));
 }
 
-void UIWizardNewVMPageBasic2::initializePage()
+void UIWizardNewVMPageBasicHardware::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -103,7 +103,7 @@ void UIWizardNewVMPageBasic2::initializePage()
     m_pBaseMemoryEditor->setFocus();
 }
 
-bool UIWizardNewVMPageBasic2::isComplete() const
+bool UIWizardNewVMPageBasicHardware::isComplete() const
 {
     return UIWizardPage::isComplete();
 }
