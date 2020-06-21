@@ -233,10 +233,32 @@ function parseIsoTimestamp(sTs)
         if (chSign == '-')
             cMinTz = -cMinTz;
 
-        return new Date(oDate.getTime() + cMinTz * 60000);
+        return new Date(oDate.getTime() - cMinTz * 60000);
     }
     console.assert(false);
     return oDate;
+}
+
+/** 
+ * @param   oDate   Date object. 
+ */ 
+function formatTimeHHMM(oDate, fNbsp)
+{
+    var sTime = oDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'} );
+    if (fNbsp === true)
+        sTime = sTime.replace(' ', '\u00a0');
+
+    /* Workaround for single digit hours in firefox with en_US (minutes works fine): */
+    var iHours = oDate.getHours();
+    if ((iHours % 12) < 10)
+    {
+        var ch1 = sTime.substr(0, 1);
+        var ch2 = sTime.substr(1, 1);
+        if (  ch1 == (iHours % 12).toString()
+            && !(ch2 >= '0' && ch2 <= '9'))
+            sTime = '0' + sTime;
+    }
+    return sTime;
 }
 
 /**
@@ -1026,8 +1048,8 @@ function tooltipReallyShow(oTooltip, oRelTo)
  */
 function tooltipElementOnMouseEnter()
 {
-    console.log('tooltipElementOnMouseEnter: arguments.length='+arguments.length+' [0]='+arguments[0]);
-    console.log('ENT: currentTarget='+arguments[0].currentTarget+' id='+arguments[0].currentTarget.id+' class='+arguments[0].currentTarget.className);
+    /*console.log('tooltipElementOnMouseEnter: arguments.length='+arguments.length+' [0]='+arguments[0]);
+    console.log('ENT: currentTarget='+arguments[0].currentTarget+' id='+arguments[0].currentTarget.id+' class='+arguments[0].currentTarget.className); */
     tooltipResetShowTimer();
     tooltipResetHideTimer();
     return true;
@@ -1044,8 +1066,8 @@ function tooltipElementOnMouseEnter()
 function tooltipElementOnMouseOut()
 {
     var oEvt = arguments[0];
-    console.log('tooltipElementOnMouseOut: arguments.length='+arguments.length+' [0]='+oEvt);
-    console.log('OUT: currentTarget='+oEvt.currentTarget+' id='+oEvt.currentTarget.id+' class='+oEvt.currentTarget.className);
+    /*console.log('tooltipElementOnMouseOut: arguments.length='+arguments.length+' [0]='+oEvt);
+    console.log('OUT: currentTarget='+oEvt.currentTarget+' id='+oEvt.currentTarget.id+' class='+oEvt.currentTarget.className);*/
 
     /* Ignore the event if leaving to a child element. */
     var oElm = oEvt.toElement || oEvt.relatedTarget;
@@ -1205,7 +1227,12 @@ function svnHistoryTooltipNewOnLoad()
 
 function svnHistoryTooltipNewOnReadState(oTooltip, oRestReq, oParent)
 {
-    console.log('svnHistoryTooltipNewOnReadState');
+    /*console.log('svnHistoryTooltipNewOnReadState: status=' + oRestReq.status + ' readyState=' + oRestReq.readyState);*/
+    if (oRestReq.readyState != oRestReq.DONE)
+    {
+        oTooltip.oInnerElm.innerHTML = '<p>Loading ...(' + oRestReq.readyState + ')</p>';
+        return true;
+    }
 
     /*
      * Check the result and translate it to a javascript object (oResp).
@@ -1267,7 +1294,7 @@ function svnHistoryTooltipNewOnReadState(oTooltip, oRestReq, oParent)
             sHtml += '  <dt id="r' + oCommit.iRevision + '"' + sHighligh + '>';
             sHtml += '<a href="' + oResp.sTracChangesetUrlFmt.replace('%(iRevision)s', oCommit.iRevision.toString());
             sHtml += '" target="_blank">';
-            sHtml += '<span class="tmvcstimeline-time">' + escapeElem(tsCreated.toLocaleTimeString()) + '</span>'
+            sHtml += '<span class="tmvcstimeline-time">' + escapeElem(formatTimeHHMM(tsCreated, true)) + '</span>'
             sHtml += ' Changeset <span class="tmvcstimeline-rev">[' + oCommit.iRevision + ']</span>';
             sHtml += ' by <span class="tmvcstimeline-author">' + escapeElem(oCommit.sAuthor) + '</span>';
             sHtml += '</a></dt>\n';
@@ -1279,7 +1306,7 @@ function svnHistoryTooltipNewOnReadState(oTooltip, oRestReq, oParent)
         sHtml += '</div>';
     }
 
-    console.log('svnHistoryTooltipNewOnReadState: sHtml=' + sHtml);
+    /*console.log('svnHistoryTooltipNewOnReadState: sHtml=' + sHtml);*/
     oTooltip.oInnerElm.innerHTML = sHtml;
 
     tooltipReallyShow(oTooltip, oParent);
@@ -1418,13 +1445,13 @@ function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
         var sSrc;
 
         var oTooltip = g_dTooltips[sKey];
-        console.log('svnHistoryTooltipNewDelayedShow: ' + sRepository + ' ' + oTooltip);
+        /*console.log('svnHistoryTooltipNewDelayedShow: ' + sRepository + ' ' + oTooltip);*/
         if (!oTooltip)
         {
             /*
              * Create a new tooltip element.
              */
-            console.log('creating ' + sKey);
+            /*console.log('creating ' + sKey);*/
 
             var oElm = document.createElement('div');
             oElm.setAttribute('id', sKey);

@@ -39,8 +39,7 @@ function vcsRevisionFormatDate(tsDate)
  */
 function vcsRevisionFormatTime(tsDate)
 {
-    var sRet = tsDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'} );
-    return sRet.replace(' ', '\u00a0');
+    return formatTimeHHMM(tsDate, true /*fNbsp*/);
 }
 
 /**
