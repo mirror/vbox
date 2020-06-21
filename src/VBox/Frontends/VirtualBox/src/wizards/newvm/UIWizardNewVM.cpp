@@ -68,10 +68,10 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewVMPageBasicUnattended);
-            setPage(Page2, new UIWizardNewVMPageBasicNameType(m_strGroup));
-            setPage(Page3, new UIWizardNewVMPageBasicHardware);
-            setPage(Page4, new UIWizardNewVMPageBasicDisk);
+            setPage(PageUnattended, new UIWizardNewVMPageBasicUnattended);
+            setPage(PageNameType, new UIWizardNewVMPageBasicNameType(m_strGroup));
+            setPage(PageHardware, new UIWizardNewVMPageBasicHardware);
+            setPage(PageDisk, new UIWizardNewVMPageBasicDisk);
             break;
         }
         case WizardMode_Expert:
@@ -372,13 +372,36 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     return true;
 }
 
+int UIWizardNewVM::nextId() const
+{
+    switch (currentId())
+    {
+        case PageUnattended:
+            return PageNameType;
+            break;
+        case PageNameType:
+            return PageHardware;
+            break;
+        case PageHardware:
+            return PageDisk;
+            break;
+        case PageDisk:
+            return UIWizard::nextId();
+        case PageMax:
+        default:
+            return PageUnattended;
+            break;
+    }
+    return UIWizard::nextId();
+}
+
 void UIWizardNewVM::sltHandleWizardCancel()
 {
     switch (mode())
     {
         case WizardMode_Basic:
         {
-            UIWizardNewVMPageBasicNameType *pPage = qobject_cast<UIWizardNewVMPageBasicNameType*> (page(Page2));
+            UIWizardNewVMPageBasicNameType *pPage = qobject_cast<UIWizardNewVMPageBasicNameType*> (page(PageNameType));
             /* Make sure that we were able to find the page that created the folder. */
             Assert(pPage);
             if (pPage)

@@ -38,10 +38,11 @@ public:
     /* Page IDs: */
     enum
     {
-        Page1,
-        Page2,
-        Page3,
-        Page4
+        PageUnattended,
+        PageNameType,
+        PageHardware,
+        PageDisk,
+        PageMax
     };
 
     /* Page IDs: */
@@ -70,6 +71,7 @@ protected:
     void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
     /* Attaches default devices: */
     bool attachDefaultDevices(const CGuestOSType &comGuestType);
+    virtual int nextId() const /* override */;
 
     /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasicDisk;
