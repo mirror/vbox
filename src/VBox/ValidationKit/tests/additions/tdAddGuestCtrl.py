@@ -4777,7 +4777,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             except:
                 return reporter.errorXcpt('os.mkdir(%s)' % (sSubDir, ));
 
-		reporter.log2('Defining tests ...');
+        reporter.log2('Defining tests ...');
 
         #
         # Bad parameter tests.
