@@ -39,6 +39,12 @@
 using namespace UIExtraDataDefs;
 
 
+UIUnattendedInstallData::UIUnattendedInstallData()
+    : m_fUnattendedEnabled(false)
+    , m_fStartHeadless(false)
+{
+}
+
 UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QString() */)
     : UIWizard(pParent, WizardType_NewVM)
     , m_strGroup(strGroup)
@@ -71,9 +77,10 @@ void UIWizardNewVM::prepare()
         {
             setPage(PageUnattended, new UIWizardNewVMPageBasicUnattended);
             setPage(PageNameType, new UIWizardNewVMPageBasicNameType(m_strGroup));
+            setPage(PageInstallSetup, new UIWizardNewVMPageBasicInstallSetup);
             setPage(PageHardware, new UIWizardNewVMPageBasicHardware);
             setPage(PageDisk, new UIWizardNewVMPageBasicDisk);
-            setPage(PageInstallSetup, new UIWizardNewVMPageBasicInstallSetup);
+            setStartId(PageUnattended);
             break;
         }
         case WizardMode_Expert:
@@ -374,31 +381,33 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     return true;
 }
 
-int UIWizardNewVM::nextId() const
-{
-    switch (currentId())
-    {
-        case PageUnattended:
-            return PageNameType;
-            break;
-        case PageNameType:
-            if (!isUnattendedInstallEnabled())
-                return PageHardware;
-            else
-                return PageInstallSetup;
-            break;
-        case PageHardware:
-            return PageDisk;
-            break;
-        case PageDisk:
-            return UIWizard::nextId();
-        case PageMax:
-        default:
-            return PageUnattended;
-            break;
-    }
-    return UIWizard::nextId();
-}
+// int UIWizardNewVM::nextId() const
+// {
+//     switch (currentId())
+//     {
+//         case PageUnattended:
+//             return PageNameType;
+//             break;
+//         case PageNameType:
+//             if (!isUnattendedInstallEnabled())
+//                 return PageHardware;
+//             else
+//                 return PageInstallSetup;
+//             break;
+//         case PageInstallSetup:
+//                 return PageHardware;
+//         case PageHardware:
+//             return PageDisk;
+//             break;
+//         case PageDisk:
+//             return UIWizard::nextId();
+//         case PageMax:
+//         default:
+//             return PageUnattended;
+//             break;
+//     }
+//     return UIWizard::nextId();
+// }
 
 void UIWizardNewVM::sltHandleWizardCancel()
 {
@@ -501,25 +510,28 @@ QUuid UIWizardNewVM::createdMachineId() const
     return QUuid();
 }
 
-QString UIWizardNewVM::unattendedISOFilePath() const
+const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
     QVariant fieldValue = field("ISOFilePath");
-    if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::QString))
-        return QString();
-    return fieldValue.toString();
+    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::QString))
+        m_unattendedInstallData.m_strISOPath = fieldValue.toString();
+
+    fieldValue = field("isUnattendedEnabled");
+    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
+        m_unattendedInstallData.m_fUnattendedEnabled = fieldValue.toBool();
+
+    fieldValue = field("startHeadless");
+    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
+        m_unattendedInstallData.m_fStartHeadless = fieldValue.toBool();
+
+    m_unattendedInstallData.m_uMachineUid = createdMachineId();
+
+    return m_unattendedInstallData;
 }
 
 bool UIWizardNewVM::isUnattendedInstallEnabled() const
 {
     QVariant fieldValue = field("isUnattendedEnabled");
-    if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::Bool))
-        return false;
-    return fieldValue.toBool();
-}
-
-bool UIWizardNewVM::startHeadless() const
-{
-    QVariant fieldValue = field("startHeadless");
     if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::Bool))
         return false;
     return fieldValue.toBool();

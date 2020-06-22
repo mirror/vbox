@@ -609,19 +609,19 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
         windowManager().registerNewParent(pWizard, pWizardParent);
         pWizard->prepare();
 
+        CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
+        AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
+
         /* Execute wizard: */
         pWizard->exec();
 
         /* Cache unattended install related info and delete the wizard before handling the unattended install stuff: */
-        bool fUnattendedEnabled = pWizard->isUnattendedInstallEnabled();
-        QUuid uMachineUid = pWizard->createdMachineId();
-        QString strISOPath = pWizard->unattendedISOFilePath();
-        bool fStartHeadless = pWizard->startHeadless();
+        UIUnattendedInstallData unattendedInstallData = pWizard->unattendedInstallData();
 
         delete pWizard;
         /* Handle unattended install stuff: */
-        if (fUnattendedEnabled)
-            startUnattendedInstall(uMachineUid, strISOPath, fStartHeadless);
+        if (unattendedInstallData.m_fUnattendedEnabled)
+            startUnattendedInstall(comUnattendedInstaller, unattendedInstallData);
     }
     /* For cloud machine: */
     else
@@ -1870,23 +1870,20 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
     comVBox.RegisterMachine(comMachineNew);
 }
 
-void UIVirtualBoxManager::startUnattendedInstall(const QUuid &uMachineUid, const QString &strISOPath, bool fStartHeadless)
+void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInstaller, const UIUnattendedInstallData &unattendedData)
 {
     CVirtualBox comVBox = uiCommon().virtualBox();
-    CMachine comMachine = comVBox.FindMachine(uMachineUid.toString());
+    CMachine comMachine = comVBox.FindMachine(unattendedData.m_uMachineUid.toString());
     if (comMachine.isNull())
         return;
 
-    if (!QFileInfo(strISOPath).exists())
+    if (!QFileInfo(unattendedData.m_strISOPath).exists())
     {
         /// @todo Show a relavant error message here
         return;
     }
 
-    CUnattended comUnattendedInstaller = comVBox.CreateUnattendedInstaller();
-    AssertMsgReturnVoid(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
-
-    comUnattendedInstaller.SetIsoPath(strISOPath);
+    comUnattendedInstaller.SetIsoPath(unattendedData.m_strISOPath);
     checkUnattendedInstallError(comUnattendedInstaller);
     comUnattendedInstaller.SetMachine(comMachine);
     checkUnattendedInstallError(comUnattendedInstaller);
@@ -1898,7 +1895,7 @@ void UIVirtualBoxManager::startUnattendedInstall(const QUuid &uMachineUid, const
     checkUnattendedInstallError(comUnattendedInstaller);
 
     UICommon::LaunchMode enmLaunchMode = UICommon::LaunchMode_Default;
-    if (fStartHeadless)
+    if (unattendedData.m_fStartHeadless)
         enmLaunchMode = UICommon::LaunchMode_Headless;
     uiCommon().launchMachine(comMachine, enmLaunchMode);
 }

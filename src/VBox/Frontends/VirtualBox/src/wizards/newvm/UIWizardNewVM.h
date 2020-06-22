@@ -28,7 +28,19 @@
 #include "COMEnums.h"
 #include "CMachine.h"
 
-/* New Virtual Machine wizard: */
+/** Container for unattended install related data. */
+struct UIUnattendedInstallData
+{
+    UIUnattendedInstallData();
+    bool m_fUnattendedEnabled;
+    QUuid m_uMachineUid;
+    QString m_strISOPath;
+    bool m_fStartHeadless;
+    QString m_strUserName;
+    QString m_strPassword;
+};
+
+/** New Virtual Machine wizard: */
 class UIWizardNewVM : public UIWizard
 {
     Q_OBJECT;
@@ -40,9 +52,9 @@ public:
     {
         PageUnattended,
         PageNameType,
+        PageInstallSetup,
         PageHardware,
         PageDisk,
-        PageInstallSetup,
         PageMax
     };
 
@@ -60,9 +72,8 @@ public:
 
     /** Returns the Id of newly created VM. */
     QUuid createdMachineId() const;
-    QString unattendedISOFilePath() const;
+    const UIUnattendedInstallData &unattendedInstallData() const;
     bool isUnattendedInstallEnabled() const;
-    bool startHeadless() const;
 
 protected:
 
@@ -72,7 +83,7 @@ protected:
     void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
     /* Attaches default devices: */
     bool attachDefaultDevices(const CGuestOSType &comGuestType);
-    virtual int nextId() const /* override */;
+    //virtual int nextId() const /* override */;
 
     /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasicDisk;
@@ -87,6 +98,7 @@ private:
     /* Translation stuff: */
     void retranslateUi();
 
+
     /* Helping stuff: */
     QString getNextControllerName(KStorageBus type);
 
@@ -99,6 +111,8 @@ private:
     int m_iFloppyCount;
     int m_iSASCount;
     int m_iUSBCount;
+
+    mutable UIUnattendedInstallData m_unattendedInstallData;
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;

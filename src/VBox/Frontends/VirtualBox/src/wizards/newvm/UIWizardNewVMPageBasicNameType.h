@@ -92,6 +92,7 @@ public:
 
     /* Constructor: */
     UIWizardNewVMPageBasicNameType(const QString &strGroup);
+    virtual int nextId() const /* override */;
 
 protected:
 

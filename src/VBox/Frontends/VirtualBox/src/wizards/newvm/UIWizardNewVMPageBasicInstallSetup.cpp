@@ -125,10 +125,9 @@ UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
         pMainLayout->addStretch();
     }
 
-
     /* Register fields: */
-    registerField("baseMemory", this, "baseMemory");
-    registerField("VCPUCount", this, "VCPUCount");
+    // registerField("baseMemory", this, "baseMemory");
+    // registerField("VCPUCount", this, "VCPUCount");
 }
 
 void UIWizardNewVMPageBasicInstallSetup::retranslateUi()
@@ -140,7 +139,6 @@ void UIWizardNewVMPageBasicInstallSetup::retranslateUi()
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can specify the user name/password and time zone. "
                                             "The values you enter here will be used during the unattended install.</p>"));
-
 }
 
 void UIWizardNewVMPageBasicInstallSetup::initializePage()

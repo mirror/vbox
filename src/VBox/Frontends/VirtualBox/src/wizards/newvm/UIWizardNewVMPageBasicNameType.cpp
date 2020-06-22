@@ -344,6 +344,14 @@ UIWizardNewVMPageBasicNameType::UIWizardNewVMPageBasicNameType(const QString &st
     registerField("machineBaseName", this, "machineBaseName");
 }
 
+int UIWizardNewVMPageBasicNameType::nextId() const
+{
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (!pWizard || !pWizard->isUnattendedInstallEnabled())
+        return UIWizardNewVM::PageHardware;
+    return UIWizardNewVM::PageInstallSetup;
+}
+
 void UIWizardNewVMPageBasicNameType::sltNameChanged(const QString &strNewName)
 {
     /* Call to base-class: */
