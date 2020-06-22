@@ -240,7 +240,7 @@ function parseIsoTimestamp(sTs)
 }
 
 /** 
- * @param   oDate   Date object. 
+ * @param   oDate   Date object.
  */
 function formatTimeHHMM(oDate, fNbsp)
 {
