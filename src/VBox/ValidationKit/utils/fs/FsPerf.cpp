@@ -3532,7 +3532,7 @@ int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
         size_t cbToRead = cbBuf;
         if (cbToRead > cbLeft)
             cbToRead = (size_t)cbLeft;
-        pbBuf[cbToRead] = 0xff;
+        pbBuf[cbToRead - 1] = 0xff;
 
         RTTESTI_CHECK_RC_RET(RTFileRead(hFile1, pbBuf, cbToRead, NULL), VINF_SUCCESS, rcCheck);
         RTTESTI_CHECK_RET(ASMMemIsZero(pbBuf, cbToRead), VERR_MISMATCH);
