@@ -34,6 +34,7 @@ class QLabel;
 class QLineEdit;
 class QSpinBox;
 class QIRichTextLabel;
+struct UIUnattendedInstallData;
 
 class UIUserNamePasswordEditor : public QIWithRetranslateUI<QWidget>
 {
@@ -44,6 +45,12 @@ public:
 
     UIUserNamePasswordEditor(QWidget *pParent = 0);
 
+    QString userName() const;
+    void setUserName(const QString &strUserName);
+
+    QString password() const;
+    void setPassword(const QString &strPassword);
+
 protected:
 
     void retranslateUi();
@@ -51,7 +58,7 @@ protected:
 private:
 
     void prepare();
-    void addField(QLabel *&pLabel, QLineEdit *&pLineEdit, QGridLayout *pLayout, bool fIsPasswordField = false);
+    void addLineEdit(QLabel *&pLabel, QLineEdit *&pLineEdit, QGridLayout *pLayout, bool fIsPasswordField = false);
 
     QLineEdit *m_pUserNameField;
     QLineEdit *m_pPasswordField;
@@ -66,10 +73,15 @@ private:
 /* 2nd page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPageInstallSetup : public UIWizardPageBase
 {
+public:
+
+    UIWizardNewVMPageInstallSetup();
+
+    QString userName() const;
+    QString password() const;
+
 protected:
 
-    /* Constructor: */
-    UIWizardNewVMPageInstallSetup();
 
 
     /* Widgets: */
@@ -80,11 +92,14 @@ protected:
 class UIWizardNewVMPageBasicInstallSetup : public UIWizardPage, public UIWizardNewVMPageInstallSetup
 {
     Q_OBJECT;
+    Q_PROPERTY(QString userName READ userName);
+    Q_PROPERTY(QString password READ password);
 
 public:
 
     /* Constructor: */
     UIWizardNewVMPageBasicInstallSetup();
+    void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
 
 private slots:
 

@@ -513,6 +513,9 @@ QUuid UIWizardNewVM::createdMachineId() const
 void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
 {
     m_unattendedInstallData = unattendedInstallData;
+    UIWizardNewVMPageBasicInstallSetup *pPage = qobject_cast<UIWizardNewVMPageBasicInstallSetup *>(page(PageInstallSetup));
+    if (pPage)
+        pPage->setDefaultUnattendedInstallData(unattendedInstallData);
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
@@ -528,6 +531,14 @@ const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
     fieldValue = field("startHeadless");
     if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
         m_unattendedInstallData.m_fStartHeadless = fieldValue.toBool();
+
+    fieldValue = field("userName");
+    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::QString))
+        m_unattendedInstallData.m_strUserName = fieldValue.toString();
+
+    fieldValue = field("password");
+    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::QString))
+        m_unattendedInstallData.m_strPassword = fieldValue.toString();
 
     m_unattendedInstallData.m_uMachineUid = createdMachineId();
 

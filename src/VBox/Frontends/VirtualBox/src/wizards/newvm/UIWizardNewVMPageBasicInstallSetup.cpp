@@ -46,6 +46,34 @@ UIUserNamePasswordEditor::UIUserNamePasswordEditor(QWidget *pParent /*  = 0 */)
     prepare();
 }
 
+QString UIUserNamePasswordEditor::userName() const
+{
+    if (m_pUserNameField)
+        return m_pUserNameField->text();
+    return QString();
+}
+
+void UIUserNamePasswordEditor::setUserName(const QString &strUserName)
+{
+    if (m_pUserNameField)
+        return m_pUserNameField->setText(strUserName);
+}
+
+QString UIUserNamePasswordEditor::password() const
+{
+    if (m_pPasswordField)
+        return m_pPasswordField->text();
+    return QString();
+}
+
+void UIUserNamePasswordEditor::setPassword(const QString &strPassword)
+{
+    if (m_pPasswordField)
+        m_pPasswordField->setText(strPassword);
+    if (m_pPasswordRepeatField)
+        m_pPasswordRepeatField->setText(strPassword);
+}
+
 void UIUserNamePasswordEditor::retranslateUi()
 {
     if (m_pUserNameFieldLabel)
@@ -67,7 +95,7 @@ void UIUserNamePasswordEditor::retranslateUi()
     }
 }
 
-void UIUserNamePasswordEditor::addField(QLabel *&pLabel, QLineEdit *&pLineEdit, QGridLayout *pLayout, bool fIsPasswordField /* = false */)
+void UIUserNamePasswordEditor::addLineEdit(QLabel *&pLabel, QLineEdit *&pLineEdit, QGridLayout *pLayout, bool fIsPasswordField /* = false */)
 {
     static int iRow = 0;
     if (!pLayout || pLabel || pLineEdit)
@@ -96,9 +124,10 @@ void UIUserNamePasswordEditor::prepare()
         return;
     setLayout(pMainLayout);
 
-    addField(m_pUserNameFieldLabel, m_pUserNameField, pMainLayout);
-    addField(m_pPasswordFieldLabel, m_pPasswordField, pMainLayout, true);
-    addField(m_pPasswordRepeatFieldLabel, m_pPasswordRepeatField, pMainLayout, true);
+    addLineEdit(m_pUserNameFieldLabel, m_pUserNameField, pMainLayout);
+    addLineEdit(m_pPasswordFieldLabel, m_pPasswordField, pMainLayout, true);
+    addLineEdit(m_pPasswordRepeatFieldLabel, m_pPasswordRepeatField, pMainLayout, true);
+
     retranslateUi();
 }
 
@@ -106,6 +135,21 @@ UIWizardNewVMPageInstallSetup::UIWizardNewVMPageInstallSetup()
     : m_pUserNamePasswordEditor(0)
 {
 }
+
+QString UIWizardNewVMPageInstallSetup::userName() const
+{
+    if (m_pUserNamePasswordEditor)
+        return m_pUserNamePasswordEditor->userName();
+    return QString();
+}
+
+QString UIWizardNewVMPageInstallSetup::password() const
+{
+    if (m_pUserNamePasswordEditor)
+        return m_pUserNamePasswordEditor->password();
+    return QString();
+}
+
 
 UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
     : m_pLabel(0)
@@ -125,9 +169,21 @@ UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
         pMainLayout->addStretch();
     }
 
+
     /* Register fields: */
-    // registerField("baseMemory", this, "baseMemory");
-    // registerField("VCPUCount", this, "VCPUCount");
+    registerField("userName", this, "userName");
+    registerField("password", this, "password");
+}
+
+void UIWizardNewVMPageBasicInstallSetup::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
+{
+    /* Initialize the widget data: */
+
+    if (m_pUserNamePasswordEditor)
+    {
+        m_pUserNamePasswordEditor->setUserName(unattendedInstallData.m_strUserName);
+        m_pUserNamePasswordEditor->setPassword(unattendedInstallData.m_strPassword);
+    }
 }
 
 void UIWizardNewVMPageBasicInstallSetup::retranslateUi()
