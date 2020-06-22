@@ -620,6 +620,7 @@ class TestFileSet(object):
     def chooseRandomDirFromTree(self, fLeaf = False, fNonEmpty = False, cMaxRetries = 1024):
         """
         Returns a random directory from the tree (self.oTreeDir).
+        Will return None if no directory with given parameters was found.
         """
         cRetries = 0;
         while cRetries < cMaxRetries:
@@ -640,7 +641,6 @@ class TestFileSet(object):
                     oParent = oParent.oParent;
             cRetries += 1;
 
-        reporter.errorXcpt('chooseRandomDirFromTree() failed; cMaxRetries=%d' % (cMaxRetries));
         return None; # make pylint happy
 
 #
