@@ -241,7 +241,7 @@ function parseIsoTimestamp(sTs)
 
 /** 
  * @param   oDate   Date object. 
- */ 
+ */
 function formatTimeHHMM(oDate, fNbsp)
 {
     var sTime = oDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'} );
