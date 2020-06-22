@@ -366,6 +366,8 @@ ifneq ($(KBUILD_TARGET),win)
 VirtualBox_CXXFLAGS += -Wno-switch
 endif
 
+VirtualBox_CXXFLAGS.linux += -Wno-class-memaccess
+
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
 ifdef VBOX_WITH_NEW_XCODE
  VirtualBox_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
@@ -401,6 +403,8 @@ ifneq ($(KBUILD_TARGET),win)
  VirtualBoxVM_CXXFLAGS += -Wno-switch
 endif
 
+VirtualBoxVM_CXXFLAGS.linux += -Wno-class-memaccess
+
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
 ifdef VBOX_WITH_NEW_XCODE
  VirtualBoxVM_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
@@ -435,6 +439,8 @@ endif
 # VirtualBox - GUI Global Shared Library.
 # Compiling/linking flags.
 #
+
+UICommon_CXXFLAGS.linux += -Wno-class-memaccess
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
 ifdef VBOX_WITH_NEW_XCODE
