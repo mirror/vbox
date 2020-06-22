@@ -617,11 +617,12 @@ class TestFileSet(object):
         """
         return self.aoFiles[self.oRandom.choice(xrange(len(self.aoFiles)))];
 
-    def chooseRandomDirFromTree(self, fLeaf = False, fNonEmpty = False):
+    def chooseRandomDirFromTree(self, fLeaf = False, fNonEmpty = False, cMaxRetries = 1024):
         """
         Returns a random directory from the tree (self.oTreeDir).
         """
-        while True:
+        cRetries = 0;
+        while cRetries < cMaxRetries:
             oDir = self.aoDirs[self.oRandom.choice(xrange(len(self.aoDirs)))];
             # Check fNonEmpty requirement:
             if not fNonEmpty or oDir.aoChildren:
@@ -637,6 +638,9 @@ class TestFileSet(object):
                     if oParent is self.oTreeDir:
                         return oDir;
                     oParent = oParent.oParent;
+            cRetries++;
+
+        reporter.errorXcpt('chooseRandomDirFromTree() failed; cMaxRetries=%d' % (cMaxRetries));
         return None; # make pylint happy
 
 #
