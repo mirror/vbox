@@ -4738,6 +4738,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests copying files from guest to the host.
         """
 
+        reporter.log2('Entered');
+
         #
         # Paths.
         #
@@ -4767,11 +4769,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             except:
                 return reporter.errorXcpt('os.mkdir(%s)' % (sScratchHst, ));
 
+        reporter.log2('Creating host sub dirs ...');
+
         for sSubDir in (sScratchDstDir1Hst, sScratchDstDir2Hst, sScratchDstDir3Hst):
             try:
                 os.mkdir(sSubDir);
             except:
                 return reporter.errorXcpt('os.mkdir(%s)' % (sSubDir, ));
+
+		reporter.log2('Defining tests ...');
 
         #
         # Bad parameter tests.
@@ -4877,6 +4883,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Copy the entire test tree:
                 [ tdTestCopyFromDir(sSrc = self.oTestFiles.oTreeDir.sPath, sDst = sScratchDstDir3Hst), tdTestResultSuccess() ],
             ]);
+
+        reporter.log2('Executing tests ...');
 
         #
         # Execute the tests.
