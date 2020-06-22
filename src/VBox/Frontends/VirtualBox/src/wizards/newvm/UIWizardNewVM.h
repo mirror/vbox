@@ -42,6 +42,7 @@ public:
         PageNameType,
         PageHardware,
         PageDisk,
+        PageInstallSetup,
         PageMax
     };
 

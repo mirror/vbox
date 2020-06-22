@@ -25,7 +25,6 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class UIBaseMemorySlider;
 class UIBaseMemoryEditor;
 class UIVirtualCPUEditor;
 class QSpinBox;

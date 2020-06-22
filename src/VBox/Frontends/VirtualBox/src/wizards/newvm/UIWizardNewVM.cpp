@@ -23,6 +23,7 @@
 #include "UIWizardNewVMPageBasicHardware.h"
 #include "UIWizardNewVMPageBasicDisk.h"
 #include "UIWizardNewVMPageExpert.h"
+#include "UIWizardNewVMPageBasicInstallSetup.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
 
@@ -72,6 +73,7 @@ void UIWizardNewVM::prepare()
             setPage(PageNameType, new UIWizardNewVMPageBasicNameType(m_strGroup));
             setPage(PageHardware, new UIWizardNewVMPageBasicHardware);
             setPage(PageDisk, new UIWizardNewVMPageBasicDisk);
+            setPage(PageInstallSetup, new UIWizardNewVMPageBasicInstallSetup);
             break;
         }
         case WizardMode_Expert:
@@ -380,7 +382,10 @@ int UIWizardNewVM::nextId() const
             return PageNameType;
             break;
         case PageNameType:
-            return PageHardware;
+            if (!isUnattendedInstallEnabled())
+                return PageHardware;
+            else
+                return PageInstallSetup;
             break;
         case PageHardware:
             return PageDisk;
