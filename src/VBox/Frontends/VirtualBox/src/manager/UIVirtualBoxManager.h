@@ -35,7 +35,7 @@ class QMenu;
 class QIManagerDialog;
 class UIAction;
 class UIActionPool;
-class UIUnattendedInstallData;
+struct UIUnattendedInstallData;
 class UIVirtualBoxManagerWidget;
 class UIVirtualMachineItem;
 

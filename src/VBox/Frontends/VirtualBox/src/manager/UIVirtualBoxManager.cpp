@@ -612,11 +612,17 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
         CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
         AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
 
+        UIUnattendedInstallData unattendedInstallData;
+        unattendedInstallData.m_strUserName = comUnattendedInstaller.GetUser();
+        unattendedInstallData.m_strPassword = comUnattendedInstaller.GetPassword();
+
+        pWizard->setDefaultUnattendedInstallData(unattendedInstallData);
+
         /* Execute wizard: */
         pWizard->exec();
 
         /* Cache unattended install related info and delete the wizard before handling the unattended install stuff: */
-        UIUnattendedInstallData unattendedInstallData = pWizard->unattendedInstallData();
+        unattendedInstallData = pWizard->unattendedInstallData();
 
         delete pWizard;
         /* Handle unattended install stuff: */

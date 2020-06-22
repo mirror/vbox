@@ -72,6 +72,7 @@ public:
 
     /** Returns the Id of newly created VM. */
     QUuid createdMachineId() const;
+    void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;
     bool isUnattendedInstallEnabled() const;
 

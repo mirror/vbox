@@ -510,6 +510,11 @@ QUuid UIWizardNewVM::createdMachineId() const
     return QUuid();
 }
 
+void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
+{
+    m_unattendedInstallData = unattendedInstallData;
+}
+
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
     QVariant fieldValue = field("ISOFilePath");
