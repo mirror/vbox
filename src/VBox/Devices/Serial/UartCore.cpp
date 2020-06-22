@@ -1970,7 +1970,9 @@ DECLHIDDEN(void) uartR3Detach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC p
     /* Zero out important members. */
     pThisCC->pDrvBase   = NULL;
     pThisCC->pDrvSerial = NULL;
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     uartR3XferReset(pDevIns, pThis, pThisCC);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 
 
