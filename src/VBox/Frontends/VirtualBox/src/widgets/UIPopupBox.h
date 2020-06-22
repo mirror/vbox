@@ -24,6 +24,9 @@
 /* Qt includes: */
 #include <QIcon>
 #include <QWidget>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPainterPathStroker>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"

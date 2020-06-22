@@ -17,6 +17,8 @@
 
 /* Qt includes: */
 #include <QPainter>
+#include <QPainterPath>
+#include <QPainterPathStroker>
 #include <QXmlStreamReader>
 
 

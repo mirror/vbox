@@ -18,7 +18,6 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QLabel>
-#include <QPainter>
 #include <QPaintEvent>
 #include <QStyle>
 #include <QVBoxLayout>

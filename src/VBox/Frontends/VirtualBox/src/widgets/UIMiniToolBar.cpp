@@ -21,6 +21,8 @@
 #include <QMenu>
 #include <QMoveEvent>
 #include <QPainter>
+#include <QPainterPath>
+#include <QPainterPathStroker>
 #include <QStateMachine>
 #include <QStyle>
 #include <QTimer>

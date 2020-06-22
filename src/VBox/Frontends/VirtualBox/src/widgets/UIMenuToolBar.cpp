@@ -19,6 +19,8 @@
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QPainter>
+#include <QPainterPath>
+#include <QPainterPathStroker>
 #include <QStyle>
 #include <QToolButton>
 
