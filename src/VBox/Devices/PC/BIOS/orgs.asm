@@ -52,9 +52,7 @@
 
 include commondefs.inc
 
-EBDA_SEG        equ     09FC0h          ; starts at 639K
-EBDA_SIZE       equ     1               ; 1K
-BASE_MEM_IN_K   equ     (640 - EBDA_SIZE)
+EBDA_SIZE       equ     1               ; 1K minimum -- other modules may add to it
 
 CMOS_ADDR       equ     070h
 CMOS_DATA       equ     071h
@@ -448,7 +446,14 @@ endif
                 call    set_int_vects
 
                 ;; base memory in K to 40:13
-                mov     ax, BASE_MEM_IN_K
+                mov     al, 16h
+                out     CMOS_ADDR, al
+                in      al, CMOS_DATA
+                mov     ah, al
+                mov     al, 15h
+                out     CMOS_ADDR, al
+                in      al, CMOS_DATA
+                sub     ax, EBDA_SIZE
                 mov     ds:[413h], ax
 
                 ;; manufacturing test at 40:12
@@ -491,12 +496,6 @@ endif
 
                 xor     ax, ax
                 mov     ds, ax
-                ;; TODO: What's the point? The BDA is zeroed already?!
-                mov     ds:[417h], al   ; keyboard shift flags, set 1
-                mov     ds:[418h], al   ; keyboard shift flags, set 2
-                mov     ds:[419h], al   ; keyboard Alt-numpad work area
-                mov     ds:[471h], al   ; keyboard Ctrl-Break flag
-                mov     ds:[497h], al   ; keyboard status flags 4
                 mov     al, 10h
                 mov     ds:[496h], al   ; keyboard status flags 3
 
@@ -881,13 +880,20 @@ ebda_post       proc    near
                 SET_INT_VECTOR 73h, BIOSSEG, dummy_isr  ; IRQ 11
                 SET_INT_VECTOR 77h, BIOSSEG, dummy_isr  ; IRQ 15
 
-                mov     ax, EBDA_SEG
-                mov     ds, ax
-                mov     byte ptr ds:[0], EBDA_SIZE
-                ;; store EBDA seg in 40:0E
+                ;; calculate EBDA segment
                 xor     ax, ax
                 mov     ds, ax
-                mov     word ptr ds:[40Eh], EBDA_SEG
+                mov     ax, ds:[413h]   ; conventional memory size minus EBDA size
+                mov     cx, 64          ; 64 paras per KB
+                mul     cx
+                ;; store EBDA seg in 40:0E
+                mov     word ptr ds:[40Eh], ax
+                ;; store EBDA size in the first word of EBDA
+                mov     ds, ax
+                mov     byte ptr ds:[0], EBDA_SIZE
+                ;; must reset DS to zero again
+                xor     ax, ax
+                mov     ds, ax
                 ret
 
 ebda_post       endp
