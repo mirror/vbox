@@ -47,6 +47,7 @@ struct UIDataSettingsMachineInterface
         , m_fShowMiniToolBar(false)
         , m_fMiniToolBarAtTop(false)
 #endif /* !VBOX_WS_MAC */
+        , m_enmVisualState(UIVisualStateType_Invalid)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -76,6 +77,7 @@ struct UIDataSettingsMachineInterface
                && (m_fShowMiniToolBar == other.m_fShowMiniToolBar)
                && (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop)
 #endif /* !VBOX_WS_MAC */
+               && (m_enmVisualState == other.m_enmVisualState)
                ;
     }
 
@@ -124,6 +126,9 @@ struct UIDataSettingsMachineInterface
     /** Holds whether the mini-toolbar should be aligned at top of screen. */
     bool  m_fMiniToolBarAtTop;
 #endif /* !VBOX_WS_MAC */
+
+    /** Holds the visual state. */
+    UIVisualStateType  m_enmVisualState;
 };
 
 
@@ -182,6 +187,7 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
     oldInterfaceData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
     oldInterfaceData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
 #endif
+    oldInterfaceData.m_enmVisualState = gEDataManager->requestedVisualState(m_machine.GetId());
 
     /* Cache old interface data: */
     m_pCache->cacheInitialData(oldInterfaceData);
@@ -219,6 +225,8 @@ void UIMachineSettingsInterface::getFromCache()
     m_pCheckBoxShowMiniToolBar->setChecked(oldInterfaceData.m_fShowMiniToolBar);
     m_pComboToolBarAlignment->setChecked(oldInterfaceData.m_fMiniToolBarAtTop);
 #endif
+    m_pVisualStateEditor->setMachineId(m_machine.GetId());
+    m_pVisualStateEditor->setValue(oldInterfaceData.m_enmVisualState);
 
     /* Polish page finally: */
     polishPage();
@@ -256,6 +264,7 @@ void UIMachineSettingsInterface::putToCache()
     newInterfaceData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
     newInterfaceData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
 #endif
+    newInterfaceData.m_enmVisualState = m_pVisualStateEditor->value();
 
     /* Cache new interface data: */
     m_pCache->cacheCurrentData(newInterfaceData);
@@ -350,9 +359,12 @@ bool UIMachineSettingsInterface::saveInterfaceData()
         /* Save 'Status-bar' data from the cache: */
         if (fSuccess)
             fSuccess = saveStatusBarData();
-        /* Save 'Status-bar' data from the cache: */
+        /* Save 'Mini-toolbar' data from the cache: */
         if (fSuccess)
             fSuccess = saveMiniToolbarData();
+        /* Save 'Visual State' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveVisualStateData();
     }
     /* Return result: */
     return fSuccess;
@@ -462,3 +474,22 @@ bool UIMachineSettingsInterface::saveMiniToolbarData()
     return fSuccess;
 }
 
+bool UIMachineSettingsInterface::saveVisualStateData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Visual State' data from the cache: */
+    if (fSuccess)
+    {
+        /* Get old interface data from the cache: */
+        const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
+        /* Get new interface data from the cache: */
+        const UIDataSettingsMachineInterface &newInterfaceData = m_pCache->data();
+
+        /* Save desired visual state: */
+        if (fSuccess && newInterfaceData.m_enmVisualState != oldInterfaceData.m_enmVisualState)
+            /* fSuccess = */ gEDataManager->setRequestedVisualState(newInterfaceData.m_enmVisualState, m_machine.GetId());
+    }
+    /* Return result: */
+    return fSuccess;
+}

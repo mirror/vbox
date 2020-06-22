@@ -918,6 +918,7 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIToolBar.h \
 	src/widgets/UIVideoMemoryEditor.h \
 	src/widgets/UIVirtualCPUEditor.h \
+	src/widgets/UIVisualStateEditor.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -1426,6 +1427,7 @@ UICommon_SOURCES = \
 	src/widgets/UIToolBar.cpp \
 	src/widgets/UIVideoMemoryEditor.cpp \
 	src/widgets/UIVirtualCPUEditor.cpp \
+	src/widgets/UIVisualStateEditor.cpp \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \

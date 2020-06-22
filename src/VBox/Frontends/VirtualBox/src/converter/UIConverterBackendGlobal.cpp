@@ -1548,6 +1548,25 @@ template<> UIToolType fromInternalString<UIToolType>(const QString &strToolType)
 }
 
 /* QString <= UIVisualStateType: */
+template<> QString toString(const UIVisualStateType &visualStateType)
+{
+    QString strResult;
+    switch (visualStateType)
+    {
+        case UIVisualStateType_Normal:     strResult = QApplication::translate("UICommon", "Normal (window)", "visual state"); break;
+        case UIVisualStateType_Fullscreen: strResult = QApplication::translate("UICommon", "Full-screen", "visual state"); break;
+        case UIVisualStateType_Seamless:   strResult = QApplication::translate("UICommon", "Seamless", "visual state"); break;
+        case UIVisualStateType_Scale:      strResult = QApplication::translate("UICommon", "Scaled", "visual state"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for visual state type=%d", visualStateType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIVisualStateType: */
 template<> QString toInternalString(const UIVisualStateType &visualStateType)
 {
     QString strResult;

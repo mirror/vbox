@@ -83,6 +83,8 @@ private:
     bool saveStatusBarData();
     /** Saves existing 'Mini-toolbar' data from the cache. */
     bool saveMiniToolbarData();
+    /** Saves existing 'Visual State' data from the cache. */
+    bool saveVisualStateData();
 
     /** Holds the machine ID copy. */
     const QUuid    m_uMachineId;

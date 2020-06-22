@@ -219,6 +219,7 @@ template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDe
 template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(const QString &strDetailsElementOptionTypeDescription);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIToolType &enmToolType);
 template<> SHARED_LIBRARY_STUFF UIToolType fromInternalString<UIToolType>(const QString &strToolType);
+template<> SHARED_LIBRARY_STUFF QString toString(const UIVisualStateType &visualStateType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIVisualStateType &visualStateType);
 template<> SHARED_LIBRARY_STUFF UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType);
 template<> SHARED_LIBRARY_STUFF QString toString(const DetailsElementType &detailsElementType);
