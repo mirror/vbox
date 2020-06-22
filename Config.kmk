@@ -2715,6 +2715,10 @@ else
  # gcc-5 of openSUSE42.1 only returns the major version on `gcc -dumpversion`!
  VBOX_GCC_VERSION = $(shell ($(1) -dumpfullversion 2>/dev/null || $(1) -dumpversion) | \
     $(SED_EXT) 's|\([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, $$(firstword \2 0)), $$(firstword \3 0))|' )
+ ifeq ($(KBUILD_TARGET), darwin)
+  VBOX_CLANG_VERSION = $(shell $(1) --version | \
+    $(SED_EXT) -n 's|.*version \([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, $$(firstword \2 0)), $$(firstword \3 0))|p' )
+ endif
 endif
 
 # YASM macros
@@ -2847,6 +2851,8 @@ ifeq ($(KBUILD_TARGET),darwin)
 	$(QUIET)$(APPEND) '$@' '# VBOX_PATH_MACOSX_TOOLCHAIN_ROOT: $(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)'
 	$(QUIET)$(APPEND) '$@' '#       VBOX_PATH_MACOSX_SDK_ROOT: $(VBOX_PATH_MACOSX_SDK_ROOT)'
 	$(QUIET)$(APPEND) '$@' '#     VBOX_PATH_MACOSX_DEVEL_ROOT: $(VBOX_PATH_MACOSX_DEVEL_ROOT)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_CLANG_VERSION_CC          ?= $(call VBOX_CLANG_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CC))'
+	$(QUIET)$(APPEND) '$@' 'VBOX_CLANG_VERSION_CXX         ?= $(call VBOX_CLANG_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 endif
 # HC compiler switch detection.
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CC               ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CC))'
@@ -2932,6 +2938,11 @@ endif
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++11'
 	$(QUIET)$(APPEND) '$@' ' else ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40600),)'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++0x'
+# darwin Xcode 5 allegedly knows what C++11 is
+ifeq ($(KBUILD_HOST),darwin)
+	$(QUIET)$(APPEND) '$@' ' else ifneq ($$(int-ge $$(VBOX_CLANG_VERSION_CXX),50000),)'
+	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++11'
+endif
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
 ifeq ($(KBUILD_TARGET),solaris)
@@ -5318,6 +5329,7 @@ TEMPLATE_VBOXR3EXE_LIBS                = socket iconv
  else ifeq ($(KBUILD_TARGET),darwin)
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR3EXE_LIBS                =
+TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG # Avoid 3rd party libiconv (from macports).
 TEMPLATE_VBOXR3EXE_DEFS.darwin         = $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBOXR3EXE_CFLAGS.darwin       = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -fno-common
 TEMPLATE_VBOXR3EXE_CXXFLAGS.darwin     = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
