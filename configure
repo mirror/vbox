@@ -238,12 +238,21 @@ strip_l()
 
 strip_L()
 {
-  echo "$1"|$KBUILD_SED 's|-L\([^ ]\+\)|\1|g; s|^-[^L][^ ]*||g; s| -[^L][^ ]*||g; s|^ ||; s| *$||g'
+  if [ "$OS" = "darwin" ]; then
+    echo "$1"|$KBUILD_SED 's|-F\([^ ]\+\)|\1|g; s|^-[^F][^ ]*||g; s| -[^F][^ ]*||g; s|^ ||; s| *$||g'
+  else
+    echo "$1"|$KBUILD_SED 's|-L\([^ ]\+\)|\1|g; s|^-[^L][^ ]*||g; s| -[^L][^ ]*||g; s|^ ||; s| *$||g'
+  fi
 }
 
 L_to_PATH()
 {
-  echo "$1"|$KBUILD_SED 's|-L\([^ ]\+\)|\1|g; s|^-[^L][^ ]*||g; s| -[^L][^ ]*||g; s|^ ||; s| *$||g; s| |:|g'
+echo $1 >> $LOG
+  if [ "$OS" = "darwin" ]; then
+    echo "$1"|$KBUILD_SED 's|-F\([^ ]\+\)|\1|g; s|^-[^F][^ ]*||g; s| -[^F][^ ]*||g; s|^ ||; s| *$||g; s| |:|g'
+  else
+    echo "$1"|$KBUILD_SED 's|-L\([^ ]\+\)|\1|g; s|^-[^L][^ ]*||g; s| -[^L][^ ]*||g; s|^ ||; s| *$||g; s| |:|g'
+  fi
 }
 
 strip_I()
@@ -290,7 +299,7 @@ test_compile()
   echo "compiling the following source file:" >> $LOG
   cat $ODIR.tmp_src.cc >> $LOG
   echo "using the following command line:" >> $LOG
-  echo "$CXX $CXX_FLAGS -fPIC -g -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc \"$1\"" >> $LOG
+  echo "$CXX $CXX_FLAGS -fPIC -g -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc $1" >> $LOG
   $CXX $CXX_FLAGS -fPIC -g -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc $1 >> $LOG 2>&1
   if [ $? -ne 0 ]; then
     if [ -z "$4" ]; then
@@ -1504,17 +1513,24 @@ EOF
     # Now try the user provided directory and some of the standard directories.
     QT_TRIES="$QT5DIR /System/Library /Library"
     for t in $QT_TRIES; do
-      if [ -f "$t/Frameworks/QtCore.framework/QtCore" ]; then
+      if [ -f "$t/Frameworks/QtCore.framework/QtCore" -o -f "$t/clang_64/lib/QtCore.framework/QtCore" ]; then
         PATH_SDK_QT5="$t"
+        foundqt5=1
         break
       fi
     done
     # Add the necessary params for building the test application
     if [ -n "$PATH_SDK_QT5" ]; then
-      foundqt5=1
-      INCQT5=-I$PATH_SDK_QT5/Frameworks/QtCore.framework/Headers
-      LIBQT5=-F$PATH_SDK_QT5/Frameworks
-      FLGQT5="-framework QtCore"
+      if [ -f "$t/clang_64/lib/QtCore.framework/QtCore" ]; then
+        INCQT5=-I$PATH_SDK_QT5/clang_64/lib/QtCore.framework/Headers
+        LIBQT5=-F$PATH_SDK_QT5/clang_64/lib
+        SDKQT5=$PATH_SDK_QT5/clang_64
+      else
+        INCQT5=-I$PATH_SDK_QT5/Frameworks/QtCore.framework/Headers
+        LIBQT5=-F$PATH_SDK_QT5/Frameworks
+        SDKQT5=$PATH_SDK_QT5
+      fi
+      FLGQT5="-framework QtCore -std=c++11 -Wl,-rpath,`L_to_PATH "$LIBQT5"`"
     else
       log_failure "Qt5 framework not found (can be disabled using --disable-qt)"
       fail
@@ -1594,12 +1610,12 @@ EOF
         if [ "$OS" = "darwin" ]; then
           # Successful build & run the test application so add the necessary
           # params to AutoConfig.kmk:
-          cnf_append "PATH_SDK_QT5_INC" "$PATH_SDK_QT5/Frameworks"
-          cnf_append "PATH_SDK_QT5_LIB" "$PATH_SDK_QT5/Frameworks"
-          cnf_append "PATH_SDK_QT5" "$PATH_SDK_QT5/Frameworks"
+          cnf_append "PATH_SDK_QT5_INC" "`L_to_PATH "$LIBQT5"`"
+          cnf_append "PATH_SDK_QT5_LIB" "`L_to_PATH "$LIBQT5"`"
+          cnf_append "PATH_SDK_QT5" "$SDKQT5"
           # Check for the moc tool in the Qt directory found & some standard
           # directories.
-          for q in $PATH_SDK_QT5 /usr /Developer/Tools/Qt; do
+          for q in $PATH_SDK_QT5 $PATH_SDK_QT5/clang_64 /usr /Developer/Tools/Qt; do
             if which_wrapper "$q/bin/moc" > /dev/null; then
               cnf_append "PATH_TOOL_QT5_BIN" "$q/bin"
             fi
@@ -2178,8 +2194,8 @@ check_xcode_sdk_path()
         return 0
     fi
 
-    # Check if specified path exists and is a directory.
-    if [ -d "$1" ]; then
+    # Check if specified path exists and is a directory containing Xcode.
+    if [ -d "$1" -a -f "$1/Contents/Developer/usr/bin/xcodebuild" ]; then
         return 1
     else
         echo "Xcode path [$1] not found."
@@ -2196,94 +2212,26 @@ check_darwinversion()
   test_header "Darwin version"
   darwin_ver=`uname -r`
   case "$darwin_ver" in
+    19\.*)
+      darwin_ver="10.15" # Catalina
+      ;;
+    18\.*)
+      darwin_ver="10.14" # Mojave
+      ;;
     17\.*)
-      check_xcode_sdk_path "$WITH_XCODE_DIR"
-      [ $? -eq 1 ] || fail
       darwin_ver="10.13" # High Sierra
-      sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
-      cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
-      cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
       ;;
     16\.*)
-      check_xcode_sdk_path "$WITH_XCODE_DIR"
-      [ $? -eq 1 ] || fail
       darwin_ver="10.12" # Sierra
-      sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
-      cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
-      cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
       ;;
     15\.*)
-      check_xcode_sdk_path "$WITH_XCODE_DIR"
-      [ $? -eq 1 ] || fail
       darwin_ver="10.11" # El Capitan
-      sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
-      cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
-      cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
       ;;
     14\.*)
-      check_xcode_sdk_path "$WITH_XCODE_DIR"
-      [ $? -eq 1 ] || fail
       darwin_ver="10.10" # Yosemite
-      sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
-      cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
-      cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
       ;;
     13\.*)
-      check_xcode_sdk_path "$WITH_XCODE_DIR"
-      [ $? -eq 1 ] || fail
       darwin_ver="10.9" # Mavericks
-      sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
-      cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
-      cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
-      ;;
-    12\.*)
-      darwin_ver="10.8" # Mountain Lion
-      if [ ! -z "$WITH_XCODE_DIR" ]; then
-        sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
-        cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
-        cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
-      else
-        sdk=/Developer/SDKs/MacOSX10.6.sdk
-      fi
-      CXX_FLAGS="-mmacosx-version-min=10.6 -isysroot $sdk -Wl,-syslibroot,$sdk"
-      ;;
-    11\.*)
-      darwin_ver="10.7" # Lion
-      sdk=/Developer/SDKs/MacOSX10.6.sdk
-      CXX_FLAGS="-mmacosx-version-min=10.6 -isysroot $sdk -Wl,-syslibroot,$sdk"
-      ;;
-    10\.*)
-      darwin_ver="10.6" # Snow Leopard
-      if [ "$BUILD_MACHINE" = "x86" ]; then
-          sdk=/Developer/SDKs/MacOSX10.5.sdk
-          CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
-          cnf_append "VBOX_MACOS_10_5_WORKAROUND" "1"
-      else
-          sdk=/Developer/SDKs/MacOSX10.6.sdk
-          CXX_FLAGS="-mmacosx-version-min=10.6 -isysroot $sdk -Wl,-syslibroot,$sdk"
-      fi
-#      test "$CC" = "gcc" && CC="gcc-4.0"
-#      test "$CXX" = "g++" && CXX="g++-4.0"
-      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7" "1"
-      ;;
-    9\.*)
-      darwin_ver="10.5" # Leopard
-      sdk=/Developer/SDKs/MacOSX10.5.sdk
-      CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
-#      test "$CC" = "gcc" && CC="gcc-4.0"
-#      test "$CXX" = "g++" && CXX="g++-4.0"
-      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
-      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7" "1"
-      ;;
-    8\.*)
-      darwin_ver="10.4" # Tiger
-      sdk=/Developer/SDKs/MacOSX10.4u.sdk
-      CXX_FLAGS="-mmacosx-version-min=10.4 -isysroot $sdk -Wl,-syslibroot,$sdk"
-#      test "$CC" = "gcc" && CC="gcc-4.0"
-#      test "$CXX" = "g++" && CXX="g++-4.0"
-      cnf_append "VBOX_WITH_COCOA_QT" ""
-      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
-      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7" "1"
       ;;
     *)
       echo "  failed to determine Darwin version. (uname -r: $darwin_ver)"
@@ -2291,6 +2239,35 @@ check_darwinversion()
       darwin_ver="unknown"
       ;;
   esac
+
+  check_xcode_sdk_path "$WITH_XCODE_DIR"
+  [ $? -eq 1 ] || fail
+
+  # Pick the oldest SDK offered by Xcode, to get maximum compatibility
+  devel_subdir="$WITH_XCODE_DIR/Contents/Developer"
+  sdk_subdir="$devel_subdir/Platforms/MacOSX.platform/Developer/SDKs"
+  sdk_tries="$sdk_subdir"/MacOSX10.?.sdk" $sdk_subdir"/MacOSX10.??.sdk" $sdk_subdir"/MacOSX.sdk
+  for t in $sdk_tries; do
+    if [ -f "$t/SDKSettings.plist" ]; then
+      sdk="$t"
+      sdk_ver=`defaults read "$t/SDKSettings.plist" Version`
+      break
+    fi
+  done
+  if [ -z "$sdk" ]; then
+    echo "  failed to determine SDK directory. ($sdk_subdir/MacOSX*.sdk/SDKSettings.plist should exist)"
+    fail
+  fi
+
+  cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
+  cnf_append "PATH_TOOL_VBoxXcode62" "$devel_subdir"
+  cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$devel_subdir"
+  cnf_append "VBOX_PATH_MACOSX_SDK" "$sdk"
+  if [ -n "$sdk_ver" ]; then
+    cnf_append "VBOX_DEF_MACOSX_VERSION_MIN" "$sdk_ver"
+    cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
+  fi
+
   log_success "found version $darwin_ver (SDK: $sdk)"
 }
 
@@ -2347,9 +2324,9 @@ cat << EOF
   --disable-devmapper      disable device mapper library access
   --disable-hardening      don't be strict about /dev/vboxdrv access
   --build-libxml2          build libxml2 from sources
+  --build-libssl           build openssl from sources
 EOF
 [ $OSE -eq 0 ] && cat << EOF
-  --build-libssl           build openssl from sources
   --build-libcurl          build libcurl from sources
   --build-libvpx           build libvpx from sources
 EOF
@@ -2409,6 +2386,7 @@ if [ "$OS" = "darwin" ]; then
   WITH_DBUS=0
   WITH_KMODS=0
   BUILD_LIBXML2=1
+  BUILD_LIBSSL=1
   BUILD_LIBVPX=1
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
   [ $OSE -eq 1 ] && WITH_LIBVPX=0
@@ -2477,6 +2455,8 @@ for option in "$@"; do
       OPENSSLDIR=`echo $option | cut -d'=' -f2`
       INCCRYPTO="-I${OPENSSLDIR}/include"
       LIBCRYPTO="${OPENSSLDIR}/lib/libcrypto.a ${OPENSSLDIR}/lib/libssl.a"
+      # On Darwin (at least for macports) static OpenSSL also needs zlib.
+      [ "$OS" = "darwin" ] && LIBCRYPTO="$LIBCRYPTO ${OPENSSLDIR}/lib/libz.a"
       ;;
     --with-ow-dir=*)
       WATCOM=`echo $option | cut -d'=' -f2`
@@ -2794,11 +2774,11 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   [ "$OS" != "darwin"  ] && check_pthread
   check_libxml2
   [ $WITH_LIBIDL -eq 1 ] && check_libidl
+  check_z
   check_ssl
   check_curl
   [ $WITH_LIBVPX -eq 1 ] && check_vpx
   [ $WITH_LIBOPUS -eq 1 ] && check_libopus
-  [ "$OS" != "darwin"  ] && check_z
   [ "$OS" != "darwin"  ] && check_png
   [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
   if [ $WITH_SDL -eq 1 ]; then
