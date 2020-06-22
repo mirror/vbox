@@ -879,12 +879,12 @@ void testDouble(void)
 
         RTTESTI_CHECK_RC(fromString(&obj4, "false", NULL, RT_XSTR(__LINE__)), VERR_NO_DIGITS);
 
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
-        RTTESTI_CHECK_RC(fromString(&obj4, " 0x42 ", &ErrInfo, RT_XSTR(__LINE__)), VERR_TRAILING_CHARS);
-        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
-#else
+#if (!defined(RT_OS_SOLARIS) && !defined(RT_OS_WINDOWS)) || RT_MSC_PREREQ(RT_MSC_VER_VS2015)
         RTTESTI_CHECK_RC(fromString(&obj4, " 0x42 ", &ErrInfo, RT_XSTR(__LINE__)), VINF_SUCCESS);
         RTTESTI_CHECK(obj4.m_rdValue == 66.0);
+#else
+        RTTESTI_CHECK_RC(fromString(&obj4, " 0x42 ", &ErrInfo, RT_XSTR(__LINE__)), VERR_TRAILING_CHARS);
+        RTTESTI_CHECK(obj4.m_rdValue == 0.0);
 #endif
         RTTESTI_CHECK(obj4.isNull() == false);
     }
