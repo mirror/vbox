@@ -638,7 +638,7 @@ class TestFileSet(object):
                     if oParent is self.oTreeDir:
                         return oDir;
                     oParent = oParent.oParent;
-            cRetries++;
+            cRetries += 1;
 
         reporter.errorXcpt('chooseRandomDirFromTree() failed; cMaxRetries=%d' % (cMaxRetries));
         return None; # make pylint happy
