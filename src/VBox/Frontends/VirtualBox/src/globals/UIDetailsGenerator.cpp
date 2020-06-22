@@ -958,6 +958,39 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
         return table;
     }
 
+    /* Visual state: */
+    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_VisualState)
+    {
+        const QString strAnchorType = QString("visual_state");
+        const QString strEnabledFullscreen = comMachine.GetExtraData(UIExtraDataDefs::GUI_Fullscreen);
+        const QString strEnabledSeamless = comMachine.GetExtraData(UIExtraDataDefs::GUI_Seamless);
+        const QString strEnabledScale = comMachine.GetExtraData(UIExtraDataDefs::GUI_Scale);
+        UIVisualStateType enmType = UIVisualStateType_Normal;
+        if (   strEnabledFullscreen.compare("true", Qt::CaseInsensitive) == 0
+            || strEnabledFullscreen.compare("yes", Qt::CaseInsensitive) == 0
+            || strEnabledFullscreen.compare("on", Qt::CaseInsensitive) == 0
+            || strEnabledFullscreen == "1")
+            enmType = UIVisualStateType_Fullscreen;
+        else
+        if (   strEnabledSeamless.compare("true", Qt::CaseInsensitive) == 0
+            || strEnabledSeamless.compare("yes", Qt::CaseInsensitive) == 0
+            || strEnabledSeamless.compare("on", Qt::CaseInsensitive) == 0
+            || strEnabledSeamless == "1")
+            enmType = UIVisualStateType_Seamless;
+        else
+        if (   strEnabledScale.compare("true", Qt::CaseInsensitive) == 0
+            || strEnabledScale.compare("yes", Qt::CaseInsensitive) == 0
+            || strEnabledScale.compare("on", Qt::CaseInsensitive) == 0
+            || strEnabledScale == "1")
+            enmType = UIVisualStateType_Scale;
+        const QString strVisualState = gpConverter->toString(enmType);
+        table << UITextTableLine(QApplication::translate("UIDetails", "Visual State", "details (user interface)"),
+                                 QString("<a href=#%1,%2>%3</a>")
+                                     .arg(strAnchorType)
+                                     .arg(enmType)
+                                     .arg(strVisualState));
+    }
+
 #ifndef VBOX_WS_MAC
     /* Menu-bar: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar)

@@ -50,6 +50,7 @@
 #include "UIThreadPool.h"
 #include "UIVideoMemoryEditor.h"
 #include "UIVirtualBoxManager.h"
+#include "UIVisualStateEditor.h"
 
 
 /** Known anchor roles. */
@@ -68,6 +69,7 @@ enum AnchorRole
     AnchorRole_AudioControllerType,
     AnchorRole_NetworkAttachmentType,
     AnchorRole_USBControllerType,
+    AnchorRole_VisualStateType,
 #ifndef VBOX_WS_MAC
     AnchorRole_MenuBar,
 #endif
@@ -189,6 +191,7 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#audio_controller_type", enmCal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#network_attachment_type", enmCal == ConfigurationAccessLevel_Null);
     m_pTextPane->setAnchorRoleRestricted("#usb_controller_type", enmCal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#visual_state", enmCal == ConfigurationAccessLevel_Null);
 #ifndef VBOX_WS_MAC
     m_pTextPane->setAnchorRoleRestricted("#menu_bar", enmCal == ConfigurationAccessLevel_Null);
 #endif
@@ -496,6 +499,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     roles["#audio_controller_type"] = AnchorRole_AudioControllerType;
     roles["#network_attachment_type"] = AnchorRole_NetworkAttachmentType;
     roles["#usb_controller_type"] = AnchorRole_USBControllerType;
+    roles["#visual_state"] = AnchorRole_VisualStateType;
 #ifndef VBOX_WS_MAC
     roles["#menu_bar"] = AnchorRole_MenuBar;
 #endif
@@ -876,6 +880,39 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                 const int iTriggeredIndex = actions.key(pTriggeredAction);
                 if (controllerSets.key(controllerSet) != iTriggeredIndex)
                     setMachineAttribute(machine(), MachineAttribute_USBControllerType, QVariant::fromValue(controllerSets.value(iTriggeredIndex)));
+            }
+            break;
+        }
+        case AnchorRole_VisualStateType:
+        {
+            /* Prepare popup: */
+            QPointer<QIDialogContainer> pPopup = new QIDialogContainer(0, Qt::Tool);
+            if (pPopup)
+            {
+                /* Prepare editor: */
+                UIVisualStateEditor *pEditor = new UIVisualStateEditor(pPopup, true /* with label */);
+                if (pEditor)
+                {
+                    pEditor->setMachineId(machine().GetId());
+                    pEditor->setValue(static_cast<UIVisualStateType>(strData.section(',', 0, 0).toInt()));
+                    pPopup->setWidget(pEditor);
+                }
+
+                /* Adjust popup geometry: */
+                pPopup->move(QCursor::pos());
+                pPopup->adjustSize();
+
+                // WORKAROUND:
+                // On Windows, Tool dialogs aren't activated by default by some reason.
+                // So we have created sltActivateWindow wrapping actual activateWindow
+                // to fix that annoying issue.
+                QMetaObject::invokeMethod(pPopup, "sltActivateWindow", Qt::QueuedConnection);
+                /* Execute popup, change machine name if confirmed: */
+                if (pPopup->exec() == QDialog::Accepted)
+                    gEDataManager->setRequestedVisualState(pEditor->value(), machine().GetId());
+
+                /* Delete popup: */
+                delete pPopup;
             }
             break;
         }

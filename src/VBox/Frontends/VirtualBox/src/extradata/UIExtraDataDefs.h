@@ -763,9 +763,10 @@ public:
     enum DetailsElementOptionTypeUserInterface
     {
         DetailsElementOptionTypeUserInterface_Invalid     = 0,
-        DetailsElementOptionTypeUserInterface_MenuBar     = RT_BIT(0),
-        DetailsElementOptionTypeUserInterface_StatusBar   = RT_BIT(1),
-        DetailsElementOptionTypeUserInterface_MiniToolbar = RT_BIT(2),
+        DetailsElementOptionTypeUserInterface_VisualState = RT_BIT(0),
+        DetailsElementOptionTypeUserInterface_MenuBar     = RT_BIT(1),
+        DetailsElementOptionTypeUserInterface_StatusBar   = RT_BIT(2),
+        DetailsElementOptionTypeUserInterface_MiniToolbar = RT_BIT(3),
         DetailsElementOptionTypeUserInterface_Default     = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeUserInterface);

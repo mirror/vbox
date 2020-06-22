@@ -1414,6 +1414,7 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeU
     QString strResult;
     switch (enmDetailsElementOptionTypeUserInterface)
     {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_VisualState: strResult = QApplication::translate("UICommon", "Visual State"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar:     strResult = QApplication::translate("UICommon", "Menu Bar"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar:   strResult = QApplication::translate("UICommon", "Status Bar"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar: strResult = QApplication::translate("UICommon", "Mini Toolbar"); break;
@@ -1432,6 +1433,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
     QString strResult;
     switch (enmDetailsElementOptionTypeUserInterface)
     {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_VisualState: strResult = "VisualState"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar:     strResult = "MenuBar"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar:   strResult = "StatusBar"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar: strResult = "MiniToolbar"; break;
@@ -1450,6 +1452,7 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface fromIntern
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;      QList<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface> values;
+    keys << "VisualState"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_VisualState;
     keys << "MenuBar";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar;
     keys << "StatusBar";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar;
     keys << "MiniToolbar"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar;
