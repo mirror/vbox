@@ -131,20 +131,22 @@ bool UIUserNamePasswordEditor::isComplete()
 {
     if (m_pUserNameLineEdit && m_pUserNameLineEdit->text().isEmpty())
     {
-        // mark user name the line edit
+        markLineEdit(m_pUserNameLineEdit, true);
         return false;
     }
+    else
+        markLineEdit(m_pUserNameLineEdit, false);
+    bool fPasswordOK = true;
     if (m_pPasswordLineEdit && m_pPasswordRepeatLineEdit)
     {
         if (m_pPasswordLineEdit->text() != m_pPasswordRepeatLineEdit->text())
-        {
-            // mark password line edits
-            return false;
-        }
+            fPasswordOK = false;
         if (m_pPasswordLineEdit->text().isEmpty())
-            return false;
+            fPasswordOK = false;
     }
-    return true;
+    markLineEdit(m_pPasswordLineEdit, !fPasswordOK);
+    markLineEdit(m_pPasswordRepeatLineEdit, !fPasswordOK);
+    return fPasswordOK;
 }
 
 void UIUserNamePasswordEditor::retranslateUi()
@@ -189,6 +191,18 @@ void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLine
     return;
 }
 
+void UIUserNamePasswordEditor::markLineEdit(QLineEdit *pLineEdit, bool fError)
+{
+    if (!pLineEdit)
+        return;
+    QPalette palette = pLineEdit->palette();
+    if (fError)
+        palette.setColor(QPalette::Base, QColor(255, 180, 180));
+    else
+        palette.setColor(QPalette::Base, m_orginalLineEditBaseColor);
+    pLineEdit->setPalette(palette);
+}
+
 void UIUserNamePasswordEditor::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout;
@@ -204,6 +218,9 @@ void UIUserNamePasswordEditor::prepare()
             this, &UIUserNamePasswordEditor::sltHandlePasswordVisibility);
     connect(m_pPasswordRepeatLineEdit, &UIPasswordLineEdit::sigTextVisibilityToggled,
             this, &UIUserNamePasswordEditor::sltHandlePasswordVisibility);
+    /* Cache the original back color of the line edit to restore it correctly: */
+    if (m_pUserNameLineEdit)
+        m_orginalLineEditBaseColor = m_pUserNameLineEdit->palette().color(QPalette::Base);
 
     retranslateUi();
 }

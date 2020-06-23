@@ -91,11 +91,17 @@ protected:
 
     void retranslateUi();
 
+private slots:
+
+    void sltHandlePasswordVisibility(bool fPasswordVisible);
+
 private:
 
     void prepare();
     template <class T>
     void addLineEdit(int &iRow, QLabel *&pLabel, T *&pLineEdit, QGridLayout *pLayout);
+    /** Changes @p pLineEdit's base color to indicate an error or reverts it to the original color. */
+    void markLineEdit(QLineEdit *pLineEdit, bool fError);
 
     QLineEdit          *m_pUserNameLineEdit;
     UIPasswordLineEdit *m_pPasswordLineEdit;
@@ -104,10 +110,7 @@ private:
     QLabel *m_pUserNameLabel;
     QLabel *m_pPasswordLabel;
     QLabel *m_pPasswordRepeatLabel;
-
-private slots:
-
-    void sltHandlePasswordVisibility(bool fPasswordVisible);
+    QColor m_orginalLineEditBaseColor;
 };
 
 /* 2nd page of the New Virtual Machine wizard (base part): */

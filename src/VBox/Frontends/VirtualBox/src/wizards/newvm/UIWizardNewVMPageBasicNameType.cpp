@@ -354,7 +354,6 @@ int UIWizardNewVMPageBasicNameType::nextId() const
 
 void UIWizardNewVMPageBasicNameType::sltNameChanged(const QString &strNewName)
 {
-    /* Call to base-class: */
     onNameChanged(strNewName);
     composeMachineFilePath();
 }
