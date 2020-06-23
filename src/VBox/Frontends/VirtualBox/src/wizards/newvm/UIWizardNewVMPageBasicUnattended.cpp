@@ -114,7 +114,6 @@ UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
 bool UIWizardNewVMPageBasicUnattended::isComplete() const
 {
     bool fISOFileOK = checkISOFile();
-    //emit completeChanged();
     return fISOFileOK;
 }
 

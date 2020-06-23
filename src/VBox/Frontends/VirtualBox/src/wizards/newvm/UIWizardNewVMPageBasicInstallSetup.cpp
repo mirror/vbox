@@ -59,6 +59,7 @@ void UIPasswordLineEdit::toggleTextVisibility(bool fTextVisible)
 void UIPasswordLineEdit::prepare()
 {
     m_pTextVisibilityButton = new QToolButton(this);
+    m_pTextVisibilityButton->setFocusPolicy(Qt::ClickFocus);
     m_pTextVisibilityButton->setAutoRaise(true);
     m_pTextVisibilityButton->setCursor(Qt::ArrowCursor);
     m_pTextVisibilityButton->show();
@@ -126,6 +127,26 @@ void UIUserNamePasswordEditor::setPassword(const QString &strPassword)
         m_pPasswordRepeatLineEdit->setText(strPassword);
 }
 
+bool UIUserNamePasswordEditor::isComplete()
+{
+    if (m_pUserNameLineEdit && m_pUserNameLineEdit->text().isEmpty())
+    {
+        // mark user name the line edit
+        return false;
+    }
+    if (m_pPasswordLineEdit && m_pPasswordRepeatLineEdit)
+    {
+        if (m_pPasswordLineEdit->text() != m_pPasswordRepeatLineEdit->text())
+        {
+            // mark password line edits
+            return false;
+        }
+        if (m_pPasswordLineEdit->text().isEmpty())
+            return false;
+    }
+    return true;
+}
+
 void UIUserNamePasswordEditor::retranslateUi()
 {
     if (m_pUserNameLabel)
@@ -164,6 +185,7 @@ void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLine
 
     pLabel->setBuddy(pLineEdit);
     ++iRow;
+    connect(pLineEdit, &T::textChanged, this, &UIUserNamePasswordEditor::sigSomeTextChanged);
     return;
 }
 
@@ -225,6 +247,8 @@ UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
         {
             m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
             pMemoryLayout->addWidget(m_pUserNamePasswordEditor, 0, 0);
+            connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
+                    this, &UIWizardNewVMPageBasicInstallSetup::completeChanged);
         }
         if (m_pLabel)
             pMainLayout->addWidget(m_pLabel);
@@ -276,5 +300,7 @@ void UIWizardNewVMPageBasicInstallSetup::initializePage()
 
 bool UIWizardNewVMPageBasicInstallSetup::isComplete() const
 {
-    return UIWizardPage::isComplete();
+    if (m_pUserNamePasswordEditor)
+        return m_pUserNamePasswordEditor->isComplete();
+    return true;
 }

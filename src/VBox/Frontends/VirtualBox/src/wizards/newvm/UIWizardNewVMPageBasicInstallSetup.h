@@ -69,6 +69,11 @@ class UIUserNamePasswordEditor : public QIWithRetranslateUI<QWidget>
 
     Q_OBJECT;
 
+signals:
+
+    /** this is emitted whenever the content of one of the line edits is changed. */
+    void sigSomeTextChanged();
+
 public:
 
     UIUserNamePasswordEditor(QWidget *pParent = 0);
@@ -78,6 +83,9 @@ public:
 
     QString password() const;
     void setPassword(const QString &strPassword);
+
+    /** Returns false if username or password fields are empty, or password fields do not match. */
+    bool isComplete();
 
 protected:
 
@@ -113,8 +121,6 @@ public:
     QString password() const;
 
 protected:
-
-
 
     /* Widgets: */
     UIUserNamePasswordEditor *m_pUserNamePasswordEditor;

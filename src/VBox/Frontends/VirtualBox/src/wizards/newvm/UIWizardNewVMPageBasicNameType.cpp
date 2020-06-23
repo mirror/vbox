@@ -346,9 +346,9 @@ UIWizardNewVMPageBasicNameType::UIWizardNewVMPageBasicNameType(const QString &st
 
 int UIWizardNewVMPageBasicNameType::nextId() const
 {
-    // UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    // if (!pWizard || !pWizard->isUnattendedInstallEnabled())
-    //     return UIWizardNewVM::PageHardware;
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (!pWizard || !pWizard->isUnattendedInstallEnabled())
+        return UIWizardNewVM::PageHardware;
     return UIWizardNewVM::PageInstallSetup;
 }
 

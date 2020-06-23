@@ -90,7 +90,7 @@ private:
     void cleanupPage();
 
     /* Validation stuff: */
-    bool validatePage();
+    virtual bool validatePage() /* override */;
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
