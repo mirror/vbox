@@ -982,6 +982,27 @@ static DECLCALLBACK(void) dmaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     }
 }
 
+/** @callback_method_impl{FNDBGFHANDLERDEV} */
+static DECLCALLBACK(void) dmaR3InfoPageReg(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PDMASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PDMASTATE);
+    NOREF(pszArgs);
+
+    /*
+     * Show page register contents.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->DMAC); i++)
+    {
+        PDMACONTROLLER  pDmac = &pThis->DMAC[i];
+
+        pHlp->pfnPrintf(pHlp, "DMA page registers at %02X:", i == 0 ? 0x80 : 0x88);
+        for (unsigned pg = 0; pg < RT_ELEMENTS(pDmac->au8Page); pg++)
+            pHlp->pfnPrintf(pHlp, " %02X", pDmac->au8Page[pg]);
+
+        pHlp->pfnPrintf(pHlp, "\n");
+    }
+}
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
@@ -1097,6 +1118,7 @@ static DECLCALLBACK(int) dmaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Register the info item.
      */
     PDMDevHlpDBGFInfoRegister(pDevIns, "dmac", "DMA controller info.", dmaR3Info);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "dmapage", "DMA page register info.", dmaR3InfoPageReg);
 
     return VINF_SUCCESS;
 }
