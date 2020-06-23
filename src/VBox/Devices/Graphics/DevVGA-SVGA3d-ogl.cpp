@@ -4517,8 +4517,8 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 AssertMsgFailedReturn(("Unexpected fill mode %d\n", mode.s.mode), VERR_INTERNAL_ERROR);
                 break;
             }
-            /* @note only front and back faces */
-            Assert(mode.s.face == SVGA3D_FACE_FRONT_BACK);
+            /* Only front and back faces. Also recent Mesa guest drivers initialize the 'face' to zero. */
+            ASSERT_GUEST(mode.s.face == SVGA3D_FACE_FRONT_BACK || mode.s.face == SVGA3D_FACE_INVALID);
             glPolygonMode(GL_FRONT_AND_BACK, val);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
