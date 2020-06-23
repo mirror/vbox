@@ -381,34 +381,6 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     return true;
 }
 
-// int UIWizardNewVM::nextId() const
-// {
-//     switch (currentId())
-//     {
-//         case PageUnattended:
-//             return PageNameType;
-//             break;
-//         case PageNameType:
-//             if (!isUnattendedInstallEnabled())
-//                 return PageHardware;
-//             else
-//                 return PageInstallSetup;
-//             break;
-//         case PageInstallSetup:
-//                 return PageHardware;
-//         case PageHardware:
-//             return PageDisk;
-//             break;
-//         case PageDisk:
-//             return UIWizard::nextId();
-//         case PageMax:
-//         default:
-//             return PageUnattended;
-//             break;
-//     }
-//     return UIWizard::nextId();
-// }
-
 void UIWizardNewVM::sltHandleWizardCancel()
 {
     switch (mode())

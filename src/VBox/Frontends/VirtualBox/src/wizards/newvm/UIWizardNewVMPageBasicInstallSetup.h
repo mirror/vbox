@@ -22,6 +22,7 @@
 #endif
 
 /* Qt includes: */
+#include <QLineEdit>
 #include <QWidget>
 
 /* Local includes: */
@@ -31,10 +32,37 @@
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
-class QLineEdit;
 class QSpinBox;
 class QIRichTextLabel;
 struct UIUnattendedInstallData;
+
+class UIPasswordLineEdit : public QLineEdit
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigTextVisibilityToggled(bool fTextVisible);
+
+public:
+
+    UIPasswordLineEdit(QWidget *pParent = 0);
+    void toggleTextVisibility(bool fTextVisible);
+
+protected:
+
+    virtual void paintEvent(QPaintEvent *pevent) /* override */;
+
+private:
+
+    void prepare();
+
+    QToolButton *m_pTextVisibilityButton;
+
+private slots:
+
+    void sltHandleTextVisibilityChange();
+};
 
 class UIUserNamePasswordEditor : public QIWithRetranslateUI<QWidget>
 {
@@ -58,16 +86,20 @@ protected:
 private:
 
     void prepare();
-    void addLineEdit(QLabel *&pLabel, QLineEdit *&pLineEdit, QGridLayout *pLayout, bool fIsPasswordField = false);
+    template <class T>
+    void addLineEdit(int &iRow, QLabel *&pLabel, T *&pLineEdit, QGridLayout *pLayout);
 
-    QLineEdit *m_pUserNameField;
-    QLineEdit *m_pPasswordField;
-    QLineEdit *m_pPasswordRepeatField;
+    QLineEdit          *m_pUserNameLineEdit;
+    UIPasswordLineEdit *m_pPasswordLineEdit;
+    UIPasswordLineEdit *m_pPasswordRepeatLineEdit;
 
-    QLabel *m_pUserNameFieldLabel;
-    QLabel *m_pPasswordFieldLabel;
-    QLabel *m_pPasswordRepeatFieldLabel;
+    QLabel *m_pUserNameLabel;
+    QLabel *m_pPasswordLabel;
+    QLabel *m_pPasswordRepeatLabel;
 
+private slots:
+
+    void sltHandlePasswordVisibility(bool fPasswordVisible);
 };
 
 /* 2nd page of the New Virtual Machine wizard (base part): */

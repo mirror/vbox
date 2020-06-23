@@ -21,83 +21,135 @@
 #include <QGridLayout>
 #include <QSpacerItem>
 #include <QLabel>
-#include <QLineEdit>
 #include <QSpinBox>
+#include <QStyle>
+#include <QToolButton>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UIBaseMemoryEditor.h"
 #include "UIBaseMemorySlider.h"
 #include "UICommon.h"
+#include "UIIconPool.h"
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVMPageBasicInstallSetup.h"
 #include "UIWizardNewVM.h"
 
+UIPasswordLineEdit::UIPasswordLineEdit(QWidget *pParent /*= 0 */)
+    :QLineEdit(pParent)
+    , m_pTextVisibilityButton(0)
+{
+    prepare();
+}
+
+void UIPasswordLineEdit::toggleTextVisibility(bool fTextVisible)
+{
+    if (fTextVisible)
+    {
+        setEchoMode(QLineEdit::Normal);
+        if(m_pTextVisibilityButton)
+            m_pTextVisibilityButton->setIcon(UIIconPool::iconSet(":/eye-off.png"));
+        return;
+    }
+    setEchoMode(QLineEdit::Password);
+    if(m_pTextVisibilityButton)
+        m_pTextVisibilityButton->setIcon(UIIconPool::iconSet(":/eye-on.png"));
+}
+
+void UIPasswordLineEdit::prepare()
+{
+    m_pTextVisibilityButton = new QToolButton(this);
+    m_pTextVisibilityButton->setAutoRaise(true);
+    m_pTextVisibilityButton->setCursor(Qt::ArrowCursor);
+    m_pTextVisibilityButton->show();
+    connect(m_pTextVisibilityButton, &QToolButton::clicked, this, &UIPasswordLineEdit::sltHandleTextVisibilityChange);
+    toggleTextVisibility(false);
+}
+
+void UIPasswordLineEdit::paintEvent(QPaintEvent *pevent)
+{
+    QLineEdit::paintEvent(pevent);
+    int iFrameWidth = style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
+    int iSize = height() - 2 * iFrameWidth;
+    m_pTextVisibilityButton->setGeometry(width() - iSize, iFrameWidth, iSize, iSize);
+
+}
+
+void UIPasswordLineEdit::sltHandleTextVisibilityChange()
+{
+    bool fTextVisible = false;
+    if (echoMode() == QLineEdit::Normal)
+        fTextVisible = false;
+    else
+        fTextVisible = true;
+    toggleTextVisibility(fTextVisible);
+    emit sigTextVisibilityToggled(fTextVisible);
+}
 
 UIUserNamePasswordEditor::UIUserNamePasswordEditor(QWidget *pParent /*  = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pUserNameField(0)
-    , m_pPasswordField(0)
-    , m_pPasswordRepeatField(0)
-    , m_pUserNameFieldLabel(0)
-    , m_pPasswordFieldLabel(0)
-    , m_pPasswordRepeatFieldLabel(0)
+    , m_pUserNameLineEdit(0)
+    , m_pPasswordLineEdit(0)
+    , m_pPasswordRepeatLineEdit(0)
+    , m_pUserNameLabel(0)
+    , m_pPasswordLabel(0)
+    , m_pPasswordRepeatLabel(0)
 {
     prepare();
 }
 
 QString UIUserNamePasswordEditor::userName() const
 {
-    if (m_pUserNameField)
-        return m_pUserNameField->text();
+    if (m_pUserNameLineEdit)
+        return m_pUserNameLineEdit->text();
     return QString();
 }
 
 void UIUserNamePasswordEditor::setUserName(const QString &strUserName)
 {
-    if (m_pUserNameField)
-        return m_pUserNameField->setText(strUserName);
+    if (m_pUserNameLineEdit)
+        return m_pUserNameLineEdit->setText(strUserName);
 }
 
 QString UIUserNamePasswordEditor::password() const
 {
-    if (m_pPasswordField)
-        return m_pPasswordField->text();
+    if (m_pPasswordLineEdit)
+        return m_pPasswordLineEdit->text();
     return QString();
 }
 
 void UIUserNamePasswordEditor::setPassword(const QString &strPassword)
 {
-    if (m_pPasswordField)
-        m_pPasswordField->setText(strPassword);
-    if (m_pPasswordRepeatField)
-        m_pPasswordRepeatField->setText(strPassword);
+    if (m_pPasswordLineEdit)
+        m_pPasswordLineEdit->setText(strPassword);
+    if (m_pPasswordRepeatLineEdit)
+        m_pPasswordRepeatLineEdit->setText(strPassword);
 }
 
 void UIUserNamePasswordEditor::retranslateUi()
 {
-    if (m_pUserNameFieldLabel)
+    if (m_pUserNameLabel)
     {
-        m_pUserNameFieldLabel->setText(UIWizardNewVM::tr("User Name:"));
-        m_pUserNameFieldLabel->setToolTip(UIWizardNewVM::tr("Type the user name which will be used in attended install:"));
+        m_pUserNameLabel->setText(UIWizardNewVM::tr("User Name:"));
+        m_pUserNameLabel->setToolTip(UIWizardNewVM::tr("Type the user name which will be used in attended install:"));
 
     }
-    if (m_pPasswordFieldLabel)
+    if (m_pPasswordLabel)
     {
-        m_pPasswordFieldLabel->setText(UIWizardNewVM::tr("Password:"));
-        m_pPasswordFieldLabel->setToolTip(UIWizardNewVM::tr("Type the password for the user name"));
+        m_pPasswordLabel->setText(UIWizardNewVM::tr("Password:"));
+        m_pPasswordLabel->setToolTip(UIWizardNewVM::tr("Type the password for the user name"));
 
     }
-    if (m_pPasswordRepeatFieldLabel)
+    if (m_pPasswordRepeatLabel)
     {
-        m_pPasswordRepeatFieldLabel->setText(UIWizardNewVM::tr("Repeat Password:"));
-        m_pPasswordRepeatFieldLabel->setToolTip(UIWizardNewVM::tr("Retype the password:"));
+        m_pPasswordRepeatLabel->setText(UIWizardNewVM::tr("Repeat Password:"));
+        m_pPasswordRepeatLabel->setToolTip(UIWizardNewVM::tr("Retype the password:"));
     }
 }
 
-void UIUserNamePasswordEditor::addLineEdit(QLabel *&pLabel, QLineEdit *&pLineEdit, QGridLayout *pLayout, bool fIsPasswordField /* = false */)
+template <class T>
+void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLineEdit, QGridLayout *pLayout)
 {
-    static int iRow = 0;
     if (!pLayout || pLabel || pLineEdit)
         return;
     pLabel = new QLabel;
@@ -105,14 +157,12 @@ void UIUserNamePasswordEditor::addLineEdit(QLabel *&pLabel, QLineEdit *&pLineEdi
         return;
     pLayout->addWidget(pLabel, iRow, 0, 1, 1, Qt::AlignRight);
 
-    pLineEdit = new QLineEdit;
+    pLineEdit = new T;
     if (!pLineEdit)
         return;
     pLayout->addWidget(pLineEdit, iRow, 1, 1, 1);
 
     pLabel->setBuddy(pLineEdit);
-    if (fIsPasswordField)
-        pLineEdit->setEchoMode(QLineEdit::Password);
     ++iRow;
     return;
 }
@@ -123,12 +173,25 @@ void UIUserNamePasswordEditor::prepare()
     if (!pMainLayout)
         return;
     setLayout(pMainLayout);
+    int iRow = 0;
+    addLineEdit<QLineEdit>(iRow, m_pUserNameLabel, m_pUserNameLineEdit, pMainLayout);
+    addLineEdit<UIPasswordLineEdit>(iRow, m_pPasswordLabel, m_pPasswordLineEdit, pMainLayout);
+    addLineEdit<UIPasswordLineEdit>(iRow, m_pPasswordRepeatLabel, m_pPasswordRepeatLineEdit, pMainLayout);
 
-    addLineEdit(m_pUserNameFieldLabel, m_pUserNameField, pMainLayout);
-    addLineEdit(m_pPasswordFieldLabel, m_pPasswordField, pMainLayout, true);
-    addLineEdit(m_pPasswordRepeatFieldLabel, m_pPasswordRepeatField, pMainLayout, true);
+    connect(m_pPasswordLineEdit, &UIPasswordLineEdit::sigTextVisibilityToggled,
+            this, &UIUserNamePasswordEditor::sltHandlePasswordVisibility);
+    connect(m_pPasswordRepeatLineEdit, &UIPasswordLineEdit::sigTextVisibilityToggled,
+            this, &UIUserNamePasswordEditor::sltHandlePasswordVisibility);
 
     retranslateUi();
+}
+
+void UIUserNamePasswordEditor::sltHandlePasswordVisibility(bool fPasswordVisible)
+{
+    if (m_pPasswordLineEdit)
+        m_pPasswordLineEdit->toggleTextVisibility(fPasswordVisible);
+    if (m_pPasswordRepeatLineEdit)
+        m_pPasswordRepeatLineEdit->toggleTextVisibility(fPasswordVisible);
 }
 
 UIWizardNewVMPageInstallSetup::UIWizardNewVMPageInstallSetup()
