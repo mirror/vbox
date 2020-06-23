@@ -154,7 +154,7 @@ class WuiLinkBase(WuiHtmlBase): # pylint: disable=too-few-public-methods
 class WuiTmLink(WuiLinkBase): # pylint: disable=too-few-public-methods
     """ Local link to the test manager. """
 
-    kdDbgParams = None;
+    kdDbgParams = [];
 
     def __init__(self, sName, sUrlBase, dParams = None, sConfirm = None, sTitle = None,
                  sFragmentId = None, fBracketed = True):

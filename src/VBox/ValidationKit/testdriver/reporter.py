@@ -212,7 +212,7 @@ class ReporterBase(object):
     def xmlFlush(self, fRetry = False, fForce = False):
         """Flushes XML output if buffered."""
         _ = fRetry; _ = fForce;
-        return None;
+        return True;
 
     #
     # XML output from child.
@@ -1791,6 +1791,7 @@ def testCleanup():
         g_oReporter.xmlFlush(fRetry = False, fForce = True);
     finally:
         g_oLock.release();
+        fRc = False;
     return fRc;
 
 
@@ -1870,6 +1871,7 @@ def checkTestManagerConnection():
         fRc = g_oReporter.xmlFlush(fRetry = False, fForce = True);
     finally:
         g_oLock.release();
+        fRc = False;
     return fRc;
 
 def flushall(fSkipXml = False):

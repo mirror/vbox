@@ -1938,8 +1938,8 @@ class TransportTcp(TransportBase):
             reporter.log2('TransportTcp::accept: operation in progress (%s)...' % (e,));
             try:
                 select.select([oSocket, oWakeupR], [], [oSocket, oWakeupR], cMsTimeout / 1000.0);
-            except socket.error as e:
-                if e[0] != errno.EBADF  or  not self.fConnectCanceled:
+            except socket.error as oXctp:
+                if oXctp.errno != errno.EBADF  or  not self.fConnectCanceled:
                     raise;
                 reporter.log('socket.select() on accept was canceled');
                 return None;
@@ -1949,9 +1949,9 @@ class TransportTcp(TransportBase):
             # Try accept again.
             try:
                 (oClientSocket, tClientAddr) = oSocket.accept();
-            except socket.error as e:
+            except socket.error as oXcpt:
                 if not self.__isInProgressXcpt(e):
-                    if e[0] != errno.EBADF  or  not self.fConnectCanceled:
+                    if oXcpt.errno != errno.EBADF  or  not self.fConnectCanceled:
                         raise;
                     reporter.log('socket.accept() was canceled');
                     return None;
