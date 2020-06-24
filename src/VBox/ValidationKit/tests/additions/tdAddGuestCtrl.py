@@ -1709,6 +1709,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         Helper function to copy a single file from the guest to the host.
         """
+
+        # As we pass-in randomly generated file names, the source sometimes can be empty, which
+        # in turn will result in a (correct) error by the API. Simply skip this function then.
+        if not oTest.sSrc:
+            reporter.log2('Skipping guest file "%s"' % (limitString(oTest.sSrc)));
+            return True;
+
         #
         # Do the copying.
         #
