@@ -2789,46 +2789,55 @@ static int txsDoExecHlp(PCTXSPKTHDR pPktHdr, uint32_t fFlags, const char *pszExe
         rc = txsExecSetupPollSet(pTxsExec);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Create the process.
-         */
-        if (g_fDisplayOutput)
+        char *pszExecResolved = RTPathRealDup(pszExecName);
+        if (pszExecResolved)
         {
-            RTPrintf("txs: Executing \"%s\": ", pszExecName);
-            for (uint32_t i = 0; i < cArgs; i++)
-                RTPrintf(" \"%s\"", papszArgs[i]);
-            RTPrintf("\n");
-        }
-        rc = RTProcCreateEx(pszExecName, papszArgs, pTxsExec->hEnv, 0 /*fFlags*/,
-                            pTxsExec->StdIn.phChild, pTxsExec->StdOut.phChild, pTxsExec->StdErr.phChild,
-                            *pszUsername ? pszUsername : NULL, NULL, NULL,
-                            &pTxsExec->hProcess);
-        if (RT_SUCCESS(rc))
-        {
-            ASMAtomicWriteBool(&pTxsExec->fProcessAlive, true);
-            rc2 = RTThreadUserSignal(pTxsExec->hThreadWaiter); AssertRC(rc2);
-
             /*
-             * Close the child ends of any pipes and redirected files.
+             * Create the process.
              */
-            rc2 = RTHandleClose(pTxsExec->StdIn.phChild);   AssertRC(rc2);
-            pTxsExec->StdIn.phChild     = NULL;
-            rc2 = RTHandleClose(pTxsExec->StdOut.phChild);  AssertRC(rc2);
-            pTxsExec->StdOut.phChild    = NULL;
-            rc2 = RTHandleClose(pTxsExec->StdErr.phChild);  AssertRC(rc2);
-            pTxsExec->StdErr.phChild    = NULL;
-            rc2 = RTPipeClose(pTxsExec->hTestPipeW);        AssertRC(rc2);
-            pTxsExec->hTestPipeW        = NIL_RTPIPE;
+            if (g_fDisplayOutput)
+            {
+                RTPrintf("txs: Executing \"%s\" -> \"%s\": ", pszExecName, pszExecResolved);
+                for (uint32_t i = 0; i < cArgs; i++)
+                    RTPrintf(" \"%s\"", papszArgs[i]);
+                RTPrintf("\n");
+            }
 
-            /*
-             * Let another worker function funnel output and input to the
-             * client as well as the process exit code.
-             */
-            rc = txsDoExecHlp2(pTxsExec);
+            rc = RTProcCreateEx(pszExecResolved, papszArgs, pTxsExec->hEnv, 0 /*fFlags*/,
+                                pTxsExec->StdIn.phChild, pTxsExec->StdOut.phChild, pTxsExec->StdErr.phChild,
+                                *pszUsername ? pszUsername : NULL, NULL, NULL,
+                                &pTxsExec->hProcess);
+            if (RT_SUCCESS(rc))
+            {
+                ASMAtomicWriteBool(&pTxsExec->fProcessAlive, true);
+                rc2 = RTThreadUserSignal(pTxsExec->hThreadWaiter); AssertRC(rc2);
+
+                /*
+                 * Close the child ends of any pipes and redirected files.
+                 */
+                rc2 = RTHandleClose(pTxsExec->StdIn.phChild);   AssertRC(rc2);
+                pTxsExec->StdIn.phChild     = NULL;
+                rc2 = RTHandleClose(pTxsExec->StdOut.phChild);  AssertRC(rc2);
+                pTxsExec->StdOut.phChild    = NULL;
+                rc2 = RTHandleClose(pTxsExec->StdErr.phChild);  AssertRC(rc2);
+                pTxsExec->StdErr.phChild    = NULL;
+                rc2 = RTPipeClose(pTxsExec->hTestPipeW);        AssertRC(rc2);
+                pTxsExec->hTestPipeW        = NIL_RTPIPE;
+
+                /*
+                 * Let another worker function funnel output and input to the
+                 * client as well as the process exit code.
+                 */
+                rc = txsDoExecHlp2(pTxsExec);
+            }
+            else
+                rc = txsReplyFailure(pPktHdr, "FAILED  ", "Executing process \"%s\" failed with %Rrc",
+                                     pszExecResolved, rc);
+
+            RTStrFree(pszExecResolved);
         }
         else
-            rc = txsReplyFailure(pPktHdr, "FAILED  ", "Executing process \"%s\" failed with %Rrc",
-                                 pszExecName, rc);
+            rc = VERR_NO_MEMORY;
     }
     else
         rc = pTxsExec->rcReplySend;
