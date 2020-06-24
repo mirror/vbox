@@ -1657,7 +1657,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                         'HKLM\\SYSTEM\\CurrentControlSet\\Services\\VBoxService',
                                         '/v', 'ImagePath', '/t', 'REG_SZ', '/d', sImagePath, '/f'));
             elif oTestVm.isLinux():
-                sPathSed = '/bin/sed';
+                sPathSed = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'sed');
                 fRestartVBoxService = self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging', 30 * 1000,
                                          sPathSed,
                                         (sPathSed, '-i', '-e', 's/'
