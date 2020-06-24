@@ -1698,7 +1698,7 @@ static int txsDoVer(PCTXSPKTHDR pPktHdr)
     if (RTStrPrintf2(Pkt.szVer, sizeof(Pkt.szVer), "%s r%s %s.%s (%s %s)",
                      RTBldCfgVersion(), RTBldCfgRevisionStr(), KBUILD_TARGET, KBUILD_TARGET_ARCH, __DATE__, __TIME__) > 0)
     {
-        return txsReplyInternal(&Pkt.Hdr, "ACK VER", strlen(Pkt.szVer) + 1);
+        return txsReplyInternal(&Pkt.Hdr, "ACK VER ", strlen(Pkt.szVer) + 1);
     }
 
     return txsReplyRC(pPktHdr, VERR_BUFFER_OVERFLOW, "RTStrPrintf2");
