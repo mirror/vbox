@@ -3468,7 +3468,7 @@ class AdditionsStatusTask(TdTaskBase):
                 reporter.errorXcpt();
                 return True;
             if enmRunLevel not in self.aenmWaitForRunLevels:
-                reporter.log2('AdditionsStatusTask/poll: enmRunLevel=%s not in %s' % (enmRunLevel, self.aenmWaitForRunLevels,));
+                reporter.log6('AdditionsStatusTask/poll: enmRunLevel=%s not in %s' % (enmRunLevel, self.aenmWaitForRunLevels,));
                 return False;
             reporter.log2('AdditionsStatusTask/poll: enmRunLevel=%s matched %s!' % (enmRunLevel, self.aenmWaitForRunLevels,));
 
