@@ -2601,6 +2601,12 @@ class TestDriver(base.TestDriver):                                              
             return oTestVm.pathJoin(TestDriver.getGuestWinDir(oTestVm), 'System32');
         if oTestVm.isOS2():
             return 'C:\\OS2\\DLL';
+
+        # OL / RHEL symlinks "/bin"/ to "/usr/bin". To avoid (unexpectedly) following symlinks, use "/usr/bin" then instead.
+        if  not sPathPrefix \
+        and oTestVm.sKind in ('Oracle_64', 'Oracle'): ## @todo Does this apply for "RedHat" as well?
+            return "/usr/bin";
+
         return sPathPrefix + "/bin";
 
     @staticmethod
@@ -2617,6 +2623,12 @@ class TestDriver(base.TestDriver):                                              
             return oTestVm.pathJoin(TestDriver.getGuestWinDir(oTestVm), 'System32');
         if oTestVm.isOS2():
             return 'C:\\OS2\\DLL'; ## @todo r=andy Not sure here.
+
+        # OL / RHEL symlinks "/sbin"/ to "/usr/sbin". To avoid (unexpectedly) following symlinks, use "/usr/sbin" then instead.
+        if  not sPathPrefix \
+        and oTestVm.sKind in ('Oracle_64', 'Oracle'): ## @todo Does this apply for "RedHat" as well?
+            return "/usr/sbin";
+
         return sPathPrefix + "/sbin";
 
     @staticmethod
