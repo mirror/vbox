@@ -2890,6 +2890,8 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-stringop-overflow          ?= $(call VBOX_GCC_CHECK_CXX,-Wno-stringop-overflow,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-stringop-truncation        ?= $(call VBOX_GCC_CHECK_CXX,-Wno-stringop-truncation,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-cast-function-type         ?= $(call VBOX_GCC_CHECK_CC,-Wno-cast-function-type,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-deprecated-declarations    ?= $(call VBOX_GCC_CHECK_CC,-Wno-deprecated-declarations,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-implicit-fallthrough       ?= $(call VBOX_GCC_CHECK_CC,-Wno-implicit-fallthrough,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-dwarf2-cfi-asm    ?= $(call VBOX_GCC_CHECK_CC,-fno-dwarf2-cfi-asm,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_m64                   ?= $(call VBOX_GCC_CHECK_CC,-m64,)'
