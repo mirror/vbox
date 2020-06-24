@@ -10700,7 +10700,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;新しい仮想マシンの名前を選択してください。新し仮想マシンは &lt;b&gt;%1&lt;/b&gt; のクローンになるでしょう。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;新しい仮想マシンの名前を選択してください。新しい仮想マシンは &lt;b&gt;%1&lt;/b&gt; のクローンになるでしょう。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
