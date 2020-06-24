@@ -135,7 +135,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         #        automatic updating mechanism (uses hardcoded paths, e.g. "{CDROM}/linux/amd64/TestExecService").
         #
         ## @todo Find a solution for testing the automatic Guest Additions updates, which also looks at {CDROM}s root.
-        if self.fpApiVer >= 6.0 and 'sharedfolders' in self.asTests:
+        if self.fpApiVer >= 6.0:
             sGaViso = os.path.join(self.sScratchPath, 'AdditionsAndValKit.viso');
             ## @todo encode as bash cmd line:
             sVisoContent = '--iprt-iso-maker-file-marker-bourne-sh %s ' \
