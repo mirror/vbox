@@ -38,11 +38,8 @@ MY_SORT="sort"
 MY_PROJECT_FILES=""
 MY_OUT_DIRS="\
 out/${KBUILD_TARGET}.${KBUILD_TARGET_ARCH}/${KBUILD_TYPE} \
-out/${BUILD_TARGET}.${BUILD_TARGET_ARCH}/${BUILD_TYPE} \
 out/${KBUILD_TARGET}.${KBUILD_TARGET_ARCH}/debug \
-out/${BUILD_TARGET}.${BUILD_TARGET_ARCH}/debug \
 out/${KBUILD_TARGET}.${KBUILD_TARGET_ARCH}/release \
-out/${BUILD_TARGET}.${BUILD_TARGET_ARCH}/release \
 out/linux.amd64/debug \
 out/linux.x86/debug \
 out/win.amd64/debug \
@@ -1188,9 +1185,7 @@ my_generate_project "misc"          "."                                     --be
 XPCOM_INCS="src/libs/xpcom18a4"
 for d in \
     "out/${KBUILD_TARGET}.${KBUILD_TARGET_ARCH}/${KBUILD_TYPE}/dist/sdk/bindings/xpcom" \
-    "out/${BUILD_TARGET}.${BUILD_TARGET_ARCH}/${BUILD_TYPE}/dist/sdk/bindings/xpcom" \
     "out/${KBUILD_TARGET}.${KBUILD_TARGET_ARCH}/${KBUILD_TYPE}/bin/sdk/bindings/xpcom" \
-    "out/${BUILD_TARGET}.${BUILD_TARGET_ARCH}/${BUILD_TYPE}/bin/sdk/bindings/xpcom" \
     "out/linux.amd64/debug/bin/sdk/bindings/xpcom" \
     "out/linux.x86/debug/bin/sdk/bindings/xpcom" \
     "out/darwin.amd64/debug/dist/sdk/bindings/xpcom" \
