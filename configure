@@ -372,7 +372,7 @@ check_environment()
       ;;
     x86_64|amd64)
       BUILD_MACHINE='amd64'
-      BUILD_CPU='k8'
+      BUILD_CPU='blend'
       if [ "$OS" != "solaris" ]; then
         # on AMD64 systems, 64bit libs are usually located in /usr/lib64
         # see http://www.pathname.com/fhs/pub/fhs-2.3.html#LIB64
@@ -411,18 +411,25 @@ check_environment()
   DEVDIR_BIN="$DEVDIR/$OS.$BUILD_MACHINE/bin"
   log_success "Determined build machine: $OS.$BUILD_MACHINE, target machine: $OS.$TARGET_MACHINE"
 
-  echo "BUILD_PLATFORM=\"$OS\"" >> $ENV
-  echo "export BUILD_PLATFORM" >> $ENV
-  echo "BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
-  echo "export BUILD_PLATFORM_ARCH" >> $ENV
-  echo "BUILD_TARGET=\"$OS\"" >> $ENV
-  echo "export BUILD_TARGET" >> $ENV
-  echo "BUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
-  echo "export BUILD_TARGET_ARCH" >> $ENV
-  echo "BUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
-  echo "export BUILD_TARGET_CPU" >> $ENV
-  echo "BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
-  echo "export BUILD_TYPE" >> $ENV
+  echo "KBUILD_HOST=\"$OS\"" >> $ENV
+  echo "KBUILD_HOST_ARCH=\"$BUILD_MACHINE\"" >> $ENV
+  echo "KBUILD_TARGET=\"$OS\"" >> $ENV
+  echo "KBUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
+  echo "KBUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
+  echo "KBUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
+  echo 'export KBUILD_HOST KBUILD_HOST_ARCH KBUILD_TARGET KBUILD_TARGET_ARCH KBUILD_TARGET_CPU KBUILD_TYPE' >> $ENV
+
+  # obsolete legacy stuff:
+  echo '' >> $ENV
+  echo "# Legacy - do not use:" >> $ENV
+  echo 'BUILD_PLATFORM="$KBUILD_HOST"' >> $ENV
+  echo 'BUILD_PLATFORM_ARCH="$KBUILD_HOST_ARCH"' >> $ENV
+  echo 'BUILD_TARGET="$KBUILD_TARGET"' >> $ENV
+  echo 'BUILD_TARGET_ARCH="$KBUILD_TARGET_ARCH"' >> $ENV
+  echo 'BUILD_TARGET_CPU="$KBUILD_TARGET_CPU"' >> $ENV
+  echo 'BUILD_TYPE="$KBUILD_TYPE"' >> $ENV
+  echo 'export BUILD_PLATFORM BUILD_PLATFORM_ARCH BUILD_TARGET BUILD_TARGET_ARCH BUILD_TARGET_CPU BUILD_TYPE' >> $ENV
+  echo '' >> $ENV
 }
 
 #
@@ -1843,42 +1850,32 @@ check_kbuild()
   test_header kBuild
   if which_wrapper "$KBUILDDIR/bin/$OS.$BUILD_MACHINE/kmk" > /dev/null; then
     KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$BUILD_MACHINE"
-    echo "PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
-    echo "export PATH_KBUILD" >> $ENV
-    echo "PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
-    echo "export PATH_DEVTOOLS" >> $ENV
-    echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"" >> $ENV
-    echo "export PATH_KBUILD_BIN" >> $ENV
-    echo "path_dev_bin=\"\$PATH_DEVTOOLS/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"/bin" >> $ENV
+
+    echo "KBUILD_PATH=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
+    echo "KBUILD_DEVTOOLS=\"$DEVDIR\"" >> $ENV
+    echo 'path_kbuild_bin="$KBUILD_PATH/bin/$BUILD_TARGET.$BUILD_PLATFORM_ARCH"' >> $ENV
+    echo 'path_tools_bin="$KBUILD_DEVTOOLS/$BUILD_TARGET.$BUILD_PLATFORM_ARCH/bin"' >> $ENV
+
     if [ "$OS" = "solaris" ]; then
       # Because of sh being non-default shell in Solaris we need to export PATH again when
       # sourcing env.sh. Simply exporting from ./configure does not export PATH correctly.
       echo "PATH=\"$ORGPATH\"" >> $ENV
       echo "echo \"\$PATH\" | /usr/sfw/bin/ggrep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
-      echo "echo \"\$PATH\" | /usr/sfw/bin/ggrep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
+      echo "echo \"\$PATH\" | /usr/sfw/bin/ggrep -q \"\$path_tools_bin\"  || PATH=\"\$path_tools_bin:\$PATH\"" >> $ENV
     else
       echo "echo \"\$PATH\" | grep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
-      echo "echo \"\$PATH\" | grep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
+      echo "echo \"\$PATH\" | grep -q \"\$path_tools_bin\"  || PATH=\"\$path_tools_bin:\$PATH\"" >> $ENV
     fi
-    echo "export PATH" >> $ENV
-    echo "unset path_kbuild_bin path_dev_bin" >> $ENV
+    echo "export KBUILD_PATH KBUILD_DEVTOOLS PATH" >> $ENV
+    echo "unset path_kbuild_bin path_tools_bin" >> $ENV
     KBUILD_SED="$KBUILDDIR_BIN/kmk_sed"
-  elif [ "$OS.$BUILD_MACHINE" = "darwin.amd64" ]; then
-    # Currently there are no amd64 kBuild bins. So use the x86 variant in any case.
-    KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.x86"
-    echo "PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
-    echo "export PATH_KBUILD" >> $ENV
-    echo "PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
-    echo "export PATH_DEVTOOLS" >> $ENV
-    echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.x86\"" >> $ENV
-    echo "PATH_KBUILD_BIN=\"\$path_kbuild_bin\"" >> $ENV
-    echo "export PATH_KBUILD_BIN" >> $ENV
-    echo "path_dev_bin=\"\$PATH_DEVTOOLS/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"/bin" >> $ENV
-    echo "echo \"\$PATH\" | grep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
-    echo "echo \"\$PATH\" | grep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
-    echo "export PATH" >> $ENV
-    echo "unset path_kbuild_bin path_dev_bin" >> $ENV
-    KBUILD_SED="$KBUILDDIR_BIN/kmk_sed"
+
+    echo '' >> $ENV
+    echo "# Legacy - do not use:" >> $ENV
+    echo 'PATH_KBUILD=${KBUILD_PATH}' >> $ENV
+    echo 'PATH_DEVTOOLS=${KBUILD_DEVTOOLS}' >> $ENV
+    echo 'export PATH_KBUILD PATH_DEVTOOLS' >> $ENV
+    echo '' >> $ENV
   elif check_avail "kmk" KBUILDDIR really; then
     # check for installed kBuild
     KBUILD_SED="`which_wrapper kmk_sed`"
