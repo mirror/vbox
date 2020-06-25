@@ -91,7 +91,7 @@
     <?include PublicProperties.wxi ?>
 
     <!-- Make sure installation will not start on anything other but the NT family -->
-<?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
+<?if $(env.KBUILD_TARGET_ARCH) = "amd64" ?>
     <Condition Message="!(loc.Only64Bit)">
         VersionNT64
     </Condition>
@@ -179,7 +179,7 @@
     <!-- Custom actions -->
 
     <!-- Figure out where a previous installation was, if any -->
-<?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
+<?if $(env.KBUILD_TARGET_ARCH) = "amd64" ?>
     <CustomAction Id="ca_OriginalTargetDir" Execute="firstSequence" Property="INSTALLDIR"
                   Value="[ProgramFiles64Folder]\$(env.VBOX_VENDOR_SHORT)\VirtualBox" />
 

@@ -44,7 +44,7 @@ Function ExtractFiles
   ; and keep the redundancy low
 
   Push $0
-  StrCpy "$0" "$INSTDIR\$%BUILD_TARGET_ARCH%"
+  StrCpy "$0" "$INSTDIR\$%KBUILD_TARGET_ARCH%"
 
   ; Root files
   SetOutPath "$0"
@@ -78,7 +78,7 @@ Function ExtractFiles
     FILE "$%PATH_OUT%\bin\additions\VBoxGL.dll"
   !endif
 
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
     !if $%VBOX_WITH_MESA3D% == "1"
       FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
@@ -87,7 +87,7 @@ Function ExtractFiles
       FILE "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
     !endif
 
-  !endif ; $%BUILD_TARGET_ARCH% == "amd64"
+  !endif ; $%KBUILD_TARGET_ARCH% == "amd64"
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
   ; Mouse driver
@@ -98,7 +98,7 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxMouse.cat"
 !endif
 
-!if $%BUILD_TARGET_ARCH% == "x86"
+!if $%KBUILD_TARGET_ARCH% == "x86"
   SetOutPath "$0\VBoxMouse\NT4"
   FILE "$%PATH_OUT%\bin\additions\VBoxMouseNT.sys"
 !endif
@@ -122,7 +122,7 @@ Function ExtractFiles
   SetOutPath "$0\VBoxSF"
   FILE "$%PATH_OUT%\bin\additions\VBoxSF.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP.dll"
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target
     FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP-x86.dll"
   !endif
@@ -137,7 +137,7 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxDrvInst.exe"
   FILE "$%VBOX_PATH_DIFX%\DIFxAPI.dll"
 
-!if $%BUILD_TARGET_ARCH% == "x86"
+!if $%KBUILD_TARGET_ARCH% == "x86"
   SetOutPath "$0\Tools\NT4"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuestDrvInst.exe"
   FILE "$%PATH_OUT%\bin\additions\RegCleanup.exe"
@@ -157,7 +157,7 @@ Function ${un}CheckArchitecture
   System::Call "kernel32::IsWow64Process(i s, *i .r0)"
   ; R0 now contains 1 if we're a 64-bit process, or 0 if not
 
-!if $%BUILD_TARGET_ARCH% == "amd64"
+!if $%KBUILD_TARGET_ARCH% == "amd64"
   IntCmp $0 0 wrong_platform
 !else ; 32-bit
   IntCmp $0 1 wrong_platform
@@ -483,7 +483,7 @@ FunctionEnd
 ; 32-bit mode (SysWOW64) on 64-bit guests
 !macro SetAppMode32 un
 Function ${un}SetAppMode32
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     ${EnableX64FSRedirection}
     SetRegView 32
   !endif
@@ -496,7 +496,7 @@ FunctionEnd
 ; do some tricks for the Windows paths + registry on 64-bit guests
 !macro SetAppMode64 un
 Function ${un}SetAppMode64
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     ${DisableX64FSRedirection}
     SetRegView 64
   !endif
@@ -818,19 +818,19 @@ Function ${un}RestoreFilesDirect3D
   ;         in SysWOW64 (or in system32 on 32-bit systems).
 
   ${LogVerbose} "Restoring original D3D files ..."
-!if $%BUILD_TARGET_ARCH% == "x86"
-  ${CopyFileEx} "${un}" "$SYSDIR\msd3d8.dll" "$SYSDIR\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+!if $%KBUILD_TARGET_ARCH% == "x86"
+  ${CopyFileEx} "${un}" "$SYSDIR\msd3d8.dll" "$SYSDIR\d3d8.dll" "Microsoft Corporation" "$%KBUILD_TARGET_ARCH%"
 !endif
-  ${CopyFileEx} "${un}" "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+  ${CopyFileEx} "${un}" "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll" "Microsoft Corporation" "$%KBUILD_TARGET_ARCH%"
 
   ${If} $g_bCapDllCache == "true"
-!if $%BUILD_TARGET_ARCH% == "x86"
-    ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+!if $%KBUILD_TARGET_ARCH% == "x86"
+    ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "Microsoft Corporation" "$%KBUILD_TARGET_ARCH%"
 !endif
-    ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
+    ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "Microsoft Corporation" "$%KBUILD_TARGET_ARCH%"
   ${EndIf}
 
-!if $%BUILD_TARGET_ARCH% == "amd64"
+!if $%KBUILD_TARGET_ARCH% == "amd64"
   ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d8.dll" "$g_strSysWow64\d3d8.dll" "Microsoft Corporation" "x86"
   ${CopyFileEx} "${un}" "$g_strSysWow64\msd3d9.dll" "$g_strSysWow64\d3d9.dll" "Microsoft Corporation" "x86"
 

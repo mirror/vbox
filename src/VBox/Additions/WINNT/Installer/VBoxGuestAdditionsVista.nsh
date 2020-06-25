@@ -80,7 +80,7 @@ FunctionEnd
 !macro Vista_UninstallInstDir un
 Function ${un}Vista_UninstallInstDir
 
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
   Delete /REBOOTOK "$INSTDIR\netamd.inf"
   Delete /REBOOTOK "$INSTDIR\pcntpci5.cat"
   Delete /REBOOTOK "$INSTDIR\PCNTPCI5.sys"
@@ -119,7 +119,7 @@ Function ${un}VBoxMMR_Uninstall
 
   Delete /REBOOTOK "$g_strSystemDir\VBoxMMR.exe"
 
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     Delete /REBOOTOK "$g_strSysWow64\VBoxMMRHook.dll"
     Delete /REBOOTOK "$INSTDIR\VBoxMMR-x86.exe"
     Delete /REBOOTOK "$INSTDIR\VBoxMMRHook-x86.dll"

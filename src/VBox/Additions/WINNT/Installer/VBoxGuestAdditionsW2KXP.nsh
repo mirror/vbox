@@ -246,7 +246,7 @@ Function W2K_CopyFiles
       FILE "$%PATH_OUT%\bin\additions\VBoxGL.dll"
     !endif
 
-    !if $%BUILD_TARGET_ARCH% == "amd64"
+    !if $%KBUILD_TARGET_ARCH% == "amd64"
       FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
       !if $%VBOX_WITH_MESA3D% == "1"
         FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
@@ -254,7 +254,7 @@ Function W2K_CopyFiles
         FILE "$%PATH_OUT%\bin\additions\VBoxICD-x86.dll"
         FILE "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
       !endif
-    !endif ; $%BUILD_TARGET_ARCH% == "amd64"
+    !endif ; $%KBUILD_TARGET_ARCH% == "amd64"
 
     Goto doneCr
   ${EndIf}
@@ -304,7 +304,7 @@ Function W2K_InstallFiles
   !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxSF.sys" "$g_strSystemDir\drivers\VBoxSF.sys" "$INSTDIR"
   !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMRXNP.dll" "$g_strSystemDir\VBoxMRXNP.dll" "$INSTDIR"
   AccessControl::GrantOnFile "$g_strSystemDir\VBoxMRXNP.dll" "(BU)" "GenericRead"
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer: Copy the 32-bit DLL for 32 bit applications.
     !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMRXNP-x86.dll" "$g_strSysWow64\VBoxMRXNP.dll" "$INSTDIR"
     AccessControl::GrantOnFile "$g_strSysWow64\VBoxMRXNP.dll" "(BU)" "GenericRead"
@@ -456,7 +456,7 @@ Function ${un}W2K_UninstallInstDir
     ; Try to delete libWine in case it is there from old installation
     Delete /REBOOTOK "$INSTDIR\libWine.dll"
 
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     Delete /REBOOTOK "$INSTDIR\VBoxDispD3D-x86.dll"
     !if $%VBOX_WITH_MESA3D% == "1"
       Delete /REBOOTOK "$INSTDIR\VBoxNine-x86.dll"
@@ -467,7 +467,7 @@ Function ${un}W2K_UninstallInstDir
 
       Delete /REBOOTOK "$INSTDIR\VBoxD3D9wddm-x86.dll"
       Delete /REBOOTOK "$INSTDIR\wined3dwddm-x86.dll"
-  !endif ; $%BUILD_TARGET_ARCH% == "amd64"
+  !endif ; $%KBUILD_TARGET_ARCH% == "amd64"
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
   ; WHQL fake
@@ -524,7 +524,7 @@ Function ${un}W2K_Uninstall
   ; Obsolete files end
 
   Delete /REBOOTOK "$g_strSystemDir\VBoxDispD3D.dll"
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     Delete /REBOOTOK "$g_strSysWow64\VBoxDispD3D-x86.dll"
   !endif
 
@@ -534,7 +534,7 @@ Function ${un}W2K_Uninstall
     Delete /REBOOTOK "$g_strSystemDir\VBoxICD.dll"
     Delete /REBOOTOK "$g_strSystemDir\VBoxGL.dll"
 
-    !if $%BUILD_TARGET_ARCH% == "amd64"
+    !if $%KBUILD_TARGET_ARCH% == "amd64"
       Delete /REBOOTOK "$g_strSysWow64\VBoxNine-x86.dll"
       Delete /REBOOTOK "$g_strSysWow64\VBoxSVGA-x86.dll"
       Delete /REBOOTOK "$g_strSysWow64\VBoxICD-x86.dll"
@@ -585,7 +585,7 @@ Function ${un}W2K_Uninstall
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" netprovider remove VBoxSF" "true"
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxSF" "true"
   Delete /REBOOTOK "$g_strSystemDir\VBoxMRXNP.dll" ; The network provider DLL will be locked
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+  !if $%KBUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer: Also remove 32-bit DLLs on 64-bit target arch in Wow64 node
     Delete /REBOOTOK "$g_strSysWow64\VBoxMRXNP.dll"
   !endif ; amd64

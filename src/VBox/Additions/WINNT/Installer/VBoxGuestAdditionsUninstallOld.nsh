@@ -180,7 +180,7 @@ common:
   ;Delete "$SYSDIR\drivers\VBoxMouseNT.sys"
 
   ; Delete vendor installation directory (only if completely empty)
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
   RMDir /REBOOTOK "$PROGRAMFILES32\Sun"
 !else   ; 64-bit
   RMDir /REBOOTOK "$PROGRAMFILES64\Sun"
@@ -247,7 +247,7 @@ common:
   RMDir /REBOOTOK "$1"
 
   ; Delete vendor installation directory (only if completely empty)
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
   RMDir /REBOOTOK "$PROGRAMFILES32\Sun"
 !else   ; 64-bit
   RMDir /REBOOTOK "$PROGRAMFILES64\Sun"
@@ -338,7 +338,7 @@ common:
   RMDir /REBOOTOK "$1"
 
   ; Delete vendor installation directory (only if completely empty)
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
   RMDir /REBOOTOK "$PROGRAMFILES32\innotek"
 !else   ; 64-bit
   RMDir /REBOOTOK "$PROGRAMFILES64\innotek"

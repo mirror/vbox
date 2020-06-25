@@ -23,7 +23,7 @@
   <?define Property_Version = "$(env.VBOX_VERSION_STRING_RAW)" ?>
   <?define Property_VersionExt = "$(env.VBOX_VERSION_STRING)" ?>
 
-  <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
+  <?if $(env.KBUILD_TARGET_ARCH) = "amd64" ?>
       <?define Property_ProgramFiles = "ProgramFiles64Folder" ?>
       <?define Property_Platform     = "x64" ?>
       <?define Property_Win64        = "yes" ?>

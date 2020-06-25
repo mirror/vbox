@@ -52,7 +52,7 @@ Function ${un}UninstallCommon
   RMDir /REBOOTOK "$INSTDIR"
 
   ; Delete vendor installation directory (only if completely empty)
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
   RMDir /REBOOTOK "$PROGRAMFILES32\$%VBOX_VENDOR_SHORT%"
 !else   ; 64-bit
   RMDir /REBOOTOK "$PROGRAMFILES64\$%VBOX_VENDOR_SHORT%"
@@ -76,7 +76,7 @@ Function ${un}Uninstall
 !endif
 
   ; Which OS are we using?
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
   StrCmp $g_strWinVersion "NT4" nt4     ; Windows NT 4.0
 !endif
   StrCmp $g_strWinVersion "2000" w2k    ; Windows 2000
@@ -94,7 +94,7 @@ Function ${un}Uninstall
 
   Goto notsupported
 
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
 nt4:
 
   Call ${un}NT4_Uninstall
@@ -136,7 +136,7 @@ Function ${un}UninstallInstDir
 !endif
 
   ; Which OS are we using?
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
   StrCmp $g_strWinVersion "NT4" nt4     ; Windows NT 4.0
 !endif
   StrCmp $g_strWinVersion "2000" w2k    ; Windows 2000
@@ -154,7 +154,7 @@ Function ${un}UninstallInstDir
 
   Goto notsupported
 
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+!if $%KBUILD_TARGET_ARCH% == "x86"       ; 32-bit
 nt4:
 
   Call ${un}NT4_UninstallInstDir
