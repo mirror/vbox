@@ -403,11 +403,11 @@ class Build(object): # pylint: disable=too-few-public-methods
             self.sKind = "development";
 
             if self.sType is None:
-                self.sType = os.environ.get("KBUILD_TYPE",        os.environ.get("BUILD_TYPE",        "release"));
+                self.sType = os.environ.get("KBUILD_TYPE",        "release");
             if self.sOs is None:
-                self.sOs   = os.environ.get("KBUILD_TARGET",      os.environ.get("BUILD_TARGET",      oDriver.sHost));
+                self.sOs   = os.environ.get("KBUILD_TARGET",      oDriver.sHost);
             if self.sArch is None:
-                self.sArch = os.environ.get("KBUILD_TARGET_ARCH", os.environ.get("BUILD_TARGET_ARCH", oDriver.sHostArch));
+                self.sArch = os.environ.get("KBUILD_TARGET_ARCH", oDriver.sHostArch);
 
             sOut = os.path.join('out', self.sOs + '.' + self.sArch, self.sType);
             sSearch = os.environ.get('VBOX_TD_DEV_TREE', os.path.dirname(__file__)); # Env.var. for older trees or testboxscript.
