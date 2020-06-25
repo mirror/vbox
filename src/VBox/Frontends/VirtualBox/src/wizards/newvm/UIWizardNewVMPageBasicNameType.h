@@ -93,6 +93,7 @@ public:
     /* Constructor: */
     UIWizardNewVMPageBasicNameType(const QString &strGroup);
     virtual int nextId() const /* override */;
+    void setTypeByISODetectedOSType(const QString &strDetectedOSType);
 
 protected:
 

@@ -352,6 +352,13 @@ int UIWizardNewVMPageBasicNameType::nextId() const
     return UIWizardNewVM::PageInstallSetup;
 }
 
+void UIWizardNewVMPageBasicNameType::setTypeByISODetectedOSType(const QString &strDetectedOSType)
+{
+    if (!strDetectedOSType.isEmpty())
+        onNameChanged(strDetectedOSType);
+}
+
+
 void UIWizardNewVMPageBasicNameType::sltNameChanged(const QString &strNewName)
 {
     onNameChanged(strNewName);

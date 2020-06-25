@@ -75,7 +75,11 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(PageUnattended, new UIWizardNewVMPageBasicUnattended);
+            UIWizardNewVMPageBasicUnattended *pUnattendedPage =
+                new UIWizardNewVMPageBasicUnattended;
+            connect(pUnattendedPage, &UIWizardNewVMPageBasicUnattended::sigDetectedOSTypeChanged,
+                    this, &UIWizardNewVM::sltHandleDetectedOSTypeChange);
+            setPage(PageUnattended, pUnattendedPage);
             setPage(PageNameType, new UIWizardNewVMPageBasicNameType(m_strGroup));
             setPage(PageInstallSetup, new UIWizardNewVMPageBasicInstallSetup);
             setPage(PageHardware, new UIWizardNewVMPageBasicHardware);
@@ -381,6 +385,14 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     return true;
 }
 
+QString UIWizardNewVM::getStringFieldValue(const QString &strFieldName) const
+{
+    QVariant fieldValue = field(strFieldName);
+    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::QString))
+        return fieldValue.toString();
+    return QString();
+}
+
 void UIWizardNewVM::sltHandleWizardCancel()
 {
     switch (mode())
@@ -404,6 +416,14 @@ void UIWizardNewVM::sltHandleWizardCancel()
         default:
             break;
     }
+}
+
+void UIWizardNewVM::sltHandleDetectedOSTypeChange()
+{
+    UIWizardNewVMPageBasicNameType *pPage = qobject_cast<UIWizardNewVMPageBasicNameType*>(page(PageNameType));
+    if (!pPage)
+        return;
+    pPage->setTypeByISODetectedOSType(getStringFieldValue("detectedOSTypeId"));
 }
 
 void UIWizardNewVM::retranslateUi()
@@ -492,25 +512,24 @@ void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallDat
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
 {
-    QVariant fieldValue = field("ISOFilePath");
-    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::QString))
-        m_unattendedInstallData.m_strISOPath = fieldValue.toString();
+    m_unattendedInstallData.m_strISOPath = getStringFieldValue("ISOFilePath");
+    m_unattendedInstallData.m_strUserName = getStringFieldValue("userName");
+    m_unattendedInstallData.m_strHostname = getStringFieldValue("hostname");
+    m_unattendedInstallData.m_strPassword = getStringFieldValue("password");
+    m_unattendedInstallData.m_strDetectedOSTypeId = getStringFieldValue("detectedOSTypeId");
+    m_unattendedInstallData.m_strDetectedOSVersion = getStringFieldValue("detectedOSVersion");
+    m_unattendedInstallData.m_strDetectedOSFlavor = getStringFieldValue("detectedOSFlavor");
+    m_unattendedInstallData.m_strDetectedOSLanguages = getStringFieldValue("detectedOSLanguages");
+    m_unattendedInstallData.m_strDetectedOSHints = getStringFieldValue("detectedOSHints");
 
-    fieldValue = field("isUnattendedEnabled");
+
+    QVariant fieldValue = field("isUnattendedEnabled");
     if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
         m_unattendedInstallData.m_fUnattendedEnabled = fieldValue.toBool();
 
     fieldValue = field("startHeadless");
     if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
         m_unattendedInstallData.m_fStartHeadless = fieldValue.toBool();
-
-    fieldValue = field("userName");
-    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::QString))
-        m_unattendedInstallData.m_strUserName = fieldValue.toString();
-
-    fieldValue = field("password");
-    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::QString))
-        m_unattendedInstallData.m_strPassword = fieldValue.toString();
 
     m_unattendedInstallData.m_uMachineUid = createdMachineId();
 

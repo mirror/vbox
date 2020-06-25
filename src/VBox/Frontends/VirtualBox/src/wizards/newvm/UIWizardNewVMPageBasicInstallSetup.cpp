@@ -16,14 +16,18 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
+#include <QCompleter>
 #include <QIntValidator>
-#include <QVBoxLayout>
 #include <QGridLayout>
 #include <QSpacerItem>
 #include <QLabel>
+#include <QSortFilterProxyModel>
 #include <QSpinBox>
+#include <QStringListModel>
 #include <QStyle>
 #include <QToolButton>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
@@ -183,7 +187,7 @@ void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLine
     pLineEdit = new T;
     if (!pLineEdit)
         return;
-    pLayout->addWidget(pLineEdit, iRow, 1, 1, 1);
+    pLayout->addWidget(pLineEdit, iRow, 1, 1, 3);
 
     pLabel->setBuddy(pLineEdit);
     ++iRow;
@@ -206,6 +210,7 @@ void UIUserNamePasswordEditor::markLineEdit(QLineEdit *pLineEdit, bool fError)
 void UIUserNamePasswordEditor::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout;
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
     if (!pMainLayout)
         return;
     setLayout(pMainLayout);
@@ -235,6 +240,8 @@ void UIUserNamePasswordEditor::sltHandlePasswordVisibility(bool fPasswordVisible
 
 UIWizardNewVMPageInstallSetup::UIWizardNewVMPageInstallSetup()
     : m_pUserNamePasswordEditor(0)
+    , m_pHostnameLineEdit(0)
+    , m_pHostnameLabel(0)
 {
 }
 
@@ -252,6 +259,12 @@ QString UIWizardNewVMPageInstallSetup::password() const
     return QString();
 }
 
+QString UIWizardNewVMPageInstallSetup::hostname() const
+{
+    if (m_pHostnameLineEdit)
+        return m_pHostnameLineEdit->text();
+    return QString();
+}
 
 UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
     : m_pLabel(0)
@@ -260,59 +273,58 @@ UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        QGridLayout *pMemoryLayout = new QGridLayout;
+        QGridLayout *pGridLayout = new QGridLayout;
         {
             m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
-            pMemoryLayout->addWidget(m_pUserNamePasswordEditor, 0, 0);
+            pGridLayout->addWidget(m_pUserNamePasswordEditor, 0, 0, 3, 4);
             connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
                     this, &UIWizardNewVMPageBasicInstallSetup::completeChanged);
+            m_pHostnameLabel = new QLabel;
+            m_pHostnameLineEdit = new QLineEdit;
+            pGridLayout->addWidget(m_pHostnameLabel, 3, 0, 1, 1, Qt::AlignRight);
+            pGridLayout->addWidget(m_pHostnameLineEdit, 3, 1, 1, 3);
         }
         if (m_pLabel)
             pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addLayout(pMemoryLayout);
+        pMainLayout->addLayout(pGridLayout);
         pMainLayout->addStretch();
     }
-
 
     /* Register fields: */
     registerField("userName", this, "userName");
     registerField("password", this, "password");
+    registerField("hostname", this, "hostname");
 }
 
 void UIWizardNewVMPageBasicInstallSetup::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
 {
     /* Initialize the widget data: */
-
     if (m_pUserNamePasswordEditor)
     {
         m_pUserNamePasswordEditor->setUserName(unattendedInstallData.m_strUserName);
         m_pUserNamePasswordEditor->setPassword(unattendedInstallData.m_strPassword);
     }
+    if (m_pHostnameLineEdit)
+        m_pHostnameLineEdit->setText(unattendedInstallData.m_strHostname);
 }
 
 void UIWizardNewVMPageBasicInstallSetup::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVM::tr("User Name/Password and Time Zone Selection"));
+    setTitle(UIWizardNewVM::tr("User Name/Password and Hostname Settings"));
 
     /* Translate widgets: */
     if (m_pLabel)
-        m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can specify the user name/password and time zone. "
+        m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can specify the user name/password and hostname. "
                                             "The values you enter here will be used during the unattended install.</p>"));
+    if (m_pHostnameLabel)
+        m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
 }
 
 void UIWizardNewVMPageBasicInstallSetup::initializePage()
 {
     /* Translate page: */
     retranslateUi();
-
-    /* Get recommended 'ram' field value: */
-    // CGuestOSType type = field("type").value<CGuestOSType>();
-    // m_pBaseMemoryEditor->setValue(type.GetRecommendedRAM());
-    // m_pVirtualCPUEditor->setValue(1);
-
-    // /* 'Ram' field should have focus initially: */
-    // m_pBaseMemoryEditor->setFocus();
 }
 
 bool UIWizardNewVMPageBasicInstallSetup::isComplete() const

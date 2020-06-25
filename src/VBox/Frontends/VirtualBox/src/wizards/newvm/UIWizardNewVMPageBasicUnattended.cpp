@@ -35,12 +35,15 @@
 /* COM includes: */
 #include "CHost.h"
 #include "CSystemProperties.h"
-
+#include "CUnattended.h"
 
 UIWizardNewVMPageUnattended::UIWizardNewVMPageUnattended()
     : m_pUnattendedCheckBox(0)
     , m_pStartHeadlessCheckBox(0)
+    , m_pISOSelectorLabel(0)
+    , m_pStatusLabel(0)
     , m_pISOFilePathSelector(0)
+    , m_ISOError(ISOError_NoFileName)
 {
 }
 
@@ -63,6 +66,71 @@ bool UIWizardNewVMPageUnattended::startHeadless() const
     if (!m_pStartHeadlessCheckBox)
         return false;
     return m_pStartHeadlessCheckBox->isChecked();
+}
+
+const QString &UIWizardNewVMPageUnattended::detectedOSTypeId() const
+{
+    return m_strDetectedOSTypeId;
+}
+
+const QString &UIWizardNewVMPageUnattended::detectedOSVersion() const
+{
+    return m_strDetectedOSVersion;
+}
+
+const QString &UIWizardNewVMPageUnattended::detectedOSFlavor() const
+{
+    return m_strDetectedOSFlavor;
+}
+
+const QString &UIWizardNewVMPageUnattended::detectedOSLanguages() const
+{
+    return m_strDetectedOSLanguages;
+}
+
+const QString &UIWizardNewVMPageUnattended::detectedOSHints() const
+{
+    return m_strDetectedOSHints;
+}
+
+bool UIWizardNewVMPageUnattended::determineOSType(const QString &strISOPath)
+{
+    QFileInfo isoFileInfo(strISOPath);
+    if (!isoFileInfo.exists())
+    {
+        m_ISOError = ISOError_DontExists;
+        m_strDetectedOSTypeId.clear();
+        m_strDetectedOSVersion.clear();
+        m_strDetectedOSFlavor.clear();
+        m_strDetectedOSLanguages.clear();
+        m_strDetectedOSHints.clear();
+        updateStatusLabel();
+        return false;
+    }
+
+    CUnattended comUnatteded = uiCommon().virtualBox().CreateUnattendedInstaller();
+    comUnatteded.SetIsoPath(strISOPath);
+    comUnatteded.DetectIsoOS();
+
+    m_strDetectedOSTypeId = comUnatteded.GetDetectedOSTypeId();
+    m_strDetectedOSVersion = comUnatteded.GetDetectedOSVersion();
+    m_strDetectedOSFlavor = comUnatteded.GetDetectedOSFlavor();
+    m_strDetectedOSLanguages = comUnatteded.GetDetectedOSLanguages();
+    m_strDetectedOSHints = comUnatteded.GetDetectedOSHints();
+
+    updateStatusLabel();
+    return true;
+}
+
+void UIWizardNewVMPageUnattended::updateStatusLabel()
+{
+    if (m_pStatusLabel)
+    {
+        m_pStatusLabel->setText(QString("<b>%1:</b> %2<br/><b>%3:</b> %4<br/><b>%5</b>: %6")
+                                .arg(UIWizardNewVM::tr("Detected OS Type")).arg(m_strDetectedOSTypeId)
+                                .arg(UIWizardNewVM::tr("Detected OS Version")).arg(m_strDetectedOSVersion)
+                                .arg(UIWizardNewVM::tr("Detected OS Flavor")).arg(m_strDetectedOSFlavor));
+    }
 }
 
 UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
@@ -89,9 +157,9 @@ UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
             connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasicUnattended::sltPathChanged);
         }
         m_pStartHeadlessCheckBox = new QCheckBox;
-        {
-            m_pStartHeadlessCheckBox->setEnabled(false);
-        }
+        m_pStartHeadlessCheckBox->setEnabled(false);
+        m_pStatusLabel = new QLabel;
+        m_pStatusLabel->setEnabled(false);
         pMainLayout->addWidget(m_pLabel);
 
         QGridLayout *pISOSelectorLayout = new QGridLayout;
@@ -99,6 +167,7 @@ UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
         pISOSelectorLayout->addWidget(m_pISOSelectorLabel, 1, 1, 1, 1);
         pISOSelectorLayout->addWidget(m_pISOFilePathSelector, 1, 2, 1, 4);
         pISOSelectorLayout->addWidget(m_pStartHeadlessCheckBox, 2, 2, 1, 5);
+        pISOSelectorLayout->addWidget(m_pStatusLabel, 3, 2, 1, 5);
 
         pMainLayout->addLayout(pISOSelectorLayout);
         pMainLayout->addStretch();
@@ -109,6 +178,14 @@ UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
     registerField("startHeadless", this, "startHeadless");
+    registerField("startHeadless", this, "startHeadless");
+    registerField("detectedOSTypeId", this, "detectedOSTypeId");
+    registerField("detectedOSVersion", this, "detectedOSVersion");
+    registerField("detectedOSFlavor", this, "detectedOSFlavor");
+    registerField("detectedOSLanguages", this, "detectedOSLanguages");
+    registerField("detectedOSHints", this, "detectedOSHints");
+
+
 }
 
 bool UIWizardNewVMPageBasicUnattended::isComplete() const
@@ -125,12 +202,14 @@ void UIWizardNewVMPageBasicUnattended::sltUnattendedCheckBoxToggle(bool fEnabled
         m_pISOFilePathSelector->setEnabled(fEnabled);
     if (m_pStartHeadlessCheckBox)
         m_pStartHeadlessCheckBox->setEnabled(fEnabled);
+    if (m_pStatusLabel)
+        m_pStatusLabel->setEnabled(fEnabled);
     emit completeChanged();
 }
 
 void UIWizardNewVMPageBasicUnattended::sltPathChanged(const QString &strPath)
 {
-    Q_UNUSED(strPath);
+    determineOSType(strPath);
     emit completeChanged();
 }
 
@@ -144,12 +223,15 @@ void UIWizardNewVMPageBasicUnattended::retranslateUi()
                                         "and select an installation medium. The guest OS will be "
                                         "installed after this window is closed. "));
     m_pUnattendedCheckBox->setText(UIWizardNewVM::tr("Enable unattended guest OS Install"));
-    m_pISOSelectorLabel->setText(UIWizardNewVM::tr("ISO:"));
+    m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Installation medium:"));
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
         m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked the unattended will start the virtual machine headless"));
     }
+    m_pISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file) "
+                                                         "for the unattended guest OS install"));
+    updateStatusLabel();
 }
 
 bool UIWizardNewVMPageBasicUnattended::checkISOFile() const
@@ -179,4 +261,10 @@ void UIWizardNewVMPageBasicUnattended::cleanupPage()
 bool UIWizardNewVMPageBasicUnattended::validatePage()
 {
     return checkISOFile();
+}
+
+void UIWizardNewVMPageBasicUnattended::updateStatusLabel()
+{
+    UIWizardNewVMPageUnattended::updateStatusLabel();
+    emit sigDetectedOSTypeChanged();
 }

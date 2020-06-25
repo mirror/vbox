@@ -36,19 +36,45 @@ class UIWizardNewVMPageUnattended : public UIWizardPageBase
 {
 protected:
 
-    /* Constructor: */
-    UIWizardNewVMPageUnattended();
+    enum ISOError
+    {
+        ISOError_NoError,
+        ISOError_NoFileName,
+        ISOError_DontExists,
+        ISOError_NotReadable,
+        ISOError_Max
+    };
 
-    QString ISOFilePath() const;
-    bool isUnattendedEnabled() const;
-    bool startHeadless() const;
+    UIWizardNewVMPageUnattended();
+    bool determineOSType(const QString &strISOPath);
+    virtual void updateStatusLabel();
+
+    /** @name Property getters
+      * @{ */
+        QString ISOFilePath() const;
+        bool isUnattendedEnabled() const;
+        bool startHeadless() const;
+        const QString &detectedOSTypeId() const;
+        const QString &detectedOSVersion() const;
+        const QString &detectedOSFlavor() const;
+        const QString &detectedOSLanguages() const;
+        const QString &detectedOSHints() const;
+    /** @} */
 
     QCheckBox *m_pUnattendedCheckBox;
     QCheckBox *m_pStartHeadlessCheckBox;
     QLabel *m_pISOSelectorLabel;
+    QLabel *m_pStatusLabel;
     UIFilePathSelector *m_pISOFilePathSelector;
+    ISOError m_ISOError;
 
 private:
+
+    QString m_strDetectedOSTypeId;
+    QString m_strDetectedOSVersion;
+    QString m_strDetectedOSFlavor;
+    QString m_strDetectedOSLanguages;
+    QString m_strDetectedOSHints;
 
     friend class UIWizardNewVM;
 };
@@ -60,6 +86,15 @@ class UIWizardNewVMPageBasicUnattended : public UIWizardPage, public UIWizardNew
     Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
     Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
     Q_PROPERTY(bool startHeadless READ startHeadless);
+    Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
+    Q_PROPERTY(QString detectedOSVersion READ detectedOSVersion);
+    Q_PROPERTY(QString detectedOSFlavor READ detectedOSFlavor);
+    Q_PROPERTY(QString detectedOSLanguages READ detectedOSLanguages);
+    Q_PROPERTY(QString detectedOSHints READ detectedOSHints);
+
+signals:
+
+    void sigDetectedOSTypeChanged();
 
 public:
 
@@ -71,6 +106,7 @@ protected:
 
     /* Wrapper to access 'this' from base part: */
     UIWizardPage* thisImp() { return this; }
+    virtual void updateStatusLabel();
 
 private slots:
 

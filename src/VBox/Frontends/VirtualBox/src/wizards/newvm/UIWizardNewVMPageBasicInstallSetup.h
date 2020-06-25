@@ -23,6 +23,7 @@
 
 /* Qt includes: */
 #include <QLineEdit>
+#include <QStringList>
 #include <QWidget>
 
 /* Local includes: */
@@ -120,13 +121,19 @@ public:
 
     UIWizardNewVMPageInstallSetup();
 
-    QString userName() const;
-    QString password() const;
+    /** @name Property getters
+      * @{ */
+        QString userName() const;
+        QString password() const;
+        QString hostname() const;
+    /** @} */
 
 protected:
 
     /* Widgets: */
     UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
+    QLineEdit *m_pHostnameLineEdit;
+    QLabel  *m_pHostnameLabel;
 };
 
 /* 2nd page of the New Virtual Machine wizard (basic extension): */
@@ -135,6 +142,7 @@ class UIWizardNewVMPageBasicInstallSetup : public UIWizardPage, public UIWizardN
     Q_OBJECT;
     Q_PROPERTY(QString userName READ userName);
     Q_PROPERTY(QString password READ password);
+    Q_PROPERTY(QString hostname READ hostname);
 
 public:
 
