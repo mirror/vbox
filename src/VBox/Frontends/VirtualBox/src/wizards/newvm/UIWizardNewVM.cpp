@@ -21,6 +21,7 @@
 #include "UIWizardNewVMPageBasicUnattended.h"
 #include "UIWizardNewVMPageBasicNameType.h"
 #include "UIWizardNewVMPageBasicHardware.h"
+#include "UIWizardNewVMPageBasicProductKey.h"
 #include "UIWizardNewVMPageBasicDisk.h"
 #include "UIWizardNewVMPageExpert.h"
 #include "UIWizardNewVMPageBasicInstallSetup.h"
@@ -82,6 +83,7 @@ void UIWizardNewVM::prepare()
             setPage(PageUnattended, pUnattendedPage);
             setPage(PageNameType, new UIWizardNewVMPageBasicNameType(m_strGroup));
             setPage(PageInstallSetup, new UIWizardNewVMPageBasicInstallSetup);
+            setPage(PageProductKey, new UIWizardNewVMPageBasicProductKey);
             setPage(PageHardware, new UIWizardNewVMPageBasicHardware);
             setPage(PageDisk, new UIWizardNewVMPageBasicDisk);
             setStartId(PageUnattended);
@@ -542,4 +544,9 @@ bool UIWizardNewVM::isUnattendedInstallEnabled() const
     if (fieldValue.isNull() || !fieldValue.isValid() || !fieldValue.canConvert(QMetaType::Bool))
         return false;
     return fieldValue.toBool();
+}
+
+bool UIWizardNewVM::isGuestOSTypeWindows() const
+{
+    return getStringFieldValue("guestOSFamiyId").contains("windows", Qt::CaseInsensitive);
 }

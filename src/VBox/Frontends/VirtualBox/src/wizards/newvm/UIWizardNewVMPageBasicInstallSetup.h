@@ -136,7 +136,6 @@ protected:
     QLabel  *m_pHostnameLabel;
 };
 
-/* 2nd page of the New Virtual Machine wizard (basic extension): */
 class UIWizardNewVMPageBasicInstallSetup : public UIWizardPage, public UIWizardNewVMPageInstallSetup
 {
     Q_OBJECT;
@@ -149,6 +148,7 @@ public:
     /* Constructor: */
     UIWizardNewVMPageBasicInstallSetup();
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
+    virtual int nextId() const /* override */;
 
 private slots:
 

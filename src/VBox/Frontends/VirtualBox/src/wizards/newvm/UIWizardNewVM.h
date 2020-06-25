@@ -60,6 +60,7 @@ public:
         PageUnattended,
         PageNameType,
         PageInstallSetup,
+        PageProductKey,
         PageHardware,
         PageDisk,
         PageMax
@@ -82,6 +83,7 @@ public:
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;
     bool isUnattendedInstallEnabled() const;
+    bool isGuestOSTypeWindows() const;
 
 protected:
 

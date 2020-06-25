@@ -173,19 +173,15 @@ UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
         pMainLayout->addStretch();
     }
 
-
     /* Register fields: */
     registerField("ISOFilePath", this, "ISOFilePath");
     registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
-    registerField("startHeadless", this, "startHeadless");
     registerField("startHeadless", this, "startHeadless");
     registerField("detectedOSTypeId", this, "detectedOSTypeId");
     registerField("detectedOSVersion", this, "detectedOSVersion");
     registerField("detectedOSFlavor", this, "detectedOSFlavor");
     registerField("detectedOSLanguages", this, "detectedOSLanguages");
     registerField("detectedOSHints", this, "detectedOSHints");
-
-
 }
 
 bool UIWizardNewVMPageBasicUnattended::isComplete() const

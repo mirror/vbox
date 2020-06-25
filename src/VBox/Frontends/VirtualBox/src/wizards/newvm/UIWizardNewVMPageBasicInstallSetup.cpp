@@ -333,3 +333,11 @@ bool UIWizardNewVMPageBasicInstallSetup::isComplete() const
         return m_pUserNamePasswordEditor->isComplete();
     return true;
 }
+
+int UIWizardNewVMPageBasicInstallSetup::nextId() const
+{
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (!pWizard || !pWizard->isUnattendedInstallEnabled() || !pWizard->isGuestOSTypeWindows())
+        return UIWizardNewVM::PageHardware;
+    return UIWizardNewVM::PageProductKey;
+}

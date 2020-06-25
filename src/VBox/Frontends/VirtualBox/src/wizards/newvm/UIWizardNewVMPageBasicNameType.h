@@ -55,6 +55,8 @@ protected:
     QString machineBaseName() const;
     void setMachineBaseName(const QString &strMachineBaseName);
 
+    QString guestOSFamiyId() const;
+
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
 
@@ -87,6 +89,8 @@ class UIWizardNewVMPageBasicNameType : public UIWizardPage, public UIWizardNewVM
     Q_PROPERTY(QString machineFilePath READ machineFilePath WRITE setMachineFilePath);
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
+    Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
+
 
 public:
 
