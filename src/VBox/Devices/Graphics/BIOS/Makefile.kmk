@@ -70,7 +70,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
 		--bios-sym $$(basename $$<).sym \
                --bios-type vga \
 		--output $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).asm
-	$$(QUIET)yasm -f bin \
+	$$(QUIET)$$(TOOL_YASM_AS) -f bin \
 		-o $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).bin \
 		-l $$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).lst \
 		$$(VBoxVgaBios$(1)_0_OUTDIR)/VBoxVgaBiosAlternative$(1).asm
@@ -126,7 +126,7 @@ define def_VBoxVgaBiosBin
  		$$(PATH_SUB_CURRENT)/VBoxVgaBiosAlternative$(1).md5sum \
  		$$(VBOX_BIN2C) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,bin2c,VgaBiosBin,$$<,$$@)
-	$$(QUIET)yasm -f bin -o $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom $$<
+	$$(QUIET)$$(TOOL_YASM_AS) -f bin -o $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom $$<
 	$$(QUIET)$$(REDIRECT) -C $$(VgaBiosBin_0_OUTDIR) -- \
 		$$(MD5SUM_EXT) -c $$(basename $$<).md5sum
 	$$(QUIET)$$(VBOX_BIN2C) -min 32 -max 36 -mask 0x0fff -ascii -export VgaBiosBinary$(1) $$(VgaBiosBin_0_OUTDIR)/VBoxVgaBios$(1).rom $$@
@@ -189,4 +189,3 @@ ifdef VBOX_WITH_OPEN_WATCOM
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
-

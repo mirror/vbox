@@ -43,6 +43,7 @@ VBOX_EFI_BUILD_TARGET  = $(if-expr $(intersects release profile, $(KBUILD_TYPE))
 VBOX_EFI_OUTPUT_SUBDIR = $(VBOX_EFI_BUILD_TARGET)_$(VBOX_EFI_TOOL_CHAIN)
 
 # VBox Yasm command
+## @todo r=andy Is this still needed? Or can we just use TOOL_YASM_AS?
 VBOX_YASMCMD   ?= $(firstword $(wildcard $(KBUILD_DEVTOOLS_HST)/bin/yasm$(HOSTSUFF_EXE)) yasm$(HOSTSUFF_EXE))
 
 # VBox nasm command
