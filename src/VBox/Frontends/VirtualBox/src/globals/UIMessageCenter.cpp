@@ -3108,15 +3108,15 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 #if defined (VBOX_WS_WIN)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
 #elif defined (VBOX_WS_X11)
-# ifndef VBOX_OSE
+# if !defined(VBOX_OSE) && defined(VBOX_WITH_KCHMVIEWER)
     char szViewerPath[RTPATH_MAX];
     int rc;
     rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
     AssertRC(rc);
     QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
-# else /* #ifndef VBOX_OSE */
+# else /* #if !defined(VBOX_OSE) && defined(VBOX_WITH_KCHMVIEWER) */
     uiCommon().openURL("file://" + strLocation);
-# endif /* #ifdef VBOX_OSE */
+# endif /* #if defined(VBOX_OSE) || !defined(VBOX_WITH_KCHMVIEWER) */
 #elif defined (VBOX_WS_MAC)
     uiCommon().openURL("file://" + strLocation);
 #endif
