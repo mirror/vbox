@@ -174,18 +174,26 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         self.logVmInfo(oVM);
 
+        reporter.testStart('Waiting for TXS');
         if oTestVm.isWindows():
             self.sFileCdWait = ('%s/VBoxWindowsAdditions.exe' % (self.sGstPathGaPrefix,));
         elif oTestVm.isLinux():
             self.sFileCdWait = ('%s/VBoxLinuxAdditions.run' % (self.sGstPathGaPrefix,));
 
-        reporter.log2('Waiting for TXS + CD: %s' % (self.sFileCdWait,));
-
-        reporter.testStart('Waiting for TXS + CD');
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
                                                                   cMsCdWait = 5 * 60 * 1000,
                                                                   sFileCdWait = self.sFileCdWait);
         reporter.testDone();
+
+        # Certain Linux guests don't behave accordingly so that detecting the CD isn't working properly.
+        # So reboot those guests in the hope that it works finally.
+        ### @todo Needs investigation; probably only udev or something is broken there (?).
+        if oTestVm.isLinux():
+            reporter.testStart('Rebooting and reconnecting to TXS');
+            fRc, oTxsSession = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, fCdWait = True,
+                                                                cMsCdWait = 5 * 60 * 1000,
+                                                                sFileCdWait = self.sFileCdWait);
+            reporter.testDone();
 
         if oSession is not None:
             self.addTask(oTxsSession);
