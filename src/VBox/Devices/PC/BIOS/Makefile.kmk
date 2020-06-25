@@ -173,7 +173,7 @@ define def_VBoxPcBiosBin
 		$$(PATH_SUB_CURRENT)/VBoxBiosAlternative$(1).md5sum \
 		$$(VBOX_BIN2C) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,bin2c,PcBiosBin,$$<,$$@)
-	$$(QUIET)$$(VBOX_YASM) -f bin -o $$(PcBiosBin_0_OUTDIR)/VBoxPcBios$(1).rom $$<
+	$$(QUIET)$$(TOOL_YASM_AS) -f bin -o $$(PcBiosBin_0_OUTDIR)/VBoxPcBios$(1).rom $$<
 	$$(QUIET)$$(REDIRECT) -C $$(PcBiosBin_0_OUTDIR) -- \
 		$$(MD5SUM_EXT) -c $$(basename $$<).md5sum
 	$$(QUIET)$$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary$(1) $$(PcBiosBin_0_OUTDIR)/VBoxPcBios$(1).rom $$@
