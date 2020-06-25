@@ -20,7 +20,7 @@ After extracting the contents of the tar.gz file perform the following steps:
 
 2. Install the VirtualBox package:
 
-      pkgadd -d VirtualBox-@VBOX_VERSION_STRING@-SunOS-@BUILD_TARGET_ARCH@-r@VBOX_SVN_REV@.pkg
+      pkgadd -d VirtualBox-@VBOX_VERSION_STRING@-SunOS-@KBUILD_TARGET_ARCH@-r@VBOX_SVN_REV@.pkg
 
       To perform an unattended (non-interactive) installation of this
       package, add "-n -a autoresponse SUNWvbox" (without quotes)
