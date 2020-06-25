@@ -476,7 +476,7 @@ else
  libIDL_config_libs   := $(shell $(VBOX_LIBIDL_CONFIG) --libs)
  xpidl_CFLAGS = \
 	$(libIDL_config_cflags)
- ifeq ($(BUILD_PLATFORM),linux)
+ ifeq ($(KBUILD_HOST),linux)
  xpidl_LDFLAGS = \
 	$(filter-out -l%,$(libIDL_config_libs))
  else
