@@ -30,7 +30,7 @@
 
 PATH_SDK      = ../../..
 CAPI_INC      = -I$(PATH_SDK)/bindings/c/include
-ifeq ($(BUILD_PLATFORM),win)
+ifdef ProgramFiles
 PLATFORM_INC  = -I$(PATH_SDK)/bindings/mscom/include
 PLATFORM_LIB  = $(PATH_SDK)/bindings/mscom/lib
 else
