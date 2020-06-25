@@ -174,38 +174,6 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Returns a success indicator on the general test execution. This is not
         the actual test result.
         """
-        # HACK ALERT! HORRIBLE MESS THAT SHOULDN'T BE HERE!
-        aasLogFiles = [ ];
-        if oTestVm.isLinux():
-            reporter.testStart('Enabling udev logging ...');
-            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
-            reporter.testDone();
-            if oTxsSession:
-                oTxsSession.syncExec("sed", ("sed", "-i", "'s/.*udev_log.*/udev_log=\"debug\"/'", "/etc/udev/udev.conf"),
-                                     fIgnoreErrors = True);
-
-                sUDevMonitorLog = '/tmp/udev_monitor.log';
-                aasLogFiles.append((sUDevMonitorLog, 'guest-udev_monitor-%s.log' % (oTestVm.sVmName,),));
-
-                reporter.testStart('Enabling udev monitoring ...');
-                sUdevSvc = StringIO();
-                sUdevSvc.write('[Unit]\n');
-                sUdevSvc.write('Description=udev Monitoring\n');
-                sUdevSvc.write('DefaultDependencies=no\n');
-                sUdevSvc.write('Wants=systemd-udevd.service\n');
-                sUdevSvc.write('After=systemd-udevd-control.socket systemd-udevd-kernel.socket\n');
-                sUdevSvc.write('Before=sysinit.target systemd-udev-trigger.service\n');
-                sUdevSvc.write('[Service]\n');
-                sUdevSvc.write('Type=simple\n');
-                sUdevSvc.write('ExecStart=/usr/bin/sh -c "/usr/sbin/udevadm monitor --udev --env > ' + sUDevMonitorLog + '\n');
-                sUdevSvc.write('[Install]\n');
-                sUdevSvc.write('WantedBy=sysinit.target');
-                oTxsSession.syncUploadString(sUdevSvc.getvalue(), '/etc/systemd/system/systemd-udev-monitor.service', 0o644,
-                                             fIgnoreErrors = True);
-                oTxsSession.syncExec("systemctl", ("systemctl", "enable", "systemd-udev-monitor.service"), fIgnoreErrors = True);
-                reporter.testDone();
-        # HACK ALERT - END.
-
         fRc = False;
 
         self.logVmInfo(oVM);
@@ -227,10 +195,6 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                                                                       cMsCdWait = 5 * 60 * 1000,
                                                                       sFileCdWait = self.sFileCdWait);
         reporter.testDone();
-
-        # More HACK ALERT stuff.
-        if aasLogFiles and oTxsSession:
-            self.txsDownloadFiles(oSession, oTxsSession, aasLogFiles, fIgnoreErrors = True);
 
         if oSession is not None:
             self.addTask(oTxsSession);
