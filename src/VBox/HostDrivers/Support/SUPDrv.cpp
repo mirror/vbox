@@ -85,7 +85,7 @@
  *      Log5    - Native yet-to-be-defined noise.
  *      Log6    - Native ioctl flow noise.
  *
- * Logging requires BUILD_TYPE=debug and possibly changes to the logger
+ * Logging requires KBUILD_TYPE=debug and possibly changes to the logger
  * instantiation in log-vbox.c(pp).
  */
 
