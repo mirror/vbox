@@ -33,10 +33,6 @@ __version__ = "$Revision$"
 import os;
 import sys;
 import uuid;
-if sys.version_info[0] >= 3:
-    from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
-else:
-    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -186,14 +182,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         reporter.log2('Waiting for TXS + CD: %s' % (self.sFileCdWait,));
 
         reporter.testStart('Waiting for TXS + CD');
-        if oTestVm.isLinux():
-            fRc, oTxsSession = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, fCdWait = True,
-                                                                cMsCdWait = 5 * 60 * 1000,
-                                                                sFileCdWait = self.sFileCdWait);
-        else:
-            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
-                                                                      cMsCdWait = 5 * 60 * 1000,
-                                                                      sFileCdWait = self.sFileCdWait);
+        oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
+                                                                  cMsCdWait = 5 * 60 * 1000,
+                                                                  sFileCdWait = self.sFileCdWait);
         reporter.testDone();
 
         if oSession is not None:
