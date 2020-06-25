@@ -25,7 +25,7 @@
 #  NOSUBVER=1       disable generation of the sub-version field (which is
 #                   either the subversion rev [if available] or the build date)
 #  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
-#                   VirtualBox.chm from $(vboxroot)/prebuild
+#                   maybe VirtualBox.chm from $(vboxroot)/prebuild
 #  NOMODS=1         don't build any module
 #  NOQT=1           don't build the Qt GUI
 #  NOSDL=1          don't build VBoxSDL
@@ -35,14 +35,17 @@
 #  VNC=1            build VNC code
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
+#  STAGEDCHM=<path> use VirtualBox*.chm from this directory
 #  PKGDIR=<path>    where to store the final package(s)
 #  svn_revision=xxx do not depend on subversion being available, but use this
 #                   hard-coded revision number instead
 #
-# NODOCS will also be set if UserManual*.pdf and VirtualBox*.chm are placed in
-# $(vboxroot)/prebuild.  STAGEDISO will be set if VBoxGuestAdditions.iso is
-# placed there.  Wine will not be required to be available if both NODOCS and
-# STAGEDISO are set.
+# NODOCS will be set if UserManual*.pdf is placed in $(vboxroot)/prebuild.
+# STAGEDISO will be set if VBoxGuestAdditions.iso is placed there.
+# STAGEDCHM will be set if VirtualBox*.chm is placed there.
+# VirtualBox*.chm is used if it is provided, but never attempted to be built.
+#
+# Wine will not be required if either NODOCS or STAGEDISO are set.
 
 ifeq ($(wildcard rpm/rules),)
 $(error call rpm/rules from src/VBox/Installer/linux)
@@ -52,7 +55,7 @@ verpkg   := VirtualBox-6.1
 current  := $(shell pwd)
 vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; done; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
-builddir := $(vboxroot)/rpm/builddir
+builddir := $(vboxroot)/out/rpm/builddir
 stagedir := $(vboxroot)/src/VBox/Installer/linux/rpmbuild
 rpmlib   := $(shell if [ `uname -m` = "x86_64" ]; then echo "lib64"; else echo "lib"; fi)
 chrarch  := $(shell if [ `uname -m` = "x86_64" ]; then echo "amd64"; else echo "x86"; fi)
@@ -64,9 +67,10 @@ svnrev   :=$(if $(svn_revision),$(svn_revision),)
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
-NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),$(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),1,),)
+NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),1,)
 STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vboxroot)/prebuild,)
-NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
+STAGEDCHM ?= $(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),$(vboxroot)/prebuild,)
+NOWINE   := $(if $(NODOCS),1,$(if $(STAGEDISO),1,$(ose)))
 
 ifneq ($(MAKECMDGOALS),clean)
  # look for fedora
@@ -171,7 +175,7 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 		$(firstword $(wildcard /usr/local/bin/python2.7) $(wildcard /usr/bin/python2.7) \
 		$(wildcard /usr/bin/python2.6) $(wildcard /usr/bin/python2) $(wildcard /usr/bin/python))),) \
 	     $(doc_dir) \
-	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
+	     $(if $(STAGEDCHM),VBOX_WITH_DOCS_CHM=1,) \
 	     VBOX_PACKAGE_DIST=$(rpmdist) \
 	     $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
@@ -186,7 +190,7 @@ rpm/configure-stamp:
 rpm/build-stamp: rpm/configure-stamp
 	. rpm/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
-	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox*.chm $(builddir)/bin,)
+	$(if $(STAGEDCHM),cp $(STAGEDCHM)/VirtualBox*.chm $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI32.fd $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI64.fd $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
