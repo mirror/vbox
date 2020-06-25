@@ -38,7 +38,7 @@ VBOXMOD_OBJS = \
 	SUPR0IdcClient.o \
 	SUPR0IdcClientComponent.o \
 	linux/SUPR0IdcClient-linux.o
-ifeq ($(BUILD_TARGET_ARCH),x86)
+ifeq ($(VBOX_KBUILD_TARGET_ARCH),x86)
 VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/moddi3.o \

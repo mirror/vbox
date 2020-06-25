@@ -61,7 +61,7 @@ QUIET=
 test -z "${TARGET_VER}" && TARGET_VER=`uname -r`
 # Marker to ignore a particular kernel version which was already installed.
 SKIPFILE_BASE=/var/lib/VBoxGuestAdditions/skip
-export BUILD_TYPE
+export VBOX_KBUILD_TYPE
 export USERNAME
 
 setup_log()

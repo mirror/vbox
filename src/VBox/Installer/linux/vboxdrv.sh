@@ -57,7 +57,7 @@ setup_log()
 }
 
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
-export BUILD_TYPE
+export VBOX_KBUILD_TYPE
 export USERNAME
 export USER=$USERNAME
 

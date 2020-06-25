@@ -120,7 +120,7 @@ VBOXMOD_OBJS = \
 	generic/mppresent-generic.o \
 	generic/uuid-generic.o \
 	VBox/log-vbox.o
-ifeq ($(BUILD_TARGET_ARCH),x86)
+ifeq ($(VBOX_KBUILD_TARGET_ARCH),x86)
 VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
@@ -130,7 +130,7 @@ VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifeq ($(VBOX_KBUILD_TARGET_ARCH),amd64)
 VBOXMOD_OBJS += common/alloc/heapsimple.o
 endif
 ifdef VBOX_WITH_NATIVE_DTRACE

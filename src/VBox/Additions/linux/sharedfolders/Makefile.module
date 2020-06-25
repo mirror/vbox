@@ -36,7 +36,7 @@ VBOXMOD_OBJS = \
 	VBoxGuestR0LibInit.o \
 	VBoxGuestR0LibPhysHeap.o \
 	VBoxGuestR0LibSharedFolders.o
-ifeq ($(BUILD_TARGET_ARCH),x86)
+ifeq ($(VBOX_KBUILD_TARGET_ARCH),x86)
 VBOXMOD_OBJS += \
 	divdi3.o \
 	moddi3.o \
@@ -60,7 +60,7 @@ VBOXMOD_DEFS = \
 	IN_GUEST \
 	IN_GUEST_R0 \
 	RT_NO_EXPORT_SYMBOL
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ifeq ($(VBOX_KBUILD_TARGET_ARCH),amd64)
 VBOXMOD_DEFS += VBOX_WITH_64_BITS_GUESTS
 endif
 ifneq ($(filter %uek.x86_64,$(KERN_VER)),)

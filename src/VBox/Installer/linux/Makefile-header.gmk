@@ -36,53 +36,100 @@
 # VBOXMOD_CFLAGS = <any additional CFLAGS which this module needs>
 # include $(obj)/Makefile-footer.gmk
 #
-# The kmk kBuild define KBUILD_TARGET_ARCH is available.
+# To avoid potential confusion between kmk/kBuild and linux/kbuild,
+# we use VBOX_KBUILD_TARGET_ARCH instead of KBUILD_TARGET_ARCH and
+# VBOX_KBUILD_TYPE instead of KBUILD_TYPE.  The VBOX_KBUILD_ variable
+# variant takes percedence over the kmk/kBuild ones.
 #
 
 
 #
 # First, figure out which architecture we're targeting and the build type.
 # (We have to support basic cross building (ARCH=i386|x86_64).)
-# While at it, warn about BUILD_* vars found to help with user problems.
+# While at it, warn about *BUILD_* vars found to help with user problems.
 #
+
+# VBOX_KBUILD_TARGET_ARCH = amd64|x86
 ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
- BUILD_TARGET_ARCH_DEF := amd64
+ VBOX_KBUILD_TARGET_ARCH_DEFAULT := amd64
 else
- BUILD_TARGET_ARCH_DEF := x86
+ VBOX_KBUILD_TARGET_ARCH_DEFAULT := x86
 endif
-ifneq ($(filter-out amd64 x86,$(BUILD_TARGET_ARCH)),)
- $(warning Ignoring unknown BUILD_TARGET_ARCH value '$(BUILD_TARGET_ARCH)'.)
- BUILD_TARGET_ARCH :=
+ifdef VBOX_KBUILD_TARGET_ARCH
+ ifneq ($(filter-out amd64 x86,$(VBOX_KBUILD_TARGET_ARCH)),)
+  $(warning Ignoring unknown VBOX_KBUILD_TARGET_ARCH value '$(VBOX_KBUILD_TARGET_ARCH)'.)
+  VBOX_KBUILD_TARGET_ARCH :=
+ endif
+else
+ ifdef KBUILD_TARGET_ARCH
+  ifneq ($(filter-out amd64 x86,$(KBUILD_TARGET_ARCH)),)
+  $(warning Ignoring unknown KBUILD_TARGET_ARCH value '$(KBUILD_TARGET_ARCH)'.)
+  VBOX_KBUILD_TARGET_ARCH :=
+  endif
+  else
+   ifdef BUILD_TARGET_ARCH
+    $(warning BUILD_TARGET_ARCH is deprecated, use VBOX_KBUILD_TARGET_ARCH instead.)
+    ifneq ($(filter-out amd64 x86,$(BUILD_TARGET_ARCH)),)
+     $(warning Ignoring unknown BUILD_TARGET_ARCH value '$(BUILD_TARGET_ARCH)'.)
+     VBOX_KBUILD_TARGET_ARCH :=
+   endif
+  endif
+ endif
 endif
-ifeq ($(BUILD_TARGET_ARCH),)
+ifeq ($(VBOX_KBUILD_TARGET_ARCH),)
  ifeq ($(ARCH),x86_64)
-  BUILD_TARGET_ARCH := amd64
+  VBOX_KBUILD_TARGET_ARCH := amd64
  else
   ifeq ($(ARCH),i386)
-   BUILD_TARGET_ARCH := x86
+   VBOX_KBUILD_TARGET_ARCH := x86
   else
-   BUILD_TARGET_ARCH := $(BUILD_TARGET_ARCH_DEF)
+   VBOX_KBUILD_TARGET_ARCH := $(VBOX_KBUILD_TARGET_ARCH_DEFAULT)
   endif
  endif
 else
- ifneq ($(BUILD_TARGET_ARCH),$(BUILD_TARGET_ARCH_DEF))
-  $(warning Using BUILD_TARGET_ARCH='$(BUILD_TARGET_ARCH)' from the $(origin BUILD_TARGET_ARCH).)
+ ifneq ($(VBOX_KBUILD_TARGET_ARCH),$(VBOX_KBUILD_TARGET_ARCH_DEFAULT))
+  $(warning Using VBOX_KBUILD_TARGET_ARCH='$(VBOX_KBUILD_TARGET_ARCH)' from the $(origin VBOX_KBUILD_TARGET_ARCH).)
  endif
 endif
 
-ifneq ($(filter-out release profile debug strict,$(BUILD_TYPE)),)
- $(warning Ignoring unknown BUILD_TYPE value '$(BUILD_TYPE)'.)
- BUILD_TYPE :=
-endif
-ifeq ($(BUILD_TYPE),)
- BUILD_TYPE := release
+# VBOX_KBUILD_TYPE = release|debug|profile|strict
+ifdef VBOX_KBUILD_TYPE
+ VBOX_KBUILD_TYPE_VAR := VBOX_KBUILD_TYPE
+ ifneq ($(filter-out release profile debug strict,$(VBOX_KBUILD_TYPE)),)
+  $(warning Ignoring unknown VBOX_KBUILD_TYPE value '$(VBOX_KBUILD_TYPE)'.)
+  VBOX_KBUILD_TYPE :=
+ endif
 else
- ifneq ($(BUILD_TYPE),release)
-  ifndef VBOX_KERN_QUIET
-   $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
+ ifdef KBUILD_TYPE
+  VBOX_KBUILD_TYPE_VAR := KBUILD_TYPE
+  VBOX_KBUILD_TYPE := $(KBUILD_TYPE)
+  ifneq ($(filter-out release profile debug strict,$(KBUILD_TYPE)),)
+   $(warning Ignoring unknown KBUILD_TYPE value '$(KBUILD_TYPE)'.)
+   VBOX_KBUILD_TYPE :=
+  endif
+ else
+  ifdef BUILD_TYPE
+   $(warning BUILD_TYPE is deprecated, use VBOX_KBUILD_TYPE instead.)
+   VBOX_KBUILD_TYPE_VAR := BUILD_TYPE
+   VBOX_KBUILD_TYPE := $(BUILD_TYPE)
+   ifneq ($(filter-out release profile debug strict,$(BUILD_TYPE)),)
+    $(warning Ignoring unknown BUILD_TYPE value '$(BUILD_TYPE)'.)
+    VBOX_KBUILD_TYPE :=
+   endif
   endif
  endif
 endif
+ifeq ($(VBOX_KBUILD_TYPE),)
+ VBOX_KBUILD_TYPE_VAR = VBOX_KBUILD_TYPE
+ VBOX_KBUILD_TYPE := release
+else
+ ifneq ($(VBOX_KBUILD_TYPE),release)
+  ifndef VBOX_KERN_QUIET
+   $(warning Using VBOX_KBUILD_TYPE='$(VBOX_KBUILD_TYPE)' from the $(origin $(VBOX_KBUILD_TYPE_VAR)) ($(VBOX_KBUILD_TYPE_VAR)).)
+  endif
+ endif
+endif
+
 ifeq ($(USERNAME),)
  USERNAME := noname
 endif

@@ -35,7 +35,7 @@ VBOXMOD_NAME = vboxnetadp
 VBOXMOD_OBJS = \
 	linux/VBoxNetAdp-linux.o \
 	VBoxNetAdp.o
-ifeq ($(BUILD_TARGET_ARCH),x86)
+ifeq ($(VBOX_KBUILD_TARGET_ARCH),x86)
 VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/moddi3.o \

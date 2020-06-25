@@ -33,8 +33,8 @@ UNINSTALL="uninstall.sh"
 PUBLIC_UNINSTALL_HOOK="/usr/sbin/vbox-uninstall-guest-additions"
 ROUTINES="routines.sh"
 INSTALLATION_VER="_VERSION_"
-BUILD_TYPE="_BUILDTYPE_"
-USERNAME="_USERNAME_"
+BUILD_VBOX_KBUILD_TYPE="_BUILDTYPE_"
+BUILD_USERNAME="_USERNAME_"
 UNINSTALL_SCRIPTS="vboxadd-x11 vboxvfs vboxadd-timesync vboxadd-service vboxadd"
 
 INSTALLATION_DIR="/opt/$PACKAGE-$INSTALLATION_VER"
@@ -448,8 +448,8 @@ UNINSTALLER='$UNINSTALL'
 # Package version
 INSTALL_VER='$INSTALLATION_VER'
 # Build type and user name for logging purposes
-BUILD_TYPE='$BUILD_TYPE'
-USERNAME='$USERNAME'
+BUILD_VBOX_KBUILD_TYPE='$BUILD_BUILDTYPE'
+BUILD_USERNAME='$USERNAME'
 EOF
 
 # Give the modules the chance to write their stuff
