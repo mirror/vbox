@@ -1645,6 +1645,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if sTxsVer is None:
             fEnableVerboseLogging = False;
 
+        # On Windows guests we always can enable verbose logging.
+        if oTestVm.isWindows():
+            fEnableVerboseLogging = True;
+
         # If debugging mode is enabled, skip this.
         if self.oDebug.sImgPath:
             fEnableVerboseLogging = False;
