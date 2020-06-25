@@ -860,7 +860,7 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
             self.sBinPath = os.path.join(g_ksValidationKitDir, utils.getHostOs(), utils.getHostArch());
         else:
             self.sBinPath = os.path.join(g_ksValidationKitDir, os.pardir, os.pardir, os.pardir, 'out', utils.getHostOsDotArch(),
-                                         os.environ.get('KBUILD_TYPE', os.environ.get('BUILD_TYPE', 'debug')),
+                                         os.environ.get('KBUILD_TYPE', 'debug'),
                                          'validationkit', utils.getHostOs(), utils.getHostArch());
         self.sOrgShell = os.environ.get('SHELL');
         self.sOurShell = os.path.join(self.sBinPath, 'vts_shell' + exeSuff()); # No shell yet.

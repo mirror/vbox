@@ -379,7 +379,7 @@ class TestBoxScript(object):
                 self._sTestBoxHelper = os.path.join(g_ksValidationKitDir, utils.getHostOs(), utils.getHostArch(), \
                                                     'TestBoxHelper');
             else: # Only for in-tree testing, so don't bother be too accurate right now.
-                sType = os.environ.get('KBUILD_TYPE', os.environ.get('BUILD_TYPE', 'debug'));
+                sType = os.environ.get('KBUILD_TYPE', 'debug');
                 self._sTestBoxHelper = os.path.join(g_ksValidationKitDir, os.pardir, os.pardir, os.pardir, 'out', \
                                                     utils.getHostOsDotArch(), sType, 'testboxscript', \
                                                     utils.getHostOs(), utils.getHostArch(), \
