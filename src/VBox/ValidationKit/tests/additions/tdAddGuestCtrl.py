@@ -1634,10 +1634,25 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if oTxsSession.syncMkDirPath(sDir, 0o777) is not True:
                 return reporter.error('Failed to create directory "%s"!' % (sDir,));
 
+        # Query the TestExecService (TXS) version first to find out on what we run.
+        sTxsVer = self.oTstDrv.txsVer(oSession, oTxsSession, 30 * 100, fIgnoreErrors = True);
+
+        # Whether to enable verbose logging for VBoxService.
+        fEnableVerboseLogging = True;
+
+        # Old TXS versions had a bug which caused an infinite loop when executing stuff containing "$xxx",
+        # so check the version here first and skip enabling verbose logging if needed.
+        if sTxsVer is None:
+            fEnableVerboseLogging = False;
+
+        # If debugging mode is enabled, skip this.
+        if self.oDebug.sImgPath:
+            fEnableVerboseLogging = False;
+
         #
         # Enable VBoxService verbose logging.
         #
-        if self.oDebug.sImgPath is None: # If no debugging enabled, skip this.
+        if fEnableVerboseLogging:
             self.oDebug.sGstVBoxServiceLogPath = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), "VBoxService");
             if oTxsSession.syncMkDirPath(self.oDebug.sGstVBoxServiceLogPath, 0o777) is not True:
                 return reporter.error('Failed to create directory "%s"!' % (self.oDebug.sGstVBoxServiceLogPath,));
