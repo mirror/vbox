@@ -33,27 +33,31 @@ export DH_COMPAT=5
 #  NOSUBVER=1       disable generation of the sub-version field (which is
 #                   either the subversion rev [if available] or the build date)
 #  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
-#                   VirtualBox.chm from $HOME
+#                   maybe VirtualBox.chm from $(vboxroot)/prebuild
 #  NOMODS=1         don't build any module
 #  NOQT=1           don't build the Qt GUI
+#  NOSDL=1          don't build VBoxSDL
 #  EFI=1            include the EFI binary from prebuild
 #  VERSUFFIX=<suffix> set a particular package version suffix (e.g. _customer)
 #  HEADLESS=1       build the headless version
 #  VNC=1            build VNC code
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
+#  STAGEDCHM=<path> use VirtualBox*.chm from this directory
 #  PKGDIR=<path>    where to store the final package(s)
 #
-# NODOCS will also be set if UserManual*.pdf and VirtualBox*.chm are placed in
-# $(vboxroot)/prebuild.  STAGEDISO will be set if VBoxGuestAdditions.iso is
-# placed there.  Wine will not be required to be available if both NODOCS and
-# STAGEDISO are set.
+# NODOCS will be set if UserManual*.pdf is placed in $(vboxroot)/prebuild.
+# STAGEDISO will be set if VBoxGuestAdditions.iso is placed there.
+# STAGEDCHM will be set if VirtualBox*.chm is placed there.
+# VirtualBox*.chm is used if it is provided, but never attempted to be built.
+#
+# Wine will not be required if either NODOCS or STAGEDISO are set.
 
 package  := virtualbox
 verpkg   := virtualbox-6.1
 current  := $(shell pwd)
-vboxroot := $(shell cd ../../../..; pwd)
-pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd ../../../../..; pwd))
+vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; done; pwd)
+pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
 builddir := $(vboxroot)/out/debian/builddir
 moddir   := $(vboxroot)/out/debian/modules
 prefix   := $(current)/debian/$(verpkg)
@@ -63,12 +67,15 @@ ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/RDP/server),,1))
 chrarch  := $(shell if [ `uname -m` = "x86_64" ]; then echo "amd64"; else echo "x86"; fi)
 -include $(vboxroot)/SVN_REVISION
 svnrev   :=$(if $(svn_revision),$(svn_revision),)
+
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
+NOSDL    ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
-NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),$(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),1,),)
+NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),1,)
 STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vboxroot)/prebuild,)
-NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
+STAGEDCHM ?= $(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),$(vboxroot)/prebuild,)
+NOWINE   := $(if $(NODOCS),1,$(if $(STAGEDISO),1,$(ose)))
 PYTHON   := $(firstword $(shell which python) $(shell which python3))
 
 ifneq ($(wildcard $(verfile)),)
@@ -99,6 +106,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
+	     $(if $(NOSDL),--disable-vboxsdl,) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
@@ -115,7 +123,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     VBOX_WITH_VMSVGA3D=1 \
 	     VBOX_DO_STRIP= \
 	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
-	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
+	     $(if $(STAGEDCHM),VBOX_WITH_DOCS_CHM=1,VBOX_WITH_KCHMVIEWER=) \
 	     VBOX_PACKAGE_DIST=$(debdist) \
 	     $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
@@ -133,7 +141,7 @@ debian/build-stamp $(verfile):
 	dh_testdir
 	. debian/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
-	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox*.chm $(builddir)/bin,)
+	$(if $(STAGEDCHM),cp $(STAGEDCHM)/VirtualBox*.chm $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI32.fd $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI64.fd $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
@@ -289,8 +297,8 @@ endif
 	    $(if $(NOQT),,usr/bin/VBox          usr/bin/virtualboxvm) \
 	    usr/bin/VBox                        usr/bin/VBoxManage \
 	    usr/bin/VBox                        usr/bin/vboxmanage \
-	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
-	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/vboxsdl) \
+	    $(if $(NOSDL),,usr/bin/VBox         usr/bin/VBoxSDL) \
+	    $(if $(NOSDL),,usr/bin/VBox         usr/bin/vboxsdl) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
 	    usr/bin/VBox                        usr/bin/vboxheadless \

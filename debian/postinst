@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2006-2019 Oracle Corporation
+# Copyright (C) 2006-2020 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -68,8 +68,10 @@ if [ "$1" = "configure" ]; then
   if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxHeadless > /dev/null 2>&1; then
     chmod 4511 /usr/lib/virtualbox/VBoxHeadless
   fi
-  if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxSDL > /dev/null 2>&1; then
-    chmod 4511 /usr/lib/virtualbox/VBoxSDL
+  if [ -x /usr/lib/virtualbox/VBoxSDL ]; then
+    if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxSDL > /dev/null 2>&1; then
+      chmod 4511 /usr/lib/virtualbox/VBoxSDL
+    fi
   fi
   if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetDHCP > /dev/null 2>&1; then
     chmod 4511 /usr/lib/virtualbox/VBoxNetDHCP

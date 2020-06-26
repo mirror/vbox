@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2006-2019 Oracle Corporation
+# Copyright (C) 2006-2020 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -28,15 +28,24 @@ export DH_COMPAT=5
 #  NOSUBVER=1       disable generation of the sub-version field (which is
 #                   either the subversion rev [if available] or the build date)
 #  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
-#                   VirtualBox.chm from $HOME
+#                   maybe VirtualBox.chm from $(vboxroot)/prebuild
 #  NOMODS=1         don't build any module
 #  NOQT=1           don't build the Qt GUI
+#  NOSDL=1          don't build VBoxSDL
 #  EFI=1            include the EFI binary from prebuild
 #  HEADLESS=1       build the headless version
 #  VNC=1            build VNC code
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
+#  STAGEDCHM=<path> use VirtualBox*.chm from this directory
 #  PKGDIR=<path>    where to store the final package(s)
+#
+# NODOCS will be set if UserManual*.pdf is placed in $(vboxroot)/prebuild.
+# STAGEDISO will be set if VBoxGuestAdditions.iso is placed there.
+# STAGEDCHM will be set if VirtualBox*.chm is placed there.
+# VirtualBox*.chm is used if it is provided, but never attempted to be built.
+#
+# Wine will not be required if either NODOCS or STAGEDISO are set.
 
 package  := virtualbox
 verpkg   := virtualbox-ose
@@ -49,10 +58,15 @@ prefix   := $(current)/debian/$(verpkg)
 arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
 ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/RDP/server),,1))
+
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
+NOSDL    ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
-NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
+NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),1,)
+STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vboxroot)/prebuild,)
+STAGEDCHM ?= $(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),$(vboxroot)/prebuild,)
+NOWINE   := $(if $(NODOCS),1,$(if $(STAGEDISO),1,$(ose)))
 PYTHON   := $(firstword $(shell which python) $(shell which python3))
 
 ifneq ($(wildcard $(verfile)),)
@@ -70,6 +84,7 @@ endif
 debrel  := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb_release -sc),unknown)
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
+	     $(if $(NOSDL),--disable-vboxsdl,) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
@@ -86,7 +101,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     VBOX_WITH_VMSVGA3D=1 \
 	     VBOX_DO_STRIP= \
 	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
-	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
+	     $(if $(STAGEDCHM),VBOX_WITH_DOCS_CHM=1,VBOX_WITH_KCHMVIEWER=) \
 	     $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
@@ -103,7 +118,7 @@ debian/build-stamp $(verfile):
 	dh_testdir
 	. debian/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
-	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox*.chm $(builddir)/bin,)
+	$(if $(STAGEDCHM),cp $(STAGEDCHM)/VirtualBox*.chm $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI32.fd $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI64.fd $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
@@ -258,8 +273,8 @@ endif
 	    $(if $(NOQT),,usr/bin/VBox          usr/bin/virtualboxvm) \
 	    usr/bin/VBox                        usr/bin/VBoxManage \
 	    usr/bin/VBox                        usr/bin/vboxmanage \
-	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
-	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/vboxsdl) \
+	    $(if $(NOSDL),,usr/bin/VBox         usr/bin/VBoxSDL) \
+	    $(if $(NOSDL),,usr/bin/VBox         usr/bin/vboxsdl) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
 	    usr/bin/VBox                        usr/bin/vboxheadless \
