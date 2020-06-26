@@ -174,11 +174,11 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         self.logVmInfo(oVM);
 
-        # We skip tests for VBox < 6.1 for now.
-        fVersionIgnored = self.fpApiVer <= 6.1;
+        # We skip Linux Guest Additions testing for VBox < 6.1 for now.
+        fVersionIgnored = oTestVm.isLinux() and self.fpApiVer <= 6.1;
 
         if fVersionIgnored:
-            reporter.log('Skipping tests because VBox version %s is ignored' % (self.fpApiVer,));
+            reporter.log('Skipping testing for "%s" because VBox version %s is ignored' % (oTestVm.sKind, self.fpApiVer,));
         else:
             reporter.testStart('Waiting for TXS');
             if oTestVm.isWindows():
