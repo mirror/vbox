@@ -506,10 +506,9 @@ QUuid UIWizardNewVM::createdMachineId() const
 
 void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
 {
-    m_unattendedInstallData = unattendedInstallData;
-    UIWizardNewVMPageBasicInstallSetup *pPage = qobject_cast<UIWizardNewVMPageBasicInstallSetup *>(page(PageInstallSetup));
-    if (pPage)
-        pPage->setDefaultUnattendedInstallData(unattendedInstallData);
+    setField("userName", unattendedInstallData.m_strUserName);
+    setField("password", unattendedInstallData.m_strPassword);
+    setField("hostname", unattendedInstallData.m_strHostname);
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const

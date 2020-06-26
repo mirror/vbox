@@ -35,7 +35,6 @@ struct UIUnattendedInstallData
     bool m_fUnattendedEnabled;
     QUuid m_uMachineUid;
     QString m_strISOPath;
-    QString m_strGAIOSPath;
     bool m_fStartHeadless;
     QString m_strUserName;
     QString m_strPassword;
@@ -46,6 +45,8 @@ struct UIUnattendedInstallData
     QString m_strDetectedOSLanguages;
     QString m_strDetectedOSHints;
     QString m_strProductKey;
+    bool m_fInstallGuestAdditions;
+    QString m_strGuestAdditionsISOPath;
 };
 
 /** New Virtual Machine wizard: */

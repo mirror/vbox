@@ -616,6 +616,8 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
         unattendedInstallData.m_strUserName = comUnattendedInstaller.GetUser();
         unattendedInstallData.m_strPassword = comUnattendedInstaller.GetPassword();
         unattendedInstallData.m_strHostname = comUnattendedInstaller.GetHostname();
+        unattendedInstallData.m_fInstallGuestAdditions = comUnattendedInstaller.GetInstallGuestAdditions();
+        unattendedInstallData.m_strGuestAdditionsISOPath = comUnattendedInstaller.GetAdditionsIsoPath();
 
         pWizard->setDefaultUnattendedInstallData(unattendedInstallData);
 

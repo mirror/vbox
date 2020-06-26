@@ -41,6 +41,12 @@ QString UIWizardNewVMPageInstallSetup::userName() const
     return QString();
 }
 
+void UIWizardNewVMPageInstallSetup::setUserName(const QString &strName)
+{
+    if (m_pUserNamePasswordEditor)
+        return m_pUserNamePasswordEditor->setUserName(strName);
+}
+
 QString UIWizardNewVMPageInstallSetup::password() const
 {
     if (m_pUserNamePasswordEditor)
@@ -48,11 +54,23 @@ QString UIWizardNewVMPageInstallSetup::password() const
     return QString();
 }
 
+void UIWizardNewVMPageInstallSetup::setPassword(const QString &strPassword)
+{
+    if (m_pUserNamePasswordEditor)
+        return m_pUserNamePasswordEditor->setPassword(strPassword);
+}
+
 QString UIWizardNewVMPageInstallSetup::hostname() const
 {
     if (m_pHostnameLineEdit)
         return m_pHostnameLineEdit->text();
     return QString();
+}
+
+void UIWizardNewVMPageInstallSetup::setHostname(const QString &strHostName)
+{
+    if (m_pHostnameLineEdit)
+        return m_pHostnameLineEdit->setText(strHostName);
 }
 
 UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
@@ -83,18 +101,6 @@ UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
     registerField("userName", this, "userName");
     registerField("password", this, "password");
     registerField("hostname", this, "hostname");
-}
-
-void UIWizardNewVMPageBasicInstallSetup::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
-{
-    /* Initialize the widget data: */
-    if (m_pUserNamePasswordEditor)
-    {
-        m_pUserNamePasswordEditor->setUserName(unattendedInstallData.m_strUserName);
-        m_pUserNamePasswordEditor->setPassword(unattendedInstallData.m_strPassword);
-    }
-    if (m_pHostnameLineEdit)
-        m_pHostnameLineEdit->setText(unattendedInstallData.m_strHostname);
 }
 
 void UIWizardNewVMPageBasicInstallSetup::retranslateUi()
