@@ -1638,20 +1638,20 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sTxsVer = self.oTstDrv.txsVer(oSession, oTxsSession, 30 * 100, fIgnoreErrors = True);
 
         # Whether to enable verbose logging for VBoxService.
-        fEnableVerboseLogging = True;
+        fEnableVerboseLogging = False;
 
         # Old TXS versions had a bug which caused an infinite loop when executing stuff containing "$xxx",
         # so check the version here first and skip enabling verbose logging if needed.
-        if sTxsVer is None:
-            fEnableVerboseLogging = False;
+        if sTxsVer:
+            fEnableVerboseLogging = True;
 
         # On Windows guests we always can enable verbose logging.
         if oTestVm.isWindows():
             fEnableVerboseLogging = True;
 
-        # If debugging mode is enabled, skip this.
-        if self.oDebug.sImgPath:
-            fEnableVerboseLogging = False;
+        # If debugging mode is disabled, enable logging -- otherwise a manually set up logging could clash here.
+        if not self.oDebug.sImgPath:
+            fEnableVerboseLogging = True;
 
         #
         # Enable VBoxService verbose logging.
