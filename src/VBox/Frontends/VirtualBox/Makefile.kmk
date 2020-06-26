@@ -650,6 +650,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UISlidingAnimation.h \
 	src/widgets/UISlidingWidget.h \
 	src/widgets/UITabBar.h \
+	src/widgets/UIUserNamePasswordEditor.h \
 	src/widgets/UIMenuToolBar.h \
 	src/widgets/graphics/UIGraphicsButton.h \
 	src/widgets/graphics/UIGraphicsRotatorButton.h \
@@ -1113,6 +1114,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UISlidingAnimation.cpp \
 	src/widgets/UISlidingWidget.cpp \
 	src/widgets/UITabBar.cpp \
+	src/widgets/UIUserNamePasswordEditor.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/graphics/UIGraphicsButton.cpp \
 	src/widgets/graphics/UIGraphicsRotatorButton.cpp \

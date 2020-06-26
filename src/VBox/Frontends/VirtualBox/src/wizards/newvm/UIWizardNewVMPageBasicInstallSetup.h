@@ -21,10 +21,6 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QLineEdit>
-#include <QWidget>
-
 /* Local includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIWizardPage.h"
@@ -32,88 +28,12 @@
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
-class QSpinBox;
+class QLineEdit;
 class QIRichTextLabel;
+class UIUserNamePasswordEditor;
 struct UIUnattendedInstallData;
 
-class UIPasswordLineEdit : public QLineEdit
-{
-    Q_OBJECT;
 
-signals:
-
-    void sigTextVisibilityToggled(bool fTextVisible);
-
-public:
-
-    UIPasswordLineEdit(QWidget *pParent = 0);
-    void toggleTextVisibility(bool fTextVisible);
-
-protected:
-
-    virtual void paintEvent(QPaintEvent *pevent) /* override */;
-
-private:
-
-    void prepare();
-
-    QToolButton *m_pTextVisibilityButton;
-
-private slots:
-
-    void sltHandleTextVisibilityChange();
-};
-
-class UIUserNamePasswordEditor : public QIWithRetranslateUI<QWidget>
-{
-
-    Q_OBJECT;
-
-signals:
-
-    /** this is emitted whenever the content of one of the line edits is changed. */
-    void sigSomeTextChanged();
-
-public:
-
-    UIUserNamePasswordEditor(QWidget *pParent = 0);
-
-    QString userName() const;
-    void setUserName(const QString &strUserName);
-
-    QString password() const;
-    void setPassword(const QString &strPassword);
-
-    /** Returns false if username or password fields are empty, or password fields do not match. */
-    bool isComplete();
-
-protected:
-
-    void retranslateUi();
-
-private slots:
-
-    void sltHandlePasswordVisibility(bool fPasswordVisible);
-
-private:
-
-    void prepare();
-    template <class T>
-    void addLineEdit(int &iRow, QLabel *&pLabel, T *&pLineEdit, QGridLayout *pLayout);
-    /** Changes @p pLineEdit's base color to indicate an error or reverts it to the original color. */
-    void markLineEdit(QLineEdit *pLineEdit, bool fError);
-
-    QLineEdit          *m_pUserNameLineEdit;
-    UIPasswordLineEdit *m_pPasswordLineEdit;
-    UIPasswordLineEdit *m_pPasswordRepeatLineEdit;
-
-    QLabel *m_pUserNameLabel;
-    QLabel *m_pPasswordLabel;
-    QLabel *m_pPasswordRepeatLabel;
-    QColor m_orginalLineEditBaseColor;
-};
-
-/* 2nd page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPageInstallSetup : public UIWizardPageBase
 {
 public:
