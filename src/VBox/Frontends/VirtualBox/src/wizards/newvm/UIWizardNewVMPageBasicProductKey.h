@@ -21,21 +21,15 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QLineEdit>
-#include <QStringList>
-#include <QWidget>
 
 /* Local includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QGridLayout;
 class QLabel;
-class QSpinBox;
+class QLineEdit;
 class QIRichTextLabel;
-struct UIUnattendedInstallData;
 
 class UIWizardNewVMPageProductKey : public UIWizardPageBase
 {

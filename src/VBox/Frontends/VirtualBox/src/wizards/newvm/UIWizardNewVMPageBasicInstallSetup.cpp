@@ -16,26 +16,16 @@
  */
 
 /* Qt includes: */
-#include <QComboBox>
-#include <QCompleter>
-#include <QIntValidator>
 #include <QGridLayout>
-#include <QSpacerItem>
 #include <QLabel>
-#include <QSortFilterProxyModel>
-#include <QSpinBox>
-#include <QStringListModel>
 #include <QStyle>
 #include <QToolButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
-#include "UIBaseMemoryEditor.h"
-#include "UIBaseMemorySlider.h"
 #include "UICommon.h"
 #include "UIIconPool.h"
-#include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVMPageBasicInstallSetup.h"
 #include "UIWizardNewVM.h"
 

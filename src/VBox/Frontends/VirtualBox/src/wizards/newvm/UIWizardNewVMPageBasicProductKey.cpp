@@ -17,25 +17,15 @@
 
 /* Qt includes: */
 #include <QComboBox>
-#include <QCompleter>
-#include <QIntValidator>
 #include <QGridLayout>
-#include <QSpacerItem>
 #include <QLabel>
-#include <QSortFilterProxyModel>
-#include <QSpinBox>
-#include <QStringListModel>
-#include <QStyle>
-#include <QToolButton>
+#include <QLineEdit>
+#include <QSpacerItem>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
-#include "UIBaseMemoryEditor.h"
-#include "UIBaseMemorySlider.h"
-#include "UICommon.h"
 #include "UIIconPool.h"
-#include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVMPageBasicProductKey.h"
 #include "UIWizardNewVM.h"
 
@@ -47,7 +37,7 @@ UIWizardNewVMPageProductKey::UIWizardNewVMPageProductKey()
 
 QString UIWizardNewVMPageProductKey::productKey() const
 {
-    if (!m_pProductKeyLineEdit)
+    if (!m_pProductKeyLineEdit || !m_pProductKeyLineEdit->hasAcceptableInput())
         return QString();
     return m_pProductKeyLineEdit->text();
 }
@@ -64,6 +54,7 @@ UIWizardNewVMPageBasicProductKey::UIWizardNewVMPageBasicProductKey()
         {
             m_pHostnameLabel = new QLabel;
             m_pProductKeyLineEdit = new QLineEdit;
+            m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
             pGridLayout->addWidget(m_pHostnameLabel, 3, 0, 1, 1, Qt::AlignRight);
             pGridLayout->addWidget(m_pProductKeyLineEdit, 3, 1, 1, 3);
         }

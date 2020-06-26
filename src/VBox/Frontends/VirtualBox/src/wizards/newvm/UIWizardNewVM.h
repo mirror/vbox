@@ -45,6 +45,7 @@ struct UIUnattendedInstallData
     QString m_strDetectedOSFlavor;
     QString m_strDetectedOSLanguages;
     QString m_strDetectedOSHints;
+    QString m_strProductKey;
 };
 
 /** New Virtual Machine wizard: */

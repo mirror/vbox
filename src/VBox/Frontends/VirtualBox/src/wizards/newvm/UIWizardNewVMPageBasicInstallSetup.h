@@ -23,7 +23,6 @@
 
 /* Qt includes: */
 #include <QLineEdit>
-#include <QStringList>
 #include <QWidget>
 
 /* Local includes: */
