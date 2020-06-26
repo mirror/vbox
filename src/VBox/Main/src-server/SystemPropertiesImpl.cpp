@@ -1788,7 +1788,7 @@ HRESULT SystemProperties::i_getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditio
         if (m->strDefaultAdditionsISO.isEmpty())
         {
             ErrorInfoKeeper eik;
-            (void)setDefaultAdditionsISO("");
+            (void)i_setDefaultAdditionsISO("");
         }
         aDefaultAdditionsISO = m->strDefaultAdditionsISO;
     }
