@@ -1280,8 +1280,8 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                                             else
                                                 rc = VERR_NOT_SUPPORTED;
                                         }
-                                       else
-                                           LogFlowFunc(("Unable to query symlink info for '%s', rc=%Rrc\n", szPathReal, rc));
+                                        else
+                                            LogFlowFunc(("Unable to query symlink info for '%s', rc=%Rrc\n", szPathReal, rc));
                                     }
                                     else
                                     {
@@ -1678,7 +1678,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
 
     if (mDest.isEmpty())
     {
-        strErrorInfo = Utf8StrFmt(GuestSession::tr("Destination must not be empty"));
+        strErrorInfo = Utf8StrFmt(GuestSession::tr("Guest destination must not be empty"));
         rc = VERR_INVALID_PARAMETER;
     }
     else
@@ -1689,11 +1689,11 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             Utf8Str strSrc = itSrc->strSource;
             Utf8Str strDst = mDest;
 
-            LogFlowFunc(("Source: strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
+            LogFlowFunc(("strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
 
             if (strSrc.isEmpty())
             {
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source entry must not be empty"));
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Host source entry must not be empty"));
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -1702,7 +1702,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             rc = RTPathQueryInfo(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING);
             if (RT_FAILURE(rc))
             {
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("No such host file/directory: %s"), strSrc.c_str());
                 break;
             }
 
@@ -1710,7 +1710,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             {
                 if (itSrc->enmType != FsObjType_Directory)
                 {
-                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Host source is not a file: %s"), strSrc.c_str());
                     rc = VERR_NOT_A_FILE;
                     break;
                 }
@@ -1719,7 +1719,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             {
                 if (itSrc->enmType == FsObjType_Directory)
                 {
-                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Host source is not a directory: %s"), strSrc.c_str());
                     rc = VERR_NOT_A_DIRECTORY;
                     break;
                 }
@@ -1743,7 +1743,8 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
                 if (RT_FAILURE(rc))
                 {
                     delete pFsList;
-                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), rc);
+                    strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding host source '%s' to list: %Rrc"),
+                                              strSrc.c_str(), rc);
                     break;
                 }
 
