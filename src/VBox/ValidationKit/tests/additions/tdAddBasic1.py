@@ -174,67 +174,74 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         self.logVmInfo(oVM);
 
-        reporter.testStart('Waiting for TXS');
-        if oTestVm.isWindows():
-            self.sFileCdWait = ('%s/VBoxWindowsAdditions.exe' % (self.sGstPathGaPrefix,));
-        elif oTestVm.isLinux():
-            self.sFileCdWait = ('%s/VBoxLinuxAdditions.run' % (self.sGstPathGaPrefix,));
+        # We skip tests for VBox < 6.1 for now.
+        fVersionIgnored = self.fpApiVer <= 6.1;
 
-        oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
-                                                                  cMsCdWait = 5 * 60 * 1000,
-                                                                  sFileCdWait = self.sFileCdWait);
-        reporter.testDone();
+        if fVersionIgnored:
+            reporter.log('Skipping tests because VBox version %s is ignored' % (self.fpApiVer,));
+        else:
+            reporter.testStart('Waiting for TXS');
+            if oTestVm.isWindows():
+                self.sFileCdWait = ('%s/VBoxWindowsAdditions.exe' % (self.sGstPathGaPrefix,));
+            elif oTestVm.isLinux():
+                self.sFileCdWait = ('%s/VBoxLinuxAdditions.run' % (self.sGstPathGaPrefix,));
 
-        # Certain Linux guests don't behave accordingly so that detecting the CD isn't working properly.
-        # So reboot those guests in the hope that it works finally.
-        ### @todo Needs investigation; probably only udev or something is broken there (?).
-        if oTestVm.isLinux():
-            reporter.testStart('Rebooting and reconnecting to TXS');
-            fRc, oTxsSession = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, fCdWait = True,
-                                                                cMsCdWait = 5 * 60 * 1000,
-                                                                sFileCdWait = self.sFileCdWait);
+            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True,
+                                                                      cMsCdWait = 5 * 60 * 1000,
+                                                                      sFileCdWait = self.sFileCdWait);
             reporter.testDone();
 
-        if oSession is not None:
-            self.addTask(oTxsSession);
-            # Do the testing.
-            fSkip = 'install' not in self.asTests;
-            reporter.testStart('Install');
-            if not fSkip:
-                fRc, oTxsSession = self.testInstallAdditions(oSession, oTxsSession, oTestVm);
-            reporter.testDone(fSkip);
+            # Certain Linux guests don't behave accordingly so that detecting the CD isn't working properly.
+            # So reboot those guests in the hope that it works finally.
+            ### @todo Needs investigation; probably only udev or something is broken there (?).
+            if oTestVm.isLinux():
+                reporter.testStart('Rebooting and reconnecting to TXS');
+                fRc, oTxsSession = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, fCdWait = True,
+                                                                    cMsCdWait = 5 * 60 * 1000,
+                                                                    sFileCdWait = self.sFileCdWait);
+                reporter.testDone();
 
-            if  not fSkip \
-            and not fRc:
-                reporter.log('Skipping following tests as Guest Additions were not installed successfully');
-            else:
-                fSkip = 'guestprops' not in self.asTests;
-                reporter.testStart('Guest Properties');
+            if oSession is not None:
+                self.addTask(oTxsSession);
+                # Do the testing.
+                fSkip = 'install' not in self.asTests;
+                reporter.testStart('Install');
                 if not fSkip:
-                    fRc = self.testGuestProperties(oSession, oTxsSession, oTestVm) and fRc;
+                    fRc, oTxsSession = self.testInstallAdditions(oSession, oTxsSession, oTestVm);
                 reporter.testDone(fSkip);
 
-                fSkip = 'guestcontrol' not in self.asTests;
-                reporter.testStart('Guest Control');
-                if not fSkip:
-                    fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
-                reporter.testDone(fSkip);
+                if  not fSkip \
+                and not fRc:
+                    reporter.log('Skipping following tests as Guest Additions were not installed successfully');
+                else:
+                    fSkip = 'guestprops' not in self.asTests;
+                    reporter.testStart('Guest Properties');
+                    if not fSkip:
+                        fRc = self.testGuestProperties(oSession, oTxsSession, oTestVm) and fRc;
+                    reporter.testDone(fSkip);
 
-                fSkip = 'sharedfolders' not in self.asTests and self.fpApiVer >= 6.0;
-                reporter.testStart('Shared Folders');
-                if not fSkip:
-                    fRc, oTxsSession = self.aoSubTstDrvs[1].testIt(oTestVm, oSession, oTxsSession);
-                reporter.testDone(fSkip or fRc is None);
+                    fSkip = 'guestcontrol' not in self.asTests;
+                    reporter.testStart('Guest Control');
+                    if not fSkip:
+                        fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
+                    reporter.testDone(fSkip);
 
-            ## @todo Save and restore test.
+                    fSkip = 'sharedfolders' not in self.asTests;
+                    reporter.testStart('Shared Folders');
+                    if not fSkip:
+                        fRc, oTxsSession = self.aoSubTstDrvs[1].testIt(oTestVm, oSession, oTxsSession);
+                    reporter.testDone(fSkip or fRc is None);
 
-            ## @todo Reset tests.
+                ## @todo Save and restore test.
 
-            ## @todo Final test: Uninstallation.
+                ## @todo Reset tests.
 
-            # Cleanup.
-            self.removeTask(oTxsSession);
-            self.terminateVmBySession(oSession)
+                ## @todo Final test: Uninstallation.
+
+                # Cleanup.
+                self.removeTask(oTxsSession);
+                self.terminateVmBySession(oSession);
+
         return fRc;
 
     def testInstallAdditions(self, oSession, oTxsSession, oTestVm):
