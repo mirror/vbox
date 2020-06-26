@@ -1372,7 +1372,7 @@ class Session(TdTaskBase):
 
         The task returns UUID string (in {}) on success and False on failure.
         """
-        return self.startTask(cMsTimeout, fIgnoreErrors, "bye", self.taskUuid);
+        return self.startTask(cMsTimeout, fIgnoreErrors, "uuid", self.taskUuid);
 
     def syncUuid(self, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
