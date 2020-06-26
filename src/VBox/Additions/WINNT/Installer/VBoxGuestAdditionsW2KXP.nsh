@@ -301,7 +301,20 @@ FunctionEnd
 Function W2K_InstallFiles
 
   ; The Shared Folder IFS goes to the system directory
-  !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxSF.sys" "$g_strSystemDir\drivers\VBoxSF.sys" "$INSTDIR"
+  !if $%BUILD_TARGET_ARCH% == "x86"
+    ; On x86 we have to use a different shared folder driver linked against an older RDBSS for Windows 7 and older.
+    ${If} $g_strWinVersion == "2000"
+    ${OrIf} $g_strWinVersion == "Vista"
+    ${OrIf} $g_strWinVersion == "XP"
+    ${OrIf} $g_strWinVersion == "7"
+      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxSFW2K.sys" "$g_strSystemDir\drivers\VBoxSF.sys" "$INSTDIR"
+    ${Else}
+      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxSF.sys" "$g_strSystemDir\drivers\VBoxSF.sys" "$INSTDIR"
+    ${EndIf}
+  !else
+    !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxSF.sys" "$g_strSystemDir\drivers\VBoxSF.sys" "$INSTDIR"
+  !endif
+
   !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMRXNP.dll" "$g_strSystemDir\VBoxMRXNP.dll" "$INSTDIR"
   AccessControl::GrantOnFile "$g_strSystemDir\VBoxMRXNP.dll" "(BU)" "GenericRead"
   !if $%KBUILD_TARGET_ARCH% == "amd64"
