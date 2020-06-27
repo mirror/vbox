@@ -1711,12 +1711,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if cchHst > cchGst:
             cchMaxPath -= cchHst - cchGst;
             reporter.log('cchMaxPath=%s (cchHst=%s, cchGst=%s)' % (cchMaxPath, cchHst, cchGst,));
-        asCompatibleWith = None;
-        if oTestVm.isWindows():
-            asCompatibleWith = [ 'win' ];
         self.oTestFiles = vboxtestfileset.TestFileSet(oTestVm,
                                                       self.oTstDrv.getGuestTempDir(oTestVm), 'addgst-1',
-                                                      cchMaxPath = cchMaxPath, asCompatibleWith = asCompatibleWith);
+                                                      cchMaxPath = cchMaxPath, asCompatibleWith = [ oTestVm.getGuestOs() ]);
         return self.oTestFiles.upload(oTxsSession, self.oTstDrv);
 
 
