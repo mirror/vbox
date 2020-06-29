@@ -463,7 +463,7 @@ RTDECL(unsigned) ASMBitFirstSetU32(uint32_t u32)
 
 RTDECL(unsigned) ASMBitLastSetU32(uint32_t u32)
 {
-    int32_t iBit = 32;
+    uint32_t iBit = 32;
     while (iBit-- > 0)
         if (u32 & RT_BIT_32(iBit))
             return iBit + 1;
@@ -481,7 +481,7 @@ RTDECL(unsigned) ASMBitFirstSetU64(uint64_t u64)
 
 RTDECL(unsigned) ASMBitLastSetU64(uint64_t u64)
 {
-    int32_t iBit = 64;
+    uint32_t iBit = 64;
     while (iBit-- > 0)
         if (u64 & RT_BIT_64(iBit))
             return iBit + 1;
