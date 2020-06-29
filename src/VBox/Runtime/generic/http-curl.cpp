@@ -267,6 +267,8 @@ typedef struct RTHTTPINTERNAL
     void                           *pvHeaderCallbackUser;
     /** @} */
 
+    /** Buffer for human readable error messages from curl on failures or problems. */
+    char szErrorBuffer[CURL_ERROR_SIZE];
 } RTHTTPINTERNAL;
 /** Pointer to an internal HTTP client instance. */
 typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
@@ -397,6 +399,8 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
                 pThis->cbUploadContent          = UINT64_MAX;
                 pThis->offUploadContent         = 0;
 
+                /* ask curl to give us back error messages */
+                curl_easy_setopt(pThis->pCurl, CURLOPT_ERRORBUFFER, pThis->szErrorBuffer);
 
                 *phHttp = (RTHTTP)pThis;
 
@@ -2840,7 +2844,12 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, CURLcode rcCurl, uint32_t 
             default:
                 break;
         }
-        Log(("rtHttpGetCalcStatus: rc=%Rrc rcCurl=%u\n", rc, rcCurl));
+        Log(("%s: %Rrc: %u = %s%s%.*s\n",
+             __FUNCTION__,
+             rc, rcCurl, curl_easy_strerror((CURLcode)rcCurl),
+             pThis->szErrorBuffer[0] != '\0' ? ": " : "",
+             (int) sizeof(pThis->szErrorBuffer),
+             pThis->szErrorBuffer[0] != '\0' ? pThis->szErrorBuffer : ""));
     }
 
     return rc;
