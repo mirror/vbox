@@ -2824,9 +2824,8 @@ static bool dbgDiggerLinuxProbeWithAddr(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCUI
  * @returns Flag whether a possible candidate location was found.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The user mode VM handle.
- * @param   uAddrKernelStart    The first address the kernel is expected at.
  */
-static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCUINTPTR uAddrKernelStart)
+static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM)
 {
     /**
      * With KASLR the kernel is loaded at a different address at each boot making detection
@@ -2853,7 +2852,16 @@ static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCUINTP
      *
      * So the highest offset the kernel can start is 0x40000000 which is 1GB (plus the maximum kernel size we defined).
      */
-    if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, uAddrKernelStart, _1G + LNX_MAX_KERNEL_SIZE))
+    if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, LNX64_KERNEL_ADDRESS_START, _1G + LNX_MAX_KERNEL_SIZE))
+        return true;
+
+    /*
+     * 32bit variant, makes sure we don't exceed the 4GB address space or DBGFR3MemScan() returns VERR_DBGF_MEM_NOT_FOUND immediately
+     * without searching the remainder of the address space.
+     *
+     * The default split is 3GB userspace and 1GB kernel, so we just search the entire upper 1GB kernel space.
+     */
+    if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, LNX32_KERNEL_ADDRESS_START, _4G - LNX32_KERNEL_ADDRESS_START))
         return true;
 
     return false;
@@ -2917,10 +2925,7 @@ static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, void *pvData)
     }
 
     /* Maybe the kernel uses KASLR. */
-    if (dbgDiggerLinuxProbeKaslr(pThis, pUVM, LNX32_KERNEL_ADDRESS_START))
-        return true;
-
-    if (dbgDiggerLinuxProbeKaslr(pThis, pUVM, LNX64_KERNEL_ADDRESS_START))
+    if (dbgDiggerLinuxProbeKaslr(pThis, pUVM))
         return true;
 
     return false;
