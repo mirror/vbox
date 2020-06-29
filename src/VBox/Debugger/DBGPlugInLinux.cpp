@@ -292,25 +292,21 @@ static int dbgDiggerLinuxKrnlLogBufFindByNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM
 
         /** @todo Go back to find the start address of the kernel log (or we loose potential kernel log messages). */
 
-        if (RT_SUCCESS(rc))
+        if (   RT_SUCCESS(rc)
+            && cbLogBuf)
         {
             /* Align log buffer size to a power of two. */
-            if (cbLogBuf && !RT_IS_POWER_OF_TWO(cbLogBuf))
-            {
-                uint32_t i = 0;
+            uint32_t idxBitLast = ASMBitLastSetU32(cbLogBuf);
+            idxBitLast--; /* There is at least one bit set, see check above. */
 
-                while (cbLogBuf)
-                {
-                    cbLogBuf >>= 1;
-                    i++;
-                }
-
-                cbLogBuf = 1 << i;
-            }
+            if (cbLogBuf & (RT_BIT_32(idxBitLast) - 1))
+                idxBitLast++;
 
             *pGCPtrLogBuf = AddrHit.FlatPtr;
-            *pcbLogBuf    = RT_MIN(cbLogBuf, LNX_MAX_KERNEL_LOG_SIZE);
+            *pcbLogBuf    = RT_MIN(RT_BIT_32(idxBitLast), LNX_MAX_KERNEL_LOG_SIZE);
         }
+        else if (RT_SUCCESS(rc))
+            rc = VERR_NOT_FOUND;
     }
 
     return rc;
