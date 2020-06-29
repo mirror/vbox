@@ -50,6 +50,12 @@ DnDDroppedFiles::~DnDDroppedFiles(void)
     closeInternal();
 }
 
+/**
+ * Adds a file reference to a dropped files directory.
+ *
+ * @returns VBox status code.
+ * @param   pszFile             Path of file entry to add.
+ */
 int DnDDroppedFiles::AddFile(const char *pszFile)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
@@ -59,6 +65,13 @@ int DnDDroppedFiles::AddFile(const char *pszFile)
     return VINF_SUCCESS;
 }
 
+/**
+ * Adds a directory reference to a dropped files directory.
+ * Note: This does *not* (recursively) add sub entries.
+ *
+ * @returns VBox status code.
+ * @param   pszDir              Path of directory entry to add.
+ */
 int DnDDroppedFiles::AddDir(const char *pszDir)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
@@ -68,6 +81,11 @@ int DnDDroppedFiles::AddDir(const char *pszDir)
     return VINF_SUCCESS;
 }
 
+/**
+ * Closes the dropped files directory handle, internal version.
+ *
+ * @returns VBox status code.
+ */
 int DnDDroppedFiles::closeInternal(void)
 {
     int rc;
@@ -84,21 +102,43 @@ int DnDDroppedFiles::closeInternal(void)
     return rc;
 }
 
+/**
+ * Closes the dropped files directory handle.
+ *
+ * @returns VBox status code.
+ */
 int DnDDroppedFiles::Close(void)
 {
     return closeInternal();
 }
 
+/**
+ * Returns the absolute path of the dropped files directory.
+ *
+ * @returns Pointer to absolute path of the dropped files directory.
+ */
 const char *DnDDroppedFiles::GetDirAbs(void) const
 {
     return this->m_strPathAbs.c_str();
 }
 
+/**
+ * Returns whether the dropped files directory has been opened or not.
+ *
+ * @returns \c true if open, \c false if not.
+ */
 bool DnDDroppedFiles::IsOpen(void) const
 {
     return (this->m_hDir != NULL);
 }
 
+/**
+ * Opens (creates) the dropped files directory.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             Absolute path where to create the dropped files directory.
+ * @param   fFlags              Dropped files flags to use for this directory.
+ */
 int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFILE_FLAGS_NONE */)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
@@ -166,6 +206,12 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /
     return rc;
 }
 
+/**
+ * Opens (creates) the dropped files directory in the system's temp directory.
+ *
+ * @returns VBox status code.
+ * @param   fFlags              Dropped files flags to use for this directory.
+ */
 int DnDDroppedFiles::OpenTemp(DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFILE_FLAGS_NONE */)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
@@ -183,12 +229,19 @@ int DnDDroppedFiles::OpenTemp(DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFI
     return rc;
 }
 
-int DnDDroppedFiles::Reset(bool fRemoveDropDir)
+/**
+ * Resets a droppped files directory.
+ *
+ * @returns VBox status code.
+ * @param   fDelete             Whether to physically delete the directory and its content
+ *                              or just clear the internal references.
+ */
+int DnDDroppedFiles::Reset(bool fDelete)
 {
     int rc = closeInternal();
     if (RT_SUCCESS(rc))
     {
-        if (fRemoveDropDir)
+        if (fDelete)
         {
             rc = Rollback();
         }
@@ -203,6 +256,11 @@ int DnDDroppedFiles::Reset(bool fRemoveDropDir)
     return rc;
 }
 
+/**
+ * Re-opens a droppes files directory.
+ *
+ * @returns VBox status code, or VERR_NOT_FOUND if the dropped files directory has not been opened before.
+ */
 int DnDDroppedFiles::Reopen(void)
 {
     if (this->m_strPathAbs.isEmpty())
@@ -211,6 +269,12 @@ int DnDDroppedFiles::Reopen(void)
     return OpenEx(this->m_strPathAbs.c_str(), this->m_fOpen);
 }
 
+/**
+ * Performs a rollback of a dropped files directory.
+ * This cleans the directory by physically deleting all files / directories which have been added before.
+ *
+ * @returns VBox status code.
+ */
 int DnDDroppedFiles::Rollback(void)
 {
     if (this->m_strPathAbs.isEmpty())

@@ -70,7 +70,7 @@ public:
     int OpenTemp(DNDURIDROPPEDFILEFLAGS fFlags = DNDURIDROPPEDFILE_FLAGS_NONE);
     const char *GetDirAbs(void) const;
     int Reopen(void);
-    int Reset(bool fDeleteContent);
+    int Reset(bool fDelete);
     int Rollback(void);
 
 protected:
