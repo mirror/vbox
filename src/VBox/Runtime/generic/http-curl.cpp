@@ -523,7 +523,7 @@ RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects)
      */
     if (pThis->cMaxRedirects != cMaxRedirects)
     {
-        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_MAXREDIRS, (long)cMaxRedirects);
+        CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_MAXREDIRS, (long)cMaxRedirects);
         AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_MAXREDIRS=%u: %d (%#x)\n", cMaxRedirects, rcCurl, rcCurl),
                         VERR_HTTP_CURL_ERROR);
 
@@ -577,7 +577,7 @@ RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp)
 static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProxyType, const char *pszHost,
                                    uint32_t uPort, const char *pszUsername, const char *pszPassword)
 {
-    int rcCurl;
+    CURLcode rcCurl;
     AssertReturn(pszHost, VERR_INVALID_PARAMETER);
     Log(("rtHttpUpdateProxyConfig: pThis=%p type=%d host='%s' port=%u user='%s'%s\n",
          pThis, enmProxyType, pszHost, uPort, pszUsername, pszPassword ? " with password" : " without password"));
@@ -2077,7 +2077,7 @@ static int rtHttpUpdateUserAgentHeader(PRTHTTPINTERNAL pThis, PRTHTTPHEADER pNew
         pThis->fHaveUserAgentHeader = true;
         if (pThis->fHaveSetUserAgent)
         {
-            int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_USERAGENT, (char *)NULL);
+            CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_USERAGENT, (char *)NULL);
             Assert(CURL_SUCCESS(rcCurl)); NOREF(rcCurl);
             pThis->fHaveSetUserAgent = false;
         }
@@ -2165,7 +2165,7 @@ static int rtHttpAddHeaderWorker(PRTHTTPINTERNAL pThis, const char *pchName, siz
             pThis->ppHeadersTail = &pHdr->Core.next;
         pThis->pHeaders = &pHdr->Core;
 
-        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
+        CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
         if (CURL_SUCCESS(rcCurl))
             return rtHttpUpdateUserAgentHeader(pThis, pHdr);
         return VERR_HTTP_CURL_ERROR;
@@ -2244,7 +2244,7 @@ RTR3DECL(int) RTHttpAddRawHeader(RTHTTP hHttp, const char *pszHeader, uint32_t f
      */
     if (!pThis->pHeaders)
     {
-        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pHeaders);
+        CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pHeaders);
         if (CURL_FAILURE(rcCurl))
         {
             curl_slist_free_all(pHeaders);
@@ -2524,7 +2524,7 @@ RTR3DECL(int) RTHttpSignHeaders(RTHTTP hHttp, RTHTTPMETHOD enmMethod, const char
                                 pThis->ppHeadersTail  = &pHdr->Core.next;
                             pThis->pHeaders = &pHdr->Core;
 
-                            int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
+                            CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_HTTPHEADER, pThis->pHeaders);
                             if (CURL_SUCCESS(rcCurl))
                                 return VINF_SUCCESS;
                             rc = VERR_HTTP_CURL_ERROR;
@@ -2714,7 +2714,7 @@ RTR3DECL(int) RTHttpSetVerifyPeer(RTHTTP hHttp, bool fVerify)
 
     if (pThis->fVerifyPeer != fVerify)
     {
-        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_SSL_VERIFYPEER, (long)fVerify);
+        CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_SSL_VERIFYPEER, (long)fVerify);
         AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_SSL_VERIFYPEER=%RTbool: %d (%#x)\n", fVerify, rcCurl, rcCurl),
                         VERR_HTTP_CURL_ERROR);
         pThis->fVerifyPeer = fVerify;
@@ -2739,7 +2739,7 @@ RTR3DECL(int) RTHttpSetVerifyPeer(RTHTTP hHttp, bool fVerify)
  * @param   puHttpStatus    Where to optionally return the HTTP status.  If specified,
  *                          the HTTP statuses are not translated to IPRT status codes.
  */
-static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, int rcCurl, uint32_t *puHttpStatus)
+static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, CURLcode rcCurl, uint32_t *puHttpStatus)
 {
     int rc = VERR_HTTP_CURL_ERROR;
 
@@ -2890,7 +2890,7 @@ static int rtHttpApplySettings(PRTHTTPINTERNAL pThis, const char *pszUrl)
     /*
      * The URL.
      */
-    int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_URL, pszUrl);
+    CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_URL, pszUrl);
     if (CURL_FAILURE(rcCurl))
         return VERR_INVALID_PARAMETER;
 
@@ -3363,7 +3363,7 @@ static int rtHttpGetToMem(RTHTTP hHttp, const char *pszUrl, bool fNoBody, uint8_
     if (RT_SUCCESS(rc))
     {
         RT_ZERO(pThis->BodyOutput.uData.Mem);
-        int rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteBodyData, pThis);
+        CURLcode rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteBodyData, pThis);
         if (fNoBody)
         {
             if (CURL_SUCCESS(rcCurl))
@@ -3504,7 +3504,7 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
     if (RT_SUCCESS(rc))
     {
         pThis->BodyOutput.uData.hFile = NIL_RTFILE;
-        int rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteDataToFile, (void *)&pThis->BodyOutput);
+        CURLcode rcCurl = rtHttpSetWriteCallback(pThis, &rtHttpWriteDataToFile, (void *)&pThis->BodyOutput);
         if (CURL_SUCCESS(rcCurl))
         {
             /*
@@ -3587,7 +3587,7 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
     if (RT_SUCCESS(rc))
     {
         /* Set the HTTP method. */
-        int rcCurl = 1;
+        CURLcode rcCurl = CURLE_BAD_FUNCTION_ARGUMENT;
         switch (enmMethod)
         {
             case RTHTTPMETHOD_GET:
@@ -3753,7 +3753,7 @@ RTR3DECL(int) RTHttpSetUploadCallback(RTHTTP hHttp, uint64_t cbContent, PFNRTHTT
     if (cbContent != UINT64_MAX)
     {
         AssertCompile(sizeof(curl_off_t) == sizeof(uint64_t));
-        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_INFILESIZE_LARGE, cbContent);
+        CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_INFILESIZE_LARGE, cbContent);
         AssertMsgReturn(CURL_SUCCESS(rcCurl), ("%d (%#x)\n", rcCurl, rcCurl), VERR_HTTP_CURL_ERROR);
     }
     return VINF_SUCCESS;
