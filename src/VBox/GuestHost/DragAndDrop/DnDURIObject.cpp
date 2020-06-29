@@ -32,7 +32,7 @@
 #include <VBox/log.h>
 
 
-DnDURIObject::DnDURIObject(Type enmType = /* Type_Unknown */, const RTCString &strPathAbs /* = "" */)
+DnDURIObject::DnDURIObject(Type enmType /* = Type_Unknown */, const RTCString &strPathAbs /* = "" */)
 {
     int rc2 = Init(enmType, strPathAbs);
     AssertRC(rc2);
