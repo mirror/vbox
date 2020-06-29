@@ -64,10 +64,6 @@ MY_WINDOWS_HOST=""
 MY_OPT_MINIMAL=""
 MY_OPT_USE_WILDCARDS="yes"
 
-#MY_KBUILD_PATH="${KBUILD_PATH}"
-#test -z "${MY_KBUILD_PATH}" && MY_KBUILD_PATH="${PATH_KBUILD}"
-#MY_KBUILD=""
-
 
 ##
 # Gets the absolute path to an existing directory.
