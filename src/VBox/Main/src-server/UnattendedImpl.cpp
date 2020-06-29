@@ -486,6 +486,11 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                     pszVersion = "2003";    // ??
                     *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("vb_release")) == 0)
+                {
+                    pszVersion = "2004";    // ?? vb=Vibranium
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("20h2_release")) == 0)
                 {
                     pszVersion = "2009";    // ??
