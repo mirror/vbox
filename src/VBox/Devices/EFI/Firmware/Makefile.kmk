@@ -242,13 +242,13 @@ endif
 #
 ifeq ($(KBUILD_HOST),win)
  ifndef TOOL_$(VBOX_VCC_TOOL_STEM)X86
-  include $(PATH_KBUILD)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
+  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)X86.kmk
  endif
  ifndef TOOL_$(VBOX_VCC_TOOL_STEM)AMD64
-  include $(PATH_KBUILD)/tools/$(VBOX_VCC_TOOL_STEM)AMD64.kmk
+  include $(KBUILD_PATH)/tools/$(VBOX_VCC_TOOL_STEM)AMD64.kmk
  endif
  ifndef SDK_WINSDK10
-  include $(PATH_KBUILD)/sdk/WINSDK10.kmk
+  include $(KBUILD_PATH)/sdk/WINSDK10.kmk
  endif
 endif
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
