@@ -165,6 +165,9 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
 
         /* Remember new visual state: */
         m_visualState = visualState;
+
+        /* Save requested visual state: */
+        gEDataManager->setRequestedVisualState(m_visualState, uiCommon().managedVMUuid());
     }
     else
     {

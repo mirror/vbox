@@ -1208,6 +1208,13 @@ void UIMachineLogic::prepareActionConnections()
 #endif /* VBOX_WS_MAC */
 }
 
+void UIMachineLogic::prepareOtherConnections()
+{
+    /* Extra-data connections: */
+    connect(gEDataManager, &UIExtraDataManager::sigVisualStateChange,
+            this, &UIMachineLogic::sltHandleVisualStateChange);
+}
+
 void UIMachineLogic::prepareHandlers()
 {
     /* Prepare menu update-handlers: */
@@ -2729,6 +2736,27 @@ void UIMachineLogic::sltShowGlobalPreferences()
 
     /* Just show Global Preferences: */
     showGlobalPreferences();
+}
+
+void UIMachineLogic::sltHandleVisualStateChange()
+{
+    /* Check for new requested value stored in extra-data: */
+    const UIVisualStateType enmRequestedState = gEDataManager->requestedVisualState(uiCommon().managedVMUuid());
+    /* Check whether current value OR old requested value differs from new requested one.
+     * That way we will NOT enter seamless mode instantly if it is already planned
+     * but is not entered because we're waiting for a guest addition permission. */
+    if (   visualStateType() != enmRequestedState
+        && uisession()->requestedVisualState() != enmRequestedState)
+    {
+        switch (enmRequestedState)
+        {
+            case UIVisualStateType_Normal: return sltChangeVisualStateToNormal();
+            case UIVisualStateType_Fullscreen: return sltChangeVisualStateToFullscreen();
+            case UIVisualStateType_Seamless: return sltChangeVisualStateToSeamless();
+            case UIVisualStateType_Scale: return sltChangeVisualStateToScale();
+            default: break;
+        }
+    }
 }
 
 void UIMachineLogic::typeHostKeyComboPressRelease(bool fToggleSequence)

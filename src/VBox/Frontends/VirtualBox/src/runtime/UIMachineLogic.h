@@ -226,7 +226,7 @@ protected:
     virtual void prepareSessionConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
-    virtual void prepareOtherConnections() {}
+    virtual void prepareOtherConnections();
     virtual void prepareHandlers();
     virtual void prepareMachineWindows() = 0;
     virtual void prepareMenu() {}
@@ -351,6 +351,9 @@ private slots:
 
     /** Close Runtime UI. */
     void sltCloseRuntimeUI() { closeRuntimeUI(); }
+
+    /** Handles request for visual state change. */
+    void sltHandleVisualStateChange();
 
 private:
 

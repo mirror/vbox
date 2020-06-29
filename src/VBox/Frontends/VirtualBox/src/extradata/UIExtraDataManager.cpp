@@ -4626,6 +4626,11 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
                  strKey == GUI_RestrictedStatusBarIndicators ||
                  strKey == GUI_StatusBar_IndicatorOrder)
             emit sigStatusBarConfigurationChange(uMachineID);
+        /* Visual state change: */
+        else if (strKey == GUI_Fullscreen ||
+                 strKey == GUI_Seamless ||
+                 strKey == GUI_Scale)
+            emit sigVisualStateChange(uMachineID);
         /* Scale-factor change: */
         else if (strKey == GUI_ScaleFactor)
             emit sigScaleFactorChange(uMachineID);

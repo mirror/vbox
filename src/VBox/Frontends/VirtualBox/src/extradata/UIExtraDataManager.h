@@ -80,6 +80,9 @@ signals:
     /** Notifies about VirtualBox Manager / Details pane options change. */
     void sigDetailsOptionsChange(DetailsElementType enmType);
 
+    /** Notifies about visual state change. */
+    void sigVisualStateChange(const QUuid &uMachineID);
+
     /** Notifies about menu-bar configuration change. */
     void sigMenuBarConfigurationChange(const QUuid &uMachineID);
     /** Notifies about status-bar configuration change. */
