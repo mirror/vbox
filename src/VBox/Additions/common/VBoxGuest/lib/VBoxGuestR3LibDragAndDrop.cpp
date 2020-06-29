@@ -72,7 +72,6 @@ static int vbglR3DnDGetNextMsgType(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puMsg, 
     AssertPtrReturn(pcParms, VERR_INVALID_POINTER);
 
     HGCMMsgGetNext Msg;
-    RT_ZERO(Msg);
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GET_NEXT_HOST_MSG, 3);
     Msg.uMsg.SetUInt32(0);
     Msg.cParms.SetUInt32(0);
@@ -127,8 +126,6 @@ static int vbglR3DnDHGRecvAction(PVBGLR3GUESTDNDCMDCTX pCtx,
         return VERR_NO_MEMORY;
 
     HGCMMsgHGAction Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, uMsg, 8);
     Msg.u.v3.uContext.SetUInt32(0);
     Msg.u.v3.uScreenId.SetUInt32(0);
@@ -184,8 +181,6 @@ static int vbglR3DnDHGRecvLeave(PVBGLR3GUESTDNDCMDCTX pCtx)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgHGLeave Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_EVT_LEAVE, 1);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -205,8 +200,6 @@ static int vbglR3DnDHGRecvCancel(PVBGLR3GUESTDNDCMDCTX pCtx)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgHGCancel Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_CANCEL, 1);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -238,8 +231,6 @@ static int vbglR3DnDHGRecvDir(PVBGLR3GUESTDNDCMDCTX pCtx,
     AssertPtrReturn(pfMode,         VERR_INVALID_POINTER);
 
     HGCMMsgHGSendDir Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DIR, 4);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -281,8 +272,6 @@ static int vbglR3DnDHGRecvFileData(PVBGLR3GUESTDNDCMDCTX pCtx,
     AssertPtrReturn(pcbDataRecv,     VERR_INVALID_POINTER);
 
     HGCMMsgHGSendFileData Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_FILE_DATA, 5);
     Msg.u.v3.uContext.SetUInt32(0);
     Msg.u.v3.pvData.SetPtr(pvData, cbData);
@@ -329,8 +318,6 @@ static int vbglR3DnDHGRecvFileHdr(PVBGLR3GUESTDNDCMDCTX  pCtx,
     AssertReturn(pcbTotal,       VERR_INVALID_POINTER);
 
     HGCMMsgHGSendFileHdr Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_FILE_HDR, 6);
     Msg.uContext.SetUInt32(0); /** @todo Not used yet. */
     Msg.pvName.SetPtr(pszFilename, cbFilename);
@@ -657,8 +644,6 @@ static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     LogFlowFunc(("pvDate=%p, cbData=%RU32\n", pvData, cbData));
 
     HGCMMsgHGSendData Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DATA, 5);
     Msg.u.v3.uContext.SetUInt32(0);
     Msg.u.v3.pvData.SetPtr(pvData, cbData);
@@ -703,7 +688,6 @@ static int vbglR3DnDHGRecvDataHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     Assert(pCtx->uProtocol >= 3); /* Only for protocol v3 and up. */
 
     HGCMMsgHGSendDataHdr Msg;
-    RT_ZERO(Msg);
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DATA_HDR, 12);
     Msg.uContext.SetUInt32(0);
     Msg.uFlags.SetUInt32(0);
@@ -970,8 +954,6 @@ static int vbglR3DnDGHRecvPending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t *puScreen
    /* pScreenID is optional. */
 
     HGCMMsgGHReqPending Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_GH_REQ_PENDING, 2);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -1013,8 +995,6 @@ static int vbglR3DnDGHRecvDropped(PVBGLR3GUESTDNDCMDCTX pCtx,
         return VERR_NO_MEMORY;
 
     HGCMMsgGHDropped Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_GH_EVT_DROPPED, 4);
     Msg.u.v3.uContext.SetUInt32(0);
     Msg.u.v3.pvFormat.SetPtr(pszFormatTmp, cbFormatTmp);
@@ -1111,8 +1091,6 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
          *       does not implement this command.
          */
         HGCMMsgConnect Msg;
-        RT_ZERO(Msg);
-
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_CONNECT, 3);
         /** @todo Context ID not used yet. */
         Msg.u.v3.uContext.SetUInt32(0);
@@ -1366,8 +1344,6 @@ VBGLR3DECL(int) VbglR3DnDHGSendAckOp(PVBGLR3GUESTDNDCMDCTX pCtx, VBOXDNDACTION d
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgHGAck Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_ACK_OP, 2);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -1394,8 +1370,6 @@ VBGLR3DECL(int) VbglR3DnDHGSendReqData(PVBGLR3GUESTDNDCMDCTX pCtx, const char* p
     const uint32_t cbFormat = (uint32_t)strlen(pcszFormat) + 1; /* Include termination */
 
     HGCMMsgHGReqData Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_REQ_DATA, 3);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -1421,8 +1395,6 @@ VBGLR3DECL(int) VbglR3DnDHGSendProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uSt
     AssertReturn(uStatus > DND_PROGRESS_UNKNOWN, VERR_INVALID_PARAMETER);
 
     HGCMMsgHGProgress Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_HG_EVT_PROGRESS, 4);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -1458,8 +1430,6 @@ VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
         return VERR_INVALID_UTF8_ENCODING;
 
     HGCMMsgGHAckPending Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_ACK_PENDING, 5);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -1490,8 +1460,6 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
     AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
     HGCMMsgGHSendDataHdr MsgHdr;
-    RT_ZERO(MsgHdr);
-
     VBGL_HGCM_HDR_INIT(&MsgHdr.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DATA_HDR, 12);
     MsgHdr.uContext.SetUInt32(0);                           /** @todo Not used yet. */
     MsgHdr.uFlags.SetUInt32(0);                             /** @todo Not used yet. */
@@ -1575,8 +1543,6 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     const uint32_t cbPath = (uint32_t)strPath.length() + 1; /* Include termination. */
 
     HGCMMsgGHSendDir Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DIR, 4);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
@@ -1613,8 +1579,6 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
                  pObj->GetSize(), pObj->GetMode()));
 
     HGCMMsgGHSendFileHdr MsgHdr;
-    RT_ZERO(MsgHdr);
-
     VBGL_HGCM_HDR_INIT(&MsgHdr.hdr, pCtx->uClientID, GUEST_DND_GH_SND_FILE_HDR, 6);
     MsgHdr.uContext.SetUInt32(0);                                                    /* Context ID; unused at the moment. */
     MsgHdr.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
@@ -1633,8 +1597,6 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
          * Send the actual file data, chunk by chunk.
          */
         HGCMMsgGHSendFileData Msg;
-        RT_ZERO(Msg);
-
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_FILE_DATA, 5);
         Msg.u.v3.uContext.SetUInt32(0);
         Msg.u.v3.pvChecksum.SetPtr(NULL, 0);
@@ -1868,8 +1830,6 @@ VBGLR3DECL(int) VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcErr)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     HGCMMsgGHError Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_EVT_ERROR, 2);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
