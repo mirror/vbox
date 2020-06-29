@@ -396,7 +396,7 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     /*
      * Enter the main loop of retieving files + directories.
      */
-    DnDURIObject objFile(DnDURIObject::Type_File);
+    DnDURIObject objFile;
 
     char szPathName[RTPATH_MAX] = { 0 };
     uint32_t cbPathName = 0;
@@ -496,14 +496,18 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 #else
                                 uint32_t fCreationMode = (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR;
 #endif
-                                rc = objFile.OpenEx(strPathAbs, DnDURIObject::View_Target, fOpen, fCreationMode);
+                                rc = objFile.Init(DnDURIObject::Type_File, strPathAbs);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = pDroppedFiles->AddFile(strPathAbs.c_str());
+                                    rc = objFile.Open(fOpen, fCreationMode);
                                     if (RT_SUCCESS(rc))
                                     {
-                                        cbFileWritten = 0;
-                                        objFile.SetSize(cbFileSize);
+                                        rc = pDroppedFiles->AddFile(strPathAbs.c_str());
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            cbFileWritten = 0;
+                                            objFile.SetSize(cbFileSize);
+                                        }
                                     }
                                 }
                             }
@@ -1533,7 +1537,7 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     AssertPtrReturn(pCtx,                                         VERR_INVALID_POINTER);
     AssertReturn(pObj->GetType() == DnDURIObject::Type_Directory, VERR_INVALID_PARAMETER);
 
-    RTCString strPath = pObj->GetDestPathAbs();
+    RTCString strPath = pObj->GetPath();
     LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n",
                  strPath.c_str(), strPath.length(), pObj->GetMode()));
 
@@ -1573,7 +1577,7 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject *pObj)
     if (!pvBuf)
         return VERR_NO_MEMORY;
 
-    RTCString strPath = pObj->GetDestPathAbs();
+    RTCString strPath = pObj->GetPath();
 
     LogFlowFunc(("strFile=%s (%zu), cbSize=%RU64, fMode=0x%x\n", strPath.c_str(), strPath.length(),
                  pObj->GetSize(), pObj->GetMode()));

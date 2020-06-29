@@ -881,7 +881,7 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCt
     DnDURIObject *pObj = pObjCtx->getObj();
     AssertPtr(pObj);
 
-    RTCString strPath = pObj->GetDestPathAbs();
+    RTCString strPath = pObj->GetPath();
     if (strPath.isEmpty())
         return VERR_INVALID_PARAMETER;
     if (strPath.length() >= RTPATH_MAX) /* Note: Maximum is RTPATH_MAX on guest side. */
@@ -908,7 +908,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
     DnDURIObject *pObj = pObjCtx->getObj();
     AssertPtr(pObj);
 
-    RTCString strPathSrc = pObj->GetSourcePathAbs();
+    RTCString strPathSrc = pObj->GetPath();
     if (strPathSrc.isEmpty())
         return VERR_INVALID_PARAMETER;
 
@@ -921,8 +921,10 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
     if (!pObj->IsOpen())
     {
         LogRel2(("DnD: Opening host file '%s' for transferring to guest\n", strPathSrc.c_str()));
-        rc = pObj->OpenEx(strPathSrc, DnDURIObject::View_Source,
-                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+        rc = pObj->Init(DnDURIObject::Type_File, strPathSrc);
+        if (RT_SUCCESS(rc))
+            rc = pObj->Open(RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+
         if (RT_FAILURE(rc))
             LogRel(("DnD: Opening host file '%s' failed, rc=%Rrc\n", strPathSrc.c_str(), rc));
     }
@@ -942,15 +944,15 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
                  */
                 pMsg->setType(HOST_DND_HG_SND_FILE_HDR);
                 pMsg->setNextUInt32(0); /** @todo ContextID not used yet. */
-                pMsg->setNextString(pObj->GetDestPathAbs().c_str());                  /* pvName */
-                pMsg->setNextUInt32((uint32_t)(pObj->GetDestPathAbs().length() + 1)); /* cbName */
-                pMsg->setNextUInt32(0);                                            /* uFlags */
-                pMsg->setNextUInt32(pObj->GetMode());                              /* fMode */
-                pMsg->setNextUInt64(pObj->GetSize());                              /* uSize */
+                pMsg->setNextString(pObj->GetPath().c_str());                  /* pvName */
+                pMsg->setNextUInt32((uint32_t)(pObj->GetPath().length() + 1)); /* cbName */
+                pMsg->setNextUInt32(0);                                        /* uFlags */
+                pMsg->setNextUInt32(pObj->GetMode());                          /* fMode */
+                pMsg->setNextUInt64(pObj->GetSize());                          /* uSize */
 
                 LogFlowFunc(("Sending file header ...\n"));
-                LogRel2(("DnD: Transferring host file to guest: %s (%RU64 bytes, mode 0x%x)\n",
-                         strPathSrc.c_str(), pObj->GetSize(), pObj->GetMode()));
+                LogRel2(("DnD: Transferring host file '%s' to guest (%RU64 bytes, mode 0x%x)\n",
+                         pObj->GetPath().c_str(), pObj->GetSize(), pObj->GetMode()));
 
                 /** @todo Set progress object title to current file being transferred? */
 
@@ -1006,8 +1008,8 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
     if (mDataBase.m_uProtocolVersion <= 1)
     {
-        pMsg->setNextString(pObj->GetDestPathAbs().c_str());                  /* pvName */
-        pMsg->setNextUInt32((uint32_t)(pObj->GetDestPathAbs().length() + 1)); /* cbName */
+        pMsg->setNextString(pObj->GetPath().c_str());                  /* pvName */
+        pMsg->setNextUInt32((uint32_t)(pObj->GetPath().length() + 1)); /* cbName */
     }
     else if (mDataBase.m_uProtocolVersion >= 2)
     {
@@ -1043,8 +1045,8 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
 
         if (pObj->IsComplete()) /* Done reading? */
         {
-            LogRel2(("DnD: Transferring file '%s' to guest complete\n", pObj->GetSourcePathAbs().c_str()));
-            LogFlowFunc(("File '%s' complete\n", pObj->GetSourcePathAbs().c_str()));
+            LogRel2(("DnD: Transferring file '%s' to guest complete\n", pObj->GetPath().c_str()));
+            LogFlowFunc(("File '%s' complete\n", pObj->GetPath().c_str()));
 
             /* DnDURIObject::Read() returns VINF_EOF when finished reading the entire fire,
              * but we don't want this here -- so just override this with VINF_SUCCESS. */
@@ -1053,7 +1055,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("DnD: Reading from host file '%s' failed, rc=%Rrc\n", pObj->GetSourcePathAbs().c_str(), rc));
+        LogRel(("DnD: Reading from host file '%s' failed, rc=%Rrc\n", pObj->GetPath().c_str(), rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1448,9 +1450,10 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     DnDURIObject *pCurObj = objCtx.getObj();
     AssertPtr(pCurObj);
 
-    DnDURIObject::Type enmType = pCurObj->GetType();
+    const DnDURIObject::Type enmType = pCurObj->GetType();
+
     LogRel3(("DnD: Processing: srcPath=%s, dstPath=%s, enmType=%RU32, cbSize=%RU32\n",
-             pCurObj->GetSourcePathAbs().c_str(), pCurObj->GetDestPathAbs().c_str(),
+             pCurObj->GetPath().c_str(), pCurObj->GetPath().c_str(),
              enmType, pCurObj->GetSize()));
 
     if (enmType == DnDURIObject::Type_Directory)
@@ -1464,7 +1467,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     else
     {
         AssertMsgFailed(("enmType=%RU32 is not supported for srcPath=%s, dstPath=%s\n",
-                         enmType, pCurObj->GetSourcePathAbs().c_str(), pCurObj->GetDestPathAbs().c_str()));
+                         enmType, pCurObj->GetPath().c_str(), pCurObj->GetPath().c_str()));
         rc = VERR_NOT_SUPPORTED;
     }
 
@@ -1477,7 +1480,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
 
     if (fRemove)
     {
-        LogFlowFunc(("Removing \"%s\" from list, rc=%Rrc\n", pCurObj->GetSourcePathAbs().c_str(), rc));
+        LogFlowFunc(("Removing \"%s\" from list, rc=%Rrc\n", pCurObj->GetPath().c_str(), rc));
         pCtx->mURI.removeObjCurrent();
     }
 

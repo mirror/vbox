@@ -129,29 +129,11 @@ public:
         Type_32Bit_Hack = 0x7fffffff
     };
 
-    /**
-     * Enumeration for specifying an URI object view
-     * for representing its data accordingly.
-     */
-    enum View
-    {
-        /** Unknown view, do not use. */
-        View_Unknown = 0,
-        /** Handle data from the source point of view. */
-        View_Source,
-        /** Handle data from the destination point of view. */
-        View_Target,
-        /** The usual 32-bit hack. */
-        View_Dest_32Bit_Hack = 0x7fffffff
-    };
-
 #ifdef RT_NEED_NEW_AND_DELETE
     RTMEM_IMPLEMENT_NEW_AND_DELETE();
 #endif
-    DnDURIObject(void);
-    DnDURIObject(Type type,
-                 const RTCString &strSrcPathAbs = "",
-                 const RTCString &strDstPathAbs = "");
+    DnDURIObject(Type enmType = Type_Unknown, const RTCString &strPathAbs = "");
+
     virtual ~DnDURIObject(void);
 
 public:
@@ -161,14 +143,7 @@ public:
      *
      * @return  Absolute source path of the object.
      */
-    const RTCString &GetSourcePathAbs(void) const { return m_strSrcPathAbs; }
-
-    /**
-     * Returns the given, absolute destination path of the object.
-     *
-     * @return  Absolute destination path of the object.
-     */
-    const RTCString &GetDestPathAbs(void) const { return m_strTgtPathAbs; }
+    const RTCString &GetPath(void) const { return m_strPathAbs; }
 
     RTFMODE GetMode(void) const;
 
@@ -183,14 +158,9 @@ public:
      */
     Type GetType(void) const { return m_enmType; }
 
-    /**
-     * Returns the object's view.
-     *
-     * @return  The object's view.
-     */
-    View GetView(void) const { return m_enmView; }
-
 public:
+
+    int Init(Type enmType, const RTCString &strPathAbs = "");
 
     int SetSize(uint64_t cbSize);
 
@@ -199,9 +169,8 @@ public:
     void Close(void);
     bool IsComplete(void) const;
     bool IsOpen(void) const;
-    int Open(View enmView, uint64_t fOpen, RTFMODE fMode = 0);
-    int OpenEx(const RTCString &strPath, View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0, DNDURIOBJECTFLAGS = DNDURIOBJECT_FLAGS_NONE);
-    int QueryInfo(View enmView);
+    int Open(uint64_t fOpen, RTFMODE fMode = 0, DNDURIOBJECTFLAGS = DNDURIOBJECT_FLAGS_NONE);
+    int QueryInfo(void);
     int Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
     void Reset(void);
     int Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
@@ -213,18 +182,14 @@ public:
 protected:
 
     void closeInternal(void);
-    int queryInfoInternal(View enmView);
+    int queryInfoInternal(void);
 
 protected:
 
     /** The object's type. */
     Type      m_enmType;
-    /** The object's view. */
-    View      m_enmView;
-    /** Absolute path (base) for the source. */
-    RTCString m_strSrcPathAbs;
-    /** Absolute path (base) for the target. */
-    RTCString m_strTgtPathAbs;
+    /** Absolute path of the object. */
+    RTCString m_strPathAbs;
 
     /** Union containing data depending on the object's type. */
     union

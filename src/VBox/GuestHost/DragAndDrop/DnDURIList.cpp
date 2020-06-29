@@ -61,11 +61,11 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
             LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
                          pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjFile = new DnDURIObject(DnDURIObject::Type_File, pcszSource, pcszTarget);
+            DnDURIObject *pObjFile = new DnDURIObject(DnDURIObject::Type_File, pcszSource);
             if (pObjFile)
             {
                 /** @todo Add a standard fOpen mode for this list. */
-                rc = pObjFile->Open(DnDURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                rc = pObjFile->Open(RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
                 if (RT_SUCCESS(rc))
                 {
                     m_lstTree.append(pObjFile);
@@ -76,7 +76,8 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
                     if (!(fFlags & DNDURILIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
                         pObjFile->Close();
                 }
-                else
+
+                if (RT_FAILURE(rc))
                     delete pObjFile;
             }
             else
@@ -86,7 +87,7 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
         {
             LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Type_Directory, pcszSource, pcszTarget);
+            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Type_Directory, pcszSource);
             if (pObjDir)
             {
                 m_lstTree.append(pObjDir);
@@ -383,12 +384,16 @@ int DnDURIList::AppendURIPath(const char *pszURI, DNDURILISTFLAGS fFlags)
                                   ? 0 /* Use start of path as root. */
                                   : pszFileName - pszSrcPath;
                 char *pszDstPath = &pszSrcPath[cchDstBase];
-                m_lstRoot.append(pszDstPath);
+                rc = DnDPathSanitize(pszDstPath, strlen(pszDstPath));
+                if (RT_SUCCESS(rc))
+                {
+                    m_lstRoot.append(pszDstPath);
 
-                LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszRoot=%s\n",
-                             pszSrcPath, pszFileName, pszDstPath));
+                    LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszDstPath=%s\n",
+                                 pszSrcPath, pszFileName, pszDstPath));
 
-                rc = appendPathRecursive(pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase, fFlags);
+                    rc = appendPathRecursive(pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase, fFlags);
+                }
             }
             else
                 rc = VERR_PATH_NOT_FOUND;

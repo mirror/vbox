@@ -32,40 +32,10 @@
 #include <VBox/log.h>
 
 
-DnDURIObject::DnDURIObject(void)
-    : m_enmType(Type_Unknown)
-    , m_enmView(View_Unknown)
+DnDURIObject::DnDURIObject(Type enmType = /* Type_Unknown */, const RTCString &strPathAbs /* = "" */)
 {
-    RT_ZERO(u);
-}
-
-DnDURIObject::DnDURIObject(Type enmType,
-                           const RTCString &strSrcPathAbs /* = 0 */,
-                           const RTCString &strDstPathAbs /* = 0 */)
-    : m_enmType(enmType)
-    , m_enmView(View_Unknown)
-    , m_strSrcPathAbs(strSrcPathAbs)
-    , m_strTgtPathAbs(strDstPathAbs)
-{
-    RT_ZERO(u);
-
-    switch (m_enmType)
-    {
-        case Type_File:
-        {
-            u.File.hFile = NIL_RTFILE;
-            break;
-        }
-
-        case Type_Directory:
-        {
-            u.Dir.hDir = NIL_RTDIR;
-            break;
-        }
-
-        default:
-            break;
-    }
+    int rc2 = Init(enmType, strPathAbs);
+    AssertRC(rc2);
 }
 
 DnDURIObject::~DnDURIObject(void)
@@ -75,7 +45,6 @@ DnDURIObject::~DnDURIObject(void)
 
 /**
  * Closes the object's internal handles (to files / ...).
- *
  */
 void DnDURIObject::closeInternal(void)
 {
@@ -167,6 +136,53 @@ uint64_t DnDURIObject::GetSize(void) const
 }
 
 /**
+ * Initializes the object with an expected object type and file path.
+ *
+ * @returns VBox status code.
+ * @param   enmType             Type we expect this object to be.
+ * @param   strPathAbs          Absolute path of file this object represents. Optional.
+ */
+int DnDURIObject::Init(Type enmType, const RTCString &strPathAbs /* = */)
+{
+    AssertReturn(enmType == Type_Unknown, VERR_WRONG_ORDER);
+
+    int rc;
+
+    switch (m_enmType)
+    {
+        case Type_File:
+        {
+            u.File.hFile = NIL_RTFILE;
+            break;
+        }
+
+        case Type_Directory:
+        {
+            u.Dir.hDir = NIL_RTDIR;
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    if (enmType != Type_Unknown)
+    {
+        AssertReturn(m_strPathAbs.isNotEmpty(), VERR_INVALID_PARAMETER);
+        rc = DnDPathSanitize(m_strPathAbs.mutableRaw(), m_strPathAbs.capacity());
+        if (RT_SUCCESS(rc))
+        {
+            m_enmType    = enmType;
+            m_strPathAbs = strPathAbs;
+        }
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    return rc;
+}
+
+/**
  * Returns whether the processing of the object is complete or not.
  * For file objects this means that all bytes have been processed.
  *
@@ -211,58 +227,27 @@ bool DnDURIObject::IsOpen(void) const
 }
 
 /**
- * (Re-)Opens the object with a specific view, open and file mode.
- *
- * @return  IPRT status code.
- * @param   enmView             View to use for opening the object.
- * @param   fOpen               File open flags to use.
- * @param   fMode               File mode to use.
- */
-int DnDURIObject::Open(View enmView, uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */)
-{
-    return OpenEx(  enmView == View_Source
-                  ? m_strSrcPathAbs : m_strTgtPathAbs
-                  , enmView, fOpen, fMode, DNDURIOBJECT_FLAGS_NONE);
-}
-
-/**
  * Open the object with a specific file type, and, depending on the type, specifying additional parameters.
  *
  * @return  IPRT status code.
- * @param   strPathAbs          Absolute path of the object (file / directory / ...).
- * @param   enmView             View of the object.
  * @param   fOpen               Open mode to use; only valid for file objects.
- * @param   fMode               File mode to use; only valid for file objects.
+ * @param   fMode               File mode to set; only valid for file objects. Depends on fOpen and and can be 0.
  * @param   fFlags              Additional DnD URI object flags.
  */
-int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
-                         uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */, DNDURIOBJECTFLAGS fFlags /* = DNDURIOBJECT_FLAGS_NONE */)
+int DnDURIObject::Open(uint64_t fOpen, RTFMODE fMode /* = 0 */,
+                       DNDURIOBJECTFLAGS fFlags /* = DNDURIOBJECT_FLAGS_NONE */)
 {
+    AssertReturn(fOpen, VERR_INVALID_FLAGS);
+    /* fMode is optional. */
     AssertReturn(!(fFlags & ~DNDURIOBJECT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
     RT_NOREF1(fFlags);
 
     int rc = VINF_SUCCESS;
 
-    switch (enmView)
+    if (fOpen) /* Opening mode specified? */
     {
-        case View_Source:
-            m_strSrcPathAbs = strPathAbs;
-            break;
-
-        case View_Target:
-            m_strTgtPathAbs = strPathAbs;
-            break;
-
-        default:
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
-    }
-
-    if (   RT_SUCCESS(rc)
-        && fOpen) /* Opening mode specified? */
-    {
-        LogFlowThisFunc(("strPath=%s, enmView=%RU32, fOpen=0x%x, fMode=0x%x, fFlags=0x%x\n",
-                         strPathAbs.c_str(), enmView, fOpen, fMode, fFlags));
+        LogFlowThisFunc(("strPath=%s, fOpen=0x%x, fMode=0x%x, fFlags=0x%x\n",
+                         m_strPathAbs.c_str(), fOpen, fMode, fFlags));
         switch (m_enmType)
         {
             case Type_File:
@@ -272,8 +257,7 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
                  * where the OS writes to the file while the destination side transfers
                  * it over.
                  */
-                LogFlowThisFunc(("Opening ...\n"));
-                rc = RTFileOpen(&u.File.hFile, strPathAbs.c_str(), fOpen);
+                rc = RTFileOpen(&u.File.hFile, m_strPathAbs.c_str(), fOpen);
                 if (RT_SUCCESS(rc))
                 {
                     if (   (fOpen & RTFILE_O_WRITE) /* Only set the file mode on write. */
@@ -283,7 +267,7 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
                     }
                     else if (fOpen & RTFILE_O_READ)
                     {
-                        rc = queryInfoInternal(enmView);
+                        rc = queryInfoInternal();
                     }
                 }
 
@@ -300,9 +284,9 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
 
             case Type_Directory:
             {
-                rc = RTDirOpen(&u.Dir.hDir, strPathAbs.c_str());
+                rc = RTDirOpen(&u.Dir.hDir, m_strPathAbs.c_str());
                 if (RT_SUCCESS(rc))
-                    rc = queryInfoInternal(enmView);
+                    rc = queryInfoInternal();
                 break;
             }
 
@@ -310,11 +294,6 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
                 rc = VERR_NOT_IMPLEMENTED;
                 break;
         }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        m_enmView = enmView;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -325,12 +304,9 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
  * Queries information about the object using a specific view, internal version.
  *
  * @return  IPRT status code.
- * @param   enmView             View to use for querying information. Currently ignored.
  */
-int DnDURIObject::queryInfoInternal(View enmView)
+int DnDURIObject::queryInfoInternal(void)
 {
-    RT_NOREF(enmView);
-
     int rc;
 
     switch (m_enmType)
@@ -357,11 +333,10 @@ int DnDURIObject::queryInfoInternal(View enmView)
  * Queries information about the object using a specific view.
  *
  * @return  IPRT status code.
- * @param   enmView             View to use for querying information.
  */
-int DnDURIObject::QueryInfo(View enmView)
+int DnDURIObject::QueryInfo(void)
 {
-    return queryInfoInternal(enmView);
+    return queryInfoInternal();
 }
 
 /**
@@ -444,9 +419,6 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
-    AssertMsgReturn(m_enmView == View_Source, ("Cannot write to an object which is not in target view\n"),
-                    VERR_INVALID_STATE);
-
     size_t cbRead = 0;
 
     int rc;
@@ -487,7 +459,7 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
             *pcbRead = (uint32_t)cbRead;
     }
 
-    LogFlowFunc(("Returning strSourcePath=%s, cbRead=%zu, rc=%Rrc\n", m_strSrcPathAbs.c_str(), cbRead, rc));
+    LogFlowFunc(("Returning strSourcePath=%s, cbRead=%zu, rc=%Rrc\n", m_strPathAbs.c_str(), cbRead, rc));
     return rc;
 }
 
@@ -500,10 +472,8 @@ void DnDURIObject::Reset(void)
 
     Close();
 
-    m_enmType       = Type_Unknown;
-    m_enmView       = View_Unknown;
-    m_strSrcPathAbs = "";
-    m_strTgtPathAbs = "";
+    m_enmType    = Type_Unknown;
+    m_strPathAbs = "";
 
     RT_ZERO(u);
 }
@@ -540,9 +510,6 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
-    AssertMsgReturn(m_enmView == View_Target, ("Cannot write to an object which is not in target view\n"),
-                    VERR_INVALID_STATE);
-
     size_t cbWritten = 0;
 
     int rc;
@@ -573,7 +540,7 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
             *pcbWritten = (uint32_t)cbWritten;
     }
 
-    LogFlowThisFunc(("Returning strSourcePathAbs=%s, cbWritten=%zu, rc=%Rrc\n", m_strSrcPathAbs.c_str(), cbWritten, rc));
+    LogFlowThisFunc(("Returning strSourcePathAbs=%s, cbWritten=%zu, rc=%Rrc\n", m_strPathAbs.c_str(), cbWritten, rc));
     return rc;
 }
 
