@@ -616,7 +616,6 @@ static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTH
     AssertPtrReturn(pRootListHdr, VERR_INVALID_POINTER);
 
     VBoxShClRootListHdrMsg Msg;
-    RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ, VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ);
@@ -652,7 +651,6 @@ static int vbglR3ClipboardRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIn
     AssertPtrReturn(pRootListEntry, VERR_INVALID_POINTER);
 
     VBoxShClRootListEntryMsg Msg;
-    RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ, VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ);
@@ -761,8 +759,6 @@ VBGLR3DECL(int) VbglR3ClipboarTransferStatusRecv(PVBGLR3SHCLCMDCTX pCtx,
     AssertPtrReturn(pEnmDir, VERR_INVALID_POINTER);
 
     VBoxShClTransferStatusMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_TRANSFER_STATUS);
 
@@ -808,8 +804,6 @@ VBGLR3DECL(int) VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCL
     RT_NOREF(pTransfer);
 
     VBoxShClReplyMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
@@ -841,8 +835,6 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32
     AssertPtrReturn(pfRoots, VERR_INVALID_POINTER);
 
     VBoxShClRootListReadReqMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ_REQ);
 
@@ -874,8 +866,6 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PSHC
     AssertPtrReturn(pRootListHdr, VERR_INVALID_POINTER);
 
     VBoxShClRootListHdrMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE, VBOX_SHCL_CPARMS_ROOT_LIST_HDR_WRITE);
 
@@ -905,8 +895,6 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReq(PVBGLR3SHCLCMDCTX pCtx, uint
     AssertPtrReturn(pfInfo,  VERR_INVALID_POINTER);
 
     VBoxShClRootListEntryReadReqMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ_REQ);
 
@@ -942,8 +930,6 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReply(PVBGLR3SHCLCMDCTX pCtx, ui
     AssertPtrReturn(pEntry, VERR_INVALID_POINTER);
 
     VBoxShClRootListEntryMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE, VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_WRITE);
 
@@ -977,8 +963,6 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
     AssertPtrReturn(phList,     VERR_INVALID_POINTER);
 
     VBoxShClListOpenMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_OPEN, VBOX_SHCL_CPARMS_LIST_OPEN);
 
@@ -1011,8 +995,6 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
     AssertPtrReturn(pOpenParms, VERR_INVALID_POINTER);
 
     VBoxShClListOpenMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_LIST_OPEN);
 
@@ -1047,8 +1029,6 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     VBoxShClReplyMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
@@ -1078,8 +1058,6 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHA
     AssertPtrReturn(phList, VERR_INVALID_POINTER);
 
     VBoxShClListCloseMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_LIST_CLOSE);
 
@@ -1111,8 +1089,6 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcRepl
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     VBoxShClReplyMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
@@ -1141,8 +1117,6 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAN
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     VBoxShClListCloseMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_CLOSE, VBOX_SHCL_CPARMS_LIST_CLOSE);
 
@@ -1171,8 +1145,6 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDL
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
 
     VBoxShClListHdrMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_HDR_READ, VBOX_SHCL_CPARMS_LIST_HDR);
 
@@ -1214,8 +1186,6 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHCLL
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
     VBoxShClListHdrReadReqMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_LIST_HDR_READ_REQ);
 
@@ -1252,8 +1222,6 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAND
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
 
     VBoxShClListHdrMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE, VBOX_SHCL_CPARMS_LIST_HDR);
 
@@ -1287,8 +1255,6 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAN
     AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
 
     VBoxShClListEntryMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ, VBOX_SHCL_CPARMS_LIST_ENTRY);
 
@@ -1325,8 +1291,6 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHC
     AssertPtrReturn(pfInfo, VERR_INVALID_POINTER);
 
     VBoxShClListEntryReadReqMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_LIST_ENTRY_READ);
 
@@ -1363,8 +1327,6 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHA
     AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
 
     VBoxShClListEntryMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE, VBOX_SHCL_CPARMS_LIST_ENTRY);
 
@@ -1395,8 +1357,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
     AssertPtrReturn(pCreateParms, VERR_INVALID_POINTER);
 
     VBoxShClObjOpenMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_OBJ_OPEN);
 
@@ -1430,8 +1390,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     VBoxShClReplyMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
@@ -1464,8 +1422,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
     AssertPtrReturn(phObj,        VERR_INVALID_POINTER);
 
     VBoxShClObjOpenMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_OPEN, VBOX_SHCL_CPARMS_OBJ_OPEN);
 
@@ -1497,8 +1453,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHAND
     AssertPtrReturn(phObj, VERR_INVALID_POINTER);
 
     VBoxShClObjCloseMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_OBJ_CLOSE);
 
@@ -1530,8 +1484,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     VBoxShClReplyMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_REPLY, VBOX_SHCL_CPARMS_REPLY_MIN + 1);
 
@@ -1560,8 +1512,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     VBoxShClObjCloseMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_CLOSE, VBOX_SHCL_CPARMS_OBJ_CLOSE);
 
@@ -1592,8 +1542,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHANDL
     AssertPtrReturn(pfFlags,   VERR_INVALID_POINTER);
 
     VBoxShClObjReadReqMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_OBJ_READ_REQ);
 
@@ -1637,8 +1585,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE
     /* pcbRead is optional. */
 
     VBoxShClObjReadWriteMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_READ, VBOX_SHCL_CPARMS_OBJ_READ);
 
@@ -1684,8 +1630,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
     /* pcbWritten is optional. */
 
     VBoxShClObjReadWriteMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_OBJ_WRITE, VBOX_SHCL_CPARMS_OBJ_WRITE);
 
@@ -2584,8 +2528,6 @@ VBGLR3DECL(int) VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr)
     AssertReturn(idClient, VERR_INVALID_PARAMETER);
 
     VBoxShClWriteErrorMsg Msg;
-    RT_ZERO(Msg);
-
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHCL_GUEST_FN_ERROR, VBOX_SHCL_CPARMS_ERROR);
 
     /** @todo Context ID not used yet. */
