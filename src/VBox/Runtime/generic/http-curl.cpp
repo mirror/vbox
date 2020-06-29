@@ -524,11 +524,11 @@ RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects)
     if (pThis->cMaxRedirects != cMaxRedirects)
     {
         CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_MAXREDIRS, (long)cMaxRedirects);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_MAXREDIRS=%u: %d (%#x)\n", cMaxRedirects, rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_MAXREDIRS=%u: %d (%#x)\n", cMaxRedirects, rcCurl, rcCurl),
                         VERR_HTTP_CURL_ERROR);
 
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_FOLLOWLOCATION, (long)(cMaxRedirects > 0));
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_FOLLOWLOCATION=%d: %d (%#x)\n", cMaxRedirects > 0, rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_FOLLOWLOCATION=%d: %d (%#x)\n", cMaxRedirects > 0, rcCurl, rcCurl),
                         VERR_HTTP_CURL_ERROR);
 
         pThis->cMaxRedirects = cMaxRedirects;
@@ -586,7 +586,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
     if (pThis->fNoProxy)
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_NOPROXY, (const char *)NULL);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_NOPROXY=NULL: %d (%#x)\n", rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_NOPROXY=NULL: %d (%#x)\n", rcCurl, rcCurl),
                         VERR_HTTP_CURL_PROXY_CONFIG);
         pThis->fNoProxy = false;
     }
@@ -596,7 +596,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         || enmProxyType != pThis->enmProxyType)
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYTYPE, (long)enmProxyType);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYTYPE=%d: %d (%#x)\n", enmProxyType, rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_PROXYTYPE=%d: %d (%#x)\n", enmProxyType, rcCurl, rcCurl),
                         VERR_HTTP_CURL_PROXY_CONFIG);
         pThis->enmProxyType = enmProxyType;
     }
@@ -605,7 +605,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         || uPort != pThis->uProxyPort)
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPORT, (long)uPort);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYPORT=%d: %d (%#x)\n", uPort, rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_PROXYPORT=%d: %d (%#x)\n", uPort, rcCurl, rcCurl),
                         VERR_HTTP_CURL_PROXY_CONFIG);
         pThis->uProxyPort = uPort;
     }
@@ -615,7 +615,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         || RTStrCmp(pszUsername, pThis->pszProxyUsername))
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYUSERNAME, pszUsername);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYUSERNAME=%s: %d (%#x)\n", pszUsername, rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_PROXYUSERNAME=%s: %d (%#x)\n", pszUsername, rcCurl, rcCurl),
                         VERR_HTTP_CURL_PROXY_CONFIG);
         if (pThis->pszProxyUsername)
         {
@@ -634,7 +634,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         || RTStrCmp(pszPassword, pThis->pszProxyPassword))
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPASSWORD, pszPassword);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYPASSWORD=%s: %d (%#x)\n", pszPassword ? "xxx" : NULL, rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_PROXYPASSWORD=%s: %d (%#x)\n", pszPassword ? "xxx" : NULL, rcCurl, rcCurl),
                         VERR_HTTP_CURL_PROXY_CONFIG);
         if (pThis->pszProxyPassword)
         {
@@ -654,7 +654,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         || RTStrCmp(pszHost, pThis->pszProxyHost))
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, pszHost);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXY=%s: %d (%#x)\n", pszHost, rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_PROXY=%s: %d (%#x)\n", pszHost, rcCurl, rcCurl),
                         VERR_HTTP_CURL_PROXY_CONFIG);
         if (pThis->pszProxyHost)
         {
@@ -2715,7 +2715,7 @@ RTR3DECL(int) RTHttpSetVerifyPeer(RTHTTP hHttp, bool fVerify)
     if (pThis->fVerifyPeer != fVerify)
     {
         CURLcode rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_SSL_VERIFYPEER, (long)fVerify);
-        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_SSL_VERIFYPEER=%RTbool: %d (%#x)\n", fVerify, rcCurl, rcCurl),
+        AssertMsgReturn(CURL_SUCCESS(rcCurl), ("CURLOPT_SSL_VERIFYPEER=%RTbool: %d (%#x)\n", fVerify, rcCurl, rcCurl),
                         VERR_HTTP_CURL_ERROR);
         pThis->fVerifyPeer = fVerify;
     }
@@ -2748,7 +2748,7 @@ static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pThis, CURLcode rcCurl, uint32_t 
         RTStrFree(pThis->pszRedirLocation);
         pThis->pszRedirLocation = NULL;
     }
-    if (rcCurl == CURLE_OK)
+    if (CURL_SUCCESS(rcCurl))
     {
         curl_easy_getinfo(pThis->pCurl, CURLINFO_RESPONSE_CODE, &pThis->lLastResp);
         if (puHttpStatus)
