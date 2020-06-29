@@ -666,7 +666,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "[New]"));
+        setName(QApplication::translate("UIActionPool", "[New]", "group"));
         setStatusTip(QApplication::translate("UIActionPool", "Add new group based on selected virtual machines"));
     }
 };
