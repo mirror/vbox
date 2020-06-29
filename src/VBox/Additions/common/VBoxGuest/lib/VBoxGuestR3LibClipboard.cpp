@@ -816,7 +816,6 @@ VBGLR3DECL(int) VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCL
     Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS);
     Msg.rc.SetUInt32((uint32_t )rcTransfer); /* int vs. uint32_t */
-    Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
 
     Msg.u.TransferStatus.enmStatus.SetUInt32((uint32_t)uStatus);
@@ -985,9 +984,7 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
 
     Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.fList.SetUInt32(0);
-    Msg.cbFilter.SetUInt32(pOpenParms->cbFilter);
     Msg.pvFilter.SetPtr(pOpenParms->pszFilter, pOpenParms->cbFilter);
-    Msg.cbPath.SetUInt32(pOpenParms->cbPath);
     Msg.pvPath.SetPtr(pOpenParms->pszPath, pOpenParms->cbPath);
     Msg.uHandle.SetUInt64(0);
 
@@ -1021,9 +1018,7 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_LIST_OPEN);
     Msg.fList.SetUInt32(0);
-    Msg.cbPath.SetUInt32(pOpenParms->cbPath);
     Msg.pvPath.SetPtr(pOpenParms->pszPath, pOpenParms->cbPath);
-    Msg.cbFilter.SetUInt32(pOpenParms->cbFilter);
     Msg.pvFilter.SetPtr(pOpenParms->pszFilter, pOpenParms->cbFilter);
     Msg.uHandle.SetUInt64(0);
 
@@ -1033,10 +1028,6 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
         rc = Msg.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
             rc = Msg.fList.GetUInt32(&pOpenParms->fList);
-        if (RT_SUCCESS(rc))
-            rc = Msg.cbFilter.GetUInt32(&pOpenParms->cbFilter);
-        if (RT_SUCCESS(rc))
-            rc = Msg.cbPath.GetUInt32(&pOpenParms->cbPath);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1064,7 +1055,6 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
-    Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
 
     Msg.u.ListOpen.uHandle.SetUInt64(hList);
@@ -1129,7 +1119,6 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcRepl
     Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
-    Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
 
     Msg.u.ListOpen.uHandle.SetUInt64(hList);
@@ -1413,7 +1402,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_OPEN);
     Msg.uHandle.SetUInt64(0);
-    Msg.cbPath.SetUInt32(pCreateParms->cbPath);
     Msg.szPath.SetPtr(pCreateParms->pszPath, pCreateParms->cbPath);
     Msg.fCreate.SetUInt32(0);
 
@@ -1421,8 +1409,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
     if (RT_SUCCESS(rc))
     {
         rc = Msg.uContext.GetUInt64(&pCtx->idContext);
-        if (RT_SUCCESS(rc))
-            rc = Msg.cbPath.GetUInt32(&pCreateParms->cbPath);
         if (RT_SUCCESS(rc))
             rc = Msg.fCreate.GetUInt32(&pCreateParms->fCreate);
     }
@@ -1452,7 +1438,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply,
     Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
-    Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
 
     Msg.u.ObjOpen.uHandle.SetUInt64(hObj);
@@ -1486,7 +1471,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
 
     Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.uHandle.SetUInt64(0);
-    Msg.cbPath.SetUInt32(pCreateParms->cbPath);
     Msg.szPath.SetPtr((void *)pCreateParms->pszPath, pCreateParms->cbPath);
     Msg.fCreate.SetUInt32(pCreateParms->fCreate);
 
@@ -1554,7 +1538,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
-    Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
 
     Msg.u.ObjClose.uHandle.SetUInt64(hObj);
@@ -1709,9 +1692,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
     Msg.uContext.SetUInt64(pCtx->idContext);
     Msg.uHandle.SetUInt64(hObj);
     Msg.pvData.SetPtr(pvData, cbData);
-    Msg.cbData.SetUInt32(cbData);
     Msg.pvChecksum.SetPtr(NULL, 0);
-    Msg.cbChecksum.SetUInt32(0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))

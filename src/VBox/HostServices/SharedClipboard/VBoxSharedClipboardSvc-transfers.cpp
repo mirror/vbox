@@ -790,30 +790,25 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
 
     if (cParms >= VBOX_SHCL_CPARMS_REPLY_MIN)
     {
-        uint32_t cbPayload = 0;
-
         /* aParms[0] has the context ID. */
         rc = HGCMSvcGetU32(&aParms[1], &pReply->uType);
         if (RT_SUCCESS(rc))
             rc = HGCMSvcGetU32(&aParms[2], &pReply->rc);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&aParms[3], &cbPayload);
-        if (RT_SUCCESS(rc))
-        {
-            rc = HGCMSvcGetPv(&aParms[4], &pReply->pvPayload, &pReply->cbPayload);
-            AssertReturn(cbPayload == pReply->cbPayload, VERR_INVALID_PARAMETER);
-        }
+            rc = HGCMSvcGetPv(&aParms[3], &pReply->pvPayload, &pReply->cbPayload);
 
         if (RT_SUCCESS(rc))
         {
             rc = VERR_INVALID_PARAMETER; /* Play safe. */
 
+            const unsigned idxParm = VBOX_SHCL_CPARMS_REPLY_MIN;
+
             switch (pReply->uType)
             {
                 case VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS:
                 {
-                    if (cParms >= 6)
-                        rc = HGCMSvcGetU32(&aParms[5], &pReply->u.TransferStatus.uStatus);
+                    if (cParms > idxParm)
+                        rc = HGCMSvcGetU32(&aParms[idxParm], &pReply->u.TransferStatus.uStatus);
 
                     LogFlowFunc(("uTransferStatus=%RU32\n", pReply->u.TransferStatus.uStatus));
                     break;
@@ -821,8 +816,8 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
 
                 case VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN:
                 {
-                    if (cParms >= 6)
-                        rc = HGCMSvcGetU64(&aParms[5], &pReply->u.ListOpen.uHandle);
+                    if (cParms > idxParm)
+                        rc = HGCMSvcGetU64(&aParms[idxParm], &pReply->u.ListOpen.uHandle);
 
                     LogFlowFunc(("hListOpen=%RU64\n", pReply->u.ListOpen.uHandle));
                     break;
@@ -830,8 +825,8 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
 
                 case VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE:
                 {
-                    if (cParms >= 6)
-                        rc = HGCMSvcGetU64(&aParms[5], &pReply->u.ListClose.uHandle);
+                    if (cParms > idxParm)
+                        rc = HGCMSvcGetU64(&aParms[idxParm], &pReply->u.ListClose.uHandle);
 
                     LogFlowFunc(("hListClose=%RU64\n", pReply->u.ListClose.uHandle));
                     break;
@@ -839,8 +834,8 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
 
                 case VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN:
                 {
-                    if (cParms >= 6)
-                        rc = HGCMSvcGetU64(&aParms[5], &pReply->u.ObjOpen.uHandle);
+                    if (cParms > idxParm)
+                        rc = HGCMSvcGetU64(&aParms[idxParm], &pReply->u.ObjOpen.uHandle);
 
                     LogFlowFunc(("hObjOpen=%RU64\n", pReply->u.ObjOpen.uHandle));
                     break;
@@ -848,8 +843,8 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
 
                 case VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE:
                 {
-                    if (cParms >= 6)
-                        rc = HGCMSvcGetU64(&aParms[5], &pReply->u.ObjClose.uHandle);
+                    if (cParms > idxParm)
+                        rc = HGCMSvcGetU64(&aParms[idxParm], &pReply->u.ObjClose.uHandle);
 
                     LogFlowFunc(("hObjClose=%RU64\n", pReply->u.ObjClose.uHandle));
                     break;
@@ -946,24 +941,11 @@ static int shClSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
 
     if (cParms == VBOX_SHCL_CPARMS_LIST_OPEN)
     {
-        uint32_t cbPath   = 0;
-        uint32_t cbFilter = 0;
-
         rc = HGCMSvcGetU32(&aParms[1], &pOpenParms->fList);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&aParms[2], &cbFilter);
+            rc = HGCMSvcGetStr(&aParms[2], &pOpenParms->pszFilter, &pOpenParms->cbFilter);
         if (RT_SUCCESS(rc))
-        {
-            rc = HGCMSvcGetStr(&aParms[3], &pOpenParms->pszFilter, &pOpenParms->cbFilter);
-            AssertReturn(cbFilter == pOpenParms->cbFilter, VERR_INVALID_PARAMETER);
-        }
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&aParms[4], &cbPath);
-        if (RT_SUCCESS(rc))
-        {
-            rc = HGCMSvcGetStr(&aParms[5], &pOpenParms->pszPath, &pOpenParms->cbPath);
-            AssertReturn(cbPath == pOpenParms->cbPath, VERR_INVALID_PARAMETER);
-        }
+            rc = HGCMSvcGetStr(&aParms[3], &pOpenParms->pszPath, &pOpenParms->cbPath);
 
         /** @todo Some more validation. */
     }
@@ -992,11 +974,9 @@ static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
     {
         HGCMSvcSetU64(&aParms[0], idCtx);
         HGCMSvcSetU32(&aParms[1], pOpenParms->fList);
-        HGCMSvcSetU32(&aParms[2], pOpenParms->cbFilter);
-        HGCMSvcSetPv (&aParms[3], pOpenParms->pszFilter, pOpenParms->cbFilter);
-        HGCMSvcSetU32(&aParms[4], pOpenParms->cbPath);
-        HGCMSvcSetPv (&aParms[5], pOpenParms->pszPath, pOpenParms->cbPath);
-        HGCMSvcSetU64(&aParms[6], 0); /* OUT: uHandle */
+        HGCMSvcSetPv (&aParms[2], pOpenParms->pszFilter, pOpenParms->cbFilter);
+        HGCMSvcSetPv (&aParms[3], pOpenParms->pszPath, pOpenParms->cbPath);
+        HGCMSvcSetU64(&aParms[4], 0); /* OUT: uHandle */
 
         rc = VINF_SUCCESS;
     }
@@ -1622,17 +1602,10 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             SHCLOBJOPENCREATEPARMS openCreateParms;
             RT_ZERO(openCreateParms);
 
-            uint32_t cbPath;
-            rc = HGCMSvcGetU32(&aParms[2], &cbPath); /** @todo r=bird: This is an pointless parameter. */
+            /* aParms[1] will return the object handle on success; see below. */
+            rc = HGCMSvcGetStr(&aParms[2], &openCreateParms.pszPath, &openCreateParms.cbPath);
             if (RT_SUCCESS(rc))
-            {
-                /** @todo r=bird: This is the wrong way of getting a string!   */
-                rc = HGCMSvcGetPv(&aParms[3], (void **)&openCreateParms.pszPath, &openCreateParms.cbPath);
-                if (cbPath != openCreateParms.cbPath)
-                    rc = VERR_INVALID_PARAMETER;
-            }
-            if (RT_SUCCESS(rc))
-                rc = HGCMSvcGetU32(&aParms[4], &openCreateParms.fCreate);
+                rc = HGCMSvcGetU32(&aParms[3], &openCreateParms.fCreate);
 
             if (RT_SUCCESS(rc))
             {
