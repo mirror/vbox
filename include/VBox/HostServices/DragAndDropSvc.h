@@ -252,7 +252,7 @@ typedef enum DNDPROGRESS
  * HOST_DND_HG_EVT_MOVE
  * HOST_DND_HG_EVT_DROPPED
  */
-typedef struct VBOXDNDHGACTIONMSG
+typedef struct HGCMMsgHGAction
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -281,7 +281,7 @@ typedef struct VBOXDNDHGACTIONMSG
             HGCMFunctionParameter cbFormats;    /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDHGACTIONMSG;
+} HGCMMsgHGAction;
 
 /**
  * Tells the guest that the host has left its drag and drop area on the guest.
@@ -289,7 +289,7 @@ typedef struct VBOXDNDHGACTIONMSG
  * Used by:
  * HOST_DND_HG_EVT_LEAVE
  */
-typedef struct VBOXDNDHGLEAVEMSG
+typedef struct HGCMMsgHGLeave
 {
     VBGLIOCHGCMCALL hdr;
     union
@@ -300,7 +300,7 @@ typedef struct VBOXDNDHGLEAVEMSG
             HGCMFunctionParameter uContext;
         } v3;
     } u;
-} VBOXDNDHGLEAVEMSG;
+} HGCMMsgHGLeave;
 
 /**
  * Tells the guest that the host wants to cancel the current drag and drop operation.
@@ -308,7 +308,7 @@ typedef struct VBOXDNDHGLEAVEMSG
  * Used by:
  * HOST_DND_HG_EVT_CANCEL
  */
-typedef struct VBOXDNDHGCANCELMSG
+typedef struct HGCMMsgHGCancel
 {
     VBGLIOCHGCMCALL hdr;
     union
@@ -319,7 +319,7 @@ typedef struct VBOXDNDHGCANCELMSG
             HGCMFunctionParameter uContext;
         } v3;
     } u;
-} VBOXDNDHGCANCELMSG;
+} HGCMMsgHGCancel;
 
 /**
  * Sends the header of an incoming (meta) data block.
@@ -330,7 +330,7 @@ typedef struct VBOXDNDHGCANCELMSG
  *
  * New since protocol v3.
  */
-typedef struct VBOXDNDHGSENDDATAHDRMSG
+typedef struct HGCMMsgHGSendDataHdr
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -363,7 +363,7 @@ typedef struct VBOXDNDHGSENDDATAHDRMSG
     HGCMFunctionParameter pvChecksum;      /* OUT ptr */
     /** Size (in bytes) of checksum. */
     HGCMFunctionParameter cbChecksum;      /* OUT uint32_t */
-} VBOXDNDHGSENDDATAHDRMSG;
+} HGCMMsgHGSendDataHdr;
 
 /**
  * Sends a (meta) data block to the guest.
@@ -371,7 +371,7 @@ typedef struct VBOXDNDHGSENDDATAHDRMSG
  * Used by:
  * HOST_DND_HG_SND_DATA
  */
-typedef struct VBOXDNDHGSENDDATAMSG
+typedef struct HGCMMsgHGSendData
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -401,7 +401,7 @@ typedef struct VBOXDNDHGSENDDATAMSG
             HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDHGSENDDATAMSG;
+} HGCMMsgHGSendData;
 
 /**
  * Sends more (meta) data in case the data didn't fit
@@ -412,13 +412,13 @@ typedef struct VBOXDNDHGSENDDATAMSG
  * Used by:
  * HOST_DND_HG_SND_MORE_DATA
  */
-typedef struct VBOXDNDHGSENDMOREDATAMSG
+typedef struct HGCMMsgHGSendMoreData
 {
     VBGLIOCHGCMCALL hdr;
 
     HGCMFunctionParameter pvData;       /* OUT ptr */
     HGCMFunctionParameter cbData;       /* OUT uint32_t */
-} VBOXDNDHGSENDMOREDATAMSG;
+} HGCMMsgHGSendMoreData;
 
 /**
  * Directory entry event.
@@ -427,7 +427,7 @@ typedef struct VBOXDNDHGSENDMOREDATAMSG
  * HOST_DND_HG_SND_DIR
  * GUEST_DND_GH_SND_DIR
  */
-typedef struct VBOXDNDHGSENDDIRMSG
+typedef struct HGCMMsgHGSendDir
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -454,7 +454,7 @@ typedef struct VBOXDNDHGSENDDIRMSG
             HGCMFunctionParameter fMode;        /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDHGSENDDIRMSG;
+} HGCMMsgHGSendDir;
 
 /**
  * File header message, marking the start of transferring a new file.
@@ -464,7 +464,7 @@ typedef struct VBOXDNDHGSENDDIRMSG
  * HOST_DND_HG_SND_FILE_HDR
  * GUEST_DND_GH_SND_FILE_HDR
  */
-typedef struct VBOXDNDHGSENDFILEHDRMSG
+typedef struct HGCMMsgHGSendFileHdr
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -480,7 +480,7 @@ typedef struct VBOXDNDHGSENDFILEHDRMSG
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
     /** Total size (in bytes). */
     HGCMFunctionParameter cbTotal;      /* OUT uint64_t */
-} VBOXDNDHGSENDFILEHDRMSG;
+} HGCMMsgHGSendFileHdr;
 
 /**
  * HG: File data (chunk) event.
@@ -488,7 +488,7 @@ typedef struct VBOXDNDHGSENDFILEHDRMSG
  * Used by:
  * HOST_DND_HG_SND_FILE
  */
-typedef struct VBOXDNDHGSENDFILEDATAMSG
+typedef struct HGCMMsgHGSendFileData
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -536,7 +536,7 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG
             HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDHGSENDFILEDATAMSG;
+} HGCMMsgHGSendFileData;
 
 /**
  * Asks the guest if a guest->host DnD operation is in progress.
@@ -544,7 +544,7 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG
  * Used by:
  * HOST_DND_GH_REQ_PENDING
  */
-typedef struct VBOXDNDGHREQPENDINGMSG
+typedef struct HGCMMsgGHReqPending
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -563,7 +563,7 @@ typedef struct VBOXDNDGHREQPENDINGMSG
             HGCMFunctionParameter uScreenId;    /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDGHREQPENDINGMSG;
+} HGCMMsgGHReqPending;
 
 /**
  * Tells the guest that the host has dropped the ongoing guest->host
@@ -572,7 +572,7 @@ typedef struct VBOXDNDGHREQPENDINGMSG
  * Used by:
  * HOST_DND_GH_EVT_DROPPED
  */
-typedef struct VBOXDNDGHDROPPEDMSG
+typedef struct HGCMMsgGHDropped
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -599,7 +599,7 @@ typedef struct VBOXDNDGHDROPPEDMSG
             HGCMFunctionParameter uAction;      /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDGHDROPPEDMSG;
+} HGCMMsgGHDropped;
 
 /*
  * Guest events
@@ -613,7 +613,7 @@ typedef struct VBOXDNDGHDROPPEDMSG
  * Used by:
  * GUEST_DND_GET_NEXT_HOST_MSG
  */
-typedef struct VBOXDNDNEXTMSGMSG
+typedef struct HGCMMsgGetNext
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -624,7 +624,7 @@ typedef struct VBOXDNDNEXTMSGMSG
     /** Whether or not to block (wait) for a
      *  new message to arrive. */
     HGCMFunctionParameter fBlock;    /* OUT uint32_t */
-} VBOXDNDNEXTMSGMSG;
+} HGCMMsgGetNext;
 
 /**
  * Guest connection request. Used to tell the DnD protocol
@@ -633,7 +633,7 @@ typedef struct VBOXDNDNEXTMSGMSG
  * Used by:
  * GUEST_DND_CONNECT
  */
-typedef struct VBOXDNDCONNECTMSG
+typedef struct HGCMMsgConnect
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -656,7 +656,7 @@ typedef struct VBOXDNDCONNECTMSG
             HGCMFunctionParameter uFlags;        /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDCONNECTMSG;
+} HGCMMsgConnect;
 
 /**
  * Acknowledges a host operation along with the allowed
@@ -665,7 +665,7 @@ typedef struct VBOXDNDCONNECTMSG
  * Used by:
  * GUEST_DND_HG_ACK_OP
  */
-typedef struct VBOXDNDHGACKOPMSG
+typedef struct HGCMMsgHGAck
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -682,15 +682,15 @@ typedef struct VBOXDNDHGACKOPMSG
             HGCMFunctionParameter uAction;      /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDHGACKOPMSG;
+} HGCMMsgHGAck;
 
 /**
- * HG request for data event.
+ * Requests data to be sent to the guest.
  *
  * Used by:
  * GUEST_DND_HG_REQ_DATA
  */
-typedef struct VBOXDNDHGREQDATAMSG
+typedef struct HGCMMsgHGReqData
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -708,9 +708,9 @@ typedef struct VBOXDNDHGREQDATAMSG
             HGCMFunctionParameter cbFormat;     /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDHGREQDATAMSG;
+} HGCMMsgHGReqData;
 
-typedef struct VBOXDNDHGEVTPROGRESSMSG
+typedef struct HGCMMsgHGProgress
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -731,16 +731,15 @@ typedef struct VBOXDNDHGEVTPROGRESSMSG
             HGCMFunctionParameter rc;           /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDHGEVTPROGRESSMSG;
+} HGCMMsgHGProgress;
 
 /**
- * Acknowledges a pending drag and drop event
- * to the host.
+ * Acknowledges a pending guest drag and drop event to the host.
  *
  * Used by:
  * GUEST_DND_GH_ACK_PENDING
  */
-typedef struct VBOXDNDGHACKPENDINGMSG
+typedef struct HGCMMsgGHAckPending
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -762,7 +761,7 @@ typedef struct VBOXDNDGHACKPENDINGMSG
             HGCMFunctionParameter cbFormats;    /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDGHACKPENDINGMSG;
+} HGCMMsgGHAckPending;
 
 /**
  * Sends the header of an incoming data block
@@ -773,7 +772,7 @@ typedef struct VBOXDNDGHACKPENDINGMSG
  *
  * New since protocol v3.
  */
-typedef struct VBOXDNDHGSENDDATAHDRMSG VBOXDNDGHSENDDATAHDRMSG;
+typedef struct HGCMMsgHGSendDataHdr HGCMMsgGHSendDataHdr;
 
 /**
  * Sends a (meta) data block to the host.
@@ -781,7 +780,7 @@ typedef struct VBOXDNDHGSENDDATAHDRMSG VBOXDNDGHSENDDATAHDRMSG;
  * Used by:
  * GUEST_DND_GH_SND_DATA
  */
-typedef struct VBOXDNDGHSENDDATAMSG
+typedef struct HGCMMsgGHSendData
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -809,7 +808,7 @@ typedef struct VBOXDNDGHSENDDATAMSG
             HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDGHSENDDATAMSG;
+} HGCMMsgGHSendData;
 
 /**
  * Sends a directory entry to the host.
@@ -817,7 +816,7 @@ typedef struct VBOXDNDGHSENDDATAMSG
  * Used by:
  * GUEST_DND_GH_SND_DIR
  */
-typedef struct VBOXDNDHGSENDDIRMSG VBOXDNDGHSENDDIRMSG;
+typedef struct HGCMMsgHGSendDir HGCMMsgGHSendDir;
 
 /**
  * Sends a file header to the host.
@@ -827,7 +826,7 @@ typedef struct VBOXDNDHGSENDDIRMSG VBOXDNDGHSENDDIRMSG;
  *
  * New since protocol v2.
  */
-typedef struct VBOXDNDHGSENDFILEHDRMSG VBOXDNDGHSENDFILEHDRMSG;
+typedef struct HGCMMsgHGSendFileHdr HGCMMsgGHSendFileHdr;
 
 /**
  * Sends file data to the host.
@@ -835,7 +834,7 @@ typedef struct VBOXDNDHGSENDFILEHDRMSG VBOXDNDGHSENDFILEHDRMSG;
  * Used by:
  * GUEST_DND_GH_SND_FILE_DATA
  */
-typedef struct VBOXDNDHGSENDFILEDATAMSG VBOXDNDGHSENDFILEDATAMSG;
+typedef struct HGCMMsgHGSendFileData HGCMMsgGHSendFileData;
 
 /**
  * Sends a guest error event to the host.
@@ -843,7 +842,7 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG VBOXDNDGHSENDFILEDATAMSG;
  * Used by:
  * GUEST_DND_GH_EVT_ERROR
  */
-typedef struct VBOXDNDGHEVTERRORMSG
+typedef struct HGCMMsgGHError
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -860,7 +859,7 @@ typedef struct VBOXDNDGHEVTERRORMSG
             HGCMFunctionParameter rc;           /* OUT uint32_t */
         } v3;
     } u;
-} VBOXDNDGHEVTERRORMSG;
+} HGCMMsgGHError;
 
 #pragma pack()
 
