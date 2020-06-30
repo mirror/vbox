@@ -349,15 +349,9 @@ endif
 VirtualBox_CXXFLAGS.linux += -Wno-class-memaccess
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
-ifdef VBOX_WITH_NEW_XCODE
- VirtualBox_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
- VirtualBox_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
- VirtualBox_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
-else
- VirtualBox_CXXFLAGS.darwin    += -Wno-deprecated-declarations
- VirtualBox_OBJCFLAGS.darwin   += -Wno-deprecated-declarations
- VirtualBox_OBJCXXFLAGS.darwin += -Wno-deprecated-declarations
-endif
+VirtualBox_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
+VirtualBox_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
+VirtualBox_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
 
 ifeq ($(KBUILD_TYPE),release)
  VirtualBox_LDFLAGS.win   += /SUBSYSTEM:windows
@@ -386,15 +380,9 @@ endif
 VirtualBoxVM_CXXFLAGS.linux += -Wno-class-memaccess
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
-ifdef VBOX_WITH_NEW_XCODE
- VirtualBoxVM_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
- VirtualBoxVM_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
- VirtualBoxVM_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
-else
- VirtualBoxVM_CXXFLAGS.darwin    += -Wno-deprecated-declarations
- VirtualBoxVM_OBJCFLAGS.darwin   += -Wno-deprecated-declarations
- VirtualBoxVM_OBJCXXFLAGS.darwin += -Wno-deprecated-declarations
-endif
+VirtualBoxVM_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
+VirtualBoxVM_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
+VirtualBoxVM_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
 
 ifeq ($(KBUILD_TYPE),release)
  VirtualBoxVM_LDFLAGS.win   += /SUBSYSTEM:windows
@@ -423,15 +411,9 @@ endif
 UICommon_CXXFLAGS.linux += -Wno-class-memaccess
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
-ifdef VBOX_WITH_NEW_XCODE
- UICommon_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
- UICommon_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
- UICommon_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
-else
- UICommon_CXXFLAGS.darwin    += -Wno-deprecated-declarations
- UICommon_OBJCFLAGS.darwin   += -Wno-deprecated-declarations
- UICommon_OBJCXXFLAGS.darwin += -Wno-deprecated-declarations
-endif
+UICommon_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
+UICommon_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
+UICommon_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
 
 UICommon_LDFLAGS.darwin = \
 	-install_name "$(VBOX_DYLD_EXECUTABLE_PATH)/UICommon.dylib" \
@@ -1790,11 +1772,7 @@ VirtualBox.app_SOURCES = \
 
  PROGRAMS += vmstarter
  vmstarter_TEMPLATE = VBOXR3EXE
- ifdef VBOX_WITH_NEW_XCODE
-  vmstarter_OBJCXXFLAGS += -Wno-error=deprecated-declarations ## @todo fix deprecate API use!
- else
-  vmstarter_OBJCXXFLAGS += -Wno-deprecated-declarations
- endif
+ vmstarter_OBJCXXFLAGS += -Wno-error=deprecated-declarations ## @todo fix deprecate API use!
  vmstarter_LDFLAGS += -framework AppKit
  vmstarter_SOURCES = src/platform/darwin/vmstarter.mm
  vmstarter_INST = $(INST_BIN)vmstarter
