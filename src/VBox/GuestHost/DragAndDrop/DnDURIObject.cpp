@@ -413,18 +413,24 @@ int DnDURIObject::RebaseURIPath(RTCString &strPathAbs,
             char *pszPathNew = RTPathJoinA(strBaseNew.c_str(), pszPathStart);
             if (pszPathNew)
             {
-                char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
-                                               pszPathNew /* pszPath */,
-                                               NULL /* pszQuery */, NULL /* pszFragment */);
-                if (pszPathURI)
+                rc = DnDPathValidate(pszPathNew, false /* fMustExist */);
+                if (RT_SUCCESS(rc))
                 {
-                    LogFlowFunc(("Rebasing \"%s\" to \"%s\"\n", strPathAbs.c_str(), pszPathURI));
+                    char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
+                                                   pszPathNew /* pszPath */,
+                                                   NULL /* pszQuery */, NULL /* pszFragment */);
+                    if (pszPathURI)
+                    {
+                        LogFlowFunc(("Rebasing \"%s\" to \"%s\"\n", strPathAbs.c_str(), pszPathURI));
 
-                    strPathAbs = RTCString(pszPathURI) + "\r\n";
-                    RTStrFree(pszPathURI);
+                        strPathAbs = RTCString(pszPathURI) + "\r\n";
+                        RTStrFree(pszPathURI);
+                    }
+                    else
+                        rc = VERR_INVALID_PARAMETER;
                 }
                 else
-                    rc = VERR_INVALID_PARAMETER;
+                    LogRel(("DnD: Path validation for '%s' failed with %Rrc\n", pszPathNew, rc));
 
                 RTStrFree(pszPathNew);
             }
@@ -436,6 +442,10 @@ int DnDURIObject::RebaseURIPath(RTCString &strPathAbs,
     }
     else
         rc = VERR_NO_MEMORY;
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Rebasing absolute path '%s' (baseOld=%s, baseNew=%s) failed with %Rrc\n",
+                strPathAbs.c_str(), strBaseOld.c_str(), strBaseNew.c_str(), rc));
 
     return rc;
 }
