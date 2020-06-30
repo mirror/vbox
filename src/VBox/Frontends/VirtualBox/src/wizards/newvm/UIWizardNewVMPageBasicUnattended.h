@@ -31,7 +31,6 @@ class QCheckBox;
 class QLabel;
 class UIFilePathSelector;
 
-/* 1st page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPageUnattended : public UIWizardPageBase
 {
 protected:
@@ -98,13 +97,11 @@ signals:
 
 public:
 
-    /* Constructor: */
     UIWizardNewVMPageBasicUnattended();
     virtual bool isComplete() const; /* override */
 
 protected:
 
-    /* Wrapper to access 'this' from base part: */
     UIWizardPage* thisImp() { return this; }
     virtual void updateStatusLabel();
 
@@ -117,18 +114,11 @@ private:
 
     /** Returns false if user selects unattended install and does not provide a valid ISO file path. Else returns true. */
     bool checkISOFile() const;
-
-    /* Translation stuff: */
     void retranslateUi();
-
-    /* Prepare stuff: */
     void initializePage();
     void cleanupPage();
-
-    /* Validation stuff: */
     virtual bool validatePage() /* override */;
 
-    /* Widgets: */
     QIRichTextLabel *m_pLabel;
 };
 

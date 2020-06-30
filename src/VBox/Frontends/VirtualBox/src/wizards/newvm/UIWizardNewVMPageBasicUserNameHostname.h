@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasicInstallSetup class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageBasicUserNameHostname class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicInstallSetup_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicInstallSetup_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicUserNameHostname_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicUserNameHostname_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,11 +34,11 @@ class UIUserNamePasswordEditor;
 struct UIUnattendedInstallData;
 
 
-class UIWizardNewVMPageInstallSetup : public UIWizardPageBase
+class UIWizardNewVMPageUserNameHostname : public UIWizardPageBase
 {
 public:
 
-    UIWizardNewVMPageInstallSetup();
+    UIWizardNewVMPageUserNameHostname();
 
     /** @name Property getters/setters
       * @{ */
@@ -52,13 +52,12 @@ public:
 
 protected:
 
-    /* Widgets: */
     UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
     QLineEdit *m_pHostnameLineEdit;
     QLabel  *m_pHostnameLabel;
 };
 
-class UIWizardNewVMPageBasicInstallSetup : public UIWizardPage, public UIWizardNewVMPageInstallSetup
+class UIWizardNewVMPageBasicUserNameHostname : public UIWizardPage, public UIWizardNewVMPageUserNameHostname
 {
     Q_OBJECT;
     Q_PROPERTY(QString userName READ userName WRITE setUserName);
@@ -67,25 +66,20 @@ class UIWizardNewVMPageBasicInstallSetup : public UIWizardPage, public UIWizardN
 
 public:
 
-    /* Constructor: */
-    UIWizardNewVMPageBasicInstallSetup();
-    virtual int nextId() const /* override */;
+    UIWizardNewVMPageBasicUserNameHostname();
 
 private slots:
 
 private:
 
-    /* Translation stuff: */
     void retranslateUi();
-
-    /* Prepare stuff: */
     void initializePage();
-
-    /* Validation stuff: */
     bool isComplete() const;
 
-    /* Widgets: */
+    /** Override the default behavior which resets the fields to proginal values. */
+    void cleanupPage() /* override */;
+
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicInstallSetup_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicUserNameHostname_h */

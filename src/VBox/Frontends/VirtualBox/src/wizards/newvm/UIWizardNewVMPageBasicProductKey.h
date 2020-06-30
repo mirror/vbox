@@ -39,17 +39,19 @@ public:
 
     /** @name Property getters
       * @{ */
-    QString productKey() const;
+        QString productKey() const;
     /** @} */
 
 protected:
 
-    /* Widgets: */
-    QLineEdit *m_pProductKeyLineEdit;
-    QLabel  *m_pHostnameLabel;
+    /** @name Widgets
+      * @{ */
+        QLineEdit *m_pProductKeyLineEdit;
+        QLabel  *m_pHostnameLabel;
+    /** @} */
+
 };
 
-/* 2nd page of the New Virtual Machine wizard (basic extension): */
 class UIWizardNewVMPageBasicProductKey : public UIWizardPage, public UIWizardNewVMPageProductKey
 {
     Q_OBJECT;
@@ -57,23 +59,16 @@ class UIWizardNewVMPageBasicProductKey : public UIWizardPage, public UIWizardNew
 
 public:
 
-    /* Constructor: */
     UIWizardNewVMPageBasicProductKey();
 
 private slots:
 
 private:
 
-    /* Translation stuff: */
     void retranslateUi();
-
-    /* Prepare stuff: */
     void initializePage();
-
-    /* Validation stuff: */
     bool isComplete() const;
 
-    /* Widgets: */
     QIRichTextLabel *m_pLabel;
 };
 

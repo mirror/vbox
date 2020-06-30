@@ -61,7 +61,8 @@ public:
     {
         PageUnattended,
         PageNameType,
-        PageInstallSetup,
+        PageUserNameHostname,
+        PageGAInstall,
         PageProductKey,
         PageHardware,
         PageDisk,
@@ -97,6 +98,7 @@ protected:
     bool attachDefaultDevices(const CGuestOSType &comGuestType);
 
     QString getStringFieldValue(const QString &strFieldName) const;
+    bool getBoolFieldValue(const QString &strFieldName) const;
 
     /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasicDisk;

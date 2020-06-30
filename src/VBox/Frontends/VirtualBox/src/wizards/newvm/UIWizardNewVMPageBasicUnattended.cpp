@@ -34,7 +34,6 @@
 
 /* COM includes: */
 #include "CHost.h"
-#include "CSystemProperties.h"
 #include "CUnattended.h"
 
 UIWizardNewVMPageUnattended::UIWizardNewVMPageUnattended()
@@ -166,8 +165,8 @@ UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
         pISOSelectorLayout->addWidget(m_pUnattendedCheckBox, 0, 0, 1, 5);
         pISOSelectorLayout->addWidget(m_pISOSelectorLabel, 1, 1, 1, 1);
         pISOSelectorLayout->addWidget(m_pISOFilePathSelector, 1, 2, 1, 4);
-        pISOSelectorLayout->addWidget(m_pStartHeadlessCheckBox, 2, 2, 1, 5);
-        pISOSelectorLayout->addWidget(m_pStatusLabel, 3, 2, 1, 5);
+        pISOSelectorLayout->addWidget(m_pStartHeadlessCheckBox, 2, 2, 1, 1);
+        pISOSelectorLayout->addWidget(m_pStatusLabel, 3, 2, 1, 1);
 
         pMainLayout->addLayout(pISOSelectorLayout);
         pMainLayout->addStretch();
@@ -217,7 +216,7 @@ void UIWizardNewVMPageBasicUnattended::retranslateUi()
     /* Translate widgets: */
     m_pLabel->setText(UIWizardNewVM::tr("You can enable the unattended (automated) guest OS install "
                                         "and select an installation medium. The guest OS will be "
-                                        "installed after this window is closed. "));
+                                        "installed after this wizard is closed. "));
     m_pUnattendedCheckBox->setText(UIWizardNewVM::tr("Enable unattended guest OS Install"));
     m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Installation medium:"));
     if (m_pStartHeadlessCheckBox)

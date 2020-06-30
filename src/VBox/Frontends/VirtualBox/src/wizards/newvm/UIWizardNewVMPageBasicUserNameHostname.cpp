@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasicInstallSetup class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasicUserNameHostname class implementation.
  */
 
 /*
@@ -23,60 +23,59 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UIUserNamePasswordEditor.h"
-#include "UIWizardNewVMPageBasicInstallSetup.h"
+#include "UIWizardNewVMPageBasicUserNameHostname.h"
 #include "UIWizardNewVM.h"
 
 
-UIWizardNewVMPageInstallSetup::UIWizardNewVMPageInstallSetup()
+UIWizardNewVMPageUserNameHostname::UIWizardNewVMPageUserNameHostname()
     : m_pUserNamePasswordEditor(0)
     , m_pHostnameLineEdit(0)
     , m_pHostnameLabel(0)
 {
 }
 
-QString UIWizardNewVMPageInstallSetup::userName() const
+QString UIWizardNewVMPageUserNameHostname::userName() const
 {
     if (m_pUserNamePasswordEditor)
         return m_pUserNamePasswordEditor->userName();
     return QString();
 }
 
-void UIWizardNewVMPageInstallSetup::setUserName(const QString &strName)
+void UIWizardNewVMPageUserNameHostname::setUserName(const QString &strName)
 {
     if (m_pUserNamePasswordEditor)
         return m_pUserNamePasswordEditor->setUserName(strName);
 }
 
-QString UIWizardNewVMPageInstallSetup::password() const
+QString UIWizardNewVMPageUserNameHostname::password() const
 {
     if (m_pUserNamePasswordEditor)
         return m_pUserNamePasswordEditor->password();
     return QString();
 }
 
-void UIWizardNewVMPageInstallSetup::setPassword(const QString &strPassword)
+void UIWizardNewVMPageUserNameHostname::setPassword(const QString &strPassword)
 {
     if (m_pUserNamePasswordEditor)
         return m_pUserNamePasswordEditor->setPassword(strPassword);
 }
 
-QString UIWizardNewVMPageInstallSetup::hostname() const
+QString UIWizardNewVMPageUserNameHostname::hostname() const
 {
     if (m_pHostnameLineEdit)
         return m_pHostnameLineEdit->text();
     return QString();
 }
 
-void UIWizardNewVMPageInstallSetup::setHostname(const QString &strHostName)
+void UIWizardNewVMPageUserNameHostname::setHostname(const QString &strHostName)
 {
     if (m_pHostnameLineEdit)
         return m_pHostnameLineEdit->setText(strHostName);
 }
 
-UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
+UIWizardNewVMPageBasicUserNameHostname::UIWizardNewVMPageBasicUserNameHostname()
     : m_pLabel(0)
 {
-    /* Create widget: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
@@ -85,7 +84,7 @@ UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
             m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
             pGridLayout->addWidget(m_pUserNamePasswordEditor, 0, 0, 3, 4);
             connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
-                    this, &UIWizardNewVMPageBasicInstallSetup::completeChanged);
+                    this, &UIWizardNewVMPageBasicUserNameHostname::completeChanged);
             m_pHostnameLabel = new QLabel;
             m_pHostnameLineEdit = new QLineEdit;
             pGridLayout->addWidget(m_pHostnameLabel, 3, 0, 1, 1, Qt::AlignRight);
@@ -97,18 +96,14 @@ UIWizardNewVMPageBasicInstallSetup::UIWizardNewVMPageBasicInstallSetup()
         pMainLayout->addStretch();
     }
 
-    /* Register fields: */
     registerField("userName", this, "userName");
     registerField("password", this, "password");
     registerField("hostname", this, "hostname");
 }
 
-void UIWizardNewVMPageBasicInstallSetup::retranslateUi()
+void UIWizardNewVMPageBasicUserNameHostname::retranslateUi()
 {
-    /* Translate page: */
     setTitle(UIWizardNewVM::tr("User Name/Password and Hostname Settings"));
-
-    /* Translate widgets: */
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can specify the user name/password and hostname. "
                                             "The values you enter here will be used during the unattended install.</p>"));
@@ -116,23 +111,18 @@ void UIWizardNewVMPageBasicInstallSetup::retranslateUi()
         m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
 }
 
-void UIWizardNewVMPageBasicInstallSetup::initializePage()
+void UIWizardNewVMPageBasicUserNameHostname::initializePage()
 {
-    /* Translate page: */
     retranslateUi();
 }
 
-bool UIWizardNewVMPageBasicInstallSetup::isComplete() const
+bool UIWizardNewVMPageBasicUserNameHostname::isComplete() const
 {
     if (m_pUserNamePasswordEditor)
         return m_pUserNamePasswordEditor->isComplete();
     return true;
 }
 
-int UIWizardNewVMPageBasicInstallSetup::nextId() const
+void UIWizardNewVMPageBasicUserNameHostname::cleanupPage()
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
-    if (!pWizard || !pWizard->isUnattendedInstallEnabled() || !pWizard->isGuestOSTypeWindows())
-        return UIWizardNewVM::PageHardware;
-    return UIWizardNewVM::PageProductKey;
 }

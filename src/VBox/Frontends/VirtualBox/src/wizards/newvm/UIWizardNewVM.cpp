@@ -22,9 +22,10 @@
 #include "UIWizardNewVMPageBasicNameType.h"
 #include "UIWizardNewVMPageBasicHardware.h"
 #include "UIWizardNewVMPageBasicProductKey.h"
+#include "UIWizardNewVMPageBasicGAInstall.h"
 #include "UIWizardNewVMPageBasicDisk.h"
 #include "UIWizardNewVMPageExpert.h"
-#include "UIWizardNewVMPageBasicInstallSetup.h"
+#include "UIWizardNewVMPageBasicUserNameHostname.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
 
@@ -82,7 +83,8 @@ void UIWizardNewVM::prepare()
                     this, &UIWizardNewVM::sltHandleDetectedOSTypeChange);
             setPage(PageUnattended, pUnattendedPage);
             setPage(PageNameType, new UIWizardNewVMPageBasicNameType(m_strGroup));
-            setPage(PageInstallSetup, new UIWizardNewVMPageBasicInstallSetup);
+            setPage(PageUserNameHostname, new UIWizardNewVMPageBasicUserNameHostname);
+            setPage(PageGAInstall, new UIWizardNewVMPageBasicGAInstall);
             setPage(PageProductKey, new UIWizardNewVMPageBasicProductKey);
             setPage(PageHardware, new UIWizardNewVMPageBasicHardware);
             setPage(PageDisk, new UIWizardNewVMPageBasicDisk);
@@ -395,6 +397,14 @@ QString UIWizardNewVM::getStringFieldValue(const QString &strFieldName) const
     return QString();
 }
 
+bool UIWizardNewVM::getBoolFieldValue(const QString &strFieldName) const
+{
+    QVariant fieldValue = field(strFieldName);
+    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
+        return fieldValue.toBool();
+    return false;
+}
+
 void UIWizardNewVM::sltHandleWizardCancel()
 {
     switch (mode())
@@ -509,6 +519,8 @@ void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallDat
     setField("userName", unattendedInstallData.m_strUserName);
     setField("password", unattendedInstallData.m_strPassword);
     setField("hostname", unattendedInstallData.m_strHostname);
+    setField("installGuestAdditions", unattendedInstallData.m_fInstallGuestAdditions);
+    setField("guestAdditionsISOPath", unattendedInstallData.m_strGuestAdditionsISOPath);
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
@@ -523,14 +535,11 @@ const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
     m_unattendedInstallData.m_strDetectedOSLanguages = getStringFieldValue("detectedOSLanguages");
     m_unattendedInstallData.m_strDetectedOSHints = getStringFieldValue("detectedOSHints");
     m_unattendedInstallData.m_strProductKey = getStringFieldValue("productKey");
+    m_unattendedInstallData.m_strGuestAdditionsISOPath = getStringFieldValue("guestAdditionsISOPath");
 
-    QVariant fieldValue = field("isUnattendedEnabled");
-    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
-        m_unattendedInstallData.m_fUnattendedEnabled = fieldValue.toBool();
-
-    fieldValue = field("startHeadless");
-    if (!fieldValue.isNull() && fieldValue.isValid() && fieldValue.canConvert(QMetaType::Bool))
-        m_unattendedInstallData.m_fStartHeadless = fieldValue.toBool();
+    m_unattendedInstallData.m_fUnattendedEnabled = getBoolFieldValue("isUnattendedEnabled");
+    m_unattendedInstallData.m_fStartHeadless = getBoolFieldValue("startHeadless");
+    m_unattendedInstallData.m_fInstallGuestAdditions = getBoolFieldValue("installGuestAdditions");
 
     m_unattendedInstallData.m_uMachineUid = createdMachineId();
 

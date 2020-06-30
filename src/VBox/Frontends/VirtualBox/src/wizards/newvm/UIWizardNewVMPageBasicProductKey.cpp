@@ -46,7 +46,6 @@ QString UIWizardNewVMPageProductKey::productKey() const
 UIWizardNewVMPageBasicProductKey::UIWizardNewVMPageBasicProductKey()
     : m_pLabel(0)
 {
-    /* Create widget: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
@@ -64,16 +63,13 @@ UIWizardNewVMPageBasicProductKey::UIWizardNewVMPageBasicProductKey()
         pMainLayout->addStretch();
     }
 
-    /* Register fields: */
     registerField("productKey", this, "productKey");
 }
 
 void UIWizardNewVMPageBasicProductKey::retranslateUi()
 {
-    /* Translate page: */
     setTitle(UIWizardNewVM::tr("Product Key"));
 
-    /* Translate widgets: */
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("<p>You can enter the product key for the guest OS."));
     if (m_pHostnameLabel)
@@ -82,7 +78,6 @@ void UIWizardNewVMPageBasicProductKey::retranslateUi()
 
 void UIWizardNewVMPageBasicProductKey::initializePage()
 {
-    /* Translate page: */
     retranslateUi();
 }
 

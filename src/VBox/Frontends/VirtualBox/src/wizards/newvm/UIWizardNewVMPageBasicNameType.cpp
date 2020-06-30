@@ -357,7 +357,7 @@ int UIWizardNewVMPageBasicNameType::nextId() const
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     if (!pWizard || !pWizard->isUnattendedInstallEnabled())
         return UIWizardNewVM::PageHardware;
-    return UIWizardNewVM::PageInstallSetup;
+    return UIWizardNewVM::PageUserNameHostname;
 }
 
 void UIWizardNewVMPageBasicNameType::setTypeByISODetectedOSType(const QString &strDetectedOSType)
