@@ -663,7 +663,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     /* Caller must not hold the object lock. */
     AssertReturn(!isWriteLockOnCurrentThread(), VERR_INVALID_STATE);
 
-    /* Note: the old code checked if the video mode was actially chnaged and
+    /* Note: the old code checked if the video mode was actually changed and
      * did not invalidate the source bitmap if the mode did not change.
      * The new code always invalidates the source bitmap, i.e. it will
      * notify the frontend even if nothing actually changed.
