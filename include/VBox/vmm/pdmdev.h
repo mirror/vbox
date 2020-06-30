@@ -495,8 +495,8 @@ typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 #define PDM_DEVREG_CLASS_ARCH_BIOS              RT_BIT(1)
 /** PCI bus brigde. */
 #define PDM_DEVREG_CLASS_BUS_PCI                RT_BIT(2)
-/** ISA bus brigde. */
-#define PDM_DEVREG_CLASS_BUS_ISA                RT_BIT(3)
+/** PCI built-in device (e.g. PCI root complex devices). */
+#define PDM_DEVREG_CLASS_PCI_BUILTIN            RT_BIT(3)
 /** Input device (mouse, keyboard, joystick, HID, ...). */
 #define PDM_DEVREG_CLASS_INPUT                  RT_BIT(4)
 /** Interrupt controller (PIC). */

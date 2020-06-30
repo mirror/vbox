@@ -67,7 +67,6 @@ static const DeviceAssignmentRule aGenericRules[] =
     {"hda",           0,  5, 0,  0},
 
     /* Storage controllers */
-    {"lsilogic",      0, 20, 0,  1},
     {"buslogic",      0, 21, 0,  1},
     {"lsilogicsas",   0, 22, 0,  1},
     {"nvme",          0, 14, 0,  1},
@@ -110,6 +109,7 @@ static const DeviceAssignmentRule aPiix3Rules[] =
 {
     {"piix3ide",      0,  1,  1, 0},
     {"ahci",          0, 13,  0, 1},
+    {"lsilogic",      0, 20,  0, 1},
     {"pcibridge",     0, 24,  0, 0},
     {"pcibridge",     0, 25,  0, 0},
     { NULL,          -1, -1, -1, 0}
@@ -228,6 +228,36 @@ static const DeviceAssignmentRule aIch9Rules[] =
     { NULL,          -1, -1, -1,  0}
 };
 
+
+#ifdef VBOX_WITH_IOMMU_AMD
+/*
+ * AMD IOMMU and LSI Logic controller rules.
+ *
+ * Since the PCI slot (BDF=00:20.0) of the LSI Logic controller
+ * conflicts with the SB I/O APIC, we assign the LSI Logic controller
+ * to device number 23 when the VM is configured for an AMD IOMMU.
+ */
+static const DeviceAssignmentRule aIch9IommuLsiRules[] =
+{
+    /* AMD IOMMU. */
+    {"iommu-amd",     0,  0,  2, 0},
+    /* AMD IOMMU: Reserved for southbridge I/O APIC. */
+    {"sb-ioapic",     0, 20,  0, 0},
+
+    /* Storage controller */
+    {"lsilogic",      0, 23,  0, 1},
+    { NULL,          -1, -1, -1, 0}
+};
+#endif
+
+/* LSI Logic Controller. */
+static const DeviceAssignmentRule aIch9LsiRules[] =
+{
+    /* Storage controller */
+    {"lsilogic",      0, 20,  0, 1},
+    { NULL,          -1, -1, -1, 0}
+};
+
 /* Aliasing rules */
 static const DeviceAliasRule aDeviceAliases[] =
 {
@@ -279,6 +309,7 @@ struct BusAssignmentManager::State
     volatile int32_t cRefCnt;
     ChipsetType_T    mChipsetType;
     const char *     mpszBridgeName;
+    bool             mfIommu;
     PCIMap           mPCIMap;
     ReversePCIMap    mReversePCIMap;
 
@@ -288,7 +319,7 @@ struct BusAssignmentManager::State
     ~State()
     {}
 
-    HRESULT init(ChipsetType_T chipsetType);
+    HRESULT init(ChipsetType_T chipsetType, bool fIommu);
 
     HRESULT record(const char *pszName, PCIBusAddress& GuestAddress, PCIBusAddress HostAddress);
     HRESULT autoAssign(const char *pszName, PCIBusAddress& Address);
@@ -300,9 +331,10 @@ struct BusAssignmentManager::State
     void listAttachedPCIDevices(std::vector<PCIDeviceInfo> &aAttached);
 };
 
-HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
+HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType, bool fIommu)
 {
     mChipsetType = chipsetType;
+    mfIommu = fIommu;
     switch (chipsetType)
     {
         case ChipsetType_PIIX3:
@@ -339,7 +371,7 @@ HRESULT BusAssignmentManager::State::record(const char *pszName, PCIBusAddress& 
     return S_OK;
 }
 
-bool    BusAssignmentManager::State::findPCIAddress(const char *pszDevName, int iInstance, PCIBusAddress& Address)
+bool BusAssignmentManager::State::findPCIAddress(const char *pszDevName, int iInstance, PCIBusAddress& Address)
 {
     PCIDeviceRecord devRec(pszDevName);
 
@@ -357,7 +389,7 @@ bool    BusAssignmentManager::State::findPCIAddress(const char *pszDevName, int 
 void BusAssignmentManager::State::addMatchingRules(const char *pszName, PCIRulesList& aList)
 {
     size_t iRuleset, iRule;
-    const DeviceAssignmentRule *aArrays[2] = {aGenericRules, NULL};
+    const DeviceAssignmentRule *aArrays[3] = {aGenericRules, NULL, NULL};
 
     switch (mChipsetType)
     {
@@ -365,8 +397,18 @@ void BusAssignmentManager::State::addMatchingRules(const char *pszName, PCIRules
             aArrays[1] = aPiix3Rules;
             break;
         case ChipsetType_ICH9:
+        {
             aArrays[1] = aIch9Rules;
+#ifdef VBOX_WITH_IOMMU_AMD
+            if (mfIommu)
+                aArrays[2] = aIch9IommuLsiRules;
+            else
+#endif
+            {
+                aArrays[2] = aIch9LsiRules;
+            }
             break;
+        }
         default:
             AssertFailed();
             break;
@@ -404,7 +446,7 @@ HRESULT BusAssignmentManager::State::autoAssign(const char *pszName, PCIBusAddre
 {
     PCIRulesList matchingRules;
 
-    addMatchingRules(pszName,  matchingRules);
+    addMatchingRules(pszName, matchingRules);
     const char *pszAlias = findAlias(pszName);
     if (pszAlias)
         addMatchingRules(pszAlias, matchingRules);
@@ -467,10 +509,10 @@ BusAssignmentManager::~BusAssignmentManager()
     }
 }
 
-BusAssignmentManager *BusAssignmentManager::createInstance(ChipsetType_T chipsetType)
+BusAssignmentManager *BusAssignmentManager::createInstance(ChipsetType_T chipsetType, bool fIommu)
 {
     BusAssignmentManager *pInstance = new BusAssignmentManager();
-    pInstance->pState->init(chipsetType);
+    pInstance->pState->init(chipsetType, fIommu);
     Assert(pInstance);
     return pInstance;
 }
@@ -536,15 +578,18 @@ HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char *pszDevName,
     if (FAILED(rc))
         return rc;
 
-    rc = InsertConfigInteger(pCfg, "PCIBusNo",      GuestAddress.miBus);
-    if (FAILED(rc))
-        return rc;
-    rc = InsertConfigInteger(pCfg, "PCIDeviceNo",   GuestAddress.miDevice);
-    if (FAILED(rc))
-        return rc;
-    rc = InsertConfigInteger(pCfg, "PCIFunctionNo", GuestAddress.miFn);
-    if (FAILED(rc))
-        return rc;
+    if (pCfg)
+    {
+        rc = InsertConfigInteger(pCfg, "PCIBusNo",      GuestAddress.miBus);
+        if (FAILED(rc))
+            return rc;
+        rc = InsertConfigInteger(pCfg, "PCIDeviceNo",   GuestAddress.miDevice);
+        if (FAILED(rc))
+            return rc;
+        rc = InsertConfigInteger(pCfg, "PCIFunctionNo", GuestAddress.miFn);
+        if (FAILED(rc))
+            return rc;
+    }
 
     /* Check if the bus is still unknown, i.e. the bridge to it is missing */
     if (   GuestAddress.miBus > 0

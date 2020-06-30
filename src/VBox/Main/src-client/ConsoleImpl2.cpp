@@ -800,7 +800,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         uMcfgBase = _4G - cbRamHole;
     }
 
-    BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(chipsetType);
+    /** @todo Get IOMMU from pMachine and pass info to createInstance() below. */
+    BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(chipsetType, false /* fIommu */);
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                            H();
@@ -1492,7 +1493,26 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             /* Add PCI passthrough devices */
             hrc = i_attachRawPCIDevices(pUVM, pBusMgr, pDevices);                           H();
 #endif
+
+#ifdef VBOX_WITH_IOMMU_AMD
+            /* AMD IOMMU. */
+            /** @todo Get IOMMU from pMachine. */
+            InsertConfigNode(pDevices, "iommu-amd", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
+            InsertConfigNode(pInst,    "Config", &pCfg);
+            hrc = pBusMgr->assignPCIDevice("iommu-amd", pInst);                             H();
+
+            /*
+             * Reserve the specific PCI address of the "SB I/O APIC" when using
+             * an AMD IOMMU. Required by Linux guests, see @bugref{9654#c23}.
+             */
+            PCIBusAddress PCIAddr = PCIBusAddress(VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC);
+            hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
+#endif
         }
+        /** @todo IOMMU: Disallow creating a VM without ICH9 chipset if an IOMMU is
+         *        configured. */
 
         /*
          * Enable the following devices: HPET, SMC and LPC on MacOS X guests or on ICH9 chipset

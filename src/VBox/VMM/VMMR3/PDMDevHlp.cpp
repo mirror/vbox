@@ -35,6 +35,7 @@
 
 #include <VBox/version.h>
 #include <VBox/log.h>
+#include <VBox/pci.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -1456,6 +1457,27 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
                              rc, pDevIns->pReg->szName, pDevIns->iInstance, pPciDev->Int.s.idxSubDev),
                             rc);
 
+#ifdef VBOX_WITH_IOMMU_AMD
+        /** @todo IOMMU: Restrict this to the AMD flavor of IOMMU only at runtime. */
+        PPDMIOMMU  pIommu       = &pVM->pdm.s.aIommus[0];
+        PPDMDEVINS pDevInsIommu = pIommu->CTX_SUFF(pDevIns);
+        if (pDevInsIommu)
+        {
+            /*
+             * If the PCI device/function number has been explicitly specified via CFGM,
+             * ensure it's not the BDF reserved for the southbridge I/O APIC expected
+             * by linux guests when using an AMD IOMMU, see @bugref{9654#c23}.
+             */
+            uint16_t const uDevFn    = VBOX_PCI_DEVFN_MAKE(uPciDevNo, uPciFunNo);
+            uint16_t const uBusDevFn = PCIBDF_MAKE(u8Bus, uDevFn);
+            if (uBusDevFn == VBOX_PCI_BDF_SB_IOAPIC)
+            {
+                LogRel(("Configuration error: PCI BDF (%u:%u:%u) conflicts with SB I/O APIC (%s/%d/%d)\n", u8Bus,
+                        uCfgDevice, uCfgFunction, pDevIns->pReg->szName, pDevIns->iInstance, pPciDev->Int.s.idxSubDev));
+                return VERR_NOT_AVAILABLE;
+            }
+        }
+#endif
 
         /*
          * Initialize the internal data.  We only do the wipe and the members

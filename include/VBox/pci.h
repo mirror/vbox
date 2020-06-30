@@ -474,6 +474,16 @@ typedef enum PCIADDRESSSPACE
 /** Make a PCIBDF given the bus and device:function. */
 #define PCIBDF_MAKE(a_uBus, a_uDevFn)   (((a_uBus) << VBOX_PCI_BUS_SHIFT) | (a_uDevFn))
 
+/** Southbridge I/O APIC (w/ AMD IOMMU): Bus. */
+#define VBOX_PCI_BUS_SB_IOAPIC      0
+/** Southbridge I/O APIC (w/ AMD IOMMU): Device. */
+#define VBOX_PCI_DEV_SB_IOAPIC      0x14
+/** Southbridge I/O APIC (w/ AMD IOMMU): Function. */
+#define VBOX_PCI_FN_SB_IOAPIC       0
+/** PCI BDF (hardcoded by linux guests) reserved for the SB I/O APIC when using VMs
+ *  with an AMD IOMMU. */
+#define VBOX_PCI_BDF_SB_IOAPIC      PCIBDF_MAKE(VBOX_PCI_BUS_SB_IOAPIC, \
+                                                VBOX_PCI_DEVFN_MAKE(VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC))
 
 #if defined(__cplusplus) && defined(IN_RING3)
 /* For RTStrPrintf(). */

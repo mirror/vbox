@@ -5867,31 +5867,13 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    NOREF(iInstance);
-
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PIOMMU          pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    PIOMMUCC        pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
-    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
-    int             rc;
+    RT_NOREF2(iInstance, pCfg);
     LogFlowFunc(("\n"));
 
+    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
     pThisCC->pDevInsR3 = pDevIns;
-
-    /*
-     * Validate and read the configuration.
-     */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Device|Function", "");
-
-    uint8_t uPciDevice;
-    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Device", &uPciDevice, 0);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"Device\""));
-
-    uint8_t uPciFunction;
-    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Function", &uPciFunction, 2);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("IOMMU: Failed to query \"Function\""));
 
     /*
      * Register the IOMMU with PDM.
@@ -5903,7 +5885,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     IommuReg.pfnMemWrite = iommuAmdDeviceMemWrite;
     IommuReg.pfnMsiRemap = iommuAmdDeviceMsiRemap;
     IommuReg.u32TheEnd   = PDM_IOMMUREGCC_VERSION;
-    rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
+    int rc = PDMDevHlpIommuRegister(pDevIns, &IommuReg, &pThisCC->CTX_SUFF(pIommuHlp), &pThis->idxIommu);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as an IOMMU device"));
     if (pThisCC->CTX_SUFF(pIommuHlp)->u32Version != PDM_IOMMUHLPR3_VERSION)
@@ -6006,7 +5988,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Register the PCI function with PDM.
      */
-    rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, 0 /* fFlags */, uPciDevice, uPciFunction, "amd-iommu");
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -6159,7 +6141,7 @@ const PDMDEVREG g_DeviceIommuAmd =
     /* .uReserved0 = */             0,
     /* .szName = */                 "iommu-amd",
     /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
-    /* .fClass = */                 PDM_DEVREG_CLASS_BUS_ISA,   /* Instantiate after PDM_DEVREG_CLASS_BUS_PCI */
+    /* .fClass = */                 PDM_DEVREG_CLASS_PCI_BUILTIN,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(IOMMU),

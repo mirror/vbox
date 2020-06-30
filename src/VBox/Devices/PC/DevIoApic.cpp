@@ -23,6 +23,7 @@
 #include <VBox/log.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/msi.h>
+#include <Vbox/pci.h>
 #include <VBox/vmm/pdmdev.h>
 
 #include "VBoxDD.h"
@@ -164,9 +165,6 @@ Controller" */
 #define IOAPIC_DIRECT_OFF_INDEX                 0x00
 #define IOAPIC_DIRECT_OFF_DATA                  0x10
 #define IOAPIC_DIRECT_OFF_EOI                   0x40    /* Newer I/O APIC only. */
-
-/** The I/O APIC's Bus:Device:Function. */
-#define IOAPIC_BUS_DEV_FN                       NIL_PCIBDF
 
 /* Use PDM critsect for now for I/O APIC locking, see @bugref{8245#c121}. */
 #define IOAPIC_WITH_PDM_CRITSECT
@@ -656,7 +654,7 @@ static VBOXSTRICTRC ioapicSetRedirTableEntry(PPDMDEVINS pDevIns, PIOAPIC pThis, 
          */
         uint32_t const uPinMask = UINT32_C(1) << idxRte;
         if (pThis->uIrr & uPinMask)
-            ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, IOAPIC_BUS_DEV_FN, idxRte);
+            ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, VBOX_PCI_BDF_SB_IOAPIC, idxRte);
 
         IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
         LogFlow(("IOAPIC: ioapicSetRedirTableEntry: uIndex=%#RX32 idxRte=%u uValue=%#RX32\n", uIndex, idxRte, uValue));
@@ -771,7 +769,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vec
                  */
                 uint32_t const uPinMask = UINT32_C(1) << idxRte;
                 if (pThis->uIrr & uPinMask)
-                    ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, IOAPIC_BUS_DEV_FN, idxRte);
+                    ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, VBOX_PCI_BDF_SB_IOAPIC, idxRte);
             }
         }
 
