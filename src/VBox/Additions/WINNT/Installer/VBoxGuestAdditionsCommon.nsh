@@ -722,6 +722,13 @@ FunctionEnd
   Push "${FileSrc}"
   Call ${un}VerifyFile
   Pop $0
+
+  Push "${Architecture}"
+  Push "Oracle Corporation"
+  Push "${FileDest}"
+  Call ${un}VerifyFile
+  Pop $0
+
   ${If} $0 == "0"
     ${LogVerbose} "Copying verified file $\"${FileSrc}$\" to $\"${FileDest}$\" ..."
     ClearErrors
@@ -811,22 +818,12 @@ Function ${un}RestoreFilesDirect3D
   ; "system32" on a 64-bit guest
   Call ${un}SetAppMode64
 
-  ; Note: Not finding a file (like *d3d8.dll) on Windows Vista/7 is fine;
-  ;       it simply is not present there.
-
-  ; Note 2: On 64-bit systems there are no 64-bit *d3d8 DLLs, only 32-bit ones
-  ;         in SysWOW64 (or in system32 on 32-bit systems).
-
   ${LogVerbose} "Restoring original D3D files ..."
-!if $%KBUILD_TARGET_ARCH% == "x86"
   ${CopyFileEx} "${un}" "$SYSDIR\msd3d8.dll" "$SYSDIR\d3d8.dll" "Microsoft Corporation" "$%KBUILD_TARGET_ARCH%"
-!endif
   ${CopyFileEx} "${un}" "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll" "Microsoft Corporation" "$%KBUILD_TARGET_ARCH%"
 
   ${If} $g_bCapDllCache == "true"
-!if $%KBUILD_TARGET_ARCH% == "x86"
     ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "Microsoft Corporation" "$%KBUILD_TARGET_ARCH%"
-!endif
     ${CopyFileEx} "${un}" "$SYSDIR\dllcache\msd3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "Microsoft Corporation" "$%KBUILD_TARGET_ARCH%"
   ${EndIf}
 
