@@ -402,6 +402,7 @@ start() {
         if [ "${TESTBOXSCRIPT_NESTED_PAGING}" = "no"  ]; then PARAMS="${PARAMS} --no-nested-paging"; fi
         if [ "${TESTBOXSCRIPT_IOMMU}"         = "yes" ]; then PARAMS="${PARAMS} --io-mmu"; fi
         if [ "${TESTBOXSCRIPT_IOMMU}"         = "no"  ]; then PARAMS="${PARAMS} --no-io-mmu"; fi
+        if [ "${TESTBOXSCRIPT_SPB}"           = "yes" ]; then PARAMS="${PARAMS} --spb"; fi
         if [ -n "${TESTBOXSCRIPT_SYSTEM_UUID}"     ]; then PARAMS="${PARAMS} --system-uuid '${TESTBOXSCRIPT_SYSTEM_UUID}'"; fi
         if [ -n "${TESTBOXSCRIPT_TEST_MANAGER}"    ]; then PARAMS="${PARAMS} --test-manager '${TESTBOXSCRIPT_TEST_MANAGER}'"; fi
         if [ -n "${TESTBOXSCRIPT_SCRATCH_ROOT}"    ]; then PARAMS="${PARAMS} --scratch-root '${TESTBOXSCRIPT_SCRATCH_ROOT}'"; fi
