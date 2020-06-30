@@ -54,7 +54,7 @@ struct DeviceAliasRule
 /* Device           Bus  Device Function Priority */
 
 /* Generic rules */
-static const DeviceAssignmentRule aGenericRules[] =
+static const DeviceAssignmentRule g_aGenericRules[] =
 {
     /* VGA controller */
     {"vga",           0,  2, 0,  0},
@@ -105,7 +105,7 @@ static const DeviceAssignmentRule aGenericRules[] =
 };
 
 /* PIIX3 chipset rules */
-static const DeviceAssignmentRule aPiix3Rules[] =
+static const DeviceAssignmentRule g_aPiix3Rules[] =
 {
     {"piix3ide",      0,  1,  1, 0},
     {"ahci",          0, 13,  0, 1},
@@ -117,7 +117,7 @@ static const DeviceAssignmentRule aPiix3Rules[] =
 
 
 /* ICH9 chipset rules */
-static const DeviceAssignmentRule aIch9Rules[] =
+static const DeviceAssignmentRule g_aIch9Rules[] =
 {
     /* Host Controller */
     {"i82801",        0, 30, 0,  0},
@@ -237,7 +237,7 @@ static const DeviceAssignmentRule aIch9Rules[] =
  * conflicts with the SB I/O APIC, we assign the LSI Logic controller
  * to device number 23 when the VM is configured for an AMD IOMMU.
  */
-static const DeviceAssignmentRule aIch9IommuLsiRules[] =
+static const DeviceAssignmentRule g_aIch9IommuLsiRules[] =
 {
     /* AMD IOMMU. */
     {"iommu-amd",     0,  0,  2, 0},
@@ -251,7 +251,7 @@ static const DeviceAssignmentRule aIch9IommuLsiRules[] =
 #endif
 
 /* LSI Logic Controller. */
-static const DeviceAssignmentRule aIch9LsiRules[] =
+static const DeviceAssignmentRule g_aIch9LsiRules[] =
 {
     /* Storage controller */
     {"lsilogic",      0, 20,  0, 1},
@@ -259,7 +259,7 @@ static const DeviceAssignmentRule aIch9LsiRules[] =
 };
 
 /* Aliasing rules */
-static const DeviceAliasRule aDeviceAliases[] =
+static const DeviceAliasRule g_aDeviceAliases[] =
 {
     {"e1000",       "nic"},
     {"pcnet",       "nic"},
@@ -389,23 +389,23 @@ bool BusAssignmentManager::State::findPCIAddress(const char *pszDevName, int iIn
 void BusAssignmentManager::State::addMatchingRules(const char *pszName, PCIRulesList& aList)
 {
     size_t iRuleset, iRule;
-    const DeviceAssignmentRule *aArrays[3] = {aGenericRules, NULL, NULL};
+    const DeviceAssignmentRule *aArrays[3] = {g_aGenericRules, NULL, NULL};
 
     switch (mChipsetType)
     {
         case ChipsetType_PIIX3:
-            aArrays[1] = aPiix3Rules;
+            aArrays[1] = g_aPiix3Rules;
             break;
         case ChipsetType_ICH9:
         {
-            aArrays[1] = aIch9Rules;
+            aArrays[1] = g_aIch9Rules;
 #ifdef VBOX_WITH_IOMMU_AMD
             if (mfIommu)
-                aArrays[2] = aIch9IommuLsiRules;
+                aArrays[2] = g_aIch9IommuLsiRules;
             else
 #endif
             {
-                aArrays[2] = aIch9LsiRules;
+                aArrays[2] = g_aIch9LsiRules;
             }
             break;
         }
@@ -429,10 +429,10 @@ void BusAssignmentManager::State::addMatchingRules(const char *pszName, PCIRules
 
 const char *BusAssignmentManager::State::findAlias(const char *pszDev)
 {
-    for (size_t iAlias = 0; iAlias < RT_ELEMENTS(aDeviceAliases); iAlias++)
+    for (size_t iAlias = 0; iAlias < RT_ELEMENTS(g_aDeviceAliases); iAlias++)
     {
-        if (strcmp(pszDev, aDeviceAliases[iAlias].pszDevName) == 0)
-            return aDeviceAliases[iAlias].pszDevAlias;
+        if (strcmp(pszDev, g_aDeviceAliases[iAlias].pszDevName) == 0)
+            return g_aDeviceAliases[iAlias].pszDevAlias;
     }
     return NULL;
 }
