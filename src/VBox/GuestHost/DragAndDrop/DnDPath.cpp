@@ -22,7 +22,9 @@
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/GuestHost/DragAndDrop.h>
 
+#include <iprt/dir.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 
@@ -54,19 +56,97 @@ int DnDPathSanitizeFilename(char *pszPath, size_t cbPath)
         0xa0, 0xd7af,
         '\0'
     };
-    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, s_uszValidRangePairs, '_' /* chReplacement */);
-    if (cReplaced < 0)
-        rc = VERR_INVALID_UTF8_ENCODING;
+    char *pszFilename = RTPathFilename(pszPath);
+    if (pszFilename)
+    {
+        ssize_t cReplaced = RTStrPurgeComplementSet(, s_uszValidRangePairs, '_' /* chReplacement */);
+        if (cReplaced < 0)
+            rc = VERR_INVALID_UTF8_ENCODING;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
 #else
     RT_NOREF2(pszPath, cbPath);
 #endif
     return rc;
 }
 
-int DnDPathSanitize(char *pszPath, size_t cbPath)
+/**
+ * Validates whether a given path matches our set of rules or not.
+ *
+ * @returns VBox status code.
+ * @param   pcszPath            Path to validate.
+ * @param   fMustExist          Whether the path to validate also must exist.
+ * @sa      shClTransferValidatePath().
+ */
+int DnDPathValidate(const char *pcszPath, bool fMustExist)
 {
-    /** @todo */
-    RT_NOREF2(pszPath, cbPath);
+    int rc = VINF_SUCCESS;
+
+    if (!strlen(pcszPath))
+        rc = VERR_INVALID_PARAMETER;
+
+    if (   RT_SUCCESS(rc)
+        && !RTStrIsValidEncoding(pcszPath))
+    {
+        rc = VERR_INVALID_UTF8_ENCODING;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && RTStrStr(pcszPath, ".."))
+    {
+        rc = VERR_INVALID_PARAMETER;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && fMustExist)
+    {
+        RTFSOBJINFO objInfo;
+        rc = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+            {
+                if (!RTDirExists(pcszPath)) /* Path must exist. */
+                    rc = VERR_PATH_NOT_FOUND;
+            }
+            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+            {
+                if (!RTFileExists(pcszPath)) /* File must exist. */
+                    rc = VERR_FILE_NOT_FOUND;
+            }
+            else /* Everything else (e.g. symbolic links) are not supported. */
+                rc = VERR_NOT_SUPPORTED;
+        }
+    }
+
+    return rc;
+}
+
+/**
+ * Converts a DnD path.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             Path to convert.
+ * @param   cbPath              Size (in bytes) of path to convert.
+ * @param   fFlags              Conversion flags of type DNDPATHCONVERT_FLAGS_.
+ */
+int DnDPathConvert(char *pszPath, size_t cbPath, DNDPATHCONVERTFLAGS fFlags)
+{
+    RT_NOREF(cbPath);
+    AssertReturn(!(fFlags & ~DNDPATHCONVERT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    if (fFlags & DNDPATHCONVERT_FLAGS_TO_NATIVE)
+        RTPathChangeToDosSlashes(pszPath, true);
+    else
+#else
+    RT_NOREF(fFlags);
+#endif
+    {
+        RTPathChangeToUnixSlashes(pszPath, true /* fForce */);
+    }
+
     return VINF_SUCCESS;
 }
 

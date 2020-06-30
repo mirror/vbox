@@ -384,7 +384,7 @@ int DnDURIList::AppendURIPath(const char *pszURI, DNDURILISTFLAGS fFlags)
                                   ? 0 /* Use start of path as root. */
                                   : pszFileName - pszSrcPath;
                 char *pszDstPath = &pszSrcPath[cchDstBase];
-                rc = DnDPathSanitize(pszDstPath, strlen(pszDstPath));
+                rc = DnDPathConvert(pszDstPath, strlen(pszDstPath), DNDPATHCONVERT_FLAGS_NONE);
                 if (RT_SUCCESS(rc))
                 {
                     m_lstRoot.append(pszDstPath);
@@ -498,7 +498,7 @@ int DnDURIList::SetFromURIData(const void *pvData, size_t cbData, DNDURILISTFLAG
 #endif
         if (pszFilePath)
         {
-            rc = DnDPathSanitize(pszFilePath, strlen(pszFilePath));
+            rc = DnDPathConvert(pszFilePath, strlen(pszFilePath), DNDPATHCONVERT_FLAGS_NONE);
             if (RT_SUCCESS(rc))
             {
                 m_lstRoot.append(pszFilePath);

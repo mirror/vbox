@@ -169,7 +169,7 @@ int DnDURIObject::Init(Type enmType, const RTCString &strPathAbs /* = */)
     if (enmType != Type_Unknown)
     {
         AssertReturn(m_strPathAbs.isNotEmpty(), VERR_INVALID_PARAMETER);
-        rc = DnDPathSanitize(m_strPathAbs.mutableRaw(), m_strPathAbs.capacity());
+        rc = DnDPathConvert(m_strPathAbs.mutableRaw(), m_strPathAbs.capacity(), DNDPATHCONVERT_FLAGS_TO_NATIVE);
         if (RT_SUCCESS(rc))
         {
             m_enmType    = enmType;

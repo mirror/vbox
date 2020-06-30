@@ -815,15 +815,6 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
                 break;
             }
 
-            rc = DnDPathSanitize(pszPathAbs, sizeof(pszPathAbs));
-            if (RT_FAILURE(rc))
-            {
-                LogFlowFunc(("Warning: Rebasing current file failed with rc=%Rrc\n", rc));
-                break;
-            }
-
-            LogRel2(("DnD: Absolute file path for guest file on the host is now '%s'\n", pszPathAbs));
-
             rc = pObj->Init(DnDURIObject::Type_File, pszPathAbs);
             if (RT_SUCCESS(rc))
             {

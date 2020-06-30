@@ -94,8 +94,22 @@ protected:
 bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax);
 
+int DnDPathValidate(const char *pcszPath, bool fMustExist);
+
+/** DnD path conversion flags. */
+typedef uint32_t DNDPATHCONVERTFLAGS;
+
+/** No flags specified.
+ *  This also will convert the path to the universal tansport style. */
+#define DNDPATHCONVERT_FLAGS_NONE                 0
+/** Converts the path to a OS-dependent path. */
+#define DNDPATHCONVERT_FLAGS_TO_NATIVE            RT_BIT(0)
+
+/** Mask of all valid DnD path conversion flags. */
+#define DNDPATHCONVERT_FLAGS_VALID_MASK           UINT32_C(0x1)
+
+int DnDPathConvert(char *pszPath, size_t cbPath, DNDPATHCONVERTFLAGS fFlags);
 int DnDPathSanitizeFilename(char *pszPath, size_t cbPath);
-int DnDPathSanitize(char *pszPath, size_t cbPath);
 
 /** DnDURIObject flags. */
 typedef uint32_t DNDURIOBJECTFLAGS;
