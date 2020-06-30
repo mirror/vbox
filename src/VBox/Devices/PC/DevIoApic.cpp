@@ -23,7 +23,7 @@
 #include <VBox/log.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/msi.h>
-#include <Vbox/pci.h>
+#include <VBox/pci.h>
 #include <VBox/vmm/pdmdev.h>
 
 #include "VBoxDD.h"
