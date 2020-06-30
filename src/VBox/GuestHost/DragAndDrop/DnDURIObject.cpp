@@ -50,27 +50,45 @@ void DnDURIObject::closeInternal(void)
 {
     LogFlowThisFuncEnter();
 
+    int rc;
+
     switch (m_enmType)
     {
         case Type_File:
         {
-            RTFileClose(u.File.hFile);
-            u.File.hFile = NIL_RTFILE;
-            RT_ZERO(u.File.objInfo);
+            LogRel2(("DnD: Closing file '%s'\n", m_strPathAbs.c_str()));
+
+            rc = RTFileClose(u.File.hFile);
+            if (RT_SUCCESS(rc))
+            {
+                u.File.hFile = NIL_RTFILE;
+                RT_ZERO(u.File.objInfo);
+            }
+            else
+                LogRel(("DnD: Closing file '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
             break;
         }
 
         case Type_Directory:
         {
-            RTDirClose(u.Dir.hDir);
-            u.Dir.hDir = NIL_RTDIR;
-            RT_ZERO(u.Dir.objInfo);
+            LogRel2(("DnD: Closing directory '%s'\n", m_strPathAbs.c_str()));
+
+            rc = RTDirClose(u.Dir.hDir);
+            if (RT_SUCCESS(rc))
+            {
+                u.Dir.hDir = NIL_RTDIR;
+                RT_ZERO(u.Dir.objInfo);
+            }
+            else
+                LogRel(("DnD: Closing directory '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
             break;
         }
 
         default:
             break;
     }
+
+    /** @todo Return rc. */
 }
 
 /**
@@ -175,6 +193,8 @@ int DnDURIObject::Init(Type enmType, const RTCString &strPathAbs /* = */)
             m_enmType    = enmType;
             m_strPathAbs = strPathAbs;
         }
+        else
+            LogRel2(("DnD: Absolute file path for guest file on the host is now '%s'\n", m_strPathAbs.c_str()));
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -252,6 +272,8 @@ int DnDURIObject::Open(uint64_t fOpen, RTFMODE fMode /* = 0 */,
         {
             case Type_File:
             {
+                LogRel2(("DnD: Opening file '%s'\n", m_strPathAbs.c_str()));
+
                 /*
                  * Open files on the source with RTFILE_O_DENY_WRITE to prevent races
                  * where the OS writes to the file while the destination side transfers
@@ -264,12 +286,16 @@ int DnDURIObject::Open(uint64_t fOpen, RTFMODE fMode /* = 0 */,
                         &&  fMode                   /* Some file mode to set specified? */)
                     {
                         rc = RTFileSetMode(u.File.hFile, fMode);
+                        if (RT_FAILURE(rc))
+                            LogRel(("DnD: Setting mode %#x for file '%s' failed with %Rrc\n", fMode, m_strPathAbs.c_str(), rc));
                     }
                     else if (fOpen & RTFILE_O_READ)
                     {
                         rc = queryInfoInternal();
                     }
                 }
+                else
+                    LogRel(("DnD: Opening file '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
 
                 if (RT_SUCCESS(rc))
                 {
@@ -284,9 +310,15 @@ int DnDURIObject::Open(uint64_t fOpen, RTFMODE fMode /* = 0 */,
 
             case Type_Directory:
             {
+                LogRel2(("DnD: Opening directory '%s'\n", m_strPathAbs.c_str()));
+
                 rc = RTDirOpen(&u.Dir.hDir, m_strPathAbs.c_str());
                 if (RT_SUCCESS(rc))
+                {
                     rc = queryInfoInternal();
+                }
+                else
+                    LogRel(("DnD: Opening directory '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
                 break;
             }
 
@@ -325,6 +357,9 @@ int DnDURIObject::queryInfoInternal(void)
             rc = VERR_NOT_IMPLEMENTED;
             break;
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Querying information for '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
 
     return rc;
 }
@@ -439,6 +474,8 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
                     rc = VINF_EOF;
                 }
             }
+            else
+                LogRel(("DnD: Reading from file '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
             break;
         }
 
@@ -519,7 +556,11 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
         {
             rc = RTFileWrite(u.File.hFile, pvBuf, cbBuf, &cbWritten);
             if (RT_SUCCESS(rc))
+            {
                 u.File.cbProcessed += cbWritten;
+            }
+            else
+                LogRel(("DnD: Writing to file '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
             break;
         }
 
