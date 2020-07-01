@@ -1057,7 +1057,7 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
      * This is not fatal in case we're running with an ancient VBox version.
      */
     pCtx->uSessionID = 0;
-    int rc2 = VbglR3GetSessionId(&pCtx->uSessionID);
+    int rc2 = VbglR3GetSessionId(&pCtx->uSessionID); RT_NOREF(rc2);
     LogFlowFunc(("uSessionID=%RU64, rc=%Rrc\n", pCtx->uSessionID, rc2));
 
     /*
