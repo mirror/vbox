@@ -83,10 +83,10 @@ typedef const VIRTIOSGBUF *PCVIRTIOSGBUF;
  * by the index of its head descriptor, which in optionally chains to another descriptor and so on.
  * Each descriptor, e.g. [len, GCPhys] pair in the chain represents either an OUT segment (e.g. guest-to-host)
  * or an IN segment (host-to-guest). A VIRTQBUF is created and retured from a call to virtioCoreR3VirtqAvailBufPeek()
- * or virtioCoreR3VirtqAvailBufGet(), which consolodates the VirtIO descriptor chain into a representation, where
- * pSgPhysSend is GCPhys s/g buffer containing all of the OUT descriptors and pSgPhysReturn is a GCPhys s/g
- * buffer containing all of IN descriptors to be filled with data on the
- * host to return to the guest.
+ * or virtioCoreR3VirtqAvailBufGet(). That function consolodates the VirtIO descriptor chain into a
+ * representation, where pSgPhysSend is GCPhys s/g buffer containing all of the OUT descriptors and pSgPhysReturn \
+ * is a GCPhys s/g buffer containing all of IN descriptors to be filled with data on the host to return to the
+ * guest.
  */
 typedef struct VIRTQBUF
 {
@@ -444,14 +444,14 @@ void  virtioCoreVirtqEnable(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, bool fEnabl
  */
 void  virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, bool fEnable);
 
-/*
+/**
  * Notifies guest (via ISR or MSI-X) of device configuration change
  *
  * @param   pVirtio     Pointer to the shared virtio state.
  */
 void  virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
 
-/*
+/**
  * Displays the VirtIO spec-related features offered by the core component,
  * as well as which features have been negotiated and accepted or declined by the guest driver,
  * providing a summary view of the configuration the device is operating with.
@@ -482,7 +482,7 @@ void  virtioCorePrintFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp);
  */
 void  virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs, int uVirtqNbr);
 
-/*
+/**
  * Returns the number of avail bufs in the virtq.
  *
  * @param   pDevIns     The device instance.
@@ -514,7 +514,7 @@ int  virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint
                                    PPVIRTQBUF ppVirtqBuf);
 
 /**
- * This functionf fetches the next buffer (descriptor chain) from the VirtIO "avail" ring of
+ * This function fetches the next buffer (descriptor chain) from the VirtIO "avail" ring of
  * indicated queue, and converts the buf's s/g vectors into OUT (e.g. guest-to-host)
  * components and and IN (host-to-guest) components.
  *
@@ -613,7 +613,7 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
 int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
 /**
- * Add some bytes out of a virtq (s/g) buffer, converting them from virtual memory to GCPhys
+ * Add some bytes to a virtq (s/g) buffer, converting them from virtual memory to GCPhys
  *
  * To be performant it is left to the caller to validate the size of the buffer with regard
  * to data being pulled from it to avoid underruns.
