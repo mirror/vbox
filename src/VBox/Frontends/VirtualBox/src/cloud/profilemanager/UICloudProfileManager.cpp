@@ -26,6 +26,7 @@
 #include "QITreeWidget.h"
 #include "UICommon.h"
 #include "UIActionPoolManager.h"
+#include "UICloudNetworkingStuff.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UICloudProfileDetailsWidget.h"
@@ -717,48 +718,41 @@ void UICloudProfileManagerWidget::loadCloudStuff()
     /* Clear tree first of all: */
     m_pTreeWidget->clear();
 
-    /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
-
-    /* Get CloudProviderManager for further activities: */
-    const CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
-    /* Show error message if necessary: */
-    if (!comVBox.isOk())
-        msgCenter().cannotAcquireCloudProviderManager(comVBox, this);
-    else
+    /* Iterate through existing providers: */
+    foreach (const CCloudProvider &comCloudProvider, listCloudProviders())
     {
-        /* Iterate through existing providers: */
-        foreach (const CCloudProvider &comCloudProvider, comCloudProviderManager.GetProviders())
+        /* Skip if we have nothing to populate: */
+        if (comCloudProvider.isNull())
+            continue;
+
+        /* Load provider data: */
+        UIDataCloudProvider providerData;
+        loadCloudProvider(comCloudProvider, providerData);
+        createItemForCloudProvider(providerData, false);
+
+        /* Make sure provider item is properly inserted: */
+        UIItemCloudProvider *pItem = searchItem(providerData.m_uuid);
+
+        /* Iterate through provider's profiles: */
+        foreach (const CCloudProfile &comCloudProfile, listCloudProfiles(comCloudProvider))
         {
-            /* Skip if we have nothing to populate (file missing?): */
-            if (comCloudProvider.isNull())
+            /* Skip if we have nothing to populate: */
+            if (comCloudProfile.isNull())
                 continue;
 
-            /* Load provider data: */
-            UIDataCloudProvider providerData;
-            loadCloudProvider(comCloudProvider, providerData);
-            createItemForCloudProvider(providerData, false);
-
-            /* Make sure provider item is properly inserted: */
-            UIItemCloudProvider *pItem = searchItem(providerData.m_uuid);
-
-            /* Iterate through existing profiles: */
-            foreach (const CCloudProfile &comCloudProfile, comCloudProvider.GetProfiles())
-            {
-                /* Load profile data: */
-                UIDataCloudProfile profileData;
-                loadCloudProfile(comCloudProfile, providerData, profileData);
-                createItemForCloudProfile(pItem, profileData, false);
-            }
-
-            /* Expand provider item finally: */
-            pItem->setExpanded(true);
+            /* Load profile data: */
+            UIDataCloudProfile profileData;
+            loadCloudProfile(comCloudProfile, providerData, profileData);
+            createItemForCloudProfile(pItem, profileData, false);
         }
 
-        /* Choose the 1st item as current initially: */
-        m_pTreeWidget->setCurrentItem(m_pTreeWidget->topLevelItem(0));
-        sltHandleCurrentItemChange();
+        /* Expand provider item finally: */
+        pItem->setExpanded(true);
     }
+
+    /* Choose the 1st item as current initially: */
+    m_pTreeWidget->setCurrentItem(m_pTreeWidget->topLevelItem(0));
+    sltHandleCurrentItemChange();
 }
 
 void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comProvider, UIDataCloudProvider &data)
