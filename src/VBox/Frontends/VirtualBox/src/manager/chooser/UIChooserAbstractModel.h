@@ -187,6 +187,11 @@ private:
 
     /** @name Children stuff.
       * @{ */
+        /** Reloads local tree. */
+        void reloadLocalTree();
+        /** Reloads cloud tree. */
+        void reloadCloudTree();
+
         /** Adds local machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
         void addLocalMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
         /** Adds cloud machine item based on certain @a comMachine and optionally @a fMakeItVisible, into @a strGroup. */
