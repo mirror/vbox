@@ -30,15 +30,19 @@
 
 
 /**
- * Sanitizes the file name component so that unsupported characters
- * will be replaced by an underscore ("_").
+ * Sanitizes a path so that unsupported characters will be replaced by an underscore ("_").
  *
  * @return  IPRT status code.
  * @param   pszPath             Path to sanitize.
  * @param   cbPath              Size (in bytes) of path to sanitize.
  */
-int DnDPathSanitizeFilename(char *pszPath, size_t cbPath)
+int DnDPathSanitize(char *pszPath, size_t cbPath)
 {
+    if (!pszPath) /* No path given? Bail out early. */
+        return VINF_SUCCESS;
+
+    AssertReturn(cbPath, VERR_INVALID_PARAMETER);
+
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     RT_NOREF1(cbPath);
@@ -56,15 +60,10 @@ int DnDPathSanitizeFilename(char *pszPath, size_t cbPath)
         0xa0, 0xd7af,
         '\0'
     };
-    char *pszFilename = RTPathFilename(pszPath);
-    if (pszFilename)
-    {
-        ssize_t cReplaced = RTStrPurgeComplementSet(pszFilename, s_uszValidRangePairs, '_' /* chReplacement */);
-        if (cReplaced < 0)
-            rc = VERR_INVALID_UTF8_ENCODING;
-    }
-    else
-        rc = VERR_INVALID_PARAMETER;
+
+    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, s_uszValidRangePairs, '_' /* chReplacement */);
+    if (cReplaced < 0)
+        rc = VERR_INVALID_UTF8_ENCODING;
 #else
     RT_NOREF2(pszPath, cbPath);
 #endif

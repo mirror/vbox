@@ -109,7 +109,7 @@ typedef uint32_t DNDPATHCONVERTFLAGS;
 #define DNDPATHCONVERT_FLAGS_VALID_MASK           UINT32_C(0x1)
 
 int DnDPathConvert(char *pszPath, size_t cbPath, DNDPATHCONVERTFLAGS fFlags);
-int DnDPathSanitizeFilename(char *pszPath, size_t cbPath);
+int DnDPathSanitize(char *pszPath, size_t cbPath);
 
 /** DnDURIObject flags. */
 typedef uint32_t DNDURIOBJECTFLAGS;

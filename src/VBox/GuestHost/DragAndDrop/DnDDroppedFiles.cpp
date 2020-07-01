@@ -178,7 +178,7 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /
             break;
         }
 
-        rc = DnDPathSanitizeFilename(szTime, sizeof(szTime));
+        rc = DnDPathSanitize(szTime, sizeof(szTime));
         if (RT_FAILURE(rc))
             break;
 
