@@ -73,11 +73,11 @@ protected:
  * Task structure for sending data to a target using
  * a worker thread.
  */
-class SendDataTask : public GuestDnDTargetTask
+class GuestDnDSendDataTask : public GuestDnDTargetTask
 {
 public:
 
-    SendDataTask(GuestDnDTarget *pTarget, GuestDnDSendCtx *pCtx)
+    GuestDnDSendDataTask(GuestDnDTarget *pTarget, GuestDnDSendCtx *pCtx)
         : GuestDnDTargetTask(pTarget),
           mpCtx(pCtx)
     {
@@ -89,7 +89,7 @@ public:
         GuestDnDTarget::i_sendDataThreadTask(this);
     }
 
-    virtual ~SendDataTask(void)
+    virtual ~GuestDnDSendDataTask(void)
     {
         if (mpCtx)
         {
@@ -563,7 +563,7 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
 }
 
 /* static */
-void GuestDnDTarget::i_sendDataThreadTask(SendDataTask *pTask)
+void GuestDnDTarget::i_sendDataThreadTask(GuestDnDSendDataTask *pTask)
 {
     LogFlowFunc(("pTask=%p\n", pTask));
     AssertPtrReturnVoid(pTask);
@@ -631,7 +631,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     if (FAILED(hr))
         return hr;
 
-    SendDataTask *pTask = NULL;
+    GuestDnDSendDataTask *pTask = NULL;
     GuestDnDSendCtx *pSendCtx = NULL;
 
     try
@@ -645,7 +645,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         pSendCtx->mData.getMeta().add(aData);
 
         /* pTask is responsible for deletion of pSendCtx after creating */
-        pTask = new SendDataTask(this, pSendCtx);
+        pTask = new GuestDnDSendDataTask(this, pSendCtx);
         if (!pTask->isOk())
         {
             delete pTask;
