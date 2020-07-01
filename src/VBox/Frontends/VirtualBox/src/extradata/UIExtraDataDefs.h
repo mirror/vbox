@@ -215,6 +215,8 @@ namespace UIExtraDataDefs
 
     /** @name Cloud Profile Manager
       * @{ */
+        /** Holds Cloud Profile Manager restrictions. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_CloudProfileManager_Restrictions;
         /** Holds whether Cloud Profile Manager details expanded. */
         SHARED_LIBRARY_STUFF extern const char *GUI_CloudProfileManager_Details_Expanded;
     /** @} */

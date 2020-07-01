@@ -62,6 +62,7 @@ enum
 enum
 {
     Column_Name,
+    Column_ListVMs,
     Column_Max
 };
 
@@ -69,6 +70,8 @@ enum
 /** Cloud Profile Manager provider's tree-widget item. */
 class UIItemCloudProvider : public QITreeWidgetItem, public UIDataCloudProvider
 {
+    Q_OBJECT;
+
 public:
 
     /** Constructs item. */
@@ -84,6 +87,8 @@ public:
 /** Cloud Profile Manager profile's tree-widget item. */
 class UIItemCloudProfile : public QITreeWidgetItem, public UIDataCloudProfile
 {
+    Q_OBJECT;
+
 public:
 
     /** Constructs item. */
@@ -114,6 +119,7 @@ void UIItemCloudProvider::updateFields()
     /* Update item fields: */
     setText(Column_Name, m_strName);
     setData(Column_Name, Data_ProviderID, m_uuid);
+    setCheckState(Column_ListVMs, m_fRestricted ? Qt::Unchecked : Qt::Checked);
 }
 
 
@@ -133,6 +139,7 @@ void UIItemCloudProfile::updateFields()
 {
     /* Update item fields: */
     setText(Column_Name, m_strName);
+    setCheckState(Column_ListVMs, m_fRestricted ? Qt::Unchecked : Qt::Checked);
 }
 
 
@@ -171,6 +178,11 @@ void UICloudProfileManagerWidget::retranslateUi()
     if (m_pToolBar)
         m_pToolBar->updateLayout();
 #endif
+
+    /* Translate tree-widget: */
+    m_pTreeWidget->setHeaderLabels(   QStringList()
+                                   << tr("Source")
+                                   << tr("List VMs"));
 }
 
 void UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges()
@@ -490,6 +502,14 @@ void UICloudProfileManagerWidget::sltShowCloudProfileHelp()
     uiCommon().openURL("https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm");
 }
 
+void UICloudProfileManagerWidget::sltPerformTableAdjustment()
+{
+    AssertPtrReturnVoid(m_pTreeWidget);
+    AssertPtrReturnVoid(m_pTreeWidget->header());
+    AssertPtrReturnVoid(m_pTreeWidget->viewport());
+    m_pTreeWidget->header()->resizeSection(0, m_pTreeWidget->viewport()->width() - m_pTreeWidget->header()->sectionSize(1));
+}
+
 void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
 {
     /* Get items: */
@@ -545,6 +565,36 @@ void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &posi
 
     /* And show it: */
     menu.exec(m_pTreeWidget->mapToGlobal(position));
+}
+
+void UICloudProfileManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
+{
+    /* Cast pItem to QITreeWidgetItem: */
+    QITreeWidgetItem *pChangedItem = QITreeWidgetItem::toItem(pItem);
+    AssertMsgReturnVoid(pChangedItem, ("Changed item must not be null!\n"));
+
+    /* Check whether item is of provider or profile type, then check whether it changed: */
+    bool fChanged = false;
+    UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pChangedItem);
+    UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pChangedItem);
+    if (pProviderItem)
+    {
+        const UIDataCloudProvider oldData = *pProviderItem;
+        if (   (oldData.m_fRestricted && pProviderItem->checkState(Column_ListVMs) == Qt::Checked)
+            || (!oldData.m_fRestricted && pProviderItem->checkState(Column_ListVMs) == Qt::Unchecked))
+            fChanged = true;
+    }
+    else if (pProfileItem)
+    {
+        const UIDataCloudProfile oldData = *pProfileItem;
+        if (   (oldData.m_fRestricted && pProfileItem->checkState(Column_ListVMs) == Qt::Checked)
+            || (!oldData.m_fRestricted && pProfileItem->checkState(Column_ListVMs) == Qt::Unchecked))
+            fChanged = true;
+    }
+
+    /* Gather Cloud Profile Manager restrictions and save them to extra-data: */
+    if (fChanged)
+        gEDataManager->setCloudProfileManagerRestrictions(gatherCloudProfileManagerRestrictions(m_pTreeWidget->invisibleRootItem()));
 }
 
 void UICloudProfileManagerWidget::prepare()
@@ -643,7 +693,7 @@ void UICloudProfileManagerWidget::prepareTreeWidget()
     if (m_pTreeWidget)
     {
         /* Configure tree-widget: */
-        m_pTreeWidget->header()->hide();
+        m_pTreeWidget->header()->setStretchLastSection(false);
         m_pTreeWidget->setRootIsDecorated(false);
         m_pTreeWidget->setAlternatingRowColors(true);
         m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -690,12 +740,18 @@ void UICloudProfileManagerWidget::prepareConnections()
             this, &UICloudProfileManagerWidget::sltShowCloudProfileHelp);
 
     /* Tree-widget connections: */
+    connect(m_pTreeWidget, &QITreeWidget::resized,
+            this, &UICloudProfileManagerWidget::sltPerformTableAdjustment, Qt::QueuedConnection);
+    connect(m_pTreeWidget->header(), &QHeaderView::sectionResized,
+            this, &UICloudProfileManagerWidget::sltPerformTableAdjustment, Qt::QueuedConnection);
     connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
             this, &UICloudProfileManagerWidget::sltHandleCurrentItemChange);
     connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
             this, &UICloudProfileManagerWidget::sltHandleContextMenuRequest);
     connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
             m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::setChecked);
+    connect(m_pTreeWidget, &QITreeWidget::itemChanged,
+            this, &UICloudProfileManagerWidget::sltHandleItemChange);
 
     /* Details-widget connections: */
     connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChanged,
@@ -704,6 +760,10 @@ void UICloudProfileManagerWidget::prepareConnections()
             this, &UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges);
     connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChangeAccepted,
             this, &UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges);
+
+    /* Extra-data connections: */
+    connect(gEDataManager, &UIExtraDataManager::sigCloudProfileManagerRestrictionChange,
+            this, &UICloudProfileManagerWidget::sltLoadCloudStuff);
 }
 
 void UICloudProfileManagerWidget::loadSettings()
@@ -718,6 +778,9 @@ void UICloudProfileManagerWidget::loadCloudStuff()
     /* Clear tree first of all: */
     m_pTreeWidget->clear();
 
+    /* Acquire cloud profile manager restrictions: */
+    const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
+
     /* Iterate through existing providers: */
     foreach (const CCloudProvider &comCloudProvider, listCloudProviders())
     {
@@ -728,6 +791,8 @@ void UICloudProfileManagerWidget::loadCloudStuff()
         /* Load provider data: */
         UIDataCloudProvider providerData;
         loadCloudProvider(comCloudProvider, providerData);
+        const QString strProviderPath = QString("/%1").arg(providerData.m_strShortName);
+        providerData.m_fRestricted = restrictions.contains(strProviderPath);
         createItemForCloudProvider(providerData, false);
 
         /* Make sure provider item is properly inserted: */
@@ -743,6 +808,8 @@ void UICloudProfileManagerWidget::loadCloudStuff()
             /* Load profile data: */
             UIDataCloudProfile profileData;
             loadCloudProfile(comCloudProfile, providerData, profileData);
+            const QString strProfilePath = QString("/%1/%2").arg(providerData.m_strShortName).arg(profileData.m_strName);
+            profileData.m_fRestricted = restrictions.contains(strProfilePath);
             createItemForCloudProfile(pItem, profileData, false);
         }
 
@@ -761,6 +828,8 @@ void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comPro
     if (comProvider.isOk())
         data.m_uuid = comProvider.GetId();
     if (comProvider.isOk())
+        data.m_strShortName = comProvider.GetShortName();
+    if (comProvider.isOk())
         data.m_strName = comProvider.GetName();
     foreach (const QString &strSupportedPropertyName, comProvider.GetSupportedPropertyNames())
         data.m_propertyDescriptions[strSupportedPropertyName] = comProvider.GetPropertyDescription(strSupportedPropertyName);
@@ -772,6 +841,9 @@ void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comPro
 
 void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile, const UIDataCloudProvider &providerData, UIDataCloudProfile &profileData)
 {
+    /* Gather provider settings: */
+    profileData.m_strProviderShortName = providerData.m_strShortName;
+
     /* Gather profile settings: */
     if (comProfile.isOk())
         profileData.m_strName = comProfile.GetName();
@@ -857,6 +929,40 @@ void UICloudProfileManagerWidget::updateItemForCloudProfile(const UIDataCloudPro
         if (fChooseItem)
             m_pTreeWidget->setCurrentItem(pItem);
     }
+}
+
+QStringList UICloudProfileManagerWidget::gatherCloudProfileManagerRestrictions(QTreeWidgetItem *pParentItem)
+{
+    /* Prepare result: */
+    QStringList result;
+    AssertPtrReturn(pParentItem, result);
+
+    /* Process unchecked QITreeWidgetItem(s) only: */
+    QITreeWidgetItem *pChangedItem = QITreeWidgetItem::toItem(pParentItem);
+    if (   pChangedItem
+        && pChangedItem->checkState(Column_ListVMs) == Qt::Unchecked)
+    {
+        /* Check whether item is of provider or profile type: */
+        UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pChangedItem);
+        UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pChangedItem);
+        if (pProviderItem)
+        {
+            const UIDataCloudProvider oldData = *pProviderItem;
+            result << QString("/%1").arg(oldData.m_strShortName);
+        }
+        else if (pProfileItem)
+        {
+            const UIDataCloudProfile oldData = *pProfileItem;
+            result << QString("/%1/%2").arg(oldData.m_strProviderShortName, oldData.m_strName);
+        }
+    }
+
+    /* Iterate through children recursively: */
+    for (int i = 0; i < pParentItem->childCount(); ++i)
+        result << gatherCloudProfileManagerRestrictions(pParentItem->child(i));
+
+    /* Return result: */
+    return result;
 }
 
 
@@ -979,3 +1085,6 @@ UICloudProfileManagerWidget *UICloudProfileManager::widget()
 {
     return qobject_cast<UICloudProfileManagerWidget*>(QIManagerDialog::widget());
 }
+
+
+#include "UICloudProfileManager.moc"

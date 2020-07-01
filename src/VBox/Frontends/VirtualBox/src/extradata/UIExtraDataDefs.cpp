@@ -110,6 +110,7 @@ const char *UIExtraDataDefs::GUI_VirtualMediaManager_Search_Widget_Expanded = "G
 const char *UIExtraDataDefs::GUI_HostNetworkManager_Details_Expanded = "GUI/HostNetworkManager/Details/Expanded";
 
 /* Cloud Profile Manager: */
+const char *UIExtraDataDefs::GUI_CloudProfileManager_Restrictions = "GUI/CloudProfileManager/Restrictions";
 const char *UIExtraDataDefs::GUI_CloudProfileManager_Details_Expanded = "GUI/CloudProfileManager/Details/Expanded";
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI

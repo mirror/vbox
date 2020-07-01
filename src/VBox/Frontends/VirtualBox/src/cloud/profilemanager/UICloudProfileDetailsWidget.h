@@ -44,7 +44,7 @@ struct UIDataCloudProvider
 {
     /** Constructs data. */
     UIDataCloudProvider()
-        : m_strName(QString())
+        : m_fRestricted(false)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -52,7 +52,9 @@ struct UIDataCloudProvider
     {
         return true
                && (m_uuid == other.m_uuid)
+               && (m_strShortName == other.m_strShortName)
                && (m_strName == other.m_strName)
+               && (m_fRestricted == other.m_fRestricted)
                ;
     }
 
@@ -63,8 +65,12 @@ struct UIDataCloudProvider
 
     /** Holds the provider ID. */
     QUuid    m_uuid;
+    /** Holds the provider short name. */
+    QString  m_strShortName;
     /** Holds the provider name. */
     QString  m_strName;
+    /** Holds whether provider is restricted. */
+    bool     m_fRestricted;
 
     /** Holds the profile supported property descriptions. */
     QMap<QString, QString>  m_propertyDescriptions;
@@ -75,14 +81,16 @@ struct UIDataCloudProfile
 {
     /** Constructs data. */
     UIDataCloudProfile()
-        : m_strName(QString())
+        : m_fRestricted(false)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataCloudProfile &other) const
     {
         return true
+               && (m_strProviderShortName == other.m_strProviderShortName)
                && (m_strName == other.m_strName)
+               && (m_fRestricted == other.m_fRestricted)
                && (m_data == other.m_data)
                ;
     }
@@ -92,8 +100,12 @@ struct UIDataCloudProfile
     /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataCloudProfile &other) const { return !equal(other); }
 
+    /** Holds the provider short name. */
+    QString  m_strProviderShortName;
     /** Holds the profile name. */
     QString  m_strName;
+    /** Holds whether provider is restricted. */
+    bool     m_fRestricted;
 
     /** Holds the profile data. */
     QMap<QString, QPair<QString, QString> >  m_data;

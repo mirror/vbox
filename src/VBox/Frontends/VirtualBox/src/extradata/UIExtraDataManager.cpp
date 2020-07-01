@@ -1928,6 +1928,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_SnapshotManager_Details_Expanded
            << GUI_VirtualMediaManager_Details_Expanded
            << GUI_HostNetworkManager_Details_Expanded
+           << GUI_CloudProfileManager_Restrictions
            << GUI_CloudProfileManager_Details_Expanded
            << GUI_HideDescriptionForWizards
            << GUI_HideFromManager << GUI_HideDetails
@@ -2971,6 +2972,16 @@ void UIExtraDataManager::setHostNetworkManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_HostNetworkManager_Details_Expanded, toFeatureAllowed(fExpanded));
+}
+
+QStringList UIExtraDataManager::cloudProfileManagerRestrictions()
+{
+    return extraDataStringList(GUI_CloudProfileManager_Restrictions);
+}
+
+void UIExtraDataManager::setCloudProfileManagerRestrictions(const QStringList &restrictions)
+{
+    return setExtraDataStringList(GUI_CloudProfileManager_Restrictions, restrictions);
 }
 
 bool UIExtraDataManager::cloudProfileManagerDetailsExpanded()
@@ -4567,6 +4578,9 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
             /* Runtime UI host-key combintation changed? */
             else if (strKey == GUI_Input_HostKeyCombination)
                 emit sigRuntimeUIHostKeyCombinationChange();
+            /* Cloud Profile Manager restrictions changed: */
+            else if (strKey == GUI_CloudProfileManager_Restrictions)
+                emit sigCloudProfileManagerRestrictionChange();
             /* Details categories: */
             else if (strKey == GUI_Details_Elements)
                 emit sigDetailsCategoriesChange();
