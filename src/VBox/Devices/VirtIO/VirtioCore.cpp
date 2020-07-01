@@ -42,7 +42,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #define INSTANCE(a_pVirtio)                 ((a_pVirtio)->szInstance)
-#define VIRTQNAME(a_pVirtio, a_uVirtqNbr)    ((a_pVirtio)->aVirtqState[(a_uVirtqNbr)].szVirtqName)
+#define VIRTQNAME(a_pVirtio, a_uVirtqNbr)   ((a_pVirtio)->aVirtqState[(a_uVirtqNbr)].szVirtqName)
 #define IS_DRIVER_OK(a_pVirtio)             ((a_pVirtio)->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
 #define IS_VIRTQ_EMPTY(pDevIns, pVirtio, pVirtqState) \
             (virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, pVirtqState) == 0)
@@ -243,7 +243,6 @@ DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio,
 
 
 #ifdef IN_RING3
-
 DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
     uint16_t uIdx = 0;
@@ -272,8 +271,6 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
                           pVirtio->aGCPhysVirtqUsed[uVirtqNbr] + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[pVirtio->uVirtqSize[uVirtqNbr]]),
                           &uAvailEventIdx, sizeof(uAvailEventIdx));
 }
-
-
 #endif
 
 DECLINLINE(uint16_t) virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTQSTATE pVirtqState)
@@ -1507,7 +1504,6 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUse
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocDeviceCap))
     {
 #ifdef IN_RING3
-LogFunc(("IN_RING3\n"));
         /*
          * Callback to client to manage device-specific configuration.
          */
@@ -1537,19 +1533,13 @@ LogFunc(("IN_RING3\n"));
         virtioLowerInterrupt(pDevIns, 0);
         return rcStrict;
 #else
-Log7Func(("return VINF_IOM_R3_MMIO_READ\n"));
         return VINF_IOM_R3_MMIO_READ;
 #endif
     }
 
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocCommonCfgCap))
-{
-#ifdef IN_RING3
         return virtioCommonCfgAccessed(pDevIns, pVirtio, pVirtioCC, false /* fWrite */, uOffset, cb, pv);
-#else
-        return virtioCommonCfgAccessed(pDevIns, pVirtio, pVirtioCC, false /* fWrite */, uOffset, cb, pv);
-#endif
-}
+
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocIsrCap) && cb == sizeof(uint8_t))
     {
         *(uint8_t *)pv = pVirtio->uISR;
@@ -1593,13 +1583,8 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioWrite(PPDMDEVINS pDevIns, void *pvUs
     }
 
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocCommonCfgCap))
-    {
-#ifdef IN_RING3
         return virtioCommonCfgAccessed(pDevIns, pVirtio, pVirtioCC, true /* fWrite */, uOffset, cb, (void *)pv);
-#else
-        return virtioCommonCfgAccessed(pDevIns, pVirtio, pVirtioCC, true /* fWrite */, uOffset, cb, (void *)pv);
-#endif
-    }
+
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocIsrCap) && cb == sizeof(uint8_t))
     {
         pVirtio->uISR = *(uint8_t *)pv;
