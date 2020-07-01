@@ -35,8 +35,12 @@
 DnDURIObject::DnDURIObject(Type enmType /* = Type_Unknown */, const RTCString &strPathAbs /* = "" */)
     : m_enmType(Type_Unknown)
 {
-    int rc2 = Init(enmType, strPathAbs);
-    AssertRC(rc2);
+    if (   enmType != Type_Unknown
+        && strPathAbs.isNotEmpty())
+    {
+        int rc2 = Init(enmType, strPathAbs);
+        AssertRC(rc2);
+    }
 }
 
 DnDURIObject::~DnDURIObject(void)
