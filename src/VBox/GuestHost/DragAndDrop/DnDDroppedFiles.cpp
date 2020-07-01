@@ -148,22 +148,22 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /
 
     do
     {
-        char pszDropDir[RTPATH_MAX];
-        RTStrPrintf(pszDropDir, sizeof(pszDropDir), "%s", pszPath);
+        char szDropDir[RTPATH_MAX];
+        RTStrPrintf(szDropDir, sizeof(szDropDir), "%s", pszPath);
 
         /** @todo On Windows we also could use the registry to override
          *        this path, on Posix a dotfile and/or a guest property
          *        can be used. */
 
         /* Append our base drop directory. */
-        rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), "VirtualBox Dropped Files"); /** @todo Make this tag configurable? */
+        rc = RTPathAppend(szDropDir, sizeof(szDropDir), "VirtualBox Dropped Files"); /** @todo Make this tag configurable? */
         if (RT_FAILURE(rc))
             break;
 
         /* Create it when necessary. */
-        if (!RTDirExists(pszDropDir))
+        if (!RTDirExists(szDropDir))
         {
-            rc = RTDirCreateFullPath(pszDropDir, RTFS_UNIX_IRWXU);
+            rc = RTDirCreateFullPath(szDropDir, RTFS_UNIX_IRWXU);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -182,20 +182,20 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /
         if (RT_FAILURE(rc))
             break;
 
-        rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), pszTime);
+        rc = RTPathAppend(szDropDir, sizeof(szDropDir), pszTime);
         if (RT_FAILURE(rc))
             break;
 
         /* Create it (only accessible by the current user) */
-        rc = RTDirCreateUniqueNumbered(pszDropDir, sizeof(pszDropDir), RTFS_UNIX_IRWXU, 3, '-');
+        rc = RTDirCreateUniqueNumbered(szDropDir, sizeof(szDropDir), RTFS_UNIX_IRWXU, 3, '-');
         if (RT_SUCCESS(rc))
         {
             RTDIR hDir;
-            rc = RTDirOpen(&hDir, pszDropDir);
+            rc = RTDirOpen(&hDir, szDropDir);
             if (RT_SUCCESS(rc))
             {
                 this->m_hDir       = hDir;
-                this->m_strPathAbs = pszDropDir;
+                this->m_strPathAbs = szDropDir;
                 this->m_fOpen      = fFlags;
             }
         }
