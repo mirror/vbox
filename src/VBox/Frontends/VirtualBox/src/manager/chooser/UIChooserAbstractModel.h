@@ -165,6 +165,8 @@ protected slots:
       * @{ */
         /** Handles list cloud machines task complete signal. */
         virtual void sltHandleCloudListMachinesTaskComplete(UITask *pTask);
+        /** Handles Cloud Profile Manager restriction change. */
+        virtual void sltHandleCloudProfileManagerRestrictionChange();
     /** @} */
 
 private slots:

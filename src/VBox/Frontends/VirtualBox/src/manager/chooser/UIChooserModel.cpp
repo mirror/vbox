@@ -1159,6 +1159,15 @@ void UIChooserModel::sltHandleCloudListMachinesTaskComplete(UITask *pTask)
     buildTreeForMainRoot(true /* preserve selection */);
 }
 
+void UIChooserModel::sltHandleCloudProfileManagerRestrictionChange()
+{
+    /* Call to base-class: */
+    UIChooserAbstractModel::sltHandleCloudProfileManagerRestrictionChange();
+
+    /* Build tree for main root: */
+    buildTreeForMainRoot(true /* preserve selection */);
+}
+
 void UIChooserModel::sltMakeSureCurrentItemVisible()
 {
     root()->toGroupItem()->makeSureItemIsVisible(currentItem());

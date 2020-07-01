@@ -723,15 +723,16 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
     const QString strProfileNodeName = QString("/%1/%2").arg(pAcquiringTask->providerShortName(), pAcquiringTask->profileName());
     QList<UIChooserNode*> profileNodes;
     invisibleRoot()->searchForNodes(strProfileNodeName, UIChooserItemSearchFlag_CloudProfile | UIChooserItemSearchFlag_ExactId, profileNodes);
-    AssertReturnVoid(!profileNodes.isEmpty());
-    UIChooserNode *pProfileNode = profileNodes.first();
-    AssertPtrReturnVoid(pProfileNode);
+    UIChooserNode *pProfileNode = profileNodes.value(0);
+    if (!pProfileNode)
+        return;
 
     /* Search for fake node: */
     QList<UIChooserNode*> fakeNodes;
     pProfileNode->searchForNodes(QUuid().toString(), UIChooserItemSearchFlag_Machine | UIChooserItemSearchFlag_ExactId, fakeNodes);
     UIChooserNode *pFakeNode = fakeNodes.value(0);
-    AssertPtrReturnVoid(pFakeNode);
+    if (!pFakeNode)
+        return;
 
     /* And if we have at least one cloud machine: */
     const QVector<CCloudMachine> machines = pAcquiringTask->result();
@@ -754,6 +755,12 @@ void UIChooserAbstractModel::sltHandleCloudListMachinesTaskComplete(UITask *pTas
         pFakeCloudMachineItem->setFakeCloudItemState(UIFakeCloudVirtualMachineItemState_Done);
         pFakeCloudMachineItem->setFakeCloudItemErrorMessage(pAcquiringTask->errorInfo());
     }
+}
+
+void UIChooserAbstractModel::sltHandleCloudProfileManagerRestrictionChange()
+{
+    /* Reload cloud tree: */
+    reloadCloudTree();
 }
 
 void UIChooserAbstractModel::prepare()
@@ -795,6 +802,10 @@ void UIChooserAbstractModel::prepareConnections()
     connect(this, &UIChooserAbstractModel::sigStartGroupSaving,
             this, &UIChooserAbstractModel::sltStartGroupSaving,
             Qt::QueuedConnection);
+
+    /* Setup extra-data connections: */
+    connect(gEDataManager, &UIExtraDataManager::sigCloudProfileManagerRestrictionChange,
+            this, &UIChooserAbstractModel::sltHandleCloudProfileManagerRestrictionChange);
 }
 
 void UIChooserAbstractModel::reloadLocalTree()
@@ -847,6 +858,17 @@ void UIChooserAbstractModel::reloadCloudTree()
 {
 #ifdef VBOX_GUI_WITH_CLOUD_VMS
     LogRelFlow(("UIChooserAbstractModel: Loading cloud providers/profiles...\n"));
+
+    /* Wipe out existing cloud providers first.
+     * This is quite rude, in future we need to reimplement it more wise.. */
+    foreach (UIChooserNode *pNode, invisibleRoot()->nodes(UIChooserNodeType_Group))
+    {
+        AssertPtrReturnVoid(pNode);
+        UIChooserNodeGroup *pGroupNode = pNode->toGroupNode();
+        AssertPtrReturnVoid(pGroupNode);
+        if (pGroupNode->groupType() == UIChooserNodeGroupType_Provider)
+            delete pNode;
+    }
 
     /* Acquire Cloud Profile Manager restrictions: */
     const QStringList restrictions = gEDataManager->cloudProfileManagerRestrictions();
