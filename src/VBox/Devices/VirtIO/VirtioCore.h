@@ -436,7 +436,15 @@ int  virtioCoreVirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *
 void  virtioCoreVirtqEnable(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, bool fEnable);
 
 /**
- * Enable or Disable notification for the specified queue
+ * Enable or disable notification for the specified queue.
+ *
+ * I.e. The notification enable mode informs guest driver whether or not to to notify the
+ * host device (via MMIO access to the queue notification area described in VirtIO 1.0, Section 4.1.4.4
+ * "Notification structure layout" whenever the guest driver adds a new entry to the avail ring of the queue).
+ *
+ * Note: In the VirtIO world, the device sets flags in the used ring to communicate to the driver how to
+ * handle notifications for the avail ring and the drivers sets flags in the avail ring to communicate
+ * to the device how to handle sending interrupts for the used ring.
  *
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   uVirtqNbr   Virtq number
@@ -724,7 +732,6 @@ DECLINLINE(uint64_t) virtioCoreGetNegotiatedFeatures(PVIRTIOCORE pVirtio)
     return pVirtio->uDriverFeatures;
 }
 
-
 /**
  * Get the the name of the VM state change associated with the enumeration variable
  *
@@ -782,7 +789,6 @@ void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *psz
  *                      provided text with value of cb to indicate size next to it.
  */
 void virtioCoreGCPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint16_t cb, uint32_t uBase, const char *pszTitle);
-
 
 /**
  * The following API is functions identically to the similarly-named calls pertaining to the RTSGBUF
