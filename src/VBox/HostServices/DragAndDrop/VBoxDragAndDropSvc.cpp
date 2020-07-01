@@ -488,9 +488,18 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     if (RT_SUCCESS(rc))
                         rc = HGCMSvcGetU32(&paParms[idxProto + 1], &data.uFlags);
                     if (RT_SUCCESS(rc))
-                        pClient->SetProtocolVer(data.uProtocol);
-                    if (RT_SUCCESS(rc))
                     {
+                        unsigned uProtocolVer = 3; /* The protocol version we're going to use. */
+
+                        /* Make sure we're only setting a protocl version we're supporting on the host. */
+                        if (data.uProtocol > uProtocolVer)
+                            data.uProtocol = uProtocolVer;
+
+                        pClient->SetProtocolVer(data.uProtocol);
+
+                        /* Return the highest protocol version we're supporting. */
+                        paParms[idxProto].u.uint32 = data.uProtocol;
+
                         LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
                         DO_HOST_CALLBACK();
                     }

@@ -1047,10 +1047,10 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
     int rc = VbglR3HGCMConnect("VBoxDragAndDropSvc", &pCtx->uClientID);
     if (RT_FAILURE(rc))
         return rc;
-
-    /* Set the default protocol version to use. */
-    pCtx->uProtocol = 3;
     Assert(pCtx->uClientID);
+
+    /* Set the default protocol version we would like to use. */
+    pCtx->uProtocol = 3;
 
     /*
      * Get the VM's session ID.
@@ -1061,59 +1061,29 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
     LogFlowFunc(("uSessionID=%RU64, rc=%Rrc\n", pCtx->uSessionID, rc2));
 
     /*
-     * Check if the host is >= VBox 5.0 which in case supports GUEST_DND_CONNECT.
+     * Try sending the connect message to tell the protocol version to use.
+     * Note: This might fail when the Guest Additions run on an older VBox host (< VBox 5.0) which
+     *       does not implement this command.
      */
-    bool fSupportsConnectReq = false;
+    HGCMMsgConnect Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_CONNECT, 2);
+    /** @todo Context ID not used yet. */
+    Msg.u.v3.uContext.SetUInt32(0);
+    Msg.u.v3.uProtocol.SetUInt32(pCtx->uProtocol);
+    Msg.u.v3.uFlags.SetUInt32(0); /* Unused at the moment. */
+
+    rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        /* The guest property service might not be available. Not fatal. */
-        uint32_t uGuestPropSvcClientID;
-        rc2 = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
-        if (RT_SUCCESS(rc2))
-        {
-            char *pszHostVersion;
-            rc2 = VbglR3GuestPropReadValueAlloc(uGuestPropSvcClientID, "/VirtualBox/HostInfo/VBoxVer", &pszHostVersion);
-            if (RT_SUCCESS(rc2))
-            {
-                fSupportsConnectReq = RTStrVersionCompare(pszHostVersion, "5.0") >= 0;
-                LogFlowFunc(("pszHostVersion=%s, fSupportsConnectReq=%RTbool\n", pszHostVersion, fSupportsConnectReq));
-                VbglR3GuestPropReadValueFree(pszHostVersion);
-            }
+        /* Set the protocol version we're going to use as told by the host. */
+        rc = Msg.u.v3.uProtocol.GetUInt32(&pCtx->uProtocol); AssertRC(rc);
 
-            VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
-        }
-
-        if (RT_FAILURE(rc2))
-            LogFlowFunc(("Retrieving host version failed with rc=%Rrc\n", rc2));
-    }
-
-    if (fSupportsConnectReq)
-    {
-        /*
-         * Try sending the connect message to tell the protocol version to use.
-         * Note: This might fail when the Guest Additions run on an older VBox host (< VBox 5.0) which
-         *       does not implement this command.
-         */
-        HGCMMsgConnect Msg;
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_CONNECT, 3);
-        /** @todo Context ID not used yet. */
-        Msg.u.v3.uContext.SetUInt32(0);
-        Msg.u.v3.uProtocol.SetUInt32(pCtx->uProtocol);
-        Msg.u.v3.uFlags.SetUInt32(0); /* Unused at the moment. */
-
-        rc2 = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-        if (RT_FAILURE(rc2))
-            fSupportsConnectReq = false;
-
-        LogFlowFunc(("Connection request ended with rc=%Rrc\n", rc2));
-    }
-
-    if (fSupportsConnectReq)
-    {
         pCtx->cbMaxChunkSize = _64K; /** @todo Use a scratch buffer on the heap? */
     }
-    else /* GUEST_DND_CONNECT not supported; the user needs to upgrade the host. */
-        rc = VERR_NOT_SUPPORTED;
+    else
+        pCtx->uProtocol = 0; /*  We're using protocol v0 (initial draft) as a fallback. */
+
+    /** @todo Implement protocol feature flags. */
 
     LogFlowFunc(("uClient=%RU32, uProtocol=%RU32, rc=%Rrc\n", pCtx->uClientID, pCtx->uProtocol, rc));
     return rc;
