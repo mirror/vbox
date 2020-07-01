@@ -163,7 +163,7 @@ typedef struct virtio_scsi_config
 typedef struct virtio_scsi_event
 {
     // Device-writable part
-    uint32_t uEvent;                                            /**< event                                          */
+    uint32_t uEvent;                                            /**< event                                           */
     uint8_t  abVirtioLun[8];                                    /**< lun                                             */
     uint32_t uReason;                                           /**< reason                                          */
 } VIRTIOSCSI_EVENT_T, *PVIRTIOSCSI_EVENT_T;
@@ -215,7 +215,7 @@ typedef struct VIRTIOSCSI_REQ_CMD_T
     REQ_CMD_HDR_T  ReqHdr;
     uint8_t  uCdb[1];                                           /**< cdb                                          */
 
-    REQ_CMD_PI_T piHdr;                                         /**< T10 Pi block integrity (optional feature)     */
+    REQ_CMD_PI_T piHdr;                                         /**< T10 Pi block integrity (optional feature)    */
     uint8_t  uPiOut[1];                                         /**< pi_out[]          T10 pi block integrity     */
     uint8_t  uDataOut[1];                                       /**< dataout                                      */
     /** @} */
@@ -1181,7 +1181,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     for (size_t offReq = 0; offReq < cbReqHdr; )
     {
         size_t cbSeg = cbReqHdr - offReq;
-        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
+        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSeg(pVirtqBuf->pSgPhysSend, &cbSeg);
         PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhys, &VirtqReq.ab[offReq], cbSeg);
         offReq += cbSeg;
     }
@@ -1344,7 +1344,6 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
         virtioScsiR3ReqErr(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf, &respHdr, abSense, cbSenseCfg);
         virtioScsiR3FreeReq(pTarget, pReq);
     }
-
     return VINF_SUCCESS;
 }
 
@@ -1370,13 +1369,13 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     VIRTIO_SCSI_CTRL_UNION_T ScsiCtrlUnion;
     RT_ZERO(ScsiCtrlUnion);
 
-    size_t const cbCtrl = RT_MIN(pVirtqBuf->cbPhysSend, sizeof(VIRTIO_SCSI_CTRL_UNION_T));
-    for (size_t offCtrl = 0; offCtrl < cbCtrl; )
+    size_t const cb = RT_MIN(pVirtqBuf->cbPhysSend, sizeof(VIRTIO_SCSI_CTRL_UNION_T));
+    for (size_t uOffset = 0; uOffset < cb; )
     {
-        size_t cbSeg = cbCtrl - offCtrl;
-        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
-        PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhys, &ScsiCtrlUnion.ab[offCtrl], cbSeg);
-        offCtrl += cbSeg;
+        size_t cbSeg = cb - uOffset;
+        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSeg(pVirtqBuf->pSgPhysSend, &cbSeg);
+        PDMDevHlpPCIPhysReadMeta(pDevIns, GCPhys, &ScsiCtrlUnion.ab[uOffset], cbSeg);
+        uOffset += cbSeg;
     }
 
     AssertReturn(   (ScsiCtrlUnion.Type.uType == VIRTIOSCSI_T_TMF
@@ -1590,7 +1589,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
              {
                   PVIRTQBUF pVirtqBuf;
                   int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, uVirtqNbr,
-                                                    pWorkerR3->auRedoDescs[i], &pVirtqBuf);
+                                                        pWorkerR3->auRedoDescs[i], &pVirtqBuf);
                   if (RT_FAILURE(rc))
                       LogRel(("Error fetching desc chain to redo, %Rrc", rc));
 
@@ -1779,102 +1778,48 @@ static DECLCALLBACK(int) virtioScsiR3QueryDeviceLocation(PPDMIMEDIAPORT pInterfa
 *********************************************************************************************************************************/
 
 /**
- * Resolves to boolean true if uOffset matches a field offset and size exactly,
- * (or if 64-bit field, if it accesses either 32-bit part as a 32-bit access)
- * Assumption is this critereon is mandated by VirtIO 1.0, Section 4.1.3.1)
- * (Easily re-written to allow unaligned bounded access to a field).
- *
- * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
- * @result           - true or false
- */
-#define MATCH_SCSI_CONFIG(member) \
-        (   (   RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member) == 8 \
-             && (   offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) \
-                 || offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) + sizeof(uint32_t)) \
-             && cb == sizeof(uint32_t)) \
-         || (   offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) \
-             && cb == RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member)) )
-
-#ifdef LOG_ENABLED
-# define LOG_SCSI_CONFIG_ACCESSOR(member) \
-        virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member), \
-                               pv, cb, offIntra, fWrite, false, 0);
-#else
-# define LOG_SCSI_CONFIG_ACCESSOR(member) do { } while (0)
-#endif
-
-#define SCSI_CONFIG_ACCESSOR(member) \
-    do \
-    { \
-        uint32_t offIntra = offConfig - RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member); \
-        if (fWrite) \
-            memcpy((char *)&pThis->virtioScsiConfig.member + offIntra, pv, cb); \
-        else \
-            memcpy(pv, (const char *)&pThis->virtioScsiConfig.member + offIntra, cb); \
-        LOG_SCSI_CONFIG_ACCESSOR(member); \
-    } while(0)
-
-#define SCSI_CONFIG_ACCESSOR_READONLY(member) \
-    do \
-    { \
-        uint32_t offIntra = offConfig - RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member); \
-        if (fWrite) \
-            LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
-        else \
-        { \
-            memcpy(pv, (const char *)&pThis->virtioScsiConfig.member + offIntra, cb); \
-            LOG_SCSI_CONFIG_ACCESSOR(member); \
-        } \
-    } while(0)
-
-/**
  * Worker for virtioScsiR3DevCapWrite and virtioScsiR3DevCapRead.
  */
-static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *pv, uint32_t cb, bool fWrite)
+static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t uOffsetOfAccess, void *pv, uint32_t cb, bool fWrite)
 {
     AssertReturn(pv && cb <= sizeof(uint32_t), fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00);
 
-    if (MATCH_SCSI_CONFIG(uNumVirtqs))
-        SCSI_CONFIG_ACCESSOR_READONLY(uNumVirtqs);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uNumVirtqs,     VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uNumVirtqs,     VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uSegMax))
-        SCSI_CONFIG_ACCESSOR_READONLY(uSegMax);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uSegMax,        VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uSegMax,        VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uMaxSectors))
-        SCSI_CONFIG_ACCESSOR_READONLY(uMaxSectors);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uMaxSectors,    VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uMaxSectors,    VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uCmdPerLun))
-        SCSI_CONFIG_ACCESSOR_READONLY(uCmdPerLun);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uCmdPerLun,     VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uCmdPerLun,     VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uEventInfoSize))
-        SCSI_CONFIG_ACCESSOR_READONLY(uEventInfoSize);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uEventInfoSize, VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uEventInfoSize, VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uSenseSize))
-        SCSI_CONFIG_ACCESSOR(uSenseSize);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uSenseSize,     VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS(          uSenseSize,     VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uCdbSize))
-        SCSI_CONFIG_ACCESSOR(uCdbSize);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uCdbSize,       VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS(          uCdbSize,       VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uMaxChannel))
-        SCSI_CONFIG_ACCESSOR_READONLY(uMaxChannel);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uMaxChannel,    VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uMaxChannel,    VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uMaxTarget))
-        SCSI_CONFIG_ACCESSOR_READONLY(uMaxTarget);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uMaxTarget,     VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uMaxTarget,     VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
-    if (MATCH_SCSI_CONFIG(uMaxLun))
-        SCSI_CONFIG_ACCESSOR_READONLY(uMaxLun);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uMaxLun,        VIRTIOSCSI_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uMaxLun,        VIRTIOSCSI_CONFIG_T, uOffsetOfAccess, &pThis->virtioScsiConfig);
     else
     {
-        LogFunc(("Bad access by guest to virtio_scsi_config: off=%u (%#x), cb=%u\n", offConfig, offConfig, cb));
+        LogFunc(("Bad access by guest to virtio_scsi_config: off=%u (%#x), cb=%u\n", uOffsetOfAccess, uOffsetOfAccess, cb));
         return fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00;
     }
     return VINF_SUCCESS;
 }
-
-#undef SCSI_CONFIG_ACCESSOR_READONLY
-#undef SCSI_CONFIG_ACCESSOR
-#undef LOG_ACCESSOR
-#undef MATCH_SCSI_CONFIG
 
 /**
  * @callback_method_impl{VIRTIOCORER3,pfnDevCapRead}
@@ -2527,7 +2472,7 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     /* Attach the queues and create worker threads for them: */
     for (uint16_t uVirtqNbr = 0; uVirtqNbr < VIRTIOSCSI_VIRTQ_CNT; uVirtqNbr++)
     {
-        rc = virtioCoreR3VirtqAttach(&pThis->Virtio, uVirtqNbr, VIRTQNAME(uVirtqNbr));
+        rc = virtioCoreVirtqAttach(&pThis->Virtio, uVirtqNbr, VIRTQNAME(uVirtqNbr));
         if (RT_FAILURE(rc))
             continue;
         if (uVirtqNbr == CONTROLQ_IDX || IS_REQ_VIRTQ(uVirtqNbr))

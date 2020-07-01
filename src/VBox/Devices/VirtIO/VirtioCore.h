@@ -91,6 +91,8 @@ typedef const VIRTIOSGBUF *PCVIRTIOSGBUF;
 typedef struct VIRTQBUF
 {
     uint32_t            u32Magic;                                /**< Magic value, VIRTQBUF_MAGIC.             */
+    uint16_t            uVirtqNbr;                               /**< VirtIO index of associated virtq         */
+    uint16_t            pad;
     uint32_t volatile   cRefs;                                   /**< Reference counter.                       */
     uint32_t            uHeadIdx;                                /**< Head idx of associated desc chain        */
     size_t              cbPhysSend;                              /**< Total size of src buffer                 */
@@ -210,7 +212,7 @@ typedef struct virtio_pci_common_cfg
     uint32_t  uDriverFeatures;                                   /**< RW (driver-accepted device features)      */
     uint16_t  uMsixConfig;                                       /**< RW (driver sets MSI-X config vector)      */
     uint16_t  uNumVirtqs;                                        /**< RO (device specifies max queues)          */
-    uint8_t   uDeviceStatus;                                     /**< RW (driver writes device status, 0=reset) */
+    uint8_t   fDeviceStatus;                                     /**< RW (driver writes device status, 0=reset) */
     uint8_t   uConfigGeneration;                                 /**< RO (device changes when changing configs) */
 
     /* Virtq-specific fields (values reflect (via MMIO) info related to queue indicated by uVirtqSelect. */
@@ -269,7 +271,7 @@ typedef struct VIRTIOCORE
     uint32_t                    uDeviceFeaturesSelect;             /**< (MMIO) hi/lo select uDeviceFeatures GUEST */
     uint32_t                    uDriverFeaturesSelect;             /**< (MMIO) hi/lo select uDriverFeatures GUEST */
     uint32_t                    uMsixConfig;                       /**< (MMIO) MSI-X vector                 GUEST */
-    uint8_t                     uDeviceStatus;                     /**< (MMIO) Device Status                GUEST */
+    uint8_t                     fDeviceStatus;                     /**< (MMIO) Device Status                GUEST */
     uint8_t                     uPrevDeviceStatus;                 /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                     uConfigGeneration;                 /**< (MMIO) Device config sequencer       HOST */
     VIRTQSTATE                  aVirtqState[VIRTQ_MAX_CNT];        /**< Local impl-specific queue context         */
@@ -421,7 +423,7 @@ void  virtioCoreResetAll(PVIRTIOCORE pVirtio);
  *
  * @returns VBox status code.
  */
-int  virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *pcszName);
+int  virtioCoreVirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *pcszName);
 
 /**
  * Enables or disables a virtq
@@ -560,7 +562,7 @@ int  virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
  * @retval  VERR_INVALID_STATE   VirtIO not in ready state (asserted).
  * @retval  VERR_NOT_AVAILABLE   If the queue is empty.
  */
-int  virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
+int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
                                   uint16_t uHeadIdx, PPVIRTQBUF ppVirtqBuf);
 
 /**
@@ -600,16 +602,41 @@ int  virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
  * @note    This function will not release any reference to pVirtqBuf.  The
  *          caller must take care of that.
  */
-int  virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, PRTSGBUF pSgVirtReturn,
+int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, PRTSGBUF pSgVirtReturn,
                                  PVIRTQBUF pVirtqBuf, bool fFence);
-
 /**
  * Advance index of avail ring to next entry in specified virtq (see virtioCoreR3VirtqAvailBufPeek())
  *
  * @param   pVirtio      Pointer to the virtio state.
  * @param   uVirtqNbr    Index of queue
  */
-int  virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
+int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
+
+/**
+ * Add some bytes out of a virtq (s/g) buffer, converting them from virtual memory to GCPhys
+ *
+ * To be performant it is left to the caller to validate the size of the buffer with regard
+ * to data being pulled from it to avoid underruns.
+ *
+ * @param   pVirtio     Pointer to the shared virtio state.
+ * @param   pVirtqBuf   output: virtq buffer
+ * @param   pv          input: virtual memory buffer to receive bytes
+ * @param   cb          number of bytes to add to the s/g buffer.
+ */
+void virtioCoreR3VirqBufFill(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb);
+
+/**
+ * Extract some bytes out of a virtq (s/g) buffer, converting them from GCPhys to virtual memory
+ *
+ * To be performant it is left to the caller to validate the size of the buffer with regard
+ * to data being pulled from it to avoid underruns.
+ *
+ * @param   pVirtio     Pointer to the shared virtio state.
+ * @param   pVirtqBuf   input: virtq buffer
+ * @param   pv          output: virtual memory buffer to receive bytes
+ * @param   cb          number of bytes to Drain from buffer
+ */
+void virtioCoreR3VirtqBufDrain(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb);
 
 /**
  * Updates indicated virtq's "used ring" descriptor index to match "shadow" index that tracks
@@ -777,7 +804,7 @@ DECLINLINE(size_t) virtioCoreGCPhysChainCalcBufSize(PCVIRTIOSGBUF pGcSgBuf)
 
 void     virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs);
 void     virtioCoreGCPhysChainReset(PVIRTIOSGBUF pGcSgBuf);
-RTGCPHYS virtioCoreGCPhysChainGetNextSegment(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg);
+RTGCPHYS virtioCoreGCPhysChainGetNextSeg(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg);
 RTGCPHYS virtioCoreGCPhysChainAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance);
 void     virtioCoreGCPhysChainInit(PVIRTIOSGBUF pSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs);
 size_t   virtioCoreGCPhysChainCalcBufSize(PCVIRTIOSGBUF pGcSgBuf);
@@ -793,6 +820,135 @@ int      virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC
 int      virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
 const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState);
 
+/*
+ * The following macros assist with handling/logging MMIO accesses to VirtIO dev-specific config area,
+ * in a way that enhances code readability and debug logging consistency.
+ *
+ * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
+ */
+
+#ifdef LOG_ENABLED
+
+# define VIRTIO_DEV_CONFIG_LOG_ACCESS(member, tCfgStruct, uOffsetOfAccess) \
+    if (LogIs7Enabled()) { \
+        uint32_t uMbrOffset = uOffsetOfAccess - RT_UOFFSETOF(tCfgStruct, member); \
+        uint32_t uMbrSize   = RT_SIZEOFMEMB(tCfgStruct, member); \
+        virtioCoreLogMappedIoValue(__FUNCTION__, #member, uMbrSize, pv, cb, uMbrOffset, fWrite, false, 0); \
+    }
+
+# define VIRTIO_DEV_CONFIG_LOG_INDEXED_ACCESS(member, tCfgStruct, uOffsetOfAccess, uIdx) \
+    if (LogIs7Enabled()) { \
+        uint32_t uMbrOffset = uOffsetOfAccess - RT_UOFFSETOF(tCfgStruct, member); \
+        uint32_t uMbrSize   = RT_SIZEOFMEMB(tCfgStruct, member); \
+        virtioCoreLogMappedIoValue(__FUNCTION__, #member, uMbrSize,  pv, cb, uMbrOffset, fWrite, true, uIdx); \
+    }
+#else
+# define VIRTIO_DEV_CONFIG_LOG_ACCESS(member, tCfgStruct, uMbrOffset) do { } while (0)
+# define VIRTIO_DEV_CONFIG_LOG_INDEXED_ACCESS(member, tCfgStruct, uMbrOffset, uIdx) do { } while (0)
+#endif
+
+DECLINLINE(bool) virtioCoreMatchMember(uint32_t uOffset, uint32_t cb, uint32_t uMemberOff,
+                                       size_t uMemberSize, bool fSubFieldMatch)
+{
+    /* Test for 8-byte field always (accessed as two 32-bit components) */
+    if (uMemberSize == 8)
+        return (cb == sizeof(uint32_t)) && (uOffset == uMemberOff || uOffset == (uMemberOff + sizeof(uint32_t)));
+
+    if (fSubFieldMatch)
+        return (uOffset >= uMemberOff) && (cb <= uMemberSize - (uOffset - uMemberOff));
+
+    /* Test for exact match */
+    return (uOffset == uMemberOff) && (cb == uMemberSize);
+}
+
+/**
+ * Yields boolean true if uOffsetOfAccess falls within bytes of specified member of config struct
+ */
+#define VIRTIO_DEV_CONFIG_SUBMATCH_MEMBER(member, tCfgStruct, uOffsetOfAccess) \
+            virtioCoreMatchMember(uOffsetOfAccess, cb, \
+                                  RT_UOFFSETOF(tCfgStruct, member),  \
+                                  RT_SIZEOFMEMB(tCfgStruct, member), true /* fSubfieldMatch */)
+
+#define VIRTIO_DEV_CONFIG_MATCH_MEMBER(member, tCfgStruct, uOffsetOfAccess) \
+            virtioCoreMatchMember(uOffsetOfAccess, cb, \
+                                  RT_UOFFSETOF(tCfgStruct, member),  \
+                                  RT_SIZEOFMEMB(tCfgStruct, member), false /* fSubfieldMatch */)
+
+/**
+ * Copy reads or copy writes specified member field of config struct (based on fWrite),
+ * the memory described by cb and pv.
+ *
+ * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
+ */
+#define VIRTIO_DEV_CONFIG_ACCESS(member, tCfgStruct, uOffsetOfAccess, pCfgStruct) \
+    do \
+    { \
+        uint32_t uOffsetInMember = uOffsetOfAccess - RT_UOFFSETOF(tCfgStruct, member); \
+        if (fWrite) \
+            memcpy(((char *)&(pCfgStruct)->member) + uOffsetInMember, pv, cb); \
+        else \
+            memcpy(pv, ((const char *)&(pCfgStruct)->member) + uOffsetInMember, cb); \
+        VIRTIO_DEV_CONFIG_LOG_ACCESS(member, tCfgStruct, uOffsetOfAccess); \
+    } while(0)
+
+/**
+ * Copies bytes into memory described by cb, pv from the specified member field of the config struct.
+ * The operation is a nop and logs error if implied parameter fWrite is true.
+ *
+ * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
+ */
+#define VIRTIO_DEV_CONFIG_ACCESS_READONLY(member, tCfgStruct, uOffsetOfAccess, pCfgStruct) \
+    do \
+    { \
+        uint32_t uOffsetInMember = uOffsetOfAccess - RT_UOFFSETOF(tCfgStruct, member); \
+        if (fWrite) \
+            LogFunc(("Guest attempted to write readonly virtio config struct (member %s)\n", #member)); \
+        else \
+        { \
+            memcpy(pv, ((const char *)&(pCfgStruct)->member) + uOffsetInMember, cb); \
+            VIRTIO_DEV_CONFIG_LOG_ACCESS(member, tCfgStruct, uOffsetOfAccess); \
+        } \
+    } while(0)
+
+/**
+ * Copies into or out of specified member field of config struct (based on fWrite),
+ * the memory described by cb and pv.
+ *
+ * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
+ */
+#define VIRTIO_DEV_CONFIG_ACCESS_INDEXED(member, uIdx, tCfgStruct, uOffsetOfAccess, pCfgStruct) \
+    do \
+    { \
+        uint32_t uOffsetInMember = uOffsetOfAccess - RT_UOFFSETOF(tCfgStruct, member); \
+        if (fWrite) \
+            memcpy(((char *)&(pCfgStruct)->member[uIdx]) + uOffsetInMember, pv, cb); \
+        else \
+            memcpy(pv, ((const char *)&(pCfgStruct)->member[uIdx]) + uOffsetInMember, cb); \
+        VIRTIO_DEV_CONFIG_LOG_INDEXED_ACCESS(member, tCfgStruct, uOffsetOfAccess, uIdx); \
+    } while(0)
+
+/**
+ * Copies bytes into memory described by cb, pv from the specified member field of the config struct.
+ * The operation is a nop and logs error if implied parameter fWrite is true.
+ *
+ * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
+ */
+#define VIRTIO_DEV_CONFIG_ACCESS_INDEXED_READONLY(member, uidx, tCfgStruct, uOffsetOfAccess, pCfgStruct) \
+    do \
+    { \
+        uint32_t uOffsetInMember = uOffsetOfAccess - RT_UOFFSETOF(tCfgStruct, member); \
+        if (fWrite) \
+            LogFunc(("Guest attempted to write readonly virtio config struct (member %s)\n", #member)); \
+        else \
+        { \
+            memcpy(pv, ((const char *)&(pCfgStruct)->member[uIdx]) + uOffsetInMember, cb); \
+            VIRTIO_DEV_CONFIG_LOG_INDEXED_ACCESS(member, tCfgStruct, uOffsetOfAccess, uIdx); \
+        } \
+    } while(0)
+
 /** @} */
+
+/** @name API for VirtIO parent device
+ * @{ */
 
 #endif /* !VBOX_INCLUDED_SRC_VirtIO_VirtioCore_h */

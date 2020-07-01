@@ -58,23 +58,34 @@
 
 #include "VBoxDD.h"
 
-#define VIRTIONET_SAVED_STATE_VERSION          UINT32_C(1)
-#define VIRTIONET_MAX_QPAIRS                   1
-#define VIRTIONET_MAX_VIRTQS                   (VIRTIONET_MAX_QPAIRS * 2 + 1)
-#define VIRTIONET_MAX_FRAME_SIZE               65535 + 18     /**< Max IP pkt size + Ethernet header with VLAN tag  */
-#define VIRTIONET_MAC_FILTER_LEN               32
-#define VIRTIONET_MAX_VLAN_ID                  (1 << 12)
-#define VIRTIONET_PREALLOCATE_RX_SEG_COUNT     32
+#define LUN0                            0
 
-#define VIRTQNAME(uVirtqNbr)       (pThis->aVirtqs[uVirtqNbr]->szName)
-#define CBVIRTQNAME(uVirtqNbr)     RTStrNLen(VIRTQNAME(uVirtqNbr), sizeof(VIRTQNAME(uVirtqNbr)))
-#define FEATURE_ENABLED(feature)  RT_BOOL(pThis->fNegotiatedFeatures & VIRTIONET_F_##feature)
-#define FEATURE_DISABLED(feature) (!FEATURE_ENABLED(feature))
-#define FEATURE_OFFERED(feature)  VIRTIONET_HOST_FEATURES_OFFERED & VIRTIONET_F_##feature
+#define VIRTIONET_SAVED_STATE_VERSION   UINT32_C(1)
+#define VIRTIONET_MAX_QPAIRS            1
+#define VIRTIONET_MAX_VIRTQS            (VIRTIONET_MAX_QPAIRS * 2 + 1)
+#define VIRTIONET_MAX_FRAME_SIZE        65535 + 18  /**< Max IP pkt size + Eth. header w/VLAN tag  */
+#define VIRTIONET_MAC_FILTER_LEN        32
+#define VIRTIONET_MAX_VLAN_ID           (1 << 12)
+#define VIRTIONET_RX_SEG_COUNT          32
 
-#define IS_VIRTQ_EMPTY(pDevIns, pVirtio, uVirtqNbr) \
-            (virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, uVirtqNbr) == 0)
+#define VIRTQNAME(uVirtqNbr)            (pThis->aVirtqs[uVirtqNbr]->szName)
+#define CBVIRTQNAME(uVirtqNbr)          RTStrNLen(VIRTQNAME(uVirtqNbr), sizeof(VIRTQNAME(uVirtqNbr)))
+#define FEATURE_ENABLED(feature)        RT_BOOL(pThis->fNegotiatedFeatures & VIRTIONET_F_##feature)
+#define FEATURE_DISABLED(feature)       (!FEATURE_ENABLED(feature))
+#define FEATURE_OFFERED(feature)        VIRTIONET_HOST_FEATURES_OFFERED & VIRTIONET_F_##feature
 
+/* Macros to calculate queue specific index number VirtIO 1.0, 5.1.2 */
+#define IS_TX_VIRTQ(n)                  ((n) != CTRLQIDX && ((n) & 1))
+#define IS_RX_VIRTQ(n)                  ((n) != CTRLQIDX && !IS_TX_VIRTQ(n))
+#define IS_CTRL_VIRTQ(n)                ((n) == CTRLQIDX)
+#define RXQIDX(qPairIdx)                (qPairIdx * 2)
+#define TXQIDX(qPairIdx)                (qPairIdx * 2 + 1)
+#define CTRLQIDX                        (FEATURE_ENABLED(MQ) ? ((VIRTIONET_MAX_QPAIRS - 1) * 2 + 2) : 2)
+
+#define IS_LINK_UP(pState)              (pState->virtioNetConfig.uStatus & VIRTIONET_F_LINK_UP)
+#define IS_LINK_DOWN(pState)            !IS_LINK_UP(pState)
+
+\
 #define SET_LINK_UP(pState) \
             LogFunc(("SET_LINK_UP\n")); \
             pState->virtioNetConfig.uStatus |= VIRTIONET_F_LINK_UP; \
@@ -85,18 +96,9 @@
             pState->virtioNetConfig.uStatus &= ~VIRTIONET_F_LINK_UP; \
             virtioCoreNotifyConfigChanged(&pThis->Virtio)
 
-#define IS_LINK_UP(pState)   (pState->virtioNetConfig.uStatus & VIRTIONET_F_LINK_UP)
-#define IS_LINK_DOWN(pState) !IS_LINK_UP(pState)
+#define IS_VIRTQ_EMPTY(pDevIns, pVirtio, uVirtqNbr) \
+            (virtioCoreVirtqAvailBufCount(pDevIns, pVirtio, uVirtqNbr) == 0)
 
-/* Macros to calculate queue specific index number VirtIO 1.0, 5.1.2 */
-#define IS_TX_VIRTQ(n)    ((n) != CTRLQIDX && ((n) & 1))
-#define IS_RX_VIRTQ(n)    ((n) != CTRLQIDX && !IS_TX_VIRTQ(n))
-#define IS_CTRL_VIRTQ(n)  ((n) == CTRLQIDX)
-#define RXQIDX(qPairIdx)  (qPairIdx * 2)
-#define TXQIDX(qPairIdx)  (qPairIdx * 2 + 1)
-#define CTRLQIDX          (FEATURE_ENABLED(MQ) ? ((VIRTIONET_MAX_QPAIRS - 1) * 2 + 2) : 2)
-
-#define LUN0    0
 
 #ifdef USING_CRITICAL_SECTION
 #  define ENTER_CRITICAL_SECTION \
@@ -182,23 +184,28 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+
 /**
  * Virtio Net Host Device device-specific configuration (VirtIO 1.0, 5.1.4)
  * VBox VirtIO core issues callback to this VirtIO device-specific implementation to handle
  * MMIO accesses to device-specific configuration parameters.
  */
-
 #pragma pack(1)
-typedef struct virtio_net_config
-{
-    RTMAC  uMacAddress;                                         /**< mac                                            */
-#if FEATURE_OFFERED(STATUS)
-    uint16_t uStatus;                                           /**< status                                         */
+
+    typedef struct virtio_net_config
+    {
+        RTMAC  uMacAddress;                                     /**< mac                                            */
+
+#if     FEATURE_OFFERED(STATUS)
+               uint16_t uStatus;                                /**< status                                         */
 #endif
-#if FEATURE_OFFERED(MQ)
-    uint16_t uMaxVirtqPairs;                                    /**< max_virtq_pairs                                */
+
+#if     FEATURE_OFFERED(MQ)
+               uint16_t uMaxVirtqPairs;                         /**< max_virtq_pairs                                */
 #endif
-} VIRTIONET_CONFIG_T, PVIRTIONET_CONFIG_T;
+
+    } VIRTIONET_CONFIG_T, PVIRTIONET_CONFIG_T;
+
 #pragma pack()
 
 #define VIRTIONET_F_LINK_UP                          1          /**< config status: Link is up                      */
@@ -769,10 +776,10 @@ DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis, PCDBGFINFOHLP pHlp)
 
 #ifdef LOG_ENABLED
 void virtioNetDumpGcPhysRxBuf(PPDMDEVINS pDevIns, PVIRTIONETPKTHDR pRxPktHdr,
-                     uint16_t cDescs, uint8_t *pvBuf, uint16_t cb, RTGCPHYS GCPhysRxBuf, uint8_t cbRxBuf)
+                     uint16_t cVirtqBufs, uint8_t *pvBuf, uint16_t cb, RTGCPHYS GCPhysRxBuf, uint8_t cbRxBuf)
 {
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
-    pRxPktHdr->uNumBuffers = cDescs;
+    pRxPktHdr->uNumBuffers = cVirtqBufs;
     if (pRxPktHdr)
     {
         LogFunc(("-------------------------------------------------------------------\n"));
@@ -915,7 +922,7 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
         pHlp->pfnPrintf(pHlp, "    fGenUpdatePending ......... %d\n",   pThis->Virtio.fGenUpdatePending);
         pHlp->pfnPrintf(pHlp, "    fMsiSupport ............... %d\n",   pThis->Virtio.fMsiSupport);
         pHlp->pfnPrintf(pHlp, "    uConfigGeneration ......... %d\n",   pThis->Virtio.uConfigGeneration);
-        pHlp->pfnPrintf(pHlp, "    uDeviceStatus ............. 0x%x\n", pThis->Virtio.uDeviceStatus);
+        pHlp->pfnPrintf(pHlp, "    uDeviceStatus ............. 0x%x\n", pThis->Virtio.fDeviceStatus);
         pHlp->pfnPrintf(pHlp, "    cVirtqPairs .,............. %d\n",   pThis->cVirtqPairs);
         pHlp->pfnPrintf(pHlp, "    cVirtVirtqs .,............. %d\n",   pThis->cVirtVirtqs);
         pHlp->pfnPrintf(pHlp, "    cWorkers .................. %d\n",   pThis->cWorkers);
@@ -1010,84 +1017,30 @@ DECLINLINE(bool) virtioNetValidateRequiredFeatures(uint32_t fFeatures)
     return true;
 }
 
-/**
- * Resolves to boolean true if uOffset matches a field offset and size exactly,
- * (or if 64-bit field, if it accesses either 32-bit part as a 32-bit access)
- * Assumption is this critereon is mandated by VirtIO 1.0, Section 4.1.3.1)
- * (Easily re-written to allow unaligned bounded access to a field).
- *
- * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
- * @result           - true or false
- */
-#define MATCH_NET_CONFIG(member) \
-        (   (   RT_SIZEOFMEMB(VIRTIONET_CONFIG_T, member) == 8 \
-             && (   offConfig == RT_UOFFSETOF(VIRTIONET_CONFIG_T, member) \
-                 || offConfig == RT_UOFFSETOF(VIRTIONET_CONFIG_T, member) + sizeof(uint32_t)) \
-             && cb == sizeof(uint32_t)) \
-         || (offConfig + cb <= RT_UOFFSETOF(VIRTIONET_CONFIG_T, member) \
-                             + RT_SIZEOFMEMB(VIRTIONET_CONFIG_T, member)) )
-
-#ifdef LOG_ENABLED
-# define LOG_NET_CONFIG_ACCESSOR(member) \
-        virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIONET_CONFIG_T, member), \
-                               pv, cb, offIntra, fWrite, false, 0);
-#else
-# define LOG_NET_CONFIG_ACCESSOR(member) do { } while (0)
-#endif
-
-#define NET_CONFIG_ACCESSOR(member) \
-    do \
-    { \
-        uint32_t offIntra = offConfig - RT_UOFFSETOF(VIRTIONET_CONFIG_T, member); \
-        if (fWrite) \
-            memcpy((char *)&pThis->virtioNetConfig.member + offIntra, pv, cb); \
-        else \
-            memcpy(pv, (const char *)&pThis->virtioNetConfig.member + offIntra, cb); \
-        LOG_NET_CONFIG_ACCESSOR(member); \
-    } while(0)
-
-#define NET_CONFIG_ACCESSOR_READONLY(member) \
-    do \
-    { \
-        uint32_t offIntra = offConfig - RT_UOFFSETOF(VIRTIONET_CONFIG_T, member); \
-        if (fWrite) \
-            LogFunc(("%s Guest attempted to write readonly virtio_pci_common_cfg.%s\n", pThis->szInst, #member)); \
-        else \
-        { \
-            memcpy(pv, (const char *)&pThis->virtioNetConfig.member + offIntra, cb); \
-            LOG_NET_CONFIG_ACCESSOR(member); \
-        } \
-    } while(0)
-
-
-static int virtioNetR3CfgAccessed(PVIRTIONET pThis, uint32_t offConfig, void *pv, uint32_t cb, bool fWrite)
+static int virtioNetR3CfgAccessed(PVIRTIONET pThis, uint32_t uOffsetOfAccess, void *pv, uint32_t cb, bool fWrite)
 {
     AssertReturn(pv && cb <= sizeof(uint32_t), fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00);
 
-    if (MATCH_NET_CONFIG(uMacAddress))
-        NET_CONFIG_ACCESSOR_READONLY(uMacAddress);
+    if (VIRTIO_DEV_CONFIG_SUBMATCH_MEMBER( uMacAddress,      VIRTIONET_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uMacAddress,      VIRTIONET_CONFIG_T, uOffsetOfAccess, &pThis->virtioNetConfig);
 #if FEATURE_OFFERED(STATUS)
     else
-    if (MATCH_NET_CONFIG(uStatus))
-        NET_CONFIG_ACCESSOR_READONLY(uStatus);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uStatus,          VIRTIONET_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uStatus,          VIRTIONET_CONFIG_T, uOffsetOfAccess, &pThis->virtioNetConfig);
 #endif
 #if FEATURE_OFFERED(MQ)
     else
-    if (MATCH_NET_CONFIG(uMaxVirtqPairs))
-        NET_CONFIG_ACCESSOR_READONLY(uMaxVirtqPairs);
+    if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(    uMaxVirtqPairs,   VIRTIONET_CONFIG_T, uOffsetOfAccess))
+        VIRTIO_DEV_CONFIG_ACCESS_READONLY( uMaxVirtqPairs,   VIRTIONET_CONFIG_T, uOffsetOfAccess, &pThis->virtioNetConfig);
 #endif
     else
     {
-        LogFunc(("%s Bad access by guest to virtio_net_config: off=%u (%#x), cb=%u\n", pThis->szInst, offConfig, offConfig, cb));
+        LogFunc(("%s Bad access by guest to virtio_net_config: off=%u (%#x), cb=%u\n",
+                pThis->szInst, uOffsetOfAccess, uOffsetOfAccess, cb));
         return fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00;
     }
     return VINF_SUCCESS;
 }
-
-#undef NET_CONFIG_ACCESSOR_READONLY
-#undef NET_CONFIG_ACCESSOR
-#undef LOG_ACCESSOR
-#undef MATCH_NET_CONFIG
 
 /**
  * @callback_method_impl{VIRTIOCORER3,pfnDevCapRead}
@@ -1096,7 +1049,7 @@ static DECLCALLBACK(int) virtioNetR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOff
 {
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
 
-    LogFunc(("%s uOffset: %d, cb: %d\n",  pThis->szInst, uOffset, cb));
+    LogFunc((" %s uOffset: %d, cb: %d\n",  pThis->szInst, uOffset, cb));
     RT_NOREF(pThis);
     return virtioNetR3CfgAccessed(PDMDEVINS_2_DATA(pDevIns, PVIRTIONET), uOffset, pv, cb, false /*fRead*/);
 }
@@ -1544,7 +1497,7 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOW
 
         if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
         {
-            LogFunc(("Waken due to %s\n", rc == VERR_TIMEOUT ? "timeout" : "interrupted"));
+            LogFunc(("Waken due to %s\n", rc == VERR_TIMEOUT ? "timeout" : "getting interrupted"));
             continue;
         }
         if (RT_FAILURE(rc)) {
@@ -1661,7 +1614,7 @@ static bool virtioNetR3AddressFilter(PVIRTIONET pThis, const void *pvBuf, size_t
         else
             pszType = (char *)"Unicast";
 
-        LogFunc(("%s node(%RTmac %s%s), pkt(%RTmac %s)",
+        LogFunc(("%s node(%RTmac %s%s), pkt(%RTmac %s)\n",
                  pThis->szInst, pThis->virtioNetConfig.uMacAddress.au8,
                  pThis->fPromiscuous ? "promiscuous" : "",
                  pThis->fAllMulticast ? " all-multicast" : "",
@@ -1734,11 +1687,12 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
                                        PRTSGBUF pVirtSegBufToGuest, PRTSGSEG paVirtSegsToGuest,
                                        PVIRTIONETVIRTQ pRxVirtq)
 {
-    uint8_t fAddPktHdr = true;
     RTGCPHYS GCPhysPktHdrNumBuffers = 0;
-    uint16_t cDescs;
-    uint64_t uOffset;
-    for (cDescs = uOffset = 0; uOffset < cb; )
+    uint8_t  fAddPktHdr = true;
+    uint16_t cVirtqBufs  = 0;
+    uint64_t uOffset = 0;
+
+    while (uOffset < cb)
     {
         PVIRTQBUF pVirtqBuf = NULL;
 
@@ -1760,11 +1714,11 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
                             virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf),
                             VERR_INTERNAL_ERROR);
 
-        size_t cbDescChainLeft = pVirtqBuf->cbPhysReturn;
+        size_t cbBufRemaining = pVirtqBuf->cbPhysReturn;
         uint8_t  cbHdr = sizeof(VIRTIONETPKTHDR);
 
         /* Fill the Guest Rx buffer with data received from the interface */
-        for (uint16_t cSegs = 0; uOffset < cb && cbDescChainLeft; )
+        for (uint16_t cSegs = 0; uOffset < cb && cbBufRemaining; )
         {
             if (fAddPktHdr)
             {
@@ -1772,7 +1726,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
                 paVirtSegsToGuest[0].cbSeg = cbHdr;
                 paVirtSegsToGuest[0].pvSeg = RTMemAlloc(cbHdr);
                 AssertReturn(paVirtSegsToGuest[0].pvSeg, VERR_NO_MEMORY);
-                cbDescChainLeft -= cbHdr;
+                cbBufRemaining -= cbHdr;
 
                 memcpy(paVirtSegsToGuest[0].pvSeg, rxPktHdr, cbHdr);
 
@@ -1793,24 +1747,23 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
             }
 
             /* Append remaining Rx pkt or as much current desc chain has room for */
-            size_t cbCropped = RT_MIN(cb, cbDescChainLeft);
-            paVirtSegsToGuest[cSegs].cbSeg = cbCropped;
+            size_t cbLimited = RT_MIN(cb, cbBufRemaining);
+            paVirtSegsToGuest[cSegs].cbSeg = cbLimited;
             paVirtSegsToGuest[cSegs].pvSeg = ((uint8_t *)pvBuf) + uOffset;
-            cbDescChainLeft -= cbCropped;
-            uOffset += cbCropped;
-            cDescs++;
+            cbBufRemaining -= cbLimited;
+            uOffset        += cbLimited;
+            cVirtqBufs++;
             cSegs++;
             RTSgBufInit(pVirtSegBufToGuest, paVirtSegsToGuest, cSegs);
             Log7Func(("Send Rx pkt to guest...\n"));
             STAM_PROFILE_START(&pThis->StatReceiveStore, a);
             virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pRxVirtq->idx,
-                                    pVirtSegBufToGuest, pVirtqBuf, true /* fFence */);
+                                        pVirtSegBufToGuest, pVirtqBuf, true /* fFence */);
             STAM_PROFILE_STOP(&pThis->StatReceiveStore, a);
 
             if (FEATURE_DISABLED(MRG_RXBUF))
                 break;
         }
-
         virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
     }
 
@@ -1822,10 +1775,8 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
 
     /* Fix-up pkthdr (in guest phys. memory) with number buffers (descriptors) processed */
 
-    int rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhysPktHdrNumBuffers, &cDescs, sizeof(cDescs));
-    AssertMsgRCReturn(rc,
-                  ("Failure updating descriptor count in pkt hdr in guest physical memory\n"),
-                  rc);
+    int rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhysPktHdrNumBuffers, &cVirtqBufs, sizeof(cVirtqBufs));
+    AssertMsgRCReturn(rc, ("Failure updating descriptor count in pkt hdr in guest physical memory\n"), rc);
 
     virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, pRxVirtq->idx);
 
@@ -1891,7 +1842,7 @@ static int virtioNetR3HandleRxPacket(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRT
         rxPktHdr.uGsoType = VIRTIONET_HDR_GSO_NONE;
     }
 
-    uint16_t cSegsAllocated = VIRTIONET_PREALLOCATE_RX_SEG_COUNT;
+    uint16_t cSegsAllocated = VIRTIONET_RX_SEG_COUNT;
 
     PRTSGBUF pVirtSegBufToGuest = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
     AssertReturn(pVirtSegBufToGuest, VERR_NO_MEMORY);
@@ -1997,34 +1948,14 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterf
     return virtioNetR3NetworkDown_ReceiveGso(pInterface, pvBuf, cb, NULL);
 }
 
-/* Read physical bytes from the out segment(s) of descriptor chain */
-static void virtqNetR3PullBytesFromVirtqBuf(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTQBUF pVirtqBuf,
-                                              void *pv, size_t cb)
-{
-    uint8_t *pb = (uint8_t *)pv;
-    size_t cbLim = RT_MIN(pVirtqBuf->cbPhysSend, cb);
-    while (cbLim)
-    {
-        size_t cbSeg = cbLim;
-        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSegment(pVirtqBuf->pSgPhysSend, &cbSeg);
-        PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pb, cbSeg);
-        pb += cbSeg;
-        cbLim -= cbSeg;
-        pVirtqBuf->cbPhysSend -= cbSeg;
-    }
-    LogFunc(("%s Pulled %d/%d bytes from desc chain (%d bytes left)\n",
-             pThis->szInst, cb - cbLim, cb, pVirtqBuf->cbPhysSend));
-    RT_NOREF(pThis);
-}
 
-static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC,
+static uint8_t virtioNetR3CtrlRx(PVIRTIONET pThis, PVIRTIONETCC pThisCC,
                                  PVIRTIONET_CTRL_HDR_T pCtrlPktHdr, PVIRTQBUF pVirtqBuf)
 {
 
 #define LOG_VIRTIONET_FLAG(fld) LogFunc(("%s Setting %s=%d\n", pThis->szInst, #fld, pThis->fld))
 
     LogFunc(("%s Processing CTRL Rx command\n", pThis->szInst));
-    RT_NOREF(pThis);
     switch(pCtrlPktHdr->uCmd)
     {
       case VIRTIONET_CTRL_RX_PROMISC:
@@ -2045,7 +1976,7 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
     }
 
     uint8_t fOn, fPromiscChanged = false;
-    virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &fOn, (size_t)RT_MIN(pVirtqBuf->cbPhysSend, sizeof(fOn)));
+    virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &fOn, (size_t)RT_MIN(pVirtqBuf->cbPhysSend, sizeof(fOn)));
 
     switch(pCtrlPktHdr->uCmd)
     {
@@ -2078,32 +2009,14 @@ static uint8_t virtioNetR3CtrlRx(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONE
     }
 
     if (pThisCC->pDrv && fPromiscChanged)
-    {
-        if (pThis->fPromiscuous | pThis->fAllMulticast)
-        {
-            pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, true);
-        }
-        else
-        {
-            pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, false);
-        }
-    }
+        pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, (pThis->fPromiscuous || pThis->fAllMulticast));
 
     return VIRTIONET_OK;
 }
 
-static uint8_t virtioNetR3CtrlMac(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC,
-                                  PVIRTIONET_CTRL_HDR_T pCtrlPktHdr, PVIRTQBUF pVirtqBuf)
+static uint8_t virtioNetR3CtrlMac(PVIRTIONET pThis, PVIRTIONET_CTRL_HDR_T pCtrlPktHdr, PVIRTQBUF pVirtqBuf)
 {
     LogFunc(("%s Processing CTRL MAC command\n", pThis->szInst));
-
-    RT_NOREF(pThisCC);
-
-#define ASSERT_CTRL_ADDR_SET(v) \
-    AssertMsgReturn((v), ("DESC chain too small to process CTRL_MAC_ADDR_SET cmd\n"), VIRTIONET_ERROR)
-
-#define ASSERT_CTRL_TABLE_SET(v) \
-    AssertMsgReturn((v), ("DESC chain too small to process CTRL_MAC_TABLE_SET cmd\n"), VIRTIONET_ERROR)
 
     AssertMsgReturn(pVirtqBuf->cbPhysSend >= sizeof(*pCtrlPktHdr),
                    ("insufficient descriptor space for ctrl pkt hdr"),
@@ -2115,8 +2028,10 @@ static uint8_t virtioNetR3CtrlMac(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTION
         case VIRTIONET_CTRL_MAC_ADDR_SET:
         {
             /* Set default Rx filter MAC */
-            ASSERT_CTRL_ADDR_SET(cbRemaining >= sizeof(VIRTIONET_CTRL_MAC_TABLE_LEN));
-            virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &pThis->rxFilterMacDefault, sizeof(VIRTIONET_CTRL_MAC_TABLE_LEN));
+            AssertMsgReturn(cbRemaining >= sizeof(pThis->rxFilterMacDefault),
+                            ("DESC chain too small to process CTRL_MAC_ADDR_SET cmd\n"), VIRTIONET_ERROR);
+
+            virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &pThis->rxFilterMacDefault, sizeof(VIRTIONET_CTRL_MAC_TABLE_LEN));
             break;
         }
         case VIRTIONET_CTRL_MAC_TABLE_SET:
@@ -2124,29 +2039,53 @@ static uint8_t virtioNetR3CtrlMac(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTION
             VIRTIONET_CTRL_MAC_TABLE_LEN cMacs;
 
             /* Load unicast MAC filter table */
-            ASSERT_CTRL_TABLE_SET(cbRemaining >= sizeof(cMacs));
-            virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &cMacs, sizeof(cMacs));
+
+            AssertMsgReturn(cbRemaining >= sizeof(cMacs),
+                           ("DESC chain too small to process CTRL_MAC_TABLE_SET cmd\n"), VIRTIONET_ERROR);
+
+            /* Fetch count of unicast filter MACs from guest buffer */
+            virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &cMacs, sizeof(cMacs));
+
             cbRemaining -= sizeof(cMacs);
+
             Log7Func(("%s Guest provided %d unicast MAC Table entries\n", pThis->szInst, cMacs));
+
             if (cMacs)
             {
                 uint32_t cbMacs = cMacs * sizeof(RTMAC);
-                ASSERT_CTRL_TABLE_SET(cbRemaining >= cbMacs);
-                virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &pThis->aMacUnicastFilter, cbMacs);
+
+                AssertMsgReturn(cbRemaining >= cbMacs,
+                                ("Virtq buffer too small to process CTRL_MAC_TABLE_SET cmd\n"), VIRTIONET_ERROR);
+
+                /* Fetch unicast table contents from guest buffer */
+                virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &pThis->aMacUnicastFilter, cbMacs);
+
                 cbRemaining -= cbMacs;
             }
             pThis->cUnicastFilterMacs = cMacs;
 
             /* Load multicast MAC filter table */
-            ASSERT_CTRL_TABLE_SET(cbRemaining >= sizeof(cMacs));
-            virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &cMacs, sizeof(cMacs));
+            AssertMsgReturn(cbRemaining >= sizeof(cMacs),
+                            ("Virtq buffer too small to process CTRL_MAC_TABLE_SET cmd\n"), VIRTIONET_ERROR);
+
+            /* Fetch count of multicast filter MACs from guest buffer */
+            virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &cMacs, sizeof(cMacs));
+
             cbRemaining -= sizeof(cMacs);
+
             Log10Func(("%s Guest provided %d multicast MAC Table entries\n", pThis->szInst, cMacs));
+
+
             if (cMacs)
             {
                 uint32_t cbMacs = cMacs * sizeof(RTMAC);
-                ASSERT_CTRL_TABLE_SET(cbRemaining >= cbMacs);
-                virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &pThis->aMacMulticastFilter, cbMacs);
+
+                AssertMsgReturn(cbRemaining >= cbMacs,
+                                ("Virtq buffer too small to process CTRL_MAC_TABLE_SET cmd\n"), VIRTIONET_ERROR);
+
+                /* Fetch multicast table contents from guest buffer */
+                virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &pThis->aMacMulticastFilter, cbMacs);
+
                 cbRemaining -= cbMacs;
             }
             pThis->cMulticastFilterMacs = cMacs;
@@ -2165,21 +2104,24 @@ static uint8_t virtioNetR3CtrlMac(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTION
     return VIRTIONET_OK;
 }
 
-static uint8_t virtioNetR3CtrlVlan(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC,
-                                   PVIRTIONET_CTRL_HDR_T pCtrlPktHdr, PVIRTQBUF pVirtqBuf)
+static uint8_t virtioNetR3CtrlVlan(PVIRTIONET pThis, PVIRTIONET_CTRL_HDR_T pCtrlPktHdr, PVIRTQBUF pVirtqBuf)
 {
     LogFunc(("%s Processing CTRL VLAN command\n", pThis->szInst));
 
-    RT_NOREF(pThisCC);
-
     uint16_t uVlanId;
     size_t cbRemaining = pVirtqBuf->cbPhysSend - sizeof(*pCtrlPktHdr);
+
     AssertMsgReturn(cbRemaining > sizeof(uVlanId),
         ("DESC chain too small for VIRTIO_NET_CTRL_VLAN cmd processing"), VIRTIONET_ERROR);
-    virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, &uVlanId, sizeof(uVlanId));
+
+    /* Fetch VLAN ID from guest buffer */
+    virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &uVlanId, sizeof(uVlanId));
+
     AssertMsgReturn(uVlanId > VIRTIONET_MAX_VLAN_ID,
         ("%s VLAN ID out of range (VLAN ID=%u)\n", pThis->szInst, uVlanId), VIRTIONET_ERROR);
+
     LogFunc(("%s uCommand=%u VLAN ID=%u\n", pThis->szInst, pCtrlPktHdr->uCmd, uVlanId));
+
     switch (pCtrlPktHdr->uCmd)
     {
         case VIRTIONET_CTRL_VLAN_ADD:
@@ -2220,7 +2162,7 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
     AssertMsgReturnVoid(pVirtqBuf->cbPhysSend >= sizeof(VIRTIONET_CTRL_HDR_T),
                         ("DESC chain too small for CTRL pkt header"));
 
-    virtqNetR3PullBytesFromVirtqBuf(pDevIns, pThis, pVirtqBuf, pCtrlPktHdr,
+    virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, pCtrlPktHdr,
                          RT_MIN(pVirtqBuf->cbPhysSend, sizeof(VIRTIONET_CTRL_HDR_T)));
 
     Log7Func(("%s CTRL COMMAND: class=%d command=%d\n", pThis->szInst, pCtrlPktHdr->uClass, pCtrlPktHdr->uCmd));
@@ -2229,13 +2171,13 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
     switch (pCtrlPktHdr->uClass)
     {
         case VIRTIONET_CTRL_RX:
-            uAck = virtioNetR3CtrlRx(pDevIns, pThis, pThisCC, pCtrlPktHdr, pVirtqBuf);
+            uAck = virtioNetR3CtrlRx(pThis, pThisCC, pCtrlPktHdr, pVirtqBuf);
             break;
         case VIRTIONET_CTRL_MAC:
-            uAck = virtioNetR3CtrlMac(pDevIns, pThis, pThisCC, pCtrlPktHdr, pVirtqBuf);
+            uAck = virtioNetR3CtrlMac(pThis, pCtrlPktHdr, pVirtqBuf);
             break;
         case VIRTIONET_CTRL_VLAN:
-            uAck = virtioNetR3CtrlVlan(pDevIns, pThis, pThisCC, pCtrlPktHdr, pVirtqBuf);
+            uAck = virtioNetR3CtrlVlan(pThis, pCtrlPktHdr, pVirtqBuf);
             break;
         case VIRTIONET_CTRL_ANNOUNCE:
             uAck = VIRTIONET_OK;
@@ -2916,7 +2858,7 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
         {
             PVIRTIONETVIRTQ pVirtq = &pThis->aVirtqs[uVirtqNbr];
             pVirtq->idx = uVirtqNbr;
-            (void) virtioCoreR3VirtqAttach(&pThis->Virtio, pVirtq->idx, pVirtq->szName);
+            (void) virtioCoreVirtqAttach(&pThis->Virtio, pVirtq->idx, pVirtq->szName);
             pVirtq->fAttachedToVirtioCore = true;
             if (IS_VIRTQ_EMPTY(pThisCC->pDevIns, &pThis->Virtio, pVirtq->idx))
                 virtioCoreVirtqEnableNotify(&pThis->Virtio, pVirtq->idx, true /* fEnable */);
