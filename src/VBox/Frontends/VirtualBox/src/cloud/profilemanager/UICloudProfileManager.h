@@ -132,6 +132,8 @@ private:
         void prepareTreeWidget();
         /** Prepares details-widget. */
         void prepareDetailsWidget();
+        /** Prepares connections. */
+        void prepareConnections();
         /** Load settings: */
         void loadSettings();
     /** @} */

@@ -572,20 +572,6 @@ void UICloudProfileManagerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
     addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage));
     addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help));
-
-    /* Connect actions: */
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add), &QAction::triggered,
-            this, &UICloudProfileManagerWidget::sltAddCloudProfile);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import), &QAction::triggered,
-            this, &UICloudProfileManagerWidget::sltImportCloudProfiles);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove), &QAction::triggered,
-            this, &UICloudProfileManagerWidget::sltRemoveCloudProfile);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::toggled,
-            this, &UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage), &QAction::triggered,
-            this, &UICloudProfileManagerWidget::sltShowCloudProfileTryPage);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help), &QAction::triggered,
-            this, &UICloudProfileManagerWidget::sltShowCloudProfileHelp);
 }
 
 void UICloudProfileManagerWidget::prepareWidgets()
@@ -609,6 +595,8 @@ void UICloudProfileManagerWidget::prepareWidgets()
         prepareTreeWidget();
         /* Prepare details-widget: */
         prepareDetailsWidget();
+        /* Prepare connections: */
+        prepareConnections();
     }
 }
 
@@ -663,12 +651,6 @@ void UICloudProfileManagerWidget::prepareTreeWidget()
         m_pTreeWidget->setSortingEnabled(true);
         m_pTreeWidget->sortByColumn(Column_Name, Qt::AscendingOrder);
         m_pTreeWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-        connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
-                this, &UICloudProfileManagerWidget::sltHandleCurrentItemChange);
-        connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
-                this, &UICloudProfileManagerWidget::sltHandleContextMenuRequest);
-        connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
-                m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::setChecked);
 
         /* Add into layout: */
         layout()->addWidget(m_pTreeWidget);
@@ -684,16 +666,43 @@ void UICloudProfileManagerWidget::prepareDetailsWidget()
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
         m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-        connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChanged,
-                this, &UICloudProfileManagerWidget::sigCloudProfileDetailsDataChanged);
-        connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChangeRejected,
-                this, &UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges);
-        connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChangeAccepted,
-                this, &UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges);
 
         /* Add into layout: */
         layout()->addWidget(m_pDetailsWidget);
     }
+}
+
+void UICloudProfileManagerWidget::prepareConnections()
+{
+    /* Action connections: */
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltAddCloudProfile);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltImportCloudProfiles);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltRemoveCloudProfile);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::toggled,
+            this, &UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltShowCloudProfileTryPage);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltShowCloudProfileHelp);
+
+    /* Tree-widget connections: */
+    connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
+            this, &UICloudProfileManagerWidget::sltHandleCurrentItemChange);
+    connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
+            this, &UICloudProfileManagerWidget::sltHandleContextMenuRequest);
+    connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
+            m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::setChecked);
+
+    /* Details-widget connections: */
+    connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChanged,
+            this, &UICloudProfileManagerWidget::sigCloudProfileDetailsDataChanged);
+    connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChangeRejected,
+            this, &UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges);
+    connect(m_pDetailsWidget, &UICloudProfileDetailsWidget::sigDataChangeAccepted,
+            this, &UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges);
 }
 
 void UICloudProfileManagerWidget::loadSettings()
