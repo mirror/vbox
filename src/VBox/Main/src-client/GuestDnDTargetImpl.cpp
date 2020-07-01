@@ -638,8 +638,6 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     {
         //pSendCtx is passed into SendDataTask where one is deleted in destructor
         pSendCtx = new GuestDnDSendCtx();
-        RT_BZERO(pSendCtx, sizeof(GuestDnDSendCtx));
-
         pSendCtx->mpTarget      = this;
         pSendCtx->mpResp        = pResp;
         pSendCtx->mScreenID     = aScreenId;
