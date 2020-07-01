@@ -77,7 +77,7 @@ class SendDataTask : public GuestDnDTargetTask
 {
 public:
 
-    SendDataTask(GuestDnDTarget *pTarget, PSENDDATACTX pCtx)
+    SendDataTask(GuestDnDTarget *pTarget, GuestDnDSendCtx *pCtx)
         : GuestDnDTargetTask(pTarget),
           mpCtx(pCtx)
     {
@@ -99,12 +99,12 @@ public:
     }
 
 
-    PSENDDATACTX getCtx(void) { return mpCtx; }
+    GuestDnDSendCtx *getCtx(void) { return mpCtx; }
 
 protected:
 
     /** Pointer to send data context. */
-    PSENDDATACTX mpCtx;
+    GuestDnDSendCtx *mpCtx;
 };
 
 // constructor / destructor
@@ -632,13 +632,13 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         return hr;
 
     SendDataTask *pTask = NULL;
-    PSENDDATACTX pSendCtx = NULL;
+    GuestDnDSendCtx *pSendCtx = NULL;
 
     try
     {
         //pSendCtx is passed into SendDataTask where one is deleted in destructor
-        pSendCtx = new SENDDATACTX;
-        RT_BZERO(pSendCtx, sizeof(SENDDATACTX));
+        pSendCtx = new GuestDnDSendCtx();
+        RT_BZERO(pSendCtx, sizeof(GuestDnDSendCtx));
 
         pSendCtx->mpTarget      = this;
         pSendCtx->mpResp        = pResp;
@@ -761,7 +761,7 @@ Utf8Str GuestDnDTarget::i_hostErrorToString(int hostRc)
  * @returns VBox status code that the caller ignores. Not sure if that's
  *          intentional or not.
  */
-int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
+int GuestDnDTarget::i_sendData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -801,7 +801,7 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     return rc;
 }
 
-int GuestDnDTarget::i_sendDataBody(PSENDDATACTX pCtx, GuestDnDData *pData)
+int GuestDnDTarget::i_sendDataBody(GuestDnDSendCtx *pCtx, GuestDnDData *pData)
 {
     AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
     AssertPtrReturn(pData, VERR_INVALID_POINTER);
@@ -843,7 +843,7 @@ int GuestDnDTarget::i_sendDataBody(PSENDDATACTX pCtx, GuestDnDData *pData)
     return rc;
 }
 
-int GuestDnDTarget::i_sendDataHeader(PSENDDATACTX pCtx, GuestDnDData *pData, GuestDnDURIData *pURIData /* = NULL */)
+int GuestDnDTarget::i_sendDataHeader(GuestDnDSendCtx *pCtx, GuestDnDData *pData, GuestDnDURIData *pURIData /* = NULL */)
 {
     AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
     AssertPtrReturn(pData, VERR_INVALID_POINTER);
@@ -872,7 +872,7 @@ int GuestDnDTarget::i_sendDataHeader(PSENDDATACTX pCtx, GuestDnDData *pData, Gue
     return rc;
 }
 
-int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
+int GuestDnDTarget::i_sendDirectory(GuestDnDSendCtx *pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
     AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
@@ -899,7 +899,7 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCt
     return VINF_SUCCESS;
 }
 
-int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
+int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
     AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
@@ -984,7 +984,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, Gu
     return rc;
 }
 
-int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
+int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
     AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
@@ -1064,7 +1064,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDURIObjCtx *pObjCtx
 /* static */
 DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
 {
-    PSENDDATACTX pCtx = (PSENDDATACTX)pvUser;
+    GuestDnDSendCtx *pCtx = (GuestDnDSendCtx *)pvUser;
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     GuestDnDTarget *pThis = pCtx->mpTarget;
@@ -1273,7 +1273,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
     return rcToGuest; /* Tell the guest. */
 }
 
-int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
+int GuestDnDTarget::i_sendURIData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtr(pCtx->mpResp);
@@ -1429,7 +1429,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
     return rc;
 }
 
-int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
+int GuestDnDTarget::i_sendURIDataLoop(GuestDnDSendCtx *pCtx, GuestDnDMsg *pMsg)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
@@ -1488,7 +1488,7 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
     return rc;
 }
 
-int GuestDnDTarget::i_sendRawData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
+int GuestDnDTarget::i_sendRawData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     NOREF(msTimeout);

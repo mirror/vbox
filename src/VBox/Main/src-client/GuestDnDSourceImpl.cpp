@@ -74,7 +74,7 @@ class RecvDataTask : public GuestDnDSourceTask
 {
 public:
 
-    RecvDataTask(GuestDnDSource *pSource, PRECVDATACTX pCtx)
+    RecvDataTask(GuestDnDSource *pSource, GuestDnDRecvCtx *pCtx)
         : GuestDnDSourceTask(pSource)
         , mpCtx(pCtx)
     {
@@ -88,12 +88,12 @@ public:
 
     virtual ~RecvDataTask(void) { }
 
-    PRECVDATACTX getCtx(void) { return mpCtx; }
+    GuestDnDRecvCtx *getCtx(void) { return mpCtx; }
 
 protected:
 
     /** Pointer to receive data context. */
-    PRECVDATACTX mpCtx;
+    GuestDnDRecvCtx *mpCtx;
 };
 
 // constructor / destructor
@@ -423,7 +423,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
     if (mDataBase.m_cTransfersPending)
         return setError(E_FAIL, tr("Current drop operation still in progress"));
 
-    PRECVDATACTX pCtx = &mData.mRecvCtx;
+    GuestDnDRecvCtx *pCtx = &mData.mRecvCtx;
     HRESULT hr = S_OK;
 
     try
@@ -540,7 +540,7 @@ Utf8Str GuestDnDSource::i_hostErrorToString(int hostRc)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-int GuestDnDSource::i_onReceiveDataHdr(PRECVDATACTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr)
+int GuestDnDSource::i_onReceiveDataHdr(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATAHDR pDataHdr)
 {
     AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
     AssertReturn(pDataHdr, VERR_INVALID_POINTER);
@@ -558,7 +558,7 @@ int GuestDnDSource::i_onReceiveDataHdr(PRECVDATACTX pCtx, PVBOXDNDSNDDATAHDR pDa
     return VINF_SUCCESS;
 }
 
-int GuestDnDSource::i_onReceiveData(PRECVDATACTX pCtx, PVBOXDNDSNDDATA pSndData)
+int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndData)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pSndData, VERR_INVALID_POINTER);
@@ -658,7 +658,7 @@ int GuestDnDSource::i_onReceiveData(PRECVDATACTX pCtx, PVBOXDNDSNDDATA pSndData)
     return rc;
 }
 
-int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath, uint32_t fMode)
+int GuestDnDSource::i_onReceiveDir(GuestDnDRecvCtx *pCtx, const char *pszPath, uint32_t cbPath, uint32_t fMode)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
@@ -731,7 +731,7 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
     return rc;
 }
 
-int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath,
+int GuestDnDSource::i_onReceiveFileHdr(GuestDnDRecvCtx *pCtx, const char *pszPath, uint32_t cbPath,
                                        uint64_t cbSize, uint32_t fMode, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
@@ -865,7 +865,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
     return rc;
 }
 
-int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, uint32_t cbData)
+int GuestDnDSource::i_onReceiveFileData(GuestDnDRecvCtx *pCtx, const void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
@@ -950,7 +950,7 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
  * @returns VBox status code that the caller ignores. Not sure if that's
  *          intentional or not.
  */
-int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
+int GuestDnDSource::i_receiveData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1078,7 +1078,7 @@ void GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
     LogFlowFunc(("pSource=%p, vrc=%Rrc (ignored)\n", (GuestDnDSource *)pThis, vrc));
 }
 
-int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
+int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1183,7 +1183,7 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
     return rc;
 }
 
-int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
+int GuestDnDSource::i_receiveURIData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1318,7 +1318,7 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 /* static */
 DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
 {
-    PRECVDATACTX pCtx = (PRECVDATACTX)pvUser;
+    GuestDnDRecvCtx *pCtx = (GuestDnDRecvCtx *)pvUser;
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     GuestDnDSource *pThis = pCtx->mpSource;
@@ -1447,7 +1447,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
 /* static */
 DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
 {
-    PRECVDATACTX pCtx = (PRECVDATACTX)pvUser;
+    GuestDnDRecvCtx *pCtx = (GuestDnDRecvCtx *)pvUser;
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     GuestDnDSource *pThis = pCtx->mpSource;

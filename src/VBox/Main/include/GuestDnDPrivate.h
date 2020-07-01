@@ -761,7 +761,7 @@ protected:
 /**
  * Context structure for sending data to the guest.
  */
-typedef struct SENDDATACTX
+struct GuestDnDSendCtx
 {
     /** Pointer to guest target class this context belongs to. */
     GuestDnDTarget                     *mpTarget;
@@ -781,13 +781,12 @@ typedef struct SENDDATACTX
     GuestDnDURIData                     mURI;
     /** Callback event to use. */
     GuestDnDCallbackEvent               mCBEvent;
-
-} SENDDATACTX, *PSENDDATACTX;
+};
 
 /**
  * Context structure for receiving data from the guest.
  */
-typedef struct RECVDATACTX
+struct GuestDnDRecvCtx
 {
     /** Pointer to guest source class this context belongs to. */
     GuestDnDSource                     *mpSource;
@@ -820,8 +819,7 @@ typedef struct RECVDATACTX
     GuestDnDURIData                     mURI;
     /** Callback event to use. */
     GuestDnDCallbackEvent               mCBEvent;
-
-} RECVDATACTX, *PRECVDATACTX;
+};
 
 /**
  * Simple structure for a buffered guest DnD message.

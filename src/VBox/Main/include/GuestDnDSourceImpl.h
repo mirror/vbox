@@ -30,8 +30,7 @@ using namespace DragAndDropSvc;
 #include "GuestDnDPrivate.h"
 
 class RecvDataTask;
-struct RECVDATACTX;
-typedef struct RECVDATACTX *PRECVDATACTX;
+struct GuestDnDRecvCtx;
 
 class ATL_NO_VTABLE GuestDnDSource :
     public GuestDnDSourceWrap,
@@ -73,11 +72,11 @@ protected:
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     /** @name Dispatch handlers for the HGCM callbacks.
      * @{ */
-    int i_onReceiveDataHdr(PRECVDATACTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr);
-    int i_onReceiveData(PRECVDATACTX pCtx, PVBOXDNDSNDDATA pSndData);
-    int i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath, uint32_t fMode);
-    int i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath, uint64_t cbSize, uint32_t fMode, uint32_t fFlags);
-    int i_onReceiveFileData(PRECVDATACTX pCtx,const void *pvData, uint32_t cbData);
+    int i_onReceiveDataHdr(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATAHDR pDataHdr);
+    int i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndData);
+    int i_onReceiveDir(GuestDnDRecvCtx *pCtx, const char *pszPath, uint32_t cbPath, uint32_t fMode);
+    int i_onReceiveFileHdr(GuestDnDRecvCtx *pCtx, const char *pszPath, uint32_t cbPath, uint64_t cbSize, uint32_t fMode, uint32_t fFlags);
+    int i_onReceiveFileData(GuestDnDRecvCtx *pCtx,const void *pvData, uint32_t cbData);
     /** @}  */
 #endif
 
@@ -99,9 +98,9 @@ protected:
 
 protected:
 
-    int i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
-    int i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
-    int i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
+    int i_receiveData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout);
+    int i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout);
+    int i_receiveURIData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout);
 
 protected:
 
@@ -111,7 +110,7 @@ protected:
         uint32_t    mcbBlockSize;
         /** The context for receiving data from the guest.
          *  At the moment only one transfer at a time is supported. */
-        RECVDATACTX mRecvCtx;
+        GuestDnDRecvCtx mRecvCtx;
     } mData;
 
     friend class RecvDataTask;
