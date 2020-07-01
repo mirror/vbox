@@ -33,6 +33,7 @@
 
 
 DnDURIObject::DnDURIObject(Type enmType /* = Type_Unknown */, const RTCString &strPathAbs /* = "" */)
+    : m_enmType(Type_Unknown)
 {
     int rc2 = Init(enmType, strPathAbs);
     AssertRC(rc2);
@@ -56,31 +57,37 @@ void DnDURIObject::closeInternal(void)
     {
         case Type_File:
         {
-            LogRel2(("DnD: Closing file '%s'\n", m_strPathAbs.c_str()));
-
-            rc = RTFileClose(u.File.hFile);
-            if (RT_SUCCESS(rc))
+            if (RTFileIsValid(u.File.hFile))
             {
-                u.File.hFile = NIL_RTFILE;
-                RT_ZERO(u.File.objInfo);
+                LogRel2(("DnD: Closing file '%s'\n", m_strPathAbs.c_str()));
+
+                rc = RTFileClose(u.File.hFile);
+                if (RT_SUCCESS(rc))
+                {
+                    u.File.hFile = NIL_RTFILE;
+                    RT_ZERO(u.File.objInfo);
+                }
+                else
+                    LogRel(("DnD: Closing file '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
             }
-            else
-                LogRel(("DnD: Closing file '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
             break;
         }
 
         case Type_Directory:
         {
-            LogRel2(("DnD: Closing directory '%s'\n", m_strPathAbs.c_str()));
-
-            rc = RTDirClose(u.Dir.hDir);
-            if (RT_SUCCESS(rc))
+            if (RTDirIsValid(u.Dir.hDir))
             {
-                u.Dir.hDir = NIL_RTDIR;
-                RT_ZERO(u.Dir.objInfo);
+                LogRel2(("DnD: Closing directory '%s'\n", m_strPathAbs.c_str()));
+
+                rc = RTDirClose(u.Dir.hDir);
+                if (RT_SUCCESS(rc))
+                {
+                    u.Dir.hDir = NIL_RTDIR;
+                    RT_ZERO(u.Dir.objInfo);
+                }
+                else
+                    LogRel(("DnD: Closing directory '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
             }
-            else
-                LogRel(("DnD: Closing directory '%s' failed with %Rrc\n", m_strPathAbs.c_str(), rc));
             break;
         }
 
@@ -162,11 +169,11 @@ uint64_t DnDURIObject::GetSize(void) const
  */
 int DnDURIObject::Init(Type enmType, const RTCString &strPathAbs /* = */)
 {
-    AssertReturn(enmType == Type_Unknown, VERR_WRONG_ORDER);
+    AssertReturn(m_enmType == Type_Unknown, VERR_WRONG_ORDER);
 
     int rc;
 
-    switch (m_enmType)
+    switch (enmType)
     {
         case Type_File:
         {
@@ -186,15 +193,16 @@ int DnDURIObject::Init(Type enmType, const RTCString &strPathAbs /* = */)
 
     if (enmType != Type_Unknown)
     {
-        AssertReturn(m_strPathAbs.isNotEmpty(), VERR_INVALID_PARAMETER);
-        rc = DnDPathConvert(m_strPathAbs.mutableRaw(), m_strPathAbs.capacity(), DNDPATHCONVERT_FLAGS_TO_NATIVE);
+        AssertReturn(strPathAbs.isNotEmpty(), VERR_INVALID_PARAMETER);
+        RTCString strPathAbsCopy = strPathAbs;
+        rc = DnDPathConvert(strPathAbsCopy.mutableRaw(), strPathAbsCopy.capacity(), DNDPATHCONVERT_FLAGS_TO_NATIVE);
         if (RT_SUCCESS(rc))
         {
             m_enmType    = enmType;
-            m_strPathAbs = strPathAbs;
+            m_strPathAbs = strPathAbsCopy;
         }
         else
-            LogRel2(("DnD: Absolute file path for guest file on the host is now '%s'\n", m_strPathAbs.c_str()));
+            LogRel2(("DnD: Absolute file path for guest file on the host is now '%s'\n", strPathAbs.c_str()));
     }
     else
         rc = VERR_INVALID_PARAMETER;
