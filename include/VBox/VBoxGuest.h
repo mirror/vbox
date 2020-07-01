@@ -542,7 +542,7 @@ AssertCompileSize(VBGLIOCCHANGEFILTERMASK, 24 + 8);
 /** @} */
 
 
-/** @name VBGL_IOCTL_GUEST_CAPS_ACQUIRE
+/** @name VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES
  * IOCTL to for acquiring and releasing guest capabilities.
  *
  * This is used for multiple purposes:
@@ -560,6 +560,7 @@ AssertCompileSize(VBGLIOCCHANGEFILTERMASK, 24 + 8);
  * VERR_RESOURCE_BUSY is returned if any capabilities in the fOrMask are
  * currently acquired by some other VBoxGuest session.
  *
+ * @todo Rename to VBGL_IOCTL_ACQUIRE_GUEST_CAPS
  * @{
  */
 #define VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES           VBGL_IOCTL_CODE_SIZE(13, VBGL_IOCTL_ACQUIRE_GUEST_CAPABILITIES_SIZE)
