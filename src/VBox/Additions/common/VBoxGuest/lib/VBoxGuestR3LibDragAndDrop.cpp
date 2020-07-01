@@ -1209,12 +1209,15 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
             }
             case HOST_DND_HG_SND_DIR:
                 RT_FALL_THROUGH();
+            case HOST_DND_HG_SND_FILE_HDR:
+                RT_FALL_THROUGH();
             case HOST_DND_HG_SND_FILE_DATA:
             {
                 /*
-                 * All messages in this case are handled internally
-                 * by vbglR3DnDHGRecvDataMain() and must be specified
-                 * by preceeding HOST_DND_HG_SND_DATA or HOST_DND_HG_SND_DATA_HDR calls.
+                 * All messages for this block are handled internally
+                 * by vbglR3DnDHGRecvDataMain(), see above.
+                 *
+                 * So if we land here our code is buggy.
                  */
                 rc = VERR_WRONG_ORDER;
                 break;
