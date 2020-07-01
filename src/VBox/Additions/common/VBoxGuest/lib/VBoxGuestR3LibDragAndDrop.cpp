@@ -1066,7 +1066,7 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
      *       does not implement this command.
      */
     HGCMMsgConnect Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_CONNECT, 2);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_CONNECT, 3);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
     Msg.u.v3.uProtocol.SetUInt32(pCtx->uProtocol);
