@@ -445,6 +445,7 @@ public:
     void cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent = 0) const;
     bool cannotExportAppliance(const CProgress &comProgress, const QString &strPath, QWidget *pParent = 0) const;
     bool cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, QWidget *pParent = 0);
+    void cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent = 0);
 
     /* API: Runtime UI warnings: */
     void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;

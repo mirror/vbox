@@ -81,7 +81,7 @@
         { \
         COMErrorInfo comErrorInfo =  comUnattendedInstaller.errorInfo(); \
         QString strErrorInfo = UIErrorString::formatErrorInfo(comErrorInfo); \
-        printf("unattended install error %s\n", qPrintable(strErrorInfo)); \
+        msgCenter().cannotRunUnattendedGuestInstall(comUnattendedInstaller); \
         return; \
         } \
     } while (0)

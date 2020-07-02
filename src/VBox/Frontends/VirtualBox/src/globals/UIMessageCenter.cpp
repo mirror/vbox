@@ -82,6 +82,7 @@
 #include "CExtPackManager.h"
 #include "CExtPackFile.h"
 #include "CHostNetworkInterface.h"
+#include "CUnattended.h"
 #include "CVFSExplorer.h"
 #include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
@@ -2259,6 +2260,15 @@ bool UIMessageCenter::cannotAddDiskEncryptionPassword(const CAppliance &comAppli
           UIErrorString::formatErrorInfo(comAppliance));
     return false;
 }
+
+void UIMessageCenter::cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent /* = 0 */)
+{
+    COMErrorInfo comErrorInfo =  comUnattendedInstall.errorInfo();    \
+    error(pParent, MessageType_Error,
+          tr("An error has occured during unattended guest install setup."),
+          UIErrorString::formatErrorInfo(comErrorInfo));
+}
+
 
 void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const
 {
