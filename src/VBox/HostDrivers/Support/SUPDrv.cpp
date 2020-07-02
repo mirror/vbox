@@ -459,8 +459,6 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadWait",                           (void *)(uintptr_t)RTThreadWait },
     { "RTThreadWaitNoResume",                   (void *)(uintptr_t)RTThreadWaitNoResume },
     { "RTThreadYield",                          (void *)(uintptr_t)RTThreadYield },
-    { "RTTimeMilliTS",                          (void *)(uintptr_t)RTTimeMilliTS },
-    { "RTTimeNanoTS",                           (void *)(uintptr_t)RTTimeNanoTS },
     { "RTTimeNow",                              (void *)(uintptr_t)RTTimeNow },
     { "RTTimerCanDoHighResolution",             (void *)(uintptr_t)RTTimerCanDoHighResolution },
     { "RTTimerChangeInterval",                  (void *)(uintptr_t)RTTimerChangeInterval },

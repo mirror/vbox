@@ -2686,7 +2686,6 @@ RuntimeR0_SOURCES      := \
 	common/string/RTStrCatEx.cpp \
 	common/string/RTStrCatP.cpp \
 	common/string/RTStrCatPEx.cpp \
-	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
 	common/string/RTStrCopyPEx.cpp \
