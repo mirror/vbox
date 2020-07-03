@@ -423,7 +423,7 @@ void  virtioCoreResetAll(PVIRTIOCORE pVirtio);
  *
  * @returns VBox status code.
  */
-int  virtioCoreVirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *pcszName);
+int  virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *pcszName);
 
 /**
  * Enables or disables a virtq

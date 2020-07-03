@@ -295,7 +295,7 @@ DECLINLINE(uint16_t) virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCOR
  *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
- * @param   uVirtqNbr    Virtq number
+ * @param   uVirtqNbr   Virtq number
  *
  * @returns how many entries have been added to ring as a delta of the consumer's
  *          avail index and the queue's guest-side current avail index.
@@ -656,7 +656,9 @@ DECLINLINE(void) virtioCoreFormatDeviceStatus(uint8_t bStatus, char *pszBuf, siz
 #undef ADJCURSOR
 }
 
-int virtioCoreVirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *pcszName)
+#ifdef IN_RING3
+
+int virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *pcszName)
 {
     LogFunc(("%s\n", pcszName));
     PVIRTQSTATE pVirtqState = &pVirtio->aVirtqState[uVirtqNbr];
@@ -667,8 +669,6 @@ int virtioCoreVirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *p
     RTStrCopy(pVirtqState->szVirtqName, sizeof(pVirtqState->szVirtqName), pcszName);
     return VINF_SUCCESS;
 }
-
-#ifdef IN_RING3
 
 /** API Fuunction: See header file */
 void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs, int uVirtqNbr)
@@ -747,7 +747,6 @@ void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
     pHlp->pfnPrintf(pHlp, "\n");
 
 }
-
 
 /** API Function: See header file */
 int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
@@ -1097,12 +1096,18 @@ int virtioCoreVirtqSyncUsedRing(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
     return VINF_SUCCESS;
 }
 
-
 /**
+ * This is called from the MMIO callback code when the guest does an MMIO access to the
+ * mapped queue notification capability area corresponding to a particular queue, to notify
+ * the queue handler of available data in the avail ring of the queue (VirtIO 1.0, 4.1.4.4.1)
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pVirtio     Pointer to the shared virtio state.
+ * @param   uVirtqNbr   Virtq to check for guest interrupt handling preference
+ * @param   uNotifyIdx  Notification index
  */
 static void virtioCoreVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, uint16_t uNotifyIdx)
 {
-
     PVIRTIOCORECC pVirtioCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
 
     /* See VirtIO 1.0, section 4.1.5.2 It implies that uVirtqNbr and uNotifyIdx should match.
@@ -1132,11 +1137,10 @@ static void virtioCoreVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
  *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
- * @param   uVirtqNbr    Virtq to check for guest interrupt handling preference
+ * @param   uVirtqNbr   Virtq to check for guest interrupt handling preference
  */
 static void virtioCoreNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
-
     Assert(uVirtqNbr < RT_ELEMENTS(pVirtio->aVirtqState));
     PVIRTQSTATE pVirtqState = &pVirtio->aVirtqState[uVirtqNbr];
 
@@ -1264,7 +1268,7 @@ static void virtioResetDevice(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio)
 
 /**
  * Invoked by this implementation when guest driver resets the device.
- * The driver itself will not  until the device has read the status change.
+ * The driver itself will not until the device has read the status change.
  */
 static void virtioGuestR3WasReset(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC)
 {
@@ -1303,8 +1307,7 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
              * yet the linux driver attempts to write/read it back twice */
             VIRTIO_DEV_CONFIG_LOG_ACCESS(uDeviceFeatures, VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess);
             LogFunc(("... WARNING: Guest attempted to write readonly virtio_pci_common_cfg.device_feature (ignoring)\n"));
-//            return VINF_SUCCESS;
-            return VINF_IOM_MMIO_UNUSED_00; /** @todo which is right this or VINF_SUCCESS? */
+            return VINF_IOM_MMIO_UNUSED_00;
         }
         else /* Guest READ pCommonCfg->uDeviceFeatures */
         {
@@ -1789,7 +1792,6 @@ int virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSS
     return VINF_SUCCESS;
 }
 
-
 /*********************************************************************************************************************************
 *   Device Level                                                                                                                 *
 *********************************************************************************************************************************/
@@ -2014,8 +2016,9 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
 
     if (pVirtioCC->pbDevSpecificCfg)
     {
-        /* Following capability (via VirtIO 1.0, section 4.1.4.6). Client defines the
-         * device-specific config fields struct and passes size to this constructor */
+        /* Device specific config capability (via VirtIO 1.0, section 4.1.4.6).
+         * Client defines the device-specific config struct and passes size to virtioCoreR3Init()
+         * to inform this. */
         pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
         pCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
         pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;

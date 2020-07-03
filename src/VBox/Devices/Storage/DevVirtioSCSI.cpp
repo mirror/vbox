@@ -2472,7 +2472,7 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     /* Attach the queues and create worker threads for them: */
     for (uint16_t uVirtqNbr = 0; uVirtqNbr < VIRTIOSCSI_VIRTQ_CNT; uVirtqNbr++)
     {
-        rc = virtioCoreVirtqAttach(&pThis->Virtio, uVirtqNbr, VIRTQNAME(uVirtqNbr));
+        rc = virtioCoreR3VirtqAttach(&pThis->Virtio, uVirtqNbr, VIRTQNAME(uVirtqNbr));
         if (RT_FAILURE(rc))
             continue;
         if (uVirtqNbr == CONTROLQ_IDX || IS_REQ_VIRTQ(uVirtqNbr))

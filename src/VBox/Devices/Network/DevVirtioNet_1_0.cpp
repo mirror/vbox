@@ -2858,7 +2858,7 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
         {
             PVIRTIONETVIRTQ pVirtq = &pThis->aVirtqs[uVirtqNbr];
             pVirtq->idx = uVirtqNbr;
-            (void) virtioCoreVirtqAttach(&pThis->Virtio, pVirtq->idx, pVirtq->szName);
+            (void) virtioCoreR3VirtqAttach(&pThis->Virtio, pVirtq->idx, pVirtq->szName);
             pVirtq->fAttachedToVirtioCore = true;
             if (IS_VIRTQ_EMPTY(pThisCC->pDevIns, &pThis->Virtio, pVirtq->idx))
                 virtioCoreVirtqEnableNotify(&pThis->Virtio, pVirtq->idx, true /* fEnable */);
