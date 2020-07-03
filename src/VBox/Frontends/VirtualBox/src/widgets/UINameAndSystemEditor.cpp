@@ -251,7 +251,7 @@ void UINameAndSystemEditor::retranslateUi()
     if (m_pNameLabel)
         m_pNameLabel->setText(tr("Name:"));
     if (m_pPathLabel)
-        m_pPathLabel->setText(tr("Machine Folder:"));
+        m_pPathLabel->setText(tr("Folder:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
     if (m_pLabelType)
