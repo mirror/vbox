@@ -29,13 +29,6 @@
         </para>
       </listitem>
 
-      <listitem>
-        <para>
-          Hardware 2D video playback acceleration support for Windows
-          guests
-        </para>
-      </listitem>
-
 <!--   <listitem>
         <para>
           PCI passthrough (Linux hosts only)
