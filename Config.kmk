@@ -2294,17 +2294,16 @@ VBOX_GOOD_COMSPEC_BS ?= $(subst /,\,$(VBOX_GOOD_COMSPEC))
 # version is assumed to be the
 #
 ifeq ($(KBUILD_TARGET),darwin)
- ifdef VBOX_WITH_NEW_XCODE
-  VBOX_DEF_MACOSX_VERSION_MIN ?= 10.9
- else
-  VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
+ # The minimum macOS version we're targetting.
+ ifndef VBOX_DEF_MACOSX_VERSION_MIN
+  if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO) # For GAs.
+   VBOX_DEF_MACOSX_VERSION_MIN := 10.6
+  else
+   VBOX_DEF_MACOSX_VERSION_MIN := 10.9
+  endif
  endif
 
- ifdef VBOX_WITH_NEW_XCODE
-  # Use the tool path of the compiler (it's clang, not gcc in this instance).
-  include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC_TOOL).kmk
-  VBOX_PATH_MACOSX_DEVEL_ROOT := $(PATH_TOOL_$(VBOX_GCC_TOOL))
- else
+ if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO) # For GAs.
   # Check for the Xcode 4.1 bits in tools/darwin.x86.
   if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
     && !defined(VBOX_XCODE_VERSION) \
@@ -2312,20 +2311,27 @@ ifeq ($(KBUILD_TARGET),darwin)
    VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL := 1
    VBOX_PATH_MACOSX_DEVEL_ROOT := $(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1
    VBOX_XCODE_VERSION := 4.1
+  else
+  # Fallback - system / LocalConfig.kmk.
+   VBOX_PATH_MACOSX_DEVEL_ROOT     ?= /Developer
+   VBOX_PATH_MACOSX_SDK_ROOT       ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs
+   VBOX_PATH_MACOSX_TOOLCHAIN_ROOT ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)
   endif
- endif
-
- # Fallback - system / LocalConfig.kmk.
- ifdef VBOX_WITH_NEW_XCODE
+ else ifeq ($(VBOX_GCC_TOOL),VBoxXcode62)
+  # Use the tool path of the compiler (it's clang, not gcc in this instance).
+  include $(KBUILD_TOOL_PATHS)/$(VBOX_GCC_TOOL).kmk
+  VBOX_PATH_MACOSX_DEVEL_ROOT := $(PATH_TOOL_$(VBOX_GCC_TOOL))
+  # Fallback - system / LocalConfig.kmk.
   ifndef VBOX_PATH_MACOSX_DEVEL_ROOT
-   VBOX_PATH_MACOSX_DEVEL_ROOT := $(firstword $(wildcard /Applications/Xcode.app/Contents/Developer /Developer))
+   VBOX_PATH_MACOSX_DEVEL_ROOT := $(firstword $(wildcard /Applications/Xcode.app/Contents/Developer /Developer /Library/Developer))
   endif
   ifndef VBOX_PATH_MACOSX_SDK_ROOT
    VBOX_PATH_MACOSX_SDK_ROOT := $(firstword $(wildcard \
    		$(PATH_TOOL_$(VBOX_GCC_TOOL)_SDKS) \
    		$(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs/. \
    		/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/. \
-   		/Developer/SDKs/. ))
+   		/Developer/SDKs/. \
+   		/Library/Developer/CommandLineTools/SDKs/. ))
   endif
   ifndef VBOX_PATH_MACOSX_TOOLCHAIN_ROOT
    VBOX_PATH_MACOSX_TOOLCHAIN_ROOT := $(firstword $(wildcard \
@@ -2337,9 +2343,7 @@ ifeq ($(KBUILD_TARGET),darwin)
    		) /. )
   endif
  else
-  VBOX_PATH_MACOSX_DEVEL_ROOT     ?= /Developer
-  VBOX_PATH_MACOSX_SDK_ROOT       ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs
-  VBOX_PATH_MACOSX_TOOLCHAIN_ROOT ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)
+  ## @todo
  endif
 
 # Where to search for SDKs.
@@ -2374,34 +2378,31 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
  ## The Xcode version.
  ifeq ($(KBUILD_HOST),darwin)
   ifndef VBOX_XCODE_VERSION
-   ifdef VBOX_WITH_NEW_XCODE
+   if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
     VBOX_XCODE_VERSION := $(shell exec $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/xcodebuild -version 2>&1)
     ifneq ($(pos Symbol not found,$(VBOX_XCODE_VERSION)),0) # Try detect unresolved symbol running Xcode 6.2 on Catalina.
      VBOX_XCODE_VERSION = 6.2
     else
      VBOX_XCODE_VERSION := $(word 2, $(VBOX_XCODE_VERSION))
     endif
-   else ifdef VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL
+   else if defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) || exists "$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/xcodebuild"
     VBOX_XCODE_VERSION := $(word 2, $(shell $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/xcodebuild -version))
    else
     VBOX_XCODE_VERSION := $(word 2, $(shell xcodebuild -version))
    endif
    ifeq ($(strip $(VBOX_XCODE_VERSION)),)
-    ifdef VBOX_WITH_NEW_XCODE
+    if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO)
+     VBOX_XCODE_VERSION := 4.1
+    else if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
      VBOX_XCODE_VERSION := 6.2
     else
-     VBOX_XCODE_VERSION := 4.1
+     ## @todo
     endif
    endif
   endif
-  ifdef VBOX_WITH_NEW_XCODE
+  if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
    ifdef KBUILD_USE_KOBJCACHE
     $(warning KBUILD_USE_KOBJCACHE does _not_ currently work with this version of Xcode)
-   endif
-  else
-   ifeq ($(VBOX_XCODE_VERSION),4.2)
-    $(warning Xcode 4.2 is not able to correctly build the recompiler!)
-    $(warning Please downgrade to Xcode 4.1 if you want a working VMM!)
    endif
   endif
  else
@@ -2425,14 +2426,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    endif
   endif
  endif
- ifdef VBOX_WITH_NEW_XCODE
-  if $(KBUILD_HOST_VERSION_MAJOR) >= 18 # HACK ALERT! dtrace doesn't work on Mojave if we specify our Xcode 6.2 environment.
-   override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
-  else
-   override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
-  endif
-  export PATH:=$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(PATH)
- else
+ if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO)
   if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
    TOOL_GXX4MACHO_PREFIX ?= llvm-
   endif
@@ -2467,6 +2461,13 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
    TOOL_GXX4MACHO_OBJCXX = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden -fvisibility-inlines-hidden
   endif
+ else
+  if $(KBUILD_HOST_VERSION_MAJOR) >= 18 # HACK ALERT! dtrace doesn't work on Mojave if we specify our Xcode 6.2 environment.
+   override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
+  else
+   override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
+  endif
+  export PATH:=$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(PATH)
  endif
 
  VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=$(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))0 \
@@ -3051,7 +3052,7 @@ if $(VBOX_GCC_VERSION_CXX) >= 40200 || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) #
  VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 endif
 if   $(KBUILD_TARGET) == "linux" \
-  || ($(KBUILD_TARGET) == "darwin" && defined(VBOX_WITH_NEW_XCODE)) \
+  || ($(KBUILD_TARGET) == "darwin" && "$(VBOX_GCC_TOOL)" != "GXX4MACHO" && "$(VBOX_GCC_TOOL)" != "GXX42MACHO") \
   || defined(VBOX_WITH_MASOCHISTIC_WARNINGS)
  VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_WARN_MASOCHISTIC)
 endif
@@ -3072,7 +3073,7 @@ endif
 VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
 VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
 
-ifdef VBOX_WITH_NEW_XCODE
+if "$(KBUILD_TARGET)" == "darwin" && "$(VBOX_GCC_TOOL)" != "GXX4MACHO" && "$(VBOX_GCC_TOOL)" != "GXX42MACHO"
  VBOX_GCC_PEDANTIC_CXX     += -Wno-c99-extensions
  VBOX_GCC_NON_PEDANTIC_CXX += -Wno-c99-extensions
 endif
@@ -3097,7 +3098,7 @@ else ifdef VBOX_WITH_CLANG_SANITIZER ## @todo make work...
  	-DIPRT_WITH_GCC_SANITIZER \
  	-DVBOX_WITH_GCC_SANITIZER \
  	-fsanitize=object-size \
-  	-fsanitize-undefined-trap-on-error
+ 	-fsanitize-undefined-trap-on-error
 else
  VBOX_GCC_SANITIZER_FLAGS =
 endif
@@ -3290,8 +3291,10 @@ endif
 if !defined(VBOX_WITHOUT_NO_GCC_WARNING_POLICY) && !defined(VBOX_WITH_NO_GCC_WARNING_POLICY)
  if defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.6.x+
   VBOX_WITH_NO_GCC_WARNING_POLICY = 1
- else if $(KBUILD_TARGET) == "darwin" && defined(VBOX_WITH_NEW_XCODE)
+ else if "$(KBUILD_TARGET)" == "darwin"
+  ifn1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO)
    VBOX_WITH_NO_GCC_WARNING_POLICY = 1
+  endif
  else if1of ($(KBUILD_TARGET), linux)
   if $(VBOX_GCC_VERSION_CXX) >= 40600 # gcc 4.6.x+
    VBOX_WITH_NO_GCC_WARNING_POLICY = 1
@@ -4826,7 +4829,34 @@ endif
 ifeq ($(KBUILD_TARGET),darwin)
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT
- ifdef VBOX_WITH_NEW_XCODE # Note xcode uses -fstrict-aliasing, we currently don't dare... We also add -mno-red-zone.
+ if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO)
+TEMPLATE_VBOXR0DRV_INCS               += \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
+## @todo try use VBOX_GCC_PEDANTIC_CXX
+TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) \
+	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
+	-fno-common -nostdinc -fno-builtin -finline $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
+	-fno-keep-inline-functions -fno-exceptions -msoft-float \
+	-fapple-kext -fno-rtti -fcheck-new -force_cpusubtype_ALL \
+	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mkernel -mno-red-zone -gdwarf-2
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -static
+TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
+	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
+	-fno-keep-inline-functions -fno-exceptions $(VBOX_GCC_fvisibility-hidden) -msoft-float \
+	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations \
+	-Werror-implicit-function-declaration -force_cpusubtype_ALL \
+	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -static
+TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
+	-nostdlib -Wl,-kext,-new_linker -Wl,-Y,1455 -keep_private_extern
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
+TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
+TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
+ else
+  # Note xcode uses -fstrict-aliasing, we currently don't dare... We also add -mno-red-zone.
 TEMPLATE_VBOXR0DRV_INCS               += \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
@@ -4871,32 +4901,6 @@ TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext
- else
-TEMPLATE_VBOXR0DRV_INCS               += \
-	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
-	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
-## @todo try use VBOX_GCC_PEDANTIC_CXX
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) \
-	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long $(VBOX_GCC_fdiagnostics-show-option) \
-	-fno-common -nostdinc -fno-builtin -finline $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
-	-fno-keep-inline-functions -fno-exceptions -msoft-float \
-	-fapple-kext -fno-rtti -fcheck-new -force_cpusubtype_ALL \
-	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
-TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64      = -m64 -mkernel -mno-red-zone -gdwarf-2
-TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -static
-TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
-	-g $(VBOX_GCC_pipe) $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
-	-fno-keep-inline-functions -fno-exceptions $(VBOX_GCC_fvisibility-hidden) -msoft-float \
-	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations \
-	-Werror-implicit-function-declaration -force_cpusubtype_ALL \
-	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -static
-TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
-	-nostdlib -Wl,-kext,-new_linker -Wl,-Y,1455 -keep_private_extern
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
-TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
-TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
  endif
 endif
 
