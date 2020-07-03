@@ -1646,6 +1646,9 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pCaps->PresentationCaps.Value = 0;
                 pCaps->PresentationCaps.NoScreenToScreenBlt = 1;
                 pCaps->PresentationCaps.NoOverlapScreenBlt = 1;
+                pCaps->PresentationCaps.AlignmentShift = 2;
+                pCaps->PresentationCaps.MaxTextureWidthShift = 2; /* Up to 8196 */
+                pCaps->PresentationCaps.MaxTextureHeightShift = 2; /* Up to 8196 */
                 pCaps->MaxQueuedFlipOnVSync = 0; /* do we need it? */
                 pCaps->FlipCaps.Value = 0;
                 /* ? pCaps->FlipCaps.FlipOnVSyncWithNoWait = 1; */
@@ -1676,7 +1679,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 #endif
 
                 if (VBoxQueryWinVersion(NULL) >= WINVERSION_8)
-                    pCaps->WDDMVersion = DXGKDDI_WDDMv1;
+                    pCaps->WDDMVersion = DXGKDDI_WDDMv1_2;
             }
             else
             {
@@ -1756,7 +1759,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                     pQAI->u32AdapterCaps |= VBOXWDDM_QAI_CAP_DXVA; /** @todo Fetch from registry. */
                     if (VBoxQueryWinVersion(NULL) >= WINVERSION_7)
                     {
-                        // pQAI->u32AdapterCaps |= VBOXWDDM_QAI_CAP_WIN7;
+                        pQAI->u32AdapterCaps |= VBOXWDDM_QAI_CAP_WIN7;
                         // pQAI->u32AdapterCaps |= VBOXWDDM_QAI_CAP_DXVAHD; /** @todo Fetch from registry. */
                     }
 
