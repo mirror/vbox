@@ -48,6 +48,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
     , m_fChooseType(fChooseType)
     , m_fSupportsHWVirtEx(false)
     , m_fSupportsLongMode(false)
+    , m_pMainLayout(0)
     , m_pNameLabel(0)
     , m_pPathLabel(0)
     , m_pLabelFamily(0)
@@ -59,6 +60,12 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
     , m_pComboType(0)
 {
     prepare();
+}
+
+void UINameAndSystemEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pMainLayout)
+        m_pMainLayout->setColumnMinimumWidth(0, iIndent);
 }
 
 void UINameAndSystemEditor::setNameStuffEnabled(bool fEnabled)
@@ -366,12 +373,12 @@ void UINameAndSystemEditor::prepareThis()
 void UINameAndSystemEditor::prepareWidgets()
 {
     /* Create main-layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    m_pMainLayout = new QGridLayout(this);
+    if (m_pMainLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        pMainLayout->setColumnStretch(0, 0);
-        pMainLayout->setColumnStretch(1, 1);
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pMainLayout->setColumnStretch(0, 0);
+        m_pMainLayout->setColumnStretch(1, 1);
 
         int iRow = 0;
 
@@ -385,14 +392,14 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
                 /* Add into layout: */
-                pMainLayout->addWidget(m_pNameLabel, iRow, 0, 1, 1);
+                m_pMainLayout->addWidget(m_pNameLabel, iRow, 0, 1, 1);
             }
             /* Create name editor: */
             m_pNameLineEdit = new QILineEdit;
             if (m_pNameLineEdit)
             {
                 /* Add into layout: */
-                pMainLayout->addWidget(m_pNameLineEdit, iRow, 1, 1, 2);
+                m_pMainLayout->addWidget(m_pNameLineEdit, iRow, 1, 1, 2);
             }
 
             ++iRow;
@@ -408,7 +415,7 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
                 /* Add into layout: */
-                pMainLayout->addWidget(m_pPathLabel, iRow, 0, 1, 1);
+                m_pMainLayout->addWidget(m_pPathLabel, iRow, 0, 1, 1);
             }
             /* Create path selector: */
             m_pPathSelector = new UIFilePathSelector;
@@ -419,7 +426,7 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pPathSelector->setDefaultPath(strDefaultMachineFolder);
 
                 /* Add into layout: */
-                pMainLayout->addWidget(m_pPathSelector, iRow, 1, 1, 2);
+                m_pMainLayout->addWidget(m_pPathSelector, iRow, 1, 1, 2);
             }
 
             ++iRow;
@@ -435,7 +442,7 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pLabelFamily->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
                 /* Add into layout: */
-                pMainLayout->addWidget(m_pLabelFamily, iRow, 0);
+                m_pMainLayout->addWidget(m_pLabelFamily, iRow, 0);
             }
 
             int iIconRow = iRow;
@@ -448,7 +455,7 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pLabelFamily->setBuddy(m_pComboFamily);
 
                 /* Add into layout: */
-                pMainLayout->addWidget(m_pComboFamily, iRow, 1);
+                m_pMainLayout->addWidget(m_pComboFamily, iRow, 1);
             }
 
             ++iRow;
@@ -461,7 +468,7 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pLabelType->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
                 /* Add into layout: */
-                pMainLayout->addWidget(m_pLabelType, iRow, 0);
+                m_pMainLayout->addWidget(m_pLabelType, iRow, 0);
             }
             /* Create VM OS type combo: */
             m_pComboType = new QComboBox;
@@ -471,7 +478,7 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pLabelType->setBuddy(m_pComboType);
 
                 /* Add into layout: */
-                pMainLayout->addWidget(m_pComboType, iRow, 1);
+                m_pMainLayout->addWidget(m_pComboType, iRow, 1);
             }
 
             ++iRow;
@@ -494,7 +501,7 @@ void UINameAndSystemEditor::prepareWidgets()
                 pLayoutIcon->addStretch();
 
                 /* Add into layout: */
-                pMainLayout->addLayout(pLayoutIcon, iIconRow, 2, 2, 1);
+                m_pMainLayout->addLayout(pLayoutIcon, iIconRow, 2, 2, 1);
             }
 
             /* Initialize VM OS family combo
