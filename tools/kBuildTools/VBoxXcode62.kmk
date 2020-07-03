@@ -137,10 +137,6 @@ TOOL_VBoxXcode62_STRIP_SYSMOD     ?= $(PATH_TOOL_VBoxXcode62_TOOLCHAIN_BIN_SLASH
 # @param    1           The whole output filename.
 # @param    2   	The output filename sans suffix.
 TOOL_VBoxXcode62_DEBUG_BUNDLE_FN = \
-    $(1).dSYM/ \
-    $(1).dSYM/Contents/ \
-    $(1).dSYM/Contents/Resources/ \
-    $(1).dSYM/Contents/Resources/DWARF/ \
     $(1).dSYM/Contents/Info.plist \
     $(1).dSYM/Contents/Resources/DWARF/$(notdir $(1))
 
