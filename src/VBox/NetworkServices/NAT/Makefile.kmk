@@ -76,7 +76,7 @@ VBoxNetNAT_DEFS.win  = VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
 # settings.
  ifeq ($(KBUILD_TARGET),solaris)
   ifneq ($(VBOX_GCC_VERSION_CXX),)
-   ifneq ($(int-ge $(VBOX_GCC_VERSION_CXX),40600),)
+   if $(VBOX_GCC_VERSION_CXX) >= 40600
 # we compile C++ code with -std=c++0x / -std=c++11
 VBoxNetNAT_CFLAGS.solaris += -std=c99
 VBoxNetNAT_DEFS.solaris += _XOPEN_SOURCE=600

@@ -233,7 +233,7 @@ VBOX_VERSION_PREREQ = $(expr $(call VBOX_FULL_VERSION_MAKE,$(VBOX_VERSION_MAJOR)
 
 
 # Force the additions.sh script to get an exact additions build when we're doing the release.
-ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
+if $(VBOX_VERSION_BUILD) % 2 == 0
   ifeq ($(VBOX_VERSION_PRERELEASE),)
     VBOX_RELEASE_EXACT_MATCH=1
   endif
@@ -2701,20 +2701,19 @@ else
  VBOX_GCC32_CHECK_CXX = $(call VBOX_GCC_CHECK_EX_CXX, $(TOOL_$(VBOX_GCC32_TOOL)_ENV_SETUP) $(TOOL_$(VBOX_GCC32_TOOL)_CXX),$1,$2)
 endif
 
-ifeq ($(KBUILD_HOST),win) ## @todo can drop this now, we're not using cygwin.
- # This isn't important (yet) on windows, so cook the result until
- # cygwin is feeling better.
- VBOX_GCC_VERSION := $(int-add $(int-mul 10000, 3), $(int-mul 100, 3), 3)
+ifeq ($(KBUILD_HOST),win)
+ # We're not using gcc on windows anymore, just cook the result.
+ VBOX_GCC_VERSION := $(expr 10000 * 3 + 100 * 3 + 3)
 else
  # This is kind of bad, the returned string needs to be re-evaluated before use.
  # The reason for this hack is that the windows kmk_ash cannot deal with $((1+1)).
  # Some versions of gcc (e.g. openSUSE11) return only major.minor on `gcc -dumpversion`.
  # gcc-5 of openSUSE42.1 only returns the major version on `gcc -dumpversion`!
  VBOX_GCC_VERSION = $(shell ($(1) -dumpfullversion 2>/dev/null || $(1) -dumpversion) | \
-    $(SED_EXT) 's|\([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, $$(firstword \2 0)), $$(firstword \3 0))|' )
+    $(SED_EXT) 's|\([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(expr 10000 * \1 + 100 * $$(firstword \2 0) + $$(firstword \3 0))|' )
  ifeq ($(KBUILD_TARGET), darwin)
   VBOX_CLANG_VERSION = $(shell $(1) --version | \
-    $(SED_EXT) -n 's|.*version \([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, $$(firstword \2 0)), $$(firstword \3 0))|p' )
+    $(SED_EXT) -n 's|.*version \([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(expr 10000 * \1) + 100 * $$(firstword \2 0) + $$(firstword \3 0))|p' )
  endif
 endif
 
@@ -2862,7 +2861,7 @@ endif
 # -Wextra produces additional useful warnings but includes -Wno-missing-field-initializers (too noisy)
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wextra                ?= $(call VBOX_GCC_CHECK_CC,-Wextra,)'
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CC),)'
-	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CC),40500),)'
+	$(QUIET)$(APPEND) '$@' ' if $$(VBOX_GCC_VERSION_CC) >= 40500'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wlogical-op         ?= $(call VBOX_GCC_CHECK_CC,-Wlogical-op,)'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wno-logical-op      ?= $$(subst -Wlogical-op,-Wno-logical-op,$$(VBOX_GCC_Wlogical-op))
 	$(QUIET)$(APPEND) '$@' ' endif'
@@ -2902,13 +2901,10 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mtune-generic         ?= $(call VBOX_GCC_CHECK_CC,-mtune=generic,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_as_needed              ?= $(call VBOX_GCC_CHECK_LD,--as-needed,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_hash_style_sysv        ?= $(call VBOX_GCC_CHECK_LD,--hash-style=sysv,)'
-# gcc version < 3.4 has a bug in handling __attribute__((regparm(3))).
-# See http://osdir.com/ml/gcc.prs/2002-08/msg00223.html and probably http://gcc.gnu.org/bugzilla/show_bug.cgi?id=20004
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_BUGGY_REGPARM         ?= $$(int-lt $$(VBOX_GCC_VERSION_CC),30400)'
 # Set default attribute for ELF and MACH-O symbols to ``hidden'' to reduce the number
 # of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CC),)'
-	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CC),40000),)'
+	$(QUIET)$(APPEND) '$@' ' if $$(VBOX_GCC_VERSION_CC) >= 40000'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_fvisibility-hidden  ?= $(call VBOX_GCC_CHECK_CC,-fvisibility=hidden -DVBOX_HAVE_VISIBILITY_HIDDEN -DRT_USE_VISIBILITY_DEFAULT,)'
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
@@ -2916,7 +2912,7 @@ ifn1of ($(KBUILD_TARGET),haiku)
 # Set default attribute for inline functions to ``hidden'' to reduce the number
 # of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
-	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40000),)'
+	$(QUIET)$(APPEND) '$@' ' if $$(VBOX_GCC_VERSION_CXX) >= 40000'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_fvisibility-inlines-hidden ?= $(call VBOX_GCC_CHECK_CXX,-fvisibility-inlines-hidden,)'
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
@@ -2933,13 +2929,13 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-gnu-anonymous-struct ?= $(call VBOX_GCC_CHECK_CXX,-Wno-gnu-anonymous-struct,)'
 # C++ Std settings
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
-	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40800),)'
+	$(QUIET)$(APPEND) '$@' ' if $$(VBOX_GCC_VERSION_CXX) >= 40800'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++11'
-	$(QUIET)$(APPEND) '$@' ' else ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40600),)'
+	$(QUIET)$(APPEND) '$@' ' else if $$(VBOX_GCC_VERSION_CXX) >= 40600'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++0x'
 # darwin Xcode 5 allegedly knows what C++11 is
 ifeq ($(KBUILD_HOST),darwin)
-	$(QUIET)$(APPEND) '$@' ' else ifneq ($$(int-ge $$(VBOX_CLANG_VERSION_CXX),50000),)'
+	$(QUIET)$(APPEND) '$@' ' else if $$(VBOX_CLANG_VERSION_CXX) >= 50000'
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_std ?= -std=c++11'
 endif
 	$(QUIET)$(APPEND) '$@' ' endif'
