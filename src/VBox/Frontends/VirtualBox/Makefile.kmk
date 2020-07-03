@@ -649,11 +649,9 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic2.h \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.h \
 	src/wizards/newvm/UIWizardNewVM.h \
-	src/wizards/newvm/UIWizardNewVMPageBasicUserNameHostname.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic1.h \
-	src/wizards/newvm/UIWizardNewVMPageBasicGAInstall.h \
+	src/wizards/newvm/UIWizardNewVMPageBasic2.h \
 	src/wizards/newvm/UIWizardNewVMPageBasicHardware.h \
-	src/wizards/newvm/UIWizardNewVMPageBasicProductKey.h \
 	src/wizards/newvm/UIWizardNewVMPageBasicDisk.h \
 	src/wizards/newvm/UIWizardNewVMPageExpert.h \
 	src/wizards/clonevm/UIWizardCloneVM.h \
@@ -1114,11 +1112,9 @@ VirtualBox_SOURCES = \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic2.cpp \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.cpp \
 	src/wizards/newvm/UIWizardNewVM.cpp \
-	src/wizards/newvm/UIWizardNewVMPageBasicUserNameHostname.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic1.cpp \
-	src/wizards/newvm/UIWizardNewVMPageBasicGAInstall.cpp \
+	src/wizards/newvm/UIWizardNewVMPageBasic2.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasicHardware.cpp \
-	src/wizards/newvm/UIWizardNewVMPageBasicProductKey.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasicDisk.cpp \
 	src/wizards/newvm/UIWizardNewVMPageExpert.cpp \
 	src/wizards/clonevm/UIWizardCloneVM.cpp \

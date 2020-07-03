@@ -60,9 +60,7 @@ public:
     enum
     {
         Page1,
-        PageUserNameHostname,
-        PageGAInstall,
-        PageProductKey,
+        Page2,
         PageHardware,
         PageDisk,
         PageMax

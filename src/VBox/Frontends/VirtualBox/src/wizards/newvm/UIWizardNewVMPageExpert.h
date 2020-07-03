@@ -31,7 +31,7 @@ class QGroupBox;
 
 /* Expert page of the New Virtual Machine wizard: */
 class UIWizardNewVMPageExpert : public UIWizardPage,
-                                public UIWizardNewVMPageNameType,
+                                public UIWizardNewVMPage1,
                                 public UIWizardNewVMPageHardware,
                                 public UIWizardNewVMPageDisk
 {

@@ -39,7 +39,7 @@
 
 
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
-    : UIWizardNewVMPageNameType(strGroup)
+    : UIWizardNewVMPage1(strGroup)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);

@@ -19,12 +19,10 @@
 #include "UICommon.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic1.h"
+#include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasicHardware.h"
-#include "UIWizardNewVMPageBasicProductKey.h"
-#include "UIWizardNewVMPageBasicGAInstall.h"
 #include "UIWizardNewVMPageBasicDisk.h"
 #include "UIWizardNewVMPageExpert.h"
-#include "UIWizardNewVMPageBasicUserNameHostname.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
 
@@ -76,10 +74,8 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewVMPageBasicNameType(m_strGroup));
-            setPage(PageUserNameHostname, new UIWizardNewVMPageBasicUserNameHostname);
-            setPage(PageGAInstall, new UIWizardNewVMPageBasicGAInstall);
-            setPage(PageProductKey, new UIWizardNewVMPageBasicProductKey);
+            setPage(Page1, new UIWizardNewVMPageBasic1(m_strGroup));
+            setPage(Page2, new UIWizardNewVMPageBasic2);
             setPage(PageHardware, new UIWizardNewVMPageBasicHardware);
             setPage(PageDisk, new UIWizardNewVMPageBasicDisk);
             setStartId(Page1);
@@ -405,7 +401,7 @@ void UIWizardNewVM::sltHandleWizardCancel()
     {
         case WizardMode_Basic:
         {
-            UIWizardNewVMPageBasicNameType *pPage = qobject_cast<UIWizardNewVMPageBasicNameType*> (page(Page1));
+            UIWizardNewVMPageBasic1 *pPage = qobject_cast<UIWizardNewVMPageBasic1*> (page(Page1));
             /* Make sure that we were able to find the page that created the folder. */
             Assert(pPage);
             if (pPage)
@@ -426,7 +422,7 @@ void UIWizardNewVM::sltHandleWizardCancel()
 
 void UIWizardNewVM::sltHandleDetectedOSTypeChange()
 {
-    UIWizardNewVMPageBasicNameType *pPage = qobject_cast<UIWizardNewVMPageBasicNameType*>(page(Page1));
+    UIWizardNewVMPageBasic1 *pPage = qobject_cast<UIWizardNewVMPageBasic1*>(page(Page1));
     if (!pPage)
         return;
     pPage->setTypeByISODetectedOSType(getStringFieldValue("detectedOSTypeId"));

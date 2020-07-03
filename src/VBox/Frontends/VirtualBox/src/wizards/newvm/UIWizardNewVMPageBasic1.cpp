@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasicNameType class implementation.
+ * VBox Qt GUI - UIWizardNewVMPageBasic1 class implementation.
  */
 
 /*
@@ -178,7 +178,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ot",                   Qt::CaseInsensitive), "Other" },
 };
 
-UIWizardNewVMPageNameType::UIWizardNewVMPageNameType(const QString &strGroup)
+UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     : m_pButtonSimple(0)
     , m_pButtonUnattended(0)
     , m_pISOSelectorLabel(0)
@@ -193,7 +193,7 @@ UIWizardNewVMPageNameType::UIWizardNewVMPageNameType(const QString &strGroup)
     m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
 }
 
-void UIWizardNewVMPageNameType::onNameChanged(QString strNewName)
+void UIWizardNewVMPage1::onNameChanged(QString strNewName)
 {
     /* Do not forget about achitecture bits, if not yet specified: */
     if (!strNewName.contains("32") && !strNewName.contains("64"))
@@ -213,7 +213,7 @@ void UIWizardNewVMPageNameType::onNameChanged(QString strNewName)
         }
 }
 
-void UIWizardNewVMPageNameType::onOsTypeChanged()
+void UIWizardNewVMPage1::onOsTypeChanged()
 {
     /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
      * So simply disconnect the text-edit signal. */
@@ -221,7 +221,7 @@ void UIWizardNewVMPageNameType::onOsTypeChanged()
         m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
 }
 
-bool UIWizardNewVMPageNameType::determineOSType(const QString &strISOPath)
+bool UIWizardNewVMPage1::determineOSType(const QString &strISOPath)
 {
     QFileInfo isoFileInfo(strISOPath);
     if (!isoFileInfo.exists())
@@ -249,7 +249,7 @@ bool UIWizardNewVMPageNameType::determineOSType(const QString &strISOPath)
     return true;
 }
 
-void UIWizardNewVMPageNameType::composeMachineFilePath()
+void UIWizardNewVMPage1::composeMachineFilePath()
 {
     if (!m_pNameAndSystemEditor)
         return;
@@ -269,7 +269,7 @@ void UIWizardNewVMPageNameType::composeMachineFilePath()
     m_strMachineBaseName = fileInfo.completeBaseName();
 }
 
-bool UIWizardNewVMPageNameType::checkISOFile() const
+bool UIWizardNewVMPage1::checkISOFile() const
 {
     if (m_pButtonUnattended && m_pButtonUnattended->isChecked())
     {
@@ -280,7 +280,7 @@ bool UIWizardNewVMPageNameType::checkISOFile() const
     return true;
 }
 
-bool UIWizardNewVMPageNameType::createMachineFolder()
+bool UIWizardNewVMPage1::createMachineFolder()
 {
     if (!m_pNameAndSystemEditor)
         return false;
@@ -318,7 +318,7 @@ bool UIWizardNewVMPageNameType::createMachineFolder()
     return true;
 }
 
-bool UIWizardNewVMPageNameType::cleanupMachineFolder(bool fWizardCancel /* = false */)
+bool UIWizardNewVMPage1::cleanupMachineFolder(bool fWizardCancel /* = false */)
 {
     /* Make sure folder was previosly created: */
     if (m_strCreatedFolder.isEmpty())
@@ -337,76 +337,76 @@ bool UIWizardNewVMPageNameType::cleanupMachineFolder(bool fWizardCancel /* = fal
     return true;
 }
 
-QString UIWizardNewVMPageNameType::machineFilePath() const
+QString UIWizardNewVMPage1::machineFilePath() const
 {
     return m_strMachineFilePath;
 }
 
-void UIWizardNewVMPageNameType::setMachineFilePath(const QString &strMachineFilePath)
+void UIWizardNewVMPage1::setMachineFilePath(const QString &strMachineFilePath)
 {
     m_strMachineFilePath = strMachineFilePath;
 }
 
-QString UIWizardNewVMPageNameType::machineFolder() const
+QString UIWizardNewVMPage1::machineFolder() const
 {
     return m_strMachineFolder;
 }
 
-void UIWizardNewVMPageNameType::setMachineFolder(const QString &strMachineFolder)
+void UIWizardNewVMPage1::setMachineFolder(const QString &strMachineFolder)
 {
     m_strMachineFolder = strMachineFolder;
 }
 
-QString UIWizardNewVMPageNameType::machineBaseName() const
+QString UIWizardNewVMPage1::machineBaseName() const
 {
     return m_strMachineBaseName;
 }
 
-void UIWizardNewVMPageNameType::setMachineBaseName(const QString &strMachineBaseName)
+void UIWizardNewVMPage1::setMachineBaseName(const QString &strMachineBaseName)
 {
     m_strMachineBaseName = strMachineBaseName;
 }
 
-QString UIWizardNewVMPageNameType::guestOSFamiyId() const
+QString UIWizardNewVMPage1::guestOSFamiyId() const
 {
     if (!m_pNameAndSystemEditor)
         return QString();
     return m_pNameAndSystemEditor->familyId();
 }
 
-QString UIWizardNewVMPageNameType::ISOFilePath() const
+QString UIWizardNewVMPage1::ISOFilePath() const
 {
     if (!m_pISOFilePathSelector)
         return QString();
     return m_pISOFilePathSelector->path();
 }
 
-bool UIWizardNewVMPageNameType::isUnattendedEnabled() const
+bool UIWizardNewVMPage1::isUnattendedEnabled() const
 {
     if (!m_pButtonUnattended)
         return false;
     return m_pButtonUnattended->isChecked();
 }
 
-bool UIWizardNewVMPageNameType::startHeadless() const
+bool UIWizardNewVMPage1::startHeadless() const
 {
     if (!m_pStartHeadlessCheckBox)
         return false;
     return m_pStartHeadlessCheckBox->isChecked();
 }
 
-const QString &UIWizardNewVMPageNameType::detectedOSTypeId() const
+const QString &UIWizardNewVMPage1::detectedOSTypeId() const
 {
     return m_strDetectedOSTypeId;
 }
 
-UIWizardNewVMPageBasicNameType::UIWizardNewVMPageBasicNameType(const QString &strGroup)
-    : UIWizardNewVMPageNameType(strGroup)
+UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
+    : UIWizardNewVMPage1(strGroup)
 {
     prepare();
 }
 
-void UIWizardNewVMPageBasicNameType::prepare()
+void UIWizardNewVMPageBasic1::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout(this);
     if (pMainLayout)
@@ -438,7 +438,7 @@ void UIWizardNewVMPageBasicNameType::prepare()
             pButtonGroup->addButton(m_pButtonSimple);
             pButtonGroup->addButton(m_pButtonUnattended);
             connect(pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-                    this, &UIWizardNewVMPageBasicNameType::sltUnattendedCheckBoxToggle);
+                    this, &UIWizardNewVMPageBasic1::sltUnattendedCheckBoxToggle);
         }
 
         m_pISOSelectorLabel = new QLabel;
@@ -457,7 +457,7 @@ void UIWizardNewVMPageBasicNameType::prepare()
             m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
             m_pISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             m_pISOFilePathSelector->setEnabled(false);
-            connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasicNameType::sltISOPathChanged);
+            connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasic1::sltISOPathChanged);
             pMainLayout->addWidget(m_pISOFilePathSelector, 3, 2);
         }
 
@@ -483,9 +483,9 @@ void UIWizardNewVMPageBasicNameType::prepare()
         m_pNameAndSystemEditor = new UINameAndSystemEditor(this, true, true, true);
         if (m_pNameAndSystemEditor)
         {
-            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasicNameType::sltNameChanged);
-            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasicNameType::sltPathChanged);
-            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasicNameType::sltOsTypeChanged);
+            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
+            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
+            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
             pMainLayout->addWidget(m_pNameAndSystemEditor, 6, 1, 1, 2);
         }
 
@@ -503,53 +503,53 @@ void UIWizardNewVMPageBasicNameType::prepare()
     }
 }
 
-int UIWizardNewVMPageBasicNameType::nextId() const
+int UIWizardNewVMPageBasic1::nextId() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     if (!pWizard || !pWizard->isUnattendedInstallEnabled())
         return UIWizardNewVM::PageHardware;
-    return UIWizardNewVM::PageUserNameHostname;
+    return UIWizardNewVM::Page2;
 }
 
-void UIWizardNewVMPageBasicNameType::setTypeByISODetectedOSType(const QString &strDetectedOSType)
+void UIWizardNewVMPageBasic1::setTypeByISODetectedOSType(const QString &strDetectedOSType)
 {
     if (!strDetectedOSType.isEmpty())
         onNameChanged(strDetectedOSType);
 }
 
-bool UIWizardNewVMPageBasicNameType::isComplete() const
+bool UIWizardNewVMPageBasic1::isComplete() const
 {
     if (m_pNameAndSystemEditor->name().isEmpty())
         return false;
     return checkISOFile();
 }
 
-void UIWizardNewVMPageBasicNameType::sltNameChanged(const QString &strNewName)
+void UIWizardNewVMPageBasic1::sltNameChanged(const QString &strNewName)
 {
     onNameChanged(strNewName);
     composeMachineFilePath();
 }
 
-void UIWizardNewVMPageBasicNameType::sltPathChanged(const QString &strNewPath)
+void UIWizardNewVMPageBasic1::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
     composeMachineFilePath();
 }
 
-void UIWizardNewVMPageBasicNameType::sltOsTypeChanged()
+void UIWizardNewVMPageBasic1::sltOsTypeChanged()
 {
     /* Call to base-class: */
     onOsTypeChanged();
 }
 
-void UIWizardNewVMPageBasicNameType::sltISOPathChanged(const QString &strPath)
+void UIWizardNewVMPageBasic1::sltISOPathChanged(const QString &strPath)
 {
     determineOSType(strPath);
     setTypeByISODetectedOSType(m_strDetectedOSTypeId);
     emit completeChanged();
 }
 
-void UIWizardNewVMPageBasicNameType::sltUnattendedCheckBoxToggle()
+void UIWizardNewVMPageBasic1::sltUnattendedCheckBoxToggle()
 {
     const bool fEnabled = m_pButtonUnattended->isChecked();
     if (m_pISOSelectorLabel)
@@ -566,7 +566,7 @@ void UIWizardNewVMPageBasicNameType::sltUnattendedCheckBoxToggle()
 }
 
 
-void UIWizardNewVMPageBasicNameType::retranslateUi()
+void UIWizardNewVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Name and operating system"));
@@ -616,7 +616,7 @@ void UIWizardNewVMPageBasicNameType::retranslateUi()
     }
 }
 
-void UIWizardNewVMPageBasicNameType::initializePage()
+void UIWizardNewVMPageBasic1::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -624,7 +624,7 @@ void UIWizardNewVMPageBasicNameType::initializePage()
         m_pNameAndSystemEditor->setFocus();
 }
 
-void UIWizardNewVMPageBasicNameType::cleanupPage()
+void UIWizardNewVMPageBasic1::cleanupPage()
 {
     /* Cleanup: */
     cleanupMachineFolder();
@@ -632,7 +632,7 @@ void UIWizardNewVMPageBasicNameType::cleanupPage()
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardNewVMPageBasicNameType::validatePage()
+bool UIWizardNewVMPageBasic1::validatePage()
 {
     /* Try to create machine folder: */
     return createMachineFolder();
