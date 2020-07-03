@@ -25,11 +25,12 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class UINameAndSystemEditor;
 class QCheckBox;
 class QLabel;
+class QRadioButton;
 class QIRichTextLabel;
 class UIFilePathSelector;
+class UINameAndSystemEditor;
 
 /* 1st page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPageNameType : public UIWizardPageBase
@@ -73,13 +74,23 @@ protected:
     void composeMachineFilePath();
     bool checkISOFile() const;
 
+    /** Holds the simple variant button instance. */
+    QRadioButton *m_pButtonSimple;
+    /** Holds the unattended variant button instance. */
+    QRadioButton *m_pButtonUnattended;
+
+    /** Holds the ISO selector label instance. */
+    QLabel *m_pISOSelectorLabel;
+    /** Holds the ISO selector editor instance. */
+    UIFilePathSelector *m_pISOFilePathSelector;
+
+    /** Holds the headless start label instance. */
+    QLabel *m_pStartHeadlessLabel;
+    /** Holds the headless start checkbox instance. */
+    QCheckBox *m_pStartHeadlessCheckBox;
 
     /** Provides a path selector and a line edit field for path and name entry. */
     UINameAndSystemEditor *m_pNameAndSystemEditor;
-    QCheckBox *m_pUnattendedCheckBox;
-    QCheckBox *m_pStartHeadlessCheckBox;
-    QLabel *m_pISOSelectorLabel;
-    UIFilePathSelector *m_pISOFilePathSelector;
     QString m_strDetectedOSTypeId;
 
 private:
@@ -138,7 +149,7 @@ private slots:
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
     void sltISOPathChanged(const QString &strPath);
-    void sltUnattendedCheckBoxToggle(bool fEnabled);
+    void sltUnattendedCheckBoxToggle();
 
 private:
 
@@ -154,8 +165,8 @@ private:
     virtual bool validatePage() /* override */;
 
     /* Widgets: */
-    QIRichTextLabel *m_pLabel;
-
+    QIRichTextLabel *m_pLabel1;
+    QIRichTextLabel *m_pLabel2;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicNameType_h */
