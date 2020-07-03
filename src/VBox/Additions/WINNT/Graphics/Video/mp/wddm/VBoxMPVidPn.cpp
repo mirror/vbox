@@ -146,7 +146,7 @@ static NTSTATUS vboxVidPnPopulateVideoSignalInfo(D3DKMDT_VIDEO_SIGNAL_INFO *pVsi
         pVsi->VSyncFreq.Numerator = VSync * 1000;
         pVsi->VSyncFreq.Denominator = 1000;
         pVsi->PixelRate = pVsi->TotalSize.cx * pVsi->TotalSize.cy * VSync;
-        pVsi->HSyncFreq.Numerator = (UINT)((pVsi->PixelRate / pVsi->TotalSize.cy) * 1000);
+        pVsi->HSyncFreq.Numerator = (UINT)((VSync * pVsi->TotalSize.cy) * 1000);
         pVsi->HSyncFreq.Denominator = 1000;
     }
     pVsi->ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
