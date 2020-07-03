@@ -18,7 +18,6 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMPageBasicUnattended.h"
 #include "UIWizardNewVMPageBasicNameType.h"
 #include "UIWizardNewVMPageBasicHardware.h"
 #include "UIWizardNewVMPageBasicProductKey.h"
@@ -77,18 +76,13 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
-            // UIWizardNewVMPageBasicUnattended *pUnattendedPage =
-            //     new UIWizardNewVMPageBasicUnattended;
-            // connect(pUnattendedPage, &UIWizardNewVMPageBasicUnattended::sigDetectedOSTypeChanged,
-            //         this, &UIWizardNewVM::sltHandleDetectedOSTypeChange);
-            // setPage(PageUnattended, pUnattendedPage);
             setPage(PageNameType, new UIWizardNewVMPageBasicNameType(m_strGroup));
             setPage(PageUserNameHostname, new UIWizardNewVMPageBasicUserNameHostname);
             setPage(PageGAInstall, new UIWizardNewVMPageBasicGAInstall);
             setPage(PageProductKey, new UIWizardNewVMPageBasicProductKey);
             setPage(PageHardware, new UIWizardNewVMPageBasicHardware);
             setPage(PageDisk, new UIWizardNewVMPageBasicDisk);
-            setStartId(PageUnattended);
+            setStartId(PageNameType);
             break;
         }
         case WizardMode_Expert:

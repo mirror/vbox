@@ -59,7 +59,6 @@ public:
     /* Page IDs: */
     enum
     {
-        PageUnattended,
         PageNameType,
         PageUserNameHostname,
         PageGAInstall,
