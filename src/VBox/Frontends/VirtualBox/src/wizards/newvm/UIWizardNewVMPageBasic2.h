@@ -104,6 +104,8 @@ public:
 protected:
 
     virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** Don't reset the user entered values in case of "back" button press. */
+    virtual void cleanupPage() /* override */;
 
 private slots:
 
@@ -121,9 +123,6 @@ private:
     bool isComplete() const;
     /** Returns true if we show the widgets for guest os product key. */
     bool isProductKeyWidgetVisible() const;
-
-    /** Override the default behavior which resets the fields to proginal values. */
-    void cleanupPage() /* override */;
 
     QIRichTextLabel *m_pLabel;
 };

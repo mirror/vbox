@@ -26,6 +26,7 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UIFilePathSelector.h"
+#include "UIIconPool.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
@@ -176,7 +177,7 @@ void UIWizardNewVMPageBasic2::createUserNameHostNameWidgets()
     pGridLayout->addWidget(m_pHostnameLabel, 3, 0, 1, 1, Qt::AlignRight);
     pGridLayout->addWidget(m_pHostnameLineEdit, 3, 1, 1, 3);
 
-    m_pToolBox->insertItem(Tabs_UserNameHostname, pContainer, QString());
+    m_pToolBox->insertItem(Tabs_UserNameHostname, pContainer, UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
 
 }
 
@@ -208,7 +209,7 @@ void UIWizardNewVMPageBasic2::createGAInstallWidgets()
     pContainerLayout->addWidget(m_pISOPathLabel, 1, 1, 1, 1);
     pContainerLayout->addWidget(m_pISOFilePathSelector, 1, 2, 1, 4);
 
-    m_pToolBox->insertItem(Tabs_GAInstall, pContainer, QString());
+    m_pToolBox->insertItem(Tabs_GAInstall, pContainer, UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
 }
 
 void UIWizardNewVMPageBasic2::createProductKeyWidgets()
@@ -225,15 +226,16 @@ void UIWizardNewVMPageBasic2::createProductKeyWidgets()
     pGridLayout->addWidget(m_pProductKeyLabel, 0, 0, 1, 1, Qt::AlignRight);
     pGridLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 3);
 
-    m_pToolBox->insertItem(Tabs_ProductKey, pContainer, QString());
+    m_pToolBox->insertItem(Tabs_ProductKey, pContainer, UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
 }
 
 void UIWizardNewVMPageBasic2::retranslateUi()
 {
-    setTitle(UIWizardNewVM::tr("User Name/Password and Hostname Settings"));
+    setTitle(UIWizardNewVM::tr("Unattended Guest OS Install Setup"));
     if (m_pLabel)
-        m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can specify the user name/password and hostname. "
-                                            "The values you enter here will be used during the unattended install.</p>"));
+        m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can configure the unattended install by modifying user name, password, and "
+                                            "hostname. You can additionally enable guest additions install and a product key for "
+                                            "Microsoft Windows guests.</p>"));
     if (m_pHostnameLabel)
         m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
     if (m_pToolBox)
@@ -280,6 +282,7 @@ void UIWizardNewVMPageBasic2::showEvent(QShowEvent *pEvent)
     }
     UIWizardPage::showEvent(pEvent);
 }
+
 
 void UIWizardNewVMPageBasic2::sltInstallGACheckBoxToggle(bool fEnabled)
 {
