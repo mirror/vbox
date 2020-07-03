@@ -22,7 +22,7 @@
 #endif
 
 /* Local includes: */
-#include "UIWizardNewVMPageBasicNameType.h"
+#include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasicHardware.h"
 #include "UIWizardNewVMPageBasicDisk.h"
 

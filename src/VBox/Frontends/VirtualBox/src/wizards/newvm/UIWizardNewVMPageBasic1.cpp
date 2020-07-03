@@ -28,7 +28,7 @@
 #include "UIFilePathSelector.h"
 #include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
-#include "UIWizardNewVMPageBasicNameType.h"
+#include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVM.h"
 
 /* COM includes: */

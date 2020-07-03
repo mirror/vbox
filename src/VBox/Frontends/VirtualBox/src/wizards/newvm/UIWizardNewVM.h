@@ -59,7 +59,7 @@ public:
     /* Page IDs: */
     enum
     {
-        PageNameType,
+        Page1,
         PageUserNameHostname,
         PageGAInstall,
         PageProductKey,
