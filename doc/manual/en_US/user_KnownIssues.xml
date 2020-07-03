@@ -89,6 +89,28 @@
 
       <listitem>
         <para>
+          Poor performance when using &product-name; and <emphasis
+          role="bold">Hyper-V</emphasis> on the same host. To fix this, certain
+          Windows features like "Hyper-V Platform", "Virtual Machine Platform" and
+          "Windows Hypervisor Platform" have to be turned off, followed by a host
+          reboot.
+        </para>
+        <para>
+          Additionally, the "Microsoft Device Guard and Credential Guard hardware
+          readiness tool" might has be used in order to turn off more features,
+          e.g. with <screen>.\DG_Readiness_Tool_vX.X.ps1 -Disable -AutoReboot</screen>
+          <note>
+            <para>
+              Disabling Device Guard and Credential Guard features will have an
+              impact on the overall security of the host. Please contact your Administrator
+              beforehand regarding this.
+            </para>
+          </note>
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           The following <emphasis role="bold">Guest SMP (multiprocessor)
           limitations</emphasis> exist:
         </para>
