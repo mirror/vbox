@@ -16,14 +16,16 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
 #include <QDir>
-#include <QLineEdit>
+#include <QLabel>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UICommon.h"
+#include "UIFilePathSelector.h"
 #include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
 #include "UIWizardNewVMPageBasicNameType.h"
@@ -32,7 +34,7 @@
 /* COM includes: */
 #include "CHost.h"
 #include "CSystemProperties.h"
-
+#include "CUnattended.h"
 
 /* Defines some patterns to guess the right OS type. Should be in sync with
  * VirtualBox-settings-common.xsd in Main. The list is sorted by priority. The
@@ -175,8 +177,11 @@ static const osTypePattern gs_OSTypePattern[] =
 
 UIWizardNewVMPageNameType::UIWizardNewVMPageNameType(const QString &strGroup)
     : m_pNameAndSystemEditor(0)
+    , m_pUnattendedCheckBox(0)
+    , m_pStartHeadlessCheckBox(0)
+    , m_pISOSelectorLabel(0)
+    , m_pISOFilePathSelector(0)
     , m_strGroup(strGroup)
-
 {
     CHost host = uiCommon().host();
     m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
@@ -211,6 +216,34 @@ void UIWizardNewVMPageNameType::onOsTypeChanged()
         m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
 }
 
+bool UIWizardNewVMPageNameType::determineOSType(const QString &strISOPath)
+{
+    QFileInfo isoFileInfo(strISOPath);
+    if (!isoFileInfo.exists())
+    {
+        m_strDetectedOSTypeId.clear();
+        // m_strDetectedOSVersion.clear();
+        // m_strDetectedOSFlavor.clear();
+        // m_strDetectedOSLanguages.clear();
+        // m_strDetectedOSHints.clear();
+        // updateStatusLabel();
+        return false;
+    }
+
+    CUnattended comUnatteded = uiCommon().virtualBox().CreateUnattendedInstaller();
+    comUnatteded.SetIsoPath(strISOPath);
+    comUnatteded.DetectIsoOS();
+
+    m_strDetectedOSTypeId = comUnatteded.GetDetectedOSTypeId();
+    // m_strDetectedOSVersion = comUnatteded.GetDetectedOSVersion();
+    // m_strDetectedOSFlavor = comUnatteded.GetDetectedOSFlavor();
+    // m_strDetectedOSLanguages = comUnatteded.GetDetectedOSLanguages();
+    // m_strDetectedOSHints = comUnatteded.GetDetectedOSHints();
+
+    //updateStatusLabel();
+    return true;
+}
+
 void UIWizardNewVMPageNameType::composeMachineFilePath()
 {
     if (!m_pNameAndSystemEditor)
@@ -229,6 +262,17 @@ void UIWizardNewVMPageNameType::composeMachineFilePath()
     const QFileInfo fileInfo(m_strMachineFilePath);
     m_strMachineFolder = fileInfo.absolutePath();
     m_strMachineBaseName = fileInfo.completeBaseName();
+}
+
+bool UIWizardNewVMPageNameType::checkISOFile() const
+{
+    if (m_pUnattendedCheckBox && m_pUnattendedCheckBox->isChecked())
+    {
+        QString strISOFilePath = m_pISOFilePathSelector ? m_pISOFilePathSelector->path() : QString();
+        if (!QFileInfo(strISOFilePath).exists())
+            return false;
+    }
+    return true;
 }
 
 bool UIWizardNewVMPageNameType::createMachineFolder()
@@ -325,18 +369,87 @@ QString UIWizardNewVMPageNameType::guestOSFamiyId() const
     return m_pNameAndSystemEditor->familyId();
 }
 
+QString UIWizardNewVMPageNameType::ISOFilePath() const
+{
+    if (!m_pISOFilePathSelector)
+        return QString();
+    return m_pISOFilePathSelector->path();
+}
+
+bool UIWizardNewVMPageNameType::isUnattendedEnabled() const
+{
+    if (!m_pUnattendedCheckBox)
+        return false;
+    return m_pUnattendedCheckBox->isChecked();
+}
+
+bool UIWizardNewVMPageNameType::startHeadless() const
+{
+    if (!m_pStartHeadlessCheckBox)
+        return false;
+    return m_pStartHeadlessCheckBox->isChecked();
+}
+
+const QString &UIWizardNewVMPageNameType::detectedOSTypeId() const
+{
+    return m_strDetectedOSTypeId;
+}
+
 UIWizardNewVMPageBasicNameType::UIWizardNewVMPageBasicNameType(const QString &strGroup)
     : UIWizardNewVMPageNameType(strGroup)
 {
-    /* Create widgets: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    prepare();
+}
+
+void UIWizardNewVMPageBasicNameType::prepare()
+{
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    if (!pMainLayout)
+        return;
+
+
+    m_pLabel = new QIRichTextLabel(this);
+    m_pUnattendedCheckBox = new QCheckBox;
+    if (m_pUnattendedCheckBox)
     {
-        m_pLabel = new QIRichTextLabel(this);
-        m_pNameAndSystemEditor = new UINameAndSystemEditor(this, true, true, true);
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pNameAndSystemEditor);
-        pMainLayout->addStretch();
+        m_pUnattendedCheckBox->setLayoutDirection(Qt::RightToLeft);
+        //m_pUnattendedCheckBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+        connect(m_pUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageBasicNameType::sltUnattendedCheckBoxToggle);
     }
+    m_pStartHeadlessCheckBox = new QCheckBox;
+    if (m_pStartHeadlessCheckBox)
+    {
+        m_pStartHeadlessCheckBox->setLayoutDirection(Qt::RightToLeft);
+        m_pStartHeadlessCheckBox->setEnabled(false);
+    }
+
+    m_pISOSelectorLabel = new QLabel;
+    if (m_pISOSelectorLabel)
+    {
+        m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        m_pISOSelectorLabel->setEnabled(false);
+    }
+
+    m_pISOFilePathSelector = new UIFilePathSelector;
+    if (m_pISOFilePathSelector)
+    {
+        m_pISOFilePathSelector->setResetEnabled(false);
+        m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+        m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+        m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+        m_pISOFilePathSelector->setEnabled(false);
+        connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasicNameType::sltISOPathChanged);
+    }
+
+    m_pNameAndSystemEditor = new UINameAndSystemEditor(this, true, true, true);
+
+    pMainLayout->addWidget(m_pLabel, 0, 0, 1, 4);
+    pMainLayout->addWidget(m_pUnattendedCheckBox, 1, 0, 1, 1, Qt::AlignLeft);
+    pMainLayout->addWidget(m_pStartHeadlessCheckBox, 2, 1, 1, 1, Qt::AlignLeft);
+
+    pMainLayout->addWidget(m_pISOSelectorLabel, 3, 1, 1, 1, Qt::AlignLeft);
+    pMainLayout->addWidget(m_pISOFilePathSelector, 3, 2, 1, 3, Qt::AlignLeft);
+    pMainLayout->addWidget(m_pNameAndSystemEditor, 4, 0, 1, 5);
 
     /* Setup connections: */
     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasicNameType::sltNameChanged);
@@ -350,6 +463,10 @@ UIWizardNewVMPageBasicNameType::UIWizardNewVMPageBasicNameType(const QString &st
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
     registerField("guestOSFamiyId", this, "guestOSFamiyId");
+    registerField("ISOFilePath", this, "ISOFilePath");
+    registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
+    registerField("startHeadless", this, "startHeadless");
+    registerField("detectedOSTypeId", this, "detectedOSTypeId");
 }
 
 int UIWizardNewVMPageBasicNameType::nextId() const
@@ -364,6 +481,13 @@ void UIWizardNewVMPageBasicNameType::setTypeByISODetectedOSType(const QString &s
 {
     if (!strDetectedOSType.isEmpty())
         onNameChanged(strDetectedOSType);
+}
+
+bool UIWizardNewVMPageBasicNameType::isComplete() const
+{
+    if (m_pNameAndSystemEditor->name().isEmpty())
+        return false;
+    return checkISOFile();
 }
 
 void UIWizardNewVMPageBasicNameType::sltNameChanged(const QString &strNewName)
@@ -384,16 +508,51 @@ void UIWizardNewVMPageBasicNameType::sltOsTypeChanged()
     onOsTypeChanged();
 }
 
+void UIWizardNewVMPageBasicNameType::sltISOPathChanged(const QString &strPath)
+{
+    determineOSType(strPath);
+    setTypeByISODetectedOSType(m_strDetectedOSTypeId);
+    emit completeChanged();
+}
+
+void UIWizardNewVMPageBasicNameType::sltUnattendedCheckBoxToggle(bool fEnabled)
+{
+    if (m_pISOSelectorLabel)
+        m_pISOSelectorLabel->setEnabled(fEnabled);
+    if (m_pISOFilePathSelector)
+        m_pISOFilePathSelector->setEnabled(fEnabled);
+    if (m_pStartHeadlessCheckBox)
+        m_pStartHeadlessCheckBox->setEnabled(fEnabled);
+    // if (m_pStatusLabel)
+    //     m_pStatusLabel->setEnabled(fEnabled);
+    emit completeChanged();
+}
+
+
 void UIWizardNewVMPageBasicNameType::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Name and operating system"));
 
-    /* Translate widgets: */
-    m_pLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "
-                                        "and select the type of operating system you intend to install on it. "
-                                        "The name you choose will be used throughout VirtualBox "
-                                        "to identify this machine."));
+    if (m_pLabel)
+        m_pLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "
+                                            "and select the type of operating system you intend to install on it. "
+                                            "The name you choose will be used throughout VirtualBox "
+                                            "to identify this machine."));
+
+
+    if (m_pUnattendedCheckBox)
+    {
+        m_pUnattendedCheckBox->setText(UIWizardNewVM::tr("Unattended Install"));
+        m_pUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("When checkedan unattended guest OS will be initialized after this wizard is closed"));
+    }
+    if (m_pISOSelectorLabel)
+        m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Installation medium:"));
+    if (m_pStartHeadlessCheckBox)
+    {
+        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked the unattended install will start the virtual machine headless"));
+    }
 }
 
 void UIWizardNewVMPageBasicNameType::initializePage()

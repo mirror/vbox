@@ -77,11 +77,11 @@ void UIWizardNewVM::prepare()
     {
         case WizardMode_Basic:
         {
-            UIWizardNewVMPageBasicUnattended *pUnattendedPage =
-                new UIWizardNewVMPageBasicUnattended;
-            connect(pUnattendedPage, &UIWizardNewVMPageBasicUnattended::sigDetectedOSTypeChanged,
-                    this, &UIWizardNewVM::sltHandleDetectedOSTypeChange);
-            setPage(PageUnattended, pUnattendedPage);
+            // UIWizardNewVMPageBasicUnattended *pUnattendedPage =
+            //     new UIWizardNewVMPageBasicUnattended;
+            // connect(pUnattendedPage, &UIWizardNewVMPageBasicUnattended::sigDetectedOSTypeChanged,
+            //         this, &UIWizardNewVM::sltHandleDetectedOSTypeChange);
+            // setPage(PageUnattended, pUnattendedPage);
             setPage(PageNameType, new UIWizardNewVMPageBasicNameType(m_strGroup));
             setPage(PageUserNameHostname, new UIWizardNewVMPageBasicUserNameHostname);
             setPage(PageGAInstall, new UIWizardNewVMPageBasicGAInstall);
@@ -530,10 +530,10 @@ const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
     m_unattendedInstallData.m_strHostname = getStringFieldValue("hostname");
     m_unattendedInstallData.m_strPassword = getStringFieldValue("password");
     m_unattendedInstallData.m_strDetectedOSTypeId = getStringFieldValue("detectedOSTypeId");
-    m_unattendedInstallData.m_strDetectedOSVersion = getStringFieldValue("detectedOSVersion");
-    m_unattendedInstallData.m_strDetectedOSFlavor = getStringFieldValue("detectedOSFlavor");
-    m_unattendedInstallData.m_strDetectedOSLanguages = getStringFieldValue("detectedOSLanguages");
-    m_unattendedInstallData.m_strDetectedOSHints = getStringFieldValue("detectedOSHints");
+    // m_unattendedInstallData.m_strDetectedOSVersion = getStringFieldValue("detectedOSVersion");
+    // m_unattendedInstallData.m_strDetectedOSFlavor = getStringFieldValue("detectedOSFlavor");
+    // m_unattendedInstallData.m_strDetectedOSLanguages = getStringFieldValue("detectedOSLanguages");
+    // m_unattendedInstallData.m_strDetectedOSHints = getStringFieldValue("detectedOSHints");
     m_unattendedInstallData.m_strProductKey = getStringFieldValue("productKey");
     m_unattendedInstallData.m_strGuestAdditionsISOPath = getStringFieldValue("guestAdditionsISOPath");
 

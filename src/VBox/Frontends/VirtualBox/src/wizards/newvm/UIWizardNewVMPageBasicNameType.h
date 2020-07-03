@@ -26,7 +26,10 @@
 
 /* Forward declarations: */
 class UINameAndSystemEditor;
+class QCheckBox;
+class QLabel;
 class QIRichTextLabel;
+class UIFilePathSelector;
 
 /* 1st page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPageNameType : public UIWizardPageBase
@@ -46,24 +49,41 @@ protected:
      *  wizard cancel */
     bool cleanupMachineFolder(bool fWizardCancel = false);
 
-    QString machineFilePath() const;
-    void setMachineFilePath(const QString &strMachineFilePath);
+    /** @name Property getters/setters
+      * @{ */
+        QString machineFilePath() const;
+        void setMachineFilePath(const QString &strMachineFilePath);
 
-    QString machineFolder() const;
-    void setMachineFolder(const QString &strMachineFolder);
+        QString machineFolder() const;
+        void setMachineFolder(const QString &strMachineFolder);
 
-    QString machineBaseName() const;
-    void setMachineBaseName(const QString &strMachineBaseName);
+        QString machineBaseName() const;
+        void setMachineBaseName(const QString &strMachineBaseName);
 
-    QString guestOSFamiyId() const;
+        QString guestOSFamiyId() const;
+        QString ISOFilePath() const;
+        bool isUnattendedEnabled() const;
+        bool startHeadless() const;
+        const QString &detectedOSTypeId() const;
+    /** @} */
 
+
+    bool determineOSType(const QString &strISOPath);
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
+    bool checkISOFile() const;
+
 
     /** Provides a path selector and a line edit field for path and name entry. */
     UINameAndSystemEditor *m_pNameAndSystemEditor;
+    QCheckBox *m_pUnattendedCheckBox;
+    QCheckBox *m_pStartHeadlessCheckBox;
+    QLabel *m_pISOSelectorLabel;
+    UIFilePathSelector *m_pISOFilePathSelector;
+    QString m_strDetectedOSTypeId;
 
 private:
+
 
     /** Full path (including the file name) of the machine's configuration file. */
     QString m_strMachineFilePath;
@@ -79,6 +99,8 @@ private:
     QString m_strGroup;
     bool m_fSupportsHWVirtEx;
     bool m_fSupportsLongMode;
+
+
     friend class UIWizardNewVM;
 };
 
@@ -90,6 +112,10 @@ class UIWizardNewVMPageBasicNameType : public UIWizardPage, public UIWizardNewVM
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
     Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
+    Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
+    Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
+    Q_PROPERTY(bool startHeadless READ startHeadless);
+    Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
 
 
 public:
@@ -98,6 +124,7 @@ public:
     UIWizardNewVMPageBasicNameType(const QString &strGroup);
     virtual int nextId() const /* override */;
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
+    virtual bool isComplete() const; /* override */
 
 protected:
 
@@ -110,9 +137,12 @@ private slots:
     void sltNameChanged(const QString &strNewText);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
+    void sltISOPathChanged(const QString &strPath);
+    void sltUnattendedCheckBoxToggle(bool fEnabled);
 
 private:
 
+    void prepare();
     /* Translation stuff: */
     void retranslateUi();
 
@@ -125,6 +155,7 @@ private:
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicNameType_h */

@@ -125,7 +125,7 @@ void UIWizardNewVMPageUnattended::updateStatusLabel()
 {
     if (m_pStatusLabel)
     {
-        m_pStatusLabel->setText(QString("<b>%1:</b> %2<br/><b>%3:</b> %4<br/><b>%5</b>: %6")
+        m_pStatusLabel->setText(QString("%1: %2<br/>%3: %4<br/>%5: %6")
                                 .arg(UIWizardNewVM::tr("Detected OS Type")).arg(m_strDetectedOSTypeId)
                                 .arg(UIWizardNewVM::tr("Detected OS Version")).arg(m_strDetectedOSVersion)
                                 .arg(UIWizardNewVM::tr("Detected OS Flavor")).arg(m_strDetectedOSFlavor));
@@ -142,11 +142,13 @@ UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
         m_pUnattendedCheckBox = new QCheckBox;
         connect(m_pUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMPageBasicUnattended::sltUnattendedCheckBoxToggle);
         m_pISOSelectorLabel = new QLabel;
+        if (m_pISOSelectorLabel)
         {
             m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             m_pISOSelectorLabel->setEnabled(false);
         }
         m_pISOFilePathSelector = new UIFilePathSelector;
+        if (m_pISOFilePathSelector)
         {
             m_pISOFilePathSelector->setResetEnabled(false);
             m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
@@ -156,18 +158,24 @@ UIWizardNewVMPageBasicUnattended::UIWizardNewVMPageBasicUnattended()
             connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasicUnattended::sltPathChanged);
         }
         m_pStartHeadlessCheckBox = new QCheckBox;
-        m_pStartHeadlessCheckBox->setEnabled(false);
-        m_pStatusLabel = new QLabel;
-        m_pStatusLabel->setEnabled(false);
-        pMainLayout->addWidget(m_pLabel);
+        if (m_pStartHeadlessCheckBox)
+        {
+            m_pStartHeadlessCheckBox->setEnabled(false);
+            m_pStatusLabel = new QLabel;
+            m_pStatusLabel->setEnabled(false);
+        }
 
         QGridLayout *pISOSelectorLayout = new QGridLayout;
-        pISOSelectorLayout->addWidget(m_pUnattendedCheckBox, 0, 0, 1, 5);
-        pISOSelectorLayout->addWidget(m_pISOSelectorLabel, 1, 1, 1, 1);
-        pISOSelectorLayout->addWidget(m_pISOFilePathSelector, 1, 2, 1, 4);
-        pISOSelectorLayout->addWidget(m_pStartHeadlessCheckBox, 2, 2, 1, 1);
-        pISOSelectorLayout->addWidget(m_pStatusLabel, 3, 2, 1, 1);
+        if (pISOSelectorLayout)
+        {
+            pISOSelectorLayout->addWidget(m_pUnattendedCheckBox, 0, 0, 1, 5);
+            pISOSelectorLayout->addWidget(m_pISOSelectorLabel, 1, 1, 1, 1);
+            pISOSelectorLayout->addWidget(m_pISOFilePathSelector, 1, 2, 1, 4);
+            pISOSelectorLayout->addWidget(m_pStartHeadlessCheckBox, 2, 2, 1, 1);
+            pISOSelectorLayout->addWidget(m_pStatusLabel, 3, 2, 1, 1);
+        }
 
+        pMainLayout->addWidget(m_pLabel);
         pMainLayout->addLayout(pISOSelectorLayout);
         pMainLayout->addStretch();
     }
@@ -226,7 +234,7 @@ void UIWizardNewVMPageBasicUnattended::retranslateUi()
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked the unattended will start the virtual machine headless"));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked the unattended install will start the virtual machine headless"));
     }
     m_pISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file) "
                                                          "for the unattended guest OS install"));

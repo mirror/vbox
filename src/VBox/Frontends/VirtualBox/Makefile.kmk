@@ -650,7 +650,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.h \
 	src/wizards/newvm/UIWizardNewVM.h \
 	src/wizards/newvm/UIWizardNewVMPageBasicUserNameHostname.h \
-	src/wizards/newvm/UIWizardNewVMPageBasicUnattended.h \
 	src/wizards/newvm/UIWizardNewVMPageBasicNameType.h \
 	src/wizards/newvm/UIWizardNewVMPageBasicGAInstall.h \
 	src/wizards/newvm/UIWizardNewVMPageBasicHardware.h \
@@ -1116,7 +1115,6 @@ VirtualBox_SOURCES = \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.cpp \
 	src/wizards/newvm/UIWizardNewVM.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasicUserNameHostname.cpp \
-	src/wizards/newvm/UIWizardNewVMPageBasicUnattended.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasicNameType.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasicGAInstall.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasicHardware.cpp \
