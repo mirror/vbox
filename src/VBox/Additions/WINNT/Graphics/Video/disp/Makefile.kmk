@@ -195,7 +195,7 @@ DumpD3DCaps9_LIBS     = d3d9.lib
 DumpD3DCaps9_LDFLAGS.win = /SUBSYSTEM:CONSOLE
 
 PROGRAMS += D3DFeatureLevel
-D3DFeatureLevel_TEMPLATE = VBOXR3EXE
+D3DFeatureLevel_TEMPLATE = VBOXR3STATIC
 D3DFeatureLevel_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 D3DFeatureLevel_SOURCES  = \
 	wddm/dbg/D3DFeatureLevel.cpp
