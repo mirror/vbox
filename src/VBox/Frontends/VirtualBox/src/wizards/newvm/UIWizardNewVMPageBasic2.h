@@ -66,9 +66,9 @@ protected:
         ToolBoxItems_ProductKey
     };
 
-    void createUserNameHostNameWidgets();
-    void createGAInstallWidgets();
-    void createProductKeyWidgets();
+    QWidget *createUserNameHostNameWidgets();
+    QWidget *createGAInstallWidgets();
+    QWidget *createProductKeyWidgets();
 
     bool checkGAISOFile() const;
 

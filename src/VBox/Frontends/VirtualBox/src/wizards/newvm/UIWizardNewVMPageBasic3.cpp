@@ -153,7 +153,7 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
     m_virtualDisk.detach();
 }
 
-void UIWizardNewVMPage3::createDiskWidgets()
+QWidget *UIWizardNewVMPage3::createDiskWidgets()
 {
     QWidget *pDiskContainer = new QWidget;
     QGridLayout *pDiskLayout = new QGridLayout(pDiskContainer);
@@ -180,12 +180,10 @@ void UIWizardNewVMPage3::createDiskWidgets()
     pDiskLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
     pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
     pDiskLayout->addWidget(m_pVMMButton, 3, 2);
-
-    if (m_pToolBox)
-        m_pToolBox->insertItem(ToolBoxItems_Disk, pDiskContainer, UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    return pDiskContainer;
 }
 
-void UIWizardNewVMPage3::createHardwareWidgets()
+QWidget *UIWizardNewVMPage3::createHardwareWidgets()
 {
     QWidget *pHardwareContainer = new QWidget;
     QGridLayout *pHardwareLayout = new QGridLayout(pHardwareContainer);
@@ -194,18 +192,13 @@ void UIWizardNewVMPage3::createHardwareWidgets()
     m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);
     pHardwareLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
     pHardwareLayout->addWidget(m_pVirtualCPUEditor, 1, 0, 1, 4);
-
-    if (m_pToolBox)
-        m_pToolBox->insertItem(ToolBoxItems_Hardware, pHardwareContainer,
-                               UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    return pHardwareContainer;
 }
 
 UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
 {
     prepare();
-    /* Register classes: */
     qRegisterMetaType<CMedium>();
-    /* Register fields: */
     registerField("virtualDisk", this, "virtualDisk");
     registerField("virtualDiskId", this, "virtualDiskId");
     registerField("virtualDiskName", this, "virtualDiskName");
@@ -222,8 +215,11 @@ void UIWizardNewVMPageBasic3::prepare()
     m_pLabel = new QIRichTextLabel(this);
     pMainLayout->addWidget(m_pLabel);
     pMainLayout->addWidget(m_pToolBox);
-    createDiskWidgets();
-    createHardwareWidgets();
+
+    m_pToolBox->insertItem(ToolBoxItems_Disk, createDiskWidgets(),
+                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    m_pToolBox->insertItem(ToolBoxItems_Hardware, createHardwareWidgets(),
+                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
 
     pMainLayout->addStretch();
     updateVirtualDiskSource();

@@ -118,10 +118,10 @@ QString UIWizardNewVMPage2::productKey() const
     return m_pProductKeyLineEdit->text();
 }
 
-void UIWizardNewVMPage2::createUserNameHostNameWidgets()
+QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets()
 {
     if (!m_pToolBox)
-        return;
+        return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
 
@@ -131,13 +131,13 @@ void UIWizardNewVMPage2::createUserNameHostNameWidgets()
     m_pHostnameLineEdit = new QLineEdit;
     pGridLayout->addWidget(m_pHostnameLabel, 3, 0, 1, 1, Qt::AlignRight);
     pGridLayout->addWidget(m_pHostnameLineEdit, 3, 1, 1, 3);
-    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, pContainer, UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    return pContainer;
 }
 
-void UIWizardNewVMPage2::createGAInstallWidgets()
+QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
 {
     if (!m_pToolBox)
-        return;
+        return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pContainerLayout = new QGridLayout(pContainer);
 
@@ -159,14 +159,13 @@ void UIWizardNewVMPage2::createGAInstallWidgets()
     pContainerLayout->addWidget(m_pInstallGACheckBox, 0, 0, 1, 5);
     pContainerLayout->addWidget(m_pISOPathLabel, 1, 1, 1, 1);
     pContainerLayout->addWidget(m_pISOFilePathSelector, 1, 2, 1, 4);
-
-    m_pToolBox->insertItem(ToolBoxItems_GAInstall, pContainer, UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    return pContainer;
 }
 
-void UIWizardNewVMPage2::createProductKeyWidgets()
+QWidget *UIWizardNewVMPage2::createProductKeyWidgets()
 {
     if (!m_pToolBox)
-        return;
+        return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
 
@@ -175,7 +174,7 @@ void UIWizardNewVMPage2::createProductKeyWidgets()
     m_pProductKeyLineEdit->setInputMask(">NNNNN-NNNNN-NNNNN-NNNNN-NNNNN;#");
     pGridLayout->addWidget(m_pProductKeyLabel, 0, 0, 1, 1, Qt::AlignRight);
     pGridLayout->addWidget(m_pProductKeyLineEdit, 0, 1, 1, 3);
-    m_pToolBox->insertItem(ToolBoxItems_ProductKey, pContainer, UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    return pContainer;
 }
 
 bool UIWizardNewVMPage2::checkGAISOFile() const
@@ -209,9 +208,12 @@ void UIWizardNewVMPageBasic2::prepare()
         pMainLayout->addStretch();
     }
 
-    createUserNameHostNameWidgets();
-    createGAInstallWidgets();
-    createProductKeyWidgets();
+    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, createUserNameHostNameWidgets(),
+                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    m_pToolBox->insertItem(ToolBoxItems_GAInstall, createGAInstallWidgets(),
+                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    m_pToolBox->insertItem(ToolBoxItems_ProductKey, createProductKeyWidgets(),
+                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
 
     registerField("userName", this, "userName");
     registerField("password", this, "password");
