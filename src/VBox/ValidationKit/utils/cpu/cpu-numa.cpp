@@ -122,7 +122,7 @@ static void doTest(RTTEST hTest)
             for (uint32_t i = 0; i < cIterations; i++)
             {
 #if 1
-                size_t register u = 0;
+                size_t           u = 0;
                 size_t volatile *puCur = (size_t volatile *)pvTest;
                 size_t volatile *puEnd = puCur + cbTestSet / sizeof(size_t);
                 while (puCur != puEnd)
