@@ -507,7 +507,7 @@ int UIWizardNewVMPageBasic1::nextId() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     if (!pWizard || !pWizard->isUnattendedInstallEnabled())
-        return UIWizardNewVM::PageDisk;
+        return UIWizardNewVM::Page3;
     return UIWizardNewVM::Page2;
 }
 

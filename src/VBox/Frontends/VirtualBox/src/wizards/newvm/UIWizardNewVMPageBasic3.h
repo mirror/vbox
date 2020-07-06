@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageBasicDisk class declaration.
+ * VBox Qt GUI - UIWizardNewVMPageBasic3 class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicDisk_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicDisk_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic3_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic3_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -40,8 +40,8 @@ class UIBaseMemoryEditor;
 class UIMediaComboBox;
 class UIVirtualCPUEditor;
 
-/* 3rd page of the New Virtual Machine wizard (base part): */
-class UIWizardNewVMPageDisk : public UIWizardPageBase
+/** 3rd page of the New Virtual Machine wizard (base part). */
+class UIWizardNewVMPage3 : public UIWizardPageBase
 {
 
 protected:
@@ -53,27 +53,27 @@ protected:
     };
 
 
-    /* Constructor: */
-    UIWizardNewVMPageDisk();
+    /** Constructor. */
+    UIWizardNewVMPage3();
 
-    /* Handlers: */
+    /** Handlers. */
     void updateVirtualDiskSource();
     void getWithFileOpenDialog();
     bool getWithNewVirtualDiskWizard();
 
-    /* Stuff for 'virtualDisk' field: */
+    /** Stuff for 'virtualDisk' field. */
     CMedium virtualDisk() const { return m_virtualDisk; }
     void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
 
-    /* Stuff for 'virtualDiskId' field: */
+    /** Stuff for 'virtualDiskId' field. */
     QUuid virtualDiskId() const { return m_uVirtualDiskId; }
     void setVirtualDiskId(const QUuid &uVirtualDiskId) { m_uVirtualDiskId = uVirtualDiskId; }
 
-    /* Stuff for 'virtualDiskName' field: */
+    /** Stuff for 'virtualDiskName' field. */
     QString virtualDiskName() const { return m_strVirtualDiskName; }
     void setVirtualDiskName(const QString &strVirtualDiskName) { m_strVirtualDiskName = strVirtualDiskName; }
 
-    /* Stuff for 'virtualDiskLocation' field: */
+    /** Stuff for 'virtualDiskLocation' field. */
     QString virtualDiskLocation() const { return m_strVirtualDiskLocation; }
     void setVirtualDiskLocation(const QString &strVirtualDiskLocation) { m_strVirtualDiskLocation = strVirtualDiskLocation; }
 
@@ -83,13 +83,13 @@ protected:
     void createDiskWidgets();
     void createHardwareWidgets();
 
-    /* Helpers: */
+    /** Helpers. */
     void ensureNewVirtualDiskDeleted();
 
-    /* Input: */
+    /** Input. */
     bool m_fRecommendedNoDisk;
 
-    /* Variables: */
+    /** Variables. */
     CMedium m_virtualDisk;
     QUuid   m_uVirtualDiskId;
     QString m_strVirtualDiskName;
@@ -109,8 +109,8 @@ protected:
 
 };
 
-/* 3rd page of the New Virtual Machine wizard (basic extension): */
-class UIWizardNewVMPageBasicDisk : public UIWizardPage, public UIWizardNewVMPageDisk
+/** 3rd page of the New Virtual Machine wizard (basic extension). */
+class UIWizardNewVMPageBasic3 : public UIWizardPage, public UIWizardNewVMPage3
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
@@ -122,40 +122,40 @@ class UIWizardNewVMPageBasicDisk : public UIWizardPage, public UIWizardNewVMPage
 
 public:
 
-    /* Constructor: */
-    UIWizardNewVMPageBasicDisk();
+    /** Constructor. */
+    UIWizardNewVMPageBasic3();
 
 protected:
 
-    /* Wrapper to access 'wizard' from base part: */
+    /** Wrapper to access 'wizard' from base part. */
     UIWizard *wizardImp() const { return wizard(); }
-    /* Wrapper to access 'this' from base part: */
+    /** Wrapper to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
-    /* Wrapper to access 'wizard-field' from base part: */
+    /** Wrapper to access 'wizard-field' from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private slots:
 
-    /* Handlers: */
+    /** Handlers. */
     void sltVirtualDiskSourceChanged();
     void sltGetWithFileOpenDialog();
 
 private:
 
 
-    /** Prepare stuff: */
+    /** Prepare stuff. */
     void prepare();
     void createConnections();
     void retranslateUi();
     void initializePage();
     void cleanupPage();
 
-    /** Validation stuff: */
+    /** Validation stuff. */
     bool isComplete() const;
     bool validatePage();
 
-    /* Widgets: */
+    /** Widgets. */
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasicDisk_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic3_h */
