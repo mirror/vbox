@@ -25,7 +25,7 @@
 #include "UIMedium.h"
 
 
-UIMediaComboBox::UIMediaComboBox(QWidget *pParent)
+UIMediaComboBox::UIMediaComboBox(QWidget *pParent /* = 0 */)
     : QComboBox(pParent)
     , m_enmMediaType(UIMediumDeviceType_Invalid)
     , m_uMachineId(QUuid())

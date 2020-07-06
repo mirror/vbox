@@ -23,7 +23,6 @@
 
 /* Local includes: */
 #include "UIWizardNewVMPageBasic1.h"
-#include "UIWizardNewVMPageBasicHardware.h"
 #include "UIWizardNewVMPageBasicDisk.h"
 
 /* Forward declarations: */
@@ -32,7 +31,6 @@ class QGroupBox;
 /* Expert page of the New Virtual Machine wizard: */
 class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage1,
-                                public UIWizardNewVMPageHardware,
                                 public UIWizardNewVMPageDisk
 {
     Q_OBJECT;

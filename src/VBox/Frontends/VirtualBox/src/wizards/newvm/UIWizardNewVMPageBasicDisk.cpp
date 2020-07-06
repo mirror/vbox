@@ -19,22 +19,33 @@
 #include <QGridLayout>
 #include <QMetaType>
 #include <QRadioButton>
+#include <QToolBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
+#include "UIBaseMemoryEditor.h"
 #include "UIIconPool.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
 #include "UIMediumSelector.h"
 #include "UIMessageCenter.h"
+#include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasicDisk.h"
 
 UIWizardNewVMPageDisk::UIWizardNewVMPageDisk()
     : m_fRecommendedNoDisk(false)
+    , m_pToolBox(0)
+    , m_pDiskSkip(0)
+    , m_pDiskCreate(0)
+    , m_pDiskPresent(0)
+    , m_pDiskSelector(0)
+    , m_pVMMButton(0)
+    , m_pBaseMemoryEditor(0)
+    , m_pVirtualCPUEditor(0)
 {
 }
 
@@ -104,6 +115,20 @@ bool UIWizardNewVMPageDisk::getWithNewVirtualDiskWizard()
     return fResult;
 }
 
+int UIWizardNewVMPageDisk::baseMemory() const
+{
+    if (!m_pBaseMemoryEditor)
+        return 0;
+    return m_pBaseMemoryEditor->value();
+}
+
+int UIWizardNewVMPageDisk::VCPUCount() const
+{
+    if (!m_pVirtualCPUEditor)
+        return 1;
+    return m_pVirtualCPUEditor->value();
+}
+
 void UIWizardNewVMPageDisk::ensureNewVirtualDiskDeleted()
 {
     /* Make sure virtual-disk valid: */
@@ -128,44 +153,85 @@ void UIWizardNewVMPageDisk::ensureNewVirtualDiskDeleted()
     m_virtualDisk.detach();
 }
 
+void UIWizardNewVMPageDisk::createDiskWidgets()
+{
+    QWidget *pDiskContainer = new QWidget;
+    QGridLayout *pDiskLayout = new QGridLayout(pDiskContainer);
+
+    m_pDiskSkip = new QRadioButton;
+    m_pDiskCreate = new QRadioButton;
+    m_pDiskPresent = new QRadioButton;
+    QStyleOptionButton options;
+    options.initFrom(m_pDiskPresent);
+    int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
+    pDiskLayout->setColumnMinimumWidth(0, iWidth);
+    m_pDiskSelector = new UIMediaComboBox;
+    {
+        m_pDiskSelector->setType(UIMediumDeviceType_HardDisk);
+        m_pDiskSelector->repopulate();
+    }
+    m_pVMMButton = new QIToolButton;
+    {
+        m_pVMMButton->setAutoRaise(true);
+        m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
+    }
+    pDiskLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
+    pDiskLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
+    pDiskLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
+    pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
+    pDiskLayout->addWidget(m_pVMMButton, 3, 2);
+
+    if (m_pToolBox)
+        m_pToolBox->insertItem(ToolBoxItems_Disk, pDiskContainer, UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+}
+
+void UIWizardNewVMPageDisk::createHardwareWidgets()
+{
+    QWidget *pHardwareContainer = new QWidget;
+    QGridLayout *pHardwareLayout = new QGridLayout(pHardwareContainer);
+
+    m_pBaseMemoryEditor = new UIBaseMemoryEditor(0, true);
+    m_pVirtualCPUEditor = new UIVirtualCPUEditor(0, true);
+    pHardwareLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
+    pHardwareLayout->addWidget(m_pVirtualCPUEditor, 1, 0, 1, 4);
+
+    if (m_pToolBox)
+        m_pToolBox->insertItem(ToolBoxItems_Hardware, pHardwareContainer,
+                               UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+}
+
 UIWizardNewVMPageBasicDisk::UIWizardNewVMPageBasicDisk()
 {
-    /* Create widgets: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    {
-        m_pLabel = new QIRichTextLabel(this);
-        QGridLayout *pDiskLayout = new QGridLayout;
-        {
-            m_pDiskSkip = new QRadioButton(this);
-            m_pDiskCreate = new QRadioButton(this);
-            m_pDiskPresent = new QRadioButton(this);
-            QStyleOptionButton options;
-            options.initFrom(m_pDiskPresent);
-            int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
-            pDiskLayout->setColumnMinimumWidth(0, iWidth);
-            m_pDiskSelector = new UIMediaComboBox(this);
-            {
-                m_pDiskSelector->setType(UIMediumDeviceType_HardDisk);
-                m_pDiskSelector->repopulate();
-            }
-            m_pVMMButton = new QIToolButton(this);
-            {
-                m_pVMMButton->setAutoRaise(true);
-                m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
-            }
-            pDiskLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
-            pDiskLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
-            pDiskLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
-            pDiskLayout->addWidget(m_pDiskSelector, 3, 1);
-            pDiskLayout->addWidget(m_pVMMButton, 3, 2);
-        }
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addLayout(pDiskLayout);
-        pMainLayout->addStretch();
-        updateVirtualDiskSource();
-    }
+    prepare();
+    /* Register classes: */
+    qRegisterMetaType<CMedium>();
+    /* Register fields: */
+    registerField("virtualDisk", this, "virtualDisk");
+    registerField("virtualDiskId", this, "virtualDiskId");
+    registerField("virtualDiskName", this, "virtualDiskName");
+    registerField("virtualDiskLocation", this, "virtualDiskLocation");
+    registerField("baseMemory", this, "baseMemory");
+    registerField("VCPUCount", this, "VCPUCount");
+}
 
-    /* Setup connections: */
+void UIWizardNewVMPageBasicDisk::prepare()
+{
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    m_pToolBox = new QToolBox;
+
+    m_pLabel = new QIRichTextLabel(this);
+    pMainLayout->addWidget(m_pLabel);
+    pMainLayout->addWidget(m_pToolBox);
+    createDiskWidgets();
+    createHardwareWidgets();
+
+    pMainLayout->addStretch();
+    updateVirtualDiskSource();
+    createConnections();
+}
+
+void UIWizardNewVMPageBasicDisk::createConnections()
+{
     connect(m_pDiskSkip, &QRadioButton::toggled,
             this, &UIWizardNewVMPageBasicDisk::sltVirtualDiskSourceChanged);
     connect(m_pDiskCreate, &QRadioButton::toggled,
@@ -176,14 +242,6 @@ UIWizardNewVMPageBasicDisk::UIWizardNewVMPageBasicDisk()
             this, &UIWizardNewVMPageBasicDisk::sltVirtualDiskSourceChanged);
     connect(m_pVMMButton, &QIToolButton::clicked,
             this, &UIWizardNewVMPageBasicDisk::sltGetWithFileOpenDialog);
-
-    /* Register classes: */
-    qRegisterMetaType<CMedium>();
-    /* Register fields: */
-    registerField("virtualDisk", this, "virtualDisk");
-    registerField("virtualDiskId", this, "virtualDiskId");
-    registerField("virtualDiskName", this, "virtualDiskName");
-    registerField("virtualDiskLocation", this, "virtualDiskLocation");
 }
 
 void UIWizardNewVMPageBasicDisk::sltVirtualDiskSourceChanged()
@@ -214,12 +272,20 @@ void UIWizardNewVMPageBasicDisk::retranslateUi()
                                         "or from another location using the folder icon.</p>"
                                         "<p>If you need a more complex storage set-up you can skip this step "
                                         "and make the changes to the machine settings once the machine is created.</p>"
-                                        "<p>The recommended size of the hard disk is <b>%1</b>.</p>")
+                                        "<p>The recommended size of the hard disk is <b>%1</b>.</p>"
+                                        "<p>You can modify the virtual machine's hardware.</p>")
                                         .arg(strRecommendedHDD));
+
     m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
     m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
     m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
     m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+
+    if (m_pToolBox)
+    {
+        m_pToolBox->setItemText(ToolBoxItems_Disk, UIWizardNewVM::tr("Hard Disk"));
+        m_pToolBox->setItemText(ToolBoxItems_Hardware, UIWizardNewVM::tr("Hardware"));
+    }
 }
 
 void UIWizardNewVMPageBasicDisk::initializePage()

@@ -40,7 +40,7 @@ public:
     typedef QMap<QString, QString> BaseToDiffMap;
 
     /** Constructs media combo-box passing @a pParent to the base-class. */
-    UIMediaComboBox(QWidget *pParent);
+    UIMediaComboBox(QWidget *pParent = 0);
 
     /** Performs refresh. */
     void refresh();

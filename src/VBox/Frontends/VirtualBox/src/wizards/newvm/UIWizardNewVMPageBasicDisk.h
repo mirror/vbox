@@ -33,14 +33,25 @@
 
 /* Forward declarations: */
 class QRadioButton;
+class QToolBox;
 class QIRichTextLabel;
 class QIToolButton;
+class UIBaseMemoryEditor;
 class UIMediaComboBox;
+class UIVirtualCPUEditor;
 
 /* 3rd page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPageDisk : public UIWizardPageBase
 {
+
 protected:
+
+    enum
+    {
+        ToolBoxItems_Disk,
+        ToolBoxItems_Hardware
+    };
+
 
     /* Constructor: */
     UIWizardNewVMPageDisk();
@@ -66,6 +77,12 @@ protected:
     QString virtualDiskLocation() const { return m_strVirtualDiskLocation; }
     void setVirtualDiskLocation(const QString &strVirtualDiskLocation) { m_strVirtualDiskLocation = strVirtualDiskLocation; }
 
+    int baseMemory() const;
+    int VCPUCount() const;
+
+    void createDiskWidgets();
+    void createHardwareWidgets();
+
     /* Helpers: */
     void ensureNewVirtualDiskDeleted();
 
@@ -78,12 +95,18 @@ protected:
     QString m_strVirtualDiskName;
     QString m_strVirtualDiskLocation;
 
-    /* Widgets: */
-    QRadioButton *m_pDiskSkip;
-    QRadioButton *m_pDiskCreate;
-    QRadioButton *m_pDiskPresent;
-    UIMediaComboBox *m_pDiskSelector;
-    QIToolButton *m_pVMMButton;
+    /** @name Widgets
+     * @{ */
+       QToolBox     *m_pToolBox;
+       QRadioButton *m_pDiskSkip;
+       QRadioButton *m_pDiskCreate;
+       QRadioButton *m_pDiskPresent;
+       UIMediaComboBox *m_pDiskSelector;
+       QIToolButton *m_pVMMButton;
+       UIBaseMemoryEditor *m_pBaseMemoryEditor;
+       UIVirtualCPUEditor *m_pVirtualCPUEditor;
+    /** @} */
+
 };
 
 /* 3rd page of the New Virtual Machine wizard (basic extension): */
@@ -94,6 +117,8 @@ class UIWizardNewVMPageBasicDisk : public UIWizardPage, public UIWizardNewVMPage
     Q_PROPERTY(QUuid virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
     Q_PROPERTY(QString virtualDiskName READ virtualDiskName WRITE setVirtualDiskName);
     Q_PROPERTY(QString virtualDiskLocation READ virtualDiskLocation WRITE setVirtualDiskLocation);
+    Q_PROPERTY(int baseMemory READ baseMemory);
+    Q_PROPERTY(int VCPUCount READ VCPUCount);
 
 public:
 
@@ -117,14 +142,15 @@ private slots:
 
 private:
 
-    /* Translate stuff: */
-    void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Prepare stuff: */
+    void prepare();
+    void createConnections();
+    void retranslateUi();
     void initializePage();
     void cleanupPage();
 
-    /* Validation stuff: */
+    /** Validation stuff: */
     bool isComplete() const;
     bool validatePage();
 
