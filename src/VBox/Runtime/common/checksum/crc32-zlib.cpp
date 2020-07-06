@@ -51,7 +51,7 @@ static uint32_t rtCrc32ProcessTooBig(uint32_t uCRC32, const void *pv, size_t cb)
     return uCRC32;
 }
 
-RTDECL(uint32_t) RTCrc32(const void *pv, register size_t cb)
+RTDECL(uint32_t) RTCrc32(const void *pv, size_t cb)
 {
     uint32_t uCrc = crc32(0, NULL, 0);
     if (RT_UNLIKELY((uInt)cb == cb))
