@@ -569,17 +569,17 @@ void UIWizardNewVMPageBasic1::sltUnattendedCheckBoxToggle()
 void UIWizardNewVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVM::tr("Name and operating system"));
+    setTitle(UIWizardNewVM::tr("Virtual machine name and operating system"));
 
     if (m_pLabel1)
-        m_pLabel1->setText(UIWizardNewVM::tr("Please choose whether you want to leave newly created VM empty or use operating "
-                                             "system image medium for unattended installation. You can additionally specify "
-                                             "whether newly created machine should be started in headless mode if you are sure "
-                                             "your interference will not be necessary."));
+        m_pLabel1->setText(UIWizardNewVM::tr("Please choose whether you want to start an unattended guest os install "
+                                             "in which case you will have to select a valid installation medium. If not "
+                                             "your virtual disk will have an empty virtual hard disk. "
+                                             "Additionally you can choose to start the unattended install as a headless vm process."));
 
     if (m_pButtonSimple)
     {
-        m_pButtonSimple->setText(UIWizardNewVM::tr("Leave Empty"));
+        m_pButtonSimple->setText(UIWizardNewVM::tr("Leave Disk Empty"));
         m_pButtonSimple->setToolTip(UIWizardNewVM::tr("When checked, no guest OS will be installed after this wizard is closed"));
     }
     if (m_pButtonUnattended)

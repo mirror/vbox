@@ -269,11 +269,12 @@ void UIWizardNewVMPageBasic3::retranslateUi()
                                 UICommon::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
     m_pLabel->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard disk to the new machine. "
                                         "You can either create a new hard disk file or select one from the list "
-                                        "or from another location using the folder icon.</p>"
-                                        "<p>If you need a more complex storage set-up you can skip this step "
-                                        "and make the changes to the machine settings once the machine is created.</p>"
-                                        "<p>The recommended size of the hard disk is <b>%1</b>.</p>"
-                                        "<p>You can modify the virtual machine's hardware.</p>")
+                                        "or from another location using the folder icon. "
+                                        "If you need a more complex storage set-up you can skip this step "
+                                        "and make the changes to the machine settings once the machine is created. "
+                                        "The recommended size of the hard disk is <b>%1</b>."
+                                        "<p>You can also modify the virtual machine's hardware by modifying the amount of memory "
+                                        "and virtual processors.</p>")
                                         .arg(strRecommendedHDD));
 
     m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));

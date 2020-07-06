@@ -241,8 +241,8 @@ void UIWizardNewVMPageBasic2::retranslateUi()
     setTitle(UIWizardNewVM::tr("Unattended Guest OS Install Setup"));
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can configure the unattended install by modifying username, password, and "
-                                            "hostname. You can additionally enable guest additions install and a product key for "
-                                            "Microsoft Windows guests.</p>"));
+                                            "hostname. You can additionally enable guest additions install. "
+                                            "For Microsoft Windows guests it is possible to provide a product key..</p>"));
     if (m_pHostnameLabel)
         m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
     if (m_pToolBox)
