@@ -49,7 +49,7 @@ void *memcpy(void *pvDst, const void *pvSrc, size_t cb)
 void *memcpy(void *pvDst, const void *pvSrc, size_t cb)
 #endif
 {
-    register union
+    union
     {
         uint8_t  *pu8;
         uint32_t *pu32;
@@ -57,7 +57,7 @@ void *memcpy(void *pvDst, const void *pvSrc, size_t cb)
     } uTrg;
     uTrg.pv = pvDst;
 
-    register union
+    union
     {
         uint8_t const  *pu8;
         uint32_t const *pu32;
@@ -66,7 +66,7 @@ void *memcpy(void *pvDst, const void *pvSrc, size_t cb)
     uSrc.pv = pvSrc;
 
     /* 32-bit word moves. */
-    register size_t c = cb >> 2;
+    size_t c = cb >> 2;
     while (c-- > 0)
         *uTrg.pu32++ = *uSrc.pu32++;
 

@@ -38,9 +38,9 @@
  * @param   pszDst      Will contain a copy of pszSrc.
  * @param   pszSrc      Zero terminated string.
  */
-char* strcpy(char *pszDst, register const char *pszSrc)
+char* strcpy(char *pszDst, const char *pszSrc)
 {
-    register char *psz = pszDst;
+    char *psz = pszDst;
     while ((*psz++ = *pszSrc++))
         ;
 

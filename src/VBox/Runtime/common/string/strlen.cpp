@@ -47,7 +47,7 @@ size_t strlen(const char *pszString)
 size_t strlen(const char *pszString)
 #endif
 {
-    register const char *psz = pszString;
+    const char *psz = pszString;
     while (*psz)
         psz++;
     return psz - pszString;
