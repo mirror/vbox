@@ -1787,9 +1787,9 @@ void tstASMBench(void)
     static int32_t  volatile s_i32;
     static uint64_t volatile s_u64;
     static int64_t  volatile s_i64;
-    register unsigned i;
+    unsigned i;
     const unsigned cRounds = _2M;       /* Must be multiple of 8 */
-    register uint64_t u64Elapsed;
+    uint64_t u64Elapsed;
 
     RTTestSub(g_hTest, "Benchmarking");
 
