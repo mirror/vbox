@@ -131,7 +131,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 8);
 # endif
 
-    uint32_t register fEffective = X86_PTE_RW | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | 1;
+    uint32_t fEffective = X86_PTE_RW | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | 1;
     {
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
         /*
@@ -141,9 +141,9 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 4, rc);
 
-        PX86PML4E register  pPml4e;
+        PX86PML4E pPml4e;
         pWalk->pPml4e  = pPml4e  = &pWalk->pPml4->a[(GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK];
-        X86PML4E  register  Pml4e;
+        X86PML4E  Pml4e;
         pWalk->Pml4e.u = Pml4e.u = pPml4e->u;
 
         if (Pml4e.n.u1Present) { /* probable */ }
@@ -170,9 +170,9 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
     }
     {
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-        PX86PDPE register   pPdpe;
+        PX86PDPE pPdpe;
         pWalk->pPdpe  = pPdpe  = &pWalk->pPdpt->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
-        X86PDPE  register   Pdpe;
+        X86PDPE  Pdpe;
         pWalk->Pdpe.u = Pdpe.u = pPdpe->u;
 
         if (Pdpe.n.u1Present) { /* probable */ }
@@ -203,9 +203,9 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
 # endif
     }
     {
-        PGSTPDE register    pPde;
+        PGSTPDE pPde;
         pWalk->pPde  = pPde  = &pWalk->pPd->a[(GCPtr >> GST_PD_SHIFT) & GST_PD_MASK];
-        GSTPDE              Pde;
+        GSTPDE  Pde;
         pWalk->Pde.u = Pde.u = pPde->u;
         if (Pde.n.u1Present) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 2);
@@ -260,9 +260,9 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 1, rc);
     }
     {
-        PGSTPTE register    pPte;
+        PGSTPTE pPte;
         pWalk->pPte  = pPte  = &pWalk->pPt->a[(GCPtr >> GST_PT_SHIFT) & GST_PT_MASK];
-        GSTPTE  register    Pte;
+        GSTPTE  Pte;
         pWalk->Pte.u = Pte.u = pPte->u;
 
         if (Pte.n.u1Present) { /* probable */ }
