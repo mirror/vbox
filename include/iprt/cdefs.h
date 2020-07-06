@@ -230,7 +230,7 @@
  * @param   a_MinMajor      Minimum major version
  * @param   a_MinMinor      The minor version number part.
  */
-#define RT_CLANG_PREREQ(a_MinMajor, a_MinMinor)      RT_CLANG_PREREQ_EX(a_MinMajor, a_MinMinor, 0)
+#define RT_CLANG_PREREQ(a_MinMajor, a_MinMinor)     RT_CLANG_PREREQ_EX(a_MinMajor, a_MinMinor, 0)
 /** @def RT_CLANG_PREREQ_EX
  * Simplified way of checking __clang_major__ and __clang_minor__ regardless of
  * actual compiler used, returns @a a_OtherRet for other compilers.
@@ -244,6 +244,16 @@
     ((__clang_major__ << 16) + __clang_minor__ >= ((a_MinMajor) << 16) + (a_MinMinor))
 #else
 # define RT_CLANG_PREREQ_EX(a_MinMajor, a_MinMinor, a_OtherRet) (a_OtherRet)
+#endif
+/** @def RT_CLANG_HAS_FEATURE
+ * Wrapper around clang's __has_feature().
+ *
+ * @param   a_Feature       The feature to check for.
+ */
+#if defined(__clang_major__) && defined(__clang_minor__) && defined(__has_feature)
+# define RT_CLANG_HAS_FEATURE(a_Feature)            (__has_feature(a_Feature))
+#else
+# define RT_CLANG_HAS_FEATURE(a_Feature)            (0)
 #endif
 
 
@@ -1062,10 +1072,10 @@
 #endif
 
 /** @def RT_NO_THROW_PROTO
- * How to express that a function doesn't throw C++ exceptions
- * and the compiler can thus save itself the bother of trying
- * to catch any of them. Put this between the closing parenthesis
- * and the semicolon in function prototypes (and implementation if C++).
+ * How to express that a function doesn't throw C++ exceptions and the compiler
+ * can thus save itself the bother of trying to catch any of them and generate
+ * unwind info.  Put this between the closing parenthesis and the semicolon in
+ * function prototypes (and implementation if C++).
  *
  * @remarks May not work on C++ methods, mainly intented for C-style APIs.
  *
@@ -1074,27 +1084,29 @@
  *          when used with RTDECL or similar.  Using this forces use to have two
  *          macros, as the nothrow attribute is not for the function definition.
  */
+/** @def RT_NO_THROW_DEF
+ * The counter part to RT_NO_THROW_PROTO that is added to the function
+ * definition.
+ */
 #ifdef RT_EXCEPTIONS_ENABLED
-# ifdef __GNUC__
+# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2015, 0) \
+  || RT_CLANG_HAS_FEATURE(cxx_noexcept) \
+  || (RT_GNUC_PREREQ(7, 0) && __cplusplus >= 201100)
+#  define RT_NO_THROW_PROTO     noexcept
+#  define RT_NO_THROW_DEF       noexcept
+# elif defined(__GNUC__)
 #  if RT_GNUC_PREREQ(3, 3)
 #   define RT_NO_THROW_PROTO    __attribute__((__nothrow__))
 #  else
 #   define RT_NO_THROW_PROTO
 #  endif
+#  define RT_NO_THROW_DEF       /* Would need a DECL_NO_THROW like __declspec(nothrow), which we wont do at this point. */
 # else
 #  define RT_NO_THROW_PROTO     throw()
+#  define RT_NO_THROW_DEF       throw()
 # endif
 #else
 # define RT_NO_THROW_PROTO
-#endif
-
-/** @def RT_NO_THROW_DEF
- * The counter part to RT_NO_THROW_PROTO that is added to the function
- * definition.
- */
-#if defined(RT_EXCEPTIONS_ENABLED) && !defined(__GNUC__)
-# define RT_NO_THROW_DEF        RT_NO_THROW_PROTO
-#else
 # define RT_NO_THROW_DEF
 #endif
 
