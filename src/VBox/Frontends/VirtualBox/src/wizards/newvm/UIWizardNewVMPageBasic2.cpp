@@ -124,6 +124,7 @@ QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets()
         return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
+    pGridLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pUserNamePasswordEditor = new UIUserNamePasswordEditor;
     pGridLayout->addWidget(m_pUserNamePasswordEditor, 0, 0, 3, 4);
@@ -140,6 +141,7 @@ QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
         return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pContainerLayout = new QGridLayout(pContainer);
+    pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pInstallGACheckBox = new QCheckBox;
     m_pISOPathLabel = new QLabel;
@@ -168,6 +170,7 @@ QWidget *UIWizardNewVMPage2::createProductKeyWidgets()
         return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
+    pGridLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pProductKeyLabel = new QLabel;
     m_pProductKeyLineEdit = new QLineEdit;
