@@ -421,7 +421,7 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 #  endif /* >= 2.6.26 */
 # endif  /* 4.11.0 > version >= 2.6.24 */
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
     if (!rc)
         sb->s_bdi = bdi;
 # endif
