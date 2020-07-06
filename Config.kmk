@@ -309,8 +309,11 @@ VBOX_SUPPORTED_HOST_ARCHS := amd64
 
 # Select new Xcode based on host OS X version.
 ifeq ($(KBUILD_HOST),darwin)
+# if !defined(VBOX_WITH_EVEN_NEWER_XCODE) && !defined(VBOX_WITHOUT_EVEN_NEWER_XCODE) && !defined(VBOX_WITH_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 16 # (OS X 10.12 Sierra)
+#VBOX_WITH_EVEN_NEWER_XCODE := 1
+# else
  if !defined(VBOX_WITH_NEW_XCODE) && !defined(VBOX_WITHOUT_NEW_XCODE) && $(KBUILD_HOST_VERSION_MAJOR) >= 13 # (OS X 10.9 Mavericks)
-  VBOX_WITH_NEW_XCODE = 1
+VBOX_WITH_NEW_XCODE := 1
  endif
 endif
 # Select new VC++ on Windows.
@@ -1603,7 +1606,9 @@ ifndef VBOX_GCC_TOOL
  else ifeq ($(KBUILD_TARGET),os2)
   VBOX_GCC_TOOL := GXX3OMF
  else ifeq ($(KBUILD_TARGET),darwin)
-  ifdef VBOX_WITH_NEW_XCODE
+  ifdef VBOX_WITH_EVEN_NEWER_XCODE
+   VBOX_GCC_TOOL := CLANGXXMACHO
+  else ifdef VBOX_WITH_NEW_XCODE
    VBOX_GCC_TOOL := VBoxXcode62
   else
    VBOX_GCC_TOOL := GXX4MACHO
@@ -2297,11 +2302,14 @@ ifeq ($(KBUILD_TARGET),darwin)
  # The minimum macOS version we're targetting.
  ifndef VBOX_DEF_MACOSX_VERSION_MIN
   if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO) # For GAs.
-   VBOX_DEF_MACOSX_VERSION_MIN := 10.6
+   VBOX_DEF_MACOSX_VERSION_MIN := 10.6#  Snow Leopard
+  else if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
+   VBOX_DEF_MACOSX_VERSION_MIN := 10.9#  Mavericks
   else
-   VBOX_DEF_MACOSX_VERSION_MIN := 10.9
+   VBOX_DEF_MACOSX_VERSION_MIN := 10.13# High Sierra
   endif
  endif
+ VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT := $(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))
 
  if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO) # For GAs.
   # Check for the Xcode 4.1 bits in tools/darwin.x86.
@@ -2343,7 +2351,12 @@ ifeq ($(KBUILD_TARGET),darwin)
    		) /. )
   endif
  else
-  ## @todo
+  include $(KBUILD_PATH)/tools/$(VBOX_GCC_TOOL).kmk
+  include $(KBUILD_PATH)/sdks/MACOSX$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT).kmk
+  ifndef VBOX_PATH_MACOSX_SDK
+   VBOX_PATH_MACOSX_SDK := $(PATH_SDK_MACOSX$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT))
+  endif
+  VBOX_PATH_MACOSX_SDK_ROOT = $(dir $(VBOX_PATH_MACOSX_SDK))
  endif
 
 # Where to search for SDKs.
@@ -2364,12 +2377,12 @@ VBOX_PATH_MACOSX_SDK_ROOT_DIRS ?= \
     export VBOX_DARWIN_CLASSIC_LINKER :=
    endif
   endif
-  ifndef VBOX_PATH_MACOSX_SDK
+ endif
+ if !defined(VBOX_PATH_MACOSX_SDK) && !defined(VBOX_WITH_EVEN_NEWER_XCODE) # newer xcode handles this above
+  ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
 VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk, $(VBOX_PATH_MACOSX_SDK_ROOT_DIRS))) \
 	$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk )
-  endif
- else
-  ifndef VBOX_PATH_MACOSX_SDK
+  else
 VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk, $(VBOX_PATH_MACOSX_SDK_ROOT_DIRS))) \
 	$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk )
   endif
@@ -2396,7 +2409,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
     else if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
      VBOX_XCODE_VERSION := 6.2
     else
-     ## @todo
+     VBOX_XCODE_VERSION := 9.4# whatever
     endif
    endif
   endif
@@ -2406,7 +2419,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    endif
   endif
  else
-  VBOX_XCODE_VERSION ?= 4.1
+  VBOX_XCODE_VERSION ?= 4.1## @todo Anything special for GA, extpack and valkit tools fetching?
  endif
  VBOX_XCODE_VERSION_MAJOR := $(word 1, $(subst ., ,$(VBOX_XCODE_VERSION)))
  VBOX_XCODE_VERSION_MINOR := $(word 2, $(subst ., ,$(VBOX_XCODE_VERSION)))
@@ -2461,25 +2474,33 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
    TOOL_GXX4MACHO_OBJCXX = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden -fvisibility-inlines-hidden
   endif
- else
+ else if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
   if $(KBUILD_HOST_VERSION_MAJOR) >= 18 # HACK ALERT! dtrace doesn't work on Mojave if we specify our Xcode 6.2 environment.
    override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
   else
    override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
   endif
   export PATH:=$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(PATH)
+ else
+  override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(TOOL_$(VBOX_GCC_TOOL)_CC)"
  endif
 
- VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=$(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))0 \
-                                    MAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))0
- VBOX_DARWIN_DEF_SDK_CFLAGS      := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
- VBOX_DARWIN_DEF_SDK_CXXFLAGS    := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
- VBOX_DARWIN_DEF_SDK_OBJCFLAGS   := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
- VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
- VBOX_DARWIN_DEF_SDK_LDFLAGS      = -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK) \
-	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_CLASSIC_LINKER) $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
+ ifdef VBOX_WITH_EVEN_NEWER_XCODE
+  VBOX_DARWIN_DEF_SDK_SDKS        := MACOSX$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)
+  VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MAX_ALLOWED=$(SDK_MACOSX$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)_VERSION_VALUE)
+  VBOX_DARWIN_DEF_SDK_LDFLAGS      = $(VBOX_DARWIN_CLASSIC_LINKER) $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
+ else
+  VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)0 \
+                                     MAC_OS_X_VERSION_MAX_ALLOWED=$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT)0
+  VBOX_DARWIN_DEF_SDK_CFLAGS      := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
+  VBOX_DARWIN_DEF_SDK_CXXFLAGS    := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
+  VBOX_DARWIN_DEF_SDK_OBJCFLAGS   := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
+  VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
+  VBOX_DARWIN_DEF_SDK_LDFLAGS      = -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK) \
+  	$(VBOX_DARWIN_CLASSIC_LINKER) $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
+ endif
 
- # specific versions.
+ # specific versions - only used by xpcom18a4 (python) and 10.7 by UsbWebcam.
  ## @todo s/VBOX_DARWIN_DEF_SDK_10/VBOX_DARWIN_SDK_10/g
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4) # classic linker detection is bust otherwise
@@ -2489,8 +2510,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
   VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS    := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
   VBOX_DARWIN_DEF_SDK_10_4_OBJCFLAGS   := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
   VBOX_DARWIN_DEF_SDK_10_4_OBJCXXFLAGS := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
-  VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS     := -mmacosx-version-min=10.4 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_4) \
-	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_CLASSIC_LINKER)
+  VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS     := -mmacosx-version-min=10.4 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_4) $(VBOX_DARWIN_CLASSIC_LINKER)
  else
   VBOX_PATH_MACOSX_SDK_10_4          = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
   VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.4 SDK)
@@ -2504,8 +2524,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
   VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS    := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
   VBOX_DARWIN_DEF_SDK_10_5_OBJCFLAGS   := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
   VBOX_DARWIN_DEF_SDK_10_5_OBJCXXFLAGS := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
-  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS     := -mmacosx-version-min=10.5 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_5) \
-	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
+  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS     := -mmacosx-version-min=10.5 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_5) $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
  else
   VBOX_PATH_MACOSX_SDK_10_5          = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
   VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.5 SDK)
@@ -2519,8 +2538,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
   VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS    := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
   VBOX_DARWIN_DEF_SDK_10_6_OBJCFLAGS   := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
   VBOX_DARWIN_DEF_SDK_10_6_OBJCXXFLAGS := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
-  VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS     := -mmacosx-version-min=10.6 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_6) \
-         -Wl,-headerpad_max_install_names
+  VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS     := -mmacosx-version-min=10.6 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_6)
  else
   VBOX_PATH_MACOSX_SDK_10_6          = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
   VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.6 SDK)
@@ -2540,8 +2558,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
   VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS    := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
   VBOX_DARWIN_DEF_SDK_10_7_OBJCFLAGS   := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
   VBOX_DARWIN_DEF_SDK_10_7_OBJCXXFLAGS := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
-  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS     := -mmacosx-version-min=10.7 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_7) \
-         -Wl,-headerpad_max_install_names
+  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS     := -mmacosx-version-min=10.7 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_7)
  else
   VBOX_PATH_MACOSX_SDK_10_7          = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
   VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS  = $(error VBox: $(if $(target),$(target): ,)Using 10.7 SDK)
@@ -2713,7 +2730,7 @@ else
     $(SED_EXT) 's|\([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(expr 10000 * \1 + 100 * $$(firstword \2 0) + $$(firstword \3 0))|' )
  ifeq ($(KBUILD_TARGET), darwin)
   VBOX_CLANG_VERSION = $(shell $(1) --version | \
-    $(SED_EXT) -n 's|.*version \([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(expr 10000 * \1) + 100 * $$(firstword \2 0) + $$(firstword \3 0))|p' )
+    $(SED_EXT) -n 's|.*version \([0-9][0-9]*\)\.\{0,1\}\([0-9]\{0,\}\)\.\{0,1\}\([0-9]\{0,\}\).*|$$(expr 10000 * \1 + 100 * $$(firstword \2 0) + $$(firstword \3 0))|p' )
  endif
 endif
 
@@ -2851,10 +2868,10 @@ ifeq ($(KBUILD_TARGET),darwin)
 	$(QUIET)$(APPEND) '$@' 'VBOX_CLANG_VERSION_CXX         ?= $(call VBOX_CLANG_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 endif
 # HC compiler switch detection.
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CC               ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CC))'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CXX              ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_VERSION_CC            ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CC))'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_VERSION_CXX           ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CC               ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CC))'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_PATH_CXX              ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_LIBGCC                ?= $(shell $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-pointer-sign      ?= $(call VBOX_GCC_CHECK_CC,-Wno-pointer-sign,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-array_bounds      ?= $(call VBOX_GCC_CHECK_CC,-Wno-array-bounds,)'
@@ -4454,6 +4471,7 @@ ifdef VBOX_WITH_RAW_MODE
 
  ifeq ($(VBOX_LDR_FMT32),macho)
  TEMPLATE_VBoxRc_TOOL                = $(VBOX_GCC_TOOL)
+ TEMPLATE_VBoxRc_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
  TEMPLATE_VBoxRc_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
  TEMPLATE_VBoxRc_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -m32 -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static $(VBOX_GCC_fno-stack-protector) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-rtti
  TEMPLATE_VBoxRc_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -m32 -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static $(VBOX_GCC_fno-stack-protector) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
@@ -4613,6 +4631,7 @@ endif
 
 ifeq ($(VBOX_LDR_FMT),macho)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBoxR0_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
 TEMPLATE_VBoxR0_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBoxR0_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) \
 	-fno-common -msoft-float -static -fno-rtti -fno-exceptions $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing \
@@ -4824,6 +4843,7 @@ endif
 
 ifeq ($(KBUILD_TARGET),darwin)
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBOXR0DRV_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
 TEMPLATE_VBOXR0DRV_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT
  if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO)
 TEMPLATE_VBOXR0DRV_INCS               += \
@@ -5336,13 +5356,14 @@ TEMPLATE_VBOXR3EXE_LIBS                = socket iconv
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR3EXE_LIBS                =
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG # Avoid 3rd party libiconv (from macports).
+TEMPLATE_VBOXR3EXE_SDKS.darwin         = $(VBOX_DARWIN_DEF_SDK_SDKS)
 TEMPLATE_VBOXR3EXE_DEFS.darwin         = $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBOXR3EXE_CFLAGS.darwin       = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -fno-common
 TEMPLATE_VBOXR3EXE_CXXFLAGS.darwin     = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
 TEMPLATE_VBOXR3EXE_PCHFLAGS.darwin     = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
 TEMPLATE_VBOXR3EXE_OBJCFLAGS.darwin    = $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
 TEMPLATE_VBOXR3EXE_OBJCXXFLAGS.darwin  = $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS)
-TEMPLATE_VBOXR3EXE_LDFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)
+TEMPLATE_VBOXR3EXE_LDFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -Wl,-headerpad_max_install_names
 TEMPLATE_VBOXR3EXE_LDFLAGS.darwin.x86  = -read_only_relocs suppress
   ifdef VBOX_WITH_DTRACE_R3
    TEMPLATE_VBOXR3EXE_CXXFLAGS := $(filter-out -pedantic,$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -fdollars-in-identifiers # annoying gcc option precedence.
@@ -6153,7 +6174,7 @@ else
    TEMPLATE_VBoxNoCrtGccLib_LDFLAGS       += $(VBOX_GCC_NO_UNDEFINED)
   endif
  endif # x86
- TEMPLATE_VBoxNoCrtGccLib_LDFLAGS.darwin   = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)
+ TEMPLATE_VBoxNoCrtGccLib_LDFLAGS.darwin   = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -Wl,-headerpad_max_install_names
  TEMPLATE_VBoxNoCrtGccLib_LIBS             = # FIXME - has unwind mess.
 endif
 
@@ -6332,13 +6353,14 @@ TEMPLATE_VBOXMAINEXE_TOOL                = GXX3OMF
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
  else ifeq ($(KBUILD_TARGET),darwin)
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBOXMAINEXE_SDKS               += $(VBOX_DARWIN_DEF_SDK_SDKS)
 TEMPLATE_VBOXMAINEXE_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBOXMAINEXE_CFLAGS             += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS           += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
 TEMPLATE_VBOXMAINEXE_OBJCFLAGS          += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
 TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS        += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS)
 TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin     += -bind_at_load
-TEMPLATE_VBOXMAINEXE_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon
+TEMPLATE_VBOXMAINEXE_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon -Wl,-headerpad_max_install_names
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
  else ifeq ($(KBUILD_TARGET),haiku)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
@@ -6948,13 +6970,14 @@ ifdef VBOX_WITH_QTGUI
     TEMPLATE_VBOXQTGUIEXE_INCS    += $(PATH_SDK_QT5_INC)/legacy
    endif
   else ifeq ($(KBUILD_TARGET),darwin)
+   TEMPLATE_VBOXQTGUIEXE_SDKS.darwin        += $(VBOX_DARWIN_DEF_SDK_SDKS)
    TEMPLATE_VBOXQTGUIEXE_DEFS.darwin        += $(VBOX_DARWIN_DEF_SDK_DEFS)
    TEMPLATE_VBOXQTGUIEXE_CFLAGS.darwin      += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.darwin    += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
    TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.darwin    += $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.darwin)
    TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.darwin   += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
    TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.darwin += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS) $(VBOX_GCC_std)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin     += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -bind_at_load
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin     += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -bind_at_load -Wl,-headerpad_max_install_names
    TEMPLATE_VBOXQTGUIEXE_LIBS +=
    TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
   else
@@ -7226,6 +7249,7 @@ TEMPLATE_VBoxBldProg_OBJCFLAGS.darwin    = $(VBOX_DARWIN_DEF_SDK_10_5_OBJCFLAGS)
 TEMPLATE_VBoxBldProg_OBJCXXFLAGS.darwin  = $(VBOX_DARWIN_DEF_SDK_10_5_OBJCXXFLAGS) $(VBOX_GCC_PEDANTIC_CXX)
 TEMPLATE_VBoxBldProg_LDFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS)
   else
+TEMPLATE_VBoxBldProg_SDKS.darwin         = $(VBOX_DARWIN_DEF_SDK_SDKS)
 TEMPLATE_VBoxBldProg_DEFS.darwin         = $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBoxBldProg_CFLAGS.darwin       = $(VBOX_DARWIN_DEF_SDK_CFLAGS) -fno-common
 TEMPLATE_VBoxBldProg_CXXFLAGS.darwin     = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
