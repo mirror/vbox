@@ -132,7 +132,7 @@ public:
      *
      * @param   rcObj       IPRT status code object from an automatic cast.
      */
-    RTErrStrictType(RTErrStrictType2 const rcObj)
+    RTErrStrictType(RTErrStrictType2 const rcObj) RT_NO_THROW_DEF
         : m_rc(rcObj.getValue())
     {
     }
@@ -142,7 +142,7 @@ public:
      *
      * @param   rc          IPRT style status code.
      */
-    RTErrStrictType(int32_t rc)
+    RTErrStrictType(int32_t rc) RT_NO_THROW_DEF
         : m_rc(rc)
     {
     }
@@ -162,7 +162,7 @@ public:
     /**
      * Test for success.
      */
-    bool success() const
+    bool success() const RT_NO_THROW_DEF
     {
         return m_rc >= 0;
     }
@@ -170,13 +170,13 @@ public:
 private:
     /** @name Try ban a number of wrong types.
      * @{ */
-    RTErrStrictType(uint8_t rc)         : m_rc(-999) { NOREF(rc); }
-    RTErrStrictType(uint16_t rc)        : m_rc(-999) { NOREF(rc); }
-    RTErrStrictType(uint32_t rc)        : m_rc(-999) { NOREF(rc); }
-    RTErrStrictType(uint64_t rc)        : m_rc(-999) { NOREF(rc); }
-    RTErrStrictType(int8_t rc)          : m_rc(-999) { NOREF(rc); }
-    RTErrStrictType(int16_t rc)         : m_rc(-999) { NOREF(rc); }
-    RTErrStrictType(int64_t rc)         : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(uint8_t rc)  RT_NO_THROW_DEF : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(uint16_t rc) RT_NO_THROW_DEF : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(uint32_t rc) RT_NO_THROW_DEF : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(uint64_t rc) RT_NO_THROW_DEF : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(int8_t rc)   RT_NO_THROW_DEF : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(int16_t rc)  RT_NO_THROW_DEF : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(int64_t rc)  RT_NO_THROW_DEF : m_rc(-999) { NOREF(rc); }
     /** @todo fight long here - clashes with int32_t/int64_t on some platforms. */
     /** @} */
 };
