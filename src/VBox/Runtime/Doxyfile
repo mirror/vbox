@@ -2069,6 +2069,7 @@ PREDEFINED             = DOXYGEN_RUNNING \
                          RTDECL(type)=type \
                          RT_EXPORT_SYMBOL(name)= \
                          "DECLINLINE(type)=inline type" \
+                         DECL_INLINE_THROW(type)=DECLINLINE(type) \
                          DECL_FORCE_INLINE(type)=DECLINLINE(type) \
                          DECL_NO_INLINE(type)=type \
                          DECL_NO_RETURN(type)=type \
@@ -2087,7 +2088,10 @@ PREDEFINED             = DOXYGEN_RUNNING \
                          "RT_SRC_POS_DECL=int SRC_POS" \
                          RT_IPRT_FORMAT_ATTR(a,b)= \
                          RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
+                         RT_NOTHROW_PROTO= \
+                         RT_NOTHROW_DEF= \
                          RT_NO_THROW_PROTO= \
+                         RT_NO_THROW_DEF= \
                          \
                          RT_MSC_PREREQ(a)=0 \
                          RT_MSC_PREREQ_EX(a,b)=b
@@ -2125,6 +2129,7 @@ EXPAND_AS_DEFINED      = ARCH_BITS \
                          RTRCDECL \
                          RTDECL \
                          RTDATADECL \
+                         RT_DECL_NTAPI \
                          KAVL_FN \
                          CTXSUFF \
                          OTHERCTXSUFF \
