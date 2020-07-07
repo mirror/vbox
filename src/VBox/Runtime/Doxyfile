@@ -2115,8 +2115,11 @@ EXPAND_AS_DEFINED      = ARCH_BITS \
                          R3PTRTYPE \
                          R3R0PTRTYPE \
                          DECLEXPORT \
+                         DECL_EXPORT_NOTHROW \
                          DECLIMPORT \
+                         DECL_IMPORT_NOTHROW \
                          DECLHIDDEN \
+                         DECL_HIDDEN_NOTHROW \
                          DECLASM \
                          DECLASMTYPE \
                          DECLCALLBACKMEMBER \
