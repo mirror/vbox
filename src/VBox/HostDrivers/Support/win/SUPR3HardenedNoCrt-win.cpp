@@ -118,7 +118,7 @@ static struct
 } g_aSupR3HardenedEarlyHeaps[8];
 
 
-static uint32_t supR3HardenedEarlyFind(void *pv)
+static uint32_t supR3HardenedEarlyFind(void *pv) RT_NOTHROW_DEF
 {
     uint32_t iHeap = g_cSupR3HardenedEarlyHeaps;
     while (iHeap-- > 0)
@@ -128,7 +128,7 @@ static uint32_t supR3HardenedEarlyFind(void *pv)
 }
 
 
-static void supR3HardenedEarlyCompact(void)
+static void supR3HardenedEarlyCompact(void) RT_NOTHROW_DEF
 {
     uint32_t iHeap = g_cSupR3HardenedEarlyHeaps;
     while (iHeap-- > 0)
@@ -147,7 +147,7 @@ static void supR3HardenedEarlyCompact(void)
 }
 
 
-static void *supR3HardenedEarlyAlloc(size_t cb, bool fZero)
+static void *supR3HardenedEarlyAlloc(size_t cb, bool fZero) RT_NOTHROW_DEF
 {
     /*
      * Try allocate on existing heaps.
@@ -218,7 +218,7 @@ static void *supR3HardenedEarlyAlloc(size_t cb, bool fZero)
  *
  * @returns Heap handle.
  */
-static HANDLE supR3HardenedHeapInit(void)
+static HANDLE supR3HardenedHeapInit(void) RT_NOTHROW_DEF
 {
     Assert(g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_EP_CALLED);
     HANDLE hHeap = RtlCreateHeap(HEAP_GROWABLE | HEAP_CLASS_PRIVATE, NULL /*HeapBase*/,
@@ -237,7 +237,7 @@ static HANDLE supR3HardenedHeapInit(void)
 /**
  * Compacts the heaps before enter wait for parent/child.
  */
-DECLHIDDEN(void) supR3HardenedWinCompactHeaps(void)
+DECL_HIDDEN_NOTHROW(void) supR3HardenedWinCompactHeaps(void)
 {
     if (g_hSupR3HardenedHeap)
         RtlCompactHeap(g_hSupR3HardenedHeap, 0 /*dwFlags*/);

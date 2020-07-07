@@ -670,7 +670,7 @@ static int suplibHardenedStrCopyEx(char *pszDst, size_t cbDst, ...)
  *
  * @param   rcExit      The exit code.
  */
-DECLNORETURN(void) suplibHardenedExit(RTEXITCODE rcExit)
+DECLNORETURN(void) suplibHardenedExit(RTEXITCODE rcExit) RT_NO_THROW_DEF
 {
     for (;;)
     {
@@ -887,7 +887,7 @@ static DECLCALLBACK(size_t) suplibHardenedOutput(void *pvArg, const char *pachCh
  * @param   pszFormat   The format string.
  * @param   va          Arguments to format.
  */
-DECLHIDDEN(void) suplibHardenedPrintFV(const char *pszFormat, va_list va)
+DECL_HIDDEN_NOTHROW(void) suplibHardenedPrintFV(const char *pszFormat, va_list va) RT_NO_THROW_DEF
 {
 #ifdef IPRT_NO_CRT
     /*
@@ -1121,7 +1121,7 @@ DECLHIDDEN(void) suplibHardenedPrintFV(const char *pszFormat, va_list va)
  * @param   pszFormat   The format string.
  * @param   ...         Arguments to format.
  */
-DECLHIDDEN(void) suplibHardenedPrintF(const char *pszFormat, ...)
+DECL_HIDDEN_NOTHROW(void) suplibHardenedPrintF(const char *pszFormat, ...) RT_NO_THROW_DEF
 {
     va_list va;
     va_start(va, pszFormat);
@@ -1169,7 +1169,7 @@ static void suplibHardenedPathStripFilename(char *pszPath)
 /**
  * @copydoc RTPathFilename
  */
-DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath)
+DECL_HIDDEN_NOTHROW(char *) supR3HardenedPathFilename(const char *pszPath)
 {
     const char *psz = pszPath;
     const char *pszLastComp = pszPath;
@@ -1205,7 +1205,7 @@ DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath)
 /**
  * @copydoc RTPathAppPrivateNoArch
  */
-DECLHIDDEN(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath)
+DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE)
     const char *pszSrcPath = RTPATH_APP_PRIVATE;
@@ -1224,7 +1224,7 @@ DECLHIDDEN(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 /**
  * @copydoc RTPathAppPrivateArch
  */
-DECLHIDDEN(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
+DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE_ARCH)
     const char *pszSrcPath = RTPATH_APP_PRIVATE_ARCH;
@@ -1243,7 +1243,7 @@ DECLHIDDEN(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
 /**
  * @copydoc RTPathSharedLibs
  */
-DECLHIDDEN(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath)
+DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_SHARED_LIBS)
     const char *pszSrcPath = RTPATH_SHARED_LIBS;
@@ -1262,7 +1262,7 @@ DECLHIDDEN(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath)
 /**
  * @copydoc RTPathAppDocs
  */
-DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
+DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_DOCS)
     const char *pszSrcPath = RTPATH_APP_DOCS;
@@ -1431,7 +1431,7 @@ static bool supR3HardenedMainIsProcSelfExeAccssible(void)
  * @copydoc RTPathExecDir
  * @remarks not quite like RTPathExecDir actually...
  */
-DECLHIDDEN(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
+DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
 {
     /*
      * Lazy init (probably not required).
@@ -1458,7 +1458,7 @@ DECLHIDDEN(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
 extern "C" uint32_t g_uNtVerCombined;
 #endif
 
-DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
+DECL_HIDDEN_NOTHROW(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs) RT_NO_THROW_DEF
 {
     static const char s_szLogOption[] = "--sup-hardening-log=";
 
@@ -1476,7 +1476,7 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
             /*
              * Drop the argument from the vector (has trailing NULL entry).
              */
-            memmove(&papszArgs[iArg], &papszArgs[iArg + 1], (cArgs - iArg) * sizeof(papszArgs[0]));
+//            memmove(&papszArgs[iArg], &papszArgs[iArg + 1], (cArgs - iArg) * sizeof(papszArgs[0]));
             *pcArgs -= 1;
             cArgs   -= 1;
 
@@ -1498,8 +1498,8 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                                       NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    SUP_DPRINTF(("Log file opened: " VBOX_VERSION_STRING "r%u g_hStartupLog=%p g_uNtVerCombined=%#x\n",
-                                 VBOX_SVN_REV, g_hStartupLog, g_uNtVerCombined));
+//                    SUP_DPRINTF(("Log file opened: " VBOX_VERSION_STRING "r%u g_hStartupLog=%p g_uNtVerCombined=%#x\n",
+//                                 VBOX_SVN_REV, g_hStartupLog, g_uNtVerCombined));
 
                     /*
                      * If the path contains a drive volume, save it so we can
@@ -1507,7 +1507,7 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                      */
                     if (RT_C_IS_ALPHA(pszLogFile[0]) && pszLogFile[1] == ':')
                     {
-                        RTUtf16CopyAscii(g_wszStartupLogVol, RT_ELEMENTS(g_wszStartupLogVol), "\\??\\");
+//                        RTUtf16CopyAscii(g_wszStartupLogVol, RT_ELEMENTS(g_wszStartupLogVol), "\\??\\");
                         g_wszStartupLogVol[sizeof("\\??\\") - 1] = RT_C_TO_UPPER(pszLogFile[0]);
                         g_wszStartupLogVol[sizeof("\\??\\") + 0] = ':';
                         g_wszStartupLogVol[sizeof("\\??\\") + 1] = '\0';
@@ -1526,7 +1526,7 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
 }
 
 
-DECLHIDDEN(void) supR3HardenedLogV(const char *pszFormat, va_list va)
+DECL_HIDDEN_NOTHROW(void) supR3HardenedLogV(const char *pszFormat, va_list va) RT_NO_THROW_DEF
 {
 #ifdef RT_OS_WINDOWS
     if (   g_hStartupLog != NULL
@@ -1558,7 +1558,7 @@ DECLHIDDEN(void) supR3HardenedLogV(const char *pszFormat, va_list va)
 }
 
 
-DECLHIDDEN(void) supR3HardenedLog(const char *pszFormat,  ...)
+DECL_HIDDEN_NOTHROW(void) supR3HardenedLog(const char *pszFormat,  ...) RT_NO_THROW_DEF
 {
     va_list va;
     va_start(va, pszFormat);
@@ -1567,7 +1567,7 @@ DECLHIDDEN(void) supR3HardenedLog(const char *pszFormat,  ...)
 }
 
 
-DECLHIDDEN(void) supR3HardenedLogFlush(void)
+DECL_HIDDEN_NOTHROW(void) supR3HardenedLogFlush(void) RT_NO_THROW_DEF
 {
 #ifdef RT_OS_WINDOWS
     if (   g_hStartupLog != NULL
@@ -1646,8 +1646,8 @@ static void suplibHardenedPrintPrefix(void)
 }
 
 
-DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                        const char *pszMsgFmt, va_list va)
+DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                                 const char *pszMsgFmt, va_list va)
 {
     /*
      * First to the log.
@@ -1763,8 +1763,8 @@ DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SU
 }
 
 
-DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                       const char *pszMsgFmt, ...)
+DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                                const char *pszMsgFmt, ...)
 {
     va_list va;
     va_start(va, pszMsgFmt);
@@ -1773,7 +1773,7 @@ DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsg(const char *pszWhere, SUP
 }
 
 
-DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalV(const char *pszFormat, va_list va)
+DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalV(const char *pszFormat, va_list va)
 {
     supR3HardenedLog("Fatal error:\n");
     va_list vaCopy;
@@ -1808,7 +1808,7 @@ DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalV(const char *pszFormat, va_l
 }
 
 
-DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatal(const char *pszFormat, ...)
+DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatal(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -1817,7 +1817,7 @@ DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatal(const char *pszFormat, ...)
 }
 
 
-DECLHIDDEN(int) supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, va_list va)
+DECL_HIDDEN_NOTHROW(int) supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, va_list va)
 {
     if (fFatal)
         supR3HardenedFatalV(pszFormat, va);
@@ -1844,7 +1844,7 @@ DECLHIDDEN(int) supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, 
 }
 
 
-DECLHIDDEN(int) supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...)
+DECL_HIDDEN_NOTHROW(int) supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -1860,7 +1860,7 @@ DECLHIDDEN(int) supR3HardenedError(int rc, bool fFatal, const char *pszFormat, .
  *
  * @remarks This function will not return on failure.
  */
-DECLHIDDEN(void) supR3HardenedMainOpenDevice(void)
+DECL_HIDDEN_NOTHROW(void) supR3HardenedMainOpenDevice(void)
 {
     RTERRINFOSTATIC ErrInfo;
     SUPINITOP       enmWhat = kSupInitOp_Driver;
@@ -2515,7 +2515,7 @@ static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName
  * @param   argv            The argument vector.
  * @param   envp            The environment vector.
  */
-DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp)
+DECL_HIDDEN_NOTHROW(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp)
 {
     SUP_DPRINTF(("SUPR3HardenedMain: pszProgName=%s fFlags=%#x\n", pszProgName, fFlags));
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_HARDENED_MAIN_CALLED;
