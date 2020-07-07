@@ -1240,8 +1240,8 @@ void UIChooserModel::prepareScene()
 void UIChooserModel::prepareContextMenu()
 {
     /* Context menu for global(s): */
-    m_menus[UIChooserNodeType_Global] = new QMenu;
-    if (QMenu *pMenuGlobal = m_menus.value(UIChooserNodeType_Global))
+    m_localMenus[UIChooserNodeType_Global] = new QMenu;
+    if (QMenu *pMenuGlobal = m_localMenus.value(UIChooserNodeType_Global))
     {
         /* Check if Ext Pack is ready, some of actions my depend on it: */
         CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
@@ -1286,9 +1286,9 @@ void UIChooserModel::prepareContextMenu()
 #endif /* !VBOX_WS_MAC */
     }
 
-    /* Context menu for group(s): */
-    m_menus[UIChooserNodeType_Group] = new QMenu;
-    if (QMenu *pMenuGroup = m_menus.value(UIChooserNodeType_Group))
+    /* Context menu for local group(s): */
+    m_localMenus[UIChooserNodeType_Group] = new QMenu;
+    if (QMenu *pMenuGroup = m_localMenus.value(UIChooserNodeType_Group))
     {
         pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
         pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
@@ -1312,9 +1312,9 @@ void UIChooserModel::prepareContextMenu()
         pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
     }
 
-    /* Context menu for machine(s): */
-    m_menus[UIChooserNodeType_Machine] = new QMenu;
-    if (QMenu *pMenuMachine = m_menus.value(UIChooserNodeType_Machine))
+    /* Context menu for local machine(s): */
+    m_localMenus[UIChooserNodeType_Machine] = new QMenu;
+    if (QMenu *pMenuMachine = m_localMenus.value(UIChooserNodeType_Machine))
     {
         pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
         pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
@@ -1334,6 +1334,39 @@ void UIChooserModel::prepareContextMenu()
         pMenuMachine->addSeparator();
         pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
         pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
+        pMenuMachine->addSeparator();
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
+    }
+
+    /* Context menu for cloud group(s): */
+    m_cloudMenus[UIChooserNodeType_Group] = new QMenu;
+    if (QMenu *pMenuGroup = m_cloudMenus.value(UIChooserNodeType_Group))
+    {
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+        pMenuGroup->addSeparator();
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
+        pMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
+        pMenuGroup->addSeparator();
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+        pMenuGroup->addSeparator();
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+    }
+
+    /* Context menu for cloud machine(s): */
+    m_cloudMenus[UIChooserNodeType_Machine] = new QMenu;
+    if (QMenu *pMenuMachine = m_cloudMenus.value(UIChooserNodeType_Machine))
+    {
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
+        pMenuMachine->addSeparator();
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+        pMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
+        pMenuMachine->addSeparator();
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
         pMenuMachine->addSeparator();
         pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
         pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
@@ -1386,8 +1419,10 @@ void UIChooserModel::cleanupHandlers()
 
 void UIChooserModel::cleanupContextMenu()
 {
-    qDeleteAll(m_menus);
-    m_menus.clear();
+    qDeleteAll(m_localMenus);
+    m_localMenus.clear();
+    qDeleteAll(m_cloudMenus);
+    m_cloudMenus.clear();
 }
 
 void UIChooserModel::cleanupScene()
@@ -1418,13 +1453,13 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                     case UIChooserNodeType_Global:
                     {
                         /* Global context menu for all global item cases: */
-                        m_menus.value(UIChooserNodeType_Global)->exec(pEvent->screenPos());
+                        m_localMenus.value(UIChooserNodeType_Global)->exec(pEvent->screenPos());
                         break;
                     }
                     case UIChooserNodeType_Group:
                     {
                         /* Get group-item: */
-                        UIChooserItem *pGroupItem = qgraphicsitem_cast<UIChooserItemGroup*>(pItem);
+                        UIChooserItemGroup *pGroupItem = qgraphicsitem_cast<UIChooserItemGroup*>(pItem);
                         /* Don't show context menu for root-item: */
                         if (pGroupItem->isRoot())
                             break;
@@ -1432,15 +1467,24 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                         if (selectedItems().contains(pGroupItem) && selectedItems().size() == 1)
                         {
                             /* Group context menu in that case: */
-                            m_menus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
+                            if (pGroupItem->groupType() == UIChooserNodeGroupType_Local)
+                                m_localMenus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
+                            else if (   pGroupItem->groupType() == UIChooserNodeGroupType_Provider
+                                     || pGroupItem->groupType() == UIChooserNodeGroupType_Profile)
+                                m_cloudMenus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
                             break;
                         }
                     }
                     RT_FALL_THRU();
                     case UIChooserNodeType_Machine:
                     {
+                        /* Get machine-item: */
+                        UIChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIChooserItemMachine*>(pItem);
                         /* Machine context menu for other Group/Machine cases: */
-                        m_menus.value(UIChooserNodeType_Machine)->exec(pEvent->screenPos());
+                        if (pMachineItem->cacheType() == UIVirtualMachineItemType_Local)
+                            m_localMenus.value(UIChooserNodeType_Machine)->exec(pEvent->screenPos());
+                        else if (pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
+                            m_cloudMenus.value(UIChooserNodeType_Machine)->exec(pEvent->screenPos());
                         break;
                     }
                     default:
@@ -1460,24 +1504,35 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                     case UIChooserNodeType_Global:
                     {
                         /* Global context menu for all global item cases: */
-                        m_menus.value(UIChooserNodeType_Global)->exec(pEvent->screenPos());
+                        m_localMenus.value(UIChooserNodeType_Global)->exec(pEvent->screenPos());
                         break;
                     }
                     case UIChooserNodeType_Group:
                     {
+                        /* Get group-item: */
+                        UIChooserItemGroup *pGroupItem = qgraphicsitem_cast<UIChooserItemGroup*>(pItem);
                         /* Make sure we have group-item selected exclusively: */
-                        if (selectedItems().size() == 1)
+                        if (selectedItems().contains(pGroupItem) && selectedItems().size() == 1)
                         {
                             /* Group context menu in that case: */
-                            m_menus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
+                            if (pGroupItem->groupType() == UIChooserNodeGroupType_Local)
+                                m_localMenus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
+                            else if (   pGroupItem->groupType() == UIChooserNodeGroupType_Provider
+                                     || pGroupItem->groupType() == UIChooserNodeGroupType_Profile)
+                                m_cloudMenus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
                             break;
                         }
                     }
                     RT_FALL_THRU();
                     case UIChooserNodeType_Machine:
                     {
+                        /* Get machine-item: */
+                        UIChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIChooserItemMachine*>(pItem);
                         /* Machine context menu for other Group/Machine cases: */
-                        m_menus.value(UIChooserNodeType_Machine)->exec(pEvent->screenPos());
+                        if (pMachineItem->cacheType() == UIVirtualMachineItemType_Local)
+                            m_localMenus.value(UIChooserNodeType_Machine)->exec(pEvent->screenPos());
+                        else if (pMachineItem->cacheType() == UIVirtualMachineItemType_CloudReal)
+                            m_cloudMenus.value(UIChooserNodeType_Machine)->exec(pEvent->screenPos());
                         break;
                     }
                     default:

@@ -378,8 +378,10 @@ private:
         /** Holds the keyboard handler instance. */
         UIChooserHandlerKeyboard *m_pKeyboardHandler;
 
-        /** Holds the map of context-menu instances. */
-        QMap<UIChooserNodeType, QMenu*>  m_menus;
+        /** Holds the map of local context-menu instances. */
+        QMap<UIChooserNodeType, QMenu*>  m_localMenus;
+        /** Holds the map of cloud context-menu instances. */
+        QMap<UIChooserNodeType, QMenu*>  m_cloudMenus;
     /** @} */
 
     /** @name Selection stuff.

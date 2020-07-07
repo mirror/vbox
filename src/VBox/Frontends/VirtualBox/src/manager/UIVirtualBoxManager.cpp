@@ -1507,6 +1507,8 @@ void UIVirtualBoxManager::prepareMenuBar()
     m_pActionPool = UIActionPool::create(UIActionPoolType_Manager);
 
     /* Prepare menu update-handlers: */
+    m_menuUpdateHandlers[UIActionIndexST_M_Group] = &UIVirtualBoxManager::updateMenuGroup;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine] = &UIVirtualBoxManager::updateMenuMachine;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuGroupMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close] = &UIVirtualBoxManager::updateMenuGroupClose;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuMachineMoveToGroup;
@@ -1974,6 +1976,108 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
                 pItem->toCloud()->updateInfoAsync(false /* delayed? */);
             }
         }
+    }
+}
+
+void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
+{
+    /* For single local group selected: */
+    if (isSingleLocalGroupSelected())
+    {
+        /* Populate Group-menu: */
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_MoveToGroup));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Reset));
+        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
+        pMenu->addSeparator();
+        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Tools)->menu());
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+    }
+    else
+    {
+        /* Populate Group-menu: */
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
+        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+    }
+}
+
+void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
+{
+    /* Get first selected item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertPtrReturnVoid(pItem);
+
+    /* For local machine: */
+    if (pItem->itemType() == UIVirtualMachineItemType_Local)
+    {
+        /* Populate Machine-menu: */
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Reset));
+        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
+        pMenu->addSeparator();
+        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Tools)->menu());
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
+    }
+    else
+    {
+        /* Populate Machine-menu: */
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
+        pMenu->addSeparator();
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
     }
 }
 

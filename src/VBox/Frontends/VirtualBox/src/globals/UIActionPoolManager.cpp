@@ -3292,32 +3292,7 @@ void UIActionPoolManager::updateMenuGroup()
     /* Clear contents: */
     pMenu->clear();
 
-    /* Populate Machine-menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_New));
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_Add));
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_Rename));
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_Remove));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_MoveToGroup));
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_StartOrShow));
-    pMenu->addAction(action(UIActionIndexST_M_Group_T_Pause));
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_Reset));
-    pMenu->addMenu(action(UIActionIndexST_M_Group_M_Close)->menu());
-    pMenu->addSeparator();
-    pMenu->addMenu(action(UIActionIndexST_M_Group_M_Tools)->menu());
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_Discard));
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_ShowLogDialog));
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_Refresh));
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_ShowInFileManager));
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_CreateShortcut));
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Group_S_Sort));
-
-    /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Group);
+    /* This menu always remains invalid.. */
 }
 
 void UIActionPoolManager::updateMenuMachine()
@@ -3328,36 +3303,7 @@ void UIActionPoolManager::updateMenuMachine()
     /* Clear contents: */
     pMenu->clear();
 
-    /* Populate Machine-menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_New));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Add));
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Settings));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Clone));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Move));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_ExportToOCI));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Remove));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_MoveToGroup));
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_StartOrShow));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_T_Pause));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Reset));
-    pMenu->addMenu(action(UIActionIndexST_M_Machine_M_Close)->menu());
-    pMenu->addSeparator();
-    pMenu->addMenu(action(UIActionIndexST_M_Machine_M_Tools)->menu());
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Discard));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_ShowLogDialog));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Refresh));
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_ShowInFileManager));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_CreateShortcut));
-    pMenu->addSeparator();
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_SortParent));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_T_Search));
-
-    /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Machine);
+    /* This menu always remains invalid.. */
 }
 
 void UIActionPoolManager::updateMenuGroupMoveToGroup()
