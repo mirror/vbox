@@ -1288,6 +1288,8 @@ static int vnetR3TransmitFrame(PVNETSTATE pThis, PVNETSTATECC pThisCC, PPDMSCATT
                 case PDMNETWORKGSOTYPE_IPV6_TCP:
                     pGso->cbHdrsTotal = pHdr->u16CSumStart +
                         ((PRTNETTCP)(((uint8_t*)pSgBuf->aSegs[0].pvSeg) + pHdr->u16CSumStart))->th_off * 4;
+                    AssertMsgReturn(pSgBuf->cbUsed > pGso->cbHdrsTotal,
+                        ("cbHdrsTotal exceeds size of frame"), VERR_BUFFER_OVERFLOW);
                     pGso->cbHdrsSeg   = pGso->cbHdrsTotal;
                     break;
                 case PDMNETWORKGSOTYPE_IPV4_UDP:
