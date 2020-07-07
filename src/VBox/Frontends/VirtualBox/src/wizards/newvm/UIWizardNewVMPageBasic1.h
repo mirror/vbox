@@ -34,15 +34,15 @@ class UIFilePathSelector;
 class UINameAndSystemEditor;
 class QButtonGroup;
 
-/* 1st page of the New Virtual Machine wizard (base part): */
+/** 1st page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPage1 : public UIWizardPageBase
 {
 protected:
 
-    /* Constructor: */
+    /** Constructor. */
     UIWizardNewVMPage1(const QString &strGroup);
 
-    /* Handlers: */
+    /** Handlers. */
     void onNameChanged(QString strNewName);
     void onOsTypeChanged();
 
@@ -78,27 +78,27 @@ protected:
     /** Creates the page widgets and adds them into the @p pGridLayout. */
     void createWidgets(QGridLayout *pGridLayout);
 
-    /** Holds the simple variant button instance. */
-    QRadioButton *m_pButtonSimple;
-    /** Holds the unattended variant button instance. */
-    QRadioButton *m_pButtonUnattended;
+    /** @name Widgets
+     * @{ */
+       /** Holds the simple variant button instance. */
+       QRadioButton *m_pButtonSimple;
+       /** Holds the unattended variant button instance. */
+       QRadioButton *m_pButtonUnattended;
+       /** Holds the ISO selector label instance. */
+       QLabel *m_pISOSelectorLabel;
+       /** Holds the ISO selector editor instance. */
+       UIFilePathSelector *m_pISOFilePathSelector;
+       /** Holds the headless start label instance. */
+       QLabel *m_pStartHeadlessLabel;
+       /** Holds the headless start checkbox instance. */
+       QCheckBox *m_pStartHeadlessCheckBox;
+       /** Provides a path selector and a line edit field for path and name entry. */
+       UINameAndSystemEditor *m_pNameAndSystemEditor;
+       QIRichTextLabel *m_pLabel1;
+       QIRichTextLabel *m_pLabel2;
+       QButtonGroup *m_pButtonGroup;
+    /** @} */
 
-    /** Holds the ISO selector label instance. */
-    QLabel *m_pISOSelectorLabel;
-    /** Holds the ISO selector editor instance. */
-    UIFilePathSelector *m_pISOFilePathSelector;
-
-    /** Holds the headless start label instance. */
-    QLabel *m_pStartHeadlessLabel;
-    /** Holds the headless start checkbox instance. */
-    QCheckBox *m_pStartHeadlessCheckBox;
-
-    /** Provides a path selector and a line edit field for path and name entry. */
-    UINameAndSystemEditor *m_pNameAndSystemEditor;
-    /* Widgets: */
-    QIRichTextLabel *m_pLabel1;
-    QIRichTextLabel *m_pLabel2;
-    QButtonGroup *m_pButtonGroup;
     QString m_strDetectedOSTypeId;
 
 private:
@@ -123,7 +123,7 @@ private:
     friend class UIWizardNewVM;
 };
 
-/* 1st page of the New Virtual Machine wizard (basic extension): */
+/** 1st page of the New Virtual Machine wizard (basic extension). */
 class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
 {
     Q_OBJECT;
@@ -139,7 +139,7 @@ class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
 
 public:
 
-    /* Constructor: */
+    /** Constructor. */
     UIWizardNewVMPageBasic1(const QString &strGroup);
     virtual int nextId() const /* override */;
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
@@ -147,12 +147,12 @@ public:
 
 protected:
 
-    /* Wrapper to access 'this' from base part: */
+    /** Wrapper to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
 
 private slots:
 
-    /* Handlers: */
+    /** Handlers. */
     void sltNameChanged(const QString &strNewText);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
@@ -161,16 +161,16 @@ private slots:
 
 private:
 
-    /* Translation stuff: */
+    /** Translation stuff. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Prepare stuff. */
     void prepare();
     void createConnections();
     void initializePage();
     void cleanupPage();
 
-    /* Validation stuff: */
+    /** Validation stuff. */
     virtual bool validatePage() /* override */;
 
 };
