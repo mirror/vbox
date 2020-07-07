@@ -552,7 +552,7 @@ RTCRestInt32::RTCRestInt32(int32_t iValue) RT_NOEXCEPT
 
 
 /** Destructor. */
-RTCRestInt32::~RTCRestInt32()
+RTCRestInt32::~RTCRestInt32() RT_NOEXCEPT
 {
     /* nothing to do */
 }
