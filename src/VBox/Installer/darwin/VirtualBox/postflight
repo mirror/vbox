@@ -16,8 +16,8 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-CP="/bin/cp -f"
-CPDIR="${CP} -R"
+CPDIR="/bin/cp -f -R"
+INSTALL=/usr/bin/install
 
 
 #
@@ -43,10 +43,13 @@ fi
 #
 VBOXWEBSRV="${VBOX_INSTALL_PATH}/org.virtualbox.vboxwebsrv.plist"
 VBOXWEBSRV_TRG="${HOME}/Library/LaunchAgents"
-if [[ -e "${VBOXWEBSRV}" && -e "${VBOXWEBSRV_TRG}" ]]; then
+if [ -e "${VBOXWEBSRV}" -a -e "${VBOXWEBSRV_TRG}" ]; then
     echo "Installing vboxwebsrv launchd file to ${VBOXWEBSRV_TRG}"
-    ${CP} "${VBOXWEBSRV}" "${VBOXWEBSRV_TRG}/"
-    [ "x" != "x${USER}" ] && /usr/sbin/chown "${USER}" "${VBOXWEBSRV_TRG}/org.virtualbox.vboxwebsrv.plist"
+    if [ "x" != "x${USER}" ]; then
+        ${INSTALL} -S -o "${USER}" -m 0644 "${VBOXWEBSRV}" "${VBOXWEBSRV_TRG}/"
+    else
+        ${INSTALL} -S -m 0644 "${VBOXWEBSRV}" "${VBOXWEBSRV_TRG}/"
+    fi
 fi
 
 #
@@ -62,7 +65,7 @@ fi
 # Register our file extensions
 #
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
-if [[ -e "${LSREGISTER}" && "x" != "x${USER}" ]]; then
+if [ -e "${LSREGISTER}" -a "x" != "x${USER}" ]; then
     echo "Register file extensions for \"${USER}\""
     /usr/bin/sudo -u "${USER}" ${LSREGISTER} -f /Applications/VirtualBox.app
     /usr/bin/sudo -u "${USER}" ${LSREGISTER} -f /Applications/VirtualBox.app/Contents/Resources/vmstarter.app
