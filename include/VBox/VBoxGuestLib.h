@@ -103,9 +103,9 @@ typedef uint32_t HGCMCLIENTID;
  * Declare a VBGL ring-0 API with the right calling convention and visibilitiy.
  * @param type      Return type.  */
 # ifdef RT_OS_DARWIN /** @todo probably apply to all, but don't want a forest fire on our hands right now. */
-#  define DECLR0VBGL(type) DECLHIDDEN(type) VBOXCALL
+#  define DECLR0VBGL(type) DECLHIDDEN(DECL_NOTHROW(type)) VBOXCALL
 # else
-#  define DECLR0VBGL(type) type VBOXCALL
+#  define DECLR0VBGL(type) DECL_NOTHROW(type) VBOXCALL
 # endif
 # define DECLVBGL(type) DECLR0VBGL(type)
 
@@ -543,7 +543,7 @@ DECLR0VBGL(int)     VbglR0SetMouseStatus(uint32_t fFeatures);
  * Ring 3 VBGL declaration.
  * @param   type    The return type of the function declaration.
  */
-# define VBGLR3DECL(type) DECLHIDDEN(type) VBOXCALL
+# define VBGLR3DECL(type) DECL_HIDDEN_NOTHROW(type) VBOXCALL
 
 /** @name General-purpose functions
  * @{ */

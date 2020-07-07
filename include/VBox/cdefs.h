@@ -120,12 +120,12 @@
  */
 #if defined(IN_DIS)
 # ifdef IN_DIS_STATIC
-#  define DISDECL(type)     DECLHIDDEN(type) VBOXCALL
+#  define DISDECL(type)     DECL_HIDDEN_NOTHROW(type) VBOXCALL
 # else
-#  define DISDECL(type)     DECLEXPORT(type) VBOXCALL
+#  define DISDECL(type)     DECL_EXPORT_NOTHROW(type) VBOXCALL
 # endif
 #else
-# define DISDECL(type)      DECLIMPORT(type) VBOXCALL
+# define DISDECL(type)      DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 
@@ -141,9 +141,9 @@
  * @param   type    The return type of the function declaration.
  */
 #if defined(IN_DBG_R3) || defined(IN_DBG)
-# define DBGDECL(type)      DECLEXPORT(type) VBOXCALL
+# define DBGDECL(type)      DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define DBGDECL(type)      DECLIMPORT(type) VBOXCALL
+# define DBGDECL(type)      DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 
@@ -157,9 +157,9 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_INTNET_R3
-# define INTNETR3DECL(type) DECLEXPORT(type) VBOXCALL
+# define INTNETR3DECL(type) DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define INTNETR3DECL(type) DECLIMPORT(type) VBOXCALL
+# define INTNETR3DECL(type) DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 /** @def IN_INTNET_R0
@@ -171,9 +171,9 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_INTNET_R0
-# define INTNETR0DECL(type) DECLEXPORT(type) VBOXCALL
+# define INTNETR0DECL(type) DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define INTNETR0DECL(type) DECLIMPORT(type) VBOXCALL
+# define INTNETR0DECL(type) DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 
@@ -187,9 +187,9 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_PCIRAW_R3
-# define PCIRAWR3DECL(type) DECLEXPORT(type) VBOXCALL
+# define PCIRAWR3DECL(type) DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define PCIRAWR3DECL(type) DECLIMPORT(type) VBOXCALL
+# define PCIRAWR3DECL(type) DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 /** @def IN_PCIRAW_R0
@@ -201,9 +201,9 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_PCIRAW_R0
-# define PCIRAWR0DECL(type) DECLEXPORT(type) VBOXCALL
+# define PCIRAWR0DECL(type) DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define PCIRAWR0DECL(type) DECLIMPORT(type) VBOXCALL
+# define PCIRAWR0DECL(type) DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 
@@ -217,9 +217,9 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_REM_R3
-# define REMR3DECL(type)    DECLEXPORT(type) VBOXCALL
+# define REMR3DECL(type)    DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define REMR3DECL(type)    DECLIMPORT(type) VBOXCALL
+# define REMR3DECL(type)    DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 
@@ -234,15 +234,15 @@
  */
 #ifdef IN_SUP_R3
 # ifdef IN_SUP_STATIC
-#  define SUPR3DECL(type)   DECLHIDDEN(type) VBOXCALL
+#  define SUPR3DECL(type)   DECL_HIDDEN_NOTHROW(type) VBOXCALL
 # else
-#  define SUPR3DECL(type)   DECLEXPORT(type) VBOXCALL
+#  define SUPR3DECL(type)   DECL_EXPORT_NOTHROW(type) VBOXCALL
 # endif
 #else
 # ifdef IN_SUP_STATIC
-#  define SUPR3DECL(type)   DECLHIDDEN(type) VBOXCALL
+#  define SUPR3DECL(type)   DECL_HIDDEN_NOTHROW(type) VBOXCALL
 # else
-#  define SUPR3DECL(type)   DECLIMPORT(type) VBOXCALL
+#  define SUPR3DECL(type)   DECL_IMPORT_NOTHROW(type) VBOXCALL
 # endif
 #endif
 
@@ -260,15 +260,15 @@
  */
 #ifdef IN_SUP_R0
 # ifdef IN_SUP_STATIC
-#  define SUPR0DECL(type)   DECLHIDDEN(type) VBOXCALL
+#  define SUPR0DECL(type)   DECL_HIDDEN_NOTHROW(type) VBOXCALL
 # else
-#  define SUPR0DECL(type)   DECLEXPORT(type) VBOXCALL
+#  define SUPR0DECL(type)   DECL_EXPORT_NOTHROW(type) VBOXCALL
 # endif
 #else
 # ifdef IN_SUP_STATIC
-#  define SUPR0DECL(type)   DECLHIDDEN(type) VBOXCALL
+#  define SUPR0DECL(type)   DECL_HIDDEN_NOTHROW(type) VBOXCALL
 # else
-#  define SUPR0DECL(type)   DECLIMPORT(type) VBOXCALL
+#  define SUPR0DECL(type)   DECL_IMPORT_NOTHROW(type) VBOXCALL
 # endif
 #endif
 
@@ -281,9 +281,9 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_SUP_RC
-# define SUPRCDECL(type)    DECLEXPORT(type) VBOXCALL
+# define SUPRCDECL(type)    DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define SUPRCDECL(type)    DECLIMPORT(type) VBOXCALL
+# define SUPRCDECL(type)    DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 /** @def IN_SUP_R0
@@ -295,9 +295,9 @@
  * @param   type    The return type of the function declaration.
  */
 #if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_RC)
-# define SUPDECL(type)      DECLEXPORT(type) VBOXCALL
+# define SUPDECL(type)      DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define SUPDECL(type)      DECLIMPORT(type) VBOXCALL
+# define SUPDECL(type)      DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 
@@ -312,9 +312,9 @@
 #ifdef IN_RING0
 # define USBLIB_DECL(type)   type VBOXCALL
 #elif defined(IN_USBLIB)
-# define USBLIB_DECL(type)   DECLEXPORT(type) VBOXCALL
+# define USBLIB_DECL(type)   DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define USBLIB_DECL(type)   DECLIMPORT(type) VBOXCALL
+# define USBLIB_DECL(type)   DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 
@@ -333,15 +333,15 @@
  */
 #ifdef IN_VMM_R3
 # ifdef IN_VMM_STATIC
-#  define VMMR3DECL(type)           DECLHIDDEN(type) VBOXCALL
+#  define VMMR3DECL(type)           DECL_HIDDEN_NOTHROW(type) VBOXCALL
 # else
-#  define VMMR3DECL(type)           DECLEXPORT(type) VBOXCALL
+#  define VMMR3DECL(type)           DECL_EXPORT_NOTHROW(type) VBOXCALL
 # endif
 #elif defined(IN_RING3)
 # ifdef IN_VMM_STATIC
-#  define VMMR3DECL(type)           DECLHIDDEN(type) VBOXCALL
+#  define VMMR3DECL(type)           DECL_HIDDEN_NOTHROW(type) VBOXCALL
 # else
-#  define VMMR3DECL(type)           DECLIMPORT(type) VBOXCALL
+#  define VMMR3DECL(type)           DECL_IMPORT_NOTHROW(type) VBOXCALL
 # endif
 #else
 # define VMMR3DECL(type)            DECL_INVALID(type)
@@ -356,9 +356,9 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_R0
-# define VMMR0DECL(type)            DECLEXPORT(type) VBOXCALL
+# define VMMR0DECL(type)            DECL_EXPORT_NOTHROW(type) VBOXCALL
 #elif defined(IN_RING0)
-# define VMMR0DECL(type)            DECLIMPORT(type) VBOXCALL
+# define VMMR0DECL(type)            DECL_IMPORT_NOTHROW(type) VBOXCALL
 #else
 # define VMMR0DECL(type)            DECL_INVALID(type)
 #endif
@@ -372,9 +372,9 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_RC
-# define VMMRCDECL(type)            DECLEXPORT(type) VBOXCALL
+# define VMMRCDECL(type)            DECL_EXPORT_NOTHROW(type) VBOXCALL
 #elif defined(IN_RC)
-# define VMMRCDECL(type)            DECLIMPORT(type) VBOXCALL
+# define VMMRCDECL(type)            DECL_IMPORT_NOTHROW(type) VBOXCALL
 #else
 # define VMMRCDECL(type)            DECL_INVALID(type)
 #endif
@@ -384,9 +384,9 @@
  * @param   type    The return type of the function declaration.
  */
 #if defined(IN_VMM_R0) || defined(IN_VMM_RC)
-# define VMMRZDECL(type)            DECLEXPORT(type) VBOXCALL
+# define VMMRZDECL(type)            DECL_EXPORT_NOTHROW(type) VBOXCALL
 #elif defined(IN_RING0) || defined(IN_RZ)
-# define VMMRZDECL(type)            DECLIMPORT(type) VBOXCALL
+# define VMMRZDECL(type)            DECL_IMPORT_NOTHROW(type) VBOXCALL
 #else
 # define VMMRZDECL(type)            DECL_INVALID(type)
 #endif
@@ -396,11 +396,11 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_STATIC
-# define VMMDECL(type)              DECLHIDDEN(type) VBOXCALL
+# define VMMDECL(type)              DECL_HIDDEN_NOTHROW(type) VBOXCALL
 #elif defined(IN_VMM_R3) || defined(IN_VMM_R0) || defined(IN_VMM_RC)
-# define VMMDECL(type)              DECLEXPORT(type) VBOXCALL
+# define VMMDECL(type)              DECL_EXPORT_NOTHROW(type) VBOXCALL
 #else
-# define VMMDECL(type)              DECLIMPORT(type) VBOXCALL
+# define VMMDECL(type)              DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 /** @def VMM_INT_DECL
@@ -408,7 +408,7 @@
  * @param   type    The return type of the function declaration.
  */
 #if defined(IN_VMM_R3) || defined(IN_VMM_R0) || defined(IN_VMM_RC)
-# define VMM_INT_DECL(type)         DECLHIDDEN(type) VBOXCALL
+# define VMM_INT_DECL(type)         DECL_HIDDEN_NOTHROW(type) VBOXCALL
 #else
 # define VMM_INT_DECL(type)         DECL_INVALID(type)
 #endif
@@ -418,7 +418,7 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_R3
-# define VMMR3_INT_DECL(type)       DECLHIDDEN(type) VBOXCALL
+# define VMMR3_INT_DECL(type)       DECL_HIDDEN_NOTHROW(type) VBOXCALL
 #else
 # define VMMR3_INT_DECL(type)       DECL_INVALID(type)
 #endif
@@ -428,7 +428,7 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_R0
-# define VMMR0_INT_DECL(type)       DECLHIDDEN(type) VBOXCALL
+# define VMMR0_INT_DECL(type)       DECL_HIDDEN_NOTHROW(type) VBOXCALL
 #else
 # define VMMR0_INT_DECL(type)       DECL_INVALID(type)
 #endif
@@ -438,7 +438,7 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_RC
-# define VMMRC_INT_DECL(type)       DECLHIDDEN(type) VBOXCALL
+# define VMMRC_INT_DECL(type)       DECL_HIDDEN_NOTHROW(type) VBOXCALL
 #else
 # define VMMRC_INT_DECL(type)       DECL_INVALID(type)
 #endif
@@ -448,7 +448,7 @@
  * @param   type    The return type of the function declaration.
  */
 #if defined(IN_VMM_RC) || defined(IN_VMM_R0)
-# define VMMRZ_INT_DECL(type)       DECLHIDDEN(type) VBOXCALL
+# define VMMRZ_INT_DECL(type)       DECL_HIDDEN_NOTHROW(type) VBOXCALL
 #else
 # define VMMRZ_INT_DECL(type)       DECL_INVALID(type)
 #endif
@@ -464,12 +464,12 @@
  */
 #ifdef IN_VBOXDDU
 # ifdef IN_VBOXDDU_STATIC
-#  define VBOXDDU_DECL(type) type
+#  define VBOXDDU_DECL(type)        type
 # else
-#  define VBOXDDU_DECL(type) DECLEXPORT(type) VBOXCALL
+#  define VBOXDDU_DECL(type)        DECL_EXPORT_NOTHROW(type) VBOXCALL
 # endif
 #else
-# define VBOXDDU_DECL(type) DECLIMPORT(type) VBOXCALL
+# define VBOXDDU_DECL(type)         DECL_IMPORT_NOTHROW(type) VBOXCALL
 #endif
 
 /** @} */
