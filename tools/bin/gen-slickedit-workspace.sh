@@ -861,9 +861,15 @@ EOF
         -e 's/(type) DECLHIDDEN(type)/(type) type/' \
         -e 's/(type) DECLEXPORT(type)/(type) type/' \
         -e 's/(type) DECLIMPORT(type)/(type) type/' \
+        -e 's/(type) DECL_HIDDEN_NOTHROW(type)/(type) type/' \
+        -e 's/(type) DECL_EXPORT_NOTHROW(type)/(type) type/' \
+        -e 's/(type) DECL_IMPORT_NOTHROW(type)/(type) type/' \
         -e 's/(a_Type) DECLHIDDEN(a_Type)/(a_Type) a_Type/' \
         -e 's/(a_Type) DECLEXPORT(a_Type)/(a_Type) a_Type/' \
         -e 's/(a_Type) DECLIMPORT(a_Type)/(a_Type) a_Type/' \
+        -e 's/(a_Type) DECL_HIDDEN_NOTHROW(a_Type)/(a_Type) a_Type/' \
+        -e 's/(a_Type) DECL_EXPORT_NOTHROW(a_Type)/(a_Type) a_Type/' \
+        -e 's/(a_Type) DECL_IMPORT_NOTHROW(a_Type)/(a_Type) a_Type/' \
         \
         --append "${MY_FILE}" \
         ${MY_HDR_FILES}
