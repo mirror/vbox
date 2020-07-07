@@ -1341,6 +1341,12 @@
 # define DECLEXPORT(type)       type
 #endif
 
+/** @def DECL_IMPORT_NOTHROW
+ * How to declare an exported function that does not throw C++ exceptions.
+ * @param   type    The return type of the function declaration.
+ */
+#define DECL_EXPORT_NOTHROW(a_Type) DECL_NOTHROW(DECLEXPORT(a_Type))
+
 /** @def DECLIMPORT
  * How to declare an imported function.
  * @param   type    The return type of the function declaration.
@@ -1350,6 +1356,12 @@
 #else
 # define DECLIMPORT(type)       type
 #endif
+
+/** @def DECL_IMPORT_NOTHROW
+ * How to declare an imported function that does not throw C++ exceptions.
+ * @param   type    The return type of the function declaration.
+ */
+#define DECL_IMPORT_NOTHROW(a_Type) DECL_NOTHROW(DECLIMPORT(a_Type))
 
 /** @def DECLHIDDEN
  * How to declare a non-exported function or variable.
@@ -1655,12 +1667,12 @@
  */
 #ifdef IN_RT_R0
 # ifdef IN_RT_STATIC
-#  define RTR0DECL(type)    DECLHIDDEN(DECL_NOTHROW(type)) RTCALL
+#  define RTR0DECL(type)    DECL_HIDDEN_NOTHROW(type) RTCALL
 # else
-#  define RTR0DECL(type)    DECLEXPORT(DECL_NOTHROW(type)) RTCALL
+#  define RTR0DECL(type)    DECL_EXPORT_NOTHROW(type) RTCALL
 # endif
 #else
-# define RTR0DECL(type)     DECLIMPORT(DECL_NOTHROW(type)) RTCALL
+# define RTR0DECL(type)     DECL_IMPORT_NOTHROW(type) RTCALL
 #endif
 
 /** @def IN_RT_R3
@@ -1676,12 +1688,12 @@
  */
 #ifdef IN_RT_R3
 # ifdef IN_RT_STATIC
-#  define RTR3DECL(type)    DECLHIDDEN(DECL_NOTHROW(type)) RTCALL
+#  define RTR3DECL(type)    DECL_HIDDEN_NOTHROW(type) RTCALL
 # else
-#  define RTR3DECL(type)    DECLEXPORT(DECL_NOTHROW(type)) RTCALL
+#  define RTR3DECL(type)    DECL_EXPORT_NOTHROW(type) RTCALL
 # endif
 #else
-# define RTR3DECL(type)     DECLIMPORT(DECL_NOTHROW(type)) RTCALL
+# define RTR3DECL(type)     DECL_IMPORT_NOTHROW(type) RTCALL
 #endif
 
 /** @def IN_RT_RC
@@ -1697,12 +1709,12 @@
  */
 #ifdef IN_RT_RC
 # ifdef IN_RT_STATIC
-#  define RTRCDECL(type)    DECLHIDDEN(DECL_NOTHROW(type)) RTCALL
+#  define RTRCDECL(type)    DECL_HIDDEN_NOTHROW(type) RTCALL
 # else
-#  define RTRCDECL(type)    DECLEXPORT(DECL_NOTHROW(type)) RTCALL
+#  define RTRCDECL(type)    DECL_EXPORT_NOTHROW(type) RTCALL
 # endif
 #else
-# define RTRCDECL(type)     DECLIMPORT(DECL_NOTHROW(type)) RTCALL
+# define RTRCDECL(type)     DECL_IMPORT_NOTHROW(type) RTCALL
 #endif
 
 /** @def RTDECL(type)
@@ -1715,12 +1727,12 @@
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
-#  define RTDECL(type)      DECLHIDDEN(DECL_NOTHROW(type)) RTCALL
+#  define RTDECL(type)      DECL_HIDDEN_NOTHROW(type) RTCALL
 # else
-#  define RTDECL(type)      DECLEXPORT(DECL_NOTHROW(type)) RTCALL
+#  define RTDECL(type)      DECL_EXPORT_NOTHROW(type) RTCALL
 # endif
 #else
-# define RTDECL(type)       DECLIMPORT(DECL_NOTHROW(type)) RTCALL
+# define RTDECL(type)       DECL_IMPORT_NOTHROW(type) RTCALL
 #endif
 
 /** @def RTDATADECL(type)
