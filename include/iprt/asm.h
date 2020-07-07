@@ -204,7 +204,7 @@ void * _ReturnAddress(void);
 #elif defined(__WATCOMC__)
 void ASMCompilerBarrier(void);
 #else /* 2003 should have _ReadWriteBarrier() but I guess we're at 2002 level then... */
-DECLINLINE(void) ASMCompilerBarrier(void)
+DECLINLINE(void) ASMCompilerBarrier(void) RT_NOTHROW_DEF
 {
     __asm
     {
@@ -229,9 +229,9 @@ DECLINLINE(void) ASMCompilerBarrier(void)
  * spin locks.
  */
 #if RT_INLINE_ASM_EXTERNAL && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMNopPause(void);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMNopPause(void) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMNopPause(void)
+DECLINLINE(void) ASMNopPause(void) RT_NOTHROW_DEF
 {
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  if RT_INLINE_ASM_GNU_STYLE
@@ -257,9 +257,9 @@ DECLINLINE(void) ASMNopPause(void)
  * @param   u8     The 8-bit value to assign to *pu8.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8);
+RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8)
+DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xchgb %0, %1\n\t"
@@ -295,7 +295,7 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8)
  * @param   pi8     Pointer to the 8-bit variable to update.
  * @param   i8      The 8-bit value to assign to *pi8.
  */
-DECLINLINE(int8_t) ASMAtomicXchgS8(volatile int8_t RT_FAR *pi8, int8_t i8)
+DECLINLINE(int8_t) ASMAtomicXchgS8(volatile int8_t RT_FAR *pi8, int8_t i8) RT_NOTHROW_DEF
 {
     return (int8_t)ASMAtomicXchgU8((volatile uint8_t RT_FAR *)pi8, (uint8_t)i8);
 }
@@ -308,7 +308,7 @@ DECLINLINE(int8_t) ASMAtomicXchgS8(volatile int8_t RT_FAR *pi8, int8_t i8)
  * @param   pf      Pointer to the 8-bit variable to update.
  * @param   f       The 8-bit value to assign to *pi8.
  */
-DECLINLINE(bool) ASMAtomicXchgBool(volatile bool RT_FAR *pf, bool f)
+DECLINLINE(bool) ASMAtomicXchgBool(volatile bool RT_FAR *pf, bool f) RT_NOTHROW_DEF
 {
 #ifdef _MSC_VER
     return !!ASMAtomicXchgU8((volatile uint8_t RT_FAR *)pf, (uint8_t)f);
@@ -326,9 +326,9 @@ DECLINLINE(bool) ASMAtomicXchgBool(volatile bool RT_FAR *pf, bool f)
  * @param   u16     The 16-bit value to assign to *pu16.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u16);
+RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u16) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u16)
+DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u16) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xchgw %0, %1\n\t"
@@ -364,7 +364,7 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u
  * @param   pi16    Pointer to the 16-bit variable to update.
  * @param   i16     The 16-bit value to assign to *pi16.
  */
-DECLINLINE(int16_t) ASMAtomicXchgS16(volatile int16_t RT_FAR *pi16, int16_t i16)
+DECLINLINE(int16_t) ASMAtomicXchgS16(volatile int16_t RT_FAR *pi16, int16_t i16) RT_NOTHROW_DEF
 {
     return (int16_t)ASMAtomicXchgU16((volatile uint16_t RT_FAR *)pi16, (uint16_t)i16);
 }
@@ -380,9 +380,9 @@ DECLINLINE(int16_t) ASMAtomicXchgS16(volatile int16_t RT_FAR *pi16, int16_t i16)
  * @remarks Does not work on 286 and earlier.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u32)
+DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("xchgl %0, %1\n\t"
@@ -422,7 +422,7 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u
  * @param   pi32    Pointer to the 32-bit variable to update.
  * @param   i32     The 32-bit value to assign to *pi32.
  */
-DECLINLINE(int32_t) ASMAtomicXchgS32(volatile int32_t RT_FAR *pi32, int32_t i32)
+DECLINLINE(int32_t) ASMAtomicXchgS32(volatile int32_t RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     return (int32_t)ASMAtomicXchgU32((volatile uint32_t RT_FAR *)pi32, (uint32_t)i32);
 }
@@ -439,9 +439,9 @@ DECLINLINE(int32_t) ASMAtomicXchgS32(volatile int32_t RT_FAR *pi32, int32_t i32)
  */
 #if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
  || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
-RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u64);
+RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u64)
+DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
 # if defined(RT_ARCH_AMD64)
 #  if RT_INLINE_ASM_USES_INTRIN
@@ -517,7 +517,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
  * @param   pi64    Pointer to the 64-bit variable to update.
  * @param   i64     The 64-bit value to assign to *pi64.
  */
-DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t RT_FAR *pi64, int64_t i64)
+DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     return (int64_t)ASMAtomicXchgU64((volatile uint64_t RT_FAR *)pi64, (uint64_t)i64);
 }
@@ -530,7 +530,7 @@ DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t RT_FAR *pi64, int64_t i64)
  * @param   puDst   Pointer to the size_t variable to update.
  * @param   uNew    The new value to assign to *puDst.
  */
-DECLINLINE(size_t) ASMAtomicXchgZ(size_t volatile RT_FAR *puDst, const size_t uNew)
+DECLINLINE(size_t) ASMAtomicXchgZ(size_t volatile RT_FAR *puDst, const size_t uNew) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 16
     AssertCompile(sizeof(size_t) == 2);
@@ -552,7 +552,7 @@ DECLINLINE(size_t) ASMAtomicXchgZ(size_t volatile RT_FAR *puDst, const size_t uN
  * @param   ppv    Pointer to the pointer variable to update.
  * @param   pv     The pointer value to assign to *ppv.
  */
-DECLINLINE(void RT_FAR *) ASMAtomicXchgPtr(void RT_FAR * volatile RT_FAR *ppv, const void RT_FAR *pv)
+DECLINLINE(void RT_FAR *) ASMAtomicXchgPtr(void RT_FAR * volatile RT_FAR *ppv, const void RT_FAR *pv) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 32 || ARCH_BITS == 16
     return (void RT_FAR *)ASMAtomicXchgU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppv, (uint32_t)pv);
@@ -594,7 +594,7 @@ DECLINLINE(void RT_FAR *) ASMAtomicXchgPtr(void RT_FAR * volatile RT_FAR *ppv, c
  * @param   ppvRC   Pointer to the pointer variable to update.
  * @param   pvRC    The pointer value to assign to *ppv.
  */
-DECLINLINE(RTRCPTR) ASMAtomicXchgRCPtr(RTRCPTR volatile RT_FAR *ppvRC, RTRCPTR pvRC)
+DECLINLINE(RTRCPTR) ASMAtomicXchgRCPtr(RTRCPTR volatile RT_FAR *ppvRC, RTRCPTR pvRC) RT_NOTHROW_DEF
 {
     return (RTRCPTR)ASMAtomicXchgU32((uint32_t volatile RT_FAR *)(void RT_FAR *)ppvRC, (uint32_t)pvRC);
 }
@@ -607,7 +607,7 @@ DECLINLINE(RTRCPTR) ASMAtomicXchgRCPtr(RTRCPTR volatile RT_FAR *ppvRC, RTRCPTR p
  * @param   ppvR0  Pointer to the pointer variable to update.
  * @param   pvR0   The pointer value to assign to *ppv.
  */
-DECLINLINE(RTR0PTR) ASMAtomicXchgR0Ptr(RTR0PTR volatile RT_FAR *ppvR0, RTR0PTR pvR0)
+DECLINLINE(RTR0PTR) ASMAtomicXchgR0Ptr(RTR0PTR volatile RT_FAR *ppvR0, RTR0PTR pvR0) RT_NOTHROW_DEF
 {
 #if R0_ARCH_BITS == 32 || ARCH_BITS == 16
     return (RTR0PTR)ASMAtomicXchgU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppvR0, (uint32_t)pvR0);
@@ -626,7 +626,7 @@ DECLINLINE(RTR0PTR) ASMAtomicXchgR0Ptr(RTR0PTR volatile RT_FAR *ppvR0, RTR0PTR p
  * @param   ppvR3  Pointer to the pointer variable to update.
  * @param   pvR3   The pointer value to assign to *ppv.
  */
-DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile RT_FAR *ppvR3, RTR3PTR pvR3)
+DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile RT_FAR *ppvR3, RTR3PTR pvR3) RT_NOTHROW_DEF
 {
 #if R3_ARCH_BITS == 32 || ARCH_BITS == 16
     return (RTR3PTR)ASMAtomicXchgU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppvR3, (uint32_t)pvR3);
@@ -719,9 +719,9 @@ DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile RT_FAR *ppvR3, RTR3PTR p
  * @remarks x86: Requires a 486 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL || !RT_INLINE_ASM_GNU_STYLE
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t u8New, const uint8_t u8Old);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t u8New, const uint8_t u8Old) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t u8New, uint8_t u8Old)
+DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t u8New, uint8_t u8Old) RT_NOTHROW_DEF
 {
     uint8_t u8Ret;
     __asm__ __volatile__("lock; cmpxchgb %3, %0\n\t"
@@ -749,7 +749,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgS8(volatile int8_t RT_FAR *pi8, const int8_t i8New, const int8_t i8Old)
+DECLINLINE(bool) ASMAtomicCmpXchgS8(volatile int8_t RT_FAR *pi8, const int8_t i8New, const int8_t i8Old) RT_NOTHROW_DEF
 {
     return ASMAtomicCmpXchgU8((volatile uint8_t RT_FAR *)pi8, (uint8_t)i8New, (uint8_t)i8Old);
 }
@@ -767,7 +767,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS8(volatile int8_t RT_FAR *pi8, const int8_t i8
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgBool(volatile bool RT_FAR *pf, const bool fNew, const bool fOld)
+DECLINLINE(bool) ASMAtomicCmpXchgBool(volatile bool RT_FAR *pf, const bool fNew, const bool fOld) RT_NOTHROW_DEF
 {
     return ASMAtomicCmpXchgU8((volatile uint8_t RT_FAR *)pf, (uint8_t)fNew, (uint8_t)fOld);
 }
@@ -786,9 +786,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgBool(volatile bool RT_FAR *pf, const bool fNew,
  * @remarks x86: Requires a 486 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, uint32_t u32Old)
+DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, uint32_t u32Old) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     uint8_t u8Ret;
@@ -843,7 +843,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t RT_FAR *pi32, const int32_t i32New, const int32_t i32Old)
+DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t RT_FAR *pi32, const int32_t i32New, const int32_t i32Old) RT_NOTHROW_DEF
 {
     return ASMAtomicCmpXchgU32((volatile uint32_t RT_FAR *)pi32, (uint32_t)i32New, (uint32_t)i32Old);
 }
@@ -863,9 +863,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t RT_FAR *pi32, const int32_
  */
 #if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
  || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, const uint64_t u64New, const uint64_t u64Old);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, const uint64_t u64New, const uint64_t u64Old) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u64New, uint64_t u64Old)
+DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u64New, uint64_t u64Old) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
    return (uint64_t)_InterlockedCompareExchange64((__int64 RT_FAR *)pu64, u64New, u64Old) == u64Old;
@@ -962,7 +962,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_t i64, const int64_t i64Old)
+DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_t i64, const int64_t i64Old) RT_NOTHROW_DEF
 {
     return ASMAtomicCmpXchgU64((volatile uint64_t RT_FAR *)pi64, (uint64_t)i64, (uint64_t)i64Old);
 }
@@ -980,7 +980,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, const void RT_FAR *pvNew, const void RT_FAR *pvOld)
+DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, const void RT_FAR *pvNew, const void RT_FAR *pvOld) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 32 || ARCH_BITS == 16
     return ASMAtomicCmpXchgU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppv, (uint32_t)pvNew, (uint32_t)pvOld);
@@ -1090,9 +1090,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, con
  * @remarks x86: Requires a 486 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old, uint32_t RT_FAR *pu32Old);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old, uint32_t RT_FAR *pu32Old) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old, uint32_t RT_FAR *pu32Old)
+DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uint32_t u32New, const uint32_t u32Old, uint32_t RT_FAR *pu32Old) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     uint8_t u8Ret;
@@ -1153,7 +1153,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgExS32(volatile int32_t RT_FAR *pi32, const int32_t i32New, const int32_t i32Old, int32_t RT_FAR *pi32Old)
+DECLINLINE(bool) ASMAtomicCmpXchgExS32(volatile int32_t RT_FAR *pi32, const int32_t i32New, const int32_t i32Old, int32_t RT_FAR *pi32Old) RT_NOTHROW_DEF
 {
     return ASMAtomicCmpXchgExU32((volatile uint32_t RT_FAR *)pi32, (uint32_t)i32New, (uint32_t)i32Old, (uint32_t RT_FAR *)pi32Old);
 }
@@ -1175,9 +1175,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS32(volatile int32_t RT_FAR *pi32, const int3
  */
 #if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
  || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t RT_FAR *pu64Old);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t RT_FAR *pu64Old) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t RT_FAR *pu64Old)
+DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uint64_t u64New, const uint64_t u64Old, uint64_t RT_FAR *pu64Old) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
    return (*pu64Old =_InterlockedCompareExchange64((__int64 RT_FAR *)pu64, u64New, u64Old)) == u64Old;
@@ -1276,7 +1276,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t RT_FAR *pi64, const int64_t i64, const int64_t i64Old, int64_t RT_FAR *pi64Old)
+DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t RT_FAR *pi64, const int64_t i64, const int64_t i64Old, int64_t RT_FAR *pi64Old) RT_NOTHROW_DEF
 {
     return ASMAtomicCmpXchgExU64((volatile uint64_t RT_FAR *)pi64, (uint64_t)i64, (uint64_t)i64Old, (uint64_t RT_FAR *)pi64Old);
 }
@@ -1353,7 +1353,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t RT_FAR *pi64, const int6
  * @remarks x86: Requires a 486 or later.
  */
 DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void RT_FAR * volatile RT_FAR *ppv, const void RT_FAR *pvNew, const void RT_FAR *pvOld,
-                                           void RT_FAR * RT_FAR *ppvOld)
+                                           void RT_FAR * RT_FAR *ppvOld) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 32 || ARCH_BITS == 16
     return ASMAtomicCmpXchgExU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppv, (uint32_t)pvNew, (uint32_t)pvOld, (uint32_t RT_FAR *)ppvOld);
@@ -1403,9 +1403,9 @@ DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void RT_FAR * volatile RT_FAR *ppv, c
  * Virtualization unfriendly serializing instruction, always exits.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionCpuId(void);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionCpuId(void) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMSerializeInstructionCpuId(void)
+DECLINLINE(void) ASMSerializeInstructionCpuId(void) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     RTCCUINTREG xAX = 0;
@@ -1449,9 +1449,9 @@ DECLINLINE(void) ASMSerializeInstructionCpuId(void)
  * Virtualization friendly serializing instruction, though more expensive.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionIRet(void);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionIRet(void) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMSerializeInstructionIRet(void)
+DECLINLINE(void) ASMSerializeInstructionIRet(void) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
@@ -1494,9 +1494,9 @@ DECLINLINE(void) ASMSerializeInstructionIRet(void)
  * Virtualization friendlier serializing instruction, may still cause exits.
  */
 #if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionRdTscp(void);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMSerializeInstructionRdTscp(void)
+DECLINLINE(void) ASMSerializeInstructionRdTscp(void) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     /* rdtscp is not supported by ancient linux build VM of course :-( */
@@ -1532,7 +1532,7 @@ DECLINLINE(void) ASMSerializeInstructionRdTscp(void)
 #elif defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 # define ASMSerializeInstruction() ASMSerializeInstructionCpuId()
 #elif defined(RT_ARCH_SPARC64)
-RTDECL(void) ASMSerializeInstruction(void);
+RTDECL(void) ASMSerializeInstruction(void) RT_NOTHROW_PROTO;
 #else
 # error "Port me"
 #endif
@@ -1541,7 +1541,7 @@ RTDECL(void) ASMSerializeInstruction(void);
 /**
  * Memory fence, waits for any pending writes and reads to complete.
  */
-DECLINLINE(void) ASMMemoryFence(void)
+DECLINLINE(void) ASMMemoryFence(void) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_AMD64) || (defined(RT_ARCH_X86) && !defined(RT_WITH_OLD_CPU_SUPPORT))
 # if RT_INLINE_ASM_GNU_STYLE
@@ -1569,7 +1569,7 @@ DECLINLINE(void) ASMMemoryFence(void)
 /**
  * Write fence, waits for any pending writes to complete.
  */
-DECLINLINE(void) ASMWriteFence(void)
+DECLINLINE(void) ASMWriteFence(void) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_AMD64) || (defined(RT_ARCH_X86) && !defined(RT_WITH_OLD_CPU_SUPPORT))
 # if RT_INLINE_ASM_GNU_STYLE
@@ -1593,7 +1593,7 @@ DECLINLINE(void) ASMWriteFence(void)
 /**
  * Read fence, waits for any pending reads to complete.
  */
-DECLINLINE(void) ASMReadFence(void)
+DECLINLINE(void) ASMReadFence(void) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_AMD64) || (defined(RT_ARCH_X86) && !defined(RT_WITH_OLD_CPU_SUPPORT))
 # if RT_INLINE_ASM_GNU_STYLE
@@ -1620,7 +1620,7 @@ DECLINLINE(void) ASMReadFence(void)
  * @returns Current *pu8 value
  * @param   pu8    Pointer to the 8-bit variable to read.
  */
-DECLINLINE(uint8_t) ASMAtomicReadU8(volatile uint8_t RT_FAR *pu8)
+DECLINLINE(uint8_t) ASMAtomicReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_DEF
 {
     ASMMemoryFence();
     return *pu8;    /* byte reads are atomic on x86 */
@@ -1633,7 +1633,7 @@ DECLINLINE(uint8_t) ASMAtomicReadU8(volatile uint8_t RT_FAR *pu8)
  * @returns Current *pu8 value
  * @param   pu8    Pointer to the 8-bit variable to read.
  */
-DECLINLINE(uint8_t) ASMAtomicUoReadU8(volatile uint8_t RT_FAR *pu8)
+DECLINLINE(uint8_t) ASMAtomicUoReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_DEF
 {
     return *pu8;    /* byte reads are atomic on x86 */
 }
@@ -1645,7 +1645,7 @@ DECLINLINE(uint8_t) ASMAtomicUoReadU8(volatile uint8_t RT_FAR *pu8)
  * @returns Current *pi8 value
  * @param   pi8    Pointer to the 8-bit variable to read.
  */
-DECLINLINE(int8_t) ASMAtomicReadS8(volatile int8_t RT_FAR *pi8)
+DECLINLINE(int8_t) ASMAtomicReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
 {
     ASMMemoryFence();
     return *pi8;    /* byte reads are atomic on x86 */
@@ -1658,7 +1658,7 @@ DECLINLINE(int8_t) ASMAtomicReadS8(volatile int8_t RT_FAR *pi8)
  * @returns Current *pi8 value
  * @param   pi8    Pointer to the 8-bit variable to read.
  */
-DECLINLINE(int8_t) ASMAtomicUoReadS8(volatile int8_t RT_FAR *pi8)
+DECLINLINE(int8_t) ASMAtomicUoReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
 {
     return *pi8;    /* byte reads are atomic on x86 */
 }
@@ -1670,7 +1670,7 @@ DECLINLINE(int8_t) ASMAtomicUoReadS8(volatile int8_t RT_FAR *pi8)
  * @returns Current *pu16 value
  * @param   pu16    Pointer to the 16-bit variable to read.
  */
-DECLINLINE(uint16_t) ASMAtomicReadU16(volatile uint16_t RT_FAR *pu16)
+DECLINLINE(uint16_t) ASMAtomicReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHROW_DEF
 {
     ASMMemoryFence();
     Assert(!((uintptr_t)pu16 & 1));
@@ -1684,7 +1684,7 @@ DECLINLINE(uint16_t) ASMAtomicReadU16(volatile uint16_t RT_FAR *pu16)
  * @returns Current *pu16 value
  * @param   pu16    Pointer to the 16-bit variable to read.
  */
-DECLINLINE(uint16_t) ASMAtomicUoReadU16(volatile uint16_t RT_FAR *pu16)
+DECLINLINE(uint16_t) ASMAtomicUoReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pu16 & 1));
     return *pu16;
@@ -1697,7 +1697,7 @@ DECLINLINE(uint16_t) ASMAtomicUoReadU16(volatile uint16_t RT_FAR *pu16)
  * @returns Current *pi16 value
  * @param   pi16    Pointer to the 16-bit variable to read.
  */
-DECLINLINE(int16_t) ASMAtomicReadS16(volatile int16_t RT_FAR *pi16)
+DECLINLINE(int16_t) ASMAtomicReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW_DEF
 {
     ASMMemoryFence();
     Assert(!((uintptr_t)pi16 & 1));
@@ -1711,7 +1711,7 @@ DECLINLINE(int16_t) ASMAtomicReadS16(volatile int16_t RT_FAR *pi16)
  * @returns Current *pi16 value
  * @param   pi16    Pointer to the 16-bit variable to read.
  */
-DECLINLINE(int16_t) ASMAtomicUoReadS16(volatile int16_t RT_FAR *pi16)
+DECLINLINE(int16_t) ASMAtomicUoReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pi16 & 1));
     return *pi16;
@@ -1724,7 +1724,7 @@ DECLINLINE(int16_t) ASMAtomicUoReadS16(volatile int16_t RT_FAR *pi16)
  * @returns Current *pu32 value
  * @param   pu32    Pointer to the 32-bit variable to read.
  */
-DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t RT_FAR *pu32)
+DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHROW_DEF
 {
     ASMMemoryFence();
     Assert(!((uintptr_t)pu32 & 3));
@@ -1741,7 +1741,7 @@ DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t RT_FAR *pu32)
  * @returns Current *pu32 value
  * @param   pu32    Pointer to the 32-bit variable to read.
  */
-DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t RT_FAR *pu32)
+DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pu32 & 3));
 #if ARCH_BITS == 16
@@ -1757,7 +1757,7 @@ DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t RT_FAR *pu32)
  * @returns Current *pi32 value
  * @param   pi32    Pointer to the 32-bit variable to read.
  */
-DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t RT_FAR *pi32)
+DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW_DEF
 {
     ASMMemoryFence();
     Assert(!((uintptr_t)pi32 & 3));
@@ -1774,7 +1774,7 @@ DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t RT_FAR *pi32)
  * @returns Current *pi32 value
  * @param   pi32    Pointer to the 32-bit variable to read.
  */
-DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32)
+DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pi32 & 3));
 #if ARCH_BITS == 16
@@ -1796,9 +1796,9 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32)
  */
 #if (RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)) \
  || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
-RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64);
+RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64)
+DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW_DEF
 {
     uint64_t u64;
 # ifdef RT_ARCH_AMD64
@@ -1878,9 +1878,9 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64)
 #if !defined(RT_ARCH_AMD64) \
   && (   (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
       || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC)
-RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64);
+RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64)
+DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW_DEF
 {
     uint64_t u64;
 # ifdef RT_ARCH_AMD64
@@ -1958,7 +1958,7 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64)
  * @remarks This may fault if the memory is read-only!
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(int64_t) ASMAtomicReadS64(volatile int64_t RT_FAR *pi64)
+DECLINLINE(int64_t) ASMAtomicReadS64(volatile int64_t RT_FAR *pi64) RT_NOTHROW_DEF
 {
     return (int64_t)ASMAtomicReadU64((volatile uint64_t RT_FAR *)pi64);
 }
@@ -1974,7 +1974,7 @@ DECLINLINE(int64_t) ASMAtomicReadS64(volatile int64_t RT_FAR *pi64)
  * @remarks This will fault if the memory is read-only!
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(int64_t) ASMAtomicUoReadS64(volatile int64_t RT_FAR *pi64)
+DECLINLINE(int64_t) ASMAtomicUoReadS64(volatile int64_t RT_FAR *pi64) RT_NOTHROW_DEF
 {
     return (int64_t)ASMAtomicUoReadU64((volatile uint64_t RT_FAR *)pi64);
 }
@@ -1986,7 +1986,7 @@ DECLINLINE(int64_t) ASMAtomicUoReadS64(volatile int64_t RT_FAR *pi64)
  * @returns Current *pcb value
  * @param   pcb     Pointer to the size_t variable to read.
  */
-DECLINLINE(size_t) ASMAtomicReadZ(size_t volatile RT_FAR *pcb)
+DECLINLINE(size_t) ASMAtomicReadZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64
     return ASMAtomicReadU64((uint64_t volatile RT_FAR *)pcb);
@@ -2007,7 +2007,7 @@ DECLINLINE(size_t) ASMAtomicReadZ(size_t volatile RT_FAR *pcb)
  * @returns Current *pcb value
  * @param   pcb     Pointer to the size_t variable to read.
  */
-DECLINLINE(size_t) ASMAtomicUoReadZ(size_t volatile RT_FAR *pcb)
+DECLINLINE(size_t) ASMAtomicUoReadZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64 || ARCH_BITS == 16
     return ASMAtomicUoReadU64((uint64_t volatile RT_FAR *)pcb);
@@ -2031,7 +2031,7 @@ DECLINLINE(size_t) ASMAtomicUoReadZ(size_t volatile RT_FAR *pcb)
  * @remarks Please use ASMAtomicReadPtrT, it provides better type safety and
  *          requires less typing (no casts).
  */
-DECLINLINE(void RT_FAR *) ASMAtomicReadPtr(void RT_FAR * volatile RT_FAR *ppv)
+DECLINLINE(void RT_FAR *) ASMAtomicReadPtr(void RT_FAR * volatile RT_FAR *ppv) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 32 || ARCH_BITS == 16
     return (void RT_FAR *)ASMAtomicReadU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppv);
@@ -2072,7 +2072,7 @@ DECLINLINE(void RT_FAR *) ASMAtomicReadPtr(void RT_FAR * volatile RT_FAR *ppv)
  * @remarks Please use ASMAtomicUoReadPtrT, it provides better type safety and
  *          requires less typing (no casts).
  */
-DECLINLINE(void RT_FAR *) ASMAtomicUoReadPtr(void RT_FAR * volatile RT_FAR *ppv)
+DECLINLINE(void RT_FAR *) ASMAtomicUoReadPtr(void RT_FAR * volatile RT_FAR *ppv) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 32 || ARCH_BITS == 16
     return (void RT_FAR *)ASMAtomicUoReadU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppv);
@@ -2111,7 +2111,7 @@ DECLINLINE(void RT_FAR *) ASMAtomicUoReadPtr(void RT_FAR * volatile RT_FAR *ppv)
  * @returns Current *pf value
  * @param   pf      Pointer to the boolean variable to read.
  */
-DECLINLINE(bool) ASMAtomicReadBool(volatile bool RT_FAR *pf)
+DECLINLINE(bool) ASMAtomicReadBool(volatile bool RT_FAR *pf) RT_NOTHROW_DEF
 {
     ASMMemoryFence();
     return *pf;     /* byte reads are atomic on x86 */
@@ -2124,7 +2124,7 @@ DECLINLINE(bool) ASMAtomicReadBool(volatile bool RT_FAR *pf)
  * @returns Current *pf value
  * @param   pf      Pointer to the boolean variable to read.
  */
-DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool RT_FAR *pf)
+DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool RT_FAR *pf) RT_NOTHROW_DEF
 {
     return *pf;     /* byte reads are atomic on x86 */
 }
@@ -2228,7 +2228,7 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool RT_FAR *pf)
  * @param   pu8     Pointer to the 8-bit variable.
  * @param   u8      The 8-bit value to assign to *pu8.
  */
-DECLINLINE(void) ASMAtomicWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8)
+DECLINLINE(void) ASMAtomicWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_DEF
 {
     ASMAtomicXchgU8(pu8, u8);
 }
@@ -2240,7 +2240,7 @@ DECLINLINE(void) ASMAtomicWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8)
  * @param   pu8     Pointer to the 8-bit variable.
  * @param   u8      The 8-bit value to assign to *pu8.
  */
-DECLINLINE(void) ASMAtomicUoWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8)
+DECLINLINE(void) ASMAtomicUoWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT_NOTHROW_DEF
 {
     *pu8 = u8;      /* byte writes are atomic on x86 */
 }
@@ -2252,7 +2252,7 @@ DECLINLINE(void) ASMAtomicUoWriteU8(volatile uint8_t RT_FAR *pu8, uint8_t u8)
  * @param   pi8     Pointer to the 8-bit variable to read.
  * @param   i8      The 8-bit value to assign to *pi8.
  */
-DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8)
+DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8) RT_NOTHROW_DEF
 {
     ASMAtomicXchgS8(pi8, i8);
 }
@@ -2264,7 +2264,7 @@ DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8)
  * @param   pi8     Pointer to the 8-bit variable to write.
  * @param   i8      The 8-bit value to assign to *pi8.
  */
-DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8)
+DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8) RT_NOTHROW_DEF
 {
     *pi8 = i8;      /* byte writes are atomic on x86 */
 }
@@ -2276,7 +2276,7 @@ DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t RT_FAR *pi8, int8_t i8)
  * @param   pu16    Pointer to the 16-bit variable to write.
  * @param   u16     The 16-bit value to assign to *pu16.
  */
-DECLINLINE(void) ASMAtomicWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u16)
+DECLINLINE(void) ASMAtomicWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u16) RT_NOTHROW_DEF
 {
     ASMAtomicXchgU16(pu16, u16);
 }
@@ -2288,7 +2288,7 @@ DECLINLINE(void) ASMAtomicWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u16)
  * @param   pu16    Pointer to the 16-bit variable to write.
  * @param   u16     The 16-bit value to assign to *pu16.
  */
-DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u16)
+DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u16) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pu16 & 1));
     *pu16 = u16;
@@ -2301,7 +2301,7 @@ DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t RT_FAR *pu16, uint16_t u1
  * @param   pi16    Pointer to the 16-bit variable to write.
  * @param   i16     The 16-bit value to assign to *pi16.
  */
-DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16)
+DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16) RT_NOTHROW_DEF
 {
     ASMAtomicXchgS16(pi16, i16);
 }
@@ -2313,7 +2313,7 @@ DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16)
  * @param   pi16    Pointer to the 16-bit variable to write.
  * @param   i16     The 16-bit value to assign to *pi16.
  */
-DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16)
+DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pi16 & 1));
     *pi16 = i16;
@@ -2326,7 +2326,7 @@ DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t RT_FAR *pi16, int16_t i16)
  * @param   pu32    Pointer to the 32-bit variable to write.
  * @param   u32     The 32-bit value to assign to *pu32.
  */
-DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u32)
+DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
     ASMAtomicXchgU32(pu32, u32);
 }
@@ -2338,7 +2338,7 @@ DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u32)
  * @param   pu32    Pointer to the 32-bit variable to write.
  * @param   u32     The 32-bit value to assign to *pu32.
  */
-DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u32)
+DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pu32 & 3));
 #if ARCH_BITS >= 32
@@ -2355,7 +2355,7 @@ DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t RT_FAR *pu32, uint32_t u3
  * @param   pi32    Pointer to the 32-bit variable to write.
  * @param   i32     The 32-bit value to assign to *pi32.
  */
-DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32)
+DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     ASMAtomicXchgS32(pi32, i32);
 }
@@ -2367,7 +2367,7 @@ DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32)
  * @param   pi32    Pointer to the 32-bit variable to write.
  * @param   i32     The 32-bit value to assign to *pi32.
  */
-DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32)
+DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pi32 & 3));
 #if ARCH_BITS >= 32
@@ -2384,7 +2384,7 @@ DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t RT_FAR *pi32, int32_t i32)
  * @param   pu64    Pointer to the 64-bit variable to write.
  * @param   u64     The 64-bit value to assign to *pu64.
  */
-DECLINLINE(void) ASMAtomicWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u64)
+DECLINLINE(void) ASMAtomicWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
     ASMAtomicXchgU64(pu64, u64);
 }
@@ -2396,7 +2396,7 @@ DECLINLINE(void) ASMAtomicWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u64)
  * @param   pu64    Pointer to the 64-bit variable to write.
  * @param   u64     The 64-bit value to assign to *pu64.
  */
-DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u64)
+DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pu64 & 7));
 #if ARCH_BITS == 64
@@ -2413,7 +2413,7 @@ DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
  * @param   pi64    Pointer to the 64-bit variable to write.
  * @param   i64     The 64-bit value to assign to *pi64.
  */
-DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64)
+DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     ASMAtomicXchgS64(pi64, i64);
 }
@@ -2425,7 +2425,7 @@ DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64)
  * @param   pi64    Pointer to the 64-bit variable to write.
  * @param   i64     The 64-bit value to assign to *pi64.
  */
-DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64)
+DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     Assert(!((uintptr_t)pi64 & 7));
 #if ARCH_BITS == 64
@@ -2443,7 +2443,7 @@ DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t RT_FAR *pi64, int64_t i64)
  * @param   pcb     Pointer to the size_t variable to write.
  * @param   cb      The value to assign to *pcb.
  */
-DECLINLINE(void) ASMAtomicWriteZ(volatile size_t RT_FAR *pcb, size_t cb)
+DECLINLINE(void) ASMAtomicWriteZ(volatile size_t RT_FAR *pcb, size_t cb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64
     ASMAtomicWriteU64((uint64_t volatile *)pcb, cb);
@@ -2464,7 +2464,7 @@ DECLINLINE(void) ASMAtomicWriteZ(volatile size_t RT_FAR *pcb, size_t cb)
  * @param   pf      Pointer to the boolean variable to write.
  * @param   f       The boolean value to assign to *pf.
  */
-DECLINLINE(void) ASMAtomicWriteBool(volatile bool RT_FAR *pf, bool f)
+DECLINLINE(void) ASMAtomicWriteBool(volatile bool RT_FAR *pf, bool f) RT_NOTHROW_DEF
 {
     ASMAtomicWriteU8((uint8_t volatile RT_FAR *)pf, f);
 }
@@ -2476,7 +2476,7 @@ DECLINLINE(void) ASMAtomicWriteBool(volatile bool RT_FAR *pf, bool f)
  * @param   pf      Pointer to the boolean variable to write.
  * @param   f       The boolean value to assign to *pf.
  */
-DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool RT_FAR *pf, bool f)
+DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool RT_FAR *pf, bool f) RT_NOTHROW_DEF
 {
     *pf = f;    /* byte writes are atomic on x86 */
 }
@@ -2488,7 +2488,7 @@ DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool RT_FAR *pf, bool f)
  * @param   ppv     Pointer to the pointer variable to write.
  * @param   pv      The pointer value to assign to *ppv.
  */
-DECLINLINE(void) ASMAtomicWritePtrVoid(void RT_FAR * volatile RT_FAR *ppv, const void *pv)
+DECLINLINE(void) ASMAtomicWritePtrVoid(void RT_FAR * volatile RT_FAR *ppv, const void *pv) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 32 || ARCH_BITS == 16
     ASMAtomicWriteU32((volatile uint32_t RT_FAR *)(void RT_FAR *)ppv, (uint32_t)pv);
@@ -2724,7 +2724,7 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void RT_FAR * volatile RT_FAR *ppv, const
  * @remarks Currently not implemented, just to make 16-bit code happy.
  * @remarks x86: Requires a 486 or later.
  */
-RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicAddU16(uint16_t volatile RT_FAR *pu16, uint32_t u16);
+RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicAddU16(uint16_t volatile RT_FAR *pu16, uint32_t u16) RT_NOTHROW_PROTO;
 
 
 /**
@@ -2737,9 +2737,9 @@ RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicAddU16(uint16_t volatile RT_FAR *pu
  * @remarks x86: Requires a 486 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
+DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     u32 = _InterlockedExchangeAdd((long RT_FAR *)pu32, u32);
@@ -2781,7 +2781,7 @@ DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile RT_FAR *pu32, uint32_t u3
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile RT_FAR *pi32, int32_t i32)
+DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     return (int32_t)ASMAtomicAddU32((uint32_t volatile RT_FAR *)pi32, (uint32_t)i32);
 }
@@ -2797,9 +2797,9 @@ DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile RT_FAR *pi32, int32_t i32)
  * @remarks x86: Requires a Pentium or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u64);
+DECLASM(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
+DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
     u64 = _InterlockedExchangeAdd64((__int64 RT_FAR *)pu64, u64);
@@ -2839,7 +2839,7 @@ DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile RT_FAR *pu64, uint64_t u6
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(int64_t) ASMAtomicAddS64(int64_t volatile RT_FAR *pi64, int64_t i64)
+DECLINLINE(int64_t) ASMAtomicAddS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     return (int64_t)ASMAtomicAddU64((uint64_t volatile RT_FAR *)pi64, (uint64_t)i64);
 }
@@ -2852,7 +2852,7 @@ DECLINLINE(int64_t) ASMAtomicAddS64(int64_t volatile RT_FAR *pi64, int64_t i64)
  * @param   pcb         Pointer to the size_t value.
  * @param   cb          Number to add.
  */
-DECLINLINE(size_t) ASMAtomicAddZ(size_t volatile RT_FAR *pcb, size_t cb)
+DECLINLINE(size_t) ASMAtomicAddZ(size_t volatile RT_FAR *pcb, size_t cb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64
     AssertCompileSize(size_t, 8);
@@ -2897,7 +2897,7 @@ DECLINLINE(size_t) ASMAtomicAddZ(size_t volatile RT_FAR *pcb, size_t cb)
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(uint16_t) ASMAtomicSubU16(uint16_t volatile RT_FAR *pu16, uint32_t u16)
+DECLINLINE(uint16_t) ASMAtomicSubU16(uint16_t volatile RT_FAR *pu16, uint32_t u16) RT_NOTHROW_DEF
 {
     return ASMAtomicAddU16(pu16, (uint16_t)-(int16_t)u16);
 }
@@ -2912,7 +2912,7 @@ DECLINLINE(uint16_t) ASMAtomicSubU16(uint16_t volatile RT_FAR *pu16, uint32_t u1
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int16_t) ASMAtomicSubS16(int16_t volatile RT_FAR *pi16, int16_t i16)
+DECLINLINE(int16_t) ASMAtomicSubS16(int16_t volatile RT_FAR *pi16, int16_t i16) RT_NOTHROW_DEF
 {
     return (int16_t)ASMAtomicAddU16((uint16_t volatile RT_FAR *)pi16, (uint16_t)-i16);
 }
@@ -2927,7 +2927,7 @@ DECLINLINE(int16_t) ASMAtomicSubS16(int16_t volatile RT_FAR *pi16, int16_t i16)
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(uint32_t) ASMAtomicSubU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
+DECLINLINE(uint32_t) ASMAtomicSubU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
     return ASMAtomicAddU32(pu32, (uint32_t)-(int32_t)u32);
 }
@@ -2942,7 +2942,7 @@ DECLINLINE(uint32_t) ASMAtomicSubU32(uint32_t volatile RT_FAR *pu32, uint32_t u3
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int32_t) ASMAtomicSubS32(int32_t volatile RT_FAR *pi32, int32_t i32)
+DECLINLINE(int32_t) ASMAtomicSubS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     return (int32_t)ASMAtomicAddU32((uint32_t volatile RT_FAR *)pi32, (uint32_t)-i32);
 }
@@ -2957,7 +2957,7 @@ DECLINLINE(int32_t) ASMAtomicSubS32(int32_t volatile RT_FAR *pi32, int32_t i32)
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(uint64_t) ASMAtomicSubU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
+DECLINLINE(uint64_t) ASMAtomicSubU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
     return ASMAtomicAddU64(pu64, (uint64_t)-(int64_t)u64);
 }
@@ -2972,7 +2972,7 @@ DECLINLINE(uint64_t) ASMAtomicSubU64(uint64_t volatile RT_FAR *pu64, uint64_t u6
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(int64_t) ASMAtomicSubS64(int64_t volatile RT_FAR *pi64, int64_t i64)
+DECLINLINE(int64_t) ASMAtomicSubS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     return (int64_t)ASMAtomicAddU64((uint64_t volatile RT_FAR *)pi64, (uint64_t)-i64);
 }
@@ -2987,7 +2987,7 @@ DECLINLINE(int64_t) ASMAtomicSubS64(int64_t volatile RT_FAR *pi64, int64_t i64)
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(size_t) ASMAtomicSubZ(size_t volatile RT_FAR *pcb, size_t cb)
+DECLINLINE(size_t) ASMAtomicSubZ(size_t volatile RT_FAR *pcb, size_t cb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64
     return ASMAtomicSubU64((uint64_t volatile RT_FAR *)pcb, cb);
@@ -3032,7 +3032,7 @@ DECLINLINE(size_t) ASMAtomicSubZ(size_t volatile RT_FAR *pcb, size_t cb)
  *
  * @remarks x86: Requires a 486 or later.
  */
-RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicIncU16(uint16_t volatile RT_FAR *pu16);
+RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicIncU16(uint16_t volatile RT_FAR *pu16) RT_NOTHROW_PROTO;
 
 
 /**
@@ -3044,9 +3044,9 @@ RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMAtomicIncU16(uint16_t volatile RT_FAR *pu
  * @remarks x86: Requires a 486 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32)
+DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_DEF
 {
     uint32_t u32;
 # if RT_INLINE_ASM_USES_INTRIN
@@ -3088,7 +3088,7 @@ DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile RT_FAR *pu32)
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int32_t) ASMAtomicIncS32(int32_t volatile RT_FAR *pi32)
+DECLINLINE(int32_t) ASMAtomicIncS32(int32_t volatile RT_FAR *pi32) RT_NOTHROW_DEF
 {
     return (int32_t)ASMAtomicIncU32((uint32_t volatile RT_FAR *)pi32);
 }
@@ -3103,9 +3103,9 @@ DECLINLINE(int32_t) ASMAtomicIncS32(int32_t volatile RT_FAR *pi32)
  * @remarks x86: Requires a Pentium or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64);
+DECLASM(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64)
+DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
     uint64_t u64;
@@ -3136,7 +3136,7 @@ DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile RT_FAR *pu64)
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(int64_t) ASMAtomicIncS64(int64_t volatile RT_FAR *pi64)
+DECLINLINE(int64_t) ASMAtomicIncS64(int64_t volatile RT_FAR *pi64) RT_NOTHROW_DEF
 {
     return (int64_t)ASMAtomicIncU64((uint64_t volatile RT_FAR *)pi64);
 }
@@ -3150,7 +3150,7 @@ DECLINLINE(int64_t) ASMAtomicIncS64(int64_t volatile RT_FAR *pi64)
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int64_t) ASMAtomicIncZ(size_t volatile RT_FAR *pcb)
+DECLINLINE(int64_t) ASMAtomicIncZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64
     return ASMAtomicIncU64((uint64_t volatile RT_FAR *)pcb);
@@ -3174,7 +3174,7 @@ DECLINLINE(int64_t) ASMAtomicIncZ(size_t volatile RT_FAR *pcb)
  *
  * @remarks x86: Requires a 486 or later.
  */
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicDecU16(uint16_t volatile RT_FAR *pu16);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicDecU16(uint16_t volatile RT_FAR *pu16) RT_NOTHROW_PROTO;
 
 
 /**
@@ -3186,9 +3186,9 @@ RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicDecU16(uint16_t volatile RT_FAR *pu
  * @remarks x86: Requires a 486 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32)
+DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_DEF
 {
     uint32_t u32;
 # if RT_INLINE_ASM_USES_INTRIN
@@ -3230,7 +3230,7 @@ DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile RT_FAR *pu32)
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int32_t) ASMAtomicDecS32(int32_t volatile RT_FAR *pi32)
+DECLINLINE(int32_t) ASMAtomicDecS32(int32_t volatile RT_FAR *pi32) RT_NOTHROW_DEF
 {
     return (int32_t)ASMAtomicDecU32((uint32_t volatile RT_FAR *)pi32);
 }
@@ -3245,9 +3245,9 @@ DECLINLINE(int32_t) ASMAtomicDecS32(int32_t volatile RT_FAR *pi32)
  * @remarks x86: Requires a Pentium or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64);
+RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64)
+DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
     uint64_t u64 = _InterlockedDecrement64((__int64 volatile RT_FAR *)pu64);
@@ -3277,7 +3277,7 @@ DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile RT_FAR *pu64)
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(int64_t) ASMAtomicDecS64(int64_t volatile RT_FAR *pi64)
+DECLINLINE(int64_t) ASMAtomicDecS64(int64_t volatile RT_FAR *pi64) RT_NOTHROW_DEF
 {
     return (int64_t)ASMAtomicDecU64((uint64_t volatile RT_FAR *)pi64);
 }
@@ -3291,7 +3291,7 @@ DECLINLINE(int64_t) ASMAtomicDecS64(int64_t volatile RT_FAR *pi64)
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int64_t) ASMAtomicDecZ(size_t volatile RT_FAR *pcb)
+DECLINLINE(int64_t) ASMAtomicDecZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64
     return ASMAtomicDecU64((uint64_t volatile RT_FAR *)pcb);
@@ -3314,9 +3314,9 @@ DECLINLINE(int64_t) ASMAtomicDecZ(size_t volatile RT_FAR *pcb)
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
+DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     _InterlockedOr((long volatile RT_FAR *)pu32, (long)u32);
@@ -3351,7 +3351,7 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
  *
  * @remarks x86: Requires a 386 or later.
  */
-DECLINLINE(void) ASMAtomicOrS32(int32_t volatile RT_FAR *pi32, int32_t i32)
+DECLINLINE(void) ASMAtomicOrS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     ASMAtomicOrU32((uint32_t volatile RT_FAR *)pi32, i32);
 }
@@ -3366,9 +3366,9 @@ DECLINLINE(void) ASMAtomicOrS32(int32_t volatile RT_FAR *pi32, int32_t i32)
  * @remarks x86: Requires a Pentium or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64);
+DECLASM(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
+DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
     _InterlockedOr64((__int64 volatile RT_FAR *)pu64, (__int64)u64);
@@ -3400,7 +3400,7 @@ DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(void) ASMAtomicOrS64(int64_t volatile RT_FAR *pi64, int64_t i64)
+DECLINLINE(void) ASMAtomicOrS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     ASMAtomicOrU64((uint64_t volatile RT_FAR *)pi64, i64);
 }
@@ -3415,9 +3415,9 @@ DECLINLINE(void) ASMAtomicOrS64(int64_t volatile RT_FAR *pi64, int64_t i64)
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
+DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     _InterlockedAnd((long volatile RT_FAR *)pu32, u32);
@@ -3452,7 +3452,7 @@ DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
  *
  * @remarks x86: Requires a 386 or later.
  */
-DECLINLINE(void) ASMAtomicAndS32(int32_t volatile RT_FAR *pi32, int32_t i32)
+DECLINLINE(void) ASMAtomicAndS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     ASMAtomicAndU32((uint32_t volatile RT_FAR *)pi32, (uint32_t)i32);
 }
@@ -3467,9 +3467,9 @@ DECLINLINE(void) ASMAtomicAndS32(int32_t volatile RT_FAR *pi32, int32_t i32)
  * @remarks x86: Requires a Pentium or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64);
+DECLASM(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
+DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
     _InterlockedAnd64((__int64 volatile RT_FAR *)pu64, u64);
@@ -3501,7 +3501,7 @@ DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(void) ASMAtomicAndS64(int64_t volatile RT_FAR *pi64, int64_t i64)
+DECLINLINE(void) ASMAtomicAndS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     ASMAtomicAndU64((uint64_t volatile RT_FAR *)pi64, (uint64_t)i64);
 }
@@ -3516,9 +3516,9 @@ DECLINLINE(void) ASMAtomicAndS64(int64_t volatile RT_FAR *pi64, int64_t i64)
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
+DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("orl %1, %0\n\t"
@@ -3550,7 +3550,7 @@ DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
  *
  * @remarks x86: Requires a 386 or later.
  */
-DECLINLINE(void) ASMAtomicUoOrS32(int32_t volatile RT_FAR *pi32, int32_t i32)
+DECLINLINE(void) ASMAtomicUoOrS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     ASMAtomicUoOrU32((uint32_t volatile RT_FAR *)pi32, i32);
 }
@@ -3565,9 +3565,9 @@ DECLINLINE(void) ASMAtomicUoOrS32(int32_t volatile RT_FAR *pi32, int32_t i32)
  * @remarks x86: Requires a Pentium or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64);
+DECLASM(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
+DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("orq %1, %q0\n\t"
@@ -3596,7 +3596,7 @@ DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(void) ASMAtomicUoOrS64(int64_t volatile RT_FAR *pi64, int64_t i64)
+DECLINLINE(void) ASMAtomicUoOrS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     ASMAtomicUoOrU64((uint64_t volatile RT_FAR *)pi64, i64);
 }
@@ -3611,9 +3611,9 @@ DECLINLINE(void) ASMAtomicUoOrS64(int64_t volatile RT_FAR *pi64, int64_t i64)
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
+DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__("andl %1, %0\n\t"
@@ -3645,7 +3645,7 @@ DECLINLINE(void) ASMAtomicUoAndU32(uint32_t volatile RT_FAR *pu32, uint32_t u32)
  *
  * @remarks x86: Requires a 386 or later.
  */
-DECLINLINE(void) ASMAtomicUoAndS32(int32_t volatile RT_FAR *pi32, int32_t i32)
+DECLINLINE(void) ASMAtomicUoAndS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
     ASMAtomicUoAndU32((uint32_t volatile RT_FAR *)pi32, (uint32_t)i32);
 }
@@ -3660,9 +3660,9 @@ DECLINLINE(void) ASMAtomicUoAndS32(int32_t volatile RT_FAR *pi32, int32_t i32)
  * @remarks x86: Requires a Pentium or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64);
+DECLASM(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
+DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
     __asm__ __volatile__("andq %1, %0\n\t"
@@ -3691,7 +3691,7 @@ DECLINLINE(void) ASMAtomicUoAndU64(uint64_t volatile RT_FAR *pu64, uint64_t u64)
  *
  * @remarks x86: Requires a Pentium or later.
  */
-DECLINLINE(void) ASMAtomicUoAndS64(int64_t volatile RT_FAR *pi64, int64_t i64)
+DECLINLINE(void) ASMAtomicUoAndS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
     ASMAtomicUoAndU64((uint64_t volatile RT_FAR *)pi64, (uint64_t)i64);
 }
@@ -3706,9 +3706,9 @@ DECLINLINE(void) ASMAtomicUoAndS64(int64_t volatile RT_FAR *pi64, int64_t i64)
  * @remarks x86: Requires a 486 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32)
+DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_DEF
 {
     uint32_t u32;
 # if RT_INLINE_ASM_GNU_STYLE
@@ -3747,9 +3747,9 @@ DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile RT_FAR *pu32)
  * @remarks x86: Requires a 486 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32)
+DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHROW_DEF
 {
     uint32_t u32;
 # if RT_INLINE_ASM_GNU_STYLE
@@ -3805,9 +3805,9 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32)
  * @param   pv  Pointer to the memory block. This must be page aligned.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZeroPage(volatile void RT_FAR *pv);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_PROTO;
 # else
-DECLINLINE(void) ASMMemZeroPage(volatile void RT_FAR *pv)
+DECLINLINE(void) ASMMemZeroPage(volatile void RT_FAR *pv) RT_NOTHROW_DEF
 {
 #  if RT_INLINE_ASM_USES_INTRIN
 #   ifdef RT_ARCH_AMD64
@@ -3862,9 +3862,9 @@ DECLINLINE(void) ASMMemZeroPage(volatile void RT_FAR *pv)
  * @param   cb  Number of bytes in the block. This MUST be aligned on 32-bit!
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb)
+DECLINLINE(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
 #  ifdef RT_ARCH_AMD64
@@ -3910,9 +3910,9 @@ DECLINLINE(void) ASMMemZero32(volatile void RT_FAR *pv, size_t cb)
  * @param   u32 The value to fill with.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32)
+DECLINLINE(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
 #  ifdef RT_ARCH_AMD64
@@ -3964,9 +3964,9 @@ DECLINLINE(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32)
 #if    !defined(RDESKTOP) && (!defined(RT_OS_LINUX) || !defined(__KERNEL__)) \
     && !defined(RT_ARCH_SPARC64) \
     && !defined(RT_ARCH_SPARC)
-DECLASM(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb);
+DECLASM(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb)
+DECLINLINE(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
 {
     uint8_t const *pb = (uint8_t const RT_FAR *)pv;
     for (; cb; cb--, pb++)
@@ -3989,7 +3989,7 @@ DECLINLINE(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb)
  *
  * @sa      ASMMemFirstNonZero
  */
-DECLINLINE(bool) ASMMemIsZero(void const RT_FAR *pv, size_t cb)
+DECLINLINE(bool) ASMMemIsZero(void const RT_FAR *pv, size_t cb) RT_NOTHROW_DEF
 {
     return ASMMemFirstNonZero(pv, cb) == NULL;
 }
@@ -4003,7 +4003,7 @@ DECLINLINE(bool) ASMMemIsZero(void const RT_FAR *pv, size_t cb)
  * @param   pvPage      Pointer to the page.  Must be aligned on 16 byte
  *                      boundary
  */
-DECLINLINE(bool) ASMMemIsZeroPage(void const RT_FAR *pvPage)
+DECLINLINE(bool) ASMMemIsZeroPage(void const RT_FAR *pvPage) RT_NOTHROW_DEF
 {
 # if 0 /*RT_INLINE_ASM_GNU_STYLE - this is actually slower... */
     union { RTCCUINTREG r; bool f; } uAX;
@@ -4073,9 +4073,9 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const RT_FAR *pvPage)
     && (!defined(RT_OS_FREEBSD) || !defined(_KERNEL)) \
     && !defined(RT_ARCH_SPARC64) \
     && !defined(RT_ARCH_SPARC)
-DECLASM(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, uint8_t u8);
+DECLASM(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, uint8_t u8) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, uint8_t u8)
+DECLINLINE(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, uint8_t u8) RT_NOTHROW_DEF
 {
     uint8_t const *pb = (uint8_t const RT_FAR *)pv;
     for (; cb; cb--, pb++)
@@ -4099,7 +4099,7 @@ DECLINLINE(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, ui
  *
  * @remarks No alignment requirements.
  */
-DECLINLINE(bool) ASMMemIsAllU8(void const RT_FAR *pv, size_t cb, uint8_t u8)
+DECLINLINE(bool) ASMMemIsAllU8(void const RT_FAR *pv, size_t cb, uint8_t u8) RT_NOTHROW_DEF
 {
     return ASMMemFirstMismatchingU8(pv, cb, u8) == NULL;
 }
@@ -4117,7 +4117,7 @@ DECLINLINE(bool) ASMMemIsAllU8(void const RT_FAR *pv, size_t cb, uint8_t u8)
  * @param   cb      Number of bytes in the block. This MUST be aligned on 32-bit!
  * @param   u32     The value it's supposed to be filled with.
  */
-DECLINLINE(uint32_t RT_FAR *) ASMMemFirstMismatchingU32(void const RT_FAR *pv, size_t cb, uint32_t u32)
+DECLINLINE(uint32_t RT_FAR *) ASMMemFirstMismatchingU32(void const RT_FAR *pv, size_t cb, uint32_t u32) RT_NOTHROW_DEF
 {
 /** @todo rewrite this in inline assembly? */
     uint32_t const RT_FAR *pu32 = (uint32_t const RT_FAR *)pv;
@@ -4143,9 +4143,9 @@ DECLINLINE(uint32_t RT_FAR *) ASMMemFirstMismatchingU32(void const RT_FAR *pv, s
  * @param   pvByte      Pointer to the byte.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte);
+RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte)
+DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_DEF
 {
     /** @todo verify that the compiler actually doesn't optimize this away. (intel & gcc) */
     uint8_t u8;
@@ -4183,7 +4183,7 @@ DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte)
  * @param   pvBuf       Pointer to the buffer.
  * @param   cbBuf       The size of the buffer in bytes. Must be >= 1.
  */
-DECLINLINE(void) ASMProbeReadBuffer(const void RT_FAR *pvBuf, size_t cbBuf)
+DECLINLINE(void) ASMProbeReadBuffer(const void RT_FAR *pvBuf, size_t cbBuf) RT_NOTHROW_DEF
 {
     /** @todo verify that the compiler actually doesn't optimize this away. (intel & gcc) */
     /* the first byte */
@@ -4220,9 +4220,9 @@ DECLINLINE(void) ASMProbeReadBuffer(const void RT_FAR *pvBuf, size_t cbBuf)
  *          traps accessing the last bits in the bitmap.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     _bittestandset((long RT_FAR *)pvBitmap, iBit);
@@ -4261,9 +4261,9 @@ DECLINLINE(void) ASMBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit)
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
 # if RT_INLINE_ASM_USES_INTRIN
@@ -4303,9 +4303,9 @@ DECLINLINE(void) ASMAtomicBitSet(volatile void RT_FAR *pvBitmap, int32_t iBit)
  *          traps accessing the last bits in the bitmap.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     _bittestandreset((long RT_FAR *)pvBitmap, iBit);
@@ -4345,9 +4345,9 @@ DECLINLINE(void) ASMBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
 # if RT_INLINE_ASM_GNU_STYLE
@@ -4385,9 +4385,9 @@ DECLINLINE(void) ASMAtomicBitClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
  *          traps accessing the last bits in the bitmap.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     _bittestandcomplement((long RT_FAR *)pvBitmap, iBit);
@@ -4425,9 +4425,9 @@ DECLINLINE(void) ASMBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit)
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
 # if RT_INLINE_ASM_GNU_STYLE
@@ -4468,9 +4468,9 @@ DECLINLINE(void) ASMAtomicBitToggle(volatile void RT_FAR *pvBitmap, int32_t iBit
  *          traps accessing the last bits in the bitmap.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
 # if RT_INLINE_ASM_USES_INTRIN
@@ -4519,9 +4519,9 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit)
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
@@ -4571,9 +4571,9 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void RT_FAR *pvBitmap, int32_t 
  *          traps accessing the last bits in the bitmap.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
 # if RT_INLINE_ASM_USES_INTRIN
@@ -4623,9 +4623,9 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
@@ -4676,9 +4676,9 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void RT_FAR *pvBitmap, int32_
  *          traps accessing the last bits in the bitmap.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
 # if RT_INLINE_ASM_USES_INTRIN
@@ -4727,9 +4727,9 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBi
  * @remarks x86: Requires a 386 or later.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
     AssertMsg(!((uintptr_t)pvBitmap & 3), ("address %p not 32-bit aligned", pvBitmap));
@@ -4777,9 +4777,9 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void RT_FAR *pvBitmap, int32
  *          traps accessing the last bits in the bitmap.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit);
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit)
+DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit) RT_NOTHROW_DEF
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
 # if RT_INLINE_ASM_USES_INTRIN
@@ -4821,7 +4821,7 @@ DECLINLINE(bool) ASMBitTest(const volatile void RT_FAR *pvBitmap, int32_t iBit)
  * @param   iBitStart   The First bit to clear.
  * @param   iBitEnd     The first bit not to clear.
  */
-DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitStart, int32_t iBitEnd)
+DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitStart, int32_t iBitEnd) RT_NOTHROW_DEF
 {
     if (iBitStart < iBitEnd)
     {
@@ -4862,7 +4862,7 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitSt
  * @param   iBitStart   The First bit to set.
  * @param   iBitEnd     The first bit not to set.
  */
-DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStart, int32_t iBitEnd)
+DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStart, int32_t iBitEnd) RT_NOTHROW_DEF
 {
     if (iBitStart < iBitEnd)
     {
@@ -4905,9 +4905,9 @@ DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStar
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits);
+DECLASM(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits)
+DECLINLINE(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_DEF
 {
     if (cBits)
     {
@@ -4991,9 +4991,9 @@ DECLINLINE(int32_t) ASMBitFirstClear(const volatile void RT_FAR *pvBitmap, uint3
  *                      The search will start at iBitPrev + 1.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev);
+DECLASM(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
+DECLINLINE(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_DEF
 {
     const volatile uint32_t RT_FAR *pau32Bitmap = (const volatile uint32_t RT_FAR *)pvBitmap;
     int                             iBit = ++iBitPrev & 31;
@@ -5060,9 +5060,9 @@ DECLINLINE(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t c
  * @param   cBits       The number of bits in the bitmap. Multiple of 32.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits);
+DECLASM(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits)
+DECLINLINE(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits) RT_NOTHROW_DEF
 {
     if (cBits)
     {
@@ -5145,9 +5145,9 @@ DECLINLINE(int32_t) ASMBitFirstSet(const volatile void RT_FAR *pvBitmap, uint32_
  *                      The search will start at iBitPrev + 1.
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev);
+DECLASM(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev)
+DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBits, uint32_t iBitPrev) RT_NOTHROW_DEF
 {
     const volatile uint32_t RT_FAR *pau32Bitmap = (const volatile uint32_t RT_FAR *)pvBitmap;
     int                             iBit = ++iBitPrev & 31;
@@ -5215,9 +5215,9 @@ DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBi
  * @remarks Similar to ffs() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU32(uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU32(uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32)
+DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     unsigned long iBit;
@@ -5264,7 +5264,7 @@ DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32)
  * @param   i32     Integer to search for set bits.
  * @remark  Similar to ffs() in BSD.
  */
-DECLINLINE(unsigned) ASMBitFirstSetS32(int32_t i32)
+DECLINLINE(unsigned) ASMBitFirstSetS32(int32_t i32) RT_NOTHROW_DEF
 {
     return ASMBitFirstSetU32((uint32_t)i32);
 }
@@ -5281,9 +5281,9 @@ DECLINLINE(unsigned) ASMBitFirstSetS32(int32_t i32)
  * @remarks Similar to ffs() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU64(uint64_t u64);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU64(uint64_t u64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64)
+DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     unsigned long iBit;
@@ -5336,9 +5336,9 @@ DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64)
  * @remarks For 16-bit bs3kit code.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU16(uint16_t u16);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitFirstSetU16(uint16_t u16) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(unsigned) ASMBitFirstSetU16(uint16_t u16)
+DECLINLINE(unsigned) ASMBitFirstSetU16(uint16_t u16) RT_NOTHROW_DEF
 {
     return ASMBitFirstSetU32((uint32_t)u16);
 }
@@ -5355,9 +5355,9 @@ DECLINLINE(unsigned) ASMBitFirstSetU16(uint16_t u16)
  * @remark  Similar to fls() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU32(uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU32(uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32)
+DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     unsigned long iBit;
@@ -5404,7 +5404,7 @@ DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32)
  * @param   i32     Integer to search for set bits.
  * @remark  Similar to fls() in BSD.
  */
-DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32)
+DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32) RT_NOTHROW_DEF
 {
     return ASMBitLastSetU32((uint32_t)i32);
 }
@@ -5421,9 +5421,9 @@ DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32)
  * @remark  Similar to fls() in BSD.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU64(uint64_t u64);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU64(uint64_t u64) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64)
+DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     unsigned long iBit;
@@ -5474,9 +5474,9 @@ DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64)
  * @remarks For 16-bit bs3kit code.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU16(uint16_t u16);
+RT_ASM_DECL_PRAGMA_WATCOM_386(unsigned) ASMBitLastSetU16(uint16_t u16) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(unsigned) ASMBitLastSetU16(uint16_t u16)
+DECLINLINE(unsigned) ASMBitLastSetU16(uint16_t u16) RT_NOTHROW_DEF
 {
     return ASMBitLastSetU32((uint32_t)u16);
 }
@@ -5490,9 +5490,9 @@ DECLINLINE(unsigned) ASMBitLastSetU16(uint16_t u16)
  * @param   u16     16-bit integer value.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMByteSwapU16(uint16_t u16);
+RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16)
+DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     u16 = _byteswap_ushort(u16);
@@ -5518,9 +5518,9 @@ DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16)
  * @param   u32     32-bit integer value.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMByteSwapU32(uint32_t u32);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32)
+DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     u32 = _byteswap_ulong(u32);
@@ -5545,7 +5545,7 @@ DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32)
  * @returns Revert
  * @param   u64     64-bit integer value.
  */
-DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64)
+DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_AMD64) && RT_INLINE_ASM_USES_INTRIN
     u64 = _byteswap_uint64(u64);
@@ -5565,9 +5565,9 @@ DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64)
  * @param   cShift              How many bits to rotate by.
  */
 #ifdef __WATCOMC__
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMRotateLeftU32(uint32_t u32, unsigned cShift);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMRotateLeftU32(uint32_t u32, unsigned cShift) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift)
+DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     return _rotl(u32, cShift);
@@ -5590,9 +5590,9 @@ DECLINLINE(uint32_t) ASMRotateLeftU32(uint32_t u32, uint32_t cShift)
  * @param   cShift              How many bits to rotate by.
  */
 #ifdef __WATCOMC__
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMRotateRightU32(uint32_t u32, unsigned cShift);
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMRotateRightU32(uint32_t u32, unsigned cShift) RT_NOTHROW_PROTO;
 #else
-DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift)
+DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift) RT_NOTHROW_DEF
 {
 # if RT_INLINE_ASM_USES_INTRIN
     return _rotr(u32, cShift);
@@ -5614,7 +5614,7 @@ DECLINLINE(uint32_t) ASMRotateRightU32(uint32_t u32, uint32_t cShift)
  * @param   u64                 The value to rotate.
  * @param   cShift              How many bits to rotate by.
  */
-DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift)
+DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift) RT_NOTHROW_DEF
 {
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotl64(u64, cShift);
@@ -5651,7 +5651,7 @@ DECLINLINE(uint64_t) ASMRotateLeftU64(uint64_t u64, uint32_t cShift)
  * @param   u64                 The value to rotate.
  * @param   cShift              How many bits to rotate by.
  */
-DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift)
+DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift) RT_NOTHROW_DEF
 {
 #if RT_INLINE_ASM_USES_INTRIN
     return _rotr64(u64, cShift);
