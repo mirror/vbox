@@ -670,7 +670,7 @@ static int suplibHardenedStrCopyEx(char *pszDst, size_t cbDst, ...)
  *
  * @param   rcExit      The exit code.
  */
-DECLNORETURN(void) suplibHardenedExit(RTEXITCODE rcExit) RT_NO_THROW_DEF
+DECL_HIDDEN_NOTHROW(DECLNORETURN(void)) suplibHardenedExit(RTEXITCODE rcExit)
 {
     for (;;)
     {
@@ -887,7 +887,7 @@ static DECLCALLBACK(size_t) suplibHardenedOutput(void *pvArg, const char *pachCh
  * @param   pszFormat   The format string.
  * @param   va          Arguments to format.
  */
-DECL_HIDDEN_NOTHROW(void) suplibHardenedPrintFV(const char *pszFormat, va_list va) RT_NO_THROW_DEF
+DECL_HIDDEN_NOTHROW(void) suplibHardenedPrintFV(const char *pszFormat, va_list va)
 {
 #ifdef IPRT_NO_CRT
     /*
@@ -1121,7 +1121,7 @@ DECL_HIDDEN_NOTHROW(void) suplibHardenedPrintFV(const char *pszFormat, va_list v
  * @param   pszFormat   The format string.
  * @param   ...         Arguments to format.
  */
-DECL_HIDDEN_NOTHROW(void) suplibHardenedPrintF(const char *pszFormat, ...) RT_NO_THROW_DEF
+DECL_HIDDEN_NOTHROW(void) suplibHardenedPrintF(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -1458,7 +1458,7 @@ DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
 extern "C" uint32_t g_uNtVerCombined;
 #endif
 
-DECL_HIDDEN_NOTHROW(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs) RT_NO_THROW_DEF
+DECL_HIDDEN_NOTHROW(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
 {
     static const char s_szLogOption[] = "--sup-hardening-log=";
 
@@ -1526,7 +1526,7 @@ DECL_HIDDEN_NOTHROW(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs) RT
 }
 
 
-DECL_HIDDEN_NOTHROW(void) supR3HardenedLogV(const char *pszFormat, va_list va) RT_NO_THROW_DEF
+DECL_HIDDEN_NOTHROW(void) supR3HardenedLogV(const char *pszFormat, va_list va)
 {
 #ifdef RT_OS_WINDOWS
     if (   g_hStartupLog != NULL
@@ -1558,7 +1558,7 @@ DECL_HIDDEN_NOTHROW(void) supR3HardenedLogV(const char *pszFormat, va_list va) R
 }
 
 
-DECL_HIDDEN_NOTHROW(void) supR3HardenedLog(const char *pszFormat,  ...) RT_NO_THROW_DEF
+DECL_HIDDEN_NOTHROW(void) supR3HardenedLog(const char *pszFormat,  ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -1567,7 +1567,7 @@ DECL_HIDDEN_NOTHROW(void) supR3HardenedLog(const char *pszFormat,  ...) RT_NO_TH
 }
 
 
-DECL_HIDDEN_NOTHROW(void) supR3HardenedLogFlush(void) RT_NO_THROW_DEF
+DECL_HIDDEN_NOTHROW(void) supR3HardenedLogFlush(void)
 {
 #ifdef RT_OS_WINDOWS
     if (   g_hStartupLog != NULL

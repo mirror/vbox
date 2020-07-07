@@ -130,9 +130,9 @@ DECL_HIDDEN_NOTHROW(int)    suplibHardenedStrNCmp(const char *psz1, const char *
 # define suplibHardenedStrCmp  strcmp
 # define suplibHardenedStrNCmp strncmp
 #endif
-DECLNORETURN(void)  suplibHardenedExit(RTEXITCODE rcExit) RT_NO_THROW_PROTO;
-DECL_HIDDEN_NOTHROW(void)   suplibHardenedPrintF(const char *pszFormat, ...) RT_NO_THROW_PROTO;
-DECL_HIDDEN_NOTHROW(void)   suplibHardenedPrintFV(const char *pszFormat, va_list va) RT_NO_THROW_PROTO;
+DECL_HIDDEN_NOTHROW(DECLNORETURN(void)) suplibHardenedExit(RTEXITCODE rcExit);
+DECL_HIDDEN_NOTHROW(void)   suplibHardenedPrintF(const char *pszFormat, ...);
+DECL_HIDDEN_NOTHROW(void)   suplibHardenedPrintFV(const char *pszFormat, va_list va);
 
 /** @} */
 
@@ -400,53 +400,53 @@ DECL_HIDDEN_NOTHROW(char *) supR3HardenedPathFilename(const char *pszPath);
  * Display a fatal error and try call TrustedError or quit.
  */
 DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                                 const char *pszMsgFmt, va_list va) RT_NO_THROW_PROTO;
+                                                                 const char *pszMsgFmt, va_list va);
 
 /**
  * Display a fatal error and try call TrustedError or quit.
  */
 DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                                const char *pszMsgFmt, ...) RT_NO_THROW_PROTO;
+                                                                const char *pszMsgFmt, ...);
 
 /**
  * Display a fatal error and quit.
  */
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalV(const char *pszFormat, va_list va) RT_NO_THROW_PROTO;
+DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalV(const char *pszFormat, va_list va);
 
 /**
  * Display a fatal error and quit.
  */
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatal(const char *pszFormat, ...) RT_NO_THROW_PROTO;
+DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatal(const char *pszFormat, ...);
 
 /**
  * Display an error which may or may not be fatal.
  */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, va_list va) RT_NO_THROW_PROTO;
+DECL_HIDDEN_NOTHROW(int)    supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, va_list va);
 
 /**
  * Display an error which may or may not be fatal.
  */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...) RT_NO_THROW_PROTO;
+DECL_HIDDEN_NOTHROW(int)    supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...);
 
 /**
  * Open any startup log file specified in the argument.
  */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedOpenLog(int *pcArgs, char **papszArgs) RT_NO_THROW_PROTO;
+DECL_HIDDEN_NOTHROW(void)   supR3HardenedOpenLog(int *pcArgs, char **papszArgs);
 
 /**
  * Write to the startup log file.
  */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedLogV(const char *pszFormat, va_list va) RT_NO_THROW_PROTO;
+DECL_HIDDEN_NOTHROW(void)   supR3HardenedLogV(const char *pszFormat, va_list va);
 
 /**
  * Write to the startup log file.
  */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedLog(const char *pszFormat, ...) RT_NO_THROW_PROTO;
+DECL_HIDDEN_NOTHROW(void)   supR3HardenedLog(const char *pszFormat, ...);
 
 /**
  * Flushes the log file.
  */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedLogFlush(void) RT_NO_THROW_PROTO;
+DECL_HIDDEN_NOTHROW(void)   supR3HardenedLogFlush(void);
 
 
 DECL_HIDDEN_NOTHROW(int)    supR3HardenedVerifyAll(bool fFatal, const char *pszProgName, const char *pszExePath, uint32_t fMainFlags);
