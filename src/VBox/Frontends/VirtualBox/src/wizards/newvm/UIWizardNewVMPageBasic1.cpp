@@ -280,6 +280,84 @@ bool UIWizardNewVMPage1::checkISOFile() const
     return true;
 }
 
+void UIWizardNewVMPage1::createWidgets(QGridLayout *pGridLayout)
+{
+    if (pGridLayout)
+    {
+        m_pLabel1 = new QIRichTextLabel;
+        if (m_pLabel1)
+            pGridLayout->addWidget(m_pLabel1, 0, 0, 1, 3);
+
+        m_pButtonGroup = new QButtonGroup;
+        if (m_pButtonGroup)
+        {
+            m_pButtonSimple = new QRadioButton;
+            if (m_pButtonSimple)
+            {
+                m_pButtonSimple->setChecked(true);
+                pGridLayout->addWidget(m_pButtonSimple, 1, 0, 1, 3);
+            }
+            m_pButtonUnattended = new QRadioButton;
+            if (m_pButtonUnattended)
+            {
+                QStyleOptionButton options;
+                options.initFrom(m_pButtonUnattended);
+                const int iWidth = m_pButtonUnattended->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth,
+                                                                             &options, m_pButtonUnattended);
+                pGridLayout->setColumnMinimumWidth(0, iWidth);
+                pGridLayout->addWidget(m_pButtonUnattended, 2, 0, 1, 3);
+            }
+
+            m_pButtonGroup->addButton(m_pButtonSimple);
+            m_pButtonGroup->addButton(m_pButtonUnattended);
+        }
+
+        m_pISOSelectorLabel = new QLabel;
+        if (m_pISOSelectorLabel)
+        {
+            m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
+            m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            m_pISOSelectorLabel->setEnabled(false);
+            pGridLayout->addWidget(m_pISOSelectorLabel, 3, 1);
+        }
+        m_pISOFilePathSelector = new UIFilePathSelector;
+        if (m_pISOFilePathSelector)
+        {
+            m_pISOFilePathSelector->setResetEnabled(false);
+            m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+            m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+            m_pISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            m_pISOFilePathSelector->setEnabled(false);
+            pGridLayout->addWidget(m_pISOFilePathSelector, 3, 2);
+        }
+
+        m_pStartHeadlessLabel = new QLabel;
+        if (m_pStartHeadlessLabel)
+        {
+            m_pStartHeadlessLabel->setAlignment(Qt::AlignRight);
+            m_pStartHeadlessLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            m_pStartHeadlessLabel->setEnabled(false);
+            pGridLayout->addWidget(m_pStartHeadlessLabel, 4, 1);
+        }
+        m_pStartHeadlessCheckBox = new QCheckBox;
+        if (m_pStartHeadlessCheckBox)
+        {
+            m_pStartHeadlessCheckBox->setEnabled(false);
+            pGridLayout->addWidget(m_pStartHeadlessCheckBox, 4, 2);
+        }
+
+        m_pLabel2 = new QIRichTextLabel;
+        if (m_pLabel2)
+            pGridLayout->addWidget(m_pLabel2, 5, 0, 1, 3);
+
+        m_pNameAndSystemEditor = new UINameAndSystemEditor(0, true, true, true);
+        if (m_pNameAndSystemEditor)
+        {
+            pGridLayout->addWidget(m_pNameAndSystemEditor, 6, 1, 1, 2);
+        }
+    }
+}
+
 bool UIWizardNewVMPage1::createMachineFolder()
 {
     if (!m_pNameAndSystemEditor)
@@ -408,99 +486,30 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 
 void UIWizardNewVMPageBasic1::prepare()
 {
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
-    {
-        m_pLabel1 = new QIRichTextLabel(this);
-        if (m_pLabel1)
-            pMainLayout->addWidget(m_pLabel1, 0, 0, 1, 3);
+    QGridLayout *pMainLayout = new QGridLayout(this);;
+    createWidgets(pMainLayout);
+    void createConnections();
+    /* Register fields: */
+    registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
+    registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
+    registerField("machineFilePath", this, "machineFilePath");
+    registerField("machineFolder", this, "machineFolder");
+    registerField("machineBaseName", this, "machineBaseName");
+    registerField("guestOSFamiyId", this, "guestOSFamiyId");
+    registerField("ISOFilePath", this, "ISOFilePath");
+    registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
+    registerField("startHeadless", this, "startHeadless");
+    registerField("detectedOSTypeId", this, "detectedOSTypeId");
+}
 
-        QButtonGroup *pButtonGroup = new QButtonGroup(this);
-        if (pButtonGroup)
-        {
-            m_pButtonSimple = new QRadioButton(this);
-            if (m_pButtonSimple)
-            {
-                m_pButtonSimple->setChecked(true);
-                pMainLayout->addWidget(m_pButtonSimple, 1, 0, 1, 3);
-            }
-            m_pButtonUnattended = new QRadioButton(this);
-            if (m_pButtonUnattended)
-            {
-                QStyleOptionButton options;
-                options.initFrom(m_pButtonUnattended);
-                const int iWidth = m_pButtonUnattended->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth,
-                                                                             &options, m_pButtonUnattended);
-                pMainLayout->setColumnMinimumWidth(0, iWidth);
-                pMainLayout->addWidget(m_pButtonUnattended, 2, 0, 1, 3);
-            }
-
-            pButtonGroup->addButton(m_pButtonSimple);
-            pButtonGroup->addButton(m_pButtonUnattended);
-            connect(pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-                    this, &UIWizardNewVMPageBasic1::sltUnattendedCheckBoxToggle);
-        }
-
-        m_pISOSelectorLabel = new QLabel;
-        if (m_pISOSelectorLabel)
-        {
-            m_pISOSelectorLabel->setAlignment(Qt::AlignRight);
-            m_pISOSelectorLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            m_pISOSelectorLabel->setEnabled(false);
-            pMainLayout->addWidget(m_pISOSelectorLabel, 3, 1);
-        }
-        m_pISOFilePathSelector = new UIFilePathSelector;
-        if (m_pISOFilePathSelector)
-        {
-            m_pISOFilePathSelector->setResetEnabled(false);
-            m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-            m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-            m_pISOFilePathSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            m_pISOFilePathSelector->setEnabled(false);
-            connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasic1::sltISOPathChanged);
-            pMainLayout->addWidget(m_pISOFilePathSelector, 3, 2);
-        }
-
-        m_pStartHeadlessLabel = new QLabel;
-        if (m_pStartHeadlessLabel)
-        {
-            m_pStartHeadlessLabel->setAlignment(Qt::AlignRight);
-            m_pStartHeadlessLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            m_pStartHeadlessLabel->setEnabled(false);
-            pMainLayout->addWidget(m_pStartHeadlessLabel, 4, 1);
-        }
-        m_pStartHeadlessCheckBox = new QCheckBox;
-        if (m_pStartHeadlessCheckBox)
-        {
-            m_pStartHeadlessCheckBox->setEnabled(false);
-            pMainLayout->addWidget(m_pStartHeadlessCheckBox, 4, 2);
-        }
-
-        m_pLabel2 = new QIRichTextLabel(this);
-        if (m_pLabel2)
-            pMainLayout->addWidget(m_pLabel2, 5, 0, 1, 3);
-
-        m_pNameAndSystemEditor = new UINameAndSystemEditor(this, true, true, true);
-        if (m_pNameAndSystemEditor)
-        {
-            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
-            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
-            connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
-            pMainLayout->addWidget(m_pNameAndSystemEditor, 6, 1, 1, 2);
-        }
-
-        /* Register fields: */
-        registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
-        registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
-        registerField("machineFilePath", this, "machineFilePath");
-        registerField("machineFolder", this, "machineFolder");
-        registerField("machineBaseName", this, "machineBaseName");
-        registerField("guestOSFamiyId", this, "guestOSFamiyId");
-        registerField("ISOFilePath", this, "ISOFilePath");
-        registerField("isUnattendedEnabled", this, "isUnattendedEnabled");
-        registerField("startHeadless", this, "startHeadless");
-        registerField("detectedOSTypeId", this, "detectedOSTypeId");
-    }
+void UIWizardNewVMPageBasic1::createConnections()
+{
+    connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardNewVMPageBasic1::sltUnattendedCheckBoxToggle);
+    connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged, this, &UIWizardNewVMPageBasic1::sltISOPathChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
 }
 
 int UIWizardNewVMPageBasic1::nextId() const

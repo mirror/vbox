@@ -26,11 +26,13 @@
 
 /* Forward declarations: */
 class QCheckBox;
+class QGridLayout;
 class QLabel;
 class QRadioButton;
 class QIRichTextLabel;
 class UIFilePathSelector;
 class UINameAndSystemEditor;
+class QButtonGroup;
 
 /* 1st page of the New Virtual Machine wizard (base part): */
 class UIWizardNewVMPage1 : public UIWizardPageBase
@@ -73,6 +75,8 @@ protected:
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
     bool checkISOFile() const;
+    /** Creates the page widgets and adds them into the @p pGridLayout. */
+    void createWidgets(QGridLayout *pGridLayout);
 
     /** Holds the simple variant button instance. */
     QRadioButton *m_pButtonSimple;
@@ -91,6 +95,10 @@ protected:
 
     /** Provides a path selector and a line edit field for path and name entry. */
     UINameAndSystemEditor *m_pNameAndSystemEditor;
+    /* Widgets: */
+    QIRichTextLabel *m_pLabel1;
+    QIRichTextLabel *m_pLabel2;
+    QButtonGroup *m_pButtonGroup;
     QString m_strDetectedOSTypeId;
 
 private:
@@ -153,20 +161,18 @@ private slots:
 
 private:
 
-    void prepare();
     /* Translation stuff: */
     void retranslateUi();
 
     /* Prepare stuff: */
+    void prepare();
+    void createConnections();
     void initializePage();
     void cleanupPage();
 
     /* Validation stuff: */
     virtual bool validatePage() /* override */;
 
-    /* Widgets: */
-    QIRichTextLabel *m_pLabel1;
-    QIRichTextLabel *m_pLabel2;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic1_h */
