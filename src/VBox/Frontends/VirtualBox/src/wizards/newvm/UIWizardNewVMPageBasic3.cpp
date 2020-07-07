@@ -38,7 +38,6 @@
 
 UIWizardNewVMPage3::UIWizardNewVMPage3()
     : m_fRecommendedNoDisk(false)
-    , m_pToolBox(0)
     , m_pDiskSkip(0)
     , m_pDiskCreate(0)
     , m_pDiskPresent(0)
@@ -200,6 +199,8 @@ QWidget *UIWizardNewVMPage3::createHardwareWidgets()
 }
 
 UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
+    : m_pLabel(0)
+    , m_pToolBox(0)
 {
     prepare();
     qRegisterMetaType<CMedium>();
@@ -294,20 +295,27 @@ void UIWizardNewVMPageBasic3::initializePage()
     /* Translate page: */
     retranslateUi();
 
-    /* Prepare initial choice: */
+    /* Prepare initial disk choice: */
     if (field("type").value<CGuestOSType>().GetRecommendedHDD() != 0)
     {
-        m_pDiskCreate->setFocus();
-        m_pDiskCreate->setChecked(true);
+        if (m_pDiskCreate)
+        {
+            m_pDiskCreate->setFocus();
+            m_pDiskCreate->setChecked(true);
+        }
         m_fRecommendedNoDisk = false;
     }
     else
     {
-        m_pDiskSkip->setFocus();
-        m_pDiskSkip->setChecked(true);
+        if (m_pDiskSkip)
+        {
+            m_pDiskSkip->setFocus();
+            m_pDiskSkip->setChecked(true);
+        }
         m_fRecommendedNoDisk = true;
     }
-    m_pDiskSelector->setCurrentIndex(0);
+    if (m_pDiskSelector)
+        m_pDiskSelector->setCurrentIndex(0);
 }
 
 void UIWizardNewVMPageBasic3::cleanupPage()

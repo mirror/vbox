@@ -23,15 +23,16 @@
 
 /* Local includes: */
 #include "UIWizardNewVMPageBasic1.h"
+#include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
 
 /* Forward declarations: */
-class QGroupBox;
 class QToolBox;
 
 /** Expert page of the New Virtual Machine wizard. */
 class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage1,
+                                public UIWizardNewVMPage2,
                                 public UIWizardNewVMPage3
 {
     Q_OBJECT;
@@ -42,6 +43,18 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
     Q_PROPERTY(QUuid virtualDiskId READ virtualDiskId WRITE setVirtualDiskId);
     Q_PROPERTY(QString virtualDiskLocation READ virtualDiskLocation WRITE setVirtualDiskLocation);
     Q_PROPERTY(int baseMemory READ baseMemory);
+    Q_PROPERTY(QString guestOSFamiyId READ guestOSFamiyId);
+    Q_PROPERTY(QString ISOFilePath READ ISOFilePath);
+    Q_PROPERTY(bool isUnattendedEnabled READ isUnattendedEnabled);
+    Q_PROPERTY(bool startHeadless READ startHeadless);
+    Q_PROPERTY(QString detectedOSTypeId READ detectedOSTypeId);
+    Q_PROPERTY(QString userName READ userName WRITE setUserName);
+    Q_PROPERTY(QString password READ password WRITE setPassword);
+    Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
+    Q_PROPERTY(bool installGuestAdditions READ installGuestAdditions WRITE setInstallGuestAdditions);
+    Q_PROPERTY(QString guestAdditionsISOPath READ guestAdditionsISOPath WRITE setGuestAdditionsISOPath);
+    Q_PROPERTY(QString productKey READ productKey);
+    Q_PROPERTY(int VCPUCount READ VCPUCount);
 
 public:
 
@@ -65,11 +78,18 @@ private slots:
     void sltOsTypeChanged();
     void sltVirtualDiskSourceChanged();
     void sltGetWithFileOpenDialog();
+    void sltUnattendedCheckBoxToggle();
+    void sltISOPathChanged(const QString &strPath);
+    void sltInstallGACheckBoxToggle(bool fChecked);
+    void sltGAISOPathChanged(const QString &strPath);
 
 private:
     enum ExpertToolboxItems
     {
-        ExpertToolboxItems_NameAnsOSType,
+        ExpertToolboxItems_NameAndOSType,
+        ExpertToolboxItems_UsernameHostname,
+        ExpertToolboxItems_GAInstall,
+        ExpertToolboxItems_ProductKey,
         ExpertToolboxItems_Disk,
         ExpertToolboxItems_Hardware
 
@@ -78,6 +98,7 @@ private:
     void retranslateUi();
 
     /** Prepare stuff. */
+    void createConnections();
     void initializePage();
     void cleanupPage();
 
@@ -86,9 +107,7 @@ private:
     bool validatePage();
 
     /** Widgets. */
-    QWidget *m_pNameAndSystemCnt;
-    QGroupBox *m_pMemoryCnt;
-    QGroupBox *m_pDiskCnt;
+    QWidget *m_pNameAndSystemContainer;
     QToolBox  *m_pToolBox;
 };
 

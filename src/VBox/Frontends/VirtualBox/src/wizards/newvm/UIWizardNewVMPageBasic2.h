@@ -74,14 +74,13 @@ protected:
 
     /** @name Widgets
       * @{ */
-        QToolBox *m_pToolBox;
         UIUserNamePasswordEditor *m_pUserNamePasswordEditor;
         QLineEdit *m_pHostnameLineEdit;
         QLabel  *m_pHostnameLabel;
         /** Guest additions iso selection widgets. */
         QCheckBox *m_pInstallGACheckBox;
-        QLabel  *m_pISOPathLabel;
-        UIFilePathSelector *m_pISOFilePathSelector;
+        QLabel  *m_pGAISOPathLabel;
+        UIFilePathSelector *m_pGAISOFilePathSelector;
         /** Product key stuff. */
         QLineEdit *m_pProductKeyLineEdit;
         QLabel  *m_pProductKeyLabel;
@@ -126,6 +125,7 @@ private:
     bool isProductKeyWidgetVisible() const;
 
     QIRichTextLabel *m_pLabel;
+    QToolBox *m_pToolBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic2_h */

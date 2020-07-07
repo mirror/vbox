@@ -186,6 +186,8 @@ UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
     , m_pStartHeadlessLabel(0)
     , m_pStartHeadlessCheckBox(0)
     , m_pNameAndSystemEditor(0)
+    , m_pUnattendedLabel(0)
+    , m_pNameOSTypeLabel(0)
     , m_strGroup(strGroup)
 {
     CHost host = uiCommon().host();
@@ -280,13 +282,16 @@ bool UIWizardNewVMPage1::checkISOFile() const
     return true;
 }
 
-void UIWizardNewVMPage1::createWidgets(QGridLayout *pGridLayout)
+void UIWizardNewVMPage1::createNameOSTypeWidgets(QGridLayout *pGridLayout, bool fCreateLabels /* = true */)
 {
     if (pGridLayout)
     {
-        m_pLabel1 = new QIRichTextLabel;
-        if (m_pLabel1)
-            pGridLayout->addWidget(m_pLabel1, 0, 0, 1, 3);
+        if (fCreateLabels)
+        {
+            m_pUnattendedLabel = new QIRichTextLabel;
+            if (m_pUnattendedLabel)
+                pGridLayout->addWidget(m_pUnattendedLabel, 0, 0, 1, 3);
+        }
 
         m_pButtonGroup = new QButtonGroup;
         if (m_pButtonGroup)
@@ -346,9 +351,12 @@ void UIWizardNewVMPage1::createWidgets(QGridLayout *pGridLayout)
             pGridLayout->addWidget(m_pStartHeadlessCheckBox, 4, 2);
         }
 
-        m_pLabel2 = new QIRichTextLabel;
-        if (m_pLabel2)
-            pGridLayout->addWidget(m_pLabel2, 5, 0, 1, 3);
+        if (fCreateLabels)
+        {
+            m_pNameOSTypeLabel = new QIRichTextLabel;
+            if (m_pNameOSTypeLabel)
+                pGridLayout->addWidget(m_pNameOSTypeLabel, 5, 0, 1, 3);
+        }
 
         m_pNameAndSystemEditor = new UINameAndSystemEditor(0, true, true, true);
         if (m_pNameAndSystemEditor)
@@ -487,7 +495,7 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
 void UIWizardNewVMPageBasic1::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout(this);;
-    createWidgets(pMainLayout);
+    createNameOSTypeWidgets(pMainLayout);
     createConnections();
     /* Register fields: */
     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
@@ -520,7 +528,7 @@ int UIWizardNewVMPageBasic1::nextId() const
     return UIWizardNewVM::Page2;
 }
 
-void UIWizardNewVMPageBasic1::setTypeByISODetectedOSType(const QString &strDetectedOSType)
+void UIWizardNewVMPage1::setTypeByISODetectedOSType(const QString &strDetectedOSType)
 {
     if (!strDetectedOSType.isEmpty())
         onNameChanged(strDetectedOSType);
@@ -569,8 +577,6 @@ void UIWizardNewVMPageBasic1::sltUnattendedCheckBoxToggle()
         m_pStartHeadlessLabel->setEnabled(fEnabled);
     if (m_pStartHeadlessCheckBox)
         m_pStartHeadlessCheckBox->setEnabled(fEnabled);
-    // if (m_pStatusLabel)
-    //     m_pStatusLabel->setEnabled(fEnabled);
     emit completeChanged();
 }
 
@@ -580,8 +586,8 @@ void UIWizardNewVMPageBasic1::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Virtual machine name and operating system"));
 
-    if (m_pLabel1)
-        m_pLabel1->setText(UIWizardNewVM::tr("Please choose whether you want to start an unattended guest os install "
+    if (m_pUnattendedLabel)
+        m_pUnattendedLabel->setText(UIWizardNewVM::tr("Please choose whether you want to start an unattended guest os install "
                                              "in which case you will have to select a valid installation medium. If not "
                                              "your virtual disk will have an empty virtual hard disk. "
                                              "Additionally you can choose to start the unattended install as a headless vm process."));
@@ -608,8 +614,8 @@ void UIWizardNewVMPageBasic1::retranslateUi()
         m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked, the unattended install will start the virtual machine headless"));
     }
 
-    if (m_pLabel2)
-        m_pLabel2->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "
+    if (m_pNameOSTypeLabel)
+        m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "
                                              "and select the type of operating system you intend to install on it. "
                                              "The name you choose will be used throughout VirtualBox "
                                              "to identify this machine."));

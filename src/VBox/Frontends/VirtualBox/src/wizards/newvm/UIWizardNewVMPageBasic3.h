@@ -95,7 +95,6 @@ protected:
 
     /** @name Widgets
      * @{ */
-       QToolBox     *m_pToolBox;
        QRadioButton *m_pDiskSkip;
        QRadioButton *m_pDiskCreate;
        QRadioButton *m_pDiskPresent;
@@ -154,6 +153,7 @@ private:
 
     /** Widgets. */
     QIRichTextLabel *m_pLabel;
+    QToolBox     *m_pToolBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageBasic3_h */

@@ -33,13 +33,12 @@
 
 
 UIWizardNewVMPage2::UIWizardNewVMPage2()
-    : m_pToolBox(0)
-    , m_pUserNamePasswordEditor(0)
+    : m_pUserNamePasswordEditor(0)
     , m_pHostnameLineEdit(0)
     , m_pHostnameLabel(0)
     , m_pInstallGACheckBox(0)
-    , m_pISOPathLabel(0)
-    , m_pISOFilePathSelector(0)
+    , m_pGAISOPathLabel(0)
+    , m_pGAISOFilePathSelector(0)
     , m_pProductKeyLineEdit(0)
     , m_pProductKeyLabel(0)
 
@@ -100,15 +99,15 @@ void UIWizardNewVMPage2::setInstallGuestAdditions(bool fInstallGA)
 
 QString UIWizardNewVMPage2::guestAdditionsISOPath() const
 {
-    if (!m_pISOFilePathSelector)
+    if (!m_pGAISOFilePathSelector)
         return QString();
-    return m_pISOFilePathSelector->path();
+    return m_pGAISOFilePathSelector->path();
 }
 
 void UIWizardNewVMPage2::setGuestAdditionsISOPath(const QString &strISOPath)
 {
-    if (m_pISOFilePathSelector)
-        m_pISOFilePathSelector->setPath(strISOPath);
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setPath(strISOPath);
 }
 
 QString UIWizardNewVMPage2::productKey() const
@@ -120,8 +119,6 @@ QString UIWizardNewVMPage2::productKey() const
 
 QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets()
 {
-    if (!m_pToolBox)
-        return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
     pGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -137,37 +134,33 @@ QWidget *UIWizardNewVMPage2::createUserNameHostNameWidgets()
 
 QWidget *UIWizardNewVMPage2::createGAInstallWidgets()
 {
-    if (!m_pToolBox)
-        return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pContainerLayout = new QGridLayout(pContainer);
     pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pInstallGACheckBox = new QCheckBox;
-    m_pISOPathLabel = new QLabel;
+    m_pGAISOPathLabel = new QLabel;
     {
-        m_pISOPathLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-        m_pISOPathLabel->setEnabled(false);
+        m_pGAISOPathLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        m_pGAISOPathLabel->setEnabled(false);
     }
-    m_pISOFilePathSelector = new UIFilePathSelector;
+    m_pGAISOFilePathSelector = new UIFilePathSelector;
     {
-        m_pISOFilePathSelector->setResetEnabled(false);
-        m_pISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
-        m_pISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
-        m_pISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-        m_pISOFilePathSelector->setEnabled(false);
+        m_pGAISOFilePathSelector->setResetEnabled(false);
+        m_pGAISOFilePathSelector->setMode(UIFilePathSelector::Mode_File_Open);
+        m_pGAISOFilePathSelector->setFileDialogFilters("*.iso *.ISO");
+        m_pGAISOFilePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+        m_pGAISOFilePathSelector->setEnabled(false);
     }
 
     pContainerLayout->addWidget(m_pInstallGACheckBox, 0, 0, 1, 5);
-    pContainerLayout->addWidget(m_pISOPathLabel, 1, 1, 1, 1);
-    pContainerLayout->addWidget(m_pISOFilePathSelector, 1, 2, 1, 4);
+    pContainerLayout->addWidget(m_pGAISOPathLabel, 1, 1, 1, 1);
+    pContainerLayout->addWidget(m_pGAISOFilePathSelector, 1, 2, 1, 4);
     return pContainer;
 }
 
 QWidget *UIWizardNewVMPage2::createProductKeyWidgets()
 {
-    if (!m_pToolBox)
-        return 0;
     QWidget *pContainer = new QWidget;
     QGridLayout *pGridLayout = new QGridLayout(pContainer);
     pGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -184,7 +177,7 @@ bool UIWizardNewVMPage2::checkGAISOFile() const
 {
     if (m_pInstallGACheckBox && m_pInstallGACheckBox->isChecked())
     {
-        QString strISOFilePath = m_pISOFilePathSelector ? m_pISOFilePathSelector->path() : QString();
+        QString strISOFilePath = m_pGAISOFilePathSelector ? m_pGAISOFilePathSelector->path() : QString();
         if (!QFileInfo(strISOFilePath).exists())
             return false;
     }
@@ -193,6 +186,7 @@ bool UIWizardNewVMPage2::checkGAISOFile() const
 
 UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
     : m_pLabel(0)
+    , m_pToolBox(0)
 {
     prepare();
 }
@@ -236,8 +230,8 @@ void UIWizardNewVMPageBasic2::createConnections()
     if (m_pInstallGACheckBox)
         connect(m_pInstallGACheckBox, &QCheckBox::toggled, this,
                 &UIWizardNewVMPageBasic2::sltInstallGACheckBoxToggle);
-    if (m_pISOFilePathSelector)
-        connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged,
+    if (m_pGAISOFilePathSelector)
+        connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
                 this, &UIWizardNewVMPageBasic2::sltGAISOPathChanged);
 }
 
@@ -258,10 +252,10 @@ void UIWizardNewVMPageBasic2::retranslateUi()
     }
     if (m_pInstallGACheckBox)
         m_pInstallGACheckBox->setText(UIWizardNewVM::tr("Install guest additions"));
-    if (m_pISOPathLabel)
-        m_pISOPathLabel->setText(UIWizardNewVM::tr("Installation medium:"));
-    if (m_pISOFilePathSelector)
-        m_pISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
+    if (m_pGAISOPathLabel)
+        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("Installation medium:"));
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
     if (m_pProductKeyLabel)
         m_pProductKeyLabel->setText(UIWizardNewVM::tr("Product Key:"));
 }
@@ -295,13 +289,12 @@ void UIWizardNewVMPageBasic2::showEvent(QShowEvent *pEvent)
     UIWizardPage::showEvent(pEvent);
 }
 
-
 void UIWizardNewVMPageBasic2::sltInstallGACheckBoxToggle(bool fEnabled)
 {
-    if (m_pISOPathLabel)
-        m_pISOPathLabel->setEnabled(fEnabled);
-    if (m_pISOFilePathSelector)
-        m_pISOFilePathSelector->setEnabled(fEnabled);
+    if (m_pGAISOPathLabel)
+        m_pGAISOPathLabel->setEnabled(fEnabled);
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setEnabled(fEnabled);
     emit completeChanged();
 }
 

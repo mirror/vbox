@@ -76,7 +76,8 @@ protected:
     void composeMachineFilePath();
     bool checkISOFile() const;
     /** Creates the page widgets and adds them into the @p pGridLayout. */
-    void createWidgets(QGridLayout *pGridLayout);
+    void createNameOSTypeWidgets(QGridLayout *pGridLayout, bool fCreateLabels = true);
+    void setTypeByISODetectedOSType(const QString &strDetectedOSType);
 
     /** @name Widgets
      * @{ */
@@ -94,8 +95,8 @@ protected:
        QCheckBox *m_pStartHeadlessCheckBox;
        /** Provides a path selector and a line edit field for path and name entry. */
        UINameAndSystemEditor *m_pNameAndSystemEditor;
-       QIRichTextLabel *m_pLabel1;
-       QIRichTextLabel *m_pLabel2;
+       QIRichTextLabel *m_pUnattendedLabel;
+       QIRichTextLabel *m_pNameOSTypeLabel;
        QButtonGroup *m_pButtonGroup;
     /** @} */
 
@@ -142,7 +143,6 @@ public:
     /** Constructor. */
     UIWizardNewVMPageBasic1(const QString &strGroup);
     virtual int nextId() const /* override */;
-    void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     virtual bool isComplete() const; /* override */
 
 protected:
