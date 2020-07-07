@@ -564,13 +564,17 @@ my_generate_usercpp_h()
 #define IN_SLICKEDIT
 #define RT_C_DECLS_BEGIN
 #define RT_C_DECLS_END
-#define RT_NO_THROW
+#define RT_NOTHROW_PROTO
+#define RT_NOTHROW_DEF
+#define RT_NO_THROW_PROTO
+#define RT_NO_THROW_DEF
 #define RT_NOEXCEPT
 #define RT_OVERRIDE
-#define RT_THROW(type) throw(type)
+#define RT_THROW(type)                  throw(type)
 #define RT_GCC_EXTENSION
 #define RT_COMPILER_GROKS_64BIT_BITFIELDS
 #define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+#define RT_DECL_NTAPI(type)             type
 
 #define ATL_NO_VTABLE
 #define BEGIN_COM_MAP(a)
@@ -644,6 +648,7 @@ EOF
 #define RT_IPRT_FORMAT_ATTR(a_iFmt, a_iArgs)
 #define RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a_iFmt, a_iArgs)
 #define DECLINLINE(type)                inline type
+#define DECL_INLINE_THROW(type)         inline type
 #define DECL_FORCE_INLINE(type)         inline type
 #define DECL_INVALID(type)              type
 
