@@ -213,7 +213,8 @@ static int testLdrOne(const char *pszFilename)
                 cErrors++;
                 break;
             }
-            DECLCALLBACKPTR(int, pfnDisasmTest1)(void) = (DECLCALLBACKPTR(int, RT_NOTHING)(void))(uintptr_t)Value; /* eeeh. */
+            typedef DECLCALLBACKPTR(int, PFNDISASMTEST1)(void);
+            PFNDISASMTEST1 pfnDisasmTest1 = (PFNDISASMTEST1)(uintptr_t)Value;
             RTPrintf("tstLdr-4: pfnDisasmTest1=%p / add-symbol-file %s %#x\n", pfnDisasmTest1, pszFilename, aLoads[i].pvBits);
             uint32_t iSeg = 0;
             RTLdrEnumSegments(aLoads[i].hLdrMod, testEnumSegment, &iSeg);
