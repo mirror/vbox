@@ -1373,6 +1373,12 @@
 # define DECL_HIDDEN_CONST(a_Type)   DECLHIDDEN(a_Type)
 #endif
 
+/** @def DECL_HIDDEN_NOTHROW
+ * How to declare a non-exported function that does not throw C++ exceptions.
+ * @param   type    The return type of the function or the data type of the variable.
+ */
+#define DECL_HIDDEN_NOTHROW(a_Type) DECL_NOTHROW(DECLHIDDEN(a_Type))
+
 /** @def DECL_INVALID
  * How to declare a function not available for linking in the current context.
  * The purpose is to create compile or like time errors when used.  This isn't
@@ -1402,7 +1408,7 @@
  * How to declare an internal assembly function type.
  * @param   type    The return type of the function.
  */
-#define DECLASMTYPE(type)       DECL_NOTHROW(type RTCALL)
+#define DECLASMTYPE(type)       DECL_NOTHROW_TYPEDEF(type RTCALL)
 
 /** @def RT_ASM_DECL_PRAGMA_WATCOM
  * How to declare a assembly method prototype with watcom \#pragma aux definition.  */
@@ -1582,17 +1588,33 @@
 #endif
 
 /** @def DECL_FORCE_INLINE
- * How to declare a function as inline and try convince the compiler to always
- * inline it regardless of optimization switches.
+ * How to declare a function that does not throw any C++ exceptions as inline
+ * and try convince the compiler to always inline it regardless of optimization
+ * switches.
  * @param   type    The return type of the function declaration.
  * @remarks Use sparsely and with care. Don't use this macro on C++ methods.
+ * @sa      DECL_FORCE_INLINE_THROW
  */
 #ifdef __GNUC__
 # define DECL_FORCE_INLINE(type)    __attribute__((__always_inline__)) DECLINLINE(type)
 #elif defined(_MSC_VER)
-# define DECL_FORCE_INLINE(type)    __forceinline type
+# define DECL_FORCE_INLINE(type)    DECL_NOTHROW(__forceinline type)
 #else
 # define DECL_FORCE_INLINE(type)    DECLINLINE(type)
+#endif
+
+/** @def DECL_FORCE_INLINE_THROW
+ * How to declare a function throwing C++ exceptions as inline and try convince
+ * the compiler to always inline it regardless of optimization switches.
+ * @param   type    The return type of the function declaration.
+ * @remarks Use sparsely and with care. Don't use this macro on C++ methods.
+ */
+#ifdef __GNUC__
+# define DECL_FORCE_INLINE_THROW(type)  __attribute__((__always_inline__)) DECL_INLINE_THROW(type)
+#elif defined(_MSC_VER)
+# define DECL_FORCE_INLINE_THROW(type)  __forceinline type
+#else
+# define DECL_FORCE_INLINE_THROW(type)  DECL_INLINE_THROW(type)
 #endif
 
 
