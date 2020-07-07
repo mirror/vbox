@@ -31,7 +31,7 @@
  * collected via OS APIs.
  */
 
-/* @todo not sure if using a separate namespace would be beneficial */
+/** @todo not sure if using a separate namespace would be beneficial */
 
 #include <iprt/path.h>
 #include <iprt/stream.h>
@@ -47,7 +47,7 @@
 
 /* Base */
 
-DECLINLINE(void) handleRtError(int rc, const char *pszMsgFmt, ...)
+DECL_INLINE_THROW(void) handleRtError(int rc, const char *pszMsgFmt, ...)
 {
     if (RT_FAILURE(rc))
     {
@@ -60,7 +60,7 @@ DECLINLINE(void) handleRtError(int rc, const char *pszMsgFmt, ...)
     }
 }
 
-DECLINLINE(void) handleComError(HRESULT hr, const char *pszMsgFmt, ...)
+DECL_INLINE_THROW(void) handleComError(HRESULT hr, const char *pszMsgFmt, ...)
 {
     if (FAILED(hr))
     {

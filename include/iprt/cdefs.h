@@ -155,6 +155,17 @@
 # error "Exactly one RT_ARCH_XXX macro shall be defined"
 #endif
 
+/** @def RT_CPLUSPLUS_PREREQ
+ * Require a minimum __cplusplus value, simplifying dealing with non-C++ code.
+ *
+ * @param   a_Min           The minimum version, e.g. 201100.
+ */
+#ifdef __cplusplus
+# define RT_CPLUSPLUS_PREREQ(a_Min)      (__cplusplus >= (a_Min))
+#else
+# define RT_CPLUSPLUS_PREREQ(a_Min)      (0)
+#endif
+
 /** @def RT_GNUC_PREREQ
  * Shorter than fiddling with __GNUC__ and __GNUC_MINOR__.
  *
@@ -1071,44 +1082,101 @@
 # define RT_EXCEPTIONS_ENABLED
 #endif
 
-/** @def RT_NO_THROW_PROTO
+/** @def DECL_NOTHROW
+ * How to declare a function which does not throw C++ exceptions.
+ *
+ * @note This macro can be combined with other macros, for example
+ * @code
+ *   EMR3DECL(DECL_NOTHROW(void)) foo(void);
+ * @endcode
+ *
+ * @note GCC is currently restricted to 4.2+ given the ominous comments on
+ *       RT_NOTHROW_PROTO.
+ */
+#ifdef __cplusplus
+# ifdef _MSC_VER
+#  define DECL_NOTHROW(type)        __declspec(nothrow) type
+# elif RT_CLANG_PREREQ(6,0) || RT_GNUC_PREREQ(4,2)
+#  define DECL_NOTHROW(type)        __attribute__((__nothrow__)) type
+# else
+#  define DECL_NOTHROW(type)        type
+# endif
+#else
+# define DECL_NOTHROW(type)         type
+#endif
+
+/** @def DECL_NOTHROW_TYPEDEF
+ * How to declare a function which does not throw C++ exceptions.
+ *
+ * This only works with Clang at present, but it does makes a difference there.
+ */
+#if RT_CLANG_PREREQ(6,0)
+# define DECL_NOTHROW_TYPEDEF(type) __attribute__((__nothrow__)) type
+#else
+# define DECL_NOTHROW_TYPEDEF(type) type
+#endif
+
+/** @def DECL_NOTHROW_PFN
+ * How to declare a function which does not throw C++ exceptions.
+ *
+ * This only works with Clang at present, but it does makes a difference there.
+ */
+#if RT_CLANG_PREREQ(6,0)
+# define DECL_NOTHROW_PFN(type, cconv, name)    __attribute__((__nothrow__)) type (cconv * name)
+#elif defined(__IBMC__) || defined(__IBMCPP__)
+# define DECL_NOTHROW_PFN(type, cconv, name)    type (* cconv name)
+#else
+# define DECL_NOTHROW_PFN(type, cconv, name)    type (cconv * name)
+#endif
+
+/** @def RT_NOTHROW_PROTO
+ * Function does not throw any C++ exceptions, prototype edition.
+ *
  * How to express that a function doesn't throw C++ exceptions and the compiler
  * can thus save itself the bother of trying to catch any of them and generate
  * unwind info.  Put this between the closing parenthesis and the semicolon in
  * function prototypes (and implementation if C++).
  *
- * @remarks May not work on C++ methods, mainly intented for C-style APIs.
+ * @note    This translates to 'noexcept' when compiling in newer C++ mode.
  *
  * @remarks The use of the nothrow attribute with GCC is because old compilers
  *          (4.1.1, 32-bit) leaking the nothrow into global space or something
- *          when used with RTDECL or similar.  Using this forces use to have two
+ *          when used with RTDECL or similar.  Using this forces us to have two
  *          macros, as the nothrow attribute is not for the function definition.
  */
-/** @def RT_NO_THROW_DEF
- * The counter part to RT_NO_THROW_PROTO that is added to the function
+/** @def RT_NOTHROW_DEF
+ * Function does not throw any C++ exceptions, definition edition.
+ *
+ * The counter part to RT_NOTHROW_PROTO that is added to the function
  * definition.
  */
 #ifdef RT_EXCEPTIONS_ENABLED
 # if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2015, 0) \
   || RT_CLANG_HAS_FEATURE(cxx_noexcept) \
   || (RT_GNUC_PREREQ(7, 0) && __cplusplus >= 201100)
-#  define RT_NO_THROW_PROTO     noexcept
-#  define RT_NO_THROW_DEF       noexcept
+#  define RT_NOTHROW_PROTO      noexcept
+#  define RT_NOTHROW_DEF        noexcept
 # elif defined(__GNUC__)
 #  if RT_GNUC_PREREQ(3, 3)
-#   define RT_NO_THROW_PROTO    __attribute__((__nothrow__))
+#   define RT_NOTHROW_PROTO     __attribute__((__nothrow__))
 #  else
-#   define RT_NO_THROW_PROTO
+#   define RT_NOTHROW_PROTO
 #  endif
-#  define RT_NO_THROW_DEF       /* Would need a DECL_NO_THROW like __declspec(nothrow), which we wont do at this point. */
+#  define RT_NOTHROW_DEF        /* Would need a DECL_NO_THROW like __declspec(nothrow), which we wont do at this point. */
 # else
-#  define RT_NO_THROW_PROTO     throw()
-#  define RT_NO_THROW_DEF       throw()
+#  define RT_NOTHROW_PROTO      throw()
+#  define RT_NOTHROW_DEF        throw()
 # endif
 #else
-# define RT_NO_THROW_PROTO
-# define RT_NO_THROW_DEF
+# define RT_NOTHROW_PROTO
+# define RT_NOTHROW_DEF
 #endif
+/** @def RT_NOTHROW_PROTO
+ * @deprecated Use RT_NOTHROW_PROTO. */
+#define RT_NO_THROW_PROTO       RT_NOTHROW_PROTO
+/** @def RT_NOTHROW_DEF
+ * @deprecated Use RT_NOTHROW_DEF. */
+#define RT_NO_THROW_DEF         RT_NOTHROW_DEF
 
 /** @def RT_THROW
  * How to express that a method or function throws a type of exceptions. Some
@@ -1159,22 +1227,17 @@
 
 /** @def RT_NOEXCEPT
  * Wrapper for the C++11 noexcept keyword (only true form).
+ * @note use RT_NOTHROW instead.
  */
 /** @def RT_NOEXCEPT_EX
  * Wrapper for the C++11 noexcept keyword with expression.
  */
 #ifdef __cplusplus
-# if RT_MSC_PREREQ_EX(RT_MSC_VER_VS2015, 0)
+# if (RT_MSC_PREREQ_EX(RT_MSC_VER_VS2015, 0) && defined(RT_EXCEPTIONS_ENABLED)) \
+  || RT_CLANG_HAS_FEATURE(cxx_noexcept) \
+  || (RT_GNUC_PREREQ(7, 0) && __cplusplus >= 201100)
 #  define RT_NOEXCEPT           noexcept
 #  define RT_NOEXCEPT_EX(expr)  noexcept(expr)
-# elif RT_GNUC_PREREQ(7, 0)
-#  if __cplusplus >= 201100
-#   define RT_NOEXCEPT          noexcept
-#   define RT_NOEXCEPT_EX(expr) noexcept(expr)
-#  else
-#   define RT_NOEXCEPT
-#   define RT_NOEXCEPT_EX(expr)
-#  endif
 # else
 #  define RT_NOEXCEPT
 #  define RT_NOEXCEPT_EX(expr)
@@ -1188,7 +1251,9 @@
 /** @def RT_FALL_THROUGH
  * Tell the compiler that we're falling through to the next case in a switch.
  * @sa RT_FALL_THRU  */
-#if RT_GNUC_PREREQ(7, 0)
+#if RT_CLANG_PREREQ(4, 0) && RT_CPLUSPLUS_PREREQ(201100)
+# define RT_FALL_THROUGH()      [[clang::fallthrough]]
+#elif RT_GNUC_PREREQ(7, 0)
 # define RT_FALL_THROUGH()      __attribute__((__fallthrough__))
 #else
 # define RT_FALL_THROUGH()      (void)0
@@ -1271,9 +1336,9 @@
 #if defined(_MSC_VER) || defined(RT_OS_OS2)
 # define DECLEXPORT(type)       __declspec(dllexport) type
 #elif defined(RT_USE_VISIBILITY_DEFAULT)
-# define DECLEXPORT(type)      __attribute__((visibility("default"))) type
+# define DECLEXPORT(type)       __attribute__((visibility("default"))) type
 #else
-# define DECLEXPORT(type)      type
+# define DECLEXPORT(type)       type
 #endif
 
 /** @def DECLIMPORT
@@ -1325,18 +1390,19 @@
 /** @def DECLASM
  * How to declare an internal assembly function.
  * @param   type    The return type of the function declaration.
+ * @note    DECL_NOTHROW is implied.
  */
 #ifdef __cplusplus
-# define DECLASM(type)           extern "C" type RTCALL
+# define DECLASM(type)           extern "C" DECL_NOTHROW(type RTCALL)
 #else
-# define DECLASM(type)           type RTCALL
+# define DECLASM(type)           DECL_NOTHROW(type RTCALL)
 #endif
 
 /** @def DECLASMTYPE
  * How to declare an internal assembly function type.
  * @param   type    The return type of the function.
  */
-#define DECLASMTYPE(type)       type RTCALL
+#define DECLASMTYPE(type)       DECL_NOTHROW(type RTCALL)
 
 /** @def RT_ASM_DECL_PRAGMA_WATCOM
  * How to declare a assembly method prototype with watcom \#pragma aux definition.  */
@@ -1344,7 +1410,7 @@
  * Same as RT_ASM_DECL_PRAGMA_WATCOM, but there is no 16-bit version when
  * 8086, 80186 or 80286 is selected as the target CPU. */
 #if defined(__WATCOMC__) && ARCH_BITS == 16 && defined(RT_ARCH_X86)
-# define RT_ASM_DECL_PRAGMA_WATCOM(type) type
+# define RT_ASM_DECL_PRAGMA_WATCOM(type)        type
 # if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
 #  define RT_ASM_DECL_PRAGMA_WATCOM_386(type)   DECLASM(type)
 # else
@@ -1366,14 +1432,14 @@
  * @endcode
  */
 #ifdef _MSC_VER
-# define DECL_NO_RETURN(type)   __declspec(noreturn) type
+# define DECL_NO_RETURN(type)       __declspec(noreturn) type
 #elif defined(__GNUC__)
-# define DECL_NO_RETURN(type)   __attribute__((noreturn)) type
+# define DECL_NO_RETURN(type)       __attribute__((noreturn)) type
 #else
-# define DECL_NO_RETURN(type)   type
+# define DECL_NO_RETURN(type)       type
 #endif
 /** @deprecated Use DECL_NO_RETURN instead. */
-#define DECLNORETURN(type) DECL_NO_RETURN(type)
+#define DECLNORETURN(type)          DECL_NO_RETURN(type)
 
 /** @def DECL_RETURNS_TWICE
  * How to declare a function which may return more than once.
@@ -1383,7 +1449,7 @@
  * @endcode
  */
 #if RT_GNUC_PREREQ(4, 1)
-# define DECL_RETURNS_TWICE(type)  __attribute__((returns_twice)) type
+# define DECL_RETURNS_TWICE(type)   __attribute__((returns_twice)) type
 # else
 # define DECL_RETURNS_TWICE(type)   type
 #endif
@@ -1397,37 +1463,43 @@
  * @endcode
  */
 #if defined(__GNUC__)
-# define DECLWEAK(type)         type __attribute__((weak))
+# define DECLWEAK(type)             type __attribute__((weak))
 #else
-# define DECLWEAK(type)         type
+# define DECLWEAK(type)             type
 #endif
 
 /** @def DECLCALLBACK
  * How to declare an call back function type.
  * @param   type    The return type of the function declaration.
  */
-#define DECLCALLBACK(type)      type RT_FAR_CODE RTCALL
+#ifdef _MSC_VER
+# define DECLCALLBACK(type)         type RT_FAR_CODE RTCALL
+#else
+# define DECLCALLBACK(type)         DECL_NOTHROW_TYPEDEF(type RT_FAR_CODE RTCALL)
+#endif
 
 /** @def DECLCALLBACKPTR
  * How to declare an call back function pointer.
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the variable member.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(__IBMC__) || defined(__IBMCPP__)
 # define DECLCALLBACKPTR(type, name)    type (* RTCALL name)
 #else
-# define DECLCALLBACKPTR(type, name)    type (RT_FAR_CODE RTCALL * name)
+# define DECLCALLBACKPTR(type, name)    DECL_NOTHROW_PFN(type, RT_FAR_CODE RTCALL, name)
 #endif
 
 /** @def DECLCALLBACKMEMBER
  * How to declare an call back function pointer member.
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(__IBMC__) || defined(__IBMCPP__)
 # define DECLCALLBACKMEMBER(type, name) type (* RTCALL name)
 #else
-# define DECLCALLBACKMEMBER(type, name) type (RT_FAR_CODE RTCALL * name)
+# define DECLCALLBACKMEMBER(type, name) DECL_NOTHROW_PFN(type, RT_FAR_CODE RTCALL, name)
 #endif
 
 /** @def DECLR3CALLBACKMEMBER
@@ -1435,6 +1507,7 @@
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 # define DECLR3CALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name) args
@@ -1447,6 +1520,7 @@
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RC) || defined(DOXYGEN_RUNNING)
 # define DECLRCCALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name)  args
@@ -1464,6 +1538,7 @@
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 # define DECLR0CALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name) args
@@ -1472,22 +1547,39 @@
 #endif
 
 /** @def DECLINLINE
- * How to declare a function as inline.
+ * How to declare a function as inline that does not throw any C++ exceptions.
+ * @param   type    The return type of the function declaration.
+ * @remarks Don't use this macro on C++ methods.
+ * @sa      DECL_INLINE_THROW
+ */
+#if defined(__GNUC__) && !defined(DOXYGEN_RUNNING)
+# define DECLINLINE(type)           DECL_NOTHROW(static __inline__ type)
+#elif defined(__cplusplus) || defined(DOXYGEN_RUNNING)
+# define DECLINLINE(type)           DECL_NOTHROW(static inline type)
+#elif defined(_MSC_VER)
+# define DECLINLINE(type)           DECL_NOTHROW(static _inline type)
+#elif defined(__IBMC__)
+# define DECLINLINE(type)           DECL_NOTHROW(_Inline type)
+#else
+# define DECLINLINE(type)           DECL_NOTHROW(inline type)
+#endif
+
+/** @def DECL_INLINE_THROW
+ * How to declare a function as inline that throws C++ exceptions.
  * @param   type    The return type of the function declaration.
  * @remarks Don't use this macro on C++ methods.
  */
 #if defined(__GNUC__) && !defined(DOXYGEN_RUNNING)
-# define DECLINLINE(type) static __inline__ type
+# define DECL_INLINE_THROW(type)    static __inline__ type
 #elif defined(__cplusplus) || defined(DOXYGEN_RUNNING)
-# define DECLINLINE(type) static inline type
+# define DECL_INLINE_THROW(type)    static inline type
 #elif defined(_MSC_VER)
-# define DECLINLINE(type) static _inline type
+# define DECL_INLINE_THROW(type)    static _inline type
 #elif defined(__IBMC__)
-# define DECLINLINE(type) _Inline type
+# define DECL_INLINE_THROW(type)    _Inline type
 #else
-# define DECLINLINE(type) inline type
+# define DECL_INLINE_THROW(type)    inline type
 #endif
-
 
 /** @def DECL_FORCE_INLINE
  * How to declare a function as inline and try convince the compiler to always
@@ -1537,15 +1629,16 @@
  * @param   type    The return type of the function declaration.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
+ * @note    DECL_NOTHROW is implied.
  */
 #ifdef IN_RT_R0
 # ifdef IN_RT_STATIC
-#  define RTR0DECL(type)    DECLHIDDEN(type) RTCALL
+#  define RTR0DECL(type)    DECLHIDDEN(DECL_NOTHROW(type)) RTCALL
 # else
-#  define RTR0DECL(type)    DECLEXPORT(type) RTCALL
+#  define RTR0DECL(type)    DECLEXPORT(DECL_NOTHROW(type)) RTCALL
 # endif
 #else
-# define RTR0DECL(type)     DECLIMPORT(type) RTCALL
+# define RTR0DECL(type)     DECLIMPORT(DECL_NOTHROW(type)) RTCALL
 #endif
 
 /** @def IN_RT_R3
@@ -1557,15 +1650,16 @@
  * @param   type    The return type of the function declaration.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
+ * @note    DECL_NOTHROW is implied.
  */
 #ifdef IN_RT_R3
 # ifdef IN_RT_STATIC
-#  define RTR3DECL(type)    DECLHIDDEN(type) RTCALL
+#  define RTR3DECL(type)    DECLHIDDEN(DECL_NOTHROW(type)) RTCALL
 # else
-#  define RTR3DECL(type)    DECLEXPORT(type) RTCALL
+#  define RTR3DECL(type)    DECLEXPORT(DECL_NOTHROW(type)) RTCALL
 # endif
 #else
-# define RTR3DECL(type)     DECLIMPORT(type) RTCALL
+# define RTR3DECL(type)     DECLIMPORT(DECL_NOTHROW(type)) RTCALL
 #endif
 
 /** @def IN_RT_RC
@@ -1577,15 +1671,16 @@
  * @param   type    The return type of the function declaration.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
+ * @note    DECL_NOTHROW is implied.
  */
 #ifdef IN_RT_RC
 # ifdef IN_RT_STATIC
-#  define RTRCDECL(type)    DECLHIDDEN(type) RTCALL
+#  define RTRCDECL(type)    DECLHIDDEN(DECL_NOTHROW(type)) RTCALL
 # else
-#  define RTRCDECL(type)    DECLEXPORT(type) RTCALL
+#  define RTRCDECL(type)    DECLEXPORT(DECL_NOTHROW(type)) RTCALL
 # endif
 #else
-# define RTRCDECL(type)     DECLIMPORT(type) RTCALL
+# define RTRCDECL(type)     DECLIMPORT(DECL_NOTHROW(type)) RTCALL
 #endif
 
 /** @def RTDECL(type)
@@ -1594,15 +1689,16 @@
  * @param   type    The return type of the function declaration.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
+ * @note    DECL_NOTHROW is implied.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
-#  define RTDECL(type)      DECLHIDDEN(type) RTCALL
+#  define RTDECL(type)      DECLHIDDEN(DECL_NOTHROW(type)) RTCALL
 # else
-#  define RTDECL(type)      DECLEXPORT(type) RTCALL
+#  define RTDECL(type)      DECLEXPORT(DECL_NOTHROW(type)) RTCALL
 # endif
 #else
-# define RTDECL(type)       DECLIMPORT(type) RTCALL
+# define RTDECL(type)       DECLIMPORT(DECL_NOTHROW(type)) RTCALL
 #endif
 
 /** @def RTDATADECL(type)
