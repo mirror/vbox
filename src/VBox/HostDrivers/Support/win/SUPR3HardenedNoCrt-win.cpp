@@ -62,6 +62,7 @@ RTDATADECL(const char * volatile)    g_pszRTAssertFile;
 RTDATADECL(uint32_t volatile)        g_u32RTAssertLine;
 RTDATADECL(const char * volatile)    g_pszRTAssertFunction;
 
+
 RTDECL(bool) RTAssertMayPanic(void)
 {
     return true;
