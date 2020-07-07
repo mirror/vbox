@@ -27,8 +27,9 @@
 
 /* Forward declarations: */
 class QGroupBox;
+class QToolBox;
 
-/* Expert page of the New Virtual Machine wizard: */
+/** Expert page of the New Virtual Machine wizard. */
 class UIWizardNewVMPageExpert : public UIWizardPage,
                                 public UIWizardNewVMPage1,
                                 public UIWizardNewVMPage3
@@ -44,21 +45,21 @@ class UIWizardNewVMPageExpert : public UIWizardPage,
 
 public:
 
-    /* Constructor: */
+    /** Constructor. */
     UIWizardNewVMPageExpert(const QString &strGroup);
 
 protected:
 
-    /* Wrapper to access 'wizard' from base part: */
+    /** Wrapper to access 'wizard' from base part. */
     UIWizard *wizardImp() const { return wizard(); }
-    /* Wrapper to access 'this' from base part: */
+    /** Wrapper to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
-    /* Wrapper to access 'wizard-field' from base part: */
+    /** Wrapper to access 'wizard-field' from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private slots:
 
-    /* Handlers: */
+    /** Handlers. */
     void sltNameChanged(const QString &strNewText);
     void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
@@ -66,22 +67,29 @@ private slots:
     void sltGetWithFileOpenDialog();
 
 private:
+    enum ExpertToolboxItems
+    {
+        ExpertToolboxItems_NameAnsOSType,
+        ExpertToolboxItems_Disk,
+        ExpertToolboxItems_Hardware
 
-    /* Translation stuff: */
+    };
+    /** Translation stuff. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Prepare stuff. */
     void initializePage();
     void cleanupPage();
 
-    /* Validation stuff: */
+    /** Validation stuff. */
     bool isComplete() const;
     bool validatePage();
 
-    /* Widgets: */
-    QGroupBox *m_pNameAndSystemCnt;
+    /** Widgets. */
+    QWidget *m_pNameAndSystemCnt;
     QGroupBox *m_pMemoryCnt;
     QGroupBox *m_pDiskCnt;
+    QToolBox  *m_pToolBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h */

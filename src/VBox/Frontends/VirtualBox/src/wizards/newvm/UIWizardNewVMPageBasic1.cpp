@@ -488,7 +488,7 @@ void UIWizardNewVMPageBasic1::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout(this);;
     createWidgets(pMainLayout);
-    void createConnections();
+    createConnections();
     /* Register fields: */
     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
     registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));

@@ -24,6 +24,7 @@
 #include <QRadioButton>
 #include <QSpacerItem>
 #include <QSpinBox>
+#include <QToolBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -40,11 +41,16 @@
 
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
+    , m_pNameAndSystemCnt(0)
+    , m_pMemoryCnt(0)
+    , m_pDiskCnt(0)
+    , m_pToolBox(0)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
-        m_pNameAndSystemCnt = new QGroupBox(this);
+        m_pToolBox = new QToolBox;
+        m_pNameAndSystemCnt = new QWidget(this);
         {
             m_pNameAndSystemCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QHBoxLayout *pNameAndSystemCntLayout = new QHBoxLayout(m_pNameAndSystemCnt);
@@ -53,50 +59,12 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
                 pNameAndSystemCntLayout->addWidget(m_pNameAndSystemEditor);
             }
         }
-        m_pMemoryCnt = new QGroupBox(this);
-        {
-            m_pMemoryCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *pMemoryCntLayout = new QGridLayout(m_pMemoryCnt);
-            {
-                m_pBaseMemoryEditor = new UIBaseMemoryEditor;
-                pMemoryCntLayout->addWidget(m_pBaseMemoryEditor, 0, 0, 1, 4);
-            }
-        }
-        m_pDiskCnt = new QGroupBox(this);
-        {
-            m_pDiskCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *pDiskCntLayout = new QGridLayout(m_pDiskCnt);
-            {
-                m_pDiskSkip = new QRadioButton(m_pDiskCnt);
-                m_pDiskCreate = new QRadioButton(m_pDiskCnt);
-                {
-                    m_pDiskCreate->setChecked(true);
-                }
-                m_pDiskPresent = new QRadioButton(m_pDiskCnt);
-                QStyleOptionButton options;
-                options.initFrom(m_pDiskPresent);
-                int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
-                pDiskCntLayout->setColumnMinimumWidth(0, iWidth);
-                m_pDiskSelector = new UIMediaComboBox(m_pDiskCnt);
-                {
-                    m_pDiskSelector->setType(UIMediumDeviceType_HardDisk);
-                    m_pDiskSelector->repopulate();
-                }
-                m_pVMMButton = new QIToolButton(m_pDiskCnt);
-                {
-                    m_pVMMButton->setAutoRaise(true);
-                    m_pVMMButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
-                }
-                pDiskCntLayout->addWidget(m_pDiskSkip, 0, 0, 1, 3);
-                pDiskCntLayout->addWidget(m_pDiskCreate, 1, 0, 1, 3);
-                pDiskCntLayout->addWidget(m_pDiskPresent, 2, 0, 1, 3);
-                pDiskCntLayout->addWidget(m_pDiskSelector, 3, 1);
-                pDiskCntLayout->addWidget(m_pVMMButton, 3, 2);
-            }
-        }
-        pMainLayout->addWidget(m_pNameAndSystemCnt);
-        pMainLayout->addWidget(m_pMemoryCnt);
-        pMainLayout->addWidget(m_pDiskCnt);
+
+        pMainLayout->addWidget(m_pToolBox);
+        m_pToolBox->insertItem(ExpertToolboxItems_NameAnsOSType, m_pNameAndSystemCnt, "");
+        m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
+
         pMainLayout->addStretch();
         updateVirtualDiskSource();
     }
@@ -183,13 +151,19 @@ void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
 void UIWizardNewVMPageExpert::retranslateUi()
 {
     /* Translate widgets: */
-    m_pNameAndSystemCnt->setTitle(UIWizardNewVM::tr("Name and operating system"));
-    m_pMemoryCnt->setTitle(UIWizardNewVM::tr("&Memory size"));
-    m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard disk"));
+
+    //m_pMemoryCnt->setTitle(UIWizardNewVM::tr("&Memory size"));
+    //m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard disk"));
     m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
     m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
     m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
     m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+    if (m_pToolBox)
+    {
+        m_pToolBox->setItemText(ExpertToolboxItems_NameAnsOSType, UIWizardNewVM::tr("Name and operating system"));
+        m_pToolBox->setItemText(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
+        m_pToolBox->setItemText(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
+    }
 }
 
 void UIWizardNewVMPageExpert::initializePage()
