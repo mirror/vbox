@@ -34,6 +34,76 @@
 ;
 BEGINCODELOW
 BITS 16
+BEGINPROC TMPL_NM(BenchmarkFlushCmd_rm)
+        call    TMPL_NM(Bs2IsModeSupported_rm)
+        jz      .done
+        call    TMPL_NM(Bs2EnterMode_rm)
+BITS TMPL_BITS
+        push    xBP
+        mov     xBP, xSP
+        push    sAX
+        push    sBX
+        push    sCX
+        push    sDX
+        push    sDI
+        sub     sSP, 20h
+
+        ; Get the current time.
+        mov     xAX, xSP
+        call    TMPL_NM_CMN(GetNanoTS)
+
+        ; Do the test.
+        mov     edi, TEST_INSTRUCTION_COUNT_IO / 4
+%define MSR_IA32_FLUSH_CMD                  0x10b
+%define MSR_IA32_FLUSH_CMD_F_L1D            RT_BIT_32(0)
+        mov     ecx, MSR_IA32_FLUSH_CMD
+        mov     eax, MSR_IA32_FLUSH_CMD_F_L1D
+        xor     edx, edx
+.again:
+        wrmsr
+        wrmsr
+        wrmsr
+        wrmsr
+        dec     edi
+        jnz     .again
+
+        ; Calc the elapsed time and report the result.
+        mov     xAX, xSP
+        call    TMPL_NM_CMN(GetElapsedNanoTS)
+
+        mov     xCX, .s_szTestName
+        mov     edx, TEST_INSTRUCTION_COUNT_IO
+        mov     xAX, xSP
+        call    TMPL_NM_CMN(ReportResult)
+
+        add     sSP, 20h
+        pop     sDI
+        pop     sDX
+        pop     sCX
+        pop     sBX
+        pop     sAX
+        leave
+
+        call    TMPL_NM(Bs2ExitMode)
+BITS 16
+.done:
+        ret
+
+.s_szTestName:
+        db TMPL_MODE_STR, ', FLUSH_CMD', 0
+ENDPROC TMPL_NM(BenchmarkFlushCmd_rm)
+
+TMPL_BEGINCODE
+BITS TMPL_BITS
+
+
+;;
+; Run the CPUID benchmark for this mode.
+;
+; @uses nothing
+;
+BEGINCODELOW
+BITS 16
 BEGINPROC TMPL_NM(BenchmarkCpuId_rm)
         call    TMPL_NM(Bs2IsModeSupported_rm)
         jz      .done
