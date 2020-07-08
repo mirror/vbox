@@ -130,7 +130,7 @@ DECL_HIDDEN_NOTHROW(int)    suplibHardenedStrNCmp(const char *psz1, const char *
 # define suplibHardenedStrCmp  strcmp
 # define suplibHardenedStrNCmp strncmp
 #endif
-DECL_HIDDEN_NOTHROW(DECLNORETURN(void)) suplibHardenedExit(RTEXITCODE rcExit);
+DECL_HIDDEN_NOTHROW(DECL_NO_RETURN(void)) suplibHardenedExit(RTEXITCODE rcExit);
 DECL_HIDDEN_NOTHROW(void)   suplibHardenedPrintF(const char *pszFormat, ...);
 DECL_HIDDEN_NOTHROW(void)   suplibHardenedPrintFV(const char *pszFormat, va_list va);
 

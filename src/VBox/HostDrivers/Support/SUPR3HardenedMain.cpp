@@ -670,7 +670,7 @@ static int suplibHardenedStrCopyEx(char *pszDst, size_t cbDst, ...)
  *
  * @param   rcExit      The exit code.
  */
-DECL_HIDDEN_NOTHROW(DECLNORETURN(void)) suplibHardenedExit(RTEXITCODE rcExit)
+DECL_HIDDEN_NOTHROW(DECL_NO_RETURN(void)) suplibHardenedExit(RTEXITCODE rcExit)
 {
     for (;;)
     {

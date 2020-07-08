@@ -51,7 +51,7 @@
 
 typedef const char *c_caddr_t;
 
-DECLNORETURN(static void) panic (char *fmt, ...)
+DECL_NO_RETURN(static void) panic (char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

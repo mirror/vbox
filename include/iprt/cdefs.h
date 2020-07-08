@@ -737,17 +737,17 @@
 /** @def CTXTYPE
  * Declare a type differently in GC, R3 and R0.
  *
- * @param   GCType  The GC type.
- * @param   R3Type  The R3 type.
- * @param   R0Type  The R0 type.
+ * @param   a_GCType    The GC type.
+ * @param   a_R3Type    The R3 type.
+ * @param   a_R0Type    The R0 type.
  * @remark  For pointers used only in one context use RCPTRTYPE(), R3R0PTRTYPE(), R3PTRTYPE() or R0PTRTYPE().
  */
 #if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-# define CTXTYPE(GCType, R3Type, R0Type)  GCType
+# define CTXTYPE(a_GCType, a_R3Type, a_R0Type)  a_GCType
 #elif defined(IN_RING3) || defined(DOXYGEN_RUNNING)
-# define CTXTYPE(GCType, R3Type, R0Type)  R3Type
+# define CTXTYPE(a_GCType, a_R3Type, a_R0Type)  a_R3Type
 #else
-# define CTXTYPE(GCType, R3Type, R0Type)  R0Type
+# define CTXTYPE(a_GCType, a_R3Type, a_R0Type)  a_R0Type
 #endif
 
 /** @def CTX_EXPR
@@ -758,11 +758,11 @@
  * @param   a_RCExpr    The RC expression.
  */
 #if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr)  a_RCExpr
+# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr) a_RCExpr
 #elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
-# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr)  a_R0Expr
+# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr) a_R0Expr
 #else
-# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr)  a_R3Expr
+# define CTX_EXPR(a_R3Expr, a_R0Expr, a_RCExpr) a_R3Expr
 #endif
 
 /** @def RCPTRTYPE
@@ -770,51 +770,51 @@
  * both HC and RC. The main purpose is to make sure structures have the same
  * size when built for different architectures.
  *
- * @param   RCType  The RC type.
+ * @param   a_RCType    The RC type.
  */
-#define RCPTRTYPE(RCType)       CTXTYPE(RCType, RTRCPTR, RTRCPTR)
+#define RCPTRTYPE(a_RCType)     CTXTYPE(a_RCType, RTRCPTR, RTRCPTR)
 
 /** @def RGPTRTYPE
  * This will become RCPTRTYPE once we've convered all uses of RCPTRTYPE to this.
  *
- * @param   RCType  The RC type.
+ * @param   a_RCType    The RC type.
  */
-#define RGPTRTYPE(RCType)       CTXTYPE(RCType, RTGCPTR, RTGCPTR)
+#define RGPTRTYPE(a_RCType)     CTXTYPE(a_RCType, RTGCPTR, RTGCPTR)
 
 /** @def R3R0PTRTYPE
  * Declare a pointer which is used in HC, is explicitly valid in ring 3 and 0,
  * but appears in structure(s) used by both HC and GC. The main purpose is to
  * make sure structures have the same size when built for different architectures.
  *
- * @param   R3R0Type  The R3R0 type.
+ * @param   a_R3R0Type  The R3R0 type.
  * @remarks This used to be called HCPTRTYPE.
  */
-#define R3R0PTRTYPE(R3R0Type)   CTXTYPE(RTHCPTR, R3R0Type, R3R0Type)
+#define R3R0PTRTYPE(a_R3R0Type) CTXTYPE(RTHCPTR, a_R3R0Type, a_R3R0Type)
 
 /** @def R3PTRTYPE
  * Declare a pointer which is used in R3 but appears in structure(s) used by
  * both HC and GC. The main purpose is to make sure structures have the same
  * size when built for different architectures.
  *
- * @param   R3Type  The R3 type.
+ * @param   a_R3Type    The R3 type.
  */
-#define R3PTRTYPE(R3Type)       CTXTYPE(RTHCUINTPTR, R3Type, RTHCUINTPTR)
+#define R3PTRTYPE(a_R3Type)     CTXTYPE(RTHCUINTPTR, a_R3Type, RTHCUINTPTR)
 
 /** @def R0PTRTYPE
  * Declare a pointer which is used in R0 but appears in structure(s) used by
  * both HC and GC. The main purpose is to make sure structures have the same
  * size when built for different architectures.
  *
- * @param   R0Type  The R0 type.
+ * @param   a_R0Type    The R0 type.
  */
-#define R0PTRTYPE(R0Type)       CTXTYPE(RTHCUINTPTR, RTHCUINTPTR, R0Type)
+#define R0PTRTYPE(a_R0Type)     CTXTYPE(RTHCUINTPTR, RTHCUINTPTR, a_R0Type)
 
 /** @def CTXSUFF
  * Adds the suffix of the current context to the passed in
  * identifier name. The suffix is HC or GC.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   var     Identifier name.
+ * @param   a_Var   Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
 /** @def OTHERCTXSUFF
@@ -822,15 +822,15 @@
  * identifier name. The suffix is HC or GC.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   var     Identifier name.
+ * @param   a_Var   Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
 #if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-# define CTXSUFF(var)       var##GC
-# define OTHERCTXSUFF(var)  var##HC
+# define CTXSUFF(a_Var)         a_Var##GC
+# define OTHERCTXSUFF(a_Var)    a_Var##HC
 #else
-# define CTXSUFF(var)       var##HC
-# define OTHERCTXSUFF(var)  var##GC
+# define CTXSUFF(a_Var)         a_Var##HC
+# define OTHERCTXSUFF(a_Var)    a_Var##GC
 #endif
 
 /** @def CTXALLSUFF
@@ -838,15 +838,15 @@
  * identifier name. The suffix is R3, R0 or GC.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   var     Identifier name.
+ * @param   a_Var     Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
 #if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-# define CTXALLSUFF(var)    var##GC
+# define CTXALLSUFF(a_Var)      a_Var##GC
 #elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
-# define CTXALLSUFF(var)    var##R0
+# define CTXALLSUFF(a_Var)      a_Var##R0
 #else
-# define CTXALLSUFF(var)    var##R3
+# define CTXALLSUFF(a_Var)      a_Var##R3
 #endif
 
 /** @def CTX_SUFF
@@ -854,16 +854,16 @@
  * identifier name. The suffix is R3, R0 or RC.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   var     Identifier name.
+ * @param   a_Var   Identifier name.
  *
  * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
  */
 #if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-# define CTX_SUFF(var)      var##RC
+# define CTX_SUFF(a_Var)        a_Var##RC
 #elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
-# define CTX_SUFF(var)      var##R0
+# define CTX_SUFF(a_Var)        a_Var##R0
 #else
-# define CTX_SUFF(var)      var##R3
+# define CTX_SUFF(a_Var)        a_Var##R3
 #endif
 
 /** @def CTX_SUFF_Z
@@ -872,14 +872,14 @@
  * The suffix thus is R3 or RZ.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   var     Identifier name.
+ * @param   a_Var   Identifier name.
  *
  * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
  */
 #if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
-# define CTX_SUFF_Z(var)    var##R3
+# define CTX_SUFF_Z(a_Var)      a_Var##R3
 #else
-# define CTX_SUFF_Z(var)    var##RZ
+# define CTX_SUFF_Z(a_Var)      a_Var##RZ
 #endif
 
 
@@ -888,24 +888,24 @@
  * The middle name is HC or GC.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   first   First name.
- * @param   last    Surname.
+ * @param   a_First First name.
+ * @param   a_Last  Surname.
  */
 /** @def OTHERCTXMID
  * Adds the other context as a middle name of an identifier name
  * The middle name is HC or GC.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   first   First name.
- * @param   last    Surname.
+ * @param   a_First First name.
+ * @param   a_Last  Surname.
  * @deprecated use CTX_MID or CTX_MID_Z
  */
 #if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-# define CTXMID(first, last)        first##GC##last
-# define OTHERCTXMID(first, last)   first##HC##last
+# define CTXMID(a_First, a_Last)        a_First##GC##a_Last
+# define OTHERCTXMID(a_First, a_Last)   a_First##HC##a_Last
 #else
-# define CTXMID(first, last)        first##HC##last
-# define OTHERCTXMID(first, last)   first##GC##last
+# define CTXMID(a_First, a_Last)        a_First##HC##a_Last
+# define OTHERCTXMID(a_First, a_Last)   a_First##GC##a_Last
 #endif
 
 /** @def CTXALLMID
@@ -913,16 +913,16 @@
  * The middle name is R3, R0 or GC.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   first   First name.
- * @param   last    Surname.
+ * @param   a_First First name.
+ * @param   a_Last  Surname.
  * @deprecated use CTX_MID or CTX_MID_Z
  */
 #if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-# define CTXALLMID(first, last)     first##GC##last
+# define CTXALLMID(a_First, a_Last)     a_First##GC##a_Last
 #elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
-# define CTXALLMID(first, last)     first##R0##last
+# define CTXALLMID(a_First, a_Last)     a_First##R0##a_Last
 #else
-# define CTXALLMID(first, last)     first##R3##last
+# define CTXALLMID(a_First, a_Last)     a_First##R3##a_Last
 #endif
 
 /** @def CTX_MID
@@ -930,15 +930,15 @@
  * The middle name is R3, R0 or RC.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   first   First name.
- * @param   last    Surname.
+ * @param   a_First First name.
+ * @param   a_Last  Surname.
  */
 #if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-# define CTX_MID(first, last)       first##RC##last
+# define CTX_MID(a_First, a_Last)       a_First##RC##a_Last
 #elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
-# define CTX_MID(first, last)       first##R0##last
+# define CTX_MID(a_First, a_Last)       a_First##R0##a_Last
 #else
-# define CTX_MID(first, last)       first##R3##last
+# define CTX_MID(a_First, a_Last)       a_First##R3##a_Last
 #endif
 
 /** @def CTX_MID_Z
@@ -947,13 +947,13 @@
  * The middle name thus is either R3 or RZ.
  *
  * This is macro should only be used in shared code to avoid a forest of ifdefs.
- * @param   first   First name.
- * @param   last    Surname.
+ * @param   a_First First name.
+ * @param   a_Last  Surname.
  */
 #ifdef IN_RING3
-# define CTX_MID_Z(first, last)     first##R3##last
+# define CTX_MID_Z(a_First, a_Last)     a_First##R3##a_Last
 #else
-# define CTX_MID_Z(first, last)     first##RZ##last
+# define CTX_MID_Z(a_First, a_Last)     a_First##RZ##a_Last
 #endif
 
 
@@ -964,13 +964,13 @@
  * This is typically used to wrap description strings in structures shared
  * between R3, R0 and/or GC. The intention is to avoid the \#ifdef IN_RING3 mess.
  *
- * @param   pR3String   The R3 string. Only referenced in R3.
+ * @param   a_pR3String     The R3 string. Only referenced in R3.
  * @see R0STRING and GCSTRING
  */
 #ifdef IN_RING3
-# define R3STRING(pR3String)    (pR3String)
+# define R3STRING(a_pR3String)  (a_pR3String)
 #else
-# define R3STRING(pR3String)    ("<R3_STRING>")
+# define R3STRING(a_pR3String)  ("<R3_STRING>")
 #endif
 
 /** @def R0STRING
@@ -980,13 +980,13 @@
  * This is typically used to wrap description strings in structures shared
  * between R3, R0 and/or GC. The intention is to avoid the \#ifdef IN_RING0 mess.
  *
- * @param   pR0String   The R0 string. Only referenced in R0.
+ * @param   a_pR0String The R0 string. Only referenced in R0.
  * @see R3STRING and GCSTRING
  */
 #ifdef IN_RING0
-# define R0STRING(pR0String)    (pR0String)
+# define R0STRING(a_pR0String)  (a_pR0String)
 #else
-# define R0STRING(pR0String)    ("<R0_STRING>")
+# define R0STRING(a_pR0String)  ("<R0_STRING>")
 #endif
 
 /** @def RCSTRING
@@ -996,13 +996,13 @@
  * This is typically used to wrap description strings in structures shared
  * between R3, R0 and/or RC. The intention is to avoid the \#ifdef IN_RC mess.
  *
- * @param   pRCString   The RC string. Only referenced in RC.
+ * @param   a_pRCString The RC string. Only referenced in RC.
  * @see R3STRING, R0STRING
  */
 #ifdef IN_RC
-# define RCSTRING(pRCString)    (pRCString)
+# define RCSTRING(a_pRCString)  (a_pRCString)
 #else
-# define RCSTRING(pRCString)    ("<RC_STRING>")
+# define RCSTRING(a_pRCString)  ("<RC_STRING>")
 #endif
 
 
@@ -1085,48 +1085,26 @@
 /** @def DECL_NOTHROW
  * How to declare a function which does not throw C++ exceptions.
  *
- * @note This macro can be combined with other macros, for example
+ * @param   a_Type      The return type.
+ *
+ * @note    This macro can be combined with other macros, for example
  * @code
  *   EMR3DECL(DECL_NOTHROW(void)) foo(void);
  * @endcode
  *
- * @note GCC is currently restricted to 4.2+ given the ominous comments on
- *       RT_NOTHROW_PROTO.
+ * @note    GCC is currently restricted to 4.2+ given the ominous comments on
+ *          RT_NOTHROW_PROTO.
  */
 #ifdef __cplusplus
 # ifdef _MSC_VER
-#  define DECL_NOTHROW(type)        __declspec(nothrow) type
+#  define DECL_NOTHROW(a_Type)      __declspec(nothrow) a_Type
 # elif RT_CLANG_PREREQ(6,0) || RT_GNUC_PREREQ(4,2)
-#  define DECL_NOTHROW(type)        __attribute__((__nothrow__)) type
+#  define DECL_NOTHROW(a_Type)      __attribute__((__nothrow__)) a_Type
 # else
-#  define DECL_NOTHROW(type)        type
+#  define DECL_NOTHROW(a_Type)      a_Type
 # endif
 #else
-# define DECL_NOTHROW(type)         type
-#endif
-
-/** @def DECL_NOTHROW_TYPEDEF
- * How to declare a function which does not throw C++ exceptions.
- *
- * This only works with Clang at present, but it does makes a difference there.
- */
-#if RT_CLANG_PREREQ(6,0)
-# define DECL_NOTHROW_TYPEDEF(type) __attribute__((__nothrow__)) type
-#else
-# define DECL_NOTHROW_TYPEDEF(type) type
-#endif
-
-/** @def DECL_NOTHROW_PFN
- * How to declare a function which does not throw C++ exceptions.
- *
- * This only works with Clang at present, but it does makes a difference there.
- */
-#if RT_CLANG_PREREQ(6,0)
-# define DECL_NOTHROW_PFN(type, cconv, name)    __attribute__((__nothrow__)) type (cconv * name)
-#elif defined(__IBMC__) || defined(__IBMCPP__)
-# define DECL_NOTHROW_PFN(type, cconv, name)    type (* cconv name)
-#else
-# define DECL_NOTHROW_PFN(type, cconv, name)    type (cconv * name)
+# define DECL_NOTHROW(a_Type)       a_Type
 #endif
 
 /** @def RT_NOTHROW_PROTO
@@ -1182,7 +1160,7 @@
  * How to express that a method or function throws a type of exceptions. Some
  * compilers does not want this kind of information and will warning about it.
  *
- * @param   type    The type exception.
+ * @param   a_Type  The type exception.
  *
  * @remarks If the actual throwing is done from the header, enclose it by
  *          \#ifdef RT_EXCEPTIONS_ENABLED ... \#else ... \#endif so the header
@@ -1192,14 +1170,14 @@
  */
 #ifdef RT_EXCEPTIONS_ENABLED
 # if RT_MSC_PREREQ_EX(RT_MSC_VER_VC71, 0)
-#   define RT_THROW(type)
+#   define RT_THROW(a_Type)
 # elif RT_GNUC_PREREQ(7, 0)
-#   define RT_THROW(type)
+#   define RT_THROW(a_Type)
 # else
-#   define RT_THROW(type)       throw(type)
+#   define RT_THROW(a_Type)     throw(a_Type)
 # endif
 #else
-# define RT_THROW(type)
+# define RT_THROW(a_Type)
 #endif
 
 
@@ -1231,20 +1209,21 @@
  */
 /** @def RT_NOEXCEPT_EX
  * Wrapper for the C++11 noexcept keyword with expression.
+ * @param   a_Expr      The expression.
  */
 #ifdef __cplusplus
 # if (RT_MSC_PREREQ_EX(RT_MSC_VER_VS2015, 0) && defined(RT_EXCEPTIONS_ENABLED)) \
   || RT_CLANG_HAS_FEATURE(cxx_noexcept) \
   || (RT_GNUC_PREREQ(7, 0) && __cplusplus >= 201100)
-#  define RT_NOEXCEPT           noexcept
-#  define RT_NOEXCEPT_EX(expr)  noexcept(expr)
+#  define RT_NOEXCEPT               noexcept
+#  define RT_NOEXCEPT_EX(a_Expr)    noexcept(a_Expr)
 # else
 #  define RT_NOEXCEPT
-#  define RT_NOEXCEPT_EX(expr)
+#  define RT_NOEXCEPT_EX(a_Expr)
 # endif
 #else
 # define RT_NOEXCEPT
-# define RT_NOEXCEPT_EX(expr)
+# define RT_NOEXCEPT_EX(a_Expr)
 #endif
 
 
@@ -1331,107 +1310,114 @@
  *          the linux kernel and potentially elsewhere (3rd party).
  */
 #if defined(_MSC_VER) || defined(__WATCOMC__)
-# define RTCALL                 __cdecl
+# define RTCALL                         __cdecl
 #elif defined(RT_OS_OS2)
-# define RTCALL                 __cdecl
+# define RTCALL                         __cdecl
 #elif defined(__GNUC__) && defined(RT_ARCH_X86)
-# define RTCALL                 __attribute__((__cdecl__,__regparm__(0)))
+# define RTCALL                         __attribute__((__cdecl__,__regparm__(0)))
 #else
 # define RTCALL
 #endif
 
 /** @def DECLEXPORT
  * How to declare an exported function.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  */
 #if defined(_MSC_VER) || defined(RT_OS_OS2)
-# define DECLEXPORT(type)       __declspec(dllexport) type
+# define DECLEXPORT(a_RetType)          __declspec(dllexport) a_RetType
 #elif defined(RT_USE_VISIBILITY_DEFAULT)
-# define DECLEXPORT(type)       __attribute__((visibility("default"))) type
+# define DECLEXPORT(a_RetType)          __attribute__((visibility("default"))) a_RetType
 #else
-# define DECLEXPORT(type)       type
+# define DECLEXPORT(a_RetType)          a_RetType
 #endif
 
 /** @def DECL_IMPORT_NOTHROW
  * How to declare an exported function that does not throw C++ exceptions.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  */
-#define DECL_EXPORT_NOTHROW(a_Type) DECL_NOTHROW(DECLEXPORT(a_Type))
+#define DECL_EXPORT_NOTHROW(a_RetType)  DECL_NOTHROW(DECLEXPORT(a_RetType))
 
 /** @def DECLIMPORT
  * How to declare an imported function.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  */
 #if defined(_MSC_VER) || (defined(RT_OS_OS2) && !defined(__IBMC__) && !defined(__IBMCPP__))
-# define DECLIMPORT(type)       __declspec(dllimport) type
+# define DECLIMPORT(a_RetType)          __declspec(dllimport) a_RetType
 #else
-# define DECLIMPORT(type)       type
+# define DECLIMPORT(a_RetType)          a_RetType
 #endif
 
 /** @def DECL_IMPORT_NOTHROW
  * How to declare an imported function that does not throw C++ exceptions.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType  The return type of the function declaration.
  */
-#define DECL_IMPORT_NOTHROW(a_Type) DECL_NOTHROW(DECLIMPORT(a_Type))
+#define DECL_IMPORT_NOTHROW(a_RetType)  DECL_NOTHROW(DECLIMPORT(a_RetType))
 
 /** @def DECLHIDDEN
  * How to declare a non-exported function or variable.
- * @param   type    The return type of the function or the data type of the variable.
+ * @param   a_Type  The return type of the function or the data type of the variable.
+ * @sa      DECL_HIDDEN_DATA, DECL_HIDDEN_CONST
+ * @todo split up into data and non-data.
  */
 #if !defined(RT_GCC_SUPPORTS_VISIBILITY_HIDDEN) || defined(RT_NO_VISIBILITY_HIDDEN)
-# define DECLHIDDEN(type)       type
+# define DECLHIDDEN(a_Type)             a_Type
 #else
-# define DECLHIDDEN(type)       __attribute__((visibility("hidden"))) type
+# define DECLHIDDEN(a_Type)             __attribute__((visibility("hidden"))) a_Type
+#endif
+
+/** @def DECL_HIDDEN_DATA
+ * How to declare a non-exported variable.
+ * @param   a_Type  The data type of the variable.
+ * @sa      DECL_HIDDEN_CONST
+ */
+#if !defined(RT_GCC_SUPPORTS_VISIBILITY_HIDDEN) || defined(RT_NO_VISIBILITY_HIDDEN)
+# define DECL_HIDDEN_DATA(a_Type)       a_Type
+#else
+# define DECL_HIDDEN_DATA(a_Type)       __attribute__((visibility("hidden"))) a_Type
 #endif
 
 /** @def DECL_HIDDEN_CONST
  * Workaround for g++ warnings when applying the hidden attribute to a const
- * definition.  Use DECLHIDDEN for the declaration.
- * @param   a_Type      The return type of the function or the data type of
- *                      the variable.
+ * definition.  Use DECL_HIDDEN_DATA for the declaration.
+ * @param   a_Type      The data type of the variable.
+ * @sa      DECL_HIDDEN_DATA
  */
 #if defined(__cplusplus) && defined(__GNUC__)
-# define DECL_HIDDEN_CONST(a_Type)   a_Type
+# define DECL_HIDDEN_CONST(a_Type)      a_Type
 #else
-# define DECL_HIDDEN_CONST(a_Type)   DECLHIDDEN(a_Type)
+# define DECL_HIDDEN_CONST(a_Type)      DECL_HIDDEN_DATA(a_Type)
 #endif
 
 /** @def DECL_HIDDEN_NOTHROW
  * How to declare a non-exported function that does not throw C++ exceptions.
- * @param   type    The return type of the function or the data type of the variable.
+ * @param   a_RetType   The return type of the function.
  */
-#define DECL_HIDDEN_NOTHROW(a_Type) DECL_NOTHROW(DECLHIDDEN(a_Type))
+#define DECL_HIDDEN_NOTHROW(a_RetType)  DECL_NOTHROW(DECLHIDDEN(a_RetType))
 
 /** @def DECL_INVALID
  * How to declare a function not available for linking in the current context.
  * The purpose is to create compile or like time errors when used.  This isn't
  * possible on all platforms.
- * @param   type    The return type of the function.
+ * @param   a_RetType   The return type of the function.
  */
 #if defined(_MSC_VER)
-# define DECL_INVALID(type)     __declspec(dllimport) type __stdcall
+# define DECL_INVALID(a_RetType)    __declspec(dllimport) a_RetType __stdcall
 #elif defined(__GNUC__) && defined(__cplusplus)
-# define DECL_INVALID(type)     extern "C++" type
+# define DECL_INVALID(a_RetType)    extern "C++" a_RetType
 #else
-# define DECL_INVALID(type)     type
+# define DECL_INVALID(a_RetType)    a_RetType
 #endif
 
 /** @def DECLASM
  * How to declare an internal assembly function.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @note    DECL_NOTHROW is implied.
  */
 #ifdef __cplusplus
-# define DECLASM(type)           extern "C" DECL_NOTHROW(type RTCALL)
+# define DECLASM(a_RetType)         extern "C" DECL_NOTHROW(a_RetType RTCALL)
 #else
-# define DECLASM(type)           DECL_NOTHROW(type RTCALL)
+# define DECLASM(a_RetType)         DECL_NOTHROW(a_RetType RTCALL)
 #endif
-
-/** @def DECLASMTYPE
- * How to declare an internal assembly function type.
- * @param   type    The return type of the function.
- */
-#define DECLASMTYPE(type)       DECL_NOTHROW_TYPEDEF(type RTCALL)
 
 /** @def RT_ASM_DECL_PRAGMA_WATCOM
  * How to declare a assembly method prototype with watcom \#pragma aux definition.  */
@@ -1439,18 +1425,18 @@
  * Same as RT_ASM_DECL_PRAGMA_WATCOM, but there is no 16-bit version when
  * 8086, 80186 or 80286 is selected as the target CPU. */
 #if defined(__WATCOMC__) && ARCH_BITS == 16 && defined(RT_ARCH_X86)
-# define RT_ASM_DECL_PRAGMA_WATCOM(type)        type
+# define RT_ASM_DECL_PRAGMA_WATCOM(a_RetType)       a_RetType
 # if defined(__SW_0) || defined(__SW_1) || defined(__SW_2)
-#  define RT_ASM_DECL_PRAGMA_WATCOM_386(type)   DECLASM(type)
+#  define RT_ASM_DECL_PRAGMA_WATCOM_386(a_RetType)  DECLASM(a_RetType)
 # else
-#  define RT_ASM_DECL_PRAGMA_WATCOM_386(type)   type
+#  define RT_ASM_DECL_PRAGMA_WATCOM_386(a_RetType)  a_RetType
 # endif
 #elif defined(__WATCOMC__) && ARCH_BITS == 32 && defined(RT_ARCH_X86)
-# define RT_ASM_DECL_PRAGMA_WATCOM(type)        type
-# define RT_ASM_DECL_PRAGMA_WATCOM_386(type)    type
+# define RT_ASM_DECL_PRAGMA_WATCOM(a_RetType)       a_RetType
+# define RT_ASM_DECL_PRAGMA_WATCOM_386(a_RetType)   a_RetType
 #else
-# define RT_ASM_DECL_PRAGMA_WATCOM(type)        DECLASM(type)
-# define RT_ASM_DECL_PRAGMA_WATCOM_386(type)    DECLASM(type)
+# define RT_ASM_DECL_PRAGMA_WATCOM(a_RetType)       DECLASM(a_RetType)
+# define RT_ASM_DECL_PRAGMA_WATCOM_386(a_RetType)   DECLASM(a_RetType)
 #endif
 
 /** @def DECL_NO_RETURN
@@ -1461,14 +1447,12 @@
  * @endcode
  */
 #ifdef _MSC_VER
-# define DECL_NO_RETURN(type)       __declspec(noreturn) type
+# define DECL_NO_RETURN(a_RetType)  __declspec(noreturn) a_RetType
 #elif defined(__GNUC__)
-# define DECL_NO_RETURN(type)       __attribute__((noreturn)) type
+# define DECL_NO_RETURN(a_RetType)  __attribute__((noreturn)) a_RetType
 #else
-# define DECL_NO_RETURN(type)       type
+# define DECL_NO_RETURN(a_RetType)  a_RetType
 #endif
-/** @deprecated Use DECL_NO_RETURN instead. */
-#define DECLNORETURN(type)          DECL_NO_RETURN(type)
 
 /** @def DECL_RETURNS_TWICE
  * How to declare a function which may return more than once.
@@ -1478,9 +1462,9 @@
  * @endcode
  */
 #if RT_GNUC_PREREQ(4, 1)
-# define DECL_RETURNS_TWICE(type)   __attribute__((returns_twice)) type
+# define DECL_RETURNS_TWICE(a_RetType)  __attribute__((returns_twice)) a_RetType
 # else
-# define DECL_RETURNS_TWICE(type)   type
+# define DECL_RETURNS_TWICE(a_RetType)  a_RetType
 #endif
 
 /** @def DECLWEAK
@@ -1492,216 +1476,216 @@
  * @endcode
  */
 #if defined(__GNUC__)
-# define DECLWEAK(type)             type __attribute__((weak))
+# define DECLWEAK(a_Type)           a_Type __attribute__((weak))
 #else
-# define DECLWEAK(type)             type
+# define DECLWEAK(a_Type)           a_Type
 #endif
 
 /** @def DECLCALLBACK
  * How to declare an call back function.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @note    Use DECLCALLBACKTYPE for typedefs.
  */
-#define DECLCALLBACK(type)          DECL_NOTHROW(type RT_FAR_CODE RTCALL)
+#define DECLCALLBACK(a_Type)        DECL_NOTHROW(a_Type RT_FAR_CODE RTCALL)
 
 /** @def DECLCALLBACKTYPE_EX
  * How to declare an call back function type.
- * @param   type    The return type of the function declaration.
- * @param   cconv   Calling convention.
- * @param   name    The name of the typedef
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_CallConv  Calling convention.
+ * @param   a_Name      The name of the typedef
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if RT_CLANG_PREREQ(6,0)
-# define DECLCALLBACKTYPE_EX(type, cconv, name, args)   __attribute__((__nothrow__)) type cconv name args
+# define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType a_CallConv a_Name a_Args
 #elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
-# define DECLCALLBACKTYPE_EX(type, cconv, name, args)   type cconv name args throw()
+# define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType a_CallConv a_Name a_Args throw()
 #else
-# define DECLCALLBACKTYPE_EX(type, cconv, name, args)   type cconv name args
+# define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType a_CallConv a_Name a_Args
 #endif
 /** @def DECLCALLBACKTYPE
  * How to declare an call back function type.
- * @param   type    The return type of the function declaration.
- * @param   name    The name of the typedef
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_Name      The name of the typedef
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
-#define DECLCALLBACKTYPE(type, name, args)              DECLCALLBACKTYPE_EX(type, RT_FAR_CODE RTCALL, name, args)
+#define DECLCALLBACKTYPE(a_RetType, a_Name, a_Args) DECLCALLBACKTYPE_EX(a_RetType, RT_FAR_CODE RTCALL, a_Name, a_Args)
 
 /** @def DECLCALLBACKPTR_EX
  * How to declare an call back function pointer.
- * @param   type    The return type of the function declaration.
- * @param   cconv   Calling convention.
- * @param   name    The name of the variable member.
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_CallConv  Calling convention.
+ * @param   a_Name      The name of the variable member.
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(__IBMC__) || defined(__IBMCPP__)
-# define DECLCALLBACKPTR_EX(type, cconv, name, args)    type (* cconv name) args
+# define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (* a_CallConv a_Name) a_Args
 #elif RT_CLANG_PREREQ(6,0)
-# define DECLCALLBACKPTR_EX(type, cconv, name, args)    __attribute__((__nothrow__)) type (cconv * name) args
+# define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType (a_CallConv * a_Name) a_Args
 #elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
-# define DECLCALLBACKPTR_EX(type, cconv, name, args)    type (cconv * name) args throw()
+# define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv * a_Name) a_Args throw()
 #else
-# define DECLCALLBACKPTR_EX(type, cconv, name, args)    type (cconv * name) args
+# define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv * a_Name) a_Args
 #endif
 /** @def DECLCALLBACKPTR
  * How to declare an call back function pointer.
- * @param   type    The return type of the function declaration.
- * @param   name    The name of the variable member.
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_Name      The name of the variable member.
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
-#define DECLCALLBACKPTR(type, name, args)               DECLCALLBACKPTR_EX(type, RT_FAR_CODE RTCALL, name, args)
+#define DECLCALLBACKPTR(a_RetType, a_Name, a_Args) DECLCALLBACKPTR_EX(a_RetType, RT_FAR_CODE RTCALL, a_Name, a_Args)
 
 /** @def DECLCALLBACKMEMBER_EX
  * How to declare an call back function pointer member.
- * @param   type    The return type of the function declaration.
- * @param   cconv   Calling convention.
- * @param   name    The name of the struct/union/class member.
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_CallConv  Calling convention.
+ * @param   a_Name      The name of the struct/union/class member.
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(__IBMC__) || defined(__IBMCPP__)
-# define DECLCALLBACKMEMBER_EX(type, cconv, name, args) type (* cconv name) args
+# define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (* a_CallConv a_Name) a_Args
 #elif RT_CLANG_PREREQ(6,0)
-# define DECLCALLBACKMEMBER_EX(type, cconv, name, args) __attribute__((__nothrow__)) type (cconv *name) args
+# define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType (a_CallConv *a_Name) a_Args
 #elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
-# define DECLCALLBACKMEMBER_EX(type, cconv, name, args) type (cconv *name) args throw()
+# define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv *a_Name) a_Args throw()
 #else
-# define DECLCALLBACKMEMBER_EX(type, cconv, name, args) type (cconv *name) args
+# define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv *a_Name) a_Args
 #endif
 /** @def DECLCALLBACKMEMBER
  * How to declare an call back function pointer member.
- * @param   type    The return type of the function declaration.
- * @param   name    The name of the struct/union/class member.
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_Name      The name of the struct/union/class member.
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
-#define DECLCALLBACKMEMBER(type, name, args)   DECLCALLBACKMEMBER_EX(type, RT_FAR_CODE RTCALL, name, args)
+#define DECLCALLBACKMEMBER(a_RetType, a_Name, a_Args) DECLCALLBACKMEMBER_EX(a_RetType, RT_FAR_CODE RTCALL, a_Name, a_Args)
 
 /** @def DECLR3CALLBACKMEMBER
  * How to declare an call back function pointer member - R3 Ptr.
- * @param   type    The return type of the function declaration.
- * @param   name    The name of the struct/union/class member.
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_Name      The name of the struct/union/class member.
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
-# define DECLR3CALLBACKMEMBER(type, name, args) DECLCALLBACKMEMBER(type, name, args)
+# define DECLR3CALLBACKMEMBER(a_RetType, a_Name, a_Args) DECLCALLBACKMEMBER(a_RetType, a_Name, a_Args)
 #else
-# define DECLR3CALLBACKMEMBER(type, name, args) RTR3PTR name
+# define DECLR3CALLBACKMEMBER(a_RetType, a_Name, a_Args) RTR3PTR a_Name
 #endif
 
 /** @def DECLRCCALLBACKMEMBER
  * How to declare an call back function pointer member - RC Ptr.
- * @param   type    The return type of the function declaration.
- * @param   name    The name of the struct/union/class member.
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_Name      The name of the struct/union/class member.
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RC) || defined(DOXYGEN_RUNNING)
-# define DECLRCCALLBACKMEMBER(type, name, args) DECLCALLBACKMEMBER(type, name, args)
+# define DECLRCCALLBACKMEMBER(a_RetType, a_Name, a_Args) DECLCALLBACKMEMBER(a_RetType, a_Name, a_Args)
 #else
-# define DECLRCCALLBACKMEMBER(type, name, args) RTRCPTR name
+# define DECLRCCALLBACKMEMBER(a_RetType, a_Name, a_Args) RTRCPTR a_Name
 #endif
 #if defined(IN_RC) || defined(DOXYGEN_RUNNING)
-# define DECLRGCALLBACKMEMBER(type, name, args) DECLCALLBACKMEMBER(type, name, args)
+# define DECLRGCALLBACKMEMBER(a_RetType, a_Name, a_Args) DECLCALLBACKMEMBER(a_RetType, a_Name, a_Args)
 #else
-# define DECLRGCALLBACKMEMBER(type, name, args) RTRGPTR name
+# define DECLRGCALLBACKMEMBER(a_RetType, a_Name, a_Args) RTRGPTR a_Name
 #endif
 
 /** @def DECLR0CALLBACKMEMBER
  * How to declare an call back function pointer member - R0 Ptr.
- * @param   type    The return type of the function declaration.
- * @param   name    The name of the struct/union/class member.
- * @param   args    The argument list enclosed in parentheses.
+ * @param   a_RetType   The return type of the function declaration.
+ * @param   a_Name      The name of the struct/union/class member.
+ * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
-# define DECLR0CALLBACKMEMBER(type, name, args) DECLCALLBACKMEMBER(type, name, args)
+# define DECLR0CALLBACKMEMBER(a_RetType, a_Name, a_Args) DECLCALLBACKMEMBER(a_RetType, a_Name, a_Args)
 #else
-# define DECLR0CALLBACKMEMBER(type, name, args) RTR0PTR name
+# define DECLR0CALLBACKMEMBER(a_RetType, a_Name, a_Args) RTR0PTR a_Name
 #endif
 
 /** @def DECLINLINE
  * How to declare a function as inline that does not throw any C++ exceptions.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @remarks Don't use this macro on C++ methods.
  * @sa      DECL_INLINE_THROW
  */
 #if defined(__GNUC__) && !defined(DOXYGEN_RUNNING)
-# define DECLINLINE(type)           DECL_NOTHROW(static __inline__ type)
+# define DECLINLINE(a_RetType)          DECL_NOTHROW(static __inline__ a_RetType)
 #elif defined(__cplusplus) || defined(DOXYGEN_RUNNING)
-# define DECLINLINE(type)           DECL_NOTHROW(static inline type)
+# define DECLINLINE(a_RetType)          DECL_NOTHROW(static inline a_RetType)
 #elif defined(_MSC_VER)
-# define DECLINLINE(type)           DECL_NOTHROW(static _inline type)
+# define DECLINLINE(a_RetType)          DECL_NOTHROW(static _inline a_RetType)
 #elif defined(__IBMC__)
-# define DECLINLINE(type)           DECL_NOTHROW(_Inline type)
+# define DECLINLINE(a_RetType)          DECL_NOTHROW(_Inline a_RetType)
 #else
-# define DECLINLINE(type)           DECL_NOTHROW(inline type)
+# define DECLINLINE(a_RetType)          DECL_NOTHROW(inline a_RetType)
 #endif
 
 /** @def DECL_INLINE_THROW
  * How to declare a function as inline that throws C++ exceptions.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @remarks Don't use this macro on C++ methods.
  */
 #if defined(__GNUC__) && !defined(DOXYGEN_RUNNING)
-# define DECL_INLINE_THROW(type)    static __inline__ type
+# define DECL_INLINE_THROW(a_RetType)   static __inline__ a_RetType
 #elif defined(__cplusplus) || defined(DOXYGEN_RUNNING)
-# define DECL_INLINE_THROW(type)    static inline type
+# define DECL_INLINE_THROW(a_RetType)   static inline a_RetType
 #elif defined(_MSC_VER)
-# define DECL_INLINE_THROW(type)    static _inline type
+# define DECL_INLINE_THROW(a_RetType)   static _inline a_RetType
 #elif defined(__IBMC__)
-# define DECL_INLINE_THROW(type)    _Inline type
+# define DECL_INLINE_THROW(a_RetType)   _Inline a_RetType
 #else
-# define DECL_INLINE_THROW(type)    inline type
+# define DECL_INLINE_THROW(a_RetType)   inline a_RetType
 #endif
 
 /** @def DECL_FORCE_INLINE
  * How to declare a function that does not throw any C++ exceptions as inline
  * and try convince the compiler to always inline it regardless of optimization
  * switches.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @remarks Use sparsely and with care. Don't use this macro on C++ methods.
  * @sa      DECL_FORCE_INLINE_THROW
  */
 #ifdef __GNUC__
-# define DECL_FORCE_INLINE(type)    __attribute__((__always_inline__)) DECLINLINE(type)
+# define DECL_FORCE_INLINE(a_RetType)   __attribute__((__always_inline__)) DECLINLINE(a_RetType)
 #elif defined(_MSC_VER)
-# define DECL_FORCE_INLINE(type)    DECL_NOTHROW(__forceinline type)
+# define DECL_FORCE_INLINE(a_RetType)   DECL_NOTHROW(__forceinline a_RetType)
 #else
-# define DECL_FORCE_INLINE(type)    DECLINLINE(type)
+# define DECL_FORCE_INLINE(a_RetType)   DECLINLINE(a_RetType)
 #endif
 
 /** @def DECL_FORCE_INLINE_THROW
  * How to declare a function throwing C++ exceptions as inline and try convince
  * the compiler to always inline it regardless of optimization switches.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @remarks Use sparsely and with care. Don't use this macro on C++ methods.
  */
 #ifdef __GNUC__
-# define DECL_FORCE_INLINE_THROW(type)  __attribute__((__always_inline__)) DECL_INLINE_THROW(type)
+# define DECL_FORCE_INLINE_THROW(a_RetType) __attribute__((__always_inline__)) DECL_INLINE_THROW(a_RetType)
 #elif defined(_MSC_VER)
-# define DECL_FORCE_INLINE_THROW(type)  __forceinline type
+# define DECL_FORCE_INLINE_THROW(a_RetType) __forceinline a_RetType
 #else
-# define DECL_FORCE_INLINE_THROW(type)  DECL_INLINE_THROW(type)
+# define DECL_FORCE_INLINE_THROW(a_RetType) DECL_INLINE_THROW(a_RetType)
 #endif
 
 
 /** @def DECL_NO_INLINE
  * How to declare a function telling the compiler not to inline it.
  * @param   scope   The function scope, static or RT_NOTHING.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @remarks Don't use this macro on C++ methods.
  */
 #ifdef __GNUC__
-# define DECL_NO_INLINE(scope,type) __attribute__((__noinline__)) scope type
+# define DECL_NO_INLINE(scope, a_RetType)   __attribute__((__noinline__)) scope a_RetType
 #elif defined(_MSC_VER)
-# define DECL_NO_INLINE(scope,type) __declspec(noinline) scope type
+# define DECL_NO_INLINE(scope, a_RetType)   __declspec(noinline) scope a_RetType
 #else
-# define DECL_NO_INLINE(scope,type) scope type
+# define DECL_NO_INLINE(scope,a_RetType) scope a_RetType
 #endif
 
 
@@ -1718,111 +1702,111 @@
  * Used to indicate whether we're inside the same link module as the host
  * context ring-0 Runtime Library.
  */
-/** @def RTR0DECL(type)
+/** @def RTR0DECL(a_RetType)
  * Runtime Library host context ring-0 export or import declaration.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return a_RetType of the function declaration.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
  * @note    DECL_NOTHROW is implied.
  */
 #ifdef IN_RT_R0
 # ifdef IN_RT_STATIC
-#  define RTR0DECL(type)    DECL_HIDDEN_NOTHROW(type) RTCALL
+#  define RTR0DECL(a_RetType)   DECL_HIDDEN_NOTHROW(a_RetType) RTCALL
 # else
-#  define RTR0DECL(type)    DECL_EXPORT_NOTHROW(type) RTCALL
+#  define RTR0DECL(a_RetType)   DECL_EXPORT_NOTHROW(a_RetType) RTCALL
 # endif
 #else
-# define RTR0DECL(type)     DECL_IMPORT_NOTHROW(type) RTCALL
+# define RTR0DECL(a_RetType)    DECL_IMPORT_NOTHROW(a_RetType) RTCALL
 #endif
 
 /** @def IN_RT_R3
  * Used to indicate whether we're inside the same link module as the host
  * context ring-3 Runtime Library.
  */
-/** @def RTR3DECL(type)
+/** @def RTR3DECL(a_RetType)
  * Runtime Library host context ring-3 export or import declaration.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
  * @note    DECL_NOTHROW is implied.
  */
 #ifdef IN_RT_R3
 # ifdef IN_RT_STATIC
-#  define RTR3DECL(type)    DECL_HIDDEN_NOTHROW(type) RTCALL
+#  define RTR3DECL(a_RetType)   DECL_HIDDEN_NOTHROW(a_RetType) RTCALL
 # else
-#  define RTR3DECL(type)    DECL_EXPORT_NOTHROW(type) RTCALL
+#  define RTR3DECL(a_RetType)   DECL_EXPORT_NOTHROW(a_RetType) RTCALL
 # endif
 #else
-# define RTR3DECL(type)     DECL_IMPORT_NOTHROW(type) RTCALL
+# define RTR3DECL(a_RetType)    DECL_IMPORT_NOTHROW(a_RetType) RTCALL
 #endif
 
 /** @def IN_RT_RC
  * Used to indicate whether we're inside the same link module as the raw-mode
  * context (RC) runtime library.
  */
-/** @def RTRCDECL(type)
+/** @def RTRCDECL(a_RetType)
  * Runtime Library raw-mode context export or import declaration.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
  * @note    DECL_NOTHROW is implied.
  */
 #ifdef IN_RT_RC
 # ifdef IN_RT_STATIC
-#  define RTRCDECL(type)    DECL_HIDDEN_NOTHROW(type) RTCALL
+#  define RTRCDECL(a_RetType)   DECL_HIDDEN_NOTHROW(a_RetType) RTCALL
 # else
-#  define RTRCDECL(type)    DECL_EXPORT_NOTHROW(type) RTCALL
+#  define RTRCDECL(a_RetType)   DECL_EXPORT_NOTHROW(a_RetType) RTCALL
 # endif
 #else
-# define RTRCDECL(type)     DECL_IMPORT_NOTHROW(type) RTCALL
+# define RTRCDECL(a_RetType)    DECL_IMPORT_NOTHROW(a_RetType) RTCALL
 #endif
 
-/** @def RTDECL(type)
+/** @def RTDECL(a_RetType)
  * Runtime Library export or import declaration.
  * Functions declared using this macro exists in all contexts.
- * @param   type    The return type of the function declaration.
+ * @param   a_RetType   The return type of the function declaration.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
  * @note    DECL_NOTHROW is implied.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
-#  define RTDECL(type)      DECL_HIDDEN_NOTHROW(type) RTCALL
+#  define RTDECL(a_RetType)     DECL_HIDDEN_NOTHROW(a_RetType) RTCALL
 # else
-#  define RTDECL(type)      DECL_EXPORT_NOTHROW(type) RTCALL
+#  define RTDECL(a_RetType)     DECL_EXPORT_NOTHROW(a_RetType) RTCALL
 # endif
 #else
-# define RTDECL(type)       DECL_IMPORT_NOTHROW(type) RTCALL
+# define RTDECL(a_RetType)      DECL_IMPORT_NOTHROW(a_RetType) RTCALL
 #endif
 
-/** @def RTDATADECL(type)
+/** @def RTDATADECL(a_RetType)
  * Runtime Library export or import declaration.
  * Data declared using this macro exists in all contexts.
- * @param   type    The data type.
+ * @param   a_RetType   The data type.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
-/** @def RT_DECL_DATA_CONST(type)
+/** @def RT_DECL_DATA_CONST(a_RetType)
  * Definition of a const variable. See DECL_HIDDEN_CONST.
- * @param   type    The const data type.
+ * @param   a_RetType   The const data type.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
-#  define RTDATADECL(type)          DECLHIDDEN(type)
-#  define RT_DECL_DATA_CONST(type)  DECL_HIDDEN_CONST(type)
+#  define RTDATADECL(a_RetType)             DECLHIDDEN(a_RetType)
+#  define RT_DECL_DATA_CONST(a_RetType)     DECL_HIDDEN_CONST(a_RetType)
 # else
-#  define RTDATADECL(type)          DECLEXPORT(type)
+#  define RTDATADECL(a_RetType)             DECLEXPORT(a_RetType)
 #  if defined(__cplusplus) && defined(__GNUC__)
-#   define RT_DECL_DATA_CONST(type) type
+#   define RT_DECL_DATA_CONST(a_RetType)    a_RetType
 #  else
-#   define RT_DECL_DATA_CONST(type) DECLEXPORT(type)
+#   define RT_DECL_DATA_CONST(a_RetType)    DECLEXPORT(a_RetType)
 #  endif
 # endif
 #else
-# define RTDATADECL(type)           DECLIMPORT(type)
-# define RT_DECL_DATA_CONST(type)   DECLIMPORT(type)
+# define RTDATADECL(a_RetType)              DECLIMPORT(a_RetType)
+# define RT_DECL_DATA_CONST(a_RetType)      DECLIMPORT(a_RetType)
 #endif
 
 /** @def RT_DECL_CLASS

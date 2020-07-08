@@ -327,7 +327,7 @@ VMMR3_INT_DECL(void)            EMR3Relocate(PVM pVM);
 VMMR3_INT_DECL(void)            EMR3ResetCpu(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)            EMR3Reset(PVM pVM);
 VMMR3_INT_DECL(int)             EMR3Term(PVM pVM);
-VMMR3DECL(DECLNORETURN(void))   EMR3FatalError(PVMCPU pVCpu, int rc);
+VMMR3DECL(DECL_NO_RETURN(void)) EMR3FatalError(PVMCPU pVCpu, int rc);
 VMMR3_INT_DECL(int)             EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(VBOXSTRICTRC)    EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);

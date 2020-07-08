@@ -108,9 +108,9 @@ RT_C_DECLS_END
 # define AssertRC(expr) do { } while(0)
 #endif
 
-#define DECLCALLBACK(type) type
-#define DECLCALLBACKTYPE(type, name, args) type name args
-#define DECLCALLBACKMEMBER(type, name, args) type (* name) args
+#define DECLCALLBACK(a_RetType) a_RetType
+#define DECLCALLBACKTYPE(a_RetType, a_Name, a_Args) a_RetType a_Name a_Args
+#define DECLCALLBACKMEMBER(a_RetType, a_Name, a_Args) a_RetType (*a_Name) a_Args
 #if __GNUC__ >= 4
 # define DECLHIDDEN(type) __attribute__((visibility("hidden"))) type
 #else
