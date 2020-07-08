@@ -472,6 +472,18 @@
       on its private network.
     </para>
 
+    <note>
+      <para>
+        Even though the NAT engine separates the VM from the host,
+        the VM has access to the host's loopback interface and the
+        network services running on it. The host's loopback interface
+        is accessible as IP address 10.0.2.2. This access to the host's
+        loopback interface can be extremely useful in some cases, for
+        example when running a web application under development in the
+        VM and the database server on the loopback interface on the host.
+      </para>
+    </note>
+
     <para>
       The virtual machine receives its network address and configuration
       on the private network from a DHCP server integrated into
@@ -797,6 +809,21 @@
     </para>
 
 <screen>VBoxManage list natnetworks</screen>
+
+    <note>
+      <para>
+        Even though the NAT service separates the VM from the host,
+        the VM has access to the host's loopback interface and the
+        network services running on it. The host's loopback interface
+        is accessible as IP address 10.0.2.2 (assuming the default
+        configuration, in other configurations it's the respective
+        address in the configured IPv4 or IPv6 network range). This
+        access to the host's loopback interface can be extremely useful
+        in some cases, for example when running a web application under
+        development in the VM and the database server on the loopback
+        interface on the host.
+      </para>
+    </note>
 
   </sect1>
 

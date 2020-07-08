@@ -62,7 +62,7 @@
 
       <listitem>
         <para>
-          <emphasis role="strong"> Monitor system activity.</emphasis>
+          <emphasis role="strong">Monitor system activity.</emphasis>
           System security builds on three pillars: good security
           protocols, proper system configuration and system monitoring.
           Auditing and reviewing audit records address the third
@@ -215,7 +215,9 @@
           <xref linkend="network_nat"/>. The guest is part of a private
           subnet belonging to this VM and the guest IP is not visible
           from the outside. This networking mode works without any
-          additional setup and is sufficient for many purposes.
+          additional setup and is sufficient for many purposes. Keep in
+          mind that NAT allows access to the host operating system's
+          loopback interface.
         </para>
 
         <para>
@@ -535,7 +537,7 @@
       This section contains security recommendations for specific
       issues. By default VirtualBox will configure the VMs to run in a
       secure manner, however this may not always be possible without
-      additional user actions (e.g. host OS / firmware configuration
+      additional user actions (for example host OS / firmware configuration
       changes).
     </para>
 
