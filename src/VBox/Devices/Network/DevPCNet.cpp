@@ -620,7 +620,7 @@ typedef struct TMD
     {
         uint32_t trc:4;         /**< transmit retry count */
         uint32_t res:12;        /**< reserved */
-        uint32_t tdr:10;        /**< ??? */
+        uint32_t tdr:10;        /**< time domain reflectometry */
         uint32_t rtry:1;        /**< retry error */
         uint32_t lcar:1;        /**< loss of carrier */
         uint32_t lcol:1;        /**< late collision */
@@ -761,98 +761,137 @@ static void pcnetPhysWrite(PPDMDEVINS pDevIns, PPCNETSTATE pThis, RTGCPHYS GCPhy
 }
 
 /**
- * Load transmit message descriptor
- * Make sure we read the own flag first.
+ * Load transmit message descriptor (TMD) if we own it.
+ * Makes sure we read the OWN bit first, which requires issuing two reads if
+ * the OWN bit is laid out in the second (D)WORD in memory.
  *
  * @param   pDevIns     The device instance.
  * @param pThis         adapter private data
  * @param addr          physical address of the descriptor
- * @param fRetIfNotOwn  return immediately after reading the own flag if we don't own the descriptor
  * @return              true if we own the descriptor, false otherwise
  */
-DECLINLINE(bool) pcnetTmdLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr, bool fRetIfNotOwn)
+DECLINLINE(bool) pcnetTmdTryLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr)
 {
-    uint8_t    ownbyte;
-
+    /* Convert the in-memory format to the internal layout which corresponds to SWSTYLE=2.
+     * Do not touch tmd if the OWN bit is not set (i.e. we don't own the descriptor).
+     */
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
     {
-        uint16_t xda[4];
+        uint16_t xda[4];    /* Corresponds to memory layout, last word unused. */
 
-        PDMDevHlpPhysRead(pDevIns, addr+3, &ownbyte, 1);
-        if (!(ownbyte & 0x80) && fRetIfNotOwn)
+        /* For SWSTYLE=0, the OWN bit is in the second WORD we need and must be read before the first WORD. */
+        PDMDevHlpPhysRead(pDevIns, addr + sizeof(uint16_t), (void*)&xda[1], 2 * sizeof(uint16_t));
+        if (!(xda[1] & RT_BIT(15)))
             return false;
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(xda));
-        ((uint32_t *)tmd)[0] = (uint32_t)xda[0] | ((uint32_t)(xda[1] & 0x00ff) << 16);
-        ((uint32_t *)tmd)[1] = (uint32_t)xda[2] | ((uint32_t)(xda[1] & 0xff00) << 16);
-        ((uint32_t *)tmd)[2] = (uint32_t)xda[3] << 16;
-        ((uint32_t *)tmd)[3] = 0;
+        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(uint16_t));
+        ((uint32_t *)tmd)[0] = (uint32_t)xda[0] | ((uint32_t)(xda[1] & 0x00ff) << 16);  /* TMD0, buffer address. */
+        ((uint32_t *)tmd)[1] = (uint32_t)xda[2] | ((uint32_t)(xda[1] & 0xff00) << 16);  /* TMD1, buffer size and control bits. */
+        ((uint32_t *)tmd)[2] = 0;   /* TMD2, status bits, set on error but not read. */
+        ((uint32_t *)tmd)[3] = 0;   /* TMD3, user data, never accessed. */
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
-        PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
-        if (!(ownbyte & 0x80) && fRetIfNotOwn)
+        /* For SWSTYLE=2, the OWN bit is in the second DWORD we need and must be read first. */
+        uint32_t xda[2];
+        PDMDevHlpPhysRead(pDevIns, addr + sizeof(uint32_t), (void*)&xda[1], sizeof(uint32_t));
+        if (!(xda[1] & RT_BIT(31)))
             return false;
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)tmd, 16);
+        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(uint32_t));
+        ((uint32_t *)tmd)[0] = xda[0];  /* TMD0, buffer address. */
+        ((uint32_t *)tmd)[1] = xda[1];  /* TMD1, buffer size and control bits. */
+        ((uint32_t *)tmd)[2] = 0;       /* TMD2, status bits, set on error but not read. */
+        ((uint32_t *)tmd)[3] = 0;       /* TMD3, user data, never accessed. */
     }
     else
     {
-        uint32_t xda[4];
-        PDMDevHlpPhysRead(pDevIns, addr+7, &ownbyte, 1);
-        if (!(ownbyte & 0x80) && fRetIfNotOwn)
+        /* For SWSTYLE=3, the OWN bit is in the first DWORD we need, therefore a single read suffices. */
+        uint32_t xda[2];
+        PDMDevHlpPhysRead(pDevIns, addr + sizeof(uint32_t), (void*)&xda, sizeof(xda));
+        if (!(xda[0] & RT_BIT(31)))
             return false;
-        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda[0], sizeof(xda));
-        ((uint32_t *)tmd)[0] = xda[2];
-        ((uint32_t *)tmd)[1] = xda[1];
-        ((uint32_t *)tmd)[2] = xda[0];
-        ((uint32_t *)tmd)[3] = xda[3];
+        ((uint32_t *)tmd)[0] = xda[1];  /* TMD0, buffer address. */
+        ((uint32_t *)tmd)[1] = xda[0];  /* TMD1, buffer size and control bits. */
+        ((uint32_t *)tmd)[2] = 0;       /* TMD2, status bits, set on error but not read. */
+        ((uint32_t *)tmd)[3] = 0;       /* TMD3, user data, never accessed. */
     }
-    /* Double check the own bit; guest drivers might be buggy and lock prefixes in the recompiler are ignored by other threads. */
-#ifdef DEBUG
-    if (tmd->tmd1.own == 1 && !(ownbyte & 0x80))
-        Log(("pcnetTmdLoad: own bit flipped while reading!!\n"));
-#endif
-    if (!(ownbyte & 0x80))
-        tmd->tmd1.own = 0;
 
     return !!tmd->tmd1.own;
 }
 
 /**
+ * Loads an entire transmit message descriptor. Used for logging/debugging.
+ *
+ * @param pDevIns       The device instance.
+ * @param pThis         Adapter private data
+ * @param addr          Physical address of the descriptor
+ */
+DECLINLINE(void) pcnetTmdLoadAll(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr)
+{
+    /* Convert the in-memory format to the internal layout which corresponds to SWSTYLE=2. */
+    if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
+    {
+        uint16_t xda[4];
+
+        /* For SWSTYLE=0, we have to do a bit of work. */
+        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda, sizeof(xda));
+        ((uint32_t *)tmd)[0] = (uint32_t)xda[0] | ((uint32_t)(xda[1] & 0x00ff) << 16);  /* TMD0, buffer address. */
+        ((uint32_t *)tmd)[1] = (uint32_t)xda[2] | ((uint32_t)(xda[1] & 0xff00) << 16);  /* TMD1, buffer size and control bits. */
+        ((uint32_t *)tmd)[2] = (uint32_t)xda[3] << 16;                                  /* TMD2, status bits. */
+        ((uint32_t *)tmd)[3] = 0;                                           /* TMD3, user data, not present for SWSTYLE=1. */
+    }
+    else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
+    {
+        /* For SWSTYLE=2, simply read the TMD as is. */
+        PDMDevHlpPhysRead(pDevIns, addr, (void*)tmd, sizeof(*tmd));
+    }
+    else
+    {
+        /* For SWSTYLE=3, swap the first and third DWORD around. */
+        uint32_t xda[4];
+        PDMDevHlpPhysRead(pDevIns, addr, (void*)&xda, sizeof(xda));
+        ((uint32_t *)tmd)[0] = xda[2];  /* TMD0, buffer address. */
+        ((uint32_t *)tmd)[1] = xda[1];  /* TMD1, buffer size and control bits. */
+        ((uint32_t *)tmd)[2] = xda[0];  /* TMD2, status bits. */
+        ((uint32_t *)tmd)[3] = xda[3];  /* TMD3, user data. */
+    }
+}
+
+/**
  * Store transmit message descriptor and hand it over to the host (the VM guest).
- * Make sure that all data are transmitted before we clear the own flag.
+ * Make sure the cleared OWN bit gets written last.
  */
 DECLINLINE(void) pcnetTmdStorePassHost(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr)
 {
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTmdStore), a);
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
     {
-        uint16_t xda[4];
-        xda[0] =   ((uint32_t *)tmd)[0]        & 0xffff;
+        uint16_t xda[4];    /* Corresponds to memory layout, only two words used. */
+
+        /* For SWSTYLE=0, write the status word first, then the word containing the OWN bit. */
         xda[1] = ((((uint32_t *)tmd)[0] >> 16) &   0xff) | ((((uint32_t *)tmd)[1]>>16) & 0xff00);
-        xda[2] =   ((uint32_t *)tmd)[1]        & 0xffff;
+        xda[1] &= ~RT_BIT(15);
         xda[3] =   ((uint32_t *)tmd)[2] >> 16;
-        xda[1] |=  0x8000;
-        pcnetPhysWrite(pDevIns, pThis, addr, (void*)&xda[0], sizeof(xda));
-        xda[1] &= ~0x8000;
-        pcnetPhysWrite(pDevIns, pThis, addr+3, (uint8_t*)xda + 3, 1);
+        /** @todo: The WORD containing status bits may not need to be written unless the ERR bit is set. */
+        pcnetPhysWrite(pDevIns, pThis, addr + 3 * sizeof(uint16_t), (void*)&xda[3], sizeof(uint16_t));
+        pcnetPhysWrite(pDevIns, pThis, addr + 1 * sizeof(uint16_t), (void*)&xda[1], sizeof(uint16_t));
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
-        ((uint32_t*)tmd)[1] |=  0x80000000;
-        pcnetPhysWrite(pDevIns, pThis, addr, (void*)tmd, 12);
-        ((uint32_t*)tmd)[1] &= ~0x80000000;
-        pcnetPhysWrite(pDevIns, pThis, addr+7, (uint8_t*)tmd + 7, 1);
+        /* For SWSTYLE=0, write TMD2 first, then TMD1. */
+        /** @todo: The DWORD containing status bits may not need to be written unless the ERR bit is set. */
+        pcnetPhysWrite(pDevIns, pThis, addr + 2 * sizeof(uint32_t), (uint32_t*)tmd + 2, sizeof(uint32_t));
+        ((uint32_t*)tmd)[1] &= ~RT_BIT(31);
+        pcnetPhysWrite(pDevIns, pThis, addr + 1 * sizeof(uint32_t), (uint32_t*)tmd + 1, sizeof(uint32_t));
     }
     else
     {
-        uint32_t xda[3];
+        uint32_t xda[2];
+
+        /* For SWSTYLE=3, two DWORDs can be written in one go because the OWN bit is last. */
         xda[0] = ((uint32_t *)tmd)[2];
         xda[1] = ((uint32_t *)tmd)[1];
-        xda[2] = ((uint32_t *)tmd)[0];
-        xda[1] |=  0x80000000;
-        pcnetPhysWrite(pDevIns, pThis, addr, (void*)&xda[0], sizeof(xda));
-        xda[1] &= ~0x80000000;
-        pcnetPhysWrite(pDevIns, pThis, addr+7, (uint8_t*)xda + 7, 1);
+        xda[1] &= ~RT_BIT(31);
+        pcnetPhysWrite(pDevIns, pThis, addr, (void*)&xda, sizeof(xda));
     }
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTmdStore), a);
 }
@@ -1799,7 +1838,7 @@ static int pcnetTdtePoll(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd)
     {
         RTGCPHYS32 cxda = pcnetTdraAddr(pThis, CSR_XMTRC(pThis));
 
-        if (!pcnetTmdLoad(pDevIns, pThis, tmd, PHYSADDR(pThis, cxda), true))
+        if (!pcnetTmdTryLoad(pDevIns, pThis, tmd, PHYSADDR(pThis, cxda)))
         {
             STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTdtePoll), a);
             return 0;
@@ -1861,7 +1900,7 @@ static int pcnetCalcPacketLen(PPDMDEVINS pDevIns, PPCNETSTATE pThis, unsigned cb
 
         RTGCPHYS32 addrDesc = pcnetTdraAddr(pThis, iDesc);
 
-        if (!pcnetTmdLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, addrDesc), true))
+        if (!pcnetTmdTryLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, addrDesc)))
         {
             STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTxLenCalc), a);
             /*
@@ -2292,12 +2331,16 @@ DECLINLINE(int) pcnetXmitSendBuf(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETST
  */
 static void pcnetXmitRead1stSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, unsigned cbFrame, PPDMSCATTERGATHER pSgBuf)
 {
-    AssertFailed(); /* This path is not supposed to be taken atm */
-
     pSgBuf->cbUsed = cbFrame;
     for (uint32_t iSeg = 0; ; iSeg++)
     {
-        Assert(iSeg < pSgBuf->cSegs);
+        if (iSeg >= pSgBuf->cSegs)
+        {
+            AssertFailed();
+            LogRelMax(10, ("PCnet: pcnetXmitRead1stSlow: segment overflow -> ignoring\n"));
+            return;
+        }
+
         uint32_t cbRead = (uint32_t)RT_MIN(cbFrame, pSgBuf->aSegs[iSeg].cbSeg);
         PDMDevHlpPhysRead(pDevIns, GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
         cbFrame -= cbRead;
@@ -2314,8 +2357,6 @@ static void pcnetXmitRead1stSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, uns
  */
 static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, unsigned cbFrame, PPDMSCATTERGATHER pSgBuf)
 {
-    AssertFailed(); /* This path is not supposed to be taken atm */
-
     /* Find the segment which we'll put the next byte into. */
     size_t      off    = pSgBuf->cbUsed;
     size_t      offSeg = 0;
@@ -2324,7 +2365,12 @@ static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, un
     {
         offSeg += pSgBuf->aSegs[iSeg].cbSeg;
         iSeg++;
-        Assert(iSeg < pSgBuf->cSegs);
+        if (iSeg >= pSgBuf->cSegs)
+        {
+            AssertFailed();
+            LogRelMax(10, ("PCnet: pcnetXmitReadMoreSlow: segment overflow #1 -> ignoring\n"));
+            return;
+        }
     }
 
     /* Commit before we start copying so we can decrement cbFrame. */
@@ -2347,7 +2393,12 @@ static void pcnetXmitReadMoreSlow(PPDMDEVINS pDevIns, RTGCPHYS32 GCPhysFrame, un
     /* For the remainder, we've got whole segments. */
     for (;; iSeg++)
     {
-        Assert(iSeg < pSgBuf->cSegs);
+        if (iSeg >= pSgBuf->cSegs)
+        {
+            AssertFailed();
+            LogRelMax(10, ("PCnet: pcnetXmitReadMoreSlow: segment overflow #2 -> ignoring\n"));
+            return;
+        }
 
         uint32_t cbRead = (uint32_t)RT_MIN(pSgBuf->aSegs[iSeg].cbSeg, cbFrame);
         PDMDevHlpPhysRead(pDevIns, GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
@@ -2633,8 +2684,8 @@ static int pcnetAsyncTransmit(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATE
                 else
                     CSR_XMTRC(pThis)--;
 
-                TMD dummy;
-                if (!pcnetTdtePoll(pDevIns, pThis, &dummy))
+                TMD tmdNext;
+                if (!pcnetTdtePoll(pDevIns, pThis, &tmdNext))
                 {
                     /*
                      * Underflow!
@@ -2655,15 +2706,15 @@ static int pcnetAsyncTransmit(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATE
                 pcnetTmdStorePassHost(pDevIns, pThis, &tmd, GCPhysPrevTmd);
 
                 /*
-                 * The next tmd.
+                 * The next tmd is already loaded.
                  */
 #ifdef VBOX_WITH_STATISTICS
                 cBuffers++;
 #endif
-                pcnetTmdLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)), false);
+                tmd = tmdNext;
                 cb = 4096 - tmd.tmd1.bcnt;
                 if (   !fDropFrame
-                    && pSgBuf->cbUsed + cb <= MAX_FRAME) /** @todo this used to be ... + cb < MAX_FRAME. */
+                    && pSgBuf->cbUsed + cb <= pSgBuf->cbAvailable)
                     pcnetXmitReadMore(pDevIns, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
                 else
                 {
@@ -2857,7 +2908,7 @@ static void pcnetPollTimer(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC 
     if (CSR_CXDA(pThis))
     {
         TMD tmd;
-        pcnetTmdLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)), false);
+        pcnetTmdLoadAll(pDevIns, pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
         Log10(("#%d pcnetPollTimer: TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_CXDA(pThis))));
         PRINT_TMD(&tmd);
     }
@@ -4309,7 +4360,7 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
         while (i-- > 0)
         {
             TMD tmd;
-            pcnetTmdLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, GCPhys), false);
+            pcnetTmdLoadAll(pDevIns, pThis, &tmd, PHYSADDR(pThis, GCPhys));
             pHlp->pfnPrintf(pHlp,
                             "%04x %RX32:%c%c TBADR=%08RX32 BCNT=%03x OWN=%d "
                             "ERR=%d NOFCS=%d LTINT=%d ONE=%d DEF=%d STP=%d ENP=%d BPE=%d "
