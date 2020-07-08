@@ -1317,6 +1317,7 @@ static void buslogicR3SendIncomingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pThis, R
     MbxIn.u32PhysAddrCCB           = (uint32_t)GCPhysAddrCCB;
     MbxIn.u.in.uHostAdapterStatus  = uHostAdapterStatus;
     MbxIn.u.in.uTargetDeviceStatus = uDeviceStatus;
+    MbxIn.u.in.uReserved           = 0;
     MbxIn.u.in.uCompletionCode     = uMailboxCompletionCode;
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSectIntr, VINF_SUCCESS);
@@ -2434,10 +2435,23 @@ static int buslogicRegisterRead(PPDMDEVINS pDevIns, PBUSLOGIC pThis, unsigned iR
         }
         case BUSLOGIC_REGISTER_DATAIN:
         {
+            AssertCompileSize(pThis->LocalRam, 256);
+            AssertCompileSize(pThis->iReply, sizeof(uint8_t));
+            AssertCompileSize(pThis->cbReplyParametersLeft, sizeof(uint8_t));
+
             if (pThis->fUseLocalRam)
                 *pu32 = pThis->LocalRam.u8View[pThis->iReply];
             else
-                *pu32 = pThis->aReplyBuffer[pThis->iReply];
+            {
+                /*
+                 * Real adapters seem to pad the reply with zeroes and allow up to 255 bytes even
+                 * if the real reply is shorter.
+                 */
+                if (pThis->iReply >= sizeof(pThis->aReplyBuffer))
+                    *pu32 = 0;
+                else
+                    *pu32 = pThis->aReplyBuffer[pThis->iReply];
+            }
 
             /* Careful about underflow - guest can read data register even if
              * no data is available.
