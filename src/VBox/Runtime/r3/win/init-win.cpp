@@ -58,96 +58,96 @@ typedef LPTOP_LEVEL_EXCEPTION_FILTER (WINAPI * PFNSETUNHANDLEDEXCEPTIONFILTER)(L
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Windows DLL loader protection level. */
-DECLHIDDEN(RTR3WINLDRPROT)      g_enmWinLdrProt = RTR3WINLDRPROT_NONE;
+DECL_HIDDEN_DATA(RTR3WINLDRPROT)      g_enmWinLdrProt = RTR3WINLDRPROT_NONE;
 /** Our simplified windows version.    */
-DECLHIDDEN(RTWINOSTYPE)         g_enmWinVer = kRTWinOSType_UNKNOWN;
+DECL_HIDDEN_DATA(RTWINOSTYPE)         g_enmWinVer = kRTWinOSType_UNKNOWN;
 /** Extended windows version information. */
-DECLHIDDEN(OSVERSIONINFOEXW)    g_WinOsInfoEx;
+DECL_HIDDEN_DATA(OSVERSIONINFOEXW)    g_WinOsInfoEx;
 
 /** The native kernel32.dll handle. */
-DECLHIDDEN(HMODULE)                         g_hModKernel32 = NULL;
+DECL_HIDDEN_DATA(HMODULE)                       g_hModKernel32 = NULL;
 /** GetSystemWindowsDirectoryW or GetWindowsDirectoryW (NT4). */
-DECLHIDDEN(PFNGETWINSYSDIR)                 g_pfnGetSystemWindowsDirectoryW = NULL;
+DECL_HIDDEN_DATA(PFNGETWINSYSDIR)               g_pfnGetSystemWindowsDirectoryW = NULL;
 /** The GetCurrentThreadStackLimits API. */
-static PFNGETCURRENTTHREADSTACKLIMITS       g_pfnGetCurrentThreadStackLimits = NULL;
+static PFNGETCURRENTTHREADSTACKLIMITS           g_pfnGetCurrentThreadStackLimits = NULL;
 /** SetUnhandledExceptionFilter. */
-static PFNSETUNHANDLEDEXCEPTIONFILTER       g_pfnSetUnhandledExceptionFilter = NULL;
+static PFNSETUNHANDLEDEXCEPTIONFILTER           g_pfnSetUnhandledExceptionFilter = NULL;
 /** The previous unhandled exception filter. */
-static LPTOP_LEVEL_EXCEPTION_FILTER         g_pfnUnhandledXcptFilter = NULL;
+static LPTOP_LEVEL_EXCEPTION_FILTER             g_pfnUnhandledXcptFilter = NULL;
 /** SystemTimeToTzSpecificLocalTime. */
-decltype(SystemTimeToTzSpecificLocalTime)  *g_pfnSystemTimeToTzSpecificLocalTime = NULL;
+DECL_HIDDEN_DATA(decltype(SystemTimeToTzSpecificLocalTime) *) g_pfnSystemTimeToTzSpecificLocalTime = NULL;
 
 /** The native ntdll.dll handle. */
-DECLHIDDEN(HMODULE)                         g_hModNtDll = NULL;
+DECL_HIDDEN_DATA(HMODULE)                       g_hModNtDll = NULL;
 /** NtQueryFullAttributesFile   */
-DECLHIDDEN(PFNNTQUERYFULLATTRIBUTESFILE)    g_pfnNtQueryFullAttributesFile = NULL;
+DECL_HIDDEN_DATA(PFNNTQUERYFULLATTRIBUTESFILE)  g_pfnNtQueryFullAttributesFile = NULL;
 /** NtDuplicateToken (NT 3.51). */
-DECLHIDDEN(PFNNTDUPLICATETOKEN)             g_pfnNtDuplicateToken = NULL;
+DECL_HIDDEN_DATA(PFNNTDUPLICATETOKEN)           g_pfnNtDuplicateToken = NULL;
 /** NtAlertThread (NT 3.51). */
-decltype(NtAlertThread)                    *g_pfnNtAlertThread = NULL;
+DECL_HIDDEN_DATA(decltype(NtAlertThread) *)     g_pfnNtAlertThread = NULL;
 
 /** Either ws2_32.dll (NT4+) or wsock32.dll (NT3.x). */
-DECLHIDDEN(HMODULE)                         g_hModWinSock = NULL;
+DECL_HIDDEN_DATA(HMODULE)                       g_hModWinSock = NULL;
 /** Set if we're dealing with old winsock.   */
-DECLHIDDEN(bool)                            g_fOldWinSock = false;
+DECL_HIDDEN_DATA(bool)                          g_fOldWinSock = false;
 /** WSAStartup   */
-DECLHIDDEN(PFNWSASTARTUP)                   g_pfnWSAStartup = NULL;
+DECL_HIDDEN_DATA(PFNWSASTARTUP)                 g_pfnWSAStartup = NULL;
 /** WSACleanup */
-DECLHIDDEN(PFNWSACLEANUP)                   g_pfnWSACleanup = NULL;
+DECL_HIDDEN_DATA(PFNWSACLEANUP)                 g_pfnWSACleanup = NULL;
 /** Pointner to WSAGetLastError (for RTErrVarsSave). */
-DECLHIDDEN(PFNWSAGETLASTERROR)              g_pfnWSAGetLastError = NULL;
+DECL_HIDDEN_DATA(PFNWSAGETLASTERROR)            g_pfnWSAGetLastError = NULL;
 /** Pointner to WSASetLastError (for RTErrVarsRestore). */
-DECLHIDDEN(PFNWSASETLASTERROR)              g_pfnWSASetLastError = NULL;
+DECL_HIDDEN_DATA(PFNWSASETLASTERROR)            g_pfnWSASetLastError = NULL;
 /** WSACreateEvent */
-DECLHIDDEN(PFNWSACREATEEVENT)               g_pfnWSACreateEvent = NULL;
+DECL_HIDDEN_DATA(PFNWSACREATEEVENT)             g_pfnWSACreateEvent = NULL;
 /** WSACloseEvent  */
-DECLHIDDEN(PFNWSACLOSEEVENT)                g_pfnWSACloseEvent = NULL;
+DECL_HIDDEN_DATA(PFNWSACLOSEEVENT)              g_pfnWSACloseEvent = NULL;
 /** WSASetEvent */
-DECLHIDDEN(PFNWSASETEVENT)                  g_pfnWSASetEvent = NULL;
+DECL_HIDDEN_DATA(PFNWSASETEVENT)                g_pfnWSASetEvent = NULL;
 /** WSAEventSelect   */
-DECLHIDDEN(PFNWSAEVENTSELECT)               g_pfnWSAEventSelect = NULL;
+DECL_HIDDEN_DATA(PFNWSAEVENTSELECT)             g_pfnWSAEventSelect = NULL;
 /** WSAEnumNetworkEvents */
-DECLHIDDEN(PFNWSAENUMNETWORKEVENTS)         g_pfnWSAEnumNetworkEvents = NULL;
+DECL_HIDDEN_DATA(PFNWSAENUMNETWORKEVENTS)       g_pfnWSAEnumNetworkEvents = NULL;
 /** WSASend */
-DECLHIDDEN(PFNWSASend)                      g_pfnWSASend = NULL;
+DECL_HIDDEN_DATA(PFNWSASend)                    g_pfnWSASend = NULL;
 /** socket */
-DECLHIDDEN(PFNWINSOCKSOCKET)                g_pfnsocket = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKSOCKET)              g_pfnsocket = NULL;
 /** closesocket */
-DECLHIDDEN(PFNWINSOCKCLOSESOCKET)           g_pfnclosesocket = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKCLOSESOCKET)         g_pfnclosesocket = NULL;
 /** recv */
-DECLHIDDEN(PFNWINSOCKRECV)                  g_pfnrecv = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKRECV)                g_pfnrecv = NULL;
 /** send */
-DECLHIDDEN(PFNWINSOCKSEND)                  g_pfnsend = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKSEND)                g_pfnsend = NULL;
 /** recvfrom */
-DECLHIDDEN(PFNWINSOCKRECVFROM)              g_pfnrecvfrom = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKRECVFROM)            g_pfnrecvfrom = NULL;
 /** sendto */
-DECLHIDDEN(PFNWINSOCKSENDTO)                g_pfnsendto = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKSENDTO)              g_pfnsendto = NULL;
 /** bind */
-DECLHIDDEN(PFNWINSOCKBIND)                  g_pfnbind = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKBIND)                g_pfnbind = NULL;
 /** listen  */
-DECLHIDDEN(PFNWINSOCKLISTEN)                g_pfnlisten = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKLISTEN)              g_pfnlisten = NULL;
 /** accept */
-DECLHIDDEN(PFNWINSOCKACCEPT)                g_pfnaccept = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKACCEPT)              g_pfnaccept = NULL;
 /** connect */
-DECLHIDDEN(PFNWINSOCKCONNECT)               g_pfnconnect = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKCONNECT)             g_pfnconnect = NULL;
 /** shutdown */
-DECLHIDDEN(PFNWINSOCKSHUTDOWN)              g_pfnshutdown = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKSHUTDOWN)            g_pfnshutdown = NULL;
 /** getsockopt */
-DECLHIDDEN(PFNWINSOCKGETSOCKOPT)            g_pfngetsockopt = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKGETSOCKOPT)          g_pfngetsockopt = NULL;
 /** setsockopt */
-DECLHIDDEN(PFNWINSOCKSETSOCKOPT)            g_pfnsetsockopt = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKSETSOCKOPT)          g_pfnsetsockopt = NULL;
 /** ioctlsocket */
-DECLHIDDEN(PFNWINSOCKIOCTLSOCKET)           g_pfnioctlsocket = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKIOCTLSOCKET)         g_pfnioctlsocket = NULL;
 /** getpeername   */
-DECLHIDDEN(PFNWINSOCKGETPEERNAME)           g_pfngetpeername = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKGETPEERNAME)         g_pfngetpeername = NULL;
 /** getsockname */
-DECLHIDDEN(PFNWINSOCKGETSOCKNAME)           g_pfngetsockname = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKGETSOCKNAME)         g_pfngetsockname = NULL;
 /** __WSAFDIsSet */
-DECLHIDDEN(PFNWINSOCK__WSAFDISSET)          g_pfn__WSAFDIsSet = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCK__WSAFDISSET)        g_pfn__WSAFDIsSet = NULL;
 /** select */
-DECLHIDDEN(PFNWINSOCKSELECT)                g_pfnselect = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKSELECT)              g_pfnselect = NULL;
 /** gethostbyname */
-DECLHIDDEN(PFNWINSOCKGETHOSTBYNAME)         g_pfngethostbyname = NULL;
+DECL_HIDDEN_DATA(PFNWINSOCKGETHOSTBYNAME)       g_pfngethostbyname = NULL;
 
 
 /*********************************************************************************************************************************

@@ -42,14 +42,14 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Pointer to the lock group used by IPRT. */
-lck_grp_t                  *g_pDarwinLockGroup = NULL;
+DECL_HIDDEN_DATA(lck_grp_t *)                   g_pDarwinLockGroup = NULL;
 /** Pointer to the ast_pending function, if found. */
-PFNR0DARWINASTPENDING       g_pfnR0DarwinAstPending = NULL;
+DECL_HIDDEN_DATA(PFNR0DARWINASTPENDING)         g_pfnR0DarwinAstPending = NULL;
 /** Pointer to the cpu_interrupt function, if found. */
-PFNR0DARWINCPUINTERRUPT     g_pfnR0DarwinCpuInterrupt = NULL;
+DECL_HIDDEN_DATA(PFNR0DARWINCPUINTERRUPT)       g_pfnR0DarwinCpuInterrupt = NULL;
 #ifdef DEBUG
 /** Pointer to the vm_fault_external function - used once for debugging @bugref{9466}. */
-PFNR0DARWINVMFAULTEXTERNAL  g_pfnR0DarwinVmFaultExternal = NULL;
+DECL_HIDDEN_DATA(PFNR0DARWINVMFAULTEXTERNAL)    g_pfnR0DarwinVmFaultExternal = NULL;
 #endif
 
 

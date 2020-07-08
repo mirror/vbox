@@ -1779,34 +1779,34 @@
 # define RTDECL(a_RetType)      DECL_IMPORT_NOTHROW(a_RetType) RTCALL
 #endif
 
-/** @def RTDATADECL(a_RetType)
+/** @def RTDATADECL(a_Type)
  * Runtime Library export or import declaration.
  * Data declared using this macro exists in all contexts.
- * @param   a_RetType   The data type.
+ * @param   a_Type  The data type.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
-/** @def RT_DECL_DATA_CONST(a_RetType)
+/** @def RT_DECL_DATA_CONST(a_Type)
  * Definition of a const variable. See DECL_HIDDEN_CONST.
- * @param   a_RetType   The const data type.
+ * @param   a_Type  The const data type.
  * @remarks This is only used inside IPRT.  Other APIs need to define their own
  *          XXXX_DECL macros for dealing with import/export/static visibility.
  */
 #if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
-#  define RTDATADECL(a_RetType)             DECLHIDDEN(a_RetType)
-#  define RT_DECL_DATA_CONST(a_RetType)     DECL_HIDDEN_CONST(a_RetType)
+#  define RTDATADECL(a_Type)            DECL_HIDDEN_DATA(a_Type)
+#  define RT_DECL_DATA_CONST(a_Type)    DECL_HIDDEN_CONST(a_Type)
 # else
-#  define RTDATADECL(a_RetType)             DECLEXPORT(a_RetType)
+#  define RTDATADECL(a_Type)            DECLEXPORT(a_Type)
 #  if defined(__cplusplus) && defined(__GNUC__)
-#   define RT_DECL_DATA_CONST(a_RetType)    a_RetType
+#   define RT_DECL_DATA_CONST(a_Type)   a_Type
 #  else
-#   define RT_DECL_DATA_CONST(a_RetType)    DECLEXPORT(a_RetType)
+#   define RT_DECL_DATA_CONST(a_Type)   DECLEXPORT(a_Type)
 #  endif
 # endif
 #else
-# define RTDATADECL(a_RetType)              DECLIMPORT(a_RetType)
-# define RT_DECL_DATA_CONST(a_RetType)      DECLIMPORT(a_RetType)
+# define RTDATADECL(a_Type)             DECLIMPORT(a_Type)
+# define RT_DECL_DATA_CONST(a_Type)     DECLIMPORT(a_Type)
 #endif
 
 /** @def RT_DECL_CLASS

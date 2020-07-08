@@ -93,9 +93,9 @@ typedef RTDVMVOLUMEINTERNAL *PRTDVMVOLUMEINTERNAL;
 /*********************************************************************************************************************************
 *   Global variables                                                                                                             *
 *********************************************************************************************************************************/
-extern RTDVMFMTOPS g_rtDvmFmtMbr;
-extern RTDVMFMTOPS g_rtDvmFmtGpt;
-extern RTDVMFMTOPS g_rtDvmFmtBsdLbl;
+extern DECL_HIDDEN_DATA(const RTDVMFMTOPS) g_rtDvmFmtMbr;
+extern DECL_HIDDEN_DATA(const RTDVMFMTOPS) g_rtDvmFmtGpt;
+extern DECL_HIDDEN_DATA(const RTDVMFMTOPS) g_rtDvmFmtBsdLbl;
 
 /**
  * Supported volume formats.

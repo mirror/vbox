@@ -119,7 +119,7 @@ static PRTDBGMODREGIMG  g_pImgHead;
 static PRTDBGMODREGDBG  g_pDbgHead;
 /** String cache for the debug info interpreters.
  * RTSTRCACHE is thread safe. */
-DECLHIDDEN(RTSTRCACHE)  g_hDbgModStrCache = NIL_RTSTRCACHE;
+DECL_HIDDEN_DATA(RTSTRCACHE)  g_hDbgModStrCache = NIL_RTSTRCACHE;
 
 
 

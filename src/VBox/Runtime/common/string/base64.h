@@ -49,10 +49,10 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-extern DECLHIDDEN(const uint8_t)    g_au8rtBase64CharToVal[256];
-extern DECLHIDDEN(const char)       g_szrtBase64ValToChar[64+1];
-extern DECLHIDDEN(const size_t)     g_acchrtBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1];
-extern DECLHIDDEN(const char)       g_aachrtBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1][2];
+extern DECL_HIDDEN_DATA(const uint8_t)  g_au8rtBase64CharToVal[256];
+extern DECL_HIDDEN_DATA(const char)     g_szrtBase64ValToChar[64+1];
+extern DECL_HIDDEN_DATA(const size_t)   g_acchrtBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1];
+extern DECL_HIDDEN_DATA(const char)     g_aachrtBase64EolStyles[RTBASE64_FLAGS_EOL_STYLE_MASK + 1][2];
 
 
 /*********************************************************************************************************************************

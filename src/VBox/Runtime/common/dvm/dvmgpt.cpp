@@ -536,7 +536,7 @@ static DECLCALLBACK(int) rtDvmFmtGptVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t
     return rtDvmDiskWrite(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbWrite);
 }
 
-RTDVMFMTOPS g_rtDvmFmtGpt =
+DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtGpt =
 {
     /* pszFmt */
     "GPT",

@@ -45,10 +45,10 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
-DECLHIDDEN(char)             g_szrtProcExePath[RTPATH_MAX] = "Unknown.exe";
-DECLHIDDEN(size_t)           g_cchrtProcExePath = 11;
-DECLHIDDEN(size_t)           g_cchrtProcExeDir = 0;
-DECLHIDDEN(size_t)           g_offrtProcName = 0;
+DECL_HIDDEN_DATA(char)      g_szrtProcExePath[RTPATH_MAX] = "Unknown.exe";
+DECL_HIDDEN_DATA(size_t)    g_cchrtProcExePath = 11;
+DECL_HIDDEN_DATA(size_t)    g_cchrtProcExeDir = 0;
+DECL_HIDDEN_DATA(size_t)    g_offrtProcName = 0;
 RT_C_DECLS_END
 
 

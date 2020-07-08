@@ -87,13 +87,13 @@ static bool volatile        g_fInitializing = false;
 
 /** The process path.
  * This is used by RTPathExecDir and RTProcGetExecutablePath and set by rtProcInitName. */
-DECLHIDDEN(char)            g_szrtProcExePath[RTPATH_MAX];
+DECL_HIDDEN_DATA(char)      g_szrtProcExePath[RTPATH_MAX];
 /** The length of g_szrtProcExePath. */
-DECLHIDDEN(size_t)          g_cchrtProcExePath;
+DECL_HIDDEN_DATA(size_t)    g_cchrtProcExePath;
 /** The length of directory path component of g_szrtProcExePath. */
-DECLHIDDEN(size_t)          g_cchrtProcDir;
+DECL_HIDDEN_DATA(size_t)    g_cchrtProcDir;
 /** The offset of the process name into g_szrtProcExePath. */
-DECLHIDDEN(size_t)          g_offrtProcName;
+DECL_HIDDEN_DATA(size_t)    g_offrtProcName;
 
 /** The IPRT init flags. */
 static uint32_t             g_fInitFlags;
@@ -108,23 +108,23 @@ static char **              g_papszrtOrgArgs;
 /**
  * Program start nanosecond TS.
  */
-DECLHIDDEN(uint64_t)        g_u64ProgramStartNanoTS;
+DECL_HIDDEN_DATA(uint64_t)  g_u64ProgramStartNanoTS;
 
 /**
  * The process identifier of the running process.
  */
-DECLHIDDEN(RTPROCESS)       g_ProcessSelf = NIL_RTPROCESS;
+DECL_HIDDEN_DATA(RTPROCESS) g_ProcessSelf = NIL_RTPROCESS;
 
 /**
  * The current process priority.
  */
-DECLHIDDEN(RTPROCPRIORITY)  g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
+DECL_HIDDEN_DATA(RTPROCPRIORITY)  g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
 
 /**
  * Set if the atexit callback has been called, i.e. indicating
  * that the process is terminating.
  */
-DECLHIDDEN(bool volatile)   g_frtAtExitCalled = false;
+DECL_HIDDEN_DATA(bool volatile)   g_frtAtExitCalled = false;
 
 #ifdef IPRT_WITH_ALIGNMENT_CHECKS
 /**

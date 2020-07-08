@@ -689,19 +689,19 @@ typedef struct RTDBGMODINT
 typedef RTDBGMODINT *PRTDBGMODINT;
 
 
-extern DECLHIDDEN(RTSTRCACHE)           g_hDbgModStrCache;
-extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgCodeView;
-extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDwarf;
-extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgNm;
-extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgMapSym;
+extern DECL_HIDDEN_DATA(RTSTRCACHE)             g_hDbgModStrCache;
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgCodeView;
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgDwarf;
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgNm;
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgMapSym;
 #ifdef RT_OS_WINDOWS
-extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDbgHelp;
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgDbgHelp;
 #endif
-extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDeferred;
-extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgContainer;
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgDeferred;
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgContainer;
 
-extern DECLHIDDEN(RTDBGMODVTIMG const)  g_rtDbgModVtImgLdr;
-extern DECLHIDDEN(RTDBGMODVTIMG const)  g_rtDbgModVtImgDeferred;
+extern DECL_HIDDEN_DATA(RTDBGMODVTIMG const)    g_rtDbgModVtImgLdr;
+extern DECL_HIDDEN_DATA(RTDBGMODVTIMG const)    g_rtDbgModVtImgDeferred;
 
 DECLHIDDEN(int) rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg);
 DECLHIDDEN(int) rtDbgModContainer_SymbolRemoveAll(PRTDBGMODINT pMod);

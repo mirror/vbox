@@ -685,7 +685,7 @@ static DECLCALLBACK(int) rtDvmFmtMbrVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t
     return rtDvmDiskWrite(pVol->pVolMgr->pDisk, pVol->pEntry->offPart + off, pvBuf, cbWrite);
 }
 
-RTDVMFMTOPS g_rtDvmFmtMbr =
+DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtMbr =
 {
     /* pszFmt */
     "MBR",

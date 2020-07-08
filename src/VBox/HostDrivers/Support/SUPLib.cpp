@@ -96,7 +96,7 @@ static bool                     g_fPreInited = false;
 /** The SUPLib instance data.
  * Well, at least parts of it, specifically the parts that are being handed over
  * via the pre-init mechanism from the hardened executable stub.  */
-SUPLIBDATA                      g_supLibData =
+DECL_HIDDEN_DATA(SUPLIBDATA)    g_supLibData =
 {
     /*.hDevice              = */    SUP_HDEVICE_NIL,
     /*.fUnrestricted        = */    true
@@ -115,25 +115,25 @@ SUPLIBDATA                      g_supLibData =
  *
  * @todo This will probably deserve it's own session or some other good solution...
  */
-DECLEXPORT(PSUPGLOBALINFOPAGE)  g_pSUPGlobalInfoPage;
+DECLEXPORT(PSUPGLOBALINFOPAGE)      g_pSUPGlobalInfoPage;
 /** Address of the ring-0 mapping of the GIP. */
-PSUPGLOBALINFOPAGE              g_pSUPGlobalInfoPageR0;
+PSUPGLOBALINFOPAGE                  g_pSUPGlobalInfoPageR0;
 /** The physical address of the GIP. */
-static RTHCPHYS                 g_HCPhysSUPGlobalInfoPage = NIL_RTHCPHYS;
+static RTHCPHYS                     g_HCPhysSUPGlobalInfoPage = NIL_RTHCPHYS;
 
 /** The negotiated cookie. */
-uint32_t                        g_u32Cookie = 0;
+DECL_HIDDEN_DATA(uint32_t)          g_u32Cookie = 0;
 /** The negotiated session cookie. */
-uint32_t                        g_u32SessionCookie;
+DECL_HIDDEN_DATA(uint32_t)          g_u32SessionCookie;
 /** Session handle. */
-PSUPDRVSESSION                  g_pSession;
+DECL_HIDDEN_DATA(PSUPDRVSESSION)    g_pSession;
 /** R0 SUP Functions used for resolving referenced to the SUPR0 module. */
-PSUPQUERYFUNCS                  g_pSupFunctions;
+DECL_HIDDEN_DATA(PSUPQUERYFUNCS)    g_pSupFunctions;
 
 /** PAGE_ALLOC_EX sans kernel mapping support indicator. */
-static bool                     g_fSupportsPageAllocNoKernel = true;
+static bool                         g_fSupportsPageAllocNoKernel = true;
 /** Fake mode indicator. (~0 at first, 0 or 1 after first test) */
-uint32_t                        g_uSupFakeMode = UINT32_MAX;
+DECL_HIDDEN_DATA(uint32_t)          g_uSupFakeMode = UINT32_MAX;
 
 
 /*********************************************************************************************************************************

@@ -32,7 +32,7 @@
 
 #include <iprt/crypto/pkix.h>
 
-extern DECLHIDDEN(RTCRPKIXSIGNATUREDESC const) g_rtCrPkixSigningHashWithRsaDesc;
+extern DECL_HIDDEN_DATA(RTCRPKIXSIGNATUREDESC const) g_rtCrPkixSigningHashWithRsaDesc;
 
 #endif /* !IPRT_INCLUDED_SRC_common_crypto_pkix_signature_builtin_h */
 

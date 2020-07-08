@@ -95,8 +95,7 @@ DECLHIDDEN(int) IOBUFMgrDestroy(IOBUFMGR hIoBufMgr);
  *                             if there is not enough free memory to satisfy the complete request.
  *                             NULL if partial allocations are not supported.
  */
-DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size_t cbIoBuf,
-                                 size_t *pcbIoBufAllocated);
+DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size_t cbIoBuf, size_t *pcbIoBufAllocated);
 
 /**
  * Frees a given I/O buffer.

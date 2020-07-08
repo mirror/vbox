@@ -338,17 +338,17 @@ typedef enum SUPR3HARDENEDMAINSTATE
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-extern DECLHIDDEN(uint32_t)             g_u32Cookie;
-extern DECLHIDDEN(uint32_t)             g_u32SessionCookie;
-extern DECLHIDDEN(SUPLIBDATA)           g_supLibData;
-extern DECLHIDDEN(uint32_t)             g_uSupFakeMode;
-extern DECLHIDDEN(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPageR0;
+extern DECL_HIDDEN_DATA(uint32_t)               g_u32Cookie;
+extern DECL_HIDDEN_DATA(uint32_t)               g_u32SessionCookie;
+extern DECL_HIDDEN_DATA(SUPLIBDATA)             g_supLibData;
+extern DECL_HIDDEN_DATA(uint32_t)               g_uSupFakeMode;
+extern DECL_HIDDEN_DATA(PSUPGLOBALINFOPAGE)     g_pSUPGlobalInfoPageR0;
 #ifdef VBOX_INCLUDED_SRC_Support_SUPDrvIOC_h
-extern DECLHIDDEN(PSUPQUERYFUNCS)       g_pSupFunctions;
+extern DECL_HIDDEN_DATA(PSUPQUERYFUNCS)         g_pSupFunctions;
 #endif
-extern DECLHIDDEN(SUPR3HARDENEDMAINSTATE) g_enmSupR3HardenedMainState;
+extern DECL_HIDDEN_DATA(SUPR3HARDENEDMAINSTATE) g_enmSupR3HardenedMainState;
 #ifdef RT_OS_WINDOWS
-extern DECLHIDDEN(bool)                 g_fSupEarlyProcessInit;
+extern DECL_HIDDEN_DATA(bool)                   g_fSupEarlyProcessInit;
 #endif
 
 

@@ -137,7 +137,7 @@ typedef RTTHREADINT *PRTTHREADINT;
 /** @} */
 
 /** Counters for each thread type. */
-extern DECLHIDDEN(uint32_t volatile)   g_acRTThreadTypeStats[RTTHREADTYPE_END];
+extern DECL_HIDDEN_DATA(uint32_t volatile) g_acRTThreadTypeStats[RTTHREADTYPE_END];
 
 
 /**

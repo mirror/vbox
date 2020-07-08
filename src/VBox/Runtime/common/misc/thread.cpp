@@ -86,7 +86,7 @@ static PAVLPVNODECORE           g_ThreadTree;
 /** The number of threads in the tree (for ring-0 termination kludge). */
 static uint32_t volatile        g_cThreadInTree;
 /** Counters for each thread type. */
-DECLHIDDEN(uint32_t volatile)   g_acRTThreadTypeStats[RTTHREADTYPE_END];
+DECL_HIDDEN_DATA(uint32_t volatile) g_acRTThreadTypeStats[RTTHREADTYPE_END];
 
 
 /*********************************************************************************************************************************
