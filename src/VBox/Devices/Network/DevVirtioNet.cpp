@@ -902,15 +902,21 @@ static int vnetR3HandleRxPacket(PPDMDEVINS pDevIns, PVNETSTATE pThis, PVNETSTATE
             default:
                 return VERR_INVALID_PARAMETER;
         }
-        Hdr.Hdr.u16HdrLen = pGso->cbHdrsTotal;
-        Hdr.Hdr.u16GSOSize = pGso->cbMaxSeg;
+        Hdr.Hdr.u16HdrLen    = pGso->cbHdrsTotal;
+        Hdr.Hdr.u16GSOSize   = pGso->cbMaxSeg;
         Hdr.Hdr.u16CSumStart = pGso->offHdr2;
+        Hdr.u16NumBufs       = 0;
         STAM_REL_COUNTER_INC(&pThis->StatReceiveGSO);
     }
     else
     {
-        Hdr.Hdr.u8Flags   = 0;
-        Hdr.Hdr.u8GSOType = VNETHDR_GSO_NONE;
+        Hdr.Hdr.u8Flags       = 0;
+        Hdr.Hdr.u8GSOType     = VNETHDR_GSO_NONE;
+        Hdr.Hdr.u16HdrLen     = 0;
+        Hdr.Hdr.u16GSOSize    = 0;
+        Hdr.Hdr.u16CSumStart  = 0;
+        Hdr.Hdr.u16CSumOffset = 0;
+        Hdr.u16NumBufs        = 0;
     }
 
     if (vnetR3MergeableRxBuffers(pThis))
