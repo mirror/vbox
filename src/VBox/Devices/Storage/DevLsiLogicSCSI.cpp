@@ -1983,7 +1983,7 @@ static size_t lsilogicSgBufWalker(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
                 && SGEntry.Simple32.fEndOfBuffer)
                 return cbCopied - RT_MIN(cbSkip, cbCopied);
 
-            uint32_t cbCopyThis           = RT_MIN(SGEntry.Simple32.u24Length, cbCopy);
+            size_t   cbCopyThis           = RT_MIN(SGEntry.Simple32.u24Length, cbCopy);
             RTGCPHYS GCPhysAddrDataBuffer = SGEntry.Simple32.u32DataBufferAddressLow;
 
             if (SGEntry.Simple32.f64BitAddress)
