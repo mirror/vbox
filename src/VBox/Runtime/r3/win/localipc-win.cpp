@@ -828,7 +828,10 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
                                                0 /*no sharing*/,
                                                &SecAttrs,
                                                OPEN_EXISTING,
-                                               FILE_FLAG_OVERLAPPED,
+                                               FILE_FLAG_OVERLAPPED
+                                               /* Needed in order to prevent the server to impersonate with this thread's
+                                                * security context. See #9773. */
+                                               | SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS,
                                                NULL /*no template handle*/);
                     if (hPipe != INVALID_HANDLE_VALUE)
                     {
