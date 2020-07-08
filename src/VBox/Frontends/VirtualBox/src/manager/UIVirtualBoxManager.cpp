@@ -16,10 +16,12 @@
  */
 
 /* Qt includes: */
+#include <QFile>
 #include <QMenuBar>
+#include <QPushButton>
 #include <QStandardPaths>
 #include <QStatusBar>
-//# include <QToolButton>
+#include <QTextEdit>
 
 /* GUI includes: */
 #include "QIFileDialog.h"
@@ -86,6 +88,121 @@
         } \
     } while (0)
 
+
+/** QDialog extension used to ask for a public key for console connection needs. */
+class UIAcquirePublicKeyDialog : public QDialog
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs dialog passing @a pParent to the base-class. */
+    UIAcquirePublicKeyDialog(QWidget *pParent = 0);
+
+    /** Return public key. */
+    QString publicKey() const;
+
+private slots:
+
+    /** Handles abstract @a pButton click. */
+    void sltHandleButtonClicked(QAbstractButton *pButton);
+    /** Handles Open button click. */
+    void sltHandleOpenButtonClick();
+
+    /** Performs revalidation. */
+    void sltRevalidate();
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** Holds the text-editor instance. */
+    QTextEdit         *m_pTextEditor;
+    /** Holds the button-box instance. */
+    QIDialogButtonBox *m_pButtonBox;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIAcquirePublicKeyDialog implementation.                                                                               *
+*********************************************************************************************************************************/
+
+UIAcquirePublicKeyDialog::UIAcquirePublicKeyDialog(QWidget *pParent /* = 0 */)
+    : QDialog(pParent)
+    , m_pTextEditor(0)
+    , m_pButtonBox(0)
+{
+    prepare();
+    sltRevalidate();
+}
+
+QString UIAcquirePublicKeyDialog::publicKey() const
+{
+    return m_pTextEditor->toPlainText();
+}
+
+void UIAcquirePublicKeyDialog::sltHandleButtonClicked(QAbstractButton *pButton)
+{
+    const QDialogButtonBox::StandardButton enmStandardButton = m_pButtonBox->standardButton(pButton);
+    switch (enmStandardButton)
+    {
+        case QDialogButtonBox::Ok:     return accept();
+        case QDialogButtonBox::Cancel: return reject();
+        case QDialogButtonBox::Open:   return sltHandleOpenButtonClick();
+        default: break;
+    }
+}
+
+void UIAcquirePublicKeyDialog::sltHandleOpenButtonClick()
+{
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    const QString strFileName = QIFileDialog::getOpenFileName(comVBox.GetHomeFolder(), QString(),
+                                                              this, tr("Choose a public key file"));
+    if (!strFileName.isEmpty())
+    {
+        QFile file(strFileName);
+        if (file.open(QIODevice::ReadOnly))
+            m_pTextEditor->setPlainText(file.readAll());
+        else
+            msgCenter().cannotOpenPublicKeyFile(strFileName);
+    }
+}
+
+void UIAcquirePublicKeyDialog::sltRevalidate()
+{
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!m_pTextEditor->toPlainText().isEmpty());
+}
+
+void UIAcquirePublicKeyDialog::prepare()
+{
+    /* Prepare layout: */
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
+    {
+        /* Prepare text-editor: */
+        m_pTextEditor = new QTextEdit(this);
+        if (m_pTextEditor)
+        {
+            connect(m_pTextEditor, &QTextEdit::textChanged, this, &UIAcquirePublicKeyDialog::sltRevalidate);
+            pLayout->addWidget(m_pTextEditor);
+        }
+
+        /* Prepare button-box: */
+        m_pButtonBox = new QIDialogButtonBox(this);
+        if (m_pButtonBox)
+        {
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Open);
+            connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIAcquirePublicKeyDialog::sltHandleButtonClicked);
+            pLayout->addWidget(m_pButtonBox);
+        }
+    }
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIVirtualBoxManager implementation.                                                                                    *
+*********************************************************************************************************************************/
 
 /* static */
 UIVirtualBoxManager *UIVirtualBoxManager::s_pInstance = 0;
@@ -863,6 +980,95 @@ void UIVirtualBoxManager::sltPerformStartMachineDetachable()
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
     performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Separate);
+}
+
+void UIVirtualBoxManager::sltPerformCreateConsoleConnection()
+{
+    /* Get selected items: */
+    QList<UIVirtualMachineItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    /* Create input dialog to pass public key to newly created console connection: */
+    QPointer<UIAcquirePublicKeyDialog> pDialog = new UIAcquirePublicKeyDialog(this);
+    if (pDialog)
+    {
+        if (pDialog->exec() == QDialog::Accepted)
+        {
+            foreach (UIVirtualMachineItem *pItem, items)
+            {
+                /* Make sure the item exists and is of cloud type: */
+                AssertPtrReturnVoid(pItem);
+                UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+                if (!pCloudItem)
+                    continue;
+
+                /* Acquire current machine: */
+                CCloudMachine comMachine = pCloudItem->machine();
+
+                /* Acquire machine name: */
+                QString strName;
+                if (!cloudMachineName(comMachine, strName))
+                    continue;
+
+                /* Prepare "create console connection" progress: */
+                CProgress comProgress = comMachine.CreateConsoleConnection(pDialog->publicKey());
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotCreateConsoleConnection(comMachine);
+                    continue;
+                }
+
+                /* Show "create console connection" progress: */
+                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                {
+                    msgCenter().cannotCreateConsoleConnection(comProgress, strName);
+                    continue;
+                }
+            }
+        }
+        delete pDialog;
+    }
+}
+
+void UIVirtualBoxManager::sltPerformDeleteConsoleConnection()
+{
+    /* Get selected items: */
+    QList<UIVirtualMachineItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    foreach (UIVirtualMachineItem *pItem, items)
+    {
+        /* Make sure the item exists and is of cloud type: */
+        AssertPtrReturnVoid(pItem);
+        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+        if (!pCloudItem)
+            continue;
+
+        /* Acquire current machine: */
+        CCloudMachine comMachine = pCloudItem->machine();
+
+        /* Acquire machine name: */
+        QString strName;
+        if (!cloudMachineName(comMachine, strName))
+            continue;
+
+        /* Prepare "delete console connection" progress: */
+        CProgress comProgress = comMachine.DeleteConsoleConnection();
+        if (!comMachine.isOk())
+        {
+            msgCenter().cannotDeleteConsoleConnection(comMachine);
+            continue;
+        }
+
+        /* Show "delete console connection" progress: */
+        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        {
+            msgCenter().cannotDeleteConsoleConnection(comProgress, strName);
+            continue;
+        }
+    }
 }
 
 void UIVirtualBoxManager::sltPerformDiscardMachineState()
@@ -1701,6 +1907,18 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartMachineDetachable);
 
+    /* 'Group/Console' menu connections: */
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCreateConsoleConnection);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnection);
+
+    /* 'Machine/Console' menu connections: */
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCreateConsoleConnection);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnection);
+
     /* 'Group/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
@@ -2015,6 +2233,7 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
+        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Console)->menu());
         pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
@@ -2071,6 +2290,7 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Console)->menu());
         pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
@@ -2247,6 +2467,16 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable, items));
+
+    /* Enable/disable group-console actions: */
+    actionPool()->action(UIActionIndexST_M_Group_M_Console)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console, items));
+    actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console_S_CreateConnection, items));
+    actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console_S_DeleteConnection, items));
+
+    /* Enable/disable machine-console actions: */
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CreateConnection, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection, items));
 
     /* Enable/disable group-close actions: */
     actionPool()->action(UIActionIndexST_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close, items));
@@ -2511,6 +2741,15 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         {
             return isAtLeastOneItemSupportsShortcuts(items);
         }
+        case UIActionIndexST_M_Group_M_Console:
+        case UIActionIndexST_M_Group_M_Console_S_CreateConnection:
+        case UIActionIndexST_M_Group_M_Console_S_DeleteConnection:
+        case UIActionIndexST_M_Machine_M_Console:
+        case UIActionIndexST_M_Machine_M_Console_S_CreateConnection:
+        case UIActionIndexST_M_Machine_M_Console_S_DeleteConnection:
+        {
+            return isAtLeastOneItemStarted(items);
+        }
         case UIActionIndexST_M_Group_M_Close:
         case UIActionIndexST_M_Machine_M_Close:
         {
@@ -2718,3 +2957,6 @@ bool UIVirtualBoxManager::isAtLeastOneItemRunning(const QList<UIVirtualMachineIt
             return true;
     return false;
 }
+
+
+#include "UIVirtualBoxManager.moc"

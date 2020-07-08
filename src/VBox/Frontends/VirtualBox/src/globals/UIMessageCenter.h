@@ -303,6 +303,11 @@ public:
     bool confirmStartMultipleMachines(const QString &strNames) const;
     void cannotMoveMachine(const CMachine &machine, QWidget *pParent = 0) const;
     void cannotMoveMachine(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
+    void cannotOpenPublicKeyFile(const QString &strPath, QWidget *pParent = 0) const;
+    void cannotCreateConsoleConnection(const CCloudMachine &comMachine, QWidget *pParent = 0);
+    void cannotCreateConsoleConnection(const CProgress &comProgress, const QString &strMachineName, QWidget *pParent = 0);
+    void cannotDeleteConsoleConnection(const CCloudMachine &comMachine, QWidget *pParent = 0);
+    void cannotDeleteConsoleConnection(const CProgress &comProgress, const QString &strMachineName, QWidget *pParent = 0);
 
     /* API: Snapshot warnings: */
     int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const;

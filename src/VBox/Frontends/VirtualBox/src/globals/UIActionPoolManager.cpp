@@ -1302,6 +1302,84 @@ protected:
 };
 
 
+/** Menu action extension, used as 'Console' menu class. */
+class UIActionMenuSelectorConsole : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorConsole(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/host_iface_edit_16px.png") /// @todo replace with proper icon
+    {}
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "C&onsole"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Create Console Connection' action class. */
+class UIActionSimpleSelectorConsolePerformCreateConnection : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorConsolePerformCreateConnection(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/host_iface_add_16px.png", ":/host_iface_add_disabled_16px.png") /// @todo replace with proper icon
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CreateConsoleConnection");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Create Connection"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create console connection to be able to use ssh/vnc clients"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Delete Console Connection' action class. */
+class UIActionSimpleSelectorConsolePerformDeleteConnection : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorConsolePerformDeleteConnection(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/host_iface_remove_16px.png", ":/host_iface_remove_disabled_16px.png") /// @todo replace with proper icon
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("DeleteConsoleConnection");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Delete Connection"));
+        setStatusTip(QApplication::translate("UIActionPool", "Delete console connection to disconnect ssh/vnc clients"));
+    }
+};
+
+
 /** Menu action extension, used as 'Close' menu class. */
 class UIActionMenuSelectorClose : public UIActionMenu
 {
@@ -2945,6 +3023,9 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable] = new UIActionSimpleSelectorCommonPerformStartDetachable(this);
     m_pool[UIActionIndexST_M_Group_T_Pause] = new UIActionToggleSelectorCommonPauseAndResume(this);
     m_pool[UIActionIndexST_M_Group_S_Reset] = new UIActionSimpleSelectorCommonPerformReset(this);
+    m_pool[UIActionIndexST_M_Group_M_Console] = new UIActionMenuSelectorConsole(this);
+    m_pool[UIActionIndexST_M_Group_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
+    m_pool[UIActionIndexST_M_Group_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
     m_pool[UIActionIndexST_M_Group_M_Close] = new UIActionMenuSelectorClose(this);
     m_pool[UIActionIndexST_M_Group_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
     m_pool[UIActionIndexST_M_Group_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
@@ -2978,6 +3059,9 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable] = new UIActionSimpleSelectorCommonPerformStartDetachable(this);
     m_pool[UIActionIndexST_M_Machine_T_Pause] = new UIActionToggleSelectorCommonPauseAndResume(this);
     m_pool[UIActionIndexST_M_Machine_S_Reset] = new UIActionSimpleSelectorCommonPerformReset(this);
+    m_pool[UIActionIndexST_M_Machine_M_Console] = new UIActionMenuSelectorConsole(this);
+    m_pool[UIActionIndexST_M_Machine_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
+    m_pool[UIActionIndexST_M_Machine_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
     m_pool[UIActionIndexST_M_Machine_M_Close] = new UIActionMenuSelectorClose(this);
     m_pool[UIActionIndexST_M_Machine_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
     m_pool[UIActionIndexST_M_Machine_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
@@ -3066,6 +3150,8 @@ void UIActionPoolManager::preparePool()
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup].ptfm = &UIActionPoolManager::updateMenuMachineMoveToGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_StartOrShow].ptfm =   &UIActionPoolManager::updateMenuGroupStartOrShow;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_StartOrShow].ptfm = &UIActionPoolManager::updateMenuMachineStartOrShow;
+    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Console].ptfm =       &UIActionPoolManager::updateMenuGroupConsole;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Console].ptfm =     &UIActionPoolManager::updateMenuMachineConsole;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close].ptfm =         &UIActionPoolManager::updateMenuGroupClose;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close].ptfm =       &UIActionPoolManager::updateMenuMachineClose;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Tools].ptfm =         &UIActionPoolManager::updateMenuGroupTools;
@@ -3363,6 +3449,38 @@ void UIActionPoolManager::updateMenuMachineStartOrShow()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Machine_M_StartOrShow);
+}
+
+void UIActionPoolManager::updateMenuGroupConsole()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexST_M_Group_M_Console)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Populate 'Group' / 'Console' menu: */
+    pMenu->addAction(action(UIActionIndexST_M_Group_M_Console_S_CreateConnection));
+    pMenu->addAction(action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_Group_M_Console);
+}
+
+void UIActionPoolManager::updateMenuMachineConsole()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_Console)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Populate 'Machine' / 'Console' menu: */
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_Machine_M_Console);
 }
 
 void UIActionPoolManager::updateMenuGroupClose()
@@ -3681,6 +3799,8 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal)
                     << action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless)
                     << action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable)
+                    << action(UIActionIndexST_M_Group_M_Console_S_CreateConnection)
+                    << action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection)
                     // << action(UIActionIndexST_M_Group_M_Close_S_Detach)
                     << action(UIActionIndexST_M_Group_M_Close_S_SaveState)
                     << action(UIActionIndexST_M_Group_M_Close_S_Shutdown)
@@ -3713,6 +3833,8 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable)
+                    << action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection)
+                    << action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)
                     // << action(UIActionIndexST_M_Machine_M_Close_S_Detach)
                     << action(UIActionIndexST_M_Machine_M_Close_S_SaveState)
                     << action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)

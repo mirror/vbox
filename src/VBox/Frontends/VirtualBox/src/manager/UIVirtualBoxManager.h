@@ -237,6 +237,11 @@ private slots:
         /** Handles call to start machine in detachable mode. */
         void sltPerformStartMachineDetachable();
 
+        /** Handles call to create console connection. */
+        void sltPerformCreateConsoleConnection();
+        /** Handles call to delete console connection. */
+        void sltPerformDeleteConsoleConnection();
+
         /** Handles call to discard machine state. */
         void sltPerformDiscardMachineState();
 

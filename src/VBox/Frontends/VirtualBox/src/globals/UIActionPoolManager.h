@@ -69,6 +69,9 @@ enum UIActionIndexST
     UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable,
     UIActionIndexST_M_Group_T_Pause,
     UIActionIndexST_M_Group_S_Reset,
+    UIActionIndexST_M_Group_M_Console,
+    UIActionIndexST_M_Group_M_Console_S_CreateConnection,
+    UIActionIndexST_M_Group_M_Console_S_DeleteConnection,
     UIActionIndexST_M_Group_M_Close,
     UIActionIndexST_M_Group_M_Close_S_Detach,
     UIActionIndexST_M_Group_M_Close_S_SaveState,
@@ -102,6 +105,9 @@ enum UIActionIndexST
     UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable,
     UIActionIndexST_M_Machine_T_Pause,
     UIActionIndexST_M_Machine_S_Reset,
+    UIActionIndexST_M_Machine_M_Console,
+    UIActionIndexST_M_Machine_M_Console_S_CreateConnection,
+    UIActionIndexST_M_Machine_M_Console_S_DeleteConnection,
     UIActionIndexST_M_Machine_M_Close,
     UIActionIndexST_M_Machine_M_Close_S_Detach,
     UIActionIndexST_M_Machine_M_Close_S_SaveState,
@@ -213,6 +219,10 @@ protected:
     void updateMenuGroupStartOrShow();
     /** Updates 'Machine' / 'Start or Show' menu. */
     void updateMenuMachineStartOrShow();
+    /** Updates 'Group' / 'Console' menu. */
+    void updateMenuGroupConsole();
+    /** Updates 'Machine' / 'Console' menu. */
+    void updateMenuMachineConsole();
     /** Updates 'Group' / 'Close' menu. */
     void updateMenuGroupClose();
     /** Updates 'Machine' / 'Close' menu. */
