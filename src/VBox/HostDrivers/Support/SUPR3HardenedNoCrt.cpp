@@ -40,7 +40,7 @@
 #ifdef SUP_HARDENED_NEED_CRT_FUNCTIONS /** @todo this crap is obsolete. */
 
 /** memcmp */
-DECLHIDDEN(int) suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size_t cbToComp)
+DECL_HIDDEN_NOTHROW(int) suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size_t cbToComp)
 {
     size_t const   *puDst = (size_t const *)pvDst;
     size_t const   *puSrc = (size_t const *)pvSrc;
@@ -74,7 +74,7 @@ DECLHIDDEN(int) suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size
 
 
 /** memcpy */
-DECLHIDDEN(void *) suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t cbToCopy)
+DECL_HIDDEN_NOTHROW(void *) suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t cbToCopy)
 {
     size_t         *puDst = (size_t *)pvDst;
     size_t const   *puSrc = (size_t const *)pvSrc;
@@ -97,7 +97,7 @@ DECLHIDDEN(void *) suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t 
 
 
 /** memset */
-DECLHIDDEN(void *) suplibHardenedMemSet(void *pvDst, int ch, size_t cbToSet)
+DECL_HIDDEN_NOTHROW(void *) suplibHardenedMemSet(void *pvDst, int ch, size_t cbToSet)
 {
     uint8_t *pbDst = (uint8_t *)pvDst;
     while (cbToSet > 0)
@@ -111,7 +111,7 @@ DECLHIDDEN(void *) suplibHardenedMemSet(void *pvDst, int ch, size_t cbToSet)
 
 
 /** strcpy */
-DECLHIDDEN(char *) suplibHardenedStrCopy(char *pszDst, const char *pszSrc)
+DECL_HIDDEN_NOTHROW(char *) suplibHardenedStrCopy(char *pszDst, const char *pszSrc)
 {
     char *pszRet = pszDst;
     char ch;
@@ -125,7 +125,7 @@ DECLHIDDEN(char *) suplibHardenedStrCopy(char *pszDst, const char *pszSrc)
 
 
 /** strlen */
-DECLHIDDEN(size_t) suplibHardenedStrLen(const char *psz)
+DECL_HIDDEN_NOTHROW(size_t) suplibHardenedStrLen(const char *psz)
 {
     const char *pszStart = psz;
     while (*psz)
@@ -135,7 +135,7 @@ DECLHIDDEN(size_t) suplibHardenedStrLen(const char *psz)
 
 
 /** strcat */
-DECLHIDDEN(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc)
+DECL_HIDDEN_NOTHROW(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc)
 {
     char *pszRet = pszDst;
     while (*pszDst)
@@ -146,7 +146,7 @@ DECLHIDDEN(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc)
 
 
 /** strcmp */
-DECLHIDDEN(int) suplibHardenedStrCmp(const char *psz1, const char *psz2)
+DECL_HIDDEN_NOTHROW(int) suplibHardenedStrCmp(const char *psz1, const char *psz2)
 {
     for (;;)
     {
@@ -161,7 +161,7 @@ DECLHIDDEN(int) suplibHardenedStrCmp(const char *psz1, const char *psz2)
 
 
 /** strncmp */
-DECLHIDDEN(int) suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax)
+DECL_HIDDEN_NOTHROW(int) suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax)
 {
     while (cchMax-- > 0)
     {
