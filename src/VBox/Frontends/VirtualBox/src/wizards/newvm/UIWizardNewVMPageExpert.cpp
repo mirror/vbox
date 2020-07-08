@@ -338,8 +338,20 @@ bool UIWizardNewVMPageExpert::isComplete() const
     /* Make sure mandatory fields are complete,
      * 'ram' field feats the bounds,
      * 'virtualDisk' field feats the rules: */
-    return UIWizardPage::isComplete() &&
-           (m_pDiskSkip->isChecked() || !m_pDiskPresent->isChecked() || !uiCommon().medium(m_pDiskSelector->id()).isNull());
+    if (!UIWizardPage::isComplete() &&
+        (m_pDiskSkip->isChecked() || !m_pDiskPresent->isChecked() || !uiCommon().medium(m_pDiskSelector->id()).isNull()))
+        return false;
+    /* Check unattended install related stuff: */
+    if (isUnattendedEnabled())
+    {
+        /* Check the installation medium: */
+        if (!checkISOFile())
+            return false;
+        /* Check the GA installation medium: */
+        if (!checkGAISOFile())
+            return false;
+    }
+    return true;
 }
 
 bool UIWizardNewVMPageExpert::validatePage()
