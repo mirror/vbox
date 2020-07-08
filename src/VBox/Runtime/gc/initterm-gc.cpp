@@ -45,7 +45,7 @@
 /**
  * Program start nanosecond TS.
  */
-uint64_t    g_u64ProgramStartNanoTS;
+DECL_HIDDEN_DATA(uint64_t) g_u64ProgramStartNanoTS;
 
 
 /**

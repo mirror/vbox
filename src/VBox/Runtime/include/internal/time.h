@@ -36,7 +36,7 @@ RT_C_DECLS_BEGIN
 
 #if defined(IN_RING3) || defined(IN_RC)
 
-extern DECLHIDDEN(uint64_t) g_u64ProgramStartNanoTS;
+extern DECL_HIDDEN_DATA(uint64_t) g_u64ProgramStartNanoTS;
 
 #endif
 

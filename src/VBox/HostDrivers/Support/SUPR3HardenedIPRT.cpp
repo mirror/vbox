@@ -44,7 +44,7 @@
 /**
  * @copydoc RTPathFilename
  */
-DECL_HIDDEN_NOTHROW(char *) supR3HardenedPathFilename(const char *pszPath)
+DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath)
 {
     return RTPathFilename(pszPath);
 }
@@ -53,7 +53,7 @@ DECL_HIDDEN_NOTHROW(char *) supR3HardenedPathFilename(const char *pszPath)
 /**
  * @copydoc RTPathAppPrivateNoArch
  */
-DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 {
     return RTPathAppPrivateNoArch(pszPath, cchPath);
 }
@@ -62,7 +62,7 @@ DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t
 /**
  * @copydoc RTPathAppPrivateArch
  */
-DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
 {
     return RTPathAppPrivateArch(pszPath, cchPath);
 }
@@ -71,7 +71,7 @@ DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t c
 /**
  * @copydoc RTPathSharedLibs
  */
-DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath)
 {
     return RTPathSharedLibs(pszPath, cchPath);
 }
@@ -80,7 +80,7 @@ DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppSharedLibs(char *pszPath, size_t cc
 /**
  * @copydoc RTPathAppDocs
  */
-DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
 {
     return RTPathAppDocs(pszPath, cchPath);
 }
@@ -89,14 +89,14 @@ DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
 /**
  * @copydoc RTPathExecDir
  */
-DECL_HIDDEN_NOTHROW(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathAppBin(char *pszPath, size_t cchPath)
 {
     return RTPathExecDir(pszPath, cchPath);
 }
 
 
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                                 const char *pszMsgFmt, va_list va)
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                        const char *pszMsgFmt, va_list va)
 {
     va_list vaCopy;
     va_copy(vaCopy, va);
@@ -106,8 +106,8 @@ DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsgV(const char *psz
 }
 
 
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                                const char *pszMsgFmt, ...)
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                       const char *pszMsgFmt, ...)
 {
     va_list va;
     va_start(va, pszMsgFmt);
@@ -116,7 +116,7 @@ DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsg(const char *pszW
 }
 
 
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalV(const char *pszFormat, va_list va)
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalV(const char *pszFormat, va_list va)
 {
     va_list vaCopy;
     va_copy(vaCopy, va);
@@ -125,7 +125,7 @@ DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalV(const char *pszFor
 }
 
 
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatal(const char *pszFormat, ...)
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatal(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -134,7 +134,7 @@ DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatal(const char *pszForm
 }
 
 
-DECL_HIDDEN_NOTHROW(int) supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, va_list va)
+DECLHIDDEN(int) supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, va_list va)
 {
     if (fFatal)
         supR3HardenedFatalV(pszFormat, va);
@@ -149,7 +149,7 @@ DECL_HIDDEN_NOTHROW(int) supR3HardenedErrorV(int rc, bool fFatal, const char *ps
 }
 
 
-DECL_HIDDEN_NOTHROW(int) supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...)
+DECLHIDDEN(int) supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);

@@ -238,7 +238,7 @@ static HANDLE supR3HardenedHeapInit(void) RT_NOTHROW_DEF
 /**
  * Compacts the heaps before enter wait for parent/child.
  */
-DECL_HIDDEN_NOTHROW(void) supR3HardenedWinCompactHeaps(void)
+DECLHIDDEN(void) supR3HardenedWinCompactHeaps(void)
 {
     if (g_hSupR3HardenedHeap)
         RtlCompactHeap(g_hSupR3HardenedHeap, 0 /*dwFlags*/);

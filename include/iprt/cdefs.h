@@ -1353,17 +1353,39 @@
  */
 #define DECL_IMPORT_NOTHROW(a_RetType)  DECL_NOTHROW(DECLIMPORT(a_RetType))
 
+/** @def DECL_HIDDEN_ONLY
+ * How to declare a non-exported function or variable.
+ * @param   a_Type  The return type of the function or the data type of the variable.
+ * @sa      DECL_HIDDEN, DECL_HIDDEN_DATA, DECL_HIDDEN_CONST
+ * @internal Considered more or less internal.
+ */
+#if !defined(RT_GCC_SUPPORTS_VISIBILITY_HIDDEN) || defined(RT_NO_VISIBILITY_HIDDEN)
+# define DECL_HIDDEN_ONLY(a_Type)       a_Type
+#else
+# define DECL_HIDDEN_ONLY(a_Type)       __attribute__((visibility("hidden"))) a_Type
+#endif
+
 /** @def DECLHIDDEN
  * How to declare a non-exported function or variable.
  * @param   a_Type  The return type of the function or the data type of the variable.
- * @sa      DECL_HIDDEN_DATA, DECL_HIDDEN_CONST
+ * @sa      DECL_HIDDEN_THROW, DECL_HIDDEN_DATA, DECL_HIDDEN_CONST
  * @todo split up into data and non-data.
  */
-#if !defined(RT_GCC_SUPPORTS_VISIBILITY_HIDDEN) || defined(RT_NO_VISIBILITY_HIDDEN)
-# define DECLHIDDEN(a_Type)             a_Type
-#else
-# define DECLHIDDEN(a_Type)             __attribute__((visibility("hidden"))) a_Type
-#endif
+#define DECLHIDDEN(a_Type)              DECL_NOTHROW(DECL_HIDDEN_ONLY(a_Type))
+
+/** @def DECL_HIDDEN_NOTHROW
+ * How to declare a non-exported function that does not throw C++ exceptions.
+ * @param   a_RetType   The return type of the function.
+ * @note    Same as DECLHIDDEN but provided to go along with DECL_IMPORT_NOTHROW
+ *          and DECL_EXPORT_NOTHROW.
+ */
+#define DECL_HIDDEN_NOTHROW(a_RetType)  DECL_NOTHROW(DECL_HIDDEN_ONLY(a_RetType))
+
+/** @def DECL_HIDDEN_THROW
+ * How to declare a non-exported function that may throw C++ exceptions.
+ * @param   a_RetType   The return type of the function.
+ */
+#define DECL_HIDDEN_THROW(a_RetType)    DECL_HIDDEN_ONLY(a_Type)
 
 /** @def DECL_HIDDEN_DATA
  * How to declare a non-exported variable.
@@ -1387,12 +1409,6 @@
 #else
 # define DECL_HIDDEN_CONST(a_Type)      DECL_HIDDEN_DATA(a_Type)
 #endif
-
-/** @def DECL_HIDDEN_NOTHROW
- * How to declare a non-exported function that does not throw C++ exceptions.
- * @param   a_RetType   The return type of the function.
- */
-#define DECL_HIDDEN_NOTHROW(a_RetType)  DECL_NOTHROW(DECLHIDDEN(a_RetType))
 
 /** @def DECL_INVALID
  * How to declare a function not available for linking in the current context.
@@ -1487,7 +1503,7 @@
  * @note    DECL_NOTHROW is implied.
  * @note    Use DECLCALLBACKTYPE for typedefs.
  */
-#define DECLCALLBACK(a_Type)        DECL_NOTHROW(a_Type RT_FAR_CODE RTCALL)
+#define DECLCALLBACK(a_RetType)     DECL_NOTHROW(a_RetType RT_FAR_CODE RTCALL)
 
 /** @def DECL_HIDDEN_CALLBACK
  * How to declare an call back function with hidden visibility.
@@ -1495,7 +1511,7 @@
  * @note    DECL_NOTHROW is implied.
  * @note    Use DECLCALLBACKTYPE for typedefs.
  */
-#define DECL_HIDDEN_CALLBACK(a_Type) DECLHIDDEN(DECL_NOTHROW(a_Type RT_FAR_CODE RTCALL))
+#define DECL_HIDDEN_CALLBACK(a_RetType) DECL_HIDDEN_ONLY(DECLCALLBACK(a_RetType))
 
 /** @def DECLCALLBACKTYPE_EX
  * How to declare an call back function type.

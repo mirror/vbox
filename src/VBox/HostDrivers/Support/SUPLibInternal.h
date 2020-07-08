@@ -111,14 +111,14 @@
  */
 #if defined(IN_SUP_HARDENED_R3) && defined(RT_OS_WINDOWS)
 # define SUP_HARDENED_NEED_CRT_FUNCTIONS
-DECL_HIDDEN_NOTHROW(int)    suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size_t cbToComp);
-DECL_HIDDEN_NOTHROW(void *) suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t cbToCopy);
-DECL_HIDDEN_NOTHROW(void *) suplibHardenedMemSet(void *pvDst, int ch, size_t cbToSet);
-DECL_HIDDEN_NOTHROW(char *) suplibHardenedStrCopy(char *pszDst, const char *pszSrc);
-DECL_HIDDEN_NOTHROW(size_t) suplibHardenedStrLen(const char *psz);
-DECL_HIDDEN_NOTHROW(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc);
-DECL_HIDDEN_NOTHROW(int)    suplibHardenedStrCmp(const char *psz1, const char *psz2);
-DECL_HIDDEN_NOTHROW(int)    suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax);
+DECLHIDDEN(int)    suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size_t cbToComp);
+DECLHIDDEN(void *) suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t cbToCopy);
+DECLHIDDEN(void *) suplibHardenedMemSet(void *pvDst, int ch, size_t cbToSet);
+DECLHIDDEN(char *) suplibHardenedStrCopy(char *pszDst, const char *pszSrc);
+DECLHIDDEN(size_t) suplibHardenedStrLen(const char *psz);
+DECLHIDDEN(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc);
+DECLHIDDEN(int)    suplibHardenedStrCmp(const char *psz1, const char *psz2);
+DECLHIDDEN(int)    suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax);
 #else
 # undef SUP_HARDENED_NEED_CRT_FUNCTIONS
 # define suplibHardenedMemComp memcmp
@@ -130,9 +130,9 @@ DECL_HIDDEN_NOTHROW(int)    suplibHardenedStrNCmp(const char *psz1, const char *
 # define suplibHardenedStrCmp  strcmp
 # define suplibHardenedStrNCmp strncmp
 #endif
-DECL_HIDDEN_NOTHROW(DECL_NO_RETURN(void)) suplibHardenedExit(RTEXITCODE rcExit);
-DECL_HIDDEN_NOTHROW(void)   suplibHardenedPrintF(const char *pszFormat, ...);
-DECL_HIDDEN_NOTHROW(void)   suplibHardenedPrintFV(const char *pszFormat, va_list va);
+DECLHIDDEN(DECL_NO_RETURN(void)) suplibHardenedExit(RTEXITCODE rcExit);
+DECLHIDDEN(void)   suplibHardenedPrintF(const char *pszFormat, ...);
+DECLHIDDEN(void)   suplibHardenedPrintFV(const char *pszFormat, va_list va);
 
 /** @} */
 
@@ -384,118 +384,117 @@ DECL_NOTHROW(DECLEXPORT(int)) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_
 
 
 /** @copydoc RTPathAppPrivateNoArch */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath);
+DECLHIDDEN(int)    supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath);
 /** @copydoc RTPathAppPrivateArch */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath);
+DECLHIDDEN(int)    supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath);
 /** @copydoc RTPathSharedLibs */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath);
+DECLHIDDEN(int)    supR3HardenedPathAppSharedLibs(char *pszPath, size_t cchPath);
 /** @copydoc RTPathAppDocs */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedPathAppDocs(char *pszPath, size_t cchPath);
+DECLHIDDEN(int)    supR3HardenedPathAppDocs(char *pszPath, size_t cchPath);
 /** @copydoc RTPathExecDir */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedPathAppBin(char *pszPath, size_t cchPath);
+DECLHIDDEN(int)    supR3HardenedPathAppBin(char *pszPath, size_t cchPath);
 /** @copydoc RTPathFilename */
-DECL_HIDDEN_NOTHROW(char *) supR3HardenedPathFilename(const char *pszPath);
+DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath);
 
 /**
  * Display a fatal error and try call TrustedError or quit.
  */
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
                                                                  const char *pszMsgFmt, va_list va);
 
 /**
  * Display a fatal error and try call TrustedError or quit.
  */
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
                                                                 const char *pszMsgFmt, ...);
 
 /**
  * Display a fatal error and quit.
  */
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatalV(const char *pszFormat, va_list va);
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalV(const char *pszFormat, va_list va);
 
 /**
  * Display a fatal error and quit.
  */
-DECL_NO_RETURN(DECL_HIDDEN_NOTHROW(void)) supR3HardenedFatal(const char *pszFormat, ...);
+DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatal(const char *pszFormat, ...);
 
 /**
  * Display an error which may or may not be fatal.
  */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, va_list va);
+DECLHIDDEN(int)    supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, va_list va);
 
 /**
  * Display an error which may or may not be fatal.
  */
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...);
+DECLHIDDEN(int)    supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...);
 
 /**
  * Open any startup log file specified in the argument.
  */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedOpenLog(int *pcArgs, char **papszArgs);
+DECLHIDDEN(void)   supR3HardenedOpenLog(int *pcArgs, char **papszArgs);
 
 /**
  * Write to the startup log file.
  */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedLogV(const char *pszFormat, va_list va);
+DECLHIDDEN(void)   supR3HardenedLogV(const char *pszFormat, va_list va);
 
 /**
  * Write to the startup log file.
  */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedLog(const char *pszFormat, ...);
+DECLHIDDEN(void)   supR3HardenedLog(const char *pszFormat, ...);
 
 /**
  * Flushes the log file.
  */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedLogFlush(void);
+DECLHIDDEN(void)   supR3HardenedLogFlush(void);
 
 
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedVerifyAll(bool fFatal, const char *pszProgName, const char *pszExePath, uint32_t fMainFlags);
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal, PCSUPINSTFILE pFile);
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFatal);
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo);
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, bool fMaybe3rdParty,
-                                                    PRTERRINFO pErrInfo);
+DECLHIDDEN(int)    supR3HardenedVerifyAll(bool fFatal, const char *pszProgName, const char *pszExePath, uint32_t fMainFlags);
+DECLHIDDEN(int)    supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal, PCSUPINSTFILE pFile);
+DECLHIDDEN(int)    supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFatal);
+DECLHIDDEN(int)    supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)    supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, bool fMaybe3rdParty,
+                                           PRTERRINFO pErrInfo);
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedVerifyFileFollowSymlinks(const char *pszFilename, RTHCUINTPTR hNativeFile,
+DECLHIDDEN(int)    supR3HardenedVerifyFileFollowSymlinks(const char *pszFilename, RTHCUINTPTR hNativeFile,
                                                                   bool fMaybe3rdParty, PRTERRINFO pErrInfo);
 #endif
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedGetPreInitData(PSUPPREINITDATA pPreInitData);
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
+DECLHIDDEN(void)   supR3HardenedGetPreInitData(PSUPPREINITDATA pPreInitData);
+DECLHIDDEN(int)    supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
 
 #ifdef RT_OS_WINDOWS
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinInitAppBin(uint32_t fFlags);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinInitVersion(bool fEarlyInit);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinInitImports(void);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinModifyDllSearchPath(uint32_t fFlags, const char *pszAppBinPath);
+DECLHIDDEN(void)   supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge);
+DECLHIDDEN(void)   supR3HardenedWinInitAppBin(uint32_t fFlags);
+DECLHIDDEN(void)   supR3HardenedWinInitVersion(bool fEarlyInit);
+DECLHIDDEN(void)   supR3HardenedWinInitImports(void);
+DECLHIDDEN(void)   supR3HardenedWinModifyDllSearchPath(uint32_t fFlags, const char *pszAppBinPath);
 # ifdef IPRT_INCLUDED_nt_nt_h
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
-                                                                PFNNTWAITFORSINGLEOBJECT *ppfnNtWaitForSingleObject,
-                                                                PFNNTSETEVENT *ppfnNtSetEvent);
+DECLHIDDEN(void)   supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr, PFNNTWAITFORSINGLEOBJECT *ppfnNtWaitForSingleObject,
+                                                       PFNNTSETEVENT *ppfnNtSetEvent);
 # endif
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinInitImportsEarly(uintptr_t uNtDllAddr);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinInitSyscalls(bool fReportErrors, PRTERRINFO pErrInfo);
-DECL_HIDDEN_NOTHROW(PFNRT)  supR3HardenedWinGetRealDllSymbol(const char *pszDll, const char *pszProcedure);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinEnableThreadCreation(void);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(const char *pszProgName);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinFlushLoaderCache();
-DECL_HIDDEN_NOTHROW(bool)   supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **papszArgs);
-DECL_HIDDEN_NOTHROW(int)    supR3HardenedWinReSpawn(int iWhich);
+DECLHIDDEN(void)   supR3HardenedWinInitImportsEarly(uintptr_t uNtDllAddr);
+DECLHIDDEN(void)   supR3HardenedWinInitSyscalls(bool fReportErrors, PRTERRINFO pErrInfo);
+DECLHIDDEN(PFNRT)  supR3HardenedWinGetRealDllSymbol(const char *pszDll, const char *pszProcedure);
+DECLHIDDEN(void)   supR3HardenedWinEnableThreadCreation(void);
+DECLHIDDEN(void)   supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(const char *pszProgName);
+DECLHIDDEN(void)   supR3HardenedWinFlushLoaderCache();
+DECLHIDDEN(bool)   supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **papszArgs);
+DECLHIDDEN(int)    supR3HardenedWinReSpawn(int iWhich);
 # ifdef _WINDEF_
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT);
+DECLHIDDEN(void)   supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT);
 # endif
-DECL_HIDDEN_NOTHROW(void *) supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only, uint32_t fMainFlags);
+DECLHIDDEN(void *) supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only, uint32_t fMainFlags);
 extern RTUTF16      g_wszSupLibHardenedExePath[1024];
 # ifdef RTPATH_MAX
 extern char         g_szSupLibHardenedExePath[RTPATH_MAX];
 # endif
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinCompactHeaps(void);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedMainOpenDevice(void);
-DECL_HIDDEN_NOTHROW(char *) supR3HardenedWinReadErrorInfoDevice(char *pszErrorInfo, size_t cbErrorInfo, const char *pszPrefix);
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedWinReportErrorToParent(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                        const char *pszFormat, va_list va);
+DECLHIDDEN(void)   supR3HardenedWinCompactHeaps(void);
+DECLHIDDEN(void)   supR3HardenedMainOpenDevice(void);
+DECLHIDDEN(char *) supR3HardenedWinReadErrorInfoDevice(char *pszErrorInfo, size_t cbErrorInfo, const char *pszPrefix);
+DECLHIDDEN(void)   supR3HardenedWinReportErrorToParent(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                       const char *pszFormat, va_list va);
 #else   /* !RT_OS_WINDOWS */
-DECL_HIDDEN_NOTHROW(void)   supR3HardenedPosixInit(void);
+DECLHIDDEN(void)   supR3HardenedPosixInit(void);
 #endif  /* !RT_OS_WINDOWS */
 
 SUPR3DECL(int)              supR3PageLock(void *pvStart, size_t cPages, PSUPPAGE paPages);

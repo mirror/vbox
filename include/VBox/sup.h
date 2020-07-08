@@ -1175,7 +1175,7 @@ typedef FNSUPTRUSTEDERROR *PFNSUPTRUSTEDERROR;
  * @param   argv            The argument vector.
  * @param   envp            The environment vector.
  */
-DECL_HIDDEN_NOTHROW(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp);
+DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp);
 
 /** @name SUPR3HardenedMain flags.
  * @{ */
