@@ -1577,7 +1577,6 @@
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
- * @note    Will be renamed to DECLCALLBACKMEMBER.
  */
 #define DECLCALLBACKMEMBER(type, name, args)   DECLCALLBACKMEMBER_EX(type, RT_FAR_CODE RTCALL, name, args)
 
