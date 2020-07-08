@@ -101,7 +101,8 @@ s/\bAssertPtrReturn\b/assert_ptr_return/g
 s/\bAssertRC\b\([^;]*\);/WARN_ON_ONCE(RT_FAILURE\1);/g
 s/\bAssertRC\b/Assert_RC_statement_should_be_on_one_line/g
 s/\bDECLCALLBACK\b(\([^)]*\))/\1/g
-s/\bDECLCALLBACKMEMBER\b(\([^,)]*\), *\([^,)]*\))/\1 (*\2)/g
+  s/\bDECLCALLBACKTYPE\b(\([^,)]*\), *\([^,)]*\), *(\([^;)]*\) *) *)/\1 \2(\3)/g
+s/\bDECLCALLBACKMEMBER\b(\([^,)]*\), *\([^,)]*\), *(\([^;)]*\) *) *)/\1 (*\2)(\3)/g
 s/^\bDECLHIDDEN\b(\([^)]*\))/\1/g
 s/\bDECLINLINE\b(\([^)]*\))/static inline \1/g
 s/\bRT_BIT\b/BIT/g
