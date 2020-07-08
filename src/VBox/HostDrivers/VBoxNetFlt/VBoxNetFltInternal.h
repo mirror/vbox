@@ -345,7 +345,7 @@ DECLHIDDEN(int) vboxNetFltTryDeleteIdc(PVBOXNETFLTGLOBALS pGlobals);
 DECLHIDDEN(bool) vboxNetFltCanUnload(PVBOXNETFLTGLOBALS pGlobals);
 DECLHIDDEN(PVBOXNETFLTINS) vboxNetFltFindInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName);
 
-DECLHIDDEN(DECLCALLBACK(void)) vboxNetFltPortReleaseBusy(PINTNETTRUNKIFPORT pIfPort);
+DECL_HIDDEN_CALLBACK(void) vboxNetFltPortReleaseBusy(PINTNETTRUNKIFPORT pIfPort);
 DECLHIDDEN(void) vboxNetFltRetain(PVBOXNETFLTINS pThis, bool fBusy);
 DECLHIDDEN(bool) vboxNetFltTryRetainBusyActive(PVBOXNETFLTINS pThis);
 DECLHIDDEN(bool) vboxNetFltTryRetainBusyNotDisconnected(PVBOXNETFLTINS pThis);

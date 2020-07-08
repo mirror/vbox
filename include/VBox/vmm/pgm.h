@@ -168,7 +168,7 @@ typedef enum PGMACCESSTYPE
 #  define PGM_ALL_CB2_DECL(type)    DECLCALLBACK(DECLEXPORT(type))
 # endif
 #else
-# define PGM_ALL_CB2_DECL(type)     DECLCALLBACK(DECLHIDDEN(type))
+# define PGM_ALL_CB2_DECL(type)     DECL_HIDDEN_CALLBACK(type)
 #endif
 
 /** @def PGM_ALL_CB2_PROTO

@@ -1484,9 +1484,18 @@
 /** @def DECLCALLBACK
  * How to declare an call back function.
  * @param   a_RetType   The return type of the function declaration.
+ * @note    DECL_NOTHROW is implied.
  * @note    Use DECLCALLBACKTYPE for typedefs.
  */
 #define DECLCALLBACK(a_Type)        DECL_NOTHROW(a_Type RT_FAR_CODE RTCALL)
+
+/** @def DECL_HIDDEN_CALLBACK
+ * How to declare an call back function with hidden visibility.
+ * @param   a_RetType   The return type of the function declaration.
+ * @note    DECL_NOTHROW is implied.
+ * @note    Use DECLCALLBACKTYPE for typedefs.
+ */
+#define DECL_HIDDEN_CALLBACK(a_Type) DECLHIDDEN(DECL_NOTHROW(a_Type RT_FAR_CODE RTCALL))
 
 /** @def DECLCALLBACKTYPE_EX
  * How to declare an call back function type.

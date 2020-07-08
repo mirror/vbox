@@ -1110,7 +1110,7 @@ static DECLCALLBACK(int) rtZipTarFss_QueryInfo(void *pvThis, PRTFSOBJINFO pObjIn
 /**
  * @interface_method_impl{RTVFSFSSTREAMOPS,pfnNext}
  */
-DECLHIDDEN(DECLCALLBACK(int)) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj)
+DECL_HIDDEN_CALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj)
 {
     PRTZIPTARFSSTREAM pThis = (PRTZIPTARFSSTREAM)pvThis;
 

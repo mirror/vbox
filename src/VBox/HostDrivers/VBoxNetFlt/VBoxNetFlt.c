@@ -770,7 +770,7 @@ static DECLCALLBACK(void) vboxNetFltPortRelease(PINTNETTRUNKIFPORT pIfPort)
 /**
  * @callback_method_impl{FNINTNETTRUNKIFPORTRELEASEBUSY}
  */
-DECLHIDDEN(DECLCALLBACK(void)) vboxNetFltPortReleaseBusy(PINTNETTRUNKIFPORT pIfPort)
+DECL_HIDDEN_CALLBACK(void) vboxNetFltPortReleaseBusy(PINTNETTRUNKIFPORT pIfPort)
 {
     PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
     vboxNetFltRelease(pThis, true /*fBusy*/);

@@ -161,10 +161,11 @@ static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlpTracing_MmioFill(PPDMDEVINS pDevIns
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIoPortCreateEx} */
-DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
-                                                                uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
-                                                                PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, RTR3PTR pvUser,
-                                                                const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
+DECL_HIDDEN_CALLBACK(int)
+pdmR3DevHlpTracing_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
+                                  uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                  PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, RTR3PTR pvUser,
+                                  const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlpTracing_IoPortCreateEx: caller='%s'/%d: cPorts=%#x fFlags=%#x pPciDev=%p iPciRegion=%#x pfnOut=%p pfnIn=%p pfnOutStr=%p pfnInStr=%p pvUser=%p pszDesc=%p:{%s} paExtDescs=%p phIoPorts=%p\n",
@@ -208,7 +209,7 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_IoPortCreateEx(PPDMDEVINS pDevI
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIoPortMap} */
-DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port)
+DECL_HIDDEN_CALLBACK(int) pdmR3DevHlpTracing_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: hIoPorts=%#x Port=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hIoPorts, Port));
@@ -224,7 +225,7 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_IoPortMap(PPDMDEVINS pDevIns, I
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIoPortUnmap} */
-DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
+DECL_HIDDEN_CALLBACK(int) pdmR3DevHlpTracing_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: hIoPorts=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hIoPorts));
@@ -240,10 +241,11 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_IoPortUnmap(PPDMDEVINS pDevIns,
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioCreateEx} */
-DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
-                                                              uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                                              PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
-                                                              void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
+DECL_HIDDEN_CALLBACK(int)
+pdmR3DevHlpTracing_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
+                                uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
+                                PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
+                                void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioCreateEx: caller='%s'/%d: cbRegion=%#RGp fFlags=%#x pPciDev=%p iPciRegion=%#x pfnWrite=%p pfnRead=%p pfnFill=%p pvUser=%p pszDesc=%p:{%s} phRegion=%p\n",
@@ -289,7 +291,7 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_MmioCreateEx(PPDMDEVINS pDevIns
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioMap} */
-DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys)
+DECL_HIDDEN_CALLBACK(int) pdmR3DevHlpTracing_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: hRegion=%#x GCPhys=%#RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, GCPhys));
@@ -305,7 +307,7 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_MmioMap(PPDMDEVINS pDevIns, IOM
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioUnmap} */
-DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+DECL_HIDDEN_CALLBACK(int) pdmR3DevHlpTracing_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: hRegion=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
@@ -321,7 +323,8 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_MmioUnmap(PPDMDEVINS pDevIns, I
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPhysRead} */
-DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags)
+DECL_HIDDEN_CALLBACK(int)
+pdmR3DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
 
@@ -355,7 +358,8 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RT
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPhysWrite} */
-DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags)
+DECL_HIDDEN_CALLBACK(int)
+pdmR3DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
 
@@ -389,7 +393,7 @@ DECLHIDDEN(DECLCALLBACK(int)) pdmR3DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, R
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysRead} */
-DECLHIDDEN(DECLCALLBACK(int))
+DECL_HIDDEN_CALLBACK(int)
 pdmR3DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -442,7 +446,7 @@ pdmR3DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysWrite} */
-DECLHIDDEN(DECLCALLBACK(int))
+DECL_HIDDEN_CALLBACK(int)
 pdmR3DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -494,7 +498,7 @@ pdmR3DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCISetIrq} */
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel)
+DECL_HIDDEN_CALLBACK(void) pdmR3DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
@@ -544,14 +548,14 @@ DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, 
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCISetIrqNoWait} */
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel)
+DECL_HIDDEN_CALLBACK(void) pdmR3DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel)
 {
     pdmR3DevHlpTracing_PCISetIrq(pDevIns, pPciDev, iIrq, iLevel);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnISASetIrq} */
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+DECL_HIDDEN_CALLBACK(void) pdmR3DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_ISASetIrq: caller='%s'/%d: iIrq=%d iLevel=%d\n", pDevIns->pReg->szName, pDevIns->iInstance, iIrq, iLevel));
@@ -593,7 +597,7 @@ DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, 
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnISASetIrqNoWait} */
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+DECL_HIDDEN_CALLBACK(void) pdmR3DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     pdmR3DevHlpTracing_ISASetIrq(pDevIns, iIrq, iLevel);
 }

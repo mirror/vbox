@@ -101,7 +101,7 @@ typedef RTDBGSTACKSELFSYMSEARCH *PRTDBGSTACKSELFSYMSEARCH;
 *********************************************************************************************************************************/
 /* Wanted to use DECLHIDDEN(DECLASM(size_t)) here, but early solaris 11 doesn't like it. */
 RT_C_DECLS_BEGIN
-DECLHIDDEN(DECLCALLBACK(size_t)) rtDbgStackDumpSelfWorker(char *pszStack, size_t cbStack, uint32_t fFlags, PCRTCCUINTREG pauRegs);
+DECL_HIDDEN_CALLBACK(size_t) rtDbgStackDumpSelfWorker(char *pszStack, size_t cbStack, uint32_t fFlags, PCRTCCUINTREG pauRegs);
 RT_C_DECLS_END
 
 
@@ -405,7 +405,7 @@ static bool rtDbgStackDumpSelfQuerySymbol(PRTDBGSTACKSELFMOD pMod, uintptr_t uRv
  * @param   pauRegs     Register state.  For AMD64 and x86 this starts with the
  *                      PC and us followed by the general purpose registers.
  */
-DECLHIDDEN(DECLCALLBACK(size_t)) rtDbgStackDumpSelfWorker(char *pszStack, size_t cbStack, uint32_t fFlags, PCRTCCUINTREG pauRegs)
+DECL_HIDDEN_CALLBACK(size_t) rtDbgStackDumpSelfWorker(char *pszStack, size_t cbStack, uint32_t fFlags, PCRTCCUINTREG pauRegs)
 {
     RT_NOREF(fFlags);
 

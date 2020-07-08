@@ -1662,49 +1662,49 @@ void        pdmCritSectRwLeaveSharedQueued(PPDMCRITSECTRW pThis);
 void        pdmCritSectRwLeaveExclQueued(PPDMCRITSECTRW pThis);
 #endif
 
-#if defined IN_RING0
-DECLHIDDEN(bool)               pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc);
+#ifdef IN_RING0
+DECLHIDDEN(bool)           pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc);
 #endif
 
 #ifdef VBOX_WITH_DBGF_TRACING
-# if defined(IN_RING3)
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
-                                                                 uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
-                                                                 PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, RTR3PTR pvUser,
-                                                                 const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
-                                                               uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                                               PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
-                                                               void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR3DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR3DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+# ifdef IN_RING3
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
+                                                             uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                             PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, RTR3PTR pvUser,
+                                                             const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
+                                                           uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
+                                                           PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
+                                                           void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+DECL_HIDDEN_CALLBACK(int)  pdmR3DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+DECL_HIDDEN_CALLBACK(void) pdmR3DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
+DECL_HIDDEN_CALLBACK(void) pdmR3DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
+DECL_HIDDEN_CALLBACK(void) pdmR3DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+DECL_HIDDEN_CALLBACK(void) pdmR3DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 # elif defined(IN_RING0)
-DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_IoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
-                                                                       PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
-                                                                       PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr,
-                                                                       void *pvUser);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_MmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
-                                                                     PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
-DECLHIDDEN(DECLCALLBACK(int))  pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-DECLHIDDEN(DECLCALLBACK(void)) pdmR0DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+DECL_HIDDEN_CALLBACK(int)  pdmR0DevHlpTracing_IoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
+                                                                   PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                                   PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr,
+                                                                   void *pvUser);
+DECL_HIDDEN_CALLBACK(int)  pdmR0DevHlpTracing_MmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                                                 PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser);
+DECL_HIDDEN_CALLBACK(int)  pdmR0DevHlpTracing_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+DECL_HIDDEN_CALLBACK(int)  pdmR0DevHlpTracing_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+DECL_HIDDEN_CALLBACK(int)  pdmR0DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags);
+DECL_HIDDEN_CALLBACK(int)  pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, uint32_t fFlags);
+DECL_HIDDEN_CALLBACK(void) pdmR0DevHlpTracing_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
+DECL_HIDDEN_CALLBACK(void) pdmR0DevHlpTracing_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel);
+DECL_HIDDEN_CALLBACK(void) pdmR0DevHlpTracing_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+DECL_HIDDEN_CALLBACK(void) pdmR0DevHlpTracing_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 # else
-# error "Invalid environment selected"
+#  error "Invalid environment selected"
 # endif
 #endif
 

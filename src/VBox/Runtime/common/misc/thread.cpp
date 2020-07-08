@@ -700,7 +700,7 @@ DECLHIDDEN(void) rtThreadTerminate(PRTTHREADINT pThread, int rc)
  * @param   NativeThread    The native thread id.
  * @param   pszThreadName   The name of the thread (purely a dummy for backtrace).
  */
-DECLCALLBACK(DECLHIDDEN(int)) rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName)
+DECL_HIDDEN_CALLBACK(int) rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName)
 {
     int rc;
     NOREF(pszThreadName);

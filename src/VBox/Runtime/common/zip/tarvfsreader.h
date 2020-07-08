@@ -162,7 +162,7 @@ typedef struct RTZIPTARFSSTREAM
 typedef RTZIPTARFSSTREAM *PRTZIPTARFSSTREAM;
 
 DECLHIDDEN(void)                rtZipTarReaderInit(PRTZIPTARFSSTREAM pThis, RTVFSIOSTREAM hVfsIos, uint64_t offStart);
-DECLHIDDEN(DECLCALLBACK(int))   rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
+DECL_HIDDEN_CALLBACK(int)       rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
 DECLHIDDEN(PRTZIPTARBASEOBJ)    rtZipTarFsStreamBaseObjToPrivate(PRTZIPTARFSSTREAM pThis, RTVFSOBJ hVfsObj);
 
 #endif /* !IPRT_INCLUDED_SRC_common_zip_tarvfsreader_h */
