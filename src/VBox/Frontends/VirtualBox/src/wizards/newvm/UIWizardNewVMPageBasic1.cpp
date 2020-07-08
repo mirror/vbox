@@ -206,11 +206,7 @@ void UIWizardNewVMPage1::onNameChanged(QString strNewName)
         if (strNewName.contains(gs_OSTypePattern[i].pattern))
         {
             if (m_pNameAndSystemEditor)
-            {
-                m_pNameAndSystemEditor->blockSignals(true);
                 m_pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
-                m_pNameAndSystemEditor->blockSignals(false);
-            }
             break;
         }
 }

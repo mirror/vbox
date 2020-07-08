@@ -351,6 +351,11 @@ bool UIWizardNewVMPageExpert::isComplete() const
         if (!checkGAISOFile())
             return false;
     }
+    if (m_pUserNamePasswordEditor)
+    {
+        if (!m_pUserNamePasswordEditor->isComplete())
+            return false;
+    }
     return true;
 }
 

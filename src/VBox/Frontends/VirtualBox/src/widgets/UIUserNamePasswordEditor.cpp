@@ -121,15 +121,15 @@ void UIUserNamePasswordEditor::setPassword(const QString &strPassword)
         m_pPasswordRepeatLineEdit->setText(strPassword);
 }
 
-bool UIUserNamePasswordEditor::isComplete()
+bool UIUserNamePasswordEditor::isUserNameComplete()
 {
-    if (m_pUserNameLineEdit && m_pUserNameLineEdit->text().isEmpty())
-    {
-        markLineEdit(m_pUserNameLineEdit, true);
-        return false;
-    }
-    else
-        markLineEdit(m_pUserNameLineEdit, false);
+    bool fComplete = (m_pUserNameLineEdit && !m_pUserNameLineEdit->text().isEmpty());
+    markLineEdit(m_pUserNameLineEdit, !fComplete);
+    return fComplete;
+}
+
+bool UIUserNamePasswordEditor::isPasswordComplete()
+{
     bool fPasswordOK = true;
     if (m_pPasswordLineEdit && m_pPasswordRepeatLineEdit)
     {
@@ -141,6 +141,13 @@ bool UIUserNamePasswordEditor::isComplete()
     markLineEdit(m_pPasswordLineEdit, !fPasswordOK);
     markLineEdit(m_pPasswordRepeatLineEdit, !fPasswordOK);
     return fPasswordOK;
+}
+
+bool UIUserNamePasswordEditor::isComplete()
+{
+    bool fUserNameField = isUserNameComplete();
+    bool fPasswordField = isPasswordComplete();
+    return fUserNameField && fPasswordField;
 }
 
 void UIUserNamePasswordEditor::retranslateUi()
@@ -181,7 +188,7 @@ void UIUserNamePasswordEditor::addLineEdit(int &iRow, QLabel *&pLabel, T *&pLine
 
     pLabel->setBuddy(pLineEdit);
     ++iRow;
-    connect(pLineEdit, &T::textChanged, this, &UIUserNamePasswordEditor::sigSomeTextChanged);
+    connect(pLineEdit, &T::textChanged, this, &UIUserNamePasswordEditor::sltSomeTextChanged);
     return;
 }
 
@@ -226,4 +233,11 @@ void UIUserNamePasswordEditor::sltHandlePasswordVisibility(bool fPasswordVisible
         m_pPasswordLineEdit->toggleTextVisibility(fPasswordVisible);
     if (m_pPasswordRepeatLineEdit)
         m_pPasswordRepeatLineEdit->toggleTextVisibility(fPasswordVisible);
+}
+
+void UIUserNamePasswordEditor::sltSomeTextChanged()
+{
+    /* Check text lines edits and mark them accordingly: */
+    isComplete();
+    emit sigSomeTextChanged();
 }

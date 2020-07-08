@@ -90,6 +90,7 @@ protected:
 private slots:
 
     void sltHandlePasswordVisibility(bool fPasswordVisible);
+    void sltSomeTextChanged();
 
 private:
 
@@ -98,6 +99,9 @@ private:
     void addLineEdit(int &iRow, QLabel *&pLabel, T *&pLineEdit, QGridLayout *pLayout);
     /** Changes @p pLineEdit's base color to indicate an error or reverts it to the original color. */
     void markLineEdit(QLineEdit *pLineEdit, bool fError);
+
+    bool isUserNameComplete();
+    bool isPasswordComplete();
 
     QLineEdit          *m_pUserNameLineEdit;
     UIPasswordLineEdit *m_pPasswordLineEdit;
