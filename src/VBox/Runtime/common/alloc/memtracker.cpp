@@ -181,7 +181,7 @@ AssertCompileMemberAlignment(RTMEMTRACKERINT, FallbackUser, 8);
 typedef struct RTMEMTRACKEROUTPUT
 {
     /** The printf like callback. */
-    DECLCALLBACKMEMBER(void, pfnPrintf)(struct RTMEMTRACKEROUTPUT *pThis, const char *pszFormat, ...);
+    DECLCALLBACKMEMBER(void, pfnPrintf,(struct RTMEMTRACKEROUTPUT *pThis, const char *pszFormat, ...));
 
     /** The data. */
     union

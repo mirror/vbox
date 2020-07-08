@@ -304,7 +304,7 @@ typedef DBGCEXTFUNCS *PDBGCEXTFUNCS;
  * @param   enmCat      The desired result category. Can be ignored.
  * @param   pResult     Where to store the result.
  */
-typedef DECLCALLBACK(int) FNDBGCOPUNARY(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
+typedef DECLCALLBACKTYPE(int, FNDBGCOPUNARY,(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult));
 /** Pointer to a unary operator handler function. */
 typedef FNDBGCOPUNARY *PFNDBGCOPUNARY;
 
@@ -320,7 +320,7 @@ typedef FNDBGCOPUNARY *PFNDBGCOPUNARY;
  * @param   pArg2       The 2nd argument.
  * @param   pResult     Where to store the result.
  */
-typedef DECLCALLBACK(int) FNDBGCOPBINARY(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult);
+typedef DECLCALLBACKTYPE(int, FNDBGCOPBINARY,(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult));
 /** Pointer to a binary operator handler function. */
 typedef FNDBGCOPBINARY *PFNDBGCOPBINARY;
 
@@ -375,7 +375,7 @@ typedef const struct DBGCSYM *PCDBGCSYM;
  * @param   enmType     The result type.
  * @param   pResult     Where to store the result.
  */
-typedef DECLCALLBACK(int) FNDBGCSYMGET(PCDBGCSYM pSymDesc, PDBGCCMDHLP pCmdHlp, DBGCVARTYPE enmType, PDBGCVAR pResult);
+typedef DECLCALLBACKTYPE(int, FNDBGCSYMGET,(PCDBGCSYM pSymDesc, PDBGCCMDHLP pCmdHlp, DBGCVARTYPE enmType, PDBGCVAR pResult));
 /** Pointer to get function for a builtin symbol. */
 typedef FNDBGCSYMGET *PFNDBGCSYMGET;
 
@@ -389,7 +389,7 @@ typedef FNDBGCSYMGET *PFNDBGCSYMGET;
  * @param   pCmdHlp     Pointer to the command callback structure.
  * @param   pValue      The value to assign the symbol.
  */
-typedef DECLCALLBACK(int) FNDBGCSYMSET(PCDBGCSYM pSymDesc, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pValue);
+typedef DECLCALLBACKTYPE(int, FNDBGCSYMSET,(PCDBGCSYM pSymDesc, PDBGCCMDHLP pCmdHlp, PCDBGCVAR pValue));
 /** Pointer to set function for a builtin symbol. */
 typedef FNDBGCSYMSET *PFNDBGCSYMSET;
 
@@ -539,7 +539,7 @@ typedef DBGCSCREEN *PDBGCSCREEN;
  * @param   psz             The string to dump
  * @param   pvUser          Opaque user data.
  */
-typedef DECLCALLBACK(int) FNDGCSCREENBLIT(const char *psz, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNDGCSCREENBLIT,(const char *psz, void *pvUser));
 /** Pointer to a FNDGCSCREENBLIT. */
 typedef FNDGCSCREENBLIT *PFNDGCSCREENBLIT;
 

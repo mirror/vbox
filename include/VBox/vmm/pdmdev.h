@@ -74,7 +74,7 @@ RT_C_DECLS_BEGIN
  *                      therefore passed as an argument.  When using it at other
  *                      times, it can be found in pDevIns->pCfg.
  */
-typedef DECLCALLBACK(int)   FNPDMDEVCONSTRUCT(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg);
+typedef DECLCALLBACKTYPE(int, FNPDMDEVCONSTRUCT,(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg));
 /** Pointer to a FNPDMDEVCONSTRUCT() function. */
 typedef FNPDMDEVCONSTRUCT *PFNPDMDEVCONSTRUCT;
 
@@ -90,7 +90,7 @@ typedef FNPDMDEVCONSTRUCT *PFNPDMDEVCONSTRUCT;
  * @remarks The device critical section is not entered.  The routine may delete
  *          the critical section, so the caller cannot exit it.
  */
-typedef DECLCALLBACK(int)   FNPDMDEVDESTRUCT(PPDMDEVINS pDevIns);
+typedef DECLCALLBACKTYPE(int, FNPDMDEVDESTRUCT,(PPDMDEVINS pDevIns));
 /** Pointer to a FNPDMDEVDESTRUCT() function. */
 typedef FNPDMDEVDESTRUCT *PFNPDMDEVDESTRUCT;
 
@@ -113,7 +113,7 @@ typedef FNPDMDEVDESTRUCT *PFNPDMDEVDESTRUCT;
  * @remarks The device critical section is not entered.  The relocations should
  *          not normally require any locking.
  */
-typedef DECLCALLBACK(void) FNPDMDEVRELOCATE(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
+typedef DECLCALLBACKTYPE(void, FNPDMDEVRELOCATE,(PPDMDEVINS pDevIns, RTGCINTPTR offDelta));
 /** Pointer to a FNPDMDEVRELOCATE() function. */
 typedef FNPDMDEVRELOCATE *PFNPDMDEVRELOCATE;
 
@@ -125,7 +125,7 @@ typedef FNPDMDEVRELOCATE *PFNPDMDEVRELOCATE;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(void)   FNPDMDEVPOWERON(PPDMDEVINS pDevIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDEVPOWERON,(PPDMDEVINS pDevIns));
 /** Pointer to a FNPDMDEVPOWERON() function. */
 typedef FNPDMDEVPOWERON *PFNPDMDEVPOWERON;
 
@@ -137,7 +137,7 @@ typedef FNPDMDEVPOWERON *PFNPDMDEVPOWERON;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(void)  FNPDMDEVRESET(PPDMDEVINS pDevIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDEVRESET,(PPDMDEVINS pDevIns));
 /** Pointer to a FNPDMDEVRESET() function. */
 typedef FNPDMDEVRESET *PFNPDMDEVRESET;
 
@@ -153,7 +153,7 @@ typedef FNPDMDEVRESET *PFNPDMDEVRESET;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(void)  FNPDMDEVSOFTRESET(PPDMDEVINS pDevIns, uint32_t fFlags);
+typedef DECLCALLBACKTYPE(void, FNPDMDEVSOFTRESET,(PPDMDEVINS pDevIns, uint32_t fFlags));
 /** Pointer to a FNPDMDEVSOFTRESET() function. */
 typedef FNPDMDEVSOFTRESET *PFNPDMDEVSOFTRESET;
 
@@ -188,7 +188,7 @@ typedef FNPDMDEVSOFTRESET *PFNPDMDEVSOFTRESET;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(void)  FNPDMDEVSUSPEND(PPDMDEVINS pDevIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDEVSUSPEND,(PPDMDEVINS pDevIns));
 /** Pointer to a FNPDMDEVSUSPEND() function. */
 typedef FNPDMDEVSUSPEND *PFNPDMDEVSUSPEND;
 
@@ -200,7 +200,7 @@ typedef FNPDMDEVSUSPEND *PFNPDMDEVSUSPEND;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(void)  FNPDMDEVRESUME(PPDMDEVINS pDevIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDEVRESUME,(PPDMDEVINS pDevIns));
 /** Pointer to a FNPDMDEVRESUME() function. */
 typedef FNPDMDEVRESUME *PFNPDMDEVRESUME;
 
@@ -215,7 +215,7 @@ typedef FNPDMDEVRESUME *PFNPDMDEVRESUME;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(void)   FNPDMDEVPOWEROFF(PPDMDEVINS pDevIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDEVPOWEROFF,(PPDMDEVINS pDevIns));
 /** Pointer to a FNPDMDEVPOWEROFF() function. */
 typedef FNPDMDEVPOWEROFF *PFNPDMDEVPOWEROFF;
 
@@ -235,7 +235,7 @@ typedef FNPDMDEVPOWEROFF *PFNPDMDEVPOWEROFF;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(int)  FNPDMDEVATTACH(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
+typedef DECLCALLBACKTYPE(int, FNPDMDEVATTACH,(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags));
 /** Pointer to a FNPDMDEVATTACH() function. */
 typedef FNPDMDEVATTACH *PFNPDMDEVATTACH;
 
@@ -254,7 +254,7 @@ typedef FNPDMDEVATTACH *PFNPDMDEVATTACH;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(void)  FNPDMDEVDETACH(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
+typedef DECLCALLBACKTYPE(void, FNPDMDEVDETACH,(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags));
 /** Pointer to a FNPDMDEVDETACH() function. */
 typedef FNPDMDEVDETACH *PFNPDMDEVDETACH;
 
@@ -268,7 +268,7 @@ typedef FNPDMDEVDETACH *PFNPDMDEVDETACH;
  *
  * @remarks The device critical section is not entered.
  */
-typedef DECLCALLBACK(int) FNPDMDEVQUERYINTERFACE(PPDMDEVINS pDevIns, unsigned iLUN, PPDMIBASE *ppBase);
+typedef DECLCALLBACKTYPE(int, FNPDMDEVQUERYINTERFACE,(PPDMDEVINS pDevIns, unsigned iLUN, PPDMIBASE *ppBase));
 /** Pointer to a FNPDMDEVQUERYINTERFACE() function. */
 typedef FNPDMDEVQUERYINTERFACE *PFNPDMDEVQUERYINTERFACE;
 
@@ -283,7 +283,7 @@ typedef FNPDMDEVQUERYINTERFACE *PFNPDMDEVQUERYINTERFACE;
  *
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(int) FNPDMDEVINITCOMPLETE(PPDMDEVINS pDevIns);
+typedef DECLCALLBACKTYPE(int, FNPDMDEVINITCOMPLETE,(PPDMDEVINS pDevIns));
 /** Pointer to a FNPDMDEVINITCOMPLETE() function. */
 typedef FNPDMDEVINITCOMPLETE *PFNPDMDEVINITCOMPLETE;
 
@@ -1529,7 +1529,7 @@ typedef struct PDMPICREG
      * @param   uTagSrc         The IRQ tag and source (for tracing).
      * @remarks Caller enters the PDM critical section.
      */
-    DECLCALLBACKMEMBER(void, pfnSetIrq)(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc);
+    DECLCALLBACKMEMBER(void, pfnSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
 
     /**
      * Get a pending interrupt.
@@ -1539,7 +1539,7 @@ typedef struct PDMPICREG
      * @param   puTagSrc        Where to return the IRQ tag and source.
      * @remarks Caller enters the PDM critical section.
      */
-    DECLCALLBACKMEMBER(int, pfnGetInterrupt)(PPDMDEVINS pDevIns, uint32_t *puTagSrc);
+    DECLCALLBACKMEMBER(int, pfnGetInterrupt,(PPDMDEVINS pDevIns, uint32_t *puTagSrc));
 
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
@@ -1563,14 +1563,14 @@ typedef struct PDMPICHLP
      *
      * @param   pDevIns         Device instance of the PIC.
      */
-    DECLCALLBACKMEMBER(void, pfnSetInterruptFF)(PPDMDEVINS pDevIns);
+    DECLCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the PIC.
      */
-    DECLCALLBACKMEMBER(void, pfnClearInterruptFF)(PPDMDEVINS pDevIns);
+    DECLCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
 
     /**
      * Acquires the PDM lock.
@@ -1580,14 +1580,14 @@ typedef struct PDMPICHLP
      * @param   pDevIns         The PIC device instance.
      * @param   rc              What to return if we fail to acquire the lock.
      */
-    DECLCALLBACKMEMBER(int,   pfnLock)(PPDMDEVINS pDevIns, int rc);
+    DECLCALLBACKMEMBER(int, pfnLock,(PPDMDEVINS pDevIns, int rc));
 
     /**
      * Releases the PDM lock.
      *
      * @param   pDevIns         The PIC device instance.
      */
-    DECLCALLBACKMEMBER(void,  pfnUnlock)(PPDMDEVINS pDevIns);
+    DECLCALLBACKMEMBER(void, pfnUnlock,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1715,7 +1715,7 @@ typedef struct PDMIOAPICREG
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLCALLBACKMEMBER(void, pfnSetIrq)(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc);
+    DECLCALLBACKMEMBER(void, pfnSetIrq,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int iIrq, int iLevel, uint32_t uTagSrc));
 
     /**
      * Send a MSI.
@@ -1729,7 +1729,7 @@ typedef struct PDMIOAPICREG
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLCALLBACKMEMBER(void, pfnSendMsi)(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc);
+    DECLCALLBACKMEMBER(void, pfnSendMsi,(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc));
 
     /**
      * Set the EOI for an interrupt vector.
@@ -1744,7 +1744,7 @@ typedef struct PDMIOAPICREG
      * @remarks Caller enters the PDM critical section
      *          Actually, as per 2018-07-21 this isn't true (bird).
      */
-    DECLCALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoi)(PPDMDEVINS pDevIns, uint8_t u8Vector);
+    DECLCALLBACKMEMBER(VBOXSTRICTRC, pfnSetEoi,(PPDMDEVINS pDevIns, uint8_t u8Vector));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1779,8 +1779,8 @@ typedef struct PDMIOAPICHLP
      *
      * @sa      APICBusDeliver()
      */
-    DECLCALLBACKMEMBER(int, pfnApicBusDeliver)(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                               uint8_t uVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc);
+    DECLCALLBACKMEMBER(int, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+                                               uint8_t uVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
 
     /**
      * Acquires the PDM lock.
@@ -1790,14 +1790,14 @@ typedef struct PDMIOAPICHLP
      * @param   pDevIns         The IOAPIC device instance.
      * @param   rc              What to return if we fail to acquire the lock.
      */
-    DECLCALLBACKMEMBER(int,   pfnLock)(PPDMDEVINS pDevIns, int rc);
+    DECLCALLBACKMEMBER(int, pfnLock,(PPDMDEVINS pDevIns, int rc));
 
     /**
      * Releases the PDM lock.
      *
      * @param   pDevIns         The IOAPIC device instance.
      */
-    DECLCALLBACKMEMBER(void,  pfnUnlock)(PPDMDEVINS pDevIns);
+    DECLCALLBACKMEMBER(void, pfnUnlock,(PPDMDEVINS pDevIns));
 
     /**
      * Private interface between the IOAPIC and IOMMU.
@@ -1810,7 +1810,7 @@ typedef struct PDMIOAPICHLP
      *
      * @sa      iommuAmdDeviceMsiRemap().
      */
-    DECLCALLBACKMEMBER(int, pfnIommuMsiRemap)(PPDMDEVINS pDevIns, uint16_t uDevIt, PCMSIMSG pMsiIn, PMSIMSG pMsiOut);
+    DECLCALLBACKMEMBER(int, pfnIommuMsiRemap,(PPDMDEVINS pDevIns, uint16_t uDevIt, PCMSIMSG pMsiIn, PMSIMSG pMsiOut));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -2036,7 +2036,8 @@ typedef R3PTRTYPE(const PDMPCIRAWHLPR3 *) PCPDMPCIRAWHLPR3;
  * @param   cb          Block size.
  * @remarks The device lock is not taken, however, the DMA device lock is held.
  */
-typedef DECLCALLBACK(uint32_t) FNDMATRANSFERHANDLER(PPDMDEVINS pDevIns, void *pvUser, unsigned uChannel, uint32_t off, uint32_t cb);
+typedef DECLCALLBACKTYPE(uint32_t, FNDMATRANSFERHANDLER,(PPDMDEVINS pDevIns, void *pvUser, unsigned uChannel,
+                                                         uint32_t off, uint32_t cb));
 /** Pointer to a FNDMATRANSFERHANDLER(). */
 typedef FNDMATRANSFERHANDLER *PFNDMATRANSFERHANDLER;
 
@@ -8216,7 +8217,7 @@ typedef struct PDMDEVREGCB
  * @param   pCallbacks      Pointer to the callback table.
  * @param   u32Version      VBox version number.
  */
-typedef DECLCALLBACK(int) FNPDMVBOXDEVICESREGISTER(PPDMDEVREGCB pCallbacks, uint32_t u32Version);
+typedef DECLCALLBACKTYPE(int, FNPDMVBOXDEVICESREGISTER,(PPDMDEVREGCB pCallbacks, uint32_t u32Version));
 
 /** @} */
 

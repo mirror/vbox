@@ -108,7 +108,7 @@ AssertCompileMemberAlignment(GIMMMIO2REGION, GCPhysPage, 8);
  *
  * @param   pVM             The cross context VM structure.
  */
-typedef DECLCALLBACK(void) FNGIMDEBUGBUFAVAIL(PVM pVM);
+typedef DECLCALLBACKTYPE(void, FNGIMDEBUGBUFAVAIL,(PVM pVM));
 /** Pointer to GIM debug buffer available callback. */
 typedef FNGIMDEBUGBUFAVAIL *PFNGIMDEBUGBUFAVAIL;
 

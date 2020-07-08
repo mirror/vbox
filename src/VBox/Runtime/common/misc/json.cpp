@@ -145,8 +145,8 @@ typedef const RTJSONTOKEN *PCRTJSONTOKEN;
  * @param   cbBuf           How much to read.
  * @param   pcbRead         Where to store the amount of data read on succcess.
  */
-typedef DECLCALLBACK(int) FNRTJSONTOKENIZERREAD(void *pvUser, size_t offInput, void *pvBuf, size_t cbBuf,
-                                                size_t *pcbRead);
+typedef DECLCALLBACKTYPE(int, FNRTJSONTOKENIZERREAD,(void *pvUser, size_t offInput, void *pvBuf, size_t cbBuf,
+                                                     size_t *pcbRead));
 /** Pointer to a tokenizer read buffer callback. */
 typedef FNRTJSONTOKENIZERREAD *PFNRTJSONTOKENIZERREAD;
 

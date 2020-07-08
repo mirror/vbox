@@ -930,8 +930,8 @@ typedef PDMAUDIOMIXBUFFMT *PPDMAUDIOMIXBUFFMT;
  * @param   pOpts           Conversion options.
  * @todo r=bird: The @a paDst size is presumable given in @a pOpts->cFrames?
  */
-typedef DECLCALLBACK(uint32_t) FNPDMAUDIOMIXBUFCONVFROM(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc,
-                                                        PCPDMAUDMIXBUFCONVOPTS pOpts);
+typedef DECLCALLBACKTYPE(uint32_t, FNPDMAUDIOMIXBUFCONVFROM,(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc,
+                                                             PCPDMAUDMIXBUFCONVOPTS pOpts));
 /** Pointer to a convertion-from function used by the PDM audio buffer mixer. */
 typedef FNPDMAUDIOMIXBUFCONVFROM *PFNPDMAUDIOMIXBUFCONVFROM;
 
@@ -944,7 +944,7 @@ typedef FNPDMAUDIOMIXBUFCONVFROM *PFNPDMAUDIOMIXBUFCONVFROM;
  * @todo r=bird: The @a paSrc size is presumable given in @a pOpts->cFrames and
  *       this implicitly gives the pvDst size too, right?
  */
-typedef DECLCALLBACK(void) FNPDMAUDIOMIXBUFCONVTO(void *pvDst, PCPDMAUDIOFRAME paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts);
+typedef DECLCALLBACKTYPE(void, FNPDMAUDIOMIXBUFCONVTO,(void *pvDst, PCPDMAUDIOFRAME paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts));
 /** Pointer to a convertion-to function used by the PDM audio buffer mixer. */
 typedef FNPDMAUDIOMIXBUFCONVTO *PFNPDMAUDIOMIXBUFCONVTO;
 
@@ -1337,7 +1337,8 @@ typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
  * @param   pvUser              User argument.
  * @param   cbUser              Size (in bytes) of user argument.
  */
-typedef DECLCALLBACK(int) FNPDMHOSTAUDIOCALLBACK(PPDMDRVINS pDrvIns, PDMAUDIOBACKENDCBTYPE enmType, void *pvUser, size_t cbUser);
+typedef DECLCALLBACKTYPE(int, FNPDMHOSTAUDIOCALLBACK,(PPDMDRVINS pDrvIns, PDMAUDIOBACKENDCBTYPE enmType,
+                                                      void *pvUser, size_t cbUser));
 /** Pointer to a FNPDMHOSTAUDIOCALLBACK(). */
 typedef FNPDMHOSTAUDIOCALLBACK *PFNPDMHOSTAUDIOCALLBACK;
 

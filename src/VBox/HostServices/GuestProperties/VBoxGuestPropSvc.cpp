@@ -1824,7 +1824,7 @@ int Service::uninit()
 using guestProp::Service;
 
 /**
- * @copydoc VBOXHGCMSVCLOAD
+ * @copydoc FNVBOXHGCMSVCLOAD
  */
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *ptable)
 {

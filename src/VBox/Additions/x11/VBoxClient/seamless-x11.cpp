@@ -429,8 +429,7 @@ size_t SeamlessX11::getRectCount(void)
 
 RTVEC_DECL(RectList, RTRECT)
 
-DECLCALLBACK(int) getRectsCallback(VBoxGuestWinInfo *pInfo,
-                                   struct RectList *pRects)
+static DECLCALLBACK(int) getRectsCallback(VBoxGuestWinInfo *pInfo, struct RectList *pRects)
 {
     if (pInfo->mhasShape)
     {
@@ -484,8 +483,7 @@ int SeamlessX11::updateRects(void)
         if (RT_FAILURE(rc))
             return rc;
     }
-    mGuestWindows.doWithAll((PVBOXGUESTWINCALLBACK)getRectsCallback,
-                            &rects);
+    mGuestWindows.doWithAll((PFNVBOXGUESTWINCALLBACK)getRectsCallback, &rects);
     if (mpRects)
         RTMemFree(mpRects);
     mcRects = RectListSize(&rects);

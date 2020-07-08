@@ -83,8 +83,8 @@ static VBOXDNDCONTEXT           g_Ctx = { 0 };
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_PROTO;
+static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_PROTO;
 
 
 
@@ -198,8 +198,7 @@ void VBoxDnDWnd::Destroy(void)
  * @param   pvUser                  Pointer to VBoxDnDWnd instance which
  *                                  is using the thread.
  */
-/* static */
-int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
+/*static*/ DECLCALLBACK(int) VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
 {
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
@@ -250,16 +249,15 @@ int VBoxDnDWnd::Thread(RTTHREAD hThread, void *pvUser)
         dwExStyle &= ~WS_EX_TRANSPARENT; /* Remove transparency bit. */
         dwStyle |= WS_VISIBLE; /* Make the window visible. */
 #endif
-        pThis->hWnd =
-            CreateWindowEx(dwExStyle,
-                           VBOX_DND_WND_CLASS, VBOX_DND_WND_CLASS,
-                           dwStyle,
+        pThis->hWnd = CreateWindowEx(dwExStyle,
+                                     VBOX_DND_WND_CLASS, VBOX_DND_WND_CLASS,
+                                     dwStyle,
 #ifdef VBOX_DND_DEBUG_WND
-                           CW_USEDEFAULT, CW_USEDEFAULT, 200, 200, NULL, NULL,
+                                     CW_USEDEFAULT, CW_USEDEFAULT, 200, 200, NULL, NULL,
 #else
-                           -200, -200, 100, 100, NULL, NULL,
+                                     -200, -200, 100, 100, NULL, NULL,
 #endif
-                           hInstance, pThis /* lParm */);
+                                     hInstance, pThis /* lParm */);
         if (!pThis->hWnd)
         {
             DWORD dwErr = GetLastError();
@@ -1624,8 +1622,7 @@ int VBoxDnDWnd::setMode(Mode enmMode)
  * Static helper function for having an own WndProc for proxy
  * window instances.
  */
-static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg,
-                                               WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_DEF
 {
     LONG_PTR pUserData = GetWindowLongPtr(hWnd, GWLP_USERDATA);
     AssertPtrReturn(pUserData, 0);
@@ -1641,8 +1638,7 @@ static LRESULT CALLBACK vboxDnDWndProcInstance(HWND hWnd, UINT uMsg,
  * Static helper function for routing Windows messages to a specific
  * proxy window instance.
  */
-static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg,
-                                       WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_DEF
 {
     /* Note: WM_NCCREATE is not the first ever message which arrives, but
      *       early enough for us. */

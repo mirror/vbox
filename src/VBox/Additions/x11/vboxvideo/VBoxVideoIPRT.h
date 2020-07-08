@@ -109,7 +109,8 @@ RT_C_DECLS_END
 #endif
 
 #define DECLCALLBACK(type) type
-#define DECLCALLBACKMEMBER(type, name) type (* name)
+#define DECLCALLBACKTYPE(type, name, args) type name args
+#define DECLCALLBACKMEMB32(type, name, args) type (* name) args
 #if __GNUC__ >= 4
 # define DECLHIDDEN(type) __attribute__((visibility("hidden"))) type
 #else

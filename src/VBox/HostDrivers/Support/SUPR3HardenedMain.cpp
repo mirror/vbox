@@ -484,12 +484,12 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** @see RTR3InitEx */
-typedef DECLCALLBACK(int) FNRTR3INITEX(uint32_t iVersion, uint32_t fFlags, int cArgs,
-                                       char **papszArgs, const char *pszProgramPath);
+typedef DECLCALLBACKTYPE(int, FNRTR3INITEX,(uint32_t iVersion, uint32_t fFlags, int cArgs,
+                                            char **papszArgs, const char *pszProgramPath));
 typedef FNRTR3INITEX *PFNRTR3INITEX;
 
 /** @see RTLogRelPrintf */
-typedef DECLCALLBACK(void) FNRTLOGRELPRINTF(const char *pszFormat, ...);
+typedef DECLCALLBACKTYPE(void, FNRTLOGRELPRINTF,(const char *pszFormat, ...));
 typedef FNRTLOGRELPRINTF *PFNRTLOGRELPRINTF;
 
 

@@ -310,7 +310,7 @@ typedef SUPPREINITDATA const *PCSUPPREINITDATA;
 #define SUPPREINITDATA_MAGIC    UINT32_C(0xbeef0001)
 
 /** @copydoc supR3PreInit */
-typedef DECLCALLBACK(int) FNSUPR3PREINIT(PSUPPREINITDATA pPreInitData, uint32_t fFlags);
+typedef DECLCALLBACKTYPE(int, FNSUPR3PREINIT,(PSUPPREINITDATA pPreInitData, uint32_t fFlags));
 /** Pointer to supR3PreInit. */
 typedef FNSUPR3PREINIT *PFNSUPR3PREINIT;
 

@@ -301,7 +301,7 @@ VBOX_LISTENER_DECLARE(VirtualBoxEventListenerImpl)
  * a thread dedicated to delivering this signal.  Do not doing anything
  * unnecessary here.
  */
-static void signalHandler(int iSignal)
+static void signalHandler(int iSignal) RT_NOTHROW_DEF
 {
     NOREF(iSignal);
     ASMAtomicWriteBool(&g_fCanceled, true);
@@ -706,9 +706,9 @@ static RTEXITCODE watchdogMain(/*HandlerArg *a */)
          * Install signal handlers.
          */
         signal(SIGINT,   signalHandler);
-    #ifdef SIGBREAK
+#ifdef SIGBREAK
         signal(SIGBREAK, signalHandler);
-    #endif
+#endif
 
         /*
          * Setup the global event listeners:

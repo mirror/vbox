@@ -1126,7 +1126,7 @@ typedef const RTFLOAT80U2 RT_FAR *PCRTFLOAT80U2;
 /** Generic function type.
  * @see PFNRT
  */
-typedef DECLCALLBACK(void) FNRT(void);
+typedef DECLCALLBACKTYPE(void, FNRT,(void));
 
 /** Generic function pointer.
  * With -pedantic, gcc-4 complains when casting a function to a data object, for
@@ -1146,6 +1146,11 @@ typedef DECLCALLBACK(void) FNRT(void);
  * something dangerous, assigning a pointer to executable code to a data object.
  */
 typedef FNRT *PFNRT;
+
+/** Variant on PFNRT that takes one pointer argument. */
+typedef DECLCALLBACKTYPE(void, FNRT1,(void *pvArg));
+/** Pointer to FNRT1. */
+typedef FNRT1 *PFNRT1;
 
 /** Millisecond interval. */
 typedef uint32_t                        RTMSINTERVAL;
@@ -2797,7 +2802,7 @@ typedef RTSTRTUPLE const RT_FAR *PCRTSTRTUPLE;
  * @param   uPercentage     The percentage of the operation which has been completed.
  * @param   pvUser          The user specified argument.
  */
-typedef DECLCALLBACK(int) FNRTPROGRESS(unsigned uPrecentage, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTPROGRESS,(unsigned uPrecentage, void *pvUser));
 /** Pointer to a generic progress callback function, FNRTPROCESS(). */
 typedef FNRTPROGRESS *PFNRTPROGRESS;
 
@@ -2808,7 +2813,7 @@ typedef FNRTPROGRESS *PFNRTPROGRESS;
  * @param   pszFormat       The format string.
  * @param   va              Arguments for the format string.
  */
-typedef DECLCALLBACK(void) FNRTDUMPPRINTFV(void *pvUser, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+typedef DECLCALLBACKTYPE(void, FNRTDUMPPRINTFV,(void *pvUser, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0));
 /** Pointer to a generic printf-like function for dumping. */
 typedef FNRTDUMPPRINTFV *PFNRTDUMPPRINTFV;
 

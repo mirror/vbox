@@ -588,7 +588,7 @@ static DWORD vgsvcWinCtrlHandlerCommon(DWORD dwControl)
 /**
  * Callback registered by RegisterServiceCtrlHandler on NT4 and earlier.
  */
-static VOID WINAPI vgsvcWinCtrlHandlerNt4(DWORD dwControl)
+static VOID WINAPI vgsvcWinCtrlHandlerNt4(DWORD dwControl) RT_NOTHROW_DEF
 {
     VGSvcVerbose(2, "Control handler (NT4): dwControl=%#x\n", dwControl);
     vgsvcWinCtrlHandlerCommon(dwControl);
@@ -598,7 +598,8 @@ static VOID WINAPI vgsvcWinCtrlHandlerNt4(DWORD dwControl)
 /**
  * Callback registered by RegisterServiceCtrlHandler on NT5 and later.
  */
-static DWORD WINAPI vgsvcWinCtrlHandlerNt5Plus(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
+static DWORD WINAPI
+vgsvcWinCtrlHandlerNt5Plus(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext) RT_NOTHROW_DEF
 {
     VGSvcVerbose(2, "Control handler: dwControl=%#x, dwEventType=%#x\n", dwControl, dwEventType);
     RT_NOREF1(lpContext);

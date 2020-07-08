@@ -41,7 +41,9 @@
 #include <iprt/time.h>
 
 #if 1
+# include "../include/internal/openssl-pre.h"
 # include <openssl/bn.h>
+# include "../include/internal/openssl-post.h"
 #endif
 
 

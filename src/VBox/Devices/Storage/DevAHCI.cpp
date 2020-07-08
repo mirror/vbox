@@ -639,10 +639,10 @@ AssertCompileSize(SGLEntry, 16);
  *                   On return this contains the remaining amount if
  *                   cbCopy < *pcbSkip or 0 otherwise.
  */
-typedef DECLCALLBACK(void) AHCIR3MEMCOPYCALLBACK(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
-                                                 PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip);
+typedef DECLCALLBACKTYPE(void, FNAHCIR3MEMCOPYCALLBACK,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
+                                                        PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip));
 /** Pointer to a memory copy buffer callback. */
-typedef AHCIR3MEMCOPYCALLBACK *PAHCIR3MEMCOPYCALLBACK;
+typedef FNAHCIR3MEMCOPYCALLBACK *PFNAHCIR3MEMCOPYCALLBACK;
 #endif
 
 /** Defines for a scatter gather list entry. */
@@ -3261,7 +3261,7 @@ DECLINLINE(uint32_t) ahciGetNSectorsQueued(uint8_t *pCmdFis)
 /**
  * Copy from guest to host memory worker.
  *
- * @copydoc AHCIR3MEMCOPYCALLBACK
+ * @copydoc FNAHCIR3MEMCOPYCALLBACK
  */
 static DECLCALLBACK(void) ahciR3CopyBufferFromGuestWorker(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
                                                           size_t cbCopy, size_t *pcbSkip)
@@ -3286,7 +3286,7 @@ static DECLCALLBACK(void) ahciR3CopyBufferFromGuestWorker(PPDMDEVINS pDevIns, RT
 /**
  * Copy from host to guest memory worker.
  *
- * @copydoc AHCIR3MEMCOPYCALLBACK
+ * @copydoc FNAHCIR3MEMCOPYCALLBACK
  */
 static DECLCALLBACK(void) ahciR3CopyBufferToGuestWorker(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
                                                         size_t cbCopy, size_t *pcbSkip)
@@ -3320,7 +3320,7 @@ static DECLCALLBACK(void) ahciR3CopyBufferToGuestWorker(PPDMDEVINS pDevIns, RTGC
  * @param   cbCopy          How many bytes to copy.
  */
 static size_t ahciR3PrdtlWalk(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
-                              PAHCIR3MEMCOPYCALLBACK pfnCopyWorker,
+                              PFNAHCIR3MEMCOPYCALLBACK pfnCopyWorker,
                               PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
 {
     RTGCPHYS GCPhysPrdtl = pAhciReq->GCPhysPrdtl;

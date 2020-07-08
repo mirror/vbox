@@ -1210,22 +1210,22 @@ static int  vmR3ReqProcessOne(PVMREQ pReq)
             union
             {
                 PFNRT pfn;
-                DECLCALLBACKMEMBER(int, pfn00)(void);
-                DECLCALLBACKMEMBER(int, pfn01)(uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn02)(uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn03)(uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn04)(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn05)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn06)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn07)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn08)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn09)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn10)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn11)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn12)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn13)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn14)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
-                DECLCALLBACKMEMBER(int, pfn15)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+                DECLCALLBACKMEMBER(int, pfn00,(void));
+                DECLCALLBACKMEMBER(int, pfn01,(uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn02,(uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn03,(uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn04,(uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn05,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn06,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn07,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn08,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn09,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn10,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn11,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn12,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn13,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn14,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
+                DECLCALLBACKMEMBER(int, pfn15,(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t));
             } u;
             u.pfn = pReq->u.Internal.pfn;
 #ifdef RT_ARCH_AMD64

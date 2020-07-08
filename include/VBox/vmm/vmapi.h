@@ -67,7 +67,7 @@ RT_C_DECLS_BEGIN
  * @param   pszFormat       Error message format string.
  * @param   args            Error message arguments.
  */
-typedef DECLCALLBACK(void) FNVMATERROR(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, va_list args);
+typedef DECLCALLBACKTYPE(void, FNVMATERROR,(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, va_list args));
 /** Pointer to a VM error callback. */
 typedef FNVMATERROR *PFNVMATERROR;
 
@@ -117,8 +117,8 @@ VMMDECL(int)    VMSetErrorV(PVMCC pVM, int rc, RT_SRC_POS_DECL, const char *pszF
  * @param   pszFormat       Error message format string.
  * @param   va              Error message arguments.
  */
-typedef DECLCALLBACK(void) FNVMATRUNTIMEERROR(PUVM pUVM, void *pvUser, uint32_t fFlags, const char *pszErrorId,
-                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(5, 0);
+typedef DECLCALLBACKTYPE(void, FNVMATRUNTIMEERROR,(PUVM pUVM, void *pvUser, uint32_t fFlags, const char *pszErrorId,
+                                                   const char *pszFormat, va_list va)) RT_IPRT_FORMAT_ATTR(5, 0);
 /** Pointer to a VM runtime error callback. */
 typedef FNVMATRUNTIMEERROR *PFNVMATRUNTIMEERROR;
 
@@ -157,7 +157,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVMCC pVM, uint32_t fFlags, const char *pszError
  * @param   enmOldState The old state.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(void) FNVMATSTATE(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNVMATSTATE,(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser));
 /** Pointer to a VM state callback. */
 typedef FNVMATSTATE *PFNVMATSTATE;
 
@@ -362,7 +362,7 @@ typedef enum VMSUSPENDREASON
  * @param   uPercent    Completion percentage (0-100).
  * @param   pvUser      User specified argument.
  */
-typedef DECLCALLBACK(int) FNVMPROGRESS(PUVM pUVM, unsigned uPercent, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNVMPROGRESS,(PUVM pUVM, unsigned uPercent, void *pvUser));
 /** Pointer to a FNVMPROGRESS function. */
 typedef FNVMPROGRESS *PFNVMPROGRESS;
 

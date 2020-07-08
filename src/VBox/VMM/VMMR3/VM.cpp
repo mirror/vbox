@@ -92,7 +92,7 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int                  vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUVM *ppUVM);
-static int                  vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
+static DECLCALLBACK(int)    vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
 static int                  vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus);
 static int                  vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int                  vmR3InitRing0(PVM pVM);
@@ -540,7 +540,7 @@ static int vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUV
  *
  * @thread EMT
  */
-static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM)
+static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM)
 {
 #if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && !defined(VBOX_WITH_OLD_CPU_SUPPORT)
     /*

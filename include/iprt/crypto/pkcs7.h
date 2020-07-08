@@ -484,8 +484,8 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7DIGESTINFO, RTDECL, RTCrPkcs7DigestInfo,
  * @param   pvUser              The user argument.
  * @param   pErrInfo            Optional error info buffer.
  */
-typedef DECLCALLBACK(int) FNRTCRPKCS7VERIFYCERTCALLBACK(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
-                                                        uint32_t fFlags, void *pvUser, PRTERRINFO pErrInfo);
+typedef DECLCALLBACKTYPE(int, FNRTCRPKCS7VERIFYCERTCALLBACK,(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
+                                                             uint32_t fFlags, void *pvUser, PRTERRINFO pErrInfo));
 /** Pointer to a FNRTCRPKCS7VERIFYCERTCALLBACK callback. */
 typedef FNRTCRPKCS7VERIFYCERTCALLBACK *PFNRTCRPKCS7VERIFYCERTCALLBACK;
 

@@ -59,7 +59,7 @@ RT_C_DECLS_BEGIN
  *                      will close this socket.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(int) FNRTTCPSERVE(RTSOCKET hSocket, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTTCPSERVE,(RTSOCKET hSocket, void *pvUser));
 /** Pointer to a RTTCPSERVE(). */
 typedef FNRTTCPSERVE *PFNRTTCPSERVE;
 

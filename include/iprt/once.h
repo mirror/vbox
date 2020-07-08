@@ -49,7 +49,7 @@ RT_C_DECLS_BEGIN
  *
  * @param   pvUser          The user parameter.
  */
-typedef DECLCALLBACK(int32_t) FNRTONCE(void *pvUser);
+typedef DECLCALLBACKTYPE(int32_t, FNRTONCE,(void *pvUser));
 /** Pointer to a FNRTONCE. */
 typedef FNRTONCE *PFNRTONCE;
 
@@ -60,7 +60,7 @@ typedef FNRTONCE *PFNRTONCE;
  * @param   fLazyCleanUpOk  Indicates whether lazy clean-up is OK (see
  *                          initterm.h).
  */
-typedef DECLCALLBACK(void) FNRTONCECLEANUP(void *pvUser, bool fLazyCleanUpOk);
+typedef DECLCALLBACKTYPE(void, FNRTONCECLEANUP,(void *pvUser, bool fLazyCleanUpOk));
 /** Pointer to a FNRTONCE. */
 typedef FNRTONCECLEANUP *PFNRTONCECLEANUP;
 

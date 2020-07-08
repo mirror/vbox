@@ -140,7 +140,7 @@ private:
     HRESULT i_setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL fEnforce);
 
     /** RTLogGetFlags, RTLogGetGroupSettings and RTLogGetDestinations function. */
-    typedef DECLCALLBACK(int) FNLOGGETSTR(PRTLOGGER, char *, size_t);
+    typedef DECLCALLBACKTYPE(int, FNLOGGETSTR,(PRTLOGGER, char *, size_t));
     /** Function pointer.  */
     typedef FNLOGGETSTR *PFNLOGGETSTR;
     HRESULT i_logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLogGetStr, const char *pszLogGetStr, Utf8Str *pstrSettings);

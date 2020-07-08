@@ -40,7 +40,9 @@
 #include <iprt/crypto/x509.h>
 
 #ifdef IPRT_WITH_OPENSSL
+# include "internal/openssl-pre.h"
 # include <openssl/x509.h>
+# include "internal/openssl-post.h"
 #endif
 
 #include "store-internal.h"

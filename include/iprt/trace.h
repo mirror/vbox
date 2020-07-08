@@ -110,8 +110,8 @@ RTDECL(int)         RTTraceBufDumpToAssert(RTTRACEBUF hTraceBuf);
  * @param   pszMsg              The message text.
  * @param   pvUser              The user argument.
  */
-typedef DECLCALLBACK(int) FNRTTRACEBUFCALLBACK(RTTRACEBUF hTraceBuf, uint32_t iEntry, uint64_t NanoTS,
-                                               RTCPUID idCpu, const char *pszMsg, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTTRACEBUFCALLBACK,(RTTRACEBUF hTraceBuf, uint32_t iEntry, uint64_t NanoTS,
+                                                    RTCPUID idCpu, const char *pszMsg, void *pvUser));
 /** Pointer to trace buffer enumeration callback function. */
 typedef FNRTTRACEBUFCALLBACK *PFNRTTRACEBUFCALLBACK;
 

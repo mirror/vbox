@@ -80,7 +80,7 @@ typedef enum PGMRELOCATECALL
  * @remark  The return value is no a failure indicator, it's an acceptance
  *          indicator. Relocation can not fail!
  */
-typedef DECLCALLBACK(bool) FNPGMRELOCATE(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew, PGMRELOCATECALL enmMode, void *pvUser);
+typedef DECLCALLBACKTYPE(bool, FNPGMRELOCATE,(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew, PGMRELOCATECALL enmMode, void *pvUser));
 /** Pointer to a relocation callback function. */
 typedef FNPGMRELOCATE *PFNPGMRELOCATE;
 
@@ -202,8 +202,8 @@ typedef enum PGMACCESSTYPE
  * @param   pvUser      User argument.
  * @thread  EMT(pVCpu)
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNPGMRZPHYSPFHANDLER(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                                        RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPGMRZPHYSPFHANDLER,(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                             RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser));
 /** Pointer to PGM access callback. */
 typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
 
@@ -233,8 +233,9 @@ typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
  * @param   pvUser          User argument.
  * @thread  EMT(pVCpu)
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNPGMPHYSHANDLER(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPGMPHYSHANDLER,(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
+                                                         void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType,
+                                                         PGMACCESSORIGIN enmOrigin, void *pvUser));
 /** Pointer to PGM access callback. */
 typedef FNPGMPHYSHANDLER *PFNPGMPHYSHANDLER;
 
@@ -610,7 +611,7 @@ typedef PGMPHYSNEMPAGEINFO *PPGMPHYSNEMPAGEINFO;
  *                      copy accordingly.
  * @param   pvUser      Callback user argument.
  */
-typedef DECLCALLBACK(int) FNPGMPHYSNEMCHECKPAGE(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, PPGMPHYSNEMPAGEINFO pInfo, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNPGMPHYSNEMCHECKPAGE,(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, PPGMPHYSNEMPAGEINFO pInfo, void *pvUser));
 /** Pointer to a FNPGMPHYSNEMCHECKPAGE function. */
 typedef FNPGMPHYSNEMCHECKPAGE *PFNPGMPHYSNEMCHECKPAGE;
 
@@ -629,7 +630,8 @@ VMM_INT_DECL(int)   PGMPhysNemPageInfoChecker(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHY
  *                      update.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNPGMPHYSNEMENUMCALLBACK(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNPGMPHYSNEMENUMCALLBACK,(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys,
+                                                        uint8_t *pu2NemState, void *pvUser));
 /** Pointer to a FNPGMPHYSNEMENUMCALLBACK function. */
 typedef FNPGMPHYSNEMENUMCALLBACK *PFNPGMPHYSNEMENUMCALLBACK;
 VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVMCC pVM, PVMCPUCC VCpu, uint8_t uMinState,

@@ -160,7 +160,7 @@ typedef struct RTLDRREADER
      * @param   cb          Number of bytes to read.
      * @param   off         Where to start reading relative to the start of the raw image.
      */
-    DECLCALLBACKMEMBER(int, pfnRead)(PRTLDRREADER pReader, void *pvBuf, size_t cb, RTFOFF off);
+    DECLCALLBACKMEMBER(int, pfnRead,(PRTLDRREADER pReader, void *pvBuf, size_t cb, RTFOFF off));
 
     /**
      * Tells end position of last read.
@@ -168,7 +168,7 @@ typedef struct RTLDRREADER
      * @returns position relative to start of the raw image.
      * @param   pReader     Pointer to the reader instance.
      */
-    DECLCALLBACKMEMBER(RTFOFF, pfnTell)(PRTLDRREADER pReader);
+    DECLCALLBACKMEMBER(RTFOFF, pfnTell,(PRTLDRREADER pReader));
 
     /**
      * Gets the size of the raw image bits.
@@ -176,7 +176,7 @@ typedef struct RTLDRREADER
      * @returns size of raw image bits in bytes.
      * @param   pReader     Pointer to the reader instance.
      */
-    DECLCALLBACKMEMBER(uint64_t, pfnSize)(PRTLDRREADER pReader);
+    DECLCALLBACKMEMBER(uint64_t, pfnSize,(PRTLDRREADER pReader));
 
     /**
      * Map the bits into memory.
@@ -189,7 +189,7 @@ typedef struct RTLDRREADER
      * @param   ppvBits     Where to store the address of the memory mapping on success.
      *                      The size of the mapping can be obtained by calling pfnSize().
      */
-    DECLCALLBACKMEMBER(int, pfnMap)(PRTLDRREADER pReader, const void **ppvBits);
+    DECLCALLBACKMEMBER(int, pfnMap,(PRTLDRREADER pReader, const void **ppvBits));
 
     /**
      * Unmap bits.
@@ -198,7 +198,7 @@ typedef struct RTLDRREADER
      * @param   pReader     Pointer to the reader instance.
      * @param   pvBits      Memory pointer returned by pfnMap().
      */
-    DECLCALLBACKMEMBER(int, pfnUnmap)(PRTLDRREADER pReader, const void *pvBits);
+    DECLCALLBACKMEMBER(int, pfnUnmap,(PRTLDRREADER pReader, const void *pvBits));
 
     /**
      * Gets the most appropriate log name.
@@ -206,7 +206,7 @@ typedef struct RTLDRREADER
      * @returns Pointer to readonly log name.
      * @param   pReader     Pointer to the reader instance.
      */
-    DECLCALLBACKMEMBER(const char *, pfnLogName)(PRTLDRREADER pReader);
+    DECLCALLBACKMEMBER(const char *, pfnLogName,(PRTLDRREADER pReader));
 
     /**
      * Releases all resources associated with the reader instance.
@@ -215,7 +215,7 @@ typedef struct RTLDRREADER
      * @returns iprt status code.
      * @param   pReader     Pointer to the reader instance.
      */
-    DECLCALLBACKMEMBER(int, pfnDestroy)(PRTLDRREADER pReader);
+    DECLCALLBACKMEMBER(int, pfnDestroy,(PRTLDRREADER pReader));
 } RTLDRREADER;
 
 /** Magic value for RTLDRREADER (Gordon Matthew Thomas Sumner / Sting). */
@@ -510,7 +510,7 @@ RTDECL(int) RTLdrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH
  * @param   off         Where to start reading.
  * @param   pvUser      The user parameter.
  */
-typedef DECLCALLBACK(int) FNRTLDRRDRMEMREAD(void *pvBuf, size_t cb, size_t off, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTLDRRDRMEMREAD,(void *pvBuf, size_t cb, size_t off, void *pvUser));
 /** Pointer to a RTLdrOpenInMemory reader callback. */
 typedef FNRTLDRRDRMEMREAD *PFNRTLDRRDRMEMREAD;
 
@@ -522,7 +522,7 @@ typedef FNRTLDRRDRMEMREAD *PFNRTLDRRDRMEMREAD;
  * @param   pvUser      The user parameter.
  * @param   cbImage     The image size.
  */
-typedef DECLCALLBACK(void) FNRTLDRRDRMEMDTOR(void *pvUser, size_t cbImage);
+typedef DECLCALLBACKTYPE(void, FNRTLDRRDRMEMDTOR,(void *pvUser, size_t cbImage));
 /** Pointer to a RTLdrOpenInMemory destructor callback. */
 typedef FNRTLDRRDRMEMDTOR *PFNRTLDRRDRMEMDTOR;
 
@@ -678,8 +678,8 @@ RTDECL(size_t) RTLdrSize(RTLDRMOD hLdrMod);
  * @param   pValue          Where to store the symbol value (address).
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(int) FNRTLDRIMPORT(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol,
-                                        PRTLDRADDR pValue, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTLDRIMPORT,(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol,
+                                             PRTLDRADDR pValue, void *pvUser));
 /** Pointer to a FNRTLDRIMPORT() callback function. */
 typedef FNRTLDRIMPORT *PFNRTLDRIMPORT;
 
@@ -725,7 +725,7 @@ RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR NewBaseAddre
  * @param   Value           Symbol value.
  * @param   pvUser          The user argument specified to RTLdrEnumSymbols().
  */
-typedef DECLCALLBACK(int) FNRTLDRENUMSYMS(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTLDRADDR Value, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTLDRENUMSYMS,(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTLDRADDR Value, void *pvUser));
 /** Pointer to a FNRTLDRENUMSYMS() callback function. */
 typedef FNRTLDRENUMSYMS *PFNRTLDRENUMSYMS;
 
@@ -896,7 +896,7 @@ typedef RTLDRDBGINFO const *PCRTLDRDBGINFO;
  * @param   pDbgInfo        Pointer to a read only structure with the details.
  * @param   pvUser          The user parameter specified to RTLdrEnumDbgInfo.
  */
-typedef DECLCALLBACK(int) FNRTLDRENUMDBG(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTLDRENUMDBG,(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser));
 /** Pointer to a debug info enumerator callback. */
 typedef FNRTLDRENUMDBG *PFNRTLDRENUMDBG;
 
@@ -985,7 +985,7 @@ typedef RTLDRSEG const *PCRTLDRSEG;
  * @param   pSeg            The segment information.
  * @param   pvUser          The user parameter specified to RTLdrEnumSegments.
  */
-typedef DECLCALLBACK(int) FNRTLDRENUMSEGS(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTLDRENUMSEGS,(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser));
 /** Pointer to a segment enumerator callback. */
 typedef FNRTLDRENUMSEGS *PFNRTLDRENUMSEGS;
 
@@ -1223,10 +1223,10 @@ typedef enum RTLDRSIGNATURETYPE
  * @param   pvUser          User argument.
  *
  */
-typedef DECLCALLBACK(int) FNRTLDRVALIDATESIGNEDDATA(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
-                                                    void const *pvSignature, size_t cbSignature,
-                                                    void const *pvExternalData, size_t cbExternalData,
-                                                    PRTERRINFO pErrInfo, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTLDRVALIDATESIGNEDDATA,(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE enmSignature,
+                                                         void const *pvSignature, size_t cbSignature,
+                                                         void const *pvExternalData, size_t cbExternalData,
+                                                         PRTERRINFO pErrInfo, void *pvUser));
 /** Pointer to a signature verification callback. */
 typedef FNRTLDRVALIDATESIGNEDDATA *PFNRTLDRVALIDATESIGNEDDATA;
 

@@ -4785,7 +4785,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-void pgmR3PhysUnmapChunk(PVM pVM)
+static DECLCALLBACK(void) pgmR3PhysUnmapChunk(PVM pVM)
 {
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysUnmapChunkRendezvous, NULL);
     AssertRC(rc);

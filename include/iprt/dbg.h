@@ -282,7 +282,7 @@ typedef struct RTDBGUNWINDSTATE
      * @param   cbToRead    The number of bytes to read.
      * @param   pvDst       Where to put the bytes we read.
      */
-    DECLCALLBACKMEMBER(int, pfnReadStack)(struct RTDBGUNWINDSTATE *pThis, RTUINTPTR uSp, size_t cbToRead, void *pvDst);
+    DECLCALLBACKMEMBER(int, pfnReadStack,(struct RTDBGUNWINDSTATE *pThis, RTUINTPTR uSp, size_t cbToRead, void *pvDst));
     /** User argument (useful for pfnReadStack). */
     void               *pvUser;
 
@@ -652,7 +652,7 @@ RTDECL(int) RTDbgCfgQueryUInt(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, uint64_t *
  * @param   pszMsg          The message.
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(void) FNRTDBGCFGLOG(RTDBGCFG hDbgCfg, uint32_t iLevel, const char *pszMsg, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTDBGCFGLOG,(RTDBGCFG hDbgCfg, uint32_t iLevel, const char *pszMsg, void *pvUser));
 /** Pointer to a log callback. */
 typedef FNRTDBGCFGLOG *PFNRTDBGCFGLOG;
 
@@ -685,7 +685,7 @@ RTDECL(int) RTDbgCfgSetLogCallback(RTDBGCFG hDbgCfg, PFNRTDBGCFGLOG pfnCallback,
  * @param   pvUser1             First user parameter.
  * @param   pvUser2             Second user parameter.
  */
-typedef DECLCALLBACK(int) FNRTDBGCFGOPEN(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2);
+typedef DECLCALLBACKTYPE(int, FNRTDBGCFGOPEN,(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2));
 /** Pointer to a open-file callback used to the RTDbgCfgOpen functions. */
 typedef FNRTDBGCFGOPEN *PFNRTDBGCFGOPEN;
 

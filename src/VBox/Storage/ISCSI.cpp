@@ -392,12 +392,12 @@ typedef enum ISCSICMDTYPE
 
 
 /** The command completion function. */
-typedef DECLCALLBACK(void) FNISCSICMDCOMPLETED(PISCSIIMAGE pImage, int rcReq, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNISCSICMDCOMPLETED,(PISCSIIMAGE pImage, int rcReq, void *pvUser));
 /** Pointer to a command completion function. */
 typedef FNISCSICMDCOMPLETED *PFNISCSICMDCOMPLETED;
 
 /** The command execution function. */
-typedef DECLCALLBACK(int) FNISCSIEXEC(void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNISCSIEXEC,(void *pvUser));
 /** Pointer to a command execution function. */
 typedef FNISCSIEXEC *PFNISCSIEXEC;
 

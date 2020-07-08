@@ -27,7 +27,7 @@
 #include <iprt/cpp/ministring.h>
 #include <iprt/cpp/list.h>
 
-typedef DECLCALLBACK(int) FNDNDPROGRESS(uint32_t uState, uint32_t uPercentage, int rc, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNDNDPROGRESS,(uint32_t uState, uint32_t uPercentage, int rc, void *pvUser));
 typedef FNDNDPROGRESS *PFNDNDPROGRESS;
 
 /**

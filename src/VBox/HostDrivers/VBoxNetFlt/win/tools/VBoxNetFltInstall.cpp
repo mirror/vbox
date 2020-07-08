@@ -35,9 +35,9 @@
 #define VBOX_NETFLT_RETRIES 10
 
 
-static VOID winNetCfgLogger(LPCSTR szString)
+static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
-    printf("%s", szString);
+    printf("%s", pszString);
 }
 
 /** Wrapper around GetfullPathNameW that will try an alternative INF location.

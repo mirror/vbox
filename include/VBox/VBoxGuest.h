@@ -818,7 +818,7 @@ typedef struct VBGLOS2ATTACHDD
      * @param   cbReq               The size of the data buffer.
      */
 # if ARCH_BITS == 32 || defined(DOXYGEN_RUNNING)
-    DECLCALLBACKMEMBER(int, pfnServiceEP)(uint32_t u32Session, unsigned iFunction, PVBGLREQHDR pReqHdr, size_t cbReq);
+    DECLCALLBACKMEMBER(int, pfnServiceEP,(uint32_t u32Session, unsigned iFunction, PVBGLREQHDR pReqHdr, size_t cbReq));
 # else
     uint32_t pfnServiceEP;
 #endif
@@ -835,7 +835,7 @@ typedef struct VBGLOS2ATTACHDD
      * @endcode
      */
 # if ARCH_BITS == 16 || defined(DOXYGEN_RUNNING)
-    DECLCALLBACKMEMBER(int, fpfnServiceEP)(uint32_t u32Session, uint16_t iFunction, PVBGLREQHDR fpvData, uint16_t cbData);
+    DECLCALLBACKMEMBER(int, fpfnServiceEP,(uint32_t u32Session, uint16_t iFunction, PVBGLREQHDR fpvData, uint16_t cbData));
 # else
     RTFAR16 fpfnServiceEP;
 # endif

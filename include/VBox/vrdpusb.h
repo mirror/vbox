@@ -68,18 +68,18 @@ typedef struct REMOTEUSBCALLBACK
 {
     PREMOTEUSBBACKEND pInstance;
 
-    DECLCALLBACKMEMBER(int, pfnOpen)             (PREMOTEUSBBACKEND pInstance, const char *pszAddress, size_t cbAddress, PREMOTEUSBDEVICE *ppDevice);
-    DECLCALLBACKMEMBER(void, pfnClose)           (PREMOTEUSBDEVICE pDevice);
-    DECLCALLBACKMEMBER(int, pfnReset)            (PREMOTEUSBDEVICE pDevice);
-    DECLCALLBACKMEMBER(int, pfnSetConfig)        (PREMOTEUSBDEVICE pDevice, uint8_t u8Cfg);
-    DECLCALLBACKMEMBER(int, pfnClaimInterface)   (PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum);
-    DECLCALLBACKMEMBER(int, pfnReleaseInterface) (PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum);
-    DECLCALLBACKMEMBER(int, pfnInterfaceSetting) (PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum, uint8_t u8Setting);
-    DECLCALLBACKMEMBER(int, pfnQueueURB)         (PREMOTEUSBDEVICE pDevice, uint8_t u8Type, uint8_t u8Ep, uint8_t u8Direction, uint32_t u32Len, void *pvData, void *pvURB, PREMOTEUSBQURB *ppRemoteURB);
-    DECLCALLBACKMEMBER(int, pfnReapURB)          (PREMOTEUSBDEVICE pDevice, uint32_t u32Millies, void **ppvURB, uint32_t *pu32Len, uint32_t *pu32Err);
-    DECLCALLBACKMEMBER(int, pfnClearHaltedEP)    (PREMOTEUSBDEVICE pDevice, uint8_t u8Ep);
-    DECLCALLBACKMEMBER(void, pfnCancelURB)       (PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB);
-    DECLCALLBACKMEMBER(int, pfnWakeup)           (PREMOTEUSBDEVICE pDevice);
+    DECLCALLBACKMEMBER(int, pfnOpen,(PREMOTEUSBBACKEND pInstance, const char *pszAddress, size_t cbAddress, PREMOTEUSBDEVICE *ppDevice));
+    DECLCALLBACKMEMBER(void, pfnClose,(PREMOTEUSBDEVICE pDevice));
+    DECLCALLBACKMEMBER(int, pfnReset,(PREMOTEUSBDEVICE pDevice));
+    DECLCALLBACKMEMBER(int, pfnSetConfig,(PREMOTEUSBDEVICE pDevice, uint8_t u8Cfg));
+    DECLCALLBACKMEMBER(int, pfnClaimInterface,(PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum));
+    DECLCALLBACKMEMBER(int, pfnReleaseInterface,(PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum));
+    DECLCALLBACKMEMBER(int, pfnInterfaceSetting,(PREMOTEUSBDEVICE pDevice, uint8_t u8Ifnum, uint8_t u8Setting));
+    DECLCALLBACKMEMBER(int, pfnQueueURB,(PREMOTEUSBDEVICE pDevice, uint8_t u8Type, uint8_t u8Ep, uint8_t u8Direction, uint32_t u32Len, void *pvData, void *pvURB, PREMOTEUSBQURB *ppRemoteURB));
+    DECLCALLBACKMEMBER(int, pfnReapURB,(PREMOTEUSBDEVICE pDevice, uint32_t u32Millies, void **ppvURB, uint32_t *pu32Len, uint32_t *pu32Err));
+    DECLCALLBACKMEMBER(int, pfnClearHaltedEP,(PREMOTEUSBDEVICE pDevice, uint8_t u8Ep));
+    DECLCALLBACKMEMBER(void, pfnCancelURB,(PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB));
+    DECLCALLBACKMEMBER(int, pfnWakeup,(PREMOTEUSBDEVICE pDevice));
 } REMOTEUSBCALLBACK;
 
 /** @} */

@@ -83,7 +83,7 @@ typedef TSTDEVPLUGINREGISTER *PTSTDEVPLUGINREGISTER;
  * @param   pvUser             Opaque user data passed in the register callbacks.
  * @param   pRegisterCallbacks Pointer to the register callbacks structure.
  */
-typedef DECLCALLBACK(int) FNTSTDEVPLUGINLOAD(void *pvUser, PTSTDEVPLUGINREGISTER pRegisterCallbacks);
+typedef DECLCALLBACKTYPE(int, FNTSTDEVPLUGINLOAD,(void *pvUser, PTSTDEVPLUGINREGISTER pRegisterCallbacks));
 typedef FNTSTDEVPLUGINLOAD *PFNTSTDEVPLUGINLOAD;
 #define TSTDEV_PLUGIN_LOAD_NAME "TSTDevPluginLoad"
 

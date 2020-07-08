@@ -403,7 +403,7 @@ static bool addCertToStore(DWORD dwDst, const char *pszStoreNm, const char *pszC
  * Worker for cmdDisplayAll.
  */
 static BOOL WINAPI displaySystemStoreCallback(const void *pvSystemStore, DWORD dwFlags, PCERT_SYSTEM_STORE_INFO pStoreInfo,
-                                              void *pvReserved, void *pvArg)
+                                              void *pvReserved, void *pvArg) RT_NOTHROW_DEF
 {
     RT_NOREF(pvArg);
     if (g_cVerbosityLevel > 1)
@@ -481,7 +481,8 @@ static BOOL WINAPI displaySystemStoreCallback(const void *pvSystemStore, DWORD d
 /**
  * Worker for cmdDisplayAll.
  */
-static BOOL WINAPI displaySystemStoreLocation(LPCWSTR pwszStoreLocation, DWORD dwFlags, void *pvReserved, void *pvArg)
+static BOOL WINAPI
+displaySystemStoreLocation(LPCWSTR pwszStoreLocation, DWORD dwFlags, void *pvReserved, void *pvArg) RT_NOTHROW_DEF
 {
     NOREF(pvReserved); NOREF(pvArg);
     RTPrintf("System store location: %#010x '%ls'\n", dwFlags, pwszStoreLocation);

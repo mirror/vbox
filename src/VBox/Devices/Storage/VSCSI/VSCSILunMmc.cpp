@@ -89,7 +89,7 @@ typedef struct VSCSILUNMMC
  * @param   pbBuf           The buffer to use.
  * @param   cbBuf           Size of the buffer.
  */
-typedef DECLCALLBACK(size_t) FNVSCSILUNMMCFILLFEATURE(uint8_t *pbBuf, size_t cbBuf);
+typedef DECLCALLBACKTYPE(size_t, FNVSCSILUNMMCFILLFEATURE,(uint8_t *pbBuf, size_t cbBuf));
 /** Pointer to a fill feature callback. */
 typedef FNVSCSILUNMMCFILLFEATURE *PFNVSCSILUNMMCFILLFEATURE;
 

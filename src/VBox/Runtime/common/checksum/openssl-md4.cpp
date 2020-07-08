@@ -30,7 +30,9 @@
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
 
+#include "internal/openssl-pre.h"
 #include <openssl/opensslconf.h>
+#include "internal/openssl-post.h"
 #if 0 //ndef OPENSSL_NO_MD4
 # include <openssl/md4.h>
 

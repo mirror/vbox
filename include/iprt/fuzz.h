@@ -169,7 +169,7 @@ typedef RTFUZZCTXSTATS *PRTFUZZCTXSTATS;
  * @param   cbWrite             Number of bytes to write.
  * @param   pvUser              Opaque user data passed in RTFuzzCtxStateExport().
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXEXPORT(RTFUZZCTX hFuzzCtx, const void *pvBuf, size_t cbWrite, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTFUZZCTXEXPORT,(RTFUZZCTX hFuzzCtx, const void *pvBuf, size_t cbWrite, void *pvUser));
 /** Pointer to a fuzzing context state export callback. */
 typedef FNRTFUZZCTXEXPORT *PFNRTFUZZCTXEXPORT;
 
@@ -183,7 +183,7 @@ typedef FNRTFUZZCTXEXPORT *PFNRTFUZZCTXEXPORT;
  * @param   pcbRead             Where to store the amount of data written, optional.
  * @param   pvUser              Opaque user data passed in RTFuzzCtxCreateFromState().
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXIMPORT(RTFUZZCTX hFuzzCtx, void *pvBuf, size_t cbRead, size_t *pcbRead, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTFUZZCTXIMPORT,(RTFUZZCTX hFuzzCtx, void *pvBuf, size_t cbRead, size_t *pcbRead, void *pvUser));
 /** Pointer to a fuzzing context state export callback. */
 typedef FNRTFUZZCTXIMPORT *PFNRTFUZZCTXIMPORT;
 
@@ -937,7 +937,7 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdMaster(unsigned cArgs, char **papszArgs);
  * @param   cbBuf               Size of the buffer in bytes.
  * @param   pvUser              Opaque user data.
  */
-typedef DECLCALLBACK(int) FNFUZZCLIENTCONSUME(const void *pvBuf, size_t cbBuf, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNFUZZCLIENTCONSUME,(const void *pvBuf, size_t cbBuf, void *pvUser));
 /** Pointer to a client consumption callback. */
 typedef FNFUZZCLIENTCONSUME *PFNFUZZCLIENTCONSUME;
 

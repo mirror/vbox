@@ -289,15 +289,15 @@ typedef VSCSILUNIOCALLBACKS *PVSCSILUNIOCALLBACKS;
 /**
  * The virtual SCSI request completed callback.
  */
-typedef DECLCALLBACK(void) FNVSCSIREQCOMPLETED(VSCSIDEVICE hVScsiDevice,
-                                               void *pvVScsiDeviceUser,
-                                               void *pvVScsiReqUser,
-                                               int rcScsiCode,
-                                               bool fRedoPossible,
-                                               int rcReq,
-                                               size_t cbXfer,
-                                               VSCSIXFERDIR enmXferDir,
-                                               size_t cbSense);
+typedef DECLCALLBACKTYPE(void, FNVSCSIREQCOMPLETED,(VSCSIDEVICE hVScsiDevice,
+                                                    void *pvVScsiDeviceUser,
+                                                    void *pvVScsiReqUser,
+                                                    int rcScsiCode,
+                                                    bool fRedoPossible,
+                                                    int rcReq,
+                                                    size_t cbXfer,
+                                                    VSCSIXFERDIR enmXferDir,
+                                                    size_t cbSense));
 /** Pointer to a virtual SCSI request completed callback. */
 typedef FNVSCSIREQCOMPLETED *PFNVSCSIREQCOMPLETED;
 

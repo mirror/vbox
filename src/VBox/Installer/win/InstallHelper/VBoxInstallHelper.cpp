@@ -524,17 +524,17 @@ static VOID vboxDrvLoggerCallback(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *psz
     }
 }
 
-static VOID netCfgLoggerCallback(LPCSTR szString)
+static DECLCALLBACK(void) netCfgLoggerCallback(const char *pszString)
 {
     if (g_hCurrentModule)
-        logString(g_hCurrentModule, szString);
+        logString(g_hCurrentModule, pszString);
 }
 
 static VOID netCfgLoggerDisable()
 {
     if (g_hCurrentModule)
     {
-        VBoxNetCfgWinSetLogging((LOG_ROUTINE)NULL);
+        VBoxNetCfgWinSetLogging(NULL);
         g_hCurrentModule = NULL;
     }
 }
@@ -548,7 +548,7 @@ static VOID netCfgLoggerEnable(MSIHANDLE hModule)
 
     g_hCurrentModule = hModule;
 
-    VBoxNetCfgWinSetLogging((LOG_ROUTINE)netCfgLoggerCallback);
+    VBoxNetCfgWinSetLogging(netCfgLoggerCallback);
     /* uncomment next line if you want to add logging information from VBoxDrvCfg.cpp */
 //    VBoxDrvCfgLoggerSet(vboxDrvLoggerCallback, NULL);
 }

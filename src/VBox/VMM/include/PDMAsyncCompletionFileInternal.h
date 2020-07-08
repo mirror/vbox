@@ -452,7 +452,7 @@ AssertCompileMemberAlignment(PDMASYNCCOMPLETIONENDPOINTFILE, StatRead, sizeof(ui
 #endif
 
 /** Request completion function */
-typedef DECLCALLBACK(void)   FNPDMACTASKCOMPLETED(PPDMACTASKFILE pTask, void *pvUser, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMACTASKCOMPLETED,(PPDMACTASKFILE pTask, void *pvUser, int rc));
 /** Pointer to a request completion function. */
 typedef FNPDMACTASKCOMPLETED *PFNPDMACTASKCOMPLETED;
 

@@ -41,8 +41,10 @@
 # include "internal/magics.h"
 
 # include "internal/iprt-openssl.h"
+# include "internal/openssl-pre.h"
 # include <openssl/ssl.h>
 # include <openssl/tls1.h>
+# include "internal/openssl-post.h"
 
 
 /*********************************************************************************************************************************

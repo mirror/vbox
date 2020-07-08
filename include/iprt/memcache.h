@@ -75,7 +75,7 @@ typedef RTMEMCACHE                             *PRTMEMCACHE;
  *
  * @remarks No serialization is performed.
  */
-typedef DECLCALLBACK(int) FNMEMCACHECTOR(RTMEMCACHE hMemCache, void *pvObj, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNMEMCACHECTOR,(RTMEMCACHE hMemCache, void *pvObj, void *pvUser));
 /** Pointer to an object constructor for the memory cache. */
 typedef FNMEMCACHECTOR *PFNMEMCACHECTOR;
 
@@ -90,7 +90,7 @@ typedef FNMEMCACHECTOR *PFNMEMCACHECTOR;
  *
  * @remarks No serialization is performed.
  */
-typedef DECLCALLBACK(void) FNMEMCACHEDTOR(RTMEMCACHE hMemCache, void *pvObj, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNMEMCACHEDTOR,(RTMEMCACHE hMemCache, void *pvObj, void *pvUser));
 /** Pointer to an object destructor for the memory cache. */
 typedef FNMEMCACHEDTOR *PFNMEMCACHEDTOR;
 

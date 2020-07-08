@@ -362,9 +362,8 @@ private:
  *
  */
 
-typedef xmlParserInput* FNEXTERNALENTITYLOADER(const char *aURI,
-                                               const char *aID,
-                                               xmlParserCtxt *aCtxt);
+typedef DECLCALLBACKTYPE_EX(xmlParserInput *, RT_NOTHING, FNEXTERNALENTITYLOADER,(const char *aURI, const char *aID,
+                                                                                  xmlParserCtxt *aCtxt));
 typedef FNEXTERNALENTITYLOADER *PFNEXTERNALENTITYLOADER;
 
 class RT_DECL_CLASS GlobalLock
@@ -1138,8 +1137,8 @@ private:
     struct Data;
     struct Data *m;
 
-    static int ReadCallback(void *aCtxt, char *aBuf, int aLen);
-    static int CloseCallback (void *aCtxt);
+    static int ReadCallback(void *aCtxt, char *aBuf, int aLen) RT_NOTHROW_PROTO;
+    static int CloseCallback(void *aCtxt) RT_NOTHROW_PROTO;
 };
 
 /**
@@ -1169,9 +1168,9 @@ public:
     int write(const Document &rDoc, RTCString *pStrDst);
 
 private:
-    static int WriteCallbackForSize(void *pvUser, const char *pachBuf, int cbToWrite);
-    static int WriteCallbackForReal(void *pvUser, const char *pachBuf, int cbToWrite);
-    static int CloseCallback(void *pvUser);
+    static int WriteCallbackForSize(void *pvUser, const char *pachBuf, int cbToWrite) RT_NOTHROW_PROTO;
+    static int WriteCallbackForReal(void *pvUser, const char *pachBuf, int cbToWrite) RT_NOTHROW_PROTO;
+    static int CloseCallback(void *pvUser) RT_NOTHROW_PROTO;
 
     /** Pointer to the destination string while we're in the write() call.   */
     RTCString  *m_pStrDst;
@@ -1206,8 +1205,8 @@ public:
      */
     void write(const char *pcszFilename, bool fSafe);
 
-    static int WriteCallback(void *aCtxt, const char *aBuf, int aLen);
-    static int CloseCallback(void *aCtxt);
+    static int WriteCallback(void *aCtxt, const char *aBuf, int aLen) RT_NOTHROW_PROTO;
+    static int CloseCallback(void *aCtxt) RT_NOTHROW_PROTO;
 
     /** The suffix used by XmlFileWriter::write() for the temporary file. */
     static const char * const s_pszTmpSuff;

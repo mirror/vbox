@@ -260,7 +260,7 @@ typedef RTTRACELOGRDREVT           *PRTTRACELOGRDREVT;
  * @param   cbBuf               Number of bytes to stream.
  * @param   pcbWritten          Where to store the number of bytes written on success, optional.
  */
-typedef DECLCALLBACK(int) FNRTTRACELOGWRSTREAM(void *pvUser, const void *pvBuf, size_t cbBuf, size_t *pcbWritten);
+typedef DECLCALLBACKTYPE(int, FNRTTRACELOGWRSTREAM,(void *pvUser, const void *pvBuf, size_t cbBuf, size_t *pcbWritten));
 /** Pointer to a writer stream callback. */
 typedef FNRTTRACELOGWRSTREAM *PFNRTTRACELOGWRSTREAM;
 
@@ -278,8 +278,8 @@ typedef FNRTTRACELOGWRSTREAM *PFNRTTRACELOGWRSTREAM;
  * @param   pcbRead             Where to store the number of bytes read on success.
  * @param   cMsTimeout          How long to wait for something to arrive
  */
-typedef DECLCALLBACK(int) FNRTTRACELOGRDRSTREAM(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbRead,
-                                                RTMSINTERVAL cMsTimeout);
+typedef DECLCALLBACKTYPE(int, FNRTTRACELOGRDRSTREAM,(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbRead,
+                                                     RTMSINTERVAL cMsTimeout));
 /** Pointer to a writer stream callback. */
 typedef FNRTTRACELOGRDRSTREAM *PFNRTTRACELOGRDRSTREAM;
 
@@ -290,7 +290,7 @@ typedef FNRTTRACELOGRDRSTREAM *PFNRTTRACELOGRDRSTREAM;
  * @returns IPRT status code.
  * @param   pvUser              Opaque user data passed on trace log writer creation.
  */
-typedef DECLCALLBACK(int) FNRTTRACELOGSTREAMCLOSE(void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTTRACELOGSTREAMCLOSE,(void *pvUser));
 /** Pointer to a stream close callback. */
 typedef FNRTTRACELOGSTREAMCLOSE *PFNRTTRACELOGSTREAMCLOSE;
 

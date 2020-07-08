@@ -218,8 +218,9 @@ endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  # -wd4774: string(532): warning C4774: 'sprintf_s' : format string expected in argument 3 is not a string literal
  # -wd4458: stdsoap2.h(2644): warning C4458: declaration of 'type' hides class member
+ # -wd5039: x509v3.h(883): warning C5039: 'OPENSSL_sk_set_cmp_func': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
  # soapc-1.cpp(182) : warning C4883: 'soap_getelement': function size suppresses optimizations
- TEMPLATE_VBOXWEBR3EXE_CXXFLAGS.win = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.win) -wd4774 -wd4458 -wd4883
+ TEMPLATE_VBOXWEBR3EXE_CXXFLAGS.win = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.win) -wd4774 -wd4458 -wd4883 -wd5039
 endif
 
 ifdef VBOX_GSOAP_INSTALLED
@@ -388,6 +389,7 @@ ifdef VBOX_GSOAP_INSTALLED
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   vboxwebsrv_CXXFLAGS.win += -wd4774 # string(532): warning C4774: 'sprintf_s' : format string expected in argument 3 is not a string literal
   vboxwebsrv_CXXFLAGS.win += -wd4458 # stdsoap2.h(2644): warning C4458: declaration of 'type' hides class member
+  vboxwebsrv_CXXFLAGS.win += -wd5039 # x509v3.h(883): warning C5039: 'OPENSSL_sk_set_cmp_func': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
  endif
  ifn1of ($(KBUILD_TARGET), win)
   vboxwebsrv_CXXFLAGS += -Wno-shadow $(VBOX_GCC_Wno-literal-suffix) $(VBOX_GCC_Wno-misleading-indentation)

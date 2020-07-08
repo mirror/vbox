@@ -1190,7 +1190,7 @@ VMMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
  * @param   pVM         The cross context VM structure.
  * @param   pvSample    The sample registered using STAMR3RegisterCallback.
  */
-typedef void FNSTAMR3CALLBACKRESET(PVM pVM, void *pvSample);
+typedef DECLCALLBACKTYPE(void, FNSTAMR3CALLBACKRESET,(PVM pVM, void *pvSample));
 /** Pointer to a STAM sample reset callback. */
 typedef FNSTAMR3CALLBACKRESET *PFNSTAMR3CALLBACKRESET;
 
@@ -1202,7 +1202,7 @@ typedef FNSTAMR3CALLBACKRESET *PFNSTAMR3CALLBACKRESET;
  * @param   pszBuf      The buffer to print into.
  * @param   cchBuf      The size of the buffer.
  */
-typedef void FNSTAMR3CALLBACKPRINT(PVM pVM, void *pvSample, char *pszBuf, size_t cchBuf);
+typedef DECLCALLBACKTYPE(void, FNSTAMR3CALLBACKPRINT,(PVM pVM, void *pvSample, char *pszBuf, size_t cchBuf));
 /** Pointer to a STAM sample print callback. */
 typedef FNSTAMR3CALLBACKPRINT *PFNSTAMR3CALLBACKPRINT;
 
@@ -1246,8 +1246,8 @@ VMMR3DECL(int)  STAMR3Print(PUVM pUVM, const char *pszPat);
  * @param   pszDesc         The description.
  * @param   pvUser          The pvUser argument given to STAMR3Enum().
  */
-typedef DECLCALLBACK(int) FNSTAMR3ENUM(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                       STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNSTAMR3ENUM,(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
+                                            STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser));
 /** Pointer to a FNSTAMR3ENUM(). */
 typedef FNSTAMR3ENUM *PFNSTAMR3ENUM;
 

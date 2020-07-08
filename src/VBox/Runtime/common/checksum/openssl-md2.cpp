@@ -30,10 +30,14 @@
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
 
+#include "internal/openssl-pre.h"
 #include <openssl/opensslconf.h>
 #ifndef OPENSSL_NO_MD2
 # include <openssl/md2.h>
+#endif
+#include "internal/openssl-post.h"
 
+#ifndef OPENSSL_NO_MD2
 # define RT_MD2_PRIVATE_CONTEXT
 # include <iprt/md2.h>
 

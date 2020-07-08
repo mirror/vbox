@@ -123,7 +123,7 @@ static RTEXITCODE error(const char *pszFormat,  ...)
 
 
 /** qsort callback. */
-static int CompareErrMsg(const void *pv1, const void *pv2)
+static int CompareErrMsg(const void *pv1, const void *pv2) RT_NOTHROW_DEF
 {
     PRTSTATUSMSGINT1 p1 = (PRTSTATUSMSGINT1)pv1;
     PRTSTATUSMSGINT1 p2 = (PRTSTATUSMSGINT1)pv2;

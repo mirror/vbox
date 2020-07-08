@@ -514,7 +514,8 @@ RTR3DECL(bool) RTHttpGetVerifyPeer(RTHTTP hHttp);
  *                                   unavailable, probably 0.
  * @param   cbDowloaded     How much was downloaded thus far.
  */
-typedef DECLCALLBACK(void) FNRTHTTPDOWNLDPROGRCALLBACK(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal, uint64_t cbDownloaded);
+typedef DECLCALLBACKTYPE(void, FNRTHTTPDOWNLDPROGRCALLBACK,(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal,
+                                                            uint64_t cbDownloaded));
 /** Pointer to a download progress callback. */
 typedef FNRTHTTPDOWNLDPROGRCALLBACK *PFNRTHTTPDOWNLDPROGRCALLBACK;
 
@@ -545,8 +546,8 @@ RTR3DECL(int) RTHttpSetDownloadProgressCallback(RTHTTP hHttp, PFNRTHTTPDOWNLDPRO
  *          like that, it is just a convenience provided by the caller.  The
  *          value is the sum of the previous @a cbBuf values.
  */
-typedef DECLCALLBACK(int) FNRTHTTPDOWNLOADCALLBACK(RTHTTP hHttp, void const *pvBuf, size_t cbBuf, uint32_t uHttpStatus,
-                                                   uint64_t offContent, uint64_t cbContent, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTHTTPDOWNLOADCALLBACK,(RTHTTP hHttp, void const *pvBuf, size_t cbBuf, uint32_t uHttpStatus,
+                                                        uint64_t offContent, uint64_t cbContent, void *pvUser));
 /** Pointer to a download data receiver callback. */
 typedef FNRTHTTPDOWNLOADCALLBACK *PFNRTHTTPDOWNLOADCALLBACK;
 
@@ -593,8 +594,8 @@ RTR3DECL(int) RTHttpSetDownloadCallback(RTHTTP hHttp, uint32_t fFlags, PFNRTHTTP
  *          like that, it is just a convenience provided by the caller.  The
  *          value is the sum of the previously returned @a *pcbActual values.
  */
-typedef DECLCALLBACK(int) FNRTHTTPUPLOADCALLBACK(RTHTTP hHttp, void *pvBuf, size_t cbBuf, uint64_t offContent,
-                                                 size_t *pcbActual, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTHTTPUPLOADCALLBACK,(RTHTTP hHttp, void *pvBuf, size_t cbBuf, uint64_t offContent,
+                                                      size_t *pcbActual, void *pvUser));
 /** Pointer to an upload data producer callback. */
 typedef FNRTHTTPUPLOADCALLBACK *PFNRTHTTPUPLOADCALLBACK;
 
@@ -630,8 +631,8 @@ RTR3DECL(int) RTHttpSetUploadCallback(RTHTTP hHttp, uint64_t cbContent, PFNRTHTT
  *              - ':http-status-line' -- the HTTP/{version} {status-code} stuff.
  *              - ':end-of-headers'   -- marks the end of header callbacks.
  */
-typedef DECLCALLBACK(int) FNRTHTTPHEADERCALLBACK(RTHTTP hHttp, uint32_t uMatchWord, const char *pchField, size_t cchField,
-                                                 const char *pchValue, size_t cchValue, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTHTTPHEADERCALLBACK,(RTHTTP hHttp, uint32_t uMatchWord, const char *pchField, size_t cchField,
+                                                      const char *pchValue, size_t cchValue, void *pvUser));
 /** Pointer to a header field consumer callback. */
 typedef FNRTHTTPHEADERCALLBACK *PFNRTHTTPHEADERCALLBACK;
 
@@ -661,14 +662,14 @@ RTR3DECL(int) RTHttpSetHeaderCallback(RTHTTP hHttp, PFNRTHTTPHEADERCALLBACK pfnC
 
 
 /** @name thin wrappers for setting one or a few related curl options
- * @remarks Temporary. Will not be included in the 6.0 release!
+ * @remarks Temporary. Will not be included in the 7.0 release!
  * @{ */
-typedef size_t FNRTHTTPREADCALLBACKRAW(void *pbDst, size_t cbItem, size_t cItems, void *pvUser);
+typedef DECLCALLBACKTYPE_EX(size_t, RT_NOTHING, FNRTHTTPREADCALLBACKRAW,(void *pbDst, size_t cbItem, size_t cItems, void *pvUser));
 typedef FNRTHTTPREADCALLBACKRAW *PFNRTHTTPREADCALLBACKRAW;
 #define RT_HTTP_READCALLBACK_ABORT 0x10000000 /* CURL_READFUNC_ABORT */
 RTR3DECL(int) RTHttpRawSetReadCallback(RTHTTP hHttp, PFNRTHTTPREADCALLBACKRAW pfnRead, void *pvUser);
 
-typedef size_t FNRTHTTPWRITECALLBACKRAW(char *pbSrc, size_t cbItem, size_t cItems, void *pvUser);
+typedef DECLCALLBACKTYPE_EX(size_t, RT_NOTHING, FNRTHTTPWRITECALLBACKRAW,(char *pbSrc, size_t cbItem, size_t cItems, void *pvUser));
 typedef FNRTHTTPWRITECALLBACKRAW *PFNRTHTTPWRITECALLBACKRAW;
 RTR3DECL(int) RTHttpRawSetWriteCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACKRAW pfnWrite, void *pvUser);
 RTR3DECL(int) RTHttpRawSetWriteHeaderCallback(RTHTTP hHttp, PFNRTHTTPWRITECALLBACKRAW pfnWrite, void *pvUser);

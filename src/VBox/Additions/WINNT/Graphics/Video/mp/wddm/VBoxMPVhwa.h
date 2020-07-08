@@ -34,8 +34,8 @@ void vboxVhwaCommandFree(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATI
 int  vboxVhwaCommandSubmit(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST * pCmd);
 void vboxVhwaCommandSubmitAsynchAndComplete(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd);
 
-typedef DECLCALLBACK(void) FNVBOXVHWACMDCOMPLETION(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST * pCmd,
-                                                   void *pvContext);
+typedef DECLCALLBACKTYPE(void, FNVBOXVHWACMDCOMPLETION,(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd,
+                                                        void *pvContext));
 typedef FNVBOXVHWACMDCOMPLETION *PFNVBOXVHWACMDCOMPLETION;
 
 void vboxVhwaCommandSubmitAsynch(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd,

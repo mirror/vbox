@@ -165,7 +165,7 @@ typedef const GVMMSTATS *PCGVMMSTATS;
  * @param   pGVM        The VM
  * @param   pvUser      The user parameter.
  *  */
-typedef DECLCALLBACK(int) FNGVMMR0ENUMCALLBACK(PGVM pGVM, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNGVMMR0ENUMCALLBACK,(PGVM pGVM, void *pvUser));
 /** Pointer to an VM enumeration callback function. */
 typedef FNGVMMR0ENUMCALLBACK *PFNGVMMR0ENUMCALLBACK;
 

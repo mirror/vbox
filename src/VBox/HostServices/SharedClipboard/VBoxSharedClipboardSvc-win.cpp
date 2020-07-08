@@ -198,7 +198,7 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **p
 }
 
 static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
-                                                       HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+                                                       HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_DEF
 {
     AssertPtr(pCtx);
 
@@ -401,8 +401,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
 /**
  * Static helper function for having a per-client proxy window instances.
  */
-static LRESULT CALLBACK vboxClipboardSvcWinWndProcInstance(HWND hWnd, UINT uMsg,
-                                                           WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK vboxClipboardSvcWinWndProcInstance(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_DEF
 {
     LONG_PTR pUserData = GetWindowLongPtr(hWnd, GWLP_USERDATA);
     AssertPtrReturn(pUserData, 0);
@@ -418,7 +417,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcInstance(HWND hWnd, UINT uMsg,
  * Static helper function for routing Windows messages to a specific
  * proxy window instance.
  */
-static LRESULT CALLBACK vboxClipboardSvcWinWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK vboxClipboardSvcWinWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_DEF
 {
     /* Note: WM_NCCREATE is not the first ever message which arrives, but
      *       early enough for us. */

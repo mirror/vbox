@@ -39,7 +39,9 @@
 #ifdef IPRT_WITH_OPENSSL
 # include "internal/iprt-openssl.h"
 # include "internal/magics.h"
-# include "openssl/evp.h"
+# include "internal/openssl-pre.h"
+# include <openssl/evp.h>
+# include "internal/openssl-post.h"
 # ifndef OPENSSL_VERSION_NUMBER
 #  error "Missing OPENSSL_VERSION_NUMBER!"
 # endif

@@ -54,17 +54,17 @@ typedef struct DBGGUIVT
     /** The version. (DBGGUIVT_VERSION) */
     uint32_t u32Version;
     /** @copydoc DBGGuiDestroy */
-    DECLCALLBACKMEMBER(int,  pfnDestroy)(PDBGGUI pGui);
+    DECLCALLBACKMEMBER(int, pfnDestroy,(PDBGGUI pGui));
     /** @copydoc DBGGuiAdjustRelativePos */
-    DECLCALLBACKMEMBER(void, pfnAdjustRelativePos)(PDBGGUI pGui, int x, int y, unsigned cx, unsigned cy);
+    DECLCALLBACKMEMBER(void, pfnAdjustRelativePos,(PDBGGUI pGui, int x, int y, unsigned cx, unsigned cy));
     /** @copydoc DBGGuiShowStatistics */
-    DECLCALLBACKMEMBER(int,  pfnShowStatistics)(PDBGGUI pGui);
+    DECLCALLBACKMEMBER(int, pfnShowStatistics,(PDBGGUI pGui));
     /** @copydoc DBGGuiShowCommandLine */
-    DECLCALLBACKMEMBER(int,  pfnShowCommandLine)(PDBGGUI pGui);
+    DECLCALLBACKMEMBER(int, pfnShowCommandLine,(PDBGGUI pGui));
     /** @copydoc DBGGuiSetParent */
-    DECLCALLBACKMEMBER(void, pfnSetParent)(PDBGGUI pGui, void *pvParent);
+    DECLCALLBACKMEMBER(void, pfnSetParent,(PDBGGUI pGui, void *pvParent));
     /** @copydoc DBGGuiSetMenu */
-    DECLCALLBACKMEMBER(void, pfnSetMenu)(PDBGGUI pGui, void *pvMenu);
+    DECLCALLBACKMEMBER(void, pfnSetMenu,(PDBGGUI pGui, void *pvMenu));
     /** The end version. (DBGGUIVT_VERSION) */
     uint32_t u32EndVersion;
 } DBGGUIVT;
@@ -94,7 +94,7 @@ typedef DBGGUIVT const *PCDBGGUIVT;
  */
 DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
 /** @copydoc DBGGuiCreate */
-typedef DECLCALLBACK(int) FNDBGGUICREATE(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
+typedef DECLCALLBACKTYPE(int, FNDBGGUICREATE,(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT));
 /** Pointer to DBGGuiCreate. */
 typedef FNDBGGUICREATE *PFNDBGGUICREATE;
 
@@ -109,7 +109,7 @@ typedef FNDBGGUICREATE *PFNDBGGUICREATE;
  */
 DBGDECL(int) DBGGuiCreateForVM(PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
 /** @copydoc DBGGuiCreateForVM */
-typedef DECLCALLBACK(int) FNDBGGUICREATEFORVM(PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
+typedef DECLCALLBACKTYPE(int, FNDBGGUICREATEFORVM,(PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT));
 /** Pointer to DBGGuiCreateForVM. */
 typedef FNDBGGUICREATEFORVM *PFNDBGGUICREATEFORVM;
 

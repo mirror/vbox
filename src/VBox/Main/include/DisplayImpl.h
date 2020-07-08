@@ -409,12 +409,13 @@ private:
 
 public:
 
-    static int i_displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppbData, size_t *pcbData,
-                                          uint32_t *pcx, uint32_t *pcy, bool *pfMemFree);
+    static DECLCALLBACK(int) i_displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppbData, size_t *pcbData,
+                                                        uint32_t *pcx, uint32_t *pcy, bool *pfMemFree);
 
 private:
-    static int i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll);
-    static int i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
+    static DECLCALLBACK(int) i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll);
+    static DECLCALLBACK(int) i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y,
+                                               ULONG width, ULONG height);
 
     void i_updateGuestGraphicsFacility(void);
 

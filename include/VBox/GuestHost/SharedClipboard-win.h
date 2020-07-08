@@ -130,7 +130,7 @@ bool SharedClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI);
 
 int SharedClipboardWinChainAdd(PSHCLWINCTX pCtx);
 int SharedClipboardWinChainRemove(PSHCLWINCTX pCtx);
-VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
+VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult) RT_NOTHROW_DEF;
 LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
 
 SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat);

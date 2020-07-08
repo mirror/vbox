@@ -36,9 +36,9 @@
 # define VBOX_NETADP_HWID L"sun_VBoxNetAdp"
 #endif
 
-static VOID winNetCfgLogger(LPCSTR szString)
+static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
-    printf("%s", szString);
+    printf("%s", pszString);
 }
 
 static int VBoxNetAdpUninstall(void)

@@ -461,7 +461,7 @@ typedef struct VDFILTERINFO
 /**
  * Request completion callback for the async read/write API.
  */
-typedef DECLCALLBACK(void) FNVDASYNCTRANSFERCOMPLETE (void *pvUser1, void *pvUser2, int rcReq);
+typedef DECLCALLBACKTYPE(void, FNVDASYNCTRANSFERCOMPLETE,(void *pvUser1, void *pvUser2, int rcReq));
 /** Pointer to a transfer compelte callback. */
 typedef FNVDASYNCTRANSFERCOMPLETE *PFNVDASYNCTRANSFERCOMPLETE;
 
@@ -1724,9 +1724,8 @@ typedef VDIOREQTYPE *PVDIOREQTYPE;
  * @param   pvVdIoReq       Pointer to the allocator specific memory for this request.
  * @param   rcReq           The completion status code.
  */
-typedef DECLCALLBACK(void) FNVDIOQUEUEREQCOMPLETE(VDIOQUEUE hVdIoQueue, PVDISK pDisk,
-                                                  VDIOREQ hVdIoReq, void *pvVdIoReq,
-                                                  int rcReq);
+typedef DECLCALLBACKTYPE(void, FNVDIOQUEUEREQCOMPLETE,(VDIOQUEUE hVdIoQueue, PVDISK pDisk,
+                                                       VDIOREQ hVdIoReq,  void *pvVdIoReq, int rcReq));
 /** Pointer to a VD I/O queue request completion callback. */
 typedef FNVDIOQUEUEREQCOMPLETE *PFNVDIOQUEUEREQCOMPLETE;
 

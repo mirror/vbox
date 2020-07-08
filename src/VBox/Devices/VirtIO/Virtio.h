@@ -147,7 +147,7 @@ typedef VQUEUE *PVQUEUE;
  * @param   pDevIns         The device instance.
  * @param   pQueue          Pointer to the queue structure.
  */
-typedef DECLCALLBACK(void) FNVPCIQUEUECALLBACK(PPDMDEVINS pDevIns, PVQUEUE pQueue);
+typedef DECLCALLBACKTYPE(void, FNVPCIQUEUECALLBACK,(PPDMDEVINS pDevIns, PVQUEUE pQueue));
 /** Pointer to a VQUEUE callback function. */
 typedef FNVPCIQUEUECALLBACK *PFNVPCIQUEUECALLBACK;
 
@@ -266,13 +266,13 @@ typedef struct VPCISTATERC
  * @{ */
 typedef struct VPCIIOCALLBACKS
 {
-     DECLCALLBACKMEMBER(uint32_t, pfnGetHostFeatures)(PVPCISTATE pVPciState);
-     DECLCALLBACKMEMBER(uint32_t, pfnGetHostMinimalFeatures)(PVPCISTATE pVPciState);
-     DECLCALLBACKMEMBER(void,     pfnSetHostFeatures)(PVPCISTATE pVPciState, uint32_t fFeatures);
-     DECLCALLBACKMEMBER(int,      pfnGetConfig)(PVPCISTATE pVPciState, uint32_t offCfg, uint32_t cb, void *pvData);
-     DECLCALLBACKMEMBER(int,      pfnSetConfig)(PVPCISTATE pVPciState, uint32_t offCfg, uint32_t cb, void *pvData);
-     DECLCALLBACKMEMBER(int,      pfnReset)(PPDMDEVINS pDevIns);
-     DECLCALLBACKMEMBER(void,     pfnReady)(PPDMDEVINS pDevIns);
+     DECLCALLBACKMEMBER(uint32_t, pfnGetHostFeatures,(PVPCISTATE pVPciState));
+     DECLCALLBACKMEMBER(uint32_t, pfnGetHostMinimalFeatures,(PVPCISTATE pVPciState));
+     DECLCALLBACKMEMBER(void, pfnSetHostFeatures,(PVPCISTATE pVPciState, uint32_t fFeatures));
+     DECLCALLBACKMEMBER(int, pfnGetConfig,(PVPCISTATE pVPciState, uint32_t offCfg, uint32_t cb, void *pvData));
+     DECLCALLBACKMEMBER(int, pfnSetConfig,(PVPCISTATE pVPciState, uint32_t offCfg, uint32_t cb, void *pvData));
+     DECLCALLBACKMEMBER(int, pfnReset,(PPDMDEVINS pDevIns));
+     DECLCALLBACKMEMBER(void, pfnReady,(PPDMDEVINS pDevIns));
 } VPCIIOCALLBACKS;
 /** Pointer to a const VirtIO port I/O callback structure. */
 typedef const VPCIIOCALLBACKS *PCVPCIIOCALLBACKS;

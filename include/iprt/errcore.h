@@ -292,7 +292,7 @@ RTDECL(int)  RTErrConvertToErrno(int iErr);
  * @param   pachChars   Pointer to an array of utf-8 characters.
  * @param   cbChars     Number of bytes in the character array pointed to by pachChars.
  */
-typedef DECLCALLBACK(size_t) FNRTSTROUTPUT(void *pvArg, const char *pachChars, size_t cbChars);
+typedef DECLCALLBACKTYPE(size_t, FNRTSTROUTPUT,(void *pvArg, const char *pachChars, size_t cbChars));
 /** Pointer to callback function. */
 typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
 #endif

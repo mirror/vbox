@@ -45,8 +45,10 @@
 #include <iprt/vfs.h>
 
 
-
-typedef DECLCALLBACK(int) FNLLVMFUZZERTESTONEINPUT(const uint8_t *pbData, size_t cbData);
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+typedef DECLCALLBACKTYPE(int, FNLLVMFUZZERTESTONEINPUT,(const uint8_t *pbData, size_t cbData));
 typedef FNLLVMFUZZERTESTONEINPUT *PFNLLVMFUZZERTESTONEINPUT;
 
 

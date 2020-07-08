@@ -294,7 +294,7 @@ RTDECL(bool) RTMpIsCpuWorkPending(void);
  * @param   pvUser1     The 1st user argument.
  * @param   pvUser2     The 2nd user argument.
  */
-typedef DECLCALLBACK(void) FNRTMPWORKER(RTCPUID idCpu, void *pvUser1, void *pvUser2);
+typedef DECLCALLBACKTYPE(void, FNRTMPWORKER,(RTCPUID idCpu, void *pvUser1, void *pvUser2));
 /** Pointer to a FNRTMPWORKER. */
 typedef FNRTMPWORKER *PFNRTMPWORKER;
 
@@ -461,7 +461,7 @@ typedef enum RTMPEVENT
  * @param   enmEvent    The event.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(void) FNRTMPNOTIFICATION(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTMPNOTIFICATION,(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser));
 /** Pointer to a FNRTMPNOTIFICATION(). */
 typedef FNRTMPNOTIFICATION *PFNRTMPNOTIFICATION;
 

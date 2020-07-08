@@ -77,7 +77,7 @@ typedef struct PDMQUEUEITEMCORE
  *          callback.  No locks will be held, but for now it's safe to assume
  *          that only one EMT will do queue callbacks at any one time.
  */
-typedef DECLCALLBACK(bool) FNPDMQUEUEDEV(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem);
+typedef DECLCALLBACKTYPE(bool, FNPDMQUEUEDEV,(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem));
 /** Pointer to a FNPDMQUEUEDEV(). */
 typedef FNPDMQUEUEDEV *PFNPDMQUEUEDEV;
 
@@ -91,7 +91,7 @@ typedef FNPDMQUEUEDEV *PFNPDMQUEUEDEV;
  * @remarks No locks will be held, but for now it's safe to assume that only one
  *          EMT will do queue callbacks at any one time.
  */
-typedef DECLCALLBACK(bool) FNPDMQUEUEUSB(PPDMUSBINS pUsbIns, PPDMQUEUEITEMCORE pItem);
+typedef DECLCALLBACKTYPE(bool, FNPDMQUEUEUSB,(PPDMUSBINS pUsbIns, PPDMQUEUEITEMCORE pItem));
 /** Pointer to a FNPDMQUEUEUSB(). */
 typedef FNPDMQUEUEUSB *PFNPDMQUEUEUSB;
 
@@ -105,7 +105,7 @@ typedef FNPDMQUEUEUSB *PFNPDMQUEUEUSB;
  * @remarks No locks will be held, but for now it's safe to assume that only one
  *          EMT will do queue callbacks at any one time.
  */
-typedef DECLCALLBACK(bool) FNPDMQUEUEDRV(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItem);
+typedef DECLCALLBACKTYPE(bool, FNPDMQUEUEDRV,(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItem));
 /** Pointer to a FNPDMQUEUEDRV(). */
 typedef FNPDMQUEUEDRV *PFNPDMQUEUEDRV;
 
@@ -119,7 +119,7 @@ typedef FNPDMQUEUEDRV *PFNPDMQUEUEDRV;
  * @remarks No locks will be held, but for now it's safe to assume that only one
  *          EMT will do queue callbacks at any one time.
  */
-typedef DECLCALLBACK(bool) FNPDMQUEUEINT(PVM pVM, PPDMQUEUEITEMCORE pItem);
+typedef DECLCALLBACKTYPE(bool, FNPDMQUEUEINT,(PVM pVM, PPDMQUEUEITEMCORE pItem));
 /** Pointer to a FNPDMQUEUEINT(). */
 typedef FNPDMQUEUEINT *PFNPDMQUEUEINT;
 
@@ -133,7 +133,7 @@ typedef FNPDMQUEUEINT *PFNPDMQUEUEINT;
  * @remarks No locks will be held, but for now it's safe to assume that only one
  *          EMT will do queue callbacks at any one time.
  */
-typedef DECLCALLBACK(bool) FNPDMQUEUEEXT(void *pvUser, PPDMQUEUEITEMCORE pItem);
+typedef DECLCALLBACKTYPE(bool, FNPDMQUEUEEXT,(void *pvUser, PPDMQUEUEITEMCORE pItem));
 /** Pointer to a FNPDMQUEUEEXT(). */
 typedef FNPDMQUEUEEXT *PFNPDMQUEUEEXT;
 

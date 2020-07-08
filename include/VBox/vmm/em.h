@@ -115,16 +115,16 @@ VMM_INT_DECL(void)              EMSetState(PVMCPU pVCpu, EMSTATE enmNewState);
  * These are placed here because IOM wants to use them as well.
  * @{
  */
-typedef DECLCALLBACK(uint32_t)  FNEMULATEPARAM2UINT32(void *pvParam1, uint64_t val2);
-typedef FNEMULATEPARAM2UINT32  *PFNEMULATEPARAM2UINT32;
-typedef DECLCALLBACK(uint32_t)  FNEMULATEPARAM2(void *pvParam1, size_t val2);
-typedef FNEMULATEPARAM2        *PFNEMULATEPARAM2;
-typedef DECLCALLBACK(uint32_t)  FNEMULATEPARAM3(void *pvParam1, uint64_t val2, size_t val3);
-typedef FNEMULATEPARAM3        *PFNEMULATEPARAM3;
-typedef DECLCALLBACK(int)       FNEMULATELOCKPARAM2(void *pvParam1, uint64_t val2, RTGCUINTREG32 *pf);
-typedef FNEMULATELOCKPARAM2    *PFNEMULATELOCKPARAM2;
-typedef DECLCALLBACK(int)       FNEMULATELOCKPARAM3(void *pvParam1, uint64_t val2, size_t cb, RTGCUINTREG32 *pf);
-typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
+typedef DECLCALLBACKTYPE(uint32_t, FNEMULATEPARAM2UINT32,(void *pvParam1, uint64_t val2));
+typedef FNEMULATEPARAM2UINT32    *PFNEMULATEPARAM2UINT32;
+typedef DECLCALLBACKTYPE(uint32_t, FNEMULATEPARAM2,(void *pvParam1, size_t val2));
+typedef FNEMULATEPARAM2          *PFNEMULATEPARAM2;
+typedef DECLCALLBACKTYPE(uint32_t, FNEMULATEPARAM3,(void *pvParam1, uint64_t val2, size_t val3));
+typedef FNEMULATEPARAM3          *PFNEMULATEPARAM3;
+typedef DECLCALLBACKTYPE(int, FNEMULATELOCKPARAM2,(void *pvParam1, uint64_t val2, RTGCUINTREG32 *pf));
+typedef FNEMULATELOCKPARAM2 *PFNEMULATELOCKPARAM2;
+typedef DECLCALLBACKTYPE(int, FNEMULATELOCKPARAM3,(void *pvParam1, uint64_t val2, size_t cb, RTGCUINTREG32 *pf));
+typedef FNEMULATELOCKPARAM3 *PFNEMULATELOCKPARAM3;
 /** @}  */
 
 VMMDECL(void)                   EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC);

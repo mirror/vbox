@@ -144,9 +144,7 @@ struct VBVAINFOVIEW;
  * @param  pInfo   array of @a VBVAINFOVIEW structures to be filled in
  * @todo  explicitly pass the array size
  */
-typedef DECLCALLBACK(int) FNHGSMIFILLVIEWINFO(void *pvData,
-                                              struct VBVAINFOVIEW *pInfo,
-                                              uint32_t cViews);
+typedef DECLCALLBACKTYPE(int, FNHGSMIFILLVIEWINFO,(void *pvData, struct VBVAINFOVIEW *pInfo, uint32_t cViews));
 /** Pointer to a FNHGSMIFILLVIEWINFO callback */
 typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
 

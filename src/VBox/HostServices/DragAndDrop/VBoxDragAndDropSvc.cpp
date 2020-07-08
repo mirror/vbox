@@ -1219,7 +1219,7 @@ DECLCALLBACK(int) DragAndDropService::progressCallback(uint32_t uStatus, uint32_
 }
 
 /**
- * @copydoc VBOXHGCMSVCLOAD
+ * @copydoc FNVBOXHGCMSVCLOAD
  */
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTable)
 {

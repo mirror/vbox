@@ -82,8 +82,8 @@ typedef PCIIOREGION const *PCPCIIOREGION;
  * @param   cb              The register size. [1,2,4]
  * @param   pu32Value       Where to return the register value.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNPCIBRIDGECONFIGREAD(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
-                                                         uint32_t u32Address, unsigned cb, uint32_t *pu32Value);
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPCIBRIDGECONFIGREAD,(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
+                                                              uint32_t u32Address, unsigned cb, uint32_t *pu32Value));
 /** Pointer to a FNPCICONFIGREAD() function. */
 typedef FNPCIBRIDGECONFIGREAD *PFNPCIBRIDGECONFIGREAD;
 /** Pointer to a PFNPCICONFIGREAD. */
@@ -101,8 +101,8 @@ typedef PFNPCIBRIDGECONFIGREAD *PPFNPCIBRIDGECONFIGREAD;
  * @param   u32Value        The value that's being written. The number of bits actually used from
  *                          this value is determined by the cb parameter.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNPCIBRIDGECONFIGWRITE(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
-                                                          uint32_t u32Address, unsigned cb, uint32_t u32Value);
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPCIBRIDGECONFIGWRITE,(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
+                                                               uint32_t u32Address, unsigned cb, uint32_t u32Value));
 /** Pointer to a FNPCICONFIGWRITE() function. */
 typedef FNPCIBRIDGECONFIGWRITE *PFNPCIBRIDGECONFIGWRITE;
 /** Pointer to a PFNPCICONFIGWRITE. */

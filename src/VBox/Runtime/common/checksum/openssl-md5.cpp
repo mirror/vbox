@@ -30,7 +30,9 @@
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
 
+#include "internal/openssl-pre.h"
 #include <openssl/md5.h>
+#include "internal/openssl-post.h"
 
 #define RT_MD5_OPENSSL_PRIVATE_CONTEXT
 #include <iprt/md5.h>

@@ -121,7 +121,7 @@ typedef struct USBDEVDESC
  * @param   pszTest         Test name.
  * @param   pParams         The USB test parameters to set up.
  */
-typedef DECLCALLBACK(int) FNUSBTESTPARAMSSETUP(unsigned idxTest, const char *pszTest, PUSBTESTPARAMS pParams);
+typedef DECLCALLBACKTYPE(int, FNUSBTESTPARAMSSETUP,(unsigned idxTest, const char *pszTest, PUSBTESTPARAMS pParams));
 /** Pointer to a USB test parameters setup callback. */
 typedef FNUSBTESTPARAMSSETUP *PFNUSBTESTPARAMSSETUP;
 

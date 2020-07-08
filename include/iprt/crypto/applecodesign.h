@@ -251,7 +251,7 @@ RTDECL(int) RTCrAppleCsInit(PRTCRAPLCS pDesc, void const *pvBlob, size_t cbBlob,
  * @param   cb          Number of bytes to digest.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(int) FNRTCRAPPLECSDIGESTAREA(RTCRDIGEST hDigest, size_t off, size_t cb, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTCRAPPLECSDIGESTAREA,(RTCRDIGEST hDigest, size_t off, size_t cb, void *pvUser));
 /** Pointer to a image digest callback. */
 typedef FNRTCRAPPLECSDIGESTAREA *PFNRTCRAPPLECSDIGESTAREA;
 

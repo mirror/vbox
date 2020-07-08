@@ -34,13 +34,13 @@ typedef struct
      * Start service.
      * @returns VBox status code.
      */
-    DECLCALLBACKMEMBER(int, pfnStart)(void);
+    DECLCALLBACKMEMBER(int, pfnStart,(void));
 
     /**
      * Stop service.
      * @returns VBox status code.
      */
-    DECLCALLBACKMEMBER(int, pfnStop)(void);
+    DECLCALLBACKMEMBER(int, pfnStop,(void));
 
 } VBOXCLIENTSERVICE;
 

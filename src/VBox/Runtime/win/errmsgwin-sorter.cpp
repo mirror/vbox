@@ -120,7 +120,7 @@ static RTEXITCODE error(const char *pszFormat,  ...)
 
 
 /** qsort callback. */
-static int CompareWinErrMsg(const void *pv1, const void *pv2)
+static int CompareWinErrMsg(const void *pv1, const void *pv2) RT_NOTHROW_DEF
 {
     PCRTWINERRMSG p1 = (PCRTWINERRMSG)pv1;
     PCRTWINERRMSG p2 = (PCRTWINERRMSG)pv2;

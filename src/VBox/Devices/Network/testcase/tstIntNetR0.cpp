@@ -75,7 +75,7 @@ typedef enum SUPDRVOBJTYPE
  * @param   pvUser1     The first user argument.
  * @param   pvUser2     The second user argument.
  */
-typedef DECLCALLBACK(void) FNSUPDRVDESTRUCTOR(void *pvObj, void *pvUser1, void *pvUser2);
+typedef DECLCALLBACKTYPE(void, FNSUPDRVDESTRUCTOR,(void *pvObj, void *pvUser1, void *pvUser2));
 /** Pointer to a FNSUPDRVDESTRUCTOR(). */
 typedef FNSUPDRVDESTRUCTOR *PFNSUPDRVDESTRUCTOR;
 

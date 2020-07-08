@@ -179,7 +179,7 @@ typedef struct RTVFSOBJOPS
      * @returns IPRT status code.
      * @param   pvThis      The implementation specific file data.
      */
-    DECLCALLBACKMEMBER(int, pfnClose)(void *pvThis);
+    DECLCALLBACKMEMBER(int, pfnClose,(void *pvThis));
 
     /**
      * Get information about the file.
@@ -191,7 +191,7 @@ typedef struct RTVFSOBJOPS
      * @param   enmAddAttr  Which set of additional attributes to request.
      * @sa      RTVfsObjQueryInfo, RTFileQueryInfo, RTPathQueryInfo
      */
-    DECLCALLBACKMEMBER(int, pfnQueryInfo)(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+    DECLCALLBACKMEMBER(int, pfnQueryInfo,(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr));
 
     /** Marks the end of the structure (RTVFSOBJOPS_VERSION). */
     uintptr_t               uEndMarker;
@@ -222,7 +222,7 @@ typedef struct RTVFSOPS
      * @param   pvThis      The implementation specific data.
      * @param   phVfsDir    Where to return the handle to the root directory.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenRoot)(void *pvThis, PRTVFSDIR phVfsDir);
+    DECLCALLBACKMEMBER(int, pfnOpenRoot,(void *pvThis, PRTVFSDIR phVfsDir));
 
     /**
      * Query the status of the given storage range (optional).
@@ -236,7 +236,7 @@ typedef struct RTVFSOPS
      * @param   cb          Number of bytes to check.
      * @param   pfUsed      Where to store whether the given range is in use.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryRangeState)(void *pvThis, uint64_t off, size_t cb, bool *pfUsed);
+    DECLCALLBACKMEMBER(int, pfnQueryRangeState,(void *pvThis, uint64_t off, size_t cb, bool *pfUsed));
 
     /** @todo There will be more methods here to optimize opening and
      *        querying. */
@@ -253,7 +253,7 @@ typedef struct RTVFSOPS
      * @param   phVfs???    Return handle to what we've traversed.
      * @param   p???        Return other stuff...
      */
-    DECLCALLBACKMEMBER(int, pfnTraverse)(void *pvThis, const char *pszPath, size_t *poffPath, PRTVFS??? phVfs?, ???* p???);
+    DECLCALLBACKMEMBER(int, pfnTraverse,(void *pvThis, const char *pszPath, size_t *poffPath, PRTVFS??? phVfs?, ???* p???));
 #endif
 
     /** @todo need rename API */
@@ -343,7 +343,7 @@ typedef struct RTVFSOBJSETOPS
      * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileSetMode
      */
-    DECLCALLBACKMEMBER(int, pfnSetMode)(void *pvThis, RTFMODE fMode, RTFMODE fMask);
+    DECLCALLBACKMEMBER(int, pfnSetMode,(void *pvThis, RTFMODE fMode, RTFMODE fMask));
 
     /**
      * Set the timestamps associated with the object.
@@ -363,8 +363,8 @@ typedef struct RTVFSOBJSETOPS
      * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileSetTimes
      */
-    DECLCALLBACKMEMBER(int, pfnSetTimes)(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                         PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
+    DECLCALLBACKMEMBER(int, pfnSetTimes,(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                         PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime));
 
     /**
      * Set the unix style owner and group.
@@ -378,7 +378,7 @@ typedef struct RTVFSOBJSETOPS
      * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileSetOwner
      */
-    DECLCALLBACKMEMBER(int, pfnSetOwner)(void *pvThis, RTUID uid, RTGID gid);
+    DECLCALLBACKMEMBER(int, pfnSetOwner,(void *pvThis, RTUID uid, RTGID gid));
 
     /** Marks the end of the structure (RTVFSOBJSETOPS_VERSION). */
     uintptr_t               uEndMarker;
@@ -422,7 +422,7 @@ typedef struct RTVFSFSSTREAMOPS
      *
      * @note    Setting this member to NULL is okay for write-only streams.
      */
-    DECLCALLBACKMEMBER(int, pfnNext)(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
+    DECLCALLBACKMEMBER(int, pfnNext,(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj));
 
     /**
      * Adds another object into the stream.
@@ -438,7 +438,7 @@ typedef struct RTVFSFSSTREAMOPS
      *
      * @note    Setting this member to NULL is okay for read-only streams.
      */
-    DECLCALLBACKMEMBER(int, pfnAdd)(void *pvThis, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags);
+    DECLCALLBACKMEMBER(int, pfnAdd,(void *pvThis, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags));
 
     /**
      * Pushes an byte stream onto the stream (optional).
@@ -466,8 +466,8 @@ typedef struct RTVFSFSSTREAMOPS
      *                      to.  If the FS stream is backed by a file, the returned
      *                      handle can be cast to a file if necessary.
      */
-    DECLCALLBACKMEMBER(int, pfnPushFile)(void *pvThis, const char *pszPath, uint64_t cbFile,
-                                         PCRTFSOBJINFO paObjInfo, uint32_t cObjInfo, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos);
+    DECLCALLBACKMEMBER(int, pfnPushFile,(void *pvThis, const char *pszPath, uint64_t cbFile,
+                                         PCRTFSOBJINFO paObjInfo, uint32_t cObjInfo, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos));
 
     /**
      * Marks the end of the stream.
@@ -480,7 +480,7 @@ typedef struct RTVFSFSSTREAMOPS
      *
      * @note    Setting this member to NULL is okay for read-only streams.
      */
-    DECLCALLBACKMEMBER(int, pfnEnd)(void *pvThis);
+    DECLCALLBACKMEMBER(int, pfnEnd,(void *pvThis));
 
     /** Marks the end of the structure (RTVFSFSSTREAMOPS_VERSION). */
     uintptr_t               uEndMarker;
@@ -576,8 +576,8 @@ typedef struct RTVFSDIROPS
      * @param   phVfsObj    Where to return the handle to the opened object.
      * @sa      RTFileOpen, RTDirOpen
      */
-    DECLCALLBACKMEMBER(int, pfnOpen)(void *pvThis, const char *pszEntry, uint64_t fOpenFile,
-                                     uint32_t fObjFlags, PRTVFSOBJ phVfsObj);
+    DECLCALLBACKMEMBER(int, pfnOpen,(void *pvThis, const char *pszEntry, uint64_t fOpenFile,
+                                     uint32_t fObjFlags, PRTVFSOBJ phVfsObj));
 
     /**
      * Optional method for symbolic link handling in the vfsstddir.cpp.
@@ -595,7 +595,7 @@ typedef struct RTVFSDIROPS
      * @param   phVfsDir    Where to return the handle to the specified root
      *                      directory (or may current dir on a drive letter).
      */
-    DECLCALLBACKMEMBER(int, pfnFollowAbsoluteSymlink)(void *pvThis, const char *pszRoot, PRTVFSDIR phVfsDir);
+    DECLCALLBACKMEMBER(int, pfnFollowAbsoluteSymlink,(void *pvThis, const char *pszRoot, PRTVFSDIR phVfsDir));
 
     /**
      * Open or create a file.
@@ -608,7 +608,7 @@ typedef struct RTVFSDIROPS
      * @note    Optional.  RTVFSDIROPS::pfnOpenObj will be used if NULL.
      * @sa      RTFileOpen.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenFile)(void *pvThis, const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile);
+    DECLCALLBACKMEMBER(int, pfnOpenFile,(void *pvThis, const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile));
 
     /**
      * Open an existing subdirectory.
@@ -625,7 +625,7 @@ typedef struct RTVFSDIROPS
      * @note    Optional.  RTVFSDIROPS::pfnOpenObj will be used if NULL.
      * @sa      RTDirOpen.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenDir)(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir);
+    DECLCALLBACKMEMBER(int, pfnOpenDir,(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir));
 
     /**
      * Creates a new subdirectory.
@@ -639,7 +639,7 @@ typedef struct RTVFSDIROPS
      * @note    Optional.  RTVFSDIROPS::pfnOpenObj will be used if NULL.
      * @sa      RTDirCreate.
      */
-    DECLCALLBACKMEMBER(int, pfnCreateDir)(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir);
+    DECLCALLBACKMEMBER(int, pfnCreateDir,(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir));
 
     /**
      * Opens an existing symbolic link.
@@ -652,7 +652,7 @@ typedef struct RTVFSDIROPS
      * @note    Optional.  RTVFSDIROPS::pfnOpenObj will be used if NULL.
      * @sa      RTSymlinkCreate.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenSymlink)(void *pvThis, const char *pszSymlink, PRTVFSSYMLINK phVfsSymlink);
+    DECLCALLBACKMEMBER(int, pfnOpenSymlink,(void *pvThis, const char *pszSymlink, PRTVFSSYMLINK phVfsSymlink));
 
     /**
      * Creates a new symbolic link.
@@ -666,8 +666,8 @@ typedef struct RTVFSDIROPS
      *                      newly create symbolic link.
      * @sa      RTSymlinkCreate.
      */
-    DECLCALLBACKMEMBER(int, pfnCreateSymlink)(void *pvThis, const char *pszSymlink, const char *pszTarget,
-                                              RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink);
+    DECLCALLBACKMEMBER(int, pfnCreateSymlink,(void *pvThis, const char *pszSymlink, const char *pszTarget,
+                                              RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink));
 
     /**
      * Query information about an entry.
@@ -681,8 +681,8 @@ typedef struct RTVFSDIROPS
      *          will be used if NULL.
      * @sa      RTPathQueryInfo, RTVFSOBJOPS::pfnQueryInfo
      */
-    DECLCALLBACKMEMBER(int, pfnQueryEntryInfo)(void *pvThis, const char *pszEntry,
-                                               PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+    DECLCALLBACKMEMBER(int, pfnQueryEntryInfo,(void *pvThis, const char *pszEntry,
+                                               PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr));
 
     /**
      * Removes a directory entry.
@@ -695,7 +695,7 @@ typedef struct RTVFSDIROPS
      *                      (RTFS_TYPE_XXX).
      * @sa      RTFileRemove, RTDirRemove, RTSymlinkRemove.
      */
-    DECLCALLBACKMEMBER(int, pfnUnlinkEntry)(void *pvThis, const char *pszEntry, RTFMODE fType);
+    DECLCALLBACKMEMBER(int, pfnUnlinkEntry,(void *pvThis, const char *pszEntry, RTFMODE fType));
 
     /**
      * Renames a directory entry.
@@ -712,7 +712,7 @@ typedef struct RTVFSDIROPS
      * @todo    This API is not flexible enough, must be able to rename between
      *          directories within a file system.
      */
-    DECLCALLBACKMEMBER(int, pfnRenameEntry)(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName);
+    DECLCALLBACKMEMBER(int, pfnRenameEntry,(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName));
 
     /**
      * Rewind the directory stream so that the next read returns the first
@@ -721,7 +721,7 @@ typedef struct RTVFSDIROPS
      * @returns IPRT status code.
      * @param   pvThis      The implementation specific directory data.
      */
-    DECLCALLBACKMEMBER(int, pfnRewindDir)(void *pvThis);
+    DECLCALLBACKMEMBER(int, pfnRewindDir,(void *pvThis));
 
     /**
      * Rewind the directory stream so that the next read returns the first
@@ -734,7 +734,7 @@ typedef struct RTVFSDIROPS
      * @param   enmAddAttr  Which set of additional attributes to request.
      * @sa      RTDirReadEx
      */
-    DECLCALLBACKMEMBER(int, pfnReadDir)(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAddAttr);
+    DECLCALLBACKMEMBER(int, pfnReadDir,(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAddAttr));
 
     /** Marks the end of the structure (RTVFSDIROPS_VERSION). */
     uintptr_t               uEndMarker;
@@ -809,7 +809,7 @@ typedef struct RTVFSSYMLINKOPS
      * @param   cbTarget    The size of the target buffer.
      * @sa      RTSymlinkRead
      */
-    DECLCALLBACKMEMBER(int, pfnRead)(void *pvThis, char *pszTarget, size_t cbTarget);
+    DECLCALLBACKMEMBER(int, pfnRead,(void *pvThis, char *pszTarget, size_t cbTarget));
 
     /** Marks the end of the structure (RTVFSSYMLINKOPS_VERSION). */
     uintptr_t               uEndMarker;
@@ -880,7 +880,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @sa      RTVfsIoStrmRead, RTVfsIoStrmSgRead, RTVfsFileRead,
      *          RTVfsFileReadAt, RTFileRead, RTFileReadAt.
      */
-    DECLCALLBACKMEMBER(int, pfnRead)(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
+    DECLCALLBACKMEMBER(int, pfnRead,(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead));
 
     /**
      * Writes to the file/stream.
@@ -899,7 +899,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileWrite, RTFileWriteAt.
      */
-    DECLCALLBACKMEMBER(int, pfnWrite)(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);
+    DECLCALLBACKMEMBER(int, pfnWrite,(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten));
 
     /**
      * Flushes any pending data writes to the stream.
@@ -908,7 +908,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @param   pvThis      The implementation specific file data.
      * @sa      RTFileFlush.
      */
-    DECLCALLBACKMEMBER(int, pfnFlush)(void *pvThis);
+    DECLCALLBACKMEMBER(int, pfnFlush,(void *pvThis));
 
     /**
      * Poll for events.
@@ -925,8 +925,8 @@ typedef struct RTVFSIOSTREAMOPS
      *          events, waiting for errors works like sleep.
      * @sa      RTPollSetAdd, RTPoll, RTPollNoResume.
      */
-    DECLCALLBACKMEMBER(int, pfnPollOne)(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                                        uint32_t *pfRetEvents);
+    DECLCALLBACKMEMBER(int, pfnPollOne,(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                                        uint32_t *pfRetEvents));
 
     /**
      * Tells the current file/stream position.
@@ -936,7 +936,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @param   poffActual  Where to return the actual offset.
      * @sa      RTFileTell
      */
-    DECLCALLBACKMEMBER(int, pfnTell)(void *pvThis, PRTFOFF poffActual);
+    DECLCALLBACKMEMBER(int, pfnTell,(void *pvThis, PRTFOFF poffActual));
 
     /**
      * Skips @a cb ahead in the stream.
@@ -946,7 +946,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @param   cb          The number bytes to skip.
      * @remarks This is optional and can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnSkip)(void *pvThis, RTFOFF cb);
+    DECLCALLBACKMEMBER(int, pfnSkip,(void *pvThis, RTFOFF cb));
 
     /**
      * Fills the stream with @a cb zeros.
@@ -956,7 +956,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @param   cb          The number of zero bytes to insert.
      * @remarks This is optional and can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnZeroFill)(void *pvThis, RTFOFF cb);
+    DECLCALLBACKMEMBER(int, pfnZeroFill,(void *pvThis, RTFOFF cb));
 
     /** Marks the end of the structure (RTVFSIOSTREAMOPS_VERSION). */
     uintptr_t               uEndMarker;
@@ -1035,7 +1035,7 @@ typedef struct RTVFSFILEOPS
      * @param   poffActual  Where to return the actual offset.
      * @sa      RTFileSeek
      */
-    DECLCALLBACKMEMBER(int, pfnSeek)(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual);
+    DECLCALLBACKMEMBER(int, pfnSeek,(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual));
 
     /**
      * Get the current file size.
@@ -1045,7 +1045,7 @@ typedef struct RTVFSFILEOPS
      * @param   pcbFile     Where to store the current file size.
      * @sa      RTFileQuerySize
      */
-    DECLCALLBACKMEMBER(int, pfnQuerySize)(void *pvThis, uint64_t *pcbFile);
+    DECLCALLBACKMEMBER(int, pfnQuerySize,(void *pvThis, uint64_t *pcbFile));
 
     /**
      * Change the file size.
@@ -1065,7 +1065,7 @@ typedef struct RTVFSFILEOPS
      * @note    Optional.  If NULL, VERR_WRITE_PROTECT will be returned.
      * @sa      RTFileSetSize, RTFileSetAllocationSize
      */
-    DECLCALLBACKMEMBER(int, pfnSetSize)(void *pvThis, uint64_t cbFile, uint32_t fFlags);
+    DECLCALLBACKMEMBER(int, pfnSetSize,(void *pvThis, uint64_t cbFile, uint32_t fFlags));
 
     /**
      * Determine the maximum file size.
@@ -1079,7 +1079,7 @@ typedef struct RTVFSFILEOPS
      * @note    Optional.  If NULL, VERR_NOT_IMPLEMENTED will be returned.
      * @sa      RTFileQueryMaxSizeEx
      */
-    DECLCALLBACKMEMBER(int, pfnQueryMaxSize)(void *pvThis, uint64_t *pcbMax);
+    DECLCALLBACKMEMBER(int, pfnQueryMaxSize,(void *pvThis, uint64_t *pcbMax));
 
     /** @todo There will be more methods here. */
 
@@ -1336,8 +1336,8 @@ typedef struct RTVFSCHAINELEMENTREG
      * @param   pErrInfo        Where to return additional error information, if
      *                          available.  Optional.
      */
-    DECLCALLBACKMEMBER(int, pfnValidate)(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
-                                         PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo);
+    DECLCALLBACKMEMBER(int, pfnValidate,(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                         PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo));
 
     /**
      * Create a VFS object according to the element specification.
@@ -1355,9 +1355,9 @@ typedef struct RTVFSCHAINELEMENTREG
      * @param   pErrInfo        Where to return additional error information, if
      *                          available.  Optional.
      */
-    DECLCALLBACKMEMBER(int, pfnInstantiate)(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+    DECLCALLBACKMEMBER(int, pfnInstantiate,(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
                                             PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
-                                            PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo);
+                                            PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo));
 
     /**
      * Determins whether the element can be reused.
@@ -1376,9 +1376,9 @@ typedef struct RTVFSCHAINELEMENTREG
      * @param   pReuseElement   The chain element specification of the existing
      *                          element that is being considered for reuse.
      */
-    DECLCALLBACKMEMBER(bool, pfnCanReuseElement)(PCRTVFSCHAINELEMENTREG pProviderReg,
+    DECLCALLBACKMEMBER(bool, pfnCanReuseElement,(PCRTVFSCHAINELEMENTREG pProviderReg,
                                                  PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
-                                                 PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement);
+                                                 PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement));
 
     /** End marker (RTVFSCHAINELEMENTREG_VERSION). */
     uintptr_t               uEndMarker;

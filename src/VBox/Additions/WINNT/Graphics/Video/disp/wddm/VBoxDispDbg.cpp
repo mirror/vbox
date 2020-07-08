@@ -132,7 +132,7 @@ typedef struct VBOXVDBG_DUMP_INFO
     const RECT *pRect;
 } VBOXVDBG_DUMP_INFO, *PVBOXVDBG_DUMP_INFO;
 
-typedef DECLCALLBACK(void) FNVBOXVDBG_CONTENTS_DUMPER(PVBOXVDBG_DUMP_INFO pInfo, BOOLEAN fBreak, void *pvDumper);
+typedef DECLCALLBACKTYPE(void, FNVBOXVDBG_CONTENTS_DUMPER,(PVBOXVDBG_DUMP_INFO pInfo, BOOLEAN fBreak, void *pvDumper));
 typedef FNVBOXVDBG_CONTENTS_DUMPER *PFNVBOXVDBG_CONTENTS_DUMPER;
 
 static VOID vboxVDbgDoDumpSummary(const char * pPrefix, PVBOXVDBG_DUMP_INFO pInfo, const char * pSuffix)
@@ -587,7 +587,7 @@ void vboxVDbgDoPrintRect(const char * pPrefix, const RECT *pRect, const char * p
     vboxVDbgPrint(("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix));
 }
 
-static VOID CALLBACK vboxVDbgTimerCb(__in PVOID lpParameter, __in BOOLEAN TimerOrWaitFired)
+static VOID CALLBACK vboxVDbgTimerCb(__in PVOID lpParameter, __in BOOLEAN TimerOrWaitFired) RT_NOTHROW_DEF
 {
     RT_NOREF(lpParameter, TimerOrWaitFired);
     Assert(0);
@@ -687,7 +687,7 @@ static bool vboxVDbgIsExceptionIgnored(PEXCEPTION_RECORD pExceptionRecord)
     return false;
 }
 
-LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
+static LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo) RT_NOTHROW_DEF
 {
     static volatile bool g_fAllowIgnore = true; /* Might be changed in kernel debugger. */
 
@@ -720,7 +720,7 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
 void vboxVDbgVEHandlerRegister()
 {
     Assert(!g_VBoxWDbgVEHandler);
-    g_VBoxWDbgVEHandler = AddVectoredExceptionHandler(1,vboxVDbgVectoredHandler);
+    g_VBoxWDbgVEHandler = AddVectoredExceptionHandler(1, vboxVDbgVectoredHandler);
     Assert(g_VBoxWDbgVEHandler);
 
     g_hModPsapi = GetModuleHandleA("Psapi.dll"); /* Usually already loaded. */

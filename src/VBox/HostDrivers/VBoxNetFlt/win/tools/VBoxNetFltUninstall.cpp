@@ -33,9 +33,9 @@
 #define VBOX_NETFLT_MP_INF L".\\VBoxNetFltM.inf"
 #define VBOX_NETFLT_RETRIES 10
 
-static VOID winNetCfgLogger(LPCSTR szString)
+static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
-    printf("%s", szString);
+    printf("%s", pszString);
 }
 
 static int VBoxNetFltUninstall()

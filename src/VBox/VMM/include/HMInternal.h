@@ -390,7 +390,7 @@ typedef struct HMEXITHISTORY
  * @param   offCpumVCpu     Offset from pVM->cpum to pVM->aCpus[idCpu].cpum.
  * @returns Return code indicating the action to take.
  */
-typedef DECLCALLBACK(int) FNHMSWITCHERHC(PVM pVM, uint32_t offCpumVCpu);
+typedef DECLCALLBACKTYPE(int, FNHMSWITCHERHC,(PVM pVM, uint32_t offCpumVCpu));
 /** Pointer to switcher function. */
 typedef FNHMSWITCHERHC *PFNHMSWITCHERHC;
 
@@ -691,12 +691,12 @@ AssertCompileMemberAlignment(HM, svm,                 8);
  * @param   pVM         Pointer to the cross context VM structure.
  * @param   pVCpu       Pointer to the cross context per-CPU structure.
  */
-typedef DECLCALLBACK(int) FNHMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu);
+typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu));
 /** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 
 /** SVM VMRun function. */
-typedef DECLCALLBACK(int) FNHMSVMVMRUN(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVMCC pVM, PVMCPUCC pVCpu);
+typedef DECLCALLBACKTYPE(int, FNHMSVMVMRUN,(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVMCC pVM, PVMCPUCC pVCpu));
 /** Pointer to a SVM VMRun function. */
 typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 

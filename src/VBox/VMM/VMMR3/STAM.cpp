@@ -81,7 +81,7 @@ typedef struct STAMR3PRINTONEARGS
 {
     PUVM        pUVM;
     void       *pvArg;
-    DECLCALLBACKMEMBER(void, pfnPrintf)(struct STAMR3PRINTONEARGS *pvArg, const char *pszFormat, ...);
+    DECLCALLBACKMEMBER(void, pfnPrintf,(struct STAMR3PRINTONEARGS *pvArg, const char *pszFormat, ...));
 } STAMR3PRINTONEARGS, *PSTAMR3PRINTONEARGS;
 
 

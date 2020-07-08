@@ -241,7 +241,7 @@ typedef struct RTLDROPS
      * @param   pMod    Pointer to the loader module structure.
      * @remark  Compulsory entry point.
      */
-    DECLCALLBACKMEMBER(int, pfnClose)(PRTLDRMODINTERNAL pMod);
+    DECLCALLBACKMEMBER(int, pfnClose,(PRTLDRMODINTERNAL pMod));
 
     /**
      * Gets a simple symbol.
@@ -252,7 +252,7 @@ typedef struct RTLDROPS
      * @param   pszSymbol   The symbol name.
      * @param   ppvValue    Where to store the symbol value.
      */
-    DECLCALLBACKMEMBER(int, pfnGetSymbol)(PRTLDRMODINTERNAL pMod, const char *pszSymbol, void **ppvValue);
+    DECLCALLBACKMEMBER(int, pfnGetSymbol,(PRTLDRMODINTERNAL pMod, const char *pszSymbol, void **ppvValue));
 
     /**
      * Called when we're done with getting bits and relocating them.
@@ -264,7 +264,7 @@ typedef struct RTLDROPS
      * @param   pMod        Pointer to the loader module structure.
      * @remark  This is an optional entry point.
      */
-    DECLCALLBACKMEMBER(int, pfnDone)(PRTLDRMODINTERNAL pMod);
+    DECLCALLBACKMEMBER(int, pfnDone,(PRTLDRMODINTERNAL pMod));
 
     /**
      * Enumerates the symbols exported by the module.
@@ -279,8 +279,8 @@ typedef struct RTLDROPS
      * @param   pvUser      User argument to pass to the enumerator.
      * @remark  This is an optional entry point.
      */
-    DECLCALLBACKMEMBER(int, pfnEnumSymbols)(PRTLDRMODINTERNAL pMod, unsigned fFlags, const void *pvBits, RTUINTPTR BaseAddress,
-                                            PFNRTLDRENUMSYMS pfnCallback, void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnEnumSymbols,(PRTLDRMODINTERNAL pMod, unsigned fFlags, const void *pvBits, RTUINTPTR BaseAddress,
+                                            PFNRTLDRENUMSYMS pfnCallback, void *pvUser));
 
 
 /* extended functions: */
@@ -293,7 +293,7 @@ typedef struct RTLDROPS
      * @param   pMod    Pointer to the loader module structure.
      * @remark  Extended loader feature.
      */
-    DECLCALLBACKMEMBER(size_t, pfnGetImageSize)(PRTLDRMODINTERNAL pMod);
+    DECLCALLBACKMEMBER(size_t, pfnGetImageSize,(PRTLDRMODINTERNAL pMod));
 
     /**
      * Gets the image bits fixed up for a specified address.
@@ -307,7 +307,7 @@ typedef struct RTLDROPS
      * @param   pvUser          User argument to pass to the callback.
      * @remark  Extended loader feature.
      */
-    DECLCALLBACKMEMBER(int, pfnGetBits)(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnGetBits,(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser));
 
     /**
      * Relocate bits obtained using pfnGetBits to a new address.
@@ -322,7 +322,7 @@ typedef struct RTLDROPS
      * @param   pvUser          User argument to pass to the callback.
      * @remark  Extended loader feature.
      */
-    DECLCALLBACKMEMBER(int, pfnRelocate)(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress, RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnRelocate,(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress, RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser));
 
     /**
      * Gets a symbol with special base address and stuff.
@@ -340,8 +340,8 @@ typedef struct RTLDROPS
      * @param   pValue      Where to store the symbol value.
      * @remark  Extended loader feature.
      */
-    DECLCALLBACKMEMBER(int, pfnGetSymbolEx)(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
-                                            uint32_t iOrdinal, const char *pszSymbol, RTUINTPTR *pValue);
+    DECLCALLBACKMEMBER(int, pfnGetSymbolEx,(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
+                                            uint32_t iOrdinal, const char *pszSymbol, RTUINTPTR *pValue));
 
     /**
      * Query forwarder information on the specified symbol.
@@ -361,8 +361,8 @@ typedef struct RTLDROPS
      *                      the return code is VERR_LDR_FORWARDER.
      * @remark  Extended loader feature.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryForwarderInfo)(PRTLDRMODINTERNAL pMod, const void *pvBits, uint32_t iOrdinal,
-                                                   const char *pszSymbol, PRTLDRIMPORTINFO pInfo, size_t cbInfo);
+    DECLCALLBACKMEMBER(int, pfnQueryForwarderInfo,(PRTLDRMODINTERNAL pMod, const void *pvBits, uint32_t iOrdinal,
+                                                   const char *pszSymbol, PRTLDRIMPORTINFO pInfo, size_t cbInfo));
 
     /**
      * Enumerates the debug info contained in the module.
@@ -375,8 +375,8 @@ typedef struct RTLDROPS
      * @param   pvUser      User argument to pass to the enumerator.
      * @remark  This is an optional entry point that can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnEnumDbgInfo)(PRTLDRMODINTERNAL pMod, const void *pvBits,
-                                            PFNRTLDRENUMDBG pfnCallback, void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnEnumDbgInfo,(PRTLDRMODINTERNAL pMod, const void *pvBits,
+                                            PFNRTLDRENUMDBG pfnCallback, void *pvUser));
 
     /**
      * Enumerates the segments in the module.
@@ -388,7 +388,7 @@ typedef struct RTLDROPS
      * @param   pvUser      User argument to pass to the enumerator.
      * @remark  This is an optional entry point that can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnEnumSegments)(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnEnumSegments,(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser));
 
     /**
      * Converts a link address to a segment:offset address.
@@ -401,8 +401,8 @@ typedef struct RTLDROPS
      * @param   poffSeg         Where to return the segment offset.
      * @remark  This is an optional entry point that can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnLinkAddressToSegOffset)(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
-                                                       uint32_t *piSeg, PRTLDRADDR poffSeg);
+    DECLCALLBACKMEMBER(int, pfnLinkAddressToSegOffset,(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
+                                                       uint32_t *piSeg, PRTLDRADDR poffSeg));
 
     /**
      * Converts a link address to a RVA.
@@ -414,7 +414,7 @@ typedef struct RTLDROPS
      * @param   pRva            Where to return the RVA.
      * @remark  This is an optional entry point that can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnLinkAddressToRva)(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva);
+    DECLCALLBACKMEMBER(int, pfnLinkAddressToRva,(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva));
 
     /**
      * Converts a segment:offset to a RVA.
@@ -427,7 +427,7 @@ typedef struct RTLDROPS
      * @param   pRva            Where to return the RVA.
      * @remark  This is an optional entry point that can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnSegOffsetToRva)(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva);
+    DECLCALLBACKMEMBER(int, pfnSegOffsetToRva,(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva));
 
     /**
      * Converts a RVA to a segment:offset.
@@ -440,7 +440,7 @@ typedef struct RTLDROPS
      * @param   poffSeg         Where to return the segment offset.
      * @remark  This is an optional entry point that can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnRvaToSegOffset)(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg);
+    DECLCALLBACKMEMBER(int, pfnRvaToSegOffset,(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg));
 
     /**
      * Reads a debug info part (section) from the image.
@@ -459,7 +459,7 @@ typedef struct RTLDROPS
      * @param   cb              The number of bytes to read.
      * @param   pMod            Pointer to the loader module structure.
      */
-    DECLCALLBACKMEMBER(int, pfnReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void *pvBuf);
+    DECLCALLBACKMEMBER(int, pfnReadDbgInfo,(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void *pvBuf));
 
     /**
      * Generic method for querying image properties.
@@ -482,8 +482,8 @@ typedef struct RTLDROPS
      *                          VERR_BUFFER_OVERFLOW is returned, this is set to the
      *                          required buffer size.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryProp)(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
-                                          void *pvBuf, size_t cbBuf, size_t *pcbRet);
+    DECLCALLBACKMEMBER(int, pfnQueryProp,(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
+                                          void *pvBuf, size_t cbBuf, size_t *pcbRet));
 
     /**
      * Verify the image signature.
@@ -500,8 +500,8 @@ typedef struct RTLDROPS
      * @param   pvUser          User argument for the callback.
      * @param   pErrInfo        Pointer to an error info buffer. Optional.
      */
-    DECLCALLBACKMEMBER(int, pfnVerifySignature)(PRTLDRMODINTERNAL pMod, PFNRTLDRVALIDATESIGNEDDATA pfnCallback, void *pvUser,
-                                                PRTERRINFO pErrInfo);
+    DECLCALLBACKMEMBER(int, pfnVerifySignature,(PRTLDRMODINTERNAL pMod, PFNRTLDRVALIDATESIGNEDDATA pfnCallback, void *pvUser,
+                                                PRTERRINFO pErrInfo));
 
     /**
      * Calculate the image hash according the image signing rules.
@@ -512,7 +512,7 @@ typedef struct RTLDROPS
      * @param   pszDigest       Where to store the image digest.
      * @param   cbDigest        Size of the buffer @a pszDigest points at.
      */
-    DECLCALLBACKMEMBER(int, pfnHashImage)(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest);
+    DECLCALLBACKMEMBER(int, pfnHashImage,(PRTLDRMODINTERNAL pMod, RTDIGESTTYPE enmDigest, char *pszDigest, size_t cbDigest));
 
         /**
      * Try use unwind information to unwind one frame.
@@ -533,8 +533,8 @@ typedef struct RTLDROPS
      *
      * @sa      RTLdrUnwindFrame, RTDbgModUnwindFrame
      */
-    DECLCALLBACKMEMBER(int, pfnUnwindFrame)(PRTLDRMODINTERNAL pMod, void const *pvBits, uint32_t iSeg, RTUINTPTR off,
-                                            PRTDBGUNWINDSTATE pState);
+    DECLCALLBACKMEMBER(int, pfnUnwindFrame,(PRTLDRMODINTERNAL pMod, void const *pvBits, uint32_t iSeg, RTUINTPTR off,
+                                            PRTDBGUNWINDSTATE pState));
 
     /** Dummy entry to make sure we've initialized it all. */
     RTUINT uDummy;

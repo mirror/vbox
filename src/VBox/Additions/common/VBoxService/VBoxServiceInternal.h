@@ -53,7 +53,7 @@ typedef struct
      * Called before parsing arguments.
      * @returns VBox status code.
      */
-    DECLCALLBACKMEMBER(int, pfnPreInit)(void);
+    DECLCALLBACKMEMBER(int, pfnPreInit,(void));
 
     /**
      * Tries to parse the given command line option.
@@ -65,13 +65,13 @@ typedef struct
      * @param   argv        The argument vector.
      * @param   pi          The argument vector index. Update if any value(s) are eaten.
      */
-    DECLCALLBACKMEMBER(int, pfnOption)(const char **ppszShort, int argc, char **argv, int *pi);
+    DECLCALLBACKMEMBER(int, pfnOption,(const char **ppszShort, int argc, char **argv, int *pi));
 
     /**
      * Called before parsing arguments.
      * @returns VBox status code.
      */
-    DECLCALLBACKMEMBER(int, pfnInit)(void);
+    DECLCALLBACKMEMBER(int, pfnInit,(void));
 
     /** Called from the worker thread.
      *
@@ -80,19 +80,19 @@ typedef struct
      * @param   pfShutdown      Pointer to a per service termination flag to check
      *                          before and after blocking.
      */
-    DECLCALLBACKMEMBER(int, pfnWorker)(bool volatile *pfShutdown);
+    DECLCALLBACKMEMBER(int, pfnWorker,(bool volatile *pfShutdown));
 
     /**
      * Stops a service.
      */
-    DECLCALLBACKMEMBER(void, pfnStop)(void);
+    DECLCALLBACKMEMBER(void, pfnStop,(void));
 
     /**
      * Does termination cleanups.
      *
      * @remarks This may be called even if pfnInit hasn't been called!
      */
-    DECLCALLBACKMEMBER(void, pfnTerm)(void);
+    DECLCALLBACKMEMBER(void, pfnTerm,(void));
 } VBOXSERVICE;
 /** Pointer to a VBOXSERVICE. */
 typedef VBOXSERVICE *PVBOXSERVICE;

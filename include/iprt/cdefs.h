@@ -1311,6 +1311,17 @@
 # define RT_COMPILER_SUPPORTS_VA_ARGS
 #endif
 
+/** @def RT_CB_LOG_CAST
+ * Helper for logging function pointers to function may throw stuff.
+ *
+ * Not needed for function pointer types declared using our DECLCALLBACK
+ * macros, only external types. */
+#if defined(_MSC_VER) && defined(RT_EXCEPTIONS_ENABLED)
+# define RT_CB_LOG_CAST(a_pfnCallback) ((uintptr_t)(a_pfnCallback) + 1 - 1)
+#else
+# define RT_CB_LOG_CAST(a_pfnCallback) (a_pfnCallback)
+#endif
+
 
 
 /** @def RTCALL
@@ -1487,38 +1498,88 @@
 #endif
 
 /** @def DECLCALLBACK
+ * How to declare an call back function.
+ * @param   type    The return type of the function declaration.
+ * @note    Use DECLCALLBACKTYPE for typedefs.
+ */
+#define DECLCALLBACK(type)          DECL_NOTHROW(type RT_FAR_CODE RTCALL)
+
+/** @def DECLCALLBACKTYPE_EX
  * How to declare an call back function type.
  * @param   type    The return type of the function declaration.
+ * @param   cconv   Calling convention.
+ * @param   name    The name of the typedef
+ * @param   args    The argument list enclosed in parentheses.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
-#ifdef _MSC_VER
-# define DECLCALLBACK(type)         type RT_FAR_CODE RTCALL
+#if RT_CLANG_PREREQ(6,0)
+# define DECLCALLBACKTYPE_EX(type, cconv, name, args)   __attribute__((__nothrow__)) type cconv name args
+#elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+# define DECLCALLBACKTYPE_EX(type, cconv, name, args)   type cconv name args throw()
 #else
-# define DECLCALLBACK(type)         DECL_NOTHROW_TYPEDEF(type RT_FAR_CODE RTCALL)
+# define DECLCALLBACKTYPE_EX(type, cconv, name, args)   type cconv name args
 #endif
+/** @def DECLCALLBACKTYPE
+ * How to declare an call back function type.
+ * @param   type    The return type of the function declaration.
+ * @param   name    The name of the typedef
+ * @param   args    The argument list enclosed in parentheses.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
+ */
+#define DECLCALLBACKTYPE(type, name, args)              DECLCALLBACKTYPE_EX(type, RT_FAR_CODE RTCALL, name, args)
 
+/** @def DECLCALLBACKPTR_EX
+ * How to declare an call back function pointer.
+ * @param   type    The return type of the function declaration.
+ * @param   cconv   Calling convention.
+ * @param   name    The name of the variable member.
+ * @param   args    The argument list enclosed in parentheses.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
+ */
+#if defined(__IBMC__) || defined(__IBMCPP__)
+# define DECLCALLBACKPTR_EX(type, cconv, name, args)    type (* cconv name) args
+#elif RT_CLANG_PREREQ(6,0)
+# define DECLCALLBACKPTR_EX(type, cconv, name, args)    __attribute__((__nothrow__)) type (cconv * name) args
+#elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+# define DECLCALLBACKPTR_EX(type, cconv, name, args)    type (cconv * name) args throw()
+#else
+# define DECLCALLBACKPTR_EX(type, cconv, name, args)    type (cconv * name) args
+#endif
 /** @def DECLCALLBACKPTR
  * How to declare an call back function pointer.
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the variable member.
+ * @param   args    The argument list enclosed in parentheses.
+ * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
+ */
+#define DECLCALLBACKPTR(type, name, args)               DECLCALLBACKPTR_EX(type, RT_FAR_CODE RTCALL, name, args)
+
+/** @def DECLCALLBACKMEMBER_EX
+ * How to declare an call back function pointer member.
+ * @param   type    The return type of the function declaration.
+ * @param   cconv   Calling convention.
+ * @param   name    The name of the struct/union/class member.
+ * @param   args    The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(__IBMC__) || defined(__IBMCPP__)
-# define DECLCALLBACKPTR(type, name)    type (* RTCALL name)
+# define DECLCALLBACKMEMBER_EX(type, cconv, name, args) type (* cconv name) args
+#elif RT_CLANG_PREREQ(6,0)
+# define DECLCALLBACKMEMBER_EX(type, cconv, name, args) __attribute__((__nothrow__)) type (cconv *name) args
+#elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+# define DECLCALLBACKMEMBER_EX(type, cconv, name, args) type (cconv *name) args throw()
 #else
-# define DECLCALLBACKPTR(type, name)    DECL_NOTHROW_PFN(type, RT_FAR_CODE RTCALL, name)
+# define DECLCALLBACKMEMBER_EX(type, cconv, name, args) type (cconv *name) args
 #endif
-
 /** @def DECLCALLBACKMEMBER
  * How to declare an call back function pointer member.
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
+ * @param   args    The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
+ * @note    Will be renamed to DECLCALLBACKMEMBER.
  */
-#if defined(__IBMC__) || defined(__IBMCPP__)
-# define DECLCALLBACKMEMBER(type, name) type (* RTCALL name)
-#else
-# define DECLCALLBACKMEMBER(type, name) DECL_NOTHROW_PFN(type, RT_FAR_CODE RTCALL, name)
-#endif
+#define DECLCALLBACKMEMBER(type, name, args)   DECLCALLBACKMEMBER_EX(type, RT_FAR_CODE RTCALL, name, args)
 
 /** @def DECLR3CALLBACKMEMBER
  * How to declare an call back function pointer member - R3 Ptr.
@@ -1528,9 +1589,9 @@
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
-# define DECLR3CALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name) args
+# define DECLR3CALLBACKMEMBER(type, name, args) DECLCALLBACKMEMBER(type, name, args)
 #else
-# define DECLR3CALLBACKMEMBER(type, name, args)  RTR3PTR name
+# define DECLR3CALLBACKMEMBER(type, name, args) RTR3PTR name
 #endif
 
 /** @def DECLRCCALLBACKMEMBER
@@ -1541,14 +1602,14 @@
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RC) || defined(DOXYGEN_RUNNING)
-# define DECLRCCALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name)  args
+# define DECLRCCALLBACKMEMBER(type, name, args) DECLCALLBACKMEMBER(type, name, args)
 #else
-# define DECLRCCALLBACKMEMBER(type, name, args)  RTRCPTR name
+# define DECLRCCALLBACKMEMBER(type, name, args) RTRCPTR name
 #endif
 #if defined(IN_RC) || defined(DOXYGEN_RUNNING)
-# define DECLRGCALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name)  args
+# define DECLRGCALLBACKMEMBER(type, name, args) DECLCALLBACKMEMBER(type, name, args)
 #else
-# define DECLRGCALLBACKMEMBER(type, name, args)  RTRGPTR name
+# define DECLRGCALLBACKMEMBER(type, name, args) RTRGPTR name
 #endif
 
 /** @def DECLR0CALLBACKMEMBER
@@ -1559,9 +1620,9 @@
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
-# define DECLR0CALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name) args
+# define DECLR0CALLBACKMEMBER(type, name, args) DECLCALLBACKMEMBER(type, name, args)
 #else
-# define DECLR0CALLBACKMEMBER(type, name, args)  RTR0PTR name
+# define DECLR0CALLBACKMEMBER(type, name, args) RTR0PTR name
 #endif
 
 /** @def DECLINLINE

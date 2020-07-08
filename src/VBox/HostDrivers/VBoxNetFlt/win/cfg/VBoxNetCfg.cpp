@@ -59,9 +59,9 @@
 # define Assert _ASSERT
 # define AssertMsg(expr, msg) do{}while (0)
 #endif
-static LOG_ROUTINE g_Logger = NULL;
+static PFNVBOXNETCFGLOGGER volatile g_pfnLogger = NULL;
 
-static VOID DoLogging(LPCSTR szString, ...);
+static void DoLogging(const char *pszString, ...);
 #define NonStandardLog DoLogging
 #define NonStandardLogFlow(x) DoLogging x
 
@@ -864,24 +864,24 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinPropChangeAllNetDevicesOfId(IN LPCWSTR 
 /*
  * logging
  */
-static VOID DoLogging(LPCSTR szString, ...)
+static void DoLogging(const char *pszString, ...)
 {
-    LOG_ROUTINE pfnRoutine = (LOG_ROUTINE)(*((void * volatile *)&g_Logger));
-    if (pfnRoutine)
+    PFNVBOXNETCFGLOGGER pfnLogger = g_pfnLogger;
+    if (pfnLogger)
     {
         char szBuffer[4096] = {0};
         va_list va;
-        va_start(va, szString);
-        _vsnprintf(szBuffer, RT_ELEMENTS(szBuffer), szString, va);
+        va_start(va, pszString);
+        _vsnprintf(szBuffer, RT_ELEMENTS(szBuffer), pszString, va);
         va_end(va);
 
-        pfnRoutine(szBuffer);
+        pfnLogger(szBuffer);
     }
 }
 
-VBOXNETCFGWIN_DECL(VOID) VBoxNetCfgWinSetLogging(IN LOG_ROUTINE pfnLog)
+VBOXNETCFGWIN_DECL(void) VBoxNetCfgWinSetLogging(IN PFNVBOXNETCFGLOGGER pfnLogger)
 {
-    *((void * volatile *)&g_Logger) = pfnLog;
+    g_pfnLogger = pfnLogger;
 }
 
 /*

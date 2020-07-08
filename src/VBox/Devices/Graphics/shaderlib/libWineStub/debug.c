@@ -72,7 +72,7 @@ static const char * const debug_classes[] = { "fixme", "err", "warn", "trace" };
 
 #define MAX_DEBUG_OPTIONS 256
 
-typedef DECLCALLBACK(void) FNVBOXWINELOGBACKDOOR(char* pcszStr);
+typedef DECLCALLBACKTYPE(void, FNVBOXWINELOGBACKDOOR,(char* pcszStr));
 typedef FNVBOXWINELOGBACKDOOR *PFNVBOXWINELOGBACKDOOR;
 static PFNVBOXWINELOGBACKDOOR vbox_log_backdoor = NULL;
 static unsigned char default_flags = (1 << __WINE_DBCL_ERR) | (1 << __WINE_DBCL_FIXME) | (1 << __WINE_DBCL_WARN);

@@ -215,10 +215,10 @@ char *vmsvgaFormatEnumValue(char *pszBuffer, size_t cbBuffer, const char *pszNam
  * @param   pszLine         The line to output.
  * @param   pvUser          The user argument.
  */
-typedef DECLCALLBACK(void) FMVMSVGAASCIIPRINTLN(const char *pszLine, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNVMSVGAASCIIPRINTLN,(const char *pszLine, void *pvUser));
 /** Pointer to an ASCII "art" print line callback. */
-typedef FMVMSVGAASCIIPRINTLN *PFMVMSVGAASCIIPRINTLN;
-void vmsvga3dAsciiPrint(PFMVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void const *pvImage, size_t cbImage,
+typedef FNVMSVGAASCIIPRINTLN *PFNVMSVGAASCIIPRINTLN;
+void vmsvga3dAsciiPrint(PFNVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void const *pvImage, size_t cbImage,
                         uint32_t cx, uint32_t cy, uint32_t cbScanline, SVGA3dSurfaceFormat enmFormat, bool fInvY,
                         uint32_t cchMaxX, uint32_t cchMaxY);
 DECLCALLBACK(void) vmsvga3dAsciiPrintlnInfo(const char *pszLine, void *pvUser);

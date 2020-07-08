@@ -121,8 +121,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableDynamicIpConfig(IN const GUID *pG
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinDhcpRediscover(IN const GUID *pGuid);
 
 
-typedef VOID (*LOG_ROUTINE)(LPCSTR szString); /**< I'm not prefixed. */
-VBOXNETCFGWIN_DECL(VOID) VBoxNetCfgWinSetLogging(IN LOG_ROUTINE pfnLog);
+typedef DECLCALLBACKTYPE(void, FNVBOXNETCFGLOGGER,(const char *pszString));
+typedef FNVBOXNETCFGLOGGER *PFNVBOXNETCFGLOGGER;
+VBOXNETCFGWIN_DECL(void) VBoxNetCfgWinSetLogging(IN PFNVBOXNETCFGLOGGER pfnLogger);
 
 RT_C_DECLS_END
 

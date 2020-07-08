@@ -135,7 +135,7 @@ typedef BOOL            (WINAPI *PFNWSAEVENTSELECT)(UINT_PTR, HANDLE, LONG);
 /** WSAEnumNetworkEvents */
 typedef int             (WINAPI *PFNWSAENUMNETWORKEVENTS)(UINT_PTR, HANDLE, struct _WSANETWORKEVENTS *);
 /** WSASend */
-typedef int             (WINAPI *PFNWSASend)(UINT_PTR, struct _WSABUF *, DWORD, LPDWORD, DWORD dwFlags, struct _OVERLAPPED *, PFNRT /*LPWSAOVERLAPPED_COMPLETION_ROUTINE*/);
+typedef int             (WINAPI *PFNWSASend)(UINT_PTR, struct _WSABUF *, DWORD, LPDWORD, DWORD dwFlags, struct _OVERLAPPED *, uintptr_t /*LPWSAOVERLAPPED_COMPLETION_ROUTINE*/);
 
 /** socket */
 typedef UINT_PTR        (WINAPI *PFNWINSOCKSOCKET)(int, int, int);

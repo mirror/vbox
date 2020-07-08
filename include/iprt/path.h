@@ -1130,7 +1130,7 @@ RTDECL(int) RTPathJoinEx(char *pszPathDst, size_t cbPathDst,
  * @param   pvUser1         The first user parameter.
  * @param   pvUser2         The second user parameter.
  */
-typedef DECLCALLBACK(int) FNRTPATHTRAVERSER(char const *pchPath, size_t cchPath, void *pvUser1, void *pvUser2);
+typedef DECLCALLBACKTYPE(int, FNRTPATHTRAVERSER,(char const *pchPath, size_t cchPath, void *pvUser1, void *pvUser2));
 /** Pointer to a FNRTPATHTRAVERSER. */
 typedef FNRTPATHTRAVERSER *PFNRTPATHTRAVERSER;
 

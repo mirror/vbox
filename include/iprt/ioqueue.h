@@ -112,7 +112,7 @@ typedef struct RTIOQUEUEPROVVTABLE
      *
      * @returns Flag whether the provider is supported.
      */
-    DECLCALLBACKMEMBER(bool, pfnIsSupported) (void);
+    DECLCALLBACKMEMBER(bool, pfnIsSupported,(void));
 
     /**
      * Initializes the provider specific parts of the given I/O queue.
@@ -123,8 +123,7 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @param   cSqEntries      Number of entries for the submission queue.
      * @param   cCqEntries      Number of entries for the completion queue.
      */
-    DECLCALLBACKMEMBER(int, pfnQueueInit) (RTIOQUEUEPROV hIoQueueProv, uint32_t fFlags,
-                                           uint32_t cSqEntries, uint32_t cCqEntries);
+    DECLCALLBACKMEMBER(int, pfnQueueInit,(RTIOQUEUEPROV hIoQueueProv, uint32_t fFlags, uint32_t cSqEntries, uint32_t cCqEntries));
 
     /**
      * Destroys the provider specific parts of the I/O queue and frees all
@@ -133,7 +132,7 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @returns nothing.
      * @param   hIoQueueProv    The I/O queue provider instance to destroy.
      */
-    DECLCALLBACKMEMBER(void, pfnQueueDestroy) (RTIOQUEUEPROV hIoQueueProv);
+    DECLCALLBACKMEMBER(void, pfnQueueDestroy,(RTIOQUEUEPROV hIoQueueProv));
 
     /**
      * Registers the given handle for use with the I/O queue instance.
@@ -144,7 +143,7 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @param   hIoQueueProv    The I/O queue provider instance.
      * @param   pHandle         The handle to register.
      */
-    DECLCALLBACKMEMBER(int, pfnHandleRegister) (RTIOQUEUEPROV hIoQueueProv, PCRTHANDLE pHandle);
+    DECLCALLBACKMEMBER(int, pfnHandleRegister,(RTIOQUEUEPROV hIoQueueProv, PCRTHANDLE pHandle));
 
     /**
      * Deregisters the given handle for use with the I/O queue instance.
@@ -155,7 +154,7 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @param   hIoQueueProv    The I/O queue provider instance.
      * @param   pHandle         The handle to deregister.
      */
-    DECLCALLBACKMEMBER(int, pfnHandleDeregister) (RTIOQUEUEPROV hIoQueueProv, PCRTHANDLE pHandle);
+    DECLCALLBACKMEMBER(int, pfnHandleDeregister,(RTIOQUEUEPROV hIoQueueProv, PCRTHANDLE pHandle));
 
     /**
      * Prepares a request for the given I/O queue.
@@ -170,9 +169,8 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @param   fReqFlags           Additional flags for the request.
      * @param   pvUser              Opaque user data which is passed back in the completion event.
      */
-    DECLCALLBACKMEMBER(int, pfnReqPrepare) (RTIOQUEUEPROV hIoQueueProv, PCRTHANDLE pHandle, RTIOQUEUEOP enmOp,
-                                            uint64_t off, void *pvBuf, size_t cbBuf, uint32_t fReqFlags,
-                                            void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnReqPrepare,(RTIOQUEUEPROV hIoQueueProv, PCRTHANDLE pHandle, RTIOQUEUEOP enmOp,
+                                           uint64_t off, void *pvBuf, size_t cbBuf, uint32_t fReqFlags, void *pvUser));
 
     /**
      * Prepares a request for the given I/O queue.
@@ -187,9 +185,8 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @param   fReqFlags           Additional flags for the request.
      * @param   pvUser              Opaque user data which is passed back in the completion event.
      */
-    DECLCALLBACKMEMBER(int, pfnReqPrepareSg) (RTIOQUEUEPROV hIoQueueProv, PCRTHANDLE pHandle, RTIOQUEUEOP enmOp,
-                                              uint64_t off, PCRTSGBUF pSgBuf, size_t cbSg, uint32_t fReqFlags,
-                                              void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnReqPrepareSg,(RTIOQUEUEPROV hIoQueueProv, PCRTHANDLE pHandle, RTIOQUEUEOP enmOp,
+                                             uint64_t off, PCRTSGBUF pSgBuf, size_t cbSg, uint32_t fReqFlags, void *pvUser));
 
     /**
      * Commits all prepared requests to the consumer for processing.
@@ -198,7 +195,7 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @param   hIoQueueProv        The I/O queue provider instance.
      * @param   pcReqsCommitted     Where to store the number of requests actually committed.
      */
-    DECLCALLBACKMEMBER(int, pfnCommit) (RTIOQUEUEPROV hIoQueueProv, uint32_t *pcReqsCommitted);
+    DECLCALLBACKMEMBER(int, pfnCommit,(RTIOQUEUEPROV hIoQueueProv, uint32_t *pcReqsCommitted));
 
     /**
      * Waits for completion events from the given I/O queue.
@@ -212,8 +209,8 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @param   pcCEvt              Where to store the number of completion events on success.
      * @param   fFlags              Additional flags controlling the wait behavior.
      */
-    DECLCALLBACKMEMBER(int, pfnEvtWait) (RTIOQUEUEPROV hIoQueueProv, PRTIOQUEUECEVT paCEvt, uint32_t cCEvt,
-                                         uint32_t cMinWait, uint32_t *pcCEvt, uint32_t fFlags);
+    DECLCALLBACKMEMBER(int, pfnEvtWait,(RTIOQUEUEPROV hIoQueueProv, PRTIOQUEUECEVT paCEvt, uint32_t cCEvt,
+                                        uint32_t cMinWait, uint32_t *pcCEvt, uint32_t fFlags));
 
     /**
      * Wakes up the thread waiting in RTIOQUEUEPROVVTABLE::pfnEvtWait().
@@ -221,7 +218,7 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @returns IPRT status code.
      * @param   hIoQueueProv        The I/O queue provider instance.
      */
-    DECLCALLBACKMEMBER(int, pfnEvtWaitWakeup) (RTIOQUEUEPROV hIoQueueProv);
+    DECLCALLBACKMEMBER(int, pfnEvtWaitWakeup,(RTIOQUEUEPROV hIoQueueProv));
 
     /** Marks the end of the structure (RTIOQUEUEPROVVTABLE_VERSION). */
     uintptr_t               uEndMarker;

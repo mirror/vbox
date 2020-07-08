@@ -412,9 +412,9 @@ static uint32_t             g_fSupAdversaries = 0;
 *********************************************************************************************************************************/
 static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfAccess, PULONG pfProtect,
                                          bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust,
-                                         bool *pfQuiet);
+                                         bool *pfQuiet) RT_NOTHROW_PROTO;
 static void     supR3HardenedWinRegisterDllNotificationCallback(void);
-static void     supR3HardenedWinReInstallHooks(bool fFirst);
+static void     supR3HardenedWinReInstallHooks(bool fFirst) RT_NOTHROW_PROTO;
 DECLASM(void)   supR3HardenedEarlyProcessInitThunk(void);
 DECLASM(void)   supR3HardenedMonitor_KiUserApcDispatcher(void);
 #ifndef VBOX_WITHOUT_HARDENDED_XCPT_LOGGING
@@ -555,7 +555,7 @@ DECLHIDDEN(void *) supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem
  * @param   hFile           The file in question.
  * @param   pIndexNumber    where to return the index number.
  */
-static bool supR3HardenedWinVerifyCacheGetIndexNumber(HANDLE hFile, PLARGE_INTEGER pIndexNumber)
+static bool supR3HardenedWinVerifyCacheGetIndexNumber(HANDLE hFile, PLARGE_INTEGER pIndexNumber) RT_NOTHROW_DEF
 {
     IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
     NTSTATUS rcNt = NtQueryInformationFile(hFile, &Ios, pIndexNumber, sizeof(*pIndexNumber), FileInternalInformation);
@@ -575,7 +575,7 @@ static bool supR3HardenedWinVerifyCacheGetIndexNumber(HANDLE hFile, PLARGE_INTEG
  * @returns Hash value.
  * @param   pUniStr             String to hash.
  */
-static uint32_t supR3HardenedWinVerifyCacheHashPath(PCUNICODE_STRING pUniStr)
+static uint32_t supR3HardenedWinVerifyCacheHashPath(PCUNICODE_STRING pUniStr) RT_NOTHROW_DEF
 {
     uint32_t uHash   = 0;
     unsigned cwcLeft = pUniStr->Length / sizeof(WCHAR);
@@ -602,7 +602,7 @@ static uint32_t supR3HardenedWinVerifyCacheHashPath(PCUNICODE_STRING pUniStr)
  *                              not available.
  * @param   pszName             The import name (UTF-8).
  */
-static uint32_t supR3HardenedWinVerifyCacheHashDirAndFile(PCRTUTF16 pawcDir, uint32_t cwcDir, const char *pszName)
+static uint32_t supR3HardenedWinVerifyCacheHashDirAndFile(PCRTUTF16 pawcDir, uint32_t cwcDir, const char *pszName) RT_NOTHROW_DEF
 {
     uint32_t uHash = 0;
     while (cwcDir-- > 0)
@@ -634,7 +634,7 @@ static uint32_t supR3HardenedWinVerifyCacheHashDirAndFile(PCRTUTF16 pawcDir, uin
  * @param   pawcRight           The right hand string.
  * @param   cwcToCompare        The number of chars to compare.
  */
-static bool supR3HardenedWinVerifyCacheIsMatch(PCRTUTF16 pawcLeft, PCRTUTF16 pawcRight, uint32_t cwcToCompare)
+static bool supR3HardenedWinVerifyCacheIsMatch(PCRTUTF16 pawcLeft, PCRTUTF16 pawcRight, uint32_t cwcToCompare) RT_NOTHROW_DEF
 {
     /* Try a quick memory compare first. */
     if (memcmp(pawcLeft, pawcRight, cwcToCompare * sizeof(RTUTF16)) == 0)
@@ -670,7 +670,7 @@ static bool supR3HardenedWinVerifyCacheIsMatch(PCRTUTF16 pawcLeft, PCRTUTF16 paw
  * @param   fFlags              The image verification flags.
  */
 static void supR3HardenedWinVerifyCacheInsert(PCUNICODE_STRING pUniStr, HANDLE hFile, int rc,
-                                              bool fWinVerifyTrust, uint32_t fFlags)
+                                              bool fWinVerifyTrust, uint32_t fFlags) RT_NOTHROW_DEF
 {
     /*
      * Allocate and initalize a new entry.
@@ -733,7 +733,7 @@ static void supR3HardenedWinVerifyCacheInsert(PCUNICODE_STRING pUniStr, HANDLE h
  * @param   pUniStr             The full path of the image.
  * @param   hFile               The file handle.
  */
-static PVERIFIERCACHEENTRY supR3HardenedWinVerifyCacheLookup(PCUNICODE_STRING pUniStr, HANDLE hFile)
+static PVERIFIERCACHEENTRY supR3HardenedWinVerifyCacheLookup(PCUNICODE_STRING pUniStr, HANDLE hFile) RT_NOTHROW_DEF
 {
     PRTUTF16 const      pwszPath = pUniStr->Buffer;
     uint16_t const      cbPath   = pUniStr->Length;
@@ -1202,7 +1202,7 @@ static void supR3HardenedWinVerifyCacheProcessWvtTodos(void)
  * @returns NT status.
  * @param   rc                      VBox status code.
  */
-static NTSTATUS supR3HardenedScreenImageCalcStatus(int rc)
+static NTSTATUS supR3HardenedScreenImageCalcStatus(int rc) RT_NOTHROW_DEF
 {
     /* This seems to be what LdrLoadDll returns when loading a 32-bit DLL into
        a 64-bit process.  At least here on windows 10 (2015-11-xx).
@@ -1239,8 +1239,9 @@ static NTSTATUS supR3HardenedScreenImageCalcStatus(int rc)
  *                                  this image in the log (i.e. we've seen it
  *                                  lots of times already).  Optional.
  */
-static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfAccess, PULONG pfProtect,
-                                         bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust, bool *pfQuiet)
+static NTSTATUS
+supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfAccess, PULONG pfProtect,
+                         bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust, bool *pfQuiet) RT_NOTHROW_DEF
 {
     *pfCallRealApi = false;
     if (pfQuiet)
@@ -2357,7 +2358,8 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
  * @remarks Vista and later.
  * @remarks The loader lock is held when we're called, at least on Windows 7.
  */
-static VOID CALLBACK supR3HardenedDllNotificationCallback(ULONG ulReason, PCLDR_DLL_NOTIFICATION_DATA pData, PVOID pvUser)
+static VOID CALLBACK
+supR3HardenedDllNotificationCallback(ULONG ulReason, PCLDR_DLL_NOTIFICATION_DATA pData, PVOID pvUser) RT_NOTHROW_DEF
 {
     NOREF(pvUser);
 
@@ -2765,7 +2767,7 @@ DECLHIDDEN(void) supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT)
  *
  * @returns true if we're positive we're alone, false if not.
  */
-static bool supR3HardenedWinAmIAlone(void)
+static bool supR3HardenedWinAmIAlone(void) RT_NOTHROW_DEF
 {
     ULONG    fAmIAlone = 0;
     ULONG    cbIgn     = 0;
@@ -2786,7 +2788,7 @@ static bool supR3HardenedWinAmIAlone(void)
  * @param   cbMem               The amount of memory to change.
  * @param   fNewProt            The new protection.
  */
-static NTSTATUS supR3HardenedWinProtectMemory(PVOID pvMem, SIZE_T cbMem, ULONG fNewProt)
+static NTSTATUS supR3HardenedWinProtectMemory(PVOID pvMem, SIZE_T cbMem, ULONG fNewProt) RT_NOTHROW_DEF
 {
     ULONG fOldProt = 0;
     return NtProtectVirtualMemory(NtCurrentProcess(), &pvMem, &cbMem, fNewProt, &fOldProt);
@@ -2796,7 +2798,7 @@ static NTSTATUS supR3HardenedWinProtectMemory(PVOID pvMem, SIZE_T cbMem, ULONG f
 /**
  * Installs or reinstalls the NTDLL patches.
  */
-static void supR3HardenedWinReInstallHooks(bool fFirstCall)
+static void supR3HardenedWinReInstallHooks(bool fFirstCall) RT_NOTHROW_DEF
 {
     struct
     {

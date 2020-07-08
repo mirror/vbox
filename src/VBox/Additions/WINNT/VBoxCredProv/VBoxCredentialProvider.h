@@ -22,7 +22,7 @@
 #endif
 
 #include <iprt/win/windows.h>
-#include <credentialprovider.h>
+#include <iprt/win/credentialprovider.h>
 #include <Shlguid.h>
 
 #include "VBoxCredProvUtils.h"

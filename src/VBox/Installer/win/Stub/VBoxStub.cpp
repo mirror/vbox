@@ -25,7 +25,7 @@
 #endif
 
 #include <iprt/win/windows.h>
-#include <commctrl.h>
+#include <iprt/win/commctrl.h>
 #include <fcntl.h>
 #include <io.h>
 #include <lmerr.h>

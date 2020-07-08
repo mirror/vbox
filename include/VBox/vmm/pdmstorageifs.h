@@ -143,7 +143,7 @@ typedef struct PDMIMOUNT
  * @param   pvUser          Opaque user data.
  * @param   uPercent        Completion percentage.
  */
-typedef DECLCALLBACK(int) FNSIMPLEPROGRESS(void *pvUser, unsigned uPercentage);
+typedef DECLCALLBACKTYPE(int, FNSIMPLEPROGRESS,(void *pvUser, unsigned uPercentage));
 /** Pointer to FNSIMPLEPROGRESS() */
 typedef FNSIMPLEPROGRESS *PFNSIMPLEPROGRESS;
 

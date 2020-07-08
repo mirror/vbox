@@ -748,7 +748,7 @@ static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
     return rc;
 }
 
-static int vboxClipboardWindowThread(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) vboxClipboardWindowThread(RTTHREAD hThread, void *pvUser)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pvUser;
     AssertPtr(pCtx);

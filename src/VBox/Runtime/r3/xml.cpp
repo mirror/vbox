@@ -384,12 +384,12 @@ int MemoryBuf::read(char *aBuf, int aLen)
 
 struct GlobalLock::Data
 {
-    PFNEXTERNALENTITYLOADER pOldLoader;
+    PFNEXTERNALENTITYLOADER pfnOldLoader;
     RTCLock lock;
 
     Data()
-        : pOldLoader(NULL),
-          lock(gGlobal.sxml.lock)
+        : pfnOldLoader(NULL)
+        , lock(gGlobal.sxml.lock)
     {
     }
 };
@@ -401,16 +401,16 @@ GlobalLock::GlobalLock()
 
 GlobalLock::~GlobalLock()
 {
-    if (m->pOldLoader)
-        xmlSetExternalEntityLoader(m->pOldLoader);
+    if (m->pfnOldLoader)
+        xmlSetExternalEntityLoader(m->pfnOldLoader);
     delete m;
     m = NULL;
 }
 
-void GlobalLock::setExternalEntityLoader(PFNEXTERNALENTITYLOADER pLoader)
+void GlobalLock::setExternalEntityLoader(PFNEXTERNALENTITYLOADER pfnLoader)
 {
-    m->pOldLoader = xmlGetExternalEntityLoader();
-    xmlSetExternalEntityLoader(pLoader);
+    m->pfnOldLoader = xmlGetExternalEntityLoader();
+    xmlSetExternalEntityLoader(pfnLoader);
 }
 
 // static
@@ -1823,7 +1823,7 @@ ElementNode *Document::createRootElement(const char *pcszRootElementName,
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-static void xmlParserBaseGenericError(void *pCtx, const char *pszMsg, ...)
+static void xmlParserBaseGenericError(void *pCtx, const char *pszMsg, ...) RT_NOTHROW_DEF
 {
     NOREF(pCtx);
     va_list args;
@@ -1832,7 +1832,7 @@ static void xmlParserBaseGenericError(void *pCtx, const char *pszMsg, ...)
     va_end(args);
 }
 
-static void xmlParserBaseStructuredError(void *pCtx, xmlErrorPtr error)
+static void xmlParserBaseStructuredError(void *pCtx, xmlErrorPtr error) RT_NOTHROW_DEF
 {
     NOREF(pCtx);
     /* we expect that there is always a trailing NL */
@@ -2017,7 +2017,7 @@ int XmlStringWriter::write(const Document &rDoc, RTCString *pStrDst)
     return rc;
 }
 
-/*static*/ int XmlStringWriter::WriteCallbackForSize(void *pvUser, const char *pachBuf, int cbToWrite)
+/*static*/ int XmlStringWriter::WriteCallbackForSize(void *pvUser, const char *pachBuf, int cbToWrite) RT_NOTHROW_DEF
 {
     if (cbToWrite > 0)
         *(size_t *)pvUser += (unsigned)cbToWrite;
@@ -2025,7 +2025,7 @@ int XmlStringWriter::write(const Document &rDoc, RTCString *pStrDst)
     return cbToWrite;
 }
 
-/*static*/ int XmlStringWriter::WriteCallbackForReal(void *pvUser, const char *pachBuf, int cbToWrite)
+/*static*/ int XmlStringWriter::WriteCallbackForReal(void *pvUser, const char *pachBuf, int cbToWrite) RT_NOTHROW_DEF
 {
     XmlStringWriter *pThis = static_cast<XmlStringWriter*>(pvUser);
     if (!pThis->m_fOutOfMemory)
@@ -2047,7 +2047,7 @@ int XmlStringWriter::write(const Document &rDoc, RTCString *pStrDst)
     return -1; /* failure */
 }
 
-int XmlStringWriter::CloseCallback(void *pvUser)
+/*static*/ int XmlStringWriter::CloseCallback(void *pvUser) RT_NOTHROW_DEF
 {
     /* Nothing to do here. */
     RT_NOREF(pvUser);
@@ -2172,8 +2172,7 @@ void XmlFileParser::read(const RTCString &strFilename,
     doc.refreshInternals();
 }
 
-// static
-int XmlFileParser::ReadCallback(void *aCtxt, char *aBuf, int aLen)
+/*static*/ int XmlFileParser::ReadCallback(void *aCtxt, char *aBuf, int aLen) RT_NOTHROW_DEF
 {
     ReadContext *pContext = static_cast<ReadContext*>(aCtxt);
 
@@ -2192,7 +2191,7 @@ int XmlFileParser::ReadCallback(void *aCtxt, char *aBuf, int aLen)
     return -1 /* failure */;
 }
 
-int XmlFileParser::CloseCallback(void *aCtxt)
+/*static*/ int XmlFileParser::CloseCallback(void *aCtxt) RT_NOTHROW_DEF
 {
     /// @todo to be written
     NOREF(aCtxt);
@@ -2300,7 +2299,7 @@ void XmlFileWriter::write(const char *pcszFilename, bool fSafe)
     }
 }
 
-int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen)
+/*static*/ int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen) RT_NOTHROW_DEF
 {
     WriteContext *pContext = static_cast<WriteContext*>(aCtxt);
 
@@ -2318,7 +2317,7 @@ int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen)
     return -1 /* failure */;
 }
 
-int XmlFileWriter::CloseCallback(void *aCtxt)
+/*static*/ int XmlFileWriter::CloseCallback(void *aCtxt) RT_NOTHROW_DEF
 {
     /// @todo to be written
     NOREF(aCtxt);

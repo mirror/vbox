@@ -33,7 +33,7 @@
 #define VBOX_NETLWF_RETRIES 10
 
 
-static VOID winNetCfgLogger(LPCSTR pszString)
+static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
     printf("%s", pszString);
 }

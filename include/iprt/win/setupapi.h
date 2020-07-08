@@ -29,12 +29,21 @@
 # pragma once
 #endif
 
-#pragma warning(push)
-#pragma warning(disable:4668) /* warning C4668: 'USE_SP_ALTPLATFORM_INFO_V1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4668) /* warning C4668: 'USE_SP_ALTPLATFORM_INFO_V1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+# ifdef __cplusplus
+#  if _MSC_VER >= 1900 /*RT_MSC_VER_VC140*/
+#   pragma warning(disable:5039) /* winbase.h(13179): warning C5039: 'TpSetCallbackCleanupGroup': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception. */
+#  endif
+# endif
+#endif
 
 #include <setupapi.h>
 
-#pragma warning(pop)
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #endif /* !IPRT_INCLUDED_win_setupapi_h */
 

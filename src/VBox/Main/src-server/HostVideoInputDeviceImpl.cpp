@@ -118,16 +118,16 @@ static DECLCALLBACK(int) hostWebcamAdd(void *pvUser,
 }
 
 /** @todo These typedefs must be in a header. */
-typedef DECLCALLBACK(int) FNVBOXHOSTWEBCAMADD(void *pvUser,
-                                              const char *pszName,
-                                              const char *pszPath,
-                                              const char *pszAlias,
-                                              uint64_t *pu64Result);
+typedef DECLCALLBACKTYPE(int, FNVBOXHOSTWEBCAMADD,(void *pvUser,
+                                                   const char *pszName,
+                                                   const char *pszPath,
+                                                   const char *pszAlias,
+                                                   uint64_t *pu64Result));
 typedef FNVBOXHOSTWEBCAMADD *PFNVBOXHOSTWEBCAMADD;
 
-typedef DECLCALLBACK(int) FNVBOXHOSTWEBCAMLIST(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd,
-                                               void *pvUser,
-                                               uint64_t *pu64WebcamAddResult);
+typedef DECLCALLBACKTYPE(int, FNVBOXHOSTWEBCAMLIST,(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd,
+                                                    void *pvUser,
+                                                    uint64_t *pu64WebcamAddResult));
 typedef FNVBOXHOSTWEBCAMLIST *PFNVBOXHOSTWEBCAMLIST;
 
 static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, PFNVBOXHOSTWEBCAMLIST *ppfn)

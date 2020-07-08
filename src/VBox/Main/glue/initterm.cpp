@@ -200,7 +200,8 @@ static unsigned int gXPCOMInitCount = 0;
 /**
  * Replacement function for the InvokeStub method for the IRundown stub.
  */
-static HRESULT STDMETHODCALLTYPE Rundown_InvokeStub(IRpcStubBuffer *pThis, RPCOLEMESSAGE *pMsg, IRpcChannelBuffer *pBuf)
+static HRESULT STDMETHODCALLTYPE
+Rundown_InvokeStub(IRpcStubBuffer *pThis, RPCOLEMESSAGE *pMsg, IRpcChannelBuffer *pBuf) RT_NOTHROW_DEF
 {
     /*
      * Our mission here is to prevent remote calls to methods #8 and #9,
@@ -421,7 +422,7 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
                     union
                     {
                         void *pv;
-                        DECLCALLBACKMEMBER(uint32_t, pfnRegUpdate)(void);
+                        DECLCALLBACKMEMBER(uint32_t, pfnRegUpdate,(void));
                     } u;
                     vrc = RTLdrGetSymbol(hMod, "VbpsUpdateRegistrations", &u.pv);
                     if (RT_SUCCESS(vrc))

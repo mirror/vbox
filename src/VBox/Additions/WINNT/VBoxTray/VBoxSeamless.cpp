@@ -194,7 +194,7 @@ void VBoxSeamlessDisable(void)
     VBoxDispIfSeamlessTerm(&gVBoxDispIfSeamless);
 }
 
-BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
+BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam) RT_NOTHROW_DEF
 {
     PVBOX_ENUM_PARAM    lpParam = (PVBOX_ENUM_PARAM)lParam;
     DWORD               dwStyle, dwExStyle;

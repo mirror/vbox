@@ -118,10 +118,10 @@ typedef struct HGSMIENV
     void *pvEnv;
 
     /* Allocate system memory. */
-    DECLCALLBACKMEMBER(void *, pfnAlloc)(void *pvEnv, HGSMISIZE cb);
+    DECLCALLBACKMEMBER(void *, pfnAlloc,(void *pvEnv, HGSMISIZE cb));
 
     /* Free system memory. */
-    DECLCALLBACKMEMBER(void, pfnFree)(void *pvEnv, void *pv);
+    DECLCALLBACKMEMBER(void, pfnFree,(void *pvEnv, void *pv));
 } HGSMIENV;
 
 #endif /* !VBOX_INCLUDED_Graphics_HGSMIDefs_h */

@@ -905,7 +905,7 @@ VMMR3DECL(int)  DBGFR3BpDisable(PUVM pUVM, uint32_t iBp);
  * @param   pvUser      The user argument.
  * @param   pBp         Pointer to the breakpoint information. (readonly)
  */
-typedef DECLCALLBACK(int) FNDBGFBPENUM(PUVM pUVM, void *pvUser, PCDBGFBP pBp);
+typedef DECLCALLBACKTYPE(int, FNDBGFBPENUM,(PUVM pUVM, void *pvUser, PCDBGFBP pBp));
 /** Pointer to a breakpoint enumeration callback function. */
 typedef FNDBGFBPENUM *PFNDBGFBPENUM;
 
@@ -953,7 +953,7 @@ typedef struct DBGFINFOHLP
      * @param   pszFormat   The format string.
      * @param   ...         Arguments.
      */
-    DECLCALLBACKMEMBER(void, pfnPrintf)(PCDBGFINFOHLP pHlp, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+    DECLCALLBACKMEMBER(void, pfnPrintf,(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(2, 3);
 
     /**
      * Print formatted string.
@@ -962,7 +962,7 @@ typedef struct DBGFINFOHLP
      * @param   pszFormat   The format string.
      * @param   args        Argument list.
      */
-    DECLCALLBACKMEMBER(void, pfnPrintfV)(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(2, 0);
+    DECLCALLBACKMEMBER(void, pfnPrintfV,(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)) RT_IPRT_FORMAT_ATTR(2, 0);
 
     /**
      * Report getopt parsing trouble
@@ -972,8 +972,8 @@ typedef struct DBGFINFOHLP
      * @param   pValueUnion The value union.
      * @param   pState      The getopt state.
      */
-    DECLCALLBACKMEMBER(void, pfnGetOptError)(PCDBGFINFOHLP pHlp, int rc, union RTGETOPTUNION *pValueUnion,
-                                             struct RTGETOPTSTATE *pState);
+    DECLCALLBACKMEMBER(void, pfnGetOptError,(PCDBGFINFOHLP pHlp, int rc, union RTGETOPTUNION *pValueUnion,
+                                             struct RTGETOPTSTATE *pState));
 } DBGFINFOHLP;
 
 
@@ -984,7 +984,7 @@ typedef struct DBGFINFOHLP
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */
-typedef DECLCALLBACK(void) FNDBGFHANDLERDEV(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFHANDLERDEV,(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs));
 /** Pointer to a FNDBGFHANDLERDEV function. */
 typedef FNDBGFHANDLERDEV  *PFNDBGFHANDLERDEV;
 
@@ -995,7 +995,7 @@ typedef FNDBGFHANDLERDEV  *PFNDBGFHANDLERDEV;
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */
-typedef DECLCALLBACK(void) FNDBGFHANDLERDRV(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFHANDLERDRV,(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, const char *pszArgs));
 /** Pointer to a FNDBGFHANDLERDRV function. */
 typedef FNDBGFHANDLERDRV  *PFNDBGFHANDLERDRV;
 
@@ -1006,7 +1006,7 @@ typedef FNDBGFHANDLERDRV  *PFNDBGFHANDLERDRV;
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */
-typedef DECLCALLBACK(void) FNDBGFHANDLERINT(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFHANDLERINT,(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs));
 /** Pointer to a FNDBGFHANDLERINT function. */
 typedef FNDBGFHANDLERINT  *PFNDBGFHANDLERINT;
 
@@ -1017,7 +1017,7 @@ typedef FNDBGFHANDLERINT  *PFNDBGFHANDLERINT;
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */
-typedef DECLCALLBACK(void) FNDBGFHANDLEREXT(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFHANDLEREXT,(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs));
 /** Pointer to a FNDBGFHANDLEREXT function. */
 typedef FNDBGFHANDLEREXT  *PFNDBGFHANDLEREXT;
 
@@ -1029,7 +1029,7 @@ typedef FNDBGFHANDLEREXT  *PFNDBGFHANDLEREXT;
  * @param   cArgs       Number of arguments.
  * @param   papszArgs   Argument vector.
  */
-typedef DECLCALLBACK(void) FNDBGFINFOARGVDEV(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFINFOARGVDEV,(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs));
 /** Pointer to a FNDBGFINFOARGVDEV function. */
 typedef FNDBGFINFOARGVDEV *PFNDBGFINFOARGVDEV;
 
@@ -1041,7 +1041,7 @@ typedef FNDBGFINFOARGVDEV *PFNDBGFINFOARGVDEV;
  * @param   cArgs       Number of arguments.
  * @param   papszArgs   Argument vector.
  */
-typedef DECLCALLBACK(void) FNDBGFINFOARGVUSB(PPDMUSBINS pUsbIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFINFOARGVUSB,(PPDMUSBINS pUsbIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs));
 /** Pointer to a FNDBGFINFOARGVUSB function. */
 typedef FNDBGFINFOARGVUSB *PFNDBGFINFOARGVUSB;
 
@@ -1053,7 +1053,7 @@ typedef FNDBGFINFOARGVUSB *PFNDBGFINFOARGVUSB;
  * @param   cArgs       Number of arguments.
  * @param   papszArgs   Argument vector.
  */
-typedef DECLCALLBACK(void) FNDBGFINFOARGVDRV(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFINFOARGVDRV,(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs));
 /** Pointer to a FNDBGFINFOARGVDRV function. */
 typedef FNDBGFINFOARGVDRV *PFNDBGFINFOARGVDRV;
 
@@ -1065,7 +1065,7 @@ typedef FNDBGFINFOARGVDRV *PFNDBGFINFOARGVDRV;
  * @param   cArgs       Number of arguments.
  * @param   papszArgs   Argument vector.
  */
-typedef DECLCALLBACK(void) FNDBGFINFOARGVINT(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFINFOARGVINT,(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs));
 /** Pointer to a FNDBGFINFOARGVINT function. */
 typedef FNDBGFINFOARGVINT *PFNDBGFINFOARGVINT;
 
@@ -1077,7 +1077,7 @@ typedef FNDBGFINFOARGVINT *PFNDBGFINFOARGVINT;
  * @param   cArgs       Number of arguments.
  * @param   papszArgs   Argument vector.
  */
-typedef DECLCALLBACK(void) FNDBGFINFOARGVEXT(void *pvUser, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+typedef DECLCALLBACKTYPE(void, FNDBGFINFOARGVEXT,(void *pvUser, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs));
 /** Pointer to a FNDBGFINFOARGVEXT function. */
 typedef FNDBGFINFOARGVEXT *PFNDBGFINFOARGVEXT;
 
@@ -1167,7 +1167,7 @@ VMMR3_INT_DECL(int) DBGFR3InfoMulti(PVM pVM, const char *pszIncludePat, const ch
  * @param   pszName     Info identifier name.
  * @param   pszDesc     The description.
  */
-typedef DECLCALLBACK(int) FNDBGFINFOENUM(PUVM pUVM, const char *pszName, const char *pszDesc, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNDBGFINFOENUM,(PUVM pUVM, const char *pszName, const char *pszDesc, void *pvUser));
 /** Pointer to a FNDBGFINFOENUM function. */
 typedef FNDBGFINFOENUM *PFNDBGFINFOENUM;
 
@@ -1955,11 +1955,11 @@ typedef struct DBGFREGSUBFIELD
     /** Getter (optional).
      * @remarks Does not take the device lock or anything like that.
      */
-    DECLCALLBACKMEMBER(int, pfnGet)(void *pvUser, struct DBGFREGSUBFIELD const *pSubField, PRTUINT128U puValue);
+    DECLCALLBACKMEMBER(int, pfnGet,(void *pvUser, struct DBGFREGSUBFIELD const *pSubField, PRTUINT128U puValue));
     /** Setter (optional).
      * @remarks Does not take the device lock or anything like that.
      */
-    DECLCALLBACKMEMBER(int, pfnSet)(void *pvUser, struct DBGFREGSUBFIELD const *pSubField, RTUINT128U uValue, RTUINT128U fMask);
+    DECLCALLBACKMEMBER(int, pfnSet,(void *pvUser, struct DBGFREGSUBFIELD const *pSubField, RTUINT128U uValue, RTUINT128U fMask));
 } DBGFREGSUBFIELD;
 /** Pointer to a const register sub-field descriptor. */
 typedef DBGFREGSUBFIELD const *PCDBGFREGSUBFIELD;
@@ -2016,11 +2016,11 @@ typedef struct DBGFREGDESC
     /** Getter.
      * @remarks Does not take the device lock or anything like that.
      */
-    DECLCALLBACKMEMBER(int, pfnGet)(void *pvUser, struct DBGFREGDESC const *pDesc, PDBGFREGVAL pValue);
+    DECLCALLBACKMEMBER(int, pfnGet,(void *pvUser, struct DBGFREGDESC const *pDesc, PDBGFREGVAL pValue));
     /** Setter.
      * @remarks Does not take the device lock or anything like that.
      */
-    DECLCALLBACKMEMBER(int, pfnSet)(void *pvUser, struct DBGFREGDESC const *pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask);
+    DECLCALLBACKMEMBER(int, pfnSet,(void *pvUser, struct DBGFREGDESC const *pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask));
     /** Aliases (optional). */
     PCDBGFREGALIAS          paAliases;
     /** Sub fields (optional). */
@@ -2201,7 +2201,7 @@ typedef struct DBGFOSREG
      * @param   pUVM    The user mode VM handle.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(int, pfnConstruct)(PUVM pUVM, void *pvData);
+    DECLCALLBACKMEMBER(int, pfnConstruct,(PUVM pUVM, void *pvData));
 
     /**
      * Destroys the instance.
@@ -2209,7 +2209,7 @@ typedef struct DBGFOSREG
      * @param   pUVM    The user mode VM handle.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(void, pfnDestruct)(PUVM pUVM, void *pvData);
+    DECLCALLBACKMEMBER(void, pfnDestruct,(PUVM pUVM, void *pvData));
 
     /**
      * Probes the guest memory for OS finger prints.
@@ -2221,7 +2221,7 @@ typedef struct DBGFOSREG
      * @param   pUVM    The user mode VM handle.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(bool, pfnProbe)(PUVM pUVM, void *pvData);
+    DECLCALLBACKMEMBER(bool, pfnProbe,(PUVM pUVM, void *pvData));
 
     /**
      * Initializes a fresly detected guest, loading symbols and such useful stuff.
@@ -2232,7 +2232,7 @@ typedef struct DBGFOSREG
      * @param   pUVM    The user mode VM handle.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(int, pfnInit)(PUVM pUVM, void *pvData);
+    DECLCALLBACKMEMBER(int, pfnInit,(PUVM pUVM, void *pvData));
 
     /**
      * Refreshes symbols and stuff following a redetection of the same OS.
@@ -2243,7 +2243,7 @@ typedef struct DBGFOSREG
      * @param   pUVM    The user mode VM handle.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(int, pfnRefresh)(PUVM pUVM, void *pvData);
+    DECLCALLBACKMEMBER(int, pfnRefresh,(PUVM pUVM, void *pvData));
 
     /**
      * Terminates an OS when a new (or none) OS has been detected,
@@ -2254,7 +2254,7 @@ typedef struct DBGFOSREG
      * @param   pUVM    The user mode VM handle.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(void, pfnTerm)(PUVM pUVM, void *pvData);
+    DECLCALLBACKMEMBER(void, pfnTerm,(PUVM pUVM, void *pvData));
 
     /**
      * Queries the version of the running OS.
@@ -2267,7 +2267,7 @@ typedef struct DBGFOSREG
      * @param   pszVersion  Where to store the version string.
      * @param   cchVersion  The size of the version string buffer.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryVersion)(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion);
+    DECLCALLBACKMEMBER(int, pfnQueryVersion,(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion));
 
     /**
      * Queries the pointer to a interface.
@@ -2282,7 +2282,7 @@ typedef struct DBGFOSREG
      * @param   pvData  Pointer to the instance data.
      * @param   enmIf   The interface identifier.
      */
-    DECLCALLBACKMEMBER(void *, pfnQueryInterface)(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf);
+    DECLCALLBACKMEMBER(void *, pfnQueryInterface,(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf));
 
     /**
      * Stack unwind assist callback.
@@ -2299,9 +2299,9 @@ typedef struct DBGFOSREG
      * @param   hAs             The address space being used for the unwind.
      * @param   puScratch       Scratch area (initialized to zero, no dtor).
      */
-    DECLCALLBACKMEMBER(int, pfnStackUnwindAssist)(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
+    DECLCALLBACKMEMBER(int, pfnStackUnwindAssist,(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
                                                   PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx, RTDBGAS hAs,
-                                                  uint64_t *puScratch);
+                                                  uint64_t *puScratch));
 
     /** Trailing magic (DBGFOSREG_MAGIC). */
     uint32_t u32EndMagic;
@@ -2346,8 +2346,8 @@ typedef struct DBGFOSIDMESG
      *                      including zero terminator.  On VERR_BUFFER_OVERFLOW this
      *                      holds the necessary buffer size.  Optional.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryKernelLog)(struct DBGFOSIDMESG *pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
-                                               char *pszBuf, size_t cbBuf, size_t *pcbActual);
+    DECLCALLBACKMEMBER(int, pfnQueryKernelLog,(struct DBGFOSIDMESG *pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
+                                               char *pszBuf, size_t cbBuf, size_t *pcbActual));
     /** Trailing magic (DBGFOSIDMESG_MAGIC). */
     uint32_t    u32EndMagic;
 } DBGFOSIDMESG;
@@ -2406,7 +2406,7 @@ typedef enum DBGFPLUGINOP
  * @param   pUVM            The user mode VM handle. This may be NULL.
  * @param   uArg            Extra argument.
  */
-typedef DECLCALLBACK(int) FNDBGFPLUGIN(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg);
+typedef DECLCALLBACKTYPE(int, FNDBGFPLUGIN,(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg));
 /** Pointer to a FNDBGFPLUGIN. */
 typedef FNDBGFPLUGIN *PFNDBGFPLUGIN;
 
@@ -2623,10 +2623,9 @@ typedef struct DBGFTYPEREG
  * @param   cValBufs        Number of value buffers (for arrays).
  * @param   pvUser          Opaque user data.
  */
-typedef DECLCALLBACK(int) FNDBGFR3TYPEVALDUMP(uint32_t off, const char *pszField, uint32_t iLvl,
-                                              DBGFTYPEBUILTIN enmType, size_t cbType,
-                                              PDBGFTYPEVALBUF pValBuf, uint32_t cValBufs,
-                                              void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNDBGFR3TYPEVALDUMP,(uint32_t off, const char *pszField, uint32_t iLvl,
+                                                   DBGFTYPEBUILTIN enmType, size_t cbType,
+                                                   PDBGFTYPEVALBUF pValBuf, uint32_t cValBufs, void *pvUser));
 /** Pointer to a FNDBGFR3TYPEVALDUMP. */
 typedef FNDBGFR3TYPEVALDUMP *PFNDBGFR3TYPEVALDUMP;
 
@@ -2643,9 +2642,9 @@ typedef FNDBGFR3TYPEVALDUMP *PFNDBGFR3TYPEVALDUMP;
  * @param   cElements       Number of for the field ( > 0 for arrays).
  * @param   pvUser          Opaque user data.
  */
-typedef DECLCALLBACK(int) FNDBGFR3TYPEDUMP(uint32_t off, const char *pszField, uint32_t iLvl,
-                                           const char *pszType, uint32_t fTypeFlags,
-                                           uint32_t cElements, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNDBGFR3TYPEDUMP,(uint32_t off, const char *pszField, uint32_t iLvl,
+                                                const char *pszType, uint32_t fTypeFlags,
+                                                uint32_t cElements, void *pvUser));
 /** Pointer to a FNDBGFR3TYPEDUMP. */
 typedef FNDBGFR3TYPEDUMP *PFNDBGFR3TYPEDUMP;
 

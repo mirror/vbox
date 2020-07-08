@@ -164,7 +164,7 @@ VMM_INT_DECL(bool)      TMCpuTickIsTicking(PVMCPUCC pVCpu);
  * @param   pTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */
-typedef DECLCALLBACK(void) FNTMTIMERDEV(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNTMTIMERDEV,(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser));
 /** Pointer to a device timer callback function. */
 typedef FNTMTIMERDEV *PFNTMTIMERDEV;
 
@@ -176,7 +176,7 @@ typedef FNTMTIMERDEV *PFNTMTIMERDEV;
  * @param   pTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */
-typedef DECLCALLBACK(void) FNTMTIMERUSB(PPDMUSBINS pUsbIns, PTMTIMER pTimer, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNTMTIMERUSB,(PPDMUSBINS pUsbIns, PTMTIMER pTimer, void *pvUser));
 /** Pointer to a timer callback for a USB device. */
 typedef FNTMTIMERUSB *PFNTMTIMERUSB;
 
@@ -187,7 +187,7 @@ typedef FNTMTIMERUSB *PFNTMTIMERUSB;
  * @param   pTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */
-typedef DECLCALLBACK(void) FNTMTIMERDRV(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNTMTIMERDRV,(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser));
 /** Pointer to a driver timer callback function. */
 typedef FNTMTIMERDRV *PFNTMTIMERDRV;
 
@@ -197,7 +197,7 @@ typedef FNTMTIMERDRV *PFNTMTIMERDRV;
  * @param   pSrvIns         Service instance of the device which registered the timer.
  * @param   pTimer          The timer handle.
  */
-typedef DECLCALLBACK(void) FNTMTIMERSRV(PPDMSRVINS pSrvIns, PTMTIMER pTimer);
+typedef DECLCALLBACKTYPE(void, FNTMTIMERSRV,(PPDMSRVINS pSrvIns, PTMTIMER pTimer));
 /** Pointer to a service timer callback function. */
 typedef FNTMTIMERSRV *PFNTMTIMERSRV;
 
@@ -208,7 +208,7 @@ typedef FNTMTIMERSRV *PFNTMTIMERSRV;
  * @param   pTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */
-typedef DECLCALLBACK(void) FNTMTIMERINT(PVM pVM, PTMTIMER pTimer, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNTMTIMERINT,(PVM pVM, PTMTIMER pTimer, void *pvUser));
 /** Pointer to internal timer callback function. */
 typedef FNTMTIMERINT *PFNTMTIMERINT;
 
@@ -217,7 +217,7 @@ typedef FNTMTIMERINT *PFNTMTIMERINT;
  *
  * @param   pvUser          User argument as specified when the timer was created.
  */
-typedef DECLCALLBACK(void) FNTMTIMEREXT(void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNTMTIMEREXT,(void *pvUser));
 /** Pointer to an external timer callback function. */
 typedef FNTMTIMEREXT *PFNTMTIMEREXT;
 

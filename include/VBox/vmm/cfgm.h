@@ -81,7 +81,7 @@ typedef enum CFGMCONFIGTYPE
  * @param   pVM         The cross context VM structure.
  * @param   pvUser      The argument supplied to VMR3Create().
  */
-typedef DECLCALLBACK(int) FNCFGMCONSTRUCTOR(PUVM pUVM, PVM pVM, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNCFGMCONSTRUCTOR,(PUVM pUVM, PVM pVM, void *pvUser));
 /** Pointer to a FNCFGMCONSTRUCTOR(). */
 typedef FNCFGMCONSTRUCTOR *PFNCFGMCONSTRUCTOR;
 

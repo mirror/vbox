@@ -187,7 +187,7 @@ static PCVBMGCMD lookupCommand(const char *pszCommand)
  * a thread dedicated to delivering this signal.  Do not doing anything
  * unnecessary here.
  */
-static void showProgressSignalHandler(int iSignal)
+static void showProgressSignalHandler(int iSignal) RT_NOTHROW_DEF
 {
     NOREF(iSignal);
     ASMAtomicWriteBool(&g_fCanceled, true);

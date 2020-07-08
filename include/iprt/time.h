@@ -976,7 +976,7 @@ typedef struct RTTIMENANOTSDATA
      * @param   u64DeltaPrev    The delta relative to the previously returned timestamp.
      * @param   u64PrevNanoTS   The previously returned timestamp (as it was read it).
      */
-    DECLCALLBACKMEMBER(void, pfnBad)(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
+    DECLCALLBACKMEMBER(void, pfnBad,(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS));
 
     /**
      * Callback for when rediscovery is required.
@@ -984,7 +984,7 @@ typedef struct RTTIMENANOTSDATA
      * @returns Nanosecond timestamp.
      * @param   pData           Pointer to this structure.
      */
-    DECLCALLBACKMEMBER(uint64_t, pfnRediscover)(PRTTIMENANOTSDATA pData);
+    DECLCALLBACKMEMBER(uint64_t, pfnRediscover,(PRTTIMENANOTSDATA pData));
 
     /**
      * Callback for when some CPU index related stuff goes wrong.
@@ -997,7 +997,7 @@ typedef struct RTTIMENANOTSDATA
      * @param   iGipCpu         The GIP CPU array index if available, otherwise
      *                          (UINT16_MAX-1).
      */
-    DECLCALLBACKMEMBER(uint64_t, pfnBadCpuIndex)(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu);
+    DECLCALLBACKMEMBER(uint64_t, pfnBadCpuIndex,(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu));
 
     /** Number of 1ns steps because of overshooting the period. */
     uint32_t            c1nsSteps;
@@ -1067,7 +1067,7 @@ typedef RTTIMENANOTSDATA RTTIMENANOTSDATARC;
 #endif
 
 /** Internal RTTimeNanoTS worker (assembly). */
-typedef DECLCALLBACK(uint64_t) FNTIMENANOTSINTERNAL(PRTTIMENANOTSDATA pData);
+typedef DECLCALLBACKTYPE(uint64_t, FNTIMENANOTSINTERNAL,(PRTTIMENANOTSDATA pData));
 /** Pointer to an internal RTTimeNanoTS worker (assembly). */
 typedef FNTIMENANOTSINTERNAL *PFNTIMENANOTSINTERNAL;
 RTDECL(uint64_t) RTTimeNanoTSLegacySyncInvarNoDelta(PRTTIMENANOTSDATA pData);

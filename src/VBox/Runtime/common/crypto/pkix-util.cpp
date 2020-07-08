@@ -39,7 +39,9 @@
 
 #ifdef IPRT_WITH_OPENSSL
 # include "internal/iprt-openssl.h"
-# include "openssl/evp.h"
+# include "internal/openssl-pre.h"
+# include <openssl/evp.h>
+# include "internal/openssl-post.h"
 #endif
 
 

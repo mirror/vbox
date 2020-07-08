@@ -96,7 +96,7 @@ volatile uint32_t dwTimeOut = dwNormalTimeout; /* time for EXE to be idle before
 
 
 /** Passed to CreateThread to monitor the shutdown event. */
-static DWORD WINAPI MonitorProc(void *pv)
+static DWORD WINAPI MonitorProc(void *pv) RT_NOTHROW_DEF
 {
     CExeModule *p = (CExeModule *)pv;
     p->MonitorShutdown();
@@ -593,12 +593,13 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
 */
 static BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
 {
-    BOOL fResult = FALSE;
-    typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONCREATE)(HWND hWnd, LPCWSTR pwszReason);
+    typedef DECLCALLBACKPTR_EX(BOOL, WINAPI, PFNSHUTDOWNBLOCKREASONCREATE,(HWND hWnd, LPCWSTR pwszReason));
 
-    PFNSHUTDOWNBLOCKREASONCREATE pfn = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(
-            GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonCreate");
+    PFNSHUTDOWNBLOCKREASONCREATE pfn
+        = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonCreate");
     AssertPtr(pfn);
+
+    BOOL fResult = FALSE;
     if (pfn)
         fResult = pfn(hWnd, pwszReason);
     return fResult;
@@ -610,12 +611,12 @@ static BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
 */
 static BOOL ShutdownBlockReasonDestroyAPI(HWND hWnd)
 {
-    BOOL fResult = FALSE;
-    typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONDESTROY)(HWND hWnd);
-
-    PFNSHUTDOWNBLOCKREASONDESTROY pfn = (PFNSHUTDOWNBLOCKREASONDESTROY)GetProcAddress(
-        GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonDestroy");
+    typedef DECLCALLBACKPTR_EX(BOOL, WINAPI, PFNSHUTDOWNBLOCKREASONDESTROY,(HWND hWnd));
+    PFNSHUTDOWNBLOCKREASONDESTROY pfn
+        = (PFNSHUTDOWNBLOCKREASONDESTROY)GetProcAddress(GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonDestroy");
     AssertPtr(pfn);
+
+    BOOL fResult = FALSE;
     if (pfn)
         fResult = pfn(hWnd);
     return fResult;

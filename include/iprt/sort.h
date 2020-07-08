@@ -48,7 +48,7 @@ RT_C_DECLS_BEGIN
  * @param   pvElement2      The 2nd element.
  * @param   pvUser          The user argument passed to the sorting function.
  */
-typedef DECLCALLBACK(int) FNRTSORTCMP(void const *pvElement1, void const *pvElement2, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTSORTCMP,(void const *pvElement1, void const *pvElement2, void *pvUser));
 /** Pointer to a compare function. */
 typedef FNRTSORTCMP *PFNRTSORTCMP;
 
@@ -61,7 +61,7 @@ typedef FNRTSORTCMP *PFNRTSORTCMP;
  * @param   pfnCmp          Callback function comparing two elements.
  * @param   pvUser          User argument for the callback.
  */
-typedef DECLCALLBACK(void) FNRTSORT(void *pvArray, size_t cElements, size_t cbElement, PFNRTSORTCMP pfnCmp, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTSORT,(void *pvArray, size_t cElements, size_t cbElement, PFNRTSORTCMP pfnCmp, void *pvUser));
 /** Pointer to a sorter function for an array of variable sized elements. */
 typedef FNRTSORT *PFNRTSORT;
 
@@ -73,7 +73,7 @@ typedef FNRTSORT *PFNRTSORT;
  * @param   pfnCmp          Callback function comparing two elements.
  * @param   pvUser          User argument for the callback.
  */
-typedef DECLCALLBACK(void) FNRTSORTAPV(void **papvArray, size_t cElements, PFNRTSORTCMP pfnCmp, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTSORTAPV,(void **papvArray, size_t cElements, PFNRTSORTCMP pfnCmp, void *pvUser));
 /** Pointer to a pointer array sorter function. */
 typedef FNRTSORTAPV *PFNRTSORTAPV;
 

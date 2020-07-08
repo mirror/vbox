@@ -76,7 +76,7 @@ static bool ResolveDynamicImports(void)
     return g_pfnGetDpiForMonitor != NULL;
 }
 
-static BOOL CALLBACK MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lpClipRect, LPARAM dwData)
+static BOOL CALLBACK MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lpClipRect, LPARAM dwData) RT_NOTHROW_DEF
 {
     /* These required for clipped screens only: */
     RT_NOREF(hdcMonitor, lpClipRect);

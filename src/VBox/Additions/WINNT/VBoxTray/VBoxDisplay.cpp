@@ -48,9 +48,11 @@ typedef struct _VBOXDISPLAYCONTEXT
     const VBOXSERVICEENV *pEnv;
     BOOL fAnyX;
     /** ChangeDisplaySettingsEx does not exist in NT. ResizeDisplayDevice uses the function. */
-    LONG (WINAPI * pfnChangeDisplaySettingsEx)(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
+    DECLCALLBACKMEMBER_EX(LONG,WINAPI, pfnChangeDisplaySettingsEx,(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd,
+                                                                   DWORD dwflags, LPVOID lParam));
     /** EnumDisplayDevices does not exist in NT. isVBoxDisplayDriverActive et al. are using these functions. */
-    BOOL (WINAPI * pfnEnumDisplayDevices)(IN LPCSTR lpDevice, IN DWORD iDevNum, OUT PDISPLAY_DEVICEA lpDisplayDevice, IN DWORD dwFlags);
+    DECLCALLBACKMEMBER_EX(BOOL, WINAPI, pfnEnumDisplayDevices,(IN LPCSTR lpDevice, IN DWORD iDevNum,
+                                                               OUT PDISPLAY_DEVICEA lpDisplayDevice, IN DWORD dwFlags));
     /** Display driver interface, XPDM - WDDM abstraction see VBOXDISPIF** definitions above */
     VBOXDISPIF dispIf;
 } VBOXDISPLAYCONTEXT, *PVBOXDISPLAYCONTEXT;

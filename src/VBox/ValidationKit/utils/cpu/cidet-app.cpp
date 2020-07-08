@@ -185,7 +185,7 @@ DECLASM(void) CidetAppExecute(PCIDETCPUCTX pSaveCtx, PCCIDETCPUCTX pRestoreCtx);
  */
 
 #ifdef RT_OS_WINDOWS
-static int CidetAppXcptFilter(EXCEPTION_POINTERS *pXcptPtrs)
+static int CidetAppXcptFilter(EXCEPTION_POINTERS *pXcptPtrs) RT_NOTHROW_DEF
 {
     /*
      * Grab the this point. We expect at most one signal.
@@ -381,7 +381,7 @@ static int CidetAppXcptFilter(EXCEPTION_POINTERS *pXcptPtrs)
  * @returns Long jumps or terminates the process.
  * @param   pXcptPtrs   The exception record.
  */
-static LONG CALLBACK CidetAppVectoredXcptHandler(EXCEPTION_POINTERS *pXcptPtrs)
+static LONG CALLBACK CidetAppVectoredXcptHandler(EXCEPTION_POINTERS *pXcptPtrs) RT_NOTHROW_DEF
 {
     RTStrmPrintf(g_pStdErr, "CidetAppVectoredXcptHandler!\n");
     CidetAppXcptFilter(pXcptPtrs);
@@ -397,7 +397,7 @@ static LONG CALLBACK CidetAppVectoredXcptHandler(EXCEPTION_POINTERS *pXcptPtrs)
  * @returns Long jumps or terminates the process.
  * @param   pXcptPtrs   The exception record.
  */
-static LONG CALLBACK CidetAppUnhandledXcptFilter(EXCEPTION_POINTERS *pXcptPtrs)
+static LONG CALLBACK CidetAppUnhandledXcptFilter(EXCEPTION_POINTERS *pXcptPtrs) RT_NOTHROW_DEF
 {
     RTStrmPrintf(g_pStdErr, "CidetAppUnhandledXcptFilter!\n");
     CidetAppXcptFilter(pXcptPtrs);

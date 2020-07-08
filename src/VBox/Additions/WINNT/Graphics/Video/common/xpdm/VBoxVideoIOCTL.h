@@ -68,16 +68,17 @@
 typedef void* HVBOXVIDEOHGSMI;
 
 /** Complete host commands addressed to the display */
-typedef DECLCALLBACK(void) FNVBOXVIDEOHGSMICOMPLETION(HVBOXVIDEOHGSMI hHGSMI, struct VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HOST * pCmd);
+typedef DECLCALLBACKTYPE(void, FNVBOXVIDEOHGSMICOMPLETION,(HVBOXVIDEOHGSMI hHGSMI,
+                                                           struct VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HOST * pCmd));
 typedef FNVBOXVIDEOHGSMICOMPLETION *PFNVBOXVIDEOHGSMICOMPLETION;
 
 /** request the host commands addressed to the display */
-typedef DECLCALLBACK(int) FNVBOXVIDEOHGSMICOMMANDS(HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, uint32_t iDevice,
-                                                   struct VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HOST ** ppCmd);
+typedef DECLCALLBACKTYPE(int, FNVBOXVIDEOHGSMICOMMANDS,(HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, uint32_t iDevice,
+                                                        struct VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HOST ** ppCmd));
 typedef FNVBOXVIDEOHGSMICOMMANDS *PFNVBOXVIDEOHGSMICOMMANDS;
 
 /** post guest command (offset) to the host */
-typedef DECLCALLBACK(void) FNVBOXVIDEOHGSMIPOSTCOMMAND(HVBOXVIDEOHGSMI hHGSMI, HGSMIOFFSET offCmd);
+typedef DECLCALLBACKTYPE(void, FNVBOXVIDEOHGSMIPOSTCOMMAND,(HVBOXVIDEOHGSMI hHGSMI, HGSMIOFFSET offCmd));
 typedef FNVBOXVIDEOHGSMIPOSTCOMMAND *PFNVBOXVIDEOHGSMIPOSTCOMMAND;
 
 #pragma pack(1)

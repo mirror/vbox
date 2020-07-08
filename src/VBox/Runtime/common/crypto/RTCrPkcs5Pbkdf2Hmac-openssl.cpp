@@ -37,7 +37,9 @@
 # include <iprt/assert.h>
 
 # include "internal/iprt-openssl.h"
-# include "openssl/evp.h"
+# include "internal/openssl-pre.h"
+# include <openssl/evp.h>
+# include "internal/openssl-post.h"
 
 
 RTDECL(int) RTCrPkcs5Pbkdf2Hmac(void const *pvInput, size_t cbInput, void const *pvSalt, size_t cbSalt, uint32_t cIterations,

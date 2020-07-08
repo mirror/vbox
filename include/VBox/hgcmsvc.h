@@ -575,7 +575,7 @@ typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
  * @param pvParm      The function parameters.
  * @param cbParm      The size of the function parameters.
  */
-typedef DECLCALLBACK(int) FNHGCMSVCEXT(void *pvExtension, uint32_t u32Function, void *pvParm, uint32_t cbParms);
+typedef DECLCALLBACKTYPE(int, FNHGCMSVCEXT,(void *pvExtension, uint32_t u32Function, void *pvParm, uint32_t cbParms));
 typedef FNHGCMSVCEXT *PFNHGCMSVCEXT;
 
 /**
@@ -687,8 +687,8 @@ typedef struct VBOXHGCMSVCFNTABLE
 
 
 /** Service initialization entry point. */
-typedef DECLCALLBACK(int) VBOXHGCMSVCLOAD(VBOXHGCMSVCFNTABLE *ptable);
-typedef VBOXHGCMSVCLOAD *PFNVBOXHGCMSVCLOAD;
+typedef DECLCALLBACKTYPE(int, FNVBOXHGCMSVCLOAD,(VBOXHGCMSVCFNTABLE *ptable));
+typedef FNVBOXHGCMSVCLOAD *PFNVBOXHGCMSVCLOAD;
 #define VBOX_HGCM_SVCLOAD_NAME "VBoxHGCMSvcLoad"
 
 #endif /* !VBOX_INCLUDED_hgcmsvc_h */

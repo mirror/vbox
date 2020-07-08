@@ -242,7 +242,7 @@ struct VBGLIOCIDCHGCMFASTCALL;
  * @param   pvData      VBoxGuest pointer to be passed to callback.
  * @param   u32Data     VBoxGuest 32 bit value to be passed to callback.
  */
-typedef DECLCALLBACK(int) FNVBGLHGCMCALLBACK(VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data);
+typedef DECLCALLBACKTYPE(int, FNVBGLHGCMCALLBACK,(VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data));
 /** Pointer to a FNVBGLHGCMCALLBACK. */
 typedef FNVBGLHGCMCALLBACK *PFNVBGLHGCMCALLBACK;
 

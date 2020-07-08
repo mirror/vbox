@@ -53,7 +53,7 @@ static void WriteLog(const char *pszFormat, ...);
 
 static void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd,
                                         LONG idObject, LONG idChild,
-                                        DWORD dwEventThread, DWORD dwmsEventTime)
+                                        DWORD dwEventThread, DWORD dwmsEventTime) RT_NOTHROW_DEF
 {
     RT_NOREF(hWinEventHook, idChild, dwEventThread, dwmsEventTime);
     DWORD dwStyle;
@@ -108,7 +108,7 @@ static void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hWinEventHook, DWORD event
 
 static void CALLBACK VBoxHandleDesktopEvent(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd,
                                             LONG idObject, LONG idChild,
-                                            DWORD dwEventThread, DWORD dwmsEventTime)
+                                            DWORD dwEventThread, DWORD dwmsEventTime) RT_NOTHROW_DEF
 {
     RT_NOREF(hWinEventHook, event, hwnd, idObject, idChild, dwEventThread, dwmsEventTime);
     if (!g_hDesktopNotifyEvent)

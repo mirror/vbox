@@ -46,7 +46,7 @@ typedef struct RTDIRINTERNAL *PRTDIRINTERNAL;
  * @param   pDir        The directory handle.
  * @param   pszName     The path to match to the filter.
  */
-typedef DECLCALLBACK(bool) FNRTDIRFILTER(PRTDIRINTERNAL pDir, const char *pszName);
+typedef DECLCALLBACKTYPE(bool, FNRTDIRFILTER,(PRTDIRINTERNAL pDir, const char *pszName));
 /** Pointer to a filter function. */
 typedef FNRTDIRFILTER *PFNRTDIRFILTER;
 

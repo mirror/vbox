@@ -119,8 +119,8 @@ public:
      *          like that, it is just a convenience provided by the caller.  The value
      *          is the sum of the previously returned @a *pcbActual values.
      */
-    typedef DECLCALLBACK(int) FNPRODUCER(RTCRestBinaryParameter *a_pThis, void *a_pvDst, size_t a_cbDst,
-                                         uint64_t a_offContent, size_t *a_pcbActual) /*RT_NOEXCEPT*/;
+    typedef DECLCALLBACKTYPE(int, FNPRODUCER,(RTCRestBinaryParameter *a_pThis, void *a_pvDst, size_t a_cbDst,
+                                              uint64_t a_offContent, size_t *a_pcbActual)) /*RT_NOEXCEPT*/;
     /** Pointer to a byte producer callback. */
     typedef FNPRODUCER *PFNPRODUCER;
 
@@ -257,8 +257,8 @@ public:
      *          like that, it is just a convenience provided by the caller.  The value
      *          is the sum of the previous @a a_cbSrc values.
      */
-    typedef DECLCALLBACK(int) FNCONSUMER(RTCRestBinaryResponse *a_pThis, const void *a_pvSrc, size_t a_cbSrc,
-                                         uint32_t a_uHttpStatus, uint64_t a_offContent, uint64_t a_cbContent) /*RT_NOEXCEPT*/;
+    typedef DECLCALLBACKTYPE(int, FNCONSUMER,(RTCRestBinaryResponse *a_pThis, const void *a_pvSrc, size_t a_cbSrc,
+                                              uint32_t a_uHttpStatus, uint64_t a_offContent, uint64_t a_cbContent)) /*RT_NOEXCEPT*/;
     /** Pointer to a byte consumer callback. */
     typedef FNCONSUMER *PFNCONSUMER;
 

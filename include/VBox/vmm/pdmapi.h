@@ -67,7 +67,7 @@ VMM_INT_DECL(bool)      PDMVmmDevHeapIsEnabled(PVM pVM);
  *                              it's being mapped, NIL_RTGCPHYS if it's being
  *                              unmapped.
  */
-typedef DECLCALLBACK(void) FNPDMVMMDEVHEAPNOTIFY(PVM pVM, void *pvAllocation, RTGCPHYS GCPhysAllocation);
+typedef DECLCALLBACKTYPE(void, FNPDMVMMDEVHEAPNOTIFY,(PVM pVM, void *pvAllocation, RTGCPHYS GCPhysAllocation));
 /** Pointer (ring-3) to a FNPDMVMMDEVHEAPNOTIFY function. */
 typedef R3PTRTYPE(FNPDMVMMDEVHEAPNOTIFY *) PFNPDMVMMDEVHEAPNOTIFY;
 
@@ -125,8 +125,8 @@ typedef enum  PDMLDRCTX
  * @param   enmCtx          The context the module is loaded into.
  * @param   pvArg           User argument.
  */
-typedef DECLCALLBACK(int) FNPDMR3ENUM(PVM pVM, const char *pszFilename, const char *pszName,
-                                      RTUINTPTR ImageBase, size_t cbImage, PDMLDRCTX enmCtx, void *pvArg);
+typedef DECLCALLBACKTYPE(int, FNPDMR3ENUM,(PVM pVM, const char *pszFilename, const char *pszName,
+                                           RTUINTPTR ImageBase, size_t cbImage, PDMLDRCTX enmCtx, void *pvArg));
 /** Pointer to a FNPDMR3ENUM() function. */
 typedef FNPDMR3ENUM *PFNPDMR3ENUM;
 VMMR3DECL(int)          PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);

@@ -145,7 +145,7 @@ typedef SCMCOMMENTINFO const *PCSCMCOMMENTINFO;
  * @param   cchBody         The comment body length.
  * @param   pvUser          User callback argument.
  */
-typedef DECLCALLBACK(int) FNSCMCOMMENTENUMERATOR(PCSCMCOMMENTINFO pInfo, const char *pszBody, size_t cchBody, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNSCMCOMMENTENUMERATOR,(PCSCMCOMMENTINFO pInfo, const char *pszBody, size_t cchBody, void *pvUser));
 /** Poiter to a omment enumeration callback function. */
 typedef FNSCMCOMMENTENUMERATOR *PFNSCMCOMMENTENUMERATOR;
 

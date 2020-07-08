@@ -49,7 +49,7 @@ RT_C_DECLS_BEGIN
  * @param   pvBuf       Compressed data.
  * @param   cbBuf       Size of the compressed data.
  */
-typedef DECLCALLBACK(int) FNRTZIPOUT(void *pvUser, const void *pvBuf, size_t cbBuf);
+typedef DECLCALLBACKTYPE(int, FNRTZIPOUT,(void *pvUser, const void *pvBuf, size_t cbBuf));
 /** Pointer to FNRTZIPOUT() function. */
 typedef FNRTZIPOUT *PFNRTZIPOUT;
 
@@ -62,7 +62,7 @@ typedef FNRTZIPOUT *PFNRTZIPOUT;
  * @param   cbBuf       Size of the buffer.
  * @param   pcbBuf      Number of bytes actually stored in the buffer.
  */
-typedef DECLCALLBACK(int) FNRTZIPIN(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbBuf);
+typedef DECLCALLBACKTYPE(int, FNRTZIPIN,(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbBuf));
 /** Pointer to FNRTZIPIN() function. */
 typedef FNRTZIPIN *PFNRTZIPIN;
 

@@ -2075,8 +2075,7 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
             DWORD dwErr = GetLastError();
             rc = RTErrConvertFromWin32(dwErr);
             if (rc == VERR_UNRESOLVED_ERROR)
-                LogRelFunc(("CreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
-                            g_pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
+                LogRelFunc(("CreateProcessWithLogonW failed: dwErr=%u (%#x), rc=%Rrc\n", dwErr, dwErr, rc));
         }
         if (pwszzBlock)
             RTEnvFreeUtf16Block(pwszzBlock);

@@ -72,7 +72,7 @@ typedef struct SUPSVCSERVICE
      * @returns VBox status code, log entry is written on failure.
      * @param   ppvInstance     Where to store the instance handle.
      */
-    DECLCALLBACKMEMBER(int,  pfnCreate)(void **ppvInstance);
+    DECLCALLBACKMEMBER(int, pfnCreate,(void **ppvInstance));
 
     /**
      * Start the service.
@@ -80,7 +80,7 @@ typedef struct SUPSVCSERVICE
      * @returns VBox status code, log entry is written on failure.
      * @param   pvInstance      The instance handle.
      */
-    DECLCALLBACKMEMBER(void, pfnStart)(void *pvInstance);
+    DECLCALLBACKMEMBER(void, pfnStart,(void *pvInstance));
 
     /**
      * Attempt to stop a running service.
@@ -91,7 +91,7 @@ typedef struct SUPSVCSERVICE
      * @returns VBox status code, log entry is written on failure.
      * @param   pvInstance      The instance handle.
      */
-    DECLCALLBACKMEMBER(int,  pfnTryStop)(void *pvInstance);
+    DECLCALLBACKMEMBER(int, pfnTryStop,(void *pvInstance));
 
     /**
      * Destroy the service, stopping first it if necessary.
@@ -99,7 +99,7 @@ typedef struct SUPSVCSERVICE
      * @param   pvInstance      The instance handle.
      * @param   fRunning        Whether the service is running or not.
      */
-    DECLCALLBACKMEMBER(void, pfnStopAndDestroy)(void *pvInstance, bool fRunning);
+    DECLCALLBACKMEMBER(void, pfnStopAndDestroy,(void *pvInstance, bool fRunning));
 } SUPSVCSERVICE;
 /** Pointer to a service descriptor. */
 typedef SUPSVCSERVICE *PSUPSVCSERVICE;

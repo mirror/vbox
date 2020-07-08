@@ -49,7 +49,7 @@
 # define VBoxTlsRefAssertImpl(_a) do {} while (0)
 #endif
 
-typedef DECLCALLBACK(void) FNVBOXTLSREFDTOR(void*);
+typedef DECLCALLBACKTYPE(void, FNVBOXTLSREFDTOR,(void *));
 typedef FNVBOXTLSREFDTOR *PFNVBOXTLSREFDTOR;
 
 typedef enum {

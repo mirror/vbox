@@ -80,7 +80,7 @@ typedef struct RTDBGMODVTIMG
      * @param   enmArch     The desired architecture.
      * @param   fLdrFlags   Extra loader flags (RTLDR_O_XXX).
      */
-    DECLCALLBACKMEMBER(int, pfnTryOpen)(PRTDBGMODINT pMod, RTLDRARCH enmArch, uint32_t fLdrFlags);
+    DECLCALLBACKMEMBER(int, pfnTryOpen,(PRTDBGMODINT pMod, RTLDRARCH enmArch, uint32_t fLdrFlags));
 
     /**
      * Close the interpreter, freeing all associated resources.
@@ -90,7 +90,7 @@ typedef struct RTDBGMODVTIMG
      *
      * @param   pMod        Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(int, pfnClose)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(int, pfnClose,(PRTDBGMODINT pMod));
 
     /**
      * Enumerate the debug info contained in the executable image.
@@ -104,7 +104,7 @@ typedef struct RTDBGMODVTIMG
      *                          handle argument!
      * @param   pvUser          The user argument.
      */
-    DECLCALLBACKMEMBER(int, pfnEnumDbgInfo)(PRTDBGMODINT pMod, PFNRTLDRENUMDBG pfnCallback, void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnEnumDbgInfo,(PRTDBGMODINT pMod, PFNRTLDRENUMDBG pfnCallback, void *pvUser));
 
     /**
      * Enumerate the segments in the executable image.
@@ -118,7 +118,7 @@ typedef struct RTDBGMODVTIMG
      *                          handle argument!
      * @param   pvUser          The user argument.
      */
-    DECLCALLBACKMEMBER(int, pfnEnumSegments)(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnEnumSegments,(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser));
 
     /**
      * Enumerates the symbols exported by the module.
@@ -132,8 +132,8 @@ typedef struct RTDBGMODVTIMG
      *                          to.
      * @param   pvUser          User argument to pass to the enumerator.
      */
-    DECLCALLBACKMEMBER(int, pfnEnumSymbols)(PRTDBGMODINT pMod, uint32_t fFlags, RTLDRADDR BaseAddress,
-                                            PFNRTLDRENUMSYMS pfnCallback, void *pvUser);
+    DECLCALLBACKMEMBER(int, pfnEnumSymbols,(PRTDBGMODINT pMod, uint32_t fFlags, RTLDRADDR BaseAddress,
+                                            PFNRTLDRENUMSYMS pfnCallback, void *pvUser));
 
     /**
      * Gets the size of the loaded image.
@@ -144,7 +144,7 @@ typedef struct RTDBGMODVTIMG
      *
      * @param   pMod            Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(RTUINTPTR, pfnImageSize)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(RTUINTPTR, pfnImageSize,(PRTDBGMODINT pMod));
 
     /**
      * Converts a link address to a segment:offset address (RVA included).
@@ -156,8 +156,8 @@ typedef struct RTDBGMODVTIMG
      * @param   piSeg           The segment index.
      * @param   poffSeg         Where to return the segment offset.
      */
-    DECLCALLBACKMEMBER(int, pfnLinkAddressToSegOffset)(PRTDBGMODINT pMod, RTLDRADDR LinkAddress,
-                                                       PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg);
+    DECLCALLBACKMEMBER(int, pfnLinkAddressToSegOffset,(PRTDBGMODINT pMod, RTLDRADDR LinkAddress,
+                                                       PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg));
 
     /**
      * Converts an image relative virtual address to a segment:offset.
@@ -169,7 +169,7 @@ typedef struct RTDBGMODVTIMG
      * @param   piSeg           The segment index.
      * @param   poffSeg         Where to return the segment offset.
      */
-    DECLCALLBACKMEMBER(int, pfnRvaToSegOffset)(PRTDBGMODINT pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg);
+    DECLCALLBACKMEMBER(int, pfnRvaToSegOffset,(PRTDBGMODINT pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg));
 
     /**
      * Creates a read-only mapping of a part of the image file.
@@ -186,7 +186,7 @@ typedef struct RTDBGMODVTIMG
      *
      * @remarks Fixups will only be applied if @a iDbgInfo is specified.
      */
-    DECLCALLBACKMEMBER(int, pfnMapPart)(PRTDBGMODINT pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void const **ppvMap);
+    DECLCALLBACKMEMBER(int, pfnMapPart,(PRTDBGMODINT pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void const **ppvMap));
 
     /**
      * Unmaps memory previously mapped by pfnMapPart.
@@ -198,7 +198,7 @@ typedef struct RTDBGMODVTIMG
      * @param   ppvMap          The mapping address on input, NULL on
      *                          successful return.
      */
-    DECLCALLBACKMEMBER(int, pfnUnmapPart)(PRTDBGMODINT pMod, size_t cb, void const **ppvMap);
+    DECLCALLBACKMEMBER(int, pfnUnmapPart,(PRTDBGMODINT pMod, size_t cb, void const **ppvMap));
 
     /**
      * Reads data from the image file.
@@ -212,7 +212,7 @@ typedef struct RTDBGMODVTIMG
      * @param   pvBuf           The buffer to read into.
      * @param   cb              The number of bytes to read.
      */
-    DECLCALLBACKMEMBER(int, pfnReadAt)(PRTDBGMODINT pMod, uint32_t iDbgInfoHint, RTFOFF off, void *pvBuf, size_t cb);
+    DECLCALLBACKMEMBER(int, pfnReadAt,(PRTDBGMODINT pMod, uint32_t iDbgInfoHint, RTFOFF off, void *pvBuf, size_t cb));
 
     /**
      * Gets the image format.
@@ -220,7 +220,7 @@ typedef struct RTDBGMODVTIMG
      * @returns Valid image format on success, RTLDRFMT_INVALID if not supported.
      * @param   pMod            Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(RTLDRFMT, pfnGetFormat)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(RTLDRFMT, pfnGetFormat,(PRTDBGMODINT pMod));
 
     /**
      * Gets the image architecture.
@@ -229,7 +229,7 @@ typedef struct RTDBGMODVTIMG
      *          supported.
      * @param   pMod            Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(RTLDRARCH, pfnGetArch)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(RTLDRARCH, pfnGetArch,(PRTDBGMODINT pMod));
 
     /**
      * Generic method for querying image properties.
@@ -244,7 +244,7 @@ typedef struct RTDBGMODVTIMG
      *                          the required buffer size.  Optional.
      * @sa      RTLdrQueryPropEx
      */
-    DECLCALLBACKMEMBER(int, pfnQueryProp)(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet);
+    DECLCALLBACKMEMBER(int, pfnQueryProp,(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet));
 
     /**
      * Try use unwind information to unwind one frame.
@@ -263,7 +263,7 @@ typedef struct RTDBGMODVTIMG
      *
      * @sa      RTLdrUnwindFrame, RTDbgModUnwindFrame
      */
-    DECLCALLBACKMEMBER(int, pfnUnwindFrame)(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState);
+    DECLCALLBACKMEMBER(int, pfnUnwindFrame,(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState));
 
     /** For catching initialization errors (RTDBGMODVTIMG_MAGIC). */
     uint32_t    u32EndMagic;
@@ -306,7 +306,7 @@ typedef struct RTDBGMODVTDBG
      *                      initialize pDbgOps and pvDbgPriv.
      * @param   enmArch     The desired architecture.
      */
-    DECLCALLBACKMEMBER(int, pfnTryOpen)(PRTDBGMODINT pMod, RTLDRARCH enmArch);
+    DECLCALLBACKMEMBER(int, pfnTryOpen,(PRTDBGMODINT pMod, RTLDRARCH enmArch));
 
     /**
      * Close the interpreter, freeing all associated resources.
@@ -316,7 +316,7 @@ typedef struct RTDBGMODVTDBG
      *
      * @param   pMod        Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(int, pfnClose)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(int, pfnClose,(PRTDBGMODINT pMod));
 
 
 
@@ -328,7 +328,7 @@ typedef struct RTDBGMODVTDBG
      * @param   uRva        The image relative address to convert.
      * @param   poffSeg     Where to return the segment offset. Optional.
      */
-    DECLCALLBACKMEMBER(RTDBGSEGIDX, pfnRvaToSegOff)(PRTDBGMODINT pMod, RTUINTPTR uRva, PRTUINTPTR poffSeg);
+    DECLCALLBACKMEMBER(RTDBGSEGIDX, pfnRvaToSegOff,(PRTDBGMODINT pMod, RTUINTPTR uRva, PRTUINTPTR poffSeg));
 
     /**
      * Image size when mapped if segments are mapped adjacently.
@@ -339,7 +339,7 @@ typedef struct RTDBGMODVTDBG
      * @returns Image mapped size.
      * @param   pMod        Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(RTUINTPTR, pfnImageSize)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(RTUINTPTR, pfnImageSize,(PRTDBGMODINT pMod));
 
 
 
@@ -360,8 +360,8 @@ typedef struct RTDBGMODVTDBG
      *                      The assigned segment index on successful return.
      *                      Optional.
      */
-    DECLCALLBACKMEMBER(int, pfnSegmentAdd)(PRTDBGMODINT pMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName, size_t cchName,
-                                           uint32_t fFlags, PRTDBGSEGIDX piSeg);
+    DECLCALLBACKMEMBER(int, pfnSegmentAdd,(PRTDBGMODINT pMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName, size_t cchName,
+                                           uint32_t fFlags, PRTDBGSEGIDX piSeg));
 
     /**
      * Gets the segment count.
@@ -371,7 +371,7 @@ typedef struct RTDBGMODVTDBG
      *
      * @param   pMod        Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(RTDBGSEGIDX, pfnSegmentCount)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(RTDBGSEGIDX, pfnSegmentCount,(PRTDBGMODINT pMod));
 
     /**
      * Gets information about a segment.
@@ -383,7 +383,7 @@ typedef struct RTDBGMODVTDBG
      * @param   iSeg        The segment.
      * @param   pSegInfo    Where to store the segment information.
      */
-    DECLCALLBACKMEMBER(int, pfnSegmentByIndex)(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, PRTDBGSEGMENT pSegInfo);
+    DECLCALLBACKMEMBER(int, pfnSegmentByIndex,(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, PRTDBGSEGMENT pSegInfo));
 
 
 
@@ -404,9 +404,9 @@ typedef struct RTDBGMODVTDBG
      *                      interpreter doesn't do ordinals, this will be set to
      *                      UINT32_MAX. Optional
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolAdd)(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
+    DECLCALLBACKMEMBER(int, pfnSymbolAdd,(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
                                           uint32_t iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags,
-                                          uint32_t *piOrdinal);
+                                          uint32_t *piOrdinal));
 
     /**
      * Gets the number of symbols in the module.
@@ -418,7 +418,7 @@ typedef struct RTDBGMODVTDBG
      *
      * @param   pMod        Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(uint32_t, pfnSymbolCount)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(uint32_t, pfnSymbolCount,(PRTDBGMODINT pMod));
 
     /**
      * Queries symbol information by ordinal number.
@@ -433,7 +433,7 @@ typedef struct RTDBGMODVTDBG
      * @param   iOrdinal    The symbol ordinal number.
      * @param   pSymInfo    Where to store the symbol information.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolByOrdinal)(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo);
+    DECLCALLBACKMEMBER(int, pfnSymbolByOrdinal,(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo));
 
     /**
      * Queries symbol information by symbol name.
@@ -448,7 +448,7 @@ typedef struct RTDBGMODVTDBG
      * @param   cchSymbol   The length of the symbol name.
      * @param   pSymInfo    Where to store the symbol information.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolByName)(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol, PRTDBGSYMBOL pSymInfo);
+    DECLCALLBACKMEMBER(int, pfnSymbolByName,(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol, PRTDBGSYMBOL pSymInfo));
 
     /**
      * Queries symbol information by address.
@@ -470,8 +470,8 @@ typedef struct RTDBGMODVTDBG
      *                      and the returned symbol. Optional.
      * @param   pSymInfo    Where to store the symbol information.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, uint32_t fFlags,
-                                             PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
+    DECLCALLBACKMEMBER(int, pfnSymbolByAddr,(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, uint32_t fFlags,
+                                             PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo));
 
 
 
@@ -491,8 +491,8 @@ typedef struct RTDBGMODVTDBG
      *                      the interpreter doesn't do ordinals, this will be set to
      *                      UINT32_MAX. Optional
      */
-    DECLCALLBACKMEMBER(int, pfnLineAdd)(PRTDBGMODINT pMod, const char *pszFile, size_t cchFile, uint32_t uLineNo,
-                                        uint32_t iSeg, RTUINTPTR off, uint32_t *piOrdinal);
+    DECLCALLBACKMEMBER(int, pfnLineAdd,(PRTDBGMODINT pMod, const char *pszFile, size_t cchFile, uint32_t uLineNo,
+                                        uint32_t iSeg, RTUINTPTR off, uint32_t *piOrdinal));
 
     /**
      * Gets the number of line numbers in the module.
@@ -501,7 +501,7 @@ typedef struct RTDBGMODVTDBG
      *
      * @param   pMod        Pointer to the module structure.
      */
-    DECLCALLBACKMEMBER(uint32_t, pfnLineCount)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(uint32_t, pfnLineCount,(PRTDBGMODINT pMod));
 
     /**
      * Queries line number information by ordinal number.
@@ -516,7 +516,7 @@ typedef struct RTDBGMODVTDBG
      * @param   iOrdinal    The line number ordinal number.
      * @param   pLineInfo   Where to store the information about the line number.
      */
-    DECLCALLBACKMEMBER(int, pfnLineByOrdinal)(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo);
+    DECLCALLBACKMEMBER(int, pfnLineByOrdinal,(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo));
 
     /**
      * Queries line number information by address.
@@ -534,8 +534,8 @@ typedef struct RTDBGMODVTDBG
      * @param   pLineInfo   Where to store the information about the closest line
      *                      number.
      */
-    DECLCALLBACKMEMBER(int, pfnLineByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off,
-                                           PRTINTPTR poffDisp, PRTDBGLINE pLineInfo);
+    DECLCALLBACKMEMBER(int, pfnLineByAddr,(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off,
+                                           PRTINTPTR poffDisp, PRTDBGLINE pLineInfo));
 
     /**
      * Try use unwind information to unwind one frame.
@@ -554,7 +554,7 @@ typedef struct RTDBGMODVTDBG
      *
      * @sa      RTDbgModUnwindFrame
      */
-    DECLCALLBACKMEMBER(int, pfnUnwindFrame)(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState);
+    DECLCALLBACKMEMBER(int, pfnUnwindFrame,(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState));
 
     /** For catching initialization errors (RTDBGMODVTDBG_MAGIC). */
     uint32_t    u32EndMagic;
@@ -571,7 +571,7 @@ typedef RTDBGMODVTDBG const *PCRTDBGMODVTDBG;
  * @param   pDbgMod         Pointer to the debug module structure.
  * @param   pDeferred       The deferred load data.
  */
-typedef DECLCALLBACK(int) FNRTDBGMODDEFERRED(PRTDBGMODINT pDbgMod, struct RTDBGMODDEFERRED *pDeferred);
+typedef DECLCALLBACKTYPE(int, FNRTDBGMODDEFERRED,(PRTDBGMODINT pDbgMod, struct RTDBGMODDEFERRED *pDeferred));
 /** Pointer to a deferred loading callback. */
 typedef FNRTDBGMODDEFERRED *PFNRTDBGMODDEFERRED;
 

@@ -1072,7 +1072,7 @@ typedef struct PDMUSBREGCB
  * @param   pCallbacks      Pointer to the callback table.
  * @param   u32Version      VBox version number.
  */
-typedef DECLCALLBACK(int) FNPDMVBOXUSBREGISTER(PCPDMUSBREGCB pCallbacks, uint32_t u32Version);
+typedef DECLCALLBACKTYPE(int, FNPDMVBOXUSBREGISTER,(PCPDMUSBREGCB pCallbacks, uint32_t u32Version));
 
 VMMR3DECL(int)  PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName, PCFGMNODE pDeviceNode, PCRTUUID pUuid,
                                              const char *pszCaptureFilename);

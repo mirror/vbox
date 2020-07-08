@@ -1113,7 +1113,7 @@ SUPR3DECL(int) SUPR3Uninstall(void);
  * @param   argv            The argument vector.
  * @param   envp            The environment vector.
  */
-typedef DECLCALLBACK(int) FNSUPTRUSTEDMAIN(int argc, char **argv, char **envp);
+typedef DECLCALLBACKTYPE(int, FNSUPTRUSTEDMAIN,(int argc, char **argv, char **envp));
 /** Pointer to FNSUPTRUSTEDMAIN(). */
 typedef FNSUPTRUSTEDMAIN *PFNSUPTRUSTEDMAIN;
 
@@ -1150,8 +1150,8 @@ typedef enum SUPINITOP
  * @param   pszMsgFmt       Error message format string.
  * @param   va              The message format arguments.
  */
-typedef DECLCALLBACK(void) FNSUPTRUSTEDERROR(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                             const char *pszMsgFmt, va_list va) RT_IPRT_FORMAT_ATTR(4, 0);
+typedef DECLCALLBACKTYPE(void, FNSUPTRUSTEDERROR,(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                  const char *pszMsgFmt, va_list va)) RT_IPRT_FORMAT_ATTR(4, 0);
 /** Pointer to FNSUPTRUSTEDERROR. */
 typedef FNSUPTRUSTEDERROR *PFNSUPTRUSTEDERROR;
 
@@ -1968,7 +1968,7 @@ typedef enum SUPDRVOBJTYPE
  * @param   pvUser1     The first user argument.
  * @param   pvUser2     The second user argument.
  */
-typedef DECLCALLBACK(void) FNSUPDRVDESTRUCTOR(void *pvObj, void *pvUser1, void *pvUser2);
+typedef DECLCALLBACKTYPE(void, FNSUPDRVDESTRUCTOR,(void *pvObj, void *pvUser1, void *pvUser2));
 /** Pointer to a FNSUPDRVDESTRUCTOR(). */
 typedef FNSUPDRVDESTRUCTOR *PFNSUPDRVDESTRUCTOR;
 
@@ -2433,8 +2433,8 @@ SUPR0DECL(void) SUPR0TracerUmodProbeFire(PSUPDRVSESSION pSession, PSUPDRVTRACERU
  * @param   u64Arg      64-bit integer argument.
  * @param   pReqHdr     The request header. Input / Output. Optional.
  */
-typedef DECLCALLBACK(int) FNSUPR0SERVICEREQHANDLER(PSUPDRVSESSION pSession, uint32_t uOperation,
-                                                   uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr);
+typedef DECLCALLBACKTYPE(int, FNSUPR0SERVICEREQHANDLER,(PSUPDRVSESSION pSession, uint32_t uOperation,
+                                                        uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr));
 /** Pointer to a FNR0SERVICEREQHANDLER(). */
 typedef R0PTRTYPE(FNSUPR0SERVICEREQHANDLER *) PFNSUPR0SERVICEREQHANDLER;
 

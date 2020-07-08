@@ -95,8 +95,8 @@ typedef struct HGSMIHEAP
  * @param   cbBuffer        Size of command data.
  * @thread  EMT on the host side.
  */
-typedef DECLCALLBACK(int) FNHGSMICHANNELHANDLER(void *pvHandler, uint16_t u16ChannelInfo,
-                                                RT_UNTRUSTED_VOLATILE_HSTGST void *pvBuffer, HGSMISIZE cbBuffer);
+typedef DECLCALLBACKTYPE(int, FNHGSMICHANNELHANDLER,(void *pvHandler, uint16_t u16ChannelInfo,
+                                                     RT_UNTRUSTED_VOLATILE_HSTGST void *pvBuffer, HGSMISIZE cbBuffer));
 /** Pointer to a channel handler callback. */
 typedef FNHGSMICHANNELHANDLER *PFNHGSMICHANNELHANDLER;
 

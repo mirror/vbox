@@ -357,7 +357,7 @@ typedef struct SUPLDROPEN
  * @returns Appropriate error code on failure.
  * @param   hMod        Image handle for use in APIs.
  */
-typedef DECLCALLBACK(int) FNR0MODULEINIT(void *hMod);
+typedef DECLCALLBACKTYPE(int, FNR0MODULEINIT,(void *hMod));
 /** Pointer to a FNR0MODULEINIT(). */
 typedef R0PTRTYPE(FNR0MODULEINIT *) PFNR0MODULEINIT;
 
@@ -367,7 +367,7 @@ typedef R0PTRTYPE(FNR0MODULEINIT *) PFNR0MODULEINIT;
  *
  * @param   hMod        Image handle for use in APIs.
  */
-typedef DECLCALLBACK(void) FNR0MODULETERM(void *hMod);
+typedef DECLCALLBACKTYPE(void, FNR0MODULETERM,(void *hMod));
 /** Pointer to a FNR0MODULETERM(). */
 typedef R0PTRTYPE(FNR0MODULETERM *) PFNR0MODULETERM;
 

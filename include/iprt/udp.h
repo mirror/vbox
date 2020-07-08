@@ -58,7 +58,7 @@ RT_C_DECLS_BEGIN
  * @param   Sock        The socket on which the datagram needs to be received.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(int) FNRTUDPSERVE(RTSOCKET Sock, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTUDPSERVE,(RTSOCKET Sock, void *pvUser));
 /** Pointer to a RTUDPSERVE(). */
 typedef FNRTUDPSERVE *PFNRTUDPSERVE;
 

@@ -1843,8 +1843,9 @@ void sanitiseMachineFilename(Utf8Str &strName)
 }
 
 #ifdef DEBUG
+typedef DECLCALLBACKTYPE(void, FNTESTPRINTF,(const char *, ...));
 /** Simple unit test/operation examples for sanitiseMachineFilename(). */
-static unsigned testSanitiseMachineFilename(DECLCALLBACKMEMBER(void, pfnPrintf)(const char *, ...))
+static unsigned testSanitiseMachineFilename(FNTESTPRINTF *pfnPrintf)
 {
     unsigned cErrors = 0;
 

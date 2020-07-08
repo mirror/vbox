@@ -43,10 +43,10 @@ RT_C_DECLS_BEGIN
 
 #ifndef SUP_CERTIFICATES_ONLY
 # ifdef RT_OS_WINDOWS
-DECLHIDDEN(int)     supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo);
-DECLHIDDEN(void)    supHardenedWinTermImageVerifier(void);
-DECLHIDDEN(void)    supR3HardenedWinVerifyCacheScheduleImports(RTLDRMOD hLdrMod, PCRTUTF16 pwszName);
-DECLHIDDEN(void)    supR3HardenedWinVerifyCachePreload(PCRTUTF16 pwszName);
+DECL_HIDDEN_NOTHROW(int)     supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(void)    supHardenedWinTermImageVerifier(void);
+DECL_HIDDEN_NOTHROW(void)    supR3HardenedWinVerifyCacheScheduleImports(RTLDRMOD hLdrMod, PCRTUTF16 pwszName);
+DECL_HIDDEN_NOTHROW(void)    supR3HardenedWinVerifyCachePreload(PCRTUTF16 pwszName);
 
 
 typedef enum SUPHARDNTVPKIND
@@ -75,17 +75,17 @@ typedef enum SUPHARDNTVPKIND
  */
 #define SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW        RT_BIT_32(0)
 /** @} */
-DECLHIDDEN(int)     supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, uint32_t fFlags,
-                                                uint32_t *pcFixes, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)     supHardNtVpThread(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)     supHardNtVpDebugger(HANDLE hProcess, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)     supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind,
+                                                         uint32_t fFlags, uint32_t *pcFixes, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)     supHardNtVpThread(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)     supHardNtVpDebugger(HANDLE hProcess, PRTERRINFO pErrInfo);
 
-DECLHIDDEN(bool)    supHardViUtf16PathIsEqualEx(PCRTUTF16 pawcLeft, size_t cwcLeft, const char *pszRight);
-DECLHIDDEN(bool)    supHardViUniStrPathStartsWithUniStr(UNICODE_STRING const *pUniStrLeft,
-                                                        UNICODE_STRING const *pUniStrRight, bool fCheckSlash);
-DECLHIDDEN(bool)    supHardViUtf16PathStartsWithEx(PCRTUTF16 pwszLeft, uint32_t cwcLeft,
-                                                PCRTUTF16 pwszRight, uint32_t cwcRight, bool fCheckSlash);
-DECLHIDDEN(bool)    supHardViIsAppPatchDir(PCRTUTF16 pwszPath, uint32_t cwcName);
+DECL_HIDDEN_NOTHROW(bool)    supHardViUtf16PathIsEqualEx(PCRTUTF16 pawcLeft, size_t cwcLeft, const char *pszRight);
+DECL_HIDDEN_NOTHROW(bool)    supHardViUniStrPathStartsWithUniStr(UNICODE_STRING const *pUniStrLeft,
+                                                                 UNICODE_STRING const *pUniStrRight, bool fCheckSlash);
+DECL_HIDDEN_NOTHROW(bool)    supHardViUtf16PathStartsWithEx(PCRTUTF16 pwszLeft, uint32_t cwcLeft,
+                                                            PCRTUTF16 pwszRight, uint32_t cwcRight, bool fCheckSlash);
+DECL_HIDDEN_NOTHROW(bool)    supHardViIsAppPatchDir(PCRTUTF16 pwszPath, uint32_t cwcName);
 
 
 /**
@@ -113,15 +113,15 @@ typedef struct SUPHNTVIRDR
 } SUPHNTVIRDR;
 /** Pointer to an SUP image verifier loader reader instance. */
 typedef SUPHNTVIRDR *PSUPHNTVIRDR;
-DECLHIDDEN(int)  supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PSUPHNTVIRDR *ppNtViRdr);
-DECLHIDDEN(bool) supHardenedWinIsWinVerifyTrustCallable(void);
-DECLHIDDEN(int)  supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, int rc,
-                                                bool *pfWinVerifyTrust, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)  supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, bool fAvoidWinVerifyTrust,
-                                                   bool *pfWinVerifyTrust, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)  supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t fFlags, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)  supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, PSUPHNTVIRDR pNtViRdr,
-                                                   bool fAvoidWinVerifyTrust, bool *pfWinVerifyTrust, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)  supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PSUPHNTVIRDR *ppNtViRdr);
+DECL_HIDDEN_NOTHROW(bool) supHardenedWinIsWinVerifyTrustCallable(void);
+DECL_HIDDEN_NOTHROW(int)  supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, int rc,
+                                                         bool *pfWinVerifyTrust, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)  supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags,
+                                                            bool fAvoidWinVerifyTrust, bool *pfWinVerifyTrust, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)  supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t fFlags, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)  supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, PSUPHNTVIRDR pNtViRdr,
+                                                            bool fAvoidWinVerifyTrust, bool *pfWinVerifyTrust, PRTERRINFO pErrInfo);
 /** @name SUPHNTVI_F_XXX - Flags for supHardenedWinVerifyImageByHandle.
  * @{ */
 /** The signing certificate must be the same as the one the VirtualBox build
@@ -175,10 +175,10 @@ typedef struct SUPHNTLDRCACHEENTRY
 } SUPHNTLDRCACHEENTRY;
 /** Pointer to a loader cache entry. */
 typedef SUPHNTLDRCACHEENTRY *PSUPHNTLDRCACHEENTRY;
-DECLHIDDEN(int)  supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY *ppEntry, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)  supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUTF16 pwszName, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)  supHardNtLdrCacheEntryGetBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits, RTLDRADDR uBaseAddress,
-                                               PFNRTLDRIMPORT pfnGetImport, void *pvUser, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)  supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY *ppEntry, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)  supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUTF16 pwszName, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int)  supHardNtLdrCacheEntryGetBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits, RTLDRADDR uBaseAddress,
+                                                        PFNRTLDRIMPORT pfnGetImport, void *pvUser, PRTERRINFO pErrInfo);
 
 
 /** Which directory under the system root to get. */
@@ -188,7 +188,7 @@ typedef enum SUPHARDNTSYSROOTDIR
     kSupHardNtSysRootDir_WinSxS,
 } SUPHARDNTSYSROOTDIR;
 
-DECLHIDDEN(int) supHardNtGetSystemRootDir(void *pvBuf, uint32_t cbBuf, SUPHARDNTSYSROOTDIR enmDir, PRTERRINFO pErrInfo);
+DECL_HIDDEN_NOTHROW(int) supHardNtGetSystemRootDir(void *pvBuf, uint32_t cbBuf, SUPHARDNTSYSROOTDIR enmDir, PRTERRINFO pErrInfo);
 
 #  ifndef SUPHNTVI_NO_NT_STUFF
 
@@ -213,7 +213,8 @@ extern SUPSYSROOTDIRBUF g_SupLibHardenedAppBinNtPath;
 
 #   ifdef IN_RING0
 /** Pointer to NtQueryVirtualMemory. */
-typedef NTSTATUS (NTAPI *PFNNTQUERYVIRTUALMEMORY)(HANDLE, void const *, MEMORY_INFORMATION_CLASS, PVOID, SIZE_T, PSIZE_T);
+typedef DECLCALLBACKPTR_EX(NTSTATUS, NTAPI, PFNNTQUERYVIRTUALMEMORY,(HANDLE, void const *, MEMORY_INFORMATION_CLASS,
+                                                                     PVOID, SIZE_T, PSIZE_T));
 extern PFNNTQUERYVIRTUALMEMORY g_pfnNtQueryVirtualMemory;
 #   endif
 

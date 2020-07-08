@@ -356,8 +356,8 @@ typedef struct VBOXEXTPACKREG
      * @param   pVirtualBox The VirtualBox interface.
      * @param   pErrInfo    Where to return extended error information.
      */
-    DECLCALLBACKMEMBER(int, pfnInstalled)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
-                                          PRTERRINFO pErrInfo);
+    DECLCALLBACKMEMBER(int, pfnInstalled,(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
+                                          PRTERRINFO pErrInfo));
 
     /**
      * Hook for cleaning up before the extension pack is uninstalled.
@@ -369,7 +369,7 @@ typedef struct VBOXEXTPACKREG
      * @todo    This is currently called holding locks making pVirtualBox
      *          relatively unusable.
      */
-    DECLCALLBACKMEMBER(int, pfnUninstall)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+    DECLCALLBACKMEMBER(int, pfnUninstall,(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox));
 
     /**
      * Hook for doing work after the VirtualBox object is ready.
@@ -377,7 +377,7 @@ typedef struct VBOXEXTPACKREG
      * @param   pThis       Pointer to this structure.
      * @param   pVirtualBox The VirtualBox interface.
      */
-    DECLCALLBACKMEMBER(void, pfnVirtualBoxReady)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+    DECLCALLBACKMEMBER(void, pfnVirtualBoxReady,(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox));
 
     /**
      * Hook for doing work before unloading.
@@ -388,7 +388,7 @@ typedef struct VBOXEXTPACKREG
      * @remarks This is not called on uninstall, then pfnUninstall will be the
      *          last callback.
      */
-    DECLCALLBACKMEMBER(void, pfnUnload)(PCVBOXEXTPACKREG pThis);
+    DECLCALLBACKMEMBER(void, pfnUnload,(PCVBOXEXTPACKREG pThis));
 
     /**
      * Hook for changing the default VM configuration upon creation.
@@ -398,8 +398,8 @@ typedef struct VBOXEXTPACKREG
      * @param   pVirtualBox The VirtualBox interface.
      * @param   pMachine    The machine interface.
      */
-    DECLCALLBACKMEMBER(int, pfnVMCreated)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
-                                          VBOXEXTPACK_IF_CS(IMachine) *pMachine);
+    DECLCALLBACKMEMBER(int, pfnVMCreated,(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
+                                          VBOXEXTPACK_IF_CS(IMachine) *pMachine));
 
     /**
      * Query the IUnknown interface to an object in the main module.
@@ -408,7 +408,7 @@ typedef struct VBOXEXTPACKREG
      * @param   pThis       Pointer to this structure.
      * @param   pObjectId   Pointer to the object ID (UUID).
      */
-    DECLCALLBACKMEMBER(void *, pfnQueryObject)(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
+    DECLCALLBACKMEMBER(void *, pfnQueryObject,(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId));
 
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKREG pThis)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKREG pThis)); /**< Reserved for minor structure revisions. */
@@ -443,7 +443,7 @@ typedef struct VBOXEXTPACKREG
  *                          (i.e. use some static const data for it).
  * @param   pErrInfo        Where to return extended error information.
  */
-typedef DECLCALLBACK(int) FNVBOXEXTPACKREGISTER(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKREG *ppReg, PRTERRINFO pErrInfo);
+typedef DECLCALLBACKTYPE(int, FNVBOXEXTPACKREGISTER,(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKREG *ppReg, PRTERRINFO pErrInfo));
 /** Pointer to a FNVBOXEXTPACKREGISTER. */
 typedef FNVBOXEXTPACKREGISTER *PFNVBOXEXTPACKREGISTER;
 
@@ -474,7 +474,7 @@ typedef struct VBOXEXTPACKVMREG
      * @param   pThis       Pointer to this structure.
      * @param   pConsole    The Console interface.
      */
-    DECLCALLBACKMEMBER(void, pfnConsoleReady)(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole);
+    DECLCALLBACKMEMBER(void, pfnConsoleReady,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole));
 
     /**
      * Hook for doing work before unloading.
@@ -483,7 +483,7 @@ typedef struct VBOXEXTPACKVMREG
      *
      * @remarks The helpers are not available at this point in time.
      */
-    DECLCALLBACKMEMBER(void, pfnUnload)(PCVBOXEXTPACKVMREG pThis);
+    DECLCALLBACKMEMBER(void, pfnUnload,(PCVBOXEXTPACKVMREG pThis));
 
     /**
      * Hook for configuring the VMM for a VM.
@@ -493,7 +493,7 @@ typedef struct VBOXEXTPACKVMREG
      * @param   pConsole    The console interface.
      * @param   pVM         The cross context VM structure.
      */
-    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM)(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
+    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM));
 
     /**
      * Hook for doing work right before powering on the VM.
@@ -503,7 +503,7 @@ typedef struct VBOXEXTPACKVMREG
      * @param   pConsole    The console interface.
      * @param   pVM         The cross context VM structure.
      */
-    DECLCALLBACKMEMBER(int, pfnVMPowerOn)(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
+    DECLCALLBACKMEMBER(int, pfnVMPowerOn,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM));
 
     /**
      * Hook for doing work after powering off the VM.
@@ -512,7 +512,7 @@ typedef struct VBOXEXTPACKVMREG
      * @param   pConsole    The console interface.
      * @param   pVM         The cross context VM structure. Can be NULL.
      */
-    DECLCALLBACKMEMBER(void, pfnVMPowerOff)(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
+    DECLCALLBACKMEMBER(void, pfnVMPowerOff,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM));
 
     /**
      * Query the IUnknown interface to an object in the main VM module.
@@ -521,7 +521,7 @@ typedef struct VBOXEXTPACKVMREG
      * @param   pThis       Pointer to this structure.
      * @param   pObjectId   Pointer to the object ID (UUID).
      */
-    DECLCALLBACKMEMBER(void *, pfnQueryObject)(PCVBOXEXTPACKVMREG pThis, PCRTUUID pObjectId);
+    DECLCALLBACKMEMBER(void *, pfnQueryObject,(PCVBOXEXTPACKVMREG pThis, PCRTUUID pObjectId));
 
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKVMREG pThis)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKVMREG pThis)); /**< Reserved for minor structure revisions. */
@@ -556,7 +556,7 @@ typedef struct VBOXEXTPACKVMREG
  *                          (i.e. use some static const data for it).
  * @param   pErrInfo        Where to return extended error information.
  */
-typedef DECLCALLBACK(int) FNVBOXEXTPACKVMREGISTER(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKVMREG *ppReg, PRTERRINFO pErrInfo);
+typedef DECLCALLBACKTYPE(int, FNVBOXEXTPACKVMREGISTER,(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTPACKVMREG *ppReg, PRTERRINFO pErrInfo));
 /** Pointer to a FNVBOXEXTPACKVMREGISTER. */
 typedef FNVBOXEXTPACKVMREGISTER *PFNVBOXEXTPACKVMREGISTER;
 

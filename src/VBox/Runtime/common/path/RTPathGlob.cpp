@@ -270,7 +270,7 @@ typedef struct RTPATHMATCHVAR
      * @param   pCache      Pointer to the path matching cache.  May speed up
      *                      enumerating PATH items and similar.
      */
-    DECLCALLBACKMEMBER(int, pfnQuery)(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue, PRTPATHMATCHCACHE pCache);
+    DECLCALLBACKMEMBER(int, pfnQuery,(uint32_t iItem, char *pszBuf, size_t cbBuf, size_t *pcchValue, PRTPATHMATCHCACHE pCache));
 
     /**
      * Matching method, optional.
@@ -284,7 +284,7 @@ typedef struct RTPATHMATCHVAR
      * @param   fIgnoreCase Whether to ignore case or not when comparing.
      * @param   pcchMatched Where to return the length of the match (value length).
      */
-    DECLCALLBACKMEMBER(int, pfnMatch)(const char *pchMatch, size_t cchMatch, bool fIgnoreCase, size_t *pcchMatched);
+    DECLCALLBACKMEMBER(int, pfnMatch,(const char *pchMatch, size_t cchMatch, bool fIgnoreCase, size_t *pcchMatched));
 
 } RTPATHMATCHVAR;
 

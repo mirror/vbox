@@ -87,8 +87,8 @@ struct RAWPCIPERVM;
  * @param   enmAction       Action performed (i.e. if page was mapped
  *                          or unmapped).
  */
-typedef DECLCALLBACK(int) FNRAWPCICONTIGPHYSMEMINFO(struct RAWPCIPERVM *pVmData, RTHCPHYS HCPhysStart,
-                                                    RTGCPHYS GCPhysStart, uint64_t cbMem, PCIRAWMEMINFOACTION enmAction);
+typedef DECLCALLBACKTYPE(int, FNRAWPCICONTIGPHYSMEMINFO,(struct RAWPCIPERVM *pVmData, RTHCPHYS HCPhysStart,
+                                                         RTGCPHYS GCPhysStart, uint64_t cbMem, PCIRAWMEMINFOACTION enmAction));
 typedef FNRAWPCICONTIGPHYSMEMINFO *PFNRAWPCICONTIGPHYSMEMINFO;
 
 /** Data being part of the VM structure. */
@@ -347,7 +347,7 @@ typedef struct RAWPCIDEVPORT *PRAWPCIDEVPORT;
  * @param   pvContext       Opaque user data passed to the handler.
  * @param   iIrq            Interrupt number.
  */
-typedef DECLCALLBACK(bool) FNRAWPCIISR(void *pvContext, int32_t iIrq);
+typedef DECLCALLBACKTYPE(bool, FNRAWPCIISR,(void *pvContext, int32_t iIrq));
 typedef FNRAWPCIISR *PFNRAWPCIISR;
 
 /**

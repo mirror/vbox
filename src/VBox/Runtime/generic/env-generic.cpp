@@ -120,7 +120,7 @@ typedef struct RTENVINTERNAL
     char      **papszEnvOtherCP;
 
     /** The compare function we're using. */
-    DECLCALLBACKMEMBER(int, pfnCompare)(const char *psz1, const char *psz2, size_t cchMax);
+    DECLCALLBACKMEMBER(int, pfnCompare,(const char *psz1, const char *psz2, size_t cchMax));
 } RTENVINTERNAL, *PRTENVINTERNAL;
 
 

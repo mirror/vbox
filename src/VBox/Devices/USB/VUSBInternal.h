@@ -101,7 +101,7 @@ typedef struct VUSBURBVUSBINT
      * Callback which will free the URB once it's reaped and completed.
      * @param   pUrb    The URB.
      */
-    DECLCALLBACKMEMBER(void, pfnFree)(PVUSBURB pUrb);
+    DECLCALLBACKMEMBER(void, pfnFree,(PVUSBURB pUrb));
     /** Submit timestamp. (logging only) */
     uint64_t        u64SubmitTS;
 } VUSBURBVUSBINT;

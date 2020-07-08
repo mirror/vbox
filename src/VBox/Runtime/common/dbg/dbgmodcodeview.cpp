@@ -187,8 +187,8 @@ typedef RTDBGMODCV *PCRTDBGMODCV;
  * @param   cbSubSect       The size of the subsection data.
  * @param   pDirEnt         The directory entry.
  */
-typedef DECLCALLBACK(int) FNDBGMODCVSUBSECTCALLBACK(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect,
-                                                    PCRTCVDIRENT32 pDirEnt);
+typedef DECLCALLBACKTYPE(int, FNDBGMODCVSUBSECTCALLBACK,(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSect,
+                                                         PCRTCVDIRENT32 pDirEnt));
 /** Pointer to a subsection callback. */
 typedef FNDBGMODCVSUBSECTCALLBACK *PFNDBGMODCVSUBSECTCALLBACK;
 

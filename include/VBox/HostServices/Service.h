@@ -181,11 +181,11 @@ protected:
 };
 
 template <class T>
-class AbstractService: public RTCNonCopyable
+class AbstractService : public RTCNonCopyable
 {
 public:
     /**
-     * @copydoc VBOXHGCMSVCLOAD
+     * @copydoc FNVBOXHGCMSVCLOAD
      */
     static DECLCALLBACK(int) svcLoad(VBOXHGCMSVCFNTABLE *pTable)
     {

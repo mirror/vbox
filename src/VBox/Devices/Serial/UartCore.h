@@ -67,7 +67,7 @@ typedef struct UARTCORE *PUARTCORE;
  * @param   iLUN                The LUN associated with the UART core.
  * @param   iLvl                The interrupt level.
  */
-typedef DECLCALLBACK(void) FNUARTCOREIRQREQ(PPDMDEVINS pDevIns, PUARTCORE pThis, unsigned iLUN, int iLvl);
+typedef DECLCALLBACKTYPE(void, FNUARTCOREIRQREQ,(PPDMDEVINS pDevIns, PUARTCORE pThis, unsigned iLUN, int iLvl));
 /** Pointer to a UART core IRQ request callback. */
 typedef FNUARTCOREIRQREQ *PFNUARTCOREIRQREQ;
 

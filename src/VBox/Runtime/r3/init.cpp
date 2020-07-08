@@ -150,7 +150,7 @@ DECLHIDDEN(void) rtR3InitNativeObtrusive(uint32_t fFlags) { RT_NOREF_PV(fFlags);
  * This makes sure any loggers are flushed and will later also work the
  * termination callback chain.
  */
-static void rtR3ExitCallback(void)
+static void rtR3ExitCallback(void) RT_NOTHROW_DEF
 {
     ASMAtomicWriteBool(&g_frtAtExitCalled, true);
 

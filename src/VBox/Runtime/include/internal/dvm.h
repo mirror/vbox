@@ -94,7 +94,7 @@ typedef struct RTDVMFMTOPS
      * @param   pDisk           Disk descriptor.
      * @param   puScore         Where to store the match score on success.
      */
-    DECLCALLBACKMEMBER(int, pfnProbe)(PCRTDVMDISK pDisk, uint32_t *puScore);
+    DECLCALLBACKMEMBER(int, pfnProbe,(PCRTDVMDISK pDisk, uint32_t *puScore));
 
     /**
      * Opens the format to set up all structures.
@@ -103,7 +103,7 @@ typedef struct RTDVMFMTOPS
      * @param   pDisk           The disk descriptor.
      * @param   phVolMgrFmt     Where to store the volume format data on success.
      */
-    DECLCALLBACKMEMBER(int, pfnOpen)(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt);
+    DECLCALLBACKMEMBER(int, pfnOpen,(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt));
 
     /**
      * Initializes a new volume map.
@@ -112,7 +112,7 @@ typedef struct RTDVMFMTOPS
      * @param   pDisk           The disk descriptor.
      * @param   phVolMgrFmt     Where to store the volume format data on success.
      */
-    DECLCALLBACKMEMBER(int, pfnInitialize)(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt);
+    DECLCALLBACKMEMBER(int, pfnInitialize,(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt));
 
     /**
      * Closes the volume format.
@@ -120,7 +120,7 @@ typedef struct RTDVMFMTOPS
      * @returns nothing.
      * @param   hVolMgrFmt      The format specific volume manager handle.
      */
-    DECLCALLBACKMEMBER(void, pfnClose)(RTDVMFMT hVolMgrFmt);
+    DECLCALLBACKMEMBER(void, pfnClose,(RTDVMFMT hVolMgrFmt));
 
     /**
      * Returns whether the given range is in use by the volume manager.
@@ -132,9 +132,9 @@ typedef struct RTDVMFMTOPS
      * @param   pfUsed          Where to store whether the range is in use by the
      *                          volume manager.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryRangeUse)(RTDVMFMT hVolMgrFmt,
+    DECLCALLBACKMEMBER(int, pfnQueryRangeUse,(RTDVMFMT hVolMgrFmt,
                                               uint64_t off, uint64_t cbRange,
-                                              bool *pfUsed);
+                                              bool *pfUsed));
 
     /**
      * Gets the number of valid volumes in the map.
@@ -142,7 +142,7 @@ typedef struct RTDVMFMTOPS
      * @returns Number of valid volumes in the map or UINT32_MAX on failure.
      * @param   hVolMgrFmt      The format specific volume manager handle.
      */
-    DECLCALLBACKMEMBER(uint32_t, pfnGetValidVolumes)(RTDVMFMT hVolMgrFmt);
+    DECLCALLBACKMEMBER(uint32_t, pfnGetValidVolumes,(RTDVMFMT hVolMgrFmt));
 
     /**
      * Gets the maximum number of volumes the map can have.
@@ -150,7 +150,7 @@ typedef struct RTDVMFMTOPS
      * @returns Maximum number of volumes in the map or 0 on failure.
      * @param   hVolMgrFmt      The format specific volume manager handle.
      */
-    DECLCALLBACKMEMBER(uint32_t, pfnGetMaxVolumes)(RTDVMFMT hVolMgrFmt);
+    DECLCALLBACKMEMBER(uint32_t, pfnGetMaxVolumes,(RTDVMFMT hVolMgrFmt));
 
     /**
      * Get the first valid volume from a map.
@@ -160,7 +160,7 @@ typedef struct RTDVMFMTOPS
      * @param   phVolFmt        Where to store the volume handle to the first volume
      *                          on success.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryFirstVolume)(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT phVolFmt);
+    DECLCALLBACKMEMBER(int, pfnQueryFirstVolume,(RTDVMFMT hVolMgrFmt, PRTDVMVOLUMEFMT phVolFmt));
 
     /**
      * Get the first valid volume from a map.
@@ -171,7 +171,7 @@ typedef struct RTDVMFMTOPS
      * @param   phVolFmtNext    Where to store the handle to the format specific
      *                          volume data of the next volume on success.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryNextVolume)(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT hVolFmt, PRTDVMVOLUMEFMT phVolFmtNext);
+    DECLCALLBACKMEMBER(int, pfnQueryNextVolume,(RTDVMFMT hVolMgrFmt, RTDVMVOLUMEFMT hVolFmt, PRTDVMVOLUMEFMT phVolFmtNext));
 
     /**
      * Closes a volume handle.
@@ -179,7 +179,7 @@ typedef struct RTDVMFMTOPS
      * @returns nothing.
      * @param   hVolFmt         The format specific volume handle.
      */
-    DECLCALLBACKMEMBER(void, pfnVolumeClose)(RTDVMVOLUMEFMT hVolFmt);
+    DECLCALLBACKMEMBER(void, pfnVolumeClose,(RTDVMVOLUMEFMT hVolFmt));
 
     /**
      * Gets the size of the given volume.
@@ -187,7 +187,7 @@ typedef struct RTDVMFMTOPS
      * @returns Size of the volume in bytes or 0 on failure.
      * @param   hVolFmt         The format specific volume handle.
      */
-    DECLCALLBACKMEMBER(uint64_t, pfnVolumeGetSize)(RTDVMVOLUMEFMT hVolFmt);
+    DECLCALLBACKMEMBER(uint64_t, pfnVolumeGetSize,(RTDVMVOLUMEFMT hVolFmt));
 
     /**
      * Queries the name of the given volume.
@@ -196,7 +196,7 @@ typedef struct RTDVMFMTOPS
      * @param   hVolFmt         The format specific volume handle.
      * @param   ppszVolname     Where to store the name of the volume on success.
      */
-    DECLCALLBACKMEMBER(int, pfnVolumeQueryName)(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName);
+    DECLCALLBACKMEMBER(int, pfnVolumeQueryName,(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName));
 
     /**
      * Get the type of the given volume.
@@ -204,7 +204,7 @@ typedef struct RTDVMFMTOPS
      * @returns The volume type on success, DVMVOLTYPE_INVALID if hVol is invalid.
      * @param   hVolFmt         The format specific volume handle.
      */
-    DECLCALLBACKMEMBER(RTDVMVOLTYPE, pfnVolumeGetType)(RTDVMVOLUMEFMT hVolFmt);
+    DECLCALLBACKMEMBER(RTDVMVOLTYPE, pfnVolumeGetType,(RTDVMVOLUMEFMT hVolFmt));
 
     /**
      * Get the flags of the given volume.
@@ -212,7 +212,7 @@ typedef struct RTDVMFMTOPS
      * @returns The volume flags or UINT64_MAX on failure.
      * @param   hVolFmt         The format specific volume handle.
      */
-    DECLCALLBACKMEMBER(uint64_t, pfnVolumeGetFlags)(RTDVMVOLUMEFMT hVolFmt);
+    DECLCALLBACKMEMBER(uint64_t, pfnVolumeGetFlags,(RTDVMVOLUMEFMT hVolFmt));
 
     /**
      * Queries the range of the given volume on the underyling medium.
@@ -224,7 +224,7 @@ typedef struct RTDVMFMTOPS
      * @param   poffLast        Where to store the last byte offset on the
      *                          underlying medium (inclusive).
      */
-    DECLCALLBACKMEMBER(int, pfnVolumeQueryRange)(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffLast);
+    DECLCALLBACKMEMBER(int, pfnVolumeQueryRange,(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffLast));
 
     /**
      * Returns whether the supplied range is at least partially intersecting
@@ -239,10 +239,10 @@ typedef struct RTDVMFMTOPS
      * @param   pcbIntersect    Where to store the number of bytes intersecting
      *                          with the range if true is returned.
      */
-    DECLCALLBACKMEMBER(bool, pfnVolumeIsRangeIntersecting)(RTDVMVOLUMEFMT hVolFmt,
+    DECLCALLBACKMEMBER(bool, pfnVolumeIsRangeIntersecting,(RTDVMVOLUMEFMT hVolFmt,
                                                            uint64_t offStart, size_t cbRange,
                                                            uint64_t *poffVol,
-                                                           uint64_t *pcbIntersect);
+                                                           uint64_t *pcbIntersect));
 
     /**
      * Read data from the given volume.
@@ -253,7 +253,7 @@ typedef struct RTDVMFMTOPS
      * @param   pvBuf           Where to store the read data.
      * @param   cbRead          How many bytes to read.
      */
-    DECLCALLBACKMEMBER(int, pfnVolumeRead)(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead);
+    DECLCALLBACKMEMBER(int, pfnVolumeRead,(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead));
 
     /**
      * Write data to the given volume.
@@ -264,7 +264,7 @@ typedef struct RTDVMFMTOPS
      * @param   pvBuf           The data to write.
      * @param   cbWrite         How many bytes to write.
      */
-    DECLCALLBACKMEMBER(int, pfnVolumeWrite)(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite);
+    DECLCALLBACKMEMBER(int, pfnVolumeWrite,(RTDVMVOLUMEFMT hVolFmt, uint64_t off, const void *pvBuf, size_t cbWrite));
 
 } RTDVMFMTOPS;
 /** Pointer to a DVM ops table. */

@@ -310,7 +310,7 @@ int SharedClipboardWinChainRemove(PSHCLWINCTX pCtx)
  * @param   dwData              Pointer to user-provided data. Contains our Windows clipboard context.
  * @param   lResult             Additional data to pass. Not used currently.
  */
-VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult)
+VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult) RT_NOTHROW_DEF
 {
     RT_NOREF(hWnd);
     RT_NOREF(uMsg);

@@ -37,7 +37,9 @@
 # include <iprt/err.h>
 
 # include "internal/iprt-openssl.h"
-# include "openssl/rand.h"
+# include "internal/openssl-pre.h"
+# include <openssl/rand.h>
+# include "internal/openssl-post.h"
 
 
 RTDECL(int) RTCrRandBytes(void *pvDst, size_t cbDst)

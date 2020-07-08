@@ -55,8 +55,8 @@
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
  *          that is very likely be a lock order violation.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNPCICONFIGREAD(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                   uint32_t uAddress, unsigned cb, uint32_t *pu32Value);
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPCICONFIGREAD,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                        uint32_t uAddress, unsigned cb, uint32_t *pu32Value));
 /** Pointer to a FNPCICONFIGREAD() function. */
 typedef FNPCICONFIGREAD *PFNPCICONFIGREAD;
 /** Pointer to a PFNPCICONFIGREAD. */
@@ -80,8 +80,8 @@ typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
  *          that is very likely be a lock order violation.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNPCICONFIGWRITE(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                    uint32_t uAddress, unsigned cb, uint32_t u32Value);
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPCICONFIGWRITE,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                         uint32_t uAddress, unsigned cb, uint32_t u32Value));
 /** Pointer to a FNPCICONFIGWRITE() function. */
 typedef FNPCICONFIGWRITE *PFNPCICONFIGWRITE;
 /** Pointer to a PFNPCICONFIGWRITE. */
@@ -122,8 +122,8 @@ typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
  *          that is very likely be a lock order violation.
  */
-typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
+typedef DECLCALLBACKTYPE(int, FNPCIIOREGIONMAP,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType));
 /** Pointer to a FNPCIIOREGIONMAP() function. */
 typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 
@@ -138,7 +138,8 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
  * @param   cbRegion        The region size.
  * @param   enmType         Combination of the PCI_ADDRESS_SPACE_* values.
  */
-typedef DECLCALLBACK(int) FNPCIIOREGIONOLDSETTER(PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion, PCIADDRESSSPACE enmType);
+typedef DECLCALLBACKTYPE(int, FNPCIIOREGIONOLDSETTER,(PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
+                                                      PCIADDRESSSPACE enmType));
 /** Pointer to a FNPCIIOREGIONOLDSETTER() function. */
 typedef FNPCIIOREGIONOLDSETTER *PFNPCIIOREGIONOLDSETTER;
 
@@ -152,7 +153,7 @@ typedef FNPCIIOREGIONOLDSETTER *PFNPCIIOREGIONOLDSETTER;
  * @param   iOtherRegion    The number of the region swap with.
  * @sa      @bugref{9359}
  */
-typedef DECLCALLBACK(int) FNPCIIOREGIONSWAP(PPDMPCIDEV pPciDev, uint32_t iRegion, uint32_t iOtherRegion);
+typedef DECLCALLBACKTYPE(int, FNPCIIOREGIONSWAP,(PPDMPCIDEV pPciDev, uint32_t iRegion, uint32_t iOtherRegion));
 /** Pointer to a FNPCIIOREGIONSWAP() function. */
 typedef FNPCIIOREGIONSWAP *PFNPCIIOREGIONSWAP;
 

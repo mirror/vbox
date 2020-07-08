@@ -45,7 +45,8 @@ extern "C" {
 #include "lwip/tcpip.h"
 }
 
-typedef struct {
+typedef struct LWIPCOREUSERCALLBACK
+{
     PFNRT1 pfn;
     void *pvUser;
 } LWIPCOREUSERCALLBACK, *PLWIPCOREUSERCALLBACK;
@@ -63,9 +64,9 @@ static LWIPCORE g_LwipCore;
 
 
 /**
- * @note: this function executes on TCPIP thread.
+ * @note this function executes on TCPIP thread.
  */
-static void lwipCoreUserCallback(void *pvArg)
+static void lwipCoreUserCallback(void *pvArg) RT_NOTHROW_DEF
 {
     LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
 
@@ -80,9 +81,9 @@ static void lwipCoreUserCallback(void *pvArg)
 
 
 /**
- * @note: this function executes on TCPIP thread.
+ * @note this function executes on TCPIP thread.
  */
-static void lwipCoreInitDone(void *pvArg)
+static void lwipCoreInitDone(void *pvArg) RT_NOTHROW_DEF
 {
     LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
 
@@ -94,9 +95,9 @@ static void lwipCoreInitDone(void *pvArg)
 
 
 /**
- * @note: this function executes on TCPIP thread.
+ * @note this function executes on TCPIP thread.
  */
-static void lwipCoreFiniDone(void *pvArg)
+static void lwipCoreFiniDone(void *pvArg) RT_NOTHROW_DEF
 {
     LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
 

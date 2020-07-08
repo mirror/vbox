@@ -135,7 +135,7 @@ typedef struct DRVHOSTBASE
      * @param   pThis       Pointer to the instance data.
      * @param   fLock       Set if locking, clear if unlocking.
      */
-    DECLCALLBACKMEMBER(int, pfnDoLock)(PDRVHOSTBASE pThis, bool fLock);
+    DECLCALLBACKMEMBER(int, pfnDoLock,(PDRVHOSTBASE pThis, bool fLock));
 
     union
     {

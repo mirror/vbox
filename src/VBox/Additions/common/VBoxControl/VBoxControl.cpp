@@ -577,7 +577,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             paDeviceModes[i].dmFields |= DM_BITSPERPEL;
             paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
         }
-        Log(("calling pfnChangeDisplaySettingsEx %p\n", g_pfnChangeDisplaySettingsExA));
+        Log(("calling pfnChangeDisplaySettingsEx %p\n", RT_CB_LOG_CAST(g_pfnChangeDisplaySettingsExA)));
         g_pfnChangeDisplaySettingsExA((LPSTR)paDisplayDevices[i].DeviceName,
                                       &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
         Log(("ChangeDisplaySettingsEx position err %d\n", GetLastError()));
@@ -621,7 +621,8 @@ static DECLCALLBACK(RTEXITCODE) handleSetVideoMode(int argc, char *argv[])
         g_pfnEnumDisplaySettingsA     = (decltype(g_pfnEnumDisplaySettingsA))    GetProcAddress(hmodUser, "EnumDisplaySettingsA");
 
         Log(("VBoxService: g_pfnChangeDisplaySettingsExA=%p g_pfnChangeDisplaySettingsA=%p g_pfnEnumDisplaySettingsA=%p\n",
-             g_pfnChangeDisplaySettingsExA, g_pfnChangeDisplaySettingsA, g_pfnEnumDisplaySettingsA));
+             RT_CB_LOG_CAST(g_pfnChangeDisplaySettingsExA), RT_CB_LOG_CAST(g_pfnChangeDisplaySettingsA),
+             RT_CB_LOG_CAST(g_pfnEnumDisplaySettingsA)));
 
         if (   g_pfnChangeDisplaySettingsExA
             && g_pfnChangeDisplaySettingsA
@@ -2022,7 +2023,7 @@ static DECLCALLBACK(RTEXITCODE) handleUnzip(int argc, char *argv[])
 
 
 /** command handler type */
-typedef DECLCALLBACK(RTEXITCODE) FNVBOXCTRLCMDHANDLER(int argc, char *argv[]);
+typedef DECLCALLBACKTYPE(RTEXITCODE, FNVBOXCTRLCMDHANDLER,(int argc, char *argv[]));
 typedef FNVBOXCTRLCMDHANDLER *PFNVBOXCTRLCMDHANDLER;
 
 /** The table of all registered command handlers. */

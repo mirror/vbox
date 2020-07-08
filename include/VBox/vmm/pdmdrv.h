@@ -74,7 +74,7 @@ typedef RCPTRTYPE(struct PDMDRVHLPRC const *) PCPDMDRVHLPRC;
  *                      times, it can be accessed via pDrvIns->pCfg.
  * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  */
-typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
+typedef DECLCALLBACKTYPE(int, FNPDMDRVCONSTRUCT,(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags));
 /** Pointer to a FNPDMDRVCONSTRUCT() function. */
 typedef FNPDMDRVCONSTRUCT *PFNPDMDRVCONSTRUCT;
 
@@ -86,7 +86,7 @@ typedef FNPDMDRVCONSTRUCT *PFNPDMDRVCONSTRUCT;
  *
  * @param   pDrvIns     The driver instance data.
  */
-typedef DECLCALLBACK(void)   FNPDMDRVDESTRUCT(PPDMDRVINS pDrvIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDRVDESTRUCT,(PPDMDRVINS pDrvIns));
 /** Pointer to a FNPDMDRVDESTRUCT() function. */
 typedef FNPDMDRVDESTRUCT *PFNPDMDRVDESTRUCT;
 
@@ -106,7 +106,7 @@ typedef FNPDMDRVDESTRUCT *PFNPDMDRVDESTRUCT;
  *
  * @remark  A relocation CANNOT fail.
  */
-typedef DECLCALLBACK(void) FNPDMDRVRELOCATE(PPDMDRVINS pDrvIns, RTGCINTPTR offDelta);
+typedef DECLCALLBACKTYPE(void, FNPDMDRVRELOCATE,(PPDMDRVINS pDrvIns, RTGCINTPTR offDelta));
 /** Pointer to a FNPDMDRVRELOCATE() function. */
 typedef FNPDMDRVRELOCATE *PFNPDMDRVRELOCATE;
 
@@ -126,9 +126,9 @@ typedef FNPDMDRVRELOCATE *PFNPDMDRVRELOCATE;
  * @param   cbOut       Size of output data.
  * @param   pcbOut      Where to store the actual size of the output data.
  */
-typedef DECLCALLBACK(int) FNPDMDRVIOCTL(PPDMDRVINS pDrvIns, uint32_t uFunction,
-                                        void *pvIn, uint32_t cbIn,
-                                        void *pvOut, uint32_t cbOut, uint32_t *pcbOut);
+typedef DECLCALLBACKTYPE(int, FNPDMDRVIOCTL,(PPDMDRVINS pDrvIns, uint32_t uFunction,
+                                             void *pvIn, uint32_t cbIn,
+                                             void *pvOut, uint32_t cbOut, uint32_t *pcbOut));
 /** Pointer to a FNPDMDRVIOCTL() function. */
 typedef FNPDMDRVIOCTL *PFNPDMDRVIOCTL;
 
@@ -137,7 +137,7 @@ typedef FNPDMDRVIOCTL *PFNPDMDRVIOCTL;
  *
  * @param   pDrvIns     The driver instance data.
  */
-typedef DECLCALLBACK(void)   FNPDMDRVPOWERON(PPDMDRVINS pDrvIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDRVPOWERON,(PPDMDRVINS pDrvIns));
 /** Pointer to a FNPDMDRVPOWERON() function. */
 typedef FNPDMDRVPOWERON *PFNPDMDRVPOWERON;
 
@@ -147,7 +147,7 @@ typedef FNPDMDRVPOWERON *PFNPDMDRVPOWERON;
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
-typedef DECLCALLBACK(void)  FNPDMDRVRESET(PPDMDRVINS pDrvIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDRVRESET,(PPDMDRVINS pDrvIns));
 /** Pointer to a FNPDMDRVRESET() function. */
 typedef FNPDMDRVRESET *PFNPDMDRVRESET;
 
@@ -157,7 +157,7 @@ typedef FNPDMDRVRESET *PFNPDMDRVRESET;
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
-typedef DECLCALLBACK(void)  FNPDMDRVSUSPEND(PPDMDRVINS pDrvIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDRVSUSPEND,(PPDMDRVINS pDrvIns));
 /** Pointer to a FNPDMDRVSUSPEND() function. */
 typedef FNPDMDRVSUSPEND *PFNPDMDRVSUSPEND;
 
@@ -167,7 +167,7 @@ typedef FNPDMDRVSUSPEND *PFNPDMDRVSUSPEND;
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
-typedef DECLCALLBACK(void)  FNPDMDRVRESUME(PPDMDRVINS pDrvIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDRVRESUME,(PPDMDRVINS pDrvIns));
 /** Pointer to a FNPDMDRVRESUME() function. */
 typedef FNPDMDRVRESUME *PFNPDMDRVRESUME;
 
@@ -180,7 +180,7 @@ typedef FNPDMDRVRESUME *PFNPDMDRVRESUME;
  *
  * @param   pDrvIns     The driver instance data.
  */
-typedef DECLCALLBACK(void)   FNPDMDRVPOWEROFF(PPDMDRVINS pDrvIns);
+typedef DECLCALLBACKTYPE(void, FNPDMDRVPOWEROFF,(PPDMDRVINS pDrvIns));
 /** Pointer to a FNPDMDRVPOWEROFF() function. */
 typedef FNPDMDRVPOWEROFF *PFNPDMDRVPOWEROFF;
 
@@ -197,7 +197,7 @@ typedef FNPDMDRVPOWEROFF *PFNPDMDRVPOWEROFF;
  * @param   pDrvIns     The driver instance.
  * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  */
-typedef DECLCALLBACK(int)  FNPDMDRVATTACH(PPDMDRVINS pDrvIns, uint32_t fFlags);
+typedef DECLCALLBACKTYPE(int, FNPDMDRVATTACH,(PPDMDRVINS pDrvIns, uint32_t fFlags));
 /** Pointer to a FNPDMDRVATTACH() function. */
 typedef FNPDMDRVATTACH *PFNPDMDRVATTACH;
 
@@ -212,7 +212,7 @@ typedef FNPDMDRVATTACH *PFNPDMDRVATTACH;
  * @param   pDrvIns     The driver instance.
  * @param   fFlags      PDM_TACH_FLAGS_NOT_HOT_PLUG or 0.
  */
-typedef DECLCALLBACK(void)  FNPDMDRVDETACH(PPDMDRVINS pDrvIns, uint32_t fFlags);
+typedef DECLCALLBACKTYPE(void, FNPDMDRVDETACH,(PPDMDRVINS pDrvIns, uint32_t fFlags));
 /** Pointer to a FNPDMDRVDETACH() function. */
 typedef FNPDMDRVDETACH *PFNPDMDRVDETACH;
 
@@ -1863,7 +1863,7 @@ typedef struct PDMDRVREGCB
  * @param   pCallbacks      Pointer to the callback table.
  * @param   u32Version      VBox version number.
  */
-typedef DECLCALLBACK(int) FNPDMVBOXDRIVERSREGISTER(PCPDMDRVREGCB pCallbacks, uint32_t u32Version);
+typedef DECLCALLBACKTYPE(int, FNPDMVBOXDRIVERSREGISTER,(PCPDMDRVREGCB pCallbacks, uint32_t u32Version));
 
 VMMR3DECL(int) PDMR3DrvStaticRegistration(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnCallback);
 

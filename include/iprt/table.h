@@ -49,7 +49,7 @@ typedef struct RTTABALLOCATOR *PRTTABALLOCATOR;
  * @param   pAllocator  The allocator structure.
  * @param   cb          The number of bytes to allocate. (Never 0.)
  */
-typedef DECLCALLBACK(void *) FNRTTABALLOC(PRTTABALLOCATOR pAllocator, size_t cb);
+typedef DECLCALLBACKTYPE(void *, FNRTTABALLOC,(PRTTABALLOCATOR pAllocator, size_t cb));
 /** Pointer to a FNRTTABALLOC() function. */
 typedef FNRTTABALLOC *PFNRTTABALLOC;
 
@@ -59,7 +59,7 @@ typedef FNRTTABALLOC *PFNRTTABALLOC;
  * @param   pAllocator  The allocator structure.
  * @param   pv          The memory to free. (can be NULL)
  */
-typedef DECLCALLBACK(void *) FNRTTABFREE(PRTTABALLOCATOR pAllocator, void *pv);
+typedef DECLCALLBACKTYPE(void *, FNRTTABFREE,(PRTTABALLOCATOR pAllocator, void *pv));
 /** Pointer to a FNRTTABFREE() function. */
 typedef FNRTTABFREE *PFNRTTABFREE;
 
@@ -94,7 +94,7 @@ RTDECL(RTTABALLOCATOR) RTTabDefaultAllocator(void);
  * @param   pvItem2     The second item.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNRTTABCOMP(const void *pvItem1, const void *pvItem2, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTTABCOMP,(const void *pvItem1, const void *pvItem2, void *pvUser));
 /** Pointer to a FNRTTABCOMP() function. */
 typedef FNRTTABCOMP *PFNRTTABCOMP;
 
@@ -108,7 +108,7 @@ typedef FNRTTABCOMP *PFNRTTABCOMP;
  * @param   pvItem      The item to copy.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(void *) FNRTTABDUPLICATE(const void *pvItem, void *pvUser);
+typedef DECLCALLBACKTYPE(void *, FNRTTABDUPLICATE,(const void *pvItem, void *pvUser));
 /** Pointer to a FNRTTABDUPLICATE() function. */
 typedef FNRTTABDUPLICATE *PFNRTTABDUPLICATE;
 
@@ -120,7 +120,7 @@ typedef FNRTTABDUPLICATE *PFNRTTABDUPLICATE;
  * @param   pvItem      The item.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(void) FNRTTABCALLBACK(const void *pvItem, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTTABCALLBACK,(const void *pvItem, void *pvUser));
 /** Pointer to a FNRTTABCALLBACK() function. */
 typedef FNRTTABCALLBACK *PFNRTTABCALLBACK;
 
@@ -156,7 +156,7 @@ typedef struct RTTABOPS
      * @param   pAllocator      Custom allocator. Pass NULL for the default allocator.
      * @param   pfnComp         The comparision function.
      */
-    DECLCALLBACKMEMBER(PRTTAB, pfnCreate)(PCRTTABOPS pOps, unsigned fCreateFlags, PRTTABALLOCATOR pAllocator, PFNRTTABCOMP pfnComp);
+    DECLCALLBACKMEMBER(PRTTAB, pfnCreate,(PCRTTABOPS pOps, unsigned fCreateFlags, PRTTABALLOCATOR pAllocator, PFNRTTABCOMP pfnComp));
 
     /**
      * Duplicates a table to a table of the same type.
@@ -169,14 +169,14 @@ typedef struct RTTABOPS
      * @param   pfnNewCB        Callback which is called for all the items in the new table. Optional.
      * @param   pAllocator      Custom allocator. Pass NULL to use the same allocator as pTab.
      */
-    DECLCALLBACKMEMBER(PRTTAB, pfnDuplicate)(PCRTTAB pTab, PFNRTTABDUPLICATE pfnDuplicate, PFNRTTABCALLBACK pfnNewCB, PRTTABALLOCATOR pAllocator);
+    DECLCALLBACKMEMBER(PRTTAB, pfnDuplicate,(PCRTTAB pTab, PFNRTTABDUPLICATE pfnDuplicate, PFNRTTABCALLBACK pfnNewCB, PRTTABALLOCATOR pAllocator));
 
     /**
      * Destroys a table.
      *
      * @param   pTab        The table to destroy.
      */
-    DECLCALLBACKMEMBER(void, pfnDestroy)(PRTTAB pTab);
+    DECLCALLBACKMEMBER(void, pfnDestroy,(PRTTAB pTab));
 
     /**
      * Inserts an item into the table, if a matching item is encountered
@@ -188,7 +188,7 @@ typedef struct RTTABOPS
      * @param   pTab            The table.
      * @param   pvItem          The item which will be inserted if an matching item was not found in the table.
      */
-    DECLCALLBACKMEMBER(void **, pfnProbe)(PRTTAB pTab, void *pvItem);
+    DECLCALLBACKMEMBER(void **, pfnProbe,(PRTTAB pTab, void *pvItem));
 
     /**
      * Inserts an item into the table, fail if a matching item exists.
@@ -198,7 +198,7 @@ typedef struct RTTABOPS
      * @param   pTab            The table.
      * @param   pvItem          The item which is to be inserted.
      */
-    DECLCALLBACKMEMBER(void *, pfnInsert)(PRTTAB pTab, void *pvItem);
+    DECLCALLBACKMEMBER(void *, pfnInsert,(PRTTAB pTab, void *pvItem));
 
     /**
      * Inserts an item into the table, if a matching item is encountered
@@ -209,7 +209,7 @@ typedef struct RTTABOPS
      * @param   pTab            The table.
      * @param   pvItem          The item which is to be inserted.
      */
-    DECLCALLBACKMEMBER(void *, pfnReplace)(PRTTAB pTab, void *pvItem);
+    DECLCALLBACKMEMBER(void *, pfnReplace,(PRTTAB pTab, void *pvItem));
 
     /**
      * Removes an item from the table if found.
@@ -219,7 +219,7 @@ typedef struct RTTABOPS
      * @param   pTab            The table.
      * @param   pvItem          The item which is to be inserted.
      */
-    DECLCALLBACKMEMBER(void *, pfnRemove)(PRTTAB pTab, const void *pvItem);
+    DECLCALLBACKMEMBER(void *, pfnRemove,(PRTTAB pTab, const void *pvItem));
 
     /**
      * Finds an item in the table.
@@ -229,7 +229,7 @@ typedef struct RTTABOPS
      * @param   pTab            The table.
      * @param   pvItem          The item which is to be inserted.
      */
-    DECLCALLBACKMEMBER(void *, pfnFind)(PRTTAB pTab, const void *pvItem);
+    DECLCALLBACKMEMBER(void *, pfnFind,(PRTTAB pTab, const void *pvItem));
 
     /**
      * Initializes a traverser to the NULL item.
@@ -243,7 +243,7 @@ typedef struct RTTABOPS
      * @param   pTab            The table.
      * @param   pTravNew        Pointer to a preallocated structure. Optional.
      */
-    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravInit)(PRTTAB pTab, PRTTABTRAVERSER pTravNew);
+    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravInit,(PRTTAB pTab, PRTTABTRAVERSER pTravNew));
 
     /**
      * Initializes a traverser to the first item in the table.
@@ -257,7 +257,7 @@ typedef struct RTTABOPS
      * @param   pTab            The table.
      * @param   pTravNew        Pointer to a preallocated structure. Optional.
      */
-    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravFirst)(PRTTAB pTab, PRTTABTRAVERSER pTravNew);
+    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravFirst,(PRTTAB pTab, PRTTABTRAVERSER pTravNew));
 
     /**
      * Initializes a traverser to the last item in the table.
@@ -271,7 +271,7 @@ typedef struct RTTABOPS
      * @param   pTab            The table.
      * @param   pTravNew        Pointer to a preallocated structure. Optional.
      */
-    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravLast)(PRTTAB pTab, PRTTABTRAVERSER pTravNew);
+    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravLast,(PRTTAB pTab, PRTTABTRAVERSER pTravNew));
 
     /**
      * Initializes a traverser to an item matching the given one.
@@ -286,7 +286,7 @@ typedef struct RTTABOPS
      * @param   pTravNew        Pointer to a preallocated structure. Optional.
      * @param   pvItem          The item to find the match to.
      */
-    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravFind)(PRTTAB pTab, PRTTABTRAVERSER pTravNew, const void *pvItem);
+    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravFind,(PRTTAB pTab, PRTTABTRAVERSER pTravNew, const void *pvItem));
 
     /**
      * Initializes a traverser to the inserted item.
@@ -304,7 +304,7 @@ typedef struct RTTABOPS
      * @param   pTravNew        Pointer to a preallocated structure. Optional.
      * @param   pvItem          The item to be inserted.
      */
-    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravInsert)(PRTTAB pTab, PRTTABTRAVERSER pTravNew, void *pvItem);
+    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravInsert,(PRTTAB pTab, PRTTABTRAVERSER pTravNew, void *pvItem));
 
     /**
      * Duplicates a traverser.
@@ -315,7 +315,7 @@ typedef struct RTTABOPS
      * @param   pTrav           The traverser to duplicate.
      * @param   pTravNew        Pointer to a preallocated structure. Optional.
      */
-    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravDuplicate)(PRTTABTRAVERSERCORE pTrav, PCRTTABTRAVERSER pTravNew);
+    DECLCALLBACKMEMBER(PRTTABTRAVERSERCORE, pfnTravDuplicate,(PRTTABTRAVERSERCORE pTrav, PCRTTABTRAVERSER pTravNew));
 
     /**
      * Frees a traverser.
@@ -325,7 +325,7 @@ typedef struct RTTABOPS
      *
      * @param   pTrav           The traverser which is to be free.
      */
-    DECLCALLBACKMEMBER(void, pfnTravFree)(PRTTABTRAVERSERCORE pTrav);
+    DECLCALLBACKMEMBER(void, pfnTravFree,(PRTTABTRAVERSERCORE pTrav));
 
     /**
      * Gets the current item.
@@ -333,7 +333,7 @@ typedef struct RTTABOPS
      * @returns The current item. (NULL indicates the imaginary NULL item.)
      * @param   pTrav           The traverser.
      */
-    DECLCALLBACKMEMBER(void *, pfnTravCur)(PCRTTABTRAVERSERCORE pTrav);
+    DECLCALLBACKMEMBER(void *, pfnTravCur,(PCRTTABTRAVERSERCORE pTrav));
 
     /**
      * Advances to the next item.
@@ -341,7 +341,7 @@ typedef struct RTTABOPS
      * @returns The new current item. (NULL indicates the imaginary NULL item.)
      * @param   pTrav           The traverser.
      */
-    DECLCALLBACKMEMBER(void *, pfnTravNext)(PRTTABTRAVERSERCORE pTrav);
+    DECLCALLBACKMEMBER(void *, pfnTravNext,(PRTTABTRAVERSERCORE pTrav));
 
     /**
      * Advances to the previous item.
@@ -349,7 +349,7 @@ typedef struct RTTABOPS
      * @returns The new current item. (NULL indicates the imaginary NULL item.)
      * @param   pTrav           The traverser.
      */
-    DECLCALLBACKMEMBER(void *, pfnTravPrev)(PRTTABTRAVERSERCORE pTrav);
+    DECLCALLBACKMEMBER(void *, pfnTravPrev,(PRTTABTRAVERSERCORE pTrav));
 
     /**
      * Replaces the current item.
@@ -363,7 +363,7 @@ typedef struct RTTABOPS
      * @param   pTrav           The traverser.
      * @param   pvItem          The item to be inserted.
      */
-    DECLCALLBACKMEMBER(void *, pfnTravReplace)(PRTTABTRAVERSERCORE pTrav, void *pvItem);
+    DECLCALLBACKMEMBER(void *, pfnTravReplace,(PRTTABTRAVERSERCORE pTrav, void *pvItem));
 
     /** The type of table type. */
     const char                *pszType;

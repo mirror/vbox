@@ -30,7 +30,9 @@
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
 
+#include "internal/openssl-pre.h"
 #include <openssl/sha.h>
+#include "internal/openssl-post.h"
 
 #define RT_SHA256_PRIVATE_CONTEXT
 #include <iprt/sha.h>

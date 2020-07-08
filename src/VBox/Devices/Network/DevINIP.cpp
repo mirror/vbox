@@ -244,7 +244,7 @@ static err_t devINIPOutputRaw(struct netif *netif, struct pbuf *p)
  * @returns lwIP error code
  * @param   netif   Interface to configure.
  */
-static err_t devINIPInterface(struct netif *netif)
+static err_t devINIPInterface(struct netif *netif) RT_NOTHROW_DEF
 {
     LogFlow(("%s: netif=%p\n", __FUNCTION__, netif));
     Assert(g_pDevINIPData != NULL);

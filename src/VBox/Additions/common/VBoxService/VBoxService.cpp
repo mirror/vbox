@@ -616,7 +616,7 @@ static unsigned vgsvcCountEnabledServices(void)
  * @remarks This is generally called on a new thread, so we're racing every
  *          other thread in the process.
  */
-static BOOL WINAPI vgsvcWinConsoleControlHandler(DWORD dwCtrlType)
+static BOOL WINAPI vgsvcWinConsoleControlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
 {
     int rc = VINF_SUCCESS;
     bool fEventHandled = FALSE;
@@ -1230,7 +1230,7 @@ int main(int argc, char **argv)
 #ifdef RT_OS_WINDOWS
 # ifndef RT_OS_NT4 /** @todo r=bird: What's RT_OS_NT4??? */
         /* Install console control handler. */
-        if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)vgsvcWinConsoleControlHandler, TRUE /* Add handler */))
+        if (!SetConsoleCtrlHandler(vgsvcWinConsoleControlHandler, TRUE /* Add handler */))
         {
             VGSvcError("Unable to add console control handler, error=%ld\n", GetLastError());
             /* Just skip this error, not critical. */

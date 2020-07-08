@@ -41,7 +41,7 @@ RT_C_DECLS_BEGIN
  * @param   pvUser1     The first user argument.
  * @param   pvUser2     The second user argument.
  */
-typedef DECLCALLBACK(void) FNMPWORKER(RTCPUID idCpu, void *pvUser1, void *pvUser2);
+typedef DECLCALLBACKTYPE(void, FNMPWORKER,(RTCPUID idCpu, void *pvUser1, void *pvUser2));
 /** Pointer to a FNMPWORKER(). */
 typedef FNMPWORKER *PFNMPWORKER;
 

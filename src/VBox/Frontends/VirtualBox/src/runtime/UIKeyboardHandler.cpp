@@ -1297,7 +1297,7 @@ bool UIKeyboardHandler::macKeyboardEvent(const void *pvCocoaEvent, EventRef even
 #elif defined(VBOX_WS_WIN)
 
 /* static */
-LRESULT CALLBACK UIKeyboardHandler::winKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK UIKeyboardHandler::winKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) RT_NOTHROW_DEF
 {
     /* All keyboard class events needs to be handled: */
     if (nCode == HC_ACTION && m_spKeyboardHandler && m_spKeyboardHandler->winKeyboardEvent(wParam, *(KBDLLHOOKSTRUCT*)lParam))

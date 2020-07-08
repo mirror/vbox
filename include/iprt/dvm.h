@@ -153,8 +153,7 @@ typedef RTDVMVOLUME                *PRTDVMVOLUME;
  * @param   cb             Range to check in bytes.
  * @param   pfAllocated    Where to store the allocation status on success.
  */
-typedef DECLCALLBACK(int) FNDVMVOLUMEQUERYBLOCKSTATUS(void *pvUser, uint64_t off,
-                                                      uint64_t cb, bool *pfAllocated);
+typedef DECLCALLBACKTYPE(int, FNDVMVOLUMEQUERYBLOCKSTATUS,(void *pvUser, uint64_t off, uint64_t cb, bool *pfAllocated));
 /** Pointer to a query block allocation status callback. */
 typedef FNDVMVOLUMEQUERYBLOCKSTATUS *PFNDVMVOLUMEQUERYBLOCKSTATUS;
 

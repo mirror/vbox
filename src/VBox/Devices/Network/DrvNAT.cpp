@@ -411,7 +411,7 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
  * @param   pSgBuf              The scatter/gather buffer.
  * @thread  NAT
  */
-static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
+static DECLCALLBACK(void) drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
 {
 #if 0 /* Assertion happens often to me after resuming a VM -- no time to investigate this now. */
     Assert(pThis->enmLinkState == PDMNETWORKLINKSTATE_UP);
@@ -655,7 +655,7 @@ static DECLCALLBACK(void) drvNATNetworkUp_SetPromiscuousMode(PPDMINETWORKUP pInt
  * Worker function for drvNATNetworkUp_NotifyLinkChanged().
  * @thread "NAT" thread.
  */
-static void drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enmLinkState)
 {
     pThis->enmLinkState = pThis->enmLinkStateWant = enmLinkState;
     switch (enmLinkState)
@@ -711,9 +711,9 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
     RTReqRelease(pReq);
 }
 
-static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
-                                                bool fUdp, const char *pHostIp,
-                                                uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
+static DECLCALLBACK(void) drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
+                                                              bool fUdp, const char *pHostIp,
+                                                              uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
 {
     struct in_addr guestIp, hostIp;
 

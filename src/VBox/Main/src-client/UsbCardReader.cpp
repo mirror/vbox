@@ -594,7 +594,7 @@ static DECLCALLBACK(int) drvCardReaderThreadCmd(PPDMDRVINS pDrvIns, PPDMTHREAD p
     return rc;
 }
 
-static int drvCardReaderWakeupFunc(PUSBCARDREADER pThis)
+static DECLCALLBACK(int) drvCardReaderWakeupFunc(PUSBCARDREADER pThis)
 {
     NOREF(pThis);
     /* Returning a VINF_* will cause RTReqQueueProcess return. */

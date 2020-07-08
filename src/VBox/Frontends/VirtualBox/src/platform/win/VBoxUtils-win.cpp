@@ -23,12 +23,12 @@
 namespace NativeWindowSubsystem
 {
     /** Enumerates visible always-on-top (top-most) windows. */
-    BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam);
+    BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam) RT_NOTHROW_PROTO;
     /** Contains visible top-most-window rectangles. */
     QList<QRect> topMostRects;
 }
 
-BOOL CALLBACK NativeWindowSubsystem::EnumWindowsProc(HWND hWnd, LPARAM)
+BOOL CALLBACK NativeWindowSubsystem::EnumWindowsProc(HWND hWnd, LPARAM) RT_NOTHROW_DEF
 {
     /* Ignore NULL HWNDs: */
     if (!hWnd)

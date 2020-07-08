@@ -182,8 +182,8 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
     bool fDontLoadRulesOnStartup;
     static DECLCALLBACK(void) onLwipTcpIpInit(void *arg);
     static DECLCALLBACK(void) onLwipTcpIpFini(void *arg);
-    static err_t netifInit(netif *pNetif);
-    static err_t netifLinkoutput(netif *pNetif, pbuf *pBuf);
+    static err_t netifInit(netif *pNetif) RT_NOTHROW_PROTO;
+    static err_t netifLinkoutput(netif *pNetif, pbuf *pBuf) RT_NOTHROW_PROTO;
     /* static int intNetThreadRecv(RTTHREAD, void *); - unused */
 
     VECNATSERVICEPF m_vecPortForwardRule4;
@@ -528,7 +528,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 /*
  * Callback for netif_add() to initialize the interface.
  */
-/*static*/ err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
+/*static*/ err_t VBoxNetLwipNAT::netifInit(netif *pNetif) RT_NOTHROW_DEF
 {
     err_t rcLwip = ERR_OK;
 
@@ -590,7 +590,7 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 }
 
 
-/*static*/ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
+/*static*/ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_DEF
 {
     AssertPtrReturn(pNetif, ERR_ARG);
     AssertPtrReturn(pPBuf, ERR_ARG);

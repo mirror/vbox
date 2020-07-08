@@ -63,7 +63,7 @@ typedef PPDMASYNCCOMPLETIONENDPOINT *PPPDMASYNCCOMPLETIONENDPOINT;
  * @param   pvUser      User argument.
  * @param   rc          The status code of the completed request.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEDEV(PPDMDEVINS pDevIns, void *pvUser, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMASYNCCOMPLETEDEV,(PPDMDEVINS pDevIns, void *pvUser, int rc));
 /** Pointer to a FNPDMASYNCCOMPLETEDEV(). */
 typedef FNPDMASYNCCOMPLETEDEV *PFNPDMASYNCCOMPLETEDEV;
 
@@ -76,7 +76,7 @@ typedef FNPDMASYNCCOMPLETEDEV *PFNPDMASYNCCOMPLETEDEV;
  * @param   pvUser         User argument given during request initiation.
  * @param   rc          The status code of the completed request.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEDRV(PPDMDRVINS pDrvIns, void *pvTemplateUser, void *pvUser, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMASYNCCOMPLETEDRV,(PPDMDRVINS pDrvIns, void *pvTemplateUser, void *pvUser, int rc));
 /** Pointer to a FNPDMASYNCCOMPLETEDRV(). */
 typedef FNPDMASYNCCOMPLETEDRV *PFNPDMASYNCCOMPLETEDRV;
 
@@ -88,7 +88,7 @@ typedef FNPDMASYNCCOMPLETEDRV *PFNPDMASYNCCOMPLETEDRV;
  * @param   pvUser      User argument.
  * @param   rc          The status code of the completed request.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEUSB(PPDMUSBINS pUsbIns, void *pvUser, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMASYNCCOMPLETEUSB,(PPDMUSBINS pUsbIns, void *pvUser, int rc));
 /** Pointer to a FNPDMASYNCCOMPLETEUSB(). */
 typedef FNPDMASYNCCOMPLETEUSB *PFNPDMASYNCCOMPLETEUSB;
 
@@ -101,7 +101,7 @@ typedef FNPDMASYNCCOMPLETEUSB *PFNPDMASYNCCOMPLETEUSB;
  * @param   pvUser2     User argument for the template.
  * @param   rc          The status code of the completed request.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEINT(PVM pVM, void *pvUser, void *pvUser2, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMASYNCCOMPLETEINT,(PVM pVM, void *pvUser, void *pvUser2, int rc));
 /** Pointer to a FNPDMASYNCCOMPLETEINT(). */
 typedef FNPDMASYNCCOMPLETEINT *PFNPDMASYNCCOMPLETEINT;
 

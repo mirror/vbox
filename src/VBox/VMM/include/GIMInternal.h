@@ -99,7 +99,7 @@ typedef GIMCPU *PGIMCPU;
  *
  * @param   pVM             The cross context VM structure.
  */
-typedef DECLCALLBACK(void) FNGIMDEBUGBUFREADCOMPLETED(PVM pVM);
+typedef DECLCALLBACKTYPE(void, FNGIMDEBUGBUFREADCOMPLETED,(PVM pVM));
 /** Pointer to GIM debug buffer read completion callback. */
 typedef FNGIMDEBUGBUFREADCOMPLETED *PFNGIMDEBUGBUFREADCOMPLETED;
 

@@ -37,6 +37,11 @@
 # if _MSC_VER >= 1800 /*RT_MSC_VER_VC120*/
 #  pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
 # endif
+# ifdef __cplusplus
+#  if _MSC_VER >= 1900 /*RT_MSC_VER_VC140*/
+#   pragma warning(disable:5039) /* winbase.h(13179): warning C5039: 'TpSetCallbackCleanupGroup': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception. */
+#  endif
+# endif
 #endif
 
 #include <d3d9.h>

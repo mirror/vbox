@@ -84,7 +84,7 @@ typedef VDBACKENDREGISTER *PVDBACKENDREGISTER;
  * @param   pvUser             Opaque user data passed in the register callbacks.
  * @param   pRegisterCallbacks Pointer to the register callbacks structure.
  */
-typedef DECLCALLBACK(int) FNVDPLUGINLOAD(void *pvUser, PVDBACKENDREGISTER pRegisterCallbacks);
+typedef DECLCALLBACKTYPE(int, FNVDPLUGINLOAD,(void *pvUser, PVDBACKENDREGISTER pRegisterCallbacks));
 typedef FNVDPLUGINLOAD *PFNVDPLUGINLOAD;
 #define VD_PLUGIN_LOAD_NAME "VDPluginLoad"
 

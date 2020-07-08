@@ -156,14 +156,14 @@ private:
     static DECLCALLBACK(void) lwipInitCB(void *pvArg);
     void lwipInit();
 
-    static err_t netifInitCB(netif *pNetif);
+    static err_t netifInitCB(netif *pNetif) RT_NOTHROW_PROTO;
     err_t netifInit(netif *pNetif);
 
-    static err_t netifLinkOutputCB(netif *pNetif, pbuf *pPBuf);
+    static err_t netifLinkOutputCB(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_PROTO;
     err_t netifLinkOutput(pbuf *pPBuf);
 
     static void dhcp4RecvCB(void *arg, struct udp_pcb *pcb, struct pbuf *p,
-                            ip_addr_t *addr, u16_t port);
+                            ip_addr_t *addr, u16_t port) RT_NOTHROW_PROTO;
     void dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t port);
 };
 
@@ -583,7 +583,7 @@ int VBoxNetDhcpd::ifClose()
 }
 
 
-/* static */ err_t VBoxNetDhcpd::netifInitCB(netif *pNetif)
+/* static */ err_t VBoxNetDhcpd::netifInitCB(netif *pNetif) RT_NOTHROW_DEF
 {
     AssertPtrReturn(pNetif, ERR_ARG);
 
@@ -592,7 +592,7 @@ int VBoxNetDhcpd::ifClose()
 }
 
 
-/* static */ err_t VBoxNetDhcpd::netifLinkOutputCB(netif *pNetif, pbuf *pPBuf)
+/* static */ err_t VBoxNetDhcpd::netifLinkOutputCB(netif *pNetif, pbuf *pPBuf) RT_NOTHROW_DEF
 {
     AssertPtrReturn(pNetif, ERR_ARG);
     AssertPtrReturn(pPBuf, ERR_ARG);
@@ -606,7 +606,7 @@ int VBoxNetDhcpd::ifClose()
 
 /* static */ void VBoxNetDhcpd::dhcp4RecvCB(void *arg, struct udp_pcb *pcb,
                                             struct pbuf *p,
-                                            ip_addr_t *addr, u16_t port)
+                                            ip_addr_t *addr, u16_t port) RT_NOTHROW_DEF
 {
     AssertPtrReturnVoid(arg);
 

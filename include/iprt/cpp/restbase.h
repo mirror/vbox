@@ -212,7 +212,7 @@ public:
      * @param   a_ppInstance Where to return the deserialized instance.
      *                       May return an object on failure.
      */
-    typedef DECLCALLBACK(int) FNDESERIALIZEINSTANCEFROMJSON(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance);
+    typedef DECLCALLBACKTYPE(int, FNDESERIALIZEINSTANCEFROMJSON,(RTCRestJsonCursor const &a_rCursor, RTCRestObjectBase **a_ppInstance));
     /** Pointer to a FNDESERIALIZEINSTANCEFROMJSON function. */
     typedef FNDESERIALIZEINSTANCEFROMJSON *PFNDESERIALIZEINSTANCEFROMJSON;
 

@@ -82,7 +82,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-typedef DECLCALLBACK(int) FNCALLVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
+typedef DECLCALLBACKTYPE(int, FNCALLVMMR0,(PVMR0 pVMR0, unsigned uOperation, void *pvArg));
 typedef FNCALLVMMR0 *PFNCALLVMMR0;
 
 

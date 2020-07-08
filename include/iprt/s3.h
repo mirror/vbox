@@ -56,7 +56,7 @@ typedef RTS3                               *PRTS3;
  * @param   uPercent    The process completion percentage.
  * @param   pvUser      The user parameter given to RTS3SetProgressCallback.
  */
-typedef DECLCALLBACK(int) FNRTS3PROGRESS(unsigned uPercent, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTS3PROGRESS,(unsigned uPercent, void *pvUser));
 /** Pointer to a S3 progress callback. */
 typedef FNRTS3PROGRESS *PFNRTS3PROGRESS;
 

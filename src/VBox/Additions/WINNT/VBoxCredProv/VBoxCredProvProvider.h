@@ -21,7 +21,7 @@
 # pragma once
 #endif
 
-#include <credentialprovider.h>
+#include <iprt/win/credentialprovider.h>
 #include <iprt/win/windows.h>
 #include <strsafe.h>
 

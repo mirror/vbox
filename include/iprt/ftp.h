@@ -222,7 +222,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pData           Pointer to generic callback data.
      * @param   pcszUser        User name.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnUserConnect)(PRTFTPCALLBACKDATA pData, const char *pcszUser);
+    DECLCALLBACKMEMBER(int, pfnOnUserConnect,(PRTFTPCALLBACKDATA pData, const char *pcszUser));
     /**
      * Callback which gets invoked when a user tries to authenticate with a password.
      *
@@ -231,7 +231,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pcszUser        User name to authenticate.
      * @param   pcszPassword    Password to authenticate with.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnUserAuthenticate)(PRTFTPCALLBACKDATA pData, const char *pcszUser, const char *pcszPassword);
+    DECLCALLBACKMEMBER(int, pfnOnUserAuthenticate,(PRTFTPCALLBACKDATA pData, const char *pcszUser, const char *pcszPassword));
     /**
      * Callback which gets invoked when a user disconnected.
      *
@@ -239,7 +239,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pData           Pointer to generic callback data.
      * @param   pcszUser        User name which disconnected.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnUserDisconnect)(PRTFTPCALLBACKDATA pData, const char *pcszUser);
+    DECLCALLBACKMEMBER(int, pfnOnUserDisconnect,(PRTFTPCALLBACKDATA pData, const char *pcszUser));
     /**
      * Callback which gets invoked when the client wants to start reading or writing a file.
      *
@@ -249,7 +249,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   fMode           File mode to use (IPRT stlye).
      * @param   ppvHandle       Opaque file handle only known to the callback implementation.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnFileOpen)(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint32_t fMode, void **ppvHandle);
+    DECLCALLBACKMEMBER(int, pfnOnFileOpen,(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint32_t fMode, void **ppvHandle));
     /**
      * Callback which gets invoked when the client wants to read from a file.
      *
@@ -260,7 +260,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   cbToRead        How much (in bytes) to read. Must at least supply the size of pvBuf.
      * @param   pcbRead         How much (in bytes) was read. Optional.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnFileRead)(PRTFTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+    DECLCALLBACKMEMBER(int, pfnOnFileRead,(PRTFTPCALLBACKDATA pData, void *pvHandle, void *pvBuf, size_t cbToRead, size_t *pcbRead));
     /**
      * Callback which gets invoked when the client is done reading from or writing to a file.
      *
@@ -268,7 +268,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pData           Pointer to generic callback data.
      * @param   ppvHandle       Opaque file handle only known to the callback implementation.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnFileClose)(PRTFTPCALLBACKDATA pData, void *pvHandle);
+    DECLCALLBACKMEMBER(int, pfnOnFileClose,(PRTFTPCALLBACKDATA pData, void *pvHandle));
     /**
      * Callback which gets invoked when the client wants to retrieve the size of a specific file.
      *
@@ -277,7 +277,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pcszPath        Relative path (to root directory) of file to retrieve size for.
      * @param   puSize          Where to store the file size on success.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnFileGetSize)(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint64_t *puSize);
+    DECLCALLBACKMEMBER(int, pfnOnFileGetSize,(PRTFTPCALLBACKDATA pData, const char *pcszPath, uint64_t *puSize));
     /**
      * Callback which gets invoked when the client wants to retrieve information about a file.
      *
@@ -287,7 +287,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pFsObjInfo      Where to return the RTFSOBJINFO data on success. Optional.
      * @returns VBox status code.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnFileStat)(PRTFTPCALLBACKDATA pData, const char *pcszPath, PRTFSOBJINFO pFsObjInfo);
+    DECLCALLBACKMEMBER(int, pfnOnFileStat,(PRTFTPCALLBACKDATA pData, const char *pcszPath, PRTFSOBJINFO pFsObjInfo));
     /**
      * Callback which gets invoked when setting the current working directory.
      *
@@ -295,7 +295,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pData           Pointer to generic callback data.
      * @param   pcszCWD         Current working directory to set.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnPathSetCurrent)(PRTFTPCALLBACKDATA pData, const char *pcszCWD);
+    DECLCALLBACKMEMBER(int, pfnOnPathSetCurrent,(PRTFTPCALLBACKDATA pData, const char *pcszCWD));
     /**
      * Callback which gets invoked when a client wants to retrieve the current working directory.
      *
@@ -304,14 +304,14 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pszPWD          Where to store the current working directory.
      * @param   cbPWD           Size of buffer in bytes.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnPathGetCurrent)(PRTFTPCALLBACKDATA pData, char *pszPWD, size_t cbPWD);
+    DECLCALLBACKMEMBER(int, pfnOnPathGetCurrent,(PRTFTPCALLBACKDATA pData, char *pszPWD, size_t cbPWD));
     /**
      * Callback which gets invoked when the client wants to move up a directory (relative to the current working directory).
      *
      * @returns VBox status code.
      * @param   pData           Pointer to generic callback data.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnPathUp)(PRTFTPCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(int, pfnOnPathUp,(PRTFTPCALLBACKDATA pData));
     /**
      * Callback which gets invoked when the server wants to open a directory for reading.
      *
@@ -321,7 +321,7 @@ typedef struct RTFTPSERVERCALLBACKS
      *                          If NULL, the current directory will be listed.
      * @param   ppvHandle       Where to return the opaque directory handle.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnDirOpen)(PRTFTPCALLBACKDATA pData, const char *pcszPath, void **ppvHandle);
+    DECLCALLBACKMEMBER(int, pfnOnDirOpen,(PRTFTPCALLBACKDATA pData, const char *pcszPath, void **ppvHandle));
     /**
      * Callback which gets invoked when the server wants to close a directory handle.
      *
@@ -329,7 +329,7 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   pData           Pointer to generic callback data.
      * @param   pvHandle        Directory handle to close.
      */
-    DECLCALLBACKMEMBER(int,  pfnOnDirClose)(PRTFTPCALLBACKDATA pData, void *pvHandle);
+    DECLCALLBACKMEMBER(int, pfnOnDirClose,(PRTFTPCALLBACKDATA pData, void *pvHandle));
     /**
      * Callback which gets invoked when the server wants to read the next directory entry.
      *
@@ -342,8 +342,8 @@ typedef struct RTFTPSERVERCALLBACKS
      * @param   ppszGroup       Where to return the allocated string of the group.
      * @param   ppszTarget      Where to return the allocated string of the target (if a link). Currently unused.
      */
-    DECLCALLBACKMEMBER(int, pfnOnDirRead)(PRTFTPCALLBACKDATA pData, void *pvHandle, char **ppszEntry,
-                                          PRTFSOBJINFO pInfo, char **ppszOwner, char **ppszGroup, char **ppszTarget);
+    DECLCALLBACKMEMBER(int, pfnOnDirRead,(PRTFTPCALLBACKDATA pData, void *pvHandle, char **ppszEntry,
+                                          PRTFSOBJINFO pInfo, char **ppszOwner, char **ppszGroup, char **ppszTarget));
 } RTFTPSERVERCALLBACKS;
 /** Pointer to a FTP server callback data table. */
 typedef RTFTPSERVERCALLBACKS *PRTFTPSERVERCALLBACKS;

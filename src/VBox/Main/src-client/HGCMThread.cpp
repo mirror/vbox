@@ -145,7 +145,7 @@ class HGCMThread : public HGCMReferencedObject
 
         int MsgAlloc(HGCMMsgCore **pMsg, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
         int MsgGet(HGCMMsgCore **ppMsg);
-        int MsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool bWait);
+        int MsgPost(HGCMMsgCore *pMsg, PFNHGCMMSGCALLBACK pfnCallback, bool bWait);
         int MsgComplete(HGCMMsgCore *pMsg, int32_t result);
 };
 
@@ -399,7 +399,7 @@ int HGCMThread::MsgAlloc(HGCMMsgCore **ppMsg, uint32_t u32MsgId, PFNHGCMNEWMSGAL
     return VINF_SUCCESS;
 }
 
-int HGCMThread::MsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool fWait)
+int HGCMThread::MsgPost(HGCMMsgCore *pMsg, PFNHGCMMSGCALLBACK pfnCallback, bool fWait)
 {
     LogFlow(("HGCMThread::MsgPost: thread = %p, pMsg = %p, pfnCallback = %p\n", this, pMsg, pfnCallback));
 
@@ -693,7 +693,7 @@ int hgcmMsgAlloc(HGCMThread *pThread, HGCMMsgCore **ppMsg, uint32_t u32MsgId, PF
     return rc;
 }
 
-DECLINLINE(int) hgcmMsgPostInternal(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool fWait)
+DECLINLINE(int) hgcmMsgPostInternal(HGCMMsgCore *pMsg, PFNHGCMMSGCALLBACK pfnCallback, bool fWait)
 {
     LogFlow(("MAIN::hgcmMsgPostInternal: pMsg = %p, pfnCallback = %p, fWait = %d\n", pMsg, pfnCallback, fWait));
     Assert(pMsg);
@@ -708,7 +708,7 @@ DECLINLINE(int) hgcmMsgPostInternal(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallb
     return rc;
 }
 
-int hgcmMsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback)
+int hgcmMsgPost(HGCMMsgCore *pMsg, PFNHGCMMSGCALLBACK pfnCallback)
 {
     int rc = hgcmMsgPostInternal(pMsg, pfnCallback, false);
 

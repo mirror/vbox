@@ -82,7 +82,7 @@ typedef struct VDSCRIPTARG
 typedef VDSCRIPTARG *PVDSCRIPTARG;
 
 /** Script callback. */
-typedef DECLCALLBACK(int) FNVDSCRIPTCALLBACK(PVDSCRIPTARG paScriptArgs, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNVDSCRIPTCALLBACK,(PVDSCRIPTARG paScriptArgs, void *pvUser));
 /** Pointer to a script callback. */
 typedef FNVDSCRIPTCALLBACK *PFNVDSCRIPTCALLBACK;
 
@@ -126,7 +126,7 @@ typedef const VDSCRIPTCALLBACK *PCVDSCRIPTCALLBACK;
  * @param   pvBuf          Where to store the read bits.
  * @param   cbRead         How much to read.
  */
-typedef DECLCALLBACK(int) FNVDSCRIPTASREAD(void *pvUser, VDSCRIPTARG Address, void *pvBuf, size_t cbRead);
+typedef DECLCALLBACKTYPE(int, FNVDSCRIPTASREAD,(void *pvUser, VDSCRIPTARG Address, void *pvBuf, size_t cbRead));
 /** Pointer to a read callback. */
 typedef FNVDSCRIPTASREAD *PFNVDSCRIPTASREAD;
 
@@ -140,7 +140,7 @@ typedef FNVDSCRIPTASREAD *PFNVDSCRIPTASREAD;
  * @param   pvBuf          Data to write.
  * @param   cbWrite        How much to write.
  */
-typedef DECLCALLBACK(int) FNVDSCRIPTASWRITE(void *pvUser, VDSCRIPTARG Address, const void *pvBuf, size_t cbWrite);
+typedef DECLCALLBACKTYPE(int, FNVDSCRIPTASWRITE,(void *pvUser, VDSCRIPTARG Address, const void *pvBuf, size_t cbWrite));
 /** Pointer to a write callback. */
 typedef FNVDSCRIPTASWRITE *PFNVDSCRIPTASWRITE;
 

@@ -952,7 +952,7 @@ protected:
 };
 
 /** Guest DnD callback function definition. */
-typedef DECLCALLBACKPTR(int, PFNGUESTDNDCALLBACK) (uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
+typedef DECLCALLBACKPTR(int, PFNGUESTDNDCALLBACK,(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser));
 
 /**
  * Structure for keeping a guest DnD callback.

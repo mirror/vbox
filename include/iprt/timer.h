@@ -80,7 +80,7 @@ typedef struct RTTIMER   *PRTTIMER;
  *                      callback after the timer was started. For omni timers
  *                      this will be 1 when a cpu comes back online.
  */
-typedef DECLCALLBACK(void) FNRTTIMER(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+typedef DECLCALLBACKTYPE(void, FNRTTIMER,(PRTTIMER pTimer, void *pvUser, uint64_t iTick));
 /** Pointer to FNRTTIMER() function. */
 typedef FNRTTIMER *PFNRTTIMER;
 
@@ -289,7 +289,7 @@ RTDECL(bool) RTTimerCanDoHighResolution(void);
  *                      callback after the timer was started. Will jump if we've
  *                      skipped ticks when lagging behind.
  */
-typedef DECLCALLBACK(void) FNRTTIMERLR(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
+typedef DECLCALLBACKTYPE(void, FNRTTIMERLR,(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick));
 /** Pointer to FNRTTIMER() function. */
 typedef FNRTTIMERLR *PFNRTTIMERLR;
 

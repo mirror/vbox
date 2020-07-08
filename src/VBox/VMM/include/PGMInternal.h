@@ -2902,13 +2902,13 @@ typedef struct PGMMODEDATAGST
 {
     /** The guest mode type. */
     uint32_t                        uType;
-    DECLCALLBACKMEMBER(int,         pfnGetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
-    DECLCALLBACKMEMBER(int,         pfnModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask);
-    DECLCALLBACKMEMBER(int,         pfnGetPDE)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde);
-    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
-    DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPUCC pVCpu);
+    DECLCALLBACKMEMBER(int, pfnGetPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLCALLBACKMEMBER(int, pfnModifyPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLCALLBACKMEMBER(int, pfnGetPDE,(PVMCPUCC pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3));
+    DECLCALLBACKMEMBER(int, pfnExit,(PVMCPUCC pVCpu));
 #ifdef IN_RING3
-    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPUCC pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
+    DECLCALLBACKMEMBER(int, pfnRelocate,(PVMCPUCC pVCpu, RTGCPTR offDelta)); /**< Only in ring-3. */
 #endif
 } PGMMODEDATAGST;
 
@@ -2929,13 +2929,13 @@ typedef struct PGMMODEDATASHW
 {
     /** The shadow mode type. */
     uint32_t                        uType;
-    DECLCALLBACKMEMBER(int,         pfnGetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-    DECLCALLBACKMEMBER(int,         pfnModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags,
-                                                   uint64_t fMask, uint32_t fOpFlags);
-    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode);
-    DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPUCC pVCpu);
+    DECLCALLBACKMEMBER(int, pfnGetPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLCALLBACKMEMBER(int, pfnModifyPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags,
+                                                   uint64_t fMask, uint32_t fOpFlags));
+    DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu, bool fIs64BitsPagingMode));
+    DECLCALLBACKMEMBER(int, pfnExit,(PVMCPUCC pVCpu));
 #ifdef IN_RING3
-    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPUCC pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
+    DECLCALLBACKMEMBER(int, pfnRelocate,(PVMCPUCC pVCpu, RTGCPTR offDelta)); /**< Only in ring-3. */
 #endif
 } PGMMODEDATASHW;
 
@@ -2955,18 +2955,18 @@ typedef struct PGMMODEDATABTH
     /** The guest mode type. */
     uint32_t                        uGstType;
 
-    DECLCALLBACKMEMBER(int,         pfnInvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
-    DECLCALLBACKMEMBER(int,         pfnSyncCR3)(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
-    DECLCALLBACKMEMBER(int,         pfnPrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
-    DECLCALLBACKMEMBER(int,         pfnVerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError);
-    DECLCALLBACKMEMBER(int,         pfnMapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
-    DECLCALLBACKMEMBER(int,         pfnUnmapCR3)(PVMCPUCC pVCpu);
-    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
+    DECLCALLBACKMEMBER(int, pfnInvalidatePage,(PVMCPUCC pVCpu, RTGCPTR GCPtrPage));
+    DECLCALLBACKMEMBER(int, pfnSyncCR3,(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLCALLBACKMEMBER(int, pfnPrefetchPage,(PVMCPUCC pVCpu, RTGCPTR GCPtrPage));
+    DECLCALLBACKMEMBER(int, pfnVerifyAccessSyncPage,(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLCALLBACKMEMBER(int, pfnMapCR3,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3));
+    DECLCALLBACKMEMBER(int, pfnUnmapCR3,(PVMCPUCC pVCpu));
+    DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3));
 #ifndef IN_RING3
-    DECLCALLBACKMEMBER(int,         pfnTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken);
+    DECLCALLBACKMEMBER(int, pfnTrap0eHandler,(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken));
 #endif
 #ifdef VBOX_STRICT
-    DECLCALLBACKMEMBER(unsigned,    pfnAssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb);
+    DECLCALLBACKMEMBER(unsigned, pfnAssertCR3,(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
 } PGMMODEDATABTH;
 

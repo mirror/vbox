@@ -58,7 +58,7 @@ static DWORD g_dwSelfTLS = TLS_OUT_OF_INDEXES;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static unsigned __stdcall rtThreadNativeMain(void *pvArgs);
+static unsigned __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_PROTO;
 static void rtThreadWinTellDebuggerThreadName(uint32_t idThread, const char *pszName);
 
 
@@ -242,7 +242,7 @@ static void rtThreadNativeUninitComAndOle(void)
 /**
  * Wrapper which unpacks the param stuff and calls thread function.
  */
-static unsigned __stdcall rtThreadNativeMain(void *pvArgs)
+static unsigned __stdcall rtThreadNativeMain(void *pvArgs) RT_NOTHROW_DEF
 {
     DWORD           dwThreadId = GetCurrentThreadId();
     PRTTHREADINT    pThread = (PRTTHREADINT)pvArgs;

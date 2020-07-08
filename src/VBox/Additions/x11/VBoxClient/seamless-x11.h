@@ -48,7 +48,8 @@ typedef FNSENDREGIONUPDATE *PFNSENDREGIONUPDATE;
 
 /** Structure containing information about a guest window's position and visible area.
     Used inside of VBoxGuestWindowList. */
-struct VBoxGuestWinInfo {
+struct VBoxGuestWinInfo
+{
 public:
     /** Header structure for insertion into an AVL tree */
     AVLU32NODECORE Core;
@@ -65,10 +66,10 @@ public:
      * is destroyed. */
     XRectangle *mpRects;
     /** Constructor. */
-    VBoxGuestWinInfo(bool hasShape, int x, int y, int w, int h, int cRects,
-                     XRectangle *pRects)
-            : mhasShape(hasShape), mX(x), mY(y), mWidth(w), mHeight(h),
-              mcRects(cRects), mpRects(pRects) {}
+    VBoxGuestWinInfo(bool hasShape, int x, int y, int w, int h, int cRects, XRectangle *pRects)
+        : mhasShape(hasShape), mX(x), mY(y), mWidth(w), mHeight(h)
+        , mcRects(cRects), mpRects(pRects)
+    {}
 
     /** Destructor */
     ~VBoxGuestWinInfo()
@@ -82,16 +83,16 @@ public:
 
 private:
     // We don't want a copy constructor or assignment operator
-    VBoxGuestWinInfo(const VBoxGuestWinInfo&);
-    VBoxGuestWinInfo& operator=(const VBoxGuestWinInfo&);
+    VBoxGuestWinInfo(const VBoxGuestWinInfo &);
+    VBoxGuestWinInfo &operator=(const VBoxGuestWinInfo &);
 };
 
 /** Callback type used for "DoWithAll" calls */
-typedef DECLCALLBACK(int) VBOXGUESTWINCALLBACK(VBoxGuestWinInfo *, void *);
+typedef DECLCALLBACKTYPE(int, FNVBOXGUESTWINCALLBACK,(VBoxGuestWinInfo *, void *));
 /** Pointer to VBOXGUESTWINCALLBACK */
-typedef VBOXGUESTWINCALLBACK *PVBOXGUESTWINCALLBACK;
+typedef FNVBOXGUESTWINCALLBACK *PFNVBOXGUESTWINCALLBACK;
 
-DECLCALLBACK(int) inline VBoxGuestWinCleanup(VBoxGuestWinInfo *pInfo, void *)
+static inline DECLCALLBACK(int) VBoxGuestWinCleanup(VBoxGuestWinInfo *pInfo, void *)
 {
     delete pInfo;
     return VINF_SUCCESS;
@@ -135,15 +136,14 @@ public:
         return (VBoxGuestWinInfo *)RTAvlU32Get(&mWindows, hWin);
     }
 
-    void detachAll(PVBOXGUESTWINCALLBACK pCallback, void *pvParam)
+    void detachAll(PFNVBOXGUESTWINCALLBACK pfnCallback, void *pvParam)
     {
-        RTAvlU32Destroy(&mWindows, (PAVLU32CALLBACK)pCallback, pvParam);
+        RTAvlU32Destroy(&mWindows, (PAVLU32CALLBACK)pfnCallback, pvParam);
     }
 
-    int doWithAll(PVBOXGUESTWINCALLBACK pCallback, void *pvParam)
+    int doWithAll(PFNVBOXGUESTWINCALLBACK pfnCallback, void *pvParam)
     {
-        return RTAvlU32DoWithAll(&mWindows, 1, (PAVLU32CALLBACK)pCallback,
-                                 pvParam);
+        return RTAvlU32DoWithAll(&mWindows, 1, (PAVLU32CALLBACK)pfnCallback, pvParam);
     }
 
     bool addWindow(Window hWin, bool isMapped, int x, int y, int w, int h, int cRects,
@@ -151,8 +151,7 @@ public:
     {
         LogRelFlowFunc(("hWin=%lu, isMapped=%RTbool, x=%d, y=%d, w=%d, h=%d, cRects=%d\n",
                         (unsigned long) hWin, isMapped, x, y, w, h, cRects));
-        VBoxGuestWinInfo *pInfo = new VBoxGuestWinInfo(isMapped, x, y, w, h, cRects,
-                                                       pRects);
+        VBoxGuestWinInfo *pInfo = new VBoxGuestWinInfo(isMapped, x, y, w, h, cRects, pRects);
         pInfo->Core.Key = hWin;
         LogRelFlowFuncLeave();
         return RTAvlU32Insert(&mWindows, &pInfo->Core);

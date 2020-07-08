@@ -228,7 +228,7 @@ typedef VBGLIOCHGCMCALL const RT_FAR *PCVBGLIOCHGCMCALL;
  * Mouse event noticification callback function.
  * @param   pvUser      Argument given when setting the callback.
  */
-typedef DECLCALLBACK(void) FNVBOXGUESTMOUSENOTIFY(void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNVBOXGUESTMOUSENOTIFY,(void *pvUser));
 /** Pointer to a mouse event notification callback function. */
 typedef FNVBOXGUESTMOUSENOTIFY *PFNVBOXGUESTMOUSENOTIFY; /**< @todo fix type prefix */
 

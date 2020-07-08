@@ -725,7 +725,8 @@ static bool autostartSvcWinSetServiceStatus(DWORD dwStatus, int iWaitHint, DWORD
  * @param   pvContext       The context pointer registered with the handler.
  *                          Currently not used.
  */
-static DWORD WINAPI autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID pvEventData, LPVOID pvContext)
+static DWORD WINAPI
+autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID pvEventData, LPVOID pvContext) RT_NOTHROW_DEF
 {
     LogFlow(("autostartSvcWinServiceCtrlHandlerEx: dwControl=%#x dwEventType=%#x pvEventData=%p\n",
              dwControl, dwEventType, pvEventData));

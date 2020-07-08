@@ -50,6 +50,9 @@
 #include <iprt/vfs.h>
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define RTFUZZCTX_MAGIC UINT32_C(0xdeadc0de) /** @todo */
 
 
@@ -95,8 +98,8 @@ typedef enum RTFUZZMUTATORCLASS
  * @param   pMutationParent     The parent mutation to start working from.
  * @param   ppMutation          Where to store the created mutation on success.
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATORPREP(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
-                                                 PPRTFUZZMUTATION ppMutation);
+typedef DECLCALLBACKTYPE(int, FNRTFUZZCTXMUTATORPREP,(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                      PPRTFUZZMUTATION ppMutation));
 /** Pointer to a mutator preparation callback. */
 typedef FNRTFUZZCTXMUTATORPREP *PFNRTFUZZCTXMUTATORPREP;
 
@@ -111,8 +114,8 @@ typedef FNRTFUZZCTXMUTATORPREP *PFNRTFUZZCTXMUTATORPREP;
  * @param   pbBuf               The buffer to work on.
  * @param   cbBuf               Size of the remaining buffer.
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOREXEC(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
-                                                 uint8_t *pbBuf, size_t cbBuf);
+typedef DECLCALLBACKTYPE(int, FNRTFUZZCTXMUTATOREXEC,(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
+                                                      uint8_t *pbBuf, size_t cbBuf));
 /** Pointer to a mutator execution callback. */
 typedef FNRTFUZZCTXMUTATOREXEC *PFNRTFUZZCTXMUTATOREXEC;
 
@@ -127,8 +130,8 @@ typedef FNRTFUZZCTXMUTATOREXEC *PFNRTFUZZCTXMUTATOREXEC;
  * @param   pfnExport           The export callback.
  * @param   pvUser              Opaque user data to pass to the export callback.
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOREXPORT(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
-                                                   PFNRTFUZZCTXEXPORT pfnExport, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTFUZZCTXMUTATOREXPORT,(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
+                                                        PFNRTFUZZCTXEXPORT pfnExport, void *pvUser));
 /** Pointer to a mutator export callback. */
 typedef FNRTFUZZCTXMUTATOREXPORT *PFNRTFUZZCTXMUTATOREXPORT;
 
@@ -143,8 +146,8 @@ typedef FNRTFUZZCTXMUTATOREXPORT *PFNRTFUZZCTXMUTATOREXPORT;
  * @param   pfnExport           The import callback.
  * @param   pvUser              Opaque user data to pass to the import callback.
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATORIMPORT(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, void *pvMutation,
-                                                   PFNRTFUZZCTXIMPORT pfnImport, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTFUZZCTXMUTATORIMPORT,(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, void *pvMutation,
+                                                        PFNRTFUZZCTXIMPORT pfnImport, void *pvUser));
 /** Pointer to a mutator import callback. */
 typedef FNRTFUZZCTXMUTATORIMPORT *PFNRTFUZZCTXMUTATORIMPORT;
 

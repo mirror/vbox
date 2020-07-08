@@ -936,7 +936,7 @@ DECLINLINE(uint32_t) VUSBIRhGetPeriodicFrameRate(PVUSBIROOTHUBCONNECTOR pInterfa
  *
  * @thread  The reset thread or EMT.
  */
-typedef DECLCALLBACK(void) FNVUSBRESETDONE(PVUSBIDEVICE pDevice, int rc, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNVUSBRESETDONE,(PVUSBIDEVICE pDevice, int rc, void *pvUser));
 /** Pointer to a device reset completion callback function (FNUSBRESETDONE). */
 typedef FNVUSBRESETDONE *PFNVUSBRESETDONE;
 

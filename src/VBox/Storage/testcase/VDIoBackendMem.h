@@ -38,7 +38,7 @@ typedef PVDIOBACKENDMEM *PPVDIOBACKENDMEM;
  * @param   pvUser    Opaque user data.
  * @param   rcReq     Completion code for the request.
  */
-typedef DECLCALLBACK(int) FNVDIOCOMPLETE(void *pvUser, int rcReq);
+typedef DECLCALLBACKTYPE(int, FNVDIOCOMPLETE,(void *pvUser, int rcReq));
 /** Pointer to a completion handler. */
 typedef FNVDIOCOMPLETE *PFNVDIOCOMPLETE;
 

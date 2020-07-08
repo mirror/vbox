@@ -97,7 +97,7 @@ typedef enum VMMCALLRING3
  * @param   enmOperation    The operation causing the ring-3 jump.
  * @param   pvUser          The user argument.
  */
-typedef DECLCALLBACK(int) FNVMMR0CALLRING3NOTIFICATION(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNVMMR0CALLRING3NOTIFICATION,(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, void *pvUser));
 /** Pointer to a FNRTMPNOTIFICATION(). */
 typedef FNVMMR0CALLRING3NOTIFICATION *PFNVMMR0CALLRING3NOTIFICATION;
 
@@ -112,7 +112,7 @@ typedef FNVMMR0CALLRING3NOTIFICATION *PFNVMMR0CALLRING3NOTIFICATION;
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pvUser  The user argument.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNVMMEMTRENDEZVOUS(PVM pVM, PVMCPU pVCpu, void *pvUser);
+typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNVMMEMTRENDEZVOUS,(PVM pVM, PVMCPU pVCpu, void *pvUser));
 /** Pointer to a rendezvous callback function. */
 typedef FNVMMEMTRENDEZVOUS *PFNVMMEMTRENDEZVOUS;
 

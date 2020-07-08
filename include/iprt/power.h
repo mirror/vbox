@@ -62,7 +62,7 @@ typedef enum RTPOWEREVENT
  * @param   enmEvent    The event.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(void) FNRTPOWERNOTIFICATION(RTPOWEREVENT enmEvent, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTPOWERNOTIFICATION,(RTPOWEREVENT enmEvent, void *pvUser));
 /** Pointer to a FNRTPOWERNOTIFICATION(). */
 typedef FNRTPOWERNOTIFICATION *PFNRTPOWERNOTIFICATION;
 

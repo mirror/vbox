@@ -98,10 +98,10 @@ typedef struct LSILOGICSCSI *PLSILOGICSCSI;
  *                      On return this contains the remaining amount if
  *                      cbCopy < *pcbSkip or 0 otherwise.
  */
-typedef DECLCALLBACK(void) LSILOGICR3MEMCOPYCALLBACK(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
-                                                     PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip);
+typedef DECLCALLBACKTYPE(void, FNLSILOGICR3MEMCOPYCALLBACK,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
+                                                            PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip));
 /** Pointer to a memory copy buffer callback. */
-typedef LSILOGICR3MEMCOPYCALLBACK *PLSILOGICR3MEMCOPYCALLBACK;
+typedef FNLSILOGICR3MEMCOPYCALLBACK *PFNLSILOGICR3MEMCOPYCALLBACK;
 #endif
 
 /**
@@ -1880,7 +1880,7 @@ static void lsilogicDumpSGEntry(PMptSGEntryUnion pSGEntry)
 /**
  * Copy from guest to host memory worker.
  *
- * @copydoc LSILOGICR3MEMCOPYCALLBACK
+ * @copydoc FNLSILOGICR3MEMCOPYCALLBACK
  */
 static DECLCALLBACK(void) lsilogicR3CopyBufferFromGuestWorker(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
                                                               PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip)
@@ -1905,7 +1905,7 @@ static DECLCALLBACK(void) lsilogicR3CopyBufferFromGuestWorker(PPDMDEVINS pDevIns
 /**
  * Copy from host to guest memory worker.
  *
- * @copydoc LSILOGICR3MEMCOPYCALLBACK
+ * @copydoc FNLSILOGICR3MEMCOPYCALLBACK
  */
 static DECLCALLBACK(void) lsilogicR3CopyBufferToGuestWorker(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
                                                             PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip)
@@ -1940,7 +1940,7 @@ static DECLCALLBACK(void) lsilogicR3CopyBufferToGuestWorker(PPDMDEVINS pDevIns, 
  * @param   cbCopy          How many bytes to copy.
  */
 static size_t lsilogicSgBufWalker(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
-                                  PLSILOGICR3MEMCOPYCALLBACK pfnCopyWorker,
+                                  PFNLSILOGICR3MEMCOPYCALLBACK pfnCopyWorker,
                                   PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
 {
     bool     fEndOfList = false;

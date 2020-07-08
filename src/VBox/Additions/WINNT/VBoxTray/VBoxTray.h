@@ -97,7 +97,7 @@ typedef struct _VBOXSERVICEDESC
      * @param   ppInstance      Where to return the thread-specific instance data.
      * @todo r=bird: The pEnv type is WRONG!  Please check all your const pointers.
      */
-    DECLCALLBACKMEMBER(int,  pfnInit)   (const PVBOXSERVICEENV pEnv, void **ppInstance);
+    DECLCALLBACKMEMBER(int, pfnInit,(const PVBOXSERVICEENV pEnv, void **ppInstance));
 
     /** Called from the worker thread.
      *
@@ -107,19 +107,19 @@ typedef struct _VBOXSERVICEDESC
      * @param   pfShutdown      Pointer to a per service termination flag to check
      *                          before and after blocking.
      */
-    DECLCALLBACKMEMBER(int,  pfnWorker) (void *pInstance, bool volatile *pfShutdown);
+    DECLCALLBACKMEMBER(int, pfnWorker,(void *pInstance, bool volatile *pfShutdown));
 
     /**
      * Stops a service.
      */
-    DECLCALLBACKMEMBER(int,  pfnStop)   (void *pInstance);
+    DECLCALLBACKMEMBER(int, pfnStop,(void *pInstance));
 
     /**
      * Does termination cleanups.
      *
      * @remarks This may be called even if pfnInit hasn't been called!
      */
-    DECLCALLBACKMEMBER(void, pfnDestroy)(void *pInstance);
+    DECLCALLBACKMEMBER(void, pfnDestroy,(void *pInstance));
 } VBOXSERVICEDESC, *PVBOXSERVICEDESC;
 
 extern VBOXSERVICEDESC g_SvcDescDisplay;

@@ -267,7 +267,7 @@ RT_C_DECLS_END
  * @param   cbReq       The size of the request packet.
  */
 /** @todo move this and change to function proto */
-typedef DECLCALLBACK(int) FNSUPDRVIDCENTRY(PSUPDRVSESSION pSession, uint32_t uReq, void *pvReq, uint32_t cbReq);
+typedef DECLCALLBACKTYPE(int, FNSUPDRVIDCENTRY,(PSUPDRVSESSION pSession, uint32_t uReq, void *pvReq, uint32_t cbReq));
 
 /** @} */
 

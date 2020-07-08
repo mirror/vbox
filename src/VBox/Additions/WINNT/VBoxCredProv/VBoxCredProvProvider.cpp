@@ -22,7 +22,7 @@
 #include <new> /* For bad_alloc. */
 
 #include <iprt/win/windows.h>
-#include <credentialprovider.h>
+#include <iprt/win/credentialprovider.h>
 
 #include <iprt/errcore.h>
 #include <VBox/VBoxGuestLib.h>

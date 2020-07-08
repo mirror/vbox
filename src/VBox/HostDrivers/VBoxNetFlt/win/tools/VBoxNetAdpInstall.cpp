@@ -47,9 +47,9 @@
 #endif
 
 
-static VOID winNetCfgLogger(LPCSTR szString)
+static DECLCALLBACK(void) winNetCfgLogger(const char *pszString)
 {
-    printf("%s\n", szString);
+    printf("%s\n", pszString);
 }
 
 

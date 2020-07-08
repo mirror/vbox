@@ -267,7 +267,7 @@ typedef struct RTFTPSERVERCLIENT
 typedef RTFTPSERVERCLIENT *PRTFTPSERVERCLIENT;
 
 /** Function pointer declaration for a specific FTP server command handler. */
-typedef DECLCALLBACK(int) FNRTFTPSERVERCMD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs);
+typedef DECLCALLBACKTYPE(int, FNRTFTPSERVERCMD,(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs));
 /** Pointer to a FNRTFTPSERVERCMD(). */
 typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
 

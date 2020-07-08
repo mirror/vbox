@@ -46,7 +46,7 @@ typedef struct VBOXVMSVGASHADERIF
      * @param   fOtherProfile   If set, switch to the non-default profile.  If
      *                          clear, switch back to the default profile.
      */
-    DECLCALLBACKMEMBER(void, pfnSwitchInitProfile)(PVBOXVMSVGASHADERIF pThis, bool fOtherProfile);
+    DECLCALLBACKMEMBER(void, pfnSwitchInitProfile,(PVBOXVMSVGASHADERIF pThis, bool fOtherProfile));
 
     /**
      * Extension enumeration function.
@@ -61,8 +61,8 @@ typedef struct VBOXVMSVGASHADERIF
      *                          we'll use the default profile if CLEAR and the
      *                          non-default if SET.
      */
-    DECLCALLBACKMEMBER(bool, pfnGetNextExtension)(PVBOXVMSVGASHADERIF pThis, void **ppvEnumCtx, char *pszBuf, size_t cbBuf,
-                                                  bool fOtherProfile);
+    DECLCALLBACKMEMBER(bool, pfnGetNextExtension,(PVBOXVMSVGASHADERIF pThis, void **ppvEnumCtx, char *pszBuf, size_t cbBuf,
+                                                  bool fOtherProfile));
 } VBOXVMSVGASHADERIF;
 
 SHADERDECL(int) ShaderInitLib(PVBOXVMSVGASHADERIF pVBoxShaderIf);

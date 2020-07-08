@@ -82,7 +82,7 @@ typedef struct SERIALTEST *PSERIALTEST;
  * @returns IPRT status code.
  * @param   pSerialTest         The serial test instance data.
  */
-typedef DECLCALLBACK(int) FNSERIALTESTRUN(PSERIALTEST pSerialTest);
+typedef DECLCALLBACKTYPE(int, FNSERIALTESTRUN,(PSERIALTEST pSerialTest));
 /** Pointer to the serial test callback. */
 typedef FNSERIALTESTRUN *PFNSERIALTESTRUN;
 

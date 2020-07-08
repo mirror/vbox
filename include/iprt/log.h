@@ -197,7 +197,7 @@ typedef enum RTLOGPHASE
  * @param   pszFormat   Format string.
  * @param   ...         Optional arguments as specified in the format string.
  */
-typedef DECLCALLBACK(void) FNRTLOGGER(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+typedef DECLCALLBACKTYPE(void, FNRTLOGGER,(const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(1, 2);
 /** Pointer to logger function. */
 typedef FNRTLOGGER *PFNRTLOGGER;
 
@@ -206,7 +206,7 @@ typedef FNRTLOGGER *PFNRTLOGGER;
  *
  * @param   pLogger     Pointer to the logger instance which is to be flushed.
  */
-typedef DECLCALLBACK(void) FNRTLOGFLUSH(PRTLOGGER pLogger);
+typedef DECLCALLBACKTYPE(void, FNRTLOGFLUSH,(PRTLOGGER pLogger));
 /** Pointer to flush function. */
 typedef FNRTLOGFLUSH *PFNRTLOGFLUSH;
 
@@ -215,7 +215,7 @@ typedef FNRTLOGFLUSH *PFNRTLOGFLUSH;
  *
  * @param   pLogger     Pointer to the logger instance which is to be flushed.
  */
-typedef DECLCALLBACK(void) FNRTLOGFLUSHGC(PRTLOGGERRC pLogger);
+typedef DECLCALLBACKTYPE(void, FNRTLOGFLUSHGC,(PRTLOGGERRC pLogger));
 /** Pointer to logger function. */
 typedef RCPTRTYPE(FNRTLOGFLUSHGC *) PFNRTLOGFLUSHGC;
 
@@ -226,7 +226,7 @@ typedef RCPTRTYPE(FNRTLOGFLUSHGC *) PFNRTLOGFLUSHGC;
  * @param   pszFormat   Format string.
  * @param   ...         Optional arguments specified in the format string.
  */
-typedef DECLCALLBACK(void) FNRTLOGPHASEMSG(PRTLOGGER pLogger, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+typedef DECLCALLBACKTYPE(void, FNRTLOGPHASEMSG,(PRTLOGGER pLogger, const char *pszFormat, ...)) RT_IPRT_FORMAT_ATTR(2, 3);
 /** Pointer to header/footer message callback function. */
 typedef FNRTLOGPHASEMSG *PFNRTLOGPHASEMSG;
 
@@ -238,7 +238,7 @@ typedef FNRTLOGPHASEMSG *PFNRTLOGPHASEMSG;
  * @param   pfnLogPhaseMsg  Callback for writing the header/footer (RTLogPrintf
  *                          and others are out of bounds).
  */
-typedef DECLCALLBACK(void) FNRTLOGPHASE(PRTLOGGER pLogger, RTLOGPHASE enmLogPhase, PFNRTLOGPHASEMSG pfnLogPhaseMsg);
+typedef DECLCALLBACKTYPE(void, FNRTLOGPHASE,(PRTLOGGER pLogger, RTLOGPHASE enmLogPhase, PFNRTLOGPHASEMSG pfnLogPhaseMsg));
 /** Pointer to log header/footer callback function. */
 typedef FNRTLOGPHASE *PFNRTLOGPHASE;
 
@@ -254,7 +254,7 @@ typedef FNRTLOGPHASE *PFNRTLOGPHASE;
  * @param   cchBuf      The size of the output buffer.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(size_t) FNRTLOGPREFIX(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
+typedef DECLCALLBACKTYPE(size_t, FNRTLOGPREFIX,(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser));
 /** Pointer to prefix callback function. */
 typedef FNRTLOGPREFIX *PFNRTLOGPREFIX;
 
@@ -2417,7 +2417,7 @@ RTDECL(void) RTLogDumpPrintfV(void *pvUser, const char *pszFormat, va_list va) R
  * @param   pachChars   Pointer to an array of utf-8 characters.
  * @param   cbChars     Number of bytes in the character array pointed to by pachChars.
  */
-typedef DECLCALLBACK(size_t) FNRTSTROUTPUT(void *pvArg, const char *pachChars, size_t cbChars);
+typedef DECLCALLBACKTYPE(size_t, FNRTSTROUTPUT,(void *pvArg, const char *pachChars, size_t cbChars));
 /** Pointer to callback function. */
 typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
 #endif

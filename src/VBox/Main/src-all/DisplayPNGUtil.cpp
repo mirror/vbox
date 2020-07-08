@@ -32,7 +32,7 @@ typedef struct PNGWriteCtx
     int rc;
 } PNGWriteCtx;
 
-static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_t cb)
+static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_t cb) RT_NOTHROW_DEF
 {
     PNGWriteCtx *pCtx = (PNGWriteCtx *)png_get_io_ptr(png_ptr);
     LogFlowFunc(("png_ptr %p, p %p, cb %d, pCtx %p\n", png_ptr, p, cb, pCtx));
@@ -61,7 +61,7 @@ static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_
     }
 }
 
-static void PNGAPI png_output_flush_fn(png_structp png_ptr)
+static void PNGAPI png_output_flush_fn(png_structp png_ptr) RT_NOTHROW_DEF
 {
     NOREF(png_ptr);
     /* Do nothing. */
@@ -143,7 +143,13 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
                 info_ptr = png_create_info_struct(png_ptr);
                 if (info_ptr)
                 {
+#if RT_MSC_PREREQ(RT_MSC_VER_VC140)
+#pragma warning(push,3)
                     if (!setjmp(png_jmpbuf(png_ptr)))
+#pragma warning(pop)
+#else
+                    if (!setjmp(png_jmpbuf(png_ptr)))
+#endif
                     {
                         PNGWriteCtx ctx;
                         ctx.pu8PNG = NULL;

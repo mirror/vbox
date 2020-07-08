@@ -104,8 +104,8 @@ typedef PGMR3DUMPHIERARCHYSTATE *PPGMR3DUMPHIERARCHYSTATE;
  * @param   cbNeedle        Size of what we're searching for.
  */
 
-typedef DECLCALLBACK(uint8_t const *) FNPGMR3DBGFIXEDMEMSCAN(void const *pvHaystack, uint32_t cbHaystack,
-                                                             void const *pvNeedle, size_t cbNeedle);
+typedef DECLCALLBACKTYPE(uint8_t const *, FNPGMR3DBGFIXEDMEMSCAN,(void const *pvHaystack, uint32_t cbHaystack,
+                                                                  void const *pvNeedle, size_t cbNeedle));
 /** Pointer to an fixed size and step assembly scanner function. */
 typedef FNPGMR3DBGFIXEDMEMSCAN *PFNPGMR3DBGFIXEDMEMSCAN;
 

@@ -237,7 +237,7 @@ RTDECL(bool) RTThreadYield(void);
  * @param   ThreadSelf  Thread handle to this thread.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(int) FNRTTHREAD(RTTHREAD ThreadSelf, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTTHREAD,(RTTHREAD ThreadSelf, void *pvUser));
 /** Pointer to a FNRTTHREAD(). */
 typedef FNRTTHREAD *PFNRTTHREAD;
 
@@ -280,8 +280,8 @@ RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUse
                            RTTHREADTYPE enmType, unsigned fFlags, const char *pszName);
 #ifndef RT_OS_LINUX /* XXX crashes genksyms at least on 32-bit Linux hosts */
 /** Pointer to a RTThreadCreate function. */
-typedef DECLCALLBACKPTR(int, PFNRTTHREADCREATE)(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
-                                                RTTHREADTYPE enmType, unsigned fFlags, const char *pszName);
+typedef DECLCALLBACKPTR(int, PFNRTTHREADCREATE,(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
+                                                RTTHREADTYPE enmType, unsigned fFlags, const char *pszName));
 #endif
 
 
@@ -644,7 +644,7 @@ typedef enum RTTHREADCTXEVENT
  *                      events, we may add more (thread exit, ++) later.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(void) FNRTTHREADCTXHOOK(RTTHREADCTXEVENT enmEvent, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTTHREADCTXHOOK,(RTTHREADCTXEVENT enmEvent, void *pvUser));
 /** Pointer to a context switching hook. */
 typedef FNRTTHREADCTXHOOK *PFNRTTHREADCTXHOOK;
 
@@ -872,7 +872,7 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
  *
  * @param   pvValue     The current value.
  */
-typedef DECLCALLBACK(void) FNRTTLSDTOR(void *pvValue);
+typedef DECLCALLBACKTYPE(void, FNRTTLSDTOR,(void *pvValue));
 /** Pointer to a FNRTTLSDTOR. */
 typedef FNRTTLSDTOR *PFNRTTLSDTOR;
 

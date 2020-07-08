@@ -22,12 +22,10 @@
 # pragma once
 #endif
 
-
-typedef DECLCALLBACKPTR(void, PFNRT1)(void *);
-
 /**
- * initiliazes LWIP core, and do callback on tcp/ip thread
+ * Initializes LWIP core, and do callback on tcp/ip thread.
  */
 int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void * pfnCallbackArg);
 void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void * pfnCallbackArg);
+
 #endif /* !VBOX_INCLUDED_SRC_Network_lwip_new_vbox_VBoxLwipCore_h */

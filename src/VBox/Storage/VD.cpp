@@ -106,7 +106,7 @@ typedef enum VDIOCTXTXDIR
 } VDIOCTXTXDIR, *PVDIOCTXTXDIR;
 
 /** Transfer function */
-typedef DECLCALLBACK(int) FNVDIOCTXTRANSFER (PVDIOCTX pIoCtx);
+typedef DECLCALLBACKTYPE(int, FNVDIOCTXTRANSFER ,(PVDIOCTX pIoCtx));
 /** Pointer to a transfer function. */
 typedef FNVDIOCTXTRANSFER *PFNVDIOCTXTRANSFER;
 

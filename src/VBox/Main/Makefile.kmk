@@ -1442,6 +1442,9 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 		'#if _MSC_VER >= 1800 /* RT_MSC_VER_VC120 */' \
 		'# pragma warning(disable:4005)' \
 		'#endif' \
+		'#if _MSC_VER >= 1900 /* RT_MSC_VER_VC140 */' \
+		'# pragma warning(disable:5039)' \
+		'#endif' \
                ''
 	$(QUIET)$(CAT_EXT) "$1.tmp" >> "$1"
 	$(QUIET)$(APPEND) -n "$1" \

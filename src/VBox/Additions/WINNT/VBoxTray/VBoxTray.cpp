@@ -496,7 +496,7 @@ static bool vboxTrayHandleGlobalMessages(PVBOXGLOBALMESSAGE pTable, UINT uMsg,
  * @param   enmPhase
  * @param   pfnLog
  */
-static void vboxTrayLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
+static DECLCALLBACK(void) vboxTrayLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
 {
     /* Some introductory information. */
     static RTTIMESPEC s_TimeSpec;
@@ -725,7 +725,8 @@ static int vboxTraySetupSeamless(void)
             BOOL (WINAPI * pfnConvertStringSecurityDescriptorToSecurityDescriptorA)(LPCSTR StringSecurityDescriptor, DWORD StringSDRevision, PSECURITY_DESCRIPTOR  *SecurityDescriptor, PULONG  SecurityDescriptorSize);
             *(void **)&pfnConvertStringSecurityDescriptorToSecurityDescriptorA =
                 RTLdrGetSystemSymbol("advapi32.dll", "ConvertStringSecurityDescriptorToSecurityDescriptorA");
-            Log(("pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %x\n", pfnConvertStringSecurityDescriptorToSecurityDescriptorA));
+            Log(("pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %p\n",
+                 RT_CB_LOG_CAST(pfnConvertStringSecurityDescriptorToSecurityDescriptorA)));
             if (pfnConvertStringSecurityDescriptorToSecurityDescriptorA)
             {
                 PSECURITY_DESCRIPTOR    pSD;
@@ -1674,7 +1675,7 @@ typedef enum VBOXCAPS_ENTRY_ACSTATE
 struct VBOXCAPS_ENTRY;
 struct VBOXCAPS;
 
-typedef DECLCALLBACKPTR(void, PFNVBOXCAPS_ENTRY_ON_ENABLE)(struct VBOXCAPS *pConsole, struct VBOXCAPS_ENTRY *pCap, BOOL fEnabled);
+typedef DECLCALLBACKPTR(void, PFNVBOXCAPS_ENTRY_ON_ENABLE,(struct VBOXCAPS *pConsole, struct VBOXCAPS_ENTRY *pCap, BOOL fEnabled));
 
 typedef struct VBOXCAPS_ENTRY
 {

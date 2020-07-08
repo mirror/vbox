@@ -332,7 +332,7 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) vdIfErrorMessage(PVDINTERFACEERROR pIf
  * @param   pvUser          Opaque user data which is passed on request submission.
  * @param   rcReq           Status code of the completed request.
  */
-typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser, int rcReq);
+typedef DECLCALLBACKTYPE(int, FNVDCOMPLETED,(void *pvUser, int rcReq));
 /** Pointer to FNVDCOMPLETED() */
 typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 
@@ -710,7 +710,7 @@ VBOXDDU_DECL(int) VDIfDestroyFromVfsStream(PVDINTERFACEIO pIoIf);
  * @param   pvUser          The opaque user data associated with this interface.
  * @param   uPercentage     Completion percentage.
  */
-typedef DECLCALLBACK(int) FNVDPROGRESS(void *pvUser, unsigned uPercentage);
+typedef DECLCALLBACKTYPE(int, FNVDPROGRESS,(void *pvUser, unsigned uPercentage));
 /** Pointer to FNVDPROGRESS() */
 typedef FNVDPROGRESS *PFNVDPROGRESS;
 

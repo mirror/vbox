@@ -70,7 +70,7 @@ typedef enum PDMBLKCACHEXFERDIR
  * @param   pvUser          User argument given during request initiation.
  * @param   rc              The status code of the completed request.
  */
-typedef DECLCALLBACK(void) FNPDMBLKCACHEXFERCOMPLETEDRV(PPDMDRVINS pDrvIns, void *pvUser, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMBLKCACHEXFERCOMPLETEDRV,(PPDMDRVINS pDrvIns, void *pvUser, int rc));
 /** Pointer to a FNPDMBLKCACHEXFERCOMPLETEDRV(). */
 typedef FNPDMBLKCACHEXFERCOMPLETEDRV *PFNPDMBLKCACHEXFERCOMPLETEDRV;
 
@@ -84,8 +84,8 @@ typedef FNPDMBLKCACHEXFERCOMPLETEDRV *PFNPDMBLKCACHEXFERCOMPLETEDRV;
  * @param   pSgBuf          Scather / gather buffer for the transfer.
  * @param   hIoXfer         I/O transfer handle to ping on completion.
  */
-typedef DECLCALLBACK(int) FNPDMBLKCACHEXFERENQUEUEDRV(PPDMDRVINS pDrvIns, PDMBLKCACHEXFERDIR enmXferDir,
-                                                      uint64_t off, size_t cbXfer, PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer);
+typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEDRV,(PPDMDRVINS pDrvIns, PDMBLKCACHEXFERDIR enmXferDir, uint64_t off,
+                                                           size_t cbXfer, PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer));
 /** Pointer to a FNPDMBLKCACHEXFERENQUEUEDRV(). */
 typedef FNPDMBLKCACHEXFERENQUEUEDRV *PFNPDMBLKCACHEXFERENQUEUEDRV;
 
@@ -97,8 +97,8 @@ typedef FNPDMBLKCACHEXFERENQUEUEDRV *PFNPDMBLKCACHEXFERENQUEUEDRV;
  * @param   cRanges         Number of range entries.
  * @param   hIoXfer         I/O handle to return on completion.
  */
-typedef DECLCALLBACK(int) FNPDMBLKCACHEXFERENQUEUEDISCARDDRV(PPDMDRVINS pDrvIns, PCRTRANGE paRanges, unsigned cRanges,
-                                                             PPDMBLKCACHEIOXFER hIoXfer);
+typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEDISCARDDRV,(PPDMDRVINS pDrvIns, PCRTRANGE paRanges, unsigned cRanges,
+                                                                  PPDMBLKCACHEIOXFER hIoXfer));
 /** Pointer to a FNPDMBLKCACHEXFERENQUEUEDISCARDDRV(). */
 typedef FNPDMBLKCACHEXFERENQUEUEDISCARDDRV *PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV;
 
@@ -109,7 +109,7 @@ typedef FNPDMBLKCACHEXFERENQUEUEDISCARDDRV *PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV;
  * @param   pvUser          User argument given during request initiation.
  * @param   rc              The status code of the completed request.
  */
-typedef DECLCALLBACK(void) FNPDMBLKCACHEXFERCOMPLETEDEV(PPDMDEVINS pDevIns, void *pvUser, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMBLKCACHEXFERCOMPLETEDEV,(PPDMDEVINS pDevIns, void *pvUser, int rc));
 /** Pointer to a FNPDMBLKCACHEXFERCOMPLETEDEV(). */
 typedef FNPDMBLKCACHEXFERCOMPLETEDEV *PFNPDMBLKCACHEXFERCOMPLETEDEV;
 
@@ -123,8 +123,8 @@ typedef FNPDMBLKCACHEXFERCOMPLETEDEV *PFNPDMBLKCACHEXFERCOMPLETEDEV;
  * @param   pSgBuf          Scather / gather buffer for the transfer.
  * @param   hIoXfer         I/O transfer handle to ping on completion.
  */
-typedef DECLCALLBACK(int) FNPDMBLKCACHEXFERENQUEUEDEV(PPDMDEVINS pDevIns, PDMBLKCACHEXFERDIR enmXferDir,
-                                                      uint64_t off, size_t cbXfer, PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer);
+typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEDEV,(PPDMDEVINS pDevIns, PDMBLKCACHEXFERDIR enmXferDir, uint64_t off,
+                                                           size_t cbXfer, PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer));
 /** Pointer to a FNPDMBLKCACHEXFERENQUEUEDEV(). */
 typedef FNPDMBLKCACHEXFERENQUEUEDEV *PFNPDMBLKCACHEXFERENQUEUEDEV;
 
@@ -136,8 +136,8 @@ typedef FNPDMBLKCACHEXFERENQUEUEDEV *PFNPDMBLKCACHEXFERENQUEUEDEV;
  * @param   cRanges         Number of range entries.
  * @param   hIoXfer         I/O handle to return on completion.
  */
-typedef DECLCALLBACK(int) FNPDMBLKCACHEXFERENQUEUEDISCARDDEV(PPDMDEVINS pDevIns, PCRTRANGE paRanges, unsigned cRanges,
-                                                             PPDMBLKCACHEIOXFER hIoXfer);
+typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEDISCARDDEV,(PPDMDEVINS pDevIns, PCRTRANGE paRanges, unsigned cRanges,
+                                                                  PPDMBLKCACHEIOXFER hIoXfer));
 /** Pointer to a FNPDMBLKCACHEXFERENQUEUEDISCARDDEV(). */
 typedef FNPDMBLKCACHEXFERENQUEUEDISCARDDEV *PFNPDMBLKCACHEXFERENQUEUEDISCARDDEV;
 
@@ -148,7 +148,7 @@ typedef FNPDMBLKCACHEXFERENQUEUEDISCARDDEV *PFNPDMBLKCACHEXFERENQUEUEDISCARDDEV;
  * @param   pvUser          User argument given during request initiation.
  * @param   rc              The status code of the completed request.
  */
-typedef DECLCALLBACK(void) FNPDMBLKCACHEXFERCOMPLETEINT(void *pvUserInt, void *pvUser, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMBLKCACHEXFERCOMPLETEINT,(void *pvUserInt, void *pvUser, int rc));
 /** Pointer to a FNPDMBLKCACHEXFERCOMPLETEINT(). */
 typedef FNPDMBLKCACHEXFERCOMPLETEINT *PFNPDMBLKCACHEXFERCOMPLETEINT;
 
@@ -162,8 +162,8 @@ typedef FNPDMBLKCACHEXFERCOMPLETEINT *PFNPDMBLKCACHEXFERCOMPLETEINT;
  * @param   pSgBuf          Scather / gather buffer for the transfer.
  * @param   hIoXfer         I/O transfer handle to ping on completion.
  */
-typedef DECLCALLBACK(int) FNPDMBLKCACHEXFERENQUEUEINT(void *pvUser, PDMBLKCACHEXFERDIR enmXferDir,
-                                                      uint64_t off, size_t cbXfer, PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer);
+typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEINT,(void *pvUser, PDMBLKCACHEXFERDIR enmXferDir, uint64_t off,
+                                                           size_t cbXfer, PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer));
 /** Pointer to a FNPDMBLKCACHEXFERENQUEUEINT(). */
 typedef FNPDMBLKCACHEXFERENQUEUEINT *PFNPDMBLKCACHEXFERENQUEUEINT;
 
@@ -175,8 +175,8 @@ typedef FNPDMBLKCACHEXFERENQUEUEINT *PFNPDMBLKCACHEXFERENQUEUEINT;
  * @param   cRanges         Number of range entries.
  * @param   hIoXfer         I/O handle to return on completion.
  */
-typedef DECLCALLBACK(int) FNPDMBLKCACHEXFERENQUEUEDISCARDINT(void *pvUser, PCRTRANGE paRanges, unsigned cRanges,
-                                                             PPDMBLKCACHEIOXFER hIoXfer);
+typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEDISCARDINT,(void *pvUser, PCRTRANGE paRanges, unsigned cRanges,
+                                                                  PPDMBLKCACHEIOXFER hIoXfer));
 /** Pointer to a FNPDMBLKCACHEXFERENQUEUEDISCARDINT(). */
 typedef FNPDMBLKCACHEXFERENQUEUEDISCARDINT *PFNPDMBLKCACHEXFERENQUEUEDISCARDINT;
 
@@ -187,7 +187,7 @@ typedef FNPDMBLKCACHEXFERENQUEUEDISCARDINT *PFNPDMBLKCACHEXFERENQUEUEDISCARDINT;
  * @param   pvUser          User argument given during request initiation.
  * @param   rc              The status code of the completed request.
  */
-typedef DECLCALLBACK(void) FNPDMBLKCACHEXFERCOMPLETEUSB(PPDMUSBINS pUsbIns, void *pvUser, int rc);
+typedef DECLCALLBACKTYPE(void, FNPDMBLKCACHEXFERCOMPLETEUSB,(PPDMUSBINS pUsbIns, void *pvUser, int rc));
 /** Pointer to a FNPDMBLKCACHEXFERCOMPLETEUSB(). */
 typedef FNPDMBLKCACHEXFERCOMPLETEUSB *PFNPDMBLKCACHEXFERCOMPLETEUSB;
 
@@ -201,8 +201,8 @@ typedef FNPDMBLKCACHEXFERCOMPLETEUSB *PFNPDMBLKCACHEXFERCOMPLETEUSB;
  * @param   pSgBuf          Scather / gather buffer for the transfer.
  * @param   hIoXfer         I/O transfer handle to ping on completion.
  */
-typedef DECLCALLBACK(int) FNPDMBLKCACHEXFERENQUEUEUSB(PPDMUSBINS pUsbIns, PDMBLKCACHEXFERDIR enmXferDir,
-                                                      uint64_t off, size_t cbXfer, PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer);
+typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEUSB,(PPDMUSBINS pUsbIns, PDMBLKCACHEXFERDIR enmXferDir, uint64_t off,
+                                                           size_t cbXfer, PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer));
 /** Pointer to a FNPDMBLKCACHEXFERENQUEUEUSB(). */
 typedef FNPDMBLKCACHEXFERENQUEUEUSB *PFNPDMBLKCACHEXFERENQUEUEUSB;
 
@@ -214,8 +214,8 @@ typedef FNPDMBLKCACHEXFERENQUEUEUSB *PFNPDMBLKCACHEXFERENQUEUEUSB;
  * @param   cRanges         Number of range entries.
  * @param   hIoXfer         I/O handle to return on completion.
  */
-typedef DECLCALLBACK(int) FNPDMBLKCACHEXFERENQUEUEDISCARDUSB(PPDMUSBINS pUsbIns, PCRTRANGE paRanges, unsigned cRanges,
-                                                             PPDMBLKCACHEIOXFER hIoXfer);
+typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEDISCARDUSB,(PPDMUSBINS pUsbIns, PCRTRANGE paRanges, unsigned cRanges,
+                                                                  PPDMBLKCACHEIOXFER hIoXfer));
 /** Pointer to a FNPDMBLKCACHEXFERENQUEUEDISCARDUSB(). */
 typedef FNPDMBLKCACHEXFERENQUEUEDISCARDUSB *PFNPDMBLKCACHEXFERENQUEUEDISCARDUSB;
 

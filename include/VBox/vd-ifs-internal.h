@@ -39,6 +39,22 @@ RT_C_DECLS_BEGIN
  * @{ */
 
 /**
+ * Read data callback.
+ *
+ * @return  VBox status code.
+ * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.
+ * @param   pvUser          The opaque data passed for the operation.
+ * @param   uOffset         Offset of first reading byte from start of disk.
+ *                          Must be aligned to a sector boundary.
+ * @param   pvBuffer        Pointer to buffer for reading data.
+ * @param   cbBuffer        Number of bytes to read.
+ *                          Must be aligned to a sector boundary.
+ */
+typedef DECLCALLBACKTYPE(int, FNVDPARENTREAD,(void *pvUser, uint64_t uOffset, void *pvBuffer, size_t cbBuffer));
+/** Pointer to a FNVDPARENTREAD. */
+typedef FNVDPARENTREAD *PFNVDPARENTREAD;
+
+/**
  * Interface to get the parent state.
  *
  * Per-operation interface. Optional, present only if there is a parent, and
@@ -49,21 +65,12 @@ typedef struct VDINTERFACEPARENTSTATE
     /**
      * Common interface header.
      */
-    VDINTERFACE    Core;
+    VDINTERFACE     Core;
 
     /**
-     * Read data callback.
-     *
-     * @return  VBox status code.
-     * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.
-     * @param   pvUser          The opaque data passed for the operation.
-     * @param   uOffset         Offset of first reading byte from start of disk.
-     *                          Must be aligned to a sector boundary.
-     * @param   pvBuffer        Pointer to buffer for reading data.
-     * @param   cbBuffer        Number of bytes to read.
-     *                          Must be aligned to a sector boundary.
+     * Read data callback, see FNVDPARENTREAD for details.
      */
-    DECLR3CALLBACKMEMBER(int, pfnParentRead, (void *pvUser, uint64_t uOffset, void *pvBuffer, size_t cbBuffer));
+    PFNVDPARENTREAD pfnParentRead;
 
 } VDINTERFACEPARENTSTATE, *PVDINTERFACEPARENTSTATE;
 
@@ -106,7 +113,7 @@ typedef PVDIOSTORAGE *PPVDIOSTORAGE;
  * @param   pvUser          Opaque user data passed during a read/write request.
  * @param   rcReq           Status code for the completed request.
  */
-typedef DECLCALLBACK(int) FNVDXFERCOMPLETED(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq);
+typedef DECLCALLBACKTYPE(int, FNVDXFERCOMPLETED,(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq));
 /** Pointer to FNVDXFERCOMPLETED() */
 typedef FNVDXFERCOMPLETED *PFNVDXFERCOMPLETED;
 

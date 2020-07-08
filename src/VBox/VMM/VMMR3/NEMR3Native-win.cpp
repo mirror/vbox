@@ -284,7 +284,7 @@ nemR3WinLogWrapper_NtDeviceIoControlFile(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUT
                hFile, pIos, pIos->Status, pIos->Information, pszFunction, pvInput, cbInput, pvOutput, cbOutput, rcNt, ASMReturnAddress()));
     else
         Log12(("VID!NtDeviceIoControlFile: hFile=%#zx hEvt=%#zx Apc=%p/%p pIos=%p->{s:%#x, i:%#zx} uFunction=%s Input=%p LB %#x Output=%p LB %#x) -> %#x; Caller=%p\n",
-               hFile, hEvt, pfnApcCallback, pvApcCtx, pIos, pIos->Status, pIos->Information, pszFunction,
+               hFile, hEvt, RT_CB_LOG_CAST(pfnApcCallback), pvApcCtx, pIos, pIos->Status, pIos->Information, pszFunction,
                pvInput, cbInput, pvOutput, cbOutput, rcNt, ASMReturnAddress()));
     if (cbOutput > 0 && pvOutput)
     {

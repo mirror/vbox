@@ -316,7 +316,7 @@ typedef struct VIRTIOCORER3
      * @param   fDriverOk  True if guest driver is okay (thus queues, etc... are
      *                     valid)
      */
-    DECLCALLBACKMEMBER(void, pfnStatusChanged)(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint32_t fDriverOk);
+    DECLCALLBACKMEMBER(void, pfnStatusChanged,(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint32_t fDriverOk));
 
     /**
      * Implementation-specific client callback to access VirtIO Device-specific capabilities
@@ -327,7 +327,7 @@ typedef struct VIRTIOCORER3
      * @param   pvBuf      Buffer in which to save read data.
      * @param   cbToRead   Number of bytes to read.
      */
-    DECLCALLBACKMEMBER(int,  pfnDevCapRead)(PPDMDEVINS pDevIns, uint32_t offCap, void *pvBuf, uint32_t cbToRead);
+    DECLCALLBACKMEMBER(int, pfnDevCapRead,(PPDMDEVINS pDevIns, uint32_t offCap, void *pvBuf, uint32_t cbToRead));
 
     /**
      * Implementation-specific client ballback to access VirtIO Device-specific capabilities
@@ -338,7 +338,7 @@ typedef struct VIRTIOCORER3
      * @param   pvBuf      Buffer with the bytes to write.
      * @param   cbToWrite  Number of bytes to write.
      */
-    DECLCALLBACKMEMBER(int,  pfnDevCapWrite)(PPDMDEVINS pDevIns, uint32_t offCap, const void *pvBuf, uint32_t cbWrite);
+    DECLCALLBACKMEMBER(int, pfnDevCapWrite,(PPDMDEVINS pDevIns, uint32_t offCap, const void *pvBuf, uint32_t cbWrite));
 
 
     /**
@@ -349,7 +349,7 @@ typedef struct VIRTIOCORER3
      * @param   pVirtioCC  Pointer to the ring-3 virtio state.
      * @param   uVirtqNbr   Index of the notified queue
      */
-    DECLCALLBACKMEMBER(void, pfnVirtqNotified)(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
+    DECLCALLBACKMEMBER(void, pfnVirtqNotified,(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr));
 
     /** @} */
 
@@ -379,7 +379,7 @@ typedef struct VIRTIOCORER0
      * @param   pVirtioCC  Pointer to the ring-3 virtio state.
      * @param   uVirtqNbr  Index of the notified queue
      */
-    DECLCALLBACKMEMBER(void, pfnVirtqNotified)(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
+    DECLCALLBACKMEMBER(void, pfnVirtqNotified,(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr));
 
 } VIRTIOCORER0;
 

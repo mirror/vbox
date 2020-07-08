@@ -32,12 +32,12 @@ typedef struct VBOXSHGSMI
     HGSMIHEAP Heap;
 } VBOXSHGSMI, *PVBOXSHGSMI;
 
-typedef DECLCALLBACK(void) FNVBOXSHGSMICMDCOMPLETION(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvCmd, void *pvContext);
+typedef DECLCALLBACKTYPE(void, FNVBOXSHGSMICMDCOMPLETION,(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvCmd, void *pvContext));
 typedef FNVBOXSHGSMICMDCOMPLETION *PFNVBOXSHGSMICMDCOMPLETION;
 
-typedef DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) FNVBOXSHGSMICMDCOMPLETION_IRQ(PVBOXSHGSMI pHeap,
-                                                                               void RT_UNTRUSTED_VOLATILE_HOST *pvCmd,
-                                                                               void *pvContext, void **ppvCompletion);
+typedef DECLCALLBACKTYPE(PFNVBOXSHGSMICMDCOMPLETION, FNVBOXSHGSMICMDCOMPLETION_IRQ,(PVBOXSHGSMI pHeap,
+                                                                                    void RT_UNTRUSTED_VOLATILE_HOST *pvCmd,
+                                                                                    void *pvContext, void **ppvCompletion));
 typedef FNVBOXSHGSMICMDCOMPLETION_IRQ *PFNVBOXSHGSMICMDCOMPLETION_IRQ;
 
 

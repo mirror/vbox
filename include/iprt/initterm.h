@@ -206,7 +206,7 @@ typedef enum RTTERMREASON
  * @param   iStatus             The meaning of this depends on enmReason.
  * @param   pvUser              User argument passed to RTTermRegisterCallback.
  */
-typedef DECLCALLBACK(void) FNRTTERMCALLBACK(RTTERMREASON enmReason, int32_t iStatus, void *pvUser);
+typedef DECLCALLBACKTYPE(void, FNRTTERMCALLBACK,(RTTERMREASON enmReason, int32_t iStatus, void *pvUser));
 /** Pointer to an IPRT termination callback function. */
 typedef FNRTTERMCALLBACK *PFNRTTERMCALLBACK;
 

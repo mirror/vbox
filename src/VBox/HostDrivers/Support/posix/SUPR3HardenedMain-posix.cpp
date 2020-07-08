@@ -81,7 +81,7 @@
  * On Solaris dlsym() will return the value in the GOT/PLT entry.  We don't wish
  * to patch the lazy loader trampoline function, but rather the real function!
  */
-typedef DECLCALLBACK(void) FNSUPHARDENEDSYMRESOLVE(void);
+typedef DECLCALLBACKTYPE(void, FNSUPHARDENEDSYMRESOLVE,(void));
 /** Pointer to FNSUPHARDENEDSYMRESOLVE. */
 typedef FNSUPHARDENEDSYMRESOLVE *PFNSUPHARDENEDSYMRESOLVE;
 

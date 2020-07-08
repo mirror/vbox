@@ -29,16 +29,25 @@
 # pragma once
 #endif
 
-#pragma warning(push)
-#pragma warning(disable:4668) /* 'NDIS_SUPPORT_NDIS6' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
-#if _MSC_VER >= 1800 /*RT_MSC_VER_VC120*/
-# pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
-# pragma warning(disable:4255) /* windef.h(227) : warning C4255: 'NEARPROC' : no function prototype given: converting '()' to '(void)' */
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4668) /* 'NDIS_SUPPORT_NDIS6' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+# if _MSC_VER >= 1800 /*RT_MSC_VER_VC120*/
+#  pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
+#  pragma warning(disable:4255) /* windef.h(227) : warning C4255: 'NEARPROC' : no function prototype given: converting '()' to '(void)' */
+# endif
+# if _MSC_VER >= 1900 /*RT_MSC_VER_VC140*/
+#  ifdef __cplusplus
+#   pragma warning(disable:5039) /* ws2tcpip.h(874): warning C5039: 'WSAIoctl': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception. */
+#  endif
+# endif
 #endif
 
 #include <ws2tcpip.h>
 
-#pragma warning(pop)
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #endif /* !IPRT_INCLUDED_win_ws2tcpip_h */
 

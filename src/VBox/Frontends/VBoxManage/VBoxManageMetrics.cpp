@@ -364,7 +364,7 @@ static bool volatile g_fKeepGoing = true;
  *
  * @remarks This is called on a new thread.
  */
-static BOOL WINAPI ctrlHandler(DWORD dwCtrlType)
+static BOOL WINAPI ctrlHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
 {
     switch (dwCtrlType)
     {

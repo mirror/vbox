@@ -471,7 +471,7 @@ DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-typedef DECLCALLBACK(int) FNVMMR0SETJMP(PVMCC pVM, PVMCPUCC pVCpu);
+typedef DECLCALLBACKTYPE(int, FNVMMR0SETJMP,(PVMCC pVM, PVMCPUCC pVCpu));
 /** Pointer to FNVMMR0SETJMP(). */
 typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
 
@@ -497,7 +497,7 @@ DECLASM(int)    vmmR0CallRing3SetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, P
  * @returns VBox status code.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNVMMR0SETJMP2(PGVM pGVM, VMCPUID idCpu);
+typedef DECLCALLBACKTYPE(int, FNVMMR0SETJMP2,(PGVM pGVM, VMCPUID idCpu));
 /** Pointer to FNVMMR0SETJMP2(). */
 typedef FNVMMR0SETJMP2 *PFNVMMR0SETJMP2;
 
@@ -519,7 +519,7 @@ DECLASM(int)    vmmR0CallRing3SetJmp2(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP2 pfn,
  * @returns VBox status code.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNVMMR0SETJMPEX(void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNVMMR0SETJMPEX,(void *pvUser));
 /** Pointer to FNVMMR0SETJMPEX(). */
 typedef FNVMMR0SETJMPEX *PFNVMMR0SETJMPEX;
 

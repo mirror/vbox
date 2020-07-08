@@ -31,9 +31,9 @@
 #include "VBoxCredProvUtils.h"
 
 
-VBoxCredProvPoller::VBoxCredProvPoller(void) :
-    m_hThreadPoller(NIL_RTTHREAD),
-    m_pProv(NULL)
+VBoxCredProvPoller::VBoxCredProvPoller(void)
+    : m_hThreadPoller(NIL_RTTHREAD)
+    , m_pProv(NULL)
 {
 }
 
@@ -145,4 +145,3 @@ VBoxCredProvPoller::threadPoller(RTTHREAD hThreadSelf, void *pvUser)
 
     return VINF_SUCCESS;
 }
-

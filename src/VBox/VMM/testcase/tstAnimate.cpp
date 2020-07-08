@@ -51,7 +51,7 @@
 static volatile bool g_fSignaled = false;
 
 
-static void SigInterrupt(int iSignal)
+static void SigInterrupt(int iSignal) RT_NOTHROW_DEF
 {
     NOREF(iSignal);
     signal(SIGINT, SigInterrupt);
@@ -59,7 +59,7 @@ static void SigInterrupt(int iSignal)
     RTPrintf("caught SIGINT\n");
 }
 
-typedef DECLCALLBACK(int) FNSETGUESTGPR(PVM, uint32_t);
+typedef DECLCALLBACKTYPE(int, FNSETGUESTGPR,(PVM, uint32_t));
 typedef FNSETGUESTGPR *PFNSETGUESTGPR;
 static int scriptGPReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 {
@@ -71,7 +71,7 @@ static int scriptGPReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
     return ((PFNSETGUESTGPR)(uintptr_t)pvUser)(pVM, u32);
 }
 
-typedef DECLCALLBACK(int) FNSETGUESTSEL(PVM, uint16_t);
+typedef DECLCALLBACKTYPE(int, FNSETGUESTSEL,(PVM, uint16_t));
 typedef FNSETGUESTSEL *PFNSETGUESTSEL;
 static int scriptSelReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 {
@@ -83,7 +83,7 @@ static int scriptSelReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
     return ((PFNSETGUESTSEL)(uintptr_t)pvUser)(pVM, u16);
 }
 
-typedef DECLCALLBACK(int) FNSETGUESTSYS(PVM, uint32_t);
+typedef DECLCALLBACKTYPE(int, FNSETGUESTSYS,(PVM, uint32_t));
 typedef FNSETGUESTSYS *PFNSETGUESTSYS;
 static int scriptSysReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 {
@@ -96,7 +96,7 @@ static int scriptSysReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 }
 
 
-typedef DECLCALLBACK(int) FNSETGUESTDTR(PVM, uint32_t, uint16_t);
+typedef DECLCALLBACKTYPE(int, FNSETGUESTDTR,(PVM, uint32_t, uint16_t));
 typedef FNSETGUESTDTR *PFNSETGUESTDTR;
 static int scriptDtrReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 {

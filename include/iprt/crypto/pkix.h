@@ -199,8 +199,8 @@ typedef struct RTCRPKIXSIGNATUREDESC
      * @param   pParams         Algorithm/key parameters, optional.  Will be NULL if
      *                          none.
      */
-    DECLCALLBACKMEMBER(int, pfnInit)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, void *pvOpaque, bool fSigning,
-                                     RTCRKEY hKey, PCRTASN1DYNTYPE pParams);
+    DECLCALLBACKMEMBER(int, pfnInit,(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, void *pvOpaque, bool fSigning,
+                                     RTCRKEY hKey, PCRTASN1DYNTYPE pParams));
 
     /**
      * Resets the state before performing another signing or verification.
@@ -213,7 +213,7 @@ typedef struct RTCRPKIXSIGNATUREDESC
      * @param   pvState         The opaque provider state.
      * @param   fSigning        Exactly the same value as the init call.
      */
-    DECLCALLBACKMEMBER(int, pfnReset)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, bool fSigning);
+    DECLCALLBACKMEMBER(int, pfnReset,(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, bool fSigning));
 
     /**
      * Deletes the provider state. Optional.
@@ -225,7 +225,7 @@ typedef struct RTCRPKIXSIGNATUREDESC
      * @param   pvState         The opaque provider state.
      * @param   fSigning        Exactly the same value as the init call.
      */
-    DECLCALLBACKMEMBER(void, pfnDelete)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, bool fSigning);
+    DECLCALLBACKMEMBER(void, pfnDelete,(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, bool fSigning));
 
     /**
      * Verifies a signed message digest (fSigning = false).
@@ -248,8 +248,8 @@ typedef struct RTCRPKIXSIGNATUREDESC
      * @param   pvSignature     The signature to validate.
      * @param   cbSignature     The size of the signature (in bytes).
      */
-    DECLCALLBACKMEMBER(int, pfnVerify)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, RTCRKEY hKey,
-                                       RTCRDIGEST hDigest, void const *pvSignature, size_t cbSignature);
+    DECLCALLBACKMEMBER(int, pfnVerify,(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, RTCRKEY hKey,
+                                       RTCRDIGEST hDigest, void const *pvSignature, size_t cbSignature));
 
     /**
      * Sign a message digest (fSigning = true).
@@ -276,8 +276,8 @@ typedef struct RTCRPKIXSIGNATUREDESC
      *                          of the returned signature, or the required size in
      *                          case of VERR_BUFFER_OVERFLOW.
      */
-    DECLCALLBACKMEMBER(int, pfnSign)(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, RTCRKEY hKey,
-                                     RTCRDIGEST hDigest, void *pvSignature, size_t *pcbSignature);
+    DECLCALLBACKMEMBER(int, pfnSign,(struct RTCRPKIXSIGNATUREDESC const *pDesc, void *pvState, RTCRKEY hKey,
+                                     RTCRDIGEST hDigest, void *pvSignature, size_t *pcbSignature));
 
 } RTCRPKIXSIGNATUREDESC;
 /** Pointer to a public key signature scheme provider descriptor. */
@@ -434,8 +434,8 @@ typedef struct RTCRPKIXENCRYPTIONDESC
      * @param   pParams         Algorithm/key parameters, optional.  Will be NULL if
      *                          none.
      */
-    DECLCALLBACKMEMBER(int, pfnInit)(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState, void *pvOpaque, bool fEncrypt,
-                                     PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams);
+    DECLCALLBACKMEMBER(int, pfnInit,(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState, void *pvOpaque, bool fEncrypt,
+                                     PCRTASN1BITSTRING pKey, PCRTASN1DYNTYPE pParams));
 
     /**
      * Re-initializes the provider state.
@@ -450,7 +450,7 @@ typedef struct RTCRPKIXENCRYPTIONDESC
      * @param   pvState         The opaque provider state.
      * @param   enmOperation    Same as for the earlier pfnInit call.
      */
-    DECLCALLBACKMEMBER(int, pfnReset)(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState, bool fEncrypt);
+    DECLCALLBACKMEMBER(int, pfnReset,(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState, bool fEncrypt));
 
     /**
      * Deletes the provider state. Optional.
@@ -463,7 +463,7 @@ typedef struct RTCRPKIXENCRYPTIONDESC
      * @param   pvState         The opaque provider state.
      * @param   enmOperation    Same as for the earlier pfnInit call.
      */
-    DECLCALLBACKMEMBER(void, pfnDelete)(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState, bool fEncrypt);
+    DECLCALLBACKMEMBER(void, pfnDelete,(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState, bool fEncrypt));
 
     /**
      * Encrypt using the public key (fEncrypt = true).
@@ -486,9 +486,9 @@ typedef struct RTCRPKIXENCRYPTIONDESC
      *                          ciphertext returned.
      * @param   fFinal          Whether this is the final call.
      */
-    DECLCALLBACKMEMBER(int, pfnEncrypt)(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState,
+    DECLCALLBACKMEMBER(int, pfnEncrypt,(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState,
                                         void const *pvPlaintext, size_t cbPlaintext,
-                                        void *pvCiphertext, size_t cbMaxCiphertext, size_t *pcbCiphertext, bool fFinal);
+                                        void *pvCiphertext, size_t cbMaxCiphertext, size_t *pcbCiphertext, bool fFinal));
 
     /**
      * Calculate the output buffer size for the next pfnEncrypt call.
@@ -502,8 +502,8 @@ typedef struct RTCRPKIXENCRYPTIONDESC
      *                          be larger than the actual number of bytes return.
      * @param   fFinal          Whether this is the final call.
      */
-    DECLCALLBACKMEMBER(int, pfnEncryptLength)(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState,
-                                              size_t cbPlaintext, size_t *pcbCiphertext, bool fFinal);
+    DECLCALLBACKMEMBER(int, pfnEncryptLength,(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState,
+                                              size_t cbPlaintext, size_t *pcbCiphertext, bool fFinal));
 
     /**
      * Decrypt using the private key (fEncrypt = false).
@@ -526,9 +526,9 @@ typedef struct RTCRPKIXENCRYPTIONDESC
      *                          plaintext returned.
      * @param   fFinal          Whether this is the final call.
      */
-    DECLCALLBACKMEMBER(int, pfnDecrypt)(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState,
+    DECLCALLBACKMEMBER(int, pfnDecrypt,(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState,
                                         void const *pvCiphertext, size_t cbCiphertext,
-                                        void *pvPlaintext, size_t cbMaxPlaintext, size_t *pcbPlaintext, bool fFinal);
+                                        void *pvPlaintext, size_t cbMaxPlaintext, size_t *pcbPlaintext, bool fFinal));
 
     /**
      * Calculate the output buffer size for the next pfnDecrypt call.
@@ -542,8 +542,8 @@ typedef struct RTCRPKIXENCRYPTIONDESC
      *                          be larger than the actual number of bytes return.
      * @param   fFinal          Whether this is the final call.
      */
-    DECLCALLBACKMEMBER(int, pfnDecryptLength)(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState,
-                                              size_t cbCiphertext, size_t *pcbPlaintext, bool fFinal);
+    DECLCALLBACKMEMBER(int, pfnDecryptLength,(struct RTCRPKIXENCRYPTIONDESC const *pDesc, void *pvState,
+                                              size_t cbCiphertext, size_t *pcbPlaintext, bool fFinal));
 } RTCRPKIXENCRYPTIONDESC;
 /** Pointer to a public key encryption schema provider descriptor. */
 typedef RTCRPKIXENCRYPTIONDESC const *PCRTCRPKIXENCRYPTIONDESC;

@@ -65,14 +65,14 @@ typedef struct RTCRDIGESTDESC
     /**
      * Allocates the digest data.
      */
-    DECLCALLBACKMEMBER(void *, pfnNew)(void);
+    DECLCALLBACKMEMBER(void *, pfnNew,(void));
 
     /**
      * Frees the digest data.
      *
      * @param   pvState     The opaque message digest state.
      */
-    DECLCALLBACKMEMBER(void, pfnFree)(void *pvState);
+    DECLCALLBACKMEMBER(void, pfnFree,(void *pvState));
 
     /**
      * Updates the digest with more data.
@@ -81,7 +81,7 @@ typedef struct RTCRDIGESTDESC
      * @param   pvData      The data to add to the digest.
      * @param   cbData      The amount of data to add to the digest.
      */
-    DECLCALLBACKMEMBER(void, pfnUpdate)(void *pvState, const void *pvData, size_t cbData);
+    DECLCALLBACKMEMBER(void, pfnUpdate,(void *pvState, const void *pvData, size_t cbData));
 
     /**
      * Finalizes the digest calculation.
@@ -90,7 +90,7 @@ typedef struct RTCRDIGESTDESC
      * @param   pbHash      Where to store the output digest.  This buffer is at
      *                      least RTCRDIGESTDESC::cbHash bytes large.
      */
-    DECLCALLBACKMEMBER(void, pfnFinal)(void *pvState, uint8_t *pbHash);
+    DECLCALLBACKMEMBER(void, pfnFinal,(void *pvState, uint8_t *pbHash));
 
     /**
      * (Re-)Initializes the digest. Optional.
@@ -102,7 +102,7 @@ typedef struct RTCRDIGESTDESC
      * @param   pvOpaque    Opaque algortihm specific parameter.
      * @param   fReInit     Set if this is a re-init call.
      */
-    DECLCALLBACKMEMBER(int, pfnInit)(void *pvState, void *pvOpaque, bool fReInit);
+    DECLCALLBACKMEMBER(int, pfnInit,(void *pvState, void *pvOpaque, bool fReInit));
 
     /**
      * Deletes the message digest state.
@@ -111,7 +111,7 @@ typedef struct RTCRDIGESTDESC
      *
      * @param   pvState     The opaque message digest state.
      */
-    DECLCALLBACKMEMBER(void, pfnDelete)(void *pvState);
+    DECLCALLBACKMEMBER(void, pfnDelete,(void *pvState));
 
     /**
      * Clones the message digest state.
@@ -122,7 +122,7 @@ typedef struct RTCRDIGESTDESC
      * @param   pvState     The opaque message digest state (destination).
      * @param   pvSrcState  The opaque message digest state to clone (source).
      */
-    DECLCALLBACKMEMBER(int, pfnClone)(void *pvState, void const *pvSrcState);
+    DECLCALLBACKMEMBER(int, pfnClone,(void *pvState, void const *pvSrcState));
 
     /**
      * Gets the hash size.
@@ -134,7 +134,7 @@ typedef struct RTCRDIGESTDESC
      * @returns The hash size.
      * @param   pvState     The opaque message digest state.
      */
-    DECLCALLBACKMEMBER(uint32_t, pfnGetHashSize)(void *pvState);
+    DECLCALLBACKMEMBER(uint32_t, pfnGetHashSize,(void *pvState));
 
     /**
      * Gets the digest type (when enmType is RTDIGESTTYPE_UNKNOWN).
@@ -142,7 +142,7 @@ typedef struct RTCRDIGESTDESC
      * @returns The hash size.
      * @param   pvState     The opaque message digest state.
      */
-    DECLCALLBACKMEMBER(RTDIGESTTYPE, pfnGetDigestType)(void *pvState);
+    DECLCALLBACKMEMBER(RTDIGESTTYPE, pfnGetDigestType,(void *pvState));
 } RTCRDIGESTDESC;
 /** Pointer to const message digest details and vtable. */
 typedef RTCRDIGESTDESC const *PCRTCRDIGESTDESC;

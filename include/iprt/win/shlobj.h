@@ -38,6 +38,9 @@
 # endif
 # if _MSC_VER >= 1900 /*RT_MSC_VER_VC140*/
 #  pragma warning(disable:4091) /* sdk/v7.1/include/shlobj.h(1151): warning C4091: 'typedef ': ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared */
+#  ifdef __cplusplus
+#   pragma warning(disable:5039) /* commctrl.h(8323): warning C5039: 'DSA_DestroyCallback': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception. */
+#  endif
 # endif
 # if _MSC_VER >= 1910 /*RT_MSC_VER_VC141*/
 #  pragma warning(disable:4768) /* sdk/v7.1/include/shlobj.h(1065): warning C4768: __declspec attributes before linkage specification are ignored */

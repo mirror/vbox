@@ -38,8 +38,10 @@
 # include <iprt/crypto/digest.h>
 
 # include "internal/iprt-openssl.h"
+# include "internal/openssl-pre.h"
 # include <openssl/x509.h>
 # include <openssl/err.h>
+# include "internal/openssl-post.h"
 
 
 DECLHIDDEN(void) rtCrOpenSslInit(void)

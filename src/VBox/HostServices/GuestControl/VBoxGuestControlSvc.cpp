@@ -2483,7 +2483,7 @@ GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient,
 
 
 /**
- * @copydoc VBOXHGCMSVCLOAD
+ * @copydoc FNVBOXHGCMSVCLOAD
  */
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTable)
 {

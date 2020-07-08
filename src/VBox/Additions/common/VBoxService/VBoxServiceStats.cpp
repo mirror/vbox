@@ -67,7 +67,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-typedef struct _VBOXSTATSCONTEXT
+typedef struct VBOXSTATSCONTEXT
 {
     RTMSINTERVAL    cMsStatInterval;
 
@@ -77,10 +77,11 @@ typedef struct _VBOXSTATSCONTEXT
     uint64_t        au64LastCpuLoad_Nice[VMM_MAX_CPU_COUNT];
 
 #ifdef RT_OS_WINDOWS
-    NTSTATUS (WINAPI *pfnNtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation,
-                                                   ULONG SystemInformationLength, PULONG ReturnLength);
-    void     (WINAPI *pfnGlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer);
-    BOOL     (WINAPI *pfnGetPerformanceInfo)(PPERFORMANCE_INFORMATION pPerformanceInformation, DWORD cb);
+    DECLCALLBACKMEMBER_EX(NTSTATUS, WINAPI, pfnNtQuerySystemInformation,(SYSTEM_INFORMATION_CLASS SystemInformationClass,
+                                                                         PVOID SystemInformation, ULONG SystemInformationLength,
+                                                                         PULONG ReturnLength));
+    DECLCALLBACKMEMBER_EX(void,     WINAPI, pfnGlobalMemoryStatusEx,(LPMEMORYSTATUSEX lpBuffer));
+    DECLCALLBACKMEMBER_EX(BOOL,     WINAPI, pfnGetPerformanceInfo,(PPERFORMANCE_INFORMATION pPerformanceInformation, DWORD cb));
 #endif
 } VBOXSTATSCONTEXT;
 

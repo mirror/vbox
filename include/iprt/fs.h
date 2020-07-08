@@ -623,7 +623,7 @@ RTR3DECL(bool) RTFsIsCaseSensitive(const char *pszFsPath);
  * @param   pszMountpoint   The mountpoint name.
  * @param   pvUser          The user argument.
  */
-typedef DECLCALLBACK(int) FNRTFSMOUNTPOINTENUM(const char *pszMountpoint, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTFSMOUNTPOINTENUM,(const char *pszMountpoint, void *pvUser));
 /** Pointer to a FNRTFSMOUNTPOINTENUM(). */
 typedef FNRTFSMOUNTPOINTENUM *PFNRTFSMOUNTPOINTENUM;
 

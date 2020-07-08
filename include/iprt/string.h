@@ -1624,7 +1624,7 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  * @param   pachChars   Pointer to an array of utf-8 characters.
  * @param   cbChars     Number of bytes in the character array pointed to by pachChars.
  */
-typedef DECLCALLBACK(size_t) FNRTSTROUTPUT(void *pvArg, const char *pachChars, size_t cbChars);
+typedef DECLCALLBACKTYPE(size_t, FNRTSTROUTPUT,(void *pvArg, const char *pachChars, size_t cbChars));
 /** Pointer to callback function. */
 typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
 #endif
@@ -1680,9 +1680,9 @@ typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
  * @param   fFlags          Flags (RTSTR_NTFS_*).
  * @param   chArgSize       The argument size specifier, 'l' or 'L'.
  */
-typedef DECLCALLBACK(size_t) FNSTRFORMAT(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                                         const char **ppszFormat, va_list *pArgs, int cchWidth,
-                                         int cchPrecision, unsigned fFlags, char chArgSize);
+typedef DECLCALLBACKTYPE(size_t, FNSTRFORMAT,(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                              const char **ppszFormat, va_list *pArgs, int cchWidth,
+                                              int cchPrecision, unsigned fFlags, char chArgSize));
 /** Pointer to a FNSTRFORMAT() function. */
 typedef FNSTRFORMAT *PFNSTRFORMAT;
 
@@ -1898,10 +1898,10 @@ RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80V
  * @param   fFlags          Flags (NTFS_*).
  * @param   pvUser          The user argument.
  */
-typedef DECLCALLBACK(size_t) FNRTSTRFORMATTYPE(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                                               const char *pszType, void const *pvValue,
-                                               int cchWidth, int cchPrecision, unsigned fFlags,
-                                               void *pvUser);
+typedef DECLCALLBACKTYPE(size_t, FNRTSTRFORMATTYPE,(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                                    const char *pszType, void const *pvValue,
+                                                    int cchWidth, int cchPrecision, unsigned fFlags,
+                                                    void *pvUser));
 /** Pointer to a FNRTSTRFORMATTYPE. */
 typedef FNRTSTRFORMATTYPE *PFNRTSTRFORMATTYPE;
 
@@ -3290,7 +3290,7 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceGetN(PRTSTRSPACE pStrSpace, const char *pszStr
  * @param   pStr        The string node
  * @param   pvUser      The user specified argument.
  */
-typedef DECLCALLBACK(int)   FNRTSTRSPACECALLBACK(PRTSTRSPACECORE pStr, void *pvUser);
+typedef DECLCALLBACKTYPE(int, FNRTSTRSPACECALLBACK,(PRTSTRSPACECORE pStr, void *pvUser));
 /** Pointer to callback function for RTStrSpaceEnumerate() and RTStrSpaceDestroy(). */
 typedef FNRTSTRSPACECALLBACK *PFNRTSTRSPACECALLBACK;
 

@@ -36,8 +36,10 @@
 # include <iprt/string.h>
 
 # include "internal/iprt-openssl.h"
+# include "internal/openssl-pre.h"
 # include <openssl/rsa.h>
 # include <openssl/err.h>
+# include "internal/openssl-post.h"
 
 # include "key-internal.h"
 

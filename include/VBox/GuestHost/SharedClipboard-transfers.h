@@ -735,21 +735,21 @@ typedef struct SHCLPROVIDERCTX
  */
 typedef struct SHCLPROVIDERINTERFACE
 {
-    DECLCALLBACKMEMBER(int, pfnTransferOpen)(PSHCLPROVIDERCTX pCtx);
-    DECLCALLBACKMEMBER(int, pfnTransferClose)(PSHCLPROVIDERCTX pCtx);
-    DECLCALLBACKMEMBER(int, pfnRootsGet)(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
-    DECLCALLBACKMEMBER(int, pfnListOpen)(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
-    DECLCALLBACKMEMBER(int, pfnListClose)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
-    DECLCALLBACKMEMBER(int, pfnListHdrRead)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-    DECLCALLBACKMEMBER(int, pfnListHdrWrite)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-    DECLCALLBACKMEMBER(int, pfnListEntryRead)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
-    DECLCALLBACKMEMBER(int, pfnListEntryWrite)(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
-    DECLCALLBACKMEMBER(int, pfnObjOpen)(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj);
-    DECLCALLBACKMEMBER(int, pfnObjClose)(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
-    DECLCALLBACKMEMBER(int, pfnObjRead)(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
-                                        uint32_t fFlags, uint32_t *pcbRead);
-    DECLCALLBACKMEMBER(int, pfnObjWrite)(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
-                                         uint32_t fFlags, uint32_t *pcbWritten);
+    DECLCALLBACKMEMBER(int, pfnTransferOpen,(PSHCLPROVIDERCTX pCtx));
+    DECLCALLBACKMEMBER(int, pfnTransferClose,(PSHCLPROVIDERCTX pCtx));
+    DECLCALLBACKMEMBER(int, pfnRootsGet,(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList));
+    DECLCALLBACKMEMBER(int, pfnListOpen,(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList));
+    DECLCALLBACKMEMBER(int, pfnListClose,(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList));
+    DECLCALLBACKMEMBER(int, pfnListHdrRead,(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr));
+    DECLCALLBACKMEMBER(int, pfnListHdrWrite,(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr));
+    DECLCALLBACKMEMBER(int, pfnListEntryRead,(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry));
+    DECLCALLBACKMEMBER(int, pfnListEntryWrite,(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry));
+    DECLCALLBACKMEMBER(int, pfnObjOpen,(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj));
+    DECLCALLBACKMEMBER(int, pfnObjClose,(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj));
+    DECLCALLBACKMEMBER(int, pfnObjRead,(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
+                                        uint32_t fFlags, uint32_t *pcbRead));
+    DECLCALLBACKMEMBER(int, pfnObjWrite,(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
+                                         uint32_t fFlags, uint32_t *pcbWritten));
 } SHCLPROVIDERINTERFACE, *PSHCLPROVIDERINTERFACE;
 
 /**
@@ -791,19 +791,19 @@ typedef struct SHCLTRANSFERCALLBACKS
     /** Size (in bytes) of user data pointing at. Optional and can be 0. */
     size_t cbUser;
     /** Called after the transfer has been initialized. */
-    DECLCALLBACKMEMBER(int,  pfnTransferInitialize)(PSHCLTRANSFERCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(int, pfnTransferInitialize,(PSHCLTRANSFERCALLBACKDATA pData));
     /** Called before the transfer will be started. */
-    DECLCALLBACKMEMBER(int,  pfnTransferStart)(PSHCLTRANSFERCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(int, pfnTransferStart,(PSHCLTRANSFERCALLBACKDATA pData));
     /** Called when reading / writing the list header is complete. */
-    DECLCALLBACKMEMBER(void, pfnListHeaderComplete)(PSHCLTRANSFERCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(void, pfnListHeaderComplete,(PSHCLTRANSFERCALLBACKDATA pData));
     /** Called when reading / writing a list entry is complete. */
-    DECLCALLBACKMEMBER(void, pfnListEntryComplete)(PSHCLTRANSFERCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(void, pfnListEntryComplete,(PSHCLTRANSFERCALLBACKDATA pData));
     /** Called when the transfer is complete. */
-    DECLCALLBACKMEMBER(void, pfnTransferComplete)(PSHCLTRANSFERCALLBACKDATA pData, int rc);
+    DECLCALLBACKMEMBER(void, pfnTransferComplete,(PSHCLTRANSFERCALLBACKDATA pData, int rc));
     /** Called when the transfer has been canceled. */
-    DECLCALLBACKMEMBER(void, pfnTransferCanceled)(PSHCLTRANSFERCALLBACKDATA pData);
+    DECLCALLBACKMEMBER(void, pfnTransferCanceled,(PSHCLTRANSFERCALLBACKDATA pData));
     /** Called when transfer resulted in an unrecoverable error. */
-    DECLCALLBACKMEMBER(void, pfnTransferError)(PSHCLTRANSFERCALLBACKDATA pData, int rc);
+    DECLCALLBACKMEMBER(void, pfnTransferError,(PSHCLTRANSFERCALLBACKDATA pData, int rc));
 } SHCLTRANSFERCALLBACKS, *PSHCLTRANSFERCALLBACKS;
 
 /**
