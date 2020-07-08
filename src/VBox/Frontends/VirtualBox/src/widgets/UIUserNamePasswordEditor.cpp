@@ -19,18 +19,18 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QStyle>
-#include <QToolButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
+#include "QIToolButton.h"
 #include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
 
 UIPasswordLineEdit::UIPasswordLineEdit(QWidget *pParent /*= 0 */)
-    :QLineEdit(pParent)
+    : QLineEdit(pParent)
     , m_pTextVisibilityButton(0)
 {
     prepare();
@@ -38,37 +38,65 @@ UIPasswordLineEdit::UIPasswordLineEdit(QWidget *pParent /*= 0 */)
 
 void UIPasswordLineEdit::toggleTextVisibility(bool fTextVisible)
 {
+    AssertPtrReturnVoid(m_pTextVisibilityButton);
+
     if (fTextVisible)
     {
         setEchoMode(QLineEdit::Normal);
-        if(m_pTextVisibilityButton)
+        if (m_pTextVisibilityButton)
             m_pTextVisibilityButton->setIcon(UIIconPool::iconSet(":/eye_closed_10px.png"));
-        return;
     }
-    setEchoMode(QLineEdit::Password);
-    if(m_pTextVisibilityButton)
-        m_pTextVisibilityButton->setIcon(UIIconPool::iconSet(":/eye_10px.png"));
+    else
+    {
+        setEchoMode(QLineEdit::Password);
+        if (m_pTextVisibilityButton)
+            m_pTextVisibilityButton->setIcon(UIIconPool::iconSet(":/eye_10px.png"));
+    }
 }
 
 void UIPasswordLineEdit::prepare()
 {
-    m_pTextVisibilityButton = new QToolButton(this);
-    m_pTextVisibilityButton->setIconSize(QSize(10, 10));
-    m_pTextVisibilityButton->setFocusPolicy(Qt::ClickFocus);
-    m_pTextVisibilityButton->setAutoRaise(true);
-    m_pTextVisibilityButton->setCursor(Qt::ArrowCursor);
-    m_pTextVisibilityButton->show();
-    connect(m_pTextVisibilityButton, &QToolButton::clicked, this, &UIPasswordLineEdit::sltHandleTextVisibilityChange);
+    /* Prepare text visibility button: */
+    m_pTextVisibilityButton = new QIToolButton(this);
+    if (m_pTextVisibilityButton)
+    {
+        m_pTextVisibilityButton->setIconSize(QSize(10, 10));
+        m_pTextVisibilityButton->setFocusPolicy(Qt::ClickFocus);
+        m_pTextVisibilityButton->setCursor(Qt::ArrowCursor);
+        m_pTextVisibilityButton->show();
+        connect(m_pTextVisibilityButton, &QToolButton::clicked, this, &UIPasswordLineEdit::sltHandleTextVisibilityChange);
+    }
+
     toggleTextVisibility(false);
+    adjustTextVisibilityButtonGeometry();
 }
 
-void UIPasswordLineEdit::paintEvent(QPaintEvent *pevent)
+void UIPasswordLineEdit::adjustTextVisibilityButtonGeometry()
 {
-    QLineEdit::paintEvent(pevent);
+    AssertPtrReturnVoid(m_pTextVisibilityButton);
+
+#ifdef VBOX_WS_MAC
+    /* Do not forget to update QIToolButton size on macOS, it's FIXED: */
+    m_pTextVisibilityButton->setFixedSize(m_pTextVisibilityButton->minimumSizeHint());
+    /* Calculate suitable position for a QIToolButton, it's FRAMELESS: */
+    const int iWidth = m_pTextVisibilityButton->width();
+    const int iMinHeight = qMin(height(), m_pTextVisibilityButton->height());
+    const int iMaxHeight = qMax(height(), m_pTextVisibilityButton->height());
+    const int iHalfHeightDiff = (iMaxHeight - iMinHeight) / 2;
+    m_pTextVisibilityButton->setGeometry(width() - iWidth - iHalfHeightDiff, iHalfHeightDiff, iWidth, iWidth);
+#else
     int iFrameWidth = style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
     int iSize = height() - 2 * iFrameWidth;
     m_pTextVisibilityButton->setGeometry(width() - iSize, iFrameWidth, iSize, iSize);
+#endif
+}
 
+void UIPasswordLineEdit::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QLineEdit::resizeEvent(pEvent);
+
+    adjustTextVisibilityButtonGeometry();
 }
 
 void UIPasswordLineEdit::sltHandleTextVisibilityChange()

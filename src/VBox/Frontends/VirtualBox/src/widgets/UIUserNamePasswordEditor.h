@@ -31,6 +31,7 @@
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
+class QIToolButton;
 
 class UIPasswordLineEdit : public QLineEdit
 {
@@ -47,13 +48,14 @@ public:
 
 protected:
 
-    virtual void paintEvent(QPaintEvent *pevent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
 
 private:
 
     void prepare();
+    void adjustTextVisibilityButtonGeometry();
 
-    QToolButton *m_pTextVisibilityButton;
+    QIToolButton *m_pTextVisibilityButton;
 
 private slots:
 
