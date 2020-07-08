@@ -818,6 +818,8 @@ DECLINLINE(bool) pcnetTmdTryLoad(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd
     return !!tmd->tmd1.own;
 }
 
+#if defined(IN_RING3) || defined(LOG_ENABLED)
+
 /**
  * Loads an entire transmit message descriptor. Used for logging/debugging.
  *
@@ -855,6 +857,8 @@ DECLINLINE(void) pcnetTmdLoadAll(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd
         ((uint32_t *)tmd)[3] = xda[3];  /* TMD3, user data. */
     }
 }
+
+#endif
 
 /**
  * Store transmit message descriptor and hand it over to the host (the VM guest).
