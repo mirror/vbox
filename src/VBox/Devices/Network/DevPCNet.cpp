@@ -445,8 +445,6 @@ typedef struct PCNETSTATE
     STAMCOUNTER                         StatTransmitCase2;
     STAMPROFILE                         StatTransmitSendR3;
     STAMPROFILE                         StatTransmitSendRZ;
-    STAMPROFILEADV                      StatTxLenCalcRZ;
-    STAMPROFILEADV                      StatTxLenCalcR3;
     STAMPROFILEADV                      StatTdtePollRZ;
     STAMPROFILEADV                      StatTdtePollR3;
     STAMPROFILEADV                      StatTmdStoreRZ;
@@ -1880,59 +1878,6 @@ static int pcnetTdtePoll(PPDMDEVINS pDevIns, PPCNETSTATE pThis, TMD *tmd)
 
 
 /**
- * Poll Transmit Descriptor Table Entry
- * @return true if transmit descriptors available
- */
-static int pcnetCalcPacketLen(PPDMDEVINS pDevIns, PPCNETSTATE pThis, unsigned cb)
-{
-    TMD tmd;
-    unsigned cbPacket = cb;
-    uint32_t iDesc = CSR_XMTRC(pThis);
-    uint32_t iFirstDesc = iDesc;
-
-    STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTxLenCalc), a);
-    do
-    {
-        /* Advance the ring counter */
-        if (iDesc < 2)
-            iDesc = CSR_XMTRL(pThis);
-        else
-            iDesc--;
-
-        if (iDesc == iFirstDesc)
-            break;
-
-        RTGCPHYS32 addrDesc = pcnetTdraAddr(pThis, iDesc);
-
-        if (!pcnetTmdTryLoad(pDevIns, pThis, &tmd, PHYSADDR(pThis, addrDesc)))
-        {
-            STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTxLenCalc), a);
-            /*
-             * No need to count further since this packet won't be sent anyway
-             * due to underflow.
-             */
-            Log3(("#%d pcnetCalcPacketLen: underflow, return %u\n", PCNET_INST_NR, cbPacket));
-            return cbPacket;
-        }
-        if (RT_UNLIKELY(tmd.tmd1.ones != 15))
-        {
-            STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTxLenCalc), a);
-            LogRel(("PCnet#%d: BAD TMD XDA=%#010x\n",
-                    PCNET_INST_NR, PHYSADDR(pThis, addrDesc)));
-            Log3(("#%d pcnetCalcPacketLen: bad TMD, return %u\n", PCNET_INST_NR, cbPacket));
-            return cbPacket;
-        }
-        Log3(("#%d pcnetCalcPacketLen: got valid TMD, cb=%u\n", PCNET_INST_NR, 4096 - tmd.tmd1.bcnt));
-        cbPacket += 4096 - tmd.tmd1.bcnt;
-    } while (!tmd.tmd1.enp);
-    STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTxLenCalc), a);
-
-    Log3(("#%d pcnetCalcPacketLen: return %u\n", PCNET_INST_NR, cbPacket));
-    return cbPacket;
-}
-
-
-/**
  * Write data into guest receive buffers.
  */
 static void pcnetReceiveNoSync(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC,
@@ -2663,7 +2608,7 @@ static int pcnetAsyncTransmit(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATE
              * we could reliably do that on SMP guests.
              */
             unsigned cb = 4096 - tmd.tmd1.bcnt;
-            rc = pcnetXmitAllocBuf(pThis, pThisCC, pcnetCalcPacketLen(pDevIns, pThis, cb), fLoopback, &SgLoop, &pSgBuf);
+            rc = pcnetXmitAllocBuf(pThis, pThisCC, RT_MAX(MAX_FRAME, cb), fLoopback, &SgLoop, &pSgBuf);
             if (rc == VERR_TRY_AGAIN)
             {
                 STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
@@ -5458,8 +5403,6 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTransmitR3,         STAMTYPE_PROFILE, "Transmit/TotalR3",   STAMUNIT_TICKS_PER_CALL,      "Profiling transmits in R3");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTransmitSendRZ,     STAMTYPE_PROFILE, "Transmit/SendRZ",    STAMUNIT_TICKS_PER_CALL,      "Profiling PCnet send transmit in RZ");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTransmitSendR3,     STAMTYPE_PROFILE, "Transmit/SendR3",    STAMUNIT_TICKS_PER_CALL,      "Profiling PCnet send transmit in R3");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxLenCalcRZ,        STAMTYPE_PROFILE, "Transmit/LenCalcRZ", STAMUNIT_TICKS_PER_CALL,      "Profiling PCnet TX len calc in RZ");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxLenCalcR3,        STAMTYPE_PROFILE, "Transmit/LenCalcR3", STAMUNIT_TICKS_PER_CALL,      "Profiling PCnet TX len calc in R3");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTdtePollRZ,         STAMTYPE_PROFILE, "TdtePollRZ",         STAMUNIT_TICKS_PER_CALL,      "Profiling PCnet TdtePoll in RZ");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTdtePollR3,         STAMTYPE_PROFILE, "TdtePollR3",         STAMUNIT_TICKS_PER_CALL,      "Profiling PCnet TdtePoll in R3");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRdtePollRZ,         STAMTYPE_PROFILE, "RdtePollRZ",         STAMUNIT_TICKS_PER_CALL,      "Profiling PCnet RdtePoll in RZ");
