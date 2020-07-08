@@ -332,6 +332,9 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 
     /* Unlock the signals of m_pComboType: */
     m_pComboType->blockSignals(false);
+
+    /* Notify listeners about this change: */
+    emit sigOSFamilyChanged();
 }
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)

@@ -54,9 +54,12 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
         m_pNameAndSystemContainer = new QWidget(this);
         QGridLayout *pNameContainerLayout = new QGridLayout(m_pNameAndSystemContainer);
         createNameOSTypeWidgets(pNameContainerLayout, false);
+        m_pGAInstallContainer = createGAInstallWidgets();
+        m_pUsernameHostnameContainer = createUserNameHostNameWidgets();
+
         m_pToolBox->insertItem(ExpertToolboxItems_NameAndOSType, m_pNameAndSystemContainer, "");
-        m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, createUserNameHostNameWidgets(), "");
-        m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, createGAInstallWidgets(), "");
+        m_pToolBox->insertItem(ExpertToolboxItems_UsernameHostname, m_pUsernameHostnameContainer, "");
+        m_pToolBox->insertItem(ExpertToolboxItems_GAInstall, m_pGAInstallContainer, "");
         m_pToolBox->insertItem(ExpertToolboxItems_ProductKey, createProductKeyWidgets(), "");
         m_pToolBox->insertItem(ExpertToolboxItems_Disk, createDiskWidgets(), "");
         m_pToolBox->insertItem(ExpertToolboxItems_Hardware, createHardwareWidgets(), "");
@@ -142,15 +145,8 @@ void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
 
 void UIWizardNewVMPageExpert::sltUnattendedCheckBoxToggle()
 {
-    const bool fEnabled = m_pButtonUnattended->isChecked();
-    if (m_pISOSelectorLabel)
-        m_pISOSelectorLabel->setEnabled(fEnabled);
-    if (m_pISOFilePathSelector)
-        m_pISOFilePathSelector->setEnabled(fEnabled);
-    if (m_pStartHeadlessLabel)
-        m_pStartHeadlessLabel->setEnabled(fEnabled);
-    if (m_pStartHeadlessCheckBox)
-        m_pStartHeadlessCheckBox->setEnabled(fEnabled);
+    if (m_pButtonUnattended)
+        disableEnableUnattendedRelatedWidgets(m_pButtonUnattended->isChecked());
     emit completeChanged();
 }
 
@@ -174,6 +170,14 @@ void UIWizardNewVMPageExpert::sltGAISOPathChanged(const QString &strPath)
 {
     Q_UNUSED(strPath);
     emit completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged()
+{
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
+    if (m_pProductKeyLineEdit)
+        m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
 }
 
 void UIWizardNewVMPageExpert::retranslateUi()
@@ -237,36 +241,51 @@ void UIWizardNewVMPageExpert::retranslateUi()
 void UIWizardNewVMPageExpert::createConnections()
 {
     /* Connections for Name, OS Type, and unattended install stuff: */
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
-            this, &UIWizardNewVMPageExpert::sltNameChanged);
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
-            this, &UIWizardNewVMPageExpert::sltPathChanged);
-    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
-            this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
-    connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-            this, &UIWizardNewVMPageExpert::sltUnattendedCheckBoxToggle);
-    connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged,
-            this, &UIWizardNewVMPageExpert::sltISOPathChanged);
+    if (m_pNameAndSystemEditor)
+    {
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
+                this, &UIWizardNewVMPageExpert::sltNameChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
+                this, &UIWizardNewVMPageExpert::sltPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
+                this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged,
+                this, &UIWizardNewVMPageExpert::sltOSFamilyTypeChanged);
+    }
+    if (m_pButtonGroup)
+        connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+                this, &UIWizardNewVMPageExpert::sltUnattendedCheckBoxToggle);
+    if (m_pISOFilePathSelector)
+        connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged,
+                this, &UIWizardNewVMPageExpert::sltISOPathChanged);
 
     /* Connections for username, password, and hostname: */
-    connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
-            this, &UIWizardNewVMPageExpert::completeChanged);
-    connect(m_pInstallGACheckBox, &QCheckBox::toggled, this,
-            &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
-    connect(m_pISOFilePathSelector, &UIFilePathSelector::pathChanged,
-            this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
+    if (m_pUserNamePasswordEditor)
+        connect(m_pUserNamePasswordEditor, &UIUserNamePasswordEditor::sigSomeTextChanged,
+                this, &UIWizardNewVMPageExpert::completeChanged);
+    if (m_pInstallGACheckBox)
+        connect(m_pInstallGACheckBox, &QCheckBox::toggled, this,
+                &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
+    if (m_pGAISOFilePathSelector)
+        connect(m_pGAISOFilePathSelector, &UIFilePathSelector::pathChanged,
+                this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
 
     /* Connections for disk and hardware stuff: */
-    connect(m_pDiskSkip, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-    connect(m_pDiskCreate, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-    connect(m_pDiskPresent, &QRadioButton::toggled,
-            this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-    connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-            this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-    connect(m_pVMMButton, &QIToolButton::clicked,
-            this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
+    if (m_pDiskSkip)
+        connect(m_pDiskSkip, &QRadioButton::toggled,
+                this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+    if (m_pDiskCreate)
+        connect(m_pDiskCreate, &QRadioButton::toggled,
+                this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+    if (m_pDiskPresent)
+        connect(m_pDiskPresent, &QRadioButton::toggled,
+                this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+    if (m_pDiskSelector)
+        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+                this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+    if (m_pVMMButton)
+        connect(m_pVMMButton, &QIToolButton::clicked,
+                this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
 }
 
 void UIWizardNewVMPageExpert::initializePage()
@@ -300,6 +319,11 @@ void UIWizardNewVMPageExpert::initializePage()
     }
     if (m_pDiskSelector)
         m_pDiskSelector->setCurrentIndex(0);
+
+    if (m_pButtonUnattended)
+        disableEnableUnattendedRelatedWidgets(m_pButtonUnattended->isChecked());
+    m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
+    m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
 }
 
 void UIWizardNewVMPageExpert::cleanupPage()
@@ -354,4 +378,32 @@ bool UIWizardNewVMPageExpert::validatePage()
 
     /* Return result: */
     return fResult;
+}
+
+bool UIWizardNewVMPageExpert::isProductKeyWidgetEnabled() const
+{
+    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    if (!pWizard || !pWizard->isUnattendedInstallEnabled() || !pWizard->isGuestOSTypeWindows())
+        return false;
+    return true;
+}
+
+void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnabled)
+{
+    if (m_pISOSelectorLabel)
+        m_pISOSelectorLabel->setEnabled(fEnabled);
+    if (m_pISOFilePathSelector)
+        m_pISOFilePathSelector->setEnabled(fEnabled);
+    if (m_pStartHeadlessLabel)
+        m_pStartHeadlessLabel->setEnabled(fEnabled);
+    if (m_pStartHeadlessCheckBox)
+        m_pStartHeadlessCheckBox->setEnabled(fEnabled);
+    if (m_pGAInstallContainer)
+        m_pGAInstallContainer->setEnabled(fEnabled);
+    if (m_pUsernameHostnameContainer)
+        m_pUsernameHostnameContainer->setEnabled(fEnabled);
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
+    if (m_pProductKeyLineEdit)
+        m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
 }

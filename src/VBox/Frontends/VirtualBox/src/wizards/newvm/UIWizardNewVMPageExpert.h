@@ -82,6 +82,7 @@ private slots:
     void sltISOPathChanged(const QString &strPath);
     void sltInstallGACheckBoxToggle(bool fChecked);
     void sltGAISOPathChanged(const QString &strPath);
+    void sltOSFamilyTypeChanged();
 
 private:
     enum ExpertToolboxItems
@@ -106,8 +107,13 @@ private:
     bool isComplete() const;
     bool validatePage();
 
+    bool isProductKeyWidgetEnabled() const;
+    void disableEnableUnattendedRelatedWidgets(bool fEnabled);
+
     /** Widgets. */
     QWidget *m_pNameAndSystemContainer;
+    QWidget *m_pGAInstallContainer;
+    QWidget *m_pUsernameHostnameContainer;
     QToolBox  *m_pToolBox;
 };
 

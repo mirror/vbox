@@ -122,7 +122,7 @@ private:
     void initializePage();
     bool isComplete() const;
     /** Returns true if we show the widgets for guest os product key. */
-    bool isProductKeyWidgetVisible() const;
+    bool isProductKeyWidgetEnabled() const;
 
     QIRichTextLabel *m_pLabel;
     QToolBox *m_pToolBox;

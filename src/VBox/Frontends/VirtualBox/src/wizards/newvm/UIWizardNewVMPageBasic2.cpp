@@ -284,7 +284,7 @@ void UIWizardNewVMPageBasic2::showEvent(QShowEvent *pEvent)
     {
         QWidget *pProductKeyWidget = m_pToolBox->widget(ToolBoxItems_ProductKey);
         if (pProductKeyWidget)
-            pProductKeyWidget->setEnabled(isProductKeyWidgetVisible());
+            pProductKeyWidget->setEnabled(isProductKeyWidgetEnabled());
     }
     UIWizardPage::showEvent(pEvent);
 }
@@ -304,7 +304,7 @@ void UIWizardNewVMPageBasic2::sltGAISOPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-bool UIWizardNewVMPageBasic2::isProductKeyWidgetVisible() const
+bool UIWizardNewVMPageBasic2::isProductKeyWidgetEnabled() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
     if (!pWizard || !pWizard->isUnattendedInstallEnabled() || !pWizard->isGuestOSTypeWindows())
