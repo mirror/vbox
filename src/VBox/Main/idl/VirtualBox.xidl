@@ -26950,35 +26950,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="getSerialConsoleCommand" const="yes">
-      <param name="command" type="IStringArray" dir="out">
-        <desc>
-          String array of length 1 that contains as its only element
-          the shell command to establish ssh connection to the cloud
-          machine serial console.
-        </desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>
-          Progress object to track the operation completion.
-        </desc>
-      </param>
-    </method>
+    <attribute name="consoleConnectionFingerprint" type="wstring" readonly="yes">
+      <desc>
+        The fingerprint of the ssh key that is authorized to access
+        the machine's console connection.
+      </desc>
+    </attribute>>
 
-    <method name="getVNCConsoleCommand" const="yes">
-      <param name="command" type="IStringArray" dir="out">
-        <desc>
-          String array of length 1 that contains as its only element
-          the shell command to establish ssh port forwarding for the
-          VNC connection to the cloud machine console.
-        </desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>
-          Progress object to track the operation completion.
-        </desc>
-      </param>
-    </method>
+    <attribute name="serialConsoleCommand" type="wstring" readonly="yes">
+      <desc>
+        The shell command to establish ssh connection to the cloud
+        machine serial console.
+      </desc>
+    </attribute>>>
+
+    <attribute name="VNCConsoleCommand" type="wstring" readonly="yes">
+      <desc>
+        The shell command to establish ssh port forwarding for the
+        VNC connection to the cloud machine console.
+      </desc>
+    </attribute>
 
   </interface>
 
