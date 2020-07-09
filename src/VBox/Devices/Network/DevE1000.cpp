@@ -2473,7 +2473,10 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
                      pThis->szPrf, status.u16Special, cb));
         }
         else
+        {
             status.fVP = false; /* Set VP only if we stripped the tag */
+            memcpy(rxPacket, pvBuf, cb);
+        }
     }
     else
         memcpy(rxPacket, pvBuf, cb);
@@ -3660,7 +3663,7 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     pGso->offHdr1  = pCtx->ip.u8CSS;
     pGso->offHdr2  = pCtx->tu.u8CSS;
     pGso->cbHdrsTotal = pCtx->dw3.u8HDRLEN;
-    pGso->cbMaxSeg = pCtx->dw3.u16MSS;
+    pGso->cbMaxSeg = pCtx->dw3.u16MSS + (pGso->u8Type == PDMNETWORKGSOTYPE_IPV4_UDP ? pGso->offHdr2 : 0);
     Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), pGso->cbMaxSeg * 5));
     E1kLog2(("e1kSetupGsoCtx: mss=%#x hdr=%#x hdrseg=%#x hdr1=%#x hdr2=%#x %s\n",
              pGso->cbMaxSeg, pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->offHdr1, pGso->offHdr2, PDMNetGsoTypeName((PDMNETWORKGSOTYPE)pGso->u8Type) ));
@@ -4603,6 +4606,20 @@ static bool e1kAddToFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThis
     LogFlow(("%s e1kAddToFrame: ENTER cbFragment=%d u16TxPktLen=%d cbUsed=%d cbAvailable=%d fGSO=%s\n",
              pThis->szPrf, cbFragment, pThis->u16TxPktLen, pTxSg->cbUsed, pTxSg->cbAvailable,
              fGso ? "true" : "false"));
+    PCPDMNETWORKGSO pGso = (PCPDMNETWORKGSO)pTxSg->pvUser;
+    if (pGso)
+    {
+        if (RT_UNLIKELY(pGso->cbMaxSeg == 0))
+        {
+            E1kLog(("%s zero-sized fragments are not allowed\n", pThis->szPrf));
+            return false;
+        }
+        if (RT_UNLIKELY(pGso->u8Type == PDMNETWORKGSOTYPE_IPV4_UDP))
+        {
+            E1kLog(("%s UDP fragmentation is no longer supported\n", pThis->szPrf));
+            return false;
+        }
+    }
     if (RT_UNLIKELY( !fGso && cbNewPkt > E1K_MAX_TX_PKT_SIZE ))
     {
         E1kLog(("%s Transmit packet is too large: %u > %u(max)\n", pThis->szPrf, cbNewPkt, E1K_MAX_TX_PKT_SIZE));
@@ -5266,6 +5283,7 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                 break;
             default:
                 AssertMsgFailed(("Impossible descriptor type!"));
+                continue;
         }
         if (pDesc->legacy.cmd.fEOP)
         {
