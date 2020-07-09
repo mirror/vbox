@@ -2230,6 +2230,13 @@ EXPORTS
     SUPR3TracerOpen
     SUPR3TracerIoCtl
 
+    ; Proxy info retrieval
+    RTHttpCreate
+    RTHttpDestroy
+    RTHttpFreeProxyInfo
+    RTHttpGetProxyInfoForUrl
+    RTHttpUseSystemProxySettings
+
     ; Very temporary stuff:
     RTHttpRawGetResponseCode
     RTHttpRawPerform
