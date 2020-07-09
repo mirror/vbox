@@ -3546,6 +3546,58 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
 }
 
 
+RTR3DECL(int) RTHttpGetProxyInfoForUrl(RTHTTP hHttp, const char *pcszUrl, PRTHTTPPROXYINFO pProxy)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    rtHttpResetState(pThis);
+    int rc = rtHttpApplySettings(pThis, pcszUrl);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    switch (pThis->enmProxyType)
+    {
+        case CURLPROXY_HTTP:
+        case CURLPROXY_HTTP_1_0:
+            pProxy->enmProxyType = RTHTTPPROXYTYPE_HTTP;
+            break;
+        case CURLPROXY_HTTPS:
+            pProxy->enmProxyType = RTHTTPPROXYTYPE_HTTPS;
+            break;
+        case CURLPROXY_SOCKS4:
+        case CURLPROXY_SOCKS4A:
+            pProxy->enmProxyType = RTHTTPPROXYTYPE_SOCKS4;
+            break;
+        case CURLPROXY_SOCKS5:
+        case CURLPROXY_SOCKS5_HOSTNAME:
+            pProxy->enmProxyType = RTHTTPPROXYTYPE_SOCKS5;
+            break;
+        default:
+            pProxy->enmProxyType = RTHTTPPROXYTYPE_UNKNOWN;
+            break;
+    }
+    if (pThis->pszProxyHost == NULL)
+        return VERR_INTERNAL_ERROR;
+    pProxy->pszProxyHost = RTStrDup(pThis->pszProxyHost);
+    pProxy->uProxyPort = pThis->uProxyPort;
+    pProxy->pszProxyUsername = NULL;
+    pProxy->pszProxyPassword = NULL;
+
+    return VINF_SUCCESS;
+}
+
+
+RTR3DECL(int) RTHttpFreeProxyInfo(PRTHTTPPROXYINFO pProxy)
+{
+    if (pProxy)
+    {
+        RTStrFree(pProxy->pszProxyHost);
+        RTStrFree(pProxy->pszProxyUsername);
+        RTStrFree(pProxy->pszProxyPassword);
+    }
+    return VINF_SUCCESS;
+}
+
+
 RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMethod, void const *pvReqBody, size_t cbReqBody,
                             uint32_t *puHttpStatus, void **ppvHeaders, size_t *pcbHeaders, void **ppvBody, size_t *pcbBody)
 {

@@ -661,6 +661,57 @@ typedef FNRTHTTPHEADERCALLBACK *PFNRTHTTPHEADERCALLBACK;
 RTR3DECL(int) RTHttpSetHeaderCallback(RTHTTP hHttp, PFNRTHTTPHEADERCALLBACK pfnCallback, void *pvUser);
 
 
+/**
+ * Supported proxy types.
+ */
+typedef enum {
+    RTHTTPPROXYTYPE_UNKNOWN,
+    RTHTTPPROXYTYPE_HTTP,
+    RTHTTPPROXYTYPE_HTTPS,
+    RTHTTPPROXYTYPE_SOCKS4,
+    RTHTTPPROXYTYPE_SOCKS5
+} RTHTTPPROXYTYPE;
+
+/**
+ * Proxy information structure.
+ */
+typedef struct {
+    /** Proxy host name (RTStrFree). */
+    char               *pszProxyHost;
+    /** Proxy port number (UINT32_MAX if not specified). */
+    uint32_t            uProxyPort;
+    /** The proxy type (RTHTTPPROXYTYPE_HTTP, RTHTTPPROXYTYPE_SOCKS5, ++). */
+    RTHTTPPROXYTYPE     enmProxyType;
+    /** Proxy username (RTStrFree). */
+    char               *pszProxyUsername;
+    /** Proxy password (RTStrFree). */
+    char               *pszProxyPassword;
+} RTHTTPPROXYINFO;
+/** A pointer to proxy information structure. */
+typedef RTHTTPPROXYINFO *PRTHTTPPROXYINFO;
+
+/**
+ * Retrieve system proxy information for the specified URL.
+ *
+ * @returns IPRT status code.
+ * @param   hHttp           The HTTP client handle.
+ * @param   pcszUrl         The URL that needs to be accessed via proxy.
+ * @param   pProxyInfo      A pointer to the structure where the proxy information to be stored.
+ *
+ * @note    This function allocates memory that must be released by RTHttpFreeProxyInfo.
+ */
+RTR3DECL(int) RTHttpGetProxyInfoForUrl(RTHTTP hHttp, const char *pcszUrl, PRTHTTPPROXYINFO pProxyInfo);
+
+/**
+ * Release memory used for storing proxy information.
+ *
+ * @returns IPRT status code.
+ * @param   pProxyInfo      A pointer to the proxy structure being released.
+ *
+ * @note    This function releases memory that has been allocated by RTHttpGetProxyInfoForUrl.
+ */
+RTR3DECL(int) RTHttpFreeProxyInfo(PRTHTTPPROXYINFO pProxyInfo);
+
 /** @name thin wrappers for setting one or a few related curl options
  * @remarks Temporary. Will not be included in the 7.0 release!
  * @{ */

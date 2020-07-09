@@ -30,6 +30,7 @@
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
 #include <iprt/file.h>
+#include <iprt/http.h>
 #include <VBox/log.h>
 
 #include <iprt/cpp/path.h>
@@ -2106,6 +2107,58 @@ static int composeTemplatePath(const char *pcszTemplate, Bstr& strFullPath)
     return rc;
 }
 
+static bool getSystemProxyForUrl(const com::Utf8Str &strUrl, Bstr &strProxy)
+{
+    RTHTTP hHttp;
+    int rc = RTHttpCreate(&hHttp);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("OCI-NET: Failed to create HTTP context (rc=%d)\n", rc));
+        return false;
+    }
+    rc = RTHttpUseSystemProxySettings(hHttp);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("OCI-NET: Failed to use system proxy (rc=%d)\n", rc));
+        RTHttpDestroy(hHttp);
+        return false;
+    }
+
+    RTHTTPPROXYINFO proxy;
+    RT_ZERO(proxy);
+    rc = RTHttpGetProxyInfoForUrl(hHttp, strUrl.c_str(), &proxy);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("OCI-NET: Failed to get proxy for %s (rc=%d)\n", strUrl.c_str(), rc));
+        RTHttpDestroy(hHttp);
+        return false;
+    }
+    const char *pcszProxyScheme = "";
+    switch (proxy.enmProxyType)
+    {
+        case RTHTTPPROXYTYPE_HTTP:
+            pcszProxyScheme = "http://";
+            break;
+        case RTHTTPPROXYTYPE_HTTPS:
+            pcszProxyScheme = "https://";
+            break;
+        case RTHTTPPROXYTYPE_SOCKS4:
+            pcszProxyScheme = "socks4://";
+            break;
+        case RTHTTPPROXYTYPE_SOCKS5:
+            pcszProxyScheme = "socks://";
+            break;
+        case RTHTTPPROXYTYPE_UNKNOWN:
+            LogRel(("OCI-NET: Unknown proxy type. Using direct connecton."));
+            RTHttpDestroy(hHttp);
+            return false;
+    }
+    strProxy = BstrFmt("%s%s:%d", pcszProxyScheme, proxy.pszProxyHost, proxy.uProxyPort);
+    RTHttpFreeProxyInfo(&proxy);
+    RTHttpDestroy(hHttp);
+    return true;
+}
+
 static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bstr& aGatewayIso, const Bstr& aGuestAdditionsIso, const Bstr& aProxy)
 {
     /* Check if the image already exists. */
@@ -2124,12 +2177,41 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
         return E_FAIL;
 
     ComPtr<ISystemProperties> systemProperties;
+    ProxyMode_T enmProxyMode;
+    Bstr strProxy;
     ComPtr<IMedium> hd;
     Bstr defaultMachineFolder;
     Bstr guestAdditionsISO;
     hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
     if (errorOccured(hrc, "Failed to obtain system properties."))
         return hrc;
+    if (aProxy.isNotEmpty())
+        strProxy = aProxy;
+    else
+    {
+        hrc = systemProperties->COMGETTER(ProxyMode)(&enmProxyMode);
+        if (errorOccured(hrc, "Failed to obtain proxy mode."))
+            return hrc;
+        switch (enmProxyMode)
+        {
+            case ProxyMode_NoProxy:
+                strProxy.setNull();
+                break;
+            case ProxyMode_Manual:
+                hrc = systemProperties->COMGETTER(ProxyURL)(strProxy.asOutParam());
+                if (errorOccured(hrc, "Failed to obtain proxy URL."))
+                    return hrc;
+                break;
+            case ProxyMode_System:
+                if (!getSystemProxyForUrl("https://dl.fedoraproject.org", strProxy))
+                    errorOccured(E_FAIL, "Failed to get system proxy for https://dl.fedoraproject.org. Will use direct connection.");
+                break;
+            default: /* To get rid of ProxyMode_32BitHack 'warning' */
+                RTAssertPanic();
+                break;
+        }
+
+    }
     hrc = systemProperties->COMGETTER(DefaultMachineFolder)(defaultMachineFolder.asOutParam());
     if (errorOccured(hrc, "Failed to obtain default machine folder."))
         return hrc;
@@ -2282,12 +2364,13 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     if (errorOccured(hrc, "Failed to set post install script template for the unattended installer."))
         return hrc;
 
-    if (aProxy.isNotEmpty())
+    if (strProxy.isNotEmpty())
     {
-        hrc = unattended->COMSETTER(Proxy)(aProxy.raw());
+        hrc = unattended->COMSETTER(Proxy)(strProxy.raw());
         if (errorOccured(hrc, "Failed to set post install script template for the unattended installer."))
             return hrc;
     }
+
     hrc = unattended->Prepare();
     if (errorOccured(hrc, "Failed to prepare unattended installation."))
         return hrc;
