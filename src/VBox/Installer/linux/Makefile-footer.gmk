@@ -100,7 +100,7 @@ JOBS := $(shell (getconf _NPROCESSORS_ONLN || grep -Ec '^processor|^CPU[0-9]' /p
 JOBS :=
  endif
 
-VBOX_SUBDIR_VAR=$(if VBOX_KERN_GROKS_SUBDIRS,SUBDIRS,M)
+VBOX_SUBDIR_VAR=$(if $(VBOX_KERN_GROKS_SUBDIRS),SUBDIRS,M)
 
 # OL/UEK: CONFIG_MODULE_SIG= disables module signing for external modules.
 # Ubuntu 18.04.3: CONFIG_MODULE_SIG_ALL= disables signing of all modules.
