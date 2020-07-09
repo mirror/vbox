@@ -2096,6 +2096,7 @@ PREDEFINED += \
 
 # decl and calling conventions.
 PREDEFINED += \
+    DECL_NOTHROW(a_RetType)=a_RetType \
     "DECLINLINE(type)=inline type" \
     DECL_INLINE_THROW(type)=DECLINLINE(type) \
     DECL_FORCE_INLINE(type)=DECLINLINE(type) \
