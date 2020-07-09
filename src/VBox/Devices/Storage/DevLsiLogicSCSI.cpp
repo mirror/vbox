@@ -1401,9 +1401,12 @@ static VBOXSTRICTRC lsilogicRegisterWrite(PPDMDEVINS pDevIns, PLSILOGICSCSI pThi
             {
                 /*
                  * We are already performing a doorbell function.
-                 * Get the remaining parameters.
+                 * Get the remaining parameters, ignore any excess writes.
                  */
-                AssertMsg(pThis->iMessage < RT_ELEMENTS(pThis->aMessage), ("Message is too big to fit into the buffer\n"));
+                AssertMsgReturn(pThis->iMessage < pThis->cMessage,
+                                ("Guest is trying to write more than was indicated in the handshake\n"),
+                                VINF_SUCCESS);
+
                 /*
                  * If the last byte of the message is written, force a switch to R3 because some requests might force
                  * a reply through the FIFO which cannot be handled in GC or R0.
@@ -1419,8 +1422,6 @@ static VBOXSTRICTRC lsilogicRegisterWrite(PPDMDEVINS pDevIns, PLSILOGICSCSI pThi
                     int rc = lsilogicR3ProcessMessageRequest(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PLSILOGICSCSICC),
                                                              (PMptMessageHdr)pThis->aMessage, &pThis->ReplyBuffer);
                     AssertRC(rc);
-
-                    pThis->iMessage = 0;
                 }
 #endif
             }
