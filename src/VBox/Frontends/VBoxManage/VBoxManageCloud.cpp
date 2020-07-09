@@ -2109,6 +2109,10 @@ static int composeTemplatePath(const char *pcszTemplate, Bstr& strFullPath)
 
 static bool getSystemProxyForUrl(const com::Utf8Str &strUrl, Bstr &strProxy)
 {
+#ifndef VBOX_WITH_PROXY_INFO
+    LogRel(("OCI-NET: Proxy support is disabled. Using direct connection.\n"));
+    return false;
+#else /* VBOX_WITH_PROXY_INFO */
     RTHTTP hHttp;
     int rc = RTHttpCreate(&hHttp);
     if (RT_FAILURE(rc))
@@ -2157,6 +2161,7 @@ static bool getSystemProxyForUrl(const com::Utf8Str &strUrl, Bstr &strProxy)
     RTHttpFreeProxyInfo(&proxy);
     RTHttpDestroy(hHttp);
     return true;
+#endif /* VBOX_WITH_PROXY_INFO */
 }
 
 static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bstr& aGatewayIso, const Bstr& aGuestAdditionsIso, const Bstr& aProxy)
