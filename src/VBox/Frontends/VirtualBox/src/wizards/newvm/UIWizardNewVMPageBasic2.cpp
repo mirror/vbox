@@ -184,6 +184,12 @@ bool UIWizardNewVMPage2::checkGAISOFile() const
     return true;
 }
 
+void UIWizardNewVMPage2::markWidgets() const
+{
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->mark(!checkGAISOFile());
+}
+
 UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
     : m_pLabel(0)
     , m_pToolBox(0)
@@ -267,6 +273,7 @@ void UIWizardNewVMPageBasic2::initializePage()
 
 bool UIWizardNewVMPageBasic2::isComplete() const
 {
+    markWidgets();
     if (!checkGAISOFile())
         return false;
     if (m_pUserNamePasswordEditor)

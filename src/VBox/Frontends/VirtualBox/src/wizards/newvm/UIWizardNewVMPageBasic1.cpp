@@ -491,7 +491,9 @@ void UIWizardNewVMPage1::setTypeByISODetectedOSType(const QString &strDetectedOS
 void UIWizardNewVMPage1::markWidgets() const
 {
     if (m_pISOFilePathSelector)
-        m_pISOFilePathSelector->mark(isISOFileSelectorComplete());
+        m_pISOFilePathSelector->mark(!isISOFileSelectorComplete());
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->markNameLineEdit(m_pNameAndSystemEditor->name().isEmpty());
 }
 
 bool UIWizardNewVMPage1::isISOFileSelectorComplete() const

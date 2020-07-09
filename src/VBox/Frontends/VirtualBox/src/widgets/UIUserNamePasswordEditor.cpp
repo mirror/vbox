@@ -118,6 +118,7 @@ UIUserNamePasswordEditor::UIUserNamePasswordEditor(QWidget *pParent /*  = 0 */)
     , m_pUserNameLabel(0)
     , m_pPasswordLabel(0)
     , m_pPasswordRepeatLabel(0)
+    , m_fForceUnmark(false)
 {
     prepare();
 }
@@ -179,6 +180,13 @@ bool UIUserNamePasswordEditor::isComplete()
     return fUserNameField && fPasswordField;
 }
 
+void UIUserNamePasswordEditor::setForceUnmark(bool fForceUnmark)
+{
+    m_fForceUnmark = fForceUnmark;
+    isUserNameComplete();
+    isPasswordComplete();
+}
+
 void UIUserNamePasswordEditor::retranslateUi()
 {
     if (m_pUserNameLabel)
@@ -226,10 +234,10 @@ void UIUserNamePasswordEditor::markLineEdit(QLineEdit *pLineEdit, bool fError)
     if (!pLineEdit)
         return;
     QPalette palette = pLineEdit->palette();
-    if (fError)
-        palette.setColor(QPalette::Base, QColor(255, 180, 180));
-    else
+    if (!fError || m_fForceUnmark)
         palette.setColor(QPalette::Base, m_orginalLineEditBaseColor);
+    else
+        palette.setColor(QPalette::Base, QColor(255, 180, 180));
     pLineEdit->setPalette(palette);
 }
 

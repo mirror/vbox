@@ -426,6 +426,12 @@ void UIWizardNewVM::sltHandleDetectedOSTypeChange()
     pPage->setTypeByISODetectedOSType(getStringFieldValue("detectedOSTypeId"));
 }
 
+void UIWizardNewVM::sltCustomButtonClicked(int iId)
+{
+    UIWizard::sltCustomButtonClicked(iId);
+    setFieldsFromDefaultUnttendedInstallData();
+}
+
 void UIWizardNewVM::retranslateUi()
 {
     /* Call to base-class: */
@@ -504,11 +510,17 @@ QUuid UIWizardNewVM::createdMachineId() const
 
 void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
 {
-    setField("userName", unattendedInstallData.m_strUserName);
-    setField("password", unattendedInstallData.m_strPassword);
-    setField("hostname", unattendedInstallData.m_strHostname);
-    setField("installGuestAdditions", unattendedInstallData.m_fInstallGuestAdditions);
-    setField("guestAdditionsISOPath", unattendedInstallData.m_strGuestAdditionsISOPath);
+    m_unattendedInstallData = unattendedInstallData;
+    setFieldsFromDefaultUnttendedInstallData();
+}
+
+void UIWizardNewVM::setFieldsFromDefaultUnttendedInstallData()
+{
+    setField("userName", m_unattendedInstallData.m_strUserName);
+    setField("password", m_unattendedInstallData.m_strPassword);
+    setField("hostname", m_unattendedInstallData.m_strHostname);
+    setField("installGuestAdditions", m_unattendedInstallData.m_fInstallGuestAdditions);
+    setField("guestAdditionsISOPath", m_unattendedInstallData.m_strGuestAdditionsISOPath);
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const

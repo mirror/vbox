@@ -109,7 +109,7 @@ private:
 
     bool isProductKeyWidgetEnabled() const;
     void disableEnableUnattendedRelatedWidgets(bool fEnabled);
-
+    void markWidgets() const;
     /** Widgets. */
     QWidget *m_pNameAndSystemContainer;
     QWidget *m_pGAInstallContainer;

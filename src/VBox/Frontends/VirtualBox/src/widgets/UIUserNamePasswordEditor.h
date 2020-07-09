@@ -84,6 +84,8 @@ public:
 
     /** Returns false if username or password fields are empty, or password fields do not match. */
     bool isComplete();
+    /** Sets m_fForceUnmark flag. see it for more info. */
+    void setForceUnmark(bool fForceUnmark);
 
 protected:
 
@@ -113,6 +115,8 @@ private:
     QLabel *m_pPasswordLabel;
     QLabel *m_pPasswordRepeatLabel;
     QColor m_orginalLineEditBaseColor;
+    /** When true line edits are not marked even if they have to be. */
+    bool m_fForceUnmark;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIUserNamePasswordEditor_h */

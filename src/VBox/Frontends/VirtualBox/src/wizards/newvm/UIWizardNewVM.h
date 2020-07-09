@@ -104,6 +104,7 @@ private slots:
 
     void sltHandleWizardCancel();
     void sltHandleDetectedOSTypeChange();
+    virtual void sltCustomButtonClicked(int iId) /* override */;
 
 private:
 
@@ -113,6 +114,7 @@ private:
 
     /* Helping stuff: */
     QString getNextControllerName(KStorageBus type);
+    void setFieldsFromDefaultUnttendedInstallData();
 
     /* Variables: */
     CMachine m_machine;

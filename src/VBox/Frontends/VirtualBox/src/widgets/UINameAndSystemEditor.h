@@ -112,6 +112,9 @@ public:
     /** Defines the name-field @a strValidator. */
     void setNameFieldValidator(const QString &strValidator);
 
+    /** Passes the @p fError to QILineEdit::mark(bool) effectively changing the background color. */
+    void markNameLineEdit(bool fError);
+
 protected:
 
     /** Handles translation event. */

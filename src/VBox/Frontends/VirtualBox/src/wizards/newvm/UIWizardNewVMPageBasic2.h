@@ -71,6 +71,7 @@ protected:
     QWidget *createProductKeyWidgets();
 
     bool checkGAISOFile() const;
+    void markWidgets() const;
 
     /** @name Widgets
       * @{ */

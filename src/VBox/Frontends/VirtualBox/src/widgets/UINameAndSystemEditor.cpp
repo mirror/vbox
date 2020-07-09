@@ -253,6 +253,12 @@ void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidator)
     m_pNameLineEdit->setValidator(new QRegExpValidator(QRegExp(strValidator), this));
 }
 
+void UINameAndSystemEditor::markNameLineEdit(bool fError)
+{
+    if (m_pNameLineEdit)
+        m_pNameLineEdit->mark(fError);
+}
+
 void UINameAndSystemEditor::retranslateUi()
 {
     if (m_pNameLabel)
