@@ -3459,12 +3459,7 @@ void UIActionPoolManager::updateMenuGroupConsole()
     /* Clear contents: */
     pMenu->clear();
 
-    /* Populate 'Group' / 'Console' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Console_S_CreateConnection));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection));
-
-    /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Group_M_Console);
+    /* This menu always remains invalid.. */
 }
 
 void UIActionPoolManager::updateMenuMachineConsole()
@@ -3475,12 +3470,7 @@ void UIActionPoolManager::updateMenuMachineConsole()
     /* Clear contents: */
     pMenu->clear();
 
-    /* Populate 'Machine' / 'Console' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
-
-    /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Machine_M_Console);
+    /* This menu always remains invalid.. */
 }
 
 void UIActionPoolManager::updateMenuGroupClose()

@@ -16,7 +16,9 @@
  */
 
 /* Qt includes: */
+#include <QClipboard>
 #include <QFile>
+#include <QGuiApplication>
 #include <QMenuBar>
 #include <QPushButton>
 #include <QStandardPaths>
@@ -33,6 +35,7 @@
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIHostNetworkManager.h"
+#include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIMediumManager.h"
 #include "UIMessageCenter.h"
@@ -1071,6 +1074,15 @@ void UIVirtualBoxManager::sltPerformDeleteConsoleConnection()
     }
 }
 
+void UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint()
+{
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertPtrReturnVoid(pAction);
+    QClipboard *pClipboard = QGuiApplication::clipboard();
+    AssertPtrReturnVoid(pClipboard);
+    pClipboard->setText(pAction->property("fingerprint").toString());
+}
+
 void UIVirtualBoxManager::sltPerformDiscardMachineState()
 {
     /* Get selected items: */
@@ -1716,8 +1728,10 @@ void UIVirtualBoxManager::prepareMenuBar()
     m_menuUpdateHandlers[UIActionIndexST_M_Group] = &UIVirtualBoxManager::updateMenuGroup;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine] = &UIVirtualBoxManager::updateMenuMachine;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuGroupMoveToGroup;
+    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Console] = &UIVirtualBoxManager::updateMenuGroupConsole;
     m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close] = &UIVirtualBoxManager::updateMenuGroupClose;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuMachineMoveToGroup;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Console] = &UIVirtualBoxManager::updateMenuMachineConsole;
     m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close] = &UIVirtualBoxManager::updateMenuMachineClose;
 
     /* Build menu-bar: */
@@ -2318,6 +2332,31 @@ void UIVirtualBoxManager::updateMenuGroupMoveToGroup(QMenu *pMenu)
     }
 }
 
+void UIVirtualBoxManager::updateMenuGroupConsole(QMenu *pMenu)
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtrReturnVoid(pCloudItem);
+
+    /* Acquire current cloud machine: */
+    CCloudMachine comMachine = pCloudItem->machine();
+    const QString strFingerprint = comMachine.GetConsoleConnectionFingerprint();
+
+    /* Populate 'Group' / 'Console' menu: */
+    if (strFingerprint.isEmpty())
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection));
+    else
+    {
+        QAction *pAction = pMenu->addAction(UIIconPool::iconSet(":/file_manager_copy_16px.png"),
+                                            QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprint),
+                                            this, &UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint);
+        pAction->setProperty("fingerprint", strFingerprint);
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection));
+    }
+}
+
 void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
 {
     /* Get selected items: */
@@ -2345,6 +2384,31 @@ void UIVirtualBoxManager::updateMenuMachineMoveToGroup(QMenu *pMenu)
             strVisibleGroupName = QApplication::translate("UIActionPool", "[Root]", "group");
         QAction *pAction = pMenu->addAction(strVisibleGroupName, this, &UIVirtualBoxManager::sltPerformMachineMoveToSpecificGroup);
         pAction->setProperty("actual_group_name", strGroupName);
+    }
+}
+
+void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtrReturnVoid(pCloudItem);
+
+    /* Acquire current cloud machine: */
+    CCloudMachine comMachine = pCloudItem->machine();
+    const QString strFingerprint = comMachine.GetConsoleConnectionFingerprint();
+
+    /* Populate 'Group' / 'Console' menu: */
+    if (strFingerprint.isEmpty())
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection));
+    else
+    {
+        QAction *pAction = pMenu->addAction(UIIconPool::iconSet(":/file_manager_copy_16px.png"),
+                                            QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprint),
+                                            this, &UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint);
+        pAction->setProperty("fingerprint", strFingerprint);
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
     }
 }
 

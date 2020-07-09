@@ -241,6 +241,8 @@ private slots:
         void sltPerformCreateConsoleConnection();
         /** Handles call to delete console connection. */
         void sltPerformDeleteConsoleConnection();
+        /** Handles call to copy console connection key fingerprint. */
+        void sltCopyConsoleConnectionFingerprint();
 
         /** Handles call to discard machine state. */
         void sltPerformDiscardMachineState();
@@ -358,10 +360,14 @@ private:
         void updateMenuMachine(QMenu *pMenu);
         /** Updates 'Group' : 'Move to Group' menu. */
         void updateMenuGroupMoveToGroup(QMenu *pMenu);
+        /** Updates 'Group' : 'Console' menu. */
+        void updateMenuGroupConsole(QMenu *pMenu);
         /** Updates 'Group' : 'Close' menu. */
         void updateMenuGroupClose(QMenu *pMenu);
         /** Updates 'Machine' : 'Move to Group' menu. */
         void updateMenuMachineMoveToGroup(QMenu *pMenu);
+        /** Updates 'Machine' : 'Console' menu. */
+        void updateMenuMachineConsole(QMenu *pMenu);
         /** Updates 'Machine' : 'Close' menu. */
         void updateMenuMachineClose(QMenu *pMenu);
 
