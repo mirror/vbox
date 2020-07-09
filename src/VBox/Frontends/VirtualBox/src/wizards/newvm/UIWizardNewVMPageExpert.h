@@ -88,12 +88,11 @@ private:
     enum ExpertToolboxItems
     {
         ExpertToolboxItems_NameAndOSType,
+        ExpertToolboxItems_Disk,
+        ExpertToolboxItems_Hardware,
         ExpertToolboxItems_UsernameHostname,
         ExpertToolboxItems_GAInstall,
-        ExpertToolboxItems_ProductKey,
-        ExpertToolboxItems_Disk,
-        ExpertToolboxItems_Hardware
-
+        ExpertToolboxItems_ProductKey
     };
     /** Translation stuff. */
     void retranslateUi();
