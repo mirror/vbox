@@ -304,8 +304,8 @@ void QIComboBox::setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy enmPolicy)
 
 void QIComboBox::mark(bool fError)
 {
-    if (!m_pComboBox)
-        return;
+    /* Redirect to combo-box: */
+    AssertPtrReturnVoid(m_pComboBox);
     QPalette palette = m_pComboBox->palette();
     if (fError)
         palette.setColor(QPalette::Base, QColor(255, 180, 180));
