@@ -111,14 +111,14 @@
  */
 #if defined(IN_SUP_HARDENED_R3) && defined(RT_OS_WINDOWS)
 # define SUP_HARDENED_NEED_CRT_FUNCTIONS
-DECLHIDDEN(int)    suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size_t cbToComp);
-DECLHIDDEN(void *) suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t cbToCopy);
-DECLHIDDEN(void *) suplibHardenedMemSet(void *pvDst, int ch, size_t cbToSet);
-DECLHIDDEN(char *) suplibHardenedStrCopy(char *pszDst, const char *pszSrc);
-DECLHIDDEN(size_t) suplibHardenedStrLen(const char *psz);
-DECLHIDDEN(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc);
-DECLHIDDEN(int)    suplibHardenedStrCmp(const char *psz1, const char *psz2);
-DECLHIDDEN(int)    suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax);
+DECLHIDDEN(int)     suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size_t cbToComp);
+DECLHIDDEN(void *)  suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t cbToCopy);
+DECLHIDDEN(void *)  suplibHardenedMemSet(void *pvDst, int ch, size_t cbToSet);
+DECLHIDDEN(char *)  suplibHardenedStrCopy(char *pszDst, const char *pszSrc);
+DECLHIDDEN(size_t)  suplibHardenedStrLen(const char *psz);
+DECLHIDDEN(char *)  suplibHardenedStrCat(char *pszDst, const char *pszSrc);
+DECLHIDDEN(int)     suplibHardenedStrCmp(const char *psz1, const char *psz2);
+DECLHIDDEN(int)     suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax);
 #else
 # undef SUP_HARDENED_NEED_CRT_FUNCTIONS
 # define suplibHardenedMemComp memcmp
@@ -131,8 +131,8 @@ DECLHIDDEN(int)    suplibHardenedStrNCmp(const char *psz1, const char *psz2, siz
 # define suplibHardenedStrNCmp strncmp
 #endif
 DECLHIDDEN(DECL_NO_RETURN(void)) suplibHardenedExit(RTEXITCODE rcExit);
-DECLHIDDEN(void)   suplibHardenedPrintF(const char *pszFormat, ...);
-DECLHIDDEN(void)   suplibHardenedPrintFV(const char *pszFormat, va_list va);
+DECLHIDDEN(void)    suplibHardenedPrintF(const char *pszFormat, ...);
+DECLHIDDEN(void)    suplibHardenedPrintFV(const char *pszFormat, va_list va);
 
 /** @} */
 
@@ -356,18 +356,18 @@ extern DECL_HIDDEN_DATA(bool)                   g_fSupEarlyProcessInit;
 *   OS Specific Function                                                       *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
-int     suplibOsInstall(void);
-int     suplibOsUninstall(void);
-int     suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo);
-int     suplibOsTerm(PSUPLIBDATA pThis);
-int     suplibOsHardenedVerifyInit(void);
-int     suplibOsHardenedVerifyTerm(void);
-int     suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq);
-int     suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu);
-int     suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages);
-int     suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages);
-int     suplibOsQueryVTxSupported(const char **ppszWhy);
-bool    suplibOsIsNemSupportedWhenNoVtxOrAmdV(void);
+DECLHIDDEN(int)     suplibOsInstall(void);
+DECLHIDDEN(int)     suplibOsUninstall(void);
+DECLHIDDEN(int)     suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)     suplibOsTerm(PSUPLIBDATA pThis);
+DECLHIDDEN(int)     suplibOsHardenedVerifyInit(void);
+DECLHIDDEN(int)     suplibOsHardenedVerifyTerm(void);
+DECLHIDDEN(int)     suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq);
+DECLHIDDEN(int)     suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu);
+DECLHIDDEN(int)     suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages);
+DECLHIDDEN(int)     suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages);
+DECLHIDDEN(int)     suplibOsQueryVTxSupported(const char **ppszWhy);
+DECLHIDDEN(bool)    suplibOsIsNemSupportedWhenNoVtxOrAmdV(void);
 
 
 /**
@@ -400,13 +400,13 @@ DECLHIDDEN(char *)  supR3HardenedPathFilename(const char *pszPath);
  * Display a fatal error and try call TrustedError or quit.
  */
 DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                                 const char *pszMsgFmt, va_list va);
+                                                        const char *pszMsgFmt, va_list va);
 
 /**
  * Display a fatal error and try call TrustedError or quit.
  */
 DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc,
-                                                                const char *pszMsgFmt, ...);
+                                                       const char *pszMsgFmt, ...);
 
 /**
  * Display a fatal error and quit.

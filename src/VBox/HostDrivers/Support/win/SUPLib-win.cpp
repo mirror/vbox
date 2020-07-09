@@ -91,7 +91,7 @@ static int suplibConvertWin32Err(int);
 static bool g_fHardenedVerifyInited = false;
 
 
-int suplibOsHardenedVerifyInit(void)
+DECLHIDDEN(int) suplibOsHardenedVerifyInit(void)
 {
     if (!g_fHardenedVerifyInited)
     {
@@ -108,14 +108,14 @@ int suplibOsHardenedVerifyInit(void)
 }
 
 
-int suplibOsHardenedVerifyTerm(void)
+DECLHIDDEN(int) suplibOsHardenedVerifyTerm(void)
 {
     /** @todo free resources...  */
     return VINF_SUCCESS;
 }
 
 
-int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
 {
     /*
      * Make sure the image verifier is fully initialized.
@@ -272,7 +272,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINIT
 
 #ifndef IN_SUP_HARDENED_R3
 
-int suplibOsInstall(void)
+DECLHIDDEN(int) suplibOsInstall(void)
 {
     int rc = suplibOsCreateService();
     if (RT_SUCCESS(rc))
@@ -285,7 +285,7 @@ int suplibOsInstall(void)
 }
 
 
-int suplibOsUninstall(void)
+DECLHIDDEN(int) suplibOsUninstall(void)
 {
     int rc = suplibOsStopService();
     if (RT_SUCCESS(rc))
@@ -647,7 +647,7 @@ static int suplibOsStartService(void)
 #endif /* !IN_SUP_HARDENED_R3 */
 
 
-int suplibOsTerm(PSUPLIBDATA pThis)
+DECLHIDDEN(int) suplibOsTerm(PSUPLIBDATA pThis)
 {
     /*
      * Check if we're inited at all.
@@ -665,7 +665,7 @@ int suplibOsTerm(PSUPLIBDATA pThis)
 
 #ifndef IN_SUP_HARDENED_R3
 
-int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
+DECLHIDDEN(int) suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     RT_NOREF1(cbReq);
 
@@ -697,7 +697,7 @@ int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cb
 }
 
 
-int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu)
+DECLHIDDEN(int) suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu)
 {
     /*
      * Issue device I/O control.
@@ -724,7 +724,7 @@ int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu)
 }
 
 
-int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
+DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 {
     NOREF(pThis);
     *ppvPages = VirtualAlloc(NULL, (size_t)cPages << PAGE_SHIFT, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
@@ -734,7 +734,7 @@ int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 }
 
 
-int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
+DECLHIDDEN(int) suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
 {
     NOREF(pThis);
     if (VirtualFree(pvPages, 0, MEM_RELEASE))
@@ -743,7 +743,7 @@ int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
 }
 
 
-bool suplibOsIsNemSupportedWhenNoVtxOrAmdV(void)
+DECLHIDDEN(bool) suplibOsIsNemSupportedWhenNoVtxOrAmdV(void)
 {
 # if ARCH_BITS == 64
     /*
