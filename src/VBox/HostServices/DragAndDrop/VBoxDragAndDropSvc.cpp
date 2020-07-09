@@ -29,6 +29,7 @@
 #include <VBox/GuestHost/DragAndDropDefs.h>
 #include <VBox/HostServices/Service.h>
 #include <VBox/HostServices/DragAndDropSvc.h>
+#include <VBox/AssertGuest.h>
 
 #include <VBox/err.h>
 
@@ -407,6 +408,15 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
         rc = VERR_NOT_FOUND;
     }
 
+/* Verifies that an uint32 parameter has the expected buffer size set.
+ * Will set rc to VERR_INVALID_PARAMETER otherwise. See #9777. */
+#define VERIFY_BUFFER_SIZE_UINT32(a_ParmUInt32, a_SizeExpected) \
+{ \
+    uint32_t cbTemp = 0; \
+    rc = HGCMSvcGetU32(&a_ParmUInt32, &cbTemp); \
+    ASSERT_GUEST_STMT(RT_SUCCESS(rc) && cbTemp == a_SizeExpected, rc = VERR_INVALID_PARAMETER); \
+}
+
     if (rc == VINF_SUCCESS) /* Note: rc might be VINF_HGCM_ASYNC_EXECUTE! */
     {
         LogFlowFunc(("Client %RU32: Protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
@@ -556,8 +566,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetPv(&paParms[1], (void **)&data.pszFormat, &data.cbFormat);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.cbFormat);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbFormat);
                         }
                         break;
                     }
@@ -639,8 +648,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                                 rc = HGCMSvcGetU32(&paParms[2], &data.uAllActions);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetPv(&paParms[3], (void**)&data.pszFormat, &data.cbFormat);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[4], &data.cbFormat);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[4], data.cbFormat);
                         }
                         break;
                     }
@@ -683,8 +691,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                         rc = HGCMSvcGetU32(&paParms[4], &data.data.cbMeta);
                     if (RT_SUCCESS(rc))
                         rc = HGCMSvcGetPv(&paParms[5], &data.data.pvMetaFmt, &data.data.cbMetaFmt);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[6], &data.data.cbMetaFmt);
+                    VERIFY_BUFFER_SIZE_UINT32(paParms[6], data.data.cbMetaFmt);
                     if (RT_SUCCESS(rc))
                         rc = HGCMSvcGetU64(&paParms[7], &data.data.cObjects);
                     if (RT_SUCCESS(rc))
@@ -693,9 +700,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                         rc = HGCMSvcGetU32(&paParms[9], (uint32_t *)&data.data.enmChecksumType);
                     if (RT_SUCCESS(rc))
                         rc = HGCMSvcGetPv(&paParms[10], &data.data.pvChecksum, &data.data.cbChecksum);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[11], &data.data.cbChecksum);
-
+                    VERIFY_BUFFER_SIZE_UINT32(paParms[11], data.data.cbChecksum);
                     LogFlowFunc(("fFlags=0x%x, cbTotalSize=%RU64, cObj=%RU64\n",
                                  data.data.uFlags, data.data.cbTotal, data.data.cObjects));
                     DO_HOST_CALLBACK();
@@ -717,12 +722,10 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetPv(&paParms[1], (void**)&data.data.u.v3.pvData, &data.data.u.v3.cbData);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.data.u.v3.cbData);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.data.u.v3.cbData);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetPv(&paParms[3], (void**)&data.data.u.v3.pvChecksum, &data.data.u.v3.cbChecksum);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[4], &data.data.u.v3.cbChecksum);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[4], data.data.u.v3.cbChecksum);
                             DO_HOST_CALLBACK();
                         }
                         break;
@@ -763,8 +766,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pszPath, &data.cbPath);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.cbPath);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbPath);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetU32(&paParms[3], &data.fMode);
                         }
@@ -777,8 +779,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                         if (cParms == 3)
                         {
                             rc = HGCMSvcGetPv(&paParms[0], (void**)&data.pszPath, &data.cbPath);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[1], &data.cbPath);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[1], data.cbPath);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetU32(&paParms[2], &data.fMode);
                         }
@@ -802,8 +803,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                     if (RT_SUCCESS(rc))
                         rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pszFilePath, &data.cbFilePath);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[2], &data.cbFilePath);
+                    VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbFilePath);
                     if (RT_SUCCESS(rc))
                         rc = HGCMSvcGetU32(&paParms[3], &data.fFlags);
                     if (RT_SUCCESS(rc))
@@ -835,12 +835,10 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pvData, &data.cbData);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.cbData);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbData);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetPv(&paParms[3], (void**)&data.u.v3.pvChecksum, &data.u.v3.cbChecksum);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[4], &data.u.v3.cbChecksum);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[4], data.u.v3.cbChecksum);
 
                             LogFlowFunc(("pvData=0x%p, cbData=%RU32\n", data.pvData, data.cbData));
                             DO_HOST_CALLBACK();
@@ -858,8 +856,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pvData, &data.cbData);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.cbData);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbData);
 
                             LogFlowFunc(("cbData=%RU32, pvData=0x%p\n", data.cbData, data.pvData));
                             DO_HOST_CALLBACK();
@@ -874,14 +871,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             VBOXDNDCBSNDFILEDATADATA data;
                             RT_ZERO(data);
                             data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
-                            uint32_t cTmp;
-                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.u.v1.pszFilePath, &cTmp);
+                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.u.v1.pszFilePath, &data.u.v1.cbFilePath);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[1], data.u.v1.cbFilePath);
                             if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[1], &data.u.v1.cbFilePath);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[2], (void**)&data.pvData, &cTmp);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[3], &data.cbData);
+                                rc = HGCMSvcGetPv(&paParms[2], (void**)&data.pvData, &data.cbData);
+                            VERIFY_BUFFER_SIZE_UINT32(paParms[3], data.cbData);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetU32(&paParms[4], &data.u.v1.fMode);
 
@@ -981,6 +975,8 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             }
         }
     }
+
+#undef VERIFY_BUFFER_SIZE_UINT32
 
     /*
      * If async execution is requested, we didn't notify the guest yet about
