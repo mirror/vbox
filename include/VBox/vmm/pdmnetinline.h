@@ -542,7 +542,7 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
         case PDMNETWORKGSOTYPE_IPV4_UDP:
             if (iSeg == 0)
             {
-                if (pGso->offHdr2 + sizeof(RTNETUDP::uh_ulen) > cbFrame)
+                if (pGso->offHdr2 + sizeof(uint16_t) > cbFrame)
                     return 0; /* Incomplete UDP header! */
                 /* uh_ulen cannot exceed cbFrame - pGso->offHdr2 (offset of UDP header) */
                 if ((unsigned)(pGso->offHdr2 + RT_BE2H_U16(((PCRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen)) > cbFrame)
