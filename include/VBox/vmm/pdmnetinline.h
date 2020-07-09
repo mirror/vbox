@@ -546,10 +546,12 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
                     return 0; /* Incomplete UDP header! */
                 /* uh_ulen cannot exceed cbFrame - pGso->offHdr2 (offset of UDP header) */
                 if ((unsigned)(pGso->offHdr2 + RT_BE2H_U16(((PCRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen)) > cbFrame)
+                {
                     if (cbFrame > UINT16_MAX)
                         ((PRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen = 0xFFFF;
                     else
                         ((PRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen = RT_H2BE_U16((uint16_t)(cbFrame - pGso->offHdr2));
+                }
                 Assert((unsigned)(pGso->offHdr2 + ((PCRTNETUDP)&pbFrame[pGso->offHdr2])->uh_ulen) <= cbFrame);
                 pdmNetGsoUpdateUdpHdrUfo(RTNetIPv4PseudoChecksum((PRTNETIPV4)&pbFrame[pGso->offHdr1]),
                                          pbSegHdrs, pbFrame, pGso->offHdr2);
