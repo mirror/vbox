@@ -593,6 +593,7 @@ RuntimeR3_SOURCES       = \
 	common/string/RTStrIStartsWith.cpp \
 	common/string/RTStrICmpAscii.cpp \
 	common/string/RTStrNICmpAscii.cpp \
+	common/string/RTStrSplit.cpp \
 	common/string/RTStrStr.cpp \
 	common/string/RTUtf16Copy.cpp \
 	common/string/RTUtf16CopyAscii.cpp \

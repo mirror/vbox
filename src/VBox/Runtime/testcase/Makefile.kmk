@@ -121,6 +121,7 @@ PROGRAMS += \
 	tstRTStrCache \
 	tstRTStrCatCopy \
 	tstRTStrFormat \
+	tstRTStrSplit \
 	tstStrSimplePattern \
 	tstStrToNum \
 	tstRTStrVersion \
@@ -640,6 +641,9 @@ tstRTStrCatCopy_SOURCES = tstRTStrCatCopy.cpp
 
 tstRTStrFormat_TEMPLATE = VBOXR3TSTEXE
 tstRTStrFormat_SOURCES = tstRTStrFormat.cpp
+
+tstRTStrSplit_TEMPLATE = VBOXR3TSTEXE
+tstRTStrSplit_SOURCES = tstRTStrSplit.cpp
 
 tstStrSimplePattern_TEMPLATE = VBOXR3TSTEXE
 tstStrSimplePattern_SOURCES = tstStrSimplePattern.cpp

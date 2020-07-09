@@ -2514,6 +2514,20 @@ RTDECL(bool) RTStrStartsWith(const char *pszString, const char *pszStart);
 RTDECL(bool) RTStrIStartsWith(const char *pszString, const char *pszStart);
 
 /**
+ * Splits a string buffer with a given separator into separate strings.
+ * If no separators are found, no strings are returned. Consequtive separators will be skipped.
+ *
+ * @returns iprt status code.
+ * @param   pcszStrings         String buffer to split.
+ * @param   cbStrings           Size (in bytes) of string buffer to split, including terminator.
+ * @param   pcszSeparator       Separator to use / find for splitting strings.
+ * @param   ppapszStrings       Where to return the allocated string array on success. Needs to be free'd by the caller.
+ * @param   pcStrings           Where to return the number of split strings in \a ppapszStrings.
+ */
+RTDECL(int) RTStrSplit(const char *pcszStrings, size_t cbStrings,
+                       const char *pcszSeparator, char ***ppapszStrings, size_t *pcStrings);
+
+/**
  * Locates a case sensitive substring.
  *
  * If any of the two strings are NULL, then NULL is returned. If the needle is

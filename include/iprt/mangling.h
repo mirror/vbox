@@ -2166,6 +2166,7 @@
 # define RTStrMemFind32_EndProc                         RT_MANGLER(RTStrMemFind32_EndProc)
 # define RTStrMemFind64                                 RT_MANGLER(RTStrMemFind64)
 # define RTStrMemFind64_EndProc                         RT_MANGLER(RTStrMemFind64_EndProc)
+# define RTStrSplit                                     RT_MANGLER(RTStrSplit)
 # define RTStrmClearError                               RT_MANGLER(RTStrmClearError)
 # define RTStrmClose                                    RT_MANGLER(RTStrmClose)
 # define RTStrmError                                    RT_MANGLER(RTStrmError)
