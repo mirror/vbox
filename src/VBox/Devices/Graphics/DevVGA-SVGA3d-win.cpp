@@ -1932,8 +1932,13 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                                                   D3DPOOL_SYSTEMMEM,
                                                   &pSurface->bounce.pTexture,
                                                   NULL);
-            AssertMsgReturn(hr == D3D_OK, ("CreateTexture (systemmem) failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+            AssertMsgReturnStmt(hr == D3D_OK,
+                ("CreateTexture (systemmem) failed with %x\n", hr),
+                D3D_RELEASE(pSurface->u.pTexture),
+                VERR_INTERNAL_ERROR);
         }
+
         AssertMsgReturn(hr == D3D_OK, ("CreateTexture INTZ failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
         pSurface->fStencilAsTexture = true;
@@ -2010,7 +2015,10 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                                                       D3DPOOL_SYSTEMMEM,
                                                       &pSurface->bounce.pTexture,
                                                       NULL);
-                AssertMsgReturn(hr == D3D_OK, ("CreateTexture (systemmem) failed with %x\n", hr), VERR_INTERNAL_ERROR);
+                AssertMsgReturnStmt(hr == D3D_OK,
+                    ("CreateTexture (systemmem) failed with %x\n", hr),
+                    D3D_RELEASE(pSurface->u.pTexture),
+                    VERR_INTERNAL_ERROR);
 
                 if (pSurface->formatD3D != pSurface->d3dfmtRequested)
                 {
