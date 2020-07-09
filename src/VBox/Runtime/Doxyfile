@@ -2056,45 +2056,74 @@ INCLUDE_FILE_PATTERNS  =
 # recursively expanded use the := operator instead of the = operator.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-PREDEFINED             = DOXYGEN_RUNNING \
-                         RT_C_DECLS_END= \
-                         RT_C_DECLS_BEGIN= \
-                         VBOX=1 \
-                         RT_STRICT=1 \
-                         __cplusplus=1 \
-                         RTCALL= \
-                         ARCH_BITS=HC_ARCH_BITS \
-                         R3_ARCH_BITS=HC_ARCH_BITS \
-                         R0_ARCH_BITS=HC_ARCH_BITS \
-                         RTDECL(type)=type \
-                         RT_EXPORT_SYMBOL(name)= \
-                         "DECLINLINE(type)=inline type" \
-                         DECL_INLINE_THROW(type)=DECLINLINE(type) \
-                         DECL_FORCE_INLINE(type)=DECLINLINE(type) \
-                         DECL_NO_INLINE(type)=type \
-                         DECL_NO_RETURN(type)=type \
-                         DECLCALLBACK(type)=type \
-                         RT_ASM_DECL_PRAGMA_WATCOM(type)=type \
-                         RT_ASM_DECL_PRAGMA_WATCOM_386(type)=type \
-                         AssertCompile(expr) \
-                         AssertCompileSize(a,b) \
-                         AssertCompileSizeAlignment(a,b) \
-                         AssertCompileMemberSizeAlignment(a,b,c) \
-                         AssertCompileMemberAlignment(a,b,c) \
-                         AssertCompileMemberOffset(a,b,c) \
-                         AssertCompile2MemberOffsets(a,b,c) \
-                         RT_SRC_POS=1 \
-                         RT_SRC_POS_ARGS=SRC_POS \
-                         "RT_SRC_POS_DECL=int SRC_POS" \
-                         RT_IPRT_FORMAT_ATTR(a,b)= \
-                         RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
-                         RT_NOTHROW_PROTO= \
-                         RT_NOTHROW_DEF= \
-                         RT_NO_THROW_PROTO= \
-                         RT_NO_THROW_DEF= \
-                         \
-                         RT_MSC_PREREQ(a)=0 \
-                         RT_MSC_PREREQ_EX(a,b)=b
+PREDEFINED             = \
+    DOXYGEN_RUNNING \
+    RT_C_DECLS_END= \
+    RT_C_DECLS_BEGIN= \
+    VBOX=1 \
+    RT_STRICT=1 \
+    __cplusplus=1 \
+    ARCH_BITS=HC_ARCH_BITS \
+    R3_ARCH_BITS=HC_ARCH_BITS \
+    R0_ARCH_BITS=HC_ARCH_BITS \
+    RTDECL(type)=type \
+    RT_EXPORT_SYMBOL(name)= \
+    \
+    RT_SRC_POS=1 \
+    RT_SRC_POS_ARGS=SRC_POS \
+    "RT_SRC_POS_DECL=int SRC_POS" \
+    "RTLOG_COMMA_SRC_POS_DECL=, int SRC_POS" \
+    \
+    RT_IPRT_FORMAT_ATTR(a,b)= \
+    RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a,b)= \
+    RT_NOTHROW_PROTO= \
+    RT_NOTHROW_DEF= \
+    RT_NO_THROW_PROTO= \
+    RT_NO_THROW_DEF= \
+    RTASN1CONTEXTTAG_IMPL_CURSOR_INLINES(a)= \
+    \
+    RT_MSC_PREREQ(a)=0 \
+    RT_MSC_PREREQ_EX(a,b)=b
+
+PREDEFINED += \
+    AssertCompile(expr) \
+    AssertCompileSize(a,b) \
+    AssertCompileSizeAlignment(a,b) \
+    AssertCompileMemberSizeAlignment(a,b,c) \
+    AssertCompileMemberAlignment(a,b,c) \
+    AssertCompileMemberOffset(a,b,c) \
+    AssertCompile2MemberOffsets(a,b,c)
+
+# decl and calling conventions.
+PREDEFINED += \
+    "DECLINLINE(type)=inline type" \
+    DECL_INLINE_THROW(type)=DECLINLINE(type) \
+    DECL_FORCE_INLINE(type)=DECLINLINE(type) \
+    DECL_NO_INLINE(type)=type \
+    DECL_NO_RETURN(type)=type \
+    DECLCALLBACK(type)=type \
+    "DECLCALLBACKTYPE(type,name,args)=type name args" \
+    "DECLCALLBACKTYPE_EX(type,cconv,name,args)=type name args" \
+    "DECLCALLBACKPTR(type,name,args)=type (* name) args" \
+    "DECLCALLBACKPTR_EX(type,cconv,name,args)=type (* name) args" \
+    "DECLCALLBACKMEMBER(type,name,args)=type (* name) args" \
+    "DECLCALLBACKMEMBER_EX(type,cconv,name,args)=type (* name) args" \
+    DECLEXPORT(type)=type \
+    DECL_EXPORT_NOTHROW(type)=type \
+    DECLIMPORT(type)=type \
+    DECL_IMPORT_NOTHROW(type)=type \
+    DECLHIDDEN(type)=type \
+    DECL_HIDDEN_NOTHROW(type)=type \
+    DECL_HIDDEN_ONLY(type)=type \
+    DECL_HIDDEN_THROW(type)=type \
+    DECL_HIDDEN_DATA(type)=type \
+    DECL_HIDDEN_CONST(type)=type \
+    DECL_HIDDEN_CALLBACK(type)=type \
+    DECLASM(type)=type \
+    RT_ASM_DECL_PRAGMA_WATCOM(type)=type \
+    RT_ASM_DECL_PRAGMA_WATCOM_386(type)=type \
+    DECLNORETURN(type)=type \
+    RTCALL=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
