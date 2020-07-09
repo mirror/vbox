@@ -43,7 +43,7 @@ int main()
     RTTestBanner(hTest);
 
     /* Invalid stuff. */
-    RTTEST_CHECK_RC(hTest, RTStrSplit(NULL, NULL, NULL, NULL, NULL), VERR_INVALID_POINTER);
+    RTTEST_CHECK_RC(hTest, RTStrSplit(NULL, 0, NULL, NULL, NULL), VERR_INVALID_POINTER);
     RTTEST_CHECK_RC(hTest, RTStrSplit("foo", 0, NULL, NULL, NULL), VERR_INVALID_PARAMETER);
     RTTEST_CHECK_RC(hTest, RTStrSplit("foo", 42, NULL, NULL, NULL), VERR_INVALID_POINTER);
 
