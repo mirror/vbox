@@ -76,12 +76,12 @@
 
 /** @name virtq related flags
  * @{ */
-#define VIRTQUEUE_DESC_F_NEXT                               1        /**< Indicates this descriptor chains to next  */
-#define VIRTQUEUE_DESC_F_WRITE                              2        /**< Marks buffer as write-only (default ro)   */
-#define VIRTQUEUE_DESC_F_INDIRECT                           4        /**< Buffer is list of buffer descriptors      */
+#define VIRTQ_DESC_F_NEXT                               1        /**< Indicates this descriptor chains to next  */
+#define VIRTQ_DESC_F_WRITE                              2        /**< Marks buffer as write-only (default ro)   */
+#define VIRTQ_DESC_F_INDIRECT                           4        /**< Buffer is list of buffer descriptors      */
 
-#define VIRTQUEUE_USED_F_NO_NOTIFY                          1        /**< Dev to Drv: Don't notify when buf added   */
-#define VIRTQUEUE_AVAIL_F_NO_INTERRUPT                      1        /**< Drv to Dev: Don't notify when buf eaten   */
+#define VIRTQ_USED_F_NO_NOTIFY                          1        /**< Dev to Drv: Don't notify when buf added   */
+#define VIRTQ_AVAIL_F_NO_INTERRUPT                      1        /**< Drv to Dev: Don't notify when buf eaten   */
 /** @} */
 
 /**
@@ -94,7 +94,7 @@ typedef struct virtq_desc
     uint32_t  cb;                                                /**< len        Buffer length                  */
     uint16_t  fFlags;                                            /**< flags      Buffer specific flags          */
     uint16_t  uDescIdxNext;                                      /**< next       Idx set if VIRTIO_DESC_F_NEXT  */
-} VIRTQUEUE_DESC_T, *PVIRTQUEUE_DESC_T;
+} VIRTQ_DESC_T, *PVIRTQ_DESC_T;
 
 typedef struct virtq_avail
 {
@@ -102,23 +102,23 @@ typedef struct virtq_avail
     uint16_t  uIdx;                                              /**< idx        Index of next free ring slot   */
     RT_FLEXIBLE_ARRAY_EXTENSION
     uint16_t  auRing[RT_FLEXIBLE_ARRAY];                         /**< ring       Ring: avail drv to dev bufs    */
-    //uint16_t  uUsedEventIdx;                                   /**< used_event (if VIRTQUEUE_USED_F_EVENT_IDX)    */
-} VIRTQUEUE_AVAIL_T, *PVIRTQUEUE_AVAIL_T;
+    //uint16_t  uUsedEventIdx;                                   /**< used_event (if VIRTQ_USED_F_EVENT_IDX)    */
+} VIRTQ_AVAIL_T, *PVIRTQ_AVAIL_T;
 
 typedef struct virtq_used_elem
 {
     uint32_t  uDescIdx;                                          /**< idx         Start of used desc chain      */
     uint32_t  cbElem;                                            /**< len         Total len of used desc chain  */
-} VIRTQUEUE_USED_ELEM_T;
+} VIRTQ_USED_ELEM_T;
 
 typedef struct virt_used
 {
     uint16_t  fFlags;                                            /**< flags       used ring host-to-guest flags */
     uint16_t  uIdx;                                              /**< idx         Index of next ring slot       */
     RT_FLEXIBLE_ARRAY_EXTENSION
-    VIRTQUEUE_USED_ELEM_T aRing[RT_FLEXIBLE_ARRAY];                  /**< ring        Ring: used dev to drv bufs    */
-    //uint16_t  uAvailEventIdx;                                  /**< avail_event if (VIRTQUEUE_USED_F_EVENT_IDX)   */
-} VIRTQUEUE_USED_T, *PVIRTQUEUE_USED_T;
+    VIRTQ_USED_ELEM_T aRing[RT_FLEXIBLE_ARRAY];                  /**< ring        Ring: used dev to drv bufs    */
+    //uint16_t  uAvailEventIdx;                                  /**< avail_event if (VIRTQ_USED_F_EVENT_IDX)   */
+} VIRTQ_USED_T, *PVIRTQ_USED_T;
 
 
 const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState)
@@ -146,14 +146,14 @@ static int  virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, 
  */
 #ifdef IN_RING3
 DECLINLINE(void) virtioReadDesc(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTQUEUE pVirtq,
-                                uint32_t idxDesc, PVIRTQUEUE_DESC_T pDesc)
+                                uint32_t idxDesc, PVIRTQ_DESC_T pDesc)
 {
     AssertMsg(pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_NOREF(pVirtio);
     uint16_t const cVirtqItems = RT_MAX(pVirtq->uSize, 1); /* Make sure to avoid div-by-zero. */
     PDMDevHlpPCIPhysRead(pDevIns,
-                      pVirtq->GCPhysVirtqDesc + sizeof(VIRTQUEUE_DESC_T) * (idxDesc % cVirtqItems),
-                      pDesc, sizeof(VIRTQUEUE_DESC_T));
+                      pVirtq->GCPhysVirtqDesc + sizeof(VIRTQ_DESC_T) * (idxDesc % cVirtqItems),
+                      pDesc, sizeof(VIRTQ_DESC_T));
 }
 #endif
 
@@ -168,7 +168,7 @@ DECLINLINE(uint16_t) virtioReadAvailDescIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVir
     RT_NOREF(pVirtio);
     uint16_t const cVirtqItems = RT_MAX(pVirtq->uSize, 1); /* Make sure to avoid div-by-zero. */
     PDMDevHlpPCIPhysRead(pDevIns,
-                         pVirtq->GCPhysVirtqAvail + RT_UOFFSETOF_DYN(VIRTQUEUE_AVAIL_T, auRing[availIdx % cVirtqItems]),
+                         pVirtq->GCPhysVirtqAvail + RT_UOFFSETOF_DYN(VIRTQ_AVAIL_T, auRing[availIdx % cVirtqItems]),
                          &uDescIdx, sizeof(uDescIdx));
     return uDescIdx;
 }
@@ -180,7 +180,7 @@ DECLINLINE(uint16_t) virtioReadAvailUsedEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pV
     AssertMsg(pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_NOREF(pVirtio);
     PDMDevHlpPCIPhysRead(pDevIns,
-                         pVirtq->GCPhysVirtqAvail + RT_UOFFSETOF_DYN(VIRTQUEUE_AVAIL_T, auRing[pVirtq->uSize]),
+                         pVirtq->GCPhysVirtqAvail + RT_UOFFSETOF_DYN(VIRTQ_AVAIL_T, auRing[pVirtq->uSize]),
                          &uUsedEventIdx, sizeof(uUsedEventIdx));
     return uUsedEventIdx;
 }
@@ -192,7 +192,7 @@ DECLINLINE(uint16_t) virtioReadAvailRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVir
     AssertMsg(pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_NOREF(pVirtio);
     PDMDevHlpPCIPhysRead(pDevIns,
-                         pVirtq->GCPhysVirtqAvail + RT_UOFFSETOF(VIRTQUEUE_AVAIL_T, uIdx),
+                         pVirtq->GCPhysVirtqAvail + RT_UOFFSETOF(VIRTQ_AVAIL_T, uIdx),
                          &uIdx, sizeof(uIdx));
     return uIdx;
 }
@@ -203,7 +203,7 @@ DECLINLINE(uint16_t) virtioReadAvailRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pV
     AssertMsg(pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_NOREF(pVirtio);
     PDMDevHlpPCIPhysRead(pDevIns,
-                         pVirtq->GCPhysVirtqAvail + RT_UOFFSETOF(VIRTQUEUE_AVAIL_T, fFlags),
+                         pVirtq->GCPhysVirtqAvail + RT_UOFFSETOF(VIRTQ_AVAIL_T, fFlags),
                          &fFlags, sizeof(fFlags));
     return fFlags;
 }
@@ -218,13 +218,13 @@ DECLINLINE(uint16_t) virtioReadAvailRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pV
 DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTQUEUE pVirtq,
                                      uint32_t usedIdx, uint32_t uDescIdx, uint32_t uLen)
 {
-    VIRTQUEUE_USED_ELEM_T elem = { uDescIdx,  uLen };
+    VIRTQ_USED_ELEM_T elem = { uDescIdx,  uLen };
     AssertMsg(pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_NOREF(pVirtio);
     uint16_t const cVirtqItems = RT_MAX(pVirtq->uSize, 1); /* Make sure to avoid div-by-zero. */
     PDMDevHlpPCIPhysWrite(pDevIns,
                           pVirtq->GCPhysVirtqUsed
-                        + RT_UOFFSETOF_DYN(VIRTQUEUE_USED_T, aRing[usedIdx % cVirtqItems]),
+                        + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[usedIdx % cVirtqItems]),
                           &elem, sizeof(elem));
 }
 
@@ -234,7 +234,7 @@ DECLINLINE(void) virtioWriteUsedRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirti
     RT_NOREF(pVirtio);
     RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
     PDMDevHlpPCIPhysWrite(pDevIns,
-                          pVirtq->GCPhysVirtqUsed + RT_UOFFSETOF(VIRTQUEUE_USED_T, fFlags),
+                          pVirtq->GCPhysVirtqUsed + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
                           &fFlags, sizeof(fFlags));
 }
 #endif
@@ -244,7 +244,7 @@ DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio,
     AssertMsg(pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_NOREF(pVirtio);
     PDMDevHlpPCIPhysWrite(pDevIns,
-                          pVirtq->GCPhysVirtqUsed + RT_UOFFSETOF(VIRTQUEUE_USED_T, uIdx),
+                          pVirtq->GCPhysVirtqUsed + RT_UOFFSETOF(VIRTQ_USED_T, uIdx),
                           &uIdx, sizeof(uIdx));
 }
 
@@ -256,7 +256,7 @@ DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
     AssertMsg(pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_NOREF(pVirtio);
     PDMDevHlpPCIPhysRead(pDevIns,
-                         pVirtq->GCPhysVirtqUsed + RT_UOFFSETOF(VIRTQUEUE_USED_T, uIdx),
+                         pVirtq->GCPhysVirtqUsed + RT_UOFFSETOF(VIRTQ_USED_T, uIdx),
                          &uIdx, sizeof(uIdx));
     return uIdx;
 }
@@ -267,7 +267,7 @@ DECLINLINE(uint16_t) virtioReadUsedRingFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
     AssertMsg(pVirtio->fDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_NOREF(pVirtio);
     PDMDevHlpPCIPhysRead(pDevIns,
-                         pVirtq->GCPhysVirtqUsed + RT_UOFFSETOF(VIRTQUEUE_USED_T, fFlags),
+                         pVirtq->GCPhysVirtqUsed + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
                          &fFlags, sizeof(fFlags));
     return fFlags;
 }
@@ -279,7 +279,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
     RT_NOREF(pVirtio);
     PDMDevHlpPCIPhysWrite(pDevIns,
                           pVirtq->GCPhysVirtqUsed
-                        + RT_UOFFSETOF_DYN(VIRTQUEUE_USED_T, aRing[pVirtq->uSize]),
+                        + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[pVirtq->uSize]),
                           &uAvailEventIdx, sizeof(uAvailEventIdx));
 }
 #endif
@@ -323,7 +323,6 @@ uint16_t virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, u
 
     return virtioCoreVirtqAvailBufCount_inline(pDevIns, pVirtio, pVirtq);
 }
-
 
 /** @} */
 
@@ -457,7 +456,7 @@ void virtioCorePrintFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp)
         const char *pcszDesc;
     } const s_aFeatures[] =
     {
-        { VIRTIO_F_RING_INDIRECT_DESC,      "   RING_INDIRECT_DESC   Driver can use descriptors with VIRTQUEUE_DESC_F_INDIRECT flag set\n" },
+        { VIRTIO_F_RING_INDIRECT_DESC,      "   RING_INDIRECT_DESC   Driver can use descriptors with VIRTQ_DESC_F_INDIRECT flag set\n" },
         { VIRTIO_F_RING_EVENT_IDX,          "   RING_EVENT_IDX       Enables use_event and avail_event fields described in 2.4.7, 2.4.8\n" },
         { VIRTIO_F_VERSION_1,               "   VERSION              Used to detect legacy drivers.\n" },
     };
@@ -714,8 +713,8 @@ void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
         cReturnSegs = pVirtqBuf->pSgPhysReturn ? pVirtqBuf->pSgPhysReturn->cSegs : 0;
     }
 
-    bool fAvailNoInterrupt   = virtioReadAvailRingFlags(pDevIns, pVirtio, pVirtq) & VIRTQUEUE_AVAIL_F_NO_INTERRUPT;
-    bool fUsedNoNotify       = virtioReadUsedRingFlags(pDevIns, pVirtio, pVirtq) & VIRTQUEUE_USED_F_NO_NOTIFY;
+    bool fAvailNoInterrupt   = virtioReadAvailRingFlags(pDevIns, pVirtio, pVirtq) & VIRTQ_AVAIL_F_NO_INTERRUPT;
+    bool fUsedNoNotify       = virtioReadUsedRingFlags(pDevIns, pVirtio, pVirtq) & VIRTQ_USED_F_NO_NOTIFY;
 
 
     pHlp->pfnPrintf(pHlp, "       queue enabled: ........... %s\n", pVirtq->uEnable ? "true" : "false");
@@ -800,7 +799,7 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
     /*
      * Gather segments.
      */
-    VIRTQUEUE_DESC_T desc;
+    VIRTQ_DESC_T desc;
 
     uint32_t cbIn = 0;
     uint32_t cbOut = 0;
@@ -836,7 +835,7 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
 
         virtioReadDesc(pDevIns, pVirtio, pVirtq, uDescIdx, &desc);
 
-        if (desc.fFlags & VIRTQUEUE_DESC_F_WRITE)
+        if (desc.fFlags & VIRTQ_DESC_F_WRITE)
         {
             Log6Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", pVirtq->szName, uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
             cbIn += desc.cb;
@@ -858,7 +857,7 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
         pSeg->cbSeg = desc.cb;
 
         uDescIdx = desc.uDescIdxNext;
-    } while (desc.fFlags & VIRTQUEUE_DESC_F_NEXT);
+    } while (desc.fFlags & VIRTQ_DESC_F_NEXT);
 
     /*
      * Add segments to the descriptor chain structure.
@@ -934,9 +933,9 @@ void virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtq, bool fEna
         uint16_t fFlags = virtioReadUsedRingFlags(pVirtio->pDevInsR3, pVirtio, pVirtq);
 
         if (fEnable)
-            fFlags &= ~ VIRTQUEUE_USED_F_NO_NOTIFY;
+            fFlags &= ~ VIRTQ_USED_F_NO_NOTIFY;
         else
-            fFlags |= VIRTQUEUE_USED_F_NO_NOTIFY;
+            fFlags |= VIRTQ_USED_F_NO_NOTIFY;
 
         virtioWriteUsedRingFlags(pVirtio->pDevInsR3, pVirtio, pVirtq, fFlags);
     }
@@ -1198,12 +1197,12 @@ static void virtioCoreNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio,
     else
     {
         /** If guest driver hasn't suppressed interrupts, interrupt  */
-        if (!(virtioReadAvailRingFlags(pDevIns, pVirtio, pVirtq) & VIRTQUEUE_AVAIL_F_NO_INTERRUPT))
+        if (!(virtioReadAvailRingFlags(pDevIns, pVirtio, pVirtq) & VIRTQ_AVAIL_F_NO_INTERRUPT))
         {
             virtioKick(pDevIns, pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtq->uMsix);
             return;
         }
-        Log6Func(("...skipping interrupt for %s (guest set VIRTQUEUE_AVAIL_F_NO_INTERRUPT)\n", pVirtq->szName));
+        Log6Func(("...skipping interrupt for %s (guest set VIRTQ_AVAIL_F_NO_INTERRUPT)\n", pVirtq->szName));
     }
 }
 
