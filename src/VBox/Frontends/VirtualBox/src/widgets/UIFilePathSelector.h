@@ -215,7 +215,6 @@ private:
 
     /** Path is set to m_strDefaultPath when it is reset. */
     QString m_strDefaultPath;
-
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIFilePathSelector_h */

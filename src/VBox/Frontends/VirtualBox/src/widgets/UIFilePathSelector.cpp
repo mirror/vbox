@@ -26,7 +26,6 @@
 #ifdef VBOX_WS_WIN
 # include <QListView>
 #endif
-#include <QPalette>
 
 /* GUI includes: */
 #include "QIFileDialog.h"
@@ -183,7 +182,6 @@ const QString& UIFilePathSelector::defaultPath() const
 {
     return m_strDefaultPath;
 }
-
 
 void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = true */)
 {
