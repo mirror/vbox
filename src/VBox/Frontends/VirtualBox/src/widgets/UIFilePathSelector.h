@@ -117,6 +117,9 @@ public:
     void setDefaultPath(const QString &strDefaultPath);
     const QString& defaultPath() const;
 
+    /** Paints the file selectors background to a reddish color when @p fError is true. */
+    void markFileSelector(bool fError);
+
 public slots:
 
     /** Defines the @a strPath and @a fRefreshText after that. */
@@ -212,6 +215,7 @@ private:
 
     /** Path is set to m_strDefaultPath when it is reset. */
     QString m_strDefaultPath;
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIFilePathSelector_h */

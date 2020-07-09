@@ -71,7 +71,7 @@ public:
         PageExpert
     };
 
-    /* Constructor: */
+    /** Constructor: */
     UIWizardNewVM(QWidget *pParent, const QString &strGroup = QString());
 
     /** Prepare routine. */

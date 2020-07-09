@@ -335,6 +335,7 @@ void UIWizardNewVMPageExpert::cleanupPage()
 
 bool UIWizardNewVMPageExpert::isComplete() const
 {
+    UIWizardNewVMPage1::markWidgets();
     /* Make sure mandatory fields are complete,
      * 'ram' field feats the bounds,
      * 'virtualDisk' field feats the rules: */
@@ -345,7 +346,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
     if (isUnattendedEnabled())
     {
         /* Check the installation medium: */
-        if (!checkISOFile())
+        if (!isISOFileSelectorComplete())
             return false;
         /* Check the GA installation medium: */
         if (!checkGAISOFile())

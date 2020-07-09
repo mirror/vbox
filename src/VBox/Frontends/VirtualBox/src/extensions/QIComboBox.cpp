@@ -302,6 +302,18 @@ void QIComboBox::setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy enmPolicy)
     m_pComboBox->setSizeAdjustPolicy(enmPolicy);
 }
 
+void QIComboBox::mark(bool fError)
+{
+    if (!m_pComboBox)
+        return;
+    QPalette palette = m_pComboBox->palette();
+    if (fError)
+        palette.setColor(QPalette::Base, QColor(255, 180, 180));
+    else
+        palette.setColor(QPalette::Base, m_originalBaseColor);
+    m_pComboBox->setPalette(palette);
+}
+
 void QIComboBox::clear()
 {
     /* Redirect to combo-box: */
@@ -375,6 +387,8 @@ void QIComboBox::prepare()
         m_pComboBox = new QComboBox;
         AssertPtrReturnVoid(m_pComboBox);
         {
+            /* Cache original base color: */
+            m_originalBaseColor = m_pComboBox->palette().color(QPalette::Base);
             /* Configure combo-box: */
             setFocusProxy(m_pComboBox);
             connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
