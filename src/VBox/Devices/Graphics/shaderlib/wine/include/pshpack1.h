@@ -110,7 +110,7 @@
 #  if defined(_MSC_VER) && (_MSC_VER >= 800)
 #   pragma warning(disable:4103)
 #  endif
-#  if defined(__clang_major__) && (__clang_major__ >= 6)
+#  if defined(__clang_major__) && defined(__has_warning) && __has_warning("-Wpragma-pack")
 #   pragma clang diagnostic ignored "-Wpragma-pack"
 #  endif
 
