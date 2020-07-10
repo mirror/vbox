@@ -35,7 +35,11 @@
 #include <iprt/string.h>
 #include <iprt/err.h>
 
-#include <NSSystemDirectories.h>
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
+# include <sysdir.h>
+#else
+# include <NSSystemDirectories.h>
+#endif
 #include <sys/syslimits.h>
 #ifdef IPRT_USE_CORE_SERVICE_FOR_USER_DOCUMENTS
 # include <CoreServices/CoreServices.h>
@@ -52,14 +56,24 @@ RTDECL(int) RTPathUserDocuments(char *pszPath, size_t cchPath)
 
     /*
      * Try NSSystemDirectories first since that works for directories that doesn't exist.
+     * The NSSystemDirectories API was renamed in 10.12 to sysdir.
      */
     int rc = VERR_PATH_NOT_FOUND;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
+    sysdir_search_path_enumeration_state EnmState = sysdir_start_search_path_enumeration(SYSDIR_DIRECTORY_DOCUMENT,
+                                                                                         SYSDIR_DOMAIN_MASK_USER);
+#else
     NSSearchPathEnumerationState EnmState = NSStartSearchPathEnumeration(NSDocumentDirectory, NSUserDomainMask);
+#endif
     if (EnmState != 0)
     {
         char szTmp[PATH_MAX];
         szTmp[0] = szTmp[PATH_MAX - 1] = '\0';
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
+        EnmState = sysdir_get_next_search_path_enumeration(EnmState, szTmp);
+#else
         EnmState = NSGetNextSearchPathEnumeration(EnmState, szTmp);
+#endif
         if (EnmState != 0)
         {
             size_t cchTmp = strlen(szTmp);
