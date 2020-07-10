@@ -286,12 +286,12 @@ bool UIWizardNewVMPageBasic2::isComplete() const
     bool fIsComplete = true;
     if (!checkGAISOFile())
     {
-        m_pToolBox->setItemIcon(ToolBoxItems_GAInstall, UIIconPool::iconSet(":/warning.png"));
+        m_pToolBox->setItemIcon(ToolBoxItems_GAInstall, UIIconPool::iconSet(":/status_error_16px.png"));
         fIsComplete = false;
     }
     if (m_pUserNamePasswordEditor && !m_pUserNamePasswordEditor->isComplete())
     {
-        m_pToolBox->setItemIcon(ToolBoxItems_UserNameHostname, UIIconPool::iconSet(":/warning.png"));
+        m_pToolBox->setItemIcon(ToolBoxItems_UserNameHostname, UIIconPool::iconSet(":/status_error_16px.png"));
         fIsComplete = false;
     }
     return fIsComplete;

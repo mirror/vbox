@@ -417,7 +417,6 @@
         <file alias="vrdp_warning_16px.png">images/vrdp_warning_16px.png</file>
         <file alias="vtx_amdv_16px.png">images/vtx_amdv_16px.png</file>
         <file alias="vtx_amdv_disabled_16px.png">images/vtx_amdv_disabled_16px.png</file>
-        <file alias="warning.png">images/warning.png</file>
         <file alias="web_camera_16px.png">images/web_camera_16px.png</file>
         <file alias="web_camera_disabled_16px.png">images/web_camera_disabled_16px.png</file>
         <file alias="web_camera_unavailable_16px.png">images/web_camera_unavailable_16px.png</file>

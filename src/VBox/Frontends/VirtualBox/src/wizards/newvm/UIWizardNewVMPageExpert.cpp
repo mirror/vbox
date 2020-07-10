@@ -319,14 +319,14 @@ bool UIWizardNewVMPageExpert::isComplete() const
     if (!UIWizardPage::isComplete())
     {
         m_pToolBox->setItemIcon(ExpertToolboxItems_NameAndOSType,
-                                UIIconPool::iconSet(":/warning.png"));
+                                UIIconPool::iconSet(":/status_error_16px.png"));
         fIsComplete = false;
     }
 
     if (!m_pDiskSkip->isChecked() && !m_pDiskPresent->isChecked() && uiCommon().medium(m_pDiskSelector->id()).isNull())
     {
         m_pToolBox->setItemIcon(ExpertToolboxItems_Disk,
-                                UIIconPool::iconSet(":/warning.png"));
+                                UIIconPool::iconSet(":/status_error_16px.png"));
         fIsComplete = false;
     }
     /* Check unattended install related stuff: */
@@ -336,14 +336,14 @@ bool UIWizardNewVMPageExpert::isComplete() const
         if (!isISOFileSelectorComplete())
         {
             m_pToolBox->setItemIcon(ExpertToolboxItems_NameAndOSType,
-                                    UIIconPool::iconSet(":/warning.png"));
+                                    UIIconPool::iconSet(":/status_error_16px.png"));
             fIsComplete = false;
         }
         /* Check the GA installation medium: */
         if (!checkGAISOFile())
         {
             m_pToolBox->setItemIcon(ExpertToolboxItems_GAInstall,
-                                    UIIconPool::iconSet(":/warning.png"));
+                                    UIIconPool::iconSet(":/status_error_16px.png"));
             fIsComplete = false;
         }
         if (m_pUserNamePasswordEditor)
@@ -351,7 +351,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
             if (!m_pUserNamePasswordEditor->isComplete())
             {
                 m_pToolBox->setItemIcon(ExpertToolboxItems_UsernameHostname,
-                                        UIIconPool::iconSet(":/warning.png"));
+                                        UIIconPool::iconSet(":/status_error_16px.png"));
                 fIsComplete = false;
             }
         }
