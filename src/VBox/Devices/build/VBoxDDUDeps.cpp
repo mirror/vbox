@@ -33,23 +33,23 @@
 /** Just a dummy global structure containing a bunch of
  * function pointers to code which is wanted in the link.
  */
-PFNRT g_apfnVBoxDDUDeps[] =
+struct CLANG11WEIRDNESS { PFNRT pfn; } g_apfnVBoxDDUDeps[] =
 {
-    (PFNRT)VDInit,
-    (PFNRT)VDIfCreateVfsStream,
-    (PFNRT)VDIfCreateFromVfsStream,
-    (PFNRT)VDCreateVfsFileFromDisk,
-    (PFNRT)VDIfTcpNetInstDefaultCreate,
+    { (PFNRT)VDInit },
+    { (PFNRT)VDIfCreateVfsStream },
+    { (PFNRT)VDIfCreateFromVfsStream },
+    { (PFNRT)VDCreateVfsFileFromDisk },
+    { (PFNRT)VDIfTcpNetInstDefaultCreate },
 #ifdef VBOX_WITH_USB
-    (PFNRT)USBFilterInit,
-    (PFNRT)USBLibHashSerial,
+    { (PFNRT)USBFilterInit },
+    { (PFNRT)USBLibHashSerial },
 # ifdef RT_OS_OS2
-    (PFNRT)UsbOpen,
+    { (PFNRT)UsbOpen },
 # endif
 # if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS) /* PORTME */
-    (PFNRT)USBLibInit,
+    { (PFNRT)USBLibInit },
 # endif
 #endif /* VBOX_WITH_USB */
-    NULL
+    { NULL },
 };
 

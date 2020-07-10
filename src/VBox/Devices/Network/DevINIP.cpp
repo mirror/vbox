@@ -130,14 +130,14 @@ static PDEVINTNETIP g_pDevINIPData = NULL;
  * really ugly hack to avoid linking problems on unix style platforms
  * using .a libraries for now.
  */
-static const PFNRT g_pDevINILinkHack[] =
+static const struct CLANG11WEIRDNESS { PFNRT pfn; } g_pDevINILinkHack[] =
 {
-    (PFNRT)lwip_socket,
-    (PFNRT)lwip_close,
-    (PFNRT)lwip_setsockopt,
-    (PFNRT)lwip_recv,
-    (PFNRT)lwip_send,
-    (PFNRT)lwip_select
+    { (PFNRT)lwip_socket },
+    { (PFNRT)lwip_close },
+    { (PFNRT)lwip_setsockopt },
+    { (PFNRT)lwip_recv },
+    { (PFNRT)lwip_send },
+    { (PFNRT)lwip_select },
 };
 
 
