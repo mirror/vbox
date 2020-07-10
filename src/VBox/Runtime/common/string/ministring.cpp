@@ -1143,21 +1143,21 @@ RTCString::join(const RTCList<RTCString, RTCString *> &a_rList,
                              "" /* a_rstrPrefix */, a_rstrSep);
 }
 
-const RTCString operator+(const RTCString &a_rStr1, const RTCString &a_rStr2)
+RTDECL(const RTCString) operator+(const RTCString &a_rStr1, const RTCString &a_rStr2)
 {
     RTCString strRet(a_rStr1);
     strRet += a_rStr2;
     return strRet;
 }
 
-const RTCString operator+(const RTCString &a_rStr1, const char *a_pszStr2)
+RTDECL(const RTCString) operator+(const RTCString &a_rStr1, const char *a_pszStr2)
 {
     RTCString strRet(a_rStr1);
     strRet += a_pszStr2;
     return strRet;
 }
 
-const RTCString operator+(const char *a_psz1, const RTCString &a_rStr2)
+RTDECL(const RTCString) operator+(const char *a_psz1, const RTCString &a_rStr2)
 {
     RTCString strRet(a_psz1);
     strRet += a_rStr2;

@@ -992,7 +992,7 @@ DECLHIDDEN(int) rtDbgModContainer_RemoveAll(PRTDBGMODINT pMod)
  * @param   cbSeg       The size of the initial segment. 0 if segments are to be
  *                      created manually later on.
  */
-int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg)
+DECLHIDDEN(int) rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg)
 {
     PRTDBGMODCTN pThis = (PRTDBGMODCTN)RTMemAlloc(sizeof(*pThis));
     if (!pThis)

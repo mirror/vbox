@@ -166,7 +166,7 @@ SUPR3DECL(int) SUPR3Uninstall(void)
 }
 
 
-DECLEXPORT(int) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_t fFlags)
+DECL_NOTHROW(DECLEXPORT(int)) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_t fFlags)
 {
     /*
      * The caller is kind of trustworthy, just perform some basic checks.

@@ -238,9 +238,8 @@ typedef FNRTTRACELOGRDRSTATEHANDLER *PFNRTTRACELOGRDRSTATEHANDLER;
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
+*   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-
 static DECLCALLBACK(int) rtTraceLogRdrHdrRecvd(PRTTRACELOGRDRINT pThis, RTTRACELOGRDRPOLLEVT *penmEvt, bool *pfContinuePoll);
 static DECLCALLBACK(int) rtTraceLogRdrHdrDescRecvd(PRTTRACELOGRDRINT pThis, RTTRACELOGRDRPOLLEVT *penmEvt, bool *pfContinuePoll);
 static DECLCALLBACK(int) rtTraceLogRdrMagicRecvd(PRTTRACELOGRDRINT pThis, RTTRACELOGRDRPOLLEVT *penmEvt, bool *pfContinuePoll);
@@ -255,22 +254,23 @@ static DECLCALLBACK(int) rtTraceLogRdrEvtDataRecvd(PRTTRACELOGRDRINT pThis, RTTR
 
 /**
  * State handlers.
+ * @note The struct wrapper is for working around a Clang nothrow attrib oddity.
  */
-static PFNRTTRACELOGRDRSTATEHANDLER g_apfnStateHandlers[] =
+static struct { PFNRTTRACELOGRDRSTATEHANDLER pfn; } g_aStateHandlers[] =
 {
-    NULL,
-    rtTraceLogRdrHdrRecvd,
-    rtTraceLogRdrHdrDescRecvd,
-    rtTraceLogRdrMagicRecvd,
-    rtTraceLogRdrEvtDescRecvd,
-    rtTraceLogRdrEvtDescIdRecvd,
-    rtTraceLogRdrEvtDescDescriptionRecvd,
-    rtTraceLogRdrEvtItemDescRecvd,
-    rtTraceLogRdrEvtItemDescNameRecvd,
-    rtTraceLogRdrEvtItemDescDescriptionRecvd,
-    rtTraceLogRdrEvtMarkerRecvd,
-    rtTraceLogRdrEvtDataRecvd,
-    NULL
+    { NULL },
+    { rtTraceLogRdrHdrRecvd },
+    { rtTraceLogRdrHdrDescRecvd },
+    { rtTraceLogRdrMagicRecvd },
+    { rtTraceLogRdrEvtDescRecvd },
+    { rtTraceLogRdrEvtDescIdRecvd },
+    { rtTraceLogRdrEvtDescDescriptionRecvd },
+    { rtTraceLogRdrEvtItemDescRecvd },
+    { rtTraceLogRdrEvtItemDescNameRecvd },
+    { rtTraceLogRdrEvtItemDescDescriptionRecvd },
+    { rtTraceLogRdrEvtMarkerRecvd },
+    { rtTraceLogRdrEvtDataRecvd },
+    { NULL }
 };
 
 /**
@@ -1569,7 +1569,7 @@ RTDECL(int) RTTraceLogRdrEvtPoll(RTTRACELOGRDR hTraceLogRdr, RTTRACELOGRDRPOLLEV
             if (cbRecvd == pThis->cbRecvLeft)
             {
                 /* Act according to the current state. */
-                rc = g_apfnStateHandlers[pThis->enmState](pThis, penmEvt, &fContinue);
+                rc = g_aStateHandlers[pThis->enmState].pfn(pThis, penmEvt, &fContinue);
             }
             else
                 pThis->cbRecvLeft -= cbRecvd;

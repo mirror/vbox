@@ -342,8 +342,8 @@ static int  rtFtpServerDataConnFlush(PRTFTPSERVERDATACONN pDataConn);
 
 static void rtFtpServerClientStateReset(PRTFTPSERVERCLIENTSTATE pState);
 
-/**
- * Function prototypes for command handlers.
+/** @name Command handlers.
+ * @{
  */
 static FNRTFTPSERVERCMD rtFtpServerHandleABOR;
 static FNRTFTPSERVERCMD rtFtpServerHandleCDUP;
@@ -364,6 +364,7 @@ static FNRTFTPSERVERCMD rtFtpServerHandleSTRU;
 static FNRTFTPSERVERCMD rtFtpServerHandleSYST;
 static FNRTFTPSERVERCMD rtFtpServerHandleTYPE;
 static FNRTFTPSERVERCMD rtFtpServerHandleUSER;
+/** @} */
 
 /**
  * Structure for maintaining a single command entry for the command table.
@@ -1269,7 +1270,7 @@ static void rtFtpServerDataConnReset(PRTFTPSERVERDATACONN pDataConn)
 *   Command Protocol Handlers                                                                                                    *
 *********************************************************************************************************************************/
 
-static int rtFtpServerHandleABOR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleABOR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
@@ -1285,7 +1286,7 @@ static int rtFtpServerHandleABOR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
@@ -1321,7 +1322,7 @@ static int rtFtpServerHandleCDUP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
@@ -1343,7 +1344,7 @@ static int rtFtpServerHandleCWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const
                                   ? RTFTPSERVER_REPLY_OKAY : RTFTPSERVER_REPLY_CONN_REQ_FILE_ACTION_NOT_TAKEN);
 }
 
-static int rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleFEAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
@@ -1861,7 +1862,7 @@ static DECLCALLBACK(int) rtFtpServerDataConnListThread(RTTHREAD ThreadSelf, void
     return rc;
 }
 
-static int rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     /* If no argument is given, use the server's CWD as the path. */
     const char *pcszPath = cArgs ? apcszArgs[0] : pClient->State.pszCWD;
@@ -1907,7 +1908,7 @@ static int rtFtpServerHandleLIST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleMODE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleMODE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(pClient, cArgs, apcszArgs);
 
@@ -1915,7 +1916,7 @@ static int rtFtpServerHandleMODE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return VINF_SUCCESS;
 }
 
-static int rtFtpServerHandleNOOP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleNOOP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
@@ -1925,7 +1926,7 @@ static int rtFtpServerHandleNOOP(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_OKAY);
 }
 
-static int rtFtpServerHandlePASS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandlePASS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
         return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
@@ -1950,7 +1951,7 @@ static int rtFtpServerHandlePASS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
         return rtFtpServerSendReplyRc(pClient, RTFTPSERVER_REPLY_ERROR_INVALID_PARAMETERS);
@@ -1970,7 +1971,7 @@ static int rtFtpServerHandlePORT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
@@ -1986,7 +1987,7 @@ static int rtFtpServerHandlePWD(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const
     return rc;
 }
 
-static int rtFtpServerHandleOPTS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleOPTS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
@@ -1999,7 +2000,7 @@ static int rtFtpServerHandleOPTS(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
@@ -2022,7 +2023,7 @@ static int rtFtpServerHandleQUIT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1) /* File name needs to be present. */
         return VERR_INVALID_PARAMETER;
@@ -2070,7 +2071,7 @@ static int rtFtpServerHandleRETR(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleSIZE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleSIZE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
@@ -2095,7 +2096,7 @@ static int rtFtpServerHandleSIZE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
@@ -2137,7 +2138,7 @@ static int rtFtpServerHandleSTAT(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleSTRU(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleSTRU(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
@@ -2158,7 +2159,7 @@ static int rtFtpServerHandleSTRU(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     RT_NOREF(cArgs, apcszArgs);
 
@@ -2170,7 +2171,7 @@ static int rtFtpServerHandleSYST(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleTYPE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleTYPE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
@@ -2196,7 +2197,7 @@ static int rtFtpServerHandleTYPE(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, cons
     return rc;
 }
 
-static int rtFtpServerHandleUSER(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
+static DECLCALLBACK(int) rtFtpServerHandleUSER(PRTFTPSERVERCLIENT pClient, uint8_t cArgs, const char * const *apcszArgs)
 {
     if (cArgs != 1)
         return VERR_INVALID_PARAMETER;
