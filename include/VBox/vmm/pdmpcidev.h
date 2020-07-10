@@ -59,8 +59,10 @@ typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPCICONFIGREAD,(PPDMDEVINS pDevIns, PPDM
                                                         uint32_t uAddress, unsigned cb, uint32_t *pu32Value));
 /** Pointer to a FNPCICONFIGREAD() function. */
 typedef FNPCICONFIGREAD *PFNPCICONFIGREAD;
+#if !RT_CLANG_PREREQ(11, 0) /* Clang 11 (at least) has trouble with nothrow and pointers to function pointers. */
 /** Pointer to a PFNPCICONFIGREAD. */
 typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
+#endif
 
 /**
  * Callback function for writing to the PCI configuration space.
@@ -84,8 +86,10 @@ typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPCICONFIGWRITE,(PPDMDEVINS pDevIns, PPD
                                                          uint32_t uAddress, unsigned cb, uint32_t u32Value));
 /** Pointer to a FNPCICONFIGWRITE() function. */
 typedef FNPCICONFIGWRITE *PFNPCICONFIGWRITE;
+#if !RT_CLANG_PREREQ(11, 0) /* Clang 11 (at least) has trouble with nothrow and pointers to function pointers. */
 /** Pointer to a PFNPCICONFIGWRITE. */
 typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
+#endif
 
 /**
  * Callback function for mapping an PCI I/O region.

@@ -86,8 +86,10 @@ typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPCIBRIDGECONFIGREAD,(PPDMDEVINSR3 pDevI
                                                               uint32_t u32Address, unsigned cb, uint32_t *pu32Value));
 /** Pointer to a FNPCICONFIGREAD() function. */
 typedef FNPCIBRIDGECONFIGREAD *PFNPCIBRIDGECONFIGREAD;
+#if !RT_CLANG_PREREQ(11, 0) /* Clang 11 (at least) has trouble with nothrow and pointers to function pointers. */
 /** Pointer to a PFNPCICONFIGREAD. */
 typedef PFNPCIBRIDGECONFIGREAD *PPFNPCIBRIDGECONFIGREAD;
+#endif
 
 /**
  * Callback function for writing to the PCI configuration space.
@@ -105,8 +107,10 @@ typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPCIBRIDGECONFIGWRITE,(PPDMDEVINSR3 pDev
                                                                uint32_t u32Address, unsigned cb, uint32_t u32Value));
 /** Pointer to a FNPCICONFIGWRITE() function. */
 typedef FNPCIBRIDGECONFIGWRITE *PFNPCIBRIDGECONFIGWRITE;
+#if !RT_CLANG_PREREQ(11, 0) /* Clang 11 (at least) has trouble with nothrow and pointers to function pointers. */
 /** Pointer to a PFNPCICONFIGWRITE. */
 typedef PFNPCIBRIDGECONFIGWRITE *PPFNPCIBRIDGECONFIGWRITE;
+#endif
 
 /* Forward declaration */
 struct DEVPCIBUS;
