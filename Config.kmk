@@ -2948,6 +2948,7 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-c++17-compat-mangling ?= $(call VBOX_GCC_CHECK_CXX,-Wno-c++17-compat-mangling,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-nullability-extension ?= $(call VBOX_GCC_CHECK_CXX,-Wno-nullability-extension,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-gnu-statement-expression ?= $(call VBOX_GCC_CHECK_CXX,-Wno-gnu-statement-expression,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-import-preprocessor-directive-pedantic ?= $(call VBOX_GCC_CHECK_CXX,-Wno-import-preprocessor-directive-pedantic,)'
 ifeq ($(KBUILD_TARGET),solaris)
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_msave-args            ?= $(call VBOX_GCC_CHECK_CXX,-msave-args,)'
 # Detect the solaris assembler. It is used by the the 4.x gcc compilers,
@@ -4899,6 +4900,7 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -mkerne
 	-fmodules -fmodules-prune-interval=86400 -fmodules-prune-after=345600 -Wnon-modular-include-in-framework-module \
 	-Werror=non-modular-include-in-framework-module \
 	$(VBOX_GCC_Wno-nullability-extension) $(VBOX_GCC_Wno-gnu-statement-expression) \
+       $(VBOX_GCC_Wno-import-preprocessor-directive-pedantic) \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fasm-blocks -fno-strict-aliasing -stdlib=libc++
 #  if1of ($(VBOX_GCC_TOOL), CLANGXXMACHO) ## @todo check if we can safely use $(VBOX_GCC_std) @bugref{9790}, good for noexcept.
 #TEMPLATE_VBOXR0DRV_CXXFLAGS           += $(VBOX_GCC_std)
