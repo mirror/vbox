@@ -588,32 +588,30 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb, 
 }
 
 
-static void pgmR3DbgSelectMemScanFunction(PFNPGMR3DBGFIXEDMEMSCAN *ppfnMemScan, uint32_t GCPhysAlign, size_t cbNeedle)
+static PFNPGMR3DBGFIXEDMEMSCAN pgmR3DbgSelectMemScanFunction(uint32_t GCPhysAlign, size_t cbNeedle)
 {
-    *ppfnMemScan = NULL;
     switch (GCPhysAlign)
     {
         case 1:
             if (cbNeedle >= 8)
-                *ppfnMemScan = pgmR3DbgFixedMemScan8Wide1Step;
-            else if (cbNeedle >= 4)
-                *ppfnMemScan = pgmR3DbgFixedMemScan4Wide1Step;
-            else
-                *ppfnMemScan = pgmR3DbgFixedMemScan1Wide1Step;
-            break;
+                return pgmR3DbgFixedMemScan8Wide1Step;
+            if (cbNeedle >= 4)
+                return pgmR3DbgFixedMemScan4Wide1Step;
+            return pgmR3DbgFixedMemScan1Wide1Step;
         case 2:
             if (cbNeedle >= 2)
-                *ppfnMemScan = pgmR3DbgFixedMemScan2Wide2Step;
+                return pgmR3DbgFixedMemScan2Wide2Step;
             break;
         case 4:
             if (cbNeedle >= 4)
-                *ppfnMemScan = pgmR3DbgFixedMemScan4Wide4Step;
+                return pgmR3DbgFixedMemScan4Wide4Step;
             break;
         case 8:
             if (cbNeedle >= 8)
-                *ppfnMemScan = pgmR3DbgFixedMemScan8Wide8Step;
+                return pgmR3DbgFixedMemScan8Wide8Step;
             break;
     }
+    return NULL;
 }
 
 
@@ -684,8 +682,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                                ? GCPhys + cbRange - 1
                                : ~(RTGCPHYS)0;
 
-    PFNPGMR3DBGFIXEDMEMSCAN pfnMemScan;
-    pgmR3DbgSelectMemScanFunction(&pfnMemScan, (uint32_t)GCPhysAlign, cbNeedle);
+    PFNPGMR3DBGFIXEDMEMSCAN pfnMemScan = pgmR3DbgSelectMemScanFunction((uint32_t)GCPhysAlign, cbNeedle);
 
     /*
      * Search the memory - ignore MMIO and zero pages, also don't
@@ -863,8 +860,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
     uint32_t        offPage   = GCPtr & PAGE_OFFSET_MASK;
     GCPtr &= ~(RTGCPTR)PAGE_OFFSET_MASK;
 
-    PFNPGMR3DBGFIXEDMEMSCAN pfnMemScan;
-    pgmR3DbgSelectMemScanFunction(&pfnMemScan, (uint32_t)GCPtrAlign, cbNeedle);
+    PFNPGMR3DBGFIXEDMEMSCAN pfnMemScan = pgmR3DbgSelectMemScanFunction((uint32_t)GCPtrAlign, cbNeedle);
 
     VMSTATE         enmVMState              = pVM->enmVMState;
     uint32_t const  cYieldCountDownReload   = VMSTATE_IS_RUNNING(enmVMState) ? 4096 : 65536;
