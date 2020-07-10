@@ -66,7 +66,9 @@
 #include <IOKit/IOUserClient.h>
 #include <IOKit/pwr_mgt/RootDomain.h>
 #include <IOKit/IODeviceTreeSupport.h>
-#include <IOKit/usb/IOUSBHIDDriver.h>
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 101100
+# include <IOKit/usb/IOUSBHIDDriver.h>
+#endif
 #include <IOKit/bluetooth/IOBluetoothHIDDriver.h>
 #include <IOKit/bluetooth/IOBluetoothHIDDriverTypes.h>
 
@@ -1292,7 +1294,7 @@ static DECLCALLBACK(int) supdrvDarwinLdrOpenVerifyCertificatCallback(PCRTCRX509C
 {
     RT_NOREF(pvUser); //PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
 # ifdef DEBUG_bird
-    printf("supdrvDarwinLdrOpenVerifyCertificatCallback: pCert=%p hCertPaths=%p\n", pCert, hCertPaths);
+    printf("supdrvDarwinLdrOpenVerifyCertificatCallback: pCert=%p hCertPaths=%p\n", (void *)pCert, (void *)hCertPaths);
 # endif
 
 # if 0
@@ -1898,9 +1900,16 @@ static void supdrvDarwinResumeBluetoothKbd(void)
  */
 static void supdrvDarwinResumeBuiltinKbd(void)
 {
+    /** @todo macbook pro 16 w/ 10.15.5 as the "Apple Internal Keyboard /
+     *        Trackpad" hooked up to "HID Relay" / "AppleUserUSBHostHIDDevice"
+     *        and "AppleUserUSBHostHIDDevice" among other things, but not
+     *        "AppleUSBTCKeyboard". This change is probably older than 10.15,
+     *        given that IOUSBHIDDriver not is present in the 10.11 SDK. */
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 101100
     /*
      * AppleUSBTCKeyboard KEXT is responsible for built-in keyboard management.
-     * We resume keyboard by accessing to its IOService. */
+     * We resume keyboard by accessing to its IOService.
+     */
     OSDictionary *pDictionary = IOService::serviceMatching("AppleUSBTCKeyboard");
     if (pDictionary)
     {
@@ -1918,6 +1927,7 @@ static void supdrvDarwinResumeBuiltinKbd(void)
         }
         pDictionary->release();
     }
+#endif
 }
 
 

@@ -236,13 +236,17 @@ typedef VBDTSTACKDATA *PVBDTSTACKDATA;
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
 /** @name DTrace kernel interface used on Darwin and Linux.
  * @{ */
-static void        (* g_pfnDTraceProbeFire)(dtrace_id_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
-static dtrace_id_t (* g_pfnDTraceProbeCreate)(dtrace_provider_id_t, const char *, const char *, const char *, int, void *);
-static dtrace_id_t (* g_pfnDTraceProbeLookup)(dtrace_provider_id_t, const char *, const char *, const char *);
-static int         (* g_pfnDTraceProviderRegister)(const char *, const dtrace_pattr_t *, uint32_t, /*cred_t*/ void *,
-                                                   const dtrace_pops_t *, void *, dtrace_provider_id_t *);
-static void        (* g_pfnDTraceProviderInvalidate)(dtrace_provider_id_t);
-static int         (* g_pfnDTraceProviderUnregister)(dtrace_provider_id_t);
+static DECLCALLBACKPTR_EX(void,        RT_NOTHING, g_pfnDTraceProbeFire,(dtrace_id_t, uint64_t, uint64_t, uint64_t, uint64_t,
+                                                                         uint64_t));
+static DECLCALLBACKPTR_EX(dtrace_id_t, RT_NOTHING, g_pfnDTraceProbeCreate,(dtrace_provider_id_t, const char *, const char *,
+                                                                           const char *, int, void *));
+static DECLCALLBACKPTR_EX(dtrace_id_t, RT_NOTHING, g_pfnDTraceProbeLookup,(dtrace_provider_id_t, const char *, const char *,
+                                                                           const char *));
+static DECLCALLBACKPTR_EX(int,         RT_NOTHING, g_pfnDTraceProviderRegister,(const char *, const dtrace_pattr_t *, uint32_t,
+                                                                                /*cred_t*/ void *, const dtrace_pops_t *,
+                                                                                void *, dtrace_provider_id_t *));
+static DECLCALLBACKPTR_EX(void,        RT_NOTHING, g_pfnDTraceProviderInvalidate,(dtrace_provider_id_t));
+static DECLCALLBACKPTR_EX(int,         RT_NOTHING, g_pfnDTraceProviderUnregister,(dtrace_provider_id_t));
 
 #define dtrace_probe            g_pfnDTraceProbeFire
 #define dtrace_probe_create     g_pfnDTraceProbeCreate
@@ -1110,15 +1114,15 @@ const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
     static const struct
     {
         const char *pszName;
-        PFNRT      *ppfn;
+        uintptr_t  *ppfn; /**< @note Clang 11 nothrow weirdness forced this from PFNRT * to uintptr_t *. */
     } s_aDTraceFunctions[] =
     {
-        { "dtrace_probe",        (PFNRT*)&dtrace_probe        },
-        { "dtrace_probe_create", (PFNRT*)&dtrace_probe_create },
-        { "dtrace_probe_lookup", (PFNRT*)&dtrace_probe_lookup },
-        { "dtrace_register",     (PFNRT*)&dtrace_register     },
-        { "dtrace_invalidate",   (PFNRT*)&dtrace_invalidate   },
-        { "dtrace_unregister",   (PFNRT*)&dtrace_unregister   },
+        { "dtrace_probe",        (uintptr_t *)&dtrace_probe        },
+        { "dtrace_probe_create", (uintptr_t *)&dtrace_probe_create },
+        { "dtrace_probe_lookup", (uintptr_t *)&dtrace_probe_lookup },
+        { "dtrace_register",     (uintptr_t *)&dtrace_register     },
+        { "dtrace_invalidate",   (uintptr_t *)&dtrace_invalidate   },
+        { "dtrace_unregister",   (uintptr_t *)&dtrace_unregister   },
     };
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(s_aDTraceFunctions); i++)
