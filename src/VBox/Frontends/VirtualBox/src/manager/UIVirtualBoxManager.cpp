@@ -1194,6 +1194,40 @@ void UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint()
     pClipboard->setText(pAction->property("fingerprint").toString());
 }
 
+void UIVirtualBoxManager::sltPerformCopyCommandSerial()
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtrReturnVoid(pCloudItem);
+
+    /* Acquire cloud machine: */
+    CCloudMachine comMachine = pCloudItem->machine();
+
+    /* Put copied serial command to clipboard: */
+    QClipboard *pClipboard = QGuiApplication::clipboard();
+    AssertPtrReturnVoid(pClipboard);
+    pClipboard->setText(comMachine.GetSerialConsoleCommand());
+}
+
+void UIVirtualBoxManager::sltPerformCopyCommandVNC()
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtrReturnVoid(pCloudItem);
+
+    /* Acquire cloud machine: */
+    CCloudMachine comMachine = pCloudItem->machine();
+
+    /* Put copied VNC command to clipboard: */
+    QClipboard *pClipboard = QGuiApplication::clipboard();
+    AssertPtrReturnVoid(pClipboard);
+    pClipboard->setText(comMachine.GetVNCConsoleCommand());
+}
+
 void UIVirtualBoxManager::sltPerformDiscardMachineState()
 {
     /* Get selected items: */
@@ -2043,6 +2077,10 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCopyCommandSerial);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCopyCommandVNC);
 
     /* 'Group/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), &UIAction::triggered,
@@ -2503,6 +2541,8 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
                                             QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprint),
                                             this, &UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint);
         pAction->setProperty("fingerprint", strFingerprint);
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC));
     }
 }
 
@@ -2635,6 +2675,8 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_M_Console)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CreateConnection, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC, items));
 
     /* Enable/disable group-close actions: */
     actionPool()->action(UIActionIndexST_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close, items));
@@ -2905,6 +2947,8 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Machine_M_Console:
         case UIActionIndexST_M_Machine_M_Console_S_CreateConnection:
         case UIActionIndexST_M_Machine_M_Console_S_DeleteConnection:
+        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial:
+        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC:
         {
             return isAtLeastOneItemStarted(items);
         }

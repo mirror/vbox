@@ -247,6 +247,10 @@ private slots:
         void sltPerformDeleteConsoleConnectionForMachine();
         /** Handles call to copy console connection key fingerprint. */
         void sltCopyConsoleConnectionFingerprint();
+        /** Handles call to copy serial console command. */
+        void sltPerformCopyCommandSerial();
+        /** Handles call to copy VNC console command. */
+        void sltPerformCopyCommandVNC();
 
         /** Handles call to discard machine state. */
         void sltPerformDiscardMachineState();
