@@ -634,10 +634,10 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                     }
                 }
                 RT_FALL_THRU();
+                default:
 #ifdef PGM_WITH_LARGE_PAGES
                 default_case:
 #endif
-                default:
                     Assert(!pPage->cModifications || ++cModifiedPages);
                     Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX || pPage->cModifications);
                     Assert(pPage->iModifiedPrev == NIL_PGMPOOL_IDX || pPage->cModifications);
