@@ -483,17 +483,17 @@ static SUPFUNC g_aFunctions[] =
  * Drag in the rest of IRPT since we share it with the
  * rest of the kernel modules on darwin.
  */
-PFNRT g_apfnVBoxDrvIPRTDeps[] =
+struct CLANG11WERIDNESS { PFNRT pfn; } g_apfnVBoxDrvIPRTDeps[] =
 {
     /* VBoxNetAdp */
-    (PFNRT)RTRandBytes,
+    { (PFNRT)RTRandBytes },
     /* VBoxUSB */
-    (PFNRT)RTPathStripFilename,
+    { (PFNRT)RTPathStripFilename },
 #if !defined(RT_OS_FREEBSD)
-    (PFNRT)RTHandleTableAlloc,
-    (PFNRT)RTStrPurgeEncoding,
+    { (PFNRT)RTHandleTableAlloc },
+    { (PFNRT)RTStrPurgeEncoding },
 #endif
-    NULL
+    { NULL }
 };
 #endif  /* RT_OS_DARWIN || RT_OS_SOLARIS || RT_OS_FREEBSD */
 
