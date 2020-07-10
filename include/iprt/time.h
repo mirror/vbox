@@ -357,18 +357,16 @@ DECLINLINE(void) RTTimeSpecGetSecondsAndNano(PRTTIMESPEC pTime, int32_t *pi32Sec
 
 
 /* PORTME: Add struct timeval guard macro here. */
-/*
- * Starting with Linux kernel version 5.6-rc3, the struct timeval is no longer
- * available to kernel code and must not be used in kernel code.
- * Only 64-bit time-interfaces are allowed into the kernel.
- */
-#if defined(RT_OS_LINUX) && defined(_LINUX_TIME64_H)
- #define RTTIME_NO_TIMEVAL
-#endif
-#if !defined(RTTIME_NO_TIMEVAL) \
- && (defined(RTTIME_INCL_TIMEVAL) || defined(_STRUCT_TIMEVAL) || defined(_SYS__TIMEVAL_H_) \
- || defined(_SYS_TIME_H) || defined(_TIMEVAL) || defined(_LINUX_TIME_H) \
- || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_)))
+#if defined(RTTIME_INCL_TIMEVAL) \
+ || defined(_SYS__TIMEVAL_H_) \
+ || defined(_SYS_TIME_H) \
+ || defined(_TIMEVAL) \
+ || defined(_STRUCT_TIMEVAL) \
+ || (   defined(RT_OS_LINUX) \
+     && defined(_LINUX_TIME_H) \
+     && (!defined(__KERNEL__) /* || < 5.6-rc3 - but we don't need this in ring-0. @bugref{9757} */)) \
+ || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_))
+
 /**
  * Gets the time as POSIX timeval.
  *
@@ -402,28 +400,23 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimeval(PRTTIMESPEC pTime, const struct tim
 {
     return RTTimeSpecAddMicro(RTTimeSpecSetSeconds(pTime, pTimeval->tv_sec), pTimeval->tv_usec);
 }
+
 #endif /* various ways of detecting struct timeval */
 
 
 /* PORTME: Add struct timespec guard macro here. */
-/*
- * Starting with Linux kernel version 5.6-rc3, the _STRUCT_TIMESPEC is only defined
- * under !__KERNEL__ guard and _LINUX_TIME64_H does not define a corresponding
- * _STRUCT_TIMESPEC64. Only 64-bit time-interfaces are now allowed into the kernel.
- * We have to keep it for __KERNEL__ though to support older guest kernels (2.6.X)
- * without _LINUX_TIME64_H.
- */
-#if defined(RT_OS_LINUX) && defined(_LINUX_TIME64_H)
-#define RTTIME_NO_TIMESPEC
-#endif
-#if !defined(RTTIME_NO_TIMESPEC) \
- && (defined(RTTIME_INCL_TIMESPEC) || defined(_STRUCT_TIMESPEC) || defined(_SYS__TIMESPEC_H_) \
- || defined(TIMEVAL_TO_TIMESPEC) || defined(_TIMESPEC) \
- || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_)))
+#if defined(RTTIME_INCL_TIMESPEC) \
+ || defined(_SYS__TIMESPEC_H_) \
+ || defined(TIMEVAL_TO_TIMESPEC) \
+ || defined(_TIMESPEC) \
+ || (   defined(_STRUCT_TIMESPEC) \
+     && (!defined(RT_OS_LINUX) || !defined(__KERNEL__) /* || < 5.6-rc3 - but we don't need this in ring-0. @bugref{9757} */) ) \
+ || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_))
+
 /**
  * Gets the time as POSIX timespec.
  *
- * @returns pTime.
+ * @returns pTimespec.
  * @param   pTime       The time spec to interpret.
  * @param   pTimespec   Where to store the time as POSIX timespec.
  */
@@ -453,15 +446,45 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimespec(PRTTIMESPEC pTime, const struct ti
 {
     return RTTimeSpecAddNano(RTTimeSpecSetSeconds(pTime, pTimespec->tv_sec), pTimespec->tv_nsec);
 }
+
 #endif /* various ways of detecting struct timespec */
 
-#if defined(RTTIME_NO_TIMESPEC)
-DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimespec64(PRTTIMESPEC pTime, const struct timespec64 *pTimeval)
-{
-    return RTTimeSpecAddNano(RTTimeSpecSetSeconds(pTime, pTimeval->tv_sec), pTimeval->tv_nsec);
-}
-#endif /* RT_OS_LINUX && _LINUX_TIME64_H */
 
+#if defined(RT_OS_LINUX) && defined(_LINUX_TIME64_H) /* since linux 3.17 */
+
+/**
+ * Gets the time a linux 64-bit timespec structure.
+ * @returns pTimespec.
+ * @param   pTime       The time spec to modify.
+ * @param   pTimespec   Where to store the time as linux 64-bit timespec.
+ */
+DECLINLINE(struct timespec64 *) RTTimeSpecSetTimespec64(PCRTTIMESPEC pTime, struct timespec64 *pTimespec)
+{
+    int64_t i64 = RTTimeSpecGetNano(pTime);
+    int32_t i32Nano = (int32_t)(i64 % RT_NS_1SEC);
+    i64 /= RT_NS_1SEC;
+    if (i32Nano < 0)
+    {
+        i32Nano += RT_NS_1SEC;
+        i64--;
+    }
+    pTimespec->tv_sec = i64;
+    pTimespec->tv_nsec = i32Nano;
+    return pTimespec;
+}
+
+/**
+ * Sets the time from a linux 64-bit timespec structure.
+ * @returns pTime.
+ * @param   pTime       The time spec to modify.
+ * @param   pTimespec   Pointer to the linux 64-bit timespec struct with the new time.
+ */
+DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimespec64(PRTTIMESPEC pTime, const struct timespec64 *pTimespec)
+{
+    return RTTimeSpecAddNano(RTTimeSpecSetSeconds(pTime, pTimespec->tv_sec), pTimespec->tv_nsec);
+}
+
+#endif /* RT_OS_LINUX && _LINUX_TIME64_H */
 
 
 /** The offset of the unix epoch and the base for NT time (in 100ns units).
@@ -498,6 +521,7 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetNtTime(PRTTIMESPEC pTime, uint64_t u64NtTim
 
 
 #ifdef _FILETIME_
+
 /**
  * Gets the time as NT file time.
  *
@@ -522,7 +546,8 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetNtFileTime(PRTTIMESPEC pTime, const FILETIM
 {
     return RTTimeSpecSetNtTime(pTime, *(const uint64_t *)pFileTime);
 }
-#endif
+
+#endif /* _FILETIME_ */
 
 
 /** The offset to the start of DOS time.
