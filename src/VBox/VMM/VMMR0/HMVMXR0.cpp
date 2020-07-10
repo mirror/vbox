@@ -735,93 +735,93 @@ AssertCompile(RT_ELEMENTS(g_aVmcsSegAttr)  == X86_SREG_COUNT);
 /**
  * VMX_EXIT dispatch table.
  */
-static const PFNVMXEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
+static const struct CLANG11NOTHROWWEIRDNESS { PFNVMXEXITHANDLER pfn; } g_aVMExitHandlers[VMX_EXIT_MAX + 1] =
 {
-    /*  0  VMX_EXIT_XCPT_OR_NMI             */  hmR0VmxExitXcptOrNmi,
-    /*  1  VMX_EXIT_EXT_INT                 */  hmR0VmxExitExtInt,
-    /*  2  VMX_EXIT_TRIPLE_FAULT            */  hmR0VmxExitTripleFault,
-    /*  3  VMX_EXIT_INIT_SIGNAL             */  hmR0VmxExitErrUnexpected,
-    /*  4  VMX_EXIT_SIPI                    */  hmR0VmxExitErrUnexpected,
-    /*  5  VMX_EXIT_IO_SMI                  */  hmR0VmxExitErrUnexpected,
-    /*  6  VMX_EXIT_SMI                     */  hmR0VmxExitErrUnexpected,
-    /*  7  VMX_EXIT_INT_WINDOW              */  hmR0VmxExitIntWindow,
-    /*  8  VMX_EXIT_NMI_WINDOW              */  hmR0VmxExitNmiWindow,
-    /*  9  VMX_EXIT_TASK_SWITCH             */  hmR0VmxExitTaskSwitch,
-    /* 10  VMX_EXIT_CPUID                   */  hmR0VmxExitCpuid,
-    /* 11  VMX_EXIT_GETSEC                  */  hmR0VmxExitGetsec,
-    /* 12  VMX_EXIT_HLT                     */  hmR0VmxExitHlt,
-    /* 13  VMX_EXIT_INVD                    */  hmR0VmxExitInvd,
-    /* 14  VMX_EXIT_INVLPG                  */  hmR0VmxExitInvlpg,
-    /* 15  VMX_EXIT_RDPMC                   */  hmR0VmxExitRdpmc,
-    /* 16  VMX_EXIT_RDTSC                   */  hmR0VmxExitRdtsc,
-    /* 17  VMX_EXIT_RSM                     */  hmR0VmxExitErrUnexpected,
-    /* 18  VMX_EXIT_VMCALL                  */  hmR0VmxExitVmcall,
+    /*  0  VMX_EXIT_XCPT_OR_NMI             */  { hmR0VmxExitXcptOrNmi },
+    /*  1  VMX_EXIT_EXT_INT                 */  { hmR0VmxExitExtInt },
+    /*  2  VMX_EXIT_TRIPLE_FAULT            */  { hmR0VmxExitTripleFault },
+    /*  3  VMX_EXIT_INIT_SIGNAL             */  { hmR0VmxExitErrUnexpected },
+    /*  4  VMX_EXIT_SIPI                    */  { hmR0VmxExitErrUnexpected },
+    /*  5  VMX_EXIT_IO_SMI                  */  { hmR0VmxExitErrUnexpected },
+    /*  6  VMX_EXIT_SMI                     */  { hmR0VmxExitErrUnexpected },
+    /*  7  VMX_EXIT_INT_WINDOW              */  { hmR0VmxExitIntWindow },
+    /*  8  VMX_EXIT_NMI_WINDOW              */  { hmR0VmxExitNmiWindow },
+    /*  9  VMX_EXIT_TASK_SWITCH             */  { hmR0VmxExitTaskSwitch },
+    /* 10  VMX_EXIT_CPUID                   */  { hmR0VmxExitCpuid },
+    /* 11  VMX_EXIT_GETSEC                  */  { hmR0VmxExitGetsec },
+    /* 12  VMX_EXIT_HLT                     */  { hmR0VmxExitHlt },
+    /* 13  VMX_EXIT_INVD                    */  { hmR0VmxExitInvd },
+    /* 14  VMX_EXIT_INVLPG                  */  { hmR0VmxExitInvlpg },
+    /* 15  VMX_EXIT_RDPMC                   */  { hmR0VmxExitRdpmc },
+    /* 16  VMX_EXIT_RDTSC                   */  { hmR0VmxExitRdtsc },
+    /* 17  VMX_EXIT_RSM                     */  { hmR0VmxExitErrUnexpected },
+    /* 18  VMX_EXIT_VMCALL                  */  { hmR0VmxExitVmcall },
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* 19  VMX_EXIT_VMCLEAR                 */  hmR0VmxExitVmclear,
-    /* 20  VMX_EXIT_VMLAUNCH                */  hmR0VmxExitVmlaunch,
-    /* 21  VMX_EXIT_VMPTRLD                 */  hmR0VmxExitVmptrld,
-    /* 22  VMX_EXIT_VMPTRST                 */  hmR0VmxExitVmptrst,
-    /* 23  VMX_EXIT_VMREAD                  */  hmR0VmxExitVmread,
-    /* 24  VMX_EXIT_VMRESUME                */  hmR0VmxExitVmresume,
-    /* 25  VMX_EXIT_VMWRITE                 */  hmR0VmxExitVmwrite,
-    /* 26  VMX_EXIT_VMXOFF                  */  hmR0VmxExitVmxoff,
-    /* 27  VMX_EXIT_VMXON                   */  hmR0VmxExitVmxon,
+    /* 19  VMX_EXIT_VMCLEAR                 */  { hmR0VmxExitVmclear },
+    /* 20  VMX_EXIT_VMLAUNCH                */  { hmR0VmxExitVmlaunch },
+    /* 21  VMX_EXIT_VMPTRLD                 */  { hmR0VmxExitVmptrld },
+    /* 22  VMX_EXIT_VMPTRST                 */  { hmR0VmxExitVmptrst },
+    /* 23  VMX_EXIT_VMREAD                  */  { hmR0VmxExitVmread },
+    /* 24  VMX_EXIT_VMRESUME                */  { hmR0VmxExitVmresume },
+    /* 25  VMX_EXIT_VMWRITE                 */  { hmR0VmxExitVmwrite },
+    /* 26  VMX_EXIT_VMXOFF                  */  { hmR0VmxExitVmxoff },
+    /* 27  VMX_EXIT_VMXON                   */  { hmR0VmxExitVmxon },
 #else
-    /* 19  VMX_EXIT_VMCLEAR                 */  hmR0VmxExitSetPendingXcptUD,
-    /* 20  VMX_EXIT_VMLAUNCH                */  hmR0VmxExitSetPendingXcptUD,
-    /* 21  VMX_EXIT_VMPTRLD                 */  hmR0VmxExitSetPendingXcptUD,
-    /* 22  VMX_EXIT_VMPTRST                 */  hmR0VmxExitSetPendingXcptUD,
-    /* 23  VMX_EXIT_VMREAD                  */  hmR0VmxExitSetPendingXcptUD,
-    /* 24  VMX_EXIT_VMRESUME                */  hmR0VmxExitSetPendingXcptUD,
-    /* 25  VMX_EXIT_VMWRITE                 */  hmR0VmxExitSetPendingXcptUD,
-    /* 26  VMX_EXIT_VMXOFF                  */  hmR0VmxExitSetPendingXcptUD,
-    /* 27  VMX_EXIT_VMXON                   */  hmR0VmxExitSetPendingXcptUD,
+    /* 19  VMX_EXIT_VMCLEAR                 */  { hmR0VmxExitSetPendingXcptUD },
+    /* 20  VMX_EXIT_VMLAUNCH                */  { hmR0VmxExitSetPendingXcptUD },
+    /* 21  VMX_EXIT_VMPTRLD                 */  { hmR0VmxExitSetPendingXcptUD },
+    /* 22  VMX_EXIT_VMPTRST                 */  { hmR0VmxExitSetPendingXcptUD },
+    /* 23  VMX_EXIT_VMREAD                  */  { hmR0VmxExitSetPendingXcptUD },
+    /* 24  VMX_EXIT_VMRESUME                */  { hmR0VmxExitSetPendingXcptUD },
+    /* 25  VMX_EXIT_VMWRITE                 */  { hmR0VmxExitSetPendingXcptUD },
+    /* 26  VMX_EXIT_VMXOFF                  */  { hmR0VmxExitSetPendingXcptUD },
+    /* 27  VMX_EXIT_VMXON                   */  { hmR0VmxExitSetPendingXcptUD },
 #endif
-    /* 28  VMX_EXIT_MOV_CRX                 */  hmR0VmxExitMovCRx,
-    /* 29  VMX_EXIT_MOV_DRX                 */  hmR0VmxExitMovDRx,
-    /* 30  VMX_EXIT_IO_INSTR                */  hmR0VmxExitIoInstr,
-    /* 31  VMX_EXIT_RDMSR                   */  hmR0VmxExitRdmsr,
-    /* 32  VMX_EXIT_WRMSR                   */  hmR0VmxExitWrmsr,
-    /* 33  VMX_EXIT_ERR_INVALID_GUEST_STATE */  hmR0VmxExitErrInvalidGuestState,
-    /* 34  VMX_EXIT_ERR_MSR_LOAD            */  hmR0VmxExitErrUnexpected,
-    /* 35  UNDEFINED                        */  hmR0VmxExitErrUnexpected,
-    /* 36  VMX_EXIT_MWAIT                   */  hmR0VmxExitMwait,
-    /* 37  VMX_EXIT_MTF                     */  hmR0VmxExitMtf,
-    /* 38  UNDEFINED                        */  hmR0VmxExitErrUnexpected,
-    /* 39  VMX_EXIT_MONITOR                 */  hmR0VmxExitMonitor,
-    /* 40  VMX_EXIT_PAUSE                   */  hmR0VmxExitPause,
-    /* 41  VMX_EXIT_ERR_MACHINE_CHECK       */  hmR0VmxExitErrUnexpected,
-    /* 42  UNDEFINED                        */  hmR0VmxExitErrUnexpected,
-    /* 43  VMX_EXIT_TPR_BELOW_THRESHOLD     */  hmR0VmxExitTprBelowThreshold,
-    /* 44  VMX_EXIT_APIC_ACCESS             */  hmR0VmxExitApicAccess,
-    /* 45  VMX_EXIT_VIRTUALIZED_EOI         */  hmR0VmxExitErrUnexpected,
-    /* 46  VMX_EXIT_GDTR_IDTR_ACCESS        */  hmR0VmxExitErrUnexpected,
-    /* 47  VMX_EXIT_LDTR_TR_ACCESS          */  hmR0VmxExitErrUnexpected,
-    /* 48  VMX_EXIT_EPT_VIOLATION           */  hmR0VmxExitEptViolation,
-    /* 49  VMX_EXIT_EPT_MISCONFIG           */  hmR0VmxExitEptMisconfig,
-    /* 50  VMX_EXIT_INVEPT                  */  hmR0VmxExitSetPendingXcptUD,
-    /* 51  VMX_EXIT_RDTSCP                  */  hmR0VmxExitRdtscp,
-    /* 52  VMX_EXIT_PREEMPT_TIMER           */  hmR0VmxExitPreemptTimer,
+    /* 28  VMX_EXIT_MOV_CRX                 */  { hmR0VmxExitMovCRx },
+    /* 29  VMX_EXIT_MOV_DRX                 */  { hmR0VmxExitMovDRx },
+    /* 30  VMX_EXIT_IO_INSTR                */  { hmR0VmxExitIoInstr },
+    /* 31  VMX_EXIT_RDMSR                   */  { hmR0VmxExitRdmsr },
+    /* 32  VMX_EXIT_WRMSR                   */  { hmR0VmxExitWrmsr },
+    /* 33  VMX_EXIT_ERR_INVALID_GUEST_STATE */  { hmR0VmxExitErrInvalidGuestState },
+    /* 34  VMX_EXIT_ERR_MSR_LOAD            */  { hmR0VmxExitErrUnexpected },
+    /* 35  UNDEFINED                        */  { hmR0VmxExitErrUnexpected },
+    /* 36  VMX_EXIT_MWAIT                   */  { hmR0VmxExitMwait },
+    /* 37  VMX_EXIT_MTF                     */  { hmR0VmxExitMtf },
+    /* 38  UNDEFINED                        */  { hmR0VmxExitErrUnexpected },
+    /* 39  VMX_EXIT_MONITOR                 */  { hmR0VmxExitMonitor },
+    /* 40  VMX_EXIT_PAUSE                   */  { hmR0VmxExitPause },
+    /* 41  VMX_EXIT_ERR_MACHINE_CHECK       */  { hmR0VmxExitErrUnexpected },
+    /* 42  UNDEFINED                        */  { hmR0VmxExitErrUnexpected },
+    /* 43  VMX_EXIT_TPR_BELOW_THRESHOLD     */  { hmR0VmxExitTprBelowThreshold },
+    /* 44  VMX_EXIT_APIC_ACCESS             */  { hmR0VmxExitApicAccess },
+    /* 45  VMX_EXIT_VIRTUALIZED_EOI         */  { hmR0VmxExitErrUnexpected },
+    /* 46  VMX_EXIT_GDTR_IDTR_ACCESS        */  { hmR0VmxExitErrUnexpected },
+    /* 47  VMX_EXIT_LDTR_TR_ACCESS          */  { hmR0VmxExitErrUnexpected },
+    /* 48  VMX_EXIT_EPT_VIOLATION           */  { hmR0VmxExitEptViolation },
+    /* 49  VMX_EXIT_EPT_MISCONFIG           */  { hmR0VmxExitEptMisconfig },
+    /* 50  VMX_EXIT_INVEPT                  */  { hmR0VmxExitSetPendingXcptUD },
+    /* 51  VMX_EXIT_RDTSCP                  */  { hmR0VmxExitRdtscp },
+    /* 52  VMX_EXIT_PREEMPT_TIMER           */  { hmR0VmxExitPreemptTimer },
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* 53  VMX_EXIT_INVVPID                 */  hmR0VmxExitInvvpid,
+    /* 53  VMX_EXIT_INVVPID                 */  { hmR0VmxExitInvvpid },
 #else
-    /* 53  VMX_EXIT_INVVPID                 */  hmR0VmxExitSetPendingXcptUD,
+    /* 53  VMX_EXIT_INVVPID                 */  { hmR0VmxExitSetPendingXcptUD },
 #endif
-    /* 54  VMX_EXIT_WBINVD                  */  hmR0VmxExitWbinvd,
-    /* 55  VMX_EXIT_XSETBV                  */  hmR0VmxExitXsetbv,
-    /* 56  VMX_EXIT_APIC_WRITE              */  hmR0VmxExitErrUnexpected,
-    /* 57  VMX_EXIT_RDRAND                  */  hmR0VmxExitErrUnexpected,
-    /* 58  VMX_EXIT_INVPCID                 */  hmR0VmxExitInvpcid,
-    /* 59  VMX_EXIT_VMFUNC                  */  hmR0VmxExitErrUnexpected,
-    /* 60  VMX_EXIT_ENCLS                   */  hmR0VmxExitErrUnexpected,
-    /* 61  VMX_EXIT_RDSEED                  */  hmR0VmxExitErrUnexpected,
-    /* 62  VMX_EXIT_PML_FULL                */  hmR0VmxExitErrUnexpected,
-    /* 63  VMX_EXIT_XSAVES                  */  hmR0VmxExitErrUnexpected,
-    /* 64  VMX_EXIT_XRSTORS                 */  hmR0VmxExitErrUnexpected,
-    /* 65  UNDEFINED                        */  hmR0VmxExitErrUnexpected,
-    /* 66  VMX_EXIT_SPP_EVENT               */  hmR0VmxExitErrUnexpected,
-    /* 67  VMX_EXIT_UMWAIT                  */  hmR0VmxExitErrUnexpected,
-    /* 68  VMX_EXIT_TPAUSE                  */  hmR0VmxExitErrUnexpected,
+    /* 54  VMX_EXIT_WBINVD                  */  { hmR0VmxExitWbinvd },
+    /* 55  VMX_EXIT_XSETBV                  */  { hmR0VmxExitXsetbv },
+    /* 56  VMX_EXIT_APIC_WRITE              */  { hmR0VmxExitErrUnexpected },
+    /* 57  VMX_EXIT_RDRAND                  */  { hmR0VmxExitErrUnexpected },
+    /* 58  VMX_EXIT_INVPCID                 */  { hmR0VmxExitInvpcid },
+    /* 59  VMX_EXIT_VMFUNC                  */  { hmR0VmxExitErrUnexpected },
+    /* 60  VMX_EXIT_ENCLS                   */  { hmR0VmxExitErrUnexpected },
+    /* 61  VMX_EXIT_RDSEED                  */  { hmR0VmxExitErrUnexpected },
+    /* 62  VMX_EXIT_PML_FULL                */  { hmR0VmxExitErrUnexpected },
+    /* 63  VMX_EXIT_XSAVES                  */  { hmR0VmxExitErrUnexpected },
+    /* 64  VMX_EXIT_XRSTORS                 */  { hmR0VmxExitErrUnexpected },
+    /* 65  UNDEFINED                        */  { hmR0VmxExitErrUnexpected },
+    /* 66  VMX_EXIT_SPP_EVENT               */  { hmR0VmxExitErrUnexpected },
+    /* 67  VMX_EXIT_UMWAIT                  */  { hmR0VmxExitErrUnexpected },
+    /* 68  VMX_EXIT_TPAUSE                  */  { hmR0VmxExitErrUnexpected },
 };
 #endif /* HMVMX_USE_FUNCTION_TABLE */
 
@@ -4248,10 +4248,10 @@ static int hmR0VmxSetupVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstG
 VMMR0DECL(int) VMXR0GlobalInit(void)
 {
 #ifdef HMVMX_USE_FUNCTION_TABLE
-    AssertCompile(VMX_EXIT_MAX + 1 == RT_ELEMENTS(g_apfnVMExitHandlers));
+    AssertCompile(VMX_EXIT_MAX + 1 == RT_ELEMENTS(g_aVMExitHandlers));
 # ifdef VBOX_STRICT
-    for (unsigned i = 0; i < RT_ELEMENTS(g_apfnVMExitHandlers); i++)
-        Assert(g_apfnVMExitHandlers[i]);
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aVMExitHandlers); i++)
+        Assert(g_aVMExitHandlers[i].pfn);
 # endif
 #endif
     return VINF_SUCCESS;
@@ -11226,7 +11226,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
          * Handle the VM-exit.
          */
 #ifdef HMVMX_USE_FUNCTION_TABLE
-        rcStrict = g_apfnVMExitHandlers[VmxTransient.uExitReason](pVCpu, &VmxTransient);
+        rcStrict = g_aVMExitHandlers[VmxTransient.uExitReason].pfn(pVCpu, &VmxTransient);
 #else
         rcStrict = hmR0VmxHandleExit(pVCpu, &VmxTransient);
 #endif
@@ -12399,7 +12399,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugHandleExit(PVMCPUCC pVCpu, PVMXTRANSIENT
      * Normal processing.
      */
 #ifdef HMVMX_USE_FUNCTION_TABLE
-    return g_apfnVMExitHandlers[uExitReason](pVCpu, pVmxTransient);
+    return g_aVMExitHandlers[uExitReason].pfn(pVCpu, pVmxTransient);
 #else
     return hmR0VmxHandleExit(pVCpu, pVmxTransient, uExitReason);
 #endif
