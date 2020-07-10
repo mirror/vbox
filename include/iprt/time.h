@@ -362,8 +362,8 @@ DECLINLINE(void) RTTimeSpecGetSecondsAndNano(PRTTIMESPEC pTime, int32_t *pi32Sec
  * available to kernel code and must not be used in kernel code.
  * Only 64-bit time-interfaces are allowed into the kernel.
  */
-#if defined(RT_OS_LINUX) && (defined(__KERNEL__) || defined(_LINUX_TIME64_H))
-#define RTTIME_NO_TIMEVAL
+#if defined(RT_OS_LINUX) && defined(_LINUX_TIME64_H)
+ #define RTTIME_NO_TIMEVAL
 #endif
 #if !defined(RTTIME_NO_TIMEVAL) \
  && (defined(RTTIME_INCL_TIMEVAL) || defined(_STRUCT_TIMEVAL) || defined(_SYS__TIMEVAL_H_) \
