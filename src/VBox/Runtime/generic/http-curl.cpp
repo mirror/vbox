@@ -1154,6 +1154,9 @@ static bool rtHttpDarwinGetBooleanFromDict(CFDictionaryRef hDict, void const *pv
  */
 static CFURLRef rtHttpDarwinUrlToCFURL(const char *pszUrl)
 {
+    /* CFURLCreateStringByAddingPercentEscapes is deprecated, so try use CFURLCreateWithBytes
+       as it doesn't validate as much as as CFUrlCreateWithString does. */
+#if 0
     CFURLRef    hUrl = NULL;
     CFStringRef hStrUrl = CFStringCreateWithCString(kCFAllocatorDefault, pszUrl, kCFStringEncodingUTF8);
     if (hStrUrl)
@@ -1174,6 +1177,11 @@ static CFURLRef rtHttpDarwinUrlToCFURL(const char *pszUrl)
     }
     else
         AssertFailed();
+#else
+    CFURLRef hUrl = CFURLCreateWithBytes(kCFAllocatorDefault, (const uint8_t *)pszUrl, strlen(pszUrl),
+                                         kCFStringEncodingUTF8, NULL /*baseURL*/);
+    Assert(hUrl);
+#endif
     return hUrl;
 }
 
@@ -1527,7 +1535,8 @@ static int rtHttpDarwinConfigureProxyForUrlWorker(PRTHTTPINTERNAL pThis, CFDicti
 
     /* Work around for <rdar://problem/5530166>, whatever that is.  Initializes
        some internal CFNetwork state, they say.  See CFPRoxySupportTool example. */
-    hArray = CFNetworkCopyProxiesForURL(hUrlTarget, NULL);
+    CFDictionaryRef hDictNull = (CFDictionaryRef)(42-42); /*workaround for -Wnonnull warning in Clang 11. */
+    hArray = CFNetworkCopyProxiesForURL(hUrlTarget, hDictNull);
     if (hArray)
         CFRelease(hArray);
 
@@ -3121,7 +3130,7 @@ static size_t rtHttpWriteBodyData(char *pchBuf, size_t cbUnit, size_t cUnits, vo
 /**
  * cURL callback for writing header data.
  */
-static size_t rtHttpWriteHeaderData(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser)
+static size_t rtHttpWriteHeaderData(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser) RT_NOTHROW_DEF
 {
     PRTHTTPINTERNAL   pThis      = (PRTHTTPINTERNAL)pvUser;
     size_t const      cbToAppend = cbUnit * cUnits;
@@ -3209,7 +3218,7 @@ static size_t rtHttpWriteHeaderData(char *pchBuf, size_t cbUnit, size_t cUnits, 
 /**
  * cURL callback for working the upload callback.
  */
-static size_t rtHttpWriteDataToDownloadCallback(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser)
+static size_t rtHttpWriteDataToDownloadCallback(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser) RT_NOTHROW_DEF
 {
     PRTHTTPINTERNAL   pThis = (PRTHTTPINTERNAL)pvUser;
     size_t const      cbBuf = cbUnit * cUnits;
@@ -3242,7 +3251,7 @@ static size_t rtHttpWriteDataToDownloadCallback(char *pchBuf, size_t cbUnit, siz
 /**
  * Callback feeding cURL data from RTHTTPINTERNAL::ReadData::Mem.
  */
-static size_t rtHttpReadData(void *pvDst, size_t cbUnit, size_t cUnits, void *pvUser)
+static size_t rtHttpReadData(void *pvDst, size_t cbUnit, size_t cUnits, void *pvUser) RT_NOTHROW_DEF
 {
     PRTHTTPINTERNAL pThis = (PRTHTTPINTERNAL)pvUser;
     size_t const cbReq    = cbUnit * cUnits;
@@ -3259,7 +3268,7 @@ static size_t rtHttpReadData(void *pvDst, size_t cbUnit, size_t cUnits, void *pv
 /**
  * Callback feeding cURL data via the user upload callback.
  */
-static size_t rtHttpReadDataFromUploadCallback(void *pvDst, size_t cbUnit, size_t cUnits, void *pvUser)
+static size_t rtHttpReadDataFromUploadCallback(void *pvDst, size_t cbUnit, size_t cUnits, void *pvUser) RT_NOTHROW_DEF
 {
     PRTHTTPINTERNAL pThis = (PRTHTTPINTERNAL)pvUser;
     size_t const cbReq    = cbUnit * cUnits;
@@ -3477,7 +3486,7 @@ RTR3DECL(void) RTHttpFreeResponse(void *pvResponse)
 /**
  * cURL callback for writing data to a file.
  */
-static size_t rtHttpWriteDataToFile(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser)
+static size_t rtHttpWriteDataToFile(char *pchBuf, size_t cbUnit, size_t cUnits, void *pvUser) RT_NOTHROW_DEF
 {
     RTHTTPOUTPUTDATA *pOutput   = (RTHTTPOUTPUTDATA *)pvUser;
     PRTHTTPINTERNAL   pThis     = pOutput->pHttp;
