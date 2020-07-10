@@ -104,7 +104,7 @@ static void doInVmmTests(RTTEST hTest)
     RTTESTI_CHECK_RC_RETV(SUPR3PageAlloc(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT, (void **)&pVM), VINF_SUCCESS);
 
 
-    PUVM pUVM = (PUVM)RTMemPageAlloc(sizeof(*pUVM));
+    PUVM pUVM = (PUVM)RTMemPageAllocZ(sizeof(*pUVM));
     pUVM->u32Magic = UVM_MAGIC;
     pUVM->pVM = pVM;
     pVM->pUVM = pUVM;
