@@ -985,7 +985,7 @@ void UIVirtualBoxManager::sltPerformStartMachineDetachable()
     performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Separate);
 }
 
-void UIVirtualBoxManager::sltPerformCreateConsoleConnection()
+void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup()
 {
     /* Get selected items: */
     QList<UIVirtualMachineItem*> items = currentItems();
@@ -999,34 +999,43 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnection()
         {
             foreach (UIVirtualMachineItem *pItem, items)
             {
-                /* Make sure the item exists and is of cloud type: */
-                AssertPtrReturnVoid(pItem);
-                UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
-                if (!pCloudItem)
-                    continue;
-
-                /* Acquire current machine: */
-                CCloudMachine comMachine = pCloudItem->machine();
-
-                /* Acquire machine name: */
-                QString strName;
-                if (!cloudMachineName(comMachine, strName))
-                    continue;
-
-                /* Prepare "create console connection" progress: */
-                CProgress comProgress = comMachine.CreateConsoleConnection(pDialog->publicKey());
-                if (!comMachine.isOk())
+                /* Make sure the item exists: */
+                AssertPtr(pItem);
+                if (pItem)
                 {
-                    msgCenter().cannotCreateConsoleConnection(comMachine);
-                    continue;
-                }
+                    /* Make sure the item is of cloud type: */
+                    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+                    if (pCloudItem)
+                    {
+                        /* Acquire current machine: */
+                        CCloudMachine comMachine = pCloudItem->machine();
 
-                /* Show "create console connection" progress: */
-                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                {
-                    msgCenter().cannotCreateConsoleConnection(comProgress, strName);
-                    continue;
+                        /* Acquire machine console connection fingerprint: */
+                        QString strConsoleConnectionFingerprint;
+                        if (cloudMachineConsoleConnectionFingerprint(comMachine, strConsoleConnectionFingerprint))
+                        {
+                            /* Only if no fingerprint exist: */
+                            if (strConsoleConnectionFingerprint.isEmpty())
+                            {
+                                /* Acquire machine name: */
+                                QString strName;
+                                if (cloudMachineName(comMachine, strName))
+                                {
+                                    /* Prepare "create console connection" progress: */
+                                    CProgress comProgress = comMachine.CreateConsoleConnection(pDialog->publicKey());
+                                    if (!comMachine.isOk())
+                                        msgCenter().cannotCreateConsoleConnection(comMachine);
+                                    else
+                                    {
+                                        /* Show "create console connection" progress: */
+                                        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                                        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                                            msgCenter().cannotCreateConsoleConnection(comProgress, strName);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1034,7 +1043,58 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnection()
     }
 }
 
-void UIVirtualBoxManager::sltPerformDeleteConsoleConnection()
+void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine()
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+
+    /* Create input dialog to pass public key to newly created console connection: */
+    QPointer<UIAcquirePublicKeyDialog> pDialog = new UIAcquirePublicKeyDialog(this);
+    if (pDialog)
+    {
+        if (pDialog->exec() == QDialog::Accepted)
+        {
+            /* Make sure the item is of cloud type: */
+            UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+            AssertPtr(pCloudItem);
+            if (pCloudItem)
+            {
+                /* Acquire current machine: */
+                CCloudMachine comMachine = pCloudItem->machine();
+
+                /* Acquire machine console connection fingerprint: */
+                QString strConsoleConnectionFingerprint;
+                if (cloudMachineConsoleConnectionFingerprint(comMachine, strConsoleConnectionFingerprint))
+                {
+                    /* Only if no fingerprint exist: */
+                    if (strConsoleConnectionFingerprint.isEmpty())
+                    {
+                        /* Acquire machine name: */
+                        QString strName;
+                        if (cloudMachineName(comMachine, strName))
+                        {
+                            /* Prepare "create console connection" progress: */
+                            CProgress comProgress = comMachine.CreateConsoleConnection(pDialog->publicKey());
+                            if (!comMachine.isOk())
+                                msgCenter().cannotCreateConsoleConnection(comMachine);
+                            else
+                            {
+                                /* Show "create console connection" progress: */
+                                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                                    msgCenter().cannotCreateConsoleConnection(comProgress, strName);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        delete pDialog;
+    }
+}
+
+void UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForGroup()
 {
     /* Get selected items: */
     QList<UIVirtualMachineItem*> items = currentItems();
@@ -1042,34 +1102,85 @@ void UIVirtualBoxManager::sltPerformDeleteConsoleConnection()
 
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        /* Make sure the item exists and is of cloud type: */
-        AssertPtrReturnVoid(pItem);
-        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
-        if (!pCloudItem)
-            continue;
+        /* Make sure the item exists: */
+        AssertPtr(pItem);
+        if (pItem)
+        {
+            /* Make sure the item is of cloud type: */
+            UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+            if (pCloudItem)
+            {
+                /* Acquire current machine: */
+                CCloudMachine comMachine = pCloudItem->machine();
 
+                /* Acquire machine console connection fingerprint: */
+                QString strConsoleConnectionFingerprint;
+                if (cloudMachineConsoleConnectionFingerprint(comMachine, strConsoleConnectionFingerprint))
+                {
+                    /* Only if fingerprint exists: */
+                    if (!strConsoleConnectionFingerprint.isEmpty())
+                    {
+                        /* Acquire machine name: */
+                        QString strName;
+                        if (cloudMachineName(comMachine, strName))
+                        {
+                            /* Prepare "delete console connection" progress: */
+                            CProgress comProgress = comMachine.DeleteConsoleConnection();
+                            if (!comMachine.isOk())
+                                msgCenter().cannotDeleteConsoleConnection(comMachine);
+                            else
+                            {
+                                /* Show "delete console connection" progress: */
+                                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                                    msgCenter().cannotDeleteConsoleConnection(comProgress, strName);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForMachine()
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+
+    /* Make sure the item is of cloud type: */
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtr(pCloudItem);
+    if (pCloudItem)
+    {
         /* Acquire current machine: */
         CCloudMachine comMachine = pCloudItem->machine();
 
-        /* Acquire machine name: */
-        QString strName;
-        if (!cloudMachineName(comMachine, strName))
-            continue;
-
-        /* Prepare "delete console connection" progress: */
-        CProgress comProgress = comMachine.DeleteConsoleConnection();
-        if (!comMachine.isOk())
+        /* Acquire machine console connection fingerprint: */
+        QString strConsoleConnectionFingerprint;
+        if (cloudMachineConsoleConnectionFingerprint(comMachine, strConsoleConnectionFingerprint))
         {
-            msgCenter().cannotDeleteConsoleConnection(comMachine);
-            continue;
-        }
-
-        /* Show "delete console connection" progress: */
-        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-        {
-            msgCenter().cannotDeleteConsoleConnection(comProgress, strName);
-            continue;
+            /* Only if fingerprint exists: */
+            if (!strConsoleConnectionFingerprint.isEmpty())
+            {
+                /* Acquire machine name: */
+                QString strName;
+                if (cloudMachineName(comMachine, strName))
+                {
+                    /* Prepare "delete console connection" progress: */
+                    CProgress comProgress = comMachine.DeleteConsoleConnection();
+                    if (!comMachine.isOk())
+                        msgCenter().cannotDeleteConsoleConnection(comMachine);
+                    else
+                    {
+                        /* Show "delete console connection" progress: */
+                        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_media_delete_90px.png", 0, 0); /// @todo use proper icon
+                        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                            msgCenter().cannotDeleteConsoleConnection(comProgress, strName);
+                    }
+                }
+            }
         }
     }
 }
@@ -1923,15 +2034,15 @@ void UIVirtualBoxManager::prepareConnections()
 
     /* 'Group/Console' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformCreateConsoleConnection);
+            this, &UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup);
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnection);
+            this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForGroup);
 
     /* 'Machine/Console' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformCreateConsoleConnection);
+            this, &UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnection);
+            this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForMachine);
 
     /* 'Group/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), &UIAction::triggered,
@@ -2334,27 +2445,9 @@ void UIVirtualBoxManager::updateMenuGroupMoveToGroup(QMenu *pMenu)
 
 void UIVirtualBoxManager::updateMenuGroupConsole(QMenu *pMenu)
 {
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
-    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
-    AssertPtrReturnVoid(pCloudItem);
-
-    /* Acquire current cloud machine: */
-    CCloudMachine comMachine = pCloudItem->machine();
-    const QString strFingerprint = comMachine.GetConsoleConnectionFingerprint();
-
     /* Populate 'Group' / 'Console' menu: */
-    if (strFingerprint.isEmpty())
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection));
-    else
-    {
-        QAction *pAction = pMenu->addAction(UIIconPool::iconSet(":/file_manager_copy_16px.png"),
-                                            QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprint),
-                                            this, &UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint);
-        pAction->setProperty("fingerprint", strFingerprint);
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection));
-    }
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection));
 }
 
 void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
@@ -2404,11 +2497,12 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection));
     else
     {
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
+        pMenu->addSeparator();
         QAction *pAction = pMenu->addAction(UIIconPool::iconSet(":/file_manager_copy_16px.png"),
                                             QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprint),
                                             this, &UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint);
         pAction->setProperty("fingerprint", strFingerprint);
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
     }
 }
 
