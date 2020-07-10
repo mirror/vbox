@@ -56,64 +56,64 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-PFNRT g_VBoxRTDeps[] =
+struct CLANG11NONSENSE { PFNRT pfn; } g_VBoxRTDeps[] =
 {
 #ifndef RT_NO_GIP
-    (PFNRT)SUPR3Init,
-    (PFNRT)SUPR3PageAllocEx,
-    (PFNRT)SUPR3LoadVMM,
-    (PFNRT)SUPSemEventCreate,
-    (PFNRT)SUPTracerFireProbe,
-    (PFNRT)SUPGetTscDeltaSlow,
+    { (PFNRT)SUPR3Init },
+    { (PFNRT)SUPR3PageAllocEx },
+    { (PFNRT)SUPR3LoadVMM },
+    { (PFNRT)SUPSemEventCreate },
+    { (PFNRT)SUPTracerFireProbe },
+    { (PFNRT)SUPGetTscDeltaSlow },
 #endif
-    (PFNRT)xmlLoadCatalogs,
-    (PFNRT)RTLocalIpcServerCreate,
-    (PFNRT)MD5_Init,
-    (PFNRT)RC4,
-    (PFNRT)RC4_set_key,
-    (PFNRT)PEM_read_bio_X509,
-    (PFNRT)PEM_read_bio_PrivateKey,
-    (PFNRT)X509_free,
-    (PFNRT)X509_verify_cert_error_string,
-    (PFNRT)i2d_X509,
-    (PFNRT)i2d_X509,
-    (PFNRT)i2d_PublicKey,
-    (PFNRT)DH_generate_parameters_ex, /* gsoap */
-    (PFNRT)DH_new, /* gsoap */
+    { (PFNRT)xmlLoadCatalogs },
+    { (PFNRT)RTLocalIpcServerCreate },
+    { (PFNRT)MD5_Init },
+    { (PFNRT)RC4 },
+    { (PFNRT)RC4_set_key },
+    { (PFNRT)PEM_read_bio_X509 },
+    { (PFNRT)PEM_read_bio_PrivateKey },
+    { (PFNRT)X509_free },
+    { (PFNRT)X509_verify_cert_error_string },
+    { (PFNRT)i2d_X509 },
+    { (PFNRT)i2d_X509 },
+    { (PFNRT)i2d_PublicKey },
+    { (PFNRT)DH_generate_parameters_ex }, /* gsoap */
+    { (PFNRT)DH_new }, /* gsoap */
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-    (PFNRT)OpenSSL_version_num, /* gsoap */
-    (PFNRT)ASN1_STRING_get0_data, /* gsoap */
+    { (PFNRT)OpenSSL_version_num }, /* gsoap */
+    { (PFNRT)ASN1_STRING_get0_data }, /* gsoap */
 #endif
 #if OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER) || defined(OPENSSL_MANGLER)
-    (PFNRT)RSA_generate_key, /* gsoap */
+    { (PFNRT)RSA_generate_key }, /* gsoap */
 #endif
-    (PFNRT)RSA_generate_key_ex,
+    { (PFNRT)RSA_generate_key_ex },
 #if OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER) || defined(OPENSSL_MANGLER)
-    (PFNRT)DH_generate_parameters, /* gsoap */
+    { (PFNRT)DH_generate_parameters }, /* gsoap */
 #endif
-    (PFNRT)DH_generate_parameters_ex,
-    (PFNRT)RAND_load_file,
+    { (PFNRT)DH_generate_parameters_ex },
+    { (PFNRT)RAND_load_file },
 #if OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER)
-    (PFNRT)CRYPTO_set_dynlock_create_callback,
-    (PFNRT)CRYPTO_set_dynlock_lock_callback,
-    (PFNRT)CRYPTO_set_dynlock_destroy_callback,
+    { (PFNRT)CRYPTO_set_dynlock_create_callback },
+    { (PFNRT)CRYPTO_set_dynlock_lock_callback },
+    { (PFNRT)CRYPTO_set_dynlock_destroy_callback },
 #endif
-    (PFNRT)RTAssertShouldPanic,
-    (PFNRT)ASMAtomicReadU64,
-    (PFNRT)ASMAtomicCmpXchgU64,
-    (PFNRT)ASMBitFirstSet,
-    (PFNRT)RTBldCfgRevision,
-    (PFNRT)SSL_free,
+    { (PFNRT)RTAssertShouldPanic },
+    { (PFNRT)ASMAtomicReadU64 },
+    { (PFNRT)ASMAtomicCmpXchgU64 },
+    { (PFNRT)ASMBitFirstSet },
+    { (PFNRT)RTBldCfgRevision },
+    { (PFNRT)SSL_free },
 #if OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER)
-    (PFNRT)SSL_library_init,
-    (PFNRT)SSL_load_error_strings,
+    { (PFNRT)SSL_library_init },
+    { (PFNRT)SSL_load_error_strings },
 #endif
-    (PFNRT)SSL_CTX_free,
-    (PFNRT)SSL_CTX_use_certificate_file,
-    (PFNRT)SSLv23_method,
+    { (PFNRT)SSL_CTX_free },
+    { (PFNRT)SSL_CTX_use_certificate_file },
+    { (PFNRT)SSLv23_method },
 #if OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER)
-    (PFNRT)TLSv1_server_method,
+    { (PFNRT)TLSv1_server_method },
 #endif
-    NULL
+    { NULL }
 };
 
