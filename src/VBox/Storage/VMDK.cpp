@@ -4784,7 +4784,7 @@ static int vmdkAllocGrainGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, PVDIOC
 /**
  * Internal - complete the grain allocation by updating disk grain table if required.
  */
-static int vmdkAllocGrainComplete(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq)
+static DECLCALLBACK(int) vmdkAllocGrainComplete(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq)
 {
     RT_NOREF1(rcReq);
     int rc = VINF_SUCCESS;
