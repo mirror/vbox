@@ -4233,6 +4233,17 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
                     "CSR124=%04RX32: RPA=%04x (Runt Packet Accept)\n",
                     pThis->aCSR[122], !!(pThis->aCSR[122] & RT_BIT(3)));
 
+    if (pThis->uDevType == DEV_AM79C970A || pThis->uDevType == DEV_AM79C973)
+    {
+        /* Print the Burst and Bus Control Register;  the DWIO bit is quite important. */
+        pHlp->pfnPrintf(pHlp,
+                        "BCR18=%#04x: ROMTMG=%u MEMCMD=%u EXTREQ=%u\n"
+                        "              DWIO=%u BREADE=%u BWRITE=%u\n",
+                        pThis->aBCR[18],
+                        (pThis->aBCR[18] >> 12) & 0xf, !!(pThis->aBCR[18] & RT_BIT(9)), !!(pThis->aBCR[18] & RT_BIT(8)),
+                        !!(pThis->aBCR[18] & RT_BIT(7)), !!(pThis->aBCR[18] & RT_BIT(6)), !!(pThis->aBCR[18] & RT_BIT(5)));
+    }
+
     if (pThis->uDevType == DEV_AM79C973)
     {
         /* Print a bit of the MII state. */
