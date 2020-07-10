@@ -623,14 +623,14 @@ static void test2()
 
     MTTESTLISTTYPE<MTTESTTYPE>  testList;
     RTTHREAD                    ahThreads[6];
-    static PFNRTTHREAD          apfnThreads[6] =
+    static struct CLANG11WEIRDNESS { PFNRTTHREAD pfn; } aThreads[6] =
     {
-        MtTest1ThreadProc, MtTest2ThreadProc, MtTest3ThreadProc, MtTest4ThreadProc, MtTest5ThreadProc, MtTest6ThreadProc
+        {MtTest1ThreadProc}, {MtTest2ThreadProc}, {MtTest3ThreadProc}, {MtTest4ThreadProc}, {MtTest5ThreadProc}, {MtTest6ThreadProc}
     };
 
     for (unsigned i = 0; i < RT_ELEMENTS(ahThreads); i++)
     {
-        RTTESTI_CHECK_RC_RETV(RTThreadCreateF(&ahThreads[i], apfnThreads[i], &testList, 0,
+        RTTESTI_CHECK_RC_RETV(RTThreadCreateF(&ahThreads[i], aThreads[i].pfn, &testList, 0,
                                               RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest%u", i), VINF_SUCCESS);
     }
 
