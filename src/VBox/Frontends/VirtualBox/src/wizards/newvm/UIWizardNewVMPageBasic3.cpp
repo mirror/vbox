@@ -155,6 +155,14 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
     m_virtualDisk.detach();
 }
 
+void UIWizardNewVMPage3::retranslateWidgets()
+{
+    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
+    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
+    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
+    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
+}
+
 QWidget *UIWizardNewVMPage3::createDiskWidgets()
 {
     QWidget *pDiskContainer = new QWidget;
@@ -221,10 +229,9 @@ void UIWizardNewVMPageBasic3::prepare()
     pMainLayout->addWidget(m_pLabel);
     pMainLayout->addWidget(m_pToolBox);
 
-    m_pToolBox->insertItem(ToolBoxItems_Disk, createDiskWidgets(),
-                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
-    m_pToolBox->insertItem(ToolBoxItems_Hardware, createHardwareWidgets(),
-                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    m_pToolBox->insertItem(ToolBoxItems_Disk, createDiskWidgets(), QString());
+    m_pToolBox->insertItem(ToolBoxItems_Hardware, createHardwareWidgets(), QString());
+    m_pToolBox->setStyleSheet("QToolBox::tab:selected { font: bold; }");
 
     pMainLayout->addStretch();
     updateVirtualDiskSource();
@@ -277,12 +284,7 @@ void UIWizardNewVMPageBasic3::retranslateUi()
                                         "<p>You can also modify the virtual machine's hardware by modifying the amount of memory "
                                         "and virtual processors.</p>")
                                         .arg(strRecommendedHDD));
-
-    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
-    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
-    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
-    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
-
+    retranslateWidgets();
     if (m_pToolBox)
     {
         m_pToolBox->setItemText(ToolBoxItems_Disk, UIWizardNewVM::tr("Hard Disk"));

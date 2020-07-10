@@ -72,6 +72,7 @@ protected:
 
     bool checkGAISOFile() const;
     void markWidgets() const;
+    void retranslateWidgets();
 
     /** @name Widgets
       * @{ */

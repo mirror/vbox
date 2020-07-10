@@ -81,6 +81,7 @@ protected:
 
     /** Helpers. */
     void ensureNewVirtualDiskDeleted();
+    void retranslateWidgets();
 
     /** Input. */
     bool m_fRecommendedNoDisk;

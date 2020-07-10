@@ -186,39 +186,10 @@ void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged()
 
 void UIWizardNewVMPageExpert::retranslateUi()
 {
-    if (m_pUnattendedLabel)
-        m_pUnattendedLabel->setText(UIWizardNewVM::tr("Please choose whether you want to start an unattended guest os install "
-                                             "in which case you will have to select a valid installation medium. If not "
-                                             "your virtual disk will have an empty virtual hard disk. "
-                                             "Additionally you can choose to start the unattended install as a headless vm process."));
-    if (m_pButtonSimple)
-    {
-        m_pButtonSimple->setText(UIWizardNewVM::tr("Leave Disk Empty"));
-        m_pButtonSimple->setToolTip(UIWizardNewVM::tr("When checked, no guest OS will be installed after this wizard is closed"));
-    }
-    if (m_pButtonUnattended)
-    {
-        m_pButtonUnattended->setText(UIWizardNewVM::tr("Unattended Install"));
-        m_pButtonUnattended->setToolTip(UIWizardNewVM::tr("When checked, an unattended guest OS will be initialized after this wizard is closed"));
-    }
+    UIWizardNewVMPage1::retranslateWidgets();
+    UIWizardNewVMPage2::retranslateWidgets();
+    UIWizardNewVMPage3::retranslateWidgets();
 
-    if (m_pISOSelectorLabel)
-        m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Image:"));
-
-    if (m_pStartHeadlessLabel)
-        m_pStartHeadlessLabel->setText(UIWizardNewVM::tr("Options:"));
-    if (m_pStartHeadlessCheckBox)
-    {
-        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked, the unattended install will start the virtual machine headless"));
-    }
-
-
-
-    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
-    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
-    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard disk file"));
-    m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard disk file..."));
     if (m_pToolBox)
     {
         m_pToolBox->setItemText(ExpertToolboxItems_NameAndOSType, QString(UIWizardNewVM::tr("Name and operating system")));
@@ -228,18 +199,6 @@ void UIWizardNewVMPageExpert::retranslateUi()
         m_pToolBox->setItemText(ExpertToolboxItems_Disk, UIWizardNewVM::tr("Hard disk"));
         m_pToolBox->setItemText(ExpertToolboxItems_Hardware, UIWizardNewVM::tr("Hardware"));
     }
-
-    if (m_pHostnameLabel)
-        m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
-    if (m_pInstallGACheckBox)
-        m_pInstallGACheckBox->setText(UIWizardNewVM::tr("Install guest additions"));
-    if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("Installation medium:"));
-    if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
-    if (m_pProductKeyLabel)
-        m_pProductKeyLabel->setText(UIWizardNewVM::tr("Product Key:"));
-
 }
 
 void UIWizardNewVMPageExpert::createConnections()

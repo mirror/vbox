@@ -503,6 +503,32 @@ bool UIWizardNewVMPage1::isISOFileSelectorComplete() const
     return checkISOFile();
 }
 
+void UIWizardNewVMPage1::retranslateWidgets()
+{
+    if (m_pButtonSimple)
+    {
+        m_pButtonSimple->setText(UIWizardNewVM::tr("Leave Disk Empty"));
+        m_pButtonSimple->setToolTip(UIWizardNewVM::tr("When checked, no guest OS will be installed after this wizard is closed thereby leaving the virtual machine's disk empty."));
+    }
+    if (m_pButtonUnattended)
+    {
+        m_pButtonUnattended->setText(UIWizardNewVM::tr("Unattended Install"));
+        m_pButtonUnattended->setToolTip(UIWizardNewVM::tr("When checked, an unattended guest OS installation will be started after this wizard is closed."));
+    }
+
+    if (m_pISOSelectorLabel)
+        m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Image:"));
+
+    if (m_pStartHeadlessLabel)
+        m_pStartHeadlessLabel->setText(UIWizardNewVM::tr("Options:"));
+    if (m_pStartHeadlessCheckBox)
+    {
+        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked, the unattended install will start the virtual machine in headless mode."));
+    }
+
+}
+
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)
 {
@@ -595,6 +621,7 @@ void UIWizardNewVMPageBasic1::sltUnattendedCheckBoxToggle()
 
 void UIWizardNewVMPageBasic1::retranslateUi()
 {
+    retranslateWidgets();
     /* Translate page: */
     setTitle(UIWizardNewVM::tr("Virtual machine name and operating system"));
 
@@ -604,27 +631,6 @@ void UIWizardNewVMPageBasic1::retranslateUi()
                                              "your virtual disk will have an empty virtual hard disk. "
                                              "Additionally you can choose to start the unattended install as a headless vm process."));
 
-    if (m_pButtonSimple)
-    {
-        m_pButtonSimple->setText(UIWizardNewVM::tr("Leave Disk Empty"));
-        m_pButtonSimple->setToolTip(UIWizardNewVM::tr("When checked, no guest OS will be installed after this wizard is closed"));
-    }
-    if (m_pButtonUnattended)
-    {
-        m_pButtonUnattended->setText(UIWizardNewVM::tr("Unattended Install"));
-        m_pButtonUnattended->setToolTip(UIWizardNewVM::tr("When checked, an unattended guest OS will be initialized after this wizard is closed"));
-    }
-
-    if (m_pISOSelectorLabel)
-        m_pISOSelectorLabel->setText(UIWizardNewVM::tr("Image:"));
-
-    if (m_pStartHeadlessLabel)
-        m_pStartHeadlessLabel->setText(UIWizardNewVM::tr("Options:"));
-    if (m_pStartHeadlessCheckBox)
-    {
-        m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("Start VM Headless"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("When checked, the unattended install will start the virtual machine headless"));
-    }
 
     if (m_pNameOSTypeLabel)
         m_pNameOSTypeLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "

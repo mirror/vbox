@@ -78,8 +78,8 @@ protected:
     void setTypeByISODetectedOSType(const QString &strDetectedOSType);
     /** Colors the widgets red if they cause isComplete to fail. */
     void markWidgets() const;
-
     bool isISOFileSelectorComplete() const;
+    void retranslateWidgets();
 
     /** @name Widgets
      * @{ */

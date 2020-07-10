@@ -190,6 +190,20 @@ void UIWizardNewVMPage2::markWidgets() const
         m_pGAISOFilePathSelector->mark(!checkGAISOFile());
 }
 
+void UIWizardNewVMPage2::retranslateWidgets()
+{
+    if (m_pHostnameLabel)
+        m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
+    if (m_pInstallGACheckBox)
+        m_pInstallGACheckBox->setText(UIWizardNewVM::tr("Install guest additions"));
+    if (m_pGAISOPathLabel)
+        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("Installation medium:"));
+    if (m_pGAISOFilePathSelector)
+        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
+    if (m_pProductKeyLabel)
+        m_pProductKeyLabel->setText(UIWizardNewVM::tr("Product Key:"));
+}
+
 UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
     : m_pLabel(0)
     , m_pToolBox(0)
@@ -211,12 +225,10 @@ void UIWizardNewVMPageBasic2::prepare()
         pMainLayout->addStretch();
     }
 
-    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, createUserNameHostNameWidgets(),
-                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
-    m_pToolBox->insertItem(ToolBoxItems_GAInstall, createGAInstallWidgets(),
-                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
-    m_pToolBox->insertItem(ToolBoxItems_ProductKey, createProductKeyWidgets(),
-                           UIIconPool::iconSet(":/cloud_profile_manager_16px.png"), QString());
+    m_pToolBox->insertItem(ToolBoxItems_UserNameHostname, createUserNameHostNameWidgets(), QString());
+    m_pToolBox->insertItem(ToolBoxItems_GAInstall, createGAInstallWidgets(), QString());
+    m_pToolBox->insertItem(ToolBoxItems_ProductKey, createProductKeyWidgets(), QString());
+    m_pToolBox->setStyleSheet("QToolBox::tab:selected { font: bold; }");
 
     registerField("userName", this, "userName");
     registerField("password", this, "password");
@@ -248,22 +260,13 @@ void UIWizardNewVMPageBasic2::retranslateUi()
         m_pLabel->setText(UIWizardNewVM::tr("<p>Here you can configure the unattended install by modifying username, password, and "
                                             "hostname. You can additionally enable guest additions install. "
                                             "For Microsoft Windows guests it is possible to provide a product key..</p>"));
-    if (m_pHostnameLabel)
-        m_pHostnameLabel->setText(UIWizardNewVM::tr("Hostname:"));
+    retranslateWidgets();
     if (m_pToolBox)
     {
         m_pToolBox->setItemText(ToolBoxItems_UserNameHostname, UIWizardNewVM::tr("Username and hostname"));
         m_pToolBox->setItemText(ToolBoxItems_GAInstall, UIWizardNewVM::tr("Guest additions install"));
         m_pToolBox->setItemText(ToolBoxItems_ProductKey, UIWizardNewVM::tr("Product key"));
     }
-    if (m_pInstallGACheckBox)
-        m_pInstallGACheckBox->setText(UIWizardNewVM::tr("Install guest additions"));
-    if (m_pGAISOPathLabel)
-        m_pGAISOPathLabel->setText(UIWizardNewVM::tr("Installation medium:"));
-    if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
-    if (m_pProductKeyLabel)
-        m_pProductKeyLabel->setText(UIWizardNewVM::tr("Product Key:"));
 }
 
 void UIWizardNewVMPageBasic2::initializePage()
@@ -273,12 +276,25 @@ void UIWizardNewVMPageBasic2::initializePage()
 
 bool UIWizardNewVMPageBasic2::isComplete() const
 {
+    AssertReturn(m_pToolBox, false);
+
+    m_pToolBox->setItemIcon(ToolBoxItems_UserNameHostname, QIcon());
+    m_pToolBox->setItemIcon(ToolBoxItems_GAInstall, QIcon());
+    m_pToolBox->setItemIcon(ToolBoxItems_ProductKey, QIcon());
+
     markWidgets();
+    bool fIsComplete = true;
     if (!checkGAISOFile())
-        return false;
-    if (m_pUserNamePasswordEditor)
-        return m_pUserNamePasswordEditor->isComplete();
-    return true;
+    {
+        m_pToolBox->setItemIcon(ToolBoxItems_GAInstall, UIIconPool::iconSet(":/warning.png"));
+        fIsComplete = false;
+    }
+    if (m_pUserNamePasswordEditor && !m_pUserNamePasswordEditor->isComplete())
+    {
+        m_pToolBox->setItemIcon(ToolBoxItems_UserNameHostname, UIIconPool::iconSet(":/warning.png"));
+        fIsComplete = false;
+    }
+    return fIsComplete;
 }
 
 void UIWizardNewVMPageBasic2::cleanupPage()
@@ -288,11 +304,7 @@ void UIWizardNewVMPageBasic2::cleanupPage()
 void UIWizardNewVMPageBasic2::showEvent(QShowEvent *pEvent)
 {
     if (m_pToolBox)
-    {
-        QWidget *pProductKeyWidget = m_pToolBox->widget(ToolBoxItems_ProductKey);
-        if (pProductKeyWidget)
-            pProductKeyWidget->setEnabled(isProductKeyWidgetEnabled());
-    }
+        m_pToolBox->setItemEnabled(ToolBoxItems_ProductKey, isProductKeyWidgetEnabled());
     UIWizardPage::showEvent(pEvent);
 }
 
