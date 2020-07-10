@@ -1173,7 +1173,7 @@ static bool rtR0DbgKrnlDarwinIsRangePresent(uintptr_t uAddress, size_t cb,
         if (!rtR0DbgKrnlDarwinIsPagePresent(uAddress))
         {
             LOG_NOT_PRESENT("RTR0DbgInfo: %p: Page in %s is not present: %#zx - rva %#zx; in structure %#zx (%#zx LB %#zx)\n",
-                            pHdr, pszWhat, uAddress, uAddress - (uintptr_t)pHdr, uAddress - uStartAddress, uStartAddress, cb);
+                            (void *)pHdr, pszWhat, uAddress, uAddress - (uintptr_t)pHdr, uAddress - uStartAddress, uStartAddress, cb);
             return false;
         }
 
@@ -1243,16 +1243,16 @@ static int rtR0DbgKrnlDarwinOpenInMemory(PRTDBGKRNLINFO phKrnlInfo)
                     pThis->cLoadCmds  = pHdr->ncmds;
                     pThis->cbLoadCmds = pHdr->sizeofcmds;
                     if (pHdr->ncmds < 4)
-                        LOG_MISMATCH("RTR0DbgInfo: %p: ncmds=%u is too small\n", pHdr, pThis->cLoadCmds);
+                        LOG_MISMATCH("RTR0DbgInfo: %p: ncmds=%u is too small\n", (void *)pHdr, pThis->cLoadCmds);
                     else if (pThis->cLoadCmds > 256)
-                        LOG_MISMATCH("RTR0DbgInfo: %p: ncmds=%u is too big\n", pHdr, pThis->cLoadCmds);
+                        LOG_MISMATCH("RTR0DbgInfo: %p: ncmds=%u is too big\n", (void *)pHdr, pThis->cLoadCmds);
                     else if (pThis->cbLoadCmds <= pThis->cLoadCmds * sizeof(load_command_t))
                         LOG_MISMATCH("RTR0DbgInfo: %p: sizeofcmds=%u is too small for ncmds=%u\n",
-                                     pHdr, pThis->cbLoadCmds, pThis->cLoadCmds);
+                                     (void *)pHdr, pThis->cbLoadCmds, pThis->cLoadCmds);
                     else if (pThis->cbLoadCmds >= _1M)
-                        LOG_MISMATCH("RTR0DbgInfo: %p: sizeofcmds=%u is too big\n", pHdr, pThis->cbLoadCmds);
+                        LOG_MISMATCH("RTR0DbgInfo: %p: sizeofcmds=%u is too big\n", (void *)pHdr, pThis->cbLoadCmds);
                     else if (pHdr->flags & ~MH_VALID_FLAGS)
-                        LOG_MISMATCH("RTR0DbgInfo: %p: invalid flags=%#x\n", pHdr, pHdr->flags);
+                        LOG_MISMATCH("RTR0DbgInfo: %p: invalid flags=%#x\n", (void *)pHdr, pHdr->flags);
                     /*
                      * Check that we can safely read the load commands, then parse & validate them.
                      */
@@ -1272,16 +1272,16 @@ static int rtR0DbgKrnlDarwinOpenInMemory(PRTDBGKRNLINFO phKrnlInfo)
                             uintptr_t const offSomeKernAddr = uSomeKernelAddr - uCur;
                             if (offSomeKernAddr >= pThis->cbTextSeg)
                                 LOG_MISMATCH("RTR0DbgInfo: %p: Our symbol at %zx (off %zx) isn't within the text segment (size %#zx)\n",
-                                             pHdr, uSomeKernelAddr, offSomeKernAddr, pThis->cbTextSeg);
+                                             (void *)pHdr, uSomeKernelAddr, offSomeKernAddr, pThis->cbTextSeg);
                             /*
                              * Parse the symbol+string tables.
                              */
                             else if (pThis->uSymTabLinkAddr == 0)
                                 LOG_MISMATCH("RTR0DbgInfo: %p: No symbol table VA (off %#x L %#x)\n",
-                                             pHdr, pThis->offSyms, pThis->cSyms);
+                                             (void *)pHdr, pThis->offSyms, pThis->cSyms);
                             else if (pThis->uStrTabLinkAddr == 0)
                                 LOG_MISMATCH("RTR0DbgInfo: %p: No string table VA (off %#x LB %#x)\n",
-                                             pHdr, pThis->offSyms, pThis->cbStrTab);
+                                             (void *)pHdr, pThis->offSyms, pThis->cbStrTab);
                             else if (   rtR0DbgKrnlDarwinIsRangePresent(pThis->uStrTabLinkAddr + pThis->offLoad,
                                                                         pThis->cbStrTab, "string table", pHdr)
                                      && rtR0DbgKrnlDarwinIsRangePresent(pThis->uSymTabLinkAddr + pThis->offLoad,

@@ -1375,7 +1375,7 @@ static int rtR0MemObjNativeProtectWorker(PRTR0MEMOBJINTERNAL pMem, size_t offSub
         {
             s_cComplaints++;
             printf("rtR0MemObjNativeProtect: vm_protect(%p,%p,%p,false,%#x) -> %d\n",
-                   pVmMap, (void *)Start, (void *)cbSub, fMachProt, krc);
+                   (void *)pVmMap, (void *)Start, (void *)cbSub, fMachProt, krc);
 
             kern_return_t               krc2;
             vm_offset_t                 pvReal = Start;

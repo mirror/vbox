@@ -77,12 +77,12 @@ DECLHIDDEN(int) rtR0InitNative(void)
         if (RT_SUCCESS(rc))
         {
             RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "ast_pending",   (void **)&g_pfnR0DarwinAstPending);
-            printf("ast_pending=%p\n", g_pfnR0DarwinAstPending);
+            printf("ast_pending=%p\n", (void *)(uintptr_t)g_pfnR0DarwinAstPending);
             RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "cpu_interrupt", (void **)&g_pfnR0DarwinCpuInterrupt);
-            printf("cpu_interrupt=%p\n", g_pfnR0DarwinCpuInterrupt);
+            printf("cpu_interrupt=%p\n", (void *)(uintptr_t)g_pfnR0DarwinCpuInterrupt);
 #ifdef DEBUG
             RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "vm_fault_external", (void **)&g_pfnR0DarwinVmFaultExternal);
-            printf("vm_fault_external=%p\n", g_pfnR0DarwinVmFaultExternal);
+            printf("vm_fault_external=%p\n", (void *)(uintptr_t)g_pfnR0DarwinVmFaultExternal);
 #endif
             RTR0DbgKrnlInfoRelease(hKrnlInfo);
         }
