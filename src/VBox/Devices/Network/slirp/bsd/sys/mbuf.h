@@ -69,6 +69,7 @@ DECL_NO_RETURN(static void) panic (char *fmt, ...)
 # endif
 # endif
 
+# undef  bzero
 # define bzero(a1, len) memset((a1), 0, (len))
 
 /* (vvl) some definitions from sys/param.h */
