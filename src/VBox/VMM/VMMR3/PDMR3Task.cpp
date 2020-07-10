@@ -515,7 +515,7 @@ static void pdmR3TaskDestroyOne(PVM pVM, PPDMTASKSET pTaskSet, PPDMTASK pTask, s
     ASMAtomicWriteNullPtr(&pTask->pvOwner);
     pTask->enmType     = (PDMTASKTYPE)0;
     pTask->fFlags      = 0;
-    ASMAtomicWriteNullPtr(&pTask->pfnCallback);
+    ASMAtomicWriteNullPtr((void **)&pTask->pfnCallback);
     ASMAtomicWriteNullPtr(&pTask->pvUser);
     ASMAtomicWriteNullPtr(&pTask->pszName);
 
