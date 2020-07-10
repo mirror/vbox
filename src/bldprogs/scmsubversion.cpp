@@ -775,18 +775,18 @@ static void scmSvnTryResolveFunctions(void)
                 {
                     unsigned    iLib;
                     const char *pszSymbol;
-                    PFNRT      *ppfn;
+                    uintptr_t  *ppfn;   /**< The nothrow attrib of PFNRT goes down the wrong way with Clang 11, thus uintptr_t. */
                 } s_aSymbols[] =
                 {
-                    { 2, "apr_initialize",              (PFNRT *)&g_pfnAprInitialize },
-                    { 2, "apr_hash_first",              (PFNRT *)&g_pfnAprHashFirst },
-                    { 2, "apr_hash_next",               (PFNRT *)&g_pfnAprHashNext },
-                    { 2, "apr_hash_this_val",           (PFNRT *)&g_pfnAprHashThisVal },
-                    { 1, "svn_pool_create_ex",          (PFNRT *)&g_pfnSvnPoolCreateEx },
-                    { 2, "apr_pool_clear",              (PFNRT *)&g_pfnAprPoolClear },
-                    { 2, "apr_pool_destroy",            (PFNRT *)&g_pfnAprPoolDestroy },
-                    { 0, "svn_client_create_context",   (PFNRT *)&g_pfnSvnClientCreateContext },
-                    { 0, "svn_client_propget4",         (PFNRT *)&g_pfnSvnClientPropGet4 },
+                    { 2, "apr_initialize",              (uintptr_t *)&g_pfnAprInitialize },
+                    { 2, "apr_hash_first",              (uintptr_t *)&g_pfnAprHashFirst },
+                    { 2, "apr_hash_next",               (uintptr_t *)&g_pfnAprHashNext },
+                    { 2, "apr_hash_this_val",           (uintptr_t *)&g_pfnAprHashThisVal },
+                    { 1, "svn_pool_create_ex",          (uintptr_t *)&g_pfnSvnPoolCreateEx },
+                    { 2, "apr_pool_clear",              (uintptr_t *)&g_pfnAprPoolClear },
+                    { 2, "apr_pool_destroy",            (uintptr_t *)&g_pfnAprPoolDestroy },
+                    { 0, "svn_client_create_context",   (uintptr_t *)&g_pfnSvnClientCreateContext },
+                    { 0, "svn_client_propget4",         (uintptr_t *)&g_pfnSvnClientPropGet4 },
                 };
                 for (unsigned i = 0; i < RT_ELEMENTS(s_aSymbols); i++)
                 {
