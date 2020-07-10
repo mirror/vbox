@@ -699,7 +699,7 @@ static int dbgcGdbStubCtxParseTpPktArgs(const uint8_t *pbArgs, size_t cbArgs, GD
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQueryTStatus(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryTStatus(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     RT_NOREF(pbArgs, cbArgs);
 
@@ -711,7 +711,7 @@ static int dbgcGdbStubCtxPktProcessQueryTStatus(PGDBSTUBCTX pThis, const uint8_t
 /**
  * @copydoc FNGDBSTUBQPKTPROC
  */
-static int dbgcGdbStubCtxPktProcessFeatXmlRegs(PGDBSTUBCTX pThis, const uint8_t *pbVal, size_t cbVal)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessFeatXmlRegs(PGDBSTUBCTX pThis, const uint8_t *pbVal, size_t cbVal)
 {
     /*
      * xmlRegisters contain a list of supported architectures delimited by ','.
@@ -811,7 +811,7 @@ static int dbgcGdbStubCtxPktProcessQuerySupportedReply(PGDBSTUBCTX pThis)
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQuerySupported(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQuerySupported(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     /* Skip the : following the qSupported start. */
     if (   cbArgs < 1
@@ -1139,7 +1139,7 @@ static const GDBREGDESC *dbgcGdbStubRegGet(uint32_t idxReg)
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQueryThreadId(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryThreadId(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     RT_NOREF(pbArgs, cbArgs);
 
@@ -1161,7 +1161,7 @@ static int dbgcGdbStubCtxPktProcessQueryThreadId(PGDBSTUBCTX pThis, const uint8_
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQueryAttached(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryAttached(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     RT_NOREF(pbArgs, cbArgs);
 
@@ -1179,7 +1179,7 @@ static int dbgcGdbStubCtxPktProcessQueryAttached(PGDBSTUBCTX pThis, const uint8_
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQueryXferFeatRead(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryXferFeatRead(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     /* Skip the : following the Xfer:features:read start. */
     if (   cbArgs < 1
@@ -1238,7 +1238,7 @@ static int dbgcGdbStubCtxPktProcessQueryXferFeatRead(PGDBSTUBCTX pThis, const ui
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQueryRcmd(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryRcmd(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     /* Skip the , following the qRcmd start. */
     if (   cbArgs < 1
@@ -1317,7 +1317,7 @@ static int dbgcGdbStubCtxPktProcessQueryThreadInfoWorker(PGDBSTUBCTX pThis)
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQueryThreadInfoStart(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryThreadInfoStart(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     RT_NOREF(pbArgs, cbArgs);
 
@@ -1335,7 +1335,7 @@ static int dbgcGdbStubCtxPktProcessQueryThreadInfoStart(PGDBSTUBCTX pThis, const
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQueryThreadInfoCont(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryThreadInfoCont(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     RT_NOREF(pbArgs, cbArgs);
 
@@ -1363,7 +1363,7 @@ static int dbgcGdbStubCtxPktProcessQueryThreadInfoCont(PGDBSTUBCTX pThis, const 
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessQueryThreadExtraInfo(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessQueryThreadExtraInfo(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     /* Skip the , following the qThreadExtraInfo start. */
     if (   cbArgs < 1
@@ -1474,7 +1474,7 @@ static int dbgcGdbStubCtxPktProcessQuery(PGDBSTUBCTX pThis, const uint8_t *pbQue
  * @param   pbArgs              Pointer to the start of the arguments in the packet.
  * @param   cbArgs              Size of arguments in bytes.
  */
-static int dbgcGdbStubCtxPktProcessVCont(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
+static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessVCont(PGDBSTUBCTX pThis, const uint8_t *pbArgs, size_t cbArgs)
 {
     int rc = VINF_SUCCESS;
 
