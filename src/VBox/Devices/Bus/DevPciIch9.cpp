@@ -126,7 +126,7 @@ DECLINLINE(void) ich9pciStateToPciAddr(PDEVPCIROOT pPciRoot, RTGCPHYS addr, PciA
     RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
 }
 
-static void ich9pciSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
+static DECLCALLBACK(void) ich9pciSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     LogFlowFunc(("invoked by %p/%d: iIrq=%d iLevel=%d uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, iIrq, iLevel, uTagSrc));
     ich9pciSetIrqInternal(pDevIns, PDMINS_2_DATA(pDevIns, PDEVPCIROOT), PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC),
@@ -184,7 +184,7 @@ DECLHIDDEN(PPDMDEVINS) devpcibridgeCommonSetIrqRootWalk(PPDMDEVINS pDevIns, PPDM
 
 }
 
-static void ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
+static DECLCALLBACK(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     /*
      * The PCI-to-PCI bridge specification defines how the interrupt pins
