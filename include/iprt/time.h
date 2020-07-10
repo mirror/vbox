@@ -472,10 +472,10 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimespec64(PRTTIMESPEC pTime, const struct 
 /**
  * Gets the time as NT time.
  *
- * @returns Nt time.
+ * @returns NT time.
  * @param   pTime       The time spec to interpret.
  */
-DECLINLINE(uint64_t) RTTimeSpecGetNtTime(PCRTTIMESPEC pTime)
+DECLINLINE(int64_t) RTTimeSpecGetNtTime(PCRTTIMESPEC pTime)
 {
     return pTime->i64NanosecondsRelativeToUnixEpoch / 100
         + RTTIME_NT_TIME_OFFSET_UNIX;
