@@ -147,15 +147,15 @@ RT_C_DECLS_END
 *********************************************************************************************************************************/
 /** Drag in necessary library bits.
  * The runtime lives here (in VMMR0.r0) and VBoxDD*R0.r0 links against us. */
-PFNRT g_VMMR0Deps[] =
+struct CLANG11WEIRDNOTHROW { PFNRT pfn; } g_VMMR0Deps[] =
 {
-    (PFNRT)RTCrc32,
-    (PFNRT)RTOnce,
+    { (PFNRT)RTCrc32 },
+    { (PFNRT)RTOnce },
 #if defined(RT_ARCH_X86) && (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
-    (PFNRT)__udivdi3,
-    (PFNRT)__umoddi3,
+    { (PFNRT)__udivdi3 },
+    { (PFNRT)__umoddi3 },
 #endif
-    NULL
+    { NULL }
 };
 
 #ifdef RT_OS_SOLARIS
