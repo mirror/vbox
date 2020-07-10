@@ -447,6 +447,21 @@ bool UICloudNetworkingStuff::cloudMachineState(const CCloudMachine &comCloudMach
     return false;
 }
 
+bool UICloudNetworkingStuff::cloudMachineConsoleConnectionFingerprint(const CCloudMachine &comCloudMachine,
+                                                                      QString &strResult,
+                                                                      QWidget *pParent /* = 0 */)
+{
+    const QString strConsoleConnectionFingerprint = comCloudMachine.GetConsoleConnectionFingerprint();
+    if (!comCloudMachine.isOk())
+        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+    else
+    {
+        strResult = strConsoleConnectionFingerprint;
+        return true;
+    }
+    return false;
+}
+
 bool UICloudNetworkingStuff::refreshCloudMachineInfo(CCloudMachine comCloudMachine,
                                                      QWidget *pParent /* = 0 */)
 {
