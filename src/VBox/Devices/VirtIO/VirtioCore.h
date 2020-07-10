@@ -812,7 +812,6 @@ void     virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, s
 void     virtioCoreGCPhysChainReset(PVIRTIOSGBUF pGcSgBuf);
 RTGCPHYS virtioCoreGCPhysChainGetNextSeg(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg);
 RTGCPHYS virtioCoreGCPhysChainAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance);
-size_t   virtioCoreGCPhysChainCalcBufSize(PCVIRTIOSGBUF pGcSgBuf);
 
 
 /** Misc VM and PDM boilerplate */
