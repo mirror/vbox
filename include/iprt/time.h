@@ -355,6 +355,13 @@ DECLINLINE(void) RTTimeSpecGetSecondsAndNano(PRTTIMESPEC pTime, int32_t *pi32Sec
     *pi32Nano    = i32Nano;
 }
 
+/** @def RTTIME_LINUX_KERNEL_PREREQ
+ * @note Cannot really be moved to iprt/cdefs.h, see the-linux-kernel.h */
+#if defined(RT_OS_LINUX) && defined(LINUX_KERNEL_VERSION) && defined(KERNEL_VERSION)
+# define RTTIME_LINUX_KERNEL_PREREQ(a, b, c)    (LINUX_VERSION_CODE < KERNEL_VERSION(a,b,c))
+#else
+# define RTTIME_LINUX_KERNEL_PREREQ(a, b, c)    0
+#endif
 
 /* PORTME: Add struct timeval guard macro here. */
 #if defined(RTTIME_INCL_TIMEVAL) \
@@ -364,7 +371,7 @@ DECLINLINE(void) RTTimeSpecGetSecondsAndNano(PRTTIMESPEC pTime, int32_t *pi32Sec
  || defined(_STRUCT_TIMEVAL) \
  || (   defined(RT_OS_LINUX) \
      && defined(_LINUX_TIME_H) \
-     && (!defined(__KERNEL__) /* || < 5.6-rc3 - but we don't need this in ring-0. @bugref{9757} */)) \
+     && (!defined(__KERNEL__) || !RTTIME_LINUX_KERNEL_PREREQ(5,6,0)) /* @bugref{9757} */ ) \
  || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_))
 
 /**
@@ -410,7 +417,9 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimeval(PRTTIMESPEC pTime, const struct tim
  || defined(TIMEVAL_TO_TIMESPEC) \
  || defined(_TIMESPEC) \
  || (   defined(_STRUCT_TIMESPEC) \
-     && (!defined(RT_OS_LINUX) || !defined(__KERNEL__) /* || < 5.6-rc3 - but we don't need this in ring-0. @bugref{9757} */) ) \
+     && (   !defined(RT_OS_LINUX) \
+         || !defined(__KERNEL__) \
+         || !RTTIME_LINUX_KERNEL_PREREQ(5,6,0) /* @bugref{9757} */)) \
  || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_))
 
 /**
@@ -458,7 +467,7 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimespec(PRTTIMESPEC pTime, const struct ti
  * @param   pTime       The time spec to modify.
  * @param   pTimespec   Where to store the time as linux 64-bit timespec.
  */
-DECLINLINE(struct timespec64 *) RTTimeSpecSetTimespec64(PCRTTIMESPEC pTime, struct timespec64 *pTimespec)
+DECLINLINE(struct timespec64 *) RTTimeSpecGetTimespec64(PCRTTIMESPEC pTime, struct timespec64 *pTimespec)
 {
     int64_t i64 = RTTimeSpecGetNano(pTime);
     int32_t i32Nano = (int32_t)(i64 % RT_NS_1SEC);
