@@ -149,7 +149,8 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
 /**
  * @interface_method_impl{RTTIMENANOTSDATA,pfnBadCpuIndex}
  */
-DECLEXPORT(uint64_t) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu)
+DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet,
+                                                              uint16_t iGipCpu)
 {
     PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
     AssertFatalMsgFailed(("pVM=%p idApic=%#x iCpuSet=%#x iGipCpu=%#x\n", pVM, idApic, iCpuSet, iGipCpu));
