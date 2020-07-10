@@ -5184,6 +5184,20 @@ ifn1of ($(KBUILD_TARGET), darwin os2 win solaris freebsd)
  TEMPLATE_VBOXR0DRV_CXXFLAGS  += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
 endif
 
+ifeq ($(KBUILD_TARGET),darwin)
+#
+# A variant of VBOXR0DRV that uses the 10.10 SDK.
+#
+TEMPLATE_VBoxR0DrvOSX10.10 = VBoxR0Drv variant using the 10.10 SDK
+TEMPLATE_VBoxR0DrvOSX10.10_EXTENDS  = VBOXR0DRV
+TEMPLATE_VBoxR0DrvOSX10.10_SDKS     = MACOSX1010
+TEMPLATE_VBoxR0DrvOSX10.10_INCS     = $(filter-out $(VBOX_PATH_MACOSX_SDK)/%,$(TEMPLATE_VBOXR0DRV_INCS)) \
+	$(PATH_SDK_MACOSX1010)/System/Library/Frameworks/Kernel.framework/PrivateHeaders \
+	$(PATH_SDK_MACOSX1010)/System/Library/Frameworks/Kernel.framework/Headers
+TEMPLATE_VBoxR0DrvOSX10.10_DEFS     = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_VBOXR0DRV_DEFS))
+
+endif
+
 #
 # Template for building libraries used by ring-0 drivers.
 #

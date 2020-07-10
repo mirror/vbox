@@ -27,13 +27,19 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+
 #
 # VBoxUSB.kext - The Darwin Kernel Extension.
 #
 
 # Leopard (x86) and Snow Leopard (x86/amd64)
 SYSMODS.darwin       += VBoxUSB
-VBoxUSB_TEMPLATE      = VBOXR0DRV
+VBoxUSB_TEMPLATE     := VBOXR0DRV
+ifdef KMK_WITH_VERSION_COMPARE ## @todo @bugref{9790}: Remove after updating kmk.
+if "$(VBOX_DEF_MACOSX_VERSION_MIN)" vge "10.11" # The IOUSBDevice.h header was removed in 10.11.
+VBoxUSB_TEMPLATE     := VBoxR0DrvOSX10.10
+endif
+endif                          ## @todo @bugref{9790}: Remove after updating kmk.
 VBoxUSB_INST          = $(INST_VBOXUSB)Contents/MacOS/
 VBoxUSB_DEBUG_INST.darwin = $(patsubst %/,%,$(INST_VBOXUSB))
 VBoxUSB_INCS          = \
