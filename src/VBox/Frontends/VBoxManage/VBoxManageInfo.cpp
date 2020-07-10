@@ -1413,6 +1413,22 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         break;
                     }
 
+#ifdef VBOX_WITH_CLOUD_NET
+                    case NetworkAttachmentType_Cloud:
+                    {
+                        Bstr strNetwork;
+                        nic->COMGETTER(CloudNetwork)(strNetwork.asOutParam());
+                        if (details == VMINFO_MACHINEREADABLE)
+                        {
+                            RTPrintf("cloud-network%d=\"%ls\"\n", currentNIC + 1, strNetwork.raw());
+                            strAttachment = "cloudnetwork";
+                        }
+                        else
+                            strAttachment = Utf8StrFmt("Cloud Network '%s'", Utf8Str(strNetwork).c_str());
+                        break;
+                    }
+#endif /* VBOX_WITH_CLOUD_NET */
+
                     default:
                         strAttachment = "unknown";
                         break;

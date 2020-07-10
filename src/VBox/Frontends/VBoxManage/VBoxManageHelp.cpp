@@ -478,7 +478,11 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            hostinfo|hostcpuids|hddbackends|hdds|dvds|floppies|\n"
                      "                            usbhost|usbfilters|systemproperties|extpacks|\n"
                      "                            groups|webcams|screenshotformats|cloudproviders|\n"
+#if defined(VBOX_WITH_CLOUD_NET)
+                     "                            cloudprofiles|cloudnets\n"
+#else
                      "                            cloudprofiles\n"
+#endif
                      "\n", SEP);
 
     if (enmCommand == USAGE_SHOWVMINFO || enmCommand == USAGE_S_ALL)
