@@ -31,6 +31,12 @@
 #define LOG_GROUP RTLOGGROUP_TIME
 #include "the-linux-kernel.h"
 #include "internal/iprt.h"
+/* Make sure we have the setting functions we need for RTTimeNow: */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
+# define RTTIME_INCL_TIMEVAL
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+# define RTTIME_INCL_TIMESPEC
+#endif
 #include <iprt/time.h>
 #include <iprt/asm.h>
 
@@ -182,22 +188,19 @@ RT_EXPORT_SYMBOL(RTTimeSystemMilliTS);
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     IPRT_LINUX_SAVE_EFL_AC();
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
-/* On Linux 4.20, time.h includes time64.h and we have to use 64-bit times. */
-# ifdef _LINUX_TIME64_H
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0)
     struct timespec64 Ts;
-    ktime_get_real_ts64(&Ts);
-# else
-    struct timespec Ts;
-    ktime_get_real_ts(&Ts);
-# endif
+    ktime_get_real_ts64(&Ts);   /* ktime_get_real_ts64 was added as a macro in 3.17, function since 4.18. */
     IPRT_LINUX_RESTORE_EFL_AC();
-# ifdef _LINUX_TIME64_H
     return RTTimeSpecSetTimespec64(pTime, &Ts);
-# else
+
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+    struct timespec Ts;
+    ktime_get_real_ts(&Ts);     /* ktime_get_real_ts was removed in Linux 4.20. */
+    IPRT_LINUX_RESTORE_EFL_AC();
     return RTTimeSpecSetTimespec(pTime, &Ts);
-# endif
-#else   /* < 2.6.16 */
+
+#else /* < 2.6.16 */
     struct timeval Tv;
     do_gettimeofday(&Tv);
     IPRT_LINUX_RESTORE_EFL_AC();
