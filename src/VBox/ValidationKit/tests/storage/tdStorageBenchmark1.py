@@ -1090,10 +1090,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         else:
             if iDiffLvl == 0:
                 tMediumVariant = self.convDiskToMediumVariant(sDiskVariant);
-                oHd = oSession.createBaseHd(sDiskPath + '/base.disk', sDiskFormat, cbDisk, \
+                oHd = oSession.createBaseHd(sDiskPath + '/base.img', sDiskFormat, cbDisk, \
                                             cMsTimeout = 3600 * 1000, tMediumVariant = tMediumVariant);
             else:
-                sDiskPath = sDiskPath + '/diff_%u.disk' % (iDiffLvl);
+                sDiskPath = sDiskPath + '/diff_%u.img' % (iDiffLvl);
                 oHd = oSession.createDiffHd(oHdParent, sDiskPath, None);
 
             if oHd is not None and iDiffLvl == 0 and self.fEncryptDisk:
