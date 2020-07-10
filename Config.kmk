@@ -2944,6 +2944,8 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-string-plus-int ?= $(call VBOX_GCC_CHECK_CC,-Wno-string-plus-int,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-nested-anon-types ?= $(call VBOX_GCC_CHECK_CC,-Wno-nested-anon-types,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-gnu-anonymous-struct ?= $(call VBOX_GCC_CHECK_CXX,-Wno-gnu-anonymous-struct,)'
+# CLang 11.
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-c++17-compat-mangling ?= $(call VBOX_GCC_CHECK_CXX,-Wno-c++17-compat-mangling,)'
 ifeq ($(KBUILD_TARGET),solaris)
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_msave-args            ?= $(call VBOX_GCC_CHECK_CXX,-msave-args,)'
 # Detect the solaris assembler. It is used by the the 4.x gcc compilers,
@@ -3067,7 +3069,8 @@ endif
 VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs \
 	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter) $(VBOX_GCC_Wno-language-extension-token) \
 	$(VBOX_GCC_Wno-extended-offsetof) $(VBOX_GCC_Wno-gnu-folding-constant) $(VBOX_GCC_Wno-gnu-anonymous-struct) \
-	$(VBOX_GCC_Wlogical-op) $(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types) $(VBOX_GCC_Wno-variadic-macros)
+	$(VBOX_GCC_Wlogical-op) $(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types) $(VBOX_GCC_Wno-variadic-macros) \
+       $(VBOX_GCC_Wno-c++17-compat-mangling)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
 if $(VBOX_GCC_VERSION_CXX) >= 40200 || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.2.x+ (4.1.2 is causing trouble with the extpack & add builds)
  VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
