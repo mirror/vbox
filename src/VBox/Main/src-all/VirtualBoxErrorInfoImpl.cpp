@@ -85,7 +85,7 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode)(LONG *aResultCode)
 {
     CheckComArgOutPointerValid(aResultCode);
 
-    *aResultCode = m_resultCode;
+    *aResultCode = (LONG)m_resultCode;
     return S_OK;
 }
 
@@ -250,7 +250,7 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetResult(nsresult *aResult)
     PRInt32 lrc;
     nsresult rc = COMGETTER(ResultCode)(&lrc);
     if (SUCCEEDED(rc))
-      *aResult = lrc;
+      *aResult = (nsresult)lrc;
     return rc;
 }
 
