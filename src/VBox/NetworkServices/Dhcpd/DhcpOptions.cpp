@@ -201,7 +201,7 @@ template <typename a_Type>
         char szTmp[256];
         if (pszNext)
         {
-            size_t cchToCopy = pszNext - pcszValue;
+            size_t cchToCopy = (size_t)(pszNext - pcszValue);
             if (cchToCopy >= sizeof(szTmp))
                 return VERR_INVALID_PARAMETER;
             memcpy(szTmp, pcszValue, cchToCopy);
