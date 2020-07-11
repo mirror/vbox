@@ -436,7 +436,7 @@ HRESULT NATNetwork::addLocalMapping(const com::Utf8Str &aHostId, LONG aOffset)
     if (RT_FAILURE(rc))
         return E_INVALIDARG;
 
-    if (((net.u + aOffset) & mask.u) != net.u)
+    if (((net.u + (uint32_t)aOffset) & mask.u) != net.u)
         return E_INVALIDARG;
 
     settings::NATLoopbackOffsetList::iterator it;
@@ -457,7 +457,7 @@ HRESULT NATNetwork::addLocalMapping(const com::Utf8Str &aHostId, LONG aOffset)
             if (it1 != m->s.llHostLoopbackOffsetList.end())
                 return E_INVALIDARG; /* this offset is already registered. */
 
-            (*it).u32Offset = aOffset;
+            (*it).u32Offset = (uint32_t)aOffset;
         }
 
         AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
@@ -486,7 +486,7 @@ HRESULT NATNetwork::getLoopbackIp6(LONG *aLoopbackIp6)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aLoopbackIp6 = m->s.u32HostLoopback6Offset;
+    *aLoopbackIp6 = (LONG)m->s.u32HostLoopback6Offset;
     return S_OK;
 }
 
@@ -502,7 +502,7 @@ HRESULT NATNetwork::setLoopbackIp6(LONG aLoopbackIp6)
         if (static_cast<uint32_t>(aLoopbackIp6) == m->s.u32HostLoopback6Offset)
             return S_OK;
 
-        m->s.u32HostLoopback6Offset = aLoopbackIp6;
+        m->s.u32HostLoopback6Offset = (LONG)aLoopbackIp6;
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
