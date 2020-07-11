@@ -732,7 +732,7 @@ DECLINLINE(uint64_t) SUPReadTsc(void)
 #endif /* X86 || AMD64 */
 
 /** @internal */
-SUPDECL(uint64_t) SUPGetTscDeltaSlow(PSUPGLOBALINFOPAGE pGip);
+SUPDECL(int64_t) SUPGetTscDeltaSlow(PSUPGLOBALINFOPAGE pGip);
 
 /**
  * Gets the TSC delta for the current CPU.

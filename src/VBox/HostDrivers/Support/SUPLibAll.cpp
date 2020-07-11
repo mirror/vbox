@@ -294,7 +294,7 @@ DECLINLINE(uint16_t) supGetGipCpuIndex(PSUPGLOBALINFOPAGE pGip)
  * @param   pGip        The GIP.
  * @internal
  */
-SUPDECL(uint64_t) SUPGetTscDeltaSlow(PSUPGLOBALINFOPAGE pGip)
+SUPDECL(int64_t) SUPGetTscDeltaSlow(PSUPGLOBALINFOPAGE pGip)
 {
     uint16_t iGipCpu = supGetGipCpuIndex(pGip);
     if (RT_LIKELY(iGipCpu < pGip->cCpus))
