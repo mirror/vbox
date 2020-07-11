@@ -2317,8 +2317,7 @@ HRESULT Machine::setSnapshotFolder(const com::Utf8Str &aSnapshotFolder)
 
     if (strSnapshotFolder.isEmpty())
         strSnapshotFolder = "Snapshots";
-    int vrc = i_calculateFullPath(strSnapshotFolder,
-                                strSnapshotFolder);
+    int vrc = i_calculateFullPath(strSnapshotFolder, strSnapshotFolder);
     if (RT_FAILURE(vrc))
         return setErrorBoth(E_FAIL, vrc,
                             tr("Invalid snapshot folder '%s' (%Rrc)"),
@@ -7053,7 +7052,7 @@ HRESULT Machine::i_saveRegistryEntry(settings::MachineRegistryEntry &data)
 int Machine::i_calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), Global::vboxStatusCodeFromCOM(autoCaller.rc()));
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -10265,7 +10264,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             settings::GuestProperty prop; /// @todo r=bird: some excellent variable name choices here: 'prop' and 'property'; No 'const' clue either.
             prop.strName = it->first;
             prop.strValue = property.strValue;
-            prop.timestamp = property.mTimestamp;
+            prop.timestamp = (uint64_t)property.mTimestamp;
             char szFlags[GUEST_PROP_MAX_FLAGS_LEN + 1];
             GuestPropWriteFlags(property.mFlags, szFlags);
             prop.strFlags = szFlags;
@@ -13108,12 +13107,13 @@ HRESULT SessionMachine::beginPoweringDown(ComPtr<IProgress> &aProgress)
 HRESULT SessionMachine::endPoweringDown(LONG aResult,
                                         const com::Utf8Str &aErrMsg)
 {
+    HRESULT const hrcResult = (HRESULT)aResult;
     LogFlowThisFuncEnter();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(    (   (SUCCEEDED(aResult) && mData->mMachineState == MachineState_PoweredOff)
-                      || (FAILED(aResult) && mData->mMachineState == MachineState_Stopping))
+    AssertReturn(    (   (SUCCEEDED(hrcResult) && mData->mMachineState == MachineState_PoweredOff)
+                      || (FAILED(hrcResult) && mData->mMachineState == MachineState_Stopping))
                   && mConsoleTaskData.mLastState != MachineState_Null,
                  E_FAIL);
 
@@ -13123,22 +13123,22 @@ HRESULT SessionMachine::endPoweringDown(LONG aResult,
      * task). On success the VM process already changed the state to
      * MachineState_PoweredOff, so no need to do anything.
      */
-    if (FAILED(aResult))
+    if (FAILED(hrcResult))
         i_setMachineState(mConsoleTaskData.mLastState);
 
     /* notify the progress object about operation completion */
     Assert(mConsoleTaskData.mProgress);
-    if (SUCCEEDED(aResult))
+    if (SUCCEEDED(hrcResult))
         mConsoleTaskData.mProgress->i_notifyComplete(S_OK);
     else
     {
         if (aErrMsg.length())
-            mConsoleTaskData.mProgress->i_notifyComplete(aResult,
+            mConsoleTaskData.mProgress->i_notifyComplete(hrcResult,
                                                          COM_IIDOF(ISession),
                                                          getComponentName(),
                                                          aErrMsg.c_str());
         else
-            mConsoleTaskData.mProgress->i_notifyComplete(aResult);
+            mConsoleTaskData.mProgress->i_notifyComplete(hrcResult);
     }
 
     /* clear out the temporary saved state data */
