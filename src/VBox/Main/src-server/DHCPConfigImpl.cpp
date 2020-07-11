@@ -275,9 +275,9 @@ HRESULT DHCPConfig::i_setForcedOptions(const std::vector<DHCPOption_T> &aOptions
         /* Actually changed? */
         if (m_vecForcedOptions.size() == aOptions.size())
         {
-            ssize_t i = m_vecForcedOptions.size();
+            ssize_t i = (ssize_t)m_vecForcedOptions.size();
             while (i-- > 0)
-                if (m_vecForcedOptions[i] != aOptions[i])
+                if (m_vecForcedOptions[(size_t)i] != aOptions[(size_t)i])
                     break;
             if (i < 0)
                 return S_OK;
