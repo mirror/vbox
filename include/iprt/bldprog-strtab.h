@@ -97,7 +97,7 @@ DECLINLINE(ssize_t) RTBldProgStrTabQueryString(PCRTBLDPROGSTRTAB pStrTab, uint32
         const char  *pchSrc = &pStrTab->pchStrTab[offString];
         while (cchString-- > 0)
         {
-            unsigned char uch = *pchSrc++;
+            unsigned char uch = *(unsigned char *)pchSrc++;
             if (!(uch & 0x80))
             {
                 /*
@@ -191,7 +191,7 @@ DECLINLINE(size_t) RTBldProgStrTabQueryOutput(PCRTBLDPROGSTRTAB pStrTab, uint32_
         const char *pchSrc = &pStrTab->pchStrTab[offString];
         while (cchString-- > 0)
         {
-            unsigned char uch = *pchSrc++;
+            unsigned char uch = *(unsigned char *)pchSrc++;
             if (!(uch & 0x80))
             {
                 /*
@@ -220,7 +220,7 @@ DECLINLINE(size_t) RTBldProgStrTabQueryOutput(PCRTBLDPROGSTRTAB pStrTab, uint32_
                 RTUNICP uc = ' ';
                 int rc = RTStrGetCpNEx(&pchSrc, &cchString, &uc);
                 if (RT_SUCCESS(rc))
-                    cchRet += pfnOutput(pvArgOutput, pchUtf8Seq, pchSrc - pchUtf8Seq);
+                    cchRet += pfnOutput(pvArgOutput, pchUtf8Seq, (size_t)(pchSrc - pchUtf8Seq));
                 else
                     cchRet += pfnOutput(pvArgOutput, "?", 1);
             }
