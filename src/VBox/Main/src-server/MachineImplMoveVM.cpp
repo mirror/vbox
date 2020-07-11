@@ -161,7 +161,7 @@ HRESULT MachineMoveVM::init()
 
 
     int vrc = RTFsQuerySizes(strTargetFolder.c_str(), &cbTotal, &cbFree, &cbBlock, &cbSector);
-    if (FAILED(vrc))
+    if (RT_FAILURE(vrc))
         return m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                         m_pMachine->tr("Unable to determine free space at move destination ('%s'): %Rrc"),
                                         strTargetFolder.c_str(), vrc);
@@ -196,7 +196,7 @@ HRESULT MachineMoveVM::init()
 
     RTFSPROPERTIES properties;
     vrc = RTFsQueryProperties(strTargetFolder.c_str(), &properties);
-    if (FAILED(vrc))
+    if (RT_FAILURE(vrc))
         return m_pMachine->setErrorVrc(vrc, "RTFsQueryProperties(%s): %Rrc", strTargetFolder.c_str(), vrc);
 
     Log2(("disk properties: remote=%RTbool read only=%RTbool compressed=%RTbool\n",
@@ -352,7 +352,7 @@ HRESULT MachineMoveVM::init()
                         /* Calculate progress data */
                         ++uCount;
                         uTotalWeight += mtc.chain[a - 1].uWeight;
-                        totalMediumsSize += cbSize;
+                        totalMediumsSize += (uint64_t)cbSize;
                         Log2(("Image %s was added into the moved list\n", name.c_str()));
                     }
                 }
