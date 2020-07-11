@@ -80,7 +80,7 @@ HRESULT BandwidthGroup::init(BandwidthControl *aParent,
     m->bd->mData.strName = aName;
     m->bd->mData.enmType = aType;
     m->bd->cReferences = 0;
-    m->bd->mData.cMaxBytesPerSec = aMaxBytesPerSec;
+    m->bd->mData.cMaxBytesPerSec = (uint64_t)aMaxBytesPerSec;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -228,7 +228,7 @@ HRESULT BandwidthGroup::getMaxBytesPerSec(LONG64 *aMaxBytesPerSec)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMaxBytesPerSec = m->bd->mData.cMaxBytesPerSec;
+    *aMaxBytesPerSec = (LONG64)m->bd->mData.cMaxBytesPerSec;
 
     return S_OK;
 }
@@ -242,7 +242,7 @@ HRESULT BandwidthGroup::setMaxBytesPerSec(LONG64 aMaxBytesPerSec)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->mData.cMaxBytesPerSec = aMaxBytesPerSec;
+    m->bd->mData.cMaxBytesPerSec = (uint64_t)aMaxBytesPerSec;
 
     /* inform direct session if any. */
     ComObjPtr<Machine> pMachine = m->pParent->i_getMachine();
