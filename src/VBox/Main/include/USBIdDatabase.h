@@ -91,7 +91,7 @@ public:
     {
         char szTmp[USB_ID_DATABASE_MAX_STRING * 2];
         ssize_t cchTmp = RTBldProgStrTabQueryString(&s_StrTab, pStr->off, pStr->cch, szTmp, sizeof(szTmp));
-        return RTCString(szTmp, RT_MAX(cchTmp, 0));
+        return RTCString(szTmp, (size_t)RT_MAX(cchTmp, 0));
     }
 
 private:
