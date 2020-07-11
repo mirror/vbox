@@ -111,7 +111,7 @@ size_t ParsedIntervalFilter_base::parseValue (
 
     AssertReturn(endptr, 0);
 
-    size_t parsed = endptr - aFilter;
+    size_t parsed = (size_t)(endptr - aFilter);
 
     // return parsed if not able to parse to the end
     if (parsed != aEnd)

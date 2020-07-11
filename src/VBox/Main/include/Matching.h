@@ -320,16 +320,14 @@ protected:
 
     ParsedRegexpFilter_base (bool aDefIgnoreCase = false,
                              size_t aMinLen = 0, size_t aMaxLen = 0)
-        : mDefIgnoreCase (aDefIgnoreCase)
-        , mIgnoreCase (aDefIgnoreCase)
+        : mIgnoreCase (aDefIgnoreCase)
         , mMinLen (aMinLen)
         , mMaxLen (aMaxLen)
         {}
 
     ParsedRegexpFilter_base (const Bstr &aFilter, bool aDefIgnoreCase = false,
                              size_t aMinLen = 0, size_t aMaxLen = 0)
-        : mDefIgnoreCase (aDefIgnoreCase)
-        , mIgnoreCase (aDefIgnoreCase)
+        : mIgnoreCase (aDefIgnoreCase)
         , mMinLen (aMinLen)
         , mMaxLen (aMaxLen)
     {
@@ -348,7 +346,6 @@ private:
 
     void parse (const Bstr &aFilter);
 
-    bool mDefIgnoreCase : 1;
     bool mIgnoreCase : 1;
 
     size_t mMinLen;
