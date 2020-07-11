@@ -23,11 +23,14 @@ include $(KBUILD_PATH)/subheader.kmk
 # Target lists.
 #
 LIBRARIES += VBoxOGLTest
-VBoxOGLTest_TEMPLATE = VBOXR3NP
 ifneq ($(KBUILD_TARGET),darwin)
-  VBoxOGLTest_SOURCES = OpenGLTest.cpp
-endif
+## @todo r=bird: Why VBOXR3NP?
+VBoxOGLTest_TEMPLATE = VBOXR3NP
+VBoxOGLTest_SOURCES = OpenGLTest.cpp
+else
+VBoxOGLTest_TEMPLATE = VBoxR3Dll
 VBoxOGLTest_SOURCES.darwin = OpenGLTestDarwin.cpp
+endif
 
 #
 # App for testing GL support

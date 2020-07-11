@@ -145,6 +145,7 @@ bool RTCALL VBoxOglIs3DAccelerationSupported(void)
              * the GL_EXT_texture_rectangle extension. If they are not
              * available, disable 3D support.
              */
+#pragma clang diagnostic ignored "-Wdeprecated-declarations" /* gluCheckExtension deprecated since 10.10 - use MetalKit. */
             CGLSetCurrentContext(pCglContext);
             const GLubyte *pszExts = glGetString(GL_EXTENSIONS);
             isSupported = gluCheckExtension((const GLubyte *)"GL_EXT_framebuffer_object", pszExts);
