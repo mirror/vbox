@@ -1222,18 +1222,17 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
     try
     {
         Utf8Str strBasename(pTask->locInfo.strPath);
-        RTCList<RTCString, RTCString *> parts = strBasename.split("/" );
+        RTCList<RTCString, RTCString *> parts = strBasename.split("/");
         if (parts.size() != 2)//profile + instance id
-        {
-            return setErrorVrc(VERR_MISMATCH, tr("%s: The profile name or instance id are absent or"
-                                                 "contain unsupported characters.", __FUNCTION__));
-        }
+            return setErrorVrc(VERR_MISMATCH,
+                               tr("%s: The profile name or instance id are absent or contain unsupported characters: %s"),
+                               __FUNCTION__, strBasename.c_str());
 
         //Get information about the passed cloud instance
         ComPtr<ICloudProviderManager> cpm;
         hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
         if (FAILED(hrc))
-            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found"), __FUNCTION__);
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found (%Rhrc)"), __FUNCTION__, hrc);
 
         Utf8Str strProviderName = pTask->locInfo.strProvider;
         ComPtr<ICloudProvider> cloudProvider;
@@ -1241,20 +1240,20 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
 
         if (FAILED(hrc))
-            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found"), __FUNCTION__);
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found (%Rhrc)"), __FUNCTION__, hrc);
 
         Utf8Str profileName(parts.at(0));//profile
         if (profileName.isEmpty())
-            return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found"), __FUNCTION__);
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found (%Rhrc)"), __FUNCTION__, hrc);
 
         hrc = cloudProvider->GetProfileByName(Bstr(parts.at(0)).raw(), cloudProfile.asOutParam());
         if (FAILED(hrc))
-            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found"), __FUNCTION__);
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found (%Rhrc)"), __FUNCTION__, hrc);
 
         ComObjPtr<ICloudClient> cloudClient;
         hrc = cloudProfile->CreateCloudClient(cloudClient.asOutParam());
         if (FAILED(hrc))
-            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found"), __FUNCTION__);
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found (%Rhrc)"), __FUNCTION__, hrc);
 
         m->virtualSystemDescriptions.clear();//clear all for assurance before creating new
         std::vector<ComPtr<IVirtualSystemDescription> > vsdArray;
@@ -1263,7 +1262,8 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         hrc = createVirtualSystemDescriptions(requestedVSDnums, &newVSDnums);
         if (FAILED(hrc)) throw hrc;
         if (requestedVSDnums != newVSDnums)
-            throw setErrorVrc(VERR_MISMATCH, tr("%s: Requested and created numbers of VSD are differ."), __FUNCTION__);
+            throw setErrorVrc(VERR_MISMATCH, tr("%s: Requested (%d) and created (%d) numbers of VSD are differ ."),
+                              __FUNCTION__, requestedVSDnums, newVSDnums);
 
         hrc = getVirtualSystemDescriptions(vsdArray);
         if (FAILED(hrc)) throw hrc;
@@ -1278,16 +1278,12 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         if (FAILED(hrc)) throw hrc;
 
         // set cloud profile
-        instanceDescription->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
-                             Bstr(profileName).raw(),
-                             NULL);
+        instanceDescription->AddDescription(VirtualSystemDescriptionType_CloudProfileName, Bstr(profileName).raw(),  NULL);
 
         Utf8StrFmt strSetting("VM with id %s imported from the cloud provider %s",
                               parts.at(1).c_str(), strProviderName.c_str());
         // set description
-        instanceDescription->AddDescription(VirtualSystemDescriptionType_Description,
-                             Bstr(strSetting).raw(),
-                             NULL);
+        instanceDescription->AddDescription(VirtualSystemDescriptionType_Description, Bstr(strSetting).raw(), NULL);
     }
     catch (HRESULT arc)
     {
@@ -1919,22 +1915,22 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         catch (HRESULT aRc)
                         {
                             hrc = aRc;
-                            strLastActualErrorDesc = Utf8StrFmt("%s: Processing the downloaded object was failed. "
-                                    "The exception (%Rrc)\n", __FUNCTION__, hrc);
+                            strLastActualErrorDesc.printf("%s: Processing the downloaded object was failed. The exception (%Rhrc)\n",
+                                                          __FUNCTION__, hrc);
                             LogRel((strLastActualErrorDesc.c_str()));
                         }
                         catch (int aRc)
                         {
                             hrc = setErrorVrc(aRc);
-                            strLastActualErrorDesc = Utf8StrFmt("%s: Processing the downloaded object was failed. "
-                                    "The exception (%Rrc)\n", __FUNCTION__, aRc);
+                            strLastActualErrorDesc.printf("%s: Processing the downloaded object was failed. The exception (%Rrc/%Rhrc)\n",
+                                                          __FUNCTION__, aRc, hrc);
                             LogRel((strLastActualErrorDesc.c_str()));
                         }
                         catch (...)
                         {
-                            hrc = VERR_UNEXPECTED_EXCEPTION;
-                            strLastActualErrorDesc = Utf8StrFmt("%s: Processing the downloaded object was failed. "
-                                    "The exception (%Rrc)\n", __FUNCTION__, hrc);
+                            hrc = setErrorVrc(VERR_UNEXPECTED_EXCEPTION);
+                            strLastActualErrorDesc.printf("%s: Processing the downloaded object was failed. The exception (VERR_UNEXPECTED_EXCEPTION/%Rhrc)\n",
+                                                          __FUNCTION__, hrc);
                             LogRel((strLastActualErrorDesc.c_str()));
                         }
                     }
@@ -1954,7 +1950,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
                         hrc = mVirtualBox->i_findHardDiskByLocation(strAbsDstPath, false, NULL);
                         if (SUCCEEDED(hrc))
-                            throw setError(VERR_ALREADY_EXISTS, tr("The hard disk '%s' already exists."), strAbsDstPath.c_str());
+                            throw setErrorVrc(VERR_ALREADY_EXISTS, tr("The hard disk '%s' already exists."), strAbsDstPath.c_str());
 
                         /* Create an IMedium object. */
                         ComObjPtr<Medium> pTargetMedium;
@@ -1977,10 +1973,9 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             throw hrc;
 
                         hrc = pProgressImportTmp->init(mVirtualBox,
-                                                      static_cast<IAppliance*>(this),
-                                                      Utf8StrFmt(tr("Importing medium '%s'"),
-                                                                 pszName),
-                                                      TRUE);
+                                                       static_cast<IAppliance*>(this),
+                                                       Utf8StrFmt(tr("Importing medium '%s'"), pszName),
+                                                       TRUE);
                         if (FAILED(hrc))
                             throw hrc;
 
@@ -2015,7 +2010,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             d.strDiskId = pTargetMedium->i_getId().toString();
                             d.strHref = pTargetMedium->i_getLocationFull();
                             d.strFormat = pTargetMedium->i_getFormat();
-                            d.iSize = pTargetMedium->i_getSize();
+                            d.iSize = (int64_t)pTargetMedium->i_getSize();
                             d.ulSuggestedSizeMB = (uint32_t)(d.iSize/_1M);
 
                             m->pReader->m_mapDisks[d.strDiskId] = d;
@@ -2070,22 +2065,22 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         catch (HRESULT aRc)
         {
             hrc = aRc;
-            strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (local phase) failed. "
-                    "The exception (%Rrc)\n", __FUNCTION__, hrc);
+            strLastActualErrorDesc.printf("%s: Cloud import (local phase) failed. The exception (%Rhrc)\n",
+                                          __FUNCTION__, hrc);
             LogRel((strLastActualErrorDesc.c_str()));
         }
         catch (int aRc)
         {
             hrc = setErrorVrc(aRc);
-            strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (local phase) failed. "
-                    "The exception (%Rrc)\n", __FUNCTION__, aRc);
+            strLastActualErrorDesc.printf("%s: Cloud import (local phase) failed. The exception (%Rrc/%Rhrc)\n",
+                                          __FUNCTION__, aRc, hrc);
             LogRel((strLastActualErrorDesc.c_str()));
         }
         catch (...)
         {
-            hrc = VERR_UNRESOLVED_ERROR;
-            strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (local phase) failed. "
-                    "The exception (%Rrc)\n", __FUNCTION__, hrc);
+            hrc = setErrorVrc(VERR_UNRESOLVED_ERROR);
+            strLastActualErrorDesc.printf("%s: Cloud import (local phase) failed. The exception (VERR_UNRESOLVED_ERROR/%Rhrc)\n",
+                                          __FUNCTION__, hrc);
             LogRel((strLastActualErrorDesc.c_str()));
         }
 
@@ -2311,7 +2306,7 @@ HRESULT Appliance::i_readFSOVF(TaskOVF *pTask)
      * Allocate a buffer for filenames and prep it for suffix appending.
      */
     char *pszNameBuf = (char *)alloca(pTask->locInfo.strPath.length() + 16);
-    AssertReturn(pszNameBuf, VERR_NO_TMP_MEMORY);
+    AssertReturn(pszNameBuf, E_OUTOFMEMORY);
     memcpy(pszNameBuf, pTask->locInfo.strPath.c_str(), pTask->locInfo.strPath.length() + 1);
     RTPathStripSuffix(pszNameBuf);
     size_t const cchBaseName = strlen(pszNameBuf);
@@ -2666,7 +2661,7 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
     {
         const char *pszSuffix = strrchr(pszSubFileNm, '.');
         AssertReturn(pszSuffix, E_FAIL);
-        strManifestName = Utf8Str(pszSubFileNm, pszSuffix - pszSubFileNm);
+        strManifestName = Utf8Str(pszSubFileNm, (size_t)(pszSuffix - pszSubFileNm));
         strManifestName.append(".mf");
     }
     catch (...)
@@ -2731,7 +2726,7 @@ HRESULT Appliance::i_readSignatureFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosCert
         if (RT_SUCCESS(vrc))
         {
             RTVFSIOSTREAM hVfsIosTmp;
-            vrc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, pvSignature, pszSplit - (char *)pvSignature, &hVfsIosTmp);
+            vrc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, pvSignature, (size_t)(pszSplit - (char *)pvSignature), &hVfsIosTmp);
             if (RT_SUCCESS(vrc))
             {
                 vrc = RTManifestReadStandardEx(hSignedDigestManifest, hVfsIosTmp, StaticErrInfo.szMsg, sizeof(StaticErrInfo.szMsg));
@@ -3919,71 +3914,71 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
                     if (!hdc.fPrimary)
                     {
                         // secondary master
-                        lControllerPort = (long)1;
-                        lDevice = (long)0;
+                        lControllerPort = 1;
+                        lDevice         = 0;
                     }
                     else // primary master
                     {
-                        lControllerPort = (long)0;
-                        lDevice = (long)0;
+                        lControllerPort = 0;
+                        lDevice         = 0;
                     }
-                break;
+                    break;
 
                 case 1: // slave
                     if (!hdc.fPrimary)
                     {
                         // secondary slave
-                        lControllerPort = (long)1;
-                        lDevice = (long)1;
+                        lControllerPort = 1;
+                        lDevice         = 1;
                     }
                     else // primary slave
                     {
-                        lControllerPort = (long)0;
-                        lDevice = (long)1;
+                        lControllerPort = 0;
+                        lDevice         = 1;
                     }
-                break;
+                    break;
 
                 // used by older VBox exports
                 case 2:     // interpret this as secondary master
-                    lControllerPort = (long)1;
-                    lDevice = (long)0;
-                break;
+                    lControllerPort = 1;
+                    lDevice         = 0;
+                    break;
 
                 // used by older VBox exports
                 case 3:     // interpret this as secondary slave
-                    lControllerPort = (long)1;
-                    lDevice = (long)1;
-                break;
+                    lControllerPort = 1;
+                    lDevice         = 1;
+                    break;
 
                 default:
                     throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Invalid channel %RI16 specified; IDE controllers support only 0, 1 or 2"),
+                                   tr("Invalid channel %RU32 specified; IDE controllers support only 0, 1 or 2"),
                                    ulAddressOnParent);
-                break;
+                    break;
             }
-        break;
+            break;
 
         case ovf::HardDiskController::SATA:
-            controllerName = "SATA";
-            lControllerPort = (long)ulAddressOnParent;
-            lDevice = (long)0;
+            controllerName  = "SATA";
+            lControllerPort = (int32_t)ulAddressOnParent;
+            lDevice         = 0;
             break;
 
         case ovf::HardDiskController::SCSI:
         {
-            if(hdc.strControllerType.compare("lsilogicsas")==0)
+            if (hdc.strControllerType.compare("lsilogicsas")==0)
                 controllerName = "SAS";
             else
                 controllerName = "SCSI";
-            lControllerPort = (long)ulAddressOnParent;
-            lDevice = (long)0;
+            lControllerPort = (int32_t)ulAddressOnParent;
+            lDevice         = 0;
             break;
         }
 
         case ovf::HardDiskController::VIRTIOSCSI:
-            controllerName = "VirtioSCSI";
-            lControllerPort = (long)ulAddressOnParent;
-            lDevice = (long)0;
+            controllerName  = "VirtioSCSI";
+            lControllerPort = (int32_t)ulAddressOnParent;
+            lDevice         = 0;
             break;
 
         default: break;
