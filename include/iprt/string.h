@@ -1336,7 +1336,7 @@ DECLINLINE(char *) RTStrPutCp(char *psz, RTUNICP CodePoint)
 {
     if (CodePoint < 0x80)
     {
-        *psz++ = (unsigned char)CodePoint;
+        *psz++ = (char)CodePoint;
         return psz;
     }
     return RTStrPutCpInternal(psz, CodePoint);
