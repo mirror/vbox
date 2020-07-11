@@ -257,7 +257,7 @@ HRESULT HostNetworkInterface::updateConfig()
         else
             m.realIPV6Address = m.IPV6Address = Utf8Str::Empty;
         RTNetMaskToPrefixIPv6(&info.IPv6NetMask, &iPrefixIPv6);
-        m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
+        m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = (ULONG)iPrefixIPv6;
         m.hardwareAddress = Utf8StrFmt("%RTmac", &info.MACAddress);
         AssertCompile((unsigned)NETIF_T_UNKNOWN == (unsigned)HostNetworkInterfaceMediumType_Unknown);
         m.mediumType = (HostNetworkInterfaceMediumType_T)info.enmMediumType;
@@ -317,7 +317,7 @@ HRESULT HostNetworkInterface::init(Utf8Str aInterfaceName, HostNetworkInterfaceT
     else
         m.realIPV6Address = m.IPV6Address = Utf8Str::Empty;
     RTNetMaskToPrefixIPv6(&pIf->IPv6NetMask, &iPrefixIPv6);
-    m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
+    m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = (ULONG)iPrefixIPv6;
     m.dhcpEnabled = pIf->fDhcpEnabled;
     m.hardwareAddress = Utf8StrFmt("%RTmac", &pIf->MACAddress);
     AssertCompile((unsigned)NETIF_T_UNKNOWN == (unsigned)HostNetworkInterfaceMediumType_Unknown);
