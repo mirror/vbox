@@ -581,12 +581,12 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
  *
  * @returns COM status code.
  * @param   aVmName             The VM name or UUID.
- * @param   aSlot               The slot.
+ * @param   a_uSlot             The slot.
  * @param   idMachine           Where to return the VM UUID.
  */
-HRESULT DHCPServer::i_vmNameToIdAndValidateSlot(const com::Utf8Str &aVmName, LONG aSlot, com::Guid &idMachine)
+HRESULT DHCPServer::i_vmNameToIdAndValidateSlot(const com::Utf8Str &aVmName, ULONG a_uSlot, com::Guid &idMachine)
 {
-    if ((ULONG)aSlot <= 32)
+    if (a_uSlot <= 32)
     {
         /* Is it a UUID? */
         idMachine = aVmName;
@@ -600,7 +600,7 @@ HRESULT DHCPServer::i_vmNameToIdAndValidateSlot(const com::Utf8Str &aVmName, LON
             idMachine = ptrMachine->i_getId();
         return hrc;
     }
-    return setError(E_INVALIDARG, tr("NIC slot number (%d) is out of range (0..32)"), aSlot);
+    return setError(E_INVALIDARG, tr("NIC slot number (%d) is out of range (0..32)"), a_uSlot);
 }
 
 
@@ -617,7 +617,7 @@ HRESULT DHCPServer::i_vmNameToIdAndValidateSlot(const com::Utf8Str &aVmName, LON
  *
  * @note    Caller must not be holding any locks!
  */
-HRESULT DHCPServer::i_vmNameAndSlotToConfig(const com::Utf8Str &a_strVmName, LONG a_uSlot, bool a_fCreateIfNeeded,
+HRESULT DHCPServer::i_vmNameAndSlotToConfig(const com::Utf8Str &a_strVmName, ULONG a_uSlot, bool a_fCreateIfNeeded,
                                             ComObjPtr<DHCPIndividualConfig> &a_rPtrConfig)
 {
     /*
@@ -1080,7 +1080,7 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
                         RTTIMESPEC Now;
                         if (   (aState.equals("acked") || aState.equals("offered") || aState.isEmpty())
                             && secIssued + cSecsToLive < RTTimeSpecGetSeconds(RTTimeNow(&Now)))
-                            hrc = aState.assignNoThrow("expired");
+                            hrc = RT_SUCCESS(aState.assignNoThrow("expired")) ? S_OK : E_OUTOFMEMORY;
                         return hrc;
                     }
                 }
