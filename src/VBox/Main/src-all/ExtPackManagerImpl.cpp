@@ -1917,7 +1917,7 @@ ExtPack::i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgres
         ErrorInfoKeeper eik;
         eik.getVirtualBoxErrorInfo(errorInfo);
     }
-    return pProgressControl->NotifyComplete(uResultCode, errorInfo);
+    return pProgressControl->NotifyComplete((LONG)uResultCode, errorInfo);
 }
 
 /*static*/ DECLCALLBACK(int)
@@ -2216,7 +2216,7 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
 
                             m->cUpdate++;
                         }
-                        else if (SUCCEEDED(rc))
+                        else if (SUCCEEDED(hrc))
                             hrc = hrc2;
                     }
                     else
@@ -2597,7 +2597,7 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
         if (pszSuccessInd)
         {
             *pszSuccessInd = '\0';
-            offStdErrBuf  = pszSuccessInd - pszStdErrBuf;
+            offStdErrBuf  = (size_t)(pszSuccessInd - pszStdErrBuf);
         }
         else if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
                  && ProcStatus.iStatus   == 0)
@@ -3355,8 +3355,8 @@ HRESULT ExtPackManager::i_checkVrdeExtPack(Utf8Str const *a_pstrExtPack)
  * This will do extacly the same as checkVrdeExtPack and then resolve the
  * library path.
  *
- * @returns S_OK if a path is returned, COM error status and message return if
- *          not.
+ * @returns VINF_SUCCESS if a path is returned, VBox error status and message
+ *          return if not.
  * @param   a_pstrExtPack       The extension pack.
  * @param   a_pstrVrdeLibrary   Where to return the path.
  */
@@ -3376,7 +3376,7 @@ int ExtPackManager::i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack,
                            a_pstrExtPack->c_str());
     }
 
-    return hrc;
+    return Global::vboxStatusCodeFromCOM(hrc);
 }
 
 /**
