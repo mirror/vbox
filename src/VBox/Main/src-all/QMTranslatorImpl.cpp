@@ -27,8 +27,8 @@
 #include <QMTranslator.h>
 
 /* QM File Magic Number */
-static const size_t MagicLength = 16;
-static const uint8_t Magic[MagicLength] =
+static const size_t g_cbMagic = 16;
+static const uint8_t g_abMagic[g_cbMagic] =
 {
     0x3c, 0xb8, 0x64, 0x18, 0xca, 0xef, 0x9c, 0x95,
     0xcd, 0x21, 0x1c, 0xbf, 0x60, 0xa1, 0xbd, 0xdd
@@ -59,15 +59,15 @@ class QMBytesStream
 
 public:
 
-    QMBytesStream(const uint8_t *const dataStart, size_t cbSize) :
-        m_cbSize(dataStart ? cbSize : 0),
-        m_dataStart(dataStart),
-        m_iter(dataStart)
+    QMBytesStream(const uint8_t *const dataStart, size_t cbSize)
+        : m_cbSize(dataStart ? cbSize : 0)
+        , m_dataStart(dataStart)
+        , m_iter(dataStart)
     {
         setEnd();
     }
 
-    /* Sets end pointer
+    /** Sets end pointer.
      * Used in message reader to detect the end of message block */
     inline void setEnd(size_t pos = 0)
     {
@@ -88,7 +88,7 @@ public:
         return RT_BE2H_U32(result);
     }
 
-    /* Reads string in UTF16 and converts it into a UTF8 string */
+    /** Reads string in UTF16 and converts it into a UTF8 string */
     inline com::Utf8Str readUtf16String()
     {
         uint32_t size = read32();
@@ -108,7 +108,7 @@ public:
         return com::Utf8Str((CBSTR) &wstr.front(), wstr.size());
     }
 
-    /* Reads string in one-byte encoding
+    /** Reads string in one-byte encoding.
      * The string is assumed to be in ISO-8859-1 encoding */
     inline com::Utf8Str readString()
     {
@@ -119,28 +119,46 @@ public:
         return result;
     }
 
-    /* Checks the magic number
-     * Should be called when in the beginning of the data */
+    /** Checks the magic number.
+     * Should be called when in the beginning of the data
+     * @throws exception on mismatch  */
     inline void checkMagic()
     {
-        checkSize(MagicLength);
-        if (memcmp(&(*m_iter), Magic, MagicLength)) throw QMException("Wrong magic number");
-        m_iter += MagicLength;
+        checkSize(g_cbMagic);
+        if (RT_LIKELY(memcmp(&(*m_iter), g_abMagic, g_cbMagic) == 0))
+            m_iter += g_cbMagic;
+        else
+            throw QMException("Wrong magic number");
     }
 
-    /* Has we reached the end pointer? */
-    inline bool hasFinished() { return m_iter == m_end; }
-
-    /* Returns current stream position */
-    inline size_t tellPos() { return m_iter - m_dataStart; }
-
-    /* Moves current pointer to a desired position */
-    inline void seek(int pos) { m_iter += pos; }
-
-    /* Checks whether stream has enough data to read size bytes */
-    inline void checkSize(int size)
+    /** Has we reached the end pointer? */
+    inline bool hasFinished()
     {
-        if (m_end - m_iter < size) throw QMException("Incorrect item size");
+        return m_iter == m_end;
+    }
+
+    /** Returns current stream position */
+    inline size_t tellPos()
+    {
+        return (size_t)(m_iter - m_dataStart);
+    }
+
+    /** Moves current pointer to a desired position */
+    inline void seek(uint32_t offSkip)
+    {
+        size_t cbLeft = (size_t)(m_end - m_iter);
+        if (cbLeft <= offSkip)
+            m_iter += offSkip;
+        else
+            m_iter = m_end; /** @todo r=bird: Or throw exception via checkSize? */
+    }
+
+    /** Checks whether stream has enough data to read size bytes */
+    inline void checkSize(size_t size)
+    {
+        if (RT_LIKELY((size_t)(m_end - m_iter) >= size))
+            return;
+        throw QMException("Incorrect item size");
     }
 };
 
