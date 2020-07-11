@@ -200,28 +200,29 @@ void HostPowerServiceDarwin::checkBatteryCriticalLevel(bool *pfCriticalChanged)
                          CFStringCompare((CFStringRef)psValue, CFSTR(kIOPSBatteryPowerValue), 0) == kCFCompareEqualTo)
                     powerSource = POWER_SOURCE_BATTERY;
 
-                int curCapacity = 0;
-                int maxCapacity = 1;
-                float remCapacity = 0.0f;
 
                 /* Fetch the current capacity value of the power source */
+                int curCapacity = 0;
                 result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSCurrentCapacityKey), &psValue);
                 if (result)
                     CFNumberGetValue((CFNumberRef)psValue, kCFNumberSInt32Type, &curCapacity);
+
                 /* Fetch the maximum capacity value of the power source */
+                int maxCapacity = 1;
                 result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSMaxCapacityKey), &psValue);
                 if (result)
                     CFNumberGetValue((CFNumberRef)psValue, kCFNumberSInt32Type, &maxCapacity);
 
                 /* Calculate the remaining capacity in percent */
-                remCapacity = ((float)curCapacity/(float)maxCapacity * 100.0);
+                float remCapacity = ((float)curCapacity/(float)maxCapacity * 100.0f);
 
                 /* Check for critical. 5 percent is default. */
                 int criticalValue = 5;
                 result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSDeadWarnLevelKey), &psValue);
                 if (result)
                     CFNumberGetValue((CFNumberRef)psValue, kCFNumberSInt32Type, &criticalValue);
-                critical = (remCapacity < criticalValue);
+                critical = remCapacity < criticalValue;
+
                 /* We have to take action only if we are on battery, the
                  * previous state wasn't critical, the state has changed & the
                  * user requested that info. */
