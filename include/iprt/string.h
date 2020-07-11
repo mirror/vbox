@@ -2661,7 +2661,7 @@ DECLINLINE(size_t) RTStrOffCharOrTerm(const char *pszHaystack, char chNeedle)
     while (   (ch = *psz) != chNeedle
            && ch != '\0')
         psz++;
-    return psz - pszHaystack;
+    return (size_t)(psz - pszHaystack);
 }
 
 /**
