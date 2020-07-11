@@ -502,7 +502,7 @@ HRESULT NATNetwork::setLoopbackIp6(LONG aLoopbackIp6)
         if (static_cast<uint32_t>(aLoopbackIp6) == m->s.u32HostLoopback6Offset)
             return S_OK;
 
-        m->s.u32HostLoopback6Offset = (LONG)aLoopbackIp6;
+        m->s.u32HostLoopback6Offset = (uint32_t)aLoopbackIp6;
     }
 
     AutoWriteLock vboxLock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
