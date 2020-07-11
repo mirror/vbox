@@ -30,7 +30,7 @@ GuestOSType::GuestOSType()
     , mRAMSize(0)
     , mGraphicsControllerType(GraphicsControllerType_Null)
     , mVRAMSize(0)
-    , mHDDSize(0), mMonitorCount(0)
+    , mHDDSize(0),
     , mNetworkAdapterType(NetworkAdapterType_Am79C973)
     , mNumSerialEnabled(0)
     , mDVDStorageControllerType(StorageControllerType_PIIX3)
@@ -234,7 +234,7 @@ HRESULT GuestOSType::getRecommended3DAcceleration(BOOL *aRecommended3DAccelerati
 HRESULT GuestOSType::getRecommendedHDD(LONG64 *aHDDSize)
 {
     /* mHDDSize is constant during life time, no need to lock */
-    *aHDDSize = mHDDSize;
+    *aHDDSize = (LONG64)mHDDSize;
 
     return S_OK;
 }
