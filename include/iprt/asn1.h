@@ -772,7 +772,7 @@ RTDECL(int) RTAsn1SeqOfCore_Clone(PRTASN1SEQOFCORE pThis, PCRTASN1COREVTABLE pVt
         uint32_t uPos = pThis->cItems; \
         int rc = RT_CONCAT(a_ImplExtNm,_InsertEx)(pThis, uPos, NULL /*pToClone*/, pThis->Allocation.pAllocator, &uPos); \
         if (RT_SUCCESS(rc)) \
-            return uPos; \
+            return (int32_t)uPos; \
         return rc; \
     } \
     RTASN1TYPE_STANDARD_PROTOTYPES(a_ThisType, a_DeclMacro, a_ImplExtNm, a_CoreMember.Asn1Core)
