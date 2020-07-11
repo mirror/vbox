@@ -213,7 +213,7 @@ HRESULT VBoxEvent::waitProcessed(LONG aTimeout, BOOL *aResult)
     // must drop lock while waiting, because setProcessed() needs synchronization.
     alock.release();
     /** @todo maybe while loop for spurious wakeups? */
-    int vrc = ::RTSemEventWait(m->mWaitEvent, aTimeout);
+    int vrc = ::RTSemEventWait(m->mWaitEvent, aTimeout < 0 ? RT_INDEFINITE_WAIT : (RTMSINTERVAL)aTimeout);
     AssertMsg(RT_SUCCESS(vrc) || vrc == VERR_TIMEOUT || vrc == VERR_INTERRUPTED,
               ("RTSemEventWait returned %Rrc\n", vrc));
     alock.acquire();
@@ -920,7 +920,7 @@ HRESULT ListenerRecord::dequeue(IEvent **aEvent,
             // release lock while waiting, listener will not go away due to above holder
             aAlock.release();
 
-            ::RTSemEventWait(hEvt, aTimeout);
+            ::RTSemEventWait(hEvt, aTimeout < 0 ? RT_INDEFINITE_WAIT : (RTMSINTERVAL)aTimeout);
             ASMAtomicDecS32(&mQEventBusyCnt);
 
             // reacquire lock
