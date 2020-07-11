@@ -3063,7 +3063,7 @@
 #define RT_MAKE_U32_FROM_U8(b0, b1, b2, b3) \
     ((uint32_t)(  (uint32_t)((uint8_t)(b3)) << 24 \
                 | (uint32_t)((uint8_t)(b2)) << 16 \
-                | (uint16_t)((uint8_t)(b1)) << 8 \
+                | (uint32_t)((uint8_t)(b1)) << 8 \
                 |            (uint8_t)(b0) ))
 
 /** @def RT_MAKE_U16
