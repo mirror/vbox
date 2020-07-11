@@ -1359,7 +1359,7 @@ HRESULT Host::getOSVersion(com::Utf8Str &aVersion)
     if (szOSServicePack[0] != '\0')
     {
         char *psz = strchr(szOSRelease, '\0');
-        RTStrPrintf(psz, &szOSRelease[sizeof(szOSRelease)] - psz, "sp%s", szOSServicePack);
+        RTStrPrintf(psz, (size_t)(&szOSRelease[sizeof(szOSRelease)] - psz), "sp%s", szOSServicePack);
     }
 
     aVersion = szOSRelease;
