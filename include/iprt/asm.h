@@ -3150,7 +3150,7 @@ DECLINLINE(int64_t) ASMAtomicIncS64(int64_t volatile RT_FAR *pi64) RT_NOTHROW_DE
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int64_t) ASMAtomicIncZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
+DECLINLINE(size_t) ASMAtomicIncZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64
     return ASMAtomicIncU64((uint64_t volatile RT_FAR *)pcb);
@@ -3291,7 +3291,7 @@ DECLINLINE(int64_t) ASMAtomicDecS64(int64_t volatile RT_FAR *pi64) RT_NOTHROW_DE
  *
  * @remarks x86: Requires a 486 or later.
  */
-DECLINLINE(int64_t) ASMAtomicDecZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
+DECLINLINE(size_t) ASMAtomicDecZ(size_t volatile RT_FAR *pcb) RT_NOTHROW_DEF
 {
 #if ARCH_BITS == 64
     return ASMAtomicDecU64((uint64_t volatile RT_FAR *)pcb);
@@ -3353,7 +3353,7 @@ DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) RT
  */
 DECLINLINE(void) ASMAtomicOrS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
-    ASMAtomicOrU32((uint32_t volatile RT_FAR *)pi32, i32);
+    ASMAtomicOrU32((uint32_t volatile RT_FAR *)pi32, (uint32_t)i32);
 }
 
 
@@ -3402,7 +3402,7 @@ DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) RT
  */
 DECLINLINE(void) ASMAtomicOrS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
-    ASMAtomicOrU64((uint64_t volatile RT_FAR *)pi64, i64);
+    ASMAtomicOrU64((uint64_t volatile RT_FAR *)pi64, (uint64_t)i64);
 }
 
 
@@ -3552,7 +3552,7 @@ DECLINLINE(void) ASMAtomicUoOrU32(uint32_t volatile RT_FAR *pu32, uint32_t u32) 
  */
 DECLINLINE(void) ASMAtomicUoOrS32(int32_t volatile RT_FAR *pi32, int32_t i32) RT_NOTHROW_DEF
 {
-    ASMAtomicUoOrU32((uint32_t volatile RT_FAR *)pi32, i32);
+    ASMAtomicUoOrU32((uint32_t volatile RT_FAR *)pi32, (uint32_t)i32);
 }
 
 
@@ -3598,7 +3598,7 @@ DECLINLINE(void) ASMAtomicUoOrU64(uint64_t volatile RT_FAR *pu64, uint64_t u64) 
  */
 DECLINLINE(void) ASMAtomicUoOrS64(int64_t volatile RT_FAR *pi64, int64_t i64) RT_NOTHROW_DEF
 {
-    ASMAtomicUoOrU64((uint64_t volatile RT_FAR *)pi64, i64);
+    ASMAtomicUoOrU64((uint64_t volatile RT_FAR *)pi64, (uint64_t)i64);
 }
 
 
@@ -4840,9 +4840,9 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitSt
                 iBitStart = iStart + 32;
             }
 
-            /* whole dword. */
+            /* whole dwords. */
             if (iBitStart != iEnd)
-                ASMMemZero32(pu32, (iEnd - iBitStart) >> 3);
+                ASMMemZero32(pu32, ((uint32_t)iEnd - (uint32_t)iBitStart) >> 3);
 
             /* bits in last dword. */
             if (iBitEnd & 31)
@@ -4883,7 +4883,7 @@ DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStar
 
             /* whole dword. */
             if (iBitStart != iEnd)
-                ASMMemFill32(pu32, (iEnd - iBitStart) >> 3, ~UINT32_C(0));
+                ASMMemFill32(pu32, ((uint32_t)iEnd - (uint32_t)iBitStart) >> 3, ~UINT32_C(0));
 
             /* bits in last dword. */
             if (iBitEnd & 31)
@@ -5028,7 +5028,7 @@ DECLINLINE(int) ASMBitNextClear(const volatile void RT_FAR *pvBitmap, uint32_t c
         }
 #  endif
         if (iBit >= 0)
-            return iBit + iBitPrev;
+            return iBit + (int)iBitPrev;
 # endif
 
         /*
@@ -5182,7 +5182,7 @@ DECLINLINE(int) ASMBitNextSet(const volatile void RT_FAR *pvBitmap, uint32_t cBi
         }
 #  endif
         if (iBit >= 0)
-            return iBit + iBitPrev;
+            return iBit + (int)iBitPrev;
 # endif
 
         /*
