@@ -336,7 +336,7 @@ DECLINLINE(bool) RTCritSectIsInitialized(PCRTCRITSECT pCritSect)
  */
 DECLINLINE(uint32_t) RTCritSectGetRecursion(PCRTCRITSECT pCritSect)
 {
-    return pCritSect->cNestings;
+    return (uint32_t)pCritSect->cNestings;
 }
 
 /**
