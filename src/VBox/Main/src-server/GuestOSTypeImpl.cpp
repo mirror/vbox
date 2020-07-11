@@ -30,7 +30,7 @@ GuestOSType::GuestOSType()
     , mRAMSize(0)
     , mGraphicsControllerType(GraphicsControllerType_Null)
     , mVRAMSize(0)
-    , mHDDSize(0),
+    , mHDDSize(0)
     , mNetworkAdapterType(NetworkAdapterType_Am79C973)
     , mNumSerialEnabled(0)
     , mDVDStorageControllerType(StorageControllerType_PIIX3)
