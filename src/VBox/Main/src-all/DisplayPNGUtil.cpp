@@ -106,19 +106,11 @@ int DisplayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
 
         if (pu8Bitmap)
         {
-            uint8_t *dst = pu8Bitmap;
-            uint8_t *src = pu8Data;
-            int dstW = cxBitmap;
-            int dstH = cyBitmap;
-            int srcW = cx;
-            int srcH = cy;
-            int iDeltaLine = cx * 4;
-
-            BitmapScale32 (dst,
-                           dstW, dstH,
-                           src,
-                           iDeltaLine,
-                           srcW, srcH);
+            BitmapScale32(pu8Bitmap /*dst*/,
+                          (int)cxBitmap, (int)cyBitmap,
+                          pu8Data /*src*/,
+                          (int)cx * 4,
+                          (int)cx, (int)cy);
         }
         else
         {
