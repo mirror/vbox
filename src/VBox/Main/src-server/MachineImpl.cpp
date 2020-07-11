@@ -164,7 +164,7 @@ Machine::Data::~Data()
 Machine::HWData::HWData()
 {
     /* default values for a newly created machine */
-    mHWVersion = Utf8StrFmt("%d", SchemaDefs::DefaultHardwareVersion);
+    mHWVersion.printf("%d", SchemaDefs::DefaultHardwareVersion);
     mMemorySize = 128;
     mCPUCount = 1;
     mCPUHotPlugEnabled = false;
@@ -4345,13 +4345,10 @@ HRESULT Machine::setHotPluggableForDevice(const com::Utf8Str &aName, LONG aContr
 HRESULT Machine::setNoBandwidthGroupForDevice(const com::Utf8Str &aName, LONG aControllerPort,
                                               LONG aDevice)
 {
-    int rc = S_OK;
     LogFlowThisFunc(("aName=\"%s\" aControllerPort=%d aDevice=%d\n",
                      aName.c_str(), aControllerPort, aDevice));
 
-    rc = setBandwidthGroupForDevice(aName, aControllerPort, aDevice, NULL);
-
-    return rc;
+    return setBandwidthGroupForDevice(aName, aControllerPort, aDevice, NULL);
 }
 
 HRESULT Machine::setBandwidthGroupForDevice(const com::Utf8Str &aName, LONG aControllerPort,
@@ -4416,14 +4413,10 @@ HRESULT Machine::attachDeviceWithoutMedium(const com::Utf8Str &aName,
                                            LONG aDevice,
                                            DeviceType_T aType)
 {
-     HRESULT rc = S_OK;
-
      LogFlowThisFunc(("aName=\"%s\" aControllerPort=%d aDevice=%d aType=%d\n",
                       aName.c_str(), aControllerPort, aDevice, aType));
 
-     rc = attachDevice(aName, aControllerPort, aDevice, aType, NULL);
-
-     return rc;
+     return attachDevice(aName, aControllerPort, aDevice, aType, NULL);
 }
 
 
@@ -4432,13 +4425,10 @@ HRESULT Machine::unmountMedium(const com::Utf8Str &aName,
                                LONG aDevice,
                                BOOL aForce)
 {
-     int rc = S_OK;
      LogFlowThisFunc(("aName=\"%s\" aControllerPort=%d aDevice=%d",
                       aName.c_str(), aControllerPort, aForce));
 
-     rc = mountMedium(aName, aControllerPort, aDevice, NULL, aForce);
-
-     return rc;
+     return mountMedium(aName, aControllerPort, aDevice, NULL, aForce);
 }
 
 HRESULT Machine::mountMedium(const com::Utf8Str &aName,
@@ -4447,7 +4437,6 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
                              const ComPtr<IMedium> &aMedium,
                              BOOL aForce)
 {
-    int rc = S_OK;
     LogFlowThisFunc(("aName=\"%s\" aControllerPort=%d aDevice=%d aForce=%d\n",
                      aName.c_str(), aControllerPort, aDevice, aForce));
 
@@ -4529,7 +4518,7 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
 
     mediumLock.release();
     multiLock.release();
-    rc = i_onMediumChange(pAttach, aForce);
+    HRESULT rc = i_onMediumChange(pAttach, aForce);
     multiLock.acquire();
     mediumLock.acquire();
 
@@ -5114,9 +5103,9 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
             /* Delete any backup or uncommitted XML files. Ignore failures.
                See the fSafe parameter of xml::XmlFileWriter::write for details. */
             /** @todo Find a way to avoid referring directly to iprt/xml.h here. */
-            Utf8Str otherXml = Utf8StrFmt("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszTmpSuff);
+            Utf8StrFmt otherXml("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszTmpSuff);
             RTFileDelete(otherXml.c_str());
-            otherXml = Utf8StrFmt("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszPrevSuff);
+            otherXml.printf("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszPrevSuff);
             RTFileDelete(otherXml.c_str());
 
             /* delete the Logs folder, nothing important should be left
@@ -5131,25 +5120,21 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
                  * (this must be in sync with the rotation logic in
                  * Console::powerUpThread()). Also, delete the VBox.png[.N]
                  * files that may have been created by the GUI. */
-                Utf8Str log = Utf8StrFmt("%s%cVBox.log",
-                                         logFolder.c_str(), RTPATH_DELIMITER);
+                Utf8StrFmt log("%s%cVBox.log", logFolder.c_str(), RTPATH_DELIMITER);
                 RTFileDelete(log.c_str());
-                log = Utf8StrFmt("%s%cVBox.png",
-                                 logFolder.c_str(), RTPATH_DELIMITER);
+                log.printf("%s%cVBox.png", logFolder.c_str(), RTPATH_DELIMITER);
                 RTFileDelete(log.c_str());
-                for (int i = uLogHistoryCount; i > 0; i--)
+                for (ULONG i = uLogHistoryCount; i > 0; i--)
                 {
-                    log = Utf8StrFmt("%s%cVBox.log.%d",
-                                     logFolder.c_str(), RTPATH_DELIMITER, i);
+                    log.printf("%s%cVBox.log.%u", logFolder.c_str(), RTPATH_DELIMITER, i);
                     RTFileDelete(log.c_str());
-                    log = Utf8StrFmt("%s%cVBox.png.%d",
-                                     logFolder.c_str(), RTPATH_DELIMITER, i);
+                    log.printf("%s%cVBox.png.%u", logFolder.c_str(), RTPATH_DELIMITER, i);
                     RTFileDelete(log.c_str());
                 }
 #if defined(RT_OS_WINDOWS)
-                log = Utf8StrFmt("%s%cVBoxStartup.log", logFolder.c_str(), RTPATH_DELIMITER);
+                log.printf("%s%cVBoxStartup.log", logFolder.c_str(), RTPATH_DELIMITER);
                 RTFileDelete(log.c_str());
-                log = Utf8StrFmt("%s%cVBoxHardening.log", logFolder.c_str(), RTPATH_DELIMITER);
+                log.printf("%s%cVBoxHardening.log", logFolder.c_str(), RTPATH_DELIMITER);
                 RTFileDelete(log.c_str());
 #endif
 
@@ -7141,10 +7126,10 @@ void Machine::i_getLogFolder(Utf8Str &aLogFolder)
             char szTmp2[RTPATH_MAX];
             vrc = RTPathAbs(szTmp, szTmp2, sizeof(szTmp2));
             if (RT_SUCCESS(vrc))
-                aLogFolder = Utf8StrFmt("%s%c%s",
-                                        szTmp2,
-                                        RTPATH_DELIMITER,
-                                        mUserData->s.strName.c_str()); // path/to/logfolder/vmname
+                aLogFolder.printf("%s%c%s",
+                                  szTmp2,
+                                  RTPATH_DELIMITER,
+                                  mUserData->s.strName.c_str()); // path/to/logfolder/vmname
         }
         else
             vrc = VERR_PATH_IS_RELATIVE;
@@ -7171,15 +7156,15 @@ Utf8Str Machine::i_getLogFilename(ULONG idx)
 
     Utf8Str log;
     if (idx == 0)
-        log = Utf8StrFmt("%s%cVBox.log", logFolder.c_str(), RTPATH_DELIMITER);
+        log.printf("%s%cVBox.log", logFolder.c_str(), RTPATH_DELIMITER);
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_HARDENING)
     else if (idx == 1)
-        log = Utf8StrFmt("%s%cVBoxHardening.log", logFolder.c_str(), RTPATH_DELIMITER);
+        log.printf("%s%cVBoxHardening.log", logFolder.c_str(), RTPATH_DELIMITER);
     else
-        log = Utf8StrFmt("%s%cVBox.log.%u", logFolder.c_str(), RTPATH_DELIMITER, idx - 1);
+        log.printf("%s%cVBox.log.%u", logFolder.c_str(), RTPATH_DELIMITER, idx - 1);
 #else
     else
-        log = Utf8StrFmt("%s%cVBox.log.%u", logFolder.c_str(), RTPATH_DELIMITER, idx);
+        log.printf("%s%cVBox.log.%u", logFolder.c_str(), RTPATH_DELIMITER, idx);
 #endif
     return log;
 }
@@ -7241,9 +7226,9 @@ Utf8Str Machine::i_getSnapshotNVRAMFilename()
 
     Utf8Str strNVRAMFilePath = mUserData->s.strSnapshotFolder;
     strNVRAMFilePath += RTPATH_DELIMITER;
-    strNVRAMFilePath += Utf8StrFmt("%04d-%02u-%02uT%02u-%02u-%02u-%09uZ.nvram",
-                                   time.i32Year, time.u8Month, time.u8MonthDay,
-                                   time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond);
+    strNVRAMFilePath.appendPrintf("%04d-%02u-%02uT%02u-%02u-%02u-%09uZ.nvram",
+                                  time.i32Year, time.u8Month, time.u8MonthDay,
+                                  time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond);
 
     return strNVRAMFilePath;
 }
@@ -7282,9 +7267,9 @@ void Machine::i_composeSavedStateFilename(Utf8Str &strStateFilePath)
     RTTimeExplode(&time, &ts);
 
     strStateFilePath += RTPATH_DELIMITER;
-    strStateFilePath += Utf8StrFmt("%04d-%02u-%02uT%02u-%02u-%02u-%09uZ.sav",
-                                   time.i32Year, time.u8Month, time.u8MonthDay,
-                                   time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond);
+    strStateFilePath.appendPrintf("%04d-%02u-%02uT%02u-%02u-%02u-%09uZ.sav",
+                                  time.i32Year, time.u8Month, time.u8MonthDay,
+                                  time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond);
 }
 
 /**
@@ -7748,7 +7733,7 @@ bool Machine::i_checkForSpawnFailure()
         uint64_t cbStartupLogFile = 0;
         int vrc2 = RTFileQuerySizeByPath(strHardeningLogFile.c_str(), &cbStartupLogFile);
         if (RT_SUCCESS(vrc2) && cbStartupLogFile > 0)
-            strExtraInfo.append(Utf8StrFmt(tr(".  More details may be available in '%s'"), strHardeningLogFile.c_str()));
+            strExtraInfo.appendPrintf(tr(".  More details may be available in '%s'"), strHardeningLogFile.c_str());
 #endif
 
         if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_NORMAL)
@@ -9542,16 +9527,14 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             configFile = mData->m_strConfigFileFull;
 
             /* first, rename the directory if it matches the group and machine name */
-            Utf8Str groupPlusName = Utf8StrFmt("%s%c%s",
-                group.c_str(), RTPATH_DELIMITER, name.c_str());
+            Utf8StrFmt groupPlusName("%s%c%s", group.c_str(), RTPATH_DELIMITER, name.c_str());
             /** @todo hack, make somehow use of ComposeMachineFilename */
             if (mUserData->s.fDirectoryIncludesUUID)
-                groupPlusName += Utf8StrFmt(" (%RTuuid)", mData->mUuid.raw());
-            Utf8Str newGroupPlusName = Utf8StrFmt("%s%c%s",
-                newGroup.c_str(), RTPATH_DELIMITER, newName.c_str());
+                groupPlusName.appendPrintf(" (%RTuuid)", mData->mUuid.raw());
+            Utf8StrFmt newGroupPlusName("%s%c%s", newGroup.c_str(), RTPATH_DELIMITER, newName.c_str());
             /** @todo hack, make somehow use of ComposeMachineFilename */
             if (mUserData->s.fDirectoryIncludesUUID)
-                newGroupPlusName += Utf8StrFmt(" (%RTuuid)", mData->mUuid.raw());
+                newGroupPlusName.appendPrintf(" (%RTuuid)", mData->mUuid.raw());
             configDir = configFile;
             configDir.stripFilename();
             newConfigDir = configDir;
@@ -9603,17 +9586,16 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                 }
             }
 
-            newConfigFile = Utf8StrFmt("%s%c%s.vbox",
-                newConfigDir.c_str(), RTPATH_DELIMITER, newName.c_str());
+            newConfigFile.printf("%s%c%s.vbox", newConfigDir.c_str(), RTPATH_DELIMITER, newName.c_str());
 
             /* then try to rename the settings file itself */
             if (newConfigFile != configFile)
             {
                 /* get the path to old settings file in renamed directory */
-                configFile = Utf8StrFmt("%s%c%s",
-                                        newConfigDir.c_str(),
-                                        RTPATH_DELIMITER,
-                                        RTPathFilename(configFile.c_str()));
+                configFile.printf("%s%c%s",
+                                  newConfigDir.c_str(),
+                                  RTPATH_DELIMITER,
+                                  RTPathFilename(configFile.c_str()));
                 if (!fSettingsFileIsNew)
                 {
                     /* perform real rename only if the machine is not new */
@@ -10031,7 +10013,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         if (    mHWData->mHWVersion == "1"
              && mSSData->strStateFilePath.isEmpty()
            )
-            mHWData->mHWVersion = Utf8StrFmt("%d", SchemaDefs::DefaultHardwareVersion);
+            mHWData->mHWVersion.printf("%d", SchemaDefs::DefaultHardwareVersion);
 
         data.strVersion = mHWData->mHWVersion;
         data.uuid = mHWData->mHardwareUUID;
@@ -11529,7 +11511,7 @@ bool Machine::i_isInOwnDir(Utf8Str *aSettingsDir /* = NULL */) const
                      .stripSuffix();                        // vmname
     /** @todo hack, make somehow use of ComposeMachineFilename */
     if (mUserData->s.fDirectoryIncludesUUID)
-        strConfigFileOnly += Utf8StrFmt(" (%RTuuid)", mData->mUuid.raw());
+        strConfigFileOnly.appendPrintf(" (%RTuuid)", mData->mUuid.raw());
 
     AssertReturn(!strMachineDirName.isEmpty(), false);
     AssertReturn(!strConfigFileOnly.isEmpty(), false);
