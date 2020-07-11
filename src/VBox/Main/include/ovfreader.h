@@ -334,46 +334,46 @@ public:
     RTCString strResourceSubType;
     bool fResourceRequired;
 
-    RTCString strHostResource;   // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
-                                        // Not all devices need a backing." Used with disk items, for which this references a virtual
-                                        // disk from the Disks section.
+    RTCString strHostResource;   ///< "Abstractly specifies how a device shall connect to a resource on the deployment platform.
+                                 /// Not all devices need a backing." Used with disk items, for which this
+                                 /// references a virtual disk from the Disks section.
     bool fAutomaticAllocation;
     bool fAutomaticDeallocation;
-    RTCString strConnection;     // "All Ethernet adapters that specify the same abstract network connection name within an OVF
-                                        // package shall be deployed on the same network. The abstract network connection name shall be
-                                        // listed in the NetworkSection at the outermost envelope level." We ignore this and only set up
-                                        // a network adapter depending on the network name.
-    RTCString strAddress;        // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
-    int32_t lAddress;                   // strAddress as an integer, if applicable.
-    RTCString strAddressOnParent;         // "For a device, this specifies its location on the controller."
-    RTCString strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
-    uint64_t ullVirtualQuantity;        // "Specifies the quantity of resources presented. For example, “256”."
-    uint64_t ullReservation;            // "Specifies the minimum quantity of resources guaranteed to be available."
-    uint64_t ullLimit;                  // "Specifies the maximum quantity of resources that will be granted."
-    uint64_t ullWeight;                 // "Specifies a relative priority for this allocation in relation to other allocations."
+    RTCString strConnection;     ///< "All Ethernet adapters that specify the same abstract network connection name within an OVF
+                                 /// package shall be deployed on the same network. The abstract network connection name shall be
+                                 /// listed in the NetworkSection at the outermost envelope level." We ignore this and only set up
+                                 /// a network adapter depending on the network name.
+    RTCString strAddress;        ///< "Device-specific. For an Ethernet adapter, this specifies the MAC address."
+    int32_t lAddress;            ///< strAddress as an integer, if applicable.
+    RTCString strAddressOnParent;///< "For a device, this specifies its location on the controller."
+    RTCString strAllocationUnits;///< "Specifies the units of allocation used. For example, “byte * 2^20”."
+    uint64_t ullVirtualQuantity; ///< "Specifies the quantity of resources presented. For example, “256”."
+    uint64_t ullReservation;     ///< "Specifies the minimum quantity of resources guaranteed to be available."
+    uint64_t ullLimit;           ///< "Specifies the maximum quantity of resources that will be granted."
+    uint64_t ullWeight;          ///< "Specifies a relative priority for this allocation in relation to other allocations."
 
     RTCString strConsumerVisibility;
     RTCString strMappingBehavior;
     RTCString strPoolID;
-    uint32_t ulBusNumber;               // seen with IDE controllers, but not listed in OVF spec
+    uint32_t ulBusNumber;        ///< seen with IDE controllers, but not listed in OVF spec
 
-    uint32_t ulLineNumber;              // line number of <Item> element in XML source; cached for error messages
+    int m_iLineNumber;           ///< line number of \<Item\> element in XML source; cached for error messages
 
     VirtualHardwareItem()
-        : ulInstanceID(0),
-          fResourceRequired(false),
-          fAutomaticAllocation(false),
-          fAutomaticDeallocation(false),
-          ullVirtualQuantity(0),
-          ullReservation(0),
-          ullLimit(0),
-          ullWeight(0),
-          ulBusNumber(0),
-          ulLineNumber(0),
-          fDefault(false)
+        : ulInstanceID(0)
+        , fResourceRequired(false)
+        , fAutomaticAllocation(false)
+        , fAutomaticDeallocation(false)
+        , ullVirtualQuantity(0)
+        , ullReservation(0)
+        , ullLimit(0)
+        , ullWeight(0)
+        , ulBusNumber(0)
+        , m_iLineNumber(0)
+        , fDefault(false)
     {
         itemName = "Item";
-    };
+    }
 
     virtual ~VirtualHardwareItem() { /* Makes MSC happy. */ }
 
@@ -416,9 +416,11 @@ class StorageItem: public VirtualHardwareItem
     //see DMTF Schema Documentation http://schemas.dmtf.org/wbem/cim-html/2/
     StorageAccessType_T accessType;
     RTCString strHostExtentName;
+#if 0 /* unused */
     int16_t hostExtentNameFormat;
     int16_t hostExtentNameNamespace;
     int64_t hostExtentStartingAddress;
+#endif
     int64_t hostResourceBlockSize;
     int64_t limit;
     RTCString strOtherHostExtentNameFormat;
@@ -429,16 +431,19 @@ class StorageItem: public VirtualHardwareItem
     int64_t virtualResourceBlockSize;
 
 public:
-    StorageItem(): VirtualHardwareItem(),
-        accessType(StorageAccessType_Unknown),
-        hostExtentNameFormat(-1),
-        hostExtentNameNamespace(-1),
-        hostExtentStartingAddress(-1),
-        hostResourceBlockSize(-1),
-        limit(-1),
-        reservation(-1),
-        virtualQuantity(-1),
-        virtualResourceBlockSize(-1)
+    StorageItem()
+        : VirtualHardwareItem()
+        , accessType(StorageAccessType_Unknown)
+#if 0 /* unused */
+        , hostExtentNameFormat(-1)
+        , hostExtentNameNamespace(-1)
+        , hostExtentStartingAddress(-1)
+#endif
+        , hostResourceBlockSize(-1)
+        , limit(-1)
+        , reservation(-1)
+        , virtualQuantity(-1)
+        , virtualResourceBlockSize(-1)
     {
         itemName = "StorageItem";
     };
@@ -460,16 +465,19 @@ private:
 class EthernetPortItem: public VirtualHardwareItem
 {
     //see DMTF Schema Documentation http://schemas.dmtf.org/wbem/cim-html/2/
+#if 0 /* unused */
     uint16_t DefaultPortVID;
     uint16_t DefaultPriority;
     uint16_t DesiredVLANEndpointMode;
     uint32_t GroupID;
     uint32_t ManagerID;
-    RTCString strNetworkPortProfileID;
     uint16_t NetworkPortProfileIDType;
+#endif
+    RTCString strNetworkPortProfileID;
     RTCString strOtherEndpointMode;
     RTCString strOtherNetworkPortProfileIDTypeInfo;
     RTCString strPortCorrelationID;
+#if 0 /* unused */
     uint16_t PortVID;
     bool Promiscuous;
     uint64_t ReceiveBandwidthLimit;
@@ -478,13 +486,14 @@ class EthernetPortItem: public VirtualHardwareItem
     uint32_t VSITypeID;
     uint8_t VSITypeIDVersion;
     uint16_t AllowedPriorities[256];
-    RTCString strAllowedToReceiveMACAddresses;
     uint16_t AllowedToReceiveVLANs[256];
-    RTCString strAllowedToTransmitMACAddresses;
     uint16_t AllowedToTransmitVLANs[256];
+#endif
+    RTCString strAllowedToReceiveMACAddresses;
+    RTCString strAllowedToTransmitMACAddresses;
 
 public:
-    EthernetPortItem(): VirtualHardwareItem()
+    EthernetPortItem() : VirtualHardwareItem()
     {
         itemName = "EthernetPortItem";
     };

@@ -446,7 +446,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                     else
                         continue;
                     vsys.vecHardwareItems.push_back(pItem);
-                    pItem->ulLineNumber = pelmItem->getLineNumber();
+                    pItem->m_iLineNumber = pelmItem->getLineNumber();
                     pItem->fillItem(pelmItem);
 
                     /* validate */
@@ -468,12 +468,12 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             mapHardwareItems[pItem->ulInstanceID] = pItem;
                         else
 #if 1
-                            LogRel(("OVFREADER: Warning reading '%s'! Duplicate ulInstanceID %u on line %u, previous at %u!\n",
-                                    m_strPath.c_str(), pItem->ulInstanceID, pItem->ulLineNumber, itDup->second->ulLineNumber));
+                            LogRel(("OVFREADER: Warning reading '%s'! Duplicate ulInstanceID %u on line %d, previous at %d!\n",
+                                    m_strPath.c_str(), pItem->ulInstanceID, pItem->m_iLineNumber, itDup->second->m_iLineNumber));
 #else
-                            throw OVFLogicError(N_("Error reading '%s': Duplicate ulInstanceID %u on line %u, previous at %u"),
+                            throw OVFLogicError(N_("Error reading '%s': Duplicate ulInstanceID %u on line %d, previous at %d"),
                                                 m_strPath.c_str(), pItem->ulInstanceID,
-                                                pItem->ulLineNumber, itDup->second->ulLineNumber);
+                                                pItem->m_iLineNumber, itDup->second->m_iLineNumber);
 #endif
                     }
                 }
@@ -506,7 +506,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                                 m_strPath.c_str(),
                                                 i.ullVirtualQuantity,
                                                 UINT16_MAX,
-                                                i.ulLineNumber);
+                                                i.m_iLineNumber);
                         break;
 
                     case ResourceType_Memory:        // 4
@@ -519,7 +519,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             throw OVFLogicError(N_("Error reading \"%s\": Invalid allocation unit \"%s\" specified with memory size item, line %d"),
                                                 m_strPath.c_str(),
                                                 i.strAllocationUnits.c_str(),
-                                                i.ulLineNumber);
+                                                i.m_iLineNumber);
                         break;
 
                     case ResourceType_IDEController:          // 5
@@ -674,7 +674,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             throw OVFLogicError(N_("Error reading \"%s\": Host resource of type \"Other Storage Device (%d)\" is supported with SATA AHCI controllers only, line %d (subtype:%s)"),
                                                 m_strPath.c_str(),
                                                 ResourceType_OtherStorageDevice,
-                                                i.ulLineNumber, i.strResourceSubType.c_str() );
+                                                i.m_iLineNumber, i.strResourceSubType.c_str() );
                         break;
                     }
 
@@ -711,7 +711,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             throw OVFLogicError(N_("Error reading \"%s\": Unknown resource type %d in hardware item, line %d"),
                                                 m_strPath.c_str(),
                                                 i.resourceType,
-                                                i.ulLineNumber);
+                                                i.m_iLineNumber);
                         }
                     }
                 } // end switch
@@ -756,7 +756,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                                 m_strPath.c_str(),
                                                 i.ulInstanceID,
                                                 i.ulParent,
-                                                i.ulLineNumber);
+                                                i.m_iLineNumber);
 
                         VirtualDisk vd;
                         vd.idController = i.ulParent;
@@ -777,7 +777,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                               m_strPath.c_str(),
                                               i.ulInstanceID,
                                               i.strHostResource.c_str(),
-                                              i.ulLineNumber);
+                                              i.m_iLineNumber);
 
                         vsys.mapVirtualDisks[vd.strDiskId] = vd;
                         break;
@@ -890,7 +890,7 @@ void VirtualHardwareItem::fillItem(const xml::ElementNode *item)
 //               || strcmp(pelmItemChild->getPrefix(), "vmw"))
 //          throw OVFLogicError(N_("Unknown element \"%s\" under Item element, line %d"),
 //                              pcszItemChildName,
-//                              ulLineNumber);
+//                              m_iLineNumber);
     }
 }
 
@@ -899,7 +899,7 @@ void VirtualHardwareItem::_checkConsistencyAndCompliance() RT_THROW(OVFLogicErro
     RTCString name = getItemName();
     if (resourceType == 0)
         throw OVFLogicError(N_("Empty element ResourceType under %s element, line %d. see DMTF Schema Documentation %s"),
-                            name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+                            name.c_str(), m_iLineNumber, DTMF_SPECS_URI);
 
     /* Don't be too uptight about the ulInstanceID value.  There are OVAs out
        there which have ulInstanceID="%iid% for memory for instance, which is
@@ -912,10 +912,10 @@ void VirtualHardwareItem::_checkConsistencyAndCompliance() RT_THROW(OVFLogicErro
             || resourceType == ResourceType_iSCSIHBA //??
             || resourceType == ResourceType_IBHCA )  //??
             throw OVFLogicError(N_("Element InstanceID is absent under %s element, line %d. see DMTF Schema Documentation %s"),
-                                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+                                name.c_str(), m_iLineNumber, DTMF_SPECS_URI);
         else
             LogRel(("OVFREADER: Warning: Ignoring missing or invalid ulInstanceID under element %s, line %u\n",
-                    name.c_str(), ulLineNumber));
+                    name.c_str(), m_iLineNumber));
     }
 }
 
@@ -994,28 +994,28 @@ void StorageItem::_checkConsistencyAndCompliance() RT_THROW(OVFLogicError)
     if (accessType == StorageAccessType_Unknown)
     {
         //throw OVFLogicError(N_("Access type is unknown under %s element, line %d"),
-        //        name.c_str(), ulLineNumber);
+        //                    name.c_str(), m_iLineNumber);
     }
 
     if (hostResourceBlockSize <= 0 && reservation > 0)
     {
         throw OVFLogicError(N_("Element HostResourceBlockSize is absent under %s element, line %d. "
                                "see DMTF Schema Documentation %s"),
-                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+                            name.c_str(), m_iLineNumber, DTMF_SPECS_URI);
     }
 
     if (virtualResourceBlockSize <= 0 && virtualQuantity > 0)
     {
         throw OVFLogicError(N_("Element VirtualResourceBlockSize is absent under %s element, line %d. "
                                "see DMTF Schema Documentation %s"),
-                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+                            name.c_str(), m_iLineNumber, DTMF_SPECS_URI);
     }
 
     if (virtualQuantity > 0 && strVirtualQuantityUnits.isEmpty())
     {
         throw OVFLogicError(N_("Element VirtualQuantityUnits is absent under %s element, line %d. "
                                "see DMTF Schema Documentation %s"),
-                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+                            name.c_str(), m_iLineNumber, DTMF_SPECS_URI);
     }
 
     if (virtualResourceBlockSize <= 1 &&
@@ -1027,7 +1027,7 @@ void StorageItem::_checkConsistencyAndCompliance() RT_THROW(OVFLogicError)
                                "under %s element, line %d. "
                                "It's needed to change on \"byte\". "
                                "see DMTF Schema Documentation %s"),
-                                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+                            name.c_str(), m_iLineNumber, DTMF_SPECS_URI);
     }
 }
 
