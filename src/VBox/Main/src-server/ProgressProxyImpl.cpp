@@ -337,11 +337,11 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
             if (fCompleted)
             {
                 /* Check the result. */
-                LONG hrcResult;
-                hrc = pOtherProgress->COMGETTER(ResultCode)(&hrcResult);
+                LONG lResult;
+                hrc = pOtherProgress->COMGETTER(ResultCode)(&lResult);
                 if (FAILED(hrc))
-                    hrcResult = hrc;
-                if (SUCCEEDED((HRESULT)hrcResult))
+                    lResult = (LONG)hrc;
+                if (SUCCEEDED((HRESULT)lResult))
                     LogFlowThisFunc(("Succeeded\n"));
                 else
                 {
@@ -366,16 +366,16 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
                             bstrText = "<failed>";
 
                         Utf8Str strText(bstrText);
-                        LogFlowThisFunc(("Got ErrorInfo(%s); hrcResult=%Rhrc\n", strText.c_str(), hrcResult));
-                        Progress::i_notifyComplete((HRESULT)hrcResult,
+                        LogFlowThisFunc(("Got ErrorInfo(%s); hrcResult=%Rhrc\n", strText.c_str(), (HRESULT)lResult));
+                        Progress::i_notifyComplete((HRESULT)lResult,
                                                    Guid(bstrIID).ref(),
                                                    Utf8Str(bstrComponent).c_str(),
                                                    "%s", strText.c_str());
                     }
                     else
                     {
-                        LogFlowThisFunc(("ErrorInfo failed with hrc=%Rhrc; hrcResult=%Rhrc\n", hrc, hrcResult));
-                        Progress::i_notifyComplete((HRESULT)hrcResult,
+                        LogFlowThisFunc(("ErrorInfo failed with hrc=%Rhrc; hrcResult=%Rhrc\n", hrc, (HRESULT)lResult));
+                        Progress::i_notifyComplete((HRESULT)lResult,
                                                    COM_IIDOF(IProgress),
                                                    "ProgressProxy",
                                                    tr("No error info"));
