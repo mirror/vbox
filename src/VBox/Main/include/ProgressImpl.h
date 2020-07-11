@@ -234,6 +234,7 @@ private:
                            const ComPtr<IVirtualBoxErrorInfo> &aErrorInfo);
 
     // internal helper methods
+    HRESULT i_notifyCompleteWorker(HRESULT aResultCode, const ComPtr<IVirtualBoxErrorInfo> &aErrorInfo);
     double i_calcTotalPercent();
     void i_checkForAutomaticTimeout(void);
 

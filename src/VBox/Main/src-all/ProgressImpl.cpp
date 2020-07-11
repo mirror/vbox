@@ -368,7 +368,7 @@ HRESULT Progress::i_notifyComplete(HRESULT aResultCode)
 #endif /* !defined(VBOX_WITH_XPCOM) */
     }
 
-    return notifyComplete((LONG)aResultCode, errorInfo);
+    return i_notifyCompleteWorker(aResultCode, errorInfo);
 }
 
 /**
@@ -412,7 +412,7 @@ HRESULT Progress::i_notifyCompleteV(HRESULT aResultCode,
     AssertComRCReturnRC(rc);
     errorInfo->init(aResultCode, aIID, pcszComponent, text);
 
-    return notifyComplete((LONG)aResultCode, errorInfo);
+    return i_notifyCompleteWorker(aResultCode, errorInfo);
 }
 
 /**
@@ -459,7 +459,7 @@ HRESULT Progress::i_notifyCompleteBothV(HRESULT aResultCode,
     AssertComRCReturnRC(rc);
     errorInfo->initEx(aResultCode, vrc, aIID, pszComponent, text);
 
-    return notifyComplete((LONG)aResultCode, errorInfo);
+    return i_notifyCompleteWorker(aResultCode, errorInfo);
 }
 
 /**
@@ -1111,23 +1111,40 @@ HRESULT Progress::notifyPointOfNoReturn(void)
  */
 HRESULT Progress::notifyComplete(LONG aResultCode, const ComPtr<IVirtualBoxErrorInfo> &aErrorInfo)
 {
-    HRESULT hrcOperation = (HRESULT)aResultCode; /* XPCOM has an unsigned HRESULT, upsetting Clang 11 wrt sign conv. */
-    LogThisFunc(("hrcOperation=%Rhrc\n", hrcOperation));
+    return i_notifyCompleteWorker((HRESULT)aResultCode, aErrorInfo);
+}
+
+
+// private internal helpers
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Marks the operation as complete and attaches full error info.
+ *
+ * This is where the actual work is done, the related methods all end up here.
+ *
+ * @param aResultCode       Operation result (error) code, must not be S_OK.
+ * @param aErrorInfo        List of arguments for the format string.
+ *
+ * @note This is just notifyComplete with the correct aResultCode type.
+ */
+HRESULT Progress::i_notifyCompleteWorker(HRESULT aResultCode, const ComPtr<IVirtualBoxErrorInfo> &aErrorInfo)
+{
+    LogThisFunc(("aResultCode=%Rhrc\n", aResultCode));
     /* on failure we expect error info, on success there must be none */
-    AssertMsg(FAILED(hrcOperation) ^ aErrorInfo.isNull(),
-              ("No error info but trying to set a failed result (%08X)!\n",
-               hrcOperation));
+    AssertMsg(FAILED(aResultCode) ^ aErrorInfo.isNull(),
+              ("No error info but trying to set a failed result (%08X/%Rhrc)!\n", aResultCode, aResultCode));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mCompleted == FALSE, E_FAIL);
 
-    if (mCanceled && SUCCEEDED(hrcOperation))
-        hrcOperation = E_FAIL;
+    if (mCanceled && SUCCEEDED(aResultCode))
+        aResultCode = E_FAIL;
 
     mCompleted = TRUE;
-    mResultCode = hrcOperation;
-    if (SUCCEEDED(hrcOperation))
+    mResultCode = aResultCode;
+    if (SUCCEEDED(aResultCode))
     {
         m_ulCurrentOperation = m_cOperations - 1; /* last operation */
         m_ulOperationPercent = 100;
@@ -1148,10 +1165,6 @@ HRESULT Progress::notifyComplete(LONG aResultCode, const ComPtr<IVirtualBoxError
 
     return S_OK;
 }
-
-
-// private internal helpers
-/////////////////////////////////////////////////////////////////////////////
 
 /**
  * Internal helper to compute the total percent value based on the member values and
