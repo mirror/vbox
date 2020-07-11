@@ -166,8 +166,8 @@ public:
         if (mEventSource && mEvent)
         {
             BOOL fDelivered = FALSE;
-            int rc = mEventSource->FireEvent(mEvent, aTimeout, &fDelivered);
-            AssertRCReturn(rc, FALSE);
+            HRESULT hrc = mEventSource->FireEvent(mEvent, aTimeout, &fDelivered);
+            AssertComRCReturn(hrc, FALSE);
             return fDelivered;
         }
         return FALSE;
