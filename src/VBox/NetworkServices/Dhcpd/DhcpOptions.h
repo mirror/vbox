@@ -446,7 +446,7 @@ protected:
             return -1;
 
         append(dst, m_String);
-        return m_String.length();
+        return (ssize_t)m_String.length();
     }
 
 public:
@@ -550,7 +550,7 @@ protected:
             cbValue += cbItem;
         }
 
-        return cbValue;
+        return (ssize_t)cbValue;
     }
 
 public:
@@ -705,13 +705,13 @@ protected:
     virtual ssize_t encodeValue(octets_t &dst) const
     {
         dst.insert(dst.end(), m_Data.begin(), m_Data.end());
-        return m_Data.size();
+        return (ssize_t)m_Data.size();
     }
 
     virtual int decodeValue(const octets_t &src, size_t cb)
     {
         octets_t::const_iterator beg(src.begin());
-        octets_t data(beg, beg + cb);
+        octets_t data(beg, beg + (ssize_t)cb);
         m_Data.swap(data);
 
         m_fPresent = true;
