@@ -30,6 +30,11 @@ endif
 # which get picked up below.
 #
 ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
+ ifn1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.10 10.9 10.8 10.7 10.6 10.5 10.4) ## @todo @bugref{9790}: if $(VBOX_DEF_MACOSX_VERSION_MIN) vge 10.11
+  VBOX_PYTHON_SUFFTBD := .tbd
+ else
+  VBOX_PYTHON_SUFFTBD :=
+ endif
  ifndef VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6
   if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.5 10.4)
    VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/include/python2.6
@@ -39,7 +44,7 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
    VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.6/Python
   else if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.6 10.7 10.8 10.9 10.10 10.11 10.12) ## @todo @bugref{9790} 2.6 header was dropped in 10.13, so: else if $(VBOX_DEF_MACOSX_VERSION_MIN) vge 10.13
    VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.6/Headers
-   VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.6/Python
+   VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.6/Python$(VBOX_PYTHON_SUFFTBD)
   endif
   if !defined(VBOX_OSE) || "$(wildcard $(VBOX_PYTHON26_LIB))" != ""
    VBOX_PYTHON26_LIB_X86 = $(VBOX_PYTHON26_LIB)
@@ -57,7 +62,7 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
    VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/../MacOSX10.10.sdk/System/Library/Frameworks/Python.framework/Versions/2.7/Python
   else
    VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Headers
-   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Python
+   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Python.framework/Versions/2.7/Python$(VBOX_PYTHON_SUFFTBD)
   endif
   if !defined(VBOX_OSE) || "$(wildcard $(VBOX_PYTHON27_LIB))" != ""
    VBOX_PYTHON27_LIB_X86 = $(VBOX_PYTHON27_LIB)
