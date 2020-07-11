@@ -328,7 +328,7 @@ DECLINLINE(int) RTCpuLastIndex(PCRTCPUSET pSet)
                     break;
                 u64 <<= 1;
             }
-            return (int)i * 64 + iBit;
+            return (int)i * 64 + (int)iBit;
         }
     }
     return 0;
