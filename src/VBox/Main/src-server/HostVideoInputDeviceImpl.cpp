@@ -130,7 +130,11 @@ typedef DECLCALLBACKTYPE(int, FNVBOXHOSTWEBCAMLIST,(PFNVBOXHOSTWEBCAMADD pfnWebc
                                                     uint64_t *pu64WebcamAddResult));
 typedef FNVBOXHOSTWEBCAMLIST *PFNVBOXHOSTWEBCAMLIST;
 
+#if RT_CLANG_PREREQ(11, 0) && !RT_CLANG_PREREQ(13, 0) /*assuming this issue will be fixed eventually*/
+static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, void **ppfn)
+#else
 static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, PFNVBOXHOSTWEBCAMLIST *ppfn)
+#endif
 {
     int rc;
     if (RTPathHavePath(pszPath))
@@ -184,7 +188,11 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
     {
         PFNVBOXHOSTWEBCAMLIST pfn = NULL;
         RTLDRMOD hmod = NIL_RTLDRMOD;
+#if RT_CLANG_PREREQ(11, 0) && !RT_CLANG_PREREQ(13, 0) /*assuming this issue will be fixed eventually*/
+        int vrc = loadHostWebcamLibrary(strLibrary.c_str(), &hmod, (void **)&pfn);
+#else
         int vrc = loadHostWebcamLibrary(strLibrary.c_str(), &hmod, &pfn);
+#endif
 
         LogRel(("Load [%s] vrc=%Rrc\n", strLibrary.c_str(), vrc));
 
@@ -192,7 +200,7 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
         {
             uint64_t u64Result = S_OK;
             vrc = pfn(hostWebcamAdd, pList, &u64Result);
-            Log(("VBoxHostWebcamList vrc %Rrc, result 0x%08X\n", vrc, u64Result));
+            Log(("VBoxHostWebcamList vrc %Rrc, result 0x%08RX64\n", vrc, u64Result));
             if (RT_FAILURE(vrc))
             {
                 hr = (HRESULT)u64Result;
