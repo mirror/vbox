@@ -175,8 +175,8 @@ typedef struct VDISKRAWPARTDESC
  */
 typedef enum VDISKPARTTYPE
 {
-    MBR,
-    GPT
+    VDISKPARTTYPE_MBR = 0,
+    VDISKPARTTYPE_GPT
 } VDISKPARTTYPE;
 
 /**

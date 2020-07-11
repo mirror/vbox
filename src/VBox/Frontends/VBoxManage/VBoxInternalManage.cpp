@@ -123,7 +123,7 @@ typedef struct HOSTPARTITION
 typedef struct HOSTPARTITIONS
 {
     /** partitioning type - MBR or GPT */
-    VDISKPARTTYPE uPartitioningType;
+    VDISKPARTTYPE   uPartitioningType;
     unsigned        cPartitions;
     HOSTPARTITION   aPartitions[HOSTPARTITION_MAX];
 } HOSTPARTITIONS, *PHOSTPARTITIONS;
@@ -758,8 +758,8 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
     if (aBuffer[450] == 0xEE)/* check the sign of the GPT disk*/
     {
-        partitioningType = GPT;
-        pPart->uPartitioningType = GPT;//partitioningType;
+        partitioningType = VDISKPARTTYPE_GPT;
+        pPart->uPartitioningType = VDISKPARTTYPE_GPT;//partitioningType;
 
         if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
             return VERR_INVALID_PARAMETER;
@@ -874,8 +874,8 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     }
     else
     {
-        partitioningType = MBR;
-        pPart->uPartitioningType = MBR;//partitioningType;
+        partitioningType = VDISKPARTTYPE_MBR;
+        pPart->uPartitioningType = VDISKPARTTYPE_MBR;//partitioningType;
 
         if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
             return VERR_INVALID_PARAMETER;
@@ -1034,7 +1034,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     pPart->aPartitions[0].cPartDataSectors = pPart->aPartitions[0].uStart;
 
     /* Fill out partitioning location info for backup GPT. */
-    if (partitioningType == GPT)
+    if (partitioningType == VDISKPARTTYPE_GPT)
     {
         pPart->aPartitions[pPart->cPartitions-1].uPartDataStart = lastUsableLBA+1;
         pPart->aPartitions[pPart->cPartitions-1].cPartDataSectors = 33;
@@ -1774,20 +1774,17 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
                 RawDescriptor.pPartDescs[i].cbData = RT_MIN(RawDescriptor.pPartDescs[i+1].uStart - RawDescriptor.pPartDescs[i].uStart, RawDescriptor.pPartDescs[i].cbData);
                 if (!RawDescriptor.pPartDescs[i].cbData)
                 {
-                    if (RawDescriptor.uPartitioningType == MBR)
+                    if (RawDescriptor.uPartitioningType == VDISKPARTTYPE_MBR)
                     {
                         RTMsgError("MBR/EPT overlaps with data area");
                         vrc = VERR_INVALID_PARAMETER;
                         goto out;
                     }
-                    else
+                    if (RawDescriptor.cPartDescs != i+1)
                     {
-                        if (RawDescriptor.cPartDescs != i+1)
-                        {
-                            RTMsgError("GPT overlaps with data area");
-                            vrc = VERR_INVALID_PARAMETER;
-                            goto out;
-                        }
+                        RTMsgError("GPT overlaps with data area");
+                        vrc = VERR_INVALID_PARAMETER;
+                        goto out;
                     }
                 }
             }
