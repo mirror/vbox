@@ -163,7 +163,7 @@ public:
 
                 int vrc = RTTimerLRStart(sTimer, gShutdownDelayMs * RT_NS_1MS_64);
                 AssertRC(vrc);
-                timerStarted = !!(SUCCEEDED(vrc));
+                timerStarted = RT_SUCCESS(vrc);
             }
             else
             {
@@ -912,11 +912,9 @@ int main(int argc, char **argv)
             vrc = RTFileOpen(&hPidFile, g_pszPidFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
             if (RT_SUCCESS(vrc))
             {
-                char szBuf[32];
-                const char *lf = "\n";
-                RTStrFormatNumber(szBuf, getpid(), 10, 0, 0, 0);
-                RTFileWrite(hPidFile, szBuf, strlen(szBuf), NULL);
-                RTFileWrite(hPidFile, lf, strlen(lf), NULL);
+                char szBuf[64];
+                size_t cchToWrite = RTStrPrintf(szBuf, sizeof(szBuf), "%ld\n", (long)getpid());
+                RTFileWrite(hPidFile, szBuf, cchToWrite, NULL);
                 RTFileClose(hPidFile);
             }
         }
