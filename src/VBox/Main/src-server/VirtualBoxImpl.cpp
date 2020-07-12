@@ -1190,7 +1190,7 @@ HRESULT VirtualBox::getAPIRevision(LONG64 *aAPIRevision)
      *        only changing when actual API changes happens. */
     uRevision |= 1;
 
-    *aAPIRevision = uRevision;
+    *aAPIRevision = (LONG64)uRevision;
 
     return S_OK;
 }
@@ -1913,7 +1913,10 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
     if (FAILED(rc))
         return rc;
 
-    Utf8Str strCreateFlags(aFlags);
+    /** @todo r=bird: Would be goot to rewrite this parsing using offset into
+     *        aFlags and drop all the C pointers, strchr, misguided RTStrStr and
+     *        tedious copying of substrings. */
+    Utf8Str strCreateFlags(aFlags); /** @todo r=bird: WTF is the point of this copy? */
     Guid id;
     bool fForceOverwrite = false;
     bool fDirectoryIncludesUUID = false;
@@ -1923,17 +1926,17 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
         while (*pcszNext != '\0')
         {
             Utf8Str strFlag;
-            const char *pcszComma = RTStrStr(pcszNext, ",");
+            const char *pcszComma = strchr(pcszNext, ','); /*clueless version: RTStrStr(pcszNext, ","); */
             if (!pcszComma)
                 strFlag = pcszNext;
             else
-                strFlag = Utf8Str(pcszNext, pcszComma - pcszNext);
+                strFlag.assign(pcszNext, (size_t)(pcszComma - pcszNext));
 
-            const char *pcszEqual = RTStrStr(strFlag.c_str(), "=");
+            const char *pcszEqual = strchr(strFlag.c_str(), '='); /* more cluelessness: RTStrStr(strFlag.c_str(), "="); */
             /* skip over everything which doesn't contain '=' */
             if (pcszEqual && pcszEqual != strFlag.c_str())
             {
-                Utf8Str strKey(strFlag.c_str(), pcszEqual - strFlag.c_str());
+                Utf8Str strKey(strFlag.c_str(), (size_t)(pcszEqual - strFlag.c_str()));
                 Utf8Str strValue(strFlag.c_str() + (pcszEqual - strFlag.c_str() + 1));
 
                 if (strKey == "UUID")
@@ -1945,11 +1948,12 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
             }
 
             if (!pcszComma)
-                pcszNext += strFlag.length();
+                pcszNext += strFlag.length();  /* you can just 'break' out here... */
             else
                 pcszNext += strFlag.length() + 1;
         }
     }
+
     /* Create UUID if none was specified. */
     if (id.isZero())
         id.create();
