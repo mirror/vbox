@@ -121,7 +121,8 @@ int CollectorDarwin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availa
     if (RT_SUCCESS(rc))
     {
         *total = totalRAM;
-        *available = cb / 1024;
+        cb /= 1024;
+        *available = cb < ~(ULONG)0 ? (ULONG)cb : ~(ULONG)0;
         *used = *total - *available;
     }
     return rc;
@@ -130,16 +131,16 @@ int CollectorDarwin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availa
 static int getProcessInfo(RTPROCESS process, struct proc_taskinfo *tinfo)
 {
     Log7(("getProcessInfo() getting info for %d", process));
-    int nb = proc_pidinfo(process, PROC_PIDTASKINFO, 0,  tinfo, sizeof(*tinfo));
-    if (nb <= 0)
+    int cbRet = proc_pidinfo((pid_t)process, PROC_PIDTASKINFO, 0, tinfo, sizeof(*tinfo));
+    if (cbRet <= 0)
     {
-        int rc = errno;
-        Log(("proc_pidinfo() -> %s", strerror(rc)));
-        return RTErrConvertFromDarwin(rc);
+        int iErrNo = errno;
+        Log(("proc_pidinfo() -> %s", strerror(iErrNo)));
+        return RTErrConvertFromDarwin(iErrNo);
     }
-    else if ((unsigned int)nb < sizeof(*tinfo))
+    if ((unsigned int)cbRet < sizeof(*tinfo))
     {
-        Log(("proc_pidinfo() -> too few bytes %d", nb));
+        Log(("proc_pidinfo() -> too few bytes %d", cbRet));
         return VERR_INTERNAL_ERROR;
     }
     return VINF_SUCCESS;
@@ -170,7 +171,8 @@ int CollectorDarwin::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
     int rc = getProcessInfo(process, &tinfo);
     if (RT_SUCCESS(rc))
     {
-        *used = tinfo.pti_resident_size / 1024;
+        uint64_t cKbResident = tinfo.pti_resident_size / 1024;
+        *used = cKbResident < ~(ULONG)0 ? (ULONG)cKbResident : ~(ULONG)0;
     }
     return rc;
 }
