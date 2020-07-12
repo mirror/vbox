@@ -3076,36 +3076,39 @@
 
 /** @def RT_BSWAP_U64
  * Reverses the byte order of an uint64_t value. */
-#if 0
-# define RT_BSWAP_U64(u64)  RT_BSWAP_U64_C(u64)
-#elif defined(__GNUC__)
-# define RT_BSWAP_U64(u64)  (__builtin_constant_p((u64)) \
-                            ? RT_BSWAP_U64_C(u64) : ASMByteSwapU64(u64))
+#if defined(__GNUC__)
+# define RT_BSWAP_U64(u64)  (__builtin_constant_p((u64)) ? RT_BSWAP_U64_C(u64) : ASMByteSwapU64(u64))
 #else
 # define RT_BSWAP_U64(u64)  ASMByteSwapU64(u64)
 #endif
 
 /** @def RT_BSWAP_U32
  * Reverses the byte order of an uint32_t value. */
-#if 0
-# define RT_BSWAP_U32(u32)  RT_BSWAP_U32_C(u32)
-#elif defined(__GNUC__)
-# define RT_BSWAP_U32(u32)  (__builtin_constant_p((u32)) \
-                            ? RT_BSWAP_U32_C(u32) : ASMByteSwapU32(u32))
+#if defined(__GNUC__)
+# define RT_BSWAP_U32(u32)  (__builtin_constant_p((u32)) ? RT_BSWAP_U32_C(u32) : ASMByteSwapU32(u32))
 #else
 # define RT_BSWAP_U32(u32)  ASMByteSwapU32(u32)
 #endif
 
 /** @def RT_BSWAP_U16
  * Reverses the byte order of an uint16_t value. */
-#if 0
-# define RT_BSWAP_U16(u16)  RT_BSWAP_U16_C(u16)
-#elif defined(__GNUC__)
-# define RT_BSWAP_U16(u16)  (__builtin_constant_p((u16)) \
-                            ? RT_BSWAP_U16_C(u16) : ASMByteSwapU16(u16))
+#if defined(__GNUC__)
+# define RT_BSWAP_U16(u16)  (__builtin_constant_p((u16)) ? RT_BSWAP_U16_C(u16) : ASMByteSwapU16(u16))
 #else
 # define RT_BSWAP_U16(u16)  ASMByteSwapU16(u16)
 #endif
+
+/** @def RT_BSWAP_S64
+ * Reverses the byte order of an int64_t value. */
+#define RT_BSWAP_S64(i64)   ((int64_t)RT_BSWAP_U64((uint64_t)i64))
+
+/** @def RT_BSWAP_S32
+ * Reverses the byte order of an int32_t value. */
+#define RT_BSWAP_S32(i32)   ((int32_t)RT_BSWAP_U32((uint32_t)i32))
+
+/** @def RT_BSWAP_S16
+ * Reverses the byte order of an int16_t value. */
+#define RT_BSWAP_S16(i16)   ((int16_t)RT_BSWAP_U16((uint16_t)i16))
 
 
 /** @def RT_BSWAP_U64_C
@@ -3120,6 +3123,23 @@
  * Reverses the byte order of an uint16_t constant. */
 #define RT_BSWAP_U16_C(u16) RT_MAKE_U16(RT_HIBYTE(u16), RT_LOBYTE(u16))
 
+/** @def RT_BSWAP_S64_C
+ * Reverses the byte order of an int64_t constant. */
+#define RT_BSWAP_S64_C(i64) ((int64_t)RT_MAKE_U64(RT_BSWAP_U32_C((uint64_t)(i64) >> 32), RT_BSWAP_U32_C((uint32_t)(i64))))
+
+/** @def RT_BSWAP_S32_C
+ * Reverses the byte order of an int32_t constant. */
+#define RT_BSWAP_S32_C(i32) ((int32_t)RT_MAKE_U32_FROM_U8(RT_BYTE4(i32), RT_BYTE3(i32), RT_BYTE2(i32), RT_BYTE1(i)))
+
+/** @def RT_BSWAP_S16_C
+ * Reverses the byte order of an uint16_t constant. */
+#define RT_BSWAP_S16_C(i16) ((int16_t)RT_MAKE_U16(RT_HIBYTE(i16), RT_LOBYTE(i16)))
+
+
+
+/** @name Host to/from little endian.
+ * @note Typically requires iprt/asm.h to be included.
+ * @{ */
 
 /** @def RT_H2LE_U64
  * Converts an uint64_t value from host to little endian byte order. */
@@ -3218,6 +3238,107 @@
 # define RT_LE2H_U16_C(u16) (u16)
 #endif
 
+/** @def RT_H2LE_S64
+ * Converts an int64_t value from host to little endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2LE_S64(i64)   RT_BSWAP_S64(i64)
+#else
+# define RT_H2LE_S64(i64)   (i64)
+#endif
+
+/** @def RT_H2LE_S64_C
+ * Converts an int64_t constant from host to little endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2LE_S64_C(i64) RT_BSWAP_S64_C(i64)
+#else
+# define RT_H2LE_S64_C(i64) (i64)
+#endif
+
+/** @def RT_H2LE_S32
+ * Converts an int32_t value from host to little endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2LE_S32(i32)   RT_BSWAP_S32(i32)
+#else
+# define RT_H2LE_S32(i32)   (i32)
+#endif
+
+/** @def RT_H2LE_S32_C
+ * Converts an int32_t constant from host to little endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2LE_S32_C(i32) RT_BSWAP_S32_C(i32)
+#else
+# define RT_H2LE_S32_C(i32) (i32)
+#endif
+
+/** @def RT_H2LE_S16
+ * Converts an int16_t value from host to little endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2LE_S16(i16)   RT_BSWAP_S16(i16)
+#else
+# define RT_H2LE_S16(i16)   (i16)
+#endif
+
+/** @def RT_H2LE_S16_C
+ * Converts an int16_t constant from host to little endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2LE_S16_C(i16) RT_BSWAP_S16_C(i16)
+#else
+# define RT_H2LE_S16_C(i16) (i16)
+#endif
+
+/** @def RT_LE2H_S64
+ * Converts an int64_t value from little endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_LE2H_S64(i64)   RT_BSWAP_S64(i64)
+#else
+# define RT_LE2H_S64(i64)   (i64)
+#endif
+
+/** @def RT_LE2H_S64_C
+ * Converts an int64_t constant from little endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_LE2H_S64_C(i64) RT_BSWAP_S64_C(i64)
+#else
+# define RT_LE2H_S64_C(i64) (i64)
+#endif
+
+/** @def RT_LE2H_S32
+ * Converts an int32_t value from little endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_LE2H_S32(i32)   RT_BSWAP_S32(i32)
+#else
+# define RT_LE2H_S32(i32)   (i32)
+#endif
+
+/** @def RT_LE2H_S32_C
+ * Converts an int32_t constant from little endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_LE2H_S32_C(i32) RT_BSWAP_S32_C(i32)
+#else
+# define RT_LE2H_S32_C(i32) (i32)
+#endif
+
+/** @def RT_LE2H_S16
+ * Converts an int16_t value from little endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_LE2H_S16(i16)   RT_BSWAP_S16(i16)
+#else
+# define RT_LE2H_S16(i16)   (i16)
+#endif
+
+/** @def RT_LE2H_S16_C
+ * Converts an int16_t constant from little endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_LE2H_S16_C(i16) RT_BSWAP_S16_C(i16)
+#else
+# define RT_LE2H_S16_C(i16) (i16)
+#endif
+
+/** @} */
+
+/** @name Host to/from big endian.
+ * @note Typically requires iprt/asm.h to be included.
+ * @{ */
 
 /** @def RT_H2BE_U64
  * Converts an uint64_t value from host to big endian byte order. */
@@ -3315,6 +3436,106 @@
 # define RT_BE2H_U16_C(u16) RT_BSWAP_U16_C(u16)
 #endif
 
+/** @def RT_H2BE_S64
+ * Converts an int64_t value from host to big endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2BE_S64(i64)   (i64)
+#else
+# define RT_H2BE_S64(i64)   RT_BSWAP_S64(i64)
+#endif
+
+/** @def RT_H2BE_S64_C
+ * Converts an int64_t constant from host to big endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2BE_S64_C(i64) (i64)
+#else
+# define RT_H2BE_S64_C(i64) RT_BSWAP_S64_C(i64)
+#endif
+
+/** @def RT_H2BE_S32
+ * Converts an int32_t value from host to big endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2BE_S32(i32)   (i32)
+#else
+# define RT_H2BE_S32(i32)   RT_BSWAP_S32(i32)
+#endif
+
+/** @def RT_H2BE_S32_C
+ * Converts an int32_t constant from host to big endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2BE_S32_C(i32) (i32)
+#else
+# define RT_H2BE_S32_C(i32) RT_BSWAP_S32_C(i32)
+#endif
+
+/** @def RT_H2BE_S16
+ * Converts an int16_t value from host to big endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2BE_S16(i16)   (i16)
+#else
+# define RT_H2BE_S16(i16)   RT_BSWAP_S16(i16)
+#endif
+
+/** @def RT_H2BE_S16_C
+ * Converts an int16_t constant from host to big endian byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_H2BE_S16_C(i16) (i16)
+#else
+# define RT_H2BE_S16_C(i16) RT_BSWAP_S16_C(i16)
+#endif
+
+/** @def RT_BE2H_S64
+ * Converts an int64_t value from big endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_BE2H_S64(i64)   (i64)
+#else
+# define RT_BE2H_S64(i64)   RT_BSWAP_S64(i64)
+#endif
+
+/** @def RT_BE2H_S64
+ * Converts an int64_t constant from big endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_BE2H_S64_C(i64) (i64)
+#else
+# define RT_BE2H_S64_C(i64) RT_BSWAP_S64_C(i64)
+#endif
+
+/** @def RT_BE2H_S32
+ * Converts an int32_t value from big endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_BE2H_S32(i32)   (i32)
+#else
+# define RT_BE2H_S32(i32)   RT_BSWAP_S32(i32)
+#endif
+
+/** @def RT_BE2H_S32_C
+ * Converts an int32_t value from big endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_BE2H_S32_C(i32) (i32)
+#else
+# define RT_BE2H_S32_C(i32) RT_BSWAP_S32_C(i32)
+#endif
+
+/** @def RT_BE2H_S16
+ * Converts an int16_t value from big endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_BE2H_S16(i16)   (i16)
+#else
+# define RT_BE2H_S16(i16)   RT_BSWAP_S16(i16)
+#endif
+
+/** @def RT_BE2H_S16_C
+ * Converts an int16_t constant from big endian to host byte order. */
+#ifdef RT_BIG_ENDIAN
+# define RT_BE2H_S16_C(i16) (i16)
+#else
+# define RT_BE2H_S16_C(i16) RT_BSWAP_S16_C(i16)
+#endif
+/** @} */
+
+/** @name Host to/from network byte order.
+ * @note Typically requires iprt/asm.h to be included.
+ * @{ */
 
 /** @def RT_H2N_U64
  * Converts an uint64_t value from host to network byte order. */
@@ -3363,6 +3584,56 @@
 /** @def RT_N2H_U16_C
  * Converts an uint16_t value from network to host byte order. */
 #define RT_N2H_U16_C(u16)   RT_BE2H_U16_C(u16)
+
+/** @def RT_H2N_S64
+ * Converts an int64_t value from host to network byte order. */
+#define RT_H2N_S64(i64)     RT_H2BE_S64(i64)
+
+/** @def RT_H2N_S64_C
+ * Converts an int64_t constant from host to network byte order. */
+#define RT_H2N_S64_C(i64)   RT_H2BE_S64_C(i64)
+
+/** @def RT_H2N_S32
+ * Converts an int32_t value from host to network byte order. */
+#define RT_H2N_S32(i32)     RT_H2BE_S32(i32)
+
+/** @def RT_H2N_S32_C
+ * Converts an int32_t constant from host to network byte order. */
+#define RT_H2N_S32_C(i32)   RT_H2BE_S32_C(i32)
+
+/** @def RT_H2N_S16
+ * Converts an int16_t value from host to network byte order. */
+#define RT_H2N_S16(i16)     RT_H2BE_S16(i16)
+
+/** @def RT_H2N_S16_C
+ * Converts an int16_t constant from host to network byte order. */
+#define RT_H2N_S16_C(i16)   RT_H2BE_S16_C(i16)
+
+/** @def RT_N2H_S64
+ * Converts an int64_t value from network to host byte order. */
+#define RT_N2H_S64(i64)     RT_BE2H_S64(i64)
+
+/** @def RT_N2H_S64_C
+ * Converts an int64_t constant from network to host byte order. */
+#define RT_N2H_S64_C(i64)   RT_BE2H_S64_C(i64)
+
+/** @def RT_N2H_S32
+ * Converts an int32_t value from network to host byte order. */
+#define RT_N2H_S32(i32)     RT_BE2H_S32(i32)
+
+/** @def RT_N2H_S32_C
+ * Converts an int32_t constant from network to host byte order. */
+#define RT_N2H_S32_C(i32)   RT_BE2H_S32_C(i32)
+
+/** @def RT_N2H_S16
+ * Converts an int16_t value from network to host byte order. */
+#define RT_N2H_S16(i16)     RT_BE2H_S16(i16)
+
+/** @def RT_N2H_S16_C
+ * Converts an int16_t value from network to host byte order. */
+#define RT_N2H_S16_C(i16)   RT_BE2H_S16_C(i16)
+
+/** @} */
 
 
 /*
