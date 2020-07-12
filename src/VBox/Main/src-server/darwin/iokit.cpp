@@ -278,7 +278,7 @@ static bool darwinDictGetString(CFDictionaryRef DictRef, CFStringRef KeyStrRef, 
     CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (ValRef)
     {
-        if (CFStringGetCString((CFStringRef)ValRef, psz, cch, kCFStringEncodingUTF8))
+        if (CFStringGetCString((CFStringRef)ValRef, psz, (CFIndex)cch, kCFStringEncodingUTF8))
             return true;
     }
     Assert(cch > 0);
@@ -327,7 +327,7 @@ static bool darwinDictGetData(CFDictionaryRef DictRef, CFStringRef KeyStrRef, vo
         CFIndex cbActual = CFDataGetLength((CFDataRef)ValRef);
         if (cbActual >= 0 && cbBuf == (size_t)cbActual)
         {
-            CFDataGetBytes((CFDataRef)ValRef, CFRangeMake(0, cbBuf), (uint8_t *)pvBuf);
+            CFDataGetBytes((CFDataRef)ValRef, CFRangeMake(0, (CFIndex)cbBuf), (uint8_t *)pvBuf);
             return true;
         }
     }
@@ -1034,7 +1034,7 @@ static void darwinDeterminUSBDeviceState(PUSBDEVICE pCur, io_object_t USBDevice,
         if (g_uMajorDarwin >= VBOX_OSX_EL_CAPTIAN_VER)
         {
             io_object_t IOUSBDeviceNew = IO_OBJECT_NULL;
-            io_object_t krc = darwinGetUSBHostDeviceFromLegacyDevice(USBDevice, &IOUSBDeviceNew);
+            kern_return_t krc = darwinGetUSBHostDeviceFromLegacyDevice(USBDevice, &IOUSBDeviceNew);
             if (   krc == KERN_SUCCESS
                 && IOUSBDeviceNew != IO_OBJECT_NULL)
             {
@@ -1717,7 +1717,7 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                         char *psz = strchr(szTmp, '\0');
                         *psz++ = ':';
                         *psz++ = ' ';
-                        size_t cchLeft = sizeof(szTmp) - (psz - &szTmp[0]) - (sizeof(" (Wireless)") - 1);
+                        size_t cchLeft = sizeof(szTmp) - (size_t)(psz - &szTmp[0]) - (sizeof(" (Wireless)") - 1);
                         bool fFound = false;
                         CFIndex i;
 
@@ -1730,12 +1730,12 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                             {
                                 CFStringRef BSDNameRef = SCNetworkInterfaceGetBSDName(IfRef);
                                 if (     BSDNameRef
-                                    &&   CFStringGetCString(BSDNameRef, psz, cchLeft, kCFStringEncodingUTF8)
+                                    &&   CFStringGetCString(BSDNameRef, psz, (CFIndex)cchLeft, kCFStringEncodingUTF8)
                                     &&  !strcmp(psz, szBSDName))
                                 {
                                     CFStringRef ServiceNameRef = SCNetworkServiceGetName(ServiceRef);
                                     if (    ServiceNameRef
-                                        &&  CFStringGetCString(ServiceNameRef, psz, cchLeft, kCFStringEncodingUTF8))
+                                        &&  CFStringGetCString(ServiceNameRef, psz, (CFIndex)cchLeft, kCFStringEncodingUTF8))
                                     {
                                         fFound = true;
                                         break;
@@ -1750,12 +1750,12 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                                 SCNetworkInterfaceRef IfRef = (SCNetworkInterfaceRef)CFArrayGetValueAtIndex(IfsRef, i);
                                 CFStringRef BSDNameRef = SCNetworkInterfaceGetBSDName(IfRef);
                                 if (     BSDNameRef
-                                    &&   CFStringGetCString(BSDNameRef, psz, cchLeft, kCFStringEncodingUTF8)
+                                    &&   CFStringGetCString(BSDNameRef, psz, (CFIndex)cchLeft, kCFStringEncodingUTF8)
                                     &&  !strcmp(psz, szBSDName))
                                 {
                                     CFStringRef DisplayNameRef = SCNetworkInterfaceGetLocalizedDisplayName(IfRef);
                                     if (    DisplayNameRef
-                                        &&  CFStringGetCString(DisplayNameRef, psz, cchLeft, kCFStringEncodingUTF8))
+                                        &&  CFStringGetCString(DisplayNameRef, psz, (CFIndex)cchLeft, kCFStringEncodingUTF8))
                                     {
                                         fFound = true;
                                         break;
