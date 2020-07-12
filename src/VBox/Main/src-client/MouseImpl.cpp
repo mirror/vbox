@@ -24,6 +24,7 @@
 #include "DisplayImpl.h"
 #include "VMMDev.h"
 #include "MousePointerShapeWrap.h"
+#include "VBoxEvents.h"
 
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/VMMDev.h>
@@ -265,8 +266,12 @@ HRESULT Mouse::init (ConsoleMouseInterface *parent)
     unconst(mEventSource).createObject();
     HRESULT rc = mEventSource->init();
     AssertComRCReturnRC(rc);
-    mMouseEvent.init(mEventSource, VBoxEventType_OnGuestMouse,
-                     0, 0, 0, 0, 0, 0);
+
+    ComPtr<IEvent> ptrEvent;
+    rc = CreateGuestMouseEvent(ptrEvent.asOutParam(), mEventSource,
+                               (GuestMouseEventMode_T)0, 0 /*x*/, 0 /*y*/, 0 /*z*/, 0 /*w*/, 0 /*buttons*/);
+    AssertComRCReturnRC(rc);
+    mMouseEvent.init(ptrEvent, mEventSource);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -687,16 +692,12 @@ void Mouse::i_fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
         mode = GuestMouseEventMode_Relative;
 
     if (fButtons != 0)
-    {
-        VBoxEventDesc evDesc;
-        evDesc.init(mEventSource, VBoxEventType_OnGuestMouse, mode, x, y,
-                    dz, dw, fButtons);
-        evDesc.fire(0);
-    }
+        fireGuestMouseEvent(mEventSource, mode, x, y, dz, dw, fButtons);
     else
     {
-        mMouseEvent.reinit(VBoxEventType_OnGuestMouse, mode, x, y, dz, dw,
-                           fButtons);
+        ComPtr<IEvent> ptrEvent;
+        mMouseEvent.getEvent(ptrEvent.asOutParam());
+        ReinitGuestMouseEvent(ptrEvent, mode, x, y, dz, dw, fButtons);
         mMouseEvent.fire(0);
     }
 }
@@ -721,11 +722,8 @@ void Mouse::i_fireMultiTouchEvent(uint8_t cContacts,
         contactFlags[i] = RT_BYTE2(u32Hi);
     }
 
-    VBoxEventDesc evDesc;
-    evDesc.init(mEventSource, VBoxEventType_OnGuestMultiTouch,
-                cContacts, ComSafeArrayAsInParam(xPositions), ComSafeArrayAsInParam(yPositions),
-                ComSafeArrayAsInParam(contactIds), ComSafeArrayAsInParam(contactFlags), u32ScanTime);
-    evDesc.fire(0);
+    fireGuestMultiTouchEvent(mEventSource, cContacts, ComSafeArrayAsInParam(xPositions), ComSafeArrayAsInParam(yPositions),
+                             ComSafeArrayAsInParam(contactIds), ComSafeArrayAsInParam(contactFlags), u32ScanTime);
 }
 
 /**

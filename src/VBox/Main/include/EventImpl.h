@@ -26,8 +26,8 @@
 #include "VetoEventWrap.h"
 
 
-class ATL_NO_VTABLE VBoxEvent :
-    public EventWrap
+class ATL_NO_VTABLE VBoxEvent
+    : public EventWrap
 {
 public:
     DECLARE_EMPTY_CTOR_DTOR(VBoxEvent)
@@ -54,8 +54,8 @@ private:
 };
 
 
-class ATL_NO_VTABLE VBoxVetoEvent :
-    public VetoEventWrap
+class ATL_NO_VTABLE VBoxVetoEvent
+    : public VetoEventWrap
 {
 public:
     DECLARE_EMPTY_CTOR_DTOR(VBoxVetoEvent)
@@ -122,7 +122,7 @@ private:
 
 
     struct Data;
-    Data* m;
+    Data *m;
 
     friend class ListenerRecord;
 };
@@ -133,9 +133,15 @@ public:
     VBoxEventDesc() : mEvent(0), mEventSource(0)
     {}
 
+    VBoxEventDesc(IEvent *aEvent, IEventSource *aSource)
+        : mEvent(aEvent), mEventSource(aSource)
+    {}
+
     ~VBoxEventDesc()
     {}
 
+
+#if 0
     /**
      * This function to be used with some care, as arguments order must match
      * attribute declaration order event class and its superclasses up to
@@ -149,6 +155,13 @@ public:
     * fields. Assumes event is subtype of IReusableEvent, asserts otherwise.
     */
     HRESULT reinit(VBoxEventType_T aType, ...);
+#endif
+
+    void init(IEvent *aEvent, IEventSource *aSource)
+    {
+        mEvent       = aEvent;
+        mEventSource = aSource;
+    }
 
     void uninit()
     {

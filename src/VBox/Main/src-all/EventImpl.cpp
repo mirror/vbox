@@ -57,6 +57,7 @@
 #include "EventImpl.h"
 #include "AutoCaller.h"
 #include "LoggingNew.h"
+#include "VBoxEvents.h"
 
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
@@ -1072,9 +1073,7 @@ HRESULT EventSource::registerListener(const ComPtr<IEventListener> &aListener,
     RecordHolder<ListenerRecord> lrh(new ListenerRecord(aListener, interested, aActive, this));
     m->mListeners.insert(Listeners::value_type((IEventListener *)aListener, lrh));
 
-    VBoxEventDesc evDesc;
-    evDesc.init(this, VBoxEventType_OnEventSourceChanged, (IEventListener *)aListener, TRUE);
-    evDesc.fire(0);
+    fireEventSourceChangedEvent(this, (IEventListener *)aListener, TRUE /*add*/);
 
     return S_OK;
 }
@@ -1092,20 +1091,12 @@ HRESULT EventSource::unregisterListener(const ComPtr<IEventListener> &aListener)
         it->second.obj()->shutdown();
         m->mListeners.erase(it);
         // destructor removes refs from the event map
+        fireEventSourceChangedEvent(this, (IEventListener *)aListener, FALSE /*add*/);
         rc = S_OK;
     }
     else
-    {
         rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                       tr("Listener was never registered"));
-    }
-
-    if (SUCCEEDED(rc))
-    {
-        VBoxEventDesc evDesc;
-        evDesc.init(this, VBoxEventType_OnEventSourceChanged, (IEventListener *)aListener, FALSE);
-        evDesc.fire(0);
-    }
 
     return rc;
 }

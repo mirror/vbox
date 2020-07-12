@@ -89,6 +89,7 @@
 #include "LoggingNew.h"
 #include "CloudProviderManagerImpl.h"
 #include "ThreadTask.h"
+#include "VBoxEvents.h"
 
 #include <QMTranslator.h>
 
@@ -134,6 +135,7 @@ std::map<com::Utf8Str, int> VirtualBox::sNatNetworkNameToRefCount;
 RWLockHandle *VirtualBox::spMtxNatNetworkNameToRefCountLock;
 
 
+#if 0 /* obsoleted by AsyncEvent */
 ////////////////////////////////////////////////////////////////////////////////
 //
 // CallbackEvent class
@@ -172,6 +174,37 @@ private:
     VirtualBox         *mVirtualBox;
 protected:
     VBoxEventType_T     mWhat;
+};
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// AsyncEvent class
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * For firing off an event on asynchronously on an event thread.
+ */
+class VirtualBox::AsyncEvent : public Event
+{
+public:
+    AsyncEvent(VirtualBox *a_pVirtualBox, ComPtr<IEvent> const &a_rEvent)
+        : mVirtualBox(a_pVirtualBox), mEvent(a_rEvent)
+    {
+        Assert(a_pVirtualBox);
+    }
+
+    void *handler() RT_OVERRIDE;
+
+private:
+    /**
+     * @note This is a weak ref -- the CallbackEvent handler thread is bound to the
+     *       lifetime of the VirtualBox instance, so it's safe.
+     */
+    VirtualBox         *mVirtualBox;
+    /** The event. */
+    ComPtr<IEvent>      mEvent;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -555,6 +588,13 @@ HRESULT VirtualBox::init()
     bool fCreate = false;
     try
     {
+        /* Create the event source early as we may fire async event during settings loading (media). */
+        rc = unconst(m->pEventSource).createObject();
+        if (FAILED(rc)) throw rc;
+        rc = m->pEventSource->init();
+        if (FAILED(rc)) throw rc;
+
+
         /* Get the VirtualBox home directory. */
         {
             char szHomeDir[RTPATH_MAX];
@@ -717,11 +757,6 @@ HRESULT VirtualBox::init()
             AssertComRCThrowRC(rc);
         }
 #endif /* VBOX_WITH_CLOUD_NET */
-
-        /* events */
-        if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
-            rc = m->pEventSource->init();
-        if (FAILED(rc)) throw rc;
 
         /* cloud provider manager */
         rc = unconst(m->pCloudProviderManager).createObject();
@@ -3187,47 +3222,6 @@ void VirtualBox::i_addProcessToReap(RTPROCESS pid)
     m->pClientWatcher->addProcess(pid);
 }
 
-/** Event for onMachineStateChange(), onMachineDataChange(), onMachineRegistered() */
-struct MachineEvent : public VirtualBox::CallbackEvent
-{
-    MachineEvent(VirtualBox *aVB, VBoxEventType_T aWhat, const Guid &aId, BOOL aBool)
-        : CallbackEvent(aVB, aWhat), id(aId.toUtf16())
-        , mBool(aBool)
-        { }
-
-    MachineEvent(VirtualBox *aVB, VBoxEventType_T aWhat, const Guid &aId, MachineState_T aState)
-        : CallbackEvent(aVB, aWhat), id(aId.toUtf16())
-        , mState(aState)
-        {}
-
-    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
-    {
-        switch (mWhat)
-        {
-            case VBoxEventType_OnMachineDataChanged:
-                aEvDesc.init(aSource, mWhat, id.raw(), mBool);
-                break;
-
-            case VBoxEventType_OnMachineStateChanged:
-                aEvDesc.init(aSource, mWhat, id.raw(), mState);
-                break;
-
-            case VBoxEventType_OnMachineRegistered:
-                aEvDesc.init(aSource, mWhat, id.raw(), mBool);
-                break;
-
-            default:
-                AssertFailedReturn(S_OK);
-         }
-         return S_OK;
-    }
-
-    Bstr id;
-    MachineState_T mState;
-    BOOL mBool;
-};
-
-
 /**
  * VD plugin load
  */
@@ -3244,125 +3238,52 @@ int VirtualBox::i_unloadVDPlugin(const char *pszPluginLibrary)
     return m->pSystemProperties->i_unloadVDPlugin(pszPluginLibrary);
 }
 
-
-/** Event for onMediumRegistered() */
-struct MediumRegisteredEventStruct : public VirtualBox::CallbackEvent
-{
-    MediumRegisteredEventStruct(VirtualBox *aVB, const Guid &aMediumId,
-                          const DeviceType_T aDevType, const BOOL aRegistered)
-        : CallbackEvent(aVB, VBoxEventType_OnMediumRegistered)
-        , mMediumId(aMediumId.toUtf16()), mDevType(aDevType), mRegistered(aRegistered)
-    {}
-
-    virtual HRESULT prepareEventDesc(IEventSource *aSource, VBoxEventDesc &aEvDesc)
-    {
-        return aEvDesc.init(aSource, VBoxEventType_OnMediumRegistered, mMediumId.raw(), mDevType, mRegistered);
-    }
-
-    Bstr mMediumId;
-    DeviceType_T mDevType;
-    BOOL mRegistered;
-};
-
 /**
  *  @note Doesn't lock any object.
  */
 void VirtualBox::i_onMediumRegistered(const Guid &aMediumId, const DeviceType_T aDevType, const BOOL aRegistered)
 {
-    i_postEvent(new MediumRegisteredEventStruct(this, aMediumId, aDevType, aRegistered));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateMediumRegisteredEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                              aMediumId.toUtf16().raw(), aDevType, aRegistered);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
-
-/** Event for onMediumConfigChanged() */
-struct MediumConfigChangedEventStruct : public VirtualBox::CallbackEvent
-{
-    MediumConfigChangedEventStruct(VirtualBox *aVB, IMedium *aMedium)
-        : CallbackEvent(aVB, VBoxEventType_OnMediumConfigChanged)
-        , mMedium(aMedium)
-    {}
-
-    virtual HRESULT prepareEventDesc(IEventSource *aSource, VBoxEventDesc &aEvDesc)
-    {
-        return aEvDesc.init(aSource, VBoxEventType_OnMediumConfigChanged, mMedium);
-    }
-
-    IMedium* mMedium;
-};
 
 void VirtualBox::i_onMediumConfigChanged(IMedium *aMedium)
 {
-    i_postEvent(new MediumConfigChangedEventStruct(this, aMedium));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateMediumConfigChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aMedium);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
-
-/** Event for onMediumChanged() */
-struct MediumChangedEventStruct : public VirtualBox::CallbackEvent
-{
-    MediumChangedEventStruct(VirtualBox *aVB, IMediumAttachment *aMediumAttachment)
-        : CallbackEvent(aVB, VBoxEventType_OnMediumChanged)
-        , mMediumAttachment(aMediumAttachment)
-    {}
-
-    virtual HRESULT prepareEventDesc(IEventSource *aSource, VBoxEventDesc &aEvDesc)
-    {
-        return aEvDesc.init(aSource, VBoxEventType_OnMediumChanged, mMediumAttachment);
-    }
-
-    IMediumAttachment* mMediumAttachment;
-};
 
 void VirtualBox::i_onMediumChanged(IMediumAttachment *aMediumAttachment)
 {
-    i_postEvent(new MediumChangedEventStruct(this, aMediumAttachment));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateMediumChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aMediumAttachment);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
-
-/** Event for onStorageControllerChanged() */
-struct StorageControllerChangedEventStruct : public VirtualBox::CallbackEvent
-{
-    StorageControllerChangedEventStruct(VirtualBox *aVB, const Guid &aMachineId,
-                                        const com::Utf8Str &aControllerName)
-        : CallbackEvent(aVB, VBoxEventType_OnStorageControllerChanged)
-        , mMachineId(aMachineId.toUtf16()), mControllerName(aControllerName)
-    {}
-
-    virtual HRESULT prepareEventDesc(IEventSource *aSource, VBoxEventDesc &aEvDesc)
-    {
-        return aEvDesc.init(aSource, VBoxEventType_OnStorageControllerChanged, mMachineId.raw(), mControllerName.raw());
-    }
-
-    Bstr mMachineId;
-    Bstr mControllerName;
-};
 
 /**
  *  @note Doesn't lock any object.
  */
 void VirtualBox::i_onStorageControllerChanged(const Guid &aMachineId, const com::Utf8Str &aControllerName)
 {
-    i_postEvent(new StorageControllerChangedEventStruct(this, aMachineId, aControllerName));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateStorageControllerChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                                      aMachineId.toUtf16().raw(), Bstr(aControllerName).raw());
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
-
-/** Event for onStorageDeviceChanged() */
-struct StorageDeviceChangedEventStruct : public VirtualBox::CallbackEvent
-{
-    StorageDeviceChangedEventStruct(VirtualBox *aVB, IMediumAttachment *aStorageDevice, BOOL fRemoved, BOOL fSilent)
-        : CallbackEvent(aVB, VBoxEventType_OnStorageDeviceChanged)
-        , mStorageDevice(aStorageDevice)
-        , mRemoved(fRemoved)
-        , mSilent(fSilent)
-    {}
-
-    virtual HRESULT prepareEventDesc(IEventSource *aSource, VBoxEventDesc &aEvDesc)
-    {
-        return aEvDesc.init(aSource, VBoxEventType_OnStorageDeviceChanged, mStorageDevice, mRemoved, mSilent);
-    }
-
-    IMediumAttachment* mStorageDevice;
-    BOOL mRemoved;
-    BOOL mSilent;
-};
 
 void VirtualBox::i_onStorageDeviceChanged(IMediumAttachment *aStorageDevice, const BOOL fRemoved, const BOOL fSilent)
 {
-    i_postEvent(new StorageDeviceChangedEventStruct(this, aStorageDevice, fRemoved, fSilent));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateStorageDeviceChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aStorageDevice, fRemoved, fSilent);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
 /**
@@ -3370,7 +3291,10 @@ void VirtualBox::i_onStorageDeviceChanged(IMediumAttachment *aStorageDevice, con
  */
 void VirtualBox::i_onMachineStateChange(const Guid &aId, MachineState_T aState)
 {
-    i_postEvent(new MachineEvent(this, VBoxEventType_OnMachineStateChanged, aId, aState));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateMachineStateChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aState);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
 /**
@@ -3378,7 +3302,10 @@ void VirtualBox::i_onMachineStateChange(const Guid &aId, MachineState_T aState)
  */
 void VirtualBox::i_onMachineDataChange(const Guid &aId, BOOL aTemporary)
 {
-    i_postEvent(new MachineEvent(this, VBoxEventType_OnMachineDataChanged, aId, aTemporary));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateMachineDataChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aTemporary);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
 /**
@@ -3387,67 +3314,52 @@ void VirtualBox::i_onMachineDataChange(const Guid &aId, BOOL aTemporary)
 BOOL VirtualBox::i_onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
                                         Bstr &aError)
 {
-    LogFlowThisFunc(("machine={%s} aKey={%ls} aValue={%ls}\n",
-                      aId.toString().c_str(), aKey, aValue));
+    LogFlowThisFunc(("machine={%RTuuid} aKey={%ls} aValue={%ls}\n", aId.raw(), aKey, aValue));
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), FALSE);
 
-    BOOL allowChange = TRUE;
-    Bstr id = aId.toUtf16();
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateExtraDataCanChangeEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aKey, aValue);
+    AssertComRCReturn(hrc, TRUE);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 
-    VBoxEventDesc evDesc;
-    evDesc.init(m->pEventSource, VBoxEventType_OnExtraDataCanChange, id.raw(), aKey, aValue);
-    BOOL fDelivered = evDesc.fire(3000); /* Wait up to 3 secs for delivery */
+    VBoxEventDesc EvtDesc(ptrEvent, m->pEventSource);
+    BOOL fDelivered = EvtDesc.fire(3000); /* Wait up to 3 secs for delivery */
     //Assert(fDelivered);
+    BOOL fAllowChange = TRUE;
     if (fDelivered)
     {
-        ComPtr<IEvent> aEvent;
-        evDesc.getEvent(aEvent.asOutParam());
-        ComPtr<IExtraDataCanChangeEvent> aCanChangeEvent = aEvent;
-        Assert(aCanChangeEvent);
-        BOOL fVetoed = FALSE;
-        aCanChangeEvent->IsVetoed(&fVetoed);
-        allowChange = !fVetoed;
+        ComPtr<IExtraDataCanChangeEvent> ptrCanChangeEvent = ptrEvent;
+        Assert(ptrCanChangeEvent);
 
-        if (!allowChange)
+        BOOL fVetoed = FALSE;
+        ptrCanChangeEvent->IsVetoed(&fVetoed);
+        fAllowChange = !fVetoed;
+
+        if (!fAllowChange)
         {
             SafeArray<BSTR> aVetos;
-            aCanChangeEvent->GetVetos(ComSafeArrayAsOutParam(aVetos));
+            ptrCanChangeEvent->GetVetos(ComSafeArrayAsOutParam(aVetos));
             if (aVetos.size() > 0)
                 aError = aVetos[0];
         }
     }
-    else
-        allowChange = TRUE;
 
-    LogFlowThisFunc(("allowChange=%RTbool\n", allowChange));
-    return allowChange;
+    LogFlowThisFunc(("fAllowChange=%RTbool\n", fAllowChange));
+    return fAllowChange;
 }
-
-/** Event for onExtraDataChange() */
-struct ExtraDataEvent : public VirtualBox::CallbackEvent
-{
-    ExtraDataEvent(VirtualBox *aVB, const Guid &aMachineId,
-                   IN_BSTR aKey, IN_BSTR aVal)
-        : CallbackEvent(aVB, VBoxEventType_OnExtraDataChanged)
-        , machineId(aMachineId.toUtf16()), key(aKey), val(aVal)
-    {}
-
-    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
-    {
-        return aEvDesc.init(aSource, VBoxEventType_OnExtraDataChanged, machineId.raw(), key.raw(), val.raw());
-    }
-
-    Bstr machineId, key, val;
-};
 
 /**
  *  @note Doesn't lock any object.
+ *  @todo +d
  */
 void VirtualBox::i_onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue)
 {
-    i_postEvent(new ExtraDataEvent(this, aId, aKey, aValue));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateExtraDataChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aKey, aValue);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
 /**
@@ -3455,59 +3367,34 @@ void VirtualBox::i_onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVal
  */
 void VirtualBox::i_onMachineRegistered(const Guid &aId, BOOL aRegistered)
 {
-    i_postEvent(new MachineEvent(this, VBoxEventType_OnMachineRegistered, aId, aRegistered));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateMachineRegisteredEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aRegistered);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
-
-/** Event for onSessionStateChange() */
-struct SessionEvent : public VirtualBox::CallbackEvent
-{
-    SessionEvent(VirtualBox *aVB, const Guid &aMachineId, SessionState_T aState)
-        : CallbackEvent(aVB, VBoxEventType_OnSessionStateChanged)
-        , machineId(aMachineId.toUtf16()), sessionState(aState)
-    {}
-
-    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
-    {
-        return aEvDesc.init(aSource, VBoxEventType_OnSessionStateChanged, machineId.raw(), sessionState);
-    }
-    Bstr machineId;
-    SessionState_T sessionState;
-};
 
 /**
  *  @note Doesn't lock any object.
+ *  @todo +d
  */
 void VirtualBox::i_onSessionStateChange(const Guid &aId, SessionState_T aState)
 {
-    i_postEvent(new SessionEvent(this, aId, aState));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateSessionStateChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aState);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
-
-/** Event for i_onSnapshotTaken(), i_onSnapshotDeleted(), i_onSnapshotRestored() and i_onSnapshotChange() */
-struct SnapshotEvent : public VirtualBox::CallbackEvent
-{
-    SnapshotEvent(VirtualBox *aVB, const Guid &aMachineId, const Guid &aSnapshotId,
-                  VBoxEventType_T aWhat)
-        : CallbackEvent(aVB, aWhat)
-        , machineId(aMachineId), snapshotId(aSnapshotId)
-        {}
-
-    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
-    {
-        return aEvDesc.init(aSource, mWhat, machineId.toUtf16().raw(),
-                            snapshotId.toUtf16().raw());
-    }
-
-    Guid machineId;
-    Guid snapshotId;
-};
 
 /**
  *  @note Doesn't lock any object.
  */
 void VirtualBox::i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    i_postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
-                                  VBoxEventType_OnSnapshotTaken));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateSnapshotTakenEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                           aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
 /**
@@ -3515,8 +3402,11 @@ void VirtualBox::i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshot
  */
 void VirtualBox::i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    i_postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
-                                  VBoxEventType_OnSnapshotDeleted));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateSnapshotDeletedEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                             aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
 /**
@@ -3524,42 +3414,28 @@ void VirtualBox::i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapsh
  */
 void VirtualBox::i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    i_postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
-                                  VBoxEventType_OnSnapshotRestored));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateSnapshotRestoredEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                              aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
 /**
  *  @note Doesn't lock any object.
+ *  @todo +d
  */
 void VirtualBox::i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    i_postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
-                                  VBoxEventType_OnSnapshotChanged));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateSnapshotChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                             aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
-/** Event for onGuestPropertyChange() */
-struct GuestPropertyEvent : public VirtualBox::CallbackEvent
-{
-    GuestPropertyEvent(VirtualBox *aVBox, const Guid &aMachineId,
-                       IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
-        : CallbackEvent(aVBox, VBoxEventType_OnGuestPropertyChanged),
-          machineId(aMachineId),
-          name(aName),
-          value(aValue),
-          flags(aFlags)
-    {}
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS /** @todo r=bird: Why is this still here?  */
 
-    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
-    {
-        return aEvDesc.init(aSource, VBoxEventType_OnGuestPropertyChanged,
-                            machineId.toUtf16().raw(), name.raw(), value.raw(), flags.raw());
-    }
-
-    Guid machineId;
-    Bstr name, value, flags;
-};
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
  * Generates a new clipboard area on the host by opening (and locking) a new, temporary directory.
  *
@@ -3832,19 +3708,26 @@ ULONG VirtualBox::i_onClipboardAreaGetRefCount(ULONG aID)
     LogFlowThisFunc(("aID=%RU32, cRefCount=%RU32\n", aID, cRefCount));
     return cRefCount;
 }
+
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /**
  *  @note Doesn't lock any object.
+ *  @todo +d
  */
 void VirtualBox::i_onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName,
                                          IN_BSTR aValue, IN_BSTR aFlags)
 {
-    i_postEvent(new GuestPropertyEvent(this, aMachineId, aName, aValue, aFlags));
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = CreateGuestPropertyChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                                  aMachineId.toUtf16().raw(), aName, aValue, aFlags);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
 }
 
 /**
  *  @note Doesn't lock any object.
+ *  @todo +d
  */
 void VirtualBox::i_onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
                                        NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
@@ -3854,6 +3737,7 @@ void VirtualBox::i_onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, boo
                          aHostPort, aGuestIp, aGuestPort);
 }
 
+/**  @todo +d  */
 void VirtualBox::i_onNATNetworkChange(IN_BSTR aName)
 {
     fireNATNetworkChangedEvent(m->pEventSource, aName);
@@ -5801,6 +5685,7 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#if 0 /* obsoleted by AsyncEvent */
 /**
  * Prepare the event using the overwritten #prepareEventDesc method and fire.
  *
@@ -5830,6 +5715,32 @@ void *VirtualBox::CallbackEvent::handler()
     }
 
     mVirtualBox = NULL; /* Not needed any longer. Still make sense to do this? */
+    return NULL;
+}
+#endif
+
+/**
+ * Called on the event handler thread.
+ *
+ * @note Locks the managed VirtualBox object for reading but leaves the lock
+ *       before iterating over callbacks and calling their methods.
+ */
+void *VirtualBox::AsyncEvent::handler()
+{
+    if (mVirtualBox)
+    {
+        AutoCaller autoCaller(mVirtualBox);
+        if (autoCaller.isOk())
+        {
+            VBoxEventDesc EvtDesc(mEvent, mVirtualBox->m->pEventSource);
+            EvtDesc.fire(/* don't wait for delivery */0);
+        }
+        else
+            Log1WarningFunc(("VirtualBox has been uninitialized (state=%d), the callback event is discarded!\n",
+                             mVirtualBox->getObjectState().getState()));
+        mVirtualBox = NULL; /* Old code did this, not really necessary, but whatever. */
+    }
+    mEvent.setNull();
     return NULL;
 }
 

@@ -90,8 +90,12 @@ public:
     typedef std::list<ComPtr<IInternalSessionControl> > InternalControlList;
     typedef ObjectsList<Machine> MachinesOList;
 
+#if 0 /* obsoleted by AsyncEvent */
     class CallbackEvent;
     friend class CallbackEvent;
+#endif
+    class AsyncEvent;
+    friend class AsyncEvent;
 
 #ifndef VBOX_WITH_XPCOM
 # ifdef VBOX_WITH_SDS

@@ -126,7 +126,7 @@
     <xsl:otherwise>
       <xsl:choose>
         <xsl:when test="$mod='ptr'">
-          <xsl:value-of select="'BYTE*'" />
+          <xsl:value-of select="'BYTE *'" />
         </xsl:when>
         <xsl:when test="(($type='wstring') or ($type='uuid'))">
           <xsl:choose>
@@ -147,7 +147,7 @@
         <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
           <xsl:choose>
             <xsl:when test="$param">
-              <xsl:value-of select="concat($type,'*')"/>
+              <xsl:value-of select="concat($type,' *')"/>
             </xsl:when>
             <xsl:otherwise>
               <xsl:value-of select="concat('ComPtr&lt;',$type,'&gt;')"/>
@@ -185,7 +185,7 @@
         </xsl:otherwise>
       </xsl:choose>
       <xsl:if test="$dir='out'">
-        <xsl:value-of select="'*'"/>
+        <xsl:value-of select="' *'"/>
       </xsl:if>
       <xsl:if test="$param and not($param='_')">
         <xsl:value-of select="concat(' ', $param)"/>
@@ -257,6 +257,7 @@
 <xsl:template name="genAttrInitCode">
   <xsl:param name="name" />
   <xsl:param name="obj" />
+  <xsl:param name="va" select="true" />
   <xsl:variable name="extends">
     <xsl:value-of select="key('G_keyInterfacesByName', $name)/@extends" />
   </xsl:variable>
@@ -270,6 +271,7 @@
       <xsl:call-template name="genAttrInitCode">
         <xsl:with-param name="name" select="$extends" />
         <xsl:with-param name="obj" select="$obj" />
+        <xsl:with-param name="va" select="$va" />
       </xsl:call-template>
     </xsl:when>
     <xsl:otherwise>
@@ -309,27 +311,36 @@
             <xsl:with-param name="dir" select="'in'" />
           </xsl:call-template>
         </xsl:variable>
-        <xsl:value-of select="       '#ifdef RT_OS_WINDOWS&#10;'"/>
-        <xsl:value-of select="concat('              SAFEARRAY *aPtr_', @name, ' = va_arg(args, SAFEARRAY *);&#10;')"/>
-        <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr_', @name, '(aPtr_', @name, ');&#10;')"/>
-        <xsl:value-of select="       '#else&#10;'"/>
-        <xsl:value-of select="concat('              PRUint32 aArrSize_', @name, ' = va_arg(args, PRUint32);&#10;')"/>
-        <xsl:value-of select="concat('              void*    aPtr_', @name, ' = va_arg(args, void*);&#10;')"/>
-        <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr_', @name, '(aArrSize_', @name, ', (', $elemtype,'*)aPtr_', @name, ');&#10;')"/>
-        <xsl:value-of select="       '#endif&#10;'"/>
-        <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(ComSafeArrayAsInParam(aArr_', @name, '));&#10;')"/>
+        <xsl:if test="$va">
+          <xsl:value-of select="       '#ifdef RT_OS_WINDOWS&#10;'"/>
+          <xsl:value-of select="concat('            SAFEARRAY *aPtr_', @name, ' = va_arg(args, SAFEARRAY *);&#10;')"/>
+          <xsl:value-of select="concat('            com::SafeArray&lt;', $elemtype,'&gt;   aArr_', @name, '(aPtr_', @name, ');&#10;')"/>
+          <xsl:value-of select="       '#else&#10;'"/>
+          <xsl:value-of select="concat('            PRUint32 aArrSize_', @name, ' = va_arg(args, PRUint32);&#10;')"/>
+          <xsl:value-of select="concat('            void*    aPtr_', @name, ' = va_arg(args, void*);&#10;')"/>
+          <xsl:value-of select="concat('            com::SafeArray&lt;', $elemtype,'&gt;   aArr_', @name, '(aArrSize_', @name, ', (', $elemtype,'*)aPtr_', @name, ');&#10;')"/>
+          <xsl:value-of select="       '#endif&#10;'"/>
+          <xsl:value-of select="concat('            ',$obj, '->set_', @name, '(ComSafeArrayAsInParam(aArr_', @name, '));&#10;')"/>
+        </xsl:if>
+        <xsl:if test="not($va)">
+          <xsl:value-of select="concat('            ',$obj, '->set_', @name, '(ComSafeArrayInArg(a_', @name, '));&#10;')"/>
+        </xsl:if>
       </xsl:when>
       <xsl:when test="substring($aType, string-length($aType) - 1) = '_T'"> <!-- To avoid pedantic gcc warnings/errors. -->
-        <xsl:value-of select="       '#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK&#10;'"/>
-        <xsl:value-of select="concat('              ',$aTypeName, ' = (',$aType,')va_arg(args, int);&#10;')"/>
-        <xsl:value-of select="       '#else&#10;'"/>
-        <xsl:value-of select="concat('              ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>
-        <xsl:value-of select="       '#endif&#10;'"/>
-        <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
+        <xsl:if test="$va">
+          <xsl:value-of select="       '#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK&#10;'"/>
+          <xsl:value-of select="concat('            ',$aTypeName, ' = (',$aType,')va_arg(args, int);&#10;')"/>
+          <xsl:value-of select="       '#else&#10;'"/>
+          <xsl:value-of select="concat('            ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>
+          <xsl:value-of select="       '#endif&#10;'"/>
+        </xsl:if>
+        <xsl:value-of select="concat('            ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:value-of select="concat('              ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>
-        <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
+        <xsl:if test="$va">
+          <xsl:value-of select="concat('            ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>
+        </xsl:if>
+        <xsl:value-of select="concat('            ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:for-each>
@@ -488,7 +499,7 @@
   <xsl:param name="isReusable" />
 
   <xsl:value-of select="concat('class ATL_NO_VTABLE ',$implName,
-                        '&#10;    : public VirtualBoxBase,&#10;      VBOX_SCRIPTABLE_IMPL(',
+                        '&#10;    : public VirtualBoxBase&#10;    , VBOX_SCRIPTABLE_IMPL(',
                         @name, ')&#10;{&#10;')" />
   <xsl:value-of select="'public:&#10;'" />
   <xsl:value-of select="concat('    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(', $implName, ', ', @name, ')&#10;')" />
@@ -549,7 +560,7 @@
   <xsl:choose>
     <xsl:when test="$isVeto='yes'">
 <xsl:text><![CDATA[
-    HRESULT init(IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable = TRUE)
+    HRESULT init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWaitable = TRUE)
     {
         NOREF(aWaitable);
         return mEvent->init(aSource, aType);
@@ -585,20 +596,20 @@ private:
     <xsl:when test="$isReusable='yes'">
       <xsl:text>
 <![CDATA[
-    HRESULT init(IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable = FALSE)
+    HRESULT init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWaitable = FALSE)
     {
         mGeneration = 1;
         return mEvent->init(aSource, aType, aWaitable);
     }
     STDMETHOD(COMGETTER(Generation))(ULONG *aGeneration)
     {
-      *aGeneration = mGeneration;
-      return S_OK;
+        *aGeneration = mGeneration;
+        return S_OK;
     }
     STDMETHOD(Reuse)()
     {
-       ASMAtomicIncU32((volatile uint32_t*)&mGeneration);
-       return S_OK;
+        ASMAtomicIncU32((volatile uint32_t *)&mGeneration);
+        return S_OK;
     }
 private:
     volatile ULONG              mGeneration;
@@ -607,7 +618,7 @@ private:
     </xsl:when>
     <xsl:otherwise>
 <xsl:text><![CDATA[
-    HRESULT init(IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable)
+    HRESULT init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWaitable)
     {
         return mEvent->init(aSource, aType, aWaitable);
     }
@@ -636,6 +647,104 @@ private:
     <xsl:with-param name="depth" select="'1'" />
     <xsl:with-param name="parents" select="''" />
   </xsl:call-template>
+
+  <!-- Split off the remainer into separate template? -->
+  <xsl:variable name="evname">
+    <xsl:value-of select="substring(@name, 2)" />
+  </xsl:variable>
+  <xsl:variable name="evid">
+    <xsl:value-of select="concat('On', substring(@name, 2, string-length(@name)-6))" />
+  </xsl:variable>
+  <xsl:variable name="ifname">
+    <xsl:value-of select="@name" />
+  </xsl:variable>
+  <xsl:variable name="waitable">
+    <xsl:choose>
+      <xsl:when test="@waitable='yes'">
+        <xsl:value-of select="'TRUE'"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="'FALSE'"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+
+  <!-- Generate ReinitXxxxEvent functions if reusable. -->
+  <xsl:if test="$isReusable='yes'">
+    <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Reinit', $evname, '(IEvent *aEvent')"/>
+    <xsl:call-template name="genFormalParams">
+      <xsl:with-param name="name" select="$ifname" />
+    </xsl:call-template>
+    <xsl:text>)&#10;</xsl:text>
+    <xsl:text>{&#10;</xsl:text>
+    <xsl:text>    </xsl:text><xsl:value-of select="$implName"/><xsl:text> *pEvtImpl = dynamic_cast&lt;</xsl:text>
+    <xsl:value-of select="$implName"/><xsl:text> *&gt;(aEvent);&#10;</xsl:text>
+    <xsl:text>    if (pEvtImpl)&#10;</xsl:text>
+    <xsl:text>    {&#10;</xsl:text>
+    <xsl:text>        pEvtImpl->Reuse();&#10;</xsl:text>
+    <xsl:text>        {&#10;</xsl:text>
+    <xsl:call-template name="genAttrInitCode">
+      <xsl:with-param name="name" select="@name" />
+      <xsl:with-param name="obj" select="'pEvtImpl'" />
+      <xsl:with-param name="va" select="false" />
+    </xsl:call-template>
+    <xsl:text>        }&#10;</xsl:text>
+    <xsl:text>        return S_OK;&#10;</xsl:text>
+    <xsl:text>    }&#10;</xsl:text>
+    <xsl:text>    return E_INVALIDARG;&#10;</xsl:text>
+    <xsl:text>}&#10;</xsl:text>
+    <xsl:text>&#10;</xsl:text>
+  </xsl:if>
+
+  <!-- Generate the CreateXxxxEvent function. -->
+  <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Create', $evname, '(IEvent **aEvent, IEventSource *aSource')"/>
+  <xsl:call-template name="genFormalParams">
+    <xsl:with-param name="name" select="$ifname" />
+  </xsl:call-template>
+  <xsl:text>)&#10;</xsl:text>
+  <xsl:text>{&#10;</xsl:text>
+  <xsl:text>    ComObjPtr&lt;</xsl:text><xsl:value-of select="$implName"/><xsl:text>&gt; EvtObj;&#10;</xsl:text>
+  <xsl:text>    HRESULT hrc = EvtObj.createObject();&#10;</xsl:text>
+  <xsl:text>    if (SUCCEEDED(hrc))&#10;</xsl:text>
+  <xsl:text>    {&#10;</xsl:text>
+  <xsl:text>        hrc = EvtObj-&gt;init(aSource, VBoxEventType_</xsl:text><xsl:value-of select="$evid"/>
+  <xsl:text>, </xsl:text><xsl:value-of select="$waitable" /><xsl:text> /*waitable*/);&#10;</xsl:text>
+  <xsl:text>        if (SUCCEEDED(hrc))&#10;</xsl:text>
+  <xsl:text>        {&#10;</xsl:text>
+  <xsl:call-template name="genAttrInitCode">
+    <xsl:with-param name="name" select="@name" />
+    <xsl:with-param name="obj" select="'EvtObj'" />
+    <xsl:with-param name="va" select="false" />
+  </xsl:call-template>
+  <xsl:text>            hrc = EvtObj.queryInterfaceTo(aEvent);&#10;</xsl:text>
+  <xsl:text>        }&#10;</xsl:text>
+  <xsl:text>    }&#10;</xsl:text>
+  <xsl:text>    return hrc;&#10;</xsl:text>
+  <xsl:text>}&#10;</xsl:text>
+  <xsl:text>&#10;</xsl:text>
+
+  <!-- Generate the fireXxxxEvent function. -->
+  <xsl:value-of select="concat('DECLHIDDEN(HRESULT) fire', $evname, '(IEventSource *aSource')"/>
+  <xsl:call-template name="genFormalParams">
+    <xsl:with-param name="name" select="$ifname" />
+  </xsl:call-template>
+  <xsl:text>)&#10;</xsl:text>
+  <xsl:text>{&#10;</xsl:text>
+  <xsl:text>    ComPtr&lt;IEvent&gt; ptrEvent;&#10;</xsl:text>
+  <xsl:text>    HRESULT hrc = </xsl:text>
+  <xsl:value-of select="concat('Create', $evname, '(ptrEvent.asOutParam(), aSource')"/>
+  <xsl:call-template name="genFactParams">
+    <xsl:with-param name="name" select="$ifname" />
+  </xsl:call-template>
+  <xsl:text>);&#10;</xsl:text>
+  <xsl:text>    if (SUCCEEDED(hrc))&#10;</xsl:text>
+  <xsl:text>    {&#10;</xsl:text>
+  <xsl:text>        VBoxEventDesc EvtDesc(ptrEvent, aSource);&#10;</xsl:text>
+  <xsl:text>        EvtDesc.fire(/* do not wait for delivery */ 0);&#10;</xsl:text>
+  <xsl:text>    }&#10;</xsl:text>
+  <xsl:text>    return hrc;&#10;</xsl:text>
+  <xsl:text>}&#10;</xsl:text>
+  <xsl:text>&#10;</xsl:text>
 
 </xsl:template>
 
@@ -690,6 +799,7 @@ private:
 #include <VBox/com/array.h>
 #include <iprt/asm.h>
 #include "EventImpl.h"
+#include "VBoxEvents.h"
 ]]></xsl:text>
 
   <!-- Interfaces -->
@@ -722,6 +832,7 @@ private:
   </xsl:for-each>
 
   <xsl:text><![CDATA[
+#if 0
 HRESULT VBoxEventDesc::init(IEventSource *aSource, VBoxEventType_T aType, ...)
 {
     va_list args;
@@ -751,9 +862,11 @@ HRESULT VBoxEventDesc::init(IEventSource *aSource, VBoxEventType_T aType, ...)
 
     return S_OK;
 }
+#endif
 ]]></xsl:text>
 
  <xsl:text><![CDATA[
+#if 0
 HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
 {
     va_list args;
@@ -782,6 +895,7 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
 
     return S_OK;
 }
+#endif
 ]]></xsl:text>
 
 </xsl:template>
@@ -867,11 +981,14 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
 
 <xsl:text><![CDATA[
 #include "EventImpl.h"
+
 ]]></xsl:text>
 
-  <!-- Interfaces -->
+  <!-- Simple methods for firing off events. -->
+ <xsl:text>/** @name Fire off events&#10;</xsl:text>
+ <xsl:text> * @{ */&#10;</xsl:text>
   <xsl:for-each select="//interface[@autogen='VBoxEvent']">
-    <xsl:value-of select="concat('// ', @name,  ' generation routine &#10;')" />
+    <xsl:value-of select="concat('/** Fire an ', @name,  ' event. */&#10;')" />
     <xsl:variable name="evname">
       <xsl:value-of select="substring(@name, 2)" />
     </xsl:variable>
@@ -883,7 +1000,9 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
       <xsl:value-of select="@name" />
     </xsl:variable>
 
-    <xsl:value-of select="concat('DECLINLINE(void) fire', $evname, '(IEventSource* aSource')"/>
+    <!--
+    OLD:
+    <xsl:value-of select="concat('DECLINLINE(void) fire', $evname, '(IEventSource *aSource')"/>
     <xsl:call-template name="genFormalParams">
       <xsl:with-param name="name" select="$ifname" />
     </xsl:call-template>
@@ -897,7 +1016,63 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
     <xsl:value-of select="');&#10;'"/>
     <xsl:value-of select="       '    evDesc.fire(/* do not wait for delivery */ 0);&#10;'"/>
     <xsl:value-of select="       '}&#10;'"/>
+
+    NEW:
+    -->
+    <xsl:value-of select="concat('DECLHIDDEN(HRESULT) fire', $evname, '(IEventSource *aSource')"/>
+    <xsl:call-template name="genFormalParams">
+      <xsl:with-param name="name" select="$ifname" />
+    </xsl:call-template>
+    <xsl:text>);&#10;</xsl:text>
   </xsl:for-each>
+  <xsl:text>/** @} */&#10;&#10;</xsl:text>
+
+  <!-- Event instantiation methods. -->
+  <xsl:text>/** @name Instantiate events&#10;</xsl:text>
+  <xsl:text> * @{ */&#10;</xsl:text>
+  <xsl:for-each select="//interface[@autogen='VBoxEvent']">
+    <xsl:value-of select="concat('/** Create an ', @name,  ' event. */&#10;')" />
+    <xsl:variable name="evname">
+      <xsl:value-of select="substring(@name, 2)" />
+    </xsl:variable>
+    <xsl:variable name="evid">
+      <xsl:value-of select="concat('On', substring(@name, 2, string-length(@name)-6))" />
+    </xsl:variable>
+    <xsl:variable name="ifname">
+      <xsl:value-of select="@name" />
+    </xsl:variable>
+
+    <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Create', $evname, '(IEvent **aEvent, IEventSource *aSource')"/>
+    <xsl:call-template name="genFormalParams">
+      <xsl:with-param name="name" select="$ifname" />
+    </xsl:call-template>
+    <xsl:text>);&#10;</xsl:text>
+  </xsl:for-each>
+  <xsl:text>/** @} */&#10;</xsl:text>
+  <xsl:text>&#10;</xsl:text>
+
+  <!-- Reinitialization methods for reusable events. -->
+  <xsl:text>/** @name Re-init reusable events&#10;</xsl:text>
+  <xsl:text> * @{ */&#10;</xsl:text>
+  <xsl:for-each select="//interface[@autogen='VBoxEvent']">
+    <xsl:if test="@extends='IReusableEvent'">
+      <xsl:value-of select="concat('/** Re-init an ', @name,  ' event. */&#10;')" />
+      <xsl:variable name="evname">
+        <xsl:value-of select="substring(@name, 2)" />
+      </xsl:variable>
+      <xsl:variable name="ifname">
+        <xsl:value-of select="@name" />
+      </xsl:variable>
+
+      <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Reinit', $evname, '(IEvent *aEvent')"/>
+      <xsl:call-template name="genFormalParams">
+        <xsl:with-param name="name" select="$ifname" />
+      </xsl:call-template>
+      <xsl:text>);&#10;</xsl:text>
+    </xsl:if>
+  </xsl:for-each>
+  <xsl:text>/** @} */&#10;</xsl:text>
+
 </xsl:template>
 
 <xsl:template match="/">

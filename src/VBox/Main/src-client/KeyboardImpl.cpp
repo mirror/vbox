@@ -22,6 +22,7 @@
 #include "ConsoleImpl.h"
 
 #include "AutoCaller.h"
+#include "VBoxEvents.h"
 
 #include <VBox/com/array.h>
 #include <VBox/vmm/pdmdrv.h>
@@ -211,9 +212,7 @@ HRESULT Keyboard::putScancodes(const std::vector<LONG> &aScancodes,
     for (size_t i = 0; i < aScancodes.size(); ++i)
         keys[i] = aScancodes[i];
 
-    VBoxEventDesc evDesc;
-    evDesc.init(mEventSource, VBoxEventType_OnGuestKeyboard, ComSafeArrayAsInParam(keys));
-    evDesc.fire(0);
+    fireGuestKeyboardEvent(mEventSource, ComSafeArrayAsInParam(keys));
 
     if (RT_FAILURE(vrc))
         return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,

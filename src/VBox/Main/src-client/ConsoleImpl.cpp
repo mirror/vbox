@@ -7357,54 +7357,54 @@ HRESULT Console::i_onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    VBoxEventDesc evDesc;
+    ComPtr<IEvent> ptrEvent;
     if (aCheck)
     {
-        evDesc.init(mEventSource, VBoxEventType_OnCanShowWindow);
-        BOOL fDelivered = evDesc.fire(5000); /* Wait up to 5 secs for delivery */
-        //Assert(fDelivered);
-        if (fDelivered)
+        *aCanShow = TRUE;
+        HRESULT hrc = CreateCanShowWindowEvent(ptrEvent.asOutParam(), mEventSource);
+        if (SUCCEEDED(hrc))
         {
-            ComPtr<IEvent> pEvent;
-            evDesc.getEvent(pEvent.asOutParam());
-            // bit clumsy
-            ComPtr<ICanShowWindowEvent> pCanShowEvent = pEvent;
-            if (pCanShowEvent)
+            VBoxEventDesc EvtDesc(ptrEvent, mEventSource);
+            BOOL fDelivered = EvtDesc.fire(5000); /* Wait up to 5 secs for delivery */
+            //Assert(fDelivered);
+            if (fDelivered)
             {
-                BOOL fVetoed = FALSE;
-                BOOL fApproved = FALSE;
-                pCanShowEvent->IsVetoed(&fVetoed);
-                pCanShowEvent->IsApproved(&fApproved);
-                *aCanShow = fApproved || !fVetoed;
-            }
-            else
-            {
-                AssertFailed();
-                *aCanShow = TRUE;
+                // bit clumsy
+                ComPtr<ICanShowWindowEvent> ptrCanShowEvent = ptrEvent;
+                if (ptrCanShowEvent)
+                {
+                    BOOL fVetoed   = FALSE;
+                    BOOL fApproved = FALSE;
+                    ptrCanShowEvent->IsVetoed(&fVetoed);
+                    ptrCanShowEvent->IsApproved(&fApproved);
+                    *aCanShow = fApproved || !fVetoed;
+                }
+                else
+                    AssertFailed();
             }
         }
-        else
-            *aCanShow = TRUE;
     }
     else
     {
-        evDesc.init(mEventSource, VBoxEventType_OnShowWindow, INT64_C(0));
-        BOOL fDelivered = evDesc.fire(5000); /* Wait up to 5 secs for delivery */
-        //Assert(fDelivered);
-        if (fDelivered)
+        HRESULT hrc = CreateShowWindowEvent(ptrEvent.asOutParam(), mEventSource, 0);
+        if (SUCCEEDED(hrc))
         {
-            ComPtr<IEvent> pEvent;
-            evDesc.getEvent(pEvent.asOutParam());
-            ComPtr<IShowWindowEvent> pShowEvent = pEvent;
-            if (pShowEvent)
+            VBoxEventDesc EvtDesc(ptrEvent, mEventSource);
+            BOOL fDelivered = EvtDesc.fire(5000); /* Wait up to 5 secs for delivery */
+            //Assert(fDelivered);
+            if (fDelivered)
             {
-                LONG64 iEvWinId = 0;
-                pShowEvent->COMGETTER(WinId)(&iEvWinId);
-                if (iEvWinId != 0 && *aWinId == 0)
-                    *aWinId = iEvWinId;
+                ComPtr<IShowWindowEvent> ptrShowEvent = ptrEvent;
+                if (ptrShowEvent)
+                {
+                    LONG64 idWindow = 0;
+                    ptrShowEvent->COMGETTER(WinId)(&idWindow);
+                    if (idWindow != 0 && *aWinId == 0)
+                        *aWinId = idWindow;
+                }
+                else
+                    AssertFailed();
             }
-            else
-                AssertFailed();
         }
     }
 
