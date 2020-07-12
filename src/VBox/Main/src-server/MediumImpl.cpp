@@ -25,6 +25,7 @@
 #include "ExtPackManagerImpl.h"
 
 #include "AutoCaller.h"
+#include "Global.h"
 #include "LoggingNew.h"
 #include "ThreadTask.h"
 #include "VBox/com/MultiResult.h"
@@ -1270,8 +1271,9 @@ HRESULT Medium::initOne(Medium *aParent,
         else
         {
             // Otherwise use the old VirtualBox "make absolute path" logic:
-            rc = m->pVirtualBox->i_calculateFullPath(data.strLocation, strFull);
-            if (FAILED(rc)) return rc;
+            int vrc = m->pVirtualBox->i_calculateFullPath(data.strLocation, strFull);
+            if (RT_FAILURE(vrc))
+                return Global::vboxStatusCodeToCOM(vrc);
         }
     }
     else
@@ -1701,7 +1703,7 @@ HRESULT Medium::getSize(LONG64 *aSize)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aSize = m->size;
+    *aSize = (LONG64)m->size;
 
     return S_OK;
 }
@@ -1946,7 +1948,7 @@ HRESULT Medium::getLogicalSize(LONG64 *aLogicalSize)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aLogicalSize = m->logicalSize;
+    *aLogicalSize = (LONG64)m->logicalSize;
 
     return S_OK;
 }
@@ -2588,7 +2590,7 @@ HRESULT Medium::createBaseStorage(LONG64 aLogicalSize,
             throw rc;
 
         /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::CreateBaseTask(this, pProgress, aLogicalSize,
+        pTask = new Medium::CreateBaseTask(this, pProgress, (uint64_t)aLogicalSize,
                                            (MediumVariant_T)mediumVariantFlags);
         rc = pTask->rc();
         AssertComRC(rc);
@@ -2783,10 +2785,7 @@ HRESULT Medium::cloneToBase(const ComPtr<IMedium> &aTarget,
                             const std::vector<MediumVariant_T> &aVariant,
                             ComPtr<IProgress> &aProgress)
 {
-     int rc = S_OK;
-
-     rc =  cloneTo(aTarget, aVariant, NULL, aProgress);
-     return rc;
+     return cloneTo(aTarget, aVariant, NULL, aProgress);
 }
 
 HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
@@ -2978,9 +2977,9 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
 
             if (aLocation.isEmpty())
             {
-                rc = setError(VERR_PATH_ZERO_LENGTH,
-                           tr("Medium '%s' can't be moved. Destination path is empty."),
-                           i_getLocationFull().c_str());
+                rc = setErrorVrc(VERR_PATH_ZERO_LENGTH,
+                                 tr("Medium '%s' can't be moved. Destination path is empty."),
+                                 i_getLocationFull().c_str());
                 throw rc;
             }
 
@@ -3045,9 +3044,9 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
                                 strExt = "img";
                                 break;
                             default:
-                                rc = setError(VERR_NOT_A_FILE, /** @todo r=bird: Mixing status codes again. */
-                                       tr("Medium '%s' has RAW type. \"Move\" operation isn't supported for this type."),
-                                       i_getLocationFull().c_str());
+                                rc = setErrorVrc(VERR_NOT_A_FILE, /** @todo r=bird: Mixing status codes again. */
+                                                 tr("Medium '%s' has RAW type. \"Move\" operation isn't supported for this type."),
+                                                 i_getLocationFull().c_str());
                                 throw rc;
                         }
                     }
@@ -3075,9 +3074,9 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
 
             if (!i_isMediumFormatFile())
             {
-                rc = setError(VERR_NOT_A_FILE,
-                              tr("Medium '%s' isn't a file object. \"Move\" operation isn't supported."),
-                              i_getLocationFull().c_str());
+                rc = setErrorVrc(VERR_NOT_A_FILE,
+                                 tr("Medium '%s' isn't a file object. \"Move\" operation isn't supported."),
+                                 i_getLocationFull().c_str());
                 throw rc;
             }
             /* Path must be absolute */
@@ -3097,9 +3096,9 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
             rc = i_preparationForMoving(destPath);
             if (FAILED(rc))
             {
-                rc = setError(VERR_NO_CHANGE,
-                           tr("Medium '%s' is already in the correct location"),
-                           i_getLocationFull().c_str());
+                rc = setErrorVrc(VERR_NO_CHANGE,
+                                 tr("Medium '%s' is already in the correct location"),
+                                 i_getLocationFull().c_str());
                 throw rc;
             }
         }
@@ -3140,7 +3139,7 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
 
                 if (ses)
                 {
-                    rc = setError(VERR_VM_UNEXPECTED_VM_STATE,
+                    rc = setError(VBOX_E_INVALID_VM_STATE,
                                   tr("At least the VM '%s' to whom this medium '%s' attached has currently an opened session. Stop all VMs before relocating this medium"),
                                   id.toString().c_str(),
                                   i_getLocationFull().c_str());
@@ -3298,7 +3297,7 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation)
                         AssertComRCThrowRC(autoCaller.rc());
                         alock.acquire();
 
-                        rc = setError(VERR_VM_UNEXPECTED_VM_STATE,
+                        rc = setError(VBOX_E_INVALID_VM_STATE,
                                       tr("At least the VM '%s' to whom this medium '%s' attached has currently an opened session. Stop all VMs before set location for this medium"),
                                       id.toString().c_str(),
                                       i_getLocationFull().c_str());
@@ -3405,6 +3404,7 @@ HRESULT Medium::compact(ComPtr<IProgress> &aProgress)
 HRESULT Medium::resize(LONG64 aLogicalSize,
                        ComPtr<IProgress> &aProgress)
 {
+    CheckComArgExpr(aLogicalSize, aLogicalSize > 0);
     HRESULT rc = S_OK;
     ComObjPtr<Progress> pProgress;
 
@@ -3452,7 +3452,7 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
     catch (HRESULT aRC) { rc = aRC; }
 
     if (SUCCEEDED(rc))
-        rc = i_resize(aLogicalSize, pMediumLockList, &pProgress, false /* aWait */, true /* aNotify */);
+        rc = i_resize((uint64_t)aLogicalSize, pMediumLockList, &pProgress, false /* aWait */, true /* aNotify */);
 
     if (SUCCEEDED(rc))
         pProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -5065,7 +5065,7 @@ MediumVariant_T Medium::i_getPreferredDiffVariant()
 
     /* m->variant is const, no need to lock */
     ULONG mediumVariantFlags = (ULONG)m->variant;
-    mediumVariantFlags &= ~(MediumVariant_Fixed | MediumVariant_VmdkStreamOptimized);
+    mediumVariantFlags &= ~(ULONG)(MediumVariant_Fixed | MediumVariant_VmdkStreamOptimized);
     mediumVariantFlags |= MediumVariant_Diff;
     return (MediumVariant_T)mediumVariantFlags;
 }
@@ -6185,7 +6185,7 @@ void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
  * @note Locks the media from the chain for writing.
  */
 
-HRESULT Medium::i_resize(LONG64 aLogicalSize,
+HRESULT Medium::i_resize(uint64_t aLogicalSize,
                          MediumLockList *aMediumLockList,
                          ComObjPtr<Progress> *aProgress,
                          bool aWait,

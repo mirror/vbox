@@ -206,7 +206,7 @@ public:
     void i_cancelMergeTo(MediumLockList *aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
-    HRESULT i_resize(LONG64 aLogicalSize,
+    HRESULT i_resize(uint64_t aLogicalSize,
                      MediumLockList *aMediumLockList,
                      ComObjPtr<Progress> *aProgress,
                      bool aWait,
