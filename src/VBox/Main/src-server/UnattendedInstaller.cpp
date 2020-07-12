@@ -510,7 +510,7 @@ HRESULT UnattendedInstaller::newAuxIsoImageMaker(PRTFSISOMAKER phIsoMaker)
 {
     int vrc = RTFsIsoMakerCreate(phIsoMaker);
     if (RT_SUCCESS(vrc))
-        return vrc;
+        return S_OK;
     return mpParent->setErrorBoth(E_FAIL, vrc, mpParent->tr("RTFsIsoMakerCreate failed (%Rrc)"), vrc);
 }
 
