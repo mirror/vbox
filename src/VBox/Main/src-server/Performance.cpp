@@ -414,6 +414,7 @@ CollectorGuestManager::~CollectorGuestManager()
         Log7Func(("{%p}: Waiting for CGM request processing thread to stop...\n", this));
         int vrc = RTThreadWait(mThread, 1000 /* 1 sec */, &rcThread);
         Log7Func(("{%p}: RTThreadWait returned %Rrc (thread exit code: %Rrc)\n", this, vrc, rcThread));
+        RT_NOREF(vrc);
     }
 }
 
