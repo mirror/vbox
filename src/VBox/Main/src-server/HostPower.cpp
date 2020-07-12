@@ -175,7 +175,7 @@ void HostPowerService::notify(Reason_T aReason)
                     {
                         LONG iRc;
                         progress->COMGETTER(ResultCode)(&iRc);
-                        rc = iRc;
+                        rc = (HRESULT)iRc;
                     }
 
                     AssertMsg(SUCCEEDED(rc), ("SaveState WaitForCompletion failed with %Rhrc (%#08X)\n", rc, rc));
