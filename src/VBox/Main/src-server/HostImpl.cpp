@@ -418,12 +418,12 @@ HRESULT Host::init(VirtualBox *aParent)
         ComPtr<IHostNetworkInterface> hif;
         ComPtr<IProgress> progress;
 
-        int r = NetIfCreateHostOnlyNetworkInterface(m->pParent,
-                                                    hif.asOutParam(),
-                                                    progress.asOutParam(),
-                                                    it->c_str());
-        if (RT_FAILURE(r))
-            LogRel(("failed to create %s, error (0x%x)\n", it->c_str(), r));
+        int vrc = NetIfCreateHostOnlyNetworkInterface(m->pParent,
+                                                      hif.asOutParam(),
+                                                      progress.asOutParam(),
+                                                      it->c_str());
+        if (RT_FAILURE(vrc))
+            LogRel(("failed to create %s, error (%Rrc)\n", it->c_str(), vrc));
     }
 
 #endif /* defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) */
@@ -713,13 +713,15 @@ HRESULT Host::i_updatePersistentConfigForHostOnlyAdapters(void)
             ComPtr<IHostNetworkInterface> hif;
             ComPtr<IProgress> progress;
 
-            int rc = NetIfCreateHostOnlyNetworkInterface(m->pParent, hif.asOutParam(), progress.asOutParam(), pInfo->bstrName.raw());
-            if (RT_FAILURE(rc))
+            int vrc = NetIfCreateHostOnlyNetworkInterface(m->pParent, hif.asOutParam(), progress.asOutParam(),
+                                                          pInfo->bstrName.raw());
+            if (RT_FAILURE(vrc))
             {
-                LogRel(("Failed to create host-only adapter (%d)\n", rc));
+                LogRel(("Failed to create host-only adapter (%Rrc)\n", vrc));
                 hrc = E_UNEXPECTED;
                 break;
             }
+
             /* Wait for the adapter to get configured completely, before we modify IP addresses. */
             progress->WaitForCompletion(-1);
             fChangesMade = true;
@@ -1420,14 +1422,14 @@ HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHos
     /* No need to lock anything. If there ever will - watch out, the function
      * called below grabs the VirtualBox lock. */
 
-    int r = NetIfCreateHostOnlyNetworkInterface(m->pParent, aHostInterface.asOutParam(), aProgress.asOutParam());
-    if (RT_SUCCESS(r))
+    int vrc = NetIfCreateHostOnlyNetworkInterface(m->pParent, aHostInterface.asOutParam(), aProgress.asOutParam());
+    if (RT_SUCCESS(vrc))
     {
         if (aHostInterface.isNull())
             return setError(E_FAIL,
                             tr("Unable to create a host network interface"));
 
-#if !defined(RT_OS_WINDOWS)
+# if !defined(RT_OS_WINDOWS)
         Bstr tmpAddr, tmpMask, tmpName;
         HRESULT hrc;
         hrc = aHostInterface->COMGETTER(Name)(tmpName.asOutParam());
@@ -1452,7 +1454,7 @@ HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHos
                                                tmpName.raw()).raw(),
                                                tmpMask.raw());
         ComAssertComRCRet(hrc, hrc);
-#endif /* !defined(RT_OS_WINDOWS) */
+# endif /* !defined(RT_OS_WINDOWS) */
     }
 
     return S_OK;
