@@ -321,7 +321,7 @@ HRESULT PerformanceCollector::getMetrics(const std::vector<com::Utf8Str> &aMetri
             filteredMetrics.push_back(*it);
 
     aMetrics.resize(filteredMetrics.size());
-    int i = 0;
+    size_t i = 0;
     for (it = filteredMetrics.begin(); it != filteredMetrics.end(); ++it)
     {
         ComObjPtr<PerformanceMetric> metric;
@@ -329,7 +329,7 @@ HRESULT PerformanceCollector::getMetrics(const std::vector<com::Utf8Str> &aMetri
         if (SUCCEEDED(rc))
             rc = metric->init(*it);
         AssertComRCReturnRC(rc);
-        LogFlow(("PerformanceCollector::GetMetrics() store a metric at retMetrics[%d]...\n", i));
+        LogFlow(("PerformanceCollector::GetMetrics() store a metric at retMetrics[%zu]...\n", i));
         aMetrics[i++] = metric;
     }
     return rc;
@@ -374,7 +374,7 @@ HRESULT PerformanceCollector::setupMetrics(const std::vector<com::Utf8Str> &aMet
         }
 
     aAffectedMetrics.resize(filteredMetrics.size());
-    int i = 0;
+    size_t i = 0;
     for (it = filteredMetrics.begin();
          it != filteredMetrics.end() && SUCCEEDED(rc); ++it)
         rc = toIPerformanceMetric(*it, aAffectedMetrics[i++]);
@@ -408,7 +408,7 @@ HRESULT PerformanceCollector::enableMetrics(const std::vector<com::Utf8Str> &aMe
         }
 
     aAffectedMetrics.resize(filteredMetrics.size());
-    int i = 0;
+    size_t i = 0;
     for (it = filteredMetrics.begin();
          it != filteredMetrics.end() && SUCCEEDED(rc); ++it)
         rc = toIPerformanceMetric(*it, aAffectedMetrics[i++]);
@@ -444,7 +444,7 @@ HRESULT PerformanceCollector::disableMetrics(const std::vector<com::Utf8Str> &aM
         }
 
     aAffectedMetrics.resize(filteredMetrics.size());
-    int i = 0;
+    size_t i = 0;
     for (it = filteredMetrics.begin();
          it != filteredMetrics.end() && SUCCEEDED(rc); ++it)
         rc = toIPerformanceMetric(*it, aAffectedMetrics[i++]);
@@ -483,7 +483,6 @@ HRESULT PerformanceCollector::queryMetricsData(const std::vector<com::Utf8Str> &
             flatSize += (*it)->getLength();
         }
 
-    int i = 0;
     size_t flatIndex = 0;
     size_t numberOfMetrics = filteredMetrics.size();
     aReturnMetricNames.resize(numberOfMetrics);
@@ -495,6 +494,7 @@ HRESULT PerformanceCollector::queryMetricsData(const std::vector<com::Utf8Str> &
     aReturnDataLengths.resize(numberOfMetrics);
     aReturnData.resize(flatSize);
 
+    size_t i = 0;
     for (it = filteredMetrics.begin(); it != filteredMetrics.end(); ++it, ++i)
     {
         ULONG *values, length, sequenceNumber;
@@ -698,7 +698,11 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
      * Those should be destroyed now.
      */
     Log7Func(("{%p}: before remove_if: toBeCollected.size()=%d\n", this, toBeCollected.size()));
+#if RT_CPLUSPLUS_PREREQ(201100) /* mem_fun is deprecated in C++11 and removed in C++17 */
+    toBeCollected.remove_if(std::mem_fn(&pm::BaseMetric::isUnregistered));
+#else
     toBeCollected.remove_if(std::mem_fun(&pm::BaseMetric::isUnregistered));
+#endif
     Log7Func(("{%p}: after remove_if: toBeCollected.size()=%d\n", this, toBeCollected.size()));
     Log7Func(("{%p}: before remove_if: m.baseMetrics.size()=%d\n", this, m.baseMetrics.size()));
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
@@ -718,8 +722,11 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
     m.gm->destroyUnregistered();
 
     /* Finally, collect the data */
-    std::for_each(toBeCollected.begin(), toBeCollected.end(),
-                  std::mem_fun(&pm::BaseMetric::collect));
+#if RT_CPLUSPLUS_PREREQ(201100) /* mem_fun is deprecated in C++11 and removed in C++17 */
+    std::for_each(toBeCollected.begin(), toBeCollected.end(), std::mem_fn(&pm::BaseMetric::collect));
+#else
+    std::for_each(toBeCollected.begin(), toBeCollected.end(), std::mem_fun(&pm::BaseMetric::collect));
+#endif
     Log4Func(("{%p}: LEAVE\n", this));
 }
 
@@ -769,8 +776,9 @@ HRESULT PerformanceMetric::init(pm::Metric *aMetric)
     m.period      = aMetric->getPeriod();
     m.count       = aMetric->getLength();
     m.unit        = aMetric->getUnit();
-    m.min         = aMetric->getMinValue();
-    m.max         = aMetric->getMaxValue();
+    /** @todo r=bird: LONG/ULONG mixup.   */
+    m.min         = (LONG)aMetric->getMinValue();
+    m.max         = (LONG)aMetric->getMaxValue();
 
     autoInitSpan.setSucceeded();
     return S_OK;
@@ -788,8 +796,9 @@ HRESULT PerformanceMetric::init(pm::BaseMetric *aMetric)
     m.period      = aMetric->getPeriod();
     m.count       = aMetric->getLength();
     m.unit        = aMetric->getUnit();
-    m.min         = aMetric->getMinValue();
-    m.max         = aMetric->getMaxValue();
+    /** @todo r=bird: LONG/ULONG mixup.   */
+    m.min         = (LONG)aMetric->getMinValue();
+    m.max         = (LONG)aMetric->getMaxValue();
 
     autoInitSpan.setSucceeded();
     return S_OK;
