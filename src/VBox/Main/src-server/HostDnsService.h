@@ -37,11 +37,12 @@ typedef const HostDnsMonitorProxy *PCHostDnsMonitorProxy;
 
 class HostDnsInformation
 {
-  public:
+public:
     static const uint32_t IGNORE_SERVER_ORDER = RT_BIT_32(0);
     static const uint32_t IGNORE_SUFFIXES     = RT_BIT_32(1);
 
-  public:
+public:
+    /** @todo r=bird: Why on earth are we using std::string and not Utf8Str?   */
     std::vector<std::string> servers;
     std::string domain;
     std::vector<std::string> searchList;

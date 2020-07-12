@@ -139,7 +139,7 @@ int HostDnsServiceDarwin::monitorThreadProc(void)
         return VERR_NO_MEMORY;
     }
 
-    if(SCDynamicStoreSetNotificationKeys(m->m_store, watchingArrayRef, NULL))
+    if (SCDynamicStoreSetNotificationKeys(m->m_store, watchingArrayRef, NULL))
         CFRunLoopAddSource(CFRunLoopGetCurrent(), m->m_DnsWatcher, kCFRunLoopCommonModes);
 
     CFRelease(watchingArrayRef);
@@ -148,7 +148,7 @@ int HostDnsServiceDarwin::monitorThreadProc(void)
 
     /* Trigger initial update. */
     int rc = updateInfo();
-    AssertRC(rc); /* Not fatal in release builds. */
+    AssertRC(rc); /* Not fatal in release builds. */  /** @todo r=bird: The function always returns VINF_SUCCESS. */
 
     while (!ASMAtomicReadBool(&m->m_fStop))
     {
@@ -188,9 +188,7 @@ int HostDnsServiceDarwin::updateInfo(void)
         return VINF_SUCCESS;
 
     HostDnsInformation info;
-    CFStringRef domainNameRef = (CFStringRef)CFDictionaryGetValue(
-       static_cast<CFDictionaryRef>(propertyRef), CFSTR("DomainName"));
-
+    CFStringRef domainNameRef = (CFStringRef)CFDictionaryGetValue(static_cast<CFDictionaryRef>(propertyRef), CFSTR("DomainName"));
     if (domainNameRef)
     {
         const char *pszDomainName = CFStringGetCStringPtr(domainNameRef, CFStringGetSystemEncoding());
@@ -198,44 +196,50 @@ int HostDnsServiceDarwin::updateInfo(void)
             info.domain = pszDomainName;
     }
 
-    int i, arrayCount;
-
-    CFArrayRef serverArrayRef = (CFArrayRef)CFDictionaryGetValue(
-       static_cast<CFDictionaryRef>(propertyRef), CFSTR("ServerAddresses"));
+    CFArrayRef serverArrayRef = (CFArrayRef)CFDictionaryGetValue(static_cast<CFDictionaryRef>(propertyRef),
+                                                                 CFSTR("ServerAddresses"));
     if (serverArrayRef)
     {
-        arrayCount = CFArrayGetCount(serverArrayRef);
-        for (i = 0; i < arrayCount; ++i)
+        CFIndex const cItems = CFArrayGetCount(serverArrayRef);
+        for (CFIndex i = 0; i < cItems; ++i)
         {
             CFStringRef serverAddressRef = (CFStringRef)CFArrayGetValueAtIndex(serverArrayRef, i);
             if (!serverArrayRef)
                 continue;
 
+            /** @todo r=bird: This code is messed up as CFStringGetCStringPtr is documented
+             *  to return NULL even if the string is valid.   Furthermore, we must have
+             *  UTF-8 - some joker might decide latin-1 is better here for all we know
+             *  and we'll end up with evil invalid UTF-8 sequences. */
             const char *pszServerAddress = CFStringGetCStringPtr(serverAddressRef, CFStringGetSystemEncoding());
             if (!pszServerAddress)
                 continue;
 
+            /** @todo r=bird: Why on earth are we using std::string and not Utf8Str?   */
             info.servers.push_back(std::string(pszServerAddress));
         }
     }
 
-    CFArrayRef searchArrayRef = (CFArrayRef)CFDictionaryGetValue(
-       static_cast<CFDictionaryRef>(propertyRef), CFSTR("SearchDomains"));
-
+    CFArrayRef searchArrayRef = (CFArrayRef)CFDictionaryGetValue(static_cast<CFDictionaryRef>(propertyRef),
+                                                                 CFSTR("SearchDomains"));
     if (searchArrayRef)
     {
-        arrayCount = CFArrayGetCount(searchArrayRef);
-
-        for (i = 0; i < arrayCount; ++i)
+        CFIndex const cItems = CFArrayGetCount(searchArrayRef);
+        for (CFIndex i = 0; i < cItems; ++i)
         {
             CFStringRef searchStringRef = (CFStringRef)CFArrayGetValueAtIndex(searchArrayRef, i);
             if (!searchArrayRef)
                 continue;
 
+            /** @todo r=bird: This code is messed up as CFStringGetCStringPtr is documented
+             *  to return NULL even if the string is valid.   Furthermore, we must have
+             *  UTF-8 - some joker might decide latin-1 is better here for all we know
+             *  and we'll end up with evil invalid UTF-8 sequences. */
             const char *pszSearchString = CFStringGetCStringPtr(searchStringRef, CFStringGetSystemEncoding());
             if (!pszSearchString)
                 continue;
 
+            /** @todo r=bird: Why on earth are we using std::string and not Utf8Str?   */
             info.searchList.push_back(std::string(pszSearchString));
         }
     }

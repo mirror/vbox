@@ -68,13 +68,17 @@ bool HostDnsInformation::equals(const HostDnsInformation &info, uint32_t fLaxCom
     return fSameServers && fSameDomain && fSameSearchList;
 }
 
-inline static void detachVectorOfString(const std::vector<std::string>& v,
-                                        std::vector<com::Utf8Str> &aArray)
+DECLINLINE(void) detachVectorOfString(const std::vector<std::string>& v, std::vector<com::Utf8Str> &aArray)
 {
     aArray.resize(v.size());
     size_t i = 0;
     for (std::vector<std::string>::const_iterator it = v.begin(); it != v.end(); ++it, ++i)
-        aArray[i] = Utf8Str(it->c_str());
+        aArray[i] = Utf8Str(it->c_str()); /** @todo r=bird: *it isn't necessarily UTF-8 clean!!
+                                           * On darwin we do silly shit like using CFStringGetSystemEncoding()
+                                           * that may be UTF-8 but doesn't need to be.
+                                           *
+                                           * Why on earth are we using std::string here anyway?
+                                           */
 }
 
 struct HostDnsServiceBase::Data
