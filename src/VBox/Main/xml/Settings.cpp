@@ -351,74 +351,72 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion, const 
     SettingsVersion_T sv = SettingsVersion_Null;
     if (strVersion.length() > 3)
     {
-        uint32_t ulMajor = 0;
-        uint32_t ulMinor = 0;
-
         const char *pcsz = strVersion.c_str();
-        char c;
 
-        while (    (c = *pcsz)
-                && RT_C_IS_DIGIT(c)
-              )
+        uint32_t uMajor = 0;
+        char ch;
+        while (   (ch = *pcsz)
+               && RT_C_IS_DIGIT(ch) )
         {
-            ulMajor *= 10;
-            ulMajor += c - '0';
+            uMajor *= 10;
+            uMajor += (uint32_t)(ch - '0');
             ++pcsz;
         }
 
-        if (*pcsz++ == '.')
+        uint32_t uMinor = 0;
+        if (ch == '.')
         {
-            while (    (c = *pcsz)
-                    && RT_C_IS_DIGIT(c)
-                  )
+            pcsz++;
+            while (   (ch = *pcsz)
+                   && RT_C_IS_DIGIT(ch))
             {
-                ulMinor *= 10;
-                ulMinor += c - '0';
+                uMinor *= 10;
+                uMinor += (ULONG)(ch - '0');
                 ++pcsz;
             }
         }
 
-        if (ulMajor == 1)
+        if (uMajor == 1)
         {
-            if (ulMinor == 3)
+            if (uMinor == 3)
                 sv = SettingsVersion_v1_3;
-            else if (ulMinor == 4)
+            else if (uMinor == 4)
                 sv = SettingsVersion_v1_4;
-            else if (ulMinor == 5)
+            else if (uMinor == 5)
                 sv = SettingsVersion_v1_5;
-            else if (ulMinor == 6)
+            else if (uMinor == 6)
                 sv = SettingsVersion_v1_6;
-            else if (ulMinor == 7)
+            else if (uMinor == 7)
                 sv = SettingsVersion_v1_7;
-            else if (ulMinor == 8)
+            else if (uMinor == 8)
                 sv = SettingsVersion_v1_8;
-            else if (ulMinor == 9)
+            else if (uMinor == 9)
                 sv = SettingsVersion_v1_9;
-            else if (ulMinor == 10)
+            else if (uMinor == 10)
                 sv = SettingsVersion_v1_10;
-            else if (ulMinor == 11)
+            else if (uMinor == 11)
                 sv = SettingsVersion_v1_11;
-            else if (ulMinor == 12)
+            else if (uMinor == 12)
                 sv = SettingsVersion_v1_12;
-            else if (ulMinor == 13)
+            else if (uMinor == 13)
                 sv = SettingsVersion_v1_13;
-            else if (ulMinor == 14)
+            else if (uMinor == 14)
                 sv = SettingsVersion_v1_14;
-            else if (ulMinor == 15)
+            else if (uMinor == 15)
                 sv = SettingsVersion_v1_15;
-            else if (ulMinor == 16)
+            else if (uMinor == 16)
                 sv = SettingsVersion_v1_16;
-            else if (ulMinor == 17)
+            else if (uMinor == 17)
                 sv = SettingsVersion_v1_17;
-            else if (ulMinor == 18)
+            else if (uMinor == 18)
                 sv = SettingsVersion_v1_18;
-            else if (ulMinor > 18)
+            else if (uMinor > 18)
                 sv = SettingsVersion_Future;
         }
-        else if (ulMajor > 1)
+        else if (uMajor > 1)
             sv = SettingsVersion_Future;
 
-        Log(("Parsed settings version %d.%d to enum value %d\n", ulMajor, ulMinor, sv));
+        Log(("Parsed settings version %d.%d to enum value %d\n", uMajor, uMinor, sv));
     }
 
     if (sv == SettingsVersion_Null)
@@ -533,10 +531,10 @@ void ConfigFileBase::parseBase64(IconBlob &binary,
         throw ConfigFileError(this, pElm, N_("Base64 encoded data too long (%d > %d)"), cbOut, DECODE_STR_MAX);
     else if (cbOut < 0)
         throw ConfigFileError(this, pElm, N_("Base64 encoded data '%s' invalid"), psz);
-    binary.resize(cbOut);
+    binary.resize((size_t)cbOut);
     int vrc = VINF_SUCCESS;
     if (cbOut)
-        vrc = RTBase64Decode(psz, &binary.front(), cbOut, NULL, NULL);
+        vrc = RTBase64Decode(psz, &binary.front(), (size_t)cbOut, NULL, NULL);
     if (RT_FAILURE(vrc))
     {
         binary.resize(0);
@@ -564,17 +562,16 @@ com::Utf8Str ConfigFileBase::stringifyTimestamp(const RTTIMESPEC &stamp) const
  * Helper to create a base64 encoded string out of a binary blob.
  * @param str
  * @param binary
+ * @throws std::bad_alloc and ConfigFileError
  */
 void ConfigFileBase::toBase64(com::Utf8Str &str, const IconBlob &binary) const
 {
-    ssize_t cb = binary.size();
+    size_t cb = binary.size();
     if (cb > 0)
     {
-        ssize_t cchOut = RTBase64EncodedLength(cb);
-        str.reserve(cchOut+1);
-        int vrc = RTBase64Encode(&binary.front(), cb,
-                                 str.mutableRaw(), str.capacity(),
-                                 NULL);
+        size_t cchOut = RTBase64EncodedLength(cb);
+        str.reserve(cchOut + 1);
+        int vrc = RTBase64Encode(&binary.front(), cb, str.mutableRaw(), str.capacity(), NULL);
         if (RT_FAILURE(vrc))
             throw ConfigFileError(this, NULL, N_("Failed to convert binary data to base64 format (%Rrc)"), vrc);
         str.jolt();
@@ -2155,7 +2152,7 @@ bool MainConfigFile::convertGuiProxySettings(const com::Utf8Str &strUIProxySetti
                 if (*psz != '\0' && *psz != ',')
                 {
                     const char *pszEnd  = strchr(psz, ',');
-                    size_t      cchHost = pszEnd ? pszEnd - psz : strlen(psz);
+                    size_t      cchHost = pszEnd ? (size_t)(pszEnd - psz) : strlen(psz);
                     while (cchHost > 0 && RT_C_IS_SPACE(psz[cchHost - 1]))
                         cchHost--;
                     systemProperties.strProxyUrl.assign(psz, cchHost);
