@@ -935,7 +935,6 @@ HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Prog
     if (SUCCEEDED(hrc))
     {
         if (aLocInfo.strProvider.equals("OCI"))
-        {
             hrc = aProgress->init(mVirtualBox, static_cast<IAppliance *>(this),
                                   Utf8Str(tr("Exporting VM to Cloud...")),
                                   TRUE /* aCancelable */,
@@ -943,11 +942,10 @@ HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Prog
                                   1000, // ULONG ulTotalOperationsWeight,
                                   Utf8Str(tr("Exporting VM to Cloud...")), // aFirstOperationDescription
                                   10); // ULONG ulFirstOperationWeight
-        }
         else
-            hrc = setErrorVrc(VBOX_E_NOT_SUPPORTED,
-                              tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
-                              aLocInfo.strProvider.c_str());
+            hrc = setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
+                           aLocInfo.strProvider.c_str());
         if (SUCCEEDED(hrc))
         {
             /* Initialize the worker task: */
@@ -2345,7 +2343,7 @@ HRESULT Appliance::i_exportCloudImpl(TaskCloud *pTask)
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%: Cloud provider manager object wasn't found"), __FUNCTION__);
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%: Cloud provider manager object wasn't found"), __FUNCTION__);
 
     Utf8Str strProviderName = pTask->locInfo.strProvider;
     ComPtr<ICloudProvider> cloudProvider;
@@ -2353,7 +2351,7 @@ HRESULT Appliance::i_exportCloudImpl(TaskCloud *pTask)
     hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
 
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found"), __FUNCTION__);
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found"), __FUNCTION__);
 
     ComPtr<IVirtualSystemDescription> vsd = m->virtualSystemDescriptions.front();
 
@@ -2364,26 +2362,26 @@ HRESULT Appliance::i_exportCloudImpl(TaskCloud *pTask)
     com::SafeArray<BSTR> aExtraConfigValues;
 
     hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CloudProfileName,
-                             ComSafeArrayAsOutParam(retTypes),
-                             ComSafeArrayAsOutParam(aRefs),
-                             ComSafeArrayAsOutParam(aOvfValues),
-                             ComSafeArrayAsOutParam(aVBoxValues),
-                             ComSafeArrayAsOutParam(aExtraConfigValues));
+                                    ComSafeArrayAsOutParam(retTypes),
+                                    ComSafeArrayAsOutParam(aRefs),
+                                    ComSafeArrayAsOutParam(aOvfValues),
+                                    ComSafeArrayAsOutParam(aVBoxValues),
+                                    ComSafeArrayAsOutParam(aExtraConfigValues));
     if (FAILED(hrc))
         return hrc;
 
     Utf8Str profileName(aVBoxValues[0]);
     if (profileName.isEmpty())
-        return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found"), __FUNCTION__);
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found"), __FUNCTION__);
 
     hrc = cloudProvider->GetProfileByName(aVBoxValues[0], cloudProfile.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found"), __FUNCTION__);
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found"), __FUNCTION__);
 
     ComObjPtr<ICloudClient> cloudClient;
     hrc = cloudProfile->CreateCloudClient(cloudClient.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found"), __FUNCTION__);
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found"), __FUNCTION__);
 
     if (m->virtualSystemDescriptions.size() == 1)
     {
