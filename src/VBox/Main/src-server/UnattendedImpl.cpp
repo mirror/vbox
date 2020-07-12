@@ -55,12 +55,12 @@ struct ControllerSlot
 {
     StorageBus_T    enmBus;
     Utf8Str         strControllerName;
-    ULONG           uPort;
-    ULONG           uDevice;
+    LONG            iPort;
+    LONG            iDevice;
     bool            fFree;
 
-    ControllerSlot(StorageBus_T a_enmBus, const Utf8Str &a_rName, ULONG a_uPort, ULONG a_uDevice, bool a_fFree)
-        : enmBus(a_enmBus), strControllerName(a_rName), uPort(a_uPort), uDevice(a_uDevice), fFree(a_fFree)
+    ControllerSlot(StorageBus_T a_enmBus, const Utf8Str &a_rName, LONG a_iPort, LONG a_iDevice, bool a_fFree)
+        : enmBus(a_enmBus), strControllerName(a_rName), iPort(a_iPort), iDevice(a_iDevice), fFree(a_fFree)
     {}
 
     bool operator<(const ControllerSlot &rThat) const
@@ -69,9 +69,9 @@ struct ControllerSlot
         {
             if (strControllerName == rThat.strControllerName)
             {
-                if (uPort == rThat.uPort)
-                    return uDevice < rThat.uDevice;
-                return uPort < rThat.uPort;
+                if (iPort == rThat.iPort)
+                    return iDevice < rThat.iDevice;
+                return iPort < rThat.iPort;
             }
             return strControllerName < rThat.strControllerName;
         }
@@ -102,8 +102,8 @@ struct ControllerSlot
     {
         return enmBus            == rThat.enmBus
             && strControllerName == rThat.strControllerName
-            && uPort             == rThat.uPort
-            && uDevice           == rThat.uDevice;
+            && iPort             == rThat.iPort
+            && iDevice           == rThat.iDevice;
     }
 };
 
@@ -118,23 +118,23 @@ typedef struct UnattendedInstallationDisk
     Utf8Str         strControllerName;
     DeviceType_T    enmDeviceType;
     AccessMode_T    enmAccessType;
-    ULONG           uPort;
-    ULONG           uDevice;
+    LONG            iPort;
+    LONG            iDevice;
     bool            fMountOnly;
     Utf8Str         strImagePath;
 
     UnattendedInstallationDisk(StorageBus_T a_enmBusType, Utf8Str const &a_rBusName, DeviceType_T a_enmDeviceType,
-                               AccessMode_T a_enmAccessType, ULONG a_uPort, ULONG a_uDevice, bool a_fMountOnly,
+                               AccessMode_T a_enmAccessType, LONG a_iPort, LONG a_iDevice, bool a_fMountOnly,
                                Utf8Str const &a_rImagePath)
         : enmBusType(a_enmBusType), strControllerName(a_rBusName), enmDeviceType(a_enmDeviceType), enmAccessType(a_enmAccessType)
-        , uPort(a_uPort), uDevice(a_uDevice), fMountOnly(a_fMountOnly), strImagePath(a_rImagePath)
+        , iPort(a_iPort), iDevice(a_iDevice), fMountOnly(a_fMountOnly), strImagePath(a_rImagePath)
     {
         Assert(strControllerName.length() > 0);
     }
 
     UnattendedInstallationDisk(std::list<ControllerSlot>::const_iterator const &itDvdSlot, Utf8Str const &a_rImagePath)
         : enmBusType(itDvdSlot->enmBus), strControllerName(itDvdSlot->strControllerName), enmDeviceType(DeviceType_DVD)
-        , enmAccessType(AccessMode_ReadOnly), uPort(itDvdSlot->uPort), uDevice(itDvdSlot->uDevice)
+        , enmAccessType(AccessMode_ReadOnly), iPort(itDvdSlot->iPort), iDevice(itDvdSlot->iDevice)
         , fMountOnly(!itDvdSlot->fFree), strImagePath(a_rImagePath)
     {
         Assert(strControllerName.length() > 0);
@@ -1104,7 +1104,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
                     do
                         psz++;
                     while (RT_C_IS_ALNUM(*psz) || *psz == '_');
-                    size_t cchIdentifier = psz - pszIdentifier;
+                    size_t cchIdentifier = (size_t)(psz - pszIdentifier);
 
                     /* Skip to the value. */
                     while (RT_C_IS_BLANK(*psz))
@@ -1939,13 +1939,13 @@ HRESULT Unattended::i_findOrCreateNeededFreeSlots(const Utf8Str &rStrControllerN
     /*
      * Iterate thru all possible slots, adding those not found in arrayOfUsedSlots.
      */
-    for (uint32_t iPort = 0; iPort < cPorts; iPort++)
-        for (uint32_t iDevice = 0; iDevice < cMaxDevicesPerPort; iDevice++)
+    for (int32_t iPort = 0; iPort < (int32_t)cPorts; iPort++)
+        for (int32_t iDevice = 0; iDevice < (int32_t)cMaxDevicesPerPort; iDevice++)
         {
             bool fFound = false;
             for (size_t i = 0; i < arrayOfUsedSlots.size(); i++)
-                if (   arrayOfUsedSlots[i].uPort   == iPort
-                    && arrayOfUsedSlots[i].uDevice == iDevice)
+                if (   arrayOfUsedSlots[i].iPort   == iPort
+                    && arrayOfUsedSlots[i].iDevice == iDevice)
                 {
                     fFound = true;
                     break;
@@ -1976,8 +1976,9 @@ HRESULT Unattended::i_findOrCreateNeededFreeSlots(const Utf8Str &rStrControllerN
      */
     hrc = pController->COMSETTER(PortCount)(cPorts + (ULONG)cNewPortsNeeded);
     AssertComRCReturn(hrc, hrc);
-    for (uint32_t iPort = cPorts; iPort < cPorts + cNewPortsNeeded; iPort++)
-        for (uint32_t iDevice = 0; iDevice < cMaxDevicesPerPort; iDevice++)
+    int32_t const cPortsNew = (int32_t)(cPorts + cNewPortsNeeded);
+    for (int32_t iPort = (int32_t)cPorts; iPort < cPortsNew; iPort++)
+        for (int32_t iDevice = 0; iDevice < (int32_t)cMaxDevicesPerPort; iDevice++)
         {
             rDvdSlots.push_back(ControllerSlot(enmStorageBus, rStrControllerName, iPort, iDevice, true /*fFree*/));
             if (rDvdSlots.size() >= cSlotsNeeded)
@@ -2701,15 +2702,15 @@ HRESULT Unattended::i_attachImage(UnattendedInstallationDisk const *pImage, ComP
         if (pImage->fMountOnly)
         {
             // mount the opened disk image
-            rc = rPtrSessionMachine->MountMedium(Bstr(pImage->strControllerName).raw(), pImage->uPort,
-                                                 pImage->uDevice, ptrMedium, TRUE /*fForce*/);
+            rc = rPtrSessionMachine->MountMedium(Bstr(pImage->strControllerName).raw(), pImage->iPort,
+                                                 pImage->iDevice, ptrMedium, TRUE /*fForce*/);
             LogRelFlowFunc(("Machine::MountMedium -> %Rhrc\n", rc));
         }
         else
         {
             //attach the opened disk image to the controller
-            rc = rPtrSessionMachine->AttachDevice(Bstr(pImage->strControllerName).raw(), pImage->uPort,
-                                                  pImage->uDevice, pImage->enmDeviceType, ptrMedium);
+            rc = rPtrSessionMachine->AttachDevice(Bstr(pImage->strControllerName).raw(), pImage->iPort,
+                                                  pImage->iDevice, pImage->enmDeviceType, ptrMedium);
             LogRelFlowFunc(("Machine::AttachDevice -> %Rhrc\n", rc));
         }
     }
