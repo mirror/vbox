@@ -450,7 +450,11 @@ HRESULT VRDEServer::getVRDEProperty(const com::Utf8Str &aKey, com::Utf8Str &aVal
     return S_OK;
 }
 
+#if RT_CLANG_PREREQ(11, 0) && !RT_CLANG_PREREQ(13, 0) /*assuming this issue will be fixed eventually*/
+static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, void *ppfn)
+#else
 static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, PFNVRDESUPPORTEDPROPERTIES *ppfn)
+#endif
 {
     int rc = VINF_SUCCESS;
 
@@ -542,7 +546,11 @@ HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
          */
         PFNVRDESUPPORTEDPROPERTIES pfn = NULL;
         RTLDRMOD hmod = NIL_RTLDRMOD;
+#if RT_CLANG_PREREQ(11, 0) && !RT_CLANG_PREREQ(13, 0) /*assuming this issue will be fixed eventually*/
+        vrc = loadVRDELibrary(strVrdeLibrary.c_str(), &hmod, (void **)&pfn);
+#else
         vrc = loadVRDELibrary(strVrdeLibrary.c_str(), &hmod, &pfn);
+#endif
         Log(("VRDEPROP: load library [%s] rc %Rrc\n", strVrdeLibrary.c_str(), vrc));
         if (RT_SUCCESS(vrc))
         {
