@@ -981,14 +981,14 @@ HRESULT Appliance::i_searchUniqueVMName(Utf8Str& aName) const
     return S_OK;
 }
 
-HRESULT Appliance::i_searchUniqueImageFilePath(const Utf8Str &aMachineFolder, DeviceType_T aDeviceType, Utf8Str &aName) const
+HRESULT Appliance::i_ensureUniqueImageFilePath(const Utf8Str &aMachineFolder, DeviceType_T aDeviceType, Utf8Str &aName) const
 {
     /*
      * Check if the file exists or if a medium with this path is registered already
      */
     Utf8Str strAbsName;
-    ssize_t offDashNum = -1;
-    ssize_t cchDashNum = 0;
+    size_t  offDashNum = ~(size_t)0;
+    size_t  cchDashNum = 0;
     for (unsigned i = 1;; i++)
     {
         /* Complete the path (could be relative to machine folder). */
@@ -1006,10 +1006,10 @@ HRESULT Appliance::i_searchUniqueImageFilePath(const Utf8Str &aMachineFolder, De
         }
 
         /* Insert '_%i' before the suffix and try again. */
-        if (offDashNum < 0)
+        if (offDashNum == ~(size_t)0)
         {
             const char *pszSuffix = RTPathSuffix(aName.c_str());
-            offDashNum = pszSuffix ? pszSuffix - aName.c_str() : aName.length();
+            offDashNum = pszSuffix ? (size_t)(pszSuffix - aName.c_str()) : aName.length();
         }
         char   szTmp[32];
         size_t cchTmp = RTStrPrintf(szTmp, sizeof(szTmp),  "_%u", i);
