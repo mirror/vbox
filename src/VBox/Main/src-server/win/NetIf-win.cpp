@@ -45,6 +45,7 @@
 #include "HostNetworkInterfaceImpl.h"
 #include "ProgressImpl.h"
 #include "VirtualBoxImpl.h"
+#include "Global.h"
 #include "netif.h"
 #include "ThreadTask.h"
 
@@ -1153,18 +1154,18 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
 #else
     /* create a progress object */
     ComObjPtr<Progress> progress;
-    progress.createObject();
+    HRESULT hrc = progress.createObject();
+    AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
 
     ComPtr<IHost> host;
-    HRESULT rc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
-    if (SUCCEEDED(rc))
+    hrc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
+    if (SUCCEEDED(hrc))
     {
-        rc = progress->init(pVirtualBox, host,
-                            Bstr(_T("Creating host only network interface")).raw(),
-                            FALSE /* aCancelable */);
-        if (SUCCEEDED(rc))
+        hrc = progress->init(pVirtualBox, host,
+                             Bstr(_T("Creating host only network interface")).raw(),
+                             FALSE /* aCancelable */);
+        if (SUCCEEDED(hrc))
         {
-            if (FAILED(rc)) return rc;
             progress.queryInterfaceTo(aProgress);
 
             /* create a new uninitialized host interface object */
@@ -1180,16 +1181,16 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
             d->iface = iface;
             d->ptrVBox = pVirtualBox;
 
-            rc = pVirtualBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                                     netIfNetworkInterfaceHelperClient,
-                                                     static_cast<void *>(d),
-                                                     progress);
+            hrc = pVirtualBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                      netIfNetworkInterfaceHelperClient,
+                                                      static_cast<void *>(d),
+                                                      progress);
             /* d is now owned by netIfNetworkInterfaceHelperClient(), no need to delete one here */
 
         }
     }
 
-    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+    return Global::vboxStatusCodeFromCOM(hrc);
 #endif
 }
 
@@ -1201,17 +1202,18 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, const Guid &aId
 #else
     /* create a progress object */
     ComObjPtr<Progress> progress;
-    progress.createObject();
+    HRESULT hrc = progress.createObject();
+    AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
+
     ComPtr<IHost> host;
-    HRESULT rc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
-    if (SUCCEEDED(rc))
+    hrc = pVirtualBox->COMGETTER(Host)(host.asOutParam());
+    if (SUCCEEDED(hrc))
     {
-        rc = progress->init(pVirtualBox, host,
-                           Bstr(_T("Removing host network interface")).raw(),
-                           FALSE /* aCancelable */);
-        if (SUCCEEDED(rc))
+        hrc = progress->init(pVirtualBox, host,
+                             Bstr(_T("Removing host network interface")).raw(),
+                             FALSE /* aCancelable */);
+        if (SUCCEEDED(hrc))
         {
-            if (FAILED(rc)) return rc;
             progress.queryInterfaceTo(aProgress);
 
             /* create the networkInterfaceHelperClient() argument */
@@ -1220,16 +1222,16 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, const Guid &aId
             d->msgCode = SVCHlpMsg::RemoveHostOnlyNetworkInterface;
             d->guid = aId;
 
-            rc = pVirtualBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
-                                                     netIfNetworkInterfaceHelperClient,
-                                                     static_cast<void *>(d),
-                                                     progress);
+            hrc = pVirtualBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
+                                                      netIfNetworkInterfaceHelperClient,
+                                                      static_cast<void *>(d),
+                                                      progress);
             /* d is now owned by netIfNetworkInterfaceHelperClient(), no need to delete one here */
 
         }
     }
 
-    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+    return Global::vboxStatusCodeFromCOM(hrc);
 #endif
 }
 
