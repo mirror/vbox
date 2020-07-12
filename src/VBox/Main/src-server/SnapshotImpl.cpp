@@ -1446,14 +1446,17 @@ public:
                      bool fPause,
                      uint32_t uMemSize,
                      bool fTakingSnapshotOnline)
-        : SnapshotTask(m, p, t, s),
-          m_strName(strName),
-          m_strDescription(strDescription),
-          m_uuidSnapshot(uuidSnapshot),
-          m_fPause(fPause),
-          m_uMemSize(uMemSize),
-          m_fTakingSnapshotOnline(fTakingSnapshotOnline)
+        : SnapshotTask(m, p, t, s)
+        , m_strName(strName)
+        , m_strDescription(strDescription)
+        , m_uuidSnapshot(uuidSnapshot)
+        , m_fPause(fPause)
+#if 0 /*unused*/
+        , m_uMemSize(uMemSize)
+#endif
+        , m_fTakingSnapshotOnline(fTakingSnapshotOnline)
     {
+        RT_NOREF(uMemSize);
         if (fTakingSnapshotOnline)
             m_pDirectControl = m->mData->mSession.mDirectControl;
         // If the VM is already paused then there's no point trying to pause
@@ -1481,7 +1484,9 @@ private:
     Utf8Str m_strStateFilePath;
     ComPtr<IInternalSessionControl> m_pDirectControl;
     bool m_fPause;
+#if 0 /*unused*/
     uint32_t m_uMemSize;
+#endif
     bool m_fTakingSnapshotOnline;
 
     friend HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWriteLock &alock, bool aSuccess);
