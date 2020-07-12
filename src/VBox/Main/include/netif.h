@@ -96,11 +96,13 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list);
 int NetIfEnableStaticIpConfig(VirtualBox *pVBox, HostNetworkInterface * pIf, ULONG aOldIp, ULONG aNewIp, ULONG aMask);
 int NetIfEnableStaticIpConfigV6(VirtualBox *pVBox, HostNetworkInterface *pIf, const Utf8Str &aOldIPV6Address, const Utf8Str &aIPV6Address, ULONG aIPV6MaskPrefixLength);
 int NetIfEnableDynamicIpConfig(VirtualBox *pVBox, HostNetworkInterface * pIf);
-#if defined(RT_OS_WINDOWS)
-int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress, IN_BSTR bstrName = NULL);
-#else /* !defined(RT_OS_WINDOWS) */
-int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress, const char *pszName = NULL);
-#endif /* !defined(RT_OS_WINDOWS) */
+#ifdef RT_OS_WINDOWS
+int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress,
+                                        IN_BSTR bstrName = NULL);
+#else
+int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress,
+                                        const char *pszName = NULL);
+#endif
 int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, const Guid &aId, IProgress **aProgress);
 int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *);
 int NetIfGetConfigByName(PNETIFINFO pInfo);
