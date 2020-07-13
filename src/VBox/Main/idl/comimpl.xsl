@@ -568,8 +568,8 @@
     <xsl:with-param name="name" select="@name" />
   </xsl:call-template>
   <xsl:value-of select="       '    END_COM_MAP()&#10;'" />
-  <xsl:value-of select="concat('    ',$implName,'() { /*Log((&quot;',$implName,'\n&quot;))*/;}&#10;')" />
-  <xsl:value-of select="concat('    virtual ~',$implName,'() { /*Log((&quot;~',$implName,'\n&quot;))*/; uninit(); }&#10;')" />
+  <xsl:value-of select="concat('    ',$implName,'() { Log12((&quot;',$implName,' %p\n&quot;, this)); }&#10;')" />
+  <xsl:value-of select="concat('    virtual ~',$implName,'() { Log12((&quot;~',$implName,' %p\n&quot;, this)); uninit(); }&#10;')" />
   <xsl:text><![CDATA[
     HRESULT FinalConstruct()
     {
@@ -813,10 +813,12 @@ private:
   </xsl:call-template>
 
 <xsl:text><![CDATA[
+#define LOG_GROUP LOG_GROUP_MAIN_EVENT
 #include <VBox/com/array.h>
+#include <VBox/log.h>
 #include <iprt/asm.h>
-#include "EventImpl.h"
 #include "VBoxEvents.h"
+
 ]]></xsl:text>
 
   <!-- Interfaces -->
