@@ -212,10 +212,14 @@
         </xsl:call-template>
       </xsl:variable>
       <xsl:value-of select="concat('         SafeArray&lt;', $elemtype, '&gt; aArr(ComSafeArrayInArg(',$param,'));&#10;')"/>
-      <xsl:value-of select="concat('         ',$member, '.initFrom(aArr);&#10;')"/>
+      <xsl:value-of select="concat('         return ',$member, '.initFrom(aArr);&#10;')"/>
+    </xsl:when>
+    <xsl:when test="($type='wstring') or ($type='uuid')">
+      <xsl:value-of select="concat('         return ',$member, '.assignEx(', $param, ');&#10;')"/>
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="concat('         ', $member, ' = ', $param, ';&#10;')"/>
+      <xsl:value-of select="       '         return S_OK;&#10;'" />
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -452,19 +456,17 @@
         <xsl:with-param name="param" select="$pName" />
         <xsl:with-param name="safearray" select="@safearray" />
       </xsl:call-template>
-      <xsl:value-of select="       '         return S_OK;&#10;'" />
       <xsl:value-of select="       '    }&#10;'" />
     </xsl:if>
 
     <xsl:value-of select="       '    // purely internal setter&#10;'" />
-    <xsl:value-of select="concat('    HRESULT set_', @name,'(',$pTypeNameIn, ')&#10;    {&#10;')" />
+    <xsl:value-of select="concat('    inline HRESULT set_', @name,'(',$pTypeNameIn, ')&#10;    {&#10;')" />
     <xsl:call-template name="genSetParam">
       <xsl:with-param name="type" select="@type" />
       <xsl:with-param name="member" select="$mName" />
       <xsl:with-param name="param" select="$pName" />
       <xsl:with-param name="safearray" select="@safearray" />
     </xsl:call-template>
-    <xsl:value-of select="       '         return S_OK;&#10;'" />
     <xsl:value-of select="       '    }&#10;'" />
   </xsl:for-each>
 
