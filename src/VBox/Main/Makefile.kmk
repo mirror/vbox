@@ -804,15 +804,21 @@ OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 #
 # Generate some event stuff for VBoxSVC and VBoxC.
 #
-$(VBOX_AUTOGEN_EVENT_H): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_AUTOGEN_EVENT_H).ts)
+$(VBOX_AUTOGEN_EVENT_H).ts +| $(VBOX_AUTOGEN_EVENT_H): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEventHeader -o $@ $< $(VBOX_XIDL_FILE)
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEventHeader -o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl" "$(VBOX_XIDL_FILE)"
+	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_EVENT_H)"
 
-$(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_AUTOGEN_EVENT_CPP).ts)
+$(VBOX_AUTOGEN_EVENT_CPP).ts +| $(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEvent -o $@ $< $(VBOX_XIDL_FILE)
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEvent -o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl" "$(VBOX_XIDL_FILE)"
+	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_EVENT_CPP)"
 
-OTHER_CLEAN += $(VBOX_AUTOGEN_EVENT_H) $(VBOX_AUTOGEN_EVENT_CPP)
+OTHER_CLEAN += $(VBOX_AUTOGEN_EVENT_H).ts $(VBOX_AUTOGEN_EVENT_H) $(VBOX_AUTOGEN_EVENT_CPP).ts $(VBOX_AUTOGEN_EVENT_CPP)
 
 ifdef VBOX_WITH_XPCOM
 #

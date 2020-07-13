@@ -140,23 +140,6 @@ public:
     ~VBoxEventDesc()
     {}
 
-
-#if 0
-    /**
-     * This function to be used with some care, as arguments order must match
-     * attribute declaration order event class and its superclasses up to
-     * IEvent. If unsure, consult implementation in generated VBoxEvents.cpp.
-     */
-    HRESULT init(IEventSource* aSource, VBoxEventType_T aType, ...);
-
-    /**
-    * Function similar to the above, but assumes that init() for this type
-    * already called once, so no need to allocate memory, and only reinit
-    * fields. Assumes event is subtype of IReusableEvent, asserts otherwise.
-    */
-    HRESULT reinit(VBoxEventType_T aType, ...);
-#endif
-
     void init(IEvent *aEvent, IEventSource *aSource)
     {
         mEvent       = aEvent;
