@@ -3736,7 +3736,7 @@ void VirtualBox::i_onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, boo
                          aHostPort, aGuestIp, aGuestPort);
 }
 
-/**  @todo +d  */
+/** @todo +d  */
 void VirtualBox::i_onNATNetworkChange(IN_BSTR aName)
 {
     fireNATNetworkChangedEvent(m->pEventSource, aName);
