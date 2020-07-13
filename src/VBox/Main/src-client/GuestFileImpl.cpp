@@ -526,7 +526,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                 alock.release();
 
                 com::SafeArray<BYTE> data((size_t)cbRead);
-                data.initFrom((BYTE*)dataCb.u.read.pvData, cbRead);
+                data.initFrom((BYTE *)dataCb.u.read.pvData, cbRead);
 
                 ::FireGuestFileReadEvent(mEventSource, mSession, this, mData.mOffCurrent, cbRead, ComSafeArrayAsInParam(data));
             }

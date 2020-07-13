@@ -910,7 +910,7 @@ HRESULT Progress::setCurrentOperationProgress(ULONG aPercent)
         m_ulOperationPercent = aPercent;
         ULONG actualPercent = 0;
         getPercent(&actualPercent);
-        ::FireProgressPercentageChangedEvent(pEventSource, mId.toUtf16().raw(), (LONG)actualPercent);
+        ::FireProgressPercentageChangedEvent(pEventSource, mId.toString(), (LONG)actualPercent);
     }
 
     return S_OK;
@@ -1067,7 +1067,7 @@ HRESULT Progress::setNextOperation(const com::Utf8Str &aNextOperationDescription
 
     ULONG actualPercent = 0;
     getPercent(&actualPercent);
-    ::FireProgressPercentageChangedEvent(pEventSource, mId.toUtf16().raw(), (LONG)actualPercent);
+    ::FireProgressPercentageChangedEvent(pEventSource, mId.toString(), (LONG)actualPercent);
 
     return S_OK;
 }
@@ -1161,7 +1161,7 @@ HRESULT Progress::i_notifyCompleteWorker(HRESULT aResultCode, const ComPtr<IVirt
     if (mWaitersCount > 0)
         RTSemEventMultiSignal(mCompletedSem);
 
-    ::FireProgressTaskCompletedEvent(pEventSource, mId.toUtf16().raw());
+    ::FireProgressTaskCompletedEvent(pEventSource, mId.toString());
 
     return S_OK;
 }

@@ -170,19 +170,19 @@ HRESULT NATNetwork::i_saveSettings(settings::NATNetwork &data)
     AssertReturn(!m->s.strNetworkName.isEmpty(), E_FAIL);
     data = m->s;
 
-    m->pVirtualBox->i_onNATNetworkSetting(Bstr(m->s.strNetworkName).raw(),
+    m->pVirtualBox->i_onNATNetworkSetting(m->s.strNetworkName,
                                           m->s.fEnabled,
-                                          Bstr(m->s.strIPv4NetworkCidr).raw(),
-                                          Bstr(m->IPv4Gateway).raw(),
+                                          m->s.strIPv4NetworkCidr,
+                                          m->IPv4Gateway,
                                           m->s.fAdvertiseDefaultIPv6Route,
                                           m->s.fNeedDhcpServer);
 
     /* Notify listerners listening on this network only */
     ::FireNATNetworkSettingEvent(m->pEventSource,
-                                 Bstr(m->s.strNetworkName).raw(),
+                                 m->s.strNetworkName,
                                  m->s.fEnabled,
-                                 Bstr(m->s.strIPv4NetworkCidr).raw(),
-                                 Bstr(m->IPv4Gateway).raw(),
+                                 m->s.strIPv4NetworkCidr,
+                                 m->IPv4Gateway,
                                  m->s.fAdvertiseDefaultIPv6Route,
                                  m->s.fNeedDhcpServer);
 
@@ -583,16 +583,16 @@ HRESULT NATNetwork::addPortForwardRule(BOOL aIsIpv6,
         ComAssertComRCRetRC(rc);
     }
 
-    m->pVirtualBox->i_onNATNetworkPortForward(Bstr(m->s.strNetworkName).raw(), TRUE, aIsIpv6,
-                                              Bstr(aPortForwardRuleName).raw(), aProto,
-                                              Bstr(aHostIp).raw(), aHostPort,
-                                              Bstr(aGuestIp).raw(), aGuestPort);
+    m->pVirtualBox->i_onNATNetworkPortForward(m->s.strNetworkName, TRUE, aIsIpv6,
+                                              aPortForwardRuleName, aProto,
+                                              aHostIp, aHostPort,
+                                              aGuestIp, aGuestPort);
 
     /* Notify listerners listening on this network only */
-    ::FireNATNetworkPortForwardEvent(m->pEventSource, Bstr(m->s.strNetworkName).raw(), TRUE,
-                                     aIsIpv6, Bstr(aPortForwardRuleName).raw(), aProto,
-                                     Bstr(aHostIp).raw(), aHostPort,
-                                     Bstr(aGuestIp).raw(), aGuestPort);
+    ::FireNATNetworkPortForwardEvent(m->pEventSource, m->s.strNetworkName, TRUE,
+                                     aIsIpv6, aPortForwardRuleName, aProto,
+                                     aHostIp, aHostPort,
+                                     aGuestIp, aGuestPort);
 
     return S_OK;
 }
@@ -628,16 +628,12 @@ HRESULT NATNetwork::removePortForwardRule(BOOL aIsIpv6, const com::Utf8Str &aPor
         ComAssertComRCRetRC(rc);
     }
 
-    m->pVirtualBox->i_onNATNetworkPortForward(Bstr(m->s.strNetworkName).raw(), FALSE, aIsIpv6,
-                                              Bstr(aPortForwardRuleName).raw(), proto,
-                                              Bstr(strHostIP).raw(), u16HostPort,
-                                              Bstr(strGuestIP).raw(), u16GuestPort);
+    m->pVirtualBox->i_onNATNetworkPortForward(m->s.strNetworkName, FALSE, aIsIpv6, aPortForwardRuleName, proto,
+                                              strHostIP, u16HostPort, strGuestIP, u16GuestPort);
 
     /* Notify listerners listening on this network only */
-    ::FireNATNetworkPortForwardEvent(m->pEventSource, Bstr(m->s.strNetworkName).raw(), FALSE,
-                                     aIsIpv6, Bstr(aPortForwardRuleName).raw(), proto,
-                                     Bstr(strHostIP).raw(), u16HostPort,
-                                     Bstr(strGuestIP).raw(), u16GuestPort);
+    ::FireNATNetworkPortForwardEvent(m->pEventSource, m->s.strNetworkName, FALSE, aIsIpv6, aPortForwardRuleName, proto,
+                                     strHostIP, u16HostPort, strGuestIP, u16GuestPort);
     return S_OK;
 }
 
@@ -853,7 +849,7 @@ HRESULT  NATNetwork::start()
 
     if (RT_SUCCESS(m->NATRunner.start(false /* KillProcOnStop */)))
     {
-        m->pVirtualBox->i_onNATNetworkStartStop(Bstr(m->s.strNetworkName).raw(), TRUE);
+        m->pVirtualBox->i_onNATNetworkStartStop(m->s.strNetworkName, TRUE);
         return S_OK;
     }
     /** @todo missing setError()! */
@@ -866,7 +862,7 @@ HRESULT  NATNetwork::start()
 HRESULT NATNetwork::stop()
 {
 #ifdef VBOX_WITH_NAT_SERVICE
-    m->pVirtualBox->i_onNATNetworkStartStop(Bstr(m->s.strNetworkName).raw(), FALSE);
+    m->pVirtualBox->i_onNATNetworkStartStop(m->s.strNetworkName, FALSE);
 
     if (!m->dhcpServer.isNull())
         m->dhcpServer->Stop();

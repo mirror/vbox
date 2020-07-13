@@ -344,16 +344,14 @@ public:
             {
                 ComPtr<IExtraDataChangedEvent> pEDCEv = aEvent;
                 Bstr strMachineId;
-                Bstr strKey;
-                Bstr strVal;
-                HRESULT hrc = S_OK;
-
-                hrc = pEDCEv->COMGETTER(MachineId)(strMachineId.asOutParam());
+                HRESULT hrc = pEDCEv->COMGETTER(MachineId)(strMachineId.asOutParam());
                 if (FAILED(hrc)) break;
 
+                Bstr strKey;
                 hrc = pEDCEv->COMGETTER(Key)(strKey.asOutParam());
                 if (FAILED(hrc)) break;
 
+                Bstr strVal;
                 hrc = pEDCEv->COMGETTER(Value)(strVal.asOutParam());
                 if (FAILED(hrc)) break;
 
@@ -5223,7 +5221,7 @@ HRESULT Console::i_onStorageControllerChange(const Guid &aMachineId, const Utf8S
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    ::FireStorageControllerChangedEvent(mEventSource, Bstr(aMachineId.toString()).raw(), Bstr(aControllerName).raw());
+    ::FireStorageControllerChangedEvent(mEventSource, aMachineId.toString(), aControllerName);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
     return S_OK;
@@ -6064,7 +6062,7 @@ HRESULT Console::i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, B
     return rc;
 }
 
-HRESULT Console::i_onExtraDataChange(IN_BSTR aMachineId, IN_BSTR aKey, IN_BSTR aVal)
+HRESULT Console::i_onExtraDataChange(const Bstr &aMachineId, const Bstr &aKey, const Bstr &aVal)
 {
     LogFlowThisFunc(("\n"));
 
@@ -6072,35 +6070,28 @@ HRESULT Console::i_onExtraDataChange(IN_BSTR aMachineId, IN_BSTR aKey, IN_BSTR a
     if (FAILED(autoCaller.rc()))
         return autoCaller.rc();
 
-    if (!aMachineId)
+    if (aMachineId != i_getId())
         return S_OK;
 
-    HRESULT hrc = S_OK;
-    Bstr idMachine(aMachineId);
-    if (   FAILED(hrc)
-        || idMachine != i_getId())
-        return hrc;
-
     /* don't do anything if the VM isn't running */
-    SafeVMPtrQuiet ptrVM(this);
-    if (ptrVM.isOk())
+    if (aKey == "VBoxInternal2/TurnResetIntoPowerOff")
     {
-        if (RTUtf16CmpAscii(aKey, "VBoxInternal2/TurnResetIntoPowerOff") == 0)
+        SafeVMPtrQuiet ptrVM(this);
+        if (ptrVM.isOk())
         {
-            mfTurnResetIntoPowerOff = RTUtf16CmpAscii(aVal, "1") == 0;
+            mfTurnResetIntoPowerOff = aVal == "1";
             int vrc = VMR3SetPowerOffInsteadOfReset(ptrVM.rawUVM(), mfTurnResetIntoPowerOff);
             AssertRC(vrc);
-        }
 
-        ptrVM.release();
+            ptrVM.release();
+        }
     }
 
     /* notify console callbacks on success */
-    if (SUCCEEDED(hrc))
-        ::FireExtraDataChangedEvent(mEventSource, aMachineId, aKey, aVal);
+    ::FireExtraDataChangedEvent(mEventSource, aMachineId.raw(), aKey.raw(), aVal.raw());
 
-    LogFlowThisFunc(("Leaving hrc=%#x\n", hrc));
-    return hrc;
+    LogFlowThisFunc(("Leaving S_OK\n"));
+    return S_OK;
 }
 
 /**

@@ -788,7 +788,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     {
         if (fDisabled)
             ::FireGuestMonitorChangedEvent(mParent->i_getEventSource(),
-                                           GuestMonitorChangedEventType_Disabled,  uScreenId, 0, 0, 0, 0);
+                                           GuestMonitorChangedEventType_Disabled, uScreenId, 0, 0, 0, 0);
         else
             ::FireGuestMonitorChangedEvent(mParent->i_getEventSource(),
                                            GuestMonitorChangedEventType_Enabled, uScreenId, xOrigin, yOrigin, w, h);

@@ -194,15 +194,15 @@ public:
     void i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
                                 NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
                                 IN_BSTR aGuestIp, uint16_t aGuestPort);
-    void i_onNATNetworkChanged(IN_BSTR aNetworkName);
-    void i_onNATNetworkStartStop(IN_BSTR aNetworkName, BOOL aStart);
-    void i_onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled, IN_BSTR aNetwork,
-                               IN_BSTR aGateway, BOOL aAdvertiseDefaultIpv6RouteEnabled,
+    void i_onNATNetworkChanged(const Utf8Str &aNetworkName);
+    void i_onNATNetworkStartStop(const Utf8Str &aNetworkName, BOOL aStart);
+    void i_onNATNetworkSetting(const Utf8Str &aNetworkName, BOOL aEnabled, const Utf8Str &aNetwork,
+                               const Utf8Str &aGateway, BOOL aAdvertiseDefaultIpv6RouteEnabled,
                                BOOL fNeedDhcpServer);
-    void i_onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL fIpv6,
-                                   IN_BSTR aRuleName, NATProtocol_T proto,
-                                   IN_BSTR aHostIp, LONG aHostPort,
-                                   IN_BSTR aGuestIp, LONG aGuestPort);
+    void i_onNATNetworkPortForward(const Utf8Str &aNetworkName, BOOL create, BOOL fIpv6,
+                                   const Utf8Str &aRuleName, NATProtocol_T proto,
+                                   const Utf8Str &aHostIp, LONG aHostPort,
+                                   const Utf8Str &aGuestIp, LONG aGuestPort);
     void i_onHostNameResolutionConfigurationChange();
 
     int i_natNetworkRefInc(const Utf8Str &aNetworkName);

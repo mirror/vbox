@@ -3731,18 +3731,18 @@ void VirtualBox::i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bo
 }
 
 /** @todo Unused!!  */
-void VirtualBox::i_onNATNetworkChanged(IN_BSTR aName)
+void VirtualBox::i_onNATNetworkChanged(const Utf8Str &aName)
 {
     ::FireNATNetworkChangedEvent(m->pEventSource, aName);
 }
 
-void VirtualBox::i_onNATNetworkStartStop(IN_BSTR aName, BOOL fStart)
+void VirtualBox::i_onNATNetworkStartStop(const Utf8Str &aName, BOOL fStart)
 {
     ::FireNATNetworkStartStopEvent(m->pEventSource, aName, fStart);
 }
 
-void VirtualBox::i_onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled,
-                                       IN_BSTR aNetwork, IN_BSTR aGateway,
+void VirtualBox::i_onNATNetworkSetting(const Utf8Str &aNetworkName, BOOL aEnabled,
+                                       const Utf8Str &aNetwork, const Utf8Str &aGateway,
                                        BOOL aAdvertiseDefaultIpv6RouteEnabled,
                                        BOOL fNeedDhcpServer)
 {
@@ -3750,10 +3750,10 @@ void VirtualBox::i_onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled,
                                  aAdvertiseDefaultIpv6RouteEnabled, fNeedDhcpServer);
 }
 
-void VirtualBox::i_onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL fIpv6,
-                                           IN_BSTR aRuleName, NATProtocol_T proto,
-                                           IN_BSTR aHostIp, LONG aHostPort,
-                                           IN_BSTR aGuestIp, LONG aGuestPort)
+void VirtualBox::i_onNATNetworkPortForward(const Utf8Str &aNetworkName, BOOL create, BOOL fIpv6,
+                                           const Utf8Str &aRuleName, NATProtocol_T proto,
+                                           const Utf8Str &aHostIp, LONG aHostPort,
+                                           const Utf8Str &aGuestIp, LONG aGuestPort)
 {
     ::FireNATNetworkPortForwardEvent(m->pEventSource, aNetworkName, create, fIpv6, aRuleName, proto,
                                      aHostIp, aHostPort, aGuestIp, aGuestPort);
@@ -5918,7 +5918,7 @@ HRESULT VirtualBox::createNATNetwork(const com::Utf8Str &aNetworkName,
 
     natNetwork.queryInterfaceTo(aNetwork.asOutParam());
 
-    ::FireNATNetworkCreationDeletionEvent(m->pEventSource, Bstr(aNetworkName).raw(), TRUE);
+    ::FireNATNetworkCreationDeletionEvent(m->pEventSource, aNetworkName, TRUE);
 
     return rc;
 #else
