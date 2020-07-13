@@ -258,6 +258,80 @@
   </xsl:choose>
 </xsl:template>
 
+<xsl:template name="genFormalParams">
+  <xsl:param name="name" />
+  <xsl:variable name="extends">
+    <xsl:value-of select="key('G_keyInterfacesByName', $name)/@extends" />
+  </xsl:variable>
+
+  <xsl:choose>
+    <xsl:when test="$extends='IEvent'">
+    </xsl:when>
+    <xsl:when test="$extends='IReusableEvent'">
+    </xsl:when>
+    <xsl:when test="count(key('G_keyInterfacesByName', $extends)) > 0">
+      <xsl:call-template name="genFormalParams">
+        <xsl:with-param name="name" select="$extends" />
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:call-template name="fatalError">
+        <xsl:with-param name="msg" select="concat('No idea how to process it: ', $name)" />
+      </xsl:call-template>
+    </xsl:otherwise>
+  </xsl:choose>
+
+  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikeEmptyInterfaces']">
+    <xsl:variable name="aName" select="concat('a_',@name)"/>
+    <xsl:variable name="aTypeName">
+      <xsl:call-template name="typeIdl2Back">
+        <xsl:with-param name="type" select="@type" />
+        <xsl:with-param name="safearray" select="@safearray" />
+        <xsl:with-param name="param" select="$aName" />
+        <xsl:with-param name="dir" select="'in'" />
+        <xsl:with-param name="mod" select="@mod" />
+      </xsl:call-template>
+    </xsl:variable>
+    <xsl:value-of select="concat(', ',$aTypeName)"/>
+  </xsl:for-each>
+</xsl:template>
+
+<xsl:template name="genCallParams">
+  <xsl:param name="name" />
+  <xsl:variable name="extends">
+    <xsl:value-of select="key('G_keyInterfacesByName', $name)/@extends" />
+  </xsl:variable>
+
+  <xsl:choose>
+    <xsl:when test="$extends='IEvent'">
+    </xsl:when>
+    <xsl:when test="$extends='IReusableEvent'">
+    </xsl:when>
+    <xsl:when test="count(key('G_keyInterfacesByName', $extends)) > 0">
+      <xsl:call-template name="genCallParams">
+        <xsl:with-param name="name" select="$extends" />
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:call-template name="fatalError">
+        <xsl:with-param name="msg" select="concat('No idea how to process it: ', $name)" />
+      </xsl:call-template>
+    </xsl:otherwise>
+  </xsl:choose>
+
+  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikeEmptyInterfaces']">
+    <xsl:variable name="aName" select="concat('a_',@name)"/>
+    <xsl:choose>
+      <xsl:when test="@safearray='yes'">
+        <xsl:value-of select="concat(', ComSafeArrayInArg(',$aName,')')"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="concat(', ',$aName)"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:for-each>
+</xsl:template>
+
 <xsl:template name="genAttrInitCode">
   <xsl:param name="name" />
   <xsl:param name="obj" />
@@ -708,7 +782,7 @@ private:
   <xsl:text>    ComPtr&lt;IEvent&gt; ptrEvent;&#10;</xsl:text>
   <xsl:text>    HRESULT hrc = </xsl:text>
   <xsl:value-of select="concat('Create', $evname, '(ptrEvent.asOutParam(), aSource')"/>
-  <xsl:call-template name="genFactParams">
+  <xsl:call-template name="genCallParams">
     <xsl:with-param name="name" select="$ifname" />
   </xsl:call-template>
   <xsl:text>);&#10;</xsl:text>
@@ -768,80 +842,6 @@ private:
     </xsl:choose>
   </xsl:for-each>
 
-</xsl:template>
-
-<xsl:template name="genFormalParams">
-  <xsl:param name="name" />
-  <xsl:variable name="extends">
-    <xsl:value-of select="key('G_keyInterfacesByName', $name)/@extends" />
-  </xsl:variable>
-
-  <xsl:choose>
-    <xsl:when test="$extends='IEvent'">
-    </xsl:when>
-    <xsl:when test="$extends='IReusableEvent'">
-    </xsl:when>
-    <xsl:when test="count(key('G_keyInterfacesByName', $extends)) > 0">
-      <xsl:call-template name="genFormalParams">
-        <xsl:with-param name="name" select="$extends" />
-      </xsl:call-template>
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:call-template name="fatalError">
-        <xsl:with-param name="msg" select="concat('No idea how to process it: ', $name)" />
-      </xsl:call-template>
-    </xsl:otherwise>
-  </xsl:choose>
-
-  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikeEmptyInterfaces']">
-    <xsl:variable name="aName" select="concat('a_',@name)"/>
-    <xsl:variable name="aTypeName">
-      <xsl:call-template name="typeIdl2Back">
-        <xsl:with-param name="type" select="@type" />
-        <xsl:with-param name="safearray" select="@safearray" />
-        <xsl:with-param name="param" select="$aName" />
-        <xsl:with-param name="dir" select="'in'" />
-        <xsl:with-param name="mod" select="@mod" />
-      </xsl:call-template>
-    </xsl:variable>
-    <xsl:value-of select="concat(', ',$aTypeName)"/>
-  </xsl:for-each>
-</xsl:template>
-
-<xsl:template name="genFactParams">
-  <xsl:param name="name" />
-  <xsl:variable name="extends">
-    <xsl:value-of select="key('G_keyInterfacesByName', $name)/@extends" />
-  </xsl:variable>
-
-  <xsl:choose>
-    <xsl:when test="$extends='IEvent'">
-    </xsl:when>
-    <xsl:when test="$extends='IReusableEvent'">
-    </xsl:when>
-    <xsl:when test="count(key('G_keyInterfacesByName', $extends)) > 0">
-      <xsl:call-template name="genFactParams">
-        <xsl:with-param name="name" select="$extends" />
-      </xsl:call-template>
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:call-template name="fatalError">
-        <xsl:with-param name="msg" select="concat('No idea how to process it: ', $name)" />
-      </xsl:call-template>
-    </xsl:otherwise>
-  </xsl:choose>
-
-  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikeEmptyInterfaces']">
-    <xsl:variable name="aName" select="concat('a_',@name)"/>
-    <xsl:choose>
-      <xsl:when test="@safearray='yes'">
-        <xsl:value-of select="concat(', ComSafeArrayInArg(',$aName,')')"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:value-of select="concat(', ',$aName)"/>
-      </xsl:otherwise>
-    </xsl:choose>
-  </xsl:for-each>
 </xsl:template>
 
 
