@@ -168,9 +168,8 @@ public:
     void i_onStorageDeviceChanged(IMediumAttachment* aStorageDevice, const BOOL fRemoved, const BOOL fSilent);
     void i_onMachineStateChanged(const Guid &aId, MachineState_T aState);
     void i_onMachineDataChanged(const Guid &aId, BOOL aTemporary = FALSE);
-    BOOL i_onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
-                                Bstr &aError);
-    void i_onExtraDataChanged(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue);
+    BOOL i_onExtraDataCanChange(const Guid &aId, const Utf8Str &aKey, const Utf8Str &aValue, Bstr &aError);
+    void i_onExtraDataChanged(const Guid &aId, const Utf8Str &aKey, const Utf8Str &aValue);
     void i_onMachineRegistered(const Guid &aId, BOOL aRegistered);
     void i_onSessionStateChanged(const Guid &aId, SessionState_T aState);
 
@@ -191,7 +190,7 @@ public:
     ULONG i_onClipboardAreaGetRefCount(ULONG aID);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-    void i_onGuestPropertyChanged(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags);
+    void i_onGuestPropertyChanged(const Guid &aMachineId, const Utf8Str &aName, const Utf8Str &aValue, const Utf8Str &aFlags);
     void i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
                                 NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
                                 IN_BSTR aGuestIp, uint16_t aGuestPort);

@@ -185,6 +185,50 @@ void Bstr::copyFromN(const char *a_pszSrc, size_t a_cchMax)
     throw std::bad_alloc();
 }
 
+HRESULT Bstr::cleanupAndCopyFromNoThrow(const char *a_pszSrc, size_t a_cchMax) RT_NOEXCEPT
+{
+    /*
+     * Check for empty input (m_bstr == NULL means empty, there are no NULL strings).
+     */
+    cleanup();
+    if (!a_cchMax || !a_pszSrc || !*a_pszSrc)
+        return S_OK;
+
+    /*
+     * Calculate the length and allocate a BSTR string buffer of the right
+     * size, i.e. optimize heap usage.
+     */
+    HRESULT hrc;
+    size_t cwc;
+    int vrc = ::RTStrCalcUtf16LenEx(a_pszSrc, a_cchMax, &cwc);
+    if (RT_SUCCESS(vrc))
+    {
+        m_bstr = ::SysAllocStringByteLen(NULL, (unsigned)(cwc * sizeof(OLECHAR)));
+        if (RT_LIKELY(m_bstr))
+        {
+            PRTUTF16 pwsz = (PRTUTF16)m_bstr;
+            vrc = ::RTStrToUtf16Ex(a_pszSrc, a_cchMax, &pwsz, cwc + 1, NULL);
+            if (RT_SUCCESS(vrc))
+                return S_OK;
+
+            /* This should not happen! */
+            AssertRC(vrc);
+            cleanup();
+            hrc = E_UNEXPECTED;
+        }
+        else
+            hrc = E_OUTOFMEMORY;
+    }
+    else
+    {
+        /* Unexpected: Invalid UTF-8 input. */
+        AssertLogRelMsgFailed(("%Rrc %.*Rhxs\n", vrc, RTStrNLen(a_pszSrc, a_cchMax), a_pszSrc));
+        hrc = E_UNEXPECTED;
+    }
+    return hrc;
+}
+
+
 int Bstr::compareUtf8(const char *a_pszRight, CaseSensitivity a_enmCase /*= CaseSensitive*/) const
 {
     PCRTUTF16 pwszLeft = m_bstr;

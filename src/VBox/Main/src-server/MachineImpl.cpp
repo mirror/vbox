@@ -4697,19 +4697,17 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
         // ask for permission from all listeners outside the locks;
         // i_onExtraDataCanChange() only briefly requests the VirtualBox
         // lock to copy the list of callbacks to invoke
-        Bstr error;
-        Bstr bstrValue(aValue);
-
-        if (!mParent->i_onExtraDataCanChange(mData->mUuid, Bstr(aKey).raw(), bstrValue.raw(), error))
+        Bstr bstrError;
+        if (!mParent->i_onExtraDataCanChange(mData->mUuid, aKey, aValue, bstrError))
         {
-            const char *sep = error.isEmpty() ? "" : ": ";
-            Log1WarningFunc(("Someone vetoed! Change refused%s%ls\n", sep, error.raw()));
+            const char *sep = bstrError.isEmpty() ? "" : ": ";
+            Log1WarningFunc(("Someone vetoed! Change refused%s%ls\n", sep, bstrError.raw()));
             return setError(E_ACCESSDENIED,
                             tr("Could not set extra data because someone refused the requested change of '%s' to '%s'%s%ls"),
                             aKey.c_str(),
                             aValue.c_str(),
                             sep,
-                            error.raw());
+                            bstrError.raw());
         }
 
         // data is changing and change not vetoed: then write it out under the lock
@@ -4738,7 +4736,7 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
 
     // fire notification outside the lock
     if (fChanged)
-        mParent->i_onExtraDataChanged(mData->mUuid, Bstr(aKey).raw(), Bstr(aValue).raw());
+        mParent->i_onExtraDataChanged(mData->mUuid, aKey, aValue);
 
     return S_OK;
 }
@@ -5522,7 +5520,7 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
         {
             alock.release();
 
-            mParent->i_onGuestPropertyChanged(mData->mUuid, Bstr(aName).raw(), Bstr(aValue).raw(), Bstr(aFlags).raw());
+            mParent->i_onGuestPropertyChanged(mData->mUuid, aName, aValue, aFlags);
         }
     }
     catch (std::bad_alloc &)
@@ -13535,7 +13533,7 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
 
         alock.release();
 
-        mParent->i_onGuestPropertyChanged(mData->mUuid, Bstr(aName).raw(), Bstr(aValue).raw(), Bstr(aFlags).raw());
+        mParent->i_onGuestPropertyChanged(mData->mUuid, aName, aValue, aFlags);
     }
     catch (...)
     {
