@@ -196,6 +196,59 @@ public:
         return cleanupAndCopyFromEx((const OLECHAR *)a_pSrcStr);
     }
 
+    /**
+     * Assign the value of a RTCString/Utf8Str string, no exceptions.
+     *
+     * @returns S_OK or E_OUTOFMEMORY.
+     * @param   a_rSrcStr   The source string
+     */
+    HRESULT assignEx(RTCString const &a_rSrcStr) RT_NOEXCEPT
+    {
+        return cleanupAndCopyFromNoThrow(a_rSrcStr.c_str(), a_rSrcStr.length());
+    }
+
+    /**
+     * Assign the value of a RTCString/Utf8Str substring, no exceptions.
+     *
+     * @returns S_OK, E_OUTOFMEMORY or E_INVALIDARG.
+     * @param   a_rSrcStr   The source string
+     * @param   a_offSrc    The character (byte) offset of the substring.
+     * @param   a_cchSrc    The number of characters (bytes) to copy from the source
+     *                      string.
+     */
+    HRESULT assignEx(RTCString const &a_rSrcStr, size_t a_offSrc, size_t a_cchSrc) RT_NOEXCEPT
+    {
+        size_t const cchTmp = a_rSrcStr.length();
+        if (   a_offSrc + a_cchSrc < cchTmp
+            && a_offSrc < cchTmp)
+            return cleanupAndCopyFromNoThrow(a_rSrcStr.c_str() + a_offSrc, a_cchSrc);
+        return E_INVALIDARG;
+    }
+
+    /**
+     * Assign the value of a zero terminated UTF-8 string, no exceptions.
+     *
+     * @returns S_OK or E_OUTOFMEMORY.
+     * @param   a_pszSrcStr The source string.
+     */
+    HRESULT assignEx(const char *a_pszSrcStr) RT_NOEXCEPT
+    {
+        return cleanupAndCopyFromNoThrow(a_pszSrcStr, RTSTR_MAX);
+    }
+
+    /**
+     * Assign the value of a UTF-8 substring, no exceptions.
+     *
+     * @returns S_OK or E_OUTOFMEMORY.
+     * @param   a_pszSrcStr The source string.
+     * @param   a_cchSrc    The number of characters (bytes) to copy from the source
+     *                      string.
+     */
+    HRESULT assignEx(const char *a_pszSrcStr, size_t a_cchSrc) RT_NOEXCEPT
+    {
+        return cleanupAndCopyFromNoThrow(a_pszSrcStr, a_cchSrc);
+    }
+
 #ifdef _MSC_VER
 # if _MSC_VER >= 1400
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
@@ -1018,6 +1071,9 @@ protected:
      * @throws  std::bad_alloc - the object is representing an empty string.
      */
     void copyFromN(const char *a_pszSrc, size_t a_cchSrc);
+
+    /** cleanup() + non-throwing copyFromN(). */
+    HRESULT cleanupAndCopyFromNoThrow(const char *a_pszSrc, size_t a_cchMax) RT_NOEXCEPT;
 
     Bstr   &appendWorkerUtf16(PCRTUTF16 pwszSrc, size_t cwcSrc);
     Bstr   &appendWorkerUtf8(const char *pszSrc, size_t cchSrc);
