@@ -3722,11 +3722,11 @@ void VirtualBox::i_onGuestPropertyChanged(const Guid &aMachineId, const Utf8Str 
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
-                                        NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
-                                        IN_BSTR aGuestIp, uint16_t aGuestPort)
+void VirtualBox::i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, const Utf8Str &aName,
+                                        NATProtocol_T aProto, const Utf8Str &aHostIp, uint16_t aHostPort,
+                                        const Utf8Str &aGuestIp, uint16_t aGuestPort)
 {
-    ::FireNATRedirectEvent(m->pEventSource, aMachineId.toUtf16().raw(), ulSlot, fRemove, aName, aProto, aHostIp,
+    ::FireNATRedirectEvent(m->pEventSource, aMachineId.toString(), ulSlot, fRemove, aName, aProto, aHostIp,
                            aHostPort, aGuestIp, aGuestPort);
 }
 

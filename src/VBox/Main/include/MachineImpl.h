@@ -511,9 +511,9 @@ public:
 
     // callback handlers
     virtual HRESULT i_onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */, BOOL /* changeAdapter */) { return S_OK; }
-    virtual HRESULT i_onNATRedirectRuleChange(ULONG /* slot */, BOOL /* fRemove */ , IN_BSTR /* name */,
-                                              NATProtocol_T /* protocol */, IN_BSTR /* host ip */, LONG /* host port */,
-                                              IN_BSTR /* guest port */, LONG /* guest port */ ) { return S_OK; }
+    virtual HRESULT i_onNATRedirectRuleChanged(ULONG /* slot */, BOOL /* fRemove */ , const Utf8Str & /* name */,
+                                               NATProtocol_T /* protocol */, const Utf8Str & /* host ip */, LONG /* host port */,
+                                               const Utf8Str & /* guest port */, LONG /* guest port */ ) { return S_OK; }
     virtual HRESULT i_onAudioAdapterChange(IAudioAdapter * /* audioAdapter */) { return S_OK; }
     virtual HRESULT i_onSerialPortChange(ISerialPort * /* serialPort */) { return S_OK; }
     virtual HRESULT i_onParallelPortChange(IParallelPort * /* parallelPort */) { return S_OK; }
@@ -1318,9 +1318,9 @@ public:
     ClientToken *i_getClientToken();
 
     HRESULT i_onNetworkAdapterChange(INetworkAdapter *networkAdapter, BOOL changeAdapter);
-    HRESULT i_onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRemove, IN_BSTR aRuleName,
-                                      NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort,
-                                      IN_BSTR aGuestIp, LONG aGuestPort);
+    HRESULT i_onNATRedirectRuleChanged(ULONG ulSlot, BOOL aNatRuleRemove, const Utf8Str &aRuleName,
+                                       NATProtocol_T aProto, const Utf8Str &aHostIp, LONG aHostPort,
+                                       const Utf8Str &aGuestIp, LONG aGuestPort) RT_OVERRIDE;
     HRESULT i_onStorageControllerChange(const com::Guid &aMachineId, const com::Utf8Str &aControllerName);
     HRESULT i_onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT i_onVMProcessPriorityChange(VMProcPriority_T aPriority);

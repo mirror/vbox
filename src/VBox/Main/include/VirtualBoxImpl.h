@@ -191,9 +191,9 @@ public:
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     void i_onGuestPropertyChanged(const Guid &aMachineId, const Utf8Str &aName, const Utf8Str &aValue, const Utf8Str &aFlags);
-    void i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
-                                NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
-                                IN_BSTR aGuestIp, uint16_t aGuestPort);
+    void i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, const Utf8Str &aName,
+                                NATProtocol_T aProto, const Utf8Str &aHostIp, uint16_t aHostPort,
+                                const Utf8Str &aGuestIp, uint16_t aGuestPort);
     void i_onNATNetworkChanged(const Utf8Str &aNetworkName);
     void i_onNATNetworkStartStop(const Utf8Str &aNetworkName, BOOL aStart);
     void i_onNATNetworkSetting(const Utf8Str &aNetworkName, BOOL aEnabled, const Utf8Str &aNetwork,

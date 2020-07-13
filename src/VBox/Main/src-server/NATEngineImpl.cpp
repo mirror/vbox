@@ -325,8 +325,7 @@ HRESULT NATEngine::addRedirect(const com::Utf8Str &aName, NATProtocol_T aProto, 
     mAdapter->COMGETTER(Slot)(&ulSlot);
 
     alock.release();
-    mParent->i_onNATRedirectRuleChange(ulSlot, FALSE, Bstr(name).raw(), aProto, Bstr(r.strHostIP).raw(),
-                                       r.u16HostPort, Bstr(r.strGuestIP).raw(), r.u16GuestPort);
+    mParent->i_onNATRedirectRuleChanged(ulSlot, FALSE, name, aProto, r.strHostIP, r.u16HostPort, r.strGuestIP, r.u16GuestPort);
     return S_OK;
 }
 
@@ -349,8 +348,7 @@ HRESULT NATEngine::removeRedirect(const com::Utf8Str &aName)
     mData->m->mapRules.erase(aName); /* NB: erase by key, "it" may not be valid */
     mParent->i_setModified(Machine::IsModified_NetworkAdapters);
     alock.release();
-    mParent->i_onNATRedirectRuleChange(ulSlot, TRUE, Bstr(aName).raw(), r.proto, Bstr(r.strHostIP).raw(),
-                                       r.u16HostPort, Bstr(r.strGuestIP).raw(), r.u16GuestPort);
+    mParent->i_onNATRedirectRuleChanged(ulSlot, TRUE, aName, r.proto, r.strHostIP, r.u16HostPort, r.strGuestIP, r.u16GuestPort);
     return S_OK;
 }
 

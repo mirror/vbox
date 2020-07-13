@@ -298,33 +298,36 @@ public:
         {
             case VBoxEventType_OnNATRedirect:
             {
-                Bstr id;
                 ComPtr<IMachine> pMachine = mConsole->i_machine();
                 ComPtr<INATRedirectEvent> pNREv = aEvent;
                 HRESULT rc = E_FAIL;
                 Assert(pNREv);
 
+                Bstr id;
                 rc = pNREv->COMGETTER(MachineId)(id.asOutParam());
                 AssertComRC(rc);
                 if (id != mConsole->i_getId())
                     break;
+
                 /* now we can operate with redirects */
-                NATProtocol_T proto;
+                NATProtocol_T proto = (NATProtocol_T)0;
                 pNREv->COMGETTER(Proto)(&proto);
                 BOOL fRemove;
                 pNREv->COMGETTER(Remove)(&fRemove);
-                Bstr hostIp, guestIp;
-                LONG hostPort, guestPort;
+                Bstr hostIp;
                 pNREv->COMGETTER(HostIP)(hostIp.asOutParam());
+                LONG hostPort = 0;
                 pNREv->COMGETTER(HostPort)(&hostPort);
+                Bstr guestIp;
                 pNREv->COMGETTER(GuestIP)(guestIp.asOutParam());
+                LONG guestPort = 0;
                 pNREv->COMGETTER(GuestPort)(&guestPort);
                 ULONG ulSlot;
                 rc = pNREv->COMGETTER(Slot)(&ulSlot);
                 AssertComRC(rc);
                 if (FAILED(rc))
                     break;
-                mConsole->i_onNATRedirectRuleChange(ulSlot, fRemove, proto, hostIp.raw(), hostPort, guestIp.raw(), guestPort);
+                mConsole->i_onNATRedirectRuleChanged(ulSlot, fRemove, proto, hostIp.raw(), hostPort, guestIp.raw(), guestPort);
                 break;
             }
 
@@ -4077,10 +4080,8 @@ HRESULT Console::i_onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::i_onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
-                                           NATProtocol_T aProto, IN_BSTR aHostIP,
-                                           LONG aHostPort, IN_BSTR aGuestIP,
-                                           LONG aGuestPort)
+HRESULT Console::i_onNATRedirectRuleChanged(ULONG ulInstance, BOOL aNatRuleRemove, NATProtocol_T aProto, IN_BSTR aHostIP,
+                                            LONG aHostPort, IN_BSTR aGuestIP, LONG aGuestPort)
 {
     LogFlowThisFunc(("\n"));
 
