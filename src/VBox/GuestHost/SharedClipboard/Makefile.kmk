@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
- include $(PATH_SUB_CURRENT)/testcases/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
