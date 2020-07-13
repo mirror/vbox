@@ -619,7 +619,9 @@ void Bstr::copyFrom(const OLECHAR *a_bstrSrc)
     if (a_bstrSrc && *a_bstrSrc)
     {
         m_bstr = ::SysAllocString(a_bstrSrc);
-        if (!m_bstr)
+        if (RT_LIKELY(m_bstr))
+        { /* likely */ }
+        else
             throw std::bad_alloc();
     }
     else
@@ -631,6 +633,24 @@ void Bstr::cleanupAndCopyFrom(const OLECHAR *a_bstrSrc)
 {
     cleanup();
     copyFrom(a_bstrSrc);
+}
+
+
+HRESULT Bstr::cleanupAndCopyFromEx(const OLECHAR *a_bstrSrc) RT_NOEXCEPT
+{
+    cleanup();
+
+    if (a_bstrSrc && *a_bstrSrc)
+    {
+        m_bstr = ::SysAllocString(a_bstrSrc);
+        if (RT_LIKELY(m_bstr))
+        { /* likely */ }
+        else
+            return E_OUTOFMEMORY;
+    }
+    else
+        m_bstr = NULL;
+    return S_OK;
 }
 
 
