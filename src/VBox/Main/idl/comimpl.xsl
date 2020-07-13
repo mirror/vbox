@@ -387,13 +387,15 @@
             <xsl:with-param name="dir" select="'in'" />
           </xsl:call-template>
         </xsl:variable>
-        <xsl:value-of select="concat('            ',$obj, '->set_', @name, '(ComSafeArrayInArg(a_', @name, '));&#10;')"/>
+        <xsl:text>        if (SUCCEEDED(hrc))&#10;</xsl:text>
+        <xsl:value-of select="concat('            hrc = ',$obj, '->set_', @name, '(ComSafeArrayInArg(a_', @name, '));&#10;')"/>
       </xsl:when>
-      <xsl:when test="substring($aType, string-length($aType) - 1) = '_T'"> <!-- To avoid pedantic gcc warnings/errors. -->
-        <xsl:value-of select="concat('            ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
+      <xsl:when test="(@type='wstring') or (@type = 'uuid')">
+        <xsl:text>        if (SUCCEEDED(hrc))&#10;</xsl:text>
+        <xsl:value-of select="concat('            hrc = ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:value-of select="concat('            ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
+        <xsl:value-of select="concat('        ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:for-each>
@@ -487,7 +489,7 @@
     <xsl:value-of select="       'private:&#10;'" />
     <xsl:value-of select="concat('    ', $mType, '    ', $mName,';&#10;')" />
     <xsl:value-of select="       'public:&#10;'" />
-    <xsl:value-of select="concat('    STDMETHOD(COMGETTER(', $capsName,'))(',$pTypeNameOut,')&#10;    {&#10;')" />
+    <xsl:value-of select="concat('    STDMETHOD(COMGETTER(', $capsName,'))(',$pTypeNameOut,') RT_OVERRIDE&#10;    {&#10;')" />
     <xsl:call-template name="genRetParam">
       <xsl:with-param name="type" select="@type" />
       <xsl:with-param name="member" select="$mName" />
@@ -498,7 +500,7 @@
     <xsl:value-of select="       '    }&#10;'" />
 
     <xsl:if test="not(@readonly='yes')">
-      <xsl:value-of select="concat('    STDMETHOD(COMSETTER(', $capsName,'))(',$pTypeNameIn,')&#10;    {&#10;')" />
+      <xsl:value-of select="concat('    STDMETHOD(COMSETTER(', $capsName,'))(',$pTypeNameIn,') RT_OVERRIDE&#10;    {&#10;')" />
       <xsl:call-template name="genSetParam">
         <xsl:with-param name="type" select="@type" />
         <xsl:with-param name="member" select="$mName" />
@@ -566,8 +568,8 @@
     <xsl:with-param name="name" select="@name" />
   </xsl:call-template>
   <xsl:value-of select="       '    END_COM_MAP()&#10;'" />
-  <xsl:value-of select="concat('    ',$implName,'() { /*printf(&quot;',$implName,'\n&quot;)*/;}&#10;')" />
-  <xsl:value-of select="concat('    virtual ~',$implName,'() { /*printf(&quot;~',$implName,'\n&quot;)*/; uninit(); }&#10;')" />
+  <xsl:value-of select="concat('    ',$implName,'() { /*Log((&quot;',$implName,'\n&quot;))*/;}&#10;')" />
+  <xsl:value-of select="concat('    virtual ~',$implName,'() { /*Log((&quot;~',$implName,'\n&quot;))*/; uninit(); }&#10;')" />
   <xsl:text><![CDATA[
     HRESULT FinalConstruct()
     {
@@ -579,23 +581,23 @@
         uninit();
         BaseFinalRelease();
     }
-    STDMETHOD(COMGETTER(Type))(VBoxEventType_T *aType)
+    STDMETHOD(COMGETTER(Type))(VBoxEventType_T *aType) RT_OVERRIDE
     {
         return mEvent->COMGETTER(Type)(aType);
     }
-    STDMETHOD(COMGETTER(Source))(IEventSource * *aSource)
+    STDMETHOD(COMGETTER(Source))(IEventSource * *aSource) RT_OVERRIDE
     {
         return mEvent->COMGETTER(Source)(aSource);
     }
-    STDMETHOD(COMGETTER(Waitable))(BOOL *aWaitable)
+    STDMETHOD(COMGETTER(Waitable))(BOOL *aWaitable) RT_OVERRIDE
     {
         return mEvent->COMGETTER(Waitable)(aWaitable);
     }
-    STDMETHOD(SetProcessed)()
+    STDMETHOD(SetProcessed)() RT_OVERRIDE
     {
        return mEvent->SetProcessed();
     }
-    STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult)
+    STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult) RT_OVERRIDE
     {
         return mEvent->WaitProcessed(aTimeout, aResult);
     }
@@ -616,27 +618,27 @@
         NOREF(aWaitable);
         return mEvent->init(aSource, aType);
     }
-    STDMETHOD(AddVeto)(IN_BSTR aVeto)
+    STDMETHOD(AddVeto)(IN_BSTR aVeto) RT_OVERRIDE
     {
         return mEvent->AddVeto(aVeto);
     }
-    STDMETHOD(IsVetoed)(BOOL *aResult)
+    STDMETHOD(IsVetoed)(BOOL *aResult) RT_OVERRIDE
     {
        return mEvent->IsVetoed(aResult);
     }
-    STDMETHOD(GetVetos)(ComSafeArrayOut(BSTR, aVetos))
+    STDMETHOD(GetVetos)(ComSafeArrayOut(BSTR, aVetos)) RT_OVERRIDE
     {
        return mEvent->GetVetos(ComSafeArrayOutArg(aVetos));
     }
-    STDMETHOD(AddApproval)(IN_BSTR aReason)
+    STDMETHOD(AddApproval)(IN_BSTR aReason) RT_OVERRIDE
     {
         return mEvent->AddApproval(aReason);
     }
-    STDMETHOD(IsApproved)(BOOL *aResult)
+    STDMETHOD(IsApproved)(BOOL *aResult) RT_OVERRIDE
     {
        return mEvent->IsApproved(aResult);
     }
-    STDMETHOD(GetApprovals)(ComSafeArrayOut(BSTR, aReasons))
+    STDMETHOD(GetApprovals)(ComSafeArrayOut(BSTR, aReasons)) RT_OVERRIDE
     {
        return mEvent->GetApprovals(ComSafeArrayOutArg(aReasons));
     }
@@ -652,12 +654,12 @@ private:
         mGeneration = 1;
         return mEvent->init(aSource, aType, aWaitable);
     }
-    STDMETHOD(COMGETTER(Generation))(ULONG *aGeneration)
+    STDMETHOD(COMGETTER(Generation))(ULONG *aGeneration) RT_OVERRIDE
     {
         *aGeneration = mGeneration;
         return S_OK;
     }
-    STDMETHOD(Reuse)()
+    STDMETHOD(Reuse)() RT_OVERRIDE
     {
         ASMAtomicIncU32((volatile uint32_t *)&mGeneration);
         return S_OK;
@@ -733,13 +735,12 @@ private:
     <xsl:text>    if (pEvtImpl)&#10;</xsl:text>
     <xsl:text>    {&#10;</xsl:text>
     <xsl:text>        pEvtImpl->Reuse();&#10;</xsl:text>
-    <xsl:text>        {&#10;</xsl:text>
+    <xsl:text>        HRESULT hrc = S_OK;&#10;</xsl:text>
     <xsl:call-template name="genAttrInitCode">
       <xsl:with-param name="name" select="@name" />
       <xsl:with-param name="obj" select="'pEvtImpl'" />
     </xsl:call-template>
-    <xsl:text>        }&#10;</xsl:text>
-    <xsl:text>        return S_OK;&#10;</xsl:text>
+    <xsl:text>        return hrc;&#10;</xsl:text>
     <xsl:text>    }&#10;</xsl:text>
     <xsl:text>    return E_INVALIDARG;&#10;</xsl:text>
     <xsl:text>}&#10;</xsl:text>
@@ -759,15 +760,18 @@ private:
   <xsl:text>    {&#10;</xsl:text>
   <xsl:text>        hrc = EvtObj-&gt;init(aSource, VBoxEventType_</xsl:text><xsl:value-of select="$evid"/>
   <xsl:text>, </xsl:text><xsl:value-of select="$waitable" /><xsl:text> /*waitable*/);&#10;</xsl:text>
-  <xsl:text>        if (SUCCEEDED(hrc))&#10;</xsl:text>
-  <xsl:text>        {&#10;</xsl:text>
   <xsl:call-template name="genAttrInitCode">
     <xsl:with-param name="name" select="@name" />
     <xsl:with-param name="obj" select="'EvtObj'" />
   </xsl:call-template>
+  <xsl:text>        if (SUCCEEDED(hrc))&#10;</xsl:text>
+  <xsl:text>        {&#10;</xsl:text>
   <xsl:text>            hrc = EvtObj.queryInterfaceTo(aEvent);&#10;</xsl:text>
+  <xsl:text>            if (SUCCEEDED(hrc))&#10;</xsl:text>
+  <xsl:text>                return hrc;&#10;</xsl:text>
   <xsl:text>        }&#10;</xsl:text>
   <xsl:text>    }&#10;</xsl:text>
+  <xsl:text>    *aEvent = NULL;&#10;</xsl:text>
   <xsl:text>    return hrc;&#10;</xsl:text>
   <xsl:text>}&#10;</xsl:text>
   <xsl:text>&#10;</xsl:text>
