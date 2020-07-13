@@ -730,6 +730,17 @@ HRESULT Utf8Str::cloneToEx(char **pstr) const
 }
 #endif
 
+HRESULT Utf8Str::cloneToEx(BSTR *pbstr) const RT_NOEXCEPT
+{
+    if (!pbstr)
+        return S_OK;
+    Bstr bstr;
+    HRESULT hrc = bstr.assignEx(*this);
+    if (SUCCEEDED(hrc))
+        hrc = bstr.detachToEx(pbstr);
+    return hrc;
+}
+
 Utf8Str& Utf8Str::stripTrailingSlash()
 {
     if (length())

@@ -1283,13 +1283,7 @@ public:
      * @param   pbstr Where to store a clone of the string.
      * @returns S_OK or E_OUTOFMEMORY (COM status codes).
      */
-    HRESULT cloneToEx(BSTR *pbstr) const
-    {
-        if (!pbstr)
-            return S_OK;
-        Bstr bstr(*this);
-        return bstr.detachToEx(pbstr);
-    }
+    HRESULT cloneToEx(BSTR *pbstr) const RT_NOEXCEPT;
 
     /**
      * Safe assignment from BSTR.
