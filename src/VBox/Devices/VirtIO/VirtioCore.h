@@ -401,6 +401,30 @@ typedef CTX_SUFF(VIRTIOCORE) VIRTIOCORECC;
  * @{ */
 
 /**
+ * Setup PCI device controller and Virtio state
+ *
+ * This should be called from PDMDEVREGR3::pfnConstruct.
+ *
+ * @param   pDevIns                 The device instance.
+ * @param   pVirtio                 Pointer to the shared virtio state.  This
+ *                                  must be the first member in the shared
+ *                                  device instance data!
+ * @param   pVirtioCC               Pointer to the ring-3 virtio state.  This
+ *                                  must be the first member in the ring-3
+ *                                  device instance data!
+ * @param   pPciParams              Values to populate industry standard PCI Configuration Space data structure
+ * @param   pcszInstance            Device instance name (format-specifier)
+ * @param   fDevSpecificFeatures    VirtIO device-specific features offered by
+ *                                  client
+ * @param   cbDevSpecificCfg        Size of virtio_pci_device_cap device-specific struct
+ * @param   pvDevSpecificCfg        Address of client's dev-specific
+ *                                  configuration struct.
+ */
+int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC,
+                          PVIRTIOPCIPARAMS pPciParams, const char *pcszInstance,
+                          uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
+
+/**
  * Initiate orderly reset procedure. This is an exposed API for clients that might need it.
  * Invoked by client to reset the device and driver (see VirtIO 1.0 section 2.1.1/2.1.2)
  *
@@ -620,6 +644,128 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
  */
 int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
+
+DECLINLINE(void) virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
+{
+    AssertPtr(pGcSgBuf);
+    Assert((cSegs > 0 && VALID_PTR(paSegs)) || (!cSegs && !paSegs));
+    Assert(cSegs < (~(unsigned)0 >> 1));
+
+    pGcSgBuf->paSegs = paSegs;
+    pGcSgBuf->cSegs  = (unsigned)cSegs;
+    pGcSgBuf->idxSeg = 0;
+    if (cSegs && paSegs)
+    {
+        pGcSgBuf->GCPhysCur = paSegs[0].GCPhys;
+        pGcSgBuf->cbSegLeft = paSegs[0].cbSeg;
+    }
+    else
+    {
+        pGcSgBuf->GCPhysCur = 0;
+        pGcSgBuf->cbSegLeft = 0;
+    }
+}
+
+DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
+{
+    size_t cbData;
+    RTGCPHYS pGcBuf;
+
+    /* Check that the S/G buffer has memory left. */
+    if (RT_LIKELY(pGcSgBuf->idxSeg < pGcSgBuf->cSegs && pGcSgBuf->cbSegLeft))
+    { /* likely */ }
+    else
+    {
+        *pcbData = 0;
+        return 0;
+    }
+
+    AssertMsg(    pGcSgBuf->cbSegLeft <= 128 * _1M
+              && (RTGCPHYS)pGcSgBuf->GCPhysCur >= (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].GCPhys
+              && (RTGCPHYS)pGcSgBuf->GCPhysCur + pGcSgBuf->cbSegLeft <=
+                   (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].GCPhys + pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg,
+                 ("pGcSgBuf->idxSeg=%d pGcSgBuf->cSegs=%d pGcSgBuf->GCPhysCur=%p pGcSgBuf->cbSegLeft=%zd "
+                  "pGcSgBuf->paSegs[%d].GCPhys=%p pGcSgBuf->paSegs[%d].cbSeg=%zd\n",
+                  pGcSgBuf->idxSeg, pGcSgBuf->cSegs, pGcSgBuf->GCPhysCur, pGcSgBuf->cbSegLeft,
+                  pGcSgBuf->idxSeg, pGcSgBuf->paSegs[pGcSgBuf->idxSeg].GCPhys, pGcSgBuf->idxSeg,
+                  pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg));
+
+    cbData = RT_MIN(*pcbData, pGcSgBuf->cbSegLeft);
+    pGcBuf = pGcSgBuf->GCPhysCur;
+    pGcSgBuf->cbSegLeft -= cbData;
+    if (!pGcSgBuf->cbSegLeft)
+    {
+        pGcSgBuf->idxSeg++;
+
+        if (pGcSgBuf->idxSeg < pGcSgBuf->cSegs)
+        {
+            pGcSgBuf->GCPhysCur = pGcSgBuf->paSegs[pGcSgBuf->idxSeg].GCPhys;
+            pGcSgBuf->cbSegLeft = pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg;
+        }
+        *pcbData = cbData;
+    }
+    else
+        pGcSgBuf->GCPhysCur = pGcSgBuf->GCPhysCur + cbData;
+
+    return pGcBuf;
+}
+
+DECLINLINE(void) virtioCoreGCPhysChainReset(PVIRTIOSGBUF pGcSgBuf)
+{
+    AssertPtrReturnVoid(pGcSgBuf);
+
+    pGcSgBuf->idxSeg = 0;
+    if (pGcSgBuf->cSegs)
+    {
+        pGcSgBuf->GCPhysCur = pGcSgBuf->paSegs[0].GCPhys;
+        pGcSgBuf->cbSegLeft = pGcSgBuf->paSegs[0].cbSeg;
+    }
+    else
+    {
+        pGcSgBuf->GCPhysCur = 0;
+        pGcSgBuf->cbSegLeft = 0;
+    }
+}
+
+DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance)
+{
+    AssertReturn(pGcSgBuf, 0);
+
+    size_t cbLeft = cbAdvance;
+    while (cbLeft)
+    {
+        size_t cbThisAdvance = cbLeft;
+        virtioCoreGCPhysChainGet(pGcSgBuf, &cbThisAdvance);
+        if (!cbThisAdvance)
+            break;
+
+        cbLeft -= cbThisAdvance;
+    }
+    return cbAdvance - cbLeft;
+}
+
+DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainGetNextSeg(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg)
+{
+    AssertReturn(pGcSgBuf, 0);
+    AssertPtrReturn(pcbSeg, 0);
+
+    if (!*pcbSeg)
+        *pcbSeg = pGcSgBuf->cbSegLeft;
+
+    return virtioCoreGCPhysChainGet(pGcSgBuf, pcbSeg);
+}
+
+DECLINLINE(size_t) virtioCoreGCPhysChainCalcBufSize(PVIRTIOSGBUF pGcSgBuf)
+{
+    size_t   cb = 0;
+    unsigned i  = pGcSgBuf->cSegs;
+     while (i-- > 0)
+         cb += pGcSgBuf->paSegs[i].cbSeg;
+     return cb;
+ }
+
+#define VIRTQNAME(a_pVirtio, a_uVirtq) ((a_pVirtio)->aVirtqueues[(a_uVirtq)].szName)
+
 /**
  * Add some bytes to a virtq (s/g) buffer, converting them from virtual memory to GCPhys
  *
@@ -631,7 +777,23 @@ int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
  * @param   pv          input: virtual memory buffer to receive bytes
  * @param   cb          number of bytes to add to the s/g buffer.
  */
-void virtioCoreR3VirqBufFill(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb);
+DECLINLINE(void) virtioCoreR3VirqBufFill(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb)
+{
+    uint8_t *pb = (uint8_t *)pv;
+    size_t cbLim = RT_MIN(pVirtqBuf->cbPhysReturn, cb);
+    while (cbLim)
+    {
+        size_t cbSeg = cbLim;
+        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSeg(pVirtqBuf->pSgPhysReturn, &cbSeg);
+        PDMDevHlpPCIPhysWrite(pVirtio->pDevInsR3, GCPhys, pb, cbSeg);
+        pb += cbSeg;
+        cbLim -= cbSeg;
+        pVirtqBuf->cbPhysSend -= cbSeg;
+    }
+    LogFunc(("Added %d/%d bytes to %s buffer, head idx: %u (%d bytes remain)\n",
+             cb - cbLim, cb, VIRTQNAME(pVirtio, pVirtqBuf->uVirtq),
+             pVirtqBuf->uHeadIdx, pVirtqBuf->cbPhysReturn));
+}
 
 /**
  * Extract some bytes out of a virtq (s/g) buffer, converting them from GCPhys to virtual memory
@@ -644,7 +806,25 @@ void virtioCoreR3VirqBufFill(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv,
  * @param   pv          output: virtual memory buffer to receive bytes
  * @param   cb          number of bytes to Drain from buffer
  */
-void virtioCoreR3VirtqBufDrain(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb);
+DECLINLINE(void) virtioCoreR3VirtqBufDrain(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb)
+{
+    uint8_t *pb = (uint8_t *)pv;
+    size_t cbLim = RT_MIN(pVirtqBuf->cbPhysSend, cb);
+    while (cbLim)
+    {
+        size_t cbSeg = cbLim;
+        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSeg(pVirtqBuf->pSgPhysSend, &cbSeg);
+        PDMDevHlpPCIPhysRead(pVirtio->pDevInsR3, GCPhys, pb, cbSeg);
+        pb += cbSeg;
+        cbLim -= cbSeg;
+        pVirtqBuf->cbPhysSend -= cbSeg;
+    }
+    LogFunc(("Drained %d/%d bytes from %s buffer, head idx: %u (%d bytes left)\n",
+             cb - cbLim, cb, VIRTQNAME(pVirtio, pVirtqBuf->uVirtq),
+             pVirtqBuf->uHeadIdx, pVirtqBuf->cbPhysSend));
+}
+
+#undef VIRTQNAME
 
 /**
  * Updates indicated virtq's "used ring" descriptor index to match "shadow" index that tracks
@@ -819,8 +999,6 @@ int      virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDL
 int      virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 void     virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState);
 void     virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
-int      virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
-                          const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
 int      virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
 const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState);
 

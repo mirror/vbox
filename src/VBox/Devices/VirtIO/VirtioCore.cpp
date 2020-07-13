@@ -324,127 +324,6 @@ uint16_t virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, u
     return virtioCoreVirtqAvailBufCount_inline(pDevIns, pVirtio, pVirtq);
 }
 
-/** @} */
-
-void virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
-{
-    AssertPtr(pGcSgBuf);
-    Assert(   (cSegs > 0 && VALID_PTR(paSegs)) || (!cSegs && !paSegs));
-    Assert(cSegs < (~(unsigned)0 >> 1));
-
-    pGcSgBuf->paSegs = paSegs;
-    pGcSgBuf->cSegs  = (unsigned)cSegs;
-    pGcSgBuf->idxSeg = 0;
-    if (cSegs && paSegs)
-    {
-        pGcSgBuf->GCPhysCur = paSegs[0].GCPhys;
-        pGcSgBuf->cbSegLeft = paSegs[0].cbSeg;
-    }
-    else
-    {
-        pGcSgBuf->GCPhysCur = 0;
-        pGcSgBuf->cbSegLeft = 0;
-    }
-}
-
-static RTGCPHYS virtioCoreGCPhysChainGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
-{
-    size_t cbData;
-    RTGCPHYS pGcBuf;
-
-    /* Check that the S/G buffer has memory left. */
-    if (RT_LIKELY(pGcSgBuf->idxSeg < pGcSgBuf->cSegs && pGcSgBuf->cbSegLeft))
-    { /* likely */ }
-    else
-    {
-        *pcbData = 0;
-        return 0;
-    }
-
-    AssertMsg(    pGcSgBuf->cbSegLeft <= 128 * _1M
-              && (RTGCPHYS)pGcSgBuf->GCPhysCur >= (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].GCPhys
-              && (RTGCPHYS)pGcSgBuf->GCPhysCur + pGcSgBuf->cbSegLeft <=
-                   (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].GCPhys + pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg,
-                 ("pGcSgBuf->idxSeg=%d pGcSgBuf->cSegs=%d pGcSgBuf->GCPhysCur=%p pGcSgBuf->cbSegLeft=%zd "
-                  "pGcSgBuf->paSegs[%d].GCPhys=%p pGcSgBuf->paSegs[%d].cbSeg=%zd\n",
-                  pGcSgBuf->idxSeg, pGcSgBuf->cSegs, pGcSgBuf->GCPhysCur, pGcSgBuf->cbSegLeft,
-                  pGcSgBuf->idxSeg, pGcSgBuf->paSegs[pGcSgBuf->idxSeg].GCPhys, pGcSgBuf->idxSeg,
-                  pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg));
-
-    cbData = RT_MIN(*pcbData, pGcSgBuf->cbSegLeft);
-    pGcBuf = pGcSgBuf->GCPhysCur;
-    pGcSgBuf->cbSegLeft -= cbData;
-    if (!pGcSgBuf->cbSegLeft)
-    {
-        pGcSgBuf->idxSeg++;
-
-        if (pGcSgBuf->idxSeg < pGcSgBuf->cSegs)
-        {
-            pGcSgBuf->GCPhysCur = pGcSgBuf->paSegs[pGcSgBuf->idxSeg].GCPhys;
-            pGcSgBuf->cbSegLeft = pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg;
-        }
-        *pcbData = cbData;
-    }
-    else
-        pGcSgBuf->GCPhysCur = pGcSgBuf->GCPhysCur + cbData;
-
-    return pGcBuf;
-}
-
-void virtioCoreGCPhysChainReset(PVIRTIOSGBUF pGcSgBuf)
-{
-    AssertPtrReturnVoid(pGcSgBuf);
-
-    pGcSgBuf->idxSeg = 0;
-    if (pGcSgBuf->cSegs)
-    {
-        pGcSgBuf->GCPhysCur = pGcSgBuf->paSegs[0].GCPhys;
-        pGcSgBuf->cbSegLeft = pGcSgBuf->paSegs[0].cbSeg;
-    }
-    else
-    {
-        pGcSgBuf->GCPhysCur = 0;
-        pGcSgBuf->cbSegLeft = 0;
-    }
-}
-
-RTGCPHYS virtioCoreGCPhysChainAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance)
-{
-    AssertReturn(pGcSgBuf, 0);
-
-    size_t cbLeft = cbAdvance;
-    while (cbLeft)
-    {
-        size_t cbThisAdvance = cbLeft;
-        virtioCoreGCPhysChainGet(pGcSgBuf, &cbThisAdvance);
-        if (!cbThisAdvance)
-            break;
-
-        cbLeft -= cbThisAdvance;
-    }
-    return cbAdvance - cbLeft;
-}
-
-RTGCPHYS virtioCoreGCPhysChainGetNextSeg(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg)
-{
-    AssertReturn(pGcSgBuf, 0);
-    AssertPtrReturn(pcbSeg, 0);
-
-    if (!*pcbSeg)
-        *pcbSeg = pGcSgBuf->cbSegLeft;
-
-    return virtioCoreGCPhysChainGet(pGcSgBuf, pcbSeg);
-}
-
-size_t virtioCoreGCPhysChainCalcBufSize(PVIRTIOSGBUF pGcSgBuf)
-{
-    size_t   cb = 0;
-    unsigned i  = pGcSgBuf->cSegs;
-     while (i-- > 0)
-         cb += pGcSgBuf->paSegs[i].cbSeg;
-     return cb;
- }
-
 #ifdef IN_RING3
 
 /** API Function: See header file*/
@@ -762,130 +641,6 @@ void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
 }
 
 /** API Function: See header file */
-int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
-                             uint16_t uHeadIdx, PPVIRTQBUF ppVirtqBuf)
-{
-    AssertReturn(ppVirtqBuf, VERR_INVALID_POINTER);
-    *ppVirtqBuf = NULL;
-
-    AssertMsgReturn(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues),
-                        ("uVirtq out of range"), VERR_INVALID_PARAMETER);
-    PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
-
-    if (!IS_DRIVER_OK(pVirtio) || !pVirtq->uEnable)
-    {
-        LogRelFunc(("Driver not ready or queue not enabled\n"));
-        return 0;
-    }
-
-    AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtq->uEnable,
-                    ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
-
-    uint16_t uDescIdx = uHeadIdx;
-
-    Log6Func(("%s DESC CHAIN: (head) desc_idx=%u\n", pVirtq->szName, uHeadIdx));
-
-    /*
-     * Allocate and initialize the descriptor chain structure.
-     */
-    PVIRTQBUF pVirtqBuf = (PVIRTQBUF)RTMemAllocZ(sizeof(VIRTQBUF_T));
-    AssertReturn(pVirtqBuf, VERR_NO_MEMORY);
-    pVirtqBuf->u32Magic  = VIRTQBUF_MAGIC;
-    pVirtqBuf->cRefs     = 1;
-    pVirtqBuf->uHeadIdx  = uHeadIdx;
-    pVirtqBuf->uVirtq = uVirtq;
-    *ppVirtqBuf = pVirtqBuf;
-
-    /*
-     * Gather segments.
-     */
-    VIRTQ_DESC_T desc;
-
-    uint32_t cbIn = 0;
-    uint32_t cbOut = 0;
-    uint32_t cSegsIn = 0;
-    uint32_t cSegsOut = 0;
-    PVIRTIOSGSEG paSegsIn  = pVirtqBuf->aSegsIn;
-    PVIRTIOSGSEG paSegsOut = pVirtqBuf->aSegsOut;
-
-    do
-    {
-        PVIRTIOSGSEG pSeg;
-
-        /*
-         * Malicious guests may go beyond paSegsIn or paSegsOut boundaries by linking
-         * several descriptors into a loop. Since there is no legitimate way to get a sequences of
-         * linked descriptors exceeding the total number of descriptors in the ring (see @bugref{8620}),
-         * the following aborts I/O if breach and employs a simple log throttling algorithm to notify.
-         */
-        if (cSegsIn + cSegsOut >= VIRTQ_MAX_ENTRIES)
-        {
-            static volatile uint32_t s_cMessages  = 0;
-            static volatile uint32_t s_cThreshold = 1;
-            if (ASMAtomicIncU32(&s_cMessages) == ASMAtomicReadU32(&s_cThreshold))
-            {
-                LogRelMax(64, ("Too many linked descriptors; check if the guest arranges descriptors in a loop.\n"));
-                if (ASMAtomicReadU32(&s_cMessages) != 1)
-                    LogRelMax(64, ("(the above error has occured %u times so far)\n", ASMAtomicReadU32(&s_cMessages)));
-                ASMAtomicWriteU32(&s_cThreshold, ASMAtomicReadU32(&s_cThreshold) * 10);
-            }
-            break;
-        }
-        RT_UNTRUSTED_VALIDATED_FENCE();
-
-        virtioReadDesc(pDevIns, pVirtio, pVirtq, uDescIdx, &desc);
-
-        if (desc.fFlags & VIRTQ_DESC_F_WRITE)
-        {
-            Log6Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", pVirtq->szName, uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
-            cbIn += desc.cb;
-            pSeg = &paSegsIn[cSegsIn++];
-        }
-        else
-        {
-            Log6Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", pVirtq->szName, uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
-            cbOut += desc.cb;
-            pSeg = &paSegsOut[cSegsOut++];
-            if (LogIs11Enabled())
-            {
-                virtioCoreGCPhysHexDump(pDevIns, desc.GCPhysBuf, desc.cb, 0, NULL);
-                Log(("\n"));
-            }
-        }
-
-        pSeg->GCPhys = desc.GCPhysBuf;
-        pSeg->cbSeg = desc.cb;
-
-        uDescIdx = desc.uDescIdxNext;
-    } while (desc.fFlags & VIRTQ_DESC_F_NEXT);
-
-    /*
-     * Add segments to the descriptor chain structure.
-     */
-    if (cSegsIn)
-    {
-        virtioCoreGCPhysChainInit(&pVirtqBuf->SgBufIn, paSegsIn, cSegsIn);
-        pVirtqBuf->pSgPhysReturn = &pVirtqBuf->SgBufIn;
-        pVirtqBuf->cbPhysReturn  = cbIn;
-        STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsIn, cSegsIn);
-    }
-
-    if (cSegsOut)
-    {
-        virtioCoreGCPhysChainInit(&pVirtqBuf->SgBufOut, paSegsOut, cSegsOut);
-        pVirtqBuf->pSgPhysSend   = &pVirtqBuf->SgBufOut;
-        pVirtqBuf->cbPhysSend    = cbOut;
-        STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsOut, cSegsOut);
-    }
-
-    STAM_REL_COUNTER_INC(&pVirtio->StatDescChainsAllocated);
-    Log6Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
-        pVirtq->szName, cSegsOut, cbOut, cSegsIn, cbIn));
-
-    return VINF_SUCCESS;
-}
-
-/** API Function: See header file */
 uint32_t virtioCoreR3VirtqBufRetain(PVIRTQBUF pVirtqBuf)
 {
     AssertReturn(pVirtqBuf, UINT32_MAX);
@@ -964,6 +719,7 @@ int virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
 int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtq)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
+
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
 
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtq->uEnable,
@@ -974,6 +730,129 @@ int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtq)
 
     Log6Func(("%s avail shadow idx: %u\n", pVirtq->szName, pVirtq->uAvailIdxShadow));
     pVirtq->uAvailIdxShadow++;
+
+    return VINF_SUCCESS;
+}
+
+
+/** API Function: See header file */
+int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
+                             uint16_t uHeadIdx, PPVIRTQBUF ppVirtqBuf)
+{
+    AssertReturn(ppVirtqBuf, VERR_INVALID_POINTER);
+    *ppVirtqBuf = NULL;
+
+    AssertMsgReturn(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues),
+                        ("uVirtq out of range"), VERR_INVALID_PARAMETER);
+
+    PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
+
+    AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtq->uEnable,
+                    ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
+
+    uint16_t uDescIdx = uHeadIdx;
+
+    Log6Func(("%s DESC CHAIN: (head) desc_idx=%u\n", pVirtio->aVirtqueues[uVirtq].szName, uHeadIdx));
+
+    /*
+     * Allocate and initialize the descriptor chain structure.
+     */
+    PVIRTQBUF pVirtqBuf = (PVIRTQBUF)RTMemAllocZ(sizeof(VIRTQBUF_T));
+    AssertReturn(pVirtqBuf, VERR_NO_MEMORY);
+    pVirtqBuf->u32Magic  = VIRTQBUF_MAGIC;
+    pVirtqBuf->cRefs     = 1;
+    pVirtqBuf->uHeadIdx  = uHeadIdx;
+    pVirtqBuf->uVirtq    = uVirtq;
+    *ppVirtqBuf = pVirtqBuf;
+
+    /*
+     * Gather segments.
+     */
+    VIRTQ_DESC_T desc;
+
+    uint32_t cbIn     = 0;
+    uint32_t cbOut    = 0;
+    uint32_t cSegsIn  = 0;
+    uint32_t cSegsOut = 0;
+
+    PVIRTIOSGSEG paSegsIn  = pVirtqBuf->aSegsIn;
+    PVIRTIOSGSEG paSegsOut = pVirtqBuf->aSegsOut;
+
+    do
+    {
+        PVIRTIOSGSEG pSeg;
+
+        /*
+         * Malicious guests may go beyond paSegsIn or paSegsOut boundaries by linking
+         * several descriptors into a loop. Since there is no legitimate way to get a sequences of
+         * linked descriptors exceeding the total number of descriptors in the ring (see @bugref{8620}),
+         * the following aborts I/O if breach and employs a simple log throttling algorithm to notify.
+         */
+        if (cSegsIn + cSegsOut >= VIRTQ_MAX_ENTRIES)
+        {
+            static volatile uint32_t s_cMessages  = 0;
+            static volatile uint32_t s_cThreshold = 1;
+            if (ASMAtomicIncU32(&s_cMessages) == ASMAtomicReadU32(&s_cThreshold))
+            {
+                LogRelMax(64, ("Too many linked descriptors; check if the guest arranges descriptors in a loop.\n"));
+                if (ASMAtomicReadU32(&s_cMessages) != 1)
+                    LogRelMax(64, ("(the above error has occured %u times so far)\n", ASMAtomicReadU32(&s_cMessages)));
+                ASMAtomicWriteU32(&s_cThreshold, ASMAtomicReadU32(&s_cThreshold) * 10);
+            }
+            break;
+        }
+        RT_UNTRUSTED_VALIDATED_FENCE();
+
+        virtioReadDesc(pDevIns, pVirtio, pVirtq, uDescIdx, &desc);
+
+        if (desc.fFlags & VIRTQ_DESC_F_WRITE)
+        {
+            Log6Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", pVirtq->szName, uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
+            cbIn += desc.cb;
+            pSeg = &paSegsIn[cSegsIn++];
+        }
+        else
+        {
+            Log6Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", pVirtq->szName, uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
+            cbOut += desc.cb;
+            pSeg = &paSegsOut[cSegsOut++];
+#ifdef DEEP_DEBUG
+            if (LogIs11Enabled())
+            {
+                virtioCoreGCPhysHexDump(pDevIns, desc.GCPhysBuf, desc.cb, 0, NULL);
+                Log(("\n"));
+            }
+#endif
+        }
+
+        pSeg->GCPhys = desc.GCPhysBuf;
+        pSeg->cbSeg = desc.cb;
+
+        uDescIdx = desc.uDescIdxNext;
+    } while (desc.fFlags & VIRTQ_DESC_F_NEXT);
+
+    /*
+     * Add segments to the descriptor chain structure.
+     */
+    if (cSegsIn)
+    {
+        virtioCoreGCPhysChainInit(&pVirtqBuf->SgBufIn, paSegsIn, cSegsIn);
+        pVirtqBuf->pSgPhysReturn = &pVirtqBuf->SgBufIn;
+        pVirtqBuf->cbPhysReturn  = cbIn;
+        STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsIn, cSegsIn);
+    }
+
+    if (cSegsOut)
+    {
+        virtioCoreGCPhysChainInit(&pVirtqBuf->SgBufOut, paSegsOut, cSegsOut);
+        pVirtqBuf->pSgPhysSend   = &pVirtqBuf->SgBufOut;
+        pVirtqBuf->cbPhysSend    = cbOut;
+        STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsOut, cSegsOut);
+    }
+
+    STAM_REL_COUNTER_INC(&pVirtio->StatDescChainsAllocated);
+    Log6Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
+        pVirtq->szName, cSegsOut, cbOut, cSegsIn, cbIn));
 
     return VINF_SUCCESS;
 }
@@ -1026,7 +905,7 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
         size_t cbTarget = virtioCoreGCPhysChainCalcBufSize(pSgPhysReturn);
         cbRemain = cbTotal = RTSgBufCalcTotalLength(pSgVirtReturn);
         AssertMsgReturn(cbTarget >= cbRemain, ("No space to write data to phys memory"), VERR_BUFFER_OVERFLOW);
-        virtioCoreGCPhysChainReset(pSgPhysReturn); /* Reset ptr because req data may have already been written */
+        virtioCoreGCPhysChainReset(pSgPhysReturn);
         while (cbRemain)
         {
             cbCopy = RT_MIN(pSgVirtReturn->cbSegLeft,  pSgPhysReturn->cbSegLeft);
@@ -1063,44 +942,6 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
     return VINF_SUCCESS;
 }
 
-/** API function: See Header file  */
-void virtioCoreR3VirqBufFill(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb)
-{
-    uint8_t *pb = (uint8_t *)pv;
-    size_t cbLim = RT_MIN(pVirtqBuf->cbPhysReturn, cb);
-    while (cbLim)
-    {
-        size_t cbSeg = cbLim;
-        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSeg(pVirtqBuf->pSgPhysReturn, &cbSeg);
-        PDMDevHlpPCIPhysWrite(pVirtio->pDevInsR3, GCPhys, pb, cbSeg);
-        pb += cbSeg;
-        cbLim -= cbSeg;
-        pVirtqBuf->cbPhysSend -= cbSeg;
-    }
-    LogFunc(("Added %d/%d bytes to %s buffer, head idx: %u (%d bytes remain)\n",
-             cb - cbLim, cb, VIRTQNAME(pVirtio, pVirtqBuf->uVirtq),
-             pVirtqBuf->uHeadIdx, pVirtqBuf->cbPhysReturn));
-}
-
-
-/** API function: See Header file  */
-void virtioCoreR3VirtqBufDrain(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb)
-{
-    uint8_t *pb = (uint8_t *)pv;
-    size_t cbLim = RT_MIN(pVirtqBuf->cbPhysSend, cb);
-    while (cbLim)
-    {
-        size_t cbSeg = cbLim;
-        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSeg(pVirtqBuf->pSgPhysSend, &cbSeg);
-        PDMDevHlpPCIPhysRead(pVirtio->pDevInsR3, GCPhys, pb, cbSeg);
-        pb += cbSeg;
-        cbLim -= cbSeg;
-        pVirtqBuf->cbPhysSend -= cbSeg;
-    }
-    LogFunc(("Drained %d/%d bytes from %s buffer, head idx: %u (%d bytes left)\n",
-             cb - cbLim, cb, VIRTQNAME(pVirtio, pVirtqBuf->uVirtq),
-             pVirtqBuf->uHeadIdx, pVirtqBuf->cbPhysSend));
-}
 
 #endif /* IN_RING3 */
 
@@ -1254,11 +1095,11 @@ static void virtioResetVirtq(PVIRTIOCORE pVirtio, uint16_t uVirtq)
 
     pVirtq->uAvailIdxShadow  = 0;
     pVirtq->uUsedIdxShadow   = 0;
-    pVirtq->uEnable     = false;
-    pVirtq->uSize       = VIRTQ_MAX_ENTRIES;
-    pVirtq->uNotifyOffset  = uVirtq;
-    pVirtq->uMsix = uVirtq + 2;
-    pVirtq->fUsedRingEvent = false;
+    pVirtq->uEnable          = false;
+    pVirtq->uSize            = VIRTQ_MAX_ENTRIES;
+    pVirtq->uNotifyOffset    = uVirtq;
+    pVirtq->uMsix            = uVirtq + 2;
+    pVirtq->fUsedRingEvent   = false;
 
     if (!pVirtio->fMsiSupport) /* VirtIO 1.0, 4.1.4.3 and 4.1.5.1.2 */
         pVirtq->uMsix = VIRTIO_MSI_NO_VECTOR;
@@ -1526,7 +1367,6 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUse
     PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
     AssertReturn(cb == 1 || cb == 2 || cb == 4, VERR_INVALID_PARAMETER);
     Assert(pVirtio == (PVIRTIOCORE)pvUser); RT_NOREF(pvUser);
-
 
     uint32_t uOffset;
     if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, uOffset, pVirtio->LocDeviceCap))
@@ -1848,7 +1688,11 @@ void virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmSta
         case kvirtIoVmStateChangedPowerOff:
             break;
         case kvirtIoVmStateChangedResume:
-            virtioCoreNotifyGuestDriver(pVirtio->pDevInsR3, pVirtio, 0 /* uVirtq */);
+            for (int uVirtq = 0; uVirtq < VIRTQ_MAX_COUNT; uVirtq++)
+            {
+                if (pVirtio->aVirtqueues[uVirtq].uEnable)
+                    virtioCoreNotifyGuestDriver(pVirtio->pDevInsR3, pVirtio, uVirtq);
+            }
             break;
         default:
             LogRelFunc(("Bad enum value"));
@@ -1873,26 +1717,7 @@ void virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVi
     RT_NOREF(pDevIns, pVirtio);
 }
 
-/**
- * Setup PCI device controller and Virtio state
- *
- * This should be called from PDMDEVREGR3::pfnConstruct.
- *
- * @param   pDevIns                 The device instance.
- * @param   pVirtio                 Pointer to the shared virtio state.  This
- *                                  must be the first member in the shared
- *                                  device instance data!
- * @param   pVirtioCC               Pointer to the ring-3 virtio state.  This
- *                                  must be the first member in the ring-3
- *                                  device instance data!
- * @param   pPciParams              Values to populate industry standard PCI Configuration Space data structure
- * @param   pcszInstance            Device instance name (format-specifier)
- * @param   fDevSpecificFeatures    VirtIO device-specific features offered by
- *                                  client
- * @param   cbDevSpecificCfg        Size of virtio_pci_device_cap device-specific struct
- * @param   pvDevSpecificCfg        Address of client's dev-specific
- *                                  configuration struct.
- */
+/** API Function: See header file */
 int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
                      const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg)
 {

@@ -1497,7 +1497,7 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOW
 
         if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
         {
-            LogFunc(("Waken due to %s\n", rc == VERR_TIMEOUT ? "timeout" : "getting interrupted"));
+            LogFunc(("Woken due to %s\n", rc == VERR_TIMEOUT ? "timeout" : "getting interrupted"));
             continue;
         }
         if (RT_FAILURE(rc)) {
@@ -1751,7 +1751,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
             paVirtSegsToGuest[cSegs].cbSeg = cbLimited;
             paVirtSegsToGuest[cSegs].pvSeg = ((uint8_t *)pvBuf) + uOffset;
             cbBufRemaining -= cbLimited;
-            uOffset        += cbLimited;
+            uOffset += cbLimited;
             cVirtqBufs++;
             cSegs++;
             RTSgBufInit(pVirtSegBufToGuest, paVirtSegsToGuest, cSegs);
@@ -1922,12 +1922,8 @@ static DECLCALLBACK(int) virtioNetR3NetworkDown_ReceiveGso(PPDMINETWORKDOWN pInt
     {
 
         PVIRTIONETVIRTQ pRxVirtq = &pThis->aVirtqs[RXQIDX(uVirtqPair)];
-        if (RT_SUCCESS(!virtioNetR3CheckRxBufsAvail(pDevIns, pThis, pRxVirtq)))
+        if (RT_SUCCESS(virtioNetR3CheckRxBufsAvail(pDevIns, pThis, pRxVirtq)))
         {
-            /* Drop packets if VM is not running or cable is disconnected. */
-            if (!virtioNetIsOperational(pThis, pDevIns) || !IS_LINK_UP(pThis))
-                return VINF_SUCCESS;
-
             STAM_PROFILE_START(&pThis->StatReceive, a);
             virtioNetR3SetReadLed(pThisCC, true);
 
