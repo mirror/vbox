@@ -253,11 +253,13 @@
           <xsl:with-param name="dir" select="'in'" />
         </xsl:call-template>
       </xsl:variable>
-      <xsl:value-of select="concat('         SafeArray&lt;', $elemtype, '&gt; aArr(ComSafeArrayInArg(',$param,'));&#10;')"/>
-      <xsl:value-of select="concat('         return ',$member, '.initFrom(aArr);&#10;')"/>
+      <xsl:text>        SafeArray&lt;</xsl:text><xsl:value-of select="$elemtype"/>
+      <xsl:text>&gt; aArr(ComSafeArrayInArg(</xsl:text><xsl:value-of select="$param"/><xsl:text>));&#10;</xsl:text>
+      <xsl:text>        return </xsl:text><xsl:value-of select="$member"/><xsl:text>.initFrom(aArr);&#10;</xsl:text>
     </xsl:when>
     <xsl:when test="($type='wstring') or ($type='uuid')">
-      <xsl:value-of select="concat('         return ',$member, '.assignEx(', $param, ');&#10;')"/>
+      <xsl:text>        return </xsl:text><xsl:value-of select="$member"/><xsl:text>.assignEx(</xsl:text>
+      <xsl:value-of select="$param"/><xsl:text>);&#10;</xsl:text>
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="concat('         ', $member, ' = ', $param, ';&#10;')"/>
@@ -492,6 +494,7 @@
   <xsl:param name="name" />
   <xsl:param name="depth" />
   <xsl:param name="parents" />
+  <xsl:param name="fGenBstr" />
 
   <xsl:variable name="extends">
     <xsl:value-of select="key('G_keyInterfacesByName', $name)/@extends" />
@@ -564,31 +567,32 @@
       <xsl:value-of select="       '    }&#10;'" />
     </xsl:if>
 
-    <xsl:value-of select="       '    // purely internal setter&#10;'" />
-    <xsl:text>    inline </xsl:text>
-    <xsl:choose>
-      <xsl:when test="(@safearray='yes') or (@type='wstring') or (@type = 'uuid')">
-        <xsl:text>HRESULT</xsl:text>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:text>void</xsl:text>
-      </xsl:otherwise>
-    </xsl:choose>
-    <xsl:value-of select="concat(' set_', @name,'(',$pTypeNameIn, ')&#10;    {&#10;')" />
-    <xsl:call-template name="genSetParam">
-      <xsl:with-param name="type" select="@type" />
-      <xsl:with-param name="member" select="$mName" />
-      <xsl:with-param name="param" select="$pName" />
-      <xsl:with-param name="safearray" select="@safearray" />
-      <xsl:with-param name="internal" select="'yes'" />
-    </xsl:call-template>
-    <xsl:value-of select="       '    }&#10;'" />
-
+    <xsl:text>    // purely internal setter&#10;</xsl:text>
     <xsl:if test="(@type='wstring') or (@type = 'uuid')">
       <xsl:text>    inline HRESULT set_</xsl:text><xsl:value-of select="@name"/><xsl:text>(const Utf8Str &amp;a_rString)&#10;</xsl:text>
       <xsl:text>    {&#10;</xsl:text>
       <xsl:text>        return </xsl:text><xsl:value-of select="$mName"/><xsl:text>.assignEx(a_rString);&#10;</xsl:text>
       <xsl:text>    }&#10;</xsl:text>
+    </xsl:if>
+    <xsl:if test="not((@type='wstring') or (@type = 'uuid')) or $fGenBstr">
+      <xsl:text>    inline </xsl:text>
+      <xsl:choose>
+        <xsl:when test="(@safearray='yes') or (@type='wstring') or (@type = 'uuid')">
+          <xsl:text>HRESULT</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:text>void</xsl:text>
+        </xsl:otherwise>
+      </xsl:choose>
+      <xsl:value-of select="concat(' set_', @name,'(',$pTypeNameIn, ')&#10;    {&#10;')" />
+      <xsl:call-template name="genSetParam">
+        <xsl:with-param name="type" select="@type" />
+        <xsl:with-param name="member" select="$mName" />
+        <xsl:with-param name="param" select="$pName" />
+        <xsl:with-param name="safearray" select="@safearray" />
+        <xsl:with-param name="internal" select="'yes'" />
+      </xsl:call-template>
+      <xsl:value-of select="       '    }&#10;'" />
     </xsl:if>
 
   </xsl:for-each>
@@ -608,6 +612,7 @@
         <xsl:with-param name="name" select="$extends" />
         <xsl:with-param name="depth" select="$depth+1" />
         <xsl:with-param name="parents" select="concat($parents, ', ', @name)" />
+        <xsl:with-param name="fGenBstr" select="$fGenBstr" />
       </xsl:call-template>
     </xsl:when>
     <xsl:otherwise>
@@ -863,6 +868,7 @@ private:
 
   <xsl:call-template name="genAttrCode">
     <xsl:with-param name="name" select="@name" />
+    <xsl:with-param name="fGenBstr" select="($G_generateBstrVariants = 'yes') or (contains(@autogenflags, 'BSTR'))" />
   </xsl:call-template>
   <xsl:value-of select="'};&#10;'" />
 
