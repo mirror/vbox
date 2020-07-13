@@ -779,6 +779,7 @@ private:
   </xsl:call-template>
   <xsl:text>)&#10;</xsl:text>
   <xsl:text>{&#10;</xsl:text>
+  <xsl:text>    AssertReturn(aSource, E_INVALIDARG);&#10;</xsl:text>
   <xsl:text>    ComPtr&lt;IEvent&gt; ptrEvent;&#10;</xsl:text>
   <xsl:text>    HRESULT hrc = </xsl:text>
   <xsl:value-of select="concat('Create', $evname, '(ptrEvent.asOutParam(), aSource')"/>
@@ -788,8 +789,9 @@ private:
   <xsl:text>);&#10;</xsl:text>
   <xsl:text>    if (SUCCEEDED(hrc))&#10;</xsl:text>
   <xsl:text>    {&#10;</xsl:text>
-  <xsl:text>        VBoxEventDesc EvtDesc(ptrEvent, aSource);&#10;</xsl:text>
-  <xsl:text>        EvtDesc.fire(/* do not wait for delivery */ 0);&#10;</xsl:text>
+  <xsl:text>        BOOL fDeliveredIgnored = FALSE;&#10;</xsl:text>
+  <xsl:text>        hrc = aSource-&gt;FireEvent(ptrEvent, /* do not wait for delivery */ 0, &amp;fDeliveredIgnored);&#10;</xsl:text>
+  <xsl:text>        AssertComRC(hrc);&#10;</xsl:text>
   <xsl:text>    }&#10;</xsl:text>
   <xsl:text>    return hrc;&#10;</xsl:text>
   <xsl:text>}&#10;</xsl:text>
