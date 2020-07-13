@@ -201,6 +201,7 @@
   <xsl:param name="param"/>
   <xsl:param name="type"/>
   <xsl:param name="safearray"/>
+  <xsl:param name="internal"/>
 
   <xsl:choose>
     <xsl:when test="$safearray='yes'">
@@ -219,7 +220,9 @@
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="concat('         ', $member, ' = ', $param, ';&#10;')"/>
-      <xsl:value-of select="       '         return S_OK;&#10;'" />
+      <xsl:if test="$internal!='yes'">
+        <xsl:text>         return S_OK;&#10;</xsl:text>
+      </xsl:if>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -506,17 +509,28 @@
         <xsl:with-param name="member" select="$mName" />
         <xsl:with-param name="param" select="$pName" />
         <xsl:with-param name="safearray" select="@safearray" />
+        <xsl:with-param name="internal" select="'no'" />
       </xsl:call-template>
       <xsl:value-of select="       '    }&#10;'" />
     </xsl:if>
 
     <xsl:value-of select="       '    // purely internal setter&#10;'" />
-    <xsl:value-of select="concat('    inline HRESULT set_', @name,'(',$pTypeNameIn, ')&#10;    {&#10;')" />
+    <xsl:text>    inline </xsl:text>
+    <xsl:choose>
+      <xsl:when test="(@safearray='yes') or (@type='wstring') or (@type = 'uuid')">
+        <xsl:text>HRESULT</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>void</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+    <xsl:value-of select="concat(' set_', @name,'(',$pTypeNameIn, ')&#10;    {&#10;')" />
     <xsl:call-template name="genSetParam">
       <xsl:with-param name="type" select="@type" />
       <xsl:with-param name="member" select="$mName" />
       <xsl:with-param name="param" select="$pName" />
       <xsl:with-param name="safearray" select="@safearray" />
+      <xsl:with-param name="internal" select="'yes'" />
     </xsl:call-template>
     <xsl:value-of select="       '    }&#10;'" />
   </xsl:for-each>
