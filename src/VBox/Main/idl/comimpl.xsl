@@ -146,7 +146,7 @@
               <xsl:value-of select="'Utf8Str &amp;'"/>
             </xsl:when>
             <xsl:otherwise>
-              <xsl:value-of select="'Bstr'"/>
+              <xsl:value-of select="'Utf8Str'"/>
             </xsl:otherwise>
           </xsl:choose>
         </xsl:when>
@@ -262,7 +262,7 @@
     <xsl:otherwise>
       <xsl:value-of select="concat('         ', $member, ' = ', $param, ';&#10;')"/>
       <xsl:if test="$internal!='yes'">
-        <xsl:text>         return S_OK;&#10;</xsl:text>
+        <xsl:text>        return S_OK;&#10;</xsl:text>
       </xsl:if>
     </xsl:otherwise>
   </xsl:choose>
@@ -282,20 +282,27 @@
              <xsl:with-param name="dir" select="'in'" />
         </xsl:call-template>
       </xsl:variable>
-      <xsl:value-of select="concat('         SafeArray&lt;', $elemtype,'&gt; result;&#10;')"/>
-      <xsl:value-of select="concat('         ', $member, '.cloneTo(result);&#10;')"/>
-      <xsl:value-of select="concat('         result.detachTo(ComSafeArrayOutArg(', $param, '));&#10;')"/>
+<!-- @todo String arrays probably needs work, I doubt we're generating sensible code for them at the moment. -->
+      <xsl:text>        SafeArray&lt;</xsl:text><xsl:value-of select="$elemtype"/><xsl:text>&gt; result;&#10;</xsl:text>
+      <xsl:text>        HRESULT hrc = </xsl:text><xsl:value-of select="$member"/><xsl:text>.cloneTo(result);&#10;</xsl:text>
+      <xsl:text>        if (SUCCEEDED(hrc))&#10;</xsl:text>
+      <xsl:text>            result.detachTo(ComSafeArrayOutArg(</xsl:text><xsl:value-of select="$param"/><xsl:text>));&#10;</xsl:text>
+      <xsl:text>        return hrc;&#10;</xsl:text>
     </xsl:when>
     <xsl:otherwise>
       <xsl:choose>
         <xsl:when test="($type='wstring') or ($type = 'uuid')">
-          <xsl:value-of select="concat('         ', $member, '.cloneTo(', $param, ');&#10;')"/>
+          <xsl:text>        return </xsl:text><xsl:value-of select="$member"/><xsl:text>.cloneToEx(</xsl:text>
+          <xsl:value-of select="$param"/><xsl:text>);&#10;</xsl:text>
         </xsl:when>
         <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
-          <xsl:value-of select="concat('         ', $member, '.queryInterfaceTo(', $param, ');&#10;')"/>
+          <xsl:text>        return </xsl:text><xsl:value-of select="$member"/><xsl:text>.queryInterfaceTo(</xsl:text>
+          <xsl:value-of select="$param"/><xsl:text>);&#10;</xsl:text>
         </xsl:when>
         <xsl:otherwise>
-          <xsl:value-of select="concat('         *', $param, ' = ', $member, ';&#10;')"/>
+          <xsl:text>        *</xsl:text><xsl:value-of select="$param"/><xsl:text> = </xsl:text>
+          <xsl:value-of select="$member"/><xsl:text>;&#10;</xsl:text>
+          <xsl:text>        return S_OK;&#10;</xsl:text>
         </xsl:otherwise>
       </xsl:choose>
     </xsl:otherwise>
@@ -543,7 +550,6 @@
       <xsl:with-param name="param" select="$pName" />
       <xsl:with-param name="safearray" select="@safearray" />
     </xsl:call-template>
-    <xsl:value-of select="       '         return S_OK;&#10;'" />
     <xsl:value-of select="       '    }&#10;'" />
 
     <xsl:if test="not(@readonly='yes')">
