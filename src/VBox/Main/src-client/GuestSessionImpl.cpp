@@ -1030,7 +1030,7 @@ int GuestSession::i_directoryUnregister(GuestDirectory *pDirectory)
 
     alock.release(); /* Release lock before firing off event. */
 
-//    fireGuestDirectoryRegisteredEvent(mEventSource, this /* Session */, pDirConsumed, false /* Process unregistered */);
+//    ::FireGuestDirectoryRegisteredEvent(mEventSource, this /* Session */, pDirConsumed, false /* Process unregistered */);
 
     pDirConsumed.setNull();
 
@@ -1443,7 +1443,7 @@ int GuestSession::i_fileUnregister(GuestFile *pFile)
 
     alock.release(); /* Release lock before firing off event. */
 
-    fireGuestFileRegisteredEvent(mEventSource, this, pFileConsumed, false /* Unregistered */);
+    ::FireGuestFileRegisteredEvent(mEventSource, this, pFileConsumed, false /* Unregistered */);
 
     pFileConsumed.setNull();
 
@@ -1558,7 +1558,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
 
         alock.release(); /* Release lock before firing off event. */
 
-        fireGuestFileRegisteredEvent(mEventSource, this, pFile, true /* Registered */);
+        ::FireGuestFileRegisteredEvent(mEventSource, this, pFile, true /* Registered */);
     }
     catch (std::bad_alloc &)
     {
@@ -2449,7 +2449,7 @@ int GuestSession::i_processUnregister(GuestProcess *pProcess)
 
     alock.release(); /* Release lock before firing off event. */
 
-    fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pProc, uPID, false /* Process unregistered */);
+    ::FireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pProc, uPID, false /* Process unregistered */);
 
     pProc.setNull();
 
@@ -2552,7 +2552,7 @@ int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr
 
         alock.release(); /* Release lock before firing off event. */
 
-        fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pProcess, 0 /* PID */, true /* Process registered */);
+        ::FireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pProcess, 0 /* PID */, true /* Process registered */);
     }
     catch (std::bad_alloc &)
     {
@@ -2672,8 +2672,7 @@ int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int ses
                                     i_guestErrorToString(sessionRc));
         AssertRC(rc2);
 
-        fireGuestSessionStateChangedEvent(mEventSource, this,
-                                          mData.mSession.mID, sessionStatus, errorInfo);
+        ::FireGuestSessionStateChangedEvent(mEventSource, this, mData.mSession.mID, sessionStatus, errorInfo);
     }
 
     LogFlowFuncLeaveRC(vrc);

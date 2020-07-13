@@ -776,8 +776,8 @@ private:
   <xsl:text>}&#10;</xsl:text>
   <xsl:text>&#10;</xsl:text>
 
-  <!-- Generate the fireXxxxEvent function. -->
-  <xsl:value-of select="concat('DECLHIDDEN(HRESULT) fire', $evname, '(IEventSource *aSource')"/>
+  <!-- Generate the FireXxxxEvent function. -->
+  <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Fire', $evname, '(IEventSource *aSource')"/>
   <xsl:call-template name="genFormalParams">
     <xsl:with-param name="name" select="$ifname" />
   </xsl:call-template>
@@ -878,7 +878,7 @@ private:
       <xsl:value-of select="@name" />
     </xsl:variable>
 
-    <xsl:value-of select="concat('DECLHIDDEN(HRESULT) fire', $evname, '(IEventSource *aSource')"/>
+    <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Fire', $evname, '(IEventSource *aSource')"/>
     <xsl:call-template name="genFormalParams">
       <xsl:with-param name="name" select="$ifname" />
     </xsl:call-template>

@@ -787,22 +787,16 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     if (fGuestMonitorChangedEvent)
     {
         if (fDisabled)
-            fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
-                                         GuestMonitorChangedEventType_Disabled,
-                                         uScreenId,
-                                         0, 0, 0, 0);
+            ::FireGuestMonitorChangedEvent(mParent->i_getEventSource(),
+                                           GuestMonitorChangedEventType_Disabled,  uScreenId, 0, 0, 0, 0);
         else
-            fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
-                                         GuestMonitorChangedEventType_Enabled,
-                                         uScreenId,
-                                         xOrigin, yOrigin, w, h);
+            ::FireGuestMonitorChangedEvent(mParent->i_getEventSource(),
+                                           GuestMonitorChangedEventType_Enabled, uScreenId, xOrigin, yOrigin, w, h);
     }
 
     if (fNewOrigin)
-        fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
-                                     GuestMonitorChangedEventType_NewOrigin,
-                                     uScreenId,
-                                     xOrigin, yOrigin, 0, 0);
+        ::FireGuestMonitorChangedEvent(mParent->i_getEventSource(),
+                                       GuestMonitorChangedEventType_NewOrigin, uScreenId, xOrigin, yOrigin, 0, 0);
 
     /* Inform the VRDP server about the change of display parameters. */
     LogRelFlowFunc(("Calling VRDP\n"));
@@ -1713,7 +1707,7 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
             pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false, RT_BOOL(aNotify));
     }
     /* Notify listeners. */
-    fireGuestMonitorInfoChangedEvent(mParent->i_getEventSource(), aDisplay);
+    ::FireGuestMonitorInfoChangedEvent(mParent->i_getEventSource(), aDisplay);
     return S_OK;
 }
 
@@ -3256,11 +3250,8 @@ DECLCALLBACK(void) Display::i_displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterfac
         if (pFBInfo->fDisabled)
         {
             pFBInfo->fDisabled = false;
-            fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
-                                         GuestMonitorChangedEventType_Enabled,
-                                         uScreenId,
-                                         pFBInfo->xOrigin, pFBInfo->yOrigin,
-                                         pFBInfo->w, pFBInfo->h);
+            ::FireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(), GuestMonitorChangedEventType_Enabled, uScreenId,
+                                           pFBInfo->xOrigin, pFBInfo->yOrigin, pFBInfo->w, pFBInfo->h);
         }
     }
 
@@ -3613,7 +3604,7 @@ DECLCALLBACK(void) Display::i_displayVBVAReportCursorPosition(PPDMIDISPLAYCONNEC
         x += pThis->maFramebuffers[aScreenId].xOrigin;
         y += pThis->maFramebuffers[aScreenId].yOrigin;
     }
-    fireCursorPositionChangedEvent(pThis->mParent->i_getEventSource(), RT_BOOL(fFlags & VBVA_CURSOR_VALID_DATA), x, y);
+    ::FireCursorPositionChangedEvent(pThis->mParent->i_getEventSource(), RT_BOOL(fFlags & VBVA_CURSOR_VALID_DATA), x, y);
 }
 
 #endif /* VBOX_WITH_HGSMI */

@@ -633,8 +633,7 @@ int GuestProcess::i_onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
 
             alock.release(); /* Release lock before firing off event. */
 
-            fireGuestProcessInputNotifyEvent(mEventSource, mSession, this,
-                                             uPID, 0 /* StdIn */, dataCb.uProcessed, inputStatus);
+            ::FireGuestProcessInputNotifyEvent(mEventSource, mSession, this, uPID, 0 /* StdIn */, dataCb.uProcessed, inputStatus);
         }
     }
 
@@ -789,8 +788,8 @@ int GuestProcess::i_onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
         if (dataCb.cbData)
             data.initFrom((BYTE*)dataCb.pvData, dataCb.cbData);
 
-        fireGuestProcessOutputEvent(mEventSource, mSession, this,
-                                    mData.mPID, dataCb.uHandle, dataCb.cbData, ComSafeArrayAsInParam(data));
+        ::FireGuestProcessOutputEvent(mEventSource, mSession, this,
+                                      mData.mPID, dataCb.uHandle, dataCb.cbData, ComSafeArrayAsInParam(data));
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -970,8 +969,7 @@ int GuestProcess::i_setProcessStatus(ProcessStatus_T procStatus, int procRc)
 
         alock.release(); /* Release lock before firing off event. */
 
-        fireGuestProcessStateChangedEvent(mEventSource, mSession, this,
-                                          uPID, procStatus, errorInfo);
+        ::FireGuestProcessStateChangedEvent(mEventSource, mSession, this, uPID, procStatus, errorInfo);
 #if 0
         /*
          * On Guest Additions < 4.3 there is no guarantee that outstanding

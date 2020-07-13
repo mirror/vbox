@@ -617,7 +617,7 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                          * usable as VBoxSVC terminated in the mean time. */
                         pThis->mData.m_pVirtualBox.setNull();
                     }
-                    fireVBoxSVCAvailabilityChangedEvent(pThis->mData.m_pEventSource, FALSE);
+                    ::FireVBoxSVCAvailabilityChangedEvent(pThis->mData.m_pEventSource, FALSE);
                 }
             }
             else
@@ -641,7 +641,7 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                         pThis->mData.m_pVirtualBox = pVirtualBox;
                         pThis->mData.m_pToken = pToken;
                     }
-                    fireVBoxSVCAvailabilityChangedEvent(pThis->mData.m_pEventSource, TRUE);
+                    ::FireVBoxSVCAvailabilityChangedEvent(pThis->mData.m_pEventSource, TRUE);
                     cMillies = VBOXCLIENT_DEFAULT_INTERVAL;
                 }
             }

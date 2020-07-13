@@ -212,7 +212,7 @@ HRESULT Keyboard::putScancodes(const std::vector<LONG> &aScancodes,
     for (size_t i = 0; i < aScancodes.size(); ++i)
         keys[i] = aScancodes[i];
 
-    fireGuestKeyboardEvent(mEventSource, ComSafeArrayAsInParam(keys));
+    ::FireGuestKeyboardEvent(mEventSource, ComSafeArrayAsInParam(keys));
 
     if (RT_FAILURE(vrc))
         return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,

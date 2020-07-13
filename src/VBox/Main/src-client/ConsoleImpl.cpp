@@ -1790,7 +1790,7 @@ DECLCALLBACK(int) Console::i_doGuestPropNotification(void *pvExtension,
                                                         flags.raw());
     if (SUCCEEDED(hrc))
     {
-        fireGuestPropertyChangedEvent(pConsole->mEventSource, pConsole->i_getId().raw(), name.raw(), value.raw(), flags.raw());
+        ::FireGuestPropertyChangedEvent(pConsole->mEventSource, pConsole->i_getId().raw(), name.raw(), value.raw(), flags.raw());
         rc = VINF_SUCCESS;
     }
     else
@@ -2999,7 +2999,7 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
 
     /* Notify console callbacks after the folder is added to the list. */
     alock.release();
-    fireSharedFolderChangedEvent(mEventSource, Scope_Session);
+    ::FireSharedFolderChangedEvent(mEventSource, Scope_Session);
 
     LogFlowThisFunc(("Leaving for '%s' -> '%s'\n", aName.c_str(), aHostPath.c_str()));
 
@@ -3058,7 +3058,7 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
 
     /* Notify console callbacks after the folder is removed from the list. */
     alock.release();
-    fireSharedFolderChangedEvent(mEventSource, Scope_Session);
+    ::FireSharedFolderChangedEvent(mEventSource, Scope_Session);
 
     LogFlowThisFunc(("Leaving for '%s'\n", aName.c_str()));
 
@@ -4068,7 +4068,7 @@ HRESULT Console::i_onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        fireNetworkAdapterChangedEvent(mEventSource, aNetworkAdapter);
+        ::FireNetworkAdapterChangedEvent(mEventSource, aNetworkAdapter);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -5036,7 +5036,7 @@ HRESULT Console::i_onAudioAdapterChange(IAudioAdapter *aAudioAdapter)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(hrc))
-        fireAudioAdapterChangedEvent(mEventSource, aAudioAdapter);
+        ::FireAudioAdapterChangedEvent(mEventSource, aAudioAdapter);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
     return S_OK;
@@ -5191,7 +5191,7 @@ HRESULT Console::i_onSerialPortChange(ISerialPort *aSerialPort)
     }
 
     if (SUCCEEDED(hrc))
-        fireSerialPortChangedEvent(mEventSource, aSerialPort);
+        ::FireSerialPortChangedEvent(mEventSource, aSerialPort);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
     return hrc;
@@ -5207,7 +5207,7 @@ HRESULT Console::i_onParallelPortChange(IParallelPort *aParallelPort)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    fireParallelPortChangedEvent(mEventSource, aParallelPort);
+    ::FireParallelPortChangedEvent(mEventSource, aParallelPort);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
     return S_OK;
@@ -5223,7 +5223,7 @@ HRESULT Console::i_onStorageControllerChange(const Guid &aMachineId, const Utf8S
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    fireStorageControllerChangedEvent(mEventSource, Bstr(aMachineId.toString()).raw(), Bstr(aControllerName).raw());
+    ::FireStorageControllerChangedEvent(mEventSource, Bstr(aMachineId.toString()).raw(), Bstr(aControllerName).raw());
 
     LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
     return S_OK;
@@ -5251,7 +5251,7 @@ HRESULT Console::i_onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aFo
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        fireMediumChangedEvent(mEventSource, aMediumAttachment);
+        ::FireMediumChangedEvent(mEventSource, aMediumAttachment);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -5284,7 +5284,7 @@ HRESULT Console::i_onCPUChange(ULONG aCPU, BOOL aRemove)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        fireCPUChangedEvent(mEventSource, aCPU, aRemove);
+        ::FireCPUChangedEvent(mEventSource, aCPU, aRemove);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -5327,7 +5327,7 @@ HRESULT Console::i_onCPUExecutionCapChange(ULONG aExecutionCap)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireCPUExecutionCapChangedEvent(mEventSource, aExecutionCap);
+        ::FireCPUExecutionCapChangedEvent(mEventSource, aExecutionCap);
     }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
@@ -5371,7 +5371,7 @@ HRESULT Console::i_onClipboardModeChange(ClipboardMode_T aClipboardMode)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireClipboardModeChangedEvent(mEventSource, aClipboardMode);
+        ::FireClipboardModeChangedEvent(mEventSource, aClipboardMode);
     }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
@@ -5415,7 +5415,7 @@ HRESULT Console::i_onClipboardFileTransferModeChange(bool aEnabled)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireClipboardFileTransferModeChangedEvent(mEventSource, aEnabled ? TRUE : FALSE);
+        ::FireClipboardFileTransferModeChangedEvent(mEventSource, aEnabled ? TRUE : FALSE);
     }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
@@ -5455,7 +5455,7 @@ HRESULT Console::i_onDnDModeChange(DnDMode_T aDnDMode)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireDnDModeChangedEvent(mEventSource, aDnDMode);
+        ::FireDnDModeChangedEvent(mEventSource, aDnDMode);
     }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
@@ -5594,7 +5594,7 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireVRDEServerChangedEvent(mEventSource);
+        ::FireVRDEServerChangedEvent(mEventSource);
     }
 
     return rc;
@@ -5605,7 +5605,7 @@ void Console::i_onVRDEServerInfoChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    fireVRDEServerInfoChangedEvent(mEventSource);
+    ::FireVRDEServerInfoChangedEvent(mEventSource);
 }
 
 HRESULT Console::i_sendACPIMonitorHotPlugEvent()
@@ -5741,7 +5741,7 @@ HRESULT Console::i_onRecordingChange(BOOL fEnabled)
         if (RT_SUCCESS(vrc))
         {
             alock.release();
-            fireRecordingChangedEvent(mEventSource);
+            ::FireRecordingChangedEvent(mEventSource);
         }
 
         ptrVM.release();
@@ -5762,7 +5762,7 @@ HRESULT Console::i_onUSBControllerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    fireUSBControllerChangedEvent(mEventSource);
+    ::FireUSBControllerChangedEvent(mEventSource);
 
     return S_OK;
 }
@@ -5787,7 +5787,7 @@ HRESULT Console::i_onSharedFolderChange(BOOL aGlobal)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireSharedFolderChangedEvent(mEventSource, aGlobal ? Scope_Global : Scope_Machine);
+        ::FireSharedFolderChangedEvent(mEventSource, aGlobal ? Scope_Global : Scope_Machine);
     }
 
     return rc;
@@ -6024,7 +6024,7 @@ HRESULT Console::i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireBandwidthGroupChangedEvent(mEventSource, aBandwidthGroup);
+        ::FireBandwidthGroupChangedEvent(mEventSource, aBandwidthGroup);
     }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
@@ -6058,7 +6058,7 @@ HRESULT Console::i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, B
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        fireStorageDeviceChangedEvent(mEventSource, aMediumAttachment, aRemove, aSilent);
+        ::FireStorageDeviceChangedEvent(mEventSource, aMediumAttachment, aRemove, aSilent);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -6097,7 +6097,7 @@ HRESULT Console::i_onExtraDataChange(IN_BSTR aMachineId, IN_BSTR aKey, IN_BSTR a
 
     /* notify console callbacks on success */
     if (SUCCEEDED(hrc))
-        fireExtraDataChangedEvent(mEventSource, aMachineId, aKey, aVal);
+        ::FireExtraDataChangedEvent(mEventSource, aMachineId, aKey, aVal);
 
     LogFlowThisFunc(("Leaving hrc=%#x\n", hrc));
     return hrc;
@@ -7272,7 +7272,7 @@ void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
     com::SafeArray<BYTE> shape(cbShape);
     if (pu8Shape)
         memcpy(shape.raw(), pu8Shape, cbShape);
-    fireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shape));
+    ::FireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shape));
 
 #if 0
     LogFlowThisFuncLeave();
@@ -7288,14 +7288,14 @@ void Console::i_onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRela
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    fireMouseCapabilityChangedEvent(mEventSource, supportsAbsolute, supportsRelative, supportsMT, needsHostCursor);
+    ::FireMouseCapabilityChangedEvent(mEventSource, supportsAbsolute, supportsRelative, supportsMT, needsHostCursor);
 }
 
 void Console::i_onStateChange(MachineState_T machineState)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-    fireStateChangedEvent(mEventSource, machineState);
+    ::FireStateChangedEvent(mEventSource, machineState);
 }
 
 void Console::i_onAdditionsStateChange()
@@ -7303,7 +7303,7 @@ void Console::i_onAdditionsStateChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    fireAdditionsStateChangedEvent(mEventSource);
+    ::FireAdditionsStateChangedEvent(mEventSource);
 }
 
 /**
@@ -7326,7 +7326,7 @@ void Console::i_onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScroll
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    fireKeyboardLedsChangedEvent(mEventSource, fNumLock, fCapsLock, fScrollLock);
+    ::FireKeyboardLedsChangedEvent(mEventSource, fNumLock, fCapsLock, fScrollLock);
 }
 
 void Console::i_onUSBDeviceStateChange(IUSBDevice *aDevice, bool aAttached,
@@ -7335,7 +7335,7 @@ void Console::i_onUSBDeviceStateChange(IUSBDevice *aDevice, bool aAttached,
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    fireUSBDeviceStateChangedEvent(mEventSource, aDevice, aAttached, aError);
+    ::FireUSBDeviceStateChangedEvent(mEventSource, aDevice, aAttached, aError);
 }
 
 void Console::i_onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage)
@@ -7343,7 +7343,7 @@ void Console::i_onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    fireRuntimeErrorEvent(mEventSource, aFatal, aErrorID, aMessage);
+    ::FireRuntimeErrorEvent(mEventSource, aFatal, aErrorID, aMessage);
 }
 
 HRESULT Console::i_onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
@@ -10300,7 +10300,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                 {
                     vrc = pConsole->i_recordingEnable(fRecordingEnabled, &alock);
                     if (RT_SUCCESS(vrc))
-                        fireRecordingChangedEvent(pConsole->mEventSource);
+                        ::FireRecordingChangedEvent(pConsole->mEventSource);
                     else
                     {
                         LogRel(("Recording: Failed with %Rrc on VM power up\n", vrc));
@@ -10920,7 +10920,7 @@ DECLCALLBACK(int) Console::i_drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface
                     if (SUCCEEDED(rc))
                     {
                         pThis->pConsole->mMachine->SaveSettings();
-                        fireMediumChangedEvent(pThis->pConsole->mEventSource, pNewMediumAtt);
+                        ::FireMediumChangedEvent(pThis->pConsole->mEventSource, pNewMediumAtt);
                     }
 
                     alock.acquire();

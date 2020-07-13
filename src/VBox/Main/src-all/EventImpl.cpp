@@ -1073,7 +1073,7 @@ HRESULT EventSource::registerListener(const ComPtr<IEventListener> &aListener,
     RecordHolder<ListenerRecord> lrh(new ListenerRecord(aListener, interested, aActive, this));
     m->mListeners.insert(Listeners::value_type((IEventListener *)aListener, lrh));
 
-    fireEventSourceChangedEvent(this, (IEventListener *)aListener, TRUE /*add*/);
+    ::FireEventSourceChangedEvent(this, (IEventListener *)aListener, TRUE /*add*/);
 
     return S_OK;
 }
@@ -1091,7 +1091,7 @@ HRESULT EventSource::unregisterListener(const ComPtr<IEventListener> &aListener)
         it->second.obj()->shutdown();
         m->mListeners.erase(it);
         // destructor removes refs from the event map
-        fireEventSourceChangedEvent(this, (IEventListener *)aListener, FALSE /*add*/);
+        ::FireEventSourceChangedEvent(this, (IEventListener *)aListener, FALSE /*add*/);
         rc = S_OK;
     }
     else

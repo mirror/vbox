@@ -951,19 +951,16 @@ void Display::processDisplayData(void *pvVRAM, unsigned uScreenId)
                 if (pFBInfo->fDisabled)
                 {
                     pFBInfo->fDisabled = false;
-                    fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
-                                                 GuestMonitorChangedEventType_Enabled,
-                                                 uScreenId,
-                                                 pFBInfo->xOrigin, pFBInfo->yOrigin,
-                                                 pFBInfo->w, pFBInfo->h);
+                    ::FireGuestMonitorChangedEvent(mParent->i_getEventSource(), GuestMonitorChangedEventType_Enabled, uScreenId,
+                                                   pFBInfo->xOrigin, pFBInfo->yOrigin, pFBInfo->w, pFBInfo->h);
                 }
 
                 i_handleDisplayResize(uScreenId, pScreen->bitsPerPixel,
-                                                      (uint8_t *)pvVRAM + pFBInfo->u32Offset,
-                                                      pScreen->u32LineSize,
-                                                      pScreen->u16Width, pScreen->u16Height,
-                                                      VBVA_SCREEN_F_ACTIVE,
-                                                      pScreen->xOrigin, pScreen->yOrigin, false);
+                                      (uint8_t *)pvVRAM + pFBInfo->u32Offset,
+                                      pScreen->u32LineSize,
+                                      pScreen->u16Width, pScreen->u16Height,
+                                      VBVA_SCREEN_F_ACTIVE,
+                                      pScreen->xOrigin, pScreen->yOrigin, false);
             }
         }
         else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_END)

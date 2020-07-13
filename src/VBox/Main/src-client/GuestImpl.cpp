@@ -959,8 +959,8 @@ void Guest::i_setAdditionsInfo(const com::Utf8Str &aInterfaceVersion, VBOXOSTYPE
      */
     AdditionsRunLevelType_T const enmRunLevel = mData.mAdditionsRunLevel;
     alock.release();
-    fireGuestAdditionsStatusChangedEvent(mEventSource, AdditionsFacilityType_None, AdditionsFacilityStatus_Active,
-                                         enmRunLevel, RTTimeSpecGetMilli(&TimeSpecTS));
+    ::FireGuestAdditionsStatusChangedEvent(mEventSource, AdditionsFacilityType_None, AdditionsFacilityStatus_Active,
+                                           enmRunLevel, RTTimeSpecGetMilli(&TimeSpecTS));
 }
 
 /**
@@ -1083,8 +1083,7 @@ void Guest::i_onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enm
 
     Bstr strDetails; /** @todo Implement state details here. */
 
-    fireGuestUserStateChangedEvent(mEventSource, aUser.raw(), aDomain.raw(),
-                                   (GuestUserState_T)enmState, strDetails.raw());
+    ::FireGuestUserStateChangedEvent(mEventSource, aUser.raw(), aDomain.raw(), (GuestUserState_T)enmState, strDetails.raw());
     LogFlowFuncLeave();
 }
 
@@ -1142,9 +1141,9 @@ void Guest::i_setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestF
     if (fFireEvent || enmNewRunLevel != enmOldRunLevel)
     {
         alock.release();
-        fireGuestAdditionsStatusChangedEvent(mEventSource, (AdditionsFacilityType_T)a_enmFacility,
-                                             (AdditionsFacilityStatus_T)a_enmStatus, enmNewRunLevel,
-                                             RTTimeSpecGetMilli(a_pTimeSpecTS));
+        ::FireGuestAdditionsStatusChangedEvent(mEventSource, (AdditionsFacilityType_T)a_enmFacility,
+                                               (AdditionsFacilityStatus_T)a_enmStatus, enmNewRunLevel,
+                                               RTTimeSpecGetMilli(a_pTimeSpecTS));
     }
 }
 
@@ -1179,9 +1178,9 @@ void Guest::i_setSupportedFeatures(uint32_t aCaps)
     {
         AdditionsRunLevelType_T const enmRunLevel = mData.mAdditionsRunLevel;
         alock.release();
-        fireGuestAdditionsStatusChangedEvent(mEventSource, AdditionsFacilityType_Seamless,
-                                             aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS
-                                             ? AdditionsFacilityStatus_Active : AdditionsFacilityStatus_Inactive, enmRunLevel,
-                                             RTTimeSpecGetMilli(&TimeSpecTS));
+        ::FireGuestAdditionsStatusChangedEvent(mEventSource, AdditionsFacilityType_Seamless,
+                                               aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS
+                                               ? AdditionsFacilityStatus_Active : AdditionsFacilityStatus_Inactive,
+                                               enmRunLevel, RTTimeSpecGetMilli(&TimeSpecTS));
     }
 }

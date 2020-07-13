@@ -528,8 +528,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                 com::SafeArray<BYTE> data((size_t)cbRead);
                 data.initFrom((BYTE*)dataCb.u.read.pvData, cbRead);
 
-                fireGuestFileReadEvent(mEventSource, mSession, this, mData.mOffCurrent,
-                                       cbRead, ComSafeArrayAsInParam(data));
+                ::FireGuestFileReadEvent(mEventSource, mSession, this, mData.mOffCurrent, cbRead, ComSafeArrayAsInParam(data));
             }
             break;
         }
@@ -559,7 +558,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
             {
                 com::SafeArray<BYTE> data((size_t)cbRead);
                 data.initFrom(pbData, cbRead);
-                fireGuestFileReadEvent(mEventSource, mSession, this, offNew, cbRead, ComSafeArrayAsInParam(data));
+                ::FireGuestFileReadEvent(mEventSource, mSession, this, offNew, cbRead, ComSafeArrayAsInParam(data));
                 rc = VINF_SUCCESS;
             }
             catch (std::bad_alloc &)
@@ -587,7 +586,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
                 alock.release();
 
-                fireGuestFileWriteEvent(mEventSource, mSession, this, mData.mOffCurrent, cbWritten);
+                ::FireGuestFileWriteEvent(mEventSource, mSession, this, mData.mOffCurrent, cbWritten);
             }
             break;
         }
@@ -612,15 +611,8 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
             mData.mOffCurrent = offNew;
             alock.release();
 
-            try
-            {
-                fireGuestFileWriteEvent(mEventSource, mSession, this, offNew, cbWritten);
-                rc = VINF_SUCCESS;
-            }
-            catch (std::bad_alloc &)
-            {
-                rc = VERR_NO_MEMORY;
-            }
+            HRESULT hrc2 = ::FireGuestFileWriteEvent(mEventSource, mSession, this, offNew, cbWritten);
+            rc = SUCCEEDED(hrc2) ? VINF_SUCCESS : Global::vboxStatusCodeFromCOM(hrc2);
             break;
         }
 
@@ -640,7 +632,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
                 alock.release();
 
-                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this, dataCb.u.seek.uOffActual, 0 /* Processed */);
+                ::FireGuestFileOffsetChangedEvent(mEventSource, mSession, this, dataCb.u.seek.uOffActual, 0 /* Processed */);
             }
             break;
         }
@@ -659,7 +651,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
             dataCb.u.SetSize.cbSize = pSvcCbData->mpaParms[idx].u.uint64;
             Log3ThisFunc(("cbSize=%RU64\n", dataCb.u.SetSize.cbSize));
 
-            fireGuestFileSizeChangedEvent(mEventSource, mSession, this, dataCb.u.SetSize.cbSize);
+            ::FireGuestFileSizeChangedEvent(mEventSource, mSession, this, dataCb.u.SetSize.cbSize);
             rc = VINF_SUCCESS;
             break;
 
@@ -1066,8 +1058,7 @@ int GuestFile::i_setFileStatus(FileStatus_T fileStatus, int fileRc)
 
         alock.release(); /* Release lock before firing off event. */
 
-        fireGuestFileStateChangedEvent(mEventSource, mSession,
-                                       this, fileStatus, errorInfo);
+        ::FireGuestFileStateChangedEvent(mEventSource, mSession, this, fileStatus, errorInfo);
     }
 
     return VINF_SUCCESS;
