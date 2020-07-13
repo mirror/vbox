@@ -2949,6 +2949,7 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-nullability-extension ?= $(call VBOX_GCC_CHECK_CXX,-Wno-nullability-extension,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-gnu-statement-expression ?= $(call VBOX_GCC_CHECK_CXX,-Wno-gnu-statement-expression,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-import-preprocessor-directive-pedantic ?= $(call VBOX_GCC_CHECK_CXX,-Wno-import-preprocessor-directive-pedantic,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-undefined-var-template ?= $(call VBOX_GCC_CHECK_CXX,-Wno-undefined-var-template,)'
 ifeq ($(KBUILD_TARGET),solaris)
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_msave-args            ?= $(call VBOX_GCC_CHECK_CXX,-msave-args,)'
 # Detect the solaris assembler. It is used by the the 4.x gcc compilers,
@@ -3084,7 +3085,7 @@ if   $(KBUILD_TARGET) == "linux" \
  VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_WARN_MASOCHISTIC)
 endif
 
-VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_Wno-overloaded-virtual)
+VBOX_GCC_PEDANTIC_CXX ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) $(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_Wno-overloaded-virtual) $(VBOX_GCC_Wno-undefined-var-template)
 VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
 
 # Avoid freaking out when using flexible arrays in C++ code (ldrPE.cpp, ++).
