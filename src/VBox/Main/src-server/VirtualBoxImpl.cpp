@@ -2549,7 +2549,7 @@ HRESULT VirtualBox::setExtraData(const com::Utf8Str &aKey,
 
     // fire notification outside the lock
     if (fChanged)
-        i_onExtraDataChange(Guid::Empty, Bstr(aKey).raw(), Bstr(aValue).raw());
+        i_onExtraDataChanged(Guid::Empty, Bstr(aKey).raw(), Bstr(aValue).raw());
 
     return rc;
 }
@@ -3289,7 +3289,7 @@ void VirtualBox::i_onStorageDeviceChanged(IMediumAttachment *aStorageDevice, con
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::i_onMachineStateChange(const Guid &aId, MachineState_T aState)
+void VirtualBox::i_onMachineStateChanged(const Guid &aId, MachineState_T aState)
 {
     ComPtr<IEvent> ptrEvent;
     HRESULT hrc = ::CreateMachineStateChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aState);
@@ -3300,7 +3300,7 @@ void VirtualBox::i_onMachineStateChange(const Guid &aId, MachineState_T aState)
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::i_onMachineDataChange(const Guid &aId, BOOL aTemporary)
+void VirtualBox::i_onMachineDataChanged(const Guid &aId, BOOL aTemporary)
 {
     ComPtr<IEvent> ptrEvent;
     HRESULT hrc = ::CreateMachineDataChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aTemporary);
@@ -3351,9 +3351,8 @@ BOOL VirtualBox::i_onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR a
 
 /**
  *  @note Doesn't lock any object.
- *  @todo +d
  */
-void VirtualBox::i_onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue)
+void VirtualBox::i_onExtraDataChanged(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue)
 {
     ComPtr<IEvent> ptrEvent;
     HRESULT hrc = ::CreateExtraDataChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aKey, aValue);
@@ -3374,9 +3373,8 @@ void VirtualBox::i_onMachineRegistered(const Guid &aId, BOOL aRegistered)
 
 /**
  *  @note Doesn't lock any object.
- *  @todo +d
  */
-void VirtualBox::i_onSessionStateChange(const Guid &aId, SessionState_T aState)
+void VirtualBox::i_onSessionStateChanged(const Guid &aId, SessionState_T aState)
 {
     ComPtr<IEvent> ptrEvent;
     HRESULT hrc = ::CreateSessionStateChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aState);
@@ -3422,9 +3420,8 @@ void VirtualBox::i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnaps
 
 /**
  *  @note Doesn't lock any object.
- *  @todo +d
  */
-void VirtualBox::i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId)
+void VirtualBox::i_onSnapshotChanged(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     ComPtr<IEvent> ptrEvent;
     HRESULT hrc = ::CreateSnapshotChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
@@ -3712,10 +3709,8 @@ ULONG VirtualBox::i_onClipboardAreaGetRefCount(ULONG aID)
 
 /**
  *  @note Doesn't lock any object.
- *  @todo +d
  */
-void VirtualBox::i_onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName,
-                                         IN_BSTR aValue, IN_BSTR aFlags)
+void VirtualBox::i_onGuestPropertyChanged(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
 {
     ComPtr<IEvent> ptrEvent;
     HRESULT hrc = ::CreateGuestPropertyChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
@@ -3726,18 +3721,17 @@ void VirtualBox::i_onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName,
 
 /**
  *  @note Doesn't lock any object.
- *  @todo +d
  */
-void VirtualBox::i_onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
-                                       NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
-                                       IN_BSTR aGuestIp, uint16_t aGuestPort)
+void VirtualBox::i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
+                                        NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
+                                        IN_BSTR aGuestIp, uint16_t aGuestPort)
 {
     ::FireNATRedirectEvent(m->pEventSource, aMachineId.toUtf16().raw(), ulSlot, fRemove, aName, aProto, aHostIp,
                            aHostPort, aGuestIp, aGuestPort);
 }
 
-/** @todo +d  */
-void VirtualBox::i_onNATNetworkChange(IN_BSTR aName)
+/** @todo Unused!!  */
+void VirtualBox::i_onNATNetworkChanged(IN_BSTR aName)
 {
     ::FireNATNetworkChangedEvent(m->pEventSource, aName);
 }

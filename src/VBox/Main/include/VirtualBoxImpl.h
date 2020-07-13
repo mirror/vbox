@@ -166,18 +166,18 @@ public:
     void i_onMediumChanged(IMediumAttachment* aMediumAttachment);
     void i_onStorageControllerChanged(const Guid &aMachineId, const com::Utf8Str &aControllerName);
     void i_onStorageDeviceChanged(IMediumAttachment* aStorageDevice, const BOOL fRemoved, const BOOL fSilent);
-    void i_onMachineStateChange(const Guid &aId, MachineState_T aState);
-    void i_onMachineDataChange(const Guid &aId, BOOL aTemporary = FALSE);
+    void i_onMachineStateChanged(const Guid &aId, MachineState_T aState);
+    void i_onMachineDataChanged(const Guid &aId, BOOL aTemporary = FALSE);
     BOOL i_onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
                                 Bstr &aError);
-    void i_onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue);
+    void i_onExtraDataChanged(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue);
     void i_onMachineRegistered(const Guid &aId, BOOL aRegistered);
-    void i_onSessionStateChange(const Guid &aId, SessionState_T aState);
+    void i_onSessionStateChanged(const Guid &aId, SessionState_T aState);
 
     void i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnapshotId);
-    void i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
+    void i_onSnapshotChanged(const Guid &aMachineId, const Guid &aSnapshotId);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     int i_clipboardAreaCreate(ULONG uAreaID, uint32_t fFlags, SharedClipboardAreaData **ppAreaData);
@@ -191,12 +191,11 @@ public:
     ULONG i_onClipboardAreaGetRefCount(ULONG aID);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-    void i_onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
-                                 IN_BSTR aFlags);
-    void i_onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
-                                     NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
-                                     IN_BSTR aGuestIp, uint16_t aGuestPort);
-    void i_onNATNetworkChange(IN_BSTR aNetworkName);
+    void i_onGuestPropertyChanged(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags);
+    void i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
+                                NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
+                                IN_BSTR aGuestIp, uint16_t aGuestPort);
+    void i_onNATNetworkChanged(IN_BSTR aNetworkName);
     void i_onNATNetworkStartStop(IN_BSTR aNetworkName, BOOL aStart);
     void i_onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled, IN_BSTR aNetwork,
                                IN_BSTR aGateway, BOOL aAdvertiseDefaultIpv6RouteEnabled,

@@ -1401,7 +1401,7 @@ HRESULT SnapshotMachine::i_onSnapshotChange(Snapshot *aSnapshot)
     }
 
     /* inform callbacks */
-    mParent->i_onSnapshotChange(uuidMachine, uuidSnapshot);
+    mParent->i_onSnapshotChanged(uuidMachine, uuidSnapshot);
 
     return rc;
 }

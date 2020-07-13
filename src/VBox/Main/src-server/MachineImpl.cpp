@@ -951,8 +951,8 @@ HRESULT Machine::getAccessible(BOOL *aAccessible)
 
             /* make sure interesting parties will notice the accessibility
              * state change */
-            mParent->i_onMachineStateChange(mData->mUuid, mData->mMachineState);
-            mParent->i_onMachineDataChange(mData->mUuid);
+            mParent->i_onMachineStateChanged(mData->mUuid, mData->mMachineState);
+            mParent->i_onMachineDataChanged(mData->mUuid);
         }
     }
 
@@ -3241,7 +3241,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
 
         if (oldState != SessionState_Locked)
             /* fire an event */
-            mParent->i_onSessionStateChange(i_getId(), SessionState_Locked);
+            mParent->i_onSessionStateChanged(i_getId(), SessionState_Locked);
     }
 
     return rc;
@@ -3338,7 +3338,7 @@ HRESULT Machine::launchVMProcess(const ComPtr<ISession> &aSession,
                 mParent->i_updateClientWatcher();
 
                 /* fire an event */
-                mParent->i_onSessionStateChange(i_getId(), SessionState_Spawning);
+                mParent->i_onSessionStateChanged(i_getId(), SessionState_Spawning);
             }
         }
     }
@@ -4738,7 +4738,7 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
 
     // fire notification outside the lock
     if (fChanged)
-        mParent->i_onExtraDataChange(mData->mUuid, Bstr(aKey).raw(), Bstr(aValue).raw());
+        mParent->i_onExtraDataChanged(mData->mUuid, Bstr(aKey).raw(), Bstr(aValue).raw());
 
     return S_OK;
 }
@@ -5522,10 +5522,7 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
         {
             alock.release();
 
-            mParent->i_onGuestPropertyChange(mData->mUuid,
-                                             Bstr(aName).raw(),
-                                             Bstr(aValue).raw(),
-                                             Bstr(aFlags).raw());
+            mParent->i_onGuestPropertyChanged(mData->mUuid, Bstr(aName).raw(), Bstr(aValue).raw(), Bstr(aFlags).raw());
         }
     }
     catch (std::bad_alloc &)
@@ -7778,7 +7775,7 @@ bool Machine::i_checkForSpawnFailure()
 
         mData->mSession.mPID = NIL_RTPROCESS;
 
-        mParent->i_onSessionStateChange(mData->mUuid, SessionState_Unlocked);
+        mParent->i_onSessionStateChanged(mData->mUuid, SessionState_Unlocked);
         return true;
     }
 
@@ -8383,7 +8380,7 @@ HRESULT Machine::i_setMachineState(MachineState_T aMachineState)
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
         VBOXAPI_MACHINE_STATE_CHANGED(this, aMachineState, enmOldState, mData->mUuid.toStringCurly().c_str());
 #endif
-        mParent->i_onMachineStateChange(mData->mUuid, aMachineState);
+        mParent->i_onMachineStateChanged(mData->mUuid, aMachineState);
     }
 
     LogFlowThisFuncLeave();
@@ -9850,7 +9847,7 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
          * to the client process that creates them) and thus don't need to
          * inform callbacks. */
         if (i_isSessionMachine())
-            mParent->i_onMachineDataChange(mData->mUuid);
+            mParent->i_onMachineDataChanged(mData->mUuid);
     }
 
     LogFlowThisFunc(("rc=%08X\n", rc));
@@ -12676,7 +12673,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     }
 
     /* fire an event */
-    mParent->i_onSessionStateChange(mData->mUuid, SessionState_Unlocked);
+    mParent->i_onSessionStateChanged(mData->mUuid, SessionState_Unlocked);
 
     uninitDataAndChildObjects();
 
@@ -13538,10 +13535,7 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
 
         alock.release();
 
-        mParent->i_onGuestPropertyChange(mData->mUuid,
-                                         Bstr(aName).raw(),
-                                         Bstr(aValue).raw(),
-                                         Bstr(aFlags).raw());
+        mParent->i_onGuestPropertyChanged(mData->mUuid, Bstr(aName).raw(), Bstr(aValue).raw(), Bstr(aFlags).raw());
     }
     catch (...)
     {
@@ -13883,8 +13877,8 @@ HRESULT SessionMachine::i_onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRem
      * instead acting like callback we ask IVirtualBox deliver corresponding event
      */
 
-    mParent->i_onNatRedirectChange(i_getId(), ulSlot, RT_BOOL(aNatRuleRemove), aRuleName, aProto, aHostIp,
-                                   (uint16_t)aHostPort, aGuestIp, (uint16_t)aGuestPort);
+    mParent->i_onNatRedirectChanged(i_getId(), ulSlot, RT_BOOL(aNatRuleRemove), aRuleName, aProto, aHostIp,
+                                    (uint16_t)aHostPort, aGuestIp, (uint16_t)aGuestPort);
     return S_OK;
 }
 
