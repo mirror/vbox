@@ -116,6 +116,16 @@ PACK_STRUCT_END
 #endif
 
 /** This is the ICMP6 header adapted for echo req/resp. */
+#ifdef VBOX /* Clang 11 takes offence when member addresses are taken (id).  Packing not needed, so just dispense with it. */
+struct icmp6_echo_hdr {
+  u8_t type;
+  u8_t code;
+  u16_t chksum;
+  u16_t id;
+  u16_t seqno;
+};
+AssertCompileSize(struct icmp6_echo_hdr, sizeof(uint32_t) * 2);
+#else
 #ifdef PACK_STRUCT_USE_INCLUDES
 #  include "arch/bpstruct.h"
 #endif
@@ -131,6 +141,7 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #  include "arch/epstruct.h"
 #endif
+#endif /* VBOX */
 
 
 #if LWIP_ICMP6 && LWIP_IPV6 /* don't build if not configured for use in lwipopts.h */

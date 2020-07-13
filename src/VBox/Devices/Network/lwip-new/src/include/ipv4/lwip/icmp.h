@@ -81,6 +81,16 @@ enum icmp_te_type {
  *  This header is also used for other ICMP types that do not
  *  use the data part.
  */
+#ifdef VBOX /* Clang 11 takes offence when member addresses are taken (id).  Packing not needed, so just dispense with it. */
+struct icmp_echo_hdr {
+  u8_t type;
+  u8_t code;
+  u16_t chksum;
+  u16_t id;
+  u16_t seqno;
+};
+AssertCompileSize(struct icmp_echo_hdr, sizeof(uint32_t)*2);
+#else
 PACK_STRUCT_BEGIN
 struct icmp_echo_hdr {
   PACK_STRUCT_FIELD(u8_t type);
@@ -93,6 +103,7 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #  include "arch/epstruct.h"
 #endif
+#endif /* VBOX */
 
 #define ICMPH_TYPE(hdr) ((hdr)->type)
 #define ICMPH_CODE(hdr) ((hdr)->code)
