@@ -29,7 +29,6 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIPerformanceMonitor.h"
-#include "UISession.h"
 
 /* COM includes: */
 #include "CGuest.h"
@@ -689,12 +688,11 @@ void UIMetric::reset()
     m_iMaximum = 0;
 }
 
-
 /*********************************************************************************************************************************
 *   UIPerformanceMonitor implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession)
+UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
     , m_machine(machine)
@@ -712,7 +710,6 @@ UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &mac
     if (!m_console.isNull())
         m_comGuest = m_console.GetGuest();
     m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
-    connect(pSession, &UISession::sigAdditionsStateChange, this, &UIPerformanceMonitor::sltGuestAdditionsStateChange);
 
     prepareMetrics();
     prepareObjects();
@@ -861,13 +858,13 @@ void UIPerformanceMonitor::sltTimeout()
         return;
     ++m_iTimeStep;
 
-   if (m_metrics.contains(m_strRAMMetricName))
-   {
-       quint64 iTotalRAM = 0;
-       quint64 iFreeRAM = 0;
-       UIMonitorCommon::getRAMLoad(m_performanceMonitor, m_nameList, m_objectList, iTotalRAM, iFreeRAM);
-       updateRAMGraphsAndMetric(iTotalRAM, iFreeRAM);
-   }
+    if (m_metrics.contains(m_strRAMMetricName))
+    {
+        quint64 iTotalRAM = 0;
+        quint64 iFreeRAM = 0;
+        UIMonitorCommon::getRAMLoad(m_performanceMonitor, m_nameList, m_objectList, iTotalRAM, iFreeRAM);
+        updateRAMGraphsAndMetric(iTotalRAM, iFreeRAM);
+    }
 
     /* Update the CPU load chart with values we get from IMachineDebugger::getCPULoad(..): */
     if (m_metrics.contains(m_strCPUMetricName))
@@ -903,10 +900,6 @@ void UIPerformanceMonitor::sltTimeout()
     }
 }
 
-/**
- *
- * @returns
- */
 void UIPerformanceMonitor::sltGuestAdditionsStateChange()
 {
     bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);

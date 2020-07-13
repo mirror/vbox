@@ -99,7 +99,7 @@ private:
   * and pie charts (where applicable) alongside with some text. IPerformanceCollector and IMachineDebugger are
   * two sources of the performance metrics. Unfortunately these two have very distinct APIs resulting a bit too much
   * special casing etc.*/
-class UIPerformanceMonitor : public QIWithRetranslateUI<QWidget>
+class  SHARED_LIBRARY_STUFF UIPerformanceMonitor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -108,8 +108,15 @@ public:
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference.
       * @param console is machine console reference. */
-    UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession);
+    UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console);
     ~UIPerformanceMonitor();
+
+ public slots:
+
+    /** @name These functions are connected to API events and implement necessary updates.
+      * @{ */
+        void sltGuestAdditionsStateChange();
+    /** @} */
 
 protected:
 
@@ -119,10 +126,6 @@ private slots:
 
     /** Reads the metric values for several sources and calls corresponding update functions. */
     void sltTimeout();
-    /** @name These functions are connected to API events and implement necessary updates.
-      * @{ */
-        void sltGuestAdditionsStateChange();
-    /** @} */
 
 private:
 

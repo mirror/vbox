@@ -681,7 +681,6 @@ VirtualBox_QT_MOCHDRS = \
 #
 VirtualBoxVM_QT_MOCHDRS = \
 	src/globals/UIStarter.h \
-	src/monitor/performance/UIPerformanceMonitor.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -814,6 +813,7 @@ UICommon_QT_MOCHDRS = \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
 	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
+	src/monitor/performance/UIPerformanceMonitor.h \
 	src/medium/UIFDCreationDialog.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumItem.h \
@@ -944,7 +944,6 @@ VirtualBox_QT_MOCSRCS = \
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 #
 VirtualBoxVM_QT_MOCSRCS = \
-	src/monitor/performance/UIPerformanceMonitor.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -979,6 +978,7 @@ UICommon_QT_MOCSRCS = \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
+	src/monitor/performance/UIPerformanceMonitor.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
@@ -1159,7 +1159,6 @@ $(call VBOX_SET_VER_INFO_EXE,VirtualBox,VirtualBox Manager,$(VBOX_WINDOWS_ICON_F
 VirtualBoxVM_SOURCES = \
 	src/main.cpp \
 	src/globals/UIStarter.cpp \
-	src/monitor/performance/UIPerformanceMonitor.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -1320,6 +1319,7 @@ UICommon_SOURCES = \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/monitor/UIMonitorCommon.cpp \
+	src/monitor/performance/UIPerformanceMonitor.cpp \
 	src/medium/UIFDCreationDialog.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
