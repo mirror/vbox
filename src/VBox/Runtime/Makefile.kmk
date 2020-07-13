@@ -547,6 +547,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
 	common/path/RTPathFilenameUtf16.cpp \
+	common/path/RTPathFindCommon.cpp \
 	common/path/RTPathGlob.cpp \
 	common/path/RTPathHasExt.cpp \
 	common/path/RTPathHasPath.cpp \

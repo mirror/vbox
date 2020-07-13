@@ -520,6 +520,31 @@ RTDECL(char *) RTPathFilenameEx(const char *pszPath, uint32_t fFlags);
 RTDECL(PRTUTF16) RTPathFilenameExUtf16(PCRTUTF16 pwszPath, uint32_t fFlags);
 
 /**
+ * Finds the common path in a given set of paths, extended version.
+ *
+ * Note: This does not check paths for existience or other things (e.g. symlinks).
+ *
+ * @returns Length (in characters) of the common path, 0 if not found.
+ * @param   papcszPaths         Array of paths to find common path for.
+ * @param   cPaths              Number of paths in \a papcszPaths.
+ * @param   szSeparator         Path separator to use for comparision.
+ */
+RTDECL(size_t) RTPathFindCommonEx(const char * const *papcszPaths, size_t cPaths, char szSeparator);
+
+/**
+ * Finds the common path in a given set of paths.
+ *
+ * Uses the system's native slash as separator.
+ * Note: This does not check paths for existience or other things (e.g. symlinks).
+ *
+ * @returns Length (in characters) of the common path, 0 if not found.
+ * @param   papcszPaths         Array of paths to find common path for.
+ * @param   cPaths              Number of paths in \a papcszPaths.
+ * @param   szSeparator         Path separator to use for comparision.
+ */
+RTDECL(size_t) RTPathFindCommon(const char * const *papcszPaths, size_t cPaths);
+
+/**
  * Finds the suffix part of in a path (last dot and onwards).
  *
  * @returns Pointer to suffix within pszPath.

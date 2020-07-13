@@ -100,6 +100,7 @@ PROGRAMS += \
 	tstRTNetIPv6 \
 	tstOnce \
 	tstRTPath \
+	tstRTPathFindCommon \
 	tstRTPathGlob \
 	tstRTPathQueryInfo \
 	tstRTPipe \
@@ -567,6 +568,9 @@ tstOnce_SOURCES = tstOnce.cpp
 
 tstRTPath_TEMPLATE = VBOXR3TSTEXE
 tstRTPath_SOURCES = tstRTPath.cpp
+
+tstRTPathFindCommon_TEMPLATE = VBOXR3TSTEXE
+tstRTPathFindCommon_SOURCES = tstRTPathFindCommon.cpp
 
 tstRTPathGlob_TEMPLATE = VBOXR3TSTEXE
 tstRTPathGlob_SOURCES = tstRTPathGlob.cpp
