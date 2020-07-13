@@ -7361,7 +7361,7 @@ HRESULT Console::i_onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
     if (aCheck)
     {
         *aCanShow = TRUE;
-        HRESULT hrc = CreateCanShowWindowEvent(ptrEvent.asOutParam(), mEventSource);
+        HRESULT hrc = ::CreateCanShowWindowEvent(ptrEvent.asOutParam(), mEventSource);
         if (SUCCEEDED(hrc))
         {
             VBoxEventDesc EvtDesc(ptrEvent, mEventSource);
@@ -7386,7 +7386,7 @@ HRESULT Console::i_onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
     }
     else
     {
-        HRESULT hrc = CreateShowWindowEvent(ptrEvent.asOutParam(), mEventSource, 0);
+        HRESULT hrc = ::CreateShowWindowEvent(ptrEvent.asOutParam(), mEventSource, 0);
         if (SUCCEEDED(hrc))
         {
             VBoxEventDesc EvtDesc(ptrEvent, mEventSource);

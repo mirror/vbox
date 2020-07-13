@@ -3244,8 +3244,8 @@ int VirtualBox::i_unloadVDPlugin(const char *pszPluginLibrary)
 void VirtualBox::i_onMediumRegistered(const Guid &aMediumId, const DeviceType_T aDevType, const BOOL aRegistered)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateMediumRegisteredEvent(ptrEvent.asOutParam(), m->pEventSource,
-                                              aMediumId.toUtf16().raw(), aDevType, aRegistered);
+    HRESULT hrc = ::CreateMediumRegisteredEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                                aMediumId.toUtf16().raw(), aDevType, aRegistered);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3253,7 +3253,7 @@ void VirtualBox::i_onMediumRegistered(const Guid &aMediumId, const DeviceType_T 
 void VirtualBox::i_onMediumConfigChanged(IMedium *aMedium)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateMediumConfigChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aMedium);
+    HRESULT hrc = ::CreateMediumConfigChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aMedium);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3261,7 +3261,7 @@ void VirtualBox::i_onMediumConfigChanged(IMedium *aMedium)
 void VirtualBox::i_onMediumChanged(IMediumAttachment *aMediumAttachment)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateMediumChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aMediumAttachment);
+    HRESULT hrc = ::CreateMediumChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aMediumAttachment);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3272,8 +3272,8 @@ void VirtualBox::i_onMediumChanged(IMediumAttachment *aMediumAttachment)
 void VirtualBox::i_onStorageControllerChanged(const Guid &aMachineId, const com::Utf8Str &aControllerName)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateStorageControllerChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
-                                                      aMachineId.toUtf16().raw(), Bstr(aControllerName).raw());
+    HRESULT hrc = ::CreateStorageControllerChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                                        aMachineId.toUtf16().raw(), Bstr(aControllerName).raw());
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3281,7 +3281,7 @@ void VirtualBox::i_onStorageControllerChanged(const Guid &aMachineId, const com:
 void VirtualBox::i_onStorageDeviceChanged(IMediumAttachment *aStorageDevice, const BOOL fRemoved, const BOOL fSilent)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateStorageDeviceChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aStorageDevice, fRemoved, fSilent);
+    HRESULT hrc = ::CreateStorageDeviceChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aStorageDevice, fRemoved, fSilent);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3292,7 +3292,7 @@ void VirtualBox::i_onStorageDeviceChanged(IMediumAttachment *aStorageDevice, con
 void VirtualBox::i_onMachineStateChange(const Guid &aId, MachineState_T aState)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateMachineStateChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aState);
+    HRESULT hrc = ::CreateMachineStateChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aState);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3303,7 +3303,7 @@ void VirtualBox::i_onMachineStateChange(const Guid &aId, MachineState_T aState)
 void VirtualBox::i_onMachineDataChange(const Guid &aId, BOOL aTemporary)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateMachineDataChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aTemporary);
+    HRESULT hrc = ::CreateMachineDataChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aTemporary);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3320,7 +3320,7 @@ BOOL VirtualBox::i_onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR a
     AssertComRCReturn(autoCaller.rc(), FALSE);
 
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateExtraDataCanChangeEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aKey, aValue);
+    HRESULT hrc = ::CreateExtraDataCanChangeEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aKey, aValue);
     AssertComRCReturn(hrc, TRUE);
 
     VBoxEventDesc EvtDesc(ptrEvent, m->pEventSource);
@@ -3356,7 +3356,7 @@ BOOL VirtualBox::i_onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR a
 void VirtualBox::i_onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateExtraDataChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aKey, aValue);
+    HRESULT hrc = ::CreateExtraDataChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aKey, aValue);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3367,7 +3367,7 @@ void VirtualBox::i_onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVal
 void VirtualBox::i_onMachineRegistered(const Guid &aId, BOOL aRegistered)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateMachineRegisteredEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aRegistered);
+    HRESULT hrc = ::CreateMachineRegisteredEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aRegistered);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3379,7 +3379,7 @@ void VirtualBox::i_onMachineRegistered(const Guid &aId, BOOL aRegistered)
 void VirtualBox::i_onSessionStateChange(const Guid &aId, SessionState_T aState)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateSessionStateChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aState);
+    HRESULT hrc = ::CreateSessionStateChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aId.toUtf16().raw(), aState);
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3390,8 +3390,8 @@ void VirtualBox::i_onSessionStateChange(const Guid &aId, SessionState_T aState)
 void VirtualBox::i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateSnapshotTakenEvent(ptrEvent.asOutParam(), m->pEventSource,
-                                           aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
+    HRESULT hrc = ::CreateSnapshotTakenEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                             aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3402,8 +3402,8 @@ void VirtualBox::i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshot
 void VirtualBox::i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateSnapshotDeletedEvent(ptrEvent.asOutParam(), m->pEventSource,
-                                             aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
+    HRESULT hrc = ::CreateSnapshotDeletedEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                               aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3414,8 +3414,8 @@ void VirtualBox::i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapsh
 void VirtualBox::i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateSnapshotRestoredEvent(ptrEvent.asOutParam(), m->pEventSource,
-                                              aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
+    HRESULT hrc = ::CreateSnapshotRestoredEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                                aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }
@@ -3427,8 +3427,8 @@ void VirtualBox::i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnaps
 void VirtualBox::i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     ComPtr<IEvent> ptrEvent;
-    HRESULT hrc = CreateSnapshotChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
-                                             aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
+    HRESULT hrc = ::CreateSnapshotChangedEvent(ptrEvent.asOutParam(), m->pEventSource,
+                                               aMachineId.toUtf16().raw(), aSnapshotId.toUtf16().raw());
     AssertComRCReturnVoid(hrc);
     i_postEvent(new AsyncEvent(this, ptrEvent));
 }

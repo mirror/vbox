@@ -268,8 +268,8 @@ HRESULT Mouse::init (ConsoleMouseInterface *parent)
     AssertComRCReturnRC(rc);
 
     ComPtr<IEvent> ptrEvent;
-    rc = CreateGuestMouseEvent(ptrEvent.asOutParam(), mEventSource,
-                               (GuestMouseEventMode_T)0, 0 /*x*/, 0 /*y*/, 0 /*z*/, 0 /*w*/, 0 /*buttons*/);
+    rc = ::CreateGuestMouseEvent(ptrEvent.asOutParam(), mEventSource,
+                                 (GuestMouseEventMode_T)0, 0 /*x*/, 0 /*y*/, 0 /*z*/, 0 /*w*/, 0 /*buttons*/);
     AssertComRCReturnRC(rc);
     mMouseEvent.init(ptrEvent, mEventSource);
 
