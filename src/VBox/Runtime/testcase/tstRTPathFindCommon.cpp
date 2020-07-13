@@ -45,10 +45,10 @@ int main()
 
     struct
     {
-        char  *papszPath1;
-        char  *papszPath2;
-        char  *papszPath3;
-        char  *papszPatCommon;
+        char const *papszPath1;
+        char const *papszPath2;
+        char const *papszPath3;
+        char const *papszPatCommon;
     } aTests[] =
     {
         /* Simple stuff first. */
