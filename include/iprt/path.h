@@ -540,7 +540,6 @@ RTDECL(size_t) RTPathFindCommonEx(const char * const *papcszPaths, size_t cPaths
  * @returns Length (in characters) of the common path, 0 if not found.
  * @param   papcszPaths         Array of paths to find common path for.
  * @param   cPaths              Number of paths in \a papcszPaths.
- * @param   szSeparator         Path separator to use for comparision.
  */
 RTDECL(size_t) RTPathFindCommon(const char * const *papcszPaths, size_t cPaths);
 
