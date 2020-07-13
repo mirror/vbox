@@ -1011,10 +1011,10 @@ public:
         AssertFailedReturn(*this);
     }
 
-    void cloneTo(SafeArray<T>& aOther) const
+    HRESULT cloneTo(SafeArray<T>& aOther) const
     {
         aOther.reset(size());
-        aOther.initFrom(*this);
+        return aOther.initFrom(*this);
     }
 
 
@@ -1087,8 +1087,8 @@ public:
         return list;
     }
 
-    inline void initFrom(const com::SafeArray<T> & aRef);
-    inline void initFrom(const T* aPtr, size_t aSize);
+    inline HRESULT initFrom(const com::SafeArray<T> & aRef);
+    inline HRESULT initFrom(const T* aPtr, size_t aSize);
 
     // Public methods for internal purposes only.
 
@@ -1294,60 +1294,92 @@ protected:
 
 /* Few fast specializations for primitive array types */
 template<>
-inline void com::SafeArray<BYTE>::initFrom(const com::SafeArray<BYTE> & aRef)
+inline HRESULT com::SafeArray<BYTE>::initFrom(const com::SafeArray<BYTE> & aRef)
 {
     size_t sSize = aRef.size();
-    resize(sSize);
-    ::memcpy(raw(), aRef.raw(), sSize);
+    if (resize(sSize))
+    {
+        ::memcpy(raw(), aRef.raw(), sSize);
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 template<>
-inline void com::SafeArray<BYTE>::initFrom(const BYTE* aPtr, size_t aSize)
+inline HRESULT com::SafeArray<BYTE>::initFrom(const BYTE *aPtr, size_t aSize)
 {
-    resize(aSize);
-    ::memcpy(raw(), aPtr, aSize);
+    if (resize(aSize))
+    {
+        ::memcpy(raw(), aPtr, aSize);
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 
 
 template<>
-inline void com::SafeArray<SHORT>::initFrom(const com::SafeArray<SHORT> & aRef)
+inline HRESULT com::SafeArray<SHORT>::initFrom(const com::SafeArray<SHORT> & aRef)
 {
     size_t sSize = aRef.size();
-    resize(sSize);
-    ::memcpy(raw(), aRef.raw(), sSize * sizeof(SHORT));
+    if (resize(sSize))
+    {
+        ::memcpy(raw(), aRef.raw(), sSize * sizeof(SHORT));
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 template<>
-inline void com::SafeArray<SHORT>::initFrom(const SHORT* aPtr, size_t aSize)
+inline HRESULT com::SafeArray<SHORT>::initFrom(const SHORT *aPtr, size_t aSize)
 {
-    resize(aSize);
-    ::memcpy(raw(), aPtr, aSize * sizeof(SHORT));
+    if (resize(aSize))
+    {
+        ::memcpy(raw(), aPtr, aSize * sizeof(SHORT));
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 
 template<>
-inline void com::SafeArray<USHORT>::initFrom(const com::SafeArray<USHORT> & aRef)
+inline HRESULT com::SafeArray<USHORT>::initFrom(const com::SafeArray<USHORT> & aRef)
 {
     size_t sSize = aRef.size();
-    resize(sSize);
-    ::memcpy(raw(), aRef.raw(), sSize * sizeof(USHORT));
+    if (resize(sSize))
+    {
+        ::memcpy(raw(), aRef.raw(), sSize * sizeof(USHORT));
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 template<>
-inline void com::SafeArray<USHORT>::initFrom(const USHORT* aPtr, size_t aSize)
+inline HRESULT com::SafeArray<USHORT>::initFrom(const USHORT *aPtr, size_t aSize)
 {
-    resize(aSize);
-    ::memcpy(raw(), aPtr, aSize * sizeof(USHORT));
+    if (resize(aSize))
+    {
+        ::memcpy(raw(), aPtr, aSize * sizeof(USHORT));
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 
 template<>
-inline void com::SafeArray<LONG>::initFrom(const com::SafeArray<LONG> & aRef)
+inline HRESULT com::SafeArray<LONG>::initFrom(const com::SafeArray<LONG> & aRef)
 {
     size_t sSize = aRef.size();
-    resize(sSize);
-    ::memcpy(raw(), aRef.raw(), sSize * sizeof(LONG));
+    if (resize(sSize))
+    {
+        ::memcpy(raw(), aRef.raw(), sSize * sizeof(LONG));
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 template<>
-inline void com::SafeArray<LONG>::initFrom(const LONG* aPtr, size_t aSize)
+inline HRESULT com::SafeArray<LONG>::initFrom(const LONG *aPtr, size_t aSize)
 {
-    resize(aSize);
-    ::memcpy(raw(), aPtr, aSize * sizeof(LONG));
+    if (resize(aSize))
+    {
+        ::memcpy(raw(), aPtr, aSize * sizeof(LONG));
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 
 
