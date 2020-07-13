@@ -1198,6 +1198,7 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_pColumnVisibilityToggleMenu(0)
     , m_pHostStatsWidget(0)
     , m_fIsCurrentTool(true)
+    , m_iSortIndicatorWidth(0)
 {
     prepare();
 }
@@ -1267,6 +1268,16 @@ void UIResourceMonitorWidget::paintEvent(QPaintEvent *pEvent)
 
 void UIResourceMonitorWidget::prepare()
 {
+    /* Try to guest the sort indicator's width: */
+    int iIndicatorMargin = 3;
+    QIcon sortIndicator = qApp->QApplication::style()->standardIcon(QStyle::SP_TitleBarUnshadeButton);
+    QList<QSize> iconSizes = sortIndicator.availableSizes();
+    foreach(const QSize &msize, iconSizes)
+        m_iSortIndicatorWidth = qMax(m_iSortIndicatorWidth, msize.width());
+    if (m_iSortIndicatorWidth == 0)
+        m_iSortIndicatorWidth = 20;
+    m_iSortIndicatorWidth += 2 * iIndicatorMargin;
+
     loadHiddenColumnList();
     prepareWidgets();
     loadSettings();
@@ -1445,7 +1456,6 @@ void UIResourceMonitorWidget::computeMinimumColumnWidths()
         return;
     QFontMetrics fontMetrics(m_pTableView->font());
     const QMap<int, int> &columnDataStringLengths = m_pModel->dataLengths();
-
     QMap<int, int> columnWidthsInPixels;
     for (int i = 0; i < (int)VMResourceMonitorColumn_Max; ++i)
     {
@@ -1454,7 +1464,8 @@ void UIResourceMonitorWidget::computeMinimumColumnWidths()
         int iMax = iColumnStringWidth > iColumnTitleWidth ? iColumnStringWidth : iColumnTitleWidth;
         columnWidthsInPixels[i] = iMax * fontMetrics.width('x') +
             QApplication::style()->pixelMetric(QStyle::PM_LayoutLeftMargin) +
-            QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin);
+            QApplication::style()->pixelMetric(QStyle::PM_LayoutRightMargin) +
+            m_iSortIndicatorWidth;
     }
     m_pTableView->setMinimumColumnWidths(columnWidthsInPixels);
 }

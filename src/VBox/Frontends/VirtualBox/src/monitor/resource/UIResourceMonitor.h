@@ -121,6 +121,7 @@ private:
     /** @} */
     /** Indicates if this widget's host tool is current tool. */
     bool    m_fIsCurrentTool;
+    int     m_iSortIndicatorWidth;
 };
 
 class UIResourceMonitorFactory : public QIManagerDialogFactory
