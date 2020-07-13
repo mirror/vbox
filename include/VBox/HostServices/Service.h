@@ -29,14 +29,14 @@
 # pragma once
 #endif
 
-#include <memory>  /* for auto_ptr */
-
 #include <VBox/log.h>
 #include <VBox/hgcmsvc.h>
 
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/cpp/utils.h>
+
+#include <new>
 
 
 namespace HGCM
@@ -49,7 +49,7 @@ typedef struct VBOXHGCMSVCTX
 {
     /** HGCM helper functions. */
     PVBOXHGCMSVCHELPERS pHelpers;
-    /*
+    /**
      * Callback function supplied by the host for notification of updates
      * to properties.
      */
@@ -64,36 +64,25 @@ typedef struct VBOXHGCMSVCTX
 class Message
 {
 public:
-
     Message(void);
-
     Message(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
-
     virtual ~Message(void);
 
-    uint32_t GetParamCount(void) const;
-
-    int GetData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) const;
-
-    int GetParmU32(uint32_t uParm, uint32_t *pu32Info) const;
-
-    int GetParmU64(uint32_t uParm, uint64_t *pu64Info) const;
-
-    int GetParmPtr(uint32_t uParm, void **ppvAddr, uint32_t *pcbSize) const;
-
-    uint32_t GetType(void) const;
+    uint32_t    GetParamCount(void) const RT_NOEXCEPT;
+    int         GetData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) const RT_NOEXCEPT;
+    int         GetParmU32(uint32_t uParm, uint32_t *pu32Info) const RT_NOEXCEPT;
+    int         GetParmU64(uint32_t uParm, uint64_t *pu64Info) const RT_NOEXCEPT;
+    int         GetParmPtr(uint32_t uParm, void **ppvAddr, uint32_t *pcbSize) const RT_NOEXCEPT;
+    uint32_t    GetType(void) const RT_NOEXCEPT;
 
 public:
-
-    static int CopyParms(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst,
-                         PVBOXHGCMSVCPARM paParmsSrc, uint32_t cParmsSrc,
-                         bool fDeepCopy);
+    static int  CopyParms(PVBOXHGCMSVCPARM paParmsDst, uint32_t cParmsDst,
+                          PVBOXHGCMSVCPARM paParmsSrc, uint32_t cParmsSrc,
+                          bool fDeepCopy) RT_NOEXCEPT;
 
 protected:
-
-    int initData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
-
-    void reset();
+    int         initData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) RT_NOEXCEPT;
+    void        reset() RT_NOEXCEPT;
 
 protected:
 
@@ -111,52 +100,36 @@ protected:
 class Client
 {
 public:
-
-    Client(uint32_t uClientID);
-
+    Client(uint32_t idClient);
     virtual ~Client(void);
 
 public:
-
-    int Complete(VBOXHGCMCALLHANDLE hHandle, int rcOp = VINF_SUCCESS);
-
-    int CompleteDeferred(int rcOp = VINF_SUCCESS);
-
-    uint32_t GetClientID(void) const;
-
-    VBOXHGCMCALLHANDLE GetHandle(void) const;
-
-    uint32_t GetMsgType(void) const;
-
-    uint32_t GetMsgParamCount(void) const;
-
-    uint32_t GetProtocolVer(void) const;
-
-    bool IsDeferred(void) const;
-
-    void SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-
-    void SetProtocolVer(uint32_t uVersion);
-
-    void SetSvcContext(const VBOXHGCMSVCTX &SvcCtx);
+    int         Complete(VBOXHGCMCALLHANDLE hHandle, int rcOp = VINF_SUCCESS) RT_NOEXCEPT;
+    int         CompleteDeferred(int rcOp = VINF_SUCCESS) RT_NOEXCEPT;
+    uint32_t    GetClientID(void) const RT_NOEXCEPT;
+    VBOXHGCMCALLHANDLE GetHandle(void) const RT_NOEXCEPT;
+    uint32_t    GetMsgType(void) const RT_NOEXCEPT;
+    uint32_t    GetMsgParamCount(void) const RT_NOEXCEPT;
+    uint32_t    GetProtocolVer(void) const RT_NOEXCEPT;
+    bool        IsDeferred(void) const RT_NOEXCEPT;
+    void        SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT;
+    void        SetProtocolVer(uint32_t uVersion) RT_NOEXCEPT;
+    void        SetSvcContext(const VBOXHGCMSVCTX &SvcCtx) RT_NOEXCEPT;
 
 public:
-
-    int SetDeferredMsgInfo(uint32_t uMsg, uint32_t cParms);
-
-    int SetDeferredMsgInfo(const Message *pMessage);
+    int         SetDeferredMsgInfo(uint32_t uMsg, uint32_t cParms) RT_NOEXCEPT;
+    int         SetDeferredMsgInfo(const Message *pMessage) RT_NOEXCEPT;
 
 protected:
-
-    int completeInternal(VBOXHGCMCALLHANDLE hHandle, int rcOp);
-
-    void reset(void);
+    int         completeInternal(VBOXHGCMCALLHANDLE hHandle, int rcOp) RT_NOEXCEPT;
+    void        reset(void) RT_NOEXCEPT;
 
 protected:
-
     /** The client's HGCM client ID. */
-    uint32_t           m_uClientID;
-    /** Optional protocol version the client uses. Set to 0 by default. */
+    uint32_t           m_idClient;
+    /** Optional protocol version the client uses. Set to 0 by default.
+     * @todo r=bird: This does not belong here.  Whether a service has a "protocol
+     * version" isn't given and I've argued that it's an inflexible bad idea. */
     uint32_t           m_uProtocolVer;
     /** The HGCM service context this client is bound to. */
     VBOXHGCMSVCTX      m_SvcCtx;
@@ -171,7 +144,8 @@ protected:
     {
         /** The client's HGCM call handle. Needed for completing a deferred call. */
         VBOXHGCMCALLHANDLE hHandle;
-        /** Message type (function number) to use when completing the deferred call. */
+        /** Message type (function number) to use when completing the deferred call.
+         * @todo r=bird: uType or uMsg? Make up your mind (Message::m_uMsg).  */
         uint32_t           uType;
         /** Parameter count to use when completing the deferred call. */
         uint32_t           cParms;
@@ -203,27 +177,16 @@ public:
                 rc = VERR_VERSION_MISMATCH;
             else
             {
-                RT_GCC_NO_WARN_DEPRECATED_BEGIN
-                std::auto_ptr<AbstractService> apService;
-                /* No exceptions may propagate outside. */
-                try
-                {
-                    apService = std::auto_ptr<AbstractService>(new T(pTable->pHelpers));
-                } catch (int rcThrown)
-                {
-                    rc = rcThrown;
-                } catch (...)
-                {
-                    rc = VERR_UNRESOLVED_ERROR;
-                }
-                RT_GCC_NO_WARN_DEPRECATED_END
+                AbstractService *pService = NULL;
+                /* No exceptions may propagate outside (callbacks like this one are nothrow/noexcept). */
+                try { pService = new T(pTable->pHelpers); }
+                catch (std::bad_alloc &) { rc = VERR_NO_MEMORY; }
+                catch (...)              { rc = VERR_UNEXPECTED_EXCEPTION; }
                 if (RT_SUCCESS(rc))
                 {
-                    /*
-                     * We don't need an additional client data area on the host,
-                     * because we're a class which can have members for that :-).
-                     */
-                    pTable->cbClient = 0;
+                    /* We don't need an additional client data area on the host,
+                       because we're a class which can have members for that :-). */
+                    pTable->cbClient              = 0;
 
                     /* These functions are mandatory */
                     pTable->pfnUnload             = svcUnload;
@@ -237,11 +200,11 @@ public:
                     pTable->pfnRegisterExtension  = NULL;
 
                     /* Let the service itself initialize. */
-                    rc = apService->init(pTable);
-
-                    /* Only on success stop the auto release of the auto_ptr. */
+                    rc = pService->init(pTable);
                     if (RT_SUCCESS(rc))
-                        pTable->pvService = apService.release();
+                        pTable->pvService = pService;
+                    else
+                        delete pService;
                 }
             }
         }
@@ -257,12 +220,15 @@ protected:
         RT_ZERO(m_SvcCtx);
         m_SvcCtx.pHelpers = pHelpers;
     }
-    virtual int  init(VBOXHGCMSVCFNTABLE *ptable) { RT_NOREF1(ptable); return VINF_SUCCESS; }
-    virtual int  uninit() { return VINF_SUCCESS; }
-    virtual int  clientConnect(uint32_t u32ClientID, void *pvClient) = 0;
-    virtual int  clientDisconnect(uint32_t u32ClientID, void *pvClient) = 0;
-    virtual void guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) = 0;
-    virtual int  hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+    virtual int  init(VBOXHGCMSVCFNTABLE *ptable) RT_NOEXCEPT
+    { RT_NOREF1(ptable); return VINF_SUCCESS; }
+    virtual int  uninit()  RT_NOEXCEPT
+    { return VINF_SUCCESS; }
+    virtual int  clientConnect(uint32_t idClient, void *pvClient) RT_NOEXCEPT = 0;
+    virtual int  clientDisconnect(uint32_t idClient, void *pvClient) RT_NOEXCEPT = 0;
+    virtual void guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idClient, void *pvClient, uint32_t eFunction,
+                           uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT = 0;
+    virtual int  hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
     { RT_NOREF3(eFunction, cParms, paParms); return VINF_SUCCESS; }
 
     /** Type definition for use in callback functions. */
@@ -290,16 +256,16 @@ protected:
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
     static DECLCALLBACK(int) svcConnect(void *pvService,
-                                        uint32_t u32ClientID,
+                                        uint32_t idClient,
                                         void *pvClient,
                                         uint32_t fRequestor,
                                         bool fRestoring)
     {
         RT_NOREF(fRequestor, fRestoring);
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
-        LogFlowFunc(("pvService=%p, u32ClientID=%u, pvClient=%p\n", pvService, u32ClientID, pvClient));
+        LogFlowFunc(("pvService=%p, idClient=%u, pvClient=%p\n", pvService, idClient, pvClient));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
-        int rc = pSelf->clientConnect(u32ClientID, pvClient);
+        int rc = pSelf->clientConnect(idClient, pvClient);
         LogFlowFunc(("rc=%Rrc\n", rc));
         return rc;
     }
@@ -309,13 +275,13 @@ protected:
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
     static DECLCALLBACK(int) svcDisconnect(void *pvService,
-                                           uint32_t u32ClientID,
+                                           uint32_t idClient,
                                            void *pvClient)
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
-        LogFlowFunc(("pvService=%p, u32ClientID=%u, pvClient=%p\n", pvService, u32ClientID, pvClient));
+        LogFlowFunc(("pvService=%p, idClient=%u, pvClient=%p\n", pvService, idClient, pvClient));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
-        int rc = pSelf->clientDisconnect(u32ClientID, pvClient);
+        int rc = pSelf->clientDisconnect(idClient, pvClient);
         LogFlowFunc(("rc=%Rrc\n", rc));
         return rc;
     }
@@ -324,9 +290,9 @@ protected:
      * @copydoc VBOXHGCMSVCFNTABLE::pfnCall
      * Wraps to the call member function
      */
-    static DECLCALLBACK(void) svcCall(void * pvService,
+    static DECLCALLBACK(void) svcCall(void *pvService,
                                       VBOXHGCMCALLHANDLE callHandle,
-                                      uint32_t u32ClientID,
+                                      uint32_t idClient,
                                       void *pvClient,
                                       uint32_t u32Function,
                                       uint32_t cParms,
@@ -334,9 +300,10 @@ protected:
                                       uint64_t tsArrival)
     {
         AssertLogRelReturnVoid(VALID_PTR(pvService));
-        LogFlowFunc(("pvService=%p, callHandle=%p, u32ClientID=%u, pvClient=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, callHandle, u32ClientID, pvClient, u32Function, cParms, paParms));
+        LogFlowFunc(("pvService=%p, callHandle=%p, idClient=%u, pvClient=%p, u32Function=%u, cParms=%u, paParms=%p\n",
+                     pvService, callHandle, idClient, pvClient, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
-        pSelf->guestCall(callHandle, u32ClientID, pvClient, u32Function, cParms, paParms);
+        pSelf->guestCall(callHandle, idClient, pvClient, u32Function, cParms, paParms);
         LogFlowFunc(("returning\n"));
         RT_NOREF_PV(tsArrival);
     }

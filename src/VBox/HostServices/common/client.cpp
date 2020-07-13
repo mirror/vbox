@@ -26,8 +26,8 @@
 
 using namespace HGCM;
 
-Client::Client(uint32_t uClientID)
-    : m_uClientID(uClientID)
+Client::Client(uint32_t idClient)
+    : m_idClient(idClient)
     , m_uProtocolVer(0)
     , m_fDeferred(false)
 {
@@ -48,9 +48,9 @@ Client::~Client(void)
  * @param   hHandle             Call handle to complete guest call for.
  * @param   rcOp                Return code to return to the guest side.
  */
-int Client::completeInternal(VBOXHGCMCALLHANDLE hHandle, int rcOp)
+int Client::completeInternal(VBOXHGCMCALLHANDLE hHandle, int rcOp) RT_NOEXCEPT
 {
-    LogFlowThisFunc(("uClientID=%RU32\n", m_uClientID));
+    LogFlowThisFunc(("idClient=%RU32\n", m_idClient));
 
     if (   m_SvcCtx.pHelpers
         && m_SvcCtx.pHelpers->pfnCallComplete)
@@ -67,7 +67,7 @@ int Client::completeInternal(VBOXHGCMCALLHANDLE hHandle, int rcOp)
 /**
  * Resets the client's internal state.
  */
-void Client::reset(void)
+void Client::reset(void) RT_NOEXCEPT
 {
    m_fDeferred = false;
 
@@ -82,7 +82,7 @@ void Client::reset(void)
  * @param   hHandle             Call handle to complete guest call for.
  * @param   rcOp                Return code to return to the guest side.
  */
-int Client::Complete(VBOXHGCMCALLHANDLE hHandle, int rcOp /* = VINF_SUCCESS */)
+int Client::Complete(VBOXHGCMCALLHANDLE hHandle, int rcOp /* = VINF_SUCCESS */) RT_NOEXCEPT
 {
     return completeInternal(hHandle, rcOp);
 }
@@ -94,7 +94,7 @@ int Client::Complete(VBOXHGCMCALLHANDLE hHandle, int rcOp /* = VINF_SUCCESS */)
  * @returns IPRT status code. VERR_INVALID_STATE if the client is not in deferred mode.
  * @param   rcOp                Return code to return to the guest side.
  */
-int Client::CompleteDeferred(int rcOp)
+int Client::CompleteDeferred(int rcOp) RT_NOEXCEPT
 {
     if (m_fDeferred)
     {
@@ -107,7 +107,7 @@ int Client::CompleteDeferred(int rcOp)
         return rc;
     }
 
-    AssertMsg(m_fDeferred, ("Client %RU32 is not in deferred mode\n", m_uClientID));
+    AssertMsg(m_fDeferred, ("Client %RU32 is not in deferred mode\n", m_idClient));
     return VERR_INVALID_STATE;
 }
 
@@ -116,7 +116,7 @@ int Client::CompleteDeferred(int rcOp)
  *
  * @returns HGCM handle.
  */
-VBOXHGCMCALLHANDLE Client::GetHandle(void) const
+VBOXHGCMCALLHANDLE Client::GetHandle(void) const RT_NOEXCEPT
 {
     return m_Deferred.hHandle;
 }
@@ -126,12 +126,12 @@ VBOXHGCMCALLHANDLE Client::GetHandle(void) const
  *
  * @returns HGCM handle.
  */
-uint32_t Client::GetMsgType(void) const
+uint32_t Client::GetMsgType(void) const RT_NOEXCEPT
 {
     return m_Deferred.uType;
 }
 
-uint32_t Client::GetMsgParamCount(void) const
+uint32_t Client::GetMsgParamCount(void) const RT_NOEXCEPT
 {
     return m_Deferred.cParms;
 }
@@ -141,9 +141,9 @@ uint32_t Client::GetMsgParamCount(void) const
  *
  * @returns The client's (HGCM) ID.
  */
-uint32_t Client::GetClientID(void) const
+uint32_t Client::GetClientID(void) const RT_NOEXCEPT
 {
-    return m_uClientID;
+    return m_idClient;
 }
 
 /**
@@ -151,7 +151,7 @@ uint32_t Client::GetClientID(void) const
  *
  * @returns Protocol version, or 0 if not set.
  */
-uint32_t Client::GetProtocolVer(void) const
+uint32_t Client::GetProtocolVer(void) const RT_NOEXCEPT
 {
     return m_uProtocolVer;
 }
@@ -161,7 +161,7 @@ uint32_t Client::GetProtocolVer(void) const
  *
  * @returns \c True if in deferred mode, \c False if not.
  */
-bool Client::IsDeferred(void) const
+bool Client::IsDeferred(void) const RT_NOEXCEPT
 {
     return m_fDeferred;
 }
@@ -170,9 +170,9 @@ bool Client::IsDeferred(void) const
  * Set the client's status to deferred, meaning that it does not return to the caller
  * until CompleteDeferred() has been called.
  */
-void Client::SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+void Client::SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
 {
-    LogFlowThisFunc(("uClient=%RU32\n", m_uClientID));
+    LogFlowThisFunc(("uClient=%RU32\n", m_idClient));
 
 #ifndef DEBUG_bird /** r=bird: This bugger triggers in the DnD service when restoring saved state.  Not tested?  */
     AssertMsg(m_fDeferred == false, ("Client already in deferred mode\n"));
@@ -191,7 +191,7 @@ void Client::SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint3
  *
  * @param   uVersion            Version number to set.
  */
-void Client::SetProtocolVer(uint32_t uVersion)
+void Client::SetProtocolVer(uint32_t uVersion) RT_NOEXCEPT
 {
     m_uProtocolVer = uVersion;
 }
@@ -201,7 +201,7 @@ void Client::SetProtocolVer(uint32_t uVersion)
  *
  * @param   SvcCtx              Service context to set.
  */
-void Client::SetSvcContext(const VBOXHGCMSVCTX &SvcCtx)
+void Client::SetSvcContext(const VBOXHGCMSVCTX &SvcCtx) RT_NOEXCEPT
 {
     m_SvcCtx = SvcCtx;
 }
@@ -215,7 +215,7 @@ void Client::SetSvcContext(const VBOXHGCMSVCTX &SvcCtx)
  * @param   uMsg                Message type (number) to set.
  * @param   cParms              Number of parameters the message needs.
  */
-int Client::SetDeferredMsgInfo(uint32_t uMsg, uint32_t cParms)
+int Client::SetDeferredMsgInfo(uint32_t uMsg, uint32_t cParms) RT_NOEXCEPT
 {
     if (m_fDeferred)
     {
@@ -242,7 +242,7 @@ int Client::SetDeferredMsgInfo(uint32_t uMsg, uint32_t cParms)
  * @returns IPRT status code.
  * @param   pMessage            Message to get message type and required parameters from.
  */
-int Client::SetDeferredMsgInfo(const Message *pMessage)
+int Client::SetDeferredMsgInfo(const Message *pMessage) RT_NOEXCEPT
 {
     AssertPtrReturn(pMessage, VERR_INVALID_POINTER);
     return SetDeferredMsgInfo(pMessage->GetType(), pMessage->GetParamCount());
