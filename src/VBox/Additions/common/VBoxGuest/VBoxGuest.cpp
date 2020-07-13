@@ -119,20 +119,20 @@ static const uint32_t g_cbChangeMemBalloonReq = RT_UOFFSETOF(VMMDevChangeMemBall
  * Drag in the rest of IRPT since we share it with the
  * rest of the kernel modules on Solaris.
  */
-PFNRT g_apfnVBoxGuestIPRTDeps[] =
+struct CLANG11WEIRDNESS { PFNRT pfn; } g_apfnVBoxGuestIPRTDeps[] =
 {
     /* VirtioNet */
-    (PFNRT)RTRandBytes,
+    { (PFNRT)RTRandBytes },
     /* RTSemMutex* */
-    (PFNRT)RTSemMutexCreate,
-    (PFNRT)RTSemMutexDestroy,
-    (PFNRT)RTSemMutexRequest,
-    (PFNRT)RTSemMutexRequestNoResume,
-    (PFNRT)RTSemMutexRequestDebug,
-    (PFNRT)RTSemMutexRequestNoResumeDebug,
-    (PFNRT)RTSemMutexRelease,
-    (PFNRT)RTSemMutexIsOwned,
-    NULL
+    { (PFNRT)RTSemMutexCreate },
+    { (PFNRT)RTSemMutexDestroy },
+    { (PFNRT)RTSemMutexRequest },
+    { (PFNRT)RTSemMutexRequestNoResume },
+    { (PFNRT)RTSemMutexRequestDebug },
+    { (PFNRT)RTSemMutexRequestNoResumeDebug },
+    { (PFNRT)RTSemMutexRelease },
+    { (PFNRT)RTSemMutexIsOwned },
+    { NULL }
 };
 #endif  /* RT_OS_DARWIN || RT_OS_SOLARIS  */
 
