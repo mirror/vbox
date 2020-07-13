@@ -25840,7 +25840,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IRuntimeErrorEvent" extends="IEvent"
     uuid="883DD18B-0721-4CDE-867C-1A82ABAF914C"
-    wsmap="managed" autogen="VBoxEvent" id="OnRuntimeError"
+    wsmap="managed" autogen="VBoxEvent" autogenflags="BSTR" id="OnRuntimeError"
     >
     <desc>
       Notification when an error happens during the virtual
@@ -25936,7 +25936,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IExtraDataChangedEvent" extends="IEvent"
     uuid="024F00CE-6E0B-492A-A8D0-968472A94DC7"
-    wsmap="managed" autogen="VBoxEvent" id="OnExtraDataChanged"
+    wsmap="managed" autogen="VBoxEvent" autogenflags="BSTR" id="OnExtraDataChanged"
     >
     <desc>
       Notification when machine specific or global extra data
@@ -26177,7 +26177,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IHostPCIDevicePlugEvent" extends="IMachineEvent"
     waitable="yes"
     uuid="a0bad6df-d612-47d3-89d4-db3992533948"
-    wsmap="managed" autogen="VBoxEvent" id="OnHostPCIDevicePlug"
+    wsmap="managed" autogen="VBoxEvent" autogenflags="BSTR" id="OnHostPCIDevicePlug"
     >
     <desc>
       Notification when host PCI device is plugged/unplugged. Plugging
@@ -26418,7 +26418,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface name="INATNetworkCreationDeletionEvent" extends="INATNetworkAlterEvent"
              uuid="8d984a7e-b855-40b8-ab0c-44d3515b4528"
-             wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkCreationDeletion">
+             wsmap="managed" autogen="VBoxEvent" autogenflags="BSTR" id="OnNATNetworkCreationDeletion">
     <attribute name="creationEvent" type="boolean" readonly="yes"/>
   </interface>
 

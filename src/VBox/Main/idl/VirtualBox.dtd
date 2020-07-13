@@ -66,6 +66,9 @@
     <!ATTLIST interface autogen CDATA #IMPLIED>
                 <!-- autogen names the style of code auto-generation for this
                      interface (currently only VBoxEvent). -->
+    <!ATTLIST interface autogenflags CDATA #IMPLIED>
+                <!-- autogenflags contains autogen tweaks.
+                     For autoget=VBoxEvent: 'BSTR' - generate IN_BSTR variants of the functions. -->
     <!ATTLIST interface id CDATA #IMPLIED>
                 <!-- id is only relevant for event interfaces, and specifies
                      which const name will be generated. -->

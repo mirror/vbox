@@ -34,7 +34,7 @@
 
 <!-- $G_kind contains what kind of COM class implementation we generate -->
 <xsl:variable name="G_xsltFilename" select="'autogen.xsl'" />
-<xsl:variable name="G_generateBstrVariants" select="'yes'" />
+<xsl:variable name="G_generateBstrVariants" select="'no'" />
 
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -904,7 +904,7 @@ private:
       <xsl:with-param name="utf8str" select="'yes'"/>
     </xsl:call-template>
 
-    <xsl:if test="($hasStringAttribs != '') and ($G_generateBstrVariants = 'yes')">
+    <xsl:if test="($hasStringAttribs != '') and (($G_generateBstrVariants = 'yes') or (contains(@autogenflags, 'BSTR')))">
       <xsl:call-template name="genReinitFunction">
         <xsl:with-param name="name" select="@name"/>
         <xsl:with-param name="evname" select="$evname"/>
@@ -926,7 +926,7 @@ private:
     <xsl:with-param name="utf8str" select="'yes'"/>
   </xsl:call-template>
 
-  <xsl:if test="($hasStringAttribs != '') and ($G_generateBstrVariants = 'yes')">
+  <xsl:if test="($hasStringAttribs != '') and (($G_generateBstrVariants = 'yes') or (contains(@autogenflags, 'BSTR')))">
     <xsl:call-template name="genCreateFunction">
       <xsl:with-param name="name" select="@name"/>
       <xsl:with-param name="evname" select="$evname"/>
@@ -945,7 +945,7 @@ private:
     <xsl:with-param name="utf8str" select="'yes'"/>
   </xsl:call-template>
 
-  <xsl:if test="($hasStringAttribs != '') and ($G_generateBstrVariants = 'yes')">
+  <xsl:if test="($hasStringAttribs != '') and (($G_generateBstrVariants = 'yes') or (contains(@autogenflags, 'BSTR')))">
     <xsl:call-template name="genFireFunction">
       <xsl:with-param name="evname" select="$evname"/>
       <xsl:with-param name="ifname" select="$ifname"/>
@@ -1042,7 +1042,7 @@ private:
     </xsl:call-template>
     <xsl:text>);&#10;</xsl:text>
 
-    <xsl:if test="($hasStringAttribs != '') and ($G_generateBstrVariants = 'yes')">
+    <xsl:if test="($hasStringAttribs != '') and (($G_generateBstrVariants = 'yes') or (contains(@autogenflags, 'BSTR')))">
       <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Fire', $evname, '(IEventSource *aSource')"/>
       <xsl:call-template name="genFormalParams">
         <xsl:with-param name="name" select="$ifname" />
@@ -1077,7 +1077,7 @@ private:
     </xsl:call-template>
     <xsl:text>);&#10;</xsl:text>
 
-    <xsl:if test="($hasStringAttribs != '') and ($G_generateBstrVariants = 'yes')">
+    <xsl:if test="($hasStringAttribs != '') and (($G_generateBstrVariants = 'yes') or (contains(@autogenflags, 'BSTR')))">
       <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Create', $evname, '(IEvent **aEvent, IEventSource *aSource')"/>
       <xsl:call-template name="genFormalParams">
         <xsl:with-param name="name" select="$ifname" />
@@ -1114,7 +1114,7 @@ private:
       </xsl:call-template>
       <xsl:text>);&#10;</xsl:text>
 
-      <xsl:if test="($hasStringAttribs != '') and ($G_generateBstrVariants = 'yes')">
+      <xsl:if test="($hasStringAttribs != '') and (($G_generateBstrVariants = 'yes') or (contains(@autogenflags, 'BSTR')))">
         <xsl:value-of select="concat('DECLHIDDEN(HRESULT) Reinit', $evname, '(IEvent *aEvent')"/>
         <xsl:call-template name="genFormalParams">
           <xsl:with-param name="name" select="$ifname" />
