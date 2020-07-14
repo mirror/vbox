@@ -87,7 +87,9 @@ private:
     /** The total data (the counter value we get from IMachineDebugger API). For the metrics
       * we get from IMachineDebugger m_data values are computed as deltas of total values t - (t-1) */
     quint64 m_iTotal[DATA_SERIES_SIZE];
+#if 0 /* Unused according to Clang 11. */
     int m_iMaximumQueueSize;
+#endif
     bool m_fRequiresGuestAdditions;
     /** Used for metrices whose data is computed as total deltas. That is we receieve only total value and
       * compute time step data from total deltas. m_isInitialised is true if the total has been set first time. */
