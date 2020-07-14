@@ -26955,14 +26955,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The fingerprint of the ssh key that is authorized to access
         the machine's console connection.
       </desc>
-    </attribute>>
+    </attribute>
 
     <attribute name="serialConsoleCommand" type="wstring" readonly="yes">
       <desc>
         The shell command to establish ssh connection to the cloud
         machine serial console.
       </desc>
-    </attribute>>>
+    </attribute>
 
     <attribute name="VNCConsoleCommand" type="wstring" readonly="yes">
       <desc>
