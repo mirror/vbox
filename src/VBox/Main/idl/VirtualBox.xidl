@@ -26964,10 +26964,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="serialConsoleCommandWindows" type="wstring" readonly="yes">
+      <desc>
+        The PowerShell command to establish ssh connection to the
+        cloud machine serial console using PuTTY's plink.
+      </desc>
+    </attribute>
+
     <attribute name="VNCConsoleCommand" type="wstring" readonly="yes">
       <desc>
         The shell command to establish ssh port forwarding for the
         VNC connection to the cloud machine console.
+      </desc>
+    </attribute>
+
+    <attribute name="VNCConsoleCommandWindows" type="wstring" readonly="yes">
+      <desc>
+        The PowerShell command to establish ssh port forwarding for the
+        VNC connection to the cloud machine console using PuTTY's plink.
       </desc>
     </attribute>
 
