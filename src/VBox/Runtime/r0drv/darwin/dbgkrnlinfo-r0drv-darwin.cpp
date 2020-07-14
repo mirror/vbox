@@ -382,8 +382,10 @@ static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis, const 
         KNOWN_ENTRY(nanotime),
         KNOWN_ENTRY(nop_close),
         KNOWN_ENTRY(proc_pid),
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 101500
         KNOWN_ENTRY(sock_accept),
         KNOWN_ENTRY(sockopt_name),
+#endif
         //KNOWN_ENTRY(spec_write),
         KNOWN_ENTRY(suword),
         //KNOWN_ENTRY(sysctl_int),
