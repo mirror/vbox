@@ -24,6 +24,73 @@
 #import <AppKit/NSEvent.h>
 #include <Carbon/Carbon.h>
 
+/* They just had to rename a whole load of constants in 10.12. Just wrap the carp up
+   in some defines for now as we need to keep building with both 10.9 and 10.13+: */
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
+# define VBOX_NSAlphaShiftKeyMask    NSEventModifierFlagCapsLock
+# define VBOX_NSAlternateKeyMask     NSEventModifierFlagOption
+# define VBOX_NSAppKitDefined        NSEventTypeAppKitDefined
+# define VBOX_NSApplicationDefined   NSEventTypeApplicationDefined
+# define VBOX_NSCommandKeyMask       NSEventModifierFlagCommand
+# define VBOX_NSControlKeyMask       NSEventModifierFlagControl
+# define VBOX_NSCursorUpdate         NSEventTypeCursorUpdate
+# define VBOX_NSFlagsChanged         NSEventTypeFlagsChanged
+# define VBOX_NSFunctionKeyMask      NSEventModifierFlagFunction
+# define VBOX_NSHelpKeyMask          NSEventModifierFlagHelp
+# define VBOX_NSKeyDown              NSEventTypeKeyDown
+# define VBOX_NSKeyUp                NSEventTypeKeyUp
+# define VBOX_NSLeftMouseDown        NSEventTypeLeftMouseDown
+# define VBOX_NSLeftMouseDragged     NSEventTypeLeftMouseDragged
+# define VBOX_NSLeftMouseUp          NSEventTypeLeftMouseUp
+# define VBOX_NSMouseEntered         NSEventTypeMouseEntered
+# define VBOX_NSMouseExited          NSEventTypeMouseExited
+# define VBOX_NSMouseMoved           NSEventTypeMouseMoved
+# define VBOX_NSNumericPadKeyMask    NSEventModifierFlagNumericPad
+# define VBOX_NSOtherMouseDown       NSEventTypeOtherMouseDown
+# define VBOX_NSOtherMouseDragged    NSEventTypeOtherMouseDragged
+# define VBOX_NSOtherMouseUp         NSEventTypeOtherMouseUp
+# define VBOX_NSPeriodic             NSEventTypePeriodic
+# define VBOX_NSRightMouseDown       NSEventTypeRightMouseDown
+# define VBOX_NSRightMouseDragged    NSEventTypeRightMouseDragged
+# define VBOX_NSRightMouseUp         NSEventTypeRightMouseUp
+# define VBOX_NSScrollWheel          NSEventTypeScrollWheel
+# define VBOX_NSShiftKeyMask         NSEventModifierFlagShift
+# define VBOX_NSSystemDefined        NSEventTypeSystemDefined
+# define VBOX_NSTabletPoint          NSEventTypeTabletPoint
+# define VBOX_NSTabletProximity      NSEventTypeTabletProximity
+#else
+# define VBOX_NSAlphaShiftKeyMask    NSAlphaShiftKeyMask
+# define VBOX_NSAlternateKeyMask     NSAlternateKeyMask
+# define VBOX_NSAppKitDefined        NSAppKitDefined
+# define VBOX_NSApplicationDefined   NSApplicationDefined
+# define VBOX_NSCommandKeyMask       NSCommandKeyMask
+# define VBOX_NSControlKeyMask       NSControlKeyMask
+# define VBOX_NSCursorUpdate         NSCursorUpdate
+# define VBOX_NSFlagsChanged         NSFlagsChanged
+# define VBOX_NSFunctionKeyMask      NSFunctionKeyMask
+# define VBOX_NSHelpKeyMask          NSHelpKeyMask
+# define VBOX_NSKeyDown              NSKeyDown
+# define VBOX_NSKeyUp                NSKeyUp
+# define VBOX_NSLeftMouseDown        NSLeftMouseDown
+# define VBOX_NSLeftMouseDragged     NSLeftMouseDragged
+# define VBOX_NSLeftMouseUp          NSLeftMouseUp
+# define VBOX_NSMouseEntered         NSMouseEntered
+# define VBOX_NSMouseExited          NSMouseExited
+# define VBOX_NSMouseMoved           NSMouseMoved
+# define VBOX_NSNumericPadKeyMask    NSNumericPadKeyMask
+# define VBOX_NSOtherMouseDown       NSOtherMouseDown
+# define VBOX_NSOtherMouseDragged    NSOtherMouseDragged
+# define VBOX_NSOtherMouseUp         NSOtherMouseUp
+# define VBOX_NSPeriodic             NSPeriodic
+# define VBOX_NSRightMouseDown       NSRightMouseDown
+# define VBOX_NSRightMouseDragged    NSRightMouseDragged
+# define VBOX_NSRightMouseUp         NSRightMouseUp
+# define VBOX_NSScrollWheel          NSScrollWheel
+# define VBOX_NSShiftKeyMask         NSShiftKeyMask
+# define VBOX_NSSystemDefined        NSSystemDefined
+# define VBOX_NSTabletPoint          NSTabletPoint
+# define VBOX_NSTabletProximity      NSTabletProximity
+#endif
 
 uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
 {
@@ -31,9 +98,9 @@ uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
     uint32_t fCarbon = 0;
     if (fCocoa)
     {
-        if (fCocoa & NSAlphaShiftKeyMask)
+        if (fCocoa & VBOX_NSAlphaShiftKeyMask)
             fCarbon |= alphaLock;
-        if (fCocoa & (NSShiftKeyMask | NX_DEVICELSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK))
+        if (fCocoa & (VBOX_NSShiftKeyMask | NX_DEVICELSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK))
         {
             if (fCocoa & (NX_DEVICERSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK))
             {
@@ -46,7 +113,7 @@ uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
                 fCarbon |= shiftKey;
         }
 
-        if (fCocoa & (NSControlKeyMask | NX_DEVICELCTLKEYMASK | NX_DEVICERCTLKEYMASK))
+        if (fCocoa & (VBOX_NSControlKeyMask | NX_DEVICELCTLKEYMASK | NX_DEVICERCTLKEYMASK))
         {
             if (fCocoa & (NX_DEVICELCTLKEYMASK | NX_DEVICERCTLKEYMASK))
             {
@@ -59,7 +126,7 @@ uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
                 fCarbon |= controlKey;
         }
 
-        if (fCocoa & (NSAlternateKeyMask | NX_DEVICELALTKEYMASK | NX_DEVICERALTKEYMASK))
+        if (fCocoa & (VBOX_NSAlternateKeyMask | NX_DEVICELALTKEYMASK | NX_DEVICERALTKEYMASK))
         {
             if (fCocoa & (NX_DEVICELALTKEYMASK | NX_DEVICERALTKEYMASK))
             {
@@ -72,7 +139,7 @@ uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
                 fCarbon |= optionKey;
         }
 
-        if (fCocoa & (NSCommandKeyMask | NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK))
+        if (fCocoa & (VBOX_NSCommandKeyMask | NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK))
         {
             if (fCocoa & (NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK))
             {
@@ -86,13 +153,13 @@ uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
         }
 
         /*
-        if (fCocoa & NSNumericPadKeyMask)
+        if (fCocoa & VBOX_NSNumericPadKeyMask)
             fCarbon |= ???;
 
-        if (fCocoa & NSHelpKeyMask)
+        if (fCocoa & VBOX_NSHelpKeyMask)
             fCarbon |= ???;
 
-        if (fCocoa & NSFunctionKeyMask)
+        if (fCocoa & VBOX_NSFunctionKeyMask)
             fCarbon |= ???;
         */
     }
@@ -105,29 +172,29 @@ const char *darwinEventTypeName(unsigned long enmEventType)
     switch (enmEventType)
     {
 #define EVT_CASE(nm) case nm: return #nm
-        EVT_CASE(NSLeftMouseDown);
-        EVT_CASE(NSLeftMouseUp);
-        EVT_CASE(NSRightMouseDown);
-        EVT_CASE(NSRightMouseUp);
-        EVT_CASE(NSMouseMoved);
-        EVT_CASE(NSLeftMouseDragged);
-        EVT_CASE(NSRightMouseDragged);
-        EVT_CASE(NSMouseEntered);
-        EVT_CASE(NSMouseExited);
-        EVT_CASE(NSKeyDown);
-        EVT_CASE(NSKeyUp);
-        EVT_CASE(NSFlagsChanged);
-        EVT_CASE(NSAppKitDefined);
-        EVT_CASE(NSSystemDefined);
-        EVT_CASE(NSApplicationDefined);
-        EVT_CASE(NSPeriodic);
-        EVT_CASE(NSCursorUpdate);
-        EVT_CASE(NSScrollWheel);
-        EVT_CASE(NSTabletPoint);
-        EVT_CASE(NSTabletProximity);
-        EVT_CASE(NSOtherMouseDown);
-        EVT_CASE(NSOtherMouseUp);
-        EVT_CASE(NSOtherMouseDragged);
+        EVT_CASE(VBOX_NSLeftMouseDown);
+        EVT_CASE(VBOX_NSLeftMouseUp);
+        EVT_CASE(VBOX_NSRightMouseDown);
+        EVT_CASE(VBOX_NSRightMouseUp);
+        EVT_CASE(VBOX_NSMouseMoved);
+        EVT_CASE(VBOX_NSLeftMouseDragged);
+        EVT_CASE(VBOX_NSRightMouseDragged);
+        EVT_CASE(VBOX_NSMouseEntered);
+        EVT_CASE(VBOX_NSMouseExited);
+        EVT_CASE(VBOX_NSKeyDown);
+        EVT_CASE(VBOX_NSKeyUp);
+        EVT_CASE(VBOX_NSFlagsChanged);
+        EVT_CASE(VBOX_NSAppKitDefined);
+        EVT_CASE(VBOX_NSSystemDefined);
+        EVT_CASE(VBOX_NSApplicationDefined);
+        EVT_CASE(VBOX_NSPeriodic);
+        EVT_CASE(VBOX_NSCursorUpdate);
+        EVT_CASE(VBOX_NSScrollWheel);
+        EVT_CASE(VBOX_NSTabletPoint);
+        EVT_CASE(VBOX_NSTabletProximity);
+        EVT_CASE(VBOX_NSOtherMouseDown);
+        EVT_CASE(VBOX_NSOtherMouseUp);
+        EVT_CASE(VBOX_NSOtherMouseDragged);
 #if MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_5
         EVT_CASE(NSEventTypeGesture);
         EVT_CASE(NSEventTypeMagnify);
@@ -157,20 +224,20 @@ void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
     /* Dump type specific info: */
     switch (enmEventType)
     {
-        case NSLeftMouseDown:
-        case NSLeftMouseUp:
-        case NSRightMouseDown:
-        case NSRightMouseUp:
-        case NSMouseMoved:
+        case VBOX_NSLeftMouseDown:
+        case VBOX_NSLeftMouseUp:
+        case VBOX_NSRightMouseDown:
+        case VBOX_NSRightMouseUp:
+        case VBOX_NSMouseMoved:
 
-        case NSLeftMouseDragged:
-        case NSRightMouseDragged:
-        case NSMouseEntered:
-        case NSMouseExited:
+        case VBOX_NSLeftMouseDragged:
+        case VBOX_NSRightMouseDragged:
+        case VBOX_NSMouseEntered:
+        case VBOX_NSMouseExited:
             break;
 
-        case NSKeyDown:
-        case NSKeyUp:
+        case VBOX_NSKeyDown:
+        case VBOX_NSKeyUp:
         {
             NSUInteger i;
             NSUInteger cch;
@@ -201,10 +268,10 @@ void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
             break;
         }
 
-        case NSFlagsChanged:
+        case VBOX_NSFlagsChanged:
         {
-            NSUInteger fOddBits = NSAlphaShiftKeyMask | NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask
-                                | NSCommandKeyMask | NSNumericPadKeyMask | NSHelpKeyMask | NSFunctionKeyMask
+            NSUInteger fOddBits = VBOX_NSAlphaShiftKeyMask | VBOX_NSShiftKeyMask | VBOX_NSControlKeyMask | VBOX_NSAlternateKeyMask
+                                | VBOX_NSCommandKeyMask | VBOX_NSNumericPadKeyMask | VBOX_NSHelpKeyMask | VBOX_NSFunctionKeyMask
                                 | NX_DEVICELCTLKEYMASK | NX_DEVICELSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK
                                 | NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK | NX_DEVICELALTKEYMASK
                                 | NX_DEVICERALTKEYMASK | NX_DEVICERCTLKEYMASK;
@@ -212,14 +279,14 @@ void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
             printf("    KeyCode=%04x", (int)[pEvent keyCode]);
 #define PRINT_MOD(cnst, nm) do { if (fEventMask & (cnst)) printf(" %s", #nm); } while (0)
             /* device-independent: */
-            PRINT_MOD(NSAlphaShiftKeyMask, "AlphaShift");
-            PRINT_MOD(NSShiftKeyMask, "Shift");
-            PRINT_MOD(NSControlKeyMask, "Ctrl");
-            PRINT_MOD(NSAlternateKeyMask, "Alt");
-            PRINT_MOD(NSCommandKeyMask, "Cmd");
-            PRINT_MOD(NSNumericPadKeyMask, "NumLock");
-            PRINT_MOD(NSHelpKeyMask, "Help");
-            PRINT_MOD(NSFunctionKeyMask, "Fn");
+            PRINT_MOD(VBOX_NSAlphaShiftKeyMask, "AlphaShift");
+            PRINT_MOD(VBOX_NSShiftKeyMask, "Shift");
+            PRINT_MOD(VBOX_NSControlKeyMask, "Ctrl");
+            PRINT_MOD(VBOX_NSAlternateKeyMask, "Alt");
+            PRINT_MOD(VBOX_NSCommandKeyMask, "Cmd");
+            PRINT_MOD(VBOX_NSNumericPadKeyMask, "NumLock");
+            PRINT_MOD(VBOX_NSHelpKeyMask, "Help");
+            PRINT_MOD(VBOX_NSFunctionKeyMask, "Fn");
             /* device-dependent (sort of): */
             PRINT_MOD(NX_DEVICELCTLKEYMASK,   "$L-Ctrl");
             PRINT_MOD(NX_DEVICELSHIFTKEYMASK, "$L-Shift");
@@ -239,17 +306,17 @@ void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
             break;
         }
 
-        case NSAppKitDefined:
-        case NSSystemDefined:
-        case NSApplicationDefined:
-        case NSPeriodic:
-        case NSCursorUpdate:
-        case NSScrollWheel:
-        case NSTabletPoint:
-        case NSTabletProximity:
-        case NSOtherMouseDown:
-        case NSOtherMouseUp:
-        case NSOtherMouseDragged:
+        case VBOX_NSAppKitDefined:
+        case VBOX_NSSystemDefined:
+        case VBOX_NSApplicationDefined:
+        case VBOX_NSPeriodic:
+        case VBOX_NSCursorUpdate:
+        case VBOX_NSScrollWheel:
+        case VBOX_NSTabletPoint:
+        case VBOX_NSTabletProximity:
+        case VBOX_NSOtherMouseDown:
+        case VBOX_NSOtherMouseUp:
+        case VBOX_NSOtherMouseDragged:
 #if MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_5
         case NSEventTypeGesture:
         case NSEventTypeMagnify:
