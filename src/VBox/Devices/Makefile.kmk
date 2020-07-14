@@ -346,6 +346,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    Graphics/DevVGA-SVGA3d-shared.cpp_CXXFLAGS.darwin     = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
    Graphics/DevVGA-SVGA3d-savedstate.cpp_CXXFLAGS.darwin = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
    Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin        = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
+  else if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.14 10.15 10.16 11.0)
+   Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin        = $(VBOX_GCC_Wno-deprecated-declarations)
   endif
  endif
 
@@ -1486,11 +1488,18 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects 
   TEMPLATE_VBoxSVGA3D_CFLAGS.win = $(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CFLAGS.win) \
   	-wd4777
  endif
- TEMPLATE_VBoxSVGA3D_CXXFLAGS    = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CXXFLAGS))
- TEMPLATE_VBoxSVGA3D_OBJCFLAGS   = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCFLAGS))
- TEMPLATE_VBoxSVGA3D_OBJCXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCXXFLAGS))
+ ifeq ($(KBUILD_TARGET),darwin)
+  TEMPLATE_VBoxSVGA3D_CXXFLAGS    = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CXXFLAGS))    $(VBOX_GCC_Wno-deprecated-declarations)
+  TEMPLATE_VBoxSVGA3D_OBJCFLAGS   = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCFLAGS))   $(VBOX_GCC_Wno-deprecated-declarations)
+  TEMPLATE_VBoxSVGA3D_OBJCXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCXXFLAGS)) $(VBOX_GCC_Wno-deprecated-declarations)
+ else
+  TEMPLATE_VBoxSVGA3D_CXXFLAGS    = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_CXXFLAGS))
+  TEMPLATE_VBoxSVGA3D_OBJCFLAGS   = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCFLAGS))
+  TEMPLATE_VBoxSVGA3D_OBJCXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_OBJCXXFLAGS))
+ endif
  TEMPLATE_VBoxSVGA3D_LDFLAGS.darwin  = $(TEMPLATE_$(TEMPLATE_VBoxSVGA3D_EXTENDS)_LDFLAGS.darwin) \
-  	-framework AppKit -framework OpenGL -framework IOKit
+ 	-framework AppKit -framework OpenGL -framework IOKit
+
 
  #
  # The shader library used by the SVGA3D implementation.

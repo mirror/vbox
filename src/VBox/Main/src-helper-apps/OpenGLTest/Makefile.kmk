@@ -30,6 +30,7 @@ VBoxOGLTest_SOURCES = OpenGLTest.cpp
 else
 VBoxOGLTest_TEMPLATE = VBoxR3Dll
 VBoxOGLTest_SOURCES.darwin = OpenGLTestDarwin.cpp
+VBoxOGLTest_CXXFLAGS.darwin = $(VBOX_GCC_Wno-deprecated-declarations)
 endif
 
 #
