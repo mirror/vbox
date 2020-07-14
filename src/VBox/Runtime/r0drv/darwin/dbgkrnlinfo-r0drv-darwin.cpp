@@ -32,9 +32,11 @@
 # include "the-darwin-kernel.h"
 # include <sys/kauth.h>
 RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
-# include <sys/kpi_mbuf.h>
-# include <net/kpi_interfacefilter.h>
-# include <sys/kpi_socket.h>
+# if MAC_OS_X_VERSION_MIN_REQUIRED < 101500
+#  include <sys/kpi_mbuf.h>
+#  include <net/kpi_interfacefilter.h>
+#  include <sys/kpi_socket.h>
+# endif
 # include <sys/kpi_socketfilter.h>
 RT_C_DECLS_END
 # include <sys/buf.h>
@@ -369,20 +371,20 @@ static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis, const 
         KNOWN_ENTRY(buf_size),
         KNOWN_ENTRY(copystr),
         KNOWN_ENTRY(current_proc),
-        KNOWN_ENTRY(ifnet_hdrlen),
-        KNOWN_ENTRY(ifnet_set_promiscuous),
         KNOWN_ENTRY(kauth_getuid),
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
         KNOWN_ENTRY(kauth_cred_unref),
 #else
         KNOWN_ENTRY(kauth_cred_rele),
 #endif
-        KNOWN_ENTRY(mbuf_data),
         KNOWN_ENTRY(msleep),
         KNOWN_ENTRY(nanotime),
         KNOWN_ENTRY(nop_close),
         KNOWN_ENTRY(proc_pid),
 #if MAC_OS_X_VERSION_MIN_REQUIRED < 101500
+        KNOWN_ENTRY(mbuf_data),
+        KNOWN_ENTRY(ifnet_hdrlen),
+        KNOWN_ENTRY(ifnet_set_promiscuous),
         KNOWN_ENTRY(sock_accept),
         KNOWN_ENTRY(sockopt_name),
 #endif
