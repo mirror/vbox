@@ -145,7 +145,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
         mScreenContent = [[NSImageView alloc] initWithFrame:NSRectFromCGRect(p->flipRect(p->m_updateRect))];
 //        [mScreenContent setImageAlignment: NSImageAlignCenter];
         [mScreenContent setImageAlignment: NSImageAlignTopLeft];
-        [mScreenContent setImageScaling: NSScaleToFit];
+        [mScreenContent setImageScaling: NSImageScaleAxesIndependently];
         [self addSubview: mScreenContent];
         /* The state view */
         mMonitorGlossy = [[NSImageView alloc] initWithFrame:NSRectFromCGRect(p->flipRect(p->m_monitorRect))];
