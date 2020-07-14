@@ -39,11 +39,22 @@
 # include <iprt/string.h>
 
 # include <sys/socket.h>
-# include <net/kpi_interface.h>
+# if MAC_OS_X_VERSION_MIN_REQUIRED >= 101500 /* The 10.15 SDK has a slightly butchered API deprecation attempt. */
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wmacro-redefined"      /* Each header redefines __NKE_API_DEPRECATED. */
+#  pragma clang diagnostic ignored "-Wmissing-declarations" /* Misplaced __NKE_API_DEPRECATED; in kpi_mbuf.h. */
+#  include <net/kpi_interface.h>
+#  include <sys/kpi_mbuf.h>
+#  include <net/if.h>
+#  pragma clang diagnostic pop
+# else /* < 10.15 */
+#  include <net/kpi_interface.h>
 RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
-# include <sys/kpi_mbuf.h>
+#  include <sys/kpi_mbuf.h>
 RT_C_DECLS_END
-# include <net/if.h>
+#  include <net/if.h>
+# endif /* < 10.15 */
+
 
 RT_C_DECLS_BEGIN
 

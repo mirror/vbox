@@ -58,13 +58,25 @@
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/kern_event.h>
-#include <net/kpi_interface.h>
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101500 /* The 10.15 SDK has a slightly butchered API deprecation attempt. */
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wmacro-redefined"      /* Each header redefines __NKE_API_DEPRECATED. */
+# pragma clang diagnostic ignored "-Wmissing-declarations" /* Misplaced __NKE_API_DEPRECATED; in kpi_mbuf.h. */
+# include <sys/kpi_socket.h>
+# include <net/kpi_interface.h>
+# include <sys/kpi_mbuf.h>
+# include <net/kpi_interfacefilter.h>
+# pragma clang diagnostic pop
+#else /* < 10.15*/
+# include <sys/kpi_socket.h>
+# include <net/kpi_interface.h>
 RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
-#include <sys/kpi_mbuf.h>
-#include <net/kpi_interfacefilter.h>
+# include <sys/kpi_mbuf.h>
+# include <net/kpi_interfacefilter.h>
 RT_C_DECLS_END
+#endif /* < 10.15*/
 
-#include <sys/kpi_socket.h>
+
 #include <net/if.h>
 #include <net/if_var.h>
 RT_C_DECLS_BEGIN
@@ -1374,8 +1386,12 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 
     if (pThis->u.s.pSysSock != NULL)
     {
+        RT_GCC_NO_WARN_DEPRECATED_BEGIN
+
         sock_close(pThis->u.s.pSysSock);
         pThis->u.s.pSysSock = NULL;
+
+        RT_GCC_NO_WARN_DEPRECATED_END
     }
 
     IPRT_DARWIN_RESTORE_EFL_AC();
@@ -1405,7 +1421,20 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     IPRT_DARWIN_SAVE_EFL_AC();
     errno_t error;
 
+    /** @todo Figure out how to replace the socket stuff we use to detect
+     *        addresses here as 10.5 deprecates it. */
+    RT_GCC_NO_WARN_DEPRECATED_BEGIN
+
     /** @todo reorg code to not have numerous returns with duplicate code... */
+    /** @todo reorg code to not have numerous returns with duplicate code... */
+    /** @todo reorg code to not have numerous returns with duplicate code... */
+    /** @todo reorg code to not have numerous returns with duplicate code... */
+    /** @todo reorg code to not have numerous returns with duplicate code... */
+    /** @todo reorg code to not have numerous returns with duplicate code... */
+    /** @todo reorg code to not have numerous returns with duplicate code... */
+    /** @todo reorg code to not have numerous returns with duplicate code... */
+    /** @todo reorg code to not have numerous returns with duplicate code... */
+
     error = sock_socket(PF_SYSTEM, SOCK_RAW, SYSPROTO_EVENT,
                         vboxNetFltDarwinSysSockUpcall, pThis,
                         &pThis->u.s.pSysSock);
@@ -1447,6 +1476,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
         IPRT_DARWIN_RESTORE_EFL_AC();
         return rc;
     }
+    RT_GCC_NO_WARN_DEPRECATED_END
 
     ifnet_t pIfNet = pThis->u.s.pIfNet; /* already retained */
 
@@ -1526,8 +1556,7 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
 
     if (RT_UNLIKELY(pSysSock != pThis->u.s.pSysSock))
     {
-        Log(("vboxNetFltDarwinSysSockUpcall: %p != %p?\n",
-             pSysSock, pThis->u.s.pSysSock));
+        Log(("vboxNetFltDarwinSysSockUpcall: %p != %p?\n", pSysSock, pThis->u.s.pSysSock));
         return;
     }
 
@@ -1540,7 +1569,9 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
         mbuf_t m;
         size_t len = sizeof(struct kern_event_msg) - sizeof(u_int32_t) + sizeof(struct kev_in6_data);
 
+        RT_GCC_NO_WARN_DEPRECATED_BEGIN
         error = sock_receivembuf(pSysSock, NULL, &m, 0, &len);
+        RT_GCC_NO_WARN_DEPRECATED_END
         if (error != 0)
         {
             if (error == EWOULDBLOCK)
@@ -1565,8 +1596,7 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
         {
             if (len - (sizeof(struct kern_event_msg) - sizeof(u_int32_t)) < sizeof(struct kev_in_data))
             {
-                Log(("vboxNetFltDarwinSysSockUpcall: %u bytes is too short for KEV_INET_SUBCLASS\n",
-                     (unsigned int)len));
+                Log(("vboxNetFltDarwinSysSockUpcall: %u bytes is too short for KEV_INET_SUBCLASS\n", (unsigned int)len));
                 mbuf_freem(m);
                 return;
             }
@@ -1612,7 +1642,7 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
             if (len - (sizeof(struct kern_event_msg) - sizeof(u_int32_t)) < sizeof(struct kev_in6_data))
             {
                 Log(("vboxNetFltDarwinSysSockUpcall: %u bytes is too short for KEV_INET6_SUBCLASS\n",
-                        (unsigned int)len));
+                     (unsigned int)len));
                 mbuf_freem(m);
                 return;
             }
@@ -1652,16 +1682,14 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
                     goto kev_inet6_new;
 
                 kev_inet6_new:
-                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
-                        /* :fAdded */ true, kIntNetAddrType_IPv6, pAddr);
+                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, true /*fAdded*/, kIntNetAddrType_IPv6, pAddr);
                     break;
 
                 case KEV_INET6_ADDR_DELETED:
                     Log(("KEV_INET6_ADDR_DELETED %.*s%d: %RTnaipv6\n",
                          IFNAMSIZ, link->if_name, link->if_unit, pAddr));
 
-                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
-                        /* :fAdded */ false, kIntNetAddrType_IPv6, pAddr);
+                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, false /*fAdded*/, kIntNetAddrType_IPv6, pAddr);
                     break;
 
                 default:
