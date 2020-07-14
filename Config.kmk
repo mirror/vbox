@@ -3637,7 +3637,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_TSA_URL_ARGS) \
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
-	$(1) \
+	"$(1)" \
     	$(if-expr "$5" == "",\
 	$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6)$(VBOX_SIGNTOOL) \
     	sign /as /fd sha256 \
@@ -3648,7 +3648,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_TSA_SHA2_URL_ARGS) \
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
-	$(1),)
+	"$(1)",)
    else
     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) sign \
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
@@ -3658,7 +3658,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_TSA_URL_ARGS) \
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
-	$(1)
+	"$(1)"
    endif
   endif
 
@@ -3675,7 +3675,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CERTIFICATE_EV_SUBJECT_NAME_ARGS) \
 	$(VBOX_CERTIFICATE_EV_FINGERPRINT_ARGS) \
 	$(VBOX_TSA_SHA2_URL_ARGS) \
-	$(1)
+	"$(1)"
    endif
   endif
 
@@ -3705,7 +3705,7 @@ ifdef VBOX_SIGNING_MODE
   	$(VBOX_TSA_URL_ARGS) \
   	$(if $(strip $(2)),/d "$(strip $(2))",) \
   	$(3) \
-  	$(1) \
+  	"$(1)" \
   	$(if-expr "$5" == "",\
 	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.ccs" \
@@ -3817,7 +3817,7 @@ ifdef VBOX_SIGNING_MODE
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(3) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
-	$(1) $(if $(2),--identifier "$(2)",)
+	"$(1)" $(if $(2),--identifier "$(2)",)
   endif
 
   ## Sign a Mach-O image.
@@ -3840,7 +3840,7 @@ ifdef VBOX_SIGNING_MODE
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(3) \
-	$(1) \
+	"$(1)" \
 	$(if $(2),--identifier "$(2)",)
   endif
 
@@ -3882,7 +3882,7 @@ ifdef VBOX_SIGNING_MODE
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(if $(2),--identifier "$(2)",) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
-	$(1)
+	"$(1)"
   endif
 
   ## Sign a DMG image.
@@ -3973,7 +3973,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CERTIFICATE_FILE_ARGS) \
 	$(VBOX_TOKEN_NAME_ARGS) \
 	$(VBOX_PIN_ARGS) \
-	-e $(1)
+	-e "$(1)"
 
   ## Commands for signing a driver image after link.
   if $(intersects solaris all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
