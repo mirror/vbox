@@ -1023,15 +1023,22 @@
 #endif
 
 /** @def RT_GCC_NO_WARN_DEPRECATED_BEGIN
- * Used to start a block of code where GCC should not warn about deprecated
- * declarations. */
-#if RT_GNUC_PREREQ(4, 6)
+ * Used to start a block of code where GCC and Clang should not warn about
+ * deprecated declarations. */
+/** @def RT_GCC_NO_WARN_DEPRECATED_END
+ * Used to end a block of code where GCC and Clang should not warn about
+ * deprecated declarations. */
+#if RT_CLANG_PREREQ(4, 0)
+# define RT_GCC_NO_WARN_DEPRECATED_BEGIN \
+   _Pragma("clang diagnostic push") \
+   _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+# define RT_GCC_NO_WARN_DEPRECATED_END \
+   _Pragma("clang diagnostic pop")
+
+#elif RT_GNUC_PREREQ(4, 6)
 # define RT_GCC_NO_WARN_DEPRECATED_BEGIN \
    _Pragma("GCC diagnostic push") \
    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-/** @def RT_GCC_NO_WARN_DEPRECATED_END
- * Used to end a block of code where GCC should not warn about deprecated
- * declarations. */
 # define RT_GCC_NO_WARN_DEPRECATED_END \
    _Pragma("GCC diagnostic pop")
 #else
