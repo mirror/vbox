@@ -1932,7 +1932,8 @@ static int darwinAddCarbonHandler(VBoxHidsState_t *pHidState)
         return kIOReturnError;
     }
 
-    pTapRef = CGEventTapCreate(kCGSessionEventTap, kCGTailAppendEventTap, 0, fMask, darwinCarbonCallback, (void *)pHidState);
+    pTapRef = CGEventTapCreate(kCGSessionEventTap, kCGTailAppendEventTap, kCGEventTapOptionDefault, fMask,
+                               darwinCarbonCallback, (void *)pHidState);
     if (pTapRef)
     {
         CFRunLoopSourceRef pLoopSourceRef;
