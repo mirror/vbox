@@ -26,7 +26,7 @@
 
 /* They just had to rename a whole load of constants in 10.12. Just wrap the carp up
    in some defines for now as we need to keep building with both 10.9 and 10.13+: */
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
 # define VBOX_NSAlphaShiftKeyMask    NSEventModifierFlagCapsLock
 # define VBOX_NSAlternateKeyMask     NSEventModifierFlagOption
 # define VBOX_NSAppKitDefined        NSEventTypeAppKitDefined
@@ -215,7 +215,7 @@ void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
     NSUInteger fEventMask = [pEvent modifierFlags];
     NSWindow *pEventWindow = [pEvent window];
     NSInteger iEventWindow = [pEvent windowNumber];
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
     NSGraphicsContext *pEventGraphicsContext = nil; /* NSEvent::context is deprecated and said to always return nil. */
 #else
     NSGraphicsContext *pEventGraphicsContext = [pEvent context];
@@ -343,7 +343,7 @@ void darwinPostStrippedMouseEvent(ConstNativeNSEventRef pEvent)
                                        modifierFlags:0
                                            timestamp:[pEvent timestamp] // [NSDate timeIntervalSinceReferenceDate] ?
                                         windowNumber:[pEvent windowNumber]
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
                                              context:nil /* NSEvent::context is deprecated and said to always return nil. */
 #else
                                              context:[pEvent context]
