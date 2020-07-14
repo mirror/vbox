@@ -144,7 +144,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
         /* The screen content view */
         mScreenContent = [[NSImageView alloc] initWithFrame:NSRectFromCGRect(p->flipRect(p->m_updateRect))];
 //        [mScreenContent setImageAlignment: NSImageAlignCenter];
-        [mScreenContent setImageAlignment: NSImageAlignTop| NSImageAlignLeft];
+        [mScreenContent setImageAlignment: NSImageAlignTopLeft];
         [mScreenContent setImageScaling: NSScaleToFit];
         [self addSubview: mScreenContent];
         /* The state view */
