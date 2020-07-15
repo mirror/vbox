@@ -45,26 +45,34 @@ RTDECL(int) RTStrSplit(const char *pcszStrings, size_t cbStrings,
     size_t cStrings = 0;
 
     /* Determine the number of paths in buffer first. */
-    size_t       cch    = cbStrings - 1;
-    char const  *pszTmp = pcszStrings;
+    size_t      cch     = cbStrings - 1;
+    char const *pcszTmp = pcszStrings;
+    const char *pcszEnd = RTStrEnd(pcszTmp, RTSTR_MAX);
+    char const *pcszNext;
     const size_t cchSep = strlen(pcszSeparator);
+          size_t cchNext;
     while (cch > 0)
     {
-        char const *pszNext = RTStrStr(pszTmp, pcszSeparator);
-        if (!pszNext)
+        pcszNext = RTStrStr(pcszTmp, pcszSeparator);
+        if (!pcszNext)
             break;
-        const size_t cchNext = pszNext - pszTmp;
+        cchNext = pcszNext - pcszTmp;
         if (cchNext + cchSep > cch)
             break;
-        pszTmp += cchNext + cchSep;
-        cch    -= cchNext + cchSep;
+        pcszNext += cchSep;
+        pcszTmp  += cchNext + cchSep;
+        cch      -= cchNext + cchSep;
         if (cchNext)
             ++cStrings;
     }
 
+    if (pcszTmp != pcszEnd) /* Do we need to take a trailing string without separator into account? */
+        cStrings++;
+
     if (!cStrings)
     {
-        *pcStrings = 0;
+        *ppapszStrings = NULL;
+        *pcStrings     = 0;
         return VINF_SUCCESS;
     }
 
@@ -75,19 +83,17 @@ RTDECL(int) RTStrSplit(const char *pcszStrings, size_t cbStrings,
     int rc = VINF_SUCCESS;
 
     cch    = cbStrings - 1;
-    pszTmp = pcszStrings;
+    pcszTmp = pcszStrings;
 
-    for (size_t i = 0; i < 3;)
+    for (size_t i = 0; i < cStrings;)
     {
-        char const *pszNext = RTStrStr(pszTmp, pcszSeparator);
-        if (!pszNext)
-            break;
-        const size_t cchNext = pszNext - pszTmp;
-        if (cchNext + cchSep > cch)
-            break;
+        pcszNext = RTStrStr(pcszTmp, pcszSeparator);
+        if (!pcszNext)
+            pcszNext = pcszEnd;
+        cchNext = pcszNext - pcszTmp;
         if (cchNext)
         {
-            papszStrings[i] = RTStrDupN(pszTmp, cchNext);
+            papszStrings[i] = RTStrDupN(pcszTmp, cchNext);
             if (!papszStrings[i])
             {
                 rc = VERR_NO_MEMORY;
@@ -95,8 +101,8 @@ RTDECL(int) RTStrSplit(const char *pcszStrings, size_t cbStrings,
             }
             i++;
         }
-        pszTmp += cchNext + cchSep;
-        cch    -= cchNext + cchSep;
+        pcszTmp += cchNext + cchSep;
+        cch     -= cchNext + cchSep;
     }
 
     if (RT_SUCCESS(rc))

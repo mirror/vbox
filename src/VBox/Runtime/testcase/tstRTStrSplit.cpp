@@ -54,13 +54,12 @@ int main()
     const char szEmpty[] = "";
     RTTEST_CHECK_RC(hTest, RTStrSplit(szEmpty, sizeof(szEmpty), "\r\n", &papszStrings, &cStrings), VINF_SUCCESS);
     RTTEST_CHECK(hTest, cStrings == 0);
-    RTTEST_CHECK(hTest, papszStrings == NULL);
 
     /* No separator given. */
     const char szNoSep[] = "foo";
     RTTEST_CHECK_RC(hTest, RTStrSplit(szNoSep, sizeof(szNoSep), "\r\n", &papszStrings, &cStrings), VINF_SUCCESS);
-    RTTEST_CHECK(hTest, cStrings == 0);
-    RTTEST_CHECK(hTest, papszStrings == NULL);
+    RTTEST_CHECK(hTest, cStrings == 1);
+    RTTEST_CHECK(hTest, RTStrICmp(papszStrings[0], "foo") == 0);
 
     /* Single string w/ separator. */
     const char szWithSep[] = "foo\r\n";
@@ -68,8 +67,8 @@ int main()
     RTTEST_CHECK(hTest, cStrings == 1);
     RTTEST_CHECK(hTest, papszStrings && RTStrICmp(papszStrings[0], "foo") == 0);
 
-    /* Multiple strings w/ separators. */
-    const char szWithSep2[] = "foo\r\nbar\r\n";
+    /* Multiple strings w/ separator. */
+    const char szWithSep2[] = "foo\r\nbar";
     RTTEST_CHECK_RC(hTest, RTStrSplit(szWithSep2, sizeof(szWithSep2), "\r\n", &papszStrings, &cStrings), VINF_SUCCESS);
     RTTEST_CHECK(hTest, cStrings == 2);
     RTTEST_CHECK(hTest,    cStrings == 2
@@ -87,7 +86,7 @@ int main()
                         && RTStrICmp(papszStrings[1], "bar") == 0);
 
     /* Multiple strings w/ two consequtive separators. */
-    const char szWithSep4[] = "foo\r\nbar\r\n\r\nbaz\r\n";
+    const char szWithSep4[] = "foo\r\nbar\r\n\r\nbaz";
     RTTEST_CHECK_RC(hTest, RTStrSplit(szWithSep4, sizeof(szWithSep4), "\r\n", &papszStrings, &cStrings), VINF_SUCCESS);
     RTTEST_CHECK(hTest, cStrings == 3);
     RTTEST_CHECK(hTest,    cStrings == 3
@@ -96,6 +95,15 @@ int main()
                         && RTStrICmp(papszStrings[1], "bar") == 0
                         && RTStrICmp(papszStrings[2], "baz") == 0);
 
+    /* Multiple strings w/ trailing separators. */
+    const char szWithSep5[] = "foo\r\nbar\r\n\r\nbaz\r\n\r\n";
+    RTTEST_CHECK_RC(hTest, RTStrSplit(szWithSep5, sizeof(szWithSep5), "\r\n", &papszStrings, &cStrings), VINF_SUCCESS);
+    RTTEST_CHECK(hTest, cStrings == 3);
+    RTTEST_CHECK(hTest,    cStrings == 3
+                        && papszStrings
+                        && RTStrICmp(papszStrings[0], "foo") == 0
+                        && RTStrICmp(papszStrings[1], "bar") == 0
+                        && RTStrICmp(papszStrings[2], "baz") == 0);
     /*
      * Summary.
      */
