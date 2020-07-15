@@ -376,7 +376,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         Offset (0x200),
         VAIN, 32,
         IOMA, 32, // AMD IOMMU
-        SIOA, 32, // Southbridge IO APIC (when AMD IOMMU is present) 
+        SIOA, 32, // Southbridge IO APIC (when AMD IOMMU is present)
     }
 
     Scope (\_SB)
