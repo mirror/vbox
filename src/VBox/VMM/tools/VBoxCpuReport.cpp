@@ -4533,7 +4533,7 @@ static int produceCpuIdArray(const char *pszNameC, const char *pszCpuDesc)
                    "/**\n"
                    " * CPUID leaves for %s.\n"
                    " */\n"
-                   "static CPUMCPUIDLEAF const g_aCpuIdLeaves_%s[] = \n{\n",
+                   "static CPUMCPUIDLEAF const g_aCpuIdLeaves_%s[] =\n{\n",
                    pszCpuDesc,
                    pszNameC);
     for (uint32_t i = 0; i < cLeaves; i++)
