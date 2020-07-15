@@ -328,6 +328,9 @@ typedef enum CPUMMICROARCH
 #define CPUMMICROARCH_IS_AMD_FAM_16H(a_enmMicroarch) \
     ((a_enmMicroarch) >= kCpumMicroarch_AMD_16h_First && (a_enmMicroarch) <= kCpumMicroarch_AMD_16h_End)
 
+/** Predicate macro for catching AMD Zen Family CPUs. */
+#define CPUMMICROARCH_IS_AMD_FAM_ZEN(a_enmMicroarch) \
+    ((a_enmMicroarch) >= kCpumMicroarch_AMD_Zen_First && (a_enmMicroarch) <= kCpumMicroarch_AMD_Zen_End)
 
 
 /**
