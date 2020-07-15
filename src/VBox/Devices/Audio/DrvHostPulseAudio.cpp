@@ -28,6 +28,7 @@
 #include <iprt/alloc.h>
 #include <iprt/mem.h>
 #include <iprt/uuid.h>
+#include <iprt/semaphore.h>
 
 RT_C_DECLS_BEGIN
  #include "pulse_mangling.h"
@@ -316,6 +317,31 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
 static int paWaitFor(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP)
 {
     return paWaitForEx(pThis, pOP, 10 * 1000 /* 10s timeout */);
+}
+
+
+/**
+ * Context status changed, init variant signalling our own event semaphore
+ * so we can do a timed wait.
+ */
+static void paContextCbStateChangedInit(pa_context *pCtx, void *pvUser)
+{
+    AssertPtrReturnVoid(pCtx);
+
+    RTSEMEVENT hEvtInit = (RTSEMEVENT)pvUser;
+    AssertReturnVoid(hEvtInit != NIL_RTSEMEVENT);
+
+    switch (pa_context_get_state(pCtx))
+    {
+        case PA_CONTEXT_READY:
+        case PA_CONTEXT_TERMINATED:
+        case PA_CONTEXT_FAILED:
+            RTSemEventSignal(hEvtInit);
+            break;
+
+        default:
+            break;
+    }
 }
 
 
@@ -659,40 +685,55 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_Init(PPDMIHOSTAUDIO pInterface)
         {
             LogRel(("PulseAudio: Failed to start threaded mainloop: %s\n",
                      pa_strerror(pa_context_errno(pThis->pContext))));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             break;
         }
 
-        /* Install a global callback to known if something happens to our acquired context. */
-        pa_context_set_state_callback(pThis->pContext, paContextCbStateChanged, pThis /* pvUserData */);
+        RTSEMEVENT hEvtInit = NIL_RTSEMEVENT;
+        rc = RTSemEventCreate(&hEvtInit);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("PulseAudio: Failed to create init event semaphore: %Rrc\n", rc));
+            break;
+        }
+
+        /*
+         * Install a dedicated init state callback so we can do a timed wait on our own event semaphore if connecting
+         * to the pulseaudio server takes too long.
+         */
+        pa_context_set_state_callback(pThis->pContext, paContextCbStateChangedInit, hEvtInit /* pvUserData */);
 
         pa_threaded_mainloop_lock(pThis->pMainLoop);
         fLocked = true;
 
-        if (pa_context_connect(pThis->pContext, NULL /* pszServer */,
-                               PA_CONTEXT_NOFLAGS, NULL) < 0)
+        if (!pa_context_connect(pThis->pContext, NULL /* pszServer */,
+                                PA_CONTEXT_NOFLAGS, NULL))
         {
-            LogRel(("PulseAudio: Failed to connect to server: %s\n",
-                     pa_strerror(pa_context_errno(pThis->pContext))));
-            break;
-        }
+            /* Wait on our init event semaphore and time out if connecting to the pulseaudio server takes too long. */
+            pa_threaded_mainloop_unlock(pThis->pMainLoop);
+            fLocked = false;
 
-        /* Wait until the pThis->pContext is ready. */
-        for (;;)
-        {
-            if (!pThis->fAbortLoop)
-                pa_threaded_mainloop_wait(pThis->pMainLoop);
-            pThis->fAbortLoop = false;
+            rc = RTSemEventWait(hEvtInit, RT_MS_10SEC); /* 10 seconds should be plenty. */
+
+            pa_threaded_mainloop_lock(pThis->pMainLoop);
+            fLocked = true;
 
             pa_context_state_t cstate = pa_context_get_state(pThis->pContext);
-            if (cstate == PA_CONTEXT_READY)
-                break;
-            else if (   cstate == PA_CONTEXT_TERMINATED
-                     || cstate == PA_CONTEXT_FAILED)
+            if (cstate != PA_CONTEXT_READY)
             {
-                LogRel(("PulseAudio: Failed to initialize context (state %d)\n", cstate));
-                break;
+                LogRel(("PulseAudio: Failed to initialize context (state %d, rc=%Rrc)\n", cstate, rc));
+                if (RT_SUCCESS(rc))
+                    rc = VERR_AUDIO_BACKEND_INIT_FAILED;
             }
         }
+        else
+            LogRel(("PulseAudio: Failed to connect to server: %s\n",
+                     pa_strerror(pa_context_errno(pThis->pContext))));
+
+        RTSemEventDestroy(hEvtInit);
+
+        /* Install the main state changed callback to know if something happens to our acquired context. */
+        pa_context_set_state_callback(pThis->pContext, paContextCbStateChanged, pThis /* pvUserData */);
     }
     while (0);
 
