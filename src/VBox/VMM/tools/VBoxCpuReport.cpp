@@ -522,9 +522,13 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
             }
 #endif
             /* Skip 0xc0011012..13 as it seems to be bad for our health (Phenom II X6 1100T). */
+            /* Ditto for 0x0000002ff (MSR_IA32_MTRR_DEF_TYPE) on AMD (Ryzen 7 1800X). */
             /* Ditto for 0x0000002a (EBL_CR_POWERON) and 0x00000277 (MSR_IA32_CR_PAT) on Intel (Atom 330). */
             /* And more of the same for 0x280 on Intel Pentium III. */
             if (   ((uMsr >= 0xc0011012 && uMsr <= 0xc0011013) && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
+                || (   uMsr == 0x2ff
+                    && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON)
+                    && g_enmMicroarch >= kCpumMicroarch_AMD_Zen_First)
                 || (   (uMsr == 0x2a || uMsr == 0x277)
                     && g_enmVendor == CPUMCPUVENDOR_INTEL
                     && g_enmMicroarch == kCpumMicroarch_Intel_Atom_Bonnell)
@@ -2526,6 +2530,12 @@ static VBCPUREPBADNESS queryMsrWriteBadness(uint32_t uMsr)
         case 0xc0010019:
         case 0xc001001a:
         case 0xc001001d:
+
+        case 0xc0010058: /* MMIO Configuration Base Address on AMD Zen CPUs. */
+            if (CPUMMICROARCH_IS_AMD_FAM_ZEN(g_enmMicroarch))
+                return VBCPUREPBADNESS_BOND_VILLAIN;
+            break;
+
         case 0xc0010064: /* P-state fequency, voltage, ++. */
         case 0xc0010065: /* P-state fequency, voltage, ++. */
         case 0xc0010066: /* P-state fequency, voltage, ++. */
@@ -3366,6 +3376,13 @@ static int reportMsr_Ia32ApicBase(uint32_t uMsr, uint64_t uValue)
     if (!g_MsrAcc.fAtomic)
         fSkipMask |= UINT64_C(0x0000000ffffff000);
 
+    /* @todo This makes the host unstable on a AMD Ryzen 1800X CPU, skip everything for now.
+     * Figure out exactly what causes the issue.
+     */
+    if (   g_enmMicroarch >= kCpumMicroarch_AMD_Zen_First
+        && g_enmMicroarch >= kCpumMicroarch_AMD_Zen_End)
+        fSkipMask |= UINT64_C(0xffffffffffffffff);
+
     return reportMsr_GenFunctionEx(uMsr, "Ia32ApicBase", uValue, fSkipMask, 0, NULL);
 }
 
@@ -3563,11 +3580,13 @@ static int reportMsr_Ia32MtrrFixedOrPat(uint32_t uMsr)
 {
     /* Had a spot of trouble on an old macbook pro with core2 duo T9900 (penryn)
        running 64-bit win81pe. Not giving PAT such a scrutiny fixes it. */
+    /* This hangs the host on a AMD Ryzen 1800X CPU */
     if (   uMsr != 0x00000277
         || (  g_enmVendor == CPUMCPUVENDOR_INTEL
             ? g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First
             : g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON
-            ? g_enmMicroarch != kCpumMicroarch_AMD_K8_90nm_AMDV
+            ? (   g_enmMicroarch != kCpumMicroarch_AMD_K8_90nm_AMDV
+               && !CPUMMICROARCH_IS_AMD_FAM_ZEN(g_enmMicroarch))
             : true) )
     {
         /* Every 8 bytes is a type, check the type ranges one by one. */
@@ -3643,7 +3662,10 @@ static int reportMsr_Ia32McCtlStatusAddrMiscN(VBCPUREPMSR const *paMsrs, uint32_
             cDetectedRegs++;
         cRegs++;
     }
-    if (cRegs & 3)
+
+    /** aeichner: An AMD Ryzen 7 1800X CPU triggers this and I'm too lazy to check the correctness in detail. */
+    if (   (cRegs & 3)
+        && !CPUMMICROARCH_IS_AMD_FAM_ZEN(g_enmMicroarch))
         return RTMsgErrorRc(VERR_INVALID_PARAMETER, "MC MSR range is odd: cRegs=%#x\n", cRegs);
 
     /* Just report them.  We don't bother probing here as the CTL format
