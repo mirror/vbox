@@ -358,7 +358,7 @@ DECLINLINE(void) RTTimeSpecGetSecondsAndNano(PRTTIMESPEC pTime, int32_t *pi32Sec
 /** @def RTTIME_LINUX_KERNEL_PREREQ
  * @note Cannot really be moved to iprt/cdefs.h, see the-linux-kernel.h */
 #if defined(RT_OS_LINUX) && defined(LINUX_KERNEL_VERSION) && defined(KERNEL_VERSION)
-# define RTTIME_LINUX_KERNEL_PREREQ(a, b, c)    (LINUX_VERSION_CODE < KERNEL_VERSION(a,b,c))
+# define RTTIME_LINUX_KERNEL_PREREQ(a, b, c)    (LINUX_VERSION_CODE >= KERNEL_VERSION(a,b,c))
 #else
 # define RTTIME_LINUX_KERNEL_PREREQ(a, b, c)    0
 #endif
