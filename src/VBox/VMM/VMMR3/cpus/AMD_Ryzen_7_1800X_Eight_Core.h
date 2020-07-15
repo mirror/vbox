@@ -27,7 +27,7 @@
 /**
  * CPUID leaves for AMD Ryzen 7 1800X Eight-Core Processor.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_Ryzen_7_1800X_Eight_Core[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_Ryzen_7_1800X_Eight_Core[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x0000000d, 0x68747541, 0x444d4163, 0x69746e65, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x00800f11, 0x02100800, 0x7ed8320b, 0x178bfbff, 0 | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID | CPUMCPUIDLEAF_F_CONTAINS_APIC },
@@ -5198,7 +5198,7 @@ static CPUMMSRRANGE const g_aMsrRanges_AMD_Ryzen_7_1800X_Eight_Core[] =
 /**
  * Database entry for AMD Ryzen 7 1800X Eight-Core Processor.
  */
-static CPUMDBENTRY const g_Entry_AMD_Ryzen_7_1800X_Eight_Core = 
+static CPUMDBENTRY const g_Entry_AMD_Ryzen_7_1800X_Eight_Core =
 {
     /*.pszName          = */ "AMD Ryzen 7 1800X Eight-Core",
     /*.pszFullName      = */ "AMD Ryzen 7 1800X Eight-Core Processor",
