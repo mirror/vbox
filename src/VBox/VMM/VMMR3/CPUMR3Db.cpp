@@ -206,6 +206,7 @@ typedef struct CPUMDBENTRY
 #include "cpus/Intel_80186.h"
 #include "cpus/Intel_8086.h"
 
+#include "cpus/AMD_Ryzen_7_1800X_Eight_Core.h"
 #include "cpus/AMD_FX_8150_Eight_Core.h"
 #include "cpus/AMD_Phenom_II_X6_1100T.h"
 #include "cpus/Quad_Core_AMD_Opteron_2384.h"
@@ -292,6 +293,9 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
     &g_Entry_Intel_8086,
 #endif
 
+#ifdef VBOX_CPUDB_AMD_Ryzen_7_1800X_Eight_Core_h
+    &g_Entry_AMD_Ryzen_7_1800X_Eight_Core,
+#endif
 #ifdef VBOX_CPUDB_AMD_FX_8150_Eight_Core_h
     &g_Entry_AMD_FX_8150_Eight_Core,
 #endif
