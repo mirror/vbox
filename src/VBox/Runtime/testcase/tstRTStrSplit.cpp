@@ -31,6 +31,7 @@
 #include <iprt/string.h>
 
 #include <iprt/test.h>
+#include <iprt/mem.h>
 #include <iprt/stream.h>
 
 
@@ -50,22 +51,31 @@ int main()
     char **papszStrings = NULL;
     size_t cStrings = 0;
 
+#define DO_CLEANUP() \
+    for (size_t i = 0; i < cStrings; ++i) \
+        RTStrFree(papszStrings[i]); \
+    RTMemFree(papszStrings);
+    cStrings = 0;
+
     /* Empty stuff. */
     const char szEmpty[] = "";
     RTTEST_CHECK_RC(hTest, RTStrSplit(szEmpty, sizeof(szEmpty), "\r\n", &papszStrings, &cStrings), VINF_SUCCESS);
     RTTEST_CHECK(hTest, cStrings == 0);
+    DO_CLEANUP();
 
     /* No separator given. */
     const char szNoSep[] = "foo";
     RTTEST_CHECK_RC(hTest, RTStrSplit(szNoSep, sizeof(szNoSep), "\r\n", &papszStrings, &cStrings), VINF_SUCCESS);
     RTTEST_CHECK(hTest, cStrings == 1);
     RTTEST_CHECK(hTest, RTStrICmp(papszStrings[0], "foo") == 0);
+    DO_CLEANUP();
 
     /* Single string w/ separator. */
     const char szWithSep[] = "foo\r\n";
     RTTEST_CHECK_RC(hTest, RTStrSplit(szWithSep, sizeof(szWithSep), "\r\n", &papszStrings, &cStrings), VINF_SUCCESS);
     RTTEST_CHECK(hTest, cStrings == 1);
     RTTEST_CHECK(hTest, papszStrings && RTStrICmp(papszStrings[0], "foo") == 0);
+    DO_CLEANUP();
 
     /* Multiple strings w/ separator. */
     const char szWithSep2[] = "foo\r\nbar";
@@ -75,6 +85,7 @@ int main()
                         && papszStrings
                         && RTStrICmp(papszStrings[0], "foo") == 0
                         && RTStrICmp(papszStrings[1], "bar") == 0);
+    DO_CLEANUP();
 
     /* Multiple strings w/ two consequtive separators. */
     const char szWithSep3[] = "foo\r\nbar\r\n\r\n";
@@ -84,6 +95,7 @@ int main()
                         && papszStrings
                         && RTStrICmp(papszStrings[0], "foo") == 0
                         && RTStrICmp(papszStrings[1], "bar") == 0);
+    DO_CLEANUP();
 
     /* Multiple strings w/ two consequtive separators. */
     const char szWithSep4[] = "foo\r\nbar\r\n\r\nbaz";
@@ -94,6 +106,7 @@ int main()
                         && RTStrICmp(papszStrings[0], "foo") == 0
                         && RTStrICmp(papszStrings[1], "bar") == 0
                         && RTStrICmp(papszStrings[2], "baz") == 0);
+    DO_CLEANUP();
 
     /* Multiple strings w/ trailing separators. */
     const char szWithSep5[] = "foo\r\nbar\r\n\r\nbaz\r\n\r\n";
@@ -104,6 +117,10 @@ int main()
                         && RTStrICmp(papszStrings[0], "foo") == 0
                         && RTStrICmp(papszStrings[1], "bar") == 0
                         && RTStrICmp(papszStrings[2], "baz") == 0);
+    DO_CLEANUP();
+
+#undef DO_CLEANUP
+
     /*
      * Summary.
      */
