@@ -33,7 +33,6 @@
 #include <VBox/param.h>
 
 #include <VBox/version.h>
-#include <revision-generated.h> /* VBOX_SVN_REV - PCH prevents putting it in DEFS. */
 
 #include <list>
 #include <map>
