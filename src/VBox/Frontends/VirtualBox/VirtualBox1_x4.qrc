@@ -70,6 +70,19 @@
         <file alias="chipset_warning_16px_x4.png">images/x4/chipset_warning_16px_x4.png</file>
         <file alias="close_16px_x4.png">images/x4/close_16px_x4.png</file>
         <file alias="close_popup_16px_x4.png">images/x4/close_popup_16px_x4.png</file>
+        <file alias="cloud_machine_console_16px_x4.png">images/x4/cloud_machine_console_16px_x4.png</file>
+        <file alias="cloud_machine_console_configure_external_terminal_16px_x4.png">images/x4/cloud_machine_console_configure_external_terminal_16px_x4.png</file>
+        <file alias="cloud_machine_console_configure_external_terminal_disabled_16px_x4.png">images/x4/cloud_machine_console_configure_external_terminal_disabled_16px_x4.png</file>
+        <file alias="cloud_machine_console_copy_connection_fingerprint_16px_x4.png">images/x4/cloud_machine_console_copy_connection_fingerprint_16px_x4.png</file>
+        <file alias="cloud_machine_console_copy_connection_fingerprint_disabled_16px_x4.png">images/x4/cloud_machine_console_copy_connection_fingerprint_disabled_16px_x4.png</file>
+        <file alias="cloud_machine_console_create_connection_16px_x4.png">images/x4/cloud_machine_console_create_connection_16px_x4.png</file>
+        <file alias="cloud_machine_console_create_connection_disabled_16px_x4.png">images/x4/cloud_machine_console_create_connection_disabled_16px_x4.png</file>
+        <file alias="cloud_machine_console_delete_connection_16px_x4.png">images/x4/cloud_machine_console_delete_connection_16px_x4.png</file>
+        <file alias="cloud_machine_console_delete_connection_disabled_16px_x4.png">images/x4/cloud_machine_console_delete_connection_disabled_16px_x4.png</file>
+        <file alias="cloud_machine_console_get_serial_console_command_16px_x4.png">images/x4/cloud_machine_console_get_serial_console_command_16px_x4.png</file>
+        <file alias="cloud_machine_console_get_serial_console_command_disabled_16px_x4.png">images/x4/cloud_machine_console_get_serial_console_command_disabled_16px_x4.png</file>
+        <file alias="cloud_machine_console_get_vnc_console_command_16px_x4.png">images/x4/cloud_machine_console_get_vnc_console_command_16px_x4.png</file>
+        <file alias="cloud_machine_console_get_vnc_console_command_disabled_16px_x4.png">images/x4/cloud_machine_console_get_vnc_console_command_disabled_16px_x4.png</file>
         <file alias="cloud_profile_add_16px_x4.png">images/x4/cloud_profile_add_16px_x4.png</file>
         <file alias="cloud_profile_add_32px_x4.png">images/x4/cloud_profile_add_32px_x4.png</file>
         <file alias="cloud_profile_add_disabled_16px_x4.png">images/x4/cloud_profile_add_disabled_16px_x4.png</file>
@@ -426,11 +439,5 @@
         <file alias="log_viewer_save_16px_x4.png">images/x4/log_viewer_save_16px_x4.png</file>
         <file alias="log_viewer_save_32px_x4.png">images/x4/log_viewer_save_32px_x4.png</file>
         <file alias="log_viewer_save_disabled_16px_x4.png">images/x4/log_viewer_save_disabled_16px_x4.png</file>
-        <file alias="log_viewer_save_disabled_32px_x4.png">images/x4/log_viewer_save_disabled_32px_x4.png</file>
-        <file alias="log_viewer_search_backward_16px_x4.png">images/x4/log_viewer_search_backward_16px_x4.png</file>
-        <file alias="log_viewer_search_forward_16px_x4.png">images/x4/log_viewer_search_forward_16px_x4.png</file>
-        <file alias="machine_16px_x4.png">images/x4/machine_16px_x4.png</file>
-        <file alias="machine_24px_x4.png">images/x4/machine_24px_x4.png</file>
-        <file alias="machine_32px_x4.png">images/x4/machine_32px_x4.png</file>
     </qresource>
 </RCC>

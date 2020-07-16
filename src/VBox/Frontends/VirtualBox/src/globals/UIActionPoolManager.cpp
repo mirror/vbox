@@ -1311,7 +1311,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorConsole(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/host_iface_edit_16px.png") /// @todo replace with proper icon
+        : UIActionMenu(pParent, ":/cloud_machine_console_16px.png")
     {}
 
 protected:
@@ -1332,7 +1332,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorConsolePerformCreateConnection(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/host_iface_add_16px.png", ":/host_iface_add_disabled_16px.png") /// @todo replace with proper icon
+        : UIActionSimple(pParent,
+                         ":/cloud_machine_console_create_connection_16px.png",
+                         ":/cloud_machine_console_create_connection_disabled_16px.png")
     {}
 
 protected:
@@ -1360,7 +1362,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorConsolePerformDeleteConnection(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/host_iface_remove_16px.png", ":/host_iface_remove_disabled_16px.png") /// @todo replace with proper icon
+        : UIActionSimple(pParent,
+                         ":/cloud_machine_console_delete_connection_16px.png",
+                         ":/cloud_machine_console_delete_connection_disabled_16px.png")
     {}
 
 protected:
@@ -1388,9 +1392,16 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorConsolePerformCopyCommand(UIActionPool *pParent, bool fSerial)
-        : UIActionSimple(pParent, ":/file_manager_copy_16px.png", ":/file_manager_copy_16px.png") /// @todo replace with proper icon
+        : UIActionSimple(pParent)
         , m_fSerial(fSerial)
-    {}
+    {
+        if (m_fSerial)
+            setIcon(UIIconPool::iconSet(":/cloud_machine_console_get_serial_console_command_16px.png",
+                                        ":/cloud_machine_console_get_serial_console_command_disabled_16px.png"));
+        else
+            setIcon(UIIconPool::iconSet(":/cloud_machine_console_get_vnc_console_command_16px.png",
+                                        ":/cloud_machine_console_get_vnc_console_command_disabled_16px.png"));
+    }
 
 protected:
 

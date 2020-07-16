@@ -2537,7 +2537,8 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
     {
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
         pMenu->addSeparator();
-        QAction *pAction = pMenu->addAction(UIIconPool::iconSet(":/file_manager_copy_16px.png"),
+        QAction *pAction = pMenu->addAction(UIIconPool::iconSet(":/cloud_machine_console_copy_connection_fingerprint_16px.png",
+                                                                ":/cloud_machine_console_copy_connection_fingerprint_disabled_16px.png"),
                                             QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprint),
                                             this, &UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint);
         pAction->setProperty("fingerprint", strFingerprint);
