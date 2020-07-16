@@ -16,6 +16,7 @@
  */
 
 #define LOG_GROUP LOG_GROUP_MAIN_APPLIANCE
+#include <iprt/buildconfig.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/param.h>
@@ -25,7 +26,6 @@
 #include <iprt/zip.h>
 
 #include <VBox/version.h>
-#include <revision-generated.h> /* VBOX_SVN_REV - PCH prevents putting it in DEFS. */
 
 #include "ApplianceImpl.h"
 #include "VirtualBoxImpl.h"
@@ -2310,8 +2310,8 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
                                      : pTask->enFormat == ovf::OVFVersion_2_0 ? "vboxovf20"
                                      :                                          "vboxovf");
             RTZipTarFsStreamSetGroup(hVfsFssTar, VBOX_VERSION_MINOR,
-                                     "vbox_v" RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "."
-                                     RT_XSTR(VBOX_VERSION_BUILD) "r" RT_XSTR(VBOX_SVN_REV));
+                                     Utf8StrFmt("vbox_v" RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "."
+                                                RT_XSTR(VBOX_VERSION_BUILD) "r%RU32", RTBldCfgRevision()).c_str());
 
             hrc = i_writeFSImpl(pTask, writeLock, hVfsFssTar);
             RTVfsFsStrmRelease(hVfsFssTar);
@@ -2523,8 +2523,8 @@ HRESULT Appliance::i_writeFSOPC(TaskOPC *pTask)
                 RTZipTarFsStreamSetFileMode(hVfsFssTar, 0660, 0440);
                 RTZipTarFsStreamSetOwner(hVfsFssTar, VBOX_VERSION_MAJOR, "vboxopc10");
                 RTZipTarFsStreamSetGroup(hVfsFssTar, VBOX_VERSION_MINOR,
-                                         "vbox_v" RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "."
-                                         RT_XSTR(VBOX_VERSION_BUILD) "r" RT_XSTR(VBOX_SVN_REV));
+                                         Utf8StrFmt("vbox_v" RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "."
+                                         RT_XSTR(VBOX_VERSION_BUILD) "r%RU32", RTBldCfgRevision()).c_str());
 
                 /*
                  * Let the Medium code do the heavy work.
