@@ -1275,9 +1275,6 @@ ifdef VBOX_OSE
   VBOX_WITH_RECORDING=
   VBOX_WITH_AUDIO_RECORDING=
  endif
- # Disable building and packing vboximg-mount.
- VBOX_WITH_VBOXIMGMOUNT=
- VBOX_WITH_FUSE_PACKING=
  # branding
  VBOX_BRAND_LICENSE_HTML             := $(PATH_ROOT)/doc/License-gpl-2.0.html
  VBOX_BRAND_LICENSE_RTF              := $(PATH_ROOT)/doc/License-gpl-2.0.rtf
