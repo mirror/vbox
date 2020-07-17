@@ -309,9 +309,8 @@ ifdef IPRT_WITH_FUTEX_BASED_SEMS
 endif
 RuntimeR3_INCS          = \
 	include \
-	$(SDK_VBOX_ZLIB_INCS)
-RuntimeR3_INCS         += \
-	$(PATH_ROOT)/src/libs/liblzf-3.4
+	$(SDK_VBOX_ZLIB_INCS) \
+	$(SDK_VBOX_LZF_INCS)
 
 # RuntimeR3_INCS.solaris  = \
 #    /usr/include
@@ -2243,7 +2242,7 @@ VBoxRT_INCS                   := $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
-	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
+	$(SDK_VBOX_LZF_LIBS)
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 VBoxRT_LIBS                   += \
 	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
@@ -2392,7 +2391,7 @@ endif
 VBoxRT-x86_SDKS  += VBOX_OPENSSL-x86
 
 VBoxRT-x86_LIBS = \
-	$(PATH_STAGE_LIB)/VBox-liblzf-x86$(VBOX_SUFF_LIB)
+	$(SDK_VBOX_LZF_LIBS-x86)
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 VBoxRT-x86_LIBS += \
 	$(PATH_STAGE_LIB)/SUPR3-x86$(VBOX_SUFF_LIB)
