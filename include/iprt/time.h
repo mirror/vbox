@@ -358,17 +358,15 @@ DECLINLINE(void) RTTimeSpecGetSecondsAndNano(PRTTIMESPEC pTime, int32_t *pi32Sec
 /** @def RTTIME_LINUX_KERNEL_PREREQ
  * Prerequisite minimum linux kernel version.
  * @note Cannot really be moved to iprt/cdefs.h, see the-linux-kernel.h */
-/** @def RTTIME_LINUX_KERNEL_PREREQ_OKAY
- * Defined if RTTIME_LINUX_KERNEL_PREREQ is usable.  Needed for negation,
- * though in real life RTTIME_LINUX_KERNEL_PREREQ is always okay since the
- * kernel version is -included via the gcc command line, at least for
- * recent kernels (5.7). */
+/** @def RTTIME_LINUX_KERNEL_PREREQ_LT
+ * Prerequisite maxium linux kernel version (LT=less-than).
+ * @note Cannot really be moved to iprt/cdefs.h, see the-linux-kernel.h */
 #if defined(RT_OS_LINUX) && defined(LINUX_VERSION_CODE) && defined(KERNEL_VERSION)
-# define RTTIME_LINUX_KERNEL_PREREQ(a, b, c)    (LINUX_VERSION_CODE >= KERNEL_VERSION(a,b,c))
-# define RTTIME_LINUX_KERNEL_PREREQ_OKAY
+# define RTTIME_LINUX_KERNEL_PREREQ(a, b, c)    (LINUX_VERSION_CODE >= KERNEL_VERSION(a, b, c))
+# define RTTIME_LINUX_KERNEL_PREREQ_LT(a, b, c) (!RTTIME_LINUX_KERNEL_PREREQ(a, b, c))
 #else
 # define RTTIME_LINUX_KERNEL_PREREQ(a, b, c)    0
-# undef  RTTIME_LINUX_KERNEL_PREREQ_OKAY
+# define RTTIME_LINUX_KERNEL_PREREQ_LT(a, b, c) 0
 #endif
 
 /* PORTME: Add struct timeval guard macro here. */
@@ -380,7 +378,7 @@ DECLINLINE(void) RTTimeSpecGetSecondsAndNano(PRTTIMESPEC pTime, int32_t *pi32Sec
  || (   defined(RT_OS_LINUX) \
      && defined(_LINUX_TIME_H) \
      && (   !defined(__KERNEL__) \
-         || (!RTTIME_LINUX_KERNEL_PREREQ(5,6,0) && defined(RTTIME_LINUX_KERNEL_PREREQ_OKAY)) /* @bugref{9757} */ ) ) \
+         || RTTIME_LINUX_KERNEL_PREREQ_LT(5,6,0) /* @bugref{9757} */ ) ) \
  || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_))
 
 /**
@@ -428,7 +426,7 @@ DECLINLINE(PRTTIMESPEC) RTTimeSpecSetTimeval(PRTTIMESPEC pTime, const struct tim
  || (   defined(_STRUCT_TIMESPEC) \
      && (   !defined(RT_OS_LINUX) \
          || !defined(__KERNEL__) \
-         || (!RTTIME_LINUX_KERNEL_PREREQ(5,6,0) && defined(RTTIME_LINUX_KERNEL_PREREQ_OKAY)) /* @bugref{9757} */ ) ) \
+         || RTTIME_LINUX_KERNEL_PREREQ_LT(5,6,0) /* @bugref{9757} */ ) ) \
  || (defined(RT_OS_NETBSD) && defined(_SYS_TIME_H_))
 
 /**
