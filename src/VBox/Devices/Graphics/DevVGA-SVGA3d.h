@@ -81,7 +81,7 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid);
 
 int vmsvga3dChangeMode(PVGASTATECC pThisCC);
 
-int vmsvga3dDefineScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
+int vmsvga3dDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 int vmsvga3dDestroyScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 
 int vmsvga3dSetTransform(PVGASTATECC pThisCC, uint32_t cid, SVGA3dTransformType type, float matrix[16]);

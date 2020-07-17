@@ -4457,7 +4457,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
 # ifdef VBOX_WITH_VMSVGA3D
                 if (RT_LIKELY(pThis->svga.f3DEnabled))
-                    vmsvga3dDefineScreen(pThisCC, pScreen);
+                    vmsvga3dDefineScreen(pThis, pThisCC, pScreen);
 # endif
                 break;
             }

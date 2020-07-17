@@ -2815,7 +2815,7 @@ int vmsvga3dContextDestroy(PVGASTATECC pThisCC, uint32_t cid)
     return VINF_SUCCESS;
 }
 
-int vmsvga3dBackDefineScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
+int vmsvga3dBackDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
 {
     RT_NOREF(pThisCC, pScreen);
     return VERR_NOT_IMPLEMENTED;

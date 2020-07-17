@@ -421,6 +421,15 @@ GLPFN int (* (* pfn_XSetErrorHandler)(int (*handler)(Display *, XErrorEvent *)))
 GLPFN int (* pfn_XSync)(Display *display, Bool discard);
 #define XSync pfn_XSync
 
+GLPFN int (* pfn_XScreenNumberOfScreen)(Screen *screen);
+#define XScreenNumberOfScreen pfn_XScreenNumberOfScreen
+
+GLPFN int (* pfn_XMapWindow)(Display *display, Window w);
+#define XMapWindow pfn_XMapWindow
+
+GLPFN Status (* pfn_XGetWindowAttributes)(Display *display, Window w, XWindowAttributes *window_attributes_return);
+#define XGetWindowAttributes pfn_XGetWindowAttributes
+
 #endif
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_glLdr_h */

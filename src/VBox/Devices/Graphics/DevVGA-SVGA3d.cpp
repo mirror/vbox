@@ -979,14 +979,14 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t sid, u
     return VINF_SUCCESS;
 }
 
-int vmsvga3dDefineScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
+int vmsvga3dDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
 {
     if (pScreen->pHwScreen)
     {
         vmsvga3dBackDestroyScreen(pThisCC, pScreen);
     }
 
-    int rc = vmsvga3dBackDefineScreen(pThisCC, pScreen);
+    int rc = vmsvga3dBackDefineScreen(pThis, pThisCC, pScreen);
     if (RT_SUCCESS(rc))
     {
         LogRelMax(1, ("VMSVGA: using accelerated graphics output\n"));

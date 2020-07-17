@@ -1176,16 +1176,22 @@ typedef struct VMSVGAHWSCREEN
 {
     uint32_t u32Reserved0;
 #if defined(RT_OS_LINUX)
-    VisualID visualid;
-    Pixmap pixmap;
-    GLXPixmap glxpixmap;
+    /* OpenGL context, which is used for the screen updates. */
     GLXContext glxctx;
-    bool fYInverted;
-    bool fMipmap;
+
+    /* The overlay window. */
+    Window xwindow;
+
+    /* The RGBA texture which hold the screen content. */
+    GLuint idScreenTexture;
+
+    /* Read and draw framebuffer objects for copying a surface to the screen texture. */
+    GLuint idReadFramebuffer;
+    GLuint idDrawFramebuffer;
 #endif
 } VMSVGAHWSCREEN;
 
-int vmsvga3dBackDefineScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
+int vmsvga3dBackDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 int vmsvga3dBackDestroyScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen);
 
 int vmsvga3dBackSurfaceBlitToScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen,

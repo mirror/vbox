@@ -3151,12 +3151,26 @@ int Display::i_handle3DNotifyProcess(VBOX3DNOTIFY *p3DNotify)
 
     if (!pFramebuffer.isNull())
     {
-        com::SafeArray<BYTE> data;
-        data.initFrom((BYTE *)&p3DNotify->au8Data[0], p3DNotify->cbData);
+        if (p3DNotify->enmNotification == VBOX3D_NOTIFY_TYPE_HW_OVERLAY_GET_ID)
+        {
+            LONG64 winId = 0;
+            HRESULT hr = pFramebuffer->COMGETTER(WinId)(&winId);
+            if (SUCCEEDED(hr))
+            {
+                *(uint64_t *)&p3DNotify->au8Data[0] = winId;
+            }
+            else
+                rc = VERR_NOT_SUPPORTED;
+        }
+        else
+        {
+            com::SafeArray<BYTE> data;
+            data.initFrom((BYTE *)&p3DNotify->au8Data[0], p3DNotify->cbData);
 
-        HRESULT hr = pFramebuffer->Notify3DEvent((ULONG)p3DNotify->enmNotification, ComSafeArrayAsInParam(data));
-        if (FAILED(hr))
-            rc = VERR_NOT_SUPPORTED;
+            HRESULT hr = pFramebuffer->Notify3DEvent((ULONG)p3DNotify->enmNotification, ComSafeArrayAsInParam(data));
+            if (FAILED(hr))
+                rc = VERR_NOT_SUPPORTED;
+        }
     }
     else
         rc = VERR_NOT_IMPLEMENTED;

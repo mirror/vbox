@@ -202,6 +202,9 @@ int glLdrInit(PPDMDEVINS pDevIns)
     pfn_XPending = 0;
     pfn_XSetErrorHandler = 0;
     pfn_XSync = 0;
+    pfn_XScreenNumberOfScreen = 0;
+    pfn_XMapWindow = 0;
+    pfn_XGetWindowAttributes = 0;
     pfn_glXGetFBConfigAttrib = 0;
     pfn_glXGetVisualFromFBConfig = 0;
     pfn_glXQueryVersion = 0;
@@ -309,6 +312,9 @@ int glLdrInit(PPDMDEVINS pDevIns)
     X11GETPROC_(XPending);
     X11GETPROC_(XSetErrorHandler);
     X11GETPROC_(XSync);
+    X11GETPROC_(XScreenNumberOfScreen);
+    X11GETPROC_(XMapWindow);
+    X11GETPROC_(XGetWindowAttributes);
     GLGETPROC_(glXGetFBConfigAttrib, "");
     GLGETPROC_(glXGetVisualFromFBConfig, "");
     GLGETPROC_(glXQueryVersion, "");
