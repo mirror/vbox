@@ -98,6 +98,28 @@ typedef enum GDBSTUBRECVSTATE
 
 
 /**
+ * GDB target register descriptor.
+ */
+typedef struct GDBREGDESC
+{
+    /** Register name. */
+    const char                  *pszName;
+    /** DBGF register index. */
+    DBGFREG                     enmReg;
+    /** Bitsize */
+    uint32_t                    cBits;
+    /** Type. */
+    const char                  *pszType;
+    /** Group. */
+    const char                  *pszGroup;
+} GDBREGDESC;
+/** Pointer to a GDB target register descriptor. */
+typedef GDBREGDESC *PGDBREGDESC;
+/** Pointer to a const GDB target register descriptor. */
+typedef const GDBREGDESC *PCGDBREGDESC;
+
+
+/**
  * A tracepoint descriptor.
  */
 typedef struct GDBSTUBTP
@@ -144,6 +166,10 @@ typedef struct GDBSTUBCTX
     char                        *pachTgtXmlDesc;
     /** Size of the XML target description. */
     size_t                      cbTgtXmlDesc;
+    /** Pointer to the selected GDB register set. */
+    PCGDBREGDESC                paRegs;
+    /** Number of entries in the register set. */
+    uint32_t                    cRegs;
     /** Flag whether the stub is in extended mode. */
     bool                        fExtendedMode;
     /** Flag whether was something was output using the 'O' packet since it was reset last. */
@@ -725,8 +751,10 @@ static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessFeatXmlRegs(PGDBSTUBCTX pThis, 
         if (pbDelim)
             cbThisVal = pbDelim - pbVal;
 
-        size_t cchArch = sizeof("i386:x86-64") - 1;
-        if (!memcmp(pbVal, "i386:x86-64", RT_MIN(cbVal, cchArch)))
+        const size_t cchArch64 = sizeof("i386:x86-64") - 1;
+        const size_t cchArch32 = sizeof("i386") - 1;
+        if (   !memcmp(pbVal, "i386:x86-64", RT_MIN(cbVal, cchArch64))
+            || !memcmp(pbVal, "i386", RT_MIN(cbVal, cchArch32)))
         {
             /* Set the flag to support the qXfer:features:read packet. */
             pThis->fFeatures |= GDBSTUBCTX_FEATURES_F_TGT_DESC;
@@ -976,77 +1004,115 @@ static int dbgcGdbStubCtxPktProcessQueryXferParseAnnexOffLen(const uint8_t *pbAr
 }
 
 
-/**
- * GDB registers.
- */
-static const struct GDBREGDESC
-{
-    /** Register name. */
-    const char                  *pszName;
-    /** DBGF register index. */
-    DBGFREG                     enmReg;
-    /** Bitsize */
-    uint32_t                    cBits;
-    /** Type. */
-    const char                  *pszType;
-    /** Group. */
-    const char                  *pszGroup;
-} g_aGdbRegs[] =
-{
 #define DBGREG_DESC_INIT_INT64(a_Name, a_enmDbgfReg)    { a_Name, a_enmDbgfReg, 64, "int64",    NULL }
 #define DBGREG_DESC_INIT_INT32(a_Name, a_enmDbgfReg)    { a_Name, a_enmDbgfReg, 32, "int32",    NULL }
-#define DBGREG_DESC_INIT_DATA_PTR(a_Name, a_enmDbgfReg) { a_Name, a_enmDbgfReg, 64, "data_ptr", NULL }
-#define DBGREG_DESC_INIT_CODE_PTR(a_Name, a_enmDbgfReg) { a_Name, a_enmDbgfReg, 64, "code_ptr", NULL }
+#define DBGREG_DESC_INIT_DATA_PTR64(a_Name, a_enmDbgfReg) { a_Name, a_enmDbgfReg, 64, "data_ptr", NULL }
+#define DBGREG_DESC_INIT_CODE_PTR64(a_Name, a_enmDbgfReg) { a_Name, a_enmDbgfReg, 64, "code_ptr", NULL }
+#define DBGREG_DESC_INIT_DATA_PTR32(a_Name, a_enmDbgfReg) { a_Name, a_enmDbgfReg, 32, "data_ptr", NULL }
+#define DBGREG_DESC_INIT_CODE_PTR32(a_Name, a_enmDbgfReg) { a_Name, a_enmDbgfReg, 32, "code_ptr", NULL }
 #define DBGREG_DESC_INIT_X87(a_Name, a_enmDbgfReg)      { a_Name, a_enmDbgfReg, 80, "i387_ext", NULL }
 #define DBGREG_DESC_INIT_X87_CTRL(a_Name, a_enmDbgfReg) { a_Name, a_enmDbgfReg, 32, "int",      "float" }
-    DBGREG_DESC_INIT_INT64(   "rax",    DBGFREG_RAX),
-    DBGREG_DESC_INIT_INT64(   "rbx",    DBGFREG_RBX),
-    DBGREG_DESC_INIT_INT64(   "rcx",    DBGFREG_RCX),
-    DBGREG_DESC_INIT_INT64(   "rdx",    DBGFREG_RDX),
-    DBGREG_DESC_INIT_INT64(   "rsi",    DBGFREG_RSI),
-    DBGREG_DESC_INIT_INT64(   "rdi",    DBGFREG_RDI),
-    DBGREG_DESC_INIT_DATA_PTR("rbp",    DBGFREG_RBP),
-    DBGREG_DESC_INIT_DATA_PTR("rsp",    DBGFREG_RSP),
-    DBGREG_DESC_INIT_INT64(   "r8",     DBGFREG_R8),
-    DBGREG_DESC_INIT_INT64(   "r9",     DBGFREG_R9),
-    DBGREG_DESC_INIT_INT64(   "r10",    DBGFREG_R10),
-    DBGREG_DESC_INIT_INT64(   "r11",    DBGFREG_R11),
-    DBGREG_DESC_INIT_INT64(   "r12",    DBGFREG_R12),
-    DBGREG_DESC_INIT_INT64(   "r13",    DBGFREG_R13),
-    DBGREG_DESC_INIT_INT64(   "r14",    DBGFREG_R14),
-    DBGREG_DESC_INIT_INT64(   "r15",    DBGFREG_R15),
-    DBGREG_DESC_INIT_CODE_PTR("rip",    DBGFREG_RIP),
-    DBGREG_DESC_INIT_INT32(   "eflags", DBGFREG_FLAGS),
-    DBGREG_DESC_INIT_INT32(   "cs",     DBGFREG_CS),
-    DBGREG_DESC_INIT_INT32(   "ss",     DBGFREG_SS),
-    DBGREG_DESC_INIT_INT32(   "ds",     DBGFREG_DS),
-    DBGREG_DESC_INIT_INT32(   "es",     DBGFREG_ES),
-    DBGREG_DESC_INIT_INT32(   "fs",     DBGFREG_FS),
-    DBGREG_DESC_INIT_INT32(   "gs",     DBGFREG_GS),
 
-    DBGREG_DESC_INIT_X87(     "st0",    DBGFREG_ST0),
-    DBGREG_DESC_INIT_X87(     "st1",    DBGFREG_ST1),
-    DBGREG_DESC_INIT_X87(     "st2",    DBGFREG_ST2),
-    DBGREG_DESC_INIT_X87(     "st3",    DBGFREG_ST3),
-    DBGREG_DESC_INIT_X87(     "st4",    DBGFREG_ST4),
-    DBGREG_DESC_INIT_X87(     "st5",    DBGFREG_ST5),
-    DBGREG_DESC_INIT_X87(     "st6",    DBGFREG_ST6),
-    DBGREG_DESC_INIT_X87(     "st7",    DBGFREG_ST7),
 
-    DBGREG_DESC_INIT_X87_CTRL("fctrl",  DBGFREG_FCW),
-    DBGREG_DESC_INIT_X87_CTRL("fstat",  DBGFREG_FSW),
-    DBGREG_DESC_INIT_X87_CTRL("ftag",   DBGFREG_FTW),
-    DBGREG_DESC_INIT_X87_CTRL("fop",    DBGFREG_FOP),
-    DBGREG_DESC_INIT_X87_CTRL("fioff",  DBGFREG_FPUIP),
-    DBGREG_DESC_INIT_X87_CTRL("fiseg",  DBGFREG_FPUCS),
-    DBGREG_DESC_INIT_X87_CTRL("fooff",  DBGFREG_FPUDP),
-    DBGREG_DESC_INIT_X87_CTRL("foseg",  DBGFREG_FPUDS)
+/**
+ * amd64 GDB register set.
+ */
+static const GDBREGDESC g_aGdbRegs64[] =
+{
+    DBGREG_DESC_INIT_INT64(     "rax",    DBGFREG_RAX),
+    DBGREG_DESC_INIT_INT64(     "rbx",    DBGFREG_RBX),
+    DBGREG_DESC_INIT_INT64(     "rcx",    DBGFREG_RCX),
+    DBGREG_DESC_INIT_INT64(     "rdx",    DBGFREG_RDX),
+    DBGREG_DESC_INIT_INT64(     "rsi",    DBGFREG_RSI),
+    DBGREG_DESC_INIT_INT64(     "rdi",    DBGFREG_RDI),
+    DBGREG_DESC_INIT_DATA_PTR64("rbp",    DBGFREG_RBP),
+    DBGREG_DESC_INIT_DATA_PTR64("rsp",    DBGFREG_RSP),
+    DBGREG_DESC_INIT_INT64(     "r8",     DBGFREG_R8),
+    DBGREG_DESC_INIT_INT64(     "r9",     DBGFREG_R9),
+    DBGREG_DESC_INIT_INT64(     "r10",    DBGFREG_R10),
+    DBGREG_DESC_INIT_INT64(     "r11",    DBGFREG_R11),
+    DBGREG_DESC_INIT_INT64(     "r12",    DBGFREG_R12),
+    DBGREG_DESC_INIT_INT64(     "r13",    DBGFREG_R13),
+    DBGREG_DESC_INIT_INT64(     "r14",    DBGFREG_R14),
+    DBGREG_DESC_INIT_INT64(     "r15",    DBGFREG_R15),
+    DBGREG_DESC_INIT_CODE_PTR64("rip",    DBGFREG_RIP),
+    DBGREG_DESC_INIT_INT32(     "eflags", DBGFREG_FLAGS),
+    DBGREG_DESC_INIT_INT32(     "cs",     DBGFREG_CS),
+    DBGREG_DESC_INIT_INT32(     "ss",     DBGFREG_SS),
+    DBGREG_DESC_INIT_INT32(     "ds",     DBGFREG_DS),
+    DBGREG_DESC_INIT_INT32(     "es",     DBGFREG_ES),
+    DBGREG_DESC_INIT_INT32(     "fs",     DBGFREG_FS),
+    DBGREG_DESC_INIT_INT32(     "gs",     DBGFREG_GS),
 
-#undef DBGREG_DESC_INIT_CODE_PTR
-#undef DBGREG_DESC_INIT_DATA_PTR
+    DBGREG_DESC_INIT_X87(       "st0",    DBGFREG_ST0),
+    DBGREG_DESC_INIT_X87(       "st1",    DBGFREG_ST1),
+    DBGREG_DESC_INIT_X87(       "st2",    DBGFREG_ST2),
+    DBGREG_DESC_INIT_X87(       "st3",    DBGFREG_ST3),
+    DBGREG_DESC_INIT_X87(       "st4",    DBGFREG_ST4),
+    DBGREG_DESC_INIT_X87(       "st5",    DBGFREG_ST5),
+    DBGREG_DESC_INIT_X87(       "st6",    DBGFREG_ST6),
+    DBGREG_DESC_INIT_X87(       "st7",    DBGFREG_ST7),
+
+    DBGREG_DESC_INIT_X87_CTRL(  "fctrl",  DBGFREG_FCW),
+    DBGREG_DESC_INIT_X87_CTRL(  "fstat",  DBGFREG_FSW),
+    DBGREG_DESC_INIT_X87_CTRL(  "ftag",   DBGFREG_FTW),
+    DBGREG_DESC_INIT_X87_CTRL(  "fop",    DBGFREG_FOP),
+    DBGREG_DESC_INIT_X87_CTRL(  "fioff",  DBGFREG_FPUIP),
+    DBGREG_DESC_INIT_X87_CTRL(  "fiseg",  DBGFREG_FPUCS),
+    DBGREG_DESC_INIT_X87_CTRL(  "fooff",  DBGFREG_FPUDP),
+    DBGREG_DESC_INIT_X87_CTRL(  "foseg",  DBGFREG_FPUDS)
+};
+
+
+/**
+ * i386 GDB register set.
+ */
+static const GDBREGDESC g_aGdbRegs32[] =
+{
+    DBGREG_DESC_INIT_INT32(     "eax",    DBGFREG_EAX),
+    DBGREG_DESC_INIT_INT32(     "ebx",    DBGFREG_EBX),
+    DBGREG_DESC_INIT_INT32(     "ecx",    DBGFREG_ECX),
+    DBGREG_DESC_INIT_INT32(     "edx",    DBGFREG_EDX),
+    DBGREG_DESC_INIT_INT32(     "esi",    DBGFREG_ESI),
+    DBGREG_DESC_INIT_INT32(     "edi",    DBGFREG_EDI),
+    DBGREG_DESC_INIT_DATA_PTR32("ebp",    DBGFREG_EBP),
+    DBGREG_DESC_INIT_DATA_PTR32("esp",    DBGFREG_ESP),
+    DBGREG_DESC_INIT_CODE_PTR32("eip",    DBGFREG_EIP),
+    DBGREG_DESC_INIT_INT32(     "eflags", DBGFREG_FLAGS),
+    DBGREG_DESC_INIT_INT32(     "cs",     DBGFREG_CS),
+    DBGREG_DESC_INIT_INT32(     "ss",     DBGFREG_SS),
+    DBGREG_DESC_INIT_INT32(     "ds",     DBGFREG_DS),
+    DBGREG_DESC_INIT_INT32(     "es",     DBGFREG_ES),
+    DBGREG_DESC_INIT_INT32(     "fs",     DBGFREG_FS),
+    DBGREG_DESC_INIT_INT32(     "gs",     DBGFREG_GS),
+
+    DBGREG_DESC_INIT_X87(       "st0",    DBGFREG_ST0),
+    DBGREG_DESC_INIT_X87(       "st1",    DBGFREG_ST1),
+    DBGREG_DESC_INIT_X87(       "st2",    DBGFREG_ST2),
+    DBGREG_DESC_INIT_X87(       "st3",    DBGFREG_ST3),
+    DBGREG_DESC_INIT_X87(       "st4",    DBGFREG_ST4),
+    DBGREG_DESC_INIT_X87(       "st5",    DBGFREG_ST5),
+    DBGREG_DESC_INIT_X87(       "st6",    DBGFREG_ST6),
+    DBGREG_DESC_INIT_X87(       "st7",    DBGFREG_ST7),
+
+    DBGREG_DESC_INIT_X87_CTRL(  "fctrl",  DBGFREG_FCW),
+    DBGREG_DESC_INIT_X87_CTRL(  "fstat",  DBGFREG_FSW),
+    DBGREG_DESC_INIT_X87_CTRL(  "ftag",   DBGFREG_FTW),
+    DBGREG_DESC_INIT_X87_CTRL(  "fop",    DBGFREG_FOP),
+    DBGREG_DESC_INIT_X87_CTRL(  "fioff",  DBGFREG_FPUIP),
+    DBGREG_DESC_INIT_X87_CTRL(  "fiseg",  DBGFREG_FPUCS),
+    DBGREG_DESC_INIT_X87_CTRL(  "fooff",  DBGFREG_FPUDP),
+    DBGREG_DESC_INIT_X87_CTRL(  "foseg",  DBGFREG_FPUDS)
+};
+
+#undef DBGREG_DESC_INIT_CODE_PTR64
+#undef DBGREG_DESC_INIT_DATA_PTR64
+#undef DBGREG_DESC_INIT_CODE_PTR32
+#undef DBGREG_DESC_INIT_DATA_PTR32
 #undef DBGREG_DESC_INIT_INT32
 #undef DBGREG_DESC_INIT_INT64
-};
+#undef DBGREG_DESC_INIT_X87
+#undef DBGREG_DESC_INIT_X87_CTRL
 
 
 /**
@@ -1057,11 +1123,17 @@ static const struct GDBREGDESC
  */
 static int dbgcGdbStubCtxTgtXmlDescCreate(PGDBSTUBCTX pThis)
 {
-    static const char s_szXmlTgtHdr[] =
+    static const char s_szXmlTgtHdr64[] =
         "<?xml version=\"1.0\"?>\n"
         "<!DOCTYPE target SYSTEM \"gdb-target.dtd\">\n"
         "<target version=\"1.0\">\n"
         "    <architecture>i386:x86-64</architecture>\n"
+        "    <feature name=\"org.gnu.gdb.i386.core\">\n";
+    static const char s_szXmlTgtHdr32[] =
+        "<?xml version=\"1.0\"?>\n"
+        "<!DOCTYPE target SYSTEM \"gdb-target.dtd\">\n"
+        "<target version=\"1.0\">\n"
+        "    <architecture>i386</architecture>\n"
         "    <feature name=\"org.gnu.gdb.i386.core\">\n";
     static const char s_szXmlTgtFooter[] =
         "    </feature>\n"
@@ -1076,13 +1148,13 @@ static int dbgcGdbStubCtxTgtXmlDescCreate(PGDBSTUBCTX pThis)
         char *pachXmlCur    = pThis->pachTgtXmlDesc;
         pThis->cbTgtXmlDesc = cbLeft;
 
-        rc = RTStrCatP(&pachXmlCur, &cbLeft, &s_szXmlTgtHdr[0]);
+        rc = RTStrCatP(&pachXmlCur, &cbLeft, pThis->paRegs == &g_aGdbRegs64[0] ? &s_szXmlTgtHdr64[0] : &s_szXmlTgtHdr32[0]);
         if (RT_SUCCESS(rc))
         {
             /* Register */
-            for (uint32_t i = 0; i < RT_ELEMENTS(g_aGdbRegs) && RT_SUCCESS(rc); i++)
+            for (uint32_t i = 0; i < pThis->cRegs && RT_SUCCESS(rc); i++)
             {
-                const struct GDBREGDESC *pReg = &g_aGdbRegs[i];
+                const struct GDBREGDESC *pReg = &pThis->paRegs[i];
 
                 ssize_t cchStr = 0;
                 if (pReg->pszGroup)
@@ -1120,12 +1192,13 @@ static int dbgcGdbStubCtxTgtXmlDescCreate(PGDBSTUBCTX pThis)
  * Returns the GDB register descriptor describing the given DBGF register enum.
  *
  * @returns Pointer to the GDB register descriptor or NULL if not found.
+ * @param   pThis               The GDB stub context.
  * @param   idxReg              The register to look for.
  */
-static const GDBREGDESC *dbgcGdbStubRegGet(uint32_t idxReg)
+static const GDBREGDESC *dbgcGdbStubRegGet(PGDBSTUBCTX pThis, uint32_t idxReg)
 {
-    if (RT_LIKELY(idxReg < RT_ELEMENTS(g_aGdbRegs)))
-        return &g_aGdbRegs[idxReg];
+    if (RT_LIKELY(idxReg < pThis->cRegs))
+        return &pThis->paRegs[idxReg];
 
     return NULL;
 }
@@ -1678,7 +1751,7 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                 size_t cbRegs = 0;
                 for (;;)
                 {
-                    const GDBREGDESC *pReg = &g_aGdbRegs[idxRegMax++];
+                    const GDBREGDESC *pReg = &pThis->paRegs[idxRegMax++];
                     cbRegs += pReg->cBits / 8;
                     if (pReg->enmReg == DBGFREG_SS) /* Up to this seems to belong to the general register set. */
                         break;
@@ -1693,7 +1766,7 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
 
                     for (uint32_t i = 0; i < idxRegMax && RT_SUCCESS(rc); i++)
                     {
-                        const GDBREGDESC *pReg = &g_aGdbRegs[i];
+                        const GDBREGDESC *pReg = &pThis->paRegs[i];
                         size_t cbReg = pReg->cBits / 8;
                         union
                         {
@@ -1841,7 +1914,7 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                 {
                     DBGFREGVAL RegVal;
                     DBGFREGVALTYPE enmType;
-                    const GDBREGDESC *pReg = dbgcGdbStubRegGet(uReg);
+                    const GDBREGDESC *pReg = dbgcGdbStubRegGet(pThis, uReg);
                     if (RT_LIKELY(pReg))
                     {
                         rc = DBGFR3RegNmQuery(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, pReg->pszName, &RegVal, &enmType);
@@ -1881,7 +1954,7 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
                                                        '=', &pbPktSep);
                 if (RT_SUCCESS(rc))
                 {
-                    const GDBREGDESC *pReg = dbgcGdbStubRegGet(uReg);
+                    const GDBREGDESC *pReg = dbgcGdbStubRegGet(pThis, uReg);
 
                     if (pReg)
                     {
@@ -2473,6 +2546,23 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
  */
 int dbgcGdbStubRun(PGDBSTUBCTX pThis)
 {
+    /* Select the register set based on the CPU mode. */
+    CPUMMODE enmMode   = DBGCCmdHlpGetCpuMode(&pThis->Dbgc.CmdHlp);
+    switch (enmMode)
+    {
+        case CPUMMODE_PROTECTED:
+            pThis->paRegs = &g_aGdbRegs32[0];
+            pThis->cRegs  = RT_ELEMENTS(g_aGdbRegs32);
+            break;
+        case CPUMMODE_LONG:
+            pThis->paRegs = &g_aGdbRegs64[0];
+            pThis->cRegs  = RT_ELEMENTS(g_aGdbRegs64);
+            break;
+        case CPUMMODE_REAL:
+        default:
+            return DBGCCmdHlpPrintf(&pThis->Dbgc.CmdHlp, "error: Invalid CPU mode %d.\n", enmMode);
+    }
+
     /*
      * We're ready for commands now.
      */
