@@ -1067,29 +1067,58 @@ int VBoxDnDWnd::OnHgDrop(void)
  */
 int VBoxDnDWnd::OnHgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta)
 {
-    LogFlowThisFunc(("mState=%ld, enmMetaType=%RU32, cbMeta=%RU32\n", mState, pMeta->enmType, pMeta->cbMeta));
+    LogFlowThisFunc(("mState=%ld, enmMetaType=%RU32\n", mState, pMeta->enmType));
 
-    mState = Dropped;
-
-    int rc = VINF_SUCCESS;
-    if (pMeta->pvMeta)
-    {
-        Assert(pMeta->cbMeta);
-        rc = RTCritSectEnter(&mCritSect);
-        if (RT_SUCCESS(rc))
-        {
-            if (startupInfo.pDataObject)
-                rc = startupInfo.pDataObject->Signal(mFormatRequested, pMeta->pvMeta, pMeta->cbMeta);
-            else
-                rc = VERR_NOT_FOUND;
-
-            RTCritSectLeave(&mCritSect);
-        }
-    }
-
-    int rc2 = mouseRelease();
+    int rc = RTCritSectEnter(&mCritSect);
     if (RT_SUCCESS(rc))
-        rc = rc2;
+    {
+        mState = Dropped;
+
+        if (startupInfo.pDataObject)
+        {
+            switch (pMeta->enmType)
+            {
+                case VBGLR3GUESTDNDMETADATATYPE_RAW:
+                {
+                    AssertBreakStmt(pMeta->u.Raw.pvMeta != NULL, rc = VERR_INVALID_POINTER);
+                    AssertBreakStmt(pMeta->u.Raw.cbMeta, rc = VERR_INVALID_PARAMETER);
+
+                    rc = startupInfo.pDataObject->Signal(mFormatRequested, pMeta->u.Raw.pvMeta, pMeta->u.Raw.cbMeta);
+                    break;
+                }
+
+                case VBGLR3GUESTDNDMETADATATYPE_URI_LIST:
+                {
+                    LogRel2(("DnD: URI transfer root directory is '%s'\n", DnDTransferListGetRootPathAbs(&pMeta->u.URI.Transfer)));
+
+                    char  *pszBuf;
+                    size_t cbBuf;
+                    /* Note: The transfer list already has its root set to a temporary directory, so no need to set/add a new
+                     *       path base here. */
+                    rc = DnDTransferListGetRootsEx(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_NATIVE, NULL /* pszPathBase */,
+                                                   DND_PATH_SEPARATOR, &pszBuf, &cbBuf);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = startupInfo.pDataObject->Signal(mFormatRequested, pszBuf, cbBuf);
+                        RTStrFree(pszBuf);
+                    }
+                    break;
+                }
+
+                default:
+                    AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+                    break;
+            }
+        }
+        else
+            rc = VERR_NOT_FOUND;
+
+        int rc2 = mouseRelease();
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+
+        RTCritSectLeave(&mCritSect);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

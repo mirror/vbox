@@ -37,6 +37,7 @@
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 # ifdef VBOX_WITH_DRAG_AND_DROP
+#  include <VBox/GuestHost/DragAndDrop.h>
 #  include <VBox/GuestHost/DragAndDropDefs.h>
 # endif
 # ifdef VBOX_WITH_SHARED_CLIPBOARD
@@ -1177,17 +1178,26 @@ typedef enum VBGLR3GUESTDNDMETADATATYPE
 
 /**
  * Structure for keeping + handling DnD meta data.
- *
- * Note: Don't treat this struct as POD object, as the union has classes in it.
  */
 typedef struct VBGLR3GUESTDNDMETADATA
 {
     /** The meta data type the union contains. */
     VBGLR3GUESTDNDMETADATATYPE enmType;
-    /** Pointer to actual meta data. */
-    void    *pvMeta;
-    /** Size (in bytes) of meta data. */
-    uint32_t cbMeta;
+    /** Union based on \a enmType. */
+    union
+    {
+        struct
+        {
+            /** Pointer to actual meta data. */
+            void    *pvMeta;
+            /** Size (in bytes) of meta data. */
+            uint32_t cbMeta;
+        } Raw;
+        struct
+        {
+            DNDTRANSFERLIST Transfer;
+        } URI;
+    } u;
 } VBGLR3GUESTDNDMETADATA;
 
 /** Pointer to VBGLR3GUESTDNDMETADATA. */

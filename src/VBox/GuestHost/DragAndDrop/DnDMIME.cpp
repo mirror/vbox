@@ -34,10 +34,6 @@ bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax)
 
 bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax)
 {
-    bool fNeedsDropDir = false;
-    if (!RTStrNICmp(pcszFormat, "text/uri-list", cchFormatMax)) /** @todo Add "x-special/gnome-icon-list"? */
-        fNeedsDropDir = true;
-
-    return fNeedsDropDir;
+    return DnDMIMEHasFileURLs(pcszFormat, cchFormatMax);
 }
 

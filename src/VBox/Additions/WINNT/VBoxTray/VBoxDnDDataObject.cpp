@@ -228,37 +228,17 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
         /*
          * URI list handling.
          */
-        if (mstrFormat.equalsIgnoreCase("text/uri-list"))
+        if (DnDMIMEHasFileURLs(mstrFormat.c_str(), RTSTR_MAX))
         {
-            int rc = VINF_SUCCESS;
-
-            RTCList<RTCString> lstFilesURI = RTCString((char*)mpvData, mcbData).split("\r\n");
-            RTCList<RTCString> lstFiles;
-            for (size_t i = 0; i < lstFilesURI.size(); i++)
-            {
-                char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).c_str());
-                if (pszFilePath)
-                {
-                    lstFiles.append(pszFilePath);
-                    RTStrFree(pszFilePath);
-                }
-                else /* Unable to parse -- refuse entire request. */
-                {
-                    lstFiles.clear();
-                    rc = VERR_INVALID_PARAMETER;
-                    break;
-                }
-            }
-
-            size_t cFiles = lstFiles.size();
+            char **papszFiles;
+            size_t cFiles;
+            int rc = RTStrSplit((const char *)mpvData, mcbData, DND_PATH_SEPARATOR, &papszFiles, &cFiles);
             if (   RT_SUCCESS(rc)
                 && cFiles)
             {
-#ifdef DEBUG
-                LogFlowFunc(("Files (%zu)\n", cFiles));
+                LogRel2(("DnD: Files (%zu)\n", cFiles));
                 for (size_t i = 0; i < cFiles; i++)
-                    LogFlowFunc(("\tFile: %s\n", lstFiles.at(i).c_str()));
-#endif
+                    LogRel2(("\tDnD: File '%s'\n", papszFiles[i]));
 
 #if 0
                 if (   (pFormatEtc->tymed & TYMED_ISTREAM)
@@ -309,7 +289,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
                     size_t cchFiles = 0; /* Number of ASCII characters. */
                     for (size_t i = 0; i < cFiles; i++)
                     {
-                        cchFiles += strlen(lstFiles.at(i).c_str());
+                        cchFiles += strlen(papszFiles[i]);
                         cchFiles += 1; /* Terminating '\0'. */
                     }
 
@@ -327,7 +307,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
                         {
                             size_t cchCurFile;
                             PRTUTF16 pwszFile;
-                            rc = RTStrToUtf16(lstFiles.at(i).c_str(), &pwszFile);
+                            rc = RTStrToUtf16(papszFiles[i], &pwszFile);
                             if (RT_SUCCESS(rc))
                             {
                                 cchCurFile = RTUtf16Len(pwszFile);
@@ -372,6 +352,10 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
                     else
                         rc = VERR_NO_MEMORY;
                 }
+
+                for (size_t i = 0; i < cFiles; ++i)
+                    RTStrFree(papszFiles[i]);
+                RTMemFree(papszFiles);
             }
 
             if (RT_FAILURE(rc))
@@ -670,7 +654,7 @@ void VBoxDnDDataObject::SetStatus(Status status)
 }
 
 int VBoxDnDDataObject::Signal(const RTCString &strFormat,
-                              const void *pvData, uint32_t cbData)
+                              const void *pvData, size_t cbData)
 {
     int rc;
 

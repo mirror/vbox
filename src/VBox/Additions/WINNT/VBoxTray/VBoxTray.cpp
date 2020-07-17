@@ -153,7 +153,7 @@ static uint64_t       g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. 
 #ifdef DEBUG_andy
 static VBOXSERVICEINFO g_aServices[] =
 {
-    { &g_SvcDescClipboard,      NIL_RTTHREAD, NULL, false, false, false, false, true }
+    {&g_SvcDescDnD,      NIL_RTTHREAD, NULL, false, false, false, false, true }
 };
 #else
 /**

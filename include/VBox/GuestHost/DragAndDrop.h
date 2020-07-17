@@ -32,9 +32,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/fs.h>
-
-#include <iprt/cpp/list.h>
-#include <iprt/cpp/ministring.h>
+#include <iprt/list.h>
 
 /** DnDURIDroppedFiles flags. */
 typedef uint32_t DNDURIDROPPEDFILEFLAGS;
@@ -43,53 +41,52 @@ typedef uint32_t DNDURIDROPPEDFILEFLAGS;
 #define DNDURIDROPPEDFILE_FLAGS_NONE                   0
 
 /**
- * Class for maintaining a "dropped files" directory
+ * Structure for keeping a DnD dropped files entry.
+ */
+typedef struct DNDDROPPEDFILESENTRY
+{
+    RTLISTNODE  Node;
+    char       *pszPath;
+} DNDDROPPEDFILESENTRY;
+/** Pointer to a DnD dropped files entry. */
+typedef DNDDROPPEDFILESENTRY *PDNDDROPPEDFILESENTRY;
+
+/**
+ * Structure for maintaining a "dropped files" directory
  * on the host or guest. This will contain all received files & directories
  * for a single drag and drop operation.
  *
- * In case of a failed drag and drop operation this class can also
+ * In case of a failed drag and drop operation this can also
  * perform a gentle rollback if required.
  */
-class DnDDroppedFiles
+typedef struct DNDDROPPEDFILES
 {
-public:
-#ifdef RT_NEED_NEW_AND_DELETE
-    RTMEM_IMPLEMENT_NEW_AND_DELETE();
-#endif
-    DnDDroppedFiles(void);
-    DnDDroppedFiles(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags = DNDURIDROPPEDFILE_FLAGS_NONE);
-    virtual ~DnDDroppedFiles(void);
-
-public:
-
-    int AddFile(const char *pszFile);
-    int AddDir(const char *pszDir);
-    int Close(void);
-    bool IsOpen(void) const;
-    int OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags = DNDURIDROPPEDFILE_FLAGS_NONE);
-    int OpenTemp(DNDURIDROPPEDFILEFLAGS fFlags = DNDURIDROPPEDFILE_FLAGS_NONE);
-    const char *GetDirAbs(void) const;
-    int Reopen(void);
-    int Reset(bool fDelete);
-    int Rollback(void);
-
-protected:
-
-    int closeInternal(void);
-
-protected:
-
     /** Open flags. */
-    uint32_t                     m_fOpen;
+    uint32_t     m_fOpen;
     /** Directory handle for drop directory. */
-    RTDIR                        m_hDir;
+    RTDIR        m_hDir;
     /** Absolute path to drop directory. */
-    RTCString                    m_strPathAbs;
+    char        *pszPathAbs;
     /** List for holding created directories in the case of a rollback. */
-    RTCList<RTCString>           m_lstDirs;
+    RTLISTANCHOR m_lstDirs;
     /** List for holding created files in the case of a rollback. */
-    RTCList<RTCString>           m_lstFiles;
-};
+    RTLISTANCHOR m_lstFiles;
+} DNDDROPPEDFILES;
+/** Pointer to a DnD dropped files directory. */
+typedef DNDDROPPEDFILES *PDNDDROPPEDFILES;
+
+int DnDDroppedFilesInit(PDNDDROPPEDFILES pDF, const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags);
+void DnDDroppedFilesDestroy(PDNDDROPPEDFILES pDF);
+int DnDDroppedFilesAddFile(PDNDDROPPEDFILES pDF, const char *pszFile);
+int DnDDroppedFilesAddDir(PDNDDROPPEDFILES pDF, const char *pszDir);
+int DnDDroppedFilesClose(PDNDDROPPEDFILES pDF);
+bool DnDDroppedFilesIsOpen(PDNDDROPPEDFILES pDF);
+int DnDDroppedFilesOpenEx(PDNDDROPPEDFILES pDF, const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags);
+int DnDDroppedFilesOpenTemp(PDNDDROPPEDFILES pDF, DNDURIDROPPEDFILEFLAGS fFlags);
+const char *DnDDroppedFilesGetDirAbs(PDNDDROPPEDFILES pDF);
+int DnDDroppedFilesReopen(PDNDDROPPEDFILES pDF);
+int DnDDroppedFilesReset(PDNDDROPPEDFILES pDF, bool fDelete);
+int DnDDroppedFilesRollback(PDNDDROPPEDFILES pDF);
 
 bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool DnDMIMENeedsDropDir(const char *pcszFormat, size_t cchFormatMax);
@@ -100,110 +97,68 @@ int DnDPathValidate(const char *pcszPath, bool fMustExist);
 typedef uint32_t DNDPATHCONVERTFLAGS;
 
 /** No flags specified.
- *  This also will convert the path to the universal tansport style. */
-#define DNDPATHCONVERT_FLAGS_NONE                 0
+ *  This will convert the path to the universal tansport style. */
+#define DNDPATHCONVERT_FLAGS_TRANSPORT            0
 /** Converts the path to a OS-dependent path. */
-#define DNDPATHCONVERT_FLAGS_TO_NATIVE            RT_BIT(0)
+#define DNDPATHCONVERT_FLAGS_TO_DOS               RT_BIT(0)
 
 /** Mask of all valid DnD path conversion flags. */
 #define DNDPATHCONVERT_FLAGS_VALID_MASK           UINT32_C(0x1)
 
 int DnDPathConvert(char *pszPath, size_t cbPath, DNDPATHCONVERTFLAGS fFlags);
-int DnDPathSanitize(char *pszPath, size_t cbPath);
+int DnDPathSanitizeFileName(char *pszPath, size_t cbPath);
+int DnDPathRebase(const char *pcszPathAbs, const char *pcszBaseOld, const char *pcszBaseNew, char **ppszPath);
 
-/** DnDURIObject flags. */
-typedef uint32_t DNDURIOBJECTFLAGS;
+/** DnDTransferObject flags. */
+typedef uint32_t DNDTRANSFEROBJECTFLAGS;
 
 /** No flags specified. */
-#define DNDURIOBJECT_FLAGS_NONE                   0
+#define DNDTRANSFEROBJECT_FLAGS_NONE                   0
 
-/** Mask of all valid DnD URI object flags. */
-#define DNDURIOBJECT_FLAGS_VALID_MASK             UINT32_C(0x0)
+/** Mask of all valid DnD transfer object flags. */
+#define DNDTRANSFEROBJECT_FLAGS_VALID_MASK             UINT32_C(0x0)
 
 /**
- * Class for handling DnD URI objects.
- * This class abstracts the access and handling objects when performing DnD actions.
+ * Enumeration for specifying a transfer object type.
  */
-class DnDURIObject
+typedef enum DNDTRANSFEROBJTYPE
 {
-public:
+    /** Unknown type, do not use. */
+    DNDTRANSFEROBJTYPE_UNKNOWN = 0,
+    /** Object is a file. */
+    DNDTRANSFEROBJTYPE_FILE,
+    /** Object is a directory. */
+    DNDTRANSFEROBJTYPE_DIRECTORY,
+    /** The usual 32-bit hack. */
+    DNDTRANSFEROBJTYPE_32BIT_HACK = 0x7fffffff
+} DNDTRANSFEROBJTYPE;
 
-    /**
-     * Enumeration for specifying an URI object type.
-     */
-    enum Type
-    {
-        /** Unknown type, do not use. */
-        Type_Unknown = 0,
-        /** Object is a file. */
-        Type_File,
-        /** Object is a directory. */
-        Type_Directory,
-        /** The usual 32-bit hack. */
-        Type_32Bit_Hack = 0x7fffffff
-    };
+/**
+ * Enumeration for specifying a path style.
+ */
+typedef enum DNDTRANSFEROBJPATHSTYLE
+{
+    /** Transport style (UNIX-y), the default. */
+    DNDTRANSFEROBJPATHSTYLE_TRANSPORT = 0,
+    /** DOS style, containing back slashes. */
+    DNDTRANSFEROBJPATHSTYLE_DOS,
+    /** The usual 32-bit hack. */
+    DNDTRANSFEROBJPATHSTYLE_32BIT_HACK = 0x7fffffff
+} DNDTRANSFEROBJPATHSTYLE;
 
-#ifdef RT_NEED_NEW_AND_DELETE
-    RTMEM_IMPLEMENT_NEW_AND_DELETE();
-#endif
-    DnDURIObject(Type enmType = Type_Unknown, const RTCString &strPathAbs = "");
-
-    virtual ~DnDURIObject(void);
-
-public:
-
-    /**
-     * Returns the given absolute source path of the object.
-     *
-     * @return  Absolute source path of the object.
-     */
-    const RTCString &GetPath(void) const { return m_strPathAbs; }
-
-    RTFMODE GetMode(void) const;
-
-    uint64_t GetProcessed(void) const;
-
-    uint64_t GetSize(void) const;
-
-    /**
-     * Returns the object's type.
-     *
-     * @return  The object's type.
-     */
-    Type GetType(void) const { return m_enmType; }
-
-public:
-
-    int Init(Type enmType, const RTCString &strPathAbs = "");
-
-    int SetSize(uint64_t cbSize);
-
-public:
-
-    void Close(void);
-    bool IsComplete(void) const;
-    bool IsOpen(void) const;
-    int Open(uint64_t fOpen, RTFMODE fMode = 0, DNDURIOBJECTFLAGS = DNDURIOBJECT_FLAGS_NONE);
-    int QueryInfo(void);
-    int Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
-    void Reset(void);
-    int Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
-
-public:
-
-    static int RebaseURIPath(RTCString &strPath, const RTCString &strBaseOld = "", const RTCString &strBaseNew = "");
-
-protected:
-
-    void closeInternal(void);
-    int queryInfoInternal(void);
-
-protected:
-
+/**
+ * Structure for keeping a DnD transfer object.
+ */
+typedef struct DNDTRANSFEROBJECT
+{
+    RTLISTNODE         Node;
     /** The object's type. */
-    Type      m_enmType;
-    /** Absolute path of the object. */
-    RTCString m_strPathAbs;
+    DNDTRANSFEROBJTYPE enmType;
+    /** Index (in characters, UTF-8) at which the first destination segment starts. */
+    uint16_t           idxDst;
+    /** Allocated path. Includdes the absolute source path (if any) + destination segments.
+     *  Transport (IPRT) style. */
+    char              *pszPath;
 
     /** Union containing data depending on the object's type. */
     union
@@ -229,79 +184,129 @@ protected:
             RTFSOBJINFO objInfo;
         } Dir;
     } u;
-};
+} DNDTRANSFEROBJECT;
+/** Pointer to a DnD transfer object. */
+typedef DNDTRANSFEROBJECT *PDNDTRANSFEROBJECT;
 
-/** DnDURIList flags. */
-typedef uint32_t DNDURILISTFLAGS;
+int DnDTransferObjectInit(PDNDTRANSFEROBJECT pObj, DNDTRANSFEROBJTYPE enmType, const char *pcszPathSrcAbs, const char *pcszPathDst);
+void DnDTransferObjectDestroy(PDNDTRANSFEROBJECT pObj);
+void DnDTransferObjectClose(PDNDTRANSFEROBJECT pObj);
+void DnDTransferObjectReset(PDNDTRANSFEROBJECT pObj);
+const char *DnDTransferObjectGetSourcePath(PDNDTRANSFEROBJECT pObj);
+const char *DnDTransferObjectGetDestPath(PDNDTRANSFEROBJECT pObj);
+int DnDTransferObjectGetDestPathEx(PDNDTRANSFEROBJECT pObj, DNDTRANSFEROBJPATHSTYLE enmStyle, char *pszBuf, size_t cbBuf);
+RTFMODE DnDTransferObjectGetMode(PDNDTRANSFEROBJECT pObj);
+uint64_t DnDTransferObjectGetProcessed(PDNDTRANSFEROBJECT pObj);
+uint64_t DnDTransferObjectGetSize(PDNDTRANSFEROBJECT pObj);
+DNDTRANSFEROBJTYPE DnDTransferObjectGetType(PDNDTRANSFEROBJECT pObj);
+int DnDTransferObjectSetSize(PDNDTRANSFEROBJECT pObj, uint64_t cbSize);
+bool DnDTransferObjectIsComplete(PDNDTRANSFEROBJECT pObj);
+bool DnDTransferObjectIsOpen(PDNDTRANSFEROBJECT pObj);
+int DnDTransferObjectOpen(PDNDTRANSFEROBJECT pObj, uint64_t fOpen, RTFMODE fMode, DNDTRANSFEROBJECTFLAGS fFlags);
+int DnDTransferObjectQueryInfo(PDNDTRANSFEROBJECT pObj);
+int DnDTransferObjectRead(PDNDTRANSFEROBJECT pObj, void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
+int DnDTransferObjectWrite(PDNDTRANSFEROBJECT pObj, const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
+
+/** Default URI list path separator, if not specified otherwrise.
+ *
+ *  This is there for hysterical raisins, to not break older Guest Additions.
+ ** @todo Get rid of this.  */
+#define DND_PATH_SEPARATOR                           "\r\n"
+
+/** DnDTransferList flags. */
+typedef uint32_t DNDTRANSFERLISTFLAGS;
 
 /** No flags specified. */
-#define DNDURILIST_FLAGS_NONE                   0
-/** Keep the original paths, don't convert paths to relative ones. */
-#define DNDURILIST_FLAGS_ABSOLUTE_PATHS         RT_BIT(0)
-/** Resolve all symlinks. */
-#define DNDURILIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(1)
+#define DNDTRANSFERLIST_FLAGS_NONE                   0
+/** Resolve all symlinks. Currently not supported. */
+#define DNDTRANSFERLIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(0)
 /** Keep the files + directory entries open while
  *  being in this list. */
-#define DNDURILIST_FLAGS_KEEP_OPEN              RT_BIT(2)
-/** Lazy loading: Only enumerate sub directories when needed.
+#define DNDTRANSFERLIST_FLAGS_KEEP_OPEN              RT_BIT(1)
+/** Lazy loading: Only enumerate sub directories when needed. Not implemented yet.
  ** @todo Implement lazy loading.  */
-#define DNDURILIST_FLAGS_LAZY                   RT_BIT(3)
+#define DNDTRANSFERLIST_FLAGS_LAZY                   RT_BIT(2)
 
-/** Mask of all valid DnD URI list flags. */
-#define DNDURILIST_FLAGS_VALID_MASK             UINT32_C(0xF)
+/** Mask of all valid DnD transfer list flags. */
+#define DNDTRANSFERLIST_FLAGS_VALID_MASK             UINT32_C(0x7)
 
-class DnDURIList
+/**
+ * Enumeration for specifying a transfer list format.
+ */
+typedef enum DNDTRANSFERLISTFMT
 {
-public:
-#ifdef RT_NEED_NEW_AND_DELETE
-    RTMEM_IMPLEMENT_NEW_AND_DELETE();
-#endif
-    DnDURIList(void);
-    virtual ~DnDURIList(void);
+    /** Unknown format, do not use. */
+    DNDTRANSFERLISTFMT_UNKNOWN = 0,
+    /** Native format. */
+    DNDTRANSFERLISTFMT_NATIVE,
+    /** URI format. */
+    DNDTRANSFERLISTFMT_URI,
+    /** The usual 32-bit hack. */
+    DNDTRANSFERLISTFMT_32BIT_HACK = 0x7fffffff
+} DNDTRANSFERLISTFMT;
 
-public:
+/**
+ * Structure for keeping a DnD transfer list root entry.
+ *
+ * A root entry always is relative to the parent list maintaining it.
+ */
+typedef struct DNDTRANSFERLISTROOT
+{
+    /** List node. */
+    RTLISTNODE Node;
+    /** Pointer to the relative, allocated root path.
+     *  Always ends with a trailing slash. */
+    char      *pszPathRoot;
+} DNDTRANSFERLISTROOT;
+/** Pointer to a DnD list root entry. */
+typedef DNDTRANSFERLISTROOT *PDNDTRANSFERLISTROOT;
 
-    int AppendNativePath(const char *pszPath, DNDURILISTFLAGS fFlags);
-    int AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths, DNDURILISTFLAGS fFlags);
-    int AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths, DNDURILISTFLAGS fFlags);
-    int AppendURIPath(const char *pszURI, DNDURILISTFLAGS fFlags);
-    int AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths, DNDURILISTFLAGS fFlags);
-    int AppendURIPathsFromList(const RTCList<RTCString> &lstURI, DNDURILISTFLAGS fFlags);
-
-    void Clear(void);
-    DnDURIObject *First(void) { return m_lstTree.first(); }
-    bool IsEmpty(void) const { return m_lstTree.isEmpty(); }
-    void RemoveFirst(void);
-    int SetFromURIData(const void *pvData, size_t cbData, DNDURILISTFLAGS fFlags);
-
-    RTCString GetRootEntries(const RTCString &strPathBase = "", const RTCString &strSeparator = "\r\n") const;
-    uint64_t GetRootCount(void) const { return m_lstRoot.size(); }
-    uint64_t GetTotalCount(void) const { return m_cTotal; }
-    uint64_t GetTotalBytes(void) const { return m_cbTotal; }
-
-protected:
-
-    int addEntry(const char *pcszSource, const char *pcszTarget, DNDURILISTFLAGS fFlags);
-    int appendPathRecursive(const char *pcszSrcPath, const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase, DNDURILISTFLAGS fFlags);
-
-protected:
-
-    /** List of all top-level file/directory entries.
+/**
+ * Struct for keeping a DnD transfer list.
+ *
+ * All entries must share a common (absolute) root path. For different root paths another transfer list is needed.
+ */
+typedef struct DNDTRANSFERLIST
+{
+    /** Absolute root path of this transfer list, in native path style.
+     *  Always ends with a separator. */
+    char                   *pszPathRootAbs;
+    /** List of all relative (to \a pszPathRootAbs) top-level file/directory entries, of type DNDTRANSFERLISTROOT.
      *  Note: All paths are kept internally as UNIX paths for
      *        easier conversion/handling!  */
-    RTCList<RTCString>      m_lstRoot;
-    /** List of all URI objects added. The list's content
-     *  might vary depending on how the objects are being
-     *  added (lazy or not). */
-    RTCList<DnDURIObject *> m_lstTree;
-    /** Total number of all URI objects. */
-    uint64_t                m_cTotal;
-    /** Total size of all URI objects, that is, the file
+    RTLISTANCHOR            lstRoot;
+    /** Total number of all transfer root entries. */
+    uint64_t                cRoots;
+    /** List of all transfer objects added, of type DNDTRANSFEROBJECT. */
+    RTLISTANCHOR            lstObj;
+    /** Total number of all transfer objects. */
+    uint64_t                cObj;
+    /** Total size of all transfer objects, that is, the file
      *  size of all objects (in bytes).
      *  Note: Do *not* size_t here, as we also want to support large files
      *        on 32-bit guests. */
-    uint64_t                m_cbTotal;
-};
+    uint64_t                cbObjTotal;
+} DNDTRANSFERLIST;
+/** Pointer to a DNDTRANSFERLIST struct. */
+typedef DNDTRANSFERLIST *PDNDTRANSFERLIST;
+
+int  DnDTransferListInit(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs);
+void DnDTransferListDestroy(PDNDTRANSFERLIST pList);
+void DnDTransferListReset(PDNDTRANSFERLIST pList);
+
+int DnDTransferListAppendPath(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char *pszPath, DNDTRANSFERLISTFLAGS fFlags);
+int DnDTransferListAppendPathsFromBuffer(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char *pszPaths, size_t cbPaths, const char *pcszSeparator, DNDTRANSFERLISTFLAGS fFlags);
+int DnDTransferListAppendPathsFromArray(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char * const *papcszPaths, size_t cPaths, DNDTRANSFERLISTFLAGS fFlags);
+
+int DnDTransferListGetRootsEx(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char *pcszPathBase, const char *pcszSeparator, char **ppszBuffer, size_t *pcbBuffer);
+int DnDTransferListGetRoots(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, char **ppszBuffer, size_t *pcbBuffer);
+uint64_t DnDTransferListGetRootCount(PDNDTRANSFERLIST pList);
+const char *DnDTransferListGetRootPathAbs(PDNDTRANSFERLIST pList);
+
+PDNDTRANSFEROBJECT DnDTransferListObjGetFirst(PDNDTRANSFERLIST pList);
+void DnDTransferListObjRemoveFirst(PDNDTRANSFERLIST pList);
+uint64_t DnDTransferListObjCount(PDNDTRANSFERLIST pList);
+uint64_t DnDTransferListObjTotalBytes(PDNDTRANSFERLIST pList);
 
 #endif /* !VBOX_INCLUDED_GuestHost_DragAndDrop_h */
 

@@ -938,8 +938,8 @@ int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,
     AssertPtrReturn(pResp, VERR_INVALID_POINTER);
     /* cbDataAdd is optional. */
 
-    LogFlowFunc(("cbTotal=%RU64, cbProcessed=%RU64, cbRemaining=%RU64, cbDataAdd=%RU32\n",
-                 pData->getTotal(), pData->getProcessed(), pData->getRemaining(), cbDataAdd));
+    LogFlowFunc(("cbExtra=%RU64, cbProcessed=%RU64, cbRemaining=%RU64, cbDataAdd=%RU32\n",
+                 pData->cbExtra, pData->cbProcessed, pData->getRemaining(), cbDataAdd));
 
     if (!pResp)
         return VINF_SUCCESS;

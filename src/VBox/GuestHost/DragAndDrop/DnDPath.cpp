@@ -27,25 +27,26 @@
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/uri.h>
 
 
 /**
- * Sanitizes a path so that unsupported characters will be replaced by an underscore ("_").
+ * Sanitizes the file name portion of a path so that unsupported characters will be replaced by an underscore ("_").
  *
  * @return  IPRT status code.
- * @param   pszPath             Path to sanitize.
- * @param   cbPath              Size (in bytes) of path to sanitize.
+ * @param   pszFileName         File name to sanitize.
+ * @param   cbFileName          Size (in bytes) of file name to sanitize.
  */
-int DnDPathSanitize(char *pszPath, size_t cbPath)
+int DnDPathSanitizeFileName(char *pszFileName, size_t cbFileName)
 {
-    if (!pszPath) /* No path given? Bail out early. */
+    if (!pszFileName) /* No path given? Bail out early. */
         return VINF_SUCCESS;
 
-    AssertReturn(cbPath, VERR_INVALID_PARAMETER);
+    AssertReturn(cbFileName, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
-    RT_NOREF1(cbPath);
+    RT_NOREF1(cbFileName);
     /* Replace out characters not allowed on Windows platforms, put in by RTTimeSpecToString(). */
     /** @todo Use something like RTPathSanitize() if available later some time. */
     static const RTUNICP s_uszValidRangePairs[] =
@@ -61,17 +62,23 @@ int DnDPathSanitize(char *pszPath, size_t cbPath)
         '\0'
     };
 
-    ssize_t cReplaced = RTStrPurgeComplementSet(pszPath, s_uszValidRangePairs, '_' /* chReplacement */);
+    ssize_t cReplaced = RTStrPurgeComplementSet(pszFileName, s_uszValidRangePairs, '_' /* chReplacement */);
     if (cReplaced < 0)
         rc = VERR_INVALID_UTF8_ENCODING;
 #else
-    RT_NOREF2(pszPath, cbPath);
+    RT_NOREF2(pszFileName, cbFileName);
 #endif
     return rc;
 }
 
 /**
  * Validates whether a given path matches our set of rules or not.
+ *
+ * Rules:
+ * - An empty path is allowed.
+ * - Dot components ("." or "..") are forbidden.
+ * - If \a fMustExist is \c true, the path either has to be a file or a directory and must exist.
+ * - Symbolic links are forbidden.
  *
  * @returns VBox status code.
  * @param   pcszPath            Path to validate.
@@ -80,10 +87,10 @@ int DnDPathSanitize(char *pszPath, size_t cbPath)
  */
 int DnDPathValidate(const char *pcszPath, bool fMustExist)
 {
-    int rc = VINF_SUCCESS;
+    if (!pcszPath)
+        return VERR_INVALID_POINTER;
 
-    if (!strlen(pcszPath))
-        rc = VERR_INVALID_PARAMETER;
+    int rc = VINF_SUCCESS;
 
     if (   RT_SUCCESS(rc)
         && !RTStrIsValidEncoding(pcszPath))
@@ -135,17 +142,61 @@ int DnDPathConvert(char *pszPath, size_t cbPath, DNDPATHCONVERTFLAGS fFlags)
     RT_NOREF(cbPath);
     AssertReturn(!(fFlags & ~DNDPATHCONVERT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    if (fFlags & DNDPATHCONVERT_FLAGS_TO_NATIVE)
-        RTPathChangeToDosSlashes(pszPath, true);
+    if (fFlags & DNDPATHCONVERT_FLAGS_TO_DOS)
+        RTPathChangeToDosSlashes(pszPath, true /* fForce */);
     else
-#else
-    RT_NOREF(fFlags);
-#endif
-    {
         RTPathChangeToUnixSlashes(pszPath, true /* fForce */);
-    }
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Rebases an absolute path from an old path base to a new path base.
+ * Note: Does *not* do any path conversion.
+ *
+ * @return  IPRT status code.
+ * @param   pcszPath            Path to rebase.
+ * @param   strBaseOld          Old base path to rebase from. Optional and can be NULL.
+ * @param   strBaseNew          New base path to rebase to.
+ * @param   ppszPath            Where to store the allocated rebased path on success. Needs to be free'd with RTStrFree().
+ */
+int DnDPathRebase(const char *pcszPath, const char *pcszBaseOld, const char *pcszBaseNew,
+                  char **ppszPath)
+{
+    AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszBaseOld, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszBaseNew, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszPath, VERR_INVALID_POINTER);
+
+    char szPath[RTPATH_MAX];
+
+    /* Do we need to see if the given path is part of the old base? */
+    size_t idxBase;
+    if (   pcszBaseOld
+        && RTPathStartsWith(pcszPath, pcszBaseOld))
+    {
+        idxBase = strlen(pcszBaseOld);
+    }
+    else
+        idxBase = 0;
+
+    int rc = RTStrCopy(szPath, sizeof(szPath), pcszBaseNew);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTPathAppend(szPath, sizeof(szPath), &pcszPath[idxBase]);
+        if (RT_SUCCESS(rc))
+            rc = DnDPathValidate(szPath, false /* fMustExist */);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        char *pszPath = RTStrDup(szPath);
+        if (pszPath)
+            *ppszPath = pszPath;
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
 }
 

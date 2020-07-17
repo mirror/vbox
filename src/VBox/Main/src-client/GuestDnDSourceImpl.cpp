@@ -419,32 +419,44 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
 
     LogFlowThisFunc(("cTransfersPending=%RU32\n", mDataBase.m_cTransfersPending));
 
-    /* Don't allow receiving the actual data until our transfer actually is complete. */
+    /* Don't allow receiving the actual data until our current transfer is complete. */
     if (mDataBase.m_cTransfersPending)
         return setError(E_FAIL, tr("Current drop operation still in progress"));
 
-    GuestDnDRecvCtx *pCtx = &mData.mRecvCtx;
     HRESULT hr = S_OK;
 
     try
     {
-        bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length());
-        if (fHasURIList)
+        GuestDnDRecvCtx *pCtx = &mData.mRecvCtx;
+        if (DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length()))
         {
-            LogRel2(("DnD: Drop directory is: %s\n", pCtx->mURI.getDroppedFiles().GetDirAbs()));
-            int rc2 = pCtx->mURI.toMetaData(aData);
-            if (RT_FAILURE(rc2))
-                hr = E_OUTOFMEMORY;
+            PDNDDROPPEDFILES pDF = &pCtx->mTransfer.mDroppedFiles;
+
+            const char *pcszDropDirAbs = DnDDroppedFilesGetDirAbs(pDF);
+            AssertPtr(pcszDropDirAbs);
+
+            LogRel2(("DnD: Using drop directory '%s'\n", pcszDropDirAbs));
+
+            char  *pszBuf;
+            size_t cbBuf;
+            int rc = DnDTransferListGetRootsEx(&pCtx->mTransfer.mList, DNDTRANSFERLISTFMT_NATIVE,
+                                               pcszDropDirAbs, "\n" /* On all platforms */, &pszBuf, &cbBuf);
+            if (RT_SUCCESS(rc))
+            {
+                aData.resize(cbBuf);
+                memcpy(&aData.front(), pszBuf, cbBuf);
+                RTStrFree(pszBuf);
+            }
+            else
+                LogRel(("DnD: Unable to build source root list, rc=%Rrc\n", rc));
         }
         else
         {
-            const size_t cbData = pCtx->mData.getMeta().getSize();
-            LogFlowFunc(("cbData=%zu\n", cbData));
-            if (cbData)
+            if (pCtx->Meta.cbData)
             {
                 /* Copy the data into a safe array of bytes. */
-                aData.resize(cbData);
-                memcpy(&aData.front(), pCtx->mData.getMeta().getData(), cbData);
+                aData.resize(pCtx->Meta.cbData);
+                memcpy(&aData.front(), pCtx->Meta.pvData, pCtx->Meta.cbData);
             }
             else
                 aData.resize(0);
@@ -540,16 +552,34 @@ Utf8Str GuestDnDSource::i_hostErrorToString(int hostRc)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
+/**
+ * Handles receiving a send data header from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Receive context to use.
+ * @param   pDataHdr            Pointer to send data header from the guest.
+ */
 int GuestDnDSource::i_onReceiveDataHdr(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATAHDR pDataHdr)
 {
-    AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
-    AssertReturn(pDataHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
-    pCtx->mData.setEstimatedSize(pDataHdr->cbTotal, pDataHdr->cbMeta);
+    LogRel2(("DnD: Receiving %RU64 bytes total data (%RU64 bytes meta data, %RU64 objects) from guest ...\n",
+             pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->cObjects));
 
-    Assert(pCtx->mURI.getObjToProcess() == 0);
-    pCtx->mURI.reset();
-    pCtx->mURI.setEstimatedObjects(pDataHdr->cObjects);
+    AssertReturn(pDataHdr->cbTotal >= pDataHdr->cbMeta, VERR_INVALID_PARAMETER);
+
+    int rc = pCtx->Meta.resize(pDataHdr->cbMeta);
+    AssertRCReturn(rc, rc);
+
+    pCtx->cbExtra = pDataHdr->cbTotal - pDataHdr->cbMeta;
+
+    Assert(pCtx->mTransfer.cObjToProcess == 0); /* Sanity. */
+    Assert(pCtx->mTransfer.cObjProcessed == 0);
+
+    pCtx->mTransfer.reset();
+
+    pCtx->mTransfer.cObjToProcess = pDataHdr->cObjects;
 
     /** @todo Handle compression type. */
     /** @todo Handle checksum type. */
@@ -558,6 +588,13 @@ int GuestDnDSource::i_onReceiveDataHdr(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATAHDR
     return VINF_SUCCESS;
 }
 
+/**
+ * Handles receiving a send data block from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Receive context to use.
+ * @param   pSndData            Pointer to send data block from the guest.
+ */
 int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndData)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
@@ -567,8 +604,7 @@ int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndD
 
     try
     {
-        GuestDnDData    *pData = &pCtx->mData;
-        GuestDnDURIData *pURI  = &pCtx->mURI;
+        GuestDnDTransferRecvData *pTransfer = &pCtx->mTransfer;
 
         uint32_t cbData;
         void    *pvData;
@@ -592,61 +628,74 @@ int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndD
             cbData  = pSndData->u.v3.cbData;
             pvData  = pSndData->u.v3.pvData;
 
-            /* Note: Data sizes get updated in i_onReceiveDataHdr(). */
-            cbTotal = pData->getTotal();
-            cbMeta  = pData->getMeta().getSize();
+            /* Note: Data sizes get initialized in i_onReceiveDataHdr().
+             *       So just use the set values here. */
+            cbTotal = pCtx->getTotal();
+            cbMeta  = pCtx->Meta.cbData;
         }
-        Assert(cbTotal);
 
         if (   cbData == 0
-            || cbData >  cbTotal /* Paranoia */)
+            || cbData > cbTotal /* Paranoia */)
         {
-            LogFlowFunc(("Incoming data size invalid: cbData=%RU32, cbToProcess=%RU64\n", cbData, pData->getTotal()));
+            LogFlowFunc(("Incoming data size invalid: cbData=%RU32, cbToProcess=%RU64\n", cbData, cbTotal));
             rc = VERR_INVALID_PARAMETER;
         }
-        else if (cbTotal < cbMeta)
+        else if (   cbTotal == 0
+                 || cbTotal  < cbMeta)
         {
             AssertMsgFailed(("cbTotal (%RU64) is smaller than cbMeta (%RU32)\n", cbTotal, cbMeta));
             rc = VERR_INVALID_PARAMETER;
         }
 
-        if (RT_SUCCESS(rc))
-        {
-            cbMeta = pData->getMeta().add(pvData, cbData);
-            LogFlowThisFunc(("cbMetaSize=%zu, cbData=%RU32, cbMeta=%RU32, cbTotal=%RU64\n",
-                             pData->getMeta().getSize(), cbData, cbMeta, cbTotal));
-        }
+        if (RT_FAILURE(rc))
+            return rc;
 
-        if (RT_SUCCESS(rc))
+        cbMeta = pCtx->Meta.add(pvData, cbData);
+
+        LogFlowThisFunc(("cbData=%RU32, cbMeta=%RU32, cbTotal=%RU64\n", cbData, cbMeta, cbTotal));
+
+        /*
+         * (Meta) Data transfer complete?
+         */
+        Assert(cbMeta <= pCtx->Meta.cbAllocated);
+        if (cbMeta == pCtx->Meta.cbAllocated)
         {
-            /*
-             * (Meta) Data transfer complete?
-             */
-            Assert(cbMeta <= pData->getMeta().getSize());
-            if (cbMeta == pData->getMeta().getSize())
+            LogRel2(("DnD: Receiving meta data complete\n"));
+
+            if (DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length()))
             {
-                bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length());
-                LogFlowThisFunc(("fHasURIList=%RTbool\n", fHasURIList));
-                if (fHasURIList)
-                {
-                    /* Try parsing the data as URI list. */
-                    rc = pURI->fromRemoteMetaData(pData->getMeta());
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (mDataBase.m_uProtocolVersion < 3)
-                            pData->setEstimatedSize(cbTotal, cbMeta);
+                LogRel2(("DnD: Building transfer list from meta data ...\n"));
 
-                        /*
-                         * Update our process with the data we already received.
-                         * Note: The total size will consist of the meta data (in pVecData) and
-                         *       the actual accumulated file/directory data from the guest.
-                         */
-                        rc = updateProgress(pData, pCtx->mpResp, (uint32_t)pData->getMeta().getSize());
-                    }
+                rc = DnDTransferListAppendPathsFromBuffer(&pTransfer->mList, DNDTRANSFERLISTFMT_URI,
+                                                          (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, DND_PATH_SEPARATOR,
+                                                          DNDTRANSFERLIST_FLAGS_NONE);
+                /* Validation. */
+                if (RT_SUCCESS(rc))
+                {
+                    uint64_t cRoots = DnDTransferListGetRootCount(&pTransfer->mList);
+                    if (   cRoots == 0
+                        || cRoots > pTransfer->cObjToProcess)
+                        rc = VERR_INVALID_PARAMETER;
                 }
-                else /* Raw data. */
-                    rc = updateProgress(pData, pCtx->mpResp, cbData);
+
+                if (RT_SUCCESS(rc))
+                {
+                    /* Update our process with the data we already received. */
+                    rc = updateProgress(pCtx, pCtx->mpResp, cbMeta);
+                    AssertRC(rc);
+                }
+
+                if (RT_FAILURE(rc))
+                    LogRel(("DnD: Error building transfer list, rc=%Rrc\n", rc));
             }
+            else /* Raw data. */
+            {
+                rc = updateProgress(pCtx, pCtx->mpResp, cbData);
+                AssertRC(rc);
+            }
+
+            if (RT_FAILURE(rc))
+                LogRel(("DnD: Error receiving meta data, rc=%Rrc\n", rc));
         }
     }
     catch (std::bad_alloc &)
@@ -666,194 +715,131 @@ int GuestDnDSource::i_onReceiveDir(GuestDnDRecvCtx *pCtx, const char *pszPath, u
 
     LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x\n", pszPath, cbPath, fMode));
 
-    /*
-     * Sanity checking.
-     */
-    if (   !cbPath
-        || cbPath > RTPATH_MAX)
+    AssertMsgReturn(pCtx->isComplete() == false,
+                    ("Data transfer already complete, bailing out\n"), VERR_INVALID_PARAMETER);
+
+    const PDNDTRANSFEROBJECT pObj = &pCtx->mTransfer.mObj;
+    const PDNDDROPPEDFILES   pDF  = &pCtx->mTransfer.mDroppedFiles;
+
+    int rc = DnDTransferObjectInit(pObj, DNDTRANSFEROBJTYPE_DIRECTORY,
+                                   DnDDroppedFilesGetDirAbs(pDF), pszPath);
+    if (RT_SUCCESS(rc))
     {
-        LogFlowFunc(("Path length invalid, bailing out\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+        const char *pcszPathAbs = DnDTransferObjectGetSourcePath(pObj);
+        AssertPtr(pcszPathAbs);
 
-    int rc = RTStrValidateEncodingEx(pszPath, RTSTR_MAX, 0);
-    if (RT_FAILURE(rc))
-    {
-        LogFlowFunc(("Path validation failed with %Rrc, bailing out\n", rc));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (pCtx->mURI.isComplete())
-    {
-        LogFlowFunc(("Data transfer already complete, bailing out\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    GuestDnDURIObjCtx &objCtx = pCtx->mURI.getObj(0); /** @todo Fill in context ID. */
-
-    rc = objCtx.createIntermediate(DnDURIObject::Type_Directory);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    DnDURIObject *pObj = objCtx.getObj();
-    AssertPtr(pObj);
-
-    const char *pszDroppedFilesDir = pCtx->mURI.getDroppedFiles().GetDirAbs();
-    char *pszDir = RTPathJoinA(pszDroppedFilesDir, pszPath);
-    if (pszDir)
-    {
-#ifdef RT_OS_WINDOWS
-        RTPathChangeToDosSlashes(pszDir, true /* fForce */);
-#else
-        RTPathChangeToDosSlashes(pszDir, true /* fForce */);
-#endif
-        rc = RTDirCreateFullPath(pszDir, fMode);
+        rc = RTDirCreateFullPath(pcszPathAbs, fMode);
         if (RT_SUCCESS(rc))
         {
-            pCtx->mURI.processObject(*pObj);
+            pCtx->mTransfer.cObjProcessed++;
+            if (pCtx->mTransfer.cObjProcessed <= pCtx->mTransfer.cObjToProcess)
+            {
+                rc = DnDDroppedFilesAddDir(pDF, pcszPathAbs);
+            }
+            else
+                rc = VERR_TOO_MUCH_DATA;
 
-            /* Add for having a proper rollback. */
-            int rc2 = pCtx->mURI.getDroppedFiles().AddDir(pszDir);
-            AssertRC(rc2);
+            DnDTransferObjectDestroy(pObj);
 
-            objCtx.reset();
-            LogRel2(("DnD: Created guest directory '%s' on host\n", pszDir));
+            if (RT_SUCCESS(rc))
+                LogRel2(("DnD: Created guest directory '%s' on host\n", pcszPathAbs));
         }
         else
-            LogRel(("DnD: Error creating guest directory '%s' on host, rc=%Rrc\n", pszDir, rc));
-
-        RTStrFree(pszDir);
+            LogRel(("DnD: Error creating guest directory '%s' on host, rc=%Rrc\n", pcszPathAbs, rc));
     }
-    else
-         rc = VERR_NO_MEMORY;
+
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Receiving guest directory '%s' failed with rc=%Rrc\n", pszPath, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
+/**
+ * Receives a file header from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Receive context to use.
+ * @param   pszPath             File path of file to use.
+ * @param   cbPath              Size (in bytes, including terminator) of file path.
+ * @param   cbSize              File size (in bytes) to receive.
+ * @param   fMode               File mode to use.
+ * @param   fFlags              Additional receive flags; not used yet.
+ */
 int GuestDnDSource::i_onReceiveFileHdr(GuestDnDRecvCtx *pCtx, const char *pszPath, uint32_t cbPath,
                                        uint64_t cbSize, uint32_t fMode, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbPath,     VERR_INVALID_PARAMETER);
     AssertReturn(fMode,      VERR_INVALID_PARAMETER);
     /* fFlags are optional. */
 
+    RT_NOREF(fFlags);
+
     LogFlowFunc(("pszPath=%s, cbPath=%RU32, cbSize=%RU64, fMode=0x%x, fFlags=0x%x\n", pszPath, cbPath, cbSize, fMode, fFlags));
 
-    /*
-     * Sanity checking.
-     */
-    if (   !cbPath
-        || cbPath > RTPATH_MAX)
-    {
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (!RTStrIsValidEncoding(pszPath))
-        return VERR_INVALID_PARAMETER;
-
-    if (cbSize > pCtx->mData.getTotal())
-    {
-        AssertMsgFailed(("File size (%RU64) exceeds total size to transfer (%RU64)\n", cbSize, pCtx->mData.getTotal()));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (pCtx->mURI.getObjToProcess() && pCtx->mURI.isComplete())
-        return VERR_INVALID_PARAMETER;
+    AssertMsgReturn(cbSize <= pCtx->cbExtra,
+                    ("File size (%RU64) exceeds extra size to transfer (%RU64)\n", cbSize, pCtx->cbExtra), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(   pCtx->isComplete() == false
+                    && pCtx->mTransfer.cObjToProcess,
+                    ("Data transfer already complete, bailing out\n"), VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
 
     do
     {
-        GuestDnDURIObjCtx &objCtx = pCtx->mURI.getObj(0); /** @todo Fill in context ID. */
-        DnDURIObject *pObj        = objCtx.getObj();
+        const PDNDTRANSFEROBJECT pObj = &pCtx->mTransfer.mObj;
 
-        /*
-         * Sanity checking.
-         */
-        if (pObj)
+        if (    DnDTransferObjectIsOpen(pObj)
+            && !DnDTransferObjectIsComplete(pObj))
         {
-            if (    pObj->IsOpen()
-                && !pObj->IsComplete())
-            {
-                AssertMsgFailed(("Object '%s' not complete yet\n", pObj->GetPath().c_str()));
-                rc = VERR_WRONG_ORDER;
-                break;
-            }
-
-            if (pObj->IsOpen()) /* File already opened? */
-            {
-                AssertMsgFailed(("Current opened object is '%s', close this first\n", pObj->GetPath().c_str()));
-                rc = VERR_WRONG_ORDER;
-                break;
-            }
-        }
-        else
-        {
-            /*
-             * Create new intermediate object to work with.
-             */
-            rc = objCtx.createIntermediate(DnDURIObject::Type_File);
+            AssertMsgFailed(("Object '%s' not complete yet\n", DnDTransferObjectGetSourcePath(pObj)));
+            rc = VERR_WRONG_ORDER;
+            break;
         }
 
-        if (RT_SUCCESS(rc))
+        const PDNDDROPPEDFILES pDF = &pCtx->mTransfer.mDroppedFiles;
+
+        rc = DnDTransferObjectInit(pObj, DNDTRANSFEROBJTYPE_FILE, DnDDroppedFilesGetDirAbs(pDF), pszPath);
+        AssertRCBreak(rc);
+
+        const char *pcszSource = DnDTransferObjectGetSourcePath(pObj);
+        AssertPtrBreakStmt(pcszSource, VERR_INVALID_POINTER);
+
+        /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
+        rc = DnDTransferObjectOpen(pObj, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
+                                   (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR, DNDTRANSFEROBJECT_FLAGS_NONE);
+        if (RT_FAILURE(rc))
         {
-            pObj = objCtx.getObj();
-            AssertPtr(pObj);
-
-            const char *pszDroppedFilesDir = pCtx->mURI.getDroppedFiles().GetDirAbs();
-            AssertPtr(pszDroppedFilesDir);
-
-            char pszPathAbs[RTPATH_MAX];
-            rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), pszDroppedFilesDir, pszPath);
-            if (RT_FAILURE(rc))
-            {
-                LogFlowFunc(("Warning: Rebasing current file failed with rc=%Rrc\n", rc));
-                break;
-            }
-
-            rc = pObj->Init(DnDURIObject::Type_File, pszPathAbs);
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
-                rc = pObj->Open(RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
-                                (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
-                if (RT_SUCCESS(rc))
-                {
-                    /* Add for having a proper rollback. */
-                    int rc2 = pCtx->mURI.getDroppedFiles().AddFile(pszPathAbs);
-                    AssertRC(rc2);
-                }
-            }
-
-            if (RT_FAILURE(rc))
-                LogRel(("DnD: Error opening/creating guest file '%s' on host, rc=%Rrc\n", pszPathAbs, rc));
+            LogRel(("DnD: Error opening/creating guest file '%s' on host, rc=%Rrc\n", pcszSource, rc));
+            break;
         }
 
-        if (RT_SUCCESS(rc))
+        /* Note: Protocol v1 does not send any file sizes, so always 0. */
+        if (mDataBase.m_uProtocolVersion >= 2)
+            rc = DnDTransferObjectSetSize(pObj, cbSize);
+
+        /** @todo Unescape path before printing. */
+        LogRel2(("DnD: Transferring guest file '%s' to host (%RU64 bytes, mode %#x)\n",
+                 pcszSource, DnDTransferObjectGetSize(pObj), DnDTransferObjectGetMode(pObj)));
+
+        /** @todo Set progress object title to current file being transferred? */
+
+        if (DnDTransferObjectIsComplete(pObj)) /* 0-byte file? We're done already. */
         {
-            /* Note: Protocol v1 does not send any file sizes, so always 0. */
-            if (mDataBase.m_uProtocolVersion >= 2)
-                rc = pObj->SetSize(cbSize);
+            LogRel2(("DnD: Transferring guest file '%s' (0 bytes) to host complete\n", pcszSource));
 
-            /** @todo Unescape path before printing. */
-            LogRel2(("DnD: Transferring guest file '%s' to host (%RU64 bytes, mode 0x%x)\n",
-                     pObj->GetPath().c_str(), pObj->GetSize(), pObj->GetMode()));
-
-            /** @todo Set progress object title to current file being transferred? */
-
-            if (pObj->IsComplete()) /* 0-byte file? We're done already. */
+            pCtx->mTransfer.cObjProcessed++;
+            if (pCtx->mTransfer.cObjProcessed <= pCtx->mTransfer.cObjToProcess)
             {
-                LogRel2(("DnD: Transferring guest file '%s' (0 bytes) to host complete\n", pObj->GetPath().c_str()));
-
-                pCtx->mURI.processObject(*pObj);
-                pObj->Close();
-
-                objCtx.reset();
+                /* Add for having a proper rollback. */
+                rc = DnDDroppedFilesAddFile(pDF, pcszSource);
             }
+            else
+                rc = VERR_TOO_MUCH_DATA;
+
+            DnDTransferObjectDestroy(pObj);
         }
 
     } while (0);
@@ -883,57 +869,45 @@ int GuestDnDSource::i_onReceiveFileData(GuestDnDRecvCtx *pCtx, const void *pvDat
 
     do
     {
-        GuestDnDURIObjCtx &objCtx = pCtx->mURI.getObj(0); /** @todo Fill in context ID. */
-        DnDURIObject *pObj        = objCtx.getObj();
+        const PDNDTRANSFEROBJECT pObj = &pCtx->mTransfer.mObj;
 
-        if (!pObj)
+        if (    DnDTransferObjectIsOpen(pObj)
+            && !DnDTransferObjectIsComplete(pObj))
         {
-            LogFlowFunc(("Warning: No current object set\n"));
+            AssertMsgFailed(("Object '%s' not complete yet\n", DnDTransferObjectGetSourcePath(pObj)));
             rc = VERR_WRONG_ORDER;
             break;
         }
 
-        if (pObj->IsComplete())
-        {
-            LogFlowFunc(("Warning: Object '%s' already completed\n", pObj->GetPath().c_str()));
-            rc = VERR_WRONG_ORDER;
-            break;
-        }
-
-        if (!pObj->IsOpen()) /* File opened on host? */
-        {
-            LogFlowFunc(("Warning: Object '%s' not opened\n", pObj->GetPath().c_str()));
-            rc = VERR_WRONG_ORDER;
-            break;
-        }
+        const char *pcszSource = DnDTransferObjectGetSourcePath(pObj);
+        AssertPtrBreakStmt(pcszSource, VERR_INVALID_POINTER);
 
         uint32_t cbWritten;
-        rc = pObj->Write(pvData, cbData, &cbWritten);
-        if (RT_SUCCESS(rc))
-        {
-            Assert(cbWritten <= cbData);
-            if (cbWritten < cbData)
-            {
-                LogRel(("DnD: Only written %RU32 of %RU32 bytes of guest file '%s' -- disk full?\n",
-                        cbWritten, cbData, pObj->GetPath().c_str()));
-                rc = VERR_IO_GEN_FAILURE; /** @todo Find a better rc. */
-            }
+        rc = DnDTransferObjectWrite(pObj, pvData, cbData, &cbWritten);
+        if (RT_FAILURE(rc))
+            LogRel(("DnD: Error writing guest file data for '%s', rc=%Rrc\n", pcszSource, rc));
 
-            if (RT_SUCCESS(rc))
-                rc = updateProgress(&pCtx->mData, pCtx->mpResp, cbWritten);
+        Assert(cbWritten <= cbData);
+        if (cbWritten < cbData)
+        {
+            LogRel(("DnD: Only written %RU32 of %RU32 bytes of guest file '%s' -- disk full?\n",
+                    cbWritten, cbData, pcszSource));
+            rc = VERR_IO_GEN_FAILURE; /** @todo Find a better rc. */
+            break;
         }
-        else
-            LogRel(("DnD: Error writing guest file data for '%s', rc=%Rrc\n", pObj->GetPath().c_str(), rc));
 
-        if (RT_SUCCESS(rc))
+        rc = updateProgress(pCtx, pCtx->mpResp, cbWritten);
+        AssertRCBreak(rc);
+
+        if (DnDTransferObjectIsComplete(pObj))
         {
-            if (pObj->IsComplete())
-            {
-                /** @todo Sanitize path. */
-                LogRel2(("DnD: Transferring guest file '%s' to host complete\n", pObj->GetPath().c_str()));
-                pCtx->mURI.processObject(*pObj);
-                objCtx.reset();
-            }
+            LogRel2(("DnD: Transferring guest file '%s' to host complete\n", pcszSource));
+
+            pCtx->mTransfer.cObjProcessed++;
+            if (pCtx->mTransfer.cObjProcessed > pCtx->mTransfer.cObjToProcess)
+                rc = VERR_TOO_MUCH_DATA;
+
+            DnDTransferObjectDestroy(pObj);
         }
 
     } while (0);
@@ -973,8 +947,8 @@ int GuestDnDSource::i_receiveData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
     /*
      * Reset any old data.
      */
-    pCtx->mData.reset();
-    pCtx->mURI.reset();
+    pCtx->reset();
+    pCtx->mTransfer.reset();
     pResp->reset();
 
     /*
@@ -1028,7 +1002,7 @@ int GuestDnDSource::i_receiveData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
         bool fURIData = DnDMIMENeedsDropDir(pCtx->mFmtRecv.c_str(), pCtx->mFmtRecv.length());
         if (fURIData)
         {
-            rc = i_receiveURIData(pCtx, msTimeout);
+            rc = i_receiveTransferData(pCtx, msTimeout);
         }
         else
         {
@@ -1183,7 +1157,7 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
     return rc;
 }
 
-int GuestDnDSource::i_receiveURIData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
+int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1226,19 +1200,20 @@ int GuestDnDSource::i_receiveURIData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
         REGISTER_CALLBACK(GUEST_DND_GH_SND_FILE_HDR);
     REGISTER_CALLBACK(GUEST_DND_GH_SND_FILE_DATA);
 
-    DnDDroppedFiles &droppedFiles = pCtx->mURI.getDroppedFiles();
+    const PDNDDROPPEDFILES pDF = &pCtx->mTransfer.mDroppedFiles;
 
     do
     {
-        rc = droppedFiles.OpenTemp(0 /* fFlags */);
+        rc = DnDDroppedFilesOpenTemp(pDF, 0 /* fFlags */);
         if (RT_FAILURE(rc))
         {
-            LogRel(("DnD: Opening dropped files directory '%s' on the host failed with rc=%Rrc\n", droppedFiles.GetDirAbs(), rc));
+            LogRel(("DnD: Opening dropped files directory '%s' on the host failed with rc=%Rrc\n",
+                    DnDDroppedFilesGetDirAbs(pDF), rc));
             break;
         }
 
         /*
-         * Receive the URI list.
+         * Receive the transfer list.
          */
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_GH_EVT_DROPPED);
@@ -1281,10 +1256,10 @@ int GuestDnDSource::i_receiveURIData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
 
     if (RT_FAILURE(rc))
     {
-        int rc2 = droppedFiles.Rollback();
+        int rc2 = DnDDroppedFilesRollback(pDF);
         if (RT_FAILURE(rc2))
             LogRel(("DnD: Deleting left over temporary files failed (%Rrc), please remove directory '%s' manually\n",
-                    rc2, droppedFiles.GetDirAbs()));
+                    rc2, DnDDroppedFilesGetDirAbs(pDF)));
 
         if (rc == VERR_CANCELLED)
         {
@@ -1309,7 +1284,7 @@ int GuestDnDSource::i_receiveURIData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
         rc = VINF_SUCCESS; /* The error was handled by the setProgress() calls above. */
     }
 
-    droppedFiles.Close();
+    DnDDroppedFilesClose(pDF);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1428,11 +1403,11 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
     }
 
     /* All data processed? */
-    if (pCtx->mData.isComplete())
+    if (pCtx->isComplete())
         fNotify = true;
 
-    LogFlowFunc(("cbProcessed=%RU64, cbToProcess=%RU64, fNotify=%RTbool, rcCallback=%Rrc, rc=%Rrc\n",
-                 pCtx->mData.getProcessed(), pCtx->mData.getTotal(), fNotify, rcCallback, rc));
+    LogFlowFunc(("cbProcessed=%RU64, cbExtra=%RU64, fNotify=%RTbool, rcCallback=%Rrc, rc=%Rrc\n",
+                 pCtx->cbProcessed, pCtx->cbExtra, fNotify, rcCallback, rc));
 
     if (fNotify)
     {
@@ -1603,14 +1578,14 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
     }
 
     /* All data processed? */
-    if (   pCtx->mURI.isComplete()
-        && pCtx->mData.isComplete())
+    if (   pCtx->mTransfer.isComplete()
+        && pCtx->isComplete())
     {
         fNotify = true;
     }
 
-    LogFlowFunc(("cbProcessed=%RU64, cbToProcess=%RU64, fNotify=%RTbool, rcCallback=%Rrc, rc=%Rrc\n",
-                 pCtx->mData.getProcessed(), pCtx->mData.getTotal(), fNotify, rcCallback, rc));
+    LogFlowFunc(("cbProcessed=%RU64, cbExtra=%RU64, fNotify=%RTbool, rcCallback=%Rrc, rc=%Rrc\n",
+                 pCtx->cbProcessed, pCtx->cbExtra, fNotify, rcCallback, rc));
 
     if (fNotify)
     {

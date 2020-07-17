@@ -100,7 +100,7 @@ protected:
 
     int i_receiveData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout);
     int i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout);
-    int i_receiveURIData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout);
+    int i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout);
 
 protected:
 

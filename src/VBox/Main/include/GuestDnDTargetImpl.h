@@ -86,19 +86,24 @@ protected:
 protected:
 
     int i_sendData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout);
-    int i_sendDataBody(GuestDnDSendCtx *pCtx, GuestDnDData *pData);
-    int i_sendDataHeader(GuestDnDSendCtx *pCtx, GuestDnDData *pData, GuestDnDURIData *pURIData /* = NULL */);
-    int i_sendDirectory(GuestDnDSendCtx *pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg);
-    int i_sendFile(GuestDnDSendCtx *pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg);
-    int i_sendFileData(GuestDnDSendCtx *pCtx, GuestDnDURIObjCtx *pObjCtx, GuestDnDMsg *pMsg);
+
+    int i_sendMetaDataBody(GuestDnDSendCtx *pCtx);
+    int i_sendMetaDataHeader(GuestDnDSendCtx *pCtx);
+
+    int i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout);
+    int i_sendTransferDataLoop(GuestDnDSendCtx *pCtx, GuestDnDMsg *pMsg);
+
+    int i_sendDirectory(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pObj, GuestDnDMsg *pMsg);
+    int i_sendFile(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pObj, GuestDnDMsg *pMsg);
+    int i_sendFileData(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pObj, GuestDnDMsg *pMsg);
+
     int i_sendRawData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout);
-    int i_sendURIData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout);
-    int i_sendURIDataLoop(GuestDnDSendCtx *pCtx, GuestDnDMsg *pMsg);
 
 protected:
 
     struct
     {
+        /** Flag indicating whether a data transfer currently is active. */
         bool     mfTransferIsPending;
         /** Maximum data block size (in bytes) the target can handle. */
         uint32_t mcbBlockSize;

@@ -548,7 +548,7 @@ public:
     int hgLeave(void);
     int hgMove(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault);
     int hgDrop(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndActionDefault);
-    int hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData);
+    int hgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta);
 
     /* X11 helpers. */
     int  mouseCursorFakeMove(void) const;
@@ -1899,12 +1899,12 @@ int DragInstance::hgDrop(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndAction
  *                data to the guest for further processing.
  *
  * @returns IPRT status code.
- * @param   pMetaData               Pointer to meta data from host.
+ * @param   pMeta               Pointer to meta data from host.
  */
-int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData)
+int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta)
 {
     LogFlowThisFunc(("enmMode=%RU32, enmState=%RU32\n", m_enmMode, m_enmState));
-    LogFlowThisFunc(("enmMetaDataType=%RU32\n", pMetaData->enmType));
+    LogFlowThisFunc(("enmMetaType=%RU32\n", pMeta->enmType));
 
     if (   m_enmMode  != HG
         || m_enmState != Dropped)
@@ -1912,22 +1912,48 @@ int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMetaData)
         return VERR_INVALID_STATE;
     }
 
-    if (   pMetaData->pvMeta == NULL
-        || pMetaData->cbMeta == 0)
+    void  *pvData = NULL;
+    size_t cbData = 0;
+
+    int rc;
+
+    switch (pMeta->enmType)
     {
-        return VERR_INVALID_PARAMETER;
+        case VBGLR3GUESTDNDMETADATATYPE_RAW:
+        {
+            AssertBreakStmt(pMeta->u.Raw.pvMeta != NULL, rc = VERR_INVALID_POINTER);
+            pvData = pMeta->u.Raw.pvMeta;
+            AssertBreakStmt(pMeta->u.Raw.cbMeta, rc = VERR_INVALID_PARAMETER);
+            cbData = pMeta->u.Raw.cbMeta;
+
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        case VBGLR3GUESTDNDMETADATATYPE_URI_LIST:
+        {
+            VBClLogInfo(("URI transfer root directory is '%s'\n", DnDTransferListGetRootPathAbs(&pMeta->u.URI.Transfer)));
+
+            /* Note: The transfer list already has its root set to a temporary directory, so no need to set/add a new
+             *       path base here. */
+            rc = DnDTransferListGetRootsEx(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_NATIVE, NULL /* pszPathBase */,
+                                           DND_PATH_SEPARATOR, (char **)&pvData, &cbData);
+            break;
+        }
+
+        default:
+            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+            break;
     }
 
-    int rc = VINF_SUCCESS;
-
-    const void    *pvData = pMetaData->pvMeta;
-    const uint32_t cbData = pMetaData->cbMeta;
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * At this point all data needed (including sent files/directories) should
      * be on the guest, so proceed working on communicating with the target window.
      */
-    VBClLogInfo("Received %RU32 bytes of URI list meta data from host\n", cbData);
+    VBClLogInfo("Received %RU32 bytes of meta data from host\n", cbData);
 
     /* Destroy any old data. */
     if (m_pvSelReqData)

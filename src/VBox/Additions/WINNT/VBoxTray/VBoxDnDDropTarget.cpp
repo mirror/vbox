@@ -27,6 +27,7 @@
 #include "VBox/GuestHost/DragAndDrop.h"
 #include "VBox/HostServices/DragAndDropSvc.h"
 
+#include <iprt/path.h>
 #include <iprt/utf16.h>
 #include <VBox/log.h>
 
@@ -450,15 +451,18 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
 
                                 LogRel(("DnD: Adding guest file '%s'\n", pszFileUtf8));
 
-                                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, cchFileUtf8);
                                 if (RT_SUCCESS(rc))
-                                    cchFiles += cchFileUtf8;
+                                {
+                                    rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, cchFileUtf8);
+                                    if (RT_SUCCESS(rc))
+                                        cchFiles += cchFileUtf8;
+                                }
                             }
-                            else
+
+                            if (RT_FAILURE(rc))
                                 LogRel(("DnD: Error handling file entry #%u, rc=%Rrc\n", i, rc));
 
-                            if (pszFileUtf8)
-                                RTStrFree(pszFileUtf8);
+                            RTStrFree(pszFileUtf8);
 
                             if (RT_FAILURE(rc))
                                 break;
@@ -478,31 +482,17 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                             LogFlowFunc(("cFiles=%u, cchFiles=%RU32, cbFiles=%RU32, pszFiles=0x%p\n",
                                          cFiles, cchFiles, cbFiles, pszFiles));
 
-                            /* Translate the list into URI elements. */
-                            DnDURIList lstURI;
-                            rc = lstURI.AppendNativePathsFromList(pszFiles, cbFiles,
-                                                                  DNDURILIST_FLAGS_ABSOLUTE_PATHS);
-                            if (RT_SUCCESS(rc))
-                            {
-                                RTCString strRoot = lstURI.GetRootEntries();
-                                size_t cbRoot = strRoot.length() + 1; /* Include termination */
-
-                                mpvData = RTMemAlloc(cbRoot);
-                                if (mpvData)
-                                {
-                                    memcpy(mpvData, strRoot.c_str(), cbRoot);
-                                    mcbData = cbRoot;
-                                }
-                                else
-                                    rc = VERR_NO_MEMORY;
-                            }
+                            mpvData = pszFiles;
+                            mcbData = cbFiles;
+                        }
+                        else
+                        {
+                            RTStrFree(pszFiles);
+                            pszFiles = NULL;
                         }
 
-                        LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",
-                                     rc, pszFiles, cFiles, cchFiles));
-
-                        if (pszFiles)
-                            RTStrFree(pszFiles);
+                        LogFlowFunc(("Building CF_HDROP list rc=%Rrc, cFiles=%RU16, cchFiles=%RU32\n",
+                                     rc, cFiles, cchFiles));
                         break;
                     }
 
