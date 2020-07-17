@@ -214,6 +214,25 @@ class tdAutostartOs(object):
 
         return sVBoxCfg;
 
+    def _waitAdditionsIsRunning(self, oGuest):
+        """
+        Check is the additions running
+        """
+        cAttempt = 0;
+        fRc = False;
+        while cAttempt < 30:
+            fRc = oGuest.additionsRunLevel in [vboxcon.AdditionsRunLevelType_Userland,
+                                               vboxcon.AdditionsRunLevelType_Desktop];
+            if fRc:
+                eServiceStatus, _ = oGuest.getFacilityStatus(vboxcon.AdditionsFacilityType_VBoxService);
+                fRc = eServiceStatus == vboxcon.AdditionsFacilityStatus_Active;
+                if fRc:
+                    break;
+
+            self.oTestDriver.sleep(10);
+            cAttempt += 1;
+        return fRc;
+
     def createSession(self, oSession, sName, sUser, sPassword, cMsTimeout = 10 * 1000, fIsError = True):
         """
         Creates (opens) a guest session.
@@ -544,6 +563,9 @@ class tdAutostartOsLinux(tdAutostartOs):
         # Waiting the VM is ready.
         # To do it, one will try to open the guest session and start the guest process in loop
 
+        if not self._waitAdditionsIsRunning(oSession.o.console.guest):
+            return (False, None);
+
         cAttempt = 0;
         oGuestSession = None;
         fRc = False;
@@ -849,6 +871,8 @@ class tdAutostartOsLinux(tdAutostartOs):
         all calls will be perfomed using 'sudo -u sUser'
         """
 
+        self.oTestDriver.sleep(30);
+
         _ = oSession;
 
         reporter.testStart('Check the VM %s is running for user %s' % (sVmName, sUser));
@@ -911,6 +935,9 @@ class tdAutostartOsWin(tdAutostartOs):
 
         # Waiting the VM is ready.
         # To do it, one will try to open the guest session and start the guest process in loop
+
+        if not self._waitAdditionsIsRunning(oSession.o.console.guest):
+            return (False, None);
 
         cAttempt = 0;
         oGuestSession = None;
@@ -1170,6 +1197,8 @@ class tdAutostartOsWin(tdAutostartOs):
         Check for VM running in the guest after autostart.
         """
 
+        self.oTestDriver.sleep(30);
+
         _ = oGuestSession;
 
         reporter.testStart('Check the VM %s is running for user %s' % (sVmName, sUser));
@@ -1180,17 +1209,6 @@ class tdAutostartOsWin(tdAutostartOs):
             reporter.error('Create session for user %s failed' % sUser);
         else:
 
-            #---- report tasklist for debug purpose -----
-            (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
-                                                       60 * 1000, 'C:\\Windows\\System32\\tasklist.exe',
-                                                       ['C:\\Windows\\System32\\tasklist.exe', '/m',
-                                                        'vboxheadless*', '/nh'], True, True);
-            try:
-                sTaskList = str(aBuf);
-                reporter.log("Guest tasks for user %s: %s" % (sUser, sTaskList));
-            except:
-                pass;
-            #---- end report tasklist for debug purpose -----
 
             (fRc, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check for running VM',
                                                        60 * 1000, 'C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe',
