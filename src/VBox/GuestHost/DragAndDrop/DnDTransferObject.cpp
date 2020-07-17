@@ -32,6 +32,7 @@
 
 #include <VBox/log.h>
 
+
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
@@ -94,8 +95,8 @@ int DnDTransferObjectInit(PDNDTRANSFEROBJECT pObj, DNDTRANSFEROBJTYPE enmType, c
             rc = RTPathEnsureTrailingSeparator(szPath, sizeof(szPath)) == 0 ? VERR_BUFFER_OVERFLOW : VINF_SUCCESS;
 
         /* Save the index (in characters) where the destination part starts. */
-        pObj->idxDst = (uint16_t)RTStrNLen(szPath, RTSTR_MAX);
-        AssertReturn(pObj->idxDst != RTSTR_MAX, VERR_INVALID_PARAMETER);
+        pObj->idxDst = (uint16_t)RTStrNLen(szPath, RTPATH_MAX);
+        AssertReturn(pObj->idxDst <= RTPATH_MAX, VERR_INVALID_PARAMETER);
     }
     else
     {
