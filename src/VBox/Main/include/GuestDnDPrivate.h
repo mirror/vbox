@@ -204,7 +204,7 @@ struct GuestDnDData
 
     uint64_t addProcessed(uint32_t cbDataAdd)
     {
-        const uint64_t cbTotal = Meta.cbData + cbExtra;
+        const uint64_t cbTotal = Meta.cbData + cbExtra; RT_NOREF(cbTotal);
         Assert(cbProcessed + cbDataAdd <= cbTotal);
         cbProcessed += cbDataAdd;
         return cbProcessed;
