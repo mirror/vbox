@@ -4984,14 +4984,11 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
 
     DriverInitializationData.DxgkDdiLinkDevice = NULL; //DxgkDdiLinkDevice;
     DriverInitializationData.DxgkDdiSetDisplayPrivateDriverFormat = DxgkDdiSetDisplayPrivateDriverFormat;
-//#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
-//# error port to Win7 DDI
-//            DriverInitializationData.DxgkDdiRenderKm  = DxgkDdiRenderKm;
-//            DriverInitializationData.DxgkDdiRestartFromTimeout  = DxgkDdiRestartFromTimeout;
-//            DriverInitializationData.DxgkDdiSetVidPnSourceVisibility  = DxgkDdiSetVidPnSourceVisibility;
-//            DriverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath  = DxgkDdiUpdateActiveVidPnPresentPath;
-//            DriverInitializationData.DxgkDdiQueryVidPnHWCapability  = DxgkDdiQueryVidPnHWCapability;
-//#endif
+
+    if (DriverInitializationData.Version >= DXGKDDI_INTERFACE_VERSION_WIN7)
+    {
+        DriverInitializationData.DxgkDdiQueryVidPnHWCapability = DxgkDdiQueryVidPnHWCapability;
+    }
 
     NTSTATUS Status = DxgkInitialize(pDriverObject,
                           pRegistryPath,
