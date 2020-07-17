@@ -48,7 +48,8 @@ RTDECL(size_t) RTPathFindCommonEx(const char * const *papcszPaths, size_t cPaths
         for (size_t i = 0; i < cPaths; ++i)
         {
             const char *pcszPath = papcszPaths[i];
-            if (   pcszPath[cch]
+            if (   pcszPath
+                && pcszPath[cch]
                 && pcszPath[cch] == pcszRef[cch])
                 continue;
 
