@@ -333,7 +333,10 @@ public:
 struct GuestDnDTransferSendData : public GuestDnDTransferData
 {
     GuestDnDTransferSendData()
-        : mfObjState(0) { }
+        : mfObjState(0)
+    {
+        RT_ZERO(mList);
+    }
 
     virtual ~GuestDnDTransferSendData()
     {

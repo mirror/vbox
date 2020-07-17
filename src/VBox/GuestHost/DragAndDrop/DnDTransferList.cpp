@@ -113,6 +113,9 @@ void DnDTransferListReset(PDNDTRANSFERLIST pList)
 
     /* Note: This does not clear the root path! */
 
+    if (!pList->pszPathRootAbs)
+        return;
+
     PDNDTRANSFERLISTROOT pRootCur, pRootNext;
     RTListForEachSafe(&pList->lstRoot, pRootCur, pRootNext, DNDTRANSFERLISTROOT, Node)
         dndTransferListRootFree(pList, pRootCur);
