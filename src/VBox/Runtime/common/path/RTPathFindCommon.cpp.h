@@ -255,4 +255,3 @@ static size_t RTPATH_STYLE_FN(rtPathFindCommon)(size_t cPaths, const char **paps
     }
 }
 
-
