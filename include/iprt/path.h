@@ -520,28 +520,28 @@ RTDECL(char *) RTPathFilenameEx(const char *pszPath, uint32_t fFlags);
 RTDECL(PRTUTF16) RTPathFilenameExUtf16(PCRTUTF16 pwszPath, uint32_t fFlags);
 
 /**
- * Finds the common path in a given set of paths, extended version.
- *
- * Note: This does not check paths for existience or other things (e.g. symlinks).
- *
- * @returns Length (in characters) of the common path, 0 if not found.
- * @param   papcszPaths         Array of paths to find common path for.
- * @param   cPaths              Number of paths in \a papcszPaths.
- * @param   szSeparator         Path separator to use for comparision.
- */
-RTDECL(size_t) RTPathFindCommonEx(const char * const *papcszPaths, size_t cPaths, char szSeparator);
-
-/**
  * Finds the common path in a given set of paths.
  *
- * Uses the system's native slash as separator.
- * Note: This does not check paths for existience or other things (e.g. symlinks).
+ * The paths are not made absolute or real, they are taken as given.
  *
  * @returns Length (in characters) of the common path, 0 if not found.
- * @param   papcszPaths         Array of paths to find common path for.
- * @param   cPaths              Number of paths in \a papcszPaths.
+ * @param   cPaths      Number of paths in \a papszPaths.
+ * @param   papszPaths  Array of paths to find common path for.
  */
-RTDECL(size_t) RTPathFindCommon(const char * const *papcszPaths, size_t cPaths);
+RTDECL(size_t) RTPathFindCommon(size_t cPaths, const char * const *papszPaths);
+
+/**
+ * Finds the common path in a given set of paths, extended version.
+ *
+ * The paths are not made absolute or real, they are taken as given.
+ *
+ * @returns Length (in characters) of the common path, 0 if not found.
+ * @param   cPaths      Number of paths in \a papszPaths.
+ * @param   papszPaths  Array of paths to find common path for.
+ * @param   fFlags      RTPATH_STR_F_STYLE_XXX. Other RTPATH_STR_F_XXX flags
+ *                      will be ignored.
+ */
+RTDECL(size_t) RTPathFindCommonEx(size_t cPaths, const char * const *papszPaths, uint32_t fFlags);
 
 /**
  * Finds the suffix part of in a path (last dot and onwards).

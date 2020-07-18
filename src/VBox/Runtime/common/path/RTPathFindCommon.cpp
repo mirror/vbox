@@ -34,41 +34,57 @@
 #include <iprt/path.h>
 
 
-RTDECL(size_t) RTPathFindCommonEx(const char * const *papcszPaths, size_t cPaths, char szSeparator)
+RTDECL(size_t) RTPathFindCommonEx(size_t cPaths, const char * const *papszPaths, uint32_t fFlags)
 {
-    AssertPtrReturn(papcszPaths, 0);
-    AssertReturn(cPaths, 0);
-    AssertReturn(szSeparator != '\0', 0);
+    AssertReturn(cPaths > 0, 0);
+    AssertPtrReturn(papszPaths, 0);
+    AssertReturn(RTPATH_STR_F_IS_VALID(fFlags, 0), 0);
 
-    const char *pcszRef = papcszPaths[0]; /* The reference we're comparing with. */
+    /** @todo r=bird: Extremely naive code.
+     * - The original idea of taking either '/' or '\\' as separators is very out of
+     *   touch with the rest of path.h.  On DOS based systems we need to handle both
+     *   of those as well as ':'.
+     * - Why compare pszRef with itself?
+     * - Why derefernece pszRef[cch] for each other path.
+     * - Why perform NULL checks for each outer iteration.
+     * - Why perform '\0' check before comparing with pszRef[cch]?
+     *   It's sufficient to check if pszRef[cch] is '\0'.
+     * - Why backtrack to the last path separator?  It won't return the expected
+     *   result for cPaths=1, unless the path ends with a separator.
+     * - Multiple consequtive path separators must be treated as a single one (most
+     *   of the time anyways - UNC crap).
+     */
+    const char *pszRef = papszPaths[0]; /* The reference we're comparing with. */
+    const char chNaiveSep = (fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_HOST
+                          ? RTPATH_SLASH
+                          : (fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_DOS ? '\\' : '/';
 
     size_t cch = 0;
     do
     {
         for (size_t i = 0; i < cPaths; ++i)
         {
-            const char *pcszPath = papcszPaths[i];
+            const char *pcszPath = papszPaths[i];
             if (   pcszPath
                 && pcszPath[cch]
-                && pcszPath[cch] == pcszRef[cch])
+                && pcszPath[cch] == pszRef[cch])
                 continue;
 
             while (   cch
-                   && pcszRef[--cch] != szSeparator) { }
+                   && pszRef[--cch] != chNaiveSep) { }
 
             return cch ? cch + 1 : 0;
         }
-    }
-    while (++cch);
+    } while (++cch);
 
     return 0;
 }
 RT_EXPORT_SYMBOL(RTPathFindCommonEx);
 
 
-RTDECL(size_t) RTPathFindCommon(const char * const *papcszPaths, size_t cPaths)
+RTDECL(size_t) RTPathFindCommon(size_t cPaths, const char * const *papszPaths)
 {
-    return RTPathFindCommonEx(papcszPaths, cPaths, RTPATH_SLASH);
+    return RTPathFindCommonEx(cPaths, papszPaths, RTPATH_STR_F_STYLE_HOST);
 }
 RT_EXPORT_SYMBOL(RTPathFindCommon);
 

@@ -45,30 +45,36 @@ int main()
 
     struct
     {
-        char const *papszPath1;
-        char const *papszPath2;
-        char const *papszPath3;
-        char const *papszPatCommon;
+        char const *apszPaths[3];
+        char const *pszCommon;
+        uint32_t    fFlags;
     } aTests[] =
     {
         /* Simple stuff first. */
-        { "", "", "", "" },
-        { "none", "none", "", "" },
+        { { "",                     "",                 "" },                       "",          RTPATH_STR_F_STYLE_UNIX },
+        { { "none",                 "none",             "" },                       "",          RTPATH_STR_F_STYLE_UNIX },
         /* Missing start slash. */
-        { "/path/to/stuff1", "path/to/stuff2", "", "" },
+        { { "/path/to/stuff1",      "path/to/stuff2",   "" },                       "",          RTPATH_STR_F_STYLE_UNIX },
         /* Working stuff. */
-        { "/path/to/stuff1", "/path/to/stuff2", "/path/to/stuff3", "/path/to/" },
-        { "/path/to/stuff1", "/path/to/", "/path/", "/path/" },
-        { "/path/to/stuff1", "/", "/path/", "" },
-        { "/path/to/../stuff1", "./../", "/path/to/stuff2/..", "" }
+        { { "/path/to/stuff1",      "/path/to/stuff2",  "/path/to/stuff3" },        "/path/to/", RTPATH_STR_F_STYLE_UNIX },
+        { { "/path/to/stuff1",      "/path/to/",        "/path/" },                 "/path/",    RTPATH_STR_F_STYLE_UNIX },
+        { { "/path/to/stuff1",      "/",                "/path/" },                 "",          RTPATH_STR_F_STYLE_UNIX },
+        { { "/path/to/../stuff1",   "./../",            "/path/to/stuff2/.." },     "",          RTPATH_STR_F_STYLE_UNIX },
     };
 
-    const size_t cNumPaths = 3; /* Number of paths to compare. */
-
-    size_t cchRes;
     for (size_t i = 0; i < RT_ELEMENTS(aTests); i++)
-        RTTEST_CHECK_MSG(hTest, (cchRes = RTPathFindCommonEx((const char * const *)&aTests[i], cNumPaths, '/')) == strlen(aTests[i].papszPatCommon),
-                         (hTest, "Test %zu failed: Got %zu, expected %zu\n", i, cchRes, strlen(aTests[i].papszPatCommon)));
+    {
+        size_t cPaths = RT_ELEMENTS(aTests[i].apszPaths);
+        while (cPaths > 0 && aTests[i].apszPaths[cPaths - 1] == NULL)
+            cPaths--;
+
+        size_t const cchCommon = RTPathFindCommonEx(cPaths, aTests[i].apszPaths, aTests[i].fFlags);
+        size_t const cchExpect = strlen(aTests[i].pszCommon);
+        if (cchCommon != cchExpect)
+            RTTestFailed(hTest,
+                         "Test %zu failed: got %zu, expected %zu (cPaths=%zu: %s %s %s)", i, cchCommon, cchExpect, cPaths,
+                         aTests[i].apszPaths[0], aTests[i].apszPaths[1], aTests[i].apszPaths[2]);
+    }
 
     /*
      * Summary.
