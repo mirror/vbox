@@ -544,10 +544,17 @@ RTDECL(size_t) RTPathFindCommon(size_t cPaths, const char * const *papszPaths);
  * @param   papszPaths  Array of paths to find common path for.  The paths must
  *                      not contains ".." sequences, as that's too complicated
  *                      to handle.
- * @param   fFlags      RTPATH_STR_F_STYLE_XXX and RTPATH_STR_F_NO_START if
- *                      wanted.  Other RTPATH_STR_F_XXX flags will be ignored.
+ * @param   fFlags      RTPATH_STR_F_STYLE_XXX, RTPATH_STR_F_NO_START, and
+ *                      RTPATHFINDCOMMON_F_IGNORE_DOTDOT as desired.   Other
+ *                      RTPATH_STR_F_XXX flags will be ignored.
  */
 RTDECL(size_t) RTPathFindCommonEx(size_t cPaths, const char * const *papszPaths, uint32_t fFlags);
+
+/** @name RTPATHFINDCOMMON_F_XXX - Flags for RTPathFindCommonEx.
+ * @{ */
+/** Ignore the dangers of '..' components. */
+#define RTPATHFINDCOMMON_F_IGNORE_DOTDOT    RT_BIT_32(16)
+/** @} */
 
 /**
  * Finds the suffix part of in a path (last dot and onwards).

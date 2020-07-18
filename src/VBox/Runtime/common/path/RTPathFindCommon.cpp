@@ -29,55 +29,82 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
+#include <iprt/path.h>
+
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
-#include <iprt/path.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+#include <iprt/uni.h>
+
+
+#define RTPATH_TEMPLATE_CPP_H "RTPathFindCommon.cpp.h"
+#include "rtpath-expand-template.cpp.h"
 
 
 RTDECL(size_t) RTPathFindCommonEx(size_t cPaths, const char * const *papszPaths, uint32_t fFlags)
 {
+    /*
+     * Validate input.
+     */
+    AssertReturn(RTPATH_STR_F_IS_VALID(fFlags, RTPATHFINDCOMMON_F_IGNORE_DOTDOT), 0);
     AssertReturn(cPaths > 0, 0);
     AssertPtrReturn(papszPaths, 0);
-    AssertReturn(RTPATH_STR_F_IS_VALID(fFlags, 0), 0);
+    size_t i = cPaths;
+    while (i-- > 0)
+        AssertPtrReturn(papszPaths[i], 0);
 
-    /** @todo r=bird: Extremely naive code.
-     * - The original idea of taking either '/' or '\\' as separators is very out of
-     *   touch with the rest of path.h.  On DOS based systems we need to handle both
-     *   of those as well as ':'.
-     * - Why compare pszRef with itself?
-     * - Why derefernece pszRef[cch] for each other path.
-     * - Why perform NULL checks for each outer iteration.
-     * - Why perform '\0' check before comparing with pszRef[cch]?
-     *   It's sufficient to check if pszRef[cch] is '\0'.
-     * - Why backtrack to the last path separator?  It won't return the expected
-     *   result for cPaths=1, unless the path ends with a separator.
-     * - Multiple consequtive path separators must be treated as a single one (most
-     *   of the time anyways - UNC crap).
+    /*
+     * Duplicate papszPaths so we can have individual positions in each path.
+     * Use the stack if we haven't got too many paths.
      */
-    const char *pszRef = papszPaths[0]; /* The reference we're comparing with. */
-    const char chNaiveSep = (fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_HOST
-                          ? RTPATH_SLASH
-                          : (fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_DOS ? '\\' : '/';
-
-    size_t cch = 0;
-    do
+    void        *pvFree;
+    const char **papszCopy;
+    size_t      cbNeeded = cPaths * sizeof(papszCopy[0]);
+    if (cbNeeded <= _2K)
     {
-        for (size_t i = 0; i < cPaths; ++i)
-        {
-            const char *pcszPath = papszPaths[i];
-            if (   pcszPath
-                && pcszPath[cch]
-                && pcszPath[cch] == pszRef[cch])
-                continue;
+        pvFree = NULL;
+        papszCopy = (const char **)alloca(cbNeeded);
+    }
+    else
+    {
+        pvFree = RTMemTmpAlloc(cbNeeded);
+        papszCopy = (const char **)pvFree;
+    }
+    AssertReturn(papszCopy, 0);
+    memcpy(papszCopy, papszPaths, cbNeeded);
 
-            while (   cch
-                   && pszRef[--cch] != chNaiveSep) { }
+    /*
+     * Invoke the worker for the selected path style.
+     */
+    size_t cchRet;
+    switch (fFlags & RTPATH_STR_F_STYLE_MASK)
+    {
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+        case RTPATH_STR_F_STYLE_HOST:
+#endif
+        case RTPATH_STR_F_STYLE_DOS:
+            cchRet= rtPathFindCommonStyleDos(cPaths, papszCopy, fFlags);
+            break;
 
-            return cch ? cch + 1 : 0;
-        }
-    } while (++cch);
+#if RTPATH_STYLE != RTPATH_STR_F_STYLE_DOS
+        case RTPATH_STR_F_STYLE_HOST:
+#endif
+        case RTPATH_STR_F_STYLE_UNIX:
+            cchRet = rtPathFindCommonStyleUnix(cPaths, papszCopy, fFlags);
+            break;
 
-    return 0;
+        default:
+            AssertFailedStmt(cchRet = 0); /* impossible */
+    }
+
+    /*
+     * Clean up and return.
+     */
+    if (pvFree)
+        RTMemTmpFree(pvFree);
+    return cchRet;
 }
 RT_EXPORT_SYMBOL(RTPathFindCommonEx);
 

@@ -370,23 +370,27 @@ static void testFindCommon(RTTEST hTest)
         /* Simple stuff first. */
         { { "",                     "",                 "",                     NULL, },            RTPATH_STR_F_STYLE_UNIX,
             "" },
+        { { "",                     "",                 "",                     NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "" },
         { { "none",                 "none",             "",                     NULL, },            RTPATH_STR_F_STYLE_UNIX,
             "" },
-        /* Missing start slash. */
+        { { "none",                 "none",             "",                     NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "" },
+        { { "same",                 "same",             "same",                 "same", },          RTPATH_STR_F_STYLE_UNIX,
+            "same" },
+        { { "same",                 "same",             "same",                 "same", },          RTPATH_STR_F_STYLE_DOS,
+            "same" },
+        /* More complicated. */
         { { "/path/to/stuff1",      "path/to/stuff2",   NULL,                   NULL, },            RTPATH_STR_F_STYLE_UNIX,
             "" },
-        /* Working stuff. */
         { { "/path/to/stuff1",      "/path/to/stuff2",  "/path/to/stuff3",      NULL, },            RTPATH_STR_F_STYLE_UNIX,
             "/path/to/" },
         { { "/path/to/stuff1",      "/path/to/",        "/path/",               NULL, },            RTPATH_STR_F_STYLE_UNIX,
             "/path/" },
         { { "/path/to/stuff1",      "/",                "/path/",               NULL, },            RTPATH_STR_F_STYLE_UNIX,
-            "" },
+            "/" },
         { { "/path/to/../stuff1",   "./../",            "/path/to/stuff2/..",   NULL, },            RTPATH_STR_F_STYLE_UNIX,
             "" },
-
-#if 0 /** @todo */
-        /* Things that should be working that aren't: */
         { { "a/single/path",        NULL,               NULL,                   NULL, },            RTPATH_STR_F_STYLE_UNIX,
             "a/single/path" },
         { { "a/single\\path",       NULL,               NULL,                   NULL, },            RTPATH_STR_F_STYLE_DOS,
@@ -395,6 +399,10 @@ static void testFindCommon(RTTEST hTest)
             "C:\\Windows" },
         { { "c:/windows",           "c:\\program files", "C:\\AppData",         NULL, },            RTPATH_STR_F_STYLE_DOS,
             "c:/" },
+        { { "c:/windows",           "c:windows",        "C:system32",           NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "c:" },
+        { { "c:/windows",           "d:windows",        "e:windows",            NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "" },
         { { "//usr/bin/env",        "/usr//bin/env",   "/usr/bin///env",        "/usr/bin/env", },  RTPATH_STR_F_STYLE_UNIX,
             "//usr/bin/env" },
         { { "//usr/bin/env",        "/usr//./././bin/env", "/usr/bin///env",    "/usr/bin/env", },  RTPATH_STR_F_STYLE_UNIX,
@@ -403,17 +411,27 @@ static void testFindCommon(RTTEST hTest)
             "//./what/" },
         { { "//./unc/is/weird",     "///./unc/is/weird", NULL,                  NULL, },            RTPATH_STR_F_STYLE_DOS,
             "" },
+        { { "//system360/share",    "//system370/share", "//system390/share",   NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "" },
+        { { "//system370/share1",   "//sysTEM370/share2", "//SYsTeM370/share3", NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "//system370/" },
+        { { "//system370/share1",   "Z:/",              NULL,                   NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "" },
+        { { "//system370/share1",   "/",                NULL,                   NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "" },
+        { { "//system370/share1",   "somedir",          NULL,                   NULL, },            RTPATH_STR_F_STYLE_DOS,
+            "" },
         { { "/path/to/stuff1",      "path/to/stuff2",   NULL,                   NULL, },            RTPATH_STR_F_STYLE_UNIX | RTPATH_STR_F_NO_START,
             "/path/to/" },
         { { "path/to/stuff1",       "//path\\/to\\stuff2", NULL,                NULL, },            RTPATH_STR_F_STYLE_DOS | RTPATH_STR_F_NO_START,
             "path/to/" },
-
-        /* '..' elements are not supported for now and leads to zero return. */
+        /* '..' elements are not supported for now and leads to zero return, unless RTPATHFINDCOMMON_F_IGNORE_DOTDOT is given. */
         { { "/usr/bin/env",         "/usr/../usr/bin/env", "/usr/bin/../bin/env", NULL, },          RTPATH_STR_F_STYLE_UNIX,
             "" },
         { { "/lib/",                "/lib/amd64/../lib.so", "/lib/i386/../libdl.so", NULL, },       RTPATH_STR_F_STYLE_UNIX,
             "" },
-#endif
+        { { "/lib/",                "/lib/amd64/../lib.so", "/lib/i386/../libdl.so", NULL, },       RTPATH_STR_F_STYLE_UNIX | RTPATHFINDCOMMON_F_IGNORE_DOTDOT,
+            "/lib/" },
     };
 
     for (size_t i = 0; i < RT_ELEMENTS(aTests); i++)
