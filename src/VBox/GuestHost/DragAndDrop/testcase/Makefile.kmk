@@ -1,0 +1,67 @@
+# $Id$
+## @file
+# Sub-Makefile for the DnD testcases.
+#
+
+#
+# Copyright (C) 2020 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
+
+  PROGRAMS += tstDnDTransferObject tstDnDTransferList tstDnDPath
+  TESTING  += \
+  	$(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run \
+  	$(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run \
+  	$(tstDnDTransferPath_0_OUTDIR)/tstDnDPath.run
+
+  tstDnDTransferObject_TEMPLATE  = VBOXR3TSTEXE
+  tstDnDTransferObject_DEFS      = UNIT_TEST TESTCASE
+  tstDnDTransferObject_SOURCES   = \
+		tstDnDTransferObject.cpp \
+		../DnDTransferObject.cpp \
+		../DnDPath.cpp
+  tstDnDTransferObject_CLEAN     = $(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run
+
+  $$(tstDnDTransferObject_0_OUTDIR)/tstDnDTransferObject.run: $$(tstDnDTransferObject_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstDnDTransferObject_1_STAGE_TARGET) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+  tstDnDTransferList_TEMPLATE  = VBOXR3TSTEXE
+  tstDnDTransferList_DEFS      = UNIT_TEST TESTCASE
+  tstDnDTransferList_SOURCES   = \
+		tstDnDTransferList.cpp \
+		../DnDTransferObject.cpp \
+		../DnDTransferList.cpp \
+		../DnDPath.cpp
+  tstDnDTransferList_CLEAN     = $(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run
+
+  $$(tstDnDTransferList_0_OUTDIR)/tstDnDTransferList.run: $$(tstDnDTransferList_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstDnDTransferList_1_STAGE_TARGET) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+  tstDnDPath_TEMPLATE = VBOXR3TSTEXE
+  tstDnDPath_DEFS     = UNIT_TEST TESTCASE
+  tstDnDPath_SOURCES  = \
+		tstDnDPath.cpp \
+		../DnDPath.cpp
+  tstDnDPath_CLEAN    = $(tstDnDPath_0_OUTDIR)/tstDnDPath.run
+
+  $$(tstDnDPath_0_OUTDIR)/tstDnDPath.run: $$(tstDnDPath_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstDnDPath_1_STAGE_TARGET) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+endif
+
+include $(FILE_KBUILD_SUB_FOOTER)
