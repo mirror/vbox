@@ -524,9 +524,12 @@ RTDECL(PRTUTF16) RTPathFilenameExUtf16(PCRTUTF16 pwszPath, uint32_t fFlags);
  *
  * The paths are not made absolute or real, they are taken as given.
  *
- * @returns Length (in characters) of the common path, 0 if not found.
+ * @returns The common path length as represented by \a papszPaths[0], 0 if not
+ *          found or invalid input.
  * @param   cPaths      Number of paths in \a papszPaths.
- * @param   papszPaths  Array of paths to find common path for.
+ * @param   papszPaths  Array of paths to find common path for.  The paths must
+ *                      not contains ".." sequences, as that's too complicated
+ *                      to handle.
  */
 RTDECL(size_t) RTPathFindCommon(size_t cPaths, const char * const *papszPaths);
 
@@ -535,11 +538,14 @@ RTDECL(size_t) RTPathFindCommon(size_t cPaths, const char * const *papszPaths);
  *
  * The paths are not made absolute or real, they are taken as given.
  *
- * @returns Length (in characters) of the common path, 0 if not found.
+ * @returns The common path length as represented by \a papszPaths[0], 0 if not
+ *          found or invalid input.
  * @param   cPaths      Number of paths in \a papszPaths.
- * @param   papszPaths  Array of paths to find common path for.
- * @param   fFlags      RTPATH_STR_F_STYLE_XXX. Other RTPATH_STR_F_XXX flags
- *                      will be ignored.
+ * @param   papszPaths  Array of paths to find common path for.  The paths must
+ *                      not contains ".." sequences, as that's too complicated
+ *                      to handle.
+ * @param   fFlags      RTPATH_STR_F_STYLE_XXX and RTPATH_STR_F_NO_START if
+ *                      wanted.  Other RTPATH_STR_F_XXX flags will be ignored.
  */
 RTDECL(size_t) RTPathFindCommonEx(size_t cPaths, const char * const *papszPaths, uint32_t fFlags);
 

@@ -100,7 +100,6 @@ PROGRAMS += \
 	tstRTNetIPv6 \
 	tstOnce \
 	tstRTPath \
-	tstRTPathFindCommon \
 	tstRTPathGlob \
 	tstRTPathQueryInfo \
 	tstRTPipe \
