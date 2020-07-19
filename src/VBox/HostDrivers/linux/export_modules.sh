@@ -112,12 +112,12 @@ VBOX_VENDOR=`sed -e 's/^ *VBOX_VENDOR *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.km
 VBOX_VENDOR_SHORT=`sed -e 's/^ *VBOX_VENDOR_SHORT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
 VBOX_PRODUCT=`sed -e 's/^ *VBOX_PRODUCT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
 VBOX_C_YEAR=`date +%Y`
-VBOX_WITH_PCI_PASSTHROUGH=`sed -e "s/^ *VBOX_WITH_PCI_PASSTHROUGH *= *\(1\?\)/\1/;t;d" $PATH_ROOT/Config.kmk`
+VBOX_WITH_PCI_PASSTHROUGH=`sed -e '/^ *VBOX_WITH_PCI_PASSTHROUGH *[:]\?= */!d' -e 's/ *#.*$//' -e 's/^.*= *//' $PATH_ROOT/Config.kmk`
 
 . $PATH_VBOXDRV/linux/files_vboxdrv
 . $PATH_VBOXNET/linux/files_vboxnetflt
 . $PATH_VBOXADP/linux/files_vboxnetadp
-if [ "$VBOX_WITH_PCI_PASSTHROUGH" -eq "1" ]; then
+if [ "${VBOX_WITH_PCI_PASSTHROUGH}" = "1" ]; then
     . $PATH_VBOXPCI/linux/files_vboxpci
 fi
 
@@ -201,7 +201,7 @@ else
 fi
 
 # vboxpci (VirtualBox host PCI access kernel module)
-if [ "$VBOX_WITH_PCI_PASSTHROUGH" -eq "1" ]; then
+if [ "${VBOX_WITH_PCI_PASSTHROUGH}" = "1" ]; then
     mkdir $PATH_TMP/vboxpci || exit 1
     for f in $VBOX_VBOXPCI_SOURCES; do
         install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxpci/`echo $f|cut -d'>' -f2`"
