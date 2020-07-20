@@ -130,6 +130,8 @@ MAKESELF="makeself"
 MESA="-lGL"
 INCZ=""
 LIBZ="-lz"
+INCLZF="/usr/include/liblzf"
+LIBLZF="-llzf"
 INCVNCSERVER=""
 LIBVNCSERVER="-lvncserver"
 INCDEVMAPPER=""
@@ -944,6 +946,41 @@ EOF
       cnf_append " SDK_VBOX_ZLIB_INCS" "$INCZ"
       echo "endif" >> $CNF
     fi
+  fi
+}
+
+
+#
+# Check for liblzf, needed by VBoxSVC, Runtime, ...
+#
+check_lzf()
+{
+  test_header liblzf
+  cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <lzf.h>
+extern "C" int main(void)
+{
+  printf("found LZF API version %u.%u", LZF_VERSION >> 8, LZF_VERSION & 0xff);
+#if LZF_VERSION >= 0x0105
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 1.5 or higher\n");
+  return 1;
+#endif
+}
+EOF
+  [ -n "$INCLZF" ] && I_INCLZF=`prefix_I "$INCLZF"`
+  if test_compile "$LIBLZF $I_INCLZF" liblzf liblzf nofatal; then
+    if test_execute; then
+      echo "if1of (\$(KBUILD_TARGET),darwin freebsd haiku linux)" >> $CNF
+      cnf_append " SDK_VBOX_LZF_LIBS" "`strip_l "$LIBLZF"`"
+      cnf_append " SDK_VBOX_LZF_INCS" "$INCLZF"
+      echo "endif" >> $CNF
+    fi
+  else
+    echo "not found -- builing liblzf from in-tree code."
   fi
 }
 
@@ -2772,6 +2809,7 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   check_libxml2
   [ $WITH_LIBIDL -eq 1 ] && check_libidl
   check_z
+  check_lzf
   check_ssl
   check_curl
   [ $WITH_LIBVPX -eq 1 ] && check_vpx
