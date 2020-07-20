@@ -264,7 +264,7 @@ void UIInputDialogCloudConsoleApplication::retranslateUi()
 void UIInputDialogCloudConsoleApplication::prepare()
 {
     /* Configure self: */
-    setWindowIcon(UIIconPool::iconSet(":/cloud_console_application_add_16px.png")); /// @todo use proper icon
+    setWindowIcon(UIIconPool::iconSet(":/cloud_console_application_add_16px.png"));
 
     /* Prepare main layout: */
     QGridLayout *pMainLayout = new QGridLayout(this);
@@ -360,7 +360,7 @@ void UIInputDialogCloudConsoleProfile::retranslateUi()
 void UIInputDialogCloudConsoleProfile::prepare()
 {
     /* Configure self: */
-    setWindowIcon(UIIconPool::iconSet(":/cloud_console_profile_add_16px.png")); /// @todo use proper icon
+    setWindowIcon(UIIconPool::iconSet(":/cloud_console_profile_add_16px.png"));
 
     /* Prepare main layout: */
     QGridLayout *pMainLayout = new QGridLayout(this);
