@@ -70,6 +70,26 @@
         <file alias="chipset_warning_16px.png">images/chipset_warning_16px.png</file>
         <file alias="close_16px.png">images/close_16px.png</file>
         <file alias="close_popup_16px.png">images/close_popup_16px.png</file>
+        <file alias="cloud_console_application_add_16px.png">images/cloud_console_application_add_16px.png</file>
+        <file alias="cloud_console_application_add_32px.png">images/cloud_console_application_add_32px.png</file>
+        <file alias="cloud_console_application_add_disabled_16px.png">images/cloud_console_application_add_disabled_16px.png</file>
+        <file alias="cloud_console_application_add_disabled_32px.png">images/cloud_console_application_add_disabled_32px.png</file>
+        <file alias="cloud_console_application_remove_16px.png">images/cloud_console_application_remove_16px.png</file>
+        <file alias="cloud_console_application_remove_32px.png">images/cloud_console_application_remove_32px.png</file>
+        <file alias="cloud_console_application_remove_disabled_16px.png">images/cloud_console_application_remove_disabled_16px.png</file>
+        <file alias="cloud_console_application_remove_disabled_32px.png">images/cloud_console_application_remove_disabled_32px.png</file>
+        <file alias="cloud_console_edit_16px.png">images/cloud_console_edit_16px.png</file>
+        <file alias="cloud_console_edit_32px.png">images/cloud_console_edit_32px.png</file>
+        <file alias="cloud_console_edit_disabled_16px.png">images/cloud_console_edit_disabled_16px.png</file>
+        <file alias="cloud_console_edit_disabled_32px.png">images/cloud_console_edit_disabled_32px.png</file>
+        <file alias="cloud_console_profile_add_16px.png">images/cloud_console_profile_add_16px.png</file>
+        <file alias="cloud_console_profile_add_32px.png">images/cloud_console_profile_add_32px.png</file>
+        <file alias="cloud_console_profile_add_disabled_16px.png">images/cloud_console_profile_add_disabled_16px.png</file>
+        <file alias="cloud_console_profile_add_disabled_32px.png">images/cloud_console_profile_add_disabled_32px.png</file>
+        <file alias="cloud_console_profile_remove_16px.png">images/cloud_console_profile_remove_16px.png</file>
+        <file alias="cloud_console_profile_remove_32px.png">images/cloud_console_profile_remove_32px.png</file>
+        <file alias="cloud_console_profile_remove_disabled_16px.png">images/cloud_console_profile_remove_disabled_16px.png</file>
+        <file alias="cloud_console_profile_remove_disabled_32px.png">images/cloud_console_profile_remove_disabled_32px.png</file>
         <file alias="cloud_machine_console_16px.png">images/cloud_machine_console_16px.png</file>
         <file alias="cloud_machine_console_configure_external_terminal_16px.png">images/cloud_machine_console_configure_external_terminal_16px.png</file>
         <file alias="cloud_machine_console_configure_external_terminal_disabled_16px.png">images/cloud_machine_console_configure_external_terminal_disabled_16px.png</file>
@@ -433,15 +453,5 @@
         <file alias="log_viewer_options_disabled_32px.png">images/log_viewer_options_disabled_32px.png</file>
         <file alias="log_viewer_refresh_16px.png">images/log_viewer_refresh_16px.png</file>
         <file alias="log_viewer_refresh_32px.png">images/log_viewer_refresh_32px.png</file>
-        <file alias="log_viewer_refresh_disabled_16px.png">images/log_viewer_refresh_disabled_16px.png</file>
-        <file alias="log_viewer_refresh_disabled_32px.png">images/log_viewer_refresh_disabled_32px.png</file>
-        <file alias="log_viewer_reset_font_16px.png">images/log_viewer_reset_font_16px.png</file>
-        <file alias="log_viewer_save_16px.png">images/log_viewer_save_16px.png</file>
-        <file alias="log_viewer_save_32px.png">images/log_viewer_save_32px.png</file>
-        <file alias="log_viewer_save_disabled_16px.png">images/log_viewer_save_disabled_16px.png</file>
-        <file alias="log_viewer_save_disabled_32px.png">images/log_viewer_save_disabled_32px.png</file>
-        <file alias="log_viewer_search_backward_16px.png">images/log_viewer_search_backward_16px.png</file>
-        <file alias="log_viewer_search_forward_16px.png">images/log_viewer_search_forward_16px.png</file>
-        <file alias="machine_16px.png">images/machine_16px.png</file>
     </qresource>
 </RCC>
