@@ -119,7 +119,7 @@
           particular state of a virtual machine and revert back to that
           state, if necessary. This way, one can freely experiment with
           a computing environment. If something goes wrong, such as
-          prolems after installing software or infecting the guest with
+          problems after installing software or infecting the guest with
           a virus, you can easily switch back to a previous snapshot and
           avoid the need of frequent backups and restores.
         </para>
