@@ -93,7 +93,7 @@
 
 
 /** QDialog extension used to ask for a public key for console connection needs. */
-class UIAcquirePublicKeyDialog : public QDialog
+class UIAcquirePublicKeyDialog : public QIWithRetranslateUI<QDialog>
 {
     Q_OBJECT;
 
@@ -115,6 +115,11 @@ private slots:
     /** Performs revalidation. */
     void sltRevalidate();
 
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
 private:
 
     /** Prepares all. */
@@ -132,7 +137,7 @@ private:
 *********************************************************************************************************************************/
 
 UIAcquirePublicKeyDialog::UIAcquirePublicKeyDialog(QWidget *pParent /* = 0 */)
-    : QDialog(pParent)
+    : QIWithRetranslateUI<QDialog>(pParent)
     , m_pTextEditor(0)
     , m_pButtonBox(0)
 {
@@ -177,6 +182,11 @@ void UIAcquirePublicKeyDialog::sltRevalidate()
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!m_pTextEditor->toPlainText().isEmpty());
 }
 
+void UIAcquirePublicKeyDialog::retranslateUi()
+{
+    setWindowTitle(tr("Provide public key"));
+}
+
 void UIAcquirePublicKeyDialog::prepare()
 {
     /* Prepare layout: */
@@ -200,6 +210,9 @@ void UIAcquirePublicKeyDialog::prepare()
             pLayout->addWidget(m_pButtonBox);
         }
     }
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 
@@ -2535,15 +2548,20 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection));
     else
     {
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
-        pMenu->addSeparator();
+        /* Copy fingerprint to clipboard action: */
         QAction *pAction = pMenu->addAction(UIIconPool::iconSet(":/cloud_machine_console_copy_connection_fingerprint_16px.png",
                                                                 ":/cloud_machine_console_copy_connection_fingerprint_disabled_16px.png"),
                                             QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprint),
                                             this, &UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint);
         pAction->setProperty("fingerprint", strFingerprint);
+
+        /* Copy command to clipboard actions: */
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial));
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC));
+        pMenu->addSeparator();
+
+        /* Delete connection action finally: */
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
     }
 }
 
