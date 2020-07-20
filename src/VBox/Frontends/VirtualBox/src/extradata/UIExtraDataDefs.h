@@ -221,6 +221,16 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_CloudProfileManager_Details_Expanded;
     /** @} */
 
+    /** @name Cloud Console Manager
+      * @{ */
+        /** Holds Cloud Console Manager applications/profiles. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_CloudConsoleManager_Application;
+        /** Holds Cloud Console Manager restrictions. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_CloudConsoleManager_Restrictions;
+        /** Holds whether Cloud Console Manager details expanded. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_CloudConsoleManager_Details_Expanded;
+    /** @} */
+
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** @name Extra-data Manager
       * @{ */

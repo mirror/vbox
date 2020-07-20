@@ -577,7 +577,7 @@ private:
 
     /** @name Actions
       * @{ */
-        /** */
+        /** Updates action availability. */
         void updateActionsAvailability();
     /** @} */
 
@@ -1930,6 +1930,8 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_HostNetworkManager_Details_Expanded
            << GUI_CloudProfileManager_Restrictions
            << GUI_CloudProfileManager_Details_Expanded
+           << GUI_CloudConsoleManager_Restrictions
+           << GUI_CloudConsoleManager_Details_Expanded
            << GUI_HideDescriptionForWizards
            << GUI_HideFromManager << GUI_HideDetails
            << GUI_PreventReconfiguration << GUI_PreventSnapshotOperations
@@ -2994,6 +2996,70 @@ void UIExtraDataManager::setCloudProfileManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_CloudProfileManager_Details_Expanded, toFeatureAllowed(fExpanded));
+}
+
+QStringList UIExtraDataManager::cloudConsoleManagerApplications()
+{
+    /* Gather a list of keys matching required expression: */
+    QStringList result;
+    QRegExp re(QString("^%1/([^/]+)$").arg(GUI_CloudConsoleManager_Application));
+    foreach (const QString &strKey, m_data.value(GlobalID).keys())
+        if (re.indexIn(strKey) != -1)
+            result << re.cap(1);
+    return result;
+}
+
+QStringList UIExtraDataManager::cloudConsoleManagerProfiles(const QString &strId)
+{
+    /* Gather a list of keys matching required expression: */
+    QStringList result;
+    QRegExp re(QString("^%1/%2/([^/]+)$").arg(GUI_CloudConsoleManager_Application, strId));
+    foreach (const QString &strKey, m_data.value(GlobalID).keys())
+        if (re.indexIn(strKey) != -1)
+            result << re.cap(1);
+    return result;
+}
+
+QString UIExtraDataManager::cloudConsoleManagerApplication(const QString &strId)
+{
+    return extraDataString(QString("%1/%2").arg(GUI_CloudConsoleManager_Application, strId));
+}
+
+void UIExtraDataManager::setCloudConsoleManagerApplication(const QString &strId, const QString &strDefinition)
+{
+    setExtraDataString(QString("%1/%2").arg(GUI_CloudConsoleManager_Application, strId), strDefinition);
+}
+
+QString UIExtraDataManager::cloudConsoleManagerProfile(const QString &strApplicationId, const QString &strProfileId)
+{
+    return extraDataString(QString("%1/%2/%3").arg(GUI_CloudConsoleManager_Application, strApplicationId, strProfileId));
+}
+
+void UIExtraDataManager::setCloudConsoleManagerProfile(const QString &strApplicationId, const QString &strProfileId, const QString &strDefinition)
+{
+    setExtraDataString(QString("%1/%2/%3").arg(GUI_CloudConsoleManager_Application, strApplicationId, strProfileId), strDefinition);
+}
+
+QStringList UIExtraDataManager::cloudConsoleManagerRestrictions()
+{
+    return extraDataStringList(GUI_CloudConsoleManager_Restrictions);
+}
+
+void UIExtraDataManager::setCloudConsoleManagerRestrictions(const QStringList &restrictions)
+{
+    return setExtraDataStringList(GUI_CloudConsoleManager_Restrictions, restrictions);
+}
+
+bool UIExtraDataManager::cloudConsoleManagerDetailsExpanded()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_CloudConsoleManager_Details_Expanded);
+}
+
+void UIExtraDataManager::setCloudConsoleManagerDetailsExpanded(bool fExpanded)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    return setExtraDataString(GUI_CloudConsoleManager_Details_Expanded, toFeatureAllowed(fExpanded));
 }
 
 WizardMode UIExtraDataManager::modeForWizardType(WizardType type)
@@ -4581,6 +4647,12 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
             /* Cloud Profile Manager restrictions changed: */
             else if (strKey == GUI_CloudProfileManager_Restrictions)
                 emit sigCloudProfileManagerRestrictionChange();
+            /* Cloud Console Manager data changed: */
+            else if (strKey.startsWith(QString(GUI_CloudConsoleManager_Application) + '/'))
+                emit sigCloudConsoleManagerDataChange();
+            /* Cloud Console Manager restrictions changed: */
+            else if (strKey == GUI_CloudConsoleManager_Restrictions)
+                emit sigCloudConsoleManagerRestrictionChange();
             /* Details categories: */
             else if (strKey == GUI_Details_Elements)
                 emit sigDetailsCategoriesChange();

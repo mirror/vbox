@@ -2021,6 +2021,28 @@ void UIMessageCenter::cannotAssignFormValue(const CProgress &comProgress, QWidge
           UIErrorString::formatErrorInfo(comProgress));
 }
 
+bool UIMessageCenter::confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the cloud console application <nobr><b>%1</b>?</nobr></p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+bool UIMessageCenter::confirmCloudConsoleProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the cloud console profile <nobr><b>%1</b>?</nobr></p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Warning,

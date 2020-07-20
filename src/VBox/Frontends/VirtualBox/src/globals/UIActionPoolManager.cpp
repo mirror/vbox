@@ -2982,6 +2982,217 @@ protected:
     }
 };
 
+
+/** Menu action extension, used as 'Cloud Console' menu class. */
+class UIActionMenuSelectorCloudConsole : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudConsole(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CloudConsoleMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Console"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Console Application Add' action class. */
+class UIActionMenuSelectorCloudConsolePerformApplicationAdd : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudConsolePerformApplicationAdd(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_console_application_add_32px.png",          ":/cloud_console_application_add_16px.png",
+                         ":/cloud_console_application_add_disabled_32px.png", ":/cloud_console_application_add_disabled_16px.png") /// @todo use proper icons
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("AddCloudConsoleApplication");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Add Application..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Add new cloud console application"));
+        setToolTip(  QApplication::translate("UIActionPool", "Add Cloud Console Application")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform Console Application Remove' action class. */
+class UIActionMenuSelectorCloudConsolePerformApplicationRemove : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudConsolePerformApplicationRemove(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_console_application_remove_32px.png",          ":/cloud_console_application_remove_16px.png",
+                         ":/cloud_console_application_remove_disabled_32px.png", ":/cloud_console_application_remove_disabled_16px.png") /// @todo use proper icons
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RemoveCloudConsoleApplication");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Remove Application..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Remove selected cloud console application"));
+        setToolTip(  QApplication::translate("UIActionPool", "Remove Cloud Console Application")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform Console Profile Add' action class. */
+class UIActionMenuSelectorCloudConsolePerformProfileAdd : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudConsolePerformProfileAdd(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_console_profile_add_32px.png",          ":/cloud_console_profile_add_16px.png",
+                         ":/cloud_console_profile_add_disabled_32px.png", ":/cloud_console_profile_add_disabled_16px.png") /// @todo use proper icons
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("AddCloudConsoleProfile");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Add Profile..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Add new cloud console profile"));
+        setToolTip(  QApplication::translate("UIActionPool", "Add Cloud Console Profile")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform Console Profile Remove' action class. */
+class UIActionMenuSelectorCloudConsolePerformProfileRemove : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudConsolePerformProfileRemove(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_console_profile_remove_32px.png",          ":/cloud_console_profile_remove_16px.png",
+                         ":/cloud_console_profile_remove_disabled_32px.png", ":/cloud_console_profile_remove_disabled_16px.png") /// @todo use proper icons
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("RemoveCloudConsoleProfile");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Remove Profile..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Remove selected cloud console profile"));
+        setToolTip(  QApplication::translate("UIActionPool", "Remove Cloud Console Profile")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Toggle action extension, used as 'Toggle Cloud Console Properties' action class. */
+class UIActionMenuSelectorCloudConsoleToggleProperties : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudConsoleToggleProperties(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        setIcon(UIIconPool::iconSetFull(":/cloud_console_edit_32px.png",          ":/cloud_console_edit_16px.png",
+                                        ":/cloud_console_edit_disabled_32px.png", ":/cloud_console_edit_disabled_16px.png")); /// @todo use proper icons with check-boxes
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleCloudConsoleProperties");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+P");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setIconText(QApplication::translate("UIActionPool", "Properties"));
+        setName(QApplication::translate("UIActionPool", "Console &Properties"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected cloud console properties"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Cloud Console Properties")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+
 /** Menu action extension, used as 'Resources' menu class. */
 class UIActionMenuVMResourceMonitor : public UIActionMenu
 {
@@ -3182,6 +3393,15 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Cloud_S_TryPage] = new UIActionMenuSelectorCloudShowTryPage(this);
     m_pool[UIActionIndexST_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
 
+    /* Cloud Console Manager actions: */
+    m_pool[UIActionIndexST_M_CloudConsoleWindow] = new UIActionMenuSelectorCloudConsole(this);
+    m_pool[UIActionIndexST_M_CloudConsole] = new UIActionMenuSelectorCloudConsole(this);
+    m_pool[UIActionIndexST_M_CloudConsole_S_ApplicationAdd] = new UIActionMenuSelectorCloudConsolePerformApplicationAdd(this);
+    m_pool[UIActionIndexST_M_CloudConsole_S_ApplicationRemove] = new UIActionMenuSelectorCloudConsolePerformApplicationRemove(this);
+    m_pool[UIActionIndexST_M_CloudConsole_S_ProfileAdd] = new UIActionMenuSelectorCloudConsolePerformProfileAdd(this);
+    m_pool[UIActionIndexST_M_CloudConsole_S_ProfileRemove] = new UIActionMenuSelectorCloudConsolePerformProfileRemove(this);
+    m_pool[UIActionIndexST_M_CloudConsole_T_Details] = new UIActionMenuSelectorCloudConsoleToggleProperties(this);
+
     /* VM resource Monitor actions: */
     m_pool[UIActionIndexST_M_VMResourceMonitor] = new UIActionMenuVMResourceMonitor(this);
     m_pool[UIActionIndexST_M_VMResourceMonitor_M_Columns] = new UIActionMenuSelectorVMResourceMonitorToggleColumns(this);
@@ -3219,6 +3439,8 @@ void UIActionPoolManager::preparePool()
     m_menuUpdateHandlers[UIActionIndexST_M_Network].ptfm =               &UIActionPoolManager::updateMenuNetwork;
     m_menuUpdateHandlers[UIActionIndexST_M_CloudWindow].ptfm =           &UIActionPoolManager::updateMenuCloudWindow;
     m_menuUpdateHandlers[UIActionIndexST_M_Cloud].ptfm =                 &UIActionPoolManager::updateMenuCloud;
+    m_menuUpdateHandlers[UIActionIndexST_M_CloudConsoleWindow].ptfm =    &UIActionPoolManager::updateMenuCloudConsoleWindow;
+    m_menuUpdateHandlers[UIActionIndexST_M_CloudConsole].ptfm =          &UIActionPoolManager::updateMenuCloudConsole;
     m_menuUpdateHandlers[UIActionIndexST_M_VMResourceMonitor].ptfm =     &UIActionPoolManager::updateMenuVMResourceMonitor;
     m_menuUpdateHandlers[UIActionIndexST_M_Snapshot].ptfm =              &UIActionPoolManager::updateMenuSnapshot;
 
@@ -3767,6 +3989,60 @@ void UIActionPoolManager::updateMenuCloudWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_TryPage)) || fSeparator;
     /* 'Help' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Help)) || fSeparator;
+}
+
+void UIActionPoolManager::updateMenuCloudConsoleWindow()
+{
+    /* Update corresponding menu: */
+    updateMenuCloudConsoleWrapper(action(UIActionIndexST_M_CloudConsoleWindow)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_CloudConsoleWindow);
+}
+
+void UIActionPoolManager::updateMenuCloudConsole()
+{
+    /* Update corresponding menu: */
+    updateMenuCloudConsoleWrapper(action(UIActionIndexST_M_CloudConsole)->menu());
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_CloudConsole);
+}
+
+void UIActionPoolManager::updateMenuCloudConsoleWrapper(UIMenu *pMenu)
+{
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Separator? */
+    bool fSeparator = false;
+
+    /* 'Add Application' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_S_ApplicationAdd)) || fSeparator;
+    /* 'Remove Application' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_S_ApplicationRemove)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Add Profile' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_S_ProfileAdd)) || fSeparator;
+    /* 'Remove Profile' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_S_ProfileRemove)) || fSeparator;
+
+    /* Separator? */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Properties' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_T_Details)) || fSeparator;
 }
 
 void UIActionPoolManager::updateMenuVMResourceMonitor()

@@ -78,6 +78,11 @@ signals:
     /** Notifies about Cloud Profile Manager restriction change. */
     void sigCloudProfileManagerRestrictionChange();
 
+    /** Notifies about Cloud Console Manager data change. */
+    void sigCloudConsoleManagerDataChange();
+    /** Notifies about Cloud Console Manager restriction change. */
+    void sigCloudConsoleManagerRestrictionChange();
+
     /** Notifies about VirtualBox Manager / Details pane categories change. */
     void sigDetailsCategoriesChange();
     /** Notifies about VirtualBox Manager / Details pane options change. */
@@ -416,6 +421,34 @@ public:
         bool cloudProfileManagerDetailsExpanded();
         /** Defines whether Cloud Profile Manager details @a fExpanded. */
         void setCloudProfileManagerDetailsExpanded(bool fExpanded);
+    /** @} */
+
+    /** @name Cloud Console Manager
+      * @{ */
+        /** Returns registered Cloud Console Manager applications. */
+        QStringList cloudConsoleManagerApplications();
+        /** Returns registered Cloud Console Manager profiles for application with @a strId. */
+        QStringList cloudConsoleManagerProfiles(const QString &strId);
+
+        /** Returns definition for Cloud Console Manager application with @a strId. */
+        QString cloudConsoleManagerApplication(const QString &strId);
+        /** Defines @a strDefinition for Cloud Console Manager application with @a strId. */
+        void setCloudConsoleManagerApplication(const QString &strId, const QString &strDefinition);
+
+        /** Returns definition for Cloud Console Manager profile with @a strProfileId for application with @a strApplicationId. */
+        QString cloudConsoleManagerProfile(const QString &strApplicationId, const QString &strProfileId);
+        /** Returns @a strDefinition for Cloud Console Manager profile with @a strProfileId for application with @a strApplicationId. */
+        void setCloudConsoleManagerProfile(const QString &strApplicationId, const QString &strProfileId, const QString &strDefinition);
+
+        /** Returns Cloud Console Manager restrictions. */
+        QStringList cloudConsoleManagerRestrictions();
+        /** Defines Cloud Console Manager @a restrictions. */
+        void setCloudConsoleManagerRestrictions(const QStringList &restrictions);
+
+        /** Returns whether Cloud Console Manager details expanded. */
+        bool cloudConsoleManagerDetailsExpanded();
+        /** Defines whether Cloud Console Manager details @a fExpanded. */
+        void setCloudConsoleManagerDetailsExpanded(bool fExpanded);
     /** @} */
 
     /** @name Wizards

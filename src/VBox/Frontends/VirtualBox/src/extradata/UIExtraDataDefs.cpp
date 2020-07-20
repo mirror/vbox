@@ -113,6 +113,11 @@ const char *UIExtraDataDefs::GUI_HostNetworkManager_Details_Expanded = "GUI/Host
 const char *UIExtraDataDefs::GUI_CloudProfileManager_Restrictions = "GUI/CloudProfileManager/Restrictions";
 const char *UIExtraDataDefs::GUI_CloudProfileManager_Details_Expanded = "GUI/CloudProfileManager/Details/Expanded";
 
+/* Cloud Console Manager: */
+const char *UIExtraDataDefs::GUI_CloudConsoleManager_Application = "GUI/CloudConsoleManager/Application";
+const char *UIExtraDataDefs::GUI_CloudConsoleManager_Restrictions = "GUI/CloudConsoleManager/Restrictions";
+const char *UIExtraDataDefs::GUI_CloudConsoleManager_Details_Expanded = "GUI/CloudConsoleManager/Details/Expanded";
+
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 /* Extra-data Manager: */
 const char *UIExtraDataDefs::GUI_ExtraDataManager_Geometry = "GUI/ExtraDataManager/Geometry";

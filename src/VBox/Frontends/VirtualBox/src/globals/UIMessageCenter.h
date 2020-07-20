@@ -416,6 +416,10 @@ public:
     void cannotAssignFormValue(const CRangedIntegerFormValue &comValue, QWidget *pParent = 0) const;
     void cannotAssignFormValue(const CProgress &comProgress, QWidget *pParent = 0) const;
 
+    /* API: Cloud Console Manager warnings: */
+    bool confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent = 0) const;
+    bool confirmCloudConsoleProfileRemoval(const QString &strName, QWidget *pParent = 0) const;
+
     /* API: Wizards warnings: */
     bool confirmHardDisklessMachine(QWidget *pParent = 0) const;
     void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0) const;
