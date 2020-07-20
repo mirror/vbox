@@ -33,9 +33,6 @@
 #include "UICloudProfileManager.h"
 #include "UIMessageCenter.h"
 #include "UIToolBar.h"
-#ifdef VBOX_WS_MAC
-# include "UIWindowMenuManager.h"
-#endif
 
 /* COM includes: */
 #include "CCloudProfile.h"
@@ -46,8 +43,9 @@
 /** Tree-widget item types. */
 enum CloudItemType
 {
-    CloudItemType_Provider = QTreeWidgetItem::UserType + 1,
-    CloudItemType_Profile  = QTreeWidgetItem::UserType + 2
+    CloudItemType_Invalid  = 0,
+    CloudItemType_Provider = 1,
+    CloudItemType_Profile  = 2
 };
 Q_DECLARE_METATYPE(CloudItemType);
 
@@ -56,6 +54,7 @@ enum
 {
     Data_ItemType   = Qt::UserRole + 1,
     Data_ProviderID = Qt::UserRole + 2,
+    Data_Definition = Qt::UserRole + 3,
 };
 
 /** Tree-widget column types. */
@@ -118,7 +117,8 @@ void UIItemCloudProvider::updateFields()
 {
     /* Update item fields: */
     setText(Column_Name, m_strName);
-    setData(Column_Name, Data_ProviderID, m_uuid);
+    setData(Column_Name, Data_ProviderID, m_uId);
+    setData(Column_Name, Data_Definition, QVariant::fromValue(QString("/%1").arg(m_strShortName)));
     setCheckState(Column_ListVMs, m_fRestricted ? Qt::Unchecked : Qt::Checked);
 }
 
@@ -139,6 +139,7 @@ void UIItemCloudProfile::updateFields()
 {
     /* Update item fields: */
     setText(Column_Name, m_strName);
+    setData(Column_Name, Data_Definition, QVariant::fromValue(QString("/%1/%2").arg(m_strProviderShortName, m_strName)));
     setCheckState(Column_ListVMs, m_fRestricted ? Qt::Unchecked : Qt::Checked);
 }
 
@@ -157,7 +158,6 @@ UICloudProfileManagerWidget::UICloudProfileManagerWidget(EmbedTo enmEmbedding, U
     , m_pTreeWidget(0)
     , m_pDetailsWidget(0)
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -187,22 +187,21 @@ void UICloudProfileManagerWidget::retranslateUi()
 
 void UICloudProfileManagerWidget::sltResetCloudProfileDetailsChanges()
 {
-    /* Just push the current item data there again: */
+    /* Just push the current-item data there again: */
     sltHandleCurrentItemChange();
 }
 
 void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
 {
-    /* Is can be that there is provider item, not profile item currently selected.
+    /* It can be that there is provider item, not profile item currently selected.
      * In such case we are not applying parameters, we are creating new one profile. */
-    QTreeWidgetItem *pItem = m_pTreeWidget->currentItem();
-    UIItemCloudProvider *pMaybeProviderItem = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Provider
-                                            ? static_cast<UIItemCloudProvider*>(pItem) : 0;
+    QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
+    UIItemCloudProvider *pMaybeProviderItem = qobject_cast<UIItemCloudProvider*>(pItem);
     if (pMaybeProviderItem)
         return sltAddCloudProfile();
 
     /* Get profile item: */
-    UIItemCloudProfile *pProfileItem = static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem());
+    UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pItem);
     AssertMsgReturnVoid(pProfileItem, ("Current item must not be null!\n"));
 
     /* Get item data: */
@@ -220,7 +219,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
     else
     {
         /* Get provider item: */
-        UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
+        UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
         /* Acquire provider ID: */
         const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
 
@@ -274,7 +273,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
                     loadCloudProfile(comCloudProfile, *pProviderItem, data);
                     updateItemForCloudProfile(data, true, pProfileItem);
 
-                    /* Make sure current item fetched: */
+                    /* Make sure current-item fetched: */
                     sltHandleCurrentItemChange();
 
                     /* Save profile changes: */
@@ -294,7 +293,8 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
 void UICloudProfileManagerWidget::sltAddCloudProfile()
 {
     /* Get provider item: */
-    UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(m_pTreeWidget->currentItem());
+    QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
+    UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pItem);
     AssertMsgReturnVoid(pProviderItem, ("Current item must not be null!\n"));
 
     /* Acquire profile name if not proposed by details widget: */
@@ -377,7 +377,8 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
 void UICloudProfileManagerWidget::sltImportCloudProfiles()
 {
     /* Get provider item: */
-    UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(m_pTreeWidget->currentItem());
+    QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
+    UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pItem);
     AssertMsgReturnVoid(pProviderItem, ("Current item must not be null!\n"));
 
     /* If there are profiles exist => confirm cloud profile import. */
@@ -423,7 +424,8 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
 void UICloudProfileManagerWidget::sltRemoveCloudProfile()
 {
     /* Get profile item: */
-    UIItemCloudProfile *pProfileItem = static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem());
+    QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
+    UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pItem);
     AssertMsgReturnVoid(pProfileItem, ("Current item must not be null!\n"));
 
     /* Get profile name: */
@@ -444,7 +446,7 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
     else
     {
         /* Get provider item: */
-        UIItemCloudProvider *pProviderItem = static_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
+        UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pProfileItem->parentItem());
         /* Acquire provider ID: */
         const QUuid uId = pProviderItem->data(Column_Name, Data_ProviderID).toUuid();
 
@@ -512,14 +514,10 @@ void UICloudProfileManagerWidget::sltPerformTableAdjustment()
 
 void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
 {
-    /* Get items: */
-    QTreeWidgetItem *pItem = m_pTreeWidget->currentItem();
-    UIItemCloudProvider *pItemProvider = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Provider
-                                       ? static_cast<UIItemCloudProvider*>(pItem)
-                                       : 0;
-    UIItemCloudProfile  *pItemProfile  = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Profile
-                                       ? static_cast<UIItemCloudProfile*>(pItem)
-                                       : 0;
+    /* Check current-item type: */
+    QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->currentItem());
+    UIItemCloudProvider *pItemProvider = qobject_cast<UIItemCloudProvider*>(pItem);
+    UIItemCloudProfile *pItemProfile = qobject_cast<UIItemCloudProfile*>(pItem);
 
     /* Update actions availability: */
     m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add)->setEnabled(!pItem || pItemProvider);
@@ -540,14 +538,10 @@ void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
 
 void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
 {
-    /* Get items: */
-    QTreeWidgetItem *pItem = m_pTreeWidget->itemAt(position);
-    UIItemCloudProvider *pItemProvider = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Provider
-                                       ? static_cast<UIItemCloudProvider*>(pItem)
-                                       : 0;
-    UIItemCloudProfile  *pItemProfile  = pItem && pItem->data(0, Data_ItemType).value<CloudItemType>() == CloudItemType_Profile
-                                       ? static_cast<UIItemCloudProfile*>(pItem)
-                                       : 0;
+    /* Check clicked-item type: */
+    QITreeWidgetItem *pItem = QITreeWidgetItem::toItem(m_pTreeWidget->itemAt(position));
+    UIItemCloudProvider *pItemProvider = qobject_cast<UIItemCloudProvider*>(pItem);
+    UIItemCloudProfile *pItemProfile = qobject_cast<UIItemCloudProfile*>(pItem);
 
     /* Compose temporary context-menu: */
     QMenu menu;
@@ -564,19 +558,18 @@ void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &posi
     }
 
     /* And show it: */
-    menu.exec(m_pTreeWidget->mapToGlobal(position));
+    menu.exec(m_pTreeWidget->viewport()->mapToGlobal(position));
 }
 
 void UICloudProfileManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
 {
-    /* Cast pItem to QITreeWidgetItem: */
+    /* Check item type: */
     QITreeWidgetItem *pChangedItem = QITreeWidgetItem::toItem(pItem);
-    AssertMsgReturnVoid(pChangedItem, ("Changed item must not be null!\n"));
+    UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pChangedItem);
+    UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pChangedItem);
 
     /* Check whether item is of provider or profile type, then check whether it changed: */
     bool fChanged = false;
-    UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pChangedItem);
-    UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pChangedItem);
     if (pProviderItem)
     {
         const UIDataCloudProvider oldData = *pProviderItem;
@@ -796,7 +789,7 @@ void UICloudProfileManagerWidget::loadCloudStuff()
         createItemForCloudProvider(providerData, false);
 
         /* Make sure provider item is properly inserted: */
-        UIItemCloudProvider *pItem = searchItem(providerData.m_uuid);
+        UIItemCloudProvider *pItem = searchItem(providerData.m_uId);
 
         /* Iterate through provider's profiles: */
         foreach (const CCloudProfile &comCloudProfile, listCloudProfiles(comCloudProvider))
@@ -822,24 +815,27 @@ void UICloudProfileManagerWidget::loadCloudStuff()
     sltHandleCurrentItemChange();
 }
 
-void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comProvider, UIDataCloudProvider &data)
+void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comProvider,
+                                                    UIDataCloudProvider &providerData)
 {
     /* Gather provider settings: */
     if (comProvider.isOk())
-        data.m_uuid = comProvider.GetId();
+        providerData.m_uId = comProvider.GetId();
     if (comProvider.isOk())
-        data.m_strShortName = comProvider.GetShortName();
+        providerData.m_strShortName = comProvider.GetShortName();
     if (comProvider.isOk())
-        data.m_strName = comProvider.GetName();
+        providerData.m_strName = comProvider.GetName();
     foreach (const QString &strSupportedPropertyName, comProvider.GetSupportedPropertyNames())
-        data.m_propertyDescriptions[strSupportedPropertyName] = comProvider.GetPropertyDescription(strSupportedPropertyName);
+        providerData.m_propertyDescriptions[strSupportedPropertyName] = comProvider.GetPropertyDescription(strSupportedPropertyName);
 
     /* Show error message if necessary: */
     if (!comProvider.isOk())
         msgCenter().cannotAcquireCloudProviderParameter(comProvider, this);
 }
 
-void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile, const UIDataCloudProvider &providerData, UIDataCloudProfile &profileData)
+void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile,
+                                                   const UIDataCloudProvider &providerData,
+                                                   UIDataCloudProfile &profileData)
 {
     /* Gather provider settings: */
     profileData.m_strProviderShortName = providerData.m_strShortName;
@@ -873,24 +869,25 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
         msgCenter().cannotAcquireCloudProfileParameter(comProfile, this);
 }
 
-UIItemCloudProvider *UICloudProfileManagerWidget::searchItem(const QUuid &uuid) const
+UIItemCloudProvider *UICloudProfileManagerWidget::searchItem(const QUuid &uId) const
 {
-    /* Iterated through top-level items: */
-    for (int i = 0; i < m_pTreeWidget->topLevelItemCount(); ++i)
-        if (m_pTreeWidget->topLevelItem(i)->data(0, Data_ProviderID).toUuid() == uuid)
-            return static_cast<UIItemCloudProvider*>(m_pTreeWidget->topLevelItem(i));
+    /* Iterate through tree-widget children: */
+    for (int i = 0; i < m_pTreeWidget->childCount(); ++i)
+        if (m_pTreeWidget->childItem(i)->data(Column_Name, Data_ProviderID).toUuid() == uId)
+            return qobject_cast<UIItemCloudProvider*>(m_pTreeWidget->childItem(i));
     /* Null by default: */
     return 0;
 }
 
-void UICloudProfileManagerWidget::createItemForCloudProvider(const UIDataCloudProvider &data, bool fChooseItem)
+void UICloudProfileManagerWidget::createItemForCloudProvider(const UIDataCloudProvider &providerData,
+                                                             bool fChooseItem)
 {
     /* Create new provider item: */
     UIItemCloudProvider *pItem = new UIItemCloudProvider;
     if (pItem)
     {
         /* Configure item: */
-        pItem->UIDataCloudProvider::operator=(data);
+        pItem->UIDataCloudProvider::operator=(providerData);
         pItem->updateFields();
         /* Add item to the tree: */
         m_pTreeWidget->addTopLevelItem(pItem);
@@ -900,14 +897,16 @@ void UICloudProfileManagerWidget::createItemForCloudProvider(const UIDataCloudPr
     }
 }
 
-void UICloudProfileManagerWidget::createItemForCloudProfile(QTreeWidgetItem *pParent, const UIDataCloudProfile &data, bool fChooseItem)
+void UICloudProfileManagerWidget::createItemForCloudProfile(QTreeWidgetItem *pParent,
+                                                            const UIDataCloudProfile &profileData,
+                                                            bool fChooseItem)
 {
     /* Create new profile item: */
     UIItemCloudProfile *pItem = new UIItemCloudProfile;
     if (pItem)
     {
         /* Configure item: */
-        pItem->UIDataCloudProfile::operator=(data);
+        pItem->UIDataCloudProfile::operator=(profileData);
         pItem->updateFields();
         /* Add item to the parent: */
         pParent->addChild(pItem);
@@ -917,13 +916,13 @@ void UICloudProfileManagerWidget::createItemForCloudProfile(QTreeWidgetItem *pPa
     }
 }
 
-void UICloudProfileManagerWidget::updateItemForCloudProfile(const UIDataCloudProfile &data, bool fChooseItem, UIItemCloudProfile *pItem)
+void UICloudProfileManagerWidget::updateItemForCloudProfile(const UIDataCloudProfile &profileData, bool fChooseItem, UIItemCloudProfile *pItem)
 {
     /* Update passed item: */
     if (pItem)
     {
         /* Configure item: */
-        pItem->UIDataCloudProfile::operator=(data);
+        pItem->UIDataCloudProfile::operator=(profileData);
         pItem->updateFields();
         /* And choose it as current if necessary: */
         if (fChooseItem)
@@ -941,21 +940,7 @@ QStringList UICloudProfileManagerWidget::gatherCloudProfileManagerRestrictions(Q
     QITreeWidgetItem *pChangedItem = QITreeWidgetItem::toItem(pParentItem);
     if (   pChangedItem
         && pChangedItem->checkState(Column_ListVMs) == Qt::Unchecked)
-    {
-        /* Check whether item is of provider or profile type: */
-        UIItemCloudProvider *pProviderItem = qobject_cast<UIItemCloudProvider*>(pChangedItem);
-        UIItemCloudProfile *pProfileItem = qobject_cast<UIItemCloudProfile*>(pChangedItem);
-        if (pProviderItem)
-        {
-            const UIDataCloudProvider oldData = *pProviderItem;
-            result << QString("/%1").arg(oldData.m_strShortName);
-        }
-        else if (pProfileItem)
-        {
-            const UIDataCloudProfile oldData = *pProfileItem;
-            result << QString("/%1/%2").arg(oldData.m_strProviderShortName, oldData.m_strName);
-        }
-    }
+        result << pChangedItem->data(Column_Name, Data_Definition).toString();
 
     /* Iterate through children recursively: */
     for (int i = 0; i < pParentItem->childCount(); ++i)

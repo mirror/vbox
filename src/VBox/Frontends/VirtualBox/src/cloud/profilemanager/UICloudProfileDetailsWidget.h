@@ -51,7 +51,7 @@ struct UIDataCloudProvider
     bool equal(const UIDataCloudProvider &other) const
     {
         return true
-               && (m_uuid == other.m_uuid)
+               && (m_uId == other.m_uId)
                && (m_strShortName == other.m_strShortName)
                && (m_strName == other.m_strName)
                && (m_fRestricted == other.m_fRestricted)
@@ -64,7 +64,7 @@ struct UIDataCloudProvider
     bool operator!=(const UIDataCloudProvider &other) const { return !equal(other); }
 
     /** Holds the provider ID. */
-    QUuid    m_uuid;
+    QUuid    m_uId;
     /** Holds the provider short name. */
     QString  m_strShortName;
     /** Holds the provider name. */
@@ -104,7 +104,7 @@ struct UIDataCloudProfile
     QString  m_strProviderShortName;
     /** Holds the profile name. */
     QString  m_strName;
-    /** Holds whether provider is restricted. */
+    /** Holds whether profile is restricted. */
     bool     m_fRestricted;
 
     /** Holds the profile data. */
@@ -216,7 +216,7 @@ private:
         /** Holds the table-widget instance. */
         QTableWidget *m_pTableWidget;
 
-        /** Holds the server button-box instance. */
+        /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;
     /** @} */
 };

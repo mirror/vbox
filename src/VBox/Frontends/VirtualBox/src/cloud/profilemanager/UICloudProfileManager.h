@@ -94,7 +94,7 @@ private slots:
 
     /** @name Menu/action stuff.
       * @{ */
-        /** Handles command to create cloud profile. */
+        /** Handles command to add cloud profile. */
         void sltAddCloudProfile();
         /** Handles command to import cloud profiles. */
         void sltImportCloudProfiles();
@@ -102,7 +102,7 @@ private slots:
         void sltRemoveCloudProfile();
         /** Handles command to make cloud profile details @a fVisible. */
         void sltToggleCloudProfileDetailsVisibility(bool fVisible);
-        /** Handles command to show cloud profile help. */
+        /** Handles command to show cloud profile try page. */
         void sltShowCloudProfileTryPage();
         /** Handles command to show cloud profile help. */
         void sltShowCloudProfileHelp();
@@ -116,7 +116,7 @@ private slots:
         void sltPerformTableAdjustment();
         /** Handles tree-widget current item change. */
         void sltHandleCurrentItemChange();
-        /** Handles context menu request for tree-widget @a position. */
+        /** Handles context-menu request for tree-widget @a position. */
         void sltHandleContextMenuRequest(const QPoint &position);
         /** Handles tree-widget @a pItem change. */
         void sltHandleItemChange(QTreeWidgetItem *pItem);
@@ -148,24 +148,29 @@ private:
       * @{ */
         /** Loads cloud stuff. */
         void loadCloudStuff();
-        /** Loads cloud @a comProvider data to passed @a data container. */
-        void loadCloudProvider(const CCloudProvider &comProvider, UIDataCloudProvider &data);
+        /** Loads cloud @a comProvider data to passed @a providerData container. */
+        void loadCloudProvider(const CCloudProvider &comProvider,
+                               UIDataCloudProvider &providerData);
         /** Loads cloud @a comProfile data to passed @a profileData container, using @a providerData as hint. */
-        void loadCloudProfile(const CCloudProfile &comProfile, const UIDataCloudProvider &providerData, UIDataCloudProfile &profileData);
+        void loadCloudProfile(const CCloudProfile &comProfile,
+                              const UIDataCloudProvider &providerData,
+                              UIDataCloudProfile &profileData);
     /** @} */
 
     /** @name Tree-widget stuff.
       * @{ */
-        /** Seearches a provider item with specified @a uuid. */
-        UIItemCloudProvider *searchItem(const QUuid &uuid) const;
+        /** Seearches a provider item with specified @a uId. */
+        UIItemCloudProvider *searchItem(const QUuid &uId) const;
 
-        /** Creates a new tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
-        void createItemForCloudProvider(const UIDataCloudProvider &data, bool fChooseItem);
+        /** Creates a new tree-widget item
+          * on the basis of passed @a providerData, @a fChooseItem if requested. */
+        void createItemForCloudProvider(const UIDataCloudProvider &providerData, bool fChooseItem);
 
-        /** Creates a new tree-widget item as a child of certain @a pParent, on the basis of passed @a data, @a fChooseItem if requested. */
-        void createItemForCloudProfile(QTreeWidgetItem *pParent, const UIDataCloudProfile &data, bool fChooseItem);
-        /** Updates the passed tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
-        void updateItemForCloudProfile(const UIDataCloudProfile &data, bool fChooseItem, UIItemCloudProfile *pItem);
+        /** Creates a new tree-widget item as a child of certain @a pParent,
+          * on the basis of passed @a profileData, @a fChooseItem if requested. */
+        void createItemForCloudProfile(QTreeWidgetItem *pParent, const UIDataCloudProfile &profileData, bool fChooseItem);
+        /** Updates the passed tree-widget item on the basis of passed @a profileData, @a fChooseItem if requested. */
+        void updateItemForCloudProfile(const UIDataCloudProfile &profileData, bool fChooseItem, UIItemCloudProfile *pItem);
 
         /* Gathers a list of Cloud Profile Manager restrictions starting from @a pParentItem. */
         QStringList gatherCloudProfileManagerRestrictions(QTreeWidgetItem *pParentItem);
@@ -190,7 +195,7 @@ private:
     /** @name Splitter variables.
       * @{ */
         /** Holds the tree-widget instance. */
-        QITreeWidget *m_pTreeWidget;
+        QITreeWidget                *m_pTreeWidget;
         /** Holds the details-widget instance. */
         UICloudProfileDetailsWidget *m_pDetailsWidget;
     /** @} */

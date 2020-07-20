@@ -35,10 +35,12 @@
 UICloudProfileDetailsWidget::UICloudProfileDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
+    , m_pLabelName(0)
+    , m_pEditorName(0)
+    , m_pLabelTableWidget(0)
     , m_pTableWidget(0)
     , m_pButtonBox(0)
 {
-    /* Prepare: */
     prepare();
 }
 
