@@ -83,15 +83,23 @@ install:
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo install; \
 	fi
 
-clean:
+clean-vboxdrv:
 	$(VBOX_QUIET)$(MAKE) -C vboxguest clean
+
+clean-vboxsf:
 	$(VBOX_QUIET_SH)if [ -d vboxsf ]; then \
 	    $(MAKE) -C vboxsf clean; \
 	fi
+
+clean-vboxvideo:
 	$(VBOX_QUIET_SH)if [ -d vboxvideo ]; then \
 	    $(MAKE) -C vboxvideo clean; \
 	fi
+
+clean-misc:
 	rm -f vboxguest.*o vboxsf.*o vboxvideo.*o
+
+clean: clean-vboxdrv clean-vboxsf clean-vboxvideo clean-misc
 
 check:
 	$(VBOX_QUIET)$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest check
