@@ -20,6 +20,7 @@
 #include <QFile>
 #include <QGuiApplication>
 #include <QMenuBar>
+#include <QProcess>
 #include <QPushButton>
 #include <QStandardPaths>
 #include <QStatusBar>
@@ -28,6 +29,7 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "UIActionPoolManager.h"
+#include "UICloudConsoleManager.h"
 #include "UICloudMachineSettingsDialog.h"
 #include "UICloudNetworkingStuff.h"
 #include "UICloudProfileManager.h"
@@ -260,6 +262,7 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
     , m_pManagerCloudProfile(0)
+    , m_pManagerCloudConsole(0)
 {
     s_pInstance = this;
 }
@@ -608,6 +611,29 @@ void UIVirtualBoxManager::sltCloseCloudProfileManagerWindow()
     /* Destroy instance if still exists: */
     if (m_pManagerCloudProfile)
         UIHostNetworkManagerFactory().cleanup(m_pManagerCloudProfile);
+}
+
+void UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow()
+{
+    /* Create instance if not yet created: */
+    if (!m_pManagerCloudConsole)
+    {
+        UICloudConsoleManagerFactory(m_pActionPool).prepare(m_pManagerCloudConsole, this);
+        connect(m_pManagerCloudConsole, &QIManagerDialog::sigClose,
+                this, &UIVirtualBoxManager::sltCloseCloudConsoleManagerWindow);
+    }
+
+    /* Show instance: */
+    m_pManagerCloudConsole->show();
+    m_pManagerCloudConsole->setWindowState(m_pManagerCloudConsole->windowState() & ~Qt::WindowMinimized);
+    m_pManagerCloudConsole->activateWindow();
+}
+
+void UIVirtualBoxManager::sltCloseCloudConsoleManagerWindow()
+{
+    /* Destroy instance if still exists: */
+    if (m_pManagerCloudConsole)
+        UIHostNetworkManagerFactory().cleanup(m_pManagerCloudConsole);
 }
 
 void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
@@ -1205,6 +1231,32 @@ void UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint()
     QClipboard *pClipboard = QGuiApplication::clipboard();
     AssertPtrReturnVoid(pClipboard);
     pClipboard->setText(pAction->property("fingerprint").toString());
+}
+
+void UIVirtualBoxManager::sltExecuteExternalApplication()
+{
+    /* Acquire passed path and argument: */
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertMsgReturnVoid(pAction, ("This slot should be called by action only!\n"));
+    const QString strPath = pAction->property("path").toString();
+    QStringList arguments = QStringList() << pAction->property("arguments").toString();
+
+    /* Get current-item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtrReturnVoid(pCloudItem);
+
+    /* Add serial command to arguments: */
+    const CCloudMachine comMachine = pCloudItem->machine();
+#ifdef VBOX_WS_WIN
+    arguments << comMachine.GetSerialConsoleCommandWindows();
+#else
+    arguments << comMachine.GetSerialConsoleCommand();
+#endif
+
+    /* Execute console application finally: */
+    QProcess::startDetached(strPath, arguments);
 }
 
 void UIVirtualBoxManager::sltPerformCopyCommandSerial()
@@ -2084,6 +2136,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup);
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForGroup);
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow);
 
     /* 'Machine/Console' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection), &UIAction::triggered,
@@ -2094,6 +2148,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformCopyCommandSerial);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCopyCommandVNC);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow);
 
     /* 'Group/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), &UIAction::triggered,
@@ -2180,6 +2236,7 @@ void UIVirtualBoxManager::cleanup()
     sltCloseVirtualMediumManagerWindow();
     sltCloseHostNetworkManagerWindow();
     sltCloseCloudProfileManagerWindow();
+    sltCloseCloudConsoleManagerWindow();
 
     /* Save settings: */
     saveSettings();
@@ -2499,6 +2556,8 @@ void UIVirtualBoxManager::updateMenuGroupConsole(QMenu *pMenu)
     /* Populate 'Group' / 'Console' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection));
+    pMenu->addSeparator();
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications));
 }
 
 void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
@@ -2558,6 +2617,33 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         /* Copy command to clipboard actions: */
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial));
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC));
+        pMenu->addSeparator();
+
+        /* Terminal application/profile action list: */
+        const QStringList restrictions = gEDataManager->cloudConsoleManagerRestrictions();
+        foreach (const QString strApplicationId, gEDataManager->cloudConsoleManagerApplications())
+        {
+            const QString strApplicationDefinition = QString("/%1").arg(strApplicationId);
+            if (restrictions.contains(strApplicationDefinition))
+                continue;
+            const QString strApplicationOptions = gEDataManager->cloudConsoleManagerApplication(strApplicationId);
+            const QStringList applicationValues = strApplicationOptions.split(',');
+            foreach (const QString strProfileId, gEDataManager->cloudConsoleManagerProfiles(strApplicationId))
+            {
+                const QString strProfileDefinition = QString("/%1/%2").arg(strApplicationId, strProfileId);
+                if (restrictions.contains(strProfileDefinition))
+                    continue;
+                const QString strProfileOptions = gEDataManager->cloudConsoleManagerProfile(strApplicationId, strProfileId);
+                const QStringList profileValues = strProfileOptions.split(',');
+                QAction *pAction = pMenu->addAction(QApplication::translate("UIActionPool", "%1 (%2)")
+                                                        .arg(applicationValues.value(0), profileValues.value(0)),
+                                                    this, &UIVirtualBoxManager::sltExecuteExternalApplication);
+                pAction->setProperty("path", applicationValues.value(1));
+                pAction->setProperty("arguments", profileValues.value(1));
+            }
+        }
+        /* Terminal application configuration tool: */
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications));
         pMenu->addSeparator();
 
         /* Delete connection action finally: */
@@ -2689,6 +2775,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Group_M_Console)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console, items));
     actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console_S_CreateConnection, items));
     actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console_S_DeleteConnection, items));
+    actionPool()->action(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications, items));
 
     /* Enable/disable machine-console actions: */
     actionPool()->action(UIActionIndexST_M_Machine_M_Console)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console, items));
@@ -2696,6 +2783,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications, items));
 
     /* Enable/disable group-close actions: */
     actionPool()->action(UIActionIndexST_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close, items));
@@ -2963,11 +3051,13 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Group_M_Console:
         case UIActionIndexST_M_Group_M_Console_S_CreateConnection:
         case UIActionIndexST_M_Group_M_Console_S_DeleteConnection:
+        case UIActionIndexST_M_Group_M_Console_S_ConfigureApplications:
         case UIActionIndexST_M_Machine_M_Console:
         case UIActionIndexST_M_Machine_M_Console_S_CreateConnection:
         case UIActionIndexST_M_Machine_M_Console_S_DeleteConnection:
         case UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial:
         case UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC:
+        case UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications:
         {
             return isAtLeastOneItemStarted(items);
         }

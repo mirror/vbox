@@ -1383,6 +1383,36 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Perform Configure Applications' action class. */
+class UIActionSimpleSelectorConsolePerformConfigureApplications : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorConsolePerformConfigureApplications(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_machine_console_configure_external_terminal_16px.png",
+                         ":/cloud_machine_console_configure_external_terminal_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ConfigureConsoleApplications");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Configure Console Applications"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open configuration dialog to edit console application settings"));
+    }
+};
+
 /** Simple action extension, used as 'Copy Command' action class. */
 class UIActionSimpleSelectorConsolePerformCopyCommand : public UIActionSimple
 {
@@ -3021,7 +3051,7 @@ public:
     UIActionMenuSelectorCloudConsolePerformApplicationAdd(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_application_add_32px.png",          ":/cloud_console_application_add_16px.png",
-                         ":/cloud_console_application_add_disabled_32px.png", ":/cloud_console_application_add_disabled_16px.png") /// @todo use proper icons
+                         ":/cloud_console_application_add_disabled_32px.png", ":/cloud_console_application_add_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -3056,7 +3086,7 @@ public:
     UIActionMenuSelectorCloudConsolePerformApplicationRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_application_remove_32px.png",          ":/cloud_console_application_remove_16px.png",
-                         ":/cloud_console_application_remove_disabled_32px.png", ":/cloud_console_application_remove_disabled_16px.png") /// @todo use proper icons
+                         ":/cloud_console_application_remove_disabled_32px.png", ":/cloud_console_application_remove_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -3091,7 +3121,7 @@ public:
     UIActionMenuSelectorCloudConsolePerformProfileAdd(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_profile_add_32px.png",          ":/cloud_console_profile_add_16px.png",
-                         ":/cloud_console_profile_add_disabled_32px.png", ":/cloud_console_profile_add_disabled_16px.png") /// @todo use proper icons
+                         ":/cloud_console_profile_add_disabled_32px.png", ":/cloud_console_profile_add_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -3126,7 +3156,7 @@ public:
     UIActionMenuSelectorCloudConsolePerformProfileRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_profile_remove_32px.png",          ":/cloud_console_profile_remove_16px.png",
-                         ":/cloud_console_profile_remove_disabled_32px.png", ":/cloud_console_profile_remove_disabled_16px.png") /// @todo use proper icons
+                         ":/cloud_console_profile_remove_disabled_32px.png", ":/cloud_console_profile_remove_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -3162,8 +3192,9 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        /// @todo use icons with check-boxes
         setIcon(UIIconPool::iconSetFull(":/cloud_console_edit_32px.png",          ":/cloud_console_edit_16px.png",
-                                        ":/cloud_console_edit_disabled_32px.png", ":/cloud_console_edit_disabled_16px.png")); /// @todo use proper icons with check-boxes
+                                        ":/cloud_console_edit_disabled_32px.png", ":/cloud_console_edit_disabled_16px.png"));
     }
 
 protected:
@@ -3292,6 +3323,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Group_M_Console] = new UIActionMenuSelectorConsole(this);
     m_pool[UIActionIndexST_M_Group_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
     m_pool[UIActionIndexST_M_Group_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
+    m_pool[UIActionIndexST_M_Group_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
     m_pool[UIActionIndexST_M_Group_M_Close] = new UIActionMenuSelectorClose(this);
     m_pool[UIActionIndexST_M_Group_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
     m_pool[UIActionIndexST_M_Group_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
@@ -3330,6 +3362,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
     m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true);
     m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false);
+    m_pool[UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
     m_pool[UIActionIndexST_M_Machine_M_Close] = new UIActionMenuSelectorClose(this);
     m_pool[UIActionIndexST_M_Machine_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
     m_pool[UIActionIndexST_M_Machine_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
@@ -4124,6 +4157,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable)
                     << action(UIActionIndexST_M_Group_M_Console_S_CreateConnection)
                     << action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection)
+                    << action(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications)
                     // << action(UIActionIndexST_M_Group_M_Close_S_Detach)
                     << action(UIActionIndexST_M_Group_M_Close_S_SaveState)
                     << action(UIActionIndexST_M_Group_M_Close_S_Shutdown)
@@ -4160,6 +4194,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)
                     << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial)
                     << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC)
+                    << action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications)
                     // << action(UIActionIndexST_M_Machine_M_Close_S_Detach)
                     << action(UIActionIndexST_M_Machine_M_Close_S_SaveState)
                     << action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)

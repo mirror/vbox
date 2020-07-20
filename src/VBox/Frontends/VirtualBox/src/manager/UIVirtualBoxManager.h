@@ -170,6 +170,11 @@ private slots:
         /** Handles call to close Cloud Profile Manager window. */
         void sltCloseCloudProfileManagerWindow();
 
+        /** Handles call to open Cloud Console Manager window. */
+        void sltOpenCloudConsoleManagerWindow();
+        /** Handles call to close Cloud Console Manager window. */
+        void sltCloseCloudConsoleManagerWindow();
+
         /** Handles call to open Import Appliance wizard.
           * @param strFileName can bring the name of file to import appliance from. */
         void sltOpenImportApplianceWizard(const QString &strFileName = QString());
@@ -251,6 +256,8 @@ private slots:
         void sltPerformCopyCommandSerial();
         /** Handles call to copy VNC console command. */
         void sltPerformCopyCommandVNC();
+        /** Handles call to execute external application. */
+        void sltExecuteExternalApplication();
 
         /** Handles call to discard machine state. */
         void sltPerformDiscardMachineState();
@@ -435,6 +442,8 @@ private:
     QIManagerDialog *m_pManagerHostNetwork;
     /** Holds the Cloud Profile Manager window instance. */
     QIManagerDialog *m_pManagerCloudProfile;
+    /** Holds the Cloud Console Manager window instance. */
+    QIManagerDialog *m_pManagerCloudConsole;
     /** Holds a map of (machineUUID, UIVMLogViewerDialog). */
     VMLogViewerMap   m_logViewers;
 
