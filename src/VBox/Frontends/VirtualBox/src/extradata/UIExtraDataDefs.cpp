@@ -264,7 +264,7 @@ bool UIToolStuff::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)
                 case UIToolType_Media:
                 case UIToolType_Network:
                 case UIToolType_Cloud:
-                case UIToolType_VMResourceMonitor:
+                case UIToolType_Resources:
                     return true;
                 default:
                     break;
@@ -278,7 +278,7 @@ bool UIToolStuff::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)
                 case UIToolType_Details:
                 case UIToolType_Snapshots:
                 case UIToolType_Logs:
-                case UIToolType_PerformanceMonitor:
+                case UIToolType_Performance:
                     return true;
                 default:
                     break;

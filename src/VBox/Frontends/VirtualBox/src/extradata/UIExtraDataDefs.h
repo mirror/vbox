@@ -896,13 +896,13 @@ enum UIToolType
     UIToolType_Media,
     UIToolType_Network,
     UIToolType_Cloud,
-    UIToolType_VMResourceMonitor,
+    UIToolType_Resources,
     /* Machine types: */
     UIToolType_Error,
     UIToolType_Details,
     UIToolType_Snapshots,
     UIToolType_Logs,
-    UIToolType_PerformanceMonitor
+    UIToolType_Performance,
 };
 Q_DECLARE_METATYPE(UIToolType);
 

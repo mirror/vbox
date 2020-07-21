@@ -491,11 +491,11 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     /* Make sure separate dialogs are closed when corresponding tools are opened: */
     switch (m_pWidget->toolsType())
     {
-        case UIToolType_Media:              sltCloseVirtualMediumManagerWindow(); break;
-        case UIToolType_Network:            sltCloseHostNetworkManagerWindow(); break;
-        case UIToolType_Cloud:              sltCloseCloudProfileManagerWindow(); break;
-        case UIToolType_Logs:               sltCloseLogViewerWindow(); break;
-        case UIToolType_PerformanceMonitor: sltClosePerformanceMonitorWindow(); break;
+        case UIToolType_Media:       sltCloseVirtualMediumManagerWindow(); break;
+        case UIToolType_Network:     sltCloseHostNetworkManagerWindow(); break;
+        case UIToolType_Cloud:       sltCloseCloudProfileManagerWindow(); break;
+        case UIToolType_Logs:        sltCloseLogViewerWindow(); break;
+        case UIToolType_Performance: sltClosePerformanceMonitorWindow(); break;
         default: break;
     }
 }
@@ -2688,9 +2688,8 @@ void UIVirtualBoxManager::updateActionsVisibility()
     /* Determine whether Cloud menu should be visible: */
     const bool fCloudMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Cloud;
     actionPool()->action(UIActionIndexST_M_Cloud)->setVisible(fCloudMenuShown);
-
     /* Determine whether Resources menu should be visible: */
-    const bool fResourcesMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_VMResourceMonitor;
+    const bool fResourcesMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Resources;
     actionPool()->action(UIActionIndexST_M_VMResourceMonitor)->setVisible(fResourcesMenuShown);
 
     /* Determine whether Snapshots menu should be visible: */

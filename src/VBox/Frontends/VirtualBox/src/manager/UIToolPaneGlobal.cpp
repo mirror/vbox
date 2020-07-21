@@ -181,7 +181,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
                 }
                 break;
             }
-            case UIToolType_VMResourceMonitor:
+            case UIToolType_Resources:
             {
                 /* Create VM Resource Monitor: */
                 m_pPaneResourceMonitor = new UIResourceMonitorWidget(EmbedTo_Stack, m_pActionPool, false /* show toolbar */);
@@ -193,7 +193,7 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
 #endif
 
                     /* Configure pane: */
-                    m_pPaneResourceMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_VMResourceMonitor));
+                    m_pPaneResourceMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_Resources));
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneResourceMonitor);
@@ -267,5 +267,5 @@ void UIToolPaneGlobal::handleTokenChange()
 
     /* Determine whether resource monitor is currently active tool: */
     if (m_pPaneResourceMonitor)
-        m_pPaneResourceMonitor ->setIsCurrentTool(m_fActive && currentTool() == UIToolType_VMResourceMonitor);
+        m_pPaneResourceMonitor->setIsCurrentTool(m_fActive && currentTool() == UIToolType_Resources);
 }
