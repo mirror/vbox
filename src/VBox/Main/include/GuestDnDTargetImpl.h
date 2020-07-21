@@ -80,7 +80,7 @@ protected:
 
     /** @name Callbacks for dispatch handler.
      * @{ */
-    static DECLCALLBACK(int) i_sendURIDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
+    static DECLCALLBACK(int) i_sendTransferDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
     /** @}  */
 
 protected:

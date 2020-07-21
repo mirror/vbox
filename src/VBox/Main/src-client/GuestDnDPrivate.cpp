@@ -157,30 +157,30 @@
 
 GuestDnDCallbackEvent::~GuestDnDCallbackEvent(void)
 {
-    if (NIL_RTSEMEVENT != mSemEvent)
-        RTSemEventDestroy(mSemEvent);
+    if (NIL_RTSEMEVENT != m_SemEvent)
+        RTSemEventDestroy(m_SemEvent);
 }
 
 int GuestDnDCallbackEvent::Reset(void)
 {
     int rc = VINF_SUCCESS;
 
-    if (NIL_RTSEMEVENT == mSemEvent)
-        rc = RTSemEventCreate(&mSemEvent);
+    if (NIL_RTSEMEVENT == m_SemEvent)
+        rc = RTSemEventCreate(&m_SemEvent);
 
-    mRc = VINF_SUCCESS;
+    m_Rc = VINF_SUCCESS;
     return rc;
 }
 
 int GuestDnDCallbackEvent::Notify(int rc /* = VINF_SUCCESS */)
 {
-    mRc = rc;
-    return RTSemEventSignal(mSemEvent);
+    m_Rc = rc;
+    return RTSemEventSignal(m_SemEvent);
 }
 
 int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
 {
-    return RTSemEventWait(mSemEvent, msTimeout);
+    return RTSemEventWait(m_SemEvent, msTimeout);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -766,8 +766,8 @@ GuestDnDBase::GuestDnDBase(void)
     m_lstFmtSupported = GUESTDNDINST()->defaultFormats();
 
     /* Initialzie private stuff. */
-    mDataBase.m_cTransfersPending = 0;
-    mDataBase.m_uProtocolVersion  = 0;
+    m_DataBase.cTransfersPending = 0;
+    m_DataBase.uProtocolVersion  = 0;
 }
 
 HRESULT GuestDnDBase::i_isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported)
@@ -880,34 +880,34 @@ int GuestDnDBase::getProtocolVersion(uint32_t *puProto)
 
 int GuestDnDBase::msgQueueAdd(GuestDnDMsg *pMsg)
 {
-    mDataBase.m_lstMsgOut.push_back(pMsg);
+    m_DataBase.lstMsgOut.push_back(pMsg);
     return VINF_SUCCESS;
 }
 
 GuestDnDMsg *GuestDnDBase::msgQueueGetNext(void)
 {
-    if (mDataBase.m_lstMsgOut.empty())
+    if (m_DataBase.lstMsgOut.empty())
         return NULL;
-    return mDataBase.m_lstMsgOut.front();
+    return m_DataBase.lstMsgOut.front();
 }
 
 void GuestDnDBase::msgQueueRemoveNext(void)
 {
-    if (!mDataBase.m_lstMsgOut.empty())
+    if (!m_DataBase.lstMsgOut.empty())
     {
-        GuestDnDMsg *pMsg = mDataBase.m_lstMsgOut.front();
+        GuestDnDMsg *pMsg = m_DataBase.lstMsgOut.front();
         if (pMsg)
             delete pMsg;
-        mDataBase.m_lstMsgOut.pop_front();
+        m_DataBase.lstMsgOut.pop_front();
     }
 }
 
 void GuestDnDBase::msgQueueClear(void)
 {
-    LogFlowFunc(("cMsg=%zu\n", mDataBase.m_lstMsgOut.size()));
+    LogFlowFunc(("cMsg=%zu\n", m_DataBase.lstMsgOut.size()));
 
-    GuestDnDMsgList::iterator itMsg = mDataBase.m_lstMsgOut.begin();
-    while (itMsg != mDataBase.m_lstMsgOut.end())
+    GuestDnDMsgList::iterator itMsg = m_DataBase.lstMsgOut.begin();
+    while (itMsg != m_DataBase.lstMsgOut.end())
     {
         GuestDnDMsg *pMsg = *itMsg;
         if (pMsg)
@@ -916,14 +916,14 @@ void GuestDnDBase::msgQueueClear(void)
         itMsg++;
     }
 
-    mDataBase.m_lstMsgOut.clear();
+    m_DataBase.lstMsgOut.clear();
 }
 
 int GuestDnDBase::sendCancel(void)
 {
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_CANCEL);
-    if (mDataBase.m_uProtocolVersion >= 3)
+    if (m_DataBase.uProtocolVersion >= 3)
         Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
 
     LogRel2(("DnD: Cancelling operation on guest ..."));
@@ -932,13 +932,13 @@ int GuestDnDBase::sendCancel(void)
 }
 
 int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,
-                                 uint32_t cbDataAdd /* = 0 */)
+                                 size_t cbDataAdd /* = 0 */)
 {
     AssertPtrReturn(pData, VERR_INVALID_POINTER);
     AssertPtrReturn(pResp, VERR_INVALID_POINTER);
     /* cbDataAdd is optional. */
 
-    LogFlowFunc(("cbExtra=%RU64, cbProcessed=%RU64, cbRemaining=%RU64, cbDataAdd=%RU32\n",
+    LogFlowFunc(("cbExtra=%zu, cbProcessed=%zu, cbRemaining=%zu, cbDataAdd=%zu\n",
                  pData->cbExtra, pData->cbProcessed, pData->getRemaining(), cbDataAdd));
 
     if (!pResp)

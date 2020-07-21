@@ -93,7 +93,7 @@ protected:
     /** @name Callbacks for dispatch handler.
      * @{ */
     static DECLCALLBACK(int) i_receiveRawDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
-    static DECLCALLBACK(int) i_receiveURIDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
+    static DECLCALLBACK(int) i_receiveTransferDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
     /** @}  */
 
 protected:

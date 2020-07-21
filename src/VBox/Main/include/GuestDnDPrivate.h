@@ -57,8 +57,8 @@ class GuestDnDCallbackEvent
 public:
 
     GuestDnDCallbackEvent(void)
-        : mSemEvent(NIL_RTSEMEVENT)
-        , mRc(VINF_SUCCESS) { }
+        : m_SemEvent(NIL_RTSEMEVENT)
+        , m_Rc(VINF_SUCCESS) { }
 
     virtual ~GuestDnDCallbackEvent(void);
 
@@ -68,16 +68,16 @@ public:
 
     int Notify(int rc = VINF_SUCCESS);
 
-    int Result(void) const { return mRc; }
+    int Result(void) const { return m_Rc; }
 
     int Wait(RTMSINTERVAL msTimeout);
 
 protected:
 
     /** Event semaphore to notify on error/completion. */
-    RTSEMEVENT mSemEvent;
+    RTSEMEVENT m_SemEvent;
     /** Callback result. */
-    int        mRc;
+    int        m_Rc;
 };
 
 /**
@@ -95,7 +95,7 @@ struct GuestDnDMetaData
         reset();
     }
 
-    uint32_t add(const void *pvDataAdd, uint32_t cbDataAdd)
+    size_t add(const void *pvDataAdd, size_t cbDataAdd)
     {
         LogFlowThisFunc(("pvDataAdd=%p, cbDataAdd=%zu\n", pvDataAdd, cbDataAdd));
 
@@ -115,7 +115,7 @@ struct GuestDnDMetaData
         return cbData;
     }
 
-    uint32_t add(const std::vector<BYTE> &vecAdd)
+    size_t add(const std::vector<BYTE> &vecAdd)
     {
         if (!vecAdd.size())
             return 0;
@@ -141,7 +141,7 @@ struct GuestDnDMetaData
         cbData      = 0;
     }
 
-    int resize(uint32_t cbSize)
+    int resize(size_t cbSize)
     {
         if (!cbSize)
         {
@@ -183,9 +183,9 @@ struct GuestDnDMetaData
     /** Pointer to allocated meta data. */
     void        *pvData;
     /** Used bytes of meta data. Must not exceed cbAllocated. */
-    uint32_t     cbData;
+    size_t       cbData;
     /** Size (in bytes) of allocated meta data. */
-    uint32_t     cbAllocated;
+    size_t       cbAllocated;
 };
 
 /**
@@ -202,9 +202,9 @@ struct GuestDnDData
         reset();
     }
 
-    uint64_t addProcessed(uint32_t cbDataAdd)
+    size_t addProcessed(size_t cbDataAdd)
     {
-        const uint64_t cbTotal = Meta.cbData + cbExtra; RT_NOREF(cbTotal);
+        const size_t cbTotal = Meta.cbData + cbExtra; RT_NOREF(cbTotal);
         Assert(cbProcessed + cbDataAdd <= cbTotal);
         cbProcessed += cbDataAdd;
         return cbProcessed;
@@ -212,26 +212,26 @@ struct GuestDnDData
 
     bool isComplete(void) const
     {
-        const uint64_t cbTotal = Meta.cbData + cbExtra;
-        LogFlowFunc(("cbProcessed=%RU64, cbTotal=%RU64\n", cbProcessed, cbTotal));
+        const size_t cbTotal = Meta.cbData + cbExtra;
+        LogFlowFunc(("cbProcessed=%zu, cbTotal=%zu\n", cbProcessed, cbTotal));
         Assert(cbProcessed <= cbTotal);
         return (cbProcessed == cbTotal);
     }
 
     uint8_t getPercentComplete(void) const
     {
-        const uint64_t cbTotal = Meta.cbData + cbExtra;
+        const size_t cbTotal = Meta.cbData + cbExtra;
         return (uint8_t)(cbProcessed * 100 / RT_MAX(cbTotal, 1));
     }
 
-    uint64_t getRemaining(void) const
+    size_t getRemaining(void) const
     {
-        const uint64_t cbTotal = Meta.cbData + cbExtra;
+        const size_t cbTotal = Meta.cbData + cbExtra;
         AssertReturn(cbProcessed <= cbTotal, 0);
         return cbTotal - cbProcessed;
     }
 
-    uint64_t getTotal(void) const
+    size_t getTotal(void) const
     {
         return Meta.cbData + cbExtra;
     }
@@ -247,12 +247,12 @@ struct GuestDnDData
     /** For storing the actual meta data.
      *  This might be an URI list or just plain raw data,
      *  according to the format being sent. */
-    GuestDnDMetaData  Meta;
+    GuestDnDMetaData   Meta;
     /** Extra data to send/receive (in bytes). Can be 0 for raw data.
      *  For (file) transfers this is the total size for all files. */
-    uint64_t          cbExtra;
+    size_t             cbExtra;
     /** Overall size (in bytes) of processed data. */
-    uint64_t          cbProcessed;
+    size_t             cbProcessed;
 };
 
 /** Initial object context state / no state set. */
@@ -333,9 +333,9 @@ public:
 struct GuestDnDTransferSendData : public GuestDnDTransferData
 {
     GuestDnDTransferSendData()
-        : mfObjState(0)
+        : fObjState(0)
     {
-        RT_ZERO(mList);
+        RT_ZERO(List);
     }
 
     virtual ~GuestDnDTransferSendData()
@@ -345,24 +345,24 @@ struct GuestDnDTransferSendData : public GuestDnDTransferData
 
     void destroy(void)
     {
-        DnDTransferListDestroy(&mList);
+        DnDTransferListDestroy(&List);
     }
 
     void reset(void)
     {
-        DnDTransferListReset(&mList);
-        mfObjState = 0;
+        DnDTransferListReset(&List);
+        fObjState = 0;
 
         GuestDnDTransferData::reset();
     }
 
     /** Transfer List to handle. */
-    DNDTRANSFERLIST                     mList;
+    DNDTRANSFERLIST                     List;
     /** Current state of object in transfer.
      *  This is needed for keeping compatibility to old(er) DnD HGCM protocols.
      *
      *  At the moment we only support transferring one object at a time. */
-    uint32_t                            mfObjState;
+    uint32_t                            fObjState;
 };
 
 /**
@@ -371,29 +371,29 @@ struct GuestDnDTransferSendData : public GuestDnDTransferData
 struct GuestDnDSendCtx : public GuestDnDData
 {
     /** Pointer to guest target class this context belongs to. */
-    GuestDnDTarget                     *mpTarget;
+    GuestDnDTarget                     *pTarget;
     /** Pointer to guest response class this context belongs to. */
-    GuestDnDResponse                   *mpResp;
+    GuestDnDResponse                   *pResp;
     /** Flag indicating whether a file transfer is active and
      *  initiated by the host. */
-    bool                                mIsActive;
+    bool                                fIsActive;
     /** Target (VM) screen ID. */
-    uint32_t                            mScreenID;
+    uint32_t                            uScreenID;
     /** Drag'n drop format requested by the guest. */
-    com::Utf8Str                        mFmtReq;
+    com::Utf8Str                        strFmtReq;
     /** Transfer data structure. */
-    GuestDnDTransferSendData            mTransfer;
+    GuestDnDTransferSendData            Transfer;
     /** Callback event to use. */
-    GuestDnDCallbackEvent               mCBEvent;
+    GuestDnDCallbackEvent               EventCallback;
 };
 
 struct GuestDnDTransferRecvData : public GuestDnDTransferData
 {
     GuestDnDTransferRecvData()
     {
-        RT_ZERO(mDroppedFiles);
-        RT_ZERO(mList);
-        RT_ZERO(mObj);
+        RT_ZERO(DroppedFiles);
+        RT_ZERO(List);
+        RT_ZERO(ObjCur);
     }
 
     virtual ~GuestDnDTransferRecvData()
@@ -403,27 +403,27 @@ struct GuestDnDTransferRecvData : public GuestDnDTransferData
 
     void destroy(void)
     {
-        DnDTransferListDestroy(&mList);
+        DnDTransferListDestroy(&List);
     }
 
     void reset(void)
     {
-        DnDDroppedFilesClose(&mDroppedFiles);
-        DnDTransferListReset(&mList);
-        DnDTransferObjectReset(&mObj);
+        DnDDroppedFilesClose(&DroppedFiles);
+        DnDTransferListReset(&List);
+        DnDTransferObjectReset(&ObjCur);
 
         GuestDnDTransferData::reset();
     }
 
     /** The "VirtualBox Dropped Files" directory on the host we're going
      *  to utilize for transferring files from guest to the host. */
-    DNDDROPPEDFILES                     mDroppedFiles;
+    DNDDROPPEDFILES                     DroppedFiles;
     /** Transfer List to handle.
      *  Currently we only support one transfer list at a time. */
-    DNDTRANSFERLIST                     mList;
+    DNDTRANSFERLIST                     List;
     /** Current transfer object being handled.
      *  Currently we only support one transfer object at a time. */
-    DNDTRANSFEROBJECT                   mObj;
+    DNDTRANSFEROBJECT                   ObjCur;
 };
 
 /**
@@ -432,16 +432,16 @@ struct GuestDnDTransferRecvData : public GuestDnDTransferData
 struct GuestDnDRecvCtx : public GuestDnDData
 {
     /** Pointer to guest source class this context belongs to. */
-    GuestDnDSource                     *mpSource;
+    GuestDnDSource                     *pSource;
     /** Pointer to guest response class this context belongs to. */
-    GuestDnDResponse                   *mpResp;
+    GuestDnDResponse                   *pResp;
     /** Flag indicating whether a file transfer is active and
      *  initiated by the host. */
-    bool                                mIsActive;
+    bool                                fIsActive;
     /** Formats offered by the guest (and supported by the host). */
-    GuestDnDMIMEList                    mFmtOffered;
-    /** Original drop format requested to receive from the guest. */
-    com::Utf8Str                        mFmtReq;
+    GuestDnDMIMEList                    lstFmtOffered;
+    /** Drag'n drop format requested by the guest. */
+    com::Utf8Str                        strFmtReq;
     /** Intermediate drop format to be received from the guest.
      *  Some original drop formats require a different intermediate
      *  drop format:
@@ -450,15 +450,15 @@ struct GuestDnDRecvCtx : public GuestDnDData
      *  receive the file from the guest as "text/uri-list" first,
      *  then pointing to the file path on the host with the data
      *  in "text/plain" format returned. */
-    com::Utf8Str                        mFmtRecv;
+    com::Utf8Str                        strFmtRecv;
     /** Desired drop action to perform on the host.
      *  Needed to tell the guest if data has to be
      *  deleted e.g. when moving instead of copying. */
-    VBOXDNDACTION                       mAction;
+    VBOXDNDACTION                       enmAction;
     /** Transfer data structure. */
-    GuestDnDTransferRecvData            mTransfer;
+    GuestDnDTransferRecvData            Transfer;
     /** Callback event to use. */
-    GuestDnDCallbackEvent               mCBEvent;
+    GuestDnDCallbackEvent               EventCallback;
 };
 
 /**
@@ -617,7 +617,6 @@ typedef struct GuestDnDCallback
     PFNGUESTDNDCALLBACK  pfnCallback;
     /** Pointer to user-supplied data. */
     void                *pvUser;
-
 } GuestDnDCallback;
 
 /** Contains registered callback pointers for specific HGCM message types. */
@@ -812,7 +811,7 @@ protected:
     /** @}  */
 
     int sendCancel(void);
-    int updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp, uint32_t cbDataAdd = 0);
+    int updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp, size_t cbDataAdd = 0);
     int waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDResponse *pResp, RTMSINTERVAL msTimeout);
 
 protected:
@@ -833,14 +832,14 @@ protected:
     struct
     {
         /** Number of active transfers (guest->host or host->guest). */
-        uint32_t                    m_cTransfersPending;
+        uint32_t                    cTransfersPending;
         /** The DnD protocol version to use, depending on the
          *  installed Guest Additions. See DragAndDropSvc.h for
          *  a protocol changelog. */
-        uint32_t                    m_uProtocolVersion;
+        uint32_t                    uProtocolVersion;
         /** Outgoing message queue (FIFO). */
-        GuestDnDMsgList             m_lstMsgOut;
-    } mDataBase;
+        GuestDnDMsgList             lstMsgOut;
+    } m_DataBase;
 };
 #endif /* !MAIN_INCLUDED_GuestDnDPrivate_h */
 
