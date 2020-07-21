@@ -256,6 +256,7 @@ RePackScriptsAdd_CLEAN = \
 
 ifndef VBOX_OSE
 RePackScriptsAdd_SOURCES += \
+	$(RePackScriptsAdd_0_OUTDIR)/Combined-0-Additions.cmd \
 	$(RePackScriptsAdd_0_OUTDIR)/Combined-2-SignAdditions.cmd \
 	../../../Installer/win/Scripts/sign-attestation.sh
 endif
