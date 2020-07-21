@@ -1257,7 +1257,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 #endif
 
     /* Execute console application finally: */
-    QProcess::startDetached(strPath, arguments);
+    QProcess::startDetached(QString("%1 %2").arg(strPath, arguments.join(' ')));
 }
 
 void UIVirtualBoxManager::sltPerformCopyCommandSerial()
