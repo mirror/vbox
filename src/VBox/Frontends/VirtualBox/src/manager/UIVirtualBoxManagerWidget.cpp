@@ -938,7 +938,7 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
     UIVirtualMachineItem *pItem = currentItem();
     const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
-    /* Update machine 1tools restrictions: */
+    /* Update machine tools restrictions: */
     QList<UIToolType> retrictedTypes;
     if (pItem && pItem->itemType() != UIVirtualMachineItemType_Local)
     {
@@ -946,7 +946,7 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
         if (retrictedTypes.contains(m_pPaneTools->toolsType()))
             m_pPaneTools->setToolsType(UIToolType_Details);
     }
-    if (pItem && !pItem->isItemRunning())
+    else if (pItem && !pItem->isItemRunning())
     {
         retrictedTypes << UIToolType_PerformanceMonitor;
     }
