@@ -1512,14 +1512,15 @@ template<> QString toInternalString(const UIToolType &enmToolType)
     QString strResult;
     switch (enmToolType)
     {
-        case UIToolType_Welcome:           strResult =  "Welcome"; break;
-        case UIToolType_Media:             strResult = "Media"; break;
-        case UIToolType_Network:           strResult = "Network"; break;
-        case UIToolType_Cloud:             strResult = "Cloud"; break;
-        case UIToolType_VMResourceMonitor: strResult = "VM Resource Monitor"; break;
-        case UIToolType_Details:           strResult = "Details"; break;
-        case UIToolType_Snapshots:         strResult = "Snapshots"; break;
-        case UIToolType_Logs:              strResult = "Logs"; break;
+        case UIToolType_Welcome:            strResult =  "Welcome"; break;
+        case UIToolType_Media:              strResult = "Media"; break;
+        case UIToolType_Network:            strResult = "Network"; break;
+        case UIToolType_Cloud:              strResult = "Cloud"; break;
+        case UIToolType_VMResourceMonitor:  strResult = "VM Resource Monitor"; break;
+        case UIToolType_Details:            strResult = "Details"; break;
+        case UIToolType_Snapshots:          strResult = "Snapshots"; break;
+        case UIToolType_Logs:               strResult = "Logs"; break;
+        case UIToolType_PerformanceMonitor: strResult = "Performance Monitor"; break;
         default:
         {
             AssertMsgFailed(("No text for tool type=%d", enmToolType));
@@ -1543,6 +1544,7 @@ template<> UIToolType fromInternalString<UIToolType>(const QString &strToolType)
     keys << "Details";               values << UIToolType_Details;
     keys << "Snapshots";             values << UIToolType_Snapshots;
     keys << "Logs";                  values << UIToolType_Logs;
+    keys << "Performance Monitor";   values << UIToolType_PerformanceMonitor;
     /* Invalid type for unknown words: */
     if (!keys.contains(strToolType, Qt::CaseInsensitive))
         return UIToolType_Invalid;

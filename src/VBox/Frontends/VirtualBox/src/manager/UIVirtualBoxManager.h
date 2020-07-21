@@ -285,6 +285,12 @@ private slots:
         /** Handles call to close machine Log Viewer window. */
         void sltCloseLogViewerWindow();
 
+        /** Handles call to open machine Performance Monitor window. */
+        void sltOpenPerformanceMonitorWindow();
+
+        /** Handles call to close machine Performance Monitor window. */
+        void sltClosePerformanceMonitorWindow();
+
         /** Handles call to refresh machine. */
         void sltPerformRefreshMachine();
 

@@ -199,7 +199,7 @@ void UIVMInformationDialog::prepareTabWidget()
 
         /* Create Performance Monitor tab: */
         UIPerformanceMonitor *pPerformanceMonitorWidget =
-            new UIPerformanceMonitor(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
+            new UIPerformanceMonitor(this, m_pMachineWindow->machine());
         if (pPerformanceMonitorWidget)
         {
             connect(m_pMachineWindow->uisession(), &UISession::sigAdditionsStateChange,

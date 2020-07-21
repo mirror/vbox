@@ -439,14 +439,15 @@ void UIToolsModel::retranslateUi()
     {
         switch (pItem->itemType())
         {
-            case UIToolType_Welcome:            pItem->reconfigure(tr("Welcome")); break;
-            case UIToolType_Media:              pItem->reconfigure(tr("Media")); break;
-            case UIToolType_Network:            pItem->reconfigure(tr("Network")); break;
-            case UIToolType_Cloud:              pItem->reconfigure(tr("Cloud")); break;
-            case UIToolType_VMResourceMonitor:  pItem->reconfigure(tr("Resources")); break;
-            case UIToolType_Details:            pItem->reconfigure(tr("Details")); break;
-            case UIToolType_Snapshots:          pItem->reconfigure(tr("Snapshots")); break;
-            case UIToolType_Logs:               pItem->reconfigure(tr("Logs")); break;
+            case UIToolType_Welcome:             pItem->reconfigure(tr("Welcome")); break;
+            case UIToolType_Media:               pItem->reconfigure(tr("Media")); break;
+            case UIToolType_Network:             pItem->reconfigure(tr("Network")); break;
+            case UIToolType_Cloud:               pItem->reconfigure(tr("Cloud")); break;
+            case UIToolType_VMResourceMonitor:   pItem->reconfigure(tr("Resources")); break;
+            case UIToolType_Details:             pItem->reconfigure(tr("Details")); break;
+            case UIToolType_Snapshots:           pItem->reconfigure(tr("Snapshots")); break;
+            case UIToolType_Logs:                pItem->reconfigure(tr("Logs")); break;
+            case UIToolType_PerformanceMonitor:  pItem->reconfigure(tr("Performance Monitor")); break;
             default: break;
         }
     }
@@ -520,6 +521,9 @@ void UIToolsModel::prepareItems()
     /* Logs: */
     m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Logs, QString(),
                                UIIconPool::iconSet(":/vm_show_logs_24px.png", ":/vm_show_logs_disabled_24px.png"));
+    /* Performance Monitor: */
+    m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_PerformanceMonitor, QString(),
+                               UIIconPool::iconSet(":/resource_monitor_24px.png", ":/vm_resource_monitor_24px.png"));
 }
 
 void UIToolsModel::prepareHandlers()

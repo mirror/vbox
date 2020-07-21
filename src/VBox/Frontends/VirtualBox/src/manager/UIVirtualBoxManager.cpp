@@ -491,10 +491,11 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
     /* Make sure separate dialogs are closed when corresponding tools are opened: */
     switch (m_pWidget->toolsType())
     {
-        case UIToolType_Media:   sltCloseVirtualMediumManagerWindow(); break;
-        case UIToolType_Network: sltCloseHostNetworkManagerWindow(); break;
-        case UIToolType_Cloud:   sltCloseCloudProfileManagerWindow(); break;
-        case UIToolType_Logs:    sltCloseLogViewerWindow(); break;
+        case UIToolType_Media:              sltCloseVirtualMediumManagerWindow(); break;
+        case UIToolType_Network:            sltCloseHostNetworkManagerWindow(); break;
+        case UIToolType_Cloud:              sltCloseCloudProfileManagerWindow(); break;
+        case UIToolType_Logs:               sltCloseLogViewerWindow(); break;
+        case UIToolType_PerformanceMonitor: sltClosePerformanceMonitorWindow(); break;
         default: break;
     }
 }
@@ -1785,6 +1786,14 @@ void UIVirtualBoxManager::sltCloseLogViewerWindow()
             UIVMLogViewerDialogFactory().cleanup(pDialog);
         }
     }
+}
+
+void UIVirtualBoxManager::sltOpenPerformanceMonitorWindow()
+{
+}
+
+void UIVirtualBoxManager::sltClosePerformanceMonitorWindow()
+{
 }
 
 void UIVirtualBoxManager::sltPerformRefreshMachine()

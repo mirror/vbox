@@ -902,6 +902,7 @@ enum UIToolType
     UIToolType_Details,
     UIToolType_Snapshots,
     UIToolType_Logs,
+    UIToolType_PerformanceMonitor
 };
 Q_DECLARE_METATYPE(UIToolType);
 

@@ -31,6 +31,7 @@
 #include "UIPerformanceMonitor.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
@@ -697,11 +698,9 @@ void UIMetric::reset()
 *   UIPerformanceMonitor implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console)
+UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
-    , m_machine(machine)
-    , m_console(console)
     , m_pMainLayout(0)
     , m_pTimer(0)
     , m_strCPUMetricName("CPU Load")
@@ -712,8 +711,7 @@ UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &mac
     , m_strVMExitMetricName("VMExits")
     , m_iTimeStep(0)
 {
-    if (!m_console.isNull())
-        m_comGuest = m_console.GetGuest();
+    setMachine(machine);
     m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
 
     prepareMetrics();
@@ -724,6 +722,25 @@ UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &mac
 
 UIPerformanceMonitor::~UIPerformanceMonitor()
 {
+}
+
+void UIPerformanceMonitor::setMachine(const CMachine &comMachine)
+{
+    if (comMachine.isNull())
+        return;
+
+    if (!m_comSession.isNull() && m_comSession.GetState() == KSessionState_Locked)
+        m_comSession.UnlockMachine();
+
+    m_comMachine = comMachine;
+    m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
+    AssertReturnVoid(!m_comSession.isNull());
+
+    CConsole comConsole = m_comSession.GetConsole();
+    AssertReturnVoid(!comConsole.isNull());
+    m_comGuest = comConsole.GetGuest();
+
+    m_comMachineDebugger = comConsole.GetDebugger();
 }
 
 void UIPerformanceMonitor::retranslateUi()
@@ -877,7 +894,7 @@ void UIPerformanceMonitor::sltTimeout()
         ULONG aPctExecuting;
         ULONG aPctHalted;
         ULONG aPctOther;
-        m_machineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
+        m_comMachineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
         updateCPUGraphsAndMetric(aPctExecuting, aPctOther);
     }
 
@@ -885,7 +902,7 @@ void UIPerformanceMonitor::sltTimeout()
     {
         quint64 cbNetworkTotalReceived = 0;
         quint64 cbNetworkTotalTransmitted = 0;
-        UIMonitorCommon::getNetworkLoad(m_machineDebugger, cbNetworkTotalReceived, cbNetworkTotalTransmitted);
+        UIMonitorCommon::getNetworkLoad(m_comMachineDebugger, cbNetworkTotalReceived, cbNetworkTotalTransmitted);
         updateNetworkGraphsAndMetric(cbNetworkTotalReceived, cbNetworkTotalTransmitted);
     }
 
@@ -893,14 +910,14 @@ void UIPerformanceMonitor::sltTimeout()
     {
         quint64 cbDiskIOTotalWritten = 0;
         quint64 cbDiskIOTotalRead = 0;
-        UIMonitorCommon::getDiskLoad(m_machineDebugger, cbDiskIOTotalWritten, cbDiskIOTotalRead);
+        UIMonitorCommon::getDiskLoad(m_comMachineDebugger, cbDiskIOTotalWritten, cbDiskIOTotalRead);
         updateDiskIOGraphsAndMetric(cbDiskIOTotalWritten, cbDiskIOTotalRead);
     }
 
     /* Update the VM exit chart with values we find as /PROF/CPU?/EM/RecordedExits: */
     {
         quint64 cTotalVMExits = 0;
-        UIMonitorCommon::getVMMExitCount(m_machineDebugger, cTotalVMExits);
+        UIMonitorCommon::getVMMExitCount(m_comMachineDebugger, cTotalVMExits);
         updateVMExitMetric(cTotalVMExits);
     }
 }
@@ -917,7 +934,6 @@ void UIPerformanceMonitor::sltGuestAdditionsStateChange()
 void UIPerformanceMonitor::prepareMetrics()
 {
     m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
-    m_machineDebugger = m_console.GetDebugger();
     if (m_performanceMonitor.isNull())
         return;
 

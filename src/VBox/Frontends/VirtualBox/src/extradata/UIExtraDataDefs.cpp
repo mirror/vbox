@@ -278,6 +278,7 @@ bool UIToolStuff::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)
                 case UIToolType_Details:
                 case UIToolType_Snapshots:
                 case UIToolType_Logs:
+                case UIToolType_PerformanceMonitor:
                     return true;
                 default:
                     break;

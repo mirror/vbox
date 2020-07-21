@@ -1725,6 +1725,38 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show Performance Monitor' action class. */
+class UIActionToggleSelectorToolsMachineShowPerformanceMonitor : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionToggleSelectorToolsMachineShowPerformanceMonitor(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_PerformanceMonitor));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/resources_monitor_32px.png", ":/resources_monitor_16px.png",
+                                        ":/resources_monitor_disabled_32px.png", ":/resources_monitor_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsMachinePerformanceMonitor");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&PerformanceMonitor"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the machine performance monitor pane"));
+    }
+};
 
 /** Menu action extension, used as 'Global Tools' menu class. */
 class UIActionMenuSelectorToolsGlobal : public UIActionMenu
@@ -3333,7 +3365,9 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
+    m_pool[UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor] = new UIActionToggleSelectorToolsMachineShowPerformanceMonitor(this);
     m_pool[UIActionIndexST_M_Group_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
+    m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
     m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
     m_pool[UIActionIndexST_M_Group_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
     m_pool[UIActionIndexST_M_Group_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
@@ -3444,6 +3478,7 @@ void UIActionPoolManager::preparePool()
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Details));
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Logs));
+    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor));
 
     /* 'Machine' action groups: */
     m_groupPool[UIActionIndexST_M_Machine_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Machine_M_Tools));
@@ -3833,6 +3868,7 @@ void UIActionPoolManager::updateMenuGroupTools()
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Details));
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Logs));
+    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Group_M_Tools);
@@ -4164,7 +4200,8 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Group_M_Close_S_PowerOff)
                     << action(UIActionIndexST_M_Group_M_Tools_T_Details)
                     << action(UIActionIndexST_M_Group_M_Tools_T_Snapshots)
-                    << action(UIActionIndexST_M_Group_M_Tools_T_Logs);
+                    << action(UIActionIndexST_M_Group_M_Tools_T_Logs)
+                    << action(UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor);
             break;
         }
         case UIActionIndexST_M_Machine:

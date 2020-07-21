@@ -27,6 +27,7 @@
 #include "UIErrorPane.h"
 #include "UIDetails.h"
 #include "UIIconPool.h"
+#include "UIPerformanceMonitor.h"
 #include "UISnapshotPane.h"
 #include "UIToolPaneMachine.h"
 #include "UIVirtualMachineItem.h"
@@ -45,6 +46,7 @@ UIToolPaneMachine::UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent
     , m_pPaneDetails(0)
     , m_pPaneSnapshots(0)
     , m_pPaneLogViewer(0)
+    , m_pPanePerformanceMonitor(0)
     , m_fActive(false)
 {
     /* Prepare: */
@@ -188,6 +190,24 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                 }
                 break;
             }
+            case UIToolType_PerformanceMonitor:
+            {
+                m_pPanePerformanceMonitor = new UIPerformanceMonitor(0, m_comMachine);
+                AssertPtrReturnVoid(m_pPanePerformanceMonitor);
+#ifndef VBOX_WS_MAC
+                const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                m_pPanePerformanceMonitor->setContentsMargins(iMargin, 0, iMargin, 0);
+#endif
+
+                /* Configure pane: */
+                m_pPanePerformanceMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_PerformanceMonitor));
+
+                /* Add into layout: */
+                m_pLayout->addWidget(m_pPanePerformanceMonitor);
+                m_pLayout->setCurrentWidget(m_pPanePerformanceMonitor);
+
+                break;
+            }
             default:
                 AssertFailedReturnVoid();
         }
@@ -211,10 +231,11 @@ void UIToolPaneMachine::closeTool(UIToolType enmType)
         /* Forget corresponding widget: */
         switch (enmType)
         {
-            case UIToolType_Error:     m_pPaneError = 0; break;
-            case UIToolType_Details:   m_pPaneDetails = 0; break;
-            case UIToolType_Snapshots: m_pPaneSnapshots = 0; break;
-            case UIToolType_Logs:      m_pPaneLogViewer = 0; break;
+            case UIToolType_Error:                m_pPaneError = 0; break;
+            case UIToolType_Details:              m_pPaneDetails = 0; break;
+            case UIToolType_Snapshots:            m_pPaneSnapshots = 0; break;
+            case UIToolType_Logs:                 m_pPaneLogViewer = 0; break;
+            case UIToolType_PerformanceMonitor:   m_pPanePerformanceMonitor = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -272,6 +293,17 @@ void UIToolPaneMachine::setMachine(const CMachine &comMachine)
     {
         AssertPtrReturnVoid(m_pPaneLogViewer);
         m_pPaneLogViewer->setMachine(m_comMachine);
+    }
+    /* Update performance monitor pane is it is open: */
+    if (isToolOpened(UIToolType_PerformanceMonitor))
+    {
+        // AssertPtrReturnVoid(m_pPanePerformanceMonitor);
+        // // CSession comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
+        // // AssertReturnVoid(!comSession.isNull());
+        // // CConsole comConsole = comSession.GetConsole();
+        // AssertReturnVoid(!comConsole.isNull());
+
+        //m_pPaneLogViewer->setMachine(m_comMachine);
     }
 }
 
