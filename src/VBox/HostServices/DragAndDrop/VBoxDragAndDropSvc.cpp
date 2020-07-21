@@ -589,7 +589,7 @@ do { \
                     {
                         if (cParms == 4)
                         {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.uStatus);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
                                 rc = HGCMSvcGetU32(&paParms[1], &data.uStatus);
                             if (RT_SUCCESS(rc))
