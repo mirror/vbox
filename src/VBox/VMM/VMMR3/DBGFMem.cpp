@@ -631,13 +631,12 @@ VMMDECL(int) DBGFR3PagingDumpEx(PUVM pUVM, VMCPUID idCpu, uint32_t fFlags, uint6
     AssertReturn(   !(fFlags & DBGFPGDMP_FLAGS_EPT)
                  || !(fFlags & (DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_NXE))
                  , VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
     AssertReturn(cMaxDepth, VERR_INVALID_PARAMETER);
 
     /*
      * Forward the request to the target CPU.
      */
     return VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3PagingDumpEx, 8,
-                                    pUVM, idCpu, fFlags, &cr3, &u64FirstAddr, &u64LastAddr, cMaxDepth, pHlp);
+                                    pUVM, idCpu, fFlags, &cr3, &u64FirstAddr, &u64LastAddr, cMaxDepth, pHlp ? pHlp : DBGFR3InfoLogHlp());
 }
 
