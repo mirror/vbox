@@ -207,9 +207,6 @@ static int dndTransferListObjAdd(PDNDTRANSFERLIST pList, const char *pcszSrcAbs,
                     if (RT_FAILURE(rc))
                         DnDTransferObjectDestroy(pObj);
                 }
-
-                if (RT_FAILURE(rc))
-                    RTMemFree(pObj);
             }
             else
                 rc = VERR_NO_MEMORY;
