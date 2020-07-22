@@ -829,6 +829,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 }
                 case UIToolType_Performance:
                 {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_PerformanceMonitor_S_Export));
                     break;
                 }
                 case UIToolType_Error:

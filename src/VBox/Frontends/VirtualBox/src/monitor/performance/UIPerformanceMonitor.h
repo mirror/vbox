@@ -35,6 +35,7 @@
 #include "CSession.h"
 
 /* GUI includes: */
+#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UIMonitorCommon.h"
 
@@ -45,6 +46,7 @@ class QLabel;
 class UIChart;
 class UISession;
 class UIRuntimeInfoWidget;
+class UIToolBar;
 
 #define DATA_SERIES_SIZE 2
 
@@ -109,9 +111,13 @@ public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference. */
-    UIPerformanceMonitor(QWidget *pParent, const CMachine &machine);
+    UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine, bool fShowToolbar = false);
     ~UIPerformanceMonitor();
     void setMachine(const CMachine &machine);
+
+#ifdef VBOX_WS_MAC
+    UIToolBar *toolbar() const { return m_pToolBar; }
+#endif
 
  public slots:
 
@@ -128,11 +134,14 @@ private slots:
 
     /** Reads the metric values for several sources and calls corresponding update functions. */
     void sltTimeout();
+    /** Stop updating the charts if/when the machine state changes something other than KMachineState_Running. */
+    void sltMachineStateChange(const QUuid &uId);
 
 private:
 
     void prepareObjects();
     void prepareMetrics();
+    void prepareToolBar();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
 
@@ -147,6 +156,10 @@ private:
 
     /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
     QString dataColorString(const QString &strChartName, int iDataIndex);
+    /* Starts the timer which in return collects data and updates charts/graphs. */
+    void start();
+    void reset();
+    void openSession();
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_comMachine;
@@ -157,7 +170,8 @@ private:
     CMachineDebugger      m_comMachineDebugger;
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;
-    QTimer *m_pTimer;
+    QTimer      *m_pTimer;
+    UIToolBar   *m_pToolBar;
 
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
       * @{ */
@@ -209,6 +223,8 @@ private:
         QString m_strVMExitLabelTotal;
     /** @} */
     quint64 m_iTimeStep;
+    EmbedTo m_enmEmbedding;
+    bool    m_fShowToolbar;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_monitor_performance_UIPerformanceMonitor_h */

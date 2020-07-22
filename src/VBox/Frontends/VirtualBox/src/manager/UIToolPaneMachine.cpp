@@ -192,7 +192,7 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
             }
             case UIToolType_Performance:
             {
-                m_pPanePerformanceMonitor = new UIPerformanceMonitor(0, m_comMachine);
+                m_pPanePerformanceMonitor = new UIPerformanceMonitor(EmbedTo_Stack, 0, m_comMachine, false /* Show toolbar */);
                 AssertPtrReturnVoid(m_pPanePerformanceMonitor);
 #ifndef VBOX_WS_MAC
                 const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
@@ -297,13 +297,8 @@ void UIToolPaneMachine::setMachine(const CMachine &comMachine)
     /* Update performance monitor pane is it is open: */
     if (isToolOpened(UIToolType_Performance))
     {
-        // AssertPtrReturnVoid(m_pPanePerformanceMonitor);
-        // // CSession comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
-        // // AssertReturnVoid(!comSession.isNull());
-        // // CConsole comConsole = comSession.GetConsole();
-        // AssertReturnVoid(!comConsole.isNull());
-
-        //m_pPaneLogViewer->setMachine(m_comMachine);
+        AssertPtrReturnVoid(m_pPanePerformanceMonitor);
+        m_pPanePerformanceMonitor->setMachine(m_comMachine);
     }
 }
 

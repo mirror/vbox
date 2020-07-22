@@ -29,6 +29,8 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIPerformanceMonitor.h"
+#include "UIToolBar.h"
+#include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -538,7 +540,6 @@ void UIChart::drawDisabledChartRectangle(QPainter &painter)
     painter.drawText(2 * m_iMarginLeft, 15 * m_iMarginTop, m_strGAWarning);
 }
 
-
 void UIChart::sltCreateContextMenu(const QPoint &point)
 {
     QMenu menu;
@@ -698,11 +699,13 @@ void UIMetric::reset()
 *   UIPerformanceMonitor implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine)
+UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParent,
+                                           const CMachine &machine, bool fShowToolbar /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
     , m_pMainLayout(0)
     , m_pTimer(0)
+    , m_pToolBar(0)
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
     , m_strDiskMetricName("Disk Usage")
@@ -710,14 +713,16 @@ UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &mac
     , m_strDiskIOMetricName("DiskIO")
     , m_strVMExitMetricName("VMExits")
     , m_iTimeStep(0)
+    , m_enmEmbedding(enmEmbedding)
+    , m_fShowToolbar(fShowToolbar)
 {
-    setMachine(machine);
-    m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
-
     prepareMetrics();
     prepareObjects();
-    enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
+    if (fShowToolbar)
+        prepareToolBar();
     retranslateUi();
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIPerformanceMonitor::sltMachineStateChange);
+    setMachine(machine);
 }
 
 UIPerformanceMonitor::~UIPerformanceMonitor()
@@ -726,6 +731,7 @@ UIPerformanceMonitor::~UIPerformanceMonitor()
 
 void UIPerformanceMonitor::setMachine(const CMachine &comMachine)
 {
+    reset();
     if (comMachine.isNull())
         return;
 
@@ -733,6 +739,16 @@ void UIPerformanceMonitor::setMachine(const CMachine &comMachine)
         m_comSession.UnlockMachine();
 
     m_comMachine = comMachine;
+
+    if (m_comMachine.GetState() == KMachineState_Running)
+    {
+        openSession();
+        start();
+    }
+}
+
+void UIPerformanceMonitor::openSession()
+{
     m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
     AssertReturnVoid(!m_comSession.isNull());
 
@@ -805,7 +821,6 @@ void UIPerformanceMonitor::retranslateUi()
                 pInfoLabel->setFixedWidth(iWidth);
         }
     }
-    sltTimeout();
 }
 
 void UIPerformanceMonitor::prepareObjects()
@@ -817,10 +832,7 @@ void UIPerformanceMonitor::prepareObjects()
 
     m_pTimer = new QTimer(this);
     if (m_pTimer)
-    {
         connect(m_pTimer, &QTimer::timeout, this, &UIPerformanceMonitor::sltTimeout);
-        m_pTimer->start(1000 * g_iPeriod);
-    }
 
     QScrollArea *pScrollArea = new QScrollArea(this);
     m_pMainLayout->addWidget(pScrollArea);
@@ -922,6 +934,20 @@ void UIPerformanceMonitor::sltTimeout()
     }
 }
 
+void UIPerformanceMonitor::sltMachineStateChange(const QUuid &uId)
+{
+    if (m_comMachine.isNull())
+        return;
+    if (m_comMachine.GetId() != uId)
+        return;
+    reset();
+    if (m_comMachine.GetState() == KMachineState_Running)
+    {
+        openSession();
+        start();
+    }
+}
+
 void UIPerformanceMonitor::sltGuestAdditionsStateChange()
 {
     bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
@@ -974,6 +1000,31 @@ void UIPerformanceMonitor::prepareMetrics()
     {
         UIMetric VMExitsMetric(m_strVMExitMetricName, "times", g_iMaximumQueueSize);
         m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
+    }
+}
+
+void UIPerformanceMonitor::prepareToolBar()
+{
+    /* Create toolbar: */
+    m_pToolBar = new UIToolBar(parentWidget());
+    AssertPtrReturnVoid(m_pToolBar);
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
+#ifdef VBOX_WS_MAC
+        /* Check whether we are embedded into a stack: */
+        if (m_enmEmbedding == EmbedTo_Stack)
+        {
+            /* Add into layout: */
+            layout()->addWidget(m_pToolBar);
+        }
+#else
+        /* Add into layout: */
+        layout()->addWidget(m_pToolBar);
+#endif
     }
 }
 
@@ -1189,5 +1240,30 @@ QString UIPerformanceMonitor::dataColorString(const QString &strChartName, int i
         return QColor(Qt::red).name(QColor::HexRgb);
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
+
+void UIPerformanceMonitor::reset()
+{
+    m_fGuestAdditionsAvailable = false;
+    if (m_pTimer)
+        m_pTimer->stop();
+    for (QMap<QString, UIMetric>::iterator iterator =  m_metrics.begin();
+         iterator != m_metrics.end(); ++iterator)
+        iterator.value().reset();
+    for (QMap<QString, UIChart*>::iterator iterator =  m_charts.begin();
+         iterator != m_charts.end(); ++iterator)
+        iterator.value()->update();
+}
+
+void UIPerformanceMonitor::start()
+{
+    if (m_comMachine.isNull() || m_comMachine.GetState() != KMachineState_Running)
+        return;
+
+    m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
+    enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
+    if (m_pTimer)
+        m_pTimer->start(1000 * g_iPeriod);
+}
+
 
 #include "UIPerformanceMonitor.moc"
