@@ -52,13 +52,13 @@ static void dndTransferListObjFree(PDNDTRANSFERLIST pList, PDNDTRANSFEROBJECT pL
 
 
 /**
- * Initializes a transfer list.
+ * Initializes a transfer list, internal version.
  *
  * @returns VBox status code.
  * @param   pList               Transfer list to initialize.
  * @param   pcszRootPathAbs     Absolute root path to use for this list. Optional and can be NULL.
  */
-int DnDTransferListInit(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs)
+static int dndTransferListInitInternal(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs)
 {
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
     /* pcszRootPathAbs is optional. */
@@ -82,6 +82,18 @@ int DnDTransferListInit(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs)
         return dndTransferListSetRootPath(pList, pcszRootPathAbs);
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Initializes a transfer list.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to initialize.
+ * @param   pcszRootPathAbs     Absolute root path to use for this list. Optional and can be NULL.
+ */
+int DnDTransferListInit(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs)
+{
+    return dndTransferListInitInternal(pList, pcszRootPathAbs);
 }
 
 /**
@@ -368,6 +380,87 @@ static int dndTransferListAppendPathNativeRecursive(PDNDTRANSFERLIST pList,
     return dndTransferListAppendPathRecursiveSub(pList, szPathAbs, cchPathAbs, &uBuf.DirEntry, fFlags);
 }
 
+/**
+ * Helper function for appending a local directory to a DnD transfer list.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to return total number of root entries for.
+ * @param   pszPathAbs          Absolute path of directory to append.
+ * @param   cbPathAbs           Size (in bytes) of absolute path of directory to append.
+ * @param   fFlags              Transfer list flags to use for appending.
+ */
+static int dndTransferListAppenDirectory(PDNDTRANSFERLIST pList, char* pszPathAbs, size_t cbPathAbs,
+                                         DNDTRANSFERLISTFLAGS fFlags)
+{
+    RTDIR hDir;
+    int rc = RTDirOpen(&hDir, pszPathAbs);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    const size_t cchPathAbs = RTStrNLen(pszPathAbs, cbPathAbs);
+
+    for (;;)
+    {
+        /* Get the next directory. */
+        RTDIRENTRYEX dirEntry;
+        rc = RTDirReadEx(hDir, &dirEntry, NULL, RTFSOBJATTRADD_UNIX,
+                         RTPATH_F_ON_LINK /** @todo No symlinks yet. */);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTDirEntryExIsStdDotLink(&dirEntry))
+                continue;
+
+            /* Check length. */
+            if (dirEntry.cbName + cchPathAbs + 3 >= cbPathAbs)
+            {
+                rc = VERR_BUFFER_OVERFLOW;
+                break;
+            }
+
+            /* Append the directory entry to our absolute path. */
+            memcpy(&pszPathAbs[cchPathAbs], dirEntry.szName, dirEntry.cbName + 1);
+
+            LogFlowFunc(("szName=%s, pszPathAbs=%s\n", dirEntry.szName, pszPathAbs));
+
+            switch (dirEntry.Info.Attr.fMode & RTFS_TYPE_MASK)
+            {
+                case RTFS_TYPE_DIRECTORY:
+                {
+                    rc = dndTransferListAppendPathNativeRecursive(pList, pszPathAbs, fFlags);
+                    break;
+                }
+
+                case RTFS_TYPE_FILE:
+                {
+                    rc = dndTransferListObjAdd(pList, pszPathAbs, dirEntry.Info.Attr.fMode, fFlags);
+                    break;
+                }
+
+                default:
+                    /* Silently skip everything else. */
+                    break;
+            }
+        }
+        else if (rc == VERR_NO_MORE_FILES)
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+        else
+            break;
+    }
+
+    return rc;
+}
+
+/**
+ * Appends a native path to a DnD transfer list.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to append native path to.
+ * @param   pcszPath            Path (native) to append.
+ * @param   fFlags              Transfer list flags to use for appending.
+ */
 static int dndTransferListAppendPathNative(PDNDTRANSFERLIST pList, const char *pcszPath, DNDTRANSFERLISTFLAGS fFlags)
 {
     /* We don't want to have a relative directory here. */
@@ -393,65 +486,28 @@ static int dndTransferListAppendPathNative(PDNDTRANSFERLIST pList, const char *p
         /* Make sure the path has the same root path as our list. */
         if (RTPathStartsWith(szPathAbs, pList->pszPathRootAbs))
         {
-            RTDIR hDir;
-            rc = RTDirOpen(&hDir, szPathAbs);
+            RTFSOBJINFO objInfo;
+            rc = RTPathQueryInfo(szPathAbs, &objInfo, RTFSOBJATTRADD_NOTHING);
             if (RT_SUCCESS(rc))
             {
-                for (;;)
+                switch (objInfo.Attr.fMode & RTFS_TYPE_MASK)
                 {
-                    /* Get the next directory. */
-                    RTDIRENTRYEX dirEntry;
-                    rc = RTDirReadEx(hDir, &dirEntry, NULL, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /** @todo No symlinks yet. */);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (RTDirEntryExIsStdDotLink(&dirEntry))
-                            continue;
-
-                        /* Check length. */
-                        if (dirEntry.cbName + cchPathAbs + 3 >= sizeof(szPathAbs))
-                        {
-                            rc = VERR_BUFFER_OVERFLOW;
-                            break;
-                        }
-
-                        /* Append the directory entry to our absolute path. */
-                        memcpy(&szPathAbs[cchPathAbs], dirEntry.szName, dirEntry.cbName + 1);
-
-                        LogFlowFunc(("szName=%s, szPathAbs=%s\n", dirEntry.szName, szPathAbs));
-
-                        switch (dirEntry.Info.Attr.fMode & RTFS_TYPE_MASK)
-                        {
-                            case RTFS_TYPE_DIRECTORY:
-                            {
-                                rc = dndTransferListAppendPathNativeRecursive(pList, szPathAbs, fFlags);
-                                break;
-                            }
-
-                            case RTFS_TYPE_FILE:
-                            {
-                                rc = dndTransferListObjAdd(pList, szPathAbs, dirEntry.Info.Attr.fMode, fFlags);
-                                break;
-                            }
-
-                            default:
-                                rc = VERR_NOT_SUPPORTED;
-                                break;
-                        }
-
-                        if (RT_SUCCESS(rc))
-                            rc = dndTransferListRootAdd(pList, dirEntry.szName);
-                    }
-                    else if (rc == VERR_NO_MORE_FILES)
-                    {
-                        rc = VINF_SUCCESS;
-                        break;
-                    }
-                    else
+                    case RTFS_TYPE_DIRECTORY:
+                        if (fFlags & DNDTRANSFERLIST_FLAGS_RECURSIVE)
+                            rc = dndTransferListAppenDirectory(pList, szPathAbs, sizeof(szPathAbs), fFlags);
                         break;
 
-                    if (RT_FAILURE(rc))
+                    case RTFS_TYPE_FILE:
+                        rc = dndTransferListObjAdd(pList, szPathAbs, objInfo.Attr.fMode, fFlags);
+                        break;
+
+                    default:
+                        /* Silently skip everything else. */
                         break;
                 }
+
+                if (RT_SUCCESS(rc))
+                    rc = dndTransferListRootAdd(pList, szPathAbs);
             }
         }
         else
@@ -464,6 +520,14 @@ static int dndTransferListAppendPathNative(PDNDTRANSFERLIST pList, const char *p
     return rc;
 }
 
+/**
+ * Appends an URI path to a DnD transfer list.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to append native path to.
+ * @param   pcszPath            URI path to append.
+ * @param   fFlags              Transfer list flags to use for appending.
+ */
 static int dndTransferListAppendPathURI(PDNDTRANSFERLIST pList, const char *pcszPath, DNDTRANSFERLISTFLAGS fFlags)
 {
     RT_NOREF(fFlags);
@@ -578,33 +642,80 @@ int DnDTransferListAppendPathsFromArray(PDNDTRANSFERLIST pList,
     if (!cPaths) /* Nothing to add? Bail out. */
         return VINF_SUCCESS;
 
+    char **papszPathsTmp = NULL;
+
+    /* If URI data is being handed in, extract the paths first. */
+    if (enmFmt == DNDTRANSFERLISTFMT_URI)
+    {
+        papszPathsTmp = (char **)RTMemAlloc(sizeof(char *) * cPaths);
+        if (papszPathsTmp)
+        {
+            for (size_t i = 0; i < cPaths; i++)
+                papszPathsTmp[i] = RTUriFilePath(papcszPaths[i]);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
     /* If we don't have a root path set, try to find the common path of all handed-in paths. */
     if (!pList->pszPathRootAbs)
     {
-        size_t cchRootPath = RTPathFindCommon(cPaths, papcszPaths);
+        /* Can we work on the unmodified, handed-in data or do we need to use our temporary paths? */
+        const char * const *papszPathTmp = enmFmt == DNDTRANSFERLISTFMT_NATIVE
+                                         ? papcszPaths : papszPathsTmp;
+
+        size_t cchRootPath = 0; /* Length of root path in chars. */
+        if (cPaths > 1)
+        {
+            cchRootPath = RTPathFindCommon(cPaths, papszPathTmp);
+        }
+        else
+            cchRootPath = RTPathParentLength(papszPathTmp[0]);
+
         if (cchRootPath)
         {
             /* Just use the first path in the array as the reference. */
-            char *pszRootPath = RTStrDupN(papcszPaths[0], cchRootPath);
+            char *pszRootPath = RTStrDupN(papszPathTmp[0], cchRootPath);
             if (pszRootPath)
             {
                 LogRel2(("DnD: Determined root path is '%s'\n", pszRootPath));
-                rc = dndTransferListSetRootPath(pList, pszRootPath);
+                rc = dndTransferListInitInternal(pList, pszRootPath);
                 RTStrFree(pszRootPath);
             }
             else
                 rc = VERR_NO_MEMORY;
         }
+        else
+            rc = VERR_INVALID_PARAMETER;
     }
 
-    /*
-     * Go through the created list and make sure all entries have the same root path.
-     */
-    for (size_t i = 0; i < cPaths; i++)
+    if (RT_SUCCESS(rc))
     {
-        rc = DnDTransferListAppendPath(pList, enmFmt, papcszPaths[i], fFlags);
-        if (RT_FAILURE(rc))
-            break;
+        /*
+         * Add all paths to the list.
+         */
+        for (size_t i = 0; i < cPaths; i++)
+        {
+            const char *pcszPath = enmFmt == DNDTRANSFERLISTFMT_NATIVE
+                                 ? papcszPaths[i] : papszPathsTmp[i];
+            rc = DnDTransferListAppendPath(pList, DNDTRANSFERLISTFMT_NATIVE, pcszPath, fFlags);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("DnD: Adding path '%s' (format %#x, root '%s') to transfer list failed with %Rrc\n",
+                        pcszPath, enmFmt, pList->pszPathRootAbs ? pList->pszPathRootAbs : "<None>", rc));
+                break;
+            }
+        }
+    }
+
+    if (papszPathsTmp)
+    {
+        for (size_t i = 0; i < cPaths; i++)
+            RTStrFree(papszPathsTmp[i]);
+        RTMemFree(papszPathsTmp);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -666,11 +777,14 @@ int DnDTransferListGetRootsEx(PDNDTRANSFERLIST pList,
     AssertPtrReturn(ppszBuffer, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbBuffer, VERR_INVALID_POINTER);
 
-    char *pszString = NULL;
+    char  *pszString = NULL;
+    size_t cchString = 0;
+
+    const size_t cchSep = RTStrNLen(pcszSeparator, RTPATH_MAX);
 
     /* Find out which root path to use. */
     const char *pcszPathRootTmp = pcszPathBase ? pcszPathBase : pList->pszPathRootAbs;
-    /* pcszPathRootTmp can be NULL*/
+    /* pcszPathRootTmp can be NULL */
 
     LogFlowFunc(("Using root path '%s'\n", pcszPathRootTmp ? pcszPathRootTmp : "<None>"));
 
@@ -687,6 +801,7 @@ int DnDTransferListGetRootsEx(PDNDTRANSFERLIST pList,
         {
             rc = RTStrCopy(szPath, sizeof(szPath), pcszPathRootTmp);
             AssertRCBreak(rc);
+            cchString += RTStrNLen(pcszPathRootTmp, RTPATH_MAX);
         }
 
         rc = RTPathAppend(szPath, sizeof(szPath), pRoot->pszPathRoot);
@@ -696,31 +811,53 @@ int DnDTransferListGetRootsEx(PDNDTRANSFERLIST pList,
         {
             char *pszPathURI = RTUriFileCreate(szPath);
             AssertPtrBreakStmt(pszPathURI, rc = VERR_NO_MEMORY);
-
             rc = RTStrAAppend(&pszString, pszPathURI);
+            cchString += RTStrNLen(pszPathURI, RTPATH_MAX);
             RTStrFree(pszPathURI);
             AssertRCBreak(rc);
         }
-        else
+        else /* Native */
         {
-            rc = RTStrAAppend(&pszString, szPath);
-            AssertRCBreak(rc);
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+            /* Convert paths to native path style. */
+            rc = DnDPathConvert(szPath, sizeof(szPath), DNDPATHCONVERT_FLAGS_TO_DOS);
+#endif
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTStrAAppend(&pszString, szPath);
+                AssertRCBreak(rc);
+
+                cchString += RTStrNLen(szPath, RTPATH_MAX);
+            }
         }
 
         rc = RTStrAAppend(&pszString, pcszSeparator);
         AssertRCBreak(rc);
+
+        cchString += cchSep;
     }
 
     if (RT_SUCCESS(rc))
     {
         *ppszBuffer = pszString;
-        *pcbBuffer  = pszString ? strlen(pszString) + 1 /* Include termination */ : 0;
+        *pcbBuffer  = pszString ? cchString + 1 /* Include termination */ : 0;
     }
     else
         RTStrFree(pszString);
     return rc;
 }
 
+/**
+ * Returns all root entries for a DnD transfer list.
+ *
+ * Note: Convenience function which uses the default DnD path separator.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to return root entries for.
+ * @param   enmFmt              Which format to use for returning the entries.
+ * @param   ppszBuffer          Where to return the allocated string on success. Needs to be free'd with RTStrFree().
+ * @param   pcbBuffer           Where to return the size (in bytes) of the allocated string on success, including terminator.
+ */
 int DnDTransferListGetRoots(PDNDTRANSFERLIST pList,
                             DNDTRANSFERLISTFMT enmFmt, char **ppszBuffer, size_t *pcbBuffer)
 {
@@ -811,14 +948,31 @@ static int dndTransferListSetRootPath(PDNDTRANSFERLIST pList, const char *pcszRo
     return rc;
 }
 
+/**
+ * Adds a root entry to a DnD transfer list.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to add root entry to.
+ * @param   pcszRoot            Root entry to add.
+ */
 static int dndTransferListRootAdd(PDNDTRANSFERLIST pList, const char *pcszRoot)
 {
     int rc;
 
+    /** @todo Handle / reject double entries. */
+
+    /* Calculate the path to add as the destination path to our URI object. */
+    const size_t idxPathToAdd = strlen(pList->pszPathRootAbs);
+    AssertReturn(strlen(pcszRoot) > idxPathToAdd, VERR_INVALID_PARAMETER); /* Should never happen (tm). */
+
     PDNDTRANSFERLISTROOT pRoot = (PDNDTRANSFERLISTROOT)RTMemAllocZ(sizeof(DNDTRANSFERLISTROOT));
     if (pRoot)
     {
-        pRoot->pszPathRoot = RTStrDup(pcszRoot);
+        const char *pcszRootIdx = &pcszRoot[idxPathToAdd];
+
+        LogFlowFunc(("pcszRoot=%s\n", pcszRootIdx));
+
+        pRoot->pszPathRoot = RTStrDup(pcszRootIdx);
         if (pRoot->pszPathRoot)
         {
             RTListAppend(&pList->lstRoot, &pRoot->Node);
@@ -842,7 +996,7 @@ static int dndTransferListRootAdd(PDNDTRANSFERLIST pList, const char *pcszRoot)
 }
 
 /**
- * Frees an internal DnD transfer root.
+ * Removes (and destroys) a DnD transfer root entry.
  *
  * @param   pList               Transfer list to free root for.
  * @param   pRootObj            Transfer list root to free. The pointer will be invalid after calling.
@@ -861,105 +1015,3 @@ static void dndTransferListRootFree(PDNDTRANSFERLIST pList, PDNDTRANSFERLISTROOT
     pList->cRoots--;
 }
 
-
-#if 0
-/**
- * Appends a single URI path to a transfer list.
- *
- * @returns VBox status code.
- * @param   pList               Transfer list to append URI path to.
- * @param   pszURIPath          URI path to append.
- * @param   fFlags              Transfer list flags to use for appending.
- */
-int DnDTransferListURIAppendPath(PDNDTRANSFERLIST pList, const char *pszURIPath, DNDTRANSFERLISTFLAGS fFlags)
-{
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszURIPath, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~DNDTRANSFERLIST_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
-
-    in rc;
-
-    /* Query the path component of a file URI. If this hasn't a
-     * file scheme, NULL is returned. */
-    char *pszFilePath = RTUriFilePathEx(pszURIPath, RTPATH_STR_F_STYLE_UNIX, &pszFilePath, 0 /*cbPath*/, NULL /*pcchPath*/);
-    LogFlowFunc(("pszPath=%s, pszFilePath=%s\n", pszFilePath));
-    if (pszFilePath)
-    {
-        rc = DnDPathValidate(pszFilePath, false /* fMustExist */);
-        if (RT_SUCCESS(rc))
-        {
-            uint32_t fPathConvert = DNDPATHCONVERT_FLAGS_TRANSPORT;
-#ifdef RT_OS_WINDOWS
-            fPathConvert |= DNDPATHCONVERT_FLAGS_TO_DOS;
-#endif
-            rc = DnDPathConvert(pszFilePath, strlen(pszFilePath) + 1, fPathConvert);
-            if (RT_SUCCESS(rc))
-            {
-                LogRel2(("DnD: Got URI data item '%s'\n", pszFilePath));
-
-                PDNDTRANSFERLISTROOT pRoot = (PDNDTRANSFERLISTROOT)RTMemAlloc(sizeof(DNDTRANSFERLISTROOT));
-                if (pRoot)
-                {
-                    pRoot->pszPathRoot = pszFilePath;
-
-                    RTListAppend(&pList->lstRoot, &pRoot->Node);
-                    pList->cRoots++;
-
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-            else
-                LogRel(("DnD: Path conversion of URI data item '%s' failed with %Rrc\n", pszFilePath, rc));
-        }
-        else
-            LogRel(("DnD: Path validation for URI data item '%s' failed with %Rrc\n", pszFilePath, rc));
-
-        if (RT_FAILURE(rc))
-            RTStrFree(pszFilePath);
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Appends transfer list items from an URI string buffer.
- *
- * @returns VBox status code.
- * @param   pList               Transfer list to append list data to.
- * @param   pszURIPaths         String list to append.
- * @param   cbURIPaths          Size (in bytes) of string list to append.
- * @param   pcszSeparator       Separator string to use for separating strings of \a pszURIPathsAbs.
- * @param   fFlags              Transfer list flags to use for appending.
- */
-int DnDTransferListURIAppendFromBuffer(PDNDTRANSFERLIST pList,
-                                       const char *pszURIPaths, size_t cbURIPaths,
-                                       const char *pcszSeparator, DNDTRANSFERLISTFLAGS fFlags)
-{
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszURIPaths, VERR_INVALID_POINTER);
-    AssertReturn(cbURIPaths, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~DNDTRANSFERLIST_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
-
-    char **papszPaths = NULL;
-    size_t cPaths = 0;
-    int rc = RTStrSplit(pszURIPaths, cbURIPaths, pcszSeparator, &papszPaths, &cPaths);
-    if (RT_SUCCESS(rc))
-    {
-        for (size_t i = 0; i < cPaths; i++)
-        {
-            rc = DnDTransferListURIAppendPath(pList, papszPaths[i], fFlags);
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-        for (size_t i = 0; i < cPaths; ++i)
-            RTStrFree(papszPaths[i]);
-        RTMemFree(papszPaths);
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-#endif

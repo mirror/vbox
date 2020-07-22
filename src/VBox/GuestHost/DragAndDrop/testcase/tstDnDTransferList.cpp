@@ -70,7 +70,7 @@ int main()
     RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, szPathTest, DNDTRANSFERLIST_FLAGS_NONE), VERR_PATH_NOT_FOUND);
 
     /* Adding stuff. */
-    RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, szPathWellKnown, DNDTRANSFERLIST_FLAGS_NONE), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, szPathWellKnown, DNDTRANSFERLIST_FLAGS_RECURSIVE), VINF_SUCCESS);
     RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list));
     RTTEST_CHECK(hTest, DnDTransferListObjCount(&list));
 
@@ -112,10 +112,16 @@ int main()
                          "file:///file2\r\n"
                          "file:///dir1\r\n"
                          "file:///dir%20with%20spaces\r\n";
+
     RTTEST_CHECK_RC(hTest, DnDTransferListAppendPathsFromBuffer(&list, DNDTRANSFERLISTFMT_URI, szURI, sizeof(szURI), "\r\n",
                                                                 DNDTRANSFERLIST_FLAGS_NONE), VINF_SUCCESS);
     RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list) == 4);
+    RTTEST_CHECK(hTest, RTStrCmp(DnDTransferListGetRootPathAbs(&list), RTPATH_SLASH_STR) == 0);
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "/native/base/path", "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
+    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Roots (URI, new base):\n%s\n", pszBuf);
+    RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "\\windows\\path", "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
+    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Roots (URI, new base):\n%s\n", pszBuf);
+    RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "\\\\windows\\\\path", "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Roots (URI, new base):\n%s\n", pszBuf);
     RTStrFree(pszBuf);
 
