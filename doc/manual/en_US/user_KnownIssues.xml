@@ -97,7 +97,7 @@
         </para>
         <para>
           Additionally, the "Microsoft Device Guard and Credential Guard hardware
-          readiness tool" might has be used in order to turn off more features,
+          readiness tool" might be used in order to turn off more features,
           for example with <screen>.\DG_Readiness_Tool_vX.X.ps1 -Disable -AutoReboot</screen>
           <note>
             <para>
