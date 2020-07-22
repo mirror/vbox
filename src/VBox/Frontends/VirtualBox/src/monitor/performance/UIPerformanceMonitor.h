@@ -154,6 +154,15 @@ private:
         void updateVMExitMetric(quint64 uTotalVMExits);
     /** @} */
 
+    /** @name The following functions reset corresponding info labels
+      * @{ */
+        void resetCPUInfoLabel();
+        void resetRAMInfoLabel();
+        void resetNetworkInfoLabel();
+        void resetDiskIOInfoLabel();
+        void resetVMExitInfoLabel();
+    /** @} */
+
     /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
     QString dataColorString(const QString &strChartName, int iDataIndex);
     /* Starts the timer which in return collects data and updates charts/graphs. */

@@ -87,6 +87,9 @@ public:
     QString XAxisLabel();
     void setXAxisLabel(const QString &strLabel);
 
+    bool isAvailable() const;
+    void setIsAvailable(bool fIsAvailable);
+
 protected:
 
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
@@ -134,6 +137,8 @@ private:
     /** When it is true we draw an area graph where data series drawn on top of each other.
      *  We draw first data0 then data 1 on top. Makes sense where the summation of data is guaranteed not to exceed some max. */
     bool m_fUseAreaChart;
+    /** False if the chart is not useable for some reason. For example it depends guest additions and they are not installed. */
+    bool m_fIsAvailable;
     /** For some charts it does not make sense to have an area chart. */
     bool m_fIsAreaChartAllowed;
     QColor m_dataSeriesColor[DATA_SERIES_SIZE];
@@ -157,6 +162,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_fShowPieChart(true)
     , m_fUseGradientLineColor(false)
     , m_fUseAreaChart(true)
+    , m_fIsAvailable(true)
     , m_fIsAreaChartAllowed(false)
 {
     m_axisFont = font();
@@ -273,6 +279,19 @@ void UIChart::setXAxisLabel(const QString &strLabel)
     m_strXAxisLabel = strLabel;
 }
 
+bool UIChart::isAvailable() const
+{
+    return m_fIsAvailable;
+}
+
+void UIChart::setIsAvailable(bool fIsAvailable)
+{
+    if (m_fIsAvailable == fIsAvailable)
+        return;
+    m_fIsAvailable = fIsAvailable;
+    update();
+}
+
 QSize UIChart::minimumSizeHint() const
 {
     return m_size;
@@ -335,8 +354,11 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     painter.setPen(mainAxisColor);
     drawXAxisLabels(painter, iXSubAxisCount);
 
-    /* Draw a half-transparent rectangle over the whole widget to indicate the it is disabled: */
     if (!isEnabled())
+        return;
+
+    /* Draw a half-transparent rectangle over the whole widget to indicate the it is not available: */
+    if (!isAvailable())
     {
         drawDisabledChartRectangle(painter);
         return;
@@ -742,6 +764,7 @@ void UIPerformanceMonitor::setMachine(const CMachine &comMachine)
 
     if (m_comMachine.GetState() == KMachineState_Running)
     {
+        setEnabled(true);
         openSession();
         start();
     }
@@ -943,6 +966,7 @@ void UIPerformanceMonitor::sltMachineStateChange(const QUuid &uId)
     reset();
     if (m_comMachine.GetState() == KMachineState_Running)
     {
+        setEnabled(true);
         openSession();
         start();
     }
@@ -1055,10 +1079,7 @@ void UIPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnabl
         if (!iterator.value().requiresGuestAdditions())
             continue;
         if (m_charts.contains(iterator.key()) && m_charts[iterator.key()])
-        {
-            m_charts[iterator.key()]->setEnabled(fEnable);
-            m_charts[iterator.key()]->update();
-        }
+            m_charts[iterator.key()]->setIsAvailable(fEnable);
         if (m_infoLabels.contains(iterator.key()) && m_infoLabels[iterator.key()])
         {
             m_infoLabels[iterator.key()]->setEnabled(fEnable);
@@ -1076,15 +1097,13 @@ void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, 
     if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
     {
         QString strInfo;
-        if (m_infoLabels[m_strCPUMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4%5</font><br/><font color=\"%6\">%7: %8%9</font>")
-                .arg(m_strCPUInfoLabelTitle)
-                .arg(dataColorString(m_strCPUMetricName, 0))
-                .arg(m_strCPUInfoLabelGuest).arg(QString::number(iExecutingPercentage)).arg(CPUMetric.unit())
-                .arg(dataColorString(m_strCPUMetricName, 1))
-                .arg(m_strCPUInfoLabelVMM).arg(QString::number(iOtherPercentage)).arg(CPUMetric.unit());
-        else
-            strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strCPUInfoLabelTitle).arg("--").arg("%");
+
+        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4%5</font><br/><font color=\"%6\">%7: %8%9</font>")
+            .arg(m_strCPUInfoLabelTitle)
+            .arg(dataColorString(m_strCPUMetricName, 0))
+            .arg(m_strCPUInfoLabelGuest).arg(QString::number(iExecutingPercentage)).arg(CPUMetric.unit())
+            .arg(dataColorString(m_strCPUMetricName, 1))
+            .arg(m_strCPUInfoLabelVMM).arg(QString::number(iOtherPercentage)).arg(CPUMetric.unit());
         m_infoLabels[m_strCPUMetricName]->setText(strInfo);
     }
 
@@ -1100,12 +1119,9 @@ void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
     if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
     {
         QString strInfo;
-        if (m_infoLabels[m_strRAMMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(uiCommon().formatSize(_1K * iTotalRAM, g_iDecimalCount))
-                .arg(m_strRAMInfoLabelFree).arg(uiCommon().formatSize(_1K * (iFreeRAM), g_iDecimalCount))
-                .arg(m_strRAMInfoLabelUsed).arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM), g_iDecimalCount));
-        else
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg("---").arg(m_strRAMInfoLabelFree).arg("---").arg(m_strRAMInfoLabelUsed).arg("---");
+        strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(uiCommon().formatSize(_1K * iTotalRAM, g_iDecimalCount))
+            .arg(m_strRAMInfoLabelFree).arg(uiCommon().formatSize(_1K * (iFreeRAM), g_iDecimalCount))
+            .arg(m_strRAMInfoLabelUsed).arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM), g_iDecimalCount));
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strRAMMetricName))
@@ -1122,12 +1138,12 @@ void UIPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, q
     NetMetric.setTotal(0, iReceiveTotal);
     NetMetric.setTotal(1, iTransmitTotal);
 
-    /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
     if (!NetMetric.isInitialized())
     {
         NetMetric.setIsInitialized(true);
         return;
     }
+
     NetMetric.addData(0, iReceiveRate);
     NetMetric.addData(1, iTransmitRate);
     quint64 iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
@@ -1136,23 +1152,82 @@ void UIPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, q
     if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
     {
         QString strInfo;
-        if (m_infoLabels[m_strNetworkMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
-                .arg(m_strNetworkInfoLabelTitle)
-                .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, g_iDecimalCount))
-                .arg(m_strNetworkInfoLabelReceivedTotal).arg(uiCommon().formatSize((quint64)iReceiveTotal, g_iDecimalCount))
-                .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, g_iDecimalCount))
-                .arg(m_strNetworkInfoLabelTransmittedTotal).arg(uiCommon().formatSize((quint64)iTransmitTotal, g_iDecimalCount));
-
-        else
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5").
-                arg(m_strNetworkInfoLabelTitle)
-                .arg(m_strNetworkInfoLabelReceived).arg("---")
-                .arg(m_strNetworkInfoLabelTransmitted).arg("---");
+        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
+            .arg(m_strNetworkInfoLabelTitle)
+            .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, g_iDecimalCount))
+            .arg(m_strNetworkInfoLabelReceivedTotal).arg(uiCommon().formatSize((quint64)iReceiveTotal, g_iDecimalCount))
+            .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, g_iDecimalCount))
+            .arg(m_strNetworkInfoLabelTransmittedTotal).arg(uiCommon().formatSize((quint64)iTransmitTotal, g_iDecimalCount));
         m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strNetworkMetricName))
         m_charts[m_strNetworkMetricName]->update();
+}
+
+void UIPerformanceMonitor::resetCPUInfoLabel()
+{
+    if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
+    {
+        QString strInfo =QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
+            .arg(m_strCPUInfoLabelTitle)
+            .arg(m_strCPUInfoLabelGuest).arg("--")
+            .arg(m_strCPUInfoLabelVMM).arg("--");
+        m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+    }
+}
+
+void UIPerformanceMonitor::resetRAMInfoLabel()
+{
+    if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
+    {
+        QString strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").
+            arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg("--")
+            .arg(m_strRAMInfoLabelFree).arg("--")
+            .arg(m_strRAMInfoLabelUsed).arg("--");
+        m_infoLabels[m_strRAMMetricName]->setText(strInfo);
+    }
+}
+
+void UIPerformanceMonitor::resetNetworkInfoLabel()
+{
+    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
+            .arg(m_strNetworkInfoLabelTitle)
+            .arg(m_strNetworkInfoLabelReceived).arg("--")
+            .arg(m_strNetworkInfoLabelReceivedTotal).arg("--")
+            .arg(m_strNetworkInfoLabelTransmitted).arg("--")
+            .arg(m_strNetworkInfoLabelTransmittedTotal).arg("--");
+        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
+    }
+}
+
+void UIPerformanceMonitor::resetVMExitInfoLabel()
+{
+    if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
+    {
+        QString strInfo;
+        strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
+            .arg(m_strVMExitInfoLabelTitle)
+            .arg(m_strVMExitLabelCurrent).arg("--")
+            .arg(m_strVMExitLabelTotal).arg("--");
+
+        m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
+    }
+}
+
+void UIPerformanceMonitor::resetDiskIOInfoLabel()
+{
+    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
+            .arg(m_strDiskIOInfoLabelTitle)
+            .arg(m_strDiskIOInfoLabelWritten).arg("--")
+            .arg(m_strDiskIOInfoLabelWrittenTotal).arg("--")
+            .arg(m_strDiskIOInfoLabelRead).arg("--")
+            .arg(m_strDiskIOInfoLabelReadTotal).arg("--");
+        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
+    }
 }
 
 void UIPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
@@ -1165,33 +1240,25 @@ void UIPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritt
     diskMetric.setTotal(0, uDiskIOTotalWritten);
     diskMetric.setTotal(1, uDiskIOTotalRead);
 
+    diskMetric.addData(0, iWriteRate);
+    diskMetric.addData(1, iReadRate);
     /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
-    if (!diskMetric.isInitialized())
-    {
+    if (!diskMetric.isInitialized()){
         diskMetric.setIsInitialized(true);
         return;
     }
-    diskMetric.addData(0, iWriteRate);
-    diskMetric.addData(1, iReadRate);
+
     quint64 iMaximum = qMax(diskMetric.maximum(), qMax(iWriteRate, iReadRate));
     diskMetric.setMaximum(iMaximum);
 
     if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
     {
-        QString strInfo;
-        if (m_infoLabels[m_strDiskIOMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
-                .arg(m_strDiskIOInfoLabelTitle)
-                .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(uiCommon().formatSize((quint64)iWriteRate, g_iDecimalCount))
-                .arg(m_strDiskIOInfoLabelWrittenTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
-                .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(uiCommon().formatSize((quint64)iReadRate, g_iDecimalCount))
-                .arg(m_strDiskIOInfoLabelReadTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalRead, g_iDecimalCount));
-
-        else
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5").
-                arg(m_strDiskIOInfoLabelTitle)
-                .arg(m_strDiskIOInfoLabelWritten).arg("---")
-                .arg(m_strDiskIOInfoLabelRead).arg("---");
+        QString strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
+            .arg(m_strDiskIOInfoLabelTitle)
+            .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(uiCommon().formatSize((quint64)iWriteRate, g_iDecimalCount))
+            .arg(m_strDiskIOInfoLabelWrittenTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
+            .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(uiCommon().formatSize((quint64)iReadRate, g_iDecimalCount))
+            .arg(m_strDiskIOInfoLabelReadTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalRead, g_iDecimalCount));
         m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strDiskIOMetricName))
@@ -1218,14 +1285,11 @@ void UIPerformanceMonitor::updateVMExitMetric(quint64 uTotalVMExits)
     if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
     {
         QString strInfo;
-        if (m_infoLabels[m_strVMExitMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
-                .arg(m_strVMExitInfoLabelTitle)
-                .arg(m_strVMExitLabelCurrent).arg(UICommon::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
-                .arg(m_strVMExitLabelTotal).arg(UICommon::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit());
-        else
-            strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strVMExitInfoLabelTitle).arg("--").arg("%");
-        m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
+        strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
+            .arg(m_strVMExitInfoLabelTitle)
+            .arg(m_strVMExitLabelCurrent).arg(UICommon::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
+            .arg(m_strVMExitLabelTotal).arg(UICommon::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit());
+         m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strVMExitMetricName))
         m_charts[m_strVMExitMetricName]->update();
@@ -1234,16 +1298,18 @@ void UIPerformanceMonitor::updateVMExitMetric(quint64 uTotalVMExits)
 QString UIPerformanceMonitor::dataColorString(const QString &strChartName, int iDataIndex)
 {
     if (!m_charts.contains(strChartName))
-        return QColor(Qt::red).name(QColor::HexRgb);
+        return QColor(Qt::black).name(QColor::HexRgb);
     UIChart *pChart = m_charts[strChartName];
     if (!pChart)
-        return QColor(Qt::red).name(QColor::HexRgb);
+        return QColor(Qt::black).name(QColor::HexRgb);
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
 
 void UIPerformanceMonitor::reset()
 {
     m_fGuestAdditionsAvailable = false;
+    setEnabled(false);
+
     if (m_pTimer)
         m_pTimer->stop();
     /* reset the metrics. this will delete their data cache: */
@@ -1255,11 +1321,12 @@ void UIPerformanceMonitor::reset()
          iterator != m_charts.end(); ++iterator)
         iterator.value()->update();
     /* Reset the info labels: */
-    updateRAMGraphsAndMetric(0, 0);
-    updateCPUGraphsAndMetric(0, 0);
-    updateNetworkGraphsAndMetric(0, 0);
-    updateDiskIOGraphsAndMetric(0, 0);
-    updateVMExitMetric(0);
+    resetCPUInfoLabel();
+    resetRAMInfoLabel();
+    resetNetworkInfoLabel();
+    resetDiskIOInfoLabel();
+    resetVMExitInfoLabel();
+    update();
 }
 
 void UIPerformanceMonitor::start()
