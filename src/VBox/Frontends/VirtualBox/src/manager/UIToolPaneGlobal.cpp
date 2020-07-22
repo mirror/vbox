@@ -263,8 +263,6 @@ void UIToolPaneGlobal::cleanup()
 
 void UIToolPaneGlobal::handleTokenChange()
 {
-    // printf("UIToolPaneGlobal::handleTokenChange: Active = %d, current tool = %d\n", m_fActive, currentTool());
-
     /* Determine whether resource monitor is currently active tool: */
     if (m_pPaneResourceMonitor)
         m_pPaneResourceMonitor->setIsCurrentTool(m_fActive && currentTool() == UIToolType_Resources);
