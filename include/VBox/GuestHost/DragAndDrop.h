@@ -308,6 +308,7 @@ uint64_t DnDTransferListGetRootCount(PDNDTRANSFERLIST pList);
 const char *DnDTransferListGetRootPathAbs(PDNDTRANSFERLIST pList);
 
 PDNDTRANSFEROBJECT DnDTransferListObjGetFirst(PDNDTRANSFERLIST pList);
+void DnDTransferListObjRemove(PDNDTRANSFERLIST pList, PDNDTRANSFEROBJECT pObj);
 void DnDTransferListObjRemoveFirst(PDNDTRANSFERLIST pList);
 uint64_t DnDTransferListObjCount(PDNDTRANSFERLIST pList);
 uint64_t DnDTransferListObjTotalBytes(PDNDTRANSFERLIST pList);

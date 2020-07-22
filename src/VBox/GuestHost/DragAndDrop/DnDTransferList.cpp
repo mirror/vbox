@@ -736,6 +736,37 @@ PDNDTRANSFEROBJECT DnDTransferListObjGetFirst(PDNDTRANSFERLIST pList)
 }
 
 /**
+ * Removes an object from a transfer list, internal version.
+ *
+ * @param   pList               Transfer list to remove object from.
+ * @param   pObj                Object to remove. The object will be free'd and the pointer is invalid after calling.
+ */
+static void dndTransferListObjRemoveInternal(PDNDTRANSFERLIST pList, PDNDTRANSFEROBJECT pObj)
+{
+    AssertPtrReturnVoid(pList);
+    AssertPtrReturnVoid(pObj);
+
+    /** @todo Validate if \a pObj is part of \a pList. */
+
+    uint64_t cbSize = DnDTransferObjectGetSize(pObj);
+    Assert(pList->cbObjTotal >= cbSize);
+    pList->cbObjTotal -= cbSize; /* Adjust total size. */
+
+    dndTransferListObjFree(pList, pObj);
+}
+
+/**
+ * Removes an object from a transfer list.
+ *
+ * @param   pList               Transfer list to remove object from.
+ * @param   pObj                Object to remove. The object will be free'd and the pointer is invalid after calling.
+ */
+void DnDTransferListObjRemove(PDNDTRANSFERLIST pList, PDNDTRANSFEROBJECT pObj)
+{
+    return dndTransferListObjRemoveInternal(pList, pObj);
+}
+
+/**
  * Removes the first DnD transfer object from a transfer list.
  *
  * @param   pList               Transfer list to remove first entry for.
@@ -750,11 +781,7 @@ void DnDTransferListObjRemoveFirst(PDNDTRANSFERLIST pList)
     PDNDTRANSFEROBJECT pObj = RTListGetFirst(&pList->lstObj, DNDTRANSFEROBJECT, Node);
     AssertPtr(pObj);
 
-    uint64_t cbSize = DnDTransferObjectGetSize(pObj);
-    Assert(pList->cbObjTotal >= cbSize);
-    pList->cbObjTotal -= cbSize; /* Adjust total size. */
-
-    dndTransferListObjFree(pList, pObj);
+    dndTransferListObjRemoveInternal(pList, pObj);
 }
 
 /**
