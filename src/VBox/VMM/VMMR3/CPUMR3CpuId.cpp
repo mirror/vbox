@@ -4621,6 +4621,46 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         AssertRCReturn(rc, rc);
         if (fEnable)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SPEC_CTRL);
+        else
+        {
+            /*
+             * Set the "SSBD-not-needed" flag to work around a bug in some Linux kernels when the VIRT_SPEC_CTL
+             * feature is not exposed on AMD CPUs and there is only 1 vCPU configured.
+             * This was observed with kernel "4.15.0-29-generic #31~16.04.1-Ubuntu" but more versions are likely affected.
+             * 
+             * The kernel doesn't initialize a lock and causes a NULL pointer exception later on when configuring SSBD:
+             *    EIP: _raw_spin_lock+0x14/0x30
+             *    EFLAGS: 00010046 CPU: 0
+             *    EAX: 00000000 EBX: 00000001 ECX: 00000004 EDX: 00000000
+             *    ESI: 00000000 EDI: 00000000 EBP: ee023f1c ESP: ee023f18
+             *    DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+             *    CR0: 80050033 CR2: 00000004 CR3: 3671c180 CR4: 000006f0
+             *    Call Trace:
+             *     speculative_store_bypass_update+0x8e/0x180
+             *     ssb_prctl_set+0xc0/0xe0
+             *     arch_seccomp_spec_mitigate+0x1d/0x20
+             *     do_seccomp+0x3cb/0x610
+             *     SyS_seccomp+0x16/0x20
+             *     do_fast_syscall_32+0x7f/0x1d0
+             *     entry_SYSENTER_32+0x4e/0x7c
+             *
+             * The lock would've been initialized in process.c:speculative_store_bypass_ht_init() called from two places in smpboot.c.
+             * First when a secondary CPU is started and second in native_smp_prepare_cpus() which is not called in a single vCPU environment.
+             *
+             * As spectre control features are completely disabled anyway when we arrived here there is no harm done in informing the
+             * guest to not even try.
+             */
+            if (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON)
+            {
+                PCPUMCPUIDLEAF pLeaf = cpumR3CpuIdGetExactLeaf(&pVM->cpum.s, UINT32_C(0x80000008), 0);
+                if (pLeaf)
+                {
+                    pLeaf->uEbx |= X86_CPUID_AMD_EFEID_EBX_NO_SSBD_REQUIRED;
+                    LogRel(("CPUM: Set SSBD not required flag for AMD to work around some buggy Linux kernels!\n"));
+                }
+            }
+        }
 
         return VINF_SUCCESS;
     }

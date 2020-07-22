@@ -632,6 +632,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD         RT_BIT_32(28)
 /** EDX Bit 29 - ARCHCAP - Supports the IA32_ARCH_CAPABILITIES MSR. */
 #define X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP           RT_BIT_32(29)
+/** EDX Bit 31 - SSBD - Supports the SSBD flag in IA32_SPEC_CTRL. */
+#define X86_CPUID_STEXT_FEATURE_EDX_SSBD              RT_BIT_32(31)
 
 /** @} */
 
@@ -782,18 +784,34 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  * @{
  */
 /** Bit 0 - CLZERO - Clear zero instruction. */
-#define X86_CPUID_AMD_EFEID_EBX_CLZERO       RT_BIT_32(0)
+#define X86_CPUID_AMD_EFEID_EBX_CLZERO                      RT_BIT_32(0)
 /** Bit 1 - IRPerf - Instructions retired count support. */
-#define X86_CPUID_AMD_EFEID_EBX_IRPERF       RT_BIT_32(1)
+#define X86_CPUID_AMD_EFEID_EBX_IRPERF                      RT_BIT_32(1)
 /** Bit 2 - XSaveErPtr - Always XSAVE* and XRSTR* error pointers. */
-#define X86_CPUID_AMD_EFEID_EBX_XSAVE_ER_PTR RT_BIT_32(2)
+#define X86_CPUID_AMD_EFEID_EBX_XSAVE_ER_PTR                RT_BIT_32(2)
 /** Bit 4 - RDPRU - Supports the RDPRU instruction. */
-#define X86_CPUID_AMD_EFEID_EBX_RDPRU        RT_BIT_32(4)
+#define X86_CPUID_AMD_EFEID_EBX_RDPRU                       RT_BIT_32(4)
 /** Bit 8 - MCOMMIT - Supports the MCOMMIT instruction. */
-#define X86_CPUID_AMD_EFEID_EBX_MCOMMIT      RT_BIT_32(8)
+#define X86_CPUID_AMD_EFEID_EBX_MCOMMIT                     RT_BIT_32(8)
 /* AMD pipeline length: 9 feature bits ;-) */
 /** Bit 12 - IBPB - Supports the IBPB command in IA32_PRED_CMD. */
-#define X86_CPUID_AMD_EFEID_EBX_IBPB         RT_BIT_32(12)
+#define X86_CPUID_AMD_EFEID_EBX_IBPB                        RT_BIT_32(12)
+/** Bit 14 - IBRS - Supports the IBRS bit in IA32_SPEC_CTRL. */
+#define X86_CPUID_AMD_EFEID_EBX_IBRS                        RT_BIT_32(14)
+/** Bit 15 - STIBP - Supports the STIBP bit in IA32_SPEC_CTRL. */
+#define X86_CPUID_AMD_EFEID_EBX_STIBP                       RT_BIT_32(15)
+/** Bit 16 - IBRS always on mode - IBRS should be set once during boot only. */
+#define X86_CPUID_AMD_EFEID_EBX_IBRS_ALWAYS_ON              RT_BIT_32(16)
+/** Bit 17 - STIBP always on mode - STIBP should be set once during boot only. */
+#define X86_CPUID_AMD_EFEID_EBX_STIBP_ALWAYS_ON             RT_BIT_32(17)
+/** Bit 18 - IBRS preferred - IBRS is preferred over software mitigations. */
+#define X86_CPUID_AMD_EFEID_EBX_IBRS_PREFERRED              RT_BIT_32(18)
+/** Bit 24 - Speculative Store Bypass Disable supported in SPEC_CTL. */
+#define X86_CPUID_AMD_EFEID_EBX_SPEC_CTRL_SSBD              RT_BIT_32(24)
+/** Bit 25 - Speculative Store Bypass Disable supported in VIRT_SPEC_CTL. */
+#define X86_CPUID_AMD_EFEID_EBX_VIRT_SPEC_CTRL_SSBD         RT_BIT_32(25)
+/** Bit 26 - Speculative Store Bypass Disable not required. */
+#define X86_CPUID_AMD_EFEID_EBX_NO_SSBD_REQUIRED            RT_BIT_32(26)
 /** @} */
 
 
@@ -1212,6 +1230,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_SPEC_CTRL_F_IBRS           RT_BIT_32(0)
 /** STIBP - Single thread indirect branch predictors. */
 #define MSR_IA32_SPEC_CTRL_F_STIBP          RT_BIT_32(1)
+/** SSBD - Speculative Store Bypass Disable. */
+#define MSR_IA32_SPEC_CTRL_F_SSBD           RT_BIT_32(2)
 
 /** Prediction command register.
  * Write only, logical processor scope, no state since write only. */
@@ -1836,6 +1856,16 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** SVM - VM_HSAVE_PA - Physical address for saving and restoring
  *                      host state during world switch. */
 #define MSR_K8_VM_HSAVE_PA                  UINT32_C(0xc0010117)
+
+/** Virtualized speculation control for AMD processors.
+ *
+ * Unified interface among different CPU generations.
+ * The VMM will set any architectural MSRs based on the CPU.
+ * See "White Paper: AMD64 Technology Speculative Store Bypass Disable 5.21.18"
+ * (12441_AMD64_SpeculativeStoreBypassDisable_Whitepaper_final.pdf) */
+#define MSR_AMD_VIRT_SPEC_CTL               UINT32_C(0xc001011f)
+/** Speculative Store Bypass Disable. */
+# define MSR_AMD_VIRT_SPEC_CTL_F_SSBD       RT_BIT(2)
 
 /** @} */
 
