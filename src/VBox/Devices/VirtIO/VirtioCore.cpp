@@ -688,7 +688,7 @@ void virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtq, bool fEna
         uint16_t fFlags = virtioReadUsedRingFlags(pVirtio->pDevInsR3, pVirtio, pVirtq);
 
         if (fEnable)
-            fFlags &= ~ VIRTQ_USED_F_NO_NOTIFY;
+            fFlags &= ~VIRTQ_USED_F_NO_NOTIFY;
         else
             fFlags |= VIRTQ_USED_F_NO_NOTIFY;
 
@@ -719,7 +719,6 @@ int virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
 int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtq)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
-
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
 
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtq->uEnable,
@@ -929,7 +928,7 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
 
     /*
      * Place used buffer's descriptor in used ring but don't update used ring's slot index.
-     * That will be done with a subsequent client call to virtioCoreVirtqSyncUsedRing() */
+     * That will be done with a subsequent client call to virtioCoreVirtqUsedRingSync() */
     virtioWriteUsedElem(pDevIns, pVirtio, pVirtq, pVirtq->uUsedIdxShadow++, pVirtqBuf->uHeadIdx, (uint32_t)cbTotal);
 
     if (pSgVirtReturn)
@@ -946,7 +945,7 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
 #endif /* IN_RING3 */
 
 /** API function: See Header file  */
-int virtioCoreVirtqSyncUsedRing(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq)
+int virtioCoreVirtqUsedRingSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];

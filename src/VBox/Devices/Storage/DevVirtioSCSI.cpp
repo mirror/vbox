@@ -784,7 +784,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
 
     rc = virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &ReqSgBuf, pVirtqBuf, true /*fFence*/);
     if (rc == VINF_SUCCESS)
-        virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, EVENTQ_IDX, false);
+        virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, EVENTQ_IDX, false);
     else
         LogRel(("Error writing control message to guest\n"));
     virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
@@ -853,7 +853,7 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
     virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /* fFence */);
-    virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, uVirtqNbr);
+    virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, uVirtqNbr);
 
     if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThisCC->fQuiescing)
         PDMDevHlpAsyncNotificationCompleted(pDevIns);
@@ -1042,7 +1042,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                         VERR_BUFFER_OVERFLOW);
 
         virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pReq->uVirtqNbr, &ReqSgBuf, pReq->pVirtqBuf, true /* fFence TBD */);
-        virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, pReq->uVirtqNbr);
+        virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, pReq->uVirtqNbr);
 
         Log2(("-----------------------------------------------------------------------------------------\n"));
     }
@@ -1526,7 +1526,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     RTSgBufInit(&ReqSgBuf, aReqSegs, cSegs);
 
     virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, uVirtqNbr, &ReqSgBuf, pVirtqBuf, true /*fFence*/);
-    virtioCoreVirtqSyncUsedRing(pDevIns, &pThis->Virtio, uVirtqNbr);
+    virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, uVirtqNbr);
 
     return VINF_SUCCESS;
 }
@@ -2397,7 +2397,6 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
      * Quick initialization of the state data, making sure that the destructor always works.
      */
     pThisCC->pDevIns = pDevIns;
-//    pDevIns->pVirtio = &pThis->Virtio;
 
     LogFunc(("PDM device instance: %d\n", iInstance));
     RTStrPrintf(pThis->szInstance, sizeof(pThis->szInstance), "VIRTIOSCSI%d", iInstance);
