@@ -406,14 +406,32 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
 do { \
     uint32_t cbTemp = 0; \
     rc = HGCMSvcGetU32(&a_ParmUInt32, &cbTemp); \
-    ASSERT_GUEST_STMT(RT_SUCCESS(rc) && cbTemp == a_SizeExpected, rc = VERR_INVALID_PARAMETER); \
+    ASSERT_GUEST_BREAK(RT_SUCCESS(rc) && cbTemp == a_SizeExpected); \
 } while (0)
+
+/* Gets the context ID from the first parameter and store it into the data header.
+ * Then increments idxParm by one if more than one parameter is available. */
+#define GET_CONTEXT_ID_PARM0() \
+    if (fHasCtxID) \
+    { \
+        ASSERT_GUEST_BREAK(cParms >= 1); \
+        rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID); \
+        ASSERT_GUEST_BREAK(RT_SUCCESS(rc)); \
+        if (cParms > 1) \
+            idxParm++; \
+    }
 
     if (rc == VINF_SUCCESS) /* Note: rc might be VINF_HGCM_ASYNC_EXECUTE! */
     {
         LogFlowFunc(("Client %RU32: Protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
 
-        rc = VERR_INVALID_PARAMETER; /* Play safe. */
+        rc = VERR_INVALID_PARAMETER; /* Play safe by default. */
+
+        /* Whether the client's advertised protocol sends context IDs with commands. */
+        const bool fHasCtxID = pClient->GetProtocolVer() >= 3;
+
+        /* Current parameter index to process. */
+        unsigned idxParm = 0;
 
         switch (u32Function)
         {
@@ -474,69 +492,50 @@ do { \
             case GUEST_DND_CONNECT:
             {
                 LogFlowFunc(("GUEST_DND_CONNECT\n"));
-                if (cParms >= 2)
-                {
-                    const uint8_t idxProto = cParms >= 3 ? 1 : 0;
 
-                    VBOXDNDCBCONNECTMSGDATA data;
-                    RT_ZERO(data);
-                    data.hdr.uMagic = CB_MAGIC_DND_CONNECT;
-                    if (cParms >= 3)
-                        rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                    else /* Older protocols don't have a context ID. */
-                        rc = VINF_SUCCESS;
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[idxProto], &data.uProtocol);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[idxProto + 1], &data.uFlags);
-                    if (RT_SUCCESS(rc))
-                    {
-                        unsigned uProtocolVer = 3; /* The protocol version we're going to use. */
+                ASSERT_GUEST_BREAK(cParms >= 2);
 
-                        /* Make sure we're only setting a protocl version we're supporting on the host. */
-                        if (data.uProtocol > uProtocolVer)
-                            data.uProtocol = uProtocolVer;
+                VBOXDNDCBCONNECTMSGDATA data;
+                RT_ZERO(data);
 
-                        pClient->SetProtocolVer(data.uProtocol);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.hdr.uContextID); \
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uProtocol);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm], &data.uFlags);
+                ASSERT_GUEST_RC_BREAK(rc);
 
-                        /* Return the highest protocol version we're supporting. */
-                        paParms[idxProto].u.uint32 = data.uProtocol;
+                unsigned uProtocolVer = 3; /* The protocol version we're going to use. */
 
-                        LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
-                        DO_HOST_CALLBACK();
-                    }
-                }
+                /* Make sure we're only setting a protocl version we're supporting on the host. */
+                if (data.uProtocol > uProtocolVer)
+                    data.uProtocol = uProtocolVer;
+
+                pClient->SetProtocolVer(data.uProtocol);
+
+                /* Return the highest protocol version we're supporting. */
+                AssertBreak(idxParm);
+                ASSERT_GUEST_BREAK(idxParm);
+                paParms[idxParm - 1].u.uint32 = data.uProtocol;
+
+                LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
+
+                DO_HOST_CALLBACK();
                 break;
             }
             case GUEST_DND_HG_ACK_OP:
             {
                 LogFlowFunc(("GUEST_DND_HG_ACK_OP\n"));
 
+                ASSERT_GUEST_BREAK(cParms >= 2);
+
                 VBOXDNDCBHGACKOPDATA data;
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_HG_ACK_OP;
 
-                switch (pClient->GetProtocolVer())
-                {
-                    case 3:
-                    {
-                        if (cParms == 2)
-                        {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[1], &data.uAction); /* Get drop action. */
-                        }
-                        break;
-                    }
-
-                    case 2:
-                    default:
-                    {
-                        if (cParms == 1)
-                            rc = HGCMSvcGetU32(&paParms[0], &data.uAction); /* Get drop action. */
-                        break;
-                    }
-                }
+                GET_CONTEXT_ID_PARM0();
+                rc = HGCMSvcGetU32(&paParms[idxParm], &data.uAction); /* Get drop action. */
+                ASSERT_GUEST_RC_BREAK(rc);
 
                 DO_HOST_CALLBACK();
                 break;
@@ -553,21 +552,21 @@ do { \
                 {
                     case 3:
                     {
-                        if (cParms == 3)
-                        {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[1], (void **)&data.pszFormat, &data.cbFormat);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbFormat);
-                        }
+                        ASSERT_GUEST_BREAK(cParms == 3);
+                        GET_CONTEXT_ID_PARM0();
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void **)&data.pszFormat, &data.cbFormat);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm], data.cbFormat);
                         break;
                     }
 
                     case 2:
+                        RT_FALL_THROUGH();
                     default:
                     {
-                        if (cParms == 1)
-                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.pszFormat, &data.cbFormat);
+                        ASSERT_GUEST_BREAK(cParms == 1);
+                        rc = HGCMSvcGetPv(&paParms[idxParm], (void**)&data.pszFormat, &data.cbFormat);
+                        ASSERT_GUEST_RC_BREAK(rc);
                         break;
                     }
                 }
@@ -579,41 +578,19 @@ do { \
             {
                 LogFlowFunc(("GUEST_DND_HG_EVT_PROGRESS\n"));
 
+                ASSERT_GUEST_BREAK(cParms >= 3);
+
                 VBOXDNDCBHGEVTPROGRESSDATA data;
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_HG_EVT_PROGRESS;
 
-                switch (pClient->GetProtocolVer())
-                {
-                    case 3:
-                    {
-                        if (cParms == 4)
-                        {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[1], &data.uStatus);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.uPercentage);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[3], &data.rc);
-                        }
-                        break;
-                    }
-
-                    case 2:
-                    default:
-                    {
-                        if (cParms == 3)
-                        {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.uStatus);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[1], &data.uPercentage);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.rc);
-                        }
-                        break;
-                    }
-                }
+                GET_CONTEXT_ID_PARM0();
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uStatus);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uPercentage);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm], &data.rc);
+                ASSERT_GUEST_RC_BREAK(rc);
 
                 DO_HOST_CALLBACK();
                 break;
@@ -631,31 +608,28 @@ do { \
                 {
                     case 3:
                     {
-                        if (cParms == 5)
-                        {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[1], &data.uDefAction);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.uAllActions);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[3], (void**)&data.pszFormat, &data.cbFormat);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[4], data.cbFormat);
-                        }
+                        ASSERT_GUEST_BREAK(cParms == 5);
+                        GET_CONTEXT_ID_PARM0();
+                        rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uDefAction);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uAllActions);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.pszFormat, &data.cbFormat);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm], data.cbFormat);
                         break;
                     }
 
                     case 2:
                     default:
                     {
-                        if (cParms == 3)
-                        {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.uDefAction);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[1], &data.uAllActions);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[2], (void**)&data.pszFormat, &data.cbFormat);
-                        }
+                        ASSERT_GUEST_BREAK(cParms == 3);
+                        rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uDefAction);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uAllActions);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        rc = HGCMSvcGetPv(&paParms[idxParm], (void**)&data.pszFormat, &data.cbFormat);
+                        ASSERT_GUEST_RC_BREAK(rc);
                         break;
                     }
                 }
@@ -667,75 +641,80 @@ do { \
             case GUEST_DND_GH_SND_DATA_HDR:
             {
                 LogFlowFunc(("GUEST_DND_GH_SND_DATA_HDR\n"));
-                if (cParms == 12)
-                {
-                    VBOXDNDCBSNDDATAHDRDATA data;
-                    RT_ZERO(data);
-                    data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA_HDR;
-                    rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[1], &data.data.uFlags);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[2], &data.data.uScreenId);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU64(&paParms[3], &data.data.cbTotal);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[4], &data.data.cbMeta);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetPv(&paParms[5], &data.data.pvMetaFmt, &data.data.cbMetaFmt);
-                    VERIFY_BUFFER_SIZE_UINT32(paParms[6], data.data.cbMetaFmt);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU64(&paParms[7], &data.data.cObjects);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[8], &data.data.enmCompression);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[9], (uint32_t *)&data.data.enmChecksumType);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetPv(&paParms[10], &data.data.pvChecksum, &data.data.cbChecksum);
-                    VERIFY_BUFFER_SIZE_UINT32(paParms[11], data.data.cbChecksum);
-                    LogFlowFunc(("fFlags=0x%x, cbTotalSize=%RU64, cObj=%RU64\n",
-                                 data.data.uFlags, data.data.cbTotal, data.data.cObjects));
-                    DO_HOST_CALLBACK();
-                }
+
+                ASSERT_GUEST_BREAK(cParms == 12);
+
+                VBOXDNDCBSNDDATAHDRDATA data;
+                RT_ZERO(data);
+                data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA_HDR;
+
+                GET_CONTEXT_ID_PARM0();
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.data.uFlags);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.data.uScreenId);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU64(&paParms[idxParm++], &data.data.cbTotal);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.data.cbMeta);
+                ASSERT_GUEST_RC_BREAK(rc);
+                ASSERT_GUEST_BREAK(data.data.cbMeta <= data.data.cbTotal);
+                rc = HGCMSvcGetPv(&paParms[idxParm++], &data.data.pvMetaFmt, &data.data.cbMetaFmt);
+                ASSERT_GUEST_RC_BREAK(rc);
+                VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm++], data.data.cbMetaFmt);
+                rc = HGCMSvcGetU64(&paParms[idxParm++], &data.data.cObjects);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.data.enmCompression);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], (uint32_t *)&data.data.enmChecksumType);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetPv(&paParms[idxParm++], &data.data.pvChecksum, &data.data.cbChecksum);
+                ASSERT_GUEST_RC_BREAK(rc);
+                VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm], data.data.cbChecksum);
+
+                DO_HOST_CALLBACK();
                 break;
             }
             case GUEST_DND_GH_SND_DATA:
             {
                 LogFlowFunc(("GUEST_DND_GH_SND_DATA\n"));
+
                 switch (pClient->GetProtocolVer())
                 {
                     case 3:
                     {
-                        if (cParms == 5)
-                        {
-                            VBOXDNDCBSNDDATADATA data;
-                            RT_ZERO(data);
-                            data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA;
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[1], (void**)&data.data.u.v3.pvData, &data.data.u.v3.cbData);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.data.u.v3.cbData);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[3], (void**)&data.data.u.v3.pvChecksum, &data.data.u.v3.cbChecksum);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[4], data.data.u.v3.cbChecksum);
-                            DO_HOST_CALLBACK();
-                        }
+                        ASSERT_GUEST_BREAK(cParms == 5);
+
+                        VBOXDNDCBSNDDATADATA data;
+                        RT_ZERO(data);
+                        data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA;
+
+                        GET_CONTEXT_ID_PARM0();
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.data.u.v3.pvData, &data.data.u.v3.cbData);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm++], data.data.u.v3.cbData);
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.data.u.v3.pvChecksum, &data.data.u.v3.cbChecksum);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm], data.data.u.v3.cbChecksum);
+
+                        DO_HOST_CALLBACK();
                         break;
                     }
 
                     case 2:
                     default:
                     {
-                        if (cParms == 2)
-                        {
-                            VBOXDNDCBSNDDATADATA data;
-                            RT_ZERO(data);
-                            data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA;
-                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.data.u.v1.pvData, &data.data.u.v1.cbData);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[1], &data.data.u.v1.cbTotalSize);
-                            DO_HOST_CALLBACK();
-                        }
+                        ASSERT_GUEST_BREAK(cParms == 2);
+
+                        VBOXDNDCBSNDDATADATA data;
+                        RT_ZERO(data);
+                        data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA;
+
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.data.u.v1.pvData, &data.data.u.v1.cbData);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        rc = HGCMSvcGetU32(&paParms[idxParm], &data.data.u.v1.cbTotalSize);
+                        ASSERT_GUEST_RC_BREAK(rc);
+
+                        DO_HOST_CALLBACK();
                         break;
                     }
                 }
@@ -745,39 +724,18 @@ do { \
             {
                 LogFlowFunc(("GUEST_DND_GH_SND_DIR\n"));
 
+                ASSERT_GUEST_BREAK(cParms >= 3);
+
                 VBOXDNDCBSNDDIRDATA data;
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DIR;
 
-                switch (pClient->GetProtocolVer())
-                {
-                    case 3:
-                    {
-                        if (cParms == 4)
-                        {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pszPath, &data.cbPath);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbPath);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[3], &data.fMode);
-                        }
-                        break;
-                    }
-
-                    case 2:
-                    default:
-                    {
-                        if (cParms == 3)
-                        {
-                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.pszPath, &data.cbPath);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[1], data.cbPath);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[2], &data.fMode);
-                        }
-                        break;
-                    }
-                }
+                GET_CONTEXT_ID_PARM0();
+                rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.pszPath, &data.cbPath);
+                ASSERT_GUEST_RC_BREAK(rc);
+                VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm++], data.cbPath);
+                rc = HGCMSvcGetU32(&paParms[idxParm], &data.fMode);
+                ASSERT_GUEST_RC_BREAK(rc);
 
                 DO_HOST_CALLBACK();
                 break;
@@ -786,27 +744,25 @@ do { \
             case GUEST_DND_GH_SND_FILE_HDR:
             {
                 LogFlowFunc(("GUEST_DND_GH_SND_FILE_HDR\n"));
-                if (cParms == 6)
-                {
-                    VBOXDNDCBSNDFILEHDRDATA data;
-                    RT_ZERO(data);
-                    data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_HDR;
 
-                    rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pszFilePath, &data.cbFilePath);
-                    VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbFilePath);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[3], &data.fFlags);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU32(&paParms[4], &data.fMode);
-                    if (RT_SUCCESS(rc))
-                        rc = HGCMSvcGetU64(&paParms[5], &data.cbSize);
+                ASSERT_GUEST_BREAK(cParms == 6);
 
-                    LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x, cbSize=%RU64\n",
-                                 data.pszFilePath, data.cbFilePath, data.fMode, data.cbSize));
-                    DO_HOST_CALLBACK();
-                }
+                VBOXDNDCBSNDFILEHDRDATA data;
+                RT_ZERO(data);
+                data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_HDR;
+
+                GET_CONTEXT_ID_PARM0();
+                rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.pszFilePath, &data.cbFilePath);
+                ASSERT_GUEST_RC_BREAK(rc);
+                VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm++], data.cbFilePath);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.fFlags);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.fMode);
+                ASSERT_GUEST_RC_BREAK(rc);
+                rc = HGCMSvcGetU64(&paParms[idxParm], &data.cbSize);
+                ASSERT_GUEST_RC_BREAK(rc);
+
+                DO_HOST_CALLBACK();
                 break;
             }
             case GUEST_DND_GH_SND_FILE_DATA:
@@ -818,63 +774,59 @@ do { \
                     /* Protocol v3 adds (optional) checksums. */
                     case 3:
                     {
-                        if (cParms == 5)
-                        {
-                            VBOXDNDCBSNDFILEDATADATA data;
-                            RT_ZERO(data);
-                            data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
+                        ASSERT_GUEST_BREAK(cParms == 5);
 
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pvData, &data.cbData);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbData);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[3], (void**)&data.u.v3.pvChecksum, &data.u.v3.cbChecksum);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[4], data.u.v3.cbChecksum);
+                        VBOXDNDCBSNDFILEDATADATA data;
+                        RT_ZERO(data);
+                        data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
 
-                            LogFlowFunc(("pvData=0x%p, cbData=%RU32\n", data.pvData, data.cbData));
-                            DO_HOST_CALLBACK();
-                        }
+                        GET_CONTEXT_ID_PARM0();
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.pvData, &data.cbData);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm++], data.cbData);
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.u.v3.pvChecksum, &data.u.v3.cbChecksum);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm], data.u.v3.cbChecksum);
+
+                        DO_HOST_CALLBACK();
                         break;
                     }
                     /* Protocol v2 only sends the next data chunks to reduce traffic. */
                     case 2:
                     {
-                        if (cParms == 3)
-                        {
-                            VBOXDNDCBSNDFILEDATADATA data;
-                            RT_ZERO(data);
-                            data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pvData, &data.cbData);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[2], data.cbData);
+                        ASSERT_GUEST_BREAK(cParms == 3);
 
-                            LogFlowFunc(("cbData=%RU32, pvData=0x%p\n", data.cbData, data.pvData));
-                            DO_HOST_CALLBACK();
-                        }
+                        VBOXDNDCBSNDFILEDATADATA data;
+                        RT_ZERO(data);
+                        data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
+
+                        GET_CONTEXT_ID_PARM0();
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.pvData, &data.cbData);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm], data.cbData);
+
+                        DO_HOST_CALLBACK();
                         break;
                     }
                     /* Protocol v1 sends the file path and attributes for every file chunk (!). */
                     default:
                     {
-                        if (cParms == 5)
-                        {
-                            VBOXDNDCBSNDFILEDATADATA data;
-                            RT_ZERO(data);
-                            data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
-                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.u.v1.pszFilePath, &data.u.v1.cbFilePath);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[1], data.u.v1.cbFilePath);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetPv(&paParms[2], (void**)&data.pvData, &data.cbData);
-                            VERIFY_BUFFER_SIZE_UINT32(paParms[3], data.cbData);
-                            if (RT_SUCCESS(rc))
-                                rc = HGCMSvcGetU32(&paParms[4], &data.u.v1.fMode);
+                        ASSERT_GUEST_BREAK(cParms == 5);
 
-                            LogFlowFunc(("pszFilePath=%s, cbData=%RU32, pvData=0x%p, fMode=0x%x\n",
-                                         data.u.v1.pszFilePath, data.cbData, data.pvData, data.u.v1.fMode));
-                            DO_HOST_CALLBACK();
-                        }
+                        VBOXDNDCBSNDFILEDATADATA data;
+                        RT_ZERO(data);
+                        data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
+
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.u.v1.pszFilePath, &data.u.v1.cbFilePath);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm++], data.u.v1.cbFilePath);
+                        rc = HGCMSvcGetPv(&paParms[idxParm++], (void**)&data.pvData, &data.cbData);
+                        ASSERT_GUEST_RC_BREAK(rc);
+                        VERIFY_BUFFER_SIZE_UINT32(paParms[idxParm++], data.cbData);
+                        rc = HGCMSvcGetU32(&paParms[idxParm], &data.u.v1.fMode);
+                        ASSERT_GUEST_RC_BREAK(rc);
+
+                        DO_HOST_CALLBACK();
                         break;
                     }
                 }
@@ -884,41 +836,15 @@ do { \
             {
                 LogFlowFunc(("GUEST_DND_GH_EVT_ERROR\n"));
 
+                ASSERT_GUEST_BREAK(cParms >= 1);
+
                 VBOXDNDCBEVTERRORDATA data;
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_GH_EVT_ERROR;
 
-                switch (pClient->GetProtocolVer())
-                {
-                    case 3:
-                    {
-                        if (cParms == 2)
-                        {
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-                            if (RT_SUCCESS(rc))
-                            {
-                                uint32_t rcOp;
-                                rc = HGCMSvcGetU32(&paParms[1], &rcOp);
-                                if (RT_SUCCESS(rc))
-                                    data.rc = rcOp;
-                            }
-                        }
-                        break;
-                    }
-
-                    case 2:
-                    default:
-                    {
-                        if (cParms == 1)
-                        {
-                            uint32_t rcOp;
-                            rc = HGCMSvcGetU32(&paParms[0], &rcOp);
-                            if (RT_SUCCESS(rc))
-                                data.rc = (int32_t)rcOp;
-                        }
-                        break;
-                    }
-                }
+                GET_CONTEXT_ID_PARM0();
+                rc = HGCMSvcGetU32(&paParms[idxParm], (uint32_t *)&data.rc);
+                ASSERT_GUEST_RC_BREAK(rc);
 
                 DO_HOST_CALLBACK();
                 break;
