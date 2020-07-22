@@ -218,17 +218,19 @@ typedef uint32_t DNDTRANSFERLISTFLAGS;
 
 /** No flags specified. */
 #define DNDTRANSFERLIST_FLAGS_NONE                   0
-/** Resolve all symlinks. Currently not supported. */
-#define DNDTRANSFERLIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(0)
+/** Enables recurisve directory handling. */
+#define DNDTRANSFERLIST_FLAGS_RECURSIVE              RT_BIT(0)
+/** Resolve all symlinks. Currently not supported and will be ignored. */
+#define DNDTRANSFERLIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(1)
 /** Keep the files + directory entries open while
  *  being in this list. */
-#define DNDTRANSFERLIST_FLAGS_KEEP_OPEN              RT_BIT(1)
+#define DNDTRANSFERLIST_FLAGS_KEEP_OPEN              RT_BIT(2)
 /** Lazy loading: Only enumerate sub directories when needed. Not implemented yet.
  ** @todo Implement lazy loading.  */
-#define DNDTRANSFERLIST_FLAGS_LAZY                   RT_BIT(2)
+#define DNDTRANSFERLIST_FLAGS_LAZY                   RT_BIT(3)
 
 /** Mask of all valid DnD transfer list flags. */
-#define DNDTRANSFERLIST_FLAGS_VALID_MASK             UINT32_C(0x7)
+#define DNDTRANSFERLIST_FLAGS_VALID_MASK             UINT32_C(0xF)
 
 /**
  * Enumeration for specifying a transfer list format.
@@ -254,8 +256,10 @@ typedef struct DNDTRANSFERLISTROOT
 {
     /** List node. */
     RTLISTNODE Node;
-    /** Pointer to the relative, allocated root path.
-     *  Always ends with a trailing slash. */
+    /** Pointer to the allocated root path.
+     *  - Relative to the list's root path
+     *  - Always ends with a trailing slash
+     *  - Always stored in transport style (UNIX-y). */
     char      *pszPathRoot;
 } DNDTRANSFERLISTROOT;
 /** Pointer to a DnD list root entry. */
@@ -272,7 +276,7 @@ typedef struct DNDTRANSFERLIST
      *  Always ends with a separator. */
     char                   *pszPathRootAbs;
     /** List of all relative (to \a pszPathRootAbs) top-level file/directory entries, of type DNDTRANSFERLISTROOT.
-     *  Note: All paths are kept internally as UNIX paths for
+     *  Note: All paths are stored internally in transport style (UNIX paths) for
      *        easier conversion/handling!  */
     RTLISTANCHOR            lstRoot;
     /** Total number of all transfer root entries. */
