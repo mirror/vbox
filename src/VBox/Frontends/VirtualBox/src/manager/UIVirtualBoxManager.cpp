@@ -1240,7 +1240,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
     QAction *pAction = qobject_cast<QAction*>(sender());
     AssertMsgReturnVoid(pAction, ("This slot should be called by action only!\n"));
     const QString strPath = pAction->property("path").toString();
-    QStringList arguments = QStringList() << pAction->property("arguments").toString();
+    QStringList arguments = pAction->property("arguments").toString().split(' ');
 
     /* Get current-item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -1257,7 +1257,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 #endif
 
     /* Execute console application finally: */
-    QProcess::startDetached(QString("%1 %2").arg(strPath, arguments.join(' ')));
+    QProcess::startDetached(strPath, arguments);
 }
 
 void UIVirtualBoxManager::sltPerformCopyCommandSerial()
