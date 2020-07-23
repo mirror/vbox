@@ -304,7 +304,7 @@ QSize UIChart::sizeHint() const
 
 void UIChart::retranslateUi()
 {
-    m_strGAWarning = QApplication::translate("UIVMInformationDialog", "No guest additions! This metric requires guest additions to work properly.");
+    m_strGAWarning = QApplication::translate("UIVMInformationDialog", "This metric requires guest additions to work.");
     m_strResetActionLabel = QApplication::translate("UIVMInformationDialog", "Reset");
     m_strPieChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Show Pie Chart");
     m_strAreaChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Draw Area Chart");
@@ -551,15 +551,18 @@ void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
 void UIChart::drawDisabledChartRectangle(QPainter &painter)
 {
     painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(60, 60, 60, 80));
-    painter.drawRect(QRect(0, 0, width(), height()));
+    painter.setBrush(QColor(255, 255, 255, 150));
+    painter.drawRect(m_lineChartRect);
     painter.setPen(QColor(20, 20, 20, 180));
     QFont font = painter.font();
+    int iFontSize = 64;
+    do {
+        font.setPixelSize(iFontSize);
+        --iFontSize;
+    }while(QFontMetrics(font).width(m_strGAWarning) >= m_lineChartRect.width());
     font.setBold(true);
-    /** @todo make this size dynamic. aka. autoscale the font. */
-    font.setPixelSize(16);
     painter.setFont(font);
-    painter.drawText(2 * m_iMarginLeft, 15 * m_iMarginTop, m_strGAWarning);
+    painter.drawText(m_lineChartRect, m_strGAWarning);
 }
 
 void UIChart::sltCreateContextMenu(const QPoint &point)
