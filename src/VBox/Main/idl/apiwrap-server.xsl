@@ -1806,7 +1806,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     </xsl:for-each>
     <xsl:text>)
 {
-    LogRelFlow(("{%p} %s:enter</xsl:text>
+    LogRelFlow(("{%p} %s: enter</xsl:text>
     <xsl:for-each select="param">
         <xsl:text> </xsl:text>
         <xsl:apply-templates select="@type" mode="logparamtext">
