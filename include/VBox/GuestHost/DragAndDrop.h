@@ -189,7 +189,8 @@ typedef struct DNDTRANSFEROBJECT
 /** Pointer to a DnD transfer object. */
 typedef DNDTRANSFEROBJECT *PDNDTRANSFEROBJECT;
 
-int DnDTransferObjectInit(PDNDTRANSFEROBJECT pObj, DNDTRANSFEROBJTYPE enmType, const char *pcszPathSrcAbs, const char *pcszPathDst);
+int DnDTransferObjectInit(PDNDTRANSFEROBJECT pObj);
+int DnDTransferObjectInitEx(PDNDTRANSFEROBJECT pObj, DNDTRANSFEROBJTYPE enmType, const char *pcszPathSrcAbs, const char *pcszPathDst);
 void DnDTransferObjectDestroy(PDNDTRANSFEROBJECT pObj);
 void DnDTransferObjectClose(PDNDTRANSFEROBJECT pObj);
 void DnDTransferObjectReset(PDNDTRANSFEROBJECT pObj);

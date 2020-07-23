@@ -191,8 +191,8 @@ static int dndTransferListObjAdd(PDNDTRANSFERLIST pList, const char *pcszSrcAbs,
             {
                 const bool fIsFile = RTFS_IS_FILE(fMode);
 
-                rc = DnDTransferObjectInit(pObj, fIsFile ? DNDTRANSFEROBJTYPE_FILE : DNDTRANSFEROBJTYPE_DIRECTORY,
-                                           pList->pszPathRootAbs, &pcszSrcAbs[idxPathToAdd]);
+                rc = DnDTransferObjectInitEx(pObj, fIsFile ? DNDTRANSFEROBJTYPE_FILE : DNDTRANSFEROBJTYPE_DIRECTORY,
+                                             pList->pszPathRootAbs, &pcszSrcAbs[idxPathToAdd]);
                 if (RT_SUCCESS(rc))
                 {
                     if (fIsFile)

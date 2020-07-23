@@ -498,8 +498,8 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 #else
                                 uint32_t fCreationMode = (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR;
 #endif
-                                rc = DnDTransferObjectInit(&objCur, DNDTRANSFEROBJTYPE_FILE,
-                                                           pszDropDir /* Source (base) path */, szPathName /* Destination path */);
+                                rc = DnDTransferObjectInitEx(&objCur, DNDTRANSFEROBJTYPE_FILE,
+                                                             pszDropDir /* Source (base) path */, szPathName /* Destination path */);
                                 if (RT_SUCCESS(rc))
                                 {
                                     rc = DnDTransferObjectOpen(&objCur, fOpen, fCreationMode, DNDTRANSFEROBJECT_FLAGS_NONE);

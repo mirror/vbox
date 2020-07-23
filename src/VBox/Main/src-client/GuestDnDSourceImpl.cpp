@@ -721,8 +721,8 @@ int GuestDnDSource::i_onReceiveDir(GuestDnDRecvCtx *pCtx, const char *pszPath, u
     const PDNDTRANSFEROBJECT pObj = &pCtx->Transfer.ObjCur;
     const PDNDDROPPEDFILES   pDF  = &pCtx->Transfer.DroppedFiles;
 
-    int rc = DnDTransferObjectInit(pObj, DNDTRANSFEROBJTYPE_DIRECTORY,
-                                   DnDDroppedFilesGetDirAbs(pDF), pszPath);
+    int rc = DnDTransferObjectInitEx(pObj, DNDTRANSFEROBJTYPE_DIRECTORY,
+                                     DnDDroppedFilesGetDirAbs(pDF), pszPath);
     if (RT_SUCCESS(rc))
     {
         const char *pcszPathAbs = DnDTransferObjectGetSourcePath(pObj);
@@ -801,7 +801,7 @@ int GuestDnDSource::i_onReceiveFileHdr(GuestDnDRecvCtx *pCtx, const char *pszPat
 
         const PDNDDROPPEDFILES pDF = &pCtx->Transfer.DroppedFiles;
 
-        rc = DnDTransferObjectInit(pObj, DNDTRANSFEROBJTYPE_FILE, DnDDroppedFilesGetDirAbs(pDF), pszPath);
+        rc = DnDTransferObjectInitEx(pObj, DNDTRANSFEROBJTYPE_FILE, DnDDroppedFilesGetDirAbs(pDF), pszPath);
         AssertRCBreak(rc);
 
         const char *pcszSource = DnDTransferObjectGetSourcePath(pObj);

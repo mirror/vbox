@@ -41,6 +41,36 @@ static int dndTransferObjectQueryInfoInternal(PDNDTRANSFEROBJECT pObj);
 
 
 /**
+ * Initializes the object, internal version.
+ *
+ * @returns VBox status code.
+ * @param   pObj                DnD transfer object to initialize.
+ */
+static int dndTransferObjectInitInternal(PDNDTRANSFEROBJECT pObj)
+{
+    AssertPtrReturn(pObj, VERR_INVALID_POINTER);
+
+    pObj->enmType = DNDTRANSFEROBJTYPE_UNKNOWN;
+    pObj->idxDst  = 0;
+    pObj->pszPath = NULL;
+
+    RT_ZERO(pObj->u);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Initializes the object.
+ *
+ * @returns VBox status code.
+ * @param   pObj                DnD transfer object to initialize.
+ */
+int DnDTransferObjectInit(PDNDTRANSFEROBJECT pObj)
+{
+    return dndTransferObjectInitInternal(pObj);
+}
+
+/**
  * Initializes the object with an expected object type and file path.
  *
  * @returns VBox status code.
@@ -50,35 +80,19 @@ static int dndTransferObjectQueryInfoInternal(PDNDTRANSFEROBJECT pObj);
  * @param   pcszPathDst         Relative path of file this object represents at the destination.
  *                              Together with \a pcszPathSrcAbs this represents the complete absolute local path.
  */
-int DnDTransferObjectInit(PDNDTRANSFEROBJECT pObj, DNDTRANSFEROBJTYPE enmType, const char *pcszPathSrcAbs, const char *pcszPathDst)
+int DnDTransferObjectInitEx(PDNDTRANSFEROBJECT pObj,
+                            DNDTRANSFEROBJTYPE enmType, const char *pcszPathSrcAbs, const char *pcszPathDst)
 {
     AssertPtrReturn(pObj, VERR_INVALID_POINTER);
     AssertReturn(pObj->enmType == DNDTRANSFEROBJTYPE_UNKNOWN, VERR_WRONG_ORDER); /* Already initialized? */
     /* pcszPathSrcAbs can be empty. */
     AssertPtrReturn(pcszPathDst, VERR_INVALID_POINTER);
 
-    switch (enmType)
-    {
-        case DNDTRANSFEROBJTYPE_FILE:
-        {
-            pObj->u.File.hFile = NIL_RTFILE;
-            break;
-        }
+    int rc = dndTransferObjectInitInternal(pObj);
+    AssertRCReturn(rc, rc);
 
-        case DNDTRANSFEROBJTYPE_DIRECTORY:
-        {
-            pObj->u.Dir.hDir = NIL_RTDIR;
-            break;
-        }
-
-        default:
-            AssertFailedReturn(VERR_NOT_IMPLEMENTED);
-            break; /* Never reached */
-    }
-
-    int rc = DnDPathValidate(pcszPathDst, false /* Does not need to exist */);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = DnDPathValidate(pcszPathDst, false /* Does not need to exist */);
+    AssertRCReturn(rc, rc);
 
     char szPath[RTPATH_MAX + 1];
 

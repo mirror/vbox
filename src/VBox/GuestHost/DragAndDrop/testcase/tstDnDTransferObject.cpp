@@ -47,43 +47,43 @@ static void tstPaths(RTTEST hTest)
     /*
      * Paths handling.
      */
-    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_FILE, "", "/rel/path/to/dst"));
-    RTTEST_CHECK_RC   (hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_FILE, "", "/rel/path/to/dst"), VERR_WRONG_ORDER);
+    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_FILE, "", "/rel/path/to/dst"));
+    RTTEST_CHECK_RC   (hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_FILE, "", "/rel/path/to/dst"), VERR_WRONG_ORDER);
     DnDTransferObjectReset(&Obj);
 
-    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_FILE, "/src/path1", "dst/path2"));
+    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_FILE, "/src/path1", "dst/path2"));
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetSourcePath(&Obj), "/src/path1/dst/path2") == 0);
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetDestPath(&Obj), "dst/path2") == 0);
     RTTEST_CHECK(hTest,    DnDTransferObjectGetDestPathEx(&Obj, DNDTRANSFEROBJPATHSTYLE_DOS, szBuf, sizeof(szBuf)) == VINF_SUCCESS
                         && RTStrCmp(szBuf, "dst\\path2") == 0);
     DnDTransferObjectReset(&Obj);
-    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_FILE, "", "dst/with/ending/slash/"));
+    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_FILE, "", "dst/with/ending/slash/"));
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetDestPath(&Obj), "dst/with/ending/slash/") == 0);
     RTTEST_CHECK(hTest,    DnDTransferObjectGetDestPathEx(&Obj, DNDTRANSFEROBJPATHSTYLE_TRANSPORT, szBuf, sizeof(szBuf)) == VINF_SUCCESS
                         && RTStrCmp(szBuf, "dst/with/ending/slash/") == 0);
     DnDTransferObjectReset(&Obj);
-    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "", "dst/path2"));
+    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "", "dst/path2"));
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetSourcePath(&Obj), "dst/path2/") == 0);
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetDestPath(&Obj), "dst/path2/") == 0);
     DnDTransferObjectReset(&Obj);
-    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "", "dst\\to\\path2"));
+    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "", "dst\\to\\path2"));
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetSourcePath(&Obj), "dst/to/path2/") == 0);
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetDestPath(&Obj), "dst/to/path2/") == 0);
     DnDTransferObjectReset(&Obj);
     /* Test that the destination does not have a beginning slash. */
-    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "/src/path2", "/dst/to/path2/"));
+    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "/src/path2", "/dst/to/path2/"));
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetSourcePath(&Obj), "/src/path2/dst/to/path2/") == 0);
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetDestPath(&Obj), "dst/to/path2/") == 0);
     DnDTransferObjectReset(&Obj);
-    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "/src/path2", "//////dst/to/path2/"));
+    RTTEST_CHECK_RC_OK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "/src/path2", "//////dst/to/path2/"));
     RTTEST_CHECK(hTest, RTStrCmp(DnDTransferObjectGetDestPath(&Obj), "dst/to/path2/") == 0);
 
     /*
      * Invalid stuff.
      */
     DnDTransferObjectReset(&Obj);
-    RTTEST_CHECK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "/src/path3", "../../dst/path3") == VERR_INVALID_PARAMETER);
-    RTTEST_CHECK(hTest, DnDTransferObjectInit(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "/src/../../path3", "dst/path3") == VERR_INVALID_PARAMETER);
+    RTTEST_CHECK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "/src/path3", "../../dst/path3") == VERR_INVALID_PARAMETER);
+    RTTEST_CHECK(hTest, DnDTransferObjectInitEx(&Obj, DNDTRANSFEROBJTYPE_DIRECTORY, "/src/../../path3", "dst/path3") == VERR_INVALID_PARAMETER);
 
     /*
      * Reset handling.
