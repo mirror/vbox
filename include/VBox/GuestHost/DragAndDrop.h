@@ -307,6 +307,8 @@ void DnDTransferListReset(PDNDTRANSFERLIST pList);
 int DnDTransferListAppendPath(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char *pszPath, DNDTRANSFERLISTFLAGS fFlags);
 int DnDTransferListAppendPathsFromBuffer(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char *pszPaths, size_t cbPaths, const char *pcszSeparator, DNDTRANSFERLISTFLAGS fFlags);
 int DnDTransferListAppendPathsFromArray(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char * const *papcszPaths, size_t cPaths, DNDTRANSFERLISTFLAGS fFlags);
+int DnDTransferListAppendRootsFromBuffer(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char *pszPaths, size_t cbPaths, const char *pcszSeparator, DNDTRANSFERLISTFLAGS fFlags);
+int DnDTransferListAppendRootsFromArray(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char * const *papcszPaths, size_t cPaths, DNDTRANSFERLISTFLAGS fFlags);
 
 int DnDTransferListGetRootsEx(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, const char *pcszPathBase, const char *pcszSeparator, char **ppszBuffer, size_t *pcbBuffer);
 int DnDTransferListGetRoots(PDNDTRANSFERLIST pList, DNDTRANSFERLISTFMT enmFmt, char **ppszBuffer, size_t *pcbBuffer);

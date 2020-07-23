@@ -759,6 +759,117 @@ int DnDTransferListAppendPathsFromArray(PDNDTRANSFERLIST pList,
 }
 
 /**
+ * Appends the root entries for a transfer list.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to append to.
+ * @param   enmFmt              Format of \a pszPaths to append.
+ * @param   pszPaths            Buffer of paths to append.
+ * @param   cbPaths             Size (in bytes) of buffer of paths to append.
+ * @param   pcszSeparator       Separator string to use.
+ * @param   fFlags              Transfer list flags to use for appending.
+ */
+int DnDTransferListAppendRootsFromBuffer(PDNDTRANSFERLIST pList,
+                                         DNDTRANSFERLISTFMT enmFmt, const char *pszPaths, size_t cbPaths,
+                                         const char *pcszSeparator, DNDTRANSFERLISTFLAGS fFlags)
+{
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPaths, VERR_INVALID_POINTER);
+    AssertReturn(cbPaths, VERR_INVALID_PARAMETER);
+
+    char **papszPaths = NULL;
+    size_t cPaths = 0;
+    int rc = RTStrSplit(pszPaths, cbPaths, pcszSeparator, &papszPaths, &cPaths);
+    if (RT_SUCCESS(rc))
+        rc = DnDTransferListAppendRootsFromArray(pList, enmFmt, papszPaths, cPaths, fFlags);
+
+    for (size_t i = 0; i < cPaths; ++i)
+        RTStrFree(papszPaths[i]);
+    RTMemFree(papszPaths);
+
+    return rc;
+}
+
+/**
+ * Appends root entries to a transfer list.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to append root entries to.
+ * @param   enmFmt              Format of \a papcszPaths to append.
+ * @param   papcszPaths         Array of paths to append.
+ * @param   cPaths              Number of paths in \a papcszPaths to append.
+ * @param   fFlags              Transfer list flags to use for appending.
+ */
+int DnDTransferListAppendRootsFromArray(PDNDTRANSFERLIST pList,
+                                        DNDTRANSFERLISTFMT enmFmt,
+                                        const char * const *papcszPaths, size_t cPaths, DNDTRANSFERLISTFLAGS fFlags)
+{
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrReturn(papcszPaths, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~DNDTRANSFERLIST_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+
+    AssertMsgReturn(pList->pszPathRootAbs, ("Root path not set yet\n"), VERR_WRONG_ORDER);
+
+    int rc = VINF_SUCCESS;
+
+    if (!cPaths) /* Nothing to add? Bail out. */
+        return VINF_SUCCESS;
+
+    char **papszPathsTmp = NULL;
+
+    /* If URI data is being handed in, extract the paths first. */
+    if (enmFmt == DNDTRANSFERLISTFMT_URI)
+    {
+        papszPathsTmp = (char **)RTMemAlloc(sizeof(char *) * cPaths);
+        if (papszPathsTmp)
+        {
+            for (size_t i = 0; i < cPaths; i++)
+                papszPathsTmp[i] = RTUriFilePath(papcszPaths[i]);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    char szPath[RTPATH_MAX];
+
+    /*
+     * Add all root entries to the root list.
+     */
+    for (size_t i = 0; i < cPaths; i++)
+    {
+        const char *pcszPath = enmFmt == DNDTRANSFERLISTFMT_NATIVE
+                             ? papcszPaths[i] : papszPathsTmp[i];
+
+        rc = RTPathJoin(szPath, sizeof(szPath), pList->pszPathRootAbs, pcszPath);
+        AssertRCBreak(rc);
+
+        rc = DnDPathConvert(szPath, sizeof(szPath), DNDPATHCONVERT_FLAGS_TRANSPORT);
+        AssertRCBreak(rc);
+
+        rc = dndTransferListRootAdd(pList, szPath);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("DnD: Adding root entry '%s' (format %#x, root '%s') to transfer list failed with %Rrc\n",
+                    szPath, enmFmt, pList->pszPathRootAbs, rc));
+            break;
+        }
+    }
+
+    if (papszPathsTmp)
+    {
+        for (size_t i = 0; i < cPaths; i++)
+            RTStrFree(papszPathsTmp[i]);
+        RTMemFree(papszPathsTmp);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Returns the first transfer object in a list.
  *
  * @returns Pointer to transfer object if found, or NULL if not found.
