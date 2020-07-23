@@ -336,6 +336,8 @@ struct GuestDnDTransferSendData : public GuestDnDTransferData
         : fObjState(0)
     {
         RT_ZERO(List);
+        int rc2 = DnDTransferListInit(&List);
+        AssertRC(rc2);
     }
 
     virtual ~GuestDnDTransferSendData()
@@ -390,8 +392,16 @@ struct GuestDnDTransferRecvData : public GuestDnDTransferData
     GuestDnDTransferRecvData()
     {
         RT_ZERO(DroppedFiles);
+        int rc2 = DnDDroppedFilesInit(&DroppedFiles);
+        AssertRC(rc2);
+
         RT_ZERO(List);
+        rc2 = DnDTransferListInit(&List);
+        AssertRC(rc2);
+
         RT_ZERO(ObjCur);
+        rc2 = DnDTransferObjectInit(&ObjCur);
+        AssertRC(rc2);
     }
 
     virtual ~GuestDnDTransferRecvData()

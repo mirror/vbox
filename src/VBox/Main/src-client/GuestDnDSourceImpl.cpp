@@ -564,7 +564,7 @@ int GuestDnDSource::i_onReceiveDataHdr(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATAHDR
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
-    LogRel2(("DnD: Receiving %RU64 bytes total data (%RU64 bytes meta data, %RU64 objects) from guest ...\n",
+    LogRel2(("DnD: Receiving %RU64 bytes total data (%RU32 bytes meta data, %RU64 objects) from guest ...\n",
              pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->cObjects));
 
     AssertReturn(pDataHdr->cbTotal >= pDataHdr->cbMeta, VERR_INVALID_PARAMETER);
@@ -650,25 +650,30 @@ int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndD
         if (RT_FAILURE(rc))
             return rc;
 
+        AssertReturn(cbData <= mData.mcbBlockSize, VERR_BUFFER_OVERFLOW);
+
         cbMeta = pCtx->Meta.add(pvData, cbData);
+        AssertReturn(cbMeta <= pCtx->Meta.cbData, VERR_BUFFER_OVERFLOW);
 
         LogFlowThisFunc(("cbData=%zu, cbMeta=%zu, cbTotal=%zu\n", cbData, cbMeta, cbTotal));
 
         /*
          * (Meta) Data transfer complete?
          */
-        Assert(cbMeta <= pCtx->Meta.cbAllocated);
-        if (cbMeta == pCtx->Meta.cbAllocated)
+        if (cbMeta == pCtx->Meta.cbData)
         {
             LogRel2(("DnD: Receiving meta data complete\n"));
 
             if (DnDMIMENeedsDropDir(pCtx->strFmtRecv.c_str(), pCtx->strFmtRecv.length()))
             {
-                LogRel2(("DnD: Building transfer list from meta data ...\n"));
+                LogRel2(("DnD: Building root entry list from meta data ...\n"));
 
-                rc = DnDTransferListAppendPathsFromBuffer(&pTransfer->List, DNDTRANSFERLISTFMT_URI,
-                                                          (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, DND_PATH_SEPARATOR,
-                                                          DNDTRANSFERLIST_FLAGS_NONE);
+                rc = DnDTransferListInitEx(&pTransfer->List,
+                                           DnDDroppedFilesGetDirAbs(&pCtx->Transfer.DroppedFiles));
+                if (RT_SUCCESS(rc))
+                    rc = DnDTransferListAppendRootsFromBuffer(&pTransfer->List, DNDTRANSFERLISTFMT_URI,
+                                                              (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, DND_PATH_SEPARATOR,
+                                                              DNDTRANSFERLIST_FLAGS_NONE);
                 /* Validation. */
                 if (RT_SUCCESS(rc))
                 {
@@ -686,7 +691,7 @@ int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndD
                 }
 
                 if (RT_FAILURE(rc))
-                    LogRel(("DnD: Error building transfer list, rc=%Rrc\n", rc));
+                    LogRel(("DnD: Error building root entry list, rc=%Rrc\n", rc));
             }
             else /* Raw data. */
             {
@@ -871,16 +876,13 @@ int GuestDnDSource::i_onReceiveFileData(GuestDnDRecvCtx *pCtx, const void *pvDat
     {
         const PDNDTRANSFEROBJECT pObj = &pCtx->Transfer.ObjCur;
 
-        if (    DnDTransferObjectIsOpen(pObj)
-            && !DnDTransferObjectIsComplete(pObj))
-        {
-            AssertMsgFailed(("Object '%s' not complete yet\n", DnDTransferObjectGetSourcePath(pObj)));
-            rc = VERR_WRONG_ORDER;
-            break;
-        }
-
         const char *pcszSource = DnDTransferObjectGetSourcePath(pObj);
         AssertPtrBreakStmt(pcszSource, VERR_INVALID_POINTER);
+
+        AssertMsgReturn(DnDTransferObjectIsOpen(pObj),
+                        ("Object '%s' not open (anymore)\n", pcszSource), VERR_WRONG_ORDER);
+        AssertMsgReturn(DnDTransferObjectIsComplete(pObj) == false,
+                        ("Object '%s' already marked as complete\n", pcszSource), VERR_WRONG_ORDER);
 
         uint32_t cbWritten;
         rc = DnDTransferObjectWrite(pObj, pvData, cbData, &cbWritten);
