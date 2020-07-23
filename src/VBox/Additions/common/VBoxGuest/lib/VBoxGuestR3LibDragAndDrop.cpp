@@ -853,7 +853,7 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
             Assert(cbData);
 
             /* Use the dropped files directory as the root directory for the current transfer. */
-            rc = DnDTransferListInit(&pMeta->u.URI.Transfer, DnDDroppedFilesGetDirAbs(&droppedFiles));
+            rc = DnDTransferListInitEx(&pMeta->u.URI.Transfer, DnDDroppedFilesGetDirAbs(&droppedFiles));
             if (RT_SUCCESS(rc))
             {
                 rc = DnDTransferListAppendPathsFromBuffer(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
@@ -1733,7 +1733,7 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszF
     if (DnDMIMEHasFileURLs(pszFormat, strlen(pszFormat)))
     {
         DNDTRANSFERLIST lstTransfer;
-        rc = DnDTransferListInit(&lstTransfer, NULL /* pcszRootPathAbs */);
+        rc = DnDTransferListInit(&lstTransfer);
         if (RT_SUCCESS(rc))
         {
             /** @todo Add symlink support (DNDTRANSFERLIST_FLAGS_RESOLVE_SYMLINKS) here. */

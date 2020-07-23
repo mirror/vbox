@@ -63,10 +63,7 @@ static int dndTransferListInitInternal(PDNDTRANSFERLIST pList, const char *pcszR
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
     /* pcszRootPathAbs is optional. */
 
-    if (!strlen(pcszRootPathAbs))
-        return VERR_INVALID_PARAMETER;
-
-    if (pList->pszPathRootAbs)
+    if (pList->pszPathRootAbs) /* Already initialized? */
         return VERR_WRONG_ORDER;
 
     pList->pszPathRootAbs = NULL;
@@ -85,15 +82,26 @@ static int dndTransferListInitInternal(PDNDTRANSFERLIST pList, const char *pcszR
 }
 
 /**
- * Initializes a transfer list.
+ * Initializes a transfer list, extended version.
  *
  * @returns VBox status code.
  * @param   pList               Transfer list to initialize.
  * @param   pcszRootPathAbs     Absolute root path to use for this list. Optional and can be NULL.
  */
-int DnDTransferListInit(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs)
+int DnDTransferListInitEx(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs)
 {
     return dndTransferListInitInternal(pList, pcszRootPathAbs);
+}
+
+/**
+ * Initializes a transfer list.
+ *
+ * @returns VBox status code.
+ * @param   pList               Transfer list to initialize.
+ */
+int DnDTransferListInit(PDNDTRANSFERLIST pList)
+{
+    return dndTransferListInitInternal(pList, NULL /* pcszRootPathAbs */);
 }
 
 /**

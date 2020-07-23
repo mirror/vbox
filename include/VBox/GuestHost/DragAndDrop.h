@@ -298,7 +298,8 @@ typedef struct DNDTRANSFERLIST
 /** Pointer to a DNDTRANSFERLIST struct. */
 typedef DNDTRANSFERLIST *PDNDTRANSFERLIST;
 
-int  DnDTransferListInit(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs);
+int DnDTransferListInit(PDNDTRANSFERLIST pList);
+int DnDTransferListInitEx(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs);
 void DnDTransferListDestroy(PDNDTRANSFERLIST pList);
 void DnDTransferListReset(PDNDTRANSFERLIST pList);
 

@@ -48,14 +48,17 @@ int main()
     RT_ZERO(list);
 
     /* Invalid stuff. */
-    /*RTTEST_CHECK_RC(hTest, DnDTransferListInit(&list, NULL), VERR_INVALID_POINTER);*/
-    RTTEST_CHECK_RC(hTest, DnDTransferListInit(&list, ""), VERR_INVALID_PARAMETER);
-    RTTEST_CHECK_RC(hTest, DnDTransferListInit(&list, szPathWellKnown), VINF_SUCCESS);
-    RTTEST_CHECK_RC(hTest, DnDTransferListInit(&list, szPathWellKnown), VERR_WRONG_ORDER);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, ""), VERR_INVALID_PARAMETER);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown), VERR_WRONG_ORDER);
+    DnDTransferListDestroy(&list);
+
+    /* Empty. */
+    RTTEST_CHECK_RC(hTest, DnDTransferListInit(&list), VINF_SUCCESS);
     DnDTransferListDestroy(&list);
 
     /* Initial status. */
-    RTTEST_CHECK_RC(hTest, DnDTransferListInit(&list, szPathWellKnown), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown), VINF_SUCCESS);
     RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list) == 0);
     RTTEST_CHECK(hTest, DnDTransferListObjCount(&list) == 0);
     RTTEST_CHECK(hTest, DnDTransferListObjTotalBytes(&list) == 0);
@@ -93,7 +96,7 @@ int main()
     size_t cbBuf;
 
     /* To URI data. */
-    RTTEST_CHECK_RC(hTest, DnDTransferListInit(&list, szPathWellKnown), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown), VINF_SUCCESS);
     RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, szPathWellKnown, DNDTRANSFERLIST_FLAGS_NONE), VINF_SUCCESS);
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "" /* pszBasePath */, "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
     RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Roots (native):\n%s\n", pszBuf);
