@@ -75,7 +75,8 @@ typedef struct DNDDROPPEDFILES
 /** Pointer to a DnD dropped files directory. */
 typedef DNDDROPPEDFILES *PDNDDROPPEDFILES;
 
-int DnDDroppedFilesInit(PDNDDROPPEDFILES pDF, const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags);
+int DnDDroppedFilesInit(PDNDDROPPEDFILES pDF);
+int DnDDroppedFilesInitEx(PDNDDROPPEDFILES pDF, const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags);
 void DnDDroppedFilesDestroy(PDNDDROPPEDFILES pDF);
 int DnDDroppedFilesAddFile(PDNDDROPPEDFILES pDF, const char *pszFile);
 int DnDDroppedFilesAddDir(PDNDDROPPEDFILES pDF, const char *pszDir);

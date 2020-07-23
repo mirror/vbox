@@ -39,13 +39,29 @@
 static int dndDroppedFilesCloseInternal(PDNDDROPPEDFILES pDF);
 
 
-int DnDDroppedFilesInit(PDNDDROPPEDFILES pDF,
-                        const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFILE_FLAGS_NONE */)
+static int dndDroppedFilesInitInternal(PDNDDROPPEDFILES pDF)
 {
     pDF->m_fOpen = 0;
     pDF->m_hDir  = NIL_RTDIR;
 
+    RTListInit(&pDF->m_lstFiles);
+
+    return VINF_SUCCESS;
+}
+
+int DnDDroppedFilesInitEx(PDNDDROPPEDFILES pDF,
+                          const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFILE_FLAGS_NONE */)
+{
+    int rc = dndDroppedFilesInitInternal(pDF);
+    if (RT_FAILURE(rc))
+        return rc;
+
     return DnDDroppedFilesOpenEx(pDF, pszPath, fFlags);
+}
+
+int DnDDroppedFilesInit(PDNDDROPPEDFILES pDF)
+{
+    return dndDroppedFilesInitInternal(pDF);
 }
 
 void DnDDroppedFilesDestroy(PDNDDROPPEDFILES pDF)
