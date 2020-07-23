@@ -1156,7 +1156,7 @@ void UICloudConsoleManager::retranslateUi()
 void UICloudConsoleManager::configure()
 {
     /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/cloud_console_manager_32px.png", ":/cloud_console_manager_16px.png")); /// @todo use proper icon
+    setWindowIcon(UIIconPool::iconSetFull(":/cloud_console_manager_32px.png", ":/cloud_console_manager_16px.png"));
 }
 
 void UICloudConsoleManager::configureCentralWidget()

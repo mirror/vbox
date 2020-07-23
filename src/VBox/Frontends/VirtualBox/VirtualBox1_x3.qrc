@@ -83,6 +83,11 @@
         <file alias="cloud_console_edit_32px_x3.png">images/x3/cloud_console_edit_32px_x3.png</file>
         <file alias="cloud_console_edit_disabled_16px_x3.png">images/x3/cloud_console_edit_disabled_16px_x3.png</file>
         <file alias="cloud_console_edit_disabled_32px_x3.png">images/x3/cloud_console_edit_disabled_32px_x3.png</file>
+        <file alias="cloud_console_manager_16px_x3.png">images/x3/cloud_console_manager_16px_x3.png</file>
+        <file alias="cloud_console_manager_24px_x3.png">images/x3/cloud_console_manager_24px_x3.png</file>
+        <file alias="cloud_console_manager_32px_x3.png">images/x3/cloud_console_manager_32px_x3.png</file>
+        <file alias="cloud_console_manager_disabled_16px_x3.png">images/x3/cloud_console_manager_disabled_16px_x3.png</file>
+        <file alias="cloud_console_manager_disabled_24px_x3.png">images/x3/cloud_console_manager_disabled_24px_x3.png</file>
         <file alias="cloud_console_profile_16px_x3.png">images/x3/cloud_console_profile_16px_x3.png</file>
         <file alias="cloud_console_profile_add_16px_x3.png">images/x3/cloud_console_profile_add_16px_x3.png</file>
         <file alias="cloud_console_profile_add_32px_x3.png">images/x3/cloud_console_profile_add_32px_x3.png</file>
@@ -447,8 +452,5 @@
         <file alias="log_viewer_find_disabled_16px_x3.png">images/x3/log_viewer_find_disabled_16px_x3.png</file>
         <file alias="log_viewer_find_disabled_32px_x3.png">images/x3/log_viewer_find_disabled_32px_x3.png</file>
         <file alias="log_viewer_goto_next_bookmark_16px_x3.png">images/x3/log_viewer_goto_next_bookmark_16px_x3.png</file>
-        <file alias="log_viewer_goto_previous_bookmark_16px_x3.png">images/x3/log_viewer_goto_previous_bookmark_16px_x3.png</file>
-        <file alias="log_viewer_goto_selected_bookmark_16px_x3.png">images/x3/log_viewer_goto_selected_bookmark_16px_x3.png</file>
-        <file alias="log_viewer_options_16px_x3.png">images/x3/log_viewer_options_16px_x3.png</file>
     </qresource>
 </RCC>
