@@ -31,6 +31,7 @@
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
 #include "UIToolBar.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItemCloud.h"
 #include "UIVirtualMachineItemLocal.h"
 #include "UITools.h"
@@ -276,6 +277,13 @@ void UIVirtualBoxManagerWidget::retranslateUi()
     // after changing the text.
     m_pToolBar->updateLayout();
 #endif
+}
+
+void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &)
+{
+    /* Recache current item info if machine or group item selected: */
+    if (isMachineItemSelected() || isGroupItemSelected())
+        recacheCurrentItemInformation();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolBarResize(const QSize &newSize)
@@ -626,6 +634,10 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
 
 void UIVirtualBoxManagerWidget::prepareConnections()
 {
+    /* Global VBox event handlers: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIVirtualBoxManagerWidget::sltHandleStateChange);
+
     /* Tool-bar connections: */
     connect(m_pToolBar, &UIToolBar::customContextMenuRequested,
             this, &UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest);
@@ -946,15 +958,11 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
     /* Update machine tools restrictions: */
     QList<UIToolType> retrictedTypes;
     if (pItem && pItem->itemType() != UIVirtualMachineItemType_Local)
-    {
         retrictedTypes << UIToolType_Snapshots << UIToolType_Logs << UIToolType_Performance;
-        if (retrictedTypes.contains(m_pPaneTools->toolsType()))
-            m_pPaneTools->setToolsType(UIToolType_Details);
-    }
-    else if (pItem && !pItem->isItemRunning())
-    {
+    else if (pItem && !pItem->isItemStarted())
         retrictedTypes << UIToolType_Performance;
-    }
+    if (retrictedTypes.contains(m_pPaneTools->toolsType()))
+        m_pPaneTools->setToolsType(UIToolType_Details);
     m_pPaneTools->setRestrictedToolTypes(retrictedTypes);
     /* Update machine tools availability: */
     m_pPaneTools->setToolsEnabled(UIToolClass_Machine, fCurrentItemIsOk);

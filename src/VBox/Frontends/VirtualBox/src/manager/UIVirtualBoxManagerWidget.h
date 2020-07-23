@@ -214,6 +214,12 @@ protected:
 
 private slots:
 
+    /** @name CVirtualBox event handling stuff.
+      * @{ */
+        /** Handles CVirtualBox event about state change for machine with @a uId. */
+        void sltHandleStateChange(const QUuid &uId);
+    /** @} */
+
     /** @name Tool-bar stuff.
       * @{ */
         /** Handles signal about tool-bar resize to @a newSize. */
