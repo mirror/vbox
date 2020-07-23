@@ -1086,6 +1086,10 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
             && (uSessionID != pCtx->uSessionID))
         {
             LogFlowFunc(("VM session ID changed to %RU64\n", uSessionID));
+
+            rc = VbglR3DnDDisconnect(pCtx);
+            if (RT_SUCCESS(rc))
+                rc = VbglR3DnDConnect(pCtx);
         }
     }
 
