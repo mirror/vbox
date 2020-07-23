@@ -44,6 +44,7 @@ static int dndDroppedFilesInitInternal(PDNDDROPPEDFILES pDF)
     pDF->m_fOpen = 0;
     pDF->m_hDir  = NIL_RTDIR;
 
+    RTListInit(&pDF->m_lstDirs);
     RTListInit(&pDF->m_lstFiles);
 
     return VINF_SUCCESS;
