@@ -25,6 +25,9 @@
 #include <QStandardPaths>
 #include <QStatusBar>
 #include <QTextEdit>
+#ifndef VBOX_WS_WIN
+# include <QRegExp>
+#endif
 
 /* GUI includes: */
 #include "QIFileDialog.h"
@@ -1236,11 +1239,11 @@ void UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint()
 
 void UIVirtualBoxManager::sltExecuteExternalApplication()
 {
-    /* Acquire passed path and argument: */
+    /* Acquire passed path and argument strings: */
     QAction *pAction = qobject_cast<QAction*>(sender());
     AssertMsgReturnVoid(pAction, ("This slot should be called by action only!\n"));
     const QString strPath = pAction->property("path").toString();
-    QStringList arguments = pAction->property("arguments").toString().split(' ');
+    const QString strArguments = pAction->property("arguments").toString();
 
     /* Get current-item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -1248,16 +1251,26 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
     UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
     AssertPtrReturnVoid(pCloudItem);
 
-    /* Add serial command to arguments: */
+    /* Get cloud machine to acquire serial command: */
     const CCloudMachine comMachine = pCloudItem->machine();
+
 #ifdef VBOX_WS_WIN
+    /* Gather arguments: */
+    QStringList arguments;
+    arguments << strArguments;
     arguments << comMachine.GetSerialConsoleCommandWindows();
-#else
+
+    /* Execute console application finally: */
+    QProcess::startDetached(QString("%1 %2").arg(strPath, arguments.join(' ')));
+#else /* !VBOX_WS_WIN */
+    /* Gather arguments: */
+    QStringList arguments;
+    arguments << parseShellArguments(strArguments);
     arguments << comMachine.GetSerialConsoleCommand();
-#endif
 
     /* Execute console application finally: */
     QProcess::startDetached(strPath, arguments);
+#endif /* !VBOX_WS_WIN */
 }
 
 void UIVirtualBoxManager::sltPerformCopyCommandSerial()
@@ -2438,6 +2451,79 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
         }
     }
 }
+
+#ifndef VBOX_WS_WIN
+QStringList UIVirtualBoxManager::parseShellArguments(const QString &strArguments)
+{
+    //printf("start processing arguments\n");
+
+    /* Parse argument string: */
+    QStringList arguments;
+    QRegExp re("(\"[^\"]+\")|('[^']+')|([^\\s\"']+)");
+    int iPosition = 0;
+    int iIndex = re.indexIn(strArguments, iPosition);
+    while (iIndex != -1)
+    {
+        /* Get what's the sequence we have: */
+        const QString strCap0 = re.cap(0);
+        /* Get what's the double-quoted sequence we have: */
+        const QString strCap1 = re.cap(1);
+        /* Get what's the single-quoted sequence we have: */
+        const QString strCap2 = re.cap(2);
+        /* Get what's the unquoted sequence we have: */
+        const QString strCap3 = re.cap(3);
+
+        /* If new sequence starts where previous ended
+         * we are appending new value to previous one, otherwise
+         * we are appending new value to argument list itself.. */
+
+        /* Do we have double-quoted sequence? */
+        if (!strCap1.isEmpty())
+        {
+            //printf(" [D] double-quoted sequence starting at: %d\n", iIndex);
+            /* Unquote the value and add it to the list: */
+            const QString strValue = strCap1.mid(1, strCap1.size() - 2);
+            if (!arguments.isEmpty() && iIndex == iPosition)
+                arguments.last() += strValue;
+            else
+                arguments << strValue;
+        }
+        /* Do we have single-quoted sequence? */
+        else if (!strCap2.isEmpty())
+        {
+            //printf(" [S] single-quoted sequence starting at: %d\n", iIndex);
+            /* Unquote the value and add it to the list: */
+            const QString strValue = strCap2.mid(1, strCap2.size() - 2);
+            if (!arguments.isEmpty() && iIndex == iPosition)
+                arguments.last() += strValue;
+            else
+                arguments << strValue;
+        }
+        /* Do we have unquoted sequence? */
+        else if (!strCap3.isEmpty())
+        {
+            //printf(" [U] unquoted sequence starting at: %d\n", iIndex);
+            /* Value wasn't unquoted, add it to the list: */
+            if (!arguments.isEmpty() && iIndex == iPosition)
+                arguments.last() += strCap3;
+            else
+                arguments << strCap3;
+        }
+
+        /* Advance position: */
+        iPosition = iIndex + strCap0.size();
+        /* Search for a next sequence: */
+        iIndex = re.indexIn(strArguments, iPosition);
+    }
+
+    //printf("arguments processed:\n");
+    //foreach (const QString &strArgument, arguments)
+    //    printf(" %s\n", strArgument.toUtf8().constData());
+
+    /* Return parsed arguments: */
+    return arguments;
+}
+#endif /* !VBOX_WS_WIN */
 
 void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
 {
