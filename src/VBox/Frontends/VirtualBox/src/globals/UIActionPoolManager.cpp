@@ -3365,7 +3365,6 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor] = new UIActionToggleSelectorToolsMachineShowPerformanceMonitor(this);
     m_pool[UIActionIndexST_M_Group_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
     m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
     m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
@@ -3406,6 +3405,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
     m_pool[UIActionIndexST_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexST_M_Machine_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
+    m_pool[UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor] = new UIActionToggleSelectorToolsMachineShowPerformanceMonitor(this);
     m_pool[UIActionIndexST_M_Machine_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
     m_pool[UIActionIndexST_M_Machine_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
     m_pool[UIActionIndexST_M_Machine_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
@@ -3478,13 +3478,13 @@ void UIActionPoolManager::preparePool()
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Details));
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Logs));
-    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor));
 
     /* 'Machine' action groups: */
     m_groupPool[UIActionIndexST_M_Machine_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Machine_M_Tools));
     m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Details));
     m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Snapshots));
     m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Logs));
+    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor));
 
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexST_M_File].ptfm =                  &UIActionPoolManager::updateMenuFile;
@@ -3598,6 +3598,9 @@ void UIActionPoolManager::updateMenus()
     addMenu(m_mainMenus, action(UIActionIndex_M_Log));
     updateMenuLogViewerWindow();
     updateMenuLogViewer();
+    /* 'Performance' Menu: */
+    addMenu(m_mainMenus, action(UIActionIndex_M_PerformanceMonitor));
+    updateMenuPerformanceMonitor();
 
     /* 'Help' menu: */
     addMenu(m_mainMenus, action(UIActionIndex_Menu_Help));
@@ -3868,7 +3871,6 @@ void UIActionPoolManager::updateMenuGroupTools()
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Details));
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Logs));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Group_M_Tools);
@@ -3886,6 +3888,7 @@ void UIActionPoolManager::updateMenuMachineTools()
     pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Details));
     pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots));
     pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Logs));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Machine_M_Tools);
@@ -4149,6 +4152,21 @@ void UIActionPoolManager::updateMenuSnapshot()
     m_invalidations.remove(UIActionIndexST_M_Snapshot);
 }
 
+void UIActionPoolManager::updateMenuPerformanceMonitor()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndex_M_PerformanceMonitor)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Populate Snapshot-menu: */
+    pMenu->addAction(action(UIActionIndex_M_PerformanceMonitor_S_Export));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexST_M_Snapshot);
+}
+
 void UIActionPoolManager::updateShortcuts()
 {
     /* Call to base-class: */
@@ -4200,8 +4218,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Group_M_Close_S_PowerOff)
                     << action(UIActionIndexST_M_Group_M_Tools_T_Details)
                     << action(UIActionIndexST_M_Group_M_Tools_T_Snapshots)
-                    << action(UIActionIndexST_M_Group_M_Tools_T_Logs)
-                    << action(UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor);
+                    << action(UIActionIndexST_M_Group_M_Tools_T_Logs);
             break;
         }
         case UIActionIndexST_M_Machine:
@@ -4238,7 +4255,8 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_M_Close_S_PowerOff)
                     << action(UIActionIndexST_M_Machine_M_Tools_T_Details)
                     << action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots)
-                    << action(UIActionIndexST_M_Machine_M_Tools_T_Logs);
+                    << action(UIActionIndexST_M_Machine_M_Tools_T_Logs)
+                    << action(UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor);
             break;
         }
         default:

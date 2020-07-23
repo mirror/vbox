@@ -82,7 +82,6 @@ enum UIActionIndexST
     UIActionIndexST_M_Group_M_Tools_T_Details,
     UIActionIndexST_M_Group_M_Tools_T_Snapshots,
     UIActionIndexST_M_Group_M_Tools_T_Logs,
-    UIActionIndexST_M_Group_M_Tools_T_PerformanceMonitor,
     UIActionIndexST_M_Group_S_Discard,
     UIActionIndexST_M_Group_S_ShowLogDialog,
     UIActionIndexST_M_Group_S_Refresh,
@@ -122,6 +121,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Machine_M_Tools_T_Details,
     UIActionIndexST_M_Machine_M_Tools_T_Snapshots,
     UIActionIndexST_M_Machine_M_Tools_T_Logs,
+    UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor,
     UIActionIndexST_M_Machine_S_Discard,
     UIActionIndexST_M_Machine_S_ShowLogDialog,
     UIActionIndexST_M_Machine_S_Refresh,
@@ -281,6 +281,10 @@ protected:
 
     /** Updates 'Snapshot' menu. */
     void updateMenuSnapshot();
+
+    /** Updates 'Performance' menu. */
+    void updateMenuPerformanceMonitor();
+
 
     /** Updates shortcuts. */
     virtual void updateShortcuts() /* override */;

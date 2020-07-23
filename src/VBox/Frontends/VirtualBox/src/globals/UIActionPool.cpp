@@ -2251,6 +2251,32 @@ protected:
     }
 };
 
+/** Menu action extension, used as 'Performance' menu class. */
+class UIActionMenuPerformanceMonitor : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuPerformanceMonitor(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("PerformanceMonitorMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Performance"));
+    }
+};
 
 /** Simple action extension, used as 'Export' action class. */
 class UIActionMenuPerformanceMonitorExport : public UIActionSimple
@@ -2543,6 +2569,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_S_Guest_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
 
     /* Create 'Performance Monitor' actions: */
+    m_pool[UIActionIndex_M_PerformanceMonitor] = new UIActionMenuPerformanceMonitor(this);
     m_pool[UIActionIndex_M_PerformanceMonitor_S_Export] = new UIActionMenuPerformanceMonitorExport(this);
 
 
