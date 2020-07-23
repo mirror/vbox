@@ -72,6 +72,21 @@
 # define gfp_t  unsigned
 #endif
 
+/*
+ * Wrappers around mmap_lock/mmap_sem difference.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+# define LNX_MM_DOWN_READ(a_pMm)    down_read(&(a_pMm)->mmap_lock)
+# define LNX_MM_UP_READ(a_pMm)        up_read(&(a_pMm)->mmap_lock)
+# define LNX_MM_DOWN_WRITE(a_pMm)   down_write(&(a_pMm)->mmap_lock)
+# define LNX_MM_UP_WRITE(a_pMm)       up_write(&(a_pMm)->mmap_lock)
+#else
+# define LNX_MM_DOWN_READ(a_pMm)    down_read(&(a_pMm)->mmap_sem)
+# define LNX_MM_UP_READ(a_pMm)        up_read(&(a_pMm)->mmap_sem)
+# define LNX_MM_DOWN_WRITE(a_pMm)   down_write(&(a_pMm)->mmap_sem)
+# define LNX_MM_UP_WRITE(a_pMm)       up_write(&(a_pMm)->mmap_sem)
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -182,7 +197,7 @@ static pgprot_t rtR0MemObjLinuxConvertProt(unsigned fProt, bool fKernel)
  * Worker for rtR0MemObjNativeReserveUser and rtR0MemObjNativerMapUser that creates
  * an empty user space mapping.
  *
- * We acquire the mmap_sem of the task!
+ * We acquire the mmap_sem/mmap_lock of the task!
  *
  * @returns Pointer to the mapping.
  *          (void *)-1 on failure.
@@ -222,9 +237,9 @@ static void *rtR0MemObjLinuxDoMmap(RTR3PTR R3PtrFixed, size_t cb, size_t uAlignm
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
         ulAddr = vm_mmap(NULL, R3PtrFixed, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED, 0);
 #else
-        down_write(&pTask->mm->mmap_sem);
+        LNX_MM_DOWN_WRITE(pTask->mm);
         ulAddr = do_mmap(NULL, R3PtrFixed, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED, 0);
-        up_write(&pTask->mm->mmap_sem);
+        LNX_MM_UP_WRITE(pTask->mm);
 #endif
     }
     else
@@ -232,9 +247,9 @@ static void *rtR0MemObjLinuxDoMmap(RTR3PTR R3PtrFixed, size_t cb, size_t uAlignm
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
         ulAddr = vm_mmap(NULL, 0, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS, 0);
 #else
-        down_write(&pTask->mm->mmap_sem);
+        LNX_MM_DOWN_WRITE(pTask->mm);
         ulAddr = do_mmap(NULL, 0, cb, fLnxProt, MAP_SHARED | MAP_ANONYMOUS, 0);
-        up_write(&pTask->mm->mmap_sem);
+        LNX_MM_UP_WRITE(pTask->mm);
 #endif
         if (    !(ulAddr & ~PAGE_MASK)
             &&  (ulAddr & (uAlignment - 1)))
@@ -257,7 +272,7 @@ static void *rtR0MemObjLinuxDoMmap(RTR3PTR R3PtrFixed, size_t cb, size_t uAlignm
  * Worker that destroys a user space mapping.
  * Undoes what rtR0MemObjLinuxDoMmap did.
  *
- * We acquire the mmap_sem of the task!
+ * We acquire the mmap_sem/mmap_lock of the task!
  *
  * @param   pv          The ring-3 mapping.
  * @param   cb          The size of the mapping.
@@ -269,13 +284,13 @@ static void rtR0MemObjLinuxDoMunmap(void *pv, size_t cb, struct task_struct *pTa
     Assert(pTask == current); RT_NOREF_PV(pTask);
     vm_munmap((unsigned long)pv, cb);
 #elif defined(USE_RHEL4_MUNMAP)
-    down_write(&pTask->mm->mmap_sem);
+    LNX_MM_DOWN_WRITE(pTask->mm);
     do_munmap(pTask->mm, (unsigned long)pv, cb, 0); /* should it be 1 or 0? */
-    up_write(&pTask->mm->mmap_sem);
+    LNX_MM_UP_WRITE(pTask->mm);
 #else
-    down_write(&pTask->mm->mmap_sem);
+    LNX_MM_DOWN_WRITE(pTask->mm);
     do_munmap(pTask->mm, (unsigned long)pv, cb);
-    up_write(&pTask->mm->mmap_sem);
+    LNX_MM_UP_WRITE(pTask->mm);
 #endif
 }
 
@@ -593,7 +608,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 size_t              iPage;
                 Assert(pTask);
                 if (pTask && pTask->mm)
-                    down_read(&pTask->mm->mmap_sem);
+                    LNX_MM_DOWN_READ(pTask->mm);
 
                 iPage = pMemLnx->cPages;
                 while (iPage-- > 0)
@@ -608,7 +623,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 }
 
                 if (pTask && pTask->mm)
-                    up_read(&pTask->mm->mmap_sem);
+                    LNX_MM_UP_READ(pTask->mm);
             }
             /* else: kernel memory - nothing to do here. */
             break;
@@ -1076,7 +1091,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
     papVMAs = (struct vm_area_struct **)RTMemAlloc(sizeof(*papVMAs) * cPages);
     if (papVMAs)
     {
-        down_read(&pTask->mm->mmap_sem);
+        LNX_MM_DOWN_READ(pTask->mm);
 
         /*
          * Get user pages.
@@ -1162,7 +1177,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
                 papVMAs[rc]->vm_flags |= VM_DONTCOPY | VM_LOCKED;
             }
 
-            up_read(&pTask->mm->mmap_sem);
+            LNX_MM_UP_READ(pTask->mm);
 
             RTMemFree(papVMAs);
 
@@ -1189,7 +1204,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
 #endif
         }
 
-        up_read(&pTask->mm->mmap_sem);
+        LNX_MM_UP_READ(pTask->mm);
 
         RTMemFree(papVMAs);
         rc = VERR_LOCK_FAILED;
@@ -1604,7 +1619,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
             const size_t    cPages    = (offSub + cbSub) >> PAGE_SHIFT;
             size_t          iPage;
 
-            down_write(&pTask->mm->mmap_sem);
+            LNX_MM_DOWN_WRITE(pTask->mm);
 
             rc = VINF_SUCCESS;
             if (pMemLnxToMap->cPages)
@@ -1721,7 +1736,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
             }
 #endif /* CONFIG_NUMA_BALANCING */
 
-            up_write(&pTask->mm->mmap_sem);
+            LNX_MM_UP_WRITE(pTask->mm);
 
             if (RT_SUCCESS(rc))
             {
