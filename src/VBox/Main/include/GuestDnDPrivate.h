@@ -205,7 +205,7 @@ struct GuestDnDData
     size_t addProcessed(size_t cbDataAdd)
     {
         const size_t cbTotal = Meta.cbData + cbExtra; RT_NOREF(cbTotal);
-        Assert(cbProcessed + cbDataAdd <= cbTotal);
+        AssertReturn(cbProcessed + cbDataAdd <= cbTotal, 0);
         cbProcessed += cbDataAdd;
         return cbProcessed;
     }
@@ -214,7 +214,7 @@ struct GuestDnDData
     {
         const size_t cbTotal = Meta.cbData + cbExtra;
         LogFlowFunc(("cbProcessed=%zu, cbTotal=%zu\n", cbProcessed, cbTotal));
-        Assert(cbProcessed <= cbTotal);
+        AssertReturn(cbProcessed <= cbTotal, true);
         return (cbProcessed == cbTotal);
     }
 
@@ -379,8 +379,6 @@ struct GuestDnDSendCtx : public GuestDnDData
     bool                                fIsActive;
     /** Target (VM) screen ID. */
     uint32_t                            uScreenID;
-    /** Drag'n drop format requested by the guest. */
-    com::Utf8Str                        strFmtReq;
     /** Transfer data structure. */
     GuestDnDTransferSendData            Transfer;
     /** Callback event to use. */
@@ -440,7 +438,7 @@ struct GuestDnDRecvCtx : public GuestDnDData
     bool                                fIsActive;
     /** Formats offered by the guest (and supported by the host). */
     GuestDnDMIMEList                    lstFmtOffered;
-    /** Drag'n drop format requested by the guest. */
+    /** Original drop format requested to receive from the guest. */
     com::Utf8Str                        strFmtReq;
     /** Intermediate drop format to be received from the guest.
      *  Some original drop formats require a different intermediate
@@ -531,9 +529,9 @@ public:
             return VERR_NO_MEMORY;
 
         void *pvTmp = NULL;
-        if (pvBuf)
+        if (cbBuf)
         {
-            Assert(cbBuf);
+            AssertPtr(pvBuf);
             pvTmp = RTMemDup(pvBuf, cbBuf);
             if (!pvTmp)
                 return VERR_NO_MEMORY;

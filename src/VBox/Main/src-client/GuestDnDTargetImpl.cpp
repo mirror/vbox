@@ -647,8 +647,8 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         pSendCtx->pTarget   = this;
         pSendCtx->pResp     = pResp;
         pSendCtx->uScreenID = aScreenId;
-        pSendCtx->strFmtReq = aFormat;
 
+        pSendCtx->Meta.strFmt = aFormat;
         pSendCtx->Meta.add(aData);
 
         /* pTask is responsible for deletion of pSendCtx after creating */
@@ -819,39 +819,63 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    /** @todo Add support for multiple HOST_DND_HG_SND_DATA messages in case of more than 64K data! */
-    if (pCtx->Meta.cbData > _64K)
-        return VERR_NOT_IMPLEMENTED;
+    uint8_t *pvData = (uint8_t *)pCtx->Meta.pvData;
+    size_t   cbData = pCtx->Meta.cbData;
 
-    const uint32_t cbFmt = (uint32_t)pCtx->Meta.strFmt.length() + 1; /* Include terminator. */
+    int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("cbFmt=%RU32, cbMeta=%RU32\n", cbFmt, pCtx->Meta.cbData));
+    const size_t  cbFmt   = pCtx->Meta.strFmt.length() + 1; /* Include terminator. */
+    const char   *pcszFmt = pCtx->Meta.strFmt.c_str();
 
-    GuestDnDMsg Msg;
-    Msg.setType(HOST_DND_HG_SND_DATA);
-    if (m_DataBase.uProtocolVersion < 3)
+    LogFlowFunc(("uProto=%u, szFmt=%s, cbFmt=%RU32, cbData=%zu\n", m_DataBase.uProtocolVersion, pcszFmt, cbFmt, cbData));
+
+    LogRel2(("DnD: Sending meta data to guest as '%s' (%zu bytes)\n", pcszFmt, cbData));
+
+#ifdef DEBUG
+    RTCList<RTCString> lstFilesURI = RTCString((char *)pvData, cbData).split("\r\n");
+    LogFlowFunc(("lstFilesURI=%zu\n", lstFilesURI.size()));
+    for (size_t i = 0; i < lstFilesURI.size(); i++)
+        LogFlowFunc(("\t%s\n", lstFilesURI.at(i).c_str()));
+#endif
+
+    uint8_t *pvChunk = pvData;
+    size_t   cbChunk = RT_MIN(mData.mcbBlockSize, cbData);
+    while (cbData)
     {
-        Msg.setNextUInt32(pCtx->uScreenID);                                 /* uScreenId */
-        Msg.setNextPointer(pCtx->Meta.strFmt.mutableRaw(), cbFmt);          /* pvFormat */
-        Msg.setNextUInt32(cbFmt);                                           /* cbFormat */
-        Msg.setNextPointer(pCtx->Meta.pvData, (uint32_t)pCtx->Meta.cbData); /* pvData */
-        /* Fill in the current data block size to send.
-         * Note: Only supports uint32_t. */
-        Msg.setNextUInt32((uint32_t)pCtx->Meta.cbData);                     /* cbData */
-    }
-    else
-    {
-        Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-        Msg.setNextPointer(pCtx->Meta.pvData, (uint32_t)pCtx->Meta.cbData); /* pvData */
-        Msg.setNextUInt32((uint32_t)pCtx->Meta.cbData);                     /* cbData */
-        Msg.setNextPointer(NULL, 0);                                        /** @todo pvChecksum; not used yet. */
-        Msg.setNextUInt32(0);                                               /** @todo cbChecksum; not used yet. */
+        GuestDnDMsg Msg;
+        Msg.setType(HOST_DND_HG_SND_DATA);
+
+        if (m_DataBase.uProtocolVersion < 3)
+        {
+            Msg.setNextUInt32(pCtx->uScreenID);                                 /* uScreenId */
+            Msg.setNextPointer(unconst(pcszFmt), (uint32_t)cbFmt);              /* pvFormat */
+            Msg.setNextUInt32((uint32_t)cbFmt);                                 /* cbFormat */
+            Msg.setNextPointer(pvChunk, (uint32_t)cbChunk);                     /* pvData */
+            /* Fill in the current data block size to send.
+             * Note: Only supports uint32_t. */
+            Msg.setNextUInt32((uint32_t)cbChunk);                               /* cbData */
+        }
+        else
+        {
+            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
+            Msg.setNextPointer(pvChunk, (uint32_t)cbChunk);                     /* pvData */
+            Msg.setNextUInt32((uint32_t)cbChunk);                               /* cbData */
+            Msg.setNextPointer(NULL, 0);                                        /** @todo pvChecksum; not used yet. */
+            Msg.setNextUInt32(0);                                               /** @todo cbChecksum; not used yet. */
+        }
+
+        rc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        if (RT_FAILURE(rc))
+            break;
+
+        pvChunk += cbChunk;
+        AssertBreakStmt(cbData >= cbChunk, VERR_BUFFER_UNDERFLOW);
+        cbData  -= cbChunk;
     }
 
-    int rc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
     if (RT_SUCCESS(rc))
     {
-        rc = updateProgress(pCtx, pCtx->pResp, pCtx->Meta.cbData);
+        rc = updateProgress(pCtx, pCtx->pResp, (uint32_t)pCtx->Meta.cbData);
         AssertRC(rc);
     }
 
@@ -874,6 +898,9 @@ int GuestDnDTarget::i_sendMetaDataHeader(GuestDnDSendCtx *pCtx)
 
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_HG_SND_DATA_HDR);
+
+    LogRel2(("DnD: Sending meta data header to guest (%RU64 bytes total data, %RU32 bytes meta data, %RU64 objects)\n",
+             pCtx->getTotal(), pCtx->Meta.cbData, pCtx->Transfer.cObjToProcess));
 
     Msg.setNextUInt32(0);                                                /** @todo uContext; not used yet. */
     Msg.setNextUInt32(0);                                                /** @todo uFlags; not used yet. */
@@ -975,8 +1002,8 @@ int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
                 pMsg->setNextUInt32(fMode);                          /* fMode */
                 pMsg->setNextUInt64(cbSize);                         /* uSize */
 
-                LogRel2(("DnD: Transferring host file '%s' to guest (%zu bytes, mode %#x)\n",
-                         pcszSrcPath, cbSize, fMode));
+                LogRel2(("DnD: Transferring host file '%s' to guest (as '%s', %zu bytes, mode %#x)\n",
+                         pcszSrcPath, pcszDstPath, cbSize, fMode));
 
                 /** @todo Set progress object title to current file being transferred? */
 
@@ -1050,8 +1077,6 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
     int rc = DnDTransferObjectRead(pObj, pvBuf, cbBuf, &cbRead);
     if (RT_SUCCESS(rc))
     {
-        pCtx->addProcessed(cbRead);
-
         LogFlowFunc(("cbBufe=%zu, cbRead=%RU32\n", cbBuf, cbRead));
 
         if (m_DataBase.uProtocolVersion <= 1)
@@ -1073,14 +1098,15 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
             }
         }
 
-        if (DnDTransferObjectIsComplete(pObj)) /* Done reading? */
-        {
-            LogRel2(("DnD: Transferring host file '%s' to guest complete\n", pcszSrcPath));
+        int rc2 = updateProgress(pCtx, pCtx->pResp, (uint32_t)cbRead);
+        AssertRC(rc2);
 
-            /* DnDTransferObjectRead() returns VINF_EOF when finished reading the entire file,
-             * but we don't want this here -- so just set VINF_SUCCESS. */
+        /* DnDTransferObjectRead() will return VINF_EOF if reading is complete. */
+        if (rc == VINF_EOF)
             rc = VINF_SUCCESS;
-        }
+
+        if (DnDTransferObjectIsComplete(pObj)) /* Done reading? */
+            LogRel2(("DnD: Transferring host file '%s' to guest complete\n", pcszSrcPath));
     }
     else
         LogRel(("DnD: Reading from host file '%s' failed, rc=%Rrc\n", pcszSrcPath, rc));
@@ -1098,7 +1124,10 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
     GuestDnDTarget *pThis = pCtx->pTarget;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
+    /* At the moment we only have one transfer list per transfer. */
+    PDNDTRANSFERLIST pList = &pCtx->Transfer.List;
+
+    LogFlowFunc(("pThis=%p, pList=%p, uMsg=%RU32\n", pThis, pList, uMsg));
 
     int  rc      = VINF_SUCCESS;
     int  rcGuest = VINF_SUCCESS; /* Contains error code from guest in case of VERR_GSTDND_GUEST_ERROR. */
@@ -1125,7 +1154,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
             {
                 GuestDnDMsg *pMsg = new GuestDnDMsg();
 
-                rc = pThis->i_sendTransferDataLoop(pCtx, pMsg);
+                rc = pThis->i_sendTransferListObject(pCtx, pList, pMsg);
                 if (rc == VINF_EOF) /* Transfer complete? */
                 {
                     LogFlowFunc(("Last transfer item processed, bailing out\n"));
@@ -1170,7 +1199,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
             }
 
             rc = pCtx->pResp->setProgress(100, DND_PROGRESS_ERROR, pCBData->rc,
-                                           GuestDnDTarget::i_guestErrorToString(pCBData->rc));
+                                          GuestDnDTarget::i_guestErrorToString(pCBData->rc));
             if (RT_SUCCESS(rc))
             {
                 rc      = VERR_GSTDND_GUEST_ERROR;
@@ -1353,15 +1382,49 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
         /*
          * Extract transfer list from current meta data.
          */
-        rc = DnDTransferListAppendPathsFromBuffer(&pCtx->Transfer.List, DNDTRANSFERLISTFMT_NATIVE,
-                                                  (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, "\n", DNDTRANSFERLIST_FLAGS_NONE);
+        rc = DnDTransferListAppendPathsFromBuffer(&pCtx->Transfer.List, DNDTRANSFERLISTFMT_URI,
+                                                  (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, DND_PATH_SEPARATOR,
+                                                  DNDTRANSFERLIST_FLAGS_RECURSIVE);
         if (RT_FAILURE(rc))
             break;
 
         /*
          * Update internal state to reflect everything we need to work with it.
          */
-        pCtx->cbExtra = DnDTransferListObjTotalBytes(&pCtx->Transfer.List);
+        pCtx->cbExtra               = DnDTransferListObjTotalBytes(&pCtx->Transfer.List);
+        /* cbExtra can be 0, if all files are of 0 bytes size. */
+        pCtx->Transfer.cObjToProcess = DnDTransferListObjCount(&pCtx->Transfer.List);
+        AssertBreakStmt(pCtx->Transfer.cObjToProcess, rc = VERR_INVALID_PARAMETER);
+
+        /* Update the meta data to have the current root transfer entries in the right shape. */
+        if (DnDMIMEHasFileURLs(pCtx->Meta.strFmt.c_str(), RTSTR_MAX))
+        {
+            /* Save original format we're still going to use after updating the actual meta data. */
+            Utf8Str strFmt = pCtx->Meta.strFmt;
+
+            /* Reset stale data. */
+            pCtx->Meta.reset();
+
+            void  *pvData;
+            size_t cbData;
+#ifdef DEBUG
+            rc = DnDTransferListGetRootsEx(&pCtx->Transfer.List, DNDTRANSFERLISTFMT_URI, "" /* pcszPathBase */,
+                                           "\n" /* pcszSeparator */, (char **)&pvData, &cbData);
+            AssertRCReturn(rc, rc);
+            LogFlowFunc(("URI data:\n%s", (char *)pvData));
+            RTMemFree(pvData);
+            cbData = 0;
+#endif
+            rc = DnDTransferListGetRoots(&pCtx->Transfer.List, DNDTRANSFERLISTFMT_URI,
+                                         (char **)&pvData, &cbData);
+            AssertRCReturn(rc, rc);
+
+            /* pCtx->Meta now owns the allocated data. */
+            pCtx->Meta.strFmt      = strFmt;
+            pCtx->Meta.pvData      = pvData;
+            pCtx->Meta.cbData      = cbData;
+            pCtx->Meta.cbAllocated = cbData;
+        }
 
         /*
          * The first message always is the data header. The meta data itself then follows
@@ -1443,23 +1506,31 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
     return rc;
 }
 
-int GuestDnDTarget::i_sendTransferDataLoop(GuestDnDSendCtx *pCtx, GuestDnDMsg *pMsg)
+/**
+ * Sends the next object of a transfer list to the guest.
+ *
+ * @returns VBox status code. VINF_EOF if the transfer list is complete.
+ * @param   pCtx                Send context to use.
+ * @param   pList               Transfer list to use.
+ * @param   pMsg                Message to store send data into.
+ */
+int GuestDnDTarget::i_sendTransferListObject(GuestDnDSendCtx *pCtx, PDNDTRANSFERLIST pList, GuestDnDMsg *pMsg)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
 
     int rc = updateProgress(pCtx, pCtx->pResp);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
-    if (   pCtx->isComplete()
-        && pCtx->Transfer.isComplete())
+    if (pCtx->isComplete())
     {
+        Assert(pCtx->Transfer.isComplete());
         return VINF_EOF;
     }
 
-    PDNDTRANSFEROBJECT pObj = DnDTransferListObjGetFirst(&pCtx->Transfer.List);
-    if (!pObj)
-        return VERR_WRONG_ORDER;
+    PDNDTRANSFEROBJECT pObj = DnDTransferListObjGetFirst(pList);
+    AssertPtrReturn(pObj, VERR_WRONG_ORDER);
 
     switch (DnDTransferObjectGetType(pObj))
     {
@@ -1476,9 +1547,17 @@ int GuestDnDTarget::i_sendTransferDataLoop(GuestDnDSendCtx *pCtx, GuestDnDMsg *p
             break;
     }
 
-    if (   DnDTransferObjectIsComplete(pObj)
-        || RT_FAILURE(rc))
-        DnDTransferListObjRemoveFirst(&pCtx->Transfer.List);
+    if (   RT_SUCCESS(rc)
+        && DnDTransferObjectIsComplete(pObj))
+    {
+        DnDTransferListObjRemove(pList, pObj);
+        pObj = NULL;
+
+        AssertReturn(pCtx->Transfer.cObjProcessed + 1 <= pCtx->Transfer.cObjToProcess, VERR_WRONG_ORDER);
+        pCtx->Transfer.cObjProcessed++;
+
+        pCtx->Transfer.fObjState = DND_OBJ_STATE_NONE;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

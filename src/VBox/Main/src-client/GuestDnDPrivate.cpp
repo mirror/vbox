@@ -272,79 +272,95 @@ int GuestDnDResponse::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback
     return VINF_SUCCESS;
 }
 
-int GuestDnDResponse::setProgress(unsigned uPercentage,
-                                  uint32_t uStatus,
+int GuestDnDResponse::setProgress(unsigned uPercentage, uint32_t uStatus,
                                   int rcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = "" */)
 {
-    RT_NOREF(rcOp);
-    LogFlowFunc(("uStatus=%RU32, uPercentage=%RU32, rcOp=%Rrc, strMsg=%s\n",
-                 uStatus, uPercentage, rcOp, strMsg.c_str()));
+    LogFlowFunc(("uPercentage=%u, uStatus=%RU32, , rcOp=%Rrc, strMsg=%s\n",
+                 uPercentage, uStatus, rcOp, strMsg.c_str()));
+
+    HRESULT hr = S_OK;
+
+    BOOL fCompleted = FALSE;
+    BOOL fCanceled  = FALSE;
 
     int rc = VINF_SUCCESS;
+
     if (!m_pProgress.isNull())
     {
-        BOOL fCompleted;
-        HRESULT hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
+        hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
         AssertComRC(hr);
 
-        BOOL fCanceled;
         hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
         AssertComRC(hr);
 
-        LogFlowFunc(("Current: fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
+        LogFlowFunc(("Progress fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
+    }
 
-        if (!fCompleted)
+    switch (uStatus)
+    {
+        case DragAndDropSvc::DND_PROGRESS_ERROR:
         {
-            switch (uStatus)
-            {
-                case DragAndDropSvc::DND_PROGRESS_ERROR:
-                {
-                    hr = m_pProgress->i_notifyComplete(VBOX_E_IPRT_ERROR,
-                                                       COM_IIDOF(IGuest),
-                                                       m_pParent->getComponentName(), strMsg.c_str());
-                    reset();
-                    break;
-                }
+            LogRel(("DnD: Guest reported error %Rrc\n", rcOp));
 
-                case DragAndDropSvc::DND_PROGRESS_CANCELLED:
-                {
-                    hr = m_pProgress->Cancel();
-                    AssertComRC(hr);
-                    hr = m_pProgress->i_notifyComplete(S_OK);
-                    AssertComRC(hr);
-
-                    reset();
-                    break;
-                }
-
-                case DragAndDropSvc::DND_PROGRESS_RUNNING:
-                case DragAndDropSvc::DND_PROGRESS_COMPLETE:
-                {
-                    if (!fCanceled)
-                    {
-                        hr = m_pProgress->SetCurrentOperationProgress(uPercentage);
-                        AssertComRC(hr);
-                        if (   uStatus     == DragAndDropSvc::DND_PROGRESS_COMPLETE
-                            || uPercentage >= 100)
-                        {
-                            hr = m_pProgress->i_notifyComplete(S_OK);
-                            AssertComRC(hr);
-                        }
-                    }
-                    break;
-                }
-
-                default:
-                    break;
-            }
+            if (   !m_pProgress.isNull()
+                && !fCompleted)
+                hr = m_pProgress->i_notifyComplete(VBOX_E_IPRT_ERROR,
+                                                   COM_IIDOF(IGuest),
+                                                   m_pParent->getComponentName(), strMsg.c_str());
+            reset();
+            break;
         }
 
+        case DragAndDropSvc::DND_PROGRESS_CANCELLED:
+        {
+            LogRel2(("DnD: Guest cancelled operation\n"));
+
+            if (   !m_pProgress.isNull()
+                && !fCompleted)
+            {
+                hr = m_pProgress->Cancel();
+                AssertComRC(hr);
+                hr = m_pProgress->i_notifyComplete(S_OK);
+                AssertComRC(hr);
+            }
+
+            reset();
+            break;
+        }
+
+        case DragAndDropSvc::DND_PROGRESS_RUNNING:
+            RT_FALL_THROUGH();
+        case DragAndDropSvc::DND_PROGRESS_COMPLETE:
+        {
+            LogRel2(("DnD: Guest reporting running/completion status with %u%%\n", uPercentage));
+
+            if (   !m_pProgress.isNull()
+                && !fCompleted)
+            {
+                hr = m_pProgress->SetCurrentOperationProgress(uPercentage);
+                AssertComRC(hr);
+                if (   uStatus     == DragAndDropSvc::DND_PROGRESS_COMPLETE
+                    || uPercentage >= 100)
+                {
+                    hr = m_pProgress->i_notifyComplete(S_OK);
+                    AssertComRC(hr);
+                }
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    if (!m_pProgress.isNull())
+    {
         hr = m_pProgress->COMGETTER(Completed)(&fCompleted);
         AssertComRC(hr);
         hr = m_pProgress->COMGETTER(Canceled)(&fCanceled);
         AssertComRC(hr);
 
-        LogFlowFunc(("New: fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
+        LogFlowFunc(("Progress fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -941,13 +957,18 @@ int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,
     LogFlowFunc(("cbExtra=%zu, cbProcessed=%zu, cbRemaining=%zu, cbDataAdd=%zu\n",
                  pData->cbExtra, pData->cbProcessed, pData->getRemaining(), cbDataAdd));
 
-    if (!pResp)
+    if (   !pResp
+        || !cbDataAdd) /* Only update if something really changes. */
         return VINF_SUCCESS;
 
     if (cbDataAdd)
         pData->addProcessed(cbDataAdd);
 
-    int rc = pResp->setProgress(pData->getPercentComplete(),
+    const uint8_t uPercent = pData->getPercentComplete();
+
+    LogRel2(("DnD: Transfer %RU8%% complete\n", uPercent));
+
+    int rc = pResp->setProgress(uPercent,
                                   pData->isComplete()
                                 ? DND_PROGRESS_COMPLETE
                                 : DND_PROGRESS_RUNNING);

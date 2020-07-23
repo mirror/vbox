@@ -91,7 +91,7 @@ protected:
     int i_sendMetaDataHeader(GuestDnDSendCtx *pCtx);
 
     int i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout);
-    int i_sendTransferDataLoop(GuestDnDSendCtx *pCtx, GuestDnDMsg *pMsg);
+    int i_sendTransferListObject(GuestDnDSendCtx *pCtx,  PDNDTRANSFERLIST pList, GuestDnDMsg *pMsg);
 
     int i_sendDirectory(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pObj, GuestDnDMsg *pMsg);
     int i_sendFile(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pObj, GuestDnDMsg *pMsg);
