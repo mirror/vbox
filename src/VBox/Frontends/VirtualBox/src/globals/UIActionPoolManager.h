@@ -82,6 +82,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Group_M_Tools_T_Details,
     UIActionIndexST_M_Group_M_Tools_T_Snapshots,
     UIActionIndexST_M_Group_M_Tools_T_Logs,
+    UIActionIndexST_M_Group_M_Tools_T_Performance,
     UIActionIndexST_M_Group_S_Discard,
     UIActionIndexST_M_Group_S_ShowLogDialog,
     UIActionIndexST_M_Group_S_Refresh,
@@ -121,7 +122,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Machine_M_Tools_T_Details,
     UIActionIndexST_M_Machine_M_Tools_T_Snapshots,
     UIActionIndexST_M_Machine_M_Tools_T_Logs,
-    UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor,
+    UIActionIndexST_M_Machine_M_Tools_T_Performance,
     UIActionIndexST_M_Machine_S_Discard,
     UIActionIndexST_M_Machine_S_ShowLogDialog,
     UIActionIndexST_M_Machine_S_Refresh,
@@ -144,6 +145,10 @@ enum UIActionIndexST
     UIActionIndexST_M_Snapshot_S_Restore,
     UIActionIndexST_M_Snapshot_T_Properties,
     UIActionIndexST_M_Snapshot_S_Clone,
+
+    /* Performance Monitor actions: */
+    UIActionIndex_M_Performance,
+    UIActionIndex_M_Performance_S_Export,
 
     /* Virtual Media Manager actions: */
     UIActionIndexST_M_MediumWindow,

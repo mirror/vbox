@@ -1726,14 +1726,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Performance Monitor' action class. */
-class UIActionToggleSelectorToolsMachineShowPerformanceMonitor : public UIActionToggle
+class UIActionToggleSelectorToolsMachineShowPerformance : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorToolsMachineShowPerformanceMonitor(UIActionPool *pParent)
+    UIActionToggleSelectorToolsMachineShowPerformance(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setProperty("UIToolType", QVariant::fromValue(UIToolType_Performance));
@@ -1753,8 +1753,8 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&PerformanceMonitor"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the machine performance monitor pane"));
+        setName(QApplication::translate("UIActionPool", "&Performance"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the machine performance pane"));
     }
 };
 
@@ -2135,6 +2135,69 @@ protected:
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Clone selected virtual machine"));
         setToolTip(  QApplication::translate("UIActionPool", "Clone Virtual Machine")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+
+/** Menu action extension, used as 'Performance' menu class. */
+class UIActionMenuSelectorPerformance : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorPerformance(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("PerformanceMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Performance"));
+    }
+};
+
+/** Simple action extension, used as 'Export' action class. */
+class UIActionMenuSelectorPerformanceExport : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorPerformanceExport(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/log_viewer_save_32px.png", ":/log_viewer_save_16px.png",
+                         ":/log_viewer_save_disabled_32px.png", ":/log_viewer_save_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ExportCharts");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Export..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Performance Monitor"));
+        setStatusTip(QApplication::translate("UIActionPool", "Export the chart data into a text file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Export Data to File")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -3365,6 +3428,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexST_M_Group_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
+    m_pool[UIActionIndexST_M_Group_M_Tools_T_Performance] = new UIActionToggleSelectorToolsMachineShowPerformance(this);
     m_pool[UIActionIndexST_M_Group_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
     m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
     m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
@@ -3405,7 +3469,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
     m_pool[UIActionIndexST_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexST_M_Machine_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor] = new UIActionToggleSelectorToolsMachineShowPerformanceMonitor(this);
+    m_pool[UIActionIndexST_M_Machine_M_Tools_T_Performance] = new UIActionToggleSelectorToolsMachineShowPerformance(this);
     m_pool[UIActionIndexST_M_Machine_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
     m_pool[UIActionIndexST_M_Machine_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
     m_pool[UIActionIndexST_M_Machine_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
@@ -3428,6 +3492,10 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Snapshot_S_Restore] = new UIActionMenuSelectorSnapshotPerformRestore(this);
     m_pool[UIActionIndexST_M_Snapshot_T_Properties] = new UIActionMenuSelectorSnapshotToggleProperties(this);
     m_pool[UIActionIndexST_M_Snapshot_S_Clone] = new UIActionMenuSelectorSnapshotPerformClone(this);
+
+    /* Performance Monitor actions: */
+    m_pool[UIActionIndex_M_Performance] = new UIActionMenuSelectorPerformance(this);
+    m_pool[UIActionIndex_M_Performance_S_Export] = new UIActionMenuSelectorPerformanceExport(this);
 
     /* Virtual Medium Manager actions: */
     m_pool[UIActionIndexST_M_MediumWindow] = new UIActionMenuSelectorMedium(this);
@@ -3478,13 +3546,14 @@ void UIActionPoolManager::preparePool()
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Details));
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
     m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Logs));
+    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Performance));
 
     /* 'Machine' action groups: */
     m_groupPool[UIActionIndexST_M_Machine_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Machine_M_Tools));
     m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Details));
     m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Snapshots));
     m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Logs));
-    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor));
+    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Performance));
 
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexST_M_File].ptfm =                  &UIActionPoolManager::updateMenuFile;
@@ -3598,8 +3667,8 @@ void UIActionPoolManager::updateMenus()
     addMenu(m_mainMenus, action(UIActionIndex_M_Log));
     updateMenuLogViewerWindow();
     updateMenuLogViewer();
-    /* 'Performance' Menu: */
-    addMenu(m_mainMenus, action(UIActionIndex_M_PerformanceMonitor));
+    /* 'Performance' menu: */
+    addMenu(m_mainMenus, action(UIActionIndex_M_Performance));
     updateMenuPerformanceMonitor();
 
     /* 'Help' menu: */
@@ -3871,6 +3940,7 @@ void UIActionPoolManager::updateMenuGroupTools()
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Details));
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
     pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Logs));
+    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Performance));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Group_M_Tools);
@@ -3888,7 +3958,7 @@ void UIActionPoolManager::updateMenuMachineTools()
     pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Details));
     pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots));
     pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Logs));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Performance));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Machine_M_Tools);
@@ -4155,16 +4225,16 @@ void UIActionPoolManager::updateMenuSnapshot()
 void UIActionPoolManager::updateMenuPerformanceMonitor()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndex_M_PerformanceMonitor)->menu();
+    UIMenu *pMenu = action(UIActionIndex_M_Performance)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
-    /* Populate Snapshot-menu: */
-    pMenu->addAction(action(UIActionIndex_M_PerformanceMonitor_S_Export));
+    /* Populate Performance-menu: */
+    pMenu->addAction(action(UIActionIndex_M_Performance_S_Export));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Snapshot);
+    m_invalidations.remove(UIActionIndex_M_Performance);
 }
 
 void UIActionPoolManager::updateShortcuts()
@@ -4218,7 +4288,8 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Group_M_Close_S_PowerOff)
                     << action(UIActionIndexST_M_Group_M_Tools_T_Details)
                     << action(UIActionIndexST_M_Group_M_Tools_T_Snapshots)
-                    << action(UIActionIndexST_M_Group_M_Tools_T_Logs);
+                    << action(UIActionIndexST_M_Group_M_Tools_T_Logs)
+                    << action(UIActionIndexST_M_Group_M_Tools_T_Performance);
             break;
         }
         case UIActionIndexST_M_Machine:
@@ -4256,7 +4327,7 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_M_Tools_T_Details)
                     << action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots)
                     << action(UIActionIndexST_M_Machine_M_Tools_T_Logs)
-                    << action(UIActionIndexST_M_Machine_M_Tools_T_PerformanceMonitor);
+                    << action(UIActionIndexST_M_Machine_M_Tools_T_Performance);
             break;
         }
         default:

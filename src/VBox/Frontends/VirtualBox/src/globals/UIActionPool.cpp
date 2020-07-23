@@ -2251,74 +2251,6 @@ protected:
     }
 };
 
-/** Menu action extension, used as 'Performance' menu class. */
-class UIActionMenuPerformanceMonitor : public UIActionMenu
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuPerformanceMonitor(UIActionPool *pParent)
-        : UIActionMenu(pParent)
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("PerformanceMonitorMenu");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "Performance"));
-    }
-};
-
-/** Simple action extension, used as 'Export' action class. */
-class UIActionMenuPerformanceMonitorExport : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuPerformanceMonitorExport(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/log_viewer_save_32px.png", ":/log_viewer_save_16px.png",
-                         ":/log_viewer_save_disabled_32px.png", ":/log_viewer_save_disabled_16px.png")
-    {
-        setShortcutContext(Qt::WidgetWithChildrenShortcut);
-    }
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ExportCharts");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence();
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "Export..."));
-        setShortcutScope(QApplication::translate("UIActionPool", "Performance Monitor"));
-        setStatusTip(QApplication::translate("UIActionPool", "Export the chart data into a text file"));
-        setToolTip(  QApplication::translate("UIActionPool", "Export the chart data into a text file")
-                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
-    }
-};
-
 
 /*********************************************************************************************************************************
 *   Class UIActionPool implementation.                                                                                           *
@@ -2567,11 +2499,6 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_S_Guest_InvertSelection] = new UIActionMenuFileManagerInvertSelection(this);
     m_pool[UIActionIndex_M_FileManager_S_Host_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
     m_pool[UIActionIndex_M_FileManager_S_Guest_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
-
-    /* Create 'Performance Monitor' actions: */
-    m_pool[UIActionIndex_M_PerformanceMonitor] = new UIActionMenuPerformanceMonitor(this);
-    m_pool[UIActionIndex_M_PerformanceMonitor_S_Export] = new UIActionMenuPerformanceMonitorExport(this);
-
 
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC

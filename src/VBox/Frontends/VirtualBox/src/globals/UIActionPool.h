@@ -135,11 +135,6 @@ enum UIActionIndex
     UIActionIndex_M_FileManager_S_Host_ShowProperties,
     UIActionIndex_M_FileManager_S_Guest_ShowProperties,
 
-    /* Machine performance monitor actions. */
-    UIActionIndex_M_PerformanceMonitor,
-    UIActionIndex_M_PerformanceMonitor_S_Export,
-
-
     /* Maximum index: */
     UIActionIndex_Max
 };
