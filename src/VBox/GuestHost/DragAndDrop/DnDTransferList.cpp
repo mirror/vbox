@@ -278,6 +278,9 @@ static int dndTransferListAppendPathRecursiveSub(PDNDTRANSFERLIST pList,
         pszDir[cchDir]   = '\0';
     }
 
+    rc = dndTransferListObjAdd(pList, pszDir, pDirEntry->Info.Attr.fMode, fFlags);
+    AssertRCReturn(rc, rc);
+
     LogFlowFunc(("pszDir=%s\n", pszDir));
 
     /*
@@ -358,8 +361,8 @@ static int dndTransferListAppendPathRecursiveSub(PDNDTRANSFERLIST pList,
  * @param   pcszPathAbs         Absolute path to add.
  * @param   fFlags              Flags of type DNDTRANSFERLISTFLAGS.
  */
-static int dndTransferListAppendPathNativeRecursive(PDNDTRANSFERLIST pList,
-                                                    const char *pcszPathAbs, DNDTRANSFERLISTFLAGS fFlags)
+static int dndTransferListAppendDirectoryRecursive(PDNDTRANSFERLIST pList,
+                                                   const char *pcszPathAbs, DNDTRANSFERLISTFLAGS fFlags)
 {
     char szPathAbs[RTPATH_MAX];
     int rc = RTStrCopy(szPathAbs, sizeof(szPathAbs), pcszPathAbs);
@@ -371,9 +374,14 @@ static int dndTransferListAppendPathNativeRecursive(PDNDTRANSFERLIST pList,
         uint8_t         abPadding[DNDTRANSFERLIST_DIRENTRY_BUF_SIZE];
         RTDIRENTRYEX    DirEntry;
     } uBuf;
-    const size_t cchPathAbs = strlen(szPathAbs);
-    if (!cchPathAbs)
-        return VINF_SUCCESS;
+
+    const size_t cchPathAbs = RTStrNLen(szPathAbs, RTPATH_MAX);
+    AssertReturn(cchPathAbs, VERR_BUFFER_OVERFLOW);
+
+    /* Use the directory entry to hand-in the directorie's information. */
+    rc = RTPathQueryInfo(pcszPathAbs, &uBuf.DirEntry.Info, RTFSOBJATTRADD_NOTHING);
+    AssertRCReturn(rc, rc);
+
     return dndTransferListAppendPathRecursiveSub(pList, szPathAbs, cchPathAbs, &uBuf.DirEntry, fFlags);
 }
 
@@ -384,21 +392,25 @@ static int dndTransferListAppendPathNativeRecursive(PDNDTRANSFERLIST pList,
  * @param   pList               Transfer list to return total number of root entries for.
  * @param   pszPathAbs          Absolute path of directory to append.
  * @param   cbPathAbs           Size (in bytes) of absolute path of directory to append.
+ * @param   pObjInfo            Pointer to directory object info to append.
  * @param   fFlags              Transfer list flags to use for appending.
  */
 static int dndTransferListAppendDirectory(PDNDTRANSFERLIST pList, char* pszPathAbs, size_t cbPathAbs,
-                                          DNDTRANSFERLISTFLAGS fFlags)
+                                          PRTFSOBJINFO pObjInfo, DNDTRANSFERLISTFLAGS fFlags)
 {
     RTDIR hDir;
     int rc = RTDirOpen(&hDir, pszPathAbs);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
-    const size_t cchPathAbs = RTStrNLen(pszPathAbs, cbPathAbs);
+    const size_t cchPathAbs = RTPathEnsureTrailingSeparator(pszPathAbs, sizeof(cbPathAbs));
+    AssertReturn(cchPathAbs, VERR_BUFFER_OVERFLOW);
+
+    rc = dndTransferListObjAdd(pList, pszPathAbs, pObjInfo->Attr.fMode, fFlags);
+    AssertRCReturn(rc, rc);
 
     for (;;)
     {
-        /* Get the next directory. */
+        /* Get the next entry. */
         RTDIRENTRYEX dirEntry;
         rc = RTDirReadEx(hDir, &dirEntry, NULL, RTFSOBJATTRADD_UNIX,
                          RTPATH_F_ON_LINK /** @todo No symlinks yet. */);
@@ -415,7 +427,7 @@ static int dndTransferListAppendDirectory(PDNDTRANSFERLIST pList, char* pszPathA
             }
 
             /* Append the directory entry to our absolute path. */
-            memcpy(&pszPathAbs[cchPathAbs], dirEntry.szName, dirEntry.cbName + 1);
+            memcpy(&pszPathAbs[cchPathAbs], dirEntry.szName, dirEntry.cbName + 1 /* Include terminator */);
 
             LogFlowFunc(("szName=%s, pszPathAbs=%s\n", dirEntry.szName, pszPathAbs));
 
@@ -423,7 +435,8 @@ static int dndTransferListAppendDirectory(PDNDTRANSFERLIST pList, char* pszPathA
             {
                 case RTFS_TYPE_DIRECTORY:
                 {
-                    rc = dndTransferListAppendPathNativeRecursive(pList, pszPathAbs, fFlags);
+                    if (fFlags & DNDTRANSFERLIST_FLAGS_RECURSIVE)
+                        rc = dndTransferListAppendDirectoryRecursive(pList, pszPathAbs, fFlags);
                     break;
                 }
 
@@ -465,19 +478,18 @@ static int dndTransferListAppendPathNative(PDNDTRANSFERLIST pList, const char *p
         return VERR_INVALID_PARAMETER;
 
     int rc = DnDPathValidate(pcszPath, false /* fMustExist */);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
-    char szPathAbs[RTPATH_MAX];
-    rc = RTStrCopy(szPathAbs, sizeof(szPathAbs), pcszPath);
-    if (RT_FAILURE(rc))
-        return rc;
+    char   szPathAbs[RTPATH_MAX];
+    size_t cbPathAbs = sizeof(szPathAbs);
+    rc = RTStrCopy(szPathAbs, cbPathAbs, pcszPath);
+    AssertRCReturn(rc, rc);
 
-    size_t cchPathAbs = RTStrNLen(szPathAbs, sizeof(szPathAbs));
+    size_t cchPathAbs = RTStrNLen(szPathAbs, cbPathAbs);
     AssertReturn(cchPathAbs, VERR_INVALID_PARAMETER);
 
     /* Convert path to transport style. */
-    rc = DnDPathConvert(szPathAbs, sizeof(szPathAbs), DNDPATHCONVERT_FLAGS_TRANSPORT);
+    rc = DnDPathConvert(szPathAbs, cbPathAbs, DNDPATHCONVERT_FLAGS_TRANSPORT);
     if (RT_SUCCESS(rc))
     {
         /* Make sure the path has the same root path as our list. */
@@ -487,24 +499,43 @@ static int dndTransferListAppendPathNative(PDNDTRANSFERLIST pList, const char *p
             rc = RTPathQueryInfo(szPathAbs, &objInfo, RTFSOBJATTRADD_NOTHING);
             if (RT_SUCCESS(rc))
             {
-                switch (objInfo.Attr.fMode & RTFS_TYPE_MASK)
+                const uint32_t fType = objInfo.Attr.fMode & RTFS_TYPE_MASK;
+
+                if (   RTFS_IS_DIRECTORY(fType)
+                    || RTFS_IS_FILE(fType))
                 {
-                    case RTFS_TYPE_DIRECTORY:
-                        if (fFlags & DNDTRANSFERLIST_FLAGS_RECURSIVE)
-                            rc = dndTransferListAppendDirectory(pList, szPathAbs, sizeof(szPathAbs), fFlags);
-                        break;
+                    if (RTFS_IS_DIRECTORY(fType))
+                    {
+                        cchPathAbs = RTPathEnsureTrailingSeparator(szPathAbs, cbPathAbs);
+                        AssertReturn(cchPathAbs, VERR_BUFFER_OVERFLOW);
+                    }
 
-                    case RTFS_TYPE_FILE:
-                        rc = dndTransferListObjAdd(pList, szPathAbs, objInfo.Attr.fMode, fFlags);
-                        break;
-
-                    default:
-                        /* Silently skip everything else. */
-                        break;
+                    rc = dndTransferListRootAdd(pList, szPathAbs);
                 }
+                else
+                    rc = VERR_NOT_SUPPORTED;
 
                 if (RT_SUCCESS(rc))
-                    rc = dndTransferListRootAdd(pList, szPathAbs);
+                {
+                    switch (fType)
+                    {
+                        case RTFS_TYPE_DIRECTORY:
+                        {
+                            rc = dndTransferListAppendDirectory(pList, szPathAbs, cbPathAbs, &objInfo, fFlags);
+                            break;
+                        }
+
+                        case RTFS_TYPE_FILE:
+                        {
+                            rc = dndTransferListObjAdd(pList, szPathAbs, objInfo.Attr.fMode, fFlags);
+                            break;
+                        }
+
+                        default:
+                            AssertFailed();
+                            break;
+                    }
+                }
             }
         }
         else
@@ -981,11 +1012,13 @@ static int dndTransferListSetRootPath(PDNDTRANSFERLIST pList, const char *pcszRo
  */
 static int dndTransferListRootAdd(PDNDTRANSFERLIST pList, const char *pcszRoot)
 {
+    AssertPtrReturn(pList->pszPathRootAbs, VERR_WRONG_ORDER); /* The list's root path must be set first. */
+
     int rc;
 
     /** @todo Handle / reject double entries. */
 
-    /* Calculate the path to add as the destination path to our URI object. */
+    /* Get the index pointing to the relative path in relation to set the root path. */
     const size_t idxPathToAdd = strlen(pList->pszPathRootAbs);
     AssertReturn(strlen(pcszRoot) > idxPathToAdd, VERR_INVALID_PARAMETER); /* Should never happen (tm). */
 

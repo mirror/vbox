@@ -281,7 +281,10 @@ typedef struct DNDTRANSFERLIST
     RTLISTANCHOR            lstRoot;
     /** Total number of all transfer root entries. */
     uint64_t                cRoots;
-    /** List of all transfer objects added, of type DNDTRANSFEROBJECT. */
+    /** List of all transfer objects added, of type DNDTRANSFEROBJECT.
+     *
+     *  The order of objects being added is crucial for traversing the tree.
+     *  In other words, sub directories must come first before its contents. */
     RTLISTANCHOR            lstObj;
     /** Total number of all transfer objects. */
     uint64_t                cObj;
