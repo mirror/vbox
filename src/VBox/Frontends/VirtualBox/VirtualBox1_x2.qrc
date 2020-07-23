@@ -70,6 +70,7 @@
         <file alias="chipset_warning_16px_x2.png">images/x2/chipset_warning_16px_x2.png</file>
         <file alias="close_16px_x2.png">images/x2/close_16px_x2.png</file>
         <file alias="close_popup_16px_x2.png">images/x2/close_popup_16px_x2.png</file>
+        <file alias="cloud_console_application_16px_x2.png">images/x2/cloud_console_application_16px_x2.png</file>
         <file alias="cloud_console_application_add_16px_x2.png">images/x2/cloud_console_application_add_16px_x2.png</file>
         <file alias="cloud_console_application_add_32px_x2.png">images/x2/cloud_console_application_add_32px_x2.png</file>
         <file alias="cloud_console_application_add_disabled_16px_x2.png">images/x2/cloud_console_application_add_disabled_16px_x2.png</file>
@@ -82,6 +83,7 @@
         <file alias="cloud_console_edit_32px_x2.png">images/x2/cloud_console_edit_32px_x2.png</file>
         <file alias="cloud_console_edit_disabled_16px_x2.png">images/x2/cloud_console_edit_disabled_16px_x2.png</file>
         <file alias="cloud_console_edit_disabled_32px_x2.png">images/x2/cloud_console_edit_disabled_32px_x2.png</file>
+        <file alias="cloud_console_profile_16px_x2.png">images/x2/cloud_console_profile_16px_x2.png</file>
         <file alias="cloud_console_profile_add_16px_x2.png">images/x2/cloud_console_profile_add_16px_x2.png</file>
         <file alias="cloud_console_profile_add_32px_x2.png">images/x2/cloud_console_profile_add_32px_x2.png</file>
         <file alias="cloud_console_profile_add_disabled_16px_x2.png">images/x2/cloud_console_profile_add_disabled_16px_x2.png</file>
@@ -448,6 +450,5 @@
         <file alias="log_viewer_goto_previous_bookmark_16px_x2.png">images/x2/log_viewer_goto_previous_bookmark_16px_x2.png</file>
         <file alias="log_viewer_goto_selected_bookmark_16px_x2.png">images/x2/log_viewer_goto_selected_bookmark_16px_x2.png</file>
         <file alias="log_viewer_options_16px_x2.png">images/x2/log_viewer_options_16px_x2.png</file>
-        <file alias="log_viewer_options_32px_x2.png">images/x2/log_viewer_options_32px_x2.png</file>
     </qresource>
 </RCC>

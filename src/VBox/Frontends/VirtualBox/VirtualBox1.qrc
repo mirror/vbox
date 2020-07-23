@@ -70,6 +70,7 @@
         <file alias="chipset_warning_16px.png">images/chipset_warning_16px.png</file>
         <file alias="close_16px.png">images/close_16px.png</file>
         <file alias="close_popup_16px.png">images/close_popup_16px.png</file>
+        <file alias="cloud_console_application_16px.png">images/cloud_console_application_16px.png</file>
         <file alias="cloud_console_application_add_16px.png">images/cloud_console_application_add_16px.png</file>
         <file alias="cloud_console_application_add_32px.png">images/cloud_console_application_add_32px.png</file>
         <file alias="cloud_console_application_add_disabled_16px.png">images/cloud_console_application_add_disabled_16px.png</file>
@@ -82,6 +83,7 @@
         <file alias="cloud_console_edit_32px.png">images/cloud_console_edit_32px.png</file>
         <file alias="cloud_console_edit_disabled_16px.png">images/cloud_console_edit_disabled_16px.png</file>
         <file alias="cloud_console_edit_disabled_32px.png">images/cloud_console_edit_disabled_32px.png</file>
+        <file alias="cloud_console_profile_16px.png">images/cloud_console_profile_16px.png</file>
         <file alias="cloud_console_profile_add_16px.png">images/cloud_console_profile_add_16px.png</file>
         <file alias="cloud_console_profile_add_32px.png">images/cloud_console_profile_add_32px.png</file>
         <file alias="cloud_console_profile_add_disabled_16px.png">images/cloud_console_profile_add_disabled_16px.png</file>
@@ -452,6 +454,5 @@
         <file alias="log_viewer_options_disabled_16px.png">images/log_viewer_options_disabled_16px.png</file>
         <file alias="log_viewer_options_disabled_32px.png">images/log_viewer_options_disabled_32px.png</file>
         <file alias="log_viewer_refresh_16px.png">images/log_viewer_refresh_16px.png</file>
-        <file alias="log_viewer_refresh_32px.png">images/log_viewer_refresh_32px.png</file>
     </qresource>
 </RCC>
