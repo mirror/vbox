@@ -4627,7 +4627,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
              * Set the "SSBD-not-needed" flag to work around a bug in some Linux kernels when the VIRT_SPEC_CTL
              * feature is not exposed on AMD CPUs and there is only 1 vCPU configured.
              * This was observed with kernel "4.15.0-29-generic #31~16.04.1-Ubuntu" but more versions are likely affected.
-             * 
+             *
              * The kernel doesn't initialize a lock and causes a NULL pointer exception later on when configuring SSBD:
              *    EIP: _raw_spin_lock+0x14/0x30
              *    EFLAGS: 00010046 CPU: 0
