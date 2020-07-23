@@ -1421,9 +1421,10 @@ class UIActionSimpleSelectorConsolePerformCopyCommand : public UIActionSimple
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorConsolePerformCopyCommand(UIActionPool *pParent, bool fSerial)
+    UIActionSimpleSelectorConsolePerformCopyCommand(UIActionPool *pParent, bool fSerial, bool fUnix)
         : UIActionSimple(pParent)
         , m_fSerial(fSerial)
+        , m_fUnix(fUnix)
     {
         if (m_fSerial)
             setIcon(UIIconPool::iconSet(":/cloud_machine_console_get_serial_console_command_16px.png",
@@ -1448,12 +1449,18 @@ protected:
     {
         if (m_fSerial)
         {
-            setName(QApplication::translate("UIActionPool", "&Copy Command (serial)"));
+            if (m_fUnix)
+                setName(QApplication::translate("UIActionPool", "&Copy Command (serial) for Unix"));
+            else
+                setName(QApplication::translate("UIActionPool", "&Copy Command (serial) for Windows"));
             setStatusTip(QApplication::translate("UIActionPool", "Copy console command for serial connection"));
         }
         else
         {
-            setName(QApplication::translate("UIActionPool", "&Copy Command (VNC)"));
+            if (m_fUnix)
+                setName(QApplication::translate("UIActionPool", "&Copy Command (VNC) for Unix"));
+            else
+                setName(QApplication::translate("UIActionPool", "&Copy Command (VNC) for Windows"));
             setStatusTip(QApplication::translate("UIActionPool", "Copy console command for VNC connection"));
         }
     }
@@ -1462,6 +1469,8 @@ private:
 
     /** Holds whether this command is of serial type. */
     bool  m_fSerial;
+    /** Holds whether this command is for unix. */
+    bool  m_fUnix;
 };
 
 
@@ -3457,8 +3466,10 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_M_Console] = new UIActionMenuSelectorConsole(this);
     m_pool[UIActionIndexST_M_Machine_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
     m_pool[UIActionIndexST_M_Machine_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false);
+    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true, true);
+    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true, false);
+    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false, true);
+    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false, false);
     m_pool[UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
     m_pool[UIActionIndexST_M_Machine_M_Close] = new UIActionMenuSelectorClose(this);
     m_pool[UIActionIndexST_M_Machine_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
@@ -4317,8 +4328,10 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable)
                     << action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection)
                     << action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC)
+                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix)
+                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows)
+                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix)
+                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows)
                     << action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications)
                     // << action(UIActionIndexST_M_Machine_M_Close_S_Detach)
                     << action(UIActionIndexST_M_Machine_M_Close_S_SaveState)

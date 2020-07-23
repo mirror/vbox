@@ -252,10 +252,14 @@ private slots:
         void sltPerformDeleteConsoleConnectionForMachine();
         /** Handles call to copy console connection key fingerprint. */
         void sltCopyConsoleConnectionFingerprint();
-        /** Handles call to copy serial console command. */
-        void sltPerformCopyCommandSerial();
-        /** Handles call to copy VNC console command. */
-        void sltPerformCopyCommandVNC();
+        /** Handles call to copy serial console command for Unix. */
+        void sltPerformCopyCommandSerialUnix();
+        /** Handles call to copy serial console command for Windows. */
+        void sltPerformCopyCommandSerialWindows();
+        /** Handles call to copy VNC console command for Unix. */
+        void sltPerformCopyCommandVNCUnix();
+        /** Handles call to copy VNC console command for Windows. */
+        void sltPerformCopyCommandVNCWindows();
         /** Handles call to execute external application. */
         void sltExecuteExternalApplication();
 

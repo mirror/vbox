@@ -1273,7 +1273,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 #endif /* !VBOX_WS_WIN */
 }
 
-void UIVirtualBoxManager::sltPerformCopyCommandSerial()
+void UIVirtualBoxManager::sltPerformCopyCommandSerialUnix()
 {
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -1290,7 +1290,24 @@ void UIVirtualBoxManager::sltPerformCopyCommandSerial()
     pClipboard->setText(comMachine.GetSerialConsoleCommand());
 }
 
-void UIVirtualBoxManager::sltPerformCopyCommandVNC()
+void UIVirtualBoxManager::sltPerformCopyCommandSerialWindows()
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtrReturnVoid(pCloudItem);
+
+    /* Acquire cloud machine: */
+    CCloudMachine comMachine = pCloudItem->machine();
+
+    /* Put copied serial command to clipboard: */
+    QClipboard *pClipboard = QGuiApplication::clipboard();
+    AssertPtrReturnVoid(pClipboard);
+    pClipboard->setText(comMachine.GetSerialConsoleCommandWindows());
+}
+
+void UIVirtualBoxManager::sltPerformCopyCommandVNCUnix()
 {
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -1305,6 +1322,23 @@ void UIVirtualBoxManager::sltPerformCopyCommandVNC()
     QClipboard *pClipboard = QGuiApplication::clipboard();
     AssertPtrReturnVoid(pClipboard);
     pClipboard->setText(comMachine.GetVNCConsoleCommand());
+}
+
+void UIVirtualBoxManager::sltPerformCopyCommandVNCWindows()
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtrReturnVoid(pCloudItem);
+
+    /* Acquire cloud machine: */
+    CCloudMachine comMachine = pCloudItem->machine();
+
+    /* Put copied VNC command to clipboard: */
+    QClipboard *pClipboard = QGuiApplication::clipboard();
+    AssertPtrReturnVoid(pClipboard);
+    pClipboard->setText(comMachine.GetVNCConsoleCommandWindows());
 }
 
 void UIVirtualBoxManager::sltPerformDiscardMachineState()
@@ -2166,10 +2200,14 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformCopyCommandSerial);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformCopyCommandVNC);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCopyCommandSerialUnix);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCopyCommandSerialWindows);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCopyCommandVNCUnix);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformCopyCommandVNCWindows);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow);
 
@@ -2710,8 +2748,10 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         pAction->setProperty("fingerprint", strFingerprint);
 
         /* Copy command to clipboard actions: */
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix));
+        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows));
         pMenu->addSeparator();
 
         /* Terminal application/profile action list: */
@@ -2879,8 +2919,10 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_M_Console)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CreateConnection, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications, items));
 
     /* Enable/disable group-close actions: */
@@ -3159,8 +3201,10 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexST_M_Machine_M_Console:
         case UIActionIndexST_M_Machine_M_Console_S_CreateConnection:
         case UIActionIndexST_M_Machine_M_Console_S_DeleteConnection:
-        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerial:
-        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNC:
+        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix:
+        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows:
+        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix:
+        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows:
         case UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications:
         {
             return isAtLeastOneItemStarted(items);
