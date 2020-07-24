@@ -143,8 +143,10 @@ typedef struct SUPHWVIRTMSRS
         struct
         {
             uint64_t        u64MsrHwcr;
-            uint64_t        u64Padding[27];
-        }svm;
+            uint64_t        u64MsrSmmAddr;
+            uint64_t        u64MsrSmmMask;
+            uint64_t        u64Padding[25];
+        } svm;
     } u;
 } SUPHWVIRTMSRS;
 AssertCompileSize(SUPHWVIRTMSRS, 224);

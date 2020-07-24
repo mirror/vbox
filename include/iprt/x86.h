@@ -1827,6 +1827,12 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_K8_IORRMASK1                    UINT32_C(0xc0010019)
 #define MSR_K8_TOP_MEM1                     UINT32_C(0xc001001a)
 #define MSR_K8_TOP_MEM2                     UINT32_C(0xc001001d)
+
+/** SMM MSRs. */
+#define MSR_K7_SMBASE                       UINT32_C(0xc0010111)
+#define MSR_K7_SMM_ADDR                     UINT32_C(0xc0010112)
+#define MSR_K7_SMM_MASK                     UINT32_C(0xc0010113)
+
 /** North bridge config? See BIOS & Kernel dev guides for
  * details. */
 #define MSR_K8_NB_CFG                       UINT32_C(0xc001001f)
