@@ -287,7 +287,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                     pMedium->tymed = TYMED_HGLOBAL;
                 }
 #endif
-                LogRel3(("DnD: strMIMEType=%s, vaType=%ld\n", strMIMEType.toUtf8().constData(), vaType));
+                LogRel3(("DnD: strMIMEType=%s\n", strMIMEType.toUtf8().constData()));
 
                 int rc;
 
@@ -333,7 +333,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                         }
 
                         int cFiles = lstFiles.size();
-                        LogFlowThisFunc(("Files (%zu)\n", cFiles));
+                        LogFlowThisFunc(("Files (%d)\n", cFiles));
                         if (   RT_SUCCESS(rc)
                             && cFiles)
                         {
@@ -385,7 +385,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                                     *pCurFile = L'\0';
                                     pCurFile += sizeof(RTUTF16);
 
-                                    LogFlowThisFunc(("\t#%zu: cchCurFile=%zu\n", i, cchCurFile));
+                                    LogFlowThisFunc(("\t#%d: cchCurFile=%zu\n", i, cchCurFile));
                                 }
 
                                 if (RT_SUCCESS(rc))
