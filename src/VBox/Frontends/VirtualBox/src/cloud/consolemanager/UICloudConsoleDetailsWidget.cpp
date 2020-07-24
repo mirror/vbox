@@ -236,6 +236,9 @@ void UICloudConsoleDetailsWidget::prepareWidgets()
         m_pStackedLayout = new QStackedLayout;
         if (m_pStackedLayout)
         {
+            /* Add into layout: */
+            pMainLayout->addLayout(m_pStackedLayout);
+
             /* Create application widget: */
             QWidget *pWidgetApplication = new QWidget;
             if (pWidgetApplication)
@@ -397,9 +400,6 @@ void UICloudConsoleDetailsWidget::prepareWidgets()
                 /* Add into layout: */
                 m_pStackedLayout->addWidget(pWidgetProfile);
             }
-
-            /* Add into layout: */
-            pMainLayout->addLayout(m_pStackedLayout);
         }
 
         /* If parent embedded into stack: */
