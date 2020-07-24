@@ -41,8 +41,9 @@ static int dndDroppedFilesCloseInternal(PDNDDROPPEDFILES pDF);
 
 static int dndDroppedFilesInitInternal(PDNDDROPPEDFILES pDF)
 {
-    pDF->m_fOpen = 0;
-    pDF->m_hDir  = NIL_RTDIR;
+    pDF->m_fOpen    = 0;
+    pDF->m_hDir     = NIL_RTDIR;
+    pDF->pszPathAbs = NULL;
 
     RTListInit(&pDF->m_lstDirs);
     RTListInit(&pDF->m_lstFiles);
@@ -70,6 +71,9 @@ void DnDDroppedFilesDestroy(PDNDDROPPEDFILES pDF)
     /* Only make sure to not leak any handles and stuff, don't delete any
      * directories / files here. */
     dndDroppedFilesCloseInternal(pDF);
+
+    RTStrFree(pDF->pszPathAbs);
+    pDF->pszPathAbs = NULL;
 }
 
 /**
@@ -237,8 +241,9 @@ int DnDDroppedFilesOpenEx(PDNDDROPPEDFILES pDF,
             rc = RTDirOpen(&hDir, szDropDir);
             if (RT_SUCCESS(rc))
             {
+                pDF->pszPathAbs = RTStrDup(szDropDir);
+                AssertPtrBreakStmt(pDF->pszPathAbs, rc = VERR_NO_MEMORY);
                 pDF->m_hDir     = hDir;
-                pDF->pszPathAbs = szDropDir;
                 pDF->m_fOpen    = fFlags;
             }
         }
