@@ -490,11 +490,13 @@ my_generate_usercpp_h()
     #
     # Probe the slickedit user config, picking the most recent version.
     #
+    MY_VSLICK_DB_OLD=
     if test -z "${MY_SLICK_CONFIG}"; then
         if test -d "${HOME}/Library/Application Support/SlickEdit"; then
             MY_SLICKDIR_="${HOME}/Library/Application Support/SlickEdit"
             MY_USERCPP_H="unxcpp.h"
             MY_VSLICK_DB="vslick.sta" # was .stu earlier, 24 is using .sta.
+            MY_VSLICK_DB_OLD="vslick.stu"
         elif test -d "${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"; then
             MY_SLICKDIR_="${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"
             MY_USERCPP_H="usercpp.h"
@@ -502,7 +504,8 @@ my_generate_usercpp_h()
         else
             MY_SLICKDIR_="${HOME}/.slickedit"
             MY_USERCPP_H="unxcpp.h"
-            MY_VSLICK_DB="vslick.stu"
+            MY_VSLICK_DB="vslick.sta"
+            MY_VSLICK_DB_OLD="vslick.stu"
         fi
     else
         MY_SLICKDIR_="${MY_SLICK_CONFIG}"
@@ -511,7 +514,8 @@ my_generate_usercpp_h()
             MY_VSLICK_DB="vslick.sta"
         else
             MY_USERCPP_H="unxcpp.h"
-            MY_VSLICK_DB="vslick.stu"
+            MY_VSLICK_DB="vslick.sta"
+            MY_VSLICK_DB_OLD="vslick.stu"
         fi
         # MacOS: Implement me!
     fi
@@ -520,7 +524,9 @@ my_generate_usercpp_h()
     MY_VER="0.0.0"
     for subdir in "${MY_SLICKDIR_}/"*;
     do
-        if test -f "${subdir}/${MY_USERCPP_H}"  -o  -f "${subdir}/${MY_VSLICK_DB}"; then
+        if test    -f "${subdir}/${MY_USERCPP_H}"  \
+                -o -f "${subdir}/${MY_VSLICK_DB}" \
+                -o '(' -n "${MY_VSLICK_DB_OLD}" -a -f "${subdir}/${MY_VSLICK_DB_OLD}" ')'; then
             MY_CUR_VER_NUM=0
             MY_CUR_VER=`echo "${subdir}" | ${MY_SED} -e 's,^.*/,,g'`
 
@@ -555,6 +561,7 @@ my_generate_usercpp_h()
         echo "Found SlickEdit v${MY_VER} preprocessor file: ${MY_USERCPP_H_FULL}"
     else
         echo "Failed to locate SlickEdit preprocessor file. You need to manually merge ${MY_USERCPP_H}."
+        echo "dbg: MY_SLICKDIR=${MY_SLICKDIR}  MY_USERCPP_H_FULL=${MY_USERCPP_H_FULL}"
         MY_USERCPP_H_FULL=""
     fi
 
@@ -715,6 +722,10 @@ EOF
 #define RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(a_SetOfType, a_ItemType, a_DeclMacro, a_ImplExtNm) typedef struct a_SetOfType { RTASN1SETCORE SetCore; RTASN1ALLOCATION Allocation; uint32_t cItems; RT_CONCAT(P,a_ItemType) paItems; } a_SetOfType; typedef a_SetOfType *P##a_SetOfType, const *PC##a_SetOfType; int a_ImplExtNm##_DecodeAsn1(struct RTASN1CURSOR *pCursor, uint32_t fFlags, P##a_SetOfType pThis, const char *pszErrorTag); int a_ImplExtNm##_Compare(PC##a_SetOfType pLeft, PC##a_SetOfType pRight)
 #define RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(a_TypeNm, a_DeclMacro, a_ImplExtNm) int  a_ImplExtNm##_Init(P##a_TypeNm pThis, PCRTASN1ALLOCATORVTABLE pAllocator); int  a_ImplExtNm##_Clone(P##a_TypeNm pThis, PC##a_TypeNm) pSrc, PCRTASN1ALLOCATORVTABLE pAllocator); void a_ImplExtNm##_Delete(P##a_TypeNm pThis); int  a_ImplExtNm##_Enum(P##a_TypeNm pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser); int  a_ImplExtNm##_Compare(PC##a_TypeNm) pLeft, PC##a_TypeNm pRight); int  a_ImplExtNm##_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, P##a_TypeNm pThis, const char *pszErrorTag); int  a_ImplExtNm##_CheckSanity(PC##a_TypeNm pThis, uint32_t fFlags, PRTERRINFO pErrInfo, const char *pszErrorTag)
 #define RTASN1TYPE_STANDARD_PROTOTYPES(a_TypeNm, a_DeclMacro, a_ImplExtNm, a_Asn1CoreNm) inline PRTASN1CORE a_ImplExtNm##_GetAsn1Core(PC##a_TypeNm pThis) { return (PRTASN1CORE)&pThis->a_Asn1CoreNm; } inline bool a_ImplExtNm##_IsPresent(PC##a_TypeNm pThis) { return pThis && RTASN1CORE_IS_PRESENT(&pThis->a_Asn1CoreNm); } RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(a_TypeNm, a_DeclMacro, a_ImplExtNm)
+
+#define RTLDRELF_NAME(name)             rtldrELF64##name
+#define RTLDRELF_SUFF(name)             name##64
+#define RTLDRELF_MID(pre,suff)          pre##64##suff
 
 #define BS3_DECL(type)                  type
 #define BS3_DECL_CALLBACK(type)         type
