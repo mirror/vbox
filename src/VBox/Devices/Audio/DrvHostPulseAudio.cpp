@@ -714,26 +714,32 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_Init(PPDMIHOSTAUDIO pInterface)
             fLocked = false;
 
             rc = RTSemEventWait(hEvtInit, RT_MS_10SEC); /* 10 seconds should be plenty. */
-
-            pa_threaded_mainloop_lock(pThis->pMainLoop);
-            fLocked = true;
-
-            pa_context_state_t cstate = pa_context_get_state(pThis->pContext);
-            if (cstate != PA_CONTEXT_READY)
+            if (RT_SUCCESS(rc))
             {
-                LogRel(("PulseAudio: Failed to initialize context (state %d, rc=%Rrc)\n", cstate, rc));
-                if (RT_SUCCESS(rc))
-                    rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+                pa_threaded_mainloop_lock(pThis->pMainLoop);
+                fLocked = true;
+
+                pa_context_state_t cstate = pa_context_get_state(pThis->pContext);
+                if (cstate != PA_CONTEXT_READY)
+                {
+                    LogRel(("PulseAudio: Failed to initialize context (state %d, rc=%Rrc)\n", cstate, rc));
+                    if (RT_SUCCESS(rc))
+                        rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+                }
+                else
+                {
+                    /* Install the main state changed callback to know if something happens to our acquired context. */
+                    pa_context_set_state_callback(pThis->pContext, paContextCbStateChanged, pThis /* pvUserData */);
+                }
             }
+            else
+                LogRel(("PulseAudio: Waiting for context to become ready failed with %Rrc\n", rc));
         }
         else
             LogRel(("PulseAudio: Failed to connect to server: %s\n",
                      pa_strerror(pa_context_errno(pThis->pContext))));
 
         RTSemEventDestroy(hEvtInit);
-
-        /* Install the main state changed callback to know if something happens to our acquired context. */
-        pa_context_set_state_callback(pThis->pContext, paContextCbStateChanged, pThis /* pvUserData */);
     }
     while (0);
 
