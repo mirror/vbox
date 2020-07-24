@@ -189,7 +189,7 @@ void UIAcquirePublicKeyDialog::sltRevalidate()
 
 void UIAcquirePublicKeyDialog::retranslateUi()
 {
-    setWindowTitle(tr("Provide public key"));
+    setWindowTitle(tr("Provide a public key"));
 }
 
 void UIAcquirePublicKeyDialog::prepare()
@@ -2759,9 +2759,12 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
     else
     {
         /* Copy fingerprint to clipboard action: */
+        const QString strFingerprintCompressed = strFingerprint.size() <= 12
+                                               ? strFingerprint
+                                               : QString("%1...%2").arg(strFingerprint.left(6), strFingerprint.right(6));
         QAction *pAction = pMenu->addAction(UIIconPool::iconSet(":/cloud_machine_console_copy_connection_fingerprint_16px.png",
                                                                 ":/cloud_machine_console_copy_connection_fingerprint_disabled_16px.png"),
-                                            QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprint),
+                                            QApplication::translate("UIActionPool", "Copy Key Fingerprint (%1)").arg(strFingerprintCompressed),
                                             this, &UIVirtualBoxManager::sltCopyConsoleConnectionFingerprint);
         pAction->setProperty("fingerprint", strFingerprint);
 
