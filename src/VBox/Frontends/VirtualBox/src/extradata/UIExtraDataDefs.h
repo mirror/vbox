@@ -231,6 +231,12 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_CloudConsoleManager_Details_Expanded;
     /** @} */
 
+    /** @name Cloud Console
+      * @{ */
+        /** Holds Cloud Console public key path. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_CloudConsole_PublicKey_Path;
+    /** @} */
+
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** @name Extra-data Manager
       * @{ */

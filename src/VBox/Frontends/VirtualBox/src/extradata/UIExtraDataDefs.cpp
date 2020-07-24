@@ -118,6 +118,9 @@ const char *UIExtraDataDefs::GUI_CloudConsoleManager_Application = "GUI/CloudCon
 const char *UIExtraDataDefs::GUI_CloudConsoleManager_Restrictions = "GUI/CloudConsoleManager/Restrictions";
 const char *UIExtraDataDefs::GUI_CloudConsoleManager_Details_Expanded = "GUI/CloudConsoleManager/Details/Expanded";
 
+/* Cloud Console: */
+const char *UIExtraDataDefs::GUI_CloudConsole_PublicKey_Path = "GUI/CloudConsole/PublicKey/Path";
+
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 /* Extra-data Manager: */
 const char *UIExtraDataDefs::GUI_ExtraDataManager_Geometry = "GUI/ExtraDataManager/Geometry";

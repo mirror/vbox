@@ -130,6 +130,9 @@ private:
     /** Prepares all. */
     void prepare();
 
+    /** Loads file contents. */
+    void loadFileContents(const QString &strPath, bool fIgnoreErrors = false);
+
     /** Holds the text-editor instance. */
     QTextEdit         *m_pTextEditor;
     /** Holds the button-box instance. */
@@ -174,11 +177,8 @@ void UIAcquirePublicKeyDialog::sltHandleOpenButtonClick()
                                                               this, tr("Choose a public key file"));
     if (!strFileName.isEmpty())
     {
-        QFile file(strFileName);
-        if (file.open(QIODevice::ReadOnly))
-            m_pTextEditor->setPlainText(file.readAll());
-        else
-            msgCenter().cannotOpenPublicKeyFile(strFileName);
+        gEDataManager->setCloudConsolePublicKeyPath(strFileName);
+        loadFileContents(strFileName);
     }
 }
 
@@ -218,6 +218,24 @@ void UIAcquirePublicKeyDialog::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+
+    /* Load last remembered file contents: */
+    loadFileContents(gEDataManager->cloudConsolePublicKeyPath(), true /* ignore errors */);
+
+    /* Resize to suitable size: */
+    const int iMinimumHeightHint = minimumSizeHint().height();
+    resize(iMinimumHeightHint * 2, iMinimumHeightHint);
+}
+
+void UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIgnoreErrors /* = false */)
+{
+    if (strPath.isEmpty())
+        return;
+    QFile file(strPath);
+    if (file.open(QIODevice::ReadOnly))
+        m_pTextEditor->setPlainText(file.readAll());
+    else if (!fIgnoreErrors)
+        msgCenter().cannotOpenPublicKeyFile(strPath);
 }
 
 

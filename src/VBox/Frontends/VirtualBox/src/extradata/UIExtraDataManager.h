@@ -451,6 +451,14 @@ public:
         void setCloudConsoleManagerDetailsExpanded(bool fExpanded);
     /** @} */
 
+    /** @name Cloud Console
+      * @{ */
+        /** Returns Cloud Console public key path. */
+        QString cloudConsolePublicKeyPath();
+        /** Defines Cloud Console public key @a strPath. */
+        void setCloudConsolePublicKeyPath(const QString &strPath);
+    /** @} */
+
     /** @name Wizards
       * @{ */
         /** Returns mode for wizard of passed @a type. */

@@ -1932,6 +1932,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_CloudProfileManager_Details_Expanded
            << GUI_CloudConsoleManager_Restrictions
            << GUI_CloudConsoleManager_Details_Expanded
+           << GUI_CloudConsole_PublicKey_Path
            << GUI_HideDescriptionForWizards
            << GUI_HideFromManager << GUI_HideDetails
            << GUI_PreventReconfiguration << GUI_PreventSnapshotOperations
@@ -3060,6 +3061,16 @@ void UIExtraDataManager::setCloudConsoleManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_CloudConsoleManager_Details_Expanded, toFeatureAllowed(fExpanded));
+}
+
+QString UIExtraDataManager::cloudConsolePublicKeyPath()
+{
+    return extraDataString(GUI_CloudConsole_PublicKey_Path);
+}
+
+void UIExtraDataManager::setCloudConsolePublicKeyPath(const QString &strPath)
+{
+    setExtraDataString(GUI_CloudConsole_PublicKey_Path, strPath);
 }
 
 WizardMode UIExtraDataManager::modeForWizardType(WizardType type)
