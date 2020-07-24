@@ -189,7 +189,9 @@ void UIAcquirePublicKeyDialog::sltRevalidate()
 
 void UIAcquirePublicKeyDialog::retranslateUi()
 {
-    setWindowTitle(tr("Provide a public key"));
+    setWindowTitle(tr("Public key"));
+    m_pTextEditor->setPlaceholderText(tr("Paste public key"));
+    m_pButtonBox->button(QDialogButtonBox::Open)->setText(tr("Browse"));
 }
 
 void UIAcquirePublicKeyDialog::prepare()
