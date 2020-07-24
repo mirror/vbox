@@ -2944,6 +2944,21 @@ class TestDriver(base.TestDriver):                                              
                 from testdriver.vboxwrappers import SessionWrapper;
                 oTmp = SessionWrapper(oSession, oVM, self.oVBox, self.oVBoxMgr, self, True, sName, sLogFile);
                 oTmp.addLogsToReport();
+
+                # Try to collect a stack trace of the process for fruther investigation of any startup hangs.
+                uPid = oTmp.getPid();
+                if uPid is not None:
+                    sHostProcessInfoHung = utils.processGetInfo(uPid, fSudo = True);
+                    if sHostProcessInfoHung is not None:
+                        reporter.log('Trying to annotate the hung VM startup process report, please stand by...');
+                        fRcTmp = self.annotateAndUploadProcessReport(sHostProcessInfoHung, 'vmprocess-startup-hung.log',
+                                                                     'process/report/vm', 'Annotated hung VM process state during startup');     # pylint: disable=line-too-long
+                        # Upload the raw log for manual annotation in case resolving failed.
+                        if not fRcTmp:
+                            reporter.log('Failed to annotate hung VM process report, uploading raw report');
+                            reporter.addLogString(sHostProcessInfoHung, 'vmprocess-startup-hung.log', 'process/report/vm',
+                                                  'Hung VM process state during startup');
+
                 try:
                     if oSession is not None:
                         oSession.close();
