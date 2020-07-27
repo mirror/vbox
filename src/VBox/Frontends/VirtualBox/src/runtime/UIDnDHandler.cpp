@@ -167,8 +167,17 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
     if (   m_dndTarget.isOk()
         && enmResult != KDnDAction_Ignore)
     {
-        LogFlowFunc(("strFormat=%s ...\n", strFormat.toUtf8().constData()));
+        LogRel2(("DnD: Guest requested format '%s'\n", strFormat.toUtf8().constData()));
+        LogRel2(("DnD: The host offered %d formats:\n", pMimeData->formats().size()));
 
+#if 0
+        QStringList::const_iterator itFmt = pMimeData->formats().constBegin();
+        while (itFmt != pMimeData->formats().constEnd())
+        {
+            LogRel2(("DnD:\t'%s'\n", (*itFmt).toUtf8().constData()));
+            itFmt++;
+        }
+#endif
         QByteArray arrBytes;
 
         /*
@@ -192,25 +201,15 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
          **/
         else
         {
-            LogRel3(("DnD: Guest requested a different format '%s'\n", strFormat.toUtf8().constData()));
-            LogRel3(("DnD: The host offered:\n"));
-#if 0
-            for (QStringList::iterator itFmt  = pMimeData->formats().begin();
-                                       itFmt != pMimeData->formats().end(); itFmt++)
-            {
-                QString strTemp = *itFmt;
-                LogRel3(("DnD: \t%s\n", strTemp.toUtf8().constData()));
-            }
-#endif
             if (pMimeData->hasText())
             {
-                LogRel3(("DnD: Converting data to text ...\n"));
+                LogRel2(("DnD: Converting data to text ...\n"));
                 arrBytes  = pMimeData->text().toUtf8();
                 strFormat = "text/plain;charset=utf-8";
             }
             else
             {
-                LogRel(("DnD: Error: Could not convert host format to guest format\n"));
+                LogRel(("DnD: Host formats did not offer a matching format for the guest, skipping\n"));
                 enmResult = KDnDAction_Ignore;
             }
         }
@@ -223,7 +222,7 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
             memcpy(vecData.data(), arrBytes.constData(), arrBytes.size());
 
             /* Send data to the guest. */
-            LogRel3(("DnD: Host is sending %d bytes of data as '%s'\n", vecData.size(), strFormat.toUtf8().constData()));
+            LogRel2(("DnD: Host is sending %d bytes of data as '%s'\n", vecData.size(), strFormat.toUtf8().constData()));
             CProgress progress = m_dndTarget.SendData(screenID, strFormat, vecData);
 
             if (m_dndTarget.isOk())
