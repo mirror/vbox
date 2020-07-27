@@ -1932,11 +1932,13 @@ int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta)
 
         case VBGLR3GUESTDNDMETADATATYPE_URI_LIST:
         {
-            VBClLogInfo(("URI transfer root directory is '%s'\n", DnDTransferListGetRootPathAbs(&pMeta->u.URI.Transfer)));
+            const char *pcszRootPath = DnDTransferListGetRootPathAbs(&pMeta->u.URI.Transfer);
+            AssertPtrBreakStmt(pcszRootPath, VERR_INVALID_POINTER);
 
-            /* Note: The transfer list already has its root set to a temporary directory, so no need to set/add a new
-             *       path base here. */
-            rc = DnDTransferListGetRootsEx(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_NATIVE, NULL /* pszPathBase */,
+            VBClLogInfo("Transfer list root directory is '%s'\n", pcszRootPath);
+
+            /* Note: Use the URI format here, as X' DnD spec says so. */
+            rc = DnDTransferListGetRootsEx(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, pcszRootPath,
                                            DND_PATH_SEPARATOR, (char **)&pvData, &cbData);
             break;
         }
