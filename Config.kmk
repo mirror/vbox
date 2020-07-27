@@ -3037,8 +3037,6 @@ endif
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
 	$(QUIET)$(CAT) $@
 	$(QUIET)$(ECHO) '=========== END OF $@ ========='
-# temp hack for win-* debugging.
-	/usr/bin/env || true
 
 include $(PATH_OUT)/DynamicConfig.kmk
 endif # !VBOX_NOINC_DYNAMIC_CONFIG_KMK
@@ -4631,13 +4629,15 @@ TEMPLATE_VBoxR0_CXXFLAGS            = -fno-pie -nostdinc -g $(VBOX_GCC_pipe) $(V
 	$(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions \
 	$(VBOX_GCC_fno-stack-protector) -fno-common $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) \
 	-fno-rtti $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK)
-TEMPLATE_VBoxR0_CFLAGS.amd64        = -m64 -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fasynchronous-unwind-tables -ffreestanding
-TEMPLATE_VBoxR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fasynchronous-unwind-tables
+TEMPLATE_VBoxR0_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
+	-fasynchronous-unwind-tables -ffreestanding
+TEMPLATE_VBoxR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
+	-fasynchronous-unwind-tables
 TEMPLATE_VBoxR0_CXXFLAGS.freebsd    = -ffreestanding
  if $(VBOX_GCC_VERSION_CC) < 30400
   TEMPLATE_VBoxR0_DEFS             += RT_WITHOUT_PRAGMA_ONCE
  endif
- ifeq ($(KBUILD_TARGET),solaris)
+ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBoxR0_LDFLAGS            = -r
  TEMPLATE_VBoxR0_LDFLAGS.solaris    = -u _init -u _info
  TEMPLATE_VBoxR0_LIBS.solaris       = \
@@ -4648,32 +4648,20 @@ TEMPLATE_VBoxR0_CXXFLAGS.freebsd    = -ffreestanding
  endif
  # Solaris driver signing.
  TEMPLATE_VBoxR0_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
- else
+else
  TEMPLATE_VBoxR0_LDFLAGS            = -nostdlib -Bsymbolic -g
  ## @todo WTF doesn't the globals work? Debug info is supposed to be split everywhere. GRR
  TEMPLATE_VBoxR0_LD_DEBUG           = split
- endif
- if1of ($(KBUILD_TARGET), linux)
-VBOX_WITH_VBOXR0_AS_DLL = 1
-TEMPLATE_VBoxR0_DLLSUFF             = .r0
-TEMPLATE_VBoxR0_CFLAGS             += -fPIC
-TEMPLATE_VBoxR0_CXXFLAGS           += -fPIC
-TEMPLATE_VBoxR0_LDFLAGS            +=
-TEMPLATE_VBoxR0_DTRACE_HDR_FLAGS   += --pic
-TEMPLATE_VBoxR0_DTRACE_OBJ_FLAGS   += --pic
- else
-TEMPLATE_VBoxR0_CFLAGS.amd64       += -mcmodel=kernel
-TEMPLATE_VBoxR0_CXXFLAGS.amd64     += -mcmodel=kernel
- endif
- ifn1of ($(KBUILD_TARGET),solaris freebsd)
+endif
+ifn1of ($(KBUILD_TARGET),solaris freebsd)
  TEMPLATE_VBoxR0_LIBS               = \
 	$(VBOX_GCC_LIBGCC) # intrinsics
- endif
- if1of ($(KBUILD_TARGET),linux)
- TEMPLATE_VBoxR0_POST_CMDS         += $(NLTAB)\
+endif
+if1of ($(KBUILD_TARGET),linux)
+ TEMPLATE_VBoxR0_POST_CMDS          = \
  	$(if $(eq $(tool_do),LINK_SYSMOD),if readelf -S $(out)|grep -q "[cd]tors"; then echo "Found ctors/dtors in $(out)!"; exit 1; fi)
- endif
-endif # elf
+endif
+endif
 
 ifeq ($(VBOX_LDR_FMT),macho)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_GCC_TOOL)
