@@ -30,6 +30,8 @@
 #include <VBox/log.h>
 #include <iprt/errcore.h>
 
+#include <VBox/GuestHost/DragAndDrop.h>
+
 
 UIDnDMIMEData::UIDnDMIMEData(UIDnDHandler *pDnDHandler,
                              QStringList lstFormats, Qt::DropAction defAction, Qt::DropActions actions)
@@ -233,7 +235,7 @@ int UIDnDMIMEData::getDataAsVariant(const QVector<uint8_t> &vecData,
         case QVariant::List: /* Used on OS X for representing URI lists. */
         {
             QString strData = QString(reinterpret_cast<const char*>(vecData.constData()));
-            QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
+            QStringList lstString = strData.split(DND_PATH_SEPARATOR, QString::SkipEmptyParts);
 
             QVariantList lstVariant;
 
@@ -252,7 +254,7 @@ int UIDnDMIMEData::getDataAsVariant(const QVector<uint8_t> &vecData,
         case QVariant::StringList:
         {
             QString strData = QString(reinterpret_cast<const char*>(vecData.constData()));
-            QStringList lstString = strData.split("\r\n", QString::SkipEmptyParts);
+            QStringList lstString = strData.split(DND_PATH_SEPARATOR, QString::SkipEmptyParts);
 
             LogFlowFunc(("\tStringList has %d entries\n", lstString.size()));
 # ifdef DEBUG
