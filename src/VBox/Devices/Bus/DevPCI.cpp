@@ -470,6 +470,7 @@ static const uint8_t pci_irqs[4] = { 11, 10, 9, 11 };   /* bird: added const */
 static void pci_bios_init_device(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVPCIBUS pBus,
                                  PPDMPCIDEV pPciDev, uint8_t cBridgeDepth, uint8_t *paBridgePositions)
 {
+    uint32_t uPciBiosSpecialVRAM = 0xe0000000;
     uint32_t *paddr;
     int pin, pic_irq;
     uint16_t devclass, vendor_id, device_id;
@@ -481,7 +482,7 @@ static void pci_bios_init_device(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVP
     /* Check if device is present. */
     if (vendor_id != 0xffff)
     {
-        switch(devclass)
+        switch (devclass)
         {
             case 0x0101:
                 if (   (vendor_id == 0x8086)
@@ -504,22 +505,6 @@ static void pci_bios_init_device(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVP
                                     | PCI_COMMAND_IOACCESS);
                 }
                 break;
-            case 0x0300:
-            {
-                if (vendor_id != 0x80ee)
-                    goto default_map;
-                /* VGA: map frame buffer to default Bochs VBE address */
-                devpciR3BiosInitSetRegionAddress(pDevIns, pBus, pPciDev, 0, 0xe0000000);
-                /*
-                 * Legacy VGA I/O ports are implicitly decoded by a VGA class device. But
-                 * only the framebuffer (i.e., a memory region) is explicitly registered via
-                 * devpciR3BiosInitSetRegionAddress, so don't forget to enable I/O decoding.
-                 */
-                devpciR3SetWord(pDevIns, pPciDev, PCI_COMMAND,
-                                  devpciR3GetWord(pPciDev, PCI_COMMAND)
-                                | PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS);
-                break;
-            }
             case 0x0800:
                 /* PIC */
                 vendor_id = devpciR3GetWord(pPciDev, PCI_VENDOR_ID);
@@ -638,14 +623,14 @@ static void pci_bios_init_device(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVP
                 for (unsigned i = 0; i < (PCI_NUM_REGIONS-1); i++)
                 {
                     uint32_t u32Size;
-                    uint8_t  u8RessourceType;
+                    uint8_t  u8ResourceType;
                     uint32_t u32Address = 0x10 + i * 4;
 
                     /* Calculate size. */
-                    u8RessourceType = devpciR3GetByte(pPciDev, u32Address);
+                    u8ResourceType = devpciR3GetByte(pPciDev, u32Address);
                     devpciR3SetDWord(pDevIns, pPciDev, u32Address, UINT32_C(0xffffffff));
                     u32Size = devpciR3GetDWord(pPciDev, u32Address);
-                    bool fIsPio = ((u8RessourceType & PCI_COMMAND_IOACCESS) == PCI_COMMAND_IOACCESS);
+                    bool fIsPio = ((u8ResourceType & PCI_COMMAND_IOACCESS) == PCI_COMMAND_IOACCESS);
                     /* Clear resource information depending on resource type. */
                     if (fIsPio) /* I/O */
                         u32Size &= ~(0x01);
@@ -668,7 +653,24 @@ static void pci_bios_init_device(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVP
                         if (fIsPio)
                             paddr = &pGlobals->uPciBiosIo;
                         else
+                        {
                             paddr = &pGlobals->uPciBiosMmio;
+                            bool fPrefetch =    (u8ResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_IO)))
+                                             == PCI_ADDRESS_SPACE_MEM_PREFETCH;
+
+                            if (devclass == 0x0300 && (vendor_id == 0x80ee || vendor_id == 0x15ad) && fPrefetch)
+                            {
+                                /* VGA: map frame buffer to default Bochs VBE address */
+                                paddr = &uPciBiosSpecialVRAM;
+                                /*
+                                 * For VBoxVGA must enable I/O decoding, because legacy
+                                 * VGA I/O ports are implicitly decoded by a VGA class
+                                 * device. Not needed for VMSVGA or VBoxSVGA, because
+                                 * they have an explicit I/O BAR.
+                                 */
+                                fActiveIORegion = true;
+                            }
+                        }
                         uint32_t uNew = *paddr;
                         uNew = (uNew + u32Size - 1) & ~(u32Size - 1);
                         if (fIsPio)
