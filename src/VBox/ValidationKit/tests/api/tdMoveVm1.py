@@ -536,7 +536,8 @@ class SubTstDrvMoveVm1(base.SubTestDriverBase):
             sFloppyLoc = sOldLoc + os.sep + sFloppyImageName
             sController=self.dsKeys['FloppyImage']
             fRc = fRc and oSession.attachFloppy(sFloppyLoc, sController, 0, 0)
-            dsReferenceFiles['FloppyImage'].add(os.path.normcase(os.path.join(os.path.join(sNewLoc, oMachine.name), sFloppyImageName)))
+            dsReferenceFiles['FloppyImage'].add(os.path.normcase(os.path.join(os.path.join(sNewLoc, oMachine.name),
+                                                                                           sFloppyImageName)))
 
         if fRc is True:
             fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine)
