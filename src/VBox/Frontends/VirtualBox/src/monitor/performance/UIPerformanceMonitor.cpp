@@ -905,10 +905,6 @@ void UIPerformanceMonitor::prepareObjects()
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
-    // QPalette pal = bottomSpacerWidget->palette();
-    // pal.setColor(QPalette::Background, Qt::green);
-    // bottomSpacerWidget->setAutoFillBackground(true);
-    // bottomSpacerWidget->setPalette(pal);
     pContainerLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
 }
 

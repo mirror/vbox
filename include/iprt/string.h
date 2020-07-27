@@ -763,7 +763,7 @@ RTDECL(size_t) RTStrPurgeEncoding(char *psz);
 
 /**
  * Sanitizes a (valid) UTF-8 string by replacing all characters outside a white
- * list in-place by an ASCII replacement character.
+ * list in-place by an ASCII replacedment character.
  *
  * Multi-byte characters will be replaced byte by byte.
  *
@@ -3434,4 +3434,3 @@ RTDECL(uint64_t *) RTStrMemFind64(const void *pvHaystack, uint64_t uNeedle, size
 RT_C_DECLS_END
 
 #endif /* !IPRT_INCLUDED_string_h */
-
