@@ -4,7 +4,7 @@
 """
 Autostart testcase using.
 """
-from pykickstart.commands import repo
+#from pykickstart.commands import repo
 
 __copyright__ = \
 """
