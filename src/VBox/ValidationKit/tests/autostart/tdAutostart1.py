@@ -393,7 +393,7 @@ class tdAutostartOs(object):
                                         acbFdOut[iFd] += len(abBuf);
                                         ## @todo Figure out how to uniform + append!
                                         sBuf = '';
-                                        if sys.version_info >= (2, 7) and isinstance(abBuf, memoryview): ## @todo Why is this happening?
+                                        if sys.version_info >= (2, 7) and isinstance(abBuf, memoryview):
                                             abBuf = abBuf.tobytes();
                                             sBuf  = abBuf.decode("utf-8");
                                         else:
