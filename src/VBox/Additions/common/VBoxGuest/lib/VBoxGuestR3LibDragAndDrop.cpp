@@ -380,18 +380,10 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     uint64_t cbFileSize    = 0; /* Total file size (in bytes). */
     uint64_t cbFileWritten = 0; /* Written bytes. */
 
-    /*
-     * Create and query the (unique) drop target directory in the user's temporary directory.
-     */
-    int rc = DnDDroppedFilesOpenTemp(pDroppedFiles, 0 /* fFlags */);
-    if (RT_FAILURE(rc))
-    {
-        RTMemFree(pvChunk);
-        return rc;
-    }
-
     const char *pszDropDir = DnDDroppedFilesGetDirAbs(pDroppedFiles);
     AssertPtr(pszDropDir);
+
+    int rc;
 
     /*
      * Enter the main loop of retieving files + directories.
@@ -819,22 +811,32 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
 
+    AssertMsgReturn(pCtx->cbMaxChunkSize, ("Maximum chunk size must not be 0\n"), VERR_INVALID_PARAMETER);
+
     VBOXDNDDATAHDR dataHdr;
     RT_ZERO(dataHdr);
-
-    AssertMsg(pCtx->cbMaxChunkSize, ("Maximum chunk size must not be 0\n"));
-
     dataHdr.cbMetaFmt = pCtx->cbMaxChunkSize;
     dataHdr.pvMetaFmt = RTMemAlloc(dataHdr.cbMetaFmt);
     if (!dataHdr.pvMetaFmt)
         return VERR_NO_MEMORY;
 
     DNDDROPPEDFILES droppedFiles;
+    RT_ZERO(droppedFiles);
+
+    int rc = DnDDroppedFilesInit(&droppedFiles);
+    if (RT_SUCCESS(rc))
+        rc = DnDDroppedFilesOpenTemp(&droppedFiles, DNDURIDROPPEDFILE_FLAGS_NONE);
+
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("DnD: Initializing dropped files directory failed with %Rrc\n", rc));
+        return rc;
+    }
 
     void    *pvData = NULL;
     uint64_t cbData = 0;
 
-    int rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
+    rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
     if (RT_SUCCESS(rc))
     {
         /**
@@ -856,10 +858,16 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
             rc = DnDTransferListInitEx(&pMeta->u.URI.Transfer, DnDDroppedFilesGetDirAbs(&droppedFiles));
             if (RT_SUCCESS(rc))
             {
-                rc = DnDTransferListAppendPathsFromBuffer(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
+                rc = DnDTransferListAppendRootsFromBuffer(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
                                                           DND_PATH_SEPARATOR, 0 /* fFlags */);
                 if (RT_SUCCESS(rc))
+                {
                     rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pMeta->enmType = VBGLR3GUESTDNDMETADATATYPE_URI_LIST;
+                    }
+                }
             }
         }
         else /* Raw data. */
@@ -1426,7 +1434,6 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
     if (RT_SUCCESS(rc))
     {
         HGCMMsgGHSendData MsgData;
-
         VBGL_HGCM_HDR_INIT(&MsgData.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DATA, 5);
         MsgData.u.v3.uContext.SetUInt32(0);      /** @todo Not used yet. */
         MsgData.u.v3.pvChecksum.SetPtr(NULL, 0); /** @todo Not used yet. */
@@ -1436,13 +1443,10 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
         const uint32_t cbMaxChunk = pCtx->cbMaxChunkSize;
         uint32_t       cbSent     = 0;
 
-        HGCMFunctionParameter *pParm = &MsgData.u.v3.pvData;
-
         while (cbSent < cbData)
         {
             cbCurChunk = RT_MIN(cbData - cbSent, cbMaxChunk);
-            pParm->SetPtr(static_cast<uint8_t *>(pvData) + cbSent, cbCurChunk);
-
+            MsgData.u.v3.pvData.SetPtr(static_cast<uint8_t *>(pvData) + cbSent, cbCurChunk);
             MsgData.u.v3.cbData.SetUInt32(cbCurChunk);
 
             rc = VbglR3HGCMCall(&MsgData.hdr, sizeof(MsgData));
@@ -1478,20 +1482,20 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DNDTRANSFEROBJECT *pOb
     AssertReturn(DnDTransferObjectGetType(pObj) == DNDTRANSFEROBJTYPE_DIRECTORY, VERR_INVALID_PARAMETER);
 
     const char *pcszPath = DnDTransferObjectGetDestPath(pObj);
-    const size_t cchPath = RTStrNLen(pcszPath, RTPATH_MAX);
+    const size_t cbPath  = RTStrNLen(pcszPath, RTPATH_MAX) + 1 /* Include termination. */;
     const RTFMODE fMode  = DnDTransferObjectGetMode(pObj);
 
-    LogFlowFunc(("strDir=%s (%zu), fMode=0x%x\n", pcszPath, cchPath, fMode));
+    LogFlowFunc(("strDir=%s (%zu bytes), fMode=0x%x\n", pcszPath, cbPath, fMode));
 
-    if (cchPath > RTPATH_MAX) /* Can't happen, but check anyway. */
+    if (cbPath > RTPATH_MAX + 1) /* Can't happen, but check anyway. */
         return VERR_INVALID_PARAMETER;
 
     HGCMMsgGHSendDir Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DIR, 4);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
-    Msg.u.v3.pvName.SetPtr((void *)pcszPath, (uint32_t)cchPath);
-    Msg.u.v3.cbName.SetUInt32((uint32_t)cchPath + 1); /* Include termination. */
+    Msg.u.v3.pvName.SetPtr((void *)pcszPath, (uint32_t)cbPath);
+    Msg.u.v3.cbName.SetUInt32((uint32_t)cbPath);
     Msg.u.v3.fMode.SetUInt32(fMode);
 
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -1507,15 +1511,24 @@ static int vbglR3DnDGHSendDir(PVBGLR3GUESTDNDCMDCTX pCtx, DNDTRANSFEROBJECT *pOb
  */
 static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, PDNDTRANSFEROBJECT pObj)
 {
-    AssertPtrReturn(pCtx,                                    VERR_INVALID_POINTER);
-    AssertPtrReturn(pObj,                                    VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pObj, VERR_INVALID_POINTER);
+    AssertReturn(DnDTransferObjectIsOpen(pObj) == false, VERR_INVALID_STATE);
     AssertReturn(DnDTransferObjectGetType(pObj) == DNDTRANSFEROBJTYPE_FILE, VERR_INVALID_PARAMETER);
-    AssertReturn(DnDTransferObjectIsOpen(pObj),              VERR_INVALID_STATE);
+
+    uint64_t fOpen = RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE;
+
+    int rc = DnDTransferObjectOpen(pObj, fOpen, 0 /* fMode */, DNDTRANSFEROBJECT_FLAGS_NONE);
+    if (RT_FAILURE(rc))
+        return rc;
 
     uint32_t cbBuf = _64K;           /** @todo Make this configurable? */
     void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
     if (!pvBuf)
+    {
+        DnDTransferObjectClose(pObj);
         return VERR_NO_MEMORY;
+    }
 
     const char *pcszPath  = DnDTransferObjectGetDestPath(pObj);
     const size_t cchPath  = RTStrNLen(pcszPath, RTPATH_MAX);
@@ -1533,7 +1546,7 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, PDNDTRANSFEROBJECT pO
     MsgHdr.fMode.SetUInt32(fMode);                                                   /* File mode */
     MsgHdr.cbTotal.SetUInt64(cbSize);                                                /* File size (in bytes). */
 
-    int rc = VbglR3HGCMCall(&MsgHdr.hdr, sizeof(MsgHdr));
+    rc = VbglR3HGCMCall(&MsgHdr.hdr, sizeof(MsgHdr));
 
     LogFlowFunc(("Sending file header resulted in %Rrc\n", rc));
 
@@ -1585,6 +1598,7 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, PDNDTRANSFEROBJECT pO
     }
 
     RTMemFree(pvBuf);
+    DnDTransferObjectClose(pObj);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1737,19 +1751,24 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszF
     if (DnDMIMEHasFileURLs(pszFormat, strlen(pszFormat)))
     {
         DNDTRANSFERLIST lstTransfer;
+        RT_ZERO(lstTransfer);
+
         rc = DnDTransferListInit(&lstTransfer);
         if (RT_SUCCESS(rc))
         {
             /** @todo Add symlink support (DNDTRANSFERLIST_FLAGS_RESOLVE_SYMLINKS) here. */
             /** @todo Add lazy loading (DNDTRANSFERLIST_FLAGS_LAZY) here. */
-            const DNDTRANSFERLISTFLAGS fFlags = DNDTRANSFERLIST_FLAGS_KEEP_OPEN;
+            const DNDTRANSFERLISTFLAGS fFlags = DNDTRANSFERLIST_FLAGS_RECURSIVE;
 
-            rc = DnDTransferListAppendPathsFromBuffer(&lstTransfer, DNDTRANSFERLISTFMT_NATIVE, (const char *)pvData, cbData,
+            rc = DnDTransferListAppendPathsFromBuffer(&lstTransfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
                                                       DND_PATH_SEPARATOR, fFlags);
             if (RT_SUCCESS(rc))
                 rc = vbglR3DnDGHSendTransferData(pCtx, &lstTransfer);
             DnDTransferListDestroy(&lstTransfer);
         }
+
+        if (RT_FAILURE(rc))
+            LogRel(("DnD: Sending guest meta data to host failed with %Rrc\n", rc));
     }
     else
         rc = vbglR3DnDGHSendRawData(pCtx, pvData, cbData);
