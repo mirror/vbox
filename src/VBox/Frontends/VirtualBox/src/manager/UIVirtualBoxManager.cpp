@@ -2786,6 +2786,7 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
                 continue;
             const QString strApplicationOptions = gEDataManager->cloudConsoleManagerApplication(strApplicationId);
             const QStringList applicationValues = strApplicationOptions.split(',');
+            bool fAtLeastOneProfileListed = false;
             foreach (const QString strProfileId, gEDataManager->cloudConsoleManagerProfiles(strApplicationId))
             {
                 const QString strProfileDefinition = QString("/%1/%2").arg(strApplicationId, strProfileId);
@@ -2800,6 +2801,16 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
                                                     this, &UIVirtualBoxManager::sltExecuteExternalApplication);
                 pAction->setProperty("path", applicationValues.value(1));
                 pAction->setProperty("arguments", profileValues.value(1));
+                fAtLeastOneProfileListed = true;
+            }
+            if (!fAtLeastOneProfileListed)
+            {
+                QAction *pAction = pMenu->addAction(QApplication::translate("UIActionPool",
+                                                                            "Connect with %1",
+                                                                            "with terminal application")
+                                                        .arg(applicationValues.value(0)),
+                                                    this, &UIVirtualBoxManager::sltExecuteExternalApplication);
+                pAction->setProperty("path", applicationValues.value(1));
             }
         }
         /* Terminal application configuration tool: */
