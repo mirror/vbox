@@ -123,7 +123,7 @@ RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RT
         *pcbCopied = 0;
     AssertReturn(pBufState->uMagic == RTFILECOPYPARTBUFSTATE_MAGIC, VERR_INVALID_FLAGS);
     if (pBufState->iAllocType == -42)
-    { /* more and more likley as time goes */ }
+    { /* more and more likely as time goes */ }
     else
         return rtFileCopyPartExFallback(hFileSrc, offSrc, hFileDst, offDst, cbToCopy, fFlags, pBufState, pcbCopied);
     AssertReturn(offSrc >= 0, VERR_NEGATIVE_SEEK);
@@ -154,7 +154,14 @@ RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RT
             rc = errno;
             Assert(rc != 0);
             rc = rc != 0 ? RTErrConvertFromErrno(rc) : VERR_READ_ERROR;
-            break;
+            if (rc != VERR_NOT_SAME_DEVICE || cbCopied != 0)
+                break;
+
+            /* Fall back to generic implementation if the syscall refuses to handle the case. */
+            rc = rtFileCopyPartPrepFallback(pBufState, cbToCopy);
+            if (RT_SUCCESS(rc))
+                return rtFileCopyPartExFallback(hFileSrc, offSrc, hFileDst, offDst, cbToCopy, fFlags, pBufState, pcbCopied);
+            return rc;
         }
         Assert(offThisSrc == offSrc + (int64_t)cbCopied + cbActual);
         Assert(offThisDst == offDst + (int64_t)cbCopied + cbActual);
