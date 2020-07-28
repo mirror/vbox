@@ -742,7 +742,7 @@ UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParen
     , m_fShowToolbar(fShowToolbar)
 {
     prepareMetrics();
-    prepareObjects();
+    prepareWidgets();
     if (fShowToolbar)
         prepareToolBar();
     retranslateUi();
@@ -849,12 +849,18 @@ void UIPerformanceMonitor::retranslateUi()
     }
 }
 
-void UIPerformanceMonitor::prepareObjects()
+void UIPerformanceMonitor::prepareWidgets()
 {
     m_pMainLayout = new QVBoxLayout(this);
     if (!m_pMainLayout)
         return;
-    m_pMainLayout->setSpacing(0);
+
+    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+    m_pMainLayout->setSpacing(10);
+#else
+    m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+#endif
 
     m_pTimer = new QTimer(this);
     if (m_pTimer)

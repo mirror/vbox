@@ -139,7 +139,7 @@ private slots:
 
 private:
 
-    void prepareObjects();
+    void prepareWidgets();
     void prepareMetrics();
     void prepareToolBar();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
