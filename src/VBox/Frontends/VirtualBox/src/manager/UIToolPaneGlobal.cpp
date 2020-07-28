@@ -198,6 +198,8 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneResourceMonitor);
                     m_pLayout->setCurrentWidget(m_pPaneResourceMonitor);
+                    connect(m_pPaneResourceMonitor, &UIResourceMonitorWidget::sigSwitchMachinePerformancePane,
+                            this, &UIToolPaneGlobal::sigSwitchMachinePerformancePane);
                 }
 
                 break;

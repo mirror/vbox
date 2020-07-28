@@ -183,6 +183,7 @@ public:
     UIVMResourceMonitorTableView(QWidget *pParent = 0);
     void setMinimumColumnWidths(const QMap<int, int>& widths);
     void updateColumVisibility();
+    int selectedItemIndex() const;
 
 protected:
 
@@ -248,6 +249,8 @@ private:
     void setupPerformanceCollector();
 };
 
+Q_DECLARE_METATYPE(UIResourceMonitorItem);
+
 
 /*********************************************************************************************************************************
 *   Class UIVMResourceMonitorProxyModel definition.                                                                              *
@@ -288,6 +291,7 @@ public:
     bool columnVisible(int iColumnId) const;
     void setShouldUpdate(bool fShouldUpdate);
     const QMap<int, int> dataLengths() const;
+    QUuid itemUid(int iIndex);
 
 private slots:
 
@@ -666,6 +670,27 @@ void UIVMResourceMonitorTableView::updateColumVisibility()
     resizeHeaders();
 }
 
+int UIVMResourceMonitorTableView::selectedItemIndex() const
+{
+    UIResourceMonitorProxyModel *pModel = qobject_cast<UIResourceMonitorProxyModel*>(model());
+    if (!pModel)
+        return -1;
+
+    QItemSelectionModel *pSelectionModel =  selectionModel();
+    if (!pSelectionModel)
+        return -1;
+    QModelIndexList selectedItemIndices = pSelectionModel->selectedRows();
+    if (selectedItemIndices.isEmpty())
+        return -1;
+
+    /* just use the the 1st index: */
+    QModelIndex modelIndex = pModel->mapToSource(selectedItemIndices[0]);
+
+    if (!modelIndex.isValid())
+        return -1;
+    return modelIndex.row();
+}
+
 void UIVMResourceMonitorTableView::resizeEvent(QResizeEvent *pEvent)
 {
     resizeHeaders();
@@ -859,6 +884,13 @@ void UIResourceMonitorModel::setShouldUpdate(bool fShouldUpdate)
 const QMap<int, int> UIResourceMonitorModel::dataLengths() const
 {
     return m_columnDataMaxLength;
+}
+
+QUuid UIResourceMonitorModel::itemUid(int iIndex)
+{
+    if (iIndex >= m_itemList.size())
+        return QUuid();
+    return m_itemList[iIndex].m_VMuid;
 }
 
 QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
@@ -1197,6 +1229,7 @@ UIResourceMonitorWidget::UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionP
     , m_pModel(0)
     , m_pColumnVisibilityToggleMenu(0)
     , m_pHostStatsWidget(0)
+    , m_pShowPerformanceMonitorAction(0)
     , m_fIsCurrentTool(true)
     , m_iSortIndicatorWidth(0)
 {
@@ -1246,24 +1279,11 @@ void UIResourceMonitorWidget::retranslateUi()
     m_columnTitles[VMResourceMonitorColumn_DiskIOReadTotal] = UIResourceMonitorWidget::tr("Disk Read Total");
     m_columnTitles[VMResourceMonitorColumn_DiskIOWriteTotal] = UIResourceMonitorWidget::tr("Disk Write Total");
     m_columnTitles[VMResourceMonitorColumn_VMExits] = UIResourceMonitorWidget::tr("VM Exits");
+    if (m_pShowPerformanceMonitorAction)
+        m_pShowPerformanceMonitorAction->setText(tr("Show Performance Monitor"));
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnTitles);
     computeMinimumColumnWidths();
-}
-
-void UIResourceMonitorWidget::resizeEvent(QResizeEvent *pEvent)
-{
-    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
-}
-
-void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
-{
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
-}
-
-void UIResourceMonitorWidget::paintEvent(QPaintEvent *pEvent)
-{
-    QIWithRetranslateUI<QWidget>::paintEvent(pEvent);
 }
 
 void UIResourceMonitorWidget::prepare()
@@ -1281,8 +1301,8 @@ void UIResourceMonitorWidget::prepare()
     loadHiddenColumnList();
     prepareWidgets();
     loadSettings();
-    retranslateUi();
     prepareActions();
+    retranslateUi();
     updateModelColumVisibilityCache();
 }
 
@@ -1317,8 +1337,10 @@ void UIResourceMonitorWidget::prepareWidgets()
         m_pProxyModel->setSourceModel(m_pModel);
         m_pTableView->setModel(m_pProxyModel);
         m_pTableView->setItemDelegate(new UIVMResourceMonitorDelegate);
-        m_pTableView->setSelectionMode(QAbstractItemView::NoSelection);
+        m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_pTableView->setShowGrid(false);
+        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pTableView->horizontalHeader()->setHighlightSections(false);
         m_pTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
         m_pTableView->verticalHeader()->setVisible(false);
@@ -1328,8 +1350,13 @@ void UIResourceMonitorWidget::prepareWidgets()
         m_pTableView->setAlternatingRowColors(true);
         m_pTableView->setSortingEnabled(true);
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
-        connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate, this, &UIResourceMonitorWidget::sltHandleDataUpdate);
-        connect(m_pModel, &UIResourceMonitorModel::sigHostStatsUpdate, this, &UIResourceMonitorWidget::sltHandleHostStatsUpdate);
+        connect(m_pModel, &UIResourceMonitorModel::sigDataUpdate,
+                this, &UIResourceMonitorWidget::sltHandleDataUpdate);
+        connect(m_pModel, &UIResourceMonitorModel::sigHostStatsUpdate,
+                this, &UIResourceMonitorWidget::sltHandleHostStatsUpdate);
+        connect(m_pTableView, &UIVMResourceMonitorTableView::customContextMenuRequested,
+                this, &UIResourceMonitorWidget::sltHandleTableContextMenuRequest);
+
         updateModelColumVisibilityCache();
     }
 }
@@ -1352,7 +1379,8 @@ void UIResourceMonitorWidget::prepareActions()
         pAction->setChecked(columnVisible(i));
         connect(pAction, &QAction::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
     }
-    return;
+    m_pShowPerformanceMonitorAction = new QAction(this);
+     connect(m_pShowPerformanceMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
 }
 
 void UIResourceMonitorWidget::prepareToolBar()
@@ -1431,6 +1459,28 @@ void UIResourceMonitorWidget::sltHandleDataUpdate()
     computeMinimumColumnWidths();
     if (m_pProxyModel)
         m_pProxyModel->dataUpdate();
+}
+
+void UIResourceMonitorWidget::sltHandleTableContextMenuRequest(const QPoint &pos)
+{
+    if (!m_pTableView)
+        return;
+
+    QMenu menu;
+    if (m_pShowPerformanceMonitorAction)
+        menu.addAction(m_pShowPerformanceMonitorAction);
+
+    menu.exec(m_pTableView->mapToGlobal(pos));
+}
+
+void UIResourceMonitorWidget::sltHandleShowPerformanceMonitor()
+{
+    if (!m_pTableView || !m_pModel)
+        return;
+    QUuid machineId = m_pModel->itemUid(m_pTableView->selectedItemIndex());
+    if (machineId.isNull())
+        return;
+    emit sigSwitchMachinePerformancePane(machineId);
 }
 
 void UIResourceMonitorWidget::setColumnVisible(int iColumnId, bool fVisible)

@@ -50,6 +50,7 @@ signals:
 
     /** Notifies listeners about Cloud Profile Manager change. */
     void sigCloudProfileManagerChange();
+    void sigSwitchMachinePerformancePane(const QUuid &machineUid);
 
 public:
 

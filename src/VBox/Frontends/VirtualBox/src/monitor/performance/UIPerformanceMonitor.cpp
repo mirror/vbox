@@ -559,7 +559,7 @@ void UIChart::drawDisabledChartRectangle(QPainter &painter)
     do {
         font.setPixelSize(iFontSize);
         --iFontSize;
-    }while(QFontMetrics(font).width(m_strGAWarning) >= m_lineChartRect.width());
+    }while(QFontMetrics(font).width(m_strGAWarning) >= 0.8 * m_lineChartRect.width());
     font.setBold(true);
     painter.setFont(font);
     painter.drawText(m_lineChartRect, m_strGAWarning);

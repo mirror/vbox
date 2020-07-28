@@ -247,8 +247,11 @@ private slots:
         /** Handles tool menu request. */
         void sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position);
 
-        /** Handles signal abour Tools-pane index change. */
+        /** Handles signal about Tools-pane index change. */
         void sltHandleToolsPaneIndexChange();
+
+        /** Handles signal requesting performance pane switch. */
+        void sltSwitchMachinePerformancePane(const QUuid &machineUid);
     /** @} */
 
 private:

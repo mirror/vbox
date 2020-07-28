@@ -48,6 +48,10 @@ class UIResourceMonitorWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    void sigSwitchMachinePerformancePane(const QUuid &machineId);
+
 public:
 
     UIResourceMonitorWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
@@ -68,9 +72,6 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         virtual void retranslateUi() /* override */;
-        virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
-        virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     /** @} */
 
 private slots:
@@ -79,6 +80,8 @@ private slots:
     void sltToggleColumnSelectionMenu(bool fChecked);
     void sltHandleColumnAction(bool fChecked);
     void sltHandleHostStatsUpdate(const UIVMResourceMonitorHostStats &stats);
+    void sltHandleTableContextMenuRequest(const QPoint &pos);
+    void sltHandleShowPerformanceMonitor();
 
 private:
 
@@ -118,6 +121,7 @@ private:
         /* The key is the column id (VMResourceMonitorColumn) and value is true if the column is visible. */
         QMap<int, bool>                     m_columnVisible;
         UIVMResourceMonitorHostStatsWidget *m_pHostStatsWidget;
+        QAction                            *m_pShowPerformanceMonitorAction;
     /** @} */
     /** Indicates if this widget's host tool is current tool. */
     bool    m_fIsCurrentTool;

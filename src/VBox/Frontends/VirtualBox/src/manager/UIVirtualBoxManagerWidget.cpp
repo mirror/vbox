@@ -27,6 +27,7 @@
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIChooser.h"
+#include "UICommon.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
@@ -458,6 +459,21 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
     }
 }
 
+void UIVirtualBoxManagerWidget::sltSwitchMachinePerformancePane(const QUuid &machineUid)
+{
+    if (!m_pPaneToolsMachine)
+        return;
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    CMachine comMachine = comVBox.FindMachine(machineUid.toString());
+    if (comMachine.isNull())
+        return;
+    m_pPaneToolsMachine->setActive(true);
+    m_pPaneToolsGlobal->setActive(false);
+    m_pPaneToolsMachine->setMachine(comMachine);
+    switchToMachineTool(UIToolType_Performance);
+}
+
 void UIVirtualBoxManagerWidget::prepare()
 {
     /* Prepare everything: */
@@ -555,6 +571,8 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                                 m_pPaneToolsGlobal->setActive(true);
                             connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigCloudProfileManagerChange,
                                     this, &UIVirtualBoxManagerWidget::sigCloudProfileManagerChange);
+                            connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigSwitchMachinePerformancePane,
+                                    this, &UIVirtualBoxManagerWidget::sltSwitchMachinePerformancePane);
 
                             /* Add into stack: */
                             m_pStackedWidget->addWidget(m_pPaneToolsGlobal);
