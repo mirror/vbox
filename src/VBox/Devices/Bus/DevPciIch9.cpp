@@ -1894,7 +1894,7 @@ static void ich9pciBiosInitDeviceBARs(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, 
         uint8_t u8ResourceType = devpciR3GetByte(pPciDev, u32Address);
 
         bool fPrefetch =    (u8ResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_IO)))
-                      == PCI_ADDRESS_SPACE_MEM_PREFETCH;
+                         == PCI_ADDRESS_SPACE_MEM_PREFETCH;
         bool f64Bit =    (u8ResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
                       == PCI_ADDRESS_SPACE_BAR64;
         bool fIsPio = ((u8ResourceType & PCI_ADDRESS_SPACE_IO) == PCI_ADDRESS_SPACE_IO);
