@@ -456,6 +456,21 @@ HRESULT Initialize(uint32_t fInitFlags /*=VBOX_COM_INIT_F_DEFAULT*/)
      * "already initialized using the same apartment model") */
     AssertMsg(rc == S_OK || rc == S_FALSE, ("rc=%08X\n", rc));
 
+#if defined(VBOX_WITH_SDS)
+    // Setup COM Security to enable impersonation
+    HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,
+                                                             -1,
+                                                             NULL,
+                                                             NULL,
+                                                             RPC_C_AUTHN_LEVEL_DEFAULT,
+                                                             RPC_C_IMP_LEVEL_IMPERSONATE,
+                                                             NULL,
+                                                             EOAC_NONE,
+                                                             NULL);
+    NOREF(hrGUICoInitializeSecurity);
+    Assert(SUCCEEDED(hrGUICoInitializeSecurity) || hrGUICoInitializeSecurity == RPC_E_TOO_LATE);
+#endif
+
     /*
      * IRundown has unsafe two methods we need to patch to prevent remote access.
      * Do that before we start using COM and open ourselves to possible attacks.

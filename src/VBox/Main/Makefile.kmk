@@ -1232,6 +1232,9 @@ ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_MIDL_PROXY_STUB
   VBoxCOM_DEFS.win      = VBOX_WITH_AUTO_COM_REG_UPDATE
  endif
+ ifdef VBOX_WITH_SDS
+  VBoxCOM_DEFS.win     += VBOX_WITH_SDS
+ endif
  VBoxCOM_DEFS.x86       = _WIN32_WINNT=0x0500
  VBoxCOM_DEFS.amd64     = _WIN32_WINNT=0x0510
  VBoxCOM_SOURCES       += \

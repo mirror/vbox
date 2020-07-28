@@ -74,24 +74,6 @@ void VirtualBoxClient::FinalRelease()
  */
 HRESULT VirtualBoxClient::init()
 {
-
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
-    // setup COM Security to enable impersonation
-    // This works for console VirtualBox clients, GUI has own security settings
-    //  For GUI VirtualBox it will be second call so can return TOO_LATE error
-    HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,
-                                                             -1,
-                                                             NULL,
-                                                             NULL,
-                                                             RPC_C_AUTHN_LEVEL_DEFAULT,
-                                                             RPC_C_IMP_LEVEL_IMPERSONATE,
-                                                             NULL,
-                                                             EOAC_NONE,
-                                                             NULL);
-    NOREF(hrGUICoInitializeSecurity);
-    Assert(SUCCEEDED(hrGUICoInitializeSecurity) || hrGUICoInitializeSecurity == RPC_E_TOO_LATE);
-#endif
-
     LogFlowThisFuncEnter();
 
     /* Enclose the state transition NotReady->InInit->Ready */

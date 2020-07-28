@@ -4090,22 +4090,6 @@ void UICommon::prepare()
         return;
     }
 
-#ifdef VBOX_WITH_SDS
-    // setup Client COM Security to enable impersonation required by VBOX_SDS
-    HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,
-                                                             -1,
-                                                             NULL,
-                                                             NULL,
-                                                             RPC_C_AUTHN_LEVEL_DEFAULT,
-                                                             RPC_C_IMP_LEVEL_IMPERSONATE,
-                                                             NULL,
-                                                             EOAC_NONE,
-                                                             NULL);
-    NOREF(hrGUICoInitializeSecurity);
-    Assert(RPC_E_TOO_LATE != hrGUICoInitializeSecurity);
-    Assert(hrGUICoInitializeSecurity == S_OK);
-#endif
-
     /* Make sure VirtualBoxClient instance created: */
     m_comVBoxClient.createInstance(CLSID_VirtualBoxClient);
     if (!m_comVBoxClient.isOk())
