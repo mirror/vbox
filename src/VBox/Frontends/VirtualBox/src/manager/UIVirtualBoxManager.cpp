@@ -2811,6 +2811,7 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
                                                         .arg(applicationValues.value(0)),
                                                     this, &UIVirtualBoxManager::sltExecuteExternalApplication);
                 pAction->setProperty("path", applicationValues.value(1));
+                pAction->setProperty("arguments", applicationValues.value(2));
             }
         }
         /* Terminal application configuration tool: */

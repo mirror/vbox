@@ -40,6 +40,8 @@ UICloudConsoleDetailsWidget::UICloudConsoleDetailsWidget(EmbedTo enmEmbedding, Q
     , m_pEditorApplicationName(0)
     , m_pLabelApplicationPath(0)
     , m_pEditorApplicationPath(0)
+    , m_pLabelApplicationArgument(0)
+    , m_pEditorApplicationArgument(0)
     , m_pLabelProfileName(0)
     , m_pEditorProfileName(0)
     , m_pLabelProfileArgument(0)
@@ -94,6 +96,7 @@ void UICloudConsoleDetailsWidget::clearData()
     /* Clear widgets: */
     m_pEditorApplicationName->setText(QString());
     m_pEditorApplicationPath->setText(QString());
+    m_pEditorApplicationArgument->setText(QString());
     m_pEditorProfileName->setText(QString());
     m_pEditorProfileArgument->setText(QString());
 
@@ -109,6 +112,7 @@ void UICloudConsoleDetailsWidget::retranslateUi()
     /* Translate name-editor labels: */
     m_pLabelApplicationName->setText(tr("Name:"));
     m_pLabelApplicationPath->setText(tr("Path:"));
+    m_pLabelApplicationArgument->setText(tr("Argument:"));
     m_pLabelProfileName->setText(tr("Name:"));
     m_pLabelProfileArgument->setText(tr("Argument:"));
     /* Translate name-editor: */
@@ -126,6 +130,7 @@ void UICloudConsoleDetailsWidget::retranslateEditor()
     /* Translate placeholders: */
     m_pEditorApplicationName->setPlaceholderText(tr("Enter a name for this console application..."));
     m_pEditorApplicationPath->setPlaceholderText(tr("Enter a path for this console application..."));
+    m_pEditorApplicationArgument->setPlaceholderText(tr("Enter an argument for this console application..."));
     m_pEditorProfileName->setPlaceholderText(tr("Enter a name for this console profile..."));
     m_pEditorProfileArgument->setPlaceholderText(tr("Enter an argument for this console profile..."));
 }
@@ -169,6 +174,17 @@ void UICloudConsoleDetailsWidget::sltApplicationPathChanged(const QString &strPa
 
     /* Revalidate: */
     revalidate(m_pEditorApplicationPath);
+    /* Update button states: */
+    updateButtonStates();
+}
+
+void UICloudConsoleDetailsWidget::sltApplicationArgumentChanged(const QString &strArgument)
+{
+    /* Push changes back: */
+    m_newApplicationData.m_strArgument = strArgument;
+
+    /* Revalidate: */
+    revalidate(m_pEditorApplicationArgument);
     /* Update button states: */
     updateButtonStates();
 }
@@ -248,7 +264,7 @@ void UICloudConsoleDetailsWidget::prepareWidgets()
                 if (pLayoutApplication)
                 {
                     pLayoutApplication->setContentsMargins(0, 0, 0, 0);
-                    pLayoutApplication->setRowStretch(2, 1);
+                    pLayoutApplication->setRowStretch(3, 1);
 
                     if (m_enmEmbedding == EmbedTo_Dialog)
                     {
@@ -313,6 +329,27 @@ void UICloudConsoleDetailsWidget::prepareWidgets()
 
                         /* Add into layout: */
                         pLayoutApplication->addWidget(m_pLabelApplicationPath, 1, 0);
+                    }
+
+                    /* Create argument editor: */
+                    m_pEditorApplicationArgument = new QLineEdit(pWidgetApplication);
+                    if (m_pEditorApplicationArgument)
+                    {
+                        connect(m_pEditorApplicationArgument, &QLineEdit::textChanged,
+                                this, &UICloudConsoleDetailsWidget::sltApplicationArgumentChanged);
+
+                        /* Add into layout: */
+                        pLayoutApplication->addWidget(m_pEditorApplicationArgument, 2, 1);
+                    }
+                    /* Create argument label: */
+                    m_pLabelApplicationArgument = new QLabel(pWidgetApplication);
+                    if (m_pLabelApplicationArgument)
+                    {
+                        m_pLabelApplicationArgument->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        m_pLabelApplicationArgument->setBuddy(m_pEditorApplicationArgument);
+
+                        /* Add into layout: */
+                        pLayoutApplication->addWidget(m_pLabelApplicationArgument, 2, 0);
                     }
                 }
 
@@ -426,6 +463,7 @@ void UICloudConsoleDetailsWidget::loadData()
     {
         m_pEditorApplicationName->setText(m_oldApplicationData.m_strName);
         m_pEditorApplicationPath->setText(m_oldApplicationData.m_strPath);
+        m_pEditorApplicationArgument->setText(m_oldApplicationData.m_strArgument);
     }
     /* If profile pane is selected: */
     else

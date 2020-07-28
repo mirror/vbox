@@ -52,6 +52,7 @@ struct UIDataCloudConsoleApplication
                && (m_strId == other.m_strId)
                && (m_strName == other.m_strName)
                && (m_strPath == other.m_strPath)
+               && (m_strArgument == other.m_strArgument)
                && (m_fRestricted == other.m_fRestricted)
                ;
     }
@@ -67,6 +68,8 @@ struct UIDataCloudConsoleApplication
     QString  m_strName;
     /** Holds the console application path. */
     QString  m_strPath;
+    /** Holds the console application argument. */
+    QString  m_strArgument;
     /** Holds whether console application is restricted. */
     bool     m_fRestricted;
 };
@@ -158,6 +161,8 @@ private slots:
         void sltApplicationNameChanged(const QString &strName);
         /** Handles console application path change. */
         void sltApplicationPathChanged(const QString &strPath);
+        /** Handles console application argument change. */
+        void sltApplicationArgumentChanged(const QString &strArgument);
         /** Handles console profile name change. */
         void sltProfileNameChanged(const QString &strName);
         /** Handles console profile argument change. */
@@ -224,6 +229,10 @@ private:
         QLabel    *m_pLabelApplicationPath;
         /** Holds the application path editor instance. */
         QLineEdit *m_pEditorApplicationPath;
+        /** Holds the application argument label instance. */
+        QLabel    *m_pLabelApplicationArgument;
+        /** Holds the application argument editor instance. */
+        QLineEdit *m_pEditorApplicationArgument;
 
         /** Holds the profile name label instance. */
         QLabel    *m_pLabelProfileName;

@@ -83,6 +83,8 @@ public:
     QString name() const { return m_strName; }
     /** Returns item path. */
     QString path() const { return m_strPath; }
+    /** Returns item argument. */
+    QString argument() const { return m_strArgument; }
 };
 
 /** Cloud Console Manager profile's tree-widget item. */
@@ -122,6 +124,8 @@ public:
     QString name() const;
     /** Returns application path. */
     QString path() const;
+    /** Returns application argument. */
+    QString argument() const;
 
 protected:
 
@@ -141,6 +145,10 @@ private:
     QLabel    *m_pLabelPath;
     /** Holds the path editor instance. */
     QLineEdit *m_pEditorPath;
+    /** Holds the argument label instance. */
+    QLabel    *m_pLabelArgument;
+    /** Holds the argument editor instance. */
+    QLineEdit *m_pEditorArgument;
 
     /** Holds the button-box instance. */
     QIDialogButtonBox *m_pButtonBox;
@@ -239,6 +247,8 @@ UIInputDialogCloudConsoleApplication::UIInputDialogCloudConsoleApplication(QWidg
     , m_pEditorName(0)
     , m_pLabelPath(0)
     , m_pEditorPath(0)
+    , m_pLabelArgument(0)
+    , m_pEditorArgument(0)
     , m_pButtonBox(0)
 {
     prepare();
@@ -254,11 +264,17 @@ QString UIInputDialogCloudConsoleApplication::path() const
     return m_pEditorPath->text();
 }
 
+QString UIInputDialogCloudConsoleApplication::argument() const
+{
+    return m_pEditorArgument->text();
+}
+
 void UIInputDialogCloudConsoleApplication::retranslateUi()
 {
     setWindowTitle(tr("Add Application"));
     m_pLabelName->setText(tr("Name:"));
     m_pLabelPath->setText(tr("Path:"));
+    m_pLabelArgument->setText(tr("Argument:"));
 }
 
 void UIInputDialogCloudConsoleApplication::prepare()
@@ -270,10 +286,7 @@ void UIInputDialogCloudConsoleApplication::prepare()
     QGridLayout *pMainLayout = new QGridLayout(this);
     if (pMainLayout)
     {
-        pMainLayout->setRowStretch(0, 0);
-        pMainLayout->setRowStretch(1, 0);
-        pMainLayout->setRowStretch(2, 1);
-        pMainLayout->setRowStretch(3, 0);
+        pMainLayout->setRowStretch(3, 1);
 
         /* Prepare name editor: */
         m_pEditorName = new QLineEdit(this);
@@ -305,6 +318,21 @@ void UIInputDialogCloudConsoleApplication::prepare()
             pMainLayout->addWidget(m_pLabelPath, 1, 0);
         }
 
+        /* Prepare argument editor: */
+        m_pEditorArgument = new QLineEdit(this);
+        if (m_pEditorArgument)
+        {
+            pMainLayout->addWidget(m_pEditorArgument, 2, 1);
+        }
+        /* Prepare argument editor label: */
+        m_pLabelArgument = new QLabel(this);
+        if (m_pLabelArgument)
+        {
+            m_pLabelArgument->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLabelArgument->setBuddy(m_pEditorArgument);
+            pMainLayout->addWidget(m_pLabelArgument, 2, 0);
+        }
+
         /* Prepare button-box: */
         m_pButtonBox = new QIDialogButtonBox(this);
         if  (m_pButtonBox)
@@ -312,7 +340,7 @@ void UIInputDialogCloudConsoleApplication::prepare()
             m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
             connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIInputDialogCloudConsoleApplication::reject);
             connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIInputDialogCloudConsoleApplication::accept);
-            pMainLayout->addWidget(m_pButtonBox, 3, 0, 1, 2);
+            pMainLayout->addWidget(m_pButtonBox, 4, 0, 1, 2);
         }
     }
 
@@ -485,7 +513,9 @@ void UICloudConsoleManagerWidget::sltApplyCloudConsoleDetailsChanges()
             /* Save application settings if changed: */
             if (newData != oldData)
                 gEDataManager->setCloudConsoleManagerApplication(newData.m_strId,
-                                                                 QString("%1,%2").arg(newData.m_strName, newData.m_strPath));
+                                                                 QString("%1,%2,%3").arg(newData.m_strName,
+                                                                                         newData.m_strPath,
+                                                                                         newData.m_strArgument));
             break;
         }
         case CloudConsoleItemType_Profile:
@@ -513,6 +543,7 @@ void UICloudConsoleManagerWidget::sltAddCloudConsoleApplication()
     QString strId;
     QString strApplicationName;
     QString strApplicationPath;
+    QString strApplicationArgument;
     bool fCancelled = true;
     QPointer<UIInputDialogCloudConsoleApplication> pDialog = new UIInputDialogCloudConsoleApplication(this);
     if (pDialog)
@@ -522,6 +553,7 @@ void UICloudConsoleManagerWidget::sltAddCloudConsoleApplication()
             strId = QUuid::createUuid().toString().remove(QRegExp("[{}]"));
             strApplicationName = pDialog->name();
             strApplicationPath = pDialog->path();
+            strApplicationArgument = pDialog->argument();
             fCancelled = false;
         }
         delete pDialog;
@@ -532,7 +564,7 @@ void UICloudConsoleManagerWidget::sltAddCloudConsoleApplication()
     /* Update current-item definition: */
     m_strDefinition = QString("/%1").arg(strId);
     /* Compose extra-data superset: */
-    const QString strValue = QString("%1,%2").arg(strApplicationName, strApplicationPath);
+    const QString strValue = QString("%1,%2,%3").arg(strApplicationName, strApplicationPath, strApplicationArgument);
 
     /* Save new console application to extra-data: */
     gEDataManager->setCloudConsoleManagerApplication(strId, strValue);
@@ -980,6 +1012,7 @@ void UICloudConsoleManagerWidget::loadCloudConsoleApplication(const QString &str
     applicationData.m_strId = values.value(0);
     applicationData.m_strName = values.value(1);
     applicationData.m_strPath = values.value(2);
+    applicationData.m_strArgument = values.value(3);
 }
 
 void UICloudConsoleManagerWidget::loadCloudConsoleProfile(const QString &strSuperset,
