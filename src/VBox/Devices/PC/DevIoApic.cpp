@@ -1475,7 +1475,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Init. the device state.
      */
-    LogRel(("IOAPIC: Using implementation 2.0! Chipset type %s\n", szChipType));
+    LogRel(("IOAPIC: Using implementation 2.0! I/O APIC version is %d.%d\n", pThis->u8ApicVer >> 4, pThis->u8ApicVer & 0x0F));
     ioapicR3Reset(pDevIns);
 
     return VINF_SUCCESS;
