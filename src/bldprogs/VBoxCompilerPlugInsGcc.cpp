@@ -48,6 +48,10 @@ extern "C" {
 # include "context.h" /* for g */
 #endif
 #include "cp/cp-tree.h"
+#if RT_GNUC_PREREQ(10, 0)
+# include "stringpool.h"
+# include "attribs.h"
+#endif
 #if __GNUC__ == 4 && __GNUC_MINOR__ == 5
 }
 #endif
@@ -152,12 +156,17 @@ static const struct plugin_info g_PlugInInfo =
 };
 
 #if RT_GNUC_PREREQ(4, 9)
+
 /** My pass. */
 static const pass_data g_MyPassData =
 {
     type                    : GIMPLE_PASS,
     name                    : "*iprt-format-checks", /* asterisk = no dump */
+# if RT_GNUC_PREREQ(10, 0)
+    optinfo_flags           : OPTGROUP_NONE,
+# else
     optinfo_flags           : 0,
+# endif
     tv_id                   : TV_NONE,
     properties_required     : 0,
     properties_provided     : 0,
@@ -194,7 +203,7 @@ static struct gimple_opt_pass g_MyPass =
     {
         type                    : GIMPLE_PASS,
         name                    : "*iprt-format-checks", /* asterisk = no dump */
-# if __GNUC__ != 4 || __GNUC_MINOR__ != 5
+# if RT_GNUC_PREREQ(4, 6)
         optinfo_flags           : 0,
 # endif
         gate                    : MyPassGateCallback,
@@ -233,10 +242,13 @@ static const struct attribute_spec g_AttribSpecs[] =
         decl_required           : false,
         type_required           : true,
         function_type_required  : true,
-        handler                 : AttributeHandler,
-#if __GNUC__ != 4 || __GNUC_MINOR__ != 5
-        affects_type_identity   : false
+# if RT_GNUC_PREREQ(4, 6)
+        affects_type_identity   : false,
 #endif
+        handler                 : AttributeHandler,
+# if RT_GNUC_PREREQ(10, 0)
+        exclude                 : NULL,
+# endif
     },
     {
         name                    : "iprt_format_maybe_null",
@@ -245,10 +257,13 @@ static const struct attribute_spec g_AttribSpecs[] =
         decl_required           : false,
         type_required           : true,
         function_type_required  : true,
-        handler                 : AttributeHandler,
-#if __GNUC__ != 4 || __GNUC_MINOR__ != 5
-        affects_type_identity   : false
+# if RT_GNUC_PREREQ(4, 6)
+        affects_type_identity   : false,
 #endif
+        handler                 : AttributeHandler,
+# if RT_GNUC_PREREQ(10, 0)
+        exclude                 : NULL,
+# endif
     }
 };
 
@@ -360,6 +375,20 @@ static location_t MyGetLocationPlusColumnOffset(location_t hLoc, unsigned int of
 }
 
 
+#if 0
+DECLINLINE(int) MyGetLineLength(const char *pszLine)
+{
+    if (pszLine)
+    {
+        const char *pszEol = strpbrk(pszLine, "\n\r");
+        if (!pszEol)
+            pszEol = strchr(pszLine, '\0');
+        return (int)(pszEol - pszLine);
+    }
+    return 0;
+}
+#endif
+
 static location_t MyGetFormatStringLocation(PVFMTCHKSTATE pState, const char *pszLoc)
 {
     location_t hLoc = pState->hFmtLoc;
@@ -369,21 +398,21 @@ static location_t MyGetFormatStringLocation(PVFMTCHKSTATE pState, const char *ps
         && !linemap_location_from_macro_expansion_p(line_table, hLoc))
     {
         unsigned            uCol    = 1 + offString;
+# if 0 /* apparently not needed */
         expanded_location   XLoc    = expand_location_to_spelling_point(hLoc);
+# if RT_GNUC_PREREQ(10,0)
+        char_span           Span    = location_get_source_line(XLoc.file, XLoc.line);
+        const char         *pszLine = Span.m_ptr; /** @todo if enabled */
+        int                 cchLine = (int)Span.m_n_elts;
+# elif RT_GNUC_PREREQ(6,0)
         int                 cchLine = 0;
-# if RT_GNUC_PREREQ(6,0)
         const char         *pszLine = location_get_source_line(XLoc.file, XLoc.line, &cchLine);
 # elif RT_GNUC_PREREQ(5,0)
+        int                 cchLine = 0;
         const char         *pszLine = location_get_source_line(XLoc, &cchLine);
 # else
         const char         *pszLine = location_get_source_line(XLoc);
-        if (pszLine)
-        {
-            const char *pszEol = strpbrk(pszLine, "\n\r");
-            if (!pszEol)
-                pszEol = strchr(pszLine, '\0');
-            cchLine = (int)(pszEol - pszLine);
-        }
+        int                 cchLine = MyGetLineLength(pszLine);
 # endif
         if (pszLine)
         {
@@ -391,6 +420,7 @@ static location_t MyGetFormatStringLocation(PVFMTCHKSTATE pState, const char *ps
             pszLine += XLoc.column - 1;
             cchLine -= XLoc.column - 1;
         }
+# endif
 
         hLoc = MyGetLocationPlusColumnOffset(hLoc, uCol);
     }
