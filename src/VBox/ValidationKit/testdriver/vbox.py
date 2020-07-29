@@ -3114,8 +3114,8 @@ class TestDriver(base.TestDriver):                                              
                                      ('phys', ''),
                                      ('clocks', ''),
                                      ('timers', ''),
-                                     ('gdtguest', ''),
-                                     ('ldtguest', ''),
+                                     ('gdt', ''),
+                                     ('ldt', ''),
                                     ]:
                     if sInfo in ['apic',] and self.fpApiVer < 5.1: # asserts and burns
                         continue;
