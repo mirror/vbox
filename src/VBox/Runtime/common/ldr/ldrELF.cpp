@@ -51,9 +51,11 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** Finds an ELF symbol table string. */
-#define ELF_STR(pHdrs, iStr) ((pHdrs)->pStr + (iStr))
+#define ELF_STR(pHdrs, iStr)        ((pHdrs)->Rel.pStr + (iStr))
+/** Finds an ELF symbol table string. */
+#define ELF_DYN_STR(pHdrs, iStr)    ((pHdrs)->Dyn.pStr + (iStr))
 /** Finds an ELF section header string. */
-#define ELF_SH_STR(pHdrs, iStr) ((pHdrs)->pShStr + (iStr))
+#define ELF_SH_STR(pHdrs, iStr)     ((pHdrs)->pShStr + (iStr))
 
 
 
@@ -62,6 +64,7 @@
 *********************************************************************************************************************************/
 #ifdef LOG_ENABLED
 static const char *rtldrElfGetShdrType(uint32_t iType);
+static const char *rtldrElfGetPhdrType(uint32_t iType);
 #endif
 
 
@@ -81,6 +84,7 @@ static const char *rtldrElfGetShdrType(uint32_t iType);
 
 
 #ifdef LOG_ENABLED
+
 /**
  * Gets the section type.
  *
@@ -91,23 +95,51 @@ static const char *rtldrElfGetShdrType(uint32_t iType)
 {
     switch (iType)
     {
-        case SHT_NULL:          return "SHT_NULL";
-        case SHT_PROGBITS:      return "SHT_PROGBITS";
-        case SHT_SYMTAB:        return "SHT_SYMTAB";
-        case SHT_STRTAB:        return "SHT_STRTAB";
-        case SHT_RELA:          return "SHT_RELA";
-        case SHT_HASH:          return "SHT_HASH";
-        case SHT_DYNAMIC:       return "SHT_DYNAMIC";
-        case SHT_NOTE:          return "SHT_NOTE";
-        case SHT_NOBITS:        return "SHT_NOBITS";
-        case SHT_REL:           return "SHT_REL";
-        case SHT_SHLIB:         return "SHT_SHLIB";
-        case SHT_DYNSYM:        return "SHT_DYNSYM";
+        RT_CASE_RET_STR(SHT_NULL);
+        RT_CASE_RET_STR(SHT_PROGBITS);
+        RT_CASE_RET_STR(SHT_SYMTAB);
+        RT_CASE_RET_STR(SHT_STRTAB);
+        RT_CASE_RET_STR(SHT_RELA);
+        RT_CASE_RET_STR(SHT_HASH);
+        RT_CASE_RET_STR(SHT_DYNAMIC);
+        RT_CASE_RET_STR(SHT_NOTE);
+        RT_CASE_RET_STR(SHT_NOBITS);
+        RT_CASE_RET_STR(SHT_REL);
+        RT_CASE_RET_STR(SHT_SHLIB);
+        RT_CASE_RET_STR(SHT_DYNSYM);
         default:
             return "";
     }
 }
-#endif
+
+/**
+ * Gets the program header type.
+ *
+ * @returns Pointer to read only string.
+ * @param   iType       The section type index.
+ */
+static const char *rtldrElfGetPhdrType(uint32_t iType)
+{
+    switch (iType)
+    {
+        RT_CASE_RET_STR(PT_NULL);
+        RT_CASE_RET_STR(PT_LOAD);
+        RT_CASE_RET_STR(PT_DYNAMIC);
+        RT_CASE_RET_STR(PT_INTERP);
+        RT_CASE_RET_STR(PT_NOTE);
+        RT_CASE_RET_STR(PT_SHLIB);
+        RT_CASE_RET_STR(PT_PHDR);
+        RT_CASE_RET_STR(PT_TLS);
+        RT_CASE_RET_STR(PT_GNU_EH_FRAME);
+        RT_CASE_RET_STR(PT_GNU_STACK);
+        RT_CASE_RET_STR(PT_GNU_RELRO);
+        RT_CASE_RET_STR(PT_GNU_PROPERTY);
+        default:
+            return "";
+    }
+}
+
+#endif /* LOG_ENABLED*/
 
 
 /**
@@ -124,8 +156,6 @@ DECLHIDDEN(int) rtldrELFOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH en
 {
     const char *pszLogName = pReader->pfnLogName(pReader); NOREF(pszLogName);
 
-    RT_NOREF_PV(pErrInfo); /** @todo implement */
-
     /*
      * Read the ident to decide if this is 32-bit or 64-bit
      * and worth dealing with.
@@ -134,6 +164,7 @@ DECLHIDDEN(int) rtldrELFOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH en
     int rc = pReader->pfnRead(pReader, &e_ident, sizeof(e_ident), 0);
     if (RT_FAILURE(rc))
         return rc;
+
     if (    e_ident[EI_MAG0] != ELFMAG0
         ||  e_ident[EI_MAG1] != ELFMAG1
         ||  e_ident[EI_MAG2] != ELFMAG2
@@ -141,19 +172,17 @@ DECLHIDDEN(int) rtldrELFOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH en
         ||  (   e_ident[EI_CLASS] != ELFCLASS32
              && e_ident[EI_CLASS] != ELFCLASS64)
        )
-    {
-        Log(("RTLdrELF: %s: Unsupported/invalid ident %.*Rhxs\n", pszLogName, sizeof(e_ident), e_ident));
-        return VERR_BAD_EXE_FORMAT;
-    }
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
+                                   "%s: Unsupported/invalid ident %.*Rhxs", pszLogName, sizeof(e_ident), e_ident);
+
     if (e_ident[EI_DATA] != ELFDATA2LSB)
-    {
-        Log(("RTLdrELF: %s: ELF endian %x is unsupported\n", pszLogName, e_ident[EI_DATA]));
-        return VERR_LDRELF_ODD_ENDIAN;
-    }
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_LDRELF_ODD_ENDIAN,
+                                   "%s: ELF endian %x is unsupported", pszLogName, e_ident[EI_DATA]);
+
     if (e_ident[EI_CLASS] == ELFCLASS32)
-        rc = rtldrELF32Open(pReader, fFlags, enmArch, phLdrMod);
+        rc = rtldrELF32Open(pReader, fFlags, enmArch, phLdrMod, pErrInfo);
     else
-        rc = rtldrELF64Open(pReader, fFlags, enmArch, phLdrMod);
+        rc = rtldrELF64Open(pReader, fFlags, enmArch, phLdrMod, pErrInfo);
     return rc;
 }
 

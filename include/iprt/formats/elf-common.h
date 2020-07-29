@@ -198,6 +198,12 @@ typedef struct {
 #define PT_LOPROC       0x70000000      /* First processor-specific type. */
 #define PT_HIPROC       0x7fffffff      /* Last processor-specific type. */
 
+#define PT_GNU_EH_FRAME 0x6474e550 /**< GNU/Linux -> .eh_frame_hdr */
+#define PT_GNU_STACK    0x6474e551 /**< GNU/Linux -> stack prot (RWX or RW) */
+#define PT_GNU_RELRO    0x6474e552 /**< GNU/Linux -> make RO after relocations */
+#define PT_GNU_PROPERTY 0x6474e553 /**< GNU/Linux -> .note.gnu.property */
+
+
 /* Values for p_flags. */
 #define PF_X            0x1     /* Executable. */
 #define PF_W            0x2     /* Writable. */
