@@ -38,7 +38,7 @@
 #undef LOG_GROUP
 #include "r0drv/linux/rtStrFormatKernelAddress-r0drv-linux.c"
 #undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_DEFAULT
+#define LOG_GROUP RTLOGGROUP_DEFAULT
 #include "r0drv/linux/semevent-r0drv-linux.c"
 #include "r0drv/linux/semeventmulti-r0drv-linux.c"
 #include "r0drv/linux/semfastmutex-r0drv-linux.c"
@@ -50,7 +50,7 @@
 #undef LOG_GROUP
 #include "r0drv/linux/time-r0drv-linux.c"
 #undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_DEFAULT
+#define LOG_GROUP RTLOGGROUP_DEFAULT
 #include "r0drv/linux/timer-r0drv-linux.c"
 #include "r0drv/linux/RTLogWriteDebugger-r0drv-linux.c"
 #include "common/err/RTErrConvertFromErrno.c"
