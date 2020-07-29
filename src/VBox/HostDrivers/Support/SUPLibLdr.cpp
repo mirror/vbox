@@ -450,9 +450,10 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
                 if (pArgs->paSegs)
                 {
                     AssertReturn(pArgs->iSegs < pArgs->cSegsAlloc, VERR_INTERNAL_ERROR_5);
-                    pArgs->paSegs[pArgs->iSegs].off   = pArgs->uStartRva;
-                    pArgs->paSegs[pArgs->iSegs].cb    = pArgs->uEndRva - pArgs->uStartRva;
-                    pArgs->paSegs[pArgs->iSegs].fProt = pArgs->fProt;
+                    pArgs->paSegs[pArgs->iSegs].off     = pArgs->uStartRva;
+                    pArgs->paSegs[pArgs->iSegs].cb      = pArgs->uEndRva - pArgs->uStartRva;
+                    pArgs->paSegs[pArgs->iSegs].fProt   = pArgs->fProt;
+                    pArgs->paSegs[pArgs->iSegs].fUnused = 0;
                 }
                 pArgs->iSegs++;
                 pArgs->uStartRva = pArgs->uEndRva;
@@ -480,9 +481,10 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
         if (pArgs->paSegs)
         {
             AssertReturn(pArgs->iSegs < pArgs->cSegsAlloc, VERR_INTERNAL_ERROR_5);
-            pArgs->paSegs[pArgs->iSegs].off   = pArgs->uStartRva;
-            pArgs->paSegs[pArgs->iSegs].cb    = pArgs->uEndRva - pArgs->uStartRva;
-            pArgs->paSegs[pArgs->iSegs].fProt = pArgs->fProt;
+            pArgs->paSegs[pArgs->iSegs].off     = pArgs->uStartRva;
+            pArgs->paSegs[pArgs->iSegs].cb      = pArgs->uEndRva - pArgs->uStartRva;
+            pArgs->paSegs[pArgs->iSegs].fProt   = pArgs->fProt;
+            pArgs->paSegs[pArgs->iSegs].fUnused = 0;
         }
         pArgs->iSegs++;
     }
@@ -597,9 +599,10 @@ static int supLoadModuleInner(RTLDRMOD hLdrMod, PSUPLDRLOAD pLoadReq, uint32_t c
     AssertReturn(SegArgs.uEndRva == cbImage, VERR_OUT_OF_RANGE);
     if (SegArgs.uEndRva > SegArgs.uStartRva)
     {
-        SegArgs.paSegs[SegArgs.iSegs].off   = SegArgs.uStartRva;
-        SegArgs.paSegs[SegArgs.iSegs].cb    = SegArgs.uEndRva - SegArgs.uStartRva;
-        SegArgs.paSegs[SegArgs.iSegs].fProt = SegArgs.fProt;
+        SegArgs.paSegs[SegArgs.iSegs].off     = SegArgs.uStartRva;
+        SegArgs.paSegs[SegArgs.iSegs].cb      = SegArgs.uEndRva - SegArgs.uStartRva;
+        SegArgs.paSegs[SegArgs.iSegs].fProt   = SegArgs.fProt;
+        SegArgs.paSegs[SegArgs.iSegs].fUnused = 0;
         SegArgs.iSegs++;
     }
     for (uint32_t i = 0; i < SegArgs.iSegs; i++)
