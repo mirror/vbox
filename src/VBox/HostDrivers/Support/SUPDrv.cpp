@@ -5343,7 +5343,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             if (pReq->u.In.EP.VMMR0.pvVMMR0 != pImage->pvImage)
             {
                 supdrvLdrUnlock(pDevExt);
-                return supdrvLdrLoadError(rc, pReq, "Invalid pvVMMR0 pointer: %p, expected %p", pReq->u.In.EP.VMMR0.pvVMMR0, pImage->pvImage);
+                return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq, "Invalid pvVMMR0 pointer: %p, expected %p", pReq->u.In.EP.VMMR0.pvVMMR0, pImage->pvImage);
             }
             rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, false, pReq->u.In.abImage, "VMMR0EntryFast", pReq);
             if (RT_FAILURE(rc))
