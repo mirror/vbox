@@ -5920,6 +5920,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMPciDevSetInterruptLine(pPciDev,      0x00);                     /* For software compatibility; no effect on hardware. */
 
     /* Capability Header. */
+    /* NOTE! Fields (e.g, EFR) must match what we expose in the ACPI tables. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_CAP_HDR,
                         RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_ID,    0xf)     /* RO - Secure Device capability block */
                       | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_PTR,   IOMMU_PCI_OFF_MSI_CAP_HDR)  /* RO - Offset to next capability */
@@ -5941,13 +5942,14 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);          /* RW - Range register (implemented as RO by us). */
 
     /* Misc. Information Register 0. */
+    /* NOTE! Fields (e.g, GVA size) must match what we expose in the ACPI tables. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0,
-                        RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,     0x0)    /* RO - MSI number */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_GVA_SIZE,    0x2)    /* RO - Guest Virt. Addr size (2=48 bits) */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_PA_SIZE,     0x30)   /* RO - Physical Addr size (48 bits) */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     0x40)   /* RO - Virt. Addr size (64 bits) */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV, 0x0)    /* RW - HT ATS reserved */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR, 0x0));  /* RW - PPR interrupt number */
+                        RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,      0)     /* RO - MSI number */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_GVA_SIZE,     2)     /* RO - Guest Virt. Addr size (2=48 bits) */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_PA_SIZE,     48)     /* RO - Physical Addr size (48 bits) */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     64)     /* RO - Virt. Addr size (64 bits) */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV,  0)     /* RW - HT ATS reserved */
+                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR,  0));   /* RW - PPR interrupt number */
 
     /* Misc. Information Register 1. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0, 0);
