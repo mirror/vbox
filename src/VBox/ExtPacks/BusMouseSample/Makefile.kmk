@@ -83,7 +83,7 @@ DLLS += VBoxBusMouseR3
 VBoxBusMouseR3_TEMPLATE = VBoxR3ExtPackBusMouse
 VBoxBusMouseR3_SOURCES  = DevBusMouse.cpp
 
-SYSMODS += VBoxBusMouseR0
+$(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += VBoxBusMouseR0
 VBoxBusMouseR0_TEMPLATE = VBoxR0ExtPackBusMouse
 VBoxBusMouseR0_SOURCES  = DevBusMouse.cpp
 

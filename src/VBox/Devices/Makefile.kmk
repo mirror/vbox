@@ -52,7 +52,7 @@ if !defined(VBOX_ONLY_EXTPACKS)
  if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
   LIBRARIES += ServicesR0
   DLLS      += VBoxDDU VBoxDD VBoxDD2
-  SYSMODS   += VBoxDDR0
+  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += VBoxDDR0
   ifdef VBOX_WITH_RAW_MODE
    SYSMODS   += VBoxDDRC
   endif
@@ -1385,7 +1385,7 @@ if defined(VBOX_WITH_EXTPACK) && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX
 	USB/DevXHCI.cpp
   $(call VBOX_SET_VER_INFO_DLL,VBoxEhciR3,PUEL Extension Pack - EHCI Device)
 
-  SYSMODS += VBoxEhciR0
+  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += VBoxEhciR0
   VBoxEhciR0_TEMPLATE = VBoxR0ExtPackPuel
   VBoxEhciR0_SOURCES  = \
 	USB/DevEHCI.cpp \
@@ -1421,7 +1421,7 @@ if defined(VBOX_WITH_EXTPACK) && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX
   VBoxPciRawDrv_SOURCES     = Bus/DrvPciRaw.cpp
   $(call VBOX_SET_VER_INFO_DLL,VBoxPciRawDrv,PUEL Extension Pack - PCI Passthrough Driver)
 
-  SYSMODS += VBoxPciRawR0
+  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += VBoxPciRawR0
   VBoxPciRawR0_TEMPLATE     = VBoxR0ExtPackPuel
   VBoxPciRawR0_SOURCES      = Bus/DevPciRaw.cpp
   $(call VBOX_SET_VER_INFO_R0,VBoxPciRawR0,PUEL Extension Pack - PCI Passthrough Driver$(COMMA) ring-0)
@@ -1439,7 +1439,7 @@ if defined(VBOX_WITH_EXTPACK) && defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX
   	Storage/DevNVMe.cpp
   $(call VBOX_SET_VER_INFO_DLL,VBoxNvmeR3,PUEL Extension Pack - NVMe Device)
 
-  SYSMODS += VBoxNvmeR0
+  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += VBoxNvmeR0
   VBoxNvmeR0_TEMPLATE = VBoxR0ExtPackPuel
   VBoxNvmeR0_SOURCES  = \
   	Storage/DevNVMe.cpp

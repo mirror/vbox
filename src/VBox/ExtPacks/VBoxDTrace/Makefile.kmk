@@ -252,7 +252,7 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  # The ring-0 part of VBoxDTrace.
  #
  ifneq ($(KBUILD_TARGET),solaris) # disabled on solaris - neiter needed nor currently able to build it here.
-  SYSMODS += VBoxDTraceR0
+  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += VBoxDTraceR0
  endif
  VBoxDTraceR0_TEMPLATE = VBoxR0ExtPackDTrace
  VBoxDTraceR0_DEFS = IN_VBOXDTRACE_R0 IN_RT_R0

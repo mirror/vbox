@@ -31,7 +31,7 @@ PROGRAMS += LoadGenerator
 LoadGenerator_TEMPLATE = VBoxValidationKitR3SupDrv
 LoadGenerator_SOURCES  = loadgenerator.cpp
 
-SYSMODS += loadgeneratorR0
+$(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += loadgeneratorR0
 loadgeneratorR0_TEMPLATE = VBoxValidationKitR0
 loadgeneratorR0_SOURCES = loadgeneratorR0.cpp
 

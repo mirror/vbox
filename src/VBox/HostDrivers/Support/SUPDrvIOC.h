@@ -220,9 +220,9 @@ typedef SUPREQHDR *PSUPREQHDR;
  *  -# When increment the major number, execute all pending work.
  *
  * @todo Pending work on next major version change:
- *          - Move SUP_IOCTL_FAST_DO_NOP and SUP_VMMR0_DO_NEM_RUN after NEM.
+ *          - Nothing.
  */
-#define SUPDRV_IOC_VERSION                              0x002d0002
+#define SUPDRV_IOC_VERSION                              0x002e0000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -314,8 +314,8 @@ typedef struct SUPLDROPEN
     {
         struct
         {
-            /** Size of the image we'll be loading (including tables). */
-            uint32_t        cbImageWithTabs;
+            /** Size of the image we'll be loading (including all tables). */
+            uint32_t        cbImageWithEverything;
             /** The size of the image bits. (Less or equal to cbImageWithTabs.) */
             uint32_t        cbImageBits;
             /** Image name.
@@ -390,6 +390,29 @@ typedef SUPLDRSYM *PSUPLDRSYM;
 /** Pointer to a const symbol table entry. */
 typedef SUPLDRSYM const *PCSUPLDRSYM;
 
+#define SUPLDR_PROT_READ    1   /**< Grant read access (RTMEM_PROT_READ). */
+#define SUPLDR_PROT_WRITE   2   /**< Grant write access (RTMEM_PROT_WRITE). */
+#define SUPLDR_PROT_EXEC    4   /**< Grant execute access (RTMEM_PROT_EXEC). */
+
+/**
+ * A segment table entry - chiefly for conveying memory protection.
+ */
+typedef struct SUPLDRSEG
+{
+    /** The RVA of the segment. */
+    uint32_t        off;
+    /** The size of the segment. */
+    uint32_t        cb : 28;
+    /** The segment protection (SUPLDR_PROT_XXX). */
+    uint32_t        fProt : 3;
+    /** MBZ. */
+    uint32_t        fUnused;
+} SUPLDRSEG;
+/** Pointer to a segment table entry. */
+typedef SUPLDRSEG *PSUPLDRSEG;
+/** Pointer to a const segment table entry. */
+typedef SUPLDRSEG const *PCSUPLDRSEG;
+
 /**
  * SUPLDRLOAD::u::In::EP type.
  */
@@ -443,7 +466,7 @@ typedef struct SUPLDRLOAD
             /** The size of the image bits (starting at offset 0 and
              * approaching offSymbols). */
             uint32_t        cbImageBits;
-            /** The offset of the symbol table. */
+            /** The offset of the symbol table (SUPLDRSYM array). */
             uint32_t        offSymbols;
             /** The number of entries in the symbol table. */
             uint32_t        cSymbols;
@@ -451,8 +474,12 @@ typedef struct SUPLDRLOAD
             uint32_t        offStrTab;
             /** Size of the string table. */
             uint32_t        cbStrTab;
+            /** Offset to the segment table (SUPLDRSEG array). */
+            uint32_t        offSegments;
+            /** Number of segments. */
+            uint32_t        cSegments;
             /** Size of image data in achImage. */
-            uint32_t        cbImageWithTabs;
+            uint32_t        cbImageWithEverything;
             /** The image data. */
             uint8_t         abImage[1];
         } In;

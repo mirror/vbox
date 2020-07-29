@@ -211,13 +211,13 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   	tstRTR0ThreadDriver
  endif
  if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
-  SYSMODS += \
+  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += \
   	tstLdrObjR0
   ifdef VBOX_WITH_RAW_MODE
    SYSMODS += tstLdrObj
   endif
  endif
- SYSMODS += \
+ $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += \
  	tstRTR0MemUserKernel \
  	tstRTR0SemMutex \
  	tstRTR0Timer \
@@ -225,7 +225,7 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  	tstRTR0Thread
  if1of ($(KBUILD_TARGET), solaris darwin)
   PROGRAMS += tstRTR0DbgKrnlInfoDriver
-  SYSMODS += tstRTR0DbgKrnlInfo
+  $(if-expr defined(VBOX_WITH_VBOXR0_AS_DLL),DLLS,SYSMODS) += tstRTR0DbgKrnlInfo
  endif # VBOX_SUPPORTED_HOST_ARCHS only
 
 endif

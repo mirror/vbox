@@ -1732,11 +1732,10 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             /* validate */
             PSUPLDROPEN pReq = (PSUPLDROPEN)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_LDR_OPEN);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithTabs > 0);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithTabs < 16*_1M);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithEverything > 0);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageWithEverything < 16*_1M);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithTabs);
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithEverything);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, RTStrEnd(pReq->u.In.szName, sizeof(pReq->u.In.szName)));
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, supdrvIsLdrModuleNameValid(pReq->u.In.szName));
@@ -1752,19 +1751,29 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             /* validate */
             PSUPLDRLOAD pReq = (PSUPLDRLOAD)pReqHdr;
             REQ_CHECK_EXPR(Name, pReq->Hdr.cbIn >= SUP_IOCTL_LDR_LOAD_SIZE_IN(32));
-            REQ_CHECK_SIZES_EX(SUP_IOCTL_LDR_LOAD, SUP_IOCTL_LDR_LOAD_SIZE_IN(pReq->u.In.cbImageWithTabs), SUP_IOCTL_LDR_LOAD_SIZE_OUT);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_LOAD, pReq->u.In.cSymbols <= 16384);
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_LDR_LOAD, SUP_IOCTL_LDR_LOAD_SIZE_IN(pReq->u.In.cbImageWithEverything), SUP_IOCTL_LDR_LOAD_SIZE_OUT);
             REQ_CHECK_EXPR_FMT(     !pReq->u.In.cSymbols
-                               ||   (   pReq->u.In.offSymbols < pReq->u.In.cbImageWithTabs
-                                     && pReq->u.In.offSymbols + pReq->u.In.cSymbols * sizeof(SUPLDRSYM) <= pReq->u.In.cbImageWithTabs),
-                               ("SUP_IOCTL_LDR_LOAD: offSymbols=%#lx cSymbols=%#lx cbImageWithTabs=%#lx\n", (long)pReq->u.In.offSymbols,
-                                (long)pReq->u.In.cSymbols, (long)pReq->u.In.cbImageWithTabs));
+                               ||   (   pReq->u.In.cSymbols <= 16384
+                                     && pReq->u.In.offSymbols >= pReq->u.In.cbImageBits
+                                     && pReq->u.In.offSymbols < pReq->u.In.cbImageWithEverything
+                                     && pReq->u.In.offSymbols + pReq->u.In.cSymbols * sizeof(SUPLDRSYM) <= pReq->u.In.cbImageWithEverything),
+                               ("SUP_IOCTL_LDR_LOAD: offSymbols=%#lx cSymbols=%#lx cbImageWithEverything=%#lx\n", (long)pReq->u.In.offSymbols,
+                                (long)pReq->u.In.cSymbols, (long)pReq->u.In.cbImageWithEverything));
             REQ_CHECK_EXPR_FMT(     !pReq->u.In.cbStrTab
-                               ||   (   pReq->u.In.offStrTab < pReq->u.In.cbImageWithTabs
-                                     && pReq->u.In.offStrTab + pReq->u.In.cbStrTab <= pReq->u.In.cbImageWithTabs
-                                     && pReq->u.In.cbStrTab <= pReq->u.In.cbImageWithTabs),
-                               ("SUP_IOCTL_LDR_LOAD: offStrTab=%#lx cbStrTab=%#lx cbImageWithTabs=%#lx\n", (long)pReq->u.In.offStrTab,
-                                (long)pReq->u.In.cbStrTab, (long)pReq->u.In.cbImageWithTabs));
+                               ||   (   pReq->u.In.offStrTab < pReq->u.In.cbImageWithEverything
+                                     && pReq->u.In.offStrTab >= pReq->u.In.cbImageBits
+                                     && pReq->u.In.offStrTab + pReq->u.In.cbStrTab <= pReq->u.In.cbImageWithEverything
+                                     && pReq->u.In.cbStrTab <= pReq->u.In.cbImageWithEverything),
+                               ("SUP_IOCTL_LDR_LOAD: offStrTab=%#lx cbStrTab=%#lx cbImageWithEverything=%#lx\n", (long)pReq->u.In.offStrTab,
+                                (long)pReq->u.In.cbStrTab, (long)pReq->u.In.cbImageWithEverything));
+            REQ_CHECK_EXPR_FMT(   pReq->u.In.cSegments >= 1
+                               && pReq->u.In.cSegments <= 128
+                               && pReq->u.In.cSegments <= pReq->u.In.cbImageBits / PAGE_SIZE
+                               && pReq->u.In.offSegments >= pReq->u.In.cbImageBits
+                               && pReq->u.In.offSegments < pReq->u.In.cbImageWithEverything
+                               && pReq->u.In.offSegments + pReq->u.In.cSegments * sizeof(SUPLDRSEG) <= pReq->u.In.cbImageWithEverything,
+                               ("SUP_IOCTL_LDR_LOAD: offSegments=%#lx cSegments=%#lx cbImageWithEverything=%#lx\n", (long)pReq->u.In.offSegments,
+                                (long)pReq->u.In.cSegments, (long)pReq->u.In.cbImageWithEverything));
 
             if (pReq->u.In.cSymbols)
             {
@@ -1772,14 +1781,36 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
                 PSUPLDRSYM paSyms = (PSUPLDRSYM)&pReq->u.In.abImage[pReq->u.In.offSymbols];
                 for (i = 0; i < pReq->u.In.cSymbols; i++)
                 {
-                    REQ_CHECK_EXPR_FMT(paSyms[i].offSymbol < pReq->u.In.cbImageWithTabs,
-                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImageWithTabs));
+                    REQ_CHECK_EXPR_FMT(paSyms[i].offSymbol < pReq->u.In.cbImageWithEverything,
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImageWithEverything));
                     REQ_CHECK_EXPR_FMT(paSyms[i].offName < pReq->u.In.cbStrTab,
-                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithEverything));
                     REQ_CHECK_EXPR_FMT(RTStrEnd((char const *)&pReq->u.In.abImage[pReq->u.In.offStrTab + paSyms[i].offName],
                                                 pReq->u.In.cbStrTab - paSyms[i].offName),
-                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
+                                       ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithEverything));
                 }
+            }
+            {
+                uint32_t i;
+                uint32_t offPrevEnd = 0;
+                PSUPLDRSEG paSegs = (PSUPLDRSEG)&pReq->u.In.abImage[pReq->u.In.offSegments];
+                for (i = 0; i < pReq->u.In.cSegments; i++)
+                {
+                    REQ_CHECK_EXPR_FMT(paSegs[i].off < pReq->u.In.cbImageBits && !(paSegs[i].off & PAGE_OFFSET_MASK),
+                                       ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx (max=%#lx)\n", (long)i, (long)paSegs[i].off, (long)pReq->u.In.cbImageBits));
+                    REQ_CHECK_EXPR_FMT(paSegs[i].cb <= pReq->u.In.cbImageBits,
+                                       ("SUP_IOCTL_LDR_LOAD: seg #%ld: cb %#lx (max=%#lx)\n", (long)i, (long)paSegs[i].cb, (long)pReq->u.In.cbImageBits));
+                    REQ_CHECK_EXPR_FMT(paSegs[i].off + paSegs[i].cb <= pReq->u.In.cbImageBits,
+                                       ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx + cb %#lx = %#lx (max=%#lx)\n", (long)i, (long)paSegs[i].off, (long)paSegs[i].cb, (long)(paSegs[i].off + paSegs[i].cb), (long)pReq->u.In.cbImageBits));
+                    REQ_CHECK_EXPR_FMT(paSegs[i].fProt != 0,
+                                       ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx + cb %#lx\n", (long)i, (long)paSegs[i].off, (long)paSegs[i].cb));
+                    REQ_CHECK_EXPR_FMT(paSegs[i].fUnused == 0, ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx\n", (long)i, (long)paSegs[i].off));
+                    REQ_CHECK_EXPR_FMT(offPrevEnd == paSegs[i].off,
+                                       ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx offPrevEnd %#lx\n", (long)i, (long)paSegs[i].off, (long)offPrevEnd));
+                    offPrevEnd = paSegs[i].off + paSegs[i].cb;
+                }
+                REQ_CHECK_EXPR_FMT(offPrevEnd == pReq->u.In.cbImageBits,
+                                   ("SUP_IOCTL_LDR_LOAD: offPrevEnd %#lx cbImageBits %#lx\n", (long)i, (long)offPrevEnd, (long)pReq->u.In.cbImageBits));
             }
 
             /* execute */
@@ -5023,7 +5054,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     size_t          cchName = strlen(pReq->u.In.szName); /* (caller checked < 32). */
     SUPDRV_CHECK_SMAP_SETUP();
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
-    LogFlow(("supdrvIOCtl_LdrOpen: szName=%s cbImageWithTabs=%d\n", pReq->u.In.szName, pReq->u.In.cbImageWithTabs));
+    LogFlow(("supdrvIOCtl_LdrOpen: szName=%s cbImageWithEverything=%d\n", pReq->u.In.szName, pReq->u.In.cbImageWithEverything));
 
     /*
      * Check if we got an instance of the image already.
@@ -5037,7 +5068,8 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         {
             if (RT_LIKELY(pImage->cUsage < UINT32_MAX / 2U))
             {
-                /** @todo check cbImageBits and cbImageWithTabs here, if they differs that indicates that the images are different. */
+                /** @todo check cbImageBits and cbImageWithEverything here, if they differs
+                 *        that indicates that the images are different. */
                 pImage->cUsage++;
                 pReq->u.Out.pvImageBase   = pImage->pvImage;
                 pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
@@ -5080,13 +5112,19 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      */
     pImage = (PSUPDRVLDRIMAGE)pv;
     pImage->pvImage         = NULL;
+#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
+    pImage->hMemObjImage    = NIL_RTR0MEMOBJ;
+#else
     pImage->pvImageAlloc    = NULL;
-    pImage->cbImageWithTabs = pReq->u.In.cbImageWithTabs;
+#endif
+    pImage->cbImageWithEverything = pReq->u.In.cbImageWithEverything;
     pImage->cbImageBits     = pReq->u.In.cbImageBits;
     pImage->cSymbols        = 0;
     pImage->paSymbols       = NULL;
     pImage->pachStrTab      = NULL;
     pImage->cbStrTab        = 0;
+    pImage->cSegments       = 0;
+    pImage->paSegments      = NULL;
     pImage->pfnModuleInit   = NULL;
     pImage->pfnModuleTerm   = NULL;
     pImage->pfnServiceReqHandler = NULL;
@@ -5104,10 +5142,19 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     rc = supdrvOSLdrOpen(pDevExt, pImage, pReq->u.In.szFilename);
     if (rc == VERR_NOT_SUPPORTED)
     {
+#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
+        rc = RTR0MemObjAllocPage(&pImage->hMemObjImage, pImage->cbImageBits, true /*fExecutable*/);
+        if (RT_SUCCESS(rc))
+        {
+            pImage->pvImage = RTR0MemObjAddress(pImage->hMemObjImage);
+            pImage->fNative = false;
+        }
+#else
         pImage->pvImageAlloc = RTMemExecAlloc(pImage->cbImageBits + 31);
         pImage->pvImage     = RT_ALIGN_P(pImage->pvImageAlloc, 32);
         pImage->fNative     = false;
         rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_EXEC_MEMORY;
+#endif
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
     }
     if (RT_FAILURE(rc))
@@ -5140,49 +5187,6 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 
 
 /**
- * Worker that validates a pointer to an image entrypoint.
- *
- * @returns IPRT status code.
- * @param   pDevExt         The device globals.
- * @param   pImage          The loader image.
- * @param   pv              The pointer into the image.
- * @param   fMayBeNull      Whether it may be NULL.
- * @param   fCheckNative    Whether to check with the native loaders.
- * @param   pszSymbol       The entrypoint name or log name.  If the symbol
- *                          capitalized it signifies a specific symbol, otherwise it
- *                          for logging.
- * @param   pbImageBits     The image bits prepared by ring-3.
- *
- * @remarks Will leave the lock on failure.
- */
-static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv, bool fMayBeNull,
-                                    bool fCheckNative, const uint8_t *pbImageBits, const char *pszSymbol)
-{
-    if (!fMayBeNull || pv)
-    {
-        if ((uintptr_t)pv - (uintptr_t)pImage->pvImage >= pImage->cbImageBits)
-        {
-            supdrvLdrUnlock(pDevExt);
-            Log(("Out of range (%p LB %#x): %s=%p\n", pImage->pvImage, pImage->cbImageBits, pszSymbol, pv));
-            return VERR_INVALID_PARAMETER;
-        }
-
-        if (pImage->fNative && fCheckNative)
-        {
-            int rc = supdrvOSLdrValidatePointer(pDevExt, pImage, pv, pbImageBits, pszSymbol);
-            if (RT_FAILURE(rc))
-            {
-                supdrvLdrUnlock(pDevExt);
-                Log(("Bad entry point address: %s=%p (rc=%Rrc)\n", pszSymbol, pv, rc));
-                return rc;
-            }
-        }
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Formats a load error message.
  *
  * @returns @a rc
@@ -5204,6 +5208,70 @@ int VBOXCALL supdrvLdrLoadError(int rc, PSUPLDRLOAD pReq, const char *pszFormat,
 
 
 /**
+ * Worker that validates a pointer to an image entrypoint.
+ *
+ * Calls supdrvLdrLoadError on error.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt         The device globals.
+ * @param   pImage          The loader image.
+ * @param   pv              The pointer into the image.
+ * @param   fMayBeNull      Whether it may be NULL.
+ * @param   pszSymbol       The entrypoint name or log name.  If the symbol is
+ *                          capitalized it signifies a specific symbol, otherwise it
+ *                          for logging.
+ * @param   pbImageBits     The image bits prepared by ring-3.
+ * @param   pReq            The request for passing to supdrvLdrLoadError.
+ *
+ * @note    Will leave the loader lock on failure!
+ */
+static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv, bool fMayBeNull,
+                                    const uint8_t *pbImageBits, const char *pszSymbol, PSUPLDRLOAD pReq)
+{
+    if (!fMayBeNull || pv)
+    {
+        uint32_t iSeg;
+
+        /* Must be within the image bits: */
+        uintptr_t const uRva = (uintptr_t)pv - (uintptr_t)pImage->pvImage;
+        if (uRva >= pImage->cbImageBits)
+        {
+            supdrvLdrUnlock(pDevExt);
+            return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq,
+                                      "Invalid entry point address %p given for %s: RVA %#zx, image size %#zx",
+                                      pv, pszSymbol, uRva, pImage->cbImageBits);
+        }
+
+        /* Must be in an executable segment: */
+        for (iSeg = 0; iSeg < pImage->cSegments; iSeg++)
+            if (uRva - pImage->paSegments[iSeg].off < (uintptr_t)pImage->paSegments[iSeg].cb)
+            {
+                if (pImage->paSegments[iSeg].fProt & SUPLDR_PROT_EXEC)
+                    break;
+                supdrvLdrUnlock(pDevExt);
+                return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq,
+                                          "Bad entry point %p given for %s: not executable (seg #%u: %#RX32 LB %#RX32 prot %#x)",
+                                          pv, pszSymbol, iSeg, pImage->paSegments[iSeg].off, pImage->paSegments[iSeg].cb,
+                                          pImage->paSegments[iSeg].fProt);
+            }
+
+        if (pImage->fNative)
+        {
+            /** @todo pass pReq along to the native code.   */
+            int rc = supdrvOSLdrValidatePointer(pDevExt, pImage, pv, pbImageBits, pszSymbol);
+            if (RT_FAILURE(rc))
+            {
+                supdrvLdrUnlock(pDevExt);
+                return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq,
+                                          "Bad entry point address %p for %s: rc=%Rrc\n", pv, pszSymbol, rc);
+            }
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads the image bits.
  *
  * This is the 2nd step of the loading.
@@ -5219,7 +5287,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     PSUPDRVLDRIMAGE pImage;
     int             rc;
     SUPDRV_CHECK_SMAP_SETUP();
-    LogFlow(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImageWithBits=%d\n", pReq->u.In.pvImageBase, pReq->u.In.cbImageWithTabs));
+    LogFlow(("supdrvIOCtl_LdrLoad: pvImageBase=%p cbImageWithEverything=%d\n", pReq->u.In.pvImageBase, pReq->u.In.cbImageWithEverything));
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
     /*
@@ -5241,12 +5309,12 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     /*
      * Validate input.
      */
-    if (   pImage->cbImageWithTabs != pReq->u.In.cbImageWithTabs
-        || pImage->cbImageBits     != pReq->u.In.cbImageBits)
+    if (   pImage->cbImageWithEverything != pReq->u.In.cbImageWithEverything
+        || pImage->cbImageBits           != pReq->u.In.cbImageBits)
     {
         supdrvLdrUnlock(pDevExt);
-        return supdrvLdrLoadError(VERR_INVALID_HANDLE, pReq, "Image size mismatch found: %d(prep) != %d(load) or %d != %d",
-                                  pImage->cbImageWithTabs, pReq->u.In.cbImageWithTabs, pImage->cbImageBits, pReq->u.In.cbImageBits);
+        return supdrvLdrLoadError(VERR_INVALID_HANDLE, pReq, "Image size mismatch found: %u(prep) != %u(load) or %u != %u",
+                                  pImage->cbImageWithEverything, pReq->u.In.cbImageWithEverything, pImage->cbImageBits, pReq->u.In.cbImageBits);
     }
 
     if (pImage->uState != SUP_IOCTL_LDR_OPEN)
@@ -5272,29 +5340,30 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             break;
 
         case SUPLDRLOADEP_VMMR0:
-            rc = supdrvLdrValidatePointer(    pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0,          false, false, pReq->u.In.abImage, "pvVMMR0");
-            if (RT_SUCCESS(rc))
-                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, false,  true, pReq->u.In.abImage, "VMMR0EntryFast");
-            if (RT_SUCCESS(rc))
-                rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx,   false,  true, pReq->u.In.abImage, "VMMR0EntryEx");
+            if (pReq->u.In.EP.VMMR0.pvVMMR0 != pImage->pvImage)
+            {
+                supdrvLdrUnlock(pDevExt);
+                return supdrvLdrLoadError(rc, pReq, "Invalid pvVMMR0 pointer: %p, expected %p", pReq->u.In.EP.VMMR0.pvVMMR0, pImage->pvImage);
+            }
+            rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, false, pReq->u.In.abImage, "VMMR0EntryFast", pReq);
             if (RT_FAILURE(rc))
-                return supdrvLdrLoadError(rc, pReq, "Invalid VMMR0 pointer");
+                return rc;
+            rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx,   false, pReq->u.In.abImage, "VMMR0EntryEx", pReq);
+            if (RT_FAILURE(rc))
+                return rc;
             break;
 
         case SUPLDRLOADEP_SERVICE:
-            rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.Service.pfnServiceReq, false,  true, pReq->u.In.abImage, "pfnServiceReq");
+            rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.EP.Service.pfnServiceReq, false, pReq->u.In.abImage, "pfnServiceReq", pReq);
             if (RT_FAILURE(rc))
-                return supdrvLdrLoadError(rc, pReq, "Invalid pfnServiceReq pointer: %p", pReq->u.In.EP.Service.pfnServiceReq);
+                return rc;
             if (    pReq->u.In.EP.Service.apvReserved[0] != NIL_RTR0PTR
                 ||  pReq->u.In.EP.Service.apvReserved[1] != NIL_RTR0PTR
                 ||  pReq->u.In.EP.Service.apvReserved[2] != NIL_RTR0PTR)
             {
                 supdrvLdrUnlock(pDevExt);
-                return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq,
-                                          "Out of range (%p LB %#x): apvReserved={%p,%p,%p} MBZ!",
-                                          pImage->pvImage, pReq->u.In.cbImageWithTabs,
-                                          pReq->u.In.EP.Service.apvReserved[0],
-                                          pReq->u.In.EP.Service.apvReserved[1],
+                return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq, "apvReserved={%p,%p,%p} MBZ!",
+                                          pReq->u.In.EP.Service.apvReserved[0], pReq->u.In.EP.Service.apvReserved[1],
                                           pReq->u.In.EP.Service.apvReserved[2]);
             }
             break;
@@ -5304,12 +5373,12 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq, "Invalid eEPType=%d", pReq->u.In.eEPType);
     }
 
-    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleInit, true, true, pReq->u.In.abImage, "ModuleInit");
+    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleInit, true, pReq->u.In.abImage, "ModuleInit", pReq);
     if (RT_FAILURE(rc))
-        return supdrvLdrLoadError(rc, pReq, "Invalid pfnModuleInit pointer: %p", pReq->u.In.pfnModuleInit);
-    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleTerm, true, true, pReq->u.In.abImage, "ModuleTerm");
+        return rc;
+    rc = supdrvLdrValidatePointer(pDevExt, pImage, pReq->u.In.pfnModuleTerm, true, pReq->u.In.abImage, "ModuleTerm", pReq);
     if (RT_FAILURE(rc))
-        return supdrvLdrLoadError(rc, pReq, "Invalid pfnModuleTerm pointer: %p", pReq->u.In.pfnModuleTerm);
+        return rc;
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
     /*
@@ -5321,10 +5390,8 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->cbStrTab = pReq->u.In.cbStrTab;
         if (pImage->cbStrTab)
         {
-            pImage->pachStrTab = (char *)RTMemAlloc(pImage->cbStrTab);
-            if (pImage->pachStrTab)
-                memcpy(pImage->pachStrTab, &pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
-            else
+            pImage->pachStrTab = (char *)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
+            if (!pImage->pachStrTab)
                 rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for string table: %#x", pImage->cbStrTab);
             SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
         }
@@ -5333,17 +5400,27 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (RT_SUCCESS(rc) && pImage->cSymbols)
         {
             size_t  cbSymbols = pImage->cSymbols * sizeof(SUPLDRSYM);
-            pImage->paSymbols = (PSUPLDRSYM)RTMemAlloc(cbSymbols);
-            if (pImage->paSymbols)
-                memcpy(pImage->paSymbols, &pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
-            else
+            pImage->paSymbols = (PSUPLDRSYM)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
+            if (!pImage->paSymbols)
                 rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for symbol table: %#x", cbSymbols);
+            SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+        }
+
+        pImage->cSegments = pReq->u.In.cSegments;
+        if (RT_SUCCESS(rc))
+        {
+            size_t  cbSegments = pImage->cSegments * sizeof(SUPLDRSEG);
+            pImage->paSegments = (PSUPLDRSEG)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSegments], cbSegments);
+            if (pImage->paSegments) /* Align the last segment size to avoid upsetting RTR0MemObjProtect. */ /** @todo relax RTR0MemObjProtect */
+                pImage->paSegments[pImage->cSegments - 1].cb = RT_ALIGN_32(pImage->paSegments[pImage->cSegments - 1].cb, PAGE_SIZE);
+            else
+                rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for segment table: %#x", cbSegments);
             SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
         }
     }
 
     /*
-     * Copy the bits / complete native loading.
+     * Copy the bits and apply permissions / complete native loading.
      */
     if (RT_SUCCESS(rc))
     {
@@ -5355,7 +5432,26 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.abImage, pReq);
         else
         {
+#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
+            uint32_t i;
             memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
+
+            for (i = 0; i < pImage->cSegments; i++)
+            {
+                rc = RTR0MemObjProtect(pImage->hMemObjImage, pImage->paSegments[i].off, pImage->paSegments[i].cb,
+                                       pImage->paSegments[i].fProt);
+                if (RT_SUCCESS(rc))
+                    continue;
+                if (rc == VERR_NOT_SUPPORTED)
+                    rc = VINF_SUCCESS;
+                else
+                    rc = supdrvLdrLoadError(rc, pReq, "RTR0MemObjProtect failed on seg#%u %#RX32 LB %#RX32 fProt=%#x",
+                                            i, pImage->paSegments[i].off, pImage->paSegments[i].cb, pImage->paSegments[i].fProt);
+                break;
+            }
+#else
+            memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
+#endif
             Log(("vboxdrv: Loaded '%s' at %p\n", pImage->szName, pImage->pvImage));
         }
         SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
@@ -5950,12 +6046,20 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     pImage->pDevExt = NULL;
     pImage->pNext   = NULL;
     pImage->uState  = SUP_IOCTL_LDR_FREE;
+#ifdef SUPDRV_USE_MEMOBJ_FOR_LDR_IMAGE
+    RTR0MemObjFree(pImage->hMemObjImage, true /*fMappings*/);
+    pImage->hMemObjImage = NIL_RTR0MEMOBJ;
+#else
     RTMemExecFree(pImage->pvImageAlloc, pImage->cbImageBits + 31);
     pImage->pvImageAlloc = NULL;
+#endif
+    pImage->pvImage = NULL;
     RTMemFree(pImage->pachStrTab);
     pImage->pachStrTab = NULL;
     RTMemFree(pImage->paSymbols);
     pImage->paSymbols = NULL;
+    RTMemFree(pImage->paSegments);
+    pImage->paSegments = NULL;
     RTMemFree(pImage);
 }
 
