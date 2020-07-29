@@ -29,62 +29,6 @@
 #include <VBox/log.h>
 
 #undef LOG_GROUP
-#include "r0drv/alloc-r0drv.c"
-#undef LOG_GROUP
-#include "r0drv/initterm-r0drv.c"
-#undef LOG_GROUP
-#include "r0drv/memobj-r0drv.c"
-#undef LOG_GROUP
-#include "r0drv/mpnotification-r0drv.c"
-#undef LOG_GROUP
-#include "r0drv/powernotification-r0drv.c"
-#undef LOG_GROUP
-#include "r0drv/generic/semspinmutex-r0drv-generic.c"
-#undef LOG_GROUP
-#include "common/alloc/alloc.c"
-#undef LOG_GROUP
-#include "common/checksum/crc32.c"
-#undef LOG_GROUP
-#include "common/checksum/ipv4.c"
-#undef LOG_GROUP
-#include "common/checksum/ipv6.c"
-#undef LOG_GROUP
-#include "common/err/errinfo.c"
-#undef LOG_GROUP
-#include "common/log/log.c"
-#undef LOG_GROUP
-#include "common/log/logellipsis.c"
-#undef LOG_GROUP
-#include "common/log/logrel.c"
-#undef LOG_GROUP
-#include "common/log/logrelellipsis.c"
-#undef LOG_GROUP
-#include "common/log/logcom.c"
-#undef LOG_GROUP
-#include "common/log/logformat.c"
-#undef LOG_GROUP
-#include "common/misc/RTAssertMsg1Weak.c"
-#undef LOG_GROUP
-#include "common/misc/RTAssertMsg2.c"
-#undef LOG_GROUP
-#include "common/misc/RTAssertMsg2Add.c"
-#undef LOG_GROUP
-#include "common/misc/RTAssertMsg2AddWeak.c"
-#undef LOG_GROUP
-#include "common/misc/RTAssertMsg2AddWeakV.c"
-#undef LOG_GROUP
-#include "common/misc/RTAssertMsg2Weak.c"
-#undef LOG_GROUP
-#include "common/misc/RTAssertMsg2WeakV.c"
-#undef LOG_GROUP
-#include "common/misc/assert.c"
-#undef LOG_GROUP
-#include "common/misc/handletable.c"
-#undef LOG_GROUP
-#include "common/misc/handletablectx.c"
-#undef LOG_GROUP
-#include "common/misc/thread.c"
-#undef LOG_GROUP
 #include "common/string/RTStrCat.c"
 #undef LOG_GROUP
 #include "common/string/RTStrCopy.c"
@@ -149,15 +93,4 @@
 # undef LOG_GROUP
 # include "common/alloc/heapsimple.c"
 #endif
-
-#if 0 /*def RT_ARCH_X86 - iprt/nocrt/limit.h clashes.*/
-# include "common/math/gcc/divdi3.c"
-# include "common/math/gcc/moddi3.c"
-# include "common/math/gcc/udivdi3.c"
-# include "common/math/gcc/udivmoddi4.c"
-# include "common/math/gcc/umoddi3.c"
-# include "common/math/gcc/qdivrem.c"
-#endif
-
-
 

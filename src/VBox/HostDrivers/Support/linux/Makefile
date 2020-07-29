@@ -43,7 +43,8 @@ VBOXMOD_OBJS = \
 
 ifndef VBOX_WITHOUT_COMBINED_SOURCES
 VBOXMOD_OBJS += \
-	combined-agnostic.o \
+	combined-agnostic1.o \
+	combined-agnostic2.o \
 	combined-os-specific.o
 else  # VBOX_WITHOUT_COMBINED_SOURCES
 VBOXMOD_OBJS += \
