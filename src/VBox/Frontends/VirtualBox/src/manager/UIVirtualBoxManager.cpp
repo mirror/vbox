@@ -77,6 +77,9 @@
 #include "CSystemProperties.h"
 #include "CUnattended.h"
 #include "CVirtualBoxErrorInfo.h"
+#ifdef VBOX_WS_MAC
+# include "CVirtualBox.h"
+#endif
 
 /* Other VBox stuff: */
 #include <iprt/buildconfig.h>
@@ -1274,7 +1277,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
     /* Get cloud machine to acquire serial command: */
     const CCloudMachine comMachine = pCloudItem->machine();
 
-#ifdef VBOX_WS_WIN
+#if defined(VBOX_WS_WIN)
     /* Gather arguments: */
     QStringList arguments;
     arguments << strArguments;
@@ -1282,7 +1285,34 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 
     /* Execute console application finally: */
     QProcess::startDetached(QString("%1 %2").arg(strPath, arguments.join(' ')));
-#else /* !VBOX_WS_WIN */
+#elif defined(VBOX_WS_MAC)
+    /* Gather arguments: */
+    QStringList arguments;
+    arguments << parseShellArguments(strArguments);
+
+    /* Make sure that isn't a request to start Open command: */
+    if (strPath != "open" && strPath != "/usr/bin/open")
+    {
+        /* In that case just add the command we have as simple argument: */
+        arguments << comMachine.GetSerialConsoleCommand();
+    }
+    else
+    {
+        /* Otherwise upload command to external file which can be opened with Open command: */
+        QDir uiHomeFolder(uiCommon().virtualBox().GetHomeFolder());
+        const QString strAbsoluteCommandName = uiHomeFolder.absoluteFilePath("last.command");
+        QFile file(strAbsoluteCommandName);
+        file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
+        if (!file.open(QIODevice::WriteOnly))
+            AssertFailedReturnVoid();
+        file.write(comMachine.GetSerialConsoleCommand().toUtf8());
+        file.close();
+        arguments << strAbsoluteCommandName;
+    }
+
+    /* Execute console application finally: */
+    QProcess::startDetached(strPath, arguments);
+#else /* !VBOX_WS_WIN && !VBOX_WS_MAC */
     /* Gather arguments: */
     QStringList arguments;
     arguments << parseShellArguments(strArguments);
@@ -1290,7 +1320,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 
     /* Execute console application finally: */
     QProcess::startDetached(strPath, arguments);
-#endif /* !VBOX_WS_WIN */
+#endif /* !VBOX_WS_WIN && !VBOX_WS_MAC */
 }
 
 void UIVirtualBoxManager::sltPerformCopyCommandSerialUnix()
