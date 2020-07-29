@@ -1915,7 +1915,7 @@ int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta)
     void  *pvData = NULL;
     size_t cbData = 0;
 
-    int rc;
+    int rc = VINF_SUCCESS; /* Shut up GCC. */
 
     switch (pMeta->enmType)
     {
