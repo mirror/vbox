@@ -97,6 +97,7 @@ private:
         void prepareHostStatsWidgets();
         void prepareToolBar();
         void prepareActions();
+        void updateColumnsMenu();
         void loadSettings();
         void loadHiddenColumnList();
         void saveSettings();

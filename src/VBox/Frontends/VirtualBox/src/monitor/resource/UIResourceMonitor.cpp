@@ -1279,10 +1279,15 @@ void UIResourceMonitorWidget::retranslateUi()
     m_columnTitles[VMResourceMonitorColumn_DiskIOReadTotal] = UIResourceMonitorWidget::tr("Disk Read Total");
     m_columnTitles[VMResourceMonitorColumn_DiskIOWriteTotal] = UIResourceMonitorWidget::tr("Disk Write Total");
     m_columnTitles[VMResourceMonitorColumn_VMExits] = UIResourceMonitorWidget::tr("VM Exits");
+
+    updateColumnsMenu();
+
     if (m_pShowPerformanceMonitorAction)
         m_pShowPerformanceMonitorAction->setText(tr("Show Performance Monitor"));
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnTitles);
+
+
     computeMinimumColumnWidths();
 }
 
@@ -1361,14 +1366,12 @@ void UIResourceMonitorWidget::prepareWidgets()
     }
 }
 
-void UIResourceMonitorWidget::prepareActions()
+void UIResourceMonitorWidget::updateColumnsMenu()
 {
-    if (!m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_M_Columns))
-        return;
     UIMenu *pMenu = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_M_Columns)->menu();
     if (!pMenu)
         return;
-
+    pMenu->clear();
     for (int i = 0; i < VMResourceMonitorColumn_Max; ++i)
     {
         QAction *pAction = pMenu->addAction(m_columnTitles[i]);
@@ -1379,8 +1382,13 @@ void UIResourceMonitorWidget::prepareActions()
         pAction->setChecked(columnVisible(i));
         connect(pAction, &QAction::toggled, this, &UIResourceMonitorWidget::sltHandleColumnAction);
     }
+}
+
+void UIResourceMonitorWidget::prepareActions()
+{
+    updateColumnsMenu();
     m_pShowPerformanceMonitorAction = new QAction(this);
-     connect(m_pShowPerformanceMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
+    connect(m_pShowPerformanceMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
 }
 
 void UIResourceMonitorWidget::prepareToolBar()
