@@ -35,9 +35,9 @@
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-#include <iprt/initterm.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/test.h>
 
 #include <VBox/sup.h>
 
@@ -45,8 +45,9 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static SUPGLOBALINFOPAGE g_MyGip = { SUPGLOBALINFOPAGE_MAGIC, SUPGLOBALINFOPAGE_VERSION, SUPGIPMODE_INVARIANT_TSC, 42 };
-static PSUPGLOBALINFOPAGE g_pMyGip = &g_MyGip;
+static RTTEST               g_hTest;
+static SUPGLOBALINFOPAGE    g_MyGip = { SUPGLOBALINFOPAGE_MAGIC, SUPGLOBALINFOPAGE_VERSION, SUPGIPMODE_INVARIANT_TSC, 42 };
+static PSUPGLOBALINFOPAGE   g_pMyGip = &g_MyGip;
 
 extern "C" DECLEXPORT(int) DisasmTest1(void);
 
@@ -58,6 +59,50 @@ static DECLCALLBACK(int) testEnumSegment(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void
              "     link=%RTptr LB %RTptr align=%RTptr fProt=%#x offFile=%RTfoff\n"
              , *piSeg, pSeg->RVA, pSeg->cbMapped, pSeg->pszName,
              pSeg->LinkAddress, pSeg->cb, pSeg->Alignment, pSeg->fProt, pSeg->offFile);
+
+    /*
+     * Do some address conversion tests:
+     */
+    if (pSeg->cbMapped != NIL_RTLDRADDR)
+    {
+        /* RTLdrRvaToSegOffset: */
+        uint32_t    iSegConv   = ~(uint32_t)42;
+        RTLDRADDR   offSegConv = ~(RTLDRADDR)22;
+        int rc = RTLdrRvaToSegOffset(hLdrMod, pSeg->RVA, &iSegConv, &offSegConv);
+        if (RT_FAILURE(rc))
+            RTTestIFailed("RTLdrRvaToSegOffset failed on Seg #%u / RVA %#RTptr: %Rrc", *piSeg, pSeg->RVA, rc);
+        else if (iSegConv != *piSeg || offSegConv != 0)
+                RTTestIFailed("RTLdrRvaToSegOffset on Seg #%u / RVA %#RTptr returned: iSegConv=%#x offSegConv=%RTptr, expected %#x and 0",
+                              *piSeg, pSeg->RVA, iSegConv, offSegConv, *piSeg);
+
+        /* RTLdrSegOffsetToRva: */
+        RTLDRADDR uRvaConv = ~(RTLDRADDR)22;
+        rc = RTLdrSegOffsetToRva(hLdrMod, *piSeg, 0, &uRvaConv);
+        if (RT_FAILURE(rc))
+            RTTestIFailed("RTLdrSegOffsetToRva failed on Seg #%u / off 0: %Rrc", *piSeg, rc);
+        else if (uRvaConv != pSeg->RVA)
+            RTTestIFailed("RTLdrSegOffsetToRva on Seg #%u / off 0 returned: %RTptr, expected %RTptr", *piSeg, uRvaConv, pSeg->RVA);
+
+        /* RTLdrLinkAddressToRva: */
+        uRvaConv = ~(RTLDRADDR)22;
+        rc = RTLdrLinkAddressToRva(hLdrMod, pSeg->LinkAddress, &uRvaConv);
+        if (RT_FAILURE(rc))
+            RTTestIFailed("RTLdrLinkAddressToRva failed on Seg #%u / %RTptr: %Rrc", *piSeg, pSeg->LinkAddress, rc);
+        else if (uRvaConv != pSeg->RVA)
+            RTTestIFailed("RTLdrLinkAddressToRva on Seg #%u / %RTptr returned: %RTptr, expected %RTptr",
+                          *piSeg, pSeg->LinkAddress, uRvaConv, pSeg->RVA);
+
+        /* RTLdrLinkAddressToSegOffset: */
+        iSegConv   = ~(uint32_t)42;
+        offSegConv = ~(RTLDRADDR)22;
+        rc = RTLdrLinkAddressToSegOffset(hLdrMod, pSeg->LinkAddress, &iSegConv, &offSegConv);
+        if (RT_FAILURE(rc))
+            RTTestIFailed("RTLdrLinkAddressToSegOffset failed on Seg #%u / %#RTptr: %Rrc", *piSeg, pSeg->LinkAddress, rc);
+        else if (iSegConv != *piSeg || offSegConv != 0)
+                RTTestIFailed("RTLdrLinkAddressToSegOffset on Seg #%u / %#RTptr returned: iSegConv=%#x offSegConv=%RTptr, expected %#x and 0",
+                              *piSeg, pSeg->LinkAddress, iSegConv, offSegConv, *piSeg);
+    }
+
     *piSeg += 1;
     RT_NOREF(hLdrMod);
     return VINF_SUCCESS;
@@ -125,12 +170,12 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
  * regions the for compare usage. The third is loaded into one
  * and then relocated between the two and other locations a few times.
  *
- * @returns number of errors.
  * @param   pszFilename     The file to load the mess with.
  */
-static int testLdrOne(const char *pszFilename)
+static void testLdrOne(const char *pszFilename)
 {
-    int             cErrors = 0;
+    RTTestSub(g_hTest, RTPathFilename(pszFilename));
+
     size_t          cbImage = 0;
     struct Load
     {
@@ -155,9 +200,8 @@ static int testLdrOne(const char *pszFilename)
         rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_WHATEVER, &aLoads[i].hLdrMod);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstLdr-4: Failed to open '%s'/%d, rc=%Rrc. aborting test.\n", pszFilename, i, rc);
+            RTTestIFailed("tstLdr-4: Failed to open '%s'/%d, rc=%Rrc. aborting test.", pszFilename, i, rc);
             Assert(aLoads[i].hLdrMod == NIL_RTLDRMOD);
-            cErrors++;
             break;
         }
 
@@ -165,8 +209,7 @@ static int testLdrOne(const char *pszFilename)
         size_t cb = RTLdrSize(aLoads[i].hLdrMod);
         if (cbImage && cb != cbImage)
         {
-            RTPrintf("tstLdr-4: Size mismatch '%s'/%d. aborting test.\n", pszFilename, i);
-            cErrors++;
+            RTTestIFailed("tstLdr-4: Size mismatch '%s'/%d. aborting test.", pszFilename, i);
             break;
         }
         aLoads[i].cbBits = cbImage = cb;
@@ -175,8 +218,7 @@ static int testLdrOne(const char *pszFilename)
         aLoads[i].pvBits = RTMemExecAlloc(cb);
         if (!aLoads[i].pvBits)
         {
-            RTPrintf("tstLdr-4: Out of memory '%s'/%d cbImage=%d. aborting test.\n", pszFilename, i, cbImage);
-            cErrors++;
+            RTTestIFailed("Out of memory '%s'/%d cbImage=%d. aborting test.", pszFilename, i, cbImage);
             break;
         }
 
@@ -184,8 +226,7 @@ static int testLdrOne(const char *pszFilename)
         rc = RTLdrGetBits(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits, testGetImport, NULL);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstLdr-4: Failed to get bits for '%s'/%d, rc=%Rrc. aborting test\n", pszFilename, i, rc);
-            cErrors++;
+            RTTestIFailed("Failed to get bits for '%s'/%d, rc=%Rrc. aborting test", pszFilename, i, rc);
             break;
         }
     }
@@ -193,7 +234,7 @@ static int testLdrOne(const char *pszFilename)
     /*
      * Execute the code.
      */
-    if (!cErrors)
+    if (!RTTestSubErrorCount(g_hTest))
     {
         for (i = 0; i < RT_ELEMENTS(aLoads); i += 1)
         {
@@ -209,8 +250,7 @@ static int testLdrOne(const char *pszFilename)
                                       UINT32_MAX, "_DisasmTest1", &Value);
             if (RT_FAILURE(rc))
             {
-                RTPrintf("tstLdr-4: Failed to get symbol \"DisasmTest1\" from load #%d: %Rrc\n", i, rc);
-                cErrors++;
+                RTTestIFailed("Failed to get symbol \"DisasmTest1\" from load #%d: %Rrc", i, rc);
                 break;
             }
             typedef DECLCALLBACKPTR(int, PFNDISASMTEST1,(void));
@@ -222,10 +262,7 @@ static int testLdrOne(const char *pszFilename)
             /* call the test function. */
             rc = pfnDisasmTest1();
             if (rc)
-            {
-                RTPrintf("tstLdr-4: load #%d Test1 -> %#x\n", i, rc);
-                cErrors++;
-            }
+                RTTestIFailed("load #%d Test1 -> %#x", i, rc);
 
             /* While we're here, check a couple of RTLdrQueryProp calls too */
             void *pvBits = aLoads[i].pvBits;
@@ -256,56 +293,42 @@ static int testLdrOne(const char *pszFilename)
         {
             rc = RTLdrClose(aLoads[i].hLdrMod);
             if (RT_FAILURE(rc))
-            {
-                RTPrintf("tstLdr-4: Failed to close '%s' i=%d, rc=%Rrc.\n", pszFilename, i, rc);
-                cErrors++;
-            }
+                RTTestIFailed("Failed to close '%s' i=%d, rc=%Rrc.", pszFilename, i, rc);
         }
     }
 
-    return cErrors;
 }
 
 
 
-int main(int argc, char **argv)
+int main()
 {
-    int cErrors = 0;
-    RTR3InitExe(argc, &argv, 0);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstLdr-4", &g_hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
     /*
      * Sanity check.
      */
     int rc = DisasmTest1();
-    if (rc)
+    if (rc == 0)
     {
-        RTPrintf("tstLdr-4: FATAL ERROR - DisasmTest1 is buggy: rc=%#x\n", rc);
-        return 1;
-    }
+        /*
+         * Execute the test.
+         */
+        char szPath[RTPATH_MAX];
+        rc = RTPathExecDir(szPath, sizeof(szPath) - sizeof("/tstLdrObjR0.r0"));
+        if (RT_SUCCESS(rc))
+        {
+            strcat(szPath, "/tstLdrObjR0.r0");
 
-    /*
-     * Execute the test.
-     */
-    char szPath[RTPATH_MAX];
-    rc = RTPathExecDir(szPath, sizeof(szPath) - sizeof("/tstLdrObjR0.r0"));
-    if (RT_SUCCESS(rc))
-    {
-        strcat(szPath, "/tstLdrObjR0.r0");
-        RTPrintf("tstLdr-4: TESTING '%s'...\n", szPath);
-        cErrors += testLdrOne(szPath);
+            testLdrOne(szPath);
+        }
+        else
+            RTTestIFailed("RTPathExecDir -> %Rrc", rc);
     }
     else
-    {
-        RTPrintf("tstLdr-4: RTPathExecDir -> %Rrc\n", rc);
-        cErrors++;
-    }
+        RTTestIFailed("FATAL ERROR - DisasmTest1 is buggy: rc=%#x", rc);
 
-    /*
-     * Test result summary.
-     */
-    if (!cErrors)
-        RTPrintf("tstLdr-4: SUCCESS\n");
-    else
-        RTPrintf("tstLdr-4: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+    return RTTestSummaryAndDestroy(g_hTest);
 }
