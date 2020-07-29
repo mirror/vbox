@@ -41,7 +41,7 @@ VBOXMOD_OBJS = \
 	SUPLibAll.o \
 	common/string/strformatrt.o
 
-ifdef VBOX_WITHOUT_COMBINED_SOURCES
+ifndef VBOX_WITHOUT_COMBINED_SOURCES
 VBOXMOD_OBJS += \
 	combined-agnostic.o \
 	combined-os-specific.o
