@@ -497,7 +497,7 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
 }
 
 
-/** 
+/**
  * Worker for supLoadModule().
  */
 static int supLoadModuleInner(RTLDRMOD hLdrMod, PSUPLDRLOAD pLoadReq, uint32_t cbImageWithEverything,
