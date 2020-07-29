@@ -1348,7 +1348,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Open Connection"));
+        setName(QApplication::translate("UIActionPool", "&Create Connection"));
         setStatusTip(QApplication::translate("UIActionPool", "Create console connection to be able to use ssh/vnc clients"));
     }
 };
@@ -1378,7 +1378,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Close Connection"));
+        setName(QApplication::translate("UIActionPool", "&Delete Connection"));
         setStatusTip(QApplication::translate("UIActionPool", "Delete console connection to disconnect ssh/vnc clients"));
     }
 };
