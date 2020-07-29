@@ -1180,7 +1180,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *p
         }
         else
             rc = RTLDRELF_NAME(RelocateSectionExecDyn)(pModElf, BaseAddr, pfnGetImport, pvUser,
-                                                       0, pModElf->cbImage,
+                                                       0, (Elf_Size)pModElf->cbImage,
                                                        (const uint8_t *)pModElf->pvBits /** @todo file offset ?? */,
                                                        (uint8_t *)pvBits,
                                                        (const uint8_t *)pModElf->pvBits + pShdrRel->sh_offset,
@@ -2121,7 +2121,7 @@ static int RTLDRELF_NAME(ValidateAndProcessSectionHeaders)(PRTLDRMODELF pModElf,
                                            pszLogName, pModElf->iShDynamic, i);
             if (pModElf->Ehdr.e_type != ET_DYN && pModElf->Ehdr.e_type != ET_EXEC)
                 return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
-                                           "Unexpected SHT_DYNAMIC (i=%d) for e_type=%d", pszLogName, i, pModElf->Ehdr.e_type);
+                                           "%s: Unexpected SHT_DYNAMIC (i=%d) for e_type=%d", pszLogName, i, pModElf->Ehdr.e_type);
             if (paShdrs[i].sh_entsize != sizeof(Elf_Dyn))
                 return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
                                            "%s: SHT_DYNAMIC (i=%d) sh_entsize=" FMT_ELF_XWORD ",  expected %#zx",
@@ -2130,7 +2130,7 @@ static int RTLDRELF_NAME(ValidateAndProcessSectionHeaders)(PRTLDRMODELF pModElf,
             Elf_Xword const cDynamic = paShdrs[i].sh_size / sizeof(Elf_Dyn);
             if (cDynamic > _64K || cDynamic < 2)
                 return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
-                                           "%s: SHT_DYNAMIC (i=%d) sh_size=" FMT_ELF_XWORD " is out of range, expected %u",
+                                           "%s: SHT_DYNAMIC (i=%d) sh_size=" FMT_ELF_XWORD " is out of range (2..64K)",
                                            pszLogName, i, paShdrs[i].sh_size);
             pModElf->cDynamic = (unsigned)cDynamic;
         }
@@ -2777,7 +2777,7 @@ static int RTLDRELF_NAME(ValidateAndProcessDynamicInfo)(PRTLDRMODELF pModElf, ui
             char szSecHdrNm[80];
             return RTERRINFO_LOG_SET_F(pErrInfo, VERR_BAD_EXE_FORMAT,
                                        "%s: section header #%u (%s type=" FMT_ELF_WORD " size=" FMT_ELF_XWORD ") contains relocations not referenced by the dynamic section",
-                                       pszLogName,
+                                       pszLogName, i,
                                        RTLDRELF_NAME(GetSHdrName)(pModElf, paShdrs[i].sh_name, szSecHdrNm, sizeof(szSecHdrNm)),
                                        paShdrs[i].sh_type, paShdrs[i].sh_size);
         }
