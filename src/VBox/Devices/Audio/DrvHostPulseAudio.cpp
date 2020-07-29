@@ -152,6 +152,21 @@ typedef struct PULSEAUDIOENUMCBCTX
     char               *pszDefaultSource;
 } PULSEAUDIOENUMCBCTX, *PPULSEAUDIOENUMCBCTX;
 
+
+/**
+ * Callback context for the server init context state changed callback.
+ */
+typedef struct PULSEAUDIOSTATECHGCTX
+{
+    /** The event semaphore. */
+    RTSEMEVENT                      hEvtInit;
+    /** The returned context state. */
+    volatile pa_context_state_t     enmCtxState;
+} PULSEAUDIOSTATECHGCTX;
+/** Pointer to a server init context state changed callback context. */
+typedef PULSEAUDIOSTATECHGCTX *PPULSEAUDIOSTATECHGCTX;
+
+
 #ifndef PA_CONTEXT_IS_GOOD /* To allow running on systems with PulseAudio < 0.9.11. */
 static inline int PA_CONTEXT_IS_GOOD(pa_context_state_t x) {
     return
@@ -328,15 +343,15 @@ static void paContextCbStateChangedInit(pa_context *pCtx, void *pvUser)
 {
     AssertPtrReturnVoid(pCtx);
 
-    RTSEMEVENT hEvtInit = (RTSEMEVENT)pvUser;
-    AssertReturnVoid(hEvtInit != NIL_RTSEMEVENT);
-
-    switch (pa_context_get_state(pCtx))
+    PPULSEAUDIOSTATECHGCTX pStateChgCtx = (PPULSEAUDIOSTATECHGCTX)pvUser;
+    pa_context_state_t enmCtxState = pa_context_get_state(pCtx);
+    switch (enmCtxState)
     {
         case PA_CONTEXT_READY:
         case PA_CONTEXT_TERMINATED:
         case PA_CONTEXT_FAILED:
-            RTSemEventSignal(hEvtInit);
+            pStateChgCtx->enmCtxState = enmCtxState;
+            RTSemEventSignal(pStateChgCtx->hEvtInit);
             break;
 
         default:
@@ -689,8 +704,10 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_Init(PPDMIHOSTAUDIO pInterface)
             break;
         }
 
-        RTSEMEVENT hEvtInit = NIL_RTSEMEVENT;
-        rc = RTSemEventCreate(&hEvtInit);
+        PULSEAUDIOSTATECHGCTX InitStateChgCtx;
+        InitStateChgCtx.hEvtInit    = NIL_RTSEMEVENT;
+        InitStateChgCtx.enmCtxState = PA_CONTEXT_UNCONNECTED;
+        rc = RTSemEventCreate(&InitStateChgCtx.hEvtInit);
         if (RT_FAILURE(rc))
         {
             LogRel(("PulseAudio: Failed to create init event semaphore: %Rrc\n", rc));
@@ -701,7 +718,7 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_Init(PPDMIHOSTAUDIO pInterface)
          * Install a dedicated init state callback so we can do a timed wait on our own event semaphore if connecting
          * to the pulseaudio server takes too long.
          */
-        pa_context_set_state_callback(pThis->pContext, paContextCbStateChangedInit, hEvtInit /* pvUserData */);
+        pa_context_set_state_callback(pThis->pContext, paContextCbStateChangedInit, &InitStateChgCtx /* pvUserData */);
 
         pa_threaded_mainloop_lock(pThis->pMainLoop);
         fLocked = true;
@@ -713,21 +730,20 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_Init(PPDMIHOSTAUDIO pInterface)
             pa_threaded_mainloop_unlock(pThis->pMainLoop);
             fLocked = false;
 
-            rc = RTSemEventWait(hEvtInit, RT_MS_10SEC); /* 10 seconds should be plenty. */
+            rc = RTSemEventWait(InitStateChgCtx.hEvtInit, RT_MS_10SEC); /* 10 seconds should be plenty. */
             if (RT_SUCCESS(rc))
             {
-                pa_threaded_mainloop_lock(pThis->pMainLoop);
-                fLocked = true;
-
-                pa_context_state_t cstate = pa_context_get_state(pThis->pContext);
-                if (cstate != PA_CONTEXT_READY)
+                if (InitStateChgCtx.enmCtxState != PA_CONTEXT_READY)
                 {
-                    LogRel(("PulseAudio: Failed to initialize context (state %d, rc=%Rrc)\n", cstate, rc));
+                    LogRel(("PulseAudio: Failed to initialize context (state %d, rc=%Rrc)\n", InitStateChgCtx.enmCtxState, rc));
                     if (RT_SUCCESS(rc))
                         rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 }
                 else
                 {
+                    pa_threaded_mainloop_lock(pThis->pMainLoop);
+                    fLocked = true;
+
                     /* Install the main state changed callback to know if something happens to our acquired context. */
                     pa_context_set_state_callback(pThis->pContext, paContextCbStateChanged, pThis /* pvUserData */);
                 }
@@ -739,7 +755,7 @@ static DECLCALLBACK(int) drvHostPulseAudioHA_Init(PPDMIHOSTAUDIO pInterface)
             LogRel(("PulseAudio: Failed to connect to server: %s\n",
                      pa_strerror(pa_context_errno(pThis->pContext))));
 
-        RTSemEventDestroy(hEvtInit);
+        RTSemEventDestroy(InitStateChgCtx.hEvtInit);
     }
     while (0);
 
