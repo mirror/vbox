@@ -2807,6 +2807,16 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows));
         pMenu->addSeparator();
 
+        /* Default Connect action: */
+        QAction *pDefaultAction = pMenu->addAction(QApplication::translate("UIActionPool", "Connect", "to cloud VM"),
+                                                   this, &UIVirtualBoxManager::sltExecuteExternalApplication);
+#if defined(VBOX_WS_MAC)
+        pDefaultAction->setProperty("path", "open");
+#elif defined(VBOX_WS_WIN)
+        pDefaultAction->setProperty("path", "powershell");
+#elif defined(VBOX_WS_X11)
+#endif
+
         /* Terminal application/profile action list: */
         const QStringList restrictions = gEDataManager->cloudConsoleManagerRestrictions();
         foreach (const QString strApplicationId, gEDataManager->cloudConsoleManagerApplications())
