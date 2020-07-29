@@ -524,7 +524,7 @@ void UIToolsModel::prepareItems()
 
     /* Performance: */
     m_items << new UIToolsItem(scene(), UIToolClass_Machine, UIToolType_Performance, QString(),
-                               UIIconPool::iconSet(":/resources_monitor_24px.png", ":/resources_monitor_disabled_24px.png"));
+                               UIIconPool::iconSet(":/performance_monitor_24px.png", ":/performance_monitor_disabled_24px.png"));
 }
 
 void UIToolsModel::prepareHandlers()

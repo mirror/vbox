@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="log_viewer_options_disabled_32px.png">images/log_viewer_options_disabled_32px.png</file>
         <file alias="log_viewer_refresh_16px.png">images/log_viewer_refresh_16px.png</file>
         <file alias="log_viewer_refresh_32px.png">images/log_viewer_refresh_32px.png</file>
         <file alias="log_viewer_refresh_disabled_16px.png">images/log_viewer_refresh_disabled_16px.png</file>
@@ -143,6 +142,8 @@
         <file alias="pcie_add_disabled_16px.png">images/pcie_add_disabled_16px.png</file>
         <file alias="pcie_collapse_16px.png">images/pcie_collapse_16px.png</file>
         <file alias="pcie_expand_16px.png">images/pcie_expand_16px.png</file>
+        <file alias="performance_monitor_24px.png">images/performance_monitor_24px.png</file>
+        <file alias="performance_monitor_disabled_24px.png">images/performance_monitor_disabled_24px.png</file>
         <file alias="pin_16px.png">images/pin_16px.png</file>
         <file alias="preview_empty_16to10_242x167px.png">images/preview_empty_16to10_242x167px.png</file>
         <file alias="preview_empty_16to9_242x155px.png">images/preview_empty_16to9_242x155px.png</file>
