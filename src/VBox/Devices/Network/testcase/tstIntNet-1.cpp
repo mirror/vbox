@@ -846,7 +846,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 
-    rc = SUPR3LoadVMM(szAbsPath);
+    rc = SUPR3LoadVMM(szAbsPath, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstIntNet-1: SUPR3LoadVMM(\"%s\") -> %Rrc\n", szAbsPath, rc);

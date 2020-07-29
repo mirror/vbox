@@ -682,10 +682,10 @@ SUPR3DECL(int) SUPR3GetSymbolR0(void *pvImageBase, const char *pszSymbol, void *
 }
 
 
-SUPR3DECL(int) SUPR3LoadVMM(const char *pszFilename)
+SUPR3DECL(int) SUPR3LoadVMM(const char *pszFilename, PRTERRINFO pErrInfo)
 {
     void *pvImageBase;
-    return SUPR3LoadModule(pszFilename, "VMMR0.r0", &pvImageBase, NULL /*pErrInfo*/);
+    return SUPR3LoadModule(pszFilename, "VMMR0.r0", &pvImageBase, pErrInfo);
 }
 
 

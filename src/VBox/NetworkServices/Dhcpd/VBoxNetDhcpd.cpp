@@ -259,7 +259,7 @@ int VBoxNetDhcpd::vmmInit()
     if (RT_SUCCESS(rc))
         rc = RTPathAppend(szPathVMMR0, sizeof(szPathVMMR0), "VMMR0.r0");
     if (RT_SUCCESS(rc))
-        rc = SUPR3LoadVMM(szPathVMMR0);
+        rc = SUPR3LoadVMM(szPathVMMR0, NULL /*pErrInfo*/);
     return rc;
 }
 

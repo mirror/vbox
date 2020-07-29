@@ -76,7 +76,8 @@ int main(int argc, char **argv)
         /*
          * Load VMM code.
          */
-        rc = SUPR3LoadVMM(szAbsFile);
+        RTERRINFOSTATIC ErrInfo;
+        rc = SUPR3LoadVMM(szAbsFile, RTErrInfoInitStatic(&ErrInfo));
         if (RT_SUCCESS(rc))
         {
             /*
@@ -208,7 +209,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            RTPrintf("tstInt: SUPR3LoadVMM failed with rc=%Rrc\n", rc);
+            RTPrintf("tstInt: SUPR3LoadVMM failed with rc=%Rrc%#RTeim\n", rc, &ErrInfo.Core);
             rcRet++;
         }
 

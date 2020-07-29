@@ -102,7 +102,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 
-    rc = SUPR3LoadVMM("./VMMR0.r0");
+    rc = SUPR3LoadVMM("./VMMR0.r0", NULL /*pErrInfo*/);
     if (RT_SUCCESS(rc))
     {
         Req.pSession = pSession;

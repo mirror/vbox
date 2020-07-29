@@ -383,7 +383,7 @@ int VBoxNetBaseService::tryGoOnline(void)
         return rc;
     }
 
-    rc = SUPR3LoadVMM(strcat(szPath, "/VMMR0.r0"));
+    rc = SUPR3LoadVMM(strcat(szPath, "/VMMR0.r0"), NULL);
     if (RT_FAILURE(rc))
     {
         LogRel(("VBoxNetBaseService: SUPR3LoadVMM(\"%s\") -> %Rrc\n", szPath, rc));
