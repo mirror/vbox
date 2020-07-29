@@ -39,6 +39,14 @@ VBOXMOD_OBJS = \
 	SUPDrvSem.o \
 	SUPDrvTracer.o \
 	SUPLibAll.o \
+	common/string/strformatrt.o
+
+ifdef VBOX_WITHOUT_COMBINED_SOURCES
+VBOXMOD_OBJS += \
+	combined-agnostic.o \
+	combined-os-specific.o
+else  # VBOX_WITHOUT_COMBINED_SOURCES
+VBOXMOD_OBJS += \
 	r0drv/alloc-r0drv.o \
 	r0drv/initterm-r0drv.o \
 	r0drv/memobj-r0drv.o \
@@ -98,7 +106,6 @@ VBOXMOD_OBJS = \
 	common/string/stringalloc.o \
 	common/string/strformat.o \
 	common/string/strformatnum.o \
-	common/string/strformatrt.o \
 	common/string/strformattype.o \
 	common/string/strprintf.o \
 	common/string/strtonum.o \
@@ -120,6 +127,10 @@ VBOXMOD_OBJS = \
 	generic/mppresent-generic.o \
 	generic/uuid-generic.o \
 	VBox/log-vbox.o
+ ifeq ($(VBOX_KBUILD_TARGET_ARCH),amd64)
+VBOXMOD_OBJS += common/alloc/heapsimple.o
+ endif
+endif # VBOX_WITHOUT_COMBINED_SOURCES
 ifeq ($(VBOX_KBUILD_TARGET_ARCH),x86)
 VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
@@ -130,12 +141,10 @@ VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
-ifeq ($(VBOX_KBUILD_TARGET_ARCH),amd64)
-VBOXMOD_OBJS += common/alloc/heapsimple.o
-endif
 ifdef VBOX_WITH_NATIVE_DTRACE
 VBOXMOD_OBJS += SUPDrvDTrace.o
 endif
+
 VBOXMOD_INCL  = \
 	$(VBOXDRV_DIR) \
 	$(VBOXDRV_DIR)include \
@@ -145,6 +154,7 @@ VBOXMOD_INCL += \
 	/usr/include/linux \
 	/usr/include
 endif
+
 VBOXMOD_DEFS = \
 	RT_OS_LINUX \
 	IN_RING0 \
