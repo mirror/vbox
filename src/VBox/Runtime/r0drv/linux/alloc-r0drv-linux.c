@@ -38,7 +38,7 @@
 
 
 #if (defined(RT_ARCH_AMD64) || defined(DOXYGEN_RUNNING)) && !defined(RTMEMALLOC_EXEC_HEAP)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 /**
  * Starting with 2.6.23 we can use __get_vm_area and map_vm_area to allocate
  * memory in the moduel range.  This is preferrable to the exec heap below.
