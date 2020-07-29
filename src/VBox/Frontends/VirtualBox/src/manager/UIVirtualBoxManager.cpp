@@ -2815,6 +2815,7 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
 #elif defined(VBOX_WS_WIN)
         pDefaultAction->setProperty("path", "powershell");
 #elif defined(VBOX_WS_X11)
+        Q_UNUSED(pDefaultAction);
 #endif
 
         /* Terminal application/profile action list: */
