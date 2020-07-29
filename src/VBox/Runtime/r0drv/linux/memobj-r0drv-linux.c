@@ -52,6 +52,13 @@
 # define PAGE_READONLY_EXEC PAGE_READONLY
 #endif
 
+/** @def IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
+ * Whether we use alloc_vm_area (3.2+) for executable memory.
+ * This is a must for 5.8+, but we'll enable it for earlier kernels later. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) || defined(DOXYGEN_RUNNING)
+# define IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
+#endif
+
 /*
  * 2.6.29+ kernels don't work with remap_pfn_range() anymore because
  * track_pfn_vma_new() is apparently not defined for non-RAM pages.
@@ -105,7 +112,7 @@ typedef struct RTR0MEMOBJLNX
     bool                fExecutable;
     /** Set if we've vmap'ed the memory into ring-0. */
     bool                fMappedToRing0;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+#ifdef IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
     /** Return from alloc_vm_area() that we now need to use for executable
      *  memory. */
     struct vm_struct   *pArea;
@@ -544,7 +551,7 @@ static int rtR0MemObjLinuxVMap(PRTR0MEMOBJLNX pMemLnx, bool fExecutable)
             pgprot_val(fPg) |= _PAGE_NX;
 # endif
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+# ifdef IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
         if (fExecutable)
         {
             pte_t **papPtes = (pte_t **)kmalloc_array(pMemLnx->cPages, sizeof(papPtes[0]), GFP_KERNEL);
@@ -612,7 +619,7 @@ static int rtR0MemObjLinuxVMap(PRTR0MEMOBJLNX pMemLnx, bool fExecutable)
 static void rtR0MemObjLinuxVUnmap(PRTR0MEMOBJLNX pMemLnx)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 22)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+# ifdef IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
     if (pMemLnx->pArea)
     {
 #  if 0
@@ -1828,7 +1835,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
 
 DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+# ifdef IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
     /*
      * Currently only supported when we've got addresses PTEs from the kernel.
      */
