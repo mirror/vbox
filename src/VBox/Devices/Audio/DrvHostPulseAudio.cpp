@@ -167,23 +167,26 @@ typedef struct PULSEAUDIOSTATECHGCTX
 typedef PULSEAUDIOSTATECHGCTX *PPULSEAUDIOSTATECHGCTX;
 
 
-#ifndef PA_CONTEXT_IS_GOOD /* To allow running on systems with PulseAudio < 0.9.11. */
-static inline int PA_CONTEXT_IS_GOOD(pa_context_state_t x) {
-    return
-        x == PA_CONTEXT_CONNECTING ||
-        x == PA_CONTEXT_AUTHORIZING ||
-        x == PA_CONTEXT_SETTING_NAME ||
-        x == PA_CONTEXT_READY;
+/*
+ * To allow running on systems with PulseAudio < 0.9.11.
+ */
+#if !defined(PA_CONTEXT_IS_GOOD) && PA_API_VERSION < 12 /* 12 = 0.9.11 where PA_STREAM_IS_GOOD was added */
+DECLINLINE(bool) PA_CONTEXT_IS_GOOD(pa_context_state_t enmState)
+{
+    return enmState == PA_CONTEXT_CONNECTING
+        || enmState == PA_CONTEXT_AUTHORIZING
+        || enmState == PA_CONTEXT_SETTING_NAME
+        || enmState == PA_CONTEXT_READY;
 }
-#endif /* !PA_CONTEXT_IS_GOOD */
+#endif
 
-#ifndef PA_STREAM_IS_GOOD /* To allow running on systems with PulseAudio < 0.9.11. */
-static inline int PA_STREAM_IS_GOOD(pa_stream_state_t x) {
-    return
-        x == PA_STREAM_CREATING ||
-        x == PA_STREAM_READY;
+#if !defined(PA_STREAM_IS_GOOD) && PA_API_VERSION < 12 /* 12 = 0.9.11 where PA_STREAM_IS_GOOD was added */
+DECLINLINE(bool) PA_STREAM_IS_GOOD(pa_stream_state_t enmState)
+{
+    return enmState == PA_STREAM_CREATING
+        || enmState == PA_STREAM_READY;
 }
-#endif /* !PA_STREAM_IS_GOOD */
+#endif
 
 
 /*********************************************************************************************************************************
@@ -527,13 +530,11 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
     AssertPtrReturn(pszName,   VERR_INVALID_POINTER);
 
     int rc = VERR_AUDIO_STREAM_COULD_NOT_CREATE;
-
     pa_stream *pStream = NULL;
-    uint32_t   flags   = PA_STREAM_NOFLAGS;
 
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
-    do
+    do /* goto avoidance non-loop */
     {
         pa_sample_spec *pSampleSpec = &pStreamPA->SampleSpec;
 
@@ -565,6 +566,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
 #endif
         pa_stream_set_state_callback       (pStream, paStreamCbStateChanged, pThis);
 
+        uint32_t flags = PA_STREAM_NOFLAGS;
 #if PA_API_VERSION >= 12
         /* XXX */
         flags |= PA_STREAM_ADJUST_LATENCY;
@@ -602,28 +604,29 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
         }
 
         /* Wait until the stream is ready. */
+        pa_stream_state_t enmStreamState;
         for (;;)
         {
+            enmStreamState = pa_stream_get_state(pStream);
+            if (   enmStreamState == PA_STREAM_READY
+                || !PA_STREAM_IS_GOOD(enmStreamState))
+                break;
+
             if (!pThis->fAbortLoop)
                 pa_threaded_mainloop_wait(pThis->pMainLoop);
             pThis->fAbortLoop = false;
-
-            pa_stream_state_t streamSt = pa_stream_get_state(pStream);
-            if (streamSt == PA_STREAM_READY)
-                break;
-            else if (   streamSt == PA_STREAM_FAILED
-                     || streamSt == PA_STREAM_TERMINATED)
-            {
-                LogRel(("PulseAudio: Failed to initialize stream '%s' (state %ld)\n", pszName, streamSt));
-                break;
-            }
+        }
+        if (!PA_STREAM_IS_GOOD(enmStreamState))
+        {
+            LogRel(("PulseAudio: Failed to initialize stream '%s' (state %ld)\n", pszName, enmStreamState));
+            break;
         }
 
 #ifdef LOG_ENABLED
         pStreamPA->tsStartUs = pa_rtclock_now();
 #endif
         const pa_buffer_attr *pBufAttrObtained = pa_stream_get_buffer_attr(pStream);
-        AssertPtr(pBufAttrObtained);
+        AssertPtrBreak(pBufAttrObtained);
         memcpy(pBufAttr, pBufAttrObtained, sizeof(pa_buffer_attr));
 
         LogFunc(("Obtained %s buffer attributes: tLength=%RU32, maxLength=%RU32, minReq=%RU32, fragSize=%RU32, preBuf=%RU32\n",
@@ -632,22 +635,20 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
 
         pStreamPA->pStream = pStream;
 
-        rc = VINF_SUCCESS;
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+        LogFlowFuncLeaveRC(VINF_SUCCESS);
+        return rc;
 
     } while (0);
 
-    if (   RT_FAILURE(rc)
-        && pStream)
+    /* We failed. */
+    if (pStream)
         pa_stream_disconnect(pStream);
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
 
-    if (RT_FAILURE(rc))
-    {
-        if (pStream)
-            pa_stream_unref(pStream);
-    }
-
+    if (pStream)
+        pa_stream_unref(pStream);
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
