@@ -148,10 +148,6 @@ protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
-    /** Handles editor translation. */
-    void retranslateEditor();
-    /** Handles buttons translation. */
-    void retranslateButtons();
 
 private slots:
 
