@@ -788,7 +788,13 @@ RTR3DECL(int) RTFileQueryMaxSizeEx(RTFILE hFile, PRTFOFF pcbMax)
      * this algorithm cannot possibly work. Declare defeat.
      */
     if (offLow == offHigh)
-        return VERR_NOT_SUPPORTED;
+    {
+        rc = RTFileSeek(hFile, offOld, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_SUCCESS(rc))
+            rc = VERR_NOT_IMPLEMENTED;
+
+        return rc;
+    }
 
     /*
      * Perform a binary search for the max file size.
