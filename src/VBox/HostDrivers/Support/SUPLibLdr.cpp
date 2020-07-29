@@ -593,7 +593,8 @@ static int supLoadModuleInner(RTLDRMOD hLdrMod, PSUPLDRLOAD pLoadReq, uint32_t c
         LogRel(("SUP: RTLdrEnumSegments failed for %s (%s) rc=%Rrc\n", pszModule, pszFilename, rc));
         return RTErrInfoSetF(pErrInfo, rc, "RTLdrEnumSegments #2 failed");
     }
-    SegArgs.uEndRva = cbImage;
+    SegArgs.uEndRva = (uint32_t)cbImage;
+    AssertReturn(SegArgs.uEndRva == cbImage, VERR_OUT_OF_RANGE);
     if (SegArgs.uEndRva > SegArgs.uStartRva)
     {
         SegArgs.paSegs[SegArgs.iSegs].off   = SegArgs.uStartRva;
@@ -758,7 +759,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
         if (RT_SUCCESS(rc))
         {
             Assert(SegArgs.uEndRva <= RTLdrSize(hLdrMod));
-            SegArgs.uEndRva = RTLdrSize(hLdrMod);
+            SegArgs.uEndRva = (uint32_t)CalcArgs.cbImage; /* overflow is checked later */
             if (SegArgs.uEndRva > SegArgs.uStartRva)
                 SegArgs.iSegs++;
 
