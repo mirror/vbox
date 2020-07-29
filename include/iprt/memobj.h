@@ -127,7 +127,10 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings);
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
+ * @param   fExecutable     Flag indicating whether it should be permitted to
+ *                          executed code in the memory object.  The user must
+ *                          use RTR0MemObjProtect after initialization the
+ *                          allocation to actually make it executable.
  */
 #define RTR0MemObjAllocPage(pMemObj, cb, fExecutable) \
     RTR0MemObjAllocPageTag((pMemObj), (cb), (fExecutable), RTMEM_TAG)
@@ -140,7 +143,10 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings);
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
+ * @param   fExecutable     Flag indicating whether it should be permitted to
+ *                          executed code in the memory object.  The user must
+ *                          use RTR0MemObjProtect after initialization the
+ *                          allocation to actually make it executable.
  * @param   pszTag          Allocation tag used for statistics and such.
  */
 RTR0DECL(int) RTR0MemObjAllocPageTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag);
@@ -154,7 +160,10 @@ RTR0DECL(int) RTR0MemObjAllocPageTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecu
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
+ * @param   fExecutable     Flag indicating whether it should be permitted to
+ *                          executed code in the memory object.  The user must
+ *                          use RTR0MemObjProtect after initialization the
+ *                          allocation to actually make it executable.
  */
 #define RTR0MemObjAllocLow(pMemObj, cb, fExecutable) \
     RTR0MemObjAllocLowTag((pMemObj), (cb), (fExecutable), RTMEM_TAG)
@@ -168,7 +177,10 @@ RTR0DECL(int) RTR0MemObjAllocPageTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecu
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
+ * @param   fExecutable     Flag indicating whether it should be permitted to
+ *                          executed code in the memory object.  The user must
+ *                          use RTR0MemObjProtect after initialization the
+ *                          allocation to actually make it executable.
  * @param   pszTag          Allocation tag used for statistics and such.
  */
 RTR0DECL(int) RTR0MemObjAllocLowTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag);
@@ -182,7 +194,10 @@ RTR0DECL(int) RTR0MemObjAllocLowTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecut
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
+ * @param   fExecutable     Flag indicating whether it should be permitted to
+ *                          executed code in the memory object.  The user must
+ *                          use RTR0MemObjProtect after initialization the
+ *                          allocation to actually make it executable.
  */
 #define RTR0MemObjAllocCont(pMemObj, cb, fExecutable) \
     RTR0MemObjAllocContTag((pMemObj), (cb), (fExecutable), RTMEM_TAG)
@@ -196,7 +211,10 @@ RTR0DECL(int) RTR0MemObjAllocLowTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecut
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
+ * @param   fExecutable     Flag indicating whether it should be permitted to
+ *                          executed code in the memory object.  The user must
+ *                          use RTR0MemObjProtect after initialization the
+ *                          allocation to actually make it executable.
  * @param   pszTag          Allocation tag used for statistics and such.
  */
 RTR0DECL(int) RTR0MemObjAllocContTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag);

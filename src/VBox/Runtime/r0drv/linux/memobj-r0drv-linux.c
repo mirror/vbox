@@ -92,7 +92,7 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * The Darwin version of the memory object structure.
+ * The Linux version of the memory object structure.
  */
 typedef struct RTR0MEMOBJLNX
 {
@@ -105,11 +105,20 @@ typedef struct RTR0MEMOBJLNX
     bool                fExecutable;
     /** Set if we've vmap'ed the memory into ring-0. */
     bool                fMappedToRing0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+    /** Return from alloc_vm_area() that we now need to use for executable
+     *  memory. */
+    struct vm_struct   *pArea;
+    /** PTE array that goes along with pArea (must be freed). */
+    pte_t             **papPtesForArea;
+#endif
     /** The pages in the apPages array. */
     size_t              cPages;
     /** Array of struct page pointers. (variable size) */
     struct page        *apPages[1];
-} RTR0MEMOBJLNX, *PRTR0MEMOBJLNX;
+} RTR0MEMOBJLNX;
+/** Pointer to the linux memory object. */
+typedef RTR0MEMOBJLNX *PRTR0MEMOBJLNX;
 
 
 static void rtR0MemObjLinuxFreePages(PRTR0MEMOBJLNX pMemLnx);
@@ -535,15 +544,49 @@ static int rtR0MemObjLinuxVMap(PRTR0MEMOBJLNX pMemLnx, bool fExecutable)
             pgprot_val(fPg) |= _PAGE_NX;
 # endif
 
-# ifdef VM_MAP
-        pMemLnx->Core.pv = vmap(&pMemLnx->apPages[0], pMemLnx->cPages, VM_MAP, fPg);
-# else
-        pMemLnx->Core.pv = vmap(&pMemLnx->apPages[0], pMemLnx->cPages, VM_ALLOC, fPg);
-# endif
-        if (pMemLnx->Core.pv)
-            pMemLnx->fMappedToRing0 = true;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+        if (fExecutable)
+        {
+            pte_t **papPtes = (pte_t **)kmalloc_array(pMemLnx->cPages, sizeof(papPtes[0]), GFP_KERNEL);
+            if (papPtes)
+            {
+                pMemLnx->pArea = alloc_vm_area(pMemLnx->Core.cb, papPtes); /* Note! pArea->nr_pages is not set. */
+                if (pMemLnx->pArea)
+                {
+                    size_t i;
+                    Assert(pMemLnx->pArea->size >= pMemLnx->Core.cb);   /* Note! includes guard page. */
+                    Assert(pMemLnx->pArea->addr);
+#  ifdef _PAGE_NX
+                    pgprot_val(fPg) |= _PAGE_NX; /* Uses RTR0MemObjProtect to clear NX when memory ready, W^X fashion. */
+#  endif
+                    pMemLnx->papPtesForArea = papPtes;
+                    for (i = 0; i < pMemLnx->cPages; i++)
+                        *papPtes[i] = mk_pte(pMemLnx->apPages[i], fPg);
+                    pMemLnx->Core.pv = pMemLnx->pArea->addr;
+                    pMemLnx->fMappedToRing0 = true;
+                }
+                else
+                {
+                    kfree(papPtes);
+                    rc = VERR_MAP_FAILED;
+                }
+            }
+            else
+                rc = VERR_MAP_FAILED;
+        }
         else
-            rc = VERR_MAP_FAILED;
+# endif
+        {
+# ifdef VM_MAP
+            pMemLnx->Core.pv = vmap(&pMemLnx->apPages[0], pMemLnx->cPages, VM_MAP, fPg);
+# else
+            pMemLnx->Core.pv = vmap(&pMemLnx->apPages[0], pMemLnx->cPages, VM_ALLOC, fPg);
+# endif
+            if (pMemLnx->Core.pv)
+                pMemLnx->fMappedToRing0 = true;
+            else
+                rc = VERR_MAP_FAILED;
+        }
 #else   /* < 2.4.22 */
         rc = VERR_NOT_SUPPORTED;
 #endif
@@ -569,6 +612,22 @@ static int rtR0MemObjLinuxVMap(PRTR0MEMOBJLNX pMemLnx, bool fExecutable)
 static void rtR0MemObjLinuxVUnmap(PRTR0MEMOBJLNX pMemLnx)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 22)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+    if (pMemLnx->pArea)
+    {
+#  if 0
+        pte_t **papPtes = pMemLnx->papPtesForArea;
+        size_t  i;
+        for (i = 0; i < pMemLnx->cPages; i++)
+            *papPtes[i] = 0;
+#  endif
+        free_vm_area(pMemLnx->pArea);
+        kfree(pMemLnx->papPtesForArea);
+        pMemLnx->pArea = NULL;
+        pMemLnx->papPtesForArea = NULL;
+    }
+    else
+# endif
     if (pMemLnx->fMappedToRing0)
     {
         Assert(pMemLnx->Core.pv);
@@ -1437,6 +1496,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
              * Use vmap - 2.4.22 and later.
              */
             pgprot_t fPg = rtR0MemObjLinuxConvertProt(fProt, true /* kernel */);
+            /** @todo We don't really care too much for EXEC here... 5.8 always adds NX. */
             Assert(((offSub + cbSub) >> PAGE_SHIFT) <= pMemLnxToMap->cPages);
 # ifdef VM_MAP
             pMemLnx->Core.pv = vmap(&pMemLnxToMap->apPages[offSub >> PAGE_SHIFT], cbSub >> PAGE_SHIFT, VM_MAP, fPg);
@@ -1768,6 +1828,29 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
 
 DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
 {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+    /*
+     * Currently only supported when we've got addresses PTEs from the kernel.
+     */
+    PRTR0MEMOBJLNX pMemLnx = (PRTR0MEMOBJLNX)pMem;
+    if (pMemLnx->pArea && pMemLnx->papPtesForArea)
+    {
+        pgprot_t const  fPg     = rtR0MemObjLinuxConvertProt(fProt, true /*fKernel*/);
+        size_t const    cPages  = (offSub + cbSub) >> PAGE_SHIFT;
+        pte_t         **papPtes = pMemLnx->papPtesForArea;
+        size_t          i;
+
+        for (i = offSub >> PAGE_SHIFT; i < cPages; i++)
+        {
+            set_pte(papPtes[i], mk_pte(pMemLnx->apPages[i], fPg));
+        }
+        preempt_disable();
+        __flush_tlb_all();
+        preempt_enable();
+        return VINF_SUCCESS;
+    }
+# endif
+
     NOREF(pMem);
     NOREF(offSub);
     NOREF(cbSub);
