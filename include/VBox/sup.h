@@ -1555,6 +1555,7 @@ SUPR3DECL(int) SUPR3GetSymbolR0(void *pvImageBase, const char *pszSymbol, void *
  *
  * @returns VBox status code.
  * @deprecated  Use SUPR3LoadModule(pszFilename, "VMMR0.r0", &pvImageBase)
+ * @param   pszFilename     Full path to the VMMR0.r0 file (silly).
  * @param   pErrInfo        Where to return extended error information.
  *                          Optional.
  */
