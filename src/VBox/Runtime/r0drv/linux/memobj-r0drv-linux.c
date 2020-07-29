@@ -54,8 +54,9 @@
 
 /** @def IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
  * Whether we use alloc_vm_area (3.2+) for executable memory.
- * This is a must for 5.8+, but we'll enable it for earlier kernels later. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) || defined(DOXYGEN_RUNNING)
+ * This is a must for 5.8+, but we enable it all the way back to 3.2.x for
+ * better W^R compliance (fExecutable flag). */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) || defined(DOXYGEN_RUNNING)
 # define IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
 #endif
 
