@@ -213,6 +213,20 @@ static uint16_t mode_info_find_mode(uint16_t mode, Boolean using_lfb)
         return 0;
     }
 
+    /* The LFB may be disabled. If so, LFB modes must not be reported. */
+    if (using_lfb) {
+        uint16_t    lfb_addr_hi;
+
+        out_w(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_FB_BASE_HI);
+        lfb_addr_hi = in_w(VBE_DISPI_IOPORT_DATA);
+        if (!lfb_addr_hi) {
+#ifdef DEBUG_VGA
+            printf("LFB disabled, LFB modes unavailable!\n");
+#endif
+            return 0;
+        }
+    }
+
     cur_info_ofs = sizeof(VBEHeader);
 
     vmode = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, mode)/*&cur_info->mode*/);
