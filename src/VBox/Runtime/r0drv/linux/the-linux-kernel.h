@@ -176,6 +176,11 @@
 # include <asm/set_memory.h>
 #endif
 
+/* for __flush_tlb_all() */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+# include <asm/tlbflush.h>
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
 # include <asm/smap.h>
 #else
