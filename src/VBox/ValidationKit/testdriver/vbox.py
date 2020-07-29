@@ -3237,8 +3237,13 @@ class TestDriver(base.TestDriver):                                              
             # Upload the raw log for manual annotation in case resolving failed.
             if not fRcTmp:
                 reporter.log('Failed to annotate hung VM process report, uploading raw report');
-                reporter.addLogString(sHostProcessInfoHung, 'vmprocess-hung.log', 'process/report/vm',
-                                      'Hung VM process state');
+                fRcTmp = reporter.addLogString(sHostProcessInfoHung, 'vmprocess-hung.log', 'process/report/vm',
+                                               'Hung VM process state');
+                if not fRcTmp:
+                    try: reporter.log('******* START vmprocess-hung.log *******\n%s\n******* END vmprocess-hung.log *******\n'
+                                      % (sHostProcessInfoHung,));
+                    except: pass; # paranoia
+
 
         return fRc;
 
