@@ -29,6 +29,7 @@
 
 #include <iprt/path.h>
 #include <iprt/utf16.h>
+#include <iprt/uri.h>
 #include <VBox/log.h>
 
 
@@ -388,8 +389,8 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
 
                         /* First, get the file count. */
                         /** @todo Does this work on Windows 2000 / NT4? */
-                        char *pszFiles = NULL;
-                        uint32_t cchFiles = 0;
+                        char  *pszFiles = NULL;
+                        size_t cchFiles = 0;
                         UINT cFiles = DragQueryFile(hDrop, UINT32_MAX /* iFile */, NULL /* lpszFile */, 0 /* cchFile */);
 
                         LogRel(("DnD: Got %RU16 file(s), fUnicode=%RTbool\n", cFiles, fUnicode));
@@ -453,9 +454,18 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
 
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, cchFileUtf8);
-                                    if (RT_SUCCESS(rc))
-                                        cchFiles += cchFileUtf8;
+                                    char *pszFileURI = RTUriFileCreate(pszFileUtf8);
+                                    if (pszFileURI)
+                                    {
+                                        const size_t cchFileURI = RTStrNLen(pszFileURI, RTPATH_MAX);
+                                        rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileURI, cchFileURI);
+                                        if (RT_SUCCESS(rc))
+                                            cchFiles += cchFileURI;
+
+                                        RTStrFree(pszFileURI);
+                                    }
+                                    else
+                                        rc = VERR_NO_MEMORY;
                                 }
                             }
 
@@ -464,22 +474,23 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
 
                             RTStrFree(pszFileUtf8);
 
-                            if (RT_FAILURE(rc))
-                                break;
-
-                            /* Add separation between filenames.
-                             * Note: Also do this for the last element of the list. */
-                            rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, DND_PATH_SEPARATOR, 2 /* Bytes */);
                             if (RT_SUCCESS(rc))
-                                cchFiles += 2; /* Include \r\n */
+                            {
+                                /* Add separation between filenames.
+                                 * Note: Also do this for the last element of the list. */
+                                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, DND_PATH_SEPARATOR, 2 /* Bytes */);
+                                if (RT_SUCCESS(rc))
+                                    cchFiles += 2; /* Include \r\n */
+                            }
                         }
 
                         if (RT_SUCCESS(rc))
                         {
                             cchFiles += 1; /* Add string termination. */
-                            uint32_t cbFiles = cchFiles * sizeof(char);
 
-                            LogFlowFunc(("cFiles=%u, cchFiles=%RU32, cbFiles=%RU32, pszFiles=0x%p\n",
+                            const size_t cbFiles = cchFiles * sizeof(char);
+
+                            LogFlowFunc(("cFiles=%u, cchFiles=%zu, cbFiles=%zu, pszFiles=0x%p\n",
                                          cFiles, cchFiles, cbFiles, pszFiles));
 
                             mpvData = pszFiles;
