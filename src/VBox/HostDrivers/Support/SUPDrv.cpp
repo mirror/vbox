@@ -1804,7 +1804,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
                                        ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx + cb %#lx = %#lx (max=%#lx)\n", (long)i, (long)paSegs[i].off, (long)paSegs[i].cb, (long)(paSegs[i].off + paSegs[i].cb), (long)pReq->u.In.cbImageBits));
                     REQ_CHECK_EXPR_FMT(paSegs[i].fProt != 0,
                                        ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx + cb %#lx\n", (long)i, (long)paSegs[i].off, (long)paSegs[i].cb));
-                    REQ_CHECK_EXPR_FMT(paSegs[i].fUnused == 0, ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx\n", (long)i, (long)paSegs[i].off));
+                    REQ_CHECK_EXPR_FMT(paSegs[i].fUnused == 0, ("SUP_IOCTL_LDR_LOAD: seg #%ld: fUnused=1\n", (long)i));
                     REQ_CHECK_EXPR_FMT(offPrevEnd == paSegs[i].off,
                                        ("SUP_IOCTL_LDR_LOAD: seg #%ld: off %#lx offPrevEnd %#lx\n", (long)i, (long)paSegs[i].off, (long)offPrevEnd));
                     offPrevEnd = paSegs[i].off + paSegs[i].cb;
