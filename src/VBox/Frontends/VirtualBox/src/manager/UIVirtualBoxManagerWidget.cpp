@@ -27,7 +27,6 @@
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIChooser.h"
-#include "UICommon.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UITabBar.h"
@@ -459,19 +458,12 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
     }
 }
 
-void UIVirtualBoxManagerWidget::sltSwitchMachinePerformancePane(const QUuid &machineUid)
+void UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane(const QUuid &uMachineId)
 {
-    if (!m_pPaneToolsMachine)
-        return;
-    CVirtualBox comVBox = uiCommon().virtualBox();
-
-    CMachine comMachine = comVBox.FindMachine(machineUid.toString());
-    if (comMachine.isNull())
-        return;
-    m_pPaneToolsMachine->setActive(true);
-    m_pPaneToolsGlobal->setActive(false);
-    m_pPaneToolsMachine->setMachine(comMachine);
-    switchToMachineTool(UIToolType_Performance);
+    AssertPtrReturnVoid(m_pPaneChooser);
+    AssertPtrReturnVoid(m_pPaneTools);
+    m_pPaneChooser->setCurrentMachine(uMachineId);
+    m_pPaneTools->setToolsType(UIToolType_Performance);
 }
 
 void UIVirtualBoxManagerWidget::prepare()
@@ -571,8 +563,8 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
                                 m_pPaneToolsGlobal->setActive(true);
                             connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigCloudProfileManagerChange,
                                     this, &UIVirtualBoxManagerWidget::sigCloudProfileManagerChange);
-                            connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigSwitchMachinePerformancePane,
-                                    this, &UIVirtualBoxManagerWidget::sltSwitchMachinePerformancePane);
+                            connect(m_pPaneToolsGlobal, &UIToolPaneGlobal::sigSwitchToMachinePerformancePane,
+                                    this, &UIVirtualBoxManagerWidget::sltSwitchToMachinePerformancePane);
 
                             /* Add into stack: */
                             m_pStackedWidget->addWidget(m_pPaneToolsGlobal);

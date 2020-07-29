@@ -221,6 +221,8 @@ public:
         void refreshSelectedMachineItems();
         /** Sorts selected [parent] group item. */
         void sortSelectedGroupItem();
+        /** Changes current machine item to the one with certain @a uId. */
+        void setCurrentMachineItem(const QUuid &uId);
 
         /** Defines current @a pDragObject. */
         void setCurrentDragObject(QDrag *pDragObject);

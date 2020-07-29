@@ -159,6 +159,12 @@ void UIChooser::setMachineSearchWidgetVisibility(bool fVisible)
     view()->setSearchWidgetVisible(fVisible);
 }
 
+void UIChooser::setCurrentMachine(const QUuid &uId)
+{
+    AssertPtrReturnVoid(model());
+    model()->setCurrentMachineItem(uId);
+}
+
 void UIChooser::setGlobalItemHeightHint(int iHeight)
 {
     AssertPtrReturnVoid(model());

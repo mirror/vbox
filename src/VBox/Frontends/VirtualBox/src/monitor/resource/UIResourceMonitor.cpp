@@ -1477,10 +1477,10 @@ void UIResourceMonitorWidget::sltHandleShowPerformanceMonitor()
 {
     if (!m_pTableView || !m_pModel)
         return;
-    QUuid machineId = m_pModel->itemUid(m_pTableView->selectedItemIndex());
-    if (machineId.isNull())
+    const QUuid uMachineId = m_pModel->itemUid(m_pTableView->selectedItemIndex());
+    if (uMachineId.isNull())
         return;
-    emit sigSwitchMachinePerformancePane(machineId);
+    emit sigSwitchToMachinePerformancePane(uMachineId);
 }
 
 void UIResourceMonitorWidget::setColumnVisible(int iColumnId, bool fVisible)

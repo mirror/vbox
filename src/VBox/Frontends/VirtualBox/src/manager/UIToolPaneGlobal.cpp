@@ -194,12 +194,12 @@ void UIToolPaneGlobal::openTool(UIToolType enmType)
 
                     /* Configure pane: */
                     m_pPaneResourceMonitor->setProperty("ToolType", QVariant::fromValue(UIToolType_Resources));
+                    connect(m_pPaneResourceMonitor, &UIResourceMonitorWidget::sigSwitchToMachinePerformancePane,
+                            this, &UIToolPaneGlobal::sigSwitchToMachinePerformancePane);
 
                     /* Add into layout: */
                     m_pLayout->addWidget(m_pPaneResourceMonitor);
                     m_pLayout->setCurrentWidget(m_pPaneResourceMonitor);
-                    connect(m_pPaneResourceMonitor, &UIResourceMonitorWidget::sigSwitchMachinePerformancePane,
-                            this, &UIToolPaneGlobal::sigSwitchMachinePerformancePane);
                 }
 
                 break;

@@ -960,6 +960,18 @@ void UIChooserModel::sortSelectedGroupItem()
     buildTreeForMainRoot(true /* preserve selection */);
 }
 
+void UIChooserModel::setCurrentMachineItem(const QUuid &uId)
+{
+    /* Look whether we have such item at all: */
+    UIChooserItem *pItem = root()->searchForItem(uId.toString(),
+                                                 UIChooserItemSearchFlag_Machine |
+                                                 UIChooserItemSearchFlag_ExactId);
+
+    /* Select item if exists: */
+    if (pItem)
+        setSelectedItem(pItem);
+}
+
 void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)
 {
     /* Make sure real focus unset: */

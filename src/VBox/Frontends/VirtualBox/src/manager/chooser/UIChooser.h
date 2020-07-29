@@ -151,6 +151,8 @@ public:
         void sortGroup();
         /** Toggle machine search widget to be @a fVisible. */
         void setMachineSearchWidgetVisibility(bool fVisible);
+        /** Changes current machine to the one with certain @a uId. */
+        void setCurrentMachine(const QUuid &uId);
     /** @} */
 
 public slots:

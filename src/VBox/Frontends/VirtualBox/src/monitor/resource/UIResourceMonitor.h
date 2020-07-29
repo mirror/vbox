@@ -50,7 +50,7 @@ class UIResourceMonitorWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigSwitchMachinePerformancePane(const QUuid &machineId);
+    void sigSwitchToMachinePerformancePane(const QUuid &uMachineId);
 
 public:
 
