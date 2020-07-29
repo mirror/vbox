@@ -133,6 +133,8 @@ typedef struct RTLDRMODELF
     /** Base section number, either 1 or zero depending on whether we've
      *  re-used the NULL entry for .elf.headers in ET_EXEC/ET_DYN. */
     unsigned                iFirstSect;
+    /** Set if the SHF_ALLOC section headers are in order of sh_addr. */
+    bool                    fShdrInOrder;
     /** The size of the loaded image. */
     size_t                  cbImage;
 
@@ -1376,6 +1378,45 @@ static const Elf_Shdr *RTLDRELF_NAME(GetFirstAllocatedSection)(const Elf_Shdr *p
     return NULL;
 }
 
+/**
+ * Helper that locates the next allocated section logically by RVA (sh_addr).
+ *
+ * @returns Pointer to the section header if found, NULL if none.
+ * @param   pModElf The module instance.
+ * @param   iCur    The current section header.
+ */
+static const Elf_Shdr *RTLDRELF_NAME(GetNextAllocatedSection)(PRTLDRMODELF pModElf, unsigned iCur)
+{
+    unsigned const          cShdrs  = pModElf->Ehdr.e_shnum;
+    const Elf_Shdr * const  paShdrs = pModElf->paShdrs;
+    if (pModElf->fShdrInOrder)
+    {
+        for (; iCur < cShdrs; iCur++)
+            if (paShdrs[iCur].sh_flags & SHF_ALLOC)
+                return &paShdrs[iCur];
+    }
+    else
+    {
+        Elf_Addr const uEndCur = paShdrs[iCur].sh_addr + paShdrs[iCur].sh_size;
+        Elf_Addr       offBest = ~(Elf_Addr)0;
+        unsigned       iBest   = cShdrs;
+        for (iCur = pModElf->iFirstSect; iCur < cShdrs; iCur++)
+            if (paShdrs[iCur].sh_flags & SHF_ALLOC)
+            {
+                Elf_Addr const offDelta = paShdrs[iCur].sh_addr - uEndCur;
+                if (   offDelta < offBest
+                    && paShdrs[iCur].sh_addr >= uEndCur)
+                {
+                    offBest = offDelta;
+                    iBest = iCur;
+                }
+            }
+        if (iBest < cShdrs)
+            return &paShdrs[iBest];
+    }
+    return NULL;
+}
+
 /** @copydoc RTLDROPS::pfnEnumSegments. */
 static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
@@ -1427,14 +1468,11 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFN
         {
             Seg.LinkAddress = paOrgShdrs[iShdr].sh_addr;
             Seg.RVA         = paShdrs[iShdr].sh_addr;
-            const Elf_Shdr *pShdr2 = RTLDRELF_NAME(GetFirstAllocatedSection)(&paShdrs[iShdr + 1],
-                                                                             pModElf->Ehdr.e_shnum - iShdr - 1);
-            if (   pShdr2
-                && pShdr2->sh_addr >= paShdrs[iShdr].sh_addr
-                && Seg.RVA >= uPrevMappedRva)
+            const Elf_Shdr *pShdr2 = RTLDRELF_NAME(GetNextAllocatedSection)(pModElf, iShdr);
+            if (pShdr2)
                 Seg.cbMapped = pShdr2->sh_addr - paShdrs[iShdr].sh_addr;
             else
-                Seg.cbMapped = RT_MAX(paShdrs[iShdr].sh_size, paShdrs[iShdr].sh_addralign);
+                Seg.cbMapped = pModElf->cbImage - paShdrs[iShdr].sh_addr;
             uPrevMappedRva = Seg.RVA;
         }
         else
@@ -2837,6 +2875,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     //pModElf->Dyn.cbStr    = 0;
     //pModElf->Dyn.pStr     = NULL;
     //pModElf->iFirstSect   = 0;
+    //pModElf->fShdrInOrder = false;
     //pModElf->cbImage      = 0;
     pModElf->LinkAddress    = ~(Elf_Addr)0;
     //pModElf->cbShStr      = 0;
@@ -2939,9 +2978,27 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                     }
                 }
 
-                Log2(("RTLdrElf: iSymSh=%u cSyms=%u iStrSh=%u cbStr=%u rc=%Rrc cbImage=%#zx LinkAddress=" FMT_ELF_ADDR "\n",
+                /*
+                 * Check if the sections are in order by address, as that will simplify
+                 * enumeration and address translation.
+                 */
+                pModElf->fShdrInOrder = true;
+                Elf_Addr uEndAddr = 0;
+                for (unsigned i = pModElf->iFirstSect; i < pModElf->Ehdr.e_shnum; i++)
+                    if (paShdrs[i].sh_flags & SHF_ALLOC)
+                    {
+                        if (uEndAddr <= paShdrs[i].sh_addr)
+                            uEndAddr = paShdrs[i].sh_addr + paShdrs[i].sh_size;
+                        else
+                        {
+                            pModElf->fShdrInOrder = false;
+                            break;
+                        }
+                    }
+
+                Log2(("RTLdrElf: iSymSh=%u cSyms=%u iStrSh=%u cbStr=%u rc=%Rrc cbImage=%#zx LinkAddress=" FMT_ELF_ADDR " fShdrInOrder=%RTbool\n",
                       pModElf->Rel.iSymSh, pModElf->Rel.cSyms, pModElf->Rel.iStrSh, pModElf->Rel.cbStr, rc,
-                      pModElf->cbImage, pModElf->LinkAddress));
+                      pModElf->cbImage, pModElf->LinkAddress, pModElf->fShdrInOrder));
                 if (RT_SUCCESS(rc))
                 {
                     pModElf->Core.pOps      = &RTLDRELF_MID(s_rtldrElf,Ops);

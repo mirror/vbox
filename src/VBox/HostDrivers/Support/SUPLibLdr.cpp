@@ -373,8 +373,8 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
     uint32_t cbMapped = (uint32_t)pSeg->cbMapped;
     AssertReturn(pSeg->RVA      < _1G, VERR_INTERNAL_ERROR_3);
     uint32_t uRvaSeg  = (uint32_t)pSeg->RVA;
-    Log2(("supLoadModuleCompileSegmentsCB: %RTptr/%RTptr LB %RTptr prot %#x %s\n",
-          pSeg->LinkAddress, pSeg->RVA, pSeg->cbMapped, pSeg->fProt, pSeg->pszName));
+    Log2(("supLoadModuleCompileSegmentsCB: %RTptr/%RTptr LB %RTptr/%RTptr prot %#x %s\n",
+          pSeg->LinkAddress, pSeg->RVA, pSeg->cbMapped, pSeg->cb, pSeg->fProt, pSeg->pszName));
 
     /*
      * If the protection is the same as the previous segment,
