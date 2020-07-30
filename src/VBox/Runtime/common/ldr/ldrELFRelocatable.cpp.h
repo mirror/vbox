@@ -2858,7 +2858,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     pModElf->Dyn.iStrSh     = ~0U;
     //pModElf->Dyn.cbStr    = 0;
     //pModElf->Dyn.pStr     = NULL;
-    //pModElf->iFirstSect   = 0;
+    pModElf->iFirstSect     = 1;
     //pModElf->fShdrInOrder = false;
     //pModElf->cbImage      = 0;
     pModElf->LinkAddress    = ~(Elf_Addr)0;
