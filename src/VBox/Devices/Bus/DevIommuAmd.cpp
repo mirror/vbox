@@ -5942,12 +5942,12 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     /* Misc. Information Register. */
     /* NOTE! Fields (e.g, GVA size) must match what we expose in the ACPI tables. */
-    uint32_t const  uMiscInfoReg0 =   RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,      0)  /* RO - MSI number */
-                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_GVA_SIZE,     2)  /* RO - Guest Virt. Addr size (2=48 bits) */
-                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_PA_SIZE,     48)  /* RO - Physical Addr size (48 bits) */
-                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     64)  /* RO - Virt. Addr size (64 bits) */
-                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV,  0)  /* RW - HT ATS reserved */
-                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR,  0); /* RW - PPR interrupt number */
+    uint32_t const  uMiscInfoReg0 = RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,      0)   /* RO - MSI number */
+                                  | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_GVA_SIZE,     2)   /* RO - Guest Virt. Addr size (2=48 bits) */
+                                  | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_PA_SIZE,     48)   /* RO - Physical Addr size (48 bits) */
+                                  | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     64)   /* RO - Virt. Addr size (64 bits) */
+                                  | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV,  0)   /* RW - HT ATS reserved */
+                                  | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR,  0);  /* RW - PPR interrupt number */
     uint32_t const uMiscInfoReg1  = 0;
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0, uMiscInfoReg0);
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_1, uMiscInfoReg1);
