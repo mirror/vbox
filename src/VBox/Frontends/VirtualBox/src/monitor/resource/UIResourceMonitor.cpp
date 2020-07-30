@@ -1301,8 +1301,6 @@ void UIResourceMonitorWidget::retranslateUi()
 
     updateColumnsMenu();
 
-    if (m_pShowPerformanceMonitorAction)
-        m_pShowPerformanceMonitorAction->setText(tr("Show Performance Monitor"));
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnTitles);
 
@@ -1312,9 +1310,8 @@ void UIResourceMonitorWidget::retranslateUi()
 
 void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
 {
-    QAction *pSwitchAction = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance);
-    if (pSwitchAction && m_pTableView)
-        pSwitchAction->setEnabled(m_pTableView->hasSelection());
+    if (m_pShowPerformanceMonitorAction && m_pTableView)
+        m_pShowPerformanceMonitorAction->setEnabled(m_pTableView->hasSelection());
 
     QIWithRetranslateUI<QWidget>::showEvent(pEvent);
 }
@@ -1416,11 +1413,11 @@ void UIResourceMonitorWidget::updateColumnsMenu()
 void UIResourceMonitorWidget::prepareActions()
 {
     updateColumnsMenu();
-    m_pShowPerformanceMonitorAction = new QAction(this);
-    connect(m_pShowPerformanceMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
-    QAction *pSwitchAction = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance);
-    if (pSwitchAction)
-        connect(pSwitchAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
+    m_pShowPerformanceMonitorAction =
+        m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance);
+
+    if (m_pShowPerformanceMonitorAction)
+        connect(m_pShowPerformanceMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
 }
 
 void UIResourceMonitorWidget::prepareToolBar()
@@ -1516,9 +1513,8 @@ void UIResourceMonitorWidget::sltHandleTableContextMenuRequest(const QPoint &pos
 void UIResourceMonitorWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    QAction *pSwitchAction = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance);
-    if (pSwitchAction)
-        pSwitchAction->setEnabled(!selected.isEmpty());
+    if (m_pShowPerformanceMonitorAction)
+        m_pShowPerformanceMonitorAction->setEnabled(!selected.isEmpty());
 }
 
 void UIResourceMonitorWidget::sltHandleShowPerformanceMonitor()
