@@ -3381,6 +3381,40 @@ protected:
     }
 };
 
+class UIActionMenuSelectorVMResourceMonitorSwitchToMachinePerformance : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorVMResourceMonitorSwitchToMachinePerformance(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_console_application_remove_32px .png",          ":/cloud_console_application_remove_16px.png",
+                         ":/cloud_console_application_remove_disabled_32px.png", ":/cloud_console_application_remove_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("VMResourceMonitorSwitchToMachinePerformance");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "To Performance"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Resource Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Switch to selected machine's performance pane"));
+        setToolTip(  QApplication::translate("UIActionPool", "Switch to selected machine's performance pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 
 /*********************************************************************************************************************************
 *   Class UIActionPoolManager implementation.                                                                                    *
@@ -3551,6 +3585,7 @@ void UIActionPoolManager::preparePool()
     /* VM resource Monitor actions: */
     m_pool[UIActionIndexST_M_VMResourceMonitor] = new UIActionMenuVMResourceMonitor(this);
     m_pool[UIActionIndexST_M_VMResourceMonitor_M_Columns] = new UIActionMenuSelectorVMResourceMonitorToggleColumns(this);
+    m_pool[UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance] = new UIActionMenuSelectorVMResourceMonitorSwitchToMachinePerformance(this);
 
     /* 'Group' action groups: */
     m_groupPool[UIActionIndexST_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Group_M_Tools));
@@ -4212,6 +4247,7 @@ void UIActionPoolManager::updateMenuVMResourceMonitorWrapper(UIMenu *pMenu)
     /* Clear contents: */
     pMenu->clear();
     addAction(pMenu, action(UIActionIndexST_M_VMResourceMonitor_M_Columns));
+    addAction(pMenu, action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance));
 }
 
 void UIActionPoolManager::updateMenuSnapshot()

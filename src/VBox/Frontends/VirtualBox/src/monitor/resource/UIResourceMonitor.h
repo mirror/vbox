@@ -31,6 +31,7 @@
 /* Forward declarations: */
 class QAbstractButton;
 class QFrame;
+class QItemSelection;
 class QLabel;
 class QTableView;
 class QTreeWidgetItem;
@@ -72,6 +73,7 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         virtual void retranslateUi() /* override */;
+        virtual void showEvent(QShowEvent *pEvent) /* override */;
     /** @} */
 
 private slots:
@@ -82,6 +84,7 @@ private slots:
     void sltHandleHostStatsUpdate(const UIVMResourceMonitorHostStats &stats);
     void sltHandleTableContextMenuRequest(const QPoint &pos);
     void sltHandleShowPerformanceMonitor();
+    void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 
 private:
 

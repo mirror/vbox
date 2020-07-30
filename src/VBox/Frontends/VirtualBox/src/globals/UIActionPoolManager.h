@@ -195,6 +195,7 @@ enum UIActionIndexST
     /* VM resource Monitor actions: */
     UIActionIndexST_M_VMResourceMonitor,
     UIActionIndexST_M_VMResourceMonitor_M_Columns,
+    UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance,
 
     /* Maximum index: */
     UIActionIndexST_Max

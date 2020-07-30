@@ -178,16 +178,22 @@ class UIVMResourceMonitorTableView : public QTableView
 {
     Q_OBJECT;
 
+signals:
+
+    void sigSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+
 public:
 
     UIVMResourceMonitorTableView(QWidget *pParent = 0);
     void setMinimumColumnWidths(const QMap<int, int>& widths);
     void updateColumVisibility();
     int selectedItemIndex() const;
+    bool hasSelection() const;
 
 protected:
 
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) /* override */;
 
 private slots:
 
@@ -691,10 +697,23 @@ int UIVMResourceMonitorTableView::selectedItemIndex() const
     return modelIndex.row();
 }
 
+bool UIVMResourceMonitorTableView::hasSelection() const
+{
+    if (!selectionModel())
+        return false;
+    return selectionModel()->hasSelection();
+}
+
 void UIVMResourceMonitorTableView::resizeEvent(QResizeEvent *pEvent)
 {
     resizeHeaders();
     QTableView::resizeEvent(pEvent);
+}
+
+void UIVMResourceMonitorTableView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    emit sigSelectionChanged(selected, deselected);
+    QTableView::selectionChanged(selected, deselected);
 }
 
 void UIVMResourceMonitorTableView::resizeHeaders()
@@ -1291,6 +1310,15 @@ void UIResourceMonitorWidget::retranslateUi()
     computeMinimumColumnWidths();
 }
 
+void UIResourceMonitorWidget::showEvent(QShowEvent *pEvent)
+{
+    QAction *pSwitchAction = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance);
+    if (pSwitchAction && m_pTableView)
+        pSwitchAction->setEnabled(m_pTableView->hasSelection());
+
+    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+}
+
 void UIResourceMonitorWidget::prepare()
 {
     /* Try to guest the sort indicator's width: */
@@ -1361,7 +1389,8 @@ void UIResourceMonitorWidget::prepareWidgets()
                 this, &UIResourceMonitorWidget::sltHandleHostStatsUpdate);
         connect(m_pTableView, &UIVMResourceMonitorTableView::customContextMenuRequested,
                 this, &UIResourceMonitorWidget::sltHandleTableContextMenuRequest);
-
+        connect(m_pTableView, &UIVMResourceMonitorTableView::sigSelectionChanged,
+                this, &UIResourceMonitorWidget::sltHandleTableSelectionChanged);
         updateModelColumVisibilityCache();
     }
 }
@@ -1389,6 +1418,9 @@ void UIResourceMonitorWidget::prepareActions()
     updateColumnsMenu();
     m_pShowPerformanceMonitorAction = new QAction(this);
     connect(m_pShowPerformanceMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
+    QAction *pSwitchAction = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance);
+    if (pSwitchAction)
+        connect(pSwitchAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);
 }
 
 void UIResourceMonitorWidget::prepareToolBar()
@@ -1471,7 +1503,7 @@ void UIResourceMonitorWidget::sltHandleDataUpdate()
 
 void UIResourceMonitorWidget::sltHandleTableContextMenuRequest(const QPoint &pos)
 {
-    if (!m_pTableView)
+    if (!m_pTableView || !m_pTableView->hasSelection())
         return;
 
     QMenu menu;
@@ -1479,6 +1511,14 @@ void UIResourceMonitorWidget::sltHandleTableContextMenuRequest(const QPoint &pos
         menu.addAction(m_pShowPerformanceMonitorAction);
 
     menu.exec(m_pTableView->mapToGlobal(pos));
+}
+
+void UIResourceMonitorWidget::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    Q_UNUSED(deselected);
+    QAction *pSwitchAction = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance);
+    if (pSwitchAction)
+        pSwitchAction->setEnabled(!selected.isEmpty());
 }
 
 void UIResourceMonitorWidget::sltHandleShowPerformanceMonitor()
