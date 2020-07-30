@@ -392,7 +392,7 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
     if (pSeg->fProt == pArgs->fProt)
     {
         pArgs->uEndRva = uRvaSeg + cbMapped;
-        Log2(("supLoadModuleCompileSegmentsCB: -> merged\n"));
+        Log2(("supLoadModuleCompileSegmentsCB: -> merged, end %#x\n", pArgs->uEndRva));
         return VINF_SUCCESS;
     }
 
@@ -419,7 +419,8 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
             if (cbCommon >= cbMapped)
             {
                 pArgs->uEndRva = uRvaSeg + cbMapped;
-                Log2(("supLoadModuleCompileSegmentsCB: -> merge, %#x common, upgrading prot to %#x\n", cbCommon, pArgs->fProt));
+                Log2(("supLoadModuleCompileSegmentsCB: -> merge, %#x common, upgrading prot to %#x, end %#x\n",
+                      cbCommon, pArgs->fProt, pArgs->uEndRva));
                 return VINF_SUCCESS; /* New segment was smaller than a page. */
             }
             cbMapped -= cbCommon;
@@ -437,7 +438,7 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
             {
                 pArgs->fProt   = fProt;
                 pArgs->uEndRva = uRvaSeg + cbMapped;
-                Log2(("supLoadModuleCompileSegmentsCB: -> upgrade current protection\n"));
+                Log2(("supLoadModuleCompileSegmentsCB: -> upgrade current protection, end %#x\n", pArgs->uEndRva));
                 return VINF_SUCCESS; /* Current segment was smaller than a page. */
             }
             Log2(("supLoadModuleCompileSegmentsCB: -> new, %#x common into new\n", (uint32_t)(pSeg->RVA & PAGE_OFFSET_MASK)));
@@ -445,7 +446,7 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
         else
         {
             /* Create a new segment for the common page with the combined protection. */
-            Log2(("supLoadModuleCompileSegmentsCB: -> its complicated...\n"));
+            Log2(("supLoadModuleCompileSegmentsCB: -> it's complicated...\n"));
             pArgs->uEndRva &= ~(uint32_t)PAGE_OFFSET_MASK;
             if (pArgs->uEndRva > pArgs->uStartRva)
             {
@@ -465,7 +466,7 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
             pArgs->fProt |= fProt;
 
             uint32_t const cbCommon = PAGE_SIZE - (uRvaSeg & PAGE_OFFSET_MASK);
-            if (cbCommon <= cbMapped)
+            if (cbCommon >= cbMapped)
             {
                 fProt |= pArgs->fProt;
                 pArgs->uEndRva = uRvaSeg + cbMapped;
@@ -768,7 +769,11 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
             Assert(SegArgs.uEndRva <= RTLdrSize(hLdrMod));
             SegArgs.uEndRva = (uint32_t)CalcArgs.cbImage; /* overflow is checked later */
             if (SegArgs.uEndRva > SegArgs.uStartRva)
+            {
+                Log2(("supLoadModule:                  SUP Seg #%u: %#x LB %#x prot %#x\n",
+                      SegArgs.iSegs, SegArgs.uStartRva, SegArgs.uEndRva - SegArgs.uStartRva, SegArgs.fProt));
                 SegArgs.iSegs++;
+            }
 
             const uint32_t offSymTab = RT_ALIGN_32(CalcArgs.cbImage, 8);
             const uint32_t offStrTab = offSymTab + CalcArgs.cSymbols * sizeof(SUPLDRSYM);
