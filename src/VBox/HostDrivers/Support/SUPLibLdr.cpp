@@ -358,15 +358,9 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
     AssertCompile(RTMEM_PROT_EXEC  == SUPLDR_PROT_EXEC);
     RT_NOREF(hLdrMod);
 
-    Log2(("supLoadModuleCompileSegmentsCB: %RTptr/%RTptr LB %RTptr/%RTptr prot %#x %s\n",
-          pSeg->LinkAddress, pSeg->RVA, pSeg->cbMapped, pSeg->cb, pSeg->fProt, pSeg->pszName));
-
     /* Ignore segments not part of the loaded image. */
     if (pSeg->RVA == NIL_RTLDRADDR || pSeg->cbMapped == 0)
-    {
-        Log2(("supLoadModuleCompileSegmentsCB: -> skipped\n"));
         return VINF_SUCCESS;
-    }
 
     /* We currently ASSUME that all relevant segments are in ascending RVA order. */
     AssertReturn(pSeg->RVA >= pArgs->uEndRva,
@@ -379,6 +373,8 @@ static DECLCALLBACK(int) supLoadModuleCompileSegmentsCB(RTLDRMOD hLdrMod, PCRTLD
     uint32_t cbMapped = (uint32_t)pSeg->cbMapped;
     AssertReturn(pSeg->RVA      < _1G, VERR_INTERNAL_ERROR_3);
     uint32_t uRvaSeg  = (uint32_t)pSeg->RVA;
+    Log2(("supLoadModuleCompileSegmentsCB: %RTptr/%RTptr LB %RTptr/%RTptr prot %#x %s\n",
+          pSeg->LinkAddress, pSeg->RVA, pSeg->cbMapped, pSeg->cb, pSeg->fProt, pSeg->pszName));
 
     /*
      * If the protection is the same as the previous segment,
