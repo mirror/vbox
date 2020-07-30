@@ -303,7 +303,7 @@ typedef struct DNDTRANSFERLIST
 typedef DNDTRANSFERLIST *PDNDTRANSFERLIST;
 
 int DnDTransferListInit(PDNDTRANSFERLIST pList);
-int DnDTransferListInitEx(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs);
+int DnDTransferListInitEx(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs, DNDTRANSFERLISTFMT enmFmt);
 void DnDTransferListDestroy(PDNDTRANSFERLIST pList);
 void DnDTransferListReset(PDNDTRANSFERLIST pList);
 
