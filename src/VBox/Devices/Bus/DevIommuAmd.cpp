@@ -2314,7 +2314,7 @@ typedef struct IOMMU
 
     /** @name MMIO: MSI Capability Block registers.
      * @{ */
-    MSI_MISC_INFO_T             MsiMiscInfo;         /**< MSI Misc. info registers / MSI Vector registers. */
+    MSI_MISC_INFO_T             MiscInfo;            /**< MSI Misc. info registers / MSI Vector registers. */
     /** @} */
 
     /** @name MMIO: Performance Optimization Control registers.
@@ -3340,8 +3340,8 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
         case IOMMU_MMIO_OFF_DEV_SPECIFIC_CTRL:        uReg = pThis->DevSpecificCtrl.u64;        break;
         case IOMMU_MMIO_OFF_DEV_SPECIFIC_STATUS:      uReg = pThis->DevSpecificStatus.u64;      break;
 
-        case IOMMU_MMIO_OFF_MSI_VECTOR_0:             uReg = pThis->MsiMiscInfo.u64;            break;
-        case IOMMU_MMIO_OFF_MSI_VECTOR_1:             uReg = pThis->MsiMiscInfo.au32[1];        break;
+        case IOMMU_MMIO_OFF_MSI_VECTOR_0:             uReg = pThis->MiscInfo.u64;               break;
+        case IOMMU_MMIO_OFF_MSI_VECTOR_1:             uReg = pThis->MiscInfo.au32[1];           break;
         case IOMMU_MMIO_OFF_MSI_CAP_HDR:
         {
             uint32_t const uMsiCapHdr = PDMPciDevGetDWord(pPciDev, IOMMU_PCI_OFF_MSI_CAP_HDR);
@@ -5464,19 +5464,19 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
             pHlp->pfnPrintf(pHlp, "    Major revision ID                       = %#x\n",    DevSpecificStatus.n.u4RevMajor);
         }
     }
-    /* MSI Miscellaneous Information Register (Lo and Hi). */
+    /* Miscellaneous Information Register (Lo and Hi). */
     {
-        MSI_MISC_INFO_T const MsiMiscInfo = pThis->MsiMiscInfo;
-        pHlp->pfnPrintf(pHlp, "  MSI Misc. Info. Register                = %#RX64\n",    MsiMiscInfo.u64);
+        MSI_MISC_INFO_T const MiscInfo = pThis->MiscInfo;
+        pHlp->pfnPrintf(pHlp, "  Misc. Info. Register                    = %#RX64\n",    MiscInfo.u64);
         if (fVerbose)
         {
-            pHlp->pfnPrintf(pHlp, "    Event Log MSI number                    = %#x\n",     MsiMiscInfo.n.u5MsiNumEvtLog);
-            pHlp->pfnPrintf(pHlp, "    Guest Virtual-Address Size              = %#x\n",     MsiMiscInfo.n.u3GstVirtAddrSize);
-            pHlp->pfnPrintf(pHlp, "    Physical Address Size                   = %#x\n",     MsiMiscInfo.n.u7PhysAddrSize);
-            pHlp->pfnPrintf(pHlp, "    Virtual-Address Size                    = %#x\n",     MsiMiscInfo.n.u7VirtAddrSize);
-            pHlp->pfnPrintf(pHlp, "    HT Transport ATS Range Reserved         = %RTbool\n", MsiMiscInfo.n.u1HtAtsResv);
-            pHlp->pfnPrintf(pHlp, "    PPR MSI number                          = %#x\n",     MsiMiscInfo.n.u5MsiNumPpr);
-            pHlp->pfnPrintf(pHlp, "    GA Log MSI number                       = %#x\n",     MsiMiscInfo.n.u5MsiNumGa);
+            pHlp->pfnPrintf(pHlp, "    Event Log MSI number                    = %#x\n",     MiscInfo.n.u5MsiNumEvtLog);
+            pHlp->pfnPrintf(pHlp, "    Guest Virtual-Address Size              = %#x\n",     MiscInfo.n.u3GstVirtAddrSize);
+            pHlp->pfnPrintf(pHlp, "    Physical Address Size                   = %#x\n",     MiscInfo.n.u7PhysAddrSize);
+            pHlp->pfnPrintf(pHlp, "    Virtual-Address Size                    = %#x\n",     MiscInfo.n.u7VirtAddrSize);
+            pHlp->pfnPrintf(pHlp, "    HT Transport ATS Range Reserved         = %RTbool\n", MiscInfo.n.u1HtAtsResv);
+            pHlp->pfnPrintf(pHlp, "    PPR MSI number                          = %#x\n",     MiscInfo.n.u5MsiNumPpr);
+            pHlp->pfnPrintf(pHlp, "    GA Log MSI number                       = %#x\n",     MiscInfo.n.u5MsiNumGa);
         }
     }
     /* MSI Capability Header. */
@@ -5806,7 +5806,6 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->EvtLogBBaseAddr.u64       = 0;
     pThis->EvtLogBBaseAddr.n.u4Len   = 8;
 
-    pThis->MsiMiscInfo.u64           = 0;
     pThis->PerfOptCtrl.u32           = 0;
 
     pThis->XtGenIntrCtrl.u64         = 0;
@@ -5941,18 +5940,17 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* IOMMU Range Register. */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);          /* RW - Range register (implemented as RO by us). */
 
-    /* Misc. Information Register 0. */
+    /* Misc. Information Register. */
     /* NOTE! Fields (e.g, GVA size) must match what we expose in the ACPI tables. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0,
-                        RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,      0)     /* RO - MSI number */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_GVA_SIZE,     2)     /* RO - Guest Virt. Addr size (2=48 bits) */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_PA_SIZE,     48)     /* RO - Physical Addr size (48 bits) */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     64)     /* RO - Virt. Addr size (64 bits) */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV,  0)     /* RW - HT ATS reserved */
-                      | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR,  0));   /* RW - PPR interrupt number */
-
-    /* Misc. Information Register 1. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0, 0);
+    uint32_t const  uMiscInfoReg0 =   RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM,      0)  /* RO - MSI number */
+                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_GVA_SIZE,     2)  /* RO - Guest Virt. Addr size (2=48 bits) */
+                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_PA_SIZE,     48)  /* RO - Physical Addr size (48 bits) */
+                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_VA_SIZE,     64)  /* RO - Virt. Addr size (64 bits) */
+                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_HT_ATS_RESV,  0)  /* RW - HT ATS reserved */
+                                    | RT_BF_MAKE(IOMMU_BF_MISCINFO_0_MSI_NUM_PPR,  0); /* RW - PPR interrupt number */
+    uint32_t const uMiscInfoReg1  = 0;
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_0, uMiscInfoReg0);
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MISCINFO_REG_1, uMiscInfoReg1);
 
     /* MSI Capability Header register. */
     PDMMSIREG MsiReg;
@@ -6090,6 +6088,8 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->DevSpecificStatus.u64 = 0;
     pThis->DevSpecificStatus.n.u4RevMajor = IOMMU_DEVSPEC_STATUS_MAJOR_VERSION;
     pThis->DevSpecificStatus.n.u4RevMinor = IOMMU_DEVSPEC_STATUS_MINOR_VERSION;
+
+    pThis->MiscInfo.u64 = RT_MAKE_U64(uMiscInfoReg0, uMiscInfoReg1);
 
     /*
      * Initialize parts of the IOMMU state as it would during reset.
