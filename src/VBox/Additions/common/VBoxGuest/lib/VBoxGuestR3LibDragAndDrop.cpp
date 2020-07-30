@@ -1034,7 +1034,7 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
         /* Set the protocol version we're going to use as told by the host. */
         rc = Msg.u.v3.uProtocol.GetUInt32(&pCtx->uProtocol); AssertRC(rc);
 
-        pCtx->cbMaxChunkSize = _64K; /** @todo Use a scratch buffer on the heap? */
+        pCtx->cbMaxChunkSize = DND_DEFAULT_CHUNK_SIZE; /** @todo Use a scratch buffer on the heap? */
     }
     else
         pCtx->uProtocol = 0; /*  We're using protocol v0 (initial draft) as a fallback. */
@@ -1523,7 +1523,8 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, PDNDTRANSFEROBJECT pO
     if (RT_FAILURE(rc))
         return rc;
 
-    uint32_t cbBuf = _64K;           /** @todo Make this configurable? */
+    uint32_t cbBuf = pCtx->cbMaxChunkSize;
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
     if (!pvBuf)
     {

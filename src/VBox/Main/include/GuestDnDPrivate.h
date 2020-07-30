@@ -357,8 +357,9 @@ public:
      * Initializes a transfer data object.
      *
      * @param   cbBuf           Scratch buffer size (in bytes) to use.
+     *                          If not specified, DND_DEFAULT_CHUNK_SIZE will be used.
      */
-    int init(size_t cbBuf = _64K)
+    int init(size_t cbBuf = DND_DEFAULT_CHUNK_SIZE)
     {
         reset();
 

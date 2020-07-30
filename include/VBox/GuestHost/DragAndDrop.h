@@ -209,6 +209,10 @@ int DnDTransferObjectQueryInfo(PDNDTRANSFEROBJECT pObj);
 int DnDTransferObjectRead(PDNDTRANSFEROBJECT pObj, void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
 int DnDTransferObjectWrite(PDNDTRANSFEROBJECT pObj, const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
 
+/** Defines the default chunk size of DnD data transfers.
+ *  Supported on all (older) Guest Additions which also support DnD. */
+#define DND_DEFAULT_CHUNK_SIZE                       _64K
+
 /** Separator for a formats list. */
 #define DND_FORMATS_SEPARATOR                        "\r\n"
 
