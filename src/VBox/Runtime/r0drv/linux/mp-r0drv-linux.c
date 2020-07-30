@@ -382,11 +382,36 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
 {
 #ifdef CONFIG_SMP
     IPRT_LINUX_SAVE_EFL_AC();
-    int rc;
-    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    int                     rc;
+    RTTHREADPREEMPTSTATE    PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28) /* 2.6.28 introduces CONFIG_CPUMASK_OFFSTACK */
+    cpumask_var_t           DstCpuMask;
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+    cpumask_t               DstCpuMask;
+# endif
 
     AssertReturn(idCpu1 != idCpu2, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & RTMPON_F_VALID_MASK), VERR_INVALID_FLAGS);
+
+    /*
+     * Prepare the CPU mask before we disable preemption.
+     */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+    if (!zalloc_cpumask_var(&DstCpuMask, GFP_KERNEL))
+        return VERR_NO_MEMORY;
+    cpumask_set_cpu(idCpu1, DstCpuMask);
+    cpumask_set_cpu(idCpu2, DstCpuMask);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+    if (!alloc_cpumask_var(&DstCpuMask, GFP_KERNEL))
+        return VERR_NO_MEMORY;
+    cpumask_clear(DstCpuMask);
+    cpumask_set_cpu(idCpu1, DstCpuMask);
+    cpumask_set_cpu(idCpu2, DstCpuMask);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+    cpus_clear(DstCpuMask);
+    cpu_set(idCpu1, DstCpuMask);
+    cpu_set(idCpu2, DstCpuMask);
+# endif
 
     /*
      * Check that both CPUs are online before doing the broadcast call.
@@ -401,12 +426,6 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
          * CPUs is the one we're running on, we must do the call and the post
          * call wait ourselves.
          */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
-        /* 2.6.28 introduces CONFIG_CPUMASK_OFFSTACK */
-        cpumask_var_t DstCpuMask;
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-        cpumask_t   DstCpuMask;
-# endif
         RTCPUID     idCpuSelf = RTMpCpuId();
         bool const  fCallSelf = idCpuSelf == idCpu1 || idCpuSelf == idCpu2;
         RTMPARGS    Args;
@@ -416,23 +435,6 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
         Args.idCpu   = idCpu1;
         Args.idCpu2  = idCpu2;
         Args.cHits   = 0;
-
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
-        if (!zalloc_cpumask_var(&DstCpuMask, GFP_KERNEL))
-            return VERR_NO_MEMORY;
-        cpumask_set_cpu(idCpu1, DstCpuMask);
-        cpumask_set_cpu(idCpu2, DstCpuMask);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
-        if (!alloc_cpumask_var(&DstCpuMask, GFP_KERNEL))
-            return VERR_NO_MEMORY;
-        cpumask_clear(DstCpuMask);
-        cpumask_set_cpu(idCpu1, DstCpuMask);
-        cpumask_set_cpu(idCpu2, DstCpuMask);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-        cpus_clear(DstCpuMask);
-        cpu_set(idCpu1, DstCpuMask);
-        cpu_set(idCpu2, DstCpuMask);
-# endif
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
         smp_call_function_many(DstCpuMask, rtmpLinuxWrapperPostInc, &Args, !fCallSelf /* wait */);
@@ -467,10 +469,6 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
             rc = VERR_CPU_OFFLINE;
         else
             rc = VERR_CPU_IPE_1;
-
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
-        free_cpumask_var(DstCpuMask);
-# endif
     }
     /*
      * A CPU must be present to be considered just offline.
@@ -480,7 +478,11 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
         rc = VERR_CPU_OFFLINE;
     else
         rc = VERR_CPU_NOT_FOUND;
+
     RTThreadPreemptRestore(&PreemptState);;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+    free_cpumask_var(DstCpuMask);
+# endif
     IPRT_LINUX_RESTORE_EFL_AC();
     return rc;
 
