@@ -73,17 +73,14 @@ protected:
     static Utf8Str i_guestErrorToString(int guestRc);
     static Utf8Str i_hostErrorToString(int hostRc);
 
-    /** @name Thread task workers.
-     * @{ */
-    static void i_sendDataThreadTask(GuestDnDSendDataTask *pTask);
-    /** @}  */
-
     /** @name Callbacks for dispatch handler.
      * @{ */
     static DECLCALLBACK(int) i_sendTransferDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
     /** @}  */
 
 protected:
+
+    void i_reset(void);
 
     int i_sendData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout);
 
@@ -103,10 +100,11 @@ protected:
 
     struct
     {
-        /** Flag indicating whether a data transfer currently is active. */
-        bool     mfTransferIsPending;
         /** Maximum data block size (in bytes) the target can handle. */
-        uint32_t mcbBlockSize;
+        uint32_t        mcbBlockSize;
+        /** The context for sending data to the guest.
+         *  At the moment only one transfer at a time is supported. */
+        GuestDnDSendCtx mSendCtx;
     } mData;
 
     friend class GuestDnDSendDataTask;

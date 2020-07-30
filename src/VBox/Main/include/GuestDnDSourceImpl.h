@@ -69,6 +69,8 @@ private:
 
 protected:
 
+    void i_reset(void);
+
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     /** @name Dispatch handlers for the HGCM callbacks.
      * @{ */
@@ -84,11 +86,6 @@ protected:
 
     static Utf8Str i_guestErrorToString(int guestRc);
     static Utf8Str i_hostErrorToString(int hostRc);
-
-    /** @name Thread task .
-     * @{ */
-    static void i_receiveDataThreadTask(GuestDnDRecvDataTask *pTask);
-    /** @}  */
 
     /** @name Callbacks for dispatch handler.
      * @{ */

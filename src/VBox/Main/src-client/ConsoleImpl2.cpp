@@ -3185,7 +3185,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 rc = HGCMHostRegisterServiceExtension(&m_hHgcmSvcExtDragAndDrop, "VBoxDragAndDropSvc",
                                                       &GuestDnD::notifyDnDDispatcher,
-                                                      GUESTDNDINST());
+                                                      GuestDnDInst());
                 if (RT_FAILURE(rc))
                     Log(("Cannot register VBoxDragAndDropSvc extension, rc=%Rrc\n", rc));
                 else

@@ -155,6 +155,90 @@
  *   (both in the host and the guest).
  */
 
+
+/********************************************************************************************************************************
+ *
+ ********************************************************************************************************************************/
+
+#define GUESTDND_LOCK() \
+    { \
+        int rcLock = RTCritSectEnter(&m_CritSect); \
+        if (RT_FAILURE(rcLock)) \
+            return rcLock; \
+    }
+
+#define GUESTDND_LOCK_RET(a_Ret) \
+    { \
+        int rcLock = RTCritSectEnter(&m_CritSect); \
+        if (RT_FAILURE(rcLock)) \
+            return a_Ret; \
+    }
+
+#define GUESTDND_UNLOCK() \
+    { \
+        int rcUnlock = RTCritSectLeave(&m_CritSect); RT_NOREF(rcUnlock); \
+        AssertRC(rcUnlock); \
+    }
+
+/********************************************************************************************************************************
+ *
+ ********************************************************************************************************************************/
+
+GuestDnDSendCtx::GuestDnDSendCtx(void)
+    : pTarget(NULL)
+    , pResp(NULL)
+{
+    reset();
+}
+
+void GuestDnDSendCtx::reset(void)
+{
+    if (pResp)
+        pResp->reset();
+
+    uScreenID  = 0;
+
+    Transfer.reset();
+
+    int rc2 = EventCallback.Reset();
+    AssertRC(rc2);
+
+    GuestDnDData::reset();
+}
+
+/*********************************************************************************************************************************
+ *                                                                                                                               *
+ ********************************************************************************************************************************/
+
+GuestDnDRecvCtx::GuestDnDRecvCtx(void)
+    : pSource(NULL)
+    , pResp(NULL)
+{
+    reset();
+}
+
+void GuestDnDRecvCtx::reset(void)
+{
+    if (pResp)
+        pResp->reset();
+
+    lstFmtOffered.clear();
+    strFmtReq  = "";
+    strFmtRecv = "";
+    enmAction  = 0;
+
+    Transfer.reset();
+
+    int rc2 = EventCallback.Reset();
+    AssertRC(rc2);
+
+    GuestDnDData::reset();
+}
+
+/*********************************************************************************************************************************
+ *                                                                                                                               *
+ ********************************************************************************************************************************/
+
 GuestDnDCallbackEvent::~GuestDnDCallbackEvent(void)
 {
     if (NIL_RTSEMEVENT != m_SemEvent)
@@ -183,7 +267,9 @@ int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
     return RTSemEventWait(m_SemEvent, msTimeout);
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/********************************************************************************************************************************
+ *
+ ********************************************************************************************************************************/
 
 GuestDnDResponse::GuestDnDResponse(const ComObjPtr<Guest>& pGuest)
     : m_EventSem(NIL_RTSEMEVENT)
@@ -522,16 +608,30 @@ int GuestDnDResponse::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */) co
     return rc;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/*********************************************************************************************************************************
+ *                                                                                                                               *
+ ********************************************************************************************************************************/
 
 GuestDnD* GuestDnD::s_pInstance = NULL;
 
 GuestDnD::GuestDnD(const ComObjPtr<Guest> &pGuest)
     : m_pGuest(pGuest)
+    , m_cTransfersPending(0)
 {
     LogFlowFuncEnter();
 
-    m_pResponse = new GuestDnDResponse(pGuest);
+    try
+    {
+        m_pResponse = new GuestDnDResponse(pGuest);
+    }
+    catch (std::bad_alloc &)
+    {
+        throw VERR_NO_MEMORY;
+    }
+
+    int rc = RTCritSectInit(&m_CritSect);
+    if (RT_FAILURE(rc))
+        throw rc;
 
     /* List of supported default MIME types. */
     LogRel2(("DnD: Supported default host formats:\n"));
@@ -546,6 +646,10 @@ GuestDnD::GuestDnD(const ComObjPtr<Guest> &pGuest)
 GuestDnD::~GuestDnD(void)
 {
     LogFlowFuncEnter();
+
+    Assert(m_cTransfersPending == 0); /* Sanity. */
+
+    RTCritSectDelete(&m_CritSect);
 
     if (m_pResponse)
         delete m_pResponse;
@@ -595,6 +699,72 @@ int GuestDnD::hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM p
     return pVMMDev->hgcmHostCall("VBoxDragAndDropSvc", u32Function, cParms, paParms);
 }
 
+int GuestDnD::registerSource(const ComObjPtr<GuestDnDSource> &Source)
+{
+    GUESTDND_LOCK();
+
+    Assert(m_lstSrc.size() == 0); /* We only support one source at a time at the moment. */
+    m_lstSrc.push_back(Source);
+
+    GUESTDND_UNLOCK();
+    return VINF_SUCCESS;
+}
+
+int GuestDnD::unregisterSource(const ComObjPtr<GuestDnDSource> &Source)
+{
+    GUESTDND_LOCK();
+
+    GuestDnDSrcList::iterator itSrc = std::find(m_lstSrc.begin(), m_lstSrc.end(), Source);
+    if (itSrc != m_lstSrc.end())
+        m_lstSrc.erase(itSrc);
+
+    GUESTDND_UNLOCK();
+    return VINF_SUCCESS;
+}
+
+size_t GuestDnD::getSourceCount(void)
+{
+    GUESTDND_LOCK_RET(0);
+
+    size_t cSources = m_lstSrc.size();
+
+    GUESTDND_UNLOCK();
+    return cSources;
+}
+
+int GuestDnD::registerTarget(const ComObjPtr<GuestDnDTarget> &Target)
+{
+    GUESTDND_LOCK();
+
+    Assert(m_lstTgt.size() == 0); /* We only support one target at a time at the moment. */
+    m_lstTgt.push_back(Target);
+
+    GUESTDND_UNLOCK();
+    return VINF_SUCCESS;
+}
+
+int GuestDnD::unregisterTarget(const ComObjPtr<GuestDnDTarget> &Target)
+{
+    GUESTDND_LOCK();
+
+    GuestDnDTgtList::iterator itTgt = std::find(m_lstTgt.begin(), m_lstTgt.end(), Target);
+    if (itTgt != m_lstTgt.end())
+        m_lstTgt.erase(itTgt);
+
+    GUESTDND_UNLOCK();
+    return VINF_SUCCESS;
+}
+
+size_t GuestDnD::getTargetCount(void)
+{
+    GUESTDND_LOCK_RET(0);
+
+    size_t cTargets = m_lstTgt.size();
+
+    GUESTDND_UNLOCK();
+    return cTargets;
+}
+
 /* static */
 DECLCALLBACK(int) GuestDnD::notifyDnDDispatcher(void *pvExtension, uint32_t u32Function,
                                                 void *pvParms, uint32_t cbParms)
@@ -625,7 +795,7 @@ bool GuestDnD::isFormatInFormatList(const com::Utf8Str &strFormat, const GuestDn
 GuestDnDMIMEList GuestDnD::toFormatList(const com::Utf8Str &strFormats)
 {
     GuestDnDMIMEList lstFormats;
-    RTCList<RTCString> lstFormatsTmp = strFormats.split("\r\n");
+    RTCList<RTCString> lstFormatsTmp = strFormats.split(DND_FORMATS_SEPARATOR);
 
     for (size_t i = 0; i < lstFormatsTmp.size(); i++)
         lstFormats.push_back(com::Utf8Str(lstFormatsTmp.at(i)));
@@ -640,7 +810,7 @@ com::Utf8Str GuestDnD::toFormatString(const GuestDnDMIMEList &lstFormats)
     for (size_t i = 0; i < lstFormats.size(); i++)
     {
         const com::Utf8Str &f = lstFormats.at(i);
-        strFormat += f + "\r\n";
+        strFormat += f + DND_FORMATS_SEPARATOR;
     }
 
     return strFormat;
@@ -669,7 +839,7 @@ GuestDnDMIMEList GuestDnD::toFilteredFormatList(const GuestDnDMIMEList &lstForma
 {
     GuestDnDMIMEList lstFmt;
 
-    RTCList<RTCString> lstFormats = strFormatsWanted.split("\r\n");
+    RTCList<RTCString> lstFormats = strFormatsWanted.split(DND_FORMATS_SEPARATOR);
     size_t i = 0;
     while (i < lstFormats.size())
     {
@@ -774,15 +944,17 @@ std::vector<DnDAction_T> GuestDnD::toMainActions(VBOXDNDACTIONLIST dndActionList
     return vecActions;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/*********************************************************************************************************************************
+ *                                                                                                                               *
+ ********************************************************************************************************************************/
 
 GuestDnDBase::GuestDnDBase(void)
+    : m_fIsPending(false)
 {
     /* Initialize public attributes. */
-    m_lstFmtSupported = GUESTDNDINST()->defaultFormats();
+    m_lstFmtSupported = GuestDnDInst()->defaultFormats();
 
     /* Initialzie private stuff. */
-    m_DataBase.cTransfersPending = 0;
     m_DataBase.uProtocolVersion  = 0;
 }
 
@@ -942,9 +1114,13 @@ int GuestDnDBase::sendCancel(void)
     if (m_DataBase.uProtocolVersion >= 3)
         Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
 
-    LogRel2(("DnD: Cancelling operation on guest ..."));
+    LogRel2(("DnD: Cancelling operation on guest ...\n"));
 
-    return GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    if (RT_FAILURE(rc))
+        LogRel(("DnD: Cancelling operation on guest failed with %Rrc\n", rc));
+
+    return rc;
 }
 
 int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,

@@ -88,7 +88,8 @@ struct GuestDnDMetaData
     GuestDnDMetaData(void)
         : pvData(NULL)
         , cbData(0)
-        , cbAllocated(0) { }
+        , cbAllocated(0)
+        , cbAnnounced(0) { }
 
     virtual ~GuestDnDMetaData(void)
     {
@@ -97,15 +98,19 @@ struct GuestDnDMetaData
 
     size_t add(const void *pvDataAdd, size_t cbDataAdd)
     {
-        LogFlowThisFunc(("pvDataAdd=%p, cbDataAdd=%zu\n", pvDataAdd, cbDataAdd));
-
+        LogFlowThisFunc(("cbAllocated=%zu, cbAnnounced=%zu, pvDataAdd=%p, cbDataAdd=%zu\n",
+                         cbAllocated, cbAnnounced, pvDataAdd, cbDataAdd));
         if (!cbDataAdd)
             return 0;
         AssertPtrReturn(pvDataAdd, 0);
 
-        int rc = resize(cbAllocated + cbDataAdd);
-        if (RT_FAILURE(rc))
-            return 0;
+        const size_t cbAllocatedTmp = cbData + cbDataAdd;
+        if (cbAllocatedTmp > cbAllocated)
+        {
+            int rc = resize(cbAllocatedTmp);
+            if (RT_FAILURE(rc))
+                return 0;
+        }
 
         Assert(cbAllocated >= cbData + cbDataAdd);
         memcpy((uint8_t *)pvData + cbData, pvDataAdd, cbDataAdd);
@@ -137,8 +142,9 @@ struct GuestDnDMetaData
             pvData = NULL;
         }
 
-        cbAllocated = 0;
         cbData      = 0;
+        cbAllocated = 0;
+        cbAnnounced = 0;
     }
 
     int resize(size_t cbSize)
@@ -153,18 +159,18 @@ struct GuestDnDMetaData
             return VINF_SUCCESS;
 
         if (cbSize > _32M) /* Meta data can be up to 32MB. */
-            return VERR_INVALID_PARAMETER;
+            return VERR_BUFFER_OVERFLOW;
 
         void *pvTmp = NULL;
         if (!cbAllocated)
         {
             Assert(cbData == 0);
-            pvTmp = RTMemAllocZ(cbSize);
+            pvTmp = RTMemAllocZ(RT_ALIGN_Z(cbSize, 4096));
         }
         else
         {
             AssertPtr(pvData);
-            pvTmp = RTMemRealloc(pvData, cbSize);
+            pvTmp = RTMemRealloc(pvData, RT_ALIGN_Z(cbSize, 4096));
             RT_BZERO(pvTmp, cbSize);
         }
 
@@ -186,6 +192,8 @@ struct GuestDnDMetaData
     size_t       cbData;
     /** Size (in bytes) of allocated meta data. */
     size_t       cbAllocated;
+    /** Size (in bytes) of announced meta data. */
+    size_t       cbAnnounced;
 };
 
 /**
@@ -204,7 +212,7 @@ struct GuestDnDData
 
     size_t addProcessed(size_t cbDataAdd)
     {
-        const size_t cbTotal = Meta.cbData + cbExtra; RT_NOREF(cbTotal);
+        const size_t cbTotal = getTotalAnnounced(); RT_NOREF(cbTotal);
         AssertReturn(cbProcessed + cbDataAdd <= cbTotal, 0);
         cbProcessed += cbDataAdd;
         return cbProcessed;
@@ -212,7 +220,7 @@ struct GuestDnDData
 
     bool isComplete(void) const
     {
-        const size_t cbTotal = Meta.cbData + cbExtra;
+        const size_t cbTotal = getTotalAnnounced();
         LogFlowFunc(("cbProcessed=%zu, cbTotal=%zu\n", cbProcessed, cbTotal));
         AssertReturn(cbProcessed <= cbTotal, true);
         return (cbProcessed == cbTotal);
@@ -220,18 +228,23 @@ struct GuestDnDData
 
     uint8_t getPercentComplete(void) const
     {
-        const size_t cbTotal = Meta.cbData + cbExtra;
+        const size_t cbTotal = getTotalAnnounced();
         return (uint8_t)(cbProcessed * 100 / RT_MAX(cbTotal, 1));
     }
 
     size_t getRemaining(void) const
     {
-        const size_t cbTotal = Meta.cbData + cbExtra;
+        const size_t cbTotal = getTotalAnnounced();
         AssertReturn(cbProcessed <= cbTotal, 0);
         return cbTotal - cbProcessed;
     }
 
-    size_t getTotal(void) const
+    size_t getTotalAnnounced(void) const
+    {
+        return Meta.cbAnnounced + cbExtra;
+    }
+
+    size_t getTotalAvailable(void) const
     {
         return Meta.cbData + cbExtra;
     }
@@ -372,13 +385,14 @@ struct GuestDnDTransferSendData : public GuestDnDTransferData
  */
 struct GuestDnDSendCtx : public GuestDnDData
 {
+    GuestDnDSendCtx(void);
+
+    void reset(void);
+
     /** Pointer to guest target class this context belongs to. */
     GuestDnDTarget                     *pTarget;
     /** Pointer to guest response class this context belongs to. */
     GuestDnDResponse                   *pResp;
-    /** Flag indicating whether a file transfer is active and
-     *  initiated by the host. */
-    bool                                fIsActive;
     /** Target (VM) screen ID. */
     uint32_t                            uScreenID;
     /** Transfer data structure. */
@@ -439,13 +453,14 @@ struct GuestDnDTransferRecvData : public GuestDnDTransferData
  */
 struct GuestDnDRecvCtx : public GuestDnDData
 {
+    GuestDnDRecvCtx(void);
+
+    void reset(void);
+
     /** Pointer to guest source class this context belongs to. */
     GuestDnDSource                     *pSource;
     /** Pointer to guest response class this context belongs to. */
     GuestDnDResponse                   *pResp;
-    /** Flag indicating whether a file transfer is active and
-     *  initiated by the host. */
-    bool                                fIsActive;
     /** Formats offered by the guest (and supported by the host). */
     GuestDnDMIMEList                    lstFmtOffered;
     /** Original drop format requested to receive from the guest. */
@@ -692,11 +707,10 @@ protected:
 };
 
 /**
- * Private singleton class for the guest's DnD
- * implementation. Can't be instanciated directly, only via
- * the factory pattern.
+ * Private singleton class for the guest's DnD implementation.
  *
- ** @todo Move this into GuestDnDBase.
+ * Can't be instanciated directly, only via the factory pattern.
+ * Keeps track of all ongoing DnD transfers.
  */
 class GuestDnD
 {
@@ -726,6 +740,12 @@ public:
 
 protected:
 
+    /** List of registered DnD sources. */
+    typedef std::list< ComObjPtr<GuestDnDSource> > GuestDnDSrcList;
+    /** List of registered DnD targets. */
+    typedef std::list< ComObjPtr<GuestDnDTarget> > GuestDnDTgtList;
+
+    /** Constructor; will throw rc on failure. */
     GuestDnD(const ComObjPtr<Guest>& pGuest);
     virtual ~GuestDnD(void);
 
@@ -737,6 +757,16 @@ public:
     int               hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
     GuestDnDResponse *response(void) { return m_pResponse; }
     GuestDnDMIMEList  defaultFormats(void) const { return m_strDefaultFormats; }
+    /** @}  */
+
+    /** @name Source / target management. */
+    int               registerSource(const ComObjPtr<GuestDnDSource> &Source);
+    int               unregisterSource(const ComObjPtr<GuestDnDSource> &Source);
+    size_t            getSourceCount(void);
+
+    int               registerTarget(const ComObjPtr<GuestDnDTarget> &Target);
+    int               unregisterTarget(const ComObjPtr<GuestDnDTarget> &Target);
+    size_t            getTargetCount(void);
     /** @}  */
 
 public:
@@ -764,22 +794,28 @@ protected:
     /** @name Singleton properties.
      * @{ */
     /** List of supported default MIME/Content-type formats. */
-    GuestDnDMIMEList           m_strDefaultFormats;
+    GuestDnDMIMEList            m_strDefaultFormats;
     /** Pointer to guest implementation. */
-    const ComObjPtr<Guest>     m_pGuest;
+    const ComObjPtr<Guest>      m_pGuest;
     /** The current (last) response from the guest. At the
      *  moment we only support only response a time (ARQ-style). */
-    GuestDnDResponse          *m_pResponse;
+    GuestDnDResponse           *m_pResponse;
+    /** Critical section to serialize access. */
+    RTCRITSECT                  m_CritSect;
+    /** Number of active transfers (guest->host or host->guest). */
+    uint32_t                    m_cTransfersPending;
+    GuestDnDSrcList             m_lstSrc;
+    GuestDnDTgtList             m_lstTgt;
     /** @}  */
 
 private:
 
-    /** Staic pointer to singleton instance. */
+    /** Static pointer to singleton instance. */
     static GuestDnD           *s_pInstance;
 };
 
 /** Access to the GuestDnD's singleton instance. */
-#define GUESTDNDINST() GuestDnD::getInstance()
+#define GuestDnDInst() GuestDnD::getInstance()
 
 /** List of pointers to guest DnD Messages. */
 typedef std::list<GuestDnDMsg *> GuestDnDMsgList;
@@ -832,6 +868,8 @@ protected:
     GuestDnDMIMEList                m_lstFmtSupported;
     /** List of offered MIME types to the counterpart. */
     GuestDnDMIMEList                m_lstFmtOffered;
+    /** Whether the object still is in pending state. */
+    bool                            m_fIsPending;
     /** @}  */
 
     /**
@@ -839,8 +877,6 @@ protected:
      */
     struct
     {
-        /** Number of active transfers (guest->host or host->guest). */
-        uint32_t                    cTransfersPending;
         /** The DnD protocol version to use, depending on the
          *  installed Guest Additions. See DragAndDropSvc.h for
          *  a protocol changelog. */
