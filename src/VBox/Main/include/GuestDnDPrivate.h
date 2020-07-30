@@ -48,10 +48,9 @@ class Progress;
 /** List (vector) of MIME types. */
 typedef std::vector<com::Utf8Str> GuestDnDMIMEList;
 
-/*
- ** @todo Put most of the implementations below in GuestDnDPrivate.cpp!
+/**
+ * Class to handle a guest DnD callback event.
  */
-
 class GuestDnDCallbackEvent
 {
 public:
@@ -96,6 +95,13 @@ struct GuestDnDMetaData
         reset();
     }
 
+    /**
+     * Adds new meta data.
+     *
+     * @returns New (total) meta data size in bytes.
+     * @param   pvDataAdd       Pointer of data to add.
+     * @param   cbDataAdd       Size (in bytes) of data to add.
+     */
     size_t add(const void *pvDataAdd, size_t cbDataAdd)
     {
         LogFlowThisFunc(("cbAllocated=%zu, cbAnnounced=%zu, pvDataAdd=%p, cbDataAdd=%zu\n",
@@ -120,6 +126,12 @@ struct GuestDnDMetaData
         return cbData;
     }
 
+    /**
+     * Adds new meta data.
+     *
+     * @returns New (total) meta data size in bytes.
+     * @param   vecAdd          Meta data to add.
+     */
     size_t add(const std::vector<BYTE> &vecAdd)
     {
         if (!vecAdd.size())
@@ -131,6 +143,9 @@ struct GuestDnDMetaData
         return add(&vecAdd.front(), (uint32_t)vecAdd.size());
     }
 
+    /**
+     * Resets (clears) all data.
+     */
     void reset(void)
     {
         strFmt = "";
@@ -147,6 +162,12 @@ struct GuestDnDMetaData
         cbAnnounced = 0;
     }
 
+    /**
+     * Resizes the allocation size.
+     *
+     * @returns VBox status code.
+     * @param   cbSize          New allocation size (in bytes).
+     */
     int resize(size_t cbSize)
     {
         if (!cbSize)
@@ -211,6 +232,12 @@ struct GuestDnDData
         reset();
     }
 
+    /**
+     * Adds processed data to the internal accounting.
+     *
+     * @returns New processed data size.
+     * @param   cbDataAdd       Bytes to add as done processing.
+     */
     size_t addProcessed(size_t cbDataAdd)
     {
         const size_t cbTotal = getTotalAnnounced(); RT_NOREF(cbTotal);
@@ -219,6 +246,11 @@ struct GuestDnDData
         return cbProcessed;
     }
 
+    /**
+     * Returns whether all data has been processed or not.
+     *
+     * @returns \c true if all data has been processed, \c false if not.
+     */
     bool isComplete(void) const
     {
         const size_t cbTotal = getTotalAnnounced();
@@ -227,12 +259,22 @@ struct GuestDnDData
         return (cbProcessed == cbTotal);
     }
 
+    /**
+     * Returns the percentage (0-100) of the already processed data.
+     *
+     * @returns Percentage (0-100) of the already processed data.
+     */
     uint8_t getPercentComplete(void) const
     {
         const size_t cbTotal = getTotalAnnounced();
         return (uint8_t)(cbProcessed * 100 / RT_MAX(cbTotal, 1));
     }
 
+    /**
+     * Returns the remaining (outstanding) data left for processing.
+     *
+     * @returns Remaining (outstanding) data (in bytes) left for processing.
+     */
     size_t getRemaining(void) const
     {
         const size_t cbTotal = getTotalAnnounced();
@@ -240,16 +282,31 @@ struct GuestDnDData
         return cbTotal - cbProcessed;
     }
 
+    /**
+     * Returns the total data size (in bytes) announced.
+     *
+     * @returns Total data size (in bytes) announced.
+     */
     size_t getTotalAnnounced(void) const
     {
         return Meta.cbAnnounced + cbExtra;
     }
 
+    /**
+     * Returns the total data size (in bytes) available.
+     * For receiving data, this represents the already received data.
+     * For sending data, this represents the data left to send.
+     *
+     * @returns Total data size (in bytes) available.
+     */
     size_t getTotalAvailable(void) const
     {
         return Meta.cbData + cbExtra;
     }
 
+    /**
+     * Resets all data.
+     */
     void reset(void)
     {
         Meta.reset();
@@ -277,7 +334,8 @@ struct GuestDnDData
 #define DND_OBJ_STATE_VALID_MASK     UINT32_C(0x00000001)
 
 /**
- * Class for keeping around DnD (file) transfer data.
+ * Base class for keeping around DnD (file) transfer data.
+ * Used for sending / receiving transfer data.
  */
 struct GuestDnDTransferData
 {
@@ -295,6 +353,11 @@ public:
         destroy();
     }
 
+    /**
+     * Initializes a transfer data object.
+     *
+     * @param   cbBuf           Scratch buffer size (in bytes) to use.
+     */
     int init(size_t cbBuf = _64K)
     {
         reset();
@@ -307,6 +370,9 @@ public:
         return VINF_SUCCESS;
     }
 
+    /**
+     * Destroys a transfer data object.
+     */
     void destroy(void)
     {
         reset();
@@ -320,6 +386,9 @@ public:
         cbScratchBuf = 0;
     }
 
+    /**
+     * Resets a transfer data object.
+     */
     void reset(void)
     {
         LogFlowFuncEnter();
@@ -328,6 +397,11 @@ public:
         cObjProcessed = 0;
     }
 
+    /**
+     * Returns whether this transfer object is complete or not.
+     *
+     * @returns \c true if complete, \c false if not.
+     */
     bool isComplete(void) const
     {
         return (cObjProcessed == cObjToProcess);
@@ -344,6 +418,9 @@ public:
     size_t   cbScratchBuf;
 };
 
+/**
+ * Class for keeping around DnD transfer send data (Host -> Guest).
+ */
 struct GuestDnDTransferSendData : public GuestDnDTransferData
 {
     GuestDnDTransferSendData()
@@ -359,11 +436,17 @@ struct GuestDnDTransferSendData : public GuestDnDTransferData
         destroy();
     }
 
+    /**
+     * Destroys the object.
+     */
     void destroy(void)
     {
         DnDTransferListDestroy(&List);
     }
 
+    /**
+     * Resets the object.
+     */
     void reset(void)
     {
         DnDTransferListReset(&List);
@@ -388,6 +471,9 @@ struct GuestDnDSendCtx : public GuestDnDData
 {
     GuestDnDSendCtx(void);
 
+    /**
+     * Resets the object.
+     */
     void reset(void);
 
     /** Pointer to guest target class this context belongs to. */
@@ -424,11 +510,17 @@ struct GuestDnDTransferRecvData : public GuestDnDTransferData
         destroy();
     }
 
+    /**
+     * Destroys the object.
+     */
     void destroy(void)
     {
         DnDTransferListDestroy(&List);
     }
 
+    /**
+     * Resets the object.
+     */
     void reset(void)
     {
         DnDDroppedFilesClose(&DroppedFiles);
@@ -456,6 +548,9 @@ struct GuestDnDRecvCtx : public GuestDnDData
 {
     GuestDnDRecvCtx(void);
 
+    /**
+     * Resets the object.
+     */
     void reset(void);
 
     /** Pointer to guest source class this context belongs to. */
@@ -486,7 +581,7 @@ struct GuestDnDRecvCtx : public GuestDnDData
 };
 
 /**
- * Simple structure for a buffered guest DnD message.
+ * Class for maintainig a (buffered) guest DnD message.
  */
 class GuestDnDMsg
 {
@@ -505,6 +600,9 @@ public:
 
 public:
 
+    /**
+     * Appends a new HGCM parameter to the message and returns the pointer to it.
+     */
     PVBOXHGCMSVCPARM getNextParam(void)
     {
         if (cParms >= cParmsAlloc)
@@ -522,10 +620,30 @@ public:
         return &paParms[cParms++];
     }
 
+    /**
+     * Returns the current parameter count.
+     *
+     * @returns Current parameter count.
+     */
     uint32_t getCount(void) const { return cParms; }
+
+    /**
+     * Returns the pointer to the beginning of the HGCM parameters array. Use with care.
+     *
+     * @returns Pointer to the beginning of the HGCM parameters array.
+     */
     PVBOXHGCMSVCPARM getParms(void) const { return paParms; }
+
+    /**
+     * Returns the message type.
+     *
+     * @returns Message type.
+     */
     uint32_t getType(void) const { return uMsg; }
 
+    /**
+     * Resets the object.
+     */
     void reset(void)
     {
         if (paParms)
@@ -548,6 +666,13 @@ public:
         uMsg = cParms = cParmsAlloc = 0;
     }
 
+    /**
+     * Appends a new message parameter of type pointer.
+     *
+     * @returns VBox status code.
+     * @param   pvBuf           Pointer to data to use.
+     * @param   cbBuf           Size (in bytes) of data to use.
+     */
     int setNextPointer(void *pvBuf, uint32_t cbBuf)
     {
         PVBOXHGCMSVCPARM pParm = getNextParam();
@@ -567,6 +692,12 @@ public:
         return VINF_SUCCESS;
     }
 
+    /**
+     * Appends a new message parameter of type string.
+     *
+     * @returns VBox status code.
+     * @param   pszString       Pointer to string data to use.
+     */
     int setNextString(const char *pszString)
     {
         PVBOXHGCMSVCPARM pParm = getNextParam();
@@ -581,6 +712,12 @@ public:
         return VINF_SUCCESS;
     }
 
+    /**
+     * Appends a new message parameter of type uint32_t.
+     *
+     * @returns VBox status code.
+     * @param   u32Val          uint32_t value to use.
+     */
     int setNextUInt32(uint32_t u32Val)
     {
         PVBOXHGCMSVCPARM pParm = getNextParam();
@@ -591,6 +728,12 @@ public:
         return VINF_SUCCESS;
     }
 
+    /**
+     * Appends a new message parameter of type uint64_t.
+     *
+     * @returns VBox status code.
+     * @param   u64Val          uint64_t value to use.
+     */
     int setNextUInt64(uint64_t u64Val)
     {
         PVBOXHGCMSVCPARM pParm = getNextParam();
@@ -601,6 +744,11 @@ public:
         return VINF_SUCCESS;
     }
 
+    /**
+     * Sets the HGCM message type (function number).
+     *
+     * @param   uMsgType        Message type to set.
+     */
     void setType(uint32_t uMsgType) { uMsg = uMsgType; }
 
 protected:
@@ -717,6 +865,11 @@ class GuestDnD
 {
 public:
 
+    /**
+     * Creates the Singleton GuestDnD object.
+     *
+     * @returns Newly created Singleton object, or NULL on failure.
+     */
     static GuestDnD *createInstance(const ComObjPtr<Guest>& pGuest)
     {
         Assert(NULL == GuestDnD::s_pInstance);
@@ -724,6 +877,9 @@ public:
         return GuestDnD::s_pInstance;
     }
 
+    /**
+     * Destroys the Singleton GuestDnD object.
+     */
     static void destroyInstance(void)
     {
         if (GuestDnD::s_pInstance)
@@ -733,6 +889,11 @@ public:
         }
     }
 
+    /**
+     * Returns the Singleton GuestDnD object.
+     *
+     * @returns Pointer to Singleton GuestDnD object, or NULL if not created yet.
+     */
     static inline GuestDnD *getInstance(void)
     {
         AssertPtr(GuestDnD::s_pInstance);
