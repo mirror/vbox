@@ -40,6 +40,7 @@ extern void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, uns
 extern SHCLX11FMTIDX clipGetTextFormatFromTargets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *pTargets, size_t cTargets);
 extern SHCLX11FMT clipRealFormatForX11Format(SHCLX11FMTIDX uFmtIdx);
 extern Atom clipGetAtom(PSHCLX11CTX pCtx, const char *pcszName);
+extern size_t clipReportMaxX11Formats(void);
 
 
 /*********************************************************************************************************************************
@@ -186,11 +187,12 @@ Atom XInternAtom(Display *, const char *pcsz, int)
 {
     Atom atom = 0;
     unsigned i = 0;
-    while (g_aFormats[i].pcszAtom)
+    const size_t j = clipReportMaxX11Formats();
+
+    for (i = 0; i < j; ++i)
     {
         if (!strcmp(pcsz, g_aFormats[i].pcszAtom))
             atom = (Atom) (i + 0x1000);
-        ++i;
     }
     for (i = 0; i < RT_ELEMENTS(g_tst_apszSupAtoms); ++i)
         if (!strcmp(pcsz, g_tst_apszSupAtoms[i]))
@@ -365,6 +367,7 @@ char *XGetAtomName(Display *display, Atom atom)
     if (0x1000 <= atom && atom < 0x2000)
     {
         unsigned index = atom - 0x1000;
+        AssertReturn(index < clipReportMaxX11Formats(), NULL);
         pcszName = g_aFormats[index].pcszAtom;
     }
     else
@@ -419,12 +422,12 @@ void ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCB
  */
 static SHCLX11FMTIDX tstClipFindX11FormatByAtomText(const char *pcszAtom)
 {
-    unsigned i = 0;
-    while (g_aFormats[i].pcszAtom)
+    const size_t j = clipReportMaxX11Formats();
+
+    for (unsigned i = 0; i < j; ++i)
     {
         if (!strcmp(g_aFormats[i].pcszAtom, pcszAtom))
             return i;
-        ++i;
     }
     return NIL_CLIPX11FORMAT;
 }

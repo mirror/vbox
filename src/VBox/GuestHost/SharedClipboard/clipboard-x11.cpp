@@ -128,8 +128,6 @@ SHCL_X11_DECL(SHCLX11FMTTABLE) g_aFormats[] =
     /** @todo Anything else we need to add here? */
     /** @todo Add Wayland / Weston support. */
 #endif
-    /** @todo r=aeichner The "LAST" in there was causing tstClipboardGH-X11.cpp:XInternAtom to crash because it was reading out side of the array. */
-    { NULL,                                 SHCLX11FMT_INVALID,     VBOX_SHCL_FMT_NONE },
 };
 
 
@@ -184,6 +182,20 @@ typedef struct _CLIPREADX11CBREQ
 
 
 
+#ifdef TESTCASE
+/**
+ * Return the max. number of elements in the X11 format table.
+ * Used by the testing code in tstClipboardGH-X11.cpp
+ * which cannot use RT_ELEMENTS(g_aFormats) directly.
+ *
+ * @return size_t The number of elements in the g_aFormats array.
+ */
+SHCL_X11_DECL(size_t) clipReportMaxX11Formats(void)
+{
+    return (RT_ELEMENTS(g_aFormats));
+}
+#endif
+
 /**
  * Returns the atom corresponding to a supported X11 format.
  *
@@ -194,7 +206,7 @@ typedef struct _CLIPREADX11CBREQ
 static Atom clipAtomForX11Format(PSHCLX11CTX pCtx, SHCLX11FMTIDX uFmtIdx)
 {
     LogFlowFunc(("format=%u -> pcszAtom=%s\n", uFmtIdx, g_aFormats[uFmtIdx].pcszAtom));
-    AssertReturn(uFmtIdx <= RT_ELEMENTS(g_aFormats), 0);
+    AssertReturn(uFmtIdx < RT_ELEMENTS(g_aFormats), 0);
     return clipGetAtom(pCtx, g_aFormats[uFmtIdx].pcszAtom);
 }
 
@@ -206,7 +218,7 @@ static Atom clipAtomForX11Format(PSHCLX11CTX pCtx, SHCLX11FMTIDX uFmtIdx)
  */
 SHCL_X11_DECL(SHCLX11FMT) clipRealFormatForX11Format(SHCLX11FMTIDX uFmtIdx)
 {
-    AssertReturn(uFmtIdx <= RT_ELEMENTS(g_aFormats), SHCLX11FMT_INVALID);
+    AssertReturn(uFmtIdx < RT_ELEMENTS(g_aFormats), SHCLX11FMT_INVALID);
     return g_aFormats[uFmtIdx].enmFmtX11;
 }
 
@@ -218,7 +230,7 @@ SHCL_X11_DECL(SHCLX11FMT) clipRealFormatForX11Format(SHCLX11FMTIDX uFmtIdx)
  */
 static SHCLFORMAT clipVBoxFormatForX11Format(SHCLX11FMTIDX uFmtIdx)
 {
-    AssertReturn(uFmtIdx <= RT_ELEMENTS(g_aFormats), VBOX_SHCL_FMT_NONE);
+    AssertReturn(uFmtIdx < RT_ELEMENTS(g_aFormats), VBOX_SHCL_FMT_NONE);
     return g_aFormats[uFmtIdx].uFmtVBox;
 }
 
@@ -728,7 +740,7 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
     {
         for (i = 0; i < *pcLen; ++i)
         {
-            for (j = 0; j < RT_ELEMENTS(g_aFormats) - 1; ++j) /** @todo r=aeichner Don't include the last invalid format. */
+            for (j = 0; j < RT_ELEMENTS(g_aFormats); ++j)
             {
                 Atom target = XInternAtom(XtDisplay(widget),
                                           g_aFormats[j].pcszAtom, False);
@@ -2345,4 +2357,3 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMAT Format, CLIPREADCBREQ *p
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
