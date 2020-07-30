@@ -1361,54 +1361,38 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumDbgInfo)(PRTLDRMODINTERNAL pMod, cons
 
 
 /**
- * Helper that locates the first allocated section.
+ * Locate the next allocated section by RVA (sh_addr).
+ *
+ * This is a helper for EnumSegments and SegOffsetToRva.
  *
  * @returns Pointer to the section header if found, NULL if none.
- * @param   pShdr   The section header to start searching at.
- * @param   cLeft   The number of section headers left to search. Can be 0.
+ * @param   pModElf     The module instance.
+ * @param   iShdrCur    The current section header.
  */
-static const Elf_Shdr *RTLDRELF_NAME(GetFirstAllocatedSection)(const Elf_Shdr *pShdr, unsigned cLeft)
-{
-    while (cLeft-- > 0)
-    {
-        if (pShdr->sh_flags & SHF_ALLOC)
-            return pShdr;
-        pShdr++;
-    }
-    return NULL;
-}
-
-/**
- * Helper that locates the next allocated section logically by RVA (sh_addr).
- *
- * @returns Pointer to the section header if found, NULL if none.
- * @param   pModElf The module instance.
- * @param   iCur    The current section header.
- */
-static const Elf_Shdr *RTLDRELF_NAME(GetNextAllocatedSection)(PRTLDRMODELF pModElf, unsigned iCur)
+static const Elf_Shdr *RTLDRELF_NAME(GetNextAllocatedSection)(PRTLDRMODELF pModElf, unsigned iShdrCur)
 {
     unsigned const          cShdrs  = pModElf->Ehdr.e_shnum;
     const Elf_Shdr * const  paShdrs = pModElf->paShdrs;
     if (pModElf->fShdrInOrder)
     {
-        for (; iCur < cShdrs; iCur++)
-            if (paShdrs[iCur].sh_flags & SHF_ALLOC)
-                return &paShdrs[iCur];
+        for (unsigned iShdr = iShdrCur + 1; iShdr < cShdrs; iShdr++)
+            if (paShdrs[iShdr].sh_flags & SHF_ALLOC)
+                return &paShdrs[iShdr];
     }
     else
     {
-        Elf_Addr const uEndCur = paShdrs[iCur].sh_addr + paShdrs[iCur].sh_size;
+        Elf_Addr const uEndCur = paShdrs[iShdrCur].sh_addr + paShdrs[iShdrCur].sh_size;
         Elf_Addr       offBest = ~(Elf_Addr)0;
         unsigned       iBest   = cShdrs;
-        for (iCur = pModElf->iFirstSect; iCur < cShdrs; iCur++)
-            if (paShdrs[iCur].sh_flags & SHF_ALLOC)
+        for (unsigned iShdr = pModElf->iFirstSect; iShdr < cShdrs; iShdr++)
+            if ((paShdrs[iShdr].sh_flags & SHF_ALLOC) && iShdr != iShdrCur)
             {
-                Elf_Addr const offDelta = paShdrs[iCur].sh_addr - uEndCur;
+                Elf_Addr const offDelta = paShdrs[iShdr].sh_addr - uEndCur;
                 if (   offDelta < offBest
-                    && paShdrs[iCur].sh_addr >= uEndCur)
+                    && paShdrs[iShdr].sh_addr >= uEndCur)
                 {
                     offBest = offDelta;
-                    iBest = iCur;
+                    iBest   = iShdr;
                 }
             }
         if (iBest < cShdrs)
@@ -1416,6 +1400,7 @@ static const Elf_Shdr *RTLDRELF_NAME(GetNextAllocatedSection)(PRTLDRMODELF pModE
     }
     return NULL;
 }
+
 
 /** @copydoc RTLDROPS::pfnEnumSegments. */
 static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
@@ -1562,8 +1547,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(SegOffsetToRva)(PRTLDRMODINTERNAL pMod, u
     iSeg += pModElf->iFirstSect; /* skip section 0 if not used */
     if (offSeg > pModElf->paShdrs[iSeg].sh_size)
     {
-        const Elf_Shdr *pShdr2 = RTLDRELF_NAME(GetFirstAllocatedSection)(&pModElf->paShdrs[iSeg + 1],
-                                                                         pModElf->Ehdr.e_shnum - iSeg - 1);
+        const Elf_Shdr *pShdr2 = RTLDRELF_NAME(GetNextAllocatedSection)(pModElf, iSeg);
         if (   !pShdr2
             || offSeg > (pShdr2->sh_addr - pModElf->paShdrs[iSeg].sh_addr))
             return VERR_LDR_INVALID_SEG_OFFSET;
