@@ -2807,18 +2807,16 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows));
         pMenu->addSeparator();
 
-#if defined(VBOX_WS_MAC)
         /* Default Connect action: */
         QAction *pDefaultAction = pMenu->addAction(QApplication::translate("UIActionPool", "Connect", "to cloud VM"),
                                                    this, &UIVirtualBoxManager::sltExecuteExternalApplication);
+#if defined(VBOX_WS_MAC)
         pDefaultAction->setProperty("path", "open");
 #elif defined(VBOX_WS_WIN)
-        /* Default Connect action: */
-        QAction *pDefaultAction = pMenu->addAction(QApplication::translate("UIActionPool", "Connect", "to cloud VM"),
-                                                   this, &UIVirtualBoxManager::sltExecuteExternalApplication);
         pDefaultAction->setProperty("path", "powershell");
 #elif defined(VBOX_WS_X11)
-        /// @todo invent something?
+        pDefaultAction->setProperty("path", defaultTerminalApplication());
+        pDefaultAction->setProperty("arguments", "-e sh -c");
 #endif
 
         /* Terminal application/profile action list: */
@@ -3497,6 +3495,43 @@ bool UIVirtualBoxManager::isAtLeastOneItemRunning(const QList<UIVirtualMachineIt
             return true;
     return false;
 }
+
+#ifdef VBOX_WS_X11
+/* static */
+QString UIVirtualBoxManager::defaultTerminalApplication()
+{
+    /* List terminals supporting -e argument: */
+    QStringList knownTerminalNames;
+    knownTerminalNames << "konsole"
+                       << "gnome-terminal"
+                       << "xfce4-terminal"
+                       << "terminator"
+                       << "xterm"
+                       << "aterm"
+                       << "wterm"
+                       << "guake"
+                       << "evilvte"
+                       << "mrxvt"
+                       << "rxvt"
+                       << "rxvt-unicode";
+    /* Search for a first one suitable through shell command -v test: */
+    foreach (const QString &strTerminalName, knownTerminalNames)
+    {
+        const QString strPath = "sh";
+        const QStringList arguments = QStringList() << "-c" << QString("command -v '%1'").arg(strTerminalName);
+        QProcess process;
+        process.start(strPath, arguments, QIODevice::ReadOnly);
+        process.waitForFinished(3000);
+        if (process.exitCode() == 0)
+        {
+            const QString strResult = process.readAllStandardOutput();
+            if (strResult.startsWith('/'))
+                return strResult.trimmed();
+        }
+    }
+    return QString();
+}
+#endif
 
 
 #include "UIVirtualBoxManager.moc"

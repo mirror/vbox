@@ -434,6 +434,11 @@ private:
         static bool isAtLeastOneItemStarted(const QList<UIVirtualMachineItem*> &items);
         /** Returns whether at least one of passed @a items is running. */
         static bool isAtLeastOneItemRunning(const QList<UIVirtualMachineItem*> &items);
+
+#ifdef VBOX_WS_X11
+        /** Tries to guess default X11 terminal emulator. */
+        static QString defaultTerminalApplication();
+#endif
     /** @} */
 
     /** Holds the static instance. */
