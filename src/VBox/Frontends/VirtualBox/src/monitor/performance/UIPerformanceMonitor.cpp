@@ -27,6 +27,7 @@
 #include <QTimer>
 
 /* GUI includes: */
+#include "QIFileDialog.h"
 #include "UICommon.h"
 #include "UIPerformanceMonitor.h"
 #include "UIToolBar.h"
@@ -720,6 +721,14 @@ void UIMetric::reset()
     m_iMaximum = 0;
 }
 
+void UIMetric::toFile(QFile &file) const
+{
+    QTextStream stream(&file);
+    stream << m_strName << "\n";
+    foreach (const quint64& data, m_data[0])
+        stream << data;
+}
+
 /*********************************************************************************************************************************
 *   UIPerformanceMonitor implementation.                                                                              *
 *********************************************************************************************************************************/
@@ -977,6 +986,29 @@ void UIPerformanceMonitor::sltMachineStateChange(const QUuid &uId)
     }
 }
 
+void UIPerformanceMonitor::sltExportMetricsToFile()
+{
+    QString strFileName = QIFileDialog::getSaveFileName("","",this, "");
+
+    QFile data(strFileName);
+    if (data.open(QFile::WriteOnly | QFile::Truncate)) {
+
+        for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
+             iterator != m_metrics.end(); ++iterator)
+        {
+            iterator.value().toFile(data);
+        }
+        data.close();
+
+      //   QTextStream out(&data);
+      // out << "Result: " << qSetFieldWidth(10) << left << 3.14 << 2.7;
+      // writes "Result: 3.14      2.7       "
+  }
+
+
+}
+
+
 void UIPerformanceMonitor::sltGuestAdditionsStateChange()
 {
     bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
@@ -1055,6 +1087,10 @@ void UIPerformanceMonitor::prepareToolBar()
         layout()->addWidget(m_pToolBar);
 #endif
     }
+    // QAction *pAction =
+    //     actionPool()->action(UIActionIndex_M_Performance_S_Export);
+    // if (pAction)
+    //     connect(pAction, &QAction::triggered, this, &UIPerformanceMonitor::sltExportMetricsToFile);
 }
 
 bool UIPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)

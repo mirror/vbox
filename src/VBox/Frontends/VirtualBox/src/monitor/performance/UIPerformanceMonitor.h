@@ -25,6 +25,7 @@
 #include <QWidget>
 #include <QMap>
 #include <QQueue>
+#include <QTextStream>
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -79,6 +80,8 @@ public:
     bool isInitialized() const;
 
     void reset();
+
+    void toFile(QFile &file) const;
 
 private:
 
@@ -136,6 +139,7 @@ private slots:
     void sltTimeout();
     /** Stop updating the charts if/when the machine state changes something other than KMachineState_Running. */
     void sltMachineStateChange(const QUuid &uId);
+    void sltExportMetricsToFile();
 
 private:
 
