@@ -1054,6 +1054,9 @@ int GuestDnDSource::i_receiveData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
     {
         LogRel(("DnD: Receiving data from guest failed with %Rrc\n", rc));
 
+        /* Let the guest side know first. */
+        sendCancel();
+
         /* Reset state. */
         i_reset();
     }
@@ -1283,6 +1286,9 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
 
             rc2 = pCtx->pResp->setProgress(100, DND_PROGRESS_CANCELLED);
             AssertRC(rc2);
+
+            /* Cancelling is not an error, just set success here. */
+            rc  = VINF_SUCCESS;
         }
         else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
@@ -1290,8 +1296,6 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
                                            rc, GuestDnDSource::i_hostErrorToString(rc));
             AssertRC(rc2);
         }
-
-        rc = VINF_SUCCESS; /* The error was handled by the setProgress() calls above. */
     }
 
     DnDDroppedFilesClose(pDF);

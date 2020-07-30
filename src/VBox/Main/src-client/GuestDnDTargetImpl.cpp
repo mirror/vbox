@@ -794,7 +794,10 @@ int GuestDnDTarget::i_sendData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout)
     }
 
     if (RT_FAILURE(rc))
+    {
         LogRel(("DnD: Sending data to guest failed with %Rrc\n", rc));
+        sendCancel();
+    }
 
     /* Reset state. */
     i_reset();
@@ -1485,6 +1488,9 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
 
             rc2 = pCtx->pResp->setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
             AssertRC(rc2);
+
+            /* Cancelling is not an error, just set success here. */
+            rc  = VINF_SUCCESS;
         }
         else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
@@ -1493,8 +1499,6 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
                                                GuestDnDTarget::i_hostErrorToString(rc));
             AssertRC(rc2);
         }
-
-        rc = VINF_SUCCESS; /* The error was handled by the setProgress() calls above. */
     }
 
     LogFlowFuncLeaveRC(rc);
