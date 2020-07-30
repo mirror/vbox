@@ -997,7 +997,7 @@ protected:
 
     /** Shared (internal) IDnDBase method implementations.
      * @{ */
-    HRESULT i_isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported);
+    bool i_isFormatSupported(const com::Utf8Str &aFormat) const;
     const GuestDnDMIMEList &i_getFormats(void) const;
     HRESULT i_addFormats(const GuestDnDMIMEList &aFormats);
     HRESULT i_removeFormats(const GuestDnDMIMEList &aFormats);

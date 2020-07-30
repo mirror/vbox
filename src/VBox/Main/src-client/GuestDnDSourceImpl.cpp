@@ -185,7 +185,9 @@ HRESULT GuestDnDSource::isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSu
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return GuestDnDBase::i_isFormatSupported(aFormat, aSupported);
+    *aSupported = GuestDnDBase::i_isFormatSupported(aFormat) ? TRUE : FALSE;
+
+    return S_OK;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
