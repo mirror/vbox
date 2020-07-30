@@ -855,7 +855,8 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
             Assert(cbData);
 
             /* Use the dropped files directory as the root directory for the current transfer. */
-            rc = DnDTransferListInitEx(&pMeta->u.URI.Transfer, DnDDroppedFilesGetDirAbs(&droppedFiles));
+            rc = DnDTransferListInitEx(&pMeta->u.URI.Transfer, DnDDroppedFilesGetDirAbs(&droppedFiles),
+                                       DNDTRANSFERLISTFMT_NATIVE);
             if (RT_SUCCESS(rc))
             {
                 rc = DnDTransferListAppendRootsFromBuffer(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
@@ -1736,6 +1737,7 @@ static int vbglR3DnDGHSendTransferData(PVBGLR3GUESTDNDCMDCTX pCtx, PDNDTRANSFERL
  * @param   pCtx                DnD context to use.
  * @param   pszFormat           In which format the data will be sent.
  * @param   pvData              Data block to send.
+ *                              For URI data this must contain the absolute local URI paths, separated by DND_PATH_SEPARATOR.
  * @param   cbData              Size (in bytes) of data block to send.
  */
 VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszFormat, void *pvData, uint32_t cbData)
