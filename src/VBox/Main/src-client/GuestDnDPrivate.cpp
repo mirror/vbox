@@ -944,13 +944,14 @@ bool GuestDnD::isFormatInFormatList(const com::Utf8Str &strFormat, const GuestDn
  * Static helper function to create a GuestDnDMIMEList out of a format list string.
  *
  * @returns MIME list object.
- * @param   strFormats          List of formats (separated by DND_FORMATS_SEPARATOR) to convert.
+ * @param   strFormats          List of formats to convert.
+ * @param   strSep              Separator to use. If not specified, DND_FORMATS_SEPARATOR will be used.
  */
 /* static */
-GuestDnDMIMEList GuestDnD::toFormatList(const com::Utf8Str &strFormats)
+GuestDnDMIMEList GuestDnD::toFormatList(const com::Utf8Str &strFormats, const com::Utf8Str &strSep /* = DND_FORMATS_SEPARATOR */)
 {
     GuestDnDMIMEList lstFormats;
-    RTCList<RTCString> lstFormatsTmp = strFormats.split(DND_FORMATS_SEPARATOR);
+    RTCList<RTCString> lstFormatsTmp = strFormats.split(strSep);
 
     for (size_t i = 0; i < lstFormatsTmp.size(); i++)
         lstFormats.push_back(com::Utf8Str(lstFormatsTmp.at(i)));
