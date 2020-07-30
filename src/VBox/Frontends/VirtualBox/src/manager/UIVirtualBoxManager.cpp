@@ -1277,15 +1277,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
     /* Get cloud machine to acquire serial command: */
     const CCloudMachine comMachine = pCloudItem->machine();
 
-#if defined(VBOX_WS_WIN)
-    /* Gather arguments: */
-    QStringList arguments;
-    arguments << strArguments;
-    arguments << comMachine.GetSerialConsoleCommandWindows();
-
-    /* Execute console application finally: */
-    QProcess::startDetached(QString("%1 %2").arg(strPath, arguments.join(' ')));
-#elif defined(VBOX_WS_MAC)
+#if defined(VBOX_WS_MAC)
     /* Gather arguments: */
     QStringList arguments;
     arguments << parseShellArguments(strArguments);
@@ -1312,7 +1304,15 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 
     /* Execute console application finally: */
     QProcess::startDetached(strPath, arguments);
-#else /* !VBOX_WS_WIN && !VBOX_WS_MAC */
+#elif defined(VBOX_WS_WIN)
+    /* Gather arguments: */
+    QStringList arguments;
+    arguments << strArguments;
+    arguments << comMachine.GetSerialConsoleCommandWindows();
+
+    /* Execute console application finally: */
+    QProcess::startDetached(QString("%1 %2").arg(strPath, arguments.join(' ')));
+#elif defined(VBOX_WS_X11)
     /* Gather arguments: */
     QStringList arguments;
     arguments << parseShellArguments(strArguments);
@@ -1320,7 +1320,7 @@ void UIVirtualBoxManager::sltExecuteExternalApplication()
 
     /* Execute console application finally: */
     QProcess::startDetached(strPath, arguments);
-#endif /* !VBOX_WS_WIN && !VBOX_WS_MAC */
+#endif /* VBOX_WS_X11 */
 }
 
 void UIVirtualBoxManager::sltPerformCopyCommandSerialUnix()
@@ -2807,15 +2807,18 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows));
         pMenu->addSeparator();
 
+#if defined(VBOX_WS_MAC)
         /* Default Connect action: */
         QAction *pDefaultAction = pMenu->addAction(QApplication::translate("UIActionPool", "Connect", "to cloud VM"),
                                                    this, &UIVirtualBoxManager::sltExecuteExternalApplication);
-#if defined(VBOX_WS_MAC)
         pDefaultAction->setProperty("path", "open");
 #elif defined(VBOX_WS_WIN)
+        /* Default Connect action: */
+        QAction *pDefaultAction = pMenu->addAction(QApplication::translate("UIActionPool", "Connect", "to cloud VM"),
+                                                   this, &UIVirtualBoxManager::sltExecuteExternalApplication);
         pDefaultAction->setProperty("path", "powershell");
 #elif defined(VBOX_WS_X11)
-        Q_UNUSED(pDefaultAction);
+        /// @todo invent something?
 #endif
 
         /* Terminal application/profile action list: */
