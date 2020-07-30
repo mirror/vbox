@@ -641,8 +641,10 @@ public:
       , m_hX11Thread(NIL_RTTHREAD)
       , m_hEventSem(NIL_RTSEMEVENT)
       , m_pCurDnD(NULL)
-      , m_fSrvStopping(false)
-    {}
+      , m_fStop(false)
+    {
+        RT_ZERO(m_dndCtx);
+    }
 
     int init(void);
     int run(bool fDaemonised = false);
@@ -664,9 +666,12 @@ private:
     RTCRITSECT           m_eventQueueCS;
     RTTHREAD             m_hHGCMThread;
     RTTHREAD             m_hX11Thread;
+    /** This service' DnD command context. */
+    VBGLR3GUESTDNDCMDCTX m_dndCtx;
     RTSEMEVENT           m_hEventSem;
     DragInstance        *m_pCurDnD;
-    bool                 m_fSrvStopping;
+    /** Stop indicator flag to signal the thread that it should shut down. */
+    bool                 m_fStop;
 
     friend class DragInstance;
 };
@@ -3044,42 +3049,39 @@ int DragAndDropService::init(void)
     do
     {
         rc = RTSemEventCreate(&m_hEventSem);
-        if (RT_FAILURE(rc))
-            break;
+        AssertRCBreak(rc);
 
         rc = RTCritSectInit(&m_eventQueueCS);
-        if (RT_FAILURE(rc))
-            break;
+        AssertRCBreak(rc);
+
+        rc = VbglR3DnDConnect(&m_dndCtx);
+        AssertRCBreak(rc);
 
         /* Event thread for events coming from the HGCM device. */
         rc = RTThreadCreate(&m_hHGCMThread, hgcmEventThread, this,
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE, "dndHGCM");
-        if (RT_FAILURE(rc))
-            break;
+        AssertRCBreak(rc);
 
         rc = RTThreadUserWait(m_hHGCMThread, 10 * 1000 /* 10s timeout */);
-        if (RT_FAILURE(rc))
-            break;
+        AssertRCBreak(rc);
 
-        if (ASMAtomicReadBool(&m_fSrvStopping))
+        if (ASMAtomicReadBool(&m_fStop))
             break;
 
         /* Event thread for events coming from the x11 system. */
         rc = RTThreadCreate(&m_hX11Thread, x11EventThread, this,
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE, "dndX11");
-        if (RT_FAILURE(rc))
-            break;
+        AssertRCBreak(rc);
 
         rc = RTThreadUserWait(m_hX11Thread, 10 * 1000 /* 10s timeout */);
-        if (RT_FAILURE(rc))
-            break;
+        AssertRCBreak(rc);
 
-        if (ASMAtomicReadBool(&m_fSrvStopping))
+        if (ASMAtomicReadBool(&m_fStop))
             break;
 
     } while (0);
 
-    if (m_fSrvStopping)
+    if (m_fStop)
         rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
 
     if (RT_FAILURE(rc))
@@ -3271,7 +3273,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
              */
             XFlush(m_pDisplay);
 
-        } while (!ASMAtomicReadBool(&m_fSrvStopping));
+        } while (!ASMAtomicReadBool(&m_fStop));
 
         VBClLogInfo("Stopped with rc=%Rrc\n", rc);
 
@@ -3291,9 +3293,13 @@ void DragAndDropService::cleanup(void)
 {
     LogFlowFuncEnter();
 
-    VBClLogInfo("Terminating threads ...\n");
+    VBClLogInfo("Terminating ...\n");
 
-    ASMAtomicXchgBool(&m_fSrvStopping, true);
+    /* Set stop flag first. */
+    ASMAtomicXchgBool(&m_fStop, true);
+
+    /* Disconnect from the HGCM host service, which in turn will make the HGCM thread stop. */
+    VbglR3DnDDisconnect(&m_dndCtx);
 
     /*
      * Wait for threads to terminate.
@@ -3301,11 +3307,9 @@ void DragAndDropService::cleanup(void)
     int rcThread, rc2;
     if (m_hHGCMThread != NIL_RTTHREAD)
     {
-#if 0 /** @todo Does not work because we don't cancel the HGCM call! */
+        VBClLogInfo("Terminating HGCM thread ...\n");
+
         rc2 = RTThreadWait(m_hHGCMThread, 30 * 1000 /* 30s timeout */, &rcThread);
-#else
-        rc2 = RTThreadWait(m_hHGCMThread, 200 /* 200ms timeout */, &rcThread);
-#endif
         if (RT_SUCCESS(rc2))
             rc2 = rcThread;
 
@@ -3315,11 +3319,9 @@ void DragAndDropService::cleanup(void)
 
     if (m_hX11Thread != NIL_RTTHREAD)
     {
-#if 0
-        rc2 = RTThreadWait(m_hX11Thread, 30 * 1000 /* 30s timeout */, &rcThread);
-#else
+        VBClLogInfo("Terminating X11 thread ...\n");
+
         rc2 = RTThreadWait(m_hX11Thread, 200 /* 200ms timeout */, &rcThread);
-#endif
         if (RT_SUCCESS(rc2))
             rc2 = rcThread;
 
@@ -3348,26 +3350,10 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
 {
     AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
     DragAndDropService *pThis = static_cast<DragAndDropService*>(pvUser);
-    AssertPtr(pThis);
-
-    /* This thread has an own DnD context, e.g. an own client ID. */
-    VBGLR3GUESTDNDCMDCTX dndCtx;
-
-    /*
-     * Initialize thread.
-     */
-    int rc = VbglR3DnDConnect(&dndCtx);
-
-    /* Set stop indicator on failure. */
-    if (RT_FAILURE(rc))
-        ASMAtomicXchgBool(&pThis->m_fSrvStopping, true);
 
     /* Let the service instance know in any case. */
-    int rc2 = RTThreadUserSignal(hThread);
-    AssertRC(rc2);
-
-    if (RT_FAILURE(rc))
-        return rc;
+    int rc = RTThreadUserSignal(hThread);
+    AssertRCReturn(rc, rc);
 
     /* Number of invalid messages skipped in a row. */
     int cMsgSkippedInvalid = 0;
@@ -3379,7 +3365,7 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
         e.enmType = DnDEvent::DnDEventType_HGCM;
 
         /* Wait for new events. */
-        rc = VbglR3DnDEventGetNext(&dndCtx, &e.hgcm);
+        rc = VbglR3DnDEventGetNext(&pThis->m_dndCtx, &e.hgcm);
         if (RT_SUCCESS(rc))
         {
             cMsgSkippedInvalid = 0; /* Reset skipped messages count. */
@@ -3391,21 +3377,26 @@ DECLCALLBACK(int) DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pv
         }
         else
         {
-            VBClLogError("Processing next message failed with rc=%Rrc\n", rc);
+            if (rc == VERR_INTERRUPTED) /* Can happen due to disconnect, for instance. */
+                rc = VINF_SUCCESS;
 
-            /* Old(er) hosts either are broken regarding DnD support or otherwise
-             * don't support the stuff we do on the guest side, so make sure we
-             * don't process invalid messages forever. */
-            if (cMsgSkippedInvalid++ > 32)
+            if (RT_FAILURE(rc))
             {
-                VBClLogError("Too many invalid/skipped messages from host, exiting ...\n");
-                break;
+                VBClLogError("Processing next message failed with rc=%Rrc\n", rc);
+
+                /* Old(er) hosts either are broken regarding DnD support or otherwise
+                 * don't support the stuff we do on the guest side, so make sure we
+                 * don't process invalid messages forever. */
+
+                if (cMsgSkippedInvalid++ > 32)
+                {
+                    VBClLogError("Too many invalid/skipped messages from host, exiting ...\n");
+                    break;
+                }
             }
         }
 
-    } while (!ASMAtomicReadBool(&pThis->m_fSrvStopping));
-
-    VbglR3DnDDisconnect(&dndCtx);
+    } while (!ASMAtomicReadBool(&pThis->m_fStop));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3432,7 +3423,7 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
 
     /* Set stop indicator on failure. */
     if (RT_FAILURE(rc))
-        ASMAtomicXchgBool(&pThis->m_fSrvStopping, true);
+        ASMAtomicXchgBool(&pThis->m_fStop, true);
 
     /* Let the service instance know in any case. */
     int rc2 = RTThreadUserSignal(hThread);
@@ -3484,7 +3475,7 @@ DECLCALLBACK(int) DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvU
         else
             RTThreadSleep(25 /* ms */);
 
-    } while (!ASMAtomicReadBool(&pThis->m_fSrvStopping));
+    } while (!ASMAtomicReadBool(&pThis->m_fStop));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
