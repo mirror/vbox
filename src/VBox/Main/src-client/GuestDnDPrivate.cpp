@@ -745,7 +745,7 @@ GuestDnD::~GuestDnD(void)
 HRESULT GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const
 {
     /** @todo r=andy Save the current screen's shifting coordinates to speed things up.
-     *               Only query for new offsets when the screen ID has changed. */
+     *               Only query for new offsets when the screen ID or the screen's resolution has changed. */
 
     /* For multi-monitor support we need to add shift values to the coordinates
      * (depending on the screen number). */
