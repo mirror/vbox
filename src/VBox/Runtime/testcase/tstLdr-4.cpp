@@ -60,6 +60,16 @@ static DECLCALLBACK(int) testEnumSegment(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void
              , *piSeg, pSeg->RVA, pSeg->cbMapped, pSeg->pszName,
              pSeg->LinkAddress, pSeg->cb, pSeg->Alignment, pSeg->fProt, pSeg->offFile);
 
+    if (pSeg->RVA != NIL_RTLDRADDR)
+    {
+        RTTESTI_CHECK(pSeg->cbMapped != NIL_RTLDRADDR);
+        RTTESTI_CHECK(pSeg->cbMapped >= pSeg->cb);
+    }
+    else
+    {
+        RTTESTI_CHECK(pSeg->cbMapped == NIL_RTLDRADDR);
+    }
+
     /*
      * Do some address conversion tests:
      */
