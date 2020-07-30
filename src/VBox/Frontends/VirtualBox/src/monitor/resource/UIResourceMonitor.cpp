@@ -194,6 +194,7 @@ protected:
 
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) /* override */;
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
 
 private slots:
 
@@ -714,6 +715,13 @@ void UIVMResourceMonitorTableView::selectionChanged(const QItemSelection &select
 {
     emit sigSelectionChanged(selected, deselected);
     QTableView::selectionChanged(selected, deselected);
+}
+
+void UIVMResourceMonitorTableView::mousePressEvent(QMouseEvent *pEvent)
+{
+    if (!indexAt(pEvent->pos()).isValid())
+        clearSelection();
+    QTableView::mousePressEvent(pEvent);
 }
 
 void UIVMResourceMonitorTableView::resizeHeaders()
@@ -1303,7 +1311,6 @@ void UIResourceMonitorWidget::retranslateUi()
 
     if (m_pModel)
         m_pModel->setColumnCaptions(m_columnTitles);
-
 
     computeMinimumColumnWidths();
 }
