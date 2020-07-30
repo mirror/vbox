@@ -1178,14 +1178,11 @@ HRESULT GuestDnDBase::i_isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSu
 /**
  * Returns the currently supported DnD formats.
  *
- * @returns HRESULT
- * @param   aFormats            Where to store list of the supported DnD formats.
+ * @returns List of the supported DnD formats.
  */
-HRESULT GuestDnDBase::i_getFormats(GuestDnDMIMEList &aFormats)
+const GuestDnDMIMEList &GuestDnDBase::i_getFormats(void) const
 {
-    aFormats = m_lstFmtSupported;
-
-    return S_OK;
+    return m_lstFmtSupported;
 }
 
 /**

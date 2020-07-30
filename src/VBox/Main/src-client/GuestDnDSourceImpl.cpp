@@ -200,7 +200,9 @@ HRESULT GuestDnDSource::getFormats(GuestDnDMIMEList &aFormats)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return GuestDnDBase::i_getFormats(aFormats);
+    aFormats = GuestDnDBase::i_getFormats();
+
+    return S_OK;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
