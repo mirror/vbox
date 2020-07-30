@@ -5254,6 +5254,13 @@ static int supdrvLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImag
                                           pv, pszSymbol, iSeg, pImage->paSegments[iSeg].off, pImage->paSegments[iSeg].cb,
                                           pImage->paSegments[iSeg].fProt);
             }
+        if (iSeg >= pImage->cSegments)
+        {
+            supdrvLdrUnlock(pDevExt);
+            return supdrvLdrLoadError(VERR_INVALID_PARAMETER, pReq,
+                                      "Bad entry point %p given for %s: no matching segment found (RVA %#zx)!",
+                                      pv, pszSymbol, uRva);
+        }
 
         if (pImage->fNative)
         {
@@ -5334,6 +5341,26 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         return supdrvLdrLoadError(VERR_PERMISSION_DENIED, pReq, "Loader is locked down");
     }
 
+    /*
+     * Copy the segments before we start using supdrvLdrValidatePointer for entrypoint validation.
+     */
+    pImage->cSegments = pReq->u.In.cSegments;
+    {
+        size_t  cbSegments = pImage->cSegments * sizeof(SUPLDRSEG);
+        pImage->paSegments = (PSUPLDRSEG)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSegments], cbSegments);
+        if (pImage->paSegments) /* Align the last segment size to avoid upsetting RTR0MemObjProtect. */ /** @todo relax RTR0MemObjProtect */
+            pImage->paSegments[pImage->cSegments - 1].cb = RT_ALIGN_32(pImage->paSegments[pImage->cSegments - 1].cb, PAGE_SIZE);
+        else
+        {
+            supdrvLdrUnlock(pDevExt);
+            return supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for segment table: %#x", cbSegments);
+        }
+        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+    }
+
+    /*
+     * Validate entrypoints.
+     */
     switch (pReq->u.In.eEPType)
     {
         case SUPLDRLOADEP_NOTHING:
@@ -5403,18 +5430,6 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             pImage->paSymbols = (PSUPLDRSYM)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
             if (!pImage->paSymbols)
                 rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for symbol table: %#x", cbSymbols);
-            SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
-        }
-
-        pImage->cSegments = pReq->u.In.cSegments;
-        if (RT_SUCCESS(rc))
-        {
-            size_t  cbSegments = pImage->cSegments * sizeof(SUPLDRSEG);
-            pImage->paSegments = (PSUPLDRSEG)RTMemDup(&pReq->u.In.abImage[pReq->u.In.offSegments], cbSegments);
-            if (pImage->paSegments) /* Align the last segment size to avoid upsetting RTR0MemObjProtect. */ /** @todo relax RTR0MemObjProtect */
-                pImage->paSegments[pImage->cSegments - 1].cb = RT_ALIGN_32(pImage->paSegments[pImage->cSegments - 1].cb, PAGE_SIZE);
-            else
-                rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for segment table: %#x", cbSegments);
             SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
         }
     }
