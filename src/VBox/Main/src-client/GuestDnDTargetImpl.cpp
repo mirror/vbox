@@ -316,14 +316,14 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_ENTER);
         if (m_DataBase.uProtocolVersion >= 3)
-            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-        Msg.setNextUInt32(aScreenId);
-        Msg.setNextUInt32(aX);
-        Msg.setNextUInt32(aY);
-        Msg.setNextUInt32(dndActionDefault);
-        Msg.setNextUInt32(dndActionListAllowed);
-        Msg.setNextPointer((void *)strFormats.c_str(), cbFormats);
-        Msg.setNextUInt32(cbFormats);
+            Msg.appendUInt32(0); /** @todo ContextID not used yet. */
+        Msg.appendUInt32(aScreenId);
+        Msg.appendUInt32(aX);
+        Msg.appendUInt32(aY);
+        Msg.appendUInt32(dndActionDefault);
+        Msg.appendUInt32(dndActionListAllowed);
+        Msg.appendPointer((void *)strFormats.c_str(), cbFormats);
+        Msg.appendUInt32(cbFormats);
 
         rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
@@ -394,14 +394,14 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_MOVE);
         if (m_DataBase.uProtocolVersion >= 3)
-            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-        Msg.setNextUInt32(aScreenId);
-        Msg.setNextUInt32(aX);
-        Msg.setNextUInt32(aY);
-        Msg.setNextUInt32(dndActionDefault);
-        Msg.setNextUInt32(dndActionListAllowed);
-        Msg.setNextPointer((void *)strFormats.c_str(), cbFormats);
-        Msg.setNextUInt32(cbFormats);
+            Msg.appendUInt32(0); /** @todo ContextID not used yet. */
+        Msg.appendUInt32(aScreenId);
+        Msg.appendUInt32(aX);
+        Msg.appendUInt32(aY);
+        Msg.appendUInt32(dndActionDefault);
+        Msg.appendUInt32(dndActionListAllowed);
+        Msg.appendPointer((void *)strFormats.c_str(), cbFormats);
+        Msg.appendUInt32(cbFormats);
 
         rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
@@ -441,7 +441,7 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_HG_EVT_LEAVE);
     if (m_DataBase.uProtocolVersion >= 3)
-        Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
+        Msg.appendUInt32(0); /** @todo ContextID not used yet. */
 
     int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
     if (RT_SUCCESS(rc))
@@ -517,14 +517,14 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_DROPPED);
         if (m_DataBase.uProtocolVersion >= 3)
-            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-        Msg.setNextUInt32(aScreenId);
-        Msg.setNextUInt32(aX);
-        Msg.setNextUInt32(aY);
-        Msg.setNextUInt32(dndActionDefault);
-        Msg.setNextUInt32(dndActionListAllowed);
-        Msg.setNextPointer((void*)strFormats.c_str(), cbFormats);
-        Msg.setNextUInt32(cbFormats);
+            Msg.appendUInt32(0); /** @todo ContextID not used yet. */
+        Msg.appendUInt32(aScreenId);
+        Msg.appendUInt32(aX);
+        Msg.appendUInt32(aY);
+        Msg.appendUInt32(dndActionDefault);
+        Msg.appendUInt32(dndActionListAllowed);
+        Msg.appendPointer((void*)strFormats.c_str(), cbFormats);
+        Msg.appendUInt32(cbFormats);
 
         int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(vrc))
@@ -837,21 +837,21 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
 
         if (m_DataBase.uProtocolVersion < 3)
         {
-            Msg.setNextUInt32(pCtx->uScreenID);                                 /* uScreenId */
-            Msg.setNextPointer(unconst(pcszFmt), (uint32_t)cbFmt);              /* pvFormat */
-            Msg.setNextUInt32((uint32_t)cbFmt);                                 /* cbFormat */
-            Msg.setNextPointer(pvChunk, (uint32_t)cbChunk);                     /* pvData */
+            Msg.appendUInt32(pCtx->uScreenID);                                 /* uScreenId */
+            Msg.appendPointer(unconst(pcszFmt), (uint32_t)cbFmt);              /* pvFormat */
+            Msg.appendUInt32((uint32_t)cbFmt);                                 /* cbFormat */
+            Msg.appendPointer(pvChunk, (uint32_t)cbChunk);                     /* pvData */
             /* Fill in the current data block size to send.
              * Note: Only supports uint32_t. */
-            Msg.setNextUInt32((uint32_t)cbChunk);                               /* cbData */
+            Msg.appendUInt32((uint32_t)cbChunk);                               /* cbData */
         }
         else
         {
-            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-            Msg.setNextPointer(pvChunk, (uint32_t)cbChunk);                     /* pvData */
-            Msg.setNextUInt32((uint32_t)cbChunk);                               /* cbData */
-            Msg.setNextPointer(NULL, 0);                                        /** @todo pvChecksum; not used yet. */
-            Msg.setNextUInt32(0);                                               /** @todo cbChecksum; not used yet. */
+            Msg.appendUInt32(0); /** @todo ContextID not used yet. */
+            Msg.appendPointer(pvChunk, (uint32_t)cbChunk);                     /* pvData */
+            Msg.appendUInt32((uint32_t)cbChunk);                               /* cbData */
+            Msg.appendPointer(NULL, 0);                                        /** @todo pvChecksum; not used yet. */
+            Msg.appendUInt32(0);                                               /** @todo cbChecksum; not used yet. */
         }
 
         rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
@@ -892,18 +892,18 @@ int GuestDnDTarget::i_sendMetaDataHeader(GuestDnDSendCtx *pCtx)
     LogRel2(("DnD: Sending meta data header to guest (%RU64 bytes total data, %RU32 bytes meta data, %RU64 objects)\n",
              pCtx->getTotalAnnounced(), pCtx->Meta.cbData, pCtx->Transfer.cObjToProcess));
 
-    Msg.setNextUInt32(0);                                                /** @todo uContext; not used yet. */
-    Msg.setNextUInt32(0);                                                /** @todo uFlags; not used yet. */
-    Msg.setNextUInt32(pCtx->uScreenID);                                  /* uScreen */
-    Msg.setNextUInt64(pCtx->getTotalAnnounced());                        /* cbTotal */
-    Msg.setNextUInt32((uint32_t)pCtx->Meta.cbData);                      /* cbMeta*/
-    Msg.setNextPointer(unconst(pCtx->Meta.strFmt.c_str()), (uint32_t)pCtx->Meta.strFmt.length() + 1); /* pvMetaFmt */
-    Msg.setNextUInt32((uint32_t)pCtx->Meta.strFmt.length() + 1);                                      /* cbMetaFmt */
-    Msg.setNextUInt64(pCtx->Transfer.cObjToProcess);                     /* cObjects */
-    Msg.setNextUInt32(0);                                                /** @todo enmCompression; not used yet. */
-    Msg.setNextUInt32(0);                                                /** @todo enmChecksumType; not used yet. */
-    Msg.setNextPointer(NULL, 0);                                         /** @todo pvChecksum; not used yet. */
-    Msg.setNextUInt32(0);                                                /** @todo cbChecksum; not used yet. */
+    Msg.appendUInt32(0);                                                /** @todo uContext; not used yet. */
+    Msg.appendUInt32(0);                                                /** @todo uFlags; not used yet. */
+    Msg.appendUInt32(pCtx->uScreenID);                                  /* uScreen */
+    Msg.appendUInt64(pCtx->getTotalAnnounced());                        /* cbTotal */
+    Msg.appendUInt32((uint32_t)pCtx->Meta.cbData);                      /* cbMeta*/
+    Msg.appendPointer(unconst(pCtx->Meta.strFmt.c_str()), (uint32_t)pCtx->Meta.strFmt.length() + 1); /* pvMetaFmt */
+    Msg.appendUInt32((uint32_t)pCtx->Meta.strFmt.length() + 1);                                      /* cbMetaFmt */
+    Msg.appendUInt64(pCtx->Transfer.cObjToProcess);                     /* cObjects */
+    Msg.appendUInt32(0);                                                /** @todo enmCompression; not used yet. */
+    Msg.appendUInt32(0);                                                /** @todo enmChecksumType; not used yet. */
+    Msg.appendPointer(NULL, 0);                                         /** @todo pvChecksum; not used yet. */
+    Msg.appendUInt32(0);                                                /** @todo cbChecksum; not used yet. */
 
     int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
 
@@ -925,10 +925,10 @@ int GuestDnDTarget::i_sendDirectory(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pO
 
     pMsg->setType(HOST_DND_HG_SND_DIR);
     if (m_DataBase.uProtocolVersion >= 3)
-        pMsg->setNextUInt32(0); /** @todo ContextID not used yet. */
-    pMsg->setNextString(pcszDstPath);                    /* path */
-    pMsg->setNextUInt32((uint32_t)(cchPath + 1));        /* path length, including terminator. */
-    pMsg->setNextUInt32(DnDTransferObjectGetMode(pObj)); /* mode */
+        pMsg->appendUInt32(0); /** @todo ContextID not used yet. */
+    pMsg->appendString(pcszDstPath);                    /* path */
+    pMsg->appendUInt32((uint32_t)(cchPath + 1));        /* path length, including terminator. */
+    pMsg->appendUInt32(DnDTransferObjectGetMode(pObj)); /* mode */
 
     return VINF_SUCCESS;
 }
@@ -985,12 +985,12 @@ int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
                  * The just registered callback will be called by the guest afterwards.
                  */
                 pMsg->setType(HOST_DND_HG_SND_FILE_HDR);
-                pMsg->setNextUInt32(0); /** @todo ContextID not used yet. */
-                pMsg->setNextString(pcszDstPath);                    /* pvName */
-                pMsg->setNextUInt32((uint32_t)(cchDstPath + 1));     /* cbName */
-                pMsg->setNextUInt32(0);                              /* uFlags */
-                pMsg->setNextUInt32(fMode);                          /* fMode */
-                pMsg->setNextUInt64(cbSize);                         /* uSize */
+                pMsg->appendUInt32(0); /** @todo ContextID not used yet. */
+                pMsg->appendString(pcszDstPath);                    /* pvName */
+                pMsg->appendUInt32((uint32_t)(cchDstPath + 1));     /* cbName */
+                pMsg->appendUInt32(0);                              /* uFlags */
+                pMsg->appendUInt32(fMode);                          /* fMode */
+                pMsg->appendUInt64(cbSize);                         /* uSize */
 
                 LogRel2(("DnD: Transferring host file '%s' to guest (as '%s', %zu bytes, mode %#x)\n",
                          pcszSrcPath, pcszDstPath, cbSize, fMode));
@@ -1049,12 +1049,12 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
     {
         const size_t cchDstPath = RTStrNLen(pcszDstPath, RTPATH_MAX);
 
-        pMsg->setNextString(pcszDstPath);              /* pvName */
-        pMsg->setNextUInt32((uint32_t)cchDstPath + 1); /* cbName */
+        pMsg->appendString(pcszDstPath);              /* pvName */
+        pMsg->appendUInt32((uint32_t)cchDstPath + 1); /* cbName */
     }
     else if (m_DataBase.uProtocolVersion >= 2)
     {
-        pMsg->setNextUInt32(0);                        /** @todo ContextID not used yet. */
+        pMsg->appendUInt32(0);                        /** @todo ContextID not used yet. */
     }
 
     void *pvBuf  = pCtx->Transfer.pvScratchBuf;
@@ -1071,20 +1071,20 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
 
         if (m_DataBase.uProtocolVersion <= 1)
         {
-            pMsg->setNextPointer(pvBuf, cbRead);                            /* pvData */
-            pMsg->setNextUInt32(cbRead);                                    /* cbData */
-            pMsg->setNextUInt32(DnDTransferObjectGetMode(pObj));            /* fMode */
+            pMsg->appendPointer(pvBuf, cbRead);                            /* pvData */
+            pMsg->appendUInt32(cbRead);                                    /* cbData */
+            pMsg->appendUInt32(DnDTransferObjectGetMode(pObj));            /* fMode */
         }
         else /* Protocol v2 and up. */
         {
-            pMsg->setNextPointer(pvBuf, cbRead);                            /* pvData */
-            pMsg->setNextUInt32(cbRead);                                    /* cbData */
+            pMsg->appendPointer(pvBuf, cbRead);                            /* pvData */
+            pMsg->appendUInt32(cbRead);                                    /* cbData */
 
             if (m_DataBase.uProtocolVersion >= 3)
             {
                 /** @todo Calculate checksum. */
-                pMsg->setNextPointer(NULL, 0);                              /* pvChecksum */
-                pMsg->setNextUInt32(0);                                     /* cbChecksum */
+                pMsg->appendPointer(NULL, 0);                              /* pvChecksum */
+                pMsg->appendUInt32(0);                                     /* cbChecksum */
             }
         }
 

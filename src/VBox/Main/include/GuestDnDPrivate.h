@@ -673,7 +673,7 @@ public:
      * @param   pvBuf           Pointer to data to use.
      * @param   cbBuf           Size (in bytes) of data to use.
      */
-    int setNextPointer(void *pvBuf, uint32_t cbBuf)
+    int appendPointer(void *pvBuf, uint32_t cbBuf)
     {
         PVBOXHGCMSVCPARM pParm = getNextParam();
         if (!pParm)
@@ -698,7 +698,7 @@ public:
      * @returns VBox status code.
      * @param   pszString       Pointer to string data to use.
      */
-    int setNextString(const char *pszString)
+    int appendString(const char *pszString)
     {
         PVBOXHGCMSVCPARM pParm = getNextParam();
         if (!pParm)
@@ -718,7 +718,7 @@ public:
      * @returns VBox status code.
      * @param   u32Val          uint32_t value to use.
      */
-    int setNextUInt32(uint32_t u32Val)
+    int appendUInt32(uint32_t u32Val)
     {
         PVBOXHGCMSVCPARM pParm = getNextParam();
         if (!pParm)
@@ -734,7 +734,7 @@ public:
      * @returns VBox status code.
      * @param   u64Val          uint64_t value to use.
      */
-    int setNextUInt64(uint64_t u64Val)
+    int appendUInt64(uint64_t u64Val)
     {
         PVBOXHGCMSVCPARM pParm = getNextParam();
         if (!pParm)

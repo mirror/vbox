@@ -1364,7 +1364,7 @@ int GuestDnDBase::sendCancel(void)
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_CANCEL);
     if (m_DataBase.uProtocolVersion >= 3)
-        Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
+        Msg.appendUInt32(0); /** @todo ContextID not used yet. */
 
     LogRel2(("DnD: Cancelling operation on guest ...\n"));
 

@@ -276,8 +276,8 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_GH_REQ_PENDING);
     if (m_DataBase.uProtocolVersion >= 3)
-        Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-    Msg.setNextUInt32(uScreenId);
+        Msg.appendUInt32(0); /** @todo ContextID not used yet. */
+    Msg.appendUInt32(uScreenId);
 
     int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
     if (RT_SUCCESS(rc))
@@ -1104,10 +1104,10 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_GH_EVT_DROPPED);
         if (m_DataBase.uProtocolVersion >= 3)
-            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-        Msg.setNextPointer((void*)pCtx->strFmtRecv.c_str(), (uint32_t)pCtx->strFmtRecv.length() + 1);
-        Msg.setNextUInt32((uint32_t)pCtx->strFmtRecv.length() + 1);
-        Msg.setNextUInt32(pCtx->enmAction);
+            Msg.appendUInt32(0); /** @todo ContextID not used yet. */
+        Msg.appendPointer((void*)pCtx->strFmtRecv.c_str(), (uint32_t)pCtx->strFmtRecv.length() + 1);
+        Msg.appendUInt32((uint32_t)pCtx->strFmtRecv.length() + 1);
+        Msg.appendUInt32(pCtx->enmAction);
 
         /* Make the initial call to the guest by telling that we initiated the "dropped" event on
          * the host and therefore now waiting for the actual raw data. */
@@ -1224,10 +1224,10 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_GH_EVT_DROPPED);
         if (m_DataBase.uProtocolVersion >= 3)
-            Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-        Msg.setNextPointer((void*)pCtx->strFmtRecv.c_str(), (uint32_t)pCtx->strFmtRecv.length() + 1);
-        Msg.setNextUInt32((uint32_t)pCtx->strFmtRecv.length() + 1);
-        Msg.setNextUInt32(pCtx->enmAction);
+            Msg.appendUInt32(0); /** @todo ContextID not used yet. */
+        Msg.appendPointer((void*)pCtx->strFmtRecv.c_str(), (uint32_t)pCtx->strFmtRecv.length() + 1);
+        Msg.appendUInt32((uint32_t)pCtx->strFmtRecv.length() + 1);
+        Msg.appendUInt32(pCtx->enmAction);
 
         /* Make the initial call to the guest by telling that we initiated the "dropped" event on
          * the host and therefore now waiting for the actual URI data. */
