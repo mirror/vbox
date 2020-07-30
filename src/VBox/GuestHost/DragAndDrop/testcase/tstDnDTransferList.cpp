@@ -39,18 +39,21 @@ int main()
     char szPathWellKnown[RTPATH_MAX];
     RTStrCopy(szPathWellKnown, sizeof(szPathWellKnown),
 #ifdef RT_OS_WINDOWS
-              "C:\\Windows\\INF\\");
+              "C:\\Windows\\System32\\Boot\\");
 #else
               "/bin/");
 #endif
+
+    char szPathWellKnownURI[RTPATH_MAX];
+    RTStrPrintf(szPathWellKnownURI, sizeof(szPathWellKnownURI), "file:///%s", szPathWellKnown);
 
     DNDTRANSFERLIST list;
     RT_ZERO(list);
 
     /* Invalid stuff. */
-    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, ""), VERR_INVALID_PARAMETER);
-    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown), VINF_SUCCESS);
-    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown), VERR_WRONG_ORDER);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, "", DNDTRANSFERLISTFMT_NATIVE), VERR_INVALID_PARAMETER);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown, DNDTRANSFERLISTFMT_NATIVE), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown, DNDTRANSFERLISTFMT_NATIVE), VERR_WRONG_ORDER);
     DnDTransferListDestroy(&list);
 
     /* Empty. */
@@ -58,21 +61,31 @@ int main()
     DnDTransferListDestroy(&list);
 
     /* Initial status. */
-    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown, DNDTRANSFERLISTFMT_NATIVE), VINF_SUCCESS);
     RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list) == 0);
     RTTEST_CHECK(hTest, DnDTransferListObjCount(&list) == 0);
     RTTEST_CHECK(hTest, DnDTransferListObjTotalBytes(&list) == 0);
     RTTEST_CHECK(hTest, DnDTransferListObjGetFirst(&list) == NULL);
+    DnDTransferListDestroy(&list);
 
     char szPathTest[RTPATH_MAX];
 
     /* Root path handling. */
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown, DNDTRANSFERLISTFMT_NATIVE), VINF_SUCCESS);
     RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, "/wrong/root/path", DNDTRANSFERLIST_FLAGS_NONE), VERR_INVALID_PARAMETER);
     rc = RTPathJoin(szPathTest, sizeof(szPathTest), szPathWellKnown, "/non/existing");
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
     RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, szPathTest, DNDTRANSFERLIST_FLAGS_NONE), VERR_PATH_NOT_FOUND);
+    DnDTransferListDestroy(&list);
 
-    /* Adding stuff. */
+    /* Adding native stuff. */
+    /* No root path set yet and non-recursive -> will set root path to szPathWellKnown, but without any entries added. */
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown, DNDTRANSFERLISTFMT_NATIVE), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, szPathWellKnown, DNDTRANSFERLIST_FLAGS_NONE), VINF_SUCCESS);
+    RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list));
+    RTTEST_CHECK(hTest, DnDTransferListObjCount(&list));
+
+    /* Add szPathWellKnown again, this time recursively. */
     RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, szPathWellKnown, DNDTRANSFERLIST_FLAGS_RECURSIVE), VINF_SUCCESS);
     RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list));
     RTTEST_CHECK(hTest, DnDTransferListObjCount(&list));
@@ -80,9 +93,8 @@ int main()
     char *pszString = NULL;
     size_t cbString = 0;
     RTTEST_CHECK_RC_OK(hTest, DnDTransferListGetRoots(&list, DNDTRANSFERLISTFMT_NATIVE, &pszString, &cbString));
-    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Root: %s\n", pszString);
+    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Roots:\n%s\n\n", pszString);
     RTStrFree(pszString);
-    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "\n");
 
     PDNDTRANSFEROBJECT pObj;
     while ((pObj = DnDTransferListObjGetFirst(&list)))
@@ -96,8 +108,10 @@ int main()
     size_t cbBuf;
 
     /* To URI data. */
-    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnown), VINF_SUCCESS);
-    RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_NATIVE, szPathWellKnown, DNDTRANSFERLIST_FLAGS_NONE), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListInitEx(&list, szPathWellKnownURI, DNDTRANSFERLISTFMT_URI), VINF_SUCCESS);
+    RTStrPrintf(szPathTest, sizeof(szPathTest), "%s/foo", szPathWellKnownURI);
+    RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_URI, szPathWellKnownURI, DNDTRANSFERLIST_FLAGS_NONE), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, DnDTransferListAppendPath(&list, DNDTRANSFERLISTFMT_URI, szPathTest, DNDTRANSFERLIST_FLAGS_NONE), VERR_FILE_NOT_FOUND);
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "" /* pszBasePath */, "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
     RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Roots (native):\n%s\n", pszBuf);
     RTStrFree(pszBuf);
@@ -111,15 +125,13 @@ int main()
     DnDTransferListDestroy(&list);
 
     /* From URI data. */
-    const char szURI[] = "file:///file1\r\n"
-                         "file:///file2\r\n"
-                         "file:///dir1\r\n"
-                         "file:///dir%20with%20spaces\r\n";
+    const char szURI[] = "file:///C:/Windows/System32/Boot/\r\n"
+                         "file:///C:/Windows/System/\r\n";
 
     RTTEST_CHECK_RC(hTest, DnDTransferListAppendPathsFromBuffer(&list, DNDTRANSFERLISTFMT_URI, szURI, sizeof(szURI), "\r\n",
                                                                 DNDTRANSFERLIST_FLAGS_NONE), VINF_SUCCESS);
-    RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list) == 4);
-    RTTEST_CHECK(hTest, RTStrCmp(DnDTransferListGetRootPathAbs(&list), RTPATH_SLASH_STR) == 0);
+    RTTEST_CHECK(hTest, DnDTransferListGetRootCount(&list) == 2);
+    RTTEST_CHECK(hTest, RTPathCompare(DnDTransferListGetRootPathAbs(&list), "C:/Windows/") == 0);
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "/native/base/path", "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Roots (URI, new base):\n%s\n", pszBuf);
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "\\windows\\path", "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
@@ -127,6 +139,9 @@ int main()
     RTTEST_CHECK_RC(hTest, DnDTransferListGetRootsEx(&list, DNDTRANSFERLISTFMT_NATIVE, "\\\\windows\\\\path", "\n", &pszBuf, &cbBuf), VINF_SUCCESS);
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Roots (URI, new base):\n%s\n", pszBuf);
     RTStrFree(pszBuf);
+
+    DnDTransferListDestroy(&list);
+    DnDTransferListDestroy(&list); /* Doing this twice here is intentional. */
 
     return RTTestSummaryAndDestroy(hTest);
 }

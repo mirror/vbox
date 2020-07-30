@@ -15,6 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/**
+ * This implementation is taylored to keeping track of a single DnD transfer by maintaining two separate entities,
+ * namely a list of root entries and a list of (recursive file system) transfer ojects to actually transfer.
+ *
+ * The list of root entries is sent to the target (guest/host) beforehand so that the OS has a data for the
+ * actual drag'n drop operation to work with. This also contains required header data like total number of
+ * objects or total bytes being received.
+ *
+ * The list of transfer objects only is needed in order to sending data from the source to the target.
+ * Currently there is no particular ordering implemented for the transfer object list; it depends on IPRT's RTDirRead().
+ *
+ * The target must not know anything about the actual (absolute) path the root entries are coming from
+ * due to security reasons. Those root entries then can be re-based on the target to desired location there.
+ *
+ * All data handling internally is done in the so-called "transport" format, that is, non-URI (regular) paths
+ * with the "/" as path separator. From/to URI conversion is provided for convenience only.
+ */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -40,8 +57,8 @@
 *********************************************************************************************************************************/
 static int dndTransferListSetRootPath(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs);
 
-static int dndTransferListRootAdd(PDNDTRANSFERLIST pList, const char *pcszRoot);
-static void dndTransferListRootFree(PDNDTRANSFERLIST pList, PDNDTRANSFERLISTROOT pRootObj);
+static int dndTransferListRootEntryAdd(PDNDTRANSFERLIST pList, const char *pcszRoot);
+static void dndTransferListRootEntryFree(PDNDTRANSFERLIST pList, PDNDTRANSFERLISTROOT pRootObj);
 
 static int dndTransferListObjAdd(PDNDTRANSFERLIST pList, const char *pcszSrcAbs, RTFMODE fMode, DNDTRANSFERLISTFLAGS fFlags);
 static void dndTransferListObjFree(PDNDTRANSFERLIST pList, PDNDTRANSFEROBJECT pLstObj);
@@ -86,11 +103,31 @@ static int dndTransferListInitInternal(PDNDTRANSFERLIST pList, const char *pcszR
  *
  * @returns VBox status code.
  * @param   pList               Transfer list to initialize.
- * @param   pcszRootPathAbs     Absolute root path to use for this list. Optional and can be NULL.
+ * @param   pcszRootPathAbs     Absolute root path to use for this list.
+ * @param   enmFmt              Format of \a pcszRootPathAbs.
  */
-int DnDTransferListInitEx(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs)
+int DnDTransferListInitEx(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs, DNDTRANSFERLISTFMT enmFmt)
 {
-    return dndTransferListInitInternal(pList, pcszRootPathAbs);
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszRootPathAbs, VERR_INVALID_POINTER);
+    AssertReturn(*pcszRootPathAbs, VERR_INVALID_PARAMETER);
+
+    int rc;
+
+    if (enmFmt == DNDTRANSFERLISTFMT_URI)
+    {
+        char *pszPath;
+        rc = RTUriFilePathEx(pcszRootPathAbs, RTPATH_STR_F_STYLE_UNIX, &pszPath, 0 /*cbPath*/, NULL /*pcchPath*/);
+        if (RT_SUCCESS(rc))
+        {
+            rc = dndTransferListInitInternal(pList, pszPath);
+            RTStrFree(pszPath);
+        }
+    }
+    else
+        rc = dndTransferListInitInternal(pList, pcszRootPathAbs);
+
+    return rc;
 }
 
 /**
@@ -121,6 +158,32 @@ void DnDTransferListDestroy(PDNDTRANSFERLIST pList)
 }
 
 /**
+ * Initializes a transfer list and sets the root path.
+ *
+ * Convenience function which calls dndTransferListInitInternal() if not initialized already.
+ *
+ * @returns VBox status code.
+ * @param   pList               List to determine root path for.
+ * @param   pcszRootPathAbs     Root path to use.
+ */
+static int dndTransferInitAndSetRoot(PDNDTRANSFERLIST pList, const char *pcszRootPathAbs)
+{
+    int rc;
+
+    if (!pList->pszPathRootAbs)
+    {
+        rc = dndTransferListInitInternal(pList, pcszRootPathAbs);
+        AssertRCReturn(rc, rc);
+
+        LogRel2(("DnD: Determined root path is '%s'\n", pList->pszPathRootAbs));
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    return rc;
+}
+
+/**
  * Resets a transfer list to its initial state.
  *
  * @param   pList               Transfer list to reset.
@@ -137,7 +200,7 @@ void DnDTransferListReset(PDNDTRANSFERLIST pList)
 
     PDNDTRANSFERLISTROOT pRootCur, pRootNext;
     RTListForEachSafe(&pList->lstRoot, pRootCur, pRootNext, DNDTRANSFERLISTROOT, Node)
-        dndTransferListRootFree(pList, pRootCur);
+        dndTransferListRootEntryFree(pList, pRootCur);
     Assert(RTListIsEmpty(&pList->lstRoot));
 
     PDNDTRANSFEROBJECT pObjCur, pObjNext;
@@ -405,14 +468,25 @@ static int dndTransferListAppendDirectoryRecursive(PDNDTRANSFERLIST pList,
 static int dndTransferListAppendDirectory(PDNDTRANSFERLIST pList, char* pszPathAbs, size_t cbPathAbs,
                                           PRTFSOBJINFO pObjInfo, DNDTRANSFERLISTFLAGS fFlags)
 {
-    RTDIR hDir;
-    int rc = RTDirOpen(&hDir, pszPathAbs);
-    AssertRCReturn(rc, rc);
+    const size_t cchPathRoot = RTStrNLen(pList->pszPathRootAbs, RTPATH_MAX);
+    AssertReturn(cchPathRoot, VERR_INVALID_PARAMETER);
 
     const size_t cchPathAbs = RTPathEnsureTrailingSeparator(pszPathAbs, sizeof(cbPathAbs));
     AssertReturn(cchPathAbs, VERR_BUFFER_OVERFLOW);
+    AssertReturn(cchPathAbs >= cchPathRoot, VERR_BUFFER_UNDERFLOW);
 
-    rc = dndTransferListObjAdd(pList, pszPathAbs, pObjInfo->Attr.fMode, fFlags);
+    const bool fPathIsRoot  = cchPathAbs == cchPathRoot;
+
+    int rc;
+
+    if (!fPathIsRoot)
+    {
+        rc = dndTransferListObjAdd(pList, pszPathAbs, pObjInfo->Attr.fMode, fFlags);
+        AssertRCReturn(rc, rc);
+    }
+
+    RTDIR hDir;
+    rc = RTDirOpen(&hDir, pszPathAbs);
     AssertRCReturn(rc, rc);
 
     for (;;)
@@ -456,6 +530,13 @@ static int dndTransferListAppendDirectory(PDNDTRANSFERLIST pList, char* pszPathA
                 default:
                     /* Silently skip everything else. */
                     break;
+            }
+
+            if (   RT_SUCCESS(rc)
+                /* Make sure to add a root entry if we're processing the root path at the moment. */
+                && fPathIsRoot)
+            {
+                rc = dndTransferListRootEntryAdd(pList, pszPathAbs);
             }
         }
         else if (rc == VERR_NO_MORE_FILES)
@@ -517,7 +598,12 @@ static int dndTransferListAppendPathNative(PDNDTRANSFERLIST pList, const char *p
                         AssertReturn(cchPathAbs, VERR_BUFFER_OVERFLOW);
                     }
 
-                    rc = dndTransferListRootAdd(pList, szPathAbs);
+                    const size_t cchPathRoot = RTStrNLen(pList->pszPathRootAbs, RTPATH_MAX);
+                    AssertStmt(cchPathRoot, rc = VERR_INVALID_PARAMETER);
+
+                    if (   RT_SUCCESS(rc)
+                        && cchPathAbs > cchPathRoot)
+                        rc = dndTransferListRootEntryAdd(pList, szPathAbs);
                 }
                 else
                     rc = VERR_NOT_SUPPORTED;
@@ -569,14 +655,12 @@ static int dndTransferListAppendPathURI(PDNDTRANSFERLIST pList, const char *pcsz
 
     /* Query the path component of a file URI. If this hasn't a
      * file scheme, NULL is returned. */
-    char *pszFilePath;
-    int rc = RTUriFilePathEx(pcszPath, RTPATH_STR_F_STYLE_UNIX, &pszFilePath, 0 /*cbPath*/, NULL /*pcchPath*/);
+    char *pszPath;
+    int rc = RTUriFilePathEx(pcszPath, RTPATH_STR_F_STYLE_UNIX, &pszPath, 0 /*cbPath*/, NULL /*pcchPath*/);
     if (RT_SUCCESS(rc))
     {
-        LogFlowFunc(("pcszPath=%s -> pszFilePath=%s\n", pcszPath, pszFilePath));
-        rc = dndTransferListRootAdd(pList, pszFilePath);
-        RTStrFree(pszFilePath);
-
+        rc = dndTransferListAppendPathNative(pList, pszPath, fFlags);
+        RTStrFree(pszPath);
     }
 
     if (RT_FAILURE(rc))
@@ -716,8 +800,7 @@ int DnDTransferListAppendPathsFromArray(PDNDTRANSFERLIST pList,
             char *pszRootPath = RTStrDupN(papszPathTmp[0], cchRootPath);
             if (pszRootPath)
             {
-                LogRel2(("DnD: Determined root path is '%s'\n", pszRootPath));
-                rc = dndTransferListInitInternal(pList, pszRootPath);
+                rc = dndTransferInitAndSetRoot(pList, pszRootPath);
                 RTStrFree(pszRootPath);
             }
             else
@@ -848,7 +931,7 @@ int DnDTransferListAppendRootsFromArray(PDNDTRANSFERLIST pList,
         rc = DnDPathConvert(szPath, sizeof(szPath), DNDPATHCONVERT_FLAGS_TRANSPORT);
         AssertRCBreak(rc);
 
-        rc = dndTransferListRootAdd(pList, szPath);
+        rc = dndTransferListRootEntryAdd(pList, szPath);
         if (RT_FAILURE(rc))
         {
             LogRel(("DnD: Adding root entry '%s' (format %#x, root '%s') to transfer list failed with %Rrc\n",
@@ -1110,13 +1193,24 @@ static int dndTransferListSetRootPath(PDNDTRANSFERLIST pList, const char *pcszRo
 
     RTPathEnsureTrailingSeparatorEx(szRootPath, sizeof(szRootPath), RTPATH_STR_F_STYLE_HOST);
 
-    pList->pszPathRootAbs = RTStrDup(szRootPath);
-    if (pList->pszPathRootAbs)
+    /* Make sure the root path is a directory (and no symlink or stuff). */
+    RTFSOBJINFO objInfo;
+    rc = RTPathQueryInfo(szRootPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_SUCCESS(rc))
     {
-        LogFlowFunc(("Root path is '%s'\n", pList->pszPathRootAbs));
+        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode & RTFS_TYPE_MASK))
+        {
+            pList->pszPathRootAbs = RTStrDup(szRootPath);
+            if (pList->pszPathRootAbs)
+            {
+                LogFlowFunc(("Root path is '%s'\n", pList->pszPathRootAbs));
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_NOT_A_DIRECTORY;
     }
-    else
-        rc = VERR_NO_MEMORY;
 
     return rc;
 }
@@ -1128,7 +1222,7 @@ static int dndTransferListSetRootPath(PDNDTRANSFERLIST pList, const char *pcszRo
  * @param   pList               Transfer list to add root entry to.
  * @param   pcszRoot            Root entry to add.
  */
-static int dndTransferListRootAdd(PDNDTRANSFERLIST pList, const char *pcszRoot)
+static int dndTransferListRootEntryAdd(PDNDTRANSFERLIST pList, const char *pcszRoot)
 {
     AssertPtrReturn(pList->pszPathRootAbs, VERR_WRONG_ORDER); /* The list's root path must be set first. */
 
@@ -1176,7 +1270,7 @@ static int dndTransferListRootAdd(PDNDTRANSFERLIST pList, const char *pcszRoot)
  * @param   pList               Transfer list to free root for.
  * @param   pRootObj            Transfer list root to free. The pointer will be invalid after calling.
  */
-static void dndTransferListRootFree(PDNDTRANSFERLIST pList, PDNDTRANSFERLISTROOT pRootObj)
+static void dndTransferListRootEntryFree(PDNDTRANSFERLIST pList, PDNDTRANSFERLISTROOT pRootObj)
 {
     if (!pRootObj)
         return;
