@@ -436,8 +436,10 @@ private:
         static bool isAtLeastOneItemRunning(const QList<UIVirtualMachineItem*> &items);
 
 #ifdef VBOX_WS_X11
-        /** Tries to guess default X11 terminal emulator. */
-        static QString defaultTerminalApplication();
+        /** Tries to guess default X11 terminal emulator.
+          * @returns Data packed into Qt pair of QString(s),
+          *          which is `name` and `--execute argument`. */
+        static QPair<QString, QString> defaultTerminalData();
 #endif
     /** @} */
 

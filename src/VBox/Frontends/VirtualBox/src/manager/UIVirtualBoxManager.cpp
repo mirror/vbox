@@ -2815,8 +2815,9 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
 #elif defined(VBOX_WS_WIN)
         pDefaultAction->setProperty("path", "powershell");
 #elif defined(VBOX_WS_X11)
-        pDefaultAction->setProperty("path", defaultTerminalApplication());
-        pDefaultAction->setProperty("arguments", "-e sh -c");
+        const QPair<QString, QString> terminalData = defaultTerminalData();
+        pDefaultAction->setProperty("path", terminalData.first);
+        pDefaultAction->setProperty("arguments", QString("%1 sh -c").arg(terminalData.second));
 #endif
 
         /* Terminal application/profile action list: */
@@ -3498,22 +3499,32 @@ bool UIVirtualBoxManager::isAtLeastOneItemRunning(const QList<UIVirtualMachineIt
 
 #ifdef VBOX_WS_X11
 /* static */
-QString UIVirtualBoxManager::defaultTerminalApplication()
+QPair<QString, QString> UIVirtualBoxManager::defaultTerminalData()
 {
-    /* List terminals supporting -e argument: */
+    /* List known terminals: */
     QStringList knownTerminalNames;
-    knownTerminalNames << "konsole"
-                       << "gnome-terminal"
-                       << "xfce4-terminal"
+    knownTerminalNames << "gnome-terminal"
                        << "terminator"
+                       << "konsole"
+                       << "xfce4-terminal"
+                       << "mate-terminal"
+                       << "lxterminal"
+                       << "tilda"
                        << "xterm"
                        << "aterm"
-                       << "wterm"
-                       << "guake"
-                       << "evilvte"
-                       << "mrxvt"
-                       << "rxvt"
-                       << "rxvt-unicode";
+                       << "rxvt-unicode"
+                       << "rxvt";
+
+    /* Fill map of known terminal --execute argument exceptions,
+     * keep in mind, terminals doesn't mentioned here will be
+     * used with default `-e` argument: */
+    QMap<QString, QString> knownTerminalArguments;
+    knownTerminalArguments["gnome-terminal"] = "--";
+    knownTerminalArguments["terminator"] = "-x";
+    knownTerminalArguments["xfce4-terminal"] = "-x";
+    knownTerminalArguments["mate-terminal"] = "-x";
+    knownTerminalArguments["tilda"] = "-c";
+
     /* Search for a first one suitable through shell command -v test: */
     foreach (const QString &strTerminalName, knownTerminalNames)
     {
@@ -3526,10 +3537,10 @@ QString UIVirtualBoxManager::defaultTerminalApplication()
         {
             const QString strResult = process.readAllStandardOutput();
             if (strResult.startsWith('/'))
-                return strResult.trimmed();
+                return qMakePair(strResult.trimmed(), knownTerminalArguments.value(strTerminalName, "-e"));
         }
     }
-    return QString();
+    return QPair<QString, QString>();
 }
 #endif
 
