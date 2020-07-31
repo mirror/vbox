@@ -2252,6 +2252,69 @@ protected:
 };
 
 
+/** Menu action extension, used as 'Performance' menu class. */
+class UIActionMenuSelectorPerformance : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorPerformance(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("PerformanceMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Performance"));
+    }
+};
+
+/** Simple action extension, used as 'Export' action class. */
+class UIActionMenuSelectorPerformanceExport : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorPerformanceExport(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/log_viewer_save_32px.png", ":/log_viewer_save_16px.png",
+                         ":/log_viewer_save_disabled_32px.png", ":/log_viewer_save_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ExportCharts");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Export..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Performance Monitor"));
+        setStatusTip(QApplication::translate("UIActionPool", "Export the chart data into a text file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Export Data to File")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIActionPool implementation.                                                                                           *
 *********************************************************************************************************************************/
@@ -2499,6 +2562,10 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_S_Guest_InvertSelection] = new UIActionMenuFileManagerInvertSelection(this);
     m_pool[UIActionIndex_M_FileManager_S_Host_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
     m_pool[UIActionIndex_M_FileManager_S_Guest_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
+
+    /* Performance Monitor actions: */
+    m_pool[UIActionIndex_M_Performance] = new UIActionMenuSelectorPerformance(this);
+    m_pool[UIActionIndex_M_Performance_S_Export] = new UIActionMenuSelectorPerformanceExport(this);
 
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC

@@ -44,6 +44,7 @@
 class QTimer;
 class QVBoxLayout;
 class QLabel;
+class UIActionPool;
 class UIChart;
 class UISession;
 class UIRuntimeInfoWidget;
@@ -81,7 +82,7 @@ public:
 
     void reset();
 
-    void toFile(QFile &file) const;
+    void toFile(QTextStream &stream) const;
 
 private:
 
@@ -114,7 +115,8 @@ public:
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference. */
-    UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine, bool fShowToolbar = false);
+    UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine,
+                         UIActionPool *pActionPool,bool fShowToolbar = false);
     ~UIPerformanceMonitor();
     void setMachine(const CMachine &machine);
 
@@ -146,6 +148,7 @@ private:
     void prepareWidgets();
     void prepareMetrics();
     void prepareToolBar();
+    void prepareActions();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
 
@@ -238,6 +241,7 @@ private:
     quint64 m_iTimeStep;
     EmbedTo m_enmEmbedding;
     bool    m_fShowToolbar;
+    UIActionPool *m_pActionPool;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_monitor_performance_UIPerformanceMonitor_h */

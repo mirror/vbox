@@ -28,6 +28,7 @@
 
 /* GUI includes: */
 #include "QIFileDialog.h"
+#include "UIActionPool.h"
 #include "UICommon.h"
 #include "UIPerformanceMonitor.h"
 #include "UIToolBar.h"
@@ -721,12 +722,17 @@ void UIMetric::reset()
     m_iMaximum = 0;
 }
 
-void UIMetric::toFile(QFile &file) const
+void UIMetric::toFile(QTextStream &stream) const
 {
-    QTextStream stream(&file);
-    stream << m_strName << "\n";
+    stream << "Metric Name: " << m_strName << "\n";
+    stream << "Unit: " << m_strUnit << "\n";
+    stream << "Maximum: " << m_iMaximum << "\n";
     foreach (const quint64& data, m_data[0])
-        stream << data;
+        stream << data << " ";
+    stream << "\n";
+    foreach (const quint64& data, m_data[1])
+        stream << data << " ";
+    stream << "\n\n";
 }
 
 /*********************************************************************************************************************************
@@ -734,7 +740,7 @@ void UIMetric::toFile(QFile &file) const
 *********************************************************************************************************************************/
 
 UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParent,
-                                           const CMachine &machine, bool fShowToolbar /* = false */)
+                                           const CMachine &machine, UIActionPool *pActionPool, bool fShowToolbar /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
     , m_pMainLayout(0)
@@ -749,11 +755,13 @@ UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParen
     , m_iTimeStep(0)
     , m_enmEmbedding(enmEmbedding)
     , m_fShowToolbar(fShowToolbar)
+    , m_pActionPool(pActionPool)
 {
     prepareMetrics();
     prepareWidgets();
     if (fShowToolbar)
         prepareToolBar();
+    prepareActions();
     retranslateUi();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIPerformanceMonitor::sltMachineStateChange);
     setMachine(machine);
@@ -990,22 +998,16 @@ void UIPerformanceMonitor::sltExportMetricsToFile()
 {
     QString strFileName = QIFileDialog::getSaveFileName("","",this, "");
 
-    QFile data(strFileName);
-    if (data.open(QFile::WriteOnly | QFile::Truncate)) {
-
+    QFile dataFile(strFileName);
+    if (dataFile.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream stream(&dataFile);
         for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
              iterator != m_metrics.end(); ++iterator)
         {
-            iterator.value().toFile(data);
+            iterator.value().toFile(stream);
         }
-        data.close();
-
-      //   QTextStream out(&data);
-      // out << "Result: " << qSetFieldWidth(10) << left << 3.14 << 2.7;
-      // writes "Result: 3.14      2.7       "
+        dataFile.close();
   }
-
-
 }
 
 
@@ -1087,10 +1089,14 @@ void UIPerformanceMonitor::prepareToolBar()
         layout()->addWidget(m_pToolBar);
 #endif
     }
-    // QAction *pAction =
-    //     actionPool()->action(UIActionIndex_M_Performance_S_Export);
-    // if (pAction)
-    //     connect(pAction, &QAction::triggered, this, &UIPerformanceMonitor::sltExportMetricsToFile);
+}
+
+void UIPerformanceMonitor::prepareActions()
+{
+    QAction *pAction =
+        m_pActionPool->action(UIActionIndex_M_Performance_S_Export);
+    if (pAction)
+        connect(pAction, &QAction::triggered, this, &UIPerformanceMonitor::sltExportMetricsToFile);
 }
 
 bool UIPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)

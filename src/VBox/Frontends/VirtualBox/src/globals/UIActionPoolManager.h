@@ -148,10 +148,6 @@ enum UIActionIndexST
     UIActionIndexST_M_Snapshot_T_Properties,
     UIActionIndexST_M_Snapshot_S_Clone,
 
-    /* Performance Monitor actions: */
-    UIActionIndex_M_Performance,
-    UIActionIndex_M_Performance_S_Export,
-
     /* Virtual Media Manager actions: */
     UIActionIndexST_M_MediumWindow,
     UIActionIndexST_M_Medium,
