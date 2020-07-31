@@ -4202,21 +4202,6 @@ void UIActionPoolManager::updateMenuSnapshot()
     m_invalidations.remove(UIActionIndexST_M_Snapshot);
 }
 
-void UIActionPoolManager::updateMenuPerformanceMonitor()
-{
-    /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndex_M_Performance)->menu();
-    AssertPtrReturnVoid(pMenu);
-    /* Clear contents: */
-    pMenu->clear();
-
-    /* Populate Performance-menu: */
-    pMenu->addAction(action(UIActionIndex_M_Performance_S_Export));
-
-    /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndex_M_Performance);
-}
-
 void UIActionPoolManager::updateShortcuts()
 {
     /* Call to base-class: */

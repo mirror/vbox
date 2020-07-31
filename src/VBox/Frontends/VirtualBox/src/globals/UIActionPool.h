@@ -100,6 +100,10 @@ enum UIActionIndex
     UIActionIndex_M_Log_S_Refresh,
     UIActionIndex_M_Log_S_Save,
 
+    /* 'Performance' menu actions: */
+    UIActionIndex_M_Performance,
+    UIActionIndex_M_Performance_S_Export,
+
     /* File Manager actions: */
     UIActionIndex_M_FileManager,
     UIActionIndex_M_FileManager_M_HostSubmenu,
@@ -134,10 +138,6 @@ enum UIActionIndex
     UIActionIndex_M_FileManager_S_Guest_InvertSelection,
     UIActionIndex_M_FileManager_S_Host_ShowProperties,
     UIActionIndex_M_FileManager_S_Guest_ShowProperties,
-
-    /* Performance Monitor actions: */
-    UIActionIndex_M_Performance,
-    UIActionIndex_M_Performance_S_Export,
 
     /* Maximum index: */
     UIActionIndex_Max
@@ -625,7 +625,8 @@ protected:
     virtual void updateMenuLogViewer();
     /** Updates 'Log Viewer' @a pMenu. */
     virtual void updateMenuLogViewerWrapper(UIMenu *pMenu);
-
+    /** Updates 'Performance Monitor' menu. */
+    virtual void updateMenuPerformanceMonitor();
     /** Updates 'File Manager' menu. */
     virtual void updateMenuFileManager();
     /** Updates 'File Manager' @a pMenu. */

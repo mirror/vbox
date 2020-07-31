@@ -286,10 +286,6 @@ protected:
     /** Updates 'Snapshot' menu. */
     void updateMenuSnapshot();
 
-    /** Updates 'Performance' menu. */
-    void updateMenuPerformanceMonitor();
-
-
     /** Updates shortcuts. */
     virtual void updateShortcuts() /* override */;
 

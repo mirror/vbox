@@ -2269,7 +2269,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("PerformanceMenu");
+        return QString("PerformanceMonitorMenu");
     }
 
     /** Handles translation event. */
@@ -2279,15 +2279,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Export' action class. */
-class UIActionMenuSelectorPerformanceExport : public UIActionSimple
+/** Simple action extension, used as 'Perform Export' action class. */
+class UIActionMenuSelectorPerformancePerformExport : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorPerformanceExport(UIActionPool *pParent)
+    UIActionMenuSelectorPerformancePerformExport(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/log_viewer_save_32px.png", ":/log_viewer_save_16px.png",
                          ":/log_viewer_save_disabled_32px.png", ":/log_viewer_save_disabled_16px.png")
@@ -2526,6 +2526,10 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_Log_S_Refresh] = new UIActionMenuSelectorLogPerformRefresh(this);
     m_pool[UIActionIndex_M_Log_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
 
+    /* Create 'Performance Monitor' actions: */
+    m_pool[UIActionIndex_M_Performance] = new UIActionMenuSelectorPerformance(this);
+    m_pool[UIActionIndex_M_Performance_S_Export] = new UIActionMenuSelectorPerformancePerformExport(this);
+
     /* Create 'File Manager' actions: */
     m_pool[UIActionIndex_M_FileManager] = new UIActionMenuFileManager(this);
     m_pool[UIActionIndex_M_FileManager_M_HostSubmenu] = new UIActionMenuFileManagerHostSubmenu(this);
@@ -2563,10 +2567,6 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_S_Host_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
     m_pool[UIActionIndex_M_FileManager_S_Guest_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
 
-    /* Performance Monitor actions: */
-    m_pool[UIActionIndex_M_Performance] = new UIActionMenuSelectorPerformance(this);
-    m_pool[UIActionIndex_M_Performance_S_Export] = new UIActionMenuSelectorPerformanceExport(this);
-
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC
     m_menuUpdateHandlers[UIActionIndex_M_Application].ptf = &UIActionPool::updateMenuApplication;
@@ -2575,7 +2575,7 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
     m_menuUpdateHandlers[UIActionIndex_M_LogWindow].ptf = &UIActionPool::updateMenuLogViewerWindow;
     m_menuUpdateHandlers[UIActionIndex_M_Log].ptf = &UIActionPool::updateMenuLogViewer;
-
+    m_menuUpdateHandlers[UIActionIndex_M_Performance].ptf = &UIActionPool::updateMenuPerformanceMonitor;
     m_menuUpdateHandlers[UIActionIndex_M_FileManager].ptf = &UIActionPool::updateMenuFileManager;
 
     /* Invalidate all known menus: */
@@ -2872,6 +2872,21 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
 
     /* 'Refresh' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Refresh)) || fSeparator;
+}
+
+void UIActionPool::updateMenuPerformanceMonitor()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndex_M_Performance)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'Export' action: */
+    pMenu->addAction(action(UIActionIndex_M_Performance_S_Export));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndex_M_Performance);
 }
 
 void UIActionPool::updateMenuFileManager()
