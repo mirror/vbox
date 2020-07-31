@@ -1373,6 +1373,64 @@ typedef CPUMFEATURES *PCPUMFEATURES;
 typedef CPUMFEATURES const *PCCPUMFEATURES;
 
 
+/**
+ * CPU database entry.
+ */
+typedef struct CPUMDBENTRY
+{
+    /** The CPU name. */
+    const char     *pszName;
+    /** The full CPU name. */
+    const char     *pszFullName;
+    /** The CPU vendor (CPUMCPUVENDOR). */
+    uint8_t         enmVendor;
+    /** The CPU family. */
+    uint8_t         uFamily;
+    /** The CPU model. */
+    uint8_t         uModel;
+    /** The CPU stepping. */
+    uint8_t         uStepping;
+    /** The microarchitecture. */
+    CPUMMICROARCH   enmMicroarch;
+    /** Scalable bus frequency used for reporting other frequencies. */
+    uint64_t        uScalableBusFreq;
+    /** Flags - CPUMDB_F_XXX. */
+    uint32_t        fFlags;
+    /** The maximum physical address with of the CPU.  This should correspond to
+     * the value in CPUID leaf 0x80000008 when present. */
+    uint8_t         cMaxPhysAddrWidth;
+    /** The MXCSR mask. */
+    uint32_t        fMxCsrMask;
+    /** Pointer to an array of CPUID leaves.  */
+    PCCPUMCPUIDLEAF paCpuIdLeaves;
+    /** The number of CPUID leaves in the array paCpuIdLeaves points to. */
+    uint32_t        cCpuIdLeaves;
+    /** The method used to deal with unknown CPUID leaves. */
+    CPUMUNKNOWNCPUID enmUnknownCpuId;
+    /** The default unknown CPUID value. */
+    CPUMCPUID       DefUnknownCpuId;
+
+    /** MSR mask.  Several microarchitectures ignore the higher bits of ECX in
+     *  the RDMSR and WRMSR instructions. */
+    uint32_t        fMsrMask;
+
+    /** The number of ranges in the table pointed to b paMsrRanges. */
+    uint32_t        cMsrRanges;
+    /** MSR ranges for this CPU. */
+    PCCPUMMSRRANGE  paMsrRanges;
+} CPUMDBENTRY;
+/** Pointer to a const CPU database entry. */
+typedef CPUMDBENTRY const *PCCPUMDBENTRY;
+
+/** @name CPUMDB_F_XXX - CPUDBENTRY::fFlags
+ * @{ */
+/** Should execute all in IEM.
+ * @todo Implement this - currently done in Main...  */
+#define CPUMDB_F_EXECUTE_ALL_IN_IEM         RT_BIT_32(0)
+/** @} */
+
+
+
 #ifndef VBOX_FOR_DTRACE_LIB
 
 /** @name Guest Register Getters.
@@ -2316,8 +2374,8 @@ DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCCPUMCTX pCtx, uint16_t uNewMsw
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
-    uint32_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
-    uint32_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+    uint32_t const fGstHostMask = (uint32_t)pVmcs->u64Cr0Mask.u;
+    uint32_t const fReadShadow  = (uint32_t)pVmcs->u64Cr0ReadShadow.u;
 
     /*
      * LMSW can never clear CR0.PE but it may set it. Hence, we handle the
@@ -2647,6 +2705,15 @@ VMMR3DECL(uint32_t)         CPUMR3DeterminHostMxCsrMask(void);
 
 VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
 
+VMMR3DECL(uint32_t)         CPUMR3DbGetEntries(void);
+/** Pointer to CPUMR3DbGetEntries. */
+typedef DECLCALLBACKPTR(uint32_t, PFNCPUMDBGETENTRIES, (void));
+VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByIndex(uint32_t idxCpuDb);
+/** Pointer to CPUMR3DbGetEntryByIndex. */
+typedef DECLCALLBACKPTR(PCCPUMDBENTRY, PFNCPUMDBGETENTRYBYINDEX, (uint32_t idxCpuDb));
+VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByName(const char *pszName);
+/** Pointer to CPUMR3DbGetEntryByName. */
+typedef DECLCALLBACKPTR(PCCPUMDBENTRY, PFNCPUMDBGETENTRYBYNAME, (const char *pszName));
 /** @} */
 #endif /* IN_RING3 */
 

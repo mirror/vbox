@@ -32,64 +32,8 @@
 
 
 /*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-typedef struct CPUMDBENTRY
-{
-    /** The CPU name. */
-    const char     *pszName;
-    /** The full CPU name. */
-    const char     *pszFullName;
-    /** The CPU vendor (CPUMCPUVENDOR). */
-    uint8_t         enmVendor;
-    /** The CPU family. */
-    uint8_t         uFamily;
-    /** The CPU model. */
-    uint8_t         uModel;
-    /** The CPU stepping. */
-    uint8_t         uStepping;
-    /** The microarchitecture. */
-    CPUMMICROARCH   enmMicroarch;
-    /** Scalable bus frequency used for reporting other frequencies. */
-    uint64_t        uScalableBusFreq;
-    /** Flags - CPUDB_F_XXX. */
-    uint32_t        fFlags;
-    /** The maximum physical address with of the CPU.  This should correspond to
-     * the value in CPUID leaf 0x80000008 when present. */
-    uint8_t         cMaxPhysAddrWidth;
-    /** The MXCSR mask. */
-    uint32_t        fMxCsrMask;
-    /** Pointer to an array of CPUID leaves.  */
-    PCCPUMCPUIDLEAF paCpuIdLeaves;
-    /** The number of CPUID leaves in the array paCpuIdLeaves points to. */
-    uint32_t        cCpuIdLeaves;
-    /** The method used to deal with unknown CPUID leaves. */
-    CPUMUNKNOWNCPUID enmUnknownCpuId;
-    /** The default unknown CPUID value. */
-    CPUMCPUID       DefUnknownCpuId;
-
-    /** MSR mask.  Several microarchitectures ignore the higher bits of ECX in
-     *  the RDMSR and WRMSR instructions. */
-    uint32_t        fMsrMask;
-
-    /** The number of ranges in the table pointed to b paMsrRanges. */
-    uint32_t        cMsrRanges;
-    /** MSR ranges for this CPU. */
-    PCCPUMMSRRANGE  paMsrRanges;
-} CPUMDBENTRY;
-
-
-/*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @name CPUDB_F_XXX - CPUDBENTRY::fFlags
- * @{ */
-/** Should execute all in IEM.
- * @todo Implement this - currently done in Main...  */
-#define CPUDB_F_EXECUTE_ALL_IN_IEM          RT_BIT_32(0)
-/** @} */
-
-
 /** @def NULL_ALONE
  * For eliminating an unnecessary data dependency in standalone builds (for
  * VBoxSVC). */
@@ -328,6 +272,50 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
     &g_Entry_Hygon_C86_7185_32_core,
 #endif
 };
+
+
+/**
+ * Returns the number of entries in the CPU database.
+ *
+ * @returns Number of entries.
+ * @sa      PFNCPUMDBGETENTRIES
+ */
+VMMR3DECL(uint32_t)         CPUMR3DbGetEntries(void)
+{
+    return RT_ELEMENTS(g_apCpumDbEntries);
+}
+
+
+/**
+ * Returns CPU database entry for the given index.
+ *
+ * @returns Pointer the CPU database entry, NULL if index is out of bounds.
+ * @param   idxCpuDb            The index (0..CPUMR3DbGetEntries).
+ * @sa      PFNCPUMDBGETENTRYBYINDEX
+ */
+VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByIndex(uint32_t idxCpuDb)
+{
+    AssertReturn(idxCpuDb <= RT_ELEMENTS(g_apCpumDbEntries), NULL);
+    return g_apCpumDbEntries[idxCpuDb];
+}
+
+
+/**
+ * Returns CPU database entry with the given name.
+ *
+ * @returns Pointer the CPU database entry, NULL if not found.
+ * @param   idxCpuDb            The name of the profile to return.
+ * @sa      PFNCPUMDBGETENTRYBYNAME
+ */
+VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByName(const char *pszName)
+{
+    AssertPtrReturn(pszName, NULL);
+    AssertReturn(*pszName, NULL);
+    for (size_t i = 0; i < RT_ELEMENTS(g_apCpumDbEntries); i++)
+        if (strcmp(g_apCpumDbEntries[i]->pszName, pszName) == 0)
+            return g_apCpumDbEntries[i];
+    return NULL;
+}
 
 
 
