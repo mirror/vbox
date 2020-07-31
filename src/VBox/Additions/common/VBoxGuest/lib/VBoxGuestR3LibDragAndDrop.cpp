@@ -820,25 +820,14 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
     if (!dataHdr.pvMetaFmt)
         return VERR_NO_MEMORY;
 
-    DNDDROPPEDFILES droppedFiles;
-    RT_ZERO(droppedFiles);
-
-    int rc = DnDDroppedFilesInit(&droppedFiles);
-    if (RT_SUCCESS(rc))
-        rc = DnDDroppedFilesOpenTemp(&droppedFiles, DNDURIDROPPEDFILE_FLAGS_NONE);
-
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("DnD: Initializing dropped files directory failed with %Rrc\n", rc));
-        return rc;
-    }
-
     void    *pvData = NULL;
     uint64_t cbData = 0;
 
-    rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
+    int rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
     if (RT_SUCCESS(rc))
     {
+        LogRel2(("DnD: Received %RU32 bytes meta data in format '%s'\n", cbData, (char *)dataHdr.pvMetaFmt));
+
         /**
          * Check if this is an URI event. If so, let VbglR3 do all the actual
          * data transfer + file/directory creation internally without letting
@@ -851,28 +840,45 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
         AssertPtr(dataHdr.pvMetaFmt);
         if (DnDMIMEHasFileURLs((char *)dataHdr.pvMetaFmt, dataHdr.cbMetaFmt)) /* URI data. */
         {
-            AssertPtr(pvData);
-            Assert(cbData);
+            DNDDROPPEDFILES droppedFiles;
+            RT_ZERO(droppedFiles);
 
-            /* Use the dropped files directory as the root directory for the current transfer. */
-            rc = DnDTransferListInitEx(&pMeta->u.URI.Transfer, DnDDroppedFilesGetDirAbs(&droppedFiles),
-                                       DNDTRANSFERLISTFMT_NATIVE);
+            rc = DnDDroppedFilesInit(&droppedFiles);
             if (RT_SUCCESS(rc))
+                rc = DnDDroppedFilesOpenTemp(&droppedFiles, DNDURIDROPPEDFILE_FLAGS_NONE);
+
+            if (RT_FAILURE(rc))
             {
-                rc = DnDTransferListAppendRootsFromBuffer(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
-                                                          DND_PATH_SEPARATOR, 0 /* fFlags */);
+                LogRel(("DnD: Initializing dropped files directory failed with %Rrc\n", rc));
+            }
+            else
+            {
+                AssertPtr(pvData);
+                Assert(cbData);
+
+                /* Use the dropped files directory as the root directory for the current transfer. */
+                rc = DnDTransferListInitEx(&pMeta->u.URI.Transfer, DnDDroppedFilesGetDirAbs(&droppedFiles),
+                                           DNDTRANSFERLISTFMT_NATIVE);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
+                    rc = DnDTransferListAppendRootsFromBuffer(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
+                                                              DND_PATH_SEPARATOR, 0 /* fFlags */);
                     if (RT_SUCCESS(rc))
                     {
-                        pMeta->enmType = VBGLR3GUESTDNDMETADATATYPE_URI_LIST;
+                        rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pMeta->enmType = VBGLR3GUESTDNDMETADATATYPE_URI_LIST;
+                        }
                     }
                 }
             }
         }
         else /* Raw data. */
         {
+            pMeta->u.Raw.cbMeta = cbData;
+            pMeta->u.Raw.pvMeta = pvData;
+
             pMeta->enmType = VBGLR3GUESTDNDMETADATATYPE_RAW;
         }
     }
@@ -880,19 +886,19 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
     if (dataHdr.pvMetaFmt)
         RTMemFree(dataHdr.pvMetaFmt);
 
-    if (RT_SUCCESS(rc))
-    {
-
-    }
-    else if (   RT_FAILURE(rc)
-             && rc != VERR_CANCELLED)
+    if (RT_FAILURE(rc))
     {
         if (pvData)
             RTMemFree(pvData);
 
-        int rc2 = VbglR3DnDHGSendProgress(pCtx, DND_PROGRESS_ERROR, 100 /* Percent */, rc);
-        if (RT_FAILURE(rc2))
-            LogFlowFunc(("Unable to send progress error %Rrc to host: %Rrc\n", rc, rc2));
+        LogRel(("DnD: Receiving meta data failed with %Rrc\n", rc));
+
+        if (rc != VERR_CANCELLED)
+        {
+            int rc2 = VbglR3DnDHGSendProgress(pCtx, DND_PROGRESS_ERROR, 100 /* Percent */, rc);
+            if (RT_FAILURE(rc2))
+                LogFlowFunc(("Unable to send progress error %Rrc to host: %Rrc\n", rc, rc2));
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
