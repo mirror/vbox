@@ -121,7 +121,8 @@ struct GuestDnDMetaData
         Assert(cbAllocated >= cbData + cbDataAdd);
         memcpy((uint8_t *)pvData + cbData, pvDataAdd, cbDataAdd);
 
-        cbData += cbDataAdd;
+        cbData     += cbDataAdd;
+        cbAnnounced = cbData;
 
         return cbData;
     }
