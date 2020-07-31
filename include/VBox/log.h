@@ -380,6 +380,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_CLOUDPROVIDERMANAGER,
     /** Main group, IConsole. */
     LOG_GROUP_MAIN_CONSOLE,
+    /** Main group, ICPUProfile. */
+    LOG_GROUP_MAIN_CPUPROFILE,
     /** Main group, IDataModel. */
     LOG_GROUP_MAIN_DATAMODEL,
     /** Main group, IDataStream. */
@@ -928,6 +930,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_CLOUDPROVIDER", \
     "MAIN_CLOUDPROVIDERMANAGER", \
     "MAIN_CONSOLE", \
+    "MAIN_CPUPROFILE", \
     "MAIN_DATAMODEL", \
     "MAIN_DATASTREAM", \
     "MAIN_DHCPCONFIG", \
