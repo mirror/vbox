@@ -479,9 +479,9 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            usbhost|usbfilters|systemproperties|extpacks|\n"
                      "                            groups|webcams|screenshotformats|cloudproviders|\n"
 #if defined(VBOX_WITH_CLOUD_NET)
-                     "                            cloudprofiles|cloudnets\n"
+                     "                            cloudprofiles|cloudnets|cpu-profiles\n"
 #else
-                     "                            cloudprofiles\n"
+                     "                            cloudprofiles|cpu-profiles\n"
 #endif
                      "\n", SEP);
 

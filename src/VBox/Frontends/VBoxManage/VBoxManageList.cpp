@@ -1154,7 +1154,7 @@ static HRESULT listGroups(const ComPtr<IVirtualBox> &pVirtualBox)
  * @returns See produceList.
  * @param   pVirtualBox         Reference to the IVirtualBox pointer.
  */
-static HRESULT listVideoInputDevices(const ComPtr<IVirtualBox> pVirtualBox)
+static HRESULT listVideoInputDevices(const ComPtr<IVirtualBox> &pVirtualBox)
 {
     HRESULT rc;
     ComPtr<IHost> host;
@@ -1182,7 +1182,7 @@ static HRESULT listVideoInputDevices(const ComPtr<IVirtualBox> pVirtualBox)
  * @returns See produceList.
  * @param   pVirtualBox         Reference to the IVirtualBox pointer.
  */
-static HRESULT listScreenShotFormats(const ComPtr<IVirtualBox> pVirtualBox)
+static HRESULT listScreenShotFormats(const ComPtr<IVirtualBox> &pVirtualBox)
 {
     HRESULT rc = S_OK;
     ComPtr<ISystemProperties> systemProperties;
@@ -1211,7 +1211,7 @@ static HRESULT listScreenShotFormats(const ComPtr<IVirtualBox> pVirtualBox)
  * @returns See produceList.
  * @param   pVirtualBox         Reference to the IVirtualBox pointer.
  */
-static HRESULT listCloudProviders(const ComPtr<IVirtualBox> pVirtualBox)
+static HRESULT listCloudProviders(const ComPtr<IVirtualBox> &pVirtualBox)
 {
     HRESULT rc = S_OK;
     ComPtr<ICloudProviderManager> pCloudProviderManager;
@@ -1245,7 +1245,7 @@ static HRESULT listCloudProviders(const ComPtr<IVirtualBox> pVirtualBox)
  * @param   pVirtualBox         Reference to the IVirtualBox pointer.
  * @param   fOptLong            If true, list all profile properties.
  */
-static HRESULT listCloudProfiles(const ComPtr<IVirtualBox> pVirtualBox, bool fOptLong)
+static HRESULT listCloudProfiles(const ComPtr<IVirtualBox> &pVirtualBox, bool fOptLong)
 {
     HRESULT rc = S_OK;
     ComPtr<ICloudProviderManager> pCloudProviderManager;
@@ -1294,11 +1294,94 @@ static HRESULT listCloudProfiles(const ComPtr<IVirtualBox> pVirtualBox, bool fOp
     return rc;
 }
 
+static HRESULT displayCPUProfile(ICPUProfile *pProfile, size_t idx, int cchIdx, bool fOptLong, HRESULT hrc)
+{
+    /* Retrieve the attributes needed for both long and short display. */
+    Bstr bstrName;
+    CHECK_ERROR2I_RET(pProfile, COMGETTER(Name)(bstrName.asOutParam()), hrcCheck);
+
+    CPUArchitecture_T enmArchitecture = CPUArchitecture_Any;
+    CHECK_ERROR2I_RET(pProfile, COMGETTER(Architecture)(&enmArchitecture), hrcCheck);
+    const char *pszArchitecture = "???";
+    switch (enmArchitecture)
+    {
+        case CPUArchitecture_x86:       pszArchitecture = "x86"; break;
+        case CPUArchitecture_AMD64:     pszArchitecture = "AMD64"; break;
+
+        case CPUArchitecture_32BitHack:
+        case CPUArchitecture_Any:
+            break;
+    }
+
+    /* Print what we've got. */
+    if (!fOptLong)
+        RTPrintf("#%0*zu: %ls [%s]\n", cchIdx, idx, bstrName.raw(), pszArchitecture);
+    else
+    {
+        RTPrintf("CPU Profile #%02zu:\n", idx);
+        RTPrintf("  Architecture: %s\n", pszArchitecture);
+        RTPrintf("  Name:         %ls\n", bstrName.raw());
+        CHECK_ERROR2I_RET(pProfile, COMGETTER(FullName)(bstrName.asOutParam()), hrcCheck);
+        RTPrintf("  Full Name:    %ls\n", bstrName.raw());
+    }
+    return hrc;
+}
+
+
+/**
+ * List all CPU profiles.
+ *
+ * @returns See produceList.
+ * @param   ptrVirtualBox       Reference to the smart IVirtualBox pointer.
+ * @param   fOptLong            If true, list all profile properties.
+ * @param   fOptSorted          Sort the output if true, otherwise display in
+ *                              system order.
+ */
+static HRESULT listCPUProfiles(const ComPtr<IVirtualBox> &ptrVirtualBox, bool fOptLong, bool fOptSorted)
+{
+    ComPtr<ISystemProperties> ptrSysProps;
+    CHECK_ERROR2I_RET(ptrVirtualBox, COMGETTER(SystemProperties)(ptrSysProps.asOutParam()), hrcCheck);
+    com::SafeIfaceArray<ICPUProfile> aCPUProfiles;
+    CHECK_ERROR2I_RET(ptrSysProps, GetCPUProfiles(CPUArchitecture_Any, Bstr().raw(),
+                                                  ComSafeArrayAsOutParam(aCPUProfiles)), hrcCheck);
+
+    int const cchIdx = 1 + (aCPUProfiles.size() >= 10) + (aCPUProfiles.size() >= 100);
+
+    HRESULT hrc = S_OK;
+    if (!fOptSorted)
+        for (size_t i = 0; i < aCPUProfiles.size(); i++)
+            hrc = displayCPUProfile(aCPUProfiles[i], i, cchIdx, fOptLong, hrc);
+    else
+    {
+        std::vector<std::pair<com::Bstr, ICPUProfile *> > vecSortedProfiles;
+        for (size_t i = 0; i < aCPUProfiles.size(); ++i)
+        {
+            Bstr bstrName;
+            CHECK_ERROR2I_RET(aCPUProfiles[i], COMGETTER(Name)(bstrName.asOutParam()), hrcCheck);
+            try
+            {
+                vecSortedProfiles.push_back(std::pair<com::Bstr, ICPUProfile *>(bstrName, aCPUProfiles[i]));
+            }
+            catch (std::bad_alloc &)
+            {
+                return E_OUTOFMEMORY;
+            }
+        }
+
+        std::sort(vecSortedProfiles.begin(), vecSortedProfiles.end());
+
+        for (size_t i = 0; i < vecSortedProfiles.size(); i++)
+            hrc = displayCPUProfile(vecSortedProfiles[i].second, i, cchIdx, fOptLong, hrc);
+    }
+
+    return hrc;
+}
+
 
 /**
  * The type of lists we can produce.
  */
-enum enmListType
+enum ListType_T
 {
     kListNotSpecified = 1000,
     kListVMs,
@@ -1331,6 +1414,7 @@ enum enmListType
     kListScreenShotFormats,
     kListCloudProviders,
     kListCloudProfiles,
+    kListCPUProfiles
 };
 
 
@@ -1342,7 +1426,7 @@ enum enmListType
  * @param   fOptLong            Long (@c true) or short list format.
  * @param   pVirtualBox         Reference to the IVirtualBox smart pointer.
  */
-static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, bool fOptSorted, const ComPtr<IVirtualBox> &pVirtualBox)
+static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptSorted, const ComPtr<IVirtualBox> &pVirtualBox)
 {
     HRESULT rc = S_OK;
     switch (enmCommand)
@@ -1683,6 +1767,10 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, bool fOpt
             rc = listCloudProfiles(pVirtualBox, fOptLong);
             break;
 
+        case kListCPUProfiles:
+            rc = listCPUProfiles(pVirtualBox, fOptLong, fOptSorted);
+            break;
+
         /* No default here, want gcc warnings. */
 
     } /* end switch */
@@ -1701,7 +1789,7 @@ RTEXITCODE handleList(HandlerArg *a)
     bool                fOptLong      = false;
     bool                fOptMultiple  = false;
     bool                fOptSorted    = false;
-    enum enmListType    enmOptCommand = kListNotSpecified;
+    enum ListType_T     enmOptCommand = kListNotSpecified;
 
     static const RTGETOPTDEF s_aListOptions[] =
     {
@@ -1740,6 +1828,7 @@ RTEXITCODE handleList(HandlerArg *a)
         { "screenshotformats",  kListScreenShotFormats,  RTGETOPT_REQ_NOTHING },
         { "cloudproviders",     kListCloudProviders,     RTGETOPT_REQ_NOTHING },
         { "cloudprofiles",      kListCloudProfiles,      RTGETOPT_REQ_NOTHING },
+        { "cpu-profiles",       kListCPUProfiles,        RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -1796,10 +1885,11 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListScreenShotFormats:
             case kListCloudProviders:
             case kListCloudProfiles:
-                enmOptCommand = (enum enmListType)ch;
+            case kListCPUProfiles:
+                enmOptCommand = (enum ListType_T)ch;
                 if (fOptMultiple)
                 {
-                    HRESULT hrc = produceList((enum enmListType)ch, fOptLong, fOptSorted, a->virtualBox);
+                    HRESULT hrc = produceList(enmOptCommand, fOptLong, fOptSorted, a->virtualBox);
                     if (FAILED(hrc))
                         return RTEXITCODE_FAILURE;
                 }
