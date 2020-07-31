@@ -826,7 +826,7 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
     int rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
     if (RT_SUCCESS(rc))
     {
-        LogRel2(("DnD: Received %RU32 bytes meta data in format '%s'\n", cbData, (char *)dataHdr.pvMetaFmt));
+        LogRel2(("DnD: Received %RU64 bytes meta data in format '%s'\n", cbData, (char *)dataHdr.pvMetaFmt));
 
         /**
          * Check if this is an URI event. If so, let VbglR3 do all the actual
