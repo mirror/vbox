@@ -485,6 +485,9 @@
 /** There are not enough events available on the host to create the I/O context.
  * This exact meaning is host platform dependent. */
 #define VERR_FILE_AIO_INSUFFICIENT_EVENTS   (-146)
+/** The native file handle got stale while it was open. Can occur with
+ * files on network shares when the server is unresponsive. */
+#define VERR_STALE_FILE_HANDLE              (-147)
 /** @} */
 
 
