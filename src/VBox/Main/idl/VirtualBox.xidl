@@ -981,6 +981,22 @@
   </enum>
 
   <enum
+    name="CPUArchitecture"
+    uuid="4a2c9915-12f1-43b2-bb84-e4bd4d5ca227"
+    >
+    <desc>Basic CPU architecture types.</desc>
+    <const name="Any"                 value="0">
+      <desc>Matches any CPU architecture.</desc>
+    </const>
+    <const name="x86"                 value="1">
+      <desc>32-bit (and 16-bit) x86.</desc>
+    </const>
+    <const name="AMD64"               value="2">
+      <desc>64-bit x86.  (Also known as x86-64 or x64.)</desc>
+    </const>
+  </enum>
+
+  <enum
     name="CPUPropertyType"
     uuid="3fcfe589-ca66-468f-e313-656f9d0b2eb6"
     >
@@ -6547,7 +6563,8 @@
         is "host", which indicates the host CPU.  All other names are subject
         to change.
 
-        The profiles are found in src/VBox/VMM/VMMR3/cpus/.
+        Use the <link to="ISystemProperties::getCPUProfiles" /> method to get
+        currently available CPU profiles.
       </desc>
     </attribute>
 
@@ -10728,6 +10745,29 @@
   </interface>
 
   <!--
+  // ICPUProfile
+  /////////////////////////////////////////////////////////////////////////
+  -->
+  <interface
+    name="ICPUProfile"
+    extends="$unknown"
+    uuid="b7fda727-7a08-46ee-8dd8-f8d7308b519c"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="8"
+    >
+    <desc>CPU profile. Immutable.</desc>
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>The name.</desc>
+    </attribute>
+    <attribute name="fullName" type="wstring" readonly="yes">
+      <desc>The full name.</desc>
+    </attribute>
+    <attribute name="architecture" type="CPUArchitecture" readonly="yes">
+      <desc>The CPU architecture.</desc>
+    </attribute>
+  </interface>
+
+  <!--
   // ISystemProperties
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -10748,7 +10788,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="027bc463-929c-40e8-bf16-fea557cd8e7e"
+    uuid="81c55eb1-d584-41a7-aa0b-08b71cddd773"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -11456,6 +11496,21 @@
 
       <param name="maxInstances" type="unsigned long" dir="return">
         <desc>The maximum number of instances for the given USB controller type.</desc>
+      </param>
+    </method>
+
+    <method name="getCPUProfiles">
+      <desc>Returns CPU profiles matching the given criteria.</desc>
+
+      <param name="architecture" type="CPUArchitecture" dir="in">
+        <desc>The architecture to get profiles for. Required.</desc>
+      </param>
+      <param name="namePattern" type="wstring" dir="in">
+        <desc>Name pattern. Simple wildcard matching using asterisk (*) and
+          question mark (?).</desc>
+      </param>
+      <param name="profiles" type="ICPUProfile" safearray="yes" dir="return">
+        <desc>The matching CPU profiles.</desc>
       </param>
     </method>
   </interface>

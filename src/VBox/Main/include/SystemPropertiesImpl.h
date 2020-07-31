@@ -26,6 +26,7 @@
 #include "MediumFormatImpl.h"
 #include "SystemPropertiesWrap.h"
 
+class CPUProfile;
 
 namespace settings
 {
@@ -37,6 +38,7 @@ class ATL_NO_VTABLE SystemProperties :
 {
 public:
     typedef std::list<ComObjPtr<MediumFormat> > MediumFormatList;
+    typedef std::list<ComObjPtr<CPUProfile> > CPUProfileList_T;
 
     DECLARE_EMPTY_CTOR_DTOR(SystemProperties)
 
@@ -168,6 +170,8 @@ private:
     HRESULT getMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,
                                                USBControllerType_T aType,
                                                ULONG *aMaxInstances) RT_OVERRIDE;
+    HRESULT getCPUProfiles(CPUArchitecture_T aArchitecture, const com::Utf8Str &aNamePattern,
+                           std::vector<ComPtr<ICPUProfile> > &aProfiles) RT_OVERRIDE;
 
     HRESULT i_getUserHomeDirectory(Utf8Str &strPath);
     HRESULT i_setDefaultMachineFolder(const Utf8Str &strPath);
@@ -186,6 +190,9 @@ private:
     settings::SystemProperties *m;
 
     MediumFormatList m_llMediumFormats;
+
+    bool                m_fLoadedX86CPUProfiles;    /**< Set if we've loaded the x86 and AMD64 CPU profiles. */
+    CPUProfileList_T    m_llCPUProfiles;            /**< List of loaded CPU profiles. */
 
     friend class VirtualBox;
 };

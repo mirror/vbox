@@ -563,6 +563,7 @@ VBoxSVC_SOURCES = \
 	src-server/ClientWatcher.cpp \
 	src-server/ClientToken.cpp \
 	src-server/CloudProviderManagerImpl.cpp \
+	src-server/CPUProfileImpl.cpp \
 	src-server/DataStreamImpl.cpp \
 	src-server/DHCPServerImpl.cpp \
 	src-server/DHCPConfigImpl.cpp \
