@@ -399,7 +399,7 @@ RTDECL(int)  RTErrConvertFromErrno(int iNativeCode)
 # endif
 #endif
 #ifdef ESTALE
-        case ESTALE             return VERR_STALE_FILE_HANDLE; /* 116: Stale NFS file handle */
+        case ESTALE:            return VERR_STALE_FILE_HANDLE; /* 116: Stale NFS file handle */
 #endif
 #ifdef EUCLEAN
         //case EUCLEAN          117     /* Structure needs cleaning */
