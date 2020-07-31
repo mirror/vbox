@@ -304,7 +304,7 @@ VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByIndex(uint32_t idxCpuDb)
  * Returns CPU database entry with the given name.
  *
  * @returns Pointer the CPU database entry, NULL if not found.
- * @param   idxCpuDb            The name of the profile to return.
+ * @param   pszName             The name of the profile to return.
  * @sa      PFNCPUMDBGETENTRYBYNAME
  */
 VMMR3DECL(PCCPUMDBENTRY)    CPUMR3DbGetEntryByName(const char *pszName)
