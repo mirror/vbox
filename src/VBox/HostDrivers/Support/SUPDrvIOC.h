@@ -221,6 +221,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *
  * @todo Pending work on next major version change:
  *          - Nothing.
+ * @note 0x002f0000 is used by 6.0. The next version number must be 0x00300000.
  */
 #define SUPDRV_IOC_VERSION                              0x002e0000
 
