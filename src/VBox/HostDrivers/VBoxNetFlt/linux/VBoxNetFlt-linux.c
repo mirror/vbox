@@ -211,6 +211,11 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 # endif
 #endif
 
+#if defined(CONFIG_SUSE_VERSION)
+# if CONFIG_SUSE_VERSION == 15 && CONFIG_SUSE_PATCHLEVEL == 2
+#  define OPENSUSE_152
+# endif
+#endif
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -924,7 +929,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
     for (i = 0; i < skb_shinfo(pBuf)->nr_frags; i++)
     {
         skb_frag_t *pFrag = &skb_shinfo(pBuf)->frags[i];
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0) || defined(OPENSUSE_152)
         pSG->aSegs[iSeg].cb = pFrag->bv_len;
         pSG->aSegs[iSeg].pv = VBOX_SKB_KMAP_FRAG(pFrag) + pFrag->bv_offset;
 # else /* < KERNEL_VERSION(5, 4, 0) */
@@ -945,7 +950,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
         for (i = 0; i < skb_shinfo(pFragBuf)->nr_frags; i++)
         {
             skb_frag_t *pFrag = &skb_shinfo(pFragBuf)->frags[i];
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0) || defined(OPENSUSE_152)
             pSG->aSegs[iSeg].cb = pFrag->bv_len;
             pSG->aSegs[iSeg].pv = VBOX_SKB_KMAP_FRAG(pFrag) + pFrag->bv_offset;
 # else /* < KERNEL_VERSION(5, 4, 0) */
