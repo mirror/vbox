@@ -4651,7 +4651,7 @@ TEMPLATE_VBoxR0_CXXFLAGS.freebsd    = -ffreestanding
  ## @todo WTF doesn't the globals work? Debug info is supposed to be split everywhere. GRR
  TEMPLATE_VBoxR0_LD_DEBUG           = split
  endif
- if1of ($(KBUILD_TARGET), linux)
+ if1of ($(KBUILD_TARGET), linux solaris)
 VBOX_WITH_VBOXR0_AS_DLL = 1
 TEMPLATE_VBoxR0_DLLSUFF             = .r0
 TEMPLATE_VBoxR0_CFLAGS             += -fPIC
