@@ -302,6 +302,7 @@ public:
     void setShouldUpdate(bool fShouldUpdate);
     const QMap<int, int> dataLengths() const;
     QUuid itemUid(int iIndex);
+    int itemIndex(const QUuid &uid);
 
 private slots:
 
@@ -319,8 +320,6 @@ private:
     void getHostRAMStats();
 
     QVector<UIResourceMonitorItem> m_itemList;
-    /* Used to find machines by uid. key is the machine uid and int is the index to m_itemList */
-    QMap<QUuid, int>               m_itemMap;
     QMap<int, QString> m_columnTitles;
     QTimer *m_pTimer;
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
@@ -955,6 +954,16 @@ QUuid UIResourceMonitorModel::itemUid(int iIndex)
     return m_itemList[iIndex].m_VMuid;
 }
 
+int UIResourceMonitorModel::itemIndex(const QUuid &uid)
+{
+    for (int i = 0; i < m_itemList.size(); ++i)
+    {
+        if (m_itemList[i].m_VMuid == uid)
+            return i;
+    }
+    return -1;
+}
+
 QVariant UIResourceMonitorModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || role != Qt::DisplayRole || index.row() >= rowCount())
@@ -989,7 +998,7 @@ void UIResourceMonitorModel::initializeItems()
 
 void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMachineState state)
 {
-    int iIndex = m_itemMap.value(uId, -1);
+    int iIndex = itemIndex(uId);
     /* Remove the machine in case machine is no longer working. */
     if (iIndex != -1 && state != KMachineState_Running)
     {
@@ -1197,7 +1206,7 @@ void UIResourceMonitorModel::queryPerformanceCollector()
                     CMachine comMachine = (CMachine)aReturnObjects[i];
                     if (comMachine.isNull())
                         continue;
-                    int iIndex = m_itemMap.value(comMachine.GetId(), -1);
+                    int iIndex = itemIndex(comMachine.GetId());
                     if (iIndex == -1 || iIndex >= m_itemList.size())
                         continue;
                     if (aReturnNames[i].contains("Total", Qt::CaseInsensitive))
@@ -1252,18 +1261,15 @@ void UIResourceMonitorModel::queryPerformanceCollector()
 
 void UIResourceMonitorModel::addItem(const QUuid& uMachineId, const QString& strMachineName)
 {
-    int iIndex = m_itemList.size();
     m_itemList.append(UIResourceMonitorItem(uMachineId, strMachineName));
-    m_itemMap[uMachineId] = iIndex;
 }
 
 void UIResourceMonitorModel::removeItem(const QUuid& uMachineId)
 {
-    int iIndex = m_itemMap.value(uMachineId, -1);
+    int iIndex = itemIndex(uMachineId);
     if (iIndex == -1)
         return;
     m_itemList.remove(iIndex);
-    m_itemMap.remove(uMachineId);
 }
 
 void UIResourceMonitorModel::setColumnVisible(const QMap<int, bool>& columnVisible)
