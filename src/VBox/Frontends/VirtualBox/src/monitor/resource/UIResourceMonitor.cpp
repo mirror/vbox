@@ -825,32 +825,6 @@ UIResourceMonitorItem::~UIResourceMonitorItem()
         m_comSession.UnlockMachine();
 }
 
-UIResourceMonitorItem::UIResourceMonitorItem(const UIResourceMonitorItem &other)
-    : m_VMuid(other.m_VMuid)
-    , m_strVMName(other.m_strVMName)
-    , m_uCPUGuestLoad(other.m_uCPUGuestLoad)
-    , m_uCPUVMMLoad(other.m_uCPUVMMLoad)
-    , m_uTotalRAM(other.m_uTotalRAM)
-    , m_uFreeRAM(other.m_uFreeRAM)
-    , m_uUsedRAM(other.m_uUsedRAM)
-    , m_fRAMUsagePercentage(other.m_fRAMUsagePercentage)
-    , m_uNetworkDownRate(other.m_uNetworkDownRate)
-    , m_uNetworkUpRate(other.m_uNetworkUpRate)
-    , m_uNetworkDownTotal(other.m_uNetworkDownTotal)
-    , m_uNetworkUpTotal(other.m_uNetworkUpTotal)
-    , m_uDiskWriteRate(other.m_uDiskWriteRate)
-    , m_uDiskReadRate(other.m_uDiskReadRate)
-    , m_uDiskWriteTotal(other.m_uDiskWriteTotal)
-    , m_uDiskReadTotal(other.m_uDiskReadTotal)
-    , m_uVMExitRate(other.m_uVMExitRate)
-    , m_uVMExitTotal(other.m_uVMExitTotal)
-    , m_comSession(other.m_comSession)
-    , m_comDebugger(other.m_comDebugger)
-    , m_comGuest(other.m_comGuest)
-    , m_columnData(other.m_columnData)
-{
-}
-
 bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
 {
     if (m_VMuid == other.m_VMuid)
