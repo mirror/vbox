@@ -673,7 +673,7 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
 #endif
 
     /* Lock the action preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), "opened", true);
+    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance), "opened", true);
     connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
@@ -699,8 +699,8 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
         names << items.at(i)->name();
 
     /* Lock the actions preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)
-                                                         << actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI),
+    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance)
+                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI),
                                        "opened", true);
     connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
@@ -713,7 +713,7 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
     QWidget *pWizardParent = windowManager().realParentWindow(this);
     UISafePointerWizard pWizard = new UIWizardExportApp(pWizardParent, names,
                                                         pAction &&
-                                                        pAction == actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI));
+                                                        pAction == actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI));
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->prepare();
     pWizard->exec();
@@ -723,7 +723,7 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
 void UIVirtualBoxManager::sltOpenNewCloudVMWizard()
 {
     /* Lock the action preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM), "opened", true);
+    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexMN_M_File_S_NewCloudVM), "opened", true);
     connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
@@ -774,9 +774,9 @@ void UIVirtualBoxManager::sltPerformExit()
 void UIVirtualBoxManager::sltOpenNewMachineWizard()
 {
     /* Lock the actions preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexST_M_Welcome_S_New)
-                                                         << actionPool()->action(UIActionIndexST_M_Machine_S_New)
-                                                         << actionPool()->action(UIActionIndexST_M_Group_S_New),
+    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_Welcome_S_New)
+                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_New)
+                                                         << actionPool()->action(UIActionIndexMN_M_Group_S_New),
                                        "opened", true);
     connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
@@ -835,9 +835,9 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
 void UIVirtualBoxManager::sltOpenAddMachineDialog()
 {
     /* Lock the actions preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexST_M_Welcome_S_Add)
-                                                         << actionPool()->action(UIActionIndexST_M_Machine_S_Add)
-                                                         << actionPool()->action(UIActionIndexST_M_Group_S_Add),
+    UIQObjectPropertySetter guardBlock(QList<QObject*>() << actionPool()->action(UIActionIndexMN_M_Welcome_S_Add)
+                                                         << actionPool()->action(UIActionIndexMN_M_Machine_S_Add)
+                                                         << actionPool()->action(UIActionIndexMN_M_Group_S_Add),
                                        "opened", true);
     connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
@@ -883,7 +883,7 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
                                                        const QUuid &uID /* = QString() */)
 {
     /* Lock the action preventing cascade calls: */
-    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), "opened", true);
+    UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings), "opened", true);
     connect(&guardBlock, &UIQObjectPropertySetter::sigAboutToBeDestroyed,
             this, &UIVirtualBoxManager::sltHandleUpdateActionAppearanceRequest);
     updateActionsAppearance();
@@ -1404,7 +1404,7 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
     QList<UIVirtualMachineItem*> itemsToTerminate;
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (isActionEnabled(UIActionIndexST_M_Group_S_Discard, QList<UIVirtualMachineItem*>() << pItem))
+        if (isActionEnabled(UIActionIndexMN_M_Group_S_Discard, QList<UIVirtualMachineItem*>() << pItem))
         {
             if (pItem->itemType() == UIVirtualMachineItemType_Local)
             {
@@ -1493,7 +1493,7 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
         const KMachineState enmState = pLocalItem->machineState();
 
         /* Check if current item could be paused/resumed: */
-        if (!isActionEnabled(UIActionIndexST_M_Group_T_Pause, QList<UIVirtualMachineItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexMN_M_Group_T_Pause, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /* Check if current item already paused: */
@@ -1545,7 +1545,7 @@ void UIVirtualBoxManager::sltPerformResetMachine()
     QList<UIVirtualMachineItem*> itemsToReset;
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (isActionEnabled(UIActionIndexST_M_Group_S_Reset, QList<UIVirtualMachineItem*>() << pItem))
+        if (isActionEnabled(UIActionIndexMN_M_Group_S_Reset, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToReset << pItem;
@@ -1585,7 +1585,7 @@ void UIVirtualBoxManager::sltPerformDetachMachineUI()
     foreach (UIVirtualMachineItem *pItem, items)
     {
         /* Check if current item could be detached: */
-        if (!isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Detach, QList<UIVirtualMachineItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Detach, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /// @todo Detach separate UI process..
@@ -1604,7 +1604,7 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
     {
         /* Check if current item could be saved: */
         AssertPtrReturnVoid(pItem);
-        if (!isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_SaveState, QList<UIVirtualMachineItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_SaveState, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /* Open a session to modify VM state: */
@@ -1658,7 +1658,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
     QList<UIVirtualMachineItem*> itemsToShutdown;
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, QList<UIVirtualMachineItem*>() << pItem))
+        if (isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToShutdown << pItem;
@@ -1724,7 +1724,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     QList<UIVirtualMachineItem*> itemsToPowerOff;
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        if (isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_PowerOff, QList<UIVirtualMachineItem*>() << pItem))
+        if (isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_PowerOff, QList<UIVirtualMachineItem*>() << pItem))
         {
             machineNames << pItem->name();
             itemsToPowerOff << pItem;
@@ -1815,7 +1815,7 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
             continue;
 
         /* Check if log could be show for the current item: */
-        if (!isActionEnabled(UIActionIndexST_M_Group_S_ShowLogDialog, QList<UIVirtualMachineItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexMN_M_Group_S_ShowLogDialog, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         QIManagerDialog *pLogViewerDialog = 0;
@@ -1913,7 +1913,7 @@ void UIVirtualBoxManager::sltShowMachineInFileManager()
             continue;
 
         /* Check if that item could be shown in file-browser: */
-        if (!isActionEnabled(UIActionIndexST_M_Group_S_ShowInFileManager, QList<UIVirtualMachineItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexMN_M_Group_S_ShowInFileManager, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /* Show VM in filebrowser: */
@@ -1936,7 +1936,7 @@ void UIVirtualBoxManager::sltPerformCreateMachineShortcut()
             continue;
 
         /* Check if shortcuts could be created for this item: */
-        if (!isActionEnabled(UIActionIndexST_M_Group_S_CreateShortcut, QList<UIVirtualMachineItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexMN_M_Group_S_CreateShortcut, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
         /* Create shortcut for this VM: */
@@ -2041,14 +2041,14 @@ void UIVirtualBoxManager::prepareMenuBar()
     m_pActionPool = UIActionPool::create(UIActionPoolType_Manager);
 
     /* Prepare menu update-handlers: */
-    m_menuUpdateHandlers[UIActionIndexST_M_Group] = &UIVirtualBoxManager::updateMenuGroup;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine] = &UIVirtualBoxManager::updateMenuMachine;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuGroupMoveToGroup;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Console] = &UIVirtualBoxManager::updateMenuGroupConsole;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close] = &UIVirtualBoxManager::updateMenuGroupClose;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuMachineMoveToGroup;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Console] = &UIVirtualBoxManager::updateMenuMachineConsole;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close] = &UIVirtualBoxManager::updateMenuMachineClose;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group] = &UIVirtualBoxManager::updateMenuGroup;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine] = &UIVirtualBoxManager::updateMenuMachine;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuGroupMoveToGroup;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Console] = &UIVirtualBoxManager::updateMenuGroupConsole;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Close] = &UIVirtualBoxManager::updateMenuGroupClose;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_MoveToGroup] = &UIVirtualBoxManager::updateMenuMachineMoveToGroup;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Console] = &UIVirtualBoxManager::updateMenuMachineConsole;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Close] = &UIVirtualBoxManager::updateMenuMachineClose;
 
     /* Build menu-bar: */
     foreach (QMenu *pMenu, actionPool()->menus())
@@ -2126,167 +2126,167 @@ void UIVirtualBoxManager::prepareConnections()
     connect(actionPool(), &UIActionPool::sigNotifyAboutMenuPrepare, this, &UIVirtualBoxManager::sltHandleMenuPrepare);
 
     /* 'File' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenVirtualMediumManagerWindow);
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenHostNetworkManagerWindow);
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloudProfileManagerWindow);
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenImportApplianceWizardDefault);
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenExportApplianceWizard);
-    connect(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_NewCloudVM), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenNewCloudVMWizard);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_ShowExtraDataManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenExtraDataManagerWindow);
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenPreferencesDialog);
-    connect(actionPool()->action(UIActionIndexST_M_File_S_Close), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_File_S_Close), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformExit);
 
     /* 'Welcome' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Welcome_S_New), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Welcome_S_New), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenNewMachineWizard);
-    connect(actionPool()->action(UIActionIndexST_M_Welcome_S_Add), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Welcome_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
 
     /* 'Group' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_New), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_New), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenNewMachineWizard);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Add), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Rename), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_Rename), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenGroupNameEditor);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Remove), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_Remove), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltDisbandGroup);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Group_T_Pause), &UIAction::toggled,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_T_Pause), &UIAction::toggled,
             this, &UIVirtualBoxManager::sltPerformPauseOrResumeMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Reset), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_Reset), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformResetMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Discard), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_Discard), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenLogViewerWindow);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformRefreshMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_ShowInFileManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltShowMachineInFileManager);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_CreateShortcut), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCreateMachineShortcut);
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Sort), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_S_Sort), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformGroupSorting);
 
     /* 'Machine' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_New), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenNewMachineWizard);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Add), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Add), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenAddMachineDialog);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenMachineSettingsDialogDefault);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Clone), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Clone), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloneMachineWizard);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Move), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Move), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformMachineMove);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenExportApplianceWizard);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Remove), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformMachineRemove);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformMachineMoveToNewGroup);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_T_Pause), &UIAction::toggled,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_T_Pause), &UIAction::toggled,
             this, &UIVirtualBoxManager::sltPerformPauseOrResumeMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Reset), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Reset), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformResetMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDiscardMachineState);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenLogViewerWindow);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformRefreshMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowInFileManager), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltShowMachineInFileManager);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_CreateShortcut), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCreateMachineShortcut);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformGroupSorting);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_T_Search), &UIAction::toggled,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_T_Search), &UIAction::toggled,
             this, &UIVirtualBoxManager::sltPerformMachineSearchWidgetVisibilityToggling);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSearchWidgetVisibilityChanged,
-            actionPool()->action(UIActionIndexST_M_Machine_T_Search), &QAction::setChecked);
+            actionPool()->action(UIActionIndexMN_M_Machine_T_Search), &QAction::setChecked);
 
     /* 'Group/Start or Show' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartMachineNormal);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartMachineHeadless);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartMachineDetachable);
 
     /* 'Machine/Start or Show' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartMachineNormal);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartMachineHeadless);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartMachineDetachable);
 
     /* 'Group/Console' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_CreateConnection), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForGroup);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow);
 
     /* 'Machine/Console' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CreateConnection), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCopyCommandSerialUnix);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCopyCommandSerialWindows);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCopyCommandVNCUnix);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformCopyCommandVNCWindows);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloudConsoleManagerWindow);
 
     /* 'Group/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Detach), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformSaveMachineState);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformShutdownMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 
     /* 'Machine/Close' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Detach), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformDetachMachineUI);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformSaveMachineState);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformShutdownMachine);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff), &UIAction::triggered,
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 
     /* 'Group/Tools' menu connections: */
-    connect(actionPool()->actionGroup(UIActionIndexST_M_Group_M_Tools), &QActionGroup::triggered,
+    connect(actionPool()->actionGroup(UIActionIndexMN_M_Group_M_Tools), &QActionGroup::triggered,
             this, &UIVirtualBoxManager::sltPerformShowMachineTool);
 
     /* 'Machine/Tools' menu connections: */
-    connect(actionPool()->actionGroup(UIActionIndexST_M_Machine_M_Tools), &QActionGroup::triggered,
+    connect(actionPool()->actionGroup(UIActionIndexMN_M_Machine_M_Tools), &QActionGroup::triggered,
             this, &UIVirtualBoxManager::sltPerformShowMachineTool);
 }
 
@@ -2619,43 +2619,43 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
     if (isSingleLocalGroupSelected())
     {
         /* Populate Group-menu: */
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Add));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_MoveToGroup));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Rename));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Remove));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_MoveToGroup));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Reset));
-        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Pause));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Reset));
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
         pMenu->addSeparator();
-        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Tools)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Tools)->menu());
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Discard));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_ShowInFileManager));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_CreateShortcut));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
     }
     else
     {
         /* Populate Group-menu: */
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Add));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
-        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Console)->menu());
-        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Console)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Discard));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
     }
 }
 
@@ -2669,51 +2669,51 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
     if (pItem->itemType() == UIVirtualMachineItemType_Local)
     {
         /* Populate Machine-menu: */
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Add));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Clone));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Move));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_MoveToGroup));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Reset));
-        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Pause));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Reset));
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
         pMenu->addSeparator();
-        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Tools)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Tools)->menu());
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowInFileManager));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_CreateShortcut));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Search));
     }
     else
     {
         /* Populate Machine-menu: */
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_New));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Add));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Console)->menu());
-        pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->menu());
+        pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenu->addSeparator();
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Search));
     }
 }
 
@@ -2737,10 +2737,10 @@ void UIVirtualBoxManager::updateMenuGroupMoveToGroup(QMenu *pMenu)
 void UIVirtualBoxManager::updateMenuGroupConsole(QMenu *pMenu)
 {
     /* Populate 'Group' / 'Console' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection));
+    pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_CreateConnection));
+    pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection));
     pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications));
+    pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications));
 }
 
 void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
@@ -2749,7 +2749,7 @@ void UIVirtualBoxManager::updateMenuGroupClose(QMenu *)
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
-    actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_Shutdown, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Shutdown, items));
 }
 
 void UIVirtualBoxManager::updateMenuMachineMoveToGroup(QMenu *pMenu)
@@ -2787,7 +2787,7 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
 
     /* Populate 'Group' / 'Console' menu: */
     if (strFingerprint.isEmpty())
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CreateConnection));
     else
     {
         /* Copy fingerprint to clipboard action: */
@@ -2801,10 +2801,10 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         pAction->setProperty("fingerprint", strFingerprint);
 
         /* Copy command to clipboard actions: */
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix));
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows));
         pMenu->addSeparator();
 
         /* Default Connect action: */
@@ -2858,11 +2858,11 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
             }
         }
         /* Terminal application configuration tool: */
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications));
         pMenu->addSeparator();
 
         /* Delete connection action finally: */
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection));
     }
 }
 
@@ -2872,7 +2872,7 @@ void UIVirtualBoxManager::updateMenuMachineClose(QMenu *)
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
 
-    actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, items));
 }
 
 void UIVirtualBoxManager::updateActionsVisibility()
@@ -2881,27 +2881,27 @@ void UIVirtualBoxManager::updateActionsVisibility()
     const bool fGlobalMenuShown  = m_pWidget->isGlobalItemSelected();
     const bool fGroupMenuShown   = m_pWidget->isGroupItemSelected()   &&  isSingleGroupSelected();
     const bool fMachineMenuShown = m_pWidget->isMachineItemSelected() && !isSingleGroupSelected();
-    actionPool()->action(UIActionIndexST_M_Welcome)->setVisible(fGlobalMenuShown);
-    actionPool()->action(UIActionIndexST_M_Group)->setVisible(fGroupMenuShown);
-    actionPool()->action(UIActionIndexST_M_Machine)->setVisible(fMachineMenuShown);
+    actionPool()->action(UIActionIndexMN_M_Welcome)->setVisible(fGlobalMenuShown);
+    actionPool()->action(UIActionIndexMN_M_Group)->setVisible(fGroupMenuShown);
+    actionPool()->action(UIActionIndexMN_M_Machine)->setVisible(fMachineMenuShown);
 
     /* Determine whether Media menu should be visible: */
     const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Media;
-    actionPool()->action(UIActionIndexST_M_Medium)->setVisible(fMediumMenuShown);
+    actionPool()->action(UIActionIndexMN_M_Medium)->setVisible(fMediumMenuShown);
     /* Determine whether Network menu should be visible: */
     const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Network;
-    actionPool()->action(UIActionIndexST_M_Network)->setVisible(fNetworkMenuShown);
+    actionPool()->action(UIActionIndexMN_M_Network)->setVisible(fNetworkMenuShown);
     /* Determine whether Cloud menu should be visible: */
     const bool fCloudMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Cloud;
-    actionPool()->action(UIActionIndexST_M_Cloud)->setVisible(fCloudMenuShown);
+    actionPool()->action(UIActionIndexMN_M_Cloud)->setVisible(fCloudMenuShown);
     /* Determine whether Resources menu should be visible: */
     const bool fResourcesMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Resources;
-    actionPool()->action(UIActionIndexST_M_VMResourceMonitor)->setVisible(fResourcesMenuShown);
+    actionPool()->action(UIActionIndexMN_M_VMResourceMonitor)->setVisible(fResourcesMenuShown);
 
     /* Determine whether Snapshots menu should be visible: */
     const bool fSnapshotMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
                                     m_pWidget->currentMachineTool() == UIToolType_Snapshots;
-    actionPool()->action(UIActionIndexST_M_Snapshot)->setVisible(fSnapshotMenuShown);
+    actionPool()->action(UIActionIndexMN_M_Snapshot)->setVisible(fSnapshotMenuShown);
     /* Determine whether Logs menu should be visible: */
     const bool fLogViewerMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
                                      m_pWidget->currentMachineTool() == UIToolType_Logs;
@@ -2913,19 +2913,19 @@ void UIVirtualBoxManager::updateActionsVisibility()
 
     /* Hide action shortcuts: */
     if (!fGlobalMenuShown)
-        actionPool()->setShortcutsVisible(UIActionIndexST_M_Welcome, false);
+        actionPool()->setShortcutsVisible(UIActionIndexMN_M_Welcome, false);
     if (!fGroupMenuShown)
-        actionPool()->setShortcutsVisible(UIActionIndexST_M_Group, false);
+        actionPool()->setShortcutsVisible(UIActionIndexMN_M_Group, false);
     if (!fMachineMenuShown)
-        actionPool()->setShortcutsVisible(UIActionIndexST_M_Machine, false);
+        actionPool()->setShortcutsVisible(UIActionIndexMN_M_Machine, false);
 
     /* Show action shortcuts: */
     if (fGlobalMenuShown)
-        actionPool()->setShortcutsVisible(UIActionIndexST_M_Welcome, true);
+        actionPool()->setShortcutsVisible(UIActionIndexMN_M_Welcome, true);
     if (fGroupMenuShown)
-        actionPool()->setShortcutsVisible(UIActionIndexST_M_Group, true);
+        actionPool()->setShortcutsVisible(UIActionIndexMN_M_Group, true);
     if (fMachineMenuShown)
-        actionPool()->setShortcutsVisible(UIActionIndexST_M_Machine, true);
+        actionPool()->setShortcutsVisible(UIActionIndexMN_M_Machine, true);
 }
 
 void UIVirtualBoxManager::updateActionsAppearance()
@@ -2935,89 +2935,89 @@ void UIVirtualBoxManager::updateActionsAppearance()
 
     /* Enable/disable File/Application actions: */
     actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setEnabled(isActionEnabled(UIActionIndex_M_Application_S_Preferences, items));
-    actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setEnabled(isActionEnabled(UIActionIndexST_M_File_S_ExportAppliance, items));
-    actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setEnabled(isActionEnabled(UIActionIndexST_M_File_S_ImportAppliance, items));
-    actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM)->setEnabled(isActionEnabled(UIActionIndexST_M_File_S_NewCloudVM, items));
+    actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance)->setEnabled(isActionEnabled(UIActionIndexMN_M_File_S_ExportAppliance, items));
+    actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance)->setEnabled(isActionEnabled(UIActionIndexMN_M_File_S_ImportAppliance, items));
+    actionPool()->action(UIActionIndexMN_M_File_S_NewCloudVM)->setEnabled(isActionEnabled(UIActionIndexMN_M_File_S_NewCloudVM, items));
 
     /* Enable/disable welcome actions: */
-    actionPool()->action(UIActionIndexST_M_Welcome_S_New)->setEnabled(isActionEnabled(UIActionIndexST_M_Welcome_S_New, items));
-    actionPool()->action(UIActionIndexST_M_Welcome_S_Add)->setEnabled(isActionEnabled(UIActionIndexST_M_Welcome_S_Add, items));
+    actionPool()->action(UIActionIndexMN_M_Welcome_S_New)->setEnabled(isActionEnabled(UIActionIndexMN_M_Welcome_S_New, items));
+    actionPool()->action(UIActionIndexMN_M_Welcome_S_Add)->setEnabled(isActionEnabled(UIActionIndexMN_M_Welcome_S_Add, items));
 
     /* Enable/disable group actions: */
-    actionPool()->action(UIActionIndexST_M_Group_S_New)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_New, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_Add)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Add, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_Rename)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Rename, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_Remove)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Remove, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_MoveToGroup)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_MoveToGroup, items));
-    actionPool()->action(UIActionIndexST_M_Group_T_Pause)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_T_Pause, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_Reset)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Reset, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_Discard)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Discard, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_ShowLogDialog, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Refresh, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_ShowInFileManager, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_CreateShortcut, items));
-    actionPool()->action(UIActionIndexST_M_Group_S_Sort)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Sort, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_New)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_New, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_Add)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Add, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_Rename)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Rename, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_Remove)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Remove, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_MoveToGroup)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_MoveToGroup, items));
+    actionPool()->action(UIActionIndexMN_M_Group_T_Pause)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_T_Pause, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_Reset)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Reset, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Discard, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_ShowLogDialog, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Refresh, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_ShowInFileManager)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_ShowInFileManager, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_CreateShortcut)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_CreateShortcut, items));
+    actionPool()->action(UIActionIndexMN_M_Group_S_Sort)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_S_Sort, items));
 
     /* Enable/disable machine actions: */
-    actionPool()->action(UIActionIndexST_M_Machine_S_New)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_New, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Add)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Add, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Settings, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Clone)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Clone, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Move)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Move, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_ExportToOCI, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Remove)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Remove, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_MoveToGroup, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_MoveToGroup_S_New, items));
-    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_T_Pause, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Reset)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Reset, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Discard)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Discard, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_ShowLogDialog, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Refresh, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_ShowInFileManager, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_CreateShortcut, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_SortParent)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_SortParent, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_New)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_New, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Add)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Add, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Settings)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Settings, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Clone)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Clone, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Move)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Move, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_ExportToOCI, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Remove)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Remove, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_MoveToGroup)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_MoveToGroup, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_T_Pause)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_T_Pause, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Reset)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Reset, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Discard, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_ShowLogDialog, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_Refresh, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_ShowInFileManager)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_ShowInFileManager, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_CreateShortcut)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_CreateShortcut, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_S_SortParent, items));
 
     /* Enable/disable group-start-or-show actions: */
-    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_StartOrShow, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable, items));
 
     /* Enable/disable machine-start-or-show actions: */
-    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_StartOrShow, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable, items));
 
     /* Enable/disable group-console actions: */
-    actionPool()->action(UIActionIndexST_M_Group_M_Console)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console_S_CreateConnection, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console_S_DeleteConnection, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Console)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Console, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Console_S_CreateConnection, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications, items));
 
     /* Enable/disable machine-console actions: */
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CreateConnection, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CreateConnection)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_CreateConnection, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications, items));
 
     /* Enable/disable group-close actions: */
-    actionPool()->action(UIActionIndexST_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_Detach, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_SaveState, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_Shutdown, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close_S_PowerOff, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Detach, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_SaveState, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_Shutdown, items));
+    actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close_S_PowerOff, items));
 
     /* Enable/disable machine-close actions: */
-    actionPool()->action(UIActionIndexST_M_Machine_M_Close)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Detach, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_SaveState, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_PowerOff, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Detach)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Detach, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_SaveState, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_Shutdown, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_PowerOff, items));
 
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -3027,31 +3027,31 @@ void UIVirtualBoxManager::updateActionsAppearance()
         && (   pItem->itemType() == UIVirtualMachineItemType_CloudFake
             || pItem->itemType() == UIVirtualMachineItemType_CloudReal))
     {
-        actionPool()->action(UIActionIndexST_M_Group_S_Discard)->toActionPolymorphicMenu()->setState(1);
-        actionPool()->action(UIActionIndexST_M_Machine_S_Discard)->toActionPolymorphicMenu()->setState(1);
+        actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->toActionPolymorphicMenu()->setState(1);
+        actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->toActionPolymorphicMenu()->setState(1);
     }
     else
     {
-        actionPool()->action(UIActionIndexST_M_Group_S_Discard)->toActionPolymorphicMenu()->setState(0);
-        actionPool()->action(UIActionIndexST_M_Machine_S_Discard)->toActionPolymorphicMenu()->setState(0);
+        actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->toActionPolymorphicMenu()->setState(0);
+        actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->toActionPolymorphicMenu()->setState(0);
     }
 
     /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
     {
-        actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(pItem->isItemPoweredOff() ? 0 : 1);
-        actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(pItem->isItemPoweredOff() ? 0 : 1);
+        actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(pItem->isItemPoweredOff() ? 0 : 1);
+        actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(pItem->isItemPoweredOff() ? 0 : 1);
         /// @todo Hmm, fix it?
-//        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)));
+//        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
 //        if (pButton)
 //            pButton->setPopupMode(pItem->isItemPoweredOff() ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
     }
     else
     {
-        actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(0);
-        actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(0);
+        actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(0);
+        actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(0);
         /// @todo Hmm, fix it?
-//        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)));
+//        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
 //        if (pButton)
 //            pButton->setPopupMode(pItem->isItemPoweredOff() ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
     }
@@ -3067,15 +3067,15 @@ void UIVirtualBoxManager::updateActionsAppearance()
         }
     }
     /* Update the group Pause/Resume action appearance: */
-    actionPool()->action(UIActionIndexST_M_Group_T_Pause)->blockSignals(true);
-    actionPool()->action(UIActionIndexST_M_Group_T_Pause)->setChecked(pFirstStartedAction && pFirstStartedAction->isItemPaused());
-    actionPool()->action(UIActionIndexST_M_Group_T_Pause)->retranslateUi();
-    actionPool()->action(UIActionIndexST_M_Group_T_Pause)->blockSignals(false);
+    actionPool()->action(UIActionIndexMN_M_Group_T_Pause)->blockSignals(true);
+    actionPool()->action(UIActionIndexMN_M_Group_T_Pause)->setChecked(pFirstStartedAction && pFirstStartedAction->isItemPaused());
+    actionPool()->action(UIActionIndexMN_M_Group_T_Pause)->retranslateUi();
+    actionPool()->action(UIActionIndexMN_M_Group_T_Pause)->blockSignals(false);
     /* Update the machine Pause/Resume action appearance: */
-    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(true);
-    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setChecked(pFirstStartedAction && pFirstStartedAction->isItemPaused());
-    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
-    actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
+    actionPool()->action(UIActionIndexMN_M_Machine_T_Pause)->blockSignals(true);
+    actionPool()->action(UIActionIndexMN_M_Machine_T_Pause)->setChecked(pFirstStartedAction && pFirstStartedAction->isItemPaused());
+    actionPool()->action(UIActionIndexMN_M_Machine_T_Pause)->retranslateUi();
+    actionPool()->action(UIActionIndexMN_M_Machine_T_Pause)->blockSignals(false);
 
     /* Update action toggle states: */
     if (m_pWidget)
@@ -3084,26 +3084,26 @@ void UIVirtualBoxManager::updateActionsAppearance()
         {
             case UIToolType_Details:
             {
-                actionPool()->action(UIActionIndexST_M_Group_M_Tools_T_Details)->setChecked(true);
-                actionPool()->action(UIActionIndexST_M_Machine_M_Tools_T_Details)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Details)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Details)->setChecked(true);
                 break;
             }
             case UIToolType_Snapshots:
             {
-                actionPool()->action(UIActionIndexST_M_Group_M_Tools_T_Snapshots)->setChecked(true);
-                actionPool()->action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Snapshots)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Snapshots)->setChecked(true);
                 break;
             }
             case UIToolType_Logs:
             {
-                actionPool()->action(UIActionIndexST_M_Group_M_Tools_T_Logs)->setChecked(true);
-                actionPool()->action(UIActionIndexST_M_Machine_M_Tools_T_Logs)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Logs)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Logs)->setChecked(true);
                 break;
             }
             case UIToolType_Performance:
             {
-                actionPool()->action(UIActionIndexST_M_Group_M_Tools_T_Performance)->setChecked(true);
-                actionPool()->action(UIActionIndexST_M_Machine_M_Tools_T_Performance)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Performance)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Performance)->setChecked(true);
                 break;
             }
             default:
@@ -3126,11 +3126,11 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
     switch (iActionIndex)
     {
         case UIActionIndex_M_Application_S_Preferences:
-        case UIActionIndexST_M_File_S_ExportAppliance:
-        case UIActionIndexST_M_File_S_ImportAppliance:
-        case UIActionIndexST_M_File_S_NewCloudVM:
-        case UIActionIndexST_M_Welcome_S_New:
-        case UIActionIndexST_M_Welcome_S_Add:
+        case UIActionIndexMN_M_File_S_ExportAppliance:
+        case UIActionIndexMN_M_File_S_ImportAppliance:
+        case UIActionIndexMN_M_File_S_NewCloudVM:
+        case UIActionIndexMN_M_Welcome_S_New:
+        case UIActionIndexMN_M_Welcome_S_Add:
             return true;
         default:
             break;
@@ -3146,33 +3146,33 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
     /* For known *machine* action types: */
     switch (iActionIndex)
     {
-        case UIActionIndexST_M_Group_S_New:
-        case UIActionIndexST_M_Group_S_Add:
+        case UIActionIndexMN_M_Group_S_New:
+        case UIActionIndexMN_M_Group_S_Add:
         {
             return !isGroupSavingInProgress() &&
                    (isSingleLocalGroupSelected() ||
                     isSingleCloudProfileGroupSelected());
         }
-        case UIActionIndexST_M_Group_S_Sort:
+        case UIActionIndexMN_M_Group_S_Sort:
         {
             return !isGroupSavingInProgress() &&
                    isSingleGroupSelected() &&
                    isItemsLocal(items);
         }
-        case UIActionIndexST_M_Group_S_Rename:
-        case UIActionIndexST_M_Group_S_Remove:
+        case UIActionIndexMN_M_Group_S_Rename:
+        case UIActionIndexMN_M_Group_S_Remove:
         {
             return !isGroupSavingInProgress() &&
                    isSingleGroupSelected() &&
                    isItemsLocal(items) &&
                    isItemsPoweredOff(items);
         }
-        case UIActionIndexST_M_Machine_S_New:
-        case UIActionIndexST_M_Machine_S_Add:
+        case UIActionIndexMN_M_Machine_S_New:
+        case UIActionIndexMN_M_Machine_S_Add:
         {
             return !isGroupSavingInProgress();
         }
-        case UIActionIndexST_M_Machine_S_Settings:
+        case UIActionIndexMN_M_Machine_S_Settings:
         {
             return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
@@ -3180,46 +3180,46 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
                    (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
                     m_pWidget->isCurrentStateItemSelected());
         }
-        case UIActionIndexST_M_Machine_S_Clone:
-        case UIActionIndexST_M_Machine_S_Move:
+        case UIActionIndexMN_M_Machine_S_Clone:
+        case UIActionIndexMN_M_Machine_S_Move:
         {
             return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
                    pItem->toLocal() &&
                    pItem->isItemEditable();
         }
-        case UIActionIndexST_M_Machine_S_ExportToOCI:
+        case UIActionIndexMN_M_Machine_S_ExportToOCI:
         {
             return items.size() == 1 &&
                    pItem->toLocal();
         }
-        case UIActionIndexST_M_Machine_S_Remove:
+        case UIActionIndexMN_M_Machine_S_Remove:
         {
             return !isGroupSavingInProgress() &&
                    isAtLeastOneItemRemovable(items);
         }
-        case UIActionIndexST_M_Group_M_MoveToGroup:
-        case UIActionIndexST_M_Machine_M_MoveToGroup:
-        case UIActionIndexST_M_Machine_M_MoveToGroup_S_New:
+        case UIActionIndexMN_M_Group_M_MoveToGroup:
+        case UIActionIndexMN_M_Machine_M_MoveToGroup:
+        case UIActionIndexMN_M_Machine_M_MoveToGroup_S_New:
         {
             return !isGroupSavingInProgress() &&
                    isItemsLocal(items) &&
                    isItemsPoweredOff(items);
         }
-        case UIActionIndexST_M_Group_M_StartOrShow:
-        case UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal:
-        case UIActionIndexST_M_Machine_M_StartOrShow:
-        case UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal:
+        case UIActionIndexMN_M_Group_M_StartOrShow:
+        case UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal:
+        case UIActionIndexMN_M_Machine_M_StartOrShow:
+        case UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal:
         {
             return !isGroupSavingInProgress() &&
                    isAtLeastOneItemCanBeStartedOrShown(items) &&
                     (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
                      m_pWidget->isCurrentStateItemSelected());
         }
-        case UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless:
-        case UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable:
-        case UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless:
-        case UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable:
+        case UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless:
+        case UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable:
+        case UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless:
+        case UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable:
         {
             return !isGroupSavingInProgress() &&
                    isItemsLocal(items) &&
@@ -3227,95 +3227,95 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
                     (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
                      m_pWidget->isCurrentStateItemSelected());
         }
-        case UIActionIndexST_M_Group_S_Discard:
-        case UIActionIndexST_M_Machine_S_Discard:
+        case UIActionIndexMN_M_Group_S_Discard:
+        case UIActionIndexMN_M_Machine_S_Discard:
         {
             return !isGroupSavingInProgress() &&
                    isAtLeastOneItemDiscardable(items) &&
                     (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
                      m_pWidget->isCurrentStateItemSelected());
         }
-        case UIActionIndexST_M_Group_S_ShowLogDialog:
-        case UIActionIndexST_M_Machine_S_ShowLogDialog:
+        case UIActionIndexMN_M_Group_S_ShowLogDialog:
+        case UIActionIndexMN_M_Machine_S_ShowLogDialog:
         {
             return isItemsLocal(items) &&
                    isAtLeastOneItemAccessible(items);
         }
-        case UIActionIndexST_M_Group_T_Pause:
-        case UIActionIndexST_M_Machine_T_Pause:
+        case UIActionIndexMN_M_Group_T_Pause:
+        case UIActionIndexMN_M_Machine_T_Pause:
         {
             return isItemsLocal(items) &&
                    isAtLeastOneItemStarted(items);
         }
-        case UIActionIndexST_M_Group_S_Reset:
-        case UIActionIndexST_M_Machine_S_Reset:
+        case UIActionIndexMN_M_Group_S_Reset:
+        case UIActionIndexMN_M_Machine_S_Reset:
         {
             return isItemsLocal(items) &&
                    isAtLeastOneItemRunning(items);
         }
-        case UIActionIndexST_M_Group_S_Refresh:
-        case UIActionIndexST_M_Machine_S_Refresh:
+        case UIActionIndexMN_M_Group_S_Refresh:
+        case UIActionIndexMN_M_Machine_S_Refresh:
         {
             return isAtLeastOneItemInaccessible(items);
         }
-        case UIActionIndexST_M_Group_S_ShowInFileManager:
-        case UIActionIndexST_M_Machine_S_ShowInFileManager:
+        case UIActionIndexMN_M_Group_S_ShowInFileManager:
+        case UIActionIndexMN_M_Machine_S_ShowInFileManager:
         {
             return isItemsLocal(items) &&
                    isAtLeastOneItemAccessible(items);
         }
-        case UIActionIndexST_M_Machine_S_SortParent:
+        case UIActionIndexMN_M_Machine_S_SortParent:
         {
             return !isGroupSavingInProgress() &&
                    isItemsLocal(items);
         }
-        case UIActionIndexST_M_Group_S_CreateShortcut:
-        case UIActionIndexST_M_Machine_S_CreateShortcut:
+        case UIActionIndexMN_M_Group_S_CreateShortcut:
+        case UIActionIndexMN_M_Machine_S_CreateShortcut:
         {
             return isAtLeastOneItemSupportsShortcuts(items);
         }
-        case UIActionIndexST_M_Group_M_Console:
-        case UIActionIndexST_M_Group_M_Console_S_CreateConnection:
-        case UIActionIndexST_M_Group_M_Console_S_DeleteConnection:
-        case UIActionIndexST_M_Group_M_Console_S_ConfigureApplications:
-        case UIActionIndexST_M_Machine_M_Console:
-        case UIActionIndexST_M_Machine_M_Console_S_CreateConnection:
-        case UIActionIndexST_M_Machine_M_Console_S_DeleteConnection:
-        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix:
-        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows:
-        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix:
-        case UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows:
-        case UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications:
+        case UIActionIndexMN_M_Group_M_Console:
+        case UIActionIndexMN_M_Group_M_Console_S_CreateConnection:
+        case UIActionIndexMN_M_Group_M_Console_S_DeleteConnection:
+        case UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications:
+        case UIActionIndexMN_M_Machine_M_Console:
+        case UIActionIndexMN_M_Machine_M_Console_S_CreateConnection:
+        case UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection:
+        case UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix:
+        case UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows:
+        case UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix:
+        case UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows:
+        case UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications:
         {
             return isAtLeastOneItemStarted(items);
         }
-        case UIActionIndexST_M_Group_M_Close:
-        case UIActionIndexST_M_Machine_M_Close:
+        case UIActionIndexMN_M_Group_M_Close:
+        case UIActionIndexMN_M_Machine_M_Close:
         {
             return isAtLeastOneItemStarted(items);
         }
-        case UIActionIndexST_M_Group_M_Close_S_Detach:
-        case UIActionIndexST_M_Machine_M_Close_S_Detach:
+        case UIActionIndexMN_M_Group_M_Close_S_Detach:
+        case UIActionIndexMN_M_Machine_M_Close_S_Detach:
         {
             return isItemsLocal(items) &&
-                   isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
+                   isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items);
         }
-        case UIActionIndexST_M_Group_M_Close_S_SaveState:
-        case UIActionIndexST_M_Machine_M_Close_S_SaveState:
+        case UIActionIndexMN_M_Group_M_Close_S_SaveState:
+        case UIActionIndexMN_M_Machine_M_Close_S_SaveState:
         {
             return isItemsLocal(items) &&
-                   isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
+                   isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items);
         }
-        case UIActionIndexST_M_Group_M_Close_S_Shutdown:
-        case UIActionIndexST_M_Machine_M_Close_S_Shutdown:
+        case UIActionIndexMN_M_Group_M_Close_S_Shutdown:
+        case UIActionIndexMN_M_Machine_M_Close_S_Shutdown:
         {
-            return isActionEnabled(UIActionIndexST_M_Machine_M_Close, items) &&
+            return isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items) &&
                    isAtLeastOneItemAbleToShutdown(items);
         }
-        case UIActionIndexST_M_Group_M_Close_S_PowerOff:
-        case UIActionIndexST_M_Machine_M_Close_S_PowerOff:
+        case UIActionIndexMN_M_Group_M_Close_S_PowerOff:
+        case UIActionIndexMN_M_Machine_M_Close_S_PowerOff:
         {
-            return isActionEnabled(UIActionIndexST_M_Machine_M_Close, items);
+            return isActionEnabled(UIActionIndexMN_M_Machine_M_Close, items);
         }
         default:
             break;

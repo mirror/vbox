@@ -3365,200 +3365,200 @@ UIActionPoolManager::UIActionPoolManager(bool fTemporary /* = false */)
 void UIActionPoolManager::preparePool()
 {
     /* 'File' actions: */
-    m_pool[UIActionIndexST_M_File] = new UIActionMenuSelectorFile(this);
-    m_pool[UIActionIndexST_M_File_S_ShowVirtualMediumManager] = new UIActionSimpleSelectorFileShowVirtualMediaManager(this);
-    m_pool[UIActionIndexST_M_File_S_ShowHostNetworkManager] = new UIActionSimpleSelectorFileShowHostNetworkManager(this);
-    m_pool[UIActionIndexST_M_File_S_ShowCloudProfileManager] = new UIActionSimpleSelectorFileShowCloudProfileManager(this);
-    m_pool[UIActionIndexST_M_File_S_ImportAppliance] = new UIActionSimpleSelectorFileShowImportApplianceWizard(this);
-    m_pool[UIActionIndexST_M_File_S_ExportAppliance] = new UIActionSimpleSelectorFileShowExportApplianceWizard(this);
-    m_pool[UIActionIndexST_M_File_S_NewCloudVM] = new UIActionSimpleSelectorFileShowNewCloudVMWizard(this);
+    m_pool[UIActionIndexMN_M_File] = new UIActionMenuSelectorFile(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowVirtualMediumManager] = new UIActionSimpleSelectorFileShowVirtualMediaManager(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowHostNetworkManager] = new UIActionSimpleSelectorFileShowHostNetworkManager(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowCloudProfileManager] = new UIActionSimpleSelectorFileShowCloudProfileManager(this);
+    m_pool[UIActionIndexMN_M_File_S_ImportAppliance] = new UIActionSimpleSelectorFileShowImportApplianceWizard(this);
+    m_pool[UIActionIndexMN_M_File_S_ExportAppliance] = new UIActionSimpleSelectorFileShowExportApplianceWizard(this);
+    m_pool[UIActionIndexMN_M_File_S_NewCloudVM] = new UIActionSimpleSelectorFileShowNewCloudVMWizard(this);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-    m_pool[UIActionIndexST_M_File_S_ShowExtraDataManager] = new UIActionSimpleSelectorFileShowExtraDataManager(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowExtraDataManager] = new UIActionSimpleSelectorFileShowExtraDataManager(this);
 #endif
-    m_pool[UIActionIndexST_M_File_S_Close] = new UIActionSimpleSelectorFilePerformExit(this);
+    m_pool[UIActionIndexMN_M_File_S_Close] = new UIActionSimpleSelectorFilePerformExit(this);
 
     /* 'Welcome' actions: */
-    m_pool[UIActionIndexST_M_Welcome] = new UIActionMenuSelectorMachine(this);
-    m_pool[UIActionIndexST_M_Welcome_S_New] = new UIActionSimpleSelectorMachinePerformCreate(this);
-    m_pool[UIActionIndexST_M_Welcome_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
+    m_pool[UIActionIndexMN_M_Welcome] = new UIActionMenuSelectorMachine(this);
+    m_pool[UIActionIndexMN_M_Welcome_S_New] = new UIActionSimpleSelectorMachinePerformCreate(this);
+    m_pool[UIActionIndexMN_M_Welcome_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
 
     /* 'Group' actions: */
-    m_pool[UIActionIndexST_M_Group] = new UIActionMenuSelectorGroup(this);
-    m_pool[UIActionIndexST_M_Group_S_New] = new UIActionSimpleSelectorGroupPerformCreateMachine(this);
-    m_pool[UIActionIndexST_M_Group_S_Add] = new UIActionSimpleSelectorGroupPerformAddMachine(this);
-    m_pool[UIActionIndexST_M_Group_S_Rename] = new UIActionSimpleSelectorGroupPerformRename(this);
-    m_pool[UIActionIndexST_M_Group_S_Remove] = new UIActionSimpleSelectorGroupPerformRemove(this);
-    m_pool[UIActionIndexST_M_Group_M_MoveToGroup] = new UIActionMenuSelectorCommonMoveToGroup(this);
-    m_pool[UIActionIndexST_M_Group_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
-    m_pool[UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
-    m_pool[UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless] = new UIActionSimpleSelectorCommonPerformStartHeadless(this);
-    m_pool[UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable] = new UIActionSimpleSelectorCommonPerformStartDetachable(this);
-    m_pool[UIActionIndexST_M_Group_T_Pause] = new UIActionToggleSelectorCommonPauseAndResume(this);
-    m_pool[UIActionIndexST_M_Group_S_Reset] = new UIActionSimpleSelectorCommonPerformReset(this);
-    m_pool[UIActionIndexST_M_Group_M_Console] = new UIActionMenuSelectorConsole(this);
-    m_pool[UIActionIndexST_M_Group_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
-    m_pool[UIActionIndexST_M_Group_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
-    m_pool[UIActionIndexST_M_Group_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
-    m_pool[UIActionIndexST_M_Group_M_Close] = new UIActionMenuSelectorClose(this);
-    m_pool[UIActionIndexST_M_Group_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
-    m_pool[UIActionIndexST_M_Group_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
-    m_pool[UIActionIndexST_M_Group_M_Close_S_Shutdown] = new UIActionSimpleSelectorClosePerformShutdown(this);
-    m_pool[UIActionIndexST_M_Group_M_Close_S_PowerOff] = new UIActionSimpleSelectorClosePerformPowerOff(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools] = new UIActionMenuSelectorToolsMachine(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools_T_Performance] = new UIActionToggleSelectorToolsMachineShowPerformance(this);
-    m_pool[UIActionIndexST_M_Group_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
-    m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
-    m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
-    m_pool[UIActionIndexST_M_Group_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
-    m_pool[UIActionIndexST_M_Group_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
-    m_pool[UIActionIndexST_M_Group_S_CreateShortcut] = new UIActionSimpleSelectorCommonPerformCreateShortcut(this);
-    m_pool[UIActionIndexST_M_Group_S_Sort] = new UIActionSimpleSelectorGroupPerformSort(this);
+    m_pool[UIActionIndexMN_M_Group] = new UIActionMenuSelectorGroup(this);
+    m_pool[UIActionIndexMN_M_Group_S_New] = new UIActionSimpleSelectorGroupPerformCreateMachine(this);
+    m_pool[UIActionIndexMN_M_Group_S_Add] = new UIActionSimpleSelectorGroupPerformAddMachine(this);
+    m_pool[UIActionIndexMN_M_Group_S_Rename] = new UIActionSimpleSelectorGroupPerformRename(this);
+    m_pool[UIActionIndexMN_M_Group_S_Remove] = new UIActionSimpleSelectorGroupPerformRemove(this);
+    m_pool[UIActionIndexMN_M_Group_M_MoveToGroup] = new UIActionMenuSelectorCommonMoveToGroup(this);
+    m_pool[UIActionIndexMN_M_Group_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
+    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
+    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless] = new UIActionSimpleSelectorCommonPerformStartHeadless(this);
+    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable] = new UIActionSimpleSelectorCommonPerformStartDetachable(this);
+    m_pool[UIActionIndexMN_M_Group_T_Pause] = new UIActionToggleSelectorCommonPauseAndResume(this);
+    m_pool[UIActionIndexMN_M_Group_S_Reset] = new UIActionSimpleSelectorCommonPerformReset(this);
+    m_pool[UIActionIndexMN_M_Group_M_Console] = new UIActionMenuSelectorConsole(this);
+    m_pool[UIActionIndexMN_M_Group_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
+    m_pool[UIActionIndexMN_M_Group_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
+    m_pool[UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close] = new UIActionMenuSelectorClose(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close_S_Shutdown] = new UIActionSimpleSelectorClosePerformShutdown(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close_S_PowerOff] = new UIActionSimpleSelectorClosePerformPowerOff(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools] = new UIActionMenuSelectorToolsMachine(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Performance] = new UIActionToggleSelectorToolsMachineShowPerformance(this);
+    m_pool[UIActionIndexMN_M_Group_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
+    m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
+    m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
+    m_pool[UIActionIndexMN_M_Group_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_Group_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
+    m_pool[UIActionIndexMN_M_Group_S_CreateShortcut] = new UIActionSimpleSelectorCommonPerformCreateShortcut(this);
+    m_pool[UIActionIndexMN_M_Group_S_Sort] = new UIActionSimpleSelectorGroupPerformSort(this);
 
     /* 'Machine' actions: */
-    m_pool[UIActionIndexST_M_Machine] = new UIActionMenuSelectorMachine(this);
-    m_pool[UIActionIndexST_M_Machine_S_New] = new UIActionSimpleSelectorMachinePerformCreate(this);
-    m_pool[UIActionIndexST_M_Machine_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
-    m_pool[UIActionIndexST_M_Machine_S_Settings] = new UIActionSimpleSelectorMachineShowSettings(this);
-    m_pool[UIActionIndexST_M_Machine_S_Clone] = new UIActionSimpleSelectorMachinePerformClone(this);
-    m_pool[UIActionIndexST_M_Machine_S_Move] = new UIActionSimpleSelectorMachinePerformMove(this);
-    m_pool[UIActionIndexST_M_Machine_S_ExportToOCI] = new UIActionSimpleSelectorMachinePerformExportToOCI(this);
-    m_pool[UIActionIndexST_M_Machine_S_Remove] = new UIActionSimpleSelectorMachinePerformRemove(this);
-    m_pool[UIActionIndexST_M_Machine_M_MoveToGroup] = new UIActionMenuSelectorCommonMoveToGroup(this);
-    m_pool[UIActionIndexST_M_Machine_M_MoveToGroup_S_New] = new UIActionSimpleSelectorMachineMoveToGroupNew(this);
-    m_pool[UIActionIndexST_M_Machine_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
-    m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
-    m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless] = new UIActionSimpleSelectorCommonPerformStartHeadless(this);
-    m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable] = new UIActionSimpleSelectorCommonPerformStartDetachable(this);
-    m_pool[UIActionIndexST_M_Machine_T_Pause] = new UIActionToggleSelectorCommonPauseAndResume(this);
-    m_pool[UIActionIndexST_M_Machine_S_Reset] = new UIActionSimpleSelectorCommonPerformReset(this);
-    m_pool[UIActionIndexST_M_Machine_M_Console] = new UIActionMenuSelectorConsole(this);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true, true);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true, false);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false, true);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false, false);
-    m_pool[UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
-    m_pool[UIActionIndexST_M_Machine_M_Close] = new UIActionMenuSelectorClose(this);
-    m_pool[UIActionIndexST_M_Machine_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
-    m_pool[UIActionIndexST_M_Machine_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
-    m_pool[UIActionIndexST_M_Machine_M_Close_S_Shutdown] = new UIActionSimpleSelectorClosePerformShutdown(this);
-    m_pool[UIActionIndexST_M_Machine_M_Close_S_PowerOff] = new UIActionSimpleSelectorClosePerformPowerOff(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools] = new UIActionMenuSelectorToolsMachine(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools_T_Performance] = new UIActionToggleSelectorToolsMachineShowPerformance(this);
-    m_pool[UIActionIndexST_M_Machine_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
-    m_pool[UIActionIndexST_M_Machine_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
-    m_pool[UIActionIndexST_M_Machine_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
-    m_pool[UIActionIndexST_M_Machine_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
-    m_pool[UIActionIndexST_M_Machine_S_CreateShortcut] = new UIActionSimpleSelectorCommonPerformCreateShortcut(this);
-    m_pool[UIActionIndexST_M_Machine_S_SortParent] = new UIActionSimpleSelectorMachinePerformSortParent(this);
-    m_pool[UIActionIndexST_M_Machine_T_Search] = new UIActionToggleSelectorMachineToggleSearch(this);
+    m_pool[UIActionIndexMN_M_Machine] = new UIActionMenuSelectorMachine(this);
+    m_pool[UIActionIndexMN_M_Machine_S_New] = new UIActionSimpleSelectorMachinePerformCreate(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Settings] = new UIActionSimpleSelectorMachineShowSettings(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Clone] = new UIActionSimpleSelectorMachinePerformClone(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Move] = new UIActionSimpleSelectorMachinePerformMove(this);
+    m_pool[UIActionIndexMN_M_Machine_S_ExportToOCI] = new UIActionSimpleSelectorMachinePerformExportToOCI(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Remove] = new UIActionSimpleSelectorMachinePerformRemove(this);
+    m_pool[UIActionIndexMN_M_Machine_M_MoveToGroup] = new UIActionMenuSelectorCommonMoveToGroup(this);
+    m_pool[UIActionIndexMN_M_Machine_M_MoveToGroup_S_New] = new UIActionSimpleSelectorMachineMoveToGroupNew(this);
+    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
+    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
+    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless] = new UIActionSimpleSelectorCommonPerformStartHeadless(this);
+    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable] = new UIActionSimpleSelectorCommonPerformStartDetachable(this);
+    m_pool[UIActionIndexMN_M_Machine_T_Pause] = new UIActionToggleSelectorCommonPauseAndResume(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Reset] = new UIActionSimpleSelectorCommonPerformReset(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Console] = new UIActionMenuSelectorConsole(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true, true);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true, false);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false, true);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false, false);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close] = new UIActionMenuSelectorClose(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close_S_Shutdown] = new UIActionSimpleSelectorClosePerformShutdown(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close_S_PowerOff] = new UIActionSimpleSelectorClosePerformPowerOff(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools] = new UIActionMenuSelectorToolsMachine(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Performance] = new UIActionToggleSelectorToolsMachineShowPerformance(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
+    m_pool[UIActionIndexMN_M_Machine_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_Machine_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
+    m_pool[UIActionIndexMN_M_Machine_S_CreateShortcut] = new UIActionSimpleSelectorCommonPerformCreateShortcut(this);
+    m_pool[UIActionIndexMN_M_Machine_S_SortParent] = new UIActionSimpleSelectorMachinePerformSortParent(this);
+    m_pool[UIActionIndexMN_M_Machine_T_Search] = new UIActionToggleSelectorMachineToggleSearch(this);
 
     /* Global Tools actions: */
-    m_pool[UIActionIndexST_M_Tools_M_Global] = new UIActionMenuSelectorToolsGlobal(this);
-    m_pool[UIActionIndexST_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(this);
-    m_pool[UIActionIndexST_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(this);
-    m_pool[UIActionIndexST_M_Tools_M_Global_S_CloudProfileManager] = new UIActionSimpleSelectorToolsGlobalShowCloudProfileManager(this);
-    m_pool[UIActionIndexST_M_Tools_M_Global_S_VMResourceMonitor] = new UIActionSimpleSelectorToolsGlobalShowVMResourceMonitor(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global] = new UIActionMenuSelectorToolsGlobal(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_CloudProfileManager] = new UIActionSimpleSelectorToolsGlobalShowCloudProfileManager(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_VMResourceMonitor] = new UIActionSimpleSelectorToolsGlobalShowVMResourceMonitor(this);
 
     /* Snapshot Pane actions: */
-    m_pool[UIActionIndexST_M_Snapshot] = new UIActionMenuSelectorSnapshot(this);
-    m_pool[UIActionIndexST_M_Snapshot_S_Take] = new UIActionMenuSelectorSnapshotPerformTake(this);
-    m_pool[UIActionIndexST_M_Snapshot_S_Delete] = new UIActionMenuSelectorSnapshotPerformDelete(this);
-    m_pool[UIActionIndexST_M_Snapshot_S_Restore] = new UIActionMenuSelectorSnapshotPerformRestore(this);
-    m_pool[UIActionIndexST_M_Snapshot_T_Properties] = new UIActionMenuSelectorSnapshotToggleProperties(this);
-    m_pool[UIActionIndexST_M_Snapshot_S_Clone] = new UIActionMenuSelectorSnapshotPerformClone(this);
+    m_pool[UIActionIndexMN_M_Snapshot] = new UIActionMenuSelectorSnapshot(this);
+    m_pool[UIActionIndexMN_M_Snapshot_S_Take] = new UIActionMenuSelectorSnapshotPerformTake(this);
+    m_pool[UIActionIndexMN_M_Snapshot_S_Delete] = new UIActionMenuSelectorSnapshotPerformDelete(this);
+    m_pool[UIActionIndexMN_M_Snapshot_S_Restore] = new UIActionMenuSelectorSnapshotPerformRestore(this);
+    m_pool[UIActionIndexMN_M_Snapshot_T_Properties] = new UIActionMenuSelectorSnapshotToggleProperties(this);
+    m_pool[UIActionIndexMN_M_Snapshot_S_Clone] = new UIActionMenuSelectorSnapshotPerformClone(this);
 
     /* Virtual Medium Manager actions: */
-    m_pool[UIActionIndexST_M_MediumWindow] = new UIActionMenuSelectorMedium(this);
-    m_pool[UIActionIndexST_M_Medium] = new UIActionMenuSelectorMedium(this);
-    m_pool[UIActionIndexST_M_Medium_S_Add] = new UIActionMenuSelectorMediumPerformAdd(this);
-    m_pool[UIActionIndexST_M_Medium_S_Create] = new UIActionMenuSelectorMediumPerformCreate(this);
-    m_pool[UIActionIndexST_M_Medium_S_Copy] = new UIActionMenuSelectorMediumPerformCopy(this);
-    m_pool[UIActionIndexST_M_Medium_S_Move] = new UIActionMenuSelectorMediumPerformMove(this);
-    m_pool[UIActionIndexST_M_Medium_S_Remove] = new UIActionMenuSelectorMediumPerformRemove(this);
-    m_pool[UIActionIndexST_M_Medium_S_Release] = new UIActionMenuSelectorMediumPerformRelease(this);
-    m_pool[UIActionIndexST_M_Medium_T_Details] = new UIActionMenuSelectorMediumToggleProperties(this);
-    m_pool[UIActionIndexST_M_Medium_T_Search] = new UIActionMenuSelectorMediumToggleSearch(this);
-    m_pool[UIActionIndexST_M_Medium_S_Refresh] = new UIActionMenuSelectorMediumPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_MediumWindow] = new UIActionMenuSelectorMedium(this);
+    m_pool[UIActionIndexMN_M_Medium] = new UIActionMenuSelectorMedium(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Add] = new UIActionMenuSelectorMediumPerformAdd(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Create] = new UIActionMenuSelectorMediumPerformCreate(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Copy] = new UIActionMenuSelectorMediumPerformCopy(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Move] = new UIActionMenuSelectorMediumPerformMove(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Remove] = new UIActionMenuSelectorMediumPerformRemove(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Release] = new UIActionMenuSelectorMediumPerformRelease(this);
+    m_pool[UIActionIndexMN_M_Medium_T_Details] = new UIActionMenuSelectorMediumToggleProperties(this);
+    m_pool[UIActionIndexMN_M_Medium_T_Search] = new UIActionMenuSelectorMediumToggleSearch(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Refresh] = new UIActionMenuSelectorMediumPerformRefresh(this);
 
     /* Host Network Manager actions: */
-    m_pool[UIActionIndexST_M_NetworkWindow] = new UIActionMenuSelectorNetwork(this);
-    m_pool[UIActionIndexST_M_Network] = new UIActionMenuSelectorNetwork(this);
-    m_pool[UIActionIndexST_M_Network_S_Create] = new UIActionMenuSelectorNetworkPerformCreate(this);
-    m_pool[UIActionIndexST_M_Network_S_Remove] = new UIActionMenuSelectorNetworkPerformRemove(this);
-    m_pool[UIActionIndexST_M_Network_T_Details] = new UIActionMenuSelectorNetworkToggleProperties(this);
-    m_pool[UIActionIndexST_M_Network_S_Refresh] = new UIActionMenuSelectorNetworkPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_NetworkWindow] = new UIActionMenuSelectorNetwork(this);
+    m_pool[UIActionIndexMN_M_Network] = new UIActionMenuSelectorNetwork(this);
+    m_pool[UIActionIndexMN_M_Network_S_Create] = new UIActionMenuSelectorNetworkPerformCreate(this);
+    m_pool[UIActionIndexMN_M_Network_S_Remove] = new UIActionMenuSelectorNetworkPerformRemove(this);
+    m_pool[UIActionIndexMN_M_Network_T_Details] = new UIActionMenuSelectorNetworkToggleProperties(this);
+    m_pool[UIActionIndexMN_M_Network_S_Refresh] = new UIActionMenuSelectorNetworkPerformRefresh(this);
 
     /* Cloud Profile Manager actions: */
-    m_pool[UIActionIndexST_M_CloudWindow] = new UIActionMenuSelectorCloud(this);
-    m_pool[UIActionIndexST_M_Cloud] = new UIActionMenuSelectorCloud(this);
-    m_pool[UIActionIndexST_M_Cloud_S_Add] = new UIActionMenuSelectorCloudPerformAdd(this);
-    m_pool[UIActionIndexST_M_Cloud_S_Import] = new UIActionMenuSelectorCloudPerformImport(this);
-    m_pool[UIActionIndexST_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
-    m_pool[UIActionIndexST_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
-    m_pool[UIActionIndexST_M_Cloud_S_TryPage] = new UIActionMenuSelectorCloudShowTryPage(this);
-    m_pool[UIActionIndexST_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
+    m_pool[UIActionIndexMN_M_CloudWindow] = new UIActionMenuSelectorCloud(this);
+    m_pool[UIActionIndexMN_M_Cloud] = new UIActionMenuSelectorCloud(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_Add] = new UIActionMenuSelectorCloudPerformAdd(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_Import] = new UIActionMenuSelectorCloudPerformImport(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
+    m_pool[UIActionIndexMN_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_TryPage] = new UIActionMenuSelectorCloudShowTryPage(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
 
     /* Cloud Console Manager actions: */
-    m_pool[UIActionIndexST_M_CloudConsoleWindow] = new UIActionMenuSelectorCloudConsole(this);
-    m_pool[UIActionIndexST_M_CloudConsole] = new UIActionMenuSelectorCloudConsole(this);
-    m_pool[UIActionIndexST_M_CloudConsole_S_ApplicationAdd] = new UIActionMenuSelectorCloudConsolePerformApplicationAdd(this);
-    m_pool[UIActionIndexST_M_CloudConsole_S_ApplicationRemove] = new UIActionMenuSelectorCloudConsolePerformApplicationRemove(this);
-    m_pool[UIActionIndexST_M_CloudConsole_S_ProfileAdd] = new UIActionMenuSelectorCloudConsolePerformProfileAdd(this);
-    m_pool[UIActionIndexST_M_CloudConsole_S_ProfileRemove] = new UIActionMenuSelectorCloudConsolePerformProfileRemove(this);
-    m_pool[UIActionIndexST_M_CloudConsole_T_Details] = new UIActionMenuSelectorCloudConsoleToggleProperties(this);
+    m_pool[UIActionIndexMN_M_CloudConsoleWindow] = new UIActionMenuSelectorCloudConsole(this);
+    m_pool[UIActionIndexMN_M_CloudConsole] = new UIActionMenuSelectorCloudConsole(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_S_ApplicationAdd] = new UIActionMenuSelectorCloudConsolePerformApplicationAdd(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_S_ApplicationRemove] = new UIActionMenuSelectorCloudConsolePerformApplicationRemove(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_S_ProfileAdd] = new UIActionMenuSelectorCloudConsolePerformProfileAdd(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_S_ProfileRemove] = new UIActionMenuSelectorCloudConsolePerformProfileRemove(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_T_Details] = new UIActionMenuSelectorCloudConsoleToggleProperties(this);
 
     /* VM resource Monitor actions: */
-    m_pool[UIActionIndexST_M_VMResourceMonitor] = new UIActionMenuVMResourceMonitor(this);
-    m_pool[UIActionIndexST_M_VMResourceMonitor_M_Columns] = new UIActionMenuSelectorVMResourceMonitorToggleColumns(this);
-    m_pool[UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance] = new UIActionMenuSelectorVMResourceMonitorSwitchToMachinePerformance(this);
+    m_pool[UIActionIndexMN_M_VMResourceMonitor] = new UIActionMenuVMResourceMonitor(this);
+    m_pool[UIActionIndexMN_M_VMResourceMonitor_M_Columns] = new UIActionMenuSelectorVMResourceMonitorToggleColumns(this);
+    m_pool[UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance] = new UIActionMenuSelectorVMResourceMonitorSwitchToMachinePerformance(this);
 
     /* 'Group' action groups: */
-    m_groupPool[UIActionIndexST_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Group_M_Tools));
-    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Details));
-    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
-    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Logs));
-    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Performance));
+    m_groupPool[UIActionIndexMN_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexMN_M_Group_M_Tools));
+    m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_Details));
+    m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_Snapshots));
+    m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_Logs));
+    m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_Performance));
 
     /* 'Machine' action groups: */
-    m_groupPool[UIActionIndexST_M_Machine_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Machine_M_Tools));
-    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Details));
-    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Snapshots));
-    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Logs));
-    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Performance));
+    m_groupPool[UIActionIndexMN_M_Machine_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexMN_M_Machine_M_Tools));
+    m_groupPool[UIActionIndexMN_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Machine_M_Tools_T_Details));
+    m_groupPool[UIActionIndexMN_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Machine_M_Tools_T_Snapshots));
+    m_groupPool[UIActionIndexMN_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Machine_M_Tools_T_Logs));
+    m_groupPool[UIActionIndexMN_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Machine_M_Tools_T_Performance));
 
     /* Prepare update-handlers for known menus: */
-    m_menuUpdateHandlers[UIActionIndexST_M_File].ptfm =                  &UIActionPoolManager::updateMenuFile;
-    m_menuUpdateHandlers[UIActionIndexST_M_Welcome].ptfm =               &UIActionPoolManager::updateMenuWelcome;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group].ptfm =                 &UIActionPoolManager::updateMenuGroup;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine].ptfm =               &UIActionPoolManager::updateMenuMachine;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_MoveToGroup].ptfm =   &UIActionPoolManager::updateMenuGroupMoveToGroup;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_MoveToGroup].ptfm = &UIActionPoolManager::updateMenuMachineMoveToGroup;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_StartOrShow].ptfm =   &UIActionPoolManager::updateMenuGroupStartOrShow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_StartOrShow].ptfm = &UIActionPoolManager::updateMenuMachineStartOrShow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Console].ptfm =       &UIActionPoolManager::updateMenuGroupConsole;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Console].ptfm =     &UIActionPoolManager::updateMenuMachineConsole;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close].ptfm =         &UIActionPoolManager::updateMenuGroupClose;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close].ptfm =       &UIActionPoolManager::updateMenuMachineClose;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Tools].ptfm =         &UIActionPoolManager::updateMenuGroupTools;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Tools].ptfm =       &UIActionPoolManager::updateMenuMachineTools;
-    m_menuUpdateHandlers[UIActionIndexST_M_MediumWindow].ptfm =          &UIActionPoolManager::updateMenuMediumWindow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Medium].ptfm =                &UIActionPoolManager::updateMenuMedium;
-    m_menuUpdateHandlers[UIActionIndexST_M_NetworkWindow].ptfm =         &UIActionPoolManager::updateMenuNetworkWindow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Network].ptfm =               &UIActionPoolManager::updateMenuNetwork;
-    m_menuUpdateHandlers[UIActionIndexST_M_CloudWindow].ptfm =           &UIActionPoolManager::updateMenuCloudWindow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Cloud].ptfm =                 &UIActionPoolManager::updateMenuCloud;
-    m_menuUpdateHandlers[UIActionIndexST_M_CloudConsoleWindow].ptfm =    &UIActionPoolManager::updateMenuCloudConsoleWindow;
-    m_menuUpdateHandlers[UIActionIndexST_M_CloudConsole].ptfm =          &UIActionPoolManager::updateMenuCloudConsole;
-    m_menuUpdateHandlers[UIActionIndexST_M_VMResourceMonitor].ptfm =     &UIActionPoolManager::updateMenuVMResourceMonitor;
-    m_menuUpdateHandlers[UIActionIndexST_M_Snapshot].ptfm =              &UIActionPoolManager::updateMenuSnapshot;
+    m_menuUpdateHandlers[UIActionIndexMN_M_File].ptfm =                  &UIActionPoolManager::updateMenuFile;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Welcome].ptfm =               &UIActionPoolManager::updateMenuWelcome;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group].ptfm =                 &UIActionPoolManager::updateMenuGroup;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine].ptfm =               &UIActionPoolManager::updateMenuMachine;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_MoveToGroup].ptfm =   &UIActionPoolManager::updateMenuGroupMoveToGroup;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_MoveToGroup].ptfm = &UIActionPoolManager::updateMenuMachineMoveToGroup;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_StartOrShow].ptfm =   &UIActionPoolManager::updateMenuGroupStartOrShow;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_StartOrShow].ptfm = &UIActionPoolManager::updateMenuMachineStartOrShow;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Console].ptfm =       &UIActionPoolManager::updateMenuGroupConsole;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Console].ptfm =     &UIActionPoolManager::updateMenuMachineConsole;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Close].ptfm =         &UIActionPoolManager::updateMenuGroupClose;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Close].ptfm =       &UIActionPoolManager::updateMenuMachineClose;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Group_M_Tools].ptfm =         &UIActionPoolManager::updateMenuGroupTools;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Machine_M_Tools].ptfm =       &UIActionPoolManager::updateMenuMachineTools;
+    m_menuUpdateHandlers[UIActionIndexMN_M_MediumWindow].ptfm =          &UIActionPoolManager::updateMenuMediumWindow;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Medium].ptfm =                &UIActionPoolManager::updateMenuMedium;
+    m_menuUpdateHandlers[UIActionIndexMN_M_NetworkWindow].ptfm =         &UIActionPoolManager::updateMenuNetworkWindow;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Network].ptfm =               &UIActionPoolManager::updateMenuNetwork;
+    m_menuUpdateHandlers[UIActionIndexMN_M_CloudWindow].ptfm =           &UIActionPoolManager::updateMenuCloudWindow;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Cloud].ptfm =                 &UIActionPoolManager::updateMenuCloud;
+    m_menuUpdateHandlers[UIActionIndexMN_M_CloudConsoleWindow].ptfm =    &UIActionPoolManager::updateMenuCloudConsoleWindow;
+    m_menuUpdateHandlers[UIActionIndexMN_M_CloudConsole].ptfm =          &UIActionPoolManager::updateMenuCloudConsole;
+    m_menuUpdateHandlers[UIActionIndexMN_M_VMResourceMonitor].ptfm =     &UIActionPoolManager::updateMenuVMResourceMonitor;
+    m_menuUpdateHandlers[UIActionIndexMN_M_Snapshot].ptfm =              &UIActionPoolManager::updateMenuSnapshot;
 
     /* Call to base-class: */
     UIActionPool::preparePool();
@@ -3594,17 +3594,17 @@ void UIActionPoolManager::updateMenus()
     m_mainMenus.clear();
 
     /* 'File' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_File));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_File));
     updateMenuFile();
 
     /* 'Welcome' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_Welcome));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_Welcome));
     updateMenuWelcome();
     /* 'Group' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_Group));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_Group));
     updateMenuGroup();
     /* 'Machine' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_Machine));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_Machine));
     updateMenuMachine();
 
     /* 'Machine' / 'Move to Group' menu: */
@@ -3623,24 +3623,24 @@ void UIActionPoolManager::updateMenus()
     updateMenuMachineTools();
 
     /* 'Virtual Media Manager' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_Medium));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_Medium));
     updateMenuMediumWindow();
     updateMenuMedium();
     /* 'Host Network Manager' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_Network));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_Network));
     updateMenuNetworkWindow();
     updateMenuNetwork();
     /* 'Cloud Profile Manager' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_Cloud));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_Cloud));
     updateMenuCloudWindow();
     updateMenuCloud();
 
     /* 'VM Resource Monitor' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_VMResourceMonitor));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_VMResourceMonitor));
     updateMenuVMResourceMonitor();
 
     /* 'Snapshot' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexST_M_Snapshot));
+    addMenu(m_mainMenus, action(UIActionIndexMN_M_Snapshot));
     updateMenuSnapshot();
     /* 'Log' menu: */
     addMenu(m_mainMenus, action(UIActionIndex_M_Log));
@@ -3658,7 +3658,7 @@ void UIActionPoolManager::updateMenus()
 void UIActionPoolManager::updateMenuFile()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_File)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_File)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -3685,25 +3685,25 @@ void UIActionPoolManager::updateMenuFile()
     /* 'Preferences' action goes to Application menu: */
     pMenu->addAction(action(UIActionIndex_M_Application_S_Preferences));
     /* 'Close' action goes to Application menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_Close));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_Close));
 
     /* 'Import Appliance' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ImportAppliance));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ImportAppliance));
     /* 'Export Appliance' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ExportAppliance));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ExportAppliance));
     /* 'New Cloud VM' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_NewCloudVM));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_NewCloudVM));
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /* 'Show Extra-data Manager' action goes to 'File' menu for Debug build: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtraDataManager));
 # endif
     /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
     /* 'Show Host Network Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
     if (fExtPackAccessible)
-        pMenu->addAction(action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+        pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -3712,24 +3712,24 @@ void UIActionPoolManager::updateMenuFile()
     /* Separator after 'Preferences' action of the 'File' menu: */
     pMenu->addSeparator();
     /* 'Import Appliance' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ImportAppliance));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ImportAppliance));
     /* 'Export Appliance' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ExportAppliance));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ExportAppliance));
     /* 'New Cloud VM' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_NewCloudVM));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_NewCloudVM));
     /* Separator after 'Export Appliance' action of the 'File' menu: */
     pMenu->addSeparator();
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /* 'Extra-data Manager' action goes to 'File' menu for Debug build: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowExtraDataManager));
 # endif
     /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
     /* 'Show Host Network Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
     /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
     if (fExtPackAccessible)
-        pMenu->addAction(action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+        pMenu->addAction(action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(action(UIActionIndex_M_Application_S_NetworkAccessManager));
@@ -3744,34 +3744,34 @@ void UIActionPoolManager::updateMenuFile()
     /* Separator after 'Reset Warnings' action of the 'File' menu: */
     pMenu->addSeparator();
     /* 'Close' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_File_S_Close));
+    pMenu->addAction(action(UIActionIndexMN_M_File_S_Close));
 
 #endif /* !VBOX_WS_MAC */
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_File);
+    m_invalidations.remove(UIActionIndexMN_M_File);
 }
 
 void UIActionPoolManager::updateMenuWelcome()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Welcome)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Welcome)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate Welcome menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Welcome_S_New));
-    pMenu->addAction(action(UIActionIndexST_M_Welcome_S_Add));
+    pMenu->addAction(action(UIActionIndexMN_M_Welcome_S_New));
+    pMenu->addAction(action(UIActionIndexMN_M_Welcome_S_Add));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Welcome);
+    m_invalidations.remove(UIActionIndexMN_M_Welcome);
 }
 
 void UIActionPoolManager::updateMenuGroup()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Group)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Group)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -3782,7 +3782,7 @@ void UIActionPoolManager::updateMenuGroup()
 void UIActionPoolManager::updateMenuMachine()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Machine)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Machine)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -3793,7 +3793,7 @@ void UIActionPoolManager::updateMenuMachine()
 void UIActionPoolManager::updateMenuGroupMoveToGroup()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Group_M_MoveToGroup)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Group_M_MoveToGroup)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -3804,13 +3804,13 @@ void UIActionPoolManager::updateMenuGroupMoveToGroup()
 void UIActionPoolManager::updateMenuMachineMoveToGroup()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_MoveToGroup)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Machine_M_MoveToGroup)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate 'Machine' / 'Move to Group' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New));
 
     /* This menu always remains invalid.. */
 }
@@ -3818,41 +3818,41 @@ void UIActionPoolManager::updateMenuMachineMoveToGroup()
 void UIActionPoolManager::updateMenuGroupStartOrShow()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Group_M_StartOrShow)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Group_M_StartOrShow)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate 'Group' / 'Start or Show' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Group_M_StartOrShow);
+    m_invalidations.remove(UIActionIndexMN_M_Group_M_StartOrShow);
 }
 
 void UIActionPoolManager::updateMenuMachineStartOrShow()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_StartOrShow)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Machine_M_StartOrShow)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate 'Machine' / 'Start or Show' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Machine_M_StartOrShow);
+    m_invalidations.remove(UIActionIndexMN_M_Machine_M_StartOrShow);
 }
 
 void UIActionPoolManager::updateMenuGroupConsole()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Group_M_Console)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Group_M_Console)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -3863,7 +3863,7 @@ void UIActionPoolManager::updateMenuGroupConsole()
 void UIActionPoolManager::updateMenuMachineConsole()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_Console)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Machine_M_Console)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -3874,91 +3874,91 @@ void UIActionPoolManager::updateMenuMachineConsole()
 void UIActionPoolManager::updateMenuGroupClose()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Group_M_Close)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Group_M_Close)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate 'Group' / 'Close' menu: */
-    // pMenu->addAction(action(UIActionIndexST_M_Group_M_Close_S_Detach));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Close_S_SaveState));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Close_S_Shutdown));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Close_S_PowerOff));
+    // pMenu->addAction(action(UIActionIndexMN_M_Group_M_Close_S_Detach));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Close_S_SaveState));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Close_S_Shutdown));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Close_S_PowerOff));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Group_M_Close);
+    m_invalidations.remove(UIActionIndexMN_M_Group_M_Close);
 }
 
 void UIActionPoolManager::updateMenuMachineClose()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_Close)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Machine_M_Close)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate 'Machine' / 'Close' menu: */
-    // pMenu->addAction(action(UIActionIndexST_M_Machine_M_Close_S_Detach));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Close_S_SaveState));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Close_S_Shutdown));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Close_S_PowerOff));
+    // pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Close_S_Detach));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Close_S_SaveState));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Machine_M_Close);
+    m_invalidations.remove(UIActionIndexMN_M_Machine_M_Close);
 }
 
 void UIActionPoolManager::updateMenuGroupTools()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Group_M_Tools)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Group_M_Tools)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate 'Group' / 'Tools' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Details));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Logs));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Performance));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Details));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Snapshots));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Logs));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Performance));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Group_M_Tools);
+    m_invalidations.remove(UIActionIndexMN_M_Group_M_Tools);
 }
 
 void UIActionPoolManager::updateMenuMachineTools()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_Tools)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Machine_M_Tools)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate 'Machine' / 'Tools' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Details));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Logs));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Performance));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_Details));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_Snapshots));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_Logs));
+    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_Performance));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Machine_M_Tools);
+    m_invalidations.remove(UIActionIndexMN_M_Machine_M_Tools);
 }
 
 void UIActionPoolManager::updateMenuMediumWindow()
 {
     /* Update corresponding menu: */
-    updateMenuMediumWrapper(action(UIActionIndexST_M_MediumWindow)->menu());
+    updateMenuMediumWrapper(action(UIActionIndexMN_M_MediumWindow)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_MediumWindow);
+    m_invalidations.remove(UIActionIndexMN_M_MediumWindow);
 }
 
 void UIActionPoolManager::updateMenuMedium()
 {
     /* Update corresponding menu: */
-    updateMenuMediumWrapper(action(UIActionIndexST_M_Medium)->menu());
+    updateMenuMediumWrapper(action(UIActionIndexMN_M_Medium)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Medium);
+    m_invalidations.remove(UIActionIndexMN_M_Medium);
 }
 
 void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
@@ -3970,8 +3970,8 @@ void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
     bool fSeparator = false;
 
     /* 'Add' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Add)) || fSeparator;
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Create)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Add)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Create)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -3981,17 +3981,17 @@ void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
     }
 
     /* 'Copy' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Copy)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Copy)) || fSeparator;
     /* 'Move' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Move)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Move)) || fSeparator;
     /* 'Remove' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Remove)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Remove)) || fSeparator;
     /* 'Release' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Release)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Release)) || fSeparator;
     /* 'Search' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Search)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_T_Search)) || fSeparator;
     /* 'Properties' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Details)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_T_Details)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -4001,25 +4001,25 @@ void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
     }
 
     /* 'Refresh' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Refresh)) || fSeparator;;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Refresh)) || fSeparator;;
 }
 
 void UIActionPoolManager::updateMenuNetworkWindow()
 {
     /* Update corresponding menu: */
-    updateMenuNetworkWrapper(action(UIActionIndexST_M_NetworkWindow)->menu());
+    updateMenuNetworkWrapper(action(UIActionIndexMN_M_NetworkWindow)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_NetworkWindow);
+    m_invalidations.remove(UIActionIndexMN_M_NetworkWindow);
 }
 
 void UIActionPoolManager::updateMenuNetwork()
 {
     /* Update corresponding menu: */
-    updateMenuNetworkWrapper(action(UIActionIndexST_M_Network)->menu());
+    updateMenuNetworkWrapper(action(UIActionIndexMN_M_Network)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Network);
+    m_invalidations.remove(UIActionIndexMN_M_Network);
 }
 
 void UIActionPoolManager::updateMenuNetworkWrapper(UIMenu *pMenu)
@@ -4031,7 +4031,7 @@ void UIActionPoolManager::updateMenuNetworkWrapper(UIMenu *pMenu)
     bool fSeparator = false;
 
     /* 'Create' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Create)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Network_S_Create)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -4041,9 +4041,9 @@ void UIActionPoolManager::updateMenuNetworkWrapper(UIMenu *pMenu)
     }
 
     /* 'Remove' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Remove)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Network_S_Remove)) || fSeparator;
     /* 'Properties' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_T_Details)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Network_T_Details)) || fSeparator;
 
 //    /* Separator? */
 //    if (fSeparator)
@@ -4053,25 +4053,25 @@ void UIActionPoolManager::updateMenuNetworkWrapper(UIMenu *pMenu)
 //    }
 
 //    /* 'Refresh' action: */
-//    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Refresh)) || fSeparator;;
+//    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Network_S_Refresh)) || fSeparator;;
 }
 
 void UIActionPoolManager::updateMenuCloudWindow()
 {
     /* Update corresponding menu: */
-    updateMenuCloudWrapper(action(UIActionIndexST_M_CloudWindow)->menu());
+    updateMenuCloudWrapper(action(UIActionIndexMN_M_CloudWindow)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_CloudWindow);
+    m_invalidations.remove(UIActionIndexMN_M_CloudWindow);
 }
 
 void UIActionPoolManager::updateMenuCloud()
 {
     /* Update corresponding menu: */
-    updateMenuCloudWrapper(action(UIActionIndexST_M_Cloud)->menu());
+    updateMenuCloudWrapper(action(UIActionIndexMN_M_Cloud)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Cloud);
+    m_invalidations.remove(UIActionIndexMN_M_Cloud);
 }
 
 void UIActionPoolManager::updateMenuCloudWrapper(UIMenu *pMenu)
@@ -4083,9 +4083,9 @@ void UIActionPoolManager::updateMenuCloudWrapper(UIMenu *pMenu)
     bool fSeparator = false;
 
     /* 'Add' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Add)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Cloud_S_Add)) || fSeparator;
     /* 'Import' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Import)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Cloud_S_Import)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -4095,9 +4095,9 @@ void UIActionPoolManager::updateMenuCloudWrapper(UIMenu *pMenu)
     }
 
     /* 'Remove' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Remove)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Cloud_S_Remove)) || fSeparator;
     /* 'Properties' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_T_Details)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Cloud_T_Details)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -4107,27 +4107,27 @@ void UIActionPoolManager::updateMenuCloudWrapper(UIMenu *pMenu)
     }
 
     /* 'Try Page' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_TryPage)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Cloud_S_TryPage)) || fSeparator;
     /* 'Help' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Help)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Cloud_S_Help)) || fSeparator;
 }
 
 void UIActionPoolManager::updateMenuCloudConsoleWindow()
 {
     /* Update corresponding menu: */
-    updateMenuCloudConsoleWrapper(action(UIActionIndexST_M_CloudConsoleWindow)->menu());
+    updateMenuCloudConsoleWrapper(action(UIActionIndexMN_M_CloudConsoleWindow)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_CloudConsoleWindow);
+    m_invalidations.remove(UIActionIndexMN_M_CloudConsoleWindow);
 }
 
 void UIActionPoolManager::updateMenuCloudConsole()
 {
     /* Update corresponding menu: */
-    updateMenuCloudConsoleWrapper(action(UIActionIndexST_M_CloudConsole)->menu());
+    updateMenuCloudConsoleWrapper(action(UIActionIndexMN_M_CloudConsole)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_CloudConsole);
+    m_invalidations.remove(UIActionIndexMN_M_CloudConsole);
 }
 
 void UIActionPoolManager::updateMenuCloudConsoleWrapper(UIMenu *pMenu)
@@ -4139,9 +4139,9 @@ void UIActionPoolManager::updateMenuCloudConsoleWrapper(UIMenu *pMenu)
     bool fSeparator = false;
 
     /* 'Add Application' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_S_ApplicationAdd)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_CloudConsole_S_ApplicationAdd)) || fSeparator;
     /* 'Remove Application' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_S_ApplicationRemove)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_CloudConsole_S_ApplicationRemove)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -4151,9 +4151,9 @@ void UIActionPoolManager::updateMenuCloudConsoleWrapper(UIMenu *pMenu)
     }
 
     /* 'Add Profile' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_S_ProfileAdd)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_CloudConsole_S_ProfileAdd)) || fSeparator;
     /* 'Remove Profile' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_S_ProfileRemove)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_CloudConsole_S_ProfileRemove)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
@@ -4163,43 +4163,43 @@ void UIActionPoolManager::updateMenuCloudConsoleWrapper(UIMenu *pMenu)
     }
 
     /* 'Properties' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_CloudConsole_T_Details)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_CloudConsole_T_Details)) || fSeparator;
 }
 
 void UIActionPoolManager::updateMenuVMResourceMonitor()
 {
     /* Update corresponding menu: */
-    updateMenuVMResourceMonitorWrapper(action(UIActionIndexST_M_VMResourceMonitor)->menu());
+    updateMenuVMResourceMonitorWrapper(action(UIActionIndexMN_M_VMResourceMonitor)->menu());
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_VMResourceMonitor);
+    m_invalidations.remove(UIActionIndexMN_M_VMResourceMonitor);
 }
 
 void UIActionPoolManager::updateMenuVMResourceMonitorWrapper(UIMenu *pMenu)
 {
     /* Clear contents: */
     pMenu->clear();
-    addAction(pMenu, action(UIActionIndexST_M_VMResourceMonitor_M_Columns));
-    addAction(pMenu, action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance));
+    addAction(pMenu, action(UIActionIndexMN_M_VMResourceMonitor_M_Columns));
+    addAction(pMenu, action(UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance));
 }
 
 void UIActionPoolManager::updateMenuSnapshot()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexST_M_Snapshot)->menu();
+    UIMenu *pMenu = action(UIActionIndexMN_M_Snapshot)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* Populate Snapshot-menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Snapshot_S_Take));
-    pMenu->addAction(action(UIActionIndexST_M_Snapshot_S_Delete));
-    pMenu->addAction(action(UIActionIndexST_M_Snapshot_S_Restore));
-    pMenu->addAction(action(UIActionIndexST_M_Snapshot_T_Properties));
-    pMenu->addAction(action(UIActionIndexST_M_Snapshot_S_Clone));
+    pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Take));
+    pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Delete));
+    pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Restore));
+    pMenu->addAction(action(UIActionIndexMN_M_Snapshot_T_Properties));
+    pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Clone));
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexST_M_Snapshot);
+    m_invalidations.remove(UIActionIndexMN_M_Snapshot);
 }
 
 void UIActionPoolManager::updateShortcuts()
@@ -4219,82 +4219,82 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
     /* Handle known menus: */
     switch (iIndex)
     {
-        case UIActionIndexST_M_Welcome:
+        case UIActionIndexMN_M_Welcome:
         {
-            actions << action(UIActionIndexST_M_Welcome_S_New)
-                    << action(UIActionIndexST_M_Welcome_S_Add);
+            actions << action(UIActionIndexMN_M_Welcome_S_New)
+                    << action(UIActionIndexMN_M_Welcome_S_Add);
             break;
         }
-        case UIActionIndexST_M_Group:
+        case UIActionIndexMN_M_Group:
         {
-            actions << action(UIActionIndexST_M_Group_S_New)
-                    << action(UIActionIndexST_M_Group_S_Add)
-                    << action(UIActionIndexST_M_Group_S_Rename)
-                    << action(UIActionIndexST_M_Group_S_Remove)
-                    << action(UIActionIndexST_M_Group_M_MoveToGroup)
-                    << action(UIActionIndexST_M_Group_M_StartOrShow)
-                    << action(UIActionIndexST_M_Group_T_Pause)
-                    << action(UIActionIndexST_M_Group_S_Reset)
-                    << action(UIActionIndexST_M_Group_S_Discard)
-                    << action(UIActionIndexST_M_Group_S_ShowLogDialog)
-                    << action(UIActionIndexST_M_Group_S_Refresh)
-                    << action(UIActionIndexST_M_Group_S_ShowInFileManager)
-                    << action(UIActionIndexST_M_Group_S_CreateShortcut)
-                    << action(UIActionIndexST_M_Group_S_Sort)
-                    << action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal)
-                    << action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless)
-                    << action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable)
-                    << action(UIActionIndexST_M_Group_M_Console_S_CreateConnection)
-                    << action(UIActionIndexST_M_Group_M_Console_S_DeleteConnection)
-                    << action(UIActionIndexST_M_Group_M_Console_S_ConfigureApplications)
-                    // << action(UIActionIndexST_M_Group_M_Close_S_Detach)
-                    << action(UIActionIndexST_M_Group_M_Close_S_SaveState)
-                    << action(UIActionIndexST_M_Group_M_Close_S_Shutdown)
-                    << action(UIActionIndexST_M_Group_M_Close_S_PowerOff)
-                    << action(UIActionIndexST_M_Group_M_Tools_T_Details)
-                    << action(UIActionIndexST_M_Group_M_Tools_T_Snapshots)
-                    << action(UIActionIndexST_M_Group_M_Tools_T_Logs)
-                    << action(UIActionIndexST_M_Group_M_Tools_T_Performance);
+            actions << action(UIActionIndexMN_M_Group_S_New)
+                    << action(UIActionIndexMN_M_Group_S_Add)
+                    << action(UIActionIndexMN_M_Group_S_Rename)
+                    << action(UIActionIndexMN_M_Group_S_Remove)
+                    << action(UIActionIndexMN_M_Group_M_MoveToGroup)
+                    << action(UIActionIndexMN_M_Group_M_StartOrShow)
+                    << action(UIActionIndexMN_M_Group_T_Pause)
+                    << action(UIActionIndexMN_M_Group_S_Reset)
+                    << action(UIActionIndexMN_M_Group_S_Discard)
+                    << action(UIActionIndexMN_M_Group_S_ShowLogDialog)
+                    << action(UIActionIndexMN_M_Group_S_Refresh)
+                    << action(UIActionIndexMN_M_Group_S_ShowInFileManager)
+                    << action(UIActionIndexMN_M_Group_S_CreateShortcut)
+                    << action(UIActionIndexMN_M_Group_S_Sort)
+                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal)
+                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless)
+                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable)
+                    << action(UIActionIndexMN_M_Group_M_Console_S_CreateConnection)
+                    << action(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection)
+                    << action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications)
+                    // << action(UIActionIndexMN_M_Group_M_Close_S_Detach)
+                    << action(UIActionIndexMN_M_Group_M_Close_S_SaveState)
+                    << action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)
+                    << action(UIActionIndexMN_M_Group_M_Close_S_PowerOff)
+                    << action(UIActionIndexMN_M_Group_M_Tools_T_Details)
+                    << action(UIActionIndexMN_M_Group_M_Tools_T_Snapshots)
+                    << action(UIActionIndexMN_M_Group_M_Tools_T_Logs)
+                    << action(UIActionIndexMN_M_Group_M_Tools_T_Performance);
             break;
         }
-        case UIActionIndexST_M_Machine:
+        case UIActionIndexMN_M_Machine:
         {
-            actions << action(UIActionIndexST_M_Machine_S_New)
-                    << action(UIActionIndexST_M_Machine_S_Add)
-                    << action(UIActionIndexST_M_Machine_S_Settings)
-                    << action(UIActionIndexST_M_Machine_S_Clone)
-                    << action(UIActionIndexST_M_Machine_S_Move)
-                    << action(UIActionIndexST_M_Machine_S_ExportToOCI)
-                    << action(UIActionIndexST_M_Machine_S_Remove)
-                    << action(UIActionIndexST_M_Machine_M_MoveToGroup)
-                    << action(UIActionIndexST_M_Machine_M_StartOrShow)
-                    << action(UIActionIndexST_M_Machine_T_Pause)
-                    << action(UIActionIndexST_M_Machine_S_Reset)
-                    << action(UIActionIndexST_M_Machine_S_Discard)
-                    << action(UIActionIndexST_M_Machine_S_ShowLogDialog)
-                    << action(UIActionIndexST_M_Machine_S_Refresh)
-                    << action(UIActionIndexST_M_Machine_S_ShowInFileManager)
-                    << action(UIActionIndexST_M_Machine_S_CreateShortcut)
-                    << action(UIActionIndexST_M_Machine_S_SortParent)
-                    << action(UIActionIndexST_M_Machine_M_MoveToGroup_S_New)
-                    << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal)
-                    << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless)
-                    << action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_CreateConnection)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_DeleteConnection)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialUnix)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandSerialWindows)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCUnix)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_CopyCommandVNCWindows)
-                    << action(UIActionIndexST_M_Machine_M_Console_S_ConfigureApplications)
-                    // << action(UIActionIndexST_M_Machine_M_Close_S_Detach)
-                    << action(UIActionIndexST_M_Machine_M_Close_S_SaveState)
-                    << action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)
-                    << action(UIActionIndexST_M_Machine_M_Close_S_PowerOff)
-                    << action(UIActionIndexST_M_Machine_M_Tools_T_Details)
-                    << action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots)
-                    << action(UIActionIndexST_M_Machine_M_Tools_T_Logs)
-                    << action(UIActionIndexST_M_Machine_M_Tools_T_Performance);
+            actions << action(UIActionIndexMN_M_Machine_S_New)
+                    << action(UIActionIndexMN_M_Machine_S_Add)
+                    << action(UIActionIndexMN_M_Machine_S_Settings)
+                    << action(UIActionIndexMN_M_Machine_S_Clone)
+                    << action(UIActionIndexMN_M_Machine_S_Move)
+                    << action(UIActionIndexMN_M_Machine_S_ExportToOCI)
+                    << action(UIActionIndexMN_M_Machine_S_Remove)
+                    << action(UIActionIndexMN_M_Machine_M_MoveToGroup)
+                    << action(UIActionIndexMN_M_Machine_M_StartOrShow)
+                    << action(UIActionIndexMN_M_Machine_T_Pause)
+                    << action(UIActionIndexMN_M_Machine_S_Reset)
+                    << action(UIActionIndexMN_M_Machine_S_Discard)
+                    << action(UIActionIndexMN_M_Machine_S_ShowLogDialog)
+                    << action(UIActionIndexMN_M_Machine_S_Refresh)
+                    << action(UIActionIndexMN_M_Machine_S_ShowInFileManager)
+                    << action(UIActionIndexMN_M_Machine_S_CreateShortcut)
+                    << action(UIActionIndexMN_M_Machine_S_SortParent)
+                    << action(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New)
+                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal)
+                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless)
+                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CreateConnection)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)
+                    // << action(UIActionIndexMN_M_Machine_M_Close_S_Detach)
+                    << action(UIActionIndexMN_M_Machine_M_Close_S_SaveState)
+                    << action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)
+                    << action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff)
+                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Details)
+                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Snapshots)
+                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Logs)
+                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Performance);
             break;
         }
         default:

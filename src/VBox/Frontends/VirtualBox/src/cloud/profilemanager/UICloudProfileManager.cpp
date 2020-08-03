@@ -163,7 +163,7 @@ UICloudProfileManagerWidget::UICloudProfileManagerWidget(EmbedTo enmEmbedding, U
 
 QMenu *UICloudProfileManagerWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndexST_M_CloudWindow)->menu();
+    return m_pActionPool->action(UIActionIndexMN_M_CloudWindow)->menu();
 }
 
 void UICloudProfileManagerWidget::retranslateUi()
@@ -520,10 +520,10 @@ void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
     UIItemCloudProfile *pItemProfile = qobject_cast<UIItemCloudProfile*>(pItem);
 
     /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add)->setEnabled(!pItem || pItemProvider);
-    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import)->setEnabled(!pItem || pItemProvider);
-    m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove)->setEnabled(pItemProfile);
-    m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setEnabled(pItemProfile || pItemProvider);
+    m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Add)->setEnabled(!pItem || pItemProvider);
+    m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Import)->setEnabled(!pItem || pItemProvider);
+    m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Remove)->setEnabled(pItemProfile);
+    m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details)->setEnabled(pItemProfile || pItemProvider);
 
     /* If there is an item => update details data: */
     if (pItemProfile)
@@ -533,7 +533,7 @@ void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
         m_pDetailsWidget->setData(UIDataCloudProfile());
 
     /* Update details area visibility: */
-    sltToggleCloudProfileDetailsVisibility(pItem && m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->isChecked());
+    sltToggleCloudProfileDetailsVisibility(pItem && m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details)->isChecked());
 }
 
 void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
@@ -547,14 +547,14 @@ void UICloudProfileManagerWidget::sltHandleContextMenuRequest(const QPoint &posi
     QMenu menu;
     if (pItemProfile)
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Remove));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details));
     }
     else if (pItemProvider)
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Add));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Import));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details));
     }
 
     /* And show it: */
@@ -610,12 +610,12 @@ void UICloudProfileManagerWidget::prepare()
 void UICloudProfileManagerWidget::prepareActions()
 {
     /* First of all, add actions which has smaller shortcut scope: */
-    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Add));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Import));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Remove));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_TryPage));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Help));
 }
 
 void UICloudProfileManagerWidget::prepareWidgets()
@@ -656,14 +656,14 @@ void UICloudProfileManagerWidget::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add toolbar actions: */
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Add));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Import));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Remove));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_TryPage));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Help));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -719,17 +719,17 @@ void UICloudProfileManagerWidget::prepareDetailsWidget()
 void UICloudProfileManagerWidget::prepareConnections()
 {
     /* Action connections: */
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Add), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Add), &QAction::triggered,
             this, &UICloudProfileManagerWidget::sltAddCloudProfile);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Import), &QAction::triggered,
             this, &UICloudProfileManagerWidget::sltImportCloudProfiles);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Remove), &QAction::triggered,
             this, &UICloudProfileManagerWidget::sltRemoveCloudProfile);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details), &QAction::toggled,
             this, &UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_TryPage), &QAction::triggered,
             this, &UICloudProfileManagerWidget::sltShowCloudProfileTryPage);
-    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Cloud_S_Help), &QAction::triggered,
             this, &UICloudProfileManagerWidget::sltShowCloudProfileHelp);
 
     /* Tree-widget connections: */
@@ -742,7 +742,7 @@ void UICloudProfileManagerWidget::prepareConnections()
     connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
             this, &UICloudProfileManagerWidget::sltHandleContextMenuRequest);
     connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
-            m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::setChecked);
+            m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details), &QAction::setChecked);
     connect(m_pTreeWidget, &QITreeWidget::itemChanged,
             this, &UICloudProfileManagerWidget::sltHandleItemChange);
 
@@ -762,8 +762,8 @@ void UICloudProfileManagerWidget::prepareConnections()
 void UICloudProfileManagerWidget::loadSettings()
 {
     /* Details action/widget: */
-    m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->setChecked(gEDataManager->cloudProfileManagerDetailsExpanded());
-    sltToggleCloudProfileDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details)->isChecked());
+    m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details)->setChecked(gEDataManager->cloudProfileManagerDetailsExpanded());
+    sltToggleCloudProfileDetailsVisibility(m_pActionPool->action(UIActionIndexMN_M_Cloud_T_Details)->isChecked());
 }
 
 void UICloudProfileManagerWidget::loadCloudStuff()

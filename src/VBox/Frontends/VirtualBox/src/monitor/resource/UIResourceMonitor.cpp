@@ -1417,7 +1417,7 @@ void UIResourceMonitorWidget::prepareWidgets()
 
 void UIResourceMonitorWidget::updateColumnsMenu()
 {
-    UIMenu *pMenu = m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_M_Columns)->menu();
+    UIMenu *pMenu = m_pActionPool->action(UIActionIndexMN_M_VMResourceMonitor_M_Columns)->menu();
     if (!pMenu)
         return;
     pMenu->clear();
@@ -1437,7 +1437,7 @@ void UIResourceMonitorWidget::prepareActions()
 {
     updateColumnsMenu();
     m_pShowPerformanceMonitorAction =
-        m_pActionPool->action(UIActionIndexST_M_VMResourceMonitor_S_SwitchToMachinePerformance);
+        m_pActionPool->action(UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance);
 
     if (m_pShowPerformanceMonitorAction)
         connect(m_pShowPerformanceMonitorAction, &QAction::triggered, this, &UIResourceMonitorWidget::sltHandleShowPerformanceMonitor);

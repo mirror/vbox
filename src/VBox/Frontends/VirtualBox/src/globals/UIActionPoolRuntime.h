@@ -31,7 +31,7 @@
 #include "UILibraryDefs.h"
 
 
-/** Runtime action-pool index enum.
+/** VirtualBox Runtime action-pool index enum.
   * Naming convention is following:
   * 1. Every menu index prepended with 'M',
   * 2. Every simple-action index prepended with 'S',

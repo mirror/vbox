@@ -468,7 +468,7 @@ UICloudConsoleManagerWidget::UICloudConsoleManagerWidget(EmbedTo enmEmbedding, U
 
 QMenu *UICloudConsoleManagerWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndexST_M_CloudConsoleWindow)->menu();
+    return m_pActionPool->action(UIActionIndexMN_M_CloudConsoleWindow)->menu();
 }
 
 void UICloudConsoleManagerWidget::retranslateUi()
@@ -688,11 +688,11 @@ void UICloudConsoleManagerWidget::sltHandleCurrentItemChange()
     UIItemCloudConsoleProfile *pItemProfile = qobject_cast<UIItemCloudConsoleProfile*>(pItem);
 
     /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationAdd)->setEnabled(!pItem || pItemApplication);
-    m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationRemove)->setEnabled(pItemApplication);
-    m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileAdd)->setEnabled(pItemApplication || pItemProfile);
-    m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileRemove)->setEnabled(pItemProfile);
-    m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details)->setEnabled(pItemApplication || pItemProfile);
+    m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationAdd)->setEnabled(!pItem || pItemApplication);
+    m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationRemove)->setEnabled(pItemApplication);
+    m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileAdd)->setEnabled(pItemApplication || pItemProfile);
+    m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileRemove)->setEnabled(pItemProfile);
+    m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details)->setEnabled(pItemApplication || pItemProfile);
 
     /* Update current-item definition: */
     if (pItem)
@@ -707,7 +707,7 @@ void UICloudConsoleManagerWidget::sltHandleCurrentItemChange()
         m_pDetailsWidget->clearData();
 
     /* Update details area visibility: */
-    sltToggleCloudConsoleDetailsVisibility(pItem && m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details)->isChecked());
+    sltToggleCloudConsoleDetailsVisibility(pItem && m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details)->isChecked());
 }
 
 void UICloudConsoleManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
@@ -721,17 +721,17 @@ void UICloudConsoleManagerWidget::sltHandleContextMenuRequest(const QPoint &posi
     QMenu menu;
     if (pItemApplication)
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationRemove));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileAdd));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationRemove));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileAdd));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details));
     }
     else if (pItemProfile)
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileRemove));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileRemove));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details));
     }
     else
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationAdd));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationAdd));
 
     /* And show it: */
     menu.exec(m_pTreeWidget->viewport()->mapToGlobal(position));
@@ -786,11 +786,11 @@ void UICloudConsoleManagerWidget::prepare()
 void UICloudConsoleManagerWidget::prepareActions()
 {
     /* First of all, add actions which has smaller shortcut scope: */
-    addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationAdd));
-    addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationRemove));
-    addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileAdd));
-    addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileRemove));
-    addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationAdd));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationRemove));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileAdd));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileRemove));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details));
 }
 
 void UICloudConsoleManagerWidget::prepareWidgets()
@@ -831,13 +831,13 @@ void UICloudConsoleManagerWidget::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add toolbar actions: */
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationAdd));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationRemove));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationAdd));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationRemove));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileAdd));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileRemove));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileAdd));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileRemove));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -893,15 +893,15 @@ void UICloudConsoleManagerWidget::prepareDetailsWidget()
 void UICloudConsoleManagerWidget::prepareConnections()
 {
     /* Action connections: */
-    connect(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationAdd), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationAdd), &QAction::triggered,
             this, &UICloudConsoleManagerWidget::sltAddCloudConsoleApplication);
-    connect(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ApplicationRemove), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ApplicationRemove), &QAction::triggered,
             this, &UICloudConsoleManagerWidget::sltRemoveCloudConsoleApplication);
-    connect(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileAdd), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileAdd), &QAction::triggered,
             this, &UICloudConsoleManagerWidget::sltAddCloudConsoleProfile);
-    connect(m_pActionPool->action(UIActionIndexST_M_CloudConsole_S_ProfileRemove), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_S_ProfileRemove), &QAction::triggered,
             this, &UICloudConsoleManagerWidget::sltRemoveCloudConsoleProfile);
-    connect(m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details), &QAction::toggled,
             this, &UICloudConsoleManagerWidget::sltToggleCloudConsoleDetailsVisibility);
 
     /* Tree-widget connections: */
@@ -914,7 +914,7 @@ void UICloudConsoleManagerWidget::prepareConnections()
     connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
             this, &UICloudConsoleManagerWidget::sltHandleContextMenuRequest);
     connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
-            m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details), &QAction::setChecked);
+            m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details), &QAction::setChecked);
     connect(m_pTreeWidget, &QITreeWidget::itemChanged,
             this, &UICloudConsoleManagerWidget::sltHandleItemChange);
 
@@ -936,8 +936,8 @@ void UICloudConsoleManagerWidget::prepareConnections()
 void UICloudConsoleManagerWidget::loadSettings()
 {
     /* Details action/widget: */
-    m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details)->setChecked(gEDataManager->cloudConsoleManagerDetailsExpanded());
-    sltToggleCloudConsoleDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_CloudConsole_T_Details)->isChecked());
+    m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details)->setChecked(gEDataManager->cloudConsoleManagerDetailsExpanded());
+    sltToggleCloudConsoleDetailsVisibility(m_pActionPool->action(UIActionIndexMN_M_CloudConsole_T_Details)->isChecked());
 }
 
 void UICloudConsoleManagerWidget::loadCloudConsoleStuff()

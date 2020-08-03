@@ -204,7 +204,7 @@ UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, UIA
 
 QMenu *UIHostNetworkManagerWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndexST_M_NetworkWindow)->menu();
+    return m_pActionPool->action(UIActionIndexMN_M_NetworkWindow)->menu();
 }
 
 void UIHostNetworkManagerWidget::retranslateUi()
@@ -637,8 +637,8 @@ void UIHostNetworkManagerWidget::sltHandleCurrentItemChange()
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
 
     /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexST_M_Network_S_Remove)->setEnabled(pItem);
-    m_pActionPool->action(UIActionIndexST_M_Network_T_Details)->setEnabled(pItem);
+    m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
+    m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setEnabled(pItem);
 
     /* If there is an item => update details data: */
     if (pItem)
@@ -657,13 +657,13 @@ void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &posit
     QMenu menu;
     if (m_pTreeWidget->itemAt(position))
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details));
     }
     else
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
-//        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create));
+//        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh));
     }
     /* And show it: */
     menu.exec(m_pTreeWidget->mapToGlobal(position));
@@ -689,19 +689,19 @@ void UIHostNetworkManagerWidget::prepare()
 void UIHostNetworkManagerWidget::prepareActions()
 {
     /* First of all, add actions which has smaller shortcut scope: */
-    addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh));
 
     /* Connect actions: */
-    connect(m_pActionPool->action(UIActionIndexST_M_Network_S_Create), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create), &QAction::triggered,
             this, &UIHostNetworkManagerWidget::sltCreateHostNetwork);
-    connect(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove), &QAction::triggered,
             this, &UIHostNetworkManagerWidget::sltRemoveHostNetwork);
-    connect(m_pActionPool->action(UIActionIndexST_M_Network_T_Details), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::toggled,
             this, &UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility);
-    connect(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh), &QAction::triggered,
             this, &UIHostNetworkManagerWidget::sltRefreshHostNetworks);
 }
 
@@ -741,12 +741,12 @@ void UIHostNetworkManagerWidget::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add toolbar actions: */
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Create));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Remove));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_T_Details));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details));
 //        m_pToolBar->addSeparator();
-//        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Network_S_Refresh));
+//        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -784,7 +784,7 @@ void UIHostNetworkManagerWidget::prepareTreeWidget()
         connect(m_pTreeWidget, &QITreeWidget::itemChanged,
                 this, &UIHostNetworkManagerWidget::sltHandleItemChange);
         connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
-                m_pActionPool->action(UIActionIndexST_M_Network_T_Details), &QAction::setChecked);
+                m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::setChecked);
 
         /* Add into layout: */
         layout()->addWidget(m_pTreeWidget);
@@ -815,8 +815,8 @@ void UIHostNetworkManagerWidget::prepareDetailsWidget()
 void UIHostNetworkManagerWidget::loadSettings()
 {
     /* Details action/widget: */
-    m_pActionPool->action(UIActionIndexST_M_Network_T_Details)->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
-    sltToggleHostNetworkDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_Network_T_Details)->isChecked());
+    m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->setChecked(gEDataManager->hostNetworkManagerDetailsExpanded());
+    sltToggleHostNetworkDetailsVisibility(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details)->isChecked());
 }
 
 void UIHostNetworkManagerWidget::loadHostNetworks()

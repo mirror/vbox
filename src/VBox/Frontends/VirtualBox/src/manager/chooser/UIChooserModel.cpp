@@ -1264,32 +1264,32 @@ void UIChooserModel::prepareContextMenu()
         pMenuGlobal->addSeparator();
         pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
         pMenuGlobal->addSeparator();
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_NewCloudVM));
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowExtraDataManager));
 # endif
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
         if (fExtPackAccessible)
-            pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+            pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
 
 #else /* !VBOX_WS_MAC */
 
         pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
         pMenuGlobal->addSeparator();
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ExportAppliance));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_NewCloudVM));
         pMenuGlobal->addSeparator();
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowExtraDataManager));
 # endif
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
-        pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowVirtualMediumManager));
+        pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowHostNetworkManager));
         if (fExtPackAccessible)
-            pMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
+            pMenuGlobal->addAction(actionPool()->action(UIActionIndexMN_M_File_S_ShowCloudProfileManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         pMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
         if (gEDataManager->applicationUpdateEnabled())
@@ -1302,88 +1302,88 @@ void UIChooserModel::prepareContextMenu()
     m_localMenus[UIChooserNodeType_Group] = new QMenu;
     if (QMenu *pMenuGroup = m_localMenus.value(UIChooserNodeType_Group))
     {
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_New));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Add));
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
-        pMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_MoveToGroup)->menu());
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Rename));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Remove));
+        pMenuGroup->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_MoveToGroup)->menu());
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Reset));
-        pMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Pause));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Reset));
+        pMenuGroup->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Discard));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_ShowLogDialog));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_ShowInFileManager));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_CreateShortcut));
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
     }
 
     /* Context menu for local machine(s): */
     m_localMenus[UIChooserNodeType_Machine] = new QMenu;
     if (QMenu *pMenuMachine = m_localMenus.value(UIChooserNodeType_Machine))
     {
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
-        pMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_MoveToGroup)->menu());
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Clone));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Move));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ExportToOCI));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
+        pMenuMachine->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_MoveToGroup)->menu());
         pMenuMachine->addSeparator();
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Reset));
-        pMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Pause));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Reset));
+        pMenuMachine->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
         pMenuMachine->addSeparator();
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowLogDialog));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenuMachine->addSeparator();
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_ShowInFileManager));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_CreateShortcut));
         pMenuMachine->addSeparator();
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Search));
     }
 
     /* Context menu for cloud group(s): */
     m_cloudMenus[UIChooserNodeType_Group] = new QMenu;
     if (QMenu *pMenuGroup = m_cloudMenus.value(UIChooserNodeType_Group))
     {
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_New));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Add));
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
-        pMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Console)->menu());
-        pMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
+        pMenuGroup->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Console)->menu());
+        pMenuGroup->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Close)->menu());
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Discard));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenuGroup->addSeparator();
-        pMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
     }
 
     /* Context menu for cloud machine(s): */
     m_cloudMenus[UIChooserNodeType_Machine] = new QMenu;
     if (QMenu *pMenuMachine = m_cloudMenus.value(UIChooserNodeType_Machine))
     {
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
         pMenuMachine->addSeparator();
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-        pMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Console)->menu());
-        pMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
+        pMenuMachine->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->menu());
+        pMenuMachine->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Close)->menu());
         pMenuMachine->addSeparator();
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Refresh));
         pMenuMachine->addSeparator();
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
-        pMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Search));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_SortParent));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_T_Search));
     }
 }
 

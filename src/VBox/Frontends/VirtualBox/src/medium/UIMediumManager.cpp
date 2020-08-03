@@ -170,7 +170,7 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, UIActionPool 
 
 QMenu *UIMediumManagerWidget::menu() const
 {
-    return m_pActionPool->action(UIActionIndexST_M_MediumWindow)->menu();
+    return m_pActionPool->action(UIActionIndexMN_M_MediumWindow)->menu();
 }
 
 void UIMediumManagerWidget::setProgressBar(UIEnumerationProgressBar *pProgressBar)
@@ -392,8 +392,8 @@ void UIMediumManagerWidget::sltHandleMediumDeleted(const QUuid &uMediumID)
 void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
 {
     /* Disable 'refresh' action: */
-    if (m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh))
-        m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh)->setEnabled(false);
+    if (m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh))
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh)->setEnabled(false);
 
     /* Disable details-widget: */
     if (m_pDetailsWidget)
@@ -461,8 +461,8 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationFinish()
         m_pDetailsWidget->setOptionsEnabled(true);
 
     /* Enable 'refresh' action: */
-    if (m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh))
-        m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh)->setEnabled(true);
+    if (m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh))
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh)->setEnabled(true);
 
     /* Re-fetch all current medium-items: */
     refetchCurrentMediumItems();
@@ -630,19 +630,19 @@ void UIMediumManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
     QMenu menu;
     if (pTreeWidget->itemAt(position))
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Copy));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details));
     }
     else
     {
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Create));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Add));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Create));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh));
     }
     /* And show it: */
     menu.exec(pTreeWidget->viewport()->mapToGlobal(position));
@@ -732,34 +732,34 @@ void UIMediumManagerWidget::prepareConnections()
 void UIMediumManagerWidget::prepareActions()
 {
     /* First of all, add actions which has smaller shortcut scope: */
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Create));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Add));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Create));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Copy));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh));
 
     /* Connect actions: */
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Add), &QAction::triggered,
             this, &UIMediumManagerWidget::sltAddMedium);
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Create), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Create), &QAction::triggered,
             this, &UIMediumManagerWidget::sltCreateMedium);
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Copy), &QAction::triggered,
             this, &UIMediumManagerWidget::sltCopyMedium);
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move), &QAction::triggered,
             this, &UIMediumManagerWidget::sltMoveMedium);
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove), &QAction::triggered,
             this, &UIMediumManagerWidget::sltRemoveMedium);
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release), &QAction::triggered,
             this, &UIMediumManagerWidget::sltReleaseMedium);
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details), &QAction::toggled,
             this, &UIMediumManagerWidget::sltToggleMediumDetailsVisibility);
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search), &QAction::toggled,
             this, &UIMediumManagerWidget::sltToggleMediumSearchVisibility);
-    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh), &QAction::triggered,
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh), &QAction::triggered,
             this, &UIMediumManagerWidget::sltRefreshAll);
 
     /* Update action icons: */
@@ -804,17 +804,17 @@ void UIMediumManagerWidget::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         /* Add toolbar actions: */
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Create));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Add));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Create));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Copy));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh));
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -903,7 +903,7 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumDeviceType type, int iColu
         connect(pTreeWidget, &QITreeWidget::currentItemChanged,
                 this, &UIMediumManagerWidget::sltHandleCurrentItemChanged);
         connect(pTreeWidget, &QITreeWidget::itemDoubleClicked,
-                m_pActionPool->action(UIActionIndexST_M_Medium_T_Details), &QAction::setChecked);
+                m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details), &QAction::setChecked);
         connect(pTreeWidget, &QITreeWidget::customContextMenuRequested,
                 this, &UIMediumManagerWidget::sltHandleContextMenuRequest);
         connect(pTreeWidget, &QITreeWidget::resized,
@@ -957,12 +957,12 @@ void UIMediumManagerWidget::prepareSearchWidget()
 void UIMediumManagerWidget::loadSettings()
 {
     /* Details action/widget: */
-    m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
-    sltToggleMediumDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->isChecked());
+    m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details)->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
+    sltToggleMediumDetailsVisibility(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details)->isChecked());
 
     /* Search action/widget: */
-    m_pActionPool->action(UIActionIndexST_M_Medium_T_Search)->setChecked(gEDataManager->virtualMediaManagerSearchWidgetExpanded());
-    sltToggleMediumSearchVisibility(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search)->isChecked());
+    m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search)->setChecked(gEDataManager->virtualMediaManagerSearchWidgetExpanded());
+    sltToggleMediumSearchVisibility(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search)->isChecked());
 }
 
 void UIMediumManagerWidget::repopulateTreeWidgets()
@@ -1064,15 +1064,15 @@ void UIMediumManagerWidget::updateActions()
 
     /* Apply actions accessibility: */
     bool fActionEnabledCopy = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
-    m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy)->setEnabled(fActionEnabledCopy);
+    m_pActionPool->action(UIActionIndexMN_M_Medium_S_Copy)->setEnabled(fActionEnabledCopy);
     bool fActionEnabledMove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Edit);
-    m_pActionPool->action(UIActionIndexST_M_Medium_S_Move)->setEnabled(fActionEnabledMove);
+    m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move)->setEnabled(fActionEnabledMove);
     bool fActionEnabledRemove = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Remove);
-    m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove)->setEnabled(fActionEnabledRemove);
+    m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove)->setEnabled(fActionEnabledRemove);
     bool fActionEnabledRelease = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Release);
-    m_pActionPool->action(UIActionIndexST_M_Medium_S_Release)->setEnabled(fActionEnabledRelease);
+    m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release)->setEnabled(fActionEnabledRelease);
     bool fActionEnabledDetails = true;
-    m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setEnabled(fActionEnabledDetails);
+    m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details)->setEnabled(fActionEnabledDetails);
 }
 
 void UIMediumManagerWidget::updateActionIcons()
@@ -1080,13 +1080,13 @@ void UIMediumManagerWidget::updateActionIcons()
     const UIMediumDeviceType enmCurrentMediumType = currentMediumType();
     if (enmCurrentMediumType != UIMediumDeviceType_Invalid)
     {
-        m_pActionPool->action(UIActionIndexST_M_Medium_S_Add)->setState((int)enmCurrentMediumType);
-        m_pActionPool->action(UIActionIndexST_M_Medium_S_Create)->setState((int)enmCurrentMediumType);
-        m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy)->setState((int)enmCurrentMediumType);
-        m_pActionPool->action(UIActionIndexST_M_Medium_S_Move)->setState((int)enmCurrentMediumType);
-        m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove)->setState((int)enmCurrentMediumType);
-        m_pActionPool->action(UIActionIndexST_M_Medium_S_Release)->setState((int)enmCurrentMediumType);
-        m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Add)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Create)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Copy)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details)->setState((int)enmCurrentMediumType);
     }
 }
 
