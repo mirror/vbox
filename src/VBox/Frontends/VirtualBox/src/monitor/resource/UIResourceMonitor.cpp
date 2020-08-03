@@ -219,8 +219,10 @@ public:
     UIResourceMonitorItem(const QUuid &uid, const QString &strVMName);
     UIResourceMonitorItem(const QUuid &uid);
     UIResourceMonitorItem();
+    UIResourceMonitorItem(const UIResourceMonitorItem &item);
+    ~UIResourceMonitorItem();
     bool operator==(const UIResourceMonitorItem& other) const;
-    bool isWithGuestAdditions() const;
+    bool isWithGuestAdditions();
 
     QUuid    m_VMuid;
     QString  m_strVMName;
@@ -245,8 +247,9 @@ public:
     quint64 m_uVMExitRate;
     quint64 m_uVMExitTotal;
 
+    CSession m_comSession;
     CMachineDebugger m_comDebugger;
-    mutable CGuest   m_comGuest;
+    CGuest   m_comGuest;
     /** The strings of each column for the item. We update this during performance query
       * instead of model's data function to know the string length earlier. */
     QMap<int, QString> m_columnData;
@@ -765,10 +768,10 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid, const QString &st
     , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
 {
-    CSession comSession = uiCommon().openSession(uid, KLockType_Shared);
-    if (!comSession.isNull())
+    m_comSession = uiCommon().openSession(uid, KLockType_Shared);
+    if (!m_comSession.isNull())
     {
-        CConsole comConsole = comSession.GetConsole();
+        CConsole comConsole = m_comSession.GetConsole();
         if (!comConsole.isNull())
         {
             m_comGuest = comConsole.GetGuest();
@@ -817,6 +820,38 @@ UIResourceMonitorItem::UIResourceMonitorItem(const QUuid &uid)
 {
 }
 
+UIResourceMonitorItem::~UIResourceMonitorItem()
+{
+    if (!m_comSession.isNull())
+        m_comSession.UnlockMachine();
+}
+
+UIResourceMonitorItem::UIResourceMonitorItem(const UIResourceMonitorItem &other)
+    : m_VMuid(other.m_VMuid)
+    , m_strVMName(other.m_strVMName)
+    , m_uCPUGuestLoad(other.m_uCPUGuestLoad)
+    , m_uCPUVMMLoad(other.m_uCPUVMMLoad)
+    , m_uTotalRAM(other.m_uTotalRAM)
+    , m_uFreeRAM(other.m_uFreeRAM)
+    , m_uUsedRAM(other.m_uUsedRAM)
+    , m_fRAMUsagePercentage(other.m_fRAMUsagePercentage)
+    , m_uNetworkDownRate(other.m_uNetworkDownRate)
+    , m_uNetworkUpRate(other.m_uNetworkUpRate)
+    , m_uNetworkDownTotal(other.m_uNetworkDownTotal)
+    , m_uNetworkUpTotal(other.m_uNetworkUpTotal)
+    , m_uDiskWriteRate(other.m_uDiskWriteRate)
+    , m_uDiskReadRate(other.m_uDiskReadRate)
+    , m_uDiskWriteTotal(other.m_uDiskWriteTotal)
+    , m_uDiskReadTotal(other.m_uDiskReadTotal)
+    , m_uVMExitRate(other.m_uVMExitRate)
+    , m_uVMExitTotal(other.m_uVMExitTotal)
+    , m_comSession(other.m_comSession)
+    , m_comDebugger(other.m_comDebugger)
+    , m_comGuest(other.m_comGuest)
+    , m_columnData(other.m_columnData)
+{
+}
+
 bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
 {
     if (m_VMuid == other.m_VMuid)
@@ -824,7 +859,7 @@ bool UIResourceMonitorItem::operator==(const UIResourceMonitorItem& other) const
     return false;
 }
 
-bool UIResourceMonitorItem::isWithGuestAdditions() const
+bool UIResourceMonitorItem::isWithGuestAdditions()
 {
     if (m_comGuest.isNull())
         return false;
@@ -962,6 +997,7 @@ void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMac
         removeItem(uId);
         emit layoutChanged();
         setupPerformanceCollector();
+        return;
     }
     /* Insert the machine if it is working. */
     if (iIndex == -1 && state == KMachineState_Running)
@@ -972,6 +1008,7 @@ void UIResourceMonitorModel::sltMachineStateChanged(const QUuid &uId, const KMac
             addItem(uId, comMachine.GetName());
         emit layoutChanged();
         setupPerformanceCollector();
+        return;
     }
 }
 
