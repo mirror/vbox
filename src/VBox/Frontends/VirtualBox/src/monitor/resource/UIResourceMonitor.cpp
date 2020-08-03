@@ -219,7 +219,6 @@ public:
     UIResourceMonitorItem(const QUuid &uid, const QString &strVMName);
     UIResourceMonitorItem(const QUuid &uid);
     UIResourceMonitorItem();
-    UIResourceMonitorItem(const UIResourceMonitorItem &item);
     ~UIResourceMonitorItem();
     bool operator==(const UIResourceMonitorItem& other) const;
     bool isWithGuestAdditions();
