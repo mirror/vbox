@@ -463,7 +463,7 @@ typedef enum PCIADDRESSSPACE
 /** The device number mask for a device+function number. */
 #define VBOX_PCI_DEVFN_DEV_MASK     0x1f
 /** The bus number shift count for a bus+device+function number. */
-#define VBOX_PCI_BUS_SHIFT          0xc
+#define VBOX_PCI_BUS_SHIFT          0x8
 /** The bus number mask a bus+device+function number. */
 #define VBOX_PCI_BUS_MASK           0xff
 /** Make a device+function number.   */
