@@ -236,8 +236,8 @@ void UIShortcutPool::sltReloadSelectorShortcuts()
     /* Load selector overrides: */
     loadOverridesFor(GUI_Input_SelectorShortcuts);
 
-    /* Notify selector shortcuts reloaded: */
-    emit sigSelectorShortcutsReloaded();
+    /* Notify manager shortcuts reloaded: */
+    emit sigManagerShortcutsReloaded();
 }
 
 void UIShortcutPool::sltReloadMachineShortcuts()
@@ -253,8 +253,8 @@ void UIShortcutPool::sltReloadMachineShortcuts()
     /* Load machine overrides: */
     loadOverridesFor(GUI_Input_MachineShortcuts);
 
-    /* Notify machine shortcuts reloaded: */
-    emit sigMachineShortcutsReloaded();
+    /* Notify runtime shortcuts reloaded: */
+    emit sigRuntimeShortcutsReloaded();
 }
 
 UIShortcutPool::UIShortcutPool()

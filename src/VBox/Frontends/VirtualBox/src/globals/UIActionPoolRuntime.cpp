@@ -3468,9 +3468,9 @@ void UIActionPoolRuntime::preparePool()
 void UIActionPoolRuntime::prepareConnections()
 {
     /* Prepare connections: */
-    connect(gShortcutPool, &UIShortcutPool::sigSelectorShortcutsReloaded,
+    connect(gShortcutPool, &UIShortcutPool::sigManagerShortcutsReloaded,
             this, &UIActionPoolRuntime::sltApplyShortcuts);
-    connect(gShortcutPool, &UIShortcutPool::sigMachineShortcutsReloaded,
+    connect(gShortcutPool, &UIShortcutPool::sigRuntimeShortcutsReloaded,
             this, &UIActionPoolRuntime::sltApplyShortcuts);
     connect(gEDataManager, &UIExtraDataManager::sigMenuBarConfigurationChange,
             this, &UIActionPoolRuntime::sltHandleConfigurationChange);

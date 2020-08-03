@@ -3567,8 +3567,8 @@ void UIActionPoolManager::preparePool()
 void UIActionPoolManager::prepareConnections()
 {
     /* Prepare connections: */
-    connect(gShortcutPool, &UIShortcutPool::sigSelectorShortcutsReloaded, this, &UIActionPoolManager::sltApplyShortcuts);
-    connect(gShortcutPool, &UIShortcutPool::sigMachineShortcutsReloaded, this, &UIActionPoolManager::sltApplyShortcuts);
+    connect(gShortcutPool, &UIShortcutPool::sigManagerShortcutsReloaded, this, &UIActionPoolManager::sltApplyShortcuts);
+    connect(gShortcutPool, &UIShortcutPool::sigRuntimeShortcutsReloaded, this, &UIActionPoolManager::sltApplyShortcuts);
 
     /* Call to base-class: */
     UIActionPool::prepareConnections();

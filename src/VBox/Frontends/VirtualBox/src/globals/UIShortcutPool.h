@@ -118,10 +118,10 @@ class SHARED_LIBRARY_STUFF UIShortcutPool : public QIWithRetranslateUI3<QObject>
 
 signals:
 
-    /** Notifies about Selector UI shortcuts changed. */
-    void sigSelectorShortcutsReloaded();
+    /** Notifies about Manager UI shortcuts changed. */
+    void sigManagerShortcutsReloaded();
     /** Notifies about Runtime UI shortcuts changed. */
-    void sigMachineShortcutsReloaded();
+    void sigRuntimeShortcutsReloaded();
 
 public:
 
