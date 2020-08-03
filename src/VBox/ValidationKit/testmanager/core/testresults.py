@@ -1359,7 +1359,9 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
                   '       LEFT OUTER JOIN TestBoxesWithStrings\n' \
                   '                    ON TestSets.idGenTestBox     = TestBoxesWithStrings.idGenTestBox' \
                   '       LEFT OUTER JOIN Builds AS TestSuiteBits\n' \
-                  '                    ON TestSets.idBuildTestSuite = TestSuiteBits.idBuild\n' \
+                  '                    ON TestSuiteBits.idBuild     =  TestSets.idBuildTestSuite\n' \
+                  '                   AND TestSuiteBits.tsExpire    >  TestSets.tsCreated\n' \
+                  '                   AND TestSuiteBits.tsEffective <= TestSets.tsCreated\n' \
                   '       LEFT OUTER JOIN TestResultFailures\n' \
                   '                    ON     TestSets.idTestSet          = TestResultFailures.idTestSet\n' \
                   '                       AND TestResultFailures.tsExpire = \'infinity\'::TIMESTAMP';
