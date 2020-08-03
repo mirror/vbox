@@ -769,6 +769,8 @@ UIPerformanceMonitor::UIPerformanceMonitor(EmbedTo enmEmbedding, QWidget *pParen
 
 UIPerformanceMonitor::~UIPerformanceMonitor()
 {
+    if (!m_comSession.isNull())
+        m_comSession.UnlockMachine();
 }
 
 void UIPerformanceMonitor::setMachine(const CMachine &comMachine)
