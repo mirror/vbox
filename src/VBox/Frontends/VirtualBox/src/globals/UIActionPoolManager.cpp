@@ -37,14 +37,14 @@ using namespace UIExtraDataDefs;
 
 
 /** Menu action extension, used as 'File' menu class. */
-class UIActionMenuSelectorFile : public UIActionMenu
+class UIActionMenuManagerFile : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorFile(UIActionPool *pParent)
+    UIActionMenuManagerFile(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -62,14 +62,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Virtual Media Manager' action class. */
-class UIActionSimpleSelectorFileShowVirtualMediaManager : public UIActionSimple
+class UIActionSimpleManagerFileShowVirtualMediaManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorFileShowVirtualMediaManager(UIActionPool *pParent)
+    UIActionSimpleManagerFileShowVirtualMediaManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/media_manager_16px.png", ":/media_manager_disabled_16px.png")
     {}
 
@@ -96,14 +96,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Host Network Manager' action class. */
-class UIActionSimpleSelectorFileShowHostNetworkManager : public UIActionSimple
+class UIActionSimpleManagerFileShowHostNetworkManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorFileShowHostNetworkManager(UIActionPool *pParent)
+    UIActionSimpleManagerFileShowHostNetworkManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/host_iface_manager_16px.png", ":/host_iface_manager_disabled_16px.png")
     {}
 
@@ -130,14 +130,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
-class UIActionSimpleSelectorFileShowCloudProfileManager : public UIActionSimple
+class UIActionSimpleManagerFileShowCloudProfileManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorFileShowCloudProfileManager(UIActionPool *pParent)
+    UIActionSimpleManagerFileShowCloudProfileManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/cloud_profile_manager_16px.png", ":/cloud_profile_manager_disabled_16px.png")
     {}
 
@@ -164,14 +164,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Import Appliance Wizard' action class. */
-class UIActionSimpleSelectorFileShowImportApplianceWizard : public UIActionSimple
+class UIActionSimpleManagerFileShowImportApplianceWizard : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorFileShowImportApplianceWizard(UIActionPool *pParent)
+    UIActionSimpleManagerFileShowImportApplianceWizard(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/import_32px.png", ":/import_16px.png",
                          ":/import_disabled_32px.png", ":/import_disabled_16px.png")
@@ -202,14 +202,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Export Appliance Wizard' action class. */
-class UIActionSimpleSelectorFileShowExportApplianceWizard : public UIActionSimple
+class UIActionSimpleManagerFileShowExportApplianceWizard : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorFileShowExportApplianceWizard(UIActionPool *pParent)
+    UIActionSimpleManagerFileShowExportApplianceWizard(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/export_32px.png", ":/export_16px.png",
                          ":/export_disabled_32px.png", ":/export_disabled_16px.png")
@@ -240,14 +240,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show New Cloud VM Wizard' action class. */
-class UIActionSimpleSelectorFileShowNewCloudVMWizard : public UIActionSimple
+class UIActionSimpleManagerFileShowNewCloudVMWizard : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorFileShowNewCloudVMWizard(UIActionPool *pParent)
+    UIActionSimpleManagerFileShowNewCloudVMWizard(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_vm_new_32px.png", ":/cloud_vm_new_16px.png",
                          ":/cloud_vm_new_disabled_32px.png", ":/cloud_vm_new_disabled_16px.png")
@@ -272,14 +272,14 @@ protected:
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 /** Simple action extension, used as 'Show Extra-data Manager' action class. */
-class UIActionSimpleSelectorFileShowExtraDataManager : public UIActionSimple
+class UIActionSimpleManagerFileShowExtraDataManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorFileShowExtraDataManager(UIActionPool *pParent)
+    UIActionSimpleManagerFileShowExtraDataManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/edata_manager_16px.png", ":/edata_manager_16px.png")
     {}
 
@@ -307,14 +307,14 @@ protected:
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /** Simple action extension, used as 'Perform Exit' action class. */
-class UIActionSimpleSelectorFilePerformExit : public UIActionSimple
+class UIActionSimpleManagerFilePerformExit : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorFilePerformExit(UIActionPool *pParent)
+    UIActionSimpleManagerFilePerformExit(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/exit_16px.png", ":/exit_16px.png")
     {
         setMenuRole(QAction::QuitRole);
@@ -344,14 +344,14 @@ protected:
 
 
 /** Menu action extension, used as 'Group' menu class. */
-class UIActionMenuSelectorGroup : public UIActionMenu
+class UIActionMenuManagerGroup : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorGroup(UIActionPool *pParent)
+    UIActionMenuManagerGroup(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -365,14 +365,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Create Machine' action class. */
-class UIActionSimpleSelectorGroupPerformCreateMachine : public UIActionSimple
+class UIActionSimpleManagerGroupPerformCreateMachine : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorGroupPerformCreateMachine(UIActionPool *pParent)
+    UIActionSimpleManagerGroupPerformCreateMachine(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_new_32px.png", ":/vm_new_16px.png",
                          ":/vm_new_disabled_32px.png", ":/vm_new_disabled_16px.png")
@@ -404,14 +404,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Add Machine' action class. */
-class UIActionSimpleSelectorGroupPerformAddMachine : public UIActionSimple
+class UIActionSimpleManagerGroupPerformAddMachine : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorGroupPerformAddMachine(UIActionPool *pParent)
+    UIActionSimpleManagerGroupPerformAddMachine(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_add_32px.png", ":/vm_add_16px.png",
                          ":/vm_add_disabled_32px.png", ":/vm_add_disabled_16px.png")
@@ -443,14 +443,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Rename Group' action class. */
-class UIActionSimpleSelectorGroupPerformRename : public UIActionSimple
+class UIActionSimpleManagerGroupPerformRename : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorGroupPerformRename(UIActionPool *pParent)
+    UIActionSimpleManagerGroupPerformRename(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_group_name_16px.png", ":/vm_group_name_disabled_16px.png")
     {}
 
@@ -471,14 +471,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Remove Group' action class. */
-class UIActionSimpleSelectorGroupPerformRemove : public UIActionSimple
+class UIActionSimpleManagerGroupPerformRemove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorGroupPerformRemove(UIActionPool *pParent)
+    UIActionSimpleManagerGroupPerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_group_remove_16px.png", ":/vm_group_remove_disabled_16px.png")
     {}
 
@@ -499,14 +499,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Sort Group' action class. */
-class UIActionSimpleSelectorGroupPerformSort : public UIActionSimple
+class UIActionSimpleManagerGroupPerformSort : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorGroupPerformSort(UIActionPool *pParent)
+    UIActionSimpleManagerGroupPerformSort(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png")
     {}
 
@@ -528,14 +528,14 @@ protected:
 
 
 /** Menu action extension, used as 'Machine' menu class. */
-class UIActionMenuSelectorMachine : public UIActionMenu
+class UIActionMenuManagerMachine : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMachine(UIActionPool *pParent)
+    UIActionMenuManagerMachine(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -549,14 +549,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Create Machine' action class. */
-class UIActionSimpleSelectorMachinePerformCreate : public UIActionSimple
+class UIActionSimpleManagerMachinePerformCreate : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformCreate(UIActionPool *pParent)
+    UIActionSimpleManagerMachinePerformCreate(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_new_32px.png", ":/vm_new_16px.png",
                          ":/vm_new_disabled_32px.png", ":/vm_new_disabled_16px.png")
@@ -586,14 +586,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Add Machine' action class. */
-class UIActionSimpleSelectorMachinePerformAdd : public UIActionSimple
+class UIActionSimpleManagerMachinePerformAdd : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformAdd(UIActionPool *pParent)
+    UIActionSimpleManagerMachinePerformAdd(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_add_32px.png", ":/vm_add_16px.png",
                          ":/vm_add_disabled_32px.png", ":/vm_add_disabled_16px.png")
@@ -623,14 +623,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Move to Group' menu class. */
-class UIActionMenuSelectorCommonMoveToGroup : public UIActionMenu
+class UIActionMenuManagerCommonMoveToGroup : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCommonMoveToGroup(UIActionPool *pParent)
+    UIActionMenuManagerCommonMoveToGroup(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png")
     {}
 
@@ -644,14 +644,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Move to Group => New' action class. */
-class UIActionSimpleSelectorMachineMoveToGroupNew : public UIActionSimple
+class UIActionSimpleManagerMachineMoveToGroupNew : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachineMoveToGroupNew(UIActionPool *pParent)
+    UIActionSimpleManagerMachineMoveToGroupNew(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -672,14 +672,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Machine Settings' action class. */
-class UIActionSimpleSelectorMachineShowSettings : public UIActionSimple
+class UIActionSimpleManagerMachineShowSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachineShowSettings(UIActionPool *pParent)
+    UIActionSimpleManagerMachineShowSettings(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_settings_32px.png", ":/vm_settings_16px.png",
                          ":/vm_settings_disabled_32px.png", ":/vm_settings_disabled_16px.png")
@@ -709,14 +709,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Clone Machine' action class. */
-class UIActionSimpleSelectorMachinePerformClone : public UIActionSimple
+class UIActionSimpleManagerMachinePerformClone : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformClone(UIActionPool *pParent)
+    UIActionSimpleManagerMachinePerformClone(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png")
     {}
 
@@ -743,14 +743,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Move Machine' action class. */
-class UIActionSimpleSelectorMachinePerformMove : public UIActionSimple
+class UIActionSimpleManagerMachinePerformMove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformMove(UIActionPool *pParent)
+    UIActionSimpleManagerMachinePerformMove(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_move_16px.png", ":/vm_move_disabled_16px.png")
     {}
 
@@ -771,14 +771,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Export Machine locally' action class. */
-class UIActionSimpleSelectorMachinePerformExportLocally : public UIActionSimple
+class UIActionSimpleManagerMachinePerformExportLocally : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformExportLocally(UIActionPool *pParent)
+    UIActionSimpleManagerMachinePerformExportLocally(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/export_16px.png", ":/export_disabled_16px.png")
     {}
 
@@ -799,14 +799,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Export Machine to OCI' action class. */
-class UIActionSimpleSelectorMachinePerformExportToOCI : public UIActionSimple
+class UIActionSimpleManagerMachinePerformExportToOCI : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformExportToOCI(UIActionPool *pParent)
+    UIActionSimpleManagerMachinePerformExportToOCI(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/export_16px.png", ":/export_disabled_16px.png")
     {}
 
@@ -827,14 +827,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Remove Machine' action class. */
-class UIActionSimpleSelectorMachinePerformRemove : public UIActionSimple
+class UIActionSimpleManagerMachinePerformRemove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformRemove(UIActionPool *pParent)
+    UIActionSimpleManagerMachinePerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_delete_32px.png", ":/vm_delete_16px.png",
                          ":/vm_delete_disabled_32px.png", ":/vm_delete_disabled_16px.png")
@@ -857,14 +857,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Sort Parent' action class. */
-class UIActionSimpleSelectorMachinePerformSortParent : public UIActionSimple
+class UIActionSimpleManagerMachinePerformSortParent : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformSortParent(UIActionPool *pParent)
+    UIActionSimpleManagerMachinePerformSortParent(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png")
     {}
 
@@ -885,14 +885,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Search' action class. */
-class UIActionToggleSelectorMachineToggleSearch : public UIActionToggle
+class UIActionToggleManagerMachineToggleSearch : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorMachineToggleSearch(UIActionPool *pParent)
+    UIActionToggleManagerMachineToggleSearch(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/search_16px.png", ":/search_16px.png",
                          ":/search_16px.png", ":/search_16px.png") /// @todo use icons with check-boxes
@@ -922,14 +922,14 @@ protected:
 
 
 /** Menu action extension, used as 'Start or Show' menu class. */
-class UIActionStateSelectorCommonStartOrShow : public UIActionPolymorphicMenu
+class UIActionStateManagerCommonStartOrShow : public UIActionPolymorphicMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionStateSelectorCommonStartOrShow(UIActionPool *pParent)
+    UIActionStateManagerCommonStartOrShow(UIActionPool *pParent)
         : UIActionPolymorphicMenu(pParent,
                                   ":/vm_start_32px.png", ":/vm_start_16px.png",
                                   ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png")
@@ -971,14 +971,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Normal Start' action class. */
-class UIActionSimpleSelectorCommonPerformStartNormal : public UIActionSimple
+class UIActionSimpleManagerCommonPerformStartNormal : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonPerformStartNormal(UIActionPool *pParent)
+    UIActionSimpleManagerCommonPerformStartNormal(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_start_16px.png", ":/vm_start_16px.png")
     {}
 
@@ -999,14 +999,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Headless Start' action class. */
-class UIActionSimpleSelectorCommonPerformStartHeadless : public UIActionSimple
+class UIActionSimpleManagerCommonPerformStartHeadless : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonPerformStartHeadless(UIActionPool *pParent)
+    UIActionSimpleManagerCommonPerformStartHeadless(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_start_headless_16px.png", ":/vm_start_headless_16px.png")
     {}
 
@@ -1027,14 +1027,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Detachable Start' action class. */
-class UIActionSimpleSelectorCommonPerformStartDetachable : public UIActionSimple
+class UIActionSimpleManagerCommonPerformStartDetachable : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonPerformStartDetachable(UIActionPool *pParent)
+    UIActionSimpleManagerCommonPerformStartDetachable(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_start_separate_16px.png", ":/vm_start_separate_16px.png")
     {}
 
@@ -1055,14 +1055,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Pause and Resume' action class. */
-class UIActionToggleSelectorCommonPauseAndResume : public UIActionToggle
+class UIActionToggleManagerCommonPauseAndResume : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorCommonPauseAndResume(UIActionPool *pParent)
+    UIActionToggleManagerCommonPauseAndResume(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vm_pause_on_16px.png", ":/vm_pause_16px.png",
                          ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png")
@@ -1085,14 +1085,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Reset' action class. */
-class UIActionSimpleSelectorCommonPerformReset : public UIActionSimple
+class UIActionSimpleManagerCommonPerformReset : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonPerformReset(UIActionPool *pParent)
+    UIActionSimpleManagerCommonPerformReset(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png")
     {}
 
@@ -1113,14 +1113,14 @@ protected:
 };
 
 /** Polymorphic menu action extension, used as 'Perform Discard' action class. */
-class UIActionSimpleSelectorCommonPerformDiscard : public UIActionPolymorphicMenu
+class UIActionSimpleManagerCommonPerformDiscard : public UIActionPolymorphicMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonPerformDiscard(UIActionPool *pParent)
+    UIActionSimpleManagerCommonPerformDiscard(UIActionPool *pParent)
         : UIActionPolymorphicMenu(pParent,
                                   ":/vm_discard_32px.png", ":/vm_discard_16px.png",
                                   ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png")
@@ -1165,14 +1165,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Machine Logs' action class. */
-class UIActionSimpleSelectorCommonShowMachineLogs : public UIActionSimple
+class UIActionSimpleManagerCommonShowMachineLogs : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonShowMachineLogs(UIActionPool *pParent)
+    UIActionSimpleManagerCommonShowMachineLogs(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png",
                          ":/vm_show_logs_disabled_32px.png", ":/vm_show_logs_disabled_16px.png")
@@ -1203,14 +1203,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Refresh' action class. */
-class UIActionSimpleSelectorCommonPerformRefresh : public UIActionSimple
+class UIActionSimpleManagerCommonPerformRefresh : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonPerformRefresh(UIActionPool *pParent)
+    UIActionSimpleManagerCommonPerformRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/refresh_32px.png", ":/refresh_16px.png",
                          ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
@@ -1233,14 +1233,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show in File Manager' action class. */
-class UIActionSimpleSelectorCommonShowInFileManager : public UIActionSimple
+class UIActionSimpleManagerCommonShowInFileManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonShowInFileManager(UIActionPool *pParent)
+    UIActionSimpleManagerCommonShowInFileManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png")
     {}
 
@@ -1269,14 +1269,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Create Shortcut' action class. */
-class UIActionSimpleSelectorCommonPerformCreateShortcut : public UIActionSimple
+class UIActionSimpleManagerCommonPerformCreateShortcut : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorCommonPerformCreateShortcut(UIActionPool *pParent)
+    UIActionSimpleManagerCommonPerformCreateShortcut(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
     {}
 
@@ -1303,14 +1303,14 @@ protected:
 
 
 /** Menu action extension, used as 'Console' menu class. */
-class UIActionMenuSelectorConsole : public UIActionMenu
+class UIActionMenuManagerConsole : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorConsole(UIActionPool *pParent)
+    UIActionMenuManagerConsole(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/cloud_machine_console_16px.png")
     {}
 
@@ -1324,14 +1324,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Create Console Connection' action class. */
-class UIActionSimpleSelectorConsolePerformCreateConnection : public UIActionSimple
+class UIActionSimpleManagerConsolePerformCreateConnection : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorConsolePerformCreateConnection(UIActionPool *pParent)
+    UIActionSimpleManagerConsolePerformCreateConnection(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_machine_console_create_connection_16px.png",
                          ":/cloud_machine_console_create_connection_disabled_16px.png")
@@ -1354,14 +1354,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Delete Console Connection' action class. */
-class UIActionSimpleSelectorConsolePerformDeleteConnection : public UIActionSimple
+class UIActionSimpleManagerConsolePerformDeleteConnection : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorConsolePerformDeleteConnection(UIActionPool *pParent)
+    UIActionSimpleManagerConsolePerformDeleteConnection(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_machine_console_delete_connection_16px.png",
                          ":/cloud_machine_console_delete_connection_disabled_16px.png")
@@ -1384,14 +1384,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Configure Applications' action class. */
-class UIActionSimpleSelectorConsolePerformConfigureApplications : public UIActionSimple
+class UIActionSimpleManagerConsolePerformConfigureApplications : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorConsolePerformConfigureApplications(UIActionPool *pParent)
+    UIActionSimpleManagerConsolePerformConfigureApplications(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_machine_console_configure_external_terminal_16px.png",
                          ":/cloud_machine_console_configure_external_terminal_disabled_16px.png")
@@ -1414,14 +1414,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Copy Command' action class. */
-class UIActionSimpleSelectorConsolePerformCopyCommand : public UIActionSimple
+class UIActionSimpleManagerConsolePerformCopyCommand : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorConsolePerformCopyCommand(UIActionPool *pParent, bool fSerial, bool fUnix)
+    UIActionSimpleManagerConsolePerformCopyCommand(UIActionPool *pParent, bool fSerial, bool fUnix)
         : UIActionSimple(pParent)
         , m_fSerial(fSerial)
         , m_fUnix(fUnix)
@@ -1475,14 +1475,14 @@ private:
 
 
 /** Menu action extension, used as 'Close' menu class. */
-class UIActionMenuSelectorClose : public UIActionMenu
+class UIActionMenuManagerClose : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorClose(UIActionPool *pParent)
+    UIActionMenuManagerClose(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/exit_16px.png")
     {}
 
@@ -1496,14 +1496,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Detach' action class. */
-class UIActionSimpleSelectorClosePerformDetach : public UIActionSimple
+class UIActionSimpleManagerClosePerformDetach : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorClosePerformDetach(UIActionPool *pParent)
+    UIActionSimpleManagerClosePerformDetach(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
     {}
 
@@ -1524,14 +1524,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Save' action class. */
-class UIActionSimpleSelectorClosePerformSave : public UIActionSimple
+class UIActionSimpleManagerClosePerformSave : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorClosePerformSave(UIActionPool *pParent)
+    UIActionSimpleManagerClosePerformSave(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
     {}
 
@@ -1552,14 +1552,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Shutdown' action class. */
-class UIActionSimpleSelectorClosePerformShutdown : public UIActionSimple
+class UIActionSimpleManagerClosePerformShutdown : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorClosePerformShutdown(UIActionPool *pParent)
+    UIActionSimpleManagerClosePerformShutdown(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
     {}
 
@@ -1580,14 +1580,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform PowerOff' action class. */
-class UIActionSimpleSelectorClosePerformPowerOff : public UIActionSimple
+class UIActionSimpleManagerClosePerformPowerOff : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorClosePerformPowerOff(UIActionPool *pParent)
+    UIActionSimpleManagerClosePerformPowerOff(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
     {}
 
@@ -1609,14 +1609,14 @@ protected:
 
 
 /** Menu action extension, used as 'Machine Tools' menu class. */
-class UIActionMenuSelectorToolsMachine : public UIActionMenu
+class UIActionMenuManagerToolsMachine : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorToolsMachine(UIActionPool *pParent)
+    UIActionMenuManagerToolsMachine(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/tools_menu_24px.png") /// @todo replace with 16px icon
     {}
 
@@ -1636,14 +1636,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Machine Details' action class. */
-class UIActionToggleSelectorToolsMachineShowDetails : public UIActionToggle
+class UIActionToggleManagerToolsMachineShowDetails : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorToolsMachineShowDetails(UIActionPool *pParent)
+    UIActionToggleManagerToolsMachineShowDetails(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setProperty("UIToolType", QVariant::fromValue(UIToolType_Details));
@@ -1669,14 +1669,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Machine Snapshots' action class. */
-class UIActionToggleSelectorToolsMachineShowSnapshots : public UIActionToggle
+class UIActionToggleManagerToolsMachineShowSnapshots : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorToolsMachineShowSnapshots(UIActionPool *pParent)
+    UIActionToggleManagerToolsMachineShowSnapshots(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setProperty("UIToolType", QVariant::fromValue(UIToolType_Snapshots));
@@ -1702,14 +1702,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Machine Logs' action class. */
-class UIActionToggleSelectorToolsMachineShowLogs : public UIActionToggle
+class UIActionToggleManagerToolsMachineShowLogs : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorToolsMachineShowLogs(UIActionPool *pParent)
+    UIActionToggleManagerToolsMachineShowLogs(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setProperty("UIToolType", QVariant::fromValue(UIToolType_Logs));
@@ -1735,14 +1735,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Performance Monitor' action class. */
-class UIActionToggleSelectorToolsMachineShowPerformance : public UIActionToggle
+class UIActionToggleManagerToolsMachineShowPerformance : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSelectorToolsMachineShowPerformance(UIActionPool *pParent)
+    UIActionToggleManagerToolsMachineShowPerformance(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setProperty("UIToolType", QVariant::fromValue(UIToolType_Performance));
@@ -1768,14 +1768,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Global Tools' menu class. */
-class UIActionMenuSelectorToolsGlobal : public UIActionMenu
+class UIActionMenuManagerToolsGlobal : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorToolsGlobal(UIActionPool *pParent)
+    UIActionMenuManagerToolsGlobal(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -1795,14 +1795,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Virtual Media Manager' action class. */
-class UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager : public UIActionSimple
+class UIActionSimpleManagerToolsGlobalShowVirtualMediaManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
+    UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/media_manager_24px.png", ":/media_manager_16px.png",
                          ":/media_manager_disabled_24px.png", ":/media_manager_disabled_16px.png")
@@ -1825,14 +1825,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Host Network Manager' action class. */
-class UIActionSimpleSelectorToolsGlobalShowHostNetworkManager : public UIActionSimple
+class UIActionSimpleManagerToolsGlobalShowHostNetworkManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(UIActionPool *pParent)
+    UIActionSimpleManagerToolsGlobalShowHostNetworkManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/host_iface_manager_24px.png", ":/host_iface_manager_16px.png",
                          ":/host_iface_manager_disabled_24px.png", ":/host_iface_manager_disabled_16px.png")
@@ -1855,14 +1855,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
-class UIActionSimpleSelectorToolsGlobalShowCloudProfileManager : public UIActionSimple
+class UIActionSimpleManagerToolsGlobalShowCloudProfileManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
+    UIActionSimpleManagerToolsGlobalShowCloudProfileManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_profile_manager_24px.png", ":/cloud_profile_manager_16px.png",
                          ":/cloud_profile_manager_disabled_24px.png", ":/cloud_profile_manager_disabled_16px.png")
@@ -1885,14 +1885,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show VM Resource Monitor' action class. */
-class UIActionSimpleSelectorToolsGlobalShowVMResourceMonitor : public UIActionSimple
+class UIActionSimpleManagerToolsGlobalShowVMResourceMonitor : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorToolsGlobalShowVMResourceMonitor(UIActionPool *pParent)
+    UIActionSimpleManagerToolsGlobalShowVMResourceMonitor(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/resouces_monitor_24px.png", ":/resouces_monitor_16px.png",
                          ":/resouces_monitor_disabled_24px.png", ":/resouces_monitor_disabled_16px.png")
@@ -1916,14 +1916,14 @@ protected:
 
 
 /** Menu action extension, used as 'Snapshot' menu class. */
-class UIActionMenuSelectorSnapshot : public UIActionMenu
+class UIActionMenuManagerSnapshot : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorSnapshot(UIActionPool *pParent)
+    UIActionMenuManagerSnapshot(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -1943,14 +1943,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Take' action class. */
-class UIActionMenuSelectorSnapshotPerformTake : public UIActionSimple
+class UIActionMenuManagerSnapshotPerformTake : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorSnapshotPerformTake(UIActionPool *pParent)
+    UIActionMenuManagerSnapshotPerformTake(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/snapshot_take_32px.png", ":/snapshot_take_16px.png",
                          ":/snapshot_take_disabled_32px.png", ":/snapshot_take_disabled_16px.png")
@@ -1984,14 +1984,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Delete' action class. */
-class UIActionMenuSelectorSnapshotPerformDelete : public UIActionSimple
+class UIActionMenuManagerSnapshotPerformDelete : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorSnapshotPerformDelete(UIActionPool *pParent)
+    UIActionMenuManagerSnapshotPerformDelete(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/snapshot_delete_32px.png", ":/snapshot_delete_16px.png",
                          ":/snapshot_delete_disabled_32px.png", ":/snapshot_delete_disabled_16px.png")
@@ -2025,14 +2025,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Restore' action class. */
-class UIActionMenuSelectorSnapshotPerformRestore : public UIActionSimple
+class UIActionMenuManagerSnapshotPerformRestore : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorSnapshotPerformRestore(UIActionPool *pParent)
+    UIActionMenuManagerSnapshotPerformRestore(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/snapshot_restore_32px.png", ":/snapshot_restore_16px.png",
                          ":/snapshot_restore_disabled_32px.png", ":/snapshot_restore_disabled_16px.png")
@@ -2066,14 +2066,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Toggle Snapshot Properties' action class. */
-class UIActionMenuSelectorSnapshotToggleProperties : public UIActionToggle
+class UIActionMenuManagerSnapshotToggleProperties : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorSnapshotToggleProperties(UIActionPool *pParent)
+    UIActionMenuManagerSnapshotToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2108,14 +2108,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Clone' action class. */
-class UIActionMenuSelectorSnapshotPerformClone : public UIActionSimple
+class UIActionMenuManagerSnapshotPerformClone : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorSnapshotPerformClone(UIActionPool *pParent)
+    UIActionMenuManagerSnapshotPerformClone(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_clone_32px.png", ":/vm_clone_16px.png",
                          ":/vm_clone_disabled_32px.png", ":/vm_clone_disabled_16px.png")
@@ -2150,14 +2150,14 @@ protected:
 
 
 /** Menu action extension, used as 'Medium' menu class. */
-class UIActionMenuSelectorMedium : public UIActionMenu
+class UIActionMenuManagerMedium : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMedium(UIActionPool *pParent)
+    UIActionMenuManagerMedium(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -2177,14 +2177,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Add' action class. */
-class UIActionMenuSelectorMediumPerformAdd : public UIActionSimple
+class UIActionMenuManagerMediumPerformAdd : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumPerformAdd(UIActionPool *pParent)
+    UIActionMenuManagerMediumPerformAdd(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2222,14 +2222,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Create' action class. */
-class UIActionMenuSelectorMediumPerformCreate : public UIActionSimple
+class UIActionMenuManagerMediumPerformCreate : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumPerformCreate(UIActionPool *pParent)
+    UIActionMenuManagerMediumPerformCreate(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2267,14 +2267,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Copy' action class. */
-class UIActionMenuSelectorMediumPerformCopy : public UIActionSimple
+class UIActionMenuManagerMediumPerformCopy : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumPerformCopy(UIActionPool *pParent)
+    UIActionMenuManagerMediumPerformCopy(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2312,14 +2312,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Move' action class. */
-class UIActionMenuSelectorMediumPerformMove : public UIActionSimple
+class UIActionMenuManagerMediumPerformMove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumPerformMove(UIActionPool *pParent)
+    UIActionMenuManagerMediumPerformMove(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2357,14 +2357,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Remove' action class. */
-class UIActionMenuSelectorMediumPerformRemove : public UIActionSimple
+class UIActionMenuManagerMediumPerformRemove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumPerformRemove(UIActionPool *pParent)
+    UIActionMenuManagerMediumPerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2402,14 +2402,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Release' action class. */
-class UIActionMenuSelectorMediumPerformRelease : public UIActionSimple
+class UIActionMenuManagerMediumPerformRelease : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumPerformRelease(UIActionPool *pParent)
+    UIActionMenuManagerMediumPerformRelease(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2447,14 +2447,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Toggle Medium Properties' action class. */
-class UIActionMenuSelectorMediumToggleProperties : public UIActionToggle
+class UIActionMenuManagerMediumToggleProperties : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumToggleProperties(UIActionPool *pParent)
+    UIActionMenuManagerMediumToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2493,14 +2493,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Toggle Search Pane' action class. */
-class UIActionMenuSelectorMediumToggleSearch : public UIActionToggle
+class UIActionMenuManagerMediumToggleSearch : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumToggleSearch(UIActionPool *pParent)
+    UIActionMenuManagerMediumToggleSearch(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2539,14 +2539,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Refresh' action class. */
-class UIActionMenuSelectorMediumPerformRefresh : public UIActionSimple
+class UIActionMenuManagerMediumPerformRefresh : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumPerformRefresh(UIActionPool *pParent)
+    UIActionMenuManagerMediumPerformRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/refresh_32px.png",          ":/refresh_16px.png",
                          ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
@@ -2581,14 +2581,14 @@ protected:
 
 
 /** Menu action extension, used as 'Network' menu class. */
-class UIActionMenuSelectorNetwork : public UIActionMenu
+class UIActionMenuManagerNetwork : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorNetwork(UIActionPool *pParent)
+    UIActionMenuManagerNetwork(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -2608,14 +2608,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Create' action class. */
-class UIActionMenuSelectorNetworkPerformCreate : public UIActionSimple
+class UIActionMenuManagerNetworkPerformCreate : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorNetworkPerformCreate(UIActionPool *pParent)
+    UIActionMenuManagerNetworkPerformCreate(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/host_iface_add_32px.png",          ":/host_iface_add_16px.png",
                          ":/host_iface_add_disabled_32px.png", ":/host_iface_add_disabled_16px.png")
@@ -2649,14 +2649,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Remove' action class. */
-class UIActionMenuSelectorNetworkPerformRemove : public UIActionSimple
+class UIActionMenuManagerNetworkPerformRemove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorNetworkPerformRemove(UIActionPool *pParent)
+    UIActionMenuManagerNetworkPerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/host_iface_remove_32px.png",          ":/host_iface_remove_16px.png",
                          ":/host_iface_remove_disabled_32px.png", ":/host_iface_remove_disabled_16px.png")
@@ -2690,14 +2690,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Toggle Network Properties' action class. */
-class UIActionMenuSelectorNetworkToggleProperties : public UIActionToggle
+class UIActionMenuManagerNetworkToggleProperties : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorNetworkToggleProperties(UIActionPool *pParent)
+    UIActionMenuManagerNetworkToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2732,14 +2732,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Refresh' action class. */
-class UIActionMenuSelectorNetworkPerformRefresh : public UIActionSimple
+class UIActionMenuManagerNetworkPerformRefresh : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorNetworkPerformRefresh(UIActionPool *pParent)
+    UIActionMenuManagerNetworkPerformRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/refresh_32px.png",          ":/refresh_16px.png",
                          ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
@@ -2774,14 +2774,14 @@ protected:
 
 
 /** Menu action extension, used as 'Cloud' menu class. */
-class UIActionMenuSelectorCloud : public UIActionMenu
+class UIActionMenuManagerCloud : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloud(UIActionPool *pParent)
+    UIActionMenuManagerCloud(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -2801,14 +2801,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Add' action class. */
-class UIActionMenuSelectorCloudPerformAdd : public UIActionSimple
+class UIActionMenuManagerCloudPerformAdd : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudPerformAdd(UIActionPool *pParent)
+    UIActionMenuManagerCloudPerformAdd(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_profile_add_32px.png",          ":/cloud_profile_add_16px.png",
                          ":/cloud_profile_add_disabled_32px.png", ":/cloud_profile_add_disabled_16px.png")
@@ -2843,14 +2843,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Import' action class. */
-class UIActionMenuSelectorCloudPerformImport : public UIActionSimple
+class UIActionMenuManagerCloudPerformImport : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudPerformImport(UIActionPool *pParent)
+    UIActionMenuManagerCloudPerformImport(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_profile_restore_32px.png",          ":/cloud_profile_restore_16px.png",
                          ":/cloud_profile_restore_disabled_32px.png", ":/cloud_profile_restore_disabled_16px.png")
@@ -2885,14 +2885,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Remove' action class. */
-class UIActionMenuSelectorCloudPerformRemove : public UIActionSimple
+class UIActionMenuManagerCloudPerformRemove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudPerformRemove(UIActionPool *pParent)
+    UIActionMenuManagerCloudPerformRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_profile_remove_32px.png",          ":/cloud_profile_remove_16px.png",
                          ":/cloud_profile_remove_disabled_32px.png", ":/cloud_profile_remove_disabled_16px.png")
@@ -2927,14 +2927,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Toggle Properties' action class. */
-class UIActionMenuSelectorCloudToggleProperties : public UIActionToggle
+class UIActionMenuManagerCloudToggleProperties : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudToggleProperties(UIActionPool *pParent)
+    UIActionMenuManagerCloudToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -2970,14 +2970,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Try Page' action class. */
-class UIActionMenuSelectorCloudShowTryPage : public UIActionSimple
+class UIActionMenuManagerCloudShowTryPage : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudShowTryPage(UIActionPool *pParent)
+    UIActionMenuManagerCloudShowTryPage(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_profile_try_32px.png",          ":/cloud_profile_try_16px.png",
                          ":/cloud_profile_try_disabled_32px.png", ":/cloud_profile_try_disabled_16px.png")
@@ -3012,14 +3012,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Help' action class. */
-class UIActionMenuSelectorCloudShowHelp : public UIActionSimple
+class UIActionMenuManagerCloudShowHelp : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudShowHelp(UIActionPool *pParent)
+    UIActionMenuManagerCloudShowHelp(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_profile_help_32px.png",          ":/cloud_profile_help_16px.png",
                          ":/cloud_profile_help_disabled_32px.png", ":/cloud_profile_help_disabled_16px.png")
@@ -3055,14 +3055,14 @@ protected:
 
 
 /** Menu action extension, used as 'Cloud Console' menu class. */
-class UIActionMenuSelectorCloudConsole : public UIActionMenu
+class UIActionMenuManagerCloudConsole : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudConsole(UIActionPool *pParent)
+    UIActionMenuManagerCloudConsole(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -3082,14 +3082,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Console Application Add' action class. */
-class UIActionMenuSelectorCloudConsolePerformApplicationAdd : public UIActionSimple
+class UIActionMenuManagerCloudConsolePerformApplicationAdd : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudConsolePerformApplicationAdd(UIActionPool *pParent)
+    UIActionMenuManagerCloudConsolePerformApplicationAdd(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_application_add_32px.png",          ":/cloud_console_application_add_16px.png",
                          ":/cloud_console_application_add_disabled_32px.png", ":/cloud_console_application_add_disabled_16px.png")
@@ -3117,14 +3117,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Console Application Remove' action class. */
-class UIActionMenuSelectorCloudConsolePerformApplicationRemove : public UIActionSimple
+class UIActionMenuManagerCloudConsolePerformApplicationRemove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudConsolePerformApplicationRemove(UIActionPool *pParent)
+    UIActionMenuManagerCloudConsolePerformApplicationRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_application_remove_32px.png",          ":/cloud_console_application_remove_16px.png",
                          ":/cloud_console_application_remove_disabled_32px.png", ":/cloud_console_application_remove_disabled_16px.png")
@@ -3152,14 +3152,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Console Profile Add' action class. */
-class UIActionMenuSelectorCloudConsolePerformProfileAdd : public UIActionSimple
+class UIActionMenuManagerCloudConsolePerformProfileAdd : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudConsolePerformProfileAdd(UIActionPool *pParent)
+    UIActionMenuManagerCloudConsolePerformProfileAdd(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_profile_add_32px.png",          ":/cloud_console_profile_add_16px.png",
                          ":/cloud_console_profile_add_disabled_32px.png", ":/cloud_console_profile_add_disabled_16px.png")
@@ -3187,14 +3187,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Console Profile Remove' action class. */
-class UIActionMenuSelectorCloudConsolePerformProfileRemove : public UIActionSimple
+class UIActionMenuManagerCloudConsolePerformProfileRemove : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudConsolePerformProfileRemove(UIActionPool *pParent)
+    UIActionMenuManagerCloudConsolePerformProfileRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_profile_remove_32px.png",          ":/cloud_console_profile_remove_16px.png",
                          ":/cloud_console_profile_remove_disabled_32px.png", ":/cloud_console_profile_remove_disabled_16px.png")
@@ -3222,14 +3222,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Toggle Cloud Console Properties' action class. */
-class UIActionMenuSelectorCloudConsoleToggleProperties : public UIActionToggle
+class UIActionMenuManagerCloudConsoleToggleProperties : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorCloudConsoleToggleProperties(UIActionPool *pParent)
+    UIActionMenuManagerCloudConsoleToggleProperties(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -3293,14 +3293,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Toggle Columns' action class. */
-class UIActionMenuSelectorVMResourceMonitorToggleColumns : public UIActionMenu
+class UIActionMenuManagerVMResourceMonitorToggleColumns : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorVMResourceMonitorToggleColumns(UIActionPool *pParent)
+    UIActionMenuManagerVMResourceMonitorToggleColumns(UIActionPool *pParent)
         : UIActionMenu(pParent,
                        ":/resources_monitor_columns_32px.png", ":/resources_monitor_columns_16px.png")
     {}
@@ -3318,14 +3318,14 @@ protected:
     }
 };
 
-class UIActionMenuSelectorVMResourceMonitorSwitchToMachinePerformance : public UIActionSimple
+class UIActionMenuManagerVMResourceMonitorSwitchToMachinePerformance : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorVMResourceMonitorSwitchToMachinePerformance(UIActionPool *pParent)
+    UIActionMenuManagerVMResourceMonitorSwitchToMachinePerformance(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/cloud_console_application_remove_32px .png",          ":/cloud_console_application_remove_16px.png",
                          ":/cloud_console_application_remove_disabled_32px.png", ":/cloud_console_application_remove_disabled_16px.png")
@@ -3365,160 +3365,160 @@ UIActionPoolManager::UIActionPoolManager(bool fTemporary /* = false */)
 void UIActionPoolManager::preparePool()
 {
     /* 'File' actions: */
-    m_pool[UIActionIndexMN_M_File] = new UIActionMenuSelectorFile(this);
-    m_pool[UIActionIndexMN_M_File_S_ShowVirtualMediumManager] = new UIActionSimpleSelectorFileShowVirtualMediaManager(this);
-    m_pool[UIActionIndexMN_M_File_S_ShowHostNetworkManager] = new UIActionSimpleSelectorFileShowHostNetworkManager(this);
-    m_pool[UIActionIndexMN_M_File_S_ShowCloudProfileManager] = new UIActionSimpleSelectorFileShowCloudProfileManager(this);
-    m_pool[UIActionIndexMN_M_File_S_ImportAppliance] = new UIActionSimpleSelectorFileShowImportApplianceWizard(this);
-    m_pool[UIActionIndexMN_M_File_S_ExportAppliance] = new UIActionSimpleSelectorFileShowExportApplianceWizard(this);
-    m_pool[UIActionIndexMN_M_File_S_NewCloudVM] = new UIActionSimpleSelectorFileShowNewCloudVMWizard(this);
+    m_pool[UIActionIndexMN_M_File] = new UIActionMenuManagerFile(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowVirtualMediumManager] = new UIActionSimpleManagerFileShowVirtualMediaManager(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowHostNetworkManager] = new UIActionSimpleManagerFileShowHostNetworkManager(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowCloudProfileManager] = new UIActionSimpleManagerFileShowCloudProfileManager(this);
+    m_pool[UIActionIndexMN_M_File_S_ImportAppliance] = new UIActionSimpleManagerFileShowImportApplianceWizard(this);
+    m_pool[UIActionIndexMN_M_File_S_ExportAppliance] = new UIActionSimpleManagerFileShowExportApplianceWizard(this);
+    m_pool[UIActionIndexMN_M_File_S_NewCloudVM] = new UIActionSimpleManagerFileShowNewCloudVMWizard(this);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-    m_pool[UIActionIndexMN_M_File_S_ShowExtraDataManager] = new UIActionSimpleSelectorFileShowExtraDataManager(this);
+    m_pool[UIActionIndexMN_M_File_S_ShowExtraDataManager] = new UIActionSimpleManagerFileShowExtraDataManager(this);
 #endif
-    m_pool[UIActionIndexMN_M_File_S_Close] = new UIActionSimpleSelectorFilePerformExit(this);
+    m_pool[UIActionIndexMN_M_File_S_Close] = new UIActionSimpleManagerFilePerformExit(this);
 
     /* 'Welcome' actions: */
-    m_pool[UIActionIndexMN_M_Welcome] = new UIActionMenuSelectorMachine(this);
-    m_pool[UIActionIndexMN_M_Welcome_S_New] = new UIActionSimpleSelectorMachinePerformCreate(this);
-    m_pool[UIActionIndexMN_M_Welcome_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
+    m_pool[UIActionIndexMN_M_Welcome] = new UIActionMenuManagerMachine(this);
+    m_pool[UIActionIndexMN_M_Welcome_S_New] = new UIActionSimpleManagerMachinePerformCreate(this);
+    m_pool[UIActionIndexMN_M_Welcome_S_Add] = new UIActionSimpleManagerMachinePerformAdd(this);
 
     /* 'Group' actions: */
-    m_pool[UIActionIndexMN_M_Group] = new UIActionMenuSelectorGroup(this);
-    m_pool[UIActionIndexMN_M_Group_S_New] = new UIActionSimpleSelectorGroupPerformCreateMachine(this);
-    m_pool[UIActionIndexMN_M_Group_S_Add] = new UIActionSimpleSelectorGroupPerformAddMachine(this);
-    m_pool[UIActionIndexMN_M_Group_S_Rename] = new UIActionSimpleSelectorGroupPerformRename(this);
-    m_pool[UIActionIndexMN_M_Group_S_Remove] = new UIActionSimpleSelectorGroupPerformRemove(this);
-    m_pool[UIActionIndexMN_M_Group_M_MoveToGroup] = new UIActionMenuSelectorCommonMoveToGroup(this);
-    m_pool[UIActionIndexMN_M_Group_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
-    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
-    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless] = new UIActionSimpleSelectorCommonPerformStartHeadless(this);
-    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable] = new UIActionSimpleSelectorCommonPerformStartDetachable(this);
-    m_pool[UIActionIndexMN_M_Group_T_Pause] = new UIActionToggleSelectorCommonPauseAndResume(this);
-    m_pool[UIActionIndexMN_M_Group_S_Reset] = new UIActionSimpleSelectorCommonPerformReset(this);
-    m_pool[UIActionIndexMN_M_Group_M_Console] = new UIActionMenuSelectorConsole(this);
-    m_pool[UIActionIndexMN_M_Group_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
-    m_pool[UIActionIndexMN_M_Group_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
-    m_pool[UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
-    m_pool[UIActionIndexMN_M_Group_M_Close] = new UIActionMenuSelectorClose(this);
-    m_pool[UIActionIndexMN_M_Group_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
-    m_pool[UIActionIndexMN_M_Group_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
-    m_pool[UIActionIndexMN_M_Group_M_Close_S_Shutdown] = new UIActionSimpleSelectorClosePerformShutdown(this);
-    m_pool[UIActionIndexMN_M_Group_M_Close_S_PowerOff] = new UIActionSimpleSelectorClosePerformPowerOff(this);
-    m_pool[UIActionIndexMN_M_Group_M_Tools] = new UIActionMenuSelectorToolsMachine(this);
-    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
-    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
-    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
-    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Performance] = new UIActionToggleSelectorToolsMachineShowPerformance(this);
-    m_pool[UIActionIndexMN_M_Group_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
-    m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
-    m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
-    m_pool[UIActionIndexMN_M_Group_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
-    m_pool[UIActionIndexMN_M_Group_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
-    m_pool[UIActionIndexMN_M_Group_S_CreateShortcut] = new UIActionSimpleSelectorCommonPerformCreateShortcut(this);
-    m_pool[UIActionIndexMN_M_Group_S_Sort] = new UIActionSimpleSelectorGroupPerformSort(this);
+    m_pool[UIActionIndexMN_M_Group] = new UIActionMenuManagerGroup(this);
+    m_pool[UIActionIndexMN_M_Group_S_New] = new UIActionSimpleManagerGroupPerformCreateMachine(this);
+    m_pool[UIActionIndexMN_M_Group_S_Add] = new UIActionSimpleManagerGroupPerformAddMachine(this);
+    m_pool[UIActionIndexMN_M_Group_S_Rename] = new UIActionSimpleManagerGroupPerformRename(this);
+    m_pool[UIActionIndexMN_M_Group_S_Remove] = new UIActionSimpleManagerGroupPerformRemove(this);
+    m_pool[UIActionIndexMN_M_Group_M_MoveToGroup] = new UIActionMenuManagerCommonMoveToGroup(this);
+    m_pool[UIActionIndexMN_M_Group_M_StartOrShow] = new UIActionStateManagerCommonStartOrShow(this);
+    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal] = new UIActionSimpleManagerCommonPerformStartNormal(this);
+    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless] = new UIActionSimpleManagerCommonPerformStartHeadless(this);
+    m_pool[UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable] = new UIActionSimpleManagerCommonPerformStartDetachable(this);
+    m_pool[UIActionIndexMN_M_Group_T_Pause] = new UIActionToggleManagerCommonPauseAndResume(this);
+    m_pool[UIActionIndexMN_M_Group_S_Reset] = new UIActionSimpleManagerCommonPerformReset(this);
+    m_pool[UIActionIndexMN_M_Group_M_Console] = new UIActionMenuManagerConsole(this);
+    m_pool[UIActionIndexMN_M_Group_M_Console_S_CreateConnection] = new UIActionSimpleManagerConsolePerformCreateConnection(this);
+    m_pool[UIActionIndexMN_M_Group_M_Console_S_DeleteConnection] = new UIActionSimpleManagerConsolePerformDeleteConnection(this);
+    m_pool[UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications] = new UIActionSimpleManagerConsolePerformConfigureApplications(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close] = new UIActionMenuManagerClose(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close_S_Detach] = new UIActionSimpleManagerClosePerformDetach(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close_S_SaveState] = new UIActionSimpleManagerClosePerformSave(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close_S_Shutdown] = new UIActionSimpleManagerClosePerformShutdown(this);
+    m_pool[UIActionIndexMN_M_Group_M_Close_S_PowerOff] = new UIActionSimpleManagerClosePerformPowerOff(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools] = new UIActionMenuManagerToolsMachine(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Details] = new UIActionToggleManagerToolsMachineShowDetails(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Snapshots] = new UIActionToggleManagerToolsMachineShowSnapshots(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Logs] = new UIActionToggleManagerToolsMachineShowLogs(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_Performance] = new UIActionToggleManagerToolsMachineShowPerformance(this);
+    m_pool[UIActionIndexMN_M_Group_S_Discard] = new UIActionSimpleManagerCommonPerformDiscard(this);
+    m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
+    m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
+    m_pool[UIActionIndexMN_M_Group_S_Refresh] = new UIActionSimpleManagerCommonPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_Group_S_ShowInFileManager] = new UIActionSimpleManagerCommonShowInFileManager(this);
+    m_pool[UIActionIndexMN_M_Group_S_CreateShortcut] = new UIActionSimpleManagerCommonPerformCreateShortcut(this);
+    m_pool[UIActionIndexMN_M_Group_S_Sort] = new UIActionSimpleManagerGroupPerformSort(this);
 
     /* 'Machine' actions: */
-    m_pool[UIActionIndexMN_M_Machine] = new UIActionMenuSelectorMachine(this);
-    m_pool[UIActionIndexMN_M_Machine_S_New] = new UIActionSimpleSelectorMachinePerformCreate(this);
-    m_pool[UIActionIndexMN_M_Machine_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
-    m_pool[UIActionIndexMN_M_Machine_S_Settings] = new UIActionSimpleSelectorMachineShowSettings(this);
-    m_pool[UIActionIndexMN_M_Machine_S_Clone] = new UIActionSimpleSelectorMachinePerformClone(this);
-    m_pool[UIActionIndexMN_M_Machine_S_Move] = new UIActionSimpleSelectorMachinePerformMove(this);
-    m_pool[UIActionIndexMN_M_Machine_S_ExportToOCI] = new UIActionSimpleSelectorMachinePerformExportToOCI(this);
-    m_pool[UIActionIndexMN_M_Machine_S_Remove] = new UIActionSimpleSelectorMachinePerformRemove(this);
-    m_pool[UIActionIndexMN_M_Machine_M_MoveToGroup] = new UIActionMenuSelectorCommonMoveToGroup(this);
-    m_pool[UIActionIndexMN_M_Machine_M_MoveToGroup_S_New] = new UIActionSimpleSelectorMachineMoveToGroupNew(this);
-    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
-    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal] = new UIActionSimpleSelectorCommonPerformStartNormal(this);
-    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless] = new UIActionSimpleSelectorCommonPerformStartHeadless(this);
-    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable] = new UIActionSimpleSelectorCommonPerformStartDetachable(this);
-    m_pool[UIActionIndexMN_M_Machine_T_Pause] = new UIActionToggleSelectorCommonPauseAndResume(this);
-    m_pool[UIActionIndexMN_M_Machine_S_Reset] = new UIActionSimpleSelectorCommonPerformReset(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Console] = new UIActionMenuSelectorConsole(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CreateConnection] = new UIActionSimpleSelectorConsolePerformCreateConnection(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection] = new UIActionSimpleSelectorConsolePerformDeleteConnection(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true, true);
-    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, true, false);
-    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false, true);
-    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows] = new UIActionSimpleSelectorConsolePerformCopyCommand(this, false, false);
-    m_pool[UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications] = new UIActionSimpleSelectorConsolePerformConfigureApplications(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Close] = new UIActionMenuSelectorClose(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Close_S_Detach] = new UIActionSimpleSelectorClosePerformDetach(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Close_S_SaveState] = new UIActionSimpleSelectorClosePerformSave(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Close_S_Shutdown] = new UIActionSimpleSelectorClosePerformShutdown(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Close_S_PowerOff] = new UIActionSimpleSelectorClosePerformPowerOff(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Tools] = new UIActionMenuSelectorToolsMachine(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Performance] = new UIActionToggleSelectorToolsMachineShowPerformance(this);
-    m_pool[UIActionIndexMN_M_Machine_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
-    m_pool[UIActionIndexMN_M_Machine_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
-    m_pool[UIActionIndexMN_M_Machine_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
-    m_pool[UIActionIndexMN_M_Machine_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
-    m_pool[UIActionIndexMN_M_Machine_S_CreateShortcut] = new UIActionSimpleSelectorCommonPerformCreateShortcut(this);
-    m_pool[UIActionIndexMN_M_Machine_S_SortParent] = new UIActionSimpleSelectorMachinePerformSortParent(this);
-    m_pool[UIActionIndexMN_M_Machine_T_Search] = new UIActionToggleSelectorMachineToggleSearch(this);
+    m_pool[UIActionIndexMN_M_Machine] = new UIActionMenuManagerMachine(this);
+    m_pool[UIActionIndexMN_M_Machine_S_New] = new UIActionSimpleManagerMachinePerformCreate(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Add] = new UIActionSimpleManagerMachinePerformAdd(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Settings] = new UIActionSimpleManagerMachineShowSettings(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Clone] = new UIActionSimpleManagerMachinePerformClone(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Move] = new UIActionSimpleManagerMachinePerformMove(this);
+    m_pool[UIActionIndexMN_M_Machine_S_ExportToOCI] = new UIActionSimpleManagerMachinePerformExportToOCI(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Remove] = new UIActionSimpleManagerMachinePerformRemove(this);
+    m_pool[UIActionIndexMN_M_Machine_M_MoveToGroup] = new UIActionMenuManagerCommonMoveToGroup(this);
+    m_pool[UIActionIndexMN_M_Machine_M_MoveToGroup_S_New] = new UIActionSimpleManagerMachineMoveToGroupNew(this);
+    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow] = new UIActionStateManagerCommonStartOrShow(this);
+    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal] = new UIActionSimpleManagerCommonPerformStartNormal(this);
+    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless] = new UIActionSimpleManagerCommonPerformStartHeadless(this);
+    m_pool[UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable] = new UIActionSimpleManagerCommonPerformStartDetachable(this);
+    m_pool[UIActionIndexMN_M_Machine_T_Pause] = new UIActionToggleManagerCommonPauseAndResume(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Reset] = new UIActionSimpleManagerCommonPerformReset(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Console] = new UIActionMenuManagerConsole(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CreateConnection] = new UIActionSimpleManagerConsolePerformCreateConnection(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection] = new UIActionSimpleManagerConsolePerformDeleteConnection(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix] = new UIActionSimpleManagerConsolePerformCopyCommand(this, true, true);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows] = new UIActionSimpleManagerConsolePerformCopyCommand(this, true, false);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix] = new UIActionSimpleManagerConsolePerformCopyCommand(this, false, true);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows] = new UIActionSimpleManagerConsolePerformCopyCommand(this, false, false);
+    m_pool[UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications] = new UIActionSimpleManagerConsolePerformConfigureApplications(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close] = new UIActionMenuManagerClose(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close_S_Detach] = new UIActionSimpleManagerClosePerformDetach(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close_S_SaveState] = new UIActionSimpleManagerClosePerformSave(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close_S_Shutdown] = new UIActionSimpleManagerClosePerformShutdown(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Close_S_PowerOff] = new UIActionSimpleManagerClosePerformPowerOff(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools] = new UIActionMenuManagerToolsMachine(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Details] = new UIActionToggleManagerToolsMachineShowDetails(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleManagerToolsMachineShowSnapshots(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Logs] = new UIActionToggleManagerToolsMachineShowLogs(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Performance] = new UIActionToggleManagerToolsMachineShowPerformance(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Discard] = new UIActionSimpleManagerCommonPerformDiscard(this);
+    m_pool[UIActionIndexMN_M_Machine_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
+    m_pool[UIActionIndexMN_M_Machine_S_Refresh] = new UIActionSimpleManagerCommonPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_Machine_S_ShowInFileManager] = new UIActionSimpleManagerCommonShowInFileManager(this);
+    m_pool[UIActionIndexMN_M_Machine_S_CreateShortcut] = new UIActionSimpleManagerCommonPerformCreateShortcut(this);
+    m_pool[UIActionIndexMN_M_Machine_S_SortParent] = new UIActionSimpleManagerMachinePerformSortParent(this);
+    m_pool[UIActionIndexMN_M_Machine_T_Search] = new UIActionToggleManagerMachineToggleSearch(this);
 
     /* Global Tools actions: */
-    m_pool[UIActionIndexMN_M_Tools_M_Global] = new UIActionMenuSelectorToolsGlobal(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleSelectorToolsGlobalShowHostNetworkManager(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_CloudProfileManager] = new UIActionSimpleSelectorToolsGlobalShowCloudProfileManager(this);
-    m_pool[UIActionIndexMN_M_Tools_M_Global_S_VMResourceMonitor] = new UIActionSimpleSelectorToolsGlobalShowVMResourceMonitor(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global] = new UIActionMenuManagerToolsGlobal(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_VirtualMediaManager] = new UIActionSimpleManagerToolsGlobalShowVirtualMediaManager(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_HostNetworkManager] = new UIActionSimpleManagerToolsGlobalShowHostNetworkManager(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_CloudProfileManager] = new UIActionSimpleManagerToolsGlobalShowCloudProfileManager(this);
+    m_pool[UIActionIndexMN_M_Tools_M_Global_S_VMResourceMonitor] = new UIActionSimpleManagerToolsGlobalShowVMResourceMonitor(this);
 
     /* Snapshot Pane actions: */
-    m_pool[UIActionIndexMN_M_Snapshot] = new UIActionMenuSelectorSnapshot(this);
-    m_pool[UIActionIndexMN_M_Snapshot_S_Take] = new UIActionMenuSelectorSnapshotPerformTake(this);
-    m_pool[UIActionIndexMN_M_Snapshot_S_Delete] = new UIActionMenuSelectorSnapshotPerformDelete(this);
-    m_pool[UIActionIndexMN_M_Snapshot_S_Restore] = new UIActionMenuSelectorSnapshotPerformRestore(this);
-    m_pool[UIActionIndexMN_M_Snapshot_T_Properties] = new UIActionMenuSelectorSnapshotToggleProperties(this);
-    m_pool[UIActionIndexMN_M_Snapshot_S_Clone] = new UIActionMenuSelectorSnapshotPerformClone(this);
+    m_pool[UIActionIndexMN_M_Snapshot] = new UIActionMenuManagerSnapshot(this);
+    m_pool[UIActionIndexMN_M_Snapshot_S_Take] = new UIActionMenuManagerSnapshotPerformTake(this);
+    m_pool[UIActionIndexMN_M_Snapshot_S_Delete] = new UIActionMenuManagerSnapshotPerformDelete(this);
+    m_pool[UIActionIndexMN_M_Snapshot_S_Restore] = new UIActionMenuManagerSnapshotPerformRestore(this);
+    m_pool[UIActionIndexMN_M_Snapshot_T_Properties] = new UIActionMenuManagerSnapshotToggleProperties(this);
+    m_pool[UIActionIndexMN_M_Snapshot_S_Clone] = new UIActionMenuManagerSnapshotPerformClone(this);
 
     /* Virtual Medium Manager actions: */
-    m_pool[UIActionIndexMN_M_MediumWindow] = new UIActionMenuSelectorMedium(this);
-    m_pool[UIActionIndexMN_M_Medium] = new UIActionMenuSelectorMedium(this);
-    m_pool[UIActionIndexMN_M_Medium_S_Add] = new UIActionMenuSelectorMediumPerformAdd(this);
-    m_pool[UIActionIndexMN_M_Medium_S_Create] = new UIActionMenuSelectorMediumPerformCreate(this);
-    m_pool[UIActionIndexMN_M_Medium_S_Copy] = new UIActionMenuSelectorMediumPerformCopy(this);
-    m_pool[UIActionIndexMN_M_Medium_S_Move] = new UIActionMenuSelectorMediumPerformMove(this);
-    m_pool[UIActionIndexMN_M_Medium_S_Remove] = new UIActionMenuSelectorMediumPerformRemove(this);
-    m_pool[UIActionIndexMN_M_Medium_S_Release] = new UIActionMenuSelectorMediumPerformRelease(this);
-    m_pool[UIActionIndexMN_M_Medium_T_Details] = new UIActionMenuSelectorMediumToggleProperties(this);
-    m_pool[UIActionIndexMN_M_Medium_T_Search] = new UIActionMenuSelectorMediumToggleSearch(this);
-    m_pool[UIActionIndexMN_M_Medium_S_Refresh] = new UIActionMenuSelectorMediumPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_MediumWindow] = new UIActionMenuManagerMedium(this);
+    m_pool[UIActionIndexMN_M_Medium] = new UIActionMenuManagerMedium(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Add] = new UIActionMenuManagerMediumPerformAdd(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Create] = new UIActionMenuManagerMediumPerformCreate(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Copy] = new UIActionMenuManagerMediumPerformCopy(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Move] = new UIActionMenuManagerMediumPerformMove(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Remove] = new UIActionMenuManagerMediumPerformRemove(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Release] = new UIActionMenuManagerMediumPerformRelease(this);
+    m_pool[UIActionIndexMN_M_Medium_T_Details] = new UIActionMenuManagerMediumToggleProperties(this);
+    m_pool[UIActionIndexMN_M_Medium_T_Search] = new UIActionMenuManagerMediumToggleSearch(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Refresh] = new UIActionMenuManagerMediumPerformRefresh(this);
 
     /* Host Network Manager actions: */
-    m_pool[UIActionIndexMN_M_NetworkWindow] = new UIActionMenuSelectorNetwork(this);
-    m_pool[UIActionIndexMN_M_Network] = new UIActionMenuSelectorNetwork(this);
-    m_pool[UIActionIndexMN_M_Network_S_Create] = new UIActionMenuSelectorNetworkPerformCreate(this);
-    m_pool[UIActionIndexMN_M_Network_S_Remove] = new UIActionMenuSelectorNetworkPerformRemove(this);
-    m_pool[UIActionIndexMN_M_Network_T_Details] = new UIActionMenuSelectorNetworkToggleProperties(this);
-    m_pool[UIActionIndexMN_M_Network_S_Refresh] = new UIActionMenuSelectorNetworkPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_NetworkWindow] = new UIActionMenuManagerNetwork(this);
+    m_pool[UIActionIndexMN_M_Network] = new UIActionMenuManagerNetwork(this);
+    m_pool[UIActionIndexMN_M_Network_S_Create] = new UIActionMenuManagerNetworkPerformCreate(this);
+    m_pool[UIActionIndexMN_M_Network_S_Remove] = new UIActionMenuManagerNetworkPerformRemove(this);
+    m_pool[UIActionIndexMN_M_Network_T_Details] = new UIActionMenuManagerNetworkToggleProperties(this);
+    m_pool[UIActionIndexMN_M_Network_S_Refresh] = new UIActionMenuManagerNetworkPerformRefresh(this);
 
     /* Cloud Profile Manager actions: */
-    m_pool[UIActionIndexMN_M_CloudWindow] = new UIActionMenuSelectorCloud(this);
-    m_pool[UIActionIndexMN_M_Cloud] = new UIActionMenuSelectorCloud(this);
-    m_pool[UIActionIndexMN_M_Cloud_S_Add] = new UIActionMenuSelectorCloudPerformAdd(this);
-    m_pool[UIActionIndexMN_M_Cloud_S_Import] = new UIActionMenuSelectorCloudPerformImport(this);
-    m_pool[UIActionIndexMN_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
-    m_pool[UIActionIndexMN_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
-    m_pool[UIActionIndexMN_M_Cloud_S_TryPage] = new UIActionMenuSelectorCloudShowTryPage(this);
-    m_pool[UIActionIndexMN_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
+    m_pool[UIActionIndexMN_M_CloudWindow] = new UIActionMenuManagerCloud(this);
+    m_pool[UIActionIndexMN_M_Cloud] = new UIActionMenuManagerCloud(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_Add] = new UIActionMenuManagerCloudPerformAdd(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_Import] = new UIActionMenuManagerCloudPerformImport(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_Remove] = new UIActionMenuManagerCloudPerformRemove(this);
+    m_pool[UIActionIndexMN_M_Cloud_T_Details] = new UIActionMenuManagerCloudToggleProperties(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_TryPage] = new UIActionMenuManagerCloudShowTryPage(this);
+    m_pool[UIActionIndexMN_M_Cloud_S_Help] = new UIActionMenuManagerCloudShowHelp(this);
 
     /* Cloud Console Manager actions: */
-    m_pool[UIActionIndexMN_M_CloudConsoleWindow] = new UIActionMenuSelectorCloudConsole(this);
-    m_pool[UIActionIndexMN_M_CloudConsole] = new UIActionMenuSelectorCloudConsole(this);
-    m_pool[UIActionIndexMN_M_CloudConsole_S_ApplicationAdd] = new UIActionMenuSelectorCloudConsolePerformApplicationAdd(this);
-    m_pool[UIActionIndexMN_M_CloudConsole_S_ApplicationRemove] = new UIActionMenuSelectorCloudConsolePerformApplicationRemove(this);
-    m_pool[UIActionIndexMN_M_CloudConsole_S_ProfileAdd] = new UIActionMenuSelectorCloudConsolePerformProfileAdd(this);
-    m_pool[UIActionIndexMN_M_CloudConsole_S_ProfileRemove] = new UIActionMenuSelectorCloudConsolePerformProfileRemove(this);
-    m_pool[UIActionIndexMN_M_CloudConsole_T_Details] = new UIActionMenuSelectorCloudConsoleToggleProperties(this);
+    m_pool[UIActionIndexMN_M_CloudConsoleWindow] = new UIActionMenuManagerCloudConsole(this);
+    m_pool[UIActionIndexMN_M_CloudConsole] = new UIActionMenuManagerCloudConsole(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_S_ApplicationAdd] = new UIActionMenuManagerCloudConsolePerformApplicationAdd(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_S_ApplicationRemove] = new UIActionMenuManagerCloudConsolePerformApplicationRemove(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_S_ProfileAdd] = new UIActionMenuManagerCloudConsolePerformProfileAdd(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_S_ProfileRemove] = new UIActionMenuManagerCloudConsolePerformProfileRemove(this);
+    m_pool[UIActionIndexMN_M_CloudConsole_T_Details] = new UIActionMenuManagerCloudConsoleToggleProperties(this);
 
     /* VM resource Monitor actions: */
     m_pool[UIActionIndexMN_M_VMResourceMonitor] = new UIActionMenuVMResourceMonitor(this);
-    m_pool[UIActionIndexMN_M_VMResourceMonitor_M_Columns] = new UIActionMenuSelectorVMResourceMonitorToggleColumns(this);
-    m_pool[UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance] = new UIActionMenuSelectorVMResourceMonitorSwitchToMachinePerformance(this);
+    m_pool[UIActionIndexMN_M_VMResourceMonitor_M_Columns] = new UIActionMenuManagerVMResourceMonitorToggleColumns(this);
+    m_pool[UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance] = new UIActionMenuManagerVMResourceMonitorSwitchToMachinePerformance(this);
 
     /* 'Group' action groups: */
     m_groupPool[UIActionIndexMN_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexMN_M_Group_M_Tools));
