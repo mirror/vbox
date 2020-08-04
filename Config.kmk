@@ -4636,16 +4636,16 @@ TEMPLATE_VBoxR0_CXXFLAGS.freebsd    = -ffreestanding
   TEMPLATE_VBoxR0_DEFS             += RT_WITHOUT_PRAGMA_ONCE
  endif
  ifeq ($(KBUILD_TARGET),solaris)
- #TEMPLATE_VBoxR0_LDFLAGS            = -r
+ TEMPLATE_VBoxR0_LDFLAGS            = -r
  TEMPLATE_VBoxR0_LDFLAGS.solaris    = -u _init -u _info
  TEMPLATE_VBoxR0_LDFLAGS.solaris.amd64 = -m64
  TEMPLATE_VBoxR0_LDFLAGS.solaris.x86   = -m32
  TEMPLATE_VBoxR0_LIBS.solaris       = \
 	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
- #ifdef VBOX_GCC_USING_SOLARIS_AS
- # TEMPLATE_VBoxR0_CFLAGS.amd64 += -Wa,-xmodel=kernel
- # TEMPLATE_VBoxR0_CXXFLAGS.amd64 += -Wa,-xmodel=kernel
- #endif
+ ifdef VBOX_GCC_USING_SOLARIS_AS
+  TEMPLATE_VBoxR0_CFLAGS.amd64 += -Wa,-xmodel=kernel
+  TEMPLATE_VBoxR0_CXXFLAGS.amd64 += -Wa,-xmodel=kernel
+ endif
  # Solaris driver signing.
  TEMPLATE_VBoxR0_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
  else
@@ -4653,7 +4653,7 @@ TEMPLATE_VBoxR0_CXXFLAGS.freebsd    = -ffreestanding
  ## @todo WTF doesn't the globals work? Debug info is supposed to be split everywhere. GRR
  TEMPLATE_VBoxR0_LD_DEBUG           = split
  endif
- if1of ($(KBUILD_TARGET), linux solaris)
+ if1of ($(KBUILD_TARGET), linux)
 VBOX_WITH_VBOXR0_AS_DLL = 1
 TEMPLATE_VBoxR0_DLLSUFF             = .r0
 TEMPLATE_VBoxR0_CFLAGS             += -fPIC
