@@ -4636,7 +4636,7 @@ TEMPLATE_VBoxR0_CXXFLAGS.freebsd    = -ffreestanding
   TEMPLATE_VBoxR0_DEFS             += RT_WITHOUT_PRAGMA_ONCE
  endif
  ifeq ($(KBUILD_TARGET),solaris)
- TEMPLATE_VBoxR0_LDFLAGS            = -r
+ #TEMPLATE_VBoxR0_LDFLAGS            = -r
  TEMPLATE_VBoxR0_LDFLAGS.solaris    = -u _init -u _info
  TEMPLATE_VBoxR0_LIBS.solaris       = \
 	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
