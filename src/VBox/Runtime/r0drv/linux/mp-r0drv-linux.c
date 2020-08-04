@@ -42,7 +42,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(nr_cpumask_bits) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+#if defined(nr_cpumask_bits) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
 # define VBOX_NR_CPUMASK_BITS   (nr_cpumask_bits)   /* same as nr_cpu_ids */
 #else
 # define VBOX_NR_CPUMASK_BITS   (NR_CPUS)
