@@ -31,6 +31,20 @@
 /** Number of rounds [3.4]. */
 #define RTSHA3_ROUNDS   24
 
+/** @def RTSHA3_FULL_UNROLL
+ * Do full loop unrolling unless we're using VS2019 as it seems to degrate
+ * performances there for some reason.  With gcc 10.2.1 on a recent Intel system
+ * (10890XE), this results SHA3-512 throughput (tstRTDigest-2) increasing from
+ * 83532 KiB/s to 194942 KiB/s against a text size jump from 5913 to 6929 bytes.
+ *
+ * For comparison, openssl 1.1.1g assembly code (AMD64) achives 264915 KiB/s,
+ * which is only 36% more.  Performance is more or less exactly the same as
+ * KECCAK_2X without ROL optimizations (they improve it to 203493 KiB/s).
+ */
+#if !defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
+# define RTSHA3_FULL_UNROLL
+#endif
+
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -90,14 +104,17 @@ static void rtSha3Keccak(RTSHA3ALTPRIVATECTX *pState)
          */
         {
             /* Step 1: */
-            uint64_t au64C[5];
-            au64C[0] = pState->au64[0] ^ pState->au64[5] ^ pState->au64[10] ^ pState->au64[15] ^ pState->au64[20];
-            au64C[1] = pState->au64[1] ^ pState->au64[6] ^ pState->au64[11] ^ pState->au64[16] ^ pState->au64[21];
-            au64C[2] = pState->au64[2] ^ pState->au64[7] ^ pState->au64[12] ^ pState->au64[17] ^ pState->au64[22];
-            au64C[3] = pState->au64[3] ^ pState->au64[8] ^ pState->au64[13] ^ pState->au64[18] ^ pState->au64[23];
-            au64C[4] = pState->au64[4] ^ pState->au64[9] ^ pState->au64[14] ^ pState->au64[19] ^ pState->au64[24];
+            const uint64_t au64C[5] =
+            {
+                pState->au64[0] ^ pState->au64[5] ^ pState->au64[10] ^ pState->au64[15] ^ pState->au64[20],
+                pState->au64[1] ^ pState->au64[6] ^ pState->au64[11] ^ pState->au64[16] ^ pState->au64[21],
+                pState->au64[2] ^ pState->au64[7] ^ pState->au64[12] ^ pState->au64[17] ^ pState->au64[22],
+                pState->au64[3] ^ pState->au64[8] ^ pState->au64[13] ^ pState->au64[18] ^ pState->au64[23],
+                pState->au64[4] ^ pState->au64[9] ^ pState->au64[14] ^ pState->au64[19] ^ pState->au64[24],
+            };
 
             /* Step 2 & 3: */
+#ifndef RTSHA3_FULL_UNROLL
             for (size_t i = 0; i < RT_ELEMENTS(au64C); i++)
             {
                 uint64_t const u64D = au64C[(i + 4) % RT_ELEMENTS(au64C)]
@@ -108,17 +125,33 @@ static void rtSha3Keccak(RTSHA3ALTPRIVATECTX *pState)
                 pState->au64[15 + i] ^= u64D;
                 pState->au64[20 + i] ^= u64D;
             }
+#else  /* RTSHA3_FULL_UNROLL */
+# define THETA_STEP_2_3(a_i, a_idxCLeft, a_idxCRight) do { \
+                uint64_t const u64D = au64C[a_idxCLeft] ^ ASMRotateLeftU64(au64C[a_idxCRight], 1); \
+                pState->au64[ 0 + a_i] ^= u64D; \
+                pState->au64[ 5 + a_i] ^= u64D; \
+                pState->au64[10 + a_i] ^= u64D; \
+                pState->au64[15 + a_i] ^= u64D; \
+                pState->au64[20 + a_i] ^= u64D; \
+            } while (0)
+            THETA_STEP_2_3(0, 4, 1);
+            THETA_STEP_2_3(1, 0, 2);
+            THETA_STEP_2_3(2, 1, 3);
+            THETA_STEP_2_3(3, 2, 4);
+            THETA_STEP_2_3(4, 3, 0);
+#endif /* RTSHA3_FULL_UNROLL */
         }
 
         /*
          * 3.2.2 Rho + 3.2.3 Pi
          */
         {
+#ifndef RTSHA3_FULL_UNROLL
             static uint8_t const s_aidxState[] = {10,7,11,17,18,  3, 5,16, 8,21, 24, 4,15,23,19, 13,12, 2,20,14, 22, 9, 6, 1};
             static uint8_t const s_acRotate[]  = { 1,3, 6,10,15, 21,28,36,45,55,  2,14,27,41,56,  8,25,43,62,18, 39,61,20,44};
             AssertCompile(RT_ELEMENTS(s_aidxState) == 24); AssertCompile(RT_ELEMENTS(s_acRotate) == 24);
             uint64_t u64 = pState->au64[1 /*s_aidxState[RT_ELEMENTS(s_aidxState) - 1]*/];
-#if 0 /* This is slower with VS2019. */
+# if !defined(_MSC_VER) /* This is slower with VS2019 but slightly faster with g++ (10.2.1). */
             for (size_t i = 0; i <= 23 - 1; i++) /*i=t*/
             {
                 uint64_t const u64Result = ASMRotateLeftU64(u64, s_acRotate[i]);
@@ -127,7 +160,7 @@ static void rtSha3Keccak(RTSHA3ALTPRIVATECTX *pState)
                 pState->au64[idxState] = u64Result;
             }
             pState->au64[1 /*s_aidxState[23]*/] = ASMRotateLeftU64(u64, 44 /*s_acRotate[23]*/);
-#else
+# else
             for (size_t i = 0; i <= 23; i++) /*i=t*/
             {
                 uint64_t const u64Result = ASMRotateLeftU64(u64, s_acRotate[i]);
@@ -135,39 +168,47 @@ static void rtSha3Keccak(RTSHA3ALTPRIVATECTX *pState)
                 u64 = pState->au64[idxState];
                 pState->au64[idxState] = u64Result;
             }
-#endif
+# endif
+#else  /* RTSHA3_FULL_UNROLL */
+# define RHO_AND_PI(a_idxState, a_cRotate) do { \
+                uint64_t const u64Result = ASMRotateLeftU64(u64, a_cRotate); \
+                u64 = pState->au64[a_idxState]; \
+                pState->au64[a_idxState] = u64Result; \
+            } while (0)
+
+            uint64_t u64 = pState->au64[1 /*s_aidxState[RT_ELEMENTS(s_aidxState) - 1]*/];
+            RHO_AND_PI(10,  1);
+            RHO_AND_PI( 7,  3);
+            RHO_AND_PI(11,  6);
+            RHO_AND_PI(17, 10);
+            RHO_AND_PI(18, 15);
+            RHO_AND_PI( 3, 21);
+            RHO_AND_PI( 5, 28);
+            RHO_AND_PI(16, 36);
+            RHO_AND_PI( 8, 45);
+            RHO_AND_PI(21, 55);
+            RHO_AND_PI(24,  2);
+            RHO_AND_PI( 4, 14);
+            RHO_AND_PI(15, 27);
+            RHO_AND_PI(23, 41);
+            RHO_AND_PI(19, 56);
+            RHO_AND_PI(13,  8);
+            RHO_AND_PI(12, 25);
+            RHO_AND_PI( 2, 43);
+            RHO_AND_PI(20, 62);
+            RHO_AND_PI(14, 18);
+            RHO_AND_PI(22, 39);
+            RHO_AND_PI( 9, 61);
+            RHO_AND_PI( 6, 20);
+            pState->au64[1 /*s_aidxState[23]*/] = ASMRotateLeftU64(u64, 44 /*s_acRotate[23]*/);
+
+#endif /* RTSHA3_FULL_UNROLL */
         }
 
         /*
-         * 3.2.4 Chi
+         * 3.2.4 Chi & 3.2.5 Iota.
          */
-        for (size_t i = 0; i < 25; i += 5)
-        {
-#if 0 /* This is typically slower with VS2019. Go figure. */
-            uint64_t const u0 = pState->au64[i + 0];
-            uint64_t const u1 = pState->au64[i + 1];
-            uint64_t const u2 = pState->au64[i + 2];
-            pState->au64[i + 0] = u0 ^ (~u1 & u2);
-            uint64_t const u3 = pState->au64[i + 3];
-            pState->au64[i + 1] = u1 ^ (~u2 & u3);
-            uint64_t const u4 = pState->au64[i + 4];
-            pState->au64[i + 2] = u2 ^ (~u3 & u4);
-            pState->au64[i + 3] = u3 ^ (~u4 & u0);
-            pState->au64[i + 4] = u4 ^ (~u0 & u1);
-#else
-            uint64_t const au64Tmp[] = { pState->au64[i + 0], pState->au64[i + 1], pState->au64[i + 2],
-                                         pState->au64[i + 3], pState->au64[i + 4] };
-            pState->au64[i + 0] ^= ~au64Tmp[1] & au64Tmp[2];
-            pState->au64[i + 1] ^= ~au64Tmp[2] & au64Tmp[3];
-            pState->au64[i + 2] ^= ~au64Tmp[3] & au64Tmp[4];
-            pState->au64[i + 3] ^= ~au64Tmp[4] & au64Tmp[0];
-            pState->au64[i + 4] ^= ~au64Tmp[0] & au64Tmp[1];
-#endif
-        }
-
-        /*
-         * 3.2.5 Iota.
-         */
+        /* Iota values xor constants (indexed by round). */
         static uint64_t const s_au64RC[] =
         {
             UINT64_C(0x0000000000000001), UINT64_C(0x0000000000008082), UINT64_C(0x800000000000808a), UINT64_C(0x8000000080008000),
@@ -178,7 +219,54 @@ static void rtSha3Keccak(RTSHA3ALTPRIVATECTX *pState)
             UINT64_C(0x8000000080008081), UINT64_C(0x8000000000008080), UINT64_C(0x0000000080000001), UINT64_C(0x8000000080008008),
         };
         AssertCompile(RT_ELEMENTS(s_au64RC) == RTSHA3_ROUNDS);
+#ifndef RTSHA3_FULL_UNROLL
+        /* Chi */
+        for (size_t i = 0; i < 25; i += 5)
+        {
+# ifndef _MSC_VER /* This is typically slower with VS2019 - go figure.  Makes not difference with g++. */
+            uint64_t const u0 = pState->au64[i + 0];
+            uint64_t const u1 = pState->au64[i + 1];
+            uint64_t const u2 = pState->au64[i + 2];
+            pState->au64[i + 0] = u0 ^ (~u1 & u2);
+            uint64_t const u3 = pState->au64[i + 3];
+            pState->au64[i + 1] = u1 ^ (~u2 & u3);
+            uint64_t const u4 = pState->au64[i + 4];
+            pState->au64[i + 2] = u2 ^ (~u3 & u4);
+            pState->au64[i + 3] = u3 ^ (~u4 & u0);
+            pState->au64[i + 4] = u4 ^ (~u0 & u1);
+# else
+            uint64_t const au64Tmp[] = { pState->au64[i + 0], pState->au64[i + 1], pState->au64[i + 2],
+                                         pState->au64[i + 3], pState->au64[i + 4] };
+            pState->au64[i + 0] ^= ~au64Tmp[1] & au64Tmp[2];
+            pState->au64[i + 1] ^= ~au64Tmp[2] & au64Tmp[3];
+            pState->au64[i + 2] ^= ~au64Tmp[3] & au64Tmp[4];
+            pState->au64[i + 3] ^= ~au64Tmp[4] & au64Tmp[0];
+            pState->au64[i + 4] ^= ~au64Tmp[0] & au64Tmp[1];
+# endif
+        }
+
+        /* Iota. */
         pState->au64[0] ^= s_au64RC[idxRound];
+
+#else  /* RTSHA3_FULL_UNROLL */
+# define CHI_AND_IOTA(a_i, a_IotaExpr) do { \
+            uint64_t const u0 = pState->au64[a_i + 0]; \
+            uint64_t const u1 = pState->au64[a_i + 1]; \
+            uint64_t const u2 = pState->au64[a_i + 2]; \
+            pState->au64[a_i + 0] = u0 ^ (~u1 & u2) a_IotaExpr; \
+            uint64_t const u3 = pState->au64[a_i + 3]; \
+            pState->au64[a_i + 1] = u1 ^ (~u2 & u3); \
+            uint64_t const u4 = pState->au64[a_i + 4]; \
+            pState->au64[a_i + 2] = u2 ^ (~u3 & u4); \
+            pState->au64[a_i + 3] = u3 ^ (~u4 & u0); \
+            pState->au64[a_i + 4] = u4 ^ (~u0 & u1); \
+        } while (0)
+        CHI_AND_IOTA( 0, ^ s_au64RC[idxRound]);
+        CHI_AND_IOTA( 5, RT_NOTHING);
+        CHI_AND_IOTA(10, RT_NOTHING);
+        CHI_AND_IOTA(15, RT_NOTHING);
+        CHI_AND_IOTA(20, RT_NOTHING);
+#endif /* RTSHA3_FULL_UNROLL */
     }
 
 #ifdef RT_BIG_ENDIAN
