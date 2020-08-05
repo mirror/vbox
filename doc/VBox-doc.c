@@ -109,7 +109,7 @@
  *      - @ref pg_netflt
  *      - @ref pg_rawpci
  *  - Host Services.
- *      - @ref pg_hostclip Shared Clipboard.
+ *      - @ref pg_hostclip
  *      - Shared Folders.
  *      - @ref pg_svc_guest_properties
  *      - @ref pg_svc_guest_control
