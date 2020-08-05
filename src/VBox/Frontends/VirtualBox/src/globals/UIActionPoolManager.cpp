@@ -3292,32 +3292,42 @@ protected:
     }
 };
 
-/** Toggle action extension, used as 'Toggle Columns' action class. */
-class UIActionMenuManagerVMResourceMonitorToggleColumns : public UIActionMenu
+/** Menu action extension, used as 'Columns' menu class. */
+class UIActionMenuManagerVMResourceMonitorColumns : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuManagerVMResourceMonitorToggleColumns(UIActionPool *pParent)
+    UIActionMenuManagerVMResourceMonitorColumns(UIActionPool *pParent)
         : UIActionMenu(pParent,
-                       ":/resources_monitor_columns_32px.png", ":/resources_monitor_columns_16px.png")
-    {}
+                       ":/resources_monitor_columns_32px.png", ":/resources_monitor_columns_16px.png",
+                       ":/resources_monitor_columns_disabled_32px.png", ":/resources_monitor_columns_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
 
 protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("VMResourceMonitorColumns");
+    }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Columns"));
-        setIconText(QApplication::translate("UIActionPool", "Columns"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Resource Monitor"));
         setStatusTip(QApplication::translate("UIActionPool", "Show/Hide Columns"));
         setToolTip(  QApplication::translate("UIActionPool", "Show/Hide Columns")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
+/** Simple action extension, used as 'Switch to Machine Performance' action class. */
 class UIActionMenuManagerVMResourceMonitorSwitchToMachinePerformance : public UIActionSimple
 {
     Q_OBJECT;
@@ -3327,8 +3337,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuManagerVMResourceMonitorSwitchToMachinePerformance(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/cloud_console_application_remove_32px .png",          ":/cloud_console_application_remove_16px.png",
-                         ":/cloud_console_application_remove_disabled_32px.png", ":/cloud_console_application_remove_disabled_16px.png")
+                         ":/resources_monitor_jump_to_vm_32px.png",          ":/resources_monitor_jump_to_vm_16px.png",
+                         ":/resources_monitor_jump_to_vm_disabled_32px.png", ":/resources_monitor_jump_to_vm_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -3345,7 +3355,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "To Performance"));
-        setShortcutScope(QApplication::translate("UIActionPool", "Resource Manager"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Resource Monitor"));
         setStatusTip(QApplication::translate("UIActionPool", "Switch to selected machine's performance pane"));
         setToolTip(  QApplication::translate("UIActionPool", "Switch to selected machine's performance pane")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
@@ -3517,7 +3527,7 @@ void UIActionPoolManager::preparePool()
 
     /* VM resource Monitor actions: */
     m_pool[UIActionIndexMN_M_VMResourceMonitor] = new UIActionMenuVMResourceMonitor(this);
-    m_pool[UIActionIndexMN_M_VMResourceMonitor_M_Columns] = new UIActionMenuManagerVMResourceMonitorToggleColumns(this);
+    m_pool[UIActionIndexMN_M_VMResourceMonitor_M_Columns] = new UIActionMenuManagerVMResourceMonitorColumns(this);
     m_pool[UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance] = new UIActionMenuManagerVMResourceMonitorSwitchToMachinePerformance(this);
 
     /* 'Group' action groups: */

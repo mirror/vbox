@@ -1,7 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="log_viewer_refresh_16px.png">images/log_viewer_refresh_16px.png</file>
-        <file alias="log_viewer_refresh_32px.png">images/log_viewer_refresh_32px.png</file>
         <file alias="log_viewer_refresh_disabled_16px.png">images/log_viewer_refresh_disabled_16px.png</file>
         <file alias="log_viewer_refresh_disabled_32px.png">images/log_viewer_refresh_disabled_32px.png</file>
         <file alias="log_viewer_reset_font_16px.png">images/log_viewer_reset_font_16px.png</file>
@@ -198,6 +196,10 @@
         <file alias="resources_monitor_columns_disabled_32px.png">images/resources_monitor_columns_disabled_32px.png</file>
         <file alias="resources_monitor_disabled_16px.png">images/resources_monitor_disabled_16px.png</file>
         <file alias="resources_monitor_disabled_24px.png">images/resources_monitor_disabled_24px.png</file>
+        <file alias="resources_monitor_jump_to_vm_16px.png">images/resources_monitor_jump_to_vm_16px.png</file>
+        <file alias="resources_monitor_jump_to_vm_32px.png">images/resources_monitor_jump_to_vm_32px.png</file>
+        <file alias="resources_monitor_jump_to_vm_disabled_16px.png">images/resources_monitor_jump_to_vm_disabled_16px.png</file>
+        <file alias="resources_monitor_jump_to_vm_disabled_32px.png">images/resources_monitor_jump_to_vm_disabled_32px.png</file>
         <file alias="restore_16px.png">images/restore_16px.png</file>
         <file alias="sas_16px.png">images/sas_16px.png</file>
         <file alias="sas_add_16px.png">images/sas_add_16px.png</file>
