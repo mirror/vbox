@@ -2304,8 +2304,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorPerformancePerformExport(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/log_viewer_save_32px.png", ":/log_viewer_save_16px.png",
-                         ":/log_viewer_save_disabled_32px.png", ":/log_viewer_save_disabled_16px.png")
+                         ":/performance_monitor_export_32px.png", ":/performance_monitor_export_16px.png",
+                         ":/performance_monitor_export_disabled_32px.png", ":/performance_monitor_export_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
