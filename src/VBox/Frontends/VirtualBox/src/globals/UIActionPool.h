@@ -143,7 +143,7 @@ enum UIActionIndex
     UIActionIndex_Max
 };
 
-/** Restriction levels. */
+/** Action restriction levels. */
 enum UIActionRestrictionLevel
 {
     UIActionRestrictionLevel_Base,
@@ -237,6 +237,13 @@ public:
     /** Defines action @a strShortcutScope. */
     void setShortcutScope(const QString &strShortcutScope) { m_strShortcutScope = strShortcutScope; }
 
+    /** Defines current keyboard shortcuts for this action. */
+    void setShortcuts(const QList<QKeySequence> &shortcuts);
+    /** Make action show keyboard shortcut. */
+    void showShortcut();
+    /** Make action hide keyboard shortcut. */
+    void hideShortcut();
+
     /** Returns action extra-data ID. */
     virtual int extraDataID() const { return 0; }
     /** Returns action extra-data key. */
@@ -250,13 +257,6 @@ public:
     virtual QKeySequence defaultShortcut(UIActionPoolType) const { return QKeySequence(); }
     /** Returns standard keyboard shortcut for this action. */
     virtual QKeySequence standardShortcut(UIActionPoolType) const { return QKeySequence(); }
-
-    /** Defines current keyboard shortcuts for this action. */
-    void setShortcuts(const QList<QKeySequence> &shortcuts);
-    /** Make action show keyboard shortcut. */
-    void showShortcut();
-    /** Make action hide keyboard shortcut. */
-    void hideShortcut();
 
     /** Retranslates action. */
     virtual void retranslateUi() = 0;
@@ -285,21 +285,23 @@ protected:
 private:
 
     /** Holds the action type. */
-    UIActionType  m_enmType;
+    const UIActionType  m_enmType;
     /** Holds whether this is machine-menu action. */
-    bool          m_fMachineMenuAction;
+    const bool          m_fMachineMenuAction;
 
     /** Holds the reference to the action-pool this action belongs to. */
-    UIActionPool     *m_pActionPool;
+    UIActionPool           *m_pActionPool;
     /** Holds the type of the action-pool this action belongs to. */
-    UIActionPoolType  m_enmActionPoolType;
+    const UIActionPoolType  m_enmActionPoolType;
 
     /** Holds current action state. */
-    int                  m_iState;
+    int             m_iState;
     /** Holds action icons. */
-    QVector<QIcon>       m_icons;
+    QVector<QIcon>  m_icons;
+
     /** Holds the action name. */
-    QString              m_strName;
+    QString  m_strName;
+
     /** Holds the action shortcut scope. */
     QString              m_strShortcutScope;
     /** Holds the action shortcuts. */
@@ -320,8 +322,7 @@ protected:
       * @param  strIcon          Brings the normal-icon name.
       * @param  strIconDisabled  Brings the disabled-icon name. */
     UIActionMenu(UIActionPool *pParent,
-                 const QString &strIcon = QString(),
-                 const QString &strIconDisabled = QString());
+                 const QString &strIcon = QString(), const QString &strIconDisabled = QString());
     /** Constructs menu action passing @a pParent to the base-class.
       * @param  strIconNormal          Brings the normal-icon name.
       * @param  strIconSmall           Brings the small-icon name.

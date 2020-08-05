@@ -195,7 +195,7 @@ QString UIAction::nameInMenu() const
 
 void UIAction::updateIcon()
 {
-    QAction::setIcon(m_icons.value(m_iState));
+    QAction::setIcon(m_icons.value(m_iState, m_icons.value(0)));
 }
 
 void UIAction::updateText()
@@ -263,7 +263,9 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
 
 void UIActionMenu::setShowToolTip(bool fShowToolTip)
 {
-    qobject_cast<UIMenu*>(menu())->setShowToolTip(fShowToolTip);
+    UIMenu *pMenu = qobject_cast<UIMenu*>(menu());
+    AssertPtrReturnVoid(pMenu);
+    pMenu->setShowToolTip(fShowToolTip);
 }
 
 void UIActionMenu::prepare()
@@ -420,7 +422,9 @@ UIActionPolymorphicMenu::~UIActionPolymorphicMenu()
 
 void UIActionPolymorphicMenu::setShowToolTip(bool fShowToolTip)
 {
-    qobject_cast<UIMenu*>(menu())->setShowToolTip(fShowToolTip);
+    UIMenu *pMenu = qobject_cast<UIMenu*>(menu());
+    if (pMenu)
+        pMenu->setShowToolTip(fShowToolTip);
 }
 
 void UIActionPolymorphicMenu::showMenu()
