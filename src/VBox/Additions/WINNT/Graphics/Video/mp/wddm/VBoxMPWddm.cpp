@@ -2513,7 +2513,10 @@ static BOOLEAN vboxWddmCallIsrCb(PVOID Context)
     PVBOXMP_DEVEXT pDevExt = pdc->pDevExt;
     if (pDevExt->fCmdVbvaEnabled)
     {
+#ifdef DEBUG_sunlover
+        /** @todo Remove VBOX_WITH_VIDEOHWACCEL code, because the host does not support it anymore. */
         AssertFailed(); /* Should not be here, because this is not used with 3D gallium driver. */
+#endif
         return FALSE;
     }
     return DxgkDdiInterruptRoutineLegacy(pDevExt, pdc->MessageNumber);
