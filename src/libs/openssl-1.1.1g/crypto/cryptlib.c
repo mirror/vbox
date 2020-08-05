@@ -439,7 +439,9 @@ void OPENSSL_die(const char *message, const char *file, int line)
  *
  * There are also assembler versions of this function.
  */
+# ifndef VBOX /* Don't undo the mangling, please. */
 # undef CRYPTO_memcmp
+# endif /* VBOX */
 int CRYPTO_memcmp(const void * in_a, const void * in_b, size_t len)
 {
     size_t i;
