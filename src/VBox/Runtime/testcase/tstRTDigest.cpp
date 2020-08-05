@@ -197,8 +197,40 @@ int main(int argc, char **argv)
                  else if (!RTStrICmp(ValueUnion.psz, "sha512/256"))
                  {
                      pszDigestType = "SHA-512/256";
-                     enmDigestType = RTDIGESTTYPE_SHA512T256;
+                     enmDigestType = RTDIGESTTYPE_SHA3_256;
                  }
+                 else if (!RTStrICmp(ValueUnion.psz, "sha3-224"))
+                 {
+                     pszDigestType = "SHA3-224";
+                     enmDigestType = RTDIGESTTYPE_SHA3_224;
+                 }
+                 else if (!RTStrICmp(ValueUnion.psz, "sha3-256"))
+                 {
+                     pszDigestType = "SHA3-256";
+                     enmDigestType = RTDIGESTTYPE_SHA3_256;
+                 }
+                 else if (!RTStrICmp(ValueUnion.psz, "sha3-384"))
+                 {
+                     pszDigestType = "SHA3-384";
+                     enmDigestType = RTDIGESTTYPE_SHA3_384;
+                 }
+                 else if (!RTStrICmp(ValueUnion.psz, "sha3-512"))
+                 {
+                     pszDigestType = "SHA3-512";
+                     enmDigestType = RTDIGESTTYPE_SHA3_512;
+                 }
+#if 0
+                 else if (!RTStrICmp(ValueUnion.psz, "shake128"))
+                 {
+                     pszDigestType = "SHAKE128";
+                     enmDigestType = RTDIGESTTYPE_SHAKE128;
+                 }
+                 else if (!RTStrICmp(ValueUnion.psz, "shake256"))
+                 {
+                     pszDigestType = "SHAKE256";
+                     enmDigestType = RTDIGESTTYPE_SHAKE256;
+                 }
+#endif
                  else
                  {
                      Error("Invalid digest type: %s\n", ValueUnion.psz);
@@ -235,7 +267,20 @@ int main(int argc, char **argv)
                  break;
 
              case 'h':
-                 RTPrintf("usage: tstRTDigest -t <digest-type> [-o <offset>] [-l <length>] [-x] file [file2 [..]]\n");
+                 RTPrintf("usage: tstRTDigest -t <digest-type> [-o <offset>] [-l <length>] [-m method] [-x] file [file2 [..]]\n"
+                          "\n"
+                          "Options:\n"
+                          "  -t,--type <hash-algo>\n"
+                          "  -o,--offset <file-offset>\n"
+                          "  -l,--length <byte-count>\n"
+                          "  -m,--method <full|block|file|cvas>\n"
+                          "     block: Init+Update+Finalize, data from file(s). Default.\n"
+                          "     file:  RTSha*DigestFromFile. Only SHA1 and SHA256.\n"
+                          "     cvas:  NIST test vectors processed by RTCrDigest*.\n"
+                          "     full:  Not implemented\n"
+                          "  -x,--testcase\n"
+                          "    For generating C code.\n"
+                          );
                  return 1;
 
              case VINF_GETOPT_NOT_OPTION:
@@ -413,8 +458,78 @@ int main(int argc, char **argv)
                                  break;
                              }
 
+                             case RTDIGESTTYPE_SHA3_224:
+                             {
+                                 RTSHA3T224CONTEXT Ctx;
+                                 RTSha3t224Init(&Ctx);
+                                 for (;;)
+                                 {
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
+                                     if (RT_FAILURE(rc) || !cbRead)
+                                         break;
+                                     RTSha3t224Update(&Ctx, abBuf, cbRead);
+                                 }
+                                 uint8_t abDigest[RTSHA3_224_HASH_SIZE];
+                                 RTSha3t224Final(&Ctx, abDigest);
+                                 RTSha3t224ToString(abDigest, pszDigest, sizeof(abBuf));
+                                 break;
+                             }
+
+                             case RTDIGESTTYPE_SHA3_256:
+                             {
+                                 RTSHA3T256CONTEXT Ctx;
+                                 RTSha3t256Init(&Ctx);
+                                 for (;;)
+                                 {
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
+                                     if (RT_FAILURE(rc) || !cbRead)
+                                         break;
+                                     RTSha3t256Update(&Ctx, abBuf, cbRead);
+                                 }
+                                 uint8_t abDigest[RTSHA3_256_HASH_SIZE];
+                                 RTSha3t256Final(&Ctx, abDigest);
+                                 RTSha3t256ToString(abDigest, pszDigest, sizeof(abBuf));
+                                 break;
+                             }
+
+                             case RTDIGESTTYPE_SHA3_384:
+                             {
+                                 RTSHA3T384CONTEXT Ctx;
+                                 RTSha3t384Init(&Ctx);
+                                 for (;;)
+                                 {
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
+                                     if (RT_FAILURE(rc) || !cbRead)
+                                         break;
+                                     RTSha3t384Update(&Ctx, abBuf, cbRead);
+                                 }
+                                 uint8_t abDigest[RTSHA3_384_HASH_SIZE];
+                                 RTSha3t384Final(&Ctx, abDigest);
+                                 RTSha3t384ToString(abDigest, pszDigest, sizeof(abBuf));
+                                 break;
+                             }
+
+                             case RTDIGESTTYPE_SHA3_512:
+                             {
+                                 RTSHA3T512CONTEXT Ctx;
+                                 RTSha3t512Init(&Ctx);
+                                 for (;;)
+                                 {
+                                     rc = MyReadFile(hFile, abBuf, sizeof(abBuf), &cbRead, &cbMaxLeft);
+                                     if (RT_FAILURE(rc) || !cbRead)
+                                         break;
+                                     RTSha3t512Update(&Ctx, abBuf, cbRead);
+                                 }
+                                 uint8_t abDigest[RTSHA3_512_HASH_SIZE];
+                                 RTSha3t512Final(&Ctx, abDigest);
+                                 RTSha3t512ToString(abDigest, pszDigest, sizeof(abBuf));
+                                 break;
+                             }
+
+                             /** @todo SHAKE128 and SHAKE256   */
+
                              default:
-                                 return Error("Internal error #1\n");
+                                 return Error("Internal error #1: %d %s\n", enmDigestType, pszDigest);
                          }
                          RTFileClose(hFile);
                          if (RT_FAILURE(rc) && rc != VERR_EOF)
@@ -453,7 +568,7 @@ int main(int argc, char **argv)
                          PRTSTREAM pFile;
                          rc = RTStrmOpen(ValueUnion.psz, "r", &pFile);
                          if (RT_FAILURE(rc))
-                             return Error("Failed to open CVAS file '%s': %Rrc", ValueUnion.psz, rc);
+                             return Error("Failed to open CVAS file '%s': %Rrc\n", ValueUnion.psz, rc);
 
                          /*
                           * Parse the input file.

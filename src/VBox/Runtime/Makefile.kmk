@@ -359,6 +359,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/alt-sha1.cpp \
 	common/checksum/alt-sha256.cpp \
 	common/checksum/alt-sha512.cpp \
+	common/checksum/alt-sha3.cpp \
 	common/checksum/md2str.cpp \
 	common/checksum/md4str.cpp \
 	common/checksum/md5str.cpp \

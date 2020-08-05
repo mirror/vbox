@@ -513,6 +513,68 @@ RTSHA512_DECLARE_VARIANT(512t224,512T224);
 RTSHA512_DECLARE_VARIANT(512t256,512T256);
 
 
+/**
+ * SHA3 context.
+ */
+typedef union RTSHA3CONTEXT
+{
+    uint64_t                a64Padding[26];
+    uint8_t                 abPadding[208];
+#ifdef RT_SHA3_PRIVATE_CONTEXT
+    RTSHA3PRIVATECTX        Private;
+#endif
+#ifdef RT_SHA3_PRIVATE_ALT_CONTEXT
+    RTSHA3ALTPRIVATECTX     AltPrivate;
+#endif
+} RTSHA3CONTEXT;
+/** Pointer to an SHA3 context. */
+typedef RTSHA3CONTEXT *PRTSHA3CONTEXT;
+
+/** Macro for declaring the interface for a SHA3 variation.
+ *
+ * @note The interface differes slightly from the older checksums:
+ *          - Must call Final and/or Cleanup method.
+ *          - Must use Clone instead of memcpy'ing the context.
+ *          - Status codes are returned, Init may really fail.
+ *
+ * @internal */
+#define RTSHA3_DECLARE_VARIANT(a_Bits) \
+    typedef struct RT_CONCAT3(RTSHA3T,a_Bits,CONTEXT) { RTSHA3CONTEXT Sha3; } RT_CONCAT3(RTSHA3T,a_Bits,CONTEXT); \
+    typedef RT_CONCAT3(RTSHA3T,a_Bits,CONTEXT) *RT_CONCAT3(PRTSHA3T,a_Bits,CONTEXT); \
+    RTDECL(int)  RT_CONCAT(RTSha3t,a_Bits)(const void *pvBuf, size_t cbBuf, uint8_t pabHash[RT_CONCAT3(RTSHA3_,a_Bits,_HASH_SIZE)]); \
+    RTDECL(bool) RT_CONCAT3(RTSha3t,a_Bits,Check)(const void *pvBuf, size_t cbBuf, uint8_t const pabHash[RT_CONCAT3(RTSHA3_,a_Bits,_HASH_SIZE)]); \
+    RTDECL(int)  RT_CONCAT3(RTSha3t,a_Bits,Init)(RT_CONCAT3(PRTSHA3T,a_Bits,CONTEXT) pCtx); \
+    RTDECL(int)  RT_CONCAT3(RTSha3t,a_Bits,Update)(RT_CONCAT3(PRTSHA3T,a_Bits,CONTEXT) pCtx, const void *pvBuf, size_t cbBuf); \
+    RTDECL(int)  RT_CONCAT3(RTSha3t,a_Bits,Final)(RT_CONCAT3(PRTSHA3T,a_Bits,CONTEXT) pCtx, uint8_t pabHash[RT_CONCAT3(RTSHA3_,a_Bits,_HASH_SIZE)]); \
+    RTDECL(int)  RT_CONCAT3(RTSha3t,a_Bits,Cleanup)(RT_CONCAT3(PRTSHA3T,a_Bits,CONTEXT) pCtx); \
+    RTDECL(int)  RT_CONCAT3(RTSha3t,a_Bits,Clone)(RT_CONCAT3(PRTSHA3T,a_Bits,CONTEXT) pCtx, RT_CONCAT3(RTSHA3T,a_Bits,CONTEXT) const *pCtxSrc); \
+    RTDECL(int)  RT_CONCAT3(RTSha3t,a_Bits,ToString)(uint8_t const pabHash[RT_CONCAT3(RTSHA3_,a_Bits,_HASH_SIZE)], char *pszDigest, size_t cchDigest); \
+    RTDECL(int)  RT_CONCAT3(RTSha3t,a_Bits,FromString)(char const *pszDigest, uint8_t pabHash[RT_CONCAT3(RTSHA3_,a_Bits,_HASH_SIZE)])
+
+/** The size of a SHA-224 hash. */
+#define RTSHA3_224_HASH_SIZE     28
+/** The length of a SHA-224 digest string. The terminator is not included. */
+#define RTSHA3_224_DIGEST_LEN    56
+RTSHA3_DECLARE_VARIANT(224);
+
+/** The size of a SHA-256 hash. */
+#define RTSHA3_256_HASH_SIZE     32
+/** The length of a SHA-256 digest string. The terminator is not included. */
+#define RTSHA3_256_DIGEST_LEN    64
+RTSHA3_DECLARE_VARIANT(256);
+
+/** The size of a SHA-384 hash. */
+#define RTSHA3_384_HASH_SIZE     48
+/** The length of a SHA-384 digest string. The terminator is not included. */
+#define RTSHA3_384_DIGEST_LEN    96
+RTSHA3_DECLARE_VARIANT(384);
+
+/** The size of a SHA-512 hash. */
+#define RTSHA3_512_HASH_SIZE     64
+/** The length of a SHA-512 digest string. The terminator is not included. */
+#define RTSHA3_512_DIGEST_LEN    128
+RTSHA3_DECLARE_VARIANT(512);
+
 /** @} */
 
 RT_C_DECLS_END

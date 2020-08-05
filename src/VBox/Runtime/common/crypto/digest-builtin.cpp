@@ -602,6 +602,285 @@ static RTCRDIGESTDESC const g_rtCrDigestSha512t256Desc =
 };
 #endif /* !IPRT_WITHOUT_SHA512T256 */
 
+#ifndef IPRT_WITHOUT_SHA3
+
+/*
+ * SHA3-224
+ */
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestSha3t224_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    int rc = RTSha3t224Update((PRTSHA3T224CONTEXT)pvState, pvData, cbData);
+    AssertRC(rc);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestSha3t224_Final(void *pvState, uint8_t *pbHash)
+{
+    int rc = RTSha3t224Final((PRTSHA3T224CONTEXT)pvState, pbHash);
+    AssertRC(rc);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestSha3t224_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    RT_NOREF_PV(pvOpaque);
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    if (fReInit)
+        RTSha3t224Cleanup((PRTSHA3T224CONTEXT)pvState);
+    return RTSha3t224Init((PRTSHA3T224CONTEXT)pvState);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnDelete} */
+static DECLCALLBACK(void) rtCrDigestSha3t224_Delete(void *pvState)
+{
+    RTSha3t224Cleanup((PRTSHA3T224CONTEXT)pvState);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnDelete} */
+static DECLCALLBACK(int) rtCrDigestSha3t224_Clone(void *pvState, void const *pvSrcState)
+{
+    return RTSha3t224Clone((PRTSHA3T224CONTEXT)pvState, (PRTSHA3T224CONTEXT)pvSrcState);
+}
+
+/** SHA3-224 alias ODIs. */
+static const char * const g_apszSha3t224Aliases[] =
+{
+    "2.16.840.1.101.3.4.3.13",
+    NULL
+};
+
+/** SHA3-224 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestSha3t224Desc =
+{
+    "sha3-224",
+    "2.16.840.1.101.3.4.2.7",
+    g_apszSha3t224Aliases,
+    RTDIGESTTYPE_SHA3_224,
+    RTSHA3_224_HASH_SIZE,
+    sizeof(RTSHA3T224CONTEXT),
+    0,
+    NULL,
+    NULL,
+    rtCrDigestSha3t224_Update,
+    rtCrDigestSha3t224_Final,
+    rtCrDigestSha3t224_Init,
+    rtCrDigestSha3t224_Delete,
+    rtCrDigestSha3t224_Clone,
+    NULL,
+    NULL,
+};
+
+
+/*
+ * SHA3-256
+ */
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestSha3t256_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    int rc = RTSha3t256Update((PRTSHA3T256CONTEXT)pvState, pvData, cbData);
+    AssertRC(rc);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestSha3t256_Final(void *pvState, uint8_t *pbHash)
+{
+    int rc = RTSha3t256Final((PRTSHA3T256CONTEXT)pvState, pbHash);
+    AssertRC(rc);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestSha3t256_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    RT_NOREF_PV(pvOpaque);
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    if (fReInit)
+        RTSha3t256Cleanup((PRTSHA3T256CONTEXT)pvState);
+    return RTSha3t256Init((PRTSHA3T256CONTEXT)pvState);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnDelete} */
+static DECLCALLBACK(void) rtCrDigestSha3t256_Delete(void *pvState)
+{
+    RTSha3t256Cleanup((PRTSHA3T256CONTEXT)pvState);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnDelete} */
+static DECLCALLBACK(int) rtCrDigestSha3t256_Clone(void *pvState, void const *pvSrcState)
+{
+    return RTSha3t256Clone((PRTSHA3T256CONTEXT)pvState, (PRTSHA3T256CONTEXT)pvSrcState);
+}
+
+/** SHA3-256 alias ODIs. */
+static const char * const g_apszSha3t256Aliases[] =
+{
+    "2.16.840.1.101.3.4.3.14",
+    NULL
+};
+
+/** SHA3-256 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestSha3t256Desc =
+{
+    "sha3-256",
+    "2.16.840.1.101.3.4.2.8",
+    g_apszSha3t256Aliases,
+    RTDIGESTTYPE_SHA3_256,
+    RTSHA3_256_HASH_SIZE,
+    sizeof(RTSHA3T256CONTEXT),
+    0,
+    NULL,
+    NULL,
+    rtCrDigestSha3t256_Update,
+    rtCrDigestSha3t256_Final,
+    rtCrDigestSha3t256_Init,
+    rtCrDigestSha3t256_Delete,
+    rtCrDigestSha3t256_Clone,
+    NULL,
+    NULL,
+};
+
+
+/*
+ * SHA3-384
+ */
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestSha3t384_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    int rc = RTSha3t384Update((PRTSHA3T384CONTEXT)pvState, pvData, cbData);
+    AssertRC(rc);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestSha3t384_Final(void *pvState, uint8_t *pbHash)
+{
+    int rc = RTSha3t384Final((PRTSHA3T384CONTEXT)pvState, pbHash);
+    AssertRC(rc);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestSha3t384_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    RT_NOREF_PV(pvOpaque);
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    if (fReInit)
+        RTSha3t384Cleanup((PRTSHA3T384CONTEXT)pvState);
+    return RTSha3t384Init((PRTSHA3T384CONTEXT)pvState);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnDelete} */
+static DECLCALLBACK(void) rtCrDigestSha3t384_Delete(void *pvState)
+{
+    RTSha3t384Cleanup((PRTSHA3T384CONTEXT)pvState);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnDelete} */
+static DECLCALLBACK(int) rtCrDigestSha3t384_Clone(void *pvState, void const *pvSrcState)
+{
+    return RTSha3t384Clone((PRTSHA3T384CONTEXT)pvState, (PRTSHA3T384CONTEXT)pvSrcState);
+}
+
+/** SHA3-384 alias ODIs. */
+static const char * const g_apszSha3t384Aliases[] =
+{
+    "2.16.840.1.101.3.4.3.15",
+    NULL
+};
+
+/** SHA3-384 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestSha3t384Desc =
+{
+    "sha3-384",
+    "2.16.840.1.101.3.4.2.9",
+    g_apszSha3t384Aliases,
+    RTDIGESTTYPE_SHA3_384,
+    RTSHA3_384_HASH_SIZE,
+    sizeof(RTSHA3T384CONTEXT),
+    0,
+    NULL,
+    NULL,
+    rtCrDigestSha3t384_Update,
+    rtCrDigestSha3t384_Final,
+    rtCrDigestSha3t384_Init,
+    rtCrDigestSha3t384_Delete,
+    rtCrDigestSha3t384_Clone,
+    NULL,
+    NULL,
+};
+
+
+/*
+ * SHA3-512
+ */
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnUpdate} */
+static DECLCALLBACK(void) rtCrDigestSha3t512_Update(void *pvState, const void *pvData, size_t cbData)
+{
+    int rc = RTSha3t512Update((PRTSHA3T512CONTEXT)pvState, pvData, cbData);
+    AssertRC(rc);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnFinal} */
+static DECLCALLBACK(void) rtCrDigestSha3t512_Final(void *pvState, uint8_t *pbHash)
+{
+    int rc = RTSha3t512Final((PRTSHA3T512CONTEXT)pvState, pbHash);
+    AssertRC(rc);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnInit} */
+static DECLCALLBACK(int) rtCrDigestSha3t512_Init(void *pvState, void *pvOpaque, bool fReInit)
+{
+    RT_NOREF_PV(pvOpaque);
+    AssertReturn(pvOpaque == NULL, VERR_INVALID_PARAMETER);
+    if (fReInit)
+        RTSha3t512Cleanup((PRTSHA3T512CONTEXT)pvState);
+    return RTSha3t512Init((PRTSHA3T512CONTEXT)pvState);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnDelete} */
+static DECLCALLBACK(void) rtCrDigestSha3t512_Delete(void *pvState)
+{
+    RTSha3t512Cleanup((PRTSHA3T512CONTEXT)pvState);
+}
+
+/** @impl_interface_method{RTCRDIGESTDESC::pfnDelete} */
+static DECLCALLBACK(int) rtCrDigestSha3t512_Clone(void *pvState, void const *pvSrcState)
+{
+    return RTSha3t512Clone((PRTSHA3T512CONTEXT)pvState, (PRTSHA3T512CONTEXT)pvSrcState);
+}
+
+/** SHA3-512 alias ODIs. */
+static const char * const g_apszSha3t512Aliases[] =
+{
+    "2.16.840.1.101.3.4.3.16",
+    NULL
+};
+
+/** SHA3-512 descriptor. */
+static RTCRDIGESTDESC const g_rtCrDigestSha3t512Desc =
+{
+    "sha3-512",
+    "2.16.840.1.101.3.4.2.10",
+    g_apszSha3t512Aliases,
+    RTDIGESTTYPE_SHA3_512,
+    RTSHA3_512_HASH_SIZE,
+    sizeof(RTSHA3T512CONTEXT),
+    0,
+    NULL,
+    NULL,
+    rtCrDigestSha3t512_Update,
+    rtCrDigestSha3t512_Final,
+    rtCrDigestSha3t512_Init,
+    rtCrDigestSha3t512_Delete,
+    rtCrDigestSha3t512_Clone,
+    NULL,
+    NULL,
+};
+
+#endif /* !IPRT_WITHOUT_SHA3 */
+
 
 /**
  * Array of built in message digest vtables.
@@ -627,6 +906,12 @@ static PCRTCRDIGESTDESC const g_apDigestOps[] =
 #endif
 #ifndef IPRT_WITHOUT_SHA512T256
     &g_rtCrDigestSha512t256Desc,
+#endif
+#ifndef IPRT_WITHOUT_SHA3
+    &g_rtCrDigestSha3t224Desc,
+    &g_rtCrDigestSha3t256Desc,
+    &g_rtCrDigestSha3t384Desc,
+    &g_rtCrDigestSha3t512Desc,
 #endif
 };
 
