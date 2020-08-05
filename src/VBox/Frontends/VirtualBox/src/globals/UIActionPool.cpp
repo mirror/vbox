@@ -124,9 +124,11 @@ UIMenu *UIAction::menu() const
     return QAction::menu() ? qobject_cast<UIMenu*>(QAction::menu()) : 0;
 }
 
-UIActionPolymorphicMenu *UIAction::toActionPolymorphicMenu()
+void UIAction::setState(int iState)
 {
-    return qobject_cast<UIActionPolymorphicMenu*>(this);
+    m_iState = iState;
+    updateIcon();
+    retranslateUi();
 }
 
 void UIAction::setIcon(int iState, const QIcon &icon)
@@ -381,7 +383,6 @@ UIActionPolymorphicMenu::UIActionPolymorphicMenu(UIActionPool *pParent,
                                                  const QString &strIcon, const QString &strIconDisabled)
     : UIAction(pParent, UIActionType_PolymorphicMenu)
     , m_pMenu(0)
-    , m_iState(0)
 {
     if (!strIcon.isNull())
         setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
@@ -393,7 +394,6 @@ UIActionPolymorphicMenu::UIActionPolymorphicMenu(UIActionPool *pParent,
                                                  const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
     : UIAction(pParent, UIActionType_PolymorphicMenu)
     , m_pMenu(0)
-    , m_iState(0)
 {
     if (!strIconNormal.isNull())
         setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
@@ -404,7 +404,6 @@ UIActionPolymorphicMenu::UIActionPolymorphicMenu(UIActionPool *pParent,
                                                  const QIcon &icon)
     : UIAction(pParent, UIActionType_PolymorphicMenu)
     , m_pMenu(0)
-    , m_iState(0)
 {
     if (!icon.isNull())
         setIcon(icon);

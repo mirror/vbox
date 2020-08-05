@@ -3027,20 +3027,20 @@ void UIVirtualBoxManager::updateActionsAppearance()
         && (   pItem->itemType() == UIVirtualMachineItemType_CloudFake
             || pItem->itemType() == UIVirtualMachineItemType_CloudReal))
     {
-        actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->toActionPolymorphicMenu()->setState(1);
-        actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->toActionPolymorphicMenu()->setState(1);
+        actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->setState(1);
+        actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->setState(1);
     }
     else
     {
-        actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->toActionPolymorphicMenu()->setState(0);
-        actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->toActionPolymorphicMenu()->setState(0);
+        actionPool()->action(UIActionIndexMN_M_Group_S_Discard)->setState(0);
+        actionPool()->action(UIActionIndexMN_M_Machine_S_Discard)->setState(0);
     }
 
     /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
     {
-        actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(pItem->isItemPoweredOff() ? 0 : 1);
-        actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(pItem->isItemPoweredOff() ? 0 : 1);
+        actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->setState(pItem->isItemPoweredOff() ? 0 : 1);
+        actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->setState(pItem->isItemPoweredOff() ? 0 : 1);
         /// @todo Hmm, fix it?
 //        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
 //        if (pButton)
@@ -3048,8 +3048,8 @@ void UIVirtualBoxManager::updateActionsAppearance()
     }
     else
     {
-        actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->toActionPolymorphicMenu()->setState(0);
-        actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->toActionPolymorphicMenu()->setState(0);
+        actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->setState(0);
+        actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->setState(0);
         /// @todo Hmm, fix it?
 //        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
 //        if (pButton)

@@ -214,13 +214,10 @@ public:
     /** Returns action-pool this action belongs to. */
     UIActionPool *actionPool() const { return m_pActionPool; }
 
-    /** Casts action to polymorphic-menu-action. */
-    UIActionPolymorphicMenu *toActionPolymorphicMenu();
-
     /** Returns current action state. */
     int state() const { return m_iState; }
     /** Defines current action @a iState. */
-    void setState(int iState) { m_iState = iState; updateIcon(); retranslateUi(); }
+    void setState(int iState);
 
     /** Defines @a icon for certain @a iState. */
     void setIcon(int iState, const QIcon &icon);
@@ -281,8 +278,6 @@ protected:
     /** Simplifies passed @a strText by removing dots and ampersands.
       * @note Used to simplify action names for tool-tip needs. */
     static QString simplifyText(QString strText);
-
-private:
 
     /** Holds the action type. */
     const UIActionType  m_enmType;
@@ -433,13 +428,6 @@ class SHARED_LIBRARY_STUFF UIActionPolymorphicMenu : public UIAction
 {
     Q_OBJECT;
 
-public:
-
-    /** Returns current action state. */
-    int state() const { return m_iState; }
-    /** Defines current action state. */
-    void setState(int iState) { m_iState = iState; retranslateUi(); }
-
 protected:
 
     /** Constructs polymorphic menu action passing @a pParent to the base-class.
@@ -483,8 +471,6 @@ private:
 
     /** Holds the menu instance. */
     UIMenu *m_pMenu;
-    /** Holds current action state. */
-    int     m_iState;
 };
 
 
