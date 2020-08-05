@@ -26,6 +26,7 @@
 
 #if 1 /* For now: */
 # include "alt-sha3.cpp"
+
 #else
 
 
@@ -33,12 +34,26 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
+#include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/string.h>
 
 #include "internal/openssl-pre.h"
 #include <openssl/evp.h>
 #include "internal/openssl-post.h"
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define RTSHA3PRIVATECTX_MAGIC          UINT64_C(0xb6362d323c56b758)
+#define RTSHA3PRIVATECTX_MAGIC_FINAL    UINT64_C(0x40890fe0e474215d)
+#define RTSHA3PRIVATECTX_MAGIC_DEAD     UINT64_C(0xdead7a05081cbeef)
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /* Internal EVP structure that we fake here to avoid lots of casting. */
 struct evp_md_ctx_st
 {
@@ -58,17 +73,6 @@ typedef struct RTSHA3PRIVATECTX
 #include <iprt/sha.h>
 AssertCompile(RT_SIZEOFMEMB(RTSHA3CONTEXT, abPadding) >= RT_SIZEOFMEMB(RTSHA3CONTEXT, Private));
 
-#include <iprt/assert.h>
-#include <iprt/err.h>
-#include <iprt/string.h>
-
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-#define RTSHA3PRIVATECTX_MAGIC          UINT64_C(0xb6362d323c56b758)
-#define RTSHA3PRIVATECTX_MAGIC_FINAL    UINT64_C(0x40890fe0e474215d)
-#define RTSHA3PRIVATECTX_MAGIC_DEAD     UINT64_C(0xdead7a05081cbeef)
 
 
 static int rtSha3Init(PRTSHA3CONTEXT pCtx, const EVP_MD *pMdType)
