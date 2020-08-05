@@ -243,6 +243,16 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
 }
 
 UIActionMenu::UIActionMenu(UIActionPool *pParent,
+                           const QString &strIconNormal, const QString &strIconSmall,
+                           const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
+    : UIAction(pParent, UIActionType_Menu)
+{
+    if (!strIconNormal.isNull())
+        setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
+    prepare();
+}
+
+UIActionMenu::UIActionMenu(UIActionPool *pParent,
                            const QIcon &icon)
     : UIAction(pParent, UIActionType_Menu)
 {
@@ -289,7 +299,8 @@ UIActionSimple::UIActionSimple(UIActionPool *pParent,
                                bool fMachineMenuAction /* = false */)
     : UIAction(pParent, UIActionType_Simple, fMachineMenuAction)
 {
-    setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
+    if (!strIcon.isNull())
+        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
@@ -298,7 +309,8 @@ UIActionSimple::UIActionSimple(UIActionPool *pParent,
                                bool fMachineMenuAction /* = false */)
     : UIAction(pParent, UIActionType_Simple, fMachineMenuAction)
 {
-    setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
+    if (!strIconNormal.isNull())
+        setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
@@ -306,7 +318,8 @@ UIActionSimple::UIActionSimple(UIActionPool *pParent,
                                bool fMachineMenuAction /* = false */)
     : UIAction(pParent, UIActionType_Simple, fMachineMenuAction)
 {
-    setIcon(icon);
+    if (!icon.isNull())
+        setIcon(icon);
 }
 
 
@@ -326,7 +339,8 @@ UIActionToggle::UIActionToggle(UIActionPool *pParent,
                                bool fMachineMenuAction /* = false */)
     : UIAction(pParent, UIActionType_Toggle, fMachineMenuAction)
 {
-    setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
+    if (!strIcon.isNull())
+        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
     prepare();
 }
 
@@ -336,7 +350,8 @@ UIActionToggle::UIActionToggle(UIActionPool *pParent,
                                bool fMachineMenuAction /* = false */)
     : UIAction(pParent, UIActionType_Toggle, fMachineMenuAction)
 {
-    setIcon(UIIconPool::iconSetOnOff(strIconOn, strIconOff, strIconOnDisabled, strIconOffDisabled));
+    if (!strIconOn.isNull())
+        setIcon(UIIconPool::iconSetOnOff(strIconOn, strIconOff, strIconOnDisabled, strIconOffDisabled));
     prepare();
 }
 

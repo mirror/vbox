@@ -323,6 +323,14 @@ protected:
                  const QString &strIcon = QString(),
                  const QString &strIconDisabled = QString());
     /** Constructs menu action passing @a pParent to the base-class.
+      * @param  strIconNormal          Brings the normal-icon name.
+      * @param  strIconSmall           Brings the small-icon name.
+      * @param  strIconNormalDisabled  Brings the normal-disabled-icon name.
+      * @param  strIconSmallDisabled   Brings the small-disabled-icon name. */
+    UIActionMenu(UIActionPool *pParent,
+                 const QString &strIconNormal, const QString &strIconSmall,
+                 const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
+    /** Constructs menu action passing @a pParent to the base-class.
       * @param  icon  Brings the icon. */
     UIActionMenu(UIActionPool *pParent,
                  const QIcon &icon);
