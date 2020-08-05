@@ -125,7 +125,7 @@
 #define VIRTIONET_SAVED_STATE_VERSION   UINT32_C(1)
 
 #if FEATURE_OFFERED(MQ)
-#   define VIRTIONET_MAX_QPAIRS         1000
+#   define VIRTIONET_MAX_QPAIRS         1000 /* Instance data doesn't allow an array with VIRTIONET_CTRL_MQ_VQ_PAIRS_MAX entries */
 #else
 #   define VIRTIONET_MAX_QPAIRS         VIRTIONET_CTRL_MQ_VQ_PAIRS_MIN
 #endif
@@ -2986,7 +2986,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
         pThis->virtioNetConfig.uStatus = 0;
 #   endif
 
-    pThis->virtioNetConfig.uMaxVirtqPairs   = VIRTIONET_CTRL_MQ_VQ_PAIRS_MAX;
+    pThis->virtioNetConfig.uMaxVirtqPairs   = VIRTIONET_MAX_QPAIRS;
 
     pThisCC->Virtio.pfnVirtqNotified        = virtioNetVirtqNotified;
     pThisCC->Virtio.pfnStatusChanged        = virtioNetR3StatusChanged;
