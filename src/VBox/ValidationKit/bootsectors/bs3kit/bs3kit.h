@@ -2024,7 +2024,7 @@ BS3_CMN_PROTO_STUB(void, Bs3SlabInit,(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, ui
  * Allocates one chunk from a slab.
  *
  * @returns Pointer to a chunk on success, NULL if we're out of chunks.
- * @param   pSlabCtl        The slab constrol structure to allocate from.
+ * @param   pSlabCtl        The slab control structure to allocate from.
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl));
 
@@ -2033,7 +2033,7 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl));
  *
  * @returns Pointer to the request number of chunks on success, NULL if we're
  *          out of chunks.
- * @param   pSlabCtl        The slab constrol structure to allocate from.
+ * @param   pSlabCtl        The slab control structure to allocate from.
  * @param   cChunks         The number of contiguous chunks we want.
  * @param   fFlags          Flags, see BS3_SLAB_ALLOC_F_XXX
  */
@@ -2044,7 +2044,7 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabAllocEx,(PBS3SLABCTL pSlabCtl, uint16_
  *
  * @returns Number of chunks actually freed.  When correctly used, this will
  *          match the @a cChunks parameter, of course.
- * @param   pSlabCtl        The slab constrol structure to free from.
+ * @param   pSlabCtl        The slab control structure to free from.
  * @param   uFlatChunkPtr   The flat address of the chunks to free.
  * @param   cChunks         The number of contiguous chunks to free.
  */
