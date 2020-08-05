@@ -42,6 +42,11 @@ void SHA3_squeeze(uint64_t A[5][5], unsigned char *out, size_t len, size_t r);
 # define BIT_INTERLEAVE (sizeof(void *) < 8)
 #endif
 
+# ifdef VBOX
+#  include <iprt/asm.h>
+#  define ROL32(val, shift) ASMRotateLeftU32(val, shift)
+#  define ROL64(val, shift) ASMRotateLeftU64(val, shift)
+# else /* !VBOX */
 #define ROL32(a, offset) (((a) << (offset)) | ((a) >> ((32 - (offset)) & 31)))
 
 static uint64_t ROL64(uint64_t val, int offset)
@@ -68,6 +73,7 @@ static uint64_t ROL64(uint64_t val, int offset)
         return ((uint64_t)hi << 32) | lo;
     }
 }
+#endif /* !VBOX */
 
 static const unsigned char rhotates[5][5] = {
     {  0,  1, 62, 28, 27 },
