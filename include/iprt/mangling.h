@@ -2047,6 +2047,7 @@
 # define RTSha512t256FromString                         RT_MANGLER(RTSha512t256FromString)
 # define RTSha512t256Init                               RT_MANGLER(RTSha512t256Init)
 # define RTSha512t256ToString                           RT_MANGLER(RTSha512t256ToString)
+# define RTSha512t256Update                             RT_MANGLER(RTSha512t256Update)
 # define RTSha3t224                                     RT_MANGLER(RTSha3t224)
 # define RTSha3t224Check                                RT_MANGLER(RTSha3t224Check)
 # define RTSha3t224Cleanup                              RT_MANGLER(RTSha3t224Cleanup)
