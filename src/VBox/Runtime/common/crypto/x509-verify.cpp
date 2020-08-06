@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Crypto - X.509, Signature verficiation.
+ * IPRT - Crypto - X.509, Signature verification.
  */
 
 /*
