@@ -388,7 +388,7 @@ static int rtCrPkcs7VerifyFindDigest(PRTCRDIGEST phDigest, PCRTCRPKCS7SIGNEDDATA
  * @param   pSignedData         The SignedData.
  * @param   hDigests            The digest corresponding to
  *                              pSignerInfo->DigestAlgorithm.
- * @param   fFlags              Verficiation flags.
+ * @param   fFlags              Verification flags.
  * @param   hAdditionalCerts    Store containing optional certificates,
  *                              optional.
  * @param   hTrustedCerts       Store containing trusted certificates, required.
@@ -516,7 +516,7 @@ static int rtCrPkcs7VerifySignerInfo(PCRTCRPKCS7SIGNERINFO pSignerInfo, PCRTCRPK
                     rc = RTCrPkixSignatureVerifyOctetString(hSignature, hDigest, &pSignerInfo->EncryptedDigest);
                     if (RT_FAILURE(rc))
                         rc = RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_SIGNATURE_VERIFICATION_FAILED,
-                                           "Signature verficiation failed: %Rrc", rc);
+                                           "Signature verification failed: %Rrc", rc);
                     RTCrPkixSignatureRelease(hSignature);
                 }
                 else
@@ -543,7 +543,7 @@ static int rtCrPkcs7VerifySignerInfo(PCRTCRPKCS7SIGNERINFO pSignerInfo, PCRTCRPK
  * @param   pPrimarySignerInfo  The primary signature (can be a counter
  *                              signature too if nested).
  * @param   pSignedData         The SignedData.
- * @param   fFlags              Verficiation flags.
+ * @param   fFlags              Verification flags.
  * @param   hAdditionalCerts    Store containing optional certificates,
  *                              optional.
  * @param   hTrustedCerts       Store containing trusted certificates, required.
