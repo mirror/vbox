@@ -2127,7 +2127,7 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
     /*
      * Add a blank line, just for good measure.
      */
-    int rc = RTVfsFileWrite(hVfsFileSignature, " ", 1, NULL);
+    int rc = RTVfsFileWrite(hVfsFileSignature, "\n", 1, NULL);
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "RTVfsFileWrite/signature: %Rrc", rc);
 
@@ -2202,6 +2202,8 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
                             if (iVerbosity > 1)
                                 RTMsgInfo("Created PKCS#7/CMS signature: %zu bytes, %s.",
                                           cbResult, RTCrDigestTypeToName(enmDigestType));
+                            if (enmDigestType == RTDIGESTTYPE_SHA1)
+                                RTMsgWarning("Using SHA-1 instead of SHA-3 for the PKCS#7/CMS signature.");
 
                             /*
                              * Try decode and verify the signature.
@@ -2248,28 +2250,20 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
             enmDigestType = RTDIGESTTYPE_SHA1;
     }
 
-    /** @todo Use SHA-3 instead, better diversity. @bugref{9734} */
+    /* Try SHA-3 for better diversity, only fall back on SHA1 if the private
+       key doesn't have enough bits (we skip SHA2 as it has the same variants
+       and key size requirements as SHA-3). */
     RTDIGESTTYPE enmPkcs7DigestType;
-    if (   enmDigestType == RTDIGESTTYPE_SHA1
-        || enmDigestType == RTDIGESTTYPE_SHA256
-        || enmDigestType == RTDIGESTTYPE_SHA224)
-    {
-        /* Use a SHA-512 variant: */
-        if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA512, NULL))
-            enmPkcs7DigestType = RTDIGESTTYPE_SHA512;
-        else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA384, NULL))
-            enmPkcs7DigestType = RTDIGESTTYPE_SHA384;
-        /// @todo openssl misses these in check_padding_md() in rsa_pmeth.c, causing
-        /// failure in EVP_PKEY_CTX_set_signature_md() and CMS_final().
-        //else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA512T256, NULL))
-        //    enmPkcs7DigestType = RTDIGESTTYPE_SHA512T256;
-        //else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA512T224, NULL))
-        //    enmPkcs7DigestType = RTDIGESTTYPE_SHA512T224;
-        else
-            enmPkcs7DigestType = RTDIGESTTYPE_SHA1;
-    }
-    else /* The .cert file uses SHA-512, pick SHA-256 for diversity. */
-        enmPkcs7DigestType = RTDIGESTTYPE_SHA256;
+    if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA3_512, NULL))
+        enmPkcs7DigestType = RTDIGESTTYPE_SHA3_512;
+    else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA3_384, NULL))
+        enmPkcs7DigestType = RTDIGESTTYPE_SHA3_384;
+    else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA3_256, NULL))
+        enmPkcs7DigestType = RTDIGESTTYPE_SHA3_256;
+    else if (RTCrPkixCanCertHandleDigestType(pCertificate, RTDIGESTTYPE_SHA3_224, NULL))
+        enmPkcs7DigestType = RTDIGESTTYPE_SHA3_224;
+    else
+        enmPkcs7DigestType = RTDIGESTTYPE_SHA1;
 
     /*
      * Figure the string name for the .cert file.
