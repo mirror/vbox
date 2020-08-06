@@ -202,23 +202,38 @@ void UIAction::updateIcon()
 
 void UIAction::updateText()
 {
-    /* Action-text format depends on action-pool type: */
-    switch (m_enmActionPoolType)
+    /* First of all, action-text depends on action type: */
+    switch (m_enmType)
     {
-        /* The same as menu name for Manager UI: */
-        case UIActionPoolType_Manager:
+        case UIActionType_Menu:
+        case UIActionType_PolymorphicMenu:
         {
+            /* For menu types it's very easy: */
             setText(nameInMenu());
             break;
         }
-        /* With shortcut appended for Runtime UI: */
-        case UIActionPoolType_Runtime:
+        default:
         {
-            if (machineMenuAction())
-                setText(uiCommon().insertKeyToActionText(nameInMenu(),
-                                                         gShortcutPool->shortcut(actionPool(), this).primaryToPortableText()));
-            else
-                setText(nameInMenu());
+            /* For rest of action types it depends on action-pool type: */
+            switch (m_enmActionPoolType)
+            {
+                /* The same as menu name for Manager UI: */
+                case UIActionPoolType_Manager:
+                {
+                    setText(nameInMenu());
+                    break;
+                }
+                /* With shortcut appended for Runtime UI: */
+                case UIActionPoolType_Runtime:
+                {
+                    if (machineMenuAction())
+                        setText(uiCommon().insertKeyToActionText(nameInMenu(),
+                                                                 gShortcutPool->shortcut(actionPool(), this).primaryToPortableText()));
+                    else
+                        setText(nameInMenu());
+                    break;
+                }
+            }
             break;
         }
     }
@@ -280,11 +295,6 @@ void UIActionMenu::prepare()
         connect(menu(), &UIMenu::aboutToShow,
                 actionPool(), &UIActionPool::sltHandleMenuPrepare);
     }
-}
-
-void UIActionMenu::updateText()
-{
-    setText(nameInMenu());
 }
 
 
@@ -452,11 +462,6 @@ void UIActionPolymorphicMenu::prepare()
         /* Show menu: */
         showMenu();
     }
-}
-
-void UIActionPolymorphicMenu::updateText()
-{
-    setText(nameInMenu());
 }
 
 

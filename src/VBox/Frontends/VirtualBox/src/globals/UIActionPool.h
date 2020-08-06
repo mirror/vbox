@@ -270,10 +270,9 @@ protected:
     QString nameInMenu() const;
 
     /** Updates action icon. */
-    virtual void updateIcon();
-
+    void updateIcon();
     /** Updates action text accordingly. */
-    virtual void updateText();
+    void updateText();
 
     /** Simplifies passed @a strText by removing dots and ampersands.
       * @note Used to simplify action names for tool-tip needs. */
@@ -338,9 +337,6 @@ private:
 
     /** Prepare routine. */
     void prepare();
-
-    /** Updates action text accordingly. */
-    virtual void updateText();
 };
 
 
@@ -463,9 +459,6 @@ private:
 
     /** Prepare routine. */
     void prepare();
-
-    /** Updates action text accordingly. */
-    virtual void updateText();
 
 private:
 
