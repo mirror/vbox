@@ -1112,8 +1112,8 @@ protected:
     }
 };
 
-/** Polymorphic menu action extension, used as 'Perform Discard' action class. */
-class UIActionSimpleManagerCommonPerformDiscard : public UIActionPolymorphicMenu
+/** Simple menu action extension, used as 'Perform Discard' action class. */
+class UIActionSimpleManagerCommonPerformDiscard : public UIActionSimple
 {
     Q_OBJECT;
 
@@ -1121,13 +1121,10 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleManagerCommonPerformDiscard(UIActionPool *pParent)
-        : UIActionPolymorphicMenu(pParent,
-                                  ":/vm_discard_32px.png", ":/vm_discard_16px.png",
-                                  ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png")
-    {
-        /* Hide menu always: */
-        hideMenu();
-    }
+        : UIActionSimple(pParent,
+                         ":/vm_discard_32px.png", ":/vm_discard_16px.png",
+                         ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png")
+    {}
 
 protected:
 
