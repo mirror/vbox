@@ -82,6 +82,15 @@ RTDECL(RTDIGESTTYPE) RTCrX509AlgorithmIdentifier_QueryDigestType(PCRTCRX509ALGOR
         return RTDIGESTTYPE_SHA512T224;
     if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256))
         return RTDIGESTTYPE_SHA512T256;
+
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224))
+        return RTDIGESTTYPE_SHA3_224;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256))
+        return RTDIGESTTYPE_SHA3_256;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384))
+        return RTDIGESTTYPE_SHA3_384;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512))
+        return RTDIGESTTYPE_SHA3_512;
     return RTDIGESTTYPE_INVALID;
 }
 
@@ -113,6 +122,14 @@ RTDECL(uint32_t) RTCrX509AlgorithmIdentifier_QueryDigestSize(PCRTCRX509ALGORITHM
         return 224 / 8;
     if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256))
         return 256 / 8;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224))
+        return 224 / 8;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256))
+        return 256 / 8;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384))
+        return 384 / 8;
+    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512))
+        return 512 / 8;
     if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
         return 512 / 8;
 
@@ -181,6 +198,26 @@ RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestOidAndEncryptedDigestOid(co
         if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA))
             return 0;
     }
+    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224))
+    {
+        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224_WITH_RSA))
+            return 0;
+    }
+    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256))
+    {
+        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256_WITH_RSA))
+            return 0;
+    }
+    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384))
+    {
+        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384_WITH_RSA))
+            return 0;
+    }
+    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512))
+    {
+        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512_WITH_RSA))
+            return 0;
+    }
     else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
     {
         /* ?? */
@@ -234,6 +271,18 @@ RTDECL(const char *) RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOi
         if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256)
             || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA))
             return RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA;
+        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224)
+            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224_WITH_RSA))
+            return RTCRX509ALGORITHMIDENTIFIERID_SHA3_224_WITH_RSA;
+        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256)
+            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256_WITH_RSA))
+            return RTCRX509ALGORITHMIDENTIFIERID_SHA3_256_WITH_RSA;
+        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384)
+            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384_WITH_RSA))
+            return RTCRX509ALGORITHMIDENTIFIERID_SHA3_384_WITH_RSA;
+        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512)
+            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512_WITH_RSA))
+            return RTCRX509ALGORITHMIDENTIFIERID_SHA3_512_WITH_RSA;
 
         /* if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
             return ???; */

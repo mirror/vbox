@@ -111,13 +111,29 @@ static const uint8_t g_abSha224[] =
 {/* {          {          2.16.840.1.101.3.4.2.4 (SHA-224),                         NULL },     hash octet-string } */
     0x30,0x2d, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x04,   0x05,0x00,  0x04,0x1c
 };
-static const uint8_t g_abSha512T224[] =
+static const uint8_t g_abSha512t224[] =
 {/* {          {          2.16.840.1.101.3.4.2.5 (SHA-512T224),                     NULL },     hash octet-string } */
     0x30,0x2d, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x05,   0x05,0x00,  0x04,0x1c
 };
-static const uint8_t g_abSha512T256[] =
+static const uint8_t g_abSha512t256[] =
 {/* {          {          2.16.840.1.101.3.4.2.6 (SHA-512T256),                     NULL },     hash octet-string } */
     0x30,0x31, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x06,   0x05,0x00,  0x04,0x20
+};
+static const uint8_t g_abSha3t224[] =
+{/* {          {          2.16.840.1.101.3.4.2.7 (SHA3-224),                        NULL },     hash octet-string } */
+    0x30,0x31, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x07,   0x05,0x00,  0x04,0x1c
+};
+static const uint8_t g_abSha3t256[] =
+{/* {          {          2.16.840.1.101.3.4.2.8 (SHA3-256),                        NULL },     hash octet-string } */
+    0x30,0x31, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x08,   0x05,0x00,  0x04,0x20
+};
+static const uint8_t g_abSha3t384[] =
+{/* {          {          2.16.840.1.101.3.4.2.9 (SHA3-384),                        NULL },     hash octet-string } */
+    0x30,0x31, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x09,   0x05,0x00,  0x04,0x30
+};
+static const uint8_t g_abSha3t512[] =
+{/* {          {          2.16.840.1.101.3.4.2.10 (SHA3-512),                       NULL },     hash octet-string } */
+    0x30,0x31, 0x30,0x0d, 0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x0a,   0x05,0x00,  0x04,0x40
 };
 /** @} */
 
@@ -137,8 +153,12 @@ static struct
     { RTDIGESTTYPE_MD5,         g_abMd5,        sizeof(g_abMd5) },
     { RTDIGESTTYPE_SHA384,      g_abSha384,     sizeof(g_abSha384) },
     { RTDIGESTTYPE_SHA224,      g_abSha224,     sizeof(g_abSha224) },
-    { RTDIGESTTYPE_SHA512T224,  g_abSha512T224, sizeof(g_abSha512T224)},
-    { RTDIGESTTYPE_SHA512T256,  g_abSha512T256, sizeof(g_abSha512T256)},
+    { RTDIGESTTYPE_SHA512T224,  g_abSha512t224, sizeof(g_abSha512t224)},
+    { RTDIGESTTYPE_SHA512T256,  g_abSha512t256, sizeof(g_abSha512t256)},
+    { RTDIGESTTYPE_SHA3_224,    g_abSha3t224,   sizeof(g_abSha3t224) },
+    { RTDIGESTTYPE_SHA3_256,    g_abSha3t256,   sizeof(g_abSha3t256) },
+    { RTDIGESTTYPE_SHA3_384,    g_abSha3t384,   sizeof(g_abSha3t384) },
+    { RTDIGESTTYPE_SHA3_512,    g_abSha3t512,   sizeof(g_abSha3t512) },
 };
 
 
