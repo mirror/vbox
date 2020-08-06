@@ -496,7 +496,7 @@ typedef struct RTLDROPS
      *
      * @param   pMod            Pointer to the loader module structure.
      * @param   pfnCallback     Callback that does the signature and certificate
-     *                          verficiation.
+     *                          verification.
      * @param   pvUser          User argument for the callback.
      * @param   pErrInfo        Pointer to an error info buffer. Optional.
      */
