@@ -32,16 +32,22 @@
 #define RTSHA3_ROUNDS   24
 
 /** @def RTSHA3_FULL_UNROLL
- * Do full loop unrolling unless we're using VS2019 as it seems to degrate
- * performances there for some reason.  With gcc 10.2.1 on a recent Intel system
- * (10890XE), this results SHA3-512 throughput (tstRTDigest-2) increasing from
- * 83532 KiB/s to 194942 KiB/s against a text size jump from 5913 to 6929 bytes.
+ * Do full loop unrolling.
+ *
+ * With gcc 10.2.1 on a recent Intel system (10890XE), this results SHA3-512
+ * throughput (tstRTDigest-2) increasing from 83532 KiB/s to 194942 KiB/s
+ * against a text size jump from 5913 to 6929 bytes, i.e. +1016 bytes.
+ *
+ * With VS2019 on a half decent AMD system (3990X), this results in SHA3-512
+ * speedup from 147676 KiB/s to about 192770 KiB/s.  The text cost is +612 bytes
+ * (4496 to 5108).  When disabling the unrolling of Rho+Pi we get a little
+ * increase 196591 KiB/s (+3821) for some reason, saving 22 bytes of code.
  *
  * For comparison, openssl 1.1.1g assembly code (AMD64) achives 264915 KiB/s,
  * which is only 36% more.  Performance is more or less exactly the same as
  * KECCAK_2X without ROL optimizations (they improve it to 203493 KiB/s).
  */
-#if !defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
+#if !defined(IN_SUP_HARDENED_R3) || defined(DOXYGEN_RUNNING)
 # define RTSHA3_FULL_UNROLL
 #endif
 
@@ -146,7 +152,7 @@ static void rtSha3Keccak(RTSHA3ALTPRIVATECTX *pState)
          * 3.2.2 Rho + 3.2.3 Pi
          */
         {
-#ifndef RTSHA3_FULL_UNROLL
+#if !defined(RTSHA3_FULL_UNROLL) || defined(_MSC_VER) /* VS2019 is slightly slow with this section unrolled. go figure */
             static uint8_t const s_aidxState[] = {10,7,11,17,18,  3, 5,16, 8,21, 24, 4,15,23,19, 13,12, 2,20,14, 22, 9, 6, 1};
             static uint8_t const s_acRotate[]  = { 1,3, 6,10,15, 21,28,36,45,55,  2,14,27,41,56,  8,25,43,62,18, 39,61,20,44};
             AssertCompile(RT_ELEMENTS(s_aidxState) == 24); AssertCompile(RT_ELEMENTS(s_acRotate) == 24);

@@ -2047,32 +2047,60 @@ static void testSha3_512(void)
     testGeneric("2.16.840.1.101.3.4.2.10", s_abTests, RT_ELEMENTS(s_abTests), "SHA3-512", RTDIGESTTYPE_SHA3_512, VINF_SUCCESS);
 }
 
-int main()
+
+static unsigned checkArgs(int cArgs, char **papszArgs, const char *pszName, const char *pszFamily)
+{
+    if (cArgs <= 1)
+        return 1;
+    size_t const cchName   = strlen(pszName);
+    size_t const cchFamily = strlen(pszFamily);
+    for (int i = 1; i < cArgs; i++)
+    {
+        const char  *pszArg = papszArgs[i];
+        const char  *pszSep = strpbrk(pszArg, ":=");
+        size_t const cchCur = pszSep ? (size_t)(pszSep - pszArg) : strlen(pszArg);
+        if (   (cchCur == cchName   && RTStrNICmp(pszArg, pszName, cchCur) == 0)
+            || (cchCur == cchFamily && RTStrNICmp(pszArg, pszFamily, cchCur) == 0) )
+        {
+            if (!pszSep || pszSep[1] == '\0')
+                return 1;
+            return RTStrToUInt32(pszSep + 1);
+        }
+    }
+    return 0;
+}
+
+
+int main(int argc, char **argv)
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTDigest-2", &hTest);
-    if (rc)
-        return rc;
+    RTEXITCODE rcExit = RTTestInitExAndCreate(argc, &argv, 0, "tstRTDigest-2", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
     RTTestBanner(hTest);
 
-    testMd2();
-    testMd4();
-    testMd5();
-    testSha1();
-    testSha256();
-    testSha224();
-    testSha512();
-    testSha384();
+#define DO(a_szName, a_szFamily, a_fnTestExpr) do { \
+            unsigned const cTimes = checkArgs(argc, argv, a_szName, a_szFamily); \
+            for (unsigned i = 0; i < cTimes; i++) { a_fnTestExpr; } \
+        } while (0)
+    DO("MD2",    "MD",   testMd2());
+    DO("MD4",    "MD",   testMd4());
+    DO("MD5",    "MD",   testMd5());
+    DO("SHA1",   "SHA",  testSha1());
+    DO("SHA256", "SHA2", testSha256());
+    DO("SHA224", "SHA2", testSha224());
+    DO("SHA512", "SHA2", testSha512());
+    DO("SHA384", "SHA2", testSha384());
 #ifndef IPRT_WITHOUT_SHA512T224
-    testSha512t224();
+    DO("SHA512T224", "SHA2", testSha512t224());
 #endif
 #ifndef IPRT_WITHOUT_SHA512T256
-    testSha512t256();
+    DO("SHA512T256", "SHA2", testSha512t256());
 #endif
-    testSha3_224();
-    testSha3_256();
-    testSha3_384();
-    testSha3_512();
+    DO("SHA3-224", "SHA3", testSha3_224());
+    DO("SHA3-256", "SHA3", testSha3_256());
+    DO("SHA3-384", "SHA3", testSha3_384());
+    DO("SHA3-512", "SHA3", testSha3_512());
 
     return RTTestSummaryAndDestroy(hTest);
 }
