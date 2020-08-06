@@ -53,7 +53,6 @@ enum UIActionType
     UIActionType_Menu,
     UIActionType_Simple,
     UIActionType_Toggle,
-    UIActionType_Polymorphic,
     UIActionType_PolymorphicMenu
 };
 
@@ -265,6 +264,9 @@ protected:
     /** Constructs action passing @a pParent to the base-class.
       * @param  enmType  Brings the action type. */
     UIAction(UIActionPool *pParent, UIActionType enmType, bool fMachineMenuAction = false);
+
+    /** Handles state change. */
+    virtual void handleStateChange() {}
 
     /** Returns current action name in menu. */
     QString nameInMenu() const;

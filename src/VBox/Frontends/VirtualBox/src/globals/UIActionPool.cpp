@@ -129,6 +129,7 @@ void UIAction::setState(int iState)
     m_iState = iState;
     updateIcon();
     retranslateUi();
+    handleStateChange();
 }
 
 void UIAction::setIcon(int iState, const QIcon &icon)
