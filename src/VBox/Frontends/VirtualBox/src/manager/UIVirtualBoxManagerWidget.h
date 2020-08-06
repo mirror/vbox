@@ -196,6 +196,12 @@ public:
         bool isCurrentStateItemSelected() const;
     /** @} */
 
+    /** @name Tool-bar stuff.
+      * @{ */
+        /** Updates tool-bar menu buttons. */
+        void updateToolBarMenuButtons(bool fSeparateMenuSection);
+    /** @} */
+
 public slots:
 
     /** @name Tool-bar stuff.

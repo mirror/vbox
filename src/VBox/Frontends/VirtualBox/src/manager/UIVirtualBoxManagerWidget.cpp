@@ -230,6 +230,13 @@ bool UIVirtualBoxManagerWidget::isCurrentStateItemSelected() const
     return m_pPaneToolsMachine->isCurrentStateItemSelected();
 }
 
+void UIVirtualBoxManagerWidget::updateToolBarMenuButtons(bool fSeparateMenuSection)
+{
+    QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
+    if (pButton)
+        pButton->setPopupMode(fSeparateMenuSection ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
+}
+
 void UIVirtualBoxManagerWidget::sltHandleToolBarContextMenuRequest(const QPoint &position)
 {
     /* Populate toolbar actions: */

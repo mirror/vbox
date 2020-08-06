@@ -3041,19 +3041,13 @@ void UIVirtualBoxManager::updateActionsAppearance()
     {
         actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->setState(pItem->isItemPoweredOff() ? 0 : 1);
         actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->setState(pItem->isItemPoweredOff() ? 0 : 1);
-        /// @todo Hmm, fix it?
-//        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
-//        if (pButton)
-//            pButton->setPopupMode(pItem->isItemPoweredOff() ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
+        m_pWidget->updateToolBarMenuButtons(pItem->isItemPoweredOff());
     }
     else
     {
         actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow)->setState(0);
         actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)->setState(0);
-        /// @todo Hmm, fix it?
-//        QToolButton *pButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow)));
-//        if (pButton)
-//            pButton->setPopupMode(pItem->isItemPoweredOff() ? QToolButton::MenuButtonPopup : QToolButton::DelayedPopup);
+        m_pWidget->updateToolBarMenuButtons(true /* separate menu section? */);
     }
 
     /* Pause/Resume action is deremined by 1st started item: */
