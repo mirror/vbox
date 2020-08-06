@@ -779,7 +779,7 @@ void UIPerformanceMonitor::setMachine(const CMachine &comMachine)
     if (comMachine.isNull())
         return;
 
-    if (!m_comSession.isNull() && m_comSession.GetState() == KSessionState_Locked)
+    if (!m_comSession.isNull())
         m_comSession.UnlockMachine();
 
     m_comMachine = comMachine;
