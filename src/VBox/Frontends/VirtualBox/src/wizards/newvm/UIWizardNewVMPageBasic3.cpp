@@ -297,8 +297,16 @@ void UIWizardNewVMPageBasic3::initializePage()
     /* Translate page: */
     retranslateUi();
 
+    if (!field("type").canConvert<CGuestOSType>())
+        return;
+
+    CGuestOSType type = field("type").value<CGuestOSType>();
+    ULONG recommendedRam = type.GetRecommendedRAM();
+    m_pBaseMemoryEditor->setValue(recommendedRam);
+
+
     /* Prepare initial disk choice: */
-    if (field("type").value<CGuestOSType>().GetRecommendedHDD() != 0)
+    if (type.GetRecommendedHDD() != 0)
     {
         if (m_pDiskCreate)
         {
