@@ -34,7 +34,6 @@
 /* Forward declarations: */
 class QKeySequence;
 class QString;
-class UIActionPolymorphicMenu;
 class UIActionPool;
 class UIActionPoolRuntime;
 class UIActionPoolManager;
@@ -202,16 +201,19 @@ class SHARED_LIBRARY_STUFF UIAction : public QAction
 
 public:
 
-    /** Returns action type. */
-    UIActionType type() const { return m_enmType; }
-    /** Returns whether this is machine-menu action. */
-    bool machineMenuAction() const { return m_fMachineMenuAction; }
-
-    /** Returns menu contained by this action. */
-    UIMenu *menu() const;
+    /** Constructs action passing @a pParent to the base-class.
+      * @param  enmType  Brings the action type. */
+    UIAction(UIActionPool *pParent, UIActionType enmType, bool fMachineMenuAction = false);
+    /** Destructs action. */
+    virtual ~UIAction() /* override */ { delete menu(); }
 
     /** Returns action-pool this action belongs to. */
     UIActionPool *actionPool() const { return m_pActionPool; }
+    /** Returns action type. */
+    UIActionType type() const { return m_enmType; }
+
+    /** Returns menu contained by this action. */
+    UIMenu *menu() const;
 
     /** Returns current action state. */
     int state() const { return m_iState; }
@@ -224,12 +226,12 @@ public:
     void setIcon(const QIcon &icon);
 
     /** Returns current action name. */
-    const QString &name() const { return m_strName; }
+    QString name() const { return m_strName; }
     /** Defines current action name. */
     void setName(const QString &strName);
 
     /** Returns action shortcut scope. */
-    const QString &shortcutScope() const { return m_strShortcutScope; }
+    QString shortcutScope() const { return m_strShortcutScope; }
     /** Defines action @a strShortcutScope. */
     void setShortcutScope(const QString &strShortcutScope) { m_strShortcutScope = strShortcutScope; }
 
@@ -256,14 +258,8 @@ public:
 
     /** Retranslates action. */
     virtual void retranslateUi() = 0;
-    /** Destructs action. */
-    virtual ~UIAction() /* override */ { delete menu(); }
 
 protected:
-
-    /** Constructs action passing @a pParent to the base-class.
-      * @param  enmType  Brings the action type. */
-    UIAction(UIActionPool *pParent, UIActionType enmType, bool fMachineMenuAction = false);
 
     /** Handles state change. */
     virtual void handleStateChange() {}
@@ -273,22 +269,22 @@ protected:
 
     /** Updates action icon. */
     void updateIcon();
-    /** Updates action text accordingly. */
+    /** Updates action text. */
     void updateText();
 
     /** Simplifies passed @a strText by removing dots and ampersands.
       * @note Used to simplify action names for tool-tip needs. */
     static QString simplifyText(QString strText);
 
-    /** Holds the action type. */
-    const UIActionType  m_enmType;
-    /** Holds whether this is machine-menu action. */
-    const bool          m_fMachineMenuAction;
-
     /** Holds the reference to the action-pool this action belongs to. */
     UIActionPool           *m_pActionPool;
     /** Holds the type of the action-pool this action belongs to. */
     const UIActionPoolType  m_enmActionPoolType;
+
+    /** Holds the action type. */
+    const UIActionType  m_enmType;
+    /** Holds whether this is machine-menu action. */
+    const bool          m_fMachineMenuAction;
 
     /** Holds current action state. */
     int             m_iState;
@@ -337,7 +333,7 @@ protected:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
 };
 
@@ -416,7 +412,7 @@ protected:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
 };
 
@@ -447,19 +443,19 @@ protected:
                             const QIcon &icon);
 
     /** Destructs polymorphic menu action. */
-    ~UIActionPolymorphicMenu();
+    virtual ~UIActionPolymorphicMenu() /* override */;
 
     /** Defines whether tool-tip should be shown. */
     void setShowToolTip(bool fShowToolTip);
 
-    /** Show menu. */
+    /** Shows menu. */
     void showMenu();
-    /** Hide menu. */
+    /** Hides menu. */
     void hideMenu();
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
 
 private:
@@ -481,7 +477,7 @@ class SHARED_LIBRARY_STUFF UIActionPool : public QIWithRetranslateUI3<QObject>
     typedef void (UIActionPoolManager::*PTFActionPoolManager)();
     /** Pointer to menu update-handler for Runtime sub-class. */
     typedef void (UIActionPoolRuntime::*PTFActionPoolRuntime)();
-    /** Union for two defines above. */
+    /** Union for three defines above. */
     union PointerToFunction
     {
         PTFActionPool ptf;
@@ -510,10 +506,10 @@ public:
       * used to initialize shortcuts-pool from action-pool of passed @a enmType. */
     static void createTemporary(UIActionPoolType enmType);
 
-    /** Cast action-pool to Runtime one. */
-    UIActionPoolRuntime *toRuntime();
     /** Cast action-pool to Manager one. */
     UIActionPoolManager *toManager();
+    /** Cast action-pool to Runtime one. */
+    UIActionPoolRuntime *toRuntime();
 
     /** Returns action-pool type. */
     UIActionPoolType type() const { return m_enmType; }

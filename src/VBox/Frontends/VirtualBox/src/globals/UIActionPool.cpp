@@ -101,10 +101,10 @@ bool UIMenu::event(QEvent *pEvent)
 
 UIAction::UIAction(UIActionPool *pParent, UIActionType enmType, bool fMachineMenuAction /* = false */)
     : QAction(pParent)
-    , m_enmType(enmType)
-    , m_fMachineMenuAction(fMachineMenuAction)
     , m_pActionPool(pParent)
     , m_enmActionPoolType(pParent->type())
+    , m_enmType(enmType)
+    , m_fMachineMenuAction(fMachineMenuAction)
     , m_iState(0)
     , m_fShortcutHidden(false)
 {
@@ -227,7 +227,7 @@ void UIAction::updateText()
                 /* With shortcut appended for Runtime UI: */
                 case UIActionPoolType_Runtime:
                 {
-                    if (machineMenuAction())
+                    if (m_fMachineMenuAction)
                         setText(uiCommon().insertKeyToActionText(nameInMenu(),
                                                                  gShortcutPool->shortcut(actionPool(), this).primaryToPortableText()));
                     else
@@ -512,7 +512,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Close' action class. */
 class UIActionSimplePerformClose : public UIActionSimple
 {
@@ -608,7 +607,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Minimize' action class. */
 class UIActionSimpleMinimize : public UIActionSimple
 {
@@ -654,7 +652,6 @@ protected:
 };
 #endif /* VBOX_WS_MAC */
 
-
 /** Menu action extension, used as 'Help' menu class. */
 class UIActionMenuHelp : public UIActionMenu
 {
@@ -693,7 +690,6 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Help"));
     }
 };
-
 
 /** Simple action extension, used as 'Contents' action class. */
 class UIActionSimpleContents : public UIActionSimple
@@ -752,7 +748,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Web Site' action class. */
 class UIActionSimpleWebSite : public UIActionSimple
 {
@@ -798,7 +793,6 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product web site"));
     }
 };
-
 
 /** Simple action extension, used as 'Bug Tracker' action class. */
 class UIActionSimpleBugTracker : public UIActionSimple
@@ -846,7 +840,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Forums' action class. */
 class UIActionSimpleForums : public UIActionSimple
 {
@@ -892,7 +885,6 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product forums"));
     }
 };
-
 
 /** Simple action extension, used as 'Oracle' action class. */
 class UIActionSimpleOracle : public UIActionSimple
@@ -940,7 +932,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Reset Warnings' action class. */
 class UIActionSimpleResetWarnings : public UIActionSimple
 {
@@ -987,7 +978,6 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Go back to showing all suppressed warnings and messages"));
     }
 };
-
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 /** Simple action extension, used as 'Network Access Manager' action class. */
@@ -1037,7 +1027,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Check for Updates' action class. */
 class UIActionSimpleCheckForUpdates : public UIActionSimple
 {
@@ -1085,7 +1074,6 @@ protected:
     }
 };
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
 
 /** Simple action extension, used as 'About' action class. */
 class UIActionSimpleAbout : public UIActionSimple
@@ -1145,7 +1133,6 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display a window with product information"));
     }
 };
-
 
 /** Simple action extension, used as 'Preferences' action class. */
 class UIActionSimplePreferences : public UIActionSimple
@@ -1568,7 +1555,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Copy to Guest' in file manager action class. */
 class UIActionMenuFileManagerCopyToGuest : public UIActionSimple
 {
@@ -1848,7 +1834,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Perform GoHome' in file manager action class. */
 class UIActionMenuFileManagerGoHome : public UIActionSimple
 {
@@ -1887,7 +1872,6 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
-
 
 /** Simple action extension, used as 'Perform Delete' in file manager action class. */
 class UIActionMenuFileManagerDelete : public UIActionSimple
@@ -1967,7 +1951,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Perform Rename' in file manager action class. */
 class UIActionMenuFileManagerRename : public UIActionSimple
 {
@@ -2043,7 +2026,6 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
-
 
 /** Simple action extension, used as 'Perform Copy' in file manager action class. */
 class UIActionMenuFileManagerCopy : public UIActionSimple
@@ -2197,7 +2179,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Invert Selection' in file manager action class. */
 class UIActionMenuFileManagerInvertSelection : public UIActionSimple
 {
@@ -2236,7 +2217,6 @@ protected:
     }
 };
 
-
 /** Simple action extension, used as 'Show Properties' in file manager action class. */
 class UIActionMenuFileManagerShowProperties : public UIActionSimple
 {
@@ -2274,7 +2254,6 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
-
 
 /** Menu action extension, used as 'Performance' menu class. */
 class UIActionMenuSelectorPerformance : public UIActionMenu
@@ -2388,14 +2367,14 @@ UIActionPool::UIActionPool(UIActionPoolType enmType, bool fTemporary /* = false 
 {
 }
 
-UIActionPoolRuntime *UIActionPool::toRuntime()
-{
-    return qobject_cast<UIActionPoolRuntime*>(this);
-}
-
 UIActionPoolManager *UIActionPool::toManager()
 {
     return qobject_cast<UIActionPoolManager*>(this);
+}
+
+UIActionPoolRuntime *UIActionPool::toRuntime()
+{
+    return qobject_cast<UIActionPoolRuntime*>(this);
 }
 
 QActionGroup *UIActionPool::actionGroup(int iIndex) const
@@ -2560,12 +2539,10 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_M_GuestSubmenu] = new UIActionMenuFileManagerGuestSubmenu(this);
     m_pool[UIActionIndex_M_FileManager_S_CopyToGuest] = new  UIActionMenuFileManagerCopyToGuest(this);
     m_pool[UIActionIndex_M_FileManager_S_CopyToHost] = new  UIActionMenuFileManagerCopyToHost(this);
-
     m_pool[UIActionIndex_M_FileManager_T_Options] = new UIActionMenuFileManagerOptions(this);
     m_pool[UIActionIndex_M_FileManager_T_Log] = new UIActionMenuFileManagerLog(this);
     m_pool[UIActionIndex_M_FileManager_T_Operations] = new UIActionMenuFileManagerOperations(this);
     m_pool[UIActionIndex_M_FileManager_T_Session] = new UIActionMenuFileManagerSession(this);
-
     m_pool[UIActionIndex_M_FileManager_S_Host_GoUp] = new UIActionMenuFileManagerGoUp(this);
     m_pool[UIActionIndex_M_FileManager_S_Guest_GoUp] = new UIActionMenuFileManagerGoUp(this);
     m_pool[UIActionIndex_M_FileManager_S_Host_GoHome] = new UIActionMenuFileManagerGoHome(this);
