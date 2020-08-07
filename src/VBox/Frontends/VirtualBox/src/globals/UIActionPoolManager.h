@@ -89,6 +89,7 @@ enum UIActionIndexMN
     UIActionIndexMN_M_Group_S_ShowInFileManager,
     UIActionIndexMN_M_Group_S_CreateShortcut,
     UIActionIndexMN_M_Group_S_Sort,
+    UIActionIndexMN_M_Group_T_Search,
 
     /* 'Machine' menu actions: */
     UIActionIndexMN_M_Machine,

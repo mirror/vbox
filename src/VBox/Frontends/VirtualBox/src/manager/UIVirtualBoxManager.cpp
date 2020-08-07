@@ -2180,6 +2180,10 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformCreateMachineShortcut);
     connect(actionPool()->action(UIActionIndexMN_M_Group_S_Sort), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformGroupSorting);
+    connect(actionPool()->action(UIActionIndexMN_M_Group_T_Search), &UIAction::toggled,
+            this, &UIVirtualBoxManager::sltPerformMachineSearchWidgetVisibilityToggling);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigMachineSearchWidgetVisibilityChanged,
+            actionPool()->action(UIActionIndexMN_M_Group_T_Search), &QAction::setChecked);
 
     /* 'Machine' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_Machine_S_New), &UIAction::triggered,
@@ -2641,6 +2645,7 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_CreateShortcut));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Search));
     }
     else
     {
@@ -2656,6 +2661,7 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Search));
     }
 }
 

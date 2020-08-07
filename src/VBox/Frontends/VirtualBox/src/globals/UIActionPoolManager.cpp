@@ -884,42 +884,6 @@ protected:
     }
 };
 
-/** Toggle action extension, used as 'Search' action class. */
-class UIActionToggleManagerMachineToggleSearch : public UIActionToggle
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleManagerMachineToggleSearch(UIActionPool *pParent)
-        : UIActionToggle(pParent,
-                         ":/search_16px.png", ":/search_16px.png",
-                         ":/search_16px.png", ":/search_16px.png") /// @todo use icons with check-boxes
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("SearchVM");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("Ctrl+F");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "S&earch"));
-        setStatusTip(QApplication::translate("UIActionPool", "Search virtual machines with respect to a search term"));
-    }
-};
-
 
 /** Menu action extension, used as 'Start or Show' menu class. */
 class UIActionStateManagerCommonStartOrShow : public UIActionMenu
@@ -1304,6 +1268,42 @@ protected:
         setName(QApplication::translate("UIActionPool", "Cr&eate Shortcut on Desktop"));
         setStatusTip(QApplication::translate("UIActionPool", "Create shortcut files to the VirtualBox Machine Definition files on your desktop"));
 #endif
+    }
+};
+
+/** Toggle action extension, used as 'Search' action class. */
+class UIActionToggleManagerCommonToggleSearch : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionToggleManagerCommonToggleSearch(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/search_16px.png", ":/search_16px.png",
+                         ":/search_16px.png", ":/search_16px.png") /// @todo use icons with check-boxes
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("SearchVM");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+F");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "S&earch"));
+        setStatusTip(QApplication::translate("UIActionPool", "Search virtual machines with respect to a search term"));
     }
 };
 
@@ -3432,6 +3432,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Group_S_ShowInFileManager] = new UIActionSimpleManagerCommonShowInFileManager(this);
     m_pool[UIActionIndexMN_M_Group_S_CreateShortcut] = new UIActionSimpleManagerCommonPerformCreateShortcut(this);
     m_pool[UIActionIndexMN_M_Group_S_Sort] = new UIActionSimpleManagerGroupPerformSort(this);
+    m_pool[UIActionIndexMN_M_Group_T_Search] = new UIActionToggleManagerCommonToggleSearch(this);
 
     /* 'Machine' actions: */
     m_pool[UIActionIndexMN_M_Machine] = new UIActionMenuManagerMachine(this);
@@ -3474,7 +3475,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Machine_S_ShowInFileManager] = new UIActionSimpleManagerCommonShowInFileManager(this);
     m_pool[UIActionIndexMN_M_Machine_S_CreateShortcut] = new UIActionSimpleManagerCommonPerformCreateShortcut(this);
     m_pool[UIActionIndexMN_M_Machine_S_SortParent] = new UIActionSimpleManagerMachinePerformSortParent(this);
-    m_pool[UIActionIndexMN_M_Machine_T_Search] = new UIActionToggleManagerMachineToggleSearch(this);
+    m_pool[UIActionIndexMN_M_Machine_T_Search] = new UIActionToggleManagerCommonToggleSearch(this);
 
     /* Global Tools actions: */
     m_pool[UIActionIndexMN_M_Tools_M_Global] = new UIActionMenuManagerToolsGlobal(this);

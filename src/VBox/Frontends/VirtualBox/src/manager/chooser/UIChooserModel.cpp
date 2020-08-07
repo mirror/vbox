@@ -1322,6 +1322,7 @@ void UIChooserModel::prepareContextMenu()
         pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_CreateShortcut));
         pMenuGroup->addSeparator();
         pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Search));
     }
 
     /* Context menu for local machine(s): */
@@ -1366,6 +1367,7 @@ void UIChooserModel::prepareContextMenu()
         pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Refresh));
         pMenuGroup->addSeparator();
         pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Sort));
+        pMenuGroup->addAction(actionPool()->action(UIActionIndexMN_M_Group_T_Search));
     }
 
     /* Context menu for cloud machine(s): */
