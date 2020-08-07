@@ -468,7 +468,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_MMIO_REGION_SIZE                      _16K
 /** Number of device table segments supported (power of 2). */
 #define IOMMU_MAX_DEV_TAB_SEGMENTS                  3
-/** Maximum host address translation level supported (inclusive). */
+/** Maximum host address translation level supported (inclusive). NOTE! If you
+ *  change this make sure to change the value in ACPI tables (DevACPI.cpp) */
 #define IOMMU_MAX_HOST_PT_LEVEL                     6
 /** The IOTLB entry magic. */
 #define IOMMU_IOTLBE_MAGIC                          0x10acce55
@@ -6033,6 +6034,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     /*
      * Initialize read-only registers.
+     * NOTE! Fields here must match their corresponding field in the ACPI tables.
      */
     /** @todo Don't remove the =0 assignment for now. It's just there so it's easier
      *        for me to see existing features that we might want to implement. Do it
