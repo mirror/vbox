@@ -707,7 +707,7 @@ static int rtHttpUpdateAutomaticProxyDisable(PRTHTTPINTERNAL pThis)
         pThis->pszProxyPassword = NULL;
     }
 
-    AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY,         (const char *)NULL) == CURLE_OK, VERR_INTERNAL_ERROR_2);
+    AssertReturn(curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, "") == CURLE_OK, VERR_INTERNAL_ERROR_2);
     if (pThis->pszProxyHost)
     {
         RTStrFree(pThis->pszProxyHost);
