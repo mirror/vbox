@@ -40,7 +40,6 @@ FORMS = \
     src/settings/machine/UIMachineSettingsSerial.ui \
     src/settings/machine/UIMachineSettingsUSB.ui \
     src/settings/machine/UIMachineSettingsUSBFilterDetails.ui \
-    src/settings/machine/UIMachineSettingsSF.ui \
     src/settings/machine/UIMachineSettingsSFDetails.ui \
     src/settings/machine/UIMachineSettingsInterface.ui
 

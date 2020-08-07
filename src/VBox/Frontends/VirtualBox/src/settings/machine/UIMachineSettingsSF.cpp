@@ -21,11 +21,14 @@
 #include <QTimer>
 
 /* GUI includes: */
+#include "QILabelSeparator.h"
+#include "QITreeWidget.h"
+#include "UICommon.h"
+#include "UIErrorString.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsSF.h"
 #include "UIMachineSettingsSFDetails.h"
-#include "UIErrorString.h"
-#include "UICommon.h"
+#include "UIToolBar.h"
 #include "VBoxUtils.h"
 
 
@@ -276,6 +279,9 @@ private:
 UIMachineSettingsSF::UIMachineSettingsSF()
     : m_pActionAdd(0), m_pActionEdit(0), m_pActionRemove(0)
     , m_pCache(0)
+    , m_pFoldersTreeWidget(0)
+    , m_pNameSeparator(0)
+    , m_pFoldersToolBar(0)
 {
     /* Prepare: */
     prepare();
@@ -355,7 +361,7 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsSF::getFromCache()
 {
     /* Clear list initially: */
-    mTwFolders->clear();
+    m_pFoldersTreeWidget->clear();
 
     /* Update root items visibility: */
     updateRootItemsVisibility();
@@ -365,8 +371,8 @@ void UIMachineSettingsSF::getFromCache()
         addSharedFolderItem(m_pCache->child(iFolderIndex).base(), false /* its new? */);
 
     /* Choose first folder as current: */
-    mTwFolders->setCurrentItem(mTwFolders->topLevelItem(0));
-    sltHandleCurrentItemChange(mTwFolders->currentItem());
+    m_pFoldersTreeWidget->setCurrentItem(m_pFoldersTreeWidget->topLevelItem(0));
+    sltHandleCurrentItemChange(m_pFoldersTreeWidget->currentItem());
 
     /* Polish page finally: */
     polishPage();
@@ -378,7 +384,7 @@ void UIMachineSettingsSF::putToCache()
     UIDataSettingsSharedFolders newFoldersData;
 
     /* For each folder type: */
-    QTreeWidgetItem *pMainRootItem = mTwFolders->invisibleRootItem();
+    QTreeWidgetItem *pMainRootItem = m_pFoldersTreeWidget->invisibleRootItem();
     for (int iFolderTypeIndex = 0; iFolderTypeIndex < pMainRootItem->childCount(); ++iFolderTypeIndex)
     {
         /* Get folder root item: */
@@ -409,10 +415,20 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
+
 void UIMachineSettingsSF::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIMachineSettingsSF::retranslateUi(this);
+    m_pNameSeparator->setText(tr("Shared &Folders"));
+    QTreeWidgetItem *pQTreeWidgetItem = m_pFoldersTreeWidget->headerItem();
+    pQTreeWidgetItem->setText(4, tr("At"));
+    pQTreeWidgetItem->setText(3, tr("Auto Mount"));
+    pQTreeWidgetItem->setText(2, tr("Access"));
+    pQTreeWidgetItem->setText(1, tr("Path"));
+    pQTreeWidgetItem->setText(0, tr("Name"));
+#ifndef QT_NO_WHATSTHIS
+    m_pFoldersTreeWidget->setWhatsThis(tr("Lists all shared folders accessible to this machine. Use 'net use x: \\\\vboxsvr\\share' to access a shared folder named <i>share</i> from a DOS-like OS, or 'mount -t vboxsf share mount_point' to access it from a Linux OS. This feature requires Guest Additions."));
+#endif // QT_NO_WHATSTHIS
+
 
     m_pActionAdd->setText(tr("Add Shared Folder"));
     m_pActionEdit->setText(tr("Edit Shared Folder"));
@@ -430,7 +446,7 @@ void UIMachineSettingsSF::retranslateUi()
 void UIMachineSettingsSF::polishPage()
 {
     /* Polish shared folders page availability: */
-    mNameSeparator->setEnabled(isMachineInValidMode());
+    m_pNameSeparator->setEnabled(isMachineInValidMode());
     m_pFoldersToolBar->setEnabled(isMachineInValidMode());
     m_pFoldersToolBar->setEnabled(isMachineInValidMode());
 
@@ -444,7 +460,7 @@ void UIMachineSettingsSF::showEvent(QShowEvent *pEvent)
     UISettingsPageMachine::showEvent(pEvent);
 
     /* Connect header-resize signal just before widget is shown after all the items properly loaded and initialized: */
-    connect(mTwFolders->header(), &QHeaderView::sectionResized, this, &UIMachineSettingsSF::sltAdjustTreeFields);
+    connect(m_pFoldersTreeWidget->header(), &QHeaderView::sectionResized, this, &UIMachineSettingsSF::sltAdjustTreeFields);
 
     /* Adjusting size after all pending show events are processed: */
     QTimer::singleShot(0, this, SLOT(sltAdjustTree()));
@@ -485,7 +501,7 @@ void UIMachineSettingsSF::sltAddFolder()
         addSharedFolderItem(newFolderData, true /* its new? */);
 
         /* Sort tree-widget before adjusting: */
-        mTwFolders->sortItems(0, Qt::AscendingOrder);
+        m_pFoldersTreeWidget->sortItems(0, Qt::AscendingOrder);
         /* Adjust tree-widget finally: */
         sltAdjustTree();
     }
@@ -494,7 +510,7 @@ void UIMachineSettingsSF::sltAddFolder()
 void UIMachineSettingsSF::sltEditFolder()
 {
     /* Check current folder item: */
-    SFTreeViewItem *pItem = static_cast<SFTreeViewItem*>(mTwFolders->currentItem());
+    SFTreeViewItem *pItem = static_cast<SFTreeViewItem*>(m_pFoldersTreeWidget->currentItem());
     AssertPtrReturnVoid(pItem);
     AssertPtrReturnVoid(pItem->parentItem());
 
@@ -537,13 +553,13 @@ void UIMachineSettingsSF::sltEditFolder()
             pRoot->insertChild(pRoot->childCount(), pItem);
 
             /* Update tree-widget: */
-            mTwFolders->scrollToItem(pItem);
-            mTwFolders->setCurrentItem(pItem);
+            m_pFoldersTreeWidget->scrollToItem(pItem);
+            m_pFoldersTreeWidget->setCurrentItem(pItem);
             sltHandleCurrentItemChange(pItem);
         }
 
         /* Sort tree-widget before adjusting: */
-        mTwFolders->sortItems(0, Qt::AscendingOrder);
+        m_pFoldersTreeWidget->sortItems(0, Qt::AscendingOrder);
         /* Adjust tree-widget finally: */
         sltAdjustTree();
     }
@@ -552,7 +568,7 @@ void UIMachineSettingsSF::sltEditFolder()
 void UIMachineSettingsSF::sltRemoveFolder()
 {
     /* Check current folder item: */
-    QTreeWidgetItem *pItem = mTwFolders->currentItem();
+    QTreeWidgetItem *pItem = m_pFoldersTreeWidget->currentItem();
     AssertPtrReturnVoid(pItem);
 
     /* Delete corresponding item: */
@@ -583,8 +599,8 @@ void UIMachineSettingsSF::sltHandleDoubleClick(QTreeWidgetItem *pItem)
 void UIMachineSettingsSF::sltHandleContextMenuRequest(const QPoint &position)
 {
     QMenu menu;
-    QTreeWidgetItem *pItem = mTwFolders->itemAt(position);
-    if (mTwFolders->isEnabled() && pItem && pItem->flags() & Qt::ItemIsSelectable)
+    QTreeWidgetItem *pItem = m_pFoldersTreeWidget->itemAt(position);
+    if (m_pFoldersTreeWidget->isEnabled() && pItem && pItem->flags() & Qt::ItemIsSelectable)
     {
         menu.addAction(m_pActionEdit);
         menu.addAction(m_pActionRemove);
@@ -594,7 +610,7 @@ void UIMachineSettingsSF::sltHandleContextMenuRequest(const QPoint &position)
         menu.addAction(m_pActionAdd);
     }
     if (!menu.isEmpty())
-        menu.exec(mTwFolders->viewport()->mapToGlobal(position));
+        menu.exec(m_pFoldersTreeWidget->viewport()->mapToGlobal(position));
 }
 
 void UIMachineSettingsSF::sltAdjustTree()
@@ -610,9 +626,9 @@ void UIMachineSettingsSF::sltAdjustTree()
      * 3 = Auto-mount flag
      * 4 = Auto mount point
      */
-    QAbstractItemView *pItemView = mTwFolders;
-    QHeaderView *pItemHeader = mTwFolders->header();
-    const int iTotal = mTwFolders->viewport()->width();
+    QAbstractItemView *pItemView = m_pFoldersTreeWidget;
+    QHeaderView *pItemHeader = m_pFoldersTreeWidget->header();
+    const int iTotal = m_pFoldersTreeWidget->viewport()->width();
 
     const int mw0 = qMax(pItemView->sizeHintForColumn(0), pItemHeader->sectionSizeHint(0));
     const int mw2 = qMax(pItemView->sizeHintForColumn(2), pItemHeader->sectionSizeHint(2));
@@ -650,16 +666,16 @@ void UIMachineSettingsSF::sltAdjustTree()
         w1 = iTotal - w0 - w2 - w3 - w4;
     }
 #endif
-    mTwFolders->setColumnWidth(0, w0);
-    mTwFolders->setColumnWidth(1, w1);
-    mTwFolders->setColumnWidth(2, w2);
-    mTwFolders->setColumnWidth(3, w3);
-    mTwFolders->setColumnWidth(4, w4);
+    m_pFoldersTreeWidget->setColumnWidth(0, w0);
+    m_pFoldersTreeWidget->setColumnWidth(1, w1);
+    m_pFoldersTreeWidget->setColumnWidth(2, w2);
+    m_pFoldersTreeWidget->setColumnWidth(3, w3);
+    m_pFoldersTreeWidget->setColumnWidth(4, w4);
 }
 
 void UIMachineSettingsSF::sltAdjustTreeFields()
 {
-    QTreeWidgetItem *pMainRoot = mTwFolders->invisibleRootItem();
+    QTreeWidgetItem *pMainRoot = m_pFoldersTreeWidget->invisibleRootItem();
     for (int i = 0; i < pMainRoot->childCount(); ++i)
     {
         SFTreeViewItem *pSubRoot = static_cast<SFTreeViewItem*>(pMainRoot->child(i));
@@ -672,10 +688,45 @@ void UIMachineSettingsSF::sltAdjustTreeFields()
     }
 }
 
+void UIMachineSettingsSF::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIMachineSettingsSF"));
+    resize(300, 228);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    m_pNameSeparator = new QILabelSeparator(this);
+    m_pNameSeparator->setObjectName(QStringLiteral("m_pNameSeparator"));
+
+    pMainLayout->addWidget(m_pNameSeparator);
+
+    QWidget *m_pFoldersTreeWidgetContainer = new QWidget(this);
+    m_pFoldersTreeWidgetContainer->setObjectName(QStringLiteral("m_pFoldersTreeWidgetContainer"));
+    QHBoxLayout *pFoldersLayout = new QHBoxLayout(m_pFoldersTreeWidgetContainer);
+    pFoldersLayout->setSpacing(3);
+    pFoldersLayout->setObjectName(QStringLiteral("pFoldersLayout"));
+    pFoldersLayout->setContentsMargins(0, 0, 0, 0);
+    m_pFoldersTreeWidget = new QITreeWidget(m_pFoldersTreeWidgetContainer);
+    m_pFoldersTreeWidget->setObjectName(QStringLiteral("m_pFoldersTreeWidget"));
+    m_pFoldersTreeWidget->setMinimumSize(QSize(0, 200));
+    m_pFoldersTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_pFoldersTreeWidget->setUniformRowHeights(true);
+    m_pFoldersTreeWidget->setAllColumnsShowFocus(true);
+
+    pFoldersLayout->addWidget(m_pFoldersTreeWidget);
+
+    m_pFoldersToolBar = new UIToolBar(m_pFoldersTreeWidgetContainer);
+    m_pFoldersToolBar->setObjectName(QStringLiteral("m_pFoldersToolBar"));
+
+    pFoldersLayout->addWidget(m_pFoldersToolBar);
+    pMainLayout->addWidget(m_pFoldersTreeWidgetContainer);
+    m_pNameSeparator->setBuddy(m_pFoldersTreeWidget);
+}
+
 void UIMachineSettingsSF::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsSF::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheSharedFolders;
@@ -698,10 +749,10 @@ void UIMachineSettingsSF::prepare()
 void UIMachineSettingsSF::prepareFoldersTree()
 {
     /* Shared Folders tree-widget created in the .ui file. */
-    AssertPtrReturnVoid(mTwFolders);
+    AssertPtrReturnVoid(m_pFoldersTreeWidget);
     {
         /* Configure tree-widget: */
-        mTwFolders->header()->setSectionsMovable(false);
+        m_pFoldersTreeWidget->header()->setSectionsMovable(false);
     }
 }
 
@@ -750,11 +801,11 @@ void UIMachineSettingsSF::prepareFoldersToolbar()
 void UIMachineSettingsSF::prepareConnections()
 {
     /* Configure tree-widget connections: */
-    connect(mTwFolders, &QITreeWidget::currentItemChanged,
+    connect(m_pFoldersTreeWidget, &QITreeWidget::currentItemChanged,
             this, &UIMachineSettingsSF::sltHandleCurrentItemChange);
-    connect(mTwFolders, &QITreeWidget::itemDoubleClicked,
+    connect(m_pFoldersTreeWidget, &QITreeWidget::itemDoubleClicked,
             this, &UIMachineSettingsSF::sltHandleDoubleClick);
-    connect(mTwFolders, &QITreeWidget::customContextMenuRequested,
+    connect(m_pFoldersTreeWidget, &QITreeWidget::customContextMenuRequested,
             this, &UIMachineSettingsSF::sltHandleContextMenuRequest);
 }
 
@@ -769,7 +820,7 @@ SFTreeViewItem *UIMachineSettingsSF::root(UISharedFolderType enmSharedFolderType
 {
     /* Search for the corresponding root item among all the top-level items: */
     SFTreeViewItem *pRootItem = 0;
-    QTreeWidgetItem *pMainRootItem = mTwFolders->invisibleRootItem();
+    QTreeWidgetItem *pMainRootItem = m_pFoldersTreeWidget->invisibleRootItem();
     for (int iFolderTypeIndex = 0; iFolderTypeIndex < pMainRootItem->childCount(); ++iFolderTypeIndex)
     {
         /* Get iterated item: */
@@ -791,7 +842,7 @@ QStringList UIMachineSettingsSF::usedList(bool fIncludeSelected)
 {
     /* Make the used names list: */
     QStringList list;
-    QTreeWidgetItemIterator it(mTwFolders);
+    QTreeWidgetItemIterator it(m_pFoldersTreeWidget);
     while (*it)
     {
         if ((*it)->parent() && (fIncludeSelected || !(*it)->isSelected()))
@@ -834,7 +885,7 @@ void UIMachineSettingsSF::setRootItemVisible(UISharedFolderType enmSharedFolderT
     if (!pRootItem)
     {
         /* Create new shared folder type item: */
-        pRootItem = new SFTreeViewItem(mTwFolders, SFTreeViewItem::FormatType_EllipsisEnd);
+        pRootItem = new SFTreeViewItem(m_pFoldersTreeWidget, SFTreeViewItem::FormatType_EllipsisEnd);
         AssertPtrReturnVoid(pRootItem);
         {
             /* Configure item: */
@@ -872,8 +923,8 @@ void UIMachineSettingsSF::addSharedFolderItem(const UIDataSettingsSharedFolder &
         /* Select this item if it's new: */
         if (fChoose)
         {
-            mTwFolders->scrollToItem(pItem);
-            mTwFolders->setCurrentItem(pItem);
+            m_pFoldersTreeWidget->scrollToItem(pItem);
+            m_pFoldersTreeWidget->setCurrentItem(pItem);
             sltHandleCurrentItemChange(pItem);
         }
     }

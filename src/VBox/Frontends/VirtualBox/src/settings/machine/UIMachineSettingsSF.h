@@ -23,22 +23,26 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIMachineSettingsSF.gen.h"
 
 /* COM includes: */
 #include "CSharedFolder.h"
 
 /* Forward declarations: */
+class QTreeWidgetItem;
+class QITreeWidget;
+class QILabelSeparator;
 class SFTreeViewItem;
+class UIToolBar;
+
 struct UIDataSettingsSharedFolder;
 struct UIDataSettingsSharedFolders;
 enum UISharedFolderType { MachineType, ConsoleType };
 typedef UISettingsCache<UIDataSettingsSharedFolder> UISettingsCacheSharedFolder;
 typedef UISettingsCachePool<UIDataSettingsSharedFolders, UISettingsCacheSharedFolder> UISettingsCacheSharedFolders;
 
+
 /** Machine settings: Shared Folders page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsSF : public UISettingsPageMachine,
-                                                 public Ui::UIMachineSettingsSF
+class SHARED_LIBRARY_STUFF UIMachineSettingsSF : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -105,6 +109,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares Widgets. */
+    void prepareWidgets();
     /** Prepares shared folders tree. */
     void prepareFoldersTree();
     /** Prepares shared folders toolbar. */
@@ -152,6 +158,13 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheSharedFolders *m_pCache;
+
+    /** @name Widgets
+      * @{ */
+        QITreeWidget *m_pFoldersTreeWidget;
+        QILabelSeparator *m_pNameSeparator;
+        UIToolBar *m_pFoldersToolBar;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSF_h */
