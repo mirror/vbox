@@ -51,8 +51,7 @@ enum UIActionType
 {
     UIActionType_Menu,
     UIActionType_Simple,
-    UIActionType_Toggle,
-    UIActionType_PolymorphicMenu
+    UIActionType_Toggle
 };
 
 /** Action indexes. */
@@ -328,13 +327,24 @@ protected:
     UIActionMenu(UIActionPool *pParent,
                  const QIcon &icon);
 
+    /** Destructs menu action. */
+    virtual ~UIActionMenu() /* override */;
+
     /** Defines whether tool-tip should be shown. */
     void setShowToolTip(bool fShowToolTip);
+
+    /** Shows menu. */
+    void showMenu();
+    /** Hides menu. */
+    void hideMenu();
 
 private:
 
     /** Prepares all. */
     void prepare();
+
+    /** Holds the menu instance. */
+    UIMenu *m_pMenu;
 };
 
 
@@ -414,54 +424,6 @@ private:
 
     /** Prepares all. */
     void prepare();
-};
-
-
-/** Abstract UIAction extension for 'Polymorphic Menu' action type. */
-class SHARED_LIBRARY_STUFF UIActionPolymorphicMenu : public UIAction
-{
-    Q_OBJECT;
-
-protected:
-
-    /** Constructs polymorphic menu action passing @a pParent to the base-class.
-      * @param  strIcon          Brings the normal-icon name.
-      * @param  strIconDisabled  Brings the disabled-icon name. */
-    UIActionPolymorphicMenu(UIActionPool *pParent,
-                            const QString &strIcon = QString(), const QString &strIconDisabled = QString());
-    /** Constructs polymorphic menu action passing @a pParent to the base-class.
-      * @param  strIconNormal          Brings the normal-icon name.
-      * @param  strIconSmall           Brings the small-icon name.
-      * @param  strIconNormalDisabled  Brings the normal-disabled-icon name.
-      * @param  strIconSmallDisabled   Brings the small-disabled-icon name. */
-    UIActionPolymorphicMenu(UIActionPool *pParent,
-                            const QString &strIconNormal, const QString &strIconSmall,
-                            const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
-    /** Constructs polymorphic menu action passing @a pParent to the base-class.
-      * @param  icon  Brings the icon. */
-    UIActionPolymorphicMenu(UIActionPool *pParent,
-                            const QIcon &icon);
-
-    /** Destructs polymorphic menu action. */
-    virtual ~UIActionPolymorphicMenu() /* override */;
-
-    /** Defines whether tool-tip should be shown. */
-    void setShowToolTip(bool fShowToolTip);
-
-    /** Shows menu. */
-    void showMenu();
-    /** Hides menu. */
-    void hideMenu();
-
-private:
-
-    /** Prepares all. */
-    void prepare();
-
-private:
-
-    /** Holds the menu instance. */
-    UIMenu *m_pMenu;
 };
 
 

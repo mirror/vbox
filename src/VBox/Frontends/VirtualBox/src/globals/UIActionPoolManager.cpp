@@ -922,7 +922,7 @@ protected:
 
 
 /** Menu action extension, used as 'Start or Show' menu class. */
-class UIActionStateManagerCommonStartOrShow : public UIActionPolymorphicMenu
+class UIActionStateManagerCommonStartOrShow : public UIActionMenu
 {
     Q_OBJECT;
 
@@ -930,9 +930,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionStateManagerCommonStartOrShow(UIActionPool *pParent)
-        : UIActionPolymorphicMenu(pParent,
-                                  ":/vm_start_32px.png", ":/vm_start_16px.png",
-                                  ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png")
+        : UIActionMenu(pParent,
+                       ":/vm_start_32px.png", ":/vm_start_16px.png",
+                       ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png")
     {}
 
 protected:

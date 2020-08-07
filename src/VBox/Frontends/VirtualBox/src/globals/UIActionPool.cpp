@@ -207,7 +207,6 @@ void UIAction::updateText()
     switch (m_enmType)
     {
         case UIActionType_Menu:
-        case UIActionType_PolymorphicMenu:
         {
             /* For menu types it's very easy: */
             setText(nameInMenu());
@@ -254,6 +253,7 @@ QString UIAction::simplifyText(QString strText)
 UIActionMenu::UIActionMenu(UIActionPool *pParent,
                            const QString &strIcon, const QString &strIconDisabled)
     : UIAction(pParent, UIActionType_Menu)
+    , m_pMenu(0)
 {
     if (!strIcon.isNull())
         setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
@@ -264,6 +264,7 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
                            const QString &strIconNormal, const QString &strIconSmall,
                            const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
     : UIAction(pParent, UIActionType_Menu)
+    , m_pMenu(0)
 {
     if (!strIconNormal.isNull())
         setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
@@ -273,28 +274,53 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
 UIActionMenu::UIActionMenu(UIActionPool *pParent,
                            const QIcon &icon)
     : UIAction(pParent, UIActionType_Menu)
+    , m_pMenu(0)
 {
     if (!icon.isNull())
         setIcon(icon);
     prepare();
 }
 
+UIActionMenu::~UIActionMenu()
+{
+    /* Hide menu: */
+    hideMenu();
+    /* Delete menu: */
+    delete m_pMenu;
+    m_pMenu = 0;
+}
+
 void UIActionMenu::setShowToolTip(bool fShowToolTip)
 {
-    UIMenu *pMenu = qobject_cast<UIMenu*>(menu());
-    AssertPtrReturnVoid(pMenu);
-    pMenu->setShowToolTip(fShowToolTip);
+    AssertPtrReturnVoid(m_pMenu);
+    m_pMenu->setShowToolTip(fShowToolTip);
+}
+
+void UIActionMenu::showMenu()
+{
+    /* Show menu if necessary: */
+    if (!menu())
+        setMenu(m_pMenu);
+}
+
+void UIActionMenu::hideMenu()
+{
+    /* Hide menu if necessary: */
+    if (menu())
+        setMenu(0);
 }
 
 void UIActionMenu::prepare()
 {
     /* Create menu: */
-    setMenu(new UIMenu);
-    AssertPtrReturnVoid(menu());
+    m_pMenu = new UIMenu;
+    AssertPtrReturnVoid(m_pMenu);
     {
         /* Prepare menu: */
-        connect(menu(), &UIMenu::aboutToShow,
+        connect(m_pMenu, &UIMenu::aboutToShow,
                 actionPool(), &UIActionPool::sltHandleMenuPrepare);
+        /* Show menu: */
+        showMenu();
     }
 }
 
@@ -383,86 +409,6 @@ UIActionToggle::UIActionToggle(UIActionPool *pParent,
 void UIActionToggle::prepare()
 {
     setCheckable(true);
-}
-
-
-/*********************************************************************************************************************************
-*   Class UIActionPolymorphicMenu implementation.                                                                                *
-*********************************************************************************************************************************/
-
-UIActionPolymorphicMenu::UIActionPolymorphicMenu(UIActionPool *pParent,
-                                                 const QString &strIcon, const QString &strIconDisabled)
-    : UIAction(pParent, UIActionType_PolymorphicMenu)
-    , m_pMenu(0)
-{
-    if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
-    prepare();
-}
-
-UIActionPolymorphicMenu::UIActionPolymorphicMenu(UIActionPool *pParent,
-                                                 const QString &strIconNormal, const QString &strIconSmall,
-                                                 const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
-    : UIAction(pParent, UIActionType_PolymorphicMenu)
-    , m_pMenu(0)
-{
-    if (!strIconNormal.isNull())
-        setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
-    prepare();
-}
-
-UIActionPolymorphicMenu::UIActionPolymorphicMenu(UIActionPool *pParent,
-                                                 const QIcon &icon)
-    : UIAction(pParent, UIActionType_PolymorphicMenu)
-    , m_pMenu(0)
-{
-    if (!icon.isNull())
-        setIcon(icon);
-    prepare();
-}
-
-UIActionPolymorphicMenu::~UIActionPolymorphicMenu()
-{
-    /* Hide menu: */
-    hideMenu();
-    /* Delete menu: */
-    delete m_pMenu;
-    m_pMenu = 0;
-}
-
-void UIActionPolymorphicMenu::setShowToolTip(bool fShowToolTip)
-{
-    UIMenu *pMenu = qobject_cast<UIMenu*>(menu());
-    if (pMenu)
-        pMenu->setShowToolTip(fShowToolTip);
-}
-
-void UIActionPolymorphicMenu::showMenu()
-{
-    /* Show menu if necessary: */
-    if (!menu())
-        setMenu(m_pMenu);
-}
-
-void UIActionPolymorphicMenu::hideMenu()
-{
-    /* Hide menu if necessary: */
-    if (menu())
-        setMenu(0);
-}
-
-void UIActionPolymorphicMenu::prepare()
-{
-    /* Create menu: */
-    m_pMenu = new UIMenu;
-    AssertPtrReturnVoid(m_pMenu);
-    {
-        /* Prepare menu: */
-        connect(m_pMenu, &UIMenu::aboutToShow,
-                actionPool(), &UIActionPool::sltHandleMenuPrepare);
-        /* Show menu: */
-        showMenu();
-    }
 }
 
 
