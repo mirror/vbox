@@ -19,6 +19,7 @@
 #include <QHeaderView>
 #include <QMenu>
 #include <QTimer>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QILabelSeparator.h"
@@ -692,7 +693,7 @@ void UIMachineSettingsSF::prepareWidgets()
 {
     if (objectName().isEmpty())
         setObjectName(QStringLiteral("UIMachineSettingsSF"));
-    resize(300, 228);
+    resize(300, 220);
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
     pMainLayout->setContentsMargins(0, 0, 0, 0);
