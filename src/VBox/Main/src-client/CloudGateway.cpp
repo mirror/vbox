@@ -544,28 +544,31 @@ static bool getProxyForIpAddr(ComPtr<IVirtualBox> virtualBox, const com::Utf8Str
         int rc = RTHttpCreate(&hHttp);
         if (RT_FAILURE(rc))
         {
-            LogRel(("CLOUD-NET: Failed to create HTTP context (rc=%d)\n", rc));
+            LogRel(("CLOUD-NET: Failed to create HTTP context (rc=%Rrc)\n", rc));
             return false;
         }
         rc = RTHttpUseSystemProxySettings(hHttp);
         if (RT_FAILURE(rc))
         {
-            LogRel(("CLOUD-NET: Failed to use system proxy (rc=%d)\n", rc));
+            LogRel(("CLOUD-NET: Failed to use system proxy (rc=%Rrc)\n", rc));
             RTHttpDestroy(hHttp);
             return false;
         }
 
         RTHTTPPROXYINFO proxy;
-        RT_ZERO(proxy);
-        rc = RTHttpGetProxyInfoForUrl(hHttp, ("http://" + strIpAddr).c_str(), &proxy);
+        rc = RTHttpQueryProxyInfoForUrl(hHttp, ("http://" + strIpAddr).c_str(), &proxy);
         if (RT_FAILURE(rc))
         {
-            LogRel(("CLOUD-NET: Failed to get proxy for %s (rc=%d)\n", strIpAddr.c_str(), rc));
+            LogRel(("CLOUD-NET: Failed to get proxy for %s (rc=%Rrc)\n", strIpAddr.c_str(), rc));
             RTHttpDestroy(hHttp);
             return false;
         }
         switch (proxy.enmProxyType)
         {
+            case RTHTTPPROXYTYPE_NOPROXY:
+                RTHttpFreeProxyInfo(&proxy);
+                RTHttpDestroy(hHttp);
+                return false;
             case RTHTTPPROXYTYPE_HTTP:
                 strProxyType = "HTTP";
                 break;
@@ -579,11 +582,15 @@ static bool getProxyForIpAddr(ComPtr<IVirtualBox> virtualBox, const com::Utf8Str
                 strProxyType = "SOCKS5";
                 break;
             case RTHTTPPROXYTYPE_UNKNOWN:
-                LogRel(("CLOUD-NET: Unknown proxy type."));
+            case RTHTTPPROXYTYPE_INVALID:
+            case RTHTTPPROXYTYPE_END:
+            case RTHTTPPROXYTYPE_32BIT_HACK:
                 break;
         }
+        AssertStmt(strProxyType.isNotEmpty(), LogRel(("CLOUD-NET: Unknown proxy type: %d\n", proxy.enmProxyType)));
         strProxyHost = proxy.pszProxyHost;
-        strProxyPort = BstrFmt("%d", proxy.uProxyPort);
+        if (proxy.uProxyPort != UINT32_MAX)
+            strProxyPort.printf("%d", proxy.uProxyPort);
         RTHttpFreeProxyInfo(&proxy);
         RTHttpDestroy(hHttp);
     }

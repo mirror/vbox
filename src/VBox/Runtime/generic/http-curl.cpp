@@ -3555,47 +3555,82 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
 }
 
 
-RTR3DECL(int) RTHttpGetProxyInfoForUrl(RTHTTP hHttp, const char *pcszUrl, PRTHTTPPROXYINFO pProxy)
+RTR3DECL(int) RTHttpQueryProxyInfoForUrl(RTHTTP hHttp, const char *pszUrl, PRTHTTPPROXYINFO pProxy)
 {
-    PRTHTTPINTERNAL pThis = hHttp;
-    rtHttpResetState(pThis);
-    int rc = rtHttpApplySettings(pThis, pcszUrl);
-    if (RT_FAILURE(rc))
-        return rc;
+    /*
+     * Validate input and clear output.
+     */
+    Log(("RTHttpQueryProxyInfoForUrl: hHttp=%p pszUrl=%s pProxy=%s\n", hHttp, pszUrl, pProxy));
+    RT_ZERO(*pProxy);
+    pProxy->uProxyPort = UINT32_MAX;
 
-    switch (pThis->enmProxyType)
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+
+    /*
+     * Set up the proxy for the URL.
+     */
+    rtHttpResetState(pThis);
+    /** @todo this does a bit too much (we don't need to set up SSL for instance). */
+    int rc = rtHttpApplySettings(pThis, pszUrl);
+    if (RT_SUCCESS(rc))
     {
-        case CURLPROXY_HTTP:
-        case CURLPROXY_HTTP_1_0:
-            pProxy->enmProxyType = RTHTTPPROXYTYPE_HTTP;
-            break;
+        /*
+         * Copy out the result.
+         */
+        if (pThis->fNoProxy)
+            pProxy->enmProxyType = RTHTTPPROXYTYPE_NOPROXY;
+        else
+        {
+            switch (pThis->enmProxyType)
+            {
+                case CURLPROXY_HTTP:
 #ifdef CURL_AT_LEAST_VERSION
-# if CURL_AT_LEAST_VERSION(7,52,0)
-        case CURLPROXY_HTTPS:
-            pProxy->enmProxyType = RTHTTPPROXYTYPE_HTTPS;
-            break;
+# if CURL_AT_LEAST_VERSION(7,19,4)
+                case CURLPROXY_HTTP_1_0:
 # endif
 #endif
-        case CURLPROXY_SOCKS4:
-        case CURLPROXY_SOCKS4A:
-            pProxy->enmProxyType = RTHTTPPROXYTYPE_SOCKS4;
-            break;
-        case CURLPROXY_SOCKS5:
-        case CURLPROXY_SOCKS5_HOSTNAME:
-            pProxy->enmProxyType = RTHTTPPROXYTYPE_SOCKS5;
-            break;
-        default:
-            pProxy->enmProxyType = RTHTTPPROXYTYPE_UNKNOWN;
-            break;
+                    pProxy->enmProxyType = RTHTTPPROXYTYPE_HTTP;
+                    break;
+#ifdef CURL_AT_LEAST_VERSION
+# if CURL_AT_LEAST_VERSION(7,52,0)
+                case CURLPROXY_HTTPS:
+                    pProxy->enmProxyType = RTHTTPPROXYTYPE_HTTPS;
+                    break;
+# endif
+#endif
+                case CURLPROXY_SOCKS4:
+                case CURLPROXY_SOCKS4A:
+                    pProxy->enmProxyType = RTHTTPPROXYTYPE_SOCKS4;
+                    break;
+                case CURLPROXY_SOCKS5:
+                case CURLPROXY_SOCKS5_HOSTNAME:
+                    pProxy->enmProxyType = RTHTTPPROXYTYPE_SOCKS5;
+                    break;
+                default:
+                    AssertFailed();
+                    pProxy->enmProxyType = RTHTTPPROXYTYPE_UNKNOWN;
+                    break;
+            }
+            pProxy->uProxyPort = pThis->uProxyPort;
+            if (pThis->pszProxyHost != NULL)
+            {
+                rc = RTStrDupEx(&pProxy->pszProxyHost, pThis->pszProxyHost);
+                if (pThis->pszProxyUsername && RT_SUCCESS(rc))
+                    rc = RTStrDupEx(&pProxy->pszProxyUsername, pThis->pszProxyUsername);
+                if (pThis->pszProxyPassword && RT_SUCCESS(rc))
+                    rc = RTStrDupEx(&pProxy->pszProxyPassword, pThis->pszProxyPassword);
+                if (RT_FAILURE(rc))
+                    RTHttpFreeProxyInfo(pProxy);
+            }
+            else
+            {
+                AssertFailed();
+                rc = VERR_INTERNAL_ERROR;
+            }
+        }
     }
-    if (pThis->pszProxyHost == NULL)
-        return VERR_INTERNAL_ERROR;
-    pProxy->pszProxyHost = RTStrDup(pThis->pszProxyHost);
-    pProxy->uProxyPort = pThis->uProxyPort;
-    pProxy->pszProxyUsername = NULL;
-    pProxy->pszProxyPassword = NULL;
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -3606,6 +3641,11 @@ RTR3DECL(int) RTHttpFreeProxyInfo(PRTHTTPPROXYINFO pProxy)
         RTStrFree(pProxy->pszProxyHost);
         RTStrFree(pProxy->pszProxyUsername);
         RTStrFree(pProxy->pszProxyPassword);
+        pProxy->pszProxyHost     = NULL;
+        pProxy->pszProxyUsername = NULL;
+        pProxy->pszProxyPassword = NULL;
+        pProxy->enmProxyType     = RTHTTPPROXYTYPE_INVALID;
+        pProxy->uProxyPort       = UINT32_MAX;
     }
     return VINF_SUCCESS;
 }

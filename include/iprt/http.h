@@ -664,27 +664,33 @@ RTR3DECL(int) RTHttpSetHeaderCallback(RTHTTP hHttp, PFNRTHTTPHEADERCALLBACK pfnC
 /**
  * Supported proxy types.
  */
-typedef enum {
-    RTHTTPPROXYTYPE_UNKNOWN,
+typedef enum RTHTTPPROXYTYPE
+{
+    RTHTTPPROXYTYPE_INVALID = 0,
+    RTHTTPPROXYTYPE_NOPROXY,
     RTHTTPPROXYTYPE_HTTP,
     RTHTTPPROXYTYPE_HTTPS,
     RTHTTPPROXYTYPE_SOCKS4,
-    RTHTTPPROXYTYPE_SOCKS5
+    RTHTTPPROXYTYPE_SOCKS5,
+    RTHTTPPROXYTYPE_UNKNOWN,
+    RTHTTPPROXYTYPE_END,
+    RTHTTPPROXYTYPE_32BIT_HACK = 0x7fffffff
 } RTHTTPPROXYTYPE;
 
 /**
- * Proxy information structure.
+ * Proxy information returned by RTHttpQueryProxyInfoForUrl.
  */
-typedef struct {
-    /** Proxy host name (RTStrFree). */
+typedef struct RTHTTPPROXYINFO
+{
+    /** Proxy host name. */
     char               *pszProxyHost;
     /** Proxy port number (UINT32_MAX if not specified). */
     uint32_t            uProxyPort;
     /** The proxy type (RTHTTPPROXYTYPE_HTTP, RTHTTPPROXYTYPE_SOCKS5, ++). */
     RTHTTPPROXYTYPE     enmProxyType;
-    /** Proxy username (RTStrFree). */
+    /** Proxy username. */
     char               *pszProxyUsername;
-    /** Proxy password (RTStrFree). */
+    /** Proxy password. */
     char               *pszProxyPassword;
 } RTHTTPPROXYINFO;
 /** A pointer to proxy information structure. */
@@ -695,20 +701,19 @@ typedef RTHTTPPROXYINFO *PRTHTTPPROXYINFO;
  *
  * @returns IPRT status code.
  * @param   hHttp           The HTTP client handle.
- * @param   pcszUrl         The URL that needs to be accessed via proxy.
- * @param   pProxyInfo      A pointer to the structure where the proxy information to be stored.
- *
- * @note    This function allocates memory that must be released by RTHttpFreeProxyInfo.
+ * @param   pszUrl          The URL that needs to be accessed via proxy.
+ * @param   pProxyInfo      Where to return the proxy information.  This must be
+ *                          freed up by calling RTHttpFreeProxyInfo() when done.
  */
-RTR3DECL(int) RTHttpGetProxyInfoForUrl(RTHTTP hHttp, const char *pcszUrl, PRTHTTPPROXYINFO pProxyInfo);
+RTR3DECL(int) RTHttpQueryProxyInfoForUrl(RTHTTP hHttp, const char *pszUrl, PRTHTTPPROXYINFO pProxyInfo);
 
 /**
- * Release memory used for storing proxy information.
+ * Counter part to RTHttpQueryProxyInfoForUrl that releases any memory returned
+ * in the proxy info structure.
  *
  * @returns IPRT status code.
- * @param   pProxyInfo      A pointer to the proxy structure being released.
- *
- * @note    This function releases memory that has been allocated by RTHttpGetProxyInfoForUrl.
+ * @param   pProxyInfo      Pointer to proxy info returned by a successful
+ *                          RTHttpQueryProxyInfoForUrl() call.
  */
 RTR3DECL(int) RTHttpFreeProxyInfo(PRTHTTPPROXYINFO pProxyInfo);
 

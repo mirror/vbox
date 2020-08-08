@@ -2107,61 +2107,83 @@ static int composeTemplatePath(const char *pcszTemplate, Bstr& strFullPath)
     return rc;
 }
 
-static bool getSystemProxyForUrl(const com::Utf8Str &strUrl, Bstr &strProxy)
+/**
+ * @returns COM status code.
+ * @retval  S_OK if url needs proxy.
+ * @retval  S_FALSE if noproxy for the URL.
+ */
+static HRESULT getSystemProxyForUrl(const com::Utf8Str &strUrl, Bstr &strProxy)
 {
+    /** @todo r=bird: LogRel is pointless here. */
 #ifndef VBOX_WITH_PROXY_INFO
     RT_NOREF(strUrl, strProxy);
     LogRel(("CLOUD-NET: Proxy support is disabled. Using direct connection.\n"));
-    return false;
+    return S_FALSE;
 #else /* VBOX_WITH_PROXY_INFO */
-    RTHTTP hHttp;
+    HRESULT hrc = E_FAIL;
+    RTHTTP  hHttp;
     int rc = RTHttpCreate(&hHttp);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("CLOUD-NET: Failed to create HTTP context (rc=%d)\n", rc));
-        return false;
-    }
-    rc = RTHttpUseSystemProxySettings(hHttp);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("CLOUD-NET: Failed to use system proxy (rc=%d)\n", rc));
+        rc = RTHttpUseSystemProxySettings(hHttp);
+        if (RT_SUCCESS(rc))
+        {
+            RTHTTPPROXYINFO proxy;
+            rc = RTHttpQueryProxyInfoForUrl(hHttp, strUrl.c_str(), &proxy);
+            if (RT_SUCCESS(rc))
+            {
+                const char *pcszProxyScheme = "";
+                switch (proxy.enmProxyType)
+                {
+                    case RTHTTPPROXYTYPE_NOPROXY:
+                        pcszProxyScheme = NULL;
+                        hrc = S_FALSE;
+                        break;
+                    case RTHTTPPROXYTYPE_HTTP:
+                        pcszProxyScheme = "http://";
+                        break;
+                    case RTHTTPPROXYTYPE_HTTPS:
+                        pcszProxyScheme = "https://";
+                        break;
+                    case RTHTTPPROXYTYPE_SOCKS4:
+                        pcszProxyScheme = "socks4://";
+                        break;
+                    case RTHTTPPROXYTYPE_SOCKS5:
+                        pcszProxyScheme = "socks://";
+                        break;
+                    case RTHTTPPROXYTYPE_INVALID:
+                    case RTHTTPPROXYTYPE_UNKNOWN:
+                    case RTHTTPPROXYTYPE_END:
+                    case RTHTTPPROXYTYPE_32BIT_HACK:
+                        break;
+                }
+                if (pcszProxyScheme && *pcszProxyScheme != '\0')
+                {
+                    if (proxy.pszProxyUsername || proxy.pszProxyPassword)
+                        LogRel(("CLOUD-NET: Warning! Code doesn't yet handle proxy user or password. Sorry.\n"));
+                    if (proxy.uProxyPort != UINT32_MAX)
+                        strProxy.printf("%s%s:%d", pcszProxyScheme, proxy.pszProxyHost, proxy.uProxyPort);
+                    else
+                        strProxy.printf("%s%s", pcszProxyScheme, proxy.pszProxyHost);
+                    hrc = S_OK;
+                }
+                else if (pcszProxyScheme)
+                {
+                    LogRel(("CLOUD-NET: Unknown proxy type %d. Using direct connection.\n", proxy.enmProxyType));
+                    AssertFailed();
+                }
+                RTHttpFreeProxyInfo(&proxy);
+            }
+            else
+                LogRel(("CLOUD-NET: Failed to get proxy for %s (rc=%Rrc)\n", strUrl.c_str(), rc));
+        }
+        else
+            LogRel(("CLOUD-NET: Failed to use system proxy (rc=%Rrc)\n", rc));
         RTHttpDestroy(hHttp);
-        return false;
     }
-
-    RTHTTPPROXYINFO proxy;
-    RT_ZERO(proxy);
-    rc = RTHttpGetProxyInfoForUrl(hHttp, strUrl.c_str(), &proxy);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("CLOUD-NET: Failed to get proxy for %s (rc=%d)\n", strUrl.c_str(), rc));
-        RTHttpDestroy(hHttp);
-        return false;
-    }
-    const char *pcszProxyScheme = "";
-    switch (proxy.enmProxyType)
-    {
-        case RTHTTPPROXYTYPE_HTTP:
-            pcszProxyScheme = "http://";
-            break;
-        case RTHTTPPROXYTYPE_HTTPS:
-            pcszProxyScheme = "https://";
-            break;
-        case RTHTTPPROXYTYPE_SOCKS4:
-            pcszProxyScheme = "socks4://";
-            break;
-        case RTHTTPPROXYTYPE_SOCKS5:
-            pcszProxyScheme = "socks://";
-            break;
-        case RTHTTPPROXYTYPE_UNKNOWN:
-            LogRel(("CLOUD-NET: Unknown proxy type. Using direct connecton."));
-            RTHttpDestroy(hHttp);
-            return false;
-    }
-    strProxy = BstrFmt("%s%s:%d", pcszProxyScheme, proxy.pszProxyHost, proxy.uProxyPort);
-    RTHttpFreeProxyInfo(&proxy);
-    RTHttpDestroy(hHttp);
-    return true;
+    else
+        LogRel(("CLOUD-NET: Failed to create HTTP context (rc=%Rrc)\n", rc));
+    return hrc;
 #endif /* VBOX_WITH_PROXY_INFO */
 }
 
@@ -2209,11 +2231,12 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
                     return hrc;
                 break;
             case ProxyMode_System:
-                if (!getSystemProxyForUrl("https://dl.fedoraproject.org", strProxy))
-                    errorOccured(E_FAIL, "Failed to get system proxy for https://dl.fedoraproject.org. Will use direct connection.");
+                hrc = getSystemProxyForUrl("https://dl.fedoraproject.org", strProxy);
+                if (FAILED(hrc))
+                    errorOccured(hrc, "Failed to get system proxy for https://dl.fedoraproject.org. Will use direct connection.");
                 break;
             default: /* To get rid of ProxyMode_32BitHack 'warning' */
-                RTAssertPanic();
+                AssertFailed();
                 break;
         }
 
