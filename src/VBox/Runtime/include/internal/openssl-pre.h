@@ -28,6 +28,7 @@
 
 #if defined(_MSC_VER) && defined(__cplusplus)
 # pragma warning(push)
+# pragma warning(disable:4668) /* openssl-1.1.0e-x86\include\openssl/opensslconf.h(104) : warning C4668: '__GNUC__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 # if _MSC_VER >= 1700 /*RT_MSC_VER_VC120*/ /** @todo check this. 1600 (VS2010) doesn't know it and warns. */
 # pragma warning(disable:5031) /* warning C5031: #pragma warning(pop): likely mismatch, popping warning state pushed in different file */
 # endif
