@@ -1103,7 +1103,7 @@
  *          RT_NOTHROW_PROTO.
  */
 #ifdef __cplusplus
-# ifdef _MSC_VER
+# if RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/
 #  define DECL_NOTHROW(a_Type)      __declspec(nothrow) a_Type
 # elif RT_CLANG_PREREQ(6,0) || RT_GNUC_PREREQ(4,2)
 #  define DECL_NOTHROW(a_Type)      __attribute__((__nothrow__)) a_Type
@@ -1530,7 +1530,7 @@
  */
 #if RT_CLANG_PREREQ(6,0)
 # define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType a_CallConv a_Name a_Args
-#elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
 # define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType a_CallConv a_Name a_Args throw()
 #else
 # define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType a_CallConv a_Name a_Args
@@ -1556,7 +1556,7 @@
 # define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (* a_CallConv a_Name) a_Args
 #elif RT_CLANG_PREREQ(6,0)
 # define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType (a_CallConv * a_Name) a_Args
-#elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
 # define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv * a_Name) a_Args throw()
 #else
 # define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv * a_Name) a_Args
@@ -1582,7 +1582,7 @@
 # define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (* a_CallConv a_Name) a_Args
 #elif RT_CLANG_PREREQ(6,0)
 # define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType (a_CallConv *a_Name) a_Args
-#elif defined(_MSC_VER) && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
 # define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv *a_Name) a_Args throw()
 #else
 # define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv *a_Name) a_Args
