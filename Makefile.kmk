@@ -339,9 +339,9 @@ if  defined(VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER) \
 	$(TOUCH) -c -- $(PATH_TARGET)/VBoxGuestAdditions.iso
 	$(APPEND) -t $@ "done"
 
- $$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
+ $$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
 	$(RM) -f -- "$@" "$@.tmp"
-	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
+	$(SHELL) $(KBUILD_DEVTOOLS)/bin/additions.sh --cmd fetch --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
 	$(MV) -f -- "$@.tmp" "$@"
 
 endif # VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER unless win.x86+combined
@@ -377,9 +377,9 @@ $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PA
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PATH_TARGET)/UserManual_$(f).pdf)
 	$(APPEND) -t $@ "done"
 
-$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)
+$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)
 	$(RM) -f -- "$@" "$@.tmp"
-	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
+	$(SHELL) $(KBUILD_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
 	$(MV) -f -- "$@.tmp" "$@"
 
 endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
@@ -438,9 +438,9 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 	$(APPEND) -t $@ "done"
 
    $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: \
-		$(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
+		$(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
 	$(RM) -f -- "$@" "$@.tmp"
-	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
+	$(SHELL) $(KBUILD_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
 	$(MV) -f -- "$@.tmp" "$@"
 
   else # !VBOX_WITH_EFIFW_FROM_BUILD_SERVER
@@ -474,9 +474,9 @@ buildserver-extpacks_CLEANS = \
 	$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack.tmp
 
 $$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack: \
-		$(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/extpacks.sh | $$(dir $$@)
+		$(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/extpacks.sh | $$(dir $$@)
 	$(RM) -f -- "$@.tmp" "$@"
-	$(SHELL) $(PATH_DEVTOOLS)/bin/extpacks.sh --cmd fetch --filename "$@.tmp" --vbox-version "$(VBOX_VERSION_STRING_NO_PUB)" \
+	$(SHELL) $(KBUILD_DEVTOOLS)/bin/extpacks.sh --cmd fetch --filename "$@.tmp" --vbox-version "$(VBOX_VERSION_STRING_NO_PUB)" \
 		$(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
 	$(MV) -f -- "$@.tmp" "$@"
 	$(TOUCH) -- "$@"
@@ -1953,15 +1953,15 @@ snapshot-ose:
 ifndef VBOX_OSE
 	$(QUIET)$(RM) -Rf $(wildcard $(PATH_OUT)/vbox-ose-snap-*) $(wildcard $(PATH_OUT)/VirtualBox-*.tar.bz2)
 	$(call MSG_L1,Making OSE snapshot at $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING))
-	$(PATH_DEVTOOLS)/bin/ose-snapshot.sh $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING)
+	$(KBUILD_DEVTOOLS)/bin/ose-snapshot.sh $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING)
 	$(call MSG_L1,Creating OSE tarball $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2)
 	$(REDIRECT) -C $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING) -- \
-		$(PATH_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2
+		$(KBUILD_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2
 else
 	$(QUIET)$(RM) $(wildcard $(PATH_OUT)/VirtualBox-*.tar.bz2)
 	$(call MSG_L1,Creating OSE tarball $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2)
 	$(REDIRECT) -C $(PATH_ROOT) -- \
-		$(PATH_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2
+		$(KBUILD_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2
 endif
 
 

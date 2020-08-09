@@ -79,8 +79,8 @@ VBOX_MANUAL_XML_FILES_COMMON = \
 # Tool locations.
 ifndef VBOX_OSE
  # use docbook from our tools directory
- VBOX_PATH_DOCBOOK        ?= $(PATH_DEVTOOLS)/common/DocBook/v1.69.1
- VBOX_PATH_DOCBOOK_DTD    ?= $(PATH_DEVTOOLS)/common/docbook-xml/v4.5
+ VBOX_PATH_DOCBOOK        ?= $(KBUILD_DEVTOOLS)/common/DocBook/v1.69.1
+ VBOX_PATH_DOCBOOK_DTD    ?= $(KBUILD_DEVTOOLS)/common/docbook-xml/v4.5
 else
  # use docbook of the build host
  VBOX_PATH_DOCBOOK        ?= /usr/share/xml/docbook/stylesheet/docbook-xsl

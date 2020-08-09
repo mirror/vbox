@@ -516,11 +516,11 @@ endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
-PATH_S10LIBS.x86 := $(sort $(wildcard $(PATH_DEVTOOLS)/solaris.x86/s10libs/v*))
+PATH_S10LIBS.x86 := $(sort $(wildcard $(KBUILD_DEVTOOLS)/solaris.x86/s10libs/v*))
 ifneq ($(PATH_S10LIBS.x86),)
  PATH_S10LIBS.x86 := $(call lastword,$(PATH_S10LIBS.x86))
 endif
-PATH_S10LIBS.amd64 := $(sort $(wildcard $(PATH_DEVTOOLS)/solaris.amd64/s10libs/v*))
+PATH_S10LIBS.amd64 := $(sort $(wildcard $(KBUILD_DEVTOOLS)/solaris.amd64/s10libs/v*))
 ifneq ($(PATH_S10LIBS.amd64),)
  PATH_S10LIBS.amd64 := $(call lastword,$(PATH_S10LIBS.amd64))
 endif
@@ -538,7 +538,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		\
 		$(if-expr defined(VBOX_WITH_ADDITIONS_PACKING),$(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.iso,) \
-		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL), $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
+		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL), $(KBUILD_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
 		\
 		$(if $(VBOX_OSE),,$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6, \
 			$(PATH_S10LIBS.$(arch))/$(lib)))) \
@@ -615,7 +615,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	,$(NLTAB)$(LN_SYMLINK) ../VBoxGuestAdditions.iso $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/,)
 
 	$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL) \
-	,$(INSTALL) -s -m 0644 $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2 \
+	,$(INSTALL) -s -m 0644 $(KBUILD_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2 \
 		$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/libSDL-1.2.so.0,)
 
 	$(if $(VBOX_OSE),,$(foreach arch, x86 amd64, $(foreach lib, libgcc_s.so.1 libstdc++.so.6 \
