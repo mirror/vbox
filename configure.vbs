@@ -547,6 +547,16 @@ end function
 
 
 ''
+' Right pads a string with spaces to the given length
+function RightPad(str, cch)
+   if Len(str) < cch then
+      RightPad = str & String(cch - Len(str), " ")
+   else
+      RightPad = str
+   end if
+end function
+
+''
 ' Append text to the log file and echo it to stdout
 sub Print(str)
    LogPrint str
@@ -565,8 +575,9 @@ end sub
 ''
 ' Prints a success message
 sub PrintResultMsg(strTest, strResult)
+   dim cchPad
    LogPrint "** " & strTest & ": " & strResult
-   Wscript.Echo " Found "& strTest & ": " & strResult
+   Wscript.Echo " Found " & RightPad(strTest & ": ", 18) & strPad & strResult
 end sub
 
 
@@ -576,10 +587,10 @@ sub PrintResult(strTest, strPath)
    strLongPath = PathAbsLong(strPath)
    if PathAbs(strPath) <> strLongPath then
       LogPrint         "** " & strTest & ": " & strPath & " (" & UnixSlashes(strLongPath) & ")"
-      Wscript.Echo " Found " & strTest & ": " & strPath & " (" & UnixSlashes(strLongPath) & ")"
+      Wscript.Echo " Found " & RightPad(strTest & ": ", 18) & strPath & " (" & UnixSlashes(strLongPath) & ")"
    else
       LogPrint         "** " & strTest & ": " & strPath
-      Wscript.Echo " Found " & strTest & ": " & strPath
+      Wscript.Echo " Found " & RightPad(strTest & ": ", 18) & strPath
    end if
 end sub
 
@@ -1510,6 +1521,14 @@ sub CheckForXml2(strOptXml2)
    dim strPathXml2, str
    PrintHdr "libxml2"
 
+   '
+   ' Part of tarball / svn, so we can exit immediately if no path was specified.
+   '
+   if (strOptXml2 = "") then
+      PrintResultMsg "libxml2", "src/lib/libxml2-*"
+      exit sub
+   end if
+
    ' Skip if no COM/ATL.
    if g_blnDisableCOM then
       PrintResultMsg "libxml2", "Skipped (" & g_strDisableCOM & ")"
@@ -1586,6 +1605,14 @@ sub CheckForSsl(strOptSsl, bln32Bit)
    strOpenssl = "openssl"
    if bln32Bit = True then
        strOpenssl = "openssl32"
+   end if
+
+   '
+   ' Part of tarball / svn, so we can exit immediately if no path was specified.
+   '
+   if (strOptSsl = "") then
+      PrintResult strOpenssl, "src/libs/openssl-*"
+      exit sub
    end if
 
    '
@@ -1997,11 +2024,7 @@ Sub Main
    else
       CheckForlibSDL strOptlibSDL
    end if
-   ' Don't check for this library by default as it's part of the tarball
-   ' Using an external library can add a dependency to iconv
-   if (strOptXml2 <> "") then
-      CheckForXml2 strOptXml2
-   end if
+   CheckForXml2 strOptXml2
    CheckForSsl strOptSsl, False
    if g_strTargetArch = "amd64" then
        ' 32-bit openssl required as well
