@@ -4224,7 +4224,7 @@ void UIActionPoolManager::updateShortcuts()
     /* Call to base-class: */
     UIActionPool::updateShortcuts();
     /* Create temporary Runtime UI pool to do the same: */
-    if (!m_fTemporary)
+    if (!isTemporary())
         UIActionPool::createTemporary(UIActionPoolType_Runtime);
 }
 

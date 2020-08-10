@@ -475,11 +475,13 @@ public:
 
     /** Returns action-pool type. */
     UIActionPoolType type() const { return m_enmType; }
+    /** Returns whether this action-pool is temporary. */
+    bool isTemporary() const { return m_fTemporary; }
 
     /** Returns the action for the passed @a iIndex. */
-    UIAction *action(int iIndex) const { return m_pool.value(iIndex); }
+    UIAction *action(int iIndex) const;
     /** Returns all the actions action-pool contains. */
-    QList<UIAction*> actions() const { return m_pool.values(); }
+    QList<UIAction*> actions() const;
 
     /** Returns the action group for the passed @a iIndex.
       * @note Only menu actions can have action groups. */
@@ -515,7 +517,6 @@ public:
 
     /** Defines whether shortcuts of menu actions with specified @a iIndex should be visible. */
     virtual void setShortcutsVisible(int iIndex, bool fVisible) { Q_UNUSED(iIndex); Q_UNUSED(fVisible); }
-
     /** Returns extra-data ID to save keyboard shortcuts under. */
     virtual QString shortcutsExtraDataID() const = 0;
 
@@ -539,18 +540,14 @@ protected:
     /** Constructs probably @a fTemporary action-pool of passed @a enmType. */
     UIActionPool(UIActionPoolType enmType, bool fTemporary = false);
 
-    /** Prepares all. */
-    void prepare();
     /** Prepares pool. */
     virtual void preparePool();
     /** Prepares connections. */
     virtual void prepareConnections();
     /** Cleanups connections. */
-    virtual void cleanupConnections() {}
+    virtual void cleanupConnections();
     /** Cleanups pool. */
     virtual void cleanupPool();
-    /** Cleanups all. */
-    void cleanup();
 
     /** Updates configuration. */
     virtual void updateConfiguration();
@@ -559,45 +556,41 @@ protected:
     virtual void updateMenu(int iIndex);
     /** Updates menus. */
     virtual void updateMenus() = 0;
-    /** Updates 'Application' menu. */
-    virtual void updateMenuApplication();
-#ifdef VBOX_WS_MAC
-    /** Mac OS X: Updates 'Window' menu. */
-    virtual void updateMenuWindow();
-#endif
-    /** Updates 'Help' menu. */
-    virtual void updateMenuHelp();
-    /** Updates 'Log Viewer Window' menu. */
-    virtual void updateMenuLogViewerWindow();
-    /** Updates 'Log Viewer' menu. */
-    virtual void updateMenuLogViewer();
-    /** Updates 'Log Viewer' @a pMenu. */
-    virtual void updateMenuLogViewerWrapper(UIMenu *pMenu);
-    /** Updates 'Performance Monitor' menu. */
-    virtual void updateMenuPerformanceMonitor();
-    /** Updates 'File Manager' menu. */
-    virtual void updateMenuFileManager();
-    /** Updates 'File Manager' @a pMenu. */
-    virtual void updateMenuFileManagerWrapper(UIMenu *pMenu);
 
     /** Updates shortcuts. */
     virtual void updateShortcuts();
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-
     /** Handles any Qt @a pEvent */
     virtual bool event(QEvent *pEvent) /* override */;
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
     /** Adds action into corresponding menu. */
     bool addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd = true);
     /** Adds action's menu into corresponding menu list. */
     bool addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fReallyAdd = true);
 
-    /** Holds the action-pool type. */
-    const UIActionPoolType  m_enmType;
-    /** Holds whether this action-pool is temporary. */
-    const bool              m_fTemporary;
+    /** Updates 'Application' menu. */
+    void updateMenuApplication();
+#ifdef VBOX_WS_MAC
+    /** Mac OS X: Updates 'Window' menu. */
+    void updateMenuWindow();
+#endif
+    /** Updates 'Help' menu. */
+    void updateMenuHelp();
+    /** Updates 'Log Viewer Window' menu. */
+    void updateMenuLogViewerWindow();
+    /** Updates 'Log Viewer' menu. */
+    void updateMenuLogViewer();
+    /** Updates 'Log Viewer' @a pMenu. */
+    void updateMenuLogViewerWrapper(UIMenu *pMenu);
+    /** Updates 'Performance Monitor' menu. */
+    void updateMenuPerformanceMonitor();
+    /** Updates 'File Manager' menu. */
+    void updateMenuFileManager();
+    /** Updates 'File Manager' @a pMenu. */
+    void updateMenuFileManagerWrapper(UIMenu *pMenu);
 
     /** Holds the map of actions. */
     QMap<int, UIAction*>          m_pool;
@@ -622,6 +615,18 @@ protected:
 #endif
     /** Holds restricted action types of the Help menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuHelpActionType>         m_restrictedActionsMenuHelp;
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
+    /** Holds the action-pool type. */
+    const UIActionPoolType  m_enmType;
+    /** Holds whether this action-pool is temporary. */
+    const bool              m_fTemporary;
 };
 
 

@@ -2307,12 +2307,6 @@ void UIActionPool::createTemporary(UIActionPoolType enmType)
     delete pActionPool;
 }
 
-UIActionPool::UIActionPool(UIActionPoolType enmType, bool fTemporary /* = false */)
-    : m_enmType(enmType)
-    , m_fTemporary(fTemporary)
-{
-}
-
 UIActionPoolManager *UIActionPool::toManager()
 {
     return qobject_cast<UIActionPoolManager*>(this);
@@ -2321,6 +2315,17 @@ UIActionPoolManager *UIActionPool::toManager()
 UIActionPoolRuntime *UIActionPool::toRuntime()
 {
     return qobject_cast<UIActionPoolRuntime*>(this);
+}
+
+UIAction *UIActionPool::action(int iIndex) const
+{
+    AssertReturn(m_pool.contains(iIndex), 0);
+    return m_pool.value(iIndex);
+}
+
+QList<UIAction*> UIActionPool::actions() const
+{
+    return m_pool.values();
 }
 
 QActionGroup *UIActionPool::actionGroup(int iIndex) const
@@ -2387,6 +2392,37 @@ void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel enmLevel, 
     m_invalidations << UIActionIndex_Menu_Help;
 }
 
+bool UIActionPool::processHotKey(const QKeySequence &key)
+{
+    /* Iterate through the whole list of keys: */
+    foreach (const int &iKey, m_pool.keys())
+    {
+        /* Get current action: */
+        UIAction *pAction = m_pool.value(iKey);
+        /* Skip menus/separators: */
+        if (pAction->type() == UIActionType_Menu)
+            continue;
+        /* Get the hot-key of the current action: */
+        const QString strHotKey = gShortcutPool->shortcut(this, pAction).primaryToPortableText();
+        if (pAction->isEnabled() && pAction->isAllowed() && !strHotKey.isEmpty())
+        {
+            if (key.matches(QKeySequence(strHotKey)) == QKeySequence::ExactMatch)
+            {
+                /* We asynchronously post a special event instead of calling
+                 * pAction->trigger() directly, to let key presses and
+                 * releases be processed correctly by Qt first.
+                 * Note: we assume that nobody will delete the menu item
+                 * corresponding to the key sequence, so that the pointer to
+                 * menu data posted along with the event will remain valid in
+                 * the event handler, at least until the main window is closed. */
+                QApplication::postEvent(this, new ActivateActionEvent(pAction));
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void UIActionPool::sltHandleMenuPrepare()
 {
     /* Make sure menu is valid: */
@@ -2421,16 +2457,10 @@ void UIActionPool::sltActionHovered()
 }
 #endif /* VBOX_WS_MAC */
 
-void UIActionPool::prepare()
+UIActionPool::UIActionPool(UIActionPoolType enmType, bool fTemporary /* = false */)
+    : m_enmType(enmType)
+    , m_fTemporary(fTemporary)
 {
-    /* Prepare pool: */
-    preparePool();
-    /* Prepare connections: */
-    prepareConnections();
-    /* Update configuration: */
-    updateConfiguration();
-    /* Update shortcuts: */
-    updateShortcuts();
 }
 
 void UIActionPool::preparePool()
@@ -2528,7 +2558,7 @@ void UIActionPool::preparePool()
     /* Invalidate all known menus: */
     m_invalidations.unite(m_menuUpdateHandlers.keys().toSet());
 
-    /* Retranslate finally: */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -2565,52 +2595,15 @@ void UIActionPool::prepareConnections()
 #endif
 }
 
+void UIActionPool::cleanupConnections()
+{
+    /* Nothing for now.. */
+}
+
 void UIActionPool::cleanupPool()
 {
     qDeleteAll(m_groupPool);
     qDeleteAll(m_pool);
-}
-
-void UIActionPool::cleanup()
-{
-    /* Cleanup pool: */
-    cleanupPool();
-}
-
-void UIActionPool::updateShortcuts()
-{
-    gShortcutPool->applyShortcuts(this);
-}
-
-bool UIActionPool::processHotKey(const QKeySequence &key)
-{
-    /* Iterate through the whole list of keys: */
-    foreach (const int &iKey, m_pool.keys())
-    {
-        /* Get current action: */
-        UIAction *pAction = m_pool.value(iKey);
-        /* Skip menus/separators: */
-        if (pAction->type() == UIActionType_Menu)
-            continue;
-        /* Get the hot-key of the current action: */
-        const QString strHotKey = gShortcutPool->shortcut(this, pAction).primaryToPortableText();
-        if (pAction->isEnabled() && pAction->isAllowed() && !strHotKey.isEmpty())
-        {
-            if (key.matches(QKeySequence(strHotKey)) == QKeySequence::ExactMatch)
-            {
-                /* We asynchronously post a special event instead of calling
-                 * pAction->trigger() directly, to let key presses and
-                 * releases be processed correctly by Qt first.
-                 * Note: we assume that nobody will delete the menu item
-                 * corresponding to the key sequence, so that the pointer to
-                 * menu data posted along with the event will remain valid in
-                 * the event handler, at least until the main window is closed. */
-                QApplication::postEvent(this, new ActivateActionEvent(pAction));
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 void UIActionPool::updateConfiguration()
@@ -2642,6 +2635,121 @@ void UIActionPool::updateMenu(int iIndex)
     if (   m_invalidations.contains(iIndex)
         && m_menuUpdateHandlers.contains(iIndex))
         (this->*(m_menuUpdateHandlers.value(iIndex).ptf))();
+}
+
+void UIActionPool::updateShortcuts()
+{
+    gShortcutPool->applyShortcuts(this);
+}
+
+bool UIActionPool::event(QEvent *pEvent)
+{
+    /* Depending on event-type: */
+    switch ((UIEventType)pEvent->type())
+    {
+        case ActivateActionEventType:
+        {
+            /* Process specific event: */
+            ActivateActionEvent *pActionEvent = static_cast<ActivateActionEvent*>(pEvent);
+            pActionEvent->action()->trigger();
+            pEvent->accept();
+            return true;
+        }
+        default:
+            break;
+    }
+    /* Pass to the base-class: */
+    return QObject::event(pEvent);
+}
+
+void UIActionPool::retranslateUi()
+{
+    /* Translate all the actions: */
+    foreach (const int iActionPoolKey, m_pool.keys())
+        m_pool[iActionPoolKey]->retranslateUi();
+    /* Update shortcuts: */
+    updateShortcuts();
+}
+
+bool UIActionPool::addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd /* = true */)
+{
+    /* Check if action is allowed: */
+    const bool fIsActionAllowed = pAction->isAllowed();
+
+#ifdef VBOX_WS_MAC
+    /* Check if menu is consumable: */
+    const bool fIsMenuConsumable = pMenu->isConsumable();
+    /* Check if menu is NOT yet consumed: */
+    const bool fIsMenuConsumed = pMenu->isConsumed();
+#endif
+
+    /* Make this action visible
+     * depending on clearance state. */
+    pAction->setVisible(fIsActionAllowed);
+
+#ifdef VBOX_WS_MAC
+    /* If menu is consumable: */
+    if (fIsMenuConsumable)
+    {
+        /* Add action only if menu was not yet consumed: */
+        if (!fIsMenuConsumed)
+            pMenu->addAction(pAction);
+    }
+    /* If menu is NOT consumable: */
+    else
+#endif
+    {
+        /* Add action only if is allowed: */
+        if (fIsActionAllowed && fReallyAdd)
+            pMenu->addAction(pAction);
+    }
+
+    /* Return if action is allowed: */
+    return fIsActionAllowed;
+}
+
+bool UIActionPool::addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fReallyAdd /* = true */)
+{
+    /* Check if action is allowed: */
+    const bool fIsActionAllowed = pAction->isAllowed();
+
+    /* Get action's menu: */
+    UIMenu *pMenu = pAction->menu();
+
+#ifdef VBOX_WS_MAC
+    /* Check if menu is consumable: */
+    const bool fIsMenuConsumable = pMenu->isConsumable();
+    /* Check if menu is NOT yet consumed: */
+    const bool fIsMenuConsumed = pMenu->isConsumed();
+#endif
+
+    /* Make this action visible
+     * depending on clearance state. */
+    pAction->setVisible(   fIsActionAllowed
+#ifdef VBOX_WS_MAC
+                        && !fIsMenuConsumable
+#endif
+                        );
+
+#ifdef VBOX_WS_MAC
+    /* If menu is consumable: */
+    if (fIsMenuConsumable)
+    {
+        /* Add action's menu only if menu was not yet consumed: */
+        if (!fIsMenuConsumed)
+            menuList << pMenu;
+    }
+    /* If menu is NOT consumable: */
+    else
+#endif
+    {
+        /* Add action only if is allowed: */
+        if (fIsActionAllowed && fReallyAdd)
+            menuList << pMenu;
+    }
+
+    /* Return if action is allowed: */
+    return fIsActionAllowed;
 }
 
 void UIActionPool::updateMenuApplication()
@@ -2889,114 +2997,25 @@ void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)
     }
 }
 
-void UIActionPool::retranslateUi()
+void UIActionPool::prepare()
 {
-    /* Translate all the actions: */
-    foreach (const int iActionPoolKey, m_pool.keys())
-        m_pool[iActionPoolKey]->retranslateUi();
+    /* Prepare pool: */
+    preparePool();
+    /* Prepare connections: */
+    prepareConnections();
+
+    /* Update configuration: */
+    updateConfiguration();
     /* Update shortcuts: */
     updateShortcuts();
 }
 
-bool UIActionPool::event(QEvent *pEvent)
+void UIActionPool::cleanup()
 {
-    /* Depending on event-type: */
-    switch ((UIEventType)pEvent->type())
-    {
-        case ActivateActionEventType:
-        {
-            /* Process specific event: */
-            ActivateActionEvent *pActionEvent = static_cast<ActivateActionEvent*>(pEvent);
-            pActionEvent->action()->trigger();
-            pEvent->accept();
-            return true;
-        }
-        default:
-            break;
-    }
-    /* Pass to the base-class: */
-    return QObject::event(pEvent);
-}
-
-bool UIActionPool::addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd /* = true */)
-{
-    /* Check if action is allowed: */
-    const bool fIsActionAllowed = pAction->isAllowed();
-
-#ifdef VBOX_WS_MAC
-    /* Check if menu is consumable: */
-    const bool fIsMenuConsumable = pMenu->isConsumable();
-    /* Check if menu is NOT yet consumed: */
-    const bool fIsMenuConsumed = pMenu->isConsumed();
-#endif
-
-    /* Make this action visible
-     * depending on clearance state. */
-    pAction->setVisible(fIsActionAllowed);
-
-#ifdef VBOX_WS_MAC
-    /* If menu is consumable: */
-    if (fIsMenuConsumable)
-    {
-        /* Add action only if menu was not yet consumed: */
-        if (!fIsMenuConsumed)
-            pMenu->addAction(pAction);
-    }
-    /* If menu is NOT consumable: */
-    else
-#endif
-    {
-        /* Add action only if is allowed: */
-        if (fIsActionAllowed && fReallyAdd)
-            pMenu->addAction(pAction);
-    }
-
-    /* Return if action is allowed: */
-    return fIsActionAllowed;
-}
-
-bool UIActionPool::addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fReallyAdd /* = true */)
-{
-    /* Check if action is allowed: */
-    const bool fIsActionAllowed = pAction->isAllowed();
-
-    /* Get action's menu: */
-    UIMenu *pMenu = pAction->menu();
-
-#ifdef VBOX_WS_MAC
-    /* Check if menu is consumable: */
-    const bool fIsMenuConsumable = pMenu->isConsumable();
-    /* Check if menu is NOT yet consumed: */
-    const bool fIsMenuConsumed = pMenu->isConsumed();
-#endif
-
-    /* Make this action visible
-     * depending on clearance state. */
-    pAction->setVisible(   fIsActionAllowed
-#ifdef VBOX_WS_MAC
-                        && !fIsMenuConsumable
-#endif
-                        );
-
-#ifdef VBOX_WS_MAC
-    /* If menu is consumable: */
-    if (fIsMenuConsumable)
-    {
-        /* Add action's menu only if menu was not yet consumed: */
-        if (!fIsMenuConsumed)
-            menuList << pMenu;
-    }
-    /* If menu is NOT consumable: */
-    else
-#endif
-    {
-        /* Add action only if is allowed: */
-        if (fIsActionAllowed && fReallyAdd)
-            menuList << pMenu;
-    }
-
-    /* Return if action is allowed: */
-    return fIsActionAllowed;
+    /* Cleanup connections: */
+    cleanupConnections();
+    /* Cleanup pool: */
+    cleanupPool();
 }
 
 
