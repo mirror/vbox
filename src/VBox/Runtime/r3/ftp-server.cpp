@@ -202,7 +202,7 @@ typedef enum RTFTPSERVER_CMD
     /** Sets the user name for authentication. */
     RTFTPSERVER_CMD_USER,
     /** End marker. */
-    RTFTPSERVER_CMD_LAST,
+    RTFTPSERVER_CMD_END,
     /** The usual 32-bit hack. */
     RTFTPSERVER_CMD_32BIT_HACK = 0x7fffffff
 } RTFTPSERVER_CMD;
@@ -407,7 +407,7 @@ const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
     { RTFTPSERVER_CMD_SYST,     "SYST", false, rtFtpServerHandleSYST },
     { RTFTPSERVER_CMD_TYPE,     "TYPE", true,  rtFtpServerHandleTYPE },
     { RTFTPSERVER_CMD_USER,     "USER", false, rtFtpServerHandleUSER },
-    { RTFTPSERVER_CMD_LAST,     "",     false, NULL }
+    { RTFTPSERVER_CMD_END,      "",     false, NULL }
 };
 
 /** RFC-1123 month of the year names. */
