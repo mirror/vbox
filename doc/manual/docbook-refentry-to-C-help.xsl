@@ -222,7 +222,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     <xsl:apply-templates select="node()|@*"/>
   </xsl:template>
 
-  <xsl:template match="command|option|computeroutput">
+  <xsl:template match="command|option|computeroutput|literal|emphasis|filename">
     <xsl:apply-templates select="node()|@*"/>
   </xsl:template>
 
@@ -448,18 +448,29 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
 
   <xsl:template name="screen_text_line">
     <xsl:param name="sText"/>
-    <xsl:call-template name="escape_fixed_text">
-      <xsl:with-param name="sText" select="substring-before($sText,'&#x0a;')"/>
-    </xsl:call-template>
 
-    <xsl:if test="substring-after($sText,'&#x0a;')">
-      <xsl:text>" },
-    {   RTMSGREFENTRYSTR_SCOPE_SAME,
-        "</xsl:text>
-      <xsl:call-template name="screen_text_line">
-        <xsl:with-param name="sText" select="substring-after($sText,'&#x0a;')"/>
-      </xsl:call-template>
-    </xsl:if>
+    <xsl:choose>
+      <xsl:when test="contains($sText, '&#x0a;')">
+        <xsl:call-template name="escape_fixed_text">
+          <xsl:with-param name="sText" select="substring-before($sText,'&#x0a;')"/>
+        </xsl:call-template>
+
+        <xsl:if test="substring-after($sText,'&#x0a;')">
+          <xsl:text>" },
+        {   RTMSGREFENTRYSTR_SCOPE_SAME,
+            "</xsl:text>
+          <xsl:call-template name="screen_text_line">
+            <xsl:with-param name="sText" select="substring-after($sText,'&#x0a;')"/>
+          </xsl:call-template>
+        </xsl:if>
+      </xsl:when>
+
+      <xsl:otherwise> <!-- no newline, so use the whole string -->
+        <xsl:call-template name="escape_fixed_text">
+          <xsl:with-param name="sText" select="$sText"/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
 
@@ -520,7 +531,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
   </xsl:template>
 
   <!-- Elements producing non-breaking strings (single line). -->
-  <xsl:template match="command/text()|option/text()|computeroutput/text()|arg/text()" name="escape_fixed_text">
+  <xsl:template match="command/text()|option/text()|computeroutput/text()|arg/text()|filename/text()" name="escape_fixed_text">
     <xsl:param name="sText" select="normalize-space(.)"/>
     <xsl:choose>
 

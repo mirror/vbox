@@ -1068,194 +1068,256 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
+/**
+ * sharedfolder add
+ */
+static RTEXITCODE handleSharedFolderAdd(HandlerArg *a)
+{
+    /*
+     * Parse arguments (argv[0] == subcommand).
+     */
+    static const RTGETOPTDEF s_aAddOptions[] =
+    {
+        { "--name",             'n', RTGETOPT_REQ_STRING },
+        { "-name",              'n', RTGETOPT_REQ_STRING },     // deprecated
+        { "--hostpath",         'p', RTGETOPT_REQ_STRING },
+        { "-hostpath",          'p', RTGETOPT_REQ_STRING },     // deprecated
+        { "--readonly",         'r', RTGETOPT_REQ_NOTHING },
+        { "-readonly",          'r', RTGETOPT_REQ_NOTHING },    // deprecated
+        { "--transient",        't', RTGETOPT_REQ_NOTHING },
+        { "-transient",         't', RTGETOPT_REQ_NOTHING },    // deprecated
+        { "--automount",        'a', RTGETOPT_REQ_NOTHING },
+        { "-automount",         'a', RTGETOPT_REQ_NOTHING },    // deprecated
+        { "--auto-mount-point", 'm', RTGETOPT_REQ_STRING },
+    };
+    const char *pszMachineName    = NULL;
+    const char *pszName           = NULL;
+    const char *pszHostPath       = NULL;
+    bool        fTransient        = false;
+    bool        fWritable         = true;
+    bool        fAutoMount        = false;
+    const char *pszAutoMountPoint = "";
+
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aAddOptions, RT_ELEMENTS(s_aAddOptions), 1 /*iFirst*/, 0 /*fFlags*/);
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'n':
+                pszName = ValueUnion.psz;
+                break;
+            case 'p':
+                pszHostPath = ValueUnion.psz;
+                break;
+            case 'r':
+                fWritable = false;
+                break;
+            case 't':
+                fTransient = true;
+                break;
+            case 'a':
+                fAutoMount = true;
+                break;
+            case 'm':
+                pszAutoMountPoint = ValueUnion.psz;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                if (pszMachineName)
+                    return errorArgument("Machine name is given more than once: first '%s', then '%s'",
+                                         pszMachineName, ValueUnion.psz);
+                pszMachineName = ValueUnion.psz;
+                break;
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (!pszMachineName)
+        return errorSyntax("No machine was specified");
+
+    if (!pszName)
+        return errorSyntax("No shared folder name (--name) was given");
+    if (strchr(pszName, ' '))
+        return errorSyntax("Invalid shared folder name '%s': contains space", pszName);
+    if (strchr(pszName, '\t'))
+        return errorSyntax("Invalid shared folder name '%s': contains tabs", pszName);
+    if (strchr(pszName, '\n') || strchr(pszName, '\r'))
+        return errorSyntax("Invalid shared folder name '%s': contains newline", pszName);
+
+    if (!pszHostPath)
+        return errorSyntax("No host path (--hostpath) was given");
+    char szAbsHostPath[RTPATH_MAX];
+    int vrc = RTPathAbs(pszHostPath, szAbsHostPath, sizeof(szAbsHostPath));
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTAbsPath failed on '%s': %Rrc", pszHostPath, vrc);
+
+    /*
+     * Done parsing, do some work.
+     */
+    ComPtr<IMachine> ptrMachine;
+    CHECK_ERROR2I_RET(a->virtualBox, FindMachine(Bstr(pszMachineName).raw(), ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
+    AssertReturn(ptrMachine.isNotNull(), RTEXITCODE_FAILURE);
+
+    HRESULT hrc;
+    if (fTransient)
+    {
+        /* open an existing session for the VM */
+        CHECK_ERROR2I_RET(ptrMachine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
+
+        /* get the session machine */
+        ComPtr<IMachine> ptrSessionMachine;
+        CHECK_ERROR2I_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
+
+        /* get the session console */
+        ComPtr<IConsole> ptrConsole;
+        CHECK_ERROR2I_RET(a->session, COMGETTER(Console)(ptrConsole.asOutParam()), RTEXITCODE_FAILURE);
+        if (ptrConsole.isNull())
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine '%s' is not currently running.", pszMachineName);
+
+        CHECK_ERROR2(hrc, ptrConsole, CreateSharedFolder(Bstr(pszName).raw(), Bstr(szAbsHostPath).raw(),
+                                                         fWritable, fAutoMount, Bstr(pszAutoMountPoint).raw()));
+        a->session->UnlockMachine();
+    }
+    else
+    {
+        /* open a session for the VM */
+        CHECK_ERROR2I_RET(ptrMachine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
+
+        /* get the mutable session machine */
+        ComPtr<IMachine> ptrSessionMachine;
+        CHECK_ERROR2I_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
+
+        CHECK_ERROR2(hrc, ptrSessionMachine, CreateSharedFolder(Bstr(pszName).raw(), Bstr(szAbsHostPath).raw(),
+                                                                fWritable, fAutoMount, Bstr(pszAutoMountPoint).raw()));
+        if (SUCCEEDED(hrc))
+        {
+            CHECK_ERROR2(hrc, ptrSessionMachine, SaveSettings());
+        }
+
+        a->session->UnlockMachine();
+    }
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+/**
+ * sharedfolder remove
+ */
+static RTEXITCODE handleSharedFolderRemove(HandlerArg *a)
+{
+    /*
+     * Parse arguments (argv[0] == subcommand).
+     */
+    static const RTGETOPTDEF s_aRemoveOptions[] =
+    {
+        { "--name",             'n', RTGETOPT_REQ_STRING },
+        { "-name",              'n', RTGETOPT_REQ_STRING },     // deprecated
+        { "--transient",        't', RTGETOPT_REQ_NOTHING },
+        { "-transient",         't', RTGETOPT_REQ_NOTHING },    // deprecated
+    };
+    const char *pszMachineName    = NULL;
+    const char *pszName           = NULL;
+    bool        fTransient        = false;
+
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aRemoveOptions, RT_ELEMENTS(s_aRemoveOptions), 1 /*iFirst*/, 0 /*fFlags*/);
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'n':
+                pszName = ValueUnion.psz;
+                break;
+            case 't':
+                fTransient = true;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                if (pszMachineName)
+                    return errorArgument("Machine name is given more than once: first '%s', then '%s'",
+                                         pszMachineName, ValueUnion.psz);
+                pszMachineName = ValueUnion.psz;
+                break;
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (!pszMachineName)
+        return errorSyntax("No machine was specified");
+    if (!pszName)
+        return errorSyntax("No shared folder name (--name) was given");
+
+    /*
+     * Done parsing, do some real work.
+     */
+    ComPtr<IMachine> ptrMachine;
+    CHECK_ERROR2I_RET(a->virtualBox, FindMachine(Bstr(pszMachineName).raw(), ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
+    AssertReturn(ptrMachine.isNotNull(), RTEXITCODE_FAILURE);
+
+    HRESULT hrc;
+    if (fTransient)
+    {
+        /* open an existing session for the VM */
+        CHECK_ERROR2I_RET(ptrMachine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
+        /* get the session machine */
+        ComPtr<IMachine> ptrSessionMachine;
+        CHECK_ERROR2I_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
+        /* get the session console */
+        ComPtr<IConsole> ptrConsole;
+        CHECK_ERROR2I_RET(a->session, COMGETTER(Console)(ptrConsole.asOutParam()), RTEXITCODE_FAILURE);
+        if (ptrConsole.isNull())
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine '%s' is not currently running.\n", pszMachineName);
+
+        CHECK_ERROR2(hrc, ptrConsole, RemoveSharedFolder(Bstr(pszName).raw()));
+
+        a->session->UnlockMachine();
+    }
+    else
+    {
+        /* open a session for the VM */
+        CHECK_ERROR2I_RET(ptrMachine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
+
+        /* get the mutable session machine */
+        ComPtr<IMachine> ptrSessionMachine;
+        CHECK_ERROR2I_RET(a->session, COMGETTER(Machine)(ptrSessionMachine.asOutParam()), RTEXITCODE_FAILURE);
+
+        CHECK_ERROR2(hrc, ptrSessionMachine, RemoveSharedFolder(Bstr(pszName).raw()));
+
+        /* commit and close the session */
+        if (SUCCEEDED(hrc))
+        {
+            CHECK_ERROR2(hrc, ptrSessionMachine, SaveSettings());
+        }
+        a->session->UnlockMachine();
+    }
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
 RTEXITCODE handleSharedFolder(HandlerArg *a)
 {
-    HRESULT rc;
-
-    /* we need at least a command and target */
-    if (a->argc < 2)
-        return errorSyntax(USAGE_SHAREDFOLDER, "Not enough parameters");
-
-    const char *pszMachineName = a->argv[1];
-    ComPtr<IMachine> machine;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(pszMachineName).raw(), machine.asOutParam()));
-    if (!machine)
-        return RTEXITCODE_FAILURE;
+    if (a->argc < 1)
+        return errorSyntax("Not enough parameters");
 
     if (!strcmp(a->argv[0], "add"))
     {
-        /* we need at least four more parameters */
-        if (a->argc < 5)
-            return errorSyntaxEx(USAGE_SHAREDFOLDER, HELP_SCOPE_SHAREDFOLDER_ADD, "Not enough parameters");
-
-        char *name = NULL;
-        char *hostpath = NULL;
-        bool fTransient = false;
-        bool fWritable = true;
-        bool fAutoMount = false;
-        const char *pszAutoMountPoint = "";
-
-        for (int i = 2; i < a->argc; i++)
-        {
-            if (   !strcmp(a->argv[i], "--name")
-                || !strcmp(a->argv[i], "-name"))
-            {
-                if (a->argc <= i + 1 || !*a->argv[i+1])
-                    return errorArgument("Missing argument to '%s'", a->argv[i]);
-                i++;
-                name = a->argv[i];
-            }
-            else if (   !strcmp(a->argv[i], "--hostpath")
-                     || !strcmp(a->argv[i], "-hostpath"))
-            {
-                if (a->argc <= i + 1 || !*a->argv[i+1])
-                    return errorArgument("Missing argument to '%s'", a->argv[i]);
-                i++;
-                hostpath = a->argv[i];
-            }
-            else if (   !strcmp(a->argv[i], "--readonly")
-                     || !strcmp(a->argv[i], "-readonly"))
-            {
-                fWritable = false;
-            }
-            else if (   !strcmp(a->argv[i], "--transient")
-                     || !strcmp(a->argv[i], "-transient"))
-            {
-                fTransient = true;
-            }
-            else if (   !strcmp(a->argv[i], "--automount")
-                     || !strcmp(a->argv[i], "-automount"))
-            {
-                fAutoMount = true;
-            }
-            else if (!strcmp(a->argv[i], "--auto-mount-point"))
-            {
-                if (a->argc <= i + 1 || !*a->argv[i+1])
-                    return errorArgument("Missing argument to '%s'", a->argv[i]);
-                i++;
-                pszAutoMountPoint = a->argv[i];
-            }
-            else
-                return errorSyntaxEx(USAGE_SHAREDFOLDER, HELP_SCOPE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
-        }
-
-        if (NULL != strstr(name, " "))
-            return errorSyntaxEx(USAGE_SHAREDFOLDER, HELP_SCOPE_SHAREDFOLDER_ADD, "No spaces allowed in parameter '-name'!");
-
-        /* required arguments */
-        if (!name || !hostpath)
-        {
-            return errorSyntaxEx(USAGE_SHAREDFOLDER, HELP_SCOPE_SHAREDFOLDER_ADD, "Parameters --name and --hostpath are required");
-        }
-
-        if (fTransient)
-        {
-            ComPtr<IConsole> console;
-
-            /* open an existing session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
-
-            /* get the session machine */
-            ComPtr<IMachine> sessionMachine;
-            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
-
-            /* get the session console */
-            CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), RTEXITCODE_FAILURE);
-            if (console.isNull())
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "Machine '%s' is not currently running.\n", pszMachineName);
-
-            CHECK_ERROR(console, CreateSharedFolder(Bstr(name).raw(), Bstr(hostpath).raw(),
-                                                    fWritable, fAutoMount, Bstr(pszAutoMountPoint).raw()));
-            a->session->UnlockMachine();
-        }
-        else
-        {
-            /* open a session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
-
-            /* get the mutable session machine */
-            ComPtr<IMachine> sessionMachine;
-            a->session->COMGETTER(Machine)(sessionMachine.asOutParam());
-
-            CHECK_ERROR(sessionMachine, CreateSharedFolder(Bstr(name).raw(), Bstr(hostpath).raw(),
-                                                           fWritable, fAutoMount, Bstr(pszAutoMountPoint).raw()));
-            if (SUCCEEDED(rc))
-                CHECK_ERROR(sessionMachine, SaveSettings());
-
-            a->session->UnlockMachine();
-        }
+        setCurrentSubcommand(HELP_SCOPE_SHAREDFOLDER_ADD);
+        return handleSharedFolderAdd(a);
     }
-    else if (!strcmp(a->argv[0], "remove"))
+
+    if (!strcmp(a->argv[0], "remove"))
     {
-        /* we need at least two more parameters */
-        if (a->argc < 3)
-            return errorSyntaxEx(USAGE_SHAREDFOLDER, HELP_SCOPE_SHAREDFOLDER_REMOVE, "Not enough parameters");
-
-        char *name = NULL;
-        bool fTransient = false;
-
-        for (int i = 2; i < a->argc; i++)
-        {
-            if (   !strcmp(a->argv[i], "--name")
-                || !strcmp(a->argv[i], "-name"))
-            {
-                if (a->argc <= i + 1 || !*a->argv[i+1])
-                    return errorArgument("Missing argument to '%s'", a->argv[i]);
-                i++;
-                name = a->argv[i];
-            }
-            else if (   !strcmp(a->argv[i], "--transient")
-                     || !strcmp(a->argv[i], "-transient"))
-            {
-                fTransient = true;
-            }
-            else
-                return errorSyntaxEx(USAGE_SHAREDFOLDER, HELP_SCOPE_SHAREDFOLDER_REMOVE, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
-        }
-
-        /* required arguments */
-        if (!name)
-            return errorSyntaxEx(USAGE_SHAREDFOLDER, HELP_SCOPE_SHAREDFOLDER_REMOVE, "Parameter --name is required");
-
-        if (fTransient)
-        {
-            /* open an existing session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
-            /* get the session machine */
-            ComPtr<IMachine> sessionMachine;
-            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
-            /* get the session console */
-            ComPtr<IConsole> console;
-            CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), RTEXITCODE_FAILURE);
-            if (console.isNull())
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "Machine '%s' is not currently running.\n", pszMachineName);
-
-            CHECK_ERROR(console, RemoveSharedFolder(Bstr(name).raw()));
-
-            a->session->UnlockMachine();
-        }
-        else
-        {
-            /* open a session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
-
-            /* get the mutable session machine */
-            ComPtr<IMachine> sessionMachine;
-            a->session->COMGETTER(Machine)(sessionMachine.asOutParam());
-
-            CHECK_ERROR(sessionMachine, RemoveSharedFolder(Bstr(name).raw()));
-
-            /* commit and close the session */
-            CHECK_ERROR(sessionMachine, SaveSettings());
-            a->session->UnlockMachine();
-        }
+        setCurrentSubcommand(HELP_SCOPE_SHAREDFOLDER_REMOVE);
+        return handleSharedFolderRemove(a);
     }
-    else
-        return errorSyntax(USAGE_SHAREDFOLDER, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
 
-    return RTEXITCODE_SUCCESS;
+    return errorUnknownSubcommand(a->argv[0]);
 }
 
 RTEXITCODE handleExtPack(HandlerArg *a)
