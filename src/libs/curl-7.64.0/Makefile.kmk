@@ -1,0 +1,137 @@
+# $Id: Makefile.kmk 118412 2017-10-17 14:26:02Z bird $
+## @file
+# Sub-Makefile for the libcurl library.
+#
+
+#
+# Copyright (C) 2009-2017 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+VBOX_PATH_LIBCURL = $(PATH_ROOT)/src/libs/curl-7.64.0
+
+LIBRARIES += VBox-libcurl
+VBox-libcurl_TEMPLATE       = VBoxR3RuntimeDllNonPedantic
+VBox-libcurl_SDKS           = VBOX_ZLIB VBOX_OPENSSL
+VBox-libcurl_DEFS           = \
+	IN_RT_R3 \
+	CURL_STATICLIB \
+        OPENSSL_NO_ENGINE \
+	BUILDING_LIBCURL \
+	HAVE_CONFIG_H \
+	CURL_DISABLE_GOPHER \
+	CURL_DISABLE_FILE \
+	CURL_DISABLE_DICT \
+	CURL_DISABLE_IMAP \
+	CURL_DISABLE_NTLM \
+	CURL_DISABLE_POP3 \
+	CURL_DISABLE_RTSP \
+	CURL_DISABLE_SMTP \
+	CURL_DISABLE_TELNET
+VBox-libcurl_DEPS           = $(VBox-libcurl_0_OUTDIR)/lib/curl_config.h
+VBox-libcurl_CLEAN          = $(VBox-libcurl_DEPS)
+VBox-libcurl_CFLAGS.win    += -wd4826 # formdata.c(390) : warning C4826: Conversion from 'char *' to 'curl_off_t' is sign-extended. This may cause unexpected runtime behavior.
+VBox-libcurl_CFLAGS.win    += -wd4310 # warnless.c(189) : warning C4310: cast truncates constant value
+VBox-libcurl_CFLAGS.win    += -wd4090 # openssl/lhash.h(198) : warning C4090: 'function' : different 'const' qualifiers
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
+ VBox-libcurl_CFLAGS.win   += -wd4774 # mprintf.c(949): warning C4774: 'sprintf' : format string expected in argument 2 is not a string literal
+endif
+VBox-libcurl_INCS           = include $(VBox-libcurl_0_OUTDIR)/lib $(VBOX_PATH_LIBCURL)/lib
+VBox-libcurl_SOURCES        = \
+	lib/base64.c \
+	lib/conncache.c \
+	lib/connect.c \
+	lib/content_encoding.c \
+	lib/cookie.c \
+	lib/curl_addrinfo.c \
+	lib/curl_ctype.c \
+	lib/curl_fnmatch.c \
+	lib/curl_memrchr.c \
+	lib/curl_sasl.c \
+	lib/curl_range.c \
+	lib/doh.c \
+	lib/dotdot.c \
+	lib/easy.c \
+	lib/escape.c \
+	lib/fileinfo.c \
+	lib/formdata.c \
+	lib/ftp.c \
+	lib/ftplistparser.c \
+	lib/getenv.c \
+	lib/getinfo.c \
+	lib/hash.c \
+	lib/hmac.c \
+	lib/hostcheck.c \
+	lib/hostip.c \
+	lib/hostip4.c \
+	lib/hostip6.c \
+	lib/hostsyn.c \
+	lib/http.c \
+	lib/http_chunks.c \
+	lib/http_digest.c \
+	lib/http_proxy.c \
+	lib/if2ip.c \
+	lib/inet_ntop.c \
+	lib/inet_pton.c \
+	lib/llist.c \
+	lib/md5.c \
+	lib/mime.c \
+	lib/mprintf.c \
+	lib/multi.c \
+	lib/netrc.c \
+	lib/nonblock.c \
+	lib/parsedate.c \
+	lib/pingpong.c \
+	lib/pipeline.c \
+	lib/progress.c \
+	lib/rand.c \
+	lib/select.c \
+	lib/sendf.c \
+	lib/setopt.c \
+	lib/sha256.c \
+	lib/share.c \
+	lib/slist.c \
+	lib/socks.c \
+	lib/speedcheck.c \
+	lib/splay.c \
+	lib/strcase.c \
+	lib/strdup.c \
+	lib/strerror.c \
+	lib/strtok.c \
+	lib/strtoofft.c \
+	lib/tftp.c \
+	lib/timeval.c \
+	lib/transfer.c \
+	lib/url.c \
+	lib/urlapi.c \
+	lib/vtls/openssl.c \
+	lib/vtls/vtls.c \
+	lib/warnless.c \
+	lib/wildcard.c \
+	lib/version.c \
+	lib/vauth/digest.c \
+	lib/vauth/vauth.c
+VBox-libcurl_SOURCES.win = \
+	lib/system_win32.c
+
+ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
+ LIBRARIES += VBox-libcurl-x86
+ VBox-libcurl-x86_TEMPLATE = VBoxR3DllNonPedantic-x86
+ VBox-libcurl-x86_EXTENDS = VBox-libcurl
+endif
+
+include $(FILE_KBUILD_SUB_FOOTER)
+
+#
+# Use checked in config.h instead of running ./configure for it.
+#
+libcurl_config.h.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(VBOX_PATH_LIBCURL)/config.h.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)
+
+$$(VBox-libcurl_0_OUTDIR)/lib/curl_config.h: $(libcurl_config.h.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) | $$(dir $$@)
+	$(CP) -f $^ $@
+
