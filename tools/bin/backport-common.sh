@@ -59,6 +59,23 @@ AddRevision()
     fi
 }
 
+AddRevisionRange()
+{
+    MY_REV=$1
+    MY_REV_FIRST=${MY_REV%-*}
+    MY_REV_LAST=${MY_REV#*-}
+    if test -z "${MY_REV_FIRST}" -o -z "${MY_REV_LAST}" -o '(' '!' "${MY_REV_FIRST}" -lt "${MY_REV_LAST}" ')'; then
+        echo "error: Failed to parse revision range: MY_REV_FIRST=${MY_REV_FIRST} MY_REV_LAST=${MY_REV_LAST} MY_REV=${MY_REV}"
+        exit 1
+    fi
+    MY_REV=${MY_REV_FIRST}
+    while test ${MY_REV} -le ${MY_REV_LAST};
+    do
+        AddRevision "${MY_REV}"
+        MY_REV=$(${MY_EXPR} ${MY_REV} + 1)
+    done
+}
+
 #
 # Figure default branch given the script location.
 #
@@ -97,6 +114,14 @@ do
 
         [0-9][0-9][0-9][0-9][0-9]|[0-9][0-9][0-9][0-9][0-9][0-9]|[0-9][0-9][0-9][0-9][0-9][0-9][0-9])
             AddRevision ${ARG}
+            ;;
+
+        [0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9]|[0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]|[0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9])
+            AddRevisionRange ${ARG}
+            ;;
+        r[0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9]|r[0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]|r[0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9])
+            MY_REV=`echo "${ARG}" | "${MY_SED}" -e 's/^r//'`
+            AddRevisionRange ${MY_REV}
             ;;
 
         --trunk-dir)
