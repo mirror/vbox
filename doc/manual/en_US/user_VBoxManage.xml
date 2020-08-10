@@ -6377,147 +6377,6 @@ Value: 2006.01.01</screen>
 
   </sect1>
 
-  <sect1 id="vboxmanage-sharedfolder">
-
-    <title>VBoxManage sharedfolder add/remove</title>
-
-<screen>
-VBoxManage sharedfolder     add &lt;uuid|vmname&gt;
-                                --name &lt;name&gt; --hostpath &lt;hostpath&gt;
-                                [--transient] [--readonly] [--automount]
-</screen>
-
-    <para>
-      This command enables you to share folders on the host computer
-      with guest operating systems. For this, the guest systems must
-      have a version of the &product-name; Guest Additions installed
-      which supports this functionality.
-    </para>
-
-    <para>
-      Parameters are as follows:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          <computeroutput>&lt;uuid|vmname&gt;</computeroutput>:
-          Specifies the UUID or name of the VM whose guest operating
-          system will be sharing folders with the host computer.
-          Mandatory.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <computeroutput>--name &lt;name&gt;</computeroutput>:
-          Specifies the name of the share. Each share has a unique name
-          within the namespace of the host operating system. Mandatory.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <computeroutput>-hostpath &lt;hostpath&gt;</computeroutput>:
-          Specifies the absolute path on the host operating system of
-          the directory to be shared with the guest operating system.
-          Mandatory.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <computeroutput>-transient</computeroutput>: Specifies that
-          the share is transient, meaning that it can be added and
-          removed at runtime and does not persist after the VM has
-          stopped. Optional.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <computeroutput>-readonly</computeroutput>: Specifies that the
-          share has only read-only access to files at the host path.
-        </para>
-
-        <para>
-          By default, shared folders have read/write access to the files
-          on the host path. On Linux distributions, shared folders are
-          mounted with 770 file permissions with root user and vboxsf as
-          the group. Using this option the file permissions change to
-          700. Optional.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <computeroutput>-automount</computeroutput>: Specifies that
-          the share will be automatically mounted. On Linux
-          distributions, this will be to either
-          <filename>/media/USER/sf_<replaceable>share-name</replaceable></filename>
-          or
-          <filename>/media/sf_<replaceable>share-name</replaceable></filename>,
-          where <replaceable>share-name</replaceable> is the share
-          named. The actual location depends on the guest OS. Optional.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-<screen>
-VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
-                            --name &lt;name&gt; [--transient]
-
-</screen>
-
-    <para>
-      This command enables you to delete shared folders on the host
-      computer shares with the guest operating systems. For this, the
-      guest systems must have a version of the &product-name; Guest
-      Additions installed which supports this functionality.
-    </para>
-
-    <para>
-      Parameters are as follows:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          <computeroutput>&lt;uuid|vmname&gt;</computeroutput>:
-          Specifies the UUID or name of the VM whose guest operating
-          system is sharing folders with the host computer. Mandatory.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <computeroutput>--name &lt;name&gt;</computeroutput>:
-          Specifies the name of the share to be removed. Each share has
-          a unique name within the namespace of the host operating
-          system. Mandatory.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <computeroutput>-transient</computeroutput>: Specifies that
-          the share is transient, meaning that it can be added and
-          removed at runtime and does not persist after the VM has
-          stopped. Optional.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>
-      Shared folders are described in <xref linkend="sharedfolders" />.
-    </para>
-
-  </sect1>
-
   <sect1 id="vboxmanage-guestproperty">
 
     <title>VBoxManage guestproperty</title>
@@ -9089,6 +8948,8 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
   <xi:include href="user_man_VBoxManage-snapshot.xml"       xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-clonevm.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+  <xi:include href="user_man_VBoxManage-sharedfolder.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-extpack.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
