@@ -139,10 +139,10 @@ if !defined(VBOX_ONLY_BUILD)
  RTLdrFlt_TEMPLATE = VBoxR3Tool
  RTLdrFlt_SOURCES = RTLdrFlt.cpp
 
- # RTFTPServer implements a simple FTP server.
- PROGRAMS += RTFTPServer
- RTFTPServer_TEMPLATE = VBoxR3Tool
- RTFTPServer_SOURCES = RTFTPServer.cpp
+ # RTFtpServer implements a simple FTP server.
+ PROGRAMS += RTFtpServer
+ RTFtpServer_TEMPLATE = VBoxR3Tool
+ RTFtpServer_SOURCES = RTFtpServer.cpp
 
  # RTGzip - our gzip clone (for testing the gzip/gunzip streaming code)
  PROGRAMS += RTGzip

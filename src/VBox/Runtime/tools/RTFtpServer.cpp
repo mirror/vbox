@@ -1,6 +1,12 @@
 /* $Id$ */
 /** @file
  * IPRT - Utility for running a (simple) FTP server.
+ *
+ * Use this setup to best see what's going on:
+ *    VBOX_LOG=rt_ftp=~0
+ *    VBOX_LOG_DEST="nofile stderr"
+ *    VBOX_LOG_FLAGS="unbuffered enabled thread msprog"
+ *
  */
 
 /*
@@ -22,15 +28,6 @@
  *
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
- */
-
-/*
- * Use this setup to best see what's going on:
- *
- *    VBOX_LOG=rt_ftp=~0
- *    VBOX_LOG_DEST="nofile stderr"
- *    VBOX_LOG_FLAGS="unbuffered enabled thread msprog"
- *
  */
 
 
@@ -110,7 +107,7 @@ typedef FTPSERVERVFSHANDLE *PFTPSERVERVFSHANDLE;
 *********************************************************************************************************************************/
 /** Set by the signal handler when the FTP server shall be terminated. */
 static volatile bool  g_fCanceled = false;
-static FTPSERVERDATA  g_FTPServerData;
+static FTPSERVERDATA  g_FtpServerData;
 
 
 #ifdef RT_OS_WINDOWS
@@ -511,7 +508,7 @@ int main(int argc, char **argv)
     char     szAddress[64] = "localhost";
     uint16_t uPort         = 2121;
 
-    RT_ZERO(g_FTPServerData);
+    RT_ZERO(g_FtpServerData);
 
     /*
      * Parse arguments.
@@ -545,7 +542,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'r':
-                RTStrCopy(g_FTPServerData.szPathRootAbs, sizeof(g_FTPServerData.szPathRootAbs), ValueUnion.psz);
+                RTStrCopy(g_FtpServerData.szPathRootAbs, sizeof(g_FtpServerData.szPathRootAbs), ValueUnion.psz);
                 break;
 
             case 'v':
@@ -580,16 +577,16 @@ int main(int argc, char **argv)
         }
     }
 
-    if (!strlen(g_FTPServerData.szPathRootAbs))
+    if (!strlen(g_FtpServerData.szPathRootAbs))
     {
         /* By default use the current directory as serving root directory. */
-        rc = RTPathGetCurrent(g_FTPServerData.szPathRootAbs, sizeof(g_FTPServerData.szPathRootAbs));
+        rc = RTPathGetCurrent(g_FtpServerData.szPathRootAbs, sizeof(g_FtpServerData.szPathRootAbs));
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Retrieving current directory failed: %Rrc", rc);
     }
 
     /* Initialize CWD. */
-    RTStrPrintf2(g_FTPServerData.szCWD, sizeof(g_FTPServerData.szCWD), "/");
+    RTStrPrintf2(g_FtpServerData.szCWD, sizeof(g_FtpServerData.szCWD), "/");
 
     /* Install signal handler. */
     rc = signalHandlerInstall();
@@ -618,11 +615,11 @@ int main(int argc, char **argv)
 
         RTFTPSERVER hFTPServer;
         rc = RTFtpServerCreate(&hFTPServer, szAddress, uPort, &Callbacks,
-                               &g_FTPServerData, sizeof(g_FTPServerData));
+                               &g_FtpServerData, sizeof(g_FtpServerData));
         if (RT_SUCCESS(rc))
         {
             RTPrintf("Starting FTP server at %s:%RU16 ...\n", szAddress, uPort);
-            RTPrintf("Root directory is '%s'\n", g_FTPServerData.szPathRootAbs);
+            RTPrintf("Root directory is '%s'\n", g_FtpServerData.szPathRootAbs);
 
             RTPrintf("Running FTP server ...\n");
 
