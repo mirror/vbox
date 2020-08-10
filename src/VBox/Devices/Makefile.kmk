@@ -625,7 +625,7 @@ endif
  ifeq ($(KBUILD_TARGET),darwin)
   VBoxDD_SOURCES += \
 	Audio/DrvHostCoreAudio.cpp \
-  Audio/DrvHostCoreAudio-auth.mm
+	Audio/DrvHostCoreAudio-auth.mm
  endif
 
  ifeq ($(KBUILD_TARGET),win)
