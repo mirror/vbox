@@ -44,9 +44,10 @@
       </group>
       <arg choice="req">--name=<replaceable>name</replaceable></arg>
       <arg choice="req">--hostpath=<replaceable>hostpath</replaceable></arg>
-      <arg>--automount</arg>
       <arg>--readonly</arg>
       <arg>--transient</arg>
+      <arg>--automount</arg>
+      <arg>--auto-mount-point=<replaceable>path</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-sharedfolder-remove">
@@ -104,17 +105,6 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term>--automount</term>
-          <listitem><para>
-              Specifies that the share is automatically mounted. On
-              Linux distributions, the share is mounted at
-              <filename>/var/run/media/<replaceable>username</replaceable>/sf_<replaceable>sharename</replaceable></filename>
-              or
-              <filename>/media/sf_<replaceable>sharename</replaceable></filename>,
-              depending on your guest OS.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
           <term>--readonly</term>
           <listitem><para>
               Specifies that the share has only read-only access to
@@ -135,6 +125,28 @@
               can be added and removed at runtime and does not persist
               after the VM stops.
             </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>--automount</term>
+          <listitem><para>
+              Specifies that the share is automatically mounted.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>--auto-mount-point=<replaceable>path</replaceable></term>
+           <listitem><para>
+               Specifies the mount point of the share.  This guest OS specific.  
+             </para><para>
+               For Windows and OS/2 guest this must be an unused drive letter.
+               If left blank (or if the drive letter is already in use), the
+               last unused drive letter is used instead (i.e. searching from
+               <literal>Z:</literal> thru <literal>A:</literal>).
+             </para><para>
+               For Linux, Solaris and other unix guest, it must be an absolute
+               path like <filename>/mnt/mysharedfolder</filename>.  If left
+               empty the default location is
+               <filename>/media/sf_<replaceable>sharename</replaceable></filename>.
+             </para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
