@@ -1,7 +1,19 @@
 /* $Id$ */
 /** @file
  * Generic FTP server (RFC 959) implementation.
+ *
  * Partly also implements RFC 3659 (Extensions to FTP, for "SIZE", ++).
+ *
+ * Known limitations so far:
+ * - UTF-8 support only.
+ * - Only supports ASCII + binary (image type) file streams for now.
+ * - No directory / file caching yet.
+ * - No support for writing / modifying ("DELE", "MKD", "RMD", "STOR", ++).
+ * - No FTPS / SFTP support.
+ * - No passive mode ("PASV") support.
+ * - No IPv6 support.
+ * - No proxy support.
+ * - No FXP support.
  */
 
 /*
@@ -23,19 +35,6 @@
  *
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
- */
-
-/**
- * Known limitations so far:
- * - UTF-8 support only.
- * - Only supports ASCII + binary (image type) file streams for now.
- * - No directory / file caching yet.
- * - No support for writing / modifying ("DELE", "MKD", "RMD", "STOR", ++).
- * - No FTPS / SFTP support.
- * - No passive mode ("PASV") support.
- * - No IPv6 support.
- * - No proxy support.
- * - No FXP support.
  */
 
 
@@ -157,55 +156,114 @@ typedef PRTFTPDIRCOLLECTION *PPRTFTPDIRCOLLECTION;
         AssertReturnVoid((hFTPServer)->u32Magic == RTFTPSERVER_MAGIC); \
     } while (0)
 
+
+/** Handles a FTP server callback with no arguments and returns. */
+#define RTFTPSERVER_HANDLE_CALLBACK_RET(a_Name) \
+    do \
+    { \
+        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
+        if (pCallbacks->a_Name) \
+        { \
+            RTFTPCALLBACKDATA Data = { &pClient->State }; \
+            return pCallbacks->a_Name(&Data); \
+        } \
+        return VERR_NOT_IMPLEMENTED; \
+    } while (0)
+
+/** Handles a FTP server callback with no arguments and sets rc accordingly. */
+#define RTFTPSERVER_HANDLE_CALLBACK(a_Name) \
+    do \
+    { \
+        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
+        if (pCallbacks->a_Name) \
+        { \
+            RTFTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
+            rc = pCallbacks->a_Name(&Data); \
+        } \
+        else \
+            rc = VERR_NOT_IMPLEMENTED; \
+    } while (0)
+
+/** Handles a FTP server callback with arguments and sets rc accordingly. */
+#define RTFTPSERVER_HANDLE_CALLBACK_VA(a_Name, ...) \
+    do \
+    { \
+        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
+        if (pCallbacks->a_Name) \
+        { \
+            RTFTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
+            rc = pCallbacks->a_Name(&Data, __VA_ARGS__); \
+        } \
+        else \
+            rc = VERR_NOT_IMPLEMENTED; \
+    } while (0)
+
+/** Handles a FTP server callback with arguments and returns. */
+#define RTFTPSERVER_HANDLE_CALLBACK_VA_RET(a_Name, ...) \
+    do \
+    { \
+        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
+        if (pCallbacks->a_Name) \
+        { \
+            RTFTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
+            return pCallbacks->a_Name(&Data, __VA_ARGS__); \
+        } \
+        return VERR_NOT_IMPLEMENTED; \
+    } while (0)
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /** Supported FTP server command IDs.
  *  Alphabetically, named after their official command names. */
-typedef enum RTFTPSERVER_CMD
+typedef enum RTFTPSERVERCMD
 {
     /** Invalid command, do not use. Always must come first. */
-    RTFTPSERVER_CMD_INVALID = 0,
+    RTFTPSERVERCMD_INVALID = 0,
     /** Aborts the current command on the server. */
-    RTFTPSERVER_CMD_ABOR,
+    RTFTPSERVERCMD_ABOR,
     /** Changes the current working directory. */
-    RTFTPSERVER_CMD_CDUP,
+    RTFTPSERVERCMD_CDUP,
     /** Changes the current working directory. */
-    RTFTPSERVER_CMD_CWD,
+    RTFTPSERVERCMD_CWD,
     /** Reports features supported by the server. */
-    RTFTPSERVER_CMD_FEAT,
+    RTFTPSERVERCMD_FEAT,
     /** Lists a directory. */
-    RTFTPSERVER_CMD_LIST,
+    RTFTPSERVERCMD_LIST,
     /** Sets the transfer mode. */
-    RTFTPSERVER_CMD_MODE,
+    RTFTPSERVERCMD_MODE,
     /** Sends a nop ("no operation") to the server. */
-    RTFTPSERVER_CMD_NOOP,
+    RTFTPSERVERCMD_NOOP,
     /** Sets the password for authentication. */
-    RTFTPSERVER_CMD_PASS,
+    RTFTPSERVERCMD_PASS,
     /** Sets the port to use for the data connection. */
-    RTFTPSERVER_CMD_PORT,
+    RTFTPSERVERCMD_PORT,
     /** Gets the current working directory. */
-    RTFTPSERVER_CMD_PWD,
+    RTFTPSERVERCMD_PWD,
     /** Get options. Needed in conjunction with the FEAT command. */
-    RTFTPSERVER_CMD_OPTS,
+    RTFTPSERVERCMD_OPTS,
     /** Terminates the session (connection). */
-    RTFTPSERVER_CMD_QUIT,
+    RTFTPSERVERCMD_QUIT,
     /** Retrieves a specific file. */
-    RTFTPSERVER_CMD_RETR,
+    RTFTPSERVERCMD_RETR,
     /** Retrieves the size of a file. */
-    RTFTPSERVER_CMD_SIZE,
+    RTFTPSERVERCMD_SIZE,
     /** Retrieves the current status of a transfer. */
-    RTFTPSERVER_CMD_STAT,
+    RTFTPSERVERCMD_STAT,
     /** Sets the structure type to use. */
-    RTFTPSERVER_CMD_STRU,
+    RTFTPSERVERCMD_STRU,
     /** Gets the server's OS info. */
-    RTFTPSERVER_CMD_SYST,
+    RTFTPSERVERCMD_SYST,
     /** Sets the (data) representation type. */
-    RTFTPSERVER_CMD_TYPE,
+    RTFTPSERVERCMD_TYPE,
     /** Sets the user name for authentication. */
-    RTFTPSERVER_CMD_USER,
+    RTFTPSERVERCMD_USER,
     /** End marker. */
-    RTFTPSERVER_CMD_END,
+    RTFTPSERVERCMD_END,
     /** The usual 32-bit hack. */
-    RTFTPSERVER_CMD_32BIT_HACK = 0x7fffffff
-} RTFTPSERVER_CMD;
+    RTFTPSERVERCMD_32BIT_HACK = 0x7fffffff
+} RTFTPSERVERCMD;
 
 struct RTFTPSERVERCLIENT;
 
@@ -271,67 +329,10 @@ typedef DECLCALLBACKTYPE(int, FNRTFTPSERVERCMD,(PRTFTPSERVERCLIENT pClient, uint
 /** Pointer to a FNRTFTPSERVERCMD(). */
 typedef FNRTFTPSERVERCMD *PFNRTFTPSERVERCMD;
 
-/** Handles a FTP server callback with no arguments and returns. */
-#define RTFTPSERVER_HANDLE_CALLBACK_RET(a_Name) \
-    do \
-    { \
-        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
-        if (pCallbacks->a_Name) \
-        { \
-            RTFTPCALLBACKDATA Data = { &pClient->State }; \
-            return pCallbacks->a_Name(&Data); \
-        } \
-        else \
-            return VERR_NOT_IMPLEMENTED; \
-    } while (0)
-
-/** Handles a FTP server callback with no arguments and sets rc accordingly. */
-#define RTFTPSERVER_HANDLE_CALLBACK(a_Name) \
-    do \
-    { \
-        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
-        if (pCallbacks->a_Name) \
-        { \
-            RTFTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
-            rc = pCallbacks->a_Name(&Data); \
-        } \
-        else \
-            rc = VERR_NOT_IMPLEMENTED; \
-    } while (0)
-
-/** Handles a FTP server callback with arguments and sets rc accordingly. */
-#define RTFTPSERVER_HANDLE_CALLBACK_VA(a_Name, ...) \
-    do \
-    { \
-        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
-        if (pCallbacks->a_Name) \
-        { \
-            RTFTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
-            rc = pCallbacks->a_Name(&Data, __VA_ARGS__); \
-        } \
-        else \
-            rc = VERR_NOT_IMPLEMENTED; \
-    } while (0)
-
-/** Handles a FTP server callback with arguments and returns. */
-#define RTFTPSERVER_HANDLE_CALLBACK_VA_RET(a_Name, ...) \
-    do \
-    { \
-        PRTFTPSERVERCALLBACKS pCallbacks = &pClient->pServer->Callbacks; \
-        if (pCallbacks->a_Name) \
-        { \
-            RTFTPCALLBACKDATA Data = { &pClient->State, pClient->pServer->pvUser, pClient->pServer->cbUser }; \
-            return pCallbacks->a_Name(&Data, __VA_ARGS__); \
-        } \
-        else \
-            return VERR_NOT_IMPLEMENTED; \
-    } while (0)
-
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
+*   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-
 static int  rtFtpServerDataConnOpen(PRTFTPSERVERDATACONN pDataConn, PRTNETADDRIPV4 pAddr, uint16_t uPort);
 static int  rtFtpServerDataConnClose(PRTFTPSERVERDATACONN pDataConn);
 static void rtFtpServerDataConnReset(PRTFTPSERVERDATACONN pDataConn);
@@ -369,45 +370,52 @@ static FNRTFTPSERVERCMD rtFtpServerHandleUSER;
 /**
  * Structure for maintaining a single command entry for the command table.
  */
-typedef struct RTFTPSERVER_CMD_ENTRY
+typedef struct RTFTPSERVERCMD_ENTRY
 {
     /** Command ID. */
-    RTFTPSERVER_CMD    enmCmd;
-    /** Command represented as ASCII string. */
-    char               szCmd[RTFTPSERVER_MAX_CMD_LEN];
+    RTFTPSERVERCMD      enmCmd;
+    /** Command represented as ASCII string.
+     * @todo r=bird: It's a waste to use 64 byte here when all supported commands
+     *       are 3 or 4 chars + terminator.  For (64-bit) alignment reasons,  */
+    char                szCmd[RTFTPSERVER_MAX_CMD_LEN];
     /** Whether the commands needs a logged in (valid) user. */
-    bool               fNeedsUser;
+    bool                fNeedsUser;
     /** Function pointer invoked to handle the command. */
-    PFNRTFTPSERVERCMD  pfnCmd;
-} RTFTPSERVER_CMD_ENTRY;
+    PFNRTFTPSERVERCMD   pfnCmd;
+} RTFTPSERVERCMD_ENTRY;
 /** Pointer to a command entry. */
-typedef RTFTPSERVER_CMD_ENTRY *PRTFTPSERVER_CMD_ENTRY;
+typedef RTFTPSERVERCMD_ENTRY *PRTFTPSERVERCMD_ENTRY;
 
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /**
  * Table of handled commands.
  */
-const RTFTPSERVER_CMD_ENTRY g_aCmdMap[] =
+static const RTFTPSERVERCMD_ENTRY g_aCmdMap[] =
 {
-    { RTFTPSERVER_CMD_ABOR,     "ABOR", true,  rtFtpServerHandleABOR },
-    { RTFTPSERVER_CMD_CDUP,     "CDUP", true,  rtFtpServerHandleCDUP },
-    { RTFTPSERVER_CMD_CWD,      "CWD",  true,  rtFtpServerHandleCWD  },
-    { RTFTPSERVER_CMD_FEAT,     "FEAT", false, rtFtpServerHandleFEAT },
-    { RTFTPSERVER_CMD_LIST,     "LIST", true,  rtFtpServerHandleLIST },
-    { RTFTPSERVER_CMD_MODE,     "MODE", true,  rtFtpServerHandleMODE },
-    { RTFTPSERVER_CMD_NOOP,     "NOOP", true,  rtFtpServerHandleNOOP },
-    { RTFTPSERVER_CMD_PASS,     "PASS", false, rtFtpServerHandlePASS },
-    { RTFTPSERVER_CMD_PORT,     "PORT", true,  rtFtpServerHandlePORT },
-    { RTFTPSERVER_CMD_PWD,      "PWD",  true,  rtFtpServerHandlePWD  },
-    { RTFTPSERVER_CMD_OPTS,     "OPTS", false, rtFtpServerHandleOPTS },
-    { RTFTPSERVER_CMD_QUIT,     "QUIT", false, rtFtpServerHandleQUIT },
-    { RTFTPSERVER_CMD_RETR,     "RETR", true,  rtFtpServerHandleRETR },
-    { RTFTPSERVER_CMD_SIZE,     "SIZE", true,  rtFtpServerHandleSIZE },
-    { RTFTPSERVER_CMD_STAT,     "STAT", true,  rtFtpServerHandleSTAT },
-    { RTFTPSERVER_CMD_STRU,     "STRU", true,  rtFtpServerHandleSTRU },
-    { RTFTPSERVER_CMD_SYST,     "SYST", false, rtFtpServerHandleSYST },
-    { RTFTPSERVER_CMD_TYPE,     "TYPE", true,  rtFtpServerHandleTYPE },
-    { RTFTPSERVER_CMD_USER,     "USER", false, rtFtpServerHandleUSER },
-    { RTFTPSERVER_CMD_END,      "",     false, NULL }
+    { RTFTPSERVERCMD_ABOR,      "ABOR", true,  rtFtpServerHandleABOR },
+    { RTFTPSERVERCMD_CDUP,      "CDUP", true,  rtFtpServerHandleCDUP },
+    { RTFTPSERVERCMD_CWD,       "CWD",  true,  rtFtpServerHandleCWD  },
+    { RTFTPSERVERCMD_FEAT,      "FEAT", false, rtFtpServerHandleFEAT },
+    { RTFTPSERVERCMD_LIST,      "LIST", true,  rtFtpServerHandleLIST },
+    { RTFTPSERVERCMD_MODE,      "MODE", true,  rtFtpServerHandleMODE },
+    { RTFTPSERVERCMD_NOOP,      "NOOP", true,  rtFtpServerHandleNOOP },
+    { RTFTPSERVERCMD_PASS,      "PASS", false, rtFtpServerHandlePASS },
+    { RTFTPSERVERCMD_PORT,      "PORT", true,  rtFtpServerHandlePORT },
+    { RTFTPSERVERCMD_PWD,       "PWD",  true,  rtFtpServerHandlePWD  },
+    { RTFTPSERVERCMD_OPTS,      "OPTS", false, rtFtpServerHandleOPTS },
+    { RTFTPSERVERCMD_QUIT,      "QUIT", false, rtFtpServerHandleQUIT },
+    { RTFTPSERVERCMD_RETR,      "RETR", true,  rtFtpServerHandleRETR },
+    { RTFTPSERVERCMD_SIZE,      "SIZE", true,  rtFtpServerHandleSIZE },
+    { RTFTPSERVERCMD_STAT,      "STAT", true,  rtFtpServerHandleSTAT },
+    { RTFTPSERVERCMD_STRU,      "STRU", true,  rtFtpServerHandleSTRU },
+    { RTFTPSERVERCMD_SYST,      "SYST", false, rtFtpServerHandleSYST },
+    { RTFTPSERVERCMD_TYPE,      "TYPE", true,  rtFtpServerHandleTYPE },
+    { RTFTPSERVERCMD_USER,      "USER", false, rtFtpServerHandleUSER },
+    { RTFTPSERVERCMD_END,       "",     false, NULL }
 };
 
 /** RFC-1123 month of the year names. */
@@ -2286,6 +2294,9 @@ static void rtFtpServerCmdArgsFree(char **ppapcszArgs)
  */
 static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd, size_t cbCmd)
 {
+    /** @todo r=bird: pcszCmd is a misnomer, it is _clearly_ not const as you
+     * modify it all over the place!  Please do _not_use 'c' to mean 'const', it
+     * means 'count of'. */
     /* Make sure to terminate the string in any case. */
     pcszCmd[RT_MIN(RTFTPSERVER_MAX_CMD_LEN, cbCmd)] = '\0';
 
@@ -2294,6 +2305,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
 
     /* First, terminate string by finding the command end marker (telnet style). */
     /** @todo Not sure if this is entirely correct and/or needs tweaking; good enough for now as it seems. */
+    /** @todo r=bird: Why are you using the case-insensitive version here? */
     char *pszCmdEnd = RTStrIStr(pcszCmd, "\r\n");
     if (pszCmdEnd)
         *pszCmdEnd = '\0';
@@ -2316,7 +2328,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
         unsigned i = 0;
         for (; i < RT_ELEMENTS(g_aCmdMap); i++)
         {
-            const RTFTPSERVER_CMD_ENTRY *pCmdEntry = &g_aCmdMap[i];
+            const RTFTPSERVERCMD_ENTRY *pCmdEntry = &g_aCmdMap[i];
 
             if (!RTStrICmp(papszArgs[0], pCmdEntry->szCmd))
             {
@@ -2366,7 +2378,7 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
             rcClient = RTFTPSERVER_REPLY_ERROR_CMD_NOT_IMPL;
         }
 
-        const bool fDisconnect =    g_aCmdMap[i].enmCmd == RTFTPSERVER_CMD_QUIT
+        const bool fDisconnect =    g_aCmdMap[i].enmCmd == RTFTPSERVERCMD_QUIT
                                  || pClient->State.cFailedLoginAttempts >= 3; /** @todo Make this dynamic. */
         if (fDisconnect)
         {
@@ -2397,6 +2409,10 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient, char *pcszCmd,
  *
  * @returns VBox status code.
  * @param   pClient             Client to process commands for.
+ *
+ * @todo r=bird: There are two rtFtpServerProcessCommands functions. Please
+ *       don't use C++ overloading in C code, it's unnecessary and confusing
+ *       (even in C++ code, see init() methods in the API).
  */
 static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
 {
@@ -2418,14 +2434,10 @@ static int rtFtpServerProcessCommands(PRTFTPSERVERCLIENT pClient)
                 rc = rtFtpServerProcessCommands(pClient, szCmd, cbRead);
             }
         }
+        else if (rc == VERR_TIMEOUT)
+            rc = VINF_SUCCESS;
         else
-        {
-            if (rc == VERR_TIMEOUT)
-                rc = VINF_SUCCESS;
-
-            if (RT_FAILURE(rc))
-                break;
-        }
+            break;
 
         /*
          * Handle data connection replies.
