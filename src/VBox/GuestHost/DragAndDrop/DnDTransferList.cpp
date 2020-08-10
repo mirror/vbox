@@ -631,6 +631,10 @@ static int dndTransferListAppendPathNative(PDNDTRANSFERLIST pList, const char *p
                     }
                 }
             }
+            /* On UNIX-y OSes RTPathQueryInfo() returns VERR_FILE_NOT_FOUND in some cases
+             * so tweak this to make it uniform to Windows. */
+            else if (rc == VERR_FILE_NOT_FOUND)
+                rc = VERR_PATH_NOT_FOUND;
         }
         else
             rc = VERR_INVALID_PARAMETER;
