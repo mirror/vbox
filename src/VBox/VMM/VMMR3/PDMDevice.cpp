@@ -784,13 +784,19 @@ static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename
             if (RT_SUCCESS(rc))
                 Log(("PDM: Successfully loaded device module %s (%s).\n", pszName, pszFilename));
             else
+            {
+                VMR3SetError(pVM->pUVM, rc, RT_SRC_POS, "VBoxDevicesRegister failed with rc=%Rrc for module %s (%s)",
+                             rc, pszName, pszFilename);
                 AssertMsgFailed(("VBoxDevicesRegister failed with rc=%Rrc for module %s (%s)\n", rc, pszName, pszFilename));
+            }
         }
         else
         {
             AssertMsgFailed(("Failed to locate 'VBoxDevicesRegister' in %s (%s) rc=%Rrc\n", pszName, pszFilename, rc));
             if (rc == VERR_SYMBOL_NOT_FOUND)
                 rc = VERR_PDM_NO_REGISTRATION_EXPORT;
+            VMR3SetError(pVM->pUVM, rc, RT_SRC_POS, "Failed to locate 'VBoxDevicesRegister' in %s (%s) rc=%Rrc",
+                         pszName, pszFilename, rc);
         }
     }
     else
