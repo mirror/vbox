@@ -135,7 +135,7 @@
         <varlistentry>
            <term>--auto-mount-point=<replaceable>path</replaceable></term>
            <listitem><para>
-               Specifies the mount point of the share.  This guest OS specific.  
+               Specifies the mount point of the share.  This guest OS specific.
              </para><para>
                For Windows and OS/2 guest this must be an unused drive letter.
                If left blank (or if the drive letter is already in use), the
