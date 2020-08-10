@@ -3233,6 +3233,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	common/string/memchr.asm \
 	common/string/mempcpy.asm \
 	common/string/strpbrk.cpp \
+	common/string/strstrip.cpp \
 	common/string/RTStrPrintHexBytes.cpp \
 	darwin/RTErrConvertFromDarwin.cpp \
 	darwin/RTErrConvertFromDarwinIO.cpp \
