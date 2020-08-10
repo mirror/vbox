@@ -244,7 +244,9 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	-framework IOKit \
  	-framework Carbon \
  	-framework DiskArbitration \
- 	-framework SystemConfiguration
+ 	-framework SystemConfiguration \
+ 	-framework AVFoundation \
+ 	-framework Foundation
  VBoxDD_LDFLAGS.linux    = $(VBOX_GCC_NO_UNDEFINED)
 
  # --- Tracing bits. ---
@@ -622,7 +624,8 @@ endif
 
  ifeq ($(KBUILD_TARGET),darwin)
   VBoxDD_SOURCES += \
-	Audio/DrvHostCoreAudio.cpp
+	Audio/DrvHostCoreAudio.cpp \
+  Audio/DrvHostCoreAudio-auth.mm
  endif
 
  ifeq ($(KBUILD_TARGET),win)

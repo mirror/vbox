@@ -129,6 +129,8 @@ typedef struct COREAUDIOUNIT
 } COREAUDIOUNIT, *PCOREAUDIOUNIT;
 
 
+DECLHIDDEN(int) coreAudioInputPermissionCheck(void);
+
 /*******************************************************************************
  *
  * Helper function section
@@ -1577,6 +1579,13 @@ static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMC
     const bool fIn = pCfgReq->enmDir == PDMAUDIODIR_IN;
 
     int rc = VINF_SUCCESS;
+
+    if (fIn)
+    {
+        rc = coreAudioInputPermissionCheck();
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     /* Create the recording device's out format based on our required audio settings. */
     Assert(pCAStream->pCfg == NULL);
