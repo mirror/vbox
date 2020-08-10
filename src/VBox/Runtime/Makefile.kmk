@@ -695,7 +695,6 @@ RuntimeR3_SOURCES       = \
 	generic/critsect-generic.cpp \
 	generic/critsectrw-generic.cpp \
 	generic/env-generic.cpp \
-	generic/ftp-server.cpp \
 	generic/RTDirCreateUniqueNumbered-generic.cpp \
 	generic/RTEnvDupEx-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
@@ -728,6 +727,7 @@ RuntimeR3_SOURCES       = \
 	r3/dir2.cpp \
 	r3/fileio.cpp \
 	r3/fs.cpp \
+	r3/ftp-server.cpp \
 	r3/init.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
