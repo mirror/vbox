@@ -622,27 +622,6 @@ protected:
     }
 };
 
-/** Menu action extension, used as 'Move to Group' menu class. */
-class UIActionMenuManagerCommonMoveToGroup : public UIActionMenu
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuManagerCommonMoveToGroup(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "Move to Gro&up"));
-    }
-};
-
 /** Simple action extension, used as 'Move to Group => New' action class. */
 class UIActionSimpleManagerMachineMoveToGroupNew : public UIActionSimple
 {
@@ -884,6 +863,27 @@ protected:
     }
 };
 
+
+/** Menu action extension, used as 'Move to Group' menu class. */
+class UIActionMenuManagerCommonMoveToGroup : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuManagerCommonMoveToGroup(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Move to Gro&up"));
+    }
+};
 
 /** Menu action extension, used as 'Start or Show' menu class. */
 class UIActionStateManagerCommonStartOrShow : public UIActionMenu
@@ -3672,6 +3672,115 @@ void UIActionPoolManager::updateMenus()
     updateMenuHelp();
 }
 
+void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
+{
+    /* Prepare a list of actions: */
+    QList<UIAction*> actions;
+
+    /* Handle known menus: */
+    switch (iIndex)
+    {
+        case UIActionIndexMN_M_Welcome:
+        {
+            actions << action(UIActionIndexMN_M_Welcome_S_New)
+                    << action(UIActionIndexMN_M_Welcome_S_Add);
+            break;
+        }
+        case UIActionIndexMN_M_Group:
+        {
+            actions << action(UIActionIndexMN_M_Group_S_New)
+                    << action(UIActionIndexMN_M_Group_S_Add)
+                    << action(UIActionIndexMN_M_Group_S_Rename)
+                    << action(UIActionIndexMN_M_Group_S_Remove)
+                    << action(UIActionIndexMN_M_Group_M_MoveToGroup)
+                    << action(UIActionIndexMN_M_Group_M_StartOrShow)
+                    << action(UIActionIndexMN_M_Group_T_Pause)
+                    << action(UIActionIndexMN_M_Group_S_Reset)
+                    << action(UIActionIndexMN_M_Group_S_Discard)
+                    << action(UIActionIndexMN_M_Group_S_ShowLogDialog)
+                    << action(UIActionIndexMN_M_Group_S_Refresh)
+                    << action(UIActionIndexMN_M_Group_S_ShowInFileManager)
+                    << action(UIActionIndexMN_M_Group_S_CreateShortcut)
+                    << action(UIActionIndexMN_M_Group_S_Sort)
+                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal)
+                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless)
+                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable)
+                    << action(UIActionIndexMN_M_Group_M_Console_S_CreateConnection)
+                    << action(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection)
+                    << action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications)
+                    // << action(UIActionIndexMN_M_Group_M_Close_S_Detach)
+                    << action(UIActionIndexMN_M_Group_M_Close_S_SaveState)
+                    << action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)
+                    << action(UIActionIndexMN_M_Group_M_Close_S_PowerOff)
+                    << action(UIActionIndexMN_M_Group_M_Tools_T_Details)
+                    << action(UIActionIndexMN_M_Group_M_Tools_T_Snapshots)
+                    << action(UIActionIndexMN_M_Group_M_Tools_T_Logs)
+                    << action(UIActionIndexMN_M_Group_M_Tools_T_Performance);
+            break;
+        }
+        case UIActionIndexMN_M_Machine:
+        {
+            actions << action(UIActionIndexMN_M_Machine_S_New)
+                    << action(UIActionIndexMN_M_Machine_S_Add)
+                    << action(UIActionIndexMN_M_Machine_S_Settings)
+                    << action(UIActionIndexMN_M_Machine_S_Clone)
+                    << action(UIActionIndexMN_M_Machine_S_Move)
+                    << action(UIActionIndexMN_M_Machine_S_ExportToOCI)
+                    << action(UIActionIndexMN_M_Machine_S_Remove)
+                    << action(UIActionIndexMN_M_Machine_M_MoveToGroup)
+                    << action(UIActionIndexMN_M_Machine_M_StartOrShow)
+                    << action(UIActionIndexMN_M_Machine_T_Pause)
+                    << action(UIActionIndexMN_M_Machine_S_Reset)
+                    << action(UIActionIndexMN_M_Machine_S_Discard)
+                    << action(UIActionIndexMN_M_Machine_S_ShowLogDialog)
+                    << action(UIActionIndexMN_M_Machine_S_Refresh)
+                    << action(UIActionIndexMN_M_Machine_S_ShowInFileManager)
+                    << action(UIActionIndexMN_M_Machine_S_CreateShortcut)
+                    << action(UIActionIndexMN_M_Machine_S_SortParent)
+                    << action(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New)
+                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal)
+                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless)
+                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CreateConnection)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows)
+                    << action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)
+                    // << action(UIActionIndexMN_M_Machine_M_Close_S_Detach)
+                    << action(UIActionIndexMN_M_Machine_M_Close_S_SaveState)
+                    << action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)
+                    << action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff)
+                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Details)
+                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Snapshots)
+                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Logs)
+                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Performance);
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Update shortcut visibility: */
+    foreach (UIAction *pAction, actions)
+        fVisible ? pAction->showShortcut() : pAction->hideShortcut();
+}
+
+QString UIActionPoolManager::shortcutsExtraDataID() const
+{
+    return GUI_Input_SelectorShortcuts;
+}
+
+void UIActionPoolManager::updateShortcuts()
+{
+    /* Call to base-class: */
+    UIActionPool::updateShortcuts();
+    /* Create temporary Runtime UI pool to do the same: */
+    if (!isTemporary())
+        UIActionPool::createTemporary(UIActionPoolType_Runtime);
+}
+
 void UIActionPoolManager::updateMenuFile()
 {
     /* Get corresponding menu: */
@@ -4217,115 +4326,6 @@ void UIActionPoolManager::updateMenuSnapshot()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexMN_M_Snapshot);
-}
-
-void UIActionPoolManager::updateShortcuts()
-{
-    /* Call to base-class: */
-    UIActionPool::updateShortcuts();
-    /* Create temporary Runtime UI pool to do the same: */
-    if (!isTemporary())
-        UIActionPool::createTemporary(UIActionPoolType_Runtime);
-}
-
-void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
-{
-    /* Prepare a list of actions: */
-    QList<UIAction*> actions;
-
-    /* Handle known menus: */
-    switch (iIndex)
-    {
-        case UIActionIndexMN_M_Welcome:
-        {
-            actions << action(UIActionIndexMN_M_Welcome_S_New)
-                    << action(UIActionIndexMN_M_Welcome_S_Add);
-            break;
-        }
-        case UIActionIndexMN_M_Group:
-        {
-            actions << action(UIActionIndexMN_M_Group_S_New)
-                    << action(UIActionIndexMN_M_Group_S_Add)
-                    << action(UIActionIndexMN_M_Group_S_Rename)
-                    << action(UIActionIndexMN_M_Group_S_Remove)
-                    << action(UIActionIndexMN_M_Group_M_MoveToGroup)
-                    << action(UIActionIndexMN_M_Group_M_StartOrShow)
-                    << action(UIActionIndexMN_M_Group_T_Pause)
-                    << action(UIActionIndexMN_M_Group_S_Reset)
-                    << action(UIActionIndexMN_M_Group_S_Discard)
-                    << action(UIActionIndexMN_M_Group_S_ShowLogDialog)
-                    << action(UIActionIndexMN_M_Group_S_Refresh)
-                    << action(UIActionIndexMN_M_Group_S_ShowInFileManager)
-                    << action(UIActionIndexMN_M_Group_S_CreateShortcut)
-                    << action(UIActionIndexMN_M_Group_S_Sort)
-                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartNormal)
-                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartHeadless)
-                    << action(UIActionIndexMN_M_Group_M_StartOrShow_S_StartDetachable)
-                    << action(UIActionIndexMN_M_Group_M_Console_S_CreateConnection)
-                    << action(UIActionIndexMN_M_Group_M_Console_S_DeleteConnection)
-                    << action(UIActionIndexMN_M_Group_M_Console_S_ConfigureApplications)
-                    // << action(UIActionIndexMN_M_Group_M_Close_S_Detach)
-                    << action(UIActionIndexMN_M_Group_M_Close_S_SaveState)
-                    << action(UIActionIndexMN_M_Group_M_Close_S_Shutdown)
-                    << action(UIActionIndexMN_M_Group_M_Close_S_PowerOff)
-                    << action(UIActionIndexMN_M_Group_M_Tools_T_Details)
-                    << action(UIActionIndexMN_M_Group_M_Tools_T_Snapshots)
-                    << action(UIActionIndexMN_M_Group_M_Tools_T_Logs)
-                    << action(UIActionIndexMN_M_Group_M_Tools_T_Performance);
-            break;
-        }
-        case UIActionIndexMN_M_Machine:
-        {
-            actions << action(UIActionIndexMN_M_Machine_S_New)
-                    << action(UIActionIndexMN_M_Machine_S_Add)
-                    << action(UIActionIndexMN_M_Machine_S_Settings)
-                    << action(UIActionIndexMN_M_Machine_S_Clone)
-                    << action(UIActionIndexMN_M_Machine_S_Move)
-                    << action(UIActionIndexMN_M_Machine_S_ExportToOCI)
-                    << action(UIActionIndexMN_M_Machine_S_Remove)
-                    << action(UIActionIndexMN_M_Machine_M_MoveToGroup)
-                    << action(UIActionIndexMN_M_Machine_M_StartOrShow)
-                    << action(UIActionIndexMN_M_Machine_T_Pause)
-                    << action(UIActionIndexMN_M_Machine_S_Reset)
-                    << action(UIActionIndexMN_M_Machine_S_Discard)
-                    << action(UIActionIndexMN_M_Machine_S_ShowLogDialog)
-                    << action(UIActionIndexMN_M_Machine_S_Refresh)
-                    << action(UIActionIndexMN_M_Machine_S_ShowInFileManager)
-                    << action(UIActionIndexMN_M_Machine_S_CreateShortcut)
-                    << action(UIActionIndexMN_M_Machine_S_SortParent)
-                    << action(UIActionIndexMN_M_Machine_M_MoveToGroup_S_New)
-                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartNormal)
-                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartHeadless)
-                    << action(UIActionIndexMN_M_Machine_M_StartOrShow_S_StartDetachable)
-                    << action(UIActionIndexMN_M_Machine_M_Console_S_CreateConnection)
-                    << action(UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection)
-                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialUnix)
-                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandSerialWindows)
-                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix)
-                    << action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows)
-                    << action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)
-                    // << action(UIActionIndexMN_M_Machine_M_Close_S_Detach)
-                    << action(UIActionIndexMN_M_Machine_M_Close_S_SaveState)
-                    << action(UIActionIndexMN_M_Machine_M_Close_S_Shutdown)
-                    << action(UIActionIndexMN_M_Machine_M_Close_S_PowerOff)
-                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Details)
-                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Snapshots)
-                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Logs)
-                    << action(UIActionIndexMN_M_Machine_M_Tools_T_Performance);
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Update shortcut visibility: */
-    foreach (UIAction *pAction, actions)
-        fVisible ? pAction->showShortcut() : pAction->hideShortcut();
-}
-
-QString UIActionPoolManager::shortcutsExtraDataID() const
-{
-    return GUI_Input_SelectorShortcuts;
 }
 
 

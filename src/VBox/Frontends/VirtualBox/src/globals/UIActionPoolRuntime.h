@@ -22,7 +22,6 @@
 #endif
 
 /* Qt includes: */
-#include <QList>
 #include <QMap>
 
 /* GUI includes: */
@@ -36,7 +35,6 @@
   * 1. Every menu index prepended with 'M',
   * 2. Every simple-action index prepended with 'S',
   * 3. Every toggle-action index presended with 'T',
-  * 4. Every polymorphic-action index presended with 'P',
   * 5. Every sub-index contains full parent-index name. */
 enum UIActionIndexRT
 {
@@ -177,46 +175,34 @@ public:
     /** Returns whether the action with passed @a type is allowed in the 'Machine' menu. */
     bool isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const;
     /** Defines 'Machine' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuMachine(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuMachineActionType restriction);
+    void setRestrictionForMenuMachine(UIActionRestrictionLevel level,
+                                      UIExtraDataMetaDefs::RuntimeMenuMachineActionType restriction);
 
     /** Returns whether the action with passed @a type is allowed in the 'View' menu. */
     bool isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType type) const;
     /** Defines 'View' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuView(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuViewActionType restriction);
+    void setRestrictionForMenuView(UIActionRestrictionLevel level,
+                                   UIExtraDataMetaDefs::RuntimeMenuViewActionType restriction);
 
     /** Returns whether the action with passed @a type is allowed in the 'Input' menu. */
     bool isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType type) const;
     /** Defines 'Input' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuInput(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuInputActionType restriction);
+    void setRestrictionForMenuInput(UIActionRestrictionLevel level,
+                                    UIExtraDataMetaDefs::RuntimeMenuInputActionType restriction);
 
     /** Returns whether the action with passed @a type is allowed in the 'Devices' menu. */
     bool isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType type) const;
     /** Defines 'Devices' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuDevices(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction);
+    void setRestrictionForMenuDevices(UIActionRestrictionLevel level,
+                                      UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Returns whether the action with passed @a type is allowed in the 'Debug' menu. */
     bool isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType type) const;
     /** Defines 'Debug' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuDebugger(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restriction);
+    void setRestrictionForMenuDebugger(UIActionRestrictionLevel level,
+                                       UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restriction);
 #endif
-
-protected slots:
-
-    /** Handles configuration-change. */
-    void sltHandleConfigurationChange(const QUuid &uMachineID);
-
-    /** Prepares 'View' : 'Virtual Screen #' menu (Normal, Scale). */
-    void sltPrepareMenuViewScreen();
-
-    /** Handles 'View' : 'Virtual Screen #' menu : 'Toggle' action trigger. */
-    void sltHandleActionTriggerViewScreenToggle();
-    /** Handles 'View' : 'Virtual Screen #' menu : 'Resize' @a pAction trigger. */
-    void sltHandleActionTriggerViewScreenResize(QAction *pAction);
-    /** Handles 'View' : 'Virtual Screen #' menu : 'Remap' @a pAction trigger. */
-    void sltHandleActionTriggerViewScreenRemap(QAction *pAction);
-    /** Handles 'View' : 'Virtual Screen #' menu : 'Rescale' @a pAction trigger. */
-    void sltHandleActionTriggerViewScreenRescale(QAction *pAction);
 
 protected:
 
@@ -237,6 +223,30 @@ protected:
     virtual void updateMenu(int iIndex) /* override */;
     /** Updates menus. */
     virtual void updateMenus() /* override */;
+
+    /** Returns extra-data ID to save keyboard shortcuts under. */
+    virtual QString shortcutsExtraDataID() const /* override */;
+    /** Updates shortcuts. */
+    virtual void updateShortcuts() /* override */;
+
+private slots:
+
+    /** Handles configuration-change. */
+    void sltHandleConfigurationChange(const QUuid &uMachineID);
+
+    /** Prepares 'View' : 'Virtual Screen #' menu (Normal, Scale). */
+    void sltPrepareMenuViewScreen();
+
+    /** Handles 'View' : 'Virtual Screen #' menu : 'Toggle' action trigger. */
+    void sltHandleActionTriggerViewScreenToggle();
+    /** Handles 'View' : 'Virtual Screen #' menu : 'Resize' @a pAction trigger. */
+    void sltHandleActionTriggerViewScreenResize(QAction *pAction);
+    /** Handles 'View' : 'Virtual Screen #' menu : 'Remap' @a pAction trigger. */
+    void sltHandleActionTriggerViewScreenRemap(QAction *pAction);
+    /** Handles 'View' : 'Virtual Screen #' menu : 'Rescale' @a pAction trigger. */
+    void sltHandleActionTriggerViewScreenRescale(QAction *pAction);
+
+private:
 
     /** Updates 'Machine' menu. */
     void updateMenuMachine();
@@ -278,14 +288,6 @@ protected:
     /** Updates 'Debug' menu. */
     void updateMenuDebug();
 #endif
-
-    /** Updates shortcuts. */
-    virtual void updateShortcuts() /* override */;
-
-    /** Returns extra-data ID to save keyboard shortcuts under. */
-    virtual QString shortcutsExtraDataID() const /* override */;
-
-private:
 
     /** Holds the host-screen count. */
     int  m_cHostScreens;

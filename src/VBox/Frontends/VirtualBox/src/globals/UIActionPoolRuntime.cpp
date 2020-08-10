@@ -3173,7 +3173,8 @@ bool UIActionPoolRuntime::isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMen
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuMachine(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuMachineActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuMachine(UIActionRestrictionLevel level,
+                                                       UIExtraDataMetaDefs::RuntimeMenuMachineActionType restriction)
 {
     m_restrictedActionsMenuMachine[level] = restriction;
     m_invalidations << UIActionIndexRT_M_Machine;
@@ -3187,7 +3188,8 @@ bool UIActionPoolRuntime::isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuVi
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuView(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuViewActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuView(UIActionRestrictionLevel level,
+                                                    UIExtraDataMetaDefs::RuntimeMenuViewActionType restriction)
 {
     m_restrictedActionsMenuView[level] = restriction;
     m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
@@ -3201,7 +3203,8 @@ bool UIActionPoolRuntime::isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuI
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuInput(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuInputActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuInput(UIActionRestrictionLevel level,
+                                                     UIExtraDataMetaDefs::RuntimeMenuInputActionType restriction)
 {
     m_restrictedActionsMenuInput[level] = restriction;
     m_invalidations << UIActionIndexRT_M_Input;
@@ -3215,7 +3218,8 @@ bool UIActionPoolRuntime::isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMen
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuDevices(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuDevices(UIActionRestrictionLevel level,
+                                                       UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction)
 {
     m_restrictedActionsMenuDevices[level] = restriction;
     m_invalidations << UIActionIndexRT_M_Devices;
@@ -3230,120 +3234,13 @@ bool UIActionPoolRuntime::isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuD
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel level,
+                                                        UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restriction)
 {
     m_restrictedActionsMenuDebug[level] = restriction;
     m_invalidations << UIActionIndexRT_M_Debug;
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-void UIActionPoolRuntime::sltHandleConfigurationChange(const QUuid &uMachineID)
-{
-    /* Skip unrelated machine IDs: */
-    if (uiCommon().managedVMUuid() != uMachineID)
-        return;
-
-    /* Update configuration: */
-    updateConfiguration();
-}
-
-void UIActionPoolRuntime::sltPrepareMenuViewScreen()
-{
-    /* Make sure sender is valid: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    AssertPtrReturnVoid(pMenu);
-
-    /* Do we have to show resize, remap or rescale actions? */
-    const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    const bool fAllowToShowActionRemap = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap);
-    const bool fAllowToShowActionRescale = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale);
-
-    /* Clear contents: */
-    pMenu->clear();
-
-    /* Separator: */
-    bool fSeparator = false;
-
-    /* Resize actions: */
-    if (fAllowToShowActionResize)
-    {
-        updateMenuViewResize(pMenu);
-        fSeparator = true;
-    }
-
-    /* Separator: */
-    if (fSeparator)
-    {
-        pMenu->addSeparator();
-        fSeparator = false;
-    }
-
-    /* Remap actions: */
-    if (fAllowToShowActionRemap && (m_cHostScreens > 1 || m_cGuestScreens > 1))
-    {
-        updateMenuViewRemap(pMenu);
-        fSeparator = true;
-    }
-
-    /* Separator: */
-    if (fSeparator)
-    {
-        pMenu->addSeparator();
-        fSeparator = false;
-    }
-
-    /* Rescale actions: */
-    if (fAllowToShowActionRescale)
-    {
-        updateMenuViewRescale(pMenu);
-        fSeparator = true;
-    }
-}
-
-void UIActionPoolRuntime::sltHandleActionTriggerViewScreenToggle()
-{
-    /* Make sure sender is valid: */
-    QAction *pAction = qobject_cast<QAction*>(sender());
-    AssertPtrReturnVoid(pAction);
-
-    /* Send request to enable/disable guest-screen: */
-    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
-    const bool fScreenEnabled = pAction->isChecked();
-    emit sigNotifyAboutTriggeringViewScreenToggle(iGuestScreenIndex, fScreenEnabled);
-}
-
-void UIActionPoolRuntime::sltHandleActionTriggerViewScreenResize(QAction *pAction)
-{
-    /* Make sure sender is valid: */
-    AssertPtrReturnVoid(pAction);
-
-    /* Send request to resize guest-screen to required size: */
-    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
-    const QSize size = pAction->property("Requested Size").toSize();
-    emit sigNotifyAboutTriggeringViewScreenResize(iGuestScreenIndex, size);
-}
-
-void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRemap(QAction *pAction)
-{
-    /* Make sure sender is valid: */
-    AssertPtrReturnVoid(pAction);
-
-    /* Send request to remap guest-screen to required host-screen: */
-    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
-    const int iHostScreenIndex = pAction->property("Host Screen Index").toInt();
-    emit sigNotifyAboutTriggeringViewScreenRemap(iGuestScreenIndex, iHostScreenIndex);
-}
-
-void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRescale(QAction *pAction)
-{
-    /* Make sure sender is valid: */
-    AssertPtrReturnVoid(pAction);
-
-    /* Change scale-factor directly: */
-    const double dScaleFactor = pAction->property("Requested Scale Factor").toDouble();
-    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
-    gEDataManager->setScaleFactor(dScaleFactor, uiCommon().managedVMUuid(), iGuestScreenIndex);
-}
 
 void UIActionPoolRuntime::preparePool()
 {
@@ -3639,6 +3536,128 @@ void UIActionPoolRuntime::updateMenus()
 
     /* 'File Manager' menu: */
     updateMenuFileManager();
+}
+
+QString UIActionPoolRuntime::shortcutsExtraDataID() const
+{
+    return GUI_Input_MachineShortcuts;
+}
+
+void UIActionPoolRuntime::updateShortcuts()
+{
+    /* Call to base-class: */
+    UIActionPool::updateShortcuts();
+    /* Create temporary Manager UI pool to do the same: */
+    if (!isTemporary())
+        UIActionPool::createTemporary(UIActionPoolType_Manager);
+}
+
+void UIActionPoolRuntime::sltHandleConfigurationChange(const QUuid &uMachineID)
+{
+    /* Skip unrelated machine IDs: */
+    if (uiCommon().managedVMUuid() != uMachineID)
+        return;
+
+    /* Update configuration: */
+    updateConfiguration();
+}
+
+void UIActionPoolRuntime::sltPrepareMenuViewScreen()
+{
+    /* Make sure sender is valid: */
+    QMenu *pMenu = qobject_cast<QMenu*>(sender());
+    AssertPtrReturnVoid(pMenu);
+
+    /* Do we have to show resize, remap or rescale actions? */
+    const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
+    const bool fAllowToShowActionRemap = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap);
+    const bool fAllowToShowActionRescale = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale);
+
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Separator: */
+    bool fSeparator = false;
+
+    /* Resize actions: */
+    if (fAllowToShowActionResize)
+    {
+        updateMenuViewResize(pMenu);
+        fSeparator = true;
+    }
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* Remap actions: */
+    if (fAllowToShowActionRemap && (m_cHostScreens > 1 || m_cGuestScreens > 1))
+    {
+        updateMenuViewRemap(pMenu);
+        fSeparator = true;
+    }
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* Rescale actions: */
+    if (fAllowToShowActionRescale)
+    {
+        updateMenuViewRescale(pMenu);
+        fSeparator = true;
+    }
+}
+
+void UIActionPoolRuntime::sltHandleActionTriggerViewScreenToggle()
+{
+    /* Make sure sender is valid: */
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertPtrReturnVoid(pAction);
+
+    /* Send request to enable/disable guest-screen: */
+    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
+    const bool fScreenEnabled = pAction->isChecked();
+    emit sigNotifyAboutTriggeringViewScreenToggle(iGuestScreenIndex, fScreenEnabled);
+}
+
+void UIActionPoolRuntime::sltHandleActionTriggerViewScreenResize(QAction *pAction)
+{
+    /* Make sure sender is valid: */
+    AssertPtrReturnVoid(pAction);
+
+    /* Send request to resize guest-screen to required size: */
+    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
+    const QSize size = pAction->property("Requested Size").toSize();
+    emit sigNotifyAboutTriggeringViewScreenResize(iGuestScreenIndex, size);
+}
+
+void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRemap(QAction *pAction)
+{
+    /* Make sure sender is valid: */
+    AssertPtrReturnVoid(pAction);
+
+    /* Send request to remap guest-screen to required host-screen: */
+    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
+    const int iHostScreenIndex = pAction->property("Host Screen Index").toInt();
+    emit sigNotifyAboutTriggeringViewScreenRemap(iGuestScreenIndex, iHostScreenIndex);
+}
+
+void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRescale(QAction *pAction)
+{
+    /* Make sure sender is valid: */
+    AssertPtrReturnVoid(pAction);
+
+    /* Change scale-factor directly: */
+    const double dScaleFactor = pAction->property("Requested Scale Factor").toDouble();
+    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
+    gEDataManager->setScaleFactor(dScaleFactor, uiCommon().managedVMUuid(), iGuestScreenIndex);
 }
 
 void UIActionPoolRuntime::updateMenuMachine()
@@ -4354,20 +4373,6 @@ void UIActionPoolRuntime::updateMenuDebug()
     m_invalidations.remove(UIActionIndexRT_M_Debug);
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-void UIActionPoolRuntime::updateShortcuts()
-{
-    /* Call to base-class: */
-    UIActionPool::updateShortcuts();
-    /* Create temporary Manager UI pool to do the same: */
-    if (!isTemporary())
-        UIActionPool::createTemporary(UIActionPoolType_Manager);
-}
-
-QString UIActionPoolRuntime::shortcutsExtraDataID() const
-{
-    return GUI_Input_MachineShortcuts;
-}
 
 
 #include "UIActionPoolRuntime.moc"

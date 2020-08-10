@@ -21,9 +21,6 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QList>
-
 /* GUI includes: */
 #include "UIActionPool.h"
 #include "UILibraryDefs.h"
@@ -34,7 +31,6 @@
   * 1. Every menu index prepended with 'M',
   * 2. Every simple-action index prepended with 'S',
   * 3. Every toggle-action index presended with 'T',
-  * 4. Every polymorphic-action index presended with 'P',
   * 5. Every sub-index contains full parent-index name. */
 enum UIActionIndexMN
 {
@@ -189,7 +185,7 @@ enum UIActionIndexMN
     UIActionIndexMN_M_CloudConsole_S_ProfileRemove,
     UIActionIndexMN_M_CloudConsole_T_Details,
 
-    /* VM resource Monitor actions: */
+    /* VM Resource Monitor actions: */
     UIActionIndexMN_M_VMResourceMonitor,
     UIActionIndexMN_M_VMResourceMonitor_M_Columns,
     UIActionIndexMN_M_VMResourceMonitor_S_SwitchToMachinePerformance,
@@ -221,6 +217,15 @@ protected:
     virtual void updateMenu(int iIndex) /* override */;
     /** Updates menus. */
     virtual void updateMenus() /* override */;
+
+    /** Defines whether shortcuts of menu actions with specified @a iIndex should be visible. */
+    virtual void setShortcutsVisible(int iIndex, bool fVisible) /* override */;
+    /** Returns extra-data ID to save keyboard shortcuts under. */
+    virtual QString shortcutsExtraDataID() const /* override */;
+    /** Updates shortcuts. */
+    virtual void updateShortcuts() /* override */;
+
+private:
 
     /** Updates 'File' menu. */
     void updateMenuFile();
@@ -279,24 +284,13 @@ protected:
     /** Updates 'Cloud Console' @a pMenu. */
     void updateMenuCloudConsoleWrapper(UIMenu *pMenu);
 
-   /** Updates 'VM Resource Monitor' menu. */
+    /** Updates 'VM Resource Monitor' menu. */
     void updateMenuVMResourceMonitor();
     /** Updates 'VM Resource Monitor' @a pMenu. */
     void updateMenuVMResourceMonitorWrapper(UIMenu *pMenu);
 
     /** Updates 'Snapshot' menu. */
     void updateMenuSnapshot();
-
-    /** Updates shortcuts. */
-    virtual void updateShortcuts() /* override */;
-
-    /** Defines whether shortcuts of menu actions with specified @a iIndex should be visible. */
-    virtual void setShortcutsVisible(int iIndex, bool fVisible) /* override */;
-
-    /** Returns extra-data ID to save keyboard shortcuts under. */
-    virtual QString shortcutsExtraDataID() const /* override */;
-
-private:
 
     /** Enables factory in base-class. */
     friend class UIActionPool;
