@@ -16,6 +16,8 @@
     <key>LSCanProvideIMVideoDataSource</key>    <false/>
     <key>NSHighResolutionCapable</key>          <true/>
     <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
+    <key>NSCameraUsageDescription</key>         <string>VirtualBox needs camera access for emulated webcam passthrough</string>
+    <key>NSMicrophoneUsageDescription</key>     <string>VirtualBox needs microphone access for guest audio input</string>
     <key>CFBundleDocumentTypes</key>
     <array>
      <dict>
