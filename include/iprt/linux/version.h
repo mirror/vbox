@@ -51,5 +51,29 @@
     (   LINUX_VERSION_CODE >= KERNEL_VERSION(a_MajorMin, a_MinorMin, a_PatchMin) \
      && LINUX_VERSION_CODE <  KERNEL_VERSION(a_MajorMax, a_MinorMax, a_PatchMax) )
 
+
+/** @def VBOX_RHEL_MAJ_PREREQ
+ * Require a minimum minor release number for the given RedHat release.
+ * @param a_iMajor      RHEL_MAJOR must _equal_ this.
+ * @param a_iMinor      RHEL_MINOR must be greater or equal to this.
+ */
+#if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
+# define VBOX_RHEL_MAJ_PREREQ(a_iMajor, a_iMinor) ((RHEL_MAJOR) == (a_iMajor) && (RHEL_MINOR) >= (a_iMinor))
+#else
+# define VBOX_RHEL_MAJ_PREREQ(a_iMajor, a_iMinor) (0)
+#endif
+
+/** @def RTLNX_SUSE_MAJ_PREREQ
+ * Require a minimum minor release number for the given SUSE release.
+ * @param a_iMajor      CONFIG_SUSE_VERSION must _equal_ this.
+ * @param a_iMinor      CONFIG_SUSE_PATCHLEVEL must be greater or equal to this.
+ */
+#if defined(CONFIG_SUSE_VERSION) && defined(CONFIG_SUSE_PATCHLEVEL)
+# define RTLNX_SUSE_MAJ_PREREQ(a_iMajor, a_iMinor) ((CONFIG_SUSE_VERSION) == (a_iMajor) && (CONFIG_SUSE_PATCHLEVEL) >= (a_iMinor))
+#else
+# define RTLNX_SUSE_MAJ_PREREQ(a_iMajor, a_iMinor) (0)
+#endif
+
+
 #endif /* !IPRT_INCLUDED_linux_version_h */
 

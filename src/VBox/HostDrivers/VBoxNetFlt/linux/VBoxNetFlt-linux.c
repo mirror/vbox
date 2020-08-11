@@ -205,16 +205,8 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 /*
  * GRO support was backported to RHEL 5.4
  */
-#ifdef RHEL_RELEASE_CODE
-# if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(5, 4)
-#  define VBOXNETFLT_WITH_GRO               1
-# endif
-#endif
-
-#if defined(CONFIG_SUSE_VERSION)
-# if CONFIG_SUSE_VERSION == 15 && CONFIG_SUSE_PATCHLEVEL == 2
-#  define OPENSUSE_152
-# endif
+#if RTLNX_RHEL_MAJ_PREREQ(5, 4)
+# define VBOXNETFLT_WITH_GRO                1
 #endif
 
 
@@ -928,7 +920,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
     for (i = 0; i < skb_shinfo(pBuf)->nr_frags; i++)
     {
         skb_frag_t *pFrag = &skb_shinfo(pBuf)->frags[i];
-# if RTLNX_VER_MIN(5,4,0) || defined(OPENSUSE_152)
+# if RTLNX_VER_MIN(5,4,0) || RTLNX_SUSE_MAJ_PREREQ(15, 2)
         pSG->aSegs[iSeg].cb = pFrag->bv_len;
         pSG->aSegs[iSeg].pv = VBOX_SKB_KMAP_FRAG(pFrag) + pFrag->bv_offset;
 # else /* < KERNEL_VERSION(5, 4, 0) */
@@ -949,7 +941,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
         for (i = 0; i < skb_shinfo(pFragBuf)->nr_frags; i++)
         {
             skb_frag_t *pFrag = &skb_shinfo(pFragBuf)->frags[i];
-# if RTLNX_VER_MIN(5,4,0) || defined(OPENSUSE_152)
+# if RTLNX_VER_MIN(5,4,0) || RTLNX_SUSE_MAJ_PREREQ(15, 2)
             pSG->aSegs[iSeg].cb = pFrag->bv_len;
             pSG->aSegs[iSeg].pv = VBOX_SKB_KMAP_FRAG(pFrag) + pFrag->bv_offset;
 # else /* < KERNEL_VERSION(5, 4, 0) */
