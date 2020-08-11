@@ -47,6 +47,25 @@
 # endif
 #endif
 
+
+/** @def RTLNX_VER_MIN
+ * Evaluates to true if the linux kernel version is equal or higher to the
+ * one specfied. */
+#define RTLNX_VER_MIN(a_Major, a_Minor, a_Patch) \
+    (LINUX_VERSION_CODE >= KERNEL_VERSION(a_Major, a_Minor, a_Patch))
+/** @def RTLNX_VER_MAX
+ * Evaluates to true if the linux kernel version is less to the one specfied
+ * (exclusive). */
+#define RTLNX_VER_MAX(a_Major, a_Minor, a_Patch) \
+    (LINUX_VERSION_CODE <  KERNEL_VERSION(a_Major, a_Minor, a_Patch))
+/** @def RTLNX_VER_RANGE
+ * Evaluates to true if the linux kernel version is equal or higher to the given
+ * minimum version and less (but not equal) to the maximum version (exclusive). */
+#define RTLNX_VER_RANGE(a_MajorMin, a_MinorMin, a_PatchMin,  a_MajorMax, a_MinorMax, a_PatchMax) \
+    (   LINUX_VERSION_CODE >= KERNEL_VERSION(a_MajorMin, a_MinorMin, a_PatchMin) \
+     && LINUX_VERSION_CODE <  KERNEL_VERSION(a_MajorMax, a_MinorMax, a_PatchMax) )
+
+
 #include <linux/version.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
 # include <generated/autoconf.h>
@@ -58,10 +77,10 @@
 
 /* We only support 2.4 and 2.6 series kernels */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-# error We only support 2.4 and 2.6 series kernels
+# error Sorry, we do not support 2.3 and earlier kernels.
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-# error We only support 2.4 and 2.6 series kernels
+# error Sorry, we do not support 2.5 series kernels (might work though).
 #endif
 
 #if defined(CONFIG_MODVERSIONS) && !defined(MODVERSIONS)
