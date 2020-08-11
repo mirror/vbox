@@ -1430,7 +1430,10 @@ static int vbsf_lock_user_pages_failed_check_kernel(uintptr_t uPtrFrom, size_t c
 /** Wrapper around get_user_pages. */
 DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWrite, struct page **papPages, bool *pfLockPgHack)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) \
+  || (   defined(CONFIG_SUSE_KERNEL) /** @todo Figure out when exactly. Also, guessing a bit here what got backported. */ \
+      && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 73) \
+      && LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
     ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, papPages,
                                                    fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
@@ -3730,7 +3733,8 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
  * This is needed to make open accept O_DIRECT as well as dealing with direct
  * I/O requests if we don't intercept them earlier.
  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) \
+  || (defined(CONFIG_SUSE_KERNEL) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 73) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)) /** @todo Figure out when exactly. */
 static ssize_t vbsf_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
 static ssize_t vbsf_direct_IO(struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
