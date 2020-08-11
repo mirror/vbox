@@ -89,7 +89,8 @@ VBOX_HDRS_R3_ONLY := \
 # Ring-0 driver only headers.
 VBOX_HDRS_R0DRV_ONLY := \
 	VBox/VBoxGuestLibSharedFolders.h \
-	VBox/VBoxGuestLibSharedFoldersInline.h
+	VBox/VBoxGuestLibSharedFoldersInline.h \
+       iprt/linux/version.h
 
 # GCC only headers.
 VBOX_HDRS_GCC_ONLY := \
