@@ -1401,7 +1401,7 @@ static int vbsf_lock_user_pages_failed_check_kernel(uintptr_t uPtrFrom, size_t c
     /*
      * Check that this is valid user memory that is actually in the kernel range.
      */
-#if RTLNX_VER_MIN(5,0,0) || RTLNX_RHEL_PREREQ(8,1)
+#if RTLNX_VER_MIN(5,0,0) || RTLNX_RHEL_MIN(8,1)
     if (   access_ok((void *)uPtrFrom, cPages << PAGE_SHIFT)
         && uPtrFrom >= USER_DS.seg)
 #else

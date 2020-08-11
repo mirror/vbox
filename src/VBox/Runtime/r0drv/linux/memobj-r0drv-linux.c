@@ -1775,12 +1775,8 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
             }
 
 #ifdef CONFIG_NUMA_BALANCING
-# if RTLNX_VER_MAX(3,13,0)
-#  ifdef RHEL_RELEASE_CODE
-#   if RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(7, 0)
-#    define VBOX_NUMA_HACK_OLD
-#   endif
-#  endif
+# if RTLNX_VER_MAX(3,13,0) && RTLNX_RHEL_MAX(7,0)
+#  define VBOX_NUMA_HACK_OLD
 # endif
             if (RT_SUCCESS(rc))
             {

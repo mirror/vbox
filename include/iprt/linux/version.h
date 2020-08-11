@@ -52,30 +52,56 @@
      && LINUX_VERSION_CODE <  KERNEL_VERSION(a_MajorMax, a_MinorMax, a_PatchMax) )
 
 
-/** @def RTLNX_RHEL_PREREQ
+/** @def RTLNX_RHEL_MIN
  * Require a minium RedHat release.
  * @param a_iMajor      The major release number (RHEL_MAJOR).
  * @param a_iMinor      The minor release number (RHEL_MINOR).
- * @sa RTLNX_RHEL_MAJ_PREREQ
+ * @sa RTLNX_RHEL_MAX, RTLNX_RHEL_RANGE, RTLNX_RHEL_MAJ_PREREQ
  */
 #if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
-# define RTLNX_RHEL_PREREQ(a_iMajor, a_iMinor) \
+# define RTLNX_RHEL_MIN(a_iMajor, a_iMinor) \
      ((RHEL_MAJOR) > (a_iMajor) || ((RHEL_MAJOR) == (a_iMajor) && (RHEL_MINOR) >= (a_iMinor)))
 #else
-# define RTLNX_RHEL_PREREQ(a_iMajor, a_iMinor) (0)
+# define RTLNX_RHEL_MIN(a_iMajor, a_iMinor) (0)
+#endif
+
+/** @def RTLNX_RHEL_MAX
+ * Require a maximum RedHat release, true for all RHEL versions below it.
+ * @param a_iMajor      The major release number (RHEL_MAJOR).
+ * @param a_iMinor      The minor release number (RHEL_MINOR).
+ * @sa RTLNX_RHEL_MIN, RTLNX_RHEL_RANGE, RTLNX_RHEL_MAJ_PREREQ
+ */
+#if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
+# define RTLNX_RHEL_MAX(a_iMajor, a_iMinor) \
+     ((RHEL_MAJOR) < (a_iMajor) || ((RHEL_MAJOR) == (a_iMajor) && (RHEL_MINOR) < (a_iMinor)))
+#else
+# define RTLNX_RHEL_MAX(a_iMajor, a_iMinor) (0)
+#endif
+
+/** @define RTLNX_RHEL_RANGE
+ * Check that it's a RedHat kernel in the given version range.
+ * The max version is exclusive, the minimum inclusive.
+ * @sa RTLNX_RHEL_MIN, RTLNX_RHEL_MAX, RTLNX_RHEL_MAJ_PREREQ
+ */
+#if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
+# define RTLNX_RHEL_RANGE(a_iMajorMin, a_iMinorMin,  a_iMajorMax, a_iMinorMax) \
+     (RTLNX_RHEL_MIN(a_iMajorMin, a_iMinorMin) && RTLNX_RHEL_MAX(a_iMajorMax, a_iMinorMax))
+#else
+# define RTLNX_RHEL_RANGE(a_iMajorMin, a_iMinorMin,  a_iMajorMax, a_iMinorMax)  (0)
 #endif
 
 /** @def RTLNX_RHEL_MAJ_PREREQ
  * Require a minimum minor release number for the given RedHat release.
  * @param a_iMajor      RHEL_MAJOR must _equal_ this.
  * @param a_iMinor      RHEL_MINOR must be greater or equal to this.
- * @sa RTLNX_RHEL_PREREQ
+ * @sa RTLNX_RHEL_MIN, RTLNX_RHEL_MAX
  */
 #if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
 # define RTLNX_RHEL_MAJ_PREREQ(a_iMajor, a_iMinor) ((RHEL_MAJOR) == (a_iMajor) && (RHEL_MINOR) >= (a_iMinor))
 #else
 # define RTLNX_RHEL_MAJ_PREREQ(a_iMajor, a_iMinor) (0)
 #endif
+
 
 /** @def RTLNX_SUSE_MAJ_PREREQ
  * Require a minimum minor release number for the given SUSE release.
