@@ -436,7 +436,7 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
  */
 static void vbsf_done_backing_dev(struct super_block *sb, struct vbsf_super_info *pSuperInfo)
 {
-#if RTLNX_VER_RANGE(2,6,24,  4,13,0)
+#if RTLNX_VER_RANGE(2,6,24, 4,12,0)
     bdi_destroy(&pSuperInfo->bdi);    /* includes bdi_unregister() */
 
     /* Paranoia: Make sb->s_bdi not point at pSuperInfo->bdi, in case someone
