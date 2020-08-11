@@ -342,7 +342,7 @@ public:
 public:
 
     /** The window's thread for the native message pump and OLE context. */
-    static DECLCALLBACK(int) Thread(RTTHREAD m_hThread, void *pvUser);
+    static DECLCALLBACK(int) Thread(RTTHREAD hThread, void *pvUser);
 
 public:
 
