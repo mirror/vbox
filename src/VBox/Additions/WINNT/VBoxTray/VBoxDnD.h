@@ -37,11 +37,12 @@ public:
 
     enum Status
     {
-        Uninitialized = 0,
-        Initialized,
-        Dropping,
-        Dropped,
-        Aborted
+        Status_Uninitialized = 0,
+        Status_Initialized,
+        Status_Dropping,
+        Status_Dropped,
+        Status_Aborted,
+        Status_32Bit_Hack = 0x7fffffff
     };
 
 public:
@@ -78,28 +79,27 @@ public:
 protected:
 
     bool LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
-    static HGLOBAL MemDup(HGLOBAL hMemSource);
     void RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
     /** Current drag and drop status. */
-    Status      mStatus;
+    Status      m_enmStatus;
     /** Internal reference count of this object. */
-    LONG        mRefCount;
+    LONG        m_cRefs;
     /** Number of native formats registered. This can be a different number than supplied with m_lstFormats. */
-    ULONG       mcFormats;
+    ULONG       m_cFormats;
     /** Array of registered FORMATETC structs. Matches m_cFormats. */
-    LPFORMATETC mpFormatEtc;
+    LPFORMATETC m_paFormatEtc;
     /** Array of registered STGMEDIUM structs. Matches m_cFormats. */
-    LPSTGMEDIUM mpStgMedium;
+    LPSTGMEDIUM m_paStgMedium;
     /** Event semaphore used for waiting on status changes. */
-    RTSEMEVENT  mEventDropped;
+    RTSEMEVENT  m_EvtDropped;
     /** Format of currently retrieved data. */
-    RTCString   mstrFormat;
+    RTCString   m_strFormat;
     /** The retrieved data as a raw buffer. */
-    void       *mpvData;
+    void       *m_pvData;
     /** Raw buffer size (in bytes). */
-    size_t      mcbData;
+    size_t      m_cbData;
 };
 
 /**
@@ -114,7 +114,7 @@ public:
 
 public:
 
-    VBOXDNDACTION GetCurrentAction(void) { return mDnDActionCurrent; }
+    VBOXDNDACTION GetCurrentAction(void) { return m_enmActionCurrent; }
 
 public: /* IUnknown methods. */
 
@@ -130,13 +130,13 @@ public: /* IDropSource methods. */
 protected:
 
     /** Reference count of this object. */
-    LONG                  mRefCount;
+    LONG                  m_cRefs;
     /** Pointer to parent proxy window. */
-    VBoxDnDWnd           *mpWndParent;
+    VBoxDnDWnd           *m_pWndParent;
     /** Current drag effect. */
-    DWORD                 mdwCurEffect;
+    DWORD                 m_dwCurEffect;
     /** Current action to perform on the host. */
-    VBOXDNDACTION         mDnDActionCurrent;
+    VBOXDNDACTION         m_enmActionCurrent;
 };
 
 /**
@@ -171,10 +171,10 @@ protected:
 public:
 
     /** Returns the data as mutable raw. Use with caution! */
-    void *DataMutableRaw(void) const { return mpvData; }
+    void *DataMutableRaw(void) const { return m_pvData; }
 
     /** Returns the data size (in bytes). */
-    size_t DataSize(void) const { return mcbData; }
+    size_t DataSize(void) const { return m_cbData; }
 
     RTCString Formats(void) const;
     int WaitForDrop(RTMSINTERVAL msTimeout);
@@ -182,24 +182,24 @@ public:
 protected:
 
     /** Reference count of this object. */
-    LONG                  mRefCount;
+    LONG                  m_cRefs;
     /** Pointer to parent proxy window. */
-    VBoxDnDWnd           *mpWndParent;
+    VBoxDnDWnd           *m_pWndParent;
     /** Current drop effect. */
-    DWORD                 mdwCurEffect;
+    DWORD                 m_dwCurEffect;
     /** Copy of the data object's current FORMATETC struct.
      *  Note: We don't keep the pointer of the DVTARGETDEVICE here! */
-    FORMATETC             mFormatEtc;
-    /** Stringified data object's formats string.  */
-    RTCString             mstrFormats;
+    FORMATETC             m_FormatEtc;
+    /** Stringified data object's format currently in use.  */
+    RTCString             m_strFormat;
     /** Pointer to actual format data. */
-    void                 *mpvData;
+    void                 *m_pvData;
     /** Size (in bytes) of format data. */
-    size_t                mcbData;
+    size_t                m_cbData;
     /** Event for waiting on the "drop" event. */
-    RTSEMEVENT            hEventDrop;
+    RTSEMEVENT            m_EvtDrop;
     /** Result of the drop event. */
-    int                   mDroppedRc;
+    int                   m_rcDropped;
 };
 
 /**
@@ -231,13 +231,13 @@ public:
 private:
 
     /** Reference count of this object. */
-    LONG        m_lRefCount;
+    LONG        m_cRefs;
     /** Current index for format iteration. */
-    ULONG       m_nIndex;
+    ULONG       m_uIdxCur;
     /** Number of format this object contains. */
-    ULONG       m_nNumFormats;
-    /** Array of FORMATETC formats this object contains. Matches m_nNumFormats. */
-    LPFORMATETC m_pFormatEtc;
+    ULONG       m_cFormats;
+    /** Array of FORMATETC formats this object contains. Matches m_cFormats. */
+    LPFORMATETC m_paFormatEtc;
 };
 
 struct VBOXDNDCONTEXT;
@@ -342,7 +342,7 @@ public:
 public:
 
     /** The window's thread for the native message pump and OLE context. */
-    static DECLCALLBACK(int) Thread(RTTHREAD hThread, void *pvUser);
+    static DECLCALLBACK(int) Thread(RTTHREAD m_hThread, void *pvUser);
 
 public:
 
@@ -365,7 +365,7 @@ public:
     int Abort(void);
 
     /* Host -> Guest */
-    int OnHgEnter(const RTCList<RTCString> &formats, VBOXDNDACTIONLIST dndLstActionsAllowed);
+    int OnHgEnter(const RTCList<RTCString> &formats, VBOXDNDACTIONLIST m_lstActionsAllowed);
     int OnHgMove(uint32_t u32xPos, uint32_t u32yPos, VBOXDNDACTION dndAction);
     int OnHgDrop(void);
     int OnHgLeave(void);
@@ -395,50 +395,50 @@ protected:
 public: /** @todo Make protected! */
 
     /** Pointer to DnD context. */
-    PVBOXDNDCONTEXT            pCtx;
+    PVBOXDNDCONTEXT            m_pCtx;
     /** The proxy window's main thread for processing
      *  window messages. */
-    RTTHREAD                   hThread;
+    RTTHREAD                   m_hThread;
     /** Critical section to serialize access. */
-    RTCRITSECT                 mCritSect;
+    RTCRITSECT                 m_CritSect;
     /** Event semaphore to wait for new DnD events. */
-    RTSEMEVENT                 mEventSem;
+    RTSEMEVENT                 m_EvtSem;
 #ifdef RT_OS_WINDOWS
     /** The window's handle. */
-    HWND                       hWnd;
+    HWND                       m_hWnd;
     /** List of allowed MIME types this
      *  client can handle. Make this a per-instance
      *  property so that we can selectively allow/forbid
      *  certain types later on runtime. */
-    RTCList<RTCString>         lstFmtSup;
+    RTCList<RTCString>         m_lstFmtSup;
     /** List of formats for the current
      *  drag'n drop operation. */
-    RTCList<RTCString>         lstFmtActive;
+    RTCList<RTCString>         m_lstFmtActive;
     /** List of all current drag'n drop actions allowed. */
-    VBOXDNDACTIONLIST          dndLstActionsAllowed;
+    VBOXDNDACTIONLIST          m_lstActionsAllowed;
     /** The startup information required
      *  for the actual DoDragDrop() call. */
-    VBOXDNDSTARTUPINFO         startupInfo;
+    VBOXDNDSTARTUPINFO         m_startupInfo;
     /** Is the left mouse button being pressed
      *  currently while being in this window? */
-    bool                       mfMouseButtonDown;
+    bool                       m_fMouseButtonDown;
 # ifdef VBOX_WITH_DRAG_AND_DROP_GH
     /** Pointer to IDropTarget implementation for
      *  guest -> host support. */
-    VBoxDnDDropTarget         *pDropTarget;
+    VBoxDnDDropTarget         *m_pDropTarget;
 # endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 #else /* !RT_OS_WINDOWS */
     /** @todo Implement me. */
 #endif /* !RT_OS_WINDOWS */
 
     /** The window's own DnD context. */
-    VBGLR3GUESTDNDCMDCTX       mDnDCtx;
+    VBGLR3GUESTDNDCMDCTX       m_cmdCtx;
     /** The current operation mode. */
-    Mode                       mMode;
+    Mode                       m_enmMode;
     /** The current state. */
-    State                      mState;
+    State                      m_enmState;
     /** Format being requested. */
-    RTCString                  mFormatRequested;
+    RTCString                  m_strFmtReq;
 };
 
 #endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDnD_h */

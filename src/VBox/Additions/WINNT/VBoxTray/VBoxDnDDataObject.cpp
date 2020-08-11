@@ -41,11 +41,11 @@
 /** @todo Implement IDataObjectAsyncCapability interface? */
 
 VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
-    : mStatus(Uninitialized),
-      mRefCount(1),
-      mcFormats(0),
-      mpvData(NULL),
-      mcbData(0)
+    : m_enmStatus(Status_Uninitialized),
+      m_cRefs(1),
+      m_cFormats(0),
+      m_pvData(NULL),
+      m_cbData(0)
 {
     HRESULT hr;
 
@@ -54,10 +54,10 @@ VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed
 
     try
     {
-        mpFormatEtc = new FORMATETC[cAllFormats];
-        RT_BZERO(mpFormatEtc, sizeof(FORMATETC) * cAllFormats);
-        mpStgMedium = new STGMEDIUM[cAllFormats];
-        RT_BZERO(mpStgMedium, sizeof(STGMEDIUM) * cAllFormats);
+        m_paFormatEtc = new FORMATETC[cAllFormats];
+        RT_BZERO(m_paFormatEtc, sizeof(FORMATETC) * cAllFormats);
+        m_paStgMedium = new STGMEDIUM[cAllFormats];
+        RT_BZERO(m_paStgMedium, sizeof(STGMEDIUM) * cAllFormats);
 
         /*
          * Registration of dynamic formats needed?
@@ -72,8 +72,8 @@ VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed
             {
                 LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
                              i, pFormatEtc[i].cfFormat, pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
-                mpFormatEtc[i] = pFormatEtc[i];
-                mpStgMedium[i] = pStgMed[i];
+                m_paFormatEtc[i] = pFormatEtc[i];
+                m_paStgMedium[i] = pStgMed[i];
             }
         }
 
@@ -86,7 +86,7 @@ VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed
 
     if (SUCCEEDED(hr))
     {
-        int rc2 = RTSemEventCreate(&mEventDropped);
+        int rc2 = RTSemEventCreate(&m_EvtDropped);
         AssertRC(rc2);
 
         /*
@@ -114,8 +114,8 @@ VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed
         RegisterFormat(&mpFormatEtc[cFormats++],
                        RegisterClipboardFormat(CFSTR_SHELLIDLISTOFFSET));
 #endif
-        mcFormats = cFormats;
-        mStatus   = Initialized;
+        m_cFormats = cFormats;
+        m_enmStatus   = Status_Initialized;
     }
 
     LogFlowFunc(("cFormats=%RU32, hr=%Rhrc\n", cFormats, hr));
@@ -123,16 +123,16 @@ VBoxDnDDataObject::VBoxDnDDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed
 
 VBoxDnDDataObject::~VBoxDnDDataObject(void)
 {
-    if (mpFormatEtc)
-        delete[] mpFormatEtc;
+    if (m_paFormatEtc)
+        delete[] m_paFormatEtc;
 
-    if (mpStgMedium)
-        delete[] mpStgMedium;
+    if (m_paStgMedium)
+        delete[] m_paStgMedium;
 
-    if (mpvData)
-        RTMemFree(mpvData);
+    if (m_pvData)
+        RTMemFree(m_pvData);
 
-    LogFlowFunc(("mRefCount=%RI32\n", mRefCount));
+    LogFlowFunc(("mRefCount=%RI32\n", m_cRefs));
 }
 
 /*
@@ -141,12 +141,12 @@ VBoxDnDDataObject::~VBoxDnDDataObject(void)
 
 STDMETHODIMP_(ULONG) VBoxDnDDataObject::AddRef(void)
 {
-    return InterlockedIncrement(&mRefCount);
+    return InterlockedIncrement(&m_cRefs);
 }
 
 STDMETHODIMP_(ULONG) VBoxDnDDataObject::Release(void)
 {
-    LONG lCount = InterlockedDecrement(&mRefCount);
+    LONG lCount = InterlockedDecrement(&m_cRefs);
     if (lCount == 0)
     {
         delete this;
@@ -180,35 +180,35 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
     ULONG lIndex;
     if (!LookupFormatEtc(pFormatEtc, &lIndex)) /* Format supported? */
         return DV_E_FORMATETC;
-    if (lIndex >= mcFormats) /* Paranoia. */
+    if (lIndex >= m_cFormats) /* Paranoia. */
         return DV_E_FORMATETC;
 
-    LPFORMATETC pThisFormat = &mpFormatEtc[lIndex];
+    LPFORMATETC pThisFormat = &m_paFormatEtc[lIndex];
     AssertPtr(pThisFormat);
 
-    LPSTGMEDIUM pThisMedium = &mpStgMedium[lIndex];
+    LPSTGMEDIUM pThisMedium = &m_paStgMedium[lIndex];
     AssertPtr(pThisMedium);
 
     LogFlowFunc(("Using pThisFormat=%p, pThisMedium=%p\n", pThisFormat, pThisMedium));
 
     HRESULT hr = DV_E_FORMATETC; /* Play safe. */
 
-    LogFlowFunc(("mStatus=%ld\n", mStatus));
-    if (mStatus == Dropping)
+    LogFlowFunc(("mStatus=%ld\n", m_enmStatus));
+    if (m_enmStatus == Status_Dropping)
     {
         LogRel2(("DnD: Waiting for drop event ...\n"));
-        int rc2 = RTSemEventWait(mEventDropped, RT_INDEFINITE_WAIT);
-        LogFlowFunc(("rc2=%Rrc, mStatus=%ld\n", rc2, mStatus)); RT_NOREF(rc2);
+        int rc2 = RTSemEventWait(m_EvtDropped, RT_INDEFINITE_WAIT);
+        LogFlowFunc(("rc2=%Rrc, mStatus=%ld\n", rc2, m_enmStatus)); RT_NOREF(rc2);
     }
 
-    if (mStatus == Dropped)
+    if (m_enmStatus == Status_Dropped)
     {
         LogRel2(("DnD: Drop event received\n"));
         LogRel3(("DnD: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
                  pThisFormat->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
                  pThisFormat->tymed, pThisFormat->dwAspect));
         LogRel3(("DnD: Got strFormat=%s, pvData=%p, cbData=%RU32\n",
-                  mstrFormat.c_str(), mpvData, mcbData));
+                  m_strFormat.c_str(), m_pvData, m_cbData));
 
         /*
          * Initialize default values.
@@ -219,11 +219,11 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
         /*
          * URI list handling.
          */
-        if (DnDMIMEHasFileURLs(mstrFormat.c_str(), RTSTR_MAX))
+        if (DnDMIMEHasFileURLs(m_strFormat.c_str(), RTSTR_MAX))
         {
             char **papszFiles;
             size_t cFiles;
-            int rc = RTStrSplit((const char *)mpvData, mcbData, DND_PATH_SEPARATOR, &papszFiles, &cFiles);
+            int rc = RTStrSplit((const char *)m_pvData, m_cbData, DND_PATH_SEPARATOR, &papszFiles, &cFiles);
             if (   RT_SUCCESS(rc)
                 && cFiles)
             {
@@ -262,12 +262,12 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
                     && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
                     && (pFormatEtc->cfFormat == CF_TEXT))
                 {
-                    pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
+                    pMedium->hGlobal = GlobalAlloc(GHND, m_cbData + 1);
                     if (pMedium->hGlobal)
                     {
                         char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
-                        memcpy(pcDst, mpvData, mcbData);
-                        pcDst[mcbData] = '\0';
+                        memcpy(pcDst, m_pvData, m_cbData);
+                        pcDst[m_cbData] = '\0';
                         GlobalUnlock(pMedium->hGlobal);
 
                         hr = S_OK;
@@ -355,28 +355,28 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
         /*
          * Plain text handling.
          */
-        else if (   mstrFormat.equalsIgnoreCase("text/plain")
-                 || mstrFormat.equalsIgnoreCase("text/html")
-                 || mstrFormat.equalsIgnoreCase("text/plain;charset=utf-8")
-                 || mstrFormat.equalsIgnoreCase("text/plain;charset=utf-16")
-                 || mstrFormat.equalsIgnoreCase("text/richtext")
-                 || mstrFormat.equalsIgnoreCase("UTF8_STRING")
-                 || mstrFormat.equalsIgnoreCase("TEXT")
-                 || mstrFormat.equalsIgnoreCase("STRING"))
+        else if (   m_strFormat.equalsIgnoreCase("text/plain")
+                 || m_strFormat.equalsIgnoreCase("text/html")
+                 || m_strFormat.equalsIgnoreCase("text/plain;charset=utf-8")
+                 || m_strFormat.equalsIgnoreCase("text/plain;charset=utf-16")
+                 || m_strFormat.equalsIgnoreCase("text/richtext")
+                 || m_strFormat.equalsIgnoreCase("UTF8_STRING")
+                 || m_strFormat.equalsIgnoreCase("TEXT")
+                 || m_strFormat.equalsIgnoreCase("STRING"))
         {
-            pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
+            pMedium->hGlobal = GlobalAlloc(GHND, m_cbData + 1);
             if (pMedium->hGlobal)
             {
                 char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
-                memcpy(pcDst, mpvData, mcbData);
-                pcDst[mcbData] = '\0';
+                memcpy(pcDst, m_pvData, m_cbData);
+                pcDst[m_cbData] = '\0';
                 GlobalUnlock(pMedium->hGlobal);
 
                 hr = S_OK;
             }
         }
         else
-            LogRel(("DnD: Error: Format '%s' not implemented\n", mstrFormat.c_str()));
+            LogRel(("DnD: Error: Format '%s' not implemented\n", m_strFormat.c_str()));
     }
 
     /* Error handling; at least return some basic data. */
@@ -400,7 +400,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
     }
 
     if (hr == DV_E_FORMATETC)
-        LogRel(("DnD: Error handling format '%s' (%RU32 bytes)\n", mstrFormat.c_str(), mcbData));
+        LogRel(("DnD: Error handling format '%s' (%RU32 bytes)\n", m_strFormat.c_str(), m_cbData));
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
@@ -437,11 +437,11 @@ STDMETHODIMP VBoxDnDDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
 
 STDMETHODIMP VBoxDnDDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc)
 {
-    LogFlowFunc(("dwDirection=%RI32, mcFormats=%RI32, mpFormatEtc=%p\n", dwDirection, mcFormats, mpFormatEtc));
+    LogFlowFunc(("dwDirection=%RI32, mcFormats=%RI32, mpFormatEtc=%p\n", dwDirection, m_cFormats, m_paFormatEtc));
 
     HRESULT hr;
     if (dwDirection == DATADIR_GET)
-        hr = VBoxDnDEnumFormatEtc::CreateEnumFormatEtc(mcFormats, mpFormatEtc, ppEnumFormatEtc);
+        hr = VBoxDnDEnumFormatEtc::CreateEnumFormatEtc(m_cFormats, m_paFormatEtc, ppEnumFormatEtc);
     else
         hr = E_NOTIMPL;
 
@@ -479,8 +479,8 @@ STDMETHODIMP VBoxDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
 int VBoxDnDDataObject::Abort(void)
 {
     LogFlowFunc(("Aborting ...\n"));
-    mStatus = Aborted;
-    return RTSemEventSignal(mEventDropped);
+    m_enmStatus = Status_Aborted;
+    return RTSemEventSignal(m_EvtDropped);
 }
 
 /**
@@ -584,14 +584,14 @@ bool VBoxDnDDataObject::LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
     AssertReturn(pFormatEtc, false);
     /* puIndex is optional. */
 
-    for (ULONG i = 0; i < mcFormats; i++)
+    for (ULONG i = 0; i < m_cFormats; i++)
     {
-        if(    (pFormatEtc->tymed & mpFormatEtc[i].tymed)
-            && pFormatEtc->cfFormat == mpFormatEtc[i].cfFormat
-            && pFormatEtc->dwAspect == mpFormatEtc[i].dwAspect)
+        if(    (pFormatEtc->tymed & m_paFormatEtc[i].tymed)
+            && pFormatEtc->cfFormat == m_paFormatEtc[i].cfFormat
+            && pFormatEtc->dwAspect == m_paFormatEtc[i].dwAspect)
         {
             LogRel3(("DnD: Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
-                      pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
+                      pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(m_paFormatEtc[i].cfFormat),
                       pFormatEtc->dwAspect, i));
             if (puIndex)
                 *puIndex = i;
@@ -604,25 +604,6 @@ bool VBoxDnDDataObject::LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
              pFormatEtc->dwAspect));
 
     return false;
-}
-
-/* static */
-HGLOBAL VBoxDnDDataObject::MemDup(HGLOBAL hMemSource)
-{
-    DWORD dwLen    = GlobalSize(hMemSource);
-    AssertReturn(dwLen, NULL);
-    PVOID pvSource = GlobalLock(hMemSource);
-    if (pvSource)
-    {
-        PVOID pvDest = GlobalAlloc(GMEM_FIXED, dwLen);
-        if (pvDest)
-            memcpy(pvDest, pvSource, dwLen);
-
-        GlobalUnlock(hMemSource);
-        return pvDest;
-    }
-
-    return NULL;
 }
 
 /**
@@ -659,7 +640,7 @@ void VBoxDnDDataObject::RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFo
 void VBoxDnDDataObject::SetStatus(Status status)
 {
     LogFlowFunc(("Setting status to %ld\n", status));
-    mStatus = status;
+    m_enmStatus = status;
 }
 
 /**
@@ -677,11 +658,11 @@ int VBoxDnDDataObject::Signal(const RTCString &strFormat,
 
     if (cbData)
     {
-        mpvData = RTMemAlloc(cbData);
-        if (mpvData)
+        m_pvData = RTMemAlloc(cbData);
+        if (m_pvData)
         {
-            memcpy(mpvData, pvData, cbData);
-            mcbData = cbData;
+            memcpy(m_pvData, pvData, cbData);
+            m_cbData = cbData;
             rc = VINF_SUCCESS;
         }
         else
@@ -692,22 +673,22 @@ int VBoxDnDDataObject::Signal(const RTCString &strFormat,
 
     if (RT_SUCCESS(rc))
     {
-        mStatus    = Dropped;
-        mstrFormat = strFormat;
+        m_enmStatus    = Status_Dropped;
+        m_strFormat = strFormat;
     }
     else
     {
-        mStatus = Aborted;
+        m_enmStatus = Status_Aborted;
     }
 
     /* Signal in any case. */
     LogRel2(("DnD: Signalling drop event\n"));
 
-    int rc2 = RTSemEventSignal(mEventDropped);
+    int rc2 = RTSemEventSignal(m_EvtDropped);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
-    LogFunc(("mStatus=%RU32, rc=%Rrc\n", mStatus, rc));
+    LogFunc(("mStatus=%RU32, rc=%Rrc\n", m_enmStatus, rc));
     return rc;
 }
 

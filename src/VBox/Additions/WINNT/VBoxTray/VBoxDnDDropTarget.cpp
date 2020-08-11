@@ -35,14 +35,14 @@
 
 
 VBoxDnDDropTarget::VBoxDnDDropTarget(VBoxDnDWnd *pParent)
-    : mRefCount(1),
-      mpWndParent(pParent),
-      mdwCurEffect(0),
-      mpvData(NULL),
-      mcbData(0),
-      hEventDrop(NIL_RTSEMEVENT)
+    : m_cRefs(1),
+      m_pWndParent(pParent),
+      m_dwCurEffect(0),
+      m_pvData(NULL),
+      m_cbData(0),
+      m_EvtDrop(NIL_RTSEMEVENT)
 {
-    int rc = RTSemEventCreate(&hEventDrop);
+    int rc = RTSemEventCreate(&m_EvtDrop);
     LogFlowFunc(("rc=%Rrc\n", rc)); NOREF(rc);
 }
 
@@ -50,10 +50,10 @@ VBoxDnDDropTarget::~VBoxDnDDropTarget(void)
 {
     reset();
 
-    int rc2 = RTSemEventDestroy(hEventDrop);
+    int rc2 = RTSemEventDestroy(m_EvtDrop);
     AssertRC(rc2);
 
-    LogFlowFunc(("rc=%Rrc, mRefCount=%RI32\n", rc2, mRefCount));
+    LogFlowFunc(("rc=%Rrc, mRefCount=%RI32\n", rc2, m_cRefs));
 }
 
 /*
@@ -62,12 +62,12 @@ VBoxDnDDropTarget::~VBoxDnDDropTarget(void)
 
 STDMETHODIMP_(ULONG) VBoxDnDDropTarget::AddRef(void)
 {
-    return InterlockedIncrement(&mRefCount);
+    return InterlockedIncrement(&m_cRefs);
 }
 
 STDMETHODIMP_(ULONG) VBoxDnDDropTarget::Release(void)
 {
-    LONG lCount = InterlockedDecrement(&mRefCount);
+    LONG lCount = InterlockedDecrement(&m_cRefs);
     if (lCount == 0)
     {
         delete this;
@@ -157,7 +157,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
     HRESULT hr = pDataObject->QueryGetData(&fmtEtc);
     if (hr == S_OK)
     {
-        mstrFormats = "text/uri-list";
+        m_strFormat = "text/uri-list";
     }
     else
     {
@@ -169,7 +169,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
         hr = pDataObject->QueryGetData(&fmtEtc);
         if (hr == S_OK)
         {
-            mstrFormats = "text/plain;charset=utf-8";
+            m_strFormat = "text/plain;charset=utf-8";
         }
         else
         {
@@ -179,7 +179,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
             hr = pDataObject->QueryGetData(&fmtEtc);
             if (hr == S_OK)
             {
-                mstrFormats = "text/plain;charset=utf-8";
+                m_strFormat = "text/plain;charset=utf-8";
             }
             else
             {
@@ -201,7 +201,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
         /* Make a copy of the FORMATETC structure so that we later can
          * use this for comparrison and stuff. */
         /** @todo The DVTARGETDEVICE member only is a shallow copy for now! */
-        memcpy(&mFormatEtc, &fmtEtc, sizeof(FORMATETC));
+        memcpy(&m_FormatEtc, &fmtEtc, sizeof(FORMATETC));
 
         /* Which drop effect we're going to use? */
         /* Note: pt is not used since we don't need to differentiate within our
@@ -228,7 +228,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
     }
 
     LogFlowFunc(("Returning mstrFormats=%s, cfFormat=%RI16, pdwEffect=%ld, hr=%Rhrc\n",
-                 mstrFormats.c_str(), fmtEtc.cfFormat, *pdwEffect, hr));
+                 m_strFormat.c_str(), fmtEtc.cfFormat, *pdwEffect, hr));
     return hr;
 }
 
@@ -239,10 +239,10 @@ STDMETHODIMP VBoxDnDDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pd
 
 #ifdef DEBUG_andy
     LogFlowFunc(("cfFormat=%RI16, grfKeyState=0x%x, x=%ld, y=%ld\n",
-                 mFormatEtc.cfFormat, grfKeyState, pt.x, pt.y));
+                 m_FormatEtc.cfFormat, grfKeyState, pt.x, pt.y));
 #endif
 
-    if (mFormatEtc.cfFormat)
+    if (m_FormatEtc.cfFormat)
     {
         /* Note: pt is not used since we don't need to differentiate within our
          *       proxy window. */
@@ -262,11 +262,11 @@ STDMETHODIMP VBoxDnDDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pd
 STDMETHODIMP VBoxDnDDropTarget::DragLeave(void)
 {
 #ifdef DEBUG_andy
-    LogFlowFunc(("cfFormat=%RI16\n", mFormatEtc.cfFormat));
+    LogFlowFunc(("cfFormat=%RI16\n", m_FormatEtc.cfFormat));
 #endif
 
-    if (mpWndParent)
-        mpWndParent->Hide();
+    if (m_pWndParent)
+        m_pWndParent->Hide();
 
     return S_OK;
 }
@@ -278,18 +278,18 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
     AssertPtrReturn(pdwEffect,   E_INVALIDARG);
 
     LogFlowFunc(("mFormatEtc.cfFormat=%RI16 (%s), pDataObject=0x%p, grfKeyState=0x%x, x=%ld, y=%ld\n",
-                 mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat),
+                 m_FormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(m_FormatEtc.cfFormat),
                  pDataObject, grfKeyState, pt.x, pt.y));
 
     HRESULT hr = S_OK;
 
-    if (mFormatEtc.cfFormat) /* Did we get a supported format yet? */
+    if (m_FormatEtc.cfFormat) /* Did we get a supported format yet? */
     {
         /* Make sure the data object's data format is still valid. */
-        hr = pDataObject->QueryGetData(&mFormatEtc);
+        hr = pDataObject->QueryGetData(&m_FormatEtc);
         AssertMsg(SUCCEEDED(hr),
                   ("Data format changed to invalid between DragEnter() and Drop(), cfFormat=%RI16 (%s), hr=%Rhrc\n",
-                  mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat), hr));
+                  m_FormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(m_FormatEtc.cfFormat), hr));
     }
 
     int rc = VINF_SUCCESS;
@@ -297,7 +297,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
     if (SUCCEEDED(hr))
     {
         STGMEDIUM stgMed;
-        hr = pDataObject->GetData(&mFormatEtc, &stgMed);
+        hr = pDataObject->GetData(&m_FormatEtc, &stgMed);
         if (SUCCEEDED(hr))
         {
             /*
@@ -306,7 +306,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
              */
             PVOID pvData = NULL; /** @todo Put this in an own union? */
 
-            switch (mFormatEtc.tymed)
+            switch (m_FormatEtc.tymed)
             {
                 case TYMED_HGLOBAL:
                     pvData = GlobalLock(stgMed.hGlobal);
@@ -321,7 +321,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
 
                 default:
                     AssertMsgFailed(("Storage medium type %RI32 supported\n",
-                                     mFormatEtc.tymed));
+                                     m_FormatEtc.tymed));
                     rc = VERR_NOT_SUPPORTED;
                     hr = DV_E_TYMED; /* Set special hr for OLE. */
                     break;
@@ -333,7 +333,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                  * Second stage: Do the actual copying of the data object's data,
                  *               based on the storage medium type.
                  */
-                switch (mFormatEtc.cfFormat)
+                switch (m_FormatEtc.cfFormat)
                 {
                     case CF_TEXT:
                         RT_FALL_THROUGH();
@@ -343,13 +343,13 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                         size_t cbSize = GlobalSize(pvData);
 
                         LogRel(("DnD: Got %zu bytes of %s\n", cbSize,
-                                                                mFormatEtc.cfFormat == CF_TEXT
+                                                                m_FormatEtc.cfFormat == CF_TEXT
                                                               ? "ANSI text" : "Unicode text"));
                         if (cbSize)
                         {
                             char *pszText = NULL;
 
-                            rc = mFormatEtc.cfFormat == CF_TEXT
+                            rc = m_FormatEtc.cfFormat == CF_TEXT
                                /* ANSI codepage -> UTF-8 */
                                ? RTStrCurrentCPToUtf8(&pszText, (char *)pvData)
                                /* Unicode  -> UTF-8 */
@@ -361,8 +361,8 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
 
                                 size_t cbText = strlen(pszText) + 1; /* Include termination. */
 
-                                mpvData = RTMemDup((void *)pszText, cbText);
-                                mcbData = cbText;
+                                m_pvData = RTMemDup((void *)pszText, cbText);
+                                m_cbData = cbText;
 
                                 RTStrFree(pszText);
                                 pszText = NULL;
@@ -498,8 +498,8 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                             LogFlowFunc(("cFiles=%u, cchFiles=%zu, cbFiles=%zu, pszFiles=0x%p\n",
                                          cFiles, cchFiles, cbFiles, pszFiles));
 
-                            mpvData = pszFiles;
-                            mcbData = cbFiles;
+                            m_pvData = pszFiles;
+                            m_cbData = cbFiles;
                         }
                         else
                         {
@@ -515,7 +515,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                     default:
                         /* Note: Should not happen due to the checks done in DragEnter(). */
                         AssertMsgFailed(("Format of type %RI16 (%s) not supported\n",
-                                         mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat)));
+                                         m_FormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(m_FormatEtc.cfFormat)));
                         hr = DV_E_CLIPFORMAT; /* Set special hr for OLE. */
                         break;
                 }
@@ -523,7 +523,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                 /*
                  * Third stage: Unlock + release access to the storage medium again.
                  */
-                switch (mFormatEtc.tymed)
+                switch (m_FormatEtc.tymed)
                 {
                     case TYMED_HGLOBAL:
                         GlobalUnlock(stgMed.hGlobal);
@@ -539,8 +539,8 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
             ReleaseStgMedium(&stgMed);
 
             /* Signal waiters. */
-            mDroppedRc = rc;
-            RTSemEventSignal(hEventDrop);
+            m_rcDropped = rc;
+            RTSemEventSignal(m_EvtDrop);
         }
     }
 
@@ -553,11 +553,11 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
     else
         *pdwEffect = DROPEFFECT_NONE;
 
-    if (mpWndParent)
-        mpWndParent->Hide();
+    if (m_pWndParent)
+        m_pWndParent->Hide();
 
     LogFlowFunc(("Returning with hr=%Rhrc (%Rrc), mFormatEtc.cfFormat=%RI16 (%s), *pdwEffect=%RI32\n",
-                 hr, rc, mFormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(mFormatEtc.cfFormat),
+                 hr, rc, m_FormatEtc.cfFormat, VBoxDnDDataObject::ClipboardFormatToString(m_FormatEtc.cfFormat),
                  *pdwEffect));
 
     return hr;
@@ -606,16 +606,16 @@ void VBoxDnDDropTarget::reset(void)
 {
     LogFlowFuncEnter();
 
-    if (mpvData)
+    if (m_pvData)
     {
-        RTMemFree(mpvData);
-        mpvData = NULL;
+        RTMemFree(m_pvData);
+        m_pvData = NULL;
     }
 
-    mcbData = 0;
+    m_cbData = 0;
 
-    RT_ZERO(mFormatEtc);
-    mstrFormats = "";
+    RT_ZERO(m_FormatEtc);
+    m_strFormat = "";
 }
 
 /**
@@ -625,7 +625,7 @@ void VBoxDnDDropTarget::reset(void)
  */
 RTCString VBoxDnDDropTarget::Formats(void) const
 {
-    return mstrFormats;
+    return m_strFormat;
 }
 
 /**
@@ -638,9 +638,9 @@ int VBoxDnDDropTarget::WaitForDrop(RTMSINTERVAL msTimeout)
 {
     LogFlowFunc(("msTimeout=%RU32\n", msTimeout));
 
-    int rc = RTSemEventWait(hEventDrop, msTimeout);
+    int rc = RTSemEventWait(m_EvtDrop, msTimeout);
     if (RT_SUCCESS(rc))
-        rc = mDroppedRc;
+        rc = m_rcDropped;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
