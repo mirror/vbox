@@ -1430,18 +1430,18 @@ static int vbsf_lock_user_pages_failed_check_kernel(uintptr_t uPtrFrom, size_t c
 /** Wrapper around get_user_pages. */
 DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWrite, struct page **papPages, bool *pfLockPgHack)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) \
-  || (   defined(CONFIG_SUSE_KERNEL) /** @todo Figure out when exactly. Also, guessing a bit here what got backported. */ \
-      && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 73) \
-      && LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+# if RTLNX_VER_MIN(4,9,0) \
+  || (defined(CONFIG_SUSE_KERNEL) && RTLNX_VER_RANGE(4,4,73,  4,4,74) /** @todo Figure out when & what exactly. */) \
+  || (defined(CONFIG_SUSE_KERNEL) && RTLNX_VER_RANGE(4,4,75,  4,4,90) /** @todo Figure out when & what exactly. */) \
+  || (defined(CONFIG_SUSE_KERNEL) && RTLNX_VER_RANGE(4,4,92,  4,5,0)  /** @todo Figure out when & what exactly. */)
     ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, papPages,
                                                    fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+# elif RTLNX_VER_MIN(4,6,0)
     ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 168) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+# elif RTLNX_VER_RANGE(4,4,168,  4,5,0)
     ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, uPtrFrom, cPages, papPages,
                                                    fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
+# elif RTLNX_VER_MIN(4,0,0)
     ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
 # else
     struct task_struct *pTask = current;
@@ -3733,22 +3733,24 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
  * This is needed to make open accept O_DIRECT as well as dealing with direct
  * I/O requests if we don't intercept them earlier.
  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) \
-  || (defined(CONFIG_SUSE_KERNEL) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 73) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)) /** @todo Figure out when exactly. */
+# if RTLNX_VER_MIN(4, 7, 0) \
+  || (defined(CONFIG_SUSE_KERNEL) && RTLNX_VER_RANGE(4,4,73,  4,4,74) /** @todo Figure out when exactly. */) \
+  || (defined(CONFIG_SUSE_KERNEL) && RTLNX_VER_RANGE(4,4,75,  4,4,90) /** @todo Figure out when exactly. */) \
+  || (defined(CONFIG_SUSE_KERNEL) && RTLNX_VER_RANGE(4,4,92,  4,5,0)  /** @todo Figure out when exactly. */)
 static ssize_t vbsf_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+# elif RTLNX_VER_MIN(4, 1, 0)
 static ssize_t vbsf_direct_IO(struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) || defined(VBOX_UEK)
+# elif RTLNX_VER_MIN(3, 16, 0) || defined(VBOX_UEK)
 static ssize_t vbsf_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 6)
+# elif RTLNX_VER_MIN(2, 6, 6)
 static ssize_t vbsf_direct_IO(int rw, struct kiocb *iocb, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 55)
+# elif RTLNX_VER_MIN(2, 5, 55)
 static int vbsf_direct_IO(int rw, struct kiocb *iocb, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+# elif RTLNX_VER_MIN(2, 5, 41)
 static int vbsf_direct_IO(int rw, struct file *file, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 35)
+# elif RTLNX_VER_MIN(2, 5, 35)
 static int vbsf_direct_IO(int rw, struct inode *inode, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 26)
+# elif RTLNX_VER_MIN(2, 5, 26)
 static int vbsf_direct_IO(int rw, struct inode *inode, char *buf, loff_t offset, size_t count)
 # elif LINUX_VERSION_CODE == KERNEL_VERSION(2, 4, 21) && defined(I_NEW) /* RHEL3 Frankenkernel.  */
 static int vbsf_direct_IO(int rw, struct file *file, struct kiobuf *buf, unsigned long whatever1, int whatever2)
