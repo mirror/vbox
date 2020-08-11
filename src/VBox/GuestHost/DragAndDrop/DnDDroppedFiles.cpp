@@ -39,6 +39,12 @@
 static int dndDroppedFilesCloseInternal(PDNDDROPPEDFILES pDF);
 
 
+/**
+ * Initializes a DnD Dropped Files struct, internal version.
+ *
+ * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to initialize.
+ */
 static int dndDroppedFilesInitInternal(PDNDDROPPEDFILES pDF)
 {
     pDF->m_fOpen    = 0;
@@ -51,6 +57,13 @@ static int dndDroppedFilesInitInternal(PDNDDROPPEDFILES pDF)
     return VINF_SUCCESS;
 }
 
+/**
+ * Initializes a DnD Dropped Files struct, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to initialize.
+ * @param   fFlags              Dropped Files flags to use for initialization.
+ */
 int DnDDroppedFilesInitEx(PDNDDROPPEDFILES pDF,
                           const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFILE_FLAGS_NONE */)
 {
@@ -61,11 +74,25 @@ int DnDDroppedFilesInitEx(PDNDDROPPEDFILES pDF,
     return DnDDroppedFilesOpenEx(pDF, pszPath, fFlags);
 }
 
+/**
+ * Initializes a DnD Dropped Files struct.
+ *
+ * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to initialize.
+ */
 int DnDDroppedFilesInit(PDNDDROPPEDFILES pDF)
 {
     return dndDroppedFilesInitInternal(pDF);
 }
 
+/**
+ * Destroys a DnD Dropped Files struct.
+ *
+ * Note: This does *not* (physically) delete any added content.
+ *       Make sure to call DnDDroppedFilesReset() then.
+ *
+ * @param   pDF                 DnD Dropped Files to destroy.
+ */
 void DnDDroppedFilesDestroy(PDNDDROPPEDFILES pDF)
 {
     /* Only make sure to not leak any handles and stuff, don't delete any
@@ -77,9 +104,10 @@ void DnDDroppedFilesDestroy(PDNDDROPPEDFILES pDF)
 }
 
 /**
- * Adds a file reference to a dropped files directory.
+ * Adds a file reference to a Dropped Files directory.
  *
  * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to add file to.
  * @param   pszFile             Path of file entry to add.
  */
 int DnDDroppedFilesAddFile(PDNDDROPPEDFILES pDF, const char *pszFile)
@@ -102,10 +130,12 @@ int DnDDroppedFilesAddFile(PDNDDROPPEDFILES pDF, const char *pszFile)
 }
 
 /**
- * Adds a directory reference to a dropped files directory.
+ * Adds a directory reference to a Dropped Files directory.
+ *
  * Note: This does *not* (recursively) add sub entries.
  *
  * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to add directory to.
  * @param   pszDir              Path of directory entry to add.
  */
 int DnDDroppedFilesAddDir(PDNDDROPPEDFILES pDF, const char *pszDir)
@@ -131,6 +161,7 @@ int DnDDroppedFilesAddDir(PDNDDROPPEDFILES pDF, const char *pszDir)
  * Closes the dropped files directory handle, internal version.
  *
  * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to close.
  */
 static int dndDroppedFilesCloseInternal(PDNDDROPPEDFILES pDF)
 {
@@ -152,6 +183,7 @@ static int dndDroppedFilesCloseInternal(PDNDDROPPEDFILES pDF)
  * Closes the dropped files directory handle.
  *
  * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to close.
  */
 int DnDDroppedFilesClose(PDNDDROPPEDFILES pDF)
 {
@@ -162,6 +194,7 @@ int DnDDroppedFilesClose(PDNDDROPPEDFILES pDF)
  * Returns the absolute path of the dropped files directory.
  *
  * @returns Pointer to absolute path of the dropped files directory.
+ * @param   pDF                 DnD Dropped Files return absolute path of the dropped files directory for.
  */
 const char *DnDDroppedFilesGetDirAbs(PDNDDROPPEDFILES pDF)
 {
@@ -172,6 +205,7 @@ const char *DnDDroppedFilesGetDirAbs(PDNDDROPPEDFILES pDF)
  * Returns whether the dropped files directory has been opened or not.
  *
  * @returns \c true if open, \c false if not.
+ * @param   pDF                 DnD Dropped Files to return open status for.
  */
 bool DnDDroppedFilesIsOpen(PDNDDROPPEDFILES pDF)
 {
@@ -182,6 +216,7 @@ bool DnDDroppedFilesIsOpen(PDNDDROPPEDFILES pDF)
  * Opens (creates) the dropped files directory.
  *
  * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to open.
  * @param   pszPath             Absolute path where to create the dropped files directory.
  * @param   fFlags              Dropped files flags to use for this directory.
  */
@@ -258,6 +293,7 @@ int DnDDroppedFilesOpenEx(PDNDDROPPEDFILES pDF,
  * Opens (creates) the dropped files directory in the system's temp directory.
  *
  * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to open.
  * @param   fFlags              Dropped files flags to use for this directory.
  */
 int DnDDroppedFilesOpenTemp(PDNDDROPPEDFILES pDF, DNDURIDROPPEDFILEFLAGS fFlags)
@@ -277,6 +313,11 @@ int DnDDroppedFilesOpenTemp(PDNDDROPPEDFILES pDF, DNDURIDROPPEDFILEFLAGS fFlags)
     return rc;
 }
 
+/**
+ * Free's an internal DnD Dropped Files entry.
+ *
+ * @param   pEntry              Pointer to entry to free. The pointer will be invalid after calling.
+ */
 static void dndDroppedFilesEntryFree(PDNDDROPPEDFILESENTRY pEntry)
 {
     if (!pEntry)
@@ -286,6 +327,11 @@ static void dndDroppedFilesEntryFree(PDNDDROPPEDFILESENTRY pEntry)
     RTMemFree(pEntry);
 }
 
+/**
+ * Resets an internal DnD Dropped Files list.
+ *
+ * @param   pListAnchor         Pointer to list (anchor) to reset.
+ */
 static void dndDroppedFilesResetList(PRTLISTANCHOR pListAnchor)
 {
     PDNDDROPPEDFILESENTRY pEntryCur, pEntryNext;
@@ -298,6 +344,7 @@ static void dndDroppedFilesResetList(PRTLISTANCHOR pListAnchor)
  * Resets a droppped files directory.
  *
  * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to reset.
  * @param   fDelete             Whether to physically delete the directory and its content
  *                              or just clear the internal references.
  */
@@ -325,6 +372,7 @@ int DnDDroppedFilesReset(PDNDDROPPEDFILES pDF, bool fDelete)
  * Re-opens a droppes files directory.
  *
  * @returns VBox status code, or VERR_NOT_FOUND if the dropped files directory has not been opened before.
+ * @param   pDF                 DnD Dropped Files to re-open.
  */
 int DnDDroppedFilesReopen(PDNDDROPPEDFILES pDF)
 {
@@ -339,6 +387,7 @@ int DnDDroppedFilesReopen(PDNDDROPPEDFILES pDF)
  * This cleans the directory by physically deleting all files / directories which have been added before.
  *
  * @returns VBox status code.
+ * @param   pDF                 DnD Dropped Files to roll back.
  */
 int DnDDroppedFilesRollback(PDNDDROPPEDFILES pDF)
 {

@@ -54,24 +54,33 @@
  * The following components are involved:
  *
  * 1. GUI: Uses the Qt classes for Drag and Drop and mainly forward the content
- *    of it to the Main IGuest interface (see UIDnDHandler.cpp).
+ *    of it to the Main IGuest / IGuestDnDSource / IGuestDnDTarget interfaces.
  * 2. Main: Public interface for doing Drag and Drop. Also manage the IProgress
  *    interfaces for blocking the caller by showing a progress dialog (see
  *    this file).
  * 3. HGCM service: Handle all messages from the host to the guest at once and
  *    encapsulate the internal communication details (see dndmanager.cpp and
  *    friends).
- * 4. Guest additions: Split into the platform neutral part (see
+ * 4. Guest Additions: Split into the platform neutral part (see
  *    VBoxGuestR3LibDragAndDrop.cpp) and the guest OS specific parts.
  *    Receive/send message from/to the HGCM service and does all guest specific
- *    operations. Currently only X11 is supported (see draganddrop.cpp within
- *    VBoxClient).
+ *    operations. For Windows guests VBoxTray is in charge, whereas on UNIX-y guests
+ *    VBoxClient will be used.
+ *
+ * Terminology:
+ *
+ * All transfers contain a MIME format and according meta data. This meta data then can
+ * be interpreted either as raw meta data or something else. When raw meta data is
+ * being handled, this gets passed through to the destination (guest / host) without
+ * modification. Other meta data (like URI lists) can and will be modified by the
+ * receiving side before passing to OS. How and when modifications will be applied
+ * depends on the MIME format.
  *
  * Host -> Guest:
  * 1. There are DnD Enter, Move, Leave events which are send exactly like this
- *    to the guest. The info includes the pos, mimetypes and allowed actions.
+ *    to the guest. The info includes the position, MIME types and allowed actions.
  *    The guest has to respond with an action it would accept, so the GUI could
- *    change the cursor.
+ *    change the cursor accordingly.
  * 2. On drop, first a drop event is sent. If this is accepted a drop data
  *    event follows. This blocks the GUI and shows some progress indicator.
  *
@@ -84,7 +93,7 @@
  * 3. On drop the host request the data from the guest. This blocks the GUI and
  *    shows some progress indicator.
  *
- * Some hints:
+ * Implementation hints:
  * m_strSupportedFormats here in this file defines the allowed mime-types.
  * This is necessary because we need special handling for some of the
  * mime-types. E.g. for URI lists we need to transfer the actual dirs and
@@ -103,13 +112,15 @@
  * tray icon hint (and maybe the possibility to clean this up instantly). The
  * same has to be done in the G->H direction when it is implemented.
  *
- * Of course only regularly files are supported. Symlinks are resolved and
- * transfered as regularly files. First we don't know if the other side support
- * symlinks at all and second they could point to somewhere in a directory tree
- * which not exists on the other side.
+ * Only regular files are supported; symlinks are not allowed.
  *
- * The code tries to preserve the file modes of the transfered dirs/files. This
- * is useful (and maybe necessary) for two things:
+ * Transfers currently are an all-succeed or all-fail operation (see todos).
+ *
+ * On MacOS hosts we had to implement own DnD "promises" support for file transfers,
+ * as Qt does not support this out-of-the-box.
+ *
+ * The code tries to preserve the file modes of the transfered directories / files.
+ * This is useful (and maybe necessary) for two things:
  * 1. If a file is executable, it should be also after the transfer, so the
  *    user can just execute it, without manually tweaking the modes first.
  * 2. If a dir/file is not accessible by group/others in the host, it shouldn't
@@ -117,41 +128,24 @@
  * In any case, the user mode is always set to rwx (so that we can access it
  * ourself, in e.g. for a cleanup case after cancel).
  *
- * Cancel is supported in both directions and cleans up all previous steps
- * (thats is: deleting already transfered dirs/files).
+ * ACEs / ACLs currently are not supported.
  *
- * In general I propose the following changes in the VBox HGCM infrastructure
- * for the future:
- * - Currently it isn't really possible to send messages to the guest from the
- *   host. The host informs the guest just that there is something, the guest
- *   than has to ask which message and depending on that send the appropriate
- *   message to the host, which is filled with the right data.
- * - There is no generic interface for sending bigger memory blocks to/from the
- *   guest. This is now done here, but I guess was also necessary for e.g.
- *   guest execution. So something generic which brake this up into smaller
- *   blocks and send it would be nice (with all the error handling and such
- *   ofc).
- * - I developed a "protocol" for the DnD communication here. So the host and
- *   the guest have always to match in the revision. This is ofc bad, because
- *   the additions could be outdated easily. So some generic protocol number
- *   support in HGCM for asking the host and the guest of the support version,
- *   would be nice. Ofc at least the host should be able to talk to the guest,
- *   even when the version is below the host one.
- * All this stuff would be useful for the current services, but also for future
- * onces.
+ * Cancelling ongoing transfers is supported in both directions by the guest
+ * and/or host side and cleans up all previous steps. This also involves
+ * removing partially transferred directories / files in the temporary directory.
  *
  ** @todo
  * - ESC doesn't really work (on Windows guests it's already implemented)
- *   ... in any case it seems a little bit difficult to handle from the Qt
- *   side. Maybe also a host specific implementation becomes necessary ...
- *   this would be really worst ofc.
- * - Add support for more mime-types (especially images, csv)
+ *   ... in any case it seems a little bit difficult to handle from the Qt side.
+ * - Transfers currently do not have any interactive (UI) callbacks / hooks which
+ *   e.g. would allow to skip / replace / rename and entry, or abort the operation on failure.
+ * - Add support for more MIME types (especially images, csv)
  * - Test unusual behavior:
  *   - DnD service crash in the guest during a DnD op (e.g. crash of VBoxClient or X11)
  *   - Not expected order of the events between HGCM and the guest
  * - Security considerations: We transfer a lot of memory between the guest and
  *   the host and even allow the creation of dirs/files. Maybe there should be
- *   limits introduced to preventing DOS attacks or filling up all the memory
+ *   limits introduced to preventing DoS attacks or filling up all the memory
  *   (both in the host and the guest).
  */
 

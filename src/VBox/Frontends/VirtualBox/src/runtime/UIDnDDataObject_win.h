@@ -94,12 +94,17 @@ protected:
     DnDDataObjectStatus     m_enmStatus;
     /** Internal reference count of this object. */
     LONG                    m_cRefs;
-    /** Number of native formats registered. This can be a different number than supplied with mlstFormats. */
+    /** Number of native formats registered. This can be a different number than supplied with m_lstFormats. */
     ULONG                   m_cFormats;
+    /** Array of registered FORMATETC structs. Matches m_cFormats. */
     FORMATETC              *m_pFormatEtc;
+    /** Array of registered STGMEDIUM structs. Matches m_cFormats. */
     STGMEDIUM              *m_pStgMedium;
+    /** Event semaphore used for waiting on status changes. */
     RTSEMEVENT              m_SemEvent;
+    /** List of supported formats. */
     QStringList             m_lstFormats;
+    /** Format of currently retrieved data. */
     QString                 m_strFormat;
     /** The retrieved data as a QVariant. Needed for buffering in case a second format needs the same data,
      *  e.g. CF_TEXT and CF_UNICODETEXT. */

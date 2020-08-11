@@ -17,7 +17,7 @@
 
 /** @page pg_svc_dnd    Drag and drop HGCM Service
  *
- * TODO
+ * @sa See src/VBox/Main/src-client/GuestDnDPrivate.cpp for more information.
  */
 
 

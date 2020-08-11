@@ -28,6 +28,9 @@
 
 class VBoxDnDWnd;
 
+/**
+ * Class for implementing IDataObject for VBoxTray's DnD support.
+ */
 class VBoxDnDDataObject : public IDataObject
 {
 public:
@@ -79,17 +82,29 @@ protected:
     void RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
+    /** Current drag and drop status. */
     Status      mStatus;
+    /** Internal reference count of this object. */
     LONG        mRefCount;
+    /** Number of native formats registered. This can be a different number than supplied with m_lstFormats. */
     ULONG       mcFormats;
+    /** Array of registered FORMATETC structs. Matches m_cFormats. */
     LPFORMATETC mpFormatEtc;
+    /** Array of registered STGMEDIUM structs. Matches m_cFormats. */
     LPSTGMEDIUM mpStgMedium;
+    /** Event semaphore used for waiting on status changes. */
     RTSEMEVENT  mEventDropped;
+    /** Format of currently retrieved data. */
     RTCString   mstrFormat;
+    /** The retrieved data as a raw buffer. */
     void       *mpvData;
+    /** Raw buffer size (in bytes). */
     size_t      mcbData;
 };
 
+/**
+ * Class for implementing IDropSource for VBoxTray's DnD support.
+ */
 class VBoxDnDDropSource : public IDropSource
 {
 public:
@@ -124,6 +139,9 @@ protected:
     VBOXDNDACTION         mDnDActionCurrent;
 };
 
+/**
+ * Class for implementing IDropTarget for VBoxTray's DnD support.
+ */
 class VBoxDnDDropTarget : public IDropTarget
 {
 public:
@@ -152,8 +170,12 @@ protected:
 
 public:
 
+    /** Returns the data as mutable raw. Use with caution! */
     void *DataMutableRaw(void) const { return mpvData; }
+
+    /** Returns the data size (in bytes). */
     size_t DataSize(void) const { return mcbData; }
+
     RTCString Formats(void) const;
     int WaitForDrop(RTMSINTERVAL msTimeout);
 
@@ -180,6 +202,9 @@ protected:
     int                   mDroppedRc;
 };
 
+/**
+ * Class for implementing IEnumFORMATETC for VBoxTray's DnD support.
+ */
 class VBoxDnDEnumFormatEtc : public IEnumFORMATETC
 {
 public:
@@ -205,16 +230,20 @@ public:
 
 private:
 
+    /** Reference count of this object. */
     LONG        m_lRefCount;
+    /** Current index for format iteration. */
     ULONG       m_nIndex;
+    /** Number of format this object contains. */
     ULONG       m_nNumFormats;
+    /** Array of FORMATETC formats this object contains. Matches m_nNumFormats. */
     LPFORMATETC m_pFormatEtc;
 };
 
 struct VBOXDNDCONTEXT;
 class VBoxDnDWnd;
 
-/*
+/**
  * A drag'n drop event from the host.
  */
 typedef struct VBOXDNDEVENT
@@ -370,7 +399,9 @@ public: /** @todo Make protected! */
     /** The proxy window's main thread for processing
      *  window messages. */
     RTTHREAD                   hThread;
+    /** Critical section to serialize access. */
     RTCRITSECT                 mCritSect;
+    /** Event semaphore to wait for new DnD events. */
     RTSEMEVENT                 mEventSem;
 #ifdef RT_OS_WINDOWS
     /** The window's handle. */
@@ -392,8 +423,8 @@ public: /** @todo Make protected! */
      *  currently while being in this window? */
     bool                       mfMouseButtonDown;
 # ifdef VBOX_WITH_DRAG_AND_DROP_GH
-    /** IDropTarget implementation for guest -> host
-     *  support. */
+    /** Pointer to IDropTarget implementation for
+     *  guest -> host support. */
     VBoxDnDDropTarget         *pDropTarget;
 # endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 #else /* !RT_OS_WINDOWS */

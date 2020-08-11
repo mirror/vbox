@@ -59,12 +59,16 @@ public:
 
     virtual ~GuestDnDTargetTask(void) { }
 
+    /** Returns the overall result of the task. */
     int getRC(void) const { return mRC; }
+    /** Returns if the overall result of the task is ok (succeeded) or not. */
     bool isOk(void) const { return RT_SUCCESS(mRC); }
 
 protected:
 
+    /** COM object pointer to the parent (source). */
     const ComObjPtr<GuestDnDTarget>     mTarget;
+    /** Overall result of the task. */
     int                                 mRC;
 };
 
@@ -669,6 +673,12 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
+/**
+ * Returns an error string from a guest DnD error.
+ *
+ * @returns Error string.
+ * @param   guestRc             Guest error to return error string for.
+ */
 /* static */
 Utf8Str GuestDnDTarget::i_guestErrorToString(int guestRc)
 {
@@ -707,6 +717,12 @@ Utf8Str GuestDnDTarget::i_guestErrorToString(int guestRc)
     return strError;
 }
 
+/**
+ * Returns an error string from a host DnD error.
+ *
+ * @returns Error string.
+ * @param   hostRc              Host error to return error string for.
+ */
 /* static */
 Utf8Str GuestDnDTarget::i_hostErrorToString(int hostRc)
 {
@@ -741,6 +757,9 @@ Utf8Str GuestDnDTarget::i_hostErrorToString(int hostRc)
     return strError;
 }
 
+/**
+ * Resets all internal data and state.
+ */
 void GuestDnDTarget::i_reset(void)
 {
     LogFlowThisFunc(("\n"));
@@ -918,6 +937,14 @@ int GuestDnDTarget::i_sendMetaDataHeader(GuestDnDSendCtx *pCtx)
     return rc;
 }
 
+/**
+ * Sends a directory entry to the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Send context to use.
+ * @param   pObj                Transfer object to send. Must be a directory.
+ * @param   pMsg                Where to store the message to send.
+ */
 int GuestDnDTarget::i_sendDirectory(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pObj, GuestDnDMsg *pMsg)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -941,12 +968,12 @@ int GuestDnDTarget::i_sendDirectory(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pO
 }
 
 /**
- * Sends a transfer file to the guest.
+ * Sends a file to the guest.
  *
  * @returns VBox status code.
- * @param   pCtx
- * @param   pObj
- * @param   pMsg
+ * @param   pCtx                Send context to use.
+ * @param   pObj                Transfer object to send. Must be a file.
+ * @param   pMsg                Where to store the message to send.
  */
 int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
                                PDNDTRANSFEROBJECT pObj, GuestDnDMsg *pMsg)
@@ -1033,6 +1060,14 @@ int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
     return rc;
 }
 
+/**
+ * Helper function to send actual file data to the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Send context to use.
+ * @param   pObj                Transfer object to send. Must be a file.
+ * @param   pMsg                Where to store the message to send.
+ */
 int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
                                    PDNDTRANSFEROBJECT pObj, GuestDnDMsg *pMsg)
 {
@@ -1112,6 +1147,15 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
     return rc;
 }
 
+/**
+ * Static HGCM service callback which handles sending transfer data to the guest.
+ *
+ * @returns VBox status code. Will get sent back to the host service.
+ * @param   uMsg                HGCM message ID (function number).
+ * @param   pvParms             Pointer to additional message data. Optional and can be NULL.
+ * @param   cbParms             Size (in bytes) additional message data. Optional and can be 0.
+ * @param   pvUser              User-supplied pointer on callback registration.
+ */
 /* static */
 DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
 {

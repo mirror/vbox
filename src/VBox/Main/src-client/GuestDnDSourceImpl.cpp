@@ -56,12 +56,16 @@ public:
 
     virtual ~GuestDnDSourceTask(void) { }
 
+    /** Returns the overall result of the task. */
     int getRC(void) const { return mRC; }
+    /** Returns if the overall result of the task is ok (succeeded) or not. */
     bool isOk(void) const { return RT_SUCCESS(mRC); }
 
 protected:
 
+    /** COM object pointer to the parent (source). */
     const ComObjPtr<GuestDnDSource>     mSource;
+    /** Overall result of the task. */
     int                                 mRC;
 };
 
@@ -506,6 +510,12 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
 // implementation of internal methods.
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Returns an error string from a guest DnD error.
+ *
+ * @returns Error string.
+ * @param   guestRc             Guest error to return error string for.
+ */
 /* static */
 Utf8Str GuestDnDSource::i_guestErrorToString(int guestRc)
 {
@@ -544,6 +554,12 @@ Utf8Str GuestDnDSource::i_guestErrorToString(int guestRc)
     return strError;
 }
 
+/**
+ * Returns an error string from a host DnD error.
+ *
+ * @returns Error string.
+ * @param   hostRc              Host error to return error string for.
+ */
 /* static */
 Utf8Str GuestDnDSource::i_hostErrorToString(int hostRc)
 {
@@ -582,6 +598,9 @@ Utf8Str GuestDnDSource::i_hostErrorToString(int hostRc)
     return strError;
 }
 
+/**
+ * Resets all internal data and state.
+ */
 void GuestDnDSource::i_reset(void)
 {
     LogFlowThisFunc(("\n"));
@@ -631,7 +650,7 @@ int GuestDnDSource::i_onReceiveDataHdr(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATAHDR
 }
 
 /**
- * Handles receiving a send data block from the guest.
+ * Main function for receiving data from the guest.
  *
  * @returns VBox status code.
  * @param   pCtx                Receive context to use.
@@ -761,6 +780,7 @@ int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndD
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 
 int GuestDnDSource::i_onReceiveDir(GuestDnDRecvCtx *pCtx, const char *pszPath, uint32_t cbPath, uint32_t fMode)
 {
@@ -903,6 +923,14 @@ int GuestDnDSource::i_onReceiveFileHdr(GuestDnDRecvCtx *pCtx, const char *pszPat
     return rc;
 }
 
+/**
+ * Receives file data from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Receive context to use.
+ * @param   pvData              Pointer to file data received from the guest.
+ * @param   pCtx                Size (in bytes) of file data received from the guest.
+ */
 int GuestDnDSource::i_onReceiveFileData(GuestDnDRecvCtx *pCtx, const void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -970,8 +998,11 @@ int GuestDnDSource::i_onReceiveFileData(GuestDnDRecvCtx *pCtx, const void *pvDat
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
 /**
- * @returns VBox status code that the caller ignores. Not sure if that's
- *          intentional or not.
+ * Main function to receive DnD data from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Receive context to use.
+ * @param   msTimeout           Timeout (in ms) to wait for receiving data.
  */
 int GuestDnDSource::i_receiveData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
 {
@@ -1065,6 +1096,13 @@ int GuestDnDSource::i_receiveData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
     return rc;
 }
 
+/**
+ * Receives raw (meta) data from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Receive context to use.
+ * @param   msTimeout           Timeout (in ms) to wait for receiving data.
+ */
 int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1170,6 +1208,13 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
     return rc;
 }
 
+/**
+ * Receives transfer data (files / directories / ...) from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Receive context to use.
+ * @param   msTimeout           Timeout (in ms) to wait for receiving data.
+ */
 int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1304,6 +1349,15 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
     return rc;
 }
 
+/**
+ * Static HGCM service callback which handles receiving raw data.
+ *
+ * @returns VBox status code. Will get sent back to the host service.
+ * @param   uMsg                HGCM message ID (function number).
+ * @param   pvParms             Pointer to additional message data. Optional and can be NULL.
+ * @param   cbParms             Size (in bytes) additional message data. Optional and can be 0.
+ * @param   pvUser              User-supplied pointer on callback registration.
+ */
 /* static */
 DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
 {
@@ -1433,6 +1487,15 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
     return rc; /* Tell the guest. */
 }
 
+/**
+ * Static HGCM service callback which handles receiving transfer data from the guest.
+ *
+ * @returns VBox status code. Will get sent back to the host service.
+ * @param   uMsg                HGCM message ID (function number).
+ * @param   pvParms             Pointer to additional message data. Optional and can be NULL.
+ * @param   cbParms             Size (in bytes) additional message data. Optional and can be 0.
+ * @param   pvUser              User-supplied pointer on callback registration.
+ */
 /* static */
 DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
 {

@@ -37,6 +37,9 @@ class QMimeData;
 class UIDnDMIMEData;
 class UISession;
 
+/**
+ * Main class for implementing Drag'n'Drop in the frontend.
+ */
 class UIDnDHandler: public QObject
 {
     Q_OBJECT;

@@ -172,15 +172,6 @@ STDMETHODIMP VBoxDnDDataObject::QueryInterface(REFIID iid, void **ppvObject)
     return E_NOINTERFACE;
 }
 
-/**
- * Retrieves the data stored in this object and store the result in
- * pMedium.
- *
- * @return  IPRT status code.
- * @return  HRESULT
- * @param   pFormatEtc
- * @param   pMedium
- */
 STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
@@ -415,14 +406,6 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
     return hr;
 }
 
-/**
- * Only required for IStream / IStorage interfaces.
- *
- * @return  IPRT status code.
- * @return  HRESULT
- * @param   pFormatEtc
- * @param   pMedium
- */
 STDMETHODIMP VBoxDnDDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium)
 {
     RT_NOREF(pFormatEtc, pMedium);
@@ -430,13 +413,6 @@ STDMETHODIMP VBoxDnDDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPSTGMEDIUM 
     return DATA_E_FORMATETC;
 }
 
-/**
- * Query if this objects supports a specific format.
- *
- * @return  IPRT status code.
- * @return  HRESULT
- * @param   pFormatEtc
- */
 STDMETHODIMP VBoxDnDDataObject::QueryGetData(LPFORMATETC pFormatEtc)
 {
     LogFlowFunc(("\n"));
@@ -495,6 +471,11 @@ STDMETHODIMP VBoxDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
  * Own stuff.
  */
 
+/**
+ * Aborts waiting for data being "dropped".
+ *
+ * @returns VBox status code.
+ */
 int VBoxDnDDataObject::Abort(void)
 {
     LogFlowFunc(("Aborting ...\n"));
@@ -502,6 +483,12 @@ int VBoxDnDDataObject::Abort(void)
     return RTSemEventSignal(mEventDropped);
 }
 
+/**
+ * Static helper function to convert a CLIPFORMAT to a string and return it.
+ *
+ * @returns Pointer to converted stringified CLIPFORMAT, or "unknown" if not found / invalid.
+ * @param   fmt                 CLIPFORMAT to return string for.
+ */
 /* static */
 const char* VBoxDnDDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
 {
@@ -585,6 +572,13 @@ const char* VBoxDnDDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
     return "unknown";
 }
 
+/**
+ * Checks whether a given FORMATETC is supported by this data object and returns its index.
+ *
+ * @returns \c true if format is supported, \c false if not.
+ * @param   pFormatEtc          Pointer to FORMATETC to check for.
+ * @param   puIndex             Where to store the index if format is supported.
+ */
 bool VBoxDnDDataObject::LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
 {
     AssertReturn(pFormatEtc, false);
@@ -631,6 +625,16 @@ HGLOBAL VBoxDnDDataObject::MemDup(HGLOBAL hMemSource)
     return NULL;
 }
 
+/**
+ * Registers a new format with this data object.
+ *
+ * @param   pFormatEtc          Where to store the new format into.
+ * @param   clipFormat          Clipboard format to register.
+ * @param   tyMed               Format medium type to register.
+ * @param   lIndex              Format index to register.
+ * @param   dwAspect            Format aspect to register.
+ * @param   pTargetDevice       Format target device to register.
+ */
 void VBoxDnDDataObject::RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat,
                                        TYMED tyMed, LONG lIndex, DWORD dwAspect,
                                        DVTARGETDEVICE *pTargetDevice)
@@ -647,12 +651,25 @@ void VBoxDnDDataObject::RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFo
                  pFormatEtc->cfFormat, VBoxDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat)));
 }
 
+/**
+ * Sets the current status of this data object.
+ *
+ * @param   status              New status to set.
+ */
 void VBoxDnDDataObject::SetStatus(Status status)
 {
     LogFlowFunc(("Setting status to %ld\n", status));
     mStatus = status;
 }
 
+/**
+ * Signals that data has been "dropped".
+ *
+ * @returns VBox status code.
+ * @param   strFormat           Format of data (MIME string).
+ * @param   pvData              Pointer to data.
+ * @param   cbData              Size (in bytes) of data.
+ */
 int VBoxDnDDataObject::Signal(const RTCString &strFormat,
                               const void *pvData, size_t cbData)
 {

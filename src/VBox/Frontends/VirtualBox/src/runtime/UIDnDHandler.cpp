@@ -600,6 +600,8 @@ int UIDnDHandler::retrieveData(Qt::DropAction          dropAction,
                                const QString          &strMIMEType,
                                      QVector<uint8_t> &vecData)
 {
+    /** @todo r=andy Locking required? */
+
     if (!strMIMEType.compare("application/x-qt-mime-type-name", Qt::CaseInsensitive))
         return VINF_SUCCESS;
 
@@ -712,9 +714,19 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction    dropAction,
     return rc;
 }
 
+/**
+ * Sets the current DnD operation mode.
+ *
+ * Note: Only one mode (guest->host *or* host->guest) can be active at the same time.
+ *
+ * @param   enmMode             Current operation mode to set.
+ */
 void UIDnDHandler::setOpMode(DNDOPMODE enmMode)
 {
     QMutexLocker AutoWriteLock(&m_WriteLock);
+
+    /** @todo r=andy Check for old (current) mode and refuse new mode? */
+
     m_enmOpMode = enmMode;
     LogFunc(("Operation mode is now: %RU32\n", m_enmOpMode));
 }
@@ -733,6 +745,12 @@ int UIDnDHandler::sltGetData(      Qt::DropAction  dropAction,
  * Drag and Drop helper methods
  */
 
+/**
+ * Static helper function to convert a Qt drop action to an internal DnD drop action.
+ *
+ * @returns Converted internal drop action.
+ * @param   action              Qt drop action to convert.
+ */
 /* static */
 KDnDAction UIDnDHandler::toVBoxDnDAction(Qt::DropAction action)
 {
@@ -746,6 +764,12 @@ KDnDAction UIDnDHandler::toVBoxDnDAction(Qt::DropAction action)
     return KDnDAction_Ignore;
 }
 
+/**
+ * Static helper function to convert Qt drop actions to internal DnD drop actions.
+ *
+ * @returns Vector of converted internal drop actions.
+ * @param   actions             Qt drop actions to convert.
+ */
 /* static */
 QVector<KDnDAction> UIDnDHandler::toVBoxDnDActions(Qt::DropActions actions)
 {
@@ -762,6 +786,12 @@ QVector<KDnDAction> UIDnDHandler::toVBoxDnDActions(Qt::DropActions actions)
     return vbActions;
 }
 
+/**
+ * Static helper function to convert an internal drop action to a Qt drop action.
+ *
+ * @returns Converted Qt drop action.
+ * @param   actions             Internal drop action to convert.
+ */
 /* static */
 Qt::DropAction UIDnDHandler::toQtDnDAction(KDnDAction action)
 {
@@ -777,6 +807,12 @@ Qt::DropAction UIDnDHandler::toQtDnDAction(KDnDAction action)
     return dropAct;
 }
 
+/**
+ * Static helper function to convert a vector of internal drop actions to Qt drop actions.
+ *
+ * @returns Converted Qt drop actions.
+ * @param   vecActions          Internal drop actions to convert.
+ */
 /* static */
 Qt::DropActions UIDnDHandler::toQtDnDActions(const QVector<KDnDAction> &vecActions)
 {

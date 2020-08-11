@@ -55,6 +55,7 @@ protected:
 
     /** Pointer to parent widget. */
     QWidget         *m_pParent;
+    /** Pointer to current data object. */
     UIDnDDataObject *m_pDataObject;
     /** The current reference count. */
     LONG             m_cRefCount;

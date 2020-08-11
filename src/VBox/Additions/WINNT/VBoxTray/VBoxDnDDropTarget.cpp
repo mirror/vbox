@@ -93,6 +93,11 @@ STDMETHODIMP VBoxDnDDropTarget::QueryInterface(REFIID iid, void **ppvObject)
     return E_NOINTERFACE;
 }
 
+/**
+ * Static helper function to dump supported formats of a data object.
+ *
+ * @param   pDataObject         Pointer to data object to dump formats for.
+ */
 /* static */
 void VBoxDnDDropTarget::DumpFormats(IDataObject *pDataObject)
 {
@@ -558,6 +563,13 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
     return hr;
 }
 
+/**
+ * Static helper function to return a drop effect for a given key state and allowed effects.
+ *
+ * @returns Resolved drop effect.
+ * @param   grfKeyState         Key state to determine drop effect for.
+ * @param   dwAllowedEffects    Allowed drop effects to determine drop effect for.
+ */
 /* static */
 DWORD VBoxDnDDropTarget::GetDropEffect(DWORD grfKeyState, DWORD dwAllowedEffects)
 {
@@ -587,6 +599,9 @@ DWORD VBoxDnDDropTarget::GetDropEffect(DWORD grfKeyState, DWORD dwAllowedEffects
     return dwEffect;
 }
 
+/**
+ * Resets a drop target object.
+ */
 void VBoxDnDDropTarget::reset(void)
 {
     LogFlowFuncEnter();
@@ -603,11 +618,22 @@ void VBoxDnDDropTarget::reset(void)
     mstrFormats = "";
 }
 
+/**
+ * Returns the currently supported formats of a drop target.
+ *
+ * @returns Supported formats.
+ */
 RTCString VBoxDnDDropTarget::Formats(void) const
 {
     return mstrFormats;
 }
 
+/**
+ * Waits for a drop event to happen.
+ *
+ * @returns VBox status code.
+ * @param   msTimeout           Timeout (in ms) to wait for drop event.
+ */
 int VBoxDnDDropTarget::WaitForDrop(RTMSINTERVAL msTimeout)
 {
     LogFlowFunc(("msTimeout=%RU32\n", msTimeout));
