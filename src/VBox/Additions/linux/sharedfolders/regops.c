@@ -3188,7 +3188,8 @@ static loff_t vbsf_reg_llseek(struct file *file, loff_t off, int whence)
  * causing coherency issues with O_DIRECT access to the same file as
  * well as any host interaction with the file.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0) \
+ || (defined(CONFIG_SUSE_KERNEL) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 101) /** @todo figure when exactly */)
 static int vbsf_reg_fsync(struct file *file, loff_t start, loff_t end, int datasync)
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
