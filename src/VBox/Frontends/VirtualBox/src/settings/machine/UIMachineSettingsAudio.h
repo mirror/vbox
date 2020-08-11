@@ -23,15 +23,17 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIMachineSettingsAudio.gen.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QLabel;
+class UIAudioControllerEditor;
+class UIAudioHostDriverEditor;
 struct UIDataSettingsMachineAudio;
 typedef UISettingsCache<UIDataSettingsMachineAudio> UISettingsCacheMachineAudio;
 
 /** Machine settings: Audio page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsAudio : public UISettingsPageMachine,
-                                                    public Ui::UIMachineSettingsAudio
+class SHARED_LIBRARY_STUFF UIMachineSettingsAudio : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -71,6 +73,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
 
@@ -79,6 +83,20 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineAudio *m_pCache;
+
+    QCheckBox *m_pCheckBoxAudio;
+    QCheckBox *m_pCheckBoxAudioOutput;
+    QCheckBox *m_pCheckBoxAudioInput;
+
+    /** @name Widgets
+     * @{ */
+        QLabel *m_pAudioHostDriverLabel;
+        QLabel *m_pAudioControllerLabel;
+        QLabel *m_pLabelAudioExtended;
+        QWidget *m_pContainerAudioSubOptions;
+        UIAudioHostDriverEditor *m_pAudioHostDriverEditor;
+        UIAudioControllerEditor *m_pAudioControllerEditor;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsAudio_h */

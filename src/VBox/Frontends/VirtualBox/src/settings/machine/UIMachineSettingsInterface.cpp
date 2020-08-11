@@ -143,6 +143,13 @@ UIMachineSettingsInterface::UIMachineSettingsInterface(const QUuid &uMachineId)
     : m_uMachineId(uMachineId)
     , m_pActionPool(0)
     , m_pCache(0)
+    , m_pStatusBarEditor(0)
+    , m_pMenuBarEditor(0)
+    , m_pCheckBoxShowMiniToolBar(0)
+    , m_pComboToolBarAlignment(0)
+    , m_pLabelVisualState(0)
+    , m_pVisualStateEditor(0)
+    , m_pLabelMiniToolBar(0)
 {
     /* Prepare: */
     prepare();

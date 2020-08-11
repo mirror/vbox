@@ -35,7 +35,6 @@ FORMS = \
     src/settings/machine/UIMachineSettingsSystem.ui \
     src/settings/machine/UIMachineSettingsDisplay.ui \
     src/settings/machine/UIMachineSettingsStorage.ui \
-    src/settings/machine/UIMachineSettingsAudio.ui \
     src/settings/machine/UIMachineSettingsNetwork.ui \
     src/settings/machine/UIMachineSettingsSerial.ui \
     src/settings/machine/UIMachineSettingsUSB.ui \
