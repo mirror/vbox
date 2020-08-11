@@ -15,11 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QCheckBox>
+#include <QGridLayout>
+#include <QLabel>
+
 /* GUI includes: */
 #include "UIActionPool.h"
 #include "UIExtraDataManager.h"
 #include "UIMachineSettingsInterface.h"
-
+#include "UIStatusBarEditorWindow.h"
+#include "UIMenuBarEditorWindow.h"
+#include "UIVisualStateEditor.h"
 
 /** Machine settings: User Interface page data structure. */
 struct UIDataSettingsMachineInterface
@@ -284,8 +291,15 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
 
 void UIMachineSettingsInterface::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIMachineSettingsInterface::retranslateUi(this);
+    m_pMenuBarEditor->setWhatsThis(tr("Allows to modify VM menu-bar contents."));
+    m_pLabelVisualState->setText(tr("Visual State:"));
+    m_pVisualStateEditor->setWhatsThis(tr("Selects the visual state. If machine is running it will be applied as soon as possible, otherwise desired one will be defined."));
+    m_pLabelMiniToolBar->setText(tr("Mini ToolBar:"));
+    m_pCheckBoxShowMiniToolBar->setWhatsThis(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
+    m_pCheckBoxShowMiniToolBar->setText(tr("Show in &Full-screen/Seamless"));
+    m_pComboToolBarAlignment->setWhatsThis(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen."));
+    m_pComboToolBarAlignment->setText(tr("Show at &Top of Screen"));
+    m_pStatusBarEditor->setWhatsThis(tr("Allows to modify VM status-bar contents."));
 }
 
 void UIMachineSettingsInterface::polishPage()
@@ -304,10 +318,66 @@ void UIMachineSettingsInterface::polishPage()
     m_pStatusBarEditor->setEnabled(isMachineInValidMode());
 }
 
+void UIMachineSettingsInterface::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIMachineSettingsInterface"));
+    resize(350, 300);
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    pLayoutMain->setObjectName(QStringLiteral("pLayoutMain"));
+    m_pMenuBarEditor = new UIMenuBarEditorWidget(this);
+    m_pMenuBarEditor->setObjectName(QStringLiteral("m_pMenuBarEditor"));
+    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pMenuBarEditor->sizePolicy().hasHeightForWidth());
+    m_pMenuBarEditor->setSizePolicy(sizePolicy);
+    pLayoutMain->addWidget(m_pMenuBarEditor, 0, 0, 1, 3);
+
+    m_pLabelVisualState = new QLabel;
+    m_pLabelVisualState->setObjectName(QStringLiteral("m_pLabelVisualState"));
+    m_pLabelVisualState->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutMain->addWidget(m_pLabelVisualState, 1, 0, 1, 1);
+
+    m_pVisualStateEditor = new UIVisualStateEditor;
+    m_pVisualStateEditor->setObjectName(QStringLiteral("m_pVisualStateEditor"));
+    pLayoutMain->addWidget(m_pVisualStateEditor, 1, 1, 1, 2);
+
+    m_pLabelMiniToolBar = new QLabel;
+    m_pLabelMiniToolBar->setObjectName(QStringLiteral("m_pLabelMiniToolBar"));
+    m_pLabelMiniToolBar->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutMain->addWidget(m_pLabelMiniToolBar, 2, 0, 1, 1);
+
+    m_pCheckBoxShowMiniToolBar = new QCheckBox;
+    m_pCheckBoxShowMiniToolBar->setObjectName(QStringLiteral("m_pCheckBoxShowMiniToolBar"));
+    sizePolicy.setHeightForWidth(m_pCheckBoxShowMiniToolBar->sizePolicy().hasHeightForWidth());
+    m_pCheckBoxShowMiniToolBar->setSizePolicy(sizePolicy);
+    m_pCheckBoxShowMiniToolBar->setChecked(true);
+    pLayoutMain->addWidget(m_pCheckBoxShowMiniToolBar, 2, 1, 1, 2);
+
+    m_pComboToolBarAlignment = new QCheckBox;
+    m_pComboToolBarAlignment->setObjectName(QStringLiteral("m_pComboToolBarAlignment"));
+    sizePolicy.setHeightForWidth(m_pComboToolBarAlignment->sizePolicy().hasHeightForWidth());
+    m_pComboToolBarAlignment->setSizePolicy(sizePolicy);
+    m_pComboToolBarAlignment->setChecked(false);
+    pLayoutMain->addWidget(m_pComboToolBarAlignment, 3, 1, 1, 2);
+
+    QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pLayoutMain->addItem(pSpacer, 4, 0, 1, 3);
+
+    m_pStatusBarEditor = new UIStatusBarEditorWidget(this);
+    m_pStatusBarEditor->setObjectName(QStringLiteral("m_pStatusBarEditor"));
+    sizePolicy.setHeightForWidth(m_pStatusBarEditor->sizePolicy().hasHeightForWidth());
+    m_pStatusBarEditor->setSizePolicy(sizePolicy);
+    pLayoutMain->addWidget(m_pStatusBarEditor, 5, 0, 1, 3);
+
+    QObject::connect(m_pCheckBoxShowMiniToolBar, &QCheckBox::toggled,
+                     m_pComboToolBarAlignment, &UIMachineSettingsInterface::setEnabled);
+}
+
 void UIMachineSettingsInterface::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsInterface::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineInterface;

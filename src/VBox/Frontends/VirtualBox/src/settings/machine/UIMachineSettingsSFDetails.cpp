@@ -202,17 +202,17 @@ bool UIMachineSettingsSFDetails::isPermanent() const
 
 void UIMachineSettingsSFDetails::retranslateUi()
 {
-    m_pPathLabel->setText(QApplication::translate("UIMachineSettingsSFDetails", "Folder Path:"));
-    m_pNameLabel->setText(QApplication::translate("UIMachineSettingsSFDetails", "Folder Name:"));
-    m_pNameLineEdit->setToolTip(QApplication::translate("UIMachineSettingsSFDetails", "Holds the name of the shared folder (as it will be seen by the guest OS)."));
-    m_pReadonlyCheckBox->setToolTip(QApplication::translate("UIMachineSettingsSFDetails", "When checked, the guest OS will not be able to write to the specified shared folder."));
-    m_pReadonlyCheckBox->setText(QApplication::translate("UIMachineSettingsSFDetails", "&Read-only"));
-    m_pAutoMountCheckBox->setToolTip(QApplication::translate("UIMachineSettingsSFDetails", "When checked, the guest OS will try to automatically mount the shared folder on startup."));
-    m_pAutoMountCheckBox->setText(QApplication::translate("UIMachineSettingsSFDetails", "&Auto-mount"));
-    m_pAutoMountPointLabel->setText(QApplication::translate("UIMachineSettingsSFDetails", "Mount point:"));
-    m_pAutoMountPointLineEdit->setToolTip(QApplication::translate("UIMachineSettingsSFDetails", "Where to automatically mount the folder in the guest.  A drive letter (e.g. 'G:') for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting."));
-    m_pPermanentCheckBox->setToolTip(QApplication::translate("UIMachineSettingsSFDetails", "When checked, this shared folder will be permanent."));
-    m_pPermanentCheckBox->setText(QApplication::translate("UIMachineSettingsSFDetails", "&Make Permanent"));
+    m_pPathLabel->setText(tr("Folder Path:"));
+    m_pNameLabel->setText(tr("Folder Name:"));
+    m_pNameLineEdit->setToolTip(tr("Holds the name of the shared folder (as it will be seen by the guest OS)."));
+    m_pReadonlyCheckBox->setToolTip(tr("When checked, the guest OS will not be able to write to the specified shared folder."));
+    m_pReadonlyCheckBox->setText(tr("&Read-only"));
+    m_pAutoMountCheckBox->setToolTip(tr("When checked, the guest OS will try to automatically mount the shared folder on startup."));
+    m_pAutoMountCheckBox->setText(tr("&Auto-mount"));
+    m_pAutoMountPointLabel->setText(tr("Mount point:"));
+    m_pAutoMountPointLineEdit->setToolTip(tr("Where to automatically mount the folder in the guest.  A drive letter (e.g. 'G:') for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting."));
+    m_pPermanentCheckBox->setToolTip(tr("When checked, this shared folder will be permanent."));
+    m_pPermanentCheckBox->setText(tr("&Make Permanent"));
 
     switch (m_type)
     {

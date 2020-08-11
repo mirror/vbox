@@ -23,16 +23,19 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIMachineSettingsInterface.gen.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QLabel;
 class UIActionPool;
+class UIMenuBarEditorWidget;
+class UIStatusBarEditorWidget;
+class UIVisualStateEditor;
 struct UIDataSettingsMachineInterface;
 typedef UISettingsCache<UIDataSettingsMachineInterface> UISettingsCacheMachineInterface;
 
 /** Machine settings: User Interface page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsInterface : public UISettingsPageMachine,
-                                                        public Ui::UIMachineSettingsInterface
+class SHARED_LIBRARY_STUFF UIMachineSettingsInterface : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -72,6 +75,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
 
@@ -93,6 +98,17 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineInterface *m_pCache;
+
+    /** @name Widgets
+     * @{ */
+        UIStatusBarEditorWidget *m_pStatusBarEditor;
+        UIMenuBarEditorWidget *m_pMenuBarEditor;
+        QCheckBox *m_pCheckBoxShowMiniToolBar;
+        QCheckBox *m_pComboToolBarAlignment;
+        QLabel *m_pLabelVisualState;
+        UIVisualStateEditor *m_pVisualStateEditor;
+        QLabel *m_pLabelMiniToolBar;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsInterface_h */

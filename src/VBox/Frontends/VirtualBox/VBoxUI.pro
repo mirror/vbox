@@ -39,8 +39,8 @@ FORMS = \
     src/settings/machine/UIMachineSettingsNetwork.ui \
     src/settings/machine/UIMachineSettingsSerial.ui \
     src/settings/machine/UIMachineSettingsUSB.ui \
-    src/settings/machine/UIMachineSettingsUSBFilterDetails.ui \
-    src/settings/machine/UIMachineSettingsInterface.ui
+    src/settings/machine/UIMachineSettingsUSBFilterDetails.ui
+
 
 TRANSLATIONS = \
 	nls/VirtualBox_bg.ts \
