@@ -324,6 +324,11 @@ struct SystemProperties
     uint32_t                uProxyMode; /**< ProxyMode_T */
     uint32_t                uLogHistoryCount;
     bool                    fExclusiveHwVirt;
+    bool                    fVBoxUpdateEnabled;
+    uint32_t                uVBoxUpdateCount;
+    uint32_t                uVBoxUpdateFrequency;
+    uint32_t                uVBoxUpdateTarget; /**< VBoxUpdateTarget_T */
+    com::Utf8Str            strVBoxUpdateLastCheckDate;
 };
 
 struct MachineRegistryEntry

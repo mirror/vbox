@@ -476,6 +476,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_GUESTSESSIONEVENT,
     /** Main group, IHost. */
     LOG_GROUP_MAIN_HOST,
+    /** Main group, IHostUpdate. */
+    LOG_GROUP_MAIN_HOSTUPDATE,
     /** Main group, IHostNetworkInterface. */
     LOG_GROUP_MAIN_HOSTNETWORKINTERFACE,
     /** Main group, IHostUSBDevice. */
@@ -978,6 +980,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_GUESTSESSION", \
     "MAIN_GUESTSESSIONEVENT", \
     "MAIN_HOST", \
+    "MAIN_HOSTUPDATE", \
     "MAIN_HOSTNETWORKINTERFACE", \
     "MAIN_HOSTUSBDEVICE", \
     "MAIN_HOSTUSBDEVICEFILTER", \

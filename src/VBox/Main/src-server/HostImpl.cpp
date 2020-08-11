@@ -45,6 +45,7 @@
 #include "AutoCaller.h"
 #include "LoggingNew.h"
 #include "Performance.h"
+#include "HostUpdateImpl.h"
 
 #include "MediumImpl.h"
 #include "HostPower.h"
@@ -228,6 +229,9 @@ struct Host::Data
 
     /** Startup syncing of persistent config in extra data */
     bool                    fPersistentConfigUpToDate;
+
+    /** The reference to the update check handler singleton. */
+    const ComObjPtr<HostUpdate> pHostUpdate;
 };
 
 
@@ -283,6 +287,11 @@ HRESULT Host::init(VirtualBox *aParent)
     i_updateNetIfList();
 
     m->hostDnsMonitorProxy.init(m->pParent);
+
+    hrc = unconst(m->pHostUpdate).createObject();
+    if (SUCCEEDED(hrc))
+        hrc = m->pHostUpdate->init(m->pParent);
+    AssertComRCReturn(hrc, hrc);
 
 #if defined(RT_OS_WINDOWS)
     m->pHostPowerService = new HostPowerServiceWin(m->pParent);
@@ -466,6 +475,12 @@ void Host::uninit()
     }
 
     m->hostDnsMonitorProxy.uninit();
+
+    if (m->pHostUpdate)
+    {
+        m->pHostUpdate->uninit();
+        unconst(m->pHostUpdate).setNull();
+    }
 
 #ifdef VBOX_WITH_USB
     /* wait for USB proxy service to terminate before we uninit all USB
@@ -1939,8 +1954,8 @@ HRESULT Host::removeUSBDeviceSource(const com::Utf8Str &aId)
 
 HRESULT Host::getUpdate(ComPtr<IHostUpdate> &aUpdate)
 {
-    RT_NOREF(aUpdate);
-    ReturnComNotImplemented();
+    HRESULT hrc = m->pHostUpdate.queryInterfaceTo(aUpdate.asOutParam());
+    return hrc;
 }
 
 

@@ -1601,6 +1601,10 @@ SystemProperties::SystemProperties()
     : uProxyMode(ProxyMode_System)
     , uLogHistoryCount(3)
     , fExclusiveHwVirt(true)
+    , fVBoxUpdateEnabled(true)
+    , uVBoxUpdateCount(0)
+    , uVBoxUpdateFrequency(1)
+    , uVBoxUpdateTarget(VBoxUpdateTarget_Stable)
 {
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
     fExclusiveHwVirt = false;
@@ -2245,6 +2249,12 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         if (!pelmGlobalChild->getAttributeValue("proxyMode", systemProperties.uProxyMode))
                             fCopyProxySettingsFromExtraData = true;
                         pelmGlobalChild->getAttributeValue("proxyUrl", systemProperties.strProxyUrl);
+                        pelmGlobalChild->getAttributeValue("VBoxUpdateEnabled", systemProperties.fVBoxUpdateEnabled);
+                        pelmGlobalChild->getAttributeValue("VBoxUpdateCount", systemProperties.uVBoxUpdateCount);
+                        pelmGlobalChild->getAttributeValue("VBoxUpdateFrequency", systemProperties.uVBoxUpdateFrequency);
+                        pelmGlobalChild->getAttributeValue("VBoxUpdateTarget", systemProperties.uVBoxUpdateTarget);
+                        pelmGlobalChild->getAttributeValue("VBoxUpdateLastCheckDate",
+                            systemProperties.strVBoxUpdateLastCheckDate);
                     }
                     else if (pelmGlobalChild->nameEquals("ExtraData"))
                         readExtraData(*pelmGlobalChild, mapExtraDataItems);
@@ -2457,6 +2467,12 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("proxyUrl", systemProperties.strProxyUrl);
     pelmSysProps->setAttribute("proxyMode", systemProperties.uProxyMode);
     pelmSysProps->setAttribute("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
+    pelmSysProps->setAttribute("VBoxUpdateEnabled", systemProperties.fVBoxUpdateEnabled);
+    pelmSysProps->setAttribute("VBoxUpdateCount", systemProperties.uVBoxUpdateCount);
+    pelmSysProps->setAttribute("VBoxUpdateFrequency", systemProperties.uVBoxUpdateFrequency);
+    pelmSysProps->setAttribute("VBoxUpdateTarget", systemProperties.uVBoxUpdateTarget);
+    if (systemProperties.strVBoxUpdateLastCheckDate.length())
+        pelmSysProps->setAttribute("VBoxUpdateLastCheckDate", systemProperties.strVBoxUpdateLastCheckDate);
 
     buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
                           host.llUSBDeviceFilters,

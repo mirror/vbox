@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage updatecheck
+
+    Copyright (C) 2020 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<refentry id="vboxmanage-updatecheck" lang="en">
+
+  <refentryinfo>
+    <pubdate>$Date$</pubdate>
+    <title>VBoxManage updatecheck</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-updatecheck</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-updatecheck</refname>
+    <refpurpose>Check for a newer version of VirtualBox</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage updatecheck perform</command>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-getsettings">
+      <command>VBoxManage updatecheck getsettings</command>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-modifysettings">
+      <command>VBoxManage updatecheck modifysettings</command>
+      <group>
+        <arg choice="plain">--disable</arg>
+        <arg choice="plain">--enable</arg>
+      </group>
+      <arg>--branch=<replaceable>stable | withbetas | allreleases</replaceable></arg>
+      <arg>--frequency=<replaceable>days</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>The <command>updatecheck</command> subcommand is used to check if a newer
+    version of VirtualBox is available.  The two subcommand options of <command>updatecheck</command>
+    are used for modifying or viewing the settings associated with checking for a newer version
+    of VirtualBox.</para>
+
+    <refsect2 id="vboxmanage-updatecheck">
+      <title>updatecheck</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Check if a newer version of VirtualBox is available.
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-updatecheck-getsettings">
+      <title>updatecheck getsettings</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Display the current settings used for specifying when to check for a newer version of VirtualBox.
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-updatecheck-modifysettings">
+      <title>updatecheck modifysettings</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Modify the settings used for specifying when to check for a newer version of VirtaulBox.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--enable</option></term><listitem><para>Enable the update check service.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--disable</option></term><listitem><para>Disable the update check service.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--target=stable | withbetas | allreleases</option></term>
+          <listitem><para>The preferred release type used for determining whether a newer version of VirtualBox is available.  The default is 'stable'.</para>
+          <variablelist>
+            <varlistentry>
+             <term><option>stable</option></term>
+             <listitem><para>Check for newer stable releases (maintenance and minor releases within the same major release) of VirtualBox.</para> </listitem>
+            </varlistentry>
+            <varlistentry>
+             <term><option>allreleases</option></term>
+             <listitem><para>Check for newer stable releases (maintenance and minor releases within the same major release) and major releases of VirtualBox.</para></listitem>
+            </varlistentry>
+            <varlistentry>
+             <term><option>withbetas</option></term>
+             <listitem><para>Check for newer stable releases (maintenance and minor releases within the same major release), major releases, and beta releases of VirtualBox.</para></listitem>
+            </varlistentry>
+          </variablelist>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--frequency=days</option></term>
+          <listitem><para>Specify how often in days to check for a newer version of VirtualBox.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+  </refsect1>
+
+</refentry>
+

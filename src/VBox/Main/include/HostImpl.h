@@ -116,6 +116,10 @@ private:
     HRESULT getAcceleration3DAvailable(BOOL *aAcceleration3DAvailable);
     HRESULT getVideoInputDevices(std::vector<ComPtr<IHostVideoInputDevice> > &aVideoInputDevices);
     HRESULT getUpdate(ComPtr<IHostUpdate> &aUpdate);
+    HRESULT getUpdateResponse(BOOL *aUpdateNeeded);
+    HRESULT getUpdateVersion(com::Utf8Str &aUpdateVersion);
+    HRESULT getUpdateURL(com::Utf8Str &aUpdateURL);
+    HRESULT getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded);
 
     // wrapped IHost methods
     HRESULT getProcessorSpeed(ULONG aCpuId,
@@ -160,6 +164,8 @@ private:
                                const std::vector<com::Utf8Str> &aPropertyNames, const std::vector<com::Utf8Str> &aPropertyValues);
 
     HRESULT removeUSBDeviceSource(const com::Utf8Str &aId);
+    HRESULT UpdateCheck(UpdateCheckType_T aCheckType,
+                        ComPtr<IProgress> &aProgress);
 
     // Internal Methods.
 

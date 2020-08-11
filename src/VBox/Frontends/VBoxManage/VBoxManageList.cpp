@@ -826,6 +826,38 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Proxy Mode:                      %s\n", psz);
     systemProperties->COMGETTER(ProxyURL)(str.asOutParam());
     RTPrintf("Proxy URL:                       %ls\n", str.raw());
+    systemProperties->COMGETTER(VBoxUpdateEnabled)(&fValue);
+    RTPrintf("Update check enabled:            %s\n", fValue ? "yes" : "no");
+    systemProperties->COMGETTER(VBoxUpdateCount)(&ulValue);
+    RTPrintf("Update check count:              %u\n", ulValue);
+    systemProperties->COMGETTER(VBoxUpdateFrequency)(&ulValue);
+    if (ulValue == 0)
+        RTPrintf("Update check frequency:          never\n");
+    else if (ulValue == 1)
+        RTPrintf("Update check frequency:          every day\n");
+    else
+        RTPrintf("Update check frequency:          every %u days\n", ulValue);
+    VBoxUpdateTarget_T enmVBoxUpdateTarget;
+    systemProperties->COMGETTER(VBoxUpdateTarget)(&enmVBoxUpdateTarget);
+    switch (enmVBoxUpdateTarget)
+    {
+        case VBoxUpdateTarget_Stable:
+            psz = "Stable: new minor and maintenance releases";
+            break;
+        case VBoxUpdateTarget_AllReleases:
+            psz = "All releases: new minor, maintenance, and major releases";
+            break;
+        case VBoxUpdateTarget_WithBetas:
+            psz = "With Betas: new minor, maintenance, major, and beta releases";
+            break;
+        default:
+            psz = "Unset";
+            break;
+    }
+    RTPrintf("Update check target:             %s\n", psz);
+    systemProperties->COMGETTER(VBoxUpdateLastCheckDate)(str.asOutParam());
+    RTPrintf("Last check date:                 %ls\n", str.raw());
+ 
     return S_OK;
 }
 

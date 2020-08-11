@@ -141,6 +141,17 @@ private:
     HRESULT getSupportedStorageBuses(std::vector<StorageBus_T> &aSupportedStorageBuses) RT_OVERRIDE;
     HRESULT getSupportedStorageControllerTypes(std::vector<StorageControllerType_T> &aSupportedStorageControllerTypes) RT_OVERRIDE;
     HRESULT getSupportedChipsetTypes(std::vector<ChipsetType_T> &aSupportedChipsetTypes) RT_OVERRIDE;
+    HRESULT getSupportedVBoxUpdateTargetTypes(std::vector<VBoxUpdateTarget_T> &aSupportedVBoxUpdateTargetTypes) RT_OVERRIDE;
+    HRESULT getVBoxUpdateEnabled(BOOL *aVBoxUpdateEnabled) RT_OVERRIDE;
+    HRESULT setVBoxUpdateEnabled(BOOL aVBoxUpdateEnabled) RT_OVERRIDE;
+    HRESULT getVBoxUpdateFrequency(ULONG *aVBoxUpdateFrequency) RT_OVERRIDE;
+    HRESULT setVBoxUpdateFrequency(ULONG aVBoxUpdateFrequency) RT_OVERRIDE;
+    HRESULT getVBoxUpdateLastCheckDate(com::Utf8Str &aVBoxUpdateLastCheckDate) RT_OVERRIDE;
+    HRESULT setVBoxUpdateLastCheckDate(const com::Utf8Str &aVBoxUpdateLastCheckDate) RT_OVERRIDE;
+    HRESULT getVBoxUpdateTarget(VBoxUpdateTarget_T *aVBoxUpdateTarget) RT_OVERRIDE;
+    HRESULT setVBoxUpdateTarget(VBoxUpdateTarget_T aVBoxUpdateTarget) RT_OVERRIDE;
+    HRESULT getVBoxUpdateCount(ULONG *aVBoxUpdateCount) RT_OVERRIDE;
+    HRESULT setVBoxUpdateCount(ULONG aVBoxUpdateCount) RT_OVERRIDE;
 
     // wrapped ISystemProperties methods
     HRESULT getMaxNetworkAdapters(ChipsetType_T aChipset,
@@ -184,6 +195,7 @@ private:
     HRESULT i_setAutostartDatabasePath(const com::Utf8Str &aPath);
     HRESULT i_setDefaultAdditionsISO(const com::Utf8Str &aPath);
     HRESULT i_setDefaultFrontend(const com::Utf8Str &aDefaultFrontend);
+    HRESULT i_setVBoxUpdateLastCheckDate(const com::Utf8Str &aVBoxUpdateLastCheckDate);
 
     VirtualBox * const  mParent;
 

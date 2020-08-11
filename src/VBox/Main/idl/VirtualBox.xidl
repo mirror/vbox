@@ -10224,6 +10224,21 @@
 
   </interface>
 
+  <enum
+    name="UpdateCheckType"
+    uuid="ac34bb91-6739-4791-b30f-ce84e57928bb"
+    >
+    <desc>
+      Which type of software to check whether a new version exists.
+    </desc>
+    <const name="None"              value="0">
+      <desc>No flags specified. Do not use this.</desc>
+    </const>
+    <const name="VirtualBox"        value="1"/>
+    <const name="ExtensionPack"     value="2"/>
+    <const name="GuestAdditions"    value="3"/>
+  </enum>
+
   <interface
     name="IHostUpdate" extends="$unknown"
     uuid="6fa2671b-0547-448e-bc7c-94e9e173bf57"
@@ -10235,6 +10250,44 @@
       Represents the state of the update checking logic (a singleton returned
       by <link to="IHost::update" /> attribute).
     </desc>
+
+    <method name="updateCheck">
+      <desc>
+        Check for a newer version of software based on the 'checkType' value.
+      </desc>
+      <param name="checkType" type="UpdateCheckType" dir="in">
+        <desc>The type of software to check.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track operation completion.</desc>
+      </param>
+    </method>
+
+    <attribute name="updateResponse" type="boolean" readonly="yes">
+      <desc>
+        The response from the <link to="IHostUpdate::updateCheck"/> method.
+      </desc>
+    </attribute>
+
+    <attribute name="updateVersion" type="wstring" readonly="yes">
+      <desc>
+       The newer version of the software returned by calling the update check
+       <link to="IHostUpdate::updateCheck"/> method.
+      </desc>
+    </attribute>
+
+    <attribute name="updateURL" type="wstring" readonly="yes">
+      <desc>
+       The download URL of the newer software version returned by calling the
+       update check <link to="IHostUpdate::updateCheck"/> method.
+      </desc>
+    </attribute>
+
+    <attribute name="updateCheckNeeded" type="boolean" readonly="yes">
+      <desc>
+        Is it time to check for a newer version of software?
+      </desc>
+    </attribute>
 
   </interface>
 
@@ -10739,7 +10792,7 @@
     </method>
 
     <attribute name="update" type="IHostUpdate" readonly="yes">
-      <desc>List of floppy drives available on the host.</desc>
+      <desc>The check for newer software object (singleton).</desc>
     </attribute>
 
   </interface>
@@ -10782,6 +10835,19 @@
     </const>
     <const name="Manual" value="2">
       <desc>Use the manual proxy from <link to="ISystemProperties::proxyURL"/>.</desc>
+    </const>
+  </enum>
+
+  <enum name="VBoxUpdateTarget" uuid="900d4a76-7b08-4af8-a453-f331e783eaee">
+    <desc> The preferred release type used for determining whether a newer version of VirtualBox is available. <link to="ISystemProperties::VBoxUpdateTarget"/></desc>
+    <const name="Stable" value="0">
+      <desc>Stable releases: new maintenance and minor releases within the same major release version.  This is the default.</desc>
+    </const>
+    <const name="AllReleases" value="1">
+      <desc>All releases: new maintenance, minor, and major releases.</desc>
+    </const>
+    <const name="WithBetas" value="2">
+      <desc>With betas: new maintenance, minor, and major releases as well as beta releases.</desc>
     </const>
   </enum>
 
@@ -11314,6 +11380,35 @@
       <desc>
         Returns an array of officially supported values for enum <link to="ChipsetType"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="VBoxUpdateEnabled" type="boolean" readyonly="no">
+      <desc> Is the VirtualBox update check enabled?</desc>
+    </attribute>
+
+    <attribute name="VBoxUpdateFrequency" type="unsigned long" readonly="no">
+      <desc> How often should a check for a newer version of VirtualBox be made? (in days)</desc>
+    </attribute>
+
+    <attribute name="VBoxUpdateLastCheckDate" type="wstring" readonly="no">
+      <desc> 
+        When was the update check last performed? If updating this attribute the
+        string must be in ISO 8601 format (e.g. 2020-05-11T21:13:39.348416000Z).
+      </desc>
+    </attribute>
+
+    <attribute name="VBoxUpdateTarget" type="VBoxUpdateTarget" readonly="no">
+      <desc> The preferred release type used for determining whether a newer version of VirtualBox is available.</desc>
+    </attribute>
+
+    <attribute name="VBoxUpdateCount" type="unsigned long" readonly="no">
+      <desc> The count of update check attempts.</desc>
+    </attribute>
+
+    <attribute name="supportedVBoxUpdateTargetTypes" type="VBoxUpdateTarget" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="VBoxUpdateTarget"/>.
       </desc>
     </attribute>
 

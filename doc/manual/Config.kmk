@@ -45,7 +45,8 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-unattended.xml \
 	man_VBoxManage-cloud.xml \
 	man_VBoxManage-cloudprofile.xml \
-	man_VBoxManage-signova.xml
+	man_VBoxManage-signova.xml \
+	man_VBoxManage-updatecheck.xml
 
 ## List of user manual XML files.
 VBOX_MANUAL_XML_FILES = \

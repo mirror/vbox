@@ -115,6 +115,11 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
     m->fExclusiveHwVirt = true;
 #endif
 
+    m->fVBoxUpdateEnabled = true;
+    m->uVBoxUpdateCount = 0;
+    m->uVBoxUpdateFrequency = 1; // daily is the default
+    m->uVBoxUpdateTarget = VBoxUpdateTarget_Stable;
+
     HRESULT rc = S_OK;
 
     /* Fetch info of all available hd backends. */
@@ -1807,6 +1812,19 @@ HRESULT SystemProperties::getSupportedChipsetTypes(std::vector<ChipsetType_T> &a
     return S_OK;
 }
 
+HRESULT SystemProperties::getSupportedVBoxUpdateTargetTypes(std::vector<VBoxUpdateTarget_T> &aSupportedVBoxUpdateTargetTypes)
+{
+    static const VBoxUpdateTarget_T aVBoxUpdateTargetTypes[] =
+    {
+        VBoxUpdateTarget_Stable,
+        VBoxUpdateTarget_AllReleases,
+        VBoxUpdateTarget_WithBetas
+    };
+    aSupportedVBoxUpdateTargetTypes.assign(aVBoxUpdateTargetTypes,
+                                           aVBoxUpdateTargetTypes + RT_ELEMENTS(aVBoxUpdateTargetTypes));
+    return S_OK;
+}
+
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
@@ -1840,6 +1858,12 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
     m->fExclusiveHwVirt  = data.fExclusiveHwVirt;
     m->uProxyMode        = data.uProxyMode;
     m->strProxyUrl       = data.strProxyUrl;
+
+    m->fVBoxUpdateEnabled               = data.fVBoxUpdateEnabled;
+    m->uVBoxUpdateFrequency             = data.uVBoxUpdateFrequency;
+    m->strVBoxUpdateLastCheckDate       = data.strVBoxUpdateLastCheckDate;
+    m->uVBoxUpdateTarget                = data.uVBoxUpdateTarget;
+    m->uVBoxUpdateCount                 = data.uVBoxUpdateCount;
 
     rc = i_setAutostartDatabasePath(data.strAutostartDatabasePath);
     if (FAILED(rc)) return rc;
@@ -2181,3 +2205,141 @@ HRESULT SystemProperties::i_setDefaultFrontend(const com::Utf8Str &aDefaultFront
     return S_OK;
 }
 
+HRESULT SystemProperties::i_setVBoxUpdateLastCheckDate(const com::Utf8Str &aVBoxUpdateLastCheckDate)
+{
+    m->strVBoxUpdateLastCheckDate = aVBoxUpdateLastCheckDate;
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::getVBoxUpdateEnabled(BOOL *aVBoxUpdateEnabled)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aVBoxUpdateEnabled = m->fVBoxUpdateEnabled;
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::setVBoxUpdateEnabled(BOOL aVBoxUpdateEnabled)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->fVBoxUpdateEnabled = !!aVBoxUpdateEnabled;
+    alock.release();
+
+    // VirtualBox::i_saveSettings() needs vbox write lock
+    AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = mParent->i_saveSettings();
+
+    return rc;
+}
+
+HRESULT SystemProperties::getVBoxUpdateCount(ULONG *VBoxUpdateCount)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *VBoxUpdateCount = m->uVBoxUpdateCount;
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::setVBoxUpdateCount(ULONG VBoxUpdateCount)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->uVBoxUpdateCount = VBoxUpdateCount;
+    alock.release();
+
+    // VirtualBox::i_saveSettings() needs vbox write lock
+    AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = mParent->i_saveSettings();
+
+    return rc;
+}
+
+HRESULT SystemProperties::getVBoxUpdateFrequency(ULONG *aVBoxUpdateFrequency)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aVBoxUpdateFrequency = m->uVBoxUpdateFrequency;
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::setVBoxUpdateFrequency(ULONG aVBoxUpdateFrequency)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->uVBoxUpdateFrequency = aVBoxUpdateFrequency;
+    alock.release();
+
+    // VirtualBox::i_saveSettings() needs vbox write lock
+    AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = mParent->i_saveSettings();
+
+    return rc;
+}
+
+HRESULT SystemProperties::getVBoxUpdateTarget(VBoxUpdateTarget_T *aVBoxUpdateTarget)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    VBoxUpdateTarget_T enmTarget = *aVBoxUpdateTarget = (VBoxUpdateTarget_T)m->uVBoxUpdateTarget;
+    AssertMsgReturn(enmTarget == VBoxUpdateTarget_Stable ||
+                    enmTarget == VBoxUpdateTarget_AllReleases ||
+                    enmTarget == VBoxUpdateTarget_WithBetas,
+                    ("enmTarget=%d\n", enmTarget), E_UNEXPECTED);
+    return S_OK;
+}
+
+HRESULT SystemProperties::setVBoxUpdateTarget(VBoxUpdateTarget_T aVBoxUpdateTarget)
+{
+    /* Validate input. */
+    switch (aVBoxUpdateTarget)
+    {
+        case VBoxUpdateTarget_Stable:
+        case VBoxUpdateTarget_AllReleases:
+        case VBoxUpdateTarget_WithBetas:
+            break;
+        default:
+            return setError(E_INVALIDARG, tr("Invalid Target value: %d"), (int)aVBoxUpdateTarget);
+    }
+
+    /* Set and write out settings. */
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        m->uVBoxUpdateTarget = aVBoxUpdateTarget;
+    }
+    AutoWriteLock alock(mParent COMMA_LOCKVAL_SRC_POS); /* required for saving. */
+    return mParent->i_saveSettings();
+}
+
+HRESULT SystemProperties::getVBoxUpdateLastCheckDate(com::Utf8Str &aVBoxUpdateLastCheckDate)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aVBoxUpdateLastCheckDate = m->strVBoxUpdateLastCheckDate;
+    return S_OK;
+}
+
+HRESULT SystemProperties::setVBoxUpdateLastCheckDate(const com::Utf8Str &aVBoxUpdateLastCheckDate)
+{
+    /*
+     * Validate input.
+     */
+    Utf8Str const *pLastCheckDate = &aVBoxUpdateLastCheckDate;
+    RTTIMESPEC TimeSpec;
+
+    if (pLastCheckDate->isEmpty() || !RTTimeSpecFromString(&TimeSpec, pLastCheckDate->c_str()))
+        return setErrorBoth(E_INVALIDARG, VERR_INVALID_PARAMETER,
+                            tr("Invalid LastCheckDate value: '%s'. "
+                               "Must be in ISO 8601 format (e.g. 2020-05-11T21:13:39.348416000Z)"), pLastCheckDate->c_str());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = i_setVBoxUpdateLastCheckDate(aVBoxUpdateLastCheckDate);
+    alock.release();
+    if (SUCCEEDED(rc))
+    {
+        // VirtualBox::i_saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        rc = mParent->i_saveSettings();
+    }
+
+    return rc;
+}
