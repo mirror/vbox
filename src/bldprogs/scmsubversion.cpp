@@ -1137,7 +1137,7 @@ bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState)
     }
     else
     {
-        const char *apszArgs[] = { g_szSvnPath, "propget", "svn:no-such-property", pState->pszFilename, NULL };
+        const char *apszArgs[] = { g_szSvnPath, "proplist", pState->pszFilename, NULL };
         char       *pszValue;
         int rc = scmSvnRunAndGetOutput(pState, apszArgs, true, &pszValue);
         if (RT_SUCCESS(rc))
