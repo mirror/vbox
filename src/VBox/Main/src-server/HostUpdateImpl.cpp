@@ -523,7 +523,7 @@ HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
         return setErrorVrc(rc, tr("%s: retrieving ISystemProperties::VBoxUpdateEnabled failed: %Rrc"), __FUNCTION__, rc);
 
     if (!fVBoxUpdateEnabled)
-        return NS_ERROR_NOT_IMPLEMENTED;
+        return E_NOTIMPL;
 
     ComObjPtr<Progress> pProgress;
     rc = pProgress.createObject();
