@@ -39,7 +39,7 @@
 
 UIDnDDataObject::UIDnDDataObject(UIDnDHandler *pDnDHandler, const QStringList &lstFormats)
     : m_pDnDHandler(pDnDHandler)
-    , m_enmStatus(DnDDataObjectStatus_Uninitialized)
+    , m_enmStatus(Status_Uninitialized)
     , m_cRefs(1)
     , m_cFormats(0)
     , m_pFormatEtc(NULL)
@@ -127,7 +127,7 @@ UIDnDDataObject::UIDnDDataObject(UIDnDHandler *pDnDHandler, const QStringList &l
                        RegisterClipboardFormat(CFSTR_SHELLIDLISTOFFSET));
 #endif
         m_cFormats  = cRegisteredFormats;
-        m_enmStatus = DnDDataObjectStatus_Dropping;
+        m_enmStatus = Status_Dropping;
     }
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
@@ -213,7 +213,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
         LogFlowThisFunc(("mStatus=%RU32\n", m_enmStatus));
         switch (m_enmStatus)
         {
-            case DnDDataObjectStatus_Dropping:
+            case Status_Dropping:
             {
 #if 0
                 LogRel3(("DnD: Dropping\n"));
@@ -224,7 +224,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                 break;
             }
 
-            case DnDDataObjectStatus_Dropped:
+            case Status_Dropped:
             {
                 LogRel3(("DnD: Dropped\n"));
                 LogRel3(("DnD: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
@@ -577,7 +577,7 @@ STDMETHODIMP UIDnDDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvise)
 int UIDnDDataObject::Abort(void)
 {
     LogFlowFunc(("Aborting ...\n"));
-    m_enmStatus = DnDDataObjectStatus_Aborted;
+    m_enmStatus = Status_Aborted;
     return RTSemEventSignal(m_SemEvent);
 }
 
@@ -736,7 +736,7 @@ void UIDnDDataObject::RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipForm
  *
  * @param   enmStatus           New status to set.
  */
-void UIDnDDataObject::SetStatus(DnDDataObjectStatus enmStatus)
+void UIDnDDataObject::SetStatus(Status enmStatus)
 {
     LogFlowFunc(("Setting status to %RU32\n", enmStatus));
     m_enmStatus = enmStatus;
@@ -744,12 +744,10 @@ void UIDnDDataObject::SetStatus(DnDDataObjectStatus enmStatus)
 
 /**
  * Signals that data has been "dropped".
- *
- ** @todo r=andy Remove?
  */
 void UIDnDDataObject::Signal(void)
 {
-    SetStatus(DnDDataObjectStatus_Dropped);
+    SetStatus(Status_Dropped);
 }
 
 /**
@@ -785,10 +783,10 @@ int UIDnDDataObject::Signal(const QString &strFormat,
     if (RT_SUCCESS(rc))
     {
         m_strFormat = strFormat;
-        SetStatus(DnDDataObjectStatus_Dropped);
+        SetStatus(Status_Dropped);
     }
     else
-        SetStatus(DnDDataObjectStatus_Aborted);
+        SetStatus(Status_Aborted);
 
     /* Signal in any case. */
     int rc2 = RTSemEventSignal(m_SemEvent);
