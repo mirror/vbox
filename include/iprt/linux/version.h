@@ -78,7 +78,7 @@
 # define RTLNX_RHEL_MAX(a_iMajor, a_iMinor) (0)
 #endif
 
-/** @define RTLNX_RHEL_RANGE
+/** @def RTLNX_RHEL_RANGE
  * Check that it's a RedHat kernel in the given version range.
  * The max version is exclusive, the minimum inclusive.
  * @sa RTLNX_RHEL_MIN, RTLNX_RHEL_MAX, RTLNX_RHEL_MAJ_PREREQ
