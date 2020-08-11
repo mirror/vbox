@@ -123,7 +123,7 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
 
 	vbox_bo_unreserve(bo);
 }
-#endif
+#endif /* RTLNX_VER_MAX(4,7,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4) */
 
 #ifdef CONFIG_FB_DEFERRED_IO
 # if RTLNX_VER_MAX(4,7,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)
@@ -157,7 +157,7 @@ static struct fb_deferred_io vbox_defio = {
 	.delay = HZ / 30,
 	.deferred_io = drm_fb_helper_deferred_io,
 };
-#endif
+#endif /* CONFIG_FB_DEFERRED_IO */
 
 #if RTLNX_VER_MAX(4,3,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 static void drm_fb_helper_sys_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
@@ -184,7 +184,7 @@ static void drm_fb_helper_sys_imageblit(struct fb_info *info, const struct fb_im
 	vbox_dirty_update(fbdev, image->dx, image->dy, image->width,
 			  image->height);
 }
-#endif
+#endif /* RTLNX_VER_MAX(4,3,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3) */
 
 static struct fb_ops vboxfb_ops = {
 	.owner = THIS_MODULE,

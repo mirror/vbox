@@ -152,22 +152,22 @@
 #endif
 
 #if RTLNX_VER_MAX(5,5,0)
-#include <drm/drmP.h>
+# include <drm/drmP.h>
 #else /* >= 5.5.0 */
-#include <drm/drm_file.h>
-#include <drm/drm_drv.h>
-#include <drm/drm_device.h>
-#include <drm/drm_ioctl.h>
-#include <drm/drm_fourcc.h>
-#include <drm/drm_irq.h>
-#include <drm/drm_vblank.h>
+# include <drm/drm_file.h>
+# include <drm/drm_drv.h>
+# include <drm/drm_device.h>
+# include <drm/drm_ioctl.h>
+# include <drm/drm_fourcc.h>
+# include <drm/drm_irq.h>
+# include <drm/drm_vblank.h>
 #endif /* >= 5.5.0 */
 #if RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
-#include <drm/drm_encoder.h>
+# include <drm/drm_encoder.h>
 #endif
 #include <drm/drm_fb_helper.h>
 #if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
-#include <drm/drm_gem.h>
+# include <drm/drm_gem.h>
 #endif
 
 #include <drm/ttm/ttm_bo_api.h>
@@ -366,15 +366,15 @@ int vbox_mode_init(struct drm_device *dev);
 void vbox_mode_fini(struct drm_device *dev);
 
 #if RTLNX_VER_MAX(3,3,0)
-#define DRM_MODE_FB_CMD drm_mode_fb_cmd
+# define DRM_MODE_FB_CMD drm_mode_fb_cmd
 #else
-#define DRM_MODE_FB_CMD drm_mode_fb_cmd2
+# define DRM_MODE_FB_CMD drm_mode_fb_cmd2
 #endif
 
 #if RTLNX_VER_MAX(3,15,0) && !RTLNX_RHEL_MAJ_PREREQ(7,1)
-#define CRTC_FB(crtc) ((crtc)->fb)
+# define CRTC_FB(crtc) ((crtc)->fb)
 #else
-#define CRTC_FB(crtc) ((crtc)->primary->fb)
+# define CRTC_FB(crtc) ((crtc)->primary->fb)
 #endif
 
 void vbox_enable_accel(struct vbox_private *vbox);

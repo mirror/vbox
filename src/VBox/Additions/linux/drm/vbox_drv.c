@@ -39,9 +39,8 @@
 #include "vbox_drv.h"
 
 #include <drm/drm_crtc_helper.h>
-
 #if RTLNX_VER_MIN(5,1,0) || RTLNX_RHEL_MAJ_PREREQ(8,1)
-#include <drm/drm_probe_helper.h>
+# include <drm/drm_probe_helper.h>
 #endif
 
 #include "version-generated.h"
@@ -325,8 +324,7 @@ static struct drm_driver driver = {
 	.master_set = vbox_master_set,
 	.master_drop = vbox_master_drop,
 #if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
-# if RTLNX_VER_MAX(4,14,0) && !RTLNX_RHEL_MAJ_PREREQ(7,5) \
-  && !RTLNX_SUSE_MAJ_PREREQ(15,1) && !RTLNX_SUSE_MAJ_PREREQ(12,5)
+# if RTLNX_VER_MAX(4,14,0) && !RTLNX_RHEL_MAJ_PREREQ(7,5) && !RTLNX_SUSE_MAJ_PREREQ(15,1) && !RTLNX_SUSE_MAJ_PREREQ(12,5)
 	.set_busid = drm_pci_set_busid,
 # endif
 #endif

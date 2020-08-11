@@ -40,10 +40,10 @@
 #include <linux/export.h>
 #include <drm/drm_crtc_helper.h>
 #if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
-#include <drm/drm_plane_helper.h>
+# include <drm/drm_plane_helper.h>
 #endif
 #if RTLNX_VER_MIN(5,1,0) || RTLNX_RHEL_MAJ_PREREQ(8,1)
-#include <drm/drm_probe_helper.h>
+# include <drm/drm_probe_helper.h>
 #endif
 
 #include "VBoxVideo.h"
@@ -409,9 +409,7 @@ static struct drm_encoder *vbox_best_single_encoder(struct drm_connector
 
 	/* pick the encoder ids */
 	if (enc_id)
-# if RTLNX_VER_MIN(4,15,0) \
-  || RTLNX_RHEL_MAJ_PREREQ(7,6) \
-  || (defined(CONFIG_SUSE_VERSION) && RTLNX_VER_MIN(4,12,0))
+# if RTLNX_VER_MIN(4,15,0) || RTLNX_RHEL_MAJ_PREREQ(7,6) || (defined(CONFIG_SUSE_VERSION) && RTLNX_VER_MIN(4,12,0))
 		return drm_encoder_find(connector->dev, NULL, enc_id);
 # else
 		return drm_encoder_find(connector->dev, enc_id);
@@ -546,8 +544,7 @@ static void vbox_set_edid(struct drm_connector *connector, int width,
 	for (i = 0; i < EDID_SIZE - 1; ++i)
 		sum += edid[i];
 	edid[EDID_SIZE - 1] = (0x100 - (sum & 0xFF)) & 0xFF;
-#if RTLNX_VER_MIN(4,19,0) || RTLNX_SUSE_MAJ_PREREQ(15,1) || RTLNX_SUSE_MAJ_PREREQ(12,5) \
-  || RTLNX_RHEL_MAJ_PREREQ(7,7) || RTLNX_RHEL_MAJ_PREREQ(8,1)
+#if RTLNX_VER_MIN(4,19,0) || RTLNX_RHEL_MAJ_PREREQ(7,7) || RTLNX_RHEL_MAJ_PREREQ(8,1) || RTLNX_SUSE_MAJ_PREREQ(15,1) || RTLNX_SUSE_MAJ_PREREQ(12,5)
 	drm_connector_update_edid_property(connector, (struct edid *)edid);
 #else
 	drm_mode_connector_update_edid_property(connector, (struct edid *)edid);
@@ -722,8 +719,7 @@ static int vbox_connector_init(struct drm_device *dev,
 	drm_connector_register(connector);
 #endif
 
-#if RTLNX_VER_MIN(4,19,0) || RTLNX_SUSE_MAJ_PREREQ(15,1) || RTLNX_SUSE_MAJ_PREREQ(12,5) \
-  || RTLNX_RHEL_MAJ_PREREQ(7,7) || RTLNX_RHEL_MAJ_PREREQ(8,1)
+#if RTLNX_VER_MIN(4,19,0) || RTLNX_RHEL_MAJ_PREREQ(7,7) || RTLNX_RHEL_MAJ_PREREQ(8,1) || RTLNX_SUSE_MAJ_PREREQ(15,1) || RTLNX_SUSE_MAJ_PREREQ(12,5)
 	drm_connector_attach_encoder(connector, encoder);
 #else
 	drm_mode_connector_attach_encoder(connector, encoder);

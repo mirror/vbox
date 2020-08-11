@@ -230,7 +230,7 @@ static const struct drm_mode_config_funcs vbox_mode_funcs = {
 };
 
 #if RTLNX_VER_MAX(4,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
-#define pci_iomap_range(dev, bar, offset, maxlen) \
+# define pci_iomap_range(dev, bar, offset, maxlen) \
 	ioremap(pci_resource_start(dev, bar) + (offset), maxlen)
 #endif
 
@@ -605,8 +605,7 @@ int vbox_dumb_destroy(struct drm_file *file,
 }
 #endif
 
-#if RTLNX_VER_MAX(4,19,0) && !RTLNX_SUSE_MAJ_PREREQ(15,1) && !RTLNX_SUSE_MAJ_PREREQ(12,5) \
-  && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
+#if RTLNX_VER_MAX(4,19,0) && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1) && !RTLNX_SUSE_MAJ_PREREQ(15,1) && !RTLNX_SUSE_MAJ_PREREQ(12,5)
 static void ttm_bo_put(struct ttm_buffer_object *bo)
 {
 	ttm_bo_unref(&bo);
