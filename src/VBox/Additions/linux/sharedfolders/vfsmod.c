@@ -45,14 +45,14 @@
 #include "version-generated.h"
 #include "revision-generated.h"
 #include "product-generated.h"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if RTLNX_VER_MIN(5,0,0)
 # include <uapi/linux/mount.h> /* for MS_REMOUNT */
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+#elif RTLNX_VER_MAX(3,3,0)
 # include <linux/mount.h>
 #endif
 #include <linux/seq_file.h>
 #include <linux/vfs.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 62) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
+#if RTLNX_VER_RANGE(2,5,62,  5,8,0)
 # include <linux/vermagic.h>
 #endif
 #include <VBox/err.h>
@@ -355,20 +355,20 @@ static void vbsf_super_info_free(struct vbsf_super_info *pSuperInfo)
 static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info *pSuperInfo)
 {
     int rc = 0;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MIN(2,6,0)
     /* Each new shared folder map gets a new uint64_t identifier,
      * allocated in sequence.  We ASSUME the sequence will not wrap. */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+# if RTLNX_VER_MIN(2,6,26)
     static uint64_t s_u64Sequence = 0;
     uint64_t idSeqMine = ASMAtomicIncU64(&s_u64Sequence);
 # endif
     struct backing_dev_info *bdi;
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+# if RTLNX_VER_RANGE(4,0,0,  4,2,0)
     pSuperInfo->bdi_org = sb->s_bdi;
 # endif
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+# if RTLNX_VER_MIN(4,12,0)
     rc = super_setup_bdi_name(sb, "vboxsf-%llu", (unsigned long long)idSeqMine);
     if (!rc)
         bdi = sb->s_bdi;
@@ -380,7 +380,7 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 
     bdi->ra_pages = 0;                      /* No readahead */
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
+# if RTLNX_VER_MIN(2,6,12)
     bdi->capabilities = 0
 #  ifdef BDI_CAP_MAP_DIRECT
                       | BDI_CAP_MAP_DIRECT  /* MAP_SHARED */
@@ -398,7 +398,7 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
                       | BDI_CAP_EXEC_MAP    /* can be mapped for execution */
 #  endif
 #  ifdef BDI_CAP_STRICTLIMIT
-#   if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) /* Trouble with 3.16.x/debian8.  Process stops after dirty page throttling.
+#   if RTLNX_VER_MIN(4,19,0) /* Trouble with 3.16.x/debian8.  Process stops after dirty page throttling.
                                                        * Only tested successfully with 4.19.  Maybe skip altogether? */
                       | BDI_CAP_STRICTLIMIT;
 #   endif
@@ -413,15 +413,15 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 #  endif
 # endif /* >= 2.6.12 */
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+# if RTLNX_VER_RANGE(2,6,24,  4,12,0)
     rc = bdi_init(&pSuperInfo->bdi);
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+#  if RTLNX_VER_MIN(2,6,26)
     if (!rc)
         rc = bdi_register(&pSuperInfo->bdi, NULL, "vboxsf-%llu", (unsigned long long)idSeqMine);
 #  endif /* >= 2.6.26 */
 # endif  /* 4.11.0 > version >= 2.6.24 */
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+# if RTLNX_VER_RANGE(2,6,34,  4,12,0)
     if (!rc)
         sb->s_bdi = bdi;
 # endif
@@ -436,14 +436,14 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
  */
 static void vbsf_done_backing_dev(struct super_block *sb, struct vbsf_super_info *pSuperInfo)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE <= KERNEL_VERSION(4, 12, 0)
+#if RTLNX_VER_RANGE(2,6,24,  4,13,0)
     bdi_destroy(&pSuperInfo->bdi);    /* includes bdi_unregister() */
 
     /* Paranoia: Make sb->s_bdi not point at pSuperInfo->bdi, in case someone
                  trouches it after this point (we may screw up something).  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+# if RTLNX_VER_RANGE(4,0,0,  4,2,0)
     sb->s_bdi = pSuperInfo->bdi_org; /* (noop_backing_dev_info is not exported) */
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+# elif RTLNX_VER_RANGE(2,6,34,  4,10,0)
     sb->s_bdi = &noop_backing_dev_info;
 # endif
 #endif
@@ -490,7 +490,7 @@ static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info
              * Create the actual inode structure.
              * Note! ls -la does display '.' and '..' entries with st_ino == 0, so root is #1.
              */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+#if RTLNX_VER_MIN(2,4,25)
             struct inode *iroot = iget_locked(sb, 1);
 #else
             struct inode *iroot = iget(sb, 1);
@@ -499,14 +499,14 @@ static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info
                 vbsf_init_inode(iroot, sf_i, &fsinfo, pSuperInfo);
                 VBSF_SET_INODE_INFO(iroot, sf_i);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+#if RTLNX_VER_MIN(2,4,25)
                 unlock_new_inode(iroot);
 #endif
 
                 /*
                  * Now make it a root inode.
                  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
+#if RTLNX_VER_MIN(3,4,0)
                 sb->s_root = d_make_root(iroot);
 #else
                 sb->s_root = d_alloc_root(iroot);
@@ -517,7 +517,7 @@ static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info
                 }
 
                 SFLOGRELBOTH(("vboxsf: d_make_root failed!\n"));
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0) /* d_make_root calls iput */
+#if RTLNX_VER_MAX(3,4,0) /* d_make_root calls iput */
                 iput(iroot);
 #endif
                 /* iput() will call vbsf_evict_inode()/vbsf_clear_inode(). */
@@ -581,7 +581,7 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
          */
         sb->s_magic     = 0xface;
         sb->s_blocksize = 1024;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 3)
+#if RTLNX_VER_MIN(2,4,3)
         /* Required for seek/sendfile (see 'loff_t max' in fs/read_write.c / do_sendfile()). */
 # if defined MAX_LFS_FILESIZE
         sb->s_maxbytes  = MAX_LFS_FILESIZE;
@@ -591,11 +591,11 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
         sb->s_maxbytes  = INT64_MAX;
 # endif
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+#if RTLNX_VER_MIN(2,6,11)
         sb->s_time_gran = 1; /* This might be a little optimistic for windows hosts, where it should be 100. */
 #endif
         sb->s_op        = &g_vbsf_super_ops;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+#if RTLNX_VER_MIN(2,6,38)
         sb->s_d_op      = &vbsf_dentry_ops;
 #endif
 
@@ -628,7 +628,7 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
  *
  * We must free the inode info structure here.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+#if RTLNX_VER_MIN(2,6,36)
 static void vbsf_evict_inode(struct inode *inode)
 #else
 static void vbsf_clear_inode(struct inode *inode)
@@ -641,9 +641,9 @@ static void vbsf_clear_inode(struct inode *inode)
     /*
      * Flush stuff.
      */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+#if RTLNX_VER_MIN(2,6,36)
     truncate_inode_pages(&inode->i_data, 0);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+# if RTLNX_VER_MIN(3,5,0)
     clear_inode(inode);
 # else
     end_writeback(inode);
@@ -672,7 +672,7 @@ static void vbsf_clear_inode(struct inode *inode)
    the only thing that is known about inode at this point is its index
    hence we can't do anything here, and let lookup/whatever with the
    job to properly fill then [inode] */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
+#if RTLNX_VER_MAX(2,6,25)
 static void vbsf_read_inode(struct inode *inode)
 {
 }
@@ -695,15 +695,15 @@ static void vbsf_put_super(struct super_block *sb)
 /**
  * Get file system statistics.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+#if RTLNX_VER_MIN(2,6,18)
 static int vbsf_statfs(struct dentry *dentry, struct kstatfs *stat)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
+#elif RTLNX_VER_MIN(2,5,73)
 static int vbsf_statfs(struct super_block *sb, struct kstatfs *stat)
 #else
 static int vbsf_statfs(struct super_block *sb, struct statfs *stat)
 #endif
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+#if RTLNX_VER_MIN(2,6,18)
     struct super_block *sb = dentry->d_inode->i_sb;
 #endif
     int rc;
@@ -715,7 +715,7 @@ static int vbsf_statfs(struct super_block *sb, struct statfs *stat)
         if (RT_SUCCESS(rc)) {
             stat->f_type   = UINT32_C(0x786f4256); /* 'VBox' little endian */
             stat->f_bsize  = pVolInfo->ulBytesPerAllocationUnit;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
+#if RTLNX_VER_MIN(2,5,73)
             stat->f_frsize = pVolInfo->ulBytesPerAllocationUnit;
 #endif
             stat->f_blocks = pVolInfo->ullTotalAllocationBytes
@@ -730,7 +730,7 @@ static int vbsf_statfs(struct super_block *sb, struct statfs *stat)
             stat->f_fsid.val[0] = 0;
             stat->f_fsid.val[1] = 0;
             stat->f_namelen = 255;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+#if RTLNX_VER_MIN(2,6,36)
             stat->f_flags = 0; /* not valid */
 #endif
             RT_ZERO(stat->f_spare);
@@ -745,7 +745,7 @@ static int vbsf_statfs(struct super_block *sb, struct statfs *stat)
 
 static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 23)
+#if RTLNX_VER_MIN(2,4,23)
     struct vbsf_super_info *pSuperInfo = pSuperInfo = VBSF_GET_SUPER_INFO(sb);
     struct vbsf_inode_info *sf_i;
     struct inode *iroot;
@@ -773,9 +773,9 @@ static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
     vbsf_init_inode(iroot, sf_i, &fsinfo, pSuperInfo);
     /*unlock_new_inode(iroot); */
     return 0;
-#else  /* LINUX_VERSION_CODE < 2.4.23 */
+#else  /* < 2.4.23 */
     return -ENOSYS;
-#endif /* LINUX_VERSION_CODE < 2.4.23 */
+#endif /* < 2.4.23 */
 }
 
 
@@ -785,13 +785,13 @@ static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
  * This is needed by the VBoxService automounter in order for it to pick up
  * the the 'szTag' option value it sets on its mount.
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+#if RTLNX_VER_MAX(3,3,0)
 static int vbsf_show_options(struct seq_file *m, struct vfsmount *mnt)
 #else
 static int vbsf_show_options(struct seq_file *m, struct dentry *root)
 #endif
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+#if RTLNX_VER_MAX(3,3,0)
     struct super_block     *sb         = mnt->mnt_sb;
 #else
     struct super_block     *sb         = root->d_sb;
@@ -844,12 +844,12 @@ static int vbsf_show_options(struct seq_file *m, struct dentry *root)
  * Super block operations.
  */
 static struct super_operations g_vbsf_super_ops = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
+#if RTLNX_VER_MAX(2,6,36)
     .clear_inode  = vbsf_clear_inode,
 #else
     .evict_inode  = vbsf_evict_inode,
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
+#if RTLNX_VER_MAX(2,6,25)
     .read_inode   = vbsf_read_inode,
 #endif
     .put_super    = vbsf_put_super,
@@ -864,7 +864,7 @@ static struct super_operations g_vbsf_super_ops = {
 *   File system type related stuff.                                                                                              *
 *********************************************************************************************************************************/
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 4)
+#if RTLNX_VER_MIN(2,5,4)
 
 static int vbsf_read_super_26(struct super_block *sb, void *data, int flags)
 {
@@ -878,25 +878,25 @@ static int vbsf_read_super_26(struct super_block *sb, void *data, int flags)
     return err;
 }
 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-static struct super_block *vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
-{
-    TRACE();
-    return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26);
-}
-# elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
-static int vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data, struct vfsmount *mnt)
-{
-    TRACE();
-    return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26, mnt);
-}
-# else /* LINUX_VERSION_CODE >= 2.6.39 */
+# if RTLNX_VER_MIN(2,6,39)
 static struct dentry *sf_mount(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
     TRACE();
     return mount_nodev(fs_type, flags, data, vbsf_read_super_26);
 }
-# endif /* LINUX_VERSION_CODE >= 2.6.39 */
+# elif RTLNX_VER_MIN(2,6,18)
+static int vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+{
+    TRACE();
+    return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26, mnt);
+}
+# else /* < 2.6.18 */
+static struct super_block *vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
+{
+    TRACE();
+    return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26);
+}
+# endif
 
 /**
  * File system registration structure.
@@ -904,15 +904,15 @@ static struct dentry *sf_mount(struct file_system_type *fs_type, int flags, cons
 static struct file_system_type g_vboxsf_fs_type = {
     .owner = THIS_MODULE,
     .name = "vboxsf",
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
-    .get_sb = vbsf_get_sb,
-# else
+# if RTLNX_VER_MIN(2,6,39)
     .mount = sf_mount,
+# else
+    .get_sb = vbsf_get_sb,
 # endif
     .kill_sb = kill_anon_super
 };
 
-#else  /* LINUX_VERSION_CODE < 2.5.4 */
+#else  /* < 2.5.4 */
 
 static struct super_block *vbsf_read_super_24(struct super_block *sb, void *data, int flags)
 {
@@ -930,7 +930,7 @@ static struct super_block *vbsf_read_super_24(struct super_block *sb, void *data
 
 static DECLARE_FSTYPE(g_vboxsf_fs_type, "vboxsf", vbsf_read_super_24, 0);
 
-#endif /* LINUX_VERSION_CODE < 2.5.4 */
+#endif /* < 2.5.4 */
 
 
 
@@ -1053,7 +1053,7 @@ static void __exit fini(void)
 /*
  * Module parameters.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
+#if RTLNX_VER_MIN(2,5,52)
 module_param_named(follow_symlinks, g_fFollowSymlinks, int, 0);
 MODULE_PARM_DESC(follow_symlinks,
                  "Let host resolve symlinks rather than showing them");

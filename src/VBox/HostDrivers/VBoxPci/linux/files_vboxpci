@@ -63,6 +63,7 @@ VBOX_VBOXPCI_SOURCES=" \
     ${PATH_ROOT}/include/iprt/uni.h=>include/iprt/uni.h \
     ${PATH_ROOT}/include/iprt/utf16.h=>include/iprt/utf16.h \
     ${PATH_ROOT}/include/iprt/uuid.h=>include/iprt/uuid.h \
+    ${PATH_ROOT}/include/iprt/linux/version.h=>include/iprt/linux/version.h \
     ${PATH_ROOT}/include/iprt/nocrt/limits.h=>include/iprt/nocrt/limits.h \
     ${PATH_ROOT}/include/VBox/cdefs.h=>include/VBox/cdefs.h \
     ${PATH_ROOT}/include/VBox/err.h=>include/VBox/err.h \

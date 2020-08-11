@@ -34,48 +34,45 @@
 *********************************************************************************************************************************/
 #include "vfsmod.h"
 #include <linux/uio.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 32)
+#if RTLNX_VER_MIN(2,5,32)
 # include <linux/aio.h> /* struct kiocb before 4.1 */
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+#if RTLNX_VER_MIN(2,5,12)
 # include <linux/buffer_head.h>
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+#if RTLNX_VER_RANGE(2,5,12,  2,6,31)
 # include <linux/writeback.h>
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_RANGE(2,6,23,  3,16,0)
 # include <linux/splice.h>
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 23)
+#if RTLNX_VER_RANGE(2,6,17,  2,6,23)
 # include <linux/pipe_fs_i.h>
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#if RTLNX_VER_MIN(2,4,10)
 # include <linux/swap.h> /* for mark_page_accessed */
 #endif
 #include <iprt/err.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
+#if RTLNX_VER_MAX(2,6,18)
 # define SEEK_END 2
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_MAX(3,16,0)
 # define iter_is_iovec(a_pIter) ( !((a_pIter)->type & ITER_KVEC) )
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+#elif RTLNX_VER_MAX(3,19,0)
 # define iter_is_iovec(a_pIter) ( !((a_pIter)->type & (ITER_KVEC | ITER_BVEC)) )
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
+#if RTLNX_VER_MAX(4,17,0)
 # define vm_fault_t int
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 20)
+#if RTLNX_VER_MAX(2,5,20)
 # define pgoff_t    unsigned long
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 12)
+#if RTLNX_VER_MAX(2,5,12)
 # define PageUptodate(a_pPage) Page_Uptodate(a_pPage)
 #endif
 
@@ -83,7 +80,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_MAX(3,16,0)
 struct vbsf_iov_iter {
     unsigned int        type;
     unsigned int        v_write : 1;
@@ -106,20 +103,20 @@ struct vbsf_iov_iter {
 # define iov_iter vbsf_iov_iter
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#if RTLNX_VER_MIN(2,6,19)
 /** Used by vbsf_iter_lock_pages() to keep the first page of the next segment. */
 struct vbsf_iter_stash {
     struct page    *pPage;
     size_t          off;
     size_t          cb;
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MAX(4,11,0)
     size_t          offFromEnd;
     struct iov_iter Copy;
 # endif
 };
 #endif /* >= 3.16.0 */
 /** Initializer for struct vbsf_iter_stash. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if RTLNX_VER_MIN(4,11,0)
 # define VBSF_ITER_STASH_INITIALIZER    { NULL, 0 }
 #else
 # define VBSF_ITER_STASH_INITIALIZER    { NULL, 0, ~(size_t)0 }
@@ -139,7 +136,7 @@ static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t
 /*********************************************************************************************************************************
 *   Provide more recent uio.h functionality to older kernels.                                                                    *
 *********************************************************************************************************************************/
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#if RTLNX_VER_RANGE(2,6,19,  3,16,0)
 
 /**
  * Detects the vector type.
@@ -298,7 +295,7 @@ void vbsf_iov_iter_revert(struct vbsf_iov_iter *iter, size_t cbRewind)
 }
 
 #endif /* 2.6.19 <= linux < 3.16.0 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 35)
+#if RTLNX_VER_RANGE(3,16,0,  3,16,35)
 
 /** This is for implementing cMaxPage on 3.16 which doesn't have it. */
 static ssize_t vbsf_iov_iter_get_pages_3_16(struct iov_iter *iter, struct page **papPages,
@@ -318,13 +315,13 @@ static ssize_t vbsf_iov_iter_get_pages_3_16(struct iov_iter *iter, struct page *
     vbsf_iov_iter_get_pages_3_16(a_pIter, a_papPages, a_cbMax, a_cMaxPages, a_poffPg0)
 
 #endif /* 3.16.0-3.16.34 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+#if RTLNX_VER_RANGE(2,6,19,  3,18,0)
 
 static size_t copy_from_iter(uint8_t *pbDst, size_t cbToCopy, struct iov_iter *pSrcIter)
 {
     size_t const cbTotal = cbToCopy;
     Assert(iov_iter_count(pSrcIter) >= cbToCopy);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
     if (pSrcIter->type & ITER_BVEC) {
         while (cbToCopy > 0) {
             size_t const offPage    = (uintptr_t)pbDst & PAGE_OFFSET_MASK;
@@ -363,7 +360,7 @@ static size_t copy_to_iter(uint8_t const *pbSrc, size_t cbToCopy, struct iov_ite
 {
     size_t const cbTotal = cbToCopy;
     Assert(iov_iter_count(pDstIter) >= cbToCopy);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
     if (pDstIter->type & ITER_BVEC) {
         while (cbToCopy > 0) {
             size_t const offPage    = (uintptr_t)pbSrc & PAGE_OFFSET_MASK;
@@ -554,11 +551,11 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
 *   Misc                                                                                                                         *
 *********************************************************************************************************************************/
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 6)
+#if RTLNX_VER_MAX(2,6,6)
 /** Any writable mappings? */
 DECLINLINE(bool) mapping_writably_mapped(struct address_space const *mapping)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 6)
+# if RTLNX_VER_MIN(2,5,6)
     return !list_empty(&mapping->i_mmap_shared);
 # else
     return mapping->i_mmap_shared != NULL;
@@ -567,7 +564,7 @@ DECLINLINE(bool) mapping_writably_mapped(struct address_space const *mapping)
 #endif
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 12)
+#if RTLNX_VER_MAX(2,5,12)
 /** Missing in 2.4.x, so just stub it for now. */
 DECLINLINE(bool) PageWriteback(struct page const *page)
 {
@@ -603,10 +600,9 @@ DECLINLINE(bool) vbsf_should_use_cached_read(struct file *file, struct address_s
 *   Pipe / splice stuff mainly for 2.6.17 >= linux < 2.6.31 (where no fallbacks were available)                                  *
 *********************************************************************************************************************************/
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_RANGE(2,6,17,  3,16,0)
 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 30)
+# if RTLNX_VER_MAX(2,6,30)
 #  define LOCK_PIPE(a_pPipe)   do { if ((a_pPipe)->inode) mutex_lock(&(a_pPipe)->inode->i_mutex); } while (0)
 #  define UNLOCK_PIPE(a_pPipe) do { if ((a_pPipe)->inode) mutex_unlock(&(a_pPipe)->inode->i_mutex); } while (0)
 # else
@@ -646,8 +642,7 @@ static void vbsf_wake_up_pipe(struct pipe_inode_info *pPipe, bool fReaders)
 }
 
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+#if RTLNX_VER_RANGE(2,6,17,  2,6,31)
 
 /** Verify pipe buffer content (needed for page-cache to ensure idle page). */
 static int vbsf_pipe_buf_confirm(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
@@ -720,7 +715,7 @@ static int vbsf_pipe_buf_steal(struct pipe_inode_info *pPipe, struct pipe_buffer
  */
 static struct pipe_buf_operations vbsf_pipe_buf_ops = {
     .can_merge = 0,
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# if RTLNX_VER_MIN(2,6,23)
     .confirm   = vbsf_pipe_buf_confirm,
 # else
     .pin       = vbsf_pipe_buf_confirm,
@@ -753,7 +748,7 @@ static ssize_t vbsf_feed_pages_to_pipe(struct pipe_inode_info *pPipe, struct pag
             uint32_t const      cbThisPage = RT_MIN(cbActual, PAGE_SIZE - offPg0);
             pPipeBuf->len       = cbThisPage;
             pPipeBuf->offset    = offPg0;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# if RTLNX_VER_MIN(2,6,23)
             pPipeBuf->private   = 0;
 # endif
             pPipeBuf->ops       = &vbsf_pipe_buf_ops;
@@ -894,8 +889,7 @@ static ssize_t vbsf_splice_read(struct file *file, loff_t *poffset, struct pipe_
 }
 
 #endif /* 2.6.17 <= LINUX_VERSION_CODE < 2.6.31 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_RANGE(2,6,17,  3,16,0)
 
 /**
  * For splicing from a pipe to a file.
@@ -1016,7 +1010,7 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
                                 pPipe->nrbufs -= 1;
                                 pPipeBuf = &pPipe->bufs[pPipe->curbuf];
 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 30)
+# if RTLNX_VER_MAX(2,6,30)
                                 fNeedWakeUp |= pPipe->inode != NULL;
 # else
                                 fNeedWakeUp = true;
@@ -1091,14 +1085,13 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
 
 #endif /* 2.6.17 <= LINUX_VERSION_CODE < 3.16.0 */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 30) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 23)
+#if RTLNX_VER_RANGE(2,5,30,  2,6,23)
 /**
  * Our own senfile implementation that does not go via the page cache like
  * generic_file_sendfile() does.
  */
 static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cbToSend, read_actor_t pfnActor,
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+# if RTLNX_VER_MIN(2,6,8)
                                  void *pvUser
 # else
                                  void __user *pvUser
@@ -1160,7 +1153,7 @@ static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cb
                 struct vbsf_reg_info *sf_r = (struct vbsf_reg_info *)pFile->private_data;
                 read_descriptor_t     RdDesc;
                 RdDesc.count    = cbToSend;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+# if RTLNX_VER_MIN(2,6,8)
                 RdDesc.arg.data = pvUser;
 # else
                 RdDesc.buf      = pvUser;
@@ -1289,7 +1282,7 @@ static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cb
 /** Wrapper around put_page / page_cache_release.  */
 DECLINLINE(void) vbsf_put_page(struct page *pPage)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#if RTLNX_VER_MIN(4,6,0)
     put_page(pPage);
 #else
     page_cache_release(pPage);
@@ -1300,7 +1293,7 @@ DECLINLINE(void) vbsf_put_page(struct page *pPage)
 /** Wrapper around get_page / page_cache_get.  */
 DECLINLINE(void) vbsf_get_page(struct page *pPage)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#if RTLNX_VER_MIN(4,6,0)
     get_page(pPage);
 #else
     page_cache_get(pPage);
@@ -1408,7 +1401,7 @@ static int vbsf_lock_user_pages_failed_check_kernel(uintptr_t uPtrFrom, size_t c
     /*
      * Check that this is valid user memory that is actually in the kernel range.
      */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) || defined(RHEL_81)
+#if RTLNX_VER_MIN(5,0,0) || defined(RHEL_81)
     if (   access_ok((void *)uPtrFrom, cPages << PAGE_SHIFT)
         && uPtrFrom >= USER_DS.seg)
 #else
@@ -1475,7 +1468,7 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
  */
 static ssize_t vbsf_reg_read_mapped(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_MIN(3,16,0)
     struct iovec    iov = { .iov_base = buf, .iov_len = size };
     struct iov_iter iter;
     struct kiocb    kiocb;
@@ -1490,7 +1483,7 @@ static ssize_t vbsf_reg_read_mapped(struct file *file, char /*__user*/ *buf, siz
     *off = kiocb.ki_pos;
     return cbRet;
 
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#elif RTLNX_VER_MIN(2,6,19)
     struct iovec    iov = { .iov_base = buf, .iov_len = size };
     struct kiocb    kiocb;
     ssize_t         cbRet;
@@ -1777,7 +1770,7 @@ static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t
                     flush_dcache_page(pDstPage);
                     if (cbToCopy == PAGE_SIZE)
                         SetPageUptodate(pDstPage);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+# if RTLNX_VER_MIN(2,4,10)
                     mark_page_accessed(pDstPage);
 # endif
                 } else
@@ -1986,7 +1979,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     if (   mapping
         && mapping->nrpages > 0
         && mapping_writably_mapped(mapping)) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+#if RTLNX_VER_MIN(2,6,32)
         int err = filemap_fdatawait_range(mapping, pos, pos + size - 1);
         if (err)
             return err;
@@ -2078,7 +2071,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, pSuperInfo, sf_r);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#if RTLNX_VER_MIN(2,6,19)
 
 /**
  * Companion to vbsf_iter_lock_pages().
@@ -2146,7 +2139,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
             cMaxPages -= 1;
             SFLOG3(("vbsf_iter_lock_pages: Picked up stashed page: %#zx LB %#zx\n", offPage0, cbChunk));
         } else {
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MAX(4,11,0)
             /*
              * Copy out our starting point to assist rewinding.
              */
@@ -2165,7 +2158,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
              */
             ssize_t cbSegRet;
             if (cPages == 0) {
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+# if RTLNX_VER_MAX(3,19,0)
                 while (!iov_iter_single_seg_count(iter)) /* Old code didn't skip empty segments which caused EFAULTs. */
                     iov_iter_advance(iter, 0);
 # endif
@@ -2258,7 +2251,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
          * Note! Fixes here may apply to rtR0MemObjNativeLockKernel()
          *       and vbsf_lock_user_pages_failed_check_kernel() as well.
          */
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MAX(4,11,0)
         pStash->offFromEnd = iov_iter_count(iter);
         pStash->Copy       = *iter;
 # endif
@@ -2273,7 +2266,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
                 cbSeg = iov_iter_single_seg_count(iter);
             }
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+# if RTLNX_VER_MIN(3,19,0)
             pbBuf    = iter->kvec->iov_base + iter->iov_offset;
 # else
             pbBuf    = iter->iov->iov_base  + iter->iov_offset;
@@ -2338,7 +2331,7 @@ static bool vbsf_iter_rewind(struct iov_iter *iter, struct vbsf_iter_stash *pSta
         pStash->off   = 0;
     }
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(4,11,0) || RTLNX_VER_MAX(3,16,0)
     iov_iter_revert(iter, cbToRewind + cbExtra);
     return true;
 # else
@@ -2368,7 +2361,7 @@ DECLINLINE(void) vbsf_iter_cleanup_stash(struct iov_iter *iter, struct vbsf_iter
 static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
 {
     size_t cPages;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
     if (iter_is_iovec(iter) || (iter->type & ITER_KVEC)) {
 #endif
         const struct iovec *pCurIov    = iter->iov;
@@ -2428,7 +2421,7 @@ static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
         }
         if (cPagesSpan > cPages)
             cPages = cPagesSpan;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
     } else {
         /* Won't bother with accurate counts for the next two types, just make
            some rough estimates (does pipes have segments?): */
@@ -2567,13 +2560,13 @@ static ssize_t vbsf_reg_read_iter_locking(struct kiocb *kio, struct iov_iter *it
  * @param   kio         The kernel I/O control block (or something like that).
  * @param   iter        The I/O vector iterator describing the buffer.
  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
 static ssize_t vbsf_reg_read_iter(struct kiocb *kio, struct iov_iter *iter)
 # else
 static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, unsigned long cSegs, loff_t offFile)
 # endif
 {
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MAX(3,16,0)
     struct vbsf_iov_iter    fake_iter  = VBSF_IOV_ITER_INITIALIZER(cSegs, iov, 0 /*write*/);
     struct vbsf_iov_iter   *iter       = &fake_iter;
 # endif
@@ -2601,7 +2594,7 @@ static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, uns
      * mappings around with any kind of pages loaded.
      */
     if (vbsf_should_use_cached_read(kio->ki_filp, mapping, pSuperInfo)) {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
         return generic_file_read_iter(kio, iter);
 # else
         return generic_file_aio_read(kio, iov, cSegs, offFile);
@@ -2793,13 +2786,13 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
  * @param   kio         The kernel I/O control block (or something like that).
  * @param   iter        The I/O vector iterator describing the buffer.
  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
 static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
 # else
 static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, unsigned long cSegs, loff_t offFile)
 # endif
 {
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MAX(3,16,0)
     struct vbsf_iov_iter    fake_iter  = VBSF_IOV_ITER_INITIALIZER(cSegs, iov, 1 /*write*/);
     struct vbsf_iov_iter   *iter       = &fake_iter;
 # endif
@@ -2810,10 +2803,10 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
 
     struct vbsf_reg_info   *sf_r       = kio->ki_filp->private_data;
     struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
     loff_t                  offFile    = kio->ki_pos;
 # endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+# if RTLNX_VER_MIN(4,1,0)
     bool const              fAppend    = RT_BOOL(kio->ki_flags & IOCB_APPEND);
 # else
     bool const              fAppend    = RT_BOOL(kio->ki_filp->f_flags & O_APPEND);
@@ -2853,7 +2846,7 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
     if (   mapping
         && mapping->nrpages > 0
         && mapping_writably_mapped(mapping)) {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+# if RTLNX_VER_MIN(2,6,32)
         int err = filemap_fdatawait_range(mapping, offFile, offFile + cbToWrite - 1);
         if (err)
             return err;
@@ -2889,7 +2882,7 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
                         if (offFile > i_size_read(inode))
                             i_size_write(inode, offFile);
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MIN(4,11,0)
                         if ((size_t)cbRet < cbToWrite)
                             iov_iter_revert(iter, cbToWrite - cbRet);
 # endif
@@ -3128,7 +3121,7 @@ static int vbsf_reg_release(struct inode *inode, struct file *file)
         if (   mapping
             && mapping->nrpages > 0
             /** @todo && last writable handle */ ) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+#if RTLNX_VER_MIN(2,4,25)
             if (filemap_fdatawrite(mapping) != -EIO)
 #else
             if (   filemap_fdatasync(mapping) == 0
@@ -3175,7 +3168,7 @@ static loff_t vbsf_reg_llseek(struct file *file, loff_t off, int whence)
         }
     }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 8)
+#if RTLNX_VER_MIN(2,4,8)
     return generic_file_llseek(file, off, whence);
 #else
     return default_llseek(file, off, whence);
@@ -3191,17 +3184,17 @@ static loff_t vbsf_reg_llseek(struct file *file, loff_t off, int whence)
  * causing coherency issues with O_DIRECT access to the same file as
  * well as any host interaction with the file.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0) \
- || (defined(CONFIG_SUSE_KERNEL) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 101) /** @todo figure when exactly */)
+#if RTLNX_VER_MIN(3,1,0) \
+ || (defined(CONFIG_SUSE_KERNEL) && RTLNX_VER_MIN(3,0,101) /** @todo figure when exactly */)
 static int vbsf_reg_fsync(struct file *file, loff_t start, loff_t end, int datasync)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# if RTLNX_VER_MIN(3,16,0)
     return __generic_file_fsync(file, start, end, datasync);
 # else
     return generic_file_fsync(file, start, end, datasync);
 # endif
 }
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
+#elif RTLNX_VER_MIN(2,6,35)
 static int vbsf_reg_fsync(struct file *file, int datasync)
 {
     return generic_file_fsync(file, datasync);
@@ -3209,7 +3202,7 @@ static int vbsf_reg_fsync(struct file *file, int datasync)
 #else /* < 2.6.35 */
 static int vbsf_reg_fsync(struct file *file, struct dentry *dentry, int datasync)
 {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+# if RTLNX_VER_MIN(2,6,31)
     return simple_fsync(file, dentry, datasync);
 # else
     int rc;
@@ -3218,7 +3211,7 @@ static int vbsf_reg_fsync(struct file *file, struct dentry *dentry, int datasync
 
     /** @todo What about file_fsync()? (<= 2.5.11) */
 
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+#  if RTLNX_VER_MIN(2,5,12)
     rc = sync_mapping_buffers(inode->i_mapping);
     if (   rc == 0
         && (inode->i_state & I_DIRTY)
@@ -3239,7 +3232,7 @@ static int vbsf_reg_fsync(struct file *file, struct dentry *dentry, int datasync
      * problem is elsewhere...  Doesn't happen all the time either.  Sigh.
      */
     rc = fsync_inode_buffers(inode);
-#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#   if RTLNX_VER_MIN(2,4,10)
     if (rc == 0 && datasync)
         rc = fsync_inode_data_buffers(inode);
 #   endif
@@ -3251,7 +3244,7 @@ static int vbsf_reg_fsync(struct file *file, struct dentry *dentry, int datasync
 #endif /* < 2.6.35 */
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if RTLNX_VER_MIN(4,5,0)
 /**
  * Copy a datablock from one file to another on the host side.
  */
@@ -3278,7 +3271,7 @@ static ssize_t vbsf_reg_copy_file_range(struct file *pFileSrc, loff_t offSrc, st
         AssertPtrReturn(pInodeInfoDst, -EOPNOTSUPP);
         Assert(pInodeInfoDst->u32Magic == SF_INODE_INFO_MAGIC);
 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MAX(4,11,0)
         if (!S_ISREG(pInodeSrc->i_mode) || !S_ISREG(pInodeDst->i_mode))
             return S_ISDIR(pInodeSrc->i_mode) || S_ISDIR(pInodeDst->i_mode) ? -EISDIR : -EINVAL;
 # endif
@@ -3322,7 +3315,7 @@ static struct vm_operations_struct        g_LoggingVmOps;
 
 
 /* Generic page fault callback: */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MIN(4,11,0)
 static vm_fault_t vbsf_vmlog_fault(struct vm_fault *vmf)
 {
     vm_fault_t rc;
@@ -3331,11 +3324,11 @@ static vm_fault_t vbsf_vmlog_fault(struct vm_fault *vmf)
     SFLOGFLOW(("vbsf_vmlog_fault: returns %d\n", rc));
     return rc;
 }
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# elif RTLNX_VER_MIN(2,6,23)
 static int vbsf_vmlog_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
     int rc;
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+#  if RTLNX_VER_MIN(4,10,0)
     SFLOGFLOW(("vbsf_vmlog_fault: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->address));
 #  else
     SFLOGFLOW(("vbsf_vmlog_fault: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->virtual_address));
@@ -3348,8 +3341,8 @@ static int vbsf_vmlog_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 
 
 /* Special/generic page fault handler: */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 1)
+# if RTLNX_VER_MIN(2,6,26)
+# elif RTLNX_VER_MIN(2,6,1)
 static struct page *vbsf_vmlog_nopage(struct vm_area_struct *vma, unsigned long address, int *type)
 {
     struct page *page;
@@ -3371,7 +3364,7 @@ static struct page *vbsf_vmlog_nopage(struct vm_area_struct *vma, unsigned long 
 
 
 /* Special page fault callback for making something writable: */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MIN(4,11,0)
 static vm_fault_t vbsf_vmlog_page_mkwrite(struct vm_fault *vmf)
 {
     vm_fault_t rc;
@@ -3380,11 +3373,11 @@ static vm_fault_t vbsf_vmlog_page_mkwrite(struct vm_fault *vmf)
     SFLOGFLOW(("vbsf_vmlog_page_mkwrite: returns %d\n", rc));
     return rc;
 }
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+# elif RTLNX_VER_MIN(2,6,30)
 static int vbsf_vmlog_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
     int rc;
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+#  if RTLNX_VER_MIN(4,10,0)
     SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->address));
 #  else
     SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->virtual_address));
@@ -3393,7 +3386,7 @@ static int vbsf_vmlog_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *
     SFLOGFLOW(("vbsf_vmlog_page_mkwrite: returns %d\n", rc));
     return rc;
 }
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+# elif RTLNX_VER_MIN(2,6,18)
 static int vbsf_vmlog_page_mkwrite(struct vm_area_struct *vma, struct page *page)
 {
     int rc;
@@ -3406,21 +3399,21 @@ static int vbsf_vmlog_page_mkwrite(struct vm_area_struct *vma, struct page *page
 
 
 /* Special page fault callback for mapping pages: */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+# if RTLNX_VER_MIN(4,10,0)
 static void vbsf_vmlog_map_pages(struct vm_fault *vmf, pgoff_t start, pgoff_t end)
 {
     SFLOGFLOW(("vbsf_vmlog_map_pages: vmf=%p (flags=%#x addr=%p) start=%p end=%p\n", vmf, vmf->flags, vmf->address, start, end));
     g_pGenericFileVmOps->map_pages(vmf, start, end);
     SFLOGFLOW(("vbsf_vmlog_map_pages: returns\n"));
 }
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+# elif RTLNX_VER_MIN(4,8,0)
 static void vbsf_vmlog_map_pages(struct fault_env *fenv, pgoff_t start, pgoff_t end)
 {
     SFLOGFLOW(("vbsf_vmlog_map_pages: fenv=%p (flags=%#x addr=%p) start=%p end=%p\n", fenv, fenv->flags, fenv->address, start, end));
     g_pGenericFileVmOps->map_pages(fenv, start, end);
     SFLOGFLOW(("vbsf_vmlog_map_pages: returns\n"));
 }
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+# elif RTLNX_VER_MIN(3,15,0)
 static void vbsf_vmlog_map_pages(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
     SFLOGFLOW(("vbsf_vmlog_map_pages: vma=%p vmf=%p (flags=%#x addr=%p)\n", vma, vmf, vmf->flags, vmf->virtual_address));
@@ -3432,16 +3425,16 @@ static void vbsf_vmlog_map_pages(struct vm_area_struct *vma, struct vm_fault *vm
 
 /** Overload template. */
 static struct vm_operations_struct const g_LoggingVmOpsTemplate = {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# if RTLNX_VER_MIN(2,6,23)
     .fault = vbsf_vmlog_fault,
 # endif
-# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 25)
+# if RTLNX_VER_MAX(2,6,26)
     .nopage = vbsf_vmlog_nopage,
 # endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+# if RTLNX_VER_MIN(2,6,18)
     .page_mkwrite = vbsf_vmlog_page_mkwrite,
 # endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+# if RTLNX_VER_MIN(3,15,0)
     .map_pages = vbsf_vmlog_map_pages,
 # endif
 };
@@ -3498,10 +3491,10 @@ struct file_operations vbsf_reg_fops = {
     .open            = vbsf_reg_open,
     .read            = vbsf_reg_read,
     .write           = vbsf_reg_write,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_MIN(3,16,0)
     .read_iter       = vbsf_reg_read_iter,
     .write_iter      = vbsf_reg_write_iter,
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#elif RTLNX_VER_MIN(2,6,19)
     .aio_read        = vbsf_reg_aio_read,
     .aio_write       = vbsf_reg_aio_write,
 #endif
@@ -3511,20 +3504,20 @@ struct file_operations vbsf_reg_fops = {
 #else
     .mmap            = generic_file_mmap,
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+#if RTLNX_VER_RANGE(2,6,17,  2,6,31)
     .splice_read     = vbsf_splice_read,
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_MIN(3,16,0)
     .splice_write    = iter_file_splice_write,
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17)
+#elif RTLNX_VER_MIN(2,6,17)
     .splice_write    = vbsf_splice_write,
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 30) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
+#if RTLNX_VER_RANGE(2,5,30,  2,6,23)
     .sendfile        = vbsf_reg_sendfile,
 #endif
     .llseek          = vbsf_reg_llseek,
     .fsync           = vbsf_reg_fsync,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if RTLNX_VER_MIN(4,5,0)
     .copy_file_range = vbsf_reg_copy_file_range,
 #endif
 };
@@ -3534,7 +3527,7 @@ struct file_operations vbsf_reg_fops = {
  * Inodes operations for regular files.
  */
 struct inode_operations vbsf_reg_iops = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
+#if RTLNX_VER_MIN(2,5,18)
     .getattr    = vbsf_inode_getattr,
 #else
     .revalidate = vbsf_inode_revalidate,
@@ -3620,7 +3613,7 @@ static int vbsf_readpage(struct file *file, struct page *page)
  * Needed for mmap and writes when the file is mmapped in a shared+writeable
  * fashion.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
+#if RTLNX_VER_MIN(2,5,52)
 static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
 #else
 static int vbsf_writepage(struct page *page)
@@ -3697,7 +3690,7 @@ static int vbsf_writepage(struct page *page)
 }
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#if RTLNX_VER_MIN(2,6,24)
 /**
  * Called when writing thru the page cache (which we shouldn't be doing).
  */
@@ -3723,7 +3716,7 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
 #endif /* KERNEL_VERSION >= 2.6.24 */
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#if RTLNX_VER_MIN(2,4,10)
 
 # ifdef VBOX_UEK
 #  undef iov_iter /* HACK ALERT! Don't put anything needing vbsf_iov_iter after this fun! */
@@ -3773,17 +3766,17 @@ struct address_space_operations vbsf_reg_aops = {
     .readpage       = vbsf_readpage,
     .writepage      = vbsf_writepage,
     /** @todo Need .writepages if we want msync performance...  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+#if RTLNX_VER_MIN(2,5,12)
     .set_page_dirty = __set_page_dirty_buffers,
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#if RTLNX_VER_MIN(2,6,24)
     .write_begin    = vbsf_write_begin,
     .write_end      = simple_write_end,
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 45)
+#elif RTLNX_VER_MIN(2,5,45)
     .prepare_write  = simple_prepare_write,
     .commit_write   = simple_commit_write,
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#if RTLNX_VER_MIN(2,4,10)
     .direct_IO      = vbsf_direct_IO,
 #endif
 };

@@ -50,7 +50,7 @@
 # define RTTIMER_LINUX_WITH_HRTIMER
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+#if RTLNX_VER_MAX(2,6,31)
 # define mod_timer_pinned               mod_timer
 # define HRTIMER_MODE_ABS_PINNED        HRTIMER_MODE_ABS
 #endif
@@ -367,7 +367,7 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
 #ifdef CONFIG_SMP
         if (fPinned)
         {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+# if RTLNX_VER_MIN(4,8,0)
             mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
 # else
             mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
@@ -720,7 +720,7 @@ static enum hrtimer_restart rtTimerLinuxHrCallback(struct hrtimer *pHrTimer)
 #endif /* RTTIMER_LINUX_WITH_HRTIMER */
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+#if RTLNX_VER_MIN(4,15,0)
 /**
  * Timer callback function for standard timers.
  *
@@ -839,7 +839,7 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
 #ifdef CONFIG_SMP
             if (pTimer->fSpecificCpu || pTimer->fAllCpus)
             {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+# if RTLNX_VER_MIN(4,8,0)
                 mod_timer(&pSubTimer->u.Std.LnxTimer, ulNextJiffies);
 # else
                 mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, ulNextJiffies);
@@ -902,7 +902,7 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
 #ifdef CONFIG_SMP
                     if (pTimer->fSpecificCpu || pTimer->fAllCpus)
                     {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+# if RTLNX_VER_MIN(4,8,0)
                         mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
 # else
                         mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
@@ -1519,7 +1519,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     {
         /* For paranoid reasons, defer actually destroying the semaphore when
            in atomic or interrupt context. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 32)
+#if RTLNX_VER_MIN(2,5,32)
         if (in_atomic() || in_interrupt())
 #else
         if (in_interrupt())
@@ -1620,14 +1620,14 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
         else
 #endif
         {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+#if RTLNX_VER_MIN(4,15,0)
             timer_setup(&pTimer->aSubTimers[iCpu].u.Std.LnxTimer, rtTimerLinuxStdCallback, TIMER_PINNED);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+#elif RTLNX_VER_MIN(4,8,0)
             init_timer_pinned(&pTimer->aSubTimers[iCpu].u.Std.LnxTimer);
 #else
             init_timer(&pTimer->aSubTimers[iCpu].u.Std.LnxTimer);
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
+#if RTLNX_VER_MAX(4,15,0)
             pTimer->aSubTimers[iCpu].u.Std.LnxTimer.data        = (unsigned long)&pTimer->aSubTimers[iCpu];
             pTimer->aSubTimers[iCpu].u.Std.LnxTimer.function    = rtTimerLinuxStdCallback;
 #endif
@@ -1686,7 +1686,7 @@ RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
     }
 #endif
     /* */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) || LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+#if RTLNX_VER_MAX(4,9,0) || RTLNX_VER_MIN(4,13,0)
     /* On 4.9, 4.10 and 4.12 we've observed tstRTR0Timer failures of the omni timer tests
        where we get about half of the ticks we want.  The failing test is using this value
        as interval.  So, this is a very very crude hack to try make omni timers work

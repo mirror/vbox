@@ -46,7 +46,7 @@
  * Linux kernel 2.6.23 introduced preemption notifiers but RedHat 2.6.18 kernels
  * got it backported.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18) && defined(CONFIG_PREEMPT_NOTIFIERS)
+#if RTLNX_VER_MIN(2,6,18) && defined(CONFIG_PREEMPT_NOTIFIERS)
 
 
 /*********************************************************************************************************************************
@@ -72,7 +72,7 @@ typedef struct RTTHREADCTXHOOKINT
     void                       *pvUser;
     /** The linux callbacks. */
     struct preempt_ops          PreemptOps;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 19) && defined(RT_ARCH_AMD64)
+#if RTLNX_VER_MIN(3,1,19) && defined(RT_ARCH_AMD64)
     /** Starting with 3.1.19, the linux kernel doesn't restore kernel RFLAGS during
      * task switch, so we have to do that ourselves. (x86 code is not affected.) */
     RTCCUINTREG                 fSavedRFlags;
@@ -109,7 +109,7 @@ static void rtThreadCtxHooksLnxSchedOut(struct preempt_notifier *pPreemptNotifie
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     ASMSetFlags(fSavedEFlags);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 19) && defined(RT_ARCH_AMD64)
+# if RTLNX_VER_MIN(3,1,19) && defined(RT_ARCH_AMD64)
     pThis->fSavedRFlags = fSavedEFlags;
 # endif
 #endif
@@ -142,7 +142,7 @@ static void rtThreadCtxHooksLnxSchedIn(struct preempt_notifier *pPreemptNotifier
     pThis->pfnCallback(RTTHREADCTXEVENT_IN, pThis->pvUser);
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 19) && defined(RT_ARCH_AMD64)
+# if RTLNX_VER_MIN(3,1,19) && defined(RT_ARCH_AMD64)
     fSavedEFlags &= ~RT_BIT_64(18) /*X86_EFL_AC*/;
     fSavedEFlags |= pThis->fSavedRFlags & RT_BIT_64(18) /*X86_EFL_AC*/;
 # endif
@@ -198,7 +198,7 @@ RTDECL(int) RTThreadCtxHookCreate(PRTTHREADCTXHOOK phCtxHook, uint32_t fFlags, P
     pThis->PreemptOps.sched_out = rtThreadCtxHooksLnxSchedOut;
     pThis->PreemptOps.sched_in  = rtThreadCtxHooksLnxSchedIn;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+#if RTLNX_VER_MIN(4,2,0)
     preempt_notifier_inc();
 #endif
 
@@ -235,7 +235,7 @@ RTDECL(int ) RTThreadCtxHookDestroy(RTTHREADCTXHOOK hCtxHook)
         Assert(!pThis->fEnabled); /* paranoia */
     }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+#if RTLNX_VER_MIN(4,2,0)
     preempt_notifier_dec();
 #endif
 

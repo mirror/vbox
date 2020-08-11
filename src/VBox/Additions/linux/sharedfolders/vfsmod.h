@@ -45,7 +45,7 @@
 #include <iprt/asm.h>
 #include <VBox/log.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MIN(2,6,0)
 # include <linux/backing-dev.h>
 #endif
 
@@ -82,7 +82,7 @@
 /*
  * inode compatibility glue.
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MAX(2,6,0)
 
 DECLINLINE(loff_t) i_size_read(struct inode *pInode)
 {
@@ -98,7 +98,7 @@ DECLINLINE(void) i_size_write(struct inode *pInode, loff_t cbNew)
 
 #endif /* < 2.6.0 */
 
-#if  LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0) \
+#if  RTLNX_VER_MAX(3,2,0) \
   && (!defined(RHEL_MAJOR) || RHEL_MAJOR != 6 || RHEL_MINOR < 10)
 DECLINLINE(void) set_nlink(struct inode *pInode, unsigned int cLinks)
 {
@@ -149,7 +149,7 @@ struct vbsf_super_info {
     enum vbsf_cache_mode    enmCacheMode;
     /** Mount tag for VBoxService automounter.  @since 6.0 */
     char                    szTag[32];
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+#if RTLNX_VER_RANGE(2,6,0,  4,12,0)
     /** The backing device info structure. */
     struct backing_dev_info bdi;
 #endif
@@ -159,7 +159,7 @@ struct vbsf_super_info {
     int32_t                 msDirCacheTTL;
     /** The time to live for inode information in milliseconds, for /proc/mounts. */
     int32_t                 msInodeTTL;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+#if RTLNX_VER_RANGE(4,0,0,  4,2,0)
     /** 4.0 and 4.1 are missing noop_backing_dev_info export, so take down the
      *  initial value so we can restore it in vbsf_done_backing_dev(). (paranoia) */
     struct backing_dev_info *bdi_org;
@@ -168,7 +168,7 @@ struct vbsf_super_info {
 
 /* Following casts are here to prevent assignment of void * to
    pointers of arbitrary type */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MAX(2,6,0)
 # define VBSF_GET_SUPER_INFO(sb)                ((struct vbsf_super_info *)(sb)->u.generic_sbp)
 # define VBSF_SET_SUPER_INFO(sb, a_pSuperInfo)  do { (sb)->u.generic_sbp = a_pSuperInfo; } while (0)
 #else
@@ -248,7 +248,7 @@ struct vbsf_inode_info {
 #endif
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined(KERNEL_FC6)
+#if RTLNX_VER_MIN(2,6,19) || defined(KERNEL_FC6)
 /* FC6 kernel 2.6.18, vanilla kernel 2.6.19+ */
 # define VBSF_GET_INODE_INFO(i)       ((struct vbsf_inode_info *) (i)->i_private)
 # define VBSF_SET_INODE_INFO(i, sf_i) (i)->i_private = sf_i
@@ -264,8 +264,8 @@ extern void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pIno
                               struct vbsf_super_info *pSuperInfo, bool fInodeLocked, unsigned fSetAttrs);
 extern int  vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInodeLocked);
 extern int  vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if RTLNX_VER_MIN(2,5,18)
+# if RTLNX_VER_MIN(4,11,0)
 extern int  vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32 request_mask, unsigned int query_flags);
 # else
 extern int  vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat);
@@ -419,9 +419,9 @@ DECLINLINE(void) vbsf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
 }
 
 /** Macro for getting the dentry for a struct file. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#if RTLNX_VER_MIN(4,6,0)
 # define VBSF_GET_F_DENTRY(f)   file_dentry(f)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+#elif RTLNX_VER_MIN(2,6,20)
 # define VBSF_GET_F_DENTRY(f)   (f->f_path.dentry)
 #else
 # define VBSF_GET_F_DENTRY(f)   (f->f_dentry)

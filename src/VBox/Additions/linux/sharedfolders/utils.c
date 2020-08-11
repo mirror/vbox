@@ -50,7 +50,7 @@ int vbsf_nlscpy(struct vbsf_super_info *pSuperInfo, char *name, size_t name_boun
         size_t      out_len         = 0;
 
         while (in_bound_len) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#if RTLNX_VER_MIN(2,6,31)
             unicode_t uni;
             int cbInEnc = utf8_to_utf32(in, in_bound_len, &uni);
 #else
@@ -111,7 +111,7 @@ int vbsf_nls_to_shflstring(struct vbsf_super_info *pSuperInfo, const char *pszNl
             int const cbNlsCodepoint = pSuperInfo->nls->char2uni(&pszNls[offNls], cchNls - offNls, &uc);
             if (cbNlsCodepoint >= 0) {
                 char achTmp[16];
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#if RTLNX_VER_MIN(2,6,31)
                 int cbUtf8Codepoint = utf32_to_utf8(uc, achTmp, sizeof(achTmp));
 #else
                 int cbUtf8Codepoint = utf8_wctomb(achTmp, uc, sizeof(achTmp));
@@ -144,7 +144,7 @@ int vbsf_nls_to_shflstring(struct vbsf_super_info *pSuperInfo, const char *pszNl
                     linux_wchar_t uc; /* Note! We renamed the type due to clashes. */
                     int const cbNlsCodepoint = pSuperInfo->nls->char2uni(&pszNls[offNls], cchNls - offNls, &uc);
                     if (cbNlsCodepoint >= 0) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#if RTLNX_VER_MIN(2,6,31)
                         int cbUtf8Codepoint = utf32_to_utf8(uc, pchDst, cchUtf8);
 #else
                         int cbUtf8Codepoint = utf8_wctomb(pchDst, uc, cchUtf8);
@@ -214,7 +214,7 @@ int vbsf_nls_to_shflstring(struct vbsf_super_info *pSuperInfo, const char *pszNl
 /**
  * Convert from VBox to linux time.
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MAX(2,6,0)
 DECLINLINE(void) vbsf_time_to_linux(time_t *pLinuxDst, PCRTTIMESPEC pVBoxSrc)
 {
     int64_t t = RTTimeSpecGetNano(pVBoxSrc);
@@ -222,7 +222,7 @@ DECLINLINE(void) vbsf_time_to_linux(time_t *pLinuxDst, PCRTTIMESPEC pVBoxSrc)
     *pLinuxDst = t;
 }
 #else   /* >= 2.6.0 */
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+# if RTLNX_VER_MAX(4,18,0)
 DECLINLINE(void) vbsf_time_to_linux(struct timespec *pLinuxDst, PCRTTIMESPEC pVBoxSrc)
 # else
 DECLINLINE(void) vbsf_time_to_linux(struct timespec64 *pLinuxDst, PCRTTIMESPEC pVBoxSrc)
@@ -238,13 +238,13 @@ DECLINLINE(void) vbsf_time_to_linux(struct timespec64 *pLinuxDst, PCRTTIMESPEC p
 /**
  * Convert from linux to VBox time.
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MAX(2,6,0)
 DECLINLINE(void) vbsf_time_to_vbox(PRTTIMESPEC pVBoxDst, time_t *pLinuxSrc)
 {
     RTTimeSpecSetNano(pVBoxDst, RT_NS_1SEC_64 * *pLinuxSrc);
 }
 #else   /* >= 2.6.0 */
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+# if RTLNX_VER_MAX(4,18,0)
 DECLINLINE(void) vbsf_time_to_vbox(PRTTIMESPEC pVBoxDst, struct timespec const *pLinuxSrc)
 # else
 DECLINLINE(void) vbsf_time_to_vbox(PRTTIMESPEC pVBoxDst, struct timespec64 const *pLinuxSrc)
@@ -326,14 +326,13 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
         inode->i_op = &vbsf_reg_iops;
         inode->i_fop = &vbsf_reg_fops;
         inode->i_mapping->a_ops = &vbsf_reg_aops;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 17) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(4, 0, 0)
+#if RTLNX_VER_RANGE(2,5,17,  4,0,0)
         inode->i_mapping->backing_dev_info = &pSuperInfo->bdi; /* This is needed for mmap. */
 #endif
         set_nlink(inode, 1);
     }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+#if RTLNX_VER_MIN(3,5,0)
     inode->i_uid = make_kuid(current_user_ns(), pSuperInfo->uid);
     inode->i_gid = make_kgid(current_user_ns(), pSuperInfo->gid);
 #else
@@ -342,10 +341,10 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
 #endif
 
     inode->i_size = pObjInfo->cbObject;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) && !defined(KERNEL_FC6)
+#if RTLNX_VER_MAX(2,6,19) && !defined(KERNEL_FC6)
     inode->i_blksize = 4096;
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 11)
+#if RTLNX_VER_MIN(2,4,11)
     inode->i_blkbits = 12;
 #endif
     /* i_blocks always in units of 512 bytes! */
@@ -373,7 +372,7 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
 
     TRACE();
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if RTLNX_VER_MIN(4,5,0)
     if (!fInodeLocked)
         inode_lock(pInode);
 #endif
@@ -401,7 +400,7 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
             /** @todo we probably need to be more drastic... */
             vbsf_init_inode(pInode, pInodeInfo, pObjInfo, pSuperInfo);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if RTLNX_VER_MIN(4,5,0)
             if (!fInodeLocked)
                 inode_unlock(pInode);
 #endif
@@ -466,9 +465,9 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
                     struct address_space *mapping = pInode->i_mapping;
                     if (mapping && mapping->nrpages > 0) {
                         SFLOGFLOW(("vbsf_update_inode: Invalidating the mapping %s (%#x)\n", pInodeInfo->path->String.ach, fSetAttrs));
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
+#if RTLNX_VER_MIN(2,6,34)
                         invalidate_mapping_pages(mapping, 0, ~(pgoff_t)0);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+#elif RTLNX_VER_MIN(2,5,41)
                         invalidate_inode_pages(mapping);
 #else
                         invalidate_inode_pages(pInode);
@@ -486,7 +485,7 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
     /*
      * Done.
      */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if RTLNX_VER_MIN(4,5,0)
     if (!fInodeLocked)
         inode_unlock(pInode);
 #endif
@@ -626,7 +625,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInod
 }
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 18)
+#if RTLNX_VER_MAX(2,5,18)
 /**
  * Revalidate an inode for 2.4.
  *
@@ -699,26 +698,26 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
    effect) updates inode attributes for [dentry] (given that [dentry]
    has inode at all) from these new attributes we derive [kstat] via
    [generic_fillattr] */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
+#if RTLNX_VER_MIN(2,5,18)
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MIN(4,11,0)
 int vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32 request_mask, unsigned int flags)
 # else
 int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
 # endif
 {
     int            rc;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MIN(4,11,0)
     struct dentry *dentry = path->dentry;
 # endif
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MIN(4,11,0)
     SFLOGFLOW(("vbsf_inode_getattr: dentry=%p request_mask=%#x flags=%#x\n", dentry, request_mask, flags));
 # else
     SFLOGFLOW(("vbsf_inode_getattr: dentry=%p\n", dentry));
 # endif
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MIN(4,11,0)
     /*
      * With the introduction of statx() userland can control whether we
      * update the inode information or not.
@@ -744,7 +743,7 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
         generic_fillattr(dentry->d_inode, kstat);
 
         /* Add birth time. */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if RTLNX_VER_MIN(4,11,0)
         if (dentry->d_inode) {
             struct vbsf_inode_info *pInodeInfo = VBSF_GET_INODE_INFO(dentry->d_inode);
             if (pInodeInfo) {
@@ -806,7 +805,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
      * from futimes() when asked to preserve times, see ticketref:18569.
      */
     iattr->ia_valid |= ATTR_FORCE;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 39) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 37) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0))
+#if (RTLNX_VER_RANGE(3,16,39,  3,17,0)) || RTLNX_VER_MIN(4,9,0) || (RTLNX_VER_RANGE(4,1,37,  4,2,0))
     rc = setattr_prepare(dentry, iattr);
 #else
     rc = inode_change_ok(pInode, iattr);
@@ -817,11 +816,11 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
          * operations will set those timestamps automatically.  Saves a host call.
          */
         unsigned fAttrs = iattr->ia_valid;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
+#if RTLNX_VER_MIN(2,6,15)
         fAttrs &= ~ATTR_FILE;
 #endif
         if (   fAttrs == (ATTR_SIZE | ATTR_MTIME | ATTR_CTIME)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#if RTLNX_VER_MIN(2,6,24)
             || (fAttrs & (ATTR_OPEN | ATTR_SIZE)) == (ATTR_OPEN | ATTR_SIZE)
 #endif
            )
@@ -1066,7 +1065,7 @@ int vbsf_path_from_dentry(struct vbsf_super_info *pSuperInfo, struct vbsf_inode_
             in_len -= nb;
             in += nb;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#if RTLNX_VER_MIN(2,6,31)
             nb = utf32_to_utf8(uni, out, out_bound_len);
 #else
             nb = utf8_wctomb(out, uni, out_bound_len);
@@ -1112,15 +1111,15 @@ int vbsf_path_from_dentry(struct vbsf_super_info *pSuperInfo, struct vbsf_inode_
  *
  * @note Caller holds no relevant locks, just a dentry reference.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+#if RTLNX_VER_MIN(3,6,0)
 static int vbsf_dentry_revalidate(struct dentry *dentry, unsigned flags)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#elif RTLNX_VER_MIN(2,6,0)
 static int vbsf_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
 #else
 static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
 #endif
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0)
+#if RTLNX_VER_RANGE(2,6,0,  3,6,0)
     int const flags = nd ? nd->flags : 0;
 #endif
 
@@ -1138,7 +1137,7 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
      *                   https://lwn.net/Articles/650786/
      *
      */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+#if RTLNX_VER_MIN(2,6,38)
     if (flags & LOOKUP_RCU) {
         rc = -ECHILD;
         SFLOGFLOW(("vbsf_dentry_revalidate: RCU -> -ECHILD\n"));
@@ -1180,9 +1179,9 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
              * if we do case-insensitive mounts against windows + mac hosts at some
              * later point).
              */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+#if RTLNX_VER_MIN(2,6,28)
             if (flags & (LOOKUP_CREATE | LOOKUP_RENAME_TARGET))
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 75)
+#elif RTLNX_VER_MIN(2,5,75)
             if (flags & LOOKUP_CREATE)
 #else
             if (0)
@@ -1213,7 +1212,7 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
 #ifdef SFLOG_ENABLED
 
 /** For logging purposes only. */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+# if RTLNX_VER_MIN(2,6,38)
 static int vbsf_dentry_delete(const struct dentry *pDirEntry)
 # else
 static int vbsf_dentry_delete(struct dentry *pDirEntry)
@@ -1223,7 +1222,7 @@ static int vbsf_dentry_delete(struct dentry *pDirEntry)
     return 0;
 }
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+# if RTLNX_VER_MIN(4,8,0)
 /** For logging purposes only. */
 static int vbsf_dentry_init(struct dentry *pDirEntry)
 {
@@ -1243,7 +1242,7 @@ struct dentry_operations vbsf_dentry_ops = {
     .d_revalidate = vbsf_dentry_revalidate,
 #ifdef SFLOG_ENABLED
     .d_delete = vbsf_dentry_delete,
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+# if RTLNX_VER_MIN(4,8,0)
     .d_init = vbsf_dentry_init,
 # endif
 #endif

@@ -54,8 +54,8 @@
 #   include <memory.h>
 
 #elif defined(RT_OS_LINUX)
-#   include <linux/version.h>
-#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
+#   include <iprt/linux/version.h>
+#   if RTLNX_VER_MIN(2,6,33)
 #    include <generated/autoconf.h>
 #   else
 #    ifndef AUTOCONF_INCLUDED
@@ -64,12 +64,12 @@
 #   endif
 #   if defined(CONFIG_MODVERSIONS) && !defined(MODVERSIONS)
 #       define MODVERSIONS
-#       if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 71)
+#       if RTLNX_VER_MAX(2,5,71)
 #           include <linux/modversions.h>
 #       endif
 #   endif
 #   ifndef KBUILD_STR
-#       if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
+#       if RTLNX_VER_MAX(2,6,16)
 #            define KBUILD_STR(s) s
 #       else
 #            define KBUILD_STR(s) #s
@@ -78,7 +78,7 @@
 #   include <linux/string.h>
 #   include <linux/spinlock.h>
 #   include <linux/slab.h>
-#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+#   if RTLNX_VER_MIN(2,6,27)
 #       include <linux/semaphore.h>
 #   else /* older kernels */
 #       include <asm/semaphore.h>

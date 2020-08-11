@@ -107,7 +107,7 @@ DECLINLINE(int) vbsf_symlink_nls_convert(struct vbsf_super_info *pSuperInfo, cha
     return vbsf_symlink_nls_convert_slow(pSuperInfo, pszTarget, cbTargetBuf);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if RTLNX_VER_MIN(4,5,0)
 
 /**
  * Get symbolic link.
@@ -146,7 +146,7 @@ static const char *vbsf_get_link(struct dentry *dentry, struct inode *inode, str
 
 #else /* < 4.5 */
 
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 8)
+# if RTLNX_VER_MAX(2,6,8)
 /**
  * Reads the link into the given buffer.
  */
@@ -182,9 +182,9 @@ static int vbsf_readlink(struct dentry *dentry, char *buffer, int len)
 /**
  * Follow link in dentry.
  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+# if RTLNX_VER_MIN(4,2,0)
 static const char *vbsf_follow_link(struct dentry *dentry, void **cookie)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+# elif RTLNX_VER_MIN(2,6,13)
 static void       *vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
 # else
 static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
@@ -212,12 +212,12 @@ static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
                  * using the buffer we pass it here.
                  */
                 vbsf_dentry_chain_increase_ttl(dentry);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+# if RTLNX_VER_MIN(4,2,0)
                 *cookie = pszTarget;
                 return pszTarget;
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+# elif RTLNX_VER_MIN(2,6,8)
                 nd_set_link(nd, pszTarget);
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+#  if RTLNX_VER_MIN(2,6,13)
                 return NULL;
 #  else
                 return 0;
@@ -240,12 +240,12 @@ static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
     } else {
         rc = -ENOMEM;
     }
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+# if RTLNX_VER_MIN(4,2,0)
     *cookie = ERR_PTR(rc);
     return (const char *)ERR_PTR(rc);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+# elif RTLNX_VER_MIN(2,6,8)
     nd_set_link(nd, (char *)ERR_PTR(rc));
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+#  if RTLNX_VER_MIN(2,6,13)
     return NULL;
 #  else
     return 0;
@@ -255,21 +255,21 @@ static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
 # endif /* < 2.6.8 */
 }
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+# if RTLNX_VER_MIN(2,6,8)
 /**
  * For freeing target link buffer allocated by vbsf_follow_link.
  *
  * For kernels before 2.6.8 memory isn't being kept around.
  */
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+#  if RTLNX_VER_MIN(4,2,0)
 static void vbsf_put_link(struct inode *inode, void *cookie)
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+#  elif RTLNX_VER_MIN(2,6,13)
 static void vbsf_put_link(struct dentry *dentry, struct nameidata *nd, void *cookie)
 #  else
 static void vbsf_put_link(struct dentry *dentry, struct nameidata *nd)
 #  endif
 {
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+#  if RTLNX_VER_MIN(2,6,13)
     char *page = cookie;
 #  else
     char *page = nd_get_link(nd);
@@ -286,18 +286,18 @@ static void vbsf_put_link(struct dentry *dentry, struct nameidata *nd)
  * Symlink inode operations.
  */
 struct inode_operations vbsf_lnk_iops = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+#if RTLNX_VER_MAX(4,10,0)
+# if RTLNX_VER_MIN(2,6,8)
     .readlink    = generic_readlink,
 # else
     .readlink    = vbsf_readlink,
 # endif
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if RTLNX_VER_MIN(4,5,0)
     .get_link    = vbsf_get_link
 #else
     .follow_link = vbsf_follow_link,
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+# if RTLNX_VER_MIN(2,6,8)
     .put_link    = vbsf_put_link,
 # endif
 #endif

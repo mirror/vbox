@@ -183,7 +183,7 @@ DECLINLINE(int) rtR0SemLnxWaitInit(PRTR0SEMLNXWAIT pWait, uint32_t fFlags, uint6
     /*
      * Initialize the wait queue related bits.
      */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 39)
+#if RTLNX_VER_MIN(2,5,39)
     init_wait((&pWait->WaitQE));
 #else
     RT_ZERO(pWait->WaitQE);

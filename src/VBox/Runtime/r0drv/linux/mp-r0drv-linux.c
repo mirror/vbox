@@ -42,7 +42,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(nr_cpumask_bits) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+#if defined(nr_cpumask_bits) || RTLNX_VER_MIN(2,6,28)
 # define VBOX_NR_CPUMASK_BITS   (nr_cpumask_bits)   /* same as nr_cpu_ids */
 #else
 # define VBOX_NR_CPUMASK_BITS   (NR_CPUS)
@@ -94,7 +94,7 @@ RT_EXPORT_SYMBOL(RTMpGetMaxCpuId);
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
 #if defined(CONFIG_SMP)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 2) || defined(cpu_possible)
+# if RTLNX_VER_MIN(2,6,2) || defined(cpu_possible)
     return idCpu < VBOX_NR_CPUMASK_BITS && cpu_possible(idCpu);
 # else /* < 2.5.29 */
     return idCpu < (RTCPUID)(smp_num_cpus);
@@ -125,9 +125,9 @@ RT_EXPORT_SYMBOL(RTMpGetSet);
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
 #ifdef CONFIG_SMP
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 4) || defined(num_possible_cpus)
+# if RTLNX_VER_MIN(2,6,4) || defined(num_possible_cpus)
     return num_possible_cpus();
-# elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 0)
+# elif RTLNX_VER_MAX(2,5,0)
     return smp_num_cpus;
 # else
     RTCPUSET Set;
@@ -144,7 +144,7 @@ RT_EXPORT_SYMBOL(RTMpGetCount);
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
 #ifdef CONFIG_SMP
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(cpu_online)
+# if RTLNX_VER_MIN(2,6,0) || defined(cpu_online)
     return idCpu < VBOX_NR_CPUMASK_BITS && cpu_online(idCpu);
 # else /* 2.4: */
     return idCpu < VBOX_NR_CPUMASK_BITS && cpu_online_map & RT_BIT_64(idCpu);
@@ -180,7 +180,7 @@ RT_EXPORT_SYMBOL(RTMpGetOnlineSet);
 RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 {
 #ifdef CONFIG_SMP
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(num_online_cpus)
+# if RTLNX_VER_MIN(2,6,0) || defined(num_online_cpus)
     return num_online_cpus();
 # else
     RTCPUSET Set;
@@ -216,7 +216,7 @@ static void rtmpLinuxWrapper(void *pvInfo)
 
 #ifdef CONFIG_SMP
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# if RTLNX_VER_MIN(2,6,27)
 /**
  * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER, does hit
  * increment after calling the worker.
@@ -280,9 +280,9 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     if (RTCpuSetCount(&OnlineSet) > 1)
     {
         /* Fire the function on all other CPUs without waiting for completion. */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
+# if RTLNX_VER_MIN(5,3,0)
         smp_call_function(rtmpLinuxAllWrapper, &Args, 0 /* wait */);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# elif RTLNX_VER_MIN(2,6,27)
         int rc = smp_call_function(rtmpLinuxAllWrapper, &Args, 0 /* wait */);
         Assert(!rc); NOREF(rc);
 # else
@@ -336,9 +336,9 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.cHits = 0;
 
     RTThreadPreemptDisable(&PreemptState);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
+# if RTLNX_VER_MIN(5,3,0)
     smp_call_function(rtmpLinuxWrapper, &Args, 1 /* wait */);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# elif RTLNX_VER_MIN(2,6,27)
     int rc = smp_call_function(rtmpLinuxWrapper, &Args, 1 /* wait */);
     Assert(rc == 0); NOREF(rc);
 # else /* older kernels */
@@ -356,7 +356,7 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 RT_EXPORT_SYMBOL(RTMpOnOthers);
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) && defined(CONFIG_SMP)
+#if RTLNX_VER_MAX(2,6,27) && defined(CONFIG_SMP)
 /**
  * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER
  * employed by RTMpOnPair on older kernels that lacks smp_call_function_many.
@@ -384,9 +384,9 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
     IPRT_LINUX_SAVE_EFL_AC();
     int                     rc;
     RTTHREADPREEMPTSTATE    PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28) /* 2.6.28 introduces CONFIG_CPUMASK_OFFSTACK */
+# if RTLNX_VER_MIN(2,6,28) /* 2.6.28 introduces CONFIG_CPUMASK_OFFSTACK */
     cpumask_var_t           DstCpuMask;
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# elif RTLNX_VER_MIN(2,6,27)
     cpumask_t               DstCpuMask;
 # endif
 
@@ -396,18 +396,18 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
     /*
      * Prepare the CPU mask before we disable preemption.
      */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+# if RTLNX_VER_MIN(2,6,30)
     if (!zalloc_cpumask_var(&DstCpuMask, GFP_KERNEL))
         return VERR_NO_MEMORY;
     cpumask_set_cpu(idCpu1, DstCpuMask);
     cpumask_set_cpu(idCpu2, DstCpuMask);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+# elif RTLNX_VER_MIN(2,6,28)
     if (!alloc_cpumask_var(&DstCpuMask, GFP_KERNEL))
         return VERR_NO_MEMORY;
     cpumask_clear(DstCpuMask);
     cpumask_set_cpu(idCpu1, DstCpuMask);
     cpumask_set_cpu(idCpu2, DstCpuMask);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# elif RTLNX_VER_MIN(2,6,27)
     cpus_clear(DstCpuMask);
     cpu_set(idCpu1, DstCpuMask);
     cpu_set(idCpu2, DstCpuMask);
@@ -436,10 +436,10 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
         Args.idCpu2  = idCpu2;
         Args.cHits   = 0;
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+# if RTLNX_VER_MIN(2,6,28)
         smp_call_function_many(DstCpuMask, rtmpLinuxWrapperPostInc, &Args, !fCallSelf /* wait */);
         rc = 0;
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# elif RTLNX_VER_MIN(2,6,27)
         rc = smp_call_function_mask(DstCpuMask, rtmpLinuxWrapperPostInc, &Args, !fCallSelf /* wait */);
 # else /* older kernels */
         rc = smp_call_function(rtMpLinuxOnPairWrapper, &Args, 0 /* retry */, !fCallSelf /* wait */);
@@ -480,7 +480,7 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
         rc = VERR_CPU_NOT_FOUND;
 
     RTThreadPreemptRestore(&PreemptState);;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+# if RTLNX_VER_MIN(2,6,28)
     free_cpumask_var(DstCpuMask);
 # endif
     IPRT_LINUX_RESTORE_EFL_AC();
@@ -501,7 +501,7 @@ RTDECL(bool) RTMpOnPairIsConcurrentExecSupported(void)
 RT_EXPORT_SYMBOL(RTMpOnPairIsConcurrentExecSupported);
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) && defined(CONFIG_SMP)
+#if RTLNX_VER_MAX(2,6,19) && defined(CONFIG_SMP)
 /**
  * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER
  * employed by RTMpOnSpecific on older kernels that lacks smp_call_function_single.
@@ -544,9 +544,9 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
 #ifdef CONFIG_SMP
         if (RTMpIsCpuOnline(idCpu))
         {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+# if RTLNX_VER_MIN(2,6,27)
             rc = smp_call_function_single(idCpu, rtmpLinuxWrapper, &Args, 1 /* wait */);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+# elif RTLNX_VER_MIN(2,6,19)
             rc = smp_call_function_single(idCpu, rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
 # else /* older kernels */
             rc = smp_call_function(rtmpOnSpecificLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
@@ -572,7 +572,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
 RT_EXPORT_SYMBOL(RTMpOnSpecific);
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) && defined(CONFIG_SMP)
+#if RTLNX_VER_MIN(2,6,19) && defined(CONFIG_SMP)
 /**
  * Dummy callback used by RTMpPokeCpu.
  *
@@ -587,7 +587,7 @@ static void rtmpLinuxPokeCpuCallback(void *pvInfo)
 
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#if RTLNX_VER_MIN(2,6,19)
     IPRT_LINUX_SAVE_EFL_AC();
     int rc;
     if (RTMpIsCpuPossible(idCpu))
@@ -595,9 +595,9 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
         if (RTMpIsCpuOnline(idCpu))
         {
 # ifdef CONFIG_SMP
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+#  if RTLNX_VER_MIN(2,6,27)
             rc = smp_call_function_single(idCpu, rtmpLinuxPokeCpuCallback, NULL, 0 /* wait */);
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#  elif RTLNX_VER_MIN(2,6,19)
             rc = smp_call_function_single(idCpu, rtmpLinuxPokeCpuCallback, NULL, 0 /* retry */, 0 /* wait */);
 #  else  /* older kernels */
 #   error oops

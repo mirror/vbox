@@ -33,7 +33,7 @@
 #include <iprt/thread.h>
 
 #include <iprt/asm.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 28) || defined(CONFIG_X86_SMAP)
+#if RTLNX_VER_MAX(2,5,28) || defined(CONFIG_X86_SMAP)
 # include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
@@ -87,7 +87,7 @@ RT_EXPORT_SYMBOL(RTThreadSleepNoLog);
 RTDECL(bool) RTThreadYield(void)
 {
     IPRT_LINUX_SAVE_EFL_AC();
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 20)
+#if RTLNX_VER_MIN(2,4,20)
     yield();
 #else
     /** @todo r=ramshankar: Can we use cond_resched() instead?  */
@@ -118,11 +118,11 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
     AssertMsg(c >= 0 && c < 32, ("%d\n", c));
     if (c != 0)
         return false;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 32)
+# if RTLNX_VER_MIN(2,5,32)
     if (in_atomic())
         return false;
 # endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 28)
+# if RTLNX_VER_MIN(2,5,28)
     if (irqs_disabled())
         return false;
 # else
@@ -138,13 +138,13 @@ RT_EXPORT_SYMBOL(RTThreadPreemptIsEnabled);
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD); RT_NOREF_PV(hThread);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 4)
+#if RTLNX_VER_MIN(2,5,4)
     return !!test_tsk_thread_flag(current, TIF_NEED_RESCHED);
 
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 20)
+#elif RTLNX_VER_MIN(2,4,20)
     return !!need_resched();
 
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 1, 110)
+#elif RTLNX_VER_MIN(2,1,110)
     return current->need_resched != 0;
 
 #else

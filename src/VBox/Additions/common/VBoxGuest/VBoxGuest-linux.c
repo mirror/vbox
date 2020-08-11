@@ -35,11 +35,11 @@
 
 #include "the-linux-kernel.h"
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
+#if RTLNX_VER_MIN(2,6,15)
 # define VBOXGUEST_WITH_INPUT_DRIVER
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+#if RTLNX_VER_MIN(4,15,0)
 # define CONST_4_15 const
 #else
 # define CONST_4_15
@@ -51,7 +51,7 @@
 #endif
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+#if RTLNX_VER_MIN(2,6,28)
 # include <linux/tty.h>
 #endif
 #include <VBox/version.h>
@@ -89,7 +89,7 @@
 #endif
 
 /* uidgid.h was introduced in 3.5.0. */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0)
+#if RTLNX_VER_MAX(3,5,0)
 # define kgid_t gid_t
 # define kuid_t uid_t
 #endif
@@ -141,7 +141,7 @@ static struct fasync_struct    *g_pFAsyncQueue;
  * handler. */
 static VMMDevReqMouseStatus    *g_pMouseStatusReq;
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MIN(2,6,0)
 /** Whether we've create the logger or not. */
 static volatile bool            g_fLoggerCreated;
 /** Release logger group settings. */
@@ -363,7 +363,7 @@ static void vgdrvLinuxTermPci(struct pci_dev *pPciDev)
  * @param   pvDevId         The device ID, a pointer to g_DevExt.
  * @param   pRegs           Register set. Removed in 2.6.19.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) && !defined(DOXYGEN_RUNNING)
+#if RTLNX_VER_MIN(2,6,19) && !defined(DOXYGEN_RUNNING)
 static irqreturn_t vgdrvLinuxISR(int iIrq, void *pvDevId)
 #else
 static irqreturn_t vgdrvLinuxISR(int iIrq, void *pvDevId, struct pt_regs *pRegs)
@@ -384,7 +384,7 @@ static int __init vgdrvLinuxInitISR(void)
     init_waitqueue_head(&g_PollEventQueue);
     rc = request_irq(g_pPciDev->irq,
                      vgdrvLinuxISR,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+#if RTLNX_VER_MIN(2,6,20)
                      IRQF_SHARED,
 #else
                      SA_SHIRQ,
@@ -476,7 +476,7 @@ static int __init vgdrvLinuxCreateInputDevice(void)
             g_pInputDevice->id.version = VBOX_SHORT_VERSION;
             g_pInputDevice->open       = vboxguestOpenInputDevice;
             g_pInputDevice->close      = vboxguestCloseInputDevice;
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22)
+# if RTLNX_VER_MAX(2,6,22)
             g_pInputDevice->cdev.dev   = &g_pPciDev->dev;
 # else
             g_pInputDevice->dev.parent = &g_pPciDev->dev;
@@ -595,14 +595,14 @@ static int __init vgdrvLinuxModInit(void)
                      RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER | RTLOGDEST_USER, NULL);
     if (RT_SUCCESS(rc))
     {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MIN(2,6,0)
         RTLogGroupSettings(pRelLogger, g_szLogGrp);
         RTLogFlags(pRelLogger, g_szLogFlags);
         RTLogDestinations(pRelLogger, g_szLogDst);
 #endif
         RTLogRelSetDefaultInstance(pRelLogger);
     }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MIN(2,6,0)
     g_fLoggerCreated = true;
 #endif
 
@@ -615,13 +615,13 @@ static int __init vgdrvLinuxModInit(void)
         /*
          * Call the common device extension initializer.
          */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && defined(RT_ARCH_X86)
+#if RTLNX_VER_MIN(2,6,0) && defined(RT_ARCH_X86)
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && defined(RT_ARCH_AMD64)
+#elif RTLNX_VER_MIN(2,6,0) && defined(RT_ARCH_AMD64)
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26_x64;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && defined(RT_ARCH_X86)
+#elif RTLNX_VER_MIN(2,4,0) && defined(RT_ARCH_X86)
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux24;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && defined(RT_ARCH_AMD64)
+#elif RTLNX_VER_MIN(2,4,0) && defined(RT_ARCH_AMD64)
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux24_x64;
 #else
 # warning "huh? which arch + version is this?"
@@ -739,8 +739,8 @@ static void __exit vgdrvLinuxModExit(void)
  */
 DECLINLINE(RTUID) vgdrvLinuxGetUid(void)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+#if RTLNX_VER_MIN(2,6,29)
+# if RTLNX_VER_MIN(3,5,0)
     return from_kuid(current_user_ns(), current->cred->uid);
 # else
     return current->cred->uid;
@@ -759,7 +759,7 @@ DECLINLINE(RTUID) vgdrvLinuxGetUid(void)
  */
 DECLINLINE(bool) vgdrvLinuxIsGroupZero(kgid_t gid)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+#if RTLNX_VER_MIN(3,5,0)
     return from_kgid(current_user_ns(), gid);
 #else
     return gid == 0;
@@ -792,14 +792,14 @@ static uint32_t vgdrvLinuxRequestorOnConsole(void)
 {
     uint32_t           fRet = VMMDEV_REQUESTOR_CON_DONT_KNOW;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28) /* First with tty_kref_put(). */
+#if RTLNX_VER_MIN(2,6,28) /* First with tty_kref_put(). */
     /*
      * Check for tty0..63, ASSUMING that these are only used for the physical console.
      */
     struct tty_struct *pTty = get_current_tty();
     if (pTty)
     {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+# if RTLNX_VER_MIN(4,2,0)
         const char *pszName = tty_name(pTty);
 # else
         char szBuf[64];
@@ -878,7 +878,7 @@ static int vgdrvLinuxRelease(struct inode *pInode, struct file *pFilp)
     Log(("vgdrvLinuxRelease: pFilp=%p pSession=%p pid=%d/%d %s\n",
          pFilp, pFilp->private_data, RTProcSelf(), current->pid, current->comm));
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
+#if RTLNX_VER_MAX(2,6,28)
     /* This housekeeping was needed in older kernel versions to ensure that
      * the file pointer didn't get left on the polling queue. */
     vgdrvLinuxFAsync(-1, pFilp, 0);
@@ -1187,7 +1187,7 @@ bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
 }
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if RTLNX_VER_MIN(2,6,0)
 
 /** log and dbg_log parameter setter. */
 static int vgdrvLinuxParamLogGrpSet(const char *pszValue, CONST_4_15 struct kernel_param *pParam)

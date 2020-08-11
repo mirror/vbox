@@ -47,13 +47,13 @@
 # include <linux/dmar.h>
 # include <linux/intel-iommu.h>
 # include <linux/pci.h>
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 1, 0) && \
-     (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 41) || LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0))
+# if RTLNX_VER_MAX(3,1,0) && \
+     (RTLNX_VER_MAX(2,6,41) || RTLNX_VER_MIN(3,0,0))
 #  include <asm/amd_iommu.h>
 # else
 #  include <linux/amd-iommu.h>
 # endif
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)
+# if RTLNX_VER_MAX(3,2,0)
 #  define IOMMU_PRESENT()      iommu_found()
 #  define IOMMU_DOMAIN_ALLOC() iommu_domain_alloc()
 # else
@@ -86,10 +86,10 @@ MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
 #endif
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+#if RTLNX_VER_MIN(2,6,20)
 # define PCI_DEV_GET(v,d,p)            pci_get_device(v,d,p)
 # define PCI_DEV_PUT(x)                pci_dev_put(x)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
+#if RTLNX_VER_MIN(4,17,0)
 /* assume the domain number to be zero - exactly the same assumption of
  * pci_get_bus_and_slot()
  */
@@ -164,7 +164,7 @@ static int __init VBoxPciLinuxInit(void)
 #elif defined(CONFIG_PCI_STUB_MODULE)
     if (request_module(PCI_STUB_MODULE) == 0)
     {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+# if RTLNX_VER_MIN(2,6,30)
         /* find_module() is static before Linux 2.6.30 */
         mutex_lock(&module_mutex);
         g_VBoxPciGlobals.pciStubModule = find_module(PCI_STUB_MODULE_NAME);
@@ -319,7 +319,7 @@ static int vboxPciLinuxDevReset(PVBOXRAWPCIINS pIns)
 
     if (RT_LIKELY(pIns->pPciDev))
     {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+#if RTLNX_VER_MIN(2,6,28)
         if (pci_reset_function(pIns->pPciDev))
         {
             vbpci_printk(KERN_DEBUG, pIns->pPciDev,
@@ -373,7 +373,7 @@ static int vboxPciFileWrite(struct file* file, unsigned long long offset, unsign
 
     fs_save = get_fs();
     set_fs(KERNEL_DS);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+#if RTLNX_VER_MIN(4,14,0)
     ret = kernel_write(file, data, size, &offset);
 #else
     ret = vfs_write(file, data, size, &offset);
@@ -447,7 +447,7 @@ static int vboxPciLinuxDevDetachHostDriver(PVBOXRAWPCIINS pIns)
         struct file*       pFile;
         int                iCmdLen;
         const int          cMaxBuf = 128;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#if RTLNX_VER_MIN(2,6,29)
         const struct cred *pOldCreds;
         struct cred       *pNewCreds;
 #endif
@@ -468,12 +468,12 @@ static int vboxPciLinuxDevDetachHostDriver(PVBOXRAWPCIINS pIns)
             goto done;
 
         /* Somewhat ugly hack - override current credentials */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#if RTLNX_VER_MIN(2,6,29)
         pNewCreds = prepare_creds();
         if (!pNewCreds)
                 goto done;
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+# if RTLNX_VER_MIN(3,5,0)
         pNewCreds->fsuid = GLOBAL_ROOT_UID;
 # else
         pNewCreds->fsuid = 0;
@@ -532,7 +532,7 @@ static int vboxPciLinuxDevDetachHostDriver(PVBOXRAWPCIINS pIns)
         else
             printk(KERN_DEBUG "vboxpci: cannot open %s\n", szFileBuf);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#if RTLNX_VER_MIN(2,6,29)
         revert_creds(pOldCreds);
         put_cred(pNewCreds);
 #endif
@@ -559,7 +559,7 @@ static int vboxPciLinuxDevReattachHostDriver(PVBOXRAWPCIINS pIns)
         struct file*       pFile;
         int                iCmdLen;
         const int          cMaxBuf = 128;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#if RTLNX_VER_MIN(2,6,29)
         const struct cred *pOldCreds;
         struct cred       *pNewCreds;
 #endif
@@ -585,12 +585,12 @@ static int vboxPciLinuxDevReattachHostDriver(PVBOXRAWPCIINS pIns)
                               uBus, uDevFn>>3, uDevFn&7);
 
         /* Somewhat ugly hack - override current credentials */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#if RTLNX_VER_MIN(2,6,29)
         pNewCreds = prepare_creds();
         if (!pNewCreds)
             goto done;
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+# if RTLNX_VER_MIN(3,5,0)
         pNewCreds->fsuid = GLOBAL_ROOT_UID;
 # else
         pNewCreds->fsuid = 0;
@@ -626,7 +626,7 @@ static int vboxPciLinuxDevReattachHostDriver(PVBOXRAWPCIINS pIns)
         else
             printk(KERN_DEBUG "vboxpci: cannot open %s\n", szFileBuf);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#if RTLNX_VER_MIN(2,6,29)
         revert_creds(pOldCreds);
         put_cred(pNewCreds);
 #endif
@@ -669,7 +669,7 @@ DECLHIDDEN(int) vboxPciOsDevInit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
                 pIns->pPciDev = pPciDev;
                 vbpci_printk(KERN_DEBUG, pPciDev, "%s\n", __func__);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 1)
+#if RTLNX_VER_MIN(2,6,1)
                 if (pci_enable_msi(pPciDev) == 0)
                     pIns->fMsiUsed = true;
 #endif
@@ -716,7 +716,7 @@ DECLHIDDEN(int) vboxPciOsDevDeinit(PVBOXRAWPCIINS pIns, uint32_t fFlags)
 
         vboxPciLinuxDevUnregisterWithIommu(pIns);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 1)
+#if RTLNX_VER_MIN(2,6,1)
         if (pIns->fMsiUsed)
             pci_disable_msi(pPciDev);
 #endif
@@ -842,7 +842,7 @@ DECLHIDDEN(int) vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
         rcLnx = pci_request_region(pPciDev, iRegion, "vboxpci");
         if (!rcLnx)
         {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+#if RTLNX_VER_MIN(2,6,25)
             /*
              * ioremap() defaults to no caching since the 2.6 kernels.
              * ioremap_nocache() has been removed finally in 5.6-rc1.
@@ -858,7 +858,7 @@ DECLHIDDEN(int) vboxPciOsDevMapRegion(PVBOXRAWPCIINS pIns,
                 pIns->aRegionR0Mapping[iRegion] = R0PtrMapping;
             else
             {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+#if RTLNX_VER_MIN(2,6,25)
                 vbpci_printk(KERN_DEBUG, pPciDev, "ioremap() failed\n");
 #else
                 vbpci_printk(KERN_DEBUG, pPciDev, "ioremap_nocache() failed\n");
@@ -955,7 +955,7 @@ DECLHIDDEN(int) vboxPciOsDevPciCfgRead(PVBOXRAWPCIINS pIns, uint32_t Register, P
  * @param   pvDevId         The device ID, a pointer to PVBOXRAWPCIINS.
  * @param   pRegs           Register set. Removed in 2.6.19.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) && !defined(DOXYGEN_RUNNING)
+#if RTLNX_VER_MIN(2,6,19) && !defined(DOXYGEN_RUNNING)
 static irqreturn_t vboxPciOsIrqHandler(int iIrq, void *pvDevId)
 #else
 static irqreturn_t vboxPciOsIrqHandler(int iIrq, void *pvDevId, struct pt_regs *pRegs)
@@ -991,7 +991,7 @@ DECLHIDDEN(int) vboxPciOsDevRegisterIrqHandler(PVBOXRAWPCIINS pIns, PFNRAWPCIISR
                      vboxPciOsIrqHandler,
 #ifdef VBOX_WITH_SHARED_PCI_INTERRUPTS
                      /* Allow interrupts sharing. */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+# if RTLNX_VER_MIN(2,6,20)
                      IRQF_SHARED,
 # else
                      SA_SHIRQ,
@@ -1001,7 +1001,7 @@ DECLHIDDEN(int) vboxPciOsDevRegisterIrqHandler(PVBOXRAWPCIINS pIns, PFNRAWPCIISR
 
                      /* We don't allow interrupts sharing */
                      /* XXX overhaul */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)
+# if RTLNX_VER_MIN(2,6,20) && RTLNX_VER_MAX(4,1,0)
                      IRQF_DISABLED, /* keep irqs disabled when calling the action handler */
 # else
                      0,

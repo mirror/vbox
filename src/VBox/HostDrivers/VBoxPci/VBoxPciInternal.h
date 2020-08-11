@@ -37,7 +37,7 @@
 
 #ifdef RT_OS_LINUX
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35) && defined(CONFIG_IOMMU_API)
+#if RTLNX_VER_MIN(2,6,35) && defined(CONFIG_IOMMU_API)
 # define VBOX_WITH_IOMMU
 #endif
 

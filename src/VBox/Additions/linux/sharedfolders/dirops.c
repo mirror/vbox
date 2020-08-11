@@ -35,7 +35,7 @@
 #include "vfsmod.h"
 #include <iprt/err.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+#if RTLNX_VER_MAX(4,7,0)
 # define d_in_lookup(a_pDirEntry)  (d_unhashed(a_pDirEntry))
 #endif
 
@@ -279,7 +279,7 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
  * the UTF-8 code path.
  */
 DECL_NO_INLINE(static, bool) vbsf_dir_emit_nls(
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+# if RTLNX_VER_MIN(3,11,0)
                                                struct dir_context *ctx,
 # else
                                                void *opaque, filldir_t filldir, loff_t offPos,
@@ -290,7 +290,7 @@ DECL_NO_INLINE(static, bool) vbsf_dir_emit_nls(
     char szDstName[NAME_MAX];
     int rc = vbsf_nlscpy(pSuperInfo, szDstName, sizeof(szDstName), pszSrcName, cchSrcName);
     if (rc == 0) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if RTLNX_VER_MIN(3,11,0)
         return dir_emit(ctx, szDstName, strlen(szDstName), d_ino, d_type);
 #else
         return filldir(opaque, szDstName, strlen(szDstName), offPos, d_ino, d_type) == 0;
@@ -326,13 +326,13 @@ DECL_NO_INLINE(static, bool) vbsf_dir_emit_nls(
  * b. failure to compute fake inode number
  * c. filldir returns an error (see comment on that)
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if RTLNX_VER_MIN(3,11,0)
 static int vbsf_dir_iterate(struct file *dir, struct dir_context *ctx)
 #else
 static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
 #endif
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if RTLNX_VER_MIN(3,11,0)
     loff_t                  offPos = ctx->pos;
 #else
     loff_t                  offPos = dir->f_pos;
@@ -402,7 +402,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
      * however, to simplify the above skipping code).
      */
     if (offPos < 2) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if RTLNX_VER_MIN(3,11,0)
         if (offPos == 0) {
             if (dir_emit_dot(dir, ctx))
                 dir->f_pos = ctx->pos = sf_d->offPos = offPos = 1;
@@ -430,7 +430,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
             }
         }
         if (offPos == 1) {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 5)
+# if RTLNX_VER_MIN(2,5,5)
             rc = filldir(opaque, "..", 2, 1, parent_ino(VBSF_GET_F_DENTRY(dir)), DT_DIR);
 # else
             rc = filldir(opaque, "..", 2, 1, VBSF_GET_F_DENTRY(dir)->d_parent->d_inode->i_ino, DT_DIR);
@@ -505,13 +505,13 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
                 ino_t const d_ino  = (ino_t)offPos + 0xbeef; /* very fake */
                 bool        fContinue;
                 if (pSuperInfo->fNlsIsUtf8) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if RTLNX_VER_MIN(3,11,0)
                     fContinue = dir_emit(ctx, pEntry->name.String.ach, cchSrcName, d_ino, d_type);
 #else
                     fContinue = filldir(opaque, pEntry->name.String.ach, cchSrcName, offPos, d_ino, d_type) == 0;
 #endif
                 } else {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if RTLNX_VER_MIN(3,11,0)
                     fContinue = vbsf_dir_emit_nls(ctx, pEntry->name.String.ach, cchSrcName, d_ino, d_type, pSuperInfo);
 #else
                     fContinue = vbsf_dir_emit_nls(opaque, filldir, offPos, pEntry->name.String.ach, cchSrcName,
@@ -535,7 +535,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
             pEntry        = (PSHFLDIRINFO)((uintptr_t)pEntry + RT_UOFFSETOF(SHFLDIRINFO, name.String) + cbSrcName);
             offPos       += 1;
             dir->f_pos    = offPos;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if RTLNX_VER_MIN(3,11,0)
             ctx->pos      = offPos;
 #endif
             cEntriesLeft -= 1;
@@ -554,16 +554,16 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
  */
 struct file_operations vbsf_dir_fops = {
     .open           = vbsf_dir_open,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+#if RTLNX_VER_MIN(4,7,0)
     .iterate_shared = vbsf_dir_iterate,
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#elif RTLNX_VER_MIN(3,11,0)
     .iterate        = vbsf_dir_iterate,
 #else
     .readdir        = vbsf_dir_read,
 #endif
     .release        = vbsf_dir_release,
     .read           = generic_read_dir,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
+#if RTLNX_VER_MIN(2,6,37)
     .llseek         = generic_file_llseek
 #endif
 };
@@ -587,7 +587,7 @@ static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dent
     struct vbsf_inode_info *sf_new_i = (struct vbsf_inode_info *)kmalloc(sizeof(*sf_new_i), GFP_KERNEL);
     if (sf_new_i) {
         ino_t         iNodeNo = iunique(parent->i_sb, 16);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+#if RTLNX_VER_MIN(2,4,25)
         struct inode *pInode  = iget_locked(parent->i_sb, iNodeNo);
 #else
         struct inode *pInode  = iget(parent->i_sb, iNodeNo);
@@ -613,7 +613,7 @@ static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dent
              */
             if (fInstantiate)
                 d_instantiate(dentry, pInode);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+#if RTLNX_VER_MIN(2,4,25)
             unlock_new_inode(pInode);
 #endif
             return pInode;
@@ -631,7 +631,7 @@ static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dent
  *  d_add() and setting d_op. */
 DECLINLINE(void) vbsf_d_add_inode(struct dentry *dentry, struct inode *pNewInode)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+#if RTLNX_VER_MIN(2,6,38)
     Assert(dentry->d_op == &vbsf_dentry_ops); /* (taken from the superblock) */
 #else
     dentry->d_op = &vbsf_dentry_ops;
@@ -650,9 +650,9 @@ DECLINLINE(void) vbsf_d_add_inode(struct dentry *dentry, struct inode *pNewInode
  * returned in case of success and "negative" pointer on error
  */
 static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *dentry
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+#if RTLNX_VER_MIN(3,6,0)
                                         , unsigned int flags
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#elif RTLNX_VER_MIN(2,6,0)
                                         , struct nameidata *nd
 #endif
                                         )
@@ -663,9 +663,9 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
     struct dentry          *dret;
     int                     rc;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+#if RTLNX_VER_MIN(3,6,0)
     SFLOGFLOW(("vbsf_inode_lookup: parent=%p dentry=%p flags=%#x\n", parent, dentry, flags));
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#elif RTLNX_VER_MIN(2,6,0)
     SFLOGFLOW(("vbsf_inode_lookup: parent=%p dentry=%p nd=%p{.flags=%#x}\n", parent, dentry, nd, nd ? nd->flags : 0));
 #else
     SFLOGFLOW(("vbsf_inode_lookup: parent=%p dentry=%p\n", parent, dentry));
@@ -919,7 +919,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
 }
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_MIN(3,16,0)
 /**
  * More atomic way of handling creation.
  *
@@ -929,7 +929,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
  */
 static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry, struct file *file,  unsigned fOpen,
                                   umode_t fMode
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+# if RTLNX_VER_MAX(4,19,0)
                                   , int *opened
 # endif
                                   )
@@ -981,7 +981,7 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
                  * Set FMODE_CREATED according to the action taken by SHFL_CREATE
                  * and call finish_open() to do the remaining open() work.
                  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
+# if RTLNX_VER_MIN(4,19,0)
                 if (fCreated)
                     file->f_mode |= FMODE_CREATED;
                 rc = finish_open(file, dentry, generic_file_open);
@@ -1044,11 +1044,11 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
  * @param excl          Possible O_EXCL...
  * @returns 0 on success, Linux error code otherwise
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0) || defined(DOXYGEN_RUNNING)
+#if RTLNX_VER_MIN(3,6,0) || defined(DOXYGEN_RUNNING)
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+#elif RTLNX_VER_MIN(3,3,0)
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, struct nameidata *nd)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 75)
+#elif RTLNX_VER_MIN(2,5,75)
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mode, struct nameidata *nd)
 #else
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mode)
@@ -1057,7 +1057,7 @@ static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mo
     uint32_t fCreateFlags = SHFL_CF_ACT_CREATE_IF_NEW
                           | SHFL_CF_ACT_FAIL_IF_EXISTS
                           | SHFL_CF_ACCESS_READWRITE;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 75)
+#if RTLNX_VER_RANGE(2,5,75,  3,6,0)
     /* Clear the RD flag if write-only access requested.  Otherwise assume we
        need write access to create stuff. */
     if (!(nd->intent.open.flags & 1) ) {
@@ -1081,7 +1081,7 @@ static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mo
  * @param mode          file mode
  * @returns 0 on success, Linux error code otherwise
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+#if RTLNX_VER_MIN(3,3,0)
 static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, umode_t mode)
 #else
 static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, int mode)
@@ -1202,7 +1202,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
     int      rc;
     uint32_t fRename = (old_dentry->d_inode->i_mode & S_IFDIR ? SHFL_RENAME_DIR : SHFL_RENAME_FILE)
                      | SHFL_RENAME_REPLACE_IF_EXISTS;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+#if RTLNX_VER_MIN(3,15,0)
     if (!(flags & ~RENAME_NOREPLACE)) {
         if (flags & RENAME_NOREPLACE)
             fRename &= ~SHFL_RENAME_REPLACE_IF_EXISTS;
@@ -1272,7 +1272,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
                        pSuperInfo->map.root, VBSF_GET_SUPER_INFO(new_parent->i_sb)->map.root));
             rc = -EXDEV;
         }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+#if RTLNX_VER_MIN(3,15,0)
     } else {
         SFLOGFLOW(("vbsf_inode_rename: Unsupported flags: %#x\n", flags));
         rc = -EINVAL;
@@ -1284,7 +1284,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
 }
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+#if RTLNX_VER_MAX(4,9,0)
 /**
  * The traditional rename interface without any flags.
  */
@@ -1372,7 +1372,7 @@ static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const
  */
 struct inode_operations vbsf_dir_iops = {
     .lookup         = vbsf_inode_lookup,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if RTLNX_VER_MIN(3,16,0)
     .atomic_open    = vbsf_inode_atomic_open,
 #endif
     .create         = vbsf_inode_create,
@@ -1380,15 +1380,15 @@ struct inode_operations vbsf_dir_iops = {
     .mkdir          = vbsf_inode_mkdir,
     .rmdir          = vbsf_inode_rmdir,
     .unlink         = vbsf_inode_unlink,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+#if RTLNX_VER_MIN(4,9,0)
     .rename         = vbsf_inode_rename,
 #else
     .rename         = vbsf_inode_rename_no_flags,
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+# if RTLNX_VER_MIN(3,15,0)
     .rename2        = vbsf_inode_rename,
 # endif
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
+#if RTLNX_VER_MIN(2,5,18)
     .getattr        = vbsf_inode_getattr,
 #else
     .revalidate     = vbsf_inode_revalidate,

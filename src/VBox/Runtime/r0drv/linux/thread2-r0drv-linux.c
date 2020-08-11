@@ -36,7 +36,7 @@
 #include <iprt/errcore.h>
 #include "internal/thread.h"
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if RTLNX_VER_MIN(4,11,0)
     #include <uapi/linux/sched/types.h>
 #endif /* >= KERNEL_VERSION(4, 11, 0) */
 
@@ -54,7 +54,7 @@ DECLHIDDEN(int) rtThreadNativeInit(void)
 
 DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+#if RTLNX_VER_MIN(2,6,11)
     /* See comment near MAX_RT_PRIO in linux/sched.h for details on
        sched_priority. */
     int                 iSchedClass = SCHED_NORMAL;
@@ -122,7 +122,7 @@ DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 }
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 4)
+#if RTLNX_VER_MIN(2,6,4)
 /**
  * Native kernel thread wrapper function.
  *
@@ -142,7 +142,7 @@ static int rtThreadNativeMain(void *pvArg)
 
 DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 4)
+#if RTLNX_VER_MIN(2,6,4)
     struct task_struct *NativeThread;
     IPRT_LINUX_SAVE_EFL_AC();
 

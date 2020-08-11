@@ -66,7 +66,7 @@ RT_EXPORT_SYMBOL(RTR0MemUserCopyTo);
 RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
 {
     IPRT_LINUX_SAVE_EFL_AC();
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) || defined(RHEL_81)
+#if RTLNX_VER_MIN(5,0,0) || defined(RHEL_81)
     bool fRc = access_ok((void *)R3Ptr, 1);
 #else
     bool fRc = access_ok(VERIFY_READ, (void *)R3Ptr, 1);
@@ -86,11 +86,11 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     return (uintptr_t)pv >= PAGE_OFFSET;
 #else
 # error "PORT ME"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) || defined(RHEL_81)
+#if RTLNX_VER_MIN(5,0,0) || defined(RHEL_81)
     return !access_ok(pv, 1);
 #else
     return !access_ok(VERIFY_READ, pv, 1);
-#endif /* LINUX_VERSION_CODE */
+#endif
 #endif
 }
 RT_EXPORT_SYMBOL(RTR0MemKernelIsValidAddr);
@@ -112,7 +112,7 @@ RT_EXPORT_SYMBOL(RTR0MemAreKrnlAndUsrDifferent);
  */
 static int rtR0MemKernelCopyLnxWorker(void *pvDst, void const *pvSrc, size_t cb)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 55)
+#if RTLNX_VER_MIN(2,5,55)
 /* _ASM_EXTABLE was introduced in 2.6.25 from what I can tell. Using #ifndef
    here since it has to be a macro and you never know what someone might have
    backported to an earlier kernel release. */

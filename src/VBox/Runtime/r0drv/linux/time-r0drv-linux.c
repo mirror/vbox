@@ -32,9 +32,9 @@
 #include "the-linux-kernel.h"
 #include "internal/iprt.h"
 /* Make sure we have the setting functions we need for RTTimeNow: */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
+#if RTLNX_VER_MAX(2,6,16)
 # define RTTIME_INCL_TIMEVAL
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+#elif RTLNX_VER_MAX(3,17,0)
 # define RTTIME_INCL_TIMESPEC
 #endif
 #include <iprt/time.h>
@@ -44,7 +44,7 @@
 
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
+#if RTLNX_VER_MIN(5,6,0)
     /*
      * Starting with kernel version 5.6-rc3 only 64-bit time interfaces
      * are allowed in the kernel.
@@ -56,7 +56,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
     u64 = Ts.tv_sec * RT_NS_1SEC_64 + Ts.tv_nsec;
     return u64;
 
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16) /* This must match timer-r0drv-linux.c! */
+#elif RTLNX_VER_MIN(2,6,16) /* This must match timer-r0drv-linux.c! */
     /*
      * Use ktime_get_ts, this is also what clock_gettime(CLOCK_MONOTONIC,) is using.
      */
@@ -66,7 +66,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
     u64 = Ts.tv_sec * RT_NS_1SEC_64 + Ts.tv_nsec;
     return u64;
 
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 60)
+#elif RTLNX_VER_MIN(2,5,60)
     /*
      * Seems there is no way of getting to the exact source of
      * sys_clock_gettime(CLOCK_MONOTONIC, &ts) here, I think. But
@@ -188,13 +188,13 @@ RT_EXPORT_SYMBOL(RTTimeSystemMilliTS);
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     IPRT_LINUX_SAVE_EFL_AC();
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0)
+#if RTLNX_VER_MIN(3,17,0)
     struct timespec64 Ts;
     ktime_get_real_ts64(&Ts);   /* ktime_get_real_ts64 was added as a macro in 3.17, function since 4.18. */
     IPRT_LINUX_RESTORE_EFL_AC();
     return RTTimeSpecSetTimespec64(pTime, &Ts);
 
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+#elif RTLNX_VER_MIN(2,6,16)
     struct timespec Ts;
     ktime_get_real_ts(&Ts);     /* ktime_get_real_ts was removed in Linux 4.20. */
     IPRT_LINUX_RESTORE_EFL_AC();
