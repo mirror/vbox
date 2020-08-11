@@ -163,7 +163,7 @@ static const struct drm_framebuffer_funcs vbox_fb_funcs = {
 
 int vbox_framebuffer_init(struct drm_device *dev,
 			  struct vbox_framebuffer *vbox_fb,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(4,5,0) || defined(RHEL_73)
 			  const struct DRM_MODE_FB_CMD *mode_cmd,
 #else
 			  struct DRM_MODE_FB_CMD *mode_cmd,
@@ -172,7 +172,7 @@ int vbox_framebuffer_init(struct drm_device *dev,
 {
 	int ret;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
 	drm_helper_mode_fill_fb_struct(dev, &vbox_fb->base, mode_cmd);
 #else
 	drm_helper_mode_fill_fb_struct(&vbox_fb->base, mode_cmd);
@@ -190,7 +190,7 @@ int vbox_framebuffer_init(struct drm_device *dev,
 static struct drm_framebuffer *vbox_user_framebuffer_create(
 		struct drm_device *dev,
 		struct drm_file *filp,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(4,5,0) || defined(RHEL_73)
 		const struct drm_mode_fb_cmd2 *mode_cmd)
 #else
 		struct drm_mode_fb_cmd2 *mode_cmd)
@@ -200,7 +200,7 @@ static struct drm_framebuffer *vbox_user_framebuffer_create(
 	struct vbox_framebuffer *vbox_fb;
 	int ret = -ENOMEM;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) || defined(RHEL_74)
+#if RTLNX_VER_MIN(4,7,0) || defined(RHEL_74)
 	obj = drm_gem_object_lookup(filp, mode_cmd->handles[0]);
 #else
 	obj = drm_gem_object_lookup(dev, filp, mode_cmd->handles[0]);
@@ -229,7 +229,7 @@ static const struct drm_mode_config_funcs vbox_mode_funcs = {
 	.fb_create = vbox_user_framebuffer_create,
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(4,0,0) && !defined(RHEL_73)
 #define pci_iomap_range(dev, bar, offset, maxlen) \
 	ioremap(pci_resource_start(dev, bar) + (offset), maxlen)
 #endif
@@ -447,7 +447,7 @@ static void vbox_hw_fini(struct vbox_private *vbox)
 	pci_iounmap(vbox->dev->pdev, vbox->guest_heap);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+#if RTLNX_VER_MAX(4,19,0)
 int vbox_driver_load(struct drm_device *dev, unsigned long flags)
 #else
 int vbox_driver_load(struct drm_device *dev)
@@ -511,7 +511,7 @@ err_hw_fini:
 	return ret;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
 void vbox_driver_unload(struct drm_device *dev)
 #else
 int vbox_driver_unload(struct drm_device *dev)
@@ -525,7 +525,7 @@ int vbox_driver_unload(struct drm_device *dev)
 	drm_mode_config_cleanup(dev);
 	vbox_mm_fini(vbox);
 	vbox_hw_fini(vbox);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0) && !defined(RHEL_75)
+#if RTLNX_VER_MAX(4,11,0) && !defined(RHEL_75)
 	return 0;
 #endif
 }
@@ -538,7 +538,7 @@ void vbox_driver_lastclose(struct drm_device *dev)
 {
 	struct vbox_private *vbox = dev->dev_private;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) || defined(RHEL_71)
+#if RTLNX_VER_MIN(3,16,0) || defined(RHEL_71)
 	if (vbox->fbdev)
 		drm_fb_helper_restore_fbdev_mode_unlocked(&vbox->fbdev->helper);
 #else
@@ -597,7 +597,7 @@ int vbox_dumb_create(struct drm_file *file,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(3,12,0) && !defined(RHEL_73)
 int vbox_dumb_destroy(struct drm_file *file,
 		      struct drm_device *dev, u32 handle)
 {
@@ -605,7 +605,7 @@ int vbox_dumb_destroy(struct drm_file *file,
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0) && !defined(OPENSUSE_151) && !defined(OPENSUSE_125) \
+#if RTLNX_VER_MAX(4,19,0) && !defined(OPENSUSE_151) && !defined(OPENSUSE_125) \
   && !defined(RHEL_77) && !defined(RHEL_81)
 static void ttm_bo_put(struct ttm_buffer_object *bo)
 {
@@ -622,13 +622,13 @@ void vbox_gem_free_object(struct drm_gem_object *obj)
 
 static inline u64 vbox_bo_mmap_offset(struct vbox_bo *bo)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if RTLNX_VER_MIN(5,4,0)
         return drm_vma_node_offset_addr(&bo->bo.base.vma_node);
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_70)
+#elif RTLNX_VER_MAX(3,12,0) && !defined(RHEL_70)
 	return bo->bo.addr_space_offset;
 #else
 	return drm_vma_node_offset_addr(&bo->bo.vma_node);
-#endif /* >= KERNEL_VERSION(5, 4, 0) */
+#endif /* >= 5.4.0 */
 }
 
 int
@@ -641,7 +641,7 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 	struct vbox_bo *bo;
 
 	mutex_lock(&dev->struct_mutex);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) || defined(RHEL_74)
+#if RTLNX_VER_MIN(4,7,0) || defined(RHEL_74)
 	obj = drm_gem_object_lookup(file, handle);
 #else
 	obj = drm_gem_object_lookup(dev, file, handle);

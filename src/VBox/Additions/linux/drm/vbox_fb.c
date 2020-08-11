@@ -50,7 +50,7 @@
 
 #include <VBoxVideo.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,7,0) && !defined(RHEL_74)
 /**
  * Tell the host about dirty rectangles to update.
  */
@@ -126,7 +126,7 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
 #endif
 
 #ifdef CONFIG_FB_DEFERRED_IO
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) && !defined(RHEL_74)
+# if RTLNX_VER_MAX(4,7,0) && !defined(RHEL_74)
 static void drm_fb_helper_deferred_io(struct fb_info *info, struct list_head *pagelist)
 {
 	struct vbox_fbdev *fbdev = info->par;
@@ -159,7 +159,7 @@ static struct fb_deferred_io vbox_defio = {
 };
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(4,3,0) && !defined(RHEL_73)
 static void drm_fb_helper_sys_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
 {
 	struct vbox_fbdev *fbdev = info->par;
@@ -207,7 +207,7 @@ static int vboxfb_create_object(struct vbox_fbdev *fbdev,
 	struct drm_device *dev = fbdev->helper.dev;
 	u32 size;
 	struct drm_gem_object *gobj;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+#if RTLNX_VER_MAX(3,3,0)
 	u32 pitch = mode_cmd->pitch;
 #else
 	u32 pitch = mode_cmd->pitches[0];
@@ -225,7 +225,7 @@ static int vboxfb_create_object(struct vbox_fbdev *fbdev,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(4,3,0) && !defined(RHEL_73)
 static struct fb_info *drm_fb_helper_alloc_fbi(struct drm_fb_helper *helper)
 {
 	struct fb_info *info;
@@ -267,7 +267,7 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	mode_cmd.width = sizes->surface_width;
 	mode_cmd.height = sizes->surface_height;
 	pitch = mode_cmd.width * ((sizes->surface_bpp + 7) / 8);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+#if RTLNX_VER_MAX(3,3,0)
 	mode_cmd.bpp = sizes->surface_bpp;
 	mode_cmd.depth = sizes->surface_depth;
 	mode_cmd.pitch = pitch;
@@ -335,18 +335,18 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	info->apertures->ranges[0].base = pci_resource_start(dev->pdev, 0);
 	info->apertures->ranges[0].size = pci_resource_len(dev->pdev, 0);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0) || defined(RHEL_82)
+#if RTLNX_VER_MIN(5,2,0) || defined(RHEL_82)
         /*
          * The corresponding 5.2-rc1 Linux DRM kernel changes have been
          * also backported to older RedHat based 4.18.0 Linux kernels.
          */
 	drm_fb_helper_fill_info(info, &fbdev->helper, sizes);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || VBOX_RHEL_MAJ_PREREQ(7, 5)
+#elif RTLNX_VER_MIN(4,11,0) || VBOX_RHEL_MAJ_PREREQ(7, 5)
 	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->format->depth);
 #else
 	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->depth);
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) && !defined(RHEL_82)
+#if RTLNX_VER_MAX(5,2,0) && !defined(RHEL_82)
 	drm_fb_helper_fill_var(info, &fbdev->helper, sizes->fb_width,
 			       sizes->fb_height);
 #endif
@@ -370,7 +370,7 @@ static struct drm_fb_helper_funcs vbox_fb_helper_funcs = {
 	.fb_probe = vboxfb_create,
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(4,3,0) && !defined(RHEL_73)
 static void drm_fb_helper_unregister_fbi(struct drm_fb_helper *fb_helper)
 {
 	if (fb_helper && fb_helper->fbdev)
@@ -410,7 +410,7 @@ void vbox_fbdev_fini(struct drm_device *dev)
 	}
 	drm_fb_helper_fini(&fbdev->helper);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+#if RTLNX_VER_MIN(3,9,0)
 	drm_framebuffer_unregister_private(&afb->base);
 #endif
 	drm_framebuffer_cleanup(&afb->base);
@@ -429,16 +429,16 @@ int vbox_fbdev_init(struct drm_device *dev)
 	vbox->fbdev = fbdev;
 	spin_lock_init(&fbdev->dirty_lock);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,17,0) && !defined(RHEL_72)
 	fbdev->helper.funcs = &vbox_fb_helper_funcs;
 #else
 	drm_fb_helper_prepare(dev, &fbdev->helper, &vbox_fb_helper_funcs);
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0)
+#if RTLNX_VER_MIN(5,7,0)
         ret = drm_fb_helper_init(dev, &fbdev->helper);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
+#elif RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
 	ret = drm_fb_helper_init(dev, &fbdev->helper, vbox->num_crtcs);
-#else /* KERNEL_VERSION < 4.11.0 */
+#else /* < 4.11.0 */
 	ret =
 	    drm_fb_helper_init(dev, &fbdev->helper, vbox->num_crtcs,
 			       vbox->num_crtcs);
@@ -446,7 +446,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 	if (ret)
 		return ret;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 7, 0)
+#if RTLNX_VER_MAX(5,7,0)
 	ret = drm_fb_helper_single_add_all_connectors(&fbdev->helper);
 	if (ret)
 		goto err_fini;

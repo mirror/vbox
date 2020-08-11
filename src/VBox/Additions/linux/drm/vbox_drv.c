@@ -40,7 +40,7 @@
 
 #include <drm/drm_crtc_helper.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0) || defined(RHEL_81)
+#if RTLNX_VER_MIN(5,1,0) || defined(RHEL_81)
 #include <drm/drm_probe_helper.h>
 #endif
 
@@ -62,7 +62,7 @@ MODULE_DEVICE_TABLE(pci, pciidlist);
 
 static int vbox_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+#if RTLNX_VER_MAX(4,19,0)
 	return drm_get_pci_dev(pdev, ent, &driver);
 #else
 	struct drm_device *dev = NULL;
@@ -98,7 +98,7 @@ static void vbox_pci_remove(struct pci_dev *pdev)
 {
 	struct drm_device *dev = pci_get_drvdata(pdev);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+#if RTLNX_VER_MAX(4,19,0)
 	drm_put_dev(dev);
 #else
 	drm_dev_unregister(dev);
@@ -107,7 +107,7 @@ static void vbox_pci_remove(struct pci_dev *pdev)
 #endif
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,9,0) && !defined(RHEL_74)
 static void drm_fb_helper_set_suspend_unlocked(struct drm_fb_helper *fb_helper,
 					bool suspend)
 {
@@ -225,7 +225,7 @@ static struct pci_driver vbox_pci_driver = {
 	.driver.pm = &vbox_pm_ops,
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,7,0) && !defined(RHEL_74)
 /* This works around a bug in X servers prior to 1.18.4, which sometimes
  * submit more dirty rectangles than the kernel is willing to handle and
  * then disable dirty rectangle handling altogether when they see the
@@ -241,20 +241,20 @@ long vbox_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	return rc;
 }
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) && !RHEL_74 */
+#endif /* RTLNX_VER_MAX(4,7,0) && !RHEL_74 */
 
 static const struct file_operations vbox_fops = {
 	.owner = THIS_MODULE,
 	.open = drm_open,
 	.release = drm_release,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,7,0) && !defined(RHEL_74)
 	.unlocked_ioctl = vbox_ioctl,
 #else
 	.unlocked_ioctl = drm_ioctl,
 #endif
 	.mmap = vbox_mmap,
 	.poll = drm_poll,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_70)
+#if RTLNX_VER_MAX(3,12,0) && !defined(RHEL_70)
 	.fasync = drm_fasync,
 #endif
 #ifdef CONFIG_COMPAT
@@ -285,7 +285,7 @@ static int vbox_master_set(struct drm_device *dev,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,8,0) && !defined(RHEL_74)
 static void vbox_master_drop(struct drm_device *dev,
 			     struct drm_file *file_priv, bool from_release)
 #else
@@ -304,19 +304,19 @@ static void vbox_master_drop(struct drm_device *dev, struct drm_file *file_priv)
 }
 
 static struct drm_driver driver = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+#if RTLNX_VER_MAX(5,4,0)
 	.driver_features =
 	    DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ |
-# if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && !defined(RHEL_81)
+# if RTLNX_VER_MAX(5,1,0) && !defined(RHEL_81)
 	    DRIVER_IRQ_SHARED |
-# endif /* < KERNEL_VERSION(5, 1, 0) && !defined(RHEL_81) */
+# endif /* < 5.1.0 && !defined(RHEL_81) */
 	    DRIVER_PRIME,
-#else /* >= KERNEL_VERSION(5, 4, 0) */
+#else  /* >= 5.4.0 */
         .driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ,
-#endif /* < KERNEL_VERSION(5, 4, 0) */
+#endif /* <  5.4.0 */
 	.dev_priv_size = 0,
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+#if RTLNX_VER_MAX(4,19,0)
     /* Legacy hooks, but still supported. */
 	.load = vbox_driver_load,
 	.unload = vbox_driver_unload,
@@ -324,8 +324,8 @@ static struct drm_driver driver = {
 	.lastclose = vbox_driver_lastclose,
 	.master_set = vbox_master_set,
 	.master_drop = vbox_master_drop,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0) && !defined(RHEL_75) \
+#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_72)
+# if RTLNX_VER_MAX(4,14,0) && !defined(RHEL_75) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 	.set_busid = drm_pci_set_busid,
 # endif
@@ -340,14 +340,14 @@ static struct drm_driver driver = {
 	.minor = DRIVER_MINOR,
 	.patchlevel = DRIVER_PATCHLEVEL,
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+#if RTLNX_VER_MAX(4,7,0)
 	.gem_free_object = vbox_gem_free_object,
 #else
 	.gem_free_object_unlocked = vbox_gem_free_object,
 #endif
 	.dumb_create = vbox_dumb_create,
 	.dumb_map_offset = vbox_dumb_mmap_offset,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(3,12,0) && !defined(RHEL_73)
 	.dumb_destroy = vbox_dumb_destroy,
 #else
 	.dumb_destroy = drm_gem_dumb_destroy,
@@ -367,7 +367,7 @@ static struct drm_driver driver = {
 
 static int __init vbox_init(void)
 {
-#if defined(CONFIG_VGA_CONSOLE) || LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+#if defined(CONFIG_VGA_CONSOLE) || RTLNX_VER_MIN(4,7,0)
 	if (vgacon_text_force() && vbox_modeset == -1)
 		return -EINVAL;
 #endif
@@ -375,7 +375,7 @@ static int __init vbox_init(void)
 	if (vbox_modeset == 0)
 		return -EINVAL;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_73)
 	return pci_register_driver(&vbox_pci_driver);
 #else
 	return drm_pci_init(&driver, &vbox_pci_driver);
@@ -384,7 +384,7 @@ static int __init vbox_init(void)
 
 static void __exit vbox_exit(void)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_73)
 	pci_unregister_driver(&vbox_pci_driver);
 #else
 	drm_pci_exit(&driver, &vbox_pci_driver);

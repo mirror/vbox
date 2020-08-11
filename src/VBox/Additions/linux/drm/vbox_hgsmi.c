@@ -68,7 +68,7 @@ static u32 hgsmi_checksum(u32 offset,
 	return hgsmi_hash_end(checksum);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
+#if RTLNX_VER_MAX(3,13,0)
 void *gen_pool_dma_alloc(struct gen_pool *pool, size_t size, dma_addr_t *dma)
 {
 	unsigned long vaddr = gen_pool_alloc(pool, size);

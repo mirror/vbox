@@ -33,7 +33,7 @@
  */
 #include "vbox_drv.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#if RTLNX_VER_MAX(5,1,0)
 #include <drm/drm_crtc_helper.h>
 # if defined(RHEL_81)
 #  include <drm/drm_probe_helper.h>
@@ -151,7 +151,7 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
 	}
 
 	validate_or_set_position_hints(vbox);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+#if RTLNX_VER_MIN(3,9,0)
 	drm_modeset_lock_all(dev);
 #else
 	mutex_lock(&dev->mode_config.mutex);
@@ -185,7 +185,7 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
 
 		vbox_conn->vbox_crtc->disconnected = disconnected;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+#if RTLNX_VER_MIN(3,9,0)
 	drm_modeset_unlock_all(dev);
 #else
 	mutex_unlock(&dev->mode_config.mutex);
@@ -205,7 +205,7 @@ int vbox_irq_init(struct vbox_private *vbox)
 {
 	INIT_WORK(&vbox->hotplug_work, vbox_hotplug_worker);
 	vbox_update_mode_hints(vbox);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) || defined(RHEL_71)
+#if RTLNX_VER_MIN(3,16,0) || defined(RHEL_71)
 	return drm_irq_install(vbox->dev, vbox->dev->pdev->irq);
 #else
 	return drm_irq_install(vbox->dev);

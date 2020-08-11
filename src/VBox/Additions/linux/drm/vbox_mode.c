@@ -39,10 +39,10 @@
 #include "vbox_drv.h"
 #include <linux/export.h>
 #include <drm/drm_crtc_helper.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
+#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_72)
 #include <drm/drm_plane_helper.h>
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0) || defined(RHEL_81)
+#if RTLNX_VER_MIN(5,1,0) || defined(RHEL_81)
 #include <drm/drm_probe_helper.h>
 #endif
 
@@ -69,10 +69,10 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 	vbox = crtc->dev->dev_private;
 	width = mode->hdisplay ? mode->hdisplay : 640;
 	height = mode->vdisplay ? mode->vdisplay : 480;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
 	bpp = crtc->enabled ? CRTC_FB(crtc)->format->cpp[0] * 8 : 32;
 	pitch = crtc->enabled ? CRTC_FB(crtc)->pitches[0] : width * bpp / 8;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+#elif RTLNX_VER_MIN(3,3,0)
 	bpp = crtc->enabled ? CRTC_FB(crtc)->bits_per_pixel : 32;
 	pitch = crtc->enabled ? CRTC_FB(crtc)->pitches[0] : width * bpp / 8;
 #else
@@ -93,7 +93,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 	    vbox_crtc->fb_offset % (bpp / 8) == 0)
 		VBoxVideoSetModeRegisters(
 			width, height, pitch * 8 / bpp,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
 			CRTC_FB(crtc)->format->cpp[0] * 8,
 #else
 			CRTC_FB(crtc)->bits_per_pixel,
@@ -284,11 +284,11 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
 
 static int vbox_crtc_page_flip(struct drm_crtc *crtc,
 			       struct drm_framebuffer *fb,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,12,0) || defined(RHEL_75)
 			       struct drm_pending_vblank_event *event,
 			       uint32_t page_flip_flags,
 			       struct drm_modeset_acquire_ctx *ctx)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) || defined(RHEL_70)
+#elif RTLNX_VER_MIN(3,12,0) || defined(RHEL_70)
 			       struct drm_pending_vblank_event *event,
 			       uint32_t page_flip_flags)
 #else
@@ -310,7 +310,7 @@ static int vbox_crtc_page_flip(struct drm_crtc *crtc,
 	spin_lock_irqsave(&drm->event_lock, flags);
 
 	if (event)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) || defined(RHEL_72)
+#if RTLNX_VER_MIN(3,19,0) || defined(RHEL_72)
 		drm_crtc_send_vblank_event(crtc, event);
 #else
 		drm_send_vblank_event(drm, -1, event);
@@ -385,7 +385,7 @@ static void vbox_encoder_destroy(struct drm_encoder *encoder)
 	kfree(encoder);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0) && !defined(RHEL_71)
+#if RTLNX_VER_MAX(3,13,0) && !defined(RHEL_71)
 static struct drm_encoder *drm_encoder_find(struct drm_device *dev, u32 id)
 {
 	struct drm_mode_object *mo;
@@ -398,26 +398,26 @@ static struct drm_encoder *drm_encoder_find(struct drm_device *dev, u32 id)
 static struct drm_encoder *vbox_best_single_encoder(struct drm_connector
 						    *connector)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
+#if RTLNX_VER_MIN(5,5,0)
         struct drm_encoder *encoder;
 
         /* There is only one encoder per connector */
         drm_connector_for_each_possible_encoder(connector, encoder)
             return encoder;
-#else /* KERNEL_VERSION < 5.5 */
+#else /* < 5.5 */
 	int enc_id = connector->encoder_ids[0];
 
 	/* pick the encoder ids */
 	if (enc_id)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0) || \
+# if RTLNX_VER_MIN(4,15,0) || \
      (defined(CONFIG_SUSE_VERSION) && \
-         LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)) || \
+         RTLNX_VER_MIN(4,12,0)) || \
      defined(RHEL_76)
 		return drm_encoder_find(connector->dev, NULL, enc_id);
 # else
 		return drm_encoder_find(connector->dev, enc_id);
 # endif
-#endif /* KERNEL_VERSION < 5.5 */
+#endif /* < 5.5 */
 	return NULL;
 }
 
@@ -468,7 +468,7 @@ static struct drm_encoder *vbox_encoder_init(struct drm_device *dev,
 		return NULL;
 
 	drm_encoder_init(dev, &vbox_encoder->base, &vbox_enc_funcs,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(4,5,0) || defined(RHEL_73)
 			 DRM_MODE_ENCODER_DAC, NULL);
 #else
 			 DRM_MODE_ENCODER_DAC);
@@ -547,7 +547,7 @@ static void vbox_set_edid(struct drm_connector *connector, int width,
 	for (i = 0; i < EDID_SIZE - 1; ++i)
 		sum += edid[i];
 	edid[EDID_SIZE - 1] = (0x100 - (sum & 0xFF)) & 0xFF;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || defined(OPENSUSE_151) || defined(OPENSUSE_125) \
+#if RTLNX_VER_MIN(4,19,0) || defined(OPENSUSE_151) || defined(OPENSUSE_125) \
   || defined(RHEL_77) || defined(RHEL_81)
 	drm_connector_update_edid_property(connector, (struct edid *)edid);
 #else
@@ -606,7 +606,7 @@ static int vbox_get_modes(struct drm_connector *connector)
 	}
 	vbox_set_edid(connector, preferred_width, preferred_height);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) || defined(RHEL_72)
+#if RTLNX_VER_MIN(3,19,0) || defined(RHEL_72)
 	if (vbox_connector->vbox_crtc->x_hint != -1)
 		drm_object_property_set_value(&connector->base,
 			vbox->dev->mode_config.suggested_x_property,
@@ -627,7 +627,7 @@ static int vbox_get_modes(struct drm_connector *connector)
 	return num_modes;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0) && !defined(RHEL_71)
+#if RTLNX_VER_MAX(3,14,0) && !defined(RHEL_71)
 static int vbox_mode_valid(struct drm_connector *connector,
 #else
 static enum drm_mode_status vbox_mode_valid(struct drm_connector *connector,
@@ -639,7 +639,7 @@ static enum drm_mode_status vbox_mode_valid(struct drm_connector *connector,
 
 static void vbox_connector_destroy(struct drm_connector *connector)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,17,0) && !defined(RHEL_72)
 	drm_sysfs_connector_remove(connector);
 #else
 	drm_connector_unregister(connector);
@@ -710,20 +710,20 @@ static int vbox_connector_init(struct drm_device *dev,
 	connector->interlace_allowed = 0;
 	connector->doublescan_allowed = 0;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) || defined(RHEL_72)
+#if RTLNX_VER_MIN(3,19,0) || defined(RHEL_72)
 	drm_mode_create_suggested_offset_properties(dev);
 	drm_object_attach_property(&connector->base,
 				   dev->mode_config.suggested_x_property, 0);
 	drm_object_attach_property(&connector->base,
 				   dev->mode_config.suggested_y_property, 0);
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,17,0) && !defined(RHEL_72)
 	drm_sysfs_connector_add(connector);
 #else
 	drm_connector_register(connector);
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || defined(OPENSUSE_151) || defined(OPENSUSE_125) \
+#if RTLNX_VER_MIN(4,19,0) || defined(OPENSUSE_151) || defined(OPENSUSE_125) \
   || defined(RHEL_77) || defined(RHEL_81)
 	drm_connector_attach_encoder(connector, encoder);
 #else
@@ -832,7 +832,7 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 		return -EBUSY;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) || defined(RHEL_74)
+#if RTLNX_VER_MIN(4,7,0) || defined(RHEL_74)
 	obj = drm_gem_object_lookup(file_priv, handle);
 #else
 	obj = drm_gem_object_lookup(crtc->dev, file_priv, handle);
