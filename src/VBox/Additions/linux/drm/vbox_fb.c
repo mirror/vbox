@@ -50,7 +50,7 @@
 
 #include <VBoxVideo.h>
 
-#if RTLNX_VER_MAX(4,7,0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,7,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)
 /**
  * Tell the host about dirty rectangles to update.
  */
@@ -126,7 +126,7 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
 #endif
 
 #ifdef CONFIG_FB_DEFERRED_IO
-# if RTLNX_VER_MAX(4,7,0) && !defined(RHEL_74)
+# if RTLNX_VER_MAX(4,7,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)
 static void drm_fb_helper_deferred_io(struct fb_info *info, struct list_head *pagelist)
 {
 	struct vbox_fbdev *fbdev = info->par;
@@ -159,7 +159,7 @@ static struct fb_deferred_io vbox_defio = {
 };
 #endif
 
-#if RTLNX_VER_MAX(4,3,0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(4,3,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 static void drm_fb_helper_sys_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
 {
 	struct vbox_fbdev *fbdev = info->par;
@@ -225,7 +225,7 @@ static int vboxfb_create_object(struct vbox_fbdev *fbdev,
 	return 0;
 }
 
-#if RTLNX_VER_MAX(4,3,0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(4,3,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 static struct fb_info *drm_fb_helper_alloc_fbi(struct drm_fb_helper *helper)
 {
 	struct fb_info *info;
@@ -335,18 +335,18 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	info->apertures->ranges[0].base = pci_resource_start(dev->pdev, 0);
 	info->apertures->ranges[0].size = pci_resource_len(dev->pdev, 0);
 
-#if RTLNX_VER_MIN(5,2,0) || defined(RHEL_82)
+#if RTLNX_VER_MIN(5,2,0) || RTLNX_RHEL_MAJ_PREREQ(8,2)
         /*
          * The corresponding 5.2-rc1 Linux DRM kernel changes have been
          * also backported to older RedHat based 4.18.0 Linux kernels.
          */
 	drm_fb_helper_fill_info(info, &fbdev->helper, sizes);
-#elif RTLNX_VER_MIN(4,11,0) || VBOX_RHEL_MAJ_PREREQ(7, 5)
+#elif RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7, 5)
 	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->format->depth);
 #else
 	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->depth);
 #endif
-#if RTLNX_VER_MAX(5,2,0) && !defined(RHEL_82)
+#if RTLNX_VER_MAX(5,2,0) && !RTLNX_RHEL_MAJ_PREREQ(8,2)
 	drm_fb_helper_fill_var(info, &fbdev->helper, sizes->fb_width,
 			       sizes->fb_height);
 #endif
@@ -370,7 +370,7 @@ static struct drm_fb_helper_funcs vbox_fb_helper_funcs = {
 	.fb_probe = vboxfb_create,
 };
 
-#if RTLNX_VER_MAX(4,3,0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(4,3,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 static void drm_fb_helper_unregister_fbi(struct drm_fb_helper *fb_helper)
 {
 	if (fb_helper && fb_helper->fbdev)
@@ -429,14 +429,14 @@ int vbox_fbdev_init(struct drm_device *dev)
 	vbox->fbdev = fbdev;
 	spin_lock_init(&fbdev->dirty_lock);
 
-#if RTLNX_VER_MAX(3,17,0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,17,0) && !RTLNX_RHEL_MAJ_PREREQ(7,2)
 	fbdev->helper.funcs = &vbox_fb_helper_funcs;
 #else
 	drm_fb_helper_prepare(dev, &fbdev->helper, &vbox_fb_helper_funcs);
 #endif
 #if RTLNX_VER_MIN(5,7,0)
         ret = drm_fb_helper_init(dev, &fbdev->helper);
-#elif RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
+#elif RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
 	ret = drm_fb_helper_init(dev, &fbdev->helper, vbox->num_crtcs);
 #else /* < 4.11.0 */
 	ret =

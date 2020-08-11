@@ -40,7 +40,7 @@
 
 #include <drm/drm_crtc_helper.h>
 
-#if RTLNX_VER_MIN(5,1,0) || defined(RHEL_81)
+#if RTLNX_VER_MIN(5,1,0) || RTLNX_RHEL_MAJ_PREREQ(8,1)
 #include <drm/drm_probe_helper.h>
 #endif
 
@@ -107,7 +107,7 @@ static void vbox_pci_remove(struct pci_dev *pdev)
 #endif
 }
 
-#if RTLNX_VER_MAX(4,9,0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,9,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)
 static void drm_fb_helper_set_suspend_unlocked(struct drm_fb_helper *fb_helper,
 					bool suspend)
 {
@@ -225,7 +225,7 @@ static struct pci_driver vbox_pci_driver = {
 	.driver.pm = &vbox_pm_ops,
 };
 
-#if RTLNX_VER_MAX(4,7,0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,7,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)
 /* This works around a bug in X servers prior to 1.18.4, which sometimes
  * submit more dirty rectangles than the kernel is willing to handle and
  * then disable dirty rectangle handling altogether when they see the
@@ -241,20 +241,20 @@ long vbox_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	return rc;
 }
-#endif /* RTLNX_VER_MAX(4,7,0) && !RHEL_74 */
+#endif /* RTLNX_VER_MAX(4,7,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4) */
 
 static const struct file_operations vbox_fops = {
 	.owner = THIS_MODULE,
 	.open = drm_open,
 	.release = drm_release,
-#if RTLNX_VER_MAX(4,7,0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,7,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)
 	.unlocked_ioctl = vbox_ioctl,
 #else
 	.unlocked_ioctl = drm_ioctl,
 #endif
 	.mmap = vbox_mmap,
 	.poll = drm_poll,
-#if RTLNX_VER_MAX(3,12,0) && !defined(RHEL_70)
+#if RTLNX_VER_MAX(3,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,0)
 	.fasync = drm_fasync,
 #endif
 #ifdef CONFIG_COMPAT
@@ -285,7 +285,7 @@ static int vbox_master_set(struct drm_device *dev,
 	return 0;
 }
 
-#if RTLNX_VER_MAX(4,8,0) && !defined(RHEL_74)
+#if RTLNX_VER_MAX(4,8,0) && !RTLNX_RHEL_MAJ_PREREQ(7,4)
 static void vbox_master_drop(struct drm_device *dev,
 			     struct drm_file *file_priv, bool from_release)
 #else
@@ -307,9 +307,9 @@ static struct drm_driver driver = {
 #if RTLNX_VER_MAX(5,4,0)
 	.driver_features =
 	    DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ |
-# if RTLNX_VER_MAX(5,1,0) && !defined(RHEL_81)
+# if RTLNX_VER_MAX(5,1,0) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 	    DRIVER_IRQ_SHARED |
-# endif /* < 5.1.0 && !defined(RHEL_81) */
+# endif
 	    DRIVER_PRIME,
 #else  /* >= 5.4.0 */
         .driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ,
@@ -324,8 +324,8 @@ static struct drm_driver driver = {
 	.lastclose = vbox_driver_lastclose,
 	.master_set = vbox_master_set,
 	.master_drop = vbox_master_drop,
-#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_72)
-# if RTLNX_VER_MAX(4,14,0) && !defined(RHEL_75) \
+#if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
+# if RTLNX_VER_MAX(4,14,0) && !RTLNX_RHEL_MAJ_PREREQ(7,5) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 	.set_busid = drm_pci_set_busid,
 # endif
@@ -347,7 +347,7 @@ static struct drm_driver driver = {
 #endif
 	.dumb_create = vbox_dumb_create,
 	.dumb_map_offset = vbox_dumb_mmap_offset,
-#if RTLNX_VER_MAX(3,12,0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(3,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 	.dumb_destroy = vbox_dumb_destroy,
 #else
 	.dumb_destroy = drm_gem_dumb_destroy,
@@ -375,7 +375,7 @@ static int __init vbox_init(void)
 	if (vbox_modeset == 0)
 		return -EINVAL;
 
-#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,3)
 	return pci_register_driver(&vbox_pci_driver);
 #else
 	return drm_pci_init(&driver, &vbox_pci_driver);
@@ -384,7 +384,7 @@ static int __init vbox_init(void)
 
 static void __exit vbox_exit(void)
 {
-#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,3)
 	pci_unregister_driver(&vbox_pci_driver);
 #else
 	drm_pci_exit(&driver, &vbox_pci_driver);

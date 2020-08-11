@@ -35,7 +35,7 @@
 
 #if RTLNX_VER_MAX(5,1,0)
 #include <drm/drm_crtc_helper.h>
-# if defined(RHEL_81)
+# if RTLNX_RHEL_MAJ_PREREQ(8,1)
 #  include <drm/drm_probe_helper.h>
 # endif
 #else
@@ -205,7 +205,7 @@ int vbox_irq_init(struct vbox_private *vbox)
 {
 	INIT_WORK(&vbox->hotplug_work, vbox_hotplug_worker);
 	vbox_update_mode_hints(vbox);
-#if RTLNX_VER_MIN(3,16,0) || defined(RHEL_71)
+#if RTLNX_VER_MIN(3,16,0) || RTLNX_RHEL_MAJ_PREREQ(7,1)
 	return drm_irq_install(vbox->dev, vbox->dev->pdev->irq);
 #else
 	return drm_irq_install(vbox->dev);

@@ -135,50 +135,6 @@
 #include <linux/string.h>
 #include <linux/pci.h>
 
-/** @def VBOX_RHEL_MAJ_PREREQ
- * Require a minium minor release number for the given RedHat release.
- * @param a_iMajor      RHEL_MAJOR must _equal_ this.
- * @param a_iMinor      RHEL_MINOR must be greater or equal to this.
- */
-#if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
-# define VBOX_RHEL_MAJ_PREREQ(a_iMajor, a_iMinor) ((RHEL_MAJOR) == (a_iMajor) && (RHEL_MINOR) >= (a_iMinor))
-# if RHEL_MAJOR == 8 && RHEL_MINOR >= 2
-#  define RHEL_82
-# endif
-# if RHEL_MAJOR == 8 && RHEL_MINOR >= 1
-#  define RHEL_81
-# endif
-# if RHEL_MAJOR == 8 && RHEL_MINOR >= 0
-#  define RHEL_80
-# endif
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 7
-#  define RHEL_77
-# endif
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 6
-#  define RHEL_76
-# endif
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 5
-#  define RHEL_75
-# endif
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 4
-#  define RHEL_74
-# endif
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 3
-#  define RHEL_73
-# endif
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 2
-#  define RHEL_72
-# endif
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 1
-#  define RHEL_71
-# endif
-# if RHEL_MAJOR == 7 && RHEL_MINOR >= 0
-#  define RHEL_70
-# endif
-#else
-# define VBOX_RHEL_MAJ_PREREQ(a_iMajor, a_iMinor) 0
-#endif
-
 #if defined(CONFIG_SUSE_VERSION)
 # if CONFIG_SUSE_VERSION == 15 && CONFIG_SUSE_PATCHLEVEL == 1
 #  define OPENSUSE_151
@@ -188,7 +144,7 @@
 # endif
 #endif
 
-#if RTLNX_VER_MAX(3,14,0) || defined(RHEL_71)
+#if RTLNX_VER_MAX(3,14,0) || RTLNX_RHEL_MAJ_PREREQ(7,1)
 #define U8_MAX          ((u8)~0U)
 #define S8_MAX          ((s8)(U8_MAX>>1))
 #define S8_MIN          ((s8)(-S8_MAX - 1))
@@ -214,11 +170,11 @@
 #include <drm/drm_irq.h>
 #include <drm/drm_vblank.h>
 #endif /* >= 5.5.0 */
-#if RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
 #include <drm/drm_encoder.h>
 #endif
 #include <drm/drm_fb_helper.h>
-#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_72)
+#if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
 #include <drm/drm_gem.h>
 #endif
 
@@ -234,14 +190,14 @@
 
 #include "product-generated.h"
 
-#if RTLNX_VER_MAX(4,12,0) && !defined(RHEL_75)
+#if RTLNX_VER_MAX(4,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,5)
 static inline void drm_gem_object_put_unlocked(struct drm_gem_object *obj)
 {
 	drm_gem_object_unreference_unlocked(obj);
 }
 #endif
 
-#if RTLNX_VER_MAX(4,12,0) && !defined(RHEL_75)
+#if RTLNX_VER_MAX(4,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,5)
 static inline void drm_gem_object_put(struct drm_gem_object *obj)
 {
 	drm_gem_object_unreference(obj);
@@ -275,7 +231,7 @@ static inline void drm_gem_object_put(struct drm_gem_object *obj)
 /** How frequently we refresh if the guest is not providing dirty rectangles. */
 #define VBOX_REFRESH_PERIOD (HZ / 2)
 
-#if RTLNX_VER_MAX(3,13,0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,13,0) && !RTLNX_RHEL_MAJ_PREREQ(7,2)
 static inline void *devm_kcalloc(struct device *dev, size_t n, size_t size,
 				 gfp_t flags)
 {
@@ -306,7 +262,7 @@ struct vbox_private {
 	int fb_mtrr;
 
 	struct {
-#if RTLNX_VER_MAX(5,0,0) && !defined(RHEL_77) && !defined(RHEL_81)
+#if RTLNX_VER_MAX(5,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 		struct drm_global_reference mem_global_ref;
 		struct ttm_bo_global_ref bo_global_ref;
 #endif
@@ -355,7 +311,7 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags);
 #else
 int vbox_driver_load(struct drm_device *dev);
 #endif
-#if RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
 void vbox_driver_unload(struct drm_device *dev);
 #else
 int vbox_driver_unload(struct drm_device *dev);
@@ -423,7 +379,7 @@ void vbox_mode_fini(struct drm_device *dev);
 #define DRM_MODE_FB_CMD drm_mode_fb_cmd2
 #endif
 
-#if RTLNX_VER_MAX(3,15,0) && !defined(RHEL_71)
+#if RTLNX_VER_MAX(3,15,0) && !RTLNX_RHEL_MAJ_PREREQ(7,1)
 #define CRTC_FB(crtc) ((crtc)->fb)
 #else
 #define CRTC_FB(crtc) ((crtc)->primary->fb)
@@ -439,7 +395,7 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
 
 int vbox_framebuffer_init(struct drm_device *dev,
 			  struct vbox_framebuffer *vbox_fb,
-#if RTLNX_VER_MIN(4,5,0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(4,5,0) || RTLNX_RHEL_MAJ_PREREQ(7,3)
 			  const struct DRM_MODE_FB_CMD *mode_cmd,
 #else
 			  struct DRM_MODE_FB_CMD *mode_cmd,
@@ -455,7 +411,7 @@ struct vbox_bo {
 	struct ttm_placement placement;
 	struct ttm_bo_kmap_obj kmap;
 	struct drm_gem_object gem;
-#if RTLNX_VER_MAX(3,18,0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,18,0) && !RTLNX_RHEL_MAJ_PREREQ(7,2)
 	u32 placements[3];
 #else
 	struct ttm_place placements[3];
@@ -475,7 +431,7 @@ static inline struct vbox_bo *vbox_bo(struct ttm_buffer_object *bo)
 int vbox_dumb_create(struct drm_file *file,
 		     struct drm_device *dev,
 		     struct drm_mode_create_dumb *args);
-#if RTLNX_VER_MAX(3,12,0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(3,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 int vbox_dumb_destroy(struct drm_file *file,
 		      struct drm_device *dev, u32 handle);
 #endif
@@ -503,7 +459,7 @@ static inline int vbox_bo_reserve(struct vbox_bo *bo, bool no_wait)
 {
 	int ret;
 
-#if RTLNX_VER_MIN(4,7,0) || defined(RHEL_74)
+#if RTLNX_VER_MIN(4,7,0) || RTLNX_RHEL_MAJ_PREREQ(7,4)
 	ret = ttm_bo_reserve(&bo->bo, true, no_wait, NULL);
 #else
 	ret = ttm_bo_reserve(&bo->bo, true, no_wait, false, 0);
@@ -529,7 +485,7 @@ int vbox_mmap(struct file *filp, struct vm_area_struct *vma);
 int vbox_gem_prime_pin(struct drm_gem_object *obj);
 void vbox_gem_prime_unpin(struct drm_gem_object *obj);
 struct sg_table *vbox_gem_prime_get_sg_table(struct drm_gem_object *obj);
-#if RTLNX_VER_MAX(3,18,0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,18,0) && !RTLNX_RHEL_MAJ_PREREQ(7,2)
 struct drm_gem_object *vbox_gem_prime_import_sg_table(
 	struct drm_device *dev, size_t size, struct sg_table *table);
 #else

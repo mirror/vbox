@@ -163,7 +163,7 @@ static const struct drm_framebuffer_funcs vbox_fb_funcs = {
 
 int vbox_framebuffer_init(struct drm_device *dev,
 			  struct vbox_framebuffer *vbox_fb,
-#if RTLNX_VER_MIN(4,5,0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(4,5,0) || RTLNX_RHEL_MAJ_PREREQ(7,3)
 			  const struct DRM_MODE_FB_CMD *mode_cmd,
 #else
 			  struct DRM_MODE_FB_CMD *mode_cmd,
@@ -172,7 +172,7 @@ int vbox_framebuffer_init(struct drm_device *dev,
 {
 	int ret;
 
-#if RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
 	drm_helper_mode_fill_fb_struct(dev, &vbox_fb->base, mode_cmd);
 #else
 	drm_helper_mode_fill_fb_struct(&vbox_fb->base, mode_cmd);
@@ -190,7 +190,7 @@ int vbox_framebuffer_init(struct drm_device *dev,
 static struct drm_framebuffer *vbox_user_framebuffer_create(
 		struct drm_device *dev,
 		struct drm_file *filp,
-#if RTLNX_VER_MIN(4,5,0) || defined(RHEL_73)
+#if RTLNX_VER_MIN(4,5,0) || RTLNX_RHEL_MAJ_PREREQ(7,3)
 		const struct drm_mode_fb_cmd2 *mode_cmd)
 #else
 		struct drm_mode_fb_cmd2 *mode_cmd)
@@ -200,7 +200,7 @@ static struct drm_framebuffer *vbox_user_framebuffer_create(
 	struct vbox_framebuffer *vbox_fb;
 	int ret = -ENOMEM;
 
-#if RTLNX_VER_MIN(4,7,0) || defined(RHEL_74)
+#if RTLNX_VER_MIN(4,7,0) || RTLNX_RHEL_MAJ_PREREQ(7,4)
 	obj = drm_gem_object_lookup(filp, mode_cmd->handles[0]);
 #else
 	obj = drm_gem_object_lookup(dev, filp, mode_cmd->handles[0]);
@@ -229,7 +229,7 @@ static const struct drm_mode_config_funcs vbox_mode_funcs = {
 	.fb_create = vbox_user_framebuffer_create,
 };
 
-#if RTLNX_VER_MAX(4,0,0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(4,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 #define pci_iomap_range(dev, bar, offset, maxlen) \
 	ioremap(pci_resource_start(dev, bar) + (offset), maxlen)
 #endif
@@ -511,7 +511,7 @@ err_hw_fini:
 	return ret;
 }
 
-#if RTLNX_VER_MIN(4,11,0) || defined(RHEL_75)
+#if RTLNX_VER_MIN(4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
 void vbox_driver_unload(struct drm_device *dev)
 #else
 int vbox_driver_unload(struct drm_device *dev)
@@ -525,7 +525,7 @@ int vbox_driver_unload(struct drm_device *dev)
 	drm_mode_config_cleanup(dev);
 	vbox_mm_fini(vbox);
 	vbox_hw_fini(vbox);
-#if RTLNX_VER_MAX(4,11,0) && !defined(RHEL_75)
+#if RTLNX_VER_MAX(4,11,0) && !RTLNX_RHEL_MAJ_PREREQ(7,5)
 	return 0;
 #endif
 }
@@ -538,7 +538,7 @@ void vbox_driver_lastclose(struct drm_device *dev)
 {
 	struct vbox_private *vbox = dev->dev_private;
 
-#if RTLNX_VER_MIN(3,16,0) || defined(RHEL_71)
+#if RTLNX_VER_MIN(3,16,0) || RTLNX_RHEL_MAJ_PREREQ(7,1)
 	if (vbox->fbdev)
 		drm_fb_helper_restore_fbdev_mode_unlocked(&vbox->fbdev->helper);
 #else
@@ -597,7 +597,7 @@ int vbox_dumb_create(struct drm_file *file,
 	return 0;
 }
 
-#if RTLNX_VER_MAX(3,12,0) && !defined(RHEL_73)
+#if RTLNX_VER_MAX(3,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 int vbox_dumb_destroy(struct drm_file *file,
 		      struct drm_device *dev, u32 handle)
 {
@@ -606,7 +606,7 @@ int vbox_dumb_destroy(struct drm_file *file,
 #endif
 
 #if RTLNX_VER_MAX(4,19,0) && !defined(OPENSUSE_151) && !defined(OPENSUSE_125) \
-  && !defined(RHEL_77) && !defined(RHEL_81)
+  && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 static void ttm_bo_put(struct ttm_buffer_object *bo)
 {
 	ttm_bo_unref(&bo);
@@ -624,7 +624,7 @@ static inline u64 vbox_bo_mmap_offset(struct vbox_bo *bo)
 {
 #if RTLNX_VER_MIN(5,4,0)
         return drm_vma_node_offset_addr(&bo->bo.base.vma_node);
-#elif RTLNX_VER_MAX(3,12,0) && !defined(RHEL_70)
+#elif RTLNX_VER_MAX(3,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,0)
 	return bo->bo.addr_space_offset;
 #else
 	return drm_vma_node_offset_addr(&bo->bo.vma_node);
@@ -641,7 +641,7 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 	struct vbox_bo *bo;
 
 	mutex_lock(&dev->struct_mutex);
-#if RTLNX_VER_MIN(4,7,0) || defined(RHEL_74)
+#if RTLNX_VER_MIN(4,7,0) || RTLNX_RHEL_MAJ_PREREQ(7,4)
 	obj = drm_gem_object_lookup(file, handle);
 #else
 	obj = drm_gem_object_lookup(dev, file, handle);

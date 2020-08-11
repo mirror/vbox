@@ -35,7 +35,7 @@
 #include "vbox_drv.h"
 #include <drm/ttm/ttm_page_alloc.h>
 
-#if RTLNX_VER_MAX(3,18,0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,18,0) && !RTLNX_RHEL_MAJ_PREREQ(7,2)
 #define PLACEMENT_FLAGS(placement) (placement)
 #else
 #define PLACEMENT_FLAGS(placement) ((placement).flags)
@@ -46,7 +46,7 @@ static inline struct vbox_private *vbox_bdev(struct ttm_bo_device *bd)
 	return container_of(bd, struct vbox_private, ttm.bdev);
 }
 
-#if RTLNX_VER_MAX(5,0,0) && !defined(RHEL_77) && !defined(RHEL_81)
+#if RTLNX_VER_MAX(5,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 static int vbox_ttm_mem_global_init(struct drm_global_reference *ref)
 {
 	return ttm_mem_global_init(ref->object);
@@ -210,7 +210,7 @@ static struct ttm_backend_func vbox_tt_backend_func = {
 	.destroy = &vbox_ttm_backend_destroy,
 };
 
-#if (RTLNX_VER_MAX(4,17,0)) && !defined(RHEL_76) \
+#if RTLNX_VER_MAX(4,17,0) && !RTLNX_RHEL_MAJ_PREREQ(7,6) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 static struct ttm_tt *vbox_ttm_tt_create(struct ttm_bo_device *bdev,
 					 unsigned long size,
@@ -228,7 +228,7 @@ static struct ttm_tt *vbox_ttm_tt_create(struct ttm_buffer_object *bo,
 		return NULL;
 
 	tt->func = &vbox_tt_backend_func;
-#if (RTLNX_VER_MAX(4,17,0)) && !defined(RHEL_76) \
+#if RTLNX_VER_MAX(4,17,0) && !RTLNX_RHEL_MAJ_PREREQ(7,6) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 	if (ttm_tt_init(tt, bdev, size, page_flags, dummy_read_page)) {
 #else
@@ -242,7 +242,7 @@ static struct ttm_tt *vbox_ttm_tt_create(struct ttm_buffer_object *bo,
 }
 
 #if RTLNX_VER_MAX(4,17,0)
-# if (RTLNX_VER_MAX(4,16,0)) && !defined(RHEL_76) \
+# if (RTLNX_VER_MAX(4,16,0)) && !RTLNX_RHEL_MAJ_PREREQ(7,6) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 static int vbox_ttm_tt_populate(struct ttm_tt *ttm)
 {
@@ -269,20 +269,20 @@ static struct ttm_bo_driver vbox_bo_driver = {
 	.ttm_tt_unpopulate = vbox_ttm_tt_unpopulate,
 #endif
 	.init_mem_type = vbox_bo_init_mem_type,
-#if RTLNX_VER_MIN(4,10,0) || defined(RHEL_74)
+#if RTLNX_VER_MIN(4,10,0) || RTLNX_RHEL_MAJ_PREREQ(7,4)
 	.eviction_valuable = ttm_bo_eviction_valuable,
 #endif
 	.evict_flags = vbox_bo_evict_flags,
 	.verify_access = vbox_bo_verify_access,
 	.io_mem_reserve = &vbox_ttm_io_mem_reserve,
 	.io_mem_free = &vbox_ttm_io_mem_free,
-#if RTLNX_VER_MIN(4,12,0) || defined(RHEL_75)
-# if (RTLNX_VER_MAX(4,16,0)) && !defined(RHEL_76) \
+#if RTLNX_VER_MIN(4,12,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
+# if (RTLNX_VER_MAX(4,16,0)) && !RTLNX_RHEL_MAJ_PREREQ(7,6) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 	.io_mem_pfn = ttm_bo_default_io_mem_pfn,
 # endif
 #endif
-#if (RTLNX_VER_RANGE(4,7,0,  4,11,0) || defined(RHEL_74)) && !defined(RHEL_75)
+#if (RTLNX_VER_RANGE(4,7,0,  4,11,0) || RTLNX_RHEL_MAJ_PREREQ(7,4)) && !RTLNX_RHEL_MAJ_PREREQ(7,5)
 	.lru_tail = &ttm_bo_default_lru_tail,
 	.swap_lru_tail = &ttm_bo_default_swap_lru_tail,
 #endif
@@ -294,28 +294,28 @@ int vbox_mm_init(struct vbox_private *vbox)
 	struct drm_device *dev = vbox->dev;
 	struct ttm_bo_device *bdev = &vbox->ttm.bdev;
 
-#if RTLNX_VER_MAX(5,0,0) && !defined(RHEL_77) && !defined(RHEL_81)
+#if RTLNX_VER_MAX(5,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 	ret = vbox_ttm_global_init(vbox);
 	if (ret)
 		return ret;
 #endif
 	ret = ttm_bo_device_init(&vbox->ttm.bdev,
-#if RTLNX_VER_MAX(5,0,0) && !defined(RHEL_77) && !defined(RHEL_81)
+#if RTLNX_VER_MAX(5,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 				 vbox->ttm.bo_global_ref.ref.object,
 #endif
 				 &vbox_bo_driver,
-#if RTLNX_VER_MIN(3,15,0) || defined(RHEL_71)
+#if RTLNX_VER_MIN(3,15,0) || RTLNX_RHEL_MAJ_PREREQ(7,1)
 				 dev->anon_inode->i_mapping,
 #endif
 #if RTLNX_VER_MIN(5,5,0)
                                  dev->vma_offset_manager,
-#elif RTLNX_VER_MAX(5,2,0) && !defined(RHEL_82)
+#elif RTLNX_VER_MAX(5,2,0) && !RTLNX_RHEL_MAJ_PREREQ(8,2)
 				 DRM_FILE_PAGE_OFFSET,
 #endif
 				 true);
 	if (ret) {
 		DRM_ERROR("Error initialising bo driver; %d\n", ret);
-#if RTLNX_VER_MAX(5,0,0) && !defined(RHEL_77) && !defined(RHEL_81)
+#if RTLNX_VER_MAX(5,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 		goto err_ttm_global_release;
 #else
 		return ret;
@@ -341,7 +341,7 @@ int vbox_mm_init(struct vbox_private *vbox)
 
 err_device_release:
 	ttm_bo_device_release(&vbox->ttm.bdev);
-#if RTLNX_VER_MAX(5,0,0) && !defined(RHEL_77) && !defined(RHEL_81)
+#if RTLNX_VER_MAX(5,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 err_ttm_global_release:
 	vbox_ttm_global_release(vbox);
 #endif
@@ -358,7 +358,7 @@ void vbox_mm_fini(struct vbox_private *vbox)
 	arch_phys_wc_del(vbox->fb_mtrr);
 #endif
 	ttm_bo_device_release(&vbox->ttm.bdev);
-#if RTLNX_VER_MAX(5,0,0) && !defined(RHEL_77) && !defined(RHEL_81)
+#if RTLNX_VER_MAX(5,0,0) && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 	vbox_ttm_global_release(vbox);
 #endif
 }
@@ -366,7 +366,7 @@ void vbox_mm_fini(struct vbox_private *vbox)
 void vbox_ttm_placement(struct vbox_bo *bo, int domain)
 {
 	u32 c = 0;
-#if RTLNX_VER_MAX(3,18,0) && !defined(RHEL_72)
+#if RTLNX_VER_MAX(3,18,0) && !RTLNX_RHEL_MAJ_PREREQ(7,2)
 	bo->placement.fpfn = 0;
 	bo->placement.lpfn = 0;
 #else
@@ -389,7 +389,7 @@ void vbox_ttm_placement(struct vbox_bo *bo, int domain)
 	bo->placement.num_placement = c;
 	bo->placement.num_busy_placement = c;
 
-#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_72)
+#if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
 	for (i = 0; i < c; ++i) {
 		bo->placements[i].fpfn = 0;
 		bo->placements[i].lpfn = 0;
@@ -414,7 +414,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 		goto err_free_vboxbo;
 
 	vboxbo->bo.bdev = &vbox->ttm.bdev;
-#if RTLNX_VER_MAX(3,15,0) && !defined(RHEL_71)
+#if RTLNX_VER_MAX(3,15,0) && !RTLNX_RHEL_MAJ_PREREQ(7,1)
 	vboxbo->bo.bdev->dev_mapping = dev->dev_mapping;
 #endif
 
@@ -425,13 +425,13 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 
 	ret = ttm_bo_init(&vbox->ttm.bdev, &vboxbo->bo, size,
 			  ttm_bo_type_device, &vboxbo->placement,
-#if RTLNX_VER_MAX(4,17,0) && !defined(RHEL_76) \
+#if RTLNX_VER_MAX(4,17,0) && !RTLNX_RHEL_MAJ_PREREQ(7,6) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 			  align >> PAGE_SHIFT, false, NULL, acc_size,
 #else
 			  align >> PAGE_SHIFT, false, acc_size,
 #endif
-#if RTLNX_VER_MIN(3,18,0) || defined(RHEL_72)
+#if RTLNX_VER_MIN(3,18,0) || RTLNX_RHEL_MAJ_PREREQ(7,2)
 			  NULL, NULL, vbox_bo_ttm_destroy);
 #else
 			  NULL, vbox_bo_ttm_destroy);
@@ -455,7 +455,7 @@ static inline u64 vbox_bo_gpu_offset(struct vbox_bo *bo)
 
 int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 {
-#if (RTLNX_VER_MIN(4,16,0)) || defined(RHEL_76) \
+#if (RTLNX_VER_MIN(4,16,0)) || RTLNX_RHEL_MAJ_PREREQ(7,6) \
   || defined(OPENSUSE_151) || defined(OPENSUSE_125)
 	struct ttm_operation_ctx ctx = { false, false };
 #endif
@@ -474,7 +474,7 @@ int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 	for (i = 0; i < bo->placement.num_placement; i++)
 		PLACEMENT_FLAGS(bo->placements[i]) |= TTM_PL_FLAG_NO_EVICT;
 
-#if (RTLNX_VER_MAX(4,16,0)) && !defined(RHEL_76) \
+#if (RTLNX_VER_MAX(4,16,0)) && !RTLNX_RHEL_MAJ_PREREQ(7,6) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 	ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
 #else
@@ -493,7 +493,7 @@ int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 
 int vbox_bo_unpin(struct vbox_bo *bo)
 {
-#if (RTLNX_VER_MIN(4,16,0)) || defined(RHEL_76) \
+#if (RTLNX_VER_MIN(4,16,0)) || RTLNX_RHEL_MAJ_PREREQ(7,6) \
   || defined(OPENSUSE_151) || defined(OPENSUSE_125)
 	struct ttm_operation_ctx ctx = { false, false };
 #endif
@@ -510,7 +510,7 @@ int vbox_bo_unpin(struct vbox_bo *bo)
 	for (i = 0; i < bo->placement.num_placement; i++)
 		PLACEMENT_FLAGS(bo->placements[i]) &= ~TTM_PL_FLAG_NO_EVICT;
 
-#if (RTLNX_VER_MAX(4,16,0)) && !defined(RHEL_76) \
+#if (RTLNX_VER_MAX(4,16,0)) && !RTLNX_RHEL_MAJ_PREREQ(7,6) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 	ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
 #else
@@ -529,7 +529,7 @@ int vbox_bo_unpin(struct vbox_bo *bo)
  */
 int vbox_bo_push_sysram(struct vbox_bo *bo)
 {
-#if (RTLNX_VER_MIN(4,16,0)) || defined(RHEL_76) \
+#if (RTLNX_VER_MIN(4,16,0)) || RTLNX_RHEL_MAJ_PREREQ(7,6) \
   || defined(OPENSUSE_151) || defined(OPENSUSE_125)
 	struct ttm_operation_ctx ctx = { false, false };
 #endif
@@ -551,7 +551,7 @@ int vbox_bo_push_sysram(struct vbox_bo *bo)
 	for (i = 0; i < bo->placement.num_placement; i++)
 		PLACEMENT_FLAGS(bo->placements[i]) |= TTM_PL_FLAG_NO_EVICT;
 
-#if (RTLNX_VER_MAX(4,16,0)) && !defined(RHEL_76) \
+#if (RTLNX_VER_MAX(4,16,0)) && !RTLNX_RHEL_MAJ_PREREQ(7,6) \
   && !defined(OPENSUSE_151) && !defined(OPENSUSE_125)
 	ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
 #else
