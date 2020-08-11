@@ -605,7 +605,7 @@ int vbox_dumb_destroy(struct drm_file *file,
 }
 #endif
 
-#if RTLNX_VER_MAX(4,19,0) && !defined(OPENSUSE_151) && !defined(OPENSUSE_125) \
+#if RTLNX_VER_MAX(4,19,0) && !RTLNX_SUSE_MAJ_PREREQ(15,1) && !RTLNX_SUSE_MAJ_PREREQ(12,5) \
   && !RTLNX_RHEL_MAJ_PREREQ(7,7) && !RTLNX_RHEL_MAJ_PREREQ(8,1)
 static void ttm_bo_put(struct ttm_buffer_object *bo)
 {

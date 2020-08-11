@@ -135,14 +135,6 @@
 #include <linux/string.h>
 #include <linux/pci.h>
 
-#if defined(CONFIG_SUSE_VERSION)
-# if CONFIG_SUSE_VERSION == 15 && CONFIG_SUSE_PATCHLEVEL == 1
-#  define OPENSUSE_151
-# endif
-# if CONFIG_SUSE_VERSION == 12 && CONFIG_SUSE_PATCHLEVEL >= 5
-#  define OPENSUSE_125
-# endif
-#endif
 
 #if RTLNX_VER_MAX(3,14,0) || RTLNX_RHEL_MAJ_PREREQ(7,1)
 #define U8_MAX          ((u8)~0U)
