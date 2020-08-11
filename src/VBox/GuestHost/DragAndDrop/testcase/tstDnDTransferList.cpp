@@ -133,8 +133,8 @@ int main()
 #else
     RTStrPrintf(szPathTest, sizeof(szPathTest), "/usr/");
     const char szURI[] =
-        "file:///usr/local\r\n"
-        "file:///usr/bin/\r\n";
+        "file:///usr/bin/\r\n"
+        "file:///usr/lib/\r\n";
 #endif
 
     RTTEST_CHECK_RC(hTest, DnDTransferListAppendPathsFromBuffer(&list, DNDTRANSFERLISTFMT_URI, szURI, sizeof(szURI), "\r\n",
