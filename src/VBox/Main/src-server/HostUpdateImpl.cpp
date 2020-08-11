@@ -88,7 +88,7 @@ void HostUpdate::UpdateCheckTask::handler()
 
     HRESULT rc = pHostUpdate->i_updateCheckTask(this);
 
-    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFunc(("rc=%Rhrc\n", rc)); NOREF(rc);
     LogFlowFuncLeave();
 }
 

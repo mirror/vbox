@@ -46,7 +46,11 @@ static RTEXITCODE doVBoxUpdateGetSettings(int argc, char **argv, ComPtr<IVirtual
     int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    static const RTGETOPTDEF s_aOptions[] = {};
+    /** @todo r=brent decide on the best approach for options to specify here */
+    static const RTGETOPTDEF s_aOptions[] = 
+    {
+        { "--verbose",       'v',        RTGETOPT_REQ_NOTHING }
+    };
     int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0 /* First */, 0);
     AssertRCReturn(vrc, RTEXITCODE_INIT);
 
@@ -182,11 +186,11 @@ static RTEXITCODE doVBoxUpdateModifySettings(int argc, char **argv, ComPtr<IVirt
     if (pszVBoxUpdateTarget)
     {
         VBoxUpdateTarget_T enmVBoxUpdateTarget;
-        if (!strcasecmp(pszVBoxUpdateTarget, "stable"))
+        if (!RTStrICmp(pszVBoxUpdateTarget, "stable"))
             enmVBoxUpdateTarget = VBoxUpdateTarget_Stable;
-        else if (!strcasecmp(pszVBoxUpdateTarget, "withbetas"))
+        else if (!RTStrICmp(pszVBoxUpdateTarget, "withbetas"))
             enmVBoxUpdateTarget = VBoxUpdateTarget_WithBetas;
-        else if (!strcasecmp(pszVBoxUpdateTarget, "allreleases"))
+        else if (!RTStrICmp(pszVBoxUpdateTarget, "allreleases"))
             enmVBoxUpdateTarget = VBoxUpdateTarget_AllReleases;
         else
             return errorArgument("Unknown target specified: '%s'", pszVBoxUpdateTarget);
@@ -216,7 +220,11 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    static const RTGETOPTDEF s_aOptions[] = {};
+    /** @todo r=brent decide on the best approach for options to specify here */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--verbose",       'v',        RTGETOPT_REQ_NOTHING }
+    };
     int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0 /* First */, 0);
     AssertRCReturn(vrc, RTEXITCODE_INIT);
 
