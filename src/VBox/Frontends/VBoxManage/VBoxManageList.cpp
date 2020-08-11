@@ -857,7 +857,7 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Update check target:             %s\n", psz);
     systemProperties->COMGETTER(VBoxUpdateLastCheckDate)(str.asOutParam());
     RTPrintf("Last check date:                 %ls\n", str.raw());
- 
+
     return S_OK;
 }
 

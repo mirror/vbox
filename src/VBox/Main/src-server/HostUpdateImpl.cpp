@@ -47,10 +47,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// HostUpdate private data definition                                     
-//          
+// HostUpdate private data definition
+//
 ////////////////////////////////////////////////////////////////////////////////
-                                               
+
 
 class HostUpdate::UpdateCheckTask : public ThreadTask
 {
@@ -164,7 +164,7 @@ Bstr HostUpdate::platformInfo()
                     size_t  cbRead;
                     vrc = RTPipeReadBlocking(hPipeR, achBuf, sizeof(achBuf), &cbRead);
                     if (RT_SUCCESS(vrc))
-                    {   
+                    {
                         /* grow the buffer? */
                         size_t cbBufReq = offStdOutBuf + cbRead + 1;
                         if (   cbBufReq > cbStdOutBuf
@@ -224,7 +224,7 @@ Bstr HostUpdate::platformInfo()
             vrc = VERR_TRY_AGAIN; /* (take the fallback path) */
     }
 
-    LogRelFunc(("strPlatform (Linux) = %s\n", strPlatform.c_str())); 
+    LogRelFunc(("strPlatform (Linux) = %s\n", strPlatform.c_str()));
 
     if (RT_FAILURE(vrc))
 #endif /* RT_OS_LINUX */
@@ -251,7 +251,7 @@ Bstr HostUpdate::platformInfo()
         if (!strPlatform.endsWith("]"))
             strPlatform.append("]");
 
-        LogRelFunc(("strPlatform = %s\n", strPlatform.c_str())); 
+        LogRelFunc(("strPlatform = %s\n", strPlatform.c_str()));
     }
 
     return strPlatform;
@@ -286,7 +286,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     rc = mVirtualBox->COMGETTER(Revision)(&revision);
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: IVirtualBox::revision() failed: %Rrc"), __FUNCTION__, rc);
-    url.appendPrintf("_%ld", revision); // e.g. 135618 
+    url.appendPrintf("_%ld", revision); // e.g. 135618
 
     // acquire the System Properties interface
     ComPtr<ISystemProperties> pSystemProperties;
@@ -342,7 +342,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     if (FAILED(rc))
         return rc; // ISystemProperties::setTarget calls setError() on failure
 
-    LogRelFunc(("VBox update URL = %s\n", Utf8Str(url).c_str())); 
+    LogRelFunc(("VBox update URL = %s\n", Utf8Str(url).c_str()));
 
     // Setup the User-Agent headers for the GET request
     Bstr version;
@@ -393,7 +393,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     vrc = RTHttpGetBinary(hHttp, Utf8Str(url).c_str(), &pvResponse, &cbResponse);
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("%s: RTHttpGetBinary() failed: %Rrc"), __FUNCTION__, vrc);
-    
+
     RTCList<RTCString> lstHttpReply = RTCString((char *)pvResponse, (size_t)cbResponse).split(" ", RTCString::RemoveEmptyParts);
     RTHttpFreeResponse(pvResponse);
 
@@ -537,7 +537,7 @@ HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
                          tr("Checking for software update..."),
                          TRUE /* aCancelable */);
     if (FAILED(rc))
-    { 
+    {
         return rc;
     }
 
@@ -580,7 +580,7 @@ HRESULT HostUpdate::getUpdateURL(com::Utf8Str &aUpdateURL)
 }
 
 HRESULT HostUpdate::getUpdateResponse(BOOL *aUpdateNeeded)
-{   
+{
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aUpdateNeeded = m_updateNeeded;
@@ -589,7 +589,7 @@ HRESULT HostUpdate::getUpdateResponse(BOOL *aUpdateNeeded)
 }
 
 HRESULT HostUpdate::getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded)
-{   
+{
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc;

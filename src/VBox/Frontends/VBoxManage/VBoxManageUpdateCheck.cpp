@@ -47,7 +47,7 @@ static RTEXITCODE doVBoxUpdateGetSettings(int argc, char **argv, ComPtr<IVirtual
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     /** @todo r=brent decide on the best approach for options to specify here */
-    static const RTGETOPTDEF s_aOptions[] = 
+    static const RTGETOPTDEF s_aOptions[] =
     {
         { "--verbose",       'v',        RTGETOPT_REQ_NOTHING }
     };
@@ -271,7 +271,7 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
                                     __FILE__, __LINE__);
         return RTEXITCODE_FAILURE;
     }
-   
+
     /* HRESULT hrc = */ showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Check for update failed."), RTEXITCODE_FAILURE);
 
@@ -313,7 +313,7 @@ RTEXITCODE handleUpdateCheck(HandlerArg *a)
     {
         // VBoxManage updatecheck getsettings
         return doVBoxUpdateGetSettings(a->argc - 1, &a->argv[1], a->virtualBox);
-    } 
+    }
     else if (!strcmp(a->argv[0], "modifysettings"))
     {
         // VBoxManage updatecheck modifysettings key=value

@@ -11392,7 +11392,7 @@
     </attribute>
 
     <attribute name="VBoxUpdateLastCheckDate" type="wstring" readonly="no">
-      <desc> 
+      <desc>
         When was the update check last performed? If updating this attribute the
         string must be in ISO 8601 format (e.g. 2020-05-11T21:13:39.348416000Z).
       </desc>
