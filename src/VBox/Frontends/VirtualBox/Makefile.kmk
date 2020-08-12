@@ -1694,6 +1694,22 @@ FORMS :=
 TRANSLATIONS :=
 
 
+
+ifeq ($(KBUILD_TARGET),win)
+#
+# Install the visual manifest and associated PNGs.
+#
+INSTALLS.win += VirtualBoxManifest
+VirtualBoxManifest_INST = $(INST_VIRTUALBOX)
+VirtualBoxManifest_DEFPATH = $(PATH_ROOT)/src/VBox/Artwork/$(if-expr defined(VBOX_OSE),OSE,NonOSE)/
+VirtualBoxManifest_SOURCES := \
+	virtualbox-70px.png=>VirtualBox_70px.png \
+	virtualbox-150px.png=>VirtualBox_150px.png \
+       $(PATH_SUB_CURRENT)/src/platform/win/VirtualBox.VisualElementsManifest.xml
+
+endif
+
+
 ifeq ($(KBUILD_TARGET),darwin)
 #
 # Create directories for each approved language or the application
