@@ -15,14 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QCheckBox>
+#include <QComboBox>
+#include <QGridLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QStackedLayout>
+
 /* GUI includes: */
+#include "QIAdvancedSlider.h"
+#include "QITabWidget.h"
 #include "QIWidgetValidator.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
-#include "UIExtraDataManager.h"
-#include "UIMachineSettingsDisplay.h"
 #include "UIErrorString.h"
-#include "UICommon.h"
+#include "UIExtraDataManager.h"
+#include "UIFilePathSelector.h"
+#include "UIFilmContainer.h"
+#include "UIGraphicsControllerEditor.h"
+#include "UIMachineSettingsDisplay.h"
+#include "UIScaleFactorEditor.h"
+#include "UIVideoMemoryEditor.h"
 
 /* COM includes: */
 #include "CGraphicsAdapter.h"
@@ -281,6 +297,68 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 #endif
     , m_enmGraphicsControllerTypeRecommended(KGraphicsControllerType_Null)
     , m_pCache(0)
+    , m_pCheckbox3D(0)
+    , m_pCheckboxRemoteDisplay(0)
+    , m_pCheckboxMultipleConn(0)
+    , m_pCheckboxVideoCapture(0)
+    , m_pComboRemoteDisplayAuthMethod(0)
+    , m_pComboBoxCaptureMode(0)
+    , m_pComboVideoCaptureSize(0)
+    , m_pLabelVideoScreenCountMin(0)
+    , m_pLabelVideoScreenCountMax(0)
+    , m_pLabelVideoCaptureFrameRateMin(0)
+    , m_pLabelVideoCaptureFrameRateMax(0)
+    , m_pLabelVideoCaptureQualityMin(0)
+    , m_pLabelVideoCaptureQualityMed(0)
+    , m_pLabelVideoCaptureQualityMax(0)
+    , m_pLabelAudioCaptureQualityMin(0)
+    , m_pLabelAudioCaptureQualityMed(0)
+    , m_pLabelAudioCaptureQualityMax(0)
+    , m_pVideoMemoryLabel(0)
+    , m_pLabelVideoScreenCount(0)
+    , m_pGraphicsControllerLabel(0)
+    , m_pLabelVideoOptions(0)
+    , m_pLabelRemoteDisplayOptions(0)
+    , m_pLabelCaptureMode(0)
+    , m_pLabelVideoCapturePath(0)
+    , m_pLabelVideoCaptureSizeHint(0)
+    , m_pLabelVideoCaptureSize(0)
+    , m_pLabelVideoCaptureFrameRate(0)
+    , m_pLabelVideoCaptureRate(0)
+    , m_pAudioCaptureQualityLabel(0)
+    , m_pLabelVideoCaptureScreens(0)
+    , m_pLabelGuestScreenScaleFactorEditor(0)
+    , m_pLabelRemoteDisplayPort(0)
+    , m_pLabelRemoteDisplayAuthMethod(0)
+    , m_pLabelRemoteDisplayTimeout(0)
+    , m_pEditorRemoteDisplayPort(0)
+    , m_pEditorRemoteDisplayTimeout(0)
+    , m_pEditorVideoScreenCount(0)
+    , m_pEditorVideoCaptureWidth(0)
+    , m_pEditorVideoCaptureFrameRate(0)
+    , m_pEditorVideoCaptureHeight(0)
+    , m_pEditorVideoCaptureBitRate(0)
+    , m_pGraphicsControllerEditor(0)
+    , m_pScaleFactorEditor(0)
+    , m_pVideoMemoryEditor(0)
+    , m_pEditorVideoCapturePath(0)
+    , m_pScrollerVideoCaptureScreens(0)
+    , m_pSliderAudioCaptureQuality(0)
+    , m_pSliderVideoScreenCount(0)
+    , m_pSliderVideoCaptureFrameRate(0)
+    , m_pSliderVideoCaptureQuality(0)
+    , m_pTabWidget(0)
+    , m_pContainerRemoteDisplay(0)
+    , m_pContainerRemoteDisplayOptions(0)
+    , m_pContainerVideoCapture(0)
+    , m_pContainerSliderVideoCaptureFrameRate(0)
+    , m_pContainerSliderVideoCaptureQuality(0)
+    , m_pContainerSliderAudioCaptureQuality(0)
+    , m_pTabVideo(0)
+    , m_pTabRemoteDisplay(0)
+    , m_pTabVideoCapture(0)
+    , m_pContainerLayoutSliderVideoCaptureQuality(0)
+    , m_pLayout3D(0)
 {
     /* Prepare: */
     prepare();
@@ -692,8 +770,53 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsDisplay::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIMachineSettingsDisplay::retranslateUi(this);
+    m_pVideoMemoryLabel->setText(tr("Video &Memory:"));
+    m_pVideoMemoryEditor->setWhatsThis(tr("Controls the amount of video memory provided to the virtual machine."));
+    m_pLabelVideoScreenCount->setText(tr("Mo&nitor Count:"));
+    m_pSliderVideoScreenCount->setWhatsThis(tr("Controls the amount of virtual monitors provided to the virtual machine."));
+    m_pEditorVideoScreenCount->setWhatsThis(tr("Controls the amount of virtual monitors provided to the virtual machine."));
+    m_pLabelGuestScreenScaleFactorEditor->setText(tr("Scale Factor:"));
+    m_pScaleFactorEditor->setWhatsThis(tr("Controls the guest screen scale factor."));
+    m_pGraphicsControllerLabel->setText(tr("&Graphics Controller:"));
+    m_pGraphicsControllerEditor->setWhatsThis(tr("Selects the graphics adapter type the virtual machine will use."));
+    m_pLabelVideoOptions->setText(tr("Acceleration:"));
+    m_pCheckbox3D->setWhatsThis(tr("When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host."));
+    m_pCheckbox3D->setText(tr("Enable &3D Acceleration"));
+    m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabVideo), tr("&Screen"));
+    m_pCheckboxRemoteDisplay->setWhatsThis(tr("When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client."));
+    m_pCheckboxRemoteDisplay->setText(tr("&Enable Server"));
+    m_pLabelRemoteDisplayPort->setText(tr("Server &Port:"));
+    m_pEditorRemoteDisplayPort->setWhatsThis(tr("Holds the VRDP Server port number. You may specify <tt>0</tt> (zero), to select port 3389, the standard port for RDP."));
+    m_pLabelRemoteDisplayAuthMethod->setText(tr("Authentication &Method:"));
+    m_pComboRemoteDisplayAuthMethod->setWhatsThis(tr("Selects the VRDP authentication method."));
+    m_pLabelRemoteDisplayTimeout->setText(tr("Authentication &Timeout:"));
+    m_pEditorRemoteDisplayTimeout->setWhatsThis(tr("Holds the timeout for guest authentication, in milliseconds."));
+    m_pLabelRemoteDisplayOptions->setText(tr("Extended Features:"));
+    m_pCheckboxMultipleConn->setWhatsThis(tr("When checked, multiple simultaneous connections to the VM are permitted."));
+    m_pCheckboxMultipleConn->setText(tr("&Allow Multiple Connections"));
+    m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRemoteDisplay), tr("&Remote Display"));
+    m_pCheckboxVideoCapture->setWhatsThis(tr("When checked, VirtualBox will record the virtual machine session as a video file."));
+    m_pCheckboxVideoCapture->setText(tr("&Enable Recording"));
+    m_pLabelCaptureMode->setText(tr("Recording &Mode:"));
+    m_pComboBoxCaptureMode->setWhatsThis(tr("Selects the recording mode."));
+    m_pLabelVideoCapturePath->setText(tr("File &Path:"));
+    m_pEditorVideoCapturePath->setWhatsThis(tr("Holds the filename VirtualBox uses to save the recorded content."));
+    m_pLabelVideoCaptureSize->setText(tr("Frame &Size:"));
+    m_pComboVideoCaptureSize->setWhatsThis(tr("Selects the resolution (frame size) of the recorded video."));
+    m_pEditorVideoCaptureWidth->setWhatsThis(tr("Holds the <b>horizontal</b> resolution (frame width) of the recorded video."));
+    m_pEditorVideoCaptureHeight->setWhatsThis(tr("Holds the <b>vertical</b> resolution (frame height) of the recorded video."));
+    m_pLabelVideoCaptureFrameRate->setText(tr("&Frame Rate:"));
+    m_pSliderVideoCaptureFrameRate->setWhatsThis(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size."));
+    m_pEditorVideoCaptureFrameRate->setWhatsThis(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size."));
+    m_pLabelVideoCaptureRate->setText(tr("&Video Quality:"));
+    m_pSliderVideoCaptureQuality->setWhatsThis(tr("Controls the <b>quality</b>. Increasing this value will make the video look better at the cost of an increased file size."));
+    m_pEditorVideoCaptureBitRate->setWhatsThis(tr("Holds the bitrate in <b>kilobits per second</b>. Increasing this value will make the video look better at the cost of an increased file size."));
+    m_pAudioCaptureQualityLabel->setText(tr("&Audio Quality:"));
+    m_pSliderAudioCaptureQuality->setWhatsThis(tr("Controls the <b>quality</b>. Increasing this value will make the audio sound better at the cost of an increased file size."));
+    m_pLabelVideoCaptureScreens->setText(tr("&Screens:"));
+    m_pScrollerVideoCaptureScreens->setWhatsThis(QString());
+    m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabVideoCapture), tr("Re&cording"));
+
 
     /* Screen stuff: */
     CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
@@ -913,8 +1036,7 @@ void UIMachineSettingsDisplay::sltHandleRecordingComboBoxChange()
 
 void UIMachineSettingsDisplay::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsDisplay::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineDisplay;
@@ -1189,6 +1311,391 @@ void UIMachineSettingsDisplay::prepareConnections()
 
     connect(m_pComboBoxCaptureMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UIMachineSettingsDisplay::sltHandleRecordingComboBoxChange);
+}
+
+void UIMachineSettingsDisplay::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIMachineSettingsDisplay"));
+    resize(350, 300);
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    pLayoutMain->setObjectName(QStringLiteral("pLayoutMain"));
+    m_pTabWidget = new QITabWidget();
+    m_pTabWidget->setObjectName(QStringLiteral("m_pTabWidget"));
+    m_pTabVideo = new QWidget();
+    m_pTabVideo->setObjectName(QStringLiteral("m_pTabVideo"));
+    QVBoxLayout *pLayoutTabVideo = new QVBoxLayout(m_pTabVideo);
+    pLayoutTabVideo->setObjectName(QStringLiteral("pLayoutTabVideo"));
+    QWidget *pContainerVideo = new QWidget(m_pTabVideo);
+    pContainerVideo->setObjectName(QStringLiteral("pContainerVideo"));
+    QGridLayout *pLayoutContainerVideo = new QGridLayout(pContainerVideo);
+    pLayoutContainerVideo->setObjectName(QStringLiteral("pLayoutContainerVideo"));
+    pLayoutContainerVideo->setContentsMargins(0, 0, 0, 0);
+    m_pVideoMemoryLabel = new QLabel(pContainerVideo);
+    m_pVideoMemoryLabel->setObjectName(QStringLiteral("m_pVideoMemoryLabel"));
+    m_pVideoMemoryLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerVideo->addWidget(m_pVideoMemoryLabel, 0, 0, 1, 1);
+
+    m_pVideoMemoryEditor = new UIVideoMemoryEditor(pContainerVideo);
+    m_pVideoMemoryEditor->setObjectName(QStringLiteral("m_pVideoMemoryEditor"));
+    pLayoutContainerVideo->addWidget(m_pVideoMemoryEditor, 0, 1, 2, 2);
+
+    m_pLabelVideoScreenCount = new QLabel(pContainerVideo);
+    m_pLabelVideoScreenCount->setObjectName(QStringLiteral("m_pLabelVideoScreenCount"));
+    m_pLabelVideoScreenCount->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerVideo->addWidget(m_pLabelVideoScreenCount, 2, 0, 1, 1);
+
+    QGridLayout *pLayoutVideoScreenCount = new QGridLayout();
+    pLayoutVideoScreenCount->setSpacing(0);
+    pLayoutVideoScreenCount->setObjectName(QStringLiteral("pLayoutVideoScreenCount"));
+    m_pSliderVideoScreenCount = new QIAdvancedSlider(pContainerVideo);
+    m_pSliderVideoScreenCount->setObjectName(QStringLiteral("m_pSliderVideoScreenCount"));
+    m_pSliderVideoScreenCount->setOrientation(Qt::Horizontal);
+    pLayoutVideoScreenCount->addWidget(m_pSliderVideoScreenCount, 0, 0, 1, 3);
+
+    m_pLabelVideoScreenCountMin = new QLabel(pContainerVideo);
+    m_pLabelVideoScreenCountMin->setObjectName(QStringLiteral("m_pLabelVideoScreenCountMin"));
+    pLayoutVideoScreenCount->addWidget(m_pLabelVideoScreenCountMin, 1, 0, 1, 1);
+
+    QSpacerItem *pSpacerVideoScreenCount = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pLayoutVideoScreenCount->addItem(pSpacerVideoScreenCount, 1, 1, 1, 1);
+
+    m_pLabelVideoScreenCountMax = new QLabel(pContainerVideo);
+    m_pLabelVideoScreenCountMax->setObjectName(QStringLiteral("m_pLabelVideoScreenCountMax"));
+
+    pLayoutVideoScreenCount->addWidget(m_pLabelVideoScreenCountMax, 1, 2, 1, 1);
+    pLayoutContainerVideo->addLayout(pLayoutVideoScreenCount, 2, 1, 2, 1);
+
+    m_pEditorVideoScreenCount = new QSpinBox(pContainerVideo);
+    m_pEditorVideoScreenCount->setObjectName(QStringLiteral("m_pEditorVideoScreenCount"));
+    pLayoutContainerVideo->addWidget(m_pEditorVideoScreenCount, 2, 2, 1, 1);
+
+    m_pLabelGuestScreenScaleFactorEditor = new QLabel(pContainerVideo);
+    m_pLabelGuestScreenScaleFactorEditor->setObjectName(QStringLiteral("m_pLabelGuestScreenScaleFactorEditor"));
+    m_pLabelGuestScreenScaleFactorEditor->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerVideo->addWidget(m_pLabelGuestScreenScaleFactorEditor, 4, 0, 1, 1);
+
+    QGridLayout *pLayoutGuestScreenScaleFactorEditor = new QGridLayout();
+    pLayoutGuestScreenScaleFactorEditor->setSpacing(0);
+    pLayoutGuestScreenScaleFactorEditor->setObjectName(QStringLiteral("pLayoutGuestScreenScaleFactorEditor"));
+    m_pScaleFactorEditor = new UIScaleFactorEditor(pContainerVideo);
+    m_pScaleFactorEditor->setObjectName(QStringLiteral("m_pScaleFactorEditor"));
+    pLayoutGuestScreenScaleFactorEditor->addWidget(m_pScaleFactorEditor, 0, 0, 2, 3);
+    pLayoutContainerVideo->addLayout(pLayoutGuestScreenScaleFactorEditor, 4, 1, 2, 2);
+
+    m_pGraphicsControllerLabel = new QLabel(pContainerVideo);
+    m_pGraphicsControllerLabel->setObjectName(QStringLiteral("m_pGraphicsControllerLabel"));
+    m_pGraphicsControllerLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerVideo->addWidget(m_pGraphicsControllerLabel, 6, 0, 1, 1);
+
+    m_pGraphicsControllerEditor = new UIGraphicsControllerEditor(pContainerVideo);
+    m_pGraphicsControllerEditor->setObjectName(QStringLiteral("m_pGraphicsControllerEditor"));
+    pLayoutContainerVideo->addWidget(m_pGraphicsControllerEditor, 6, 1, 1, 2);
+
+    m_pLabelVideoOptions = new QLabel(pContainerVideo);
+    m_pLabelVideoOptions->setObjectName(QStringLiteral("m_pLabelVideoOptions"));
+    m_pLabelVideoOptions->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerVideo->addWidget(m_pLabelVideoOptions, 7, 0, 1, 1);
+
+    m_pLayout3D = new QStackedLayout();
+    m_pLayout3D->setObjectName(QStringLiteral("m_pLayout3D"));
+    m_pCheckbox3D = new QCheckBox(pContainerVideo);
+    m_pCheckbox3D->setObjectName(QStringLiteral("m_pCheckbox3D"));
+    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pCheckbox3D->sizePolicy().hasHeightForWidth());
+    m_pCheckbox3D->setSizePolicy(sizePolicy);
+    m_pLayout3D->addWidget(m_pCheckbox3D);
+
+    QWidget *pPlaceholder3D = new QWidget(pContainerVideo);
+    pPlaceholder3D->setObjectName(QStringLiteral("pPlaceholder3D"));
+
+    m_pLayout3D->addWidget(pPlaceholder3D);
+    pLayoutContainerVideo->addLayout(m_pLayout3D, 7, 1, 1, 1);
+    pLayoutTabVideo->addWidget(pContainerVideo);
+
+    QSpacerItem *pStretchVideo = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pLayoutTabVideo->addItem(pStretchVideo);
+
+    m_pTabWidget->addTab(m_pTabVideo, QString());
+    m_pTabRemoteDisplay = new QWidget();
+    m_pTabRemoteDisplay->setObjectName(QStringLiteral("m_pTabRemoteDisplay"));
+    QVBoxLayout *pLayoutTabRemoteDisplay = new QVBoxLayout(m_pTabRemoteDisplay);
+    pLayoutTabRemoteDisplay->setObjectName(QStringLiteral("pLayoutTabRemoteDisplay"));
+    m_pContainerRemoteDisplay = new QWidget(m_pTabRemoteDisplay);
+    m_pContainerRemoteDisplay->setObjectName(QStringLiteral("m_pContainerRemoteDisplay"));
+    QGridLayout *pLayoutContainerRemoteDisplay = new QGridLayout(m_pContainerRemoteDisplay);
+    pLayoutContainerRemoteDisplay->setObjectName(QStringLiteral("pLayoutContainerRemoteDisplay"));
+    pLayoutContainerRemoteDisplay->setContentsMargins(0, 0, 0, 0);
+    m_pCheckboxRemoteDisplay = new QCheckBox(m_pContainerRemoteDisplay);
+    m_pCheckboxRemoteDisplay->setObjectName(QStringLiteral("m_pCheckboxRemoteDisplay"));
+    m_pCheckboxRemoteDisplay->setChecked(false);
+    pLayoutContainerRemoteDisplay->addWidget(m_pCheckboxRemoteDisplay, 0, 0, 1, 2);
+
+    QSpacerItem *pSpacerContainerRemoteDisplay = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+    pLayoutContainerRemoteDisplay->addItem(pSpacerContainerRemoteDisplay, 1, 0, 1, 1);
+
+    m_pContainerRemoteDisplayOptions = new QWidget(m_pContainerRemoteDisplay);
+    m_pContainerRemoteDisplayOptions->setObjectName(QStringLiteral("m_pContainerRemoteDisplayOptions"));
+    QGridLayout *pLayoutContainerRemoteDisplayServer = new QGridLayout(m_pContainerRemoteDisplayOptions);
+    pLayoutContainerRemoteDisplayServer->setObjectName(QStringLiteral("pLayoutContainerRemoteDisplayServer"));
+    pLayoutContainerRemoteDisplayServer->setContentsMargins(0, 0, 0, 0);
+    m_pLabelRemoteDisplayPort = new QLabel(m_pContainerRemoteDisplayOptions);
+    m_pLabelRemoteDisplayPort->setObjectName(QStringLiteral("m_pLabelRemoteDisplayPort"));
+    m_pLabelRemoteDisplayPort->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerRemoteDisplayServer->addWidget(m_pLabelRemoteDisplayPort, 0, 0, 1, 1);
+
+    m_pEditorRemoteDisplayPort = new QLineEdit(m_pContainerRemoteDisplayOptions);
+    m_pEditorRemoteDisplayPort->setObjectName(QStringLiteral("m_pEditorRemoteDisplayPort"));
+    pLayoutContainerRemoteDisplayServer->addWidget(m_pEditorRemoteDisplayPort, 0, 1, 1, 1);
+
+    m_pLabelRemoteDisplayAuthMethod = new QLabel(m_pContainerRemoteDisplayOptions);
+    m_pLabelRemoteDisplayAuthMethod->setObjectName(QStringLiteral("m_pLabelRemoteDisplayAuthMethod"));
+    m_pLabelRemoteDisplayAuthMethod->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerRemoteDisplayServer->addWidget(m_pLabelRemoteDisplayAuthMethod, 1, 0, 1, 1);
+
+    m_pComboRemoteDisplayAuthMethod = new QComboBox(m_pContainerRemoteDisplayOptions);
+    m_pComboRemoteDisplayAuthMethod->setObjectName(QStringLiteral("m_pComboRemoteDisplayAuthMethod"));
+    pLayoutContainerRemoteDisplayServer->addWidget(m_pComboRemoteDisplayAuthMethod, 1, 1, 1, 1);
+
+    m_pLabelRemoteDisplayTimeout = new QLabel(m_pContainerRemoteDisplayOptions);
+    m_pLabelRemoteDisplayTimeout->setObjectName(QStringLiteral("m_pLabelRemoteDisplayTimeout"));
+    m_pLabelRemoteDisplayTimeout->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerRemoteDisplayServer->addWidget(m_pLabelRemoteDisplayTimeout, 2, 0, 1, 1);
+
+    m_pEditorRemoteDisplayTimeout = new QLineEdit(m_pContainerRemoteDisplayOptions);
+    m_pEditorRemoteDisplayTimeout->setObjectName(QStringLiteral("m_pEditorRemoteDisplayTimeout"));
+    pLayoutContainerRemoteDisplayServer->addWidget(m_pEditorRemoteDisplayTimeout, 2, 1, 1, 1);
+
+    m_pLabelRemoteDisplayOptions = new QLabel(m_pContainerRemoteDisplayOptions);
+    m_pLabelRemoteDisplayOptions->setObjectName(QStringLiteral("m_pLabelRemoteDisplayOptions"));
+    m_pLabelRemoteDisplayOptions->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pLayoutContainerRemoteDisplayServer->addWidget(m_pLabelRemoteDisplayOptions, 3, 0, 1, 1);
+
+    m_pCheckboxMultipleConn = new QCheckBox(m_pContainerRemoteDisplayOptions);
+    m_pCheckboxMultipleConn->setObjectName(QStringLiteral("m_pCheckboxMultipleConn"));
+    sizePolicy.setHeightForWidth(m_pCheckboxMultipleConn->sizePolicy().hasHeightForWidth());
+    m_pCheckboxMultipleConn->setSizePolicy(sizePolicy);
+
+    pLayoutContainerRemoteDisplayServer->addWidget(m_pCheckboxMultipleConn, 3, 1, 1, 1);
+    pLayoutContainerRemoteDisplay->addWidget(m_pContainerRemoteDisplayOptions, 1, 1, 1, 1);
+    pLayoutTabRemoteDisplay->addWidget(m_pContainerRemoteDisplay);
+
+    QSpacerItem *pStretchRemoteDisplay = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pLayoutTabRemoteDisplay->addItem(pStretchRemoteDisplay);
+
+    m_pTabWidget->addTab(m_pTabRemoteDisplay, QString());
+    m_pTabVideoCapture = new QWidget();
+    m_pTabVideoCapture->setObjectName(QStringLiteral("m_pTabVideoCapture"));
+    QVBoxLayout *pLayoutTabVideoCapture = new QVBoxLayout(m_pTabVideoCapture);
+    pLayoutTabVideoCapture->setObjectName(QStringLiteral("pLayoutTabVideoCapture"));
+    m_pContainerVideoCapture = new QWidget(m_pTabVideoCapture);
+    m_pContainerVideoCapture->setObjectName(QStringLiteral("m_pContainerVideoCapture"));
+    QGridLayout *pLayoutContainerVideoCapture = new QGridLayout(m_pContainerVideoCapture);
+    pLayoutContainerVideoCapture->setObjectName(QStringLiteral("pLayoutContainerVideoCapture"));
+    pLayoutContainerVideoCapture->setContentsMargins(0, 0, 0, 0);
+    m_pCheckboxVideoCapture = new QCheckBox(m_pContainerVideoCapture);
+    m_pCheckboxVideoCapture->setObjectName(QStringLiteral("m_pCheckboxVideoCapture"));
+    m_pCheckboxVideoCapture->setChecked(false);
+    pLayoutContainerVideoCapture->addWidget(m_pCheckboxVideoCapture, 0, 0, 1, 2);
+
+    QSpacerItem *pLeftSpacer = new QSpacerItem(20, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pLayoutContainerVideoCapture->addItem(pLeftSpacer, 1, 0, 1, 1);
+
+    QWidget *pContainerVideoCaptureOptions = new QWidget(m_pContainerVideoCapture);
+    pContainerVideoCaptureOptions->setObjectName(QStringLiteral("pContainerVideoCaptureOptions"));
+    QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    sizePolicy1.setHorizontalStretch(1);
+    sizePolicy1.setVerticalStretch(0);
+    sizePolicy1.setHeightForWidth(pContainerVideoCaptureOptions->sizePolicy().hasHeightForWidth());
+    pContainerVideoCaptureOptions->setSizePolicy(sizePolicy1);
+    QGridLayout *pContainerLayoutVideoCapture = new QGridLayout(pContainerVideoCaptureOptions);
+    pContainerLayoutVideoCapture->setObjectName(QStringLiteral("pContainerLayoutVideoCapture"));
+    pContainerLayoutVideoCapture->setContentsMargins(0, 0, 0, 0);
+    m_pLabelCaptureMode = new QLabel(pContainerVideoCaptureOptions);
+    m_pLabelCaptureMode->setObjectName(QStringLiteral("m_pLabelCaptureMode"));
+    m_pLabelCaptureMode->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutVideoCapture->addWidget(m_pLabelCaptureMode, 0, 0, 1, 1);
+
+    m_pComboBoxCaptureMode = new QComboBox(pContainerVideoCaptureOptions);
+    m_pComboBoxCaptureMode->setObjectName(QStringLiteral("m_pComboBoxCaptureMode"));
+    pContainerLayoutVideoCapture->addWidget(m_pComboBoxCaptureMode, 0, 1, 1, 3);
+
+    m_pLabelVideoCapturePath = new QLabel(pContainerVideoCaptureOptions);
+    m_pLabelVideoCapturePath->setObjectName(QStringLiteral("m_pLabelVideoCapturePath"));
+    m_pLabelVideoCapturePath->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCapturePath, 1, 0, 1, 1);
+
+    m_pEditorVideoCapturePath = new UIFilePathSelector(pContainerVideoCaptureOptions);
+    m_pEditorVideoCapturePath->setObjectName(QStringLiteral("m_pEditorVideoCapturePath"));
+    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCapturePath, 1, 1, 1, 3);
+
+    m_pLabelVideoCaptureSize = new QLabel(pContainerVideoCaptureOptions);
+    m_pLabelVideoCaptureSize->setObjectName(QStringLiteral("m_pLabelVideoCaptureSize"));
+    m_pLabelVideoCaptureSize->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureSize, 2, 0, 1, 1);
+
+    m_pComboVideoCaptureSize = new QComboBox(pContainerVideoCaptureOptions);
+    m_pComboVideoCaptureSize->setObjectName(QStringLiteral("m_pComboVideoCaptureSize"));
+    QSizePolicy sizePolicy2(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy2.setHorizontalStretch(1);
+    sizePolicy2.setVerticalStretch(0);
+    sizePolicy2.setHeightForWidth(m_pComboVideoCaptureSize->sizePolicy().hasHeightForWidth());
+    m_pComboVideoCaptureSize->setSizePolicy(sizePolicy2);
+    pContainerLayoutVideoCapture->addWidget(m_pComboVideoCaptureSize, 2, 1, 1, 1);
+
+    m_pEditorVideoCaptureWidth = new QSpinBox(pContainerVideoCaptureOptions);
+    m_pEditorVideoCaptureWidth->setObjectName(QStringLiteral("m_pEditorVideoCaptureWidth"));
+    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCaptureWidth, 2, 2, 1, 1);
+
+    m_pEditorVideoCaptureHeight = new QSpinBox(pContainerVideoCaptureOptions);
+    m_pEditorVideoCaptureHeight->setObjectName(QStringLiteral("m_pEditorVideoCaptureHeight"));
+    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCaptureHeight, 2, 3, 1, 1);
+
+    m_pLabelVideoCaptureFrameRate = new QLabel(pContainerVideoCaptureOptions);
+    m_pLabelVideoCaptureFrameRate->setObjectName(QStringLiteral("m_pLabelVideoCaptureFrameRate"));
+    m_pLabelVideoCaptureFrameRate->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureFrameRate, 3, 0, 1, 1);
+
+    m_pContainerSliderVideoCaptureFrameRate = new QWidget(pContainerVideoCaptureOptions);
+    m_pContainerSliderVideoCaptureFrameRate->setObjectName(QStringLiteral("m_pContainerSliderVideoCaptureFrameRate"));
+    QGridLayout *pContainerLayoutSliderVideoCaptureFrameRate = new QGridLayout(m_pContainerSliderVideoCaptureFrameRate);
+    pContainerLayoutSliderVideoCaptureFrameRate->setSpacing(0);
+    pContainerLayoutSliderVideoCaptureFrameRate->setObjectName(QStringLiteral("pContainerLayoutSliderVideoCaptureFrameRate"));
+    pContainerLayoutSliderVideoCaptureFrameRate->setContentsMargins(0, 0, 0, 0);
+    m_pSliderVideoCaptureFrameRate = new QIAdvancedSlider(m_pContainerSliderVideoCaptureFrameRate);
+    m_pSliderVideoCaptureFrameRate->setObjectName(QStringLiteral("m_pSliderVideoCaptureFrameRate"));
+    m_pSliderVideoCaptureFrameRate->setOrientation(Qt::Horizontal);
+    pContainerLayoutSliderVideoCaptureFrameRate->addWidget(m_pSliderVideoCaptureFrameRate, 0, 0, 1, 3);
+
+    m_pLabelVideoCaptureFrameRateMin = new QLabel(m_pContainerSliderVideoCaptureFrameRate);
+    m_pLabelVideoCaptureFrameRateMin->setObjectName(QStringLiteral("m_pLabelVideoCaptureFrameRateMin"));
+    pContainerLayoutSliderVideoCaptureFrameRate->addWidget(m_pLabelVideoCaptureFrameRateMin, 1, 0, 1, 1);
+
+    QSpacerItem *pStretchVideoCaptureFrameRate = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pContainerLayoutSliderVideoCaptureFrameRate->addItem(pStretchVideoCaptureFrameRate, 1, 1, 1, 1);
+
+    m_pLabelVideoCaptureFrameRateMax = new QLabel(m_pContainerSliderVideoCaptureFrameRate);
+    m_pLabelVideoCaptureFrameRateMax->setObjectName(QStringLiteral("m_pLabelVideoCaptureFrameRateMax"));
+    pContainerLayoutSliderVideoCaptureFrameRate->addWidget(m_pLabelVideoCaptureFrameRateMax, 1, 2, 1, 1);
+    pContainerLayoutVideoCapture->addWidget(m_pContainerSliderVideoCaptureFrameRate, 3, 1, 2, 1);
+
+    m_pEditorVideoCaptureFrameRate = new QSpinBox(pContainerVideoCaptureOptions);
+    m_pEditorVideoCaptureFrameRate->setObjectName(QStringLiteral("m_pEditorVideoCaptureFrameRate"));
+    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCaptureFrameRate, 3, 2, 1, 2);
+
+    m_pLabelVideoCaptureRate = new QLabel(pContainerVideoCaptureOptions);
+    m_pLabelVideoCaptureRate->setObjectName(QStringLiteral("m_pLabelVideoCaptureRate"));
+    m_pLabelVideoCaptureRate->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureRate, 5, 0, 1, 1);
+
+    m_pContainerSliderVideoCaptureQuality = new QWidget(pContainerVideoCaptureOptions);
+    m_pContainerSliderVideoCaptureQuality->setObjectName(QStringLiteral("m_pContainerSliderVideoCaptureQuality"));
+    m_pContainerLayoutSliderVideoCaptureQuality = new QGridLayout(m_pContainerSliderVideoCaptureQuality);
+    m_pContainerLayoutSliderVideoCaptureQuality->setSpacing(0);
+    m_pContainerLayoutSliderVideoCaptureQuality->setObjectName(QStringLiteral("m_pContainerLayoutSliderVideoCaptureQuality"));
+    m_pContainerLayoutSliderVideoCaptureQuality->setContentsMargins(0, 0, 0, 0);
+    m_pSliderVideoCaptureQuality = new QIAdvancedSlider(m_pContainerSliderVideoCaptureQuality);
+    m_pSliderVideoCaptureQuality->setObjectName(QStringLiteral("m_pSliderVideoCaptureQuality"));
+    m_pSliderVideoCaptureQuality->setOrientation(Qt::Horizontal);
+    m_pContainerLayoutSliderVideoCaptureQuality->addWidget(m_pSliderVideoCaptureQuality, 0, 0, 1, 5);
+
+    m_pLabelVideoCaptureQualityMin = new QLabel(m_pContainerSliderVideoCaptureQuality);
+    m_pLabelVideoCaptureQualityMin->setObjectName(QStringLiteral("m_pLabelVideoCaptureQualityMin"));
+    m_pContainerLayoutSliderVideoCaptureQuality->addWidget(m_pLabelVideoCaptureQualityMin, 1, 0, 1, 1);
+
+    QSpacerItem *pStretchVideoCaptureQualityLeft = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    m_pContainerLayoutSliderVideoCaptureQuality->addItem(pStretchVideoCaptureQualityLeft, 1, 1, 1, 1);
+
+    m_pLabelVideoCaptureQualityMed = new QLabel(m_pContainerSliderVideoCaptureQuality);
+    m_pLabelVideoCaptureQualityMed->setObjectName(QStringLiteral("m_pLabelVideoCaptureQualityMed"));
+    m_pContainerLayoutSliderVideoCaptureQuality->addWidget(m_pLabelVideoCaptureQualityMed, 1, 2, 1, 1);
+
+    QSpacerItem *pStretchVideoCaptureQualityRight = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    m_pContainerLayoutSliderVideoCaptureQuality->addItem(pStretchVideoCaptureQualityRight, 1, 3, 1, 1);
+
+    m_pLabelVideoCaptureQualityMax = new QLabel(m_pContainerSliderVideoCaptureQuality);
+    m_pLabelVideoCaptureQualityMax->setObjectName(QStringLiteral("m_pLabelVideoCaptureQualityMax"));
+
+    m_pContainerLayoutSliderVideoCaptureQuality->addWidget(m_pLabelVideoCaptureQualityMax, 1, 4, 1, 1);
+    pContainerLayoutVideoCapture->addWidget(m_pContainerSliderVideoCaptureQuality, 5, 1, 2, 1);
+
+    m_pEditorVideoCaptureBitRate = new QSpinBox(pContainerVideoCaptureOptions);
+    m_pEditorVideoCaptureBitRate->setObjectName(QStringLiteral("m_pEditorVideoCaptureBitRate"));
+    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCaptureBitRate, 5, 2, 1, 2);
+
+    m_pAudioCaptureQualityLabel = new QLabel(pContainerVideoCaptureOptions);
+    m_pAudioCaptureQualityLabel->setObjectName(QStringLiteral("m_pAudioCaptureQualityLabel"));
+    m_pAudioCaptureQualityLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutVideoCapture->addWidget(m_pAudioCaptureQualityLabel, 7, 0, 1, 1);
+
+    m_pContainerSliderAudioCaptureQuality = new QWidget(pContainerVideoCaptureOptions);
+    m_pContainerSliderAudioCaptureQuality->setObjectName(QStringLiteral("m_pContainerSliderAudioCaptureQuality"));
+    QGridLayout *pContainerLayoutSliderAudioCaptureQuality = new QGridLayout(m_pContainerSliderAudioCaptureQuality);
+    pContainerLayoutSliderAudioCaptureQuality->setSpacing(0);
+    pContainerLayoutSliderAudioCaptureQuality->setObjectName(QStringLiteral("pContainerLayoutSliderAudioCaptureQuality"));
+    pContainerLayoutSliderAudioCaptureQuality->setContentsMargins(0, 0, 0, 0);
+    m_pSliderAudioCaptureQuality = new QIAdvancedSlider(m_pContainerSliderAudioCaptureQuality);
+    m_pSliderAudioCaptureQuality->setObjectName(QStringLiteral("m_pSliderAudioCaptureQuality"));
+    m_pSliderAudioCaptureQuality->setOrientation(Qt::Horizontal);
+    pContainerLayoutSliderAudioCaptureQuality->addWidget(m_pSliderAudioCaptureQuality, 0, 0, 1, 5);
+
+    m_pLabelAudioCaptureQualityMin = new QLabel(m_pContainerSliderAudioCaptureQuality);
+    m_pLabelAudioCaptureQualityMin->setObjectName(QStringLiteral("m_pLabelAudioCaptureQualityMin"));
+
+    pContainerLayoutSliderAudioCaptureQuality->addWidget(m_pLabelAudioCaptureQualityMin, 1, 0, 1, 1);
+
+    QSpacerItem *pStretchAudioCaptureQualityLeft = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pContainerLayoutSliderAudioCaptureQuality->addItem(pStretchAudioCaptureQualityLeft, 1, 1, 1, 1);
+
+    m_pLabelAudioCaptureQualityMed = new QLabel(m_pContainerSliderAudioCaptureQuality);
+    m_pLabelAudioCaptureQualityMed->setObjectName(QStringLiteral("m_pLabelAudioCaptureQualityMed"));
+    pContainerLayoutSliderAudioCaptureQuality->addWidget(m_pLabelAudioCaptureQualityMed, 1, 2, 1, 1);
+
+    QSpacerItem *pStretchAudioCaptureQualityRight = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pContainerLayoutSliderAudioCaptureQuality->addItem(pStretchAudioCaptureQualityRight, 1, 3, 1, 1);
+
+    m_pLabelAudioCaptureQualityMax = new QLabel(m_pContainerSliderAudioCaptureQuality);
+    m_pLabelAudioCaptureQualityMax->setObjectName(QStringLiteral("m_pLabelAudioCaptureQualityMax"));
+
+    pContainerLayoutSliderAudioCaptureQuality->addWidget(m_pLabelAudioCaptureQualityMax, 1, 4, 1, 1);
+    pContainerLayoutVideoCapture->addWidget(m_pContainerSliderAudioCaptureQuality, 7, 1, 2, 1);
+
+    m_pLabelVideoCaptureSizeHint = new QLabel(pContainerVideoCaptureOptions);
+    m_pLabelVideoCaptureSizeHint->setObjectName(QStringLiteral("m_pLabelVideoCaptureSizeHint"));
+    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureSizeHint, 9, 1, 1, 1);
+
+    m_pLabelVideoCaptureScreens = new QLabel(pContainerVideoCaptureOptions);
+    m_pLabelVideoCaptureScreens->setObjectName(QStringLiteral("m_pLabelVideoCaptureScreens"));
+    m_pLabelVideoCaptureScreens->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignTop);
+    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureScreens, 10, 0, 1, 1);
+
+    m_pScrollerVideoCaptureScreens = new UIFilmContainer(pContainerVideoCaptureOptions);
+    m_pScrollerVideoCaptureScreens->setObjectName(QStringLiteral("m_pScrollerVideoCaptureScreens"));
+    pContainerLayoutVideoCapture->addWidget(m_pScrollerVideoCaptureScreens, 10, 1, 1, 3);
+
+    pLayoutContainerVideoCapture->addWidget(pContainerVideoCaptureOptions, 1, 1, 1, 1);
+    pLayoutTabVideoCapture->addWidget(m_pContainerVideoCapture);
+
+    QSpacerItem *pStretchVideoCapture = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pLayoutTabVideoCapture->addItem(pStretchVideoCapture);
+    m_pTabWidget->addTab(m_pTabVideoCapture, QString());
+    pLayoutMain->addWidget(m_pTabWidget);
+
+    m_pLabelVideoScreenCount->setBuddy(m_pEditorVideoScreenCount);
+    m_pLabelRemoteDisplayPort->setBuddy(m_pEditorRemoteDisplayPort);
+    m_pLabelRemoteDisplayAuthMethod->setBuddy(m_pComboRemoteDisplayAuthMethod);
+    m_pLabelRemoteDisplayTimeout->setBuddy(m_pEditorRemoteDisplayTimeout);
+    m_pLabelCaptureMode->setBuddy(m_pEditorVideoCapturePath);
+    m_pLabelVideoCapturePath->setBuddy(m_pEditorVideoCapturePath);
+    m_pLabelVideoCaptureSize->setBuddy(m_pComboVideoCaptureSize);
+    m_pLabelVideoCaptureFrameRate->setBuddy(m_pSliderVideoCaptureFrameRate);
+    m_pLabelVideoCaptureRate->setBuddy(m_pSliderVideoCaptureQuality);
+    m_pAudioCaptureQualityLabel->setBuddy(m_pSliderAudioCaptureQuality);
+    m_pLabelVideoCaptureScreens->setBuddy(m_pScrollerVideoCaptureScreens);
+
+    QObject::connect(m_pCheckboxRemoteDisplay, &QCheckBox::toggled, m_pContainerRemoteDisplayOptions, &QWidget::setEnabled);
 }
 
 void UIMachineSettingsDisplay::cleanup()

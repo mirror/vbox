@@ -23,19 +23,31 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIMachineSettingsDisplay.gen.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QComboBox;
+class QLabel;
+class QLineEdit;
+class QGridLayout;
+class QSpinBox;
+class QStackedLayout;
+class QIAdvancedSlider;
+class QITabWidget;
 class UIActionPool;
 struct UIDataSettingsMachineDisplay;
+class UIFilePathSelector;
+class UIFilmContainer;
+class UIGraphicsControllerEditor;
+class UIScaleFactorEditor;
+class UIVideoMemoryEditor;
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UISettingsCacheMachineDisplay;
 
 /** Machine settings: Display page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsDisplay : public UISettingsPageMachine,
-                                                      public Ui::UIMachineSettingsDisplay
+class SHARED_LIBRARY_STUFF UIMachineSettingsDisplay : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -133,6 +145,8 @@ private:
     void prepareTabRecording();
     /** Prepares connections. */
     void prepareConnections();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
 
@@ -173,6 +187,72 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineDisplay *m_pCache;
+
+    /** @name Widgets
+     * @{ */
+       QCheckBox *m_pCheckbox3D;
+       QCheckBox *m_pCheckboxRemoteDisplay;
+       QCheckBox *m_pCheckboxMultipleConn;
+       QCheckBox *m_pCheckboxVideoCapture;
+       QComboBox *m_pComboRemoteDisplayAuthMethod;
+       QComboBox *m_pComboBoxCaptureMode;
+       QComboBox *m_pComboVideoCaptureSize;
+       QLabel *m_pLabelVideoScreenCountMin;
+       QLabel *m_pLabelVideoScreenCountMax;
+       QLabel *m_pLabelVideoCaptureFrameRateMin;
+       QLabel *m_pLabelVideoCaptureFrameRateMax;
+       QLabel *m_pLabelVideoCaptureQualityMin;
+       QLabel *m_pLabelVideoCaptureQualityMed;
+       QLabel *m_pLabelVideoCaptureQualityMax;
+       QLabel *m_pLabelAudioCaptureQualityMin;
+       QLabel *m_pLabelAudioCaptureQualityMed;
+       QLabel *m_pLabelAudioCaptureQualityMax;
+       QLabel *m_pVideoMemoryLabel;
+       QLabel *m_pLabelVideoScreenCount;
+       QLabel *m_pGraphicsControllerLabel;
+       QLabel *m_pLabelVideoOptions;
+       QLabel *m_pLabelRemoteDisplayOptions;
+       QLabel *m_pLabelCaptureMode;
+       QLabel *m_pLabelVideoCapturePath;
+       QLabel *m_pLabelVideoCaptureSizeHint;
+       QLabel *m_pLabelVideoCaptureSize;
+       QLabel *m_pLabelVideoCaptureFrameRate;
+       QLabel *m_pLabelVideoCaptureRate;
+       QLabel *m_pAudioCaptureQualityLabel;
+       QLabel *m_pLabelVideoCaptureScreens;
+       QLabel *m_pLabelGuestScreenScaleFactorEditor;
+       QLabel *m_pLabelRemoteDisplayPort;
+       QLabel *m_pLabelRemoteDisplayAuthMethod;
+       QLabel *m_pLabelRemoteDisplayTimeout;
+       QLineEdit *m_pEditorRemoteDisplayPort;
+       QLineEdit *m_pEditorRemoteDisplayTimeout;
+       QSpinBox *m_pEditorVideoScreenCount;
+       QSpinBox *m_pEditorVideoCaptureWidth;
+       QSpinBox *m_pEditorVideoCaptureFrameRate;
+       QSpinBox *m_pEditorVideoCaptureHeight;
+       QSpinBox *m_pEditorVideoCaptureBitRate;
+       UIGraphicsControllerEditor *m_pGraphicsControllerEditor;
+       UIScaleFactorEditor *m_pScaleFactorEditor;
+       UIVideoMemoryEditor *m_pVideoMemoryEditor;
+       UIFilePathSelector *m_pEditorVideoCapturePath;
+       UIFilmContainer *m_pScrollerVideoCaptureScreens;
+       QIAdvancedSlider *m_pSliderAudioCaptureQuality;
+       QIAdvancedSlider *m_pSliderVideoScreenCount;
+       QIAdvancedSlider *m_pSliderVideoCaptureFrameRate;
+       QIAdvancedSlider *m_pSliderVideoCaptureQuality;
+       QITabWidget *m_pTabWidget;
+       QWidget *m_pContainerRemoteDisplay;
+       QWidget *m_pContainerRemoteDisplayOptions;
+       QWidget *m_pContainerVideoCapture;
+       QWidget *m_pContainerSliderVideoCaptureFrameRate;
+       QWidget *m_pContainerSliderVideoCaptureQuality;
+       QWidget *m_pContainerSliderAudioCaptureQuality;
+       QWidget *m_pTabVideo;
+       QWidget *m_pTabRemoteDisplay;
+       QWidget *m_pTabVideoCapture;
+       QGridLayout *m_pContainerLayoutSliderVideoCaptureQuality;
+       QStackedLayout *m_pLayout3D;
+   /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsDisplay_h */

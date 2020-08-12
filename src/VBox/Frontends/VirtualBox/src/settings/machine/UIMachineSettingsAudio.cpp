@@ -173,26 +173,26 @@ void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
 
 void UIMachineSettingsAudio::retranslateUi()
 {
-    m_pCheckBoxAudio->setWhatsThis(QApplication::translate("UIMachineSettingsAudio", "When checked, a virtual PCI audio card"
-                                                           "will be plugged into the virtual machine and will communicate with"
-                                                           "the host audio system using the specified driver."));
-    m_pCheckBoxAudio->setText(QApplication::translate("UIMachineSettingsAudio", "Enable &Audio"));
-    m_pAudioHostDriverLabel->setText(QApplication::translate("UIMachineSettingsAudio", "Host Audio &Driver:"));
-    m_pAudioHostDriverEditor->setWhatsThis(QApplication::translate("UIMachineSettingsAudio", "Selects the audio output driver."
-                                                                   "The <b>Null Audio Driver</b> makes the guest see an audio card,"
-                                                                   "however every access to it will be ignored."));
-    m_pAudioControllerLabel->setText(QApplication::translate("UIMachineSettingsAudio", "Audio &Controller:"));
-    m_pAudioControllerEditor->setWhatsThis(QApplication::translate("UIMachineSettingsAudio", "Selects the type of the virtual sound"
-                                                                   "card. Depending on this value, VirtualBox will provide different"
-                                                                   "audio hardware to the virtual machine."));
-    m_pLabelAudioExtended->setText(QApplication::translate("UIMachineSettingsAudio", "Extended Features:"));
-    m_pCheckBoxAudioOutput->setWhatsThis(QApplication::translate("UIMachineSettingsAudio", "When checked, output to the virtual"
-                                                                 "audio device will reach the host. Otherwise the guest is muted."));
-    m_pCheckBoxAudioOutput->setText(QApplication::translate("UIMachineSettingsAudio", "Enable Audio &Output"));
-    m_pCheckBoxAudioInput->setWhatsThis(QApplication::translate("UIMachineSettingsAudio", "When checked, the guest will be able"
-                                                                "to capture audio input from the host. Otherwise the guest will"
-                                                                "capture only silence."));
-    m_pCheckBoxAudioInput->setText(QApplication::translate("UIMachineSettingsAudio", "Enable Audio &Input"));
+    m_pCheckBoxAudio->setWhatsThis(tr("When checked, a virtual PCI audio card"
+                                      "will be plugged into the virtual machine and will communicate with"
+                                      "the host audio system using the specified driver."));
+    m_pCheckBoxAudio->setText(tr("Enable &Audio"));
+    m_pAudioHostDriverLabel->setText(tr("Host Audio &Driver:"));
+    m_pAudioHostDriverEditor->setWhatsThis(tr("Selects the audio output driver."
+                                              "The <b>Null Audio Driver</b> makes the guest see an audio card,"
+                                              "however every access to it will be ignored."));
+    m_pAudioControllerLabel->setText(tr("Audio &Controller:"));
+    m_pAudioControllerEditor->setWhatsThis(tr("Selects the type of the virtual sound"
+                                              "card. Depending on this value, VirtualBox will provide different"
+                                              "audio hardware to the virtual machine."));
+    m_pLabelAudioExtended->setText(tr("Extended Features:"));
+    m_pCheckBoxAudioOutput->setWhatsThis(tr("When checked, output to the virtual"
+                                            "audio device will reach the host. Otherwise the guest is muted."));
+    m_pCheckBoxAudioOutput->setText(tr("Enable Audio &Output"));
+    m_pCheckBoxAudioInput->setWhatsThis(tr("When checked, the guest will be able"
+                                           "to capture audio input from the host. Otherwise the guest will"
+                                           "capture only silence."));
+    m_pCheckBoxAudioInput->setText(tr("Enable Audio &Input"));
 
 }
 

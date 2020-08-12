@@ -300,11 +300,13 @@ void UIMachineSettingsInterface::retranslateUi()
 {
     m_pMenuBarEditor->setWhatsThis(tr("Allows to modify VM menu-bar contents."));
     m_pLabelVisualState->setText(tr("Visual State:"));
-    m_pVisualStateEditor->setWhatsThis(tr("Selects the visual state. If machine is running it will be applied as soon as possible, otherwise desired one will be defined."));
+    m_pVisualStateEditor->setWhatsThis(tr("Selects the visual state. If machine is running it will be applied as soon as possible,"
+                                          "otherwise desired one will be defined."));
     m_pLabelMiniToolBar->setText(tr("Mini ToolBar:"));
     m_pCheckBoxShowMiniToolBar->setWhatsThis(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
     m_pCheckBoxShowMiniToolBar->setText(tr("Show in &Full-screen/Seamless"));
-    m_pComboToolBarAlignment->setWhatsThis(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen."));
+    m_pComboToolBarAlignment->setWhatsThis(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in its"
+                                              "default position at the bottom of the screen."));
     m_pComboToolBarAlignment->setText(tr("Show at &Top of Screen"));
     m_pStatusBarEditor->setWhatsThis(tr("Allows to modify VM status-bar contents."));
 }
