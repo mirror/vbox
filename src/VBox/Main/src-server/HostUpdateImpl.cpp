@@ -418,28 +418,64 @@ HRESULT HostUpdate::i_checkForVBoxUpdateInner(RTHTTP hHttp, Utf8Str const &strUr
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("%s: RTHttpGetBinary() failed: %Rrc"), __FUNCTION__, vrc);
 
-    /** @todo this may throw and leak.   */
-    RTCList<RTCString> lstHttpReply = RTCString((char *)pvResponse, (size_t)cbResponse).split(" ", RTCString::RemoveEmptyParts);
-    RTHttpFreeResponse(pvResponse);
+    /* Note! We can do nothing that might throw exceptions till we call RTHttpFreeResponse! */
 
-    // If url is platform=DARWIN_64BITS_GENERIC&version=6.0.12&branch=stable for example, the reply is:
-    // reply[0] = 6.0.14
-    // reply[1] = https://download.virtualbox.org/virtualbox/6.0.14/VirtualBox-6.0.14-133895-OSX.dmg
-    // If no update required, 'UPTODATE' is returned.
-    if (strcmp(lstHttpReply.at(0).c_str(), "UPTODATE") == 0)
+    /*
+     * If url is platform=DARWIN_64BITS_GENERIC&version=6.0.12&branch=stable for example, the reply is:
+     *      6.0.14<SPACE>https://download.virtualbox.org/virtualbox/6.0.14/VirtualBox-6.0.14-133895-OSX.dmg
+     * If no update required, 'UPTODATE' is returned.
+     */
+    /* Parse out the two first words of the response, ignoring whatever follows: */
+    const char *pchResponse = (const char *)pvResponse;
+    while (cbResponse > 0 && *pchResponse == ' ')
+        cbResponse--, pchResponse++;
+
+    char ch;
+    const char *pchWord0 = pchResponse;
+    while (cbResponse > 0 && (ch = *pchResponse) != ' ' && ch != '\0')
+        cbResponse--, pchResponse++;
+    size_t const cchWord0 = (size_t)(pchResponse - pchWord0);
+
+    while (cbResponse > 0 && *pchResponse == ' ')
+        cbResponse--, pchResponse++;
+    const char *pchWord1 = pchResponse;
+    while (cbResponse > 0 && (ch = *pchResponse) != ' ' && ch != '\0')
+        cbResponse--, pchResponse++;
+    size_t const cchWord1 = (size_t)(pchResponse - pchWord1);
+
+    /* Decode the two word: */
+    static char const s_szUpToDate[] = "UPTODATE";
+    if (   cchWord0 == sizeof(s_szUpToDate) - 1
+        && memcmp(pchWord0, s_szUpToDate, sizeof(s_szUpToDate) - 1) == 0)
     {
         m_updateNeeded = FALSE;
+        rc = S_OK;
     }
     else
     {
-        /** @todo r=bird: trusting the server reply too much here! */
-        m_updateNeeded = TRUE;
-        m_updateVersion = lstHttpReply.at(0).c_str();
-        m_updateURL = lstHttpReply.at(1).c_str();
-        LogRelFunc(("HTTP server reply = %s %s\n", lstHttpReply.at(0).c_str(), lstHttpReply.at(1).c_str()));
+        vrc = RTStrValidateEncodingEx(pchWord0, cchWord0, 0 /*fFlags*/);
+        if (RT_SUCCESS(vrc))
+            vrc = RTStrValidateEncodingEx(pchWord1, cchWord1, 0 /*fFlags*/);
+        if (RT_SUCCESS(vrc))
+        {
+            /** @todo Any additional sanity checks we could perform here? */
+            rc = m_updateVersion.assignEx(pchWord0, cchWord0);
+            if (SUCCEEDED(rc))
+            {
+                rc = m_updateVersion.assignEx(pchWord1, cchWord1);
+                if (SUCCEEDED(rc))
+                    m_updateNeeded = TRUE;
+            }
+            LogRelFunc(("HTTP server reply = %.*s %.*s\n", cchWord0, pchWord0, cchWord1, pchWord1));
+        }
+        else
+            rc = setErrorVrc(vrc, tr("Invalid server response: %Rrc (%.*Rhxs -- %.*Rhxs)"),
+                             vrc, cchWord0, pchWord0, cchWord1, pchWord1);
     }
 
-    return S_OK;
+    RTHttpFreeResponse(pvResponse);
+
+    return rc;
 }
 
 HRESULT HostUpdate::i_updateCheckTask(UpdateCheckTask *pTask)
