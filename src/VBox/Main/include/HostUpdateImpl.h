@@ -46,7 +46,7 @@ private:
     HRESULT getUpdateURL(com::Utf8Str &aUpdateURL);
     HRESULT getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded);
 
-    Bstr platformInfo();
+    Utf8Str platformInfo();
 
     VirtualBox * const mVirtualBox;
     ComPtr<IHostUpdate> m_pHostUpdate;

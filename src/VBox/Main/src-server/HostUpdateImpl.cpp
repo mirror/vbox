@@ -56,10 +56,10 @@ class HostUpdate::UpdateCheckTask : public ThreadTask
 {
 public:
     UpdateCheckTask(UpdateCheckType_T aCheckType, HostUpdate *aThat, Progress *aProgress)
-        : m_checkType(aCheckType),
-          m_pHostUpdate(aThat),
-          m_ptrProgress(aProgress),
-          m_rc(S_OK)
+        : m_checkType(aCheckType)
+        , m_pHostUpdate(aThat)
+        , m_ptrProgress(aProgress)
+        , m_rc(S_OK)
     {
         m_strTaskName = "UpdateCheckTask";
     }
@@ -73,7 +73,7 @@ private:
 
     /** Smart pointer to the progress object for this job. */
     ComObjPtr<Progress> m_ptrProgress;
-    HRESULT m_rc;
+    HRESULT m_rc; /**< Not really used for anything, at the moment. */
 
     friend class HostUpdate;  // allow member functions access to private data
 };
@@ -93,7 +93,7 @@ void HostUpdate::UpdateCheckTask::handler()
 }
 
 /* static */
-Bstr HostUpdate::platformInfo()
+Utf8Str HostUpdate::platformInfo()
 {
     /* Prepare platform report: */
     Utf8Str strPlatform;
@@ -350,10 +350,8 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: IVirtualBox::version() failed: %Rrc"), __FUNCTION__, rc);
 
-    Bstr strUserAgent;
-    strUserAgent.appendPrintf("VirtualBox %ls <%ls>", version.raw(), HostUpdate::platformInfo().raw());
-
-    LogRelFunc(("userAgent = %ls\n", strUserAgent.raw()));
+    Utf8StrFmt const strUserAgent("VirtualBox %ls <%s>", version.raw(), HostUpdate::platformInfo().c_str());
+    LogRelFunc(("userAgent = %s\n", strUserAgent.c_str()));
 
     RTHTTP hHttp = NIL_RTHTTP;
     int vrc = RTHttpCreate(&hHttp);
@@ -361,7 +359,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
         return setErrorVrc(vrc, tr("%s: RTHttpCreate() failed: %Rrc"), __FUNCTION__, vrc);
 
     /// @todo Are there any other headers needed to be added first via RTHttpSetHeaders()?
-    vrc = RTHttpAddHeader(hHttp, "User-Agent", Utf8Str(strUserAgent).c_str(), RTSTR_MAX, RTHTTPADDHDR_F_BACK);
+    vrc = RTHttpAddHeader(hHttp, "User-Agent", strUserAgent.c_str(), strUserAgent.length(), RTHTTPADDHDR_F_BACK);
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("%s: RTHttpAddHeader() failed: %Rrc (on User-Agent)"), __FUNCTION__, vrc);
 
