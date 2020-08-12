@@ -416,7 +416,7 @@ typedef PDMDEVREGR3 *PPDMDEVREGR3;
 /** Const pointer to a PDM Device Structure. */
 typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 /** Current DEVREGR3 version number. */
-#define PDM_DEVREGR3_VERSION                    PDM_VERSION_MAKE(0xffff, 5, 0)
+#define PDM_DEVREGR3_VERSION                    PDM_VERSION_MAKE(0xffff, 4, 0)
 
 
 /** PDM Device Flags.
@@ -640,7 +640,7 @@ typedef PDMDEVREGR0 *PPDMDEVREGR0;
 /** Pointer to a const ring-0 PDM device registration structure. */
 typedef PDMDEVREGR0 const *PCPDMDEVREGR0;
 /** Current DEVREGR0 version number. */
-#define PDM_DEVREGR0_VERSION                    PDM_VERSION_MAKE(0xff80, 2, 0)
+#define PDM_DEVREGR0_VERSION                    PDM_VERSION_MAKE(0xff80, 1, 0)
 
 
 /**
@@ -710,7 +710,7 @@ typedef PDMDEVREGRC *PPDMDEVREGRC;
 /** Pointer to a const raw-mode PDM device registration structure. */
 typedef PDMDEVREGRC const *PCPDMDEVREGRC;
 /** Current DEVREGRC version number. */
-#define PDM_DEVREGRC_VERSION                    PDM_VERSION_MAKE(0xff81, 2, 0)
+#define PDM_DEVREGRC_VERSION                    PDM_VERSION_MAKE(0xff81, 1, 0)
 
 
 
@@ -2263,7 +2263,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 43, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 44, 0)
 
 /**
  * PDM Device API.
@@ -4769,7 +4769,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 15, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 16, 0)
 
 
 /**
@@ -5298,7 +5298,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 17, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 18, 0)
 
 
 /**
