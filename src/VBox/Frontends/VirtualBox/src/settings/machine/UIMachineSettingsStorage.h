@@ -22,14 +22,26 @@
 #endif
 
 /* GUI includes: */
-#include "UIMachineSettingsStorage.gen.h"
 #include "UIMediumDefs.h"
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QComboBox;
+class QGridLayout;
+class QLabel;
+class QSpinBox;
+class QStackedWidget;
+class QILabel;
+class QLineEdit;
+class QVBoxLayout;
+class QILabelSeparator;
+class QISplitter;
+class QIToolButton;
 class QITreeView;
 class StorageModel;
 class UIMediumIDHolder;
+class UIToolBar;
 struct UIDataSettingsMachineStorage;
 struct UIDataSettingsMachineStorageController;
 struct UIDataSettingsMachineStorageAttachment;
@@ -38,8 +50,7 @@ typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UISettingsCa
 typedef UISettingsCachePool<UIDataSettingsMachineStorage, UISettingsCacheMachineStorageController> UISettingsCacheMachineStorage;
 
 /** Machine settings: Storage page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsStorage : public UISettingsPageMachine,
-                                                      public Ui::UIMachineSettingsStorage
+class SHARED_LIBRARY_STUFF UIMachineSettingsStorage : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -195,6 +206,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Prepares storage tree. */
     void prepareStorageTree();
     /** Prepares storage toolbar. */
@@ -298,6 +311,54 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineStorage *m_pCache;
+    /** @name Widgets
+     * @{ */
+       QILabelSeparator *m_pLabelSeparatorLeftPane;
+       QILabelSeparator *m_pLabelSeparatorEmpty;
+       QILabelSeparator *m_pLabelSeparatorParameters;
+       QILabelSeparator *m_pLabelSeparatorAttributes;
+       QILabelSeparator *m_pLabelSeparatorInformation;
+       QLabel *m_pLabelInfo;
+       QLabel *m_pLabelName;
+       QLabel *m_pLabelType;
+       QLabel *m_pLabelPortCount;
+       QLabel *m_pLabelHDFormat;
+       QLabel *m_pLabelCDFDType;
+       QLabel *m_pLabelHDVirtualSize;
+       QLabel *m_pLabelHDActualSize;
+       QLabel *m_pLabelSize;
+       QLabel *m_pLabelHDDetails;
+       QLabel *m_pLabelLocation;
+       QLabel *m_pLabelUsage;
+       QLabel *m_pLabelEncryption;
+       QLabel *m_pLabelMedium;
+       QILabel *m_pLabelHDFormatValue;
+       QILabel *m_pLabelCDFDTypeValue;
+       QILabel *m_pLabelHDVirtualSizeValue;
+       QILabel *m_pLabelHDActualSizeValue;
+       QILabel *m_pLabelSizeValue;
+       QILabel *m_pLabelHDDetailsValue;
+       QILabel *m_pLabelLocationValue;
+       QILabel *m_pLabelUsageValue;
+       QILabel *m_pLabelEncryptionValue;
+       QLineEdit *m_pLineEditName;
+       QComboBox *m_pComboBoxType;
+       QComboBox *m_pComboBoxSlot;
+       QSpinBox *m_pSpinBoxPortCount;
+       QCheckBox *m_pCheckBoxIoCache;
+       QCheckBox *m_pCheckBoxPassthrough;
+       QCheckBox *m_pCheckBoxTempEject;
+       QCheckBox *m_pCheckBoxNonRotational;
+       QCheckBox *m_pCheckBoxHotPluggable;
+       QIToolButton *m_pToolButtonOpen;
+       UIToolBar *m_pToolBarStorageBar;
+       QGridLayout *m_pLayoutController;
+       QGridLayout *m_pLayoutEmpty;
+       QGridLayout *m_pLayoutAttachment;
+       QStackedWidget *mSwRightPane;
+       QVBoxLayout *m_pLayoutStorage;
+       QISplitter *m_pSplitter;
+   /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsStorage_h */

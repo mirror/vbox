@@ -16,17 +16,29 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
+#include <QComboBox>
 #include <QCommonStyle>
 #include <QDrag>
 #include <QDragMoveEvent>
+#include <QGridLayout>
 #include <QItemDelegate>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QSpinBox>
+#include <QStackedWidget>
+#include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QILabel.h"
+#include "QILabelSeparator.h"
+#include "QIToolButton.h"
 #include "QITreeView.h"
+#include "QISplitter.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
@@ -36,6 +48,7 @@
 #include "UIMedium.h"
 #include "UIMediumSelector.h"
 #include "UIMessageCenter.h"
+#include "UIToolBar.h"
 
 /* COM includes: */
 #include "CMediumAttachment.h"
@@ -2938,6 +2951,51 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     , m_fPolished(false)
     , m_fLoadingInProgress(0)
     , m_pCache(0)
+    , m_pLabelSeparatorLeftPane(0)
+    , m_pLabelSeparatorEmpty(0)
+    , m_pLabelSeparatorParameters(0)
+    , m_pLabelSeparatorAttributes(0)
+    , m_pLabelSeparatorInformation(0)
+    , m_pLabelInfo(0)
+    , m_pLabelName(0)
+    , m_pLabelType(0)
+    , m_pLabelPortCount(0)
+    , m_pLabelHDFormat(0)
+    , m_pLabelCDFDType(0)
+    , m_pLabelHDVirtualSize(0)
+    , m_pLabelHDActualSize(0)
+    , m_pLabelSize(0)
+    , m_pLabelHDDetails(0)
+    , m_pLabelLocation(0)
+    , m_pLabelUsage(0)
+    , m_pLabelEncryption(0)
+    , m_pLabelMedium(0)
+    , m_pLabelHDFormatValue(0)
+    , m_pLabelCDFDTypeValue(0)
+    , m_pLabelHDVirtualSizeValue(0)
+    , m_pLabelHDActualSizeValue(0)
+    , m_pLabelSizeValue(0)
+    , m_pLabelHDDetailsValue(0)
+    , m_pLabelLocationValue(0)
+    , m_pLabelUsageValue(0)
+    , m_pLabelEncryptionValue(0)
+    , m_pLineEditName(0)
+    , m_pComboBoxType(0)
+    , m_pComboBoxSlot(0)
+    , m_pSpinBoxPortCount(0)
+    , m_pCheckBoxIoCache(0)
+    , m_pCheckBoxPassthrough(0)
+    , m_pCheckBoxTempEject(0)
+    , m_pCheckBoxNonRotational(0)
+    , m_pCheckBoxHotPluggable(0)
+    , m_pToolButtonOpen(0)
+    , m_pToolBarStorageBar(0)
+    , m_pLayoutController(0)
+    , m_pLayoutEmpty(0)
+    , m_pLayoutAttachment(0)
+    , mSwRightPane(0)
+    , m_pLayoutStorage(0)
+    , m_pSplitter(0)
 {
     /* Prepare: */
     prepare();
@@ -3289,8 +3347,43 @@ void UIMachineSettingsStorage::setConfigurationAccessLevel(ConfigurationAccessLe
 
 void UIMachineSettingsStorage::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIMachineSettingsStorage::retranslateUi(this);
+    m_pLabelSeparatorLeftPane->setText(tr("&Storage Devices"));
+    m_pLabelSeparatorEmpty->setText(tr("Information"));
+    m_pLabelInfo->setText(tr("The Storage Tree can contain several controllers of different types. This machine currently has no controllers."));
+    m_pLabelSeparatorParameters->setText(tr("Attributes"));
+    m_pLabelName->setText(tr("&Name:"));
+    m_pLineEditName->setWhatsThis(tr("Holds the name of the storage controller currently selected in the Storage Tree."));
+    m_pLabelType->setText(tr("&Type:"));
+    m_pComboBoxType->setWhatsThis(tr("Selects the sub-type of the storage controller currently selected in the Storage Tree."));
+    m_pLabelPortCount->setText(tr("&Port Count:"));
+    m_pSpinBoxPortCount->setWhatsThis(tr("Selects the port count of the SATA storage controller currently selected in the"
+                                         "Storage Tree. This must be at least one more than the highest port number you need to use."));
+    m_pCheckBoxIoCache->setWhatsThis(tr("When checked, allows to use host I/O caching capabilities."));
+    m_pCheckBoxIoCache->setText(tr("Use Host I/O Cache"));
+    m_pLabelSeparatorAttributes->setText(tr("Attributes"));
+    m_pComboBoxSlot->setWhatsThis(tr("Selects the slot on the storage controller used by this attachment. The available slots depend"
+                                     "on the type of the controller and other attachments on it."));
+    m_pToolButtonOpen->setText(QString());
+    m_pCheckBoxPassthrough->setWhatsThis(tr("When checked, allows the guest to send ATAPI commands directly to the host-drive"
+                                            "which makes it possible to use CD/DVD writers connected to the host inside the VM."
+                                            "Note that writing audio CD inside the VM is not yet supported."));
+    m_pCheckBoxPassthrough->setText(tr("&Passthrough"));
+    m_pCheckBoxTempEject->setWhatsThis(tr("When checked, the virtual disk will not be removed when the guest system ejects it."));
+    m_pCheckBoxTempEject->setText(tr("&Live CD/DVD"));
+    m_pCheckBoxNonRotational->setWhatsThis(tr("When checked, the guest system will see the virtual disk as a solid-state device."));
+    m_pCheckBoxNonRotational->setText(tr("&Solid-state Drive"));
+    m_pCheckBoxHotPluggable->setWhatsThis(tr("When checked, the guest system will see the virtual disk as a hot-pluggable device."));
+    m_pCheckBoxHotPluggable->setText(tr("&Hot-pluggable"));
+    m_pLabelSeparatorInformation->setText(tr("Information"));
+    m_pLabelHDFormat->setText(tr("Type (Format):"));
+    m_pLabelCDFDType->setText(tr("Type:"));
+    m_pLabelHDVirtualSize->setText(tr("Virtual Size:"));
+    m_pLabelHDActualSize->setText(tr("Actual Size:"));
+    m_pLabelSize->setText(tr("Size:"));
+    m_pLabelHDDetails->setText(tr("Details:"));
+    m_pLabelLocation->setText(tr("Location:"));
+    m_pLabelUsage->setText(tr("Attached to:"));
+    m_pLabelEncryption->setText(tr("Encrypted with key:"));
 
     /* Translate storage-view: */
     m_pTreeStorage->setWhatsThis(tr("Lists all storage controllers for this machine and "
@@ -3339,49 +3432,49 @@ void UIMachineSettingsStorage::polishPage()
     const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
 
     /* Polish left pane availability: */
-    mLsLeftPane->setEnabled(isMachineInValidMode());
+    m_pLabelSeparatorLeftPane->setEnabled(isMachineInValidMode());
     m_pTreeStorage->setEnabled(isMachineInValidMode());
 
     /* Polish empty information pane availability: */
-    mLsEmpty->setEnabled(isMachineInValidMode());
-    mLbInfo->setEnabled(isMachineInValidMode());
+    m_pLabelSeparatorEmpty->setEnabled(isMachineInValidMode());
+    m_pLabelInfo->setEnabled(isMachineInValidMode());
 
     /* Polish controllers pane availability: */
-    mLsParameters->setEnabled(isMachineInValidMode());
-    mLbName->setEnabled(isMachineOffline());
-    mLeName->setEnabled(isMachineOffline());
-    mLbType->setEnabled(isMachineOffline());
-    mCbType->setEnabled(isMachineOffline());
-    mLbPortCount->setEnabled(isMachineOffline());
-    mSbPortCount->setEnabled(isMachineOffline());
-    mCbIoCache->setEnabled(isMachineOffline());
+    m_pLabelSeparatorParameters->setEnabled(isMachineInValidMode());
+    m_pLabelName->setEnabled(isMachineOffline());
+    m_pLineEditName->setEnabled(isMachineOffline());
+    m_pLabelType->setEnabled(isMachineOffline());
+    m_pComboBoxType->setEnabled(isMachineOffline());
+    m_pLabelPortCount->setEnabled(isMachineOffline());
+    m_pSpinBoxPortCount->setEnabled(isMachineOffline());
+    m_pCheckBoxIoCache->setEnabled(isMachineOffline());
 
     /* Polish attachments pane availability: */
-    mLsAttributes->setEnabled(isMachineInValidMode());
-    mLbMedium->setEnabled(isMachineOffline() || (isMachineOnline() && enmDeviceType != KDeviceType_HardDisk));
-    mCbSlot->setEnabled(isMachineOffline());
-    mTbOpen->setEnabled(isMachineOffline() || (isMachineOnline() && enmDeviceType != KDeviceType_HardDisk));
-    mCbPassthrough->setEnabled(isMachineOffline());
-    mCbTempEject->setEnabled(isMachineInValidMode());
-    mCbNonRotational->setEnabled(isMachineOffline());
+    m_pLabelSeparatorAttributes->setEnabled(isMachineInValidMode());
+    m_pLabelMedium->setEnabled(isMachineOffline() || (isMachineOnline() && enmDeviceType != KDeviceType_HardDisk));
+    m_pComboBoxSlot->setEnabled(isMachineOffline());
+    m_pToolButtonOpen->setEnabled(isMachineOffline() || (isMachineOnline() && enmDeviceType != KDeviceType_HardDisk));
+    m_pCheckBoxPassthrough->setEnabled(isMachineOffline());
+    m_pCheckBoxTempEject->setEnabled(isMachineInValidMode());
+    m_pCheckBoxNonRotational->setEnabled(isMachineOffline());
     m_pCheckBoxHotPluggable->setEnabled(isMachineOffline());
-    mLsInformation->setEnabled(isMachineInValidMode());
-    mLbHDFormat->setEnabled(isMachineInValidMode());
-    mLbHDFormatValue->setEnabled(isMachineInValidMode());
-    mLbCDFDType->setEnabled(isMachineInValidMode());
-    mLbCDFDTypeValue->setEnabled(isMachineInValidMode());
-    mLbHDVirtualSize->setEnabled(isMachineInValidMode());
-    mLbHDVirtualSizeValue->setEnabled(isMachineInValidMode());
-    mLbHDActualSize->setEnabled(isMachineInValidMode());
-    mLbHDActualSizeValue->setEnabled(isMachineInValidMode());
-    mLbSize->setEnabled(isMachineInValidMode());
-    mLbSizeValue->setEnabled(isMachineInValidMode());
-    mLbHDDetails->setEnabled(isMachineInValidMode());
-    mLbHDDetailsValue->setEnabled(isMachineInValidMode());
-    mLbLocation->setEnabled(isMachineInValidMode());
-    mLbLocationValue->setEnabled(isMachineInValidMode());
-    mLbUsage->setEnabled(isMachineInValidMode());
-    mLbUsageValue->setEnabled(isMachineInValidMode());
+    m_pLabelSeparatorInformation->setEnabled(isMachineInValidMode());
+    m_pLabelHDFormat->setEnabled(isMachineInValidMode());
+    m_pLabelHDFormatValue->setEnabled(isMachineInValidMode());
+    m_pLabelCDFDType->setEnabled(isMachineInValidMode());
+    m_pLabelCDFDTypeValue->setEnabled(isMachineInValidMode());
+    m_pLabelHDVirtualSize->setEnabled(isMachineInValidMode());
+    m_pLabelHDVirtualSizeValue->setEnabled(isMachineInValidMode());
+    m_pLabelHDActualSize->setEnabled(isMachineInValidMode());
+    m_pLabelHDActualSizeValue->setEnabled(isMachineInValidMode());
+    m_pLabelSize->setEnabled(isMachineInValidMode());
+    m_pLabelSizeValue->setEnabled(isMachineInValidMode());
+    m_pLabelHDDetails->setEnabled(isMachineInValidMode());
+    m_pLabelHDDetailsValue->setEnabled(isMachineInValidMode());
+    m_pLabelLocation->setEnabled(isMachineInValidMode());
+    m_pLabelLocationValue->setEnabled(isMachineInValidMode());
+    m_pLabelUsage->setEnabled(isMachineInValidMode());
+    m_pLabelUsageValue->setEnabled(isMachineInValidMode());
     m_pLabelEncryption->setEnabled(isMachineInValidMode());
     m_pLabelEncryptionValue->setEnabled(isMachineInValidMode());
 
@@ -3396,15 +3489,15 @@ void UIMachineSettingsStorage::showEvent(QShowEvent *pEvent)
         m_fPolished = true;
 
         /* First column indent: */
-        mLtEmpty->setColumnMinimumWidth(0, 10);
-        mLtController->setColumnMinimumWidth(0, 10);
-        mLtAttachment->setColumnMinimumWidth(0, 10);
+        m_pLayoutEmpty->setColumnMinimumWidth(0, 10);
+        m_pLayoutController->setColumnMinimumWidth(0, 10);
+        m_pLayoutAttachment->setColumnMinimumWidth(0, 10);
 #if 0
         /* Second column indent minimum width: */
         QList <QLabel*> labelsList;
-        labelsList << mLbMedium << mLbHDFormat << mLbCDFDType
-                   << mLbHDVirtualSize << mLbHDActualSize << mLbSize
-                   << mLbLocation << mLbUsage;
+        labelsList << m_pLabelMedium << m_pLabelHDFormat << m_pLabelCDFDType
+                   << m_pLabelHDVirtualSize << m_pLabelHDActualSize << m_pLabelSize
+                   << m_pLabelLocation << m_pLabelUsage;
         int maxWidth = 0;
         QFontMetrics metrics(font());
         foreach (QLabel *label, labelsList)
@@ -3412,7 +3505,7 @@ void UIMachineSettingsStorage::showEvent(QShowEvent *pEvent)
             int iWidth = metrics.width(label->text());
             maxWidth = iWidth > maxWidth ? iWidth : maxWidth;
         }
-        mLtAttachment->setColumnMinimumWidth(1, maxWidth);
+        m_pLayoutAttachment->setColumnMinimumWidth(1, maxWidth);
 #endif
     }
 
@@ -3652,11 +3745,11 @@ void UIMachineSettingsStorage::sltGetInformation()
             {
                 /* Getting Controller Name: */
                 const QString strCtrName = m_pModelStorage->data(index, StorageModel::R_CtrName).toString();
-                if (mLeName->text() != strCtrName)
-                    mLeName->setText(strCtrName);
+                if (m_pLineEditName->text() != strCtrName)
+                    m_pLineEditName->setText(strCtrName);
 
                 /* Rebuild type combo: */
-                mCbType->clear();
+                m_pComboBoxType->clear();
                 /* Getting controller buses: */
                 const ControllerBusList controllerBusList(m_pModelStorage->data(index, StorageModel::R_CtrBusTypes).value<ControllerBusList>());
                 foreach (const KStorageBus &enmCurrentBus, controllerBusList)
@@ -3665,25 +3758,25 @@ void UIMachineSettingsStorage::sltGetInformation()
                     const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, m_pModelStorage->busToRole(enmCurrentBus)).value<ControllerTypeList>());
                     foreach (const KStorageControllerType &enmCurrentType, controllerTypeList)
                     {
-                        mCbType->addItem(gpConverter->toString(enmCurrentType));
-                        mCbType->setItemData(mCbType->count() - 1, QVariant::fromValue(enmCurrentBus), StorageModel::R_CtrBusType);
-                        mCbType->setItemData(mCbType->count() - 1, QVariant::fromValue(enmCurrentType), StorageModel::R_CtrType);
+                        m_pComboBoxType->addItem(gpConverter->toString(enmCurrentType));
+                        m_pComboBoxType->setItemData(m_pComboBoxType->count() - 1, QVariant::fromValue(enmCurrentBus), StorageModel::R_CtrBusType);
+                        m_pComboBoxType->setItemData(m_pComboBoxType->count() - 1, QVariant::fromValue(enmCurrentType), StorageModel::R_CtrType);
                     }
                 }
                 const KStorageControllerType enmType = m_pModelStorage->data(index, StorageModel::R_CtrType).value<KStorageControllerType>();
-                const int iCtrPos = mCbType->findData(enmType, StorageModel::R_CtrType);
-                mCbType->setCurrentIndex(iCtrPos == -1 ? 0 : iCtrPos);
+                const int iCtrPos = m_pComboBoxType->findData(enmType, StorageModel::R_CtrType);
+                m_pComboBoxType->setCurrentIndex(iCtrPos == -1 ? 0 : iCtrPos);
 
                 const KStorageBus enmBus = m_pModelStorage->data(index, StorageModel::R_CtrBusType).value<KStorageBus>();
-                mLbPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
-                mSbPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
+                m_pLabelPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
+                m_pSpinBoxPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
                 const uint uPortCount = m_pModelStorage->data(index, StorageModel::R_CtrPortCount).toUInt();
                 const uint uMaxPortCount = m_pModelStorage->data(index, StorageModel::R_CtrMaxPortCount).toUInt();
-                mSbPortCount->setMaximum(uMaxPortCount);
-                mSbPortCount->setValue(uPortCount);
+                m_pSpinBoxPortCount->setMaximum(uMaxPortCount);
+                m_pSpinBoxPortCount->setValue(uPortCount);
 
                 const bool fUseIoCache = m_pModelStorage->data(index, StorageModel::R_CtrIoCache).toBool();
-                mCbIoCache->setChecked(fUseIoCache);
+                m_pCheckBoxIoCache->setChecked(fUseIoCache);
 
                 /* Showing Controller Page: */
                 mSwRightPane->setCurrentIndex(1);
@@ -3692,36 +3785,36 @@ void UIMachineSettingsStorage::sltGetInformation()
             case AbstractItem::Type_AttachmentItem:
             {
                 /* Getting Attachment Slot: */
-                mCbSlot->clear();
+                m_pComboBoxSlot->clear();
                 const SlotsList slotsList(m_pModelStorage->data(index, StorageModel::R_AttSlots).value<SlotsList>());
                 for (int i = 0; i < slotsList.size(); ++i)
-                    mCbSlot->insertItem(mCbSlot->count(), gpConverter->toString(slotsList[i]));
+                    m_pComboBoxSlot->insertItem(m_pComboBoxSlot->count(), gpConverter->toString(slotsList[i]));
                 const StorageSlot slt = m_pModelStorage->data(index, StorageModel::R_AttSlot).value<StorageSlot>();
-                const int iAttSlotPos = mCbSlot->findText(gpConverter->toString(slt));
-                mCbSlot->setCurrentIndex(iAttSlotPos == -1 ? 0 : iAttSlotPos);
-                mCbSlot->setToolTip(mCbSlot->itemText(mCbSlot->currentIndex()));
+                const int iAttSlotPos = m_pComboBoxSlot->findText(gpConverter->toString(slt));
+                m_pComboBoxSlot->setCurrentIndex(iAttSlotPos == -1 ? 0 : iAttSlotPos);
+                m_pComboBoxSlot->setToolTip(m_pComboBoxSlot->itemText(m_pComboBoxSlot->currentIndex()));
 
                 /* Getting Attachment Medium: */
                 const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
                 switch (enmDeviceType)
                 {
                     case KDeviceType_HardDisk:
-                        mLbMedium->setText(tr("Hard &Disk:"));
-                        mTbOpen->setIcon(iconPool()->icon(HDAttachmentNormal));
-                        mTbOpen->setWhatsThis(tr("Choose or create a virtual hard disk file. The virtual machine will see "
+                        m_pLabelMedium->setText(tr("Hard &Disk:"));
+                        m_pToolButtonOpen->setIcon(iconPool()->icon(HDAttachmentNormal));
+                        m_pToolButtonOpen->setWhatsThis(tr("Choose or create a virtual hard disk file. The virtual machine will see "
                                                  "the data in the file as the contents of the virtual hard disk."));
                         break;
                     case KDeviceType_DVD:
-                        mLbMedium->setText(tr("Optical &Drive:"));
-                        mTbOpen->setIcon(iconPool()->icon(CDAttachmentNormal));
-                        mTbOpen->setWhatsThis(tr("Choose a virtual optical disk or a physical drive to use with the virtual drive. "
+                        m_pLabelMedium->setText(tr("Optical &Drive:"));
+                        m_pToolButtonOpen->setIcon(iconPool()->icon(CDAttachmentNormal));
+                        m_pToolButtonOpen->setWhatsThis(tr("Choose a virtual optical disk or a physical drive to use with the virtual drive. "
                                                  "The virtual machine will see a disk inserted into the drive with the data "
                                                  "in the file or on the disk in the physical drive as its contents."));
                         break;
                     case KDeviceType_Floppy:
-                        mLbMedium->setText(tr("Floppy &Drive:"));
-                        mTbOpen->setIcon(iconPool()->icon(FDAttachmentNormal));
-                        mTbOpen->setWhatsThis(tr("Choose a virtual floppy disk or a physical drive to use with the virtual drive. "
+                        m_pLabelMedium->setText(tr("Floppy &Drive:"));
+                        m_pToolButtonOpen->setIcon(iconPool()->icon(FDAttachmentNormal));
+                        m_pToolButtonOpen->setWhatsThis(tr("Choose a virtual floppy disk or a physical drive to use with the virtual drive. "
                                                  "The virtual machine will see a disk inserted into the drive with the data "
                                                  "in the file or on the disk in the physical drive as its contents."));
                         break;
@@ -3740,21 +3833,21 @@ void UIMachineSettingsStorage::sltGetInformation()
                 const bool fIsEditable =    (isMachineOffline())
                                          || (isMachineOnline() && enmDeviceType != KDeviceType_HardDisk)
                                          || (isMachineOnline() && enmDeviceType == KDeviceType_HardDisk && fIsHotPluggable);
-                mLbMedium->setEnabled(fIsEditable);
-                mTbOpen->setEnabled(fIsEditable);
+                m_pLabelMedium->setEnabled(fIsEditable);
+                m_pToolButtonOpen->setEnabled(fIsEditable);
 
                 /* Getting Passthrough state: */
                 const bool fHostDrive = m_pModelStorage->data(index, StorageModel::R_AttIsHostDrive).toBool();
-                mCbPassthrough->setVisible(enmDeviceType == KDeviceType_DVD && fHostDrive);
-                mCbPassthrough->setChecked(fHostDrive && m_pModelStorage->data(index, StorageModel::R_AttIsPassthrough).toBool());
+                m_pCheckBoxPassthrough->setVisible(enmDeviceType == KDeviceType_DVD && fHostDrive);
+                m_pCheckBoxPassthrough->setChecked(fHostDrive && m_pModelStorage->data(index, StorageModel::R_AttIsPassthrough).toBool());
 
                 /* Getting TempEject state: */
-                mCbTempEject->setVisible(enmDeviceType == KDeviceType_DVD && !fHostDrive);
-                mCbTempEject->setChecked(!fHostDrive && m_pModelStorage->data(index, StorageModel::R_AttIsTempEject).toBool());
+                m_pCheckBoxTempEject->setVisible(enmDeviceType == KDeviceType_DVD && !fHostDrive);
+                m_pCheckBoxTempEject->setChecked(!fHostDrive && m_pModelStorage->data(index, StorageModel::R_AttIsTempEject).toBool());
 
                 /* Getting NonRotational state: */
-                mCbNonRotational->setVisible(enmDeviceType == KDeviceType_HardDisk);
-                mCbNonRotational->setChecked(m_pModelStorage->data(index, StorageModel::R_AttIsNonRotational).toBool());
+                m_pCheckBoxNonRotational->setVisible(enmDeviceType == KDeviceType_HardDisk);
+                m_pCheckBoxNonRotational->setChecked(m_pModelStorage->data(index, StorageModel::R_AttIsNonRotational).toBool());
 
                 /* Fetch hot-pluggable state: */
                 m_pCheckBoxHotPluggable->setVisible((slt.bus == KStorageBus_SATA) || (slt.bus == KStorageBus_USB));
@@ -3764,14 +3857,14 @@ void UIMachineSettingsStorage::sltGetInformation()
                 updateAdditionalDetails(enmDeviceType);
 
                 /* Getting Other Information: */
-                mLbHDFormatValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttFormat).toString()));
-                mLbCDFDTypeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttFormat).toString()));
-                mLbHDVirtualSizeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttLogicalSize).toString()));
-                mLbHDActualSizeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttSize).toString()));
-                mLbSizeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttSize).toString()));
-                mLbHDDetailsValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttDetails).toString()));
-                mLbLocationValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttLocation).toString()));
-                mLbUsageValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttUsage).toString()));
+                m_pLabelHDFormatValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttFormat).toString()));
+                m_pLabelCDFDTypeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttFormat).toString()));
+                m_pLabelHDVirtualSizeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttLogicalSize).toString()));
+                m_pLabelHDActualSizeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttSize).toString()));
+                m_pLabelSizeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttSize).toString()));
+                m_pLabelHDDetailsValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttDetails).toString()));
+                m_pLabelLocationValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttLocation).toString()));
+                m_pLabelUsageValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttUsage).toString()));
                 m_pLabelEncryptionValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttEncryptionPasswordID).toString()));
 
                 /* Showing Attachment Page: */
@@ -3801,33 +3894,33 @@ void UIMachineSettingsStorage::sltSetInformation()
         case AbstractItem::Type_ControllerItem:
         {
             /* Setting Controller Name: */
-            if (pSender == mLeName)
-                m_pModelStorage->setData(index, mLeName->text(), StorageModel::R_CtrName);
+            if (pSender == m_pLineEditName)
+                m_pModelStorage->setData(index, m_pLineEditName->text(), StorageModel::R_CtrName);
             /* Setting Controller Sub-Type: */
-            else if (pSender == mCbType)
+            else if (pSender == m_pComboBoxType)
             {
                 const bool fResult =
                     m_pModelStorage->setData(index,
-                                             QVariant::fromValue(mCbType->currentData(StorageModel::R_CtrBusType).value<KStorageBus>()),
+                                             QVariant::fromValue(m_pComboBoxType->currentData(StorageModel::R_CtrBusType).value<KStorageBus>()),
                                              StorageModel::R_CtrBusType);
                 if (fResult)
                     m_pModelStorage->setData(index,
-                                             QVariant::fromValue(mCbType->currentData(StorageModel::R_CtrType).value<KStorageControllerType>()),
+                                             QVariant::fromValue(m_pComboBoxType->currentData(StorageModel::R_CtrType).value<KStorageControllerType>()),
                                              StorageModel::R_CtrType);
             }
-            else if (pSender == mSbPortCount)
-                m_pModelStorage->setData(index, mSbPortCount->value(), StorageModel::R_CtrPortCount);
-            else if (pSender == mCbIoCache)
-                m_pModelStorage->setData(index, mCbIoCache->isChecked(), StorageModel::R_CtrIoCache);
+            else if (pSender == m_pSpinBoxPortCount)
+                m_pModelStorage->setData(index, m_pSpinBoxPortCount->value(), StorageModel::R_CtrPortCount);
+            else if (pSender == m_pCheckBoxIoCache)
+                m_pModelStorage->setData(index, m_pCheckBoxIoCache->isChecked(), StorageModel::R_CtrIoCache);
             break;
         }
         case AbstractItem::Type_AttachmentItem:
         {
             /* Setting Attachment Slot: */
-            if (pSender == mCbSlot)
+            if (pSender == m_pComboBoxSlot)
             {
                 QModelIndex controllerIndex = m_pModelStorage->parent(index);
-                StorageSlot attachmentStorageSlot = gpConverter->fromString<StorageSlot>(mCbSlot->currentText());
+                StorageSlot attachmentStorageSlot = gpConverter->fromString<StorageSlot>(m_pComboBoxSlot->currentText());
                 m_pModelStorage->setData(index, QVariant::fromValue(attachmentStorageSlot), StorageModel::R_AttSlot);
                 QModelIndex theSameIndexAtNewPosition = m_pModelStorage->attachmentBySlot(controllerIndex, attachmentStorageSlot);
                 AssertMsg(theSameIndexAtNewPosition.isValid(), ("Current attachment disappears!\n"));
@@ -3836,19 +3929,19 @@ void UIMachineSettingsStorage::sltSetInformation()
             /* Setting Attachment Medium: */
             else if (pSender == m_pMediumIdHolder)
                 m_pModelStorage->setData(index, m_pMediumIdHolder->id(), StorageModel::R_AttMediumId);
-            else if (pSender == mCbPassthrough)
+            else if (pSender == m_pCheckBoxPassthrough)
             {
                 if (m_pModelStorage->data(index, StorageModel::R_AttIsHostDrive).toBool())
-                    m_pModelStorage->setData(index, mCbPassthrough->isChecked(), StorageModel::R_AttIsPassthrough);
+                    m_pModelStorage->setData(index, m_pCheckBoxPassthrough->isChecked(), StorageModel::R_AttIsPassthrough);
             }
-            else if (pSender == mCbTempEject)
+            else if (pSender == m_pCheckBoxTempEject)
             {
                 if (!m_pModelStorage->data(index, StorageModel::R_AttIsHostDrive).toBool())
-                    m_pModelStorage->setData(index, mCbTempEject->isChecked(), StorageModel::R_AttIsTempEject);
+                    m_pModelStorage->setData(index, m_pCheckBoxTempEject->isChecked(), StorageModel::R_AttIsTempEject);
             }
-            else if (pSender == mCbNonRotational)
+            else if (pSender == m_pCheckBoxNonRotational)
             {
-                m_pModelStorage->setData(index, mCbNonRotational->isChecked(), StorageModel::R_AttIsNonRotational);
+                m_pModelStorage->setData(index, m_pCheckBoxNonRotational->isChecked(), StorageModel::R_AttIsNonRotational);
             }
             else if (pSender == m_pCheckBoxHotPluggable)
             {
@@ -4417,8 +4510,7 @@ void UIMachineSettingsStorage::sltHandleDragDrop(QDropEvent *pEvent)
 
 void UIMachineSettingsStorage::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsStorage::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineStorage;
@@ -4431,15 +4523,14 @@ void UIMachineSettingsStorage::prepare()
     if (!uiCommon().isFullMediumEnumerationRequested())
         uiCommon().enumerateMedia();
 
-    /* Layout created in the .ui file. */
-    AssertPtrReturnVoid(mLtStorage);
+    AssertPtrReturnVoid(m_pLayoutStorage);
     {
 #ifdef VBOX_WS_MAC
         /* We need a little more space for the focus rect: */
-        mLtStorage->setContentsMargins(3, 0, 3, 0);
-        mLtStorage->setSpacing(3);
+        m_pLayoutStorage->setContentsMargins(3, 0, 3, 0);
+        m_pLayoutStorage->setSpacing(3);
 #else
-        mLtStorage->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 3);
+        m_pLayoutStorage->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 3);
 #endif
 
         /* Prepare storage tree: */
@@ -4457,7 +4548,313 @@ void UIMachineSettingsStorage::prepare()
 
     /* Initial setup (after first retranslateUi() call): */
     setMinimumWidth(500);
-    mSplitter->setSizes(QList<int>() << (int)(0.45 * minimumWidth()) << (int)(0.55 * minimumWidth()));
+    m_pSplitter->setSizes(QList<int>() << (int)(0.45 * minimumWidth()) << (int)(0.55 * minimumWidth()));
+}
+
+void UIMachineSettingsStorage::prepareWidgets()
+{
+    QVBoxLayout *pLayoutMain;
+    QWidget *pWidgetLeftPane;
+    QVBoxLayout *pLayoutLeftPane;
+    QHBoxLayout *pLayoutStorageBar;
+    QSpacerItem *pSpacerItem1;
+    QWidget *pWidgetEmpty;
+    QSpacerItem *pSpacerItem2;
+    QWidget *mWtController;
+    QSpacerItem *pSpacerItem3;
+    QWidget *pWidgetAttachment;
+    QHBoxLayout *pLayoutContainer;
+    QVBoxLayout *pLayoutAttachmentConfig;
+    QSpacerItem *pSpacerItem6;
+
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIMachineSettingsStorage"));
+    resize(800, 700);
+    pLayoutMain = new QVBoxLayout(this);
+    pLayoutMain->setObjectName(QStringLiteral("pLayoutMain"));
+    m_pSplitter = new QISplitter(this);
+    m_pSplitter->setObjectName(QStringLiteral("m_pSplitter"));
+    m_pSplitter->setOrientation(Qt::Horizontal);
+    m_pSplitter->setHandleWidth(4);
+    pWidgetLeftPane = new QWidget(m_pSplitter);
+    pWidgetLeftPane->setObjectName(QStringLiteral("pWidgetLeftPane"));
+    pLayoutLeftPane = new QVBoxLayout(pWidgetLeftPane);
+    pLayoutLeftPane->setObjectName(QStringLiteral("pLayoutLeftPane"));
+    pLayoutLeftPane->setContentsMargins(0, 0, 10, 0);
+    m_pLabelSeparatorLeftPane = new QILabelSeparator(pWidgetLeftPane);
+    m_pLabelSeparatorLeftPane->setObjectName(QStringLiteral("m_pLabelSeparatorLeftPane"));
+    pLayoutLeftPane->addWidget(m_pLabelSeparatorLeftPane);
+
+    m_pLayoutStorage = new QVBoxLayout();
+    m_pLayoutStorage->setSpacing(3);
+    m_pLayoutStorage->setContentsMargins(0, 0, 0, 0);
+    m_pLayoutStorage->setObjectName(QStringLiteral("m_pLayoutStorage"));
+    pLayoutStorageBar = new QHBoxLayout();
+    pLayoutStorageBar->setObjectName(QStringLiteral("pLayoutStorageBar"));
+    pSpacerItem1 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+    pLayoutStorageBar->addItem(pSpacerItem1);
+
+    m_pToolBarStorageBar = new UIToolBar(pWidgetLeftPane);
+    m_pToolBarStorageBar->setObjectName(QStringLiteral("m_pToolBarStorageBar"));
+    pLayoutStorageBar->addWidget(m_pToolBarStorageBar);
+
+    m_pLayoutStorage->addLayout(pLayoutStorageBar);
+    pLayoutLeftPane->addLayout(m_pLayoutStorage);
+
+    m_pSplitter->addWidget(pWidgetLeftPane);
+    mSwRightPane = new QStackedWidget(m_pSplitter);
+    mSwRightPane->setObjectName(QStringLiteral("mSwRightPane"));
+    pWidgetEmpty = new QWidget();
+    pWidgetEmpty->setObjectName(QStringLiteral("pWidgetEmpty"));
+    m_pLayoutEmpty = new QGridLayout(pWidgetEmpty);
+    m_pLayoutEmpty->setObjectName(QStringLiteral("m_pLayoutEmpty"));
+    m_pLayoutEmpty->setContentsMargins(10, 0, 0, 0);
+    m_pLabelSeparatorEmpty = new QILabelSeparator(pWidgetEmpty);
+    m_pLabelSeparatorEmpty->setObjectName(QStringLiteral("m_pLabelSeparatorEmpty"));
+    m_pLayoutEmpty->addWidget(m_pLabelSeparatorEmpty, 0, 0, 1, 2);
+
+    m_pLabelInfo = new QLabel(pWidgetEmpty);
+    m_pLabelInfo->setObjectName(QStringLiteral("m_pLabelInfo"));
+    m_pLabelInfo->setWordWrap(true);
+    m_pLayoutEmpty->addWidget(m_pLabelInfo, 1, 1, 1, 1);
+
+    pSpacerItem2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    m_pLayoutEmpty->addItem(pSpacerItem2, 2, 0, 1, 2);
+
+    mSwRightPane->addWidget(pWidgetEmpty);
+    mWtController = new QWidget();
+    mWtController->setObjectName(QStringLiteral("mWtController"));
+    m_pLayoutController = new QGridLayout(mWtController);
+    m_pLayoutController->setObjectName(QStringLiteral("m_pLayoutController"));
+    m_pLayoutController->setContentsMargins(10, 0, 0, 0);
+    m_pLabelSeparatorParameters = new QILabelSeparator(mWtController);
+    m_pLabelSeparatorParameters->setObjectName(QStringLiteral("m_pLabelSeparatorParameters"));
+    m_pLayoutController->addWidget(m_pLabelSeparatorParameters, 0, 0, 1, 3);
+
+    m_pLabelName = new QLabel(mWtController);
+    m_pLabelName->setObjectName(QStringLiteral("m_pLabelName"));
+    m_pLabelName->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutController->addWidget(m_pLabelName, 1, 1, 1, 1);
+
+    m_pLineEditName = new QLineEdit(mWtController);
+    m_pLineEditName->setObjectName(QStringLiteral("m_pLineEditName"));
+    m_pLayoutController->addWidget(m_pLineEditName, 1, 2, 1, 1);
+
+    m_pLabelType = new QLabel(mWtController);
+    m_pLabelType->setObjectName(QStringLiteral("m_pLabelType"));
+    m_pLabelType->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutController->addWidget(m_pLabelType, 2, 1, 1, 1);
+
+    m_pComboBoxType = new QComboBox(mWtController);
+    m_pComboBoxType->setObjectName(QStringLiteral("m_pComboBoxType"));
+    QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pComboBoxType->sizePolicy().hasHeightForWidth());
+    m_pComboBoxType->setSizePolicy(sizePolicy);
+    m_pLayoutController->addWidget(m_pComboBoxType, 2, 2, 1, 1);
+
+    m_pLabelPortCount = new QLabel(mWtController);
+    m_pLabelPortCount->setObjectName(QStringLiteral("m_pLabelPortCount"));
+    m_pLabelPortCount->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutController->addWidget(m_pLabelPortCount, 3, 1, 1, 1);
+
+    m_pSpinBoxPortCount = new QSpinBox(mWtController);
+    m_pSpinBoxPortCount->setObjectName(QStringLiteral("m_pSpinBoxPortCount"));
+    sizePolicy.setHeightForWidth(m_pSpinBoxPortCount->sizePolicy().hasHeightForWidth());
+    m_pSpinBoxPortCount->setSizePolicy(sizePolicy);
+    m_pLayoutController->addWidget(m_pSpinBoxPortCount, 3, 2, 1, 1);
+
+    m_pCheckBoxIoCache = new QCheckBox(mWtController);
+    m_pCheckBoxIoCache->setObjectName(QStringLiteral("m_pCheckBoxIoCache"));
+    m_pLayoutController->addWidget(m_pCheckBoxIoCache, 4, 2, 1, 1);
+
+    pSpacerItem3 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    m_pLayoutController->addItem(pSpacerItem3, 5, 0, 1, 3);
+
+    mSwRightPane->addWidget(mWtController);
+    pWidgetAttachment = new QWidget();
+    pWidgetAttachment->setObjectName(QStringLiteral("pWidgetAttachment"));
+    m_pLayoutAttachment = new QGridLayout(pWidgetAttachment);
+    m_pLayoutAttachment->setObjectName(QStringLiteral("m_pLayoutAttachment"));
+    m_pLayoutAttachment->setContentsMargins(10, 0, 0, 0);
+    m_pLabelSeparatorAttributes = new QILabelSeparator(pWidgetAttachment);
+    m_pLabelSeparatorAttributes->setObjectName(QStringLiteral("m_pLabelSeparatorAttributes"));
+    m_pLayoutAttachment->addWidget(m_pLabelSeparatorAttributes, 0, 0, 1, 3);
+
+    m_pLabelMedium = new QLabel(pWidgetAttachment);
+    m_pLabelMedium->setObjectName(QStringLiteral("m_pLabelMedium"));
+    m_pLabelMedium->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelMedium, 1, 1, 1, 1);
+
+    pLayoutContainer = new QHBoxLayout();
+    pLayoutContainer->setSpacing(1);
+    pLayoutContainer->setObjectName(QStringLiteral("pLayoutContainer"));
+    pLayoutContainer->setContentsMargins(0, 0, 0, 0);
+    m_pComboBoxSlot = new QComboBox(pWidgetAttachment);
+    m_pComboBoxSlot->setObjectName(QStringLiteral("m_pComboBoxSlot"));
+    sizePolicy.setHeightForWidth(m_pComboBoxSlot->sizePolicy().hasHeightForWidth());
+    m_pComboBoxSlot->setSizePolicy(sizePolicy);
+    pLayoutContainer->addWidget(m_pComboBoxSlot);
+
+    m_pToolButtonOpen = new QIToolButton(pWidgetAttachment);
+    m_pToolButtonOpen->setObjectName(QStringLiteral("m_pToolButtonOpen"));
+
+    pLayoutContainer->addWidget(m_pToolButtonOpen);
+    m_pLayoutAttachment->addLayout(pLayoutContainer, 1, 2, 1, 1);
+
+    pLayoutAttachmentConfig = new QVBoxLayout();
+    pLayoutAttachmentConfig->setSpacing(0);
+    pLayoutAttachmentConfig->setContentsMargins(0, 0, 0, 0);
+    pLayoutAttachmentConfig->setObjectName(QStringLiteral("pLayoutAttachmentConfig"));
+    m_pCheckBoxPassthrough = new QCheckBox(pWidgetAttachment);
+    m_pCheckBoxPassthrough->setObjectName(QStringLiteral("m_pCheckBoxPassthrough"));
+    QSizePolicy sizePolicy1(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy1.setHorizontalStretch(0);
+    sizePolicy1.setVerticalStretch(0);
+    sizePolicy1.setHeightForWidth(m_pCheckBoxPassthrough->sizePolicy().hasHeightForWidth());
+    m_pCheckBoxPassthrough->setSizePolicy(sizePolicy1);
+    pLayoutAttachmentConfig->addWidget(m_pCheckBoxPassthrough);
+
+    m_pCheckBoxTempEject = new QCheckBox(pWidgetAttachment);
+    m_pCheckBoxTempEject->setObjectName(QStringLiteral("m_pCheckBoxTempEject"));
+    sizePolicy1.setHeightForWidth(m_pCheckBoxTempEject->sizePolicy().hasHeightForWidth());
+    m_pCheckBoxTempEject->setSizePolicy(sizePolicy1);
+    pLayoutAttachmentConfig->addWidget(m_pCheckBoxTempEject);
+
+    m_pCheckBoxNonRotational = new QCheckBox(pWidgetAttachment);
+    m_pCheckBoxNonRotational->setObjectName(QStringLiteral("m_pCheckBoxNonRotational"));
+    sizePolicy1.setHeightForWidth(m_pCheckBoxNonRotational->sizePolicy().hasHeightForWidth());
+    m_pCheckBoxNonRotational->setSizePolicy(sizePolicy1);
+    pLayoutAttachmentConfig->addWidget(m_pCheckBoxNonRotational);
+
+    m_pCheckBoxHotPluggable = new QCheckBox(pWidgetAttachment);
+    m_pCheckBoxHotPluggable->setObjectName(QStringLiteral("m_pCheckBoxHotPluggable"));
+    sizePolicy1.setHeightForWidth(m_pCheckBoxHotPluggable->sizePolicy().hasHeightForWidth());
+    m_pCheckBoxHotPluggable->setSizePolicy(sizePolicy1);
+
+    pLayoutAttachmentConfig->addWidget(m_pCheckBoxHotPluggable);
+    m_pLayoutAttachment->addLayout(pLayoutAttachmentConfig, 2, 2, 1, 1);
+
+    m_pLabelSeparatorInformation = new QILabelSeparator(pWidgetAttachment);
+    m_pLabelSeparatorInformation->setObjectName(QStringLiteral("m_pLabelSeparatorInformation"));
+    m_pLayoutAttachment->addWidget(m_pLabelSeparatorInformation, 3, 0, 1, 3);
+
+    m_pLabelHDFormat = new QLabel(pWidgetAttachment);
+    m_pLabelHDFormat->setObjectName(QStringLiteral("m_pLabelHDFormat"));
+    m_pLabelHDFormat->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelHDFormat, 4, 1, 1, 1);
+
+    m_pLabelHDFormatValue = new QILabel(pWidgetAttachment);
+    m_pLabelHDFormatValue->setObjectName(QStringLiteral("m_pLabelHDFormatValue"));
+    QSizePolicy sizePolicy2(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    sizePolicy2.setHorizontalStretch(0);
+    sizePolicy2.setVerticalStretch(0);
+    sizePolicy2.setHeightForWidth(m_pLabelHDFormatValue->sizePolicy().hasHeightForWidth());
+    m_pLabelHDFormatValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelHDFormatValue, 4, 2, 1, 1);
+
+    m_pLabelCDFDType = new QLabel(pWidgetAttachment);
+    m_pLabelCDFDType->setObjectName(QStringLiteral("m_pLabelCDFDType"));
+    m_pLabelCDFDType->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelCDFDType, 5, 1, 1, 1);
+
+    m_pLabelCDFDTypeValue = new QILabel(pWidgetAttachment);
+    m_pLabelCDFDTypeValue->setObjectName(QStringLiteral("m_pLabelCDFDTypeValue"));
+    sizePolicy2.setHeightForWidth(m_pLabelCDFDTypeValue->sizePolicy().hasHeightForWidth());
+    m_pLabelCDFDTypeValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelCDFDTypeValue, 5, 2, 1, 1);
+
+    m_pLabelHDVirtualSize = new QLabel(pWidgetAttachment);
+    m_pLabelHDVirtualSize->setObjectName(QStringLiteral("m_pLabelHDVirtualSize"));
+    m_pLabelHDVirtualSize->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+    m_pLayoutAttachment->addWidget(m_pLabelHDVirtualSize, 6, 1, 1, 1);
+
+    m_pLabelHDVirtualSizeValue = new QILabel(pWidgetAttachment);
+    m_pLabelHDVirtualSizeValue->setObjectName(QStringLiteral("m_pLabelHDVirtualSizeValue"));
+    sizePolicy2.setHeightForWidth(m_pLabelHDVirtualSizeValue->sizePolicy().hasHeightForWidth());
+    m_pLabelHDVirtualSizeValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelHDVirtualSizeValue, 6, 2, 1, 1);
+
+    m_pLabelHDActualSize = new QLabel(pWidgetAttachment);
+    m_pLabelHDActualSize->setObjectName(QStringLiteral("m_pLabelHDActualSize"));
+    m_pLabelHDActualSize->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelHDActualSize, 7, 1, 1, 1);
+
+    m_pLabelHDActualSizeValue = new QILabel(pWidgetAttachment);
+    m_pLabelHDActualSizeValue->setObjectName(QStringLiteral("m_pLabelHDActualSizeValue"));
+    sizePolicy2.setHeightForWidth(m_pLabelHDActualSizeValue->sizePolicy().hasHeightForWidth());
+    m_pLabelHDActualSizeValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelHDActualSizeValue, 7, 2, 1, 1);
+
+    m_pLabelSize = new QLabel(pWidgetAttachment);
+    m_pLabelSize->setObjectName(QStringLiteral("m_pLabelSize"));
+    m_pLabelSize->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelSize, 8, 1, 1, 1);
+
+    m_pLabelSizeValue = new QILabel(pWidgetAttachment);
+    m_pLabelSizeValue->setObjectName(QStringLiteral("m_pLabelSizeValue"));
+    sizePolicy2.setHeightForWidth(m_pLabelSizeValue->sizePolicy().hasHeightForWidth());
+    m_pLabelSizeValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelSizeValue, 8, 2, 1, 1);
+
+    m_pLabelHDDetails = new QLabel(pWidgetAttachment);
+    m_pLabelHDDetails->setObjectName(QStringLiteral("m_pLabelHDDetails"));
+    m_pLabelHDDetails->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelHDDetails, 9, 1, 1, 1);
+
+    m_pLabelHDDetailsValue = new QILabel(pWidgetAttachment);
+    m_pLabelHDDetailsValue->setObjectName(QStringLiteral("m_pLabelHDDetailsValue"));
+    sizePolicy2.setHeightForWidth(m_pLabelHDDetailsValue->sizePolicy().hasHeightForWidth());
+    m_pLabelHDDetailsValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelHDDetailsValue, 9, 2, 1, 1);
+
+    m_pLabelLocation = new QLabel(pWidgetAttachment);
+    m_pLabelLocation->setObjectName(QStringLiteral("m_pLabelLocation"));
+    m_pLabelLocation->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelLocation, 10, 1, 1, 1);
+
+    m_pLabelLocationValue = new QILabel(pWidgetAttachment);
+    m_pLabelLocationValue->setObjectName(QStringLiteral("m_pLabelLocationValue"));
+    sizePolicy2.setHeightForWidth(m_pLabelLocationValue->sizePolicy().hasHeightForWidth());
+    m_pLabelLocationValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelLocationValue, 10, 2, 1, 1);
+
+    m_pLabelUsage = new QLabel(pWidgetAttachment);
+    m_pLabelUsage->setObjectName(QStringLiteral("m_pLabelUsage"));
+    m_pLabelUsage->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelUsage, 11, 1, 1, 1);
+
+    m_pLabelUsageValue = new QILabel(pWidgetAttachment);
+    m_pLabelUsageValue->setObjectName(QStringLiteral("m_pLabelUsageValue"));
+    sizePolicy2.setHeightForWidth(m_pLabelUsageValue->sizePolicy().hasHeightForWidth());
+    m_pLabelUsageValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelUsageValue, 11, 2, 1, 1);
+
+    m_pLabelEncryption = new QLabel(pWidgetAttachment);
+    m_pLabelEncryption->setObjectName(QStringLiteral("m_pLabelEncryption"));
+    m_pLabelEncryption->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    m_pLayoutAttachment->addWidget(m_pLabelEncryption, 12, 1, 1, 1);
+
+    m_pLabelEncryptionValue = new QILabel(pWidgetAttachment);
+    m_pLabelEncryptionValue->setObjectName(QStringLiteral("m_pLabelEncryptionValue"));
+    sizePolicy2.setHeightForWidth(m_pLabelEncryptionValue->sizePolicy().hasHeightForWidth());
+    m_pLabelEncryptionValue->setSizePolicy(sizePolicy2);
+    m_pLayoutAttachment->addWidget(m_pLabelEncryptionValue, 12, 2, 1, 1);
+
+    pSpacerItem6 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    m_pLayoutAttachment->addItem(pSpacerItem6, 13, 0, 1, 3);
+
+    mSwRightPane->addWidget(pWidgetAttachment);
+    m_pSplitter->addWidget(mSwRightPane);
+    pLayoutMain->addWidget(m_pSplitter);
+
+    m_pLabelName->setBuddy(m_pLineEditName);
+    m_pLabelType->setBuddy(m_pComboBoxType);
+    m_pLabelPortCount->setBuddy(m_pSpinBoxPortCount);
+    m_pLabelMedium->setBuddy(m_pToolButtonOpen);
 }
 
 void UIMachineSettingsStorage::prepareStorageTree()
@@ -4465,10 +4862,10 @@ void UIMachineSettingsStorage::prepareStorageTree()
     /* Create storage tree-view: */
     m_pTreeStorage = new QITreeView;
     AssertPtrReturnVoid(m_pTreeStorage);
-    AssertPtrReturnVoid(mLsLeftPane);
+    AssertPtrReturnVoid(m_pLabelSeparatorLeftPane);
     {
         /* Configure tree-view: */
-        mLsLeftPane->setBuddy(m_pTreeStorage);
+        m_pLabelSeparatorLeftPane->setBuddy(m_pTreeStorage);
         m_pTreeStorage->setMouseTracking(true);
         m_pTreeStorage->setAcceptDrops(true);
         m_pTreeStorage->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -4492,18 +4889,17 @@ void UIMachineSettingsStorage::prepareStorageTree()
         }
 
         /* Insert tree-view into layout: */
-        mLtStorage->insertWidget(0, m_pTreeStorage);
+        m_pLayoutStorage->insertWidget(0, m_pTreeStorage);
     }
 }
 
 void UIMachineSettingsStorage::prepareStorageToolbar()
 {
-    /* Storage toolbar created in the .ui file. */
-    AssertPtrReturnVoid(mTbStorageBar);
+    AssertPtrReturnVoid(m_pToolBarStorageBar);
     {
         /* Configure toolbar: */
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        mTbStorageBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBarStorageBar->setIconSize(QSize(iIconMetric, iIconMetric));
 
         /* Create 'Add Controller' action: */
         m_pActionAddController = new QAction(this);
@@ -4513,7 +4909,7 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
             m_pActionAddController->setIcon(iconPool()->icon(ControllerAddEn, ControllerAddDis));
 
             /* Add action into toolbar: */
-            mTbStorageBar->addAction(m_pActionAddController);
+            m_pToolBarStorageBar->addAction(m_pActionAddController);
         }
 
         /* Create 'Add PIIX3 Controller' action: */
@@ -4612,7 +5008,7 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
             m_pActionRemoveController->setIcon(iconPool()->icon(ControllerDelEn, ControllerDelDis));
 
             /* Add action into toolbar: */
-            mTbStorageBar->addAction(m_pActionRemoveController);
+            m_pToolBarStorageBar->addAction(m_pActionRemoveController);
         }
 
         /* Create 'Add Attachment' action: */
@@ -4623,7 +5019,7 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
             m_pActionAddAttachment->setIcon(iconPool()->icon(AttachmentAddEn, AttachmentAddDis));
 
             /* Add action into toolbar: */
-            mTbStorageBar->addAction(m_pActionAddAttachment);
+            m_pToolBarStorageBar->addAction(m_pActionAddAttachment);
         }
 
         /* Create 'Add HD Attachment' action: */
@@ -4658,47 +5054,45 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
             m_pActionRemoveAttachment->setIcon(iconPool()->icon(AttachmentDelEn, AttachmentDelDis));
 
             /* Add action into toolbar: */
-            mTbStorageBar->addAction(m_pActionRemoveAttachment);
+            m_pToolBarStorageBar->addAction(m_pActionRemoveAttachment);
         }
     }
 }
 
 void UIMachineSettingsStorage::prepareStorageWidgets()
 {
-    /* Open Medium tool-button created in the .ui file. */
-    AssertPtrReturnVoid(mTbOpen);
+    AssertPtrReturnVoid(m_pToolButtonOpen);
     {
         /* Create Open Medium menu: */
-        QMenu *pOpenMediumMenu = new QMenu(mTbOpen);
+        QMenu *pOpenMediumMenu = new QMenu(m_pToolButtonOpen);
         AssertPtrReturnVoid(pOpenMediumMenu);
         {
             /* Add menu into tool-button: */
-            mTbOpen->setMenu(pOpenMediumMenu);
+            m_pToolButtonOpen->setMenu(pOpenMediumMenu);
         }
     }
 
-    /* Other widgets created in the .ui file. */
-    AssertPtrReturnVoid(mSbPortCount);
-    AssertPtrReturnVoid(mLbHDFormatValue);
-    AssertPtrReturnVoid(mLbCDFDTypeValue);
-    AssertPtrReturnVoid(mLbHDVirtualSizeValue);
-    AssertPtrReturnVoid(mLbHDActualSizeValue);
-    AssertPtrReturnVoid(mLbSizeValue);
-    AssertPtrReturnVoid(mLbHDDetailsValue);
-    AssertPtrReturnVoid(mLbLocationValue);
-    AssertPtrReturnVoid(mLbUsageValue);
+    AssertPtrReturnVoid(m_pSpinBoxPortCount);
+    AssertPtrReturnVoid(m_pLabelHDFormatValue);
+    AssertPtrReturnVoid(m_pLabelCDFDTypeValue);
+    AssertPtrReturnVoid(m_pLabelHDVirtualSizeValue);
+    AssertPtrReturnVoid(m_pLabelHDActualSizeValue);
+    AssertPtrReturnVoid(m_pLabelSizeValue);
+    AssertPtrReturnVoid(m_pLabelHDDetailsValue);
+    AssertPtrReturnVoid(m_pLabelLocationValue);
+    AssertPtrReturnVoid(m_pLabelUsageValue);
     AssertPtrReturnVoid(m_pLabelEncryptionValue);
     {
         /* Configure widgets: */
-        mSbPortCount->setValue(0);
-        mLbHDFormatValue->setFullSizeSelection(true);
-        mLbCDFDTypeValue->setFullSizeSelection(true);
-        mLbHDVirtualSizeValue->setFullSizeSelection(true);
-        mLbHDActualSizeValue->setFullSizeSelection(true);
-        mLbSizeValue->setFullSizeSelection(true);
-        mLbHDDetailsValue->setFullSizeSelection(true);
-        mLbLocationValue->setFullSizeSelection(true);
-        mLbUsageValue->setFullSizeSelection(true);
+        m_pSpinBoxPortCount->setValue(0);
+        m_pLabelHDFormatValue->setFullSizeSelection(true);
+        m_pLabelCDFDTypeValue->setFullSizeSelection(true);
+        m_pLabelHDVirtualSizeValue->setFullSizeSelection(true);
+        m_pLabelHDActualSizeValue->setFullSizeSelection(true);
+        m_pLabelSizeValue->setFullSizeSelection(true);
+        m_pLabelHDDetailsValue->setFullSizeSelection(true);
+        m_pLabelLocationValue->setFullSizeSelection(true);
+        m_pLabelUsageValue->setFullSizeSelection(true);
         m_pLabelEncryptionValue->setFullSizeSelection(true);
     }
 }
@@ -4760,28 +5154,28 @@ void UIMachineSettingsStorage::prepareConnections()
     connect(m_pActionRemoveAttachment, &QAction::triggered, this, &UIMachineSettingsStorage::sltRemoveAttachment);
 
     /* Configure tool-button: */
-    connect(mTbOpen, &QIToolButton::clicked, mTbOpen, &QIToolButton::showMenu);
+    connect(m_pToolButtonOpen, &QIToolButton::clicked, m_pToolButtonOpen, &QIToolButton::showMenu);
     /* Configure menu: */
-    connect(mTbOpen->menu(), &QMenu::aboutToShow, this, &UIMachineSettingsStorage::sltPrepareOpenMediumMenu);
+    connect(m_pToolButtonOpen->menu(), &QMenu::aboutToShow, this, &UIMachineSettingsStorage::sltPrepareOpenMediumMenu);
 
     /* Configure widgets: */
     connect(m_pMediumIdHolder, &UIMediumIDHolder::sigChanged,
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mSbPortCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinBoxPortCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mLeName, &QLineEdit::textEdited,
+    connect(m_pLineEditName, &QLineEdit::textEdited,
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mCbType, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+    connect(m_pComboBoxType, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mCbSlot, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+    connect(m_pComboBoxSlot, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mCbIoCache, &QCheckBox::stateChanged,
+    connect(m_pCheckBoxIoCache, &QCheckBox::stateChanged,
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mCbPassthrough, &QCheckBox::stateChanged,
+    connect(m_pCheckBoxPassthrough, &QCheckBox::stateChanged,
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mCbTempEject, &QCheckBox::stateChanged,
+    connect(m_pCheckBoxTempEject, &QCheckBox::stateChanged,
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mCbNonRotational, &QCheckBox::stateChanged,
+    connect(m_pCheckBoxNonRotational, &QCheckBox::stateChanged,
             this, &UIMachineSettingsStorage::sltSetInformation);
     connect(m_pCheckBoxHotPluggable, &QCheckBox::stateChanged,
             this, &UIMachineSettingsStorage::sltSetInformation);
@@ -4871,23 +5265,23 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDeviceType)
 
 void UIMachineSettingsStorage::updateAdditionalDetails(KDeviceType enmType)
 {
-    mLbHDFormat->setVisible(enmType == KDeviceType_HardDisk);
-    mLbHDFormatValue->setVisible(enmType == KDeviceType_HardDisk);
+    m_pLabelHDFormat->setVisible(enmType == KDeviceType_HardDisk);
+    m_pLabelHDFormatValue->setVisible(enmType == KDeviceType_HardDisk);
 
-    mLbCDFDType->setVisible(enmType != KDeviceType_HardDisk);
-    mLbCDFDTypeValue->setVisible(enmType != KDeviceType_HardDisk);
+    m_pLabelCDFDType->setVisible(enmType != KDeviceType_HardDisk);
+    m_pLabelCDFDTypeValue->setVisible(enmType != KDeviceType_HardDisk);
 
-    mLbHDVirtualSize->setVisible(enmType == KDeviceType_HardDisk);
-    mLbHDVirtualSizeValue->setVisible(enmType == KDeviceType_HardDisk);
+    m_pLabelHDVirtualSize->setVisible(enmType == KDeviceType_HardDisk);
+    m_pLabelHDVirtualSizeValue->setVisible(enmType == KDeviceType_HardDisk);
 
-    mLbHDActualSize->setVisible(enmType == KDeviceType_HardDisk);
-    mLbHDActualSizeValue->setVisible(enmType == KDeviceType_HardDisk);
+    m_pLabelHDActualSize->setVisible(enmType == KDeviceType_HardDisk);
+    m_pLabelHDActualSizeValue->setVisible(enmType == KDeviceType_HardDisk);
 
-    mLbSize->setVisible(enmType != KDeviceType_HardDisk);
-    mLbSizeValue->setVisible(enmType != KDeviceType_HardDisk);
+    m_pLabelSize->setVisible(enmType != KDeviceType_HardDisk);
+    m_pLabelSizeValue->setVisible(enmType != KDeviceType_HardDisk);
 
-    mLbHDDetails->setVisible(enmType == KDeviceType_HardDisk);
-    mLbHDDetailsValue->setVisible(enmType == KDeviceType_HardDisk);
+    m_pLabelHDDetails->setVisible(enmType == KDeviceType_HardDisk);
+    m_pLabelHDDetailsValue->setVisible(enmType == KDeviceType_HardDisk);
 
     m_pLabelEncryption->setVisible(enmType == KDeviceType_HardDisk);
     m_pLabelEncryptionValue->setVisible(enmType == KDeviceType_HardDisk);

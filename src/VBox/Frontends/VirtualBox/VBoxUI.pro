@@ -33,7 +33,6 @@ FORMS = \
     src/settings/global/UIGlobalSettingsProxy.ui \
     src/settings/machine/UIMachineSettingsGeneral.ui \
     src/settings/machine/UIMachineSettingsSystem.ui \
-    src/settings/machine/UIMachineSettingsStorage.ui \
     src/settings/machine/UIMachineSettingsNetwork.ui \
     src/settings/machine/UIMachineSettingsSerial.ui \
     src/settings/machine/UIMachineSettingsUSB.ui \

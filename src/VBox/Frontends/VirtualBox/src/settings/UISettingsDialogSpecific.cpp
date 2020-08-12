@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QStackedWidget>
+
 /* GUI includes: */
 #include "QIWidgetValidator.h"
 #include "UICommon.h"
