@@ -73,7 +73,7 @@ private:
 
     /** Smart pointer to the progress object for this job. */
     ComObjPtr<Progress> m_ptrProgress;
-    HRESULT m_rc; /**< Not really used for anything outside i_updateCheckTask, at the moment. */
+    HRESULT m_rc; /**< Not really used for anything, at the moment. */
 
     friend class HostUpdate;  // allow member functions access to private data
 };
@@ -402,7 +402,6 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     }
     else
     {
-        /** @todo r=bird: trusting the server reply too much here! */
         m_updateNeeded = TRUE;
         m_updateVersion = lstHttpReply.at(0).c_str();
         m_updateURL = lstHttpReply.at(1).c_str();
@@ -419,44 +418,29 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
 HRESULT HostUpdate::i_updateCheckTask(UpdateCheckTask *pTask)
 {
     LogFlowFuncEnter();
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        try
-        {
-            switch (pTask->m_checkType)
-            {
-                case UpdateCheckType_VirtualBox:
-                    hrc = i_checkForVBoxUpdate();
-                    break;
-#if 0
-                case UpdateCheckType_ExtensionPack:
-                    hrc = i_checkForExtPackUpdate();
-                    break;
 
-                case UpdateCheckType_GuestAdditions:
-                    hrc = i_checkForGuestAdditionsUpdate();
-                    break;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    if (pTask->m_checkType == UpdateCheckType_VirtualBox)
+        pTask->m_rc = i_checkForVBoxUpdate();
+
+#if 0
+    else if (pTask->m_checkType == UpdateCheckType_ExtensionPack)
+        ;
+    else if (pTask->m_checkType == UpdateCheckType_GuestAdditions)
+        ;
+    else
+        assert();
 #endif
-                default:
-                    hrc = setError(E_FAIL, tr("Update check type %d is not implemented"), pTask->m_checkType);
-                    break;
-            }
-        }
-        catch (...)
-        {
-            AssertFailed();
-            hrc = E_UNEXPECTED;
-        }
-    }
 
     if (!pTask->m_ptrProgress.isNull())
-        pTask->m_ptrProgress->i_notifyComplete(hrc);
+        pTask->m_ptrProgress->i_notifyComplete(pTask->m_rc);
 
-    LogFlowFunc(("rc=%Rhrc\n", hrc));
+    LogFlowFunc(("rc=%Rhrc\n", pTask->m_rc));
     LogFlowFuncLeave();
-    return pTask->m_rc = hrc;
+
+    return pTask->m_rc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -510,24 +494,13 @@ void HostUpdate::uninit()
 HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
                                 ComPtr<IProgress> &aProgress)
 {
-    /* Validate input */
-    switch (aCheckType)
-    {
-        case UpdateCheckType_VirtualBox:
-            break;
-        case UpdateCheckType_ExtensionPack:
-            return setError(E_NOTIMPL, tr("UpdateCheckType::ExtensionPack is not implemented"));
-        case UpdateCheckType_GuestAdditions:
-            return setError(E_NOTIMPL, tr("UpdateCheckType::GuestAdditions is not implemented"));
-        default:
-            return setError(E_INVALIDARG, tr("Invalid aCheckType value %d"), aCheckType);
-    }
+    HRESULT rc;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // Check whether VirtualBox updates have been disabled before spawning the task thread.
     ComPtr<ISystemProperties> pSystemProperties;
-    HRESULT rc = mVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    rc = mVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: IVirtualBox::systemProperties() failed: %Rrc"), __FUNCTION__, rc);
 
@@ -536,35 +509,33 @@ HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: retrieving ISystemProperties::VBoxUpdateEnabled failed: %Rrc"), __FUNCTION__, rc);
 
-    /** @todo r=bird: Not sure if this makes sense, it should at least have a
-     * better status code and a proper error message.  Also, isn't this really
-     * something the caller should check?  Presumably the caller already check
-     * whther this was a good time to perform an update check (i.e. the configured
-     * time has elapsed since last check) ...
-     *
-     * It would make sense to allow performing a one-off update check even if the
-     * automatic update checking is disabled, wouldn't it? */
     if (!fVBoxUpdateEnabled)
         return E_NOTIMPL;
 
     ComObjPtr<Progress> pProgress;
     rc = pProgress.createObject();
     if (FAILED(rc))
+    {
         return rc;
+    }
 
     rc = pProgress->init(mVirtualBox,
                          static_cast<IHostUpdate*>(this),
                          tr("Checking for software update..."),
                          TRUE /* aCancelable */);
     if (FAILED(rc))
+    {
         return rc;
+    }
 
     /* initialize the worker task */
     UpdateCheckTask *pTask = new UpdateCheckTask(aCheckType, this, pProgress);
     rc = pTask->createThread();
     pTask = NULL;
     if (FAILED(rc))
+    {
         return rc;
+    }
 
     rc = pProgress.queryInterfaceTo(aProgress.asOutParam());
 
@@ -575,7 +546,10 @@ HRESULT HostUpdate::getUpdateVersion(com::Utf8Str &aUpdateVersion)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aUpdateVersion = m_updateVersion;
+    if (m_updateVersion.isNotEmpty())
+    {
+        aUpdateVersion = m_updateVersion;
+    }
 
     return S_OK;
 }
@@ -584,7 +558,10 @@ HRESULT HostUpdate::getUpdateURL(com::Utf8Str &aUpdateURL)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aUpdateURL = m_updateURL;
+    if (m_updateURL.isNotEmpty())
+    {
+        aUpdateURL = m_updateURL;
+    }
 
     return S_OK;
 }
@@ -608,9 +585,6 @@ HRESULT HostUpdate::getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded)
     if (FAILED(rc))
         return rc;
 
-    /*
-     * Is update checking enabled?
-     */
     BOOL fVBoxUpdateEnabled;
     rc = pSystemProperties->COMGETTER(VBoxUpdateEnabled)(&fVBoxUpdateEnabled);
     if (FAILED(rc))
@@ -622,9 +596,6 @@ HRESULT HostUpdate::getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded)
         return S_OK;
     }
 
-    /*
-     * When was the last update?
-     */
     Bstr strVBoxUpdateLastCheckDate;
     rc = pSystemProperties->COMGETTER(VBoxUpdateLastCheckDate)(strVBoxUpdateLastCheckDate.asOutParam());
     if (FAILED(rc))
@@ -645,9 +616,6 @@ HRESULT HostUpdate::getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded)
         return S_OK;
     }
 
-    /*
-     * Compare last update with how often we are supposed to check for updates.
-     */
     ULONG uVBoxUpdateFrequency = 0;  // value in days
     rc = pSystemProperties->COMGETTER(VBoxUpdateFrequency)(&uVBoxUpdateFrequency);
     if (FAILED(rc))
@@ -655,20 +623,19 @@ HRESULT HostUpdate::getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded)
 
     if (!uVBoxUpdateFrequency)
     {
-        /* Consider config (enable, 0 day interval) as checking once but never again.
-           We've already check since we've got a date. */
         *aUpdateCheckNeeded = false;
         return S_OK;
     }
-    uint64_t const cSecsInXDays = uVBoxUpdateFrequency * RT_SEC_1DAY_64;
 
-    RTTIMESPEC TimeDiff;
-    RTTimeSpecSub(RTTimeNow(&TimeDiff), &LastCheckTime);
+    ULONG ulSecondsInXDays = uVBoxUpdateFrequency /* in days */ * 24 /* hours */ * 60 /* minutes */ * 60 /* seconds */;
+    RTTIMESPEC TimeNow;
+    (void) RTTimeNow(&TimeNow);
+    PRTTIMESPEC TimeDiff = RTTimeSpecSub(&TimeNow, &LastCheckTime);
 
-    LogRelFunc(("Checking if seconds since last check (%lld) >= Number of seconds in %lu day%s (%lld)\n",
-                RTTimeSpecGetSeconds(&TimeDiff), uVBoxUpdateFrequency, uVBoxUpdateFrequency > 1 ? "s" : "", cSecsInXDays));
+    LogRelFunc(("Checking if seconds since last check (%ld) >= Number of seconds in %lu day%s (%ld)\n",
+        RTTimeSpecGetSeconds(TimeDiff), uVBoxUpdateFrequency, uVBoxUpdateFrequency > 1 ? "s" : "", ulSecondsInXDays));
 
-    if (RTTimeSpecGetSeconds(&TimeDiff) >= (int64_t)cSecsInXDays)
+    if (RTTimeSpecGetSeconds(TimeDiff) >= ulSecondsInXDays)
         *aUpdateCheckNeeded = true;
 
     return S_OK;
