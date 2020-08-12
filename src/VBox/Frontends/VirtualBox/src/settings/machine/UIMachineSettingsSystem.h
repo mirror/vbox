@@ -23,16 +23,22 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIMachineSettingsSystem.gen.h"
 
 /* Forward declarations: */
 struct UIDataSettingsMachineSystem;
 typedef UISettingsCache<UIDataSettingsMachineSystem> UISettingsCacheMachineSystem;
 class CMachine;
+class QCheckBox;
+class QComboBox;
+class QLabel;
+class QSpinBox;
+class QIAdvancedSlider;
+class QITabWidget;
+class UIBaseMemoryEditor;
+class UIBootOrderEditor;
 
 /** Machine settings: System page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine,
-                                                     public Ui::UIMachineSettingsSystem
+class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -116,6 +122,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Prepares 'Motherboard' tab. */
     void prepareTabMotherboard();
     /** Prepares 'Processor' tab. */
@@ -166,6 +174,45 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineSystem *m_pCache;
+
+    /** @name Widgets
+     * @{ */
+       QLabel *m_pBaseMemoryLabel;
+       QLabel *m_pBootOrderLabel;
+       QLabel *m_pLabelChipsetType;
+       QLabel *m_pLabelPointingHIDType;
+       QLabel *m_pLabelMotherboardExtended;
+       QLabel *m_pLabelCPUCount;
+       QLabel *m_pLabelCPUExecCap;
+       QLabel *m_pLabelCPUExtended;
+       QLabel *m_pLabelParavirtProvider;
+       QLabel *m_pLabelVirtualization;
+       QLabel *m_pLabelCPUMin;
+       QLabel *m_pLabelCPUMax;
+       QLabel *m_pLabelCPUExecCapMin;
+       QLabel *m_pLabelCPUExecCapMax;
+       QWidget *m_pTabMotherboard;
+       QWidget *m_pTabCPU;
+       QWidget *m_pTabAcceleration;
+       QWidget *m_pWidgetPlaceholder;
+       QCheckBox *m_pCheckBoxVirtualization;
+       QCheckBox *m_pCheckBoxNestedPaging;
+       QCheckBox *m_pCheckBoxNestedVirtualization;
+       QCheckBox *m_pCheckBoxApic;
+       QCheckBox *m_pCheckBoxEFI;
+       QCheckBox *m_pCheckBoxPAE;
+       QCheckBox *m_pCheckBoxUseUTC;
+       QComboBox *m_pComboPointingHIDType;
+       QComboBox *m_pComboChipsetType;
+       QComboBox *m_pComboParavirtProviderType;
+       QIAdvancedSlider *m_pSliderCPUCount;
+       QIAdvancedSlider *m_pSliderCPUExecCap;
+       UIBaseMemoryEditor *m_pBaseMemoryEditor;
+       UIBootOrderEditor *m_pBootOrderEditor;
+       QITabWidget *m_pTabWidgetSystem;
+       QSpinBox *m_pEditorCPUCount;
+       QSpinBox *m_pEditorCPUExecCap;
+   /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSystem_h */

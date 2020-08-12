@@ -16,10 +16,19 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
+#include <QComboBox>
 #include <QHeaderView>
+#include <QLabel>
+#include <QSpinBox>
+#include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIAdvancedSlider.h"
+#include "QITabWidget.h"
 #include "QIWidgetValidator.h"
+#include "UIBaseMemoryEditor.h"
+#include "UIBootOrderEditor.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsSystem.h"
@@ -573,8 +582,75 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsSystem::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIMachineSettingsSystem::retranslateUi(this);
+    m_pBaseMemoryLabel->setText(QApplication::translate("UIMachineSettingsSystem", "Base &Memory:"));
+    m_pBaseMemoryEditor->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Controls the amount of memory provided "
+                                                              "to the virtual machine. If you assign too much, the machine might not start."));
+    m_pBootOrderLabel->setText(QApplication::translate("UIMachineSettingsSystem", "&Boot Order:"));
+    m_pBootOrderEditor->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Defines the boot device order. Use the "
+                                                             "checkboxes on the left to enable or disable individual boot devices."
+                                                             "Move items up and down to change the device order."));
+    m_pLabelChipsetType->setText(QApplication::translate("UIMachineSettingsSystem", "&Chipset:"));
+    m_pComboChipsetType->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Selects the chipset to be emulated in "
+                                                              "this virtual machine. Note that the ICH9 chipset emulation is experimental "
+                                                              "and not recommended except for guest systems (such as Mac OS X) which require it."));
+    m_pLabelPointingHIDType->setText(QApplication::translate("UIMachineSettingsSystem", "&Pointing Device:"));
+    m_pComboPointingHIDType->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Determines whether the emulated "
+                                                                  "pointing device is a standard PS/2 mouse, a USB tablet or a "
+                                                                  "USB multi-touch tablet."));
+    m_pLabelMotherboardExtended->setText(QApplication::translate("UIMachineSettingsSystem", "Extended Features:"));
+    m_pCheckBoxApic->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "When checked, the virtual machine will "
+                                                          "support the Input Output APIC (I/O APIC), which may slightly decrease "
+                                                          "performance. <b>Note:</b> don't disable this feature after having "
+                                                          "installed a Windows guest operating system!"));
+    m_pCheckBoxApic->setText(QApplication::translate("UIMachineSettingsSystem", "Enable &I/O APIC"));
+    m_pCheckBoxEFI->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "When checked, the guest will support the "
+                                                         "Extended Firmware Interface (EFI), which is required to boot certain "
+                                                         "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated."));
+    m_pCheckBoxEFI->setText(QApplication::translate("UIMachineSettingsSystem", "Enable &EFI (special OSes only)"));
+    m_pCheckBoxUseUTC->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "When checked, the RTC device will report "
+                                                            "the time in UTC, otherwise in local (host) time. Unix usually expects "
+                                                            "the hardware clock to be set to UTC."));
+    m_pCheckBoxUseUTC->setText(QApplication::translate("UIMachineSettingsSystem", "Hardware Clock in &UTC Time"));
+    m_pTabWidgetSystem->setTabText(m_pTabWidgetSystem->indexOf(m_pTabMotherboard), QApplication::translate("UIMachineSettingsSystem", "&Motherboard"));
+    m_pLabelCPUCount->setText(QApplication::translate("UIMachineSettingsSystem", "&Processor(s):"));
+    m_pSliderCPUCount->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Controls the number of virtual CPUs in the "
+                                                            "virtual machine. You need hardware virtualization support on your host "
+                                                            "system to use more than one virtual CPU."));
+    m_pEditorCPUCount->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Controls the number of virtual CPUs in the "
+                                                            "virtual machine. You need hardware virtualization support on your host "
+                                                            "system to use more than one virtual CPU."));
+    m_pLabelCPUExecCap->setText(QApplication::translate("UIMachineSettingsSystem", "&Execution Cap:"));
+    m_pSliderCPUExecCap->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Limits the amount of time that each virtual "
+                                                              "CPU is allowed to run for. Each virtual CPU will be allowed to use up "
+                                                              "to this percentage of the processing time available on one physical CPU. "
+                                                              "The execution cap can be disabled by setting it to 100%. Setting the cap "
+                                                              "too low can make the machine feel slow to respond."));
+    m_pEditorCPUExecCap->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Limits the amount of time that each virtual CPU "
+                                                              "is allowed to run for. Each virtual CPU will be allowed to use up "
+                                                              "to this percentage of the processing time available on one physical "
+                                                              "CPU. The execution cap can be disabled by setting it to 100%. Setting "
+                                                              "the cap too low can make the machine feel slow to respond."));
+    m_pEditorCPUExecCap->setSuffix(QApplication::translate("UIMachineSettingsSystem", "%"));
+    m_pLabelCPUExtended->setText(QApplication::translate("UIMachineSettingsSystem", "Extended Features:"));
+    m_pCheckBoxPAE->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "When checked, the Physical Address Extension "
+                                                         "(PAE) feature of the host CPU will be exposed to the virtual machine."));
+    m_pCheckBoxPAE->setText(QApplication::translate("UIMachineSettingsSystem", "Enable PA&E/NX"));
+    m_pCheckBoxNestedVirtualization->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "When checked, the nested hardware "
+                                                                          "virtualization CPU feature will be exposed to the virtual machine."));
+    m_pCheckBoxNestedVirtualization->setText(QApplication::translate("UIMachineSettingsSystem", "Enable Nested &VT-x/AMD-V"));
+    m_pTabWidgetSystem->setTabText(m_pTabWidgetSystem->indexOf(m_pTabCPU), QApplication::translate("UIMachineSettingsSystem", "&Processor"));
+    m_pLabelParavirtProvider->setText(QApplication::translate("UIMachineSettingsSystem", "&Paravirtualization Interface:"));
+    m_pComboParavirtProviderType->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "Selects the paravirtualization "
+                                                                       "guest interface provider to be used by this virtual machine."));
+    m_pLabelVirtualization->setText(QApplication::translate("UIMachineSettingsSystem", "Hardware Virtualization:"));
+    m_pCheckBoxVirtualization->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "When checked, the virtual machine "
+                                                                    "will try to make use of the host CPU's hardware virtualization "
+                                                                    "extensions such as Intel VT-x and AMD-V."));
+    m_pCheckBoxVirtualization->setText(QApplication::translate("UIMachineSettingsSystem", "Enable &VT-x/AMD-V"));
+    m_pCheckBoxNestedPaging->setWhatsThis(QApplication::translate("UIMachineSettingsSystem", "When checked, the virtual machine will "
+                                                                  "try to make use of the nested paging extension of Intel VT-x and AMD-V."));
+    m_pCheckBoxNestedPaging->setText(QApplication::translate("UIMachineSettingsSystem", "Enable Nested Pa&ging"));
+    m_pTabWidgetSystem->setTabText(m_pTabWidgetSystem->indexOf(m_pTabAcceleration), QApplication::translate("UIMachineSettingsSystem", "Acce&leration"));
 
     /* Retranslate the cpu slider legend: */
     m_pLabelCPUMin->setText(tr("%1 CPU", "%1 is 1 for now").arg(m_uMinGuestCPU));
@@ -694,8 +770,7 @@ void UIMachineSettingsSystem::sltHandleHwVirtExToggle()
 
 void UIMachineSettingsSystem::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsSystem::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineSystem;
@@ -715,6 +790,275 @@ void UIMachineSettingsSystem::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIMachineSettingsSystem::prepareWidgets()
+{
+    // QVBoxLayout *pVBoxLayout1;
+    // QHBoxLayout *pHBoxLayout2;
+    // QSpacerItem *pSpacerHorizontal5;
+    // QVBoxLayout *pVBoxLayout2;
+    // QHBoxLayout *pHBoxLayout3;
+    // QSpacerItem *pSpacerHorizontal6;
+    // QSpacerItem *pSpacerVertical3;
+    // QGridLayout *pGridLayout2;
+    // QHBoxLayout *pHBoxLayout4;
+    // QSpacerItem *pSpacerHorizontal7;
+    // QVBoxLayout *pVerticalLayout1;
+    // QVBoxLayout *pVerticalLayout2;
+    // QSpacerItem *pSpacerVertical4;
+
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIMachineSettingsSystem"));
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+    m_pTabWidgetSystem = new QITabWidget();
+    m_pTabWidgetSystem->setObjectName(QStringLiteral("m_pTabWidgetSystem"));
+    m_pTabMotherboard = new QWidget();
+    m_pTabMotherboard->setObjectName(QStringLiteral("m_pTabMotherboard"));
+    QGridLayout *pGridLayout = new QGridLayout(m_pTabMotherboard);
+    pGridLayout->setObjectName(QStringLiteral("gridLayout"));
+    m_pBaseMemoryLabel = new QLabel(m_pTabMotherboard);
+    m_pBaseMemoryLabel->setObjectName(QStringLiteral("m_pBaseMemoryLabel"));
+    m_pBaseMemoryLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout->addWidget(m_pBaseMemoryLabel, 0, 0, 1, 1);
+
+    m_pBaseMemoryEditor = new UIBaseMemoryEditor(m_pTabMotherboard);
+    m_pBaseMemoryEditor->setObjectName(QStringLiteral("m_pBaseMemoryEditor"));
+    QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    sizePolicy.setHorizontalStretch(1);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pBaseMemoryEditor->sizePolicy().hasHeightForWidth());
+    m_pBaseMemoryEditor->setSizePolicy(sizePolicy);
+    pGridLayout->addWidget(m_pBaseMemoryEditor, 0, 1, 2, 3);
+
+    m_pBootOrderLabel = new QLabel(m_pTabMotherboard);
+    m_pBootOrderLabel->setObjectName(QStringLiteral("m_pBootOrderLabel"));
+    m_pBootOrderLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout->addWidget(m_pBootOrderLabel, 2, 0, 1, 1);
+
+    m_pBootOrderEditor = new UIBootOrderEditor(m_pTabMotherboard);
+    m_pBootOrderEditor->setObjectName(QStringLiteral("m_pBootOrderEditor"));
+    QSizePolicy sizePolicy1(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    sizePolicy1.setHorizontalStretch(0);
+    sizePolicy1.setVerticalStretch(0);
+    sizePolicy1.setHeightForWidth(m_pBootOrderEditor->sizePolicy().hasHeightForWidth());
+    m_pBootOrderEditor->setSizePolicy(sizePolicy1);
+    pGridLayout->addWidget(m_pBootOrderEditor, 2, 1, 3, 3);
+
+    m_pLabelChipsetType = new QLabel(m_pTabMotherboard);
+    m_pLabelChipsetType->setObjectName(QStringLiteral("m_pLabelChipsetType"));
+    m_pLabelChipsetType->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout->addWidget(m_pLabelChipsetType, 5, 0, 1, 1);
+
+    QHBoxLayout *pHBoxLayout = new QHBoxLayout();
+    pHBoxLayout->setObjectName(QStringLiteral("hboxLayout"));
+    m_pComboChipsetType = new QComboBox(m_pTabMotherboard);
+    m_pComboChipsetType->setObjectName(QStringLiteral("m_pComboChipsetType"));
+    QSizePolicy sizePolicy2(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    sizePolicy2.setHorizontalStretch(0);
+    sizePolicy2.setVerticalStretch(0);
+    sizePolicy2.setHeightForWidth(m_pComboChipsetType->sizePolicy().hasHeightForWidth());
+    m_pComboChipsetType->setSizePolicy(sizePolicy2);
+    pHBoxLayout->addWidget(m_pComboChipsetType);
+    QSpacerItem *pSpacerHorizontal3 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+    pHBoxLayout->addItem(pSpacerHorizontal3);
+    pGridLayout->addLayout(pHBoxLayout, 5, 1, 1, 3);
+
+    m_pLabelPointingHIDType = new QLabel(m_pTabMotherboard);
+    m_pLabelPointingHIDType->setObjectName(QStringLiteral("m_pLabelPointingHIDType"));
+    m_pLabelPointingHIDType->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout->addWidget(m_pLabelPointingHIDType, 6, 0, 1, 1);
+
+    QHBoxLayout *hboxLayout1 = new QHBoxLayout();
+    hboxLayout1->setObjectName(QStringLiteral("hboxLayout1"));
+    m_pComboPointingHIDType = new QComboBox(m_pTabMotherboard);
+    m_pComboPointingHIDType->setObjectName(QStringLiteral("m_pComboPointingHIDType"));
+    sizePolicy2.setHeightForWidth(m_pComboPointingHIDType->sizePolicy().hasHeightForWidth());
+    m_pComboPointingHIDType->setSizePolicy(sizePolicy2);
+    hboxLayout1->addWidget(m_pComboPointingHIDType);
+    QSpacerItem *pSpacerHorizontal4 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    hboxLayout1->addItem(pSpacerHorizontal4);
+    pGridLayout->addLayout(hboxLayout1, 6, 1, 1, 3);
+
+    m_pLabelMotherboardExtended = new QLabel(m_pTabMotherboard);
+    m_pLabelMotherboardExtended->setObjectName(QStringLiteral("m_pLabelMotherboardExtended"));
+    m_pLabelMotherboardExtended->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout->addWidget(m_pLabelMotherboardExtended, 7, 0, 1, 1);
+
+    m_pCheckBoxApic = new QCheckBox(m_pTabMotherboard);
+    m_pCheckBoxApic->setObjectName(QStringLiteral("m_pCheckBoxApic"));
+    pGridLayout->addWidget(m_pCheckBoxApic, 7, 1, 1, 3);
+
+    m_pCheckBoxEFI = new QCheckBox(m_pTabMotherboard);
+    m_pCheckBoxEFI->setObjectName(QStringLiteral("m_pCheckBoxEFI"));
+    pGridLayout->addWidget(m_pCheckBoxEFI, 8, 1, 1, 3);
+
+    m_pCheckBoxUseUTC = new QCheckBox(m_pTabMotherboard);
+    m_pCheckBoxUseUTC->setObjectName(QStringLiteral("m_pCheckBoxUseUTC"));
+    pGridLayout->addWidget(m_pCheckBoxUseUTC, 9, 1, 1, 3);
+
+    QSpacerItem *pSpacerVertical2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pGridLayout->addItem(pSpacerVertical2, 10, 0, 1, 4);
+
+    m_pTabWidgetSystem->addTab(m_pTabMotherboard, QString());
+    m_pTabCPU = new QWidget();
+    m_pTabCPU->setObjectName(QStringLiteral("m_pTabCPU"));
+    QGridLayout *pGridLayout1 = new QGridLayout(m_pTabCPU);
+    pGridLayout1->setObjectName(QStringLiteral("pGridLayout1"));
+    m_pLabelCPUCount = new QLabel(m_pTabCPU);
+    m_pLabelCPUCount->setObjectName(QStringLiteral("m_pLabelCPUCount"));
+    m_pLabelCPUCount->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout1->addWidget(m_pLabelCPUCount, 0, 0, 1, 1);
+
+    QWidget *pContainerWidget = new QWidget(m_pTabCPU);
+    pContainerWidget->setObjectName(QStringLiteral("widget"));
+    sizePolicy.setHeightForWidth(pContainerWidget->sizePolicy().hasHeightForWidth());
+    pContainerWidget->setSizePolicy(sizePolicy);
+    QVBoxLayout *pVBoxLayout1 = new QVBoxLayout(pContainerWidget);
+    pVBoxLayout1->setSpacing(0);
+    pVBoxLayout1->setObjectName(QStringLiteral("pVBoxLayout1"));
+    pVBoxLayout1->setContentsMargins(0, 0, 0, 0);
+    m_pSliderCPUCount = new QIAdvancedSlider(pContainerWidget);
+    m_pSliderCPUCount->setObjectName(QStringLiteral("m_pSliderCPUCount"));
+    m_pSliderCPUCount->setOrientation(Qt::Horizontal);
+    pVBoxLayout1->addWidget(m_pSliderCPUCount);
+
+    QHBoxLayout *pHBoxLayout2 = new QHBoxLayout();
+    pHBoxLayout2->setSpacing(0);
+    pHBoxLayout2->setObjectName(QStringLiteral("pHBoxLayout2"));
+    m_pLabelCPUMin = new QLabel(pContainerWidget);
+    m_pLabelCPUMin->setObjectName(QStringLiteral("m_pLabelCPUMin"));
+    pHBoxLayout2->addWidget(m_pLabelCPUMin);
+
+    QSpacerItem *pSpacerHorizontal5 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pHBoxLayout2->addItem(pSpacerHorizontal5);
+
+    m_pLabelCPUMax = new QLabel(pContainerWidget);
+    m_pLabelCPUMax->setObjectName(QStringLiteral("m_pLabelCPUMax"));
+    pHBoxLayout2->addWidget(m_pLabelCPUMax);
+
+    pVBoxLayout1->addLayout(pHBoxLayout2);
+    pGridLayout1->addWidget(pContainerWidget, 0, 1, 2, 1);
+
+    m_pEditorCPUCount = new QSpinBox(m_pTabCPU);
+    m_pEditorCPUCount->setObjectName(QStringLiteral("m_pEditorCPUCount"));
+    pGridLayout1->addWidget(m_pEditorCPUCount, 0, 2, 1, 1);
+
+    m_pLabelCPUExecCap = new QLabel(m_pTabCPU);
+    m_pLabelCPUExecCap->setObjectName(QStringLiteral("m_pLabelCPUExecCap"));
+    m_pLabelCPUExecCap->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout1->addWidget(m_pLabelCPUExecCap, 2, 0, 1, 1);
+
+    QVBoxLayout *pVBoxLayout2 = new QVBoxLayout();
+    pVBoxLayout2->setSpacing(0);
+    pVBoxLayout2->setObjectName(QStringLiteral("pVBoxLayout2"));
+    m_pSliderCPUExecCap = new QIAdvancedSlider(m_pTabCPU);
+    m_pSliderCPUExecCap->setObjectName(QStringLiteral("m_pSliderCPUExecCap"));
+    m_pSliderCPUExecCap->setOrientation(Qt::Horizontal);
+    pVBoxLayout2->addWidget(m_pSliderCPUExecCap);
+
+    QHBoxLayout *pHBoxLayout3 = new QHBoxLayout();
+    pHBoxLayout3->setSpacing(0);
+    pHBoxLayout3->setObjectName(QStringLiteral("pHBoxLayout3"));
+    m_pLabelCPUExecCapMin = new QLabel(m_pTabCPU);
+    m_pLabelCPUExecCapMin->setObjectName(QStringLiteral("m_pLabelCPUExecCapMin"));
+    pHBoxLayout3->addWidget(m_pLabelCPUExecCapMin);
+    QSpacerItem *pSpacerHorizontal6 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pHBoxLayout3->addItem(pSpacerHorizontal6);
+
+    m_pLabelCPUExecCapMax = new QLabel(m_pTabCPU);
+    m_pLabelCPUExecCapMax->setObjectName(QStringLiteral("m_pLabelCPUExecCapMax"));
+    pHBoxLayout3->addWidget(m_pLabelCPUExecCapMax);
+    pVBoxLayout2->addLayout(pHBoxLayout3);
+    pGridLayout1->addLayout(pVBoxLayout2, 2, 1, 2, 1);
+
+    m_pEditorCPUExecCap = new QSpinBox(m_pTabCPU);
+    m_pEditorCPUExecCap->setObjectName(QStringLiteral("m_pEditorCPUExecCap"));
+    pGridLayout1->addWidget(m_pEditorCPUExecCap, 2, 2, 1, 1);
+
+    m_pLabelCPUExtended = new QLabel(m_pTabCPU);
+    m_pLabelCPUExtended->setObjectName(QStringLiteral("m_pLabelCPUExtended"));
+    m_pLabelCPUExtended->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout1->addWidget(m_pLabelCPUExtended, 4, 0, 1, 1);
+
+    m_pCheckBoxPAE = new QCheckBox(m_pTabCPU);
+    m_pCheckBoxPAE->setObjectName(QStringLiteral("m_pCheckBoxPAE"));
+    pGridLayout1->addWidget(m_pCheckBoxPAE, 4, 1, 1, 2);
+
+    m_pCheckBoxNestedVirtualization = new QCheckBox(m_pTabCPU);
+    m_pCheckBoxNestedVirtualization->setObjectName(QStringLiteral("m_pCheckBoxNestedVirtualization"));
+    pGridLayout1->addWidget(m_pCheckBoxNestedVirtualization, 5, 1, 1, 2);
+    QSpacerItem *pSpacerVertical3 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pGridLayout1->addItem(pSpacerVertical3, 6, 0, 1, 3);
+
+    m_pTabWidgetSystem->addTab(m_pTabCPU, QString());
+    m_pTabAcceleration = new QWidget();
+    m_pTabAcceleration->setObjectName(QStringLiteral("m_pTabAcceleration"));
+    QGridLayout *pGridLayout2 = new QGridLayout(m_pTabAcceleration);
+    pGridLayout2->setObjectName(QStringLiteral("pGridLayout2"));
+    m_pLabelParavirtProvider = new QLabel(m_pTabAcceleration);
+    m_pLabelParavirtProvider->setObjectName(QStringLiteral("m_pLabelParavirtProvider"));
+    m_pLabelParavirtProvider->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout2->addWidget(m_pLabelParavirtProvider, 0, 0, 1, 1);
+
+    QHBoxLayout *pHBoxLayout4 = new QHBoxLayout();
+    pHBoxLayout4->setObjectName(QStringLiteral("pHBoxLayout4"));
+    m_pComboParavirtProviderType = new QComboBox(m_pTabAcceleration);
+    m_pComboParavirtProviderType->setObjectName(QStringLiteral("m_pComboParavirtProviderType"));
+    sizePolicy2.setHeightForWidth(m_pComboParavirtProviderType->sizePolicy().hasHeightForWidth());
+    m_pComboParavirtProviderType->setSizePolicy(sizePolicy2);
+    pHBoxLayout4->addWidget(m_pComboParavirtProviderType);
+    QSpacerItem *pSpacerHorizontal7 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pHBoxLayout4->addItem(pSpacerHorizontal7);
+    pGridLayout2->addLayout(pHBoxLayout4, 0, 1, 1, 1);
+
+    QVBoxLayout *pVerticalLayout1 = new QVBoxLayout();
+    pVerticalLayout1->setObjectName(QStringLiteral("pVerticalLayout1"));
+    m_pLabelVirtualization = new QLabel(m_pTabAcceleration);
+    m_pLabelVirtualization->setObjectName(QStringLiteral("m_pLabelVirtualization"));
+    m_pLabelVirtualization->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pVerticalLayout1->addWidget(m_pLabelVirtualization);
+
+    m_pWidgetPlaceholder = new QWidget(m_pTabAcceleration);
+    m_pWidgetPlaceholder->setObjectName(QStringLiteral("m_pWidgetPlaceholder"));
+    pVerticalLayout1->addWidget(m_pWidgetPlaceholder);
+    pGridLayout2->addLayout(pVerticalLayout1, 1, 0, 1, 1);
+
+    QVBoxLayout *pVerticalLayout2 = new QVBoxLayout();
+    pVerticalLayout2->setObjectName(QStringLiteral("pVerticalLayout2"));
+    m_pCheckBoxVirtualization = new QCheckBox(m_pTabAcceleration);
+    m_pCheckBoxVirtualization->setObjectName(QStringLiteral("m_pCheckBoxVirtualization"));
+    QSizePolicy sizePolicy3(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy3.setHorizontalStretch(1);
+    sizePolicy3.setVerticalStretch(0);
+    sizePolicy3.setHeightForWidth(m_pCheckBoxVirtualization->sizePolicy().hasHeightForWidth());
+    m_pCheckBoxVirtualization->setSizePolicy(sizePolicy3);
+    pVerticalLayout2->addWidget(m_pCheckBoxVirtualization);
+
+    m_pCheckBoxNestedPaging = new QCheckBox(m_pTabAcceleration);
+    m_pCheckBoxNestedPaging->setObjectName(QStringLiteral("m_pCheckBoxNestedPaging"));
+    QSizePolicy sizePolicy4(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy4.setHorizontalStretch(0);
+    sizePolicy4.setVerticalStretch(0);
+    sizePolicy4.setHeightForWidth(m_pCheckBoxNestedPaging->sizePolicy().hasHeightForWidth());
+    m_pCheckBoxNestedPaging->setSizePolicy(sizePolicy4);
+    pVerticalLayout2->addWidget(m_pCheckBoxNestedPaging);
+    pGridLayout2->addLayout(pVerticalLayout2, 1, 1, 1, 1);
+
+    QSpacerItem *pSpacerVertical4 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pGridLayout2->addItem(pSpacerVertical4, 2, 0, 1, 2);
+
+    m_pTabWidgetSystem->addTab(m_pTabAcceleration, QString());
+    pMainLayout->addWidget(m_pTabWidgetSystem);
+
+    m_pBootOrderLabel->setBuddy(m_pBootOrderEditor);
+    m_pLabelChipsetType->setBuddy(m_pComboChipsetType);
+    m_pLabelPointingHIDType->setBuddy(m_pComboPointingHIDType);
+    m_pLabelCPUCount->setBuddy(m_pEditorCPUCount);
+    m_pLabelCPUExecCap->setBuddy(m_pEditorCPUExecCap);
+    m_pLabelParavirtProvider->setBuddy(m_pComboParavirtProviderType);
 }
 
 void UIMachineSettingsSystem::prepareTabMotherboard()
