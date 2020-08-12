@@ -340,6 +340,12 @@
               Source="$(env.PATH_OUT)\bin\Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" />
         <File Id="file_Qt5WinExtras$(var.VBOX_QT_INFIX).dll" Name="Qt5WinExtras$(var.VBOX_QT_INFIX).dll"
               Source="$(env.PATH_OUT)\bin\Qt5WinExtras$(var.VBOX_QT_INFIX).dll" />
+        <File Id="file_VirtualBox.visualelementsmanifest.xml" Name="VirtualBox.visualelementsmanifest.xml"
+              Source="$(env.PATH_TARGET)\VirtualBox.visualelementsmanifest.xml" />
+        <File Id="file_VirtualBox_70px.png" Name="VirtualBox_70px.png"
+              Source="$(env.PATH_TARGET)\VirtualBox_70px.png" />
+        <File Id="file_VirtualBox_150px.png" Name="VirtualBox_150px.png"
+              Source="$(env.PATH_TARGET)\VirtualBox_150px.png" />
 
         <File Id="file_VBoxTestOGL.exe" Name="VBoxTestOGL.exe"
             Source="$(env.PATH_OUT)\bin\VBoxTestOGL.exe" />

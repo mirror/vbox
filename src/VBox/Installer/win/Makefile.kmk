@@ -78,6 +78,14 @@ ifndef VBOX_INSTALLER_LANGUAGES
  VBOX_INSTALLER_LANGUAGES  += $(VBOX_INSTALLER_ADD_LANGUAGES)
 endif
 
+# Paths for UWP.
+VBOX_PATH_UWP_MANIFEST     := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/src/platform/win
+ifndef VBOX_OSE
+ VBOX_PATH_UWP_ARTWORK     := $(PATH_ROOT)/src/VBox/Artwork/win/NonOSE
+else
+ VBOX_PATH_UWP_ARTWORK     := $(PATH_ROOT)/src/VBox/Artwork/win/OSE
+endif
+
 
 #
 # List of merge modules to use.
@@ -202,6 +210,9 @@ BLDDIRS += \
 	$(VBOX_WIN_INST_OUT_DIR)/NLS/
 
 OTHER_CLEAN += \
+	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox.visualelementsmanifest.xml \
+	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_70px.png \
+	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_150px.png \
 	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox.wixobj \
 	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox.wix \
 	$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox.wix \
@@ -276,6 +287,23 @@ endif
 VBOX_MSI_ICE_IGNORE := \
 	-ice:64 \
 	-ice:69
+
+#
+# Copy XML file for UWP.
+#
+$(VBOX_WIN_INST_OUT_DIR)/VirtualBox.visualelementsmanifest.xml: $(VBOX_PATH_UWP_MANIFEST)/VirtualBox.visualelementsmanifest.xml | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)$(INSTALL) -m 0644 $< $@
+
+#
+# Copy PNG files for UWP.
+#
+$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_70px.png: $(VBOX_PATH_UWP_ARTWORK)/VirtualBox_70px.png | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)$(INSTALL) -m 0644 $< $@
+$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_150px.png: $(VBOX_PATH_UWP_ARTWORK)/VirtualBox_150px.png | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)$(INSTALL) -m 0644 $< $@
 
 #
 # Create intermediate XML file for languages (needed for .MSI linking).
@@ -587,7 +615,10 @@ $(PATH_SUB_CURRENT)/VBoxMergeApp.wxi $(PATH_SUB_CURRENT)/VirtualBox.wxs: \
 	$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
-	$(VBOX_WIN_INST_OUT_DIR)/VBoxUnattendedTemplateComponent.wxi
+	$(VBOX_WIN_INST_OUT_DIR)/VBoxUnattendedTemplateComponent.wxi \
+	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox.visualelementsmanifest.xml \
+	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_70px.png \
+	$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_150px.png
 
 #
 # MSI compile.
