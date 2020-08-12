@@ -262,26 +262,26 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
 
     // Following the sequence of steps in UIUpdateStepVirtualBox::sltStartStep()
     // Build up our query URL starting with the URL basename
-    Bstr url("https://update.virtualbox.org/query.php/?");
+    Utf8Str strUrl("https://update.virtualbox.org/query.php/?");
     Bstr platform;
     rc = mVirtualBox->COMGETTER(PackageType)(platform.asOutParam());
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: IVirtualBox::packageType() failed: %Rrc"), __FUNCTION__, rc);
-    url.appendPrintf("platform=%ls", platform.raw()); // e.g. SOLARIS_64BITS_GENERIC
+    strUrl.appendPrintf("platform=%ls", platform.raw()); // e.g. SOLARIS_64BITS_GENERIC
 
     // Get the complete current version string for the query URL
     Bstr versionNormalized;
     rc = mVirtualBox->COMGETTER(VersionNormalized)(versionNormalized.asOutParam());
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: IVirtualBox::versionNormalized() failed: %Rrc"), __FUNCTION__, rc);
-    url.appendPrintf("&version=%ls", versionNormalized.raw()); // e.g. 6.1.1
-    // url.appendPrintf("&version=6.0.12"); // comment out previous line and uncomment this one for testing
+    strUrl.appendPrintf("&version=%ls", versionNormalized.raw()); // e.g. 6.1.1
+    // strUrl.appendPrintf("&version=6.0.12"); // comment out previous line and uncomment this one for testing
 
     ULONG revision;
     rc = mVirtualBox->COMGETTER(Revision)(&revision);
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: IVirtualBox::revision() failed: %Rrc"), __FUNCTION__, rc);
-    url.appendPrintf("_%ld", revision); // e.g. 135618
+    strUrl.appendPrintf("_%u", revision); // e.g. 135618
 
     // acquire the System Properties interface
     ComPtr<ISystemProperties> pSystemProperties;
@@ -311,7 +311,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     rc = pSystemProperties->COMSETTER(VBoxUpdateCount)(cVBoxUpdateCount);
     if (FAILED(rc))
         return rc; // ISystemProperties::setVBoxUpdateCount calls setError() on failure
-    url.appendPrintf("&count=%lu", cVBoxUpdateCount);
+    strUrl.appendPrintf("&count=%u", cVBoxUpdateCount);
 
     // Update the query URL and the VBoxUpdate settings (if necessary) with the 'Target' information.
     VBoxUpdateTarget_T enmTarget = VBoxUpdateTarget_Stable; // default branch is 'stable'
@@ -322,14 +322,14 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     switch (enmTarget)
     {
         case VBoxUpdateTarget_AllReleases:
-            url.appendPrintf("&branch=allrelease"); // query.php expects 'allrelease' and not 'allreleases'
+            strUrl.appendPrintf("&branch=allrelease"); // query.php expects 'allrelease' and not 'allreleases'
             break;
         case VBoxUpdateTarget_WithBetas:
-            url.appendPrintf("&branch=withbetas");
+            strUrl.appendPrintf("&branch=withbetas");
             break;
         case VBoxUpdateTarget_Stable:
         default:
-            url.appendPrintf("&branch=stable");
+            strUrl.appendPrintf("&branch=stable");
             break;
     }
 
@@ -337,9 +337,11 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     if (FAILED(rc))
         return rc; // ISystemProperties::setTarget calls setError() on failure
 
-    LogRelFunc(("VBox update URL = %s\n", Utf8Str(url).c_str()));
+    LogRelFunc(("VBox update URL = %s\n", strUrl.c_str()));
 
-    // Setup the User-Agent headers for the GET request
+    /*
+     * Setup the User-Agent headers for the GET request
+     */
     Bstr version;
     rc = mVirtualBox->COMGETTER(Version)(version.asOutParam()); // e.g. 6.1.0_RC1
     if (FAILED(rc))
@@ -358,6 +360,9 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("%s: RTHttpAddHeader() failed: %Rrc (on User-Agent)"), __FUNCTION__, vrc);
 
+    /*
+     * Configure proxying.
+     */
     ProxyMode_T enmProxyMode;
     rc = pSystemProperties->COMGETTER(ProxyMode)(&enmProxyMode);
     if (FAILED(rc))
@@ -366,7 +371,6 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     if (enmProxyMode == ProxyMode_Manual)
     {
         Bstr strProxyURL;
-
         rc = pSystemProperties->COMGETTER(ProxyURL)(strProxyURL.asOutParam());
         if (FAILED(rc))
             return setErrorVrc(rc, tr("%s: ISystemProperties::proxyURL() failed: %Rrc"), __FUNCTION__, rc);
@@ -381,9 +385,12 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
             return setErrorVrc(vrc, tr("%s: RTHttpUseSystemProxySettings() failed: %Rrc"), __FUNCTION__, vrc);
     }
 
-    void *pvResponse = 0;
+    /*
+     * Perform the GET request, returning raw binary stuff.
+     */
+    void *pvResponse = NULL;
     size_t cbResponse = 0;
-    vrc = RTHttpGetBinary(hHttp, Utf8Str(url).c_str(), &pvResponse, &cbResponse);
+    vrc = RTHttpGetBinary(hHttp, strUrl.c_str(), &pvResponse, &cbResponse);
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("%s: RTHttpGetBinary() failed: %Rrc"), __FUNCTION__, vrc);
 
@@ -408,6 +415,8 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     }
 
     // clean-up HTTP request paperwork
+    /** @todo r=bird: There is no chance that this would be NIL here unless
+     *        you've got stack corruption.  Besides, RTHttpDestruct ignores NIL. */
     if (hHttp != NIL_RTHTTP)
         RTHttpDestroy(hHttp);
 
