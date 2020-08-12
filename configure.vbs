@@ -489,6 +489,24 @@ end function
 
 
 ''
+' Returns true if there are subfolders starting with the given string.
+function HasSubdirsStartingWith(strFolder, strStartingWith)
+   HasSubdirsStartingWith = False
+   if DirExists(strFolder) then
+      dim obj
+      set obj = g_objFileSys.GetFolder(strFolder)
+      for each objSub in obj.SubFolders
+         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 Then
+            HasSubdirsStartingWith = True
+            LogPrint "# HasSubdirsStartingWith(" & strFolder & "," & strStartingWith & ") found " & objSub.Name
+            exit for
+         end if
+      next
+   end if
+end function
+
+
+''
 ' Executes a command in the shell catching output in g_strShellOutput
 function Shell(strCommand, blnBoth)
    dim strShell, strCmdline, objExec, str
@@ -520,12 +538,12 @@ end function
 
 
 ''
-' Try find the specified file in the path.
-function Which(strFile)
+' Try find the specified file in the specified path variable.
+function WhichEx(strEnvVar, strFile)
    dim strPath, iStart, iEnd, str
 
    ' the path
-   strPath = EnvGet("Path")
+   strPath = EnvGet(strEnvVar)
    iStart = 1
    do while iStart <= Len(strPath)
       iEnd = InStr(iStart, strPath, ";")
@@ -533,7 +551,7 @@ function Which(strFile)
       if iEnd > iStart then
          str = Mid(strPath, iStart, iEnd - iStart) & "/" & strFile
          if FileExists(str) then
-            Which = str
+            WhichEx = str
             exit function
          end if
       end if
@@ -542,7 +560,14 @@ function Which(strFile)
 
    ' registry or somewhere?
 
-   Which = ""
+   WhichEx = ""
+end function
+
+
+''
+' Try find the specified file in the path.
+function Which(strFile)
+   Which = WhichEx("Path", strFile)
 end function
 
 
@@ -1504,37 +1529,39 @@ sub CheckForlibSDL(strOptlibSDL)
 
    ' The tools location (first).
    if (strPathlibSDL = "") And (g_blnInternalFirst = True) Then
-      str = g_strPathDev & "/win.x86/libsdl/v1.2.11"
-      if CheckForlibSDLSub(str) then strPathlibSDL = str
-   end if
-
-   if (strPathlibSDL = "") And (g_blnInternalFirst = True) Then
-      str = g_strPathDev & "/win.x86/libsdl/v1.2.7-InnoTek"
-      if CheckForlibSDLSub(str) then strPathlibSDL = str
+      str = g_strPathDev & "/win." & g_strTargetArch & "/libsdl"
+      if HasSubdirsStartingWith(str, "v") then
+         PrintResult "libSDL", str & "/v* (auto)"
+         exit sub
+      end if
    end if
 
    ' Poke about in the path.
-   str = Which("SDLmain.lib")
-   if (strPathlibSDL = "") And (str <> "") Then
-      str = PathParent(PathStripFilename(str))
-      if CheckForlibSDLSub(str) then strPathlibSDL = str
+   if strPathlibSDL = "" Then
+      str = WhichEx("LIB", "SDLmain.lib")
+      if str = "" Then str = Which("..\lib\SDLmain.lib")
+      if str = "" Then str = Which("SDLmain.lib")
+      if str <> "" Then
+         str = PathParent(PathStripFilename(str))
+         if CheckForlibSDLSub(str) then strPathlibSDL = str
+      end if
    end if
 
-   str = Which("SDL.dll")
-   if (strPathlibSDL = "") And (str <> "") Then
-      str = PathParent(PathStripFilename(str))
-      if CheckForlibSDLSub(str) then strPathlibSDL = str
+   if strPathlibSDL = "" Then
+      str = Which("SDL.dll")
+      if str <> "" Then
+         str = PathParent(PathStripFilename(str))
+         if CheckForlibSDLSub(str) then strPathlibSDL = str
+      end if
    end if
 
    ' The tools location (post).
    if (strPathlibSDL = "") And (g_blnInternalFirst = False) Then
-      str = g_strPathDev & "/win.x86/libsdl/v1.2.11"
-      if CheckForlibSDLSub(str) then strPathlibSDL = str
-   end if
-
-   if (strPathlibSDL = "") And (g_blnInternalFirst = False) Then
-      str = g_strPathDev & "/win.x86/libsdl/v1.2.7-InnoTek"
-      if CheckForlibSDLSub(str) then strPathlibSDL = str
+      str = g_strPathDev & "/win." & g_strTargetArch & "/libsdl"
+      if HasSubdirsStartingWith(str, "v") then
+         PrintResult "libSDL", str & "/v* (auto)"
+         exit sub
+      end if
    end if
 
    ' Success?
