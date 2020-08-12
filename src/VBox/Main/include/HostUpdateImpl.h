@@ -48,12 +48,14 @@ private:
     HRESULT getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded) RT_OVERRIDE;
     /** @} */
 
+#ifdef VBOX_WITH_HOST_UPDATE_CHECK
     Utf8Str i_platformInfo();
     class UpdateCheckTask;
     HRESULT i_updateCheckTask(UpdateCheckTask *pTask);
     HRESULT i_checkForVBoxUpdate();
     HRESULT i_checkForVBoxUpdateInner(RTHTTP hHttp, com::Utf8Str const &strUrl, com::Utf8Str const &strUserAgent,
                                       ComPtr<ISystemProperties> const &ptrSystemProperties);
+#endif
 
     /** @name Data members.
      * @{  */

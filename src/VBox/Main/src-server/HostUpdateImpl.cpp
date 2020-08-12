@@ -51,6 +51,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef VBOX_WITH_HOST_UPDATE_CHECK
 
 class HostUpdate::UpdateCheckTask : public ThreadTask
 {
@@ -94,28 +95,28 @@ Utf8Str HostUpdate::i_platformInfo()
     /* Prepare platform report: */
     Utf8Str strPlatform;
 
-#if defined (RT_OS_WINDOWS)
+# if defined (RT_OS_WINDOWS)
     strPlatform = "win";
-#elif defined (RT_OS_LINUX)
+# elif defined (RT_OS_LINUX)
     strPlatform = "linux";
-#elif defined (RT_OS_DARWIN)
+# elif defined (RT_OS_DARWIN)
     strPlatform = "macosx";
-#elif defined (RT_OS_OS2)
+# elif defined (RT_OS_OS2)
     strPlatform = "os2";
-#elif defined (RT_OS_FREEBSD)
+# elif defined (RT_OS_FREEBSD)
     strPlatform = "freebsd";
-#elif defined (RT_OS_SOLARIS)
+# elif defined (RT_OS_SOLARIS)
     strPlatform = "solaris";
-#else
+# else
     strPlatform = "unknown";
-#endif
+# endif
 
     /* The format is <system>.<bitness>: */
     strPlatform.appendPrintf(".%lu", ARCH_BITS);
 
     /* Add more system information: */
     int vrc;
-#ifdef RT_OS_LINUX
+# ifdef RT_OS_LINUX
     // WORKAROUND:
     // On Linux we try to generate information using script first of all..
 
@@ -223,7 +224,7 @@ Utf8Str HostUpdate::i_platformInfo()
     LogRelFunc(("strPlatform (Linux) = %s\n", strPlatform.c_str()));
 
     if (RT_FAILURE(vrc))
-#endif /* RT_OS_LINUX */
+# endif /* RT_OS_LINUX */
     {
         /* Use RTSystemQueryOSInfo: */
         char szTmp[256];
@@ -492,7 +493,7 @@ HRESULT HostUpdate::i_updateCheckTask(UpdateCheckTask *pTask)
                 case UpdateCheckType_VirtualBox:
                     hrc = i_checkForVBoxUpdate();
                     break;
-#if 0
+# if 0
                 case UpdateCheckType_ExtensionPack:
                     hrc = i_checkForExtPackUpdate();
                     break;
@@ -500,7 +501,7 @@ HRESULT HostUpdate::i_updateCheckTask(UpdateCheckTask *pTask)
                 case UpdateCheckType_GuestAdditions:
                     hrc = i_checkForGuestAdditionsUpdate();
                     break;
-#endif
+# endif
                 default:
                     hrc = setError(E_FAIL, tr("Update check type %d is not implemented"), pTask->m_checkType);
                     break;
@@ -520,6 +521,9 @@ HRESULT HostUpdate::i_updateCheckTask(UpdateCheckTask *pTask)
     LogFlowFuncLeave();
     return hrc;
 }
+
+#endif /* VBOX_WITH_HOST_UPDATE_CHECK */
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -572,6 +576,7 @@ void HostUpdate::uninit()
 HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
                                 ComPtr<IProgress> &aProgress)
 {
+#ifdef VBOX_WITH_HOST_UPDATE_CHECK
     /* Validate input */
     switch (aCheckType)
     {
@@ -631,6 +636,9 @@ HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
     rc = pProgress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
+#else  /* !VBOX_WITH_HOST_UPDATE_CHECK */
+    return setError(E_NOTIMPL, tr("Update checking support was not compiled into this VirtualBox build"));
+#endif /* !VBOX_WITH_HOST_UPDATE_CHECK */
 }
 
 HRESULT HostUpdate::getUpdateVersion(com::Utf8Str &aUpdateVersion)
