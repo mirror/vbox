@@ -491,13 +491,6 @@ void HostUpdate::uninit()
         return;
 }
 
-HRESULT HostUpdate::getUpdate(ComPtr<IHostUpdate> &aUpdate)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    aUpdate = m_pHostUpdate;
-    return S_OK;
-}
-
 HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
                                 ComPtr<IProgress> &aProgress)
 {
