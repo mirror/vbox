@@ -763,6 +763,53 @@ end sub
 
 
 ''
+' Helper for EnvPrintPrepend and EnvPrintAppend.
+sub EnvPrintCleanup(strEnv, strValue, strSep)
+   dim cchValueAndSep
+   FileAppendLine g_strEnvFile, "set " & strEnv & "=%" & strEnv & ":" & strSep & strValue & strSep & "=" & strSep & "%"
+   cchValueAndSep = Len(strValue) + Len(strSep)
+   FileAppendLine g_strEnvFile, "if ""%" & strEnv & "%""==""" & strValue & """ set " & strEnv & "="
+   FileAppendLine g_strEnvFile, "if ""%" & strEnv & ":~0," & cchValueAndSep & "%""==""" & strValue & strSep & """ set " & strEnv & "=%" & strEnv & ":~" & cchValueAndSep & "%"
+   FileAppendLine g_strEnvFile, "if ""%" & strEnv & ":~-"  & cchValueAndSep & "%""==""" & strSep & strValue & """  set " & strEnv & "=%" & strEnv & ":~0,-" & cchValueAndSep & "%"
+end sub
+
+'' Use by EnvPrintPrepend to skip ';' stripping.
+dim g_strPrependCleanEnvVars
+
+''
+' Print a statement prepending strValue to strEnv, removing duplicate values.
+sub EnvPrintPrepend(strEnv, strValue, strSep)
+   ' Remove old values and any leading separators.
+   EnvPrintCleanup strEnv, strValue, strSep
+   if InStr(1, g_strPrependCleanEnvVars, "|" & strEnv & "|") = 0 then
+      FileAppendLine g_strEnvFile, "if ""%" & strEnv & ":~0,1%""==""" & strSep & """ set " & strEnv & "=%" & strEnv & ":~1%"
+      FileAppendLine g_strEnvFile, "if ""%" & strEnv & ":~0,1%""==""" & strSep & """ set " & strEnv & "=%" & strEnv & ":~1%"
+      g_strPrependCleanEnvVars = g_strPrependCleanEnvVars & "|" & strEnv & "|"
+   end if
+   ' Do the setting
+   FileAppendLine g_strEnvFile, "set " & strEnv & "=" & strValue & strSep & "%" & strEnv & "%"
+end sub
+
+
+'' Use by EnvPrintPrepend to skip ';' stripping.
+dim g_strAppendCleanEnvVars
+
+''
+' Print a statement appending strValue to strEnv, removing duplicate values.
+sub EnvPrintAppend(strEnv, strValue, strSep)
+   ' Remove old values and any trailing separators.
+   EnvPrintCleanup strEnv, strValue, strSep
+   if InStr(1, g_strAppendCleanEnvVars, "|" & strEnv & "|") = 0 then
+      FileAppendLine g_strEnvFile, "if ""%" & strEnv & ":~-1%""==""" & strSep & """ set " & strEnv & "=%" & strEnv & ":~0,-1%"
+      FileAppendLine g_strEnvFile, "if ""%" & strEnv & ":~-1%""==""" & strSep & """ set " & strEnv & "=%" & strEnv & ":~0,-1%"
+      g_strAppendCleanEnvVars = g_strAppendCleanEnvVars & "|" & strEnv & "|"
+   end if
+   ' Do the setting.
+   FileAppendLine g_strEnvFile, "set " & strEnv & "=%" & strEnv & "%" & strSep & strValue
+end sub
+
+
+''
 ' No COM
 sub DisableCOM(strReason)
    if g_blnDisableCOM = False then
@@ -967,6 +1014,7 @@ sub CheckForkBuild(strOptkBuild)
          g_strPathkBuildBin = g_strPathkBuild & "/bin/win.x86"
       end if
    end if
+   g_strPathkBuildBin = UnixSlashes(PathAbs(g_strPathkBuildBin))
 
    '
    ' Perform basic validations of the kBuild installation.
@@ -993,6 +1041,7 @@ sub CheckForkBuild(strOptkBuild)
    '
    ' If PATH_DEV is set, check that it's pointing to something useful.
    '
+   ''' @todo wtf is this supposed to be again?  Nobody uses it afaikt.
    str = EnvGet("PATH_DEV")
    g_strPathDev = str
    if (str <> "") _
@@ -1006,12 +1055,19 @@ sub CheckForkBuild(strOptkBuild)
    if g_strPathDev = "" then g_strPathDev = UnixSlashes(g_strPath & "/tools")
 
    '
-   ' Write KBUILD_PATH to the environment script if necessary.
+   ' Write KBUILD_PATH and updated PATH to the environment script if necessary.
    '
    if blnNeedEnvVars = True then
       EnvPrint "set KBUILD_PATH=" & g_strPathkBuild
       EnvSet "KBUILD_PATH", g_strPathkBuild
-      EnvPrint "set PATH=" & g_strPathkBuildBin & ";%PATH%"
+
+      if Right(g_strPathkBuildBin, 7) = "win.x86" then
+         EnvPrintCleanup "PATH", DosSlashes(Left(g_strPathkBuildBin, Len(g_strPathkBuildBin) - 7) & "win.amd64"), ";"
+      end if
+      if Right(g_strPathkBuildBin, 9) = "win.amd64" then
+         EnvPrintCleanup "PATH", DosSlashes(Left(g_strPathkBuildBin, Len(g_strPathkBuildBin) - 9) & "win.x86"), ";"
+      end if
+      EnvPrintPrepend "PATH", DosSlashes(g_strPathkBuildBin), ";"
       EnvPrepend "PATH", g_strPathkBuildBin & ";"
    end if
 
@@ -1158,7 +1214,7 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
 
    ' and the env.bat path fix.
    if strPathVCCommon <> "" then
-      EnvPrint "set PATH=%PATH%;" & strPathVCCommon & "/IDE;"
+      EnvPrintAppend "PATH", DosSlashes(strPathVCCommon) & "\IDE", ";"
    end if
 end sub
 
@@ -1690,6 +1746,14 @@ sub CheckForCurl(strOptCurl, bln32Bit)
    end if
 
    '
+   ' Part of tarball / svn, so we can exit immediately if no path was specified.
+   '
+   if (strOptCurl = "") then
+      PrintResult strCurl, "src/libs/curl-*"
+      exit sub
+   end if
+
+   '
    ' Try find some cURL dll/lib.
    '
    strPathCurl = ""
@@ -2018,7 +2082,13 @@ Sub Main
    CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
    CfgPrint "VBOX_WITH_LIBVPX := " '' @todo look for libvpx 1.1.0+
    CfgPrint "VBOX_WITH_LIBOPUS := " '' @todo look for libopus 1.2.1+
-   EnvPrint "set PATH=%PATH%;" & g_strPath& "/tools/win." & g_strTargetArch & "/bin;" '' @todo look for yasm
+
+   EnvPrintAppend "PATH", DosSlashes(g_strPath & "\tools\win." & g_strHostArch & "\bin"), ";" '' @todo look for yasm
+   if g_strHostArch = "amd64" then
+      EnvPrintAppend "PATH", DosSlashes(g_strPath & "\tools\win.x86\bin"), ";"
+   else
+      EnvPrintCleanup "PATH", DosSlashes(g_strPath & "\tools\win.amd64\bin"), ";"
+   end if
    if blnOptDisableSDL = True then
       DisableSDL "--disable-sdl"
    else
