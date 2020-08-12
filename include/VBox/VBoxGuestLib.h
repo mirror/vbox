@@ -1153,8 +1153,15 @@ typedef struct VBGLR3GUESTDNDCMDCTX
     uint32_t uClientID;
     /** The VM's current session ID. */
     uint64_t uSessionID;
-    /** Protocol version to use. */
-    uint32_t uProtocol;
+    /** Protocol version to use.
+     *  Deprecated; do not used / rely on it anymore. */
+    uint32_t uProtocolDeprecated;
+    /** Host feature flags (VBOX_DND_HF_XXX).
+     * This is set by VbglR3DnDConnect(). */
+    uint64_t fHostFeatures;
+    /** The guest feature flags reported to the host (VBOX_DND_GF_XXX).
+     * This is set by VbglR3DnDConnect().  */
+    uint64_t fGuestFeatures;
     /** Number of parameters retrieved for the current command. */
     uint32_t uNumParms;
     /** Max chunk size (in bytes) for data transfers. */
@@ -1296,6 +1303,8 @@ typedef const PVBGLR3DNDEVENT CPVBGLR3DNDEVENT;
 
 VBGLR3DECL(int)     VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx);
 VBGLR3DECL(int)     VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx);
+
+VBGLR3DECL(int)     VbglR3DnDReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures);
 
 VBGLR3DECL(int)     VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVENT *ppEvent);
 VBGLR3DECL(void)    VbglR3DnDEventFree(PVBGLR3DNDEVENT pEvent);

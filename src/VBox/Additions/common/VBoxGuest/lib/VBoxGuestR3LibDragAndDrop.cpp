@@ -684,7 +684,7 @@ static int vbglR3DnDHGRecvDataHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
-    Assert(pCtx->uProtocol >= 3); /* Only for protocol v3 and up. */
+    Assert(pCtx->uProtocolDeprecated >= 3); /* Only for protocol v3 and up. */
 
     HGCMMsgHGSendDataHdr Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DATA_HDR, 12);
@@ -1011,8 +1011,12 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
         return rc;
     Assert(pCtx->uClientID);
 
-    /* Set the default protocol version we would like to use. */
-    pCtx->uProtocol = 3;
+    /* Set the default protocol version we would like to use.
+     * Deprecated since VBox 6.1.x, but let this set to 3 to (hopefully) not break things. */
+    pCtx->uProtocolDeprecated = 3;
+
+    pCtx->fHostFeatures  = VBOX_DND_HF_NONE;
+    pCtx->fGuestFeatures = VBOX_DND_GF_NONE;
 
     /*
      * Get the VM's session ID.
@@ -1029,25 +1033,37 @@ VBGLR3DECL(int) VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx)
      */
     HGCMMsgConnect Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_DND_CONNECT, 3);
-    /** @todo Context ID not used yet. */
-    Msg.u.v3.uContext.SetUInt32(0);
-    Msg.u.v3.uProtocol.SetUInt32(pCtx->uProtocol);
-    Msg.u.v3.uFlags.SetUInt32(0); /* Unused at the moment. */
+    Msg.u.v3.uContext.SetUInt32(0);                /** @todo Context ID not used yet. */
+    Msg.u.v3.uProtocol.SetUInt32(pCtx->uProtocolDeprecated); /* Deprecated since VBox 6.1.x. */
+    Msg.u.v3.uFlags.SetUInt32(0);                  /* Unused at the moment. */
 
     rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         /* Set the protocol version we're going to use as told by the host. */
-        rc = Msg.u.v3.uProtocol.GetUInt32(&pCtx->uProtocol); AssertRC(rc);
+        rc = Msg.u.v3.uProtocol.GetUInt32(&pCtx->uProtocolDeprecated); AssertRC(rc);
+
+        /*
+         * Next is reporting our features.  If this fails, assume older host.
+         */
+        rc2 = VbglR3DnDReportFeatures(pCtx->uClientID, pCtx->fGuestFeatures, &pCtx->fHostFeatures);
+        if (RT_SUCCESS(rc2))
+        {
+            LogRel2(("DnD: Guest features: %#RX64 - Host features: %#RX64\n",
+                     pCtx->fGuestFeatures, pCtx->fHostFeatures));
+        }
+        else /* Failing here is not fatal; might be running with an older host. */
+        {
+            AssertLogRelMsg(rc2 == VERR_NOT_SUPPORTED || rc2 == VERR_NOT_IMPLEMENTED,
+                            ("Reporting features failed: %Rrc\n", rc2));
+        }
 
         pCtx->cbMaxChunkSize = DND_DEFAULT_CHUNK_SIZE; /** @todo Use a scratch buffer on the heap? */
     }
     else
-        pCtx->uProtocol = 0; /*  We're using protocol v0 (initial draft) as a fallback. */
+        pCtx->uProtocolDeprecated = 0; /*  We're using protocol v0 (initial draft) as a fallback. */
 
-    /** @todo Implement protocol feature flags. */
-
-    LogFlowFunc(("uClient=%RU32, uProtocol=%RU32, rc=%Rrc\n", pCtx->uClientID, pCtx->uProtocol, rc));
+    LogFlowFunc(("uClient=%RU32, uProtocol=%RU32, rc=%Rrc\n", pCtx->uClientID, pCtx->uProtocolDeprecated, rc));
     return rc;
 }
 
@@ -1065,6 +1081,45 @@ VBGLR3DECL(int) VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx)
     if (RT_SUCCESS(rc))
         pCtx->uClientID = 0;
     return rc;
+}
+
+/**
+ * Reports features to the host and retrieve host feature set.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID returned by VbglR3DnDConnect().
+ * @param   fGuestFeatures  Features to report, VBOX_DND_GF_XXX.
+ * @param   pfHostFeatures  Where to store the features VBOX_DND_HF_XXX.
+ */
+VBGLR3DECL(int) VbglR3DnDReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   f64Features0;
+            HGCMFunctionParameter   f64Features1;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_DND_REPORT_FEATURES, 2);
+        VbglHGCMParmUInt64Set(&Msg.f64Features0, fGuestFeatures);
+        VbglHGCMParmUInt64Set(&Msg.f64Features1, VBOX_DND_GF_1_MUST_BE_ONE);
+
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
+            Assert(Msg.f64Features1.type == VMMDevHGCMParmType_64bit);
+            if (Msg.f64Features1.u.value64 & VBOX_DND_GF_1_MUST_BE_ONE)
+                rc = VERR_NOT_SUPPORTED;
+            else if (pfHostFeatures)
+                *pfHostFeatures = Msg.f64Features0.u.value64;
+            break;
+        }
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+
 }
 
 /**

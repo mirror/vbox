@@ -49,8 +49,11 @@ using namespace DragAndDropSvc;
 class DragAndDropClient : public HGCM::Client
 {
 public:
+
     DragAndDropClient(uint32_t idClient)
         : HGCM::Client(idClient)
+        , fGuestFeatures0(VBOX_DND_GF_NONE)
+        , fGuestFeatures1(VBOX_DND_GF_NONE)
     {
         RT_ZERO(m_SvcCtx);
     }
@@ -61,7 +64,15 @@ public:
     }
 
 public:
+
     void disconnect(void) RT_NOEXCEPT;
+
+public:
+
+    /** Guest feature flags, VBOX_DND_GF_0_XXX. */
+    uint64_t                fGuestFeatures0;
+    /** Guest feature flags, VBOX_DND_GF_1_XXX. */
+    uint64_t                fGuestFeatures1;
 };
 
 /** Map holding pointers to drag and drop clients. Key is the (unique) HGCM client ID. */
@@ -87,6 +98,8 @@ protected:
     int  uninit(void) RT_NOEXCEPT RT_OVERRIDE;
     int  clientConnect(uint32_t idClient, void *pvClient) RT_NOEXCEPT RT_OVERRIDE;
     int  clientDisconnect(uint32_t idClient, void *pvClient) RT_NOEXCEPT RT_OVERRIDE;
+    int  clientQueryFeatures(DragAndDropClient *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT;
+    int  clientReportFeatures(DragAndDropClient *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT;
     void guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idClient, void *pvClient, uint32_t u32Function,
                    uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT RT_OVERRIDE;
     int  hostCall(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT RT_OVERRIDE;
@@ -111,6 +124,9 @@ private:
     DnDClientQueue                     m_clientQueue;
     /** Current drag and drop mode, VBOX_DRAG_AND_DROP_MODE_XXX. */
     uint32_t                           m_u32Mode;
+    /** Host feature mask (VBOX_DND_HF_0_XXX) for DND_GUEST_REPORT_FEATURES
+     * and DND_GUEST_QUERY_FEATURES. */
+    uint64_t                           m_fHostFeatures0;
 };
 
 
@@ -164,6 +180,9 @@ int DragAndDropService::init(VBOXHGCMSVCFNTABLE *pTable) RT_NOEXCEPT
 
     /* Drag'n drop mode is disabled by default. */
     modeSet(VBOX_DRAG_AND_DROP_MODE_OFF);
+
+    /* Set host features. */
+    m_fHostFeatures0 = VBOX_DND_HF_NONE;
 
     int rc = VINF_SUCCESS;
 
@@ -273,6 +292,88 @@ int DragAndDropService::clientDisconnect(uint32_t idClient, void *pvClient) RT_N
     return VINF_SUCCESS;
 }
 
+/**
+ * Implements GUEST_DND_REPORT_FEATURES.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
+ * @retval  VERR_ACCESS_DENIED if not master
+ * @retval  VERR_INVALID_PARAMETER if bit 63 in the 2nd parameter isn't set.
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ *
+ * @param   pClient     The client state.
+ * @param   hCall       The client's call handle.
+ * @param   cParms      Number of parameters.
+ * @param   paParms     Array of parameters.
+ */
+int DragAndDropService::clientReportFeatures(DragAndDropClient *pClient,
+                                             VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
+{
+    /*
+     * Validate the request.
+     */
+    ASSERT_GUEST_RETURN(cParms == 2, VERR_WRONG_PARAMETER_COUNT);
+    ASSERT_GUEST_RETURN(paParms[0].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+    uint64_t const fFeatures0 = paParms[0].u.uint64;
+    ASSERT_GUEST_RETURN(paParms[1].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+    uint64_t const fFeatures1 = paParms[1].u.uint64;
+    ASSERT_GUEST_RETURN(fFeatures1 & VBOX_DND_GF_1_MUST_BE_ONE, VERR_INVALID_PARAMETER);
+
+    /*
+     * Do the work.
+     */
+    paParms[0].u.uint64 = m_fHostFeatures0;
+    paParms[1].u.uint64 = 0;
+
+    int rc = pClient->Complete(hCall, VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        pClient->fGuestFeatures0 = fFeatures0;
+        pClient->fGuestFeatures1 = fFeatures1;
+        Log(("[Client %RU32] features: %#RX64 %#RX64\n", pClient->GetClientID(), fFeatures0, fFeatures1));
+    }
+    else
+        LogFunc(("pfnCallComplete -> %Rrc\n", rc));
+
+    return VINF_HGCM_ASYNC_EXECUTE;
+}
+
+/**
+ * Implements GUEST_DND_QUERY_FEATURES.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ *
+ * @param   pClient     The client state.
+ * @param   hCall       The client's call handle.
+ * @param   cParms      Number of parameters.
+ * @param   paParms     Array of parameters.
+ */
+int DragAndDropService::clientQueryFeatures(DragAndDropClient *pClient,
+                                            VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
+{
+    /*
+     * Validate the request.
+     */
+    ASSERT_GUEST_RETURN(cParms == 2, VERR_WRONG_PARAMETER_COUNT);
+    ASSERT_GUEST_RETURN(paParms[0].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+    ASSERT_GUEST_RETURN(paParms[1].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+    ASSERT_GUEST(paParms[1].u.uint64 & RT_BIT_64(63));
+
+    /*
+     * Do the work.
+     */
+    paParms[0].u.uint64 = m_fHostFeatures0;
+    paParms[1].u.uint64 = 0;
+
+    int rc = pClient->Complete(hCall, VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        LogFunc(("pfnCallComplete -> %Rrc\n", rc));
+
+    return VINF_HGCM_ASYNC_EXECUTE;
+}
+
 int DragAndDropService::modeSet(uint32_t u32Mode) RT_NOEXCEPT
 {
 #ifndef VBOX_WITH_DRAG_AND_DROP_GH
@@ -326,9 +427,15 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
 
         /* New since protocol v2. */
         case GUEST_DND_CONNECT:
+            RT_FALL_THROUGH();
+        /* New since VBox 6.1.x. */
+        case GUEST_DND_REPORT_FEATURES:
+            RT_FALL_THROUGH();
+        /* New since VBox 6.1.x. */
+        case GUEST_DND_QUERY_FEATURES:
         {
             /*
-             * Never block the initial connect call, as the clients do this when
+             * Never block these calls, as the clients issues those when
              * initializing and might get stuck if drag and drop is set to "disabled" at
              * that time.
              */
@@ -521,6 +628,18 @@ do { \
                 LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
 
                 DO_HOST_CALLBACK();
+                break;
+            }
+            case GUEST_DND_REPORT_FEATURES:
+            {
+                LogFlowFunc(("GUEST_DND_REPORT_FEATURES\n"));
+                rc = clientReportFeatures(pClient, callHandle, cParms, paParms);
+                break;
+            }
+            case GUEST_DND_QUERY_FEATURES:
+            {
+                LogFlowFunc(("GUEST_DND_QUERY_FEATURES"));
+                rc = clientQueryFeatures(pClient, callHandle, cParms, paParms);
                 break;
             }
             case GUEST_DND_HG_ACK_OP:

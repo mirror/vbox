@@ -43,7 +43,7 @@
  *           Guest Additions version as indicator which protocol to use for communicating with the guest.
  *           The guest itself uses VBOXDNDCONNECTMSG to report its supported protocol version to the DnD service.
  *
- *     Protocol v3 (VBox 5.0.10 and up, current):
+ *     Protocol v3 (VBox 5.0.10 and up, deprecated):
  *         + Added VBOXDNDDISCONNECTMSG for being able to track client disconnects on host side (Main).
  *         + Added context IDs for every HGCM message. Not used yet and must be 0.
  *         + Added VBOXDNDSNDDATAHDR and VBOXDNDCBSNDDATAHDRDATA to support (simple) accounting of objects
@@ -55,10 +55,13 @@
  *         | VBOXDNDHGSENDFILEDATAMSG and VBOXDNDGHSENDFILEDATAMSG are now sharing the same HGCM mesasge.
  *         - Removed unused HOST_DND_GH_RECV_DIR, HOST_DND_GH_RECV_FILE_DATA and HOST_DND_GH_RECV_FILE_HDR commands.
  *
- * Protocol TODO:
+ *     VBox 6.1.x and up, current:
+ *         + Added GUEST_DND_QUERY_FEATURES + GUEST_DND_REPORT_FEATURES.
+ *         - Protocol versioning support in VBOXDNDCONNECTMSG is now marked as being deprecated.
  *
- *     - Split up messages which use VBOXDNDHGACTIONMSG into own functions and remove parameters which
- *       are not actually needed / used by a function. Why does HOST_DND_HG_EVT_MOVE need all the format stuff, for example?
+ ** @todo:
+ * - Split up messages which use VBOXDNDHGACTIONMSG into own functions and remove parameters which
+ *   are not actually needed / used by a function. Why does HOST_DND_HG_EVT_MOVE need all the format stuff, for example?
  */
 
 #ifndef VBOX_INCLUDED_HostServices_DragAndDropSvc_h
@@ -169,6 +172,34 @@ enum eGuestFn
     /** The guest client disconnects from the HGCM service. */
     GUEST_DND_DISCONNECT               = 11,
 
+    /** Report guest side feature flags and retrieve the host ones.
+     *
+     * Two 64-bit parameters are passed in from the guest with the guest features
+     * (VBOX_DND_GF_XXX), the host replies by replacing the parameter values with
+     * the host ones (VBOX_DND_HF_XXX).
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
+     * @since   6.1.x
+     */
+    GUEST_DND_REPORT_FEATURES          = 12,
+
+    /** Query the host ones feature masks.
+     *
+     * That way the guest (client) can get hold of the features from the host.
+     * Again, it is prudent to set the 127 bit and observe it being cleared on
+     * success, as older hosts might return success without doing anything.
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
+     * @since   6.1.x
+     */
+    GUEST_DND_QUERY_FEATURES           = 13,
+
     /**
      * The guest waits for a new message the host wants to process
      * on the guest side. This can be a blocking call.
@@ -221,6 +252,23 @@ enum eGuestFn
     /** Blow the type up to 32-bit. */
     GUEST_DND_32BIT_HACK               = 0x7fffffff
 };
+
+/** @name VBOX_DND_GF_XXX - Guest features.
+ * @sa GUEST_DND_REPORT_FEATURES
+ * @{ */
+/** No flags set. */
+#define VBOX_DND_GF_NONE                          0
+/** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
+ * correctly (old hosts might not). */
+#define VBOX_DND_GF_1_MUST_BE_ONE                 RT_BIT_64(63)
+/** @} */
+
+/** @name VBOX_DND_HF_XXX - Host features.
+ * @sa DND_GUEST_REPORT_FEATURES
+ * @{ */
+/** No flags set. */
+#define VBOX_DND_HF_NONE                          0
+/** @} */
 
 /**
  * DnD operation progress states.
@@ -641,7 +689,8 @@ typedef struct HGCMMsgConnect
     {
         struct
         {
-            /** Protocol version to use. */
+            /** Protocol version to use.
+             *  Deprecated since VBox 6.1.x. Do not use / rely on it anymore. */
             HGCMFunctionParameter uProtocol;     /* OUT uint32_t */
             /** Connection flags. Optional. */
             HGCMFunctionParameter uFlags;        /* OUT uint32_t */
@@ -650,7 +699,8 @@ typedef struct HGCMMsgConnect
         {
             /** Context ID. Unused at the moment. */
             HGCMFunctionParameter uContext;     /* OUT uint32_t */
-            /** Protocol version to use. */
+            /** Protocol version to use.
+             *  Deprecated since VBox 6.1.x. Do not use / rely on it anymore. */
             HGCMFunctionParameter uProtocol;     /* OUT uint32_t */
             /** Connection flags. Optional. */
             HGCMFunctionParameter uFlags;        /* OUT uint32_t */
@@ -899,6 +949,8 @@ typedef struct VBOXDNDCBCONNECTMSGDATA
 {
     /** Callback data header. */
     VBOXDNDCBHEADERDATA         hdr;
+    /** Protocol version to use.
+     *  Deprecated since VBox 6.1.x. Do not use / rely on it anymore. */
     uint32_t                    uProtocol;
     uint32_t                    uFlags;
 } VBOXDNDCBCONNECTMSGDATA, *PVBOXDNDCBCONNECTMSGDATA;
