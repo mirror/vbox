@@ -28,7 +28,6 @@ using namespace HGCM;
 
 Client::Client(uint32_t idClient)
     : m_idClient(idClient)
-    , m_uProtocolVer(0)
     , m_fDeferred(false)
 {
     RT_ZERO(m_Deferred);
@@ -147,16 +146,6 @@ uint32_t Client::GetClientID(void) const RT_NOEXCEPT
 }
 
 /**
- * Returns the client's used protocol version.
- *
- * @returns Protocol version, or 0 if not set.
- */
-uint32_t Client::GetProtocolVer(void) const RT_NOEXCEPT
-{
-    return m_uProtocolVer;
-}
-
-/**
  * Returns whether the client currently is in deferred mode or not.
  *
  * @returns \c True if in deferred mode, \c False if not.
@@ -183,17 +172,6 @@ void Client::SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint3
     m_Deferred.uType   = u32Function;
     m_Deferred.cParms  = cParms;
     m_Deferred.paParms = paParms;
-}
-
-/**
- * Sets the client's protocol version. The protocol version is purely optional and bound
- * to a specific HGCM service.
- *
- * @param   uVersion            Version number to set.
- */
-void Client::SetProtocolVer(uint32_t uVersion) RT_NOEXCEPT
-{
-    m_uProtocolVer = uVersion;
 }
 
 /**

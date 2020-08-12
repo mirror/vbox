@@ -110,10 +110,8 @@ public:
     VBOXHGCMCALLHANDLE GetHandle(void) const RT_NOEXCEPT;
     uint32_t    GetMsgType(void) const RT_NOEXCEPT;
     uint32_t    GetMsgParamCount(void) const RT_NOEXCEPT;
-    uint32_t    GetProtocolVer(void) const RT_NOEXCEPT;
     bool        IsDeferred(void) const RT_NOEXCEPT;
     void        SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT;
-    void        SetProtocolVer(uint32_t uVersion) RT_NOEXCEPT;
     void        SetSvcContext(const VBOXHGCMSVCTX &SvcCtx) RT_NOEXCEPT;
 
 public:
@@ -127,10 +125,6 @@ protected:
 protected:
     /** The client's HGCM client ID. */
     uint32_t           m_idClient;
-    /** Optional protocol version the client uses. Set to 0 by default.
-     * @todo r=bird: This does not belong here.  Whether a service has a "protocol
-     * version" isn't given and I've argued that it's an inflexible bad idea. */
-    uint32_t           m_uProtocolVer;
     /** The HGCM service context this client is bound to. */
     VBOXHGCMSVCTX      m_SvcCtx;
     /** Flag indicating whether this client currently is deferred mode,

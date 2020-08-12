@@ -52,6 +52,7 @@ public:
 
     DragAndDropClient(uint32_t idClient)
         : HGCM::Client(idClient)
+        , uProtocolVerDeprecated(0)
         , fGuestFeatures0(VBOX_DND_GF_NONE)
         , fGuestFeatures1(VBOX_DND_GF_NONE)
     {
@@ -69,6 +70,9 @@ public:
 
 public:
 
+    /** Protocol version used by this client.
+     *  Deprecated; only used for keeping backwards compatibility. */
+    uint32_t                uProtocolVerDeprecated;
     /** Guest feature flags, VBOX_DND_GF_0_XXX. */
     uint64_t                fGuestFeatures0;
     /** Guest feature flags, VBOX_DND_GF_1_XXX. */
@@ -530,12 +534,10 @@ do { \
 
     if (rc == VINF_SUCCESS) /* Note: rc might be VINF_HGCM_ASYNC_EXECUTE! */
     {
-        LogFlowFunc(("Client %RU32: Protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
-
         rc = VERR_INVALID_PARAMETER; /* Play safe by default. */
 
         /* Whether the client's advertised protocol sends context IDs with commands. */
-        const bool fHasCtxID = pClient->GetProtocolVer() >= 3;
+        const bool fHasCtxID = pClient->uProtocolVerDeprecated >= 3;
 
         /* Current parameter index to process. */
         unsigned idxParm = 0;
@@ -618,14 +620,15 @@ do { \
                 if (data.uProtocol > uProtocolVer)
                     data.uProtocol = uProtocolVer;
 
-                pClient->SetProtocolVer(data.uProtocol);
+                pClient->uProtocolVerDeprecated = data.uProtocol;
 
                 /* Return the highest protocol version we're supporting. */
                 AssertBreak(idxParm);
                 ASSERT_GUEST_BREAK(idxParm);
                 paParms[idxParm - 1].u.uint32 = data.uProtocol;
 
-                LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n", pClient->GetClientID(), pClient->GetProtocolVer()));
+                LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n",
+                             pClient->GetClientID(), pClient->uProtocolVerDeprecated));
 
                 DO_HOST_CALLBACK();
                 break;
@@ -667,7 +670,7 @@ do { \
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_HG_REQ_DATA;
 
-                switch (pClient->GetProtocolVer())
+                switch (pClient->uProtocolVerDeprecated)
                 {
                     case 3:
                     {
@@ -723,7 +726,7 @@ do { \
                 RT_ZERO(data);
                 data.hdr.uMagic = CB_MAGIC_DND_GH_ACK_PENDING;
 
-                switch (pClient->GetProtocolVer())
+                switch (pClient->uProtocolVerDeprecated)
                 {
                     case 3:
                     {
@@ -797,7 +800,7 @@ do { \
             {
                 LogFlowFunc(("GUEST_DND_GH_SND_DATA\n"));
 
-                switch (pClient->GetProtocolVer())
+                switch (pClient->uProtocolVerDeprecated)
                 {
                     case 3:
                     {
@@ -888,7 +891,7 @@ do { \
             {
                 LogFlowFunc(("GUEST_DND_GH_SND_FILE_DATA\n"));
 
-                switch (pClient->GetProtocolVer())
+                switch (pClient->uProtocolVerDeprecated)
                 {
                     /* Protocol v3 adds (optional) checksums. */
                     case 3:
@@ -1096,7 +1099,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
 
                 int rc2 = pClient->SetDeferredMsgInfo(HOST_DND_CANCEL,
                                                       /* Protocol v3+ also contains the context ID. */
-                                                      pClient->GetProtocolVer() >= 3 ? 1 : 0);
+                                                      pClient->uProtocolVerDeprecated >= 3 ? 1 : 0);
                 pClient->CompleteDeferred(rc2);
 
                 m_clientQueue.erase(itQueue);
