@@ -924,6 +924,7 @@ typedef struct HGCMMsgGHError
 enum eDnDCallbackMagics
 {
     CB_MAGIC_DND_CONNECT                   = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_CONNECT, 0),
+    CB_MAGIC_DND_REPORT_FEATURES           = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_REPORT_FEATURES, 0),
     CB_MAGIC_DND_HG_GET_NEXT_HOST_MSG      = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_GET_NEXT_HOST_MSG, 0),
     CB_MAGIC_DND_HG_ACK_OP                 = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_HG_ACK_OP, 0),
     CB_MAGIC_DND_HG_REQ_DATA               = VBOX_DND_CB_MAGIC_MAKE(GUEST_DND_HG_REQ_DATA, 0),
@@ -945,15 +946,23 @@ typedef struct VBOXDNDCBHEADERDATA
     uint32_t                    uContextID;
 } VBOXDNDCBHEADERDATA, *PVBOXDNDCBHEADERDATA;
 
-typedef struct VBOXDNDCBCONNECTMSGDATA
+typedef struct VBOXDNDCBCONNECTDATA
 {
     /** Callback data header. */
     VBOXDNDCBHEADERDATA         hdr;
     /** Protocol version to use.
      *  Deprecated since VBox 6.1.x. Do not use / rely on it anymore. */
-    uint32_t                    uProtocol;
-    uint32_t                    uFlags;
-} VBOXDNDCBCONNECTMSGDATA, *PVBOXDNDCBCONNECTMSGDATA;
+    uint32_t                    uProtocolVersion;
+    /** Connection flags; currently unused. */
+    uint32_t                    fFlags;
+} VBOXDNDCBCONNECTDATA, *PVBOXDNDCBCONNECTDATA;
+
+typedef struct VBOXDNDCBREPORTFEATURESDATA
+{
+    /** Callback data header. */
+    VBOXDNDCBHEADERDATA         hdr;
+    uint32_t                    fGuestFeatures0;
+} VBOXDNDCBREPORTFEATURESDATA, *PVBOXDNDCBREPORTFEATURESDATA;
 
 typedef struct VBOXDNDCBDISCONNECTMSGDATA
 {

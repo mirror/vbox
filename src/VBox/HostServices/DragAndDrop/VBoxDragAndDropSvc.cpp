@@ -604,28 +604,29 @@ do { \
 
                 ASSERT_GUEST_BREAK(cParms >= 2);
 
-                VBOXDNDCBCONNECTMSGDATA data;
+                VBOXDNDCBCONNECTDATA data;
                 RT_ZERO(data);
+                data.hdr.uMagic = CB_MAGIC_DND_CONNECT;
 
                 rc = HGCMSvcGetU32(&paParms[idxParm++], &data.hdr.uContextID); \
                 ASSERT_GUEST_RC_BREAK(rc);
-                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uProtocol);
+                rc = HGCMSvcGetU32(&paParms[idxParm++], &data.uProtocolVersion);
                 ASSERT_GUEST_RC_BREAK(rc);
-                rc = HGCMSvcGetU32(&paParms[idxParm], &data.uFlags);
+                rc = HGCMSvcGetU32(&paParms[idxParm], &data.fFlags);
                 ASSERT_GUEST_RC_BREAK(rc);
 
                 unsigned uProtocolVer = 3; /* The protocol version we're going to use. */
 
                 /* Make sure we're only setting a protocl version we're supporting on the host. */
-                if (data.uProtocol > uProtocolVer)
-                    data.uProtocol = uProtocolVer;
+                if (data.uProtocolVersion > uProtocolVer)
+                    data.uProtocolVersion = uProtocolVer;
 
-                pClient->uProtocolVerDeprecated = data.uProtocol;
+                pClient->uProtocolVerDeprecated = data.uProtocolVersion;
 
                 /* Return the highest protocol version we're supporting. */
                 AssertBreak(idxParm);
                 ASSERT_GUEST_BREAK(idxParm);
-                paParms[idxParm - 1].u.uint32 = data.uProtocol;
+                paParms[idxParm - 1].u.uint32 = data.uProtocolVersion;
 
                 LogFlowFunc(("Client %RU32 is now using protocol v%RU32\n",
                              pClient->GetClientID(), pClient->uProtocolVerDeprecated));
@@ -637,6 +638,19 @@ do { \
             {
                 LogFlowFunc(("GUEST_DND_REPORT_FEATURES\n"));
                 rc = clientReportFeatures(pClient, callHandle, cParms, paParms);
+                if (RT_SUCCESS(rc))
+                {
+                    VBOXDNDCBREPORTFEATURESDATA data;
+                    RT_ZERO(data);
+                    data.hdr.uMagic = CB_MAGIC_DND_REPORT_FEATURES;
+
+                    data.fGuestFeatures0 = pClient->fGuestFeatures0;
+                    /* fGuestFeatures1 is not used yet. */
+
+                    /* Don't touch initial rc. */
+                    int rc2 = m_SvcCtx.pfnHostCallback(m_SvcCtx.pvHostData, u32Function, &data, sizeof(data));
+                    AssertRC(rc2);
+                }
                 break;
             }
             case GUEST_DND_QUERY_FEATURES:
