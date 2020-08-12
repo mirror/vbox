@@ -1,4 +1,4 @@
-/* $Id: */
+/* $Id$ */
 /** @file
  * IHostUpdate  COM class implementations.
  */
@@ -78,7 +78,6 @@ private:
     friend class HostUpdate;  // allow member functions access to private data
 };
 
-/* static */
 void HostUpdate::UpdateCheckTask::handler()
 {
     HostUpdate *pHostUpdate = this->m_pHostUpdate;
@@ -92,8 +91,7 @@ void HostUpdate::UpdateCheckTask::handler()
     LogFlowFuncLeave();
 }
 
-/* static */
-Utf8Str HostUpdate::platformInfo()
+Utf8Str HostUpdate::i_platformInfo()
 {
     /* Prepare platform report: */
     Utf8Str strPlatform;
@@ -257,7 +255,6 @@ Utf8Str HostUpdate::platformInfo()
     return strPlatform;
 }
 
-/* static */
 HRESULT HostUpdate::i_checkForVBoxUpdate()
 {
     HRESULT rc;
@@ -350,7 +347,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: IVirtualBox::version() failed: %Rrc"), __FUNCTION__, rc);
 
-    Utf8StrFmt const strUserAgent("VirtualBox %ls <%s>", version.raw(), HostUpdate::platformInfo().c_str());
+    Utf8StrFmt const strUserAgent("VirtualBox %ls <%s>", version.raw(), HostUpdate::i_platformInfo().c_str());
     LogRelFunc(("userAgent = %s\n", strUserAgent.c_str()));
 
     RTHTTP hHttp = NIL_RTHTTP;
@@ -418,7 +415,6 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     return S_OK;
 }
 
-/* static */
 HRESULT HostUpdate::i_updateCheckTask(UpdateCheckTask *pTask)
 {
     LogFlowFuncEnter();

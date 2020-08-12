@@ -38,26 +38,29 @@ public:
     void uninit();
 
 private:
-    // wrapped IHostUpdate attributes and methods
+    /** @name wrapped IHostUpdate attributes and methods
+     * @ */
     HRESULT getUpdate(ComPtr<IHostUpdate> &aUpdate);
     HRESULT updateCheck(UpdateCheckType_T aCheckType, ComPtr<IProgress> &aProgress);
     HRESULT getUpdateResponse(BOOL *aUpdateNeeded);
     HRESULT getUpdateVersion(com::Utf8Str &aUpdateVersion);
     HRESULT getUpdateURL(com::Utf8Str &aUpdateURL);
     HRESULT getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded);
+    /** @} */
 
-    Utf8Str platformInfo();
+    Utf8Str i_platformInfo();
+    class UpdateCheckTask;
+    HRESULT i_updateCheckTask(UpdateCheckTask *pTask);
+    HRESULT i_checkForVBoxUpdate();
 
+    /** @name Data members.
+     * @{  */
     VirtualBox * const mVirtualBox;
     ComPtr<IHostUpdate> m_pHostUpdate;
     BOOL m_updateNeeded;
     Utf8Str  m_updateVersion;
     Utf8Str  m_updateURL;
-
-    class UpdateCheckTask;
-
-    HRESULT i_updateCheckTask(UpdateCheckTask *pTask);
-    HRESULT i_checkForVBoxUpdate();
+    /** @} */
 };
 
 #endif /* !MAIN_INCLUDED_HostUpdateImpl_h */
