@@ -284,8 +284,8 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     strUrl.appendPrintf("_%u", revision); // e.g. 135618
 
     // acquire the System Properties interface
-    ComPtr<ISystemProperties> pSystemProperties;
-    rc = mVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    ComPtr<ISystemProperties> ptrSystemProperties;
+    rc = mVirtualBox->COMGETTER(SystemProperties)(ptrSystemProperties.asOutParam());
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: IVirtualBox::systemProperties() failed: %Rrc"), __FUNCTION__, rc);
 
@@ -296,26 +296,26 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
 
     RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&TimeNow)), szTimeStr, sizeof(szTimeStr));
     LogRelFunc(("VBox updating UpdateDate with TimeString = %s\n", szTimeStr));
-    rc = pSystemProperties->COMSETTER(VBoxUpdateLastCheckDate)(Bstr(szTimeStr).raw());
+    rc = ptrSystemProperties->COMSETTER(VBoxUpdateLastCheckDate)(Bstr(szTimeStr).raw());
     if (FAILED(rc))
         return rc; // ISystemProperties::setLastCheckDate calls setError() on failure
 
     // Update the queryURL and the VBoxUpdate setting 'VBoxUpdateCount'
     ULONG cVBoxUpdateCount = 0;
-    rc = pSystemProperties->COMGETTER(VBoxUpdateCount)(&cVBoxUpdateCount);
+    rc = ptrSystemProperties->COMGETTER(VBoxUpdateCount)(&cVBoxUpdateCount);
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: retrieving ISystemProperties::VBoxUpdateCount failed: %Rrc"), __FUNCTION__, rc);
 
     cVBoxUpdateCount++;
 
-    rc = pSystemProperties->COMSETTER(VBoxUpdateCount)(cVBoxUpdateCount);
+    rc = ptrSystemProperties->COMSETTER(VBoxUpdateCount)(cVBoxUpdateCount);
     if (FAILED(rc))
         return rc; // ISystemProperties::setVBoxUpdateCount calls setError() on failure
     strUrl.appendPrintf("&count=%u", cVBoxUpdateCount);
 
     // Update the query URL and the VBoxUpdate settings (if necessary) with the 'Target' information.
     VBoxUpdateTarget_T enmTarget = VBoxUpdateTarget_Stable; // default branch is 'stable'
-    rc = pSystemProperties->COMGETTER(VBoxUpdateTarget)(&enmTarget);
+    rc = ptrSystemProperties->COMGETTER(VBoxUpdateTarget)(&enmTarget);
     if (FAILED(rc))
         return setErrorVrc(rc, tr("%s: retrieving ISystemProperties::Target failed: %Rrc"), __FUNCTION__, rc);
 
@@ -333,14 +333,14 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
             break;
     }
 
-    rc = pSystemProperties->COMSETTER(VBoxUpdateTarget)(enmTarget);
+    rc = ptrSystemProperties->COMSETTER(VBoxUpdateTarget)(enmTarget);
     if (FAILED(rc))
         return rc; // ISystemProperties::setTarget calls setError() on failure
 
     LogRelFunc(("VBox update URL = %s\n", strUrl.c_str()));
 
     /*
-     * Setup the User-Agent headers for the GET request
+     * Compose the User-Agent header for the GET request.
      */
     Bstr version;
     rc = mVirtualBox->COMGETTER(Version)(version.asOutParam()); // e.g. 6.1.0_RC1
@@ -350,13 +350,35 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     Utf8StrFmt const strUserAgent("VirtualBox %ls <%s>", version.raw(), HostUpdate::i_platformInfo().c_str());
     LogRelFunc(("userAgent = %s\n", strUserAgent.c_str()));
 
+    /*
+     * Create the HTTP client instance and pass it to a inner worker method to
+     * ensure proper cleanup.
+     */
     RTHTTP hHttp = NIL_RTHTTP;
     int vrc = RTHttpCreate(&hHttp);
-    if (RT_FAILURE(vrc))
-        return setErrorVrc(vrc, tr("%s: RTHttpCreate() failed: %Rrc"), __FUNCTION__, vrc);
+    if (RT_SUCCESS(vrc))
+    {
+        try
+        {
+            rc = i_checkForVBoxUpdateInner(hHttp, strUrl, strUserAgent, ptrSystemProperties);
+        }
+        catch (...)
+        {
+            AssertFailed();
+            rc = E_UNEXPECTED;
+        }
+        RTHttpDestroy(hHttp);
+    }
+    else
+        rc = setErrorVrc(vrc, tr("%s: RTHttpCreate() failed: %Rrc"), __FUNCTION__, vrc);
+    return S_OK;
+}
 
+HRESULT HostUpdate::i_checkForVBoxUpdateInner(RTHTTP hHttp, Utf8Str const &strUrl, Utf8Str const &strUserAgent,
+                                              ComPtr<ISystemProperties> const &ptrSystemProperties)
+{
     /// @todo Are there any other headers needed to be added first via RTHttpSetHeaders()?
-    vrc = RTHttpAddHeader(hHttp, "User-Agent", strUserAgent.c_str(), strUserAgent.length(), RTHTTPADDHDR_F_BACK);
+    int vrc = RTHttpAddHeader(hHttp, "User-Agent", strUserAgent.c_str(), strUserAgent.length(), RTHTTPADDHDR_F_BACK);
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("%s: RTHttpAddHeader() failed: %Rrc (on User-Agent)"), __FUNCTION__, vrc);
 
@@ -364,16 +386,16 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
      * Configure proxying.
      */
     ProxyMode_T enmProxyMode;
-    rc = pSystemProperties->COMGETTER(ProxyMode)(&enmProxyMode);
+    HRESULT rc = ptrSystemProperties->COMGETTER(ProxyMode)(&enmProxyMode);
     if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: ISystemProperties::proxyMode() failed: %Rrc"), __FUNCTION__, rc);
+        return setError(rc, tr("%s: ISystemProperties::proxyMode() failed: %Rrc"), __FUNCTION__, rc);
 
     if (enmProxyMode == ProxyMode_Manual)
     {
         Bstr strProxyURL;
-        rc = pSystemProperties->COMGETTER(ProxyURL)(strProxyURL.asOutParam());
+        rc = ptrSystemProperties->COMGETTER(ProxyURL)(strProxyURL.asOutParam());
         if (FAILED(rc))
-            return setErrorVrc(rc, tr("%s: ISystemProperties::proxyURL() failed: %Rrc"), __FUNCTION__, rc);
+            return setError(rc, tr("%s: ISystemProperties::proxyURL() failed: %Rrc"), __FUNCTION__, rc);
         vrc = RTHttpSetProxyByUrl(hHttp, Utf8Str(strProxyURL).c_str());
         if (RT_FAILURE(vrc))
             return setErrorVrc(vrc, tr("%s: RTHttpSetProxyByUrl() failed: %Rrc"), __FUNCTION__, vrc);
@@ -384,6 +406,8 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
         if (RT_FAILURE(vrc))
             return setErrorVrc(vrc, tr("%s: RTHttpUseSystemProxySettings() failed: %Rrc"), __FUNCTION__, vrc);
     }
+    else
+        Assert(enmProxyMode == ProxyMode_NoProxy);
 
     /*
      * Perform the GET request, returning raw binary stuff.
@@ -394,6 +418,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     if (RT_FAILURE(vrc))
         return setErrorVrc(vrc, tr("%s: RTHttpGetBinary() failed: %Rrc"), __FUNCTION__, vrc);
 
+    /** @todo this may throw and leak.   */
     RTCList<RTCString> lstHttpReply = RTCString((char *)pvResponse, (size_t)cbResponse).split(" ", RTCString::RemoveEmptyParts);
     RTHttpFreeResponse(pvResponse);
 
@@ -413,12 +438,6 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
         m_updateURL = lstHttpReply.at(1).c_str();
         LogRelFunc(("HTTP server reply = %s %s\n", lstHttpReply.at(0).c_str(), lstHttpReply.at(1).c_str()));
     }
-
-    // clean-up HTTP request paperwork
-    /** @todo r=bird: There is no chance that this would be NIL here unless
-     *        you've got stack corruption.  Besides, RTHttpDestruct ignores NIL. */
-    if (hHttp != NIL_RTHTTP)
-        RTHttpDestroy(hHttp);
 
     return S_OK;
 }
