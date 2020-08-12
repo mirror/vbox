@@ -1419,10 +1419,19 @@ class PcdReport(object):
                         FileWrite(File, '%*s' % (self.MaxLen + 4, SkuInfo.VpdOffset))
                         VPDPcdItem = (Pcd.TokenSpaceGuidCName + '.' + PcdTokenCName, SkuIdName, SkuInfo.VpdOffset, Pcd.MaxDatumSize, SkuInfo.DefaultValue)
                         if VPDPcdItem not in VPDPcdList:
-                            VPDPcdList.append(VPDPcdItem)
+                            PcdGuidList = self.UnusedPcds.get(Pcd.TokenSpaceGuidCName)
+                            if PcdGuidList:
+                                PcdList = PcdGuidList.get(Pcd.Type)
+                                if not PcdList:
+                                    VPDPcdList.append(VPDPcdItem)
+                                for VpdPcd in PcdList:
+                                    if PcdTokenCName == VpdPcd.TokenCName:
+                                        break
+                                else:
+                                    VPDPcdList.append(VPDPcdItem)
                     if IsStructure:
                         FiledOverrideFlag = False
-                        OverrideValues = Pcd.SkuOverrideValues[Sku]
+                        OverrideValues = Pcd.SkuOverrideValues.get(Sku)
                         if OverrideValues:
                             Keys = list(OverrideValues.keys())
                             OverrideFieldStruct = self.OverrideFieldValue(Pcd, OverrideValues[Keys[0]])
@@ -2033,7 +2042,7 @@ class FdReport(object):
         self.VPDBaseAddress = 0
         self.VPDSize = 0
         for index, FdRegion in enumerate(Fd.RegionList):
-            if str(FdRegion.RegionType) is 'FILE' and Wa.Platform.VpdToolGuid in str(FdRegion.RegionDataList):
+            if str(FdRegion.RegionType) == 'FILE' and Wa.Platform.VpdToolGuid in str(FdRegion.RegionDataList):
                 self.VPDBaseAddress = self.FdRegionList[index].BaseAddress
                 self.VPDSize = self.FdRegionList[index].Size
                 break

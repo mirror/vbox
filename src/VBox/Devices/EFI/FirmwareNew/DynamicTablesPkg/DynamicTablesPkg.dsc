@@ -32,6 +32,7 @@
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
+  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
   PL011UartLib|ArmPlatformPkg/Library/PL011UartLib/PL011UartLib.inf
 
 [Components.common]
@@ -39,3 +40,10 @@
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -DDISABLE_NEW_DEPRECATED_INTERFACES
+
+!ifdef STATIC_ANALYSIS
+  # Check all rules
+  # Inhibit C6305: Potential mismatch between sizeof and countof quantities.
+  *_VS2017_*_CC_FLAGS = /wd6305 /analyze
+!endif
+

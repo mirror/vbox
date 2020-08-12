@@ -298,7 +298,7 @@ ON_EXIT:
   @param[in]    QuestionIdBase      Base question id of the cert list.
   @param[in]    DeleteIndex         Cert index to delete.
 
-  @retval   EFI_SUCCESS             Delete siganture successfully.
+  @retval   EFI_SUCCESS             Delete signature successfully.
   @retval   EFI_NOT_FOUND           Can't find the signature item,
   @retval   EFI_OUT_OF_RESOURCES    Could not allocate needed resources.
 **/
@@ -597,7 +597,7 @@ DevicePathToStr (
 
   @param DevicePath       Device path.
 
-  @retval NULL            Not enough memory resourece for AllocateCopyPool.
+  @retval NULL            Not enough memory resource for AllocateCopyPool.
   @retval Other           A new allocated string that represents the file name.
 
 **/
@@ -657,7 +657,6 @@ EnrollX509toVariable (
   EFI_SIGNATURE_LIST                *CACert;
   EFI_SIGNATURE_DATA                *CACertData;
   VOID                              *Data;
-  VOID                              *CurrentData;
   UINTN                             DataSize;
   UINTN                             SigDataSize;
   UINT32                            Attr;
@@ -669,7 +668,6 @@ EnrollX509toVariable (
   CACert        = NULL;
   CACertData    = NULL;
   Data          = NULL;
-  CurrentData   = NULL;
   Attr          = 0;
 
   Status = ReadFileContent (
@@ -712,30 +710,11 @@ EnrollX509toVariable (
   Status = gRT->GetVariable(
                   VariableName,
                   &gEfiTlsCaCertificateGuid,
-                  NULL,
+                  &Attr,
                   &DataSize,
                   NULL
                   );
   if (Status == EFI_BUFFER_TOO_SMALL) {
-    //
-    // Per spec, we have to fetch the variable's contents, even though we're
-    // only interested in the variable's attributes.
-    //
-    CurrentData = AllocatePool (DataSize);
-    if (CurrentData == NULL) {
-      Status = EFI_OUT_OF_RESOURCES;
-      goto ON_EXIT;
-    }
-    Status = gRT->GetVariable(
-                    VariableName,
-                    &gEfiTlsCaCertificateGuid,
-                    &Attr,
-                    &DataSize,
-                    CurrentData
-                    );
-    if (EFI_ERROR (Status)) {
-      goto ON_EXIT;
-    }
     Attr |= EFI_VARIABLE_APPEND_WRITE;
   } else if (Status == EFI_NOT_FOUND) {
     Attr = TLS_AUTH_CONFIG_VAR_BASE_ATTR;
@@ -764,10 +743,6 @@ ON_EXIT:
 
   if (Data != NULL) {
     FreePool (Data);
-  }
-
-  if (CurrentData != NULL) {
-    FreePool (CurrentData);
   }
 
   if (X509Data != NULL) {
@@ -1303,7 +1278,7 @@ TlsAuthConfigAccessExtractConfig (
   @param Progress       A pointer to a string filled in with the
                         offset of the most recent '&' before the
                         first failing name / value pair (or the
-                        beginn ing of the string if the failure
+                        beginning of the string if the failure
                         is in the first name / value pair) or
                         the terminating NULL if all was
                         successful.
@@ -1408,7 +1383,6 @@ TlsAuthConfigAccessCallback (
   OUT    EFI_BROWSER_ACTION_REQUEST             *ActionRequest
   )
 {
-  EFI_INPUT_KEY                   Key;
   EFI_STATUS                      Status;
   RETURN_STATUS                   RStatus;
   TLS_AUTH_CONFIG_PRIVATE_DATA    *Private;
@@ -1416,6 +1390,8 @@ TlsAuthConfigAccessCallback (
   TLS_AUTH_CONFIG_IFR_NVDATA      *IfrNvData;
   UINT16                          LabelId;
   EFI_DEVICE_PATH_PROTOCOL        *File;
+  EFI_HII_POPUP_PROTOCOL          *HiiPopUp;
+  EFI_HII_POPUP_SELECTION         PopUpSelect;
 
   Status           = EFI_SUCCESS;
   File             = NULL;
@@ -1427,6 +1403,11 @@ TlsAuthConfigAccessCallback (
   Private = TLS_AUTH_CONFIG_PRIVATE_FROM_THIS (This);
 
   mTlsAuthPrivateData = Private;
+  Status = gBS->LocateProtocol (&gEfiHiiPopupProtocolGuid, NULL, (VOID**) &HiiPopUp);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Can't find Form PopUp protocol. Exit (%r)\n", Status));
+    return Status;
+  }
 
   //
   // Retrieve uncommitted data from Browser
@@ -1485,11 +1466,13 @@ TlsAuthConfigAccessCallback (
       if (EFI_ERROR (Status)) {
         CleanFileContext (Private);
 
-        CreatePopUp (
-          EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE,
-          &Key,
-          L"ERROR: Enroll Cert Failure!",
-          NULL
+        HiiPopUp->CreatePopup (
+          HiiPopUp,
+          EfiHiiPopupStyleError,
+          EfiHiiPopupTypeOk,
+          Private->RegisteredHandle,
+          STRING_TOKEN (STR_TLS_AUTH_ENROLL_CERT_FAILURE),
+          &PopUpSelect
           );
       }
       break;

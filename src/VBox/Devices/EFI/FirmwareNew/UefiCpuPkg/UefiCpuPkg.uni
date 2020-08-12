@@ -3,7 +3,7 @@
 //
 // This Package provides UEFI compatible CPU modules and libraries.
 //
-// Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
+// Copyright (c) 2007 - 2020, Intel Corporation. All rights reserved.<BR>
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
@@ -36,6 +36,10 @@
 #string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuApInitTimeOutInMicroSeconds_PROMPT  #language en-US "Timeout for the BSP to detect all APs for the first time."
 
 #string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuApInitTimeOutInMicroSeconds_HELP  #language en-US "Specifies timeout value in microseconds for the BSP to detect all APs for the first time."
+
+#string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuBootLogicalProcessorNumber_PROMPT  #language en-US "Number of Logical Processors available after platform reset."
+
+#string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuBootLogicalProcessorNumber_HELP  #language en-US "Specifies the number of Logical Processors that are available in the preboot environment after platform reset, including BSP and APs."
 
 #string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuMicrocodePatchAddress_PROMPT  #language en-US "Microcode Region base address."
 
@@ -191,6 +195,22 @@
 
 #string STR_gUefiCpuPkgTokenSpaceGuid_PcdIsPowerOnReset_HELP  #language en-US "Indicates if the current boot is a power-on reset."
 
+#string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuSmmRestrictedMemoryAccess_PROMPT  #language en-US "Access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock."
+
+#string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuSmmRestrictedMemoryAccess_HELP  #language en-US "Indicate access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock.<BR><BR>\n"
+                                                                                            "MMIO access is always allowed regardless of the value of this PCD.<BR>\n"
+                                                                                            "Loose of such restriction is only required by RAS components in X64 platforms.<BR>\n"
+                                                                                            "The PCD value is considered as constantly TRUE in IA32 platforms.<BR>\n"
+                                                                                            "When the PCD value is TRUE, page table is initialized to cover all memory spaces<BR>\n"
+                                                                                            "and the memory occupied by page table is protected by page table itself as read-only.<BR>\n"
+                                                                                            "In X64 build, it cannot be enabled at the same time with SMM profile feature (PcdCpuSmmProfileEnable).<BR>\n"
+                                                                                            "In X64 build, it could not be enabled also at the same time with heap guard feature for SMM<BR>\n"
+                                                                                            "(PcdHeapGuardPropertyMask in MdeModulePkg).<BR>\n"
+                                                                                            "In IA32 build, page table memory is not marked as read-only when either SMM profile feature (PcdCpuSmmProfileEnable)<BR>\n"
+                                                                                            "or heap guard feature for SMM (PcdHeapGuardPropertyMask in MdeModulePkg) is enabled.<BR>\n"
+                                                                                            "TRUE  - Access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock.<BR>\n"
+                                                                                            "FALSE - Access to any type of non-SMRAM memory after SmmReadyToLock is allowed.<BR>"
+
 #string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuFeaturesCapability_PROMPT  #language en-US "Processor feature capabilities."
 
 #string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuFeaturesCapability_HELP  #language en-US "Indicates processor feature capabilities, each bit corresponding to a specific feature."
@@ -252,3 +272,9 @@
                                                                                             "24000000  -  6th and 7th generation Intel Core processors and Intel Xeon W Processor Family(24MHz).<BR>\n"
                                                                                             "19200000  -  Intel Atom processors based on Goldmont Microarchitecture with CPUID signature 06_5CH(19.2MHz).<BR>\n"
 
+#string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuSmmMpTokenCountPerChunk_PROMPT  #language en-US "Specify the count of pre allocated SMM MP tokens per chunk.\n"
+
+#string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuSmmMpTokenCountPerChunk_HELP    #language en-US "This value used to specify the count of pre allocated SMM MP tokens per chunk.\n"
+
+#string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuApStatusCheckIntervalInMicroSeconds_PROMPT  #language en-US "Periodic interval value in microseconds for AP status check in DXE.\n"
+#string STR_gUefiCpuPkgTokenSpaceGuid_PcdCpuApStatusCheckIntervalInMicroSeconds_HELP    #language en-US "Periodic interval value in microseconds for the status check of APs for StartupAllAPs() and StartupThisAP() executed in non-blocking mode in DXE phase.\n"

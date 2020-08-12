@@ -28,7 +28,7 @@ typedef enum {
 } PTP_INTERFACE_TYPE;
 
 //
-// Max TPM command/reponse length
+// Max TPM command/response length
 //
 #define TPMCMDBUFLENGTH             1024
 
@@ -121,11 +121,11 @@ Tpm12TisPcWaitRegisterBits (
 }
 
 /**
-  Get BurstCount by reading the burstCount field of a TIS regiger
+  Get BurstCount by reading the burstCount field of a TIS register
   in the time of default TIS_TIMEOUT_D.
 
   @param[in]  TisReg                Pointer to TIS register.
-  @param[out] BurstCount            Pointer to a buffer to store the got BurstConut.
+  @param[out] BurstCount            Pointer to a buffer to store the got BurstCount.
 
   @retval     EFI_SUCCESS           Get BurstCount.
   @retval     EFI_INVALID_PARAMETER TisReg is NULL or BurstCount is NULL.

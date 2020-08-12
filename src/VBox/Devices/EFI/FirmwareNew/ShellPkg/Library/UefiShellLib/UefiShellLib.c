@@ -1291,9 +1291,27 @@ ShellExecute (
   if (mEfiShellEnvironment2 != NULL) {
     //
     // Call EFI Shell version.
-    // Due to oddity in the EFI shell we want to dereference the ParentHandle here
     //
-    CmdStatus = (mEfiShellEnvironment2->Execute(*ParentHandle,
+    // Due to an unfixable bug in the EdkShell implementation, we must
+    // dereference "ParentHandle" here:
+    //
+    // 1. The EFI shell installs the EFI_SHELL_ENVIRONMENT2 protocol,
+    //    identified by gEfiShellEnvironment2Guid.
+    // 2. The Execute() member function takes "ParentImageHandle" as first
+    //    parameter, with type (EFI_HANDLE*).
+    // 3. In the EdkShell implementation, SEnvExecute() implements the
+    //    Execute() member function. It passes "ParentImageHandle" correctly to
+    //    SEnvDoExecute().
+    // 4. SEnvDoExecute() takes the (EFI_HANDLE*), and passes it directly --
+    //    without de-referencing -- to the HandleProtocol() boot service.
+    // 5. But HandleProtocol() takes an EFI_HANDLE.
+    //
+    // Therefore we must
+    // - de-reference "ParentHandle" here, to mask the bug in
+    //   SEnvDoExecute(), and
+    // - pass the resultant EFI_HANDLE as an (EFI_HANDLE*).
+    //
+    CmdStatus = (mEfiShellEnvironment2->Execute((EFI_HANDLE *)*ParentHandle,
                                           CommandLine,
                                           Output));
     //
@@ -2997,7 +3015,7 @@ ShellPrintHiiEx(
   IN INT32                Row OPTIONAL,
   IN CONST CHAR8          *Language OPTIONAL,
   IN CONST EFI_STRING_ID  HiiFormatStringId,
-  IN CONST EFI_HANDLE     HiiFormatHandle,
+  IN CONST EFI_HII_HANDLE HiiFormatHandle,
   ...
   )
 {
@@ -3609,7 +3627,7 @@ EFIAPI
 ShellPromptForResponseHii (
   IN SHELL_PROMPT_REQUEST_TYPE         Type,
   IN CONST EFI_STRING_ID  HiiFormatStringId,
-  IN CONST EFI_HANDLE     HiiFormatHandle,
+  IN CONST EFI_HII_HANDLE HiiFormatHandle,
   IN OUT VOID             **Response
   )
 {

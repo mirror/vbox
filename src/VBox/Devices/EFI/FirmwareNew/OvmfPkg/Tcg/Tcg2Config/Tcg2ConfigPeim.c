@@ -20,6 +20,8 @@
 #include <Library/Tpm2DeviceLib.h>
 #include <Ppi/TpmInitialized.h>
 
+#include "Tpm12Support.h"
+
 STATIC CONST EFI_PEI_PPI_DESCRIPTOR mTpmSelectedPpi = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEfiTpmDeviceSelectedGuid,
@@ -50,27 +52,39 @@ Tcg2ConfigPeimEntryPoint (
 
   DEBUG ((DEBUG_INFO, "%a\n", __FUNCTION__));
 
-  Status = Tpm2RequestUseTpm ();
+  Status = InternalTpm12Detect ();
   if (!EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_INFO, "%a: TPM2 detected\n", __FUNCTION__));
-    Size = sizeof (gEfiTpmDeviceInstanceTpm20DtpmGuid);
+    DEBUG ((DEBUG_INFO, "%a: TPM1.2 detected\n", __FUNCTION__));
+    Size = sizeof (gEfiTpmDeviceInstanceTpm12Guid);
     Status = PcdSetPtrS (
                PcdTpmInstanceGuid,
                &Size,
-               &gEfiTpmDeviceInstanceTpm20DtpmGuid
+               &gEfiTpmDeviceInstanceTpm12Guid
                );
     ASSERT_EFI_ERROR (Status);
   } else {
-    DEBUG ((DEBUG_INFO, "%a: no TPM2 detected\n", __FUNCTION__));
-    //
-    // If no TPM2 was detected, we still need to install
-    // TpmInitializationDonePpi. Namely, Tcg2Pei will exit early upon seeing
-    // the default (all-bits-zero) contents of PcdTpmInstanceGuid, thus we have
-    // to install the PPI in its place, in order to unblock any dependent
-    // PEIMs.
-    //
-    Status = PeiServicesInstallPpi (&mTpmInitializationDonePpiList);
-    ASSERT_EFI_ERROR (Status);
+    Status = Tpm2RequestUseTpm ();
+    if (!EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_INFO, "%a: TPM2 detected\n", __FUNCTION__));
+      Size = sizeof (gEfiTpmDeviceInstanceTpm20DtpmGuid);
+      Status = PcdSetPtrS (
+                 PcdTpmInstanceGuid,
+                 &Size,
+                 &gEfiTpmDeviceInstanceTpm20DtpmGuid
+                 );
+      ASSERT_EFI_ERROR (Status);
+    } else {
+      DEBUG ((DEBUG_INFO, "%a: no TPM detected\n", __FUNCTION__));
+      //
+      // If no TPM2 was detected, we still need to install
+      // TpmInitializationDonePpi. Namely, Tcg2Pei will exit early upon seeing
+      // the default (all-bits-zero) contents of PcdTpmInstanceGuid, thus we have
+      // to install the PPI in its place, in order to unblock any dependent
+      // PEIMs.
+      //
+      Status = PeiServicesInstallPpi (&mTpmInitializationDonePpiList);
+      ASSERT_EFI_ERROR (Status);
+    }
   }
 
   //

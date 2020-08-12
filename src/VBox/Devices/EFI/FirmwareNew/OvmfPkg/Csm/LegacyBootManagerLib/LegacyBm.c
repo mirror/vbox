@@ -173,7 +173,7 @@ LegacyBmBuildLegacyDevNameString (
   StringDesc = (CHAR8 *) (((UINTN) CurBBSEntry->DescStringSegment << 4) + CurBBSEntry->DescStringOffset);
   if (NULL != StringDesc) {
     //
-    // Only get fisrt 32 characters, this is suggested by BBS spec
+    // Only get first 32 characters, this is suggested by BBS spec
     //
     CopyMem (StringBufferA, StringDesc, LEGACY_BM_BOOT_DESCRIPTION_LENGTH);
     StringBufferA[LEGACY_BM_BOOT_DESCRIPTION_LENGTH] = 0;
@@ -378,9 +378,9 @@ LegacyBmDeleteAllBootOptions (
 /**
   Delete all the invalid legacy boot options.
 
-  @retval EFI_SUCCESS             All invalide legacy boot options are deleted.
+  @retval EFI_SUCCESS             All invalid legacy boot options are deleted.
   @retval EFI_OUT_OF_RESOURCES    Fail to allocate necessary memory.
-  @retval EFI_NOT_FOUND           Fail to retrive variable of boot order.
+  @retval EFI_NOT_FOUND           Fail to retrieve variable of boot order.
 **/
 EFI_STATUS
 LegacyBmDeleteAllInvalidBootOptions (
@@ -440,7 +440,7 @@ LegacyBmDeleteAllInvalidBootOptions (
 
     BbsIndex = LegacyBmFuzzyMatch (&BootOption[Index], BbsTable, BbsCount, BbsIndexUsed);
     if (BbsIndex == BbsCount) {
-      DEBUG ((EFI_D_INFO, "[LegacyBds] Delete Boot Option Boot%04x: %s\n", (UINTN) BootOption[Index].OptionNumber, BootOption[Index].Description));
+      DEBUG ((DEBUG_INFO, "[LegacyBds] Delete Boot Option Boot%04x: %s\n", (UINTN) BootOption[Index].OptionNumber, BootOption[Index].Description));
       //
       // Delete entry from LegacyDevOrder
       //
@@ -454,7 +454,7 @@ LegacyBmDeleteAllInvalidBootOptions (
       EfiBootManagerDeleteLoadOptionVariable (BootOption[Index].OptionNumber, BootOption[Index].OptionType);
     } else {
       if (((LEGACY_BM_BOOT_OPTION_BBS_DATA *) BootOption[Index].OptionalData)->BbsIndex != BbsIndex) {
-        DEBUG ((EFI_D_INFO, "[LegacyBds] Update Boot Option Boot%04x: %s Bbs0x%04x->Bbs0x%04x\n", (UINTN) BootOption[Index].OptionNumber, BootOption[Index].Description,
+        DEBUG ((DEBUG_INFO, "[LegacyBds] Update Boot Option Boot%04x: %s Bbs0x%04x->Bbs0x%04x\n", (UINTN) BootOption[Index].OptionNumber, BootOption[Index].Description,
                 (UINTN) ((LEGACY_BM_BOOT_OPTION_BBS_DATA *) BootOption[Index].OptionalData)->BbsIndex, (UINTN) BbsIndex));
         //
         // Update the BBS index in LegacyDevOrder
@@ -499,7 +499,7 @@ LegacyBmDeleteAllInvalidBootOptions (
 /**
   Create legacy boot option.
 
-  @param BootOption        Ponter to the boot option which will be crated.
+  @param BootOption        Pointer to the boot option which will be crated.
   @param BbsEntry          The input bbs entry info.
   @param BbsIndex          The BBS index.
 
@@ -615,10 +615,10 @@ LegacyBmFillDevOrderBuf (
   @param BbsTable        The BBS table.
   @param BbsCount        The BBS Count.
 
-  @retval EFI_SUCCES             The buffer is created and the EFI variable named
+  @retval EFI_SUCCESS            The buffer is created and the EFI variable named
                                  VAR_LEGACY_DEV_ORDER and EfiLegacyDevOrderGuid is
                                  set correctly.
-  @retval EFI_OUT_OF_RESOURCES   Memmory or storage is not enough.
+  @retval EFI_OUT_OF_RESOURCES   Memory or storage is not enough.
   @retval EFI_DEVICE_ERROR       Fail to add the device order into EFI variable fail
                                  because of hardware error.
 **/
@@ -742,7 +742,7 @@ LegacyBmCreateDevOrder (
 
   @retval EFI_SUCCESS           The boot devices are added successfully.
   @retval EFI_NOT_FOUND         The legacy boot devices are not found.
-  @retval EFI_OUT_OF_RESOURCES  Memmory or storage is not enough.
+  @retval EFI_OUT_OF_RESOURCES  Memory or storage is not enough.
   @retval EFI_DEVICE_ERROR      Fail to add the legacy device boot order into EFI variable
                                 because of hardware error.
 **/
@@ -1042,7 +1042,7 @@ LegacyBmUpdateDevOrder (
   @param DeviceType      The device type.
   @param BbsIndex        The BBS index to set the highest priority. Ignore when -1.
   @param LocalBbsTable   The BBS table.
-  @param Priority        The prority table.
+  @param Priority        The priority table.
 
   @retval EFI_SUCCESS           The function completes successfully.
   @retval EFI_NOT_FOUND         Failed to find device.
@@ -1494,7 +1494,7 @@ LegacyBmRefreshAllBootOption (
   //
   // Same algorithm pattern as the EfiBootManagerRefreshAllBootOption
   // Firstly delete the invalid legacy boot options,
-  // then enumreate and save the newly appeared legacy boot options
+  // then enumerate and save the newly appeared legacy boot options
   // the last step is legacy boot option special action to refresh the LegacyDevOrder variable
   //
   LegacyBmDeleteAllInvalidBootOptions ();
@@ -1506,7 +1506,7 @@ LegacyBmRefreshAllBootOption (
     if (LegacyBmFindBootOption (&BootOptions[Index], ExistingBootOptions, ExistingBootOptionCount) == -1) {
       Status = EfiBootManagerAddLoadOptionVariable (&BootOptions[Index], (UINTN) -1);
       DEBUG ((
-        EFI_D_INFO, "[LegacyBds] New Boot Option: Boot%04x Bbs0x%04x %s %r\n",
+        DEBUG_INFO, "[LegacyBds] New Boot Option: Boot%04x Bbs0x%04x %s %r\n",
         (UINTN) BootOptions[Index].OptionNumber,
         (UINTN) ((LEGACY_BM_BOOT_OPTION_BBS_DATA *) BootOptions[Index].OptionalData)->BbsIndex,
         BootOptions[Index].Description,

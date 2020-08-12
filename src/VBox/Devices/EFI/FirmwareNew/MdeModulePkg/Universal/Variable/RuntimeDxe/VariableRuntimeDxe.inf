@@ -36,6 +36,12 @@
   Variable.c
   VariableDxe.c
   Variable.h
+  VariableNonVolatile.c
+  VariableNonVolatile.h
+  VariableParsing.c
+  VariableParsing.h
+  VariableRuntimeCache.c
+  VariableRuntimeCache.h
   PrivilegePolymorphic.h
   Measurement.c
   TcgMorLockDxe.c

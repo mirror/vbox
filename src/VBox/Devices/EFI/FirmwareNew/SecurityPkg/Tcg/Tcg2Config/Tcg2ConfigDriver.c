@@ -240,7 +240,7 @@ InitializeTcg2VersionInfo (
 
   @retval EFI_ALREADY_STARTED    The driver already exists in system.
   @retval EFI_OUT_OF_RESOURCES   Fail to execute entry point due to lack of resources.
-  @retval EFI_SUCCES             All the related protocols are installed on the driver.
+  @retval EFI_SUCCESS            All the related protocols are installed on the driver.
   @retval Others                 Fail to install protocols as indicated.
 
 **/
@@ -443,7 +443,7 @@ Tcg2ConfigDriverUnload (
   ASSERT (PrivateData->Signature == TCG2_CONFIG_PRIVATE_DATA_SIGNATURE);
 
   gBS->UninstallMultipleProtocolInterfaces (
-         &ImageHandle,
+         ImageHandle,
          &gEfiCallerIdGuid,
          PrivateData,
          NULL

@@ -1,7 +1,7 @@
 /** @file
   The implementation of the ARP protocol.
 
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -55,7 +55,7 @@ ArpInitInstance (
 /**
   Process the Arp packets received from Mnp, the procedure conforms to RFC826.
 
-  @param[in]  Context            Pointer to the context data registerd to the
+  @param[in]  Context            Pointer to the context data registered to the
                                  Event.
 
   @return None.
@@ -113,7 +113,7 @@ ArpOnFrameRcvdDpc (
     //
     // Restart the receiving if packet size is not correct.
     //
-    goto RESTART_RECEIVE;
+    goto RECYCLE_RXDATA;
   }
 
   //
@@ -125,7 +125,7 @@ ArpOnFrameRcvdDpc (
   Head->OpCode    = NTOHS (Head->OpCode);
 
   if (RxData->DataLength < (sizeof (ARP_HEAD) + 2 * Head->HwAddrLen + 2 * Head->ProtoAddrLen)) {
-    goto RESTART_RECEIVE;
+    goto RECYCLE_RXDATA;
   }
 
   if ((Head->HwType != ArpService->SnpMode.IfType) ||
@@ -316,7 +316,7 @@ RESTART_RECEIVE:
   Queue ArpOnFrameRcvdDpc as a DPC at TPL_CALLBACK.
 
   @param[in]  Event                  The Event this notify function registered to.
-  @param[in]  Context                Pointer to the context data registerd to the
+  @param[in]  Context                Pointer to the context data registered to the
                                      Event.
 
   @return None.
@@ -338,7 +338,7 @@ ArpOnFrameRcvd (
 /**
   Process the already sent arp packets.
 
-  @param[in]  Context                Pointer to the context data registerd to the
+  @param[in]  Context                Pointer to the context data registered to the
                                      Event.
 
   @return None.
@@ -377,7 +377,7 @@ ArpOnFrameSentDpc (
   Request ArpOnFrameSentDpc as a DPC at TPL_CALLBACK.
 
   @param[in]  Event                  The Event this notify function registered to.
-  @param[in]  Context                Pointer to the context data registerd to the
+  @param[in]  Context                Pointer to the context data registered to the
                                      Event.
 
   @return None.
@@ -401,7 +401,7 @@ ArpOnFrameSent (
   Process the arp cache olding and drive the retrying arp requests.
 
   @param[in]  Event                  The Event this notify function registered to.
-  @param[in]  Context                Pointer to the context data registerd to the
+  @param[in]  Context                Pointer to the context data registered to the
                                      Event.
 
   @return None.
@@ -1008,7 +1008,7 @@ ArpConfigureInstance (
 
 
 /**
-  Send out an arp frame using the CachEntry and the ArpOpCode.
+  Send out an arp frame using the CacheEntry and the ArpOpCode.
 
   @param[in]  Instance               Pointer to the instance context data.
   @param[in]  CacheEntry             Pointer to the configuration data used to
@@ -1344,7 +1344,7 @@ ArpDeleteCacheEntry (
             );
 
   //
-  // Delete the cache entries inthe ResolvedCacheTable.
+  // Delete the cache entries in the ResolvedCacheTable.
   //
   Count += ArpDeleteCacheEntryInTable (
              &ArpService->ResolvedCacheTable,
@@ -1466,7 +1466,7 @@ ArpFindCacheEntry (
   ArpService = Instance->ArpService;
 
   //
-  // Init the FounEntries used to hold the found cache entries.
+  // Init the FoundEntries used to hold the found cache entries.
   //
   NetMapInit (&FoundEntries);
 

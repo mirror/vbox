@@ -1,7 +1,7 @@
 /** @file
   This driver produces XenBus Protocol instances for each Xen PV devices.
 
-  This XenBus bus driver will first initialize differente services in order to
+  This XenBus bus driver will first initialize different services in order to
   enumerate the ParaVirtualized devices available.
 
   Those services are:
@@ -297,8 +297,8 @@ NotifyExitBoot (
   @retval EFI_DEVICE_ERROR         The device could not be started due to a device error.Currently not implemented.
   @retval EFI_OUT_OF_RESOURCES     The request could not be completed due to a lack of resources.
   @retval EFI_UNSUPPORTED          Something is missing on the system that
-                                   prevent to start the edvice.
-  @retval Others                   The driver failded to start the device.
+                                   prevent to start the device.
+  @retval Others                   The driver failed to start the device.
 
 **/
 EFI_STATUS
@@ -362,7 +362,7 @@ XenBusDxeDriverBindingStart (
 
   Status = XenGetSharedInfoPage (Dev);
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "XenBus: Unable to get the shared info page.\n"));
+    DEBUG ((DEBUG_ERROR, "XenBus: Unable to get the shared info page.\n"));
     Status = EFI_UNSUPPORTED;
     goto ErrorAllocated;
   }
@@ -442,7 +442,7 @@ XenBusDxeDriverBindingStop (
                ControllerHandle,
                EFI_OPEN_PROTOCOL_GET_PROTOCOL);
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "XenBusDxe: get children protocol failed: %r\n", Status));
+      DEBUG ((DEBUG_ERROR, "XenBusDxe: get children protocol failed: %r\n", Status));
       continue;
     }
     ChildData = XENBUS_PRIVATE_DATA_FROM_THIS (XenBusIo);

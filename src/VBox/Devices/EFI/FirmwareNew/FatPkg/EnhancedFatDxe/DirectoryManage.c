@@ -13,11 +13,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   Get a directory entry from disk for the Ofile.
 
   @param  Parent                - The parent of the OFile which need to update.
-  @param  IoMode                - Indicate whether to read directory entry or write directroy entry.
+  @param  IoMode                - Indicate whether to read directory entry or write directory entry.
   @param  EntryPos              - The position of the directory entry to be accessed.
   @param  Entry                 - The directory entry read or written.
 
-  @retval EFI_SUCCESS           - Access the directory entry sucessfully.
+  @retval EFI_SUCCESS           - Access the directory entry successfully.
   @return other                 - An error occurred when reading the directory entry.
 
 **/
@@ -896,7 +896,7 @@ FatNewEntryPos (
   @param  Volume                - FAT file system volume.
   @param  Name                  - The file name of the volume.
 
-  @retval EFI_SUCCESS           - Update the volume with the directory entry sucessfully.
+  @retval EFI_SUCCESS           - Update the volume with the directory entry successfully.
   @return others                - An error occurred when getting volume label.
 
 **/
@@ -927,7 +927,7 @@ FatGetVolumeEntry (
   @param  Volume              - FAT file system volume.
   @param  Name                - The new file name of the volume.
 
-  @retval EFI_SUCCESS         - Update the Volume sucessfully.
+  @retval EFI_SUCCESS         - Update the Volume successfully.
   @retval EFI_UNSUPPORTED     - The input label is not a valid volume label.
   @return other               - An error occurred when setting volume label.
 
@@ -1246,7 +1246,7 @@ FatCloseDirEnt (
                           not be created either).
   @retval EFI_INVALID_PARAMETER - The parameter is not valid.
   @retval EFI_SUCCESS           - Open the file successfully.
-  @return other                 - An error occured when locating the OFile.
+  @return other                 - An error occurred when locating the OFile.
 
 **/
 EFI_STATUS

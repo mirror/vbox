@@ -107,7 +107,7 @@ AllocateLegacyMemory (
   64 KB blocks.
 
   Note: inconsistency with the Framework CSM spec. Per the spec, this function may be
-  invoked only once. This limitation is relaxed to allow multiple calls in this implemenation.
+  invoked only once. This limitation is relaxed to allow multiple calls in this implementation.
 
   @param  This                       Protocol instance pointer.
   @param  LegacyMemorySize           Size of required region
@@ -319,7 +319,7 @@ ShadowAndStartLegacy16 (
   Private->LegacyBiosImageSize  = (UINT32) LegacyBiosImageSize;
 
   //
-  // Can only shadow into memory allocated for legacy useage.
+  // Can only shadow into memory allocated for legacy usage.
   //
   ASSERT (Private->BiosStart > Private->OptionRom);
 
@@ -364,7 +364,7 @@ ShadowAndStartLegacy16 (
   }
 
   if (Table == NULL) {
-    DEBUG ((EFI_D_ERROR, "No Legacy16 table found\n"));
+    DEBUG ((DEBUG_ERROR, "No Legacy16 table found\n"));
     return EFI_NOT_FOUND;
   }
 
@@ -372,7 +372,7 @@ ShadowAndStartLegacy16 (
     //
     // Legacy16 table header checksum error.
     //
-    DEBUG ((EFI_D_ERROR, "Legacy16 table found with bad talbe header checksum\n"));
+    DEBUG ((DEBUG_ERROR, "Legacy16 table found with bad talbe header checksum\n"));
   }
 
   //
@@ -483,7 +483,7 @@ ShadowAndStartLegacy16 (
   Table->E820Pointer  = (UINT32) (Regs.X.DS * 16 + Regs.X.BX);
   Table->E820Length   = (UINT32) E820Size;
   if (Regs.X.AX != 0) {
-    DEBUG ((EFI_D_ERROR, "Legacy16 E820 length insufficient\n"));
+    DEBUG ((DEBUG_ERROR, "Legacy16 E820 length insufficient\n"));
   } else {
     TempData = Table->E820Pointer;
     CopyMem ((VOID *) TempData, Private->E820Table, E820Size);
@@ -543,7 +543,7 @@ ShadowAndStartLegacy16 (
 
     TpmPointer = (UINT32) (Regs.X.DS * 16 + Regs.X.BX);
     if (Regs.X.AX != 0) {
-      DEBUG ((EFI_D_ERROR, "TPM cannot be loaded\n"));
+      DEBUG ((DEBUG_ERROR, "TPM cannot be loaded\n"));
     } else {
       CopyMem ((VOID *) (UINTN)TpmPointer, TpmBinaryImage, TpmBinaryImageSize);
       Table->TpmSegment = Regs.X.DS;
@@ -738,7 +738,7 @@ InstallSmbiosEventCallback (
       mReserveSmbiosEntryPoint = 0;
       return;
     }
-    DEBUG ((EFI_D_INFO, "Allocate memory for Smbios Entry Point Structure\n"));
+    DEBUG ((DEBUG_INFO, "Allocate memory for Smbios Entry Point Structure\n"));
   }
 
   if ((mStructureTableAddress != 0) &&
@@ -749,7 +749,7 @@ InstallSmbiosEventCallback (
     gBS->FreePages (mStructureTableAddress, mStructureTablePages);
     mStructureTableAddress = 0;
     mStructureTablePages   = 0;
-    DEBUG ((EFI_D_INFO, "Original size is not enough. Re-allocate the memory.\n"));
+    DEBUG ((DEBUG_INFO, "Original size is not enough. Re-allocate the memory.\n"));
   }
 
   if (mStructureTableAddress == 0) {
@@ -775,7 +775,7 @@ InstallSmbiosEventCallback (
       mStructureTablePages     = 0;
       return;
     }
-    DEBUG ((EFI_D_INFO, "Allocate memory for Smbios Structure Table\n"));
+    DEBUG ((DEBUG_INFO, "Allocate memory for Smbios Structure Table\n"));
   }
 }
 
@@ -983,7 +983,7 @@ LegacyBiosInstall (
          );
 
   //
-  // Allocate 0 - 4K for real mode interupt vectors and BDA.
+  // Allocate 0 - 4K for real mode interrupt vectors and BDA.
   //
   AllocateLegacyMemory (
     AllocateAddress,
@@ -1051,7 +1051,7 @@ LegacyBiosInstall (
       MemoryPtr = (VOID *) ((UINTN) StartAddress);
       ZeroMem (MemoryPtr, 0x1000);
     } else {
-      DEBUG ((EFI_D_ERROR, "WARNING: Allocate legacy memory fail for SCSI card - %x\n", MemStart));
+      DEBUG ((DEBUG_ERROR, "WARNING: Allocate legacy memory fail for SCSI card - %x\n", MemStart));
     }
   }
 
@@ -1206,7 +1206,7 @@ LegacyBiosInstall (
                   );
   Private->Csm16PciInterfaceVersion = GetPciInterfaceVersion (Private);
 
-  DEBUG ((EFI_D_INFO, "CSM16 PCI BIOS Interface Version: %02x.%02x\n",
+  DEBUG ((DEBUG_INFO, "CSM16 PCI BIOS Interface Version: %02x.%02x\n",
           (UINT8) (Private->Csm16PciInterfaceVersion >> 8),
           (UINT8) Private->Csm16PciInterfaceVersion
         ));

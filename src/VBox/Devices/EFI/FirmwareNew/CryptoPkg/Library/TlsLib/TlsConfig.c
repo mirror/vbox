@@ -1,7 +1,7 @@
 /** @file
   SSL/TLS Configuration Library Wrapper Implementation over OpenSSL.
 
-Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -495,6 +495,62 @@ TlsSetVerify (
   // Set peer certificate verification parameters with NULL callback.
   //
   SSL_set_verify (TlsConn->Ssl, VerifyMode, NULL);
+}
+
+/**
+  Set the specified host name to be verified.
+
+  @param[in]  Tls           Pointer to the TLS object.
+  @param[in]  Flags         The setting flags during the validation.
+  @param[in]  HostName      The specified host name to be verified.
+
+  @retval  EFI_SUCCESS           The HostName setting was set successfully.
+  @retval  EFI_INVALID_PARAMETER The parameter is invalid.
+  @retval  EFI_ABORTED           Invalid HostName setting.
+
+**/
+EFI_STATUS
+EFIAPI
+TlsSetVerifyHost (
+  IN     VOID                     *Tls,
+  IN     UINT32                   Flags,
+  IN     CHAR8                    *HostName
+  )
+{
+  TLS_CONNECTION    *TlsConn;
+  X509_VERIFY_PARAM *VerifyParam;
+  UINTN             BinaryAddressSize;
+  UINT8             BinaryAddress[MAX (NS_INADDRSZ, NS_IN6ADDRSZ)];
+  INTN              ParamStatus;
+
+  TlsConn = (TLS_CONNECTION *) Tls;
+  if (TlsConn == NULL || TlsConn->Ssl == NULL || HostName == NULL) {
+     return EFI_INVALID_PARAMETER;
+  }
+
+  SSL_set_hostflags(TlsConn->Ssl, Flags);
+
+  VerifyParam = SSL_get0_param (TlsConn->Ssl);
+  ASSERT (VerifyParam != NULL);
+
+  BinaryAddressSize = 0;
+  if (inet_pton (AF_INET6, HostName, BinaryAddress) == 1) {
+    BinaryAddressSize = NS_IN6ADDRSZ;
+  } else if (inet_pton (AF_INET, HostName, BinaryAddress) == 1) {
+    BinaryAddressSize = NS_INADDRSZ;
+  }
+
+  if (BinaryAddressSize > 0) {
+    DEBUG ((DEBUG_VERBOSE, "%a:%a: parsed \"%a\" as an IPv%c address "
+      "literal\n", gEfiCallerBaseName, __FUNCTION__, HostName,
+      (UINTN)((BinaryAddressSize == NS_IN6ADDRSZ) ? '6' : '4')));
+    ParamStatus = X509_VERIFY_PARAM_set1_ip (VerifyParam, BinaryAddress,
+                    BinaryAddressSize);
+  } else {
+    ParamStatus = X509_VERIFY_PARAM_set1_host (VerifyParam, HostName, 0);
+  }
+
+  return (ParamStatus == 1) ? EFI_SUCCESS : EFI_ABORTED;
 }
 
 /**

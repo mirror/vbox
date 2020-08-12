@@ -34,7 +34,7 @@ InstallProtocolInterfaces (
   // Firmware Volume Block protocol structure.
   //
   FvbHandle = NULL;
-  DEBUG ((EFI_D_INFO, "Installing QEMU flash SMM FVB\n"));
+  DEBUG ((DEBUG_INFO, "Installing QEMU flash SMM FVB\n"));
   Status = gSmst->SmmInstallProtocolInterface (
                     &FvbHandle,
                     &gEfiSmmFirmwareVolumeBlockProtocolGuid,
@@ -73,4 +73,14 @@ MarkIoMemoryRangeForRuntimeAccess (
   //
 
   return EFI_SUCCESS;
+}
+
+VOID
+SetPcdFlashNvStorageBaseAddresses (
+  VOID
+  )
+{
+  //
+  // Do nothing.
+  //
 }

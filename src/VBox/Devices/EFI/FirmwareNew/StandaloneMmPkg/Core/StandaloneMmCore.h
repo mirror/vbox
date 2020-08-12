@@ -18,7 +18,7 @@
 #include <Protocol/DxeMmReadyToLock.h>
 #include <Protocol/MmReadyToLock.h>
 #include <Protocol/MmEndOfDxe.h>
-#include <Protocol/MmCommunication.h>
+#include <Protocol/MmCommunication2.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/MmConfiguration.h>
 
@@ -67,7 +67,7 @@ typedef struct {
 
   LIST_ENTRY                      ScheduledLink;    // mScheduledQueue
 
-  EFI_HANDLE                      FvHandle;
+  EFI_FIRMWARE_VOLUME_HEADER      *FwVolHeader;
   EFI_GUID                        FileName;
   VOID                            *Pe32Data;
   UINTN                           Pe32DataSize;

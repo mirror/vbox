@@ -85,6 +85,7 @@
 
   gTcgEvent2EntryHobGuid                             ## SOMETIMES_CONSUMES  ## HOB
   gTpm2StartupLocalityHobGuid                        ## SOMETIMES_CONSUMES  ## HOB
+  gTcg800155PlatformIdEventHobGuid                   ## SOMETIMES_CONSUMES  ## HOB
 
 [Protocols]
   gEfiTcg2ProtocolGuid                               ## PRODUCES
@@ -102,9 +103,16 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2NumberOfPCRBanks                     ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcgLogAreaMinLen                         ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2FinalLogAreaLen                      ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableRev                         ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLaml                        ## PRODUCES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLasa                        ## PRODUCES
 
 [Depex]
-  TRUE
+  # According to PcdTpm2AcpiTableRev definition in SecurityPkg.dec
+  # This PCD should be configured at DynamicHii or DynamicHiiEx.
+  # So, this PCD read operation depends on GetVariable service.
+  # Add VariableArch protocol dependency to make sure PCD read works.
+  gEfiVariableArchProtocolGuid
 
 [UserExtensions.TianoCore."ExtraFiles"]
   Tcg2DxeExtra.uni

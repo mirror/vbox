@@ -16,8 +16,24 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "Tcg2Smm.h"
 
+#pragma pack(1)
 
-EFI_TPM2_ACPI_TABLE  mTpm2AcpiTemplate = {
+typedef struct {
+  EFI_ACPI_DESCRIPTION_HEADER Header;
+  // Flags field is replaced in version 4 and above
+  //    BIT0~15:  PlatformClass      This field is only valid for version 4 and above
+  //    BIT16~31: Reserved
+  UINT32                      Flags;
+  UINT64                      AddressOfControlArea;
+  UINT32                      StartMethod;
+  UINT8                       PlatformSpecificParameters[12];  // size up to 12
+  UINT32                      Laml;                          // Optional
+  UINT64                      Lasa;                          // Optional
+} EFI_TPM2_ACPI_TABLE_V4;
+
+#pragma pack()
+
+EFI_TPM2_ACPI_TABLE_V4  mTpm2AcpiTemplate = {
   {
     EFI_ACPI_5_0_TRUSTED_COMPUTING_PLATFORM_2_TABLE_SIGNATURE,
     sizeof (mTpm2AcpiTemplate),
@@ -253,7 +269,7 @@ UpdatePPVersion (
 
 /**
   Patch interrupt resources returned by TPM _PRS. ResourceTemplate to patch is determined by input
-  interrupt buffer size. BufferSize, PkgLength and interrupt descirptor in ByteList need to be patched
+  interrupt buffer size. BufferSize, PkgLength and interrupt descriptor in ByteList need to be patched
 
   @param[in, out] Table            The TPM item in ACPI table.
   @param[in]      IrqBuffer        Input new IRQ buffer.
@@ -288,7 +304,7 @@ UpdatePossibleResource (
   // to patch TPM ACPI object _PRS returned ResourceTemplate() containing 2 resource descriptors and an auto appended End Tag
   //
   //  AML data is organized by following rule.
-  //  Code need to patch BufferSize and PkgLength and interrupt descirptor in ByteList
+  //  Code need to patch BufferSize and PkgLength and interrupt descriptor in ByteList
   //
   // =============  Buffer ====================
   //           DefBuffer := BufferOp PkgLength BufferSize ByteList
@@ -305,8 +321,8 @@ UpdatePossibleResource (
   //                               <bit 3-0: Least significant package length nybble>
   //
   //==============BufferSize==================
-  //        BufferSize := Integar
-  //           Integar := ByteConst|WordConst|DwordConst....
+  //        BufferSize := Integer
+  //           Integer := ByteConst|WordConst|DwordConst....
   //
   //           ByteConst := BytePrefix ByteData
   //
@@ -355,7 +371,7 @@ UpdatePossibleResource (
       }
 
       //
-      // Include Memory32Fixed Descritor (12 Bytes) + Interrupt Descriptor header(5 Bytes) + End Tag(2 Bytes)
+      // Include Memory32Fixed Descriptor (12 Bytes) + Interrupt Descriptor header(5 Bytes) + End Tag(2 Bytes)
       //
       NewPkgLength += 19 + IrqBuffserSize;
       if (NewPkgLength > 63) {
@@ -373,7 +389,7 @@ UpdatePossibleResource (
       *DataPtr = (UINT8)NewPkgLength;
 
       //
-      // 1.2 Patch BufferSize = sizeof(Memory32Fixed Descritor + Interrupt Descriptor + End Tag).
+      // 1.2 Patch BufferSize = sizeof(Memory32Fixed Descriptor + Interrupt Descriptor + End Tag).
       //      It is Little endian. So only patch lowest byte of BufferSize due to current interrupt number limit.
       //
       *(DataPtr + 2) = (UINT8)(IrqBuffserSize + 19);
@@ -429,7 +445,7 @@ UpdatePossibleResource (
         }
 
         //
-        // Include Memory32Fixed Descritor (12 Bytes) + Interrupt Descriptor header(5 Bytes) + End Tag(2  Bytes)
+        // Include Memory32Fixed Descriptor (12 Bytes) + Interrupt Descriptor header(5 Bytes) + End Tag(2  Bytes)
         //
         NewPkgLength += 19 + IrqBuffserSize;
 
@@ -445,7 +461,7 @@ UpdatePossibleResource (
         *(DataPtr + 1) = (UINT8)((NewPkgLength & 0xFF0) >> 4);
 
         //
-        // 2.2 Patch BufferSize = sizeof(Memory32Fixed Descritor + Interrupt Descriptor + End Tag).
+        // 2.2 Patch BufferSize = sizeof(Memory32Fixed Descriptor + Interrupt Descriptor + End Tag).
         //     It is Little endian. Only patch lowest byte of BufferSize due to current interrupt number limit.
         //
         *(DataPtr + 2 + ((*DataPtr & (BIT7|BIT6)) >> 6)) = (UINT8)(IrqBuffserSize + 19);
@@ -469,7 +485,7 @@ UpdatePossibleResource (
   //
   DataPtr += NewPkgLength - (5 + IrqBuffserSize + 2);
   //
-  //   3.1 Patch Length bit[7:0] of Interrupt descirptor patch interrupt descriptor
+  //   3.1 Patch Length bit[7:0] of Interrupt descriptor patch interrupt descriptor
   //
   *(DataPtr + 1) = (UINT8)(2 + IrqBuffserSize);
   //
@@ -482,7 +498,7 @@ UpdatePossibleResource (
   CopyMem(DataPtr + 5, IrqBuffer, IrqBuffserSize);
 
   //
-  // 4. Jump over Interrupt descirptor and Patch END Tag, set Checksum field to 0
+  // 4. Jump over Interrupt descriptor and Patch END Tag, set Checksum field to 0
   //
   DataPtr       += 5 + IrqBuffserSize;
   *DataPtr       = ACPI_END_TAG_DESCRIPTOR;
@@ -636,6 +652,21 @@ PublishAcpiTable (
   ASSERT_EFI_ERROR (Status);
 
   //
+  // Measure to PCR[0] with event EV_POST_CODE ACPI DATA.
+  // The measurement has to be done before any update.
+  // Otherwise, the PCR record would be different after TPM FW update
+  // or the PCD configuration change.
+  //
+  TpmMeasureAndLogData(
+    0,
+    EV_POST_CODE,
+    EV_POSTCODE_INFO_ACPI_DATA,
+    ACPI_DATA_LEN,
+    Table,
+    TableSize
+    );
+
+  //
   // Update Table version before measuring it to PCR
   //
   Status = UpdatePPVersion(Table, (CHAR8 *)PcdGetPtr(PcdTcgPhysicalPresenceInterfaceVer));
@@ -648,7 +679,7 @@ PublishAcpiTable (
     ));
 
   //
-  // Update TPM2 HID before measuring it to PCR
+  // Update TPM2 HID after measuring it to PCR
   //
   Status = UpdateHID(Table);
   if (EFI_ERROR(Status)) {
@@ -678,19 +709,6 @@ PublishAcpiTable (
     }
   }
 
-  //
-  // Measure to PCR[0] with event EV_POST_CODE ACPI DATA
-  //
-  TpmMeasureAndLogData(
-    0,
-    EV_POST_CODE,
-    EV_POSTCODE_INFO_ACPI_DATA,
-    ACPI_DATA_LEN,
-    Table,
-    TableSize
-    );
-
-
   ASSERT (Table->OemTableId == SIGNATURE_64 ('T', 'p', 'm', '2', 'T', 'a', 'b', 'l'));
   CopyMem (Table->OemId, PcdGetPtr (PcdAcpiDefaultOemId), sizeof (Table->OemId) );
   mTcgNvs = AssignOpRegion (Table, SIGNATURE_32 ('T', 'N', 'V', 'S'), (UINT16) sizeof (TCG_NVS));
@@ -699,7 +717,7 @@ PublishAcpiTable (
   mTcgNvs->IsShortFormPkgLength = IsShortFormPkgLength;
 
   //
-  // Publish the TPM ACPI table. Table is re-checksumed.
+  // Publish the TPM ACPI table. Table is re-checksummed.
   //
   Status = gBS->LocateProtocol (&gEfiAcpiTableProtocolGuid, NULL, (VOID **) &AcpiTable);
   ASSERT_EFI_ERROR (Status);
@@ -735,6 +753,21 @@ PublishTpm2 (
   EFI_TPM2_ACPI_CONTROL_AREA     *ControlArea;
   TPM2_PTP_INTERFACE_TYPE        InterfaceType;
 
+  //
+  // Measure to PCR[0] with event EV_POST_CODE ACPI DATA.
+  // The measurement has to be done before any update.
+  // Otherwise, the PCR record would be different after event log update
+  // or the PCD configuration change.
+  //
+  TpmMeasureAndLogData(
+    0,
+    EV_POST_CODE,
+    EV_POSTCODE_INFO_ACPI_DATA,
+    ACPI_DATA_LEN,
+    &mTpm2AcpiTemplate,
+    mTpm2AcpiTemplate.Header.Length
+    );
+
   mTpm2AcpiTemplate.Header.Revision = PcdGet8(PcdTpm2AcpiTableRev);
   DEBUG((DEBUG_INFO, "Tpm2 ACPI table revision is %d\n", mTpm2AcpiTemplate.Header.Revision));
 
@@ -748,17 +781,15 @@ PublishTpm2 (
     DEBUG((DEBUG_INFO, "Tpm2 ACPI table PlatformClass is %d\n", (mTpm2AcpiTemplate.Flags & 0x0000FFFF)));
   }
 
-  //
-  // Measure to PCR[0] with event EV_POST_CODE ACPI DATA
-  //
-  TpmMeasureAndLogData(
-    0,
-    EV_POST_CODE,
-    EV_POSTCODE_INFO_ACPI_DATA,
-    ACPI_DATA_LEN,
-    &mTpm2AcpiTemplate,
-    sizeof(mTpm2AcpiTemplate)
-    );
+  mTpm2AcpiTemplate.Laml = PcdGet32(PcdTpm2AcpiTableLaml);
+  mTpm2AcpiTemplate.Lasa = PcdGet64(PcdTpm2AcpiTableLasa);
+  if ((mTpm2AcpiTemplate.Header.Revision < EFI_TPM2_ACPI_TABLE_REVISION_4) ||
+      (mTpm2AcpiTemplate.Laml == 0) || (mTpm2AcpiTemplate.Lasa == 0)) {
+    //
+    // If version is smaller than 4 or Laml/Lasa is not valid, rollback to original Length.
+    //
+    mTpm2AcpiTemplate.Header.Length = sizeof(EFI_TPM2_ACPI_TABLE);
+  }
 
   InterfaceType = PcdGet8(PcdActiveTpmInterfaceType);
   switch (InterfaceType) {
@@ -795,7 +826,7 @@ PublishTpm2 (
   Status = AcpiTable->InstallAcpiTable (
                         AcpiTable,
                         &mTpm2AcpiTemplate,
-                        sizeof(mTpm2AcpiTemplate),
+                        mTpm2AcpiTemplate.Header.Length,
                         &TableKey
                         );
   ASSERT_EFI_ERROR (Status);

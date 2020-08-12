@@ -45,6 +45,12 @@
   Variable.c
   VariableSmm.c
   VariableStandaloneMm.c
+  VariableNonVolatile.c
+  VariableNonVolatile.h
+  VariableParsing.c
+  VariableParsing.h
+  VariableRuntimeCache.c
+  VariableRuntimeCache.h
   VarCheck.c
   Variable.h
   PrivilegePolymorphic.h

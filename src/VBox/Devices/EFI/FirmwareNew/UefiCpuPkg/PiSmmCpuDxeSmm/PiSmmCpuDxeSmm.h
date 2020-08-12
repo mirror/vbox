@@ -1,7 +1,7 @@
 /** @file
 Agent Module to load other modules to deploy SMM Entry Vector for X86 CPU.
 
-Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2020, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -212,10 +212,22 @@ typedef struct {
   UINTN                   Signature;
   LIST_ENTRY              Link;
 
-  SPIN_LOCK               *ProcedureToken;
+  SPIN_LOCK               *SpinLock;
+  volatile UINT32         RunningApCount;
 } PROCEDURE_TOKEN;
 
 #define PROCEDURE_TOKEN_FROM_LINK(a)  CR (a, PROCEDURE_TOKEN, Link, PROCEDURE_TOKEN_SIGNATURE)
+
+#define TOKEN_BUFFER_SIGNATURE  SIGNATURE_32 ('T', 'K', 'B', 'S')
+
+typedef struct {
+  UINTN                   Signature;
+  LIST_ENTRY              Link;
+
+  UINT8                   *Buffer;
+} TOKEN_BUFFER;
+
+#define TOKEN_BUFFER_FROM_LINK(a)  CR (a, TOKEN_BUFFER, Link, TOKEN_BUFFER_SIGNATURE)
 
 //
 // Private structure for the SMM CPU module that is stored in DXE Runtime memory
@@ -242,7 +254,7 @@ typedef struct {
 
   PROCEDURE_WRAPPER               *ApWrapperFunc;
   LIST_ENTRY                      TokenList;
-
+  LIST_ENTRY                      *FirstFreeToken;
 } SMM_CPU_PRIVATE_DATA;
 
 extern SMM_CPU_PRIVATE_DATA  *gSmmCpuPrivate;
@@ -272,7 +284,7 @@ extern UINT8  mSmmSaveStateRegisterLma;
 
   @retval EFI_SUCCESS   The register was read from Save State
   @retval EFI_NOT_FOUND The register is not defined for the Save State of Processor
-  @retval EFI_INVALID_PARAMTER   This or Buffer is NULL.
+  @retval EFI_INVALID_PARAMETER   This or Buffer is NULL.
 
 **/
 EFI_STATUS
@@ -296,7 +308,7 @@ SmmReadSaveState (
 
   @retval EFI_SUCCESS   The register was written from Save State
   @retval EFI_NOT_FOUND The register is not defined for the Save State of Processor
-  @retval EFI_INVALID_PARAMTER   ProcessorIndex or Width is not correct
+  @retval EFI_INVALID_PARAMETER   ProcessorIndex or Width is not correct
 
 **/
 EFI_STATUS
@@ -324,7 +336,7 @@ This function supports reading a CPU Save State register in SMBase relocation ha
 
 @retval EFI_SUCCESS           The register was read from Save State.
 @retval EFI_NOT_FOUND         The register is not defined for the Save State of Processor.
-@retval EFI_INVALID_PARAMTER  This or Buffer is NULL.
+@retval EFI_INVALID_PARAMETER  This or Buffer is NULL.
 
 **/
 EFI_STATUS
@@ -351,7 +363,7 @@ This function supports writing a CPU Save State register in SMBase relocation ha
 
 @retval EFI_SUCCESS           The register was written to Save State.
 @retval EFI_NOT_FOUND         The register is not defined for the Save State of Processor.
-@retval EFI_INVALID_PARAMTER  ProcessorIndex or Width is not correct.
+@retval EFI_INVALID_PARAMETER  ProcessorIndex or Width is not correct.
 
 **/
 EFI_STATUS
@@ -392,7 +404,7 @@ typedef struct {
   volatile VOID                     *Parameter;
   volatile UINT32                   *Run;
   volatile BOOLEAN                  *Present;
-  SPIN_LOCK                         *Token;
+  PROCEDURE_TOKEN                   *Token;
   EFI_STATUS                        *Status;
 } SMM_CPU_DATA_BLOCK;
 
@@ -1251,7 +1263,7 @@ EdkiiSmmGetMemoryAttributes (
 
 /**
   This function fixes up the address of the global variable or function
-  referred in SmmInit assembly files to be the absoute address.
+  referred in SmmInit assembly files to be the absolute address.
 **/
 VOID
 EFIAPI
@@ -1260,7 +1272,7 @@ PiSmmCpuSmmInitFixupAddress (
 
 /**
   This function fixes up the address of the global variable or function
-  referred in SmiEntry assembly files to be the absoute address.
+  referred in SmiEntry assembly files to be the absolute address.
 **/
 VOID
 EFIAPI
@@ -1447,6 +1459,17 @@ RegisterStartupProcedure (
 **/
 VOID
 InitializeDataForMmMp (
+  VOID
+  );
+
+/**
+  Return whether access to non-SMRAM is restricted.
+
+  @retval TRUE  Access to non-SMRAM is restricted.
+  @retval FALSE Access to non-SMRAM is not restricted.
+**/
+BOOLEAN
+IsRestrictedMemoryAccess (
   VOID
   );
 

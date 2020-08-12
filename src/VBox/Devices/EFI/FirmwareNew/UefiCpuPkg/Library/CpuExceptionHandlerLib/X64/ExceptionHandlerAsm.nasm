@@ -34,7 +34,7 @@ AsmIdtVectorBegin:
     db      0x6a        ; push  #VectorNum
     db      ($ - AsmIdtVectorBegin) / ((AsmIdtVectorEnd - AsmIdtVectorBegin) / 32) ; VectorNum
     push    rax
-    mov     rax, strict qword 0 ;    mov     rax, ASM_PFX(CommonInterruptEntry)
+    mov     rax, ASM_PFX(CommonInterruptEntry)
     jmp     rax
 %endrep
 AsmIdtVectorEnd:
@@ -44,8 +44,7 @@ HookAfterStubHeaderBegin:
 @VectorNum:
     db      0          ; 0 will be fixed
     push    rax
-    mov     rax, strict qword 0 ;     mov     rax, HookAfterStubHeaderEnd
-JmpAbsoluteAddress:
+    mov     rax, HookAfterStubHeaderEnd
     jmp     rax
 HookAfterStubHeaderEnd:
     mov     rax, rsp
@@ -184,17 +183,19 @@ HasErrorCode:
     push    rax
     push    rax
     sidt    [rsp]
-    xchg    rax, [rsp + 2]
-    xchg    rax, [rsp]
-    xchg    rax, [rsp + 8]
+    mov     bx, word [rsp]
+    mov     rax, qword [rsp + 2]
+    mov     qword [rsp], rax
+    mov     word [rsp + 8], bx
 
     xor     rax, rax
     push    rax
     push    rax
     sgdt    [rsp]
-    xchg    rax, [rsp + 2]
-    xchg    rax, [rsp]
-    xchg    rax, [rsp + 8]
+    mov     bx, word [rsp]
+    mov     rax, qword [rsp + 2]
+    mov     qword [rsp], rax
+    mov     word [rsp + 8], bx
 
 ;; UINT64  Ldtr, Tr;
     xor     rax, rax
@@ -255,7 +256,8 @@ HasErrorCode:
     ; and make sure RSP is 16-byte aligned
     ;
     sub     rsp, 4 * 8 + 8
-    call    ASM_PFX(CommonExceptionHandler)
+    mov     rax, ASM_PFX(CommonExceptionHandler)
+    call    rax
     add     rsp, 4 * 8 + 8
 
     cli
@@ -363,24 +365,11 @@ DoIret:
 ; comments here for definition of address map
 global ASM_PFX(AsmGetTemplateAddressMap)
 ASM_PFX(AsmGetTemplateAddressMap):
-    lea     rax, [AsmIdtVectorBegin]
+    mov     rax, AsmIdtVectorBegin
     mov     qword [rcx], rax
     mov     qword [rcx + 0x8],  (AsmIdtVectorEnd - AsmIdtVectorBegin) / 32
-    lea     rax, [HookAfterStubHeaderBegin]
+    mov     rax, HookAfterStubHeaderBegin
     mov     qword [rcx + 0x10], rax
-
-; Fix up CommonInterruptEntry address
-    lea    rax, [ASM_PFX(CommonInterruptEntry)]
-    lea    rcx, [AsmIdtVectorBegin]
-%rep  32
-    mov    qword [rcx + (JmpAbsoluteAddress - 8 - HookAfterStubHeaderBegin)], rax
-    add    rcx, (AsmIdtVectorEnd - AsmIdtVectorBegin) / 32
-%endrep
-; Fix up HookAfterStubHeaderEnd
-    lea    rax, [HookAfterStubHeaderEnd]
-    lea    rcx, [JmpAbsoluteAddress]
-    mov    qword [rcx - 8], rax
-
     ret
 
 ;-------------------------------------------------------------------------------------

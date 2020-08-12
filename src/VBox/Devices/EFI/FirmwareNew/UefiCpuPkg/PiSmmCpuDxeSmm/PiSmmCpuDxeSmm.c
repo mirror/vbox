@@ -215,7 +215,7 @@ DumpModuleInfoByIp (
 
   @retval EFI_SUCCESS   The register was read from Save State
   @retval EFI_NOT_FOUND The register is not defined for the Save State of Processor
-  @retval EFI_INVALID_PARAMTER   This or Buffer is NULL.
+  @retval EFI_INVALID_PARAMETER   This or Buffer is NULL.
 
 **/
 EFI_STATUS
@@ -287,7 +287,7 @@ SmmReadSaveState (
 
   @retval EFI_SUCCESS   The register was written from Save State
   @retval EFI_NOT_FOUND The register is not defined for the Save State of Processor
-  @retval EFI_INVALID_PARAMTER   ProcessorIndex or Width is not correct
+  @retval EFI_INVALID_PARAMETER   ProcessorIndex or Width is not correct
 
 **/
 EFI_STATUS
@@ -1431,15 +1431,17 @@ PerformRemainingTasks (
     //
     SetMemMapAttributes ();
 
-    //
-    // For outside SMRAM, we only map SMM communication buffer or MMIO.
-    //
-    SetUefiMemMapAttributes ();
+    if (IsRestrictedMemoryAccess ()) {
+      //
+      // For outside SMRAM, we only map SMM communication buffer or MMIO.
+      //
+      SetUefiMemMapAttributes ();
 
-    //
-    // Set page table itself to be read-only
-    //
-    SetPageTableAttributes ();
+      //
+      // Set page table itself to be read-only
+      //
+      SetPageTableAttributes ();
+    }
 
     //
     // Configure SMM Code Access Check feature if available.

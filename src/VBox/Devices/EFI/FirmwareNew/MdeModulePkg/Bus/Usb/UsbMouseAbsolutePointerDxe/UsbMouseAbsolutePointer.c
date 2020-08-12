@@ -109,7 +109,7 @@ USBMouseAbsolutePointerDriverBindingSupported (
 /**
   Starts the mouse device with this driver.
 
-  This function consumes USB I/O Portocol, intializes USB mouse device,
+  This function consumes USB I/O Protocol, initializes USB mouse device,
   installs Absolute Pointer Protocol, and submits Asynchronous Interrupt
   Transfer to manage the USB mouse device.
 
@@ -203,7 +203,7 @@ USBMouseAbsolutePointerDriverBindingStart (
   EndpointNumber = UsbMouseAbsolutePointerDevice->InterfaceDescriptor.NumEndpoints;
 
   //
-  // Traverse endpoints to find interrupt endpoint
+  // Traverse endpoints to find interrupt endpoint IN
   //
   Found = FALSE;
   for (Index = 0; Index < EndpointNumber; Index++) {
@@ -213,7 +213,8 @@ USBMouseAbsolutePointerDriverBindingStart (
              &EndpointDescriptor
              );
 
-    if ((EndpointDescriptor.Attributes & (BIT0 | BIT1)) == USB_ENDPOINT_INTERRUPT) {
+    if (((EndpointDescriptor.Attributes & (BIT0 | BIT1)) == USB_ENDPOINT_INTERRUPT) &&
+        ((EndpointDescriptor.EndpointAddress & USB_ENDPOINT_DIR_IN) != 0)) {
       //
       // We only care interrupt endpoint here
       //

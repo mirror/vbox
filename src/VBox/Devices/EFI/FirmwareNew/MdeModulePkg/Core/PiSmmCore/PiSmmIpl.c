@@ -10,6 +10,7 @@
 
 #include <Protocol/SmmBase2.h>
 #include <Protocol/SmmCommunication.h>
+#include <Protocol/MmCommunication2.h>
 #include <Protocol/SmmAccess2.h>
 #include <Protocol/SmmConfiguration.h>
 #include <Protocol/SmmControl2.h>
@@ -116,6 +117,39 @@ SmmCommunicationCommunicate (
   IN CONST EFI_SMM_COMMUNICATION_PROTOCOL  *This,
   IN OUT VOID                              *CommBuffer,
   IN OUT UINTN                             *CommSize OPTIONAL
+  );
+
+/**
+  Communicates with a registered handler.
+
+  This function provides a service to send and receive messages from a registered UEFI service.
+
+  @param[in] This                The EFI_MM_COMMUNICATION_PROTOCOL instance.
+  @param[in] CommBufferPhysical  Physical address of the MM communication buffer
+  @param[in] CommBufferVirtual   Virtual address of the MM communication buffer
+  @param[in] CommSize            The size of the data buffer being passed in. On exit, the size of data
+                                 being returned. Zero if the handler does not wish to reply with any data.
+                                 This parameter is optional and may be NULL.
+
+  @retval EFI_SUCCESS            The message was successfully posted.
+  @retval EFI_INVALID_PARAMETER  The CommBuffer was NULL.
+  @retval EFI_BAD_BUFFER_SIZE    The buffer is too large for the MM implementation.
+                                 If this error is returned, the MessageLength field
+                                 in the CommBuffer header or the integer pointed by
+                                 CommSize, are updated to reflect the maximum payload
+                                 size the implementation can accommodate.
+  @retval EFI_ACCESS_DENIED      The CommunicateBuffer parameter or CommSize parameter,
+                                 if not omitted, are in address range that cannot be
+                                 accessed by the MM environment.
+
+**/
+EFI_STATUS
+EFIAPI
+SmmCommunicationMmCommunicate2 (
+  IN CONST EFI_MM_COMMUNICATION2_PROTOCOL   *This,
+  IN OUT VOID                               *CommBufferPhysical,
+  IN OUT VOID                               *CommBufferVirtual,
+  IN OUT UINTN                              *CommSize OPTIONAL
   );
 
 /**
@@ -238,6 +272,13 @@ EFI_SMM_BASE2_PROTOCOL  mSmmBase2 = {
 //
 EFI_SMM_COMMUNICATION_PROTOCOL  mSmmCommunication = {
   SmmCommunicationCommunicate
+};
+
+//
+// PI 1.7 MM Communication Protocol 2 instance
+//
+EFI_MM_COMMUNICATION2_PROTOCOL  mMmCommunication2 = {
+  SmmCommunicationMmCommunicate2
 };
 
 //
@@ -577,6 +618,44 @@ SmmCommunicationCommunicate (
 }
 
 /**
+  Communicates with a registered handler.
+
+  This function provides a service to send and receive messages from a registered UEFI service.
+
+  @param[in] This                The EFI_MM_COMMUNICATION_PROTOCOL instance.
+  @param[in] CommBufferPhysical  Physical address of the MM communication buffer
+  @param[in] CommBufferVirtual   Virtual address of the MM communication buffer
+  @param[in] CommSize            The size of the data buffer being passed in. On exit, the size of data
+                                 being returned. Zero if the handler does not wish to reply with any data.
+                                 This parameter is optional and may be NULL.
+
+  @retval EFI_SUCCESS            The message was successfully posted.
+  @retval EFI_INVALID_PARAMETER  The CommBuffer was NULL.
+  @retval EFI_BAD_BUFFER_SIZE    The buffer is too large for the MM implementation.
+                                 If this error is returned, the MessageLength field
+                                 in the CommBuffer header or the integer pointed by
+                                 CommSize, are updated to reflect the maximum payload
+                                 size the implementation can accommodate.
+  @retval EFI_ACCESS_DENIED      The CommunicateBuffer parameter or CommSize parameter,
+                                 if not omitted, are in address range that cannot be
+                                 accessed by the MM environment.
+
+**/
+EFI_STATUS
+EFIAPI
+SmmCommunicationMmCommunicate2 (
+  IN CONST EFI_MM_COMMUNICATION2_PROTOCOL   *This,
+  IN OUT VOID                               *CommBufferPhysical,
+  IN OUT VOID                               *CommBufferVirtual,
+  IN OUT UINTN                              *CommSize OPTIONAL
+  )
+{
+  return SmmCommunicationCommunicate (&mSmmCommunication,
+                                      CommBufferPhysical,
+                                      CommSize);
+}
+
+/**
   Event notification that is fired when GUIDed Event Group is signaled.
 
   @param  Event                 The Event that is being processed, not used.
@@ -707,7 +786,7 @@ SmmIplSmmConfigurationEventNotify (
   }
 
   //
-  // Register the SMM Entry Point provided by the SMM Core with the SMM COnfiguration protocol
+  // Register the SMM Entry Point provided by the SMM Core with the SMM Configuration protocol
   //
   Status = SmmConfiguration->RegisterSmmEntry (SmmConfiguration, gSmmCorePrivate->SmmEntryPoint);
   ASSERT_EFI_ERROR (Status);
@@ -964,7 +1043,7 @@ ExecuteSmmCoreFromSmram (
   }
 
   //
-  // Initilize ImageContext
+  // Initialize ImageContext
   //
   ImageContext.Handle    = SourceBuffer;
   ImageContext.ImageRead = PeCoffLoaderImageReadFromMemory;
@@ -1082,7 +1161,7 @@ ExecuteSmmCoreFromSmram (
   }
 
   //
-  // Always free memory allocted by GetFileBufferByFilePath ()
+  // Always free memory allocated by GetFileBufferByFilePath ()
   //
   FreePool (SourceBuffer);
 
@@ -1758,12 +1837,13 @@ SmmIplEntry (
                   &mSmmIplHandle,
                   &gEfiSmmBase2ProtocolGuid,         &mSmmBase2,
                   &gEfiSmmCommunicationProtocolGuid, &mSmmCommunication,
+                  &gEfiMmCommunication2ProtocolGuid, &mMmCommunication2,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
 
   //
-  // Create the set of protocol and event notififcations that the SMM IPL requires
+  // Create the set of protocol and event notifications that the SMM IPL requires
   //
   for (Index = 0; mSmmIplEvents[Index].NotifyFunction != NULL; Index++) {
     if (mSmmIplEvents[Index].Protocol) {

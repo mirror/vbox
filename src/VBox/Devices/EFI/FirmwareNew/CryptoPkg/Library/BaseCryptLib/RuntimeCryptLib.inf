@@ -6,12 +6,13 @@
 #  This external input must be validated carefully to avoid security issues such as
 #  buffer overflow or integer overflow.
 #
-#  Note: MD4 Digest functions, SHA-384 Digest functions, SHA-512 Digest functions,
-#  HMAC-MD5 functions, HMAC-SHA1/SHA256 functions, AES/TDES/ARC4 functions, RSA external
+#  Note: SHA-384 Digest functions, SHA-512 Digest functions,
+#  HMAC-SHA256 functions, AES functions, RSA external
 #  functions, PKCS#7 SignedData sign functions, Diffie-Hellman functions, and
 #  authenticode signature verification functions are not supported in this instance.
 #
-#  Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2009 - 2020, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -34,19 +35,14 @@
 
 [Sources]
   InternalCryptLib.h
-  Hash/CryptMd4Null.c
   Hash/CryptMd5.c
   Hash/CryptSha1.c
   Hash/CryptSha256.c
   Hash/CryptSm3.c
   Hash/CryptSha512Null.c
-  Hmac/CryptHmacMd5Null.c
-  Hmac/CryptHmacSha1Null.c
   Hmac/CryptHmacSha256Null.c
   Kdf/CryptHkdfNull.c
   Cipher/CryptAesNull.c
-  Cipher/CryptTdesNull.c
-  Cipher/CryptArc4Null.c
   Pk/CryptRsaBasic.c
   Pk/CryptRsaExtNull.c
   Pk/CryptPkcs1OaepNull.c
@@ -75,6 +71,9 @@
   Rand/CryptRand.c
 
 [Sources.AARCH64]
+  Rand/CryptRand.c
+
+[Sources.RISCV64]
   Rand/CryptRand.c
 
 [Packages]
@@ -107,5 +106,6 @@
 
   GCC:*_CLANG35_*_CC_FLAGS = -std=c99
   GCC:*_CLANG38_*_CC_FLAGS = -std=c99
+  GCC:*_CLANGPDB_*_CC_FLAGS = -std=c99 -Wno-error=incompatible-pointer-types
 
   XCODE:*_*_*_CC_FLAGS = -std=c99

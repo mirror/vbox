@@ -4,7 +4,7 @@
 // It also provides the definitions(including PPIs/PROTOCOLs/GUIDs and library classes)
 // and libraries instances, which are used for those modules.
 //
-// Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+// Copyright (c) 2007 - 2020, Intel Corporation. All rights reserved.<BR>
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
@@ -150,10 +150,6 @@
                                                                                                   "entries. If greater than 0, then this PCD determines the number of entries,\n"
                                                                                                   "and PcdMaxPeiPerformanceLogEntries is ignored."
 
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdRealTimeClockUpdateTimeout_PROMPT  #language en-US "RTC Update Timeout Value"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdRealTimeClockUpdateTimeout_HELP  #language en-US "RTC Update Timeout Value(microsecond)."
-
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSerialUseMmio_PROMPT  #language en-US "Serial port registers use MMIO"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSerialUseMmio_HELP  #language en-US "Indicates the 16550 serial port registers are in MMIO space, or in I/O space. Default is I/O space.<BR><BR>\n"
@@ -207,12 +203,6 @@
                                                                                       "BIT5       - Enable 64-byte FIFO.  0 = Disable 64-byte FIFO.  1 = Enable 64-byte FIFO<BR>\n"
                                                                                       "BIT7..BIT6 - Reserved.  Must be 0.<BR>\n"
                                                                                       "Default is to enable and clear all FIFOs.<BR>"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdTftpBlockSize_PROMPT  #language en-US "TFTP block size"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdTftpBlockSize_HELP  #language en-US "This setting can override the default TFTP block size. A value of 0 computes "
-                                                                                  "the default from MTU information. A non-zero value will be used as block size "
-                                                                                  "in bytes."
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdMaxEfiSystemTablePointerAddress_PROMPT  #language en-US "Maximum Efi System Table Pointer address"
 
@@ -670,6 +660,18 @@
                                                                                                         "TRUE  - Device Path From Text Protocol will be produced.<BR>\n"
                                                                                                         "FALSE - Device Path From Text Protocol will not be produced.<BR>"
 
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdEnableVariableRuntimeCache_PROMPT  #language en-US "Enable the UEFI variable runtime cache."
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdEnableVariableRuntimeCache_HELP  #language en-US "Indicates if the UEFI variable runtime cache should be enabled.<BR><BR>\n"
+                                                                                               "This setting only applies if SMM variables are enabled. When enabled, all variable<BR>\n"
+                                                                                               "data for Runtime Service GetVariable () and GetNextVariableName () calls is retrieved<BR>\n"
+                                                                                               "from a runtime data buffer referred to as the "runtime cache". An SMI is not triggered<BR>\n"
+                                                                                               "at all for these requests. Variables writes still trigger an SMI. This can greatly<BR>\n"
+                                                                                               "reduce overall system SMM usage as most boots tend to issue far more variable reads<BR>\n"
+                                                                                               "than writes.<BR>\n"
+                                                                                               "TRUE  - The UEFI variable runtime cache is enabled.<BR>\n"
+                                                                                               "FALSE - The UEFI variable runtime cache is disabled.<BR>"
+
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVariableCollectStatistics_PROMPT  #language en-US "Enable variable statistics collection"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVariableCollectStatistics_HELP  #language en-US "Indicates if the statistics about variable usage will be collected. This information is stored as a vendor configuration table into the EFI system table. Set this PCD to TRUE to use VariableInfo application in MdeModulePkg\Application directory to get variable usage info. VariableInfo application will not output information if not set to TRUE.<BR><BR>\n"
@@ -889,27 +891,6 @@
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdFrontPageFormSetGuid_HELP  #language en-US "This PCD points to the front page formset GUID\n"
                                                                                          "Compare the FormsetGuid or ClassGuid with this PCD value can detect whether in front page"
 
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPropertiesTableEnable_PROMPT  #language en-US "Publish UEFI PropertiesTable."
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPropertiesTableEnable_HELP  #language en-US "Publish PropertiesTable or not.\n"
-                                                                                          "\n"
-                                                                                          "If this PCD is TRUE, DxeCore publishs PropertiesTable.\n"
-                                                                                          "DxeCore evaluates if all runtime drivers has 4K aligned PE sections. If all\n"
-                                                                                          "PE sections in runtime drivers are 4K aligned, DxeCore sets BIT0 in\n"
-                                                                                          "PropertiesTable. Or DxeCore clears BIT0 in PropertiesTable.\n"
-                                                                                          "If this PCD is FALSE, DxeCore does not publish PropertiesTable.\n"
-                                                                                          "\n"
-                                                                                          "If PropertiesTable has BIT0 set, DxeCore uses below policy in UEFI memory map:\n"
-                                                                                          "1) Use EfiRuntimeServicesCode for runtime driver PE image code section and\n"
-                                                                                          "use EfiRuntimeServicesData for runtime driver PE image header and other section.\n"
-                                                                                          "2) Set EfiRuntimeServicesCode to be EFI_MEMORY_RO.\n"
-                                                                                          "3) Set EfiRuntimeServicesData to be EFI_MEMORY_XP.\n"
-                                                                                          "4) Set EfiMemoryMappedIO and EfiMemoryMappedIOPortSpace to be EFI_MEMORY_XP.\n"
-                                                                                          "\n"
-                                                                                          "NOTE: Platform need gurantee this PCD is set correctly. Platform should set\n"
-                                                                                          "this PCD to be TURE if and only if all runtime driver has seperated Code/Data\n"
-                                                                                          "section. If PE code/data sections are merged, the result is unpredictable.\n"
-
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdShadowPeimOnBoot_HELP  #language en-US "Indicates if to shadow PEIM and PeiCore after memory is ready.<BR><BR>\n"
                                                                                      "This PCD is used on other boot path except for S3 boot.\n"
                                                                                      "TRUE  - Shadow PEIM and PeiCore after memory is ready.<BR>\n"
@@ -1006,6 +987,13 @@
                                                                                                    "which requires that all PCI MMIO BARs are located below 4 GB.<BR>"
                                                                                                    "TRUE  - All PCI MMIO BARs of a device will be located below 4 GB if it has an option ROM.<BR>"
                                                                                                    "FALSE - PCI MMIO BARs of a device may be located above 4 GB even if it has an option ROM.<BR>"
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSupportProcessCapsuleAtRuntime_PROMPT  #language en-US "Enable process non-reset capsule image at runtime."
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSupportProcessCapsuleAtRuntime_HELP  #language en-US "Indicates if the platform can support process non-reset capsule image at runtime.<BR><BR>\n"
+                                                                                                   "TRUE  - Supports process non-reset capsule image at runtime.<BR>\n"
+                                                                                                   "FALSE - Does not support process non-reset capsule image at runtime.<BR>"
+
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdStatusCodeSubClassCapsule_PROMPT  #language en-US "Status Code for Capsule subclass definitions"
 
@@ -1305,3 +1293,7 @@
                                                                                     "when the PCD is TRUE but CPU doesn't support 5-Level Paging."
                                                                                     " TRUE  - 5-Level Paging will be enabled."
                                                                                     " FALSE - 5-Level Paging will not be enabled."
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdTcgPfpMeasurementRevision_PROMPT #language en-US "TCG Platform Firmware Profile revision"
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdTcgPfpMeasurementRevision_HELP #language en-US "Indicates which TCG Platform Firmware Profile revision the EDKII firmware follows."

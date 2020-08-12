@@ -1,7 +1,7 @@
 /** @file
   GTDT table parser
 
-  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2020, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
@@ -189,6 +189,18 @@ DumpGTBlock (
     PARSER_PARAMS (GtBlockParser)
     );
 
+  // Check if the values used to control the parsing logic have been
+  // successfully read.
+  if ((GtBlockTimerCount == NULL) ||
+      (GtBlockTimerOffset == NULL)) {
+    IncrementErrorCount ();
+    Print (
+      L"ERROR: Insufficient GT Block Structure length. Length = %d.\n",
+      Length
+      );
+    return;
+  }
+
   Offset = *GtBlockTimerOffset;
   Index = 0;
 
@@ -272,6 +284,18 @@ ParseAcpiGtdt (
     PARSER_PARAMS (GtdtParser)
     );
 
+  // Check if the values used to control the parsing logic have been
+  // successfully read.
+  if ((GtdtPlatformTimerCount == NULL) ||
+      (GtdtPlatformTimerOffset == NULL)) {
+    IncrementErrorCount ();
+    Print (
+      L"ERROR: Insufficient table length. AcpiTableLength = %d.\n",
+      AcpiTableLength
+      );
+    return;
+  }
+
   TimerPtr = Ptr + *GtdtPlatformTimerOffset;
   Offset = *GtdtPlatformTimerOffset;
   Index = 0;
@@ -290,15 +314,29 @@ ParseAcpiGtdt (
       PARSER_PARAMS (GtPlatformTimerHeaderParser)
       );
 
-    // Make sure the Platform Timer is inside the table.
-    if ((Offset + *PlatformTimerLength) > AcpiTableLength) {
+    // Check if the values used to control the parsing logic have been
+    // successfully read.
+    if ((PlatformTimerType == NULL) ||
+        (PlatformTimerLength == NULL)) {
+      IncrementErrorCount ();
+      Print (
+        L"ERROR: Insufficient remaining table buffer length to read the " \
+          L"Platform Timer Structure header. Length = %d.\n",
+        AcpiTableLength - Offset
+        );
+      return;
+    }
+
+    // Validate Platform Timer Structure length
+    if ((*PlatformTimerLength == 0) ||
+        ((Offset + (*PlatformTimerLength)) > AcpiTableLength)) {
       IncrementErrorCount ();
       Print (
         L"ERROR: Invalid Platform Timer Structure length. " \
-          L"PlatformTimerLength = %d. RemainingTableBufferLength = %d. " \
-          L"GTDT parsing aborted.\n",
+          L"Length = %d. Offset = %d. AcpiTableLength = %d.\n",
         *PlatformTimerLength,
-        AcpiTableLength - Offset
+        Offset,
+        AcpiTableLength
         );
       return;
     }

@@ -1,7 +1,7 @@
 /** @file
   ACPI parser
 
-  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2020, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -406,6 +406,39 @@ Dump8Chars (
 }
 
 /**
+  This function traces 12 characters which can be optionally
+  formated using the format string if specified.
+
+  If no format string is specified the Format must be NULL.
+
+  @param [in] Format  Optional format string for tracing the data.
+  @param [in] Ptr     Pointer to the start of the buffer.
+**/
+VOID
+EFIAPI
+Dump12Chars (
+  IN CONST CHAR16* Format OPTIONAL,
+  IN       UINT8*  Ptr
+  )
+{
+  Print (
+    (Format != NULL) ? Format : L"%c%c%c%c%c%c%c%c%c%c%c%c",
+    Ptr[0],
+    Ptr[1],
+    Ptr[2],
+    Ptr[3],
+    Ptr[4],
+    Ptr[5],
+    Ptr[6],
+    Ptr[7],
+    Ptr[8],
+    Ptr[9],
+    Ptr[10],
+    Ptr[11]
+    );
+}
+
+/**
   This function indents and prints the ACPI table Field Name.
 
   @param [in] Indent      Number of spaces to add to the global table indent.
@@ -510,8 +543,15 @@ ParseAcpi (
 
   for (Index = 0; Index < ParserItems; Index++) {
     if ((Offset + Parser[Index].Length) > Length) {
+
+      // For fields outside the buffer length provided, reset any pointers
+      // which were supposed to be updated by this function call
+      if (Parser[Index].ItemPtr != NULL) {
+        *Parser[Index].ItemPtr = NULL;
+      }
+
       // We don't parse past the end of the max length specified
-      break;
+      continue;
     }
 
     if (GetConsistencyChecking () &&
@@ -633,7 +673,7 @@ DumpGas (
   IN UINT8*        Ptr
   )
 {
-  DumpGasStruct (Ptr, 2, GAS_LENGTH);
+  DumpGasStruct (Ptr, 2, sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE));
 }
 
 /**
@@ -654,7 +694,7 @@ DumpAcpiHeader (
            0,
            "ACPI Table Header",
            Ptr,
-           ACPI_DESCRIPTION_HEADER_LENGTH,
+           sizeof (EFI_ACPI_DESCRIPTION_HEADER),
            PARSER_PARAMS (AcpiHeaderParser)
            );
 }
@@ -688,7 +728,7 @@ ParseAcpiHeader (
                   0,
                   NULL,
                   Ptr,
-                  ACPI_DESCRIPTION_HEADER_LENGTH,
+                  sizeof (EFI_ACPI_DESCRIPTION_HEADER),
                   PARSER_PARAMS (AcpiHeaderParser)
                   );
 

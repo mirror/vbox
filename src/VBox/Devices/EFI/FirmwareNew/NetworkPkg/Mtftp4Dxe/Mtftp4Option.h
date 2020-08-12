@@ -45,7 +45,7 @@ typedef struct {
   @param  OptionList             The point to get the option array.
 
   @retval EFI_INVALID_PARAMETER  The parametera are invalid or packet isn't a
-                                 well-formated OACK packet.
+                                 well-formatted OACK packet.
   @retval EFI_SUCCESS            The option array is build
   @retval EFI_OUT_OF_RESOURCES   Failed to allocate memory for the array
 
@@ -70,7 +70,7 @@ Mtftp4ExtractOptions (
   @param  Operation              The current performed operation.
   @param  MtftpOption            The MTFTP4_OPTION for easy access.
 
-  @retval EFI_INVALID_PARAMETER  The option is mal-formated
+  @retval EFI_INVALID_PARAMETER  The option is malformatted
   @retval EFI_UNSUPPORTED        Some option isn't supported
   @retval EFI_SUCCESS            The option are OK and has been parsed.
 
@@ -93,7 +93,7 @@ Mtftp4ParseOption (
   @param  Operation              The current performed operation.
   @param  MtftpOption            The MTFTP_OPTION for easy access.
 
-  @retval EFI_INVALID_PARAMETER  The packet option is mal-formated
+  @retval EFI_INVALID_PARAMETER  The packet option is malformatted
   @retval EFI_UNSUPPORTED        Some option isn't supported
   @retval EFI_SUCCESS            The option are OK and has been parsed.
 

@@ -1,7 +1,7 @@
 /** @file
   Register CPU Features Library to register and manage CPU features.
 
-  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2017 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -25,7 +25,7 @@
 #define CPU_FEATURE_MWAIT                           2
 #define CPU_FEATURE_ACPI                            3
 #define CPU_FEATURE_EIST                            4
-#define CPU_FEATURE_XD                              5
+#define CPU_FEATURE_RESERVED_5                      5
 #define CPU_FEATURE_FASTSTRINGS                     6
 #define CPU_FEATURE_VMX                             7
 #define CPU_FEATURE_SMX                             8
@@ -69,23 +69,45 @@
 
 #define CPU_FEATURE_BEFORE_ALL                      BIT23
 #define CPU_FEATURE_AFTER_ALL                       BIT24
-//
-// CPU_FEATURE_BEFORE and CPU_FEATURE_AFTER only mean Thread scope
-// before and Thread scope after.
-// It will be replace with CPU_FEATURE_THREAD_BEFORE and
-// CPU_FEATURE_THREAD_AFTER, and should not be used anymore.
-//
-#define CPU_FEATURE_BEFORE                          BIT25
-#define CPU_FEATURE_AFTER                           BIT26
-
-#define CPU_FEATURE_THREAD_BEFORE                   CPU_FEATURE_BEFORE
-#define CPU_FEATURE_THREAD_AFTER                    CPU_FEATURE_AFTER
+#define CPU_FEATURE_THREAD_BEFORE                   BIT25
+#define CPU_FEATURE_THREAD_AFTER                    BIT26
 #define CPU_FEATURE_CORE_BEFORE                     BIT27
 #define CPU_FEATURE_CORE_AFTER                      BIT28
 #define CPU_FEATURE_PACKAGE_BEFORE                  BIT29
 #define CPU_FEATURE_PACKAGE_AFTER                   BIT30
 #define CPU_FEATURE_END                             MAX_UINT32
 /// @}
+
+///
+/// The bit field to indicate whether the processor is the first in its parent scope.
+///
+typedef struct {
+  //
+  // Set to 1 when current processor is the first thread in the core it resides in.
+  //
+  UINT32 Thread   : 1;
+  //
+  // Set to 1 when current processor is a thread of the first core in the module it resides in.
+  //
+  UINT32 Core     : 1;
+  //
+  // Set to 1 when current processor is a thread of the first module in the tile it resides in.
+  //
+  UINT32 Module   : 1;
+  //
+  // Set to 1 when current processor is a thread of the first tile in the die it resides in.
+  //
+  UINT32 Tile     : 1;
+  //
+  // Set to 1 when current processor is a thread of the first die in the package it resides in.
+  //
+  UINT32 Die      : 1;
+  //
+  // Set to 1 when current processor is a thread of the first package in the system.
+  //
+  UINT32 Package  : 1;
+  UINT32 Reserved : 26;
+} REGISTER_CPU_FEATURE_FIRST_PROCESSOR;
 
 ///
 /// CPU Information passed into the SupportFunc and InitializeFunc of the
@@ -97,6 +119,11 @@ typedef struct {
   /// The package that the CPU resides
   ///
   EFI_PROCESSOR_INFORMATION            ProcessorInfo;
+
+  ///
+  /// The bit flag indicating whether the CPU is the first Thread/Core/Module/Tile/Die/Package in its parent scope.
+  ///
+  REGISTER_CPU_FEATURE_FIRST_PROCESSOR First;
   ///
   /// The Display Family of the CPU computed from CPUID leaf CPUID_VERSION_INFO
   ///

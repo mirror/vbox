@@ -30,7 +30,7 @@
 #include <Library/PrintLib.h>
 #include <Library/UefiHiiServicesLib.h>
 
-extern EFI_HANDLE mTftpHiiHandle;
+extern EFI_HII_HANDLE mTftpHiiHandle;
 
 typedef struct {
   UINTN  FileSize;
@@ -56,13 +56,13 @@ RunTftp (
   );
 
 /**
-  Retrive HII package list from ImageHandle and publish to HII database.
+  Retrieve HII package list from ImageHandle and publish to HII database.
 
   @param ImageHandle            The image handle of the process.
 
   @return HII handle.
 **/
-EFI_HANDLE
+EFI_HII_HANDLE
 InitializeHiiPackage (
   EFI_HANDLE                  ImageHandle
   );

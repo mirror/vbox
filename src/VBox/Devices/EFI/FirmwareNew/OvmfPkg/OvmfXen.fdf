@@ -12,7 +12,7 @@
 ################################################################################
 
 [Defines]
-!include OvmfPkg.fdf.inc
+!include OvmfPkgDefines.fdf.inc
 
 #
 # This will allow the flash device image to be recognize as an ELF, with first
@@ -343,7 +343,7 @@ INF  MdeModulePkg/Universal/DisplayEngineDxe/DisplayEngineDxe.inf
 INF  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
 
 INF  OvmfPkg/SioBusDxe/SioBusDxe.inf
-!ifndef $(SOURCE_DEBUG_ENABLE)
+!if $(SOURCE_DEBUG_ENABLE) == FALSE
 INF  MdeModulePkg/Bus/Pci/PciSioSerialDxe/PciSioSerialDxe.inf
 !endif
 INF  MdeModulePkg/Bus/Isa/Ps2KeyboardDxe/Ps2KeyboardDxe.inf
@@ -363,6 +363,7 @@ INF  MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
 
 !if $(TOOL_CHAIN_TAG) != "XCODE5"
 INF  ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
+INF  OvmfPkg/LinuxInitrdDynamicShellCommand/LinuxInitrdDynamicShellCommand.inf
 !endif
 INF  ShellPkg/Application/Shell/Shell.inf
 
@@ -441,7 +442,7 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
    }
  }
 
-!include DecomprScratchEnd.fdf.inc
+!include FvmainCompactScratchEnd.fdf.inc
 
 ################################################################################
 
