@@ -252,23 +252,6 @@ HRESULT GuestDnDSource::removeFormats(const GuestDnDMIMEList &aFormats)
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-HRESULT GuestDnDSource::getProtocolVersion(ULONG *aProtocolVersion)
-{
-#if !defined(VBOX_WITH_DRAG_AND_DROP)
-    ReturnComNotImplemented();
-#else /* VBOX_WITH_DRAG_AND_DROP */
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aProtocolVersion = m_pResp->m_uProtocolVersion;
-
-    return S_OK;
-#endif /* VBOX_WITH_DRAG_AND_DROP */
-}
-
 // implementation of wrapped IDnDSource methods.
 /////////////////////////////////////////////////////////////////////////////
 
