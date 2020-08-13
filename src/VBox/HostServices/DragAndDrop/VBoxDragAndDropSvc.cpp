@@ -102,8 +102,8 @@ protected:
     int  uninit(void) RT_NOEXCEPT RT_OVERRIDE;
     int  clientConnect(uint32_t idClient, void *pvClient) RT_NOEXCEPT RT_OVERRIDE;
     int  clientDisconnect(uint32_t idClient, void *pvClient) RT_NOEXCEPT RT_OVERRIDE;
-    int  clientQueryFeatures(DragAndDropClient *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT;
-    int  clientReportFeatures(DragAndDropClient *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT;
+    int  clientQueryFeatures(uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT;
+    int  clientReportFeatures(DragAndDropClient *pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT;
     void guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idClient, void *pvClient, uint32_t u32Function,
                    uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT RT_OVERRIDE;
     int  hostCall(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT RT_OVERRIDE;
@@ -306,13 +306,13 @@ int DragAndDropService::clientDisconnect(uint32_t idClient, void *pvClient) RT_N
  * @retval  VERR_WRONG_PARAMETER_COUNT
  *
  * @param   pClient     The client state.
- * @param   hCall       The client's call handle.
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int DragAndDropService::clientReportFeatures(DragAndDropClient *pClient,
-                                             VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
+int DragAndDropService::clientReportFeatures(DragAndDropClient *pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
 {
+    RT_NOREF(pClient);
+
     /*
      * Validate the request.
      */
@@ -324,22 +324,17 @@ int DragAndDropService::clientReportFeatures(DragAndDropClient *pClient,
     ASSERT_GUEST_RETURN(fFeatures1 & VBOX_DND_GF_1_MUST_BE_ONE, VERR_INVALID_PARAMETER);
 
     /*
-     * Do the work.
+     * Report back the host features.
      */
     paParms[0].u.uint64 = m_fHostFeatures0;
     paParms[1].u.uint64 = 0;
 
-    int rc = pClient->Complete(hCall, VINF_SUCCESS);
-    if (RT_SUCCESS(rc))
-    {
-        pClient->fGuestFeatures0 = fFeatures0;
-        pClient->fGuestFeatures1 = fFeatures1;
-        Log(("[Client %RU32] features: %#RX64 %#RX64\n", pClient->GetClientID(), fFeatures0, fFeatures1));
-    }
-    else
-        LogFunc(("pfnCallComplete -> %Rrc\n", rc));
+    pClient->fGuestFeatures0 = fFeatures0;
+    pClient->fGuestFeatures1 = fFeatures1;
 
-    return VINF_HGCM_ASYNC_EXECUTE;
+    Log(("[Client %RU32] features: %#RX64 %#RX64\n", pClient->GetClientID(), fFeatures0, fFeatures1));
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -349,13 +344,10 @@ int DragAndDropService::clientReportFeatures(DragAndDropClient *pClient,
  * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
  * @retval  VERR_WRONG_PARAMETER_COUNT
  *
- * @param   pClient     The client state.
- * @param   hCall       The client's call handle.
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int DragAndDropService::clientQueryFeatures(DragAndDropClient *pClient,
-                                            VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
+int DragAndDropService::clientQueryFeatures(uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
 {
     /*
      * Validate the request.
@@ -366,16 +358,12 @@ int DragAndDropService::clientQueryFeatures(DragAndDropClient *pClient,
     ASSERT_GUEST(paParms[1].u.uint64 & RT_BIT_64(63));
 
     /*
-     * Do the work.
+     * Report back the host features.
      */
     paParms[0].u.uint64 = m_fHostFeatures0;
     paParms[1].u.uint64 = 0;
 
-    int rc = pClient->Complete(hCall, VINF_SUCCESS);
-    if (RT_FAILURE(rc))
-        LogFunc(("pfnCallComplete -> %Rrc\n", rc));
-
-    return VINF_HGCM_ASYNC_EXECUTE;
+    return VINF_SUCCESS;
 }
 
 int DragAndDropService::modeSet(uint32_t u32Mode) RT_NOEXCEPT
@@ -637,7 +625,7 @@ do { \
             case GUEST_DND_FN_REPORT_FEATURES:
             {
                 LogFlowFunc(("GUEST_DND_FN_REPORT_FEATURES\n"));
-                rc = clientReportFeatures(pClient, callHandle, cParms, paParms);
+                rc = clientReportFeatures(pClient, cParms, paParms);
                 if (RT_SUCCESS(rc))
                 {
                     VBOXDNDCBREPORTFEATURESDATA data;
@@ -656,7 +644,7 @@ do { \
             case GUEST_DND_FN_QUERY_FEATURES:
             {
                 LogFlowFunc(("GUEST_DND_FN_QUERY_FEATURES"));
-                rc = clientQueryFeatures(pClient, callHandle, cParms, paParms);
+                rc = clientQueryFeatures(cParms, paParms);
                 break;
             }
             case GUEST_DND_FN_HG_ACK_OP:
@@ -1052,7 +1040,10 @@ do { \
         }
     }
     else if (pClient)
+    {
+        /* Complete the call on the guest side. */
         pClient->Complete(callHandle, rc);
+    }
     else
     {
         AssertMsgFailed(("Guest call failed with %Rrc\n", rc));

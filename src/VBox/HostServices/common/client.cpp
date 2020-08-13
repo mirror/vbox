@@ -158,14 +158,17 @@ bool Client::IsDeferred(void) const RT_NOEXCEPT
 /**
  * Set the client's status to deferred, meaning that it does not return to the caller
  * until CompleteDeferred() has been called.
+ *
+ * @returns VBox status code.
+ * @param   hHandle             Call handle to save.
+ * @param   u32Function         Function number to save.
+ * @param   cParms              Number of HGCM parameters to save.
+ * @param   paParms             HGCM parameters to save.
  */
 void Client::SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]) RT_NOEXCEPT
 {
     LogFlowThisFunc(("uClient=%RU32\n", m_idClient));
 
-#ifndef DEBUG_bird /** r=bird: This bugger triggers in the DnD service when restoring saved state.  Not tested?  */
-    AssertMsg(m_fDeferred == false, ("Client already in deferred mode\n"));
-#endif
     m_fDeferred = true;
 
     m_Deferred.hHandle = hHandle;
