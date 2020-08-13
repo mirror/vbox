@@ -160,8 +160,8 @@ HRESULT GuestDnDTarget::init(const ComObjPtr<Guest>& pGuest)
      *      1) parallel transfers (multiple G->H at the same time)
      *  nor 2) mixed transfers (G->H + H->G at the same time).
      */
-    m_pResp = GuestDnDInst()->response();
-    AssertPtrReturn(m_pResp, E_POINTER);
+    m_pState = GuestDnDInst()->getState();
+    AssertPtrReturn(m_pState, E_POINTER);
 
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
@@ -315,7 +315,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_ENTER);
-        if (m_pResp->m_uProtocolVersion >= 3)
+        if (m_pState->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
         Msg.appendUInt32(aX);
@@ -328,8 +328,8 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
-            if (RT_SUCCESS(m_pResp->waitForGuestResponse()))
-                resAction = GuestDnD::toMainAction(m_pResp->getActionDefault());
+            if (RT_SUCCESS(m_pState->waitForGuestResponse()))
+                resAction = GuestDnD::toMainAction(m_pState->getActionDefault());
         }
     }
 
@@ -392,7 +392,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_MOVE);
-        if (m_pResp->m_uProtocolVersion >= 3)
+        if (m_pState->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
         Msg.appendUInt32(aX);
@@ -405,9 +405,9 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
-            GuestDnDResponse *pResp = GuestDnDInst()->response();
-            if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
-                resAction = GuestDnD::toMainAction(pResp->getActionDefault());
+            GuestDnDState *pState = GuestDnDInst()->getState();
+            if (pState && RT_SUCCESS(pState->waitForGuestResponse()))
+                resAction = GuestDnD::toMainAction(pState->getActionDefault());
         }
     }
 
@@ -439,15 +439,15 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
 
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_HG_EVT_LEAVE);
-    if (m_pResp->m_uProtocolVersion >= 3)
+    if (m_pState->m_uProtocolVersion >= 3)
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
 
     int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
     if (RT_SUCCESS(rc))
     {
-        GuestDnDResponse *pResp = GuestDnDInst()->response();
-        if (pResp)
-            pResp->waitForGuestResponse();
+        GuestDnDState *pState = GuestDnDInst()->getState();
+        if (pState)
+            pState->waitForGuestResponse();
     }
 
     if (RT_FAILURE(rc))
@@ -515,7 +515,7 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_DROPPED);
-        if (m_pResp->m_uProtocolVersion >= 3)
+        if (m_pState->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
         Msg.appendUInt32(aX);
@@ -528,12 +528,12 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(vrc))
         {
-            GuestDnDResponse *pResp = GuestDnDInst()->response();
-            if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
+            GuestDnDState *pState = GuestDnDInst()->getState();
+            if (pState && RT_SUCCESS(pState->waitForGuestResponse()))
             {
-                resAct = GuestDnD::toMainAction(pResp->getActionDefault());
+                resAct = GuestDnD::toMainAction(pState->getActionDefault());
 
-                GuestDnDMIMEList lstFormats = pResp->formats();
+                GuestDnDMIMEList lstFormats = pState->formats();
                 if (lstFormats.size() == 1) /* Exactly one format to use specified? */
                 {
                     resFmt = lstFormats.at(0);
@@ -605,9 +605,9 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         return setError(E_INVALIDARG, tr("Another drag and drop operation to the guest already is in progress"));
 
     /* Reset progress object. */
-    GuestDnDResponse *pResp = GuestDnDInst()->response();
-    AssertPtr(pResp);
-    HRESULT hr = pResp->resetProgress(m_pGuest);
+    GuestDnDState *pState = GuestDnDInst()->getState();
+    AssertPtr(pState);
+    HRESULT hr = pState->resetProgress(m_pGuest);
     if (FAILED(hr))
         return hr;
 
@@ -618,7 +618,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         mData.mSendCtx.reset();
 
         mData.mSendCtx.pTarget   = this;
-        mData.mSendCtx.pResp     = pResp;
+        mData.mSendCtx.pState    = pState;
         mData.mSendCtx.uScreenID = aScreenId;
 
         mData.mSendCtx.Meta.strFmt = aFormat;
@@ -653,7 +653,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         GuestDnDInst()->registerTarget(this);
 
         /* Return progress to caller. */
-        hr = pResp->queryProgressTo(aProgress.asOutParam());
+        hr = pState->queryProgressTo(aProgress.asOutParam());
         ComAssertComRC(hr);
     }
     else
@@ -834,7 +834,7 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
     const size_t  cbFmt   = pCtx->Meta.strFmt.length() + 1; /* Include terminator. */
     const char   *pcszFmt = pCtx->Meta.strFmt.c_str();
 
-    LogFlowFunc(("uProtoVer=%RU32, szFmt=%s, cbFmt=%RU32, cbData=%zu\n", m_pResp->m_uProtocolVersion, pcszFmt, cbFmt, cbData));
+    LogFlowFunc(("uProtoVer=%RU32, szFmt=%s, cbFmt=%RU32, cbData=%zu\n", m_pState->m_uProtocolVersion, pcszFmt, cbFmt, cbData));
 
     LogRel2(("DnD: Sending meta data to guest as '%s' (%zu bytes)\n", pcszFmt, cbData));
 
@@ -852,7 +852,7 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_SND_DATA);
 
-        if (m_pResp->m_uProtocolVersion < 3)
+        if (m_pState->m_uProtocolVersion < 3)
         {
             Msg.appendUInt32(pCtx->uScreenID);                                 /* uScreenId */
             Msg.appendPointer(unconst(pcszFmt), (uint32_t)cbFmt);              /* pvFormat */
@@ -882,7 +882,7 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
 
     if (RT_SUCCESS(rc))
     {
-        rc = updateProgress(pCtx, pCtx->pResp, (uint32_t)pCtx->Meta.cbData);
+        rc = updateProgress(pCtx, pCtx->pState, (uint32_t)pCtx->Meta.cbData);
         AssertRC(rc);
     }
 
@@ -900,7 +900,7 @@ int GuestDnDTarget::i_sendMetaDataHeader(GuestDnDSendCtx *pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    if (m_pResp->m_uProtocolVersion < 3) /* Protocol < v3 did not support this, skip. */
+    if (m_pState->m_uProtocolVersion < 3) /* Protocol < v3 did not support this, skip. */
         return VINF_SUCCESS;
 
     GuestDnDMsg Msg;
@@ -949,7 +949,7 @@ int GuestDnDTarget::i_sendDirectory(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pO
     LogRel2(("DnD: Transferring host directory '%s' to guest\n", DnDTransferObjectGetSourcePath(pObj)));
 
     pMsg->setType(HOST_DND_HG_SND_DIR);
-    if (m_pResp->m_uProtocolVersion >= 3)
+    if (m_pState->m_uProtocolVersion >= 3)
         pMsg->appendUInt32(0); /** @todo ContextID not used yet. */
     pMsg->appendString(pcszDstPath);                    /* path */
     pMsg->appendUInt32((uint32_t)(cchPath + 1));        /* path length, including terminator. */
@@ -996,7 +996,7 @@ int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
     bool fSendData = false;
     if (RT_SUCCESS(rc))
     {
-        if (m_pResp->m_uProtocolVersion >= 2)
+        if (m_pState->m_uProtocolVersion >= 2)
         {
             if (!(pCtx->Transfer.fObjState & DND_OBJ_STATE_HAS_HDR))
             {
@@ -1066,7 +1066,7 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
     AssertPtrReturn(pObj, VERR_INVALID_POINTER);
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
 
-    AssertPtrReturn(pCtx->pResp, VERR_WRONG_ORDER);
+    AssertPtrReturn(pCtx->pState, VERR_WRONG_ORDER);
 
     /** @todo Don't allow concurrent reads per context! */
 
@@ -1078,14 +1078,14 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
 
     /* Protocol version 1 sends the file path *every* time with a new file chunk.
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
-    if (m_pResp->m_uProtocolVersion <= 1)
+    if (m_pState->m_uProtocolVersion <= 1)
     {
         const size_t cchDstPath = RTStrNLen(pcszDstPath, RTPATH_MAX);
 
         pMsg->appendString(pcszDstPath);              /* pvName */
         pMsg->appendUInt32((uint32_t)cchDstPath + 1); /* cbName */
     }
-    else if (m_pResp->m_uProtocolVersion >= 2)
+    else if (m_pState->m_uProtocolVersion >= 2)
     {
         pMsg->appendUInt32(0);                        /** @todo ContextID not used yet. */
     }
@@ -1102,7 +1102,7 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
     {
         LogFlowFunc(("cbBufe=%zu, cbRead=%RU32\n", cbBuf, cbRead));
 
-        if (m_pResp->m_uProtocolVersion <= 1)
+        if (m_pState->m_uProtocolVersion <= 1)
         {
             pMsg->appendPointer(pvBuf, cbRead);                            /* pvData */
             pMsg->appendUInt32(cbRead);                                    /* cbData */
@@ -1113,7 +1113,7 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
             pMsg->appendPointer(pvBuf, cbRead);                            /* pvData */
             pMsg->appendUInt32(cbRead);                                    /* cbData */
 
-            if (m_pResp->m_uProtocolVersion >= 3)
+            if (m_pState->m_uProtocolVersion >= 3)
             {
                 /** @todo Calculate checksum. */
                 pMsg->appendPointer(NULL, 0);                              /* pvChecksum */
@@ -1121,7 +1121,7 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
             }
         }
 
-        int rc2 = updateProgress(pCtx, pCtx->pResp, (uint32_t)cbRead);
+        int rc2 = updateProgress(pCtx, pCtx->pState, (uint32_t)cbRead);
         AssertRC(rc2);
 
         /* DnDTransferObjectRead() will return VINF_EOF if reading is complete. */
@@ -1222,7 +1222,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
             AssertReturn(sizeof(VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
-            pCtx->pResp->reset();
+            pCtx->pState->reset();
 
             if (RT_SUCCESS(pCBData->rc))
             {
@@ -1230,8 +1230,8 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
                 pCBData->rc = VERR_GENERAL_FAILURE; /* Make sure some error is set. */
             }
 
-            rc = pCtx->pResp->setProgress(100, DND_PROGRESS_ERROR, pCBData->rc,
-                                          GuestDnDTarget::i_guestErrorToString(pCBData->rc));
+            rc = pCtx->pState->setProgress(100, DND_PROGRESS_ERROR, pCBData->rc,
+                                           GuestDnDTarget::i_guestErrorToString(pCBData->rc));
             if (RT_SUCCESS(rc))
             {
                 rc      = VERR_GSTDND_GUEST_ERROR;
@@ -1342,8 +1342,8 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
     if (RT_FAILURE(rc))
     {
         /* Unregister this callback. */
-        AssertPtr(pCtx->pResp);
-        int rc2 = pCtx->pResp->setCallback(uMsg, NULL /* PFNGUESTDNDCALLBACK */);
+        AssertPtr(pCtx->pState);
+        int rc2 = pCtx->pState->setCallback(uMsg, NULL /* PFNGUESTDNDCALLBACK */);
         AssertRC(rc2);
 
         /* Let the waiter(s) know. */
@@ -1372,18 +1372,18 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
 int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertPtr(pCtx->pResp);
+    AssertPtr(pCtx->pState);
 
 #define REGISTER_CALLBACK(x)                                                 \
     do {                                                                     \
-        rc = pCtx->pResp->setCallback(x, i_sendTransferDataCallback, pCtx); \
+        rc = pCtx->pState->setCallback(x, i_sendTransferDataCallback, pCtx); \
         if (RT_FAILURE(rc))                                                  \
             return rc;                                                       \
     } while (0)
 
 #define UNREGISTER_CALLBACK(x)                        \
     do {                                              \
-        int rc2 = pCtx->pResp->setCallback(x, NULL); \
+        int rc2 = pCtx->pState->setCallback(x, NULL); \
         AssertRC(rc2);                                \
     } while (0)
 
@@ -1405,7 +1405,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
     REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */
     REGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
-    if (m_pResp->m_uProtocolVersion >= 2)
+    if (m_pState->m_uProtocolVersion >= 2)
         REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
     REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
 
@@ -1472,7 +1472,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
         /*
          * Send the data header first.
          */
-        if (m_pResp->m_uProtocolVersion >= 3)
+        if (m_pState->m_uProtocolVersion >= 3)
             rc = i_sendMetaDataHeader(pCtx);
 
         /*
@@ -1483,9 +1483,9 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
 
         if (RT_SUCCESS(rc))
         {
-            rc = waitForEvent(&pCtx->EventCallback, pCtx->pResp, msTimeout);
+            rc = waitForEvent(&pCtx->EventCallback, pCtx->pState, msTimeout);
             if (RT_SUCCESS(rc))
-                pCtx->pResp->setProgress(100, DND_PROGRESS_COMPLETE, VINF_SUCCESS);
+                pCtx->pState->setProgress(100, DND_PROGRESS_COMPLETE, VINF_SUCCESS);
         }
 
     } while (0);
@@ -1500,7 +1500,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
     UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */
     UNREGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
-    if (m_pResp->m_uProtocolVersion >= 2)
+    if (m_pState->m_uProtocolVersion >= 2)
         UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
     UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
 
@@ -1521,7 +1521,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
 
             LogRel2(("DnD: Sending transfer data to guest cancelled by user\n"));
 
-            rc2 = pCtx->pResp->setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+            rc2 = pCtx->pState->setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
             AssertRC(rc2);
 
             /* Cancelling is not an error, just set success here. */
@@ -1530,8 +1530,8 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
         else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
         {
             LogRel(("DnD: Sending transfer data to guest failed with rc=%Rrc\n", rc));
-            int rc2 = pCtx->pResp->setProgress(100, DND_PROGRESS_ERROR, rc,
-                                               GuestDnDTarget::i_hostErrorToString(rc));
+            int rc2 = pCtx->pState->setProgress(100, DND_PROGRESS_ERROR, rc,
+                                                GuestDnDTarget::i_hostErrorToString(rc));
             AssertRC(rc2);
         }
     }
@@ -1554,7 +1554,7 @@ int GuestDnDTarget::i_sendTransferListObject(GuestDnDSendCtx *pCtx, PDNDTRANSFER
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
 
-    int rc = updateProgress(pCtx, pCtx->pResp);
+    int rc = updateProgress(pCtx, pCtx->pState);
     AssertRCReturn(rc, rc);
 
     PDNDTRANSFEROBJECT pObj = DnDTransferListObjGetFirst(pList);
@@ -1618,11 +1618,11 @@ int GuestDnDTarget::i_sendRawData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout)
     if (RT_FAILURE(rc))
     {
         LogRel(("DnD: Sending raw data to guest failed with rc=%Rrc\n", rc));
-        rc2 = pCtx->pResp->setProgress(100 /* Percent */, DND_PROGRESS_ERROR, rc,
-                                       GuestDnDTarget::i_hostErrorToString(rc));
+        rc2 = pCtx->pState->setProgress(100 /* Percent */, DND_PROGRESS_ERROR, rc,
+                                        GuestDnDTarget::i_hostErrorToString(rc));
     }
     else
-        rc2 = pCtx->pResp->setProgress(100 /* Percent */, DND_PROGRESS_COMPLETE, rc);
+        rc2 = pCtx->pState->setProgress(100 /* Percent */, DND_PROGRESS_COMPLETE, rc);
     AssertRC(rc2);
 
     LogFlowFuncLeaveRC(rc);

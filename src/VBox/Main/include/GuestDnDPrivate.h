@@ -36,7 +36,7 @@
  */
 class Guest;
 class GuestDnDBase;
-class GuestDnDResponse;
+class GuestDnDState;
 class GuestDnDSource;
 class GuestDnDTarget;
 class Progress;
@@ -480,8 +480,8 @@ struct GuestDnDSendCtx : public GuestDnDData
 
     /** Pointer to guest target class this context belongs to. */
     GuestDnDTarget                     *pTarget;
-    /** Pointer to guest response class this context belongs to. */
-    GuestDnDResponse                   *pResp;
+    /** Pointer to guest state this context belongs to. */
+    GuestDnDState                      *pState;
     /** Target (VM) screen ID. */
     uint32_t                            uScreenID;
     /** Transfer data structure. */
@@ -557,8 +557,8 @@ struct GuestDnDRecvCtx : public GuestDnDData
 
     /** Pointer to guest source class this context belongs to. */
     GuestDnDSource                     *pSource;
-    /** Pointer to guest response class this context belongs to. */
-    GuestDnDResponse                   *pResp;
+    /** Pointer to guest state this context belongs to. */
+    GuestDnDState                      *pState;
     /** Formats offered by the guest (and supported by the host). */
     GuestDnDMIMEList                    lstFmtOffered;
     /** Original drop format requested to receive from the guest. */
@@ -796,16 +796,16 @@ typedef struct GuestDnDCallback
 /** Contains registered callback pointers for specific HGCM message types. */
 typedef std::map<uint32_t, GuestDnDCallback> GuestDnDCallbackMap;
 
-/** @todo r=andy This class needs to go, as this now is too inflexible when it comes to all
- *               the callback handling/dispatching. It's part of the initial code and only adds
- *               unnecessary complexity. */
-class GuestDnDResponse
+/**
+ * Class for keeping a DnD guest state around.
+ */
+class GuestDnDState
 {
 
 public:
 
-    GuestDnDResponse(const ComObjPtr<Guest>& pGuest);
-    virtual ~GuestDnDResponse(void);
+    GuestDnDState(const ComObjPtr<Guest>& pGuest);
+    virtual ~GuestDnDState(void);
 
 public:
 
@@ -924,8 +924,8 @@ public:
     /** @name Public helper functions.
      * @{ */
     HRESULT           adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) const;
+    GuestDnDState    *getState(uint32_t = 0) const;
     int               hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const;
-    GuestDnDResponse *response(void) { return m_pResponse; }
     GuestDnDMIMEList  defaultFormats(void) const { return m_strDefaultFormats; }
     /** @}  */
 
@@ -967,9 +967,9 @@ protected:
     GuestDnDMIMEList            m_strDefaultFormats;
     /** Pointer to guest implementation. */
     const ComObjPtr<Guest>      m_pGuest;
-    /** The current (last) response from the guest. At the
-     *  moment we only support only response a time (ARQ-style). */
-    GuestDnDResponse           *m_pResponse;
+    /** The current state from the guest. At the
+     *  moment we only support only state a time (ARQ-style). */
+    GuestDnDState              *m_pState;
     /** Critical section to serialize access. */
     RTCRITSECT                  m_CritSect;
     /** Number of active transfers (guest->host or host->guest). */
@@ -1021,8 +1021,8 @@ protected:
     /** @}  */
 
     int sendCancel(void);
-    int updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp, size_t cbDataAdd = 0);
-    int waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDResponse *pResp, RTMSINTERVAL msTimeout);
+    int updateProgress(GuestDnDData *pData, GuestDnDState *pState, size_t cbDataAdd = 0);
+    int waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDState *pState, RTMSINTERVAL msTimeout);
 
 protected:
 
@@ -1036,8 +1036,8 @@ protected:
     GuestDnDMIMEList                m_lstFmtOffered;
     /** Whether the object still is in pending state. */
     bool                            m_fIsPending;
-    /** Pointer to response bound to this object. */
-    GuestDnDResponse               *m_pResp;
+    /** Pointer to state bound to this object. */
+    GuestDnDState                  *m_pState;
     /** @}  */
 
     /**

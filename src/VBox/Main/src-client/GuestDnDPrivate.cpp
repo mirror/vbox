@@ -183,7 +183,7 @@
 
 GuestDnDSendCtx::GuestDnDSendCtx(void)
     : pTarget(NULL)
-    , pResp(NULL)
+    , pState(NULL)
 {
     reset();
 }
@@ -193,8 +193,8 @@ GuestDnDSendCtx::GuestDnDSendCtx(void)
  */
 void GuestDnDSendCtx::reset(void)
 {
-    if (pResp)
-        pResp->reset();
+    if (pState)
+        pState->reset();
 
     uScreenID  = 0;
 
@@ -212,7 +212,7 @@ void GuestDnDSendCtx::reset(void)
 
 GuestDnDRecvCtx::GuestDnDRecvCtx(void)
     : pSource(NULL)
-    , pResp(NULL)
+    , pState(NULL)
 {
     reset();
 }
@@ -222,8 +222,8 @@ GuestDnDRecvCtx::GuestDnDRecvCtx(void)
  */
 void GuestDnDRecvCtx::reset(void)
 {
-    if (pResp)
-        pResp->reset();
+    if (pState)
+        pState->reset();
 
     lstFmtOffered.clear();
     strFmtReq  = "";
@@ -289,7 +289,7 @@ int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
  *
  ********************************************************************************************************************************/
 
-GuestDnDResponse::GuestDnDResponse(const ComObjPtr<Guest>& pGuest)
+GuestDnDState::GuestDnDState(const ComObjPtr<Guest>& pGuest)
     : m_uProtocolVersion(0)
     , m_fGuestFeatures0(VBOX_DND_GF_NONE)
     , m_EventSem(NIL_RTSEMEVENT)
@@ -302,7 +302,7 @@ GuestDnDResponse::GuestDnDResponse(const ComObjPtr<Guest>& pGuest)
         throw rc;
 }
 
-GuestDnDResponse::~GuestDnDResponse(void)
+GuestDnDState::~GuestDnDState(void)
 {
     reset();
 
@@ -313,7 +313,7 @@ GuestDnDResponse::~GuestDnDResponse(void)
 /**
  * Notifies the waiting side about a guest notification response.
  */
-int GuestDnDResponse::notifyAboutGuestResponse(void) const
+int GuestDnDState::notifyAboutGuestResponse(void) const
 {
     return RTSemEventSignal(m_EventSem);
 }
@@ -321,7 +321,7 @@ int GuestDnDResponse::notifyAboutGuestResponse(void) const
 /**
  * Resets a GuestDnDResponse object.
  */
-void GuestDnDResponse::reset(void)
+void GuestDnDState::reset(void)
 {
     LogFlowThisFuncEnter();
 
@@ -337,7 +337,7 @@ void GuestDnDResponse::reset(void)
  * @returns HRESULT
  * @param   pParent             Parent to set for the progress object.
  */
-HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
+HRESULT GuestDnDState::resetProgress(const ComObjPtr<Guest>& pParent)
 {
     m_pProgress.setNull();
 
@@ -357,7 +357,7 @@ HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
  *
  * @returns \c true if canceled, \c false if not.
  */
-bool GuestDnDResponse::isProgressCanceled(void) const
+bool GuestDnDState::isProgressCanceled(void) const
 {
     BOOL fCanceled;
     if (!m_pProgress.isNull())
@@ -379,7 +379,7 @@ bool GuestDnDResponse::isProgressCanceled(void) const
  * @param   pfnCallback         Callback function pointer to use.
  * @param   pvUser              User-provided arguments for the callback function. Optional and can be NULL.
  */
-int GuestDnDResponse::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback, void *pvUser /* = NULL */)
+int GuestDnDState::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback, void *pvUser /* = NULL */)
 {
     GuestDnDCallbackMap::iterator it = m_mapCallbacks.find(uMsg);
 
@@ -412,8 +412,8 @@ int GuestDnDResponse::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback
  * @param   rcOp                IPRT-style result code to set. Optional.
  * @param   strMsg              Message to set. Optional.
  */
-int GuestDnDResponse::setProgress(unsigned uPercentage, uint32_t uStatus,
-                                  int rcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = "" */)
+int GuestDnDState::setProgress(unsigned uPercentage, uint32_t uStatus,
+                               int rcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = "" */)
 {
     LogFlowFunc(("uPercentage=%u, uStatus=%RU32, , rcOp=%Rrc, strMsg=%s\n",
                  uPercentage, uStatus, rcOp, strMsg.c_str()));
@@ -515,7 +515,7 @@ int GuestDnDResponse::setProgress(unsigned uPercentage, uint32_t uStatus,
  * @param   pvParms             Pointer to optional data provided for a particular message. Optional.
  * @param   cbParms             Size (in bytes) of \a pvParms.
  */
-int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbParms)
+int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbParms)
 {
     LogFlowFunc(("u32Function=%RU32, pvParms=%p, cbParms=%RU32\n", u32Function, pvParms, cbParms));
 
@@ -686,7 +686,7 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
  * @returns HRESULT
  * @param   ppProgress          Where to query the progress object to.
  */
-HRESULT GuestDnDResponse::queryProgressTo(IProgress **ppProgress)
+HRESULT GuestDnDState::queryProgressTo(IProgress **ppProgress)
 {
     return m_pProgress.queryInterfaceTo(ppProgress);
 }
@@ -697,7 +697,7 @@ HRESULT GuestDnDResponse::queryProgressTo(IProgress **ppProgress)
  * @returns VBox status code.
  * @param   msTimeout           Timeout (in ms) for waiting. Optional, waits 500 ms if not specified.
  */
-int GuestDnDResponse::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */) const
+int GuestDnDState::waitForGuestResponse(RTMSINTERVAL msTimeout /*= 500 */) const
 {
     int rc = RTSemEventWait(m_EventSem, msTimeout);
 #ifdef DEBUG_andy
@@ -721,7 +721,7 @@ GuestDnD::GuestDnD(const ComObjPtr<Guest> &pGuest)
 
     try
     {
-        m_pResponse = new GuestDnDResponse(pGuest);
+        m_pState = new GuestDnDState(pGuest);
     }
     catch (std::bad_alloc &)
     {
@@ -750,8 +750,8 @@ GuestDnD::~GuestDnD(void)
 
     RTCritSectDelete(&m_CritSect);
 
-    if (m_pResponse)
-        delete m_pResponse;
+    if (m_pState)
+        delete m_pState;
 }
 
 /**
@@ -790,6 +790,19 @@ HRESULT GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *pu
 
     LogFlowFunc(("uScreenId=%RU32, x=%RU32, y=%RU32\n", uScreenId, puX ? *puX : 0, puY ? *puY : 0));
     return S_OK;
+}
+
+/**
+ * Returns a DnD guest state.
+ *
+ * @returns Pointer to DnD guest state, or NULL if not found / invalid.
+ * @param   uID                 ID of DnD guest state to return.
+ */
+GuestDnDState *GuestDnD::getState(uint32_t uID /* = 0 */) const
+{
+    AssertMsgReturn(uID == 0, ("Only one state (0) is supported at the moment\n"), NULL);
+
+    return m_pState;
 }
 
 /**
@@ -940,9 +953,8 @@ DECLCALLBACK(int) GuestDnD::notifyDnDDispatcher(void *pvExtension, uint32_t u32F
     /** @todo In case we need to handle multiple guest DnD responses at a time this
      *        would be the place to lookup and dispatch to those. For the moment we
      *        only have one response -- simple. */
-    GuestDnDResponse *pResp = pGuestDnD->m_pResponse;
-    if (pResp)
-        return pResp->onDispatch(u32Function, pvParms, cbParms);
+    if (pGuestDnD->m_pState)
+        return pGuestDnD->m_pState->onDispatch(u32Function, pvParms, cbParms);
 
     return VERR_NOT_SUPPORTED;
 }
@@ -1307,7 +1319,7 @@ int GuestDnDBase::sendCancel(void)
 {
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_CANCEL);
-    if (m_pResp->m_uProtocolVersion >= 3)
+    if (m_pState->m_uProtocolVersion >= 3)
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
 
     LogRel2(("DnD: Cancelling operation on guest ...\n"));
@@ -1324,20 +1336,20 @@ int GuestDnDBase::sendCancel(void)
  *
  * @returns VBox status code.
  * @param   pData               GuestDnDData object to use for accounting.
- * @param   pResp               GuestDnDResponse to update its progress object for.
+ * @param   pState              Guest state to update its progress object for.
  * @param   cbDataAdd           By how much data (in bytes) to update the progress.
  */
-int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,
+int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDState *pState,
                                  size_t cbDataAdd /* = 0 */)
 {
     AssertPtrReturn(pData, VERR_INVALID_POINTER);
-    AssertPtrReturn(pResp, VERR_INVALID_POINTER);
+    AssertPtrReturn(pState, VERR_INVALID_POINTER);
     /* cbDataAdd is optional. */
 
     LogFlowFunc(("cbExtra=%zu, cbProcessed=%zu, cbRemaining=%zu, cbDataAdd=%zu\n",
                  pData->cbExtra, pData->cbProcessed, pData->getRemaining(), cbDataAdd));
 
-    if (   !pResp
+    if (   !pState
         || !cbDataAdd) /* Only update if something really changes. */
         return VINF_SUCCESS;
 
@@ -1348,10 +1360,10 @@ int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,
 
     LogRel2(("DnD: Transfer %RU8%% complete\n", uPercent));
 
-    int rc = pResp->setProgress(uPercent,
-                                  pData->isComplete()
-                                ? DND_PROGRESS_COMPLETE
-                                : DND_PROGRESS_RUNNING);
+    int rc = pState->setProgress(uPercent,
+                                   pData->isComplete()
+                                 ? DND_PROGRESS_COMPLETE
+                                 : DND_PROGRESS_RUNNING);
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -1359,17 +1371,15 @@ int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,
 /**
  * Waits for a specific guest callback event to get signalled.
  *
- ** @todo GuestDnDResponse *pResp needs to go.
- *
  * @returns VBox status code. Will return VERR_CANCELLED if the user has cancelled the progress object.
  * @param   pEvent                  Callback event to wait for.
- * @param   pResp                   Response to update.
+ * @param   pState                  Guest state to update.
  * @param   msTimeout               Timeout (in ms) to wait.
  */
-int GuestDnDBase::waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDResponse *pResp, RTMSINTERVAL msTimeout)
+int GuestDnDBase::waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDState *pState, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
-    AssertPtrReturn(pResp, VERR_INVALID_POINTER);
+    AssertPtrReturn(pState, VERR_INVALID_POINTER);
 
     int rc;
 
@@ -1399,7 +1409,7 @@ int GuestDnDBase::waitForEvent(GuestDnDCallbackEvent *pEvent, GuestDnDResponse *
             rc = VERR_TIMEOUT;
             LogRel2(("DnD: Error: Guest did not respond within time\n"));
         }
-        else if (pResp->isProgressCanceled()) /** @todo GuestDnDResponse *pResp needs to go. */
+        else if (pState->isProgressCanceled())
         {
             LogRel2(("DnD: Operation was canceled by user\n"));
             rc = VERR_CANCELLED;
