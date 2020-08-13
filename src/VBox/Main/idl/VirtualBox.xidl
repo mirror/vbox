@@ -12880,7 +12880,7 @@
 
   <interface
     name="IDnDBase" extends="$unknown"
-    uuid="00727A73-000A-4C4A-006D-E7D300351186"
+    uuid="4132147b-42f8-cd96-7570-6a8800e3342c"
     wsmap="managed"
     reservedMethods="1" reservedAttributes="2"
     >
@@ -12888,6 +12888,11 @@
 
     <attribute name="formats" type="wstring" safearray="yes" readonly="yes">
       <desc>Returns all supported drag'n drop formats.</desc>
+    </attribute>
+
+    <attribute name="protocolVersion" type="unsigned long" readonly="yes">
+      <desc>Returns the protocol version which is used to communicate
+        with the guest.</desc>
     </attribute>
 
     <method name="isFormatSupported" >

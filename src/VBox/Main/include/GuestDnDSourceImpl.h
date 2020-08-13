@@ -56,6 +56,8 @@ private:
     HRESULT getFormats(GuestDnDMIMEList &aFormats);
     HRESULT addFormats(const GuestDnDMIMEList &aFormats);
     HRESULT removeFormats(const GuestDnDMIMEList &aFormats);
+
+    HRESULT getProtocolVersion(ULONG *aProtocolVersion);
     /** @}  */
 
     /** Private wrapped @name IDnDSource methods.
