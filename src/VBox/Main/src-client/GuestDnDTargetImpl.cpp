@@ -298,7 +298,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     const uint32_t cbFormats = (uint32_t)strFormats.length() + 1; /* Include terminating zero. */
 
     LogRel2(("DnD: Offered formats to guest:\n"));
-    RTCList<RTCString> lstFormats = strFormats.split(DND_PATH_SEPARATOR);
+    RTCList<RTCString> lstFormats = strFormats.split(DND_PATH_SEPARATOR_STR);
     for (size_t i = 0; i < lstFormats.size(); i++)
         LogRel2(("DnD: \t%s\n", lstFormats[i].c_str()));
 
@@ -839,7 +839,7 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
     LogRel2(("DnD: Sending meta data to guest as '%s' (%zu bytes)\n", pcszFmt, cbData));
 
 #ifdef DEBUG
-    RTCList<RTCString> lstFilesURI = RTCString((char *)pvData, cbData).split(DND_PATH_SEPARATOR);
+    RTCList<RTCString> lstFilesURI = RTCString((char *)pvData, cbData).split(DND_PATH_SEPARATOR_STR);
     LogFlowFunc(("lstFilesURI=%zu\n", lstFilesURI.size()));
     for (size_t i = 0; i < lstFilesURI.size(); i++)
         LogFlowFunc(("\t%s\n", lstFilesURI.at(i).c_str()));
@@ -1415,7 +1415,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
          * Extract transfer list from current meta data.
          */
         rc = DnDTransferListAppendPathsFromBuffer(&pCtx->Transfer.List, DNDTRANSFERLISTFMT_URI,
-                                                  (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, DND_PATH_SEPARATOR,
+                                                  (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, DND_PATH_SEPARATOR_STR,
                                                   DNDTRANSFERLIST_FLAGS_RECURSIVE);
         if (RT_FAILURE(rc))
             break;

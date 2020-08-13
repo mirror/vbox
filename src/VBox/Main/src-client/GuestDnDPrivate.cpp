@@ -977,10 +977,10 @@ bool GuestDnD::isFormatInFormatList(const com::Utf8Str &strFormat, const GuestDn
  *
  * @returns MIME list object.
  * @param   strFormats          List of formats to convert.
- * @param   strSep              Separator to use. If not specified, DND_FORMATS_SEPARATOR will be used.
+ * @param   strSep              Separator to use. If not specified, DND_FORMATS_SEPARATOR_STR will be used.
  */
 /* static */
-GuestDnDMIMEList GuestDnD::toFormatList(const com::Utf8Str &strFormats, const com::Utf8Str &strSep /* = DND_FORMATS_SEPARATOR */)
+GuestDnDMIMEList GuestDnD::toFormatList(const com::Utf8Str &strFormats, const com::Utf8Str &strSep /* = DND_FORMATS_SEPARATOR_STR */)
 {
     GuestDnDMIMEList lstFormats;
     RTCList<RTCString> lstFormatsTmp = strFormats.split(strSep);
@@ -1004,7 +1004,7 @@ com::Utf8Str GuestDnD::toFormatString(const GuestDnDMIMEList &lstFormats)
     for (size_t i = 0; i < lstFormats.size(); i++)
     {
         const com::Utf8Str &f = lstFormats.at(i);
-        strFormat += f + DND_FORMATS_SEPARATOR;
+        strFormat += f + DND_FORMATS_SEPARATOR_STR;
     }
 
     return strFormat;
@@ -1047,7 +1047,7 @@ GuestDnDMIMEList GuestDnD::toFilteredFormatList(const GuestDnDMIMEList &lstForma
 {
     GuestDnDMIMEList lstFmt;
 
-    RTCList<RTCString> lstFormats = strFormatsWanted.split(DND_FORMATS_SEPARATOR);
+    RTCList<RTCString> lstFormats = strFormatsWanted.split(DND_FORMATS_SEPARATOR_STR);
     size_t i = 0;
     while (i < lstFormats.size())
     {

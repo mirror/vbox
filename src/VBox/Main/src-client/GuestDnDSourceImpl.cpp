@@ -464,7 +464,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
             char  *pszBuf = NULL;
             size_t cbBuf  = 0;
             int rc = DnDTransferListGetRootsEx(&pCtx->Transfer.List, DNDTRANSFERLISTFMT_URI,
-                                               pcszDropDirAbs, DND_PATH_SEPARATOR, &pszBuf, &cbBuf);
+                                               pcszDropDirAbs, DND_PATH_SEPARATOR_STR, &pszBuf, &cbBuf);
             if (RT_SUCCESS(rc))
             {
                 Assert(cbBuf);
@@ -726,7 +726,7 @@ int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndD
                                            DnDDroppedFilesGetDirAbs(&pTransfer->DroppedFiles), DNDTRANSFERLISTFMT_NATIVE);
                 if (RT_SUCCESS(rc))
                     rc = DnDTransferListAppendRootsFromBuffer(&pTransfer->List, DNDTRANSFERLISTFMT_URI,
-                                                              (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, DND_PATH_SEPARATOR,
+                                                              (const char *)pCtx->Meta.pvData, pCtx->Meta.cbData, DND_PATH_SEPARATOR_STR,
                                                               DNDTRANSFERLIST_FLAGS_NONE);
                 /* Validation. */
                 if (RT_SUCCESS(rc))

@@ -1122,7 +1122,7 @@ int DnDTransferListGetRootsEx(PDNDTRANSFERLIST pList,
 int DnDTransferListGetRoots(PDNDTRANSFERLIST pList,
                             DNDTRANSFERLISTFMT enmFmt, char **ppszBuffer, size_t *pcbBuffer)
 {
-    return DnDTransferListGetRootsEx(pList, enmFmt, "" /* pcszPathRoot */, DND_PATH_SEPARATOR,
+    return DnDTransferListGetRootsEx(pList, enmFmt, "" /* pcszPathRoot */, DND_PATH_SEPARATOR_STR,
                                      ppszBuffer, pcbBuffer);
 }
 

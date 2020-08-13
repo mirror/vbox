@@ -214,13 +214,13 @@ int DnDTransferObjectWrite(PDNDTRANSFEROBJECT pObj, const void *pvBuf, size_t cb
 #define DND_DEFAULT_CHUNK_SIZE                       _64K
 
 /** Separator for a formats list. */
-#define DND_FORMATS_SEPARATOR                        "\r\n"
+#define DND_FORMATS_SEPARATOR_STR                    "\r\n"
 
 /** Default URI list path separator, if not specified otherwise.
  *
  *  This is there for hysterical raisins, to not break older Guest Additions.
  ** @todo Get rid of this.  */
-#define DND_PATH_SEPARATOR                           "\r\n"
+#define DND_PATH_SEPARATOR_STR                       "\r\n"
 
 /** DnDTransferList flags. */
 typedef uint32_t DNDTRANSFERLISTFLAGS;

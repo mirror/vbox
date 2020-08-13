@@ -223,7 +223,7 @@ STDMETHODIMP VBoxDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMed
         {
             char **papszFiles;
             size_t cFiles;
-            int rc = RTStrSplit((const char *)m_pvData, m_cbData, DND_PATH_SEPARATOR, &papszFiles, &cFiles);
+            int rc = RTStrSplit((const char *)m_pvData, m_cbData, DND_PATH_SEPARATOR_STR, &papszFiles, &cFiles);
             if (   RT_SUCCESS(rc)
                 && cFiles)
             {

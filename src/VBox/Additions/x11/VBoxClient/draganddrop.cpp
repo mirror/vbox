@@ -1944,7 +1944,7 @@ int DragInstance::hgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta)
 
             /* Note: Use the URI format here, as X' DnD spec says so. */
             rc = DnDTransferListGetRootsEx(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, pcszRootPath,
-                                           DND_PATH_SEPARATOR, (char **)&pvData, &cbData);
+                                           DND_PATH_SEPARATOR_STR, (char **)&pvData, &cbData);
             break;
         }
 

@@ -862,7 +862,7 @@ static int vbglR3DnDHGRecvDataMain(PVBGLR3GUESTDNDCMDCTX   pCtx,
                 if (RT_SUCCESS(rc))
                 {
                     rc = DnDTransferListAppendRootsFromBuffer(&pMeta->u.URI.Transfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
-                                                              DND_PATH_SEPARATOR, 0 /* fFlags */);
+                                                              DND_PATH_SEPARATOR_STR, 0 /* fFlags */);
                     if (RT_SUCCESS(rc))
                     {
                         rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
@@ -1799,7 +1799,7 @@ static int vbglR3DnDGHSendTransferData(PVBGLR3GUESTDNDCMDCTX pCtx, PDNDTRANSFERL
  * @param   pCtx                DnD context to use.
  * @param   pszFormat           In which format the data will be sent.
  * @param   pvData              Data block to send.
- *                              For URI data this must contain the absolute local URI paths, separated by DND_PATH_SEPARATOR.
+ *                              For URI data this must contain the absolute local URI paths, separated by DND_PATH_SEPARATOR_STR.
  * @param   cbData              Size (in bytes) of data block to send.
  */
 VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszFormat, void *pvData, uint32_t cbData)
@@ -1827,7 +1827,7 @@ VBGLR3DECL(int) VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszF
             const DNDTRANSFERLISTFLAGS fFlags = DNDTRANSFERLIST_FLAGS_RECURSIVE;
 
             rc = DnDTransferListAppendPathsFromBuffer(&lstTransfer, DNDTRANSFERLISTFMT_URI, (const char *)pvData, cbData,
-                                                      DND_PATH_SEPARATOR, fFlags);
+                                                      DND_PATH_SEPARATOR_STR, fFlags);
             if (RT_SUCCESS(rc))
                 rc = vbglR3DnDGHSendTransferData(pCtx, &lstTransfer);
             DnDTransferListDestroy(&lstTransfer);
