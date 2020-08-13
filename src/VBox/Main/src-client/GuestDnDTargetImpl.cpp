@@ -153,6 +153,16 @@ int GuestDnDTarget::init(const ComObjPtr<Guest>& pGuest)
 
     unconst(m_pGuest) = pGuest;
 
+    /* Set the response we're going to use for this object.
+     *
+     * At the moment we only have one response total, as we
+     * don't allow
+     *      1) parallel transfers (multiple G->H at the same time)
+     *  nor 2) mixed transfers (G->H + H->G at the same time).
+     */
+    m_pResp = GuestDnDInst()->response();
+    AssertPtrReturn(m_pResp, VERR_INVALID_POINTER);
+
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
 
@@ -251,7 +261,9 @@ HRESULT GuestDnDTarget::getProtocolVersion(ULONG *aProtocolVersion)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return GuestDnDBase::i_getProtocolVersion(aProtocolVersion);
+    *aProtocolVersion = m_pResp->m_uProtocolVersion;
+
+    return S_OK;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
@@ -278,9 +290,6 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* Determine guest DnD protocol to use. */
-    GuestDnDBase::getProtocolVersion(&m_DataBase.uProtocolVersion);
 
     /* Default action is ignoring. */
     DnDAction_T resAction = DnDAction_Ignore;
@@ -323,7 +332,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_ENTER);
-        if (m_DataBase.uProtocolVersion >= 3)
+        if (m_pResp->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
         Msg.appendUInt32(aX);
@@ -336,9 +345,8 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
-            GuestDnDResponse *pResp = GuestDnDInst()->response();
-            if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
-                resAction = GuestDnD::toMainAction(pResp->getActionDefault());
+            if (RT_SUCCESS(m_pResp->waitForGuestResponse()))
+                resAction = GuestDnD::toMainAction(m_pResp->getActionDefault());
         }
     }
 
@@ -401,7 +409,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_MOVE);
-        if (m_DataBase.uProtocolVersion >= 3)
+        if (m_pResp->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
         Msg.appendUInt32(aX);
@@ -448,7 +456,7 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
 
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_HG_EVT_LEAVE);
-    if (m_DataBase.uProtocolVersion >= 3)
+    if (m_pResp->m_uProtocolVersion >= 3)
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
 
     int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
@@ -524,7 +532,7 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     {
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_EVT_DROPPED);
-        if (m_DataBase.uProtocolVersion >= 3)
+        if (m_pResp->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
         Msg.appendUInt32(aX);
@@ -843,7 +851,7 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
     const size_t  cbFmt   = pCtx->Meta.strFmt.length() + 1; /* Include terminator. */
     const char   *pcszFmt = pCtx->Meta.strFmt.c_str();
 
-    LogFlowFunc(("uProto=%u, szFmt=%s, cbFmt=%RU32, cbData=%zu\n", m_DataBase.uProtocolVersion, pcszFmt, cbFmt, cbData));
+    LogFlowFunc(("uProtoVer=%RU32, szFmt=%s, cbFmt=%RU32, cbData=%zu\n", m_pResp->m_uProtocolVersion, pcszFmt, cbFmt, cbData));
 
     LogRel2(("DnD: Sending meta data to guest as '%s' (%zu bytes)\n", pcszFmt, cbData));
 
@@ -861,7 +869,7 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_HG_SND_DATA);
 
-        if (m_DataBase.uProtocolVersion < 3)
+        if (m_pResp->m_uProtocolVersion < 3)
         {
             Msg.appendUInt32(pCtx->uScreenID);                                 /* uScreenId */
             Msg.appendPointer(unconst(pcszFmt), (uint32_t)cbFmt);              /* pvFormat */
@@ -909,7 +917,7 @@ int GuestDnDTarget::i_sendMetaDataHeader(GuestDnDSendCtx *pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    if (m_DataBase.uProtocolVersion < 3) /* Protocol < v3 did not support this, skip. */
+    if (m_pResp->m_uProtocolVersion < 3) /* Protocol < v3 did not support this, skip. */
         return VINF_SUCCESS;
 
     GuestDnDMsg Msg;
@@ -958,7 +966,7 @@ int GuestDnDTarget::i_sendDirectory(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pO
     LogRel2(("DnD: Transferring host directory '%s' to guest\n", DnDTransferObjectGetSourcePath(pObj)));
 
     pMsg->setType(HOST_DND_HG_SND_DIR);
-    if (m_DataBase.uProtocolVersion >= 3)
+    if (m_pResp->m_uProtocolVersion >= 3)
         pMsg->appendUInt32(0); /** @todo ContextID not used yet. */
     pMsg->appendString(pcszDstPath);                    /* path */
     pMsg->appendUInt32((uint32_t)(cchPath + 1));        /* path length, including terminator. */
@@ -1005,7 +1013,7 @@ int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
     bool fSendData = false;
     if (RT_SUCCESS(rc))
     {
-        if (m_DataBase.uProtocolVersion >= 2)
+        if (m_pResp->m_uProtocolVersion >= 2)
         {
             if (!(pCtx->Transfer.fObjState & DND_OBJ_STATE_HAS_HDR))
             {
@@ -1087,14 +1095,14 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
 
     /* Protocol version 1 sends the file path *every* time with a new file chunk.
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
-    if (m_DataBase.uProtocolVersion <= 1)
+    if (m_pResp->m_uProtocolVersion <= 1)
     {
         const size_t cchDstPath = RTStrNLen(pcszDstPath, RTPATH_MAX);
 
         pMsg->appendString(pcszDstPath);              /* pvName */
         pMsg->appendUInt32((uint32_t)cchDstPath + 1); /* cbName */
     }
-    else if (m_DataBase.uProtocolVersion >= 2)
+    else if (m_pResp->m_uProtocolVersion >= 2)
     {
         pMsg->appendUInt32(0);                        /** @todo ContextID not used yet. */
     }
@@ -1111,7 +1119,7 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
     {
         LogFlowFunc(("cbBufe=%zu, cbRead=%RU32\n", cbBuf, cbRead));
 
-        if (m_DataBase.uProtocolVersion <= 1)
+        if (m_pResp->m_uProtocolVersion <= 1)
         {
             pMsg->appendPointer(pvBuf, cbRead);                            /* pvData */
             pMsg->appendUInt32(cbRead);                                    /* cbData */
@@ -1122,7 +1130,7 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
             pMsg->appendPointer(pvBuf, cbRead);                            /* pvData */
             pMsg->appendUInt32(cbRead);                                    /* cbData */
 
-            if (m_DataBase.uProtocolVersion >= 3)
+            if (m_pResp->m_uProtocolVersion >= 3)
             {
                 /** @todo Calculate checksum. */
                 pMsg->appendPointer(NULL, 0);                              /* pvChecksum */
@@ -1414,7 +1422,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
     REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */
     REGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
-    if (m_DataBase.uProtocolVersion >= 2)
+    if (m_pResp->m_uProtocolVersion >= 2)
         REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
     REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
 
@@ -1481,7 +1489,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
         /*
          * Send the data header first.
          */
-        if (m_DataBase.uProtocolVersion >= 3)
+        if (m_pResp->m_uProtocolVersion >= 3)
             rc = i_sendMetaDataHeader(pCtx);
 
         /*
@@ -1509,7 +1517,7 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
     UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */
     UNREGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
-    if (m_DataBase.uProtocolVersion >= 2)
+    if (m_pResp->m_uProtocolVersion >= 2)
         UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
     UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
 

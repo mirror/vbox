@@ -155,6 +155,16 @@ int GuestDnDSource::init(const ComObjPtr<Guest>& pGuest)
 
     unconst(m_pGuest) = pGuest;
 
+    /* Set the response we're going to use for this object.
+     *
+     * At the moment we only have one response total, as we
+     * don't allow
+     *      1) parallel transfers (multiple G->H at the same time)
+     *  nor 2) mixed transfers (G->H + H->G at the same time).
+     */
+    m_pResp = GuestDnDInst()->response();
+    AssertPtrReturn(m_pResp, VERR_INVALID_POINTER);
+
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
 
@@ -253,7 +263,9 @@ HRESULT GuestDnDSource::getProtocolVersion(ULONG *aProtocolVersion)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return GuestDnDBase::i_getProtocolVersion(aProtocolVersion);
+    *aProtocolVersion = m_pResp->m_uProtocolVersion;
+
+    return S_OK;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
@@ -272,9 +284,6 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* Determine guest DnD protocol to use. */
-    GuestDnDBase::getProtocolVersion(&m_DataBase.uProtocolVersion);
-
     /* Default is ignoring the action. */
     if (aDefaultAction)
         *aDefaultAction = DnDAction_Ignore;
@@ -283,7 +292,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
 
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_GH_REQ_PENDING);
-    if (m_DataBase.uProtocolVersion >= 3)
+    if (m_pResp->m_uProtocolVersion >= 3)
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
     Msg.appendUInt32(uScreenId);
 
@@ -672,7 +681,7 @@ int GuestDnDSource::i_onReceiveData(GuestDnDRecvCtx *pCtx, PVBOXDNDSNDDATA pSndD
         size_t  cbTotalAnnounced;
         size_t  cbMetaAnnounced;
 
-        if (m_DataBase.uProtocolVersion < 3)
+        if (m_pResp->m_uProtocolVersion < 3)
         {
             cbData  = pSndData->u.v1.cbData;
             pvData  = pSndData->u.v1.pvData;
@@ -889,7 +898,7 @@ int GuestDnDSource::i_onReceiveFileHdr(GuestDnDRecvCtx *pCtx, const char *pszPat
         }
 
         /* Note: Protocol v1 does not send any file sizes, so always 0. */
-        if (m_DataBase.uProtocolVersion >= 2)
+        if (m_pResp->m_uProtocolVersion >= 2)
             rc = DnDTransferObjectSetSize(pObj, cbSize);
 
         /** @todo Unescape path before printing. */
@@ -1137,7 +1146,7 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
     REGISTER_CALLBACK(GUEST_DND_CONNECT);
     REGISTER_CALLBACK(GUEST_DND_DISCONNECT);
     REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
-    if (m_DataBase.uProtocolVersion >= 3)
+    if (m_pResp->m_uProtocolVersion >= 3)
         REGISTER_CALLBACK(GUEST_DND_GH_SND_DATA_HDR);
     REGISTER_CALLBACK(GUEST_DND_GH_SND_DATA);
 
@@ -1148,7 +1157,7 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
          */
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_GH_EVT_DROPPED);
-        if (m_DataBase.uProtocolVersion >= 3)
+        if (m_pResp->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendPointer((void*)pCtx->strFmtRecv.c_str(), (uint32_t)pCtx->strFmtRecv.length() + 1);
         Msg.appendUInt32((uint32_t)pCtx->strFmtRecv.length() + 1);
@@ -1172,7 +1181,7 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
     UNREGISTER_CALLBACK(GUEST_DND_CONNECT);
     UNREGISTER_CALLBACK(GUEST_DND_DISCONNECT);
     UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
-    if (m_DataBase.uProtocolVersion >= 3)
+    if (m_pResp->m_uProtocolVersion >= 3)
         UNREGISTER_CALLBACK(GUEST_DND_GH_SND_DATA_HDR);
     UNREGISTER_CALLBACK(GUEST_DND_GH_SND_DATA);
 
@@ -1250,11 +1259,11 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
     REGISTER_CALLBACK(GUEST_DND_CONNECT);
     REGISTER_CALLBACK(GUEST_DND_DISCONNECT);
     REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
-    if (m_DataBase.uProtocolVersion >= 3)
+    if (m_pResp->m_uProtocolVersion >= 3)
         REGISTER_CALLBACK(GUEST_DND_GH_SND_DATA_HDR);
     REGISTER_CALLBACK(GUEST_DND_GH_SND_DATA);
     REGISTER_CALLBACK(GUEST_DND_GH_SND_DIR);
-    if (m_DataBase.uProtocolVersion >= 2)
+    if (m_pResp->m_uProtocolVersion >= 2)
         REGISTER_CALLBACK(GUEST_DND_GH_SND_FILE_HDR);
     REGISTER_CALLBACK(GUEST_DND_GH_SND_FILE_DATA);
 
@@ -1275,7 +1284,7 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
          */
         GuestDnDMsg Msg;
         Msg.setType(HOST_DND_GH_EVT_DROPPED);
-        if (m_DataBase.uProtocolVersion >= 3)
+        if (m_pResp->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendPointer((void*)pCtx->strFmtRecv.c_str(), (uint32_t)pCtx->strFmtRecv.length() + 1);
         Msg.appendUInt32((uint32_t)pCtx->strFmtRecv.length() + 1);
@@ -1571,7 +1580,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, v
             AssertReturn(sizeof(VBOXDNDCBSNDFILEDATADATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(CB_MAGIC_DND_GH_SND_FILE_DATA == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
-            if (pThis->m_DataBase.uProtocolVersion <= 1)
+            if (pThis->m_pResp->m_uProtocolVersion <= 1)
             {
                 /**
                  * Notes for protocol v1 (< VBox 5.0):

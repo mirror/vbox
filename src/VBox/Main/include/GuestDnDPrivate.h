@@ -836,10 +836,16 @@ public:
     int onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbParms);
     /** @}  */
 
-protected:
+public:
 
     /** Pointer to context this class is tied to. */
     void                 *m_pvCtx;
+    /** The DnD protocol version to use, depending on the
+     *  installed Guest Additions. See DragAndDropSvc.h for
+     *  a protocol changelog. */
+    uint32_t              m_uProtocolVersion;
+    /** The guest feature flags reported to the host (VBOX_DND_GF_XXX).  */
+    uint64_t              m_fGuestFeatures0;
     /** Event for waiting for response. */
     RTSEMEVENT            m_EventSem;
     /** Default action to perform in case of a
@@ -1002,13 +1008,9 @@ protected:
     const GuestDnDMIMEList &i_getFormats(void) const;
     HRESULT i_addFormats(const GuestDnDMIMEList &aFormats);
     HRESULT i_removeFormats(const GuestDnDMIMEList &aFormats);
-
-    HRESULT i_getProtocolVersion(ULONG *puVersion);
     /** @}  */
 
 protected:
-
-    int getProtocolVersion(uint32_t *puVersion);
 
     /** @name Functions for handling a simple host HGCM message queue.
      * @{ */
@@ -1034,6 +1036,8 @@ protected:
     GuestDnDMIMEList                m_lstFmtOffered;
     /** Whether the object still is in pending state. */
     bool                            m_fIsPending;
+    /** Pointer to response bound to this object. */
+    GuestDnDResponse               *m_pResp;
     /** @}  */
 
     /**
@@ -1041,10 +1045,6 @@ protected:
      */
     struct
     {
-        /** The DnD protocol version to use, depending on the
-         *  installed Guest Additions. See DragAndDropSvc.h for
-         *  a protocol changelog. */
-        uint32_t                    uProtocolVersion;
         /** Outgoing message queue (FIFO). */
         GuestDnDMsgList             lstMsgOut;
     } m_DataBase;

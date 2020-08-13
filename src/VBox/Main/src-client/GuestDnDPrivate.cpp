@@ -290,7 +290,9 @@ int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
  ********************************************************************************************************************************/
 
 GuestDnDResponse::GuestDnDResponse(const ComObjPtr<Guest>& pGuest)
-    : m_EventSem(NIL_RTSEMEVENT)
+    : m_uProtocolVersion(0)
+    , m_fGuestFeatures0(VBOX_DND_GF_NONE)
+    , m_EventSem(NIL_RTSEMEVENT)
     , m_dndActionDefault(0)
     , m_dndLstActionsAllowed(0)
     , m_pParent(pGuest)
@@ -518,15 +520,39 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
     LogFlowFunc(("u32Function=%RU32, pvParms=%p, cbParms=%RU32\n", u32Function, pvParms, cbParms));
 
     int rc = VERR_WRONG_ORDER; /* Play safe. */
+
+    /* Whether or not to try calling host-installed callbacks after successfully processing the message. */
     bool fTryCallbacks = false;
 
     switch (u32Function)
     {
         case DragAndDropSvc::GUEST_DND_CONNECT:
         {
-            LogThisFunc(("Client connected\n"));
+            DragAndDropSvc::PVBOXDNDCBCONNECTDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBCONNECTDATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBCONNECTDATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_CONNECT == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
 
-            /* Nothing to do here (yet). */
+            m_uProtocolVersion = pCBData->uProtocolVersion;
+            /** @todo Handle flags. */
+
+            LogThisFunc(("Client connected, using protocol v%RU32\n", m_uProtocolVersion));
+
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        case DragAndDropSvc::GUEST_DND_REPORT_FEATURES:
+        {
+            DragAndDropSvc::PVBOXDNDCBREPORTFEATURESDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBREPORTFEATURESDATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBREPORTFEATURESDATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_REPORT_FEATURES == pCBData->hdr.uMagic, VERR_INVALID_PARAMETER);
+
+            m_fGuestFeatures0 = pCBData->fGuestFeatures0;
+
+            LogThisFunc(("Client reported features: %#RX64\n", m_fGuestFeatures0));
+
             rc = VINF_SUCCESS;
             break;
         }
@@ -1150,9 +1176,6 @@ GuestDnDBase::GuestDnDBase(void)
 {
     /* Initialize public attributes. */
     m_lstFmtSupported = GuestDnDInst()->defaultFormats();
-
-    /* Initialzie private stuff. */
-    m_DataBase.uProtocolVersion  = 0;
 }
 
 /**
@@ -1215,73 +1238,6 @@ HRESULT GuestDnDBase::i_removeFormats(const GuestDnDMIMEList &aFormats)
     }
 
     return S_OK;
-}
-
-/* Deprecated. */
-HRESULT GuestDnDBase::i_getProtocolVersion(ULONG *puVersion)
-{
-    int rc = getProtocolVersion((uint32_t *)puVersion);
-    return RT_SUCCESS(rc) ? S_OK : E_FAIL;
-}
-
-/**
- * Tries to guess the DnD protocol version to use on the guest, based on the
- * installed Guest Additions version + revision.
- *
- * Deprecated.
- *
- * If unable to retrieve the protocol version, VERR_NOT_FOUND is returned along
- * with protocol version 1.
- *
- * @return  IPRT status code.
- * @param   puProto                 Where to store the protocol version.
- */
-int GuestDnDBase::getProtocolVersion(uint32_t *puProto)
-{
-    AssertPtrReturn(puProto, VERR_INVALID_POINTER);
-
-    int rc;
-
-    uint32_t uProto = 0;
-    uint32_t uVerAdditions;
-    uint32_t uRevAdditions;
-    if (   m_pGuest
-        && (uVerAdditions = m_pGuest->i_getAdditionsVersion())  > 0
-        && (uRevAdditions = m_pGuest->i_getAdditionsRevision()) > 0)
-    {
-#if 0 && defined(DEBUG)
-        /* Hardcode the to-used protocol version; nice for testing side effects. */
-        if (true)
-            uProto = 3;
-        else
-#endif
-        if (uVerAdditions >= VBOX_FULL_VERSION_MAKE(5, 0, 0))
-        {
-/** @todo
- *  r=bird: This is just too bad for anyone using an OSE additions build...
- */
-            if (uRevAdditions >= 103344) /* Since r103344: Protocol v3. */
-                uProto = 3;
-            else
-                uProto = 2; /* VBox 5.0.0 - 5.0.8: Protocol v2. */
-        }
-        /* else: uProto: 0 */
-
-        LogFlowFunc(("uVerAdditions=%RU32 (%RU32.%RU32.%RU32), r%RU32\n",
-                     uVerAdditions, VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions),
-                                    VBOX_FULL_VERSION_GET_BUILD(uVerAdditions), uRevAdditions));
-        rc = VINF_SUCCESS;
-    }
-    else
-    {
-        uProto = 1; /* Fallback. */
-        rc = VERR_NOT_FOUND;
-    }
-
-    LogRel2(("DnD: Guest is using protocol v%RU32, rc=%Rrc\n", uProto, rc));
-
-    *puProto = uProto;
-    return rc;
 }
 
 /**
@@ -1351,7 +1307,7 @@ int GuestDnDBase::sendCancel(void)
 {
     GuestDnDMsg Msg;
     Msg.setType(HOST_DND_CANCEL);
-    if (m_DataBase.uProtocolVersion >= 3)
+    if (m_pResp->m_uProtocolVersion >= 3)
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
 
     LogRel2(("DnD: Cancelling operation on guest ...\n"));
