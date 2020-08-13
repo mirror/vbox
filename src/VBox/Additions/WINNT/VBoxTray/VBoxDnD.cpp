@@ -569,7 +569,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND a_hWnd, UINT a_uMsg, WPARAM a_wParam, 
                         break;
                     }
 
-                    /* Note: After HOST_DND_HG_EVT_ENTER there immediately is a move
+                    /* Note: After HOST_DND_FN_HG_EVT_ENTER there immediately is a move
                      *       event, so fall through is intentional here. */
                     RT_FALL_THROUGH();
                 }
@@ -1203,7 +1203,7 @@ int VBoxDnDWnd::OnGhIsDnDPending(void)
 
     /**
      * Some notes regarding guest cursor movement:
-     * - The host only sends an HOST_DND_GH_REQ_PENDING message to the guest
+     * - The host only sends an HOST_DND_FN_GH_REQ_PENDING message to the guest
      *   if the mouse cursor is outside the VM's window.
      * - The guest does not know anything about the host's cursor
      *   position / state due to security reasons.

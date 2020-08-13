@@ -314,7 +314,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     if (RT_SUCCESS(rc))
     {
         GuestDnDMsg Msg;
-        Msg.setType(HOST_DND_HG_EVT_ENTER);
+        Msg.setType(HOST_DND_FN_HG_EVT_ENTER);
         if (m_pState->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
@@ -391,7 +391,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     if (RT_SUCCESS(rc))
     {
         GuestDnDMsg Msg;
-        Msg.setType(HOST_DND_HG_EVT_MOVE);
+        Msg.setType(HOST_DND_FN_HG_EVT_MOVE);
         if (m_pState->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
@@ -438,7 +438,7 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
     HRESULT hr = S_OK;
 
     GuestDnDMsg Msg;
-    Msg.setType(HOST_DND_HG_EVT_LEAVE);
+    Msg.setType(HOST_DND_FN_HG_EVT_LEAVE);
     if (m_pState->m_uProtocolVersion >= 3)
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
 
@@ -514,7 +514,7 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     if (SUCCEEDED(hr))
     {
         GuestDnDMsg Msg;
-        Msg.setType(HOST_DND_HG_EVT_DROPPED);
+        Msg.setType(HOST_DND_FN_HG_EVT_DROPPED);
         if (m_pState->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendUInt32(aScreenId);
@@ -850,7 +850,7 @@ int GuestDnDTarget::i_sendMetaDataBody(GuestDnDSendCtx *pCtx)
     while (cbData)
     {
         GuestDnDMsg Msg;
-        Msg.setType(HOST_DND_HG_SND_DATA);
+        Msg.setType(HOST_DND_FN_HG_SND_DATA);
 
         if (m_pState->m_uProtocolVersion < 3)
         {
@@ -904,7 +904,7 @@ int GuestDnDTarget::i_sendMetaDataHeader(GuestDnDSendCtx *pCtx)
         return VINF_SUCCESS;
 
     GuestDnDMsg Msg;
-    Msg.setType(HOST_DND_HG_SND_DATA_HDR);
+    Msg.setType(HOST_DND_FN_HG_SND_DATA_HDR);
 
     LogRel2(("DnD: Sending meta data header to guest (%RU64 bytes total data, %RU32 bytes meta data, %RU64 objects)\n",
              pCtx->getTotalAnnounced(), pCtx->Meta.cbData, pCtx->Transfer.cObjToProcess));
@@ -948,7 +948,7 @@ int GuestDnDTarget::i_sendDirectory(GuestDnDSendCtx *pCtx, PDNDTRANSFEROBJECT pO
 
     LogRel2(("DnD: Transferring host directory '%s' to guest\n", DnDTransferObjectGetSourcePath(pObj)));
 
-    pMsg->setType(HOST_DND_HG_SND_DIR);
+    pMsg->setType(HOST_DND_FN_HG_SND_DIR);
     if (m_pState->m_uProtocolVersion >= 3)
         pMsg->appendUInt32(0); /** @todo ContextID not used yet. */
     pMsg->appendString(pcszDstPath);                    /* path */
@@ -1009,7 +1009,7 @@ int GuestDnDTarget::i_sendFile(GuestDnDSendCtx *pCtx,
                  * separate messages, so send the file header first.
                  * The just registered callback will be called by the guest afterwards.
                  */
-                pMsg->setType(HOST_DND_HG_SND_FILE_HDR);
+                pMsg->setType(HOST_DND_FN_HG_SND_FILE_HDR);
                 pMsg->appendUInt32(0); /** @todo ContextID not used yet. */
                 pMsg->appendString(pcszDstPath);                    /* pvName */
                 pMsg->appendUInt32((uint32_t)(cchDstPath + 1));     /* cbName */
@@ -1071,13 +1071,13 @@ int GuestDnDTarget::i_sendFileData(GuestDnDSendCtx *pCtx,
     /** @todo Don't allow concurrent reads per context! */
 
     /* Set the message type. */
-    pMsg->setType(HOST_DND_HG_SND_FILE_DATA);
+    pMsg->setType(HOST_DND_FN_HG_SND_FILE_DATA);
 
     const char *pcszSrcPath = DnDTransferObjectGetSourcePath(pObj);
     const char *pcszDstPath = DnDTransferObjectGetDestPath(pObj);
 
     /* Protocol version 1 sends the file path *every* time with a new file chunk.
-     * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
+     * In protocol version 2 we only do this once with HOST_DND_FN_HG_SND_FILE_HDR. */
     if (m_pState->m_uProtocolVersion <= 1)
     {
         const size_t cchDstPath = RTStrNLen(pcszDstPath, RTPATH_MAX);
@@ -1167,15 +1167,15 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
 
     switch (uMsg)
     {
-        case GUEST_DND_CONNECT:
+        case GUEST_DND_FN_CONNECT:
             /* Nothing to do here (yet). */
             break;
 
-        case GUEST_DND_DISCONNECT:
+        case GUEST_DND_FN_DISCONNECT:
             rc = VERR_CANCELLED;
             break;
 
-        case GUEST_DND_GET_NEXT_HOST_MSG:
+        case GUEST_DND_FN_GET_NEXT_HOST_MSG:
         {
             PVBOXDNDCBHGGETNEXTHOSTMSG pCBData = reinterpret_cast<PVBOXDNDCBHGGETNEXTHOSTMSG>(pvParms);
             AssertPtr(pCBData);
@@ -1196,7 +1196,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
                     rc = pThis->msgQueueAdd(pMsg);
                     if (RT_SUCCESS(rc)) /* Return message type & required parameter count to the guest. */
                     {
-                        LogFlowFunc(("GUEST_DND_GET_NEXT_HOST_MSG -> %RU32 (%RU32 params)\n", pMsg->getType(), pMsg->getCount()));
+                        LogFlowFunc(("GUEST_DND_FN_GET_NEXT_HOST_MSG -> %RU32 (%RU32 params)\n", pMsg->getType(), pMsg->getCount()));
                         pCBData->uMsg   = pMsg->getType();
                         pCBData->cParms = pMsg->getCount();
                     }
@@ -1215,7 +1215,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
             }
             break;
         }
-        case GUEST_DND_GH_EVT_ERROR:
+        case GUEST_DND_FN_GH_EVT_ERROR:
         {
             PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<PVBOXDNDCBEVTERRORDATA>(pvParms);
             AssertPtr(pCBData);
@@ -1239,9 +1239,9 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendTransferDataCallback(uint32_t uMsg, void
             }
             break;
         }
-        case HOST_DND_HG_SND_DIR:
-        case HOST_DND_HG_SND_FILE_HDR:
-        case HOST_DND_HG_SND_FILE_DATA:
+        case HOST_DND_FN_HG_SND_DIR:
+        case HOST_DND_FN_HG_SND_FILE_HDR:
+        case HOST_DND_FN_HG_SND_FILE_DATA:
         {
             PVBOXDNDCBHGGETNEXTHOSTMSGDATA pCBData
                 = reinterpret_cast<PVBOXDNDCBHGGETNEXTHOSTMSGDATA>(pvParms);
@@ -1399,15 +1399,15 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
      * Register callbacks.
      */
     /* Guest callbacks. */
-    REGISTER_CALLBACK(GUEST_DND_CONNECT);
-    REGISTER_CALLBACK(GUEST_DND_DISCONNECT);
-    REGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
-    REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+    REGISTER_CALLBACK(GUEST_DND_FN_CONNECT);
+    REGISTER_CALLBACK(GUEST_DND_FN_DISCONNECT);
+    REGISTER_CALLBACK(GUEST_DND_FN_GET_NEXT_HOST_MSG);
+    REGISTER_CALLBACK(GUEST_DND_FN_GH_EVT_ERROR);
     /* Host callbacks. */
-    REGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
+    REGISTER_CALLBACK(HOST_DND_FN_HG_SND_DIR);
     if (m_pState->m_uProtocolVersion >= 2)
-        REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
-    REGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
+        REGISTER_CALLBACK(HOST_DND_FN_HG_SND_FILE_HDR);
+    REGISTER_CALLBACK(HOST_DND_FN_HG_SND_FILE_DATA);
 
     do
     {
@@ -1494,15 +1494,15 @@ int GuestDnDTarget::i_sendTransferData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTim
      * Unregister callbacks.
      */
     /* Guest callbacks. */
-    UNREGISTER_CALLBACK(GUEST_DND_CONNECT);
-    UNREGISTER_CALLBACK(GUEST_DND_DISCONNECT);
-    UNREGISTER_CALLBACK(GUEST_DND_GET_NEXT_HOST_MSG);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_CONNECT);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_DISCONNECT);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GET_NEXT_HOST_MSG);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_EVT_ERROR);
     /* Host callbacks. */
-    UNREGISTER_CALLBACK(HOST_DND_HG_SND_DIR);
+    UNREGISTER_CALLBACK(HOST_DND_FN_HG_SND_DIR);
     if (m_pState->m_uProtocolVersion >= 2)
-        UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_HDR);
-    UNREGISTER_CALLBACK(HOST_DND_HG_SND_FILE_DATA);
+        UNREGISTER_CALLBACK(HOST_DND_FN_HG_SND_FILE_HDR);
+    UNREGISTER_CALLBACK(HOST_DND_FN_HG_SND_FILE_DATA);
 
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
@@ -1605,8 +1605,8 @@ int GuestDnDTarget::i_sendRawData(GuestDnDSendCtx *pCtx, RTMSINTERVAL msTimeout)
     NOREF(msTimeout);
 
     /** @todo At the moment we only allow sending up to 64K raw data.
-     *        For protocol v1+v2: Fix this by using HOST_DND_HG_SND_MORE_DATA.
-     *        For protocol v3   : Send another HOST_DND_HG_SND_DATA message. */
+     *        For protocol v1+v2: Fix this by using HOST_DND_FN_HG_SND_MORE_DATA.
+     *        For protocol v3   : Send another HOST_DND_FN_HG_SND_DATA message. */
     if (!pCtx->Meta.cbData)
         return VINF_SUCCESS;
 

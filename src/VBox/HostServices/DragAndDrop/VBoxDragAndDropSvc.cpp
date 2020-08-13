@@ -161,7 +161,7 @@ void DragAndDropClient::disconnect(void) RT_NOEXCEPT
 
     if (m_SvcCtx.pfnHostCallback)
     {
-        int rc2 = m_SvcCtx.pfnHostCallback(m_SvcCtx.pvHostData, GUEST_DND_DISCONNECT, &data, sizeof(data));
+        int rc2 = m_SvcCtx.pfnHostCallback(m_SvcCtx.pvHostData, GUEST_DND_FN_DISCONNECT, &data, sizeof(data));
         if (RT_FAILURE(rc2))
             LogFlowFunc(("Warning: Unable to notify host about client %RU32 disconnect, rc=%Rrc\n", m_idClient, rc2));
         /* Not fatal. */
@@ -297,7 +297,7 @@ int DragAndDropService::clientDisconnect(uint32_t idClient, void *pvClient) RT_N
 }
 
 /**
- * Implements GUEST_DND_REPORT_FEATURES.
+ * Implements GUEST_DND_FN_REPORT_FEATURES.
  *
  * @returns VBox status code.
  * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
@@ -343,7 +343,7 @@ int DragAndDropService::clientReportFeatures(DragAndDropClient *pClient,
 }
 
 /**
- * Implements GUEST_DND_QUERY_FEATURES.
+ * Implements GUEST_DND_FN_QUERY_FEATURES.
  *
  * @returns VBox status code.
  * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
@@ -417,7 +417,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
     int rc = VERR_ACCESS_DENIED; /* Play safe. */
     switch (u32Function)
     {
-        case GUEST_DND_GET_NEXT_HOST_MSG:
+        case GUEST_DND_FN_GET_NEXT_HOST_MSG:
         {
             if (modeGet() != VBOX_DRAG_AND_DROP_MODE_OFF)
                 rc = VINF_SUCCESS;
@@ -430,13 +430,13 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
         }
 
         /* New since protocol v2. */
-        case GUEST_DND_CONNECT:
+        case GUEST_DND_FN_CONNECT:
             RT_FALL_THROUGH();
         /* New since VBox 6.1.x. */
-        case GUEST_DND_REPORT_FEATURES:
+        case GUEST_DND_FN_REPORT_FEATURES:
             RT_FALL_THROUGH();
         /* New since VBox 6.1.x. */
-        case GUEST_DND_QUERY_FEATURES:
+        case GUEST_DND_FN_QUERY_FEATURES:
         {
             /*
              * Never block these calls, as the clients issues those when
@@ -447,9 +447,9 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
             break;
         }
 
-        case GUEST_DND_HG_ACK_OP:
-        case GUEST_DND_HG_REQ_DATA:
-        case GUEST_DND_HG_EVT_PROGRESS:
+        case GUEST_DND_FN_HG_ACK_OP:
+        case GUEST_DND_FN_HG_REQ_DATA:
+        case GUEST_DND_FN_HG_EVT_PROGRESS:
         {
             if (   modeGet() == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
                 || modeGet() == VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST)
@@ -459,13 +459,13 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t idCli
             break;
         }
 
-        case GUEST_DND_GH_ACK_PENDING:
-        case GUEST_DND_GH_SND_DATA_HDR:
-        case GUEST_DND_GH_SND_DATA:
-        case GUEST_DND_GH_SND_DIR:
-        case GUEST_DND_GH_SND_FILE_HDR:
-        case GUEST_DND_GH_SND_FILE_DATA:
-        case GUEST_DND_GH_EVT_ERROR:
+        case GUEST_DND_FN_GH_ACK_PENDING:
+        case GUEST_DND_FN_GH_SND_DATA_HDR:
+        case GUEST_DND_FN_GH_SND_DATA:
+        case GUEST_DND_FN_GH_SND_DIR:
+        case GUEST_DND_FN_GH_SND_FILE_HDR:
+        case GUEST_DND_FN_GH_SND_FILE_DATA:
+        case GUEST_DND_FN_GH_EVT_ERROR:
         {
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
             if (   modeGet() == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL
@@ -546,14 +546,14 @@ do { \
         {
             /*
              * Note: Older VBox versions with enabled DnD guest->host support (< 5.0)
-             *       used the same message ID (300) for GUEST_DND_GET_NEXT_HOST_MSG and
-             *       HOST_DND_GH_REQ_PENDING, which led this service returning
+             *       used the same message ID (300) for GUEST_DND_FN_GET_NEXT_HOST_MSG and
+             *       HOST_DND_FN_GH_REQ_PENDING, which led this service returning
              *       VERR_INVALID_PARAMETER when the guest wanted to actually
-             *       handle HOST_DND_GH_REQ_PENDING.
+             *       handle HOST_DND_FN_GH_REQ_PENDING.
              */
-            case GUEST_DND_GET_NEXT_HOST_MSG:
+            case GUEST_DND_FN_GET_NEXT_HOST_MSG:
             {
-                LogFlowFunc(("GUEST_DND_GET_NEXT_HOST_MSG\n"));
+                LogFlowFunc(("GUEST_DND_FN_GET_NEXT_HOST_MSG\n"));
                 if (cParms == 3)
                 {
                     rc = m_pManager->GetNextMsgInfo(&paParms[0].u.uint32 /* uMsg */, &paParms[1].u.uint32 /* cParms */);
@@ -598,9 +598,9 @@ do { \
                 }
                 break;
             }
-            case GUEST_DND_CONNECT:
+            case GUEST_DND_FN_CONNECT:
             {
-                LogFlowFunc(("GUEST_DND_CONNECT\n"));
+                LogFlowFunc(("GUEST_DND_FN_CONNECT\n"));
 
                 ASSERT_GUEST_BREAK(cParms >= 2);
 
@@ -634,9 +634,9 @@ do { \
                 DO_HOST_CALLBACK();
                 break;
             }
-            case GUEST_DND_REPORT_FEATURES:
+            case GUEST_DND_FN_REPORT_FEATURES:
             {
-                LogFlowFunc(("GUEST_DND_REPORT_FEATURES\n"));
+                LogFlowFunc(("GUEST_DND_FN_REPORT_FEATURES\n"));
                 rc = clientReportFeatures(pClient, callHandle, cParms, paParms);
                 if (RT_SUCCESS(rc))
                 {
@@ -653,15 +653,15 @@ do { \
                 }
                 break;
             }
-            case GUEST_DND_QUERY_FEATURES:
+            case GUEST_DND_FN_QUERY_FEATURES:
             {
-                LogFlowFunc(("GUEST_DND_QUERY_FEATURES"));
+                LogFlowFunc(("GUEST_DND_FN_QUERY_FEATURES"));
                 rc = clientQueryFeatures(pClient, callHandle, cParms, paParms);
                 break;
             }
-            case GUEST_DND_HG_ACK_OP:
+            case GUEST_DND_FN_HG_ACK_OP:
             {
-                LogFlowFunc(("GUEST_DND_HG_ACK_OP\n"));
+                LogFlowFunc(("GUEST_DND_FN_HG_ACK_OP\n"));
 
                 ASSERT_GUEST_BREAK(cParms >= 2);
 
@@ -676,9 +676,9 @@ do { \
                 DO_HOST_CALLBACK();
                 break;
             }
-            case GUEST_DND_HG_REQ_DATA:
+            case GUEST_DND_FN_HG_REQ_DATA:
             {
-                LogFlowFunc(("GUEST_DND_HG_REQ_DATA\n"));
+                LogFlowFunc(("GUEST_DND_FN_HG_REQ_DATA\n"));
 
                 VBOXDNDCBHGREQDATADATA data;
                 RT_ZERO(data);
@@ -710,9 +710,9 @@ do { \
                 DO_HOST_CALLBACK();
                 break;
             }
-            case GUEST_DND_HG_EVT_PROGRESS:
+            case GUEST_DND_FN_HG_EVT_PROGRESS:
             {
-                LogFlowFunc(("GUEST_DND_HG_EVT_PROGRESS\n"));
+                LogFlowFunc(("GUEST_DND_FN_HG_EVT_PROGRESS\n"));
 
                 ASSERT_GUEST_BREAK(cParms >= 3);
 
@@ -732,9 +732,9 @@ do { \
                 break;
             }
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-            case GUEST_DND_GH_ACK_PENDING:
+            case GUEST_DND_FN_GH_ACK_PENDING:
             {
-                LogFlowFunc(("GUEST_DND_GH_ACK_PENDING\n"));
+                LogFlowFunc(("GUEST_DND_FN_GH_ACK_PENDING\n"));
 
                 VBOXDNDCBGHACKPENDINGDATA data;
                 RT_ZERO(data);
@@ -774,9 +774,9 @@ do { \
                 break;
             }
             /* New since protocol v3. */
-            case GUEST_DND_GH_SND_DATA_HDR:
+            case GUEST_DND_FN_GH_SND_DATA_HDR:
             {
-                LogFlowFunc(("GUEST_DND_GH_SND_DATA_HDR\n"));
+                LogFlowFunc(("GUEST_DND_FN_GH_SND_DATA_HDR\n"));
 
                 ASSERT_GUEST_BREAK(cParms == 12);
 
@@ -810,9 +810,9 @@ do { \
                 DO_HOST_CALLBACK();
                 break;
             }
-            case GUEST_DND_GH_SND_DATA:
+            case GUEST_DND_FN_GH_SND_DATA:
             {
-                LogFlowFunc(("GUEST_DND_GH_SND_DATA\n"));
+                LogFlowFunc(("GUEST_DND_FN_GH_SND_DATA\n"));
 
                 switch (pClient->uProtocolVerDeprecated)
                 {
@@ -856,9 +856,9 @@ do { \
                 }
                 break;
             }
-            case GUEST_DND_GH_SND_DIR:
+            case GUEST_DND_FN_GH_SND_DIR:
             {
-                LogFlowFunc(("GUEST_DND_GH_SND_DIR\n"));
+                LogFlowFunc(("GUEST_DND_FN_GH_SND_DIR\n"));
 
                 ASSERT_GUEST_BREAK(cParms >= 3);
 
@@ -877,9 +877,9 @@ do { \
                 break;
             }
             /* New since protocol v2 (>= VBox 5.0). */
-            case GUEST_DND_GH_SND_FILE_HDR:
+            case GUEST_DND_FN_GH_SND_FILE_HDR:
             {
-                LogFlowFunc(("GUEST_DND_GH_SND_FILE_HDR\n"));
+                LogFlowFunc(("GUEST_DND_FN_GH_SND_FILE_HDR\n"));
 
                 ASSERT_GUEST_BREAK(cParms == 6);
 
@@ -901,9 +901,9 @@ do { \
                 DO_HOST_CALLBACK();
                 break;
             }
-            case GUEST_DND_GH_SND_FILE_DATA:
+            case GUEST_DND_FN_GH_SND_FILE_DATA:
             {
-                LogFlowFunc(("GUEST_DND_GH_SND_FILE_DATA\n"));
+                LogFlowFunc(("GUEST_DND_FN_GH_SND_FILE_DATA\n"));
 
                 switch (pClient->uProtocolVerDeprecated)
                 {
@@ -968,9 +968,9 @@ do { \
                 }
                 break;
             }
-            case GUEST_DND_GH_EVT_ERROR:
+            case GUEST_DND_FN_GH_EVT_ERROR:
             {
-                LogFlowFunc(("GUEST_DND_GH_EVT_ERROR\n"));
+                LogFlowFunc(("GUEST_DND_FN_GH_EVT_ERROR\n"));
 
                 ASSERT_GUEST_BREAK(cParms >= 1);
 
@@ -1073,7 +1073,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
 
     switch (u32Function)
     {
-        case HOST_DND_SET_MODE:
+        case HOST_DND_FN_SET_MODE:
         {
             if (cParms != 1)
                 rc = VERR_INVALID_PARAMETER;
@@ -1084,7 +1084,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
             break;
         }
 
-        case HOST_DND_CANCEL:
+        case HOST_DND_FN_CANCEL:
         {
             LogFlowFunc(("Cancelling all waiting clients ...\n"));
 
@@ -1111,7 +1111,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                 DragAndDropClient *pClient = itClient->second;
                 AssertPtr(pClient);
 
-                int rc2 = pClient->SetDeferredMsgInfo(HOST_DND_CANCEL,
+                int rc2 = pClient->SetDeferredMsgInfo(HOST_DND_FN_CANCEL,
                                                       /* Protocol v3+ also contains the context ID. */
                                                       pClient->uProtocolVerDeprecated >= 3 ? 1 : 0);
                 pClient->CompleteDeferred(rc2);
@@ -1127,7 +1127,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
             break;
         }
 
-        case HOST_DND_HG_EVT_ENTER:
+        case HOST_DND_FN_HG_EVT_ENTER:
         {
             /* Reset the message queue as a new DnD operation just began. */
             m_pManager->Reset();
@@ -1204,7 +1204,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
 
             if (RT_SUCCESS(rcNext))
             {
-                if (uMsgClient == GUEST_DND_GET_NEXT_HOST_MSG)
+                if (uMsgClient == GUEST_DND_FN_GET_NEXT_HOST_MSG)
                 {
                     rc = pClient->SetDeferredMsgInfo(uMsgNext, cParmsNext);
 
@@ -1250,7 +1250,7 @@ DECLCALLBACK(int) DragAndDropService::progressCallback(uint32_t uStatus, uint32_
 
     if (pSelf->m_SvcCtx.pfnHostCallback)
     {
-        LogFlowFunc(("GUEST_DND_HG_EVT_PROGRESS: uStatus=%RU32, uPercentage=%RU32, rc=%Rrc\n",
+        LogFlowFunc(("GUEST_DND_FN_HG_EVT_PROGRESS: uStatus=%RU32, uPercentage=%RU32, rc=%Rrc\n",
                      uStatus, uPercentage, rc));
 
         VBOXDNDCBHGEVTPROGRESSDATA data;
@@ -1260,7 +1260,7 @@ DECLCALLBACK(int) DragAndDropService::progressCallback(uint32_t uStatus, uint32_
         data.rc           = rc; /** @todo uin32_t vs. int. */
 
         return pSelf->m_SvcCtx.pfnHostCallback(pSelf->m_SvcCtx.pvHostData,
-                                               GUEST_DND_HG_EVT_PROGRESS,
+                                               GUEST_DND_FN_HG_EVT_PROGRESS,
                                                &data, sizeof(data));
     }
 

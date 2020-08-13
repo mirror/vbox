@@ -3173,7 +3173,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                             break;
                         }
 
-                        /* Note: After HOST_DND_HG_EVT_ENTER there immediately is a move
+                        /* Note: After HOST_DND_FN_HG_EVT_ENTER there immediately is a move
                          *       event, so fall through is intentional here. */
                         RT_FALL_THROUGH();
                     }
@@ -3198,7 +3198,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                         break;
                     }
 
-                    /* Note: VbglR3DnDRecvNextMsg() will return HOST_DND_HG_SND_DATA_HDR when
+                    /* Note: VbglR3DnDRecvNextMsg() will return HOST_DND_FN_HG_SND_DATA_HDR when
                      *       the host has finished copying over all the data to the guest.
                      *
                      *       The actual data transfer (and message processing for it) will be done

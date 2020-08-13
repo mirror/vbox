@@ -274,7 +274,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
     HRESULT hr = S_OK;
 
     GuestDnDMsg Msg;
-    Msg.setType(HOST_DND_GH_REQ_PENDING);
+    Msg.setType(HOST_DND_FN_GH_REQ_PENDING);
     if (m_pState->m_uProtocolVersion >= 3)
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
     Msg.appendUInt32(uScreenId);
@@ -1126,12 +1126,12 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
     /*
      * Register callbacks.
      */
-    REGISTER_CALLBACK(GUEST_DND_CONNECT);
-    REGISTER_CALLBACK(GUEST_DND_DISCONNECT);
-    REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+    REGISTER_CALLBACK(GUEST_DND_FN_CONNECT);
+    REGISTER_CALLBACK(GUEST_DND_FN_DISCONNECT);
+    REGISTER_CALLBACK(GUEST_DND_FN_GH_EVT_ERROR);
     if (m_pState->m_uProtocolVersion >= 3)
-        REGISTER_CALLBACK(GUEST_DND_GH_SND_DATA_HDR);
-    REGISTER_CALLBACK(GUEST_DND_GH_SND_DATA);
+        REGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DATA_HDR);
+    REGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DATA);
 
     do
     {
@@ -1139,7 +1139,7 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
          * Receive the raw data.
          */
         GuestDnDMsg Msg;
-        Msg.setType(HOST_DND_GH_EVT_DROPPED);
+        Msg.setType(HOST_DND_FN_GH_EVT_DROPPED);
         if (m_pState->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendPointer((void*)pCtx->strFmtRecv.c_str(), (uint32_t)pCtx->strFmtRecv.length() + 1);
@@ -1161,12 +1161,12 @@ int GuestDnDSource::i_receiveRawData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL msTimeo
     /*
      * Unregister callbacks.
      */
-    UNREGISTER_CALLBACK(GUEST_DND_CONNECT);
-    UNREGISTER_CALLBACK(GUEST_DND_DISCONNECT);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_CONNECT);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_DISCONNECT);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_EVT_ERROR);
     if (m_pState->m_uProtocolVersion >= 3)
-        UNREGISTER_CALLBACK(GUEST_DND_GH_SND_DATA_HDR);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_SND_DATA);
+        UNREGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DATA_HDR);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DATA);
 
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
@@ -1239,16 +1239,16 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
      * Register callbacks.
      */
     /* Guest callbacks. */
-    REGISTER_CALLBACK(GUEST_DND_CONNECT);
-    REGISTER_CALLBACK(GUEST_DND_DISCONNECT);
-    REGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
+    REGISTER_CALLBACK(GUEST_DND_FN_CONNECT);
+    REGISTER_CALLBACK(GUEST_DND_FN_DISCONNECT);
+    REGISTER_CALLBACK(GUEST_DND_FN_GH_EVT_ERROR);
     if (m_pState->m_uProtocolVersion >= 3)
-        REGISTER_CALLBACK(GUEST_DND_GH_SND_DATA_HDR);
-    REGISTER_CALLBACK(GUEST_DND_GH_SND_DATA);
-    REGISTER_CALLBACK(GUEST_DND_GH_SND_DIR);
+        REGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DATA_HDR);
+    REGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DATA);
+    REGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DIR);
     if (m_pState->m_uProtocolVersion >= 2)
-        REGISTER_CALLBACK(GUEST_DND_GH_SND_FILE_HDR);
-    REGISTER_CALLBACK(GUEST_DND_GH_SND_FILE_DATA);
+        REGISTER_CALLBACK(GUEST_DND_FN_GH_SND_FILE_HDR);
+    REGISTER_CALLBACK(GUEST_DND_FN_GH_SND_FILE_DATA);
 
     const PDNDDROPPEDFILES pDF = &pCtx->Transfer.DroppedFiles;
 
@@ -1266,7 +1266,7 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
          * Receive the transfer list.
          */
         GuestDnDMsg Msg;
-        Msg.setType(HOST_DND_GH_EVT_DROPPED);
+        Msg.setType(HOST_DND_FN_GH_EVT_DROPPED);
         if (m_pState->m_uProtocolVersion >= 3)
             Msg.appendUInt32(0); /** @todo ContextID not used yet. */
         Msg.appendPointer((void*)pCtx->strFmtRecv.c_str(), (uint32_t)pCtx->strFmtRecv.length() + 1);
@@ -1292,14 +1292,14 @@ int GuestDnDSource::i_receiveTransferData(GuestDnDRecvCtx *pCtx, RTMSINTERVAL ms
     /*
      * Unregister callbacks.
      */
-    UNREGISTER_CALLBACK(GUEST_DND_CONNECT);
-    UNREGISTER_CALLBACK(GUEST_DND_DISCONNECT);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_EVT_ERROR);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_SND_DATA_HDR);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_SND_DATA);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_SND_DIR);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_SND_FILE_HDR);
-    UNREGISTER_CALLBACK(GUEST_DND_GH_SND_FILE_DATA);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_CONNECT);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_DISCONNECT);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_EVT_ERROR);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DATA_HDR);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DATA);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_SND_DIR);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_SND_FILE_HDR);
+    UNREGISTER_CALLBACK(GUEST_DND_FN_GH_SND_FILE_DATA);
 
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
@@ -1368,16 +1368,16 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
 
     switch (uMsg)
     {
-        case GUEST_DND_CONNECT:
+        case GUEST_DND_FN_CONNECT:
             /* Nothing to do here (yet). */
             break;
 
-        case GUEST_DND_DISCONNECT:
+        case GUEST_DND_FN_DISCONNECT:
             rc = VERR_CANCELLED;
             break;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-        case GUEST_DND_GH_SND_DATA_HDR:
+        case GUEST_DND_FN_GH_SND_DATA_HDR:
         {
             PVBOXDNDCBSNDDATAHDRDATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDATAHDRDATA>(pvParms);
             AssertPtr(pCBData);
@@ -1387,7 +1387,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
             rc = pThis->i_onReceiveDataHdr(pCtx, &pCBData->data);
             break;
         }
-        case GUEST_DND_GH_SND_DATA:
+        case GUEST_DND_FN_GH_SND_DATA:
         {
             PVBOXDNDCBSNDDATADATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDATADATA>(pvParms);
             AssertPtr(pCBData);
@@ -1397,7 +1397,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
             rc = pThis->i_onReceiveData(pCtx, &pCBData->data);
             break;
         }
-        case GUEST_DND_GH_EVT_ERROR:
+        case GUEST_DND_FN_GH_EVT_ERROR:
         {
             PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<PVBOXDNDCBEVTERRORDATA>(pvParms);
             AssertPtr(pCBData);
@@ -1506,16 +1506,16 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, v
 
     switch (uMsg)
     {
-        case GUEST_DND_CONNECT:
+        case GUEST_DND_FN_CONNECT:
             /* Nothing to do here (yet). */
             break;
 
-        case GUEST_DND_DISCONNECT:
+        case GUEST_DND_FN_DISCONNECT:
             rc = VERR_CANCELLED;
             break;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-        case GUEST_DND_GH_SND_DATA_HDR:
+        case GUEST_DND_FN_GH_SND_DATA_HDR:
         {
             PVBOXDNDCBSNDDATAHDRDATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDATAHDRDATA>(pvParms);
             AssertPtr(pCBData);
@@ -1525,7 +1525,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, v
             rc = pThis->i_onReceiveDataHdr(pCtx, &pCBData->data);
             break;
         }
-        case GUEST_DND_GH_SND_DATA:
+        case GUEST_DND_FN_GH_SND_DATA:
         {
             PVBOXDNDCBSNDDATADATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDATADATA>(pvParms);
             AssertPtr(pCBData);
@@ -1535,7 +1535,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, v
             rc = pThis->i_onReceiveData(pCtx, &pCBData->data);
             break;
         }
-        case GUEST_DND_GH_SND_DIR:
+        case GUEST_DND_FN_GH_SND_DIR:
         {
             PVBOXDNDCBSNDDIRDATA pCBData = reinterpret_cast<PVBOXDNDCBSNDDIRDATA>(pvParms);
             AssertPtr(pCBData);
@@ -1545,7 +1545,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, v
             rc = pThis->i_onReceiveDir(pCtx, pCBData->pszPath, pCBData->cbPath, pCBData->fMode);
             break;
         }
-        case GUEST_DND_GH_SND_FILE_HDR:
+        case GUEST_DND_FN_GH_SND_FILE_HDR:
         {
             PVBOXDNDCBSNDFILEHDRDATA pCBData = reinterpret_cast<PVBOXDNDCBSNDFILEHDRDATA>(pvParms);
             AssertPtr(pCBData);
@@ -1556,7 +1556,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, v
                                            pCBData->cbSize, pCBData->fMode, pCBData->fFlags);
             break;
         }
-        case GUEST_DND_GH_SND_FILE_DATA:
+        case GUEST_DND_FN_GH_SND_FILE_DATA:
         {
             PVBOXDNDCBSNDFILEDATADATA pCBData = reinterpret_cast<PVBOXDNDCBSNDFILEDATADATA>(pvParms);
             AssertPtr(pCBData);
@@ -1581,7 +1581,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveTransferDataCallback(uint32_t uMsg, v
                 rc = pThis->i_onReceiveFileData(pCtx, pCBData->pvData, pCBData->cbData);
             break;
         }
-        case GUEST_DND_GH_EVT_ERROR:
+        case GUEST_DND_FN_GH_EVT_ERROR:
         {
             PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<PVBOXDNDCBEVTERRORDATA>(pvParms);
             AssertPtr(pCBData);

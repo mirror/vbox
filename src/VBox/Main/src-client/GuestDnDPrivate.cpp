@@ -526,7 +526,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
 
     switch (u32Function)
     {
-        case DragAndDropSvc::GUEST_DND_CONNECT:
+        case DragAndDropSvc::GUEST_DND_FN_CONNECT:
         {
             DragAndDropSvc::PVBOXDNDCBCONNECTDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBCONNECTDATA>(pvParms);
             AssertPtr(pCBData);
@@ -542,7 +542,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             break;
         }
 
-        case DragAndDropSvc::GUEST_DND_REPORT_FEATURES:
+        case DragAndDropSvc::GUEST_DND_FN_REPORT_FEATURES:
         {
             DragAndDropSvc::PVBOXDNDCBREPORTFEATURESDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBREPORTFEATURESDATA>(pvParms);
             AssertPtr(pCBData);
@@ -557,14 +557,14 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             break;
         }
 
-        case DragAndDropSvc::GUEST_DND_DISCONNECT:
+        case DragAndDropSvc::GUEST_DND_FN_DISCONNECT:
         {
             LogThisFunc(("Client disconnected\n"));
             rc = setProgress(100, DND_PROGRESS_CANCELLED, VINF_SUCCESS);
             break;
         }
 
-        case DragAndDropSvc::GUEST_DND_HG_ACK_OP:
+        case DragAndDropSvc::GUEST_DND_FN_HG_ACK_OP:
         {
             DragAndDropSvc::PVBOXDNDCBHGACKOPDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBHGACKOPDATA>(pvParms);
             AssertPtr(pCBData);
@@ -576,7 +576,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             break;
         }
 
-        case DragAndDropSvc::GUEST_DND_HG_REQ_DATA:
+        case DragAndDropSvc::GUEST_DND_FN_HG_REQ_DATA:
         {
             DragAndDropSvc::PVBOXDNDCBHGREQDATADATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBHGREQDATADATA>(pvParms);
             AssertPtr(pCBData);
@@ -605,7 +605,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             break;
         }
 
-        case DragAndDropSvc::GUEST_DND_HG_EVT_PROGRESS:
+        case DragAndDropSvc::GUEST_DND_FN_HG_EVT_PROGRESS:
         {
             DragAndDropSvc::PVBOXDNDCBHGEVTPROGRESSDATA pCBData =
                reinterpret_cast<DragAndDropSvc::PVBOXDNDCBHGEVTPROGRESSDATA>(pvParms);
@@ -619,7 +619,7 @@ int GuestDnDState::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbPa
             break;
         }
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-        case DragAndDropSvc::GUEST_DND_GH_ACK_PENDING:
+        case DragAndDropSvc::GUEST_DND_FN_GH_ACK_PENDING:
         {
             DragAndDropSvc::PVBOXDNDCBGHACKPENDINGDATA pCBData =
                reinterpret_cast<DragAndDropSvc::PVBOXDNDCBGHACKPENDINGDATA>(pvParms);
@@ -1318,7 +1318,7 @@ void GuestDnDBase::msgQueueClear(void)
 int GuestDnDBase::sendCancel(void)
 {
     GuestDnDMsg Msg;
-    Msg.setType(HOST_DND_CANCEL);
+    Msg.setType(HOST_DND_FN_CANCEL);
     if (m_pState->m_uProtocolVersion >= 3)
         Msg.appendUInt32(0); /** @todo ContextID not used yet. */
 

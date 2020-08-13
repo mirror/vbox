@@ -68,7 +68,7 @@ public:
 
     DnDHGCancelMessage(void)
     {
-        int rc2 = initData(DragAndDropSvc::HOST_DND_CANCEL,
+        int rc2 = initData(DragAndDropSvc::HOST_DND_FN_CANCEL,
                            0 /* cParms */, 0 /* aParms */);
         AssertRC(rc2);
     }
