@@ -637,6 +637,7 @@ HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
 
     return rc;
 #else  /* !VBOX_WITH_HOST_UPDATE_CHECK */
+    RT_NOREF(aCheckType, aProgress);
     return setError(E_NOTIMPL, tr("Update checking support was not compiled into this VirtualBox build"));
 #endif /* !VBOX_WITH_HOST_UPDATE_CHECK */
 }
