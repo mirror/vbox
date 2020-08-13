@@ -23,7 +23,6 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIMachineSettingsSerial.gen.h"
 
 /* Forward declarations: */
 class QITabWidget;

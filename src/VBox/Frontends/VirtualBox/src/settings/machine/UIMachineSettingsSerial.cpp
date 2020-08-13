@@ -16,7 +16,12 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
+#include <QComboBox>
 #include <QDir>
+#include <QGridLayout>
+#include <QLabel>
+#include <QLineEdit>
 
 /* GUI includes: */
 #include "QITabWidget.h"
@@ -94,8 +99,7 @@ struct UIDataSettingsMachineSerial
 
 
 /** Machine settings: Serial Port tab. */
-class UIMachineSettingsSerial : public QIWithRetranslateUI<QWidget>,
-                                public Ui::UIMachineSettingsSerial
+class UIMachineSettingsSerial : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -126,6 +130,9 @@ private slots:
 
 private:
 
+    /* Prepares widgets: */
+    void prepareWidgets();
+
     /* Helper: Prepare stuff: */
     void prepareValidation();
 
@@ -139,6 +146,24 @@ private:
     int        m_iSlot;
     /** Holds the port mode. */
     KPortMode  m_enmPortMode;
+
+    /** @name Widgets
+     * @{ */
+       QLineEdit *m_pLineEditIRQ;
+       QLineEdit *m_pLineEditIOPort;
+       QLineEdit *m_pLineEditPath;
+       QComboBox *m_ComboBoxNumber;
+       QComboBox *m_pComboBoxMode;
+       QCheckBox *m_pCheckBoxSerial;
+       QCheckBox *m_pComboBoxPipe;
+       QLabel *m_pLabelNumber;
+       QLabel *m_pLabelIRQ;
+       QLabel *m_pLabelIOPort;
+       QLabel *m_pLabelMode;
+       QLabel *m_pLabelPath;
+    /** @} */
+
+    friend class UIMachineSettingsSerialPage;
 };
 
 
@@ -151,30 +176,41 @@ UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pP
     , m_pParent(pParent)
     , m_iSlot(-1)
     , m_enmPortMode(KPortMode_Max)
+    , m_pLineEditIRQ(0)
+    , m_pLineEditIOPort(0)
+    , m_pLineEditPath(0)
+    , m_ComboBoxNumber(0)
+    , m_pComboBoxMode(0)
+    , m_pCheckBoxSerial(0)
+    , m_pComboBoxPipe(0)
+    , m_pLabelNumber(0)
+    , m_pLabelIRQ(0)
+    , m_pLabelIOPort(0)
+    , m_pLabelMode(0)
+    , m_pLabelPath(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsSerial::setupUi(this);
+    prepareWidgets();
 
     /* Setup validation: */
-    mLeIRQ->setValidator(new QIULongValidator(0, 255, this));
-    mLeIOPort->setValidator(new QIULongValidator(0, 0xFFFF, this));
-    mLePath->setValidator(new QRegExpValidator(QRegExp(".+"), this));
+    m_pLineEditIRQ->setValidator(new QIULongValidator(0, 255, this));
+    m_pLineEditIOPort->setValidator(new QIULongValidator(0, 0xFFFF, this));
+    m_pLineEditPath->setValidator(new QRegExpValidator(QRegExp(".+"), this));
 
     /* Setup constraints: */
-    mLeIRQ->setFixedWidth(mLeIRQ->fontMetrics().width("8888"));
-    mLeIOPort->setFixedWidth(mLeIOPort->fontMetrics().width("8888888"));
+    m_pLineEditIRQ->setFixedWidth(m_pLineEditIRQ->fontMetrics().width("8888"));
+    m_pLineEditIOPort->setFixedWidth(m_pLineEditIOPort->fontMetrics().width("8888888"));
 
     /* Set initial values: */
     /* Note: If you change one of the following don't forget retranslateUi. */
-    mCbNumber->insertItem(0, uiCommon().toCOMPortName(0, 0));
-    mCbNumber->insertItems(0, uiCommon().COMPortNames());
+    m_ComboBoxNumber->insertItem(0, uiCommon().toCOMPortName(0, 0));
+    m_ComboBoxNumber->insertItems(0, uiCommon().COMPortNames());
 
     /* Setup connections: */
-    connect(mGbSerial, &QCheckBox::toggled,
+    connect(m_pCheckBoxSerial, &QCheckBox::toggled,
             this, &UIMachineSettingsSerial::sltGbSerialToggled);
-    connect(mCbNumber, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::activated),
+    connect(m_ComboBoxNumber, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::activated),
             this, &UIMachineSettingsSerial::sltCbNumberActivated);
-    connect(mCbMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+    connect(m_pComboBoxMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
             this, &UIMachineSettingsSerial::sltHandlePortModeChange);
 
     /* Prepare validation: */
@@ -184,26 +220,113 @@ UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pP
     retranslateUi();
 }
 
+void UIMachineSettingsSerial::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIMachineSettingsSerial"));
+    resize(357, 179);
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+    m_pCheckBoxSerial = new QCheckBox();
+    m_pCheckBoxSerial->setObjectName(QStringLiteral("m_pCheckBoxSerial"));
+    m_pCheckBoxSerial->setChecked(true);
+
+    pMainLayout->addWidget(m_pCheckBoxSerial, 0, 0, 1, 2);
+
+    QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+    pMainLayout->addItem(pSpacerItem, 1, 0, 1, 1);
+
+    QWidget *pWidgetSerialChild = new QWidget();
+    pWidgetSerialChild->setObjectName(QStringLiteral("pWidgetSerialChild"));
+    QGridLayout *pGridLayout1 = new QGridLayout(pWidgetSerialChild);
+    pGridLayout1->setObjectName(QStringLiteral("pGridLayout1"));
+    pGridLayout1->setContentsMargins(0, 0, 0, 0);
+    m_pLabelNumber = new QLabel(pWidgetSerialChild);
+    m_pLabelNumber->setObjectName(QStringLiteral("m_pLabelNumber"));
+    m_pLabelNumber->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout1->addWidget(m_pLabelNumber, 0, 0, 1, 1);
+
+    m_ComboBoxNumber = new QComboBox(pWidgetSerialChild);
+    m_ComboBoxNumber->setObjectName(QStringLiteral("m_ComboBoxNumber"));
+    pGridLayout1->addWidget(m_ComboBoxNumber, 0, 1, 1, 1);
+
+    m_pLabelIRQ = new QLabel(pWidgetSerialChild);
+    m_pLabelIRQ->setObjectName(QStringLiteral("m_pLabelIRQ"));
+    pGridLayout1->addWidget(m_pLabelIRQ, 0, 2, 1, 1);
+
+    m_pLineEditIRQ = new QLineEdit(pWidgetSerialChild);
+    m_pLineEditIRQ->setObjectName(QStringLiteral("m_pLineEditIRQ"));
+    pGridLayout1->addWidget(m_pLineEditIRQ, 0, 3, 1, 1);
+
+    m_pLabelIOPort = new QLabel(pWidgetSerialChild);
+    m_pLabelIOPort->setObjectName(QStringLiteral("m_pLabelIOPort"));
+    pGridLayout1->addWidget(m_pLabelIOPort, 0, 4, 1, 1);
+
+    m_pLineEditIOPort = new QLineEdit(pWidgetSerialChild);
+    m_pLineEditIOPort->setObjectName(QStringLiteral("m_pLineEditIOPort"));
+    pGridLayout1->addWidget(m_pLineEditIOPort, 0, 5, 1, 1);
+
+    QSpacerItem *pSpacerItem1 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pGridLayout1->addItem(pSpacerItem1, 0, 6, 1, 1);
+
+    m_pLabelMode = new QLabel(pWidgetSerialChild);
+    m_pLabelMode->setObjectName(QStringLiteral("m_pLabelMode"));
+    m_pLabelMode->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout1->addWidget(m_pLabelMode, 1, 0, 1, 1);
+
+    m_pComboBoxMode = new QComboBox(pWidgetSerialChild);
+    m_pComboBoxMode->setObjectName(QStringLiteral("m_pComboBoxMode"));
+    pGridLayout1->addWidget(m_pComboBoxMode, 1, 1, 1, 1);
+
+    QSpacerItem *pSpacerItem2 = new QSpacerItem(131, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pGridLayout1->addItem(pSpacerItem2, 1, 2, 1, 4);
+
+    m_pComboBoxPipe = new QCheckBox(pWidgetSerialChild);
+    m_pComboBoxPipe->setObjectName(QStringLiteral("m_pComboBoxPipe"));
+    pGridLayout1->addWidget(m_pComboBoxPipe, 2, 1, 1, 5);
+
+    m_pLabelPath = new QLabel(pWidgetSerialChild);
+    m_pLabelPath->setObjectName(QStringLiteral("m_pLabelPath"));
+    m_pLabelPath->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pGridLayout1->addWidget(m_pLabelPath, 3, 0, 1, 1);
+
+    m_pLineEditPath = new QLineEdit(pWidgetSerialChild);
+    m_pLineEditPath->setObjectName(QStringLiteral("m_pLineEditPath"));
+    pGridLayout1->addWidget(m_pLineEditPath, 3, 1, 1, 6);
+
+    pMainLayout->addWidget(pWidgetSerialChild, 1, 1, 1, 1);
+    QSpacerItem *pSpacerItem3 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pMainLayout->addItem(pSpacerItem3, 2, 0, 1, 2);
+
+    m_pLabelNumber->setBuddy(m_ComboBoxNumber);
+    m_pLabelIRQ->setBuddy(m_pLineEditIRQ);
+    m_pLabelIOPort->setBuddy(m_pLineEditIOPort);
+    m_pLabelMode->setBuddy(m_pComboBoxMode);
+    m_pLabelPath->setBuddy(m_pLineEditPath);
+
+    QObject::connect(m_pCheckBoxSerial, &QCheckBox::toggled, pWidgetSerialChild, &QLineEdit::setEnabled);
+}
+
 void UIMachineSettingsSerial::polishTab()
 {
     /* Polish port page: */
     ulong uIRQ, uIOBase;
-    const bool fStd = uiCommon().toCOMPortNumbers(mCbNumber->currentText(), uIRQ, uIOBase);
-    const KPortMode enmMode = mCbMode->currentData().value<KPortMode>();
-    mGbSerial->setEnabled(m_pParent->isMachineOffline());
-    mLbNumber->setEnabled(m_pParent->isMachineOffline());
-    mCbNumber->setEnabled(m_pParent->isMachineOffline());
-    mLbIRQ->setEnabled(m_pParent->isMachineOffline());
-    mLeIRQ->setEnabled(!fStd && m_pParent->isMachineOffline());
-    mLbIOPort->setEnabled(m_pParent->isMachineOffline());
-    mLeIOPort->setEnabled(!fStd && m_pParent->isMachineOffline());
-    mLbMode->setEnabled(m_pParent->isMachineOffline());
-    mCbMode->setEnabled(m_pParent->isMachineOffline());
-    mCbPipe->setEnabled(   (enmMode == KPortMode_HostPipe || enmMode == KPortMode_TCP)
+    const bool fStd = uiCommon().toCOMPortNumbers(m_ComboBoxNumber->currentText(), uIRQ, uIOBase);
+    const KPortMode enmMode = m_pComboBoxMode->currentData().value<KPortMode>();
+    m_pCheckBoxSerial->setEnabled(m_pParent->isMachineOffline());
+    m_pLabelNumber->setEnabled(m_pParent->isMachineOffline());
+    m_ComboBoxNumber->setEnabled(m_pParent->isMachineOffline());
+    m_pLabelIRQ->setEnabled(m_pParent->isMachineOffline());
+    m_pLineEditIRQ->setEnabled(!fStd && m_pParent->isMachineOffline());
+    m_pLabelIOPort->setEnabled(m_pParent->isMachineOffline());
+    m_pLineEditIOPort->setEnabled(!fStd && m_pParent->isMachineOffline());
+    m_pLabelMode->setEnabled(m_pParent->isMachineOffline());
+    m_pComboBoxMode->setEnabled(m_pParent->isMachineOffline());
+    m_pComboBoxPipe->setEnabled(   (enmMode == KPortMode_HostPipe || enmMode == KPortMode_TCP)
                         && m_pParent->isMachineOffline());
-    mLbPath->setEnabled(   enmMode != KPortMode_Disconnected
+    m_pLabelPath->setEnabled(   enmMode != KPortMode_Disconnected
                         && m_pParent->isMachineOffline());
-    mLePath->setEnabled(   enmMode != KPortMode_Disconnected
+    m_pLineEditPath->setEnabled(   enmMode != KPortMode_Disconnected
                         && m_pParent->isMachineOffline());
 }
 
@@ -213,41 +336,41 @@ void UIMachineSettingsSerial::loadPortData(const UIDataSettingsMachineSerialPort
     m_iSlot = portData.m_iSlot;
 
     /* Load port data: */
-    mGbSerial->setChecked(portData.m_fPortEnabled);
-    mCbNumber->setCurrentIndex(mCbNumber->findText(uiCommon().toCOMPortName(portData.m_uIRQ, portData.m_uIOBase)));
-    mLeIRQ->setText(QString::number(portData.m_uIRQ));
-    mLeIOPort->setText("0x" + QString::number(portData.m_uIOBase, 16).toUpper());
+    m_pCheckBoxSerial->setChecked(portData.m_fPortEnabled);
+    m_ComboBoxNumber->setCurrentIndex(m_ComboBoxNumber->findText(uiCommon().toCOMPortName(portData.m_uIRQ, portData.m_uIOBase)));
+    m_pLineEditIRQ->setText(QString::number(portData.m_uIRQ));
+    m_pLineEditIOPort->setText("0x" + QString::number(portData.m_uIOBase, 16).toUpper());
     m_enmPortMode = portData.m_hostMode;
-    mCbPipe->setChecked(!portData.m_fServer);
-    mLePath->setText(portData.m_strPath);
+    m_pComboBoxPipe->setChecked(!portData.m_fServer);
+    m_pLineEditPath->setText(portData.m_strPath);
 
     /* Repopulate combo-boxes content: */
     populateComboboxes();
     /* Ensure everything is up-to-date */
-    sltGbSerialToggled(mGbSerial->isChecked());
+    sltGbSerialToggled(m_pCheckBoxSerial->isChecked());
 }
 
 void UIMachineSettingsSerial::savePortData(UIDataSettingsMachineSerialPort &portData)
 {
     /* Save port data: */
-    portData.m_fPortEnabled = mGbSerial->isChecked();
-    portData.m_uIRQ = mLeIRQ->text().toULong(NULL, 0);
-    portData.m_uIOBase = mLeIOPort->text().toULong(NULL, 0);
-    portData.m_fServer = !mCbPipe->isChecked();
-    portData.m_hostMode = mCbMode->currentData().value<KPortMode>();
-    portData.m_strPath = QDir::toNativeSeparators(mLePath->text());
+    portData.m_fPortEnabled = m_pCheckBoxSerial->isChecked();
+    portData.m_uIRQ = m_pLineEditIRQ->text().toULong(NULL, 0);
+    portData.m_uIOBase = m_pLineEditIOPort->text().toULong(NULL, 0);
+    portData.m_fServer = !m_pComboBoxPipe->isChecked();
+    portData.m_hostMode = m_pComboBoxMode->currentData().value<KPortMode>();
+    portData.m_strPath = QDir::toNativeSeparators(m_pLineEditPath->text());
 }
 
 QWidget *UIMachineSettingsSerial::setOrderAfter(QWidget *pAfter)
 {
-    setTabOrder(pAfter, mGbSerial);
-    setTabOrder(mGbSerial, mCbNumber);
-    setTabOrder(mCbNumber, mLeIRQ);
-    setTabOrder(mLeIRQ, mLeIOPort);
-    setTabOrder(mLeIOPort, mCbMode);
-    setTabOrder(mCbMode, mCbPipe);
-    setTabOrder(mCbPipe, mLePath);
-    return mLePath;
+    setTabOrder(pAfter, m_pCheckBoxSerial);
+    setTabOrder(m_pCheckBoxSerial, m_ComboBoxNumber);
+    setTabOrder(m_ComboBoxNumber, m_pLineEditIRQ);
+    setTabOrder(m_pLineEditIRQ, m_pLineEditIOPort);
+    setTabOrder(m_pLineEditIOPort, m_pComboBoxMode);
+    setTabOrder(m_pComboBoxMode, m_pComboBoxPipe);
+    setTabOrder(m_pComboBoxPipe, m_pLineEditPath);
+    return m_pLineEditPath;
 }
 
 QString UIMachineSettingsSerial::pageTitle() const
@@ -258,15 +381,39 @@ QString UIMachineSettingsSerial::pageTitle() const
 bool UIMachineSettingsSerial::isUserDefined()
 {
     ulong a, b;
-    return !uiCommon().toCOMPortNumbers(mCbNumber->currentText(), a, b);
+    return !uiCommon().toCOMPortNumbers(m_ComboBoxNumber->currentText(), a, b);
 }
 
 void UIMachineSettingsSerial::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIMachineSettingsSerial::retranslateUi(this);
+    m_pCheckBoxSerial->setWhatsThis(tr("When checked, enables the given serial port of the virtual machine."));
+    m_pCheckBoxSerial->setText(tr("&Enable Serial Port"));
+    m_pLabelNumber->setText(tr("Port &Number:"));
+    m_ComboBoxNumber->setWhatsThis(tr("Selects the serial port number. You can choose one of the standard serial ports or "
+                                      "select <b>User-defined</b> and specify port parameters manually."));
+    m_pLabelIRQ->setText(tr("&IRQ:"));
+    m_pLineEditIRQ->setWhatsThis(tr("Holds the IRQ number of this serial port. This should be a whole number between <tt>0</tt> "
+                                    "and <tt>255</tt>. Values greater than <tt>15</tt> may only be used if the <b>I/O APIC</b> "
+                                    "setting is enabled for this virtual machine."));
+    m_pLabelIOPort->setText(tr("I/O Po&rt:"));
+    m_pLineEditIOPort->setWhatsThis(tr("Holds the base I/O port address of this serial port. Valid values are integer numbers in "
+                                       "range from <tt>0</tt> to <tt>0xFFFF</tt>."));
+    m_pLabelMode->setText(tr("Port &Mode:"));
+    m_pComboBoxMode->setWhatsThis(tr("Selects the working mode of this serial port. If you select <b>Disconnected</b>, the guest "
+                                     "OS will detect the serial port but will not be able to operate it."));
+    m_pComboBoxPipe->setWhatsThis(tr("When checked, the virtual machine will assume that the pipe or socket specified in the "
+                                     "<b>Path/Address</b> field exists and try to use it. Otherwise, the pipe or socket will be "
+                                     "created by the virtual machine when it starts."));
+    m_pComboBoxPipe->setText(tr("&Connect to existing pipe/socket"));
+    m_pLabelPath->setText(tr("&Path/Address:"));
+    m_pLineEditPath->setWhatsThis(tr("<p>In <b>Host Pipe</b> mode: Holds the path to the serial port's pipe on the host. "
+                                     "Examples: \"\\\\.\\pipe\\myvbox\" or \"/tmp/myvbox\", for Windows and UNIX-like systems "
+                                     "respectively.</p><p>In <b>Host Device</b> mode: Holds the host serial device name. "
+                                     "Examples: \"COM1\" or \"/dev/ttyS0\".</p><p>In <b>Raw File</b> mode: Holds the file-path "
+                                     "on the host system, where the serial output will be dumped.</p><p>In <b>TCP</b> mode: Holds "
+                                     "the TCP \"port\" when in server mode, or \"hostname:port\" when in client mode."));
 
-    mCbNumber->setItemText(mCbNumber->count() - 1, uiCommon().toCOMPortName(0, 0));
+    m_ComboBoxNumber->setItemText(m_ComboBoxNumber->count() - 1, uiCommon().toCOMPortName(0, 0));
 
     /* Translate combo-boxes content: */
     populateComboboxes();
@@ -276,8 +423,8 @@ void UIMachineSettingsSerial::sltGbSerialToggled(bool fOn)
 {
     if (fOn)
     {
-        sltCbNumberActivated(mCbNumber->currentText());
-        sltHandlePortModeChange(mCbMode->currentIndex());
+        sltCbNumberActivated(m_ComboBoxNumber->currentText());
+        sltHandlePortModeChange(m_pComboBoxMode->currentIndex());
     }
 
     /* Revalidate: */
@@ -289,12 +436,12 @@ void UIMachineSettingsSerial::sltCbNumberActivated(const QString &strText)
     ulong uIRQ, uIOBase;
     bool fStd = uiCommon().toCOMPortNumbers(strText, uIRQ, uIOBase);
 
-    mLeIRQ->setEnabled(!fStd);
-    mLeIOPort->setEnabled(!fStd);
+    m_pLineEditIRQ->setEnabled(!fStd);
+    m_pLineEditIOPort->setEnabled(!fStd);
     if (fStd)
     {
-        mLeIRQ->setText(QString::number(uIRQ));
-        mLeIOPort->setText("0x" + QString::number(uIOBase, 16).toUpper());
+        m_pLineEditIRQ->setText(QString::number(uIRQ));
+        m_pLineEditIOPort->setText("0x" + QString::number(uIOBase, 16).toUpper());
     }
 
     /* Revalidate: */
@@ -303,10 +450,10 @@ void UIMachineSettingsSerial::sltCbNumberActivated(const QString &strText)
 
 void UIMachineSettingsSerial::sltHandlePortModeChange(int iIndex)
 {
-    const KPortMode enmMode = mCbMode->itemData(iIndex).value<KPortMode>();
-    mCbPipe->setEnabled(enmMode == KPortMode_HostPipe || enmMode == KPortMode_TCP);
-    mLePath->setEnabled(enmMode != KPortMode_Disconnected);
-    mLbPath->setEnabled(enmMode != KPortMode_Disconnected);
+    const KPortMode enmMode = m_pComboBoxMode->itemData(iIndex).value<KPortMode>();
+    m_pComboBoxPipe->setEnabled(enmMode == KPortMode_HostPipe || enmMode == KPortMode_TCP);
+    m_pLineEditPath->setEnabled(enmMode != KPortMode_Disconnected);
+    m_pLabelPath->setEnabled(enmMode != KPortMode_Disconnected);
 
     /* Revalidate: */
     m_pParent->revalidate();
@@ -315,9 +462,9 @@ void UIMachineSettingsSerial::sltHandlePortModeChange(int iIndex)
 void UIMachineSettingsSerial::prepareValidation()
 {
     /* Prepare validation: */
-    connect(mLeIRQ, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
-    connect(mLeIOPort, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
-    connect(mLePath, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
+    connect(m_pLineEditIRQ, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
+    connect(m_pLineEditIOPort, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
+    connect(m_pLineEditPath, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
 }
 
 void UIMachineSettingsSerial::populateComboboxes()
@@ -325,7 +472,7 @@ void UIMachineSettingsSerial::populateComboboxes()
     /* Port mode: */
     {
         /* Clear the port mode combo-box: */
-        mCbMode->clear();
+        m_pComboBoxMode->clear();
 
         /* Load currently supported port moded: */
         CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
@@ -338,15 +485,15 @@ void UIMachineSettingsSerial::populateComboboxes()
         int iPortModeIndex = 0;
         foreach (const KPortMode &enmMode, supportedModes)
         {
-            mCbMode->insertItem(iPortModeIndex, gpConverter->toString(enmMode));
-            mCbMode->setItemData(iPortModeIndex, QVariant::fromValue(enmMode));
-            mCbMode->setItemData(iPortModeIndex, mCbMode->itemText(iPortModeIndex), Qt::ToolTipRole);
+            m_pComboBoxMode->insertItem(iPortModeIndex, gpConverter->toString(enmMode));
+            m_pComboBoxMode->setItemData(iPortModeIndex, QVariant::fromValue(enmMode));
+            m_pComboBoxMode->setItemData(iPortModeIndex, m_pComboBoxMode->itemText(iPortModeIndex), Qt::ToolTipRole);
             ++iPortModeIndex;
         }
 
         /* Choose requested port mode: */
-        const int iIndex = mCbMode->findData(m_enmPortMode);
-        mCbMode->setCurrentIndex(iIndex != -1 ? iIndex : 0);
+        const int iIndex = m_pComboBoxMode->findData(m_enmPortMode);
+        m_pComboBoxMode->setCurrentIndex(iIndex != -1 ? iIndex : 0);
     }
 }
 
@@ -498,7 +645,7 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
         /* Get current tab/page: */
         QWidget *pTab = m_pTabWidget->widget(iIndex);
         UIMachineSettingsSerial *pPage = static_cast<UIMachineSettingsSerial*>(pTab);
-        if (!pPage->mGbSerial->isChecked())
+        if (!pPage->m_pCheckBoxSerial->isChecked())
             continue;
 
         /* Prepare message: */
@@ -506,8 +653,8 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
         message.first = uiCommon().removeAccelMark(m_pTabWidget->tabText(m_pTabWidget->indexOf(pTab)));
 
         /* Check the port attribute emptiness & uniqueness: */
-        const QString strIRQ(pPage->mLeIRQ->text());
-        const QString strIOPort(pPage->mLeIOPort->text());
+        const QString strIRQ(pPage->m_pLineEditIRQ->text());
+        const QString strIOPort(pPage->m_pLineEditIOPort->text());
         const QPair<QString, QString> pair(strIRQ, strIOPort);
 
         if (strIRQ.isEmpty())
@@ -528,10 +675,10 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
 
         ports << pair;
 
-        const KPortMode enmMode = pPage->mCbMode->currentData().value<KPortMode>();
+        const KPortMode enmMode = pPage->m_pComboBoxMode->currentData().value<KPortMode>();
         if (enmMode != KPortMode_Disconnected)
         {
-            const QString strPath(pPage->mLePath->text());
+            const QString strPath(pPage->m_pLineEditPath->text());
 
             if (strPath.isEmpty())
             {
