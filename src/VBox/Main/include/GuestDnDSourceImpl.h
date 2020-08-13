@@ -41,7 +41,7 @@ public:
      * @{ */
     DECLARE_EMPTY_CTOR_DTOR(GuestDnDSource)
 
-    int     init(const ComObjPtr<Guest>& pGuest);
+    HRESULT init(const ComObjPtr<Guest>& pGuest);
     void    uninit(void);
 
     HRESULT FinalConstruct(void);
