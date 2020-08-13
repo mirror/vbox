@@ -887,6 +887,8 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 #define SUPVTCAPS_VTX_UNRESTRICTED_GUEST    RT_BIT(3)
 /** VT-x: VMCS shadowing is supported. */
 #define SUPVTCAPS_VTX_VMCS_SHADOWING        RT_BIT(4)
+/** AMD-V: Virtualized VMSAVE/VMLOAD is supported. */
+#define SUPVTCAPS_AMDV_VIRT_VMSAVE_VMLOAD   RT_BIT(5)
 /** @} */
 
 /**
