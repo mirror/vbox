@@ -16,16 +16,24 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
+#include <QComboBox>
 #include <QDir>
+#include <QLabel>
 #include <QLineEdit>
+#include <QTextEdit>
+#include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QITabWidget.h"
 #include "QIWidgetValidator.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
+#include "UIFilePathSelector.h"
 #include "UIMachineSettingsGeneral.h"
 #include "UIModalWindowManager.h"
+#include "UINameAndSystemEditor.h"
 #include "UIProgressDialog.h"
 
 /* COM includes: */
@@ -116,6 +124,27 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     , m_fEncryptionCipherChanged(false)
     , m_fEncryptionPasswordChanged(false)
     , m_pCache(0)
+    , m_pNameAndSystemEditor(0)
+    , mPsSnapshot(0)
+    , mCbClipboard(0)
+    , m_pComboCipher(0)
+    , mCbDragAndDrop(0)
+    , mTeDescription(0)
+    , m_pEditorEncryptionPassword(0)
+    , m_pEditorEncryptionPasswordConfirm(0)
+    , m_pCheckBoxEncryption(0)
+    , m_pTabWidgetGeneral(0)
+    , m_pTabBasic(0)
+    , m_pTabDescription(0)
+    , m_pTabAdvanced(0)
+    , m_pTabEncryption(0)
+    , m_pWidgetEncryption(0)
+    , m_pLabelDragAndDrop(0)
+    , m_pLabelCipher(0)
+    , m_pLabelSnapshot(0)
+    , m_pLabelClipboard(0)
+    , m_pLabelPassword1(0)
+    , m_pLabelPassword2(0)
 {
     /* Prepare: */
     prepare();
@@ -353,7 +382,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     UIValidationMessage message;
 
     /* 'Basic' tab validations: */
-    message.first = UICommon::removeAccelMark(mTwGeneral->tabText(0));
+    message.first = UICommon::removeAccelMark(m_pTabWidgetGeneral->tabText(0));
     message.second.clear();
 
     /* VM name validation: */
@@ -377,7 +406,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
         messages << message;
 
     /* 'Encryption' tab validations: */
-    message.first = UICommon::removeAccelMark(mTwGeneral->tabText(3));
+    message.first = UICommon::removeAccelMark(m_pTabWidgetGeneral->tabText(3));
     message.second.clear();
 
     /* Encryption validation: */
@@ -435,11 +464,11 @@ void UIMachineSettingsGeneral::setOrderAfter(QWidget *pWidget)
 {
     /* 'Basic' tab: */
     AssertPtrReturnVoid(pWidget);
-    AssertPtrReturnVoid(mTwGeneral);
-    AssertPtrReturnVoid(mTwGeneral->focusProxy());
+    AssertPtrReturnVoid(m_pTabWidgetGeneral);
+    AssertPtrReturnVoid(m_pTabWidgetGeneral->focusProxy());
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
-    setTabOrder(pWidget, mTwGeneral->focusProxy());
-    setTabOrder(mTwGeneral->focusProxy(), m_pNameAndSystemEditor);
+    setTabOrder(pWidget, m_pTabWidgetGeneral->focusProxy());
+    setTabOrder(m_pTabWidgetGeneral->focusProxy(), m_pNameAndSystemEditor);
 
     /* 'Advanced' tab: */
     AssertPtrReturnVoid(mPsSnapshot);
@@ -456,8 +485,33 @@ void UIMachineSettingsGeneral::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsGeneral::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIMachineSettingsGeneral::retranslateUi(this);
+    m_pTabWidgetGeneral->setTabText(m_pTabWidgetGeneral->indexOf(m_pTabBasic), QApplication::translate("UIMachineSettingsGeneral", "Basi&c"));
+    m_pLabelSnapshot->setText(QApplication::translate("UIMachineSettingsGeneral", "S&napshot Folder:"));
+    m_pLabelClipboard->setText(QApplication::translate("UIMachineSettingsGeneral", "&Shared Clipboard:"));
+    mCbClipboard->setWhatsThis(QApplication::translate("UIMachineSettingsGeneral", "Selects which clipboard data will be copied "
+                                                       "between the guest and the host OS. This feature requires Guest Additions "
+                                                       "to be installed in the guest OS."));
+    m_pLabelDragAndDrop->setText(QApplication::translate("UIMachineSettingsGeneral", "D&rag'n'Drop:"));
+    mCbDragAndDrop->setWhatsThis(QApplication::translate("UIMachineSettingsGeneral", "Selects which data will be copied between "
+                                                         "the guest and the host OS by drag'n'drop. This feature requires Guest "
+                                                         "Additions to be installed in the guest OS."));
+    m_pTabWidgetGeneral->setTabText(m_pTabWidgetGeneral->indexOf(m_pTabAdvanced), QApplication::translate("UIMachineSettingsGeneral", "A&dvanced"));
+    mTeDescription->setWhatsThis(QApplication::translate("UIMachineSettingsGeneral", "Holds the description of the virtual machine. "
+                                                         "The description field is useful for commenting on configuration details "
+                                                         "of the installed guest OS."));
+    m_pTabWidgetGeneral->setTabText(m_pTabWidgetGeneral->indexOf(m_pTabDescription), QApplication::translate("UIMachineSettingsGeneral", "D&escription"));
+    m_pCheckBoxEncryption->setWhatsThis(QApplication::translate("UIMachineSettingsGeneral", "When checked, disks attached to this "
+                                                                "virtual machine will be encrypted."));
+    m_pCheckBoxEncryption->setText(QApplication::translate("UIMachineSettingsGeneral", "En&able Disk Encryption"));
+    m_pLabelCipher->setText(QApplication::translate("UIMachineSettingsGeneral", "Disk Encryption C&ipher:"));
+    m_pComboCipher->setWhatsThis(QApplication::translate("UIMachineSettingsGeneral", "Selects the cipher to be used for encrypting "
+                                                         "the virtual machine disks."));
+    m_pLabelPassword1->setText(QApplication::translate("UIMachineSettingsGeneral", "E&nter New Password:"));
+    m_pEditorEncryptionPassword->setWhatsThis(QApplication::translate("UIMachineSettingsGeneral", "Holds the encryption password "
+                                                                      "for disks attached to this virtual machine."));
+    m_pLabelPassword2->setText(QApplication::translate("UIMachineSettingsGeneral", "C&onfirm New Password:"));
+    m_pEditorEncryptionPasswordConfirm->setWhatsThis(QApplication::translate("UIMachineSettingsGeneral", "Confirms the disk encryption password."));
+    m_pTabWidgetGeneral->setTabText(m_pTabWidgetGeneral->indexOf(m_pTabEncryption), QApplication::translate("UIMachineSettingsGeneral", "Disk Enc&ryption"));
 
     /* Translate path selector: */
     AssertPtrReturnVoid(mPsSnapshot);
@@ -495,17 +549,17 @@ void UIMachineSettingsGeneral::polishPage()
     m_pNameAndSystemEditor->setOSTypeStuffEnabled(isMachineOffline());
 
     /* Polish 'Advanced' availability: */
-    AssertPtrReturnVoid(mLbSnapshot);
+    AssertPtrReturnVoid(m_pLabelSnapshot);
     AssertPtrReturnVoid(mPsSnapshot);
-    AssertPtrReturnVoid(mLbClipboard);
+    AssertPtrReturnVoid(m_pLabelClipboard);
     AssertPtrReturnVoid(mCbClipboard);
-    AssertPtrReturnVoid(mLbDragAndDrop);
+    AssertPtrReturnVoid(m_pLabelDragAndDrop);
     AssertPtrReturnVoid(mCbDragAndDrop);
-    mLbSnapshot->setEnabled(isMachineOffline());
+    m_pLabelSnapshot->setEnabled(isMachineOffline());
     mPsSnapshot->setEnabled(isMachineOffline());
-    mLbClipboard->setEnabled(isMachineInValidMode());
+    m_pLabelClipboard->setEnabled(isMachineInValidMode());
     mCbClipboard->setEnabled(isMachineInValidMode());
-    mLbDragAndDrop->setEnabled(isMachineInValidMode());
+    m_pLabelDragAndDrop->setEnabled(isMachineInValidMode());
     mCbDragAndDrop->setEnabled(isMachineInValidMode());
 
     /* Polish 'Description' availability: */
@@ -521,8 +575,7 @@ void UIMachineSettingsGeneral::polishPage()
 
 void UIMachineSettingsGeneral::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsGeneral::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineGeneral;
@@ -542,6 +595,222 @@ void UIMachineSettingsGeneral::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIMachineSettingsGeneral::prepareWidgets()
+{
+    QHBoxLayout *mLtMain;
+
+
+    QVBoxLayout *mLtBasic;
+
+    QSpacerItem *mSpVer1;
+
+    QVBoxLayout *mLtAdvanced;
+    QWidget *mWtAdvanced;
+    QGridLayout *mLtAdvancedItems;
+
+
+
+
+    QSpacerItem *mSpHor1;
+
+
+    QSpacerItem *mSpHor2;
+    QSpacerItem *mSpVer3;
+
+    QVBoxLayout *mLtDescription;
+    QGridLayout *m_pLayoutEncryption;
+
+    QSpacerItem *spacerItem;
+    QGridLayout *m_pLayoutEncryptionSettings;
+
+
+    QSpacerItem *spacerItem1;
+
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIMachineSettingsGeneral"));
+    resize(350, 250);
+    mLtMain = new QHBoxLayout(this);
+    mLtMain->setObjectName(QStringLiteral("mLtMain"));
+    m_pTabWidgetGeneral = new QITabWidget();
+    m_pTabWidgetGeneral->setObjectName(QStringLiteral("m_pTabWidgetGeneral"));
+    m_pTabBasic = new QWidget();
+    m_pTabBasic->setObjectName(QStringLiteral("m_pTabBasic"));
+    mLtBasic = new QVBoxLayout(m_pTabBasic);
+    mLtBasic->setSpacing(0);
+    mLtBasic->setObjectName(QStringLiteral("mLtBasic"));
+    m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pTabBasic);
+    m_pNameAndSystemEditor->setObjectName(QStringLiteral("m_pNameAndSystemEditor"));
+
+    mLtBasic->addWidget(m_pNameAndSystemEditor);
+
+    mSpVer1 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+
+    mLtBasic->addItem(mSpVer1);
+
+    m_pTabWidgetGeneral->addTab(m_pTabBasic, QString());
+    m_pTabAdvanced = new QWidget();
+    m_pTabAdvanced->setObjectName(QStringLiteral("m_pTabAdvanced"));
+    mLtAdvanced = new QVBoxLayout(m_pTabAdvanced);
+    mLtAdvanced->setSpacing(0);
+    mLtAdvanced->setObjectName(QStringLiteral("mLtAdvanced"));
+    mWtAdvanced = new QWidget(m_pTabAdvanced);
+    mWtAdvanced->setObjectName(QStringLiteral("mWtAdvanced"));
+    mLtAdvancedItems = new QGridLayout(mWtAdvanced);
+    mLtAdvancedItems->setContentsMargins(0, 0, 0, 0);
+    mLtAdvancedItems->setObjectName(QStringLiteral("mLtAdvancedItems"));
+    m_pLabelSnapshot = new QLabel(mWtAdvanced);
+    m_pLabelSnapshot->setObjectName(QStringLiteral("m_pLabelSnapshot"));
+    m_pLabelSnapshot->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+    mLtAdvancedItems->addWidget(m_pLabelSnapshot, 0, 0, 1, 1);
+
+    mPsSnapshot = new UIFilePathSelector(mWtAdvanced);
+    mPsSnapshot->setObjectName(QStringLiteral("mPsSnapshot"));
+    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(mPsSnapshot->sizePolicy().hasHeightForWidth());
+    mPsSnapshot->setSizePolicy(sizePolicy);
+
+    mLtAdvancedItems->addWidget(mPsSnapshot, 0, 1, 1, 2);
+
+    m_pLabelClipboard = new QLabel(mWtAdvanced);
+    m_pLabelClipboard->setObjectName(QStringLiteral("m_pLabelClipboard"));
+    m_pLabelClipboard->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+    mLtAdvancedItems->addWidget(m_pLabelClipboard, 1, 0, 1, 1);
+
+    mCbClipboard = new QComboBox(mWtAdvanced);
+    mCbClipboard->setObjectName(QStringLiteral("mCbClipboard"));
+    QSizePolicy sizePolicy1(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    sizePolicy1.setHorizontalStretch(0);
+    sizePolicy1.setVerticalStretch(0);
+    sizePolicy1.setHeightForWidth(mCbClipboard->sizePolicy().hasHeightForWidth());
+    mCbClipboard->setSizePolicy(sizePolicy1);
+
+    mLtAdvancedItems->addWidget(mCbClipboard, 1, 1, 1, 1);
+
+    mSpHor1 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+    mLtAdvancedItems->addItem(mSpHor1, 1, 2, 1, 1);
+
+    m_pLabelDragAndDrop = new QLabel(mWtAdvanced);
+    m_pLabelDragAndDrop->setObjectName(QStringLiteral("m_pLabelDragAndDrop"));
+    m_pLabelDragAndDrop->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+    mLtAdvancedItems->addWidget(m_pLabelDragAndDrop, 2, 0, 1, 1);
+
+    mCbDragAndDrop = new QComboBox(mWtAdvanced);
+    mCbDragAndDrop->setObjectName(QStringLiteral("mCbDragAndDrop"));
+    sizePolicy1.setHeightForWidth(mCbDragAndDrop->sizePolicy().hasHeightForWidth());
+    mCbDragAndDrop->setSizePolicy(sizePolicy1);
+
+    mLtAdvancedItems->addWidget(mCbDragAndDrop, 2, 1, 1, 1);
+
+    mSpHor2 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+    mLtAdvancedItems->addItem(mSpHor2, 2, 2, 1, 1);
+
+
+    mLtAdvanced->addWidget(mWtAdvanced);
+
+    mSpVer3 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+
+    mLtAdvanced->addItem(mSpVer3);
+
+    m_pTabWidgetGeneral->addTab(m_pTabAdvanced, QString());
+    m_pTabDescription = new QWidget();
+    m_pTabDescription->setObjectName(QStringLiteral("m_pTabDescription"));
+    mLtDescription = new QVBoxLayout(m_pTabDescription);
+    mLtDescription->setSpacing(0);
+    mLtDescription->setObjectName(QStringLiteral("mLtDescription"));
+    mTeDescription = new QTextEdit(m_pTabDescription);
+    mTeDescription->setObjectName(QStringLiteral("mTeDescription"));
+    mTeDescription->setAcceptRichText(false);
+
+    mLtDescription->addWidget(mTeDescription);
+
+    m_pTabWidgetGeneral->addTab(m_pTabDescription, QString());
+    m_pTabEncryption = new QWidget();
+    m_pTabEncryption->setObjectName(QStringLiteral("m_pTabEncryption"));
+    m_pLayoutEncryption = new QGridLayout(m_pTabEncryption);
+    m_pLayoutEncryption->setObjectName(QStringLiteral("m_pLayoutEncryption"));
+    m_pCheckBoxEncryption = new QCheckBox(m_pTabEncryption);
+    m_pCheckBoxEncryption->setObjectName(QStringLiteral("m_pCheckBoxEncryption"));
+
+    m_pLayoutEncryption->addWidget(m_pCheckBoxEncryption, 0, 0, 1, 2);
+
+    spacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+
+    m_pLayoutEncryption->addItem(spacerItem, 1, 0, 1, 1);
+
+    m_pWidgetEncryption = new QWidget(m_pTabEncryption);
+    m_pWidgetEncryption->setObjectName(QStringLiteral("m_pWidgetEncryption"));
+    QSizePolicy sizePolicy2(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy2.setHorizontalStretch(1);
+    sizePolicy2.setVerticalStretch(0);
+    sizePolicy2.setHeightForWidth(m_pWidgetEncryption->sizePolicy().hasHeightForWidth());
+    m_pWidgetEncryption->setSizePolicy(sizePolicy2);
+    m_pLayoutEncryptionSettings = new QGridLayout(m_pWidgetEncryption);
+    m_pLayoutEncryptionSettings->setObjectName(QStringLiteral("m_pLayoutEncryptionSettings"));
+    m_pLayoutEncryptionSettings->setContentsMargins(0, 0, 0, 0);
+    m_pLabelCipher = new QLabel(m_pWidgetEncryption);
+    m_pLabelCipher->setObjectName(QStringLiteral("m_pLabelCipher"));
+    m_pLabelCipher->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+    m_pLayoutEncryptionSettings->addWidget(m_pLabelCipher, 0, 0, 1, 1);
+
+    m_pComboCipher = new QComboBox(m_pWidgetEncryption);
+    m_pComboCipher->setObjectName(QStringLiteral("m_pComboCipher"));
+
+    m_pLayoutEncryptionSettings->addWidget(m_pComboCipher, 0, 1, 1, 1);
+
+    m_pLabelPassword1 = new QLabel(m_pWidgetEncryption);
+    m_pLabelPassword1->setObjectName(QStringLiteral("m_pLabelPassword1"));
+    m_pLabelPassword1->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+    m_pLayoutEncryptionSettings->addWidget(m_pLabelPassword1, 1, 0, 1, 1);
+
+    m_pEditorEncryptionPassword = new QLineEdit(m_pWidgetEncryption);
+    m_pEditorEncryptionPassword->setObjectName(QStringLiteral("m_pEditorEncryptionPassword"));
+
+    m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPassword, 1, 1, 1, 1);
+
+    m_pLabelPassword2 = new QLabel(m_pWidgetEncryption);
+    m_pLabelPassword2->setObjectName(QStringLiteral("m_pLabelPassword2"));
+    m_pLabelPassword2->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+    m_pLayoutEncryptionSettings->addWidget(m_pLabelPassword2, 2, 0, 1, 1);
+
+    m_pEditorEncryptionPasswordConfirm = new QLineEdit(m_pWidgetEncryption);
+    m_pEditorEncryptionPasswordConfirm->setObjectName(QStringLiteral("m_pEditorEncryptionPasswordConfirm"));
+
+    m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPasswordConfirm, 2, 1, 1, 1);
+
+
+    m_pLayoutEncryption->addWidget(m_pWidgetEncryption, 1, 1, 1, 1);
+
+    spacerItem1 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+
+    m_pLayoutEncryption->addItem(spacerItem1, 2, 1, 1, 1);
+
+    m_pTabWidgetGeneral->addTab(m_pTabEncryption, QString());
+
+    mLtMain->addWidget(m_pTabWidgetGeneral);
+
+    m_pLabelSnapshot->setBuddy(mPsSnapshot);
+    m_pLabelClipboard->setBuddy(mCbClipboard);
+    m_pLabelDragAndDrop->setBuddy(mCbDragAndDrop);
+    m_pLabelCipher->setBuddy(m_pComboCipher);
+    m_pLabelPassword1->setBuddy(m_pEditorEncryptionPassword);
+    m_pLabelPassword2->setBuddy(m_pEditorEncryptionPasswordConfirm);
+
+
+    QObject::connect(m_pCheckBoxEncryption, SIGNAL(toggled(bool)), m_pWidgetEncryption, SLOT(setEnabled(bool)));
+
+    m_pTabWidgetGeneral->setCurrentIndex(0);
 }
 
 void UIMachineSettingsGeneral::prepareTabBasic()

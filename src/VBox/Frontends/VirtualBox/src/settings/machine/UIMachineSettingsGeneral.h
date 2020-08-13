@@ -24,15 +24,21 @@
 /* GUI includes: */
 #include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UISettingsPage.h"
-#include "UIMachineSettingsGeneral.gen.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QComboBox;
+class QLineEdit;
+class QTextEdit;
+class QITabWidget;
+class UINameAndSystemEditor;
+
+class UIFilePathSelector;
 struct UIDataSettingsMachineGeneral;
 typedef UISettingsCache<UIDataSettingsMachineGeneral> UISettingsCacheMachineGeneral;
 
 /** Machine settings: General page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsGeneral : public UISettingsPageMachine,
-                                                      public Ui::UIMachineSettingsGeneral
+class SHARED_LIBRARY_STUFF UIMachineSettingsGeneral : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -93,6 +99,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Prepares 'Basic' tab. */
     void prepareTabBasic();
     /** Prepares 'Description' tab. */
@@ -138,6 +146,30 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineGeneral *m_pCache;
+    /** @name Widgets
+     * @{ */
+       UINameAndSystemEditor *m_pNameAndSystemEditor;
+       UIFilePathSelector *mPsSnapshot;
+       QComboBox *mCbClipboard;
+       QComboBox *m_pComboCipher;
+       QComboBox *mCbDragAndDrop;
+       QTextEdit *mTeDescription;
+       QLineEdit *m_pEditorEncryptionPassword;
+       QLineEdit *m_pEditorEncryptionPasswordConfirm;
+       QCheckBox *m_pCheckBoxEncryption;
+       QITabWidget *m_pTabWidgetGeneral;
+       QWidget *m_pTabBasic;
+       QWidget *m_pTabDescription;
+       QWidget *m_pTabAdvanced;
+       QWidget *m_pTabEncryption;
+       QWidget *m_pWidgetEncryption;
+       QLabel *m_pLabelDragAndDrop;
+       QLabel *m_pLabelCipher;
+       QLabel *m_pLabelSnapshot;
+       QLabel *m_pLabelClipboard;
+       QLabel *m_pLabelPassword1;
+       QLabel *m_pLabelPassword2;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsGeneral_h */
