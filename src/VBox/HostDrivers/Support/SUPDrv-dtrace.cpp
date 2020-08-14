@@ -88,7 +88,7 @@
 #  include <dtrace/enabling.h> /* Missing from provider.h. */
 #  include <dtrace/arg.h> /* Missing from provider.h. */
 # endif
-# include <linux/kallsyms.h>
+# include <linux/module.h>
 /** Status code fixer (UEK uses linux convension unlike the others). */
 # define FIX_UEK_RC(a_rc) (-(a_rc))
 #else
