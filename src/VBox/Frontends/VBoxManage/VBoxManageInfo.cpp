@@ -114,11 +114,9 @@ HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
             {
                 Utf8Str newPrefix;
                 if (details == VMINFO_MACHINEREADABLE)
-                    newPrefix = Utf8StrFmt("%s-%d", prefix.c_str(), index + 1);
+                    newPrefix.printf("%s-%d", prefix.c_str(), index + 1);
                 else
-                {
-                    newPrefix = Utf8StrFmt("%s   ", prefix.c_str());
-                }
+                    newPrefix.printf("%s   ", prefix.c_str());
 
                 /* recursive call */
                 HRESULT hrc2 = showSnapshots(snapshot, currentSnapshot, details, newPrefix, level + 1);
@@ -1216,8 +1214,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 Bstr strMACAddress;
                 nic->COMGETTER(MACAddress)(strMACAddress.asOutParam());
                 Utf8Str strAttachment;
-                Utf8Str strNatSettings = "";
-                Utf8Str strNatForwardings = "";
+                Utf8Str strNatSettings;
+                Utf8Str strNatForwardings;
                 NetworkAttachmentType_T attachment;
                 nic->COMGETTER(AttachmentType)(&attachment);
                 switch (attachment)
@@ -1251,7 +1249,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             Utf8Str strGuestIP;
                             size_t pos, ppos;
                             pos = ppos = 0;
-                            #define ITERATE_TO_NEXT_TERM(res, str, pos, ppos)   \
+#define ITERATE_TO_NEXT_TERM(res, str, pos, ppos)   \
                             do {                                                \
                                 pos = str.find(",", ppos);                      \
                                 if (pos == Utf8Str::npos)                       \
@@ -1274,7 +1272,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             ITERATE_TO_NEXT_TERM(strGuestIP, utf, pos, ppos);
                             if (fSkip) continue;
                             strGuestPort = utf.substr(ppos, utf.length() - ppos);
-                            #undef ITERATE_TO_NEXT_TERM
+#undef ITERATE_TO_NEXT_TERM
                             switch (strProto.toUInt32())
                             {
                                 case NATProtocol_TCP:
@@ -1288,20 +1286,16 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                                     break;
                             }
                             if (details == VMINFO_MACHINEREADABLE)
-                            {
-                                strNatForwardings = Utf8StrFmt("%sForwarding(%d)=\"%s,%s,%s,%s,%s,%s\"\n",
-                                    strNatForwardings.c_str(), i, strName.c_str(), strProto.c_str(),
-                                    strHostIP.c_str(), strHostPort.c_str(),
-                                    strGuestIP.c_str(), strGuestPort.c_str());
-                            }
+                                /** @todo r=bird: This probably isn't good enough wrt escaping. */
+                                strNatForwardings.printf("%sForwarding(%d)=\"%s,%s,%s,%s,%s,%s\"\n",
+                                                         strNatForwardings.c_str(), i, strName.c_str(), strProto.c_str(),
+                                                         strHostIP.c_str(), strHostPort.c_str(),
+                                                         strGuestIP.c_str(), strGuestPort.c_str());
                             else
-                            {
-                                strNatForwardings = Utf8StrFmt("%sNIC %d Rule(%d):   name = %s, protocol = %s,"
-                                    " host ip = %s, host port = %s, guest ip = %s, guest port = %s\n",
-                                    strNatForwardings.c_str(), currentNIC + 1, i, strName.c_str(), strProto.c_str(),
-                                    strHostIP.c_str(), strHostPort.c_str(),
-                                    strGuestIP.c_str(), strGuestPort.c_str());
-                            }
+                                strNatForwardings.printf("%sNIC %d Rule(%d):   name = %s, protocol = %s, host ip = %s, host port = %s, guest ip = %s, guest port = %s\n",
+                                                         strNatForwardings.c_str(), currentNIC + 1, i, strName.c_str(),
+                                                         strProto.c_str(), strHostIP.c_str(), strHostPort.c_str(),
+                                                         strGuestIP.c_str(), strGuestPort.c_str());
                         }
                         ULONG mtu = 0;
                         ULONG sockSnd = 0;
@@ -1315,14 +1309,14 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         {
                             RTPrintf("natnet%d=\"%ls\"\n", currentNIC + 1, strNetwork.length() ? strNetwork.raw(): Bstr("nat").raw());
                             strAttachment = "nat";
-                            strNatSettings = Utf8StrFmt("mtu=\"%d\"\nsockSnd=\"%d\"\nsockRcv=\"%d\"\ntcpWndSnd=\"%d\"\ntcpWndRcv=\"%d\"\n",
-                                mtu, sockSnd ? sockSnd : 64, sockRcv ? sockRcv : 64, tcpSnd ? tcpSnd : 64, tcpRcv ? tcpRcv : 64);
+                            strNatSettings.printf("mtu=\"%d\"\nsockSnd=\"%d\"\nsockRcv=\"%d\"\ntcpWndSnd=\"%d\"\ntcpWndRcv=\"%d\"\n",
+                                                  mtu, sockSnd ? sockSnd : 64, sockRcv ? sockRcv : 64, tcpSnd ? tcpSnd : 64, tcpRcv ? tcpRcv : 64);
                         }
                         else
                         {
                             strAttachment = "NAT";
-                            strNatSettings = Utf8StrFmt("NIC %d Settings:  MTU: %d, Socket (send: %d, receive: %d), TCP Window (send:%d, receive: %d)\n",
-                                currentNIC + 1, mtu, sockSnd ? sockSnd : 64, sockRcv ? sockRcv : 64, tcpSnd ? tcpSnd : 64, tcpRcv ? tcpRcv : 64);
+                            strNatSettings.printf("NIC %d Settings:  MTU: %d, Socket (send: %d, receive: %d), TCP Window (send:%d, receive: %d)\n",
+                                                  currentNIC + 1, mtu, sockSnd ? sockSnd : 64, sockRcv ? sockRcv : 64, tcpSnd ? tcpSnd : 64, tcpRcv ? tcpRcv : 64);
                         }
                         break;
                     }
@@ -1337,7 +1331,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             strAttachment = "bridged";
                         }
                         else
-                            strAttachment = Utf8StrFmt("Bridged Interface '%ls'", strBridgeAdp.raw());
+                            strAttachment.printf("Bridged Interface '%ls'", strBridgeAdp.raw());
                         break;
                     }
 
@@ -1351,7 +1345,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             strAttachment = "intnet";
                         }
                         else
-                            strAttachment = Utf8StrFmt("Internal Network '%s'", Utf8Str(strNetwork).c_str());
+                            strAttachment.printf("Internal Network '%s'", Utf8Str(strNetwork).c_str());
                         break;
                     }
 
@@ -1365,7 +1359,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             strAttachment = "hostonly";
                         }
                         else
-                            strAttachment = Utf8StrFmt("Host-only Interface '%ls'", strHostonlyAdp.raw());
+                            strAttachment.printf("Host-only Interface '%ls'", strHostonlyAdp.raw());
                         break;
                     }
 
@@ -1380,7 +1374,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         }
                         else
                         {
-                            strAttachment = Utf8StrFmt("Generic '%ls'", strGenericDriver.raw());
+                            strAttachment.printf("Generic '%ls'", strGenericDriver.raw());
 
                             // show the generic properties
                             com::SafeArray<BSTR> aProperties;
@@ -1392,8 +1386,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             {
                                 strAttachment += " { ";
                                 for (unsigned i = 0; i < aProperties.size(); ++i)
-                                    strAttachment += Utf8StrFmt(!i ? "%ls='%ls'" : ", %ls='%ls'",
-                                                                aProperties[i], aValues[i]);
+                                    strAttachment.appendPrintf(!i ? "%ls='%ls'" : ", %ls='%ls'", aProperties[i], aValues[i]);
                                 strAttachment += " }";
                             }
                         }
@@ -1410,7 +1403,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             strAttachment = "natnetwork";
                         }
                         else
-                            strAttachment = Utf8StrFmt("NAT Network '%s'", Utf8Str(strNetwork).c_str());
+                            strAttachment.printf("NAT Network '%s'", Utf8Str(strNetwork).c_str());
                         break;
                     }
 
@@ -1425,7 +1418,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                             strAttachment = "cloudnetwork";
                         }
                         else
-                            strAttachment = Utf8StrFmt("Cloud Network '%s'", Utf8Str(strNetwork).c_str());
+                            strAttachment.printf("Cloud Network '%s'", Utf8Str(strNetwork).c_str());
                         break;
                     }
 #endif /* VBOX_WITH_CLOUD_NET */
