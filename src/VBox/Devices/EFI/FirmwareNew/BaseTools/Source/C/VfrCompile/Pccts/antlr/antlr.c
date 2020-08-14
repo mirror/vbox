@@ -1349,12 +1349,9 @@ tclass()
   zzBLOCK(zztasp1);
   zzMake0;
   {
-  char *t=NULL; TCnode *e; int go=1,tok,totok; TermEntry *p, *term, *toterm;
+  char *t=NULL; TCnode *e; int go=1,tok,totok; TermEntry *p = NULL /* vbox: shut up GCC */, *term, *toterm;
   char *akaString=NULL; int save_file; int save_line;
   char *totext=NULL;
-#ifdef VBOX
-  p = NULL;
-#endif
   zzmatch(118); zzCONSUME;
   zzmatch(TokenTerm);
   t=mystrdup(LATEXT(1));
