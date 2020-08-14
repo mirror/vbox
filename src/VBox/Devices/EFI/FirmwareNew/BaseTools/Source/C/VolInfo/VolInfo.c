@@ -37,6 +37,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "StringFuncs.h"
 #include "ParseInf.h"
 #include "PeCoffLib.h"
+
+#ifdef VBOX
+# include <iprt/cdefs.h>
+#endif
 /*
 
 #ifdef __GNUC__
@@ -1196,12 +1200,12 @@ Returns:
   case EFI_FILE_DELETED:
     printf ("        EFI_FILE_DELETED\n");
 #ifdef VBOX
-    __attribute__ ((fallthrough));
+    RT_FALL_THRU();
 #endif
   case EFI_FILE_MARKED_FOR_UPDATE:
     printf ("        EFI_FILE_MARKED_FOR_UPDATE\n");
 #ifdef VBOX
-    __attribute__ ((fallthrough));
+    RT_FALL_THRU();
 #endif
   case EFI_FILE_DATA_VALID:
     printf ("        EFI_FILE_DATA_VALID\n");
