@@ -260,6 +260,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 const char *machineStateToName(MachineState_T machineState, bool fShort);
 HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
                             VMINFO_DETAILS details);
+void outputMachineReadableString(const char *pszName, const char *pszValue);
+void outputMachineReadableString(const char *pszName, com::Bstr const *pbstrValue);
+void outputMachineReadableBool(const char *pszName, BOOL const *pfValue);
+void outputMachineReadableBool(const char *pszName, bool const *pfValue);
+void outputMachineReadableULong(const char *pszName, ULONG *uValue);
+void outputMachineReadableLong64(const char *pszName, LONG64 *uValue);
 
 /* VBoxManageList.cpp */
 RTEXITCODE handleList(HandlerArg *a);

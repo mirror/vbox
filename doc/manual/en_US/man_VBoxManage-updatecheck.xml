@@ -34,9 +34,11 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-updatecheck-perform"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage updatecheck perform</command>
+      <arg>--machine-readable</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-updatecheck-getsettings">
       <command>VBoxManage updatecheck getsettings</command>
+        <arg>--machine-readable</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-updatecheck-modifysettings">
       <command>VBoxManage updatecheck modifysettings</command>
@@ -63,6 +65,11 @@
       <para>
         Check if a newer version of VirtualBox is available.
       </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--machine-readable</option></term><listitem><para>Machine readable output.</para></listitem>
+        </varlistentry>
+      </variablelist>
     </refsect2>
 
     <refsect2 id="vboxmanage-updatecheck-getsettings">
@@ -71,6 +78,11 @@
       <para>
         Display the current settings used for specifying when to check for a newer version of VirtualBox.
       </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--machine-readable</option></term><listitem><para>Machine readable output.</para></listitem>
+        </varlistentry>
+      </variablelist>
     </refsect2>
 
     <refsect2 id="vboxmanage-updatecheck-modifysettings">

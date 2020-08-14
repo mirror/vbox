@@ -50,11 +50,13 @@ static RTEXITCODE doVBoxUpdateGetSettings(int argc, char **argv, ComPtr<IVirtual
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--verbose",       'v',        RTGETOPT_REQ_NOTHING }
+        { "--machine-readable", 'm', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0 /* First */, 0);
     AssertRCReturn(vrc, RTEXITCODE_INIT);
+
+    bool fMachineReadable = false;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -62,6 +64,10 @@ static RTEXITCODE doVBoxUpdateGetSettings(int argc, char **argv, ComPtr<IVirtual
     {
         switch (c)
         {
+            case 'm':
+                fMachineReadable = true;
+                break;
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
@@ -75,46 +81,65 @@ static RTEXITCODE doVBoxUpdateGetSettings(int argc, char **argv, ComPtr<IVirtual
 
     BOOL fVBoxUpdateEnabled;
     CHECK_ERROR2I_RET(pSystemProperties, COMGETTER(VBoxUpdateEnabled)(&fVBoxUpdateEnabled), RTEXITCODE_FAILURE);
-    RTPrintf("Enabled:                %s\n", fVBoxUpdateEnabled ? "yes" : "no");
+    if (fMachineReadable)
+        outputMachineReadableBool("enabled", &fVBoxUpdateEnabled);
+    else
+        RTPrintf("Enabled:                %s\n", fVBoxUpdateEnabled ? "yes" : "no");
 
     ULONG cVBoxUpdateCount;
     CHECK_ERROR2I_RET(pSystemProperties, COMGETTER(VBoxUpdateCount)(&cVBoxUpdateCount), RTEXITCODE_FAILURE);
-    RTPrintf("Count:                  %u\n", cVBoxUpdateCount);
+    if (fMachineReadable)
+        outputMachineReadableULong("count", &cVBoxUpdateCount);
+    else
+        RTPrintf("Count:                  %u\n", cVBoxUpdateCount);
 
-    ULONG uVBoxUpdateFrequency;
-    CHECK_ERROR2I_RET(pSystemProperties, COMGETTER(VBoxUpdateFrequency)(&uVBoxUpdateFrequency), RTEXITCODE_FAILURE);
-    if (uVBoxUpdateFrequency == 0)
-        RTPrintf("Frequency:              never\n");
-    else if (uVBoxUpdateFrequency == 1)
+    ULONG cDaysFrequencey;
+    CHECK_ERROR2I_RET(pSystemProperties, COMGETTER(VBoxUpdateFrequency)(&cDaysFrequencey), RTEXITCODE_FAILURE);
+    if (fMachineReadable)
+        outputMachineReadableULong("frequency", &cDaysFrequencey);
+    else if (cDaysFrequencey == 0)
+        RTPrintf("Frequency:              never\n"); /** @todo r=bird: Two inconsistencies here. HostUpdateImpl.cpp code will indicate the need for updating if no last-check-date.  modifysettings cannot set it to zero (I added the error message, you just skipped setting it originally). */
+    else if (cDaysFrequencey == 1)
         RTPrintf("Frequency:              every day\n");
     else
-        RTPrintf("Frequency:              every %u days\n", uVBoxUpdateFrequency);
+        RTPrintf("Frequency:              every %u days\n", cDaysFrequencey);
 
     VBoxUpdateTarget_T enmVBoxUpdateTarget;
     CHECK_ERROR2I_RET(pSystemProperties, COMGETTER(VBoxUpdateTarget)(&enmVBoxUpdateTarget), RTEXITCODE_FAILURE);
     const char *psz;
+    const char *pszMachine;
     switch (enmVBoxUpdateTarget)
     {
         case VBoxUpdateTarget_Stable:
             psz = "Stable - new minor and maintenance releases";
+            pszMachine = "stable";
             break;
         case VBoxUpdateTarget_AllReleases:
             psz = "All releases - new minor, maintenance, and major releases";
+            pszMachine = "all-releases";
             break;
         case VBoxUpdateTarget_WithBetas:
             psz = "With Betas - new minor, maintenance, major, and beta releases";
+            pszMachine = "with-betas";
             break;
         default:
+            AssertFailed();
             psz = "Unset";
+            pszMachine = "invalid";
             break;
     }
-    RTPrintf("Target:                 %s\n", psz);
+    if (fMachineReadable)
+        outputMachineReadableString("target", pszMachine);
+    else
+        RTPrintf("Target:                 %s\n", psz);
 
-    Bstr strVBoxUpdateLastCheckDate;
-    CHECK_ERROR2I_RET(pSystemProperties, COMGETTER(VBoxUpdateLastCheckDate)(strVBoxUpdateLastCheckDate.asOutParam()),
+    Bstr bstrLastCheckDate;
+    CHECK_ERROR2I_RET(pSystemProperties, COMGETTER(VBoxUpdateLastCheckDate)(bstrLastCheckDate.asOutParam()),
                       RTEXITCODE_FAILURE);
-    if (!strVBoxUpdateLastCheckDate.isEmpty())
-        RTPrintf("Last Check Date:        %ls\n", strVBoxUpdateLastCheckDate.raw());
+    if (fMachineReadable)
+        outputMachineReadableString("last-check-date", &bstrLastCheckDate);
+    else if (bstrLastCheckDate.isNotEmpty())
+        RTPrintf("Last Check Date:        %ls\n", bstrLastCheckDate.raw());
 
     return RTEXITCODE_SUCCESS;
 }
@@ -219,11 +244,13 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--verbose",       'v',        RTGETOPT_REQ_NOTHING }
+        { "--machine-readable", 'm', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0 /* First */, 0);
     AssertRCReturn(vrc, RTEXITCODE_INIT);
+
+    bool fMachineReadable = false;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -231,6 +258,10 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     {
         switch (c)
         {
+            case 'm':
+                fMachineReadable = true;
+                break;
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
@@ -276,18 +307,27 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     BOOL fUpdateNeeded = FALSE;
     CHECK_ERROR2I_RET(pHostUpdate, COMGETTER(UpdateResponse)(&fUpdateNeeded), RTEXITCODE_FAILURE);
 
-    if (!fUpdateNeeded)
-        RTPrintf("You are already running the most recent version of VirtualBox.\n");
-    else
+    if (fMachineReadable)
+        outputMachineReadableBool("update-needed", &fUpdateNeeded);
+
+    if (fUpdateNeeded)
     {
         Bstr bstrUpdateVersion;
         CHECK_ERROR2I_RET(pHostUpdate, COMGETTER(UpdateVersion)(bstrUpdateVersion.asOutParam()), RTEXITCODE_FAILURE);
         Bstr bstrUpdateURL;
         CHECK_ERROR2I_RET(pHostUpdate, COMGETTER(UpdateURL)(bstrUpdateURL.asOutParam()), RTEXITCODE_FAILURE);
 
-        RTPrintf("A new version of VirtualBox has been released! Version %ls is available at virtualbox.org.\n"
-                 "You can download this version here: %ls\n", bstrUpdateVersion.raw(), bstrUpdateURL.raw());
+        if (fMachineReadable)
+            RTPrintf("A new version of VirtualBox has been released! Version %ls is available at virtualbox.org.\n"
+                     "You can download this version here: %ls\n", bstrUpdateVersion.raw(), bstrUpdateURL.raw());
+        else
+        {
+            outputMachineReadableString("update-version", &bstrUpdateVersion);
+            outputMachineReadableString("update-url", &bstrUpdateURL);
+        }
     }
+    else if (!fMachineReadable)
+        RTPrintf("You are already running the most recent version of VirtualBox.\n");
 
     return RTEXITCODE_SUCCESS;
 }

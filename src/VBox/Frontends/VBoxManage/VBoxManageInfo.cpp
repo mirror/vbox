@@ -230,7 +230,7 @@ const char *facilityStateToName(AdditionsFacilityStatus_T faStatus, bool fShort)
  * @param   pszName             The variable name.
  * @param   pszValue            The value.
  */
-static void outputMachineReadableString(const char *pszName, const char *pszValue)
+void outputMachineReadableString(const char *pszName, const char *pszValue)
 {
     Assert(strpbrk(pszName, "\"\\") == NULL);
 
@@ -267,11 +267,48 @@ static void outputMachineReadableString(const char *pszName, const char *pszValu
  * @param   pszName             The variable name.
  * @param   pbstrValue          The value.
  */
-static void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue)
+void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue)
 {
     com::Utf8Str strValue(*pbstrValue);
     outputMachineReadableString(pszName, strValue.c_str());
 }
+
+
+/**
+ * Machine readable outputting of a boolean value.
+ */
+void outputMachineReadableBool(const char *pszName, BOOL const *pfValue)
+{
+    RTPrintf("%s=\"%s\"\n", pszName, *pfValue ? "on" : "off");
+}
+
+
+/**
+ * Machine readable outputting of a boolean value.
+ */
+void outputMachineReadableBool(const char *pszName, bool const *pfValue)
+{
+    RTPrintf("%s=\"%s\"\n", pszName, *pfValue ? "on" : "off");
+}
+
+
+/**
+ * Machine readable outputting of a ULONG value.
+ */
+void outputMachineReadableULong(const char *pszName, ULONG *puValue)
+{
+    RTPrintf("%s=\"%u\"\n", pszName, *puValue);
+}
+
+
+/**
+ * Machine readable outputting of a LONG64 value.
+ */
+void outputMachineReadableLong64(const char *pszName, LONG64 *puValue)
+{
+    RTPrintf("%s=\"%llu\"\n", pszName, *puValue);
+}
+
 
 /**
  * Converts bandwidth group type to a string.
