@@ -394,7 +394,7 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
    # Either from the build server.
    #
    ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
-    include $(PATH_ROOT)/src/VBox/Devices/EFI/Firmware/EfiModules.kmk
+    include $(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareNew/EfiModules.kmk
    endif
    INSTALLS += buildserver-efifw
    buildserver-efifw_INST = $(INST_BIN)
@@ -1876,10 +1876,10 @@ efi-fetch:
 	+ $(KMK) -C tools fetch VBOX_ONLY_EXTPACKS=1
 
 efi-build: $(VBOX_VERSION_HEADER)
-	+ $(KMK) -C src/VBox/Devices/EFI/Firmware$(VBOX_EFI_FIRMWARE_SUFFIX)
+	+ $(KMK) -C src/VBox/Devices/EFI/FirmwareNew$(VBOX_EFI_FIRMWARE_SUFFIX)
 
 efi-packing:
-	+ $(KMK) -C src/VBox/Devices/EFI/Firmware$(VBOX_EFI_FIRMWARE_SUFFIX) $(PATH_STAGE)/VBoxEfiFirmware.zip
+	+ $(KMK) -C src/VBox/Devices/EFI/FirmwareNew$(VBOX_EFI_FIRMWARE_SUFFIX) $(PATH_STAGE)/VBoxEfiFirmware.zip
 
 
 #
