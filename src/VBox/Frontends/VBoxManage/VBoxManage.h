@@ -109,7 +109,6 @@ typedef enum
     USAGE_MEDIUMENCCHKPWD,
     USAGE_USBDEVSOURCE,
     USAGE_CLOUDPROFILE,
-    USAGE_UPDATECHECK,
     /* Insert new entries before this line, but only if it is not an option
      * to go for the new style command and help handling (see e.g. extpack,
      * unattend or mediumio. */
