@@ -323,6 +323,11 @@ void UICocoaApplication::hide()
     [m_pNative hide:m_pNative];
 }
 
+void UICocoaApplication::hideUserElements()
+{
+    [m_pNative setPresentationOptions:NSApplicationPresentationHideMenuBar | NSApplicationPresentationHideDock];
+}
+
 void UICocoaApplication::registerForNativeEvents(uint32_t fMask, PFNVBOXCACALLBACK pfnCallback, void *pvUser)
 {
     [m_pNative setCallback:fMask :pfnCallback :pvUser];

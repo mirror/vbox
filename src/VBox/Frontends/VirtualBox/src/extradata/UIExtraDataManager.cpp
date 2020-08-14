@@ -1909,6 +1909,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
            << GUI_Progress_LegacyMode
+           << GUI_Customizations
            << GUI_RestrictedGlobalSettingsPages << GUI_RestrictedMachineSettingsPages
            << GUI_LanguageID
            << GUI_ActivateHoveredMachineWindow

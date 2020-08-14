@@ -69,6 +69,9 @@ public:
     /** Hides the application. */
     void hide();
 
+    /** Hides user elements such as menu-bar and dock. */
+    void hideUserElements();
+
     /** Register native @a pfnCallback of the @a pvUser taking event @a fMask into account. */
     void registerForNativeEvents(uint32_t fMask, PFNVBOXCACALLBACK pfnCallback, void *pvUser);
     /** Unregister native @a pfnCallback of the @a pvUser taking event @a fMask into account. */

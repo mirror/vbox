@@ -1833,9 +1833,13 @@ template<> QString toInternalString(const GUIFeatureType &guiFeatureType)
     QString strResult;
     switch (guiFeatureType)
     {
-        case GUIFeatureType_NoSelector:  strResult = "noSelector"; break;
-        case GUIFeatureType_NoMenuBar:   strResult = "noMenuBar"; break;
-        case GUIFeatureType_NoStatusBar: strResult = "noStatusBar"; break;
+        case GUIFeatureType_NoSelector:     strResult = "noSelector"; break;
+#ifdef VBOX_WS_MAC
+        case GUIFeatureType_NoUserElements: strResult = "noUserElements"; break;
+#else
+        case GUIFeatureType_NoMenuBar:      strResult = "noMenuBar"; break;
+#endif
+        case GUIFeatureType_NoStatusBar:    strResult = "noStatusBar"; break;
         default:
         {
             AssertMsgFailed(("No text for GUI feature type=%d", guiFeatureType));
@@ -1850,10 +1854,14 @@ template<> GUIFeatureType fromInternalString<GUIFeatureType>(const QString &strG
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<GUIFeatureType> values;
-    keys << "noSelector";  values << GUIFeatureType_NoSelector;
-    keys << "noMenuBar";   values << GUIFeatureType_NoMenuBar;
-    keys << "noStatusBar"; values << GUIFeatureType_NoStatusBar;
+    QStringList keys;         QList<GUIFeatureType> values;
+    keys << "noSelector";     values << GUIFeatureType_NoSelector;
+#ifdef VBOX_WS_MAC
+    keys << "noUserElements"; values << GUIFeatureType_NoUserElements;
+#else
+    keys << "noMenuBar";      values << GUIFeatureType_NoMenuBar;
+#endif
+    keys << "noStatusBar";    values << GUIFeatureType_NoStatusBar;
     /* None type for unknown words: */
     if (!keys.contains(strGuiFeatureType, Qt::CaseInsensitive))
         return GUIFeatureType_None;

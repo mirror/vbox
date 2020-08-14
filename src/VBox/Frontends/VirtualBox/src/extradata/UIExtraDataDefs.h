@@ -810,11 +810,15 @@ enum EventHandlingType
 /** Common UI: GUI feature types. */
 enum GUIFeatureType
 {
-    GUIFeatureType_None        = 0,
-    GUIFeatureType_NoSelector  = RT_BIT(0),
-    GUIFeatureType_NoMenuBar   = RT_BIT(1),
-    GUIFeatureType_NoStatusBar = RT_BIT(2),
-    GUIFeatureType_All         = 0xFF
+    GUIFeatureType_None           = 0,
+    GUIFeatureType_NoSelector     = RT_BIT(0),
+#ifdef VBOX_WS_MAC
+    GUIFeatureType_NoUserElements = RT_BIT(1),
+#else
+    GUIFeatureType_NoMenuBar      = RT_BIT(1),
+#endif
+    GUIFeatureType_NoStatusBar    = RT_BIT(2),
+    GUIFeatureType_All            = 0xFF
 };
 
 
