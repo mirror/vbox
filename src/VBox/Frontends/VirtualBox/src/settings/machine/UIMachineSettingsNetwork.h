@@ -23,7 +23,6 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIMachineSettingsNetwork.gen.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
 
 /* Forward declarations: */

@@ -15,16 +15,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QCheckBox>
+#include <QComboBox>
+#include <QGridLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QTextEdit>
+
 /* GUI includes: */
 #include "QIArrowButtonSwitch.h"
+#include "QILineEdit.h"
 #include "QITabWidget.h"
+#include "QIToolButton.h"
 #include "QIWidgetValidator.h"
+#include "UICommon.h"
 #include "UIConverter.h"
+#include "UIErrorString.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsNetwork.h"
-#include "UIErrorString.h"
 #include "UIExtraDataManager.h"
-#include "UICommon.h"
+#include "UINetworkAttachmentEditor.h"
 
 /* COM includes: */
 #include "CNATEngine.h"
@@ -141,8 +152,7 @@ struct UIDataSettingsMachineNetwork
 
 
 /** Machine settings: Network Adapter tab. */
-class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>,
-                                 public Ui::UIMachineSettingsNetwork
+class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -199,6 +209,9 @@ private:
     /* Helper: Prepare stuff: */
     void prepareValidation();
 
+    /* Prepares widgets: */
+    void prepareWidgets();
+
     /* Helping stuff: */
     void populateComboboxes();
 
@@ -216,6 +229,27 @@ private:
     int m_iSlot;
     KNetworkAdapterType m_enmAdapterType;
     UIPortForwardingDataList m_portForwardingRules;
+
+    /** @name Widgets
+     * @{ */
+       QLabel *m_pAttachmentTypeLabel;
+       QLabel *m_pAdapterNameLabel;
+       QLabel *m_pAdapterTypeLabel;
+       QLabel *m_pPromiscuousModeLabel;
+       QLabel *m_pMACLabel;
+       QLabel *m_pGenericPropertiesLabel;
+       UINetworkAttachmentEditor *m_pAttachmentTypeEditor;
+       QILineEdit *m_pMACEditor;
+       QIToolButton *m_pMACButton;
+       QIArrowButtonSwitch *m_pAdvancedArrow;
+       QCheckBox *m_pEnableAdapterCheckBox;
+       QCheckBox *m_pCableConnectedCheckBox;
+       QPushButton *m_pPortForwardingButton;
+       QComboBox *m_pPromiscuousModeCombo;
+       QComboBox *m_pAdapterTypeCombo;
+       QTextEdit *m_pGenericPropertiesTextEdit;
+       QWidget *m_pAdapterOptionsContainer;
+    /** @} */
 };
 
 
@@ -229,8 +263,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     , m_iSlot(-1)
     , m_enmAdapterType(KNetworkAdapterType_Null)
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsNetwork::setupUi(this);
+    prepareWidgets();
 
     /* Determine icon metric: */
     const QStyle *pStyle = QApplication::style();
@@ -566,8 +599,39 @@ void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
 
 void UIMachineSettingsNetwork::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIMachineSettingsNetwork::retranslateUi(this);
+    m_pEnableAdapterCheckBox->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "When checked, plugs this virtual "
+                                                                   "network adapter into the virtual machine."));
+    m_pEnableAdapterCheckBox->setText(QApplication::translate("UIMachineSettingsNetwork", "&Enable Network Adapter"));
+    m_pAttachmentTypeLabel->setText(QApplication::translate("UIMachineSettingsNetwork", "&Attached to:"));
+    m_pAttachmentTypeEditor->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Selects how this virtual adapter "
+                                                                  "is attached to the real network of the Host OS."));
+    m_pAdapterNameLabel->setText(QApplication::translate("UIMachineSettingsNetwork", "&Name:"));
+    m_pAdvancedArrow->setText(QApplication::translate("UIMachineSettingsNetwork", "A&dvanced"));
+    m_pAdvancedArrow->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Shows additional network adapter options."));
+    m_pAdapterTypeLabel->setText(QApplication::translate("UIMachineSettingsNetwork", "Adapter &Type:"));
+    m_pAdapterTypeCombo->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Selects the type of the virtual network "
+                                                              "adapter. Depending on this value, VirtualBox will provide different "
+                                                              "network hardware to the virtual machine."));
+    m_pPromiscuousModeLabel->setText(QApplication::translate("UIMachineSettingsNetwork", "&Promiscuous Mode:"));
+    m_pPromiscuousModeCombo->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Selects the promiscuous mode policy "
+                                                                  "of the network adapter when attached to an internal network, "
+                                                                  "host only network or a bridge."));
+    m_pMACLabel->setText(QApplication::translate("UIMachineSettingsNetwork", "&MAC Address:"));
+    m_pMACEditor->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Holds the MAC address of this adapter. It contains "
+                                                       "exactly 12 characters chosen from {0-9,A-F}. Note that the second character "
+                                                       "must be an even digit."));
+    m_pMACButton->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Generates a new random MAC address."));
+    m_pGenericPropertiesLabel->setText(QApplication::translate("UIMachineSettingsNetwork", "Generic Properties:"));
+    m_pGenericPropertiesTextEdit->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Holds the configuration settings "
+                                                                       "for the network attachment driver. The settings should be of "
+                                                                       "the form <b>name=value</b> and will depend on the driver. "
+                                                                       "Use <b>shift-enter</b> to add a new entry."));
+    m_pCableConnectedCheckBox->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "When checked, the virtual network "
+                                                                    "cable is plugged in."));
+    m_pCableConnectedCheckBox->setText(QApplication::translate("UIMachineSettingsNetwork", "&Cable Connected"));
+    m_pPortForwardingButton->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Displays a window to configure port "
+                                                                  "forwarding rules."));
+    m_pPortForwardingButton->setText(QApplication::translate("UIMachineSettingsNetwork", "&Port Forwarding"));
 
     /* Translate combo-boxes content: */
     populateComboboxes();
@@ -665,6 +729,116 @@ void UIMachineSettingsNetwork::prepareValidation()
 {
     /* Configure validation: */
     connect(m_pMACEditor, &QILineEdit::textChanged, m_pParent, &UIMachineSettingsNetworkPage::revalidate);
+}
+
+void UIMachineSettingsNetwork::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIMachineSettingsNetwork"));
+    resize(430, 250);
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+    m_pEnableAdapterCheckBox = new QCheckBox(this);
+    m_pEnableAdapterCheckBox->setObjectName(QStringLiteral("m_pEnableAdapterCheckBox"));
+
+    pMainLayout->addWidget(m_pEnableAdapterCheckBox, 0, 0, 1, 2);
+    QSpacerItem *pHorizontalSpacer1 = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+    pMainLayout->addItem(pHorizontalSpacer1, 1, 0, 1, 1);
+
+    m_pAdapterOptionsContainer = new QWidget();
+    m_pAdapterOptionsContainer->setObjectName(QStringLiteral("m_pAdapterOptionsContainer"));
+    QGridLayout *pAdapterOptionsLayout = new QGridLayout(m_pAdapterOptionsContainer);
+    pAdapterOptionsLayout->setContentsMargins(0, 0, 0, 0);
+    pAdapterOptionsLayout->setObjectName(QStringLiteral("pAdapterOptionsLayout"));
+    m_pAttachmentTypeLabel = new QLabel(m_pAdapterOptionsContainer);
+    m_pAttachmentTypeLabel->setObjectName(QStringLiteral("m_pAttachmentTypeLabel"));
+    m_pAttachmentTypeLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pAdapterOptionsLayout->addWidget(m_pAttachmentTypeLabel, 0, 0, 1, 1);
+
+    m_pAttachmentTypeEditor = new UINetworkAttachmentEditor(m_pAdapterOptionsContainer);
+    m_pAttachmentTypeEditor->setObjectName(QStringLiteral("m_pAttachmentTypeEditor"));
+    pAdapterOptionsLayout->addWidget(m_pAttachmentTypeEditor, 0, 1, 2, 3);
+
+    m_pAdapterNameLabel = new QLabel(m_pAdapterOptionsContainer);
+    m_pAdapterNameLabel->setObjectName(QStringLiteral("m_pAdapterNameLabel"));
+    m_pAdapterNameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pAdapterOptionsLayout->addWidget(m_pAdapterNameLabel, 1, 0, 1, 1);
+
+    QHBoxLayout *pAdvancedButtonLayout = new QHBoxLayout();
+    pAdvancedButtonLayout->setContentsMargins(0, 0, 0, 0);
+    pAdvancedButtonLayout->setObjectName(QStringLiteral("pAdvancedButtonLayout"));
+    QSpacerItem *pHorizontalSpacer2 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pAdvancedButtonLayout->addItem(pHorizontalSpacer2);
+
+    m_pAdvancedArrow = new QIArrowButtonSwitch(m_pAdapterOptionsContainer);
+    m_pAdvancedArrow->setObjectName(QStringLiteral("m_pAdvancedArrow"));
+    pAdvancedButtonLayout->addWidget(m_pAdvancedArrow);
+    pAdapterOptionsLayout->addLayout(pAdvancedButtonLayout, 2, 0, 1, 1);
+
+    m_pAdapterTypeLabel = new QLabel(m_pAdapterOptionsContainer);
+    m_pAdapterTypeLabel->setObjectName(QStringLiteral("m_pAdapterTypeLabel"));
+    m_pAdapterTypeLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pAdapterOptionsLayout->addWidget(m_pAdapterTypeLabel, 3, 0, 1, 1);
+
+    m_pAdapterTypeCombo = new QComboBox(m_pAdapterOptionsContainer);
+    m_pAdapterTypeCombo->setObjectName(QStringLiteral("m_pAdapterTypeCombo"));
+    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    sizePolicy.setHorizontalStretch(1);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pAdapterTypeCombo->sizePolicy().hasHeightForWidth());
+    m_pAdapterTypeCombo->setSizePolicy(sizePolicy);
+    pAdapterOptionsLayout->addWidget(m_pAdapterTypeCombo, 3, 1, 1, 3);
+
+    m_pPromiscuousModeLabel = new QLabel(m_pAdapterOptionsContainer);
+    m_pPromiscuousModeLabel->setObjectName(QStringLiteral("m_pPromiscuousModeLabel"));
+    m_pPromiscuousModeLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pAdapterOptionsLayout->addWidget(m_pPromiscuousModeLabel, 4, 0, 1, 1);
+
+    m_pPromiscuousModeCombo = new QComboBox(m_pAdapterOptionsContainer);
+    m_pPromiscuousModeCombo->setObjectName(QStringLiteral("m_pPromiscuousModeCombo"));
+    sizePolicy.setHeightForWidth(m_pPromiscuousModeCombo->sizePolicy().hasHeightForWidth());
+    m_pPromiscuousModeCombo->setSizePolicy(sizePolicy);
+    pAdapterOptionsLayout->addWidget(m_pPromiscuousModeCombo, 4, 1, 1, 3);
+
+    m_pMACLabel = new QLabel(m_pAdapterOptionsContainer);
+    m_pMACLabel->setObjectName(QStringLiteral("m_pMACLabel"));
+    m_pMACLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pAdapterOptionsLayout->addWidget(m_pMACLabel, 5, 0, 1, 1);
+
+    m_pMACEditor = new QILineEdit(m_pAdapterOptionsContainer);
+    m_pMACEditor->setObjectName(QStringLiteral("m_pMACEditor"));
+    sizePolicy.setHeightForWidth(m_pMACEditor->sizePolicy().hasHeightForWidth());
+    m_pMACEditor->setSizePolicy(sizePolicy);
+    pAdapterOptionsLayout->addWidget(m_pMACEditor, 5, 1, 1, 2);
+
+    m_pMACButton = new QIToolButton(m_pAdapterOptionsContainer);
+    m_pMACButton->setObjectName(QStringLiteral("m_pMACButton"));
+    pAdapterOptionsLayout->addWidget(m_pMACButton, 5, 3, 1, 1);
+
+    m_pGenericPropertiesLabel = new QLabel(m_pAdapterOptionsContainer);
+    m_pGenericPropertiesLabel->setObjectName(QStringLiteral("m_pGenericPropertiesLabel"));
+    m_pGenericPropertiesLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignTop);
+    pAdapterOptionsLayout->addWidget(m_pGenericPropertiesLabel, 6, 0, 1, 1);
+
+    m_pGenericPropertiesTextEdit = new QTextEdit(m_pAdapterOptionsContainer);
+    m_pGenericPropertiesTextEdit->setObjectName(QStringLiteral("m_pGenericPropertiesTextEdit"));
+    pAdapterOptionsLayout->addWidget(m_pGenericPropertiesTextEdit, 6, 1, 1, 3);
+
+    m_pCableConnectedCheckBox = new QCheckBox(m_pAdapterOptionsContainer);
+    m_pCableConnectedCheckBox->setObjectName(QStringLiteral("m_pCableConnectedCheckBox"));
+    pAdapterOptionsLayout->addWidget(m_pCableConnectedCheckBox, 7, 1, 1, 3);
+
+    m_pPortForwardingButton = new QPushButton(m_pAdapterOptionsContainer);
+    m_pPortForwardingButton->setObjectName(QStringLiteral("m_pPortForwardingButton"));
+    pAdapterOptionsLayout->addWidget(m_pPortForwardingButton, 8, 1, 1, 1);
+
+    QSpacerItem *pVerticalSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pAdapterOptionsLayout->addItem(pVerticalSpacer, 9, 0, 1, 4);
+    pMainLayout->addWidget(m_pAdapterOptionsContainer, 1, 1, 1, 1);
+
+    m_pAdapterTypeLabel->setBuddy(m_pAdapterTypeCombo);
+    m_pPromiscuousModeLabel->setBuddy(m_pPromiscuousModeCombo);
+    m_pMACLabel->setBuddy(m_pMACEditor);
 }
 
 void UIMachineSettingsNetwork::populateComboboxes()
