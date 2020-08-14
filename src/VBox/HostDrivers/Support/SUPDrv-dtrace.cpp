@@ -1167,7 +1167,7 @@ const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
  * Module teardown code.
  */
 void VBOXCALL supdrvDTraceFini(void)
-{ 
+{
 #ifdef RT_OS_LINUX
     /* Release the references. */
     unsigned i;
