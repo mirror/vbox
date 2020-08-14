@@ -2327,7 +2327,8 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
  * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
  * @param   pCtx                Context data for the clipboard backend.
  * @param   Format              The format that the VBox would like to receive the data in.
- * @param   pReq                Read callback request to use. Must be free'd in the callback.
+ * @param   pReq                Read callback request to use. Will be free'd in the callback on success.
+ *                              Otherwise the caller has to free this again on error.
  *
  * @note   We allocate a request structure which must be freed by the worker.
  */
