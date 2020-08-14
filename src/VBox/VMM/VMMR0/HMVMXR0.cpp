@@ -10457,7 +10457,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
      * Validate basic assumptions.
      */
     PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
-    Assert(pVM->hm.s.vmx.fAllowUnrestricted);
+    Assert(pVM->hm.s.vmx.fUnrestrictedGuest);
     Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
     Assert(hmGetVmxActiveVmcsInfo(pVCpu) == pVmcsInfoNstGst);
 
