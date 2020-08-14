@@ -1050,6 +1050,18 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
+            <computeroutput>--virt-vmsave-vmload on|off</computeroutput>:
+            If hardware virtualization is enabled, for AMD-V only, this
+            setting enables or disables the use of the virtualized
+            vmsave/vmload host feature while executing your guest. It is
+            enabled by default. It is recommended to leave enabled as it
+            has a drastic impact on performance while executing nested
+            guests using the nested hardware virtualization feature.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
             <computeroutput>--accelerate3d on|off</computeroutput>: If
             the Guest Additions are installed, this setting enables or
             disables hardware 3D acceleration. See
