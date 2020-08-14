@@ -2468,7 +2468,9 @@ void VBOXCALL supdrvTracerTerm(PSUPDRVDEVEXT pDevExt)
     LOG_TRACER(("supdrvTracerTerm\n"));
 
     supdrvTracerRemoveAllProviders(pDevExt);
-
+#ifdef VBOX_WITH_NATIVE_DTRACE
+    supdrvDTraceFini();
+#endif
     RTSemFastMutexDestroy(pDevExt->mtxTracer);
     pDevExt->mtxTracer = NIL_RTSEMFASTMUTEX;
     LOG_TRACER(("supdrvTracerTerm: Done\n"));

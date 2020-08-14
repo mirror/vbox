@@ -1107,6 +1107,7 @@ DECLASM(void)   supdrvTracerProbeFireStub(void);
 
 #ifdef VBOX_WITH_NATIVE_DTRACE
 const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void);
+void                    VBOXCALL supdrvDTraceFini(void);
 #endif
 
 RT_C_DECLS_END
