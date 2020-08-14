@@ -90,7 +90,7 @@ size_t VBoxPrintHex(UINT64 uValue, size_t cbType)
     }
 
 #if 0 /* There is no MultU32x32 for 32bit and cl insists on emitting __allmul otherwise so we just hardcode everything here... */
-    return cbType * 2; 
+    return cbType * 2;
 #else
     static size_t s_acbPrinted[9] = { 0, 2, 4, 0, 8, 0, 0, 0, 16};
     if (cbType < RT_ELEMENTS(s_acbPrinted))
