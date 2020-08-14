@@ -12532,6 +12532,10 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
          */
         if (VBOXVMM_GET_SETTINGS_SEQ_NO() != DbgState.uDtraceSettingsSeqNo)
             hmR0VmxPreRunGuestDebugStateUpdate(pVCpu, &VmxTransient, &DbgState);
+
+        /* Restore all controls applied by hmR0VmxPreRunGuestDebugStateApply above. */
+        rcStrict = hmR0VmxRunDebugStateRevert(pVCpu, &VmxTransient, &DbgState, rcStrict);
+        Assert(rcStrict == VINF_SUCCESS);
     }
 
     /*
@@ -12547,12 +12551,6 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
     /** @todo there seems to be issues with the resume flag when the monitor trap
      *        flag is pending without being used. Seen early in bios init when
      *        accessing APIC page in protected mode. */
-
-    /*
-     * Restore VM-exit control settings as we may not re-enter this function the
-     * next time around.
-     */
-    rcStrict = hmR0VmxRunDebugStateRevert(pVCpu, &VmxTransient, &DbgState, rcStrict);
 
     /* Restore HMCPU indicators. */
     pVCpu->hm.s.fUsingDebugLoop     = false;
