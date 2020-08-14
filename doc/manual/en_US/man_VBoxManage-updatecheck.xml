@@ -32,7 +32,7 @@
   </refnamediv>
 
   <refsynopsisdiv>
-    <cmdsynopsis id="synopsis-vboxmanage-updatecheck"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-perform"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage updatecheck perform</command>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-updatecheck-getsettings">
@@ -44,7 +44,7 @@
         <arg choice="plain">--disable</arg>
         <arg choice="plain">--enable</arg>
       </group>
-      <arg>--branch=<replaceable>stable | withbetas | allreleases</replaceable></arg>
+      <arg>--target=<replaceable>stable | withbetas | allreleases</replaceable></arg>
       <arg>--frequency=<replaceable>days</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -57,8 +57,8 @@
     are used for modifying or viewing the settings associated with checking for a newer version
     of VirtualBox.</para>
 
-    <refsect2 id="vboxmanage-updatecheck">
-      <title>updatecheck</title>
+    <refsect2 id="vboxmanage-updatecheck-perform">
+      <title>updatecheck perform</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Check if a newer version of VirtualBox is available.
