@@ -47,7 +47,8 @@ ANTLR_INFO
 #  endif
 #  ifdef __GNUC__
 #    pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#endif
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#  endif
 #endif
 
 #pragma clang diagnostic ignored "-Wparentheses-equality"
