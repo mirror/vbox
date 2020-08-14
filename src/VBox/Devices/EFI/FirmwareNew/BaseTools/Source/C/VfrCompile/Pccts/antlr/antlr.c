@@ -47,7 +47,6 @@ ANTLR_INFO
 #  endif
 #  ifdef __GNUC__
 #    pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #  endif
 #endif
 
@@ -1353,6 +1352,9 @@ tclass()
   char *t=NULL; TCnode *e; int go=1,tok,totok; TermEntry *p, *term, *toterm;
   char *akaString=NULL; int save_file; int save_line;
   char *totext=NULL;
+#ifdef VBOX
+  p = NULL;
+#endif
   zzmatch(118); zzCONSUME;
   zzmatch(TokenTerm);
   t=mystrdup(LATEXT(1));
