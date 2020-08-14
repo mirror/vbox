@@ -175,9 +175,10 @@ struct CLIPREADCBREQ
 int ShClBackendReadData(PSHCLCLIENT pClient,
                         PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
-    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pClient,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pCmdCtx,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbActual, VERR_INVALID_POINTER);
 
     RT_NOREF(pCmdCtx);
 
