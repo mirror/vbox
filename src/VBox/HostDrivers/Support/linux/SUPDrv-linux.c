@@ -757,24 +757,30 @@ EXPORT_SYMBOL(SUPDrvLinuxIDC);
 RTCCUINTREG VBOXCALL supdrvOSChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask)
 {
 #if RTLNX_VER_MIN(5,8,0)
-    RTCCUINTREG const uOld = __read_cr4();
-#elif RTLNX_VER_MIN(3,20,0)
-    RTCCUINTREG const uOld = this_cpu_read(cpu_tlbstate.cr4);
+    unsigned long fSavedFlags;
+    local_irq_save(fSavedFlags);
+    RTCCUINTREG const uOld = cr4_read_shadow();
+    cr4_update_irqsoff(fOrMask, ~fAndMask); /* Same as this function, only it is not returning the old value. */
+    AssertMsg(cr4_read_shadow() == ((uOld & fAndMask) | fOrMask),
+              ("fOrMask=%#RTreg fAndMask=%#RTreg uOld=%#RTreg; new cr4=%#llx\n", fOrMask, fAndMask, uOld, cr4_read_shadow()));
+    local_irq_restore(fSavedFlags);
 #else
+# if RTLNX_VER_MIN(3,20,0)
+    RTCCUINTREG const uOld = this_cpu_read(cpu_tlbstate.cr4);
+# else
     RTCCUINTREG const uOld = ASMGetCR4();
-#endif
+# endif
     RTCCUINTREG const uNew = (uOld & fAndMask) | fOrMask;
     if (uNew != uOld)
     {
-#if RTLNX_VER_MIN(5,8,0)
-        ASMSetCR4(uNew);
-#elif RTLNX_VER_MIN(3,20,0)
+# if RTLNX_VER_MIN(3,20,0)
         this_cpu_write(cpu_tlbstate.cr4, uNew);
         __write_cr4(uNew);
-#else
+# else
         ASMSetCR4(uNew);
-#endif
+# endif
     }
+#endif
     return uOld;
 }
 
