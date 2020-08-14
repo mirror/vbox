@@ -1120,6 +1120,7 @@ struct Hardware
     bool                fMDSClearOnSched;       //< added out of cycle, after 1.16 was out.
     bool                fMDSClearOnVMEntry;     //< added out of cycle, after 1.16 was out.
     bool                fNestedHWVirt;          //< requires settings version 1.17 (VirtualBox 6.0)
+    bool                fVirtVmsaveVmload;      //< requires settings version 1.18 (VirtualBox 6.1)
     typedef enum LongModeType { LongMode_Enabled, LongMode_Disabled, LongMode_Legacy } LongModeType;
     LongModeType        enmLongMode;
     uint32_t            cCPUs;

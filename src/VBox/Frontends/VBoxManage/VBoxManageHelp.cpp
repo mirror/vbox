@@ -554,6 +554,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--mds-clear-on-sched on|off]\n"
                      "                            [--mds-clear-on-vm-entry on|off]\n"
                      "                            [--nested-hw-virt on|off]\n"
+                     "                            [--virt-vmsave-vmload on|off]\n"
                      "                            [--cpu-profile \"host|Intel 80[86|286|386]\"]\n"
                      "                            [--cpuid-portability-level <0..3>]\n"
                      "                            [--cpuid-set <leaf[:subleaf]> <eax> <ebx> <ecx> <edx>]\n"

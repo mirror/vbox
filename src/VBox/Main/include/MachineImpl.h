@@ -275,6 +275,7 @@ public:
         BOOL                mHWVirtExUXEnabled;
         BOOL                mHWVirtExForceEnabled;
         BOOL                mHWVirtExUseNativeApi;
+        BOOL                mHWVirtExVirtVmsaveVmload;
         BOOL                mPAEEnabled;
         settings::Hardware::LongModeType mLongMode;
         BOOL                mTripleFaultReset;

@@ -74,6 +74,7 @@ enum
     MODIFYVM_LARGEPAGES,
     MODIFYVM_VTXVPID,
     MODIFYVM_VTXUX,
+    MODIFYVM_VIRT_VMSAVE_VMLOAD,
     MODIFYVM_IBPB_ON_VM_EXIT,
     MODIFYVM_IBPB_ON_VM_ENTRY,
     MODIFYVM_SPEC_CTRL,
@@ -266,6 +267,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--largepages",               MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF },
     { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--vtxux",                    MODIFYVM_VTXUX,                     RTGETOPT_REQ_BOOL_ONOFF },
+    { "--virt-vmsave-vmload",       MODIFYVM_VIRT_VMSAVE_VMLOAD,        RTGETOPT_REQ_BOOL_ONOFF },
     { "--ibpb-on-vm-exit",          MODIFYVM_IBPB_ON_VM_EXIT,           RTGETOPT_REQ_BOOL_ONOFF },
     { "--ibpb-on-vm-entry",         MODIFYVM_IBPB_ON_VM_ENTRY,          RTGETOPT_REQ_BOOL_ONOFF },
     { "--spec-ctrl",                MODIFYVM_SPEC_CTRL,                 RTGETOPT_REQ_BOOL_ONOFF },
@@ -818,6 +820,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 CHECK_ERROR(sessionMachine, SetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, ValueUnion.f));
                 break;
             }
+
+            case MODIFYVM_VIRT_VMSAVE_VMLOAD:
+                CHECK_ERROR(sessionMachine, SetHWVirtExProperty(HWVirtExPropertyType_VirtVmsaveVmload, ValueUnion.f));
+                break;
 
             case MODIFYVM_IBPB_ON_VM_EXIT:
                 CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_IBPBOnVMExit, ValueUnion.f));

@@ -258,6 +258,7 @@ static HRESULT listHostInfo(const ComPtr<IVirtualBox> pVirtualBox)
         { ProcessorFeature_NestedPaging, "nested paging" },
         { ProcessorFeature_UnrestrictedGuest, "unrestricted guest" },
         { ProcessorFeature_NestedHWVirt, "nested HW virtualization" },
+        { ProcessorFeature_VirtVmsaveVmload, "virt. vmsave/vmload" },
     };
     HRESULT rc;
     ComPtr<IHost> Host;

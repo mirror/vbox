@@ -3348,6 +3348,7 @@ Hardware::Hardware() :
     fMDSClearOnSched(true),
     fMDSClearOnVMEntry(false),
     fNestedHWVirt(false),
+    fVirtVmsaveVmload(true),
     enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
     cCPUs(1),
     fCpuHotPlug(false),
@@ -3469,6 +3470,7 @@ bool Hardware::operator==(const Hardware& h) const
             && fMDSClearOnSched               == h.fMDSClearOnSched
             && fMDSClearOnVMEntry             == h.fMDSClearOnVMEntry
             && fNestedHWVirt                  == h.fNestedHWVirt
+            && fVirtVmsaveVmload              == h.fVirtVmsaveVmload
             && cCPUs                          == h.cCPUs
             && fCpuHotPlug                    == h.fCpuHotPlug
             && ulCpuExecutionCap              == h.ulCpuExecutionCap
@@ -4445,6 +4447,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirtForce);
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExUseNativeApi")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fUseNativeApi);
+            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExVirtVmsaveVmload")))
+                pelmCPUChild->getAttributeValue("enabled", hw.fVirtVmsaveVmload);
 
             if (!(pelmCPUChild = pelmHwChild->findChildElement("PAE")))
             {
@@ -5897,6 +5901,9 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     }
     if (m->sv >= SettingsVersion_v1_17 && hw.fNestedHWVirt)
         pelmCPU->createChild("NestedHWVirt")->setAttribute("enabled", hw.fNestedHWVirt);
+
+    if (m->sv >= SettingsVersion_v1_18 && !hw.fVirtVmsaveVmload)
+        pelmCPU->createChild("HardwareVirtExVirtVmsaveVmload")->setAttribute("enabled", hw.fVirtVmsaveVmload);
 
     if (m->sv >= SettingsVersion_v1_14 && hw.enmLongMode != Hardware::LongMode_Legacy)
     {
@@ -7626,6 +7633,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_18)
     {
         if (!hardwareMachine.biosSettings.strNVRAMPath.isEmpty())
+        {
+            m->sv = SettingsVersion_v1_18;
+            return;
+        }
+
+        // VirtualBox 6.1 adds AMD-V virtualized VMSAVE/VMLOAD setting.
+        if (hardwareMachine.fVirtVmsaveVmload == false)
         {
             m->sv = SettingsVersion_v1_18;
             return;

@@ -1114,7 +1114,7 @@
 
   <enum
     name="HWVirtExPropertyType"
-    uuid="bc05551e-e288-467e-1ea3-233de08e4480"
+    uuid="00069d9c-00b5-460c-00dd-64250024f7aa"
     >
     <desc>
       Hardware virtualization property type. This enumeration represents possible values
@@ -1160,6 +1160,12 @@
       <desc>
         Use the native hypervisor API instead of the VirtualBox one (HM) for VT-X/AMD-V.  This is
         ignored if <link to="HWVirtExPropertyType_Enabled"/> isn't set.
+      </desc>
+    </const>
+    <const name="VirtVmsaveVmload"      value="8">
+      <desc>
+        Whether AMD-V Virtualized VMSAVE/VMLOAD is enabled. If this feature is not available, it will not
+        be used.
       </desc>
     </const>
   </enum>
@@ -1376,7 +1382,7 @@
 
   <enum
     name="ProcessorFeature"
-    uuid="fed0e385-dc5a-4cef-b9e2-66bafb6af6aa"
+    uuid="0064dece-000e-4963-00f8-eb9b00674c8a"
     >
     <desc>
       CPU features.
@@ -1388,6 +1394,7 @@
     <const name="NestedPaging"      value="3"/>
     <const name="UnrestrictedGuest" value="4"/>
     <const name="NestedHWVirt"      value="5"/>
+    <const name="VirtVmsaveVmload"  value="6"/>
   </enum>
 
   <enum

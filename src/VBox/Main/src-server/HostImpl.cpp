@@ -216,6 +216,7 @@ struct Host::Data
                             fNestedPagingSupported,
                             fUnrestrictedGuestSupported,
                             fNestedHWVirtSupported,
+                            fVirtVmsaveVmload,
                             fRecheckVTSupported;
 
     /** @}  */
@@ -310,6 +311,7 @@ HRESULT Host::init(VirtualBox *aParent)
     m->fNestedPagingSupported = false;
     m->fUnrestrictedGuestSupported = false;
     m->fNestedHWVirtSupported = false;
+    m->fVirtVmsaveVmload = false;
     m->fRecheckVTSupported = false;
 
     if (ASMHasCpuId())
@@ -374,6 +376,8 @@ HRESULT Host::init(VirtualBox *aParent)
                         ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSVMFeaturesEdx);
                         if (fSVMFeaturesEdx & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                             m->fNestedPagingSupported = true;
+                        if (fSVMFeaturesEdx & X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD)
+                            m->fVirtVmsaveVmload = true;
                     }
                 }
             }
@@ -1148,8 +1152,8 @@ HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 }
 
 /**
- * Updates fVTSupported, fNestedPagingSupported, fUnrestrictedGuestSupported and
- * fNestedHWVirtSupported with info from SUPR3QueryVTCaps().
+ * Updates fVTSupported, fNestedPagingSupported, fUnrestrictedGuestSupported,
+ * fVirtVmsaveVmload and fNestedHWVirtSupported with info from SUPR3QueryVTCaps().
  *
  * This is repeated till we successfully open the support driver, in case it
  * is loaded after VBoxSVC starts.
@@ -1181,6 +1185,7 @@ void Host::i_updateProcessorFeatures()
                                                          | SUPVTCAPS_VTX_UNRESTRICTED_GUEST | SUPVTCAPS_VTX_VMCS_SHADOWING))
                                           ==            (  SUPVTCAPS_VT_X | SUPVTCAPS_NESTED_PAGING
                                                          | SUPVTCAPS_VTX_UNRESTRICTED_GUEST | SUPVTCAPS_VTX_VMCS_SHADOWING);
+        m->fVirtVmsaveVmload           = (fVTCaps & SUPVTCAPS_AMDV_VIRT_VMSAVE_VMLOAD) != 0;
         m->fRecheckVTSupported = false; /* No need to try again, we cached everything. */
     }
 }
@@ -1203,6 +1208,7 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
         case ProcessorFeature_NestedPaging:
         case ProcessorFeature_UnrestrictedGuest:
         case ProcessorFeature_NestedHWVirt:
+        case ProcessorFeature_VirtVmsaveVmload:
             break;
         default:
             return setError(E_INVALIDARG, tr("The aFeature value %d (%#x) is out of range."), (int)aFeature, (int)aFeature);
@@ -1219,7 +1225,8 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
             && (   aFeature == ProcessorFeature_HWVirtEx
                 || aFeature == ProcessorFeature_NestedPaging
                 || aFeature == ProcessorFeature_UnrestrictedGuest
-                || aFeature == ProcessorFeature_NestedHWVirt)
+                || aFeature == ProcessorFeature_NestedHWVirt
+                || aFeature == ProcessorFeature_VirtVmsaveVmload)
            )
         {
             alock.release();
@@ -1251,6 +1258,10 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 
             case ProcessorFeature_NestedHWVirt:
                 *aSupported = m->fNestedHWVirtSupported;
+                break;
+
+            case ProcessorFeature_VirtVmsaveVmload:
+                *aSupported = m->fVirtVmsaveVmload;
                 break;
 
             default:

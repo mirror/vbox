@@ -182,6 +182,7 @@ Machine::HWData::HWData()
     mHWVirtExUXEnabled = true;
     mHWVirtExForceEnabled = false;
     mHWVirtExUseNativeApi = false;
+    mHWVirtExVirtVmsaveVmload = true;
 #if HC_ARCH_BITS == 64 || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
     mPAEEnabled = true;
 #else
@@ -2221,6 +2222,10 @@ HRESULT Machine::getHWVirtExProperty(HWVirtExPropertyType_T aProperty, BOOL *aVa
             *aValue = mHWData->mHWVirtExUseNativeApi;
             break;
 
+        case HWVirtExPropertyType_VirtVmsaveVmload:
+            *aValue = mHWData->mHWVirtExVirtVmsaveVmload;
+            break;
+
         default:
             return E_INVALIDARG;
     }
@@ -2276,6 +2281,12 @@ HRESULT Machine::setHWVirtExProperty(HWVirtExPropertyType_T aProperty, BOOL aVal
             i_setModified(IsModified_MachineData);
             mHWData.backup();
             mHWData->mHWVirtExUseNativeApi = !!aValue;
+            break;
+
+        case HWVirtExPropertyType_VirtVmsaveVmload:
+            i_setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mHWVirtExVirtVmsaveVmload = !!aValue;
             break;
 
         default:
@@ -8671,6 +8682,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         mHWData->mHWVirtExUXEnabled           = data.fUnrestrictedExecution;
         mHWData->mHWVirtExForceEnabled        = data.fHardwareVirtForce;
         mHWData->mHWVirtExUseNativeApi        = data.fUseNativeApi;
+        mHWData->mHWVirtExVirtVmsaveVmload    = data.fVirtVmsaveVmload;
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mLongMode                    = data.enmLongMode;
         mHWData->mTripleFaultReset            = data.fTripleFaultReset;
@@ -10020,6 +10032,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.fUnrestrictedExecution = !!mHWData->mHWVirtExUXEnabled;
         data.fHardwareVirtForce     = !!mHWData->mHWVirtExForceEnabled;
         data.fUseNativeApi          = !!mHWData->mHWVirtExUseNativeApi;
+        data.fVirtVmsaveVmload      = !!mHWData->mHWVirtExVirtVmsaveVmload;
         data.fPAE                   = !!mHWData->mPAEEnabled;
         data.enmLongMode            = mHWData->mLongMode;
         data.fTripleFaultReset      = !!mHWData->mTripleFaultReset;
