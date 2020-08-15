@@ -60,7 +60,13 @@ g_blnInternalMode = False
 dim g_blnInternalFirst
 g_blnInternalFirst = True
 
-
+' List of program files locations.
+dim g_arrProgramFiles
+if EnvGet("ProgramFiles(x86)") <> "" then
+   g_arrProgramFiles = Array(EnvGet("ProgramFiles"), EnvGet("ProgramFiles(x86)"))
+else
+   g_arrProgramFiles = Array(EnvGet("ProgramFiles"))
+end if
 
 ''
 ' Converts to unix slashes
@@ -507,6 +513,54 @@ end function
 
 
 ''
+' Sorts a string array.
+sub SortStringArray(ByRef arr)
+   dim i, j, strTemp
+   for i = UBound(arr) - 1 to 0 step -1
+      for j = 0 to i
+         if StrComp(arr(j), arr(j + 1)) > 0 then
+            strTemp = arr(j)
+            arr(j) = arr(j + 1)
+            arr(j + 1) = strTemp
+         end if
+      next
+   next
+end sub
+
+''
+' Returns a sorted array of subfolder names that starts with the given string.
+function GetSubdirsStartingWithSorted(strFolder, strStartingWith)
+   if DirExists(strFolder) then
+      dim obj, i
+      set obj = g_objFileSys.GetFolder(strFolder)
+      i = 0
+      for each objSub in obj.SubFolders
+         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 Then
+            i = i + 1
+         end if
+      next
+      if i > 0 then
+         redim arrResult(i)
+         i = 0
+         for each objSub in obj.SubFolders
+            if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 Then
+               arrResult(i) = objSub.Name
+               i = i + 1
+            end if
+         next
+
+         SortStringArray arrResult
+         GetSubdirsStartingWithSorted = arrResult
+      else
+         GetSubdirsStartingWithSorted = Array()
+      end if
+   else
+      GetSubdirsStartingWithSorted = Array()
+   end if
+end function
+
+
+''
 ' Executes a command in the shell catching output in g_strShellOutput
 function Shell(strCommand, blnBoth)
    dim strShell, strCmdline, objExec, str
@@ -602,7 +656,7 @@ end sub
 sub PrintResultMsg(strTest, strResult)
    dim cchPad
    LogPrint "** " & strTest & ": " & strResult
-   Wscript.Echo " Found " & RightPad(strTest & ": ", 18) & strPad & strResult
+   Wscript.Echo " Found " & RightPad(strTest & ": ", 22) & strPad & strResult
 end sub
 
 
@@ -612,10 +666,10 @@ sub PrintResult(strTest, strPath)
    strLongPath = PathAbsLong(strPath)
    if PathAbs(strPath) <> strLongPath then
       LogPrint         "** " & strTest & ": " & strPath & " (" & UnixSlashes(strLongPath) & ")"
-      Wscript.Echo " Found " & RightPad(strTest & ": ", 18) & strPath & " (" & UnixSlashes(strLongPath) & ")"
+      Wscript.Echo " Found " & RightPad(strTest & ": ", 22) & strPath & " (" & UnixSlashes(strLongPath) & ")"
    else
       LogPrint         "** " & strTest & ": " & strPath
-      Wscript.Echo " Found " & RightPad(strTest & ": ", 18) & strPath
+      Wscript.Echo " Found " & RightPad(strTest & ": ", 22) & strPath
    end if
 end sub
 
@@ -694,7 +748,16 @@ function LogFileExists(strPath, strFilename)
    if LogFileExists = False then
       LogPrint "Testing '" & strPath & "': " & strFilename & " not found"
    end if
+end function
 
+
+''
+' Checks if the directory exists and logs failures.
+function LogDirExists(strPath)
+   LogDirExists = DirExists(strPath)
+   if LogDirExists = False then
+      LogPrint "Testing '" & strPath & "': not found (or not dir)"
+   end if
 end function
 
 
@@ -1100,173 +1163,269 @@ sub CheckForkBuild(strOptkBuild)
    PrintResult "kBuild binaries", g_strPathkBuildBin
 end sub
 
+''
+' Class we use for detecting VisualC++
+class VisualCPPState
+   public m_blnFound
+   public m_strPathVC
+   public m_strPathVCCommon
+   public m_strVersion
+   public m_strClVersion
+   public m_blnNewLayout
+
+   private sub Class_Initialize
+      m_blnFound        = False
+      m_strPathVC       = ""
+      m_strPathVCCommon = ""
+      m_strVersion      = ""
+      m_strClVersion    = ""
+      m_blnNewLayout    = false
+   end sub
+
+   public function checkClExe(strClExe)
+      ' We'll have to make sure mspdbXX.dll is somewhere in the PATH.
+      dim strSavedPath, rcExit
+
+      strSavedPath = EnvGet("PATH")
+      if (m_strPathVCCommon <> "") Then
+         EnvAppend "PATH", ";" & m_strPathVCCommon & "/IDE"
+      end if
+      rcExit = Shell(DosSlashes(strClExe), True)
+      EnvSet "PATH", strSavedPath
+
+      checkClExe = False
+      if rcExit = 0 then
+         ' Extract the ' Version xx.yy.build.zz for arch' bit.
+         dim offVer, offEol, strVer
+         strVer = ""
+         offVer = InStr(1, g_strShellOutput, " Version ")
+         if offVer > 0 then
+            offVer = offVer + Len(" Version ")
+            offEol = InStr(offVer, g_strShellOutput, Chr(13))
+            if offEol > 0 then
+               strVer = Trim(Mid(g_strShellOutput, offVer, offEol - offVer))
+            end if
+         end if
+
+         ' Check that it's a supported version
+         checkClExe = True
+         if InStr(1, strVer, "16.") = 1 then
+            m_strVersion = "VCC110"
+         elseif InStr(1, strVer, "17.") = 1 then
+            m_strVersion = "VCC111"
+            LogPrint "The Visual C++ compiler ('" & strClExe & "') version isn't really supported, but may work: " & strVer
+         elseif InStr(1, strVer, "18.") = 1 then
+            m_strVersion = "VCC112"
+            LogPrint "The Visual C++ compiler ('" & strClExe & "') version isn't really supported, but may work: " & strVer
+         elseif InStr(1, strVer, "19.0") = 1 then
+            m_strVersion = "VCC140"
+            LogPrint "The Visual C++ compiler ('" & strClExe & "') version isn't really supported, but may work: " & strVer
+         elseif InStr(1, strVer, "19.1") = 1 then
+            m_strVersion = "VCC141"
+            LogPrint "The Visual C++ compiler ('" & strClExe & "') version isn't really supported, but may work: " & strVer
+         elseif InStr(1, strVer, "19.2") = 1 then
+            m_strVersion = "VCC142"
+         else
+            LogPrint "The Visual C++ compiler we found ('" & strClExe & "') isn't in the 10.0-19.2x range (" & strVer & ")."
+            LogPrint "Check the build requirements and select the appropriate compiler version."
+            checkClExe = False
+            exit function
+         end if
+         LogPrint "'" & strClExe & "' = " & m_strVersion & " (" & strVer & ")"
+      else
+         LogPrint "Executing '" & strClExe & "' (which we believe to be the Visual C++ compiler driver) failed (rcExit=" & rcExit & ")."
+      end if
+   end function
+
+   public function checkInner(strPathVC) ' For the new layout only
+      if m_blnFound = False then
+         if   LogDirExists(strPathVC & "/bin") _
+          and LogDirExists(strPathVC & "/lib") _
+          and LogDirExists(strPathVC & "/include") _
+          and LogFileExists(strPathVC, "include/stdarg.h") _
+          and LogFileExists(strPathVC, "lib/x64/libcpmt.lib") _
+          and LogFileExists(strPathVC, "lib/x86/libcpmt.lib") _
+         then
+            LogPrint " => seems okay. new layout."
+            if g_strHostArch = "amd64" then
+               m_blnFound = checkClExe(strPathVC & "/bin/HostX64/x64/cl.exe")
+            else
+               m_blnFound = checkClExe(strPathVC & "/bin/Host" & g_strHostArch & "/bin/" & g_strHostArch & "/cl.exe")
+            end if
+            if m_blnFound then
+               m_strPathVC = strPathVC
+            end if
+         end if
+      end if
+      checkInner = m_blnFound
+   end function
+
+   public function check(strPathVC, strPathVCommon)
+      if (m_blnFound = False) and (strPathVC <> "") then
+         m_strPathVC       = UnixSlashes(PathAbs(strPathVC))
+         m_strPathVCCommon = strPathVCCommon
+         m_strVersion      = ""
+
+         LogPrint "Trying: strPathVC=" & m_strPathVC & " strPathVCCommon=" & m_strPathVCCommon
+         if LogDirExists(m_strPathVC) then
+            ' 15.0+ layout?  This is fun because of the multiple CL versions (/tools/msvc/xx.yy.bbbbb/).
+            ' OTOH, the user may have pointed us directly to one of them.
+            if LogDirExists(m_strPathVC & "/Tools/MSVC") Then
+               m_blnNewLayout = True
+               LogPrint " => seems okay. new layout."
+               dim arrFolders, i
+               arrFolders = GetSubdirsStartingWithSorted(m_strPathVC & "/Tools/MSVC", "14.2")
+               if UBound(arrFolders) < 0 then arrFolders = GetSubdirsStartingWithSorted(m_strPathVC & "/Tools/MSVC", "14.1")
+               if UBound(arrFolders) < 0 then arrFolders = GetSubdirsStartingWithSorted(m_strPathVC & "/Tools/MSVC", "1")
+               for i = UBound(arrFolders) to LBound(arrFolders) step -1
+                  if checkInner(m_strPathVC & "/Tools/MSVC/" & arrFolders(i)) then exit for ' modifies m_strPathVC on success
+               next
+            elseif LogDirExists(m_strPathVC & "/bin/HostX64") _
+                or LogDirExists(m_strPathVC & "/bin/HostX86") then
+               checkInner(m_strPathVC)
+            ' 14.0 and older layout?
+            elseif LogFileExists(m_strPathVC, "/bin/cl.exe") Then
+               m_blnNewLayout = False
+               if   LogFileExists(m_strPathVC, "bin/link.exe") _
+                and LogFileExists(m_strPathVC, "include/string.h") _
+                and LogFileExists(m_strPathVC, "lib/libcmt.lib") _
+                and LogFileExists(m_strPathVC, "lib/msvcrt.lib") _
+               then
+                  LogPrint " => seems okay. old layout."
+                  m_blnFound = checkClExe(m_strPathVC & "/bin/cl.exe")
+               end if
+            end if
+         end if
+      end if
+      check = m_bldFound
+   end function
+
+   public function checkProg(strProg)
+      if m_blnFound = False then
+         dim str, i, offNewLayout
+         str = Which(strProg)
+         if str <> "" then
+            LogPrint "checkProg: '" & strProg & "' -> '" & str & "'"
+            if FileExists(PathStripFilename(str) & "/build.exe") then
+               Warning "Ignoring DDK cl.exe (" & str & ")." ' don't know how to deal with this cl.
+            else
+               ' Assume we've got cl.exe from somewhere under the 'bin' directory..
+               m_strPathVC = PathParent(PathStripFilename(str))
+               for i = 1 To 5
+                  if LogDirExists(m_strPathVC & "/include") then
+                     m_strPathVCCommon = PathParent(m_strPathVC) & "/Common7"
+                     if DirExists(m_strPathVCCommon) = False then
+                        m_strPathVCCommon = ""
+                        ' New layout?
+                        offNewLayout = InStr(1, LCase(DosSlashes(m_strPathVC)), "\tools\msvc\")
+                        if offNewLayout > 0 then m_strPathVC = Left(m_strPathVC, offNewLayout)
+                     end if
+                     check m_strPathVC, m_strPathVCCommon
+                     exit for
+                  end if
+                  m_strPathVC = PathParent(m_strPathVC)
+               next
+            end if
+         end if
+      end if
+      checkProg = m_bldFound
+   end function
+
+   public function checkProgFiles(strSubdir)
+      if m_blnFound = False Then
+         dim strProgFiles
+         for each strProgFiles in g_arrProgramFiles
+            check strProgFiles & "/" & strSubdir, ""
+         next
+      end if
+      checkProgFiles = m_blnFound
+   end function
+
+   public function checkRegistry(strValueNm, strVCSubdir, strVCommonSubdir)
+      if m_blnFound = False then
+         dim str, strPrefix, arrPrefixes
+         arrPrefixes = Array("HKLM\SOFTWARE\Wow6432Node\", "HKLM\SOFTWARE\", "HKCU\SOFTWARE\Wow6432Node\", "HKCU\SOFTWARE\")
+         for each strPrefix in arrPrefixes
+            str = RegGetString(strPrefix & strValueNm)
+            if str <> "" then
+               LogPrint "checkRegistry: '" & strPrefix & strValueNm & "' -> '" & str & "'"
+               if check(str & strVCSubdir, str & strVCommonSubdir) = True then
+                  exit for
+               end if
+            end if
+         next
+      end if
+      checkRegistry = m_bldFound
+   end function
+
+   public function checkInternal
+      check g_strPathDev & "/win.amd64/vcc/v14.2",  ""
+      check g_strPathDev & "/win.amd64/vcc/v14.1",  ""
+      check g_strPathDev & "/win.amd64/vcc/v14.0",  ""
+      check g_strPathDev & "/win.amd64/vcc/v10sp1", ""
+      check g_strPathDev & "/win.x86/vcc/v10sp1",   ""
+      checkInternal = m_blnFound
+   end function
+end class
 
 ''
 ' Checks for Visual C++ version 10 (2010).
-sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
-   dim strPathVC, strPathVCCommon, str, str2, blnNeedMsPDB
+sub CheckForVisualCPP(strOptVC, strOptVCCommon)
    PrintHdr "Visual C++"
 
    '
    ' Try find it...
    '
-   strPathVC = ""
-   strPathVCCommon = ""
-   if (strPathVC = "") And (strOptVC <> "") then
-      if CheckForVisualCPPSub(strOptVC, strOptVCCommon, blnOptVCExpressEdition) then
-         strPathVC = strOptVC
-         strPathVCCommon = strOptVCCommon
-      end if
-   end if
+   dim objState, strProgFiles
+   set objState = new VisualCPPState
+   objState.check strOptVC, strOptVCCommon
+   if g_blnInternalFirst = True then objState.checkInternal
+   objState.checkProg "cl.exe"
+   objState.checkProgFiles "Microsoft Visual Studio\2019\BuildTools\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2019\Professional\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2019\Community\VC"
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\16.0",             "VC", ""        ' doesn't work.
+   objState.checkProgFiles "Microsoft Visual Studio\2017\BuildTools\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2017\Professional\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2017\Community\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2017\Express\VC"
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\15.0",             "VC", ""
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\14.0",             "VC", "Common7"
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\12.0",             "VC", "Common7" '?
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\11.0",             "VC", "Common7" '?
+   objState.checkRegistry "Microsoft\VisualStudio\10.0\Setup\VS\ProductDir", "VC", "Common7"
+   if g_blnInternalFirst = False then objState.checkInternal
 
-   if (strPathVC = "") And (g_blnInternalFirst = True) Then
-      strPathVC = g_strPathDev & "/win.x86/vcc/v10sp1"
-      if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
-         strPathVC = ""
-      end if
-   end if
-
-   if   (strPathVC = "") _
-    And (Shell("cl.exe", True) = 0) then
-      str = Which("cl.exe")
-      if FileExists(PathStripFilename(strClExe) & "/build.exe") then
-         ' don't know how to deal with this cl.
-         Warning "Ignoring DDK cl.exe (" & str & ")."
-      else
-         strPathVC = PathParent(PathStripFilename(str))
-         strPathVCCommon = PathParent(strPathVC) & "/Common7"
-      end if
-   end if
-
-   if (strPathVC = "") then
-      str = RegGetString("HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\10.0\Setup\VS\ProductDir")
-      if str <> "" Then
-         str2 = str & "Common7"
-         str = str & "VC"
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
-   if (strPathVC = "") then
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\10.0\Setup\VS\ProductDir")
-      if str <> "" Then
-         str2 = str & "Common7"
-         str = str & "VC"
-         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
-            strPathVC = str
-            strPathVCCommon = str2
-         end if
-      end if
-   end if
-
-   if (strPathVC = "") And (g_blnInternalFirst = False) Then
-      strPathVC = g_strPathDev & "/win.x86/vcc/v10sp1"
-      if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
-         strPathVC = ""
-      end if
-   end if
-
-   if strPathVC = "" then
+   if objState.m_blnFound = False then
       MsgError "Cannot find cl.exe (Visual C++) anywhere on your system. Check the build requirements."
       exit sub
    end if
-
-   '
-   ' Clean up the path and determin the VC directory.
-   '
-   strPathVC = UnixSlashes(PathAbs(strPathVC))
-   g_strPathVCC = strPathVC
-
-   '
-   ' Check the version.
-   ' We'll have to make sure mspdbXX.dll is somewhere in the PATH.
-   '
-   if (strPathVCCommon <> "") Then
-      EnvAppend "PATH", ";" & strPathVCCommon & "/IDE"
-   end if
-   if Shell(DosSlashes(strPathVC & "/bin/cl.exe"), True) <> 0 then
-      MsgError "Executing '" & strClExe & "' (which we believe to be the Visual C++ compiler driver) failed."
-      exit sub
-   end if
-
-   if   (InStr(1, g_strShellOutput, "Version 16.") <= 0) _
-    And (InStr(1, g_strShellOutput, "Version 17.") <= 0) then
-      MsgError "The Visual C++ compiler we found ('" & strPathVC & "') isn't 10.0 or 11.0. Check the build requirements."
-      exit sub
-   end if
+   g_strPathVCC = objState.m_strPathVC
 
    '
    ' Ok, emit build config variables.
    '
-   if InStr(1, g_strShellOutput, "Version 16.") > 0 then
-      CfgPrint "PATH_TOOL_VCC100      := " & g_strPathVCC
-      CfgPrint "PATH_TOOL_VCC100X86   := $(PATH_TOOL_VCC100)"
-      CfgPrint "PATH_TOOL_VCC100AMD64 := $(PATH_TOOL_VCC100)"
-      CfgPrint "VBOX_WITH_NEW_VCC     :="
-      if LogFileExists(strPathVC, "atlmfc/include/atlbase.h") then
-         PrintResult "Visual C++ v10 with ATL", g_strPathVCC
-      elseif   LogFileExists(g_strPathDDK, "inc/atl71/atlbase.h") _
-           And LogFileExists(g_strPathDDK, "lib/ATL/i386/atls.lib") then
-         CfgPrint "VBOX_WITHOUT_COMPILER_REDIST=1"
-         CfgPrint "PATH_TOOL_VCC100_ATLMFC_INC       = " & g_strPathDDK & "/inc/atl71"
-         CfgPrint "PATH_TOOL_VCC100_ATLMFC_LIB.amd64 = " & g_strPathDDK & "/lib/ATL/amd64"
-         CfgPrint "PATH_TOOL_VCC100_ATLMFC_LIB.x86   = " & g_strPathDDK & "/lib/ATL/i386"
-         CfgPrint "PATH_TOOL_VCC100AMD64_ATLMFC_INC  = " & g_strPathDDK & "/inc/atl71"
-         CfgPrint "PATH_TOOL_VCC100AMD64_ATLMFC_LIB  = " & g_strPathDDK & "/lib/ATL/amd64"
-         CfgPrint "PATH_TOOL_VCC100X86_ATLMFC_INC    = " & g_strPathDDK & "/inc/atl71"
-         CfgPrint "PATH_TOOL_VCC100X86_ATLMFC_LIB    = " & g_strPathDDK & "/lib/ATL/i386"
-         PrintResult "Visual C++ v10 with DDK ATL", g_strPathVCC
-      else
-         CfgPrint "VBOX_WITHOUT_COMPILER_REDIST=1"
-         DisableCOM "No ATL"
-         PrintResult "Visual C++ v10 (or later) without ATL", g_strPathVCC
-      end if
+   CfgPrint "VBOX_VCC_TOOL_STEM    := " & objState.m_strVersion
+   CfgPrint "PATH_TOOL_" & objState.m_strVersion & "      := " & g_strPathVCC
+   CfgPrint "PATH_TOOL_" & objState.m_strVersion & "X86   := $(PATH_TOOL_" & objState.m_strVersion & ")"
+   CfgPrint "PATH_TOOL_" & objState.m_strVersion & "AMD64 := $(PATH_TOOL_" & objState.m_strVersion & ")"
 
-   elseif InStr(1, g_strShellOutput, "Version 17.") > 0 then
-      CfgPrint "PATH_TOOL_VCC110      := " & g_strPathVCC
-      CfgPrint "PATH_TOOL_VCC110X86   := $(PATH_TOOL_VCC110)"
-      CfgPrint "PATH_TOOL_VCC110AMD64 := $(PATH_TOOL_VCC110)"
-      PrintResult "Visual C++ v11", g_strPathVCC
-      MsgWarning "The support for Visual C++ v11 (aka 2012) is experimental"
-
+   if   objState.m_strVersion = "VCC100" _
+     or objState.m_strVersion = "VCC110" _
+     or objState.m_strVersion = "VCC120" _
+     or objState.m_strVersion = "VCC140" _
+   then
+      CfgPrint "VBOX_WITH_NEW_VCC     :=" '?? for VCC110+
    else
-      MsgError "The Visual C++ compiler we found ('" & strPathVC & "') isn't 10.0 or 11.0. Check the build requirements."
-      exit sub
+      CfgPrint "VBOX_WITH_NEW_VCC     := 1"
    end if
+   PrintResult "Visual C++ " & objState.m_strVersion, g_strPathVCC
 
-   ' and the env.bat path fix.
-   if strPathVCCommon <> "" then
-      EnvPrintAppend "PATH", DosSlashes(strPathVCCommon) & "\IDE", ";"
+   ' And the env.bat path fix.
+   if objState.m_strPathVCCommon <> "" then
+      EnvPrintAppend "PATH", DosSlashes(objState.m_strPathVCCommon) & "\IDE", ";"
    end if
 end sub
-
-''
-' Checks if the specified path points to a usable PSDK.
-function CheckForVisualCPPSub(strPathVC, strPathVCCommon, blnOptVCExpressEdition)
-   strPathVC = UnixSlashes(PathAbs(strPathVC))
-   CheckForVisualCPPSub = False
-   LogPrint "trying: strPathVC=" & strPathVC & " strPathVCCommon=" & strPathVCCommon & " blnOptVCExpressEdition=" & blnOptVCExpressEdition
-   if   LogFileExists(strPathVC, "bin/cl.exe") _
-    And LogFileExists(strPathVC, "bin/link.exe") _
-    And LogFileExists(strPathVC, "include/string.h") _
-    And LogFileExists(strPathVC, "lib/libcmt.lib") _
-    And LogFileExists(strPathVC, "lib/msvcrt.lib") _
-      then
-      if blnOptVCExpressEdition _
-       Or (    LogFileExists(strPathVC, "atlmfc/include/atlbase.h") _
-           And LogFileExists(strPathVC, "atlmfc/lib/atls.lib")) _
-       Or (    LogFileExists(g_strPathDDK, "inc/atl71/atlbase.h") _
-           And LogFileExists(g_strPathDDK, "lib/ATL/i386/atls.lib")) _
-         Then
-         '' @todo figure out a way we can verify the version/build!
-         CheckForVisualCPPSub = True
-      end if
-   end if
-end function
-
 
 ''
 ' Checks for a platform SDK that works with the compiler
@@ -1634,12 +1793,6 @@ sub CheckForXml2(strOptXml2)
       end if
    end if
 
-   ' Ignore failure if we're in 'internal' mode.
-   if (strPathXml2 = "") and g_blnInternalMode then
-      PrintResultMsg "libxml2", "ignored (internal mode)"
-      exit sub
-   end if
-
    ' Success?
    if strPathXml2 = "" then
       if strOptXml2 = "" then
@@ -1712,12 +1865,6 @@ sub CheckForSsl(strOptSsl, bln32Bit)
          str = PathParent(PathStripFilename(str))
          if CheckForSslSub(str) then strPathSsl = str
       end if
-   end if
-
-   ' Ignore failure if we're in 'internal' mode.
-   if (strPathSsl = "") and g_blnInternalMode then
-      PrintResultMsg strOpenssl, "ignored (internal mode)"
-      exit sub
    end if
 
    ' Success?
@@ -1794,12 +1941,6 @@ sub CheckForCurl(strOptCurl, bln32Bit)
          str = PathParent(PathStripFilename(str))
          if CheckForCurlSub(str) then strPathCurl = str
       end if
-   end if
-
-   ' Ignore failure if we're in 'internal' mode.
-   if (strPathCurl = "") and g_blnInternalMode then
-      PrintResultMsg strCurl, "ignored (internal mode)"
-      exit sub
    end if
 
    ' Success?
@@ -1931,32 +2072,33 @@ sub usage
    Print "Usage: cscript configure.vbs [options]"
    Print ""
    Print "Configuration:"
-   Print "  -h, --help"
-   Print "  --internal"
-   Print "  --internal-last"
-   Print "  --target-arch=x86|amd64"
+   Print "  -h, --help              Display this."
+   Print "  --internal              Enable internal mode."
+   Print "  --internal-last         Check internal (tools/win.*) last instad of first."
+   Print "  --target-arch=x86|amd64 The target architecture."
    Print ""
    Print "Components:"
-   Print "  --disable-COM"
+   Print "  --disable-COM           Disables all frontends and API."
+   Print "  --disable-SDL           Disables the SDL frontend."
    Print "  --disable-UDPTunnel"
-   Print "  --disable-SDL"
    Print ""
    Print "Locations:"
-   Print "  --with-kBuild=PATH    "
-   Print "  --with-libSDL=PATH    "
-   Print "  --with-Qt5=PATH       "
-   Print "  --with-DDK=PATH       "
-   Print "  --with-SDK=PATH       "
-   Print "  --with-VC=PATH        "
-   Print "  --with-VC-Common=PATH "
-   Print "  --with-VC-Express-Edition"
-   Print "  --with-W32API=PATH    "
-   Print "  --with-libxml2=PATH   "
-   Print "  --with-openssl=PATH   "
-   Print "  --with-openssl32=PATH (only for 64-bit targets)"
-   Print "  --with-libcurl=PATH   "
-   Print "  --with-libcurl32=PATH (only for 64-bit targets)"
-   Print "  --with-python=PATH    "
+   Print "  --with-kBuild=PATH      Where kBuild is to be found."
+   Print "  --with-libSDL=PATH      Where libSDL is to be found."
+   Print "  --with-Qt5=PATH         Where Qt5 is to be found."
+   Print "  --with-DDK=PATH         Where the WDK is to be found."
+   Print "  --with-SDK=PATH         Where the Windows SDK is to be found."
+   '' @todo Print "  --with-SDK10=PATH       Where the Windows 10 SDK is to be found."
+   Print "  --with-VC=PATH          Where the Visual C++ compiler is to be found."
+   Print "                          (Expecting bin, include and lib subdirs.)"
+   Print "  --with-VC-Common=PATH   Maybe needed for 2015 and older to"
+   Print "                          locate the Common7 directory.
+   Print "  --with-python=PATH      The python to use."
+   Print "  --with-libxml2=PATH     To use a libxml2 other than the VBox one."
+   Print "  --with-openssl=PATH     To use an openssl other than the VBox one."
+   Print "  --with-openssl32=PATH   The 32-bit variant of openssl."
+   Print "  --with-libcurl=PATH     To use a cURL other than the VBox one."
+   Print "  --with-libcurl32=PATH   The 32-bit variant of cURL."
 end sub
 
 
@@ -1984,8 +2126,6 @@ Sub Main
    strOptSDK = ""
    strOptVC = ""
    strOptVCCommon = ""
-   blnOptVCExpressEdition = False
-   strOptW32API = ""
    strOptXml2 = ""
    strOptSsl = ""
    strOptSsl32 = ""
@@ -2032,9 +2172,9 @@ Sub Main
          case "--with-vc-common"
             strOptVCCommon = strPath
          case "--with-vc-express-edition"
-            blnOptVCExpressEdition = True
+            ' ignore
          case "--with-w32api"
-            strOptW32API = strPath
+            ' ignore
          case "--with-libxml2"
             strOptXml2 = strPath
          case "--with-openssl"
@@ -2103,7 +2243,7 @@ Sub Main
    CheckSourcePath
    CheckForkBuild strOptkBuild
    CheckForWinDDK strOptDDK
-   CheckForVisualCPP strOptVC, strOptVCCommon, blnOptVCExpressEdition
+   CheckForVisualCPP strOptVC, strOptVCCommon
    CheckForPlatformSDK strOptSDK
    CheckForMidl
    CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
