@@ -221,17 +221,56 @@ function ArrayAppend(arr, str)
 end function
 
 
+''
+' Gets the SID of the current user.
+function GetSid()
+   dim objNet, strUser, strDomain, offSlash, objWmiUser
+   GetSid = ""
+
+   ' Figure the user + domain
+   set objNet = CreateObject("WScript.Network")
+   strUser   = objNet.UserName
+   strDomain = objNet.UserDomain
+   offSlash  = InStr(1, strUser, "\")
+   if offSlash > 0 then
+      strDomain = Left(strUser, offSlash - 1)
+      strUser   = Right(strUser, Len(strUser) - offSlash)
+   end if
+
+   ' Lookup the user.
+   on error resume next
+   set objWmiUser = GetObject("winmgmts:{impersonationlevel=impersonate}!/root/cimv2:Win32_UserAccount." _
+                              & "Domain='" & strDomain &"',Name='" & strUser & "'")
+   if err.number = 0 then
+      GetSid = objWmiUser.SID
+   end if
+end function
+
 
 ''
 ' Translates a register root name to a value
-function RegTransRoot(strRoot)
+' This will translate HKCU path to HKEY_USERS and fixing
+function RegTransRoot(strRoot, ByRef sSubKeyName)
    const HKEY_LOCAL_MACHINE = &H80000002
    const HKEY_CURRENT_USER  = &H80000001
+   const HKEY_USERS         = &H80000003
+
    select case strRoot
       case "HKLM"
          RegTransRoot = HKEY_LOCAL_MACHINE
+      case "HKUS"
+         RegTransRoot = HKEY_USERS
       case "HKCU"
-         RegTransRoot = HKEY_CURRENT_USER
+         dim strCurrentSid
+         strCurrentSid = GetSid()
+         if strCurrentSid <> "" then
+            sSubKeyName  = strCurrentSid & "\" & sSubKeyName
+            RegTransRoot = HKEY_USERS
+            'LogPrint "RegTransRoot: HKCU -> HKEY_USERS + " & sSubKeyName
+         else
+            RegTransRoot = HKEY_CURRENT_USER
+            LogPrint "RegTransRoot: Warning! HKCU -> HKEY_USERS failed!"
+         end if
       case else
          MsgFatal "RegTransRoot: Unknown root: '" & strRoot & "'"
          RegTransRoot = 0
@@ -281,13 +320,15 @@ function RegGetString(strName)
 
       ' Must use ExecMethod to call the GetStringValue method because of the context.
       Set InParms = g_objReg.Methods_("GetStringValue").Inparameters
-      InParms.hDefKey     = RegTransRoot(strRoot)
+      InParms.hDefKey     = RegTransRoot(strRoot, strKey)
       InParms.sSubKeyName = strKey
       InParms.sValueName  = strValue
       On Error Resume Next
       set OutParms = g_objReg.ExecMethod_("GetStringValue", InParms, , g_objRegCtx)
       if OutParms.ReturnValue = 0 then
-         RegGetString = OutParms.sValue
+         if OutParms.sValue <> Null then
+            RegGetString = OutParms.sValue
+         end if
       end if
    else
       ' fallback mode
@@ -298,28 +339,61 @@ end function
 
 
 ''
-' Returns an array of subkey strings.
-function RegEnumSubKeys(strRoot, strKeyPath)
-   dim iRoot
-   iRoot = RegTransRoot(strRoot)
-   RegEnumSubKeys = Array()
+' Gets a multi string value from the registry. Returns array of strings if found, otherwise empty array().
+function RegGetMultiString(strName)
+   RegGetMultiString = Array()
+   if RegInit() then
+      dim strRoot, strKey, strValue
+      dim iRoot
 
+      ' split up into root, key and value parts.
+      strRoot = left(strName, instr(strName, "\") - 1)
+      strKey = mid(strName, instr(strName, "\") + 1, instrrev(strName, "\") - instr(strName, "\"))
+      strValue = mid(strName, instrrev(strName, "\") + 1)
+
+      ' Must use ExecMethod to call the GetStringValue method because of the context.
+      Set InParms = g_objReg.Methods_("GetMultiStringValue").Inparameters
+      InParms.hDefKey     = RegTransRoot(strRoot, strKey)
+      InParms.sSubKeyName = strKey
+      InParms.sValueName  = strValue
+      On Error Resume Next
+      set OutParms = g_objReg.ExecMethod_("GetMultiStringValue", InParms, , g_objRegCtx)
+      if OutParms.ReturnValue = 0 then
+         if OutParms.sValue <> Null then
+            RegGetMultiString = OutParms.sValue
+         end if
+      end if
+   else
+      ' fallback mode
+      On Error Resume Next
+      RegGetMultiString = g_objShell.RegRead(strName)
+   end if
+end function
+
+
+''
+' Returns an array of subkey strings.
+function RegEnumSubKeys(strRoot, ByVal strKeyPath)
+   RegEnumSubKeys = Array()
    if RegInit() then
       ' Must use ExecMethod to call the EnumKey method because of the context.
       Set InParms = g_objReg.Methods_("EnumKey").Inparameters
-      InParms.hDefKey     = RegTransRoot(strRoot)
+      InParms.hDefKey     = RegTransRoot(strRoot, strKeyPath)
       InParms.sSubKeyName = strKeyPath
       On Error Resume Next
       set OutParms = g_objReg.ExecMethod_("EnumKey", InParms, , g_objRegCtx)
+      'LogPrint "RegEnumSubKeys(" & Hex(InParms.hDefKey) & "," & InParms.sSubKeyName &") -> " & OutParms.GetText_(1)
       if OutParms.ReturnValue = 0 then
-         RegEnumSubKeys = OutParms.sNames
+         if OutParms.sNames <> Null then
+            RegEnumSubKeys = OutParms.sNames
+         end if
       end if
    else
       ' fallback mode
       dim objReg, rc, arrSubKeys
       set objReg = GetObject("winmgmts:{impersonationLevel=impersonate}!\\.\root\default:StdRegProv")
       On Error Resume Next
-      rc = objReg.EnumKey(iRoot, strKeyPath, arrSubKeys)
+      rc = objReg.EnumKey(RegTransRoot(strRoot, strKeyPath), strKeyPath, arrSubKeys)
       if rc = 0 then
          RegEnumSubKeys = arrSubKeys
       end if
@@ -350,6 +424,48 @@ end function
 ' Returns an rsorted array of subkey strings.
 function RegEnumSubKeysFullRSort(strRoot, strKeyPath)
    RegEnumSubKeysFullRSort = ArrayRSortStrings(RegEnumSubKeysFull(strRoot, strKeyPath))
+end function
+
+
+''
+' Returns an array of value name strings.
+function RegEnumValueNames(strRoot, ByVal strKeyPath)
+   RegEnumValueNames = Array()
+   if RegInit() then
+      ' Must use ExecMethod to call the EnumKey method because of the context.
+      Set InParms = g_objReg.Methods_("EnumValues").Inparameters
+      InParms.hDefKey     = RegTransRoot(strRoot, strKeyPath)
+      InParms.sSubKeyName = strKeyPath
+      On Error Resume Next
+      set OutParms = g_objReg.ExecMethod_("EnumValues", InParms, , g_objRegCtx)
+      'LogPrint "RegEnumValueNames(" & Hex(InParms.hDefKey) & "," & InParms.sSubKeyName &") -> " & OutParms.GetText_(1)
+      if OutParms.ReturnValue = 0 then
+         if OutParms.sNames <> Null then
+            RegEnumValueNames = OutParms.sNames
+         end if
+      end if
+   else
+      ' fallback mode
+      dim objReg, rc, arrSubKeys
+      set objReg = GetObject("winmgmts:{impersonationLevel=impersonate}!\\.\root\default:StdRegProv")
+      On Error Resume Next
+      rc = objReg.EnumValues(RegTransRoot(strRoot, strKeyPath), strKeyPath, arrSubKeys)
+      if rc = 0 then
+         RegEnumValueNames = arrSubKeys
+      end if
+   end if
+end function
+
+
+''
+' Returns an array of full path value name strings.
+function RegEnumValueNamesFull(strRoot, strKeyPath)
+   dim arrTmp
+   arrTmp = RegEnumValueNames(strRoot, strKeyPath)
+   for i = LBound(arrTmp) to UBound(arrTmp)
+      arrTmp(i) = strKeyPath & "\" & arrTmp(i)
+   next
+   RegEnumValueNamesFull = arrTmp
 end function
 
 
@@ -2006,11 +2122,10 @@ function CheckForCurlSub(strPathCurl)
 end function
 
 
-
 ''
 ' Checks for any Qt5 binaries.
-sub CheckForQt(strOptQt5)
-   dim strPathQt5, arrFolders, arrInfixes, strInfix
+sub CheckForQt(strOptQt5, strOptInfix)
+   dim strPathQt5, strInfixQt5, arrFolders, arrVccInfixes, strVccInfix
    PrintHdr "Qt5"
 
    '
@@ -2019,17 +2134,62 @@ sub CheckForQt(strOptQt5)
    LogPrint "Checking for user specified path of Qt5 ... "
    strPathQt5 = ""
    if strOptQt5 <> "" then
-      strPathQt5 = CheckForQt5Sub(UnixSlashes(strOptQt5))
+      strPathQt5 = CheckForQt5Sub(UnixSlashes(strOptQt5), strOptInfix, strInfixQt5)
    end if
 
-   ' Check the dev tools - prefer ones matching the compiler.
-   if strPathQt5 = "" then
-      arrFolders = GetSubdirsStartingWithSorted(g_strPathDev & "/win." & g_strTargetArch & "/qt", "v5")
-      arrInfixes = Array(LCase(g_strVCCVersion), Left(LCase(g_strVCCVersion), Len(g_strVCCVersion) - 1), "")
-      for each strInfix in arrInfixes
-         for i = UBound(arrFolders) to LBound(arrFolders) step -1
-            if strInfix = "" or InStr(1, LCase(arrFolders(i)), strInfix) > 0 then
-               strPathQt5 = CheckForQt5Sub(g_strPathDev & "/win." & g_strTargetArch & "/qt/" & arrFolders(i))
+   if strPathQt = "" then
+      '
+      ' Collect links from "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\UFH\SHC"
+      '
+      ' Typical string list:
+      '   C:\Users\someuser\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Qt\5.x.y\MSVC 20zz (64-bit)\Qt 5.x.y (MSVC 20zz 64-bit).lnk
+      '   C:\Windows\System32\cmd.exe
+      '   /A /Q /K E:\qt\installed\5.x.y\msvc20zz_64\bin\qtenv2.bat
+      '
+      dim arrValues, strValue, arrStrings, str, arrCandidates, iCandidates, strCandidate, off
+      arrValues = RegEnumValueNamesFull("HKCU", "SOFTWARE\Microsoft\Windows\CurrentVersion\UFH\SHC")
+      redim arrCandidates(UBound(arrValues) - LBound(arrValues) + 1)
+      iCandidates   = 0
+      for each strValue in arrValues
+         arrStrings = RegGetMultiString("HKCU\" & strValue)
+         if UBound(arrStrings) >= 0 and UBound(arrStrings) - LBound(arrStrings) >= 2 then
+            str = Trim(arrStrings(UBound(arrStrings)))
+            if   LCase(Right(str, Len("\bin\qtenv2.bat"))) = "\bin\qtenv2.bat" _
+             and InStr(1, LCase(str), "\msvc20") > 0 _
+             and InStr(1, str, ":") > 0 _
+            then
+               off = InStr(1, str, ":") - 1
+               arrCandidates(iCandidates) = Mid(str, off, Len(str) - off - Len("\bin\qtenv2.bat") + 1)
+               LogPrint "qt5 candidate #" & iCandidates & "=" & arrCandidates(iCandidates) & " (" & str & ")"
+               iCandidates = iCandidates + 1
+            end if
+         end if
+      next
+      redim preserve arrCandidates(iCandidates)
+      if iCandidates > 0 then arrCandidates = ArrayRSortStrings(arrCandidates)   ' Kind of needs version sorting here...
+      LogPrint "Testing qtenv2.bat links (" & iCandidates & ") ..."
+
+      ' VC infixes/subdir names to consider (ASSUMES 64bit)
+      if     g_strVCCVersion = "VCC142" or g_strVCCVersion = "" then
+         arrVccInfixes = Array("msvc2019_64", "msvc2017_64", "msvc2015_64")
+      elseif g_strVCCVersion = "VCC141" then
+         arrVccInfixes = Array("msvc2017_64", "msvc2015_64", "msvc2019_64")
+      elseif g_strVCCVersion = "VCC140" then
+         arrVccInfixes = Array("msvc2015_64", "msvc2017_64", "msvc2019_64")
+      elseif g_strVCCVersion = "VCC120" then
+         arrVccInfixes = Array("msvc2013_64")
+      elseif g_strVCCVersion = "VCC110" then
+         arrVccInfixes = Array("msvc2012_64")
+      elseif g_strVCCVersion = "VCC100" then
+         arrVccInfixes = Array("msvc2010_64")
+      else
+         MsgFatal "Unexpected VC version: " & g_strVCCVersion
+         arrVccInfixes = Array()
+      end if
+      for each strVccInfix in arrVccInfixes
+         for each strCandidate in arrCandidates
+            if InStr(1, LCase(strCandidate), strVccInfix) > 0 then
+               strPathQt5 = CheckForQt5Sub(strCandidate, strOptInfix, strInfixQt5)
                if strPathQt5 <> "" then exit for
             end if
          next
@@ -2037,64 +2197,113 @@ sub CheckForQt(strOptQt5)
       next
    end if
 
-   ' Note! We could scan Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\UFH\SHC looking for entries
-   '       executing stuff like C:\qt\5.x.y\msvc2017_64\bin\qtenv2.bat
-
-   ' Display the result.
+   ' Check the dev tools - prefer ones matching the compiler.
    if strPathQt5 = "" then
-      PrintResultMsg "Qt5", "not found"
-   else
-      PrintResult "Qt5", strPathQt5
+      LogPrint "Testing tools dir (" & g_strPathDev & "/win." & g_strTargetArch & "/qt/v5*) ..."
+      arrFolders = GetSubdirsStartingWithSorted(g_strPathDev & "/win." & g_strTargetArch & "/qt", "v5")
+      arrVccInfixes = Array(LCase(g_strVCCVersion), Left(LCase(g_strVCCVersion), Len(g_strVCCVersion) - 1), "")
+      for each strVccInfix in arrVccInfixes
+         for i = UBound(arrFolders) to LBound(arrFolders) step -1
+            if strVccInfix = "" or InStr(1, LCase(arrFolders(i)), strVccInfix) > 0 then
+               strPathQt5 = CheckForQt5Sub(g_strPathDev & "/win." & g_strTargetArch & "/qt/" & arrFolders(i), strOptInfix, strInfixQt5)
+               if strPathQt5 <> "" then exit for
+            end if
+         next
+         if strPathQt5 <> "" then exit for
+      next
    end if
 
+   '
+   ' Display the result and output the config.
+   '
    if strPathQt5 <> "" then
+      PrintResult "Qt5", strPathQt5
+      PrintResultMsg "Qt5 infix", strInfixQt5
       CfgPrint "PATH_SDK_QT5          := " & strPathQt5
       CfgPrint "PATH_TOOL_QT5         := $(PATH_SDK_QT5)"
       CfgPrint "VBOX_PATH_QT          := $(PATH_SDK_QT5)"
-   end if
-   if strPathQt5 = "" then
+      CfgPrint "VBOX_QT_INFIX         := " & strInfixQt5
+      CfgPrint "VBOX_WITH_QT_PAYLOAD  := 1"
+   else
       CfgPrint "VBOX_WITH_QTGUI       :="
+      PrintResultMsg "Qt5", "not found"
    end if
 end sub
 
-
 ''
 ' Checks if the specified path points to an usable Qt5 library.
-function CheckForQt5Sub(strPathQt5)
+function CheckForQt5Sub(strPathQt5, strOptInfix, ByRef strInfixQt5)
    CheckForQt5Sub = ""
    LogPrint "trying: strPathQt5=" & strPathQt5
 
    if   LogFileExists(strPathQt5, "bin/moc.exe") _
-    And LogFileExists(strPathQt5, "bin/uic.exe") _
-    And LogFileExists(strPathQt5, "include/QtWidgets/qwidget.h") _
-    And LogFileExists(strPathQt5, "include/QtWidgets/QApplication") _
-    And LogFileExists(strPathQt5, "include/QtGui/QImage") _
-    And LogFileExists(strPathQt5, "include/QtNetwork/QHostAddress") _
-    And (   LogFileExists(strPathQt5, "lib/Qt5Core.lib") _
-         Or LogFileExists(strPathQt5, "lib/Qt5CoreVBox.lib")) _
-    And (   LogFileExists(strPathQt5, "lib/Qt5Network.lib") _
-         Or LogFileExists(strPathQt5, "lib/Qt5NetworkVBox.lib")) _
-      then
-         CheckForQt5Sub = strPathQt5
+    and LogFileExists(strPathQt5, "bin/uic.exe") _
+    and LogFileExists(strPathQt5, "include/QtWidgets/qwidget.h") _
+    and LogFileExists(strPathQt5, "include/QtWidgets/QApplication") _
+    and LogFileExists(strPathQt5, "include/QtGui/QImage") _
+    and LogFileExists(strPathQt5, "include/QtNetwork/QHostAddress") _
+   then
+      ' Infix testing.
+      if   LogFileExists(strPathQt5, "lib/Qt5Core.lib") _
+       and LogFileExists(strPathQt5, "lib/Qt5Network.lib") then
+         strInfixQt5 = ""
+         CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
+      elseif LogFileExists(strPathQt5, "lib/Qt5Core" & strOptInfix & ".lib") _
+         and LogFileExists(strPathQt5, "lib/Qt5Network" & strOptInfix & ".lib") then
+         strInfixQt5 = strOptInfix
+         CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
+      elseif LogFileExists(strPathQt5, "lib/Qt5CoreVBox.lib") _
+         and LogFileExists(strPathQt5, "lib/Qt5NetworkVBox.lib") then
+         strInfixQt5 = "VBox"
+         CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
+      end if
    end if
 end function
 
 
-'
-'
-function CheckForPython(strPathPython)
-
+''
+' Checks for python.
+function CheckForPython(strOptPython)
+   dim strPathPython, arrVersions, strVer, str
    PrintHdr "Python"
-
    CheckForPython = False
-   LogPrint "trying: strPathPython=" & strPathPython
 
-   if LogFileExists(strPathPython, "python.exe") then
-      CfgPrint "VBOX_BLD_PYTHON       := " & strPathPython & "\python.exe"
-      CheckForPython = True
+   '
+   ' Locate it.
+   '
+   strPathPython = CheckForPythonSub(strOptPython)
+   if strPathPython = "" then
+      arrVersions = Array("3.12", "3.11", "3.10", "3.9", "3.8", "3.7", "3.6", "3.5", "2.7")
+      for each strVer in arrVersions
+         strPathPython = CheckForPythonSub(RegGetString("HKLM\SOFTWARE\Python\PythonCore\" & strVer & "\InstallPath\"))
+         if strPathPython <> "" then exit for
+      next
    end if
+   if strPathPython = "" then strPathPython = CheckForPythonSub(PathStripFilename(Which("python.exe")))
 
-   PrintResult "Python ", strPathPython
+   '
+   ' Output config & result.
+   '
+   CheckForPython = strPathPython <> ""
+   if CheckForPython then
+      CfgPrint "VBOX_BLD_PYTHON       := " & strPathPython
+      PrintResult "Python", strPathPython
+   else
+      PrintResultMsg "Python", "not found"
+   end if
+end function
+
+'' Worker for CheckForPython.
+'
+function CheckForPythonSub(strPathPython)
+   CheckForPythonSub = ""
+   if strPathPython <> "" then
+      if   LogFileExists(strPathPython, "python.exe") _
+       and LogDirExists(strPathPython & "/DLLs") _
+      then
+         CheckForPythonSub = UnixSlashes(PathAbs(strPathPython & "/python.exe"))
+      end if
+   end if
 end function
 
 
@@ -2157,6 +2366,7 @@ function Main
    strOptkBuild = ""
    strOptlibSDL = ""
    strOptQt5 = ""
+   strOptQt5Infix = ""
    strOptSDK = ""
    strOptVC = ""
    strOptVCCommon = ""
@@ -2185,6 +2395,7 @@ function Main
 
       ' Process the argument
       select case LCase(strArg)
+         ' --with-something:
          case "--with-ddk"
             strOptDDK = strPath
          case "--with-dxsdk"
@@ -2199,6 +2410,8 @@ function Main
             ' ignore
          case "--with-qt5"
             strOptQt5 = strPath
+         case "--with-qt5-infix"
+            strOptQt5Infix = strPath
          case "--with-sdk"
             strOptSDK = strPath
          case "--with-vc"
@@ -2221,14 +2434,22 @@ function Main
             strOptCurl32 = strPath
          case "--with-python"
             strOptPython = strPath
+
+         ' --disable-something/--enable-something
          case "--disable-com"
             blnOptDisableCOM = True
          case "--enable-com"
             blnOptDisableCOM = False
          case "--disable-udptunnel"
             blnOptDisableUDPTunnel = True
+         case "--enable-udptunnel"
+            blnOptDisableUDPTunnel = False
          case "--disable-sdl"
             blnOptDisableSDL = True
+         case "--endable-sdl"
+            blnOptDisableSDL = False
+
+         ' Other stuff.
          case "--continue-on-error"
             g_blnContinueOnError = True
          case "--internal-first"
@@ -2279,10 +2500,10 @@ function Main
       DisableUDPTunnel "--disable-udptunnel"
    end if
    CheckSourcePath
-   CheckForkBuild strOptkBuild
-   CheckForWinDDK strOptDDK
-   CheckForVisualCPP strOptVC, strOptVCCommon
-   CheckForPlatformSDK strOptSDK
+   CheckForkBuild       strOptkBuild
+   CheckForWinDDK       strOptDDK
+   CheckForVisualCPP    strOptVC, strOptVCCommon
+   CheckForPlatformSDK  strOptSDK
    CheckForMidl
    CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
    CfgPrint "VBOX_WITH_LIBVPX := " '' @todo look for libvpx 1.1.0+
@@ -2297,23 +2518,21 @@ function Main
    if blnOptDisableSDL = True then
       DisableSDL "--disable-sdl"
    else
-      CheckForlibSDL strOptlibSDL
+      CheckForlibSDL    strOptlibSDL
    end if
-   CheckForXml2 strOptXml2
-   CheckForSsl strOptSsl, False
+   CheckForXml2         strOptXml2
+   CheckForSsl          strOptSsl, False
    if g_strTargetArch = "amd64" then
        ' 32-bit openssl required as well
-       CheckForSsl strOptSsl32, True
+       CheckForSsl      strOptSsl32, True
    end if
-   CheckForCurl strOptCurl, False
+   CheckForCurl         strOptCurl, False
    if g_strTargetArch = "amd64" then
        ' 32-bit Curl required as well
-       CheckForCurl strOptCurl32, True
+       CheckForCurl     strOptCurl32, True
    end if
-   CheckForQt strOptQt5
-   if (strOptPython <> "") then
-     CheckForPython strOptPython
-   end if
+   CheckForQt           strOptQt5, strOptQt5Infix
+   CheckForPython       strOptPython
 
    Print ""
    Print "Execute env.bat once before you start to build VBox:"
