@@ -41,11 +41,13 @@ g_strPathkBuild = ""
 g_strPathkBuildBin = ""
 g_strPathDev = ""
 
-dim g_strTargetArch
+dim g_strTargetArch, g_StrTargetArchWin
 g_strTargetArch = ""
+g_StrTargetArchWin = ""
 
-dim g_strHostArch
+dim g_strHostArch, g_strHostArchWin
 g_strHostArch = ""
+g_strHostArchWin = ""
 
 ' Visual C++ info.
 dim g_strPathVCC, g_strVCCVersion
@@ -53,7 +55,8 @@ g_strPathVCC = ""
 g_strVCCVersion = ""
 
 ' SDK and DDK.
-dim g_strPathPSDK, g_strVerPSDK, g_strPathDDK
+dim g_strPathSDK10, g_strPathPSDK, g_strVerPSDK, g_strPathDDK
+g_strPathSDK10 = ""
 g_strPathPSDK = ""
 g_strVerPSDK = ""
 g_strPathDDK = ""
@@ -644,23 +647,8 @@ end function
 
 
 ''
-' Sorts a string array.
-sub SortStringArray(ByRef arr)
-   dim i, j, strTemp
-   for i = UBound(arr) - 1 to 0 step -1
-      for j = 0 to i
-         if StrComp(arr(j), arr(j + 1)) > 0 then
-            strTemp = arr(j)
-            arr(j) = arr(j + 1)
-            arr(j + 1) = strTemp
-         end if
-      next
-   next
-end sub
-
-''
 ' Returns a sorted array of subfolder names that starts with the given string.
-function GetSubdirsStartingWithSorted(strFolder, strStartingWith)
+function GetSubdirsStartingWith(strFolder, strStartingWith)
    if DirExists(strFolder) then
       dim obj, i
       set obj = g_objFileSys.GetFolder(strFolder)
@@ -671,7 +659,7 @@ function GetSubdirsStartingWithSorted(strFolder, strStartingWith)
          end if
       next
       if i > 0 then
-         redim arrResult(i)
+         redim arrResult(i - 1)
          i = 0
          for each objSub in obj.SubFolders
             if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
@@ -679,15 +667,27 @@ function GetSubdirsStartingWithSorted(strFolder, strStartingWith)
                i = i + 1
             end if
          next
-
-         SortStringArray arrResult
-         GetSubdirsStartingWithSorted = arrResult
+         GetSubdirsStartingWith = arrResult
       else
-         GetSubdirsStartingWithSorted = Array()
+         GetSubdirsStartingWith = Array()
       end if
    else
-      GetSubdirsStartingWithSorted = Array()
+      GetSubdirsStartingWith = Array()
    end if
+end function
+
+
+''
+' Returns a sorted array of subfolder names that starts with the given string.
+function GetSubdirsStartingWithSorted(strFolder, strStartingWith)
+   GetSubdirsStartingWithSorted = ArraySortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
+end function
+
+
+''
+' Returns a reverse sorted array of subfolder names that starts with the given string.
+function GetSubdirsStartingWithRSorted(strFolder, strStartingWith)
+   GetSubdirsStartingWithRSorted = ArrayRSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
 end function
 
 
@@ -1180,6 +1180,10 @@ sub CheckForkBuild(strOptkBuild)
    Wscript.Echo " Target architecture: " & g_strTargetArch & "."
    EnvPrint "set KBUILD_TARGET_ARCH=" & g_strTargetArch
 
+   ' Windows variant of the arch name.
+   g_strTargetArchWin = g_strTargetArch
+   if g_strTargetArchWin = "amd64" then g_strTargetArchWin = "x64"
+
    str = EnvGetFirst("KBUILD_TARGET_CPU", "BUILD_TARGET_CPU")
     ' perhaps a bit pedantic this since this isn't clearly define nor used much...
    if   (str <> "") _
@@ -1213,6 +1217,11 @@ sub CheckForkBuild(strOptkBuild)
    Wscript.Echo " Host architecture: " & str & "."
    EnvPrint "set KBUILD_HOST_ARCH=" & str
    g_strHostArch = str
+
+   ' Windows variant of the arch name.
+   g_strHostArchWin = g_strHostArch
+   if g_strHostArchWin = "amd64" then g_strHostArchWin = "x64"
+
 
    str = EnvGetFirst("KBUILD_HOST_CPU", "BUILD_PLATFORM_CPU")
     ' perhaps a bit pedantic this since this isn't clearly define nor used much...
@@ -1385,11 +1394,7 @@ class VisualCPPState
           and LogFileExists(strPathVC, "lib/x86/libcpmt.lib") _
          then
             LogPrint " => seems okay. new layout."
-            if g_strHostArch = "amd64" then
-               m_blnFound = checkClExe(strPathVC & "/bin/HostX64/x64/cl.exe")
-            else
-               m_blnFound = checkClExe(strPathVC & "/bin/Host" & g_strHostArch & "/bin/" & g_strHostArch & "/cl.exe")
-            end if
+            m_blnFound = checkClExe(strPathVC & "/bin/Host" & g_strHostArchWin & "/bin/" & g_strHostArchWin & "/cl.exe")
             if m_blnFound then
                m_strPathVC = strPathVC
             end if
@@ -1669,6 +1674,108 @@ function CheckForPlatformSDKSub(strPathPSDK)
       elseif InStr(1, g_strShellOutput, "Resource Compiler Version 6.1.") > 0 then
          g_strVerPSDK = "71"
          CheckForPlatformSDKSub = True
+      end if
+   end if
+end function
+
+
+''
+' Checks for a platform SDK that works with the compiler
+sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
+   dim strPathSDK10, strSDK10Version, str
+   PrintHdr "Windows 10 SDK/WDK"
+   '' @todo implement strOptSDK10Version
+
+   '
+   ' Try find the Windows 10 kit.
+   '
+   strSDK10Version = ""
+   strPathSDK10 = CheckForSDK10Sub(strOptSDK10, strSDK10Version)
+   if strPathSDK10 = "" and g_blnInternalFirst = True  then strPathSDK10 = CheckForSDK10ToolsSub(strSDK10Version)
+   if strPathSDK10 = "" then
+      str = RegGetString("HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10")
+      strPathSDK10 = CheckForSDK10Sub(str, strSDK10Version)
+   end if
+   if strPathSDK10 = "" then
+      for each str in g_arrProgramFiles
+         strPathSDK10 = CheckForSDK10Sub(str & "/Windows Kits/10", strSDK10Version)
+         if strPathSDK10 <> "" then exit for
+      next
+   end if
+   if strPathSDK10 = "" and g_blnInternalFirst = False then strPathSDK10 = CheckForSDK10ToolsSub()
+
+   if strPathSDK10 = "" then
+      MsgError "Cannot find a suitable Windows 10 SDK.  Check configure.log and the build requirements."
+      exit sub
+   end if
+
+   '
+   ' Emit the config.
+   '
+   strPathSDK10 = UnixSlashes(PathAbs(strPathSDK10))
+   CfgPrint "PATH_SDK_WINSDK10     := " & strPathSDK10
+   CfgPrint "SDK_WINSDK10_VERSION  := " & strSDK10Version
+
+   PrintResult "Windows 10 SDK (" & strSDK10Version & ")", strPathSDK10
+   g_strPathSDK10 = strPathSDK10
+end sub
+
+''
+' Checks the tools directory.
+function CheckForSDK10ToolsSub(ByRef strSDK10Version)
+   dim arrToolsDirs, strToolsDir, arrDirs, strDir
+   CheckForSDK10ToolSub = ""
+   arrToolsDirs = Array(g_strPathDev & "/win." & g_strTargetArch & "/sdk", _
+                        g_strPathDev & "/win.x86/sdk", g_strPathDev & "/win.amd64/sdk")
+   for each strToolsDir in arrToolsDirs
+      arrDirs = GetSubdirsStartingWithRSorted(strToolsDir, "v10.")
+      for each strDir in arrDirs
+         CheckForSDK10ToolsSub = CheckForSDK10Sub(strToolsDir & "/" & strDir, strSDK10Version)
+         if CheckForSDK10ToolsSub <> "" then
+            exit function
+         end if
+      next
+   next
+
+end function
+
+''
+' Checks if the specified path points to a usable Windows 10 SDK/WDK.
+function CheckForSDK10Sub(strPathSDK10, ByRef strSDK10Version)
+   CheckForSDK10Sub = ""
+   if strPathSDK10 <> "" then
+      LogPrint "Trying: strPathSDK10=" & strPathSDK10
+      if LogDirExists(strPathSDK10) then
+         if   LogDirExists(strPathSDK10 & "/Bin") _
+          and LogDirExists(strPathSDK10 & "/Include") _
+          and LogDirExists(strPathSDK10 & "/Lib") _
+          and LogDirExists(strPathSDK10 & "/Redist") _
+         then
+            ' Only testing the highest one, for now. '' @todo incorporate strOptSDK10Version
+            dim arrVersions
+            arrVersions = GetSubdirsStartingWithSorted(strPathSDK10 & "/Include", "10.0.")
+            if UBound(arrVersions) >= 0 then
+               dim strVersion
+               strVersion = arrVersions(UBound(arrVersions))
+               LogPrint "Trying version: " & strVersion
+               if    LogFileExists(strPathSDK10, "include/" & strVersion & "/um/Windows.h") _
+                and  LogFileExists(strPathSDK10, "include/" & strVersion & "/ucrt/malloc.h") _
+                and  LogFileExists(strPathSDK10, "include/" & strVersion & "/ucrt/stdio.h") _
+                and  LogFileExists(strPathSDK10, "lib/" & strVersion & "/um/"   & g_strTargetArchWin & "/kernel32.lib") _
+                and  LogFileExists(strPathSDK10, "lib/" & strVersion & "/um/"   & g_strTargetArchWin & "/user32.lib") _
+                and  LogFileExists(strPathSDK10, "lib/" & strVersion & "/ucrt/" & g_strTargetArchWin & "/libucrt.lib") _
+                and  LogFileExists(strPathSDK10, "lib/" & strVersion & "/ucrt/" & g_strTargetArchWin & "/ucrt.lib") _
+                and  LogFileExists(strPathSDK10, "bin/" & strVersion & "/" & g_strHostArchWin & "/rc.exe") _
+                and  LogFileExists(strPathSDK10, "bin/" & strVersion & "/" & g_strHostArchWin & "/midl.exe") _
+               then
+                  '' @todo check minimum version (for WinHv).
+                  strSDK10Version  = strVersion
+                  CheckForSDK10Sub = strPathSDK10
+               end if
+            else
+               LogPrint "Found no 10.0.* subdirectories under '" & strPathSDK10 & "/Include'!"
+            end if
+         end if
       end if
    end if
 end function
@@ -2330,7 +2437,7 @@ sub usage
    Print "  --with-Qt5=PATH         Where Qt5 is to be found."
    Print "  --with-DDK=PATH         Where the WDK is to be found."
    Print "  --with-SDK=PATH         Where the Windows SDK is to be found."
-   '' @todo Print "  --with-SDK10=PATH       Where the Windows 10 SDK is to be found."
+   Print "  --with-SDK10=PATH       Where the Windows 10 SDK/WDK is to be found."
    Print "  --with-VC=PATH          Where the Visual C++ compiler is to be found."
    Print "                          (Expecting bin, include and lib subdirs.)"
    Print "  --with-VC-Common=PATH   Maybe needed for 2015 and older to"
@@ -2368,6 +2475,8 @@ function Main
    strOptQt5 = ""
    strOptQt5Infix = ""
    strOptSDK = ""
+   strOptSDK10 = ""
+   strOptSDK10Version = ""
    strOptVC = ""
    strOptVCCommon = ""
    strOptXml2 = ""
@@ -2414,6 +2523,10 @@ function Main
             strOptQt5Infix = strPath
          case "--with-sdk"
             strOptSDK = strPath
+         case "--with-sdk10"
+            strOptSDK10 = strPath
+         case "--with-sdk10-version"
+            strOptSDK10Version = strPath
          case "--with-vc"
             strOptVC = strPath
          case "--with-vc-common"
@@ -2504,6 +2617,7 @@ function Main
    CheckForWinDDK       strOptDDK
    CheckForVisualCPP    strOptVC, strOptVCCommon
    CheckForPlatformSDK  strOptSDK
+   CheckForSDK10        strOptSDK10, strOptSDK10Version
    CheckForMidl
    CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
    CfgPrint "VBOX_WITH_LIBVPX := " '' @todo look for libvpx 1.1.0+
