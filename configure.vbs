@@ -35,12 +35,11 @@ dim g_objShell, g_objFileSys
 Set g_objShell = WScript.CreateObject("WScript.Shell")
 Set g_objFileSys = WScript.CreateObject("Scripting.FileSystemObject")
 
-dim g_strPathkBuild, g_strPathkBuildBin, g_strPathDev, g_strPathVCC, g_strPathPSDK, g_strVerPSDK, g_strPathDDK, g_strSubOutput
+' kBuild stuff.
+dim g_strPathkBuild, g_strPathkBuildBin, g_strPathDev
 g_strPathkBuild = ""
+g_strPathkBuildBin = ""
 g_strPathDev = ""
-g_strPathVCC = ""
-g_strPathPSDK = ""
-g_strPathDDK = ""
 
 dim g_strTargetArch
 g_strTargetArch = ""
@@ -48,9 +47,29 @@ g_strTargetArch = ""
 dim g_strHostArch
 g_strHostArch = ""
 
+' Visual C++ info.
+dim g_strPathVCC, g_strVCCVersion
+g_strPathVCC = ""
+g_strVCCVersion = ""
+
+' SDK and DDK.
+dim g_strPathPSDK, g_strVerPSDK, g_strPathDDK
+g_strPathPSDK = ""
+g_strVerPSDK = ""
+g_strPathDDK = ""
+
+' COM disabling.
 dim g_blnDisableCOM, g_strDisableCOM
 g_blnDisableCOM = False
 g_strDisableCOM = ""
+
+' Whether to ignore (continue) on errors.
+dim g_blnContinueOnError, g_rcExit
+g_blnContinueOnError = False
+
+' The script's exit code (for ignored errors).
+dim g_rcScript
+g_rcScript = 0
 
 ' Whether to try the internal stuff first or last.
 dim g_blnInternalFirst
@@ -498,7 +517,7 @@ function HasSubdirsStartingWith(strFolder, strStartingWith)
       dim obj
       set obj = g_objFileSys.GetFolder(strFolder)
       for each objSub in obj.SubFolders
-         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 Then
+         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
             HasSubdirsStartingWith = True
             LogPrint "# HasSubdirsStartingWith(" & strFolder & "," & strStartingWith & ") found " & objSub.Name
             exit for
@@ -531,7 +550,7 @@ function GetSubdirsStartingWithSorted(strFolder, strStartingWith)
       set obj = g_objFileSys.GetFolder(strFolder)
       i = 0
       for each objSub in obj.SubFolders
-         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 Then
+         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
             i = i + 1
          end if
       next
@@ -539,7 +558,7 @@ function GetSubdirsStartingWithSorted(strFolder, strStartingWith)
          redim arrResult(i)
          i = 0
          for each objSub in obj.SubFolders
-            if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 Then
+            if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
                arrResult(i) = objSub.Name
                i = i + 1
             end if
@@ -681,7 +700,7 @@ end sub
 ' Fatal error.
 sub MsgFatal(strMsg)
    Print "fatal error: " & strMsg
-   Wscript.Quit
+   Wscript.Quit(1)
 end sub
 
 
@@ -689,7 +708,10 @@ end sub
 ' Error message, fatal unless flag to ignore errors is given.
 sub MsgError(strMsg)
    Print "error: " & strMsg
-   Wscript.Quit
+   if g_blnContinueOnError = False then
+      Wscript.Quit(1)
+   end if
+   g_rcScript = 1
 end sub
 
 
@@ -1113,7 +1135,7 @@ sub CheckForkBuild(strOptkBuild)
       exit sub
    end if
 
-   if (Shell(DosSlashes(g_strPathkBuildBin & "/kmk.exe") & " --version", True) <> 0) Then
+   if (Shell(DosSlashes(g_strPathkBuildBin & "/kmk.exe") & " --version", True) <> 0) then
       MsgFatal "Can't execute '" & g_strPathkBuildBin & "/kmk.exe --version'. check configure.log for the out."
       exit sub
    end if
@@ -1179,7 +1201,7 @@ class VisualCPPState
       dim strSavedPath, rcExit
 
       strSavedPath = EnvGet("PATH")
-      if (m_strPathVCCommon <> "") Then
+      if (m_strPathVCCommon <> "") then
          EnvAppend "PATH", ";" & m_strPathVCCommon & "/IDE"
       end if
       rcExit = Shell(DosSlashes(strClExe), True)
@@ -1262,7 +1284,7 @@ class VisualCPPState
          if LogDirExists(m_strPathVC) then
             ' 15.0+ layout?  This is fun because of the multiple CL versions (/tools/msvc/xx.yy.bbbbb/).
             ' OTOH, the user may have pointed us directly to one of them.
-            if LogDirExists(m_strPathVC & "/Tools/MSVC") Then
+            if LogDirExists(m_strPathVC & "/Tools/MSVC") then
                m_blnNewLayout = True
                LogPrint " => seems okay. new layout."
                dim arrFolders, i
@@ -1276,7 +1298,7 @@ class VisualCPPState
                 or LogDirExists(m_strPathVC & "/bin/HostX86") then
                checkInner(m_strPathVC)
             ' 14.0 and older layout?
-            elseif LogFileExists(m_strPathVC, "/bin/cl.exe") Then
+            elseif LogFileExists(m_strPathVC, "/bin/cl.exe") then
                m_blnNewLayout = False
                if   LogFileExists(m_strPathVC, "bin/link.exe") _
                 and LogFileExists(m_strPathVC, "include/string.h") _
@@ -1324,7 +1346,7 @@ class VisualCPPState
    end function
 
    public function checkProgFiles(strSubdir)
-      if m_blnFound = False Then
+      if m_blnFound = False then
          dim strProgFiles
          for each strProgFiles in g_arrProgramFiles
             check strProgFiles & "/" & strSubdir, ""
@@ -1393,6 +1415,7 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon)
       exit sub
    end if
    g_strPathVCC = objState.m_strPathVC
+   g_strVCCVersion = objState.m_strVersion
 
    '
    ' Ok, emit build config variables.
@@ -1679,7 +1702,7 @@ sub CheckForlibSDL(strOptlibSDL)
    end if
 
    ' The tools location (first).
-   if (strPathlibSDL = "") And (g_blnInternalFirst = True) Then
+   if (strPathlibSDL = "") And (g_blnInternalFirst = True) then
       str = g_strPathDev & "/win." & g_strTargetArch & "/libsdl"
       if HasSubdirsStartingWith(str, "v") then
          PrintResult "libSDL", str & "/v* (auto)"
@@ -1688,26 +1711,26 @@ sub CheckForlibSDL(strOptlibSDL)
    end if
 
    ' Poke about in the path.
-   if strPathlibSDL = "" Then
+   if strPathlibSDL = "" then
       str = WhichEx("LIB", "SDLmain.lib")
-      if str = "" Then str = Which("..\lib\SDLmain.lib")
-      if str = "" Then str = Which("SDLmain.lib")
-      if str <> "" Then
+      if str = "" then str = Which("..\lib\SDLmain.lib")
+      if str = "" then str = Which("SDLmain.lib")
+      if str <> "" then
          str = PathParent(PathStripFilename(str))
          if CheckForlibSDLSub(str) then strPathlibSDL = str
       end if
    end if
 
-   if strPathlibSDL = "" Then
+   if strPathlibSDL = "" then
       str = Which("SDL.dll")
-      if str <> "" Then
+      if str <> "" then
          str = PathParent(PathStripFilename(str))
          if CheckForlibSDLSub(str) then strPathlibSDL = str
       end if
    end if
 
    ' The tools location (post).
-   if (strPathlibSDL = "") And (g_blnInternalFirst = False) Then
+   if (strPathlibSDL = "") And (g_blnInternalFirst = False) then
       str = g_strPathDev & "/win." & g_strTargetArch & "/libsdl"
       if HasSubdirsStartingWith(str, "v") then
          PrintResult "libSDL", str & "/v* (auto)"
@@ -1777,9 +1800,9 @@ sub CheckForXml2(strOptXml2)
       if CheckForXml2Sub(strOptXml2) then strPathXml2 = strOptXml2
    end if
 
-   if strPathXml2 = "" Then
+   if strPathXml2 = "" then
       str = Which("libxml2.lib")
-      if str <> "" Then
+      if str <> "" then
          str = PathParent(PathStripFilename(str))
          if CheckForXml2Sub(str) then strPathXml2 = str
       end if
@@ -1851,9 +1874,9 @@ sub CheckForSsl(strOptSsl, bln32Bit)
       if CheckForSslSub(strOptSsl) then strPathSsl = strOptSsl
    end if
 
-   if strPathSsl = "" Then
+   if strPathSsl = "" then
       str = Which("libssl.lib")
-      if str <> "" Then
+      if str <> "" then
          str = PathParent(PathStripFilename(str))
          if CheckForSslSub(str) then strPathSsl = str
       end if
@@ -1927,9 +1950,9 @@ sub CheckForCurl(strOptCurl, bln32Bit)
       if CheckForCurlSub(strOptCurl) then strPathCurl = strOptCurl
    end if
 
-   if strPathCurl = "" Then
+   if strPathCurl = "" then
       str = Which("libcurl.lib")
-      if str <> "" Then
+      if str <> "" then
          str = PathParent(PathStripFilename(str))
          if CheckForCurlSub(str) then strPathCurl = str
       end if
@@ -1979,24 +2002,35 @@ end function
 ''
 ' Checks for any Qt5 binaries.
 sub CheckForQt(strOptQt5)
+   dim strPathQt5, arrFolders, arrInfixes, strInfix
    PrintHdr "Qt5"
 
    '
    ' Try to find the Qt5 installation (user specified path with --with-qt5)
    '
-   strPathQt5 = ""
-
    LogPrint "Checking for user specified path of Qt5 ... "
-   if (strPathQt5 = "") And (strOptQt5 <> "") then
-      strOptQt5 = UnixSlashes(strOptQt5)
-      if CheckForQt5Sub(strOptQt5) then strPathQt5 = strOptQt5
+   strPathQt5 = ""
+   if strOptQt5 <> "" then
+      strPathQt5 = CheckForQt5Sub(UnixSlashes(strOptQt5))
    end if
 
-   ' Check the dev tools
-   if (strPathQt5 = "") Then
-      strPathQt5 = g_strPathDev & "/win." & g_strTargetArch & "/qt/v5.5.1-r138"
-      if CheckForQt5Sub(strPathQt5) = False then strPathQt5 = ""
+   ' Check the dev tools - prefer ones matching the compiler.
+   if strPathQt5 = "" then
+      arrFolders = GetSubdirsStartingWithSorted(g_strPathDev & "/win." & g_strTargetArch & "/qt", "v5")
+      arrInfixes = Array(LCase(g_strVCCVersion), Left(LCase(g_strVCCVersion), Len(g_strVCCVersion) - 1), "")
+      for each strInfix in arrInfixes
+         for i = UBound(arrFolders) to LBound(arrFolders) step -1
+            if strInfix = "" or InStr(1, LCase(arrFolders(i)), strInfix) > 0 then
+               strPathQt5 = CheckForQt5Sub(g_strPathDev & "/win." & g_strTargetArch & "/qt/" & arrFolders(i))
+               if strPathQt5 <> "" then exit for
+            end if
+         next
+         if strPathQt5 <> "" then exit for
+      next
    end if
+
+   ' Note! We could scan Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\UFH\SHC looking for entries
+   '       executing stuff like C:\qt\5.x.y\msvc2017_64\bin\qtenv2.bat
 
    ' Display the result.
    if strPathQt5 = "" then
@@ -2019,8 +2053,7 @@ end sub
 ''
 ' Checks if the specified path points to an usable Qt5 library.
 function CheckForQt5Sub(strPathQt5)
-
-   CheckForQt5Sub = False
+   CheckForQt5Sub = ""
    LogPrint "trying: strPathQt5=" & strPathQt5
 
    if   LogFileExists(strPathQt5, "bin/moc.exe") _
@@ -2034,9 +2067,8 @@ function CheckForQt5Sub(strPathQt5)
     And (   LogFileExists(strPathQt5, "lib/Qt5Network.lib") _
          Or LogFileExists(strPathQt5, "lib/Qt5NetworkVBox.lib")) _
       then
-         CheckForQt5Sub = True
+         CheckForQt5Sub = strPathQt5
    end if
-
 end function
 
 
@@ -2066,6 +2098,7 @@ sub usage
    Print "Configuration:"
    Print "  -h, --help              Display this."
    Print "  --target-arch=x86|amd64 The target architecture."
+   Print "  --continue-on-error     Do not stop on errors."
    Print "  --internal-last         Check internal tools (tools/win.*) last."
    Print "  --internal-first        Check internal tools (tools/win.*) first (default)."
    Print ""
@@ -2084,7 +2117,7 @@ sub usage
    Print "  --with-VC=PATH          Where the Visual C++ compiler is to be found."
    Print "                          (Expecting bin, include and lib subdirs.)"
    Print "  --with-VC-Common=PATH   Maybe needed for 2015 and older to"
-   Print "                          locate the Common7 directory.
+   Print "                          locate the Common7 directory."
    Print "  --with-python=PATH      The python to use."
    Print "  --with-libxml2=PATH     To use a libxml2 other than the VBox one."
    Print "  --with-openssl=PATH     To use an openssl other than the VBox one."
@@ -2097,15 +2130,16 @@ end sub
 ''
 ' The main() like function.
 '
-Sub Main
+function Main
    '
    ' Write the log header and check that we're not using wscript.
    '
    LogInit
-   If UCase(Right(Wscript.FullName, 11)) = "WSCRIPT.EXE" Then
+   if UCase(Right(Wscript.FullName, 11)) = "WSCRIPT.EXE" then
       Wscript.Echo "This script must be run under CScript."
-      Wscript.Quit(1)
-   End If
+      Main = 1
+      exit function
+   end if
 
    '
    ' Parse arguments.
@@ -2187,6 +2221,8 @@ Sub Main
             blnOptDisableUDPTunnel = True
          case "--disable-sdl"
             blnOptDisableSDL = True
+         case "--continue-on-error"
+            g_blnContinueOnError = True
          case "--internal-first"
             g_blnInternalFirst = True
          case "--internal-last"
@@ -2195,11 +2231,13 @@ Sub Main
             g_strTargetArch = strPath
          case "-h", "--help", "-?"
             usage
-            Wscript.Quit(0)
+            Main = 0
+            exit function
          case else
             Wscript.echo "syntax error: Unknown option '" & str &"'."
             usage
-            Wscript.Quit(1)
+            Main = 2
+            exit function
       end select
    next
 
@@ -2275,9 +2313,15 @@ Sub Main
    Print "  env.bat"
    Print "  kmk"
    Print ""
+   if g_rcScript <> 0 then
+      Print "Warning: ignored errors. See above or in configure.log."
+   end if
 
-End Sub
+   Main = g_rcScript
+end function
 
-
-Main
+'
+' What crt0.o typically does:
+'
+WScript.Quit(Main())
 
