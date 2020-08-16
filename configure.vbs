@@ -1141,20 +1141,28 @@ sub CheckForkBuild(strOptkBuild)
    end if
 
    '
-   ' If PATH_DEV is set, check that it's pointing to something useful.
+   ' If KBUILD_DEVTOOLS is set, check that it's pointing to something useful.
    '
-   ''' @todo wtf is this supposed to be again?  Nobody uses it afaikt.
-   str = EnvGet("PATH_DEV")
+   str = UnixSlashes(EnvGet("KBUILD_DEVTOOLS"))
    g_strPathDev = str
-   if (str <> "") _
-    And False then '' @todo add some proper tests here.
-      strNew = UnixSlashes(g_strPath & "/tools")
-      EnvPrint "set PATH_DEV=" & strNew
-      EnvSet "PATH_DEV", strNew
-      MsgWarning "Found PATH_DEV='" & str &"' in your environment. Setting it to '" & strNew & "'."
+   if   str <> "" _
+    and LogDirExists(str & "/bin") _
+    and LogDirExists(str & "/win.amd64/bin") _
+    and LogDirExists(str & "/win.x86/bin") _
+   then
+      LogPrint "Found KBUILD_DEVTOOLS='" & str & "'."
+   elseif str <> "" then
+      MsgWarning "Ignoring bogus KBUILD_DEVTOOLS='" & str &"' in your environment!"
       g_strPathDev = strNew
    end if
-   if g_strPathDev = "" then g_strPathDev = UnixSlashes(g_strPath & "/tools")
+   if g_strPathDev = "" then
+      g_strPathDev = UnixSlashes(g_strPath & "/tools")
+      LogPrint "Using KBUILD_DEVTOOLS='" & g_strPathDev & "'."
+      if str <> "" then
+         EnvPrint "set KBUILD_DEVTOOLS=" & g_strPathDev
+         EnvSet "KBUILD_DEVTOOLS", g_strPathDev
+      end if
+   end if
 
    '
    ' Write KBUILD_PATH and updated PATH to the environment script if necessary.
