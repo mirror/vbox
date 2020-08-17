@@ -11,8 +11,6 @@
 
 #ifndef HEADER_DSO_CONF_H
 # define HEADER_DSO_CONF_H
-# ifndef VBOX
-#  define DSO_NONE
-# endif
+# define DSO_NONE
 # define DSO_EXTENSION ".so"
 #endif
