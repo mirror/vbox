@@ -21,13 +21,17 @@
 # pragma once
 #endif
 
-#include "UIMachineSettingsUSBFilterDetails.gen.h"
 #include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
 #include "UIMachineSettingsUSB.h"
 
-class SHARED_LIBRARY_STUFF UIMachineSettingsUSBFilterDetails : public QIWithRetranslateUI2<QIDialog>,
-                                                               public Ui::UIMachineSettingsUSBFilterDetails
+/* Forward declarations: */
+class QComboBox;
+class QGridLayout;
+class QLabel;
+class QLineEdit;
+
+class SHARED_LIBRARY_STUFF UIMachineSettingsUSBFilterDetails : public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
@@ -37,7 +41,33 @@ public:
 
 private:
 
+    void prepareWidgets();
     void retranslateUi();
+
+    /** @name Widgets
+     * @{ */
+       QComboBox *m_pComboBoxRemote;
+       QLineEdit *m_pLineEditName;
+       QLineEdit *m_pLineEditVendorID;
+       QLineEdit *m_pLineEditProductID;
+       QLineEdit *m_pLineEditRevision;
+       QLineEdit *m_pLineEditPort;
+       QLineEdit *m_pLineEditManufacturer;
+       QLineEdit *m_pLineEditProduct;
+       QLineEdit *m_pLineEditSerialNo;
+       QLabel *m_pLabelPort;
+       QLabel *m_pLabelRemote;
+       QLabel *m_pLabelProductID;
+       QLabel *m_pLabelName;
+       QLabel *m_pLabelVendorID;
+       QLabel *m_pLabelRevision;
+       QLabel *m_pLabelManufacturer;
+       QLabel *m_pLabelProduct;
+       QLabel *m_pLabelSerialNo;
+       QGridLayout *gridLayout;
+    /** @} */
+
+    friend class UIMachineSettingsUSB;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSBFilterDetails_h */

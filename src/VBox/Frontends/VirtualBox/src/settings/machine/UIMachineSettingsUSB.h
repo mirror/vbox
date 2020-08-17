@@ -23,9 +23,13 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIMachineSettingsUSB.gen.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QRadioButton;
+class QTreeWidgetItem;
+class QILabelSeparator;
+class QITreeWidget;
 class VBoxUSBMenu;
 class UIToolBar;
 struct UIDataSettingsMachineUSB;
@@ -34,8 +38,7 @@ typedef UISettingsCache<UIDataSettingsMachineUSBFilter> UISettingsCacheMachineUS
 typedef UISettingsCachePool<UIDataSettingsMachineUSB, UISettingsCacheMachineUSBFilter> UISettingsCacheMachineUSB;
 
 /** Machine settings: USB page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsUSB : public UISettingsPageMachine,
-                                                  public Ui::UIMachineSettingsUSB
+class SHARED_LIBRARY_STUFF UIMachineSettingsUSB : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -114,6 +117,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Prepares USB filters tree. */
     void prepareFiltersTree();
     /** Prepares USB filters toolbar. */
@@ -159,6 +164,17 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineUSB *m_pCache;
+    /** @name Widgets
+     * @{ */
+       QCheckBox *m_pCheckBoxUSB;
+       QITreeWidget *m_pTreeWidgetFilters;
+       QRadioButton *m_pRadioButtonUSB1;
+       QRadioButton *m_pRadioButtonUSB2;
+       QRadioButton *m_pRadioButtonUSB3;
+       QILabelSeparator *m_pCheckBoxUSBFilters;
+       QWidget *m_pUSBChild;
+       UIToolBar *m_pFiltersToolBar;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSB_h */

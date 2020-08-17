@@ -30,10 +30,7 @@ FORMS = \
     src/settings/global/UIGlobalSettingsNetwork.ui \
     src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui \
     src/settings/global/UIGlobalSettingsExtension.ui \
-    src/settings/global/UIGlobalSettingsProxy.ui \
-    src/settings/machine/UIMachineSettingsUSB.ui \
-    src/settings/machine/UIMachineSettingsUSBFilterDetails.ui
-
+    src/settings/global/UIGlobalSettingsProxy.ui
 
 TRANSLATIONS = \
 	nls/VirtualBox_bg.ts \

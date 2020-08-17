@@ -262,6 +262,23 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     , m_pParent(pParent)
     , m_iSlot(-1)
     , m_enmAdapterType(KNetworkAdapterType_Null)
+    , m_pAttachmentTypeLabel(0)
+    , m_pAdapterNameLabel(0)
+    , m_pAdapterTypeLabel(0)
+    , m_pPromiscuousModeLabel(0)
+    , m_pMACLabel(0)
+    , m_pGenericPropertiesLabel(0)
+    , m_pAttachmentTypeEditor(0)
+    , m_pMACEditor(0)
+    , m_pMACButton(0)
+    , m_pAdvancedArrow(0)
+    , m_pEnableAdapterCheckBox(0)
+    , m_pCableConnectedCheckBox(0)
+    , m_pPortForwardingButton(0)
+    , m_pPromiscuousModeCombo(0)
+    , m_pAdapterTypeCombo(0)
+    , m_pGenericPropertiesTextEdit(0)
+    , m_pAdapterOptionsContainer(0)
 {
     prepareWidgets();
 
