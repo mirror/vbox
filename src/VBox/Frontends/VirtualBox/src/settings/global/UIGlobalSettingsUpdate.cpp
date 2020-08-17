@@ -15,6 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QCheckBox>
+#include <QComboBox>
+#include <QGridLayout>
+#include <QLabel>
+#include <QRadioButton>
+
 /* GUI includes: */
 #include "UIGlobalSettingsUpdate.h"
 #include "UIExtraDataManager.h"
@@ -63,6 +70,16 @@ struct UIDataSettingsGlobalUpdate
 UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
     : m_pLastChosenRadio(0)
     , m_pCache(0)
+    , m_pUpdateDateText(0)
+    , m_pUpdateDateLabel(0)
+    , m_pUpdatePeriodLabel(0)
+    , m_pUpdateFilterLabel(0)
+    , m_pCheckBoxUpdate(0)
+    , m_pComboBoxUpdatePeriod(0)
+    , m_pRadioUpdateFilterBetas(0)
+    , m_pRadioUpdateFilterEvery(0)
+    , m_pRadioUpdateFilterStable(0)
+    , m_pContainerUpdate(0)
 {
     /* Prepare: */
     prepare();
@@ -157,8 +174,25 @@ void UIGlobalSettingsUpdate::setOrderAfter(QWidget *pWidget)
 
 void UIGlobalSettingsUpdate::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIGlobalSettingsUpdate::retranslateUi(this);
+    m_pCheckBoxUpdate->setWhatsThis(tr("When checked, the application will "
+                                       "periodically connect to the VirtualBox website and check whether a "
+                                       "new VirtualBox version is available."));
+    m_pCheckBoxUpdate->setText(tr("&Check for Updates"));
+    m_pUpdatePeriodLabel->setText(tr("&Once per:"));
+    m_pComboBoxUpdatePeriod->setWhatsThis(tr("Selects how often the new version "
+                                             "check should be performed. Note that if you want to completely "
+                                             "disable this check, just clear the above check box."));
+    m_pUpdateDateLabel->setText(tr("Next Check:"));
+    m_pUpdateFilterLabel->setText(tr("Check for:"));
+    m_pRadioUpdateFilterStable->setWhatsThis(tr("<p>Choose this if you only wish to "
+                                                "be notified about stable updates to VirtualBox.</p>"));
+    m_pRadioUpdateFilterStable->setText(tr("&Stable Release Versions"));
+    m_pRadioUpdateFilterEvery->setWhatsThis(tr("<p>Choose this if you wish to be "
+                                               "notified about all new VirtualBox releases.</p>"));
+    m_pRadioUpdateFilterEvery->setText(tr("&All New Releases"));
+    m_pRadioUpdateFilterBetas->setWhatsThis(tr("<p>Choose this to be notified about "
+                                               "all new VirtualBox releases and pre-release versions of VirtualBox.</p>"));
+    m_pRadioUpdateFilterBetas->setText(tr("All New Releases and &Pre-Releases"));
 
     /* Retranslate m_pComboBoxUpdatePeriod combobox: */
     int iCurrenIndex = m_pComboBoxUpdatePeriod->currentIndex();
@@ -196,8 +230,7 @@ void UIGlobalSettingsUpdate::sltHandleUpdatePeriodChange()
 
 void UIGlobalSettingsUpdate::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsUpdate::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalUpdate;
@@ -215,6 +248,81 @@ void UIGlobalSettingsUpdate::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIGlobalSettingsUpdate::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIGlobalSettingsUpdate"));
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    pMainLayout->setObjectName(QStringLiteral("gridLayout"));
+    m_pCheckBoxUpdate = new QCheckBox();
+    m_pCheckBoxUpdate->setObjectName(QStringLiteral("m_pCheckBoxUpdate"));
+    pMainLayout->addWidget(m_pCheckBoxUpdate, 0, 0, 1, 2);
+
+    QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+    pMainLayout->addItem(pSpacerItem, 1, 0, 1, 1);
+
+    m_pContainerUpdate = new QWidget();
+    m_pContainerUpdate->setObjectName(QStringLiteral("m_pContainerUpdate"));
+    QGridLayout *pContainerLayoutUpdate = new QGridLayout(m_pContainerUpdate);
+    pContainerLayoutUpdate->setContentsMargins(0, 0, 0, 0);
+    pContainerLayoutUpdate->setObjectName(QStringLiteral("pContainerLayoutUpdate"));
+    pContainerLayoutUpdate->setContentsMargins(0, 0, 0, 0);
+    m_pUpdatePeriodLabel = new QLabel(m_pContainerUpdate);
+    m_pUpdatePeriodLabel->setObjectName(QStringLiteral("m_pUpdatePeriodLabel"));
+    m_pUpdatePeriodLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutUpdate->addWidget(m_pUpdatePeriodLabel, 0, 0, 1, 1);
+
+    QHBoxLayout *pHBoxLayout = new QHBoxLayout();
+    pHBoxLayout->setObjectName(QStringLiteral("pHBoxLayout"));
+    m_pComboBoxUpdatePeriod = new QComboBox(m_pContainerUpdate);
+    m_pComboBoxUpdatePeriod->setObjectName(QStringLiteral("m_pComboBoxUpdatePeriod"));
+    QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pComboBoxUpdatePeriod->sizePolicy().hasHeightForWidth());
+    m_pComboBoxUpdatePeriod->setSizePolicy(sizePolicy);
+    pHBoxLayout->addWidget(m_pComboBoxUpdatePeriod);
+
+    QSpacerItem *pSpacerItem1 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    pHBoxLayout->addItem(pSpacerItem1);
+
+    pContainerLayoutUpdate->addLayout(pHBoxLayout, 0, 1, 1, 1);
+
+    m_pUpdateDateLabel = new QLabel(m_pContainerUpdate);
+    m_pUpdateDateLabel->setObjectName(QStringLiteral("m_pUpdateDateLabel"));
+    m_pUpdateDateLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutUpdate->addWidget(m_pUpdateDateLabel, 1, 0, 1, 1);
+
+    m_pUpdateDateText = new QLabel(m_pContainerUpdate);
+    m_pUpdateDateText->setObjectName(QStringLiteral("m_pUpdateDateText"));
+    pContainerLayoutUpdate->addWidget(m_pUpdateDateText, 1, 1, 1, 1);
+
+    m_pUpdateFilterLabel = new QLabel(m_pContainerUpdate);
+    m_pUpdateFilterLabel->setObjectName(QStringLiteral("m_pUpdateFilterLabel"));
+    m_pUpdateFilterLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    pContainerLayoutUpdate->addWidget(m_pUpdateFilterLabel, 2, 0, 1, 1);
+
+    m_pRadioUpdateFilterStable = new QRadioButton(m_pContainerUpdate);
+    m_pRadioUpdateFilterStable->setObjectName(QStringLiteral("m_pRadioUpdateFilterStable"));
+    pContainerLayoutUpdate->addWidget(m_pRadioUpdateFilterStable, 2, 1, 1, 1);
+
+    m_pRadioUpdateFilterEvery = new QRadioButton(m_pContainerUpdate);
+    m_pRadioUpdateFilterEvery->setObjectName(QStringLiteral("m_pRadioUpdateFilterEvery"));
+    pContainerLayoutUpdate->addWidget(m_pRadioUpdateFilterEvery, 3, 1, 1, 1);
+
+    m_pRadioUpdateFilterBetas = new QRadioButton(m_pContainerUpdate);
+    m_pRadioUpdateFilterBetas->setObjectName(QStringLiteral("m_pRadioUpdateFilterBetas"));
+    pContainerLayoutUpdate->addWidget(m_pRadioUpdateFilterBetas, 4, 1, 1, 1);
+
+    pMainLayout->addWidget(m_pContainerUpdate, 1, 1, 1, 1);
+
+    QSpacerItem *pSpacerItem2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    pMainLayout->addItem(pSpacerItem2, 2, 0, 1, 2);
+
+    m_pUpdatePeriodLabel->setBuddy(m_pComboBoxUpdatePeriod);
 }
 
 void UIGlobalSettingsUpdate::cleanup()
