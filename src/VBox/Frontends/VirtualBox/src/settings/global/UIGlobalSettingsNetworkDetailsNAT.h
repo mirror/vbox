@@ -24,9 +24,12 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UIGlobalSettingsNetworkDetailsNAT.gen.h"
 #include "UIPortForwardingTable.h"
 
+/* Forward declarations. */
+class QCheckBox;
+class QLabel;
+class QLineEdit;
 
 /** Global settings: Network page: NAT network data structure. */
 struct UIDataSettingsGlobalNetworkNAT
@@ -79,7 +82,7 @@ struct UIDataSettingsGlobalNetworkNAT
 
 
 /* Global settings / Network page / Details sub-dialog: */
-class SHARED_LIBRARY_STUFF UIGlobalSettingsNetworkDetailsNAT : public QIWithRetranslateUI2<QIDialog>, public Ui::UIGlobalSettingsNetworkDetailsNAT
+class SHARED_LIBRARY_STUFF UIGlobalSettingsNetworkDetailsNAT : public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
@@ -106,6 +109,9 @@ private slots:
 
 private:
 
+    /* Prepares widgets. */
+    void prepareWidgets();
+
     /* Helpers: Load/Save stuff: */
     void load();
     void save();
@@ -117,6 +123,21 @@ private:
     UIPortForwardingDataList &m_ipv4rules;
     /** Holds IPv6 port forwarding rules. */
     UIPortForwardingDataList &m_ipv6rules;
+
+    /** @name Widgets
+     * @{ */
+       QCheckBox *m_pCheckboxNetwork;
+       QLabel *m_pLabelNetworkName;
+       QLabel *m_pLabelNetworkCIDR;
+       QLabel *m_pLabelOptionsAdvanced;
+       QLineEdit *m_pEditorNetworkName;
+       QLineEdit *m_pEditorNetworkCIDR;
+       QCheckBox *m_pCheckboxSupportsDHCP;
+       QCheckBox *m_pCheckboxSupportsIPv6;
+       QCheckBox *m_pCheckboxAdvertiseDefaultIPv6Route;
+       QPushButton *m_pButtonPortForwarding;
+       QWidget *m_pContainerOptions;
+    /** @} */
 };
 
 
