@@ -159,22 +159,190 @@ function IsWow64()
    end if
 end function
 
+''
+' Checks if the given character is a decimal digit
+function CharIsDigit(ch)
+   CharIsDigit = (InStr(1, "0123456789", ch) > 0)
+end function
+
+''
+' Worker for StrVersionCompare
+' The offset is updated to point to the first non-digit character.
+function CountDigitsIgnoreLeadingZeros(ByRef str, ByRef off)
+   dim cntDigits, blnLeadingZeros, ch, offInt
+   cntDigits = 0
+   if CharIsDigit(Mid(str, off, 1)) then
+      ' Rewind to start of digest sequence.
+      do while off > 1
+         if not CharIsDigit(Mid(str, off - 1, 1)) then exit do
+         off = off - 1
+      loop
+      ' Count digits, ignoring leading zeros.
+      blnLeadingZeros = True
+      for off = off to Len(str)
+         ch = Mid(str, off, 1)
+         if CharIsDigit(ch) then
+            if ch <> "0" or blnLeadingZeros = False then
+               cntDigits = cntDigits + 1
+               blnLeadingZeros = False
+            end if
+         else
+            exit for
+         end if
+      next
+      ' If all zeros, count one of them.
+      if cntDigits = 0 then cntDigits = 1
+   end if
+   CountDigitsIgnoreLeadingZeros = cntDigits
+end function
+
+''
+' Very simple version string compare function.
+' @returns < 0 if str1 is smaller than str2
+' @returns 0   if str1 and str2 are equal
+' @returns > 1 if str2 is larger than str1
+function StrVersionCompare(str1, str2)
+   ' Compare the strings.  We can rely on StrComp if equal or one is empty.
+   'LogPrint "StrVersionCompare("&str1&","&str2&"):"
+   StrVersionCompare = StrComp(str2, str1)
+   if StrVersionCompare <> 0 then
+      dim cch1, cch2, off1, off2, ch1, ch2, chPrev1, chPrev2, intDiff, cchDigits
+      cch1 = Len(str1)
+      cch2 = Len(str2)
+      if cch1 > 0 and cch2 > 0 then
+         ' Compare the common portion
+         off1 = 1
+         off2 = 1
+         chPrev1 = "x"
+         chPrev2 = "x"
+         do while off1 <= cch1 and off2 <= cch2
+            ch1 = Mid(str1, off1, 1)
+            ch2 = Mid(str2, off2, 1)
+            if ch1 = ch2 then
+               off1 = off1 + 1
+               off2 = off2 + 1
+               chPrev1 = ch1
+               chPrev2 = ch2
+            else
+               ' Is there a digest sequence in play.  This includes the scenario where one of the
+               ' string ran out of digests.
+               dim blnDigest1 : blnDigest1 = CharIsDigit(ch1)
+               dim blnDigest2 : blnDigest2 = CharIsDigit(ch2)
+               if    (blnDigest1 = True or blnDigest2 = True) _
+                 and (blnDigest1 = True or CharIsDigit(chPrev1) = True) _
+                 and (blnDigest2 = True or CharIsDigit(chPrev2) = True) _
+               then
+                  'LogPrint "StrVersionCompare: off1="&off1&" off2="&off2&" ch1="&ch1&" chPrev1="&chPrev1&" ch2="&ch2&" chPrev2="&chPrev2
+                  if blnDigest1 = False then off1 = off1 - 1
+                  if blnDigest2 = False then off2 = off2 - 1
+                  ' The one with the fewer digits comes first.
+                  ' Note! off1 and off2 are adjusted to next non-digit character in the strings.
+                  cchDigits = CountDigitsIgnoreLeadingZeros(str1, off1)
+                  intDiff = cchDigits - CountDigitsIgnoreLeadingZeros(str2, off2)
+                  'LogPrint "StrVersionCompare: off1="&off1&" off2="&off2&" cchDigits="&cchDigits
+                  if intDiff <> 0 then
+                     StrVersionCompare = intDiff
+                     'LogPrint "StrVersionCompare: --> "&intDiff&" #1"
+                     exit function
+                  end if
+
+                  ' If the same number of digits, the smaller digit wins. However, because of
+                  ' potential leading zeros, we must redo the compare. Assume ASCII-like stuff
+                  ' and we can use StrComp for this.
+                  intDiff = StrComp(Mid(str1, off1 - cchDigits, cchDigits), Mid(str2, off2 - cchDigits, cchDigits))
+                  if intDiff <> 0 then
+                     StrVersionCompare = intDiff
+                     'LogPrint "StrVersionCompare: --> "&intDiff&" #2"
+                     exit function
+                  end if
+                  chPrev1 = "x"
+                  chPrev2 = "x"
+               else
+                  if blnDigest1 then
+                     StrVersionCompare = -1   ' Digits before characters
+                     'LogPrint "StrVersionCompare: --> -1 (#3)"
+                  elseif blnDigest2 then
+                     StrVersionCompare = 1       ' Digits before characters
+                     'LogPrint "StrVersionCompare: --> 1 (#4)"
+                  else
+                     StrVersionCompare = StrComp(ch1, ch2)
+                     'LogPrint "StrVersionCompare: --> "&StrVersionCompare&" (#5)"
+                  end if
+                  exit function
+               end if
+            end if
+         loop
+
+         ' The common part matches up, so the shorter string 'wins'.
+         StrVersionCompare = (cch1 - off1) - (cch2 - off2)
+      end if
+   end if
+   'LogPrint "StrVersionCompare: --> "&StrVersionCompare&" (#6)"
+end function
+
+''
+' Returns a reverse array (copy).
+function ArrayReverse(arr)
+   dim cnt, i, j, iHalf, objTmp
+   cnt = UBound(arr) - LBound(arr) + 1
+   if cnt > 0 then
+      j     = UBound(arr)
+      iHalf = Fix(LBound(arr) + cnt / 2)
+      for i = LBound(arr) to iHalf - 1
+         objTmp = arr(i)
+         arr(i) = arr(j)
+         arr(j) = objTmp
+         j = j - 1
+      next
+   end if
+   ArrayReverse = arr
+end function
+
 
 ''
 ' Returns a reverse sorted array (strings).
-function ArraySortStrings(arrStrings)
+function ArraySortStringsEx(arrStrings, ByRef fnCompare)
+   dim str1, str2, i, j
    for i = LBound(arrStrings) to UBound(arrStrings)
       str1 = arrStrings(i)
       for j = i + 1 to UBound(arrStrings)
          str2 = arrStrings(j)
-         if StrComp(str2, str1) < 0 then
+         if fnCompare(str2, str1) < 0 then
             arrStrings(j) = str1
             str1 = str2
          end if
       next
       arrStrings(i) = str1
    next
-   ArraySortStrings = arrStrings
+   ArraySortStringsEx = arrStrings
+end function
+
+
+''
+' Returns a reverse sorted array (strings).
+function ArraySortStrings(arrStrings)
+   ArraySortStrings = ArraySortStringsEx(arrStrings, GetRef("StrComp"))
+end function
+
+
+''
+' Returns a reverse sorted array (strings).
+function ArrayVerSortStrings(arrStrings)
+   ArrayVerSortStrings = ArraySortStringsEx(arrStrings, GetRef("StrVersionCompare"))
+end function
+
+
+''
+' Returns a reverse sorted array (strings).
+function ArrayRSortStrings(arrStrings)
+   ArrayRSortStrings = ArrayReverse(ArraySortStringsEx(arrStrings, GetRef("StrComp")))
+end function
+
+
+''
+' Returns a reverse version sorted array (strings).
+function ArrayRVerSortStrings(arrStrings)
+   ArrayRVerSortStrings = ArrayReverse(ArraySortStringsEx(arrStrings, GetRef("StrVersionCompare")))
 end function
 
 
@@ -188,30 +356,9 @@ end sub
 
 
 ''
-' Returns a reverse sorted array (strings).
-function ArrayRSortStrings(arrStrings)
-   ' Sort it.
-   arrStrings = ArraySortStrings(arrStrings)
-
-   ' Reverse the array.
-   cnt = UBound(arrStrings) - LBound(arrStrings) + 1
-   if cnt > 0 then
-      j   = UBound(arrStrings)
-      iHalf = Fix(LBound(arrStrings) + cnt / 2)
-      for i = LBound(arrStrings) to iHalf - 1
-         strTmp = arrStrings(i)
-         arrStrings(i) = arrStrings(j)
-         arrStrings(j) = strTmp
-         j = j - 1
-      next
-   end if
-   ArrayRSortStrings = arrStrings
-end function
-
-
-''
 ' Returns the input array with the string appended.
 ' Note! There must be some better way of doing this...
+' @todo Lots of copying here...
 function ArrayAppend(arr, str)
    dim i, cnt
    cnt = UBound(arr) - LBound(arr) + 1
@@ -221,6 +368,44 @@ function ArrayAppend(arr, str)
    next
    arrRet(UBound(arr) + 1) = str
    ArrayAppend = arrRet
+end function
+
+
+''
+' Checks if the array contains the given string (case sensitive).
+function ArrayContainsString(ByRef arr, str)
+   dim strCur
+   ArrayContainsString = False
+   for each strCur in arr
+      if StrComp(strCur, str) = 0 then
+         ArrayContainsString = True
+         exit function
+      end if
+   next
+end function
+
+
+''
+' Checks if the array contains the given string, using case insensitive compare.
+function ArrayContainsStringI(ByRef arr, str)
+   dim strCur
+   ArrayContainsStringI = False
+   for each strCur in arr
+      if StrComp(strCur, str, vbTextCompare) = 0 then
+         ArrayContainsStringI = True
+         exit function
+      end if
+   next
+end function
+
+''
+' Returns the number of entries in an array.
+function ArraySize(ByRef arr)
+   if (UBound(arr) >= 0) then
+      ArraySize = UBound(arr) - LBound(arr) + 1
+   else
+      ArraySize = 0
+   end if
 end function
 
 
@@ -314,7 +499,6 @@ function RegGetString(strName)
    RegGetString = ""
    if RegInit() then
       dim strRoot, strKey, strValue
-      dim iRoot
 
       ' split up into root, key and value parts.
       strRoot = left(strName, instr(strName, "\") - 1)
@@ -347,7 +531,6 @@ function RegGetMultiString(strName)
    RegGetMultiString = Array()
    if RegInit() then
       dim strRoot, strKey, strValue
-      dim iRoot
 
       ' split up into root, key and value parts.
       strRoot = left(strName, instr(strName, "\") - 1)
@@ -418,15 +601,15 @@ end function
 
 ''
 ' Returns an rsorted array of subkey strings.
-function RegEnumSubKeysRSort(strRoot, strKeyPath)
-   RegEnumSubKeysRSort = ArrayRSortStrings(RegEnumSubKeys(strRoot, strKeyPath))
+function RegEnumSubKeysRVerSorted(strRoot, strKeyPath)
+   RegEnumSubKeysRVerSorted = ArrayRVerSortStrings(RegEnumSubKeys(strRoot, strKeyPath))
 end function
 
 
 ''
 ' Returns an rsorted array of subkey strings.
-function RegEnumSubKeysFullRSort(strRoot, strKeyPath)
-   RegEnumSubKeysFullRSort = ArrayRSortStrings(RegEnumSubKeysFull(strRoot, strKeyPath))
+function RegEnumSubKeysFullRVerSorted(strRoot, strKeyPath)
+   RegEnumSubKeysFullRVerSorted = ArrayRVerSortStrings(RegEnumSubKeysFull(strRoot, strKeyPath))
 end function
 
 
@@ -469,6 +652,47 @@ function RegEnumValueNamesFull(strRoot, strKeyPath)
       arrTmp(i) = strKeyPath & "\" & arrTmp(i)
    next
    RegEnumValueNamesFull = arrTmp
+end function
+
+
+''
+' Extract relevant paths from program links using a callback function.
+'
+' Enumerates start menu program links from "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\UFH\SHC"
+' and similar, using the given callback to examine each and return a path if relevant.  The relevant
+' paths are returned in reverse sorted order.
+'
+' The callback prototype is as follows fnCallback(ByRef arrStrings, cStrings, ByRef objUser).
+' Any non-empty return strings are collected, reverse sorted uniquely and returned.
+'
+function CollectFromProgramItemLinks(ByRef fnCallback, ByRef objUser)
+   dim arrValues, strValue, arrStrings, str, arrCandidates, iCandidates, cStrings
+   CollectFromProgramItemLinks = Array()
+
+   arrValues = RegEnumValueNamesFull("HKCU", "SOFTWARE\Microsoft\Windows\CurrentVersion\UFH\SHC")
+   redim arrCandidates(UBound(arrValues) - LBound(arrValues) + 1)
+   iCandidates = 0
+   for each strValue in arrValues
+      arrStrings = RegGetMultiString("HKCU\" & strValue)
+      if UBound(arrStrings) >= 0 then
+         cStrings = UBound(arrStrings) + 1 - LBound(arrStrings)
+         str = fnCallback(arrStrings, cStrings, objUser)
+         if str <> "" then
+            if not ArrayContainsStringI(arrCandidates, str) then
+               arrCandidates(iCandidates) = str
+               iCandidates = iCandidates + 1
+            end if
+         end if
+      end if
+   next
+   if iCandidates > 0 then
+      redim preserve arrCandidates(iCandidates - 1)
+      arrCandidates = ArrayRVerSortStrings(arrCandidates)
+      for iCandidates = LBound(arrCandidates) to UBound(arrCandidates)
+         LogPrint "CollectFromProgramItemLinks: #" & iCandidates & ": " & arrCandidates(iCandidates)
+      next
+      CollectFromProgramItemLinks = arrCandidates
+   end if
 end function
 
 
@@ -679,15 +903,15 @@ end function
 
 ''
 ' Returns a sorted array of subfolder names that starts with the given string.
-function GetSubdirsStartingWithSorted(strFolder, strStartingWith)
-   GetSubdirsStartingWithSorted = ArraySortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
+function GetSubdirsStartingWithVerSorted(strFolder, strStartingWith)
+   GetSubdirsStartingWithVerSorted = ArrayVerSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
 end function
 
 
 ''
-' Returns a reverse sorted array of subfolder names that starts with the given string.
-function GetSubdirsStartingWithRSorted(strFolder, strStartingWith)
-   GetSubdirsStartingWithRSorted = ArrayRSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
+' Returns a reverse version sorted array of subfolder names that starts with the given string.
+function GetSubdirsStartingWithRVerSorted(strFolder, strStartingWith)
+   GetSubdirsStartingWithRSortedVersion = ArrayRVerSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
 end function
 
 
@@ -884,6 +1108,16 @@ end function
 
 
 ''
+' Checks if the file exists and logs failures.
+function LogFileExists1(strPath)
+   LogFileExists1 = FileExists(strPath)
+   if LogFileExists1 = False then
+      LogPrint "Testing '" & strPath & "': file not found"
+   end if
+end function
+
+
+''
 ' Checks if the directory exists and logs failures.
 function LogDirExists(strPath)
    LogDirExists = DirExists(strPath)
@@ -961,6 +1195,16 @@ sub CfgPrint(str)
    FileAppendLine g_strCfgFile, str
 end sub
 
+''
+' Prints a string to the config file.
+sub CfgPrintAssign(strVar, strValue)
+   if strValue = "" then
+      FileAppendLine g_strCfgFile, RightPad(strVar, 17) & " :="
+   else
+      FileAppendLine g_strCfgFile, RightPad(strVar, 17) & " := " & strValue
+   end if
+end sub
+
 
 ''
 ' Initializes the environment batch script.
@@ -1034,10 +1278,10 @@ sub DisableCOM(strReason)
       LogPrint "Disabled COM components: " & strReason
       g_blnDisableCOM = True
       g_strDisableCOM = strReason
-      CfgPrint "VBOX_WITH_MAIN="
-      CfgPrint "VBOX_WITH_QTGUI="
-      CfgPrint "VBOX_WITH_VBOXSDL="
-      CfgPrint "VBOX_WITH_DEBUGGER_GUI="
+      CfgPrintAssign "VBOX_WITH_MAIN", ""
+      CfgPrintAssign "VBOX_WITH_QTGUI", ""
+      CfgPrintAssign "VBOX_WITH_VBOXSDL", ""
+      CfgPrintAssign "VBOX_WITH_DEBUGGER_GUI", ""
    end if
 end sub
 
@@ -1049,7 +1293,7 @@ sub DisableUDPTunnel(strReason)
       LogPrint "Disabled UDPTunnel network transport: " & strReason
       g_blnDisableUDPTunnel = True
       g_strDisableUDPTunnel = strReason
-      CfgPrint "VBOX_WITH_UDPTUNNEL="
+      CfgPrintAssign "VBOX_WITH_UDPTUNNEL", ""
    end if
 end sub
 
@@ -1061,7 +1305,7 @@ sub DisableSDL(strReason)
       LogPrint "Disabled SDL frontend: " & strReason
       g_blnDisableSDL = True
       g_strDisableSDL = strReason
-      CfgPrint "VBOX_WITH_VBOXSDL="
+      CfgPrintAssign "VBOX_WITH_VBOXSDL", ""
    end if
 end sub
 
@@ -1310,6 +1554,7 @@ sub CheckForkBuild(strOptkBuild)
    PrintResult "kBuild binaries", g_strPathkBuildBin
 end sub
 
+
 ''
 ' Class we use for detecting VisualC++
 class VisualCPPState
@@ -1392,9 +1637,11 @@ class VisualCPPState
           and LogFileExists(strPathVC, "include/stdarg.h") _
           and LogFileExists(strPathVC, "lib/x64/libcpmt.lib") _
           and LogFileExists(strPathVC, "lib/x86/libcpmt.lib") _
+          and LogFileExists(strPathVC, "bin/Host" & g_strHostArchWin & "/" & g_strTargetArchWin & "/cl.exe") _
+          and LogFileExists(strPathVC, "bin/Host" & g_strHostArchWin & "/" & g_strHostArchWin & "/cl.exe") _
          then
             LogPrint " => seems okay. new layout."
-            m_blnFound = checkClExe(strPathVC & "/bin/Host" & g_strHostArchWin & "/bin/" & g_strHostArchWin & "/cl.exe")
+            m_blnFound = checkClExe(strPathVC & "/bin/Host" & g_strHostArchWin & "/" & g_strTargetArchWin & "/cl.exe")
             if m_blnFound then
                m_strPathVC = strPathVC
             end if
@@ -1417,9 +1664,9 @@ class VisualCPPState
                m_blnNewLayout = True
                LogPrint " => seems okay. new layout."
                dim arrFolders, i
-               arrFolders = GetSubdirsStartingWithSorted(m_strPathVC & "/Tools/MSVC", "14.2")
-               if UBound(arrFolders) < 0 then arrFolders = GetSubdirsStartingWithSorted(m_strPathVC & "/Tools/MSVC", "14.1")
-               if UBound(arrFolders) < 0 then arrFolders = GetSubdirsStartingWithSorted(m_strPathVC & "/Tools/MSVC", "1")
+               arrFolders = GetSubdirsStartingWithVerSorted(m_strPathVC & "/Tools/MSVC", "14.2")
+               if UBound(arrFolders) < 0 then arrFolders = GetSubdirsStartingWithVerSorted(m_strPathVC & "/Tools/MSVC", "14.1")
+               if UBound(arrFolders) < 0 then arrFolders = GetSubdirsStartingWithVerSorted(m_strPathVC & "/Tools/MSVC", "1")
                for i = UBound(arrFolders) to LBound(arrFolders) step -1
                   if checkInner(m_strPathVC & "/Tools/MSVC/" & arrFolders(i)) then exit for ' modifies m_strPathVC on success
                next
@@ -1512,7 +1759,7 @@ class VisualCPPState
 end class
 
 ''
-' Checks for Visual C++ version 10 (2010).
+' Checks for Visual C++ version 16 (2019), 15 (2017), 14 (2015), 12 (2013), 11 (2012) or 10 (2010).
 sub CheckForVisualCPP(strOptVC, strOptVCCommon)
    PrintHdr "Visual C++"
 
@@ -1523,7 +1770,6 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon)
    set objState = new VisualCPPState
    objState.check strOptVC, strOptVCCommon
    if g_blnInternalFirst = True then objState.checkInternal
-   objState.checkProg "cl.exe"
    objState.checkProgFiles "Microsoft Visual Studio\2019\BuildTools\VC"
    objState.checkProgFiles "Microsoft Visual Studio\2019\Professional\VC"
    objState.checkProgFiles "Microsoft Visual Studio\2019\Community\VC"
@@ -1536,6 +1782,7 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon)
    objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\14.0",             "VC", "Common7"
    objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\12.0",             "VC", "Common7" '?
    objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\11.0",             "VC", "Common7" '?
+   objState.checkProg "cl.exe"
    objState.checkRegistry "Microsoft\VisualStudio\10.0\Setup\VS\ProductDir", "VC", "Common7"
    if g_blnInternalFirst = False then objState.checkInternal
 
@@ -1549,19 +1796,19 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon)
    '
    ' Ok, emit build config variables.
    '
-   CfgPrint "VBOX_VCC_TOOL_STEM    := " & objState.m_strVersion
-   CfgPrint "PATH_TOOL_" & objState.m_strVersion & "      := " & g_strPathVCC
-   CfgPrint "PATH_TOOL_" & objState.m_strVersion & "X86   := $(PATH_TOOL_" & objState.m_strVersion & ")"
-   CfgPrint "PATH_TOOL_" & objState.m_strVersion & "AMD64 := $(PATH_TOOL_" & objState.m_strVersion & ")"
+   CfgPrintAssign "VBOX_VCC_TOOL_STEM", objState.m_strVersion
+   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion, g_strPathVCC
+   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion & "X86",   "$(PATH_TOOL_" & objState.m_strVersion & ")"
+   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion & "AMD64", "$(PATH_TOOL_" & objState.m_strVersion & ")"
 
    if   objState.m_strVersion = "VCC100" _
      or objState.m_strVersion = "VCC110" _
      or objState.m_strVersion = "VCC120" _
      or objState.m_strVersion = "VCC140" _
    then
-      CfgPrint "VBOX_WITH_NEW_VCC     :=" '?? for VCC110+
+      CfgPrintAssign "VBOX_WITH_NEW_VCC", "" '?? for VCC110+
    else
-      CfgPrint "VBOX_WITH_NEW_VCC     := 1"
+      CfgPrintAssign "VBOX_WITH_NEW_VCC", "1"
    end if
    PrintResult "Visual C++ " & objState.m_strVersion, g_strPathVCC
 
@@ -1614,14 +1861,14 @@ sub CheckForPlatformSDK(strOptSDK)
    end if
 
    ' Check the registry next (ASSUMES sorting).
-   arrSubKeys = RegEnumSubKeysRSort("HKLM", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
+   arrSubKeys = RegEnumSubKeysRVerSorted("HKLM", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
    for each strSubKey in arrSubKeys
       str = RegGetString("HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
       if strPathPSDK = "" And str <> "" then
          if CheckForPlatformSDKSub(str) then strPathPSDK = str
       end if
    Next
-   arrSubKeys = RegEnumSubKeysRSort("HKCU", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
+   arrSubKeys = RegEnumSubKeysRVerSorted("HKCU", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
    for each strSubKey in arrSubKeys
       str = RegGetString("HKCU\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
       if strPathPSDK = "" And str <> "" then
@@ -1650,10 +1897,11 @@ sub CheckForPlatformSDK(strOptSDK)
    ' Emit the config.
    '
    strPathPSDK = UnixSlashes(PathAbs(strPathPSDK))
-   CfgPrint "PATH_SDK_WINPSDK" & g_strVerPSDK & "    := " & strPathPSDK
-   CfgPrint "VBOX_WINPSDK          := WINPSDK" & g_strVerPSDK
+   CfgPrintAssign "PATH_SDK_WINPSDK" & g_strVerPSDK, strPathPSDK
+   CfgPrintAssign "VBOX_WINPSDK",  "WINPSDK" & g_strVerPSDK
 
-   PrintResult "Windows Platform SDK (v" & g_strVerPSDK & ")", strPathPSDK
+   PrintResult "Windows Platform SDK", strPathPSDK
+   PrintResultMsg "Windows Platform SDK version", g_strVerPSDK
    g_strPathPSDK = strPathPSDK
 end sub
 
@@ -1680,7 +1928,7 @@ end function
 
 
 ''
-' Checks for a platform SDK that works with the compiler
+' Checks for a windows 10 SDK (later also WDK).
 sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
    dim strPathSDK10, strSDK10Version, str
    PrintHdr "Windows 10 SDK/WDK"
@@ -1713,10 +1961,11 @@ sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
    ' Emit the config.
    '
    strPathSDK10 = UnixSlashes(PathAbs(strPathSDK10))
-   CfgPrint "PATH_SDK_WINSDK10     := " & strPathSDK10
-   CfgPrint "SDK_WINSDK10_VERSION  := " & strSDK10Version
+   CfgPrintAssign "PATH_SDK_WINSDK10", strPathSDK10
+   CfgPrintAssign "SDK_WINSDK10_VERSION", strSDK10Version
 
-   PrintResult "Windows 10 SDK (" & strSDK10Version & ")", strPathSDK10
+   PrintResult "Windows 10 SDK", strPathSDK10
+   PrintResultMsg "Windows 10 SDK version", strSDK10Version
    g_strPathSDK10 = strPathSDK10
 end sub
 
@@ -1728,7 +1977,7 @@ function CheckForSDK10ToolsSub(ByRef strSDK10Version)
    arrToolsDirs = Array(g_strPathDev & "/win." & g_strTargetArch & "/sdk", _
                         g_strPathDev & "/win.x86/sdk", g_strPathDev & "/win.amd64/sdk")
    for each strToolsDir in arrToolsDirs
-      arrDirs = GetSubdirsStartingWithRSorted(strToolsDir, "v10.")
+      arrDirs = GetSubdirsStartingWithRSortedVersion(strToolsDir, "v10.")
       for each strDir in arrDirs
          CheckForSDK10ToolsSub = CheckForSDK10Sub(strToolsDir & "/" & strDir, strSDK10Version)
          if CheckForSDK10ToolsSub <> "" then
@@ -1753,7 +2002,7 @@ function CheckForSDK10Sub(strPathSDK10, ByRef strSDK10Version)
          then
             ' Only testing the highest one, for now. '' @todo incorporate strOptSDK10Version
             dim arrVersions
-            arrVersions = GetSubdirsStartingWithSorted(strPathSDK10 & "/Include", "10.0.")
+            arrVersions = GetSubdirsStartingWithVerSorted(strPathSDK10 & "/Include", "10.0.")
             if UBound(arrVersions) >= 0 then
                dim strVersion
                strVersion = arrVersions(UBound(arrVersions))
@@ -1768,9 +2017,12 @@ function CheckForSDK10Sub(strPathSDK10, ByRef strSDK10Version)
                 and  LogFileExists(strPathSDK10, "bin/" & strVersion & "/" & g_strHostArchWin & "/rc.exe") _
                 and  LogFileExists(strPathSDK10, "bin/" & strVersion & "/" & g_strHostArchWin & "/midl.exe") _
                then
-                  '' @todo check minimum version (for WinHv).
-                  strSDK10Version  = strVersion
-                  CheckForSDK10Sub = strPathSDK10
+                  if StrComp(strVersion, "10.0.17134.0") >= 0 then
+                     strSDK10Version  = strVersion
+                     CheckForSDK10Sub = strPathSDK10
+                  else
+                     LogPrint "Version " & strVersion & " is too low, minimum: 10.0.17134.0"
+                  end if
                end if
             else
                LogPrint "Found no 10.0.* subdirectories under '" & strPathSDK10 & "/Include'!"
@@ -1830,7 +2082,7 @@ sub CheckForWinDDK(strOptDDK)
          next
       next
    next
-   arrLocations = ArrayRSortStrings(arrLocations)
+   arrLocations = ArrayRVerSortStrings(arrLocations)
 
    ' Check the locations we've gathered.
    for each str in arrLocations
@@ -1855,7 +2107,7 @@ sub CheckForWinDDK(strOptDDK)
    ' Emit the config.
    '
    strPathDDK = UnixSlashes(PathAbs(strPathDDK))
-   CfgPrint "PATH_SDK_WINDDK71     := " & strPathDDK
+   CfgPrintAssign "PATH_SDK_WINDDK71", strPathDDK
 
    PrintResult "Windows DDK v7.1", strPathDDK
    g_strPathDDK = strPathDDK
@@ -1886,34 +2138,126 @@ end function
 
 ''
 ' Finds midl.exe
-sub CheckForMidl()
+sub CheckForMidl(strOptMidl)
    dim strMidl
    PrintHdr "Midl.exe"
 
    ' Skip if no COM/ATL.
    if g_blnDisableCOM then
-      PrintResultMsg "Midl", "Skipped (" & g_strDisableCOM & ")"
+      PrintResultMsg "Midl.exe", "Skipped (" & g_strDisableCOM & ")"
       exit sub
    end if
 
-   if LogFileExists(g_strPathPSDK, "bin/Midl.exe") then
-      strMidl = g_strPathPSDK & "/bin/Midl.exe"
-   elseif LogFileExists(g_strPathVCC, "Common7/Tools/Bin/Midl.exe") then
-      strMidl = g_strPathVCC & "/Common7/Tools/Bin/Midl.exe"
-   elseif LogFileExists(g_strPathDDK, "bin/x86/Midl.exe") then
-      strMidl = g_strPathDDK & "/bin/x86/Midl.exe"
-   elseif LogFileExists(g_strPathDDK, "bin/Midl.exe") then
-      strMidl = g_strPathDDK & "/bin/Midl.exe"
-   elseif LogFileExists(g_strPathDev, "win.x86/bin/Midl.exe") then
-      strMidl = g_strPathDev & "/win.x86/bin/Midl.exe"
-   else
-      MsgWarning "Midl.exe not found!"
+   strMidl = CheckForMidlSub(strOptMidl)
+   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathSDK10 & "/bin/" & g_strHostArchWin & "/Midl.exe")
+   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathSDK10 & "/bin/x86/Midl.exe")
+   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathPSDK  & "/bin/Midl.exe")
+   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathVCC   & "/Common7/Tools/Bin/Midl.exe")
+   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathDDK   & "/bin/" & g_strHostArchWin & "/Midl.exe")
+   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathDDK   & "/bin/x86/Midl.exe")
+   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathDDK   & "/bin/Midl.exe")
+   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathDev   & "/win.x86/bin/Midl.exe")
+   if strMidl = "" then
+      PrintResultMsg "Midl.exe", "not found"
       exit sub
    end if
 
-   CfgPrint "VBOX_MAIN_IDL         := " & strMidl
+   CfgPrintAssign "VBOX_MAIN_IDL", strMidl
    PrintResult "Midl.exe", strMidl
 end sub
+
+function CheckForMidlSub(strMidl)
+   CheckForMidlSub = ""
+   if strMidl <> "" then
+      if LogFileExists1(strMidl) then
+         CheckForMidlSub = UnixSlashes(PathAbs(strMidl))
+      end if
+   end if
+end function
+
+
+''
+' Finds OpenWatcom
+sub CheckForOpenWatcom(strOptOpenWatcom)
+   dim strPathOpenWatcom
+   PrintHdr "OpenWatcom"
+
+   strPathOpenWatcom = CheckForOpenWatcomSub(strOptOpenWatcom)
+   if strPathOpenWatcom = "" and g_blnInternalFirst = True then strPathOpenWatcom = CheckForOpenWatcomToolsSub()
+   if strPathOpenWatcom = "" then strPathOpenWatcom = CheckForOpenWatcomSub(EnvGet("WATCOM"))
+   if strPathOpenWatcom = "" then strPathOpenWatcom = CheckForOpenWatcomSub(PathParent(PathStripFilename(Which("wcc386.exe"))))
+   if strPathOpenWatcom = "" then
+      dim arrCandiates, strCandidate
+      arrCandidates = CollectFromProgramItemLinks(GetRef("OpenWatcomProgramItemCallback"), strPathOpenWatcom)
+      for each strCandidate in arrCandidates
+         if strPathOpenWatcom = "" then strPathOpenWatcom = CheckForOpenWatcomSub(strCandidate)
+      next
+   end if
+   if strPathOpenWatcom = "" and g_blnInternalFirst = False then strPathOpenWatcom = CheckForOpenWatcomToolsSub()
+
+   if strPathOpenWatcom = "" then
+      PrintResultMsg "OpenWatcom", "not found"
+      CfgPrintAssign "VBOX_WITH_OPEN_WATCOM", ""
+      exit sub
+   end if
+
+   CfgPrintAssign "VBOX_WITH_OPEN_WATCOM", "1"
+   CfgPrintAssign "PATH_TOOL_OPENWATCOM", strPathOpenWatcom
+   PrintResult "OpenWatcom", strPathOpenWatcom
+end sub
+
+function CheckForOpenWatcomToolsSub()
+   dim arrToolsDirs, strToolsDir, arrDirs, strDir
+   arrToolsDirs = Array(g_strPathDev & "/common/openwatcom", _
+                        g_strPathDev & "/win." & g_strTargetArch & "/openwatcom", _
+                        g_strPathDev & "/win.x86/openwatcom", g_strPathDev & "/win.amd64/openwatcom")
+   for each strToolsDir in arrToolsDirs
+      arrDirs = GetSubdirsStartingWithRSortedVersion(strToolsDir, "v")
+      for each strDir in arrDirs
+         CheckForOpenWatcomToolsSub = CheckForOpenWatcomSub(strToolsDir & "/" & strDir)
+         if CheckForOpenWatcomToolsSub <> "" then
+            exit function
+         end if
+      next
+   next
+   CheckForOpenWatcomToolsSub = ""
+end function
+
+function OpenWatcomProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
+   dim str, off
+   OpenWatcomProgramItemCallback = ""
+   if cStrings > 1 then
+      str = arrStrings(1)
+      off = InStr(1, str, "\binnt\", vbTextCompare)
+      if off > 0 then
+         OpenWatcomProgramItemCallback = Left(str, off - 1)
+      end if
+   end if
+end function
+
+function CheckForOpenWatcomSub(strPathOpenWatcom)
+   CheckForOpenWatcomSub = ""
+   if strPathOpenWatcom <> "" then
+      LogPrint "Trying: " & strPathOpenWatcom
+      if LogDirExists(strPathOpenWatcom) then
+         if   LogDirExists(strPathOpenWatcom & "/binnt") _
+          and LogDirExists(strPathOpenWatcom & "/h") _
+          and LogDirExists(strPathOpenWatcom & "/eddat") _
+          and LogFileExists(strPathOpenWatcom, "binnt/wcc386.exe") _
+          and LogFileExists(strPathOpenWatcom, "binnt/wcc.exe") _
+          and LogFileExists(strPathOpenWatcom, "binnt/wlink.exe") _
+          and LogFileExists(strPathOpenWatcom, "binnt/wcl386.exe") _
+          and LogFileExists(strPathOpenWatcom, "binnt/wcl.exe") _
+          and LogFileExists(strPathOpenWatcom, "binnt/wlib.exe") _
+          and LogFileExists(strPathOpenWatcom, "binnt/wasm.exe") _
+          and LogFileExists(strPathOpenWatcom, "h/stdarg.h") _
+         then
+            '' @todo check the version!
+            CheckForOpenWatcomSub = UnixSlashes(PathAbs(strPathOpenWatcom))
+         end if
+      end if
+   end if
+end function
 
 
 ''
@@ -1981,7 +2325,7 @@ sub CheckForlibSDL(strOptlibSDL)
    end if
 
    strPathLibSDL = UnixSlashes(PathAbs(strPathLibSDL))
-   CfgPrint "PATH_SDK_LIBSDL       := " & strPathlibSDL
+   CfgPrintAssign "PATH_SDK_LIBSDL", strPathlibSDL
 
    PrintResult "libSDL", strPathlibSDL
 end sub
@@ -2051,9 +2395,9 @@ sub CheckForXml2(strOptXml2)
    end if
 
    strPathXml2 = UnixSlashes(PathAbs(strPathXml2))
-   CfgPrint "SDK_VBOX_LIBXML2_DEFS  := _REENTRANT"
-   CfgPrint "SDK_VBOX_LIBXML2_INCS  := " & strPathXml2 & "/include"
-   CfgPrint "SDK_VBOX_LIBXML2_LIBS  := " & strPathXml2 & "/lib/libxml2.lib"
+   CfgPrintAssign "SDK_VBOX_LIBXML2_DEFS", "_REENTRANT"
+   CfgPrintAssign "SDK_VBOX_LIBXML2_INCS", strPathXml2 & "/include"
+   CfgPrintAssign "SDK_VBOX_LIBXML2_LIBS", strPathXml2 & "/lib/libxml2.lib"
 
    PrintResult "libxml2", strPathXml2
 end sub
@@ -2128,13 +2472,13 @@ sub CheckForSsl(strOptSsl, bln32Bit)
 
    strPathSsl = UnixSlashes(PathAbs(strPathSsl))
    if bln32Bit = True then
-      CfgPrint "SDK_VBOX_OPENSSL-x86_INCS := " & strPathSsl & "/include"
-      CfgPrint "SDK_VBOX_OPENSSL-x86_LIBS := " & strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
-      CfgPrint "SDK_VBOX_BLD_OPENSSL-x86_LIBS := " & strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
+      CfgPrintAssign "SDK_VBOX_OPENSSL-x86_INCS",     strPathSsl & "/include"
+      CfgPrintAssign "SDK_VBOX_OPENSSL-x86_LIBS",     strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
+      CfgPrintAssign "SDK_VBOX_BLD_OPENSSL-x86_LIBS", strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
    else
-      CfgPrint "SDK_VBOX_OPENSSL_INCS := " & strPathSsl & "/include"
-      CfgPrint "SDK_VBOX_OPENSSL_LIBS := " & strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
-      CfgPrint "SDK_VBOX_BLD_OPENSSL_LIBS := " & strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
+      CfgPrintAssign "SDK_VBOX_OPENSSL_INCS",         strPathSsl & "/include"
+      CfgPrintAssign "SDK_VBOX_OPENSSL_LIBS",         strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
+      CfgPrintAssign "SDK_VBOX_BLD_OPENSSL_LIBS",     strPathSsl & "/lib/libcrypto.lib" & " " & strPathSsl & "/lib/libssl.lib"
    end if
 
    PrintResult strOpenssl, strPathSsl
@@ -2204,11 +2548,11 @@ sub CheckForCurl(strOptCurl, bln32Bit)
 
    strPathCurl = UnixSlashes(PathAbs(strPathCurl))
    if bln32Bit = True then
-      CfgPrint "SDK_VBOX_LIBCURL-x86_INCS := " & strPathCurl & "/include"
-      CfgPrint "SDK_VBOX_LIBCURL-x86_LIBS.x86 := " & strPathCurl & "/libcurl.lib"
+      CfgPrintAssign "SDK_VBOX_LIBCURL-x86_INCS",     strPathCurl & "/include"
+      CfgPrintAssign "SDK_VBOX_LIBCURL-x86_LIBS.x86", strPathCurl & "/libcurl.lib"
    else
-      CfgPrint "SDK_VBOX_LIBCURL_INCS := " & strPathCurl & "/include"
-      CfgPrint "SDK_VBOX_LIBCURL_LIBS := " & strPathCurl & "/libcurl.lib"
+      CfgPrintAssign "SDK_VBOX_LIBCURL_INCS", strPathCurl & "/include"
+      CfgPrintAssign "SDK_VBOX_LIBCURL_LIBS", strPathCurl & "/libcurl.lib"
    end if
 
    PrintResult strCurl, strPathCurl
@@ -2253,28 +2597,9 @@ sub CheckForQt(strOptQt5, strOptInfix)
       '   C:\Windows\System32\cmd.exe
       '   /A /Q /K E:\qt\installed\5.x.y\msvc20zz_64\bin\qtenv2.bat
       '
-      dim arrValues, strValue, arrStrings, str, arrCandidates, iCandidates, strCandidate, off
-      arrValues = RegEnumValueNamesFull("HKCU", "SOFTWARE\Microsoft\Windows\CurrentVersion\UFH\SHC")
-      redim arrCandidates(UBound(arrValues) - LBound(arrValues) + 1)
-      iCandidates   = 0
-      for each strValue in arrValues
-         arrStrings = RegGetMultiString("HKCU\" & strValue)
-         if UBound(arrStrings) >= 0 and UBound(arrStrings) - LBound(arrStrings) >= 2 then
-            str = Trim(arrStrings(UBound(arrStrings)))
-            if   LCase(Right(str, Len("\bin\qtenv2.bat"))) = "\bin\qtenv2.bat" _
-             and InStr(1, LCase(str), "\msvc20") > 0 _
-             and InStr(1, str, ":") > 0 _
-            then
-               off = InStr(1, str, ":") - 1
-               arrCandidates(iCandidates) = Mid(str, off, Len(str) - off - Len("\bin\qtenv2.bat") + 1)
-               LogPrint "qt5 candidate #" & iCandidates & "=" & arrCandidates(iCandidates) & " (" & str & ")"
-               iCandidates = iCandidates + 1
-            end if
-         end if
-      next
-      redim preserve arrCandidates(iCandidates)
-      if iCandidates > 0 then arrCandidates = ArrayRSortStrings(arrCandidates)   ' Kind of needs version sorting here...
-      LogPrint "Testing qtenv2.bat links (" & iCandidates & ") ..."
+      dim arrCandidates, strCandidate
+      arrCandidates = CollectFromProgramItemLinks(GetRef("Qt5ProgramItemCallback"), strPathQt5)
+      LogPrint "Testing qtenv2.bat links (" & ArraySize(arrCandidates) & ") ..."
 
       ' VC infixes/subdir names to consider (ASSUMES 64bit)
       if     g_strVCCVersion = "VCC142" or g_strVCCVersion = "" then
@@ -2307,7 +2632,7 @@ sub CheckForQt(strOptQt5, strOptInfix)
    ' Check the dev tools - prefer ones matching the compiler.
    if strPathQt5 = "" then
       LogPrint "Testing tools dir (" & g_strPathDev & "/win." & g_strTargetArch & "/qt/v5*) ..."
-      arrFolders = GetSubdirsStartingWithSorted(g_strPathDev & "/win." & g_strTargetArch & "/qt", "v5")
+      arrFolders = GetSubdirsStartingWithVerSorted(g_strPathDev & "/win." & g_strTargetArch & "/qt", "v5")
       arrVccInfixes = Array(LCase(g_strVCCVersion), Left(LCase(g_strVCCVersion), Len(g_strVCCVersion) - 1), "")
       for each strVccInfix in arrVccInfixes
          for i = UBound(arrFolders) to LBound(arrFolders) step -1
@@ -2326,16 +2651,31 @@ sub CheckForQt(strOptQt5, strOptInfix)
    if strPathQt5 <> "" then
       PrintResult "Qt5", strPathQt5
       PrintResultMsg "Qt5 infix", strInfixQt5
-      CfgPrint "PATH_SDK_QT5          := " & strPathQt5
-      CfgPrint "PATH_TOOL_QT5         := $(PATH_SDK_QT5)"
-      CfgPrint "VBOX_PATH_QT          := $(PATH_SDK_QT5)"
-      CfgPrint "VBOX_QT_INFIX         := " & strInfixQt5
-      CfgPrint "VBOX_WITH_QT_PAYLOAD  := 1"
+      CfgPrintAssign "PATH_SDK_QT5",          strPathQt5
+      CfgPrintAssign "PATH_TOOL_QT5",         "$(PATH_SDK_QT5)"
+      CfgPrintAssign "VBOX_PATH_QT",          "$(PATH_SDK_QT5)"
+      CfgPrintAssign "VBOX_QT_INFIX",         strInfixQt5
+      CfgPrintAssign "VBOX_WITH_QT_PAYLOAD",  "1"
    else
-      CfgPrint "VBOX_WITH_QTGUI       :="
       PrintResultMsg "Qt5", "not found"
+      CfgPrintAssign "VBOX_WITH_QTGUI", ""
    end if
 end sub
+
+function Qt5ProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
+   dim str, off
+   Qt5ProgramItemCallback = ""
+   if cStrings >= 3 then
+      str = Trim(arrStrings(UBound(arrStrings)))
+      if   LCase(Right(str, Len("\bin\qtenv2.bat"))) = "\bin\qtenv2.bat" _
+       and InStr(1, LCase(str), "\msvc20") > 0 _
+       and InStr(1, str, ":") > 0 _
+      then
+         off = InStr(1, str, ":") - 1
+         Qt5ProgramItemCallback = Mid(str, off, Len(str) - off - Len("\bin\qtenv2.bat") + 1)
+      end if
+   end if
+end function
 
 ''
 ' Checks if the specified path points to an usable Qt5 library.
@@ -2393,7 +2733,7 @@ function CheckForPython(strOptPython)
    '
    CheckForPython = strPathPython <> ""
    if CheckForPython then
-      CfgPrint "VBOX_BLD_PYTHON       := " & strPathPython
+      CfgPrintAssign "VBOX_BLD_PYTHON", strPathPython
       PrintResult "Python", strPathPython
    else
       PrintResultMsg "Python", "not found"
@@ -2413,6 +2753,33 @@ function CheckForPythonSub(strPathPython)
    end if
 end function
 
+
+''
+' Simple self test.
+sub SelfTest
+   dim i, str
+   str = "0123456789"
+   for i = 1 to Len(str)
+      if CharIsDigit(Mid(str, i, 1)) <> True then MsgFatal "SelfTest failed: CharIsDigit("&Mid(str, i, 1)&")"
+   next
+   str = "abcdefghijklmnopqrstuvwxyz~`!@#$%^&*()_+-=ABCDEFGHIJKLMNOPQRSTUVWXYZ/\[]{}"
+   for i = 1 to Len(str)
+      if CharIsDigit(Mid(str, i, 1)) <> False then MsgFatal "SelfTest failed: CharIsDigit("&Mid(str, i, 1)&")"
+   next
+   if StrVersionCompare("1234", "1234") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #1"
+   if StrVersionCompare("1", "1") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #2"
+   if StrVersionCompare("2", "1") <= 0 then MsgFatal "SelfTest failed: StrVersionCompare #3"
+   if StrVersionCompare("1", "2") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #4"
+   if StrVersionCompare("01", "1") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #5"
+   if StrVersionCompare("01", "001") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #6"
+   if StrVersionCompare("12", "123") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #7"
+   if StrVersionCompare("v123", "123") <= 0 then MsgFatal "SelfTest failed: StrVersionCompare #8"
+   if StrVersionCompare("v1.2.3", "v1.3.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #9"
+   if StrVersionCompare("v1.02.3", "v1.3.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #10"
+   if StrVersionCompare("v1.2.3", "v1.03.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #11"
+   if StrVersionCompare("v1.2.4", "v1.23.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #12"
+   if StrVersionCompare("v10.0.17163", "v10.00.18363") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #13"
+end sub
 
 ''
 ' Show usage.
@@ -2442,6 +2809,8 @@ sub usage
    Print "                          (Expecting bin, include and lib subdirs.)"
    Print "  --with-VC-Common=PATH   Maybe needed for 2015 and older to"
    Print "                          locate the Common7 directory."
+   Print "  --with-midl=PATH        Where midl.exe is to be found."
+   Print "  --with-openwatcom=PATH  Where OpenWatcom 1.9 is to be found."
    Print "  --with-python=PATH      The python to use."
    Print "  --with-libxml2=PATH     To use a libxml2 other than the VBox one."
    Print "  --with-openssl=PATH     To use an openssl other than the VBox one."
@@ -2464,6 +2833,7 @@ function Main
       Main = 1
       exit function
    end if
+   SelfTest
 
    '
    ' Parse arguments.
@@ -2479,6 +2849,8 @@ function Main
    strOptSDK10Version = ""
    strOptVC = ""
    strOptVCCommon = ""
+   strOptMidl = ""
+   strOptOpenWatcom = ""
    strOptXml2 = ""
    strOptSsl = ""
    strOptSsl32 = ""
@@ -2535,6 +2907,10 @@ function Main
             ' ignore
          case "--with-w32api"
             ' ignore
+         case "--with-midl"
+            strOptMidl = strPath
+         case "--with-openwatcom"
+            strOptOpenWatcom = strPath
          case "--with-libxml2"
             strOptXml2 = strPath
          case "--with-openssl"
@@ -2618,10 +2994,10 @@ function Main
    CheckForVisualCPP    strOptVC, strOptVCCommon
    CheckForPlatformSDK  strOptSDK
    CheckForSDK10        strOptSDK10, strOptSDK10Version
-   CheckForMidl
-   CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
-   CfgPrint "VBOX_WITH_LIBVPX := " '' @todo look for libvpx 1.1.0+
-   CfgPrint "VBOX_WITH_LIBOPUS := " '' @todo look for libopus 1.2.1+
+   CheckForMidl         strOptMidl
+   CheckForOpenWatcom   strOptOpenWatcom
+   CfgPrintAssign "VBOX_WITH_LIBVPX",  "" '' @todo look for libvpx 1.1.0+
+   CfgPrintAssign "VBOX_WITH_LIBOPUS", "" '' @todo look for libopus 1.2.1+
 
    EnvPrintAppend "PATH", DosSlashes(g_strPath & "\tools\win." & g_strHostArch & "\bin"), ";" '' @todo look for yasm
    if g_strHostArch = "amd64" then
