@@ -17,6 +17,8 @@
 
 /* Qt includes: */
 #include <QAbstractItemDelegate>
+#include <QCheckBox>
+#include <QGridLayout>
 #include <QHeaderView>
 #include <QItemEditorFactory>
 #include <QTabWidget>
@@ -885,6 +887,8 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     , m_pSelectorFilterEditor(0), m_pSelectorModel(0), m_pSelectorTable(0)
     , m_pMachineFilterEditor(0), m_pMachineModel(0), m_pMachineTable(0)
     , m_pCache(0)
+    , m_pEnableAutoGrabCheckbox(0)
+    , m_pMainLayout(0)
 {
     /* Prepare: */
     prepare();
@@ -1019,8 +1023,11 @@ void UIGlobalSettingsInput::setOrderAfter(QWidget *pWidget)
 
 void UIGlobalSettingsInput::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIGlobalSettingsInput::retranslateUi(this);
+    m_pEnableAutoGrabCheckbox->setWhatsThis(tr("When checked, the keyboard is automatically captured every time the VM window "
+                                               "is activated. When the keyboard is captured, all keystrokes (including system ones "
+                                               "like Alt-Tab) are directed to the VM."));
+    m_pEnableAutoGrabCheckbox->setText(tr("&Auto Capture Keyboard"));
+
 
     /* Translate tab-widget labels: */
     m_pTabWidget->setTabText(UIHotKeyTableIndex_Selector, tr("&VirtualBox Manager"));
@@ -1033,8 +1040,7 @@ void UIGlobalSettingsInput::retranslateUi()
 
 void UIGlobalSettingsInput::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsInput::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalInput;
@@ -1060,6 +1066,20 @@ void UIGlobalSettingsInput::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIGlobalSettingsInput::prepareWidgets()
+{
+
+
+
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIGlobalSettingsInput"));
+    m_pMainLayout = new QGridLayout(this);
+    m_pMainLayout->setObjectName(QStringLiteral("m_pMainLayout"));
+    m_pEnableAutoGrabCheckbox = new QCheckBox(this);
+    m_pEnableAutoGrabCheckbox->setObjectName(QStringLiteral("m_pEnableAutoGrabCheckbox"));
+    m_pMainLayout->addWidget(m_pEnableAutoGrabCheckbox, 1, 0, 1, 1);
 }
 
 void UIGlobalSettingsInput::prepareTabSelector()

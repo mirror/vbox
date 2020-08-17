@@ -23,7 +23,6 @@ LANGUAGE	= C++
 FORMS = \
     src/settings/UISettingsDialog.ui \
     src/settings/global/UIGlobalSettingsGeneral.ui \
-    src/settings/global/UIGlobalSettingsInput.ui \
     src/settings/global/UIGlobalSettingsUpdate.ui \
     src/settings/global/UIGlobalSettingsLanguage.ui \
     src/settings/global/UIGlobalSettingsDisplay.ui \

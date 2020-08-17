@@ -558,23 +558,23 @@ void UIMachineSettingsUSB::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsUSB::retranslateUi()
 {
-    m_pCheckBoxUSB->setWhatsThis(QApplication::translate("UIMachineSettingsUSB", "When checked, enables the virtual USB controller of this machine."));
-    m_pCheckBoxUSB->setText(QApplication::translate("UIMachineSettingsUSB", "Enable &USB Controller"));
-    m_pRadioButtonUSB1->setWhatsThis(QApplication::translate("UIMachineSettingsUSB", "When chosen, enables the virtual USB OHCI controller of "
-                                                  "this machine. The USB OHCI controller provides USB 1.0 support."));
-    m_pRadioButtonUSB1->setText(QApplication::translate("UIMachineSettingsUSB", "USB &1.1 (OHCI) Controller"));
-    m_pRadioButtonUSB2->setWhatsThis(QApplication::translate("UIMachineSettingsUSB", "When chosen, enables the virtual USB OHCI and EHCI "
-                                                  "controllers of this machine. Together they provide USB 2.0 support."));
-    m_pRadioButtonUSB2->setText(QApplication::translate("UIMachineSettingsUSB", "USB &2.0 (OHCI + EHCI) Controller"));
-    m_pRadioButtonUSB3->setWhatsThis(QApplication::translate("UIMachineSettingsUSB", "When chosen, enables the virtual USB xHCI controller of "
-                                                  "this machine. The USB xHCI controller provides USB 3.0 support."));
-    m_pRadioButtonUSB3->setText(QApplication::translate("UIMachineSettingsUSB", "USB &3.0 (xHCI) Controller"));
-    m_pCheckBoxUSBFilters->setText(QApplication::translate("UIMachineSettingsUSB", "USB Device &Filters"));
+    m_pCheckBoxUSB->setWhatsThis(tr("When checked, enables the virtual USB controller of this machine."));
+    m_pCheckBoxUSB->setText(tr("Enable &USB Controller"));
+    m_pRadioButtonUSB1->setWhatsThis(tr("When chosen, enables the virtual USB OHCI controller of "
+                                        "this machine. The USB OHCI controller provides USB 1.0 support."));
+    m_pRadioButtonUSB1->setText(tr("USB &1.1 (OHCI) Controller"));
+    m_pRadioButtonUSB2->setWhatsThis(tr("When chosen, enables the virtual USB OHCI and EHCI "
+                                        "controllers of this machine. Together they provide USB 2.0 support."));
+    m_pRadioButtonUSB2->setText(tr("USB &2.0 (OHCI + EHCI) Controller"));
+    m_pRadioButtonUSB3->setWhatsThis(tr("When chosen, enables the virtual USB xHCI controller of "
+                                        "this machine. The USB xHCI controller provides USB 3.0 support."));
+    m_pRadioButtonUSB3->setText(tr("USB &3.0 (xHCI) Controller"));
+    m_pCheckBoxUSBFilters->setText(tr("USB Device &Filters"));
     QTreeWidgetItem *pQtreewidgetitem = m_pTreeWidgetFilters->headerItem();
-    pQtreewidgetitem->setText(0, QApplication::translate("UIMachineSettingsUSB", "[filter]"));
-    m_pTreeWidgetFilters->setWhatsThis(QApplication::translate("UIMachineSettingsUSB", "Lists all USB filters of this machine. The checkbox "
-                                                     "to the left defines whether the particular filter is enabled or not. Use the "
-                                                     "context menu or buttons to the right to add or remove USB filters."));
+    pQtreewidgetitem->setText(0, tr("[filter]"));
+    m_pTreeWidgetFilters->setWhatsThis(tr("Lists all USB filters of this machine. The checkbox "
+                                          "to the left defines whether the particular filter is enabled or not. Use the "
+                                          "context menu or buttons to the right to add or remove USB filters."));
 
     m_pActionNew->setText(tr("Add Empty Filter"));
     m_pActionAdd->setText(tr("Add Filter From Device"));

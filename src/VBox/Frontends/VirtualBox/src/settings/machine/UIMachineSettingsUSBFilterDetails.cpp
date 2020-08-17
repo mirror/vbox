@@ -70,38 +70,38 @@ UIMachineSettingsUSBFilterDetails::UIMachineSettingsUSBFilterDetails(QWidget *pP
 
 void UIMachineSettingsUSBFilterDetails::retranslateUi()
 {
-    setWindowTitle(QApplication::translate("UIMachineSettingsUSBFilterDetails", "USB Filter Details"));
-    m_pLabelName->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "&Name:"));
-    m_pLineEditName->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds the filter name."));
-    m_pLabelVendorID->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "&Vendor ID:"));
-    m_pLineEditVendorID->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds the vendor ID filter. The "
-                                                    "<i>exact match</i> string format is <tt>XXXX</tt> where <tt>X</tt> is a "
-                                                            "hexadecimal digit. An empty string will match any value."));
-    m_pLabelProductID->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "&Product ID:"));
-    m_pLineEditProductID->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds the product ID filter. The "
-                                                     "<i>exact match</i> string format is <tt>XXXX</tt> where <tt>X</tt> is a "
-                                                     "hexadecimal digit. An empty string will match any value."));
-    m_pLabelRevision->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "&Revision:"));
-    m_pLineEditRevision->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds the revision number filter. The "
-                                                    "<i>exact match</i> string format is <tt>IIFF</tt> where <tt>I</tt> is a decimal "
-                                                    "digit of the integer part and <tt>F</tt> is a decimal digit of the fractional "
-                                                    "part. An empty string will match any value."));
-    m_pLabelManufacturer->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "&Manufacturer:"));
-    m_pLineEditManufacturer->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds the manufacturer filter as an "
-                                                        "<i>exact match</i> string. An empty string will match any value."));
-    m_pLabelProduct->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Pro&duct:"));
-    m_pLineEditProduct->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds the product name filter as an "
-                                                   "<i>exact match</i> string. An empty string will match any value."));
-    m_pLabelSerialNo->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "&Serial No.:"));
-    m_pLineEditSerialNo->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds the serial number filter as an "
-                                                    "<i>exact match</i> string. An empty string will match any value."));
-    m_pLabelPort->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Por&t:"));
-    m_pLineEditPort->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds the host USB port filter as an "
-                                                "<i>exact match</i> string. An empty string will match any value."));
-    m_pLabelRemote->setText(QApplication::translate("UIMachineSettingsUSBFilterDetails", "R&emote:"));
-    m_pComboBoxRemote->setToolTip(QApplication::translate("UIMachineSettingsUSBFilterDetails", "Holds whether this filter applies to USB "
-                                                  "devices attached locally to the host computer (<i>No</i>), to a VRDP client's "
-                                                  "computer (<i>Yes</i>), or both (<i>Any</i>)."));
+    setWindowTitle(tr("USB Filter Details"));
+    m_pLabelName->setText(tr("&Name:"));
+    m_pLineEditName->setToolTip(tr("Holds the filter name."));
+    m_pLabelVendorID->setText(tr("&Vendor ID:"));
+    m_pLineEditVendorID->setToolTip(tr("Holds the vendor ID filter. The "
+                                       "<i>exact match</i> string format is <tt>XXXX</tt> where <tt>X</tt> is a "
+                                       "hexadecimal digit. An empty string will match any value."));
+    m_pLabelProductID->setText(tr("&Product ID:"));
+    m_pLineEditProductID->setToolTip(tr("Holds the product ID filter. The "
+                                        "<i>exact match</i> string format is <tt>XXXX</tt> where <tt>X</tt> is a "
+                                        "hexadecimal digit. An empty string will match any value."));
+    m_pLabelRevision->setText(tr("&Revision:"));
+    m_pLineEditRevision->setToolTip(tr("Holds the revision number filter. The "
+                                       "<i>exact match</i> string format is <tt>IIFF</tt> where <tt>I</tt> is a decimal "
+                                       "digit of the integer part and <tt>F</tt> is a decimal digit of the fractional "
+                                       "part. An empty string will match any value."));
+    m_pLabelManufacturer->setText(tr("&Manufacturer:"));
+    m_pLineEditManufacturer->setToolTip(tr("Holds the manufacturer filter as an "
+                                           "<i>exact match</i> string. An empty string will match any value."));
+    m_pLabelProduct->setText(tr("Pro&duct:"));
+    m_pLineEditProduct->setToolTip(tr("Holds the product name filter as an "
+                                      "<i>exact match</i> string. An empty string will match any value."));
+    m_pLabelSerialNo->setText(tr("&Serial No.:"));
+    m_pLineEditSerialNo->setToolTip(tr("Holds the serial number filter as an "
+                                       "<i>exact match</i> string. An empty string will match any value."));
+    m_pLabelPort->setText(tr("Por&t:"));
+    m_pLineEditPort->setToolTip(tr("Holds the host USB port filter as an "
+                                   "<i>exact match</i> string. An empty string will match any value."));
+    m_pLabelRemote->setText(tr("R&emote:"));
+    m_pComboBoxRemote->setToolTip(tr("Holds whether this filter applies to USB "
+                                     "devices attached locally to the host computer (<i>No</i>), to a VRDP client's "
+                                     "computer (<i>Yes</i>), or both (<i>Any</i>)."));
 
     m_pComboBoxRemote->setItemText (UIMachineSettingsUSB::ModeAny, tr ("Any", "remote"));
     m_pComboBoxRemote->setItemText (UIMachineSettingsUSB::ModeOn,  tr ("Yes", "remote"));

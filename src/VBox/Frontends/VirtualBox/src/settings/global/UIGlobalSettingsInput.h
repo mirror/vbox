@@ -23,9 +23,10 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIGlobalSettingsInput.gen.h"
 
 /* Forward declartions: */
+class QCheckBox;
+class QGridLayout;
 class QLineEdit;
 class QTabWidget;
 class UIDataSettingsGlobalInput;
@@ -34,8 +35,7 @@ class UIHotKeyTableModel;
 typedef UISettingsCache<UIDataSettingsGlobalInput> UISettingsCacheGlobalInput;
 
 /** Global settings: Input page. */
-class SHARED_LIBRARY_STUFF UIGlobalSettingsInput : public UISettingsPageGlobal,
-                                                   public Ui::UIGlobalSettingsInput
+class SHARED_LIBRARY_STUFF UIGlobalSettingsInput : public UISettingsPageGlobal
 {
     Q_OBJECT;
 
@@ -78,6 +78,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Prepares 'Selector UI' tab. */
     void prepareTabSelector();
     /** Prepares 'Runtime UI' tab. */
@@ -107,6 +109,11 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalInput *m_pCache;
+
+    /** Holds the grab checkbox instance. */
+    QCheckBox *m_pEnableAutoGrabCheckbox;
+    /** Holds the main layout. */
+    QGridLayout *m_pMainLayout;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsInput_h */
