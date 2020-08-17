@@ -2016,7 +2016,6 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
 {
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pClient;
 
-    LogFlowFunc(("pvSrc=%p, cbSrc=%u\n", pvSrc, cbSrc));
     LogFlowFunc(("pReq->mFormat=%02X, pReq->mX11Format=%u, pReq->mCtx=%p\n", pReq->mFormat, pReq->mX11Format, pReq->mpCtx));
 
     AssertPtr(pReq->mpCtx);
@@ -2202,8 +2201,6 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
     else
         rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("Completing callback with %Rrc\n", rc));
 
     ShClX11RequestFromX11CompleteCallback(pReq->mpCtx->pFrontend, rc, pReq->mpReq,
                                           pvDst, cbDst);
