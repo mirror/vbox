@@ -190,24 +190,28 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS f
  * X11 has completed.
  *
  * @param  pCtx                 Our context information.
- * @param  rc                   The IPRT result code of the request.
+ * @param  rcCompletion         The completion status of the request.
  * @param  pReq                 The request structure that we passed in when we started
  *                              the request.  We RTMemFree() this in this function.
  * @param  pv                   The clipboard data returned from X11 if the request succeeded (see @a rc).
  * @param  cb                   The size of the data in @a pv.
  */
-DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx,
+                                                         int rcCompletion, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
-    RT_NOREF(pCtx, rc);
+    LogFlowFunc(("rcCompletion=%Rrc, Format=0x%x, pv=%p, cb=%RU32\n", rcCompletion, pReq->Format, pv, cb));
 
-    LogFlowFunc(("rc=%Rrc, Format=0x%x, pv=%p, cb=%RU32\n", rc, pReq->Format, pv, cb));
+    if (RT_SUCCESS(rcCompletion)) /* Only write data if the request succeeded. */
+    {
+        AssertPtrReturnVoid(pv);
+        AssertReturnVoid(pv);
 
-    int rc2 = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pReq->Format, pv, cb);
-    RT_NOREF(rc2);
+        rcCompletion = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pReq->Format, pv, cb);
+    }
 
     RTMemFree(pReq);
 
-    LogFlowFuncLeaveRC(rc2);
+    LogFlowFuncLeaveRC(rcCompletion);
 }
 
 /**
