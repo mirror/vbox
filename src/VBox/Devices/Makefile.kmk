@@ -183,7 +183,6 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
 	\
  	Input/DrvKeyboardQueue.cpp \
  	Input/DrvMouseQueue.cpp \
- 	Misc/DevIce.cpp \
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp \
  	PC/DrvACPI.cpp \
@@ -203,8 +202,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	Network/DrvNetSniffer.cpp \
  	Network/Pcap.cpp \
  	Trace/DrvIfsTrace.cpp \
- 	Trace/DrvIfsTrace-serial.cpp \
- 	Misc/DrvSerialIce.cpp
+ 	Trace/DrvIfsTrace-serial.cpp
  ifn1of ($(KBUILD_TARGET), os2)
   VBoxDD_SOURCES += Storage/DrvHostBase.cpp
  endif
