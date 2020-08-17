@@ -217,8 +217,21 @@ BuildSpcrTable (
     goto error_handler;
   }
 
+  // The SPCR InterfaceType uses the same encoding as that of the
+  // DBG2 table Port Subtype field. However InterfaceType is 8-bit
+  // while the Port Subtype field in the DBG2 table is 16-bit.
+  if ((SerialPortInfo->PortSubtype & 0xFF00) != 0) {
+    Status = EFI_INVALID_PARAMETER;
+    DEBUG ((
+      DEBUG_ERROR,
+      "ERROR: SPCR: Invalid Port Sybtype (must be < 256). Status = %r\n",
+      Status
+      ));
+    goto error_handler;
+  }
+
   // Update the serial port subtype
-  AcpiSpcr.InterfaceType = SerialPortInfo->PortSubtype;
+  AcpiSpcr.InterfaceType = (UINT8)SerialPortInfo->PortSubtype;
 
   // Update the base address
   AcpiSpcr.BaseAddress.Address = SerialPortInfo->BaseAddress;
@@ -308,8 +321,8 @@ ACPI_TABLE_GENERATOR SpcrGenerator = {
 EFI_STATUS
 EFIAPI
 AcpiSpcrLibConstructor (
-  IN CONST EFI_HANDLE                ImageHandle,
-  IN       EFI_SYSTEM_TABLE  * CONST SystemTable
+  IN  EFI_HANDLE           ImageHandle,
+  IN  EFI_SYSTEM_TABLE  *  SystemTable
   )
 {
   EFI_STATUS  Status;
@@ -331,8 +344,8 @@ AcpiSpcrLibConstructor (
 EFI_STATUS
 EFIAPI
 AcpiSpcrLibDestructor (
-  IN CONST EFI_HANDLE                ImageHandle,
-  IN       EFI_SYSTEM_TABLE  * CONST SystemTable
+  IN  EFI_HANDLE           ImageHandle,
+  IN  EFI_SYSTEM_TABLE  *  SystemTable
   )
 {
   EFI_STATUS  Status;

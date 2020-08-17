@@ -33,7 +33,7 @@ PeiFvInitialization (
   VOID *OvmfDxeMemFvBaseRelocated;
 #endif
 
-  DEBUG ((EFI_D_INFO, "Platform PEI Firmware Volume Initialization\n"));
+  DEBUG ((DEBUG_INFO, "Platform PEI Firmware Volume Initialization\n"));
 
 #ifdef VBOX
   /*

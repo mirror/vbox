@@ -244,7 +244,7 @@ EnumerateNvmeDevNamespace (
                       );
       if(EFI_ERROR(Status)) {
         gBS->UninstallMultipleProtocolInterfaces (
-               &Device->DeviceHandle,
+               Device->DeviceHandle,
                &gEfiDevicePathProtocolGuid,
                Device->DevicePath,
                &gEfiBlockIoProtocolGuid,
@@ -672,7 +672,7 @@ ProcessAsyncTaskList (
     }
 
     Private->CqHdbl[QueueId].Cqh++;
-    if (Private->CqHdbl[QueueId].Cqh > NVME_ASYNC_CCQ_SIZE) {
+    if (Private->CqHdbl[QueueId].Cqh > MIN (NVME_ASYNC_CCQ_SIZE, Private->Cap.Mqes)) {
       Private->CqHdbl[QueueId].Cqh = 0;
       Private->Pt[QueueId] ^= 1;
     }

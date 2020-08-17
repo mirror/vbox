@@ -47,7 +47,7 @@ ANTLR_INFO
 #  endif
 #  ifdef __GNUC__
 #    pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#endif
+#  endif
 #endif
 
 #pragma clang diagnostic ignored "-Wparentheses-equality"
@@ -1349,7 +1349,7 @@ tclass()
   zzBLOCK(zztasp1);
   zzMake0;
   {
-  char *t=NULL; TCnode *e; int go=1,tok,totok; TermEntry *p, *term, *toterm;
+  char *t=NULL; TCnode *e; int go=1,tok,totok; TermEntry *p = NULL /* vbox: shut up GCC */, *term, *toterm;
   char *akaString=NULL; int save_file; int save_line;
   char *totext=NULL;
   zzmatch(118); zzCONSUME;

@@ -282,7 +282,7 @@ GetSelectedVgaDeviceInfo (
     Status = gBS->HandleProtocol (HandleBuffer[Index], &gEfiPciIoProtocolGuid, (VOID**)&PciIo);
     if (!EFI_ERROR (Status)) {
       //
-      // Detemine if this is in the correct bus range.
+      // Determine if this is in the correct bus range.
       //
       Status = PciIo->GetLocation (PciIo, &Segment, &Bus, &Device, &Function);
       if (EFI_ERROR(Status) || (Bus < MinBus || Bus > MaxBus)) {
@@ -309,7 +309,7 @@ GetSelectedVgaDeviceInfo (
       if (!IS_PCI_VGA (&Pci)) {
         continue;
       }
-      DEBUG ((EFI_D_INFO,
+      DEBUG ((DEBUG_INFO,
         "PCI VGA: 0x%04x:0x%04x\n",
         Pci.Hdr.VendorId,
         Pci.Hdr.DeviceId
@@ -501,7 +501,7 @@ GetPlatformHandle (
 
             //
             // Be sure to only fill out correct information based on platform
-            // configureation.
+            // configuration.
             //
             HddInfo[HddIndex].Status        |= HDD_PRIMARY;
             HddInfo[HddIndex].Bus           = (UINT32)Bus;
@@ -882,7 +882,7 @@ TranslatePirq (
         if (PirqData == 0) {
 
           //
-          // No unused interrpts, so start reusing them.
+          // No unused interrupts, so start reusing them.
           //
           MatchData = (UINT8) (~MatchData);
         }

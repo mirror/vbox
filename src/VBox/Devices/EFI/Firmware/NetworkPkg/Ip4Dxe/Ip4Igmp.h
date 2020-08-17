@@ -111,7 +111,7 @@ Ip4LeaveGroup (
   @param[in]  Head               The IP4 header of the received message.
   @param[in]  Packet             The IGMP message, without IP4 header.
 
-  @retval EFI_INVALID_PARAMETER  The IGMP message is malformated.
+  @retval EFI_INVALID_PARAMETER  The IGMP message is malformatted.
   @retval EFI_SUCCESS            The IGMP message is successfully processed.
 
 **/
@@ -170,7 +170,7 @@ Ip4CombineGroups (
   @param  Count             The number of group addresses in the Groups.
   @param  Addr              The IP4 multicast address to remove.
 
-  @return The nubmer of group addresses in the Groups after remove.
+  @return The number of group addresses in the Groups after remove.
           It is Count if the Addr isn't in the Groups.
 
 **/

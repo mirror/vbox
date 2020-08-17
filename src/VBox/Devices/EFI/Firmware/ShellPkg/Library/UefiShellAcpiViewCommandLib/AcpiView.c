@@ -1,7 +1,13 @@
 /** @file
 
-  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2020, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
+
+  @par Glossary:
+    - Sbbr or SBBR   - Server Base Boot Requirements
+
+  @par Reference(s):
+    - Arm Server Base Boot Requirements 1.2, September 2019
 **/
 
 #include <Library/PrintLib.h>
@@ -16,6 +22,10 @@
 #include "AcpiView.h"
 #include "UefiShellAcpiViewCommandLib.h"
 
+#if defined(MDE_CPU_ARM) || defined (MDE_CPU_AARCH64)
+#include "Arm/SbbrValidator.h"
+#endif
+
 EFI_HII_HANDLE gShellAcpiViewHiiHandle = NULL;
 
 // Report variables
@@ -27,6 +37,8 @@ STATIC UINT32             mTableCount;
 STATIC UINT32             mBinTableCount;
 STATIC BOOLEAN            mConsistencyCheck;
 STATIC BOOLEAN            mColourHighlighting;
+STATIC BOOLEAN            mMandatoryTableValidate;
+STATIC UINTN              mMandatoryTableSpec;
 
 /**
   An array of acpiview command line parameters.
@@ -37,6 +49,7 @@ STATIC CONST SHELL_PARAM_ITEM ParamList[] = {
   {L"-h", TypeFlag},
   {L"-l", TypeFlag},
   {L"-s", TypeValue},
+  {L"-r", TypeValue},
   {NULL, TypeMax}
 };
 
@@ -92,6 +105,60 @@ SetConsistencyChecking (
   )
 {
   mConsistencyCheck = ConsistencyChecking;
+}
+
+/**
+  This function returns the ACPI table requirements validation flag.
+
+  @retval TRUE if check for mandatory table presence should be performed.
+**/
+BOOLEAN
+GetMandatoryTableValidate (
+  VOID
+  )
+{
+  return mMandatoryTableValidate;
+}
+
+/**
+  This function sets the ACPI table requirements validation flag.
+
+  @param  Validate    Enable/Disable ACPI table requirements validation.
+**/
+VOID
+SetMandatoryTableValidate (
+  BOOLEAN Validate
+  )
+{
+  mMandatoryTableValidate = Validate;
+}
+
+/**
+  This function returns the identifier of specification to validate ACPI table
+  requirements against.
+
+  @return   ID of specification listing mandatory tables.
+**/
+UINTN
+GetMandatoryTableSpec (
+  VOID
+  )
+{
+  return mMandatoryTableSpec;
+}
+
+/**
+  This function sets the identifier of specification to validate ACPI table
+  requirements against.
+
+  @param  Spec      ID of specification listing mandatory tables.
+**/
+VOID
+SetMandatoryTableSpec (
+  UINTN Spec
+  )
+{
+  mMandatoryTableSpec = Spec;
 }
 
 /**
@@ -381,6 +448,12 @@ AcpiView (
       return EFI_UNSUPPORTED;
     }
 
+#if defined(MDE_CPU_ARM) || defined (MDE_CPU_AARCH64)
+    if (GetMandatoryTableValidate ()) {
+      ArmSbbrResetTableCounts ();
+    }
+#endif
+
     // The RSDP length is 4 bytes starting at offset 20
     RsdpLength = *(UINT32*)(RsdpPtr + RSDP_LENGTH_OFFSET);
 
@@ -408,6 +481,12 @@ AcpiView (
       );
     return EFI_NOT_FOUND;
   }
+
+#if defined(MDE_CPU_ARM) || defined (MDE_CPU_AARCH64)
+  if (GetMandatoryTableValidate ()) {
+    ArmSbbrReqsValidate ((ARM_SBBR_VERSION)GetMandatoryTableSpec ());
+  }
+#endif
 
   ReportOption = GetReportOption ();
   if (ReportTableList != ReportOption) {
@@ -470,6 +549,7 @@ ShellCommandRunAcpiView (
   LIST_ENTRY*        Package;
   CHAR16*            ProblemParam;
   SHELL_FILE_HANDLE  TmpDumpFileHandle;
+  CONST CHAR16*      MandatoryTableSpecStr;
 
   // Set Defaults
   mReportType = ReportAll;
@@ -479,6 +559,8 @@ ShellCommandRunAcpiView (
   mSelectedAcpiTableName = NULL;
   mSelectedAcpiTableFound = FALSE;
   mConsistencyCheck = TRUE;
+  mMandatoryTableValidate = FALSE;
+  mMandatoryTableSpec = 0;
 
   ShellStatus = SHELL_SUCCESS;
   Package = NULL;
@@ -537,6 +619,18 @@ ShellCommandRunAcpiView (
         L"-s"
         );
       ShellStatus = SHELL_INVALID_PARAMETER;
+    } else if (ShellCommandLineGetFlag (Package, L"-r") &&
+               ShellCommandLineGetValue (Package, L"-r") == NULL) {
+      ShellPrintHiiEx (
+        -1,
+        -1,
+        NULL,
+        STRING_TOKEN (STR_GEN_NO_VALUE),
+        gShellAcpiViewHiiHandle,
+        L"acpiview",
+        L"-r"
+        );
+      ShellStatus = SHELL_INVALID_PARAMETER;
     } else if ((ShellCommandLineGetFlag (Package, L"-s") &&
                 ShellCommandLineGetFlag (Package, L"-l"))) {
       ShellPrintHiiEx (
@@ -567,6 +661,14 @@ ShellCommandRunAcpiView (
 
       // Surpress consistency checking if requested
       SetConsistencyChecking (!ShellCommandLineGetFlag (Package, L"-q"));
+
+      // Evaluate the parameters for mandatory ACPI table presence checks
+      SetMandatoryTableValidate (ShellCommandLineGetFlag (Package, L"-r"));
+      MandatoryTableSpecStr = ShellCommandLineGetValue (Package, L"-r");
+
+      if (MandatoryTableSpecStr != NULL) {
+        SetMandatoryTableSpec (ShellHexStrToUintn (MandatoryTableSpecStr));
+      }
 
       if (ShellCommandLineGetFlag (Package, L"-l")) {
         mReportType = ReportTableList;

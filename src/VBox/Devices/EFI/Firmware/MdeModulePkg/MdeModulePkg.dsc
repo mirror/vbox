@@ -14,7 +14,7 @@
   PLATFORM_VERSION               = 0.98
   DSC_SPECIFICATION              = 0x00010005
   OUTPUT_DIRECTORY               = Build/MdeModule
-  SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64
+  SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64|RISCV64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
@@ -182,7 +182,7 @@
   #
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 
-[LibraryClasses.EBC]
+[LibraryClasses.EBC, LibraryClasses.RISCV64]
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
 
 [PcdsFeatureFlag]
@@ -299,7 +299,6 @@
   MdeModulePkg/Library/PeiDebugPrintHobLib/PeiDebugPrintHobLib.inf
   MdeModulePkg/Library/CpuExceptionHandlerLibNull/CpuExceptionHandlerLibNull.inf
   MdeModulePkg/Library/PlatformHookLibSerialPortPpi/PlatformHookLibSerialPortPpi.inf
-  MdeModulePkg/Library/LzmaCustomDecompressLib/LzmaCustomDecompressLib.inf
   MdeModulePkg/Library/PeiDxeDebugLibReportStatusCode/PeiDxeDebugLibReportStatusCode.inf
   MdeModulePkg/Library/PeiDebugLibDebugPpi/PeiDebugLibDebugPpi.inf
   MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
@@ -433,6 +432,7 @@
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   MdeModulePkg/Library/BrotliCustomDecompressLib/BrotliCustomDecompressLib.inf
+  MdeModulePkg/Library/LzmaCustomDecompressLib/LzmaCustomDecompressLib.inf
   MdeModulePkg/Library/VarCheckUefiLib/VarCheckUefiLib.inf
   MdeModulePkg/Core/Dxe/DxeMain.inf {
     <LibraryClasses>

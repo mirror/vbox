@@ -15,7 +15,7 @@
 **/
 
 //
-// The protocols, PPI and GUID defintions for this module
+// The protocols, PPI and GUID definitions for this module
 //
 #include <Protocol/DevicePath.h>
 #include <Protocol/FirmwareVolumeBlock.h>
@@ -118,7 +118,7 @@ GetFvbInstance (
                             returned
     Global                - Pointer to ESAL_FWB_GLOBAL that contains all
                             instance data
-    FwhInstance           - The EFI_FW_VOL_INSTANCE fimrware instance structure
+    FwhInstance           - The EFI_FW_VOL_INSTANCE firmware instance structure
 
   Returns:
     EFI_SUCCESS           - Successfully returns
@@ -695,7 +695,7 @@ FvbProtocolWrite (
     Writes data beginning at Lba:Offset from FV. The write terminates either
     when *NumBytes of data have been written, or when a block boundary is
     reached.  *NumBytes is updated to reflect the actual number of bytes
-    written. The write opertion does not include erase. This routine will
+    written. The write operation does not include erase. This routine will
     attempt to write only the specified bytes. If the writes do not stick,
     it will return an error.
 
@@ -740,7 +740,7 @@ FvbProtocolRead (
     Reads data beginning at Lba:Offset from FV. The Read terminates either
     when *NumBytes of data have been read, or when a block boundary is
     reached.  *NumBytes is updated to reflect the actual number of bytes
-    written. The write opertion does not include erase. This routine will
+    written. The write operation does not include erase. This routine will
     attempt to write only the specified bytes. If the writes do not stick,
     it will return an error.
 
@@ -815,7 +815,7 @@ ValidateFvHeader (
     Expected =
       (UINT16) (((UINTN) FwVolHeader->Checksum + 0x10000 - Checksum) & 0xffff);
 
-    DEBUG ((EFI_D_INFO, "FV@%p Checksum is 0x%x, expected 0x%x\n",
+    DEBUG ((DEBUG_INFO, "FV@%p Checksum is 0x%x, expected 0x%x\n",
             FwVolHeader, FwVolHeader->Checksum, Expected));
     return EFI_NOT_FOUND;
   }
@@ -859,7 +859,7 @@ InitializeVariableFvHeader (
     UINTN   Offset;
     UINTN   Start;
 
-    DEBUG ((EFI_D_INFO,
+    DEBUG ((DEBUG_INFO,
       "Variable FV header is not valid. It will be reinitialized.\n"));
 
     //
@@ -929,7 +929,7 @@ FvbInitialize (
     //
     // Return an error so image will be unloaded
     //
-    DEBUG ((EFI_D_INFO,
+    DEBUG ((DEBUG_INFO,
       "QEMU flash was not detected. Writable FVB is not being installed.\n"));
     return EFI_WRITE_PROTECTED;
   }
@@ -946,7 +946,7 @@ FvbInitialize (
 
   Status = InitializeVariableFvHeader ();
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_INFO,
+    DEBUG ((DEBUG_INFO,
       "QEMU Flash: Unable to initialize variable FV header\n"));
     return EFI_WRITE_PROTECTED;
   }
@@ -959,7 +959,7 @@ FvbInitialize (
     //
     Status = GetFvbInfo (Length, &FwVolHeader);
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_INFO, "EFI_ERROR (GetFvbInfo (Length, &FwVolHeader))\n"));
+      DEBUG ((DEBUG_INFO, "EFI_ERROR (GetFvbInfo (Length, &FwVolHeader))\n"));
       return EFI_WRITE_PROTECTED;
     }
   }
@@ -1051,24 +1051,7 @@ FvbInitialize (
 
   MarkIoMemoryRangeForRuntimeAccess (BaseAddress, Length);
 
-  //
-  // Set several PCD values to point to flash
-  //
-  PcdStatus = PcdSet64S (
-    PcdFlashNvStorageVariableBase64,
-    (UINTN) PcdGet32 (PcdOvmfFlashNvStorageVariableBase)
-    );
-  ASSERT_RETURN_ERROR (PcdStatus);
-  PcdStatus = PcdSet32S (
-    PcdFlashNvStorageFtwWorkingBase,
-    PcdGet32 (PcdOvmfFlashNvStorageFtwWorkingBase)
-    );
-  ASSERT_RETURN_ERROR (PcdStatus);
-  PcdStatus = PcdSet32S (
-    PcdFlashNvStorageFtwSpareBase,
-    PcdGet32 (PcdOvmfFlashNvStorageFtwSpareBase)
-    );
-  ASSERT_RETURN_ERROR (PcdStatus);
+  SetPcdFlashNvStorageBaseAddresses ();
 
   FwhInstance = (EFI_FW_VOL_INSTANCE *)
     (

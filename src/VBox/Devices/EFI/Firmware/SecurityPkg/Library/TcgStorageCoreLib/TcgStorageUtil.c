@@ -640,7 +640,7 @@ TcgSetAuthorityEnabled(
   @param     HostSession       Host session data.
   @param     AceRow            Ace row info.
   @param     Authority1        Authority 1 info.
-  @param     LogicalOperator   Logiccal operator info.
+  @param     LogicalOperator   Logical operator info.
   @param     Authority2        Authority 2 info.
 
   @retval    Return the action result.
@@ -810,7 +810,7 @@ TcgFindFeatureCallback(
   Get Feature code from the header.
 
   @param     DiscoveryHeader    The discovery header.
-  @param     FeatureCode        reutrn the Feature code.
+  @param     FeatureCode        return the Feature code.
   @param     FeatureSize        return the Feature size.
 
   @retval    return the Feature code data.

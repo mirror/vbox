@@ -1,5 +1,5 @@
 ## @file
-#  Implements ACPI metholds for the TCG feature
+#  Implements ACPI methods for the TCG feature
 #
 #  This driver implements TPM definition block in ACPI table and registers SMI
 #  callback functions for physical presence and MemoryClear to handle the requests
@@ -10,6 +10,7 @@
 #  This external input must be validated carefully to avoid security issue.
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) Microsoft Corporation.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -62,6 +63,9 @@
   gEfiSmmSwDispatch2ProtocolGuid                        ## CONSUMES
   gEfiSmmVariableProtocolGuid                           ## CONSUMES
   gEfiAcpiTableProtocolGuid                             ## CONSUMES
+
+[FixedPcd]
+  gEfiSecurityPkgTokenSpaceGuid.PcdSmiCommandIoPort     ## CONSUMES
 
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid      ## CONSUMES

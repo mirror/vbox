@@ -3,6 +3,7 @@
   PEI ReadOnly Varaiable2 PPI. These services operates the non volatile storage space.
 
 Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -896,7 +897,7 @@ FindVariableEx (
       //
       if ((IndexTable != NULL) && !StopRecord) {
         Offset = (UINTN) Variable - (UINTN) LastVariable;
-        if ((Offset > 0x0FFFF) || (IndexTable->Length == sizeof (IndexTable->Index) / sizeof (IndexTable->Index[0]))) {
+        if ((Offset > 0x0FFFF) || (IndexTable->Length >= sizeof (IndexTable->Index) / sizeof (IndexTable->Index[0]))) {
           //
           // Stop to record if the distance of two neighbouring VAR_ADDED variable is larger than the allowable scope(UINT16),
           // or the record buffer is full.
@@ -1047,17 +1048,17 @@ PeiGetVariable (
     }
 
     GetVariableNameOrData (&StoreInfo, GetVariableDataPtr (Variable.CurrPtr, VariableHeader, StoreInfo.AuthFlag), VarDataSize, Data);
-
-    if (Attributes != NULL) {
-      *Attributes = VariableHeader->Attributes;
-    }
-
-    *DataSize = VarDataSize;
-    return EFI_SUCCESS;
+    Status = EFI_SUCCESS;
   } else {
-    *DataSize = VarDataSize;
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
   }
+
+  if (Attributes != NULL) {
+    *Attributes = VariableHeader->Attributes;
+  }
+  *DataSize = VarDataSize;
+
+  return Status;
 }
 
 /**

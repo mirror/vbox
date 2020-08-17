@@ -1,7 +1,8 @@
 /** @file
   Implementation of driver entry point and driver binding protocol.
 
-Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2019, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -465,8 +466,8 @@ SimpleNetworkDriverStart (
   // the IO BAR.  Save the index of the BAR into the adapter info structure.
   // for regular 32bit BARs, 0 is memory mapped, 1 is io mapped
   //
-  Snp->MemoryBarIndex = 0;
-  Snp->IoBarIndex     = 1;
+  Snp->MemoryBarIndex = PCI_MAX_BAR;
+  Snp->IoBarIndex     = PCI_MAX_BAR;
   FoundMemoryBar      = FALSE;
   FoundIoBar          = FALSE;
   for (BarIndex = 0; BarIndex < PCI_MAX_BAR; BarIndex++) {
@@ -647,19 +648,21 @@ SimpleNetworkDriverStart (
   PxeShutdown (Snp);
   PxeStop (Snp);
 
-  //
-  // Create EXIT_BOOT_SERIVES Event
-  //
-  Status = gBS->CreateEventEx (
-                  EVT_NOTIFY_SIGNAL,
-                  TPL_NOTIFY,
-                  SnpNotifyExitBootServices,
-                  Snp,
-                  &gEfiEventExitBootServicesGuid,
-                  &Snp->ExitBootServicesEvent
-                  );
-  if (EFI_ERROR (Status)) {
-    goto Error_DeleteSNP;
+  if (PcdGetBool (PcdSnpCreateExitBootServicesEvent)) {
+    //
+    // Create EXIT_BOOT_SERIVES Event
+    //
+    Status = gBS->CreateEventEx (
+                    EVT_NOTIFY_SIGNAL,
+                    TPL_CALLBACK,
+                    SnpNotifyExitBootServices,
+                    Snp,
+                    &gEfiEventExitBootServicesGuid,
+                    &Snp->ExitBootServicesEvent
+                    );
+    if (EFI_ERROR (Status)) {
+      goto Error_DeleteSNP;
+    }
   }
 
   //
@@ -778,10 +781,12 @@ SimpleNetworkDriverStop (
     return Status;
   }
 
-  //
-  // Close EXIT_BOOT_SERIVES Event
-  //
-  gBS->CloseEvent (Snp->ExitBootServicesEvent);
+  if (PcdGetBool (PcdSnpCreateExitBootServicesEvent)) {
+    //
+    // Close EXIT_BOOT_SERVICES Event
+    //
+    gBS->CloseEvent (Snp->ExitBootServicesEvent);
+  }
 
   Status = gBS->CloseProtocol (
                   Controller,
@@ -836,9 +841,9 @@ EFI_DRIVER_BINDING_PROTOCOL gSimpleNetworkDriverBinding = {
   @param ImageHandle       The driver image handle.
   @param SystemTable       The system table.
 
-  @retval EFI_SUCEESS      Initialization routine has found UNDI hardware,
+  @retval EFI_SUCCESS      Initialization routine has found UNDI hardware,
                            loaded it's ROM, and installed a notify event for
-                           the Network Indentifier Interface Protocol
+                           the Network Identifier Interface Protocol
                            successfully.
   @retval Other            Return value from HandleProtocol for
                            DeviceIoProtocol or LoadedImageProtocol

@@ -1,7 +1,7 @@
 /** @file
   DBG2 table parser
 
-  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2020, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
@@ -123,6 +123,24 @@ DumpDbgDeviceInfo (
     PARSER_PARAMS (DbgDevInfoParser)
     );
 
+  // Check if the values used to control the parsing logic have been
+  // successfully read.
+  if ((GasCount == NULL)              ||
+      (NameSpaceStringLength == NULL) ||
+      (NameSpaceStringOffset == NULL) ||
+      (OEMDataLength == NULL)         ||
+      (OEMDataOffset == NULL)         ||
+      (BaseAddrRegOffset == NULL)     ||
+      (AddrSizeOffset == NULL)) {
+    IncrementErrorCount ();
+    Print (
+      L"ERROR: Insufficient Debug Device Information Structure length. " \
+        L"Length = %d.\n",
+      Length
+      );
+    return;
+  }
+
   // GAS
   Index = 0;
   Offset = *BaseAddrRegOffset;
@@ -224,6 +242,18 @@ ParseAcpiDbg2 (
              PARSER_PARAMS (Dbg2Parser)
              );
 
+  // Check if the values used to control the parsing logic have been
+  // successfully read.
+  if ((OffsetDbgDeviceInfo == NULL) ||
+      (NumberDbgDeviceInfo == NULL)) {
+    IncrementErrorCount ();
+    Print (
+      L"ERROR: Insufficient table length. AcpiTableLength = %d\n",
+      AcpiTableLength
+      );
+    return;
+  }
+
   Offset = *OffsetDbgDeviceInfo;
   Index = 0;
 
@@ -239,15 +269,29 @@ ParseAcpiDbg2 (
       PARSER_PARAMS (DbgDevInfoHeaderParser)
       );
 
-    // Make sure the Debug Device Information structure lies inside the table.
-    if ((Offset + *DbgDevInfoLen) > AcpiTableLength) {
+    // Check if the values used to control the parsing logic have been
+    // successfully read.
+    if (DbgDevInfoLen == NULL) {
       IncrementErrorCount ();
       Print (
-        L"ERROR: Invalid Debug Device Information structure length. " \
-          L"DbgDevInfoLen = %d. RemainingTableBufferLength = %d. " \
-          L"DBG2 parsing aborted.\n",
-        *DbgDevInfoLen,
+        L"ERROR: Insufficient remaining table buffer length to read the " \
+          L"Debug Device Information structure's 'Length' field. " \
+          L"RemainingTableBufferLength = %d.\n",
         AcpiTableLength - Offset
+        );
+      return;
+    }
+
+    // Validate Debug Device Information Structure length
+    if ((*DbgDevInfoLen == 0) ||
+        ((Offset + (*DbgDevInfoLen)) > AcpiTableLength)) {
+      IncrementErrorCount ();
+      Print (
+        L"ERROR: Invalid Debug Device Information Structure length. " \
+          L"Length = %d. Offset = %d. AcpiTableLength = %d.\n",
+        *DbgDevInfoLen,
+        Offset,
+        AcpiTableLength
         );
       return;
     }

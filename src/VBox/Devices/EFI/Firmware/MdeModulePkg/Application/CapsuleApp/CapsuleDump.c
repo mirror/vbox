@@ -1,7 +1,7 @@
 /** @file
   Dump Capsule image information.
 
-  Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -38,7 +38,7 @@ DumpUxCapsule (
 {
   EFI_DISPLAY_CAPSULE                           *DisplayCapsule;
   DisplayCapsule = (EFI_DISPLAY_CAPSULE *)CapsuleHeader;
-  Print(L"[UxCapusule]\n");
+  Print(L"[UxCapsule]\n");
   Print(L"CapsuleHeader:\n");
   Print(L"  CapsuleGuid      - %g\n", &DisplayCapsule->CapsuleHeader.CapsuleGuid);
   Print(L"  HeaderSize       - 0x%x\n", DisplayCapsule->CapsuleHeader.HeaderSize);
@@ -96,8 +96,11 @@ DumpFmpCapsule (
     Print(L"  UpdateImageIndex       - 0x%x\n", FmpImageHeader->UpdateImageIndex);
     Print(L"  UpdateImageSize        - 0x%x\n", FmpImageHeader->UpdateImageSize);
     Print(L"  UpdateVendorCodeSize   - 0x%x\n", FmpImageHeader->UpdateVendorCodeSize);
-    if (FmpImageHeader->Version >= EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER_INIT_VERSION) {
+    if (FmpImageHeader->Version >= 2) {
       Print(L"  UpdateHardwareInstance - 0x%lx\n", FmpImageHeader->UpdateHardwareInstance);
+      if (FmpImageHeader->Version >= EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER_INIT_VERSION) {
+        Print(L"  ImageCapsuleSupport    - 0x%lx\n", FmpImageHeader->ImageCapsuleSupport);
+      }
     }
   }
 }
@@ -199,7 +202,7 @@ DumpCapsule (
     DumpFmpCapsule(CapsuleHeader);
   }
   if (IsNestedFmpCapsule(CapsuleHeader)) {
-    Print(L"[NestedCapusule]\n");
+    Print(L"[NestedCapsule]\n");
     Print(L"CapsuleHeader:\n");
     Print(L"  CapsuleGuid      - %g\n", &CapsuleHeader->CapsuleGuid);
     Print(L"  HeaderSize       - 0x%x\n", CapsuleHeader->HeaderSize);
@@ -338,6 +341,7 @@ CHAR8 *mLastAttemptStatusString[] = {
   "Error: Auth Error",
   "Error: Power Event AC",
   "Error: Power Event Battery",
+  "Error: Unsatisfied Dependencies",
 };
 
 /**
@@ -1007,6 +1011,7 @@ DumpFmpImageInfo (
 {
   EFI_FIRMWARE_IMAGE_DESCRIPTOR                 *CurrentImageInfo;
   UINTN                                         Index;
+  UINTN                                         Index2;
 
   Print(L"  DescriptorVersion  - 0x%x\n", DescriptorVersion);
   Print(L"  DescriptorCount    - 0x%x\n", DescriptorCount);
@@ -1043,6 +1048,18 @@ DumpFmpImageInfo (
         Print(L"    LastAttemptVersion          - 0x%x\n", CurrentImageInfo->LastAttemptVersion);
         Print(L"    LastAttemptStatus           - 0x%x (%a)\n", CurrentImageInfo->LastAttemptStatus, LastAttemptStatusToString(CurrentImageInfo->LastAttemptStatus));
         Print(L"    HardwareInstance            - 0x%lx\n", CurrentImageInfo->HardwareInstance);
+        if (DescriptorVersion > 3) {
+          Print(L"    Dependencies                - ");
+          if (CurrentImageInfo->Dependencies == NULL) {
+            Print(L"NULL\n");
+          } else {
+            Index2 = 0;
+            do {
+              Print(L"%02x ", CurrentImageInfo->Dependencies->Dependencies[Index2]);
+            } while (CurrentImageInfo->Dependencies->Dependencies[Index2 ++] != EFI_FMP_DEP_END);
+            Print(L"\n");
+          }
+        }
       }
     }
     //

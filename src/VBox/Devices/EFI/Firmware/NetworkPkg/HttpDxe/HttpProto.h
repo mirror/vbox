@@ -82,6 +82,7 @@ typedef struct {
   EFI_TLS_VERSION               Version;
   EFI_TLS_CONNECTION_END        ConnectionEnd;
   EFI_TLS_VERIFY                VerifyMethod;
+  EFI_TLS_VERIFY_HOST           VerifyHost;
   EFI_TLS_SESSION_STATE         SessionState;
 } TLS_CONFIG_DATA;
 
@@ -307,7 +308,7 @@ HttpCloseTcpRxEvent (
   );
 
 /**
-  Intiialize the HTTP_PROTOCOL structure to the unconfigured state.
+  Initialize the HTTP_PROTOCOL structure to the unconfigured state.
 
   @param[in, out]  HttpInstance         Pointer to HTTP_PROTOCOL structure.
   @param[in]       IpVersion            Indicate us TCP4 protocol or TCP6 protocol.
@@ -452,7 +453,7 @@ HttpTransmitTcp (
   @param[in]  Map                The container of either user's transmit or receive
                                  token.
   @param[in]  Item               Current item to check against.
-  @param[in]  Context            The Token to check againist.
+  @param[in]  Context            The Token to check against.
 
   @retval EFI_ACCESS_DENIED      The token or event has already been enqueued in IP
   @retval EFI_SUCCESS            The current item isn't the same token/event as the
@@ -472,7 +473,7 @@ HttpTokenExist (
 
   @param[in]  Map                The container of TxToken.
   @param[in]  Item               Current item to check against.
-  @param[in]  Context            The Token to check againist.
+  @param[in]  Context            The Token to check against.
 
   @retval EFI_NOT_READY          The HTTP message is still queued in the list.
   @retval EFI_SUCCESS            The HTTP message has been sent out.
@@ -507,11 +508,11 @@ HttpInitSession (
   );
 
 /**
-  Transmit the HTTP or HTTPS mssage by processing the associated HTTP token.
+  Transmit the HTTP or HTTPS message by processing the associated HTTP token.
 
   @param[in]  Map                The container of TxToken or Tx6Token.
   @param[in]  Item               Current item to check against.
-  @param[in]  Context            The Token to check againist.
+  @param[in]  Context            The Token to check against.
 
   @retval EFI_OUT_OF_RESOURCES   Failed to allocate resources.
   @retval EFI_SUCCESS            The HTTP message is queued into TCP transmit
@@ -531,7 +532,7 @@ HttpTcpTransmit (
 
   @param[in]  Map                The container of Rx4Token or Rx6Token.
   @param[in]  Item               Current item to check against.
-  @param[in]  Context            The Token to check againist.
+  @param[in]  Context            The Token to check against.
 
   @retval EFI_SUCCESS            The HTTP response is queued into TCP receive
                                  queue.
@@ -551,7 +552,7 @@ HttpTcpReceive (
 
   @param[in]       HttpInstance    The HTTP instance private data.
   @param[in, out]  SizeofHeaders   The HTTP header length.
-  @param[in, out]  BufferSize      The size of buffer to cacahe the header message.
+  @param[in, out]  BufferSize      The size of buffer to cache the header message.
   @param[in]       Timeout         The time to wait for receiving the header packet.
 
   @retval EFI_SUCCESS              The HTTP header is received.
@@ -599,7 +600,7 @@ HttpTcpTokenCleanup (
   @param[in]  Wrap                Pointer to HTTP token's wrap data.
 
   @retval EFI_SUCCESS             Allocation succeeded.
-  @retval EFI_OUT_OF_RESOURCES    Failed to complete the opration due to lack of resources.
+  @retval EFI_OUT_OF_RESOURCES    Failed to complete the operation due to lack of resources.
   @retval EFI_NOT_READY           Can't find a corresponding TxToken.
 
 **/

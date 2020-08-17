@@ -70,7 +70,7 @@ Tianocore Stewards
 F: *
 M: Andrew Fish <afish@apple.com>
 M: Laszlo Ersek <lersek@redhat.com>
-M: Leif Lindholm <leif.lindholm@linaro.org>
+M: Leif Lindholm <leif@nuviainc.com>
 M: Michael D Kinney <michael.d.kinney@intel.com>
 
 Responsible Disclosure, Reporting Security Issues
@@ -82,34 +82,65 @@ EDK II Releases:
 W: https://github.com/tianocore/tianocore.github.io/wiki/EDK-II-Release-Planning
 M: Liming Gao <liming.gao@intel.com>
 
+UEFI Shell Binaries (ShellBinPkg.zip) from EDK II Releases:
+-----------------------------------------------------------
+W: https://github.com/tianocore/edk2/releases/
+M: Ray Ni <ray.ni@intel.com>                  (Ia32/X64)
+M: Zhichao Gao <zhichao.gao@intel.com>        (Ia32/X64)
+M: Leif Lindholm <leif@nuviainc.com>          (ARM/AArch64)
+M: Ard Biesheuvel <ard.biesheuvel@arm.com>    (ARM/AArch64)
+
 EDK II Architectures:
 ---------------------
 ARM, AARCH64
 F: */AArch64/
 F: */Arm/
-M: Leif Lindholm <leif.lindholm@linaro.org>
-M: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+M: Leif Lindholm <leif@nuviainc.com>
+M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+
+EDK II Continuous Integration:
+------------------------------
+.azurepipelines/
+F: .azurepipelines/
+M: Sean Brogan <sean.brogan@microsoft.com>
+M: Bret Barkelew <Bret.Barkelew@microsoft.com>
+R: Michael D Kinney <michael.d.kinney@intel.com>
+R: Liming Gao <liming.gao@intel.com>
+
+.mergify/
+F: .mergify/
+M: Michael D Kinney <michael.d.kinney@intel.com>
+M: Liming Gao <liming.gao@intel.com>
+R: Sean Brogan <sean.brogan@microsoft.com>
+R: Bret Barkelew <Bret.Barkelew@microsoft.com>
+
+.pytool/
+F: .pytool/
+M: Sean Brogan <sean.brogan@microsoft.com>
+M: Bret Barkelew <Bret.Barkelew@microsoft.com>
+R: Michael D Kinney <michael.d.kinney@intel.com>
+R: Liming Gao <liming.gao@intel.com>
 
 EDK II Packages:
 ----------------
 ArmPkg
 F: ArmPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/ArmPkg
-M: Leif Lindholm <leif.lindholm@linaro.org>
-M: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+M: Leif Lindholm <leif@nuviainc.com>
+M: Ard Biesheuvel <ard.biesheuvel@arm.com>
 
 ArmPlatformPkg
 F: ArmPlatformPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/ArmPlatformPkg
-M: Leif Lindholm <leif.lindholm@linaro.org>
-M: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+M: Leif Lindholm <leif@nuviainc.com>
+M: Ard Biesheuvel <ard.biesheuvel@arm.com>
 
 ArmVirtPkg
 F: ArmVirtPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/ArmVirtPkg
 M: Laszlo Ersek <lersek@redhat.com>
-M: Ard Biesheuvel <ard.biesheuvel@linaro.org>
-R: Leif Lindholm <leif.lindholm@linaro.org>
+M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+R: Leif Lindholm <leif@nuviainc.com>
 
 ArmVirtPkg: modules used on Xen
 F: ArmVirtPkg/ArmVirtXen.*
@@ -119,7 +150,7 @@ F: ArmVirtPkg/PrePi/
 F: ArmVirtPkg/XenAcpiPlatformDxe/
 F: ArmVirtPkg/XenPlatformHasAcpiDtDxe/
 F: ArmVirtPkg/XenioFdtDxe/
-R: Julien Grall <julien.grall@arm.com>
+R: Julien Grall <julien@xen.org>
 
 BaseTools
 F: BaseTools/
@@ -130,8 +161,8 @@ M: Liming Gao <liming.gao@intel.com>
 CryptoPkg
 F: CryptoPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/CryptoPkg
-M: Jian Wang <jian.j.wang@intel.com>
-R: Ting Ye <ting.ye@intel.com>
+M: Jian J Wang <jian.j.wang@intel.com>
+R: Xiaoyu Lu <xiaoyux.lu@intel.com>
 
 DynamicTablesPkg
 F: DynamicTablesPkg/
@@ -142,8 +173,8 @@ M: Alexei Fedorov <Alexei.Fedorov@arm.com>
 EmbeddedPkg
 F: EmbeddedPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/EmbeddedPkg
-M: Leif Lindholm <leif.lindholm@linaro.org>
-M: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+M: Leif Lindholm <leif@nuviainc.com>
+M: Ard Biesheuvel <ard.biesheuvel@arm.com>
 
 EmulatorPkg
 F: EmulatorPkg/
@@ -346,15 +377,16 @@ M: Liming Gao <liming.gao@intel.com>
 NetworkPkg
 F: NetworkPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/NetworkPkg
-M: Siyuan Fu <siyuan.fu@intel.com>
-M: Jiaxin Wu <jiaxin.wu@intel.com>
+M: Maciej Rabeda <maciej.rabeda@linux.intel.com>
+R: Jiaxin Wu <jiaxin.wu@intel.com>
+R: Siyuan Fu <siyuan.fu@intel.com>
 
 OvmfPkg
 F: OvmfPkg/
 W: http://www.tianocore.org/ovmf/
 M: Jordan Justen <jordan.l.justen@intel.com>
 M: Laszlo Ersek <lersek@redhat.com>
-M: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+M: Ard Biesheuvel <ard.biesheuvel@arm.com>
 S: Maintained
 
 OvmfPkg: Xen-related modules
@@ -388,7 +420,7 @@ F: OvmfPkg/XenPvBlkDxe/
 F: OvmfPkg/XenResetVector/
 F: OvmfPkg/XenTimerDxe/
 R: Anthony Perard <anthony.perard@citrix.com>
-R: Julien Grall <julien.grall@arm.com>
+R: Julien Grall <julien@xen.org>
 
 OvmfPkg: TCG- and TPM2-related modules
 F: OvmfPkg/Include/IndustryStandard/QemuTpm.h
@@ -403,6 +435,12 @@ OvmfPkg: CSM modules
 F: OvmfPkg/Csm/
 R: David Woodhouse <dwmw2@infradead.org>
 
+OvmfPkg: MptScsi and PVSCSI driver
+F: OvmfPkg/MptScsiDxe/
+F: OvmfPkg/PvScsiDxe/
+R: Liran Alon <liran.alon@oracle.com>
+R: Nikita Leshenko <nikita.leshchenko@oracle.com>
+
 PcAtChipsetPkg
 F: PcAtChipsetPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/PcAtChipsetPkg
@@ -412,22 +450,14 @@ SecurityPkg
 F: SecurityPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/SecurityPkg
 M: Jiewen Yao <jiewen.yao@intel.com>
-M: Jian Wang <jian.j.wang@intel.com>
+M: Jian J Wang <jian.j.wang@intel.com>
 R: Chao Zhang <chao.b.zhang@intel.com>
 
 ShellPkg
 F: ShellPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/ShellPkg
-M: Jaben Carsey <jaben.carsey@intel.com>
 M: Ray Ni <ray.ni@intel.com>
-R: Zhichao Gao <zhichao.gao@intel.com>
-
-Maintainers for stable Shell binaries generation
-when need to publish Shell binaries with edk2 release:
-M: Jaben Carsey <jaben.carsey@intel.com>      (Ia32/X64)
-M: Ray Ni <ray.ni@intel.com>                  (Ia32/X64)
-M: Leif Lindholm <leif.lindholm@linaro.org>   (ARM/AArch64)
-M: Ard Biesheuvel <ard.biesheuvel@linaro.org> (ARM/AArch64)
+M: Zhichao Gao <zhichao.gao@intel.com>
 
 SignedCapsulePkg
 F: SignedCapsulePkg/
@@ -455,8 +485,16 @@ M: Guo Dong <guo.dong@intel.com>
 M: Benjamin You <benjamin.you@intel.com>
 S: Maintained
 
+UnitTestFrameworkPkg
+F: UnitTestFrameworkPkg/
+M: Michael D Kinney <michael.d.kinney@intel.com>
+R: Sean Brogan <sean.brogan@microsoft.com>
+R: Bret Barkelew <Bret.Barkelew@microsoft.com>
+S: Maintained
+
 StandaloneMmPkg
 F: StandaloneMmPkg/
-M: Achin Gupta <achin.gupta@arm.com>
+M: Ard Biesheuvel <ard.biesheuvel@arm.com>
+M: Sami Mujawar <sami.mujawar@arm.com>
 M: Jiewen Yao <jiewen.yao@intel.com>
 R: Supreeth Venkatesh <supreeth.venkatesh@arm.com>

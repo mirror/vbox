@@ -6,7 +6,7 @@
   to enter BDS phase.
 
 Copyright (c) 2004 - 2019, Intel Corporation. All rights reserved.<BR>
-(C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+(C) Copyright 2016-2019 Hewlett Packard Enterprise Development LP<BR>
 (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -340,6 +340,17 @@ BdsWait (
     if (TimeoutRemain != 0xffff) {
       TimeoutRemain--;
     }
+  }
+
+  //
+  // If the platform configured a nonzero and finite time-out, and we have
+  // actually reached that, report 100% completion to the platform.
+  //
+  // Note that the (TimeoutRemain == 0) condition excludes
+  // PcdPlatformBootTimeOut=0xFFFF, and that's deliberate.
+  //
+  if (PcdGet16 (PcdPlatformBootTimeOut) != 0 && TimeoutRemain == 0) {
+    PlatformBootManagerWaitCallback (0);
   }
   DEBUG ((EFI_D_INFO, "[Bds]Exit the waiting!\n"));
 }
@@ -1058,7 +1069,7 @@ BdsEntry (
   }
 
   if (!BootSuccess) {
-    if (PlatformRecovery) {
+    if (PcdGetBool (PcdPlatformRecoverySupport)) {
       LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypePlatformRecovery);
       ProcessLoadOptions (LoadOptions, LoadOptionCount);
       EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);

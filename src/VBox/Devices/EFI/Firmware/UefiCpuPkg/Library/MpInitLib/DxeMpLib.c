@@ -1,7 +1,7 @@
 /** @file
   MP initialize support functions for DXE phase.
 
-  Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -15,7 +15,6 @@
 
 #include <Protocol/Timer.h>
 
-#define  AP_CHECK_INTERVAL     (EFI_TIMER_PERIOD_MILLISECONDS (100))
 #define  AP_SAFE_STACK_SIZE    128
 
 CPU_MP_DATA      *mCpuMpData = NULL;
@@ -451,7 +450,9 @@ InitMpGlobalData (
   Status = gBS->SetTimer (
                   mCheckAllApsEvent,
                   TimerPeriodic,
-                  AP_CHECK_INTERVAL
+                  EFI_TIMER_PERIOD_MICROSECONDS (
+                    PcdGet32 (PcdCpuApStatusCheckIntervalInMicroSeconds)
+                    )
                   );
   ASSERT_EFI_ERROR (Status);
 
@@ -815,4 +816,28 @@ MpInitLibEnableDisableAP (
   }
 
   return Status;
+}
+
+/**
+  This funtion will try to invoke platform specific microcode shadow logic to
+  relocate microcode update patches into memory.
+
+  @param[in, out] CpuMpData  The pointer to CPU MP Data structure.
+
+  @retval EFI_SUCCESS              Shadow microcode success.
+  @retval EFI_OUT_OF_RESOURCES     No enough resource to complete the operation.
+  @retval EFI_UNSUPPORTED          Can't find platform specific microcode shadow
+                                   PPI/Protocol.
+**/
+EFI_STATUS
+PlatformShadowMicrocode (
+  IN OUT CPU_MP_DATA             *CpuMpData
+  )
+{
+  //
+  // There is no DXE version of platform shadow microcode protocol so far.
+  // A platform which only uses DxeMpInitLib instance could only supports
+  // the PCD based microcode shadowing.
+  //
+  return EFI_UNSUPPORTED;
 }

@@ -11,7 +11,7 @@
 ################################################################################
 
 [Defines]
-!include OvmfPkg.fdf.inc
+!include OvmfPkgDefines.fdf.inc
 
 #
 # Build the variable store and the firmware code as one unified flash device
@@ -62,10 +62,10 @@ FV = SECFV
 
 [FD.MEMFD]
 BaseAddress   = $(MEMFD_BASE_ADDRESS)
-Size          = 0xC00000
+Size          = 0xD00000
 ErasePolarity = 1
 BlockSize     = 0x10000
-NumBlocks     = 0xC0
+NumBlocks     = 0xD0
 
 0x000000|0x006000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesSize
@@ -83,7 +83,7 @@ gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamBase|gUefiOvmfPkgTokenSpaceGuid.P
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvSize
 FV = PEIFV
 
-0x100000|0xB00000
+0x100000|0xC00000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvSize
 FV = DXEFV
 
@@ -155,12 +155,15 @@ INF  OvmfPkg/PlatformPei/PlatformPei.inf
 INF  MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
 INF  UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf
 !if $(SMM_REQUIRE) == TRUE
+INF  MdeModulePkg/Universal/FaultTolerantWritePei/FaultTolerantWritePei.inf
+INF  MdeModulePkg/Universal/Variable/Pei/VariablePei.inf
 INF  OvmfPkg/SmmAccess/SmmAccessPei.inf
 !endif
 INF  UefiCpuPkg/CpuMpPei/CpuMpPei.inf
 
-!if $(TPM2_ENABLE) == TRUE
+!if $(TPM_ENABLE) == TRUE
 INF  OvmfPkg/Tcg/Tcg2Config/Tcg2ConfigPei.inf
+INF  SecurityPkg/Tcg/TcgPei/TcgPei.inf
 INF  SecurityPkg/Tcg/Tcg2Pei/Tcg2Pei.inf
 !endif
 
@@ -232,6 +235,12 @@ INF  OvmfPkg/XenIoPciDxe/XenIoPciDxe.inf
 INF  OvmfPkg/XenBusDxe/XenBusDxe.inf
 INF  OvmfPkg/XenPvBlkDxe/XenPvBlkDxe.inf
 !endif
+!if $(PVSCSI_ENABLE) == TRUE
+INF  OvmfPkg/PvScsiDxe/PvScsiDxe.inf
+!endif
+!if $(MPT_SCSI_ENABLE) == TRUE
+INF  OvmfPkg/MptScsiDxe/MptScsiDxe.inf
+!endif
 
 !if $(SECURE_BOOT_ENABLE) == TRUE
   INF  SecurityPkg/VariableAuthenticated/SecureBootConfigDxe/SecureBootConfigDxe.inf
@@ -247,6 +256,7 @@ INF  MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
 INF  MdeModulePkg/Universal/DriverHealthManagerDxe/DriverHealthManagerDxe.inf
 INF  MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
 INF  MdeModulePkg/Application/UiApp/UiApp.inf
+INF  OvmfPkg/QemuKernelLoaderFsDxe/QemuKernelLoaderFsDxe.inf
 INF  MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
 INF  MdeModulePkg/Universal/PrintDxe/PrintDxe.inf
 INF  MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
@@ -265,7 +275,7 @@ INF  MdeModulePkg/Universal/DisplayEngineDxe/DisplayEngineDxe.inf
 INF  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
 
 INF  OvmfPkg/SioBusDxe/SioBusDxe.inf
-!ifndef $(SOURCE_DEBUG_ENABLE)
+!if $(SOURCE_DEBUG_ENABLE) == FALSE
 INF  MdeModulePkg/Bus/Pci/PciSioSerialDxe/PciSioSerialDxe.inf
 !endif
 INF  MdeModulePkg/Bus/Isa/Ps2KeyboardDxe/Ps2KeyboardDxe.inf
@@ -300,6 +310,7 @@ INF  MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
 
 !if $(TOOL_CHAIN_TAG) != "XCODE5"
 INF  ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
+INF  OvmfPkg/LinuxInitrdDynamicShellCommand/LinuxInitrdDynamicShellCommand.inf
 !endif
 INF  ShellPkg/Application/Shell/Shell.inf
 
@@ -350,9 +361,10 @@ INF  OvmfPkg/IoMmuDxe/IoMmuDxe.inf
 !if $(SMM_REQUIRE) == TRUE
 INF  OvmfPkg/SmmAccess/SmmAccess2Dxe.inf
 INF  OvmfPkg/SmmControl2Dxe/SmmControl2Dxe.inf
-INF  UefiCpuPkg/CpuS3DataDxe/CpuS3DataDxe.inf
+INF  OvmfPkg/CpuS3DataDxe/CpuS3DataDxe.inf
 INF  MdeModulePkg/Core/PiSmmCore/PiSmmIpl.inf
 INF  MdeModulePkg/Core/PiSmmCore/PiSmmCore.inf
+INF  OvmfPkg/CpuHotplugSmm/CpuHotplugSmm.inf
 INF  UefiCpuPkg/CpuIo2Smm/CpuIo2Smm.inf
 INF  MdeModulePkg/Universal/LockBox/SmmLockBox/SmmLockBox.inf
 INF  UefiCpuPkg/PiSmmCpuDxeSmm/PiSmmCpuDxeSmm.inf
@@ -376,9 +388,13 @@ INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
 INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 !endif
 
-!if $(TPM2_ENABLE) == TRUE
+#
+# TPM support
+#
+!if $(TPM_ENABLE) == TRUE
+INF  SecurityPkg/Tcg/TcgDxe/TcgDxe.inf
 INF  SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe.inf
-!if $(TPM2_CONFIG_ENABLE) == TRUE
+!if $(TPM_CONFIG_ENABLE) == TRUE
 INF  SecurityPkg/Tcg/Tcg2Config/Tcg2ConfigDxe.inf
 !endif
 !endif
@@ -416,7 +432,7 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
    }
  }
 
-!include DecomprScratchEnd.fdf.inc
+!include FvmainCompactScratchEnd.fdf.inc
 
 ################################################################################
 

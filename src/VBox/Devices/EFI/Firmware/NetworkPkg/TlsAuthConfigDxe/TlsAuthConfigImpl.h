@@ -14,6 +14,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/HiiConfigAccess.h>
 #include <Protocol/SimpleFileSystem.h>
+#include <Protocol/HiiPopup.h>
 
 //
 // Libraries
@@ -207,7 +208,7 @@ TlsAuthConfigAccessExtractConfig (
   @param Progress       A pointer to a string filled in with the
                         offset of the most recent '&' before the
                         first failing name / value pair (or the
-                        beginn ing of the string if the failure
+                        beginning of the string if the failure
                         is in the first name / value pair) or
                         the terminating NULL if all was
                         successful.

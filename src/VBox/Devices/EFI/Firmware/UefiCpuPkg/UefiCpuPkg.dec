@@ -1,7 +1,7 @@
 ## @file  UefiCpuPkg.dec
 # This Package provides UEFI compatible CPU modules and libraries.
 #
-# Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2020, Intel Corporation. All rights reserved.<BR>
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -63,6 +63,9 @@
   ## Include/Guid/CpuFeaturesInitDone.h
   gEdkiiCpuFeaturesInitDoneGuid  = { 0xc77c3a41, 0x61ab, 0x4143, { 0x98, 0x3e, 0x33, 0x39, 0x28, 0x6, 0x28, 0xe5 }}
 
+  ## Include/Guid/MicrocodePatchHob.h
+  gEdkiiMicrocodePatchHobGuid    = { 0xd178f11d, 0x8716, 0x418e, { 0xa1, 0x31, 0x96, 0x7d, 0x2a, 0xc4, 0x28, 0x43 }}
+
 [Protocols]
   ## Include/Protocol/SmmCpuService.h
   gEfiSmmCpuServiceProtocolGuid  = { 0x1d202cab, 0xc8ab, 0x4d5c, { 0x94, 0xf7, 0x3c, 0xfc, 0xc0, 0xd3, 0xd3, 0x35 }}
@@ -78,10 +81,14 @@
 [Ppis]
   gEdkiiPeiMpServices2PpiGuid =    { 0x5cb9cb3d, 0x31a4, 0x480c, { 0x94, 0x98, 0x29, 0xd2, 0x69, 0xba, 0xcf, 0xba}}
 
+  ## Include/Ppi/ShadowMicrocode.h
+  gEdkiiPeiShadowMicrocodePpiGuid = { 0x430f6965, 0x9a69, 0x41c5, { 0x93, 0xed, 0x8b, 0xf0, 0x64, 0x35, 0xc1, 0xc6 }}
+
 [PcdsFeatureFlag]
   ## Indicates if SMM Profile will be enabled.
   #  If enabled, instruction executions in and data accesses to memory outside of SMRAM will be logged.
-  #  It could not be enabled at the same time with SMM static page table feature (PcdCpuSmmStaticPageTable).
+  #  In X64 build, it could not be enabled when PcdCpuSmmRestrictedMemoryAccess is TRUE.
+  #  In IA32 build, the page table memory is not marked as read-only when it is enabled.
   #  This PCD is only for validation purpose. It should be set to false in production.<BR><BR>
   #   TRUE  - SMM Profile will be enabled.<BR>
   #   FALSE - SMM Profile will be disabled.<BR>
@@ -146,6 +153,10 @@
   #  This PCD will only take into effect if PcdCpuStackGuard is enabled.
   # @Prompt Specify size of good stack of exception which need switching stack.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize|2048|UINT32|0x30002001
+
+  ## Count of pre allocated SMM MP tokens per chunk.
+  # @Prompt Specify the count of pre allocated SMM MP tokens per chunk.
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmMpTokenCountPerChunk|64|UINT32|0x30002002
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## This value is the CPU Local APIC base address, which aligns the address on a 4-KByte boundary.
@@ -219,6 +230,12 @@
   # @Prompt This PCD is the nominal frequency of the core crystal clock in Hz as is CPUID Leaf 0x15:ECX
   gUefiCpuPkgTokenSpaceGuid.PcdCpuCoreCrystalClockFrequency|24000000|UINT64|0x32132113
 
+  ## Specifies the periodic interval value in microseconds for the status check
+  #  of APs for StartupAllAPs() and StartupThisAP() executed in non-blocking
+  #  mode in DXE phase.
+  # @Prompt Periodic interval value in microseconds for AP status check in DXE.
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuApStatusCheckIntervalInMicroSeconds|100000|UINT32|0x0000001E
+
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## Specifies max supported number of Logical Processors.
   # @Prompt Configure max supported number of Logical Processors
@@ -226,6 +243,19 @@
   ## Specifies timeout value in microseconds for the BSP to detect all APs for the first time.
   # @Prompt Timeout for the BSP to detect all APs for the first time.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuApInitTimeOutInMicroSeconds|50000|UINT32|0x00000004
+  ## Specifies the number of Logical Processors that are available in the
+  #  preboot environment after platform reset, including BSP and APs. Possible
+  #  values:<BR><BR>
+  #  zero (default) - PcdCpuBootLogicalProcessorNumber is ignored, and
+  #                   PcdCpuApInitTimeOutInMicroSeconds limits the initial AP
+  #                   detection by the BSP.<BR>
+  #  nonzero        - PcdCpuApInitTimeOutInMicroSeconds is ignored. The initial
+  #                   AP detection finishes only when the detected CPU count
+  #                   (BSP plus APs) reaches the value of
+  #                   PcdCpuBootLogicalProcessorNumber, regardless of how long
+  #                   that takes.<BR>
+  # @Prompt Number of Logical Processors available after platform reset.
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuBootLogicalProcessorNumber|0|UINT32|0x00000008
   ## Specifies the base address of the first microcode Patch in the microcode Region.
   # @Prompt Microcode Region base address.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchAddress|0x0|UINT64|0x00000005
@@ -245,17 +275,6 @@
   #  The value is defined as below.<BR><BR>
   # @Prompt The specified AP target C-state for Mwait.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuApTargetCstate|0|UINT8|0x00000007
-
-  ## Indicates if SMM uses static page table.
-  #  If enabled, SMM will not use on-demand paging. SMM will build static page table for all memory.
-  #  This flag only impacts X64 build, because SMM always builds static page table for IA32.
-  #  It could not be enabled at the same time with SMM profile feature (PcdCpuSmmProfileEnable).
-  #  It could not be enabled also at the same time with heap guard feature for SMM
-  #  (PcdHeapGuardPropertyMask in MdeModulePkg).<BR><BR>
-  #   TRUE  - SMM uses static page table for all memory.<BR>
-  #   FALSE - SMM uses static page table for below 4G memory and use on-demand paging for above 4G memory.<BR>
-  # @Prompt Use static page table for all memory in SMM.
-  gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmStaticPageTable|TRUE|BOOLEAN|0x3213210D
 
   ## Specifies timeout value in microseconds for the BSP in SMM to wait for all APs to come into SMM.
   # @Prompt AP synchronization timeout value in SMM.
@@ -277,6 +296,23 @@
   #   FALSE - Current boot is not a power-on reset.<BR>
   # @Prompt Current boot is a power-on reset.
   gUefiCpuPkgTokenSpaceGuid.PcdIsPowerOnReset|FALSE|BOOLEAN|0x0000001B
+
+[PcdsFixedAtBuild.X64, PcdsPatchableInModule.X64, PcdsDynamic.X64, PcdsDynamicEx.X64]
+  ## Indicate access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock.
+  #  MMIO access is always allowed regardless of the value of this PCD.
+  #  Loose of such restriction is only required by RAS components in X64 platforms.
+  #  The PCD value is considered as constantly TRUE in IA32 platforms.
+  #  When the PCD value is TRUE, page table is initialized to cover all memory spaces
+  #  and the memory occupied by page table is protected by page table itself as read-only.
+  #  In X64 build, it cannot be enabled at the same time with SMM profile feature (PcdCpuSmmProfileEnable).
+  #  In X64 build, it could not be enabled also at the same time with heap guard feature for SMM
+  #  (PcdHeapGuardPropertyMask in MdeModulePkg).
+  #  In IA32 build, page table memory is not marked as read-only when either SMM profile feature (PcdCpuSmmProfileEnable)
+  #  or heap guard feature for SMM (PcdHeapGuardPropertyMask in MdeModulePkg) is enabled.
+  #   TRUE  - Access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock.<BR>
+  #   FALSE - Access to any type of non-SMRAM memory after SmmReadyToLock is allowed.<BR>
+  # @Prompt Access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock.
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmRestrictedMemoryAccess|TRUE|BOOLEAN|0x3213210F
 
 [PcdsDynamic, PcdsDynamicEx]
   ## Contains the pointer to a CPU S3 data buffer of structure ACPI_CPU_DATA.

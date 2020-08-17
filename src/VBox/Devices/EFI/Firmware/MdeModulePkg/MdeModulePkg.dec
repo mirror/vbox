@@ -3,9 +3,10 @@
 # It also provides the definitions(including PPIs/PROTOCOLs/GUIDs and library classes)
 # and libraries instances, which are used for those modules.
 #
-# Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2007 - 2020, Intel Corporation. All rights reserved.<BR>
 # Copyright (c) 2016, Linaro Ltd. All rights reserved.<BR>
-# (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+# (C) Copyright 2016 - 2019 Hewlett Packard Enterprise Development LP<BR>
 # Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 # Copyright (c) 2016, Microsoft Corporation<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -23,6 +24,8 @@
 [Includes]
   Include
 
+#[Includes.Common.Private] VBOX: No Brotli for us
+#  Library/BrotliCustomDecompressLib/brotli/c/include
 
 [LibraryClasses]
   ##  @libraryclass  Defines a set of methods to reset whole system.
@@ -295,16 +298,6 @@
   ## Include/Guid/PlatDriOverrideHii.h
   gPlatformOverridesManagerGuid      = { 0x8614567d, 0x35be, 0x4415, { 0x8d, 0x88, 0xbd, 0x7d, 0xc, 0x9c, 0x70, 0xc0 }}
 
-  ## Include/Guid/Ip4Config2Hii.h
-  gIp4Config2NvDataGuid              = { 0x9b942747, 0x154e, 0x4d29, { 0xa4, 0x36, 0xbf, 0x71, 0x0, 0xc8, 0xb5, 0x3b }}
-
-  ## Include/Guid/VlanConfigHii.h
-  gVlanConfigFormSetGuid             = { 0xd79df6b0, 0xef44, 0x43bd, { 0x97, 0x97, 0x43, 0xe9, 0x3b, 0xcf, 0x5f, 0xa8 }}
-
-  ## Include/Guid/Ip4IScsiConfigHii.h
-  gIp4IScsiConfigGuid                = { 0x6456ed61, 0x3579, 0x41c9, { 0x8a, 0x26, 0x0a, 0x0b, 0xd6, 0x2b, 0x78, 0xfc }}
-  gIScsiCHAPAuthInfoGuid             = { 0x786ec0ac, 0x65ae, 0x4d1b, { 0xb1, 0x37, 0xd, 0x11, 0xa, 0x48, 0x37, 0x97 }}
-
   ## Include/Guid/ZeroGuid.h
   gZeroGuid                          = { 0x0, 0x0, 0x0, {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}}
 
@@ -332,8 +325,8 @@
   ## Include/Protocol/VarErrorFlag.h
   gEdkiiVarErrorFlagGuid               = { 0x4b37fe8, 0xf6ae, 0x480b, { 0xbd, 0xd5, 0x37, 0xd9, 0x8c, 0x5e, 0x89, 0xaa } }
 
-  ## GUID indicates the BROTLI custom compress/decompress algorithm.
-  gBrotliCustomDecompressGuid      = { 0x3D532050, 0x5CDA, 0x4FD0, { 0x87, 0x9E, 0x0F, 0x7F, 0x63, 0x0D, 0x5A, 0xFB }}
+#  ## GUID indicates the BROTLI custom compress/decompress algorithm. VBOX: No brotli for us right now!
+#  gBrotliCustomDecompressGuid      = { 0x3D532050, 0x5CDA, 0x4FD0, { 0x87, 0x9E, 0x0F, 0x7F, 0x63, 0x0D, 0x5A, 0xFB }}
 
   ## GUID indicates the LZMA custom compress/decompress algorithm.
   #  Include/Guid/LzmaDecompress.h
@@ -342,6 +335,10 @@
 
   ## Include/Guid/TtyTerm.h
   gEfiTtyTermGuid                = { 0x7d916d80, 0x5bb1, 0x458c, {0xa4, 0x8f, 0xe2, 0x5f, 0xdd, 0x51, 0xef, 0x94 }}
+  gEdkiiLinuxTermGuid            = { 0xe4364a7f, 0xf825, 0x430e, {0x9d, 0x3a, 0x9c, 0x9b, 0xe6, 0x81, 0x7c, 0xa5 }}
+  gEdkiiXtermR6Guid              = { 0xfbfca56b, 0xbb36, 0x4b78, {0xaa, 0xab, 0xbe, 0x1b, 0x97, 0xec, 0x7c, 0xcb }}
+  gEdkiiVT400Guid                = { 0x8e46dddd, 0x3d49, 0x4a9d, {0xb8, 0x75, 0x3c, 0x08, 0x6f, 0x6a, 0xa2, 0xbd }}
+  gEdkiiSCOTermGuid              = { 0xfc7dd6e0, 0x813c, 0x434d, {0xb4, 0xda, 0x3b, 0xd6, 0x49, 0xe9, 0xe1, 0x5a }}
 
   ## Include/Guid/HiiBootMaintenanceFormset.h
   gEfiIfrBootMaintenanceGuid      = { 0xb2dedc91, 0xd59f, 0x48d2, { 0x89, 0x8a, 0x12, 0x49, 0xc, 0x74, 0xa4, 0xe0 }}
@@ -531,7 +528,6 @@
   gEfiLockBoxProtocolGuid        = { 0xbd445d79, 0xb7ad, 0x4f04, { 0x9a, 0xd8, 0x29, 0xbd, 0x20, 0x40, 0xeb, 0x3c }}
 
   ## Include/Protocol/FormBrowserEx.h
-  gEfiFormBrowserExProtocolGuid = { 0x1f73b18d, 0x4630, 0x43c1, { 0xa1, 0xde, 0x6f, 0x80, 0x85, 0x5d, 0x7d, 0xa4 } }
   gEdkiiFormBrowserExProtocolGuid = { 0x1f73b18d, 0x4630, 0x43c1, { 0xa1, 0xde, 0x6f, 0x80, 0x85, 0x5d, 0x7d, 0xa4 } }
 
   ## Include/Protocol/EbcVmTest.h
@@ -590,6 +586,11 @@
   ## Include/Protocol/IoMmu.h
   gEdkiiIoMmuProtocolGuid = { 0x4e939de9, 0xd948, 0x4b0f, { 0x88, 0xed, 0xe6, 0xe1, 0xce, 0x51, 0x7c, 0x1e } }
 
+  ## Include/Protocol/DeviceSecurity.h
+  gEdkiiDeviceSecurityProtocolGuid  = { 0x5d6b38c8, 0x5510, 0x4458, { 0xb4, 0x8d, 0x95, 0x81, 0xcf, 0xa7, 0xb0, 0xd } }
+  gEdkiiDeviceIdentifierTypePciGuid = { 0x2509b2f1, 0xa022, 0x4cca, { 0xaf, 0x70, 0xf9, 0xd3, 0x21, 0xfb, 0x66, 0x49 } }
+  gEdkiiDeviceIdentifierTypeUsbGuid = { 0x7394f350, 0x394d, 0x488c, { 0xbb, 0x75, 0xc, 0xab, 0x7b, 0x12, 0xa, 0xc5 } }
+
   ## Include/Protocol/SmmMemoryAttribute.h
   gEdkiiSmmMemoryAttributeProtocolGuid = { 0x69b792ea, 0x39ce, 0x402d, { 0xa2, 0xa6, 0xf7, 0x21, 0xde, 0x35, 0x1d, 0xfe } }
 
@@ -609,6 +610,9 @@
 
   ## Include/Protocol/PeCoffImageEmulator.h
   gEdkiiPeCoffImageEmulatorProtocolGuid = { 0x96f46153, 0x97a7, 0x4793, { 0xac, 0xc1, 0xfa, 0x19, 0xbf, 0x78, 0xea, 0x97 } }
+
+  ## Include/Protocol/PlatformBootManager.h
+  gEdkiiPlatformBootManagerProtocolGuid = { 0xaa17add4, 0x756c, 0x460d, { 0x94, 0xb8, 0x43, 0x88, 0xd7, 0xfb, 0x3e, 0x59 } }
 
 #
 # [Error.gEfiMdeModulePkgTokenSpaceGuid]
@@ -646,6 +650,18 @@
   #   FALSE - Device Path From Text Protocol will not be produced.<BR>
   # @Prompt Enable Device Path From Text support.
   gEfiMdeModulePkgTokenSpaceGuid.PcdDevicePathSupportDevicePathFromText|TRUE|BOOLEAN|0x00010038
+
+  ## Indicates if the UEFI variable runtime cache should be enabled.
+  #  This setting only applies if SMM variables are enabled. When enabled, all variable
+  #  data for Runtime Service GetVariable () and GetNextVariableName () calls is retrieved
+  #  from a runtime data buffer referred to as the "runtime cache". An SMI is not triggered
+  #  at all for these requests. Variables writes still trigger an SMI. This can greatly
+  #  reduce overall system SMM usage as most boots tend to issue far more variable reads
+  #  than writes.<BR><BR>
+  #   TRUE  - The UEFI variable runtime cache is enabled.<BR>
+  #   FALSE - The UEFI variable runtime cache is disabled.<BR>
+  # @Prompt Enable the UEFI variable runtime cache.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableVariableRuntimeCache|TRUE|BOOLEAN|0x00010039
 
   ## Indicates if the statistics about variable usage will be collected. This information is
   #  stored as a vendor configuration table into the EFI system table.
@@ -854,6 +870,12 @@
   #   FALSE - PCI MMIO BARs of a device may be located above 4 GB even if it has an option ROM
   # @Prompt Degrade 64-bit PCI MMIO BARs for legacy BIOS option ROMs
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|TRUE|BOOLEAN|0x0001003a
+
+  ## Indicates if the platform can support process non-reset capsule image at runtime.<BR><BR>
+  #   TRUE  - Supports process non-reset capsule image at runtime.<BR>
+  #   FALSE - Does not support process non-reset capsule image at runtime.<BR>
+  # @Prompt Enable process non-reset capsule image at runtime.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportProcessCapsuleAtRuntime|FALSE|BOOLEAN|0x00010079
 
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a
@@ -1128,10 +1150,6 @@
   # @Prompt Maximum number of PEI performance log entries.
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxPeiPerformanceLogEntries16|0|UINT16|0x00010035
 
-  ## RTC Update Timeout Value(microsecond).
-  # @Prompt RTC Update Timeout Value.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdRealTimeClockUpdateTimeout|100000|UINT32|0x00010034
-
   ## Indicates the 16550 serial port registers are in MMIO space, or in I/O space. Default is I/O space.<BR><BR>
   #   TRUE  - 16550 serial port registers are in MMIO space.<BR>
   #   FALSE - 16550 serial port registers are in I/O space.<BR>
@@ -1190,12 +1208,6 @@
   # @Prompt Serial port FIFO Control settings.
   # @Expression 0x80000002 | (gEfiMdeModulePkgTokenSpaceGuid.PcdSerialFifoControl & 0xD8) == 0
   gEfiMdeModulePkgTokenSpaceGuid.PcdSerialFifoControl|0x07|UINT8|0x00020005
-
-  ## This setting can override the default TFTP block size. A value of 0 computes
-  # the default from MTU information. A non-zero value will be used as block size
-  # in bytes.
-  # @Prompt TFTP block size.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdTftpBlockSize|0x0|UINT64|0x30001026
 
   ## Maximum address that the DXE Core will allocate the EFI_SYSTEM_TABLE_POINTER
   #  structure. The default value for this PCD is 0, which means that the DXE Core
@@ -1538,6 +1550,9 @@
   # @Prompt Console Output Row of Text Setup
   gEfiMdeModulePkgTokenSpaceGuid.PcdSetupConOutRow|25|UINT32|0x4000000e
 
+[PcdsFixedAtBuild.AARCH64, PcdsPatchableInModule.AARCH64]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiExposedTableVersions|0x20|UINT32|0x0001004c
+
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## UART clock frequency is for the baud rate configuration.
   # @Prompt Serial Port Clock Rate.
@@ -1792,7 +1807,7 @@
 
   ## SMBIOS version.
   # @Prompt SMBIOS version.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosVersion|0x0302|UINT16|0x00010055
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosVersion|0x0303|UINT16|0x00010055
 
   ## SMBIOS Docrev field in SMBIOS 3.0 (64-bit) Entry Point Structure.
   # @Prompt SMBIOS Docrev field in SMBIOS 3.0 (64-bit) Entry Point Structure.
@@ -1854,30 +1869,6 @@
   #
   # @Prompt Flag to request system reboot after processing capsule.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSystemRebootAfterCapsuleProcessFlag|0x0001|UINT16|0x0000006d
-
-  ## Publish PropertiesTable or not.
-  #
-  # If this PCD is TRUE, DxeCore publishs PropertiesTable.
-  # DxeCore evaluates if all runtime drivers has 4K aligned PE sections. If all
-  # PE sections in runtime drivers are 4K aligned, DxeCore sets BIT0 in
-  # PropertiesTable. Or DxeCore clears BIT0 in PropertiesTable.
-  # If this PCD is FALSE, DxeCore does not publish PropertiesTable.
-  #
-  # If PropertiesTable has BIT0 set, DxeCore uses below policy in UEFI memory map:
-  #   1) Use EfiRuntimeServicesCode for runtime driver PE image code section and
-  #      use EfiRuntimeServicesData for runtime driver PE image header and other section.
-  #   2) Set EfiRuntimeServicesCode to be EFI_MEMORY_RO.
-  #   3) Set EfiRuntimeServicesData to be EFI_MEMORY_XP.
-  #   4) Set EfiMemoryMappedIO and EfiMemoryMappedIOPortSpace to be EFI_MEMORY_XP.
-  #
-  # NOTE: Platform need gurantee this PCD is set correctly. Platform should set
-  # this PCD to be TURE if and only if all runtime driver has seperated Code/Data
-  # section. If PE code/data sections are merged, the result is unpredictable.
-  #
-  # UEFI 2.6 specification does not recommend to use this BIT0 attribute.
-  #
-  # @Prompt Publish UEFI PropertiesTable.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPropertiesTableEnable|FALSE|BOOLEAN|0x0000006e
 
   ## Default OEM ID for ACPI table creation, its length must be 0x6 bytes to follow ACPI specification.
   # @Prompt Default OEM ID for ACPI table creation.
@@ -2001,6 +1992,14 @@
   #  by this PCD, instead of the EFI System Partition that stores capsule image file.
   # @Prompt Capsule On Disk relocation device path.
   gEfiMdeModulePkgTokenSpaceGuid.PcdCodRelocationDevPath|{0xFF}|VOID*|0x0000002f
+
+  ## Indicates which TCG Platform Firmware Profile revision the EDKII firmware follows.
+  #  The revision number is defined in MdePkg/Include/IndustryStandard/UefiTcgPlatform.h
+  #  0:   This is for compatiblity support.
+  #  105: This is the first revision to support 800-155 is related event, such as
+  #       EV_EFI_PLATFORM_FIRMWARE_BLOB2 and EV_EFI_HANDOFF_TABLES2.
+  # @Prompt TCG Platform Firmware Profile revision.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision|0|UINT32|0x00010077
 
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when

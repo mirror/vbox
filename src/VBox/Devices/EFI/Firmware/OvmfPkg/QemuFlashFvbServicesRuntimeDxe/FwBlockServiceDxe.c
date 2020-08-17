@@ -44,7 +44,7 @@ InstallProtocolInterfaces (
     // LocateDevicePath fails so install a new interface and device path
     //
     FwbHandle = NULL;
-    DEBUG ((EFI_D_INFO, "Installing QEMU flash FVB\n"));
+    DEBUG ((DEBUG_INFO, "Installing QEMU flash FVB\n"));
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &FwbHandle,
                     &gEfiFirmwareVolumeBlockProtocolGuid,
@@ -65,7 +65,7 @@ InstallProtocolInterfaces (
                     );
     ASSERT_EFI_ERROR (Status);
 
-    DEBUG ((EFI_D_INFO, "Reinstalling FVB for QEMU flash region\n"));
+    DEBUG ((DEBUG_INFO, "Reinstalling FVB for QEMU flash region\n"));
     Status = gBS->ReinstallProtocolInterface (
                     FwbHandle,
                     &gEfiFirmwareVolumeBlockProtocolGuid,
@@ -215,4 +215,31 @@ MarkIoMemoryRangeForRuntimeAccess (
   }
 
   return Status;
+}
+
+VOID
+SetPcdFlashNvStorageBaseAddresses (
+  VOID
+  )
+{
+  RETURN_STATUS PcdStatus;
+
+  //
+  // Set several PCD values to point to flash
+  //
+  PcdStatus = PcdSet64S (
+    PcdFlashNvStorageVariableBase64,
+    (UINTN) PcdGet32 (PcdOvmfFlashNvStorageVariableBase)
+    );
+  ASSERT_RETURN_ERROR (PcdStatus);
+  PcdStatus = PcdSet32S (
+    PcdFlashNvStorageFtwWorkingBase,
+    PcdGet32 (PcdOvmfFlashNvStorageFtwWorkingBase)
+    );
+  ASSERT_RETURN_ERROR (PcdStatus);
+  PcdStatus = PcdSet32S (
+    PcdFlashNvStorageFtwSpareBase,
+    PcdGet32 (PcdOvmfFlashNvStorageFtwSpareBase)
+    );
+  ASSERT_RETURN_ERROR (PcdStatus);
 }

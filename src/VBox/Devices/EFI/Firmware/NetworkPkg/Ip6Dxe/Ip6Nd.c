@@ -1645,7 +1645,7 @@ Ip6ProcessNeighborSolicit (
   //
   // Sends a Neighbor Advertisement as response.
   // Set the Router flag to zero since the node is a host.
-  // If the source address of the solicitation is unspeicifed, and target address
+  // If the source address of the solicitation is unspecified, and target address
   // is one of the maintained address, reply a unsolicited multicast advertisement.
   //
   if (IsDAD && IsMaintained) {
@@ -1927,7 +1927,7 @@ Ip6ProcessRouterAdvertise (
   UINT32                    ReachableTime;
   UINT32                    RetransTimer;
   UINT16                    RouterLifetime;
-  UINT16                    Offset;
+  UINT32                    Offset;
   UINT8                     Type;
   UINT8                     Length;
   IP6_ETHER_ADDR_OPTION     LinkLayerOption;
@@ -2087,17 +2087,18 @@ Ip6ProcessRouterAdvertise (
   }
 
   //
-  // If an valid router advertisment is received, stops router solicitation.
+  // If an valid router advertisement is received, stops router solicitation.
   //
   IpSb->RouterAdvertiseReceived = TRUE;
 
   //
   // The only defined options that may appear are the Source
   // Link-Layer Address, Prefix information and MTU options.
-  // All included options have a length that is greater than zero.
+  // All included options have a length that is greater than zero and
+  // fit within the input packet.
   //
   Offset = 16;
-  while (Offset < Head->PayloadLength) {
+  while (Offset < (UINT32) Head->PayloadLength) {
     NetbufCopy (Packet, Offset, sizeof (UINT8), &Type);
     switch (Type) {
     case Ip6OptionEtherSource:
@@ -2105,9 +2106,12 @@ Ip6ProcessRouterAdvertise (
       // Update the neighbor cache
       //
       NetbufCopy (Packet, Offset, sizeof (IP6_ETHER_ADDR_OPTION), (UINT8 *) &LinkLayerOption);
-      if (LinkLayerOption.Length <= 0) {
-        goto Exit;
-      }
+
+      //
+      // Option size validity ensured by Ip6IsNDOptionValid().
+      //
+      ASSERT (LinkLayerOption.Length != 0);
+      ASSERT (Offset + (UINT32) LinkLayerOption.Length * 8 <= (UINT32) Head->PayloadLength);
 
       ZeroMem (&LinkLayerAddress, sizeof (EFI_MAC_ADDRESS));
       CopyMem (&LinkLayerAddress, LinkLayerOption.EtherAddr, 6);
@@ -2151,13 +2155,17 @@ Ip6ProcessRouterAdvertise (
         }
       }
 
-      Offset = (UINT16) (Offset + (UINT16) LinkLayerOption.Length * 8);
+      Offset += (UINT32) LinkLayerOption.Length * 8;
       break;
     case Ip6OptionPrefixInfo:
       NetbufCopy (Packet, Offset, sizeof (IP6_PREFIX_INFO_OPTION), (UINT8 *) &PrefixOption);
-      if (PrefixOption.Length != 4) {
-        goto Exit;
-      }
+
+      //
+      // Option size validity ensured by Ip6IsNDOptionValid().
+      //
+      ASSERT (PrefixOption.Length == 4);
+      ASSERT (Offset + (UINT32) PrefixOption.Length * 8 <= (UINT32) Head->PayloadLength);
+
       PrefixOption.ValidLifetime     = NTOHL (PrefixOption.ValidLifetime);
       PrefixOption.PreferredLifetime = NTOHL (PrefixOption.PreferredLifetime);
 
@@ -2251,7 +2259,7 @@ Ip6ProcessRouterAdvertise (
           //
           if (!Ip6IsOneOfSetAddress (IpSb, &StatelessAddress, NULL, NULL)) {
             //
-            // And also not in the DAD process, check its uniqeness firstly.
+            // And also not in the DAD process, check its uniqueness firstly.
             //
             if (Ip6FindDADEntry (IpSb, &StatelessAddress, NULL) == NULL) {
               Status = Ip6SetAddress (
@@ -2303,7 +2311,7 @@ Ip6ProcessRouterAdvertise (
 
           } else if (PrefixList->ValidLifetime <= 7200) {
             //
-            // If RemainingLifetime is less than or equls to 2 hours, ignore the
+            // If RemainingLifetime is less than or equals to 2 hours, ignore the
             // Prefix Information option with regards to the valid lifetime.
             // TODO: If this option has been authenticated, set the valid lifetime.
             //
@@ -2321,9 +2329,12 @@ Ip6ProcessRouterAdvertise (
       break;
     case Ip6OptionMtu:
       NetbufCopy (Packet, Offset, sizeof (IP6_MTU_OPTION), (UINT8 *) &MTUOption);
-      if (MTUOption.Length != 1) {
-        goto Exit;
-      }
+
+      //
+      // Option size validity ensured by Ip6IsNDOptionValid().
+      //
+      ASSERT (MTUOption.Length == 1);
+      ASSERT (Offset + (UINT32) MTUOption.Length * 8 <= (UINT32) Head->PayloadLength);
 
       //
       // Use IPv6 minimum link MTU 1280 bytes as the maximum packet size in order
@@ -2338,11 +2349,10 @@ Ip6ProcessRouterAdvertise (
       // Silently ignore unrecognized options
       //
       NetbufCopy (Packet, Offset + sizeof (UINT8), sizeof (UINT8), &Length);
-      if (Length <= 0) {
-        goto Exit;
-      }
 
-      Offset = (UINT16) (Offset + (UINT16) Length * 8);
+      ASSERT (Length != 0);
+
+      Offset += (UINT32) Length * 8;
       break;
     }
   }
@@ -2365,7 +2375,7 @@ Exit:
                                  the IP head removed.
 
   @retval EFI_INVALID_PARAMETER  The parameter is invalid.
-  @retval EFI_OUT_OF_RESOURCES   Insuffcient resources to complete the
+  @retval EFI_OUT_OF_RESOURCES   Insufficient resources to complete the
                                  operation.
   @retval EFI_SUCCESS            Successfully updated the route caches.
 
@@ -3069,7 +3079,7 @@ Ip6NdFasterTimerTicking (
 
 /**
   The heartbeat timer of ND module in 1 second. This time routine handles following
-  things: 1) maitain default router list; 2) maintain prefix options;
+  things: 1) maintain default router list; 2) maintain prefix options;
   3) maintain route caches.
 
   @param[in]  IpSb              The IP6 service binding instance.

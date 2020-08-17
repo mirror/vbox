@@ -183,6 +183,8 @@ GetCurrentPagingContext (
   MSR_IA32_EFER_REGISTER          MsrEfer;
   IA32_CR4                        Cr4;
   IA32_CR0                        Cr0;
+  UINT32                          *Attributes;
+  UINTN                           *PageTableBase;
 
   //
   // Don't retrieve current paging context from processor if in SMM mode.
@@ -195,25 +197,27 @@ GetCurrentPagingContext (
       mPagingContext.MachineType = IMAGE_FILE_MACHINE_I386;
     }
 
+    GetPagingDetails (&mPagingContext.ContextData, &PageTableBase, &Attributes);
+
     Cr0.UintN = AsmReadCr0 ();
     Cr4.UintN = AsmReadCr4 ();
 
     if (Cr0.Bits.PG != 0) {
-      mPagingContext.ContextData.X64.PageTableBase = (AsmReadCr3 () & PAGING_4K_ADDRESS_MASK_64);
+      *PageTableBase = (AsmReadCr3 () & PAGING_4K_ADDRESS_MASK_64);
     } else {
-      mPagingContext.ContextData.X64.PageTableBase = 0;
+      *PageTableBase = 0;
     }
     if (Cr0.Bits.WP  != 0) {
-      mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_WP_ENABLE;
+      *Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_WP_ENABLE;
     }
     if (Cr4.Bits.PSE != 0) {
-      mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PSE;
+      *Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PSE;
     }
     if (Cr4.Bits.PAE != 0) {
-      mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAE;
+      *Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAE;
     }
     if (Cr4.Bits.LA57 != 0) {
-      mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_5_LEVEL;
+      *Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_5_LEVEL;
     }
 
     AsmCpuid (CPUID_EXTENDED_FUNCTION, &RegEax, NULL, NULL, NULL);
@@ -225,12 +229,12 @@ GetCurrentPagingContext (
         MsrEfer.Uint64 = AsmReadMsr64(MSR_CORE_IA32_EFER);
         if (MsrEfer.Bits.NXE != 0) {
           // XD activated
-          mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_XD_ACTIVATED;
+          *Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_XD_ACTIVATED;
         }
       }
 
       if (RegEdx.Bits.Page1GB != 0) {
-        mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAGE_1G_SUPPORT;
+        *Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAGE_1G_SUPPORT;
       }
     }
   }
@@ -427,6 +431,7 @@ ConvertPageEntryAttribute (
 {
   UINT64  CurrentPageEntry;
   UINT64  NewPageEntry;
+  UINT32  *PageAttributes;
 
   CurrentPageEntry = *PageEntry;
   NewPageEntry = CurrentPageEntry;
@@ -470,7 +475,10 @@ ConvertPageEntryAttribute (
       break;
     }
   }
-  if ((PagingContext->ContextData.Ia32.Attributes & PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_XD_ACTIVATED) != 0) {
+
+  GetPagingDetails (&PagingContext->ContextData, NULL, &PageAttributes);
+
+  if ((*PageAttributes & PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_XD_ACTIVATED) != 0) {
     if ((Attributes & EFI_MEMORY_XP) != 0) {
       switch (PageAction) {
       case PageActionAssign:
@@ -840,7 +848,7 @@ ConvertMemoryPageAttributes (
   }
 
   //
-  // Below logic is to check 2M/4K page to make sure we donot waist memory.
+  // Below logic is to check 2M/4K page to make sure we do not waste memory.
   //
   Status = EFI_SUCCESS;
   while (Length != 0) {
@@ -902,7 +910,7 @@ Done:
 
   Caller should make sure BaseAddress and Length is at page boundary.
 
-  Caller need guarentee the TPL <= TPL_NOTIFY, if there is split page request.
+  Caller need guarantee the TPL <= TPL_NOTIFY, if there is split page request.
 
   @param[in]  PagingContext     The paging context. NULL means get page table from current CPU context.
   @param[in]  BaseAddress       The physical address that is the start address of a memory region.
@@ -1033,7 +1041,7 @@ RefreshGcdMemoryAttributesFromPaging (
                     );
     if (EFI_ERROR (Status)) {
       //
-      // If we cannot udpate the capabilities, we cannot update its
+      // If we cannot update the capabilities, we cannot update its
       // attributes either. So just simply skip current block of memory.
       //
       DEBUG ((
@@ -1410,15 +1418,18 @@ InitializePageTableLib (
   )
 {
   PAGE_TABLE_LIB_PAGING_CONTEXT     CurrentPagingContext;
+  UINT32                            *Attributes;
+  UINTN                             *PageTableBase;
 
   GetCurrentPagingContext (&CurrentPagingContext);
+
+  GetPagingDetails (&CurrentPagingContext.ContextData, &PageTableBase, &Attributes);
 
   //
   // Reserve memory of page tables for future uses, if paging is enabled.
   //
-  if (CurrentPagingContext.ContextData.X64.PageTableBase != 0 &&
-      (CurrentPagingContext.ContextData.Ia32.Attributes &
-       PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAE) != 0) {
+  if ((*PageTableBase != 0) &&
+      (*Attributes & PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAE) != 0) {
     DisableReadOnlyPageWriteProtect ();
     InitializePageTablePool (1);
     EnableReadOnlyPageWriteProtect ();
@@ -1433,10 +1444,10 @@ InitializePageTableLib (
     ASSERT (mLastPFEntryPointer != NULL);
   }
 
-  DEBUG ((DEBUG_INFO, "CurrentPagingContext:\n", CurrentPagingContext.MachineType));
+  DEBUG ((DEBUG_INFO, "CurrentPagingContext:\n"));
   DEBUG ((DEBUG_INFO, "  MachineType   - 0x%x\n", CurrentPagingContext.MachineType));
-  DEBUG ((DEBUG_INFO, "  PageTableBase - 0x%x\n", CurrentPagingContext.ContextData.X64.PageTableBase));
-  DEBUG ((DEBUG_INFO, "  Attributes    - 0x%x\n", CurrentPagingContext.ContextData.X64.Attributes));
+  DEBUG ((DEBUG_INFO, "  PageTableBase - 0x%Lx\n", (UINT64)*PageTableBase));
+  DEBUG ((DEBUG_INFO, "  Attributes    - 0x%x\n", *Attributes));
 
   return ;
 }

@@ -2,6 +2,7 @@
   Functions declaration related with DHCPv4 for HTTP boot driver.
 
 Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -35,13 +36,15 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define EFI_HTTP_BOOT_CLIENT_SYSTEM_ARCHITECTURE    HTTP_CLIENT_ARCH_ARM
 #elif defined (MDE_CPU_AARCH64)
 #define EFI_HTTP_BOOT_CLIENT_SYSTEM_ARCHITECTURE    HTTP_CLIENT_ARCH_AARCH64
+#elif defined (MDE_CPU_RISCV64)
+#define EFI_HTTP_BOOT_CLIENT_SYSTEM_ARCHITECTURE    HTTP_CLIENT_ARCH_RISCV64
 #elif defined (MDE_CPU_EBC)
 #define EFI_HTTP_BOOT_CLIENT_SYSTEM_ARCHITECTURE    HTTP_CLIENT_ARCH_EBC
 #endif
 
 /// DHCP offer types among HTTP boot.
 /// Dhcp4 and Dhcp6 share this definition, and corresponding
-/// relatioinship is as follows:
+/// relationship is as follows:
 ///   Dhcp4Discover <> Dhcp6Solicit
 ///   Dhcp4Offer    <> Dhcp6Advertise
 ///   Dhcp4Request  <> Dhcp6Request

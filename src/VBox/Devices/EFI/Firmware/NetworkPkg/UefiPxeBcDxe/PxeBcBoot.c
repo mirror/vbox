@@ -257,7 +257,7 @@ ON_EXIT:
 
   @retval EFI_ABORTED     User cancel operation.
   @retval EFI_SUCCESS     Select the boot menu success.
-  @retval EFI_NOT_READY   Read the input key from the keybroad has not finish.
+  @retval EFI_NOT_READY   Read the input key from the keyboard has not finish.
 
 **/
 EFI_STATUS
@@ -482,7 +482,20 @@ PxeBcDhcp4BootInfo (
     Cache4 = &Private->DhcpAck.Dhcp4;
   }
 
-  ASSERT (Cache4->OptList[PXEBC_DHCP4_TAG_INDEX_BOOTFILE] != NULL);
+  if (Cache4->OptList[PXEBC_DHCP4_TAG_INDEX_BOOTFILE] == NULL) {
+    //
+    // This should never happen in a correctly configured DHCP / PXE
+    // environment. One misconfiguration that can cause it is two DHCP servers
+    // mistakenly running on the same network segment at the same time, and
+    // racing each other in answering DHCP requests. Thus, the DHCP packets
+    // that the edk2 PXE client considers "belonging together" may actually be
+    // entirely independent, coming from two (competing) DHCP servers.
+    //
+    // Try to deal with this gracefully. Note that this check is not
+    // comprehensive, as we don't try to identify all such errors.
+    //
+    return EFI_PROTOCOL_ERROR;
+  }
 
   //
   // Parse the boot server address.
@@ -612,7 +625,20 @@ PxeBcDhcp6BootInfo (
     Cache6 = &Private->DhcpAck.Dhcp6;
   }
 
-  ASSERT (Cache6->OptList[PXEBC_DHCP6_IDX_BOOT_FILE_URL] != NULL);
+  if (Cache6->OptList[PXEBC_DHCP6_IDX_BOOT_FILE_URL] == NULL) {
+    //
+    // This should never happen in a correctly configured DHCP / PXE
+    // environment. One misconfiguration that can cause it is two DHCP servers
+    // mistakenly running on the same network segment at the same time, and
+    // racing each other in answering DHCP requests. Thus, the DHCP packets
+    // that the edk2 PXE client considers "belonging together" may actually be
+    // entirely independent, coming from two (competing) DHCP servers.
+    //
+    // Try to deal with this gracefully. Note that this check is not
+    // comprehensive, as we don't try to identify all such errors.
+    //
+    return EFI_PROTOCOL_ERROR;
+  }
 
   //
   // Set the station address to IP layer.
@@ -970,7 +996,7 @@ PxeBcDiscoverBootFile (
   @param[in, out] Private           Pointer to PxeBc private data.
   @param[out]     NewMakeCallback   If TRUE, it is a new callback.
                                     Otherwise, it is not new callback.
-  @retval EFI_SUCCESS          PxeBaseCodeCallbackProtocol installed succesfully.
+  @retval EFI_SUCCESS          PxeBaseCodeCallbackProtocol installed successfully.
   @retval Others               Failed to install PxeBaseCodeCallbackProtocol.
 
 **/

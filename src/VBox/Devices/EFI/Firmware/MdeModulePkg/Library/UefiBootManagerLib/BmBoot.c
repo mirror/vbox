@@ -1,6 +1,7 @@
 /** @file
   Library functions which relates with booting.
 
+Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 Copyright (c) 2011 - 2019, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -1468,6 +1469,37 @@ BmExpandLoadFile (
   //
   FileBuffer = AllocateReservedPages (EFI_SIZE_TO_PAGES (BufferSize));
   if (FileBuffer == NULL) {
+    DEBUG_CODE (
+      EFI_DEVICE_PATH *LoadFilePath;
+      CHAR16          *LoadFileText;
+      CHAR16          *FileText;
+
+      LoadFilePath = DevicePathFromHandle (LoadFileHandle);
+      if (LoadFilePath == NULL) {
+        LoadFileText = NULL;
+      } else {
+        LoadFileText = ConvertDevicePathToText (LoadFilePath, FALSE, FALSE);
+      }
+      FileText = ConvertDevicePathToText (FilePath, FALSE, FALSE);
+
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a:%a: failed to allocate reserved pages: "
+        "BufferSize=%Lu LoadFile=\"%s\" FilePath=\"%s\"\n",
+        gEfiCallerBaseName,
+        __FUNCTION__,
+        (UINT64)BufferSize,
+        LoadFileText,
+        FileText
+        ));
+
+      if (FileText != NULL) {
+        FreePool (FileText);
+      }
+      if (LoadFileText != NULL) {
+        FreePool (LoadFileText);
+      }
+      );
     return NULL;
   }
 
@@ -1944,6 +1976,15 @@ EfiBootManagerBoot (
 
     if (EFI_ERROR (Status)) {
       //
+      // With EFI_SECURITY_VIOLATION retval, the Image was loaded and an ImageHandle was created
+      // with a valid EFI_LOADED_IMAGE_PROTOCOL, but the image can not be started right now.
+      // If the caller doesn't have the option to defer the execution of an image, we should
+      // unload image for the EFI_SECURITY_VIOLATION to avoid resource leak.
+      //
+      if (Status == EFI_SECURITY_VIOLATION) {
+        gBS->UnloadImage (ImageHandle);
+      }
+      //
       // Report Status Code with the failure status to indicate that the failure to load boot option
       //
       BmReportLoadFailure (EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR, Status);
@@ -2331,12 +2372,15 @@ EfiBootManagerRefreshAllBootOption (
   VOID
   )
 {
-  EFI_STATUS                    Status;
-  EFI_BOOT_MANAGER_LOAD_OPTION  *NvBootOptions;
-  UINTN                         NvBootOptionCount;
-  EFI_BOOT_MANAGER_LOAD_OPTION  *BootOptions;
-  UINTN                         BootOptionCount;
-  UINTN                         Index;
+  EFI_STATUS                           Status;
+  EFI_BOOT_MANAGER_LOAD_OPTION         *NvBootOptions;
+  UINTN                                NvBootOptionCount;
+  EFI_BOOT_MANAGER_LOAD_OPTION         *BootOptions;
+  UINTN                                BootOptionCount;
+  EFI_BOOT_MANAGER_LOAD_OPTION         *UpdatedBootOptions;
+  UINTN                                UpdatedBootOptionCount;
+  UINTN                                Index;
+  EDKII_PLATFORM_BOOT_MANAGER_PROTOCOL *PlatformBootManager;
 
   //
   // Optionally refresh the legacy boot option
@@ -2346,7 +2390,6 @@ EfiBootManagerRefreshAllBootOption (
   }
 
   BootOptions   = BmEnumerateBootOptions (&BootOptionCount);
-  NvBootOptions = EfiBootManagerGetLoadOptions (&NvBootOptionCount, LoadOptionTypeBoot);
 
   //
   // Mark the boot option as added by BDS by setting OptionalData to a special GUID
@@ -2355,6 +2398,30 @@ EfiBootManagerRefreshAllBootOption (
     BootOptions[Index].OptionalData     = AllocateCopyPool (sizeof (EFI_GUID), &mBmAutoCreateBootOptionGuid);
     BootOptions[Index].OptionalDataSize = sizeof (EFI_GUID);
   }
+
+  //
+  // Locate Platform Boot Options Protocol
+  //
+  Status = gBS->LocateProtocol (&gEdkiiPlatformBootManagerProtocolGuid,
+                                NULL,
+                                (VOID **)&PlatformBootManager);
+  if (!EFI_ERROR (Status)) {
+    //
+    // If found, call platform specific refresh to all auto enumerated and NV
+    // boot options.
+    //
+    Status = PlatformBootManager->RefreshAllBootOptions ((CONST EFI_BOOT_MANAGER_LOAD_OPTION *)BootOptions,
+                                                         (CONST UINTN)BootOptionCount,
+                                                         &UpdatedBootOptions,
+                                                         &UpdatedBootOptionCount);
+    if (!EFI_ERROR (Status)) {
+      EfiBootManagerFreeLoadOptions (BootOptions, BootOptionCount);
+      BootOptions = UpdatedBootOptions;
+      BootOptionCount = UpdatedBootOptionCount;
+    }
+  }
+
+  NvBootOptions = EfiBootManagerGetLoadOptions (&NvBootOptionCount, LoadOptionTypeBoot);
 
   //
   // Remove invalid EFI boot options from NV

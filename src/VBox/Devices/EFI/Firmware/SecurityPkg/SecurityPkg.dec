@@ -5,9 +5,9 @@
 #  It also provides the definitions(including PPIs/PROTOCOLs/GUIDs and library classes)
 #  and libraries instances, which are used for those features.
 #
-# Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2009 - 2020, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2015 Hewlett Packard Enterprise Development LP <BR>
-# Copyright (c) 2017, Microsoft Corporation.  All rights reserved. <BR>
+# Copyright (c) Microsoft Corporation.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -62,19 +62,27 @@
   ##  @libraryclass  Provides support for TCG Physical Presence Interface (PPI) specification
   #   >= 128 Vendor Specific PPI Operation.
   #
-  Tcg2PpVendorLib|Include/Library/TcgPpVendorLib.h
+  Tcg2PpVendorLib|Include/Library/Tcg2PpVendorLib.h
 
   ##  @libraryclass  Handle TPM 2.0 physical presence request from OS.
   #
   Tcg2PhysicalPresenceLib|Include/Library/Tcg2PhysicalPresenceLib.h
 
-  ## @libraryclass  Provides interfaces about TCG storage generic commond.
+  ## @libraryclass  Provides interfaces about TCG storage generic command.
   #
   TcgStorageCoreLib|Include/Library/TcgStorageCoreLib.h
 
-  ## @libraryclass  Provides interfaces about TCG storage Opal generic commond.
+  ## @libraryclass  Provides interfaces about TCG storage Opal generic command.
   #
   TcgStorageOpalLib|Include/Library/TcgStorageOpalLib.h
+
+  ## @libraryclass  Provides interfaces to access RPMC device.
+  #
+  RpmcLib|Include/Library/RpmcLib.h
+
+  ## @libraryclass  Provides interfaces to access variable root key.
+  #
+  VariableKeyLib|Include/Library/VariableKeyLib.h
 
 [Guids]
   ## Security package token space guid.
@@ -120,6 +128,10 @@
   ## HOB GUID used to record TPM2 startup locality
   ## Include/Guid/TcgEventHob.h
   gTpm2StartupLocalityHobGuid        = { 0x397b0c9, 0x22e8, 0x459e, { 0xa4, 0xff, 0x99, 0xbc, 0x65, 0x27, 0x9, 0x29 }}
+
+  ## HOB GUID used to record TCG 800-155 PlatformId Event
+  ## Include/Guid/TcgEventHob.h
+  gTcg800155PlatformIdEventHobGuid   = { 0xe2c3bc69, 0x615c, 0x4b5b, { 0x8e, 0x5c, 0xa0, 0x33, 0xa9, 0xc2, 0x5e, 0xd6 }}
 
   ## HOB GUID used to pass all PEI measured FV info to DXE Driver.
   #  Include/Guid/MeasuredFvHob.h
@@ -260,6 +272,12 @@
   # @ValidList  0x80000003 | 0x010D0000
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice|0x010D0000|UINT32|0x00000007
 
+  ## Defines the IO port used to trigger a software System Management Interrupt (SMI).<BR><BR>
+  #  Used as the SMI Command IO port by security functionality that triggers a software SMI such
+  #  as Physical Presence Interface (PPI).<BR>
+  # @Prompt SMI Command IO port.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSmiCommandIoPort|0xB2|UINT16|0x00000009
+
   ## Progress Code for FV verification result.<BR><BR>
   #  (EFI_SOFTWARE_PEI_MODULE | EFI_SUBCLASS_SPECIFIC | XXX)
   # @Prompt Status Code for FV verification result
@@ -369,9 +387,9 @@
   # @Prompt TPM device address.
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress|0xFED40000|UINT64|0x00010012
 
-  ## This PCR means the OEM configurated number of PCR banks.
+  ## This PCR means the OEM configured number of PCR banks.
   #  0 means dynamic get from supported HASH algorithm
-  # @Prompt OEM configurated number of PCR banks.
+  # @Prompt OEM configured number of PCR banks.
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2NumberOfPCRBanks|0x0|UINT32|0x00010015
 
   ## Provides one or more SHA 256 Hashes of the RSA 2048 public keys used to verify Recovery and Capsule Update images
@@ -417,7 +435,18 @@
 
   ## This PCD defines initial setting of TCG2 Persistent Firmware Management Flags
   # PCD can be configured for different settings in different scenarios
-  # Default setting is TCG2_BIOS_TPM_MANAGEMENT_FLAG_DEFAULT | TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_DEFAULT
+  # This PCD follows UEFI TCG2 library definition bit of the BIOS TPM/Storage Management Flags<BR>
+  #    BIT0  -  Reserved <BR>
+  #    BIT1  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CLEAR <BR>
+  #    BIT2  -  Reserved <BR>
+  #    BIT3  -  TCG2_LIB_PP_FLAG_RESET_TRACK <BR>
+  #    BIT4  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_TURN_ON <BR>
+  #    BIT5  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_TURN_OFF <BR>
+  #    BIT6  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CHANGE_EPS <BR>
+  #    BIT7  -  TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CHANGE_PCRS <BR>
+  #    BIT16 -  TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_PP_REQUIRED_FOR_ENABLE_BLOCK_SID <BR>
+  #    BIT17 -  TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_PP_REQUIRED_FOR_DISABLE_BLOCK_SID <BR>
+  #    BIT18 -  TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_ENABLE_BLOCK_SID <BR>
   # @Prompt Initial setting of TCG2 Persistent Firmware Management Flags
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2PhysicalPresenceFlags|0x700E2|UINT32|0x0001001B
 
@@ -469,7 +498,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap|0xFFFFFFFF|UINT32|0x00010016
 
   ## This PCD indicates current active TPM interface type.
-  #  Accodingt to TCG PTP spec 1.3, there are 3 types defined in TPM2_PTP_INTERFACE_TYPE.<BR>
+  #  According to TCG PTP spec 1.3, there are 3 types defined in TPM2_PTP_INTERFACE_TYPE.<BR>
   #  0x00 - FIFO interface as defined in TIS 1.3 is active.<BR>
   #  0x01 - FIFO interface as defined in PTP for TPM 2.0 is active.<BR>
   #  0x02 - CRB interface is active.<BR>
@@ -478,15 +507,23 @@
   # @Prompt current active TPM interface type.
   gEfiSecurityPkgTokenSpaceGuid.PcdActiveTpmInterfaceType|0xFF|UINT8|0x0001001E
 
-  ## This PCD records IdleByass status supported by current active TPM interface.
-  #  Accodingt to TCG PTP spec 1.3, TPM with CRB interface can skip idle state and
-  #  diretcly move to CmdReady state. <BR>
+  ## This PCD records IdleBypass status supported by current active TPM interface.
+  #  According to TCG PTP spec 1.3, TPM with CRB interface can skip idle state and
+  #  directly move to CmdReady state. <BR>
   #  0x00 - Do not support IdleByPass.<BR>
   #  0x01 - Support IdleByPass.<BR>
   #  0xFF - IdleByPass State is not synced with TPM hardware.<BR>
   #
-  # @Prompt IdleByass status supported by current active TPM interface.
+  # @Prompt IdleBypass status supported by current active TPM interface.
   gEfiSecurityPkgTokenSpaceGuid.PcdCRBIdleByPass|0xFF|UINT8|0x0001001F
+
+  ## This PCD records LAML field in TPM2 ACPI table.
+  # @Prompt Tpm2AcpiTableLaml LAML field in TPM2 ACPI table.
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLaml|0|UINT32|0x00010022
+
+  ## This PCD records LASA field in TPM2 ACPI table.
+  # @Prompt Tpm2AcpiTableLasa LASA field in TPM2 ACPI table.
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLasa|0|UINT64|0x00010023
 
 [UserExtensions.TianoCore."ExtraFiles"]
   SecurityPkgExtra.uni

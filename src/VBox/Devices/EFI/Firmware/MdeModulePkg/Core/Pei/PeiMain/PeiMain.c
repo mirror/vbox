@@ -132,7 +132,7 @@ ShadowPeiCore (
   ASSERT_EFI_ERROR (Status);
 
   //
-  // Compute the PeiCore's function address after shaowed PeiCore.
+  // Compute the PeiCore's function address after shadowed PeiCore.
   // _ModuleEntryPoint is PeiCore main function entry
   //
   return (PEICORE_FUNCTION_POINTER)((UINTN) EntryPoint + (UINTN) PeiCore - (UINTN) _ModuleEntryPoint);
@@ -315,7 +315,7 @@ PeiCore (
       }
 
       //
-      // Shadow PEI Core. When permanent memory is avaiable, shadow
+      // Shadow PEI Core. When permanent memory is available, shadow
       // PEI Core and PEIMs to get high performance.
       //
       OldCoreData->ShadowedPeiCore = (PEICORE_FUNCTION_POINTER) (UINTN) PeiCore;

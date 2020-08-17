@@ -133,7 +133,7 @@ RandGetSeed128 (
   AES_KEY     AESKey;
 
   //
-  // Chose an arbitary key and zero the feed_forward_value (FFV)
+  // Chose an arbitrary key and zero the feed_forward_value (FFV)
   //
   for (Index = 0; Index < 16; Index++) {
     Key[Index] = (UINT8) Index;
@@ -291,7 +291,7 @@ int rand_pool_add_additional_data(RAND_POOL *pool)
 }
 
 /*
- * Dummy Implememtation for UEFI
+ * Dummy Implementation for UEFI
  *
  * This is OpenSSL required interface.
  */
@@ -301,7 +301,7 @@ int rand_pool_init(void)
 }
 
 /*
- * Dummy Implememtation for UEFI
+ * Dummy Implementation for UEFI
  *
  * This is OpenSSL required interface.
  */
@@ -310,7 +310,7 @@ void rand_pool_cleanup(void)
 }
 
 /*
- * Dummy Implememtation for UEFI
+ * Dummy Implementation for UEFI
  *
  * This is OpenSSL required interface.
  */

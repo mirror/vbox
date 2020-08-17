@@ -2,6 +2,7 @@
   HDD password driver which is used to support HDD security feature.
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -115,12 +116,12 @@ BuildHddPasswordDeviceInfo (
   // Build HDD password device info and save them to LockBox.
   //
   DevInfoLength = 0;
-  EFI_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
+  BASE_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
     ConfigFormEntry = BASE_CR (Entry, HDD_PASSWORD_CONFIG_FORM_ENTRY, Link);
 
     //
     // 1. Handle device which already set password.
-    // 2. When request to send freeze comamnd, driver also needs to handle device
+    // 2. When request to send freeze command, driver also needs to handle device
     //    which support security feature.
     //
     if ((!PasswordIsFullZero (ConfigFormEntry->Password)) ||
@@ -164,7 +165,7 @@ BuildHddPasswordDeviceInfo (
   ASSERT (DevInfo != NULL);
 
   TempDevInfo = DevInfo;
-  EFI_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
+  BASE_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
     ConfigFormEntry = BASE_CR (Entry, HDD_PASSWORD_CONFIG_FORM_ENTRY, Link);
 
     if ((!PasswordIsFullZero (ConfigFormEntry->Password)) ||
@@ -472,7 +473,7 @@ HddPasswordEndOfDxeEventNotify (
   //
   // Zero passsword and freeze lock device.
   //
-  EFI_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
+  BASE_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
     ConfigFormEntry = BASE_CR (Entry, HDD_PASSWORD_CONFIG_FORM_ENTRY, Link);
 
     ZeroMem (ConfigFormEntry->Password, HDD_PASSWORD_MAX_LENGTH);
@@ -2008,9 +2009,9 @@ SaveHddPasswordRequest (
 }
 
 /**
-  Get the HDD Password configuration form entry by the index of the goto opcode actived.
+  Get the HDD Password configuration form entry by the index of the goto opcode activated.
 
-  @param[in]  Index The 0-based index of the goto opcode actived.
+  @param[in]  Index The 0-based index of the goto opcode activated.
 
   @return The HDD Password configuration form entry found.
 **/
@@ -2026,7 +2027,7 @@ HddPasswordGetConfigFormEntryByIndex (
   CurrentIndex    = 0;
   ConfigFormEntry = NULL;
 
-  EFI_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
+  BASE_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
     if (CurrentIndex == Index) {
       ConfigFormEntry = BASE_CR (Entry, HDD_PASSWORD_CONFIG_FORM_ENTRY, Link);
       break;
@@ -2408,7 +2409,7 @@ HddPasswordConfigUpdateForm (
   ConfigFormEntry = NULL;
   EntryExisted    = FALSE;
 
-  EFI_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
+  BASE_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
     ConfigFormEntry = BASE_CR (Entry, HDD_PASSWORD_CONFIG_FORM_ENTRY, Link);
 
     if ((ConfigFormEntry->Bus == Bus) &&
@@ -2503,7 +2504,7 @@ HddPasswordConfigUpdateForm (
     EndLabel->Number       = HDD_DEVICE_LABEL_END;
 
     mNumberOfHddDevices = 0;
-    EFI_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
+    BASE_LIST_FOR_EACH (Entry, &mHddPasswordConfigFormList) {
       ConfigFormEntry = BASE_CR (Entry, HDD_PASSWORD_CONFIG_FORM_ENTRY, Link);
 
       HiiCreateGotoOpCode (
@@ -2758,7 +2759,7 @@ HddPasswordConfigFormInit (
   @param ImageHandle     Image handle this driver.
   @param SystemTable     Pointer to SystemTable.
 
-  @retval EFI_SUCESS     This function always complete successfully.
+  @retval EFI_SUCCESS     This function always complete successfully.
 
 **/
 EFI_STATUS
@@ -2770,7 +2771,7 @@ HddPasswordDxeInit (
 {
   EFI_STATUS                     Status;
   HDD_PASSWORD_DXE_PRIVATE_DATA  *Private;
-  EFI_EVENT                      Registration;
+  VOID                           *Registration;
   EFI_EVENT                      EndOfDxeEvent;
   EDKII_VARIABLE_LOCK_PROTOCOL   *VariableLock;
 
@@ -2806,7 +2807,7 @@ HddPasswordDxeInit (
   ASSERT_EFI_ERROR (Status);
 
   //
-  // Make HDD_PASSWORD_VARIABLE_NAME varible read-only.
+  // Make HDD_PASSWORD_VARIABLE_NAME variable read-only.
   //
   Status = gBS->LocateProtocol (&gEdkiiVariableLockProtocolGuid, NULL, (VOID **) &VariableLock);
   if (!EFI_ERROR (Status)) {

@@ -619,7 +619,7 @@ CreateDeviceManagerForm(
         TokenHelp = HiiSetString (HiiHandle, 0, String, NULL);
         FreePool (String);
 
-        FormSetGuid = ((EFI_IFR_FORM_SET *)Ptr)->Guid;
+        CopyMem (&FormSetGuid, &((EFI_IFR_FORM_SET *) Ptr)->Guid, sizeof (EFI_GUID));
 
         //
         // Network device process
@@ -891,6 +891,13 @@ DeviceManagerUiLibConstructor (
                   NULL
                   );
   ASSERT (gDeviceManagerPrivate.HiiHandle != NULL);
+
+  //
+  // The device manager form contains a page listing all the network
+  // controllers in the system. This list can only be populated if all
+  // handles have been connected, so do it here.
+  //
+  EfiBootManagerConnectAll ();
 
   //
   // Update boot manager page

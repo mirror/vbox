@@ -1,7 +1,7 @@
 /** @file
   Header file for ACPI parser
 
-  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2020, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -182,6 +182,22 @@ EFIAPI
 Dump8Chars (
   IN CONST CHAR16* Format OPTIONAL,
   IN UINT8*        Ptr
+  );
+
+/**
+  This function traces 12 characters which can be optionally
+  formated using the format string if specified.
+
+  If no format string is specified the Format must be NULL.
+
+  @param [in] Format  Optional format string for tracing the data.
+  @param [in] Ptr     Pointer to the start of the buffer.
+**/
+VOID
+EFIAPI
+Dump12Chars (
+  IN CONST CHAR16* Format OPTIONAL,
+  IN       UINT8*  Ptr
   );
 
 /**
@@ -381,26 +397,6 @@ ParseAcpi (
     (VOID**)&(Info)->CreatorRevision, NULL, NULL }
 
 /**
-  Length of the ACPI GAS structure.
-
-  NOTE: This might normally be defined as
-        sizeof (EFI_ACPI_6_2_GENERIC_ADDRESS_STRUCTURE).
-        However, we deliberately minimise any reference to the EDK2 ACPI
-        headers in an attempt to provide cross checking.
-**/
-#define GAS_LENGTH                     12
-
-/**
-  Length of the ACPI Header structure.
-
-  NOTE: This might normally be defined as
-        sizeof (EFI_ACPI_DESCRIPTION_HEADER).
-        However, we deliberately minimise any reference to the EDK2 ACPI
-        headers in an attempt to provide cross checking.
-**/
-#define ACPI_DESCRIPTION_HEADER_LENGTH  36
-
-/**
   This function indents and traces the GAS structure as described by the GasParser.
 
   @param [in] Ptr     Pointer to the start of the buffer.
@@ -522,6 +518,27 @@ ParseAcpiDbg2 (
 VOID
 EFIAPI
 ParseAcpiDsdt (
+  IN BOOLEAN Trace,
+  IN UINT8*  Ptr,
+  IN UINT32  AcpiTableLength,
+  IN UINT8   AcpiTableRevision
+  );
+
+/**
+  This function parses the ACPI FACS table.
+  When trace is enabled this function parses the FACS table and
+  traces the ACPI table fields.
+
+  This function also performs validation of the ACPI table fields.
+
+  @param [in] Trace              If TRUE, trace the ACPI fields.
+  @param [in] Ptr                Pointer to the start of the buffer.
+  @param [in] AcpiTableLength    Length of the ACPI table.
+  @param [in] AcpiTableRevision  Revision of the ACPI table.
+**/
+VOID
+EFIAPI
+ParseAcpiFacs (
   IN BOOLEAN Trace,
   IN UINT8*  Ptr,
   IN UINT32  AcpiTableLength,

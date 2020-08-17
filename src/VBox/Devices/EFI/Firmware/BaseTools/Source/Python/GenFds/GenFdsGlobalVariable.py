@@ -13,6 +13,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import Common.LongFilePathOs as os
+import sys
 from sys import stdout
 from subprocess import PIPE,Popen
 from struct import Struct
@@ -22,9 +23,9 @@ from Common.BuildToolError import COMMAND_FAILURE,GENFDS_ERROR
 from Common import EdkLogger
 from Common.Misc import SaveFileOnChange
 
-from Common.TargetTxtClassObject import TargetTxt
-from Common.ToolDefClassObject import ToolDef
-from AutoGen.BuildEngine import BuildRuleObj
+from Common.TargetTxtClassObject import TargetTxtDict
+from Common.ToolDefClassObject import ToolDefDict
+from AutoGen.BuildEngine import ToolBuildRule
 import Common.DataType as DataType
 from Common.Misc import PathClass
 from Common.LongFilePathSupport import OpenLongFilePath as open
@@ -69,7 +70,7 @@ class GenFdsGlobalVariable:
     SecCmdList = []
     CopyList   = []
     ModuleFile = ''
-    EnableGenfdsMultiThread = False
+    EnableGenfdsMultiThread = True
 
     #
     # The list whose element are flags to indicate if large FFS or SECTION files exist in FV.
@@ -95,12 +96,15 @@ class GenFdsGlobalVariable:
     def _LoadBuildRule():
         if GenFdsGlobalVariable.__BuildRuleDatabase:
             return GenFdsGlobalVariable.__BuildRuleDatabase
-        GenFdsGlobalVariable.__BuildRuleDatabase = BuildRuleObj
-        ToolDefinitionFile = TargetTxt.TargetTxtDictionary[DataType.TAB_TAT_DEFINES_TOOL_CHAIN_CONF]
+        BuildRule = ToolBuildRule()
+        GenFdsGlobalVariable.__BuildRuleDatabase = BuildRule.ToolBuildRule
+        TargetObj = TargetTxtDict()
+        ToolDefinitionFile = TargetObj.Target.TargetTxtDictionary[DataType.TAB_TAT_DEFINES_TOOL_CHAIN_CONF]
         if ToolDefinitionFile == '':
             ToolDefinitionFile = "Conf/tools_def.txt"
         if os.path.isfile(ToolDefinitionFile):
-            ToolDefinition = ToolDef.ToolsDefTxtDatabase
+            ToolDefObj = ToolDefDict((os.path.join(os.getenv("WORKSPACE"), "Conf")))
+            ToolDefinition = ToolDefObj.ToolDef.ToolsDefTxtDatabase
             if DataType.TAB_TOD_DEFINES_BUILDRULEFAMILY in ToolDefinition \
                and GenFdsGlobalVariable.ToolChainTag in ToolDefinition[DataType.TAB_TOD_DEFINES_BUILDRULEFAMILY] \
                and ToolDefinition[DataType.TAB_TOD_DEFINES_BUILDRULEFAMILY][GenFdsGlobalVariable.ToolChainTag]:
@@ -486,10 +490,10 @@ class GenFdsGlobalVariable:
 
             SaveFileOnChange(CommandFile, ' '.join(Cmd), False)
             if IsMakefile:
-                if GlobalData.gGlobalDefines.get("FAMILY") == "MSFT":
+                if sys.platform == "win32":
                     Cmd = ['if', 'exist', Input[0]] + Cmd
                 else:
-                    Cmd = ['test', '-e', Input[0], "&&"] + Cmd
+                    Cmd = ['-test', '-e', Input[0], "&&"] + Cmd
                 if ' '.join(Cmd).strip() not in GenFdsGlobalVariable.SecCmdList:
                     GenFdsGlobalVariable.SecCmdList.append(' '.join(Cmd).strip())
             elif GenFdsGlobalVariable.NeedsUpdate(Output, list(Input) + [CommandFile]):
@@ -748,7 +752,7 @@ class GenFdsGlobalVariable:
     #   @param  MacroDict     Dictionary that contains macro value pair
     #
     @staticmethod
-    def MacroExtend (Str, MacroDict={}, Arch=DataType.TAB_COMMON):
+    def MacroExtend (Str, MacroDict=None, Arch=DataType.TAB_COMMON):
         if Str is None:
             return None
 
@@ -835,6 +839,8 @@ class GenFdsGlobalVariable:
 #  @param  NameGuid         The Guid name
 #
 def FindExtendTool(KeyStringList, CurrentArchList, NameGuid):
+    ToolDefObj = ToolDefDict((os.path.join(os.getenv("WORKSPACE"), "Conf")))
+    ToolDef = ToolDefObj.ToolDef
     ToolDb = ToolDef.ToolsDefTxtDatabase
     # if user not specify filter, try to deduce it from global data.
     if KeyStringList is None or KeyStringList == []:

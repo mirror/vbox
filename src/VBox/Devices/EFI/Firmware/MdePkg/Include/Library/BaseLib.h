@@ -4,6 +4,9 @@
 
 Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.<BR>
+Portions Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
+
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -124,6 +127,30 @@ typedef struct {
 
 #endif  // defined (MDE_CPU_AARCH64)
 
+#if defined (MDE_CPU_RISCV64)
+///
+/// The RISC-V architecture context buffer used by SetJump() and LongJump().
+///
+typedef struct {
+  UINT64                            RA;
+  UINT64                            S0;
+  UINT64                            S1;
+  UINT64                            S2;
+  UINT64                            S3;
+  UINT64                            S4;
+  UINT64                            S5;
+  UINT64                            S6;
+  UINT64                            S7;
+  UINT64                            S8;
+  UINT64                            S9;
+  UINT64                            S10;
+  UINT64                            S11;
+  UINT64                            SP;
+} BASE_LIBRARY_JUMP_BUFFER;
+
+#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 8
+
+#endif // defined (MDE_CPU_RISCV64)
 
 //
 // String Services
@@ -189,7 +216,6 @@ StrnSizeS (
 
   If Destination is not aligned on a 16-bit boundary, then ASSERT().
   If Source is not aligned on a 16-bit boundary, then ASSERT().
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -225,7 +251,6 @@ StrCpyS (
 
   If Length > 0 and Destination is not aligned on a 16-bit boundary, then ASSERT().
   If Length > 0 and Source is not aligned on a 16-bit boundary, then ASSERT().
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -263,7 +288,6 @@ StrnCpyS (
 
   If Destination is not aligned on a 16-bit boundary, then ASSERT().
   If Source is not aligned on a 16-bit boundary, then ASSERT().
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -303,7 +327,6 @@ StrCatS (
 
   If Destination is not aligned on a 16-bit boundary, then ASSERT().
   If Source is not aligned on a 16-bit boundary, then ASSERT().
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -350,12 +373,7 @@ StrnCatS (
   be ignored. Then, the function stops at the first character that is a not a
   valid decimal character or a Null-terminator, whichever one comes first.
 
-  If String is NULL, then ASSERT().
-  If Data is NULL, then ASSERT().
   If String is not aligned in a 16-bit boundary, then ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
 
   If String has no valid decimal digits in the above format, then 0 is stored
   at the location pointed to by Data.
@@ -406,12 +424,7 @@ StrDecimalToUintnS (
   be ignored. Then, the function stops at the first character that is a not a
   valid decimal character or a Null-terminator, whichever one comes first.
 
-  If String is NULL, then ASSERT().
-  If Data is NULL, then ASSERT().
   If String is not aligned in a 16-bit boundary, then ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
 
   If String has no valid decimal digits in the above format, then 0 is stored
   at the location pointed to by Data.
@@ -467,12 +480,7 @@ StrDecimalToUint64S (
   the first character that is a not a valid hexadecimal character or NULL,
   whichever one comes first.
 
-  If String is NULL, then ASSERT().
-  If Data is NULL, then ASSERT().
   If String is not aligned in a 16-bit boundary, then ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
 
   If String has no valid hexadecimal digits in the above format, then 0 is
   stored at the location pointed to by Data.
@@ -528,12 +536,7 @@ StrHexToUintnS (
   the first character that is a not a valid hexadecimal character or NULL,
   whichever one comes first.
 
-  If String is NULL, then ASSERT().
-  If Data is NULL, then ASSERT().
   If String is not aligned in a 16-bit boundary, then ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
 
   If String has no valid hexadecimal digits in the above format, then 0 is
   stored at the location pointed to by Data.
@@ -622,8 +625,6 @@ AsciiStrnSizeS (
 
   This function is similar as strcpy_s defined in C11.
 
-  If an error would be returned, then the function will also ASSERT().
-
   If an error is returned, then the Destination is unmodified.
 
   @param  Destination              A pointer to a Null-terminated Ascii string.
@@ -655,8 +656,6 @@ AsciiStrCpyS (
   Source, then Destination[Length] is always set to null.
 
   This function is similar as strncpy_s defined in C11.
-
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -691,8 +690,6 @@ AsciiStrnCpyS (
   null char) to the end of the string pointed to by Destination.
 
   This function is similar as strcat_s defined in C11.
-
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -729,8 +726,6 @@ AsciiStrCatS (
   set to null.
 
   This function is similar as strncat_s defined in C11.
-
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -776,12 +771,6 @@ AsciiStrnCatS (
   [decimal digits]. The running zero in the beginning of [decimal digits] will
   be ignored. Then, the function stops at the first character that is a not a
   valid decimal character or a Null-terminator, whichever one comes first.
-
-  If String is NULL, then ASSERT().
-  If Data is NULL, then ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and String contains more than
-  PcdMaximumAsciiStringLength Ascii characters, not including the
-  Null-terminator, then ASSERT().
 
   If String has no valid decimal digits in the above format, then 0 is stored
   at the location pointed to by Data.
@@ -831,12 +820,6 @@ AsciiStrDecimalToUintnS (
   [decimal digits]. The running zero in the beginning of [decimal digits] will
   be ignored. Then, the function stops at the first character that is a not a
   valid decimal character or a Null-terminator, whichever one comes first.
-
-  If String is NULL, then ASSERT().
-  If Data is NULL, then ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and String contains more than
-  PcdMaximumAsciiStringLength Ascii characters, not including the
-  Null-terminator, then ASSERT().
 
   If String has no valid decimal digits in the above format, then 0 is stored
   at the location pointed to by Data.
@@ -891,12 +874,6 @@ AsciiStrDecimalToUint64S (
   character that is a not a valid hexadecimal character or Null-terminator,
   whichever on comes first.
 
-  If String is NULL, then ASSERT().
-  If Data is NULL, then ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and String contains more than
-  PcdMaximumAsciiStringLength Ascii characters, not including the
-  Null-terminator, then ASSERT().
-
   If String has no valid hexadecimal digits in the above format, then 0 is
   stored at the location pointed to by Data.
   If the number represented by String exceeds the range defined by UINTN, then
@@ -949,12 +926,6 @@ AsciiStrHexToUintnS (
   the first valid hexadecimal digit. Then, the function stops at the first
   character that is a not a valid hexadecimal character or Null-terminator,
   whichever on comes first.
-
-  If String is NULL, then ASSERT().
-  If Data is NULL, then ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and String contains more than
-  PcdMaximumAsciiStringLength Ascii characters, not including the
-  Null-terminator, then ASSERT().
 
   If String has no valid hexadecimal digits in the above format, then 0 is
   stored at the location pointed to by Data.
@@ -1506,15 +1477,7 @@ StrHexToUint64 (
   "::" can be used to compress one or more groups of X when X contains only 0.
   The "::" can only appear once in the String.
 
-  If String is NULL, then ASSERT().
-
-  If Address is NULL, then ASSERT().
-
   If String is not aligned in a 16-bit boundary, then ASSERT().
-
-  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
 
   If EndPointer is not NULL and Address is translated from String, a pointer
   to the character that stopped the scan is stored at the location pointed to
@@ -1567,15 +1530,7 @@ StrToIpv6Address (
   When /P is in the String, the function stops at the first character that is not
   a valid decimal digit character after P is converted.
 
-  If String is NULL, then ASSERT().
-
-  If Address is NULL, then ASSERT().
-
   If String is not aligned in a 16-bit boundary, then ASSERT().
-
-  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
 
   If EndPointer is not NULL and Address is translated from String, a pointer
   to the character that stopped the scan is stored at the location pointed to
@@ -1640,8 +1595,6 @@ StrToIpv4Address (
                   oo          Data4[48:55]
                   pp          Data4[56:63]
 
-  If String is NULL, then ASSERT().
-  If Guid is NULL, then ASSERT().
   If String is not aligned in a 16-bit boundary, then ASSERT().
 
   @param  String                   Pointer to a Null-terminated Unicode string.
@@ -1675,17 +1628,6 @@ StrToGuid (
   (Length / 2) bytes.
 
   If String is not aligned in a 16-bit boundary, then ASSERT().
-
-  If String is NULL, then ASSERT().
-
-  If Buffer is NULL, then ASSERT().
-
-  If Length is not multiple of 2, then ASSERT().
-
-  If PcdMaximumUnicodeStringLength is not zero and Length is greater than
-  PcdMaximumUnicodeStringLength, then ASSERT().
-
-  If MaxBufferSize is less than (Length / 2), then ASSERT().
 
   @param  String                   Pointer to a Null-terminated Unicode string.
   @param  Length                   The number of Unicode characters to decode.
@@ -1777,7 +1719,6 @@ UnicodeStrToAsciiStr (
   the upper 8 bits, then ASSERT().
 
   If Source is not aligned on a 16-bit boundary, then ASSERT().
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -1824,7 +1765,6 @@ UnicodeStrToAsciiStrS (
   If any Unicode characters in Source contain non-zero value in the upper 8
   bits, then ASSERT().
   If Source is not aligned on a 16-bit boundary, then ASSERT().
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -2388,10 +2328,6 @@ AsciiStrHexToUint64 (
   "::" can be used to compress one or more groups of X when X contains only 0.
   The "::" can only appear once in the String.
 
-  If String is NULL, then ASSERT().
-
-  If Address is NULL, then ASSERT().
-
   If EndPointer is not NULL and Address is translated from String, a pointer
   to the character that stopped the scan is stored at the location pointed to
   by EndPointer.
@@ -2442,10 +2378,6 @@ AsciiStrToIpv6Address (
 
   When /P is in the String, the function stops at the first character that is not
   a valid decimal digit character after P is converted.
-
-  If String is NULL, then ASSERT().
-
-  If Address is NULL, then ASSERT().
 
   If EndPointer is not NULL and Address is translated from String, a pointer
   to the character that stopped the scan is stored at the location pointed to
@@ -2508,9 +2440,6 @@ AsciiStrToIpv4Address (
                   oo          Data4[48:55]
                   pp          Data4[56:63]
 
-  If String is NULL, then ASSERT().
-  If Guid is NULL, then ASSERT().
-
   @param  String                   Pointer to a Null-terminated ASCII string.
   @param  Guid                     Pointer to the converted GUID.
 
@@ -2540,17 +2469,6 @@ AsciiStrToGuid (
   The function decodes every two hexadecimal digit characters as one byte. The
   decoding stops after Length of characters and outputs Buffer containing
   (Length / 2) bytes.
-
-  If String is NULL, then ASSERT().
-
-  If Buffer is NULL, then ASSERT().
-
-  If Length is not multiple of 2, then ASSERT().
-
-  If PcdMaximumAsciiStringLength is not zero and Length is greater than
-  PcdMaximumAsciiStringLength, then ASSERT().
-
-  If MaxBufferSize is less than (Length / 2), then ASSERT().
 
   @param  String                   Pointer to a Null-terminated ASCII string.
   @param  Length                   The number of ASCII characters to decode.
@@ -2632,7 +2550,6 @@ AsciiStrToUnicodeStr (
   equal or greater than ((AsciiStrLen (Source) + 1) * sizeof (CHAR16)) in bytes.
 
   If Destination is not aligned on a 16-bit boundary, then ASSERT().
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then the Destination is unmodified.
 
@@ -2678,7 +2595,6 @@ AsciiStrToUnicodeStrS (
   ((MIN(AsciiStrLen(Source), Length) + 1) * sizeof (CHAR8)) in bytes.
 
   If Destination is not aligned on a 16-bit boundary, then ASSERT().
-  If an error would be returned, then the function will also ASSERT().
 
   If an error is returned, then Destination and DestinationLength are
   unmodified.
@@ -2972,6 +2888,32 @@ PathCleanUpDirectories(
 **/
 #define INITIALIZE_LIST_HEAD_VARIABLE(ListHead)  {&(ListHead), &(ListHead)}
 
+/**
+  Iterates over each node in a doubly linked list using each node's forward link.
+
+  @param  Entry     A pointer to a list node used as a loop cursor during iteration
+  @param  ListHead  The head node of the doubly linked list
+
+**/
+#define BASE_LIST_FOR_EACH(Entry, ListHead)    \
+  for(Entry = (ListHead)->ForwardLink; Entry != (ListHead); Entry = Entry->ForwardLink)
+
+/**
+  Iterates over each node in a doubly linked list using each node's forward link
+  with safety against node removal.
+
+  This macro uses NextEntry to temporarily store the next list node so the node
+  pointed to by Entry may be deleted in the current loop iteration step and
+  iteration can continue from the node pointed to by NextEntry.
+
+  @param  Entry     A pointer to a list node used as a loop cursor during iteration
+  @param  NextEntry A pointer to a list node used to temporarily store the next node
+  @param  ListHead  The head node of the doubly linked list
+
+**/
+#define BASE_LIST_FOR_EACH_SAFE(Entry, NextEntry, ListHead)            \
+  for(Entry = (ListHead)->ForwardLink, NextEntry = Entry->ForwardLink;\
+      Entry != (ListHead); Entry = NextEntry, NextEntry = Entry->ForwardLink)
 
 /**
   Checks whether FirstEntry and SecondEntry are part of the same doubly-linked
@@ -5387,10 +5329,19 @@ typedef union {
     UINT32  OSXMMEXCPT:1;   ///< Operating System Support for
                             ///< Unmasked SIMD Floating Point
                             ///< Exceptions.
-    UINT32  Reserved_2:1;   ///< Reserved.
+    UINT32  UMIP:1;         ///< User-Mode Instruction Prevention.
     UINT32  LA57:1;         ///< Linear Address 57bit.
-    UINT32  VMXE:1;         ///< VMX Enable
-    UINT32  Reserved_1:18;  ///< Reserved.
+    UINT32  VMXE:1;         ///< VMX Enable.
+    UINT32  SMXE:1;         ///< SMX Enable.
+    UINT32  Reserved_3:1;   ///< Reserved.
+    UINT32  FSGSBASE:1;     ///< FSGSBASE Enable.
+    UINT32  PCIDE:1;        ///< PCID Enable.
+    UINT32  OSXSAVE:1;      ///< XSAVE and Processor Extended States Enable.
+    UINT32  Reserved_4:1;   ///< Reserved.
+    UINT32  SMEP:1;         ///< SMEP Enable.
+    UINT32  SMAP:1;         ///< SMAP Enable.
+    UINT32  PKE:1;          ///< Protection-Key Enable.
+    UINT32  Reserved_5:9;   ///< Reserved.
   } Bits;
   UINTN     UintN;
 } IA32_CR4;
