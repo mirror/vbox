@@ -1150,6 +1150,11 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &fEnableUX); H();
         InsertConfigInteger(pHM, "EnableUX", fEnableUX);
 
+        /* Virtualized VMSAVE/VMLOAD (AMD-V) */
+        BOOL fVirtVmsaveVmload = true;
+        hrc = host->GetProcessorFeature(ProcessorFeature_VirtVmsaveVmload, &fVirtVmsaveVmload);     H();
+        InsertConfigInteger(pHM, "SvmVirtVmsaveVmload", fVirtVmsaveVmload);
+
         /* Indirect branch prediction boundraries. */
         BOOL fIBPBOnVMExit = false;
         hrc = pMachine->GetCPUProperty(CPUPropertyType_IBPBOnVMExit, &fIBPBOnVMExit); H();
