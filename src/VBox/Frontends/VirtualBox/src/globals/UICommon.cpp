@@ -3130,18 +3130,19 @@ void UICommon::prepareStorageMenu(QMenu &menu,
             continue;
         /* Make sure recent-medium usage is unique: */
         bool fIsRecentMediumUsed = false;
-        foreach (const CMediumAttachment &otherAttachment, comAttachments)
-        {
-            if (otherAttachment != comCurrentAttachment)
+        if (enmMediumType != UIMediumDeviceType_DVD)
+            foreach (const CMediumAttachment &otherAttachment, comAttachments)
             {
-                const CMedium &comOtherMedium = otherAttachment.GetMedium();
-                if (!comOtherMedium.isNull() && comOtherMedium.GetLocation() == strRecentMediumLocation)
+                if (otherAttachment != comCurrentAttachment)
                 {
-                    fIsRecentMediumUsed = true;
-                    break;
+                    const CMedium &comOtherMedium = otherAttachment.GetMedium();
+                    if (!comOtherMedium.isNull() && comOtherMedium.GetLocation() == strRecentMediumLocation)
+                    {
+                        fIsRecentMediumUsed = true;
+                        break;
+                    }
                 }
             }
-        }
         /* If recent-medium usage is unique: */
         if (!fIsRecentMediumUsed)
         {
