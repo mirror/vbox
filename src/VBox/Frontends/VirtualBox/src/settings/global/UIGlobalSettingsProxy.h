@@ -23,16 +23,17 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIGlobalSettingsProxy.gen.h"
 #include "VBoxUtils.h"
 
 /* Forward declarations: */
+class QLabel;
+class QRadioButton;
+class QILineEdit;
 struct UIDataSettingsGlobalProxy;
 typedef UISettingsCache<UIDataSettingsGlobalProxy> UISettingsCacheGlobalProxy;
 
 /** Global settings: Proxy page. */
-class SHARED_LIBRARY_STUFF UIGlobalSettingsProxy : public UISettingsPageGlobal,
-                                                   public Ui::UIGlobalSettingsProxy
+class SHARED_LIBRARY_STUFF UIGlobalSettingsProxy : public UISettingsPageGlobal
 {
     Q_OBJECT;
 
@@ -74,6 +75,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares wıdgets. */
+    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
 
@@ -82,6 +85,16 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalProxy *m_pCache;
+
+    /** @name Widgets
+     * @{ */
+       QRadioButton *m_pRadioProxyAuto;
+       QRadioButton *m_pRadioProxyDisabled;
+       QRadioButton *m_pRadioProxyEnabled;
+       QILineEdit *m_pHostEditor;
+       QLabel *m_pHostLabel;
+       QWidget *m_pContainerProxy;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsProxy_h */
