@@ -107,6 +107,9 @@ static PCPDMDEVREGR0 g_apVBoxDDR0DevRegs[] =
 #ifdef VBOX_WITH_NEW_LPC_DEVICE
     &g_DeviceLPC,
 #endif
+#ifdef VBOX_WITH_IOMMU_AMD
+    &g_DeviceIommuAmd,
+#endif
 };
 
 /**
