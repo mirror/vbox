@@ -815,6 +815,16 @@ class VisualCPPState
       checkRegistry = m_bldFound
    end function
 
+   public function checkProgItems(strVersionYear)
+      if m_blnFound = False then
+         dim strCandidate
+         for each strCandidate in CollectFromProgramItemLinks(GetRef("VisualCPPCallback"), strVersionYear)
+            check strCandidate, ""
+         next
+      end if
+      checkProgItems = m_blnFound
+   end function
+
    public function checkInternal
       check g_strPathDev & "/win.amd64/vcc/v14.2",  ""
       check g_strPathDev & "/win.amd64/vcc/v14.1",  ""
@@ -824,6 +834,26 @@ class VisualCPPState
       checkInternal = m_blnFound
    end function
 end class
+
+function VisualCPPCallback(ByRef arrStrings, cStrings, ByRef strVersionYear)
+   VisualCPPCallback = ""
+   ' We're looking for items with three strings like this:
+   '   C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2019\Visual Studio Tools\VC\x64 Native Tools Command Prompt for VS 2019.lnk
+   '   C:\Windows\system32\cmd.exe
+   '   /k "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
+   if cStrings >= 3 then
+      if InStr(1, arrStrings(0), strVersionYear) > 0 then
+         dim strTail : strTail = "\Auxiliary\Build\vcvars64.bat"""
+         dim str     : str     = arrStrings(UBound(arrStrings))
+         if StrComp(Right(str, Len(strTail)), strTail, vbTextCompare) = 0 then
+            dim offColon : offColon = InStr(1, str, ":")
+            if offColon > 1 then
+               VisualCPPCallback = Mid(str, offColon - 1, Len(str) - (offColon - 2) - Len(strTail))
+            end if
+         end if
+      end if
+   end if
+end function
 
 
 ''
@@ -839,10 +869,12 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon)
    set objState = new VisualCPPState
    objState.check strOptVC, strOptVCCommon
    if g_blnInternalFirst = True then objState.checkInternal
+   objState.checkProgItems "2019"
    objState.checkProgFiles "Microsoft Visual Studio\2019\BuildTools\VC"
    objState.checkProgFiles "Microsoft Visual Studio\2019\Professional\VC"
    objState.checkProgFiles "Microsoft Visual Studio\2019\Community\VC"
    objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\16.0",             "VC", ""        ' doesn't work.
+   objState.checkProgItems "2017"
    objState.checkProgFiles "Microsoft Visual Studio\2017\BuildTools\VC"
    objState.checkProgFiles "Microsoft Visual Studio\2017\Professional\VC"
    objState.checkProgFiles "Microsoft Visual Studio\2017\Community\VC"
@@ -2061,10 +2093,11 @@ function Main
    end if
    CheckForQt           strOptQt5, strOptQt5Infix
    CheckForPython       strOptPython
-
    CfgPrintAssign "VBOX_WITH_LIBVPX",  "" '' @todo look for libvpx 1.1.0+
    CfgPrintAssign "VBOX_WITH_LIBOPUS", "" '' @todo look for libopus 1.2.1+
                                           '' @todo look for yasm
+                                          '' @todo look for nasm
+
    EnvPrintAppend "PATH", DosSlashes(g_strPath & "\tools\win." & g_strHostArch & "\bin"), ";"
    if g_strHostArch = "amd64" then
       EnvPrintAppend "PATH", DosSlashes(g_strPath & "\tools\win.x86\bin"), ";"
