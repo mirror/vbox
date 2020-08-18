@@ -393,16 +393,16 @@ end sub
 ''
 ' Generic helper for looking for a tools under g_strPathDev.
 '
-' The callback function takes the '.../tools/win.arch/tool/version' dir as
-' argument and returns an non-empty string if it was found suitable.
+' The callback function takes the '.../tools/win.arch/tool/version' dir and
+' varUser as arguments, returning an non-empty string if it was found suitable.
 '
-function SearchToolsEx(strTool, strVerPrefix, ByRef fnCallback, ByRef arrToolsDirs)
+function SearchToolsEx(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser, ByRef arrToolsDirs)
    dim strToolsDir, arrDirs, strDir
    SearchToolsEx = ""
    for each strToolsDir in arrToolsDirs
       arrDirs = GetSubdirsStartingWithRVerSorted(strToolsDir, strVerPrefix)
       for each strDir in arrDirs
-         SearchToolsEx = fnCallback(strToolsDir & "/" & strDir)
+         SearchToolsEx = fnCallback(strToolsDir & "/" & strDir, varUser)
          if SearchToolsEx <> "" then
             exit function
          end if
@@ -411,24 +411,24 @@ function SearchToolsEx(strTool, strVerPrefix, ByRef fnCallback, ByRef arrToolsDi
 end function
 
 '' Search under g_strPathDev for a tool, target arch first.
-function SearchTargetTools(strTool, strVerPrefix, ByRef fnCallback)
-   SearchTargetTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, _
+function SearchTargetTools(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser)
+   SearchTargetTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, _
                                      Array(g_strPathDev & "/win." & g_strTargetArch & "/" & strTool, _
                                            g_strPathDev & "/win.x86/" & strTool, _
                                            g_strPathDev & "/win.amd64/" & strTool))
 end function
 
 '' Search under g_strPathDev for a tool, host arch first.
-function SearchHostTools(strTool, strVerPrefix, ByRef fnCallback)
-   SearchHostTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, _
+function SearchHostTools(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser)
+   SearchHostTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, _
                                    Array(g_strPathDev & "/win." & g_strHostArch & "/" & strTool, _
                                          g_strPathDev & "/win.x86/" & strTool, _
                                          g_strPathDev & "/win.amd64/" & strTool))
 end function
 
 '' Search under g_strPathDev for a tool, common dir first.
-function SearchCommonTools(strTool, strVerPrefix, ByRef fnCallback)
-   SearchCommonTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, _
+function SearchCommonTools(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser)
+   SearchCommonTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, _
                                      Array(g_strPathDev & "/common/" & strTool, _
                                            g_strPathDev & "/win." & g_strHostArch & "/" & strTool, _
                                            g_strPathDev & "/win.x86/" & strTool, _
@@ -1344,29 +1344,49 @@ end function
 ' Locating yasm.exe
 '
 sub CheckForYasm(strOptYasm)
-   dim strPathYasm
+   dim strPathYasm, strVersion
    PrintHdr "yasm"
 
-   strPathYasm = CheckForYasmSub(strOptYasm)
-   if strPathYasm = ""                                then strPathYasm = CheckForYasmSub(PathStripFilename(strOptYasm))
-   if strPathYasm = "" and g_blnInternalFirst = true  then strPathYasm = SearchHostTools("yasm", "v", GetRef("CheckForYasmSub"))
-   if strPathYasm = ""                                then strPathYasm = CheckForYasmSub(PathStripFilename(Which("yasm.exe")))
-   if strPathYasm = "" and g_blnInternalFirst = false then strPathYasm = SearchHostTools("yasm", "v", GetRef("CheckForYasmSub"))
+   strVersion = ""
+   strPathYasm = CheckForYasmSub(strOptYasm, strVersion)
+   if strPathYasm = "" then strPathYasm = CheckForYasmSub(PathStripFilename(strOptYasm), strVersion)
+   if strPathYasm = "" and g_blnInternalFirst = true then
+      strPathYasm = SearchHostTools("yasm", "v", GetRef("CheckForYasmSub"), strVersion)
+   end if
+   if strPathYasm = "" then strPathYasm = CheckForYasmSub(PathStripFilename(Which("yasm.exe")), strVersion)
+   if strPathYasm = "" and g_blnInternalFirst = false then
+      strPathYasm = SearchHostTools("yasm", "v", GetRef("CheckForYasmSub"), strVersion)
+   end if
 
    if strPathYasm = "" then
       PrintResultMsg "yasm", "not found"
       MsgError "Unable to locate yasm!"
    else
       CfgPrintAssign "PATH_TOOL_YASM", strPathYasm
-      PrintResult "yasm", strPathYasm
+      PrintResult "yasm v" & strVersion, strPathYasm
    end if
 end sub
 
-function CheckForYasmSub(strPathYasm)
+function CheckForYasmSub(strPathYasm, ByRef strVersion)
    CheckForYasmSub = ""
    if strPathYasm <> "" then
       if LogFileExists(strPathYasm, "yasm.exe") then
-         CheckForYasmSub = UnixSlashes(PathAbs(strPathYasm))
+         dim strOutput
+         if Shell("""" & DosSlashes(strPathYasm & "\yasm.exe") & """ --version", True, strOutput) = 0 then
+            dim strPreamble : strPreamble = "yasm"
+            dim strVer      : strVer      = Trim(StrGetFirstLine(strOutput))
+            if StrComp(Left(strVer, Len(strPreamble)), strPreamble, vbTextCompare) = 0 then
+               strVersion = StrGetFirstWord(Trim(Mid(strVer, Len(strPreamble) + 1)))
+               if StrVersionCompare(strVersion, "1.3.0") >= 0 and strVersion <> "" then
+                  LogPrint "Found yasm version: " & strVer
+                  CheckForYasmSub = UnixSlashes(PathAbs(strPathYasm))
+               else
+                  LogPrint "yasm version is older than 1.3.0: " & strVersion
+               end if
+            else
+               LogPrint "Not yasm: " & strVer
+            end if
+         end if
       end if
    end if
 end function
@@ -1376,27 +1396,31 @@ end function
 ' Locating nasm.exe
 '
 sub CheckForNasm(strOptNasm)
-   dim strPathNasm
+   dim strPathNasm, strVersion
    PrintHdr "nasm"
 
-   strPathNasm = CheckForNasmSub(strOptNasm)
-   if strPathNasm = "" then strPathNasm = CheckForNasmSub(PathStripFilename(strOptNasm))
-   if strPathNasm = "" and g_blnInternalFirst = true  then strPathNasm = SearchHostTools("nasm", "v", GetRef("CheckForNasmSub"))
-   if strPathNasm = "" then strPathNasm = CheckForNasmSub(LogRegGetString("HKLM\SOFTWARE\nasm\"))
-   if strPathNasm = "" then strPathNasm = CheckForNasmSub(LogRegGetString("HKCU\SOFTWARE\nasm\"))
+   strPathNasm = CheckForNasmSub(strOptNasm, strVersion)
+   if strPathNasm = "" then strPathNasm = CheckForNasmSub(PathStripFilename(strOptNasm), strVersion)
+   if strPathNasm = "" and g_blnInternalFirst = true then
+      strPathNasm = SearchHostTools("nasm", "v", GetRef("CheckForNasmSub"), strVersion)
+   end if
+   if strPathNasm = "" then strPathNasm = CheckForNasmSub(LogRegGetString("HKLM\SOFTWARE\nasm\"), strVersion)
+   if strPathNasm = "" then strPathNasm = CheckForNasmSub(LogRegGetString("HKCU\SOFTWARE\nasm\"), strVersion)
    if strPathNasm = "" then
       for each strCandidate in CollectFromProgramItemLinks(GetRef("NasmProgramItemCallback"), strPathNasm)
-         strPathNasm = CheckForNasmSub(strCandidate)
+         strPathNasm = CheckForNasmSub(strCandidate, strVersion)
       next
    end if
-   if strPathNasm = "" then strPathNasm = CheckForNasmSub(PathStripFilename(Which("nasm.exe")))
-   if strPathNasm = "" and g_blnInternalFirst = false then strPathNasm = SearchHostTools("nasm", "v", GetRef("CheckForNasmSub"))
+   if strPathNasm = "" then strPathNasm = CheckForNasmSub(PathStripFilename(Which("nasm.exe")), strVersion)
+   if strPathNasm = "" and g_blnInternalFirst = false then
+      strPathNasm = SearchHostTools("nasm", "v", GetRef("CheckForNasmSub"), strVersion)
+   end if
 
    if strPathNasm = "" then
       PrintResultMsg "nasm", "not found"
    else
       CfgPrintAssign "PATH_TOOL_NASM", strPathNasm
-      PrintResult "nasm", strPathNasm
+      PrintResult "nasm v" & strVersion, strPathNasm
    end if
 end sub
 
@@ -1412,11 +1436,26 @@ function NasmProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
    end if
 end function
 
-function CheckForNasmSub(strPathNasm)
+function CheckForNasmSub(strPathNasm, ByRef strVersion)
    CheckForNasmSub = ""
    if strPathNasm <> "" then
       if LogFileExists(strPathNasm, "nasm.exe") then
-         CheckForNasmSub = UnixSlashes(PathAbs(strPathNasm))
+         dim strOutput
+         if Shell("""" & DosSlashes(strPathNasm & "\nasm.exe") & """ -version", True, strOutput) = 0 then
+            dim strPreamble : strPreamble = "NASM version"
+            dim strVer      : strVer      = Trim(StrGetFirstLine(strOutput))
+            if StrComp(Left(strVer, Len(strPreamble)), strPreamble, vbTextCompare) = 0 then
+               strVersion = StrGetFirstWord(Trim(Mid(strVer, Len(strPreamble) + 1)))
+               if StrVersionCompare(strVersion, "2.12.0") >= 0 and strVersion <> "" then
+                  LogPrint "Found nasm version: " & strVersion
+                  CheckForNasmSub = UnixSlashes(PathAbs(strPathNasm))
+               else
+                  LogPrint "nasm version is older than 2.12.0: " & strVersion
+               end if
+            else
+               LogPrint "Not nasm: " & strVer
+            end if
+         end if
       end if
    end if
 end function
@@ -1426,22 +1465,22 @@ end function
 ' Locating OpenWatcom 1.9
 '
 sub CheckForOpenWatcom(strOptOpenWatcom)
-   dim strPathOW, strCandidate
+   dim strPathOW, strCandidate, strVersion
    PrintHdr "OpenWatcom"
 
-   strPathOW = CheckForOpenWatcomSub(strOptOpenWatcom)
+   strPathOW = CheckForOpenWatcomSub(strOptOpenWatcom, strVersion)
    if strPathOW = "" and g_blnInternalFirst = true then
-      strPathOW = SearchCommonTools("openwatcom", "v", GetRef("CheckForOpenWatcomSub"))
+      strPathOW = SearchCommonTools("openwatcom", "v", GetRef("CheckForOpenWatcomSub"), strVersion)
    end if
-   if strPathOW = "" then strPathOW = CheckForOpenWatcomSub(EnvGet("WATCOM"))
-   if strPathOW = "" then strPathOW = CheckForOpenWatcomSub(PathParent(PathStripFilename(Which("wcc386.exe"))))
    if strPathOW = "" then
       for each strCandidate in CollectFromProgramItemLinks(GetRef("OpenWatcomProgramItemCallback"), strPathOW)
-         if strPathOW = "" then strPathOW = CheckForOpenWatcomSub(strCandidate)
+         if strPathOW = "" then strPathOW = CheckForOpenWatcomSub(strCandidate, strVersion)
       next
    end if
+   if strPathOW = "" then strPathOW = CheckForOpenWatcomSub(EnvGet("WATCOM"), strVersion)
+   if strPathOW = "" then strPathOW = CheckForOpenWatcomSub(PathParent(PathStripFilename(Which("wcc386.exe"))), strVersion)
    if strPathOW = "" and g_blnInternalFirst = false then
-      strPathOW = SearchCommonTools("openwatcom", "v", GetRef("CheckForOpenWatcomSub"))
+      strPathOW = SearchCommonTools("openwatcom", "v", GetRef("CheckForOpenWatcomSub"), strVersion)
    end if
 
    if strPathOW = "" then
@@ -1452,7 +1491,10 @@ sub CheckForOpenWatcom(strOptOpenWatcom)
 
    CfgPrintAssign "VBOX_WITH_OPEN_WATCOM", "1"
    CfgPrintAssign "PATH_TOOL_OPENWATCOM", strPathOW
-   PrintResult "OpenWatcom", strPathOW
+   PrintResult "OpenWatcom v" & strVersion, strPathOW
+   if StrVersionCompare(strVersion, "2.0") >= 0 then
+      MsgWarning "We only test building with OpenWatcom 1.9."
+   end if
 end sub
 
 function OpenWatcomProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
@@ -1467,7 +1509,7 @@ function OpenWatcomProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnus
    end if
 end function
 
-function CheckForOpenWatcomSub(strPathOW)
+function CheckForOpenWatcomSub(strPathOW, ByRef strVersion)
    CheckForOpenWatcomSub = ""
    if strPathOW <> "" then
       LogPrint "Trying: " & strPathOW
@@ -1484,8 +1526,23 @@ function CheckForOpenWatcomSub(strPathOW)
           and LogFileExists(strPathOW, "binnt/wasm.exe") _
           and LogFileExists(strPathOW, "h/stdarg.h") _
          then
-            '' @todo check the version!
-            CheckForOpenWatcomSub = UnixSlashes(PathAbs(strPathOW))
+            ' Some wcl/wcl386 option parsing quirk allows us to specify /whatever
+            ' and just get the logo text and exit code 0.  We use /y as it's a valid option.
+            dim strOutput
+            if Shell("""" & DosSlashes(strPathOW & "\binnt\wcl.exe") & """ /y", True, strOutput) = 0 then
+               dim strPreamble : strPreamble = "Open Watcom C/C++16 Compile and Link Utility Version"
+               strOutput = StrGetFirstLine(strOutput)
+               if StrStartsWithI(strOutput, strPreamble) then
+                  strVersion = StrGetFirstWord(Trim(Mid(strOutput, Len(strPreamble) + 1)))
+                  if StrVersionCompare(strVersion, "1.9") >= 0 then
+                     CheckForOpenWatcomSub = UnixSlashes(PathAbs(strPathOW))
+                  else
+                     LogPrint "OpenWatcom version id older than 1.9: " & strVersion
+                  end if
+               else
+                  LogPrint "Not OpenWatcom: " & strOutput
+               end if
+            end if
          end if
       end if
    end if

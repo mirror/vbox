@@ -565,6 +565,67 @@ function StrVersionCompare(str1, str2)
 end function
 
 
+''
+' Returns the first list of the given string.
+function StrGetFirstLine(str)
+   dim off
+   off = InStr(1, str, Chr(10))
+   if off <= 0 then off = InStr(1, str, Chr(13))
+   if off > 0 then
+      StrGetFirstLine = Mid(str, 1, off)
+   else
+      StrGetFirstLine = str
+   end if
+end function
+
+
+''
+' Returns the first word in the given string.
+'
+' Only recognizes space, tab, newline and carriage return as word separators.
+'
+function StrGetFirstWord(str)
+   dim strSep, offWord, offEnd, offEnd2, strSeparators
+   strSeparators = " " & Chr(9) & Chr(10) & Chr(13)
+
+   ' Skip leading separators.
+   for offWord = 1 to Len(str)
+      if InStr(1, strSeparators, Mid(str, offWord, 1)) < 1 then exit for
+   next
+
+   ' Find the end.
+   offEnd = Len(str) + 1
+   for offSep = 1 to Len(strSeparators)
+      offEnd2 = InStr(offWord, str, Mid(strSeparators, offSep, 1))
+      if offEnd2 > 0 and offEnd2 < offEnd then offEnd = offEnd2
+   next
+
+   StrGetFirstWord = Mid(str, offWord, offEnd - offWord)
+end function
+
+
+''
+' Checks if the string starts with the given prefix (case sensitive).
+function StrStartsWith(str, strPrefix)
+   if len(str) >= Len(strPrefix) then
+      StrStartsWith = (StrComp(Left(str, Len(strPrefix)), strPrefix, vbBinaryCompare) = 0)
+   else
+      StrStartsWith = false
+   end if
+end function
+
+
+''
+' Checks if the string starts with the given prefix, case insenstive edition.
+function StrStartsWithI(str, strPrefix)
+   if len(str) >= Len(strPrefix) then
+      StrStartsWithI = (StrComp(Left(str, Len(strPrefix)), strPrefix, vbTextCompare) = 0)
+   else
+      StrStartsWithI = false
+   end if
+end function
+
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 '  Helpers: Arrays                                                                                                               '
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -1050,6 +1111,7 @@ sub SelfTest
    for i = 1 to Len(str)
       if CharIsDigit(Mid(str, i, 1)) <> False then MsgFatal "SelfTest failed: CharIsDigit("&Mid(str, i, 1)&")"
    next
+
    if StrVersionCompare("1234", "1234") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #1"
    if StrVersionCompare("1", "1") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #2"
    if StrVersionCompare("2", "1") <= 0 then MsgFatal "SelfTest failed: StrVersionCompare #3"
@@ -1063,5 +1125,13 @@ sub SelfTest
    if StrVersionCompare("v1.2.3", "v1.03.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #11"
    if StrVersionCompare("v1.2.4", "v1.23.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #12"
    if StrVersionCompare("v10.0.17163", "v10.00.18363") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #13"
+   if StrVersionCompare("n 2.15.0", "2.12.0") <= 0 then MsgFatal "SelfTest failed: StrVersionCompare #14"
+
+   if StrGetFirstWord("1") <> "1" then MsgFatal "SelfTest: StrGetFirstWord #1"
+   if StrGetFirstWord(" 1 ") <> "1" then MsgFatal "SelfTest: StrGetFirstWord #2"
+   if StrGetFirstWord(" 1  2 ") <> "1" then MsgFatal "SelfTest: StrGetFirstWord #3"
+   if StrGetFirstWord("1 2") <> "1" then MsgFatal "SelfTest: StrGetFirstWord #4"
+   if StrGetFirstWord("1234 5") <> "1234" then MsgFatal "SelfTest: StrGetFirstWord #5"
+   if StrGetFirstWord("  ") <> "" then MsgFatal "SelfTest: StrGetFirstWord #6"
 end sub
 
