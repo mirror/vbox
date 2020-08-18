@@ -251,7 +251,7 @@ end function
 ''
 ' Returns a reverse version sorted array of subfolder names that starts with the given string.
 function GetSubdirsStartingWithRVerSorted(strFolder, strStartingWith)
-   GetSubdirsStartingWithRSortedVersion = ArrayRVerSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
+   GetSubdirsStartingWithRVerSorted = ArrayRVerSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
 end function
 
 
@@ -781,7 +781,7 @@ function RegGetString(strName)
       On Error Resume Next
       set OutParms = g_objReg.ExecMethod_("GetStringValue", InParms, , g_objRegCtx)
       if OutParms.ReturnValue = 0 then
-         if OutParms.sValue <> Null then
+         if not IsNull(OutParms.sValue) then
             RegGetString = OutParms.sValue
          end if
       end if
