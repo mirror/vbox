@@ -23,16 +23,18 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIGlobalSettingsExtension.gen.h"
 
 /* Forward declarations: */
+class QITreeWidget;
+class QTreeWidgetItem;
+class QILabelSeparator;
+class UIToolBar;
 struct UIDataSettingsGlobalExtension;
 struct UIDataSettingsGlobalExtensionItem;
 typedef UISettingsCache<UIDataSettingsGlobalExtension> UISettingsCacheGlobalExtension;
 
 /** Global settings: Extension page. */
-class SHARED_LIBRARY_STUFF UIGlobalSettingsExtension : public UISettingsPageGlobal,
-                                                       public Ui::UIGlobalSettingsExtension
+class SHARED_LIBRARY_STUFF UIGlobalSettingsExtension : public UISettingsPageGlobal
 {
     Q_OBJECT;
 
@@ -78,6 +80,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
 
@@ -91,6 +95,12 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalExtension *m_pCache;
+    /** @name Widgets
+     * @{ */
+       QITreeWidget *m_pPackagesTree;
+       QILabelSeparator *m_pEntensionLabel;
+       UIToolBar *m_pPackagesToolbar;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsExtension_h */

@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QHeaderView>
+#include <QGridLayout>
 #include <QMenu>
 #ifdef VBOX_WS_WIN
 # include <QTextStream>
@@ -24,10 +25,13 @@
 
 /* GUI includes: */
 #include "QIFileDialog.h"
+#include "QILabelSeparator.h"
+#include "QITreeWidget.h"
 #include "UICommon.h"
 #include "UIGlobalSettingsExtension.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIToolBar.h"
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -170,6 +174,9 @@ private:
 UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     : m_pActionAdd(0), m_pActionRemove(0)
     , m_pCache(0)
+    , m_pPackagesTree(0)
+    , m_pEntensionLabel(0)
+    , m_pPackagesToolbar(0)
 {
     /* Prepare: */
     prepare();
@@ -242,8 +249,15 @@ void UIGlobalSettingsExtension::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsExtension::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIGlobalSettingsExtension::retranslateUi(this);
+    m_pEntensionLabel->setText(tr("&Extension Packages"));
+    QTreeWidgetItem *pTreeWidgetItem = m_pPackagesTree->headerItem();
+    if (pTreeWidgetItem)
+    {
+        pTreeWidgetItem->setText(2, tr("Version"));
+        pTreeWidgetItem->setText(1, tr("Name"));
+        pTreeWidgetItem->setText(0, tr("Active"));
+    }
+    m_pPackagesTree->setWhatsThis(tr("Lists all installed packages."));
 
     /* Translate actions: */
     m_pActionAdd->setText(tr("Add Package"));
@@ -407,8 +421,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
 
 void UIGlobalSettingsExtension::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsExtension::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalExtension;
@@ -453,6 +466,42 @@ void UIGlobalSettingsExtension::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIGlobalSettingsExtension::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIGlobalSettingsExtension"));
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+    m_pEntensionLabel = new QILabelSeparator();
+    m_pEntensionLabel->setObjectName(QStringLiteral("m_pEntensionLabel"));
+    pMainLayout->addWidget(m_pEntensionLabel, 0, 0, 1, 1);
+
+    QWidget *pExtensionPackContainer = new QWidget();
+    pExtensionPackContainer->setObjectName(QStringLiteral("pExtensionPackContainer"));
+    QHBoxLayout *pLayout1 = new QHBoxLayout(pExtensionPackContainer);
+    pLayout1->setSpacing(3);
+    pLayout1->setContentsMargins(0, 0, 0, 0);
+    pLayout1->setObjectName(QStringLiteral("pLayout1"));
+    m_pPackagesTree = new QITreeWidget(pExtensionPackContainer);
+    m_pPackagesTree->setObjectName(QStringLiteral("m_pPackagesTree"));
+    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pPackagesTree->sizePolicy().hasHeightForWidth());
+    m_pPackagesTree->setSizePolicy(sizePolicy);
+    m_pPackagesTree->setMinimumSize(QSize(0, 150));
+    m_pPackagesTree->setRootIsDecorated(false);
+    pLayout1->addWidget(m_pPackagesTree);
+
+    m_pPackagesToolbar = new UIToolBar(pExtensionPackContainer);
+    m_pPackagesToolbar->setObjectName(QStringLiteral("m_pPackagesToolbar"));
+    pLayout1->addWidget(m_pPackagesToolbar);
+
+    pMainLayout->addWidget(pExtensionPackContainer, 1, 0, 1, 1);
+    m_pEntensionLabel->setBuddy(m_pPackagesTree);
 }
 
 void UIGlobalSettingsExtension::cleanup()

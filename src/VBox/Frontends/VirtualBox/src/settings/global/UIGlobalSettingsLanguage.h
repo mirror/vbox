@@ -23,15 +23,17 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIGlobalSettingsLanguage.gen.h"
 
 /* Forward declartions: */
+class QILabelSeparator;
+class QIRichTextLabel;
+class QITreeWidget;
+class QTreeWidgetItem;
 struct UIDataSettingsGlobalLanguage;
 typedef UISettingsCache<UIDataSettingsGlobalLanguage> UISettingsCacheGlobalLanguage;
 
 /** Global settings: Language page. */
-class SHARED_LIBRARY_STUFF UIGlobalSettingsLanguage : public UISettingsPageGlobal,
-                                                      public Ui::UIGlobalSettingsLanguage
+class SHARED_LIBRARY_STUFF UIGlobalSettingsLanguage : public UISettingsPageGlobal
 {
     Q_OBJECT;
 
@@ -78,6 +80,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
 
@@ -92,6 +96,13 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalLanguage *m_pCache;
+
+    /** @name Widgets
+     * @{ */
+       QITreeWidget *m_pLanguageTree;
+       QILabelSeparator *m_pLanguageLabel;
+       QIRichTextLabel *m_pLanguageInfo;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsLanguage_h */

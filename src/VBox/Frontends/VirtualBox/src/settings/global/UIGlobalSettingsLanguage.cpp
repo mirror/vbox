@@ -18,10 +18,14 @@
 /* Qt includes: */
 #include <QDir>
 #include <QHeaderView>
+#include <QGridLayout>
 #include <QPainter>
 #include <QTranslator>
 
 /* GUI includes: */
+#include "QILabelSeparator.h"
+#include "QIRichTextLabel.h"
+#include "QITreeWidget.h"
 #include "UIGlobalSettingsLanguage.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
@@ -195,6 +199,9 @@ private:
 UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     : m_fPolished(false)
     , m_pCache(0)
+    , m_pLanguageTree(0)
+    , m_pLanguageLabel(0)
+    , m_pLanguageInfo(0)
 {
     /* Prepare: */
     prepare();
@@ -265,8 +272,18 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsLanguage::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIGlobalSettingsLanguage::retranslateUi(this);
+    m_pLanguageLabel->setText(tr("&Interface Languages"));
+    QTreeWidgetItem *pTreeWidgetItem = m_pLanguageTree->headerItem();
+    if (pTreeWidgetItem)
+    {
+        pTreeWidgetItem->setText(3, tr("Author"));
+        pTreeWidgetItem->setText(2, tr("Language"));
+        pTreeWidgetItem->setText(1, tr("Id"));
+        pTreeWidgetItem->setText(0, tr("Name"));
+    }
+    m_pLanguageTree->setWhatsThis(tr("Lists all available user interface "
+                                     "languages. The effective language is written in <b>bold</b>. "
+                                     "Select <i>Default</i> to reset to the system default language."));
 
     /* Reload language tree: */
     reloadLanguageTree(UICommon::languageId());
@@ -328,8 +345,7 @@ void UIGlobalSettingsLanguage::sltHandleCurrentItemChange(QTreeWidgetItem *pCurr
 
 void UIGlobalSettingsLanguage::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsLanguage::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalLanguage;
@@ -363,6 +379,29 @@ void UIGlobalSettingsLanguage::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIGlobalSettingsLanguage::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIGlobalSettingsLanguage"));
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+    m_pLanguageLabel = new QILabelSeparator();
+    m_pLanguageLabel->setObjectName(QStringLiteral("m_pLanguageLabel"));
+    pMainLayout->addWidget(m_pLanguageLabel, 0, 0, 1, 1);
+
+    m_pLanguageTree = new QITreeWidget();
+    m_pLanguageTree->setObjectName(QStringLiteral("m_pLanguageTree"));
+    m_pLanguageTree->setRootIsDecorated(false);
+    pMainLayout->addWidget(m_pLanguageTree, 1, 0, 1, 1);
+
+    m_pLanguageInfo = new QIRichTextLabel();
+    m_pLanguageInfo->setObjectName(QStringLiteral("m_pLanguageInfo"));
+
+    pMainLayout->addWidget(m_pLanguageInfo, 2, 0, 1, 1);
+    m_pLanguageLabel->setBuddy(m_pLanguageTree);
 }
 
 void UIGlobalSettingsLanguage::cleanup()
