@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QRegExpValidator>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>

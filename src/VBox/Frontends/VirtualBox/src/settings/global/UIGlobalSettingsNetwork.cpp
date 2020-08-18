@@ -16,17 +16,21 @@
  */
 
 /* Qt includes: */
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QMenu>
 
 /* GUI includes: */
+#include "QILabelSeparator.h"
+#include "QITreeWidget.h"
 #include "UICommon.h"
-#include "UIIconPool.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
-#include "UIMessageCenter.h"
 #include "UIGlobalSettingsNetwork.h"
 #include "UIGlobalSettingsNetworkDetailsNAT.h"
+#include "UIIconPool.h"
+#include "UIMessageCenter.h"
+#include "UIToolBar.h"
 
 /* COM includes: */
 #include "CDHCPServer.h"
@@ -214,6 +218,10 @@ QString UIItemNetworkNAT::defaultText() const
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     : m_pActionAddNATNetwork(0), m_pActionRemoveNATNetwork(0), m_pActionEditNATNetwork(0)
     , m_pCache(0)
+    , m_pTreeNetworkNAT(0)
+    , m_pNetworkLabel(0)
+    , m_pLayoutNAT(0)
+    , m_pToolbarNetworkNAT(0)
 {
     /* Prepare: */
     prepare();
@@ -339,8 +347,8 @@ bool UIGlobalSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 
 void UIGlobalSettingsNetwork::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIGlobalSettingsNetwork::retranslateUi(this);
+    m_pNetworkLabel->setText(tr("&NAT Networks"));
+    m_pTreeNetworkNAT->setWhatsThis(tr("Lists all available NAT networks."));
 
     /* Translate tree-widget columns: */
     m_pTreeNetworkNAT->setHeaderLabels(QStringList()
@@ -477,8 +485,7 @@ void UIGlobalSettingsNetwork::sltHandleContextMenuRequestNATNetwork(const QPoint
 
 void UIGlobalSettingsNetwork::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsNetwork::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalNetwork;
@@ -497,6 +504,39 @@ void UIGlobalSettingsNetwork::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIGlobalSettingsNetwork::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UIGlobalSettingsNetwork"));
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+    m_pNetworkLabel = new QILabelSeparator();
+    m_pNetworkLabel->setObjectName(QStringLiteral("m_pNetworkLabel"));
+    pMainLayout->addWidget(m_pNetworkLabel);
+
+    m_pLayoutNAT = new QHBoxLayout();
+    m_pLayoutNAT->setSpacing(3);
+    m_pLayoutNAT->setObjectName(QStringLiteral("m_pLayoutNAT"));
+    m_pTreeNetworkNAT = new QITreeWidget();
+    m_pTreeNetworkNAT->setObjectName(QStringLiteral("m_pTreeNetworkNAT"));
+    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pTreeNetworkNAT->sizePolicy().hasHeightForWidth());
+    m_pTreeNetworkNAT->setSizePolicy(sizePolicy);
+    m_pTreeNetworkNAT->setMinimumSize(QSize(0, 150));
+    m_pTreeNetworkNAT->setRootIsDecorated(false);
+    m_pLayoutNAT->addWidget(m_pTreeNetworkNAT);
+
+    m_pToolbarNetworkNAT = new UIToolBar();
+    m_pToolbarNetworkNAT->setObjectName(QStringLiteral("m_pToolbarNetworkNAT"));
+    m_pLayoutNAT->addWidget(m_pToolbarNetworkNAT);
+
+    pMainLayout->addLayout(m_pLayoutNAT);
+    m_pNetworkLabel->setBuddy(m_pTreeNetworkNAT);
 }
 
 void UIGlobalSettingsNetwork::prepareNATNetworkTree()

@@ -23,11 +23,14 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIGlobalSettingsNetwork.gen.h"
 #include "UIPortForwardingTable.h"
 
 /* Forward declarations: */
+class QILabelSeparator;
+class QITreeWidget;
+class QTreeWidgetItem;
 class UIItemNetworkNAT;
+class UIToolBar;
 struct UIDataSettingsGlobalNetwork;
 struct UIDataSettingsGlobalNetworkNAT;
 typedef UISettingsCache<UIDataPortForwardingRule> UISettingsCachePortForwardingRule;
@@ -35,8 +38,7 @@ typedef UISettingsCachePoolOfTwo<UIDataSettingsGlobalNetworkNAT, UISettingsCache
 typedef UISettingsCachePool<UIDataSettingsGlobalNetwork, UISettingsCacheGlobalNetworkNAT> UISettingsCacheGlobalNetwork;
 
 /** Global settings: Network page. */
-class SHARED_LIBRARY_STUFF UIGlobalSettingsNetwork : public UISettingsPageGlobal,
-                                                     public Ui::UIGlobalSettingsNetwork
+class SHARED_LIBRARY_STUFF UIGlobalSettingsNetwork : public UISettingsPageGlobal
 {
     Q_OBJECT;
 
@@ -89,6 +91,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Prepares NAT network tree. */
     void prepareNATNetworkTree();
     /** Prepares NAT network toolbar. */
@@ -131,6 +135,14 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalNetwork *m_pCache;
+
+    /** @name Widgets
+     * @{ */
+       QITreeWidget *m_pTreeNetworkNAT;
+       QILabelSeparator *m_pNetworkLabel;
+       QHBoxLayout *m_pLayoutNAT;
+       UIToolBar *m_pToolbarNetworkNAT;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsNetwork_h */
