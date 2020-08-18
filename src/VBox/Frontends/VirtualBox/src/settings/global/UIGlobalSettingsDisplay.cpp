@@ -15,12 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QCheckBox>
+#include <QComboBox>
+#include <QGridLayout>
+#include <QLabel>
+#include <QSpacerItem>
+#include <QSpinBox>
+
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSettingsDisplay.h"
 #include "UIMessageCenter.h"
-
+#include "UIScaleFactorEditor.h"
 
 /** Global settings: Display page data structure. */
 struct UIDataSettingsGlobalDisplay
@@ -144,8 +152,16 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsDisplay::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UIGlobalSettingsDisplay::retranslateUi(this);
+    m_pMaxResolutionLabel->setText(tr("Maximum Guest Screen &Size:"));
+    m_pResolutionWidthLabel->setText(tr("&Width:"));
+    m_pResolutionWidthSpin->setWhatsThis(tr("Holds the maximum width which we would like the guest to use."));
+    m_pResolutionHeightLabel->setText(tr("&Height:"));
+    m_pResolutionHeightSpin->setWhatsThis(tr("Holds the maximum height which we would like the guest to use."));
+    m_pLabelGuestScreenScaleFactorEditor->setText(tr("Scale Factor:"));
+    m_pScaleFactorEditor->setWhatsThis(tr("Controls the guest screen scale factor."));
+    m_pLabelMachineWindow->setText(tr("Machine Windows:"));
+    m_pCheckBoxActivateOnMouseHover->setWhatsThis(tr("When checked, machine windows will be raised when the mouse pointer moves over them."));
+    m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse"));
 
     /* Reload combo-box: */
     reloadMaximumGuestScreenSizePolicyComboBox();
@@ -170,8 +186,7 @@ void UIGlobalSettingsDisplay::sltHandleMaximumGuestScreenSizePolicyChange()
 
 void UIGlobalSettingsDisplay::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsDisplay::setupUi(this);
+    prepareWidgets();
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalDisplay;
@@ -196,6 +211,85 @@ void UIGlobalSettingsDisplay::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIGlobalSettingsDisplay::prepareWidgets()
+{
+   if (objectName().isEmpty())
+       setObjectName(QStringLiteral("UIGlobalSettingsDisplay"));
+   QGridLayout *pMainLayout = new QGridLayout(this);
+   pMainLayout->setContentsMargins(0, 0, 0, 0);
+   pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+   m_pMaxResolutionLabel = new QLabel();
+   m_pMaxResolutionLabel->setObjectName(QStringLiteral("m_pMaxResolutionLabel"));
+   m_pMaxResolutionLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+   pMainLayout->addWidget(m_pMaxResolutionLabel, 0, 0, 1, 1);
+
+   m_pMaxResolutionCombo = new QComboBox();
+   m_pMaxResolutionCombo->setObjectName(QStringLiteral("m_pMaxResolutionCombo"));
+   QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+   sizePolicy.setHorizontalStretch(1);
+   sizePolicy.setVerticalStretch(0);
+   sizePolicy.setHeightForWidth(m_pMaxResolutionCombo->sizePolicy().hasHeightForWidth());
+   m_pMaxResolutionCombo->setSizePolicy(sizePolicy);
+   pMainLayout->addWidget(m_pMaxResolutionCombo, 0, 1, 1, 1);
+
+   m_pResolutionWidthLabel = new QLabel();
+   m_pResolutionWidthLabel->setObjectName(QStringLiteral("m_pResolutionWidthLabel"));
+   m_pResolutionWidthLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+   pMainLayout->addWidget(m_pResolutionWidthLabel, 1, 0, 1, 1);
+
+   m_pResolutionWidthSpin = new QSpinBox();
+   m_pResolutionWidthSpin->setObjectName(QStringLiteral("m_pResolutionWidthSpin"));
+   QSizePolicy sizePolicy1(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+   sizePolicy1.setHorizontalStretch(1);
+   sizePolicy1.setVerticalStretch(0);
+   sizePolicy1.setHeightForWidth(m_pResolutionWidthSpin->sizePolicy().hasHeightForWidth());
+   m_pResolutionWidthSpin->setSizePolicy(sizePolicy1);
+   pMainLayout->addWidget(m_pResolutionWidthSpin, 1, 1, 1, 1);
+
+   m_pResolutionHeightLabel = new QLabel();
+   m_pResolutionHeightLabel->setObjectName(QStringLiteral("m_pResolutionHeightLabel"));
+   m_pResolutionHeightLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+   pMainLayout->addWidget(m_pResolutionHeightLabel, 2, 0, 1, 1);
+
+   m_pResolutionHeightSpin = new QSpinBox();
+   m_pResolutionHeightSpin->setObjectName(QStringLiteral("m_pResolutionHeightSpin"));
+   sizePolicy1.setHeightForWidth(m_pResolutionHeightSpin->sizePolicy().hasHeightForWidth());
+   m_pResolutionHeightSpin->setSizePolicy(sizePolicy1);
+   pMainLayout->addWidget(m_pResolutionHeightSpin, 2, 1, 1, 1);
+
+   m_pLabelGuestScreenScaleFactorEditor = new QLabel();
+   m_pLabelGuestScreenScaleFactorEditor->setObjectName(QStringLiteral("m_pLabelGuestScreenScaleFactorEditor"));
+   m_pLabelGuestScreenScaleFactorEditor->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+   pMainLayout->addWidget(m_pLabelGuestScreenScaleFactorEditor, 3, 0, 1, 1);
+
+   m_pScaleFactorEditor = new UIScaleFactorEditor(this);
+   m_pScaleFactorEditor->setObjectName(QStringLiteral("m_pScaleFactorEditor"));
+   QSizePolicy sizePolicy2(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+   sizePolicy2.setHorizontalStretch(0);
+   sizePolicy2.setVerticalStretch(0);
+   sizePolicy2.setHeightForWidth(m_pScaleFactorEditor->sizePolicy().hasHeightForWidth());
+   m_pScaleFactorEditor->setSizePolicy(sizePolicy2);
+   pMainLayout->addWidget(m_pScaleFactorEditor, 3, 1, 2, 1);
+
+   m_pLabelMachineWindow = new QLabel();
+   m_pLabelMachineWindow->setObjectName(QStringLiteral("m_pLabelMachineWindow"));
+   m_pLabelMachineWindow->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+   pMainLayout->addWidget(m_pLabelMachineWindow, 5, 0, 1, 1);
+
+   m_pCheckBoxActivateOnMouseHover = new QCheckBox();
+   m_pCheckBoxActivateOnMouseHover->setObjectName(QStringLiteral("m_pCheckBoxActivateOnMouseHover"));
+   sizePolicy2.setHeightForWidth(m_pCheckBoxActivateOnMouseHover->sizePolicy().hasHeightForWidth());
+   m_pCheckBoxActivateOnMouseHover->setSizePolicy(sizePolicy2);
+   pMainLayout->addWidget(m_pCheckBoxActivateOnMouseHover, 5, 1, 1, 1);
+
+   QSpacerItem *spacerItem = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+   pMainLayout->addItem(spacerItem, 6, 0, 1, 2);
+
+   m_pMaxResolutionLabel->setBuddy(m_pMaxResolutionCombo);
+   m_pResolutionWidthLabel->setBuddy(m_pResolutionWidthSpin);
+   m_pResolutionHeightLabel->setBuddy(m_pResolutionHeightSpin);
 }
 
 void UIGlobalSettingsDisplay::cleanup()

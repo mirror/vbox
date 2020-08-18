@@ -24,7 +24,6 @@ FORMS = \
     src/settings/UISettingsDialog.ui \
     src/settings/global/UIGlobalSettingsGeneral.ui \
     src/settings/global/UIGlobalSettingsLanguage.ui \
-    src/settings/global/UIGlobalSettingsDisplay.ui \
     src/settings/global/UIGlobalSettingsNetwork.ui \
     src/settings/global/UIGlobalSettingsExtension.ui \
     src/settings/global/UIGlobalSettingsProxy.ui

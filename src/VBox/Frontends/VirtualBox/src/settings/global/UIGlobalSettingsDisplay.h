@@ -23,15 +23,18 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIGlobalSettingsDisplay.gen.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QComboBox;
+class QLabel;
+class QSpinBox;
+class UIScaleFactorEditor;
 struct UIDataSettingsGlobalDisplay;
 typedef UISettingsCache<UIDataSettingsGlobalDisplay> UISettingsCacheGlobalDisplay;
 
 /** Global settings: Display page. */
-class SHARED_LIBRARY_STUFF UIGlobalSettingsDisplay : public UISettingsPageGlobal,
-                                                     public Ui::UIGlobalSettingsDisplay
+class SHARED_LIBRARY_STUFF UIGlobalSettingsDisplay : public UISettingsPageGlobal
 {
     Q_OBJECT;
 
@@ -70,6 +73,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
 
@@ -81,6 +86,20 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalDisplay *m_pCache;
+
+    /** @name Widgets
+     * @{ */
+       QComboBox *m_pMaxResolutionCombo;
+       QSpinBox *m_pResolutionWidthSpin;
+       QSpinBox *m_pResolutionHeightSpin;
+       QCheckBox *m_pCheckBoxActivateOnMouseHover;
+       QLabel *m_pMaxResolutionLabel;
+       QLabel *m_pResolutionWidthLabel;
+       QLabel *m_pResolutionHeightLabel;
+       QLabel *m_pLabelGuestScreenScaleFactorEditor;
+       QLabel *m_pLabelMachineWindow;
+       UIScaleFactorEditor *m_pScaleFactorEditor;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsDisplay_h */
