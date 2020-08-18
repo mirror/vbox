@@ -4295,6 +4295,17 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
         return S_OK;
     }
 
+    {
+        // Allow MediumType_Readonly mediums and DVD in particular to be attached twice.
+        AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
+        if (m->type == MediumType_Readonly || m->devType == DeviceType_DVD)
+        {
+            BackRef ref(aMachineId, aSnapshotId);
+            m->backRefs.push_back(ref);
+            return S_OK;
+        }
+    }
+
     // if the caller has not supplied a snapshot ID, then we're attaching
     // to a machine a medium which represents the machine's current state,
     // so set the flag
