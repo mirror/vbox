@@ -286,20 +286,20 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
 
 DECLINLINE(uint16_t) virtioCoreVirtqAvailBufCount_inline(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTQUEUE pVirtq)
 {
-    uint16_t uIdx    = virtioReadAvailRingIdx(pDevIns, pVirtio, pVirtq);
-    uint16_t uShadow = pVirtq->uAvailIdxShadow;
+    uint16_t uIdxActual = virtioReadAvailRingIdx(pDevIns, pVirtio, pVirtq);
+    uint16_t uIdxShadow = pVirtq->uAvailIdxShadow;
+    uint16_t uIdxDelta;
 
-    uint16_t uDelta;
-    if (uIdx < uShadow)
-        uDelta = (uIdx + VIRTQ_MAX_ENTRIES) - uShadow;
+    if (uIdxActual < uIdxShadow)
+        uIdxDelta = (uIdxActual + VIRTQ_MAX_ENTRIES) - uIdxShadow;
     else
-        uDelta = uIdx - uShadow;
+        uIdxDelta = uIdxActual - uIdxShadow;
 
     LogFunc(("%s has %u %s (idx=%u shadow=%u)\n",
-        pVirtq->szName, uDelta, uDelta == 1 ? "entry" : "entries",
-        uIdx, uShadow));
+        pVirtq->szName, uIdxDelta, uIdxDelta == 1 ? "entry" : "entries",
+        uIdxActual, uIdxShadow));
 
-    return uDelta;
+    return uIdxDelta;
 }
 /**
  * Get count of new (e.g. pending) elements in available ring.
@@ -762,7 +762,7 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
     pVirtqBuf->cRefs     = 1;
     pVirtqBuf->uHeadIdx  = uHeadIdx;
     pVirtqBuf->uVirtq    = uVirtq;
-    *ppVirtqBuf = pVirtqBuf;
+    *ppVirtqBuf          = pVirtqBuf;
 
     /*
      * Gather segments.
@@ -1485,8 +1485,6 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
     PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
     RT_NOREF(pPciDev);
 
-    Log7Func((" pDevIns=%p pPciDev=%p uAddress=%#x%s cb=%u pu32Value=%p\n",
-                 pDevIns, pPciDev, uAddress,  uAddress < 0x10 ? " " : "", cb, pu32Value));
     if (uAddress == pVirtio->uPciCfgDataOff)
     {
         /*
@@ -1497,20 +1495,26 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
         struct virtio_pci_cap *pPciCap = &pVirtioCC->pPciCfgCap->pciCap;
         uint32_t uLength = pPciCap->uLength;
 
+        Log7Func((" pDevIns=%p pPciDev=%p uAddress=%#x%s cb=%u uLength=%d, bar=%d\n",
+                     pDevIns, pPciDev, uAddress,  uAddress < 0x10 ? " " : "", cb, uLength, pPciCap->uBar));
+
         if (  (uLength != 1 && uLength != 2 && uLength != 4)
             || cb != uLength
             || pPciCap->uBar != VIRTIO_REGION_PCI_CAP)
         {
-            ASSERT_GUEST_MSG_FAILED(("Guest read virtio_pci_cfg_cap.pci_cfg_data using mismatching config. Ignoring\n"));
+            ASSERT_GUEST_MSG_FAILED(("Guest read virtio_pci_cfg_cap.pci_cfg_data using mismatching config. "
+                                     "Ignoring\n"));
             *pu32Value = UINT32_MAX;
             return VINF_SUCCESS;
         }
 
         VBOXSTRICTRC rcStrict = virtioMmioRead(pDevIns, pVirtio, pPciCap->uOffset, pu32Value, cb);
-        Log7Func(("virtio: Guest read  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%d, length=%d, result=%d -> %Rrc\n",
+        Log7Func((" Guest read virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%d, length=%d, result=0x%x -> %Rrc\n",
                    pPciCap->uBar, pPciCap->uOffset, uLength, *pu32Value, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
+    Log7Func((" pDevIns=%p pPciDev=%p uAddress=%#x%s cb=%u pu32Value=%p\n",
+                 pDevIns, pPciDev, uAddress,  uAddress < 0x10 ? " " : "", cb, pu32Value));
     return VINF_PDM_PCI_DO_DEFAULT;
 }
 
@@ -1859,9 +1863,9 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CFG_CAP_T);
     pCfg->uCapNext = (pVirtio->fMsiSupport || pVirtioCC->pbDevSpecificCfg) ? CFG_ADDR_2_IDX(pCfg) + pCfg->uCapLen : 0;
-    pCfg->uBar     = 0;
+    pCfg->uBar     = VIRTIO_REGION_PCI_CAP;
     pCfg->uOffset  = 0;
-    pCfg->uLength  = 0;
+    pCfg->uLength  = 4;
     cbRegion += pCfg->uLength;
     SET_PCI_CAP_LOC(pPciDev, pCfg, pVirtio->LocPciCfgCap, 1);
     pVirtioCC->pPciCfgCap = (PVIRTIO_PCI_CFG_CAP_T)pCfg;
