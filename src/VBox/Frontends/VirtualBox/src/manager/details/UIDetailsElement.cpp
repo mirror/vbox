@@ -276,7 +276,7 @@ void UIDetailsElement::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
         m_enmType < DetailsElementType_Description)
         strCategory = QString("#%1").arg(gpConverter->toInternalString(m_enmType));
     else if (m_enmType == DetailsElementType_Description)
-        strCategory = QString("#%1%%mTeDescription").arg(gpConverter->toInternalString(m_enmType));
+        strCategory = QString("#%1%%m_pEditorDescription").arg(gpConverter->toInternalString(m_enmType));
     emit sigLinkClicked(strCategory, QString(), machine().GetId());
 }
 

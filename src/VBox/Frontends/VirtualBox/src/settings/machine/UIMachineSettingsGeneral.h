@@ -103,6 +103,8 @@ private:
     void prepareWidgets();
     /** Prepares 'Basic' tab. */
     void prepareTabBasic();
+    /** Prepares 'Advanced' tab. */
+    void prepareTabAdvanced();
     /** Prepares 'Description' tab. */
     void prepareTabDescription();
     /** Prepares 'Encryption' tab. */
@@ -146,29 +148,55 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineGeneral *m_pCache;
+
     /** @name Widgets
      * @{ */
-       UINameAndSystemEditor *m_pNameAndSystemEditor;
-       UIFilePathSelector *mPsSnapshot;
-       QComboBox *mCbClipboard;
-       QComboBox *m_pComboCipher;
-       QComboBox *mCbDragAndDrop;
-       QTextEdit *mTeDescription;
-       QLineEdit *m_pEditorEncryptionPassword;
-       QLineEdit *m_pEditorEncryptionPasswordConfirm;
-       QCheckBox *m_pCheckBoxEncryption;
-       QITabWidget *m_pTabWidgetGeneral;
-       QWidget *m_pTabBasic;
-       QWidget *m_pTabDescription;
-       QWidget *m_pTabAdvanced;
-       QWidget *m_pTabEncryption;
-       QWidget *m_pWidgetEncryption;
-       QLabel *m_pLabelDragAndDrop;
-       QLabel *m_pLabelCipher;
-       QLabel *m_pLabelSnapshot;
-       QLabel *m_pLabelClipboard;
-       QLabel *m_pLabelPassword1;
-       QLabel *m_pLabelPassword2;
+        /** Holds the tab-widget instance. */
+        QITabWidget *m_pTabWidget;
+
+        /** Holds the 'Basic' tab instance. */
+        QWidget               *m_pTabBasic;
+        /** Holds the name and system editor instance. */
+        UINameAndSystemEditor *m_pEditorNameAndSystem;
+
+        /** Holds the 'Advanced' tab instance. */
+        QWidget            *m_pTabAdvanced;
+        /** Holds the snapshot folder label instance. */
+        QLabel             *m_pLabelSnapshotFolder;
+        /** Holds the snapshot folder editor instance. */
+        UIFilePathSelector *m_pEditorSnapshotFolder;
+        /** Holds the shared clipboard label instance. */
+        QLabel             *m_pLabelClipboard;
+        /** Holds the shared clipboard combo instance. */
+        QComboBox          *m_pComboClipboard;
+        /** Holds the drag and drop label instance. */
+        QLabel             *m_pLabelDragAndDrop;
+        /** Holds the drag and drop combo instance. */
+        QComboBox          *m_pComboDragAndDrop;
+
+        /** Holds the 'Description' tab instance. */
+        QWidget   *m_pTabDescription;
+        /** Holds the description editor instance. */
+        QTextEdit *m_pEditorDescription;
+
+        /** Holds the 'Encryption' tab instance. */
+        QWidget   *m_pTabEncryption;
+        /** Holds the encryption check-box instance. */
+        QCheckBox *m_pCheckBoxEncryption;
+        /** Holds the encryption widget instance. */
+        QWidget   *m_pWidgetEncryptionSettings;
+        /** Holds the cipher label instance. */
+        QLabel    *m_pLabelCipher;
+        /** Holds the cipher combo instance. */
+        QComboBox *m_pComboCipher;
+        /** Holds the enter password label instance. */
+        QLabel    *m_pLabelEncryptionPassword;
+        /** Holds the enter password editor instance. */
+        QLineEdit *m_pEditorEncryptionPassword;
+        /** Holds the confirm password label instance. */
+        QLabel    *m_pLabelEncryptionPasswordConfirm;
+        /** Holds the confirm password editor instance. */
+        QLineEdit *m_pEditorEncryptionPasswordConfirm;
     /** @} */
 };
 
