@@ -2763,6 +2763,8 @@ static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iR
         /* Wake up the command thread to start or stop processing commands. */
         iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
     }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -3535,6 +3537,8 @@ static int iommuAmdWriteEvtLogEntry(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
                 iommuAmdRaiseMsiInterrupt(pDevIns);
         }
     }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -4301,9 +4305,6 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
 
         /* Continue with traversing the page directory at this level. */
     }
-
-    /* Shouldn't really get here. */
-    return VERR_IOMMU_IPE_3;
 }
 
 
@@ -5130,7 +5131,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
 
     IOMMU_LOCK(pDevIns);
 
-    VBOXSTRICTRC rcStrict;
+    VBOXSTRICTRC rcStrict = VERR_INVALID_FUNCTION;
     switch (uAddress)
     {
         case IOMMU_PCI_OFF_BASE_ADDR_REG_LO:
