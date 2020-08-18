@@ -23,15 +23,16 @@
 
 /* GUI includes: */
 #include "UISettingsPage.h"
-#include "UIGlobalSettingsGeneral.gen.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QLabel;
+class UIFilePathSelector;
 struct UIDataSettingsGlobalGeneral;
 typedef UISettingsCache<UIDataSettingsGlobalGeneral> UISettingsCacheGlobalGeneral;
 
 /** Global settings: General page. */
-class SHARED_LIBRARY_STUFF UIGlobalSettingsGeneral : public UISettingsPageGlobal,
-                                                     public Ui::UIGlobalSettingsGeneral
+class SHARED_LIBRARY_STUFF UIGlobalSettingsGeneral : public UISettingsPageGlobal
 {
     Q_OBJECT;
 
@@ -65,6 +66,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
 
@@ -73,6 +76,16 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalGeneral *m_pCache;
+
+    /** @name Widgets
+     * @{ */
+       UIFilePathSelector *m_pSelectorMachineFolder;
+       UIFilePathSelector *m_pSelectorVRDPLibName;
+       QCheckBox *m_pCheckBoxHostScreenSaver;
+       QLabel *m_pLabelMachineFolder;
+       QLabel *m_pLabelHostScreenSaver;
+       QLabel *m_pLabelVRDPLibName;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsGeneral_h */
