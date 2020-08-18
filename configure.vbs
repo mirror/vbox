@@ -623,7 +623,71 @@ sub CheckForkBuild(strOptkBuild)
    PrintResult "kBuild binaries", g_strPathkBuildBin
 end sub
 
-'' Class we use for detecting VisualC++
+
+''
+' Checks for Visual C++ version 16 (2019), 15 (2017), 14 (2015), 12 (2013), 11 (2012) or 10 (2010).
+'
+sub CheckForVisualCPP(strOptVC, strOptVCCommon)
+   PrintHdr "Visual C++"
+
+   '
+   ' Try find it...
+   '
+   dim objState, strProgFiles
+   set objState = new VisualCPPState
+   objState.check strOptVC, strOptVCCommon
+   if g_blnInternalFirst = True then objState.checkInternal
+   objState.checkProgItems "2019"
+   objState.checkProgFiles "Microsoft Visual Studio\2019\BuildTools\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2019\Professional\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2019\Community\VC"
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\16.0",             "VC", ""        ' doesn't work.
+   objState.checkProgItems "2017"
+   objState.checkProgFiles "Microsoft Visual Studio\2017\BuildTools\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2017\Professional\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2017\Community\VC"
+   objState.checkProgFiles "Microsoft Visual Studio\2017\Express\VC"
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\15.0",             "VC", ""
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\14.0",             "VC", "Common7"
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\12.0",             "VC", "Common7" '?
+   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\11.0",             "VC", "Common7" '?
+   objState.checkProg "cl.exe"
+   objState.checkRegistry "Microsoft\VisualStudio\10.0\Setup\VS\ProductDir", "VC", "Common7"
+   if g_blnInternalFirst = False then objState.checkInternal
+
+   if objState.m_blnFound = False then
+      MsgError "Cannot find cl.exe (Visual C++) anywhere on your system. Check the build requirements."
+      exit sub
+   end if
+   g_strPathVCC = objState.m_strPathVC
+   g_strVCCVersion = objState.m_strVersion
+
+   '
+   ' Ok, emit build config variables.
+   '
+   CfgPrintAssign "VBOX_VCC_TOOL_STEM", objState.m_strVersion
+   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion, g_strPathVCC
+   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion & "X86",   "$(PATH_TOOL_" & objState.m_strVersion & ")"
+   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion & "AMD64", "$(PATH_TOOL_" & objState.m_strVersion & ")"
+
+   if   objState.m_strVersion = "VCC100" _
+     or objState.m_strVersion = "VCC110" _
+     or objState.m_strVersion = "VCC120" _
+     or objState.m_strVersion = "VCC140" _
+   then
+      CfgPrintAssign "VBOX_WITH_NEW_VCC", "" '?? for VCC110+
+   else
+      CfgPrintAssign "VBOX_WITH_NEW_VCC", "1"
+   end if
+   PrintResult "Visual C++ " & objState.m_strVersion, g_strPathVCC
+
+   ' And the env.bat path fix.
+   if objState.m_strPathVCCommon <> "" then
+      EnvPrintAppend "PATH", DosSlashes(objState.m_strPathVCCommon) & "\IDE", ";"
+   end if
+end sub
+
+'' Class we use for detecting Visual C++
 class VisualCPPState
    public m_blnFound
    public m_strPathVC
@@ -835,6 +899,7 @@ class VisualCPPState
    end function
 end class
 
+' See checkProgItems()
 function VisualCPPCallback(ByRef arrStrings, cStrings, ByRef strVersionYear)
    VisualCPPCallback = ""
    ' We're looking for items with three strings like this:
@@ -857,69 +922,8 @@ end function
 
 
 ''
-' Checks for Visual C++ version 16 (2019), 15 (2017), 14 (2015), 12 (2013), 11 (2012) or 10 (2010).
+' Checks for a platform SDK that works with the compiler
 '
-sub CheckForVisualCPP(strOptVC, strOptVCCommon)
-   PrintHdr "Visual C++"
-
-   '
-   ' Try find it...
-   '
-   dim objState, strProgFiles
-   set objState = new VisualCPPState
-   objState.check strOptVC, strOptVCCommon
-   if g_blnInternalFirst = True then objState.checkInternal
-   objState.checkProgItems "2019"
-   objState.checkProgFiles "Microsoft Visual Studio\2019\BuildTools\VC"
-   objState.checkProgFiles "Microsoft Visual Studio\2019\Professional\VC"
-   objState.checkProgFiles "Microsoft Visual Studio\2019\Community\VC"
-   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\16.0",             "VC", ""        ' doesn't work.
-   objState.checkProgItems "2017"
-   objState.checkProgFiles "Microsoft Visual Studio\2017\BuildTools\VC"
-   objState.checkProgFiles "Microsoft Visual Studio\2017\Professional\VC"
-   objState.checkProgFiles "Microsoft Visual Studio\2017\Community\VC"
-   objState.checkProgFiles "Microsoft Visual Studio\2017\Express\VC"
-   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\15.0",             "VC", ""
-   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\14.0",             "VC", "Common7"
-   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\12.0",             "VC", "Common7" '?
-   objState.checkRegistry "Microsoft\VisualStudio\SxS\VS7\11.0",             "VC", "Common7" '?
-   objState.checkProg "cl.exe"
-   objState.checkRegistry "Microsoft\VisualStudio\10.0\Setup\VS\ProductDir", "VC", "Common7"
-   if g_blnInternalFirst = False then objState.checkInternal
-
-   if objState.m_blnFound = False then
-      MsgError "Cannot find cl.exe (Visual C++) anywhere on your system. Check the build requirements."
-      exit sub
-   end if
-   g_strPathVCC = objState.m_strPathVC
-   g_strVCCVersion = objState.m_strVersion
-
-   '
-   ' Ok, emit build config variables.
-   '
-   CfgPrintAssign "VBOX_VCC_TOOL_STEM", objState.m_strVersion
-   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion, g_strPathVCC
-   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion & "X86",   "$(PATH_TOOL_" & objState.m_strVersion & ")"
-   CfgPrintAssign "PATH_TOOL_" & objState.m_strVersion & "AMD64", "$(PATH_TOOL_" & objState.m_strVersion & ")"
-
-   if   objState.m_strVersion = "VCC100" _
-     or objState.m_strVersion = "VCC110" _
-     or objState.m_strVersion = "VCC120" _
-     or objState.m_strVersion = "VCC140" _
-   then
-      CfgPrintAssign "VBOX_WITH_NEW_VCC", "" '?? for VCC110+
-   else
-      CfgPrintAssign "VBOX_WITH_NEW_VCC", "1"
-   end if
-   PrintResult "Visual C++ " & objState.m_strVersion, g_strPathVCC
-
-   ' And the env.bat path fix.
-   if objState.m_strPathVCCommon <> "" then
-      EnvPrintAppend "PATH", DosSlashes(objState.m_strPathVCCommon) & "\IDE", ";"
-   end if
-end sub
-
-'' Checks for a platform SDK that works with the compiler
 sub CheckForPlatformSDK(strOptSDK)
    dim strPathPSDK, str
    PrintHdr "Windows Platform SDK (recent)"
