@@ -998,25 +998,46 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
 
     /* Set up unconditional intercepts and conditions. */
     pVmcbCtrl0->u64InterceptCtrl = HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS
-                                 | SVM_CTRL_INTERCEPT_VMMCALL;
+                                 | SVM_CTRL_INTERCEPT_VMMCALL
+                                 | SVM_CTRL_INTERCEPT_VMSAVE
+                                 | SVM_CTRL_INTERCEPT_VMLOAD
+                                 | SVM_CTRL_INTERCEPT_CLGI
+                                 | SVM_CTRL_INTERCEPT_STGI;
 
 #ifdef HMSVM_ALWAYS_TRAP_TASK_SWITCH
     pVmcbCtrl0->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_TASK_SWITCH;
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    /* Virtualized VMSAVE/VMLOAD. */
-    pVmcbCtrl0->LbrVirt.n.u1VirtVmsaveVmload = fUseVirtVmsaveVmload;
-    if (!fUseVirtVmsaveVmload)
-        pVmcbCtrl0->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
-                                     |  SVM_CTRL_INTERCEPT_VMLOAD;
+    if (pVCpu0->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvm)
+    {
+        /* Virtualized VMSAVE/VMLOAD. */
+        if (fUseVirtVmsaveVmload)
+        {
+            pVmcbCtrl0->LbrVirt.n.u1VirtVmsaveVmload = 1;
+            pVmcbCtrl0->u64InterceptCtrl &= ~(  SVM_CTRL_INTERCEPT_VMSAVE
+                                              | SVM_CTRL_INTERCEPT_VMLOAD);
+        }
+        else
+            Assert(!pVmcbCtrl0->LbrVirt.n.u1VirtVmsaveVmload);
 
-    /* Virtual GIF. */
-    pVmcbCtrl0->IntCtrl.n.u1VGifEnable = fUseVGif;
-    if (!fUseVGif)
-        pVmcbCtrl0->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
-                                     |  SVM_CTRL_INTERCEPT_STGI;
+        /* Virtual GIF. */
+        if (fUseVGif)
+        {
+            pVmcbCtrl0->IntCtrl.n.u1VGifEnable = 1;
+            pVmcbCtrl0->u64InterceptCtrl &= ~(  SVM_CTRL_INTERCEPT_CLGI
+                                              | SVM_CTRL_INTERCEPT_STGI);
+        }
+        else
+            Assert(!pVmcbCtrl0->IntCtrl.n.u1VGifEnable);
+    }
+    else
 #endif
+    {
+        Assert(!pVCpu0->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvm);
+        Assert(!pVmcbCtrl0->LbrVirt.n.u1VirtVmsaveVmload);
+        Assert(!pVmcbCtrl0->IntCtrl.n.u1VGifEnable);
+    }
 
     /* CR4 writes must always be intercepted for tracking PGM mode changes. */
     pVmcbCtrl0->u16InterceptWrCRx = RT_BIT(4);
