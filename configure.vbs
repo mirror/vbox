@@ -86,6 +86,11 @@ else
    g_arrProgramFiles = Array(EnvGet("ProgramFiles"))
 end if
 
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Paths                                                                                                                '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
 ''
 ' Converts to unix slashes
 function UnixSlashes(str)
@@ -99,6 +104,103 @@ function DosSlashes(str)
    DosSlashes = replace(str, "/", "\")
 end function
 
+
+''
+' Get the path of the parent directory. Returns root if root was specified.
+' Expects abs path.
+function PathParent(str)
+   PathParent = g_objFileSys.GetParentFolderName(DosSlashes(str))
+end function
+
+
+''
+' Strips the filename from at path.
+function PathStripFilename(str)
+   PathStripFilename = g_objFileSys.GetParentFolderName(DosSlashes(str))
+end function
+
+
+''
+' Get the abs path, use the short version if necessary.
+function PathAbs(str)
+   strAbs    = g_objFileSys.GetAbsolutePathName(DosSlashes(str))
+   strParent = g_objFileSys.GetParentFolderName(strAbs)
+   if strParent = "" then
+      PathAbs = strAbs
+   else
+      strParent = PathAbs(strParent)  ' Recurse to resolve parent paths.
+      PathAbs   = g_objFileSys.BuildPath(strParent, g_objFileSys.GetFileName(strAbs))
+
+      dim obj
+      set obj = Nothing
+      if FileExists(PathAbs) then
+         set obj = g_objFileSys.GetFile(PathAbs)
+      elseif DirExists(PathAbs) then
+         set obj = g_objFileSys.GetFolder(PathAbs)
+      end if
+
+      if not (obj is nothing) then
+         for each objSub in obj.ParentFolder.SubFolders
+            if obj.Name = objSub.Name  or  obj.ShortName = objSub.ShortName then
+               if  InStr(1, objSub.Name, " ") > 0 _
+                Or InStr(1, objSub.Name, "&") > 0 _
+                Or InStr(1, objSub.Name, "$") > 0 _
+                  then
+                  PathAbs = g_objFileSys.BuildPath(strParent, objSub.ShortName)
+                  if  InStr(1, PathAbs, " ") > 0 _
+                   Or InStr(1, PathAbs, "&") > 0 _
+                   Or InStr(1, PathAbs, "$") > 0 _
+                     then
+                     MsgFatal "PathAbs(" & str & ") attempted to return filename with problematic " _
+                      & "characters in it (" & PathAbs & "). The tool/sdk referenced will probably " _
+                      & "need to be copied or reinstalled to a location without 'spaces', '$', ';' " _
+                      & "or '&' in the path name. (Unless it's a problem with this script of course...)"
+                  end if
+               else
+                  PathAbs = g_objFileSys.BuildPath(strParent, objSub.Name)
+               end if
+               exit for
+            end if
+         next
+      end if
+   end if
+end function
+
+
+''
+' Get the abs path, use the long version.
+function PathAbsLong(str)
+   strAbs    = g_objFileSys.GetAbsolutePathName(DosSlashes(str))
+   strParent = g_objFileSys.GetParentFolderName(strAbs)
+   if strParent = "" then
+      PathAbsLong = strAbs
+   else
+      strParent = PathAbsLong(strParent)  ' Recurse to resolve parent paths.
+      PathAbsLong = g_objFileSys.BuildPath(strParent, g_objFileSys.GetFileName(strAbs))
+
+      dim obj
+      set obj = Nothing
+      if FileExists(PathAbsLong) then
+         set obj = g_objFileSys.GetFile(PathAbsLong)
+      elseif DirExists(PathAbsLong) then
+         set obj = g_objFileSys.GetFolder(PathAbsLong)
+      end if
+
+      if not (obj is nothing) then
+         for each objSub in obj.ParentFolder.SubFolders
+            if obj.Name = objSub.Name  or  obj.ShortName = objSub.ShortName then
+               PathAbsLong = g_objFileSys.BuildPath(strParent, objSub.Name)
+               exit for
+            end if
+         next
+      end if
+   end if
+end function
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Files and Dirs                                                                                                       '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 ''
 ' Read a file (typically the tmp file) into a string.
@@ -150,6 +252,107 @@ end function
 
 
 ''
+' Returns true if there are subfolders starting with the given string.
+function HasSubdirsStartingWith(strFolder, strStartingWith)
+   HasSubdirsStartingWith = False
+   if DirExists(strFolder) then
+      dim obj
+      set obj = g_objFileSys.GetFolder(strFolder)
+      for each objSub in obj.SubFolders
+         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
+            HasSubdirsStartingWith = True
+            LogPrint "# HasSubdirsStartingWith(" & strFolder & "," & strStartingWith & ") found " & objSub.Name
+            exit for
+         end if
+      next
+   end if
+end function
+
+
+''
+' Returns a sorted array of subfolder names that starts with the given string.
+function GetSubdirsStartingWith(strFolder, strStartingWith)
+   if DirExists(strFolder) then
+      dim obj, i
+      set obj = g_objFileSys.GetFolder(strFolder)
+      i = 0
+      for each objSub in obj.SubFolders
+         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
+            i = i + 1
+         end if
+      next
+      if i > 0 then
+         redim arrResult(i - 1)
+         i = 0
+         for each objSub in obj.SubFolders
+            if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
+               arrResult(i) = objSub.Name
+               i = i + 1
+            end if
+         next
+         GetSubdirsStartingWith = arrResult
+      else
+         GetSubdirsStartingWith = Array()
+      end if
+   else
+      GetSubdirsStartingWith = Array()
+   end if
+end function
+
+
+''
+' Returns a sorted array of subfolder names that starts with the given string.
+function GetSubdirsStartingWithVerSorted(strFolder, strStartingWith)
+   GetSubdirsStartingWithVerSorted = ArrayVerSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
+end function
+
+
+''
+' Returns a reverse version sorted array of subfolder names that starts with the given string.
+function GetSubdirsStartingWithRVerSorted(strFolder, strStartingWith)
+   GetSubdirsStartingWithRSortedVersion = ArrayRVerSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
+end function
+
+
+''
+' Try find the specified file in the specified path variable.
+function WhichEx(strEnvVar, strFile)
+   dim strPath, iStart, iEnd, str
+
+   ' the path
+   strPath = EnvGet(strEnvVar)
+   iStart = 1
+   do while iStart <= Len(strPath)
+      iEnd = InStr(iStart, strPath, ";")
+      if iEnd <= 0 then iEnd = Len(strPath) + 1
+      if iEnd > iStart then
+         str = Mid(strPath, iStart, iEnd - iStart) & "/" & strFile
+         if FileExists(str) then
+            WhichEx = str
+            exit function
+         end if
+      end if
+      iStart = iEnd + 1
+   loop
+
+   ' registry or somewhere?
+
+   WhichEx = ""
+end function
+
+
+''
+' Try find the specified file in the path.
+function Which(strFile)
+   Which = WhichEx("Path", strFile)
+end function
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Processes                                                                                                            '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''
 ' Checks if this is a WOW64 process.
 function IsWow64()
    if g_objShell.Environment("PROCESS")("PROCESSOR_ARCHITEW6432") <> "" then
@@ -158,6 +361,146 @@ function IsWow64()
       IsWow64 = 0
    end if
 end function
+
+
+''
+' Executes a command in the shell catching output in g_strShellOutput
+function Shell(strCommand, blnBoth)
+   dim strShell, strCmdline, objExec, str
+
+   strShell = g_objShell.ExpandEnvironmentStrings("%ComSpec%")
+   if blnBoth = true then
+      strCmdline = strShell & " /c " & strCommand & " 2>&1"
+   else
+      strCmdline = strShell & " /c " & strCommand & " 2>nul"
+   end if
+
+   LogPrint "# Shell: " & strCmdline
+   Set objExec = g_objShell.Exec(strCmdLine)
+   g_strShellOutput = objExec.StdOut.ReadAll()
+   objExec.StdErr.ReadAll()
+   do while objExec.Status = 0
+      Wscript.Sleep 20
+      g_strShellOutput = g_strShellOutput & objExec.StdOut.ReadAll()
+      objExec.StdErr.ReadAll()
+   loop
+
+   LogPrint "# Status: " & objExec.ExitCode
+   LogPrint "# Start of Output"
+   LogPrint g_strShellOutput
+   LogPrint "# End of Output"
+
+   Shell = objExec.ExitCode
+end function
+
+
+''
+' Gets the SID of the current user.
+function GetSid()
+   dim objNet, strUser, strDomain, offSlash, objWmiUser
+   GetSid = ""
+
+   ' Figure the user + domain
+   set objNet = CreateObject("WScript.Network")
+   strUser   = objNet.UserName
+   strDomain = objNet.UserDomain
+   offSlash  = InStr(1, strUser, "\")
+   if offSlash > 0 then
+      strDomain = Left(strUser, offSlash - 1)
+      strUser   = Right(strUser, Len(strUser) - offSlash)
+   end if
+
+   ' Lookup the user.
+   on error resume next
+   set objWmiUser = GetObject("winmgmts:{impersonationlevel=impersonate}!/root/cimv2:Win32_UserAccount." _
+                              & "Domain='" & strDomain &"',Name='" & strUser & "'")
+   if err.number = 0 then
+      GetSid = objWmiUser.SID
+   end if
+end function
+
+
+''
+' Gets the commandline used to invoke the script.
+function GetCommandline()
+   dim str, i
+
+   '' @todo find an api for querying it instead of reconstructing it like this...
+   GetCommandline = "cscript configure.vbs"
+   for i = 1 to WScript.Arguments.Count
+      str = WScript.Arguments.Item(i - 1)
+      if str = "" then
+         str = """"""
+      elseif (InStr(1, str, " ")) then
+         str = """" & str & """"
+      end if
+      GetCommandline = GetCommandline & " " & str
+   next
+end function
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Environment                                                                                                          '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''
+' Gets an environment variable.
+function EnvGet(strName)
+   EnvGet = g_objShell.Environment("PROCESS")(strName)
+end function
+
+
+''
+' Sets an environment variable.
+sub EnvSet(strName, strValue)
+   g_objShell.Environment("PROCESS")(strName) = strValue
+   LogPrint "EnvSet: " & strName & "=" & strValue
+end sub
+
+
+''
+' Appends a string to an environment variable
+sub EnvAppend(strName, strValue)
+   dim str
+   str = g_objShell.Environment("PROCESS")(strName)
+   g_objShell.Environment("PROCESS")(strName) =  str & strValue
+   LogPrint "EnvAppend: " & strName & "=" & str & strValue
+end sub
+
+
+''
+' Prepends a string to an environment variable
+sub EnvPrepend(strName, strValue)
+   dim str
+   str = g_objShell.Environment("PROCESS")(strName)
+   g_objShell.Environment("PROCESS")(strName) =  strValue & str
+   LogPrint "EnvPrepend: " & strName & "=" & strValue & str
+end sub
+
+''
+' Gets the first non-empty environment variable of the given two.
+function EnvGetFirst(strName1, strName2)
+   EnvGetFirst = g_objShell.Environment("PROCESS")(strName1)
+   if EnvGetFirst = "" then
+      EnvGetFirst = g_objShell.Environment("PROCESS")(strName2)
+   end if
+end function
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Strings                                                                                                              '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''
+' Right pads a string with spaces to the given length
+function RightPad(str, cch)
+   if Len(str) < cch then
+      RightPad = str & String(cch - Len(str), " ")
+   else
+      RightPad = str
+   end if
+end function
+
 
 ''
 ' Checks if the given character is a decimal digit
@@ -279,6 +622,11 @@ function StrVersionCompare(str1, str2)
    end if
    'LogPrint "StrVersionCompare: --> "&StrVersionCompare&" (#6)"
 end function
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Arrays                                                                                                               '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 ''
 ' Returns a reverse array (copy).
@@ -409,29 +757,35 @@ function ArraySize(ByRef arr)
 end function
 
 
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Registry                                                                                                             '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+'' The registry globals
+dim g_objReg, g_objRegCtx
+dim g_blnRegistry
+g_blnRegistry = false
+
+
 ''
-' Gets the SID of the current user.
-function GetSid()
-   dim objNet, strUser, strDomain, offSlash, objWmiUser
-   GetSid = ""
-
-   ' Figure the user + domain
-   set objNet = CreateObject("WScript.Network")
-   strUser   = objNet.UserName
-   strDomain = objNet.UserDomain
-   offSlash  = InStr(1, strUser, "\")
-   if offSlash > 0 then
-      strDomain = Left(strUser, offSlash - 1)
-      strUser   = Right(strUser, Len(strUser) - offSlash)
+' Init the register provider globals.
+function RegInit()
+   RegInit = false
+   On Error Resume Next
+   if g_blnRegistry = false then
+      set g_objRegCtx = CreateObject("WbemScripting.SWbemNamedValueSet")
+      ' Comment out the following for lines if the cause trouble on your windows version.
+      if IsWow64() then
+         g_objRegCtx.Add "__ProviderArchitecture", 64
+         g_objRegCtx.Add "__RequiredArchitecture", true
+         LogPrint "RegInit: WoW64"
+      end if
+      set objLocator = CreateObject("Wbemscripting.SWbemLocator")
+      set objServices = objLocator.ConnectServer("", "root\default", "", "", , , , g_objRegCtx)
+      set g_objReg = objServices.Get("StdRegProv")
+      g_blnRegistry = true
    end if
-
-   ' Lookup the user.
-   on error resume next
-   set objWmiUser = GetObject("winmgmts:{impersonationlevel=impersonate}!/root/cimv2:Win32_UserAccount." _
-                              & "Domain='" & strDomain &"',Name='" & strUser & "'")
-   if err.number = 0 then
-      GetSid = objWmiUser.SID
-   end if
+   RegInit = true
 end function
 
 
@@ -463,33 +817,6 @@ function RegTransRoot(strRoot, ByRef sSubKeyName)
          MsgFatal "RegTransRoot: Unknown root: '" & strRoot & "'"
          RegTransRoot = 0
    end select
-end function
-
-
-'' The registry globals
-dim g_objReg, g_objRegCtx
-dim g_blnRegistry
-g_blnRegistry = false
-
-
-''
-' Init the register provider globals.
-function RegInit()
-   RegInit = false
-   On Error Resume Next
-   if g_blnRegistry = false then
-      set g_objRegCtx = CreateObject("WbemScripting.SWbemNamedValueSet")
-      ' Comment out the following for lines if the cause trouble on your windows version.
-      if IsWow64() then
-         g_objRegCtx.Add "__ProviderArchitecture", 64
-         g_objRegCtx.Add "__RequiredArchitecture", true
-      end if
-      set objLocator = CreateObject("Wbemscripting.SWbemLocator")
-      set objServices = objLocator.ConnectServer("", "root\default", "", "", , , , g_objRegCtx)
-      set g_objReg = objServices.Get("StdRegProv")
-      g_blnRegistry = true
-   end if
-   RegInit = true
 end function
 
 
@@ -696,299 +1023,9 @@ function CollectFromProgramItemLinks(ByRef fnCallback, ByRef objUser)
 end function
 
 
-''
-' Gets the commandline used to invoke the script.
-function GetCommandline()
-   dim str, i
-
-   '' @todo find an api for querying it instead of reconstructing it like this...
-   GetCommandline = "cscript configure.vbs"
-   for i = 1 to WScript.Arguments.Count
-      str = WScript.Arguments.Item(i - 1)
-      if str = "" then
-         str = """"""
-      elseif (InStr(1, str, " ")) then
-         str = """" & str & """"
-      end if
-      GetCommandline = GetCommandline & " " & str
-   next
-end function
-
-
-''
-' Gets an environment variable.
-function EnvGet(strName)
-   EnvGet = g_objShell.Environment("PROCESS")(strName)
-end function
-
-
-''
-' Sets an environment variable.
-sub EnvSet(strName, strValue)
-   g_objShell.Environment("PROCESS")(strName) = strValue
-   LogPrint "EnvSet: " & strName & "=" & strValue
-end sub
-
-
-''
-' Appends a string to an environment variable
-sub EnvAppend(strName, strValue)
-   dim str
-   str = g_objShell.Environment("PROCESS")(strName)
-   g_objShell.Environment("PROCESS")(strName) =  str & strValue
-   LogPrint "EnvAppend: " & strName & "=" & str & strValue
-end sub
-
-
-''
-' Prepends a string to an environment variable
-sub EnvPrepend(strName, strValue)
-   dim str
-   str = g_objShell.Environment("PROCESS")(strName)
-   g_objShell.Environment("PROCESS")(strName) =  strValue & str
-   LogPrint "EnvPrepend: " & strName & "=" & strValue & str
-end sub
-
-''
-' Gets the first non-empty environment variable of the given two.
-function EnvGetFirst(strName1, strName2)
-   EnvGetFirst = g_objShell.Environment("PROCESS")(strName1)
-   if EnvGetFirst = "" then
-      EnvGetFirst = g_objShell.Environment("PROCESS")(strName2)
-   end if
-end function
-
-
-''
-' Get the path of the parent directory. Returns root if root was specified.
-' Expects abs path.
-function PathParent(str)
-   PathParent = g_objFileSys.GetParentFolderName(DosSlashes(str))
-end function
-
-
-''
-' Strips the filename from at path.
-function PathStripFilename(str)
-   PathStripFilename = g_objFileSys.GetParentFolderName(DosSlashes(str))
-end function
-
-
-''
-' Get the abs path, use the short version if necessary.
-function PathAbs(str)
-   strAbs    = g_objFileSys.GetAbsolutePathName(DosSlashes(str))
-   strParent = g_objFileSys.GetParentFolderName(strAbs)
-   if strParent = "" then
-      PathAbs = strAbs
-   else
-      strParent = PathAbs(strParent)  ' Recurse to resolve parent paths.
-      PathAbs   = g_objFileSys.BuildPath(strParent, g_objFileSys.GetFileName(strAbs))
-
-      dim obj
-      set obj = Nothing
-      if FileExists(PathAbs) then
-         set obj = g_objFileSys.GetFile(PathAbs)
-      elseif DirExists(PathAbs) then
-         set obj = g_objFileSys.GetFolder(PathAbs)
-      end if
-
-      if not (obj is nothing) then
-         for each objSub in obj.ParentFolder.SubFolders
-            if obj.Name = objSub.Name  or  obj.ShortName = objSub.ShortName then
-               if  InStr(1, objSub.Name, " ") > 0 _
-                Or InStr(1, objSub.Name, "&") > 0 _
-                Or InStr(1, objSub.Name, "$") > 0 _
-                  then
-                  PathAbs = g_objFileSys.BuildPath(strParent, objSub.ShortName)
-                  if  InStr(1, PathAbs, " ") > 0 _
-                   Or InStr(1, PathAbs, "&") > 0 _
-                   Or InStr(1, PathAbs, "$") > 0 _
-                     then
-                     MsgFatal "PathAbs(" & str & ") attempted to return filename with problematic " _
-                      & "characters in it (" & PathAbs & "). The tool/sdk referenced will probably " _
-                      & "need to be copied or reinstalled to a location without 'spaces', '$', ';' " _
-                      & "or '&' in the path name. (Unless it's a problem with this script of course...)"
-                  end if
-               else
-                  PathAbs = g_objFileSys.BuildPath(strParent, objSub.Name)
-               end if
-               exit for
-            end if
-         next
-      end if
-   end if
-end function
-
-
-''
-' Get the abs path, use the long version.
-function PathAbsLong(str)
-   strAbs    = g_objFileSys.GetAbsolutePathName(DosSlashes(str))
-   strParent = g_objFileSys.GetParentFolderName(strAbs)
-   if strParent = "" then
-      PathAbsLong = strAbs
-   else
-      strParent = PathAbsLong(strParent)  ' Recurse to resolve parent paths.
-      PathAbsLong = g_objFileSys.BuildPath(strParent, g_objFileSys.GetFileName(strAbs))
-
-      dim obj
-      set obj = Nothing
-      if FileExists(PathAbsLong) then
-         set obj = g_objFileSys.GetFile(PathAbsLong)
-      elseif DirExists(PathAbsLong) then
-         set obj = g_objFileSys.GetFolder(PathAbsLong)
-      end if
-
-      if not (obj is nothing) then
-         for each objSub in obj.ParentFolder.SubFolders
-            if obj.Name = objSub.Name  or  obj.ShortName = objSub.ShortName then
-               PathAbsLong = g_objFileSys.BuildPath(strParent, objSub.Name)
-               exit for
-            end if
-         next
-      end if
-   end if
-end function
-
-
-''
-' Returns true if there are subfolders starting with the given string.
-function HasSubdirsStartingWith(strFolder, strStartingWith)
-   HasSubdirsStartingWith = False
-   if DirExists(strFolder) then
-      dim obj
-      set obj = g_objFileSys.GetFolder(strFolder)
-      for each objSub in obj.SubFolders
-         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
-            HasSubdirsStartingWith = True
-            LogPrint "# HasSubdirsStartingWith(" & strFolder & "," & strStartingWith & ") found " & objSub.Name
-            exit for
-         end if
-      next
-   end if
-end function
-
-
-''
-' Returns a sorted array of subfolder names that starts with the given string.
-function GetSubdirsStartingWith(strFolder, strStartingWith)
-   if DirExists(strFolder) then
-      dim obj, i
-      set obj = g_objFileSys.GetFolder(strFolder)
-      i = 0
-      for each objSub in obj.SubFolders
-         if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
-            i = i + 1
-         end if
-      next
-      if i > 0 then
-         redim arrResult(i - 1)
-         i = 0
-         for each objSub in obj.SubFolders
-            if StrComp(Left(objSub.Name, Len(strStartingWith)), strStartingWith) = 0 then
-               arrResult(i) = objSub.Name
-               i = i + 1
-            end if
-         next
-         GetSubdirsStartingWith = arrResult
-      else
-         GetSubdirsStartingWith = Array()
-      end if
-   else
-      GetSubdirsStartingWith = Array()
-   end if
-end function
-
-
-''
-' Returns a sorted array of subfolder names that starts with the given string.
-function GetSubdirsStartingWithVerSorted(strFolder, strStartingWith)
-   GetSubdirsStartingWithVerSorted = ArrayVerSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
-end function
-
-
-''
-' Returns a reverse version sorted array of subfolder names that starts with the given string.
-function GetSubdirsStartingWithRVerSorted(strFolder, strStartingWith)
-   GetSubdirsStartingWithRSortedVersion = ArrayRVerSortStrings(GetSubdirsStartingWith(strFolder, strStartingWith))
-end function
-
-
-''
-' Executes a command in the shell catching output in g_strShellOutput
-function Shell(strCommand, blnBoth)
-   dim strShell, strCmdline, objExec, str
-
-   strShell = g_objShell.ExpandEnvironmentStrings("%ComSpec%")
-   if blnBoth = true then
-      strCmdline = strShell & " /c " & strCommand & " 2>&1"
-   else
-      strCmdline = strShell & " /c " & strCommand & " 2>nul"
-   end if
-
-   LogPrint "# Shell: " & strCmdline
-   Set objExec = g_objShell.Exec(strCmdLine)
-   g_strShellOutput = objExec.StdOut.ReadAll()
-   objExec.StdErr.ReadAll()
-   do while objExec.Status = 0
-      Wscript.Sleep 20
-      g_strShellOutput = g_strShellOutput & objExec.StdOut.ReadAll()
-      objExec.StdErr.ReadAll()
-   loop
-
-   LogPrint "# Status: " & objExec.ExitCode
-   LogPrint "# Start of Output"
-   LogPrint g_strShellOutput
-   LogPrint "# End of Output"
-
-   Shell = objExec.ExitCode
-end function
-
-
-''
-' Try find the specified file in the specified path variable.
-function WhichEx(strEnvVar, strFile)
-   dim strPath, iStart, iEnd, str
-
-   ' the path
-   strPath = EnvGet(strEnvVar)
-   iStart = 1
-   do while iStart <= Len(strPath)
-      iEnd = InStr(iStart, strPath, ";")
-      if iEnd <= 0 then iEnd = Len(strPath) + 1
-      if iEnd > iStart then
-         str = Mid(strPath, iStart, iEnd - iStart) & "/" & strFile
-         if FileExists(str) then
-            WhichEx = str
-            exit function
-         end if
-      end if
-      iStart = iEnd + 1
-   loop
-
-   ' registry or somewhere?
-
-   WhichEx = ""
-end function
-
-
-''
-' Try find the specified file in the path.
-function Which(strFile)
-   Which = WhichEx("Path", strFile)
-end function
-
-
-''
-' Right pads a string with spaces to the given length
-function RightPad(str, cch)
-   if Len(str) < cch then
-      RightPad = str & String(cch - Len(str), " ")
-   else
-      RightPad = str
-   end if
-end function
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Messaging and Output                                                                                                 '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 ''
 ' Append text to the log file and echo it to stdout
@@ -1054,6 +1091,10 @@ sub MsgError(strMsg)
    g_rcScript = 1
 end sub
 
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Logging and Logged operations                                                                                        '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 ''
 ' Write a log header with some basic info.
@@ -1235,6 +1276,7 @@ sub EnvPrintCleanup(strEnv, strValue, strSep)
    FileAppendLine g_strEnvFile, "if ""%" & strEnv & ":~-"  & cchValueAndSep & "%""==""" & strSep & strValue & """  set " & strEnv & "=%" & strEnv & ":~0,-" & cchValueAndSep & "%"
 end sub
 
+
 '' Use by EnvPrintPrepend to skip ';' stripping.
 dim g_strPrependCleanEnvVars
 
@@ -1270,6 +1312,39 @@ sub EnvPrintAppend(strEnv, strValue, strSep)
    FileAppendLine g_strEnvFile, "set " & strEnv & "=%" & strEnv & "%" & strSep & strValue
 end sub
 
+
+''
+' Self test for some of the above routines.
+'
+sub SelfTest
+   dim i, str
+   str = "0123456789"
+   for i = 1 to Len(str)
+      if CharIsDigit(Mid(str, i, 1)) <> True then MsgFatal "SelfTest failed: CharIsDigit("&Mid(str, i, 1)&")"
+   next
+   str = "abcdefghijklmnopqrstuvwxyz~`!@#$%^&*()_+-=ABCDEFGHIJKLMNOPQRSTUVWXYZ/\[]{}"
+   for i = 1 to Len(str)
+      if CharIsDigit(Mid(str, i, 1)) <> False then MsgFatal "SelfTest failed: CharIsDigit("&Mid(str, i, 1)&")"
+   next
+   if StrVersionCompare("1234", "1234") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #1"
+   if StrVersionCompare("1", "1") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #2"
+   if StrVersionCompare("2", "1") <= 0 then MsgFatal "SelfTest failed: StrVersionCompare #3"
+   if StrVersionCompare("1", "2") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #4"
+   if StrVersionCompare("01", "1") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #5"
+   if StrVersionCompare("01", "001") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #6"
+   if StrVersionCompare("12", "123") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #7"
+   if StrVersionCompare("v123", "123") <= 0 then MsgFatal "SelfTest failed: StrVersionCompare #8"
+   if StrVersionCompare("v1.2.3", "v1.3.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #9"
+   if StrVersionCompare("v1.02.3", "v1.3.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #10"
+   if StrVersionCompare("v1.2.3", "v1.03.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #11"
+   if StrVersionCompare("v1.2.4", "v1.23.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #12"
+   if StrVersionCompare("v10.0.17163", "v10.00.18363") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #13"
+end sub
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Feature disabling                                                                                                             '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 ''
 ' No COM
@@ -1310,12 +1385,17 @@ sub DisableSDL(strReason)
 end sub
 
 
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Tool/Library Locating and Checking                                                                                            '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
 ''
 ' Checks the the path doesn't contain characters the tools cannot deal with.
+'
 sub CheckSourcePath
    dim sPwd
 
-   sPwd = PathAbs(g_strPath)
+   sPwd = PathAbsLong(g_strPath)    ' Must check the long version.
    if InStr(1, sPwd, " ") > 0 then
       MsgError "Source path contains spaces! Please move it. (" & sPwd & ")"
    end if
@@ -1326,9 +1406,9 @@ sub CheckSourcePath
       MsgError "Source path contains the '%' char! Please move it. (" & sPwd & ")"
    end if
    if  InStr(1, sPwd, Chr(10)) > 0 _
-    Or InStr(1, sPwd, Chr(13)) > 0 _
-    Or InStr(1, sPwd, Chr(9)) > 0 _
-    then
+    or InStr(1, sPwd, Chr(13)) > 0 _
+    or InStr(1, sPwd, Chr(9)) > 0 _
+   then
       MsgError "Source path contains control characters! Please move it. (" & sPwd & ")"
    end if
    Print "Source path: OK"
@@ -1337,6 +1417,7 @@ end sub
 
 ''
 ' Checks for kBuild - very simple :)
+'
 sub CheckForkBuild(strOptkBuild)
    PrintHdr "kBuild"
 
@@ -1554,9 +1635,7 @@ sub CheckForkBuild(strOptkBuild)
    PrintResult "kBuild binaries", g_strPathkBuildBin
 end sub
 
-
-''
-' Class we use for detecting VisualC++
+'' Class we use for detecting VisualC++
 class VisualCPPState
    public m_blnFound
    public m_strPathVC
@@ -1758,8 +1837,10 @@ class VisualCPPState
    end function
 end class
 
+
 ''
 ' Checks for Visual C++ version 16 (2019), 15 (2017), 14 (2015), 12 (2013), 11 (2012) or 10 (2010).
+'
 sub CheckForVisualCPP(strOptVC, strOptVCCommon)
    PrintHdr "Visual C++"
 
@@ -1818,8 +1899,7 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon)
    end if
 end sub
 
-''
-' Checks for a platform SDK that works with the compiler
+'' Checks for a platform SDK that works with the compiler
 sub CheckForPlatformSDK(strOptSDK)
    dim strPathPSDK, str
    PrintHdr "Windows Platform SDK (recent)"
@@ -1905,8 +1985,7 @@ sub CheckForPlatformSDK(strOptSDK)
    g_strPathPSDK = strPathPSDK
 end sub
 
-''
-' Checks if the specified path points to a usable PSDK.
+'' Checks if the specified path points to a usable PSDK.
 function CheckForPlatformSDKSub(strPathPSDK)
    CheckForPlatformSDKSub = False
    LogPrint "trying: strPathPSDK=" & strPathPSDK
@@ -1929,6 +2008,7 @@ end function
 
 ''
 ' Checks for a windows 10 SDK (later also WDK).
+'
 sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
    dim strPathSDK10, strSDK10Version, str
    PrintHdr "Windows 10 SDK/WDK"
@@ -1969,8 +2049,7 @@ sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
    g_strPathSDK10 = strPathSDK10
 end sub
 
-''
-' Checks the tools directory.
+'' Checks the tools directory.
 function CheckForSDK10ToolsSub(ByRef strSDK10Version)
    dim arrToolsDirs, strToolsDir, arrDirs, strDir
    CheckForSDK10ToolSub = ""
@@ -1988,8 +2067,7 @@ function CheckForSDK10ToolsSub(ByRef strSDK10Version)
 
 end function
 
-''
-' Checks if the specified path points to a usable Windows 10 SDK/WDK.
+'' Checks if the specified path points to a usable Windows 10 SDK/WDK.
 function CheckForSDK10Sub(strPathSDK10, ByRef strSDK10Version)
    CheckForSDK10Sub = ""
    if strPathSDK10 <> "" then
@@ -2034,7 +2112,8 @@ end function
 
 
 ''
-' Checks for a Windows 7 Driver Kit.
+' Locating a Windows 7 Driver Kit.
+'
 sub CheckForWinDDK(strOptDDK)
    dim strPathDDK, str, strSubKeys
    PrintHdr "Windows DDK v7.1"
@@ -2137,7 +2216,8 @@ end function
 
 
 ''
-' Finds midl.exe
+' Locating midl.exe
+'
 sub CheckForMidl(strOptMidl)
    dim strMidl
    PrintHdr "Midl.exe"
@@ -2177,7 +2257,8 @@ end function
 
 
 ''
-' Finds OpenWatcom
+' Locating OpenWatcom 1.9
+'
 sub CheckForOpenWatcom(strOptOpenWatcom)
    dim strPathOpenWatcom
    PrintHdr "OpenWatcom"
@@ -2262,6 +2343,7 @@ end function
 
 ''
 ' Checks for any libSDL binaries.
+'
 sub CheckForlibSDL(strOptlibSDL)
    dim strPathlibSDL, str
    PrintHdr "libSDL"
@@ -2330,8 +2412,7 @@ sub CheckForlibSDL(strOptlibSDL)
    PrintResult "libSDL", strPathlibSDL
 end sub
 
-''
-' Checks if the specified path points to an usable libSDL or not.
+'' Checks if the specified path points to an usable libSDL or not.
 function CheckForlibSDLSub(strPathlibSDL)
    CheckForlibSDLSub = False
    LogPrint "trying: strPathlibSDL=" & strPathlibSDL
@@ -2349,6 +2430,7 @@ end function
 
 ''
 ' Checks for libxml2.
+'
 sub CheckForXml2(strOptXml2)
    dim strPathXml2, str
    PrintHdr "libxml2"
@@ -2402,8 +2484,7 @@ sub CheckForXml2(strOptXml2)
    PrintResult "libxml2", strPathXml2
 end sub
 
-''
-' Checks if the specified path points to an usable libxml2 or not.
+'' Checks if the specified path points to an usable libxml2 or not.
 function CheckForXml2Sub(strPathXml2)
    dim str
 
@@ -2422,8 +2503,7 @@ function CheckForXml2Sub(strPathXml2)
 end function
 
 
-''
-' Checks for openssl
+'' Checks for openssl
 sub CheckForSsl(strOptSsl, bln32Bit)
    dim strPathSsl, str
    PrintHdr "openssl"
@@ -2484,8 +2564,7 @@ sub CheckForSsl(strOptSsl, bln32Bit)
    PrintResult strOpenssl, strPathSsl
 end sub
 
-''
-' Checks if the specified path points to an usable openssl or not.
+'' Checks if the specified path points to an usable openssl or not.
 function CheckForSslSub(strPathSsl)
 
    CheckForSslSub = False
@@ -2500,6 +2579,7 @@ end function
 
 ''
 ' Checks for libcurl
+'
 sub CheckForCurl(strOptCurl, bln32Bit)
    dim strPathCurl, str
    PrintHdr "libcurl"
@@ -2558,8 +2638,7 @@ sub CheckForCurl(strOptCurl, bln32Bit)
    PrintResult strCurl, strPathCurl
 end sub
 
-''
-' Checks if the specified path points to an usable libcurl or not.
+'' Checks if the specified path points to an usable libcurl or not.
 function CheckForCurlSub(strPathCurl)
 
    CheckForCurlSub = False
@@ -2575,6 +2654,7 @@ end function
 
 ''
 ' Checks for any Qt5 binaries.
+'
 sub CheckForQt(strOptQt5, strOptInfix)
    dim strPathQt5, strInfixQt5, arrFolders, arrVccInfixes, strVccInfix
    PrintHdr "Qt5"
@@ -2677,8 +2757,6 @@ function Qt5ProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
    end if
 end function
 
-''
-' Checks if the specified path points to an usable Qt5 library.
 function CheckForQt5Sub(strPathQt5, strOptInfix, ByRef strInfixQt5)
    CheckForQt5Sub = ""
    LogPrint "trying: strPathQt5=" & strPathQt5
@@ -2710,6 +2788,7 @@ end function
 
 ''
 ' Checks for python.
+'
 function CheckForPython(strOptPython)
    dim strPathPython, arrVersions, strVer, str
    PrintHdr "Python"
@@ -2740,8 +2819,6 @@ function CheckForPython(strOptPython)
    end if
 end function
 
-'' Worker for CheckForPython.
-'
 function CheckForPythonSub(strPathPython)
    CheckForPythonSub = ""
    if strPathPython <> "" then
@@ -2754,35 +2831,13 @@ function CheckForPythonSub(strPathPython)
 end function
 
 
-''
-' Simple self test.
-sub SelfTest
-   dim i, str
-   str = "0123456789"
-   for i = 1 to Len(str)
-      if CharIsDigit(Mid(str, i, 1)) <> True then MsgFatal "SelfTest failed: CharIsDigit("&Mid(str, i, 1)&")"
-   next
-   str = "abcdefghijklmnopqrstuvwxyz~`!@#$%^&*()_+-=ABCDEFGHIJKLMNOPQRSTUVWXYZ/\[]{}"
-   for i = 1 to Len(str)
-      if CharIsDigit(Mid(str, i, 1)) <> False then MsgFatal "SelfTest failed: CharIsDigit("&Mid(str, i, 1)&")"
-   next
-   if StrVersionCompare("1234", "1234") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #1"
-   if StrVersionCompare("1", "1") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #2"
-   if StrVersionCompare("2", "1") <= 0 then MsgFatal "SelfTest failed: StrVersionCompare #3"
-   if StrVersionCompare("1", "2") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #4"
-   if StrVersionCompare("01", "1") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #5"
-   if StrVersionCompare("01", "001") <> 0 then MsgFatal "SelfTest failed: StrVersionCompare #6"
-   if StrVersionCompare("12", "123") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #7"
-   if StrVersionCompare("v123", "123") <= 0 then MsgFatal "SelfTest failed: StrVersionCompare #8"
-   if StrVersionCompare("v1.2.3", "v1.3.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #9"
-   if StrVersionCompare("v1.02.3", "v1.3.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #10"
-   if StrVersionCompare("v1.2.3", "v1.03.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #11"
-   if StrVersionCompare("v1.2.4", "v1.23.4") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #12"
-   if StrVersionCompare("v10.0.17163", "v10.00.18363") >= 0 then MsgFatal "SelfTest failed: StrVersionCompare #13"
-end sub
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Main function and usage                                                                                                       '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 ''
 ' Show usage.
+'
 sub usage
    Print "Usage: cscript configure.vbs [options]"
    Print ""
