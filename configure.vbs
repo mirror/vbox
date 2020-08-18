@@ -52,10 +52,11 @@ g_strLogFile = g_strPath & "\configure.log"
 
 
 ' kBuild stuff.
-dim g_strPathkBuild, g_strPathkBuildBin, g_strPathDev
+dim g_strPathkBuild, g_strPathkBuildBin, g_strPathDev, g_arrPathDev
 g_strPathkBuild = ""
 g_strPathkBuildBin = ""
 g_strPathDev = ""
+g_arrPathDev = Array(":placeholder:")
 
 dim g_strTargetArch, g_StrTargetArchWin
 g_strTargetArch = ""
@@ -410,29 +411,51 @@ function SearchToolsEx(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser, B
    next
 end function
 
-'' Search under g_strPathDev for a tool, target arch first.
+'' Search under g_strPathDev for a tool, target arch only.
 function SearchTargetTools(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser)
-   SearchTargetTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, _
-                                     Array(g_strPathDev & "/win." & g_strTargetArch & "/" & strTool, _
-                                           g_strPathDev & "/win.x86/" & strTool, _
-                                           g_strPathDev & "/win.amd64/" & strTool))
+   dim i
+   redim arrToolsDirs(ArraySize(g_arrPathDev) - 1)
+   for i = 0 to UBound(g_arrPathDev)
+      arrToolsDirs(i) = g_arrPathDev(i) & "/win." & g_strTargetArch & "/" & strTool
+   next
+   SearchTargetTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, arrToolsDirs)
+end function
+
+'' Search under g_strPathDev for a tool, target arch and alternative arches.
+function SearchTargetPlusTools(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser)
+   dim i
+   redim arrToolsDirs(ArraySize(g_arrPathDev)*3 - 1)
+   for i = 0 to UBound(g_arrPathDev)
+      arrToolsDirs(i*3 + 0) = g_arrPathDev(i) & "/win." & g_strTargetArch & "/" & strTool
+      arrToolsDirs(i*3 + 1) = g_arrPathDev(i) & "/win.x86/" & strTool
+      arrToolsDirs(i*3 + 2) = g_arrPathDev(i) & "/win.amd64/" & strTool
+   next
+   SearchTargetPlusTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, arrToolsDirs)
 end function
 
 '' Search under g_strPathDev for a tool, host arch first.
 function SearchHostTools(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser)
-   SearchHostTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, _
-                                   Array(g_strPathDev & "/win." & g_strHostArch & "/" & strTool, _
-                                         g_strPathDev & "/win.x86/" & strTool, _
-                                         g_strPathDev & "/win.amd64/" & strTool))
+   dim i
+   redim arrToolsDirs(ArraySize(g_arrPathDev) * 3 - 1)
+   for i = 0 to UBound(g_arrPathDev)
+      arrToolsDirs(i*3 + 0) = g_arrPathDev(i) & "/win." & g_strHostArch & "/" & strTool
+      arrToolsDirs(i*3 + 1) = g_arrPathDev(i) & "/win.x86/" & strTool
+      arrToolsDirs(i*3 + 2) = g_arrPathDev(i) & "/win.amd64/" & strTool
+   next
+   SearchHostTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, arrToolsDirs)
 end function
 
 '' Search under g_strPathDev for a tool, common dir first.
 function SearchCommonTools(strTool, strVerPrefix, ByRef fnCallback, ByRef varUser)
-   SearchCommonTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, _
-                                     Array(g_strPathDev & "/common/" & strTool, _
-                                           g_strPathDev & "/win." & g_strHostArch & "/" & strTool, _
-                                           g_strPathDev & "/win.x86/" & strTool, _
-                                           g_strPathDev & "/win.amd64/" & strTool))
+   dim i
+   redim arrToolsDirs(ArraySize(g_arrPathDev) * 4 - 1)
+   for i = 0 to UBound(g_arrPathDev)
+      arrToolsDirs(i*4 + 0) = g_arrPathDev(i) & "/win.common/" & strTool
+      arrToolsDirs(i*4 + 1) = g_arrPathDev(i) & "/win." & g_strTargetArch & "/" & strTool
+      arrToolsDirs(i*4 + 2) = g_arrPathDev(i) & "/win.x86/" & strTool
+      arrToolsDirs(i*4 + 3) = g_arrPathDev(i) & "/win.amd64/" & strTool
+   next
+   SearchCommonTools = SearchToolsEx(strTool, strVerPrefix, fnCallback, varUser, arrToolsDirs)
 end function
 
 ''
@@ -660,6 +683,7 @@ sub CheckForkBuild(strOptkBuild)
          EnvSet "KBUILD_DEVTOOLS", g_strPathDev
       end if
    end if
+   g_arrPathDev(ArrayFindString(g_arrPathDev, ":placeholder:")) = g_strPathDev
 
    '
    ' Write KBUILD_PATH and updated PATH to the environment script if necessary.
@@ -949,11 +973,13 @@ class VisualCPPState
    end function
 
    public function checkInternal
-      check g_strPathDev & "/win.amd64/vcc/v14.2",  ""
-      check g_strPathDev & "/win.amd64/vcc/v14.1",  ""
-      check g_strPathDev & "/win.amd64/vcc/v14.0",  ""
-      check g_strPathDev & "/win.amd64/vcc/v10sp1", ""
-      check g_strPathDev & "/win.x86/vcc/v10sp1",   ""
+      dim strPathDev
+      for each strPathDev in g_arrPathDev : check strPathDev & "/win.amd64/vcc/v14.2",  "" : next
+      for each strPathDev in g_arrPathDev : check strPathDev & "/win.amd64/vcc/v14.2",  "" : next
+      for each strPathDev in g_arrPathDev : check strPathDev & "/win.amd64/vcc/v14.1",  "" : next
+      for each strPathDev in g_arrPathDev : check strPathDev & "/win.amd64/vcc/v14.0",  "" : next
+      for each strPathDev in g_arrPathDev : check strPathDev & "/win.amd64/vcc/v10sp1", "" : next
+      for each strPathDev in g_arrPathDev : check strPathDev & "/win.x86/vcc/v10sp1",   "" : next
       checkInternal = m_blnFound
    end function
 end class
@@ -984,71 +1010,42 @@ end function
 ' Checks for a platform SDK that works with the compiler
 '
 sub CheckForPlatformSDK(strOptSDK)
-   dim strPathPSDK, str
+   dim strPathPSDK, strVersion, strSubKey, str, strHkey
    PrintHdr "Windows Platform SDK (recent)"
 
-   strPathPSDK = ""
+   '
+   ' Search for it.
+   '
 
    ' Check the supplied argument first.
-   str = strOptSDK
-   if str <> "" then
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
+   strPathPSDK = CheckForPlatformSDKSub(strOptSDK, strVersion)
 
    ' The tools location (first).
-   if strPathPSDK = "" And g_blnInternalFirst then
-      str = g_strPathDev & "/win.x86/sdk/v7.1"
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
-
-   if strPathPSDK = "" And g_blnInternalFirst then
-      str = g_strPathDev & "/win.x86/sdk/v8.0"
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
+   if strPathPSDK = "" and g_blnInternalFirst = true then strPathPSDK = SearchTargetPlusTools("sdk", "v7.1", GetRef("CheckForPlatformSDKSub"), strVersion)
+   if strPathPSDK = "" and g_blnInternalFirst = true then strPathPSDK = SearchTargetPlusTools("sdk", "v8.0", GetRef("CheckForPlatformSDKSub"), strVersion)
 
    ' Look for it in the environment
-   str = EnvGet("MSSdk")
-   if strPathPSDK = "" And str <> "" then
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
-
-   str = EnvGet("Mstools")
-   if strPathPSDK = "" And str <> "" then
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
+   if strPathPSDK = "" then  strPathPSDK = CheckForPlatformSDKSub(EnvGet("MSSdk"), strVersion)
+   if strPathPSDK = "" then  strPathPSDK = CheckForPlatformSDKSub(EnvGet("Mstools"), strVersion)
 
    ' Check if there is one installed with the compiler.
-   if strPathPSDK = "" And str <> "" then
-      str = g_strPathVCC & "/PlatformSDK"
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
+   if strPathPSDK = "" then  strPathPSDK = CheckForPlatformSDKSub(g_strPathVCC & "/PlatformSDK", strVersion)
 
    ' Check the registry next (ASSUMES sorting).
-   arrSubKeys = RegEnumSubKeysRVerSorted("HKLM", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
-   for each strSubKey in arrSubKeys
-      str = LogRegGetString("HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
-      if strPathPSDK = "" And str <> "" then
-         if CheckForPlatformSDKSub(str) then strPathPSDK = str
-      end if
-   Next
-   arrSubKeys = RegEnumSubKeysRVerSorted("HKCU", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
-   for each strSubKey in arrSubKeys
-      str = LogRegGetString("HKCU\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
-      if strPathPSDK = "" And str <> "" then
-         if CheckForPlatformSDKSub(str) then strPathPSDK = str
-      end if
-   Next
+   if strPathPSDK = "" then
+      for each strHkey in Array("HKLM", "HKCU")
+         for each strSubKey in RegEnumSubKeysRVerSorted(strHkey, "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
+            str = LogRegGetString(strHkey & "\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
+            strPathPSDK = CheckForPlatformSDKSub(str, strVersion)
+            if strPathPSDK <> "" then exit for
+         next
+         if strPathPSDK <> "" then exit for
+      next
+   end if
 
    ' The tools location (post).
-   if (strPathPSDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/sdk/v7.1"
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
-
-   if (strPathPSDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/sdk/v8.0"
-      if CheckForPlatformSDKSub(str) then strPathPSDK = str
-   end if
+   if strPathPSDK = "" and g_blnInternalFirst = false then strPathPSDK = SearchTargetPlusTools("sdk", "v7.1", GetRef("CheckForPlatformSDKSub"), strVersion)
+   if strPathPSDK = "" and g_blnInternalFirst = false then strPathPSDK = SearchTargetPlusTools("sdk", "v8.0", GetRef("CheckForPlatformSDKSub"), strVersion)
 
    ' Give up.
    if strPathPSDK = "" then
@@ -1060,31 +1057,34 @@ sub CheckForPlatformSDK(strOptSDK)
    ' Emit the config.
    '
    strPathPSDK = UnixSlashes(PathAbs(strPathPSDK))
-   CfgPrintAssign "PATH_SDK_WINPSDK" & g_strVerPSDK, strPathPSDK
-   CfgPrintAssign "VBOX_WINPSDK",  "WINPSDK" & g_strVerPSDK
+   CfgPrintAssign "PATH_SDK_WINPSDK" & strVersion, strPathPSDK
+   CfgPrintAssign "VBOX_WINPSDK",  "WINPSDK" & strVersion
 
    PrintResult "Windows Platform SDK", strPathPSDK
-   PrintResultMsg "Windows Platform SDK version", g_strVerPSDK
+   PrintResultMsg "Windows Platform SDK version", strVersion
+   g_strVerPSDK  = strVersion
    g_strPathPSDK = strPathPSDK
 end sub
 
 '' Checks if the specified path points to a usable PSDK.
-function CheckForPlatformSDKSub(strPathPSDK)
+function CheckForPlatformSDKSub(strPathPSDK, ByRef strVersion)
    dim strOutput
-   CheckForPlatformSDKSub = False
-   LogPrint "trying: strPathPSDK=" & strPathPSDK
-   if    LogFileExists(strPathPSDK, "include/Windows.h") _
-    And  LogFileExists(strPathPSDK, "lib/Kernel32.Lib") _
-    And  LogFileExists(strPathPSDK, "lib/User32.Lib") _
-    And  LogFileExists(strPathPSDK, "bin/rc.exe") _
-    And  Shell("""" & DosSlashes(strPathPSDK & "/bin/rc.exe") & """" , True, strOutput) <> 0 _
+   CheckForPlatformSDKSub = ""
+   if strPathPSDK <> "" then
+      LogPrint "Trying: strPathPSDK=" & strPathPSDK
+      if   LogFileExists(strPathPSDK, "include/Windows.h") _
+       and LogFileExists(strPathPSDK, "lib/Kernel32.Lib") _
+       and LogFileExists(strPathPSDK, "lib/User32.Lib") _
+       and LogFileExists(strPathPSDK, "bin/rc.exe") _
+       and Shell("""" & DosSlashes(strPathPSDK & "/bin/rc.exe") & """" , True, strOutput) <> 0 _
       then
-      if InStr(1, strOutput, "Resource Compiler Version 6.2.") > 0 then
-         g_strVerPSDK = "80"
-         CheckForPlatformSDKSub = True
-      elseif InStr(1, strOutput, "Resource Compiler Version 6.1.") > 0 then
-         g_strVerPSDK = "71"
-         CheckForPlatformSDKSub = True
+         if InStr(1, strOutput, "Resource Compiler Version 6.2.") > 0 then
+            strVersion = "80"
+            CheckForPlatformSDKSub = UnixSlashes(PathAbs(strPathPSDK))
+         elseif InStr(1, strOutput, "Resource Compiler Version 6.1.") > 0 then
+            strVersion = "71"
+            CheckForPlatformSDKSub = UnixSlashes(PathAbs(strPathPSDK))
+         end if
       end if
    end if
 end function
@@ -1103,7 +1103,10 @@ sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
    '
    strSDK10Version = ""
    strPathSDK10 = CheckForSDK10Sub(strOptSDK10, strSDK10Version)
-   if strPathSDK10 = "" and g_blnInternalFirst = True  then strPathSDK10 = CheckForSDK10ToolsSub(strSDK10Version)
+   if strPathSDK10 = "" and g_blnInternalFirst = true then
+      strPathSDK10 = SearchTargetPlusTools("sdk", "v10.", GetRef("CheckForSDK10Sub"), strSDK10Version)
+   end if
+
    if strPathSDK10 = "" then
       str = LogRegGetString("HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10")
       strPathSDK10 = CheckForSDK10Sub(str, strSDK10Version)
@@ -1114,7 +1117,9 @@ sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
          if strPathSDK10 <> "" then exit for
       next
    end if
-   if strPathSDK10 = "" and g_blnInternalFirst = False then strPathSDK10 = CheckForSDK10ToolsSub()
+   if strPathSDK10 = "" and g_blnInternalFirst = true then
+      strPathSDK10 = SearchTargetPlusTools("sdk", "v10.", GetRef("CheckForSDK10Sub"), strSDK10Version)
+   end if
 
    if strPathSDK10 = "" then
       MsgError "Cannot find a suitable Windows 10 SDK.  Check configure.log and the build requirements."
@@ -1132,23 +1137,6 @@ sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
    PrintResultMsg "Windows 10 SDK version", strSDK10Version
    g_strPathSDK10 = strPathSDK10
 end sub
-
-'' Checks the tools directory.
-function CheckForSDK10ToolsSub(ByRef strSDK10Version)
-   dim arrToolsDirs, strToolsDir, arrDirs, strDir
-   CheckForSDK10ToolSub = ""
-   arrToolsDirs = Array(g_strPathDev & "/win." & g_strTargetArch & "/sdk", _
-                        g_strPathDev & "/win.x86/sdk", g_strPathDev & "/win.amd64/sdk")
-   for each strToolsDir in arrToolsDirs
-      arrDirs = GetSubdirsStartingWithRVerSorted(strToolsDir, "v10.")
-      for each strDir in arrDirs
-         CheckForSDK10ToolsSub = CheckForSDK10Sub(strToolsDir & "/" & strDir, strSDK10Version)
-         if CheckForSDK10ToolsSub <> "" then
-            exit function
-         end if
-      next
-   next
-end function
 
 '' Checks if the specified path points to a usable Windows 10 SDK/WDK.
 function CheckForSDK10Sub(strPathSDK10, ByRef strSDK10Version)
@@ -1204,59 +1192,52 @@ sub CheckForWinDDK(strOptDDK)
    '
    ' Find the DDK.
    '
-   strPathDDK = ""
-   ' The specified path.
-   if strPathDDK = "" And strOptDDK <> "" then
-      if CheckForWinDDKSub(strOptDDK, True) then strPathDDK = strOptDDK
-   end if
+   strPathDDK = CheckForWinDDKSub(strOptDDK, True)
 
    ' The tools location (first).
-   if strPathDDK = "" And g_blnInternalFirst then
-      str = g_strPathDev & "/win.x86/ddk/7600.16385.1"
-      if CheckForWinDDKSub(str, False) then strPathDDK = str
+   if strPathDDK = "" and g_blnInternalFirst = true then
+      for each str in g_arrPathDev
+         strPathDDK = CheckForWinDDKSub(str & "/win.x86/ddk/7600.16385.1", False)
+         if strPathDDK <> "" then exit for
+      next
    end if
 
    ' Check the environment
-   str = EnvGet("DDK_INC_PATH")
-   if strPathDDK = "" And str <> "" then
-      str = PathParent(PathParent(str))
-      if CheckForWinDDKSub(str, True) then strPathDDK = str
-   end if
-
-   str = EnvGet("BASEDIR")
-   if strPathDDK = "" And str <> "" then
-      if CheckForWinDDKSub(str, True) then strPathDDK = str
-   end if
+   if strPathDDK = "" then strPathDDK = CheckForWinDDKSub(PathParent(PathParent(EnvGet("DDK_INC_PATH"))), True)
+   if strPathDDK = "" then strPathDDK = CheckForWinDDKSub(EnvGet("BASEDIR"), True)
 
    ' Some array constants to ease the work.
    arrSoftwareKeys = array("SOFTWARE", "SOFTWARE\Wow6432Node")
    arrRoots        = array("HKLM", "HKCU")
 
    ' Windows 7 WDK.
-   arrLocations = array()
-   for each strSoftwareKey in arrSoftwareKeys
-      for each strSubKey in RegEnumSubKeysFull("HKLM", strSoftwareKey & "\Microsoft\KitSetup\configured-kits")
-         for each strSubKey2 in RegEnumSubKeysFull("HKLM", strSubKey)
-            str = LogRegGetString("HKLM\" & strSubKey2 & "\setup-install-location")
-            if str <> "" then
-               arrLocations = ArrayAppend(arrLocations, PathAbsLong(str))
-            end if
+   if strPathDDK = "" then
+      arrLocations = array()
+      for each strSoftwareKey in arrSoftwareKeys
+         for each strSubKey in RegEnumSubKeysFull("HKLM", strSoftwareKey & "\Microsoft\KitSetup\configured-kits")
+            for each strSubKey2 in RegEnumSubKeysFull("HKLM", strSubKey)
+               str = LogRegGetString("HKLM\" & strSubKey2 & "\setup-install-location")
+               if str <> "" then
+                  arrLocations = ArrayAppend(arrLocations, PathAbsLong(str))
+               end if
+            next
          next
       next
-   next
-   arrLocations = ArrayRVerSortStrings(arrLocations)
+      arrLocations = ArrayRVerSortStrings(arrLocations)
 
-   ' Check the locations we've gathered.
-   for each str in arrLocations
-      if strPathDDK = "" then
-         if CheckForWinDDKSub(str, True) then strPathDDK = str
-      end if
-   next
+      ' Check the locations we've gathered.
+      for each str in arrLocations
+         strPathDDK = CheckForWinDDKSub(str, True)
+         if strPathDDK <> "" then exit for
+      next
+   end if
 
    ' The tools location (post).
-   if (strPathDDK = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win.x86/ddk/7600.16385.1"
-      if CheckForWinDDKSub(str, False) then strPathDDK = str
+   if strPathDDK = "" and g_blnInternalFirst = false then
+      for each str in g_arrPathDev
+         strPathDDK = CheckForWinDDKSub(str & "/win.x86/ddk/7600.16385.1", False)
+         if strPathDDK <> "" then exit for
+      next
    end if
 
    ' Give up.
@@ -1277,23 +1258,26 @@ end sub
 
 '' Quick check if the DDK is in the specified directory or not.
 function CheckForWinDDKSub(strPathDDK, blnCheckBuild)
-   dim strOutput
-   CheckForWinDDKSub = False
-   LogPrint "trying: strPathDDK=" & strPathDDK & " blnCheckBuild=" & blnCheckBuild
-   if   LogFileExists(strPathDDK, "inc/api/ntdef.h") _
-    And LogFileExists(strPathDDK, "lib/win7/i386/int64.lib") _
-    And LogFileExists(strPathDDK, "lib/wlh/i386/int64.lib") _
-    And LogFileExists(strPathDDK, "lib/wnet/i386/int64.lib") _
-    And LogFileExists(strPathDDK, "lib/wxp/i386/int64.lib") _
-    And Not LogFileExists(strPathDDK, "lib/win8/i386/int64.lib") _
-    And LogFileExists(strPathDDK, "bin/x86/rc.exe") _
-      then
-      if Not blnCheckBuild then
-         CheckForWinDDKSub = True
-      '' @todo Find better build check.
-      elseif Shell("""" & DosSlashes(strPathDDK & "/bin/x86/rc.exe") & """" , True, strOutput) <> 0 _
-         And InStr(1, strOutput, "Resource Compiler Version 6.1.") > 0 then
-         CheckForWinDDKSub = True
+   CheckForWinDDKSub = ""
+   if strPathDDK <> "" then
+      dim strOutput
+      LogPrint "Trying: strPathDDK=" & strPathDDK & " blnCheckBuild=" & blnCheckBuild
+      if   LogFileExists(strPathDDK, "inc/api/ntdef.h") _
+       And LogFileExists(strPathDDK, "lib/win7/i386/int64.lib") _
+       And LogFileExists(strPathDDK, "lib/wlh/i386/int64.lib") _
+       And LogFileExists(strPathDDK, "lib/wnet/i386/int64.lib") _
+       And LogFileExists(strPathDDK, "lib/wxp/i386/int64.lib") _
+       And Not LogFileExists(strPathDDK, "lib/win8/i386/int64.lib") _
+       And LogFileExists(strPathDDK, "bin/x86/rc.exe") _
+         then
+         if Not blnCheckBuild then
+            CheckForWinDDKSub = strPathDDK
+         '' @todo Find better build check.
+         elseif Shell("""" & DosSlashes(strPathDDK & "/bin/x86/rc.exe") & """" , True, strOutput) <> 0 _
+            and InStr(1, strOutput, "Resource Compiler Version 6.1.") > 0 _
+         then
+            CheckForWinDDKSub = strPathDDK
+         end if
       end if
    end if
 end function
@@ -1303,7 +1287,7 @@ end function
 ' Locating midl.exe
 '
 sub CheckForMidl(strOptMidl)
-   dim strMidl
+   dim strMidl, str
    PrintHdr "Midl.exe"
 
    ' Skip if no COM/ATL.
@@ -1320,7 +1304,14 @@ sub CheckForMidl(strOptMidl)
    if strMidl = "" then strMidl = CheckForMidlSub(g_strPathDDK   & "/bin/" & g_strHostArchWin & "/Midl.exe")
    if strMidl = "" then strMidl = CheckForMidlSub(g_strPathDDK   & "/bin/x86/Midl.exe")
    if strMidl = "" then strMidl = CheckForMidlSub(g_strPathDDK   & "/bin/Midl.exe")
-   if strMidl = "" then strMidl = CheckForMidlSub(g_strPathDev   & "/win.x86/bin/Midl.exe")
+   if strMidl = "" then
+      for each str in g_arrPathDev
+         strMidl = CheckForMidlSub(str & "/win." & g_strHostArchWin & "/bin/Midl.exe")
+         if strMidl <> "" then exit for
+         strMidl = CheckForMidlSub(str & "/win.x86/bin/Midl.exe")
+         if strMidl <> "" then exit for
+      next
+   end if
 
    if strMidl = "" then
       PrintResultMsg "Midl.exe", "not found"
@@ -1553,54 +1544,26 @@ end function
 ' Checks for any libSDL binaries.
 '
 sub CheckForlibSDL(strOptlibSDL)
-   dim strPathlibSDL, str
+   dim strPathLibSDL, strVersion
    PrintHdr "libSDL"
 
    '
    ' Try find some SDL library.
    '
-
-   ' First, the specific location.
-   strPathlibSDL = ""
-   if (strPathlibSDL = "") And (strOptlibSDL <> "") then
-      if CheckForlibSDLSub(strOptlibSDL) then strPathlibSDL = strOptlibSDL
+   strPathLibSDL = CheckForLibSDLSub(strOptlibSDL, strVersion)
+   if strPathlibSDL = "" and g_blnInternalFirst = true then
+      strPathLibSDL = SearchTargetTools("libsdl", "v", GetRef("CheckForLibSDLSub"), strVersion)
    end if
 
-   ' The tools location (first).
-   if (strPathlibSDL = "") And (g_blnInternalFirst = True) then
-      str = g_strPathDev & "/win." & g_strTargetArch & "/libsdl"
-      if HasSubdirsStartingWith(str, "v") then
-         PrintResult "libSDL", str & "/v* (auto)"
-         exit sub
-      end if
-   end if
+   ' Poke about in the LIB and PATH env.vars.
+   if strPathlibSDL = "" then strPathLibSDL = CheckForlibSDLSub(PathParent(PathStripFilename(WhichEx("LIB", "SDLmain.lib"))), strVersion)
+   if strPathlibSDL = "" then strPathLibSDL = CheckForlibSDLSub(PathParent(PathStripFilename(Which("..\lib\SDLmain.lib"))), strVersion)
+   if strPathlibSDL = "" then strPathLibSDL = CheckForlibSDLSub(PathParent(PathStripFilename(Which("SDLmain.lib"))), strVersion)
+   if strPathlibSDL = "" then strPathLibSDL = CheckForlibSDLSub(PathParent(PathStripFilename(Which("SDL.dll"))), strVersion)
 
-   ' Poke about in the path.
-   if strPathlibSDL = "" then
-      str = WhichEx("LIB", "SDLmain.lib")
-      if str = "" then str = Which("..\lib\SDLmain.lib")
-      if str = "" then str = Which("SDLmain.lib")
-      if str <> "" then
-         str = PathParent(PathStripFilename(str))
-         if CheckForlibSDLSub(str) then strPathlibSDL = str
-      end if
-   end if
-
-   if strPathlibSDL = "" then
-      str = Which("SDL.dll")
-      if str <> "" then
-         str = PathParent(PathStripFilename(str))
-         if CheckForlibSDLSub(str) then strPathlibSDL = str
-      end if
-   end if
-
-   ' The tools location (post).
-   if (strPathlibSDL = "") And (g_blnInternalFirst = False) then
-      str = g_strPathDev & "/win." & g_strTargetArch & "/libsdl"
-      if HasSubdirsStartingWith(str, "v") then
-         PrintResult "libSDL", str & "/v* (auto)"
-         exit sub
-      end if
+   ' The tools again.
+   if strPathlibSDL = "" and g_blnInternalFirst = false then
+      strPathLibSDL = SearchTargetTools("libsdl", "v", GetRef("CheckForLibSDLSub"), strVersion)
    end if
 
    ' Success?
@@ -1621,17 +1584,24 @@ sub CheckForlibSDL(strOptlibSDL)
 end sub
 
 '' Checks if the specified path points to an usable libSDL or not.
-function CheckForlibSDLSub(strPathlibSDL)
-   CheckForlibSDLSub = False
-   LogPrint "trying: strPathlibSDL=" & strPathlibSDL
-   if   LogFileExists(strPathlibSDL, "lib/SDL.lib") _
-    And LogFileExists(strPathlibSDL, "lib/SDLmain.lib") _
-    And LogFileExists(strPathlibSDL, "lib/SDL.dll") _
-    And LogFileExists(strPathlibSDL, "include/SDL.h") _
-    And LogFileExists(strPathlibSDL, "include/SDL_syswm.h") _
-    And LogFileExists(strPathlibSDL, "include/SDL_version.h") _
+function CheckForLibSDLSub(strPathlibSDL, strVersion)
+   CheckForlibSDLSub = ""
+   if strPathLibSDL <> "" then
+      LogPrint "Trying: strPathLibSDL=" & strPathLibSDL
+      if   LogFileExists(strPathLibSDL, "lib/SDL.lib") _
+       and LogFileExists(strPathLibSDL, "lib/SDLmain.lib") _
+       and LogFileExists(strPathLibSDL, "lib/SDL.dll") _
       then
-      CheckForlibSDLSub = True
+         dim strIncSub : strIncSub = "include"
+         if DirExists(strPathlibSDL & "/include/SDL") then strIncSub = "include/SDL"
+         if   LogFileExists(strPathLibSDL, strIncSub & "/SDL.h") _
+          and LogFileExists(strPathLibSDL, strIncSub & "/SDL_syswm.h") _
+          and LogFileExists(strPathLibSDL, strIncSub & "/SDL_version.h") _
+         then
+            strVersion = ""
+            CheckForLibSDLSub = strPathLibSDL
+         end if
+      end if
    end if
 end function
 
@@ -1864,19 +1834,16 @@ end function
 ' Checks for any Qt5 binaries.
 '
 sub CheckForQt(strOptQt5, strOptInfix)
-   dim strPathQt5, strInfixQt5, arrFolders, arrVccInfixes, strVccInfix
+   dim strPathQt5, strInfixQt5, arrFolders, arrVccInfixes, strVccInfix, strPathDev
    PrintHdr "Qt5"
 
    '
    ' Try to find the Qt5 installation (user specified path with --with-qt5)
    '
    LogPrint "Checking for user specified path of Qt5 ... "
-   strPathQt5 = ""
-   if strOptQt5 <> "" then
-      strPathQt5 = CheckForQt5Sub(UnixSlashes(strOptQt5), strOptInfix, strInfixQt5)
-   end if
-
-   if strPathQt = "" then
+   strPathQt5 = CheckForQt5Sub(UnixSlashes(strOptQt5), strOptInfix, strInfixQt5)
+   if strPathQt5 = "" and g_blnInternalFirst = true then strPathQt5 = CheckForQt5Internal(strOptInfix, strInfixQt5)
+   if strPathQt5 = "" then
       '
       ' Collect links from "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\UFH\SHC"
       '
@@ -1918,20 +1885,7 @@ sub CheckForQt(strOptQt5, strOptInfix)
    end if
 
    ' Check the dev tools - prefer ones matching the compiler.
-   if strPathQt5 = "" then
-      LogPrint "Testing tools dir (" & g_strPathDev & "/win." & g_strTargetArch & "/qt/v5*) ..."
-      arrFolders = GetSubdirsStartingWithVerSorted(g_strPathDev & "/win." & g_strTargetArch & "/qt", "v5")
-      arrVccInfixes = Array(LCase(g_strVCCVersion), Left(LCase(g_strVCCVersion), Len(g_strVCCVersion) - 1), "")
-      for each strVccInfix in arrVccInfixes
-         for i = UBound(arrFolders) to LBound(arrFolders) step -1
-            if strVccInfix = "" or InStr(1, LCase(arrFolders(i)), strVccInfix) > 0 then
-               strPathQt5 = CheckForQt5Sub(g_strPathDev & "/win." & g_strTargetArch & "/qt/" & arrFolders(i), strOptInfix, strInfixQt5)
-               if strPathQt5 <> "" then exit for
-            end if
-         next
-         if strPathQt5 <> "" then exit for
-      next
-   end if
+   if strPathQt5 = "" and g_blnInternalFirst = false then strPathQt5 = CheckForQt5Internal(strOptInfix, strInfixQt5)
 
    '
    ' Display the result and output the config.
@@ -1950,6 +1904,28 @@ sub CheckForQt(strOptQt5, strOptInfix)
    end if
 end sub
 
+function CheckForQt5Internal(strOptInfix, ByRef strInfixQt5)
+   dim strPathDev, arrFolders, arrVccInfixes, strVccInfix, i
+   CheckForQt5Internal = ""
+   for each strPathDev in g_arrPathDev
+      LogPrint "Testing tools dir (" & strPathDev & "/win." & g_strTargetArch & "/qt/v5*) ..."
+      arrFolders = GetSubdirsStartingWithVerSorted(strPathDev & "/win." & g_strTargetArch & "/qt", "v5")
+      arrVccInfixes = Array(LCase(g_strVCCVersion), Left(LCase(g_strVCCVersion), Len(g_strVCCVersion) - 1), "")
+      for each strVccInfix in arrVccInfixes
+         for i = UBound(arrFolders) to LBound(arrFolders) step -1
+            if strVccInfix = "" or InStr(1, LCase(arrFolders(i)), strVccInfix) > 0 then
+LogPrint "i="&i&" strVccInfix="&strVccInfix
+               strPathQt5 = CheckForQt5Sub(strPathDev & "/win." & g_strTargetArch & "/qt/" & arrFolders(i), strOptInfix, strInfixQt5)
+               if strPathQt5 <> "" then
+                  CheckForQt5Internal = strPathQt5
+                  exit function
+               end if
+            end if
+         next
+      next
+   next
+end function
+
 function Qt5ProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
    dim str, off
    Qt5ProgramItemCallback = ""
@@ -1967,28 +1943,33 @@ end function
 
 function CheckForQt5Sub(strPathQt5, strOptInfix, ByRef strInfixQt5)
    CheckForQt5Sub = ""
-   LogPrint "trying: strPathQt5=" & strPathQt5
+   if strPathQt5 <> "" then
+      LogPrint "Trying: strPathQt5=" & strPathQt5
 
-   if   LogFileExists(strPathQt5, "bin/moc.exe") _
-    and LogFileExists(strPathQt5, "bin/uic.exe") _
-    and LogFileExists(strPathQt5, "include/QtWidgets/qwidget.h") _
-    and LogFileExists(strPathQt5, "include/QtWidgets/QApplication") _
-    and LogFileExists(strPathQt5, "include/QtGui/QImage") _
-    and LogFileExists(strPathQt5, "include/QtNetwork/QHostAddress") _
-   then
-      ' Infix testing.
-      if   LogFileExists(strPathQt5, "lib/Qt5Core.lib") _
-       and LogFileExists(strPathQt5, "lib/Qt5Network.lib") then
-         strInfixQt5 = ""
-         CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
-      elseif LogFileExists(strPathQt5, "lib/Qt5Core" & strOptInfix & ".lib") _
-         and LogFileExists(strPathQt5, "lib/Qt5Network" & strOptInfix & ".lib") then
-         strInfixQt5 = strOptInfix
-         CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
-      elseif LogFileExists(strPathQt5, "lib/Qt5CoreVBox.lib") _
-         and LogFileExists(strPathQt5, "lib/Qt5NetworkVBox.lib") then
-         strInfixQt5 = "VBox"
-         CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
+      if   LogFileExists(strPathQt5, "bin/moc.exe") _
+       and LogFileExists(strPathQt5, "bin/uic.exe") _
+       and LogFileExists(strPathQt5, "include/QtWidgets/qwidget.h") _
+       and LogFileExists(strPathQt5, "include/QtWidgets/QApplication") _
+       and LogFileExists(strPathQt5, "include/QtGui/QImage") _
+       and LogFileExists(strPathQt5, "include/QtNetwork/QHostAddress") _
+      then
+         ' Infix testing.
+         if   LogFileExists(strPathQt5, "lib/Qt5Core.lib") _
+          and LogFileExists(strPathQt5, "lib/Qt5Network.lib") then
+            LogPrint "found it w/o infix"
+            strInfixQt5 = ""
+            CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
+         elseif LogFileExists(strPathQt5, "lib/Qt5Core" & strOptInfix & ".lib") _
+            and LogFileExists(strPathQt5, "lib/Qt5Network" & strOptInfix & ".lib") then
+            LogPrint "found it w/ infix: " & strOptInfix & " (option)"
+            strInfixQt5 = strOptInfix
+            CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
+         elseif LogFileExists(strPathQt5, "lib/Qt5CoreVBox.lib") _
+            and LogFileExists(strPathQt5, "lib/Qt5NetworkVBox.lib") then
+            LogPrint "found it w/ infix: VBox"
+            strInfixQt5 = "VBox"
+            CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
+         end if
       end if
    end if
 end function
@@ -2083,6 +2064,13 @@ sub usage
    Print "  --with-openssl32=PATH   The 32-bit variant of openssl (optional)."
    Print "  --with-libcurl=PATH     To use a cURL other than the VBox one (optional)."
    Print "  --with-libcurl32=PATH   The 32-bit variant of cURL (optional)."
+   Print ""
+   Print "  --append-tools-dir=PATH, --prepend-tools-dir=PATH"
+   Print "                          Adds an alternative tools directory to search."
+   Print "  --append-tools-dir=PATH, --prepend-prog-files=PATH"
+   Print "                          Adds an alternative Program Files dir to search."
+   Print "  --append-ewdk-drive=DRIVE, --prepend-ewdk-drive=DRIVE"
+   Print "                          Adds an EWDK drive the search list."
 end sub
 
 
@@ -2197,6 +2185,20 @@ function Main
             strOptCurl32 = strPath
          case "--with-python"
             strOptPython = strPath
+
+         ' Search lists.
+         case "--append-tools-dir"
+            g_arrToolsDirs    = ArrayAppend(g_arrPathDev, strPath)
+         case "--prepend-tools-dir"
+            g_arrToolsDirs    = ArrayPrepend(g_arrPathDev, strPath)
+         case "--append-prog-files"
+            g_arrProgramFiles = ArrayAppend(g_arrProgramFiles, strPath)
+         case "--prepend-prog-files"
+            g_arrProgramFiles = ArrayPrepend(g_arrProgramFiles, strPath)
+         case "--append-ewdk-drive"
+            g_arrProgramFiles = ArrayAppend(g_arrProgramFiles, strPath & "\Program Files")
+         case "--prepend-ewdk-drive"
+            g_arrProgramFiles = ArrayPrepend(g_arrProgramFiles, strPath & "\Program Files")
 
          ' --disable-something/--enable-something
          case "--disable-com"

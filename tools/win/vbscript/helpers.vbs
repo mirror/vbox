@@ -667,11 +667,15 @@ function ArraySortStringsEx(arrStrings, ByRef fnCompare)
    ArraySortStringsEx = arrStrings
 end function
 
+'' Wrapper for StrComp as GetRef("StrComp") fails.
+function WrapStrComp(str1, str2)
+   WrapStrComp = StrComp(str1, str2)
+end function
 
 ''
 ' Returns a reverse sorted array (strings).
 function ArraySortStrings(arrStrings)
-   ArraySortStrings = ArraySortStringsEx(arrStrings, GetRef("StrComp"))
+   ArraySortStrings = ArraySortStringsEx(arrStrings, GetRef("WrapStrComp"))
 end function
 
 
@@ -682,10 +686,15 @@ function ArrayVerSortStrings(arrStrings)
 end function
 
 
+'' Wrapper for StrComp as GetRef("StrComp") fails.
+function WrapStrCompNeg(str1, str2)
+   WrapStrCompNeg = -StrComp(str1, str2)
+end function
+
 ''
 ' Returns a reverse sorted array (strings).
 function ArrayRSortStrings(arrStrings)
-   ArrayRSortStrings = ArrayReverse(ArraySortStringsEx(arrStrings, GetRef("StrComp")))
+   ArrayRSortStrings = ArraySortStringsEx(arrStrings, GetRef("WrapStrCompNeg"))
 end function
 
 
@@ -706,18 +715,53 @@ end sub
 
 
 ''
-' Returns the input array with the string appended.
-' Note! There must be some better way of doing this...
-' @todo Lots of copying here...
-function ArrayAppend(arr, str)
-   dim i, cnt
-   cnt = UBound(arr) - LBound(arr) + 1
-   redim arrRet(cnt)
-   for i = LBound(arr) to UBound(arr)
-      arrRet(i) = arr(i)
+' Returns an Array() statement string
+function ArrayToString(arrStrings)
+   dim strRet
+   strRet = "Array("
+   for i = LBound(arrStrings) to UBound(arrStrings)
+      if i <> LBound(arrStrings) then strRet = strRet & ", "
+      strRet = strRet & """" & arrStrings(i) & """"
    next
-   arrRet(UBound(arr) + 1) = str
-   ArrayAppend = arrRet
+   ArrayToString = strRet & ")"
+end function
+
+
+''
+' Returns the input array with the string appended.
+' @note This works by reference
+function ArrayAppend(ByRef arr, str)
+   dim i
+   redim preserve arr(UBound(arr) + 1)
+   arr(UBound(arr)) = str
+   ArrayAppend = arr
+end function
+
+
+''
+' Returns the input array with the string prepended.
+' @note This works by reference
+function ArrayPrepend(ByRef arr, str)
+   dim i
+   redim preserve arr(UBound(arr) + 1)
+   for i = UBound(arr) to (LBound(arr) + 1) step -1
+      arr(i) = arr(i - 1)
+   next
+   arr(LBound(arr)) = str
+   ArrayPrepend = arr
+end function
+
+
+''
+' Returns the input array with the string prepended.
+' @note This works by reference
+function ArrayRemove(ByRef arr, idx)
+   dim i
+   for i = idx to (UBound(arr) - 1)
+      arr(i) = arr(i + 1)
+   next
+   redim preserve arr(UBound(arr) - 1)
+   ArrayRemove = arr
 end function
 
 
@@ -747,6 +791,36 @@ function ArrayContainsStringI(ByRef arr, str)
       end if
    next
 end function
+
+
+''
+' Returns the index of the first occurance of the given string; -1 if not found.
+function ArrayFindString(ByRef arr, str)
+   dim i
+   for i = LBound(arr) to UBound(arr)
+      if StrComp(arr(i), str, vbBinaryCompare) = 0 then
+         ArrayFindString = i
+         exit function
+      end if
+   next
+   ArrayFindString = LBound(arr) - 1
+end function
+
+
+''
+' Returns the index of the first occurance of the given string, -1 if not found,
+' case insensitive edition.
+function ArrayFindStringI(ByRef arr, str)
+   dim i
+   for i = LBound(arr) to UBound(arr)
+      if StrComp(arr(i), str, vbTextCompare) = 0 then
+         ArrayFindStringI = i
+         exit function
+      end if
+   next
+   ArrayFindStringI = LBound(arr) - 1
+end function
+
 
 ''
 ' Returns the number of entries in an array.
@@ -1133,5 +1207,46 @@ sub SelfTest
    if StrGetFirstWord("1 2") <> "1" then MsgFatal "SelfTest: StrGetFirstWord #4"
    if StrGetFirstWord("1234 5") <> "1234" then MsgFatal "SelfTest: StrGetFirstWord #5"
    if StrGetFirstWord("  ") <> "" then MsgFatal "SelfTest: StrGetFirstWord #6"
+
+   dim arr
+   arr = ArrayAppend(Array("0", "1"), "2")
+   if ArraySize(arr) <> 3 then MsgFatal "SelfTest: Array #1: size:" & ArraySize(arr)
+   if ArrayToString(arr) <> "Array(""0"", ""1"", ""2"")" then MsgFatal "SelfTest: Array #1: " & ArrayToString(arr)
+
+   arr = ArrayPrepend(arr, "-1")
+   if ArraySize(arr) <> 4 then MsgFatal "SelfTest: Array #2: size:" & ArraySize(arr)
+   if ArrayToString(arr) <> "Array(""-1"", ""0"", ""1"", ""2"")" then MsgFatal "SelfTest: Array #2: " & ArrayToString(arr)
+
+   ArrayPrepend arr, "-2"
+   if ArraySize(arr) <> 5 then MsgFatal "SelfTest: Array #3: size:" & ArraySize(arr)
+   if ArrayToString(arr) <> "Array(""-2"", ""-1"", ""0"", ""1"", ""2"")" then MsgFatal "SelfTest: Array #3: " & ArrayToString(arr)
+
+   ArrayRemove arr, 1
+   if ArraySize(arr) <> 4 then MsgFatal "SelfTest: Array #4: size:" & ArraySize(arr)
+   if ArrayToString(arr) <> "Array(""-2"", ""0"", ""1"", ""2"")" then MsgFatal "SelfTest: Array #4: " & ArrayToString(arr)
+
+   arr = ArrayRemove(arr, 2)
+   if ArraySize(arr) <> 3 then MsgFatal "SelfTest: Array #5: size:" & ArraySize(arr)
+   if ArrayToString(arr) <> "Array(""-2"", ""0"", ""2"")" then MsgFatal "SelfTest: Array #5: " & ArrayToString(arr)
+
+   arr = ArrayPrepend(arr, "42")
+   arr = ArrayAppend(arr, "-42")
+   if ArraySize(arr) <> 5 then MsgFatal "SelfTest: Array #6: size:" & ArraySize(arr)
+   if ArrayToString(arr) <> "Array(""42"", ""-2"", ""0"", ""2"", ""-42"")" then MsgFatal "SelfTest: Array #6: " & ArrayToString(arr)
+
+   arr = ArraySortStrings(arr)
+   if ArraySize(arr) <> 5 then MsgFatal "SelfTest: Array #7: size:" & ArraySize(arr)
+   if ArrayToString(arr) <> "Array(""-2"", ""-42"", ""0"", ""2"", ""42"")" then MsgFatal "SelfTest: Array #7: " & ArrayToString(arr)
+
+   arr = ArrayRSortStrings(arr)
+   if ArraySize(arr) <> 5 then MsgFatal "SelfTest: Array #7: size:" & ArraySize(arr)
+   if ArrayToString(arr) <> "Array(""42"", ""2"", ""0"", ""-42"", ""-2"")" then MsgFatal "SelfTest: Array #8: " & ArrayToString(arr)
+
+   arr = ArrayVerSortStrings(Array("v10", "v1", "v0"))
+   if ArrayToString(arr) <> "Array(""v0"", ""v1"", ""v10"")" then MsgFatal "SelfTest: Array #9: " & ArrayToString(arr)
+
+   arr = ArrayRVerSortStrings(arr)
+   if ArrayToString(arr) <> "Array(""v10"", ""v1"", ""v0"")" then MsgFatal "SelfTest: Array #10: " & ArrayToString(arr)
+
 end sub
 
