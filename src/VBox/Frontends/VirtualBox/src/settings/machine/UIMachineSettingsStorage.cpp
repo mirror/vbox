@@ -3292,7 +3292,7 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
                 fPass = false;
             }
             /* Check for coincidence: */
-            if (!uiCommon().medium(key).isNull() && config.contains(key))
+            if (!uiCommon().medium(key).isNull() && config.contains(key) && enmDeviceType != KDeviceType_DVD)
             {
                 message.second << tr("<i>%1</i> is using a disk that is already attached to <i>%2</i>.")
                                      .arg(value).arg(config[key]);
