@@ -83,14 +83,6 @@ dim g_blnDisableCOM, g_strDisableCOM
 g_blnDisableCOM = False
 g_strDisableCOM = ""
 
-' Whether to ignore (continue) on errors.
-dim g_blnContinueOnError, g_rcExit
-g_blnContinueOnError = False
-
-' The script's exit code (for ignored errors).
-dim g_rcScript
-g_rcScript = 0
-
 ' Whether to try the internal stuff first or last.
 dim g_blnInternalFirst
 g_blnInternalFirst = True
@@ -699,7 +691,7 @@ sub CheckForkBuild(strOptkBuild)
          EnvPrintCleanup "PATH", DosSlashes(Left(g_strPathkBuildBin, Len(g_strPathkBuildBin) - 9) & "win.x86"), ";"
       end if
       EnvPrintPrepend "PATH", DosSlashes(g_strPathkBuildBin), ";"
-      EnvPrepend "PATH", g_strPathkBuildBin & ";"
+      EnvPrependPathItem "PATH", g_strPathkBuildBin, ";"
    end if
 
    PrintResult "kBuild", g_strPathkBuild
@@ -794,7 +786,7 @@ class VisualCPPState
 
       strSavedPath = EnvGet("PATH")
       if (m_strPathVCCommon <> "") then
-         EnvAppend "PATH", ";" & m_strPathVCCommon & "/IDE"
+         EnvAppendPathItem "PATH", m_strPathVCCommon & "/IDE", ";"
       end if
       rcExit = Shell(DosSlashes(strClExe), True, strOutput)
       EnvSet "PATH", strSavedPath

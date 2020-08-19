@@ -27,6 +27,14 @@ Set g_objShell   = WScript.CreateObject("WScript.Shell")
 dim g_objFileSys
 Set g_objFileSys = WScript.CreateObject("Scripting.FileSystemObject")
 
+'' Whether to ignore (continue) on errors.
+dim g_blnContinueOnError
+g_blnContinueOnError = False
+
+'' The script's exit code (for ignored errors).
+dim g_rcScript
+g_rcScript = 0
+
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 '  Helpers: Paths                                                                                                                '
@@ -136,6 +144,85 @@ function PathAbsLong(str)
          next
       end if
    end if
+end function
+
+
+''
+' Compare two paths w/o abspathing them.
+'
+' Ignores case, slash direction, multiple slashes and single dot components.
+'
+function PathMatch(strPath1, strPath2)
+   PathMatch = true
+   if StrComp(strPath1, strPath2, vbTextCompare) <> 0 then
+      strPath1 = DosSlashes(strPath1)
+      strPath2 = DosSlashes(strPath2)
+      if StrComp(strPath1, strPath2, vbTextCompare) <> 0 then
+         ' Compare character by character
+         dim off1 : off1 = 1
+         dim off2 : off2 = 1
+
+         ' Compare UNC prefix if any, because the code below cannot handle it.  UNC has exactly two slashes.
+         if Mid(strPath1, 1, 2) = "\\" and Mid(strPath2, 1, 2) = "\\" then
+            if (Mid(strPath1, 3, 1) = "\") <> (Mid(strPath2, 3, 1) = "\") then
+               PathMatch = false
+               exit function
+            end if
+            off1 = off1 + 2
+            off2 = off2 + 2
+            if Mid(strPath1, 3, 1) = "\" then
+               off1 = PathMatchSkipSlashesAndSlashDotHelper(strPath1, off1)
+               off2 = PathMatchSkipSlashesAndSlashDotHelper(strPath2, off2)
+            end if
+         end if
+
+         ' Compare the rest.
+         dim ch1, ch2
+         do while off1 <= Len(strPath1) and off2 <= Len(strPath2)
+            ch1 = Mid(strPath1, off1, 1)
+            ch2 = Mid(strPath2, off2, 1)
+            if StrComp(ch1, ch2, vbTextCompare) = 0 then
+               off1 = off1 + 1
+               off2 = off2 + 1
+               if ch1 = "\" then
+                  off1 = PathMatchSkipSlashesAndSlashDotHelper(strPath1, off1)
+                  off2 = PathMatchSkipSlashesAndSlashDotHelper(strPath2, off2)
+               end if
+            else
+               PathMatch = False
+               exit function
+            end if
+         loop
+
+         ' One or both of the strings ran out.  That's fine if we've only got slashes
+         ' and "." components left in the other.
+         if off1 <= Len(strPath1) and Mid(strPath1, off1, 1) = "\" then
+            off1 = PathMatchSkipSlashesAndSlashDotHelper(strPath1, off1 + 1)
+         end if
+         if off2 <= Len(strPath2) and Mid(strPath2, off2, 1) = "\" then
+            off2 = PathMatchSkipSlashesAndSlashDotHelper(strPath2, off2 + 1)
+         end if
+         PathMatch = off1 > Len(strPath1) and off2 > Len(strPath2)
+      end if
+   end if
+end function
+
+'' PathMatch helper
+function PathMatchSkipSlashesAndSlashDotHelper(strPath, off)
+   dim ch
+   do while off <= Len(strPath)
+      ch = Mid(strPath, off, 1)
+      if ch = "\" then
+         off = off + 1
+      elseif ch = "." and off = Len(strPath) then
+         off = off + 1
+      elseif ch = "." and Mid(strPath, off, 2) = ".\" then
+         off = off + 2
+      else
+         exit do
+      end if
+   loop
+   PathMatchSkipSlashesAndSlashDotHelper = off
 end function
 
 
@@ -392,6 +479,36 @@ end function
 
 
 ''
+' Gets an environment variable with default value if not found.
+function EnvGetDef(strName, strDefault)
+   dim strValue
+   strValue = g_objShell.Environment("PROCESS")(strName)
+   if strValue = "" or IsNull(strValue) or IsEmpty(strValue) then
+      EnvGetDef = strDefault
+   else
+      EnvGetDef = strValue
+   end if
+end function
+
+
+''
+' Gets an environment variable with default value if not found or not
+' in the array of valid values.  Issue warning about invalid values.
+function EnvGetDefValid(strName, strDefault, arrValidValues)
+   dim strValue
+   strValue = g_objShell.Environment("PROCESS")(strName)
+   if strValue = "" or IsNull(strValue) or IsEmpty(strValue) then
+      EnvGetDefValid = strDefault
+   elseif not ArrayContainsString(arrValidValues, strValue) then
+      MsgWarning "Invalid value " & strName & " value '" & EnvGetDefValid & "', using '" & strDefault & "' instead."
+      EnvGetDefValid = strDefault
+   else
+      EnvGetDefValid = strValue
+   end if
+end function
+
+
+''
 ' Sets an environment variable.
 sub EnvSet(strName, strValue)
    g_objShell.Environment("PROCESS")(strName) = strValue
@@ -400,23 +517,142 @@ end sub
 
 
 ''
-' Appends a string to an environment variable
-sub EnvAppend(strName, strValue)
-   dim str
-   str = g_objShell.Environment("PROCESS")(strName)
-   g_objShell.Environment("PROCESS")(strName) =  str & strValue
-   LogPrint "EnvAppend: " & strName & "=" & str & strValue
-end sub
+' Prepends a string to an Path-like environment variable.
+function EnvPrependItemEx(strName, strItem, strSep, blnKeepEmpty, ByRef fnItemMatcher)
+   dim strValue
+   strValue = EnvRemoveItemEx(strName, strItem, strSep, blnKeepEmpty, fnItemMatcher, "EnvPrependItemEx")
+   if strValue <> "" then
+      strValue = strItem & strSep & strValue
+   else
+      strValue = strItem
+   end if
+   g_objShell.Environment("PROCESS")(strName) = strValue
+   EnvPrependItemEx = strValue
+end function
+
+
+''
+' Appends a string to an Path-like environment variable,
+function EnvAppendItemEx(strName, strItem, strSep, blnKeepEmpty, ByRef fnItemMatcher)
+   dim strValue
+   strValue = EnvRemoveItemEx(strName, strItem, strSep, blnKeepEmpty, fnItemMatcher, "EnvAppendItemEx")
+   if strValue <> "" then
+      strValue = strValue & strSep & strItem
+   else
+      strValue = strItem
+   end if
+   g_objShell.Environment("PROCESS")(strName) = strValue
+   EnvAppendItemEx = strValue
+end function
+
+
+''
+' Generic item remover.
+'
+' fnItemMatcher(strItem1, strItem2)
+'
+function EnvRemoveItemEx(strName, strItem, strSep, blnKeepEmpty, ByRef fnItemMatcher, strCaller)
+   dim strValue, off
+   strValue = g_objShell.Environment("PROCESS")(strName)
+   EnvRemoveItemEx = strValue
+   if strValue <> "" then
+      ' Split it up into an array of items
+      dim   arrItems    : arrItems    = Split(strValue, strSep, -1, vbTextCompare)
+
+      ' Create an array of matching indexes that we should remove.
+      dim   cntToRemove : cntToRemove = 0
+      redim arrIdxToRemove(ArraySize(arrItems) - 1)
+      dim   i, strCur
+      for i = LBound(arrItems) to UBound(arrItems)
+         strCur = arrItems(i)
+         if fnItemMatcher(strCur, strItem) or (not blnKeepEmpty and strCur = "") then
+            arrIdxToRemove(cntToRemove) = i
+            cntToRemove = cntToRemove + 1
+         end if
+      next
+
+      ' Did we find anthing to remove?
+      if cntToRemove > 0 then
+         ' Update the array and join it up again.
+         for i = cntToRemove - 1 to 0 step -1
+            arrItems = ArrayRemove(arrItems, arrIdxToRemove(i))
+         next
+         dim strNewValue : strNewValue = ArrayJoinString(arrItems, strSep)
+         EnvRemoveItemEx = strNewValue
+
+         ' Update the environment variable.
+         LogPrint strCaller &": " & strName & ": '" & strValue & "' --> '" & strNewValue & "'"
+         g_objShell.Environment("PROCESS")(strName) = strNewValue
+      end if
+   end if
+end function
+
+
+''
+' Generic case-insensitive item matcher.
+' See also PathMatch().
+function EnvItemMatch(strItem1, strItem2)
+   EnvItemMatch = (StrComp(strItem1, strItem2) = 0)
+end function
+
+
+''
+' Prepends an item to an environment variable, after first removing any
+' existing ones (case-insensitive, preserves empty elements).
+function EnvPrependItem(strName, strItem, strSep)
+   EnvPrependItem = EnvPrependItemEx(strName, strItem, strSep, true, GetRef("EnvItemMatch"))
+   LogPrint "EnvPrependItem: " & strName & "=" & EnvPrependPathItem
+end function
+
+
+''
+' Appends an item to an environment variable, after first removing any
+' existing ones (case-insensitive, preserves empty elements).
+function EnvAppendItem(strName, strItem, strSep)
+   EnvAppendItem = EnvAppendItemEx(strName, strItem, strSep, true, GetRef("EnvItemMatch"))
+   LogPrint "EnvAppendItem: " & strName & "=" & EnvPrependPathItem
+end function
+
+
+''
+' Removes a string element from an environment variable, case
+' insensitive but preserving empty elements.
+function EnvRemoveItem(strName, strItem, strSep)
+   EnvRemoveItem = EnvRemoveItemEx(strName, strIten, strSep, true, GetRef("EnvItemMatch"), "EnvRemoveItem")
+end function
+
+
+''
+' Appends a string to an Path-like environment variable,
+function EnvPrependPathItem(strName, strItem, strSep)
+   EnvPrependPathItem = EnvPrependItemEx(strName, strItem, strSep, false, GetRef("PathMatch"))
+   LogPrint "EnvPrependPathItem: " & strName & "=" & EnvPrependPathItem
+end function
+
+
+''
+' Appends a string to an Path-like environment variable,
+function EnvAppendPathItem(strName, strItem, strSep)
+   EnvAppendPathItem = EnvAppendItemEx(strName, strItem, strSep, false, GetRef("PathMatch"))
+   LogPrint "EnvAppendPathItem: " & strName & "=" & EnvAppendPathItem
+end function
+
+
+''
+' Removes a string element from an Path-like environment variable, case
+' insensitive and treating forward and backward slashes the same way.
+function EnvRemovePathItem(strName, strItem, strSep)
+   EnvRemovePathItem = EnvRemoveItemEx(strName, strIten, strSep, false, GetRef("PathMatch"), "EnvRemovePathItem")
+end function
 
 
 ''
 ' Prepends a string to an environment variable
-sub EnvPrepend(strName, strValue)
-   dim str
-   str = g_objShell.Environment("PROCESS")(strName)
-   g_objShell.Environment("PROCESS")(strName) =  strValue & str
-   LogPrint "EnvPrepend: " & strName & "=" & strValue & str
+sub EnvUnset(strName)
+   g_objShell.Environment("PROCESS").Remove(strName)
+   LogPrint "EnvUnset: " & strName
 end sub
+
 
 ''
 ' Gets the first non-empty environment variable of the given two.
@@ -425,6 +661,12 @@ function EnvGetFirst(strName1, strName2)
    if EnvGetFirst = "" then
       EnvGetFirst = g_objShell.Environment("PROCESS")(strName2)
    end if
+end function
+
+''
+' Checks if the given enviornment variable exists.
+function EnvExists(strName)
+   EnvExists = g_objShell.Environment("PROCESS")(strName) <> ""
 end function
 
 
@@ -717,13 +959,29 @@ end sub
 ''
 ' Returns an Array() statement string
 function ArrayToString(arrStrings)
-   dim strRet
+   dim strRet, i
    strRet = "Array("
    for i = LBound(arrStrings) to UBound(arrStrings)
       if i <> LBound(arrStrings) then strRet = strRet & ", "
       strRet = strRet & """" & arrStrings(i) & """"
    next
    ArrayToString = strRet & ")"
+end function
+
+
+''
+' Joins the elements of an array into a string using the given item separator.
+' @remark this is the same as Join() really.
+function ArrayJoinString(arrStrings, strSep)
+   if ArraySize(arrStrings) = 0 then
+      ArrayJoinString = ""
+   else
+      dim i
+      ArrayJoinString = "" & arrStrings(LBound(arrStrings))
+      for i = LBound(arrStrings) + 1 to UBound(arrStrings)
+         ArrayJoinString = ArrayJoinString & strSep & arrStrings(i)
+      next
+   end if
 end function
 
 
@@ -1143,6 +1401,13 @@ end sub
 
 
 ''
+' Info message.
+sub MsgInfo(strMsg)
+   Print "info: " & strMsg
+end sub
+
+
+''
 ' Warning message.
 sub MsgWarning(strMsg)
    Print "warning: " & strMsg
@@ -1166,6 +1431,27 @@ sub MsgError(strMsg)
    end if
    g_rcScript = 1
 end sub
+
+''
+' Error message, fatal unless flag to ignore errors is given.
+' @note does not return
+sub MsgSyntaxError(strMsg)
+   Print "syntax error: " & strMsg
+   Wscript.Quit(2)
+end sub
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'  Helpers: Misc                                                                                                                 '
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''
+' Translate a kBuild / VBox architecture name to a windows one.
+function XlateArchitectureToWin(strArch)
+   strArch = LCase(strArch)
+   XlateArchitectureToWin = strArch
+   if strArch = "amd64" then XlateArchitectureToWin = "x64"
+end function
 
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -1247,6 +1533,16 @@ sub SelfTest
 
    arr = ArrayRVerSortStrings(arr)
    if ArrayToString(arr) <> "Array(""v10"", ""v1"", ""v0"")" then MsgFatal "SelfTest: Array #10: " & ArrayToString(arr)
+
+   if ArrayJoinString(arr, ":") <> "v10:v1:v0" then MsgFatal "SelfTest: Array #11: " & ArrayJoinString(arr, ":")
+
+   if PathMatch("c:\", "C:\") <> true then MsgFatal "SelfTest: PathMatch #1"
+   if PathMatch("c:\\\winDows/sysTem32", "C:\WindowS\.\\.\System32\.") <> true then MsgFatal "SelfTest: PathMatch #2"
+   if PathMatch("c:\\\winDows/sysTem32", "C:\WindowS\.\\..\System32\.") <> false then MsgFatal "SelfTest: PathMatch #3"
+   if PathMatch("\\x\", "\\\x\") <> false then MsgFatal "SelfTest: PathMatch #4"
+   if PathMatch("\\x\", "\\x\") <> true then MsgFatal "SelfTest: PathMatch #5"
+   if PathMatch("\\", "\\") <> true then MsgFatal "SelfTest: PathMatch #6"
+   if PathMatch("\\x", "\\x") <> true then MsgFatal "SelfTest: PathMatch #7"
 
 end sub
 
