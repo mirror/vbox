@@ -1551,6 +1551,8 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
             pClient->State.POD.uFormat = uFormat;
     }
 
+    LogRel2(("Shared Clipboard: Guest wants to read %RU32 bytes host clipboard data in format %RU32\n", cbData, uFormat));
+
     /*
      * Do the reading.
      */
@@ -1692,6 +1694,8 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
         if (pClient->State.POD.uFormat == VBOX_SHCL_FMT_NONE)
             pClient->State.POD.uFormat = uFormat;
     }
+
+    LogRel2(("Shared Clipboard: Guest writes %RU32 bytes clipboard data in format %RU32 to host\n", cbData, uFormat));
 
     /*
      * Write the data to the active host side clipboard.
