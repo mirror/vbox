@@ -868,6 +868,28 @@ function StrStartsWithI(str, strPrefix)
 end function
 
 
+''
+' Checks if the string ends with the given suffix (case sensitive).
+function StrEndsWith(str, strSuffix)
+   if len(str) >= Len(strSuffix) then
+      StrEndsWith = (StrComp(Right(str, Len(strSuffix)), strSuffix, vbBinaryCompare) = 0)
+   else
+      StrEndsWith = false
+   end if
+end function
+
+
+''
+' Checks if the string ends with the given suffix, case insenstive edition.
+function StrEndsWithI(str, strSuffix)
+   if len(str) >= Len(strSuffix) then
+      StrEndsWithI = (StrComp(Right(str, Len(strSuffix)), strSuffix, vbTextCompare) = 0)
+   else
+      StrEndsWithI = false
+   end if
+end function
+
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 '  Helpers: Arrays                                                                                                               '
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -1546,3 +1568,11 @@ sub SelfTest
 
 end sub
 
+'
+' Run the self tests if we're executed directly.
+'
+if StrEndsWithI(Wscript.ScriptFullName, "\tools\win\vbscript\helpers.vbs") then
+   Wscript.echo "helpers.vbs: Running self test..."
+   SelfTest
+   Wscript.echo "helpers.vbs: Self test complete."
+end if
