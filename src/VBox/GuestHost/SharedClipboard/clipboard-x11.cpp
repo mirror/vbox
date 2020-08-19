@@ -1292,34 +1292,45 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
 static int clipReadVBoxShCl(PSHCLX11CTX pCtx, SHCLFORMAT Format,
                             void **ppv, uint32_t *pcb)
 {
-    LogFlowFunc(("pCtx=%p, Format=%02X, ppv=%p, pcb=%p\n", pCtx, Format, ppv, pcb));
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppv,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pcb,  VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pCtx=%p, Format=%02X\n", pCtx, Format));
 
     int rc = VINF_SUCCESS;
 
+    void    *pv = NULL;
+    uint32_t cb = 0;
+
     if (Format == VBOX_SHCL_FMT_UNICODETEXT)
     {
-        if (pCtx->pvUnicodeCache == NULL)
+        if (pCtx->pvUnicodeCache == NULL) /** @todo r=andy Using string cache here? */
             rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, Format,
-                                               &pCtx->pvUnicodeCache,
-                                               &pCtx->cbUnicodeCache);
+                                                  &pCtx->pvUnicodeCache,
+                                                  &pCtx->cbUnicodeCache);
         if (RT_SUCCESS(rc))
         {
-            AssertPtrReturn(pCtx->pvUnicodeCache, VERR_INVALID_POINTER);
-            AssertReturn   (pCtx->cbUnicodeCache, VERR_INVALID_PARAMETER);
-
-            *ppv = RTMemDup(pCtx->pvUnicodeCache, pCtx->cbUnicodeCache);
-            *pcb = pCtx->cbUnicodeCache;
-            if (*ppv == NULL)
+            pv = RTMemDup(pCtx->pvUnicodeCache, pCtx->cbUnicodeCache);
+            if (pv)
+            {
+                cb = pCtx->cbUnicodeCache;
+            }
+            else
                 rc = VERR_NO_MEMORY;
         }
     }
     else
         rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, Format,
-                                           ppv, pcb);
-    if (RT_SUCCESS(rc))
-        LogFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb, *ppv, *pcb));
+                                              &pv, &cb);
 
-    LogFlowFuncLeaveRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        *ppv = pv;
+        *pcb = cb;
+    }
+
+    LogFlowFunc(("Returning pv=%p, cb=%RU32, rc=%Rrc\n", pv, cb, rc));
     return rc;
 }
 
