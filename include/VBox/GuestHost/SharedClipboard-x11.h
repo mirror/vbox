@@ -91,14 +91,14 @@ typedef struct _SHCLX11CTX
     bool fGrabClipboardOnStart;
 
     /** The best text format X11 has to offer, as an index into the formats table. */
-    SHCLX11FMTIDX X11TextFormat;
+    SHCLX11FMTIDX idxFmtText;
     /** The best bitmap format X11 has to offer, as an index into the formats table. */
-    SHCLX11FMTIDX X11BitmapFormat;
+    SHCLX11FMTIDX idxFmtBmp;
     /** The best HTML format X11 has to offer, as an index into the formats table. */
-    SHCLX11FMTIDX X11HTMLFormat;
+    SHCLX11FMTIDX idxFmtHTML;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** The best HTML format X11 has to offer, as an index into the formats table. */
-    SHCLX11FMTIDX X11URIListFormat;
+    SHCLX11FMTIDX idxFmtURI;
 #endif
     /** What kind of formats does VBox have to offer? */
     SHCLFORMATS vboxFormats;

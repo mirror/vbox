@@ -171,13 +171,13 @@ const char XtShellStrings [] = "";
 typedef struct _CLIPREADX11CBREQ
 {
     /** The format VBox would like the data in. */
-    SHCLFORMAT       mFormat;
+    SHCLFORMAT       uFmtVBox;
     /** The format we requested from X11. */
-    SHCLX11FMTIDX    mX11Format;
+    SHCLX11FMTIDX    idxFmtX11;
     /** The clipboard context this request is associated with. */
-    SHCLX11CTX      *mpCtx;
+    SHCLX11CTX      *pCtx;
     /** The request structure passed in from the backend. */
-    CLIPREADCBREQ   *mpReq;
+    CLIPREADCBREQ   *pReq;
 } CLIPREADX11CBREQ;
 
 
@@ -422,23 +422,25 @@ static int clipQueueToEventThread(PSHCLX11CTX pCtx,
  */
 static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
 {
-    uint32_t fFormats  = clipVBoxFormatForX11Format(pCtx->X11TextFormat);
-             fFormats |= clipVBoxFormatForX11Format(pCtx->X11BitmapFormat);
-             fFormats |= clipVBoxFormatForX11Format(pCtx->X11HTMLFormat);
+    SHCLFORMATS vboxFmt  = clipVBoxFormatForX11Format(pCtx->idxFmtText);
+                vboxFmt |= clipVBoxFormatForX11Format(pCtx->idxFmtBmp);
+                vboxFmt |= clipVBoxFormatForX11Format(pCtx->idxFmtHTML);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-             fFormats |= clipVBoxFormatForX11Format(pCtx->X11URIListFormat);
+                vboxFmt |= clipVBoxFormatForX11Format(pCtx->idxFmtURI);
 #endif
 
-    LogFlowFunc(("fFormats=0x%x\n", fFormats));
-    LogFlowFunc(("txt: %u, bmp: %u, html: %u\n",
-                 pCtx->X11TextFormat, pCtx->X11BitmapFormat, pCtx->X11HTMLFormat));
+    LogFlowFunc(("idxFmtText=%u ('%s'), idxFmtBmp=%u ('%s'), idxFmtHTML=%u ('%s')",
+                 pCtx->idxFmtText, g_aFormats[pCtx->idxFmtText].pcszAtom,
+                 pCtx->idxFmtBmp,  g_aFormats[pCtx->idxFmtBmp].pcszAtom,
+                 pCtx->idxFmtHTML, g_aFormats[pCtx->idxFmtHTML].pcszAtom));
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    LogFlowFunc(("uri list: %u\n", pCtx->X11URIListFormat));
+    LogFlowFunc((", idxFmtURI=%u ('%s')", pCtx->idxFmtURI, g_aFormats[pCtx->idxFmtURI].pcszAtom));
 #endif
+    LogFlow((" -> vboxFmt=%#x\n", vboxFmt));
 
-    LogRel2(("Shared Clipboard: X11 reported available formats 0x%x\n", fFormats));
+    LogRel2(("Shared Clipboard: X11 reported available VBox formats: %#x\n", vboxFmt));
 
-    ShClX11ReportFormatsCallback(pCtx->pFrontend, fFormats);
+    ShClX11ReportFormatsCallback(pCtx->pFrontend, vboxFmt);
 }
 
 /**
@@ -451,11 +453,11 @@ static void clipResetX11Formats(PSHCLX11CTX pCtx)
 {
     LogFlowFuncEnter();
 
-    pCtx->X11TextFormat    = SHCLX11FMT_INVALID;
-    pCtx->X11BitmapFormat  = SHCLX11FMT_INVALID;
-    pCtx->X11HTMLFormat    = SHCLX11FMT_INVALID;
+    pCtx->idxFmtText = 0;
+    pCtx->idxFmtBmp  = 0;
+    pCtx->idxFmtHTML = 0;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    pCtx->X11URIListFormat = SHCLX11FMT_INVALID;
+    pCtx->idxFmtURI  = 0;
 #endif
 }
 
@@ -477,32 +479,32 @@ SHCL_X11_DECL(void) clipReportEmptyX11CB(PSHCLX11CTX pCtx)
  *
  * @return Index to supported X clipboard format.
  * @param  pCtx                 The X11 clipboard context to use.
- * @param  pTargets             The list of targets.
+ * @param  paIdxFmtTargets      The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
 SHCL_X11_DECL(SHCLX11FMTIDX) clipGetTextFormatFromTargets(PSHCLX11CTX pCtx,
-                                                          SHCLX11FMTIDX *pTargets,
+                                                          SHCLX11FMTIDX *paIdxFmtTargets,
                                                           size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    AssertReturn(VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
-    SHCLX11FMTIDX bestTextFormat = NIL_CLIPX11FORMAT;
-    SHCLX11FMT enmBestTextTarget = SHCLX11FMT_INVALID;
+    SHCLX11FMTIDX idxFmtText = NIL_CLIPX11FORMAT;
+    SHCLX11FMT    fmtTextX11 = SHCLX11FMT_INVALID;
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        SHCLX11FMTIDX format = pTargets[i];
-        if (format != NIL_CLIPX11FORMAT)
+        SHCLX11FMTIDX idxFmt = paIdxFmtTargets[i];
+        if (idxFmt != NIL_CLIPX11FORMAT)
         {
-            if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_UNICODETEXT)
-                && enmBestTextTarget < clipRealFormatForX11Format(format))
+            if (   (clipVBoxFormatForX11Format(idxFmt) == VBOX_SHCL_FMT_UNICODETEXT)
+                && fmtTextX11 < clipRealFormatForX11Format(idxFmt))
             {
-                enmBestTextTarget = clipRealFormatForX11Format(format);
-                bestTextFormat = format;
+                fmtTextX11 = clipRealFormatForX11Format(idxFmt);
+                idxFmtText = idxFmt;
             }
         }
     }
-    return bestTextFormat;
+    return idxFmtText;
 }
 
 /**
@@ -512,32 +514,32 @@ SHCL_X11_DECL(SHCLX11FMTIDX) clipGetTextFormatFromTargets(PSHCLX11CTX pCtx,
  *
  * @return Supported X clipboard format.
  * @param  pCtx                 The X11 clipboard context to use.
- * @param  pTargets             The list of targets.
+ * @param  paIdxFmtTargets      The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
 static SHCLX11FMTIDX clipGetBitmapFormatFromTargets(PSHCLX11CTX pCtx,
-                                                    SHCLX11FMTIDX *pTargets,
+                                                    SHCLX11FMTIDX *paIdxFmtTargets,
                                                     size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    AssertReturn(VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
-    SHCLX11FMTIDX bestBitmapFormat = NIL_CLIPX11FORMAT;
-    SHCLX11FMT enmBestBitmapTarget = SHCLX11FMT_INVALID;
+    SHCLX11FMTIDX idxFmtBmp = NIL_CLIPX11FORMAT;
+    SHCLX11FMT    fmtBmpX11 = SHCLX11FMT_INVALID;
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        SHCLX11FMTIDX format = pTargets[i];
-        if (format != NIL_CLIPX11FORMAT)
+        SHCLX11FMTIDX idxFmt = paIdxFmtTargets[i];
+        if (idxFmt != NIL_CLIPX11FORMAT)
         {
-            if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_BITMAP)
-                && enmBestBitmapTarget < clipRealFormatForX11Format(format))
+            if (   (clipVBoxFormatForX11Format(idxFmt) == VBOX_SHCL_FMT_BITMAP)
+                && fmtBmpX11 < clipRealFormatForX11Format(idxFmt))
             {
-                enmBestBitmapTarget = clipRealFormatForX11Format(format);
-                bestBitmapFormat = format;
+                fmtBmpX11 = clipRealFormatForX11Format(idxFmt);
+                idxFmtBmp = idxFmt;
             }
         }
     }
-    return bestBitmapFormat;
+    return idxFmtBmp;
 }
 
 /**
@@ -545,33 +547,33 @@ static SHCLX11FMTIDX clipGetBitmapFormatFromTargets(PSHCLX11CTX pCtx,
  * format we can support, and if so choose the ones we prefer.
  *
  * @return Supported X clipboard format.
- * @param   pCtx                The X11 clipboard context to use.
- * @param  pTargets             The list of targets.
+ * @param  pCtx                 The X11 clipboard context to use.
+ * @param  paIdxFmtTargets      The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
 static SHCLX11FMTIDX clipGetHtmlFormatFromTargets(PSHCLX11CTX pCtx,
-                                                  SHCLX11FMTIDX *pTargets,
+                                                  SHCLX11FMTIDX *paIdxFmtTargets,
                                                   size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    AssertReturn(VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
-    SHCLX11FMTIDX bestHTMLFormat = NIL_CLIPX11FORMAT;
-    SHCLX11FMT enmBestHtmlTarget = SHCLX11FMT_INVALID;
+    SHCLX11FMTIDX idxFmtHTML = NIL_CLIPX11FORMAT;
+    SHCLX11FMT    fmxHTMLX11 = SHCLX11FMT_INVALID;
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        SHCLX11FMTIDX format = pTargets[i];
-        if (format != NIL_CLIPX11FORMAT)
+        SHCLX11FMTIDX idxFmt = paIdxFmtTargets[i];
+        if (idxFmt != NIL_CLIPX11FORMAT)
         {
-            if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_HTML)
-                && enmBestHtmlTarget < clipRealFormatForX11Format(format))
+            if (   (clipVBoxFormatForX11Format(idxFmt) == VBOX_SHCL_FMT_HTML)
+                && fmxHTMLX11 < clipRealFormatForX11Format(idxFmt))
             {
-                enmBestHtmlTarget = clipRealFormatForX11Format(format);
-                bestHTMLFormat = format;
+                fmxHTMLX11 = clipRealFormatForX11Format(idxFmt);
+                idxFmtHTML = idxFmt;
             }
         }
     }
-    return bestHTMLFormat;
+    return idxFmtHTML;
 }
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -581,32 +583,32 @@ static SHCLX11FMTIDX clipGetHtmlFormatFromTargets(PSHCLX11CTX pCtx,
  *
  * @return Supported X clipboard format.
  * @param  pCtx                 The X11 clipboard context to use.
- * @param  pTargets             The list of targets.
+ * @param  paIdxFmtTargets      The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
 static SHCLX11FMTIDX clipGetURIListFormatFromTargets(PSHCLX11CTX pCtx,
-                                                     SHCLX11FMTIDX *pTargets,
+                                                     SHCLX11FMTIDX *paIdxFmtTargets,
                                                      size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    AssertReturn(VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
-    SHCLX11FMTIDX bestURIListFormat = NIL_CLIPX11FORMAT;
-    SHCLX11FMT enmBestURIListTarget = SHCLX11FMT_INVALID;
+    SHCLX11FMTIDX idxFmtURI = NIL_CLIPX11FORMAT;
+    SHCLX11FMT    fmtURIX11 = SHCLX11FMT_INVALID;
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        SHCLX11FMTIDX format = pTargets[i];
-        if (format != NIL_CLIPX11FORMAT)
+        SHCLX11FMTIDX idxFmt = paIdxFmtTargets[i];
+        if (idxFmt != NIL_CLIPX11FORMAT)
         {
-            if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_URI_LIST)
-                && enmBestURIListTarget < clipRealFormatForX11Format(format))
+            if (   (clipVBoxFormatForX11Format(idxFmt) == VBOX_SHCL_FMT_URI_LIST)
+                && fmtURIX11 < clipRealFormatForX11Format(idxFmt))
             {
-                enmBestURIListTarget = clipRealFormatForX11Format(format);
-                bestURIListFormat = format;
+                fmtURIX11 = clipRealFormatForX11Format(idxFmt);
+                idxFmtURI = idxFmt;
             }
         }
     }
-    return bestURIListFormat;
+    return idxFmtURI;
 }
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
@@ -616,32 +618,32 @@ static SHCLX11FMTIDX clipGetURIListFormatFromTargets(PSHCLX11CTX pCtx,
  * better than plain text).
  *
  * @param  pCtx                 The X11 clipboard context to use.
- * @param  pTargets             The list of targets.
+ * @param  paIdxFmtTargets      The list of targets.
  * @param  cTargets             The size of the list in @a pTargets.
  */
 static void clipGetFormatsFromTargets(PSHCLX11CTX pCtx,
-                                      SHCLX11FMTIDX *pTargets, size_t cTargets)
+                                      SHCLX11FMTIDX *paIdxFmtTargets, size_t cTargets)
 {
     AssertPtrReturnVoid(pCtx);
-    AssertPtrReturnVoid(pTargets);
+    AssertPtrReturnVoid(paIdxFmtTargets);
 
-    SHCLX11FMTIDX bestTextFormat = clipGetTextFormatFromTargets(pCtx, pTargets, cTargets);
-    if (pCtx->X11TextFormat != bestTextFormat)
-        pCtx->X11TextFormat = bestTextFormat;
+    SHCLX11FMTIDX idxFmtText = clipGetTextFormatFromTargets(pCtx, paIdxFmtTargets, cTargets);
+    if (pCtx->idxFmtText != idxFmtText)
+        pCtx->idxFmtText = idxFmtText;
 
-    pCtx->X11BitmapFormat = SHCLX11FMT_INVALID; /* not yet supported */ /** @todo r=andy Check this. */
-    SHCLX11FMTIDX bestBitmapFormat = clipGetBitmapFormatFromTargets(pCtx, pTargets, cTargets);
-    if (pCtx->X11BitmapFormat != bestBitmapFormat)
-        pCtx->X11BitmapFormat = bestBitmapFormat;
+    pCtx->idxFmtBmp = SHCLX11FMT_INVALID; /* not yet supported */ /** @todo r=andy Check this. */
+    SHCLX11FMTIDX idxFmtBmp = clipGetBitmapFormatFromTargets(pCtx, paIdxFmtTargets, cTargets);
+    if (pCtx->idxFmtBmp != idxFmtBmp)
+        pCtx->idxFmtBmp = idxFmtBmp;
 
-    SHCLX11FMTIDX bestHtmlFormat = clipGetHtmlFormatFromTargets(pCtx, pTargets, cTargets);
-    if (pCtx->X11HTMLFormat != bestHtmlFormat)
-        pCtx->X11HTMLFormat = bestHtmlFormat;
+    SHCLX11FMTIDX idxFmtHTML = clipGetHtmlFormatFromTargets(pCtx, paIdxFmtTargets, cTargets);
+    if (pCtx->idxFmtHTML != idxFmtHTML)
+        pCtx->idxFmtHTML = idxFmtHTML;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    SHCLX11FMTIDX bestURIListFormat = clipGetURIListFormatFromTargets(pCtx, pTargets, cTargets);
-    if (pCtx->X11URIListFormat != bestURIListFormat)
-        pCtx->X11URIListFormat = bestURIListFormat;
+    SHCLX11FMTIDX idxFmtURI = clipGetURIListFormatFromTargets(pCtx, paIdxFmtTargets, cTargets);
+    if (pCtx->idxFmtURI != idxFmtURI)
+        pCtx->idxFmtURI = idxFmtURI;
 #endif
 }
 
@@ -653,18 +655,18 @@ static void clipGetFormatsFromTargets(PSHCLX11CTX pCtx,
  * @param  pTargets             The array of atoms describing the targets supported.
  * @param  cTargets             The size of the array @a pTargets.
  */
-SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *pTargets, size_t cTargets)
+SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *paIdxFmtTargets, size_t cTargets)
 {
     LogFlowFuncEnter();
 
-    if (pTargets == NULL)
+    if (paIdxFmtTargets == NULL)
     {
         /* No data available */
         clipReportEmptyX11CB(pCtx);
         return;
     }
 
-    clipGetFormatsFromTargets(pCtx, pTargets, cTargets);
+    clipGetFormatsFromTargets(pCtx, paIdxFmtTargets, cTargets);
     clipReportFormatsToVBox(pCtx);
 }
 
@@ -714,13 +716,13 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
 
     LogRel2(("Shared Clipboard: %u formats were found\n", cFormats));
 
-    SHCLX11FMTIDX *pFormats = NULL;
+    SHCLX11FMTIDX *paIdxFmt = NULL;
     if (   cFormats
         && pValue
         && (*atomType != XT_CONVERT_FAIL /* time out */))
     {
         /* Allocated array to hold the format indices. */
-        pFormats = (SHCLX11FMTIDX *)RTMemAllocZ(cFormats * sizeof(SHCLX11FMTIDX));
+        paIdxFmt = (SHCLX11FMTIDX *)RTMemAllocZ(cFormats * sizeof(SHCLX11FMTIDX));
     }
 
 #if !defined(TESTCASE)
@@ -740,7 +742,7 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
     }
 #endif
 
-    if (pFormats)
+    if (paIdxFmt)
     {
         for (unsigned i = 0; i < cFormats; ++i)
         {
@@ -749,19 +751,19 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
                 Atom target = XInternAtom(XtDisplay(widget),
                                           g_aFormats[j].pcszAtom, False);
                 if (*(pAtoms + i) == target)
-                    pFormats[i] = j;
+                    paIdxFmt[i] = j;
             }
 #if !defined(TESTCASE)
-            if (pFormats[i] != SHCLX11FMT_INVALID)
-                LogRel2(("Shared Clipboard: Reporting format '%s'\n", g_aFormats[pFormats[i]].pcszAtom));
+            if (paIdxFmt[i] != SHCLX11FMT_INVALID)
+                LogRel2(("Shared Clipboard: Reporting format '%s'\n", g_aFormats[paIdxFmt[i]].pcszAtom));
 #endif
         }
     }
     else
         LogFunc(("Reporting empty targets (none reported or allocation failure)\n"));
 
-    clipUpdateX11Targets(pCtx, pFormats, cFormats);
-    RTMemFree(pFormats);
+    clipUpdateX11Targets(pCtx, paIdxFmt, cFormats);
+    RTMemFree(paIdxFmt);
 
     XtFree(reinterpret_cast<char *>(pValue));
 }
@@ -1247,16 +1249,16 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
 
     Atom *atomTargets = (Atom *)XtMalloc((SHCL_MAX_X11_FORMATS + cFixedTargets) * sizeof(Atom));
     unsigned cTargets = 0;
-    SHCLX11FMTIDX format = NIL_CLIPX11FORMAT;
+    SHCLX11FMTIDX idxFmt = NIL_CLIPX11FORMAT;
     do
     {
-        format = clipEnumX11Formats(pCtx->vboxFormats, format);
-        if (format != NIL_CLIPX11FORMAT)
+        idxFmt = clipEnumX11Formats(pCtx->vboxFormats, idxFmt);
+        if (idxFmt != NIL_CLIPX11FORMAT)
         {
-            atomTargets[cTargets] = clipAtomForX11Format(pCtx, format);
+            atomTargets[cTargets] = clipAtomForX11Format(pCtx, idxFmt);
             ++cTargets;
         }
-    } while (format != NIL_CLIPX11FORMAT);
+    } while (idxFmt != NIL_CLIPX11FORMAT);
 
     /* We always offer these fixed targets. */
     atomTargets[cTargets]     = clipGetAtom(pCtx, "TARGETS");
@@ -1452,12 +1454,16 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
 {
     int rc = VINF_SUCCESS;
 
-    SHCLX11FMTIDX x11Format = clipFindX11FormatByAtom(pCtx, *atomTarget);
-    SHCLX11FMT clipFormat = clipRealFormatForX11Format(x11Format);
+    SHCLX11FMTIDX idxFmtX11 = clipFindX11FormatByAtom(pCtx, *atomTarget);
+    SHCLX11FMT    fmtX11    = clipRealFormatForX11Format(idxFmtX11);
 
-    LogFlowFunc(("fFormats=0x%x, x11Format=%u, clipFormat=%u\n", pCtx->vboxFormats, x11Format, clipFormat));
+    LogFlowFunc(("vboxFormats=0x%x, idxFmtX11=%u ('%s'), fmtX11=%u\n",
+                 pCtx->vboxFormats, idxFmtX11, g_aFormats[idxFmtX11].pcszAtom, fmtX11));
 
-    if (   ((clipFormat == SHCLX11FMT_UTF8) || (clipFormat == SHCLX11FMT_TEXT))
+    LogRel2(("Shared Clipboard: Converting VBox formats %#x to '%s' for X11\n",
+             pCtx->vboxFormats, g_aFormats[idxFmtX11].pcszAtom));
+
+    if (   ((fmtX11 == SHCLX11FMT_UTF8) || (fmtX11 == SHCLX11FMT_TEXT))
         && (pCtx->vboxFormats & VBOX_SHCL_FMT_UNICODETEXT))
     {
         void    *pv = NULL;
@@ -1465,17 +1471,17 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
         rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_UNICODETEXT, &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && ((clipFormat == SHCLX11FMT_UTF8) || (clipFormat == SHCLX11FMT_TEXT)))
+        if (RT_SUCCESS(rc) && ((fmtX11 == SHCLX11FMT_UTF8) || (fmtX11 == SHCLX11FMT_TEXT)))
             rc = clipUtf16CRLFToUtf8LF(XtDisplay(pCtx->pWidget),
                                        (PRTUTF16)pv, cb, atomTarget,
                                        atomTypeReturn, pValReturn,
                                        pcLenReturn, piFormatReturn);
         if (RT_SUCCESS(rc))
-            clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, clipFormat);
+            clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, fmtX11);
 
         RTMemFree(pv);
     }
-    else if (   (clipFormat == SHCLX11FMT_BMP)
+    else if (   (fmtX11 == SHCLX11FMT_BMP)
              && (pCtx->vboxFormats & VBOX_SHCL_FMT_BITMAP))
     {
         void    *pv = NULL;
@@ -1483,7 +1489,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
         rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_BITMAP, &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && (clipFormat == SHCLX11FMT_BMP))
+        if (RT_SUCCESS(rc) && (fmtX11 == SHCLX11FMT_BMP))
         {
             /* Create a full BMP from it */
             rc = ShClDibToBmp(pv, cb, (void **)pValReturn,
@@ -1500,7 +1506,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
 
         RTMemFree(pv);
     }
-    else if (  (clipFormat == SHCLX11FMT_HTML)
+    else if (  (fmtX11 == SHCLX11FMT_HTML)
             && (pCtx->vboxFormats & VBOX_SHCL_FMT_HTML))
     {
         void    *pv = NULL;
@@ -1523,7 +1529,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
                                            atomTypeReturn, pValReturn,
                                            pcLenReturn, piFormatReturn);
             if (RT_SUCCESS(rc))
-                clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, clipFormat);
+                clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, fmtX11);
 
             RTMemFree(pv);
         }
@@ -1531,7 +1537,7 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     else if (pCtx->vboxFormats & VBOX_SHCL_FMT_URI_LIST)
     {
-        switch (clipFormat)
+        switch (fmtX11)
         {
             case SHCLX11FMT_TEXT:
                 RT_FALL_THROUGH();
@@ -1559,8 +1565,8 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
     }
 
     if (RT_FAILURE(rc))
-        LogRel2(("Shared Clipboard: Converting format 0x%x for X11 (x11Format=%u, clipFormat=%u) failed, rc=%Rrc\n",
-                 pCtx->vboxFormats, x11Format, clipFormat, rc));
+        LogRel(("Shared Clipboard: Converting VBox formats %#x to '%s' for X11 (idxFmtX11=%u, fmtX11=%u) failed, rc=%Rrc\n",
+                pCtx->vboxFormats, g_aFormats[idxFmtX11].pcszAtom, idxFmtX11, fmtX11, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1596,7 +1602,7 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
         rc = clipConvertVBoxCBForX11(pCtx, atomTarget, atomTypeReturn,
                                      pValReturn, pcLenReturn, piFormatReturn);
 
-    LogFlowFunc(("returning %RTbool, internal status code %Rrc\n", RT_SUCCESS(rc), rc));
+    LogFlowFunc(("returning %RTbool, rc=%Rrc\n", RT_SUCCESS(rc), rc));
     return RT_SUCCESS(rc) ? True : False;
 }
 
@@ -1720,11 +1726,15 @@ int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, uint32_t Formats)
 SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, unsigned cbSrc)
 {
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pClient;
+    AssertPtrReturnVoid(pReq);
 
-    LogFlowFunc(("pReq->mFormat=%02X, pReq->mX11Format=%u, pReq->mCtx=%p\n", pReq->mFormat, pReq->mX11Format, pReq->mpCtx));
+    LogFlowFunc(("pReq->uFmtVBox=%#x, pReq->idxFmtX11=%u, pReq->pCtx=%p\n", pReq->uFmtVBox, pReq->idxFmtX11, pReq->pCtx));
 
-    AssertPtr(pReq->mpCtx);
-    Assert(pReq->mFormat != VBOX_SHCL_FMT_NONE); /* Sanity. */
+    LogRel2(("Shared Clipboard: Converting X11 format '%s' to VBox format %#x\n",
+             g_aFormats[pReq->idxFmtX11].pcszAtom, pReq->uFmtVBox));
+
+    AssertPtr(pReq->pCtx);
+    Assert(pReq->uFmtVBox != VBOX_SHCL_FMT_NONE); /* Sanity. */
 
     int rc = VINF_SUCCESS;
 
@@ -1736,10 +1746,10 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
         /* The clipboard selection may have changed before we could get it. */
         rc = VERR_NO_DATA;
     }
-    else if (pReq->mFormat == VBOX_SHCL_FMT_UNICODETEXT)
+    else if (pReq->uFmtVBox == VBOX_SHCL_FMT_UNICODETEXT)
     {
         /* In which format is the clipboard data? */
-        switch (clipRealFormatForX11Format(pReq->mX11Format))
+        switch (clipRealFormatForX11Format(pReq->idxFmtX11))
         {
             case SHCLX11FMT_UTF8:
                 RT_FALL_THROUGH();
@@ -1769,10 +1779,10 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
             }
         }
     }
-    else if (pReq->mFormat == VBOX_SHCL_FMT_BITMAP)
+    else if (pReq->uFmtVBox == VBOX_SHCL_FMT_BITMAP)
     {
         /* In which format is the clipboard data? */
-        switch (clipRealFormatForX11Format(pReq->mX11Format))
+        switch (clipRealFormatForX11Format(pReq->idxFmtX11))
         {
             case SHCLX11FMT_BMP:
             {
@@ -1801,10 +1811,10 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
             }
         }
     }
-    else if (pReq->mFormat == VBOX_SHCL_FMT_HTML)
+    else if (pReq->uFmtVBox == VBOX_SHCL_FMT_HTML)
     {
         /* In which format is the clipboard data? */
-        switch (clipRealFormatForX11Format(pReq->mX11Format))
+        switch (clipRealFormatForX11Format(pReq->idxFmtX11))
         {
             case SHCLX11FMT_HTML:
             {
@@ -1864,10 +1874,10 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
         }
     }
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    else if (pReq->mFormat == VBOX_SHCL_FMT_URI_LIST)
+    else if (pReq->uFmtVBox == VBOX_SHCL_FMT_URI_LIST)
     {
         /* In which format is the clipboard data? */
-        switch (clipRealFormatForX11Format(pReq->mX11Format))
+        switch (clipRealFormatForX11Format(pReq->idxFmtX11))
         {
             case SHCLX11FMT_URI_LIST:
             {
@@ -1915,7 +1925,11 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
     else
         rc = VERR_NOT_SUPPORTED;
 
-    ShClX11RequestFromX11CompleteCallback(pReq->mpCtx->pFrontend, rc, pReq->mpReq,
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Converting X11 format '%s' (idxFmtX11=%u) to VBox format %#x failed, rc=%Rrc\n",
+                g_aFormats[pReq->idxFmtX11].pcszAtom, pReq->idxFmtX11, pReq->uFmtVBox, rc));
+
+    ShClX11RequestFromX11CompleteCallback(pReq->pCtx->pFrontend, rc, pReq->pReq,
                                           pvDst, cbDst);
     RTMemFree(pvDst);
     RTMemFree(pReq);
@@ -1947,17 +1961,17 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Callback(Widget widget, XtPointer pCli
     XtFree((char *)pvSrc);
 }
 
-static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX format,
+static int clipGetSelectionValue(PSHCLX11CTX pCtx, SHCLX11FMTIDX idxFmt,
                                  CLIPREADX11CBREQ *pReq)
 {
 #ifndef TESTCASE
     XtGetSelectionValue(pCtx->pWidget, clipGetAtom(pCtx, "CLIPBOARD"),
-                        clipAtomForX11Format(pCtx, format),
+                        clipAtomForX11Format(pCtx, idxFmt),
                         clipConvertDataFromX11Callback,
                         reinterpret_cast<XtPointer>(pReq),
                         CurrentTime);
 #else
-    tstClipRequestData(pCtx, format, (void *)pReq);
+    tstClipRequestData(pCtx, idxFmt, (void *)pReq);
 #endif
 
     return VINF_SUCCESS; /** @todo Return real rc. */
@@ -1971,47 +1985,47 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     AssertPtrReturnVoid(pvUserData);
 
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pvUserData;
-    SHCLX11CTX       *pCtx = pReq->mpCtx;
+    SHCLX11CTX       *pCtx = pReq->pCtx;
 
-    LogFlowFunc(("pReq->mFormat = %02x\n", pReq->mFormat));
+    LogFlowFunc(("pReq->mFormat = %02x\n", pReq->uFmtVBox));
 
     int rc = VERR_NO_DATA; /* VBox thinks we have data and we don't. */
 
-    if (pReq->mFormat & VBOX_SHCL_FMT_UNICODETEXT)
+    if (pReq->uFmtVBox & VBOX_SHCL_FMT_UNICODETEXT)
     {
-        pReq->mX11Format = pCtx->X11TextFormat;
-        if (pReq->mX11Format != SHCLX11FMT_INVALID)
+        pReq->idxFmtX11 = pCtx->idxFmtText;
+        if (pReq->idxFmtX11 != SHCLX11FMT_INVALID)
         {
             /* Send out a request for the data to the current clipboard owner. */
-            rc = clipGetSelectionValue(pCtx, pCtx->X11TextFormat, pReq);
+            rc = clipGetSelectionValue(pCtx, pCtx->idxFmtText, pReq);
         }
     }
-    else if (pReq->mFormat & VBOX_SHCL_FMT_BITMAP)
+    else if (pReq->uFmtVBox & VBOX_SHCL_FMT_BITMAP)
     {
-        pReq->mX11Format = pCtx->X11BitmapFormat;
-        if (pReq->mX11Format != SHCLX11FMT_INVALID)
+        pReq->idxFmtX11 = pCtx->idxFmtBmp;
+        if (pReq->idxFmtX11 != SHCLX11FMT_INVALID)
         {
             /* Send out a request for the data to the current clipboard owner. */
-            rc = clipGetSelectionValue(pCtx, pCtx->X11BitmapFormat, pReq);
+            rc = clipGetSelectionValue(pCtx, pCtx->idxFmtBmp, pReq);
         }
     }
-    else if (pReq->mFormat & VBOX_SHCL_FMT_HTML)
+    else if (pReq->uFmtVBox & VBOX_SHCL_FMT_HTML)
     {
-        pReq->mX11Format = pCtx->X11HTMLFormat;
-        if (pReq->mX11Format != SHCLX11FMT_INVALID)
+        pReq->idxFmtX11 = pCtx->idxFmtHTML;
+        if (pReq->idxFmtX11 != SHCLX11FMT_INVALID)
         {
             /* Send out a request for the data to the current clipboard owner. */
-            rc = clipGetSelectionValue(pCtx, pCtx->X11HTMLFormat, pReq);
+            rc = clipGetSelectionValue(pCtx, pCtx->idxFmtHTML, pReq);
         }
     }
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    else if (pReq->mFormat & VBOX_SHCL_FMT_URI_LIST)
+    else if (pReq->uFmtVBox & VBOX_SHCL_FMT_URI_LIST)
     {
-        pReq->mX11Format = pCtx->X11URIListFormat;
-        if (pReq->mX11Format != SHCLX11FMT_INVALID)
+        pReq->idxFmtX11 = pCtx->idxFmtURI;
+        if (pReq->idxFmtX11 != SHCLX11FMT_INVALID)
         {
             /* Send out a request for the data to the current clipboard owner. */
-            rc = clipGetSelectionValue(pCtx, pCtx->X11URIListFormat, pReq);
+            rc = clipGetSelectionValue(pCtx, pCtx->idxFmtURI, pReq);
         }
     }
 #endif
@@ -2024,7 +2038,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     {
         /* The clipboard callback was never scheduled, so we must signal
          * that the request processing is finished and clean up ourselves. */
-        ShClX11RequestFromX11CompleteCallback(pReq->mpCtx->pFrontend, rc, pReq->mpReq,
+        ShClX11RequestFromX11CompleteCallback(pReq->pCtx->pFrontend, rc, pReq->pReq,
                                               NULL /* pv */ ,0 /* cb */);
         RTMemFree(pReq);
     }
@@ -2058,9 +2072,9 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMAT Format, CLIPREADCBREQ *p
     CLIPREADX11CBREQ *pX11Req = (CLIPREADX11CBREQ *)RTMemAllocZ(sizeof(CLIPREADX11CBREQ));
     if (pX11Req)
     {
-        pX11Req->mpCtx   = pCtx;
-        pX11Req->mFormat = Format;
-        pX11Req->mpReq   = pReq;
+        pX11Req->pCtx     = pCtx;
+        pX11Req->uFmtVBox = Format;
+        pX11Req->pReq     = pReq;
 
         /* We use this to schedule a worker function on the event thread. */
         rc = clipQueueToEventThread(pCtx, ShClX11ReadDataFromX11Worker, (XtPointer)pX11Req);
