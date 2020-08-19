@@ -177,41 +177,77 @@ private:
 
     /** @name Widgets
      * @{ */
-       QLabel *m_pBaseMemoryLabel;
-       QLabel *m_pBootOrderLabel;
-       QLabel *m_pLabelChipsetType;
-       QLabel *m_pLabelPointingHIDType;
-       QLabel *m_pLabelMotherboardExtended;
-       QLabel *m_pLabelCPUCount;
-       QLabel *m_pLabelCPUExecCap;
-       QLabel *m_pLabelCPUExtended;
-       QLabel *m_pLabelParavirtProvider;
-       QLabel *m_pLabelVirtualization;
-       QLabel *m_pLabelCPUMin;
-       QLabel *m_pLabelCPUMax;
-       QLabel *m_pLabelCPUExecCapMin;
-       QLabel *m_pLabelCPUExecCapMax;
-       QWidget *m_pTabMotherboard;
-       QWidget *m_pTabCPU;
-       QWidget *m_pTabAcceleration;
-       QWidget *m_pWidgetPlaceholder;
-       QCheckBox *m_pCheckBoxVirtualization;
-       QCheckBox *m_pCheckBoxNestedPaging;
-       QCheckBox *m_pCheckBoxNestedVirtualization;
-       QCheckBox *m_pCheckBoxApic;
-       QCheckBox *m_pCheckBoxEFI;
-       QCheckBox *m_pCheckBoxPAE;
-       QCheckBox *m_pCheckBoxUseUTC;
-       QComboBox *m_pComboPointingHIDType;
-       QComboBox *m_pComboChipsetType;
-       QComboBox *m_pComboParavirtProviderType;
-       QIAdvancedSlider *m_pSliderCPUCount;
-       QIAdvancedSlider *m_pSliderCPUExecCap;
-       UIBaseMemoryEditor *m_pBaseMemoryEditor;
-       UIBootOrderEditor *m_pBootOrderEditor;
-       QITabWidget *m_pTabWidgetSystem;
-       QSpinBox *m_pEditorCPUCount;
-       QSpinBox *m_pEditorCPUExecCap;
+        /** Holds the tab-widget instance. */
+        QITabWidget *m_pTabWidget;
+
+        /** Holds the 'Motherboard' tab instance. */
+        QWidget            *m_pTabMotherboard;
+        /** Holds the base memory label instance. */
+        QLabel             *m_pLabelBaseMemory;
+        /** Holds the base memory editor instance. */
+        UIBaseMemoryEditor *m_pEditorBaseMemory;
+        /** Holds the boot order label instance. */
+        QLabel             *m_pLabelBootOrder;
+        /** Holds the boot order editor instance. */
+        UIBootOrderEditor  *m_pEditorBootOrder;
+        /** Holds the chipset label instance. */
+        QLabel             *m_pLabelChipset;
+        /** Holds the chipset combo instance. */
+        QComboBox          *m_pComboChipset;
+        /** Holds the pointing HID label instance. */
+        QLabel             *m_pLabelPointingHID;
+        /** Holds the pointing HID combo instance. */
+        QComboBox          *m_pComboPointingHID;
+        /** Holds the extended motherboard label instance. */
+        QLabel             *m_pLabelExtendedMotherboard;
+        /** Holds the APIC check-box instance. */
+        QCheckBox          *m_pCheckBoxAPIC;
+        /** Holds the EFI check-box instance. */
+        QCheckBox          *m_pCheckBoxEFI;
+        /** Holds the UTC check-box instance. */
+        QCheckBox          *m_pCheckBoxUTC;
+
+        /** Holds the 'Processor' tab instance. */
+        QWidget          *m_pTabProcessor;
+        /** Holds the processor count label instance. */
+        QLabel           *m_pLabelProcessorCount;
+        /** Holds the processor count slider instance. */
+        QIAdvancedSlider *m_pSliderProcessorCount;
+        /** Holds the processor count spinbox instance. */
+        QSpinBox         *m_pSpinboxProcessorCount;
+        /** Holds the processor count min label instance. */
+        QLabel           *m_pLabelProcessorCountMin;
+        /** Holds the processor count max label instance. */
+        QLabel           *m_pLabelProcessorCountMax;
+        /** Holds the processor exec cap label instance. */
+        QLabel           *m_pLabelProcessorExecCap;
+        /** Holds the processor exec cap slider instance. */
+        QIAdvancedSlider *m_pSliderProcessorExecCap;
+        /** Holds the processor exec cap spinbox instance. */
+        QSpinBox         *m_pSpinboxProcessorExecCap;
+        /** Holds the processor exec cap min label instance. */
+        QLabel           *m_pLabelProcessorExecCapMin;
+        /** Holds the processor exec cap max label instance. */
+        QLabel           *m_pLabelProcessorExecCapMax;
+        /** Holds the extended processor label instance. */
+        QLabel           *m_pLabelExtendedProcessor;
+        /** Holds the PAE check-box instance. */
+        QCheckBox        *m_pCheckBoxPAE;
+        /** Holds the nested virtualization check-box instance. */
+        QCheckBox        *m_pCheckBoxNestedVirtualization;
+
+        /** Holds the 'Acceleration' tab instance. */
+        QWidget   *m_pTabAcceleration;
+        /** Holds the paravirtualization provider label instance. */
+        QLabel    *m_pLabelParavirtProvider;
+        /** Holds the paravirtualization provider combo instance. */
+        QComboBox *m_pComboParavirtProvider;
+        /** Holds the virtualization label instance. */
+        QLabel *m_pLabelVirtualization;
+        /** Holds the virtualization check-box instance. */
+        QCheckBox *m_pCheckBoxVirtualization;
+        /** Holds the nested paging check-box instance. */
+        QCheckBox *m_pCheckBoxNestedPaging;
    /** @} */
 };
 
