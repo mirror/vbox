@@ -594,15 +594,17 @@ void UIMachineSettingsGeneral::prepareWidgets()
     {
         /* Prepare tab-widget: */
         m_pTabWidget = new QITabWidget(this);
+        if (m_pTabWidget)
+        {
+            /* Prepare each tab separately: */
+            prepareTabBasic();
+            prepareTabAdvanced();
+            prepareTabDescription();
+            prepareTabEncryption();
+            prepareConnections();
 
-        /* Prepare each tab separately: */
-        prepareTabBasic();
-        prepareTabAdvanced();
-        prepareTabDescription();
-        prepareTabEncryption();
-        prepareConnections();
-
-        pLayoutMain->addWidget(m_pTabWidget);
+            pLayoutMain->addWidget(m_pTabWidget);
+        }
     }
 }
 
