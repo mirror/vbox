@@ -48,52 +48,114 @@ enum
 };
 
 /**
- * Get the size of the buffer needed to hold a UTF-16-LE zero terminated string
- * with Windows EOLs converted from a UTF-16 string with Linux EOLs.
+ * Returns the length (in UTF-8 characters) of an UTF-16 string with LF EOL.
  *
  * @returns VBox status code.
- * @param   pcwszSrc The source UTF-16 string.
- * @param   cwcSrc   The length of the source string in RTUTF16 units.
- * @param   pcwcDst  The length of the destination string in RTUTF16 units.
+ * @param   pcwszSrc            UTF-16 string to return size for.
+ * @param   cwcSrc              Length of the string in RTUTF16 units.
+ * @param   pchLen              Where to return the length (in UTF-8 characters). Includes terminator.
  */
-int ShClUtf16GetWinSize(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pcwcDst);
+int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
 
 /**
- * Convert a UTF-16 text with Linux EOLs to null-terminated UTF-16-LE with
- * Windows EOLs.
- *
- * Does no checking for validity.
+ * Returns the length (in UTF-8 characters) of an UTF-16 string with CRLF EOL.
  *
  * @returns VBox status code.
- * @param   pcwszSrc Source UTF-16 text to convert.
- * @param   cwcSrc   Size of the source text int RTUTF16 units.
- * @param   pwszDst  Buffer to store the converted text to.
- * @param   cwcDst   Size of the buffer for the converted text in RTUTF16 units.
+ * @param   pcwszSrc            UTF-16 string to return size for.
+ * @param   cwcSrc              Length of the source string in RTUTF16 units.
+ * @param   pchLen              Where to return the length (in UTF-8 characters). Includes terminator.
  */
-int ShClUtf16LinToWin(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
+int ShClUtf16CRLFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
 
 /**
- * Get the size of the buffer needed to hold a zero-terminated UTF-16 string
- * with Linux EOLs converted from a UTF-16 string with Windows EOLs.
+ * Returns the length (in characters) of an UTF-16 string, including terminator.
  *
  * @returns VBox status code.
- * @param   pcwszSrc The source UTF-16 string.
- * @param   cwcSrc   The length of the source string in RTUTF16 units.
- * @param   pcwcDst  The length of the destination string in RTUTF16 units.
+ * @param  pcwszSrc             UTF-16 string to return size for.
+ * @param  cwcSrc               Length of the source string in RTUTF16 units.
+ * @param  pchLen               Where to return the length (in UTF-8 characters). Includes terminator.
  */
-int ShClUtf16GetLinSize(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pcwcDst);
+int ShClUtf16LenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
 
 /**
- * Convert UTF-16-LE text with Windows EOLs to zero-terminated UTF-16 with Linux
- * EOLs.  This function does not verify that the UTF-16 is valid.
+ * Converts an UTF-16 string with LF EOL to an UTF-16 string with CRLF EOL.
  *
  * @returns VBox status code.
- * @param   pcwszSrc Text to convert.
- * @param   cwcSrc   Size of the source text in RTUTF16 units.
- * @param   pwszDst  The buffer to store the converted text to.
- * @param   cwcDst   The size of the buffer for the destination text in RTUTF16 chars.
+ * @param   pcwszSrc            UTF-16 string to convert.
+ * @param   cwcSrc              Size of the string int RTUTF16 units.
+ * @param   pwszDst             Buffer to store the converted string to.
+ * @param   cwcDst              Size of the buffer for the converted string in RTUTF16 units. Includes terminator.
  */
-int ShClUtf16WinToLin(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
+int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
+
+/**
+ * Converts an UTF-16 string with LF EOL to an UTF-16 string with CRLF EOL.
+ *
+ * Convenience function which returns the allocated + converted string on success.
+ *
+ * @returns VBox status code.
+ * @param   pcwszSrc            UTF-16 string to convert.
+ * @param   cwcSrc              Size of the string int RTUTF16 units.
+ * @param   pwszDst             Where to return the allocated converted string. Must be free'd by the caller.
+ * @param   cwcDst              Where to return the size of the converted string in RTUTF16 units. Includes terminator.
+ */
+int ShClConvUtf16LFToCRLFA(RTUTF16 *pwcSrc, size_t cwcSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
+
+/**
+ * Converts an UTF-16 string with CRLF EOL to an UTF-16 string with LF EOL.
+ *
+ * @returns VBox status code.
+ * @param   pcwszSrc            UTF-16 string to convert.
+ * @param   cwcSrc              Size of the string in RTUTF16 units.
+ * @param   pwszDst             Where to store the converted string to.
+ * @param   cwcDst              The size of \a pwszDst in RTUTF16 chars. Includes terminator.
+ */
+int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
+
+/**
+ * Converts an UTF-16 string with CRLF EOL to UTF-8 LF.
+ *
+ * @returns VBox status code. Will return VERR_NO_DATA if no data was converted.
+ * @param  pwszSrc              UTF-16 string to convert.
+ * @param  cbSrc                Length of @a pwszSrc (in bytes).
+ * @param  pszBuf               Where to write the converted string.
+ * @param  cbBuf                The size of the buffer pointed to by @a pszBuf.
+ * @param  pcbLen               Where to store the size (in bytes) of the converted string. Includes terminator.
+ */
+int ShClConvUtf16CRLFToUtf8LF(PRTUTF16 pwszSrc, size_t cbSrc, char *pszBuf, size_t cbBuf, size_t *pcbLen);
+
+/**
+* Converts an HTML string from UTF-16 into UTF-8.
+*
+* @returns VBox status code.
+* @param  pwcSrc                The source text.
+* @param  cwSrc                 Length (in RTUTF16 units) of the source text.
+* @param  ppszDst               Where to store the converted result on success.
+* @param  pcbDst                Where to store the number of bytes written.
+*/
+int ShClConvUtf16ToUtf8HTML(RTUTF16 *pwcSrc, size_t cwSrc, char **ppszDst, size_t *pcbDst);
+
+/**
+ * Converts an UTF-8 string with LF EOL into UTF-16 CRLF.
+ *
+ * @returns VBox status code.
+ * @param  pszSrc               UTF-8 string to convert.
+ * @param  cbSrc                Size of UTF-8 string to convert (in bytes), not counting the terminating zero.
+ * @param  ppwszDst             Where to return the allocated buffer on success.
+ * @param  pcwDst               Where to return the size (in RTUTF16 units) of the allocated buffer on success. Includes terminator.
+ */
+int ShClConvUtf8LFToUtf16CRLF(const char *pszSrc, unsigned cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
+
+/**
+ * Converts a Latin-1 string with LF EOL into UTF-16 CRLF.
+ *
+ * @returns VBox status code.
+ * @param  pszSrc               UTF-8 string to convert.
+ * @param  cbSrc                Size of string (in bytes), not counting the terminating zero.
+ * @param  ppwszDst             Where to return the allocated buffer on success.
+ * @param  pcwDst               Where to return the size (in RTUTF16 units) of the allocated buffer on success. Includes terminator.
+ */
+int ShClConvLatin1LFToUtf16CRLF(const char *pszSrc, unsigned cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
 
 #pragma pack(1)
 /** @todo r=bird: Why duplicate these structures here, we've got them in

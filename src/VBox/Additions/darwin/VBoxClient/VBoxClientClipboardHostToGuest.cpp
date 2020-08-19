@@ -168,11 +168,11 @@ static int vbclClipboardGuestPasteText(PasteboardRef pPasteboard, void *pData, u
        it in both formats UTF16 (original) and UTF8. */
 
     /* Convert END-OF-LINE */
-    rc = ShClUtf16GetLinSize((RTUTF16 *)pData, cbDataSize / 2, &cbActualLen);
+    rc = ShClUtf16CRLFLenUtf8((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), &cbActualLen);
     AssertReturn(RT_SUCCESS(rc), rc);
-    pDataInternal = (RTUTF16 *)RTMemAlloc(cbActualLen * 2);
+    pDataInternal = (RTUTF16 *)RTMemAlloc(cbActualLen * sizeof(RTUTF16));
     AssertReturn(pDataInternal, VERR_NO_MEMORY);
-    rc = ShClUtf16WinToLin((RTUTF16 *)pData, cbDataSize / 2, pDataInternal, cbActualLen);
+    rc = ShClConvUtf16CRLFToLF((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), pDataInternal, cbActualLen);
 
     /* Do actual paste */
     if (RT_SUCCESS(rc))

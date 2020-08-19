@@ -706,23 +706,27 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
 #endif
 
     Atom *pAtoms = (Atom *)pValue;
-    unsigned i, j;
 
     LogFlowFunc(("pValue=%p, *pcLen=%u, *atomType=%d%s\n",
                  pValue, *pcLen, *atomType, *atomType == XT_CONVERT_FAIL ? " (XT_CONVERT_FAIL)" : ""));
 
+    unsigned cFormats = *pcLen;
+
+    LogRel2(("Shared Clipboard: %u formats were found\n", cFormats));
+
     SHCLX11FMTIDX *pFormats = NULL;
-    if (   *pcLen
+    if (   cFormats
         && pValue
         && (*atomType != XT_CONVERT_FAIL /* time out */))
     {
-       pFormats = (SHCLX11FMTIDX *)RTMemAllocZ(*pcLen * sizeof(SHCLX11FMTIDX));
+        /* Allocated array to hold the format indices. */
+        pFormats = (SHCLX11FMTIDX *)RTMemAllocZ(cFormats * sizeof(SHCLX11FMTIDX));
     }
 
 #if !defined(TESTCASE)
     if (pValue)
     {
-        for (i = 0; i < *pcLen; ++i)
+        for (unsigned i = 0; i < cFormats; ++i)
         {
             if (pAtoms[i])
             {
@@ -738,25 +742,25 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
 
     if (pFormats)
     {
-        for (i = 0; i < *pcLen; ++i)
+        for (unsigned i = 0; i < cFormats; ++i)
         {
-            for (j = 0; j < RT_ELEMENTS(g_aFormats); ++j)
+            for (unsigned j = 0; j < RT_ELEMENTS(g_aFormats); ++j)
             {
                 Atom target = XInternAtom(XtDisplay(widget),
                                           g_aFormats[j].pcszAtom, False);
                 if (*(pAtoms + i) == target)
                     pFormats[i] = j;
             }
-#if defined(DEBUG) && !defined(TESTCASE)
-            LogRel2(("%s: reporting format %d (%s)\n", __FUNCTION__,
-                     pFormats[i], g_aFormats[pFormats[i]].pcszAtom));
+#if !defined(TESTCASE)
+            if (pFormats[i] != SHCLX11FMT_INVALID)
+                LogRel2(("Shared Clipboard: Reporting format '%s'\n", g_aFormats[pFormats[i]].pcszAtom));
 #endif
         }
     }
     else
         LogFunc(("Reporting empty targets (none reported or allocation failure)\n"));
 
-    clipUpdateX11Targets(pCtx, pFormats, *pcLen);
+    clipUpdateX11Targets(pCtx, pFormats, cFormats);
     RTMemFree(pFormats);
 
     XtFree(reinterpret_cast<char *>(pValue));
@@ -1306,79 +1310,9 @@ static int clipReadVBoxShCl(PSHCLX11CTX pCtx, SHCLFORMAT Format,
 }
 
 /**
- * Calculates a buffer size large enough to hold the source Windows format
- * text converted into Unix Utf8, including the null terminator.
+ * Satisfies a request from X11 to convert the clipboard text to UTF-8 LF.
  *
- * @returns VBox status code.
- * @param  pwsz                 The source text in UCS-2 with Windows EOLs.
- * @param  cwc                  The size in USC-2 elements of the source text, with or
- *                              without the terminator.
- * @param  pcbActual            Where to store the buffer size needed.
- */
-static int clipWinTxtBufSizeForUtf8(PRTUTF16 pwsz, size_t cwc,
-                                    size_t *pcbActual)
-{
-    size_t cbRet = 0;
-    int rc = RTUtf16CalcUtf8LenEx(pwsz, cwc, &cbRet);
-    if (RT_SUCCESS(rc))
-        *pcbActual = cbRet + 1;  /* null terminator */
-    return rc;
-}
-
-/**
- * Converts text from Windows format (UCS-2 with CRLF line endings) to standard UTF-8.
- *
- * @returns VBox status code.
- * @param  pwszSrc              The text to be converted.
- * @param  cbSrc                The length of @a pwszSrc in bytes.
- * @param  pszBuf               Where to write the converted string.
- * @param  cbBuf                The size of the buffer pointed to by @a pszBuf.
- * @param  pcbActual            Where to store the size of the converted string.
- *                              optional.
- */
-static int clipWinTxtToUtf8(PRTUTF16 pwszSrc, size_t cbSrc, char *pszBuf,
-                            size_t cbBuf, size_t *pcbActual)
-{
-    PRTUTF16 pwszTmp = NULL;
-    size_t cwSrc = cbSrc / 2, cwTmp = 0, cbDest = 0;
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc (("pwszSrc=%.*ls, cbSrc=%u\n", cbSrc, pwszSrc, cbSrc));
-    /* How long will the converted text be? */
-    AssertPtr(pwszSrc);
-    AssertPtr(pszBuf);
-    rc = ShClUtf16GetLinSize(pwszSrc, cwSrc, &cwTmp);
-    if (RT_SUCCESS(rc) && cwTmp == 0)
-        rc = VERR_NO_DATA;
-    if (RT_SUCCESS(rc))
-        pwszTmp = (PRTUTF16)RTMemAlloc(cwTmp * 2);
-    if (!pwszTmp)
-        rc = VERR_NO_MEMORY;
-    /* Convert the text. */
-    if (RT_SUCCESS(rc))
-        rc = ShClUtf16WinToLin(pwszSrc, cwSrc, pwszTmp, cwTmp);
-    if (RT_SUCCESS(rc))
-    {
-        /* Convert the UTF-16 string to Utf8. */
-        rc = RTUtf16ToUtf8Ex(pwszTmp + 1, cwTmp - 1, &pszBuf, cbBuf,
-                             &cbDest);
-    }
-    RTMemFree(reinterpret_cast<void *>(pwszTmp));
-    if (pcbActual)
-        *pcbActual = cbDest + 1;
-
-    if (RT_SUCCESS(rc))
-        LogFlowFunc (("converted string is %.*s. Returning.\n", cbDest, pszBuf));
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Satisfies a request from X11 to convert the clipboard text to UTF-8.  We
- * return null-terminated text, but can cope with non-null-terminated input.
- *
- * @returns VBox status code.
+ * @returns VBox status code. VERR_NO_DATA if no data was converted.
  * @param  pDisplay             An X11 display structure, needed for conversions
  *                              performed by Xlib.
  * @param  pv                   The text to be converted (UCS-2 with Windows EOLs).
@@ -1394,25 +1328,29 @@ static int clipWinTxtToUtf8(PRTUTF16 pwszSrc, size_t cbSrc, char *pszBuf,
  * @param  piFormatReturn       Where to store the bit width (8, 16, 32) of the
  *                              data we are returning.
  */
-static int clipWinTxtToUtf8ForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
-                                    size_t cbSrc, Atom *atomTarget,
-                                    Atom *atomTypeReturn,
-                                    XtPointer *pValReturn,
-                                    unsigned long *pcLenReturn,
-                                    int *piFormatReturn)
+static int clipUtf16CRLFToUtf8LF(Display *pDisplay, PRTUTF16 pwszSrc,
+                                 size_t cbSrc, Atom *atomTarget,
+                                 Atom *atomTypeReturn,
+                                 XtPointer *pValReturn,
+                                 unsigned long *pcLenReturn,
+                                 int *piFormatReturn)
 {
-    RT_NOREF(pDisplay, pcLenReturn);
+    RT_NOREF(pDisplay);
+
+    const size_t cwcSrc = cbSrc / sizeof(RTUTF16);
+    if (!cwcSrc)
+        return VERR_NO_DATA;
 
     /* This may slightly overestimate the space needed. */
-    size_t cbDest = 0;
-    int rc = clipWinTxtBufSizeForUtf8(pwszSrc, cbSrc / 2, &cbDest);
+    size_t chDst = 0;
+    int rc = ShClUtf16LenUtf8(pwszSrc, cwcSrc, &chDst);
     if (RT_SUCCESS(rc))
     {
-        char  *pszDest  = (char *)XtMalloc(cbDest);
+        char  *pszDest  = (char *)XtMalloc(chDst);
         size_t cbActual = 0;
         if (pszDest)
         {
-            rc = clipWinTxtToUtf8(pwszSrc, cbSrc, pszDest, cbDest, &cbActual);
+            rc = ShClConvUtf16CRLFToUtf8LF(pwszSrc, cwcSrc, pszDest, chDst, &cbActual);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -1420,11 +1358,13 @@ static int clipWinTxtToUtf8ForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
         if (RT_SUCCESS(rc))
         {
             *atomTypeReturn = *atomTarget;
-            *pValReturn = (XtPointer)pszDest;
-            *pcLenReturn = cbActual;
+            *pValReturn     = (XtPointer)pszDest;
+            *pcLenReturn    = cbActual;
             *piFormatReturn = 8;
         }
     }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -1526,10 +1466,10 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
         if (RT_SUCCESS(rc) && ((clipFormat == SHCLX11FMT_UTF8) || (clipFormat == SHCLX11FMT_TEXT)))
-            rc = clipWinTxtToUtf8ForX11CB(XtDisplay(pCtx->pWidget),
-                                          (PRTUTF16)pv, cb, atomTarget,
-                                          atomTypeReturn, pValReturn,
-                                          pcLenReturn, piFormatReturn);
+            rc = clipUtf16CRLFToUtf8LF(XtDisplay(pCtx->pWidget),
+                                       (PRTUTF16)pv, cb, atomTarget,
+                                       atomTypeReturn, pValReturn,
+                                       pcLenReturn, piFormatReturn);
         if (RT_SUCCESS(rc))
             clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, clipFormat);
 
@@ -1768,241 +1708,6 @@ int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, uint32_t Formats)
 }
 
 /**
- * Massages generic UTF-16 with CR end-of-lines into the format Windows expects
- * and return the result in a RTMemAlloc allocated buffer.
- *
- * @returns VBox status code.
- * @param  pwcSrc               The source as UTF-16.
- * @param  cwcSrc               The number of 16bit elements in @a pwcSrc, not counting
- *                              the terminating zero.
- * @param  ppwszDest            Where to store the buffer address.
- * @param  pcbDest              On success, where to store the number of bytes written.
- *                              Undefined otherwise.  Optional.
- */
-static int clipUtf16ToWinTxt(RTUTF16 *pwcSrc, size_t cwcSrc,
-                             PRTUTF16 *ppwszDest, uint32_t *pcbDest)
-{
-    AssertPtrReturn(pwcSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppwszDest, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("pwcSrc=%p, cwcSrc=%u, ppwszDest=%p\n", pwcSrc, cwcSrc, ppwszDest));
-
-    if (pcbDest)
-        *pcbDest = 0;
-
-    PRTUTF16 pwszDest = NULL;
-    size_t   cwcDest;
-    int rc = ShClUtf16GetWinSize(pwcSrc, cwcSrc + 1, &cwcDest);
-    if (RT_SUCCESS(rc))
-    {
-        pwszDest = (PRTUTF16)RTMemAlloc(cwcDest * sizeof(RTUTF16));
-        if (!pwszDest)
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_SUCCESS(rc))
-        rc = ShClUtf16LinToWin(pwcSrc, cwcSrc + 1, pwszDest, cwcDest);
-
-    if (RT_SUCCESS(rc))
-    {
-        LogFlowFunc(("Converted string is %.*ls\n", cwcDest, pwszDest));
-
-        *ppwszDest = pwszDest;
-
-        if (pcbDest)
-            *pcbDest = cwcDest * sizeof(RTUTF16);
-    }
-    else
-        RTMemFree(pwszDest);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Converts UTF-8 text with CR end-of-lines into UTF-16 as Windows expects it
- * and return the result in a RTMemAlloc allocated buffer.
- *
- * @returns VBox status code.
- * @param  pcSrc                The source UTF-8.
- * @param  cbSrc                The size of the source in bytes, not counting the
- *                              terminating zero.
- * @param  ppwszDest            Where to store the buffer address.
- * @param  pcbDest              On success, where to store the number of bytes written.
- *                              Undefined otherwise.  Optional.
- */
-static int clipUtf8ToWinTxt(const char *pcSrc, unsigned cbSrc,
-                            PRTUTF16 *ppwszDest, uint32_t *pcbDest)
-{
-    AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppwszDest, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("pcSrc=%p, cbSrc=%u, ppwszDest=%p\n", pcSrc, cbSrc, ppwszDest));
-
-    if (pcbDest)
-        *pcbDest = 0;
-
-    /* Intermediate conversion to UTF-16. */
-    size_t   cwcTmp;
-    PRTUTF16 pwcTmp = NULL;
-    int rc = RTStrToUtf16Ex(pcSrc, cbSrc, &pwcTmp, 0, &cwcTmp);
-    if (RT_SUCCESS(rc))
-        rc = clipUtf16ToWinTxt(pwcTmp, cwcTmp, ppwszDest, pcbDest);
-
-    RTUtf16Free(pwcTmp);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Converts Latin-1 text with CR end-of-lines into UTF-16 as Windows expects
- * it and return the result in a RTMemAlloc allocated buffer.
- *
- * @returns VBox status code.
- * @param  pcSrc                The source text.
- * @param  cbSrc                The size of the source in bytes, not counting the
- *                              terminating zero.
- * @param  ppwszDest            Where to store the buffer address.
- * @param  pcbDest              On success, where to store the number of bytes written.
- *                              Undefined otherwise.  Optional.
- */
-static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc,
-                              PRTUTF16 *ppwszDest, uint32_t *pcbDest)
-{
-    AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppwszDest, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("pcSrc=%.*s, cbSrc=%u, ppwszDest=%p\n", cbSrc, (char *) pcSrc, cbSrc, ppwszDest));
-
-    PRTUTF16 pwszDest = NULL;
-    int rc = VINF_SUCCESS;
-
-    /* Calculate the space needed. */
-    unsigned cwcDest = 0;
-    for (unsigned i = 0; i < cbSrc && pcSrc[i] != '\0'; ++i)
-    {
-        if (pcSrc[i] == VBOX_SHCL_LINEFEED)
-            cwcDest += 2;
-        else
-            ++cwcDest;
-    }
-
-    ++cwcDest;  /* Leave space for the terminator. */
-
-    if (pcbDest)
-        *pcbDest = cwcDest * sizeof(RTUTF16);
-
-    pwszDest = (PRTUTF16) RTMemAlloc(cwcDest * sizeof(RTUTF16));
-    if (!pwszDest)
-        rc = VERR_NO_MEMORY;
-
-    /* And do the conversion, bearing in mind that Latin-1 expands "naturally"
-     * to UTF-16. */
-    if (RT_SUCCESS(rc))
-    {
-        for (unsigned i = 0, j = 0; i < cbSrc; ++i, ++j)
-        {
-            if (pcSrc[i] != VBOX_SHCL_LINEFEED)
-                pwszDest[j] = pcSrc[i];
-            else
-            {
-                pwszDest[j] = VBOX_SHCL_CARRIAGERETURN;
-                pwszDest[j + 1] = VBOX_SHCL_LINEFEED;
-                ++j;
-            }
-        }
-
-        pwszDest[cwcDest - 1] = '\0';  /* Make sure we are zero-terminated. */
-
-        LogFlowFunc(("Converted text is %.*ls\n", cwcDest, pwszDest));
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        *ppwszDest = pwszDest;
-    }
-    else
-        RTMemFree(pwszDest);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
-* Converts UTF-16 text into UTF-8 as Windows expects
-* it and return the result in a RTMemAlloc allocated buffer.
-*
-* @returns VBox status code.
-* @param  pcSrc                 The source text.
-* @param  cbSrc                 The size of the source in bytes, not counting the
-*                               terminating zero.
-* @param  ppwszDest             Where to store the buffer address.
-* @param  pcbDest               On success, where to store the number of bytes written.
-*                               Undefined otherwise.  Optional.
-*/
-static int clipUTF16ToWinHTML(RTUTF16 *pwcBuf, size_t cb, char **ppszOut, uint32_t *pcOut)
-{
-    AssertPtrReturn(pwcBuf,  VERR_INVALID_POINTER);
-    AssertReturn   (cb,      VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppszOut, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcOut,   VERR_INVALID_POINTER);
-
-    if (cb % 2)
-        return VERR_INVALID_PARAMETER;
-
-    size_t cwc = cb / 2;
-    size_t i = 0;
-    RTUTF16 *pwc = pwcBuf;
-    char *pchRes = NULL;
-    size_t cRes = 0;
-    LogFlowFunc(("src= %ls cb=%d i=%i, %x %x\n", pwcBuf, cb, i, ppszOut, pcOut));
-    while (i < cwc)
-    {
-        /* find  zero symbol (end of string) */
-        for (; i < cwc && pwcBuf[i] != 0; i++)
-            ;
-        LogFlowFunc(("skipped nulls i=%d cwc=%d\n", i, cwc));
-
-        /* convert found string */
-        char *psz = NULL;
-        size_t cch = 0;
-        int rc = RTUtf16ToUtf8Ex(pwc, cwc, &psz, pwc - pwcBuf, &cch);
-        LogFlowFunc(("utf16toutf8 src= %ls res=%s i=%i\n", pwc, psz, i));
-        if (RT_FAILURE(rc))
-        {
-            RTMemFree(pchRes);
-            return rc;
-        }
-
-        /* append new substring */
-        char *pchNew = (char *)RTMemRealloc(pchRes, cRes + cch + 1);
-        if (!pchNew)
-        {
-            RTMemFree(pchRes);
-            RTStrFree(psz);
-            return VERR_NO_MEMORY;
-        }
-        pchRes = pchNew;
-        memcpy(pchRes + cRes, psz, cch + 1);
-        LogFlowFunc(("Temp result res=%s\n", pchRes + cRes));
-
-        /* remove temporary buffer */
-        RTStrFree(psz);
-        cRes += cch + 1;
-        /* skip zero symbols */
-        for (; i < cwc && pwcBuf[i] == 0; i++)
-            ;
-        /* remember start of string */
-        pwc += i;
-    }
-    *ppszOut = pchRes;
-    *pcOut = cRes;
-
-    return VINF_SUCCESS;
-}
-
-/**
  * Converts the data obtained from the X11 clipboard to the required format,
  * place it in the buffer supplied and signal that data has arrived.
  *
@@ -2023,8 +1728,8 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
 
     int rc = VINF_SUCCESS;
 
-    void    *pvDst = NULL;
-    uint32_t cbDst = 0;
+    void  *pvDst = NULL;
+    size_t cbDst = 0;
 
     if (pvSrc == NULL)
     {
@@ -2040,16 +1745,19 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
                 RT_FALL_THROUGH();
             case SHCLX11FMT_TEXT:
             {
-                /* If we are given broken UTF-8, we treat it as Latin1. */ /** @todo Is this acceptable? */
+                size_t cwDst;
+
+                /* If we are given broken UTF-8, we treat it as Latin1. */ /** @todo BUGBUG Is this acceptable? */
                 if (RT_SUCCESS(RTStrValidateEncodingEx((char *)pvSrc, cbSrc, 0)))
-                {
-                    rc = clipUtf8ToWinTxt((const char *)pvSrc, cbSrc,
-                                          (PRTUTF16 *)&pvDst, &cbDst);
-                }
+                    rc = ShClConvUtf8LFToUtf16CRLF((const char *)pvSrc, cbSrc,
+                                                   (PRTUTF16 *)&pvDst, &cwDst);
                 else
+                    rc = ShClConvLatin1LFToUtf16CRLF((char *)pvSrc, cbSrc,
+                                                     (PRTUTF16 *)&pvDst, &cbDst);
+                if (RT_SUCCESS(rc))
                 {
-                    rc = clipLatin1ToWinTxt((char *)pvSrc, cbSrc,
-                                            (PRTUTF16 *)&pvDst, &cbDst);
+                    AssertBreakStmt(cwDst, rc = VERR_INVALID_PARAMETER);
+                    cbDst = cwDst * sizeof(RTUTF16); /* Convert RTUTF16 units to bytes. */
                 }
                 break;
             }
@@ -2112,17 +1820,24 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
                 /*
                  * Some applications sends data in UTF-16, some in UTF-8,
                  * without indication it in MIME.
-                 * But in case of UTF-16, at least an OpenOffice adds Byte Order Mark - 0xfeff
-                 * at start of clipboard data.
+                 *
+                 * In case of UTF-16, at least [Open|Libre] Office adds an byte order mark (0xfeff)
+                 * at the start of the clipboard data.
                  */
                 if (   cbSrc >= sizeof(RTUTF16)
-                    && *(PRTUTF16)pvSrc == 0xfeff)
+                    && *(PRTUTF16)pvSrc == VBOX_SHCL_UTF16LEMARKER)
                 {
-                    LogFlowFunc((" \n"));
-                    rc = clipUTF16ToWinHTML((RTUTF16 *)pvSrc, cbSrc,
-                                            (char**)&pvDst, &cbDst);
+                    rc = ShClConvUtf16ToUtf8HTML((PRTUTF16)pvSrc, cbSrc / sizeof(RTUTF16), (char**)&pvDst, &cbDst);
+                    if (RT_SUCCESS(rc))
+                    {
+                        LogFlowFunc(("UTF-16 Unicode source (%u bytes):\n%ls\n\n", cbSrc, pvSrc));
+                        LogFlowFunc(("Byte Order Mark = %hx", ((PRTUTF16)pvSrc)[0]));
+                        LogFlowFunc(("UTF-8 Unicode dest (%u bytes):\n%s\n\n", cbDst, pvDst));
+                    }
+                    else
+                        LogRel(("Shared Clipboard: Converting UTF-16 Unicode failed with %Rrc\n", rc));
                 }
-                else
+                else /* Raw data. */
                 {
                    pvDst = RTMemAlloc(cbSrc);
                    if(pvDst)
@@ -2137,8 +1852,6 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
                    }
                 }
 
-                LogFlowFunc(("Source unicode %ls, cbSrc = %d\n, Byte Order Mark = %hx", pvSrc, cbSrc, ((PRTUTF16)pvSrc)[0]));
-                LogFlowFunc(("converted to win unicode %s, cbDest = %d, rc = %Rrc\n", pvDst, cbDst, rc));
                 rc = VINF_SUCCESS;
                 break;
             }

@@ -221,13 +221,13 @@ static int vbclClipboardHostPasteText(uint32_t u32ClientId, PRTUTF16 pwszData, u
     AssertPtrReturn(pwszData, VERR_INVALID_POINTER);
 
     size_t cwcActual; /* (includes a schwarzenegger character) */
-    int rc = ShClUtf16GetWinSize(pwszData, cbData / sizeof(RTUTF16), &cwcActual);
+    int rc = ShClUtf16LFLenUtf8(pwszData, cbData / sizeof(RTUTF16), &cwcActual);
     AssertReturn(RT_SUCCESS(rc), rc);
 
     PRTUTF16 pwszWinTmp = (PRTUTF16)RTMemAlloc(cwcActual * sizeof(RTUTF16));
     AssertReturn(pwszWinTmp, VERR_NO_MEMORY);
 
-    rc = ShClUtf16LinToWin(pwszData, cbData / sizeof(RTUTF16), pwszWinTmp, cwcActual);
+    rc = ShClConvUtf16LFToCRLF(pwszData, cbData / sizeof(RTUTF16), pwszWinTmp, cwcActual);
     if (RT_SUCCESS(rc))
         rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_UNICODETEXT,
                                         pwszWinTmp, cwcActual * sizeof(RTUTF16));

@@ -298,13 +298,13 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
                  */
                 Assert(cwcSrc == RTUtf16Len(pwszSrc));
                 size_t cwcDst = 0;
-                rc = ShClUtf16GetWinSize(pwszSrc, cwcSrc, &cwcDst);
+                rc = ShClUtf16LFLenUtf8(pwszSrc, cwcSrc, &cwcDst);
                 if (RT_SUCCESS(rc))
                 {
                     *pcbActual = cwcDst * sizeof(RTUTF16);
                     if (*pcbActual <= cb)
                     {
-                        rc = ShClUtf16LinToWin(pwszSrc, cwcSrc, (PRTUTF16)pv, cb / sizeof(RTUTF16));
+                        rc = ShClConvUtf16LFToCRLF(pwszSrc, cwcSrc, (PRTUTF16)pv, cb / sizeof(RTUTF16));
                         if (RT_SUCCESS(rc))
                         {
 #ifdef SHOW_CLIPBOARD_CONTENT
@@ -553,7 +553,7 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
 
         /* How long will the converted text be? */
         size_t cwcDst = 0;
-        rc = ShClUtf16GetLinSize(pwszSrc, cwcSrc, &cwcDst);
+        rc = ShClUtf16CRLFLenUtf8(pwszSrc, cwcSrc, &cwcDst);
         AssertMsgRCReturn(rc, ("ShClUtf16GetLinSize failed: %Rrc\n", rc), rc);
 
         /* Ignore empty strings? */
@@ -567,7 +567,7 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
         PRTUTF16 pwszDst = (PRTUTF16)RTMemAlloc(cwcDst * sizeof(RTUTF16));
         AssertMsgReturn(pwszDst, ("cwcDst=%#zx\n", cwcDst), VERR_NO_UTF16_MEMORY);
 
-        rc = ShClUtf16WinToLin(pwszSrc, cwcSrc, pwszDst, cwcDst);
+        rc = ShClConvUtf16CRLFToLF(pwszSrc, cwcSrc, pwszDst, cwcDst);
         if (RT_SUCCESS(rc))
         {
             /*
