@@ -99,7 +99,7 @@ int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, s
  * @param   pwszDst             Where to return the allocated converted string. Must be free'd by the caller.
  * @param   cwcDst              Where to return the size of the converted string in RTUTF16 units. Includes terminator.
  */
-int ShClConvUtf16LFToCRLFA(RTUTF16 *pwcSrc, size_t cwcSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
+int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
 
 /**
  * Converts an UTF-16 string with CRLF EOL to an UTF-16 string with LF EOL.
@@ -116,46 +116,46 @@ int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, s
  * Converts an UTF-16 string with CRLF EOL to UTF-8 LF.
  *
  * @returns VBox status code. Will return VERR_NO_DATA if no data was converted.
- * @param  pwszSrc              UTF-16 string to convert.
+ * @param  pcwszSrc             UTF-16 string to convert.
  * @param  cbSrc                Length of @a pwszSrc (in bytes).
  * @param  pszBuf               Where to write the converted string.
  * @param  cbBuf                The size of the buffer pointed to by @a pszBuf.
  * @param  pcbLen               Where to store the size (in bytes) of the converted string. Includes terminator.
  */
-int ShClConvUtf16CRLFToUtf8LF(PRTUTF16 pwszSrc, size_t cbSrc, char *pszBuf, size_t cbBuf, size_t *pcbLen);
+int ShClConvUtf16CRLFToUtf8LF(PCRTUTF16 pcwszSrc, size_t cbSrc, char *pszBuf, size_t cbBuf, size_t *pcbLen);
 
 /**
 * Converts an HTML string from UTF-16 into UTF-8.
 *
 * @returns VBox status code.
-* @param  pwcSrc                The source text.
-* @param  cwSrc                 Length (in RTUTF16 units) of the source text.
+* @param  pcwszSrc              UTF-16 string to convert.
+* @param  cwcSrc                Length (in RTUTF16 units) of the source text.
 * @param  ppszDst               Where to store the converted result on success.
 * @param  pcbDst                Where to store the number of bytes written.
 */
-int ShClConvUtf16ToUtf8HTML(RTUTF16 *pwcSrc, size_t cwSrc, char **ppszDst, size_t *pcbDst);
+int ShClConvUtf16ToUtf8HTML(PCRTUTF16 pcwszSrc, size_t cwcSrc, char **ppszDst, size_t *pcbDst);
 
 /**
  * Converts an UTF-8 string with LF EOL into UTF-16 CRLF.
  *
  * @returns VBox status code.
- * @param  pszSrc               UTF-8 string to convert.
+ * @param  pcszSrc              UTF-8 string to convert.
  * @param  cbSrc                Size of UTF-8 string to convert (in bytes), not counting the terminating zero.
  * @param  ppwszDst             Where to return the allocated buffer on success.
  * @param  pcwDst               Where to return the size (in RTUTF16 units) of the allocated buffer on success. Includes terminator.
  */
-int ShClConvUtf8LFToUtf16CRLF(const char *pszSrc, unsigned cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
+int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
 
 /**
  * Converts a Latin-1 string with LF EOL into UTF-16 CRLF.
  *
  * @returns VBox status code.
- * @param  pszSrc               UTF-8 string to convert.
+ * @param  pcszSrc              UTF-8 string to convert.
  * @param  cbSrc                Size of string (in bytes), not counting the terminating zero.
  * @param  ppwszDst             Where to return the allocated buffer on success.
  * @param  pcwDst               Where to return the size (in RTUTF16 units) of the allocated buffer on success. Includes terminator.
  */
-int ShClConvLatin1LFToUtf16CRLF(const char *pszSrc, unsigned cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
+int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
 
 #pragma pack(1)
 /** @todo r=bird: Why duplicate these structures here, we've got them in

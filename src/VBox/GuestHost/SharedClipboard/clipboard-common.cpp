@@ -469,13 +469,13 @@ int ShClUtf16LenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen)
     return rc;
 }
 
-int ShClConvUtf16CRLFToUtf8LF(PRTUTF16 pwszSrc, size_t cwcSrc,
+int ShClConvUtf16CRLFToUtf8LF(PCRTUTF16 pcwszSrc, size_t cwcSrc,
                               char *pszBuf, size_t cbBuf, size_t *pcbLen)
 {
-    AssertPtrReturn(pwszSrc, VERR_INVALID_POINTER);
-    AssertReturn   (cwcSrc,  VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszBuf,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbLen,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
+    AssertReturn   (cwcSrc,   VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszBuf,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbLen,   VERR_INVALID_POINTER);
 
     int rc;
 
@@ -485,7 +485,7 @@ int ShClConvUtf16CRLFToUtf8LF(PRTUTF16 pwszSrc, size_t cwcSrc,
     size_t   cbLen = 0;
 
     /* How long will the converted text be? */
-    rc = ShClUtf16CRLFLenUtf8(pwszSrc, cwcSrc, &cchTmp);
+    rc = ShClUtf16CRLFLenUtf8(pcwszSrc, cwcSrc, &cchTmp);
     if (RT_SUCCESS(rc))
     {
         if (cchTmp)
@@ -493,7 +493,7 @@ int ShClConvUtf16CRLFToUtf8LF(PRTUTF16 pwszSrc, size_t cwcSrc,
             pwszTmp = (PRTUTF16)RTMemAlloc(cchTmp * sizeof(RTUTF16));
             if (pwszTmp)
             {
-                rc = ShClConvUtf16CRLFToLF(pwszSrc, cwcSrc, pwszTmp, cchTmp);
+                rc = ShClConvUtf16CRLFToLF(pcwszSrc, cwcSrc, pwszTmp, cchTmp);
                 if (RT_SUCCESS(rc))
                     rc = RTUtf16ToUtf8Ex(pwszTmp + 1, cchTmp - 1, &pszBuf, cbBuf, &cbLen);
 
@@ -515,25 +515,25 @@ int ShClConvUtf16CRLFToUtf8LF(PRTUTF16 pwszSrc, size_t cwcSrc,
     return rc;
 }
 
-int ShClConvUtf16LFToCRLFA(RTUTF16 *pwcSrc, size_t cwcSrc,
+int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc,
                            PRTUTF16 *ppwszDst, size_t *pcwDst)
 {
-    AssertPtrReturn(pwcSrc, VERR_INVALID_POINTER);
-    AssertReturn(cwcSrc, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
+    AssertReturn(cwcSrc,      VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppwszDst, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcwDst, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcwDst,   VERR_INVALID_POINTER);
 
     PRTUTF16 pwszDst = NULL;
     size_t   cchDst;
 
-    int rc = ShClUtf16LFLenUtf8(pwcSrc, cwcSrc, &cchDst);
+    int rc = ShClUtf16LFLenUtf8(pcwszSrc, cwcSrc, &cchDst);
     if (RT_SUCCESS(rc))
     {
         Assert(cchDst);
         pwszDst = (PRTUTF16)RTMemAlloc(cchDst * sizeof(RTUTF16));
         if (pwszDst)
         {
-            rc = ShClConvUtf16LFToCRLF(pwcSrc, cwcSrc, pwszDst, cchDst);
+            rc = ShClConvUtf16LFToCRLF(pcwszSrc, cwcSrc, pwszDst, cchDst);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -551,18 +551,18 @@ int ShClConvUtf16LFToCRLFA(RTUTF16 *pwcSrc, size_t cwcSrc,
     return rc;
 }
 
-int ShClConvUtf8LFToUtf16CRLF(const char *pcSrc, unsigned cbSrc,
+int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc,
                               PRTUTF16 *ppwszDst, size_t *pcwDst)
 {
-    AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
-    AssertReturn(cbSrc, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcszSrc,  VERR_INVALID_POINTER);
+    AssertReturn(cbSrc,       VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppwszDst, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcwDst, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcwDst,   VERR_INVALID_POINTER);
 
     /* Intermediate conversion to UTF-16. */
     size_t   cwcTmp;
     PRTUTF16 pwcTmp = NULL;
-    int rc = RTStrToUtf16Ex(pcSrc, cbSrc, &pwcTmp, 0, &cwcTmp);
+    int rc = RTStrToUtf16Ex(pcszSrc, cbSrc, &pwcTmp, 0, &cwcTmp);
     if (RT_SUCCESS(rc))
     {
         rc = ShClConvUtf16LFToCRLFA(pwcTmp, cwcTmp, ppwszDst, pcwDst);
@@ -573,13 +573,13 @@ int ShClConvUtf8LFToUtf16CRLF(const char *pcSrc, unsigned cbSrc,
     return rc;
 }
 
-int ShClConvLatin1LFToUtf16CRLF(const char *pcSrc, unsigned cbSrc,
+int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc,
                                 PRTUTF16 *ppwszDst, size_t *pcwDst)
 {
-    AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
-    AssertReturn(cbSrc, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcszSrc,  VERR_INVALID_POINTER);
+    AssertReturn(cbSrc,       VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppwszDst, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcwDst, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcwDst,   VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
 
@@ -587,9 +587,9 @@ int ShClConvLatin1LFToUtf16CRLF(const char *pcSrc, unsigned cbSrc,
 
     /* Calculate the space needed. */
     unsigned cbDst = 0;
-    for (unsigned i = 0; i < cbSrc && pcSrc[i] != '\0'; ++i)
+    for (unsigned i = 0; i < cbSrc && pcszSrc[i] != '\0'; ++i)
     {
-        if (pcSrc[i] == VBOX_SHCL_LINEFEED)
+        if (pcszSrc[i] == VBOX_SHCL_LINEFEED)
             cbDst += sizeof(RTUTF16);
         else
             ++cbDst;
@@ -606,8 +606,8 @@ int ShClConvLatin1LFToUtf16CRLF(const char *pcSrc, unsigned cbSrc,
     {
         for (unsigned i = 0, j = 0; i < cbSrc; ++i, ++j)
         {
-            if (pcSrc[i] != VBOX_SHCL_LINEFEED)
-                pwszDst[j] = pcSrc[i];
+            if (pcszSrc[i] != VBOX_SHCL_LINEFEED)
+                pwszDst[j] = pcszSrc[i];
             else
             {
                 pwszDst[j]     = VBOX_SHCL_CARRIAGERETURN;
@@ -631,17 +631,17 @@ int ShClConvLatin1LFToUtf16CRLF(const char *pcSrc, unsigned cbSrc,
     return rc;
 }
 
-int ShClConvUtf16ToUtf8HTML(RTUTF16 *pwcSrc, size_t cwSrc, char **ppszDst, size_t *pcbDst)
+int ShClConvUtf16ToUtf8HTML(PCRTUTF16 pcwszSrc, size_t cwcSrc, char **ppszDst, size_t *pcbDst)
 {
-    AssertPtrReturn(pwcSrc,  VERR_INVALID_POINTER);
-    AssertReturn   (cwSrc,   VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppszDst, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbDst,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
+    AssertReturn   (cwcSrc,   VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppszDst,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbDst,   VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
 
-    size_t   cwTmp = cwSrc;
-    RTUTF16 *pwTmp = pwcSrc;
+    size_t    cwTmp = cwcSrc;
+    PCRTUTF16 pwTmp = pcwszSrc;
 
     char  *pchDst = NULL;
     size_t cbDst  = 0;
@@ -650,13 +650,13 @@ int ShClConvUtf16ToUtf8HTML(RTUTF16 *pwcSrc, size_t cwSrc, char **ppszDst, size_
     while (i < cwTmp)
     {
         /* Find  zero symbol (end of string). */
-        for (; i < cwTmp && pwcSrc[i] != 0; i++)
+        for (; i < cwTmp && pcwszSrc[i] != 0; i++)
             ;
 
         /* Convert found string. */
         char  *psz = NULL;
         size_t cch = 0;
-        rc = RTUtf16ToUtf8Ex(pwTmp, cwTmp, &psz, pwTmp - pwcSrc, &cch);
+        rc = RTUtf16ToUtf8Ex(pwTmp, cwTmp, &psz, pwTmp - pcwszSrc, &cch);
         if (RT_FAILURE(rc))
             break;
 
@@ -677,7 +677,7 @@ int ShClConvUtf16ToUtf8HTML(RTUTF16 *pwcSrc, size_t cwSrc, char **ppszDst, size_
         cbDst += cch + 1;
 
         /* Skip zero symbols. */
-        for (; i < cwTmp && pwcSrc[i] == 0; i++)
+        for (; i < cwTmp && pcwszSrc[i] == 0; i++)
             ;
 
         /* Remember start of string. */
@@ -779,12 +779,12 @@ int ShClUtf16CRLFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
     return VINF_SUCCESS;
 }
 
-int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwSrc, PRTUTF16 pu16Dst, size_t cwDst)
+int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, size_t cwDst)
 {
     AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn(cwSrc, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pu16Dst, VERR_INVALID_POINTER);
-    AssertReturn(cwDst, VERR_INVALID_PARAMETER);
+    AssertReturn(cwcSrc,      VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pu16Dst,  VERR_INVALID_POINTER);
+    AssertReturn(cwDst,       VERR_INVALID_PARAMETER);
 
     AssertMsgReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER,
                     ("Big endian UTF-16 not supported yet\n"), VERR_NOT_SUPPORTED);
@@ -795,7 +795,7 @@ int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwSrc, PRTUTF16 pu16Dst, si
     size_t i = pcwszSrc[0] == VBOX_SHCL_UTF16LEMARKER ? 1 : 0;
     size_t j = 0;
 
-    for (; i < cwSrc; ++i, ++j)
+    for (; i < cwcSrc; ++i, ++j)
     {
         /* Don't copy the null byte, as we add it below. */
         if (pcwszSrc[i] == 0)
@@ -856,12 +856,12 @@ int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwSrc, PRTUTF16 pu16Dst, si
     return rc;
 }
 
-int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwSrc, PRTUTF16 pu16Dst, size_t cwDst)
+int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, size_t cwDst)
 {
     AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn(cwSrc, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pu16Dst, VERR_INVALID_POINTER);
-    AssertReturn(cwDst, VERR_INVALID_PARAMETER);
+    AssertReturn(cwcSrc,      VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pu16Dst,  VERR_INVALID_POINTER);
+    AssertReturn(cwDst,       VERR_INVALID_PARAMETER);
 
     AssertMsgReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER,
                     ("Big endian UTF-16 not supported yet\n"), VERR_NOT_SUPPORTED);
@@ -878,7 +878,7 @@ int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwSrc, PRTUTF16 pu16Dst, si
         cwDstPos = 1;
     }
 
-    for (size_t i = 0; i < cwSrc; ++i, ++cwDstPos)
+    for (size_t i = 0; i < cwcSrc; ++i, ++cwDstPos)
     {
         if (pcwszSrc[i] == 0)
             break;
@@ -886,7 +886,7 @@ int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwSrc, PRTUTF16 pu16Dst, si
         if (cwDstPos == cwDst)
             return VERR_BUFFER_OVERFLOW;
 
-        if (   (i + 1 < cwSrc)
+        if (   (i + 1 < cwcSrc)
             && (pcwszSrc[i]     == VBOX_SHCL_CARRIAGERETURN)
             && (pcwszSrc[i + 1] == VBOX_SHCL_LINEFEED))
         {
