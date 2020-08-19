@@ -96,8 +96,8 @@ int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, s
  * @returns VBox status code.
  * @param   pcwszSrc            UTF-16 string to convert.
  * @param   cwcSrc              Size of the string int RTUTF16 units.
- * @param   pwszDst             Where to return the allocated converted string. Must be free'd by the caller.
- * @param   cwcDst              Where to return the size of the converted string in RTUTF16 units. Includes terminator.
+ * @param   ppwszDst            Where to return the allocated converted string. Must be free'd by the caller.
+ * @param   pcwDst              Where to return the size of the converted string in RTUTF16 units. Includes terminator.
  */
 int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
 
