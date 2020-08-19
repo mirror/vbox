@@ -315,17 +315,17 @@ DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int 
 }
 
 /**
- * Reads clipboard data from the guest and passes it to the X11 clipboard.
+ * Callback implementation for reading clipboard data from the guest.
  *
  * @note   Runs in Xt event thread.
  *
- * @param  pCtx      Pointer to the host clipboard structure.
- * @param  fFormat   The format in which the data should be transferred
- *                   (VBOX_SHCL_FMT_XXX).
- * @param  ppv       On success and if pcb > 0, this will point to a buffer
- *                   to be freed with RTMemFree containing the data read.
- * @param  pcb       On success, this contains the number of bytes of data
- *                   returned.
+ * @returns VBox status code. VERR_NO_DATA if no data available.
+ * @param   pCtx                Pointer to the host clipboard structure.
+ * @param   fFormat             The format in which the data should be transferred
+ *                              (VBOX_SHCL_FMT_XXX).
+ * @param   ppv                 On success and if pcb > 0, this will point to a buffer
+ *                              to be freed with RTMemFree containing the data read.
+ * @param   pcb                 On success, this contains the number of bytes of data returned.
  */
 DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT fFormat, void **ppv, uint32_t *pcb)
 {
@@ -355,8 +355,16 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
             rc = ShClEventWait(&pCtx->pClient->EventSrc, idEvent, 30 * 1000, &pPayload);
             if (RT_SUCCESS(rc))
             {
-                *ppv = pPayload ? pPayload->pvData : NULL;
-                *pcb = pPayload ? pPayload->cbData : 0;
+                if (   !pPayload
+                    || !pPayload->cbData)
+                {
+                    rc = VERR_NO_DATA;
+                }
+                else
+                {
+                    *ppv = pPayload->pvData;
+                    *pcb = pPayload->cbData;
+                }
             }
 
             ShClEventRelease(&pCtx->pClient->EventSrc, idEvent);
