@@ -5961,8 +5961,6 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     MsiReg.iMsiCapOffset  = IOMMU_PCI_OFF_MSI_CAP_HDR;
     MsiReg.iMsiNextOffset = 0; /* IOMMU_PCI_OFF_MSI_MAP_CAP_HDR */
     MsiReg.fMsi64bit      = 1; /* 64-bit addressing support is mandatory; See AMD spec. 2.8 "IOMMU Interrupt Support". */
-    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
-    AssertRCReturn(rc, rc);
 
     /* MSI Address (Lo, Hi) and MSI data are read-write PCI config registers handled by our generic PCI config space code. */
 #if 0
@@ -5992,6 +5990,13 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Register MSI support for the PCI device.
+     * This must be done -after- register it as a PCI device!
+     */
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
+    AssertRCReturn(rc, rc);
 
     /*
      * Intercept PCI config. space accesses.
