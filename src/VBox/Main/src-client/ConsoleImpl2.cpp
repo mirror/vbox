@@ -800,8 +800,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         uMcfgBase = _4G - cbRamHole;
     }
 
+#ifdef VBOX_WITH_IOMMU_AMD
     /** @todo Get IOMMU from pMachine and pass info to createInstance() below. */
-    BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(chipsetType, false /* fIommu */);
+    bool const fIommu = RT_BOOL(chipsetType == ChipsetType_ICH9);
+#else
+    bool const fIommu = false;
+#endif
+    BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(chipsetType, fIommu);
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                            H();
@@ -1500,20 +1505,22 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
-            /* AMD IOMMU. */
-            /** @todo Get IOMMU from pMachine. */
-            InsertConfigNode(pDevices, "iommu-amd", &pDev);
-            InsertConfigNode(pDev,     "0", &pInst);
-            InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
-            InsertConfigNode(pInst,    "Config", &pCfg);
-            hrc = pBusMgr->assignPCIDevice("iommu-amd", pInst);                             H();
+            if (fIommu)
+            {
+                /* AMD IOMMU. */
+                InsertConfigNode(pDevices, "iommu-amd", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
+                InsertConfigNode(pInst,    "Config", &pCfg);
+                hrc = pBusMgr->assignPCIDevice("iommu-amd", pInst);                             H();
 
-            /*
-             * Reserve the specific PCI address of the "SB I/O APIC" when using
-             * an AMD IOMMU. Required by Linux guests, see @bugref{9654#c23}.
-             */
-            PCIBusAddress PCIAddr = PCIBusAddress(VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC);
-            hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
+                /*
+                 * Reserve the specific PCI address of the "SB I/O APIC" when using
+                 * an AMD IOMMU. Required by Linux guests, see @bugref{9654#c23}.
+                 */
+                PCIBusAddress PCIAddr = PCIBusAddress(VBOX_PCI_BUS_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC, VBOX_PCI_FN_SB_IOAPIC);
+                hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
+            }
 #endif
         }
         /** @todo IOMMU: Disallow creating a VM without ICH9 chipset if an IOMMU is
@@ -3257,6 +3264,24 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "NvmePciAddress",    u32NvmePCIAddr);
                 }
             }
+#ifdef VBOX_WITH_IOMMU_AMD
+            if (fIommu)
+            {
+                PCIBusAddress Address;
+                if (pBusMgr->findPCIAddress("iommu-amd", 0, Address))
+                {
+                    uint32_t u32IommuAddress = (Address.miDevice << 16) | Address.miFn;
+                    InsertConfigInteger(pCfg, "IommuAmdPciAddress", u32IommuAddress);
+                    if (pBusMgr->findPCIAddress("sb-ioapic", 0, Address))
+                    {
+                        uint32_t u32SbIoapicAddress = (Address.miDevice << 16) | Address.miFn;
+                        InsertConfigInteger(pCfg, "SbIoApicPciAddress", u32SbIoapicAddress);
+                    }
+                    else
+                        LogRel(("IOMMU: AMD IOMMU is enabled, but southbridge I/O APIC is not assigned a PCI address!\n"));
+                }
+            }
+#endif
             InsertConfigInteger(pCfg,  "IocPciAddress", uIocPCIAddress);
             if (chipsetType == ChipsetType_ICH9)
             {
