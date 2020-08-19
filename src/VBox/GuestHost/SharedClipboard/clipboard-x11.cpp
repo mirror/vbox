@@ -205,7 +205,6 @@ SHCL_X11_DECL(size_t) clipReportMaxX11Formats(void)
  */
 static Atom clipAtomForX11Format(PSHCLX11CTX pCtx, SHCLX11FMTIDX uFmtIdx)
 {
-    LogFlowFunc(("format=%u -> pcszAtom=%s\n", uFmtIdx, g_aFormats[uFmtIdx].pcszAtom));
     AssertReturn(uFmtIdx < RT_ELEMENTS(g_aFormats), 0);
     return clipGetAtom(pCtx, g_aFormats[uFmtIdx].pcszAtom);
 }
@@ -245,7 +244,10 @@ static SHCLX11FMTIDX clipFindX11FormatByAtom(PSHCLX11CTX pCtx, Atom atomFormat)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(g_aFormats); ++i)
         if (clipAtomForX11Format(pCtx, i) == atomFormat)
+        {
+            LogFlowFunc(("Returning index %u for atom '%s'\n", i, g_aFormats[i].pcszAtom));
             return i;
+        }
     return NIL_CLIPX11FORMAT;
 }
 
@@ -1225,7 +1227,10 @@ int ShClX11ThreadStop(PSHCLX11CTX pCtx)
 }
 
 /**
- * Satisfies a request from X11 for clipboard targets supported by VBox.
+ * Returns the targets supported by VBox.
+ *
+ * This will return a list of atoms which tells the caller
+ * what kind of clipboard formats we support.
  *
  * @returns VBox status code.
  * @param  pCtx                 The X11 clipboard context to use.
@@ -1243,8 +1248,6 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
                                 unsigned long *pcLenReturn,
                                 int *piFormatReturn)
 {
-    LogFlowFuncEnter();
-
     const unsigned cFixedTargets = 3;
 
     Atom *atomTargets = (Atom *)XtMalloc((SHCL_MAX_X11_FORMATS + cFixedTargets) * sizeof(Atom));
@@ -1270,12 +1273,21 @@ static int clipCreateX11Targets(PSHCLX11CTX pCtx, Atom *atomTypeReturn,
     *pcLenReturn = cTargets + cFixedTargets;
     *piFormatReturn = 32;
 
+    LogFlowFunc(("cTargets=%u\n", cTargets + cFixedTargets));
+
     return VINF_SUCCESS;
 }
 
 /**
  * This is a wrapper around ShClX11RequestDataForX11Callback that will cache the
  * data returned.
+ *
+ * @returns VBox status code. VERR_NO_DATA if no data available.
+ * @param   pCtx                The X11 clipboard context to use.
+ * @param   Format              Clipboard format to read data in.
+ * @param   ppv                 Where to store the allocated read data on success.
+ *                              Needs to be free'd by the caller.
+ * @param   pcb                 Where to return the size (in bytes) of the allocated read data on success.
  */
 static int clipReadVBoxShCl(PSHCLX11CTX pCtx, SHCLFORMAT Format,
                             void **ppv, uint32_t *pcb)
@@ -1587,14 +1599,14 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     LogFlowFuncEnter();
 
     PSHCLX11CTX pCtx = clipLookupContext(widget);
-    int rc = VINF_SUCCESS;
-
     if (!pCtx)
         return False;
 
+    /* Is this the rigt selection (clipboard) we were asked for? */
     if (!clipIsSupportedSelectionType(pCtx, *atomSelection))
         return False;
 
+    int rc;
     if (*atomTarget == clipGetAtom(pCtx, "TARGETS"))
         rc = clipCreateX11Targets(pCtx, atomTypeReturn, pValReturn,
                                   pcLenReturn, piFormatReturn);

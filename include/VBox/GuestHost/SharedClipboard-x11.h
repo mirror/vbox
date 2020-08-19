@@ -136,7 +136,7 @@ int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormats);
 int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormat, CLIPREADCBREQ *pReq);
 /** @} */
 
-/** @name Shared Clipboard callbacks exported by the X11 APIs.
+/** @name Shared Clipboard callbacks which have to be implemented the X11 backend and host service.
  *  @{
  */
 DECLCALLBACK(int)  ShClX11RequestDataForX11Callback(SHCLCONTEXT *pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb);
