@@ -198,8 +198,7 @@ void UIScaleFactorEditor::prepare()
     m_pMainLayout = new QGridLayout(this);
     if (m_pMainLayout)
     {
-        QMargins margins = m_pMainLayout->contentsMargins();
-        m_pMainLayout->setContentsMargins(0, margins.top(), 0, margins.bottom());
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
 
         m_pMonitorComboBox = new QComboBox;
         if (m_pMonitorComboBox)
@@ -244,6 +243,7 @@ void UIScaleFactorEditor::prepare()
         m_pScaleSpinBox = new QSpinBox;
         if (m_pScaleSpinBox)
         {
+            setFocusProxy(m_pScaleSpinBox);
             m_pScaleSpinBox->setSuffix("%");
             connect(m_pScaleSpinBox ,static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
                     this, &UIScaleFactorEditor::sltScaleSpinBoxValueChanged);
