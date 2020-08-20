@@ -228,7 +228,10 @@ bool
 VBoxDbgBaseWindow::event(QEvent *a_pEvt)
 {
     bool fRc = QWidget::event(a_pEvt);
-    vPolishSizeAndPos();
+    if (   a_pEvt->type() == QEvent::Paint
+        || a_pEvt->type() == QEvent::UpdateRequest
+        || a_pEvt->type() == QEvent::LayoutRequest) /** @todo Someone with Qt knowledge should figure out how to properly do this. */
+        vPolishSizeAndPos();
     return fRc;
 }
 
