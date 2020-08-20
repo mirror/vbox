@@ -1361,6 +1361,7 @@ static int clipUtf16CRLFToUtf8LF(Display *pDisplay, PRTUTF16 pwszSrc,
                                  int *piFormatReturn)
 {
     RT_NOREF(pDisplay);
+    AssertReturn(cbSrc % sizeof(RTUTF16) == 0, VERR_INVALID_PARAMETER);
 
     const size_t cwcSrc = cbSrc / sizeof(RTUTF16);
     if (!cwcSrc)
@@ -1371,22 +1372,23 @@ static int clipUtf16CRLFToUtf8LF(Display *pDisplay, PRTUTF16 pwszSrc,
     int rc = ShClUtf16LenUtf8(pwszSrc, cwcSrc, &chDst);
     if (RT_SUCCESS(rc))
     {
-        char  *pszDest  = (char *)XtMalloc(chDst);
-        size_t cbActual = 0;
-        if (pszDest)
+        chDst++; /* Add space for terminator. */
+
+        char *pszDst = (char *)XtMalloc(chDst);
+        if (pszDst)
         {
-            rc = ShClConvUtf16CRLFToUtf8LF(pwszSrc, cwcSrc, pszDest, chDst, &cbActual);
+            size_t cbActual = 0;
+            rc = ShClConvUtf16CRLFToUtf8LF(pwszSrc, cwcSrc, pszDst, chDst, &cbActual);
+            if (RT_SUCCESS(rc))
+            {
+                *atomTypeReturn = *atomTarget;
+                *pValReturn     = (XtPointer)pszDst;
+                *pcLenReturn    = cbActual + 1 /* Include terminator */;
+                *piFormatReturn = 8;
+            }
         }
         else
             rc = VERR_NO_MEMORY;
-
-        if (RT_SUCCESS(rc))
-        {
-            *atomTypeReturn = *atomTarget;
-            *pValReturn     = (XtPointer)pszDest;
-            *pcLenReturn    = cbActual;
-            *piFormatReturn = 8;
-        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1494,11 +1496,17 @@ static int clipConvertVBoxCBForX11(PSHCLX11CTX pCtx, Atom *atomTarget,
         rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_UNICODETEXT, &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && ((fmtX11 == SHCLX11FMT_UTF8) || (fmtX11 == SHCLX11FMT_TEXT)))
+
+        if (   RT_SUCCESS(rc)
+            && (   (fmtX11 == SHCLX11FMT_UTF8)
+                || (fmtX11 == SHCLX11FMT_TEXT)))
+        {
             rc = clipUtf16CRLFToUtf8LF(XtDisplay(pCtx->pWidget),
                                        (PRTUTF16)pv, cb, atomTarget,
                                        atomTypeReturn, pValReturn,
                                        pcLenReturn, piFormatReturn);
+        }
+
         if (RT_SUCCESS(rc))
             clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, fmtX11);
 
@@ -1786,11 +1794,11 @@ SHCL_X11_DECL(void) clipConvertDataFromX11CallbackWorker(void *pClient, void *pv
                                                    (PRTUTF16 *)&pvDst, &cwDst);
                 else
                     rc = ShClConvLatin1LFToUtf16CRLF((char *)pvSrc, cbSrc,
-                                                     (PRTUTF16 *)&pvDst, &cbDst);
+                                                     (PRTUTF16 *)&pvDst, &cwDst);
                 if (RT_SUCCESS(rc))
                 {
-                    AssertBreakStmt(cwDst, rc = VERR_INVALID_PARAMETER);
-                    cbDst = cwDst * sizeof(RTUTF16); /* Convert RTUTF16 units to bytes. */
+                    cwDst += 1                        /* Include terminator */;
+                    cbDst  = cwDst * sizeof(RTUTF16); /* Convert RTUTF16 units to bytes. */
                 }
                 break;
             }

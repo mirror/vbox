@@ -220,19 +220,21 @@ static int vbclClipboardHostPasteText(uint32_t u32ClientId, PRTUTF16 pwszData, u
     AssertReturn(cbData > 0,  VERR_INVALID_PARAMETER);
     AssertPtrReturn(pwszData, VERR_INVALID_POINTER);
 
-    size_t cwcActual; /* (includes a schwarzenegger character) */
-    int rc = ShClUtf16LFLenUtf8(pwszData, cbData / sizeof(RTUTF16), &cwcActual);
-    AssertReturn(RT_SUCCESS(rc), rc);
+    size_t cwcTmp; /* (includes a schwarzenegger character) */
+    int rc = ShClUtf16LFLenUtf8(pwszData, cbData / sizeof(RTUTF16), &cwcTmp);
+    AssertRCReturn(rc, rc);
 
-    PRTUTF16 pwszWinTmp = (PRTUTF16)RTMemAlloc(cwcActual * sizeof(RTUTF16));
-    AssertReturn(pwszWinTmp, VERR_NO_MEMORY);
+    cwcTmp++; /* Add space for terminator. */
 
-    rc = ShClConvUtf16LFToCRLF(pwszData, cbData / sizeof(RTUTF16), pwszWinTmp, cwcActual);
+    PRTUTF16 pwszTmp = (PRTUTF16)RTMemAlloc(cwcTmp * sizeof(RTUTF16));
+    AssertReturn(pwszTmp, VERR_NO_MEMORY);
+
+    rc = ShClConvUtf16LFToCRLF(pwszData, cbData / sizeof(RTUTF16), pwszTmp, cwcTmp);
     if (RT_SUCCESS(rc))
         rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_UNICODETEXT,
-                                        pwszWinTmp, cwcActual * sizeof(RTUTF16));
+                                        pwszTmp, cwcTmp * sizeof(RTUTF16));
 
-    RTMemFree(pwszWinTmp);
+    RTMemFree(pwszTmp);
 
     return rc;
 }

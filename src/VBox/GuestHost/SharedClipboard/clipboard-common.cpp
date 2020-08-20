@@ -465,7 +465,7 @@ int ShClUtf16LenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen)
     size_t chLen = 0;
     int rc = RTUtf16CalcUtf8LenEx(pcwszSrc, cwcSrc, &chLen);
     if (RT_SUCCESS(rc))
-        *pchLen = chLen + 1; /* Include terminator. */
+        *pchLen = chLen;
     return rc;
 }
 
@@ -488,27 +488,24 @@ int ShClConvUtf16CRLFToUtf8LF(PCRTUTF16 pcwszSrc, size_t cwcSrc,
     rc = ShClUtf16CRLFLenUtf8(pcwszSrc, cwcSrc, &cchTmp);
     if (RT_SUCCESS(rc))
     {
-        if (cchTmp)
-        {
-            pwszTmp = (PRTUTF16)RTMemAlloc(cchTmp * sizeof(RTUTF16));
-            if (pwszTmp)
-            {
-                rc = ShClConvUtf16CRLFToLF(pcwszSrc, cwcSrc, pwszTmp, cchTmp);
-                if (RT_SUCCESS(rc))
-                    rc = RTUtf16ToUtf8Ex(pwszTmp + 1, cchTmp - 1, &pszBuf, cbBuf, &cbLen);
+        cchTmp++; /* Add space for terminator. */
 
-                RTMemFree(reinterpret_cast<void *>(pwszTmp));
-            }
-            else
-                rc = VERR_NO_MEMORY;
+        pwszTmp = (PRTUTF16)RTMemAlloc(cchTmp * sizeof(RTUTF16));
+        if (pwszTmp)
+        {
+            rc = ShClConvUtf16CRLFToLF(pcwszSrc, cwcSrc, pwszTmp, cchTmp);
+            if (RT_SUCCESS(rc))
+                rc = RTUtf16ToUtf8Ex(pwszTmp + 1, cchTmp - 1, &pszBuf, cbBuf, &cbLen);
+
+            RTMemFree(reinterpret_cast<void *>(pwszTmp));
         }
         else
-            rc = VERR_NO_DATA;
+            rc = VERR_NO_MEMORY;
     }
 
     if (RT_SUCCESS(rc))
     {
-        *pcbLen = cbLen + 1 /* Include terminator */;
+        *pcbLen = cbLen;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -519,7 +516,6 @@ int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc,
                            PRTUTF16 *ppwszDst, size_t *pcwDst)
 {
     AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn(cwcSrc,      VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppwszDst, VERR_INVALID_POINTER);
     AssertPtrReturn(pcwDst,   VERR_INVALID_POINTER);
 
@@ -529,11 +525,10 @@ int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc,
     int rc = ShClUtf16LFLenUtf8(pcwszSrc, cwcSrc, &cchDst);
     if (RT_SUCCESS(rc))
     {
-        Assert(cchDst);
-        pwszDst = (PRTUTF16)RTMemAlloc(cchDst * sizeof(RTUTF16));
+        pwszDst = (PRTUTF16)RTMemAlloc((cchDst + 1 /* Leave space for terminator */) * sizeof(RTUTF16));
         if (pwszDst)
         {
-            rc = ShClConvUtf16LFToCRLF(pcwszSrc, cwcSrc, pwszDst, cchDst);
+            rc = ShClConvUtf16LFToCRLF(pcwszSrc, cwcSrc, pwszDst, cchDst + 1 /* Include terminator */);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -551,7 +546,7 @@ int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc,
     return rc;
 }
 
-int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc,
+int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
                               PRTUTF16 *ppwszDst, size_t *pcwDst)
 {
     AssertPtrReturn(pcszSrc,  VERR_INVALID_POINTER);
@@ -573,7 +568,7 @@ int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc,
     return rc;
 }
 
-int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc,
+int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc,
                                 PRTUTF16 *ppwszDst, size_t *pcwDst)
 {
     AssertPtrReturn(pcszSrc,  VERR_INVALID_POINTER);
@@ -586,18 +581,16 @@ int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc,
     PRTUTF16 pwszDst = NULL;
 
     /* Calculate the space needed. */
-    unsigned cbDst = 0;
+    unsigned cwDst = 0;
     for (unsigned i = 0; i < cbSrc && pcszSrc[i] != '\0'; ++i)
     {
         if (pcszSrc[i] == VBOX_SHCL_LINEFEED)
-            cbDst += sizeof(RTUTF16);
+            cwDst += 2; /* Space for VBOX_SHCL_CARRIAGERETURN + VBOX_SHCL_LINEFEED. */
         else
-            ++cbDst;
+            ++cwDst;
     }
 
-    ++cbDst; /* Leave space for the terminator. */
-
-    pwszDst = (PRTUTF16)RTMemAlloc(cbDst * sizeof(RTUTF16));
+    pwszDst = (PRTUTF16)RTMemAlloc((cwDst + 1 /* Leave space for the terminator */) * sizeof(RTUTF16));
     if (!pwszDst)
         rc = VERR_NO_MEMORY;
 
@@ -616,13 +609,13 @@ int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc,
             }
         }
 
-        pwszDst[cbDst - 1] = '\0';  /* Make sure we are zero-terminated. */
+        pwszDst[cwDst] = '\0';  /* Make sure we are zero-terminated. */
     }
 
     if (RT_SUCCESS(rc))
     {
         *ppwszDst = pwszDst;
-        *pcwDst   = cbDst * sizeof(RTUTF16);
+        *pcwDst   = cwDst;
     }
     else
         RTMemFree(pwszDst);
@@ -701,7 +694,6 @@ int ShClConvUtf16ToUtf8HTML(PCRTUTF16 pcwszSrc, size_t cwcSrc, char **ppszDst, s
 int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
 {
     AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn(cwSrc, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pchLen, VERR_INVALID_POINTER);
 
     AssertMsgReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER,
@@ -730,9 +722,6 @@ int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
             break;
         }
     }
-
-    /* Add terminator. */
-    ++cLen;
 
     *pchLen = cLen;
 
@@ -770,9 +759,6 @@ int ShClUtf16CRLFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
             break;
     }
 
-    /* Add terminating zero. */
-    ++cLen;
-
     *pchLen = cLen;
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
@@ -782,9 +768,8 @@ int ShClUtf16CRLFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwSrc, size_t *pchLen)
 int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pu16Dst, size_t cwDst)
 {
     AssertPtrReturn(pcwszSrc, VERR_INVALID_POINTER);
-    AssertReturn(cwcSrc,      VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pu16Dst,  VERR_INVALID_POINTER);
-    AssertReturn(cwDst,       VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pu16Dst, VERR_INVALID_POINTER);
+    AssertReturn(cwDst, VERR_INVALID_PARAMETER);
 
     AssertMsgReturn(pcwszSrc[0] != VBOX_SHCL_UTF16BEMARKER,
                     ("Big endian UTF-16 not supported yet\n"), VERR_NOT_SUPPORTED);

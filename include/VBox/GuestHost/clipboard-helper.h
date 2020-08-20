@@ -53,7 +53,8 @@ enum
  * @returns VBox status code.
  * @param   pcwszSrc            UTF-16 string to return size for.
  * @param   cwcSrc              Length of the string in RTUTF16 units.
- * @param   pchLen              Where to return the length (in UTF-8 characters). Includes terminator.
+ * @param   pchLen              Where to return the length (in UTF-8 characters).
+ *                              Does not include terminator.
  */
 int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
 
@@ -63,7 +64,8 @@ int ShClUtf16LFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
  * @returns VBox status code.
  * @param   pcwszSrc            UTF-16 string to return size for.
  * @param   cwcSrc              Length of the source string in RTUTF16 units.
- * @param   pchLen              Where to return the length (in UTF-8 characters). Includes terminator.
+ * @param   pchLen              Where to return the length (in UTF-8 characters).
+ *                              Does not include terminator.
  */
 int ShClUtf16CRLFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
 
@@ -73,7 +75,8 @@ int ShClUtf16CRLFLenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
  * @returns VBox status code.
  * @param  pcwszSrc             UTF-16 string to return size for.
  * @param  cwcSrc               Length of the source string in RTUTF16 units.
- * @param  pchLen               Where to return the length (in UTF-8 characters). Includes terminator.
+ * @param  pchLen               Where to return the length (in UTF-8 characters).
+ *                              Does not include terminator.
  */
 int ShClUtf16LenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
 
@@ -84,7 +87,7 @@ int ShClUtf16LenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen);
  * @param   pcwszSrc            UTF-16 string to convert.
  * @param   cwcSrc              Size of the string int RTUTF16 units.
  * @param   pwszDst             Buffer to store the converted string to.
- * @param   cwcDst              Size of the buffer for the converted string in RTUTF16 units. Includes terminator.
+ * @param   cwcDst              The size of \a pwszDst in RTUTF16 units.
  */
 int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
 
@@ -97,7 +100,8 @@ int ShClConvUtf16LFToCRLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, s
  * @param   pcwszSrc            UTF-16 string to convert.
  * @param   cwcSrc              Size of the string int RTUTF16 units.
  * @param   ppwszDst            Where to return the allocated converted string. Must be free'd by the caller.
- * @param   pcwDst              Where to return the size of the converted string in RTUTF16 units. Includes terminator.
+ * @param   pcwDst              Where to return the size of the converted string in RTUTF16 units.
+ *                              Does not include the terminator.
  */
 int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
 
@@ -108,7 +112,7 @@ int ShClConvUtf16LFToCRLFA(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 *ppwszDst
  * @param   pcwszSrc            UTF-16 string to convert.
  * @param   cwcSrc              Size of the string in RTUTF16 units.
  * @param   pwszDst             Where to store the converted string to.
- * @param   cwcDst              The size of \a pwszDst in RTUTF16 chars. Includes terminator.
+ * @param   cwcDst              The size of \a pwszDst in RTUTF16 units.
  */
 int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
 
@@ -120,7 +124,8 @@ int ShClConvUtf16CRLFToLF(PCRTUTF16 pcwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, s
  * @param  cbSrc                Length of @a pwszSrc (in bytes).
  * @param  pszBuf               Where to write the converted string.
  * @param  cbBuf                The size of the buffer pointed to by @a pszBuf.
- * @param  pcbLen               Where to store the size (in bytes) of the converted string. Includes terminator.
+ * @param  pcbLen               Where to store the size (in bytes) of the converted string.
+ *                              Does not include terminator.
  */
 int ShClConvUtf16CRLFToUtf8LF(PCRTUTF16 pcwszSrc, size_t cbSrc, char *pszBuf, size_t cbBuf, size_t *pcbLen);
 
@@ -142,9 +147,10 @@ int ShClConvUtf16ToUtf8HTML(PCRTUTF16 pcwszSrc, size_t cwcSrc, char **ppszDst, s
  * @param  pcszSrc              UTF-8 string to convert.
  * @param  cbSrc                Size of UTF-8 string to convert (in bytes), not counting the terminating zero.
  * @param  ppwszDst             Where to return the allocated buffer on success.
- * @param  pcwDst               Where to return the size (in RTUTF16 units) of the allocated buffer on success. Includes terminator.
+ * @param  pcwDst               Where to return the size (in RTUTF16 units) of the allocated buffer on success.
+ *                              Does not include terminator.
  */
-int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
+int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
 
 /**
  * Converts a Latin-1 string with LF EOL into UTF-16 CRLF.
@@ -153,9 +159,10 @@ int ShClConvUtf8LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc, PRTUTF16 *ppw
  * @param  pcszSrc              UTF-8 string to convert.
  * @param  cbSrc                Size of string (in bytes), not counting the terminating zero.
  * @param  ppwszDst             Where to return the allocated buffer on success.
- * @param  pcwDst               Where to return the size (in RTUTF16 units) of the allocated buffer on success. Includes terminator.
+ * @param  pcwDst               Where to return the size (in RTUTF16 units) of the allocated buffer on success.
+ *                              Does not include terminator.
  */
-int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, unsigned cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
+int ShClConvLatin1LFToUtf16CRLF(const char *pcszSrc, size_t cbSrc, PRTUTF16 *ppwszDst, size_t *pcwDst);
 
 #pragma pack(1)
 /** @todo r=bird: Why duplicate these structures here, we've got them in

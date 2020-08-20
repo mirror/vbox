@@ -301,6 +301,8 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
                 rc = ShClUtf16LFLenUtf8(pwszSrc, cwcSrc, &cwcDst);
                 if (RT_SUCCESS(rc))
                 {
+                    cwcDst++; /* Add space for terminator. */
+
                     *pcbActual = cwcDst * sizeof(RTUTF16);
                     if (*pcbActual <= cb)
                     {
@@ -556,12 +558,14 @@ int writeToPasteboard(PasteboardRef hPasteboard, uint64_t idOwnership, const voi
         rc = ShClUtf16CRLFLenUtf8(pwszSrc, cwcSrc, &cwcDst);
         AssertMsgRCReturn(rc, ("ShClUtf16GetLinSize failed: %Rrc\n", rc), rc);
 
-        /* Ignore empty strings? */
+        /* Ignore empty strings? */ /** @todo r=andy Really? Why? */
         if (cwcDst == 0)
         {
             Log(("writeToPasteboard: received empty string from the guest; ignoreing it.\n"));
             return VINF_SUCCESS;
         }
+
+        cwcDst++; /* Add space for terminator. */
 
         /* Allocate the necessary memory and do the conversion. */
         PRTUTF16 pwszDst = (PRTUTF16)RTMemAlloc(cwcDst * sizeof(RTUTF16));

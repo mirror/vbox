@@ -154,11 +154,6 @@ static int vbclClipboardGuestPasteData(PasteboardRef pPasteboard, UInt8 *pData, 
  */
 static int vbclClipboardGuestPasteText(PasteboardRef pPasteboard, void *pData, uint32_t cbDataSize)
 {
-    size_t   cbActualLen;
-    int      rc;
-    char    *pszUtf8Buf;
-    RTUTF16 *pDataInternal;
-
     AssertReturn(pData, VERR_INVALID_PARAMETER);
 
     /* Skip zero-sized buffer */
@@ -168,31 +163,35 @@ static int vbclClipboardGuestPasteText(PasteboardRef pPasteboard, void *pData, u
        it in both formats UTF16 (original) and UTF8. */
 
     /* Convert END-OF-LINE */
-    rc = ShClUtf16CRLFLenUtf8((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), &cbActualLen);
-    AssertReturn(RT_SUCCESS(rc), rc);
-    pDataInternal = (RTUTF16 *)RTMemAlloc(cbActualLen * sizeof(RTUTF16));
-    AssertReturn(pDataInternal, VERR_NO_MEMORY);
-    rc = ShClConvUtf16CRLFToLF((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), pDataInternal, cbActualLen);
+    size_t cwcDst;
+    int rc = ShClUtf16CRLFLenUtf8((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), &cwcDst);
+    AssertRCReturn(rc, rc);
 
-    /* Do actual paste */
+    cwcDst++; /* Add space for terminator. */
+
+    PRTUTF16 pwszDst = (RTUTF16 *)RTMemAlloc(cwcDst * sizeof(RTUTF16));
+    AssertPtrReturn(pwszDst, VERR_NO_MEMORY);
+
+    rc = ShClConvUtf16CRLFToLF((RTUTF16 *)pData, cbDataSize / sizeof(RTUTF16), pwszDst, cwcDst);
     if (RT_SUCCESS(rc))
     {
         /* Paste UTF16 */
-        rc = vbclClipboardGuestPasteData(pPasteboard, (UInt8 *)pDataInternal, cbActualLen * 2, kUTTypeUTF16PlainText, true);
+        rc = vbclClipboardGuestPasteData(pPasteboard, (UInt8 *)pwszDst, cwcDst * sizeof(RTUTF16), kUTTypeUTF16PlainText, true);
         if (RT_SUCCESS(rc))
         {
             /* Paste UTF8 */
-            rc = RTUtf16ToUtf8((RTUTF16 *)pDataInternal, &pszUtf8Buf);
+            char *pszDst;
+            rc = RTUtf16ToUtf8((PRTUTF16)pwszDst, &pszDst);
             if (RT_SUCCESS(rc))
             {
-                rc = vbclClipboardGuestPasteData(pPasteboard, (UInt8 *)pszUtf8Buf, strlen(pszUtf8Buf), kUTTypeUTF8PlainText, false);
-                RTStrFree(pszUtf8Buf);
+                rc = vbclClipboardGuestPasteData(pPasteboard, (UInt8 *)pszDst, strlen(pszDst), kUTTypeUTF8PlainText, false);
+                RTStrFree(pszDst);
             }
         }
 
     }
 
-    RTMemFree(pDataInternal);
+    RTMemFree(pwszDst);
 
     return rc;
 }
