@@ -822,7 +822,7 @@ void UIMachineSettingsSystem::prepareWidgets()
     if (pLayoutMain)
     {
         /* Prepare tab-widget: */
-        m_pTabWidget = new QITabWidget();
+        m_pTabWidget = new QITabWidget(this);
         if (m_pTabWidget)
         {
             /* Prepare each tab separately: */
@@ -1006,8 +1006,6 @@ void UIMachineSettingsSystem::prepareTabProcessor()
                 QHBoxLayout *m_pLayoutProcessorCountScale = new QHBoxLayout;
                 if (m_pLayoutProcessorCountScale)
                 {
-                    m_pLayoutProcessorCountScale->setSpacing(0);
-
                     /* Prepare processor count min label: */
                     m_pLabelProcessorCountMin = new QLabel(m_pTabProcessor);
                     if (m_pLabelProcessorCountMin)
@@ -1067,8 +1065,6 @@ void UIMachineSettingsSystem::prepareTabProcessor()
                 QHBoxLayout *m_pLayoutProcessorExecCapScale = new QHBoxLayout;
                 if (m_pLayoutProcessorExecCapScale)
                 {
-                    m_pLayoutProcessorExecCapScale->setSpacing(0);
-
                     /* Prepare processor exec cap min label: */
                     m_pLabelProcessorExecCapMin = new QLabel(m_pTabProcessor);
                     if (m_pLabelProcessorExecCapMin)
@@ -1236,7 +1232,6 @@ void UIMachineSettingsSystem::cleanup()
 
 void UIMachineSettingsSystem::repopulateComboChipsetType()
 {
-    /* Chipset Type combo-box created in the .ui file. */
     AssertPtrReturnVoid(m_pComboChipset);
     {
         /* Clear combo first of all: */
@@ -1258,7 +1253,6 @@ void UIMachineSettingsSystem::repopulateComboChipsetType()
 
 void UIMachineSettingsSystem::repopulateComboPointingHIDType()
 {
-    /* Pointing HID Type combo-box created in the .ui file. */
     AssertPtrReturnVoid(m_pComboPointingHID);
     {
         /* Clear combo first of all: */
@@ -1280,7 +1274,6 @@ void UIMachineSettingsSystem::repopulateComboPointingHIDType()
 
 void UIMachineSettingsSystem::repopulateComboParavirtProviderType()
 {
-    /* Paravirtualization Provider Type combo-box created in the .ui file. */
     AssertPtrReturnVoid(m_pComboParavirtProvider);
     {
         /* Clear combo first of all: */
