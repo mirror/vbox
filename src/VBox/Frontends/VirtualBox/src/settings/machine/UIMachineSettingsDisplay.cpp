@@ -297,68 +297,66 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 #endif
     , m_enmGraphicsControllerTypeRecommended(KGraphicsControllerType_Null)
     , m_pCache(0)
-    , m_pCheckbox3D(0)
-    , m_pCheckboxRemoteDisplay(0)
-    , m_pCheckboxMultipleConn(0)
-    , m_pCheckboxVideoCapture(0)
-    , m_pComboRemoteDisplayAuthMethod(0)
-    , m_pComboBoxCaptureMode(0)
-    , m_pComboVideoCaptureSize(0)
-    , m_pLabelVideoScreenCountMin(0)
-    , m_pLabelVideoScreenCountMax(0)
-    , m_pLabelVideoCaptureFrameRateMin(0)
-    , m_pLabelVideoCaptureFrameRateMax(0)
-    , m_pLabelVideoCaptureQualityMin(0)
-    , m_pLabelVideoCaptureQualityMed(0)
-    , m_pLabelVideoCaptureQualityMax(0)
-    , m_pLabelAudioCaptureQualityMin(0)
-    , m_pLabelAudioCaptureQualityMed(0)
-    , m_pLabelAudioCaptureQualityMax(0)
-    , m_pVideoMemoryLabel(0)
-    , m_pLabelVideoScreenCount(0)
-    , m_pGraphicsControllerLabel(0)
-    , m_pLabelVideoOptions(0)
-    , m_pLabelRemoteDisplayOptions(0)
-    , m_pLabelCaptureMode(0)
-    , m_pLabelVideoCapturePath(0)
-    , m_pLabelVideoCaptureSizeHint(0)
-    , m_pLabelVideoCaptureSize(0)
-    , m_pLabelVideoCaptureFrameRate(0)
-    , m_pLabelVideoCaptureRate(0)
-    , m_pAudioCaptureQualityLabel(0)
-    , m_pLabelVideoCaptureScreens(0)
-    , m_pLabelGuestScreenScaleFactorEditor(0)
-    , m_pLabelRemoteDisplayPort(0)
-    , m_pLabelRemoteDisplayAuthMethod(0)
-    , m_pLabelRemoteDisplayTimeout(0)
-    , m_pEditorRemoteDisplayPort(0)
-    , m_pEditorRemoteDisplayTimeout(0)
-    , m_pEditorVideoScreenCount(0)
-    , m_pEditorVideoCaptureWidth(0)
-    , m_pEditorVideoCaptureFrameRate(0)
-    , m_pEditorVideoCaptureHeight(0)
-    , m_pEditorVideoCaptureBitRate(0)
-    , m_pGraphicsControllerEditor(0)
-    , m_pScaleFactorEditor(0)
-    , m_pVideoMemoryEditor(0)
-    , m_pEditorVideoCapturePath(0)
-    , m_pScrollerVideoCaptureScreens(0)
-    , m_pSliderAudioCaptureQuality(0)
-    , m_pSliderVideoScreenCount(0)
-    , m_pSliderVideoCaptureFrameRate(0)
-    , m_pSliderVideoCaptureQuality(0)
     , m_pTabWidget(0)
-    , m_pContainerRemoteDisplay(0)
-    , m_pContainerRemoteDisplayOptions(0)
-    , m_pContainerVideoCapture(0)
-    , m_pContainerSliderVideoCaptureFrameRate(0)
-    , m_pContainerSliderVideoCaptureQuality(0)
-    , m_pContainerSliderAudioCaptureQuality(0)
-    , m_pTabVideo(0)
+    , m_pTabScreen(0)
+    , m_pLabelVideoMemorySize(0)
+    , m_pEditorVideoMemorySize(0)
+    , m_pLabelMonitorCount(0)
+    , m_pSliderMonitorCount(0)
+    , m_pSpinboxMonitorCount(0)
+    , m_pLabelMonitorCountMin(0)
+    , m_pLabelMonitorCountMax(0)
+    , m_pLabelScaleFactor(0)
+    , m_pEditorScaleFactor(0)
+    , m_pLabelGraphicsController(0)
+    , m_pEditorGraphicsController(0)
+    , m_pLabelAcceleration(0)
+    , m_pCheckbox3D(0)
     , m_pTabRemoteDisplay(0)
-    , m_pTabVideoCapture(0)
-    , m_pContainerLayoutSliderVideoCaptureQuality(0)
-    , m_pLayout3D(0)
+    , m_pCheckboxRemoteDisplay(0)
+    , m_pWidgetRemoteDisplaySettings(0)
+    , m_pLabelRemoteDisplayPort(0)
+    , m_pEditorRemoteDisplayPort(0)
+    , m_pLabelRemoteDisplayAuthMethod(0)
+    , m_pComboRemoteDisplayAuthMethod(0)
+    , m_pLabelRemoteDisplayTimeout(0)
+    , m_pEditorRemoteDisplayTimeout(0)
+    , m_pLabelRemoteDisplayOptions(0)
+    , m_pCheckboxMultipleConn(0)
+
+    , m_pTabRecording(0)
+    , m_pCheckboxRecording(0)
+    , m_pWidgetRecordingSettings(0)
+    , m_pLabelRecordingMode(0)
+    , m_pComboRecordingMode(0)
+    , m_pLabelRecordingFilePath(0)
+    , m_pEditorRecordingFilePath(0)
+    , m_pLabelRecordingFrameSize(0)
+    , m_pComboRecordingFrameSize(0)
+    , m_pSpinboxRecordingFrameWidth(0)
+    , m_pSpinboxRecordingFrameHeight(0)
+    , m_pLabelRecordingFrameRate(0)
+    , m_pWidgetRecordingFrameRateSettings(0)
+    , m_pSliderRecordingFrameRate(0)
+    , m_pSpinboxRecordingFrameRate(0)
+    , m_pLabelRecordingFrameRateMin(0)
+    , m_pLabelRecordingFrameRateMax(0)
+    , m_pLabelRecordingVideoQuality(0)
+    , m_pWidgetRecordingVideoQualitySettings(0)
+    , m_pSliderRecordingVideoQuality(0)
+    , m_pSpinboxRecordingVideoQuality(0)
+    , m_pLabelRecordingVideoQualityMin(0)
+    , m_pLabelRecordingVideoQualityMed(0)
+    , m_pLabelRecordingVideoQualityMax(0)
+    , m_pLabelRecordingAudioQuality(0)
+    , m_pWidgetRecordingAudioQualitySettings(0)
+    , m_pSliderRecordingAudioQuality(0)
+    , m_pLabelRecordingAudioQualityMin(0)
+    , m_pLabelRecordingAudioQualityMed(0)
+    , m_pLabelRecordingAudioQualityMax(0)
+    , m_pLabelRecordingSizeHint(0)
+    , m_pLabelRecordingScreens(0)
+    , m_pScrollerRecordingScreens(0)
 {
     /* Prepare: */
     prepare();
@@ -378,13 +376,13 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType comGuestOSType)
 
     /* Remember new guest OS type: */
     m_comGuestOSType = comGuestOSType;
-    m_pVideoMemoryEditor->setGuestOSType(m_comGuestOSType);
+    m_pEditorVideoMemorySize->setGuestOSType(m_comGuestOSType);
 
 #ifdef VBOX_WITH_3D_ACCELERATION
     /* Check if WDDM mode supported by the guest OS type: */
     const QString strGuestOSTypeId = m_comGuestOSType.isNotNull() ? m_comGuestOSType.GetId() : QString();
     m_fWddmModeSupported = UICommon::isWddmCompatibleOsType(strGuestOSTypeId);
-    m_pVideoMemoryEditor->set3DAccelerationSupported(m_fWddmModeSupported);
+    m_pEditorVideoMemorySize->set3DAccelerationSupported(m_fWddmModeSupported);
 #endif
     /* Acquire recommended graphics controller type: */
     m_enmGraphicsControllerTypeRecommended = m_comGuestOSType.GetRecommendedGraphicsController();
@@ -402,14 +400,14 @@ bool UIMachineSettingsDisplay::isAcceleration3DSelected() const
 
 KGraphicsControllerType UIMachineSettingsDisplay::graphicsControllerTypeRecommended() const
 {
-    return   m_pGraphicsControllerEditor->supportedValues().contains(m_enmGraphicsControllerTypeRecommended)
+    return   m_pEditorGraphicsController->supportedValues().contains(m_enmGraphicsControllerTypeRecommended)
            ? m_enmGraphicsControllerTypeRecommended
            : graphicsControllerTypeCurrent();
 }
 
 KGraphicsControllerType UIMachineSettingsDisplay::graphicsControllerTypeCurrent() const
 {
-    return m_pGraphicsControllerEditor->value();
+    return m_pEditorGraphicsController->value();
 }
 
 bool UIMachineSettingsDisplay::changed() const
@@ -494,22 +492,26 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Get old display data from the cache: */
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
+    /* We are doing that *now* because these combos have
+     * dynamical content which depends on cashed value: */
+    repopulateComboAuthType();
+
     /* Load old 'Screen' data from the cache: */
-    m_pEditorVideoScreenCount->setValue(oldDisplayData.m_cGuestScreenCount);
-    m_pScaleFactorEditor->setScaleFactors(oldDisplayData.m_scaleFactors);
-    m_pScaleFactorEditor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
-    m_pGraphicsControllerEditor->setValue(oldDisplayData.m_graphicsControllerType);
+    m_pSpinboxMonitorCount->setValue(oldDisplayData.m_cGuestScreenCount);
+    m_pEditorScaleFactor->setScaleFactors(oldDisplayData.m_scaleFactors);
+    m_pEditorScaleFactor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
+    m_pEditorGraphicsController->setValue(oldDisplayData.m_graphicsControllerType);
 #ifdef VBOX_WITH_3D_ACCELERATION
     m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
 #endif
-    /* Push required value to m_pVideoMemoryEditor: */
+    /* Push required value to m_pEditorVideoMemorySize: */
     sltHandleGuestScreenCountEditorChange();
     sltHandleGraphicsControllerComboChange();
 #ifdef VBOX_WITH_3D_ACCELERATION
     sltHandle3DAccelerationCheckboxChange();
 #endif
     // Should be the last one for this tab, since it depends on some of others:
-    m_pVideoMemoryEditor->setValue(oldDisplayData.m_iCurrentVRAM);
+    m_pEditorVideoMemorySize->setValue(oldDisplayData.m_iCurrentVRAM);
 
     /* If remote display server is supported: */
     if (oldDisplayData.m_fRemoteDisplayServerSupported)
@@ -517,20 +519,21 @@ void UIMachineSettingsDisplay::getFromCache()
         /* Load old 'Remote Display' data from the cache: */
         m_pCheckboxRemoteDisplay->setChecked(oldDisplayData.m_fRemoteDisplayServerEnabled);
         m_pEditorRemoteDisplayPort->setText(oldDisplayData.m_strRemoteDisplayPort);
-        m_pComboRemoteDisplayAuthMethod->setCurrentIndex(m_pComboRemoteDisplayAuthMethod->findText(gpConverter->toString(oldDisplayData.m_remoteDisplayAuthType)));
+        const int iAuthTypePosition = m_pComboRemoteDisplayAuthMethod->findData(oldDisplayData.m_remoteDisplayAuthType);
+        m_pComboRemoteDisplayAuthMethod->setCurrentIndex(iAuthTypePosition == -1 ? 0 : iAuthTypePosition);
         m_pEditorRemoteDisplayTimeout->setText(QString::number(oldDisplayData.m_uRemoteDisplayTimeout));
         m_pCheckboxMultipleConn->setChecked(oldDisplayData.m_fRemoteDisplayMultiConnAllowed);
     }
 
     /* Load old 'Recording' data from the cache: */
-    m_pCheckboxVideoCapture->setChecked(oldDisplayData.m_fRecordingEnabled);
-    m_pEditorVideoCapturePath->setHomeDir(oldDisplayData.m_strRecordingFolder);
-    m_pEditorVideoCapturePath->setPath(oldDisplayData.m_strRecordingFilePath);
-    m_pEditorVideoCaptureWidth->setValue(oldDisplayData.m_iRecordingVideoFrameWidth);
-    m_pEditorVideoCaptureHeight->setValue(oldDisplayData.m_iRecordingVideoFrameHeight);
-    m_pEditorVideoCaptureFrameRate->setValue(oldDisplayData.m_iRecordingVideoFrameRate);
-    m_pEditorVideoCaptureBitRate->setValue(oldDisplayData.m_iRecordingVideoBitRate);
-    m_pScrollerVideoCaptureScreens->setValue(oldDisplayData.m_vecRecordingScreens);
+    m_pCheckboxRecording->setChecked(oldDisplayData.m_fRecordingEnabled);
+    m_pEditorRecordingFilePath->setHomeDir(oldDisplayData.m_strRecordingFolder);
+    m_pEditorRecordingFilePath->setPath(oldDisplayData.m_strRecordingFilePath);
+    m_pSpinboxRecordingFrameWidth->setValue(oldDisplayData.m_iRecordingVideoFrameWidth);
+    m_pSpinboxRecordingFrameHeight->setValue(oldDisplayData.m_iRecordingVideoFrameHeight);
+    m_pSpinboxRecordingFrameRate->setValue(oldDisplayData.m_iRecordingVideoFrameRate);
+    m_pSpinboxRecordingVideoQuality->setValue(oldDisplayData.m_iRecordingVideoBitRate);
+    m_pScrollerRecordingScreens->setValue(oldDisplayData.m_vecRecordingScreens);
 
     /* Load data from old 'Recording option': */
     bool fRecordAudio = UIDataSettingsMachineDisplay::isRecordingOptionEnabled(oldDisplayData.m_strRecordingVideoOptions,
@@ -538,13 +541,13 @@ void UIMachineSettingsDisplay::getFromCache()
     bool fRecordVideo = UIDataSettingsMachineDisplay::isRecordingOptionEnabled(oldDisplayData.m_strRecordingVideoOptions,
                                                                                 UIDataSettingsMachineDisplay::RecordingOption_VC);
     if (fRecordAudio && fRecordVideo)
-        m_pComboBoxCaptureMode->setCurrentIndex(m_pComboBoxCaptureMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_VideoAudio)));
+        m_pComboRecordingMode->setCurrentIndex(m_pComboRecordingMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_VideoAudio)));
     else if (fRecordAudio && !fRecordVideo)
-        m_pComboBoxCaptureMode->setCurrentIndex(m_pComboBoxCaptureMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_AudioOnly)));
+        m_pComboRecordingMode->setCurrentIndex(m_pComboRecordingMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_AudioOnly)));
     else
-        m_pComboBoxCaptureMode->setCurrentIndex(m_pComboBoxCaptureMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_VideoOnly)));
+        m_pComboRecordingMode->setCurrentIndex(m_pComboRecordingMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_VideoOnly)));
 
-    m_pSliderAudioCaptureQuality->setValue(UIDataSettingsMachineDisplay::getAudioQualityFromOptions(oldDisplayData.m_strRecordingVideoOptions));
+    m_pSliderRecordingAudioQuality->setValue(UIDataSettingsMachineDisplay::getAudioQualityFromOptions(oldDisplayData.m_strRecordingVideoOptions));
 
     /* Polish page finally: */
     polishPage();
@@ -559,10 +562,10 @@ void UIMachineSettingsDisplay::putToCache()
     UIDataSettingsMachineDisplay newDisplayData;
 
     /* Gather new 'Screen' data: */
-    newDisplayData.m_iCurrentVRAM = m_pVideoMemoryEditor->value();
-    newDisplayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
-    newDisplayData.m_scaleFactors = m_pScaleFactorEditor->scaleFactors();
-    newDisplayData.m_graphicsControllerType = m_pGraphicsControllerEditor->value();
+    newDisplayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
+    newDisplayData.m_cGuestScreenCount = m_pSpinboxMonitorCount->value();
+    newDisplayData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
+    newDisplayData.m_graphicsControllerType = m_pEditorGraphicsController->value();
 #ifdef VBOX_WITH_3D_ACCELERATION
     newDisplayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
 #endif
@@ -573,24 +576,24 @@ void UIMachineSettingsDisplay::putToCache()
         /* Gather new 'Remote Display' data: */
         newDisplayData.m_fRemoteDisplayServerEnabled = m_pCheckboxRemoteDisplay->isChecked();
         newDisplayData.m_strRemoteDisplayPort = m_pEditorRemoteDisplayPort->text();
-        newDisplayData.m_remoteDisplayAuthType = gpConverter->fromString<KAuthType>(m_pComboRemoteDisplayAuthMethod->currentText());
+        newDisplayData.m_remoteDisplayAuthType = m_pComboRemoteDisplayAuthMethod->currentData().value<KAuthType>();
         newDisplayData.m_uRemoteDisplayTimeout = m_pEditorRemoteDisplayTimeout->text().toULong();
         newDisplayData.m_fRemoteDisplayMultiConnAllowed = m_pCheckboxMultipleConn->isChecked();
     }
 
     /* Gather new 'Recording' data: */
-    newDisplayData.m_fRecordingEnabled = m_pCheckboxVideoCapture->isChecked();
+    newDisplayData.m_fRecordingEnabled = m_pCheckboxRecording->isChecked();
     newDisplayData.m_strRecordingFolder = m_pCache->base().m_strRecordingFolder;
-    newDisplayData.m_strRecordingFilePath = m_pEditorVideoCapturePath->path();
-    newDisplayData.m_iRecordingVideoFrameWidth = m_pEditorVideoCaptureWidth->value();
-    newDisplayData.m_iRecordingVideoFrameHeight = m_pEditorVideoCaptureHeight->value();
-    newDisplayData.m_iRecordingVideoFrameRate = m_pEditorVideoCaptureFrameRate->value();
-    newDisplayData.m_iRecordingVideoBitRate = m_pEditorVideoCaptureBitRate->value();
-    newDisplayData.m_vecRecordingScreens = m_pScrollerVideoCaptureScreens->value();
+    newDisplayData.m_strRecordingFilePath = m_pEditorRecordingFilePath->path();
+    newDisplayData.m_iRecordingVideoFrameWidth = m_pSpinboxRecordingFrameWidth->value();
+    newDisplayData.m_iRecordingVideoFrameHeight = m_pSpinboxRecordingFrameHeight->value();
+    newDisplayData.m_iRecordingVideoFrameRate = m_pSpinboxRecordingFrameRate->value();
+    newDisplayData.m_iRecordingVideoBitRate = m_pSpinboxRecordingVideoQuality->value();
+    newDisplayData.m_vecRecordingScreens = m_pScrollerRecordingScreens->value();
 
     /* Update recording options */
     const UISettingsDefs::RecordingMode enmRecordingMode =
-        gpConverter->fromString<UISettingsDefs::RecordingMode>(m_pComboBoxCaptureMode->currentText());
+        gpConverter->fromString<UISettingsDefs::RecordingMode>(m_pComboRecordingMode->currentText());
     QStringList optionValues;
     /* Option value for video recording: */
     optionValues.push_back(     (enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio)
@@ -601,9 +604,9 @@ void UIMachineSettingsDisplay::putToCache()
                              || (enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly)
                            ? "true" : "false");
 
-    if (m_pSliderAudioCaptureQuality->value() == 1)
+    if (m_pSliderRecordingAudioQuality->value() == 1)
         optionValues.push_back("low");
-    else if (m_pSliderAudioCaptureQuality->value() == 2)
+    else if (m_pSliderRecordingAudioQuality->value() == 2)
         optionValues.push_back("med");
     else
         optionValues.push_back("high");
@@ -647,10 +650,10 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         /* Video RAM amount test: */
         if (shouldWeWarnAboutLowVRAM() && !m_comGuestOSType.isNull())
         {
-            quint64 uNeedBytes = UICommon::requiredVideoMemory(m_comGuestOSType.GetId(), m_pEditorVideoScreenCount->value());
+            quint64 uNeedBytes = UICommon::requiredVideoMemory(m_comGuestOSType.GetId(), m_pSpinboxMonitorCount->value());
 
             /* Basic video RAM amount test: */
-            if ((quint64)m_pVideoMemoryEditor->value() * _1M < uNeedBytes)
+            if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
             {
                 message.second << tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
                                      "which is the minimum amount required to switch to full-screen or seamless mode.")
@@ -661,7 +664,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
             else if (m_pCheckbox3D->isChecked() && m_fWddmModeSupported)
             {
                 uNeedBytes = qMax(uNeedBytes, (quint64) 128 * _1M);
-                if ((quint64)m_pVideoMemoryEditor->value() * _1M < uNeedBytes)
+                if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
                 {
                     message.second << tr("The virtual machine is set up to use hardware graphics acceleration "
                                          "and the operating system hint is set to Windows Vista or later. "
@@ -744,11 +747,11 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 {
     /* Screen tab-order: */
     setTabOrder(pWidget, m_pTabWidget->focusProxy());
-    setTabOrder(m_pTabWidget->focusProxy(), m_pVideoMemoryEditor);
-    setTabOrder(m_pVideoMemoryEditor, m_pSliderVideoScreenCount);
-    setTabOrder(m_pSliderVideoScreenCount, m_pEditorVideoScreenCount);
-    setTabOrder(m_pEditorVideoScreenCount, m_pScaleFactorEditor);
-    setTabOrder(m_pScaleFactorEditor, m_pGraphicsControllerEditor);
+    setTabOrder(m_pTabWidget->focusProxy(), m_pEditorVideoMemorySize);
+    setTabOrder(m_pEditorVideoMemorySize, m_pSliderMonitorCount);
+    setTabOrder(m_pSliderMonitorCount, m_pSpinboxMonitorCount);
+    setTabOrder(m_pSpinboxMonitorCount, m_pEditorScaleFactor);
+    setTabOrder(m_pEditorScaleFactor, m_pEditorGraphicsController);
 
     /* Remote Display tab-order: */
     setTabOrder(m_pCheckboxRemoteDisplay, m_pEditorRemoteDisplayPort);
@@ -757,32 +760,32 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorRemoteDisplayTimeout, m_pCheckboxMultipleConn);
 
     /* Recording tab-order: */
-    setTabOrder(m_pCheckboxMultipleConn, m_pCheckboxVideoCapture);
-    setTabOrder(m_pCheckboxVideoCapture, m_pEditorVideoCapturePath);
-    setTabOrder(m_pEditorVideoCapturePath, m_pComboVideoCaptureSize);
-    setTabOrder(m_pComboVideoCaptureSize, m_pEditorVideoCaptureWidth);
-    setTabOrder(m_pEditorVideoCaptureWidth, m_pEditorVideoCaptureHeight);
-    setTabOrder(m_pEditorVideoCaptureHeight, m_pSliderVideoCaptureFrameRate);
-    setTabOrder(m_pSliderVideoCaptureFrameRate, m_pEditorVideoCaptureFrameRate);
-    setTabOrder(m_pEditorVideoCaptureFrameRate, m_pSliderVideoCaptureQuality);
-    setTabOrder(m_pSliderVideoCaptureQuality, m_pEditorVideoCaptureBitRate);
+    setTabOrder(m_pCheckboxMultipleConn, m_pCheckboxRecording);
+    setTabOrder(m_pCheckboxRecording, m_pEditorRecordingFilePath);
+    setTabOrder(m_pEditorRecordingFilePath, m_pComboRecordingFrameSize);
+    setTabOrder(m_pComboRecordingFrameSize, m_pSpinboxRecordingFrameWidth);
+    setTabOrder(m_pSpinboxRecordingFrameWidth, m_pSpinboxRecordingFrameHeight);
+    setTabOrder(m_pSpinboxRecordingFrameHeight, m_pSliderRecordingFrameRate);
+    setTabOrder(m_pSliderRecordingFrameRate, m_pSpinboxRecordingFrameRate);
+    setTabOrder(m_pSpinboxRecordingFrameRate, m_pSliderRecordingVideoQuality);
+    setTabOrder(m_pSliderRecordingVideoQuality, m_pSpinboxRecordingVideoQuality);
 }
 
 void UIMachineSettingsDisplay::retranslateUi()
 {
-    m_pVideoMemoryLabel->setText(tr("Video &Memory:"));
-    m_pVideoMemoryEditor->setWhatsThis(tr("Controls the amount of video memory provided to the virtual machine."));
-    m_pLabelVideoScreenCount->setText(tr("Mo&nitor Count:"));
-    m_pSliderVideoScreenCount->setWhatsThis(tr("Controls the amount of virtual monitors provided to the virtual machine."));
-    m_pEditorVideoScreenCount->setWhatsThis(tr("Controls the amount of virtual monitors provided to the virtual machine."));
-    m_pLabelGuestScreenScaleFactorEditor->setText(tr("Scale Factor:"));
-    m_pScaleFactorEditor->setWhatsThis(tr("Controls the guest screen scale factor."));
-    m_pGraphicsControllerLabel->setText(tr("&Graphics Controller:"));
-    m_pGraphicsControllerEditor->setWhatsThis(tr("Selects the graphics adapter type the virtual machine will use."));
-    m_pLabelVideoOptions->setText(tr("Acceleration:"));
+    m_pLabelVideoMemorySize->setText(tr("Video &Memory:"));
+    m_pEditorVideoMemorySize->setWhatsThis(tr("Controls the amount of video memory provided to the virtual machine."));
+    m_pLabelMonitorCount->setText(tr("Mo&nitor Count:"));
+    m_pSliderMonitorCount->setWhatsThis(tr("Controls the amount of virtual monitors provided to the virtual machine."));
+    m_pSpinboxMonitorCount->setWhatsThis(tr("Controls the amount of virtual monitors provided to the virtual machine."));
+    m_pLabelScaleFactor->setText(tr("Scale &Factor:"));
+    m_pEditorScaleFactor->setWhatsThis(tr("Controls the guest screen scale factor."));
+    m_pLabelGraphicsController->setText(tr("&Graphics Controller:"));
+    m_pEditorGraphicsController->setWhatsThis(tr("Selects the graphics adapter type the virtual machine will use."));
+    m_pLabelAcceleration->setText(tr("Acceleration:"));
     m_pCheckbox3D->setWhatsThis(tr("When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host."));
     m_pCheckbox3D->setText(tr("Enable &3D Acceleration"));
-    m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabVideo), tr("&Screen"));
+    m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabScreen), tr("&Screen"));
     m_pCheckboxRemoteDisplay->setWhatsThis(tr("When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client."));
     m_pCheckboxRemoteDisplay->setText(tr("&Enable Server"));
     m_pLabelRemoteDisplayPort->setText(tr("Server &Port:"));
@@ -795,55 +798,58 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pCheckboxMultipleConn->setWhatsThis(tr("When checked, multiple simultaneous connections to the VM are permitted."));
     m_pCheckboxMultipleConn->setText(tr("&Allow Multiple Connections"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRemoteDisplay), tr("&Remote Display"));
-    m_pCheckboxVideoCapture->setWhatsThis(tr("When checked, VirtualBox will record the virtual machine session as a video file."));
-    m_pCheckboxVideoCapture->setText(tr("&Enable Recording"));
-    m_pLabelCaptureMode->setText(tr("Recording &Mode:"));
-    m_pComboBoxCaptureMode->setWhatsThis(tr("Selects the recording mode."));
-    m_pLabelVideoCapturePath->setText(tr("File &Path:"));
-    m_pEditorVideoCapturePath->setWhatsThis(tr("Holds the filename VirtualBox uses to save the recorded content."));
-    m_pLabelVideoCaptureSize->setText(tr("Frame &Size:"));
-    m_pComboVideoCaptureSize->setWhatsThis(tr("Selects the resolution (frame size) of the recorded video."));
-    m_pEditorVideoCaptureWidth->setWhatsThis(tr("Holds the <b>horizontal</b> resolution (frame width) of the recorded video."));
-    m_pEditorVideoCaptureHeight->setWhatsThis(tr("Holds the <b>vertical</b> resolution (frame height) of the recorded video."));
-    m_pLabelVideoCaptureFrameRate->setText(tr("&Frame Rate:"));
-    m_pSliderVideoCaptureFrameRate->setWhatsThis(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size."));
-    m_pEditorVideoCaptureFrameRate->setWhatsThis(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size."));
-    m_pLabelVideoCaptureRate->setText(tr("&Video Quality:"));
-    m_pSliderVideoCaptureQuality->setWhatsThis(tr("Controls the <b>quality</b>. Increasing this value will make the video look better at the cost of an increased file size."));
-    m_pEditorVideoCaptureBitRate->setWhatsThis(tr("Holds the bitrate in <b>kilobits per second</b>. Increasing this value will make the video look better at the cost of an increased file size."));
-    m_pAudioCaptureQualityLabel->setText(tr("&Audio Quality:"));
-    m_pSliderAudioCaptureQuality->setWhatsThis(tr("Controls the <b>quality</b>. Increasing this value will make the audio sound better at the cost of an increased file size."));
-    m_pLabelVideoCaptureScreens->setText(tr("&Screens:"));
-    m_pScrollerVideoCaptureScreens->setWhatsThis(QString());
-    m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabVideoCapture), tr("Re&cording"));
+    m_pCheckboxRecording->setWhatsThis(tr("When checked, VirtualBox will record the virtual machine session as a video file."));
+    m_pCheckboxRecording->setText(tr("&Enable Recording"));
+    m_pLabelRecordingMode->setText(tr("Recording &Mode:"));
+    m_pComboRecordingMode->setWhatsThis(tr("Selects the recording mode."));
+    m_pLabelRecordingFilePath->setText(tr("File &Path:"));
+    m_pEditorRecordingFilePath->setWhatsThis(tr("Holds the filename VirtualBox uses to save the recorded content."));
+    m_pLabelRecordingFrameSize->setText(tr("Frame Si&ze:"));
+    m_pComboRecordingFrameSize->setWhatsThis(tr("Selects the resolution (frame size) of the recorded video."));
+    m_pSpinboxRecordingFrameWidth->setWhatsThis(tr("Holds the <b>horizontal</b> resolution (frame width) of the recorded video."));
+    m_pSpinboxRecordingFrameHeight->setWhatsThis(tr("Holds the <b>vertical</b> resolution (frame height) of the recorded video."));
+    m_pLabelRecordingFrameRate->setText(tr("Frame R&ate:"));
+    m_pSliderRecordingFrameRate->setWhatsThis(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size."));
+    m_pSpinboxRecordingFrameRate->setWhatsThis(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size."));
+    m_pLabelRecordingVideoQuality->setText(tr("&Video Quality:"));
+    m_pSliderRecordingVideoQuality->setWhatsThis(tr("Controls the <b>quality</b>. Increasing this value will make the video look better at the cost of an increased file size."));
+    m_pSpinboxRecordingVideoQuality->setWhatsThis(tr("Holds the bitrate in <b>kilobits per second</b>. Increasing this value will make the video look better at the cost of an increased file size."));
+    m_pLabelRecordingAudioQuality->setText(tr("&Audio Quality:"));
+    m_pSliderRecordingAudioQuality->setWhatsThis(tr("Controls the <b>quality</b>. Increasing this value will make the audio sound better at the cost of an increased file size."));
+    m_pLabelRecordingScreens->setText(tr("Scree&ns:"));
+    m_pScrollerRecordingScreens->setWhatsThis(QString());
+    m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRecording), tr("Re&cording"));
 
 
     /* Screen stuff: */
     CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
-    m_pLabelVideoScreenCountMin->setText(QString::number(1));
-    m_pLabelVideoScreenCountMax->setText(QString::number(qMin(sys.GetMaxGuestMonitors(), (ULONG)8)));
+    m_pLabelMonitorCountMin->setText(QString::number(1));
+    m_pLabelMonitorCountMax->setText(QString::number(qMin(sys.GetMaxGuestMonitors(), (ULONG)8)));
 
-    /* Remote Display stuff: */
-    m_pComboRemoteDisplayAuthMethod->setItemText(0, gpConverter->toString(KAuthType_Null));
-    m_pComboRemoteDisplayAuthMethod->setItemText(1, gpConverter->toString(KAuthType_External));
-    m_pComboRemoteDisplayAuthMethod->setItemText(2, gpConverter->toString(KAuthType_Guest));
+    /* Translate Remote Display auth method combo: */
+    AssertPtrReturnVoid(m_pComboRemoteDisplayAuthMethod);
+    for (int iIndex = 0; iIndex < m_pComboRemoteDisplayAuthMethod->count(); ++iIndex)
+    {
+        const KAuthType enmType = m_pComboRemoteDisplayAuthMethod->currentData().value<KAuthType>();
+        m_pComboRemoteDisplayAuthMethod->setItemText(iIndex, gpConverter->toString(enmType));
+    }
 
     /* Recording stuff: */
-    m_pEditorVideoCaptureFrameRate->setSuffix(QString(" %1").arg(tr("fps")));
-    m_pEditorVideoCaptureBitRate->setSuffix(QString(" %1").arg(tr("kbps")));
-    m_pComboVideoCaptureSize->setItemText(0, tr("User Defined"));
-    m_pLabelVideoCaptureFrameRateMin->setText(tr("%1 fps").arg(m_pSliderVideoCaptureFrameRate->minimum()));
-    m_pLabelVideoCaptureFrameRateMax->setText(tr("%1 fps").arg(m_pSliderVideoCaptureFrameRate->maximum()));
-    m_pLabelVideoCaptureQualityMin->setText(tr("low", "quality"));
-    m_pLabelVideoCaptureQualityMed->setText(tr("medium", "quality"));
-    m_pLabelVideoCaptureQualityMax->setText(tr("high", "quality"));
-    m_pLabelAudioCaptureQualityMin->setText(tr("low", "quality"));
-    m_pLabelAudioCaptureQualityMed->setText(tr("medium", "quality"));
-    m_pLabelAudioCaptureQualityMax->setText(tr("high", "quality"));
+    m_pSpinboxRecordingFrameRate->setSuffix(QString(" %1").arg(tr("fps")));
+    m_pSpinboxRecordingVideoQuality->setSuffix(QString(" %1").arg(tr("kbps")));
+    m_pComboRecordingFrameSize->setItemText(0, tr("User Defined"));
+    m_pLabelRecordingFrameRateMin->setText(tr("%1 fps").arg(m_pSliderRecordingFrameRate->minimum()));
+    m_pLabelRecordingFrameRateMax->setText(tr("%1 fps").arg(m_pSliderRecordingFrameRate->maximum()));
+    m_pLabelRecordingVideoQualityMin->setText(tr("low", "quality"));
+    m_pLabelRecordingVideoQualityMed->setText(tr("medium", "quality"));
+    m_pLabelRecordingVideoQualityMax->setText(tr("high", "quality"));
+    m_pLabelRecordingAudioQualityMin->setText(tr("low", "quality"));
+    m_pLabelRecordingAudioQualityMed->setText(tr("medium", "quality"));
+    m_pLabelRecordingAudioQualityMax->setText(tr("high", "quality"));
 
-    m_pComboBoxCaptureMode->setItemText(0, gpConverter->toString(UISettingsDefs::RecordingMode_VideoAudio));
-    m_pComboBoxCaptureMode->setItemText(1, gpConverter->toString(UISettingsDefs::RecordingMode_VideoOnly));
-    m_pComboBoxCaptureMode->setItemText(2, gpConverter->toString(UISettingsDefs::RecordingMode_AudioOnly));
+    m_pComboRecordingMode->setItemText(0, gpConverter->toString(UISettingsDefs::RecordingMode_VideoAudio));
+    m_pComboRecordingMode->setItemText(1, gpConverter->toString(UISettingsDefs::RecordingMode_VideoOnly));
+    m_pComboRecordingMode->setItemText(2, gpConverter->toString(UISettingsDefs::RecordingMode_AudioOnly));
 
     updateRecordingFileSizeHint();
 }
@@ -854,17 +860,17 @@ void UIMachineSettingsDisplay::polishPage()
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
     /* Polish 'Screen' availability: */
-    m_pVideoMemoryLabel->setEnabled(isMachineOffline());
-    m_pVideoMemoryEditor->setEnabled(isMachineOffline());
-    m_pLabelVideoScreenCount->setEnabled(isMachineOffline());
-    m_pSliderVideoScreenCount->setEnabled(isMachineOffline());
-    m_pLabelVideoScreenCountMin->setEnabled(isMachineOffline());
-    m_pLabelVideoScreenCountMax->setEnabled(isMachineOffline());
-    m_pEditorVideoScreenCount->setEnabled(isMachineOffline());
-    m_pScaleFactorEditor->setEnabled(isMachineInValidMode());
-    m_pGraphicsControllerLabel->setEnabled(isMachineOffline());
-    m_pGraphicsControllerEditor->setEnabled(isMachineOffline());
-    m_pLabelVideoOptions->setEnabled(isMachineOffline());
+    m_pLabelVideoMemorySize->setEnabled(isMachineOffline());
+    m_pEditorVideoMemorySize->setEnabled(isMachineOffline());
+    m_pLabelMonitorCount->setEnabled(isMachineOffline());
+    m_pSliderMonitorCount->setEnabled(isMachineOffline());
+    m_pLabelMonitorCountMin->setEnabled(isMachineOffline());
+    m_pLabelMonitorCountMax->setEnabled(isMachineOffline());
+    m_pSpinboxMonitorCount->setEnabled(isMachineOffline());
+    m_pEditorScaleFactor->setEnabled(isMachineInValidMode());
+    m_pLabelGraphicsController->setEnabled(isMachineOffline());
+    m_pEditorGraphicsController->setEnabled(isMachineOffline());
+    m_pLabelAcceleration->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_3D_ACCELERATION
     m_pCheckbox3D->setEnabled(isMachineOffline());
 #else
@@ -873,25 +879,25 @@ void UIMachineSettingsDisplay::polishPage()
 
     /* Polish 'Remote Display' availability: */
     m_pTabWidget->setTabEnabled(1, oldDisplayData.m_fRemoteDisplayServerSupported);
-    m_pContainerRemoteDisplay->setEnabled(isMachineInValidMode());
-    m_pContainerRemoteDisplayOptions->setEnabled(m_pCheckboxRemoteDisplay->isChecked());
+    m_pTabRemoteDisplay->setEnabled(isMachineInValidMode());
+    m_pWidgetRemoteDisplaySettings->setEnabled(m_pCheckboxRemoteDisplay->isChecked());
     m_pLabelRemoteDisplayOptions->setEnabled(isMachineOffline() || isMachineSaved());
     m_pCheckboxMultipleConn->setEnabled(isMachineOffline() || isMachineSaved());
 
     /* Polish 'Recording' availability: */
-    m_pContainerVideoCapture->setEnabled(isMachineInValidMode());
+    m_pWidgetRecordingSettings->setEnabled(isMachineInValidMode());
     sltHandleRecordingCheckboxToggle();
 }
 
 void UIMachineSettingsDisplay::sltHandleGuestScreenCountSliderChange()
 {
     /* Apply proposed screen-count: */
-    m_pEditorVideoScreenCount->blockSignals(true);
-    m_pEditorVideoScreenCount->setValue(m_pSliderVideoScreenCount->value());
-    m_pEditorVideoScreenCount->blockSignals(false);
+    m_pSpinboxMonitorCount->blockSignals(true);
+    m_pSpinboxMonitorCount->setValue(m_pSliderMonitorCount->value());
+    m_pSpinboxMonitorCount->blockSignals(false);
 
     /* Update Video RAM requirements: */
-    m_pVideoMemoryEditor->setGuestScreenCount(m_pSliderVideoScreenCount->value());
+    m_pEditorVideoMemorySize->setGuestScreenCount(m_pSliderMonitorCount->value());
 
     /* Update recording tab screen count: */
     updateGuestScreenCount();
@@ -903,12 +909,12 @@ void UIMachineSettingsDisplay::sltHandleGuestScreenCountSliderChange()
 void UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange()
 {
     /* Apply proposed screen-count: */
-    m_pSliderVideoScreenCount->blockSignals(true);
-    m_pSliderVideoScreenCount->setValue(m_pEditorVideoScreenCount->value());
-    m_pSliderVideoScreenCount->blockSignals(false);
+    m_pSliderMonitorCount->blockSignals(true);
+    m_pSliderMonitorCount->setValue(m_pSpinboxMonitorCount->value());
+    m_pSliderMonitorCount->blockSignals(false);
 
     /* Update Video RAM requirements: */
-    m_pVideoMemoryEditor->setGuestScreenCount(m_pEditorVideoScreenCount->value());
+    m_pEditorVideoMemorySize->setGuestScreenCount(m_pSpinboxMonitorCount->value());
 
     /* Update recording tab screen count: */
     updateGuestScreenCount();
@@ -920,7 +926,7 @@ void UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange()
 void UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange()
 {
     /* Update Video RAM requirements: */
-    m_pVideoMemoryEditor->setGraphicsControllerType(m_pGraphicsControllerEditor->value());
+    m_pEditorVideoMemorySize->setGraphicsControllerType(m_pEditorGraphicsController->value());
 
     /* Revalidate: */
     revalidate();
@@ -930,7 +936,7 @@ void UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange()
 void UIMachineSettingsDisplay::sltHandle3DAccelerationCheckboxChange()
 {
     /* Update Video RAM requirements: */
-    m_pVideoMemoryEditor->set3DAccelerationEnabled(m_pCheckbox3D->isChecked());
+    m_pEditorVideoMemorySize->set3DAccelerationEnabled(m_pCheckbox3D->isChecked());
 
     /* Revalidate: */
     revalidate();
@@ -942,14 +948,14 @@ void UIMachineSettingsDisplay::sltHandleRecordingCheckboxToggle()
     /* Recording options should be enabled only if:
      * 1. Machine is in 'offline' or 'saved' state and check-box is checked,
      * 2. Machine is in 'online' state, check-box is checked, and video recording is *disabled* currently. */
-    const bool fIsRecordingOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
-                                               (isMachineOnline() && !m_pCache->base().m_fRecordingEnabled && m_pCheckboxVideoCapture->isChecked());
+    const bool fIsRecordingOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxRecording->isChecked()) ||
+                                               (isMachineOnline() && !m_pCache->base().m_fRecordingEnabled && m_pCheckboxRecording->isChecked());
 
-    m_pLabelCaptureMode->setEnabled(fIsRecordingOptionsEnabled);
-    m_pComboBoxCaptureMode->setEnabled(fIsRecordingOptionsEnabled);
+    m_pLabelRecordingMode->setEnabled(fIsRecordingOptionsEnabled);
+    m_pComboRecordingMode->setEnabled(fIsRecordingOptionsEnabled);
 
-    m_pLabelVideoCapturePath->setEnabled(fIsRecordingOptionsEnabled);
-    m_pEditorVideoCapturePath->setEnabled(fIsRecordingOptionsEnabled);
+    m_pLabelRecordingFilePath->setEnabled(fIsRecordingOptionsEnabled);
+    m_pEditorRecordingFilePath->setEnabled(fIsRecordingOptionsEnabled);
 
     enableDisableRecordingWidgets();
 }
@@ -957,16 +963,16 @@ void UIMachineSettingsDisplay::sltHandleRecordingCheckboxToggle()
 void UIMachineSettingsDisplay::sltHandleRecordingVideoFrameSizeComboboxChange()
 {
     /* Get the proposed size: */
-    const int iCurrentIndex = m_pComboVideoCaptureSize->currentIndex();
-    const QSize videoCaptureSize = m_pComboVideoCaptureSize->itemData(iCurrentIndex).toSize();
+    const int iCurrentIndex = m_pComboRecordingFrameSize->currentIndex();
+    const QSize videoCaptureSize = m_pComboRecordingFrameSize->itemData(iCurrentIndex).toSize();
 
     /* Make sure its valid: */
     if (!videoCaptureSize.isValid())
         return;
 
     /* Apply proposed size: */
-    m_pEditorVideoCaptureWidth->setValue(videoCaptureSize.width());
-    m_pEditorVideoCaptureHeight->setValue(videoCaptureSize.height());
+    m_pSpinboxRecordingFrameWidth->setValue(videoCaptureSize.width());
+    m_pSpinboxRecordingFrameHeight->setValue(videoCaptureSize.height());
 }
 
 void UIMachineSettingsDisplay::sltHandleRecordingVideoFrameWidthEditorChange()
@@ -988,9 +994,9 @@ void UIMachineSettingsDisplay::sltHandleRecordingVideoFrameHeightEditorChange()
 void UIMachineSettingsDisplay::sltHandleRecordingVideoFrameRateSliderChange()
 {
     /* Apply proposed frame-rate: */
-    m_pEditorVideoCaptureFrameRate->blockSignals(true);
-    m_pEditorVideoCaptureFrameRate->setValue(m_pSliderVideoCaptureFrameRate->value());
-    m_pEditorVideoCaptureFrameRate->blockSignals(false);
+    m_pSpinboxRecordingFrameRate->blockSignals(true);
+    m_pSpinboxRecordingFrameRate->setValue(m_pSliderRecordingFrameRate->value());
+    m_pSpinboxRecordingFrameRate->blockSignals(false);
     /* Update quality and bit-rate: */
     sltHandleRecordingVideoQualitySliderChange();
 }
@@ -998,9 +1004,9 @@ void UIMachineSettingsDisplay::sltHandleRecordingVideoFrameRateSliderChange()
 void UIMachineSettingsDisplay::sltHandleRecordingVideoFrameRateEditorChange()
 {
     /* Apply proposed frame-rate: */
-    m_pSliderVideoCaptureFrameRate->blockSignals(true);
-    m_pSliderVideoCaptureFrameRate->setValue(m_pEditorVideoCaptureFrameRate->value());
-    m_pSliderVideoCaptureFrameRate->blockSignals(false);
+    m_pSliderRecordingFrameRate->blockSignals(true);
+    m_pSliderRecordingFrameRate->setValue(m_pSpinboxRecordingFrameRate->value());
+    m_pSliderRecordingFrameRate->blockSignals(false);
     /* Update quality and bit-rate: */
     sltHandleRecordingVideoQualitySliderChange();
 }
@@ -1008,24 +1014,24 @@ void UIMachineSettingsDisplay::sltHandleRecordingVideoFrameRateEditorChange()
 void UIMachineSettingsDisplay::sltHandleRecordingVideoQualitySliderChange()
 {
     /* Calculate/apply proposed bit-rate: */
-    m_pEditorVideoCaptureBitRate->blockSignals(true);
-    m_pEditorVideoCaptureBitRate->setValue(calculateBitRate(m_pEditorVideoCaptureWidth->value(),
-                                                            m_pEditorVideoCaptureHeight->value(),
-                                                            m_pEditorVideoCaptureFrameRate->value(),
-                                                            m_pSliderVideoCaptureQuality->value()));
-    m_pEditorVideoCaptureBitRate->blockSignals(false);
+    m_pSpinboxRecordingVideoQuality->blockSignals(true);
+    m_pSpinboxRecordingVideoQuality->setValue(calculateBitRate(m_pSpinboxRecordingFrameWidth->value(),
+                                                            m_pSpinboxRecordingFrameHeight->value(),
+                                                            m_pSpinboxRecordingFrameRate->value(),
+                                                            m_pSliderRecordingVideoQuality->value()));
+    m_pSpinboxRecordingVideoQuality->blockSignals(false);
     updateRecordingFileSizeHint();
 }
 
 void UIMachineSettingsDisplay::sltHandleRecordingVideoBitRateEditorChange()
 {
     /* Calculate/apply proposed quality: */
-    m_pSliderVideoCaptureQuality->blockSignals(true);
-    m_pSliderVideoCaptureQuality->setValue(calculateQuality(m_pEditorVideoCaptureWidth->value(),
-                                                            m_pEditorVideoCaptureHeight->value(),
-                                                            m_pEditorVideoCaptureFrameRate->value(),
-                                                            m_pEditorVideoCaptureBitRate->value()));
-    m_pSliderVideoCaptureQuality->blockSignals(false);
+    m_pSliderRecordingVideoQuality->blockSignals(true);
+    m_pSliderRecordingVideoQuality->setValue(calculateQuality(m_pSpinboxRecordingFrameWidth->value(),
+                                                            m_pSpinboxRecordingFrameHeight->value(),
+                                                            m_pSpinboxRecordingFrameRate->value(),
+                                                            m_pSpinboxRecordingVideoQuality->value()));
+    m_pSliderRecordingVideoQuality->blockSignals(false);
     updateRecordingFileSizeHint();
 }
 
@@ -1036,250 +1042,652 @@ void UIMachineSettingsDisplay::sltHandleRecordingComboBoxChange()
 
 void UIMachineSettingsDisplay::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineDisplay;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Tree-widget created in the .ui file. */
-    {
-        /* Prepare 'Screen' tab: */
-        prepareTabScreen();
-        /* Prepare 'Remote Display' tab: */
-        prepareTabRemoteDisplay();
-        /* Prepare 'Recording' tab: */
-        prepareTabRecording();
-        /* Prepare connections: */
-        prepareConnections();
-    }
+    /* Prepare widgets: */
+    prepareWidgets();
 
     /* Apply language settings: */
     retranslateUi();
 }
 
+void UIMachineSettingsDisplay::prepareWidgets()
+{
+    /* Prepare main layout: */
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    if (pLayoutMain)
+    {
+        /* Prepare tab-widget: */
+        m_pTabWidget = new QITabWidget(this);
+        if (m_pTabWidget)
+        {
+            /* Prepare each tab separately: */
+            prepareTabScreen();
+            prepareTabRemoteDisplay();
+            prepareTabRecording();
+            prepareConnections();
+
+            pLayoutMain->addWidget(m_pTabWidget);
+        }
+    }
+}
+
 void UIMachineSettingsDisplay::prepareTabScreen()
 {
     /* Prepare common variables: */
-    const CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
+    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
 
-    /* Tab and it's layout created in the .ui file. */
+    /* Prepare Screen tab: */
+    m_pTabScreen = new QWidget;
+    if (m_pTabScreen)
     {
-        /* Video-memory label and editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pVideoMemoryLabel);
-        AssertPtrReturnVoid(m_pVideoMemoryEditor);
+        /* Prepare Screen tab layout: */
+        QGridLayout *pLayoutScreen = new QGridLayout(m_pTabScreen);
+        if (pLayoutScreen)
         {
-            /* Configure label & editor: */
-            m_pVideoMemoryLabel->setBuddy(m_pVideoMemoryEditor->focusProxy());
+            pLayoutScreen->setRowStretch(8, 1);
+
+            /* Prepare video memory label: */
+            m_pLabelVideoMemorySize = new QLabel(m_pTabScreen);
+            if (m_pLabelVideoMemorySize)
+            {
+                m_pLabelVideoMemorySize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                pLayoutScreen->addWidget(m_pLabelVideoMemorySize, 0, 0);
+            }
+            /* Prepare video memory editor: */
+            m_pEditorVideoMemorySize = new UIVideoMemoryEditor(m_pTabScreen);
+            if (m_pEditorVideoMemorySize)
+            {
+                m_pLabelVideoMemorySize->setBuddy(m_pEditorVideoMemorySize->focusProxy());
+                pLayoutScreen->addWidget(m_pEditorVideoMemorySize, 0, 1, 2, 2);
+            }
+
+            /* Prepare monitor count label: */
+            m_pLabelMonitorCount = new QLabel(m_pTabScreen);
+            if (m_pLabelMonitorCount)
+            {
+                m_pLabelMonitorCount->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                pLayoutScreen->addWidget(m_pLabelMonitorCount, 2, 0);
+            }
+            /* Prepare monitor count layout: */
+            QVBoxLayout *pLayoutMonitorCount = new QVBoxLayout;
+            if (pLayoutMonitorCount)
+            {
+                pLayoutMonitorCount->setContentsMargins(0, 0, 0, 0);
+
+                /* Prepare monitor count slider: */
+                m_pSliderMonitorCount = new QIAdvancedSlider(m_pTabScreen);
+                if (m_pSliderMonitorCount)
+                {
+                    const uint cHostScreens = gpDesktop->screenCount();
+                    const uint cMinGuestScreens = 1;
+                    const uint cMaxGuestScreens = comProperties.GetMaxGuestMonitors();
+                    const uint cMaxGuestScreensForSlider = qMin(cMaxGuestScreens, (uint)8);
+                    m_pSliderMonitorCount->setOrientation(Qt::Horizontal);
+                    m_pSliderMonitorCount->setMinimum(cMinGuestScreens);
+                    m_pSliderMonitorCount->setMaximum(cMaxGuestScreensForSlider);
+                    m_pSliderMonitorCount->setPageStep(1);
+                    m_pSliderMonitorCount->setSingleStep(1);
+                    m_pSliderMonitorCount->setTickInterval(1);
+                    m_pSliderMonitorCount->setOptimalHint(cMinGuestScreens, cHostScreens);
+                    m_pSliderMonitorCount->setWarningHint(cHostScreens, cMaxGuestScreensForSlider);
+
+                    pLayoutMonitorCount->addWidget(m_pSliderMonitorCount);
+                }
+                /* Prepare monitor count scale layout: */
+                QHBoxLayout *pLayoutMonitorCountScale = new QHBoxLayout;
+                if (pLayoutMonitorCountScale)
+                {
+                    pLayoutMonitorCountScale->setContentsMargins(0, 0, 0, 0);
+
+                    /* Prepare monitor count min label: */
+                    m_pLabelMonitorCountMin = new QLabel(m_pTabScreen);
+                    if (m_pLabelMonitorCountMin)
+                        pLayoutMonitorCountScale->addWidget(m_pLabelMonitorCountMin);
+                    pLayoutMonitorCountScale->addStretch();
+                    /* Prepare monitor count max label: */
+                    m_pLabelMonitorCountMax = new QLabel(m_pTabScreen);
+                    if (m_pLabelMonitorCountMax)
+                        pLayoutMonitorCountScale->addWidget(m_pLabelMonitorCountMax);
+
+                    pLayoutMonitorCount->addLayout(pLayoutMonitorCountScale);
+                }
+
+                pLayoutScreen->addLayout(pLayoutMonitorCount, 2, 1, 2, 1);
+            }
+            /* Prepare monitor count spinbox: */
+            m_pSpinboxMonitorCount = new QSpinBox(m_pTabScreen);
+            if (m_pSpinboxMonitorCount)
+            {
+                m_pLabelMonitorCount->setBuddy(m_pSpinboxMonitorCount);
+                m_pSpinboxMonitorCount->setMinimum(1);
+                m_pSpinboxMonitorCount->setMaximum(comProperties.GetMaxGuestMonitors());
+
+                pLayoutScreen->addWidget(m_pSpinboxMonitorCount, 2, 2);
+            }
+
+            /* Prepare scale factor label: */
+            m_pLabelScaleFactor = new QLabel(m_pTabScreen);
+            if (m_pLabelScaleFactor)
+            {
+                m_pLabelScaleFactor->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                pLayoutScreen->addWidget(m_pLabelScaleFactor, 4, 0);
+            }
+            /* Prepare scale factor editor: */
+            m_pEditorScaleFactor = new UIScaleFactorEditor(m_pTabScreen);
+            if (m_pEditorScaleFactor)
+            {
+                m_pLabelScaleFactor->setBuddy(m_pEditorScaleFactor->focusProxy());
+                pLayoutScreen->addWidget(m_pEditorScaleFactor, 4, 1, 2, 2);
+            }
+
+            /* Prepare graphics controller label: */
+            m_pLabelGraphicsController = new QLabel(m_pTabScreen);
+            if (m_pLabelGraphicsController)
+            {
+                m_pLabelGraphicsController->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                pLayoutScreen->addWidget(m_pLabelGraphicsController, 6, 0);
+            }
+            /* Prepare graphics controller editor: */
+            m_pEditorGraphicsController = new UIGraphicsControllerEditor(m_pTabScreen);
+            if (m_pEditorGraphicsController)
+            {
+                m_pLabelGraphicsController->setBuddy(m_pEditorGraphicsController->focusProxy());
+                pLayoutScreen->addWidget(m_pEditorGraphicsController, 6, 1, 1, 2);
+            }
+
+            /* Prepare acceleration label: */
+            m_pLabelAcceleration = new QLabel(m_pTabScreen);
+            if (m_pLabelAcceleration)
+            {
+                m_pLabelAcceleration->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                pLayoutScreen->addWidget(m_pLabelAcceleration, 7, 0);
+            }
+            /* Prepare 3D checkbox: */
+            m_pCheckbox3D = new QCheckBox(m_pTabScreen);
+            if (m_pCheckbox3D)
+                pLayoutScreen->addWidget(m_pCheckbox3D, 7, 1);
         }
 
-        /* Screen-count slider created in the .ui file. */
-        AssertPtrReturnVoid(m_pSliderVideoScreenCount);
-        {
-            /* Configure slider: */
-            const uint cHostScreens = gpDesktop->screenCount();
-            const uint cMinGuestScreens = 1;
-            const uint cMaxGuestScreens = sys.GetMaxGuestMonitors();
-            const uint cMaxGuestScreensForSlider = qMin(cMaxGuestScreens, (uint)8);
-            m_pSliderVideoScreenCount->setMinimum(cMinGuestScreens);
-            m_pSliderVideoScreenCount->setMaximum(cMaxGuestScreensForSlider);
-            m_pSliderVideoScreenCount->setPageStep(1);
-            m_pSliderVideoScreenCount->setSingleStep(1);
-            m_pSliderVideoScreenCount->setTickInterval(1);
-            m_pSliderVideoScreenCount->setOptimalHint(cMinGuestScreens, cHostScreens);
-            m_pSliderVideoScreenCount->setWarningHint(cHostScreens, cMaxGuestScreensForSlider);
-        }
-
-        /* Screen-count editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorVideoScreenCount);
-        {
-            /* Configure editor: */
-            const uint cMaxGuestScreens = sys.GetMaxGuestMonitors();
-            m_pEditorVideoScreenCount->setMinimum(1);
-            m_pEditorVideoScreenCount->setMaximum(cMaxGuestScreens);
-        }
-
-        /* Graphics controller label & editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pGraphicsControllerEditor);
-        {
-            /* Configure label & editor: */
-            m_pGraphicsControllerLabel->setBuddy(m_pGraphicsControllerEditor->focusProxy());
-        }
+        m_pTabWidget->addTab(m_pTabScreen, QString());
     }
 }
 
 void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
 {
-    /* Tab and it's layout created in the .ui file. */
+    /* Prepare Remote Display tab: */
+    m_pTabRemoteDisplay = new QWidget;
+    if (m_pTabRemoteDisplay)
     {
-        /* Port editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorRemoteDisplayPort);
+        /* Prepare Remote Display tab layout: */
+        QGridLayout *pLayoutTabRemoteDisplay = new QGridLayout(m_pTabRemoteDisplay);
+        if (pLayoutTabRemoteDisplay)
         {
-            /* Configure editor: */
-            m_pEditorRemoteDisplayPort->setValidator(new QRegExpValidator(
-                QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
+            pLayoutTabRemoteDisplay->setRowStretch(2, 1);
+
+            /* Prepare remote display check-box: */
+            m_pCheckboxRemoteDisplay = new QCheckBox(m_pTabRemoteDisplay);
+            if (m_pCheckboxRemoteDisplay)
+                pLayoutTabRemoteDisplay->addWidget(m_pCheckboxRemoteDisplay, 0, 0, 1, 2);
+
+            /* Prepare 20-px shifting spacer: */
+            QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+            if (pSpacerItem)
+                pLayoutTabRemoteDisplay->addItem(pSpacerItem, 1, 0);
+
+            /* Prepare remote display settings widget: */
+            m_pWidgetRemoteDisplaySettings = new QWidget(m_pTabRemoteDisplay);
+            if (m_pWidgetRemoteDisplaySettings)
+            {
+                /* Prepare remote display settings widget layout: */
+                QGridLayout *pLayoutRemoteDisplaySettings = new QGridLayout(m_pWidgetRemoteDisplaySettings);
+                if (pLayoutRemoteDisplaySettings)
+                {
+                    pLayoutRemoteDisplaySettings->setContentsMargins(0, 0, 0, 0);
+
+                    /* Prepare remote display port label: */
+                    m_pLabelRemoteDisplayPort = new QLabel(m_pWidgetRemoteDisplaySettings);
+                    if (m_pLabelRemoteDisplayPort)
+                    {
+                        m_pLabelRemoteDisplayPort->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRemoteDisplaySettings->addWidget(m_pLabelRemoteDisplayPort, 0, 0);
+                    }
+                    /* Prepare remote display port editor: */
+                    m_pEditorRemoteDisplayPort = new QLineEdit(m_pWidgetRemoteDisplaySettings);
+                    if (m_pEditorRemoteDisplayPort)
+                    {
+                        m_pLabelRemoteDisplayPort->setBuddy(m_pEditorRemoteDisplayPort);
+                        m_pEditorRemoteDisplayPort->setValidator(new QRegExpValidator(
+                            QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
+
+                        pLayoutRemoteDisplaySettings->addWidget(m_pEditorRemoteDisplayPort, 0, 1);
+                    }
+
+                    /* Prepare remote display auth method label: */
+                    m_pLabelRemoteDisplayAuthMethod = new QLabel(m_pWidgetRemoteDisplaySettings);
+                    if (m_pLabelRemoteDisplayAuthMethod)
+                    {
+                        m_pLabelRemoteDisplayAuthMethod->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRemoteDisplaySettings->addWidget(m_pLabelRemoteDisplayAuthMethod, 1, 0);
+                    }
+                    /* Prepare remote display auth method combo: */
+                    m_pComboRemoteDisplayAuthMethod = new QComboBox(m_pWidgetRemoteDisplaySettings);
+                    if (m_pComboRemoteDisplayAuthMethod)
+                    {
+                        m_pLabelRemoteDisplayAuthMethod->setBuddy(m_pComboRemoteDisplayAuthMethod);
+                        m_pComboRemoteDisplayAuthMethod->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+
+                        pLayoutRemoteDisplaySettings->addWidget(m_pComboRemoteDisplayAuthMethod, 1, 1);
+                    }
+
+                    /* Prepare remote display timeout label: */
+                    m_pLabelRemoteDisplayTimeout = new QLabel(m_pWidgetRemoteDisplaySettings);
+                    if (m_pLabelRemoteDisplayTimeout)
+                    {
+                        m_pLabelRemoteDisplayTimeout->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRemoteDisplaySettings->addWidget(m_pLabelRemoteDisplayTimeout, 2, 0);
+                    }
+                    /* Prepare remote display timeout editor: */
+                    m_pEditorRemoteDisplayTimeout = new QLineEdit(m_pWidgetRemoteDisplaySettings);
+                    if (m_pEditorRemoteDisplayTimeout)
+                    {
+                        m_pLabelRemoteDisplayTimeout->setBuddy(m_pEditorRemoteDisplayTimeout);
+                        m_pEditorRemoteDisplayTimeout->setValidator(new QIntValidator(this));
+
+                        pLayoutRemoteDisplaySettings->addWidget(m_pEditorRemoteDisplayTimeout, 2, 1);
+                    }
+
+                    /* Prepare remote display options label: */
+                    m_pLabelRemoteDisplayOptions = new QLabel(m_pWidgetRemoteDisplaySettings);
+                    if (m_pLabelRemoteDisplayOptions)
+                    {
+                        m_pLabelRemoteDisplayOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRemoteDisplaySettings->addWidget(m_pLabelRemoteDisplayOptions, 3, 0);
+                    }
+                    /* Prepare remote display multiple connections check-box: */
+                    m_pCheckboxMultipleConn = new QCheckBox(m_pWidgetRemoteDisplaySettings);
+                    if (m_pCheckboxMultipleConn)
+                        pLayoutRemoteDisplaySettings->addWidget(m_pCheckboxMultipleConn, 3, 1);
+                }
+
+                pLayoutTabRemoteDisplay->addWidget(m_pWidgetRemoteDisplaySettings, 1, 1);
+            }
         }
 
-        /* Timeout editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorRemoteDisplayTimeout);
-        {
-            /* Configure editor: */
-            m_pEditorRemoteDisplayTimeout->setValidator(new QIntValidator(this));
-        }
-
-        /* Auth-method combo-box created in the .ui file. */
-        AssertPtrReturnVoid(m_pComboRemoteDisplayAuthMethod);
-        {
-            /* Configure combo-box: */
-            m_pComboRemoteDisplayAuthMethod->insertItem(0, ""); /* KAuthType_Null */
-            m_pComboRemoteDisplayAuthMethod->insertItem(1, ""); /* KAuthType_External */
-            m_pComboRemoteDisplayAuthMethod->insertItem(2, ""); /* KAuthType_Guest */
-        }
+        m_pTabWidget->addTab(m_pTabRemoteDisplay, QString());
     }
 }
 
 void UIMachineSettingsDisplay::prepareTabRecording()
 {
-    /* Tab and it's layout created in the .ui file. */
+    /* Prepare Recording tab: */
+    m_pTabRecording = new QWidget;
+    if (m_pTabRecording)
     {
-        /* Capture mode selection combo box. */
-        AssertPtrReturnVoid(m_pComboBoxCaptureMode);
+        /* Prepare Recording tab layout: */
+        QGridLayout *pLayoutRecording = new QGridLayout(m_pTabRecording);
+        if (pLayoutRecording)
         {
-            m_pComboBoxCaptureMode->insertItem(0, ""); /* UISettingsDefs::RecordingMode_VideoAudio */
-            m_pComboBoxCaptureMode->insertItem(1, ""); /* UISettingsDefs::RecordingMode_VideoOnly */
-            m_pComboBoxCaptureMode->insertItem(2, ""); /* UISettingsDefs::RecordingMode_AudioOnly */
+            pLayoutRecording->setRowStretch(2, 1);
+
+            /* Prepare recording check-box: */
+            m_pCheckboxRecording = new QCheckBox(m_pWidgetRecordingSettings);
+            if (m_pCheckboxRecording)
+                pLayoutRecording->addWidget(m_pCheckboxRecording, 0, 0, 1, 2);
+
+            /* Prepare 20-px shifting spacer: */
+            QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+            if (pSpacerItem)
+                pLayoutRecording->addItem(pSpacerItem, 1, 0);
+
+            /* Prepare recording settings widget: */
+            m_pWidgetRecordingSettings = new QWidget(m_pTabRecording);
+            if (m_pWidgetRecordingSettings)
+            {
+                /* Prepare recording settings widget layout: */
+                QGridLayout *pLayoutRecordingSettings = new QGridLayout(m_pWidgetRecordingSettings);
+                if (pLayoutRecordingSettings)
+                {
+                    pLayoutRecordingSettings->setContentsMargins(0, 0, 0, 0);
+
+                    /* Prepare recording mode label: */
+                    m_pLabelRecordingMode = new QLabel(m_pWidgetRecordingSettings);
+                    if (m_pLabelRecordingMode)
+                    {
+                        m_pLabelRecordingMode->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRecordingSettings->addWidget(m_pLabelRecordingMode, 0, 0);
+                    }
+                    /* Prepare recording mode combo: */
+                    m_pComboRecordingMode = new QComboBox(m_pWidgetRecordingSettings);
+                    if (m_pComboRecordingMode)
+                    {
+                        m_pLabelRecordingMode->setBuddy(m_pComboRecordingMode);
+                        m_pComboRecordingMode->insertItem(0, ""); /* UISettingsDefs::RecordingMode_VideoAudio */
+                        m_pComboRecordingMode->insertItem(1, ""); /* UISettingsDefs::RecordingMode_VideoOnly */
+                        m_pComboRecordingMode->insertItem(2, ""); /* UISettingsDefs::RecordingMode_AudioOnly */
+
+                        pLayoutRecordingSettings->addWidget(m_pComboRecordingMode, 0, 1, 1, 3);
+                    }
+
+                    /* Prepare recording file path label: */
+                    m_pLabelRecordingFilePath = new QLabel(m_pWidgetRecordingSettings);
+                    if (m_pLabelRecordingFilePath)
+                    {
+                        m_pLabelRecordingFilePath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRecordingSettings->addWidget(m_pLabelRecordingFilePath, 1, 0);
+                    }
+                    /* Prepare recording file path editor: */
+                    m_pEditorRecordingFilePath = new UIFilePathSelector(m_pWidgetRecordingSettings);
+                    if (m_pEditorRecordingFilePath)
+                    {
+                        m_pLabelRecordingFilePath->setBuddy(m_pEditorRecordingFilePath->focusProxy());
+                        m_pEditorRecordingFilePath->setEditable(false);
+                        m_pEditorRecordingFilePath->setMode(UIFilePathSelector::Mode_File_Save);
+
+                        pLayoutRecordingSettings->addWidget(m_pEditorRecordingFilePath, 1, 1, 1, 3);
+                    }
+
+                    /* Prepare recording frame size label: */
+                    m_pLabelRecordingFrameSize = new QLabel(m_pWidgetRecordingSettings);
+                    if (m_pLabelRecordingFrameSize)
+                    {
+                        m_pLabelRecordingFrameSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRecordingSettings->addWidget(m_pLabelRecordingFrameSize, 2, 0);
+                    }
+                    /* Prepare recording frame size combo: */
+                    m_pComboRecordingFrameSize = new QComboBox(m_pWidgetRecordingSettings);
+                    if (m_pComboRecordingFrameSize)
+                    {
+                        m_pLabelRecordingFrameSize->setBuddy(m_pComboRecordingFrameSize);
+                        m_pComboRecordingFrameSize->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
+                        m_pComboRecordingFrameSize->addItem(""); /* User Defined */
+                        m_pComboRecordingFrameSize->addItem("320 x 200 (16:10)",   QSize(320, 200));
+                        m_pComboRecordingFrameSize->addItem("640 x 480 (4:3)",     QSize(640, 480));
+                        m_pComboRecordingFrameSize->addItem("720 x 400 (9:5)",     QSize(720, 400));
+                        m_pComboRecordingFrameSize->addItem("720 x 480 (3:2)",     QSize(720, 480));
+                        m_pComboRecordingFrameSize->addItem("800 x 600 (4:3)",     QSize(800, 600));
+                        m_pComboRecordingFrameSize->addItem("1024 x 768 (4:3)",    QSize(1024, 768));
+                        m_pComboRecordingFrameSize->addItem("1152 x 864 (4:3)",    QSize(1152, 864));
+                        m_pComboRecordingFrameSize->addItem("1280 x 720 (16:9)",   QSize(1280, 720));
+                        m_pComboRecordingFrameSize->addItem("1280 x 800 (16:10)",  QSize(1280, 800));
+                        m_pComboRecordingFrameSize->addItem("1280 x 960 (4:3)",    QSize(1280, 960));
+                        m_pComboRecordingFrameSize->addItem("1280 x 1024 (5:4)",   QSize(1280, 1024));
+                        m_pComboRecordingFrameSize->addItem("1366 x 768 (16:9)",   QSize(1366, 768));
+                        m_pComboRecordingFrameSize->addItem("1440 x 900 (16:10)",  QSize(1440, 900));
+                        m_pComboRecordingFrameSize->addItem("1440 x 1080 (4:3)",   QSize(1440, 1080));
+                        m_pComboRecordingFrameSize->addItem("1600 x 900 (16:9)",   QSize(1600, 900));
+                        m_pComboRecordingFrameSize->addItem("1680 x 1050 (16:10)", QSize(1680, 1050));
+                        m_pComboRecordingFrameSize->addItem("1600 x 1200 (4:3)",   QSize(1600, 1200));
+                        m_pComboRecordingFrameSize->addItem("1920 x 1080 (16:9)",  QSize(1920, 1080));
+                        m_pComboRecordingFrameSize->addItem("1920 x 1200 (16:10)", QSize(1920, 1200));
+                        m_pComboRecordingFrameSize->addItem("1920 x 1440 (4:3)",   QSize(1920, 1440));
+                        m_pComboRecordingFrameSize->addItem("2880 x 1800 (16:10)", QSize(2880, 1800));
+
+                        pLayoutRecordingSettings->addWidget(m_pComboRecordingFrameSize, 2, 1);
+                    }
+                    /* Prepare recording frame width spinbox: */
+                    m_pSpinboxRecordingFrameWidth = new QSpinBox(m_pWidgetRecordingSettings);
+                    if (m_pSpinboxRecordingFrameWidth)
+                    {
+                        uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxRecordingFrameWidth, 5);
+                        m_pSpinboxRecordingFrameWidth->setMinimum(16);
+                        m_pSpinboxRecordingFrameWidth->setMaximum(2880);
+
+                        pLayoutRecordingSettings->addWidget(m_pSpinboxRecordingFrameWidth, 2, 2);
+                    }
+                    /* Prepare recording frame height spinbox: */
+                    m_pSpinboxRecordingFrameHeight = new QSpinBox(m_pWidgetRecordingSettings);
+                    if (m_pSpinboxRecordingFrameHeight)
+                    {
+                        uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxRecordingFrameHeight, 5);
+                        m_pSpinboxRecordingFrameHeight->setMinimum(16);
+                        m_pSpinboxRecordingFrameHeight->setMaximum(1800);
+
+                        pLayoutRecordingSettings->addWidget(m_pSpinboxRecordingFrameHeight, 2, 3);
+                    }
+
+                    /* Prepare recording frame rate label: */
+                    m_pLabelRecordingFrameRate = new QLabel(m_pWidgetRecordingSettings);
+                    if (m_pLabelRecordingFrameRate)
+                    {
+                        m_pLabelRecordingFrameRate->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRecordingSettings->addWidget(m_pLabelRecordingFrameRate, 3, 0);
+                    }
+                    /* Prepare recording frame rate widget: */
+                    m_pWidgetRecordingFrameRateSettings = new QWidget(m_pWidgetRecordingSettings);
+                    if (m_pWidgetRecordingFrameRateSettings)
+                    {
+                        /* Prepare recording frame rate layout: */
+                        QVBoxLayout *pLayoutRecordingFrameRate = new QVBoxLayout(m_pWidgetRecordingFrameRateSettings);
+                        if (pLayoutRecordingFrameRate)
+                        {
+                            pLayoutRecordingFrameRate->setContentsMargins(0, 0, 0, 0);
+
+                            /* Prepare recording frame rate slider: */
+                            m_pSliderRecordingFrameRate = new QIAdvancedSlider(m_pWidgetRecordingFrameRateSettings);
+                            if (m_pSliderRecordingFrameRate)
+                            {
+                                m_pSliderRecordingFrameRate->setOrientation(Qt::Horizontal);
+                                m_pSliderRecordingFrameRate->setMinimum(1);
+                                m_pSliderRecordingFrameRate->setMaximum(30);
+                                m_pSliderRecordingFrameRate->setPageStep(1);
+                                m_pSliderRecordingFrameRate->setSingleStep(1);
+                                m_pSliderRecordingFrameRate->setTickInterval(1);
+                                m_pSliderRecordingFrameRate->setSnappingEnabled(true);
+                                m_pSliderRecordingFrameRate->setOptimalHint(1, 25);
+                                m_pSliderRecordingFrameRate->setWarningHint(25, 30);
+
+                                pLayoutRecordingFrameRate->addWidget(m_pSliderRecordingFrameRate);
+                            }
+                            /* Prepare recording frame rate scale layout: */
+                            QHBoxLayout *pLayoutRecordingFrameRateScale = new QHBoxLayout;
+                            if (pLayoutRecordingFrameRateScale)
+                            {
+                                pLayoutRecordingFrameRateScale->setContentsMargins(0, 0, 0, 0);
+
+                                /* Prepare recording frame rate min label: */
+                                m_pLabelRecordingFrameRateMin = new QLabel(m_pWidgetRecordingFrameRateSettings);
+                                if (m_pLabelRecordingFrameRateMin)
+                                    pLayoutRecordingFrameRateScale->addWidget(m_pLabelRecordingFrameRateMin);
+                                pLayoutRecordingFrameRateScale->addStretch();
+                                /* Prepare recording frame rate max label: */
+                                m_pLabelRecordingFrameRateMax = new QLabel(m_pWidgetRecordingFrameRateSettings);
+                                if (m_pLabelRecordingFrameRateMax)
+                                    pLayoutRecordingFrameRateScale->addWidget(m_pLabelRecordingFrameRateMax);
+
+                                pLayoutRecordingFrameRate->addLayout(pLayoutRecordingFrameRateScale);
+                            }
+                        }
+
+                        pLayoutRecordingSettings->addWidget(m_pWidgetRecordingFrameRateSettings, 3, 1, 2, 1);
+                    }
+                    /* Prepare recording frame rate spinbox: */
+                    m_pSpinboxRecordingFrameRate = new QSpinBox(m_pWidgetRecordingSettings);
+                    if (m_pSpinboxRecordingFrameRate)
+                    {
+                        m_pLabelRecordingFrameRate->setBuddy(m_pSpinboxRecordingFrameRate);
+                        uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxRecordingFrameRate, 3);
+                        m_pSpinboxRecordingFrameRate->setMinimum(1);
+                        m_pSpinboxRecordingFrameRate->setMaximum(30);
+
+                        pLayoutRecordingSettings->addWidget(m_pSpinboxRecordingFrameRate, 3, 2, 1, 2);
+                    }
+
+                    /* Prepare recording video quality label: */
+                    m_pLabelRecordingVideoQuality = new QLabel(m_pWidgetRecordingSettings);
+                    if (m_pLabelRecordingVideoQuality)
+                    {
+                        m_pLabelRecordingVideoQuality->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRecordingSettings->addWidget(m_pLabelRecordingVideoQuality, 5, 0);
+                    }
+                    /* Prepare recording video quality widget: */
+                    m_pWidgetRecordingVideoQualitySettings = new QWidget(m_pWidgetRecordingSettings);
+                    if (m_pWidgetRecordingVideoQualitySettings)
+                    {
+                        /* Prepare recording video quality layout: */
+                        QVBoxLayout *pLayoutRecordingVideoQuality = new QVBoxLayout(m_pWidgetRecordingVideoQualitySettings);
+                        if (pLayoutRecordingVideoQuality)
+                        {
+                            pLayoutRecordingVideoQuality->setContentsMargins(0, 0, 0, 0);
+
+                            /* Prepare recording video quality slider: */
+                            m_pSliderRecordingVideoQuality = new QIAdvancedSlider(m_pWidgetRecordingVideoQualitySettings);
+                            if (m_pSliderRecordingVideoQuality)
+                            {
+                                m_pSliderRecordingVideoQuality->setOrientation(Qt::Horizontal);
+                                m_pSliderRecordingVideoQuality->setMinimum(1);
+                                m_pSliderRecordingVideoQuality->setMaximum(10);
+                                m_pSliderRecordingVideoQuality->setPageStep(1);
+                                m_pSliderRecordingVideoQuality->setSingleStep(1);
+                                m_pSliderRecordingVideoQuality->setTickInterval(1);
+                                m_pSliderRecordingVideoQuality->setSnappingEnabled(true);
+                                m_pSliderRecordingVideoQuality->setOptimalHint(1, 5);
+                                m_pSliderRecordingVideoQuality->setWarningHint(5, 9);
+                                m_pSliderRecordingVideoQuality->setErrorHint(9, 10);
+
+                                pLayoutRecordingVideoQuality->addWidget(m_pSliderRecordingVideoQuality);
+                            }
+                            /* Prepare recording video quality scale layout: */
+                            QHBoxLayout *pLayoutRecordingVideoQialityScale = new QHBoxLayout;
+                            if (pLayoutRecordingVideoQialityScale)
+                            {
+                                pLayoutRecordingVideoQialityScale->setContentsMargins(0, 0, 0, 0);
+
+                                /* Prepare recording video quality min label: */
+                                m_pLabelRecordingVideoQualityMin = new QLabel(m_pWidgetRecordingVideoQualitySettings);
+                                if (m_pLabelRecordingVideoQualityMin)
+                                    pLayoutRecordingVideoQialityScale->addWidget(m_pLabelRecordingVideoQualityMin);
+                                pLayoutRecordingVideoQialityScale->addStretch();
+                                /* Prepare recording video quality med label: */
+                                m_pLabelRecordingVideoQualityMed = new QLabel(m_pWidgetRecordingVideoQualitySettings);
+                                if (m_pLabelRecordingVideoQualityMed)
+                                    pLayoutRecordingVideoQialityScale->addWidget(m_pLabelRecordingVideoQualityMed);
+                                pLayoutRecordingVideoQialityScale->addStretch();
+                                /* Prepare recording video quality max label: */
+                                m_pLabelRecordingVideoQualityMax = new QLabel(m_pWidgetRecordingVideoQualitySettings);
+                                if (m_pLabelRecordingVideoQualityMax)
+                                    pLayoutRecordingVideoQialityScale->addWidget(m_pLabelRecordingVideoQualityMax);
+
+                                pLayoutRecordingVideoQuality->addLayout(pLayoutRecordingVideoQialityScale);
+                            }
+                        }
+
+                        pLayoutRecordingSettings->addWidget(m_pWidgetRecordingVideoQualitySettings, 5, 1, 2, 1);
+                    }
+                    /* Prepare recording video quality spinbox: */
+                    m_pSpinboxRecordingVideoQuality = new QSpinBox(m_pWidgetRecordingSettings);
+                    if (m_pSpinboxRecordingVideoQuality)
+                    {
+                        m_pLabelRecordingVideoQuality->setBuddy(m_pSpinboxRecordingVideoQuality);
+                        uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxRecordingVideoQuality, 5);
+                        m_pSpinboxRecordingVideoQuality->setMinimum(VIDEO_CAPTURE_BIT_RATE_MIN);
+                        m_pSpinboxRecordingVideoQuality->setMaximum(VIDEO_CAPTURE_BIT_RATE_MAX);
+
+                        pLayoutRecordingSettings->addWidget(m_pSpinboxRecordingVideoQuality, 5, 2, 1, 2);
+                    }
+
+                    /* Prepare recording audio quality label: */
+                    m_pLabelRecordingAudioQuality = new QLabel(m_pWidgetRecordingSettings);
+                    if (m_pLabelRecordingAudioQuality)
+                    {
+                        m_pLabelRecordingAudioQuality->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                        pLayoutRecordingSettings->addWidget(m_pLabelRecordingAudioQuality, 7, 0);
+                    }
+                    /* Prepare recording audio quality widget: */
+                    m_pWidgetRecordingAudioQualitySettings = new QWidget(m_pWidgetRecordingSettings);
+                    if (m_pWidgetRecordingAudioQualitySettings)
+                    {
+                        /* Prepare recording audio quality layout: */
+                        QVBoxLayout *pLayoutRecordingAudioQuality = new QVBoxLayout(m_pWidgetRecordingAudioQualitySettings);
+                        if (pLayoutRecordingAudioQuality)
+                        {
+                            pLayoutRecordingAudioQuality->setContentsMargins(0, 0, 0, 0);
+
+                            /* Prepare recording audio quality slider: */
+                            m_pSliderRecordingAudioQuality = new QIAdvancedSlider(m_pWidgetRecordingAudioQualitySettings);
+                            if (m_pSliderRecordingAudioQuality)
+                            {
+                                m_pLabelRecordingAudioQuality->setBuddy(m_pSliderRecordingAudioQuality);
+                                m_pSliderRecordingAudioQuality->setOrientation(Qt::Horizontal);
+                                m_pSliderRecordingAudioQuality->setMinimum(1);
+                                m_pSliderRecordingAudioQuality->setMaximum(3);
+                                m_pSliderRecordingAudioQuality->setPageStep(1);
+                                m_pSliderRecordingAudioQuality->setSingleStep(1);
+                                m_pSliderRecordingAudioQuality->setTickInterval(1);
+                                m_pSliderRecordingAudioQuality->setSnappingEnabled(true);
+                                m_pSliderRecordingAudioQuality->setOptimalHint(1, 2);
+                                m_pSliderRecordingAudioQuality->setWarningHint(2, 3);
+                                pLayoutRecordingAudioQuality->addWidget(m_pSliderRecordingAudioQuality);
+                            }
+                            /* Prepare recording audio quality scale layout: */
+                            QHBoxLayout *pLayoutRecordingAudioQialityScale = new QHBoxLayout;
+                            if (pLayoutRecordingAudioQialityScale)
+                            {
+                                pLayoutRecordingAudioQialityScale->setContentsMargins(0, 0, 0, 0);
+
+                                /* Prepare recording audio quality min label: */
+                                m_pLabelRecordingAudioQualityMin = new QLabel(m_pWidgetRecordingAudioQualitySettings);
+                                if (m_pLabelRecordingAudioQualityMin)
+                                    pLayoutRecordingAudioQialityScale->addWidget(m_pLabelRecordingAudioQualityMin);
+                                pLayoutRecordingAudioQialityScale->addStretch();
+                                /* Prepare recording audio quality med label: */
+                                m_pLabelRecordingAudioQualityMed = new QLabel(m_pWidgetRecordingAudioQualitySettings);
+                                if (m_pLabelRecordingAudioQualityMed)
+                                    pLayoutRecordingAudioQialityScale->addWidget(m_pLabelRecordingAudioQualityMed);
+                                pLayoutRecordingAudioQialityScale->addStretch();
+                                /* Prepare recording audio quality max label: */
+                                m_pLabelRecordingAudioQualityMax = new QLabel(m_pWidgetRecordingAudioQualitySettings);
+                                if (m_pLabelRecordingAudioQualityMax)
+                                    pLayoutRecordingAudioQialityScale->addWidget(m_pLabelRecordingAudioQualityMax);
+
+                                pLayoutRecordingAudioQuality->addLayout(pLayoutRecordingAudioQialityScale);
+                            }
+                        }
+
+                        pLayoutRecordingSettings->addWidget(m_pWidgetRecordingAudioQualitySettings, 7, 1, 2, 1);
+                    }
+
+                    /* Prepare recording size hint label: */
+                    m_pLabelRecordingSizeHint = new QLabel(m_pWidgetRecordingSettings);
+                    if (m_pLabelRecordingSizeHint)
+                        pLayoutRecordingSettings->addWidget(m_pLabelRecordingSizeHint, 9, 1);
+
+                    /* Prepare recording screens label: */
+                    m_pLabelRecordingScreens = new QLabel(m_pWidgetRecordingSettings);
+                    if (m_pLabelRecordingScreens)
+                    {
+                        m_pLabelRecordingScreens->setAlignment(Qt::AlignRight | Qt::AlignTop);
+                        pLayoutRecordingSettings->addWidget(m_pLabelRecordingScreens, 10, 0);
+                    }
+                    /* Prepare recording screens scroller: */
+                    m_pScrollerRecordingScreens = new UIFilmContainer(m_pWidgetRecordingSettings);
+                    if (m_pScrollerRecordingScreens)
+                    {
+                        m_pLabelRecordingScreens->setBuddy(m_pScrollerRecordingScreens);
+                        pLayoutRecordingSettings->addWidget(m_pScrollerRecordingScreens, 10, 1, 1, 3);
+                    }
+                }
+
+                pLayoutRecording->addWidget(m_pWidgetRecordingSettings, 1, 1);
+            }
         }
 
-        /* File-path selector created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorVideoCapturePath);
-        {
-            /* Configure selector: */
-            m_pEditorVideoCapturePath->setEditable(false);
-            m_pEditorVideoCapturePath->setMode(UIFilePathSelector::Mode_File_Save);
-        }
-
-        /* Frame-size combo-box created in the .ui file. */
-        AssertPtrReturnVoid(m_pComboVideoCaptureSize);
-        {
-            /* Configure combo-box: */
-            m_pComboVideoCaptureSize->addItem(""); /* User Defined */
-            m_pComboVideoCaptureSize->addItem("320 x 200 (16:10)",   QSize(320, 200));
-            m_pComboVideoCaptureSize->addItem("640 x 480 (4:3)",     QSize(640, 480));
-            m_pComboVideoCaptureSize->addItem("720 x 400 (9:5)",     QSize(720, 400));
-            m_pComboVideoCaptureSize->addItem("720 x 480 (3:2)",     QSize(720, 480));
-            m_pComboVideoCaptureSize->addItem("800 x 600 (4:3)",     QSize(800, 600));
-            m_pComboVideoCaptureSize->addItem("1024 x 768 (4:3)",    QSize(1024, 768));
-            m_pComboVideoCaptureSize->addItem("1152 x 864 (4:3)",    QSize(1152, 864));
-            m_pComboVideoCaptureSize->addItem("1280 x 720 (16:9)",   QSize(1280, 720));
-            m_pComboVideoCaptureSize->addItem("1280 x 800 (16:10)",  QSize(1280, 800));
-            m_pComboVideoCaptureSize->addItem("1280 x 960 (4:3)",    QSize(1280, 960));
-            m_pComboVideoCaptureSize->addItem("1280 x 1024 (5:4)",   QSize(1280, 1024));
-            m_pComboVideoCaptureSize->addItem("1366 x 768 (16:9)",   QSize(1366, 768));
-            m_pComboVideoCaptureSize->addItem("1440 x 900 (16:10)",  QSize(1440, 900));
-            m_pComboVideoCaptureSize->addItem("1440 x 1080 (4:3)",   QSize(1440, 1080));
-            m_pComboVideoCaptureSize->addItem("1600 x 900 (16:9)",   QSize(1600, 900));
-            m_pComboVideoCaptureSize->addItem("1680 x 1050 (16:10)", QSize(1680, 1050));
-            m_pComboVideoCaptureSize->addItem("1600 x 1200 (4:3)",   QSize(1600, 1200));
-            m_pComboVideoCaptureSize->addItem("1920 x 1080 (16:9)",  QSize(1920, 1080));
-            m_pComboVideoCaptureSize->addItem("1920 x 1200 (16:10)", QSize(1920, 1200));
-            m_pComboVideoCaptureSize->addItem("1920 x 1440 (4:3)",   QSize(1920, 1440));
-            m_pComboVideoCaptureSize->addItem("2880 x 1800 (16:10)", QSize(2880, 1800));
-        }
-
-        /* Frame-width editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorVideoCaptureWidth);
-        {
-            /* Configure editor: */
-            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureWidth, 5);
-            m_pEditorVideoCaptureWidth->setMinimum(16);
-            m_pEditorVideoCaptureWidth->setMaximum(2880);
-        }
-
-        /* Frame-height editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorVideoCaptureHeight);
-        {
-            /* Configure editor: */
-            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureHeight, 5);
-            m_pEditorVideoCaptureHeight->setMinimum(16);
-            m_pEditorVideoCaptureHeight->setMaximum(1800);
-        }
-
-        /* Frame-rate slider created in the .ui file. */
-        AssertPtrReturnVoid(m_pSliderVideoCaptureFrameRate);
-        {
-            /* Configure slider: */
-            m_pSliderVideoCaptureFrameRate->setMinimum(1);
-            m_pSliderVideoCaptureFrameRate->setMaximum(30);
-            m_pSliderVideoCaptureFrameRate->setPageStep(1);
-            m_pSliderVideoCaptureFrameRate->setSingleStep(1);
-            m_pSliderVideoCaptureFrameRate->setTickInterval(1);
-            m_pSliderVideoCaptureFrameRate->setSnappingEnabled(true);
-            m_pSliderVideoCaptureFrameRate->setOptimalHint(1, 25);
-            m_pSliderVideoCaptureFrameRate->setWarningHint(25, 30);
-        }
-
-        /* Frame-rate editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorVideoCaptureFrameRate);
-        {
-            /* Configure editor: */
-            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureFrameRate, 3);
-            m_pEditorVideoCaptureFrameRate->setMinimum(1);
-            m_pEditorVideoCaptureFrameRate->setMaximum(30);
-        }
-
-        /* Frame quality combo-box created in the .ui file. */
-        AssertPtrReturnVoid(m_pContainerLayoutSliderVideoCaptureQuality);
-        AssertPtrReturnVoid(m_pSliderVideoCaptureQuality);
-        {
-            /* Configure quality related widget: */
-            m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(1, 4);
-            m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(3, 5);
-            m_pSliderVideoCaptureQuality->setMinimum(1);
-            m_pSliderVideoCaptureQuality->setMaximum(10);
-            m_pSliderVideoCaptureQuality->setPageStep(1);
-            m_pSliderVideoCaptureQuality->setSingleStep(1);
-            m_pSliderVideoCaptureQuality->setTickInterval(1);
-            m_pSliderVideoCaptureQuality->setSnappingEnabled(true);
-            m_pSliderVideoCaptureQuality->setOptimalHint(1, 5);
-            m_pSliderVideoCaptureQuality->setWarningHint(5, 9);
-            m_pSliderVideoCaptureQuality->setErrorHint(9, 10);
-        }
-
-        /* Bit-rate editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorVideoCaptureBitRate);
-        {
-            /* Configure editor: */
-            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
-            m_pEditorVideoCaptureBitRate->setMinimum(VIDEO_CAPTURE_BIT_RATE_MIN);
-            m_pEditorVideoCaptureBitRate->setMaximum(VIDEO_CAPTURE_BIT_RATE_MAX);
-        }
-
-         /* Frame-rate slider created in the .ui file. */
-        AssertPtrReturnVoid(m_pSliderAudioCaptureQuality);
-        {
-            /* Configure slider: */
-            m_pSliderAudioCaptureQuality->setMinimum(1);
-            m_pSliderAudioCaptureQuality->setMaximum(3);
-            m_pSliderAudioCaptureQuality->setPageStep(1);
-            m_pSliderAudioCaptureQuality->setSingleStep(1);
-            m_pSliderAudioCaptureQuality->setTickInterval(1);
-            m_pSliderAudioCaptureQuality->setSnappingEnabled(true);
-            m_pSliderAudioCaptureQuality->setOptimalHint(1, 2);
-            m_pSliderAudioCaptureQuality->setWarningHint(2, 3);
-        }
+        m_pTabWidget->addTab(m_pTabRecording, QString());
     }
 }
 
 void UIMachineSettingsDisplay::prepareConnections()
 {
     /* Configure 'Screen' connections: */
-    connect(m_pVideoMemoryEditor, &UIVideoMemoryEditor::sigValidChanged,
+    connect(m_pEditorVideoMemorySize, &UIVideoMemoryEditor::sigValidChanged,
             this, &UIMachineSettingsDisplay::revalidate);
-    connect(m_pSliderVideoScreenCount, &QIAdvancedSlider::valueChanged,
+    connect(m_pSliderMonitorCount, &QIAdvancedSlider::valueChanged,
             this, &UIMachineSettingsDisplay::sltHandleGuestScreenCountSliderChange);
-    connect(m_pEditorVideoScreenCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxMonitorCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange);
-    connect(m_pGraphicsControllerEditor, &UIGraphicsControllerEditor::sigValueChanged,
+    connect(m_pEditorGraphicsController, &UIGraphicsControllerEditor::sigValueChanged,
             this, &UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange);
 #ifdef VBOX_WITH_3D_ACCELERATION
     connect(m_pCheckbox3D, &QCheckBox::stateChanged,
@@ -1287,415 +1695,31 @@ void UIMachineSettingsDisplay::prepareConnections()
 #endif
 
     /* Configure 'Remote Display' connections: */
+    connect(m_pCheckboxRemoteDisplay, &QCheckBox::toggled, m_pWidgetRemoteDisplaySettings, &QWidget::setEnabled);
     connect(m_pCheckboxRemoteDisplay, &QCheckBox::toggled, this, &UIMachineSettingsDisplay::revalidate);
     connect(m_pEditorRemoteDisplayPort, &QLineEdit::textChanged, this, &UIMachineSettingsDisplay::revalidate);
     connect(m_pEditorRemoteDisplayTimeout, &QLineEdit::textChanged, this, &UIMachineSettingsDisplay::revalidate);
 
     /* Configure 'Recording' connections: */
-    connect(m_pCheckboxVideoCapture, &QCheckBox::toggled,
+    connect(m_pCheckboxRecording, &QCheckBox::toggled,
             this, &UIMachineSettingsDisplay::sltHandleRecordingCheckboxToggle);
-    connect(m_pComboVideoCaptureSize, static_cast<void(QComboBox::*)(int)>(&QComboBox:: currentIndexChanged),
+    connect(m_pComboRecordingFrameSize, static_cast<void(QComboBox::*)(int)>(&QComboBox:: currentIndexChanged),
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameSizeComboboxChange);
-    connect(m_pEditorVideoCaptureWidth, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxRecordingFrameWidth, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameWidthEditorChange);
-    connect(m_pEditorVideoCaptureHeight, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxRecordingFrameHeight, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameHeightEditorChange);
-    connect(m_pSliderVideoCaptureFrameRate, &QIAdvancedSlider::valueChanged,
+    connect(m_pSliderRecordingFrameRate, &QIAdvancedSlider::valueChanged,
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameRateSliderChange);
-    connect(m_pEditorVideoCaptureFrameRate, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxRecordingFrameRate, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameRateEditorChange);
-    connect(m_pSliderVideoCaptureQuality, &QIAdvancedSlider::valueChanged,
+    connect(m_pSliderRecordingVideoQuality, &QIAdvancedSlider::valueChanged,
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoQualitySliderChange);
-    connect(m_pEditorVideoCaptureBitRate, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxRecordingVideoQuality, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoBitRateEditorChange);
 
-    connect(m_pComboBoxCaptureMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pComboRecordingMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UIMachineSettingsDisplay::sltHandleRecordingComboBoxChange);
-}
-
-void UIMachineSettingsDisplay::prepareWidgets()
-{
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIMachineSettingsDisplay"));
-    resize(350, 300);
-    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
-    pLayoutMain->setObjectName(QStringLiteral("pLayoutMain"));
-    m_pTabWidget = new QITabWidget();
-    m_pTabWidget->setObjectName(QStringLiteral("m_pTabWidget"));
-    m_pTabVideo = new QWidget();
-    m_pTabVideo->setObjectName(QStringLiteral("m_pTabVideo"));
-    QVBoxLayout *pLayoutTabVideo = new QVBoxLayout(m_pTabVideo);
-    pLayoutTabVideo->setObjectName(QStringLiteral("pLayoutTabVideo"));
-    QWidget *pContainerVideo = new QWidget(m_pTabVideo);
-    pContainerVideo->setObjectName(QStringLiteral("pContainerVideo"));
-    QGridLayout *pLayoutContainerVideo = new QGridLayout(pContainerVideo);
-    pLayoutContainerVideo->setObjectName(QStringLiteral("pLayoutContainerVideo"));
-    pLayoutContainerVideo->setContentsMargins(0, 0, 0, 0);
-    m_pVideoMemoryLabel = new QLabel(pContainerVideo);
-    m_pVideoMemoryLabel->setObjectName(QStringLiteral("m_pVideoMemoryLabel"));
-    m_pVideoMemoryLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerVideo->addWidget(m_pVideoMemoryLabel, 0, 0, 1, 1);
-
-    m_pVideoMemoryEditor = new UIVideoMemoryEditor(pContainerVideo);
-    m_pVideoMemoryEditor->setObjectName(QStringLiteral("m_pVideoMemoryEditor"));
-    pLayoutContainerVideo->addWidget(m_pVideoMemoryEditor, 0, 1, 2, 2);
-
-    m_pLabelVideoScreenCount = new QLabel(pContainerVideo);
-    m_pLabelVideoScreenCount->setObjectName(QStringLiteral("m_pLabelVideoScreenCount"));
-    m_pLabelVideoScreenCount->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerVideo->addWidget(m_pLabelVideoScreenCount, 2, 0, 1, 1);
-
-    QGridLayout *pLayoutVideoScreenCount = new QGridLayout();
-    pLayoutVideoScreenCount->setSpacing(0);
-    pLayoutVideoScreenCount->setObjectName(QStringLiteral("pLayoutVideoScreenCount"));
-    m_pSliderVideoScreenCount = new QIAdvancedSlider(pContainerVideo);
-    m_pSliderVideoScreenCount->setObjectName(QStringLiteral("m_pSliderVideoScreenCount"));
-    m_pSliderVideoScreenCount->setOrientation(Qt::Horizontal);
-    pLayoutVideoScreenCount->addWidget(m_pSliderVideoScreenCount, 0, 0, 1, 3);
-
-    m_pLabelVideoScreenCountMin = new QLabel(pContainerVideo);
-    m_pLabelVideoScreenCountMin->setObjectName(QStringLiteral("m_pLabelVideoScreenCountMin"));
-    pLayoutVideoScreenCount->addWidget(m_pLabelVideoScreenCountMin, 1, 0, 1, 1);
-
-    QSpacerItem *pSpacerVideoScreenCount = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    pLayoutVideoScreenCount->addItem(pSpacerVideoScreenCount, 1, 1, 1, 1);
-
-    m_pLabelVideoScreenCountMax = new QLabel(pContainerVideo);
-    m_pLabelVideoScreenCountMax->setObjectName(QStringLiteral("m_pLabelVideoScreenCountMax"));
-
-    pLayoutVideoScreenCount->addWidget(m_pLabelVideoScreenCountMax, 1, 2, 1, 1);
-    pLayoutContainerVideo->addLayout(pLayoutVideoScreenCount, 2, 1, 2, 1);
-
-    m_pEditorVideoScreenCount = new QSpinBox(pContainerVideo);
-    m_pEditorVideoScreenCount->setObjectName(QStringLiteral("m_pEditorVideoScreenCount"));
-    pLayoutContainerVideo->addWidget(m_pEditorVideoScreenCount, 2, 2, 1, 1);
-
-    m_pLabelGuestScreenScaleFactorEditor = new QLabel(pContainerVideo);
-    m_pLabelGuestScreenScaleFactorEditor->setObjectName(QStringLiteral("m_pLabelGuestScreenScaleFactorEditor"));
-    m_pLabelGuestScreenScaleFactorEditor->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerVideo->addWidget(m_pLabelGuestScreenScaleFactorEditor, 4, 0, 1, 1);
-
-    QGridLayout *pLayoutGuestScreenScaleFactorEditor = new QGridLayout();
-    pLayoutGuestScreenScaleFactorEditor->setSpacing(0);
-    pLayoutGuestScreenScaleFactorEditor->setObjectName(QStringLiteral("pLayoutGuestScreenScaleFactorEditor"));
-    m_pScaleFactorEditor = new UIScaleFactorEditor(pContainerVideo);
-    m_pScaleFactorEditor->setObjectName(QStringLiteral("m_pScaleFactorEditor"));
-    pLayoutGuestScreenScaleFactorEditor->addWidget(m_pScaleFactorEditor, 0, 0, 2, 3);
-    pLayoutContainerVideo->addLayout(pLayoutGuestScreenScaleFactorEditor, 4, 1, 2, 2);
-
-    m_pGraphicsControllerLabel = new QLabel(pContainerVideo);
-    m_pGraphicsControllerLabel->setObjectName(QStringLiteral("m_pGraphicsControllerLabel"));
-    m_pGraphicsControllerLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerVideo->addWidget(m_pGraphicsControllerLabel, 6, 0, 1, 1);
-
-    m_pGraphicsControllerEditor = new UIGraphicsControllerEditor(pContainerVideo);
-    m_pGraphicsControllerEditor->setObjectName(QStringLiteral("m_pGraphicsControllerEditor"));
-    pLayoutContainerVideo->addWidget(m_pGraphicsControllerEditor, 6, 1, 1, 2);
-
-    m_pLabelVideoOptions = new QLabel(pContainerVideo);
-    m_pLabelVideoOptions->setObjectName(QStringLiteral("m_pLabelVideoOptions"));
-    m_pLabelVideoOptions->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerVideo->addWidget(m_pLabelVideoOptions, 7, 0, 1, 1);
-
-    m_pLayout3D = new QStackedLayout();
-    m_pLayout3D->setObjectName(QStringLiteral("m_pLayout3D"));
-    m_pCheckbox3D = new QCheckBox(pContainerVideo);
-    m_pCheckbox3D->setObjectName(QStringLiteral("m_pCheckbox3D"));
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pCheckbox3D->sizePolicy().hasHeightForWidth());
-    m_pCheckbox3D->setSizePolicy(sizePolicy);
-    m_pLayout3D->addWidget(m_pCheckbox3D);
-
-    QWidget *pPlaceholder3D = new QWidget(pContainerVideo);
-    pPlaceholder3D->setObjectName(QStringLiteral("pPlaceholder3D"));
-
-    m_pLayout3D->addWidget(pPlaceholder3D);
-    pLayoutContainerVideo->addLayout(m_pLayout3D, 7, 1, 1, 1);
-    pLayoutTabVideo->addWidget(pContainerVideo);
-
-    QSpacerItem *pStretchVideo = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pLayoutTabVideo->addItem(pStretchVideo);
-
-    m_pTabWidget->addTab(m_pTabVideo, QString());
-    m_pTabRemoteDisplay = new QWidget();
-    m_pTabRemoteDisplay->setObjectName(QStringLiteral("m_pTabRemoteDisplay"));
-    QVBoxLayout *pLayoutTabRemoteDisplay = new QVBoxLayout(m_pTabRemoteDisplay);
-    pLayoutTabRemoteDisplay->setObjectName(QStringLiteral("pLayoutTabRemoteDisplay"));
-    m_pContainerRemoteDisplay = new QWidget(m_pTabRemoteDisplay);
-    m_pContainerRemoteDisplay->setObjectName(QStringLiteral("m_pContainerRemoteDisplay"));
-    QGridLayout *pLayoutContainerRemoteDisplay = new QGridLayout(m_pContainerRemoteDisplay);
-    pLayoutContainerRemoteDisplay->setObjectName(QStringLiteral("pLayoutContainerRemoteDisplay"));
-    pLayoutContainerRemoteDisplay->setContentsMargins(0, 0, 0, 0);
-    m_pCheckboxRemoteDisplay = new QCheckBox(m_pContainerRemoteDisplay);
-    m_pCheckboxRemoteDisplay->setObjectName(QStringLiteral("m_pCheckboxRemoteDisplay"));
-    m_pCheckboxRemoteDisplay->setChecked(false);
-    pLayoutContainerRemoteDisplay->addWidget(m_pCheckboxRemoteDisplay, 0, 0, 1, 2);
-
-    QSpacerItem *pSpacerContainerRemoteDisplay = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    pLayoutContainerRemoteDisplay->addItem(pSpacerContainerRemoteDisplay, 1, 0, 1, 1);
-
-    m_pContainerRemoteDisplayOptions = new QWidget(m_pContainerRemoteDisplay);
-    m_pContainerRemoteDisplayOptions->setObjectName(QStringLiteral("m_pContainerRemoteDisplayOptions"));
-    QGridLayout *pLayoutContainerRemoteDisplayServer = new QGridLayout(m_pContainerRemoteDisplayOptions);
-    pLayoutContainerRemoteDisplayServer->setObjectName(QStringLiteral("pLayoutContainerRemoteDisplayServer"));
-    pLayoutContainerRemoteDisplayServer->setContentsMargins(0, 0, 0, 0);
-    m_pLabelRemoteDisplayPort = new QLabel(m_pContainerRemoteDisplayOptions);
-    m_pLabelRemoteDisplayPort->setObjectName(QStringLiteral("m_pLabelRemoteDisplayPort"));
-    m_pLabelRemoteDisplayPort->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerRemoteDisplayServer->addWidget(m_pLabelRemoteDisplayPort, 0, 0, 1, 1);
-
-    m_pEditorRemoteDisplayPort = new QLineEdit(m_pContainerRemoteDisplayOptions);
-    m_pEditorRemoteDisplayPort->setObjectName(QStringLiteral("m_pEditorRemoteDisplayPort"));
-    pLayoutContainerRemoteDisplayServer->addWidget(m_pEditorRemoteDisplayPort, 0, 1, 1, 1);
-
-    m_pLabelRemoteDisplayAuthMethod = new QLabel(m_pContainerRemoteDisplayOptions);
-    m_pLabelRemoteDisplayAuthMethod->setObjectName(QStringLiteral("m_pLabelRemoteDisplayAuthMethod"));
-    m_pLabelRemoteDisplayAuthMethod->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerRemoteDisplayServer->addWidget(m_pLabelRemoteDisplayAuthMethod, 1, 0, 1, 1);
-
-    m_pComboRemoteDisplayAuthMethod = new QComboBox(m_pContainerRemoteDisplayOptions);
-    m_pComboRemoteDisplayAuthMethod->setObjectName(QStringLiteral("m_pComboRemoteDisplayAuthMethod"));
-    pLayoutContainerRemoteDisplayServer->addWidget(m_pComboRemoteDisplayAuthMethod, 1, 1, 1, 1);
-
-    m_pLabelRemoteDisplayTimeout = new QLabel(m_pContainerRemoteDisplayOptions);
-    m_pLabelRemoteDisplayTimeout->setObjectName(QStringLiteral("m_pLabelRemoteDisplayTimeout"));
-    m_pLabelRemoteDisplayTimeout->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerRemoteDisplayServer->addWidget(m_pLabelRemoteDisplayTimeout, 2, 0, 1, 1);
-
-    m_pEditorRemoteDisplayTimeout = new QLineEdit(m_pContainerRemoteDisplayOptions);
-    m_pEditorRemoteDisplayTimeout->setObjectName(QStringLiteral("m_pEditorRemoteDisplayTimeout"));
-    pLayoutContainerRemoteDisplayServer->addWidget(m_pEditorRemoteDisplayTimeout, 2, 1, 1, 1);
-
-    m_pLabelRemoteDisplayOptions = new QLabel(m_pContainerRemoteDisplayOptions);
-    m_pLabelRemoteDisplayOptions->setObjectName(QStringLiteral("m_pLabelRemoteDisplayOptions"));
-    m_pLabelRemoteDisplayOptions->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutContainerRemoteDisplayServer->addWidget(m_pLabelRemoteDisplayOptions, 3, 0, 1, 1);
-
-    m_pCheckboxMultipleConn = new QCheckBox(m_pContainerRemoteDisplayOptions);
-    m_pCheckboxMultipleConn->setObjectName(QStringLiteral("m_pCheckboxMultipleConn"));
-    sizePolicy.setHeightForWidth(m_pCheckboxMultipleConn->sizePolicy().hasHeightForWidth());
-    m_pCheckboxMultipleConn->setSizePolicy(sizePolicy);
-
-    pLayoutContainerRemoteDisplayServer->addWidget(m_pCheckboxMultipleConn, 3, 1, 1, 1);
-    pLayoutContainerRemoteDisplay->addWidget(m_pContainerRemoteDisplayOptions, 1, 1, 1, 1);
-    pLayoutTabRemoteDisplay->addWidget(m_pContainerRemoteDisplay);
-
-    QSpacerItem *pStretchRemoteDisplay = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pLayoutTabRemoteDisplay->addItem(pStretchRemoteDisplay);
-
-    m_pTabWidget->addTab(m_pTabRemoteDisplay, QString());
-    m_pTabVideoCapture = new QWidget();
-    m_pTabVideoCapture->setObjectName(QStringLiteral("m_pTabVideoCapture"));
-    QVBoxLayout *pLayoutTabVideoCapture = new QVBoxLayout(m_pTabVideoCapture);
-    pLayoutTabVideoCapture->setObjectName(QStringLiteral("pLayoutTabVideoCapture"));
-    m_pContainerVideoCapture = new QWidget(m_pTabVideoCapture);
-    m_pContainerVideoCapture->setObjectName(QStringLiteral("m_pContainerVideoCapture"));
-    QGridLayout *pLayoutContainerVideoCapture = new QGridLayout(m_pContainerVideoCapture);
-    pLayoutContainerVideoCapture->setObjectName(QStringLiteral("pLayoutContainerVideoCapture"));
-    pLayoutContainerVideoCapture->setContentsMargins(0, 0, 0, 0);
-    m_pCheckboxVideoCapture = new QCheckBox(m_pContainerVideoCapture);
-    m_pCheckboxVideoCapture->setObjectName(QStringLiteral("m_pCheckboxVideoCapture"));
-    m_pCheckboxVideoCapture->setChecked(false);
-    pLayoutContainerVideoCapture->addWidget(m_pCheckboxVideoCapture, 0, 0, 1, 2);
-
-    QSpacerItem *pLeftSpacer = new QSpacerItem(20, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    pLayoutContainerVideoCapture->addItem(pLeftSpacer, 1, 0, 1, 1);
-
-    QWidget *pContainerVideoCaptureOptions = new QWidget(m_pContainerVideoCapture);
-    pContainerVideoCaptureOptions->setObjectName(QStringLiteral("pContainerVideoCaptureOptions"));
-    QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    sizePolicy1.setHorizontalStretch(1);
-    sizePolicy1.setVerticalStretch(0);
-    sizePolicy1.setHeightForWidth(pContainerVideoCaptureOptions->sizePolicy().hasHeightForWidth());
-    pContainerVideoCaptureOptions->setSizePolicy(sizePolicy1);
-    QGridLayout *pContainerLayoutVideoCapture = new QGridLayout(pContainerVideoCaptureOptions);
-    pContainerLayoutVideoCapture->setObjectName(QStringLiteral("pContainerLayoutVideoCapture"));
-    pContainerLayoutVideoCapture->setContentsMargins(0, 0, 0, 0);
-    m_pLabelCaptureMode = new QLabel(pContainerVideoCaptureOptions);
-    m_pLabelCaptureMode->setObjectName(QStringLiteral("m_pLabelCaptureMode"));
-    m_pLabelCaptureMode->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutVideoCapture->addWidget(m_pLabelCaptureMode, 0, 0, 1, 1);
-
-    m_pComboBoxCaptureMode = new QComboBox(pContainerVideoCaptureOptions);
-    m_pComboBoxCaptureMode->setObjectName(QStringLiteral("m_pComboBoxCaptureMode"));
-    pContainerLayoutVideoCapture->addWidget(m_pComboBoxCaptureMode, 0, 1, 1, 3);
-
-    m_pLabelVideoCapturePath = new QLabel(pContainerVideoCaptureOptions);
-    m_pLabelVideoCapturePath->setObjectName(QStringLiteral("m_pLabelVideoCapturePath"));
-    m_pLabelVideoCapturePath->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCapturePath, 1, 0, 1, 1);
-
-    m_pEditorVideoCapturePath = new UIFilePathSelector(pContainerVideoCaptureOptions);
-    m_pEditorVideoCapturePath->setObjectName(QStringLiteral("m_pEditorVideoCapturePath"));
-    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCapturePath, 1, 1, 1, 3);
-
-    m_pLabelVideoCaptureSize = new QLabel(pContainerVideoCaptureOptions);
-    m_pLabelVideoCaptureSize->setObjectName(QStringLiteral("m_pLabelVideoCaptureSize"));
-    m_pLabelVideoCaptureSize->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureSize, 2, 0, 1, 1);
-
-    m_pComboVideoCaptureSize = new QComboBox(pContainerVideoCaptureOptions);
-    m_pComboVideoCaptureSize->setObjectName(QStringLiteral("m_pComboVideoCaptureSize"));
-    QSizePolicy sizePolicy2(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-    sizePolicy2.setHorizontalStretch(1);
-    sizePolicy2.setVerticalStretch(0);
-    sizePolicy2.setHeightForWidth(m_pComboVideoCaptureSize->sizePolicy().hasHeightForWidth());
-    m_pComboVideoCaptureSize->setSizePolicy(sizePolicy2);
-    pContainerLayoutVideoCapture->addWidget(m_pComboVideoCaptureSize, 2, 1, 1, 1);
-
-    m_pEditorVideoCaptureWidth = new QSpinBox(pContainerVideoCaptureOptions);
-    m_pEditorVideoCaptureWidth->setObjectName(QStringLiteral("m_pEditorVideoCaptureWidth"));
-    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCaptureWidth, 2, 2, 1, 1);
-
-    m_pEditorVideoCaptureHeight = new QSpinBox(pContainerVideoCaptureOptions);
-    m_pEditorVideoCaptureHeight->setObjectName(QStringLiteral("m_pEditorVideoCaptureHeight"));
-    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCaptureHeight, 2, 3, 1, 1);
-
-    m_pLabelVideoCaptureFrameRate = new QLabel(pContainerVideoCaptureOptions);
-    m_pLabelVideoCaptureFrameRate->setObjectName(QStringLiteral("m_pLabelVideoCaptureFrameRate"));
-    m_pLabelVideoCaptureFrameRate->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureFrameRate, 3, 0, 1, 1);
-
-    m_pContainerSliderVideoCaptureFrameRate = new QWidget(pContainerVideoCaptureOptions);
-    m_pContainerSliderVideoCaptureFrameRate->setObjectName(QStringLiteral("m_pContainerSliderVideoCaptureFrameRate"));
-    QGridLayout *pContainerLayoutSliderVideoCaptureFrameRate = new QGridLayout(m_pContainerSliderVideoCaptureFrameRate);
-    pContainerLayoutSliderVideoCaptureFrameRate->setSpacing(0);
-    pContainerLayoutSliderVideoCaptureFrameRate->setObjectName(QStringLiteral("pContainerLayoutSliderVideoCaptureFrameRate"));
-    pContainerLayoutSliderVideoCaptureFrameRate->setContentsMargins(0, 0, 0, 0);
-    m_pSliderVideoCaptureFrameRate = new QIAdvancedSlider(m_pContainerSliderVideoCaptureFrameRate);
-    m_pSliderVideoCaptureFrameRate->setObjectName(QStringLiteral("m_pSliderVideoCaptureFrameRate"));
-    m_pSliderVideoCaptureFrameRate->setOrientation(Qt::Horizontal);
-    pContainerLayoutSliderVideoCaptureFrameRate->addWidget(m_pSliderVideoCaptureFrameRate, 0, 0, 1, 3);
-
-    m_pLabelVideoCaptureFrameRateMin = new QLabel(m_pContainerSliderVideoCaptureFrameRate);
-    m_pLabelVideoCaptureFrameRateMin->setObjectName(QStringLiteral("m_pLabelVideoCaptureFrameRateMin"));
-    pContainerLayoutSliderVideoCaptureFrameRate->addWidget(m_pLabelVideoCaptureFrameRateMin, 1, 0, 1, 1);
-
-    QSpacerItem *pStretchVideoCaptureFrameRate = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    pContainerLayoutSliderVideoCaptureFrameRate->addItem(pStretchVideoCaptureFrameRate, 1, 1, 1, 1);
-
-    m_pLabelVideoCaptureFrameRateMax = new QLabel(m_pContainerSliderVideoCaptureFrameRate);
-    m_pLabelVideoCaptureFrameRateMax->setObjectName(QStringLiteral("m_pLabelVideoCaptureFrameRateMax"));
-    pContainerLayoutSliderVideoCaptureFrameRate->addWidget(m_pLabelVideoCaptureFrameRateMax, 1, 2, 1, 1);
-    pContainerLayoutVideoCapture->addWidget(m_pContainerSliderVideoCaptureFrameRate, 3, 1, 2, 1);
-
-    m_pEditorVideoCaptureFrameRate = new QSpinBox(pContainerVideoCaptureOptions);
-    m_pEditorVideoCaptureFrameRate->setObjectName(QStringLiteral("m_pEditorVideoCaptureFrameRate"));
-    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCaptureFrameRate, 3, 2, 1, 2);
-
-    m_pLabelVideoCaptureRate = new QLabel(pContainerVideoCaptureOptions);
-    m_pLabelVideoCaptureRate->setObjectName(QStringLiteral("m_pLabelVideoCaptureRate"));
-    m_pLabelVideoCaptureRate->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureRate, 5, 0, 1, 1);
-
-    m_pContainerSliderVideoCaptureQuality = new QWidget(pContainerVideoCaptureOptions);
-    m_pContainerSliderVideoCaptureQuality->setObjectName(QStringLiteral("m_pContainerSliderVideoCaptureQuality"));
-    m_pContainerLayoutSliderVideoCaptureQuality = new QGridLayout(m_pContainerSliderVideoCaptureQuality);
-    m_pContainerLayoutSliderVideoCaptureQuality->setSpacing(0);
-    m_pContainerLayoutSliderVideoCaptureQuality->setObjectName(QStringLiteral("m_pContainerLayoutSliderVideoCaptureQuality"));
-    m_pContainerLayoutSliderVideoCaptureQuality->setContentsMargins(0, 0, 0, 0);
-    m_pSliderVideoCaptureQuality = new QIAdvancedSlider(m_pContainerSliderVideoCaptureQuality);
-    m_pSliderVideoCaptureQuality->setObjectName(QStringLiteral("m_pSliderVideoCaptureQuality"));
-    m_pSliderVideoCaptureQuality->setOrientation(Qt::Horizontal);
-    m_pContainerLayoutSliderVideoCaptureQuality->addWidget(m_pSliderVideoCaptureQuality, 0, 0, 1, 5);
-
-    m_pLabelVideoCaptureQualityMin = new QLabel(m_pContainerSliderVideoCaptureQuality);
-    m_pLabelVideoCaptureQualityMin->setObjectName(QStringLiteral("m_pLabelVideoCaptureQualityMin"));
-    m_pContainerLayoutSliderVideoCaptureQuality->addWidget(m_pLabelVideoCaptureQualityMin, 1, 0, 1, 1);
-
-    QSpacerItem *pStretchVideoCaptureQualityLeft = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    m_pContainerLayoutSliderVideoCaptureQuality->addItem(pStretchVideoCaptureQualityLeft, 1, 1, 1, 1);
-
-    m_pLabelVideoCaptureQualityMed = new QLabel(m_pContainerSliderVideoCaptureQuality);
-    m_pLabelVideoCaptureQualityMed->setObjectName(QStringLiteral("m_pLabelVideoCaptureQualityMed"));
-    m_pContainerLayoutSliderVideoCaptureQuality->addWidget(m_pLabelVideoCaptureQualityMed, 1, 2, 1, 1);
-
-    QSpacerItem *pStretchVideoCaptureQualityRight = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    m_pContainerLayoutSliderVideoCaptureQuality->addItem(pStretchVideoCaptureQualityRight, 1, 3, 1, 1);
-
-    m_pLabelVideoCaptureQualityMax = new QLabel(m_pContainerSliderVideoCaptureQuality);
-    m_pLabelVideoCaptureQualityMax->setObjectName(QStringLiteral("m_pLabelVideoCaptureQualityMax"));
-
-    m_pContainerLayoutSliderVideoCaptureQuality->addWidget(m_pLabelVideoCaptureQualityMax, 1, 4, 1, 1);
-    pContainerLayoutVideoCapture->addWidget(m_pContainerSliderVideoCaptureQuality, 5, 1, 2, 1);
-
-    m_pEditorVideoCaptureBitRate = new QSpinBox(pContainerVideoCaptureOptions);
-    m_pEditorVideoCaptureBitRate->setObjectName(QStringLiteral("m_pEditorVideoCaptureBitRate"));
-    pContainerLayoutVideoCapture->addWidget(m_pEditorVideoCaptureBitRate, 5, 2, 1, 2);
-
-    m_pAudioCaptureQualityLabel = new QLabel(pContainerVideoCaptureOptions);
-    m_pAudioCaptureQualityLabel->setObjectName(QStringLiteral("m_pAudioCaptureQualityLabel"));
-    m_pAudioCaptureQualityLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutVideoCapture->addWidget(m_pAudioCaptureQualityLabel, 7, 0, 1, 1);
-
-    m_pContainerSliderAudioCaptureQuality = new QWidget(pContainerVideoCaptureOptions);
-    m_pContainerSliderAudioCaptureQuality->setObjectName(QStringLiteral("m_pContainerSliderAudioCaptureQuality"));
-    QGridLayout *pContainerLayoutSliderAudioCaptureQuality = new QGridLayout(m_pContainerSliderAudioCaptureQuality);
-    pContainerLayoutSliderAudioCaptureQuality->setSpacing(0);
-    pContainerLayoutSliderAudioCaptureQuality->setObjectName(QStringLiteral("pContainerLayoutSliderAudioCaptureQuality"));
-    pContainerLayoutSliderAudioCaptureQuality->setContentsMargins(0, 0, 0, 0);
-    m_pSliderAudioCaptureQuality = new QIAdvancedSlider(m_pContainerSliderAudioCaptureQuality);
-    m_pSliderAudioCaptureQuality->setObjectName(QStringLiteral("m_pSliderAudioCaptureQuality"));
-    m_pSliderAudioCaptureQuality->setOrientation(Qt::Horizontal);
-    pContainerLayoutSliderAudioCaptureQuality->addWidget(m_pSliderAudioCaptureQuality, 0, 0, 1, 5);
-
-    m_pLabelAudioCaptureQualityMin = new QLabel(m_pContainerSliderAudioCaptureQuality);
-    m_pLabelAudioCaptureQualityMin->setObjectName(QStringLiteral("m_pLabelAudioCaptureQualityMin"));
-
-    pContainerLayoutSliderAudioCaptureQuality->addWidget(m_pLabelAudioCaptureQualityMin, 1, 0, 1, 1);
-
-    QSpacerItem *pStretchAudioCaptureQualityLeft = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    pContainerLayoutSliderAudioCaptureQuality->addItem(pStretchAudioCaptureQualityLeft, 1, 1, 1, 1);
-
-    m_pLabelAudioCaptureQualityMed = new QLabel(m_pContainerSliderAudioCaptureQuality);
-    m_pLabelAudioCaptureQualityMed->setObjectName(QStringLiteral("m_pLabelAudioCaptureQualityMed"));
-    pContainerLayoutSliderAudioCaptureQuality->addWidget(m_pLabelAudioCaptureQualityMed, 1, 2, 1, 1);
-
-    QSpacerItem *pStretchAudioCaptureQualityRight = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    pContainerLayoutSliderAudioCaptureQuality->addItem(pStretchAudioCaptureQualityRight, 1, 3, 1, 1);
-
-    m_pLabelAudioCaptureQualityMax = new QLabel(m_pContainerSliderAudioCaptureQuality);
-    m_pLabelAudioCaptureQualityMax->setObjectName(QStringLiteral("m_pLabelAudioCaptureQualityMax"));
-
-    pContainerLayoutSliderAudioCaptureQuality->addWidget(m_pLabelAudioCaptureQualityMax, 1, 4, 1, 1);
-    pContainerLayoutVideoCapture->addWidget(m_pContainerSliderAudioCaptureQuality, 7, 1, 2, 1);
-
-    m_pLabelVideoCaptureSizeHint = new QLabel(pContainerVideoCaptureOptions);
-    m_pLabelVideoCaptureSizeHint->setObjectName(QStringLiteral("m_pLabelVideoCaptureSizeHint"));
-    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureSizeHint, 9, 1, 1, 1);
-
-    m_pLabelVideoCaptureScreens = new QLabel(pContainerVideoCaptureOptions);
-    m_pLabelVideoCaptureScreens->setObjectName(QStringLiteral("m_pLabelVideoCaptureScreens"));
-    m_pLabelVideoCaptureScreens->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignTop);
-    pContainerLayoutVideoCapture->addWidget(m_pLabelVideoCaptureScreens, 10, 0, 1, 1);
-
-    m_pScrollerVideoCaptureScreens = new UIFilmContainer(pContainerVideoCaptureOptions);
-    m_pScrollerVideoCaptureScreens->setObjectName(QStringLiteral("m_pScrollerVideoCaptureScreens"));
-    pContainerLayoutVideoCapture->addWidget(m_pScrollerVideoCaptureScreens, 10, 1, 1, 3);
-
-    pLayoutContainerVideoCapture->addWidget(pContainerVideoCaptureOptions, 1, 1, 1, 1);
-    pLayoutTabVideoCapture->addWidget(m_pContainerVideoCapture);
-
-    QSpacerItem *pStretchVideoCapture = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pLayoutTabVideoCapture->addItem(pStretchVideoCapture);
-    m_pTabWidget->addTab(m_pTabVideoCapture, QString());
-    pLayoutMain->addWidget(m_pTabWidget);
-
-    m_pLabelVideoScreenCount->setBuddy(m_pEditorVideoScreenCount);
-    m_pLabelRemoteDisplayPort->setBuddy(m_pEditorRemoteDisplayPort);
-    m_pLabelRemoteDisplayAuthMethod->setBuddy(m_pComboRemoteDisplayAuthMethod);
-    m_pLabelRemoteDisplayTimeout->setBuddy(m_pEditorRemoteDisplayTimeout);
-    m_pLabelCaptureMode->setBuddy(m_pEditorVideoCapturePath);
-    m_pLabelVideoCapturePath->setBuddy(m_pEditorVideoCapturePath);
-    m_pLabelVideoCaptureSize->setBuddy(m_pComboVideoCaptureSize);
-    m_pLabelVideoCaptureFrameRate->setBuddy(m_pSliderVideoCaptureFrameRate);
-    m_pLabelVideoCaptureRate->setBuddy(m_pSliderVideoCaptureQuality);
-    m_pAudioCaptureQualityLabel->setBuddy(m_pSliderAudioCaptureQuality);
-    m_pLabelVideoCaptureScreens->setBuddy(m_pScrollerVideoCaptureScreens);
-
-    QObject::connect(m_pCheckboxRemoteDisplay, &QCheckBox::toggled, m_pContainerRemoteDisplayOptions, &QWidget::setEnabled);
 }
 
 void UIMachineSettingsDisplay::cleanup()
@@ -1703,6 +1727,29 @@ void UIMachineSettingsDisplay::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+void UIMachineSettingsDisplay::repopulateComboAuthType()
+{
+    AssertPtrReturnVoid(m_pComboRemoteDisplayAuthMethod);
+    {
+        /* Clear combo first of all: */
+        m_pComboRemoteDisplayAuthMethod->clear();
+
+        /// @todo get supported auth types, not hardcoded!
+        QVector<KAuthType> authTypes = QVector<KAuthType>() << KAuthType_Null
+                                                            << KAuthType_External
+                                                            << KAuthType_Guest;
+
+        /* Take into account currently cached value: */
+        const KAuthType enmCachedValue = m_pCache->base().m_remoteDisplayAuthType;
+        if (!authTypes.contains(enmCachedValue))
+            authTypes.prepend(enmCachedValue);
+
+        /* Populate combo finally: */
+        foreach (const KAuthType &enmType, authTypes)
+            m_pComboRemoteDisplayAuthMethod->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
+    }
 }
 
 bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVRAM()
@@ -1720,23 +1767,23 @@ bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVRAM()
 void UIMachineSettingsDisplay::lookForCorrespondingFrameSizePreset()
 {
     /* Look for video-capture size preset: */
-    lookForCorrespondingPreset(m_pComboVideoCaptureSize,
-                               QSize(m_pEditorVideoCaptureWidth->value(),
-                                     m_pEditorVideoCaptureHeight->value()));
+    lookForCorrespondingPreset(m_pComboRecordingFrameSize,
+                               QSize(m_pSpinboxRecordingFrameWidth->value(),
+                                     m_pSpinboxRecordingFrameHeight->value()));
 }
 
 void UIMachineSettingsDisplay::updateGuestScreenCount()
 {
     /* Update copy of the cached item to get the desired result: */
     QVector<BOOL> screens = m_pCache->base().m_vecRecordingScreens;
-    screens.resize(m_pEditorVideoScreenCount->value());
-    m_pScrollerVideoCaptureScreens->setValue(screens);
-    m_pScaleFactorEditor->setMonitorCount(m_pEditorVideoScreenCount->value());
+    screens.resize(m_pSpinboxMonitorCount->value());
+    m_pScrollerRecordingScreens->setValue(screens);
+    m_pEditorScaleFactor->setMonitorCount(m_pSpinboxMonitorCount->value());
 }
 
 void UIMachineSettingsDisplay::updateRecordingFileSizeHint()
 {
-    m_pLabelVideoCaptureSizeHint->setText(tr("<i>About %1MB per 5 minute video</i>").arg(m_pEditorVideoCaptureBitRate->value() * 300 / 8 / 1024));
+    m_pLabelRecordingSizeHint->setText(tr("<i>About %1MB per 5 minute video</i>").arg(m_pSpinboxRecordingVideoQuality->value() * 300 / 8 / 1024));
 }
 
 /* static */
@@ -2128,36 +2175,36 @@ void UIMachineSettingsDisplay::enableDisableRecordingWidgets()
     /* Recording options should be enabled only if:
      * 1. Machine is in 'offline' or 'saved' state and check-box is checked,
      * 2. Machine is in 'online' state, check-box is checked, and video recording is *disabled* currently. */
-    const bool fIsRecordingOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
-                                             (isMachineOnline() && !m_pCache->base().m_fRecordingEnabled && m_pCheckboxVideoCapture->isChecked());
+    const bool fIsRecordingOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxRecording->isChecked()) ||
+                                             (isMachineOnline() && !m_pCache->base().m_fRecordingEnabled && m_pCheckboxRecording->isChecked());
 
     /* Video Capture Screens option should be enabled only if:
      * Machine is in *any* valid state and check-box is checked. */
-    const bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxVideoCapture->isChecked();
+    const bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxRecording->isChecked();
     const UISettingsDefs::RecordingMode enmRecordingMode =
-        gpConverter->fromString<UISettingsDefs::RecordingMode>(m_pComboBoxCaptureMode->currentText());
+        gpConverter->fromString<UISettingsDefs::RecordingMode>(m_pComboRecordingMode->currentText());
     const bool fRecordVideo =    enmRecordingMode == UISettingsDefs::RecordingMode_VideoOnly
                               || enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio;
     const bool fRecordAudio =    enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly
                               || enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio;
 
-    m_pLabelVideoCaptureSize->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
-    m_pComboVideoCaptureSize->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
-    m_pEditorVideoCaptureWidth->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
-    m_pEditorVideoCaptureHeight->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pLabelRecordingFrameSize->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pComboRecordingFrameSize->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pSpinboxRecordingFrameWidth->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pSpinboxRecordingFrameHeight->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
 
-    m_pLabelVideoCaptureFrameRate->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
-    m_pContainerSliderVideoCaptureFrameRate->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
-    m_pEditorVideoCaptureFrameRate->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pLabelRecordingFrameRate->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pWidgetRecordingFrameRateSettings->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pSpinboxRecordingFrameRate->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
 
-    m_pLabelVideoCaptureRate->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
-    m_pContainerSliderVideoCaptureQuality->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
-    m_pEditorVideoCaptureBitRate->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
-    m_pScrollerVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled && fRecordVideo);
+    m_pLabelRecordingVideoQuality->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pWidgetRecordingVideoQualitySettings->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pSpinboxRecordingVideoQuality->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
+    m_pScrollerRecordingScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled && fRecordVideo);
 
-    m_pAudioCaptureQualityLabel->setEnabled(fIsRecordingOptionsEnabled && fRecordAudio);
-    m_pContainerSliderAudioCaptureQuality->setEnabled(fIsRecordingOptionsEnabled && fRecordAudio);
+    m_pLabelRecordingAudioQuality->setEnabled(fIsRecordingOptionsEnabled && fRecordAudio);
+    m_pWidgetRecordingAudioQualitySettings->setEnabled(fIsRecordingOptionsEnabled && fRecordAudio);
 
-    m_pLabelVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled && fRecordVideo);
-    m_pLabelVideoCaptureSizeHint->setEnabled(fIsVideoCaptureScreenOptionEnabled && fRecordVideo);
+    m_pLabelRecordingScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled && fRecordVideo);
+    m_pLabelRecordingSizeHint->setEnabled(fIsVideoCaptureScreenOptionEnabled && fRecordVideo);
 }

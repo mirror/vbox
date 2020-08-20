@@ -137,6 +137,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Prepares 'Screen' tab. */
     void prepareTabScreen();
     /** Prepares 'Remote Display' tab. */
@@ -145,10 +147,11 @@ private:
     void prepareTabRecording();
     /** Prepares connections. */
     void prepareConnections();
-    /** Prepares widgets. */
-    void prepareWidgets();
     /** Cleanups all. */
     void cleanup();
+
+    /** Repopulates auth type combo-box. */
+    void repopulateComboAuthType();
 
     /** Returns whether the VRAM requirements are important. */
     bool shouldWeWarnAboutLowVRAM();
@@ -190,68 +193,127 @@ private:
 
     /** @name Widgets
      * @{ */
-       QCheckBox *m_pCheckbox3D;
-       QCheckBox *m_pCheckboxRemoteDisplay;
-       QCheckBox *m_pCheckboxMultipleConn;
-       QCheckBox *m_pCheckboxVideoCapture;
-       QComboBox *m_pComboRemoteDisplayAuthMethod;
-       QComboBox *m_pComboBoxCaptureMode;
-       QComboBox *m_pComboVideoCaptureSize;
-       QLabel *m_pLabelVideoScreenCountMin;
-       QLabel *m_pLabelVideoScreenCountMax;
-       QLabel *m_pLabelVideoCaptureFrameRateMin;
-       QLabel *m_pLabelVideoCaptureFrameRateMax;
-       QLabel *m_pLabelVideoCaptureQualityMin;
-       QLabel *m_pLabelVideoCaptureQualityMed;
-       QLabel *m_pLabelVideoCaptureQualityMax;
-       QLabel *m_pLabelAudioCaptureQualityMin;
-       QLabel *m_pLabelAudioCaptureQualityMed;
-       QLabel *m_pLabelAudioCaptureQualityMax;
-       QLabel *m_pVideoMemoryLabel;
-       QLabel *m_pLabelVideoScreenCount;
-       QLabel *m_pGraphicsControllerLabel;
-       QLabel *m_pLabelVideoOptions;
-       QLabel *m_pLabelRemoteDisplayOptions;
-       QLabel *m_pLabelCaptureMode;
-       QLabel *m_pLabelVideoCapturePath;
-       QLabel *m_pLabelVideoCaptureSizeHint;
-       QLabel *m_pLabelVideoCaptureSize;
-       QLabel *m_pLabelVideoCaptureFrameRate;
-       QLabel *m_pLabelVideoCaptureRate;
-       QLabel *m_pAudioCaptureQualityLabel;
-       QLabel *m_pLabelVideoCaptureScreens;
-       QLabel *m_pLabelGuestScreenScaleFactorEditor;
-       QLabel *m_pLabelRemoteDisplayPort;
-       QLabel *m_pLabelRemoteDisplayAuthMethod;
-       QLabel *m_pLabelRemoteDisplayTimeout;
-       QLineEdit *m_pEditorRemoteDisplayPort;
-       QLineEdit *m_pEditorRemoteDisplayTimeout;
-       QSpinBox *m_pEditorVideoScreenCount;
-       QSpinBox *m_pEditorVideoCaptureWidth;
-       QSpinBox *m_pEditorVideoCaptureFrameRate;
-       QSpinBox *m_pEditorVideoCaptureHeight;
-       QSpinBox *m_pEditorVideoCaptureBitRate;
-       UIGraphicsControllerEditor *m_pGraphicsControllerEditor;
-       UIScaleFactorEditor *m_pScaleFactorEditor;
-       UIVideoMemoryEditor *m_pVideoMemoryEditor;
-       UIFilePathSelector *m_pEditorVideoCapturePath;
-       UIFilmContainer *m_pScrollerVideoCaptureScreens;
-       QIAdvancedSlider *m_pSliderAudioCaptureQuality;
-       QIAdvancedSlider *m_pSliderVideoScreenCount;
-       QIAdvancedSlider *m_pSliderVideoCaptureFrameRate;
-       QIAdvancedSlider *m_pSliderVideoCaptureQuality;
-       QITabWidget *m_pTabWidget;
-       QWidget *m_pContainerRemoteDisplay;
-       QWidget *m_pContainerRemoteDisplayOptions;
-       QWidget *m_pContainerVideoCapture;
-       QWidget *m_pContainerSliderVideoCaptureFrameRate;
-       QWidget *m_pContainerSliderVideoCaptureQuality;
-       QWidget *m_pContainerSliderAudioCaptureQuality;
-       QWidget *m_pTabVideo;
-       QWidget *m_pTabRemoteDisplay;
-       QWidget *m_pTabVideoCapture;
-       QGridLayout *m_pContainerLayoutSliderVideoCaptureQuality;
-       QStackedLayout *m_pLayout3D;
+        /** Holds the tab-widget instance. */
+        QITabWidget *m_pTabWidget;
+
+        /** Holds the 'Screen' tab instance. */
+        QWidget                    *m_pTabScreen;
+        /** Holds the video memory size label instance. */
+        QLabel                     *m_pLabelVideoMemorySize;
+        /** Holds the video memory size editor instance. */
+        UIVideoMemoryEditor        *m_pEditorVideoMemorySize;
+        /** Holds the monitor count label instance. */
+        QLabel                     *m_pLabelMonitorCount;
+        /** Holds the monitor count slider instance. */
+        QIAdvancedSlider           *m_pSliderMonitorCount;
+        /** Holds the monitor count spinbox instance. */
+        QSpinBox                   *m_pSpinboxMonitorCount;
+        /** Holds the monitor count min label instance. */
+        QLabel                     *m_pLabelMonitorCountMin;
+        /** Holds the monitor count max label instance. */
+        QLabel                     *m_pLabelMonitorCountMax;
+        /** Holds the scale factor label instance. */
+        QLabel                     *m_pLabelScaleFactor;
+        /** Holds the scale factor editor instance. */
+        UIScaleFactorEditor        *m_pEditorScaleFactor;
+        /** Holds the graphics controller label instance. */
+        QLabel                     *m_pLabelGraphicsController;
+        /** Holds the graphics controller editor instance. */
+        UIGraphicsControllerEditor *m_pEditorGraphicsController;
+        /** Holds the acceleration label instance. */
+        QLabel                     *m_pLabelAcceleration;
+        /** Holds the 3D check-box instance. */
+        QCheckBox                  *m_pCheckbox3D;
+
+        /** Holds the 'Remote Display' tab instance. */
+        QWidget   *m_pTabRemoteDisplay;
+        /** Holds the remote display check-box instance. */
+        QCheckBox *m_pCheckboxRemoteDisplay;
+        /** Holds the remote display settings widget instance. */
+        QWidget   *m_pWidgetRemoteDisplaySettings;
+        /** Holds the remote display port label instance. */
+        QLabel    *m_pLabelRemoteDisplayPort;
+        /** Holds the remote display port editor instance. */
+        QLineEdit *m_pEditorRemoteDisplayPort;
+        /** Holds the remote display port auth method label instance. */
+        QLabel    *m_pLabelRemoteDisplayAuthMethod;
+        /** Holds the remote display port auth method combo instance. */
+        QComboBox *m_pComboRemoteDisplayAuthMethod;
+        /** Holds the remote display timeout label instance. */
+        QLabel    *m_pLabelRemoteDisplayTimeout;
+        /** Holds the remote display timeout editor instance. */
+        QLineEdit *m_pEditorRemoteDisplayTimeout;
+        /** Holds the remote display options label instance. */
+        QLabel    *m_pLabelRemoteDisplayOptions;
+        /** Holds the remote display multiple connection check-box instance. */
+        QCheckBox *m_pCheckboxMultipleConn;
+
+        /** Holds the 'Recording' tab instance. */
+        QWidget            *m_pTabRecording;
+        /** Holds the recording check-box instance. */
+        QCheckBox          *m_pCheckboxRecording;
+        /** Holds the recording settings widget instance. */
+        QWidget            *m_pWidgetRecordingSettings;
+        /** Holds the recording mode label instance. */
+        QLabel             *m_pLabelRecordingMode;
+        /** Holds the recording mode combo instance. */
+        QComboBox          *m_pComboRecordingMode;
+        /** Holds the recording file path label instance. */
+        QLabel             *m_pLabelRecordingFilePath;
+        /** Holds the recording file path editor instance. */
+        UIFilePathSelector *m_pEditorRecordingFilePath;
+        /** Holds the recording frame size label instance. */
+        QLabel             *m_pLabelRecordingFrameSize;
+        /** Holds the recording frame size combo instance. */
+        QComboBox          *m_pComboRecordingFrameSize;
+        /** Holds the recording frame width spinbox instance. */
+        QSpinBox           *m_pSpinboxRecordingFrameWidth;
+        /** Holds the recording frame height spinbox instance. */
+        QSpinBox           *m_pSpinboxRecordingFrameHeight;
+        /** Holds the recording frame rate label instance. */
+        QLabel             *m_pLabelRecordingFrameRate;
+        /** Holds the recording frame rate settings widget instance. */
+        QWidget            *m_pWidgetRecordingFrameRateSettings;
+        /** Holds the recording frame rate slider instance. */
+        QIAdvancedSlider   *m_pSliderRecordingFrameRate;
+        /** Holds the recording frame rate spinbox instance. */
+        QSpinBox           *m_pSpinboxRecordingFrameRate;
+        /** Holds the recording frame rate min label instance. */
+        QLabel             *m_pLabelRecordingFrameRateMin;
+        /** Holds the recording frame rate max label instance. */
+        QLabel             *m_pLabelRecordingFrameRateMax;
+        /** Holds the recording video quality label instance. */
+        QLabel             *m_pLabelRecordingVideoQuality;
+        /** Holds the recording video quality settings widget instance. */
+        QWidget            *m_pWidgetRecordingVideoQualitySettings;
+        /** Holds the recording video quality slider instance. */
+        QIAdvancedSlider   *m_pSliderRecordingVideoQuality;
+        /** Holds the recording video quality spinbox instance. */
+        QSpinBox           *m_pSpinboxRecordingVideoQuality;
+        /** Holds the recording video quality min label instance. */
+        QLabel             *m_pLabelRecordingVideoQualityMin;
+        /** Holds the recording video quality med label instance. */
+        QLabel             *m_pLabelRecordingVideoQualityMed;
+        /** Holds the recording video quality max label instance. */
+        QLabel             *m_pLabelRecordingVideoQualityMax;
+        /** Holds the recording audio quality label instance. */
+        QLabel             *m_pLabelRecordingAudioQuality;
+        /** Holds the recording audio quality settings widget instance. */
+        QWidget            *m_pWidgetRecordingAudioQualitySettings;
+        /** Holds the recording audio quality slider instance. */
+        QIAdvancedSlider   *m_pSliderRecordingAudioQuality;
+        /** Holds the recording audio quality min label instance. */
+        QLabel             *m_pLabelRecordingAudioQualityMin;
+        /** Holds the recording audio quality med label instance. */
+        QLabel             *m_pLabelRecordingAudioQualityMed;
+        /** Holds the recording audio quality max label instance. */
+        QLabel             *m_pLabelRecordingAudioQualityMax;
+        /** Holds the recording size hint label instance. */
+        QLabel             *m_pLabelRecordingSizeHint;
+        /** Holds the recording screens label instance. */
+        QLabel             *m_pLabelRecordingScreens;
+        /** Holds the recording screens scroller instance. */
+        UIFilmContainer    *m_pScrollerRecordingScreens;
    /** @} */
 };
 
