@@ -1027,7 +1027,7 @@ cd "${MY_OUT_DIR}"
 #
 my_abs_dir "tools"
 if test -n "${MY_WINDOWS_HOST}"; then
-    MY_KMK_INVOCATION="${MY_ABS_DIR}/win.x86/bin/rexx.exe ${MY_ABS_DIR}/envSub.cmd kmk.exe"
+    MY_KMK_INVOCATION="cscript.exe /Nologo ${MY_ABS_DIR}/envSub.vbs --quiet -- kmk.exe"
 else
     MY_KMK_INVOCATION="/usr/bin/env LANG=C ${MY_ABS_DIR}/env.sh --quiet --no-wine kmk"
 fi
@@ -1196,7 +1196,12 @@ my_generate_project "misc"          "."                                     --be
     "Config.kmk" \
     "Makefile.kmk" \
     "src/Makefile.kmk" \
-    "src/VBox/Makefile.kmk"
+    "src/VBox/Makefile.kmk" \
+    "tools/env.sh" \
+    "tools/env.cmd" \
+    "tools/envSub.vbs" \
+    "tools/envSub.cmd" \
+    "tools/win/vbscript"
 
 
 # out/x.y/z/bin/sdk/bindings/xpcom
