@@ -652,7 +652,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             if (m_pLabelSnapshotFolder)
             {
                 m_pLabelSnapshotFolder->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutAdvanced->addWidget(m_pLabelSnapshotFolder, 0, 0, 1, 1);
+                pLayoutAdvanced->addWidget(m_pLabelSnapshotFolder, 0, 0);
             }
             /* Prepare snapshot folder editor: */
             m_pEditorSnapshotFolder = new UIFilePathSelector(m_pTabAdvanced);
@@ -668,7 +668,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             if (m_pLabelClipboard)
             {
                 m_pLabelClipboard->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutAdvanced->addWidget(m_pLabelClipboard, 1, 0, 1, 1);
+                pLayoutAdvanced->addWidget(m_pLabelClipboard, 1, 0);
             }
             /* Prepare clipboard combo: */
             m_pComboClipboard = new QComboBox(m_pTabAdvanced);
@@ -676,7 +676,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             {
                 if (m_pLabelClipboard)
                     m_pLabelClipboard->setBuddy(m_pComboClipboard);
-                pLayoutAdvanced->addWidget(m_pComboClipboard, 1, 1, 1, 1);
+                pLayoutAdvanced->addWidget(m_pComboClipboard, 1, 1);
             }
 
             /* Prepare drag&drop label: */
@@ -684,7 +684,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             if (m_pLabelDragAndDrop)
             {
                 m_pLabelDragAndDrop->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutAdvanced->addWidget(m_pLabelDragAndDrop, 2, 0, 1, 1);
+                pLayoutAdvanced->addWidget(m_pLabelDragAndDrop, 2, 0);
             }
             /* Prepare drag&drop combo: */
             m_pComboDragAndDrop = new QComboBox(m_pTabAdvanced);
@@ -692,7 +692,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             {
                 if (m_pLabelDragAndDrop)
                     m_pLabelDragAndDrop->setBuddy(m_pComboDragAndDrop);
-                pLayoutAdvanced->addWidget(m_pComboDragAndDrop, 2, 1, 1, 1);
+                pLayoutAdvanced->addWidget(m_pComboDragAndDrop, 2, 1);
             }
         }
 
@@ -748,7 +748,7 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
             /* Prepare 20-px shifting spacer: */
             QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
             if (pSpacerItem)
-                pLayoutEncryption->addItem(pSpacerItem, 1, 0, 1, 1);
+                pLayoutEncryption->addItem(pSpacerItem, 1, 0);
 
             /* Prepare encryption settings widget: */
             m_pWidgetEncryptionSettings = new QWidget(m_pTabEncryption);
@@ -765,7 +765,7 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                     if (m_pLabelCipher)
                     {
                         m_pLabelCipher->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-                        m_pLayoutEncryptionSettings->addWidget(m_pLabelCipher, 0, 0, 1, 1);
+                        m_pLayoutEncryptionSettings->addWidget(m_pLabelCipher, 0, 0);
                     }
                     /* Prepare encryption cipher combo: */
                     m_pComboCipher = new QComboBox(m_pWidgetEncryptionSettings);
@@ -777,7 +777,7 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                         m_pComboCipher->addItems(m_encryptionCiphers);
                         if (m_pLabelCipher)
                             m_pLabelCipher->setBuddy(m_pComboCipher);
-                        m_pLayoutEncryptionSettings->addWidget(m_pComboCipher, 0, 1, 1, 1);
+                        m_pLayoutEncryptionSettings->addWidget(m_pComboCipher, 0, 1);
                     }
 
                     /* Prepare encryption password label: */
@@ -785,7 +785,7 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                     if (m_pLabelEncryptionPassword)
                     {
                         m_pLabelEncryptionPassword->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-                        m_pLayoutEncryptionSettings->addWidget(m_pLabelEncryptionPassword, 1, 0, 1, 1);
+                        m_pLayoutEncryptionSettings->addWidget(m_pLabelEncryptionPassword, 1, 0);
                     }
                     /* Prepare encryption password editor: */
                     m_pEditorEncryptionPassword = new QLineEdit(m_pWidgetEncryptionSettings);
@@ -794,7 +794,7 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                         m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
                         if (m_pLabelEncryptionPassword)
                             m_pLabelEncryptionPassword->setBuddy(m_pEditorEncryptionPassword);
-                        m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPassword, 1, 1, 1, 1);
+                        m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPassword, 1, 1);
                     }
 
                     /* Prepare encryption confirm password label: */
@@ -802,7 +802,7 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                     if (m_pLabelEncryptionPasswordConfirm)
                     {
                         m_pLabelEncryptionPasswordConfirm->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-                        m_pLayoutEncryptionSettings->addWidget(m_pLabelEncryptionPasswordConfirm, 2, 0, 1, 1);
+                        m_pLayoutEncryptionSettings->addWidget(m_pLabelEncryptionPasswordConfirm, 2, 0);
                     }
                     /* Prepare encryption confirm password editor: */
                     m_pEditorEncryptionPasswordConfirm = new QLineEdit(m_pWidgetEncryptionSettings);
@@ -811,11 +811,11 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                         m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
                         if (m_pLabelEncryptionPasswordConfirm)
                             m_pLabelEncryptionPasswordConfirm->setBuddy(m_pEditorEncryptionPasswordConfirm);
-                        m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPasswordConfirm, 2, 1, 1, 1);
+                        m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPasswordConfirm, 2, 1);
                     }
                 }
 
-                pLayoutEncryption->addWidget(m_pWidgetEncryptionSettings, 1, 1, 1, 1);
+                pLayoutEncryption->addWidget(m_pWidgetEncryptionSettings, 1, 1);
             }
         }
 
@@ -859,7 +859,6 @@ void UIMachineSettingsGeneral::cleanup()
 
 void UIMachineSettingsGeneral::repopulateComboClipboardMode()
 {
-    /* Clipboard mode combo-box created in the .ui file. */
     AssertPtrReturnVoid(m_pComboClipboard);
     {
         /* Clear combo first of all: */
@@ -881,7 +880,6 @@ void UIMachineSettingsGeneral::repopulateComboClipboardMode()
 
 void UIMachineSettingsGeneral::repopulateComboDnDMode()
 {
-    /* DnD mode combo-box created in the .ui file. */
     AssertPtrReturnVoid(m_pComboDragAndDrop);
     {
         /* Clear combo first of all: */
