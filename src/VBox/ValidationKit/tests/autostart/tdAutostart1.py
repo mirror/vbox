@@ -215,7 +215,7 @@ class tdAutostartOs(object):
 
         return sVBoxCfg;
 
-    def _waitAdditionsIsRunning(self, oGuest):
+    def _waitAdditionsIsRunning(self, oGuest, fWaitTrayControl):
         """
         Check is the additions running
         """
@@ -227,8 +227,13 @@ class tdAutostartOs(object):
             if fRc:
                 eServiceStatus, _ = oGuest.getFacilityStatus(vboxcon.AdditionsFacilityType_VBoxService);
                 fRc = eServiceStatus == vboxcon.AdditionsFacilityStatus_Active;
-                if fRc:
+                if fRc and not fWaitTrayControl:
                     break;
+                if fRc:
+                    eServiceStatus, _ = oGuest.getFacilityStatus(vboxcon.AdditionsFacilityType_VBoxTrayClient);
+                    fRc = eServiceStatus == vboxcon.AdditionsFacilityStatus_Active;
+                    if fRc:
+                        break;
 
             self.oTestDriver.sleep(10);
             cAttempt += 1;
@@ -498,9 +503,9 @@ class tdAutostartOs(object):
                 oCurProgress = oGuestSession.copyFrom(sSrc, sDst, [0]);
         except:
             if not fIgnoreErrors:
-                reporter.errorXcpt('Download file exception for sSrc="%s":' % (self.sGuestAdditionsIso,));
+                reporter.errorXcpt('Download file exception for sSrc="%s":' % (sSrc,));
             else:
-                reporter.log('warning: Download file exception for sSrc="%s":' % (self.sGuestAdditionsIso,));
+                reporter.log('warning: Download file exception for sSrc="%s":' % (sSrc,));
             fRc = False;
         else:
             if oCurProgress is not None:
@@ -559,18 +564,19 @@ class tdAutostartOsLinux(tdAutostartOs):
         if not self.sTestBuild:
             raise base.GenError("VirtualBox install package not found");
 
-    def waitVMisReady(self, oSession):
+    def waitVMisReady(self, oSession, fWaitTrayControl):
         """
         Waits the VM is ready after start or reboot.
         Returns result (true or false) and guest session obtained
         """
+        _ = fWaitTrayControl;
         # Give the VM a time to reboot
         self.oTestDriver.sleep(30);
 
         # Waiting the VM is ready.
         # To do it, one will try to open the guest session and start the guest process in loop
 
-        if not self._waitAdditionsIsRunning(oSession.o.console.guest):
+        if not self._waitAdditionsIsRunning(oSession.o.console.guest, False):
             return (False, None);
 
         cAttempt = 0;
@@ -608,7 +614,7 @@ class tdAutostartOsLinux(tdAutostartOs):
             reporter.error('Calling the reboot utility failed');
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         if fRc:
-            (fRc, oGuestSession) = self.waitVMisReady(oSession);
+            (fRc, oGuestSession) = self.waitVMisReady(oSession, False);
 
         if not fRc:
             reporter.error('VM is not ready after reboot');
@@ -704,7 +710,7 @@ class tdAutostartOsLinux(tdAutostartOs):
                 # the actual installation finished. So just wait until the GA installed
                 fRc = self.closeSession(oGuestSession);
                 if fRc:
-                    (fRc, oGuestSession) = self.waitVMisReady(oSession);
+                    (fRc, oGuestSession) = self.waitVMisReady(oSession, False);
 
                 # Download log files.
                 # Ignore errors as all files above might not be present for whatever reason.
@@ -731,6 +737,7 @@ class tdAutostartOsLinux(tdAutostartOs):
             return False;
 
         reporter.testStart('Install Virtualbox into the guest VM');
+        reporter.log("Virtualbox install file: %s" % os.path.basename(self.sTestBuild));
 
         fRc = self.uploadFile(oGuestSession, self.sTestBuild,
                               '/tmp/' + os.path.basename(self.sTestBuild));
@@ -933,7 +940,7 @@ class tdAutostartOsWin(tdAutostartOs):
             raise base.GenError("VirtualBox install package not found");
         return;
 
-    def waitVMisReady(self, oSession):
+    def waitVMisReady(self, oSession, fWaitTrayControl, fWaitFacility = True):
         """
         Waits the VM is ready after start or reboot.
         """
@@ -943,7 +950,7 @@ class tdAutostartOsWin(tdAutostartOs):
         # Waiting the VM is ready.
         # To do it, one will try to open the guest session and start the guest process in loop
 
-        if not self._waitAdditionsIsRunning(oSession.o.console.guest):
+        if fWaitFacility and not self._waitAdditionsIsRunning(oSession.o.console.guest, fWaitTrayControl):
             return (False, None);
 
         cAttempt = 0;
@@ -958,7 +965,6 @@ class tdAutostartOsWin(tdAutostartOs):
                                                           False, False);
                 if fRc:
                     break;
-
                 self.closeSession(oGuestSession, False);
 
             self.oTestDriver.sleep(10);
@@ -980,7 +986,7 @@ class tdAutostartOsWin(tdAutostartOs):
             reporter.error('Calling the shutdown utility failed');
         fRc = self.closeSession(oGuestSession, True) and fRc and True; # pychecker hack.
         if fRc:
-            (fRc, oGuestSession) = self.waitVMisReady(oSession);
+            (fRc, oGuestSession) = self.waitVMisReady(oSession, True);
         if not fRc:
             reporter.error('VM is not ready after reboot');
         reporter.testDone();
@@ -1014,38 +1020,13 @@ class tdAutostartOsWin(tdAutostartOs):
         """
         Installs the Windows guest additions using the test execution service.
         """
-        #
-        # Delete relevant log files.
-        #
-        # Note! On some guests the files in question still can be locked by the OS, so ignore
-        #       deletion errors from the guest side (e.g. sharing violations) and just continue.
-        #
         reporter.testStart('Install Guest Additions');
         asLogFiles = [];
-        fHaveSetupApiDevLog = False;
-        if oVM.OSTypeId in ('WindowsNT4',):
-            sWinDir = 'C:/WinNT/';
-        else:
-            sWinDir = 'C:/Windows/';
-            asLogFiles = [sWinDir + 'setupapi.log', sWinDir + 'setupact.log', sWinDir + 'setuperr.log'];
-
-            # Apply The SetupAPI logging level so that we also get the (most verbose) setupapi.dev.log file.
-            ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
-            (fHaveSetupApiDevLog, _, _, _) = \
-                self.guestProcessExecute(oGuestSession, 'Enabling setupapi.dev.log',
-                                         60 * 1000, 'c:\\Windows\\System32\\reg.exe',
-                                         ['c:\\Windows\\System32\\reg.exe', 'add',
-                                          '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
-                                          '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'],
-                                         False, True);
-        for sFile in asLogFiles:
-            try:    oGuestSession.fsObjRemove(sFile);
-            except: pass;
 
         fRc = self.closeSession(oGuestSession, True); # pychecker hack.
 
         try:
-            oCurProgress = oSession.o.console.guest.updateGuestAdditions(self.sGuestAdditionsIso, None, None);
+            oCurProgress = oSession.o.console.guest.updateGuestAdditions(self.sGuestAdditionsIso, ['/l',], None);
         except:
             reporter.maybeErrXcpt(True, 'Updating Guest Additions exception for sSrc="%s":'
                                   % (self.sGuestAdditionsIso,));
@@ -1061,36 +1042,73 @@ class tdAutostartOsWin(tdAutostartOs):
             else:
                 fRc = reporter.error('No progress object returned');
 
-        if fRc:
-            fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox',
-                                            'vbox', 'password', 10 * 1000, True);
+        #---------------------------------------
+        #
+        ##
+        ## Install the public signing key.
+        ##
+        #
+        #self.oTestDriver.sleep(60 * 2);
+        #
+        #if oVM.OSTypeId not in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
+        #    (fRc, _, _, _) = \
+        #        self.guestProcessExecute(oGuestSession, 'Installing  SHA1 certificate',
+        #                                 60 * 1000, 'D:\\cert\\VBoxCertUtil.exe',
+        #                                 ['D:\\cert\\VBoxCertUtil.exe', 'add-trusted-publisher',
+        #                                  'D:\\cert\\vbox-sha1.cer'],
+        #                                 False, True);
+        #    if not fRc:
+        #        reporter.error('Error installing SHA1 certificate');
+        #    else:
+        #        (fRc, _, _, _) = \
+        #            self.guestProcessExecute(oGuestSession, 'Installing  SHA1 certificate',
+        #                                     60 * 1000, 'D:\\cert\\VBoxCertUtil.exe',
+        #                                     ['D:\\cert\\VBoxCertUtil.exe', 'add-trusted-publisher',
+        #                                      'D:\\cert\\vbox-sha256.cer'],
+        #                                     False, True);
+        #        if not fRc:
+        #            reporter.error('Error installing SHA256 certificate');
+        #
+        #(fRc, _, _, _) = \
+        #        self.guestProcessExecute(oGuestSession, 'Installing  GA',
+        #                                 60 * 1000, 'D:\\VBoxWindowsAdditions.exe',
+        #                                 ['D:\\VBoxWindowsAdditions.exe', '/S', '/l',
+        #                                  '/no_vboxservice_exit'],
+        #                                 False, True);
+        #
+        #if fRc:
+        #    # Due to the GA updates as separate process the above function returns before
+        #    # the actual installation finished. So just wait until the GA installed
+        #    fRc = self.closeSession(oGuestSession, True);
+        #    if fRc:
+        #        (fRc, oGuestSession) = self.waitVMisReady(oSession, False, False);
+        #---------------------------------------
+
+        # Store the result and try download logs anyway.
+        fGaRc = fRc;
+        fRc, oGuestSession = self.createSession(oSession, 'Session for user: vbox',
+                                        'vbox', 'password', 10 * 1000, True);
+        if fRc is True:
+            (fRc, oGuestSession) = self.rebootVMAndCheckReady(oSession, oGuestSession);
             if fRc is True:
-                (fRc, oGuestSession) = self.rebootVMAndCheckReady(oSession, oGuestSession);
-                if fRc is True:
-                    # Add the Windows Guest Additions installer files to the files we want to download
-                    # from the guest.
-                    sGuestAddsDir = 'C:/Program Files/Oracle/VirtualBox Guest Additions/';
-                    asLogFiles.append(sGuestAddsDir + 'install.log');
-                    # Note: There won't be a install_ui.log because of the silent installation.
-                    asLogFiles.append(sGuestAddsDir + 'install_drivers.log');
-                    asLogFiles.append('C:/Windows/setupapi.log');
+                # Add the Windows Guest Additions installer files to the files we want to download
+                # from the guest.
+                sGuestAddsDir = 'C:/Program Files/Oracle/VirtualBox Guest Additions/';
+                asLogFiles.append(sGuestAddsDir + 'install.log');
+                # Note: There won't be a install_ui.log because of the silent installation.
+                asLogFiles.append(sGuestAddsDir + 'install_drivers.log');
 
-                    # Note: setupapi.dev.log only is available since Windows 2000.
-                    if fHaveSetupApiDevLog:
-                        asLogFiles.append('C:/Windows/setupapi.dev.log');
-
-                    #
-                    # Download log files.
-                    # Ignore errors as all files above might not be present (or in different locations)
-                    # on different Windows guests.
-                    #
-                    self.downloadFiles(oGuestSession, asLogFiles, fIgnoreErrors = True);
-                else:
-                    reporter.error('Reboot after installing GuestAdditions failed');
+                # Download log files.
+                # Ignore errors as all files above might not be present (or in different locations)
+                # on different Windows guests.
+                #
+                self.downloadFiles(oGuestSession, asLogFiles, fIgnoreErrors = True);
             else:
-                reporter.error('Create session for user vbox after GA updating failed');
+                reporter.error('Reboot after installing GuestAdditions failed');
+        else:
+            reporter.error('Create session for user vbox after GA updating failed');
         reporter.testDone();
-        return (fRc, oGuestSession);
+        return (fRc and fGaRc, oGuestSession);
 
     def installVirtualBox(self, oGuestSession):
         """
@@ -1100,6 +1118,7 @@ class tdAutostartOsWin(tdAutostartOs):
         if self.sTestBuild is None:
             return False;
         reporter.testStart('Install Virtualbox into the guest VM');
+        reporter.log("Virtualbox install file: %s" % os.path.basename(self.sTestBuild));
         # Used windows image already contains the C:\Temp
         fRc = self.uploadFile(oGuestSession, self.sTestBuild,
                               'C:\\Temp\\' + os.path.basename(self.sTestBuild));
@@ -1107,20 +1126,37 @@ class tdAutostartOsWin(tdAutostartOs):
             reporter.error('Upload the installing into guest VM failed');
         else:
             if self.sTestBuild.endswith('.msi'):
+                sLogFile = 'C:\\Temp\\VBoxInstallLog.txt';
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
                                                         240 * 1000, 'C:\\Windows\\System32\\msiexec.exe',
-                                                        ['msiexec', '/quiet', '/i',
-                                                         'C:\\Temp\\' + os.path.basename(self.sTestBuild)],
+                                                        ['msiexec', '/quiet', '/norestart', '/i',
+                                                         'C:\\Temp\\' + os.path.basename(self.sTestBuild),
+                                                        '/lv', sLogFile],
                                                         False, True);
                 if not fRc:
                     reporter.error('Installing the VBox from msi installer failed');
             else:
+                sLogFile = 'C:\\Temp\\Virtualbox\\VBoxInstallLog.txt';
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
                                                         240 * 1000, 'C:\\Temp\\' + os.path.basename(self.sTestBuild),
-                                                        ['C:\\Temp\\' + os.path.basename(self.sTestBuild), '--silent'],
+                                                        ['C:\\Temp\\' + os.path.basename(self.sTestBuild), '-vvvv',
+                                                         '--silent', '--logging',
+                                                         '--msiparams', 'REBOOT=ReallySuppress'],
                                                         False, True);
                 if not fRc:
                     reporter.error('Installing the VBox failed');
+                else:
+                    (_, _, _, aBuf) = self.guestProcessExecute(oGuestSession, 'Check installation',
+                                                               240 * 1000, 'C:\\Windows\\System32\\cmd.exe',
+                                                               ['c:\\Windows\\System32\\cmd.exe', '/c',
+                                                                'dir', 'C:\\Program Files\\Oracle\\VirtualBox\\*.*'],
+                                                               True, True);
+                    reporter.log('Content of  VirtualBxox folder:');
+                    reporter.log(str(aBuf));
+
+            asLogFiles = [sLogFile,];
+            self.downloadFiles(oGuestSession, asLogFiles, fIgnoreErrors = True);
+
         reporter.testDone();
         return fRc;
 
@@ -1341,10 +1377,6 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         reporter.log('      The list of directories with VirtualBox distros. The option is mandatory');
         reporter.log('      without any default value. The test raises an exception if the');
         reporter.log('      option is not specified. At least, one directory should be pointed.');
-        reporter.log('  --guest-additions-iso <path/to/iso>');
-        reporter.log('      The path to fresh VirtualBox Guest Additions iso. The option is');
-        reporter.log('      mandatory without any default value. The test raises an exception');
-        reporter.log('      if the option is not specified.');
         reporter.log('  --test-vms      <vm1[:vm2[:...]]>');
         reporter.log('      Test the specified VMs in the given order. Use this to change');
         reporter.log('      the execution order or limit the choice of VMs');
@@ -1358,10 +1390,6 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--test-build-dirs" takes a paths argument');
             self.asTestBuildDirs = asArgs[iArg].split(',');
-        elif asArgs[iArg] == '--guest-additions-iso':
-            iArg += 1;
-            if iArg >= len(asArgs): raise base.InvalidOption('The "--guest-additions-iso" takes a path or url to iso argument');
-            self.sGuestAdditionsIso = asArgs[iArg];
         elif asArgs[iArg] == '--test-vms':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--test-vms" takes colon separated list');
@@ -1385,9 +1413,6 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         # Remove skipped VMs from the test list.
         if self.asTestBuildDirs is None:
             raise base.InvalidOption('--test-build-dirs is not specified')
-        if self.sGuestAdditionsIso is None:
-            raise base.InvalidOption('--guest-additions-iso is not specified')
-
         for sVM in self.asSkipVMs:
             try:    self.asTestVMs.remove(sVM);
             except: pass;
@@ -1413,14 +1438,6 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         # Make sure vboxapi has been imported so we can use the constants.
         if not self.importVBoxApi():
             return False;
-
-        # Download VBoxGuestAdditions.iso before work
-        sDestinationIso = os.path.join(self.sScratchPath, 'VBoxGuestAdditions.iso');
-        utils.noxcptDeleteFile(sDestinationIso);
-        if not downloadFile(self.sGuestAdditionsIso, sDestinationIso, '', reporter.log, reporter.error):
-            raise base.GenError("Could not download VBoxGuestAdditions.iso");
-        self.sGuestAdditionsIso = sDestinationIso;
-
         #
         # Configure the VMs we're going to use.
         #
@@ -1433,7 +1450,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
             oVM = self.createTestVM(self.ksOsLinux, 1, '6.0/ub1804piglit/ub1804piglit.vdi', sKind = 'Ubuntu_64', \
                                     fIoApic = True, eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
                                     eNic0Type = vboxcon.NetworkAdapterType_Am79C973, cMbRam = 2048, \
-                                    cCpus = 2, sDvdImage = self.sGuestAdditionsIso);
+                                    cCpus = 2, sDvdImage = self.getGuestAdditionsIso());
             if oVM is None:
                 return False;
         # Windows VMs
@@ -1443,7 +1460,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
             oVM = self.createTestVM(self.ksOsWindows, 1, '6.0/windows7piglit/windows7piglit.vdi', sKind = 'Windows7_64', \
                                     fIoApic = True, eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
                                     sHddControllerType = "SATA Controller", cMbRam = 2048, fPae = True, cCpus = 2, \
-                                    sDvdImage = self.sGuestAdditionsIso);
+                                    sDvdImage = self.getGuestAdditionsIso());
             if oVM is None:
                 return False;
 
@@ -1491,16 +1508,16 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         oGuestOsHlp = None              # type: tdAutostartOs
         if sVmName == self.ksOsLinux:
             oGuestOsHlp = tdAutostartOsLinux(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
-                                             self.sGuestAdditionsIso);
+                                             self.getGuestAdditionsIso());
         elif sVmName == self.ksOsSolaris:
             oGuestOsHlp = tdAutostartOsSolaris(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
-                                               self.sGuestAdditionsIso);
+                                               self.getGuestAdditionsIso());
         elif sVmName == self.ksOsDarwin:
             oGuestOsHlp = tdAutostartOsDarwin(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
-                                              self.sGuestAdditionsIso);
+                                              self.getGuestAdditionsIso());
         elif sVmName == self.ksOsWindows:
             oGuestOsHlp = tdAutostartOsWin(self, self.asTestBuildDirs, self.fpApiVer, # pylint: disable=redefined-variable-type
-                                           self.sGuestAdditionsIso);
+                                           self.getGuestAdditionsIso());
 
         sTestUserAllow = 'test1';
         sTestUserDeny = 'test2';
@@ -1508,7 +1525,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
 
         if oGuestOsHlp is not None:
             #wait the VM is ready after starting
-            (fRc, oGuestSession) = oGuestOsHlp.waitVMisReady(oSession);
+            (fRc, oGuestSession) = oGuestOsHlp.waitVMisReady(oSession, True);
             #install fresh guest additions
             if fRc:
                 (fRc, oGuestSession) = oGuestOsHlp.installAdditions(oSession, oGuestSession, oVM);
