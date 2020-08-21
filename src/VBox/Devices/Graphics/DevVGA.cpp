@@ -5531,10 +5531,15 @@ static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPC
     Log(("vgaR3PciIORegionVRamMapUnmap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
     RT_NOREF(pPciDev, cb);
 
+# ifdef VBOX_WITH_VMSVGA
     AssertReturn(   iRegion == pThis->pciRegions.iVRAM
-                 && (   enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH
-                     || (enmType == PCI_ADDRESS_SPACE_MEM && pThis->fVMSVGAEnabled && pThis->fStateLoaded))
-                 , VERR_INTERNAL_ERROR);
+                 && (    enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH
+                     || (enmType == PCI_ADDRESS_SPACE_MEM && pThis->fVMSVGAEnabled && pThis->fStateLoaded)), VERR_INTERNAL_ERROR);
+# else
+    AssertReturn(   iRegion == pThis->pciRegions.iVRAM
+                 && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
+# endif
+
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     /* Note! We cannot take the device lock here as that would create a lock order
@@ -7318,8 +7323,8 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
      * Map the first page of the VMSVGA FIFO into this context (not raw-mode).
      * We currently only access SVGA_FIFO_MIN, SVGA_FIFO_PITCHLOCK, and SVGA_FIFO_BUSY.
      */
-    AssertCompile((RT_MAX(SVGA_FIFO_MIN, RT_MAX(SVGA_FIFO_PITCHLOCK, SVGA_FIFO_BUSY)) + 1) * sizeof(uint32_t) < PAGE_SIZE);
 # if defined(VBOX_WITH_VMSVGA) && !defined(IN_RC)
+    AssertCompile((RT_MAX(SVGA_FIFO_MIN, RT_MAX(SVGA_FIFO_PITCHLOCK, SVGA_FIFO_BUSY)) + 1) * sizeof(uint32_t) < PAGE_SIZE);
     if (pThis->fVMSVGAEnabled)
     {
         rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VmSvgaFifo, 0 /* off */, PAGE_SIZE,
