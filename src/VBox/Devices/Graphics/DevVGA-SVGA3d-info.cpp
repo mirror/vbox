@@ -1817,58 +1817,58 @@ static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int
 #ifdef RT_OS_WINDOWS
     if (cbPixel == 4)
     {
-        BITMAPV4HEADER bh;
-        RT_ZERO(bh);
-        bh.bV4Size          = sizeof(bh);
-        bh.bV4Width         = w;
-        bh.bV4Height        = -h;
-        bh.bV4Planes        = 1;
-        bh.bV4BitCount      = 32;
-        bh.bV4V4Compression = BI_BITFIELDS;
-        bh.bV4SizeImage     = cbBitmap;
-        bh.bV4XPelsPerMeter = 2835;
-        bh.bV4YPelsPerMeter = 2835;
-        // bh.bV4ClrUsed       = 0;
-        // bh.bV4ClrImportant  = 0;
-        bh.bV4RedMask       = 0x00ff0000;
-        bh.bV4GreenMask     = 0x0000ff00;
-        bh.bV4BlueMask      = 0x000000ff;
-        bh.bV4AlphaMask     = 0xff000000;
-        bh.bV4CSType        = LCS_WINDOWS_COLOR_SPACE;
-        // bh.bV4Endpoints     = {0};
-        // bh.bV4GammaRed      = 0;
-        // bh.bV4GammaGreen    = 0;
-        // bh.bV4GammaBlue     = 0;
+        BMPFILEHDR fileHdr;
+        RT_ZERO(fileHdr);
+        fileHdr.uType       = BMP_HDR_MAGIC;
+        fileHdr.cbFileSize = sizeof(fileHdr) + sizeof(BITMAPV4HEADER) + cbBitmap;
+        fileHdr.offBits    = sizeof(fileHdr) + sizeof(BITMAPV4HEADER);
 
-        BMPINFO bf;
-        RT_ZERO(bf);
-        bf.Type     = BMP_HDR_MAGIC;
-        bf.FileSize = sizeof(bf) + sizeof(bh) + cbBitmap;
-        bf.Offset   = sizeof(bf) + sizeof(bh);
+        BITMAPV4HEADER hdrV4;
+        RT_ZERO(hdrV4);
+        hdrV4.bV4Size          = sizeof(hdrV4);
+        hdrV4.bV4Width         = w;
+        hdrV4.bV4Height        = -h;
+        hdrV4.bV4Planes        = 1;
+        hdrV4.bV4BitCount      = 32;
+        hdrV4.bV4V4Compression = BI_BITFIELDS;
+        hdrV4.bV4SizeImage     = cbBitmap;
+        hdrV4.bV4XPelsPerMeter = 2835;
+        hdrV4.bV4YPelsPerMeter = 2835;
+        // hdrV4.bV4ClrUsed       = 0;
+        // hdrV4.bV4ClrImportant  = 0;
+        hdrV4.bV4RedMask       = 0x00ff0000;
+        hdrV4.bV4GreenMask     = 0x0000ff00;
+        hdrV4.bV4BlueMask      = 0x000000ff;
+        hdrV4.bV4AlphaMask     = 0xff000000;
+        hdrV4.bV4CSType        = LCS_WINDOWS_COLOR_SPACE;
+        // hdrV4.bV4Endpoints     = {0};
+        // hdrV4.bV4GammaRed      = 0;
+        // hdrV4.bV4GammaGreen    = 0;
+        // hdrV4.bV4GammaBlue     = 0;
 
-        fwrite(&bf, 1, sizeof(bf), f);
-        fwrite(&bh, 1, sizeof(bh), f);
+        fwrite(&fileHdr, 1, sizeof(fileHdr), f);
+        fwrite(&hdrV4, 1, sizeof(hdrV4), f);
     }
     else
 #endif
     {
-        BMPINFO bf;
-        RT_ZERO(bf);
-        bf.Type     = BMP_HDR_MAGIC;
-        bf.FileSize = sizeof(BMPINFO) + sizeof(WINHDR) + cbBitmap;
-        bf.Offset   = sizeof(BMPINFO) + sizeof(WINHDR);
+        BMPFILEHDR fileHdr;
+        RT_ZERO(fileHdr);
+        fileHdr.uType      = BMP_HDR_MAGIC;
+        fileHdr.cbFileSize = sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR) + cbBitmap;
+        fileHdr.offBits    = sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR);
 
-        WINHDR bi;
-        RT_ZERO(bi);
-        bi.Size      = sizeof(bi);
-        bi.Width     = w;
-        bi.Height    = -h;
-        bi.Planes    = 1;
-        bi.BitCount  = 32;
-        bi.SizeImage = cbBitmap;
+        BMPWIN3XINFOHDR coreHdr;
+        RT_ZERO(coreHdr);
+        coreHdr.cbSize      = sizeof(coreHdr);
+        coreHdr.uWidth      = w;
+        coreHdr.uHeight     = -h;
+        coreHdr.cPlanes     = 1;
+        coreHdr.cBits       = 32;
+        coreHdr.cbSizeImage = cbBitmap;
 
-        fwrite(&bf, 1, sizeof(bf), f);
-        fwrite(&bi, 1, sizeof(bi), f);
+        fwrite(&fileHdr, 1, sizeof(fileHdr), f);
+        fwrite(&coreHdr, 1, sizeof(coreHdr), f);
     }
 
     if (cbPixel == 4)

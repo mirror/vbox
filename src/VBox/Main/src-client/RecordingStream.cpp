@@ -636,23 +636,23 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
         uint32_t offDst = (destY * this->ScreenSettings.Video.ulWidth + destX) * uBytesPerPixel;
 
 #ifdef VBOX_RECORDING_DUMP
-        BMPINFO bmpHdr;
-        RT_ZERO(bmpHdr);
+        BMPFILEHDR fileHdr;
+        RT_ZERO(fileHdr);
 
-        WINHDR bmpDIBHdr;
-        RT_ZERO(bmpDIBHdr);
+        BMPWIN3XINFOHDR coreHdr;
+        RT_ZERO(coreHdr);
 
-        bmpHdr.Type     = BMP_HDR_MAGIC;
-        bmpHdr.FileSize = (uint32_t)(sizeof(BMPINFO) + sizeof(WINHDR) + (w * h * uBytesPerPixel));
-        bmpHdr.Offset   = (uint32_t)(sizeof(BMPINFO) + sizeof(WINHDR));
+        fileHdr.uType       = BMP_HDR_MAGIC;
+        fileHdr.cbFileSize = (uint32_t)(sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR) + (w * h * uBytesPerPixel));
+        fileHdr.offBits    = (uint32_t)(sizeof(BMPFILEHDR) + sizeof(BMPWIN3XINFOHDR));
 
-        bmpDIBHdr.Size          = sizeof(WINHDR);
-        bmpDIBHdr.Width         = w;
-        bmpDIBHdr.Height        = h;
-        bmpDIBHdr.Planes        = 1;
-        bmpDIBHdr.BitCount      = uBPP;
-        bmpDIBHdr.XPelsPerMeter = 5000;
-        bmpDIBHdr.YPelsPerMeter = 5000;
+        coreHdr.cbSize         = sizeof(BMPWIN3XINFOHDR);
+        coreHdr.uWidth         = w;
+        coreHdr.uHeight        = h;
+        coreHdr.cPlanes        = 1;
+        coreHdr.cBits          = uBPP;
+        coreHdr.uXPelsPerMeter = 5000;
+        coreHdr.uYPelsPerMeter = 5000;
 
         char szFileName[RTPATH_MAX];
         RTStrPrintf2(szFileName, sizeof(szFileName), "/tmp/VideoRecFrame-%RU32.bmp", this->uScreenID);
@@ -662,8 +662,8 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
                              RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc2))
         {
-            RTFileWrite(fh, &bmpHdr,    sizeof(bmpHdr),    NULL);
-            RTFileWrite(fh, &bmpDIBHdr, sizeof(bmpDIBHdr), NULL);
+            RTFileWrite(fh, &fileHdr,    sizeof(fileHdr),    NULL);
+            RTFileWrite(fh, &coreHdr, sizeof(coreHdr), NULL);
         }
 #endif
         Assert(pFrame->cbRGBBuf >= w * h * uBytesPerPixel);

@@ -900,35 +900,36 @@ int ShClDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDest, size_t *pcbDes
     AssertPtrReturn(ppvDest, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbDest, VERR_INVALID_POINTER);
 
-    PWINHDR pBmpWinHdr = (PWINHDR)pvSrc;
+    PBMPWIN3XINFOHDR coreHdr = (PBMPWIN3XINFOHDR)pvSrc;
     /** @todo Support all the many versions of the DIB headers. */
-    if (   cbSrc < sizeof(WINHDR)
-        || RT_LE2H_U32(pBmpWinHdr->Size) < sizeof(WINHDR)
-        || RT_LE2H_U32(pBmpWinHdr->Size) != sizeof(WINHDR))
+    if (   cbSrc < sizeof(BMPWIN3XINFOHDR)
+        || RT_LE2H_U32(coreHdr->cbSize) < sizeof(BMPWIN3XINFOHDR)
+        || RT_LE2H_U32(coreHdr->cbSize) != sizeof(BMPWIN3XINFOHDR))
     {
         return VERR_INVALID_PARAMETER;
     }
 
-    size_t offPixel = sizeof(BMPINFO)
-                    + RT_LE2H_U32(pBmpWinHdr->Size)
-                    + RT_LE2H_U32(pBmpWinHdr->ClrUsed) * sizeof(uint32_t);
+    size_t offPixel = sizeof(BMPFILEHDR)
+                    + RT_LE2H_U32(coreHdr->cbSize)
+                    + RT_LE2H_U32(coreHdr->cClrUsed) * sizeof(uint32_t);
     if (cbSrc < offPixel)
         return VERR_INVALID_PARAMETER;
 
-    size_t cbDst = sizeof(BMPINFO) + cbSrc;
+    size_t cbDst = sizeof(BMPFILEHDR) + cbSrc;
 
     void *pvDest = RTMemAlloc(cbDst);
     if (!pvDest)
         return VERR_NO_MEMORY;
 
-    PBMPINFO pBmpHdr = (PBMPINFO)pvDest;
+    PBMPFILEHDR fileHdr = (PBMPFILEHDR)pvDest;
 
-    pBmpHdr->Type        = BMP_HDR_MAGIC;
-    pBmpHdr->FileSize    = (uint32_t)RT_H2LE_U32(cbDst);
-    pBmpHdr->Reserved1   = pBmpHdr->Reserved2 = 0;
-    pBmpHdr->Offset      = (uint32_t)RT_H2LE_U32(offPixel);
+    fileHdr->uType       = BMP_HDR_MAGIC;
+    fileHdr->cbFileSize  = (uint32_t)RT_H2LE_U32(cbDst);
+    fileHdr->Reserved1   = 0;
+    fileHdr->Reserved2   = 0;
+    fileHdr->offBits     = (uint32_t)RT_H2LE_U32(offPixel);
 
-    memcpy((uint8_t *)pvDest + sizeof(BMPINFO), pvSrc, cbSrc);
+    memcpy((uint8_t *)pvDest + sizeof(BMPFILEHDR), pvSrc, cbSrc);
 
     *ppvDest = pvDest;
     *pcbDest = cbDst;
@@ -944,16 +945,16 @@ int ShClBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest, size_t 
     AssertPtrReturn(ppvDest, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbDest, VERR_INVALID_POINTER);
 
-    PBMPINFO pBmpHdr = (PBMPINFO)pvSrc;
-    if (   cbSrc < sizeof(BMPINFO)
-        || pBmpHdr->Type != BMP_HDR_MAGIC
-        || RT_LE2H_U32(pBmpHdr->FileSize) != cbSrc)
+    PBMPFILEHDR pBmpHdr = (PBMPFILEHDR)pvSrc;
+    if (   cbSrc < sizeof(BMPFILEHDR)
+        || pBmpHdr->uType != BMP_HDR_MAGIC
+        || RT_LE2H_U32(pBmpHdr->cbFileSize) != cbSrc)
     {
         return VERR_INVALID_PARAMETER;
     }
 
-    *ppvDest = ((uint8_t *)pvSrc) + sizeof(BMPINFO);
-    *pcbDest = cbSrc - sizeof(BMPINFO);
+    *ppvDest = ((uint8_t *)pvSrc) + sizeof(BMPFILEHDR);
+    *pcbDest = cbSrc - sizeof(BMPFILEHDR);
 
     return VINF_SUCCESS;
 }

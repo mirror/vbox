@@ -33,136 +33,143 @@
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>
 
+/** @name BMP header sizes (in bytes).
+ * @{ . */
+#define BMP_HDR_SIZE_FILE      14
+#define BMP_HDR_SIZE_OS21      12
+#define BMP_HDR_SIZE_OS22      64
+#define BMP_HDR_SIZE_WIN3X     40
+/** @} . */
+
 #pragma pack(1)
 
-/** BMP File Format Bitmap Header. */
-typedef struct
+/** BMP format file header. */
+typedef struct BMPFILEHDR
 {
-    /** File Type Identifier. */
-    uint16_t      Type;
-    /** Size of File. */
-    uint32_t      FileSize;
+    /** File type identifier ("magic"). */
+    uint16_t      uType;
+    /** Size of file in bytes. */
+    uint32_t      cbFileSize;
     /** Reserved (should be 0). */
     uint16_t      Reserved1;
     /** Reserved (should be 0). */
     uint16_t      Reserved2;
-    /** Offset to bitmap data. */
-    uint32_t      Offset;
-} BMPINFO;
-AssertCompileSize(BMPINFO, 14);
-/** Pointer to a bitmap header. */
-typedef BMPINFO *PBMPINFO;
+    /** Offset (in bytes) to bitmap data. */
+    uint32_t      offBits;
+} BMPFILEHDR;
+AssertCompileSize(BMPFILEHDR, BMP_HDR_SIZE_FILE);
+/** Pointer to a BMP format file header. */
+typedef BMPFILEHDR *PBMPFILEHDR;
 
-/** OS/2 1.x Information Header Format. */
-typedef struct
+/** OS/2 1.x BMP core header,
+ *  also known as BITMAPCOREHEADER. */
+typedef struct BMPOS2COREHDR
 {
-    /** Size of Remaining Header. */
-    uint32_t      Size;
-    /** Width of Bitmap in Pixels. */
-    uint16_t      Width;
-    /** Height of Bitmap in Pixels. */
-    uint16_t      Height;
-    /** Number of Planes. */
-    uint16_t      Planes;
-    /** Color Bits Per Pixel. */
-    uint16_t      BitCount;
-} OS2HDR;
-AssertCompileSize(OS2HDR, 12);
-/** Pointer to a OS/2 1.x header format. */
-typedef OS2HDR *POS2HDR;
+    /** Size (in bytes) of remaining header. */
+    uint32_t      cbSize;
+    /** Width of bitmap in pixels. */
+    uint16_t      uWidth;
+    /** Height of bitmap in pixels. */
+    uint16_t      uHeight;
+    /** Number of planes. */
+    uint16_t      cPlanes;
+    /** Color bits per pixel. */
+    uint16_t      cBits;
+} BMPOS2COREHDR;
+AssertCompileSize(BMPOS2COREHDR, BMP_HDR_SIZE_OS21);
+/** Pointer to a OS/2 1.x BMP core header. */
+typedef BMPOS2COREHDR *PBMPOS2COREHDR;
 
-/** OS/2 2.0 Information Header Format. */
-typedef struct
+/** OS/2 2.0 BMP core header, version 2,
+ *  also known as BITMAPCOREHEADER2. */
+typedef struct BMPOS2COREHDR2
 {
-    /** Size of Remaining Header. */
-    uint32_t      Size;
-    /** Width of Bitmap in Pixels. */
-    uint32_t      Width;
-    /** Height of Bitmap in Pixels. */
-    uint32_t      Height;
-    /** Number of Planes. */
-    uint16_t      Planes;
-    /** Color Bits Per Pixel. */
-    uint16_t      BitCount;
-    /** Compression Scheme (0=none). */
-    uint32_t      Compression;
+    /** Size (in bytes) of remaining header. */
+    uint32_t      cbSize;
+    /** Width of bitmap in pixels. */
+    uint32_t      uWidth;
+    /** Height of bitmap in pixels. */
+    uint32_t      uHeight;
+    /** Number of planes. */
+    uint16_t      cPlanes;
+    /** Color bits per pixel. */
+    uint16_t      cBits;
+    /** Compression scheme of type BMP_COMPRESSION_TYPE. */
+    uint32_t      enmCompression;
     /** Size of bitmap in bytes. */
-    uint32_t      SizeImage;
-    /** Horz. Resolution in Pixels/Meter. */
-    uint32_t      XPelsPerMeter;
-    /** Vert. Resolution in Pixels/Meter. */
-    uint32_t      YPelsPerMeter;
-    /** Number of Colors in Color Table. */
-    uint32_t      ClrUsed;
-    /** Number of Important Colors. */
-    uint32_t      ClrImportant;
-    /** Resolution Measurement Used. */
-    uint16_t      Units;
-    /** Reserved Fields (always 0). */
+    uint32_t      cbSizeImage;
+    /** Horz. resolution in pixels/meter. */
+    uint32_t      uXPelsPerMeter;
+    /** Vert. resolution in pixels/meter. */
+    uint32_t      uYPelsPerMeter;
+    /** Number of colors in color table. */
+    uint32_t      cClrUsed;
+    /** Number of important colors. */
+    uint32_t      cClrImportant;
+    /** Resolution measurement Used. */
+    uint16_t      uUnits;
+    /** Reserved fields (always 0). */
     uint16_t      Reserved;
-    /** Orientation of Bitmap. */
-    uint16_t      Recording;
-    /** Halftone Algorithm Used on Image. */
-    uint16_t      Rendering;
-    /** Halftone Algorithm Data. */
-    uint32_t      Size1;
-    /** Halftone Algorithm Data. */
-    uint32_t      Size2;
-    /** Color Table Format (always 0). */
-    uint32_t      ColorEncoding;
-    /** Misc. Field for Application Use  . */
-    uint32_t      Identifier;
-} OS22HDR;
-AssertCompileSize(OS22HDR, 64);
-/** Pointer to a OS/2 2.0 header format . */
-typedef OS22HDR *POS22HDR;
+    /** Orientation of bitmap. */
+    uint16_t      uRecording;
+    /** Halftone algorithm used on image. */
+    uint16_t      enmHalftone;
+    /** Halftone algorithm data. */
+    uint32_t      uHalftoneParm1;
+    /** Halftone algorithm data. */
+    uint32_t      uHalftoneParm2;
+    /** Color table format (always 0). */
+    uint32_t      uColorEncoding;
+    /** Misc. field for application use  . */
+    uint32_t      uIdentifier;
+} BMPOS2COREHDR2;
+AssertCompileSize(BMPOS2COREHDR2, BMP_HDR_SIZE_OS22);
+/** Pointer to an OS/2 2.0 BMP core header version 2. */
+typedef BMPOS2COREHDR2 *PBMPOS2COREHDR2;
 
-/** Windows 3.x Information Header Format. */
-typedef struct
+/** Windows 3.x BMP information header Format. */
+typedef struct BMPWIN3XINFOHDR
 {
-    /** Size of Remaining Header. */
-    uint32_t      Size;
-    /** Width of Bitmap in Pixels. */
-    uint32_t      Width;
-    /** Height of Bitmap in Pixels. */
-    uint32_t      Height;
-    /** Number of Planes. */
-    uint16_t      Planes;
-    /** Bits Per Pixel. */
-    uint16_t      BitCount;
-    /** Compression Scheme (0=none). */
-    uint32_t      Compression;
+    /** Size (in bytes) of remaining header. */
+    uint32_t      cbSize;
+    /** Width of bitmap in pixels. */
+    uint32_t      uWidth;
+    /** Height of bitmap in pixels. */
+    uint32_t      uHeight;
+    /** Number of planes. */
+    uint16_t      cPlanes;
+    /** Color bits per pixel. */
+    uint16_t      cBits;
+    /** Compression scheme of type BMP_COMPRESSION_TYPE. */
+    uint32_t      enmCompression;
     /** Size of bitmap in bytes. */
-    uint32_t      SizeImage;
-    /** Horz. Resolution in Pixels/Meter. */
-    uint32_t      XPelsPerMeter;
-    /** Vert. Resolution in Pixels/Meter. */
-    uint32_t      YPelsPerMeter;
-    /** Number of Colors in Color Table. */
-    uint32_t      ClrUsed;
-    /** Number of Important Colors. */
-    uint32_t      ClrImportant;
-} WINHDR;
-/** Pointer to a Windows 3.x header format. */
-typedef WINHDR *PWINHDR;
+    uint32_t      cbSizeImage;
+    /** Horz. resolution in pixels/meter. */
+    uint32_t      uXPelsPerMeter;
+    /** Vert. resolution in pixels/meter. */
+    uint32_t      uYPelsPerMeter;
+    /** Number of colors in color table. */
+    uint32_t      cClrUsed;
+    /** Number of important colors. */
+    uint32_t      cClrImportant;
+} BMPWIN3XINFOHDR;
+AssertCompileSize(BMPWIN3XINFOHDR, BMP_HDR_SIZE_WIN3X);
+/** Pointer to a Windows 3.x BMP information header. */
+typedef BMPWIN3XINFOHDR *PBMPWIN3XINFOHDR;
 
 #pragma pack()
 
-/** BMP file magic number. */
+/** BMP file magic number for BMP / DIB. */
 #define BMP_HDR_MAGIC (RT_H2LE_U16_C(0x4d42))
 
-/** @name BMP compressions.
+/** @name BMP compression types.
  * @{ . */
-#define BMP_COMPRESS_NONE    0
-#define BMP_COMPRESS_RLE8    1
-#define BMP_COMPRESS_RLE4    2
-/** @} . */
-
-/** @name BMP header sizes.
- * @{ . */
-#define BMP_HEADER_OS21      12
-#define BMP_HEADER_OS22      64
-#define BMP_HEADER_WIN3      40
+typedef enum BMP_COMPRESSION_TYPE
+{
+    BMP_COMPRESSION_TYPE_NONE = 0,
+    BMP_COMPRESSION_TYPE_RLE8 = 1,
+    BMP_COMPRESSION_TYPE_RLE4 = 2
+} BMP_COMPRESSION_TYPE;
 /** @} . */
 
 #endif /* !IPRT_INCLUDED_formats_bmp_h */

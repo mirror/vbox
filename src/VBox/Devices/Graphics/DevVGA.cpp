@@ -3870,48 +3870,48 @@ static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
     /*
      * Get bitmap header data
      */
-    PBMPINFO pBmpInfo = (PBMPINFO)(pThisCC->pbLogo + sizeof(LOGOHDR));
-    PWINHDR  pWinHdr  = (PWINHDR)(pThisCC->pbLogo + sizeof(LOGOHDR) + sizeof(BMPINFO));
+    PBMPFILEHDR      pFileHdr = (PBMPFILEHDR)(pThisCC->pbLogo + sizeof(LOGOHDR));
+    PBMPWIN3XINFOHDR pCoreHdr = (PBMPWIN3XINFOHDR)(pThisCC->pbLogo + sizeof(LOGOHDR) + sizeof(BMPFILEHDR));
 
-    if (pBmpInfo->Type == BMP_HDR_MAGIC)
+    if (pFileHdr->uType == BMP_HDR_MAGIC)
     {
-        switch (pWinHdr->Size)
+        switch (pCoreHdr->cbSize)
         {
-            case BMP_HEADER_OS21:
+            case BMP_HDR_SIZE_OS21:
             {
-                POS2HDR pOs2Hdr = (POS2HDR)pWinHdr;
-                pThisCC->cxLogo = pOs2Hdr->Width;
-                pThisCC->cyLogo = pOs2Hdr->Height;
-                pThisCC->cLogoPlanes = pOs2Hdr->Planes;
-                pThisCC->cLogoBits = pOs2Hdr->BitCount;
-                pThisCC->LogoCompression = BMP_COMPRESS_NONE;
+                PBMPOS2COREHDR pOs2Hdr = (PBMPOS2COREHDR)pCoreHdr;
+                pThisCC->cxLogo = pOs2Hdr->uWidth;
+                pThisCC->cyLogo = pOs2Hdr->uHeight;
+                pThisCC->cLogoPlanes = pOs2Hdr->cPlanes;
+                pThisCC->cLogoBits = pOs2Hdr->cBits;
+                pThisCC->LogoCompression = BMP_COMPRESSION_TYPE_NONE;
                 pThisCC->cLogoUsedColors = 0;
                 break;
             }
 
-            case BMP_HEADER_OS22:
+            case BMP_HDR_SIZE_OS22:
             {
-                POS22HDR pOs22Hdr = (POS22HDR)pWinHdr;
-                pThisCC->cxLogo = pOs22Hdr->Width;
-                pThisCC->cyLogo = pOs22Hdr->Height;
-                pThisCC->cLogoPlanes = pOs22Hdr->Planes;
-                pThisCC->cLogoBits = pOs22Hdr->BitCount;
-                pThisCC->LogoCompression = pOs22Hdr->Compression;
-                pThisCC->cLogoUsedColors = pOs22Hdr->ClrUsed;
+                PBMPOS2COREHDR2 pOs22Hdr = (PBMPOS2COREHDR2)pCoreHdr;
+                pThisCC->cxLogo = pOs22Hdr->uWidth;
+                pThisCC->cyLogo = pOs22Hdr->uHeight;
+                pThisCC->cLogoPlanes = pOs22Hdr->cPlanes;
+                pThisCC->cLogoBits = pOs22Hdr->cBits;
+                pThisCC->LogoCompression = pOs22Hdr->enmCompression;
+                pThisCC->cLogoUsedColors = pOs22Hdr->cClrUsed;
                 break;
             }
 
-            case BMP_HEADER_WIN3:
-                pThisCC->cxLogo = pWinHdr->Width;
-                pThisCC->cyLogo = pWinHdr->Height;
-                pThisCC->cLogoPlanes = pWinHdr->Planes;
-                pThisCC->cLogoBits = pWinHdr->BitCount;
-                pThisCC->LogoCompression = pWinHdr->Compression;
-                pThisCC->cLogoUsedColors = pWinHdr->ClrUsed;
+            case BMP_HDR_SIZE_WIN3X:
+                pThisCC->cxLogo = pCoreHdr->uWidth;
+                pThisCC->cyLogo = pCoreHdr->uHeight;
+                pThisCC->cLogoPlanes = pCoreHdr->cPlanes;
+                pThisCC->cLogoBits = pCoreHdr->cBits;
+                pThisCC->LogoCompression = pCoreHdr->enmCompression;
+                pThisCC->cLogoUsedColors = pCoreHdr->cClrUsed;
                 break;
 
             default:
-                AssertLogRelMsgFailedReturn(("Unsupported bitmap header size %u.\n", pWinHdr->Size),
+                AssertLogRelMsgFailedReturn(("Unsupported bitmap header size %u.\n", pCoreHdr->cbSize),
                                             VERR_INVALID_PARAMETER);
                 break;
         }
@@ -3932,7 +3932,7 @@ static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
                               ("Unsupported %u colors.\n", pThisCC->cLogoUsedColors),
                               VERR_INVALID_PARAMETER);
 
-        AssertLogRelMsgReturn(pThisCC->LogoCompression == BMP_COMPRESS_NONE,
+        AssertLogRelMsgReturn(pThisCC->LogoCompression == BMP_COMPRESSION_TYPE_NONE,
                                ("Unsupported %u compression.\n", pThisCC->LogoCompression),
                                VERR_INVALID_PARAMETER);
 
@@ -3946,7 +3946,7 @@ static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
 
         if (pThisCC->cLogoPalEntries)
         {
-            const uint8_t *pbPal = pThisCC->pbLogo + sizeof(LOGOHDR) + sizeof(BMPINFO) + pWinHdr->Size; /* ASSUMES Size location (safe) */
+            const uint8_t *pbPal = pThisCC->pbLogo + sizeof(LOGOHDR) + sizeof(BMPFILEHDR) + pCoreHdr->cbSize; /* ASSUMES Size location (safe) */
 
             for (uint16_t i = 0; i < pThisCC->cLogoPalEntries; i++)
             {
@@ -3968,7 +3968,7 @@ static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
         /*
          * Bitmap data offset
          */
-        pThisCC->pbLogoBitmap = pThisCC->pbLogo + sizeof(LOGOHDR) + pBmpInfo->Offset;
+        pThisCC->pbLogoBitmap = pThisCC->pbLogo + sizeof(LOGOHDR) + pFileHdr->offBits;
     }
     else
         AssertLogRelMsgFailedReturn(("Not a BMP file.\n"), VERR_INVALID_PARAMETER);
