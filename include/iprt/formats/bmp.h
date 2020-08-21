@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * Bitmap (BMP) format defines.
+ * IPRT - Microsoft Bitmap Formats (BMP).
  */
 
 /*
- * Copyright (C) 2020 Oracle Corporation
+ * Copyright (C) 2006-2020 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,17 +33,23 @@
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>
 
+
+/** @defgroup grp_rt_fmt_bmp  Microsoft Bitmaps Formats (BMP)
+ * @ingroup grp_rt_formats
+ * @{
+ */
+
 /** @name BMP header sizes (in bytes).
- * @{ . */
+ * @{ */
 #define BMP_HDR_SIZE_FILE      14
 #define BMP_HDR_SIZE_OS21      12
 #define BMP_HDR_SIZE_OS22      64
 #define BMP_HDR_SIZE_WIN3X     40
-/** @} . */
+/** @} */
 
-#pragma pack(1)
 
 /** BMP format file header. */
+#pragma pack(1)
 typedef struct BMPFILEHDR
 {
     /** File type identifier ("magic"). */
@@ -57,9 +63,13 @@ typedef struct BMPFILEHDR
     /** Offset (in bytes) to bitmap data. */
     uint32_t      offBits;
 } BMPFILEHDR;
+#pragma pack()
 AssertCompileSize(BMPFILEHDR, BMP_HDR_SIZE_FILE);
 /** Pointer to a BMP format file header. */
 typedef BMPFILEHDR *PBMPFILEHDR;
+
+/** BMP file magic number for BMP / DIB. */
+#define BMP_HDR_MAGIC (RT_H2LE_U16_C(0x4d42))
 
 /** OS/2 1.x BMP core header,
  *  also known as BITMAPCOREHEADER. */
@@ -157,20 +167,16 @@ AssertCompileSize(BMPWIN3XINFOHDR, BMP_HDR_SIZE_WIN3X);
 /** Pointer to a Windows 3.x BMP information header. */
 typedef BMPWIN3XINFOHDR *PBMPWIN3XINFOHDR;
 
-#pragma pack()
 
-/** BMP file magic number for BMP / DIB. */
-#define BMP_HDR_MAGIC (RT_H2LE_U16_C(0x4d42))
 
 /** @name BMP compression types.
- * @{ . */
-typedef enum BMP_COMPRESSION_TYPE
-{
-    BMP_COMPRESSION_TYPE_NONE = 0,
-    BMP_COMPRESSION_TYPE_RLE8 = 1,
-    BMP_COMPRESSION_TYPE_RLE4 = 2
-} BMP_COMPRESSION_TYPE;
-/** @} . */
+ * @{  */
+#define BMP_COMPRESSION_TYPE_NONE  0
+#define BMP_COMPRESSION_TYPE_RLE8  1
+#define BMP_COMPRESSION_TYPE_RLE4  2
+/** @} */
+
+/** @} */
 
 #endif /* !IPRT_INCLUDED_formats_bmp_h */
 
