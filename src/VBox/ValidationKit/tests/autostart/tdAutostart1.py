@@ -1020,6 +1020,7 @@ class tdAutostartOsWin(tdAutostartOs):
         """
         Installs the Windows guest additions using the test execution service.
         """
+        _ = oVM;
         reporter.testStart('Install Guest Additions');
         asLogFiles = [];
 
