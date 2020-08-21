@@ -212,8 +212,6 @@ void UIScaleFactorEditor::prepare()
         QGridLayout *pSliderLayout = new QGridLayout;
         if (pSliderLayout)
         {
-            pSliderLayout->setSpacing(0);
-
             m_pScaleSlider = new QIAdvancedSlider;
             {
                 m_pScaleSlider->setPageStep(10);
