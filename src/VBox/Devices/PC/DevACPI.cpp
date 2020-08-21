@@ -3616,6 +3616,10 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
     ACPITBLIOMMU Ivrs;
     RT_ZERO(Ivrs);
 
+    uint16_t const uIommuBus = 0;
+    uint16_t const uIommuDev = RT_HI_U16(pThis->u32IommuAmdPciAddress);
+    uint16_t const uIommuFn  = RT_LO_U16(pThis->u32IommuAmdPciAddress);
+
     /* IVRS header. */
     acpiR3PrepareHeader(pThis, &Ivrs.Hdr.header, "IVRS", sizeof(Ivrs), ACPI_IVRS_FMT_REV_FIXED);
     /* NOTE! The values here must match what we expose via MMIO/PCI config. space in the IOMMU device code. */
@@ -3634,7 +3638,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
                                        + sizeof(Ivrs.IvhdType10Rsvd1)
                                        + sizeof(Ivrs.IvhdType10IoApic)
                                        + sizeof(Ivrs.IvhdType10Hpet);
-    Ivrs.IvhdType10.u16DeviceId        = pThis->u32IommuAmdPciAddress;
+    Ivrs.IvhdType10.u16DeviceId        = PCIBDF_MAKE(uIommuBus, VBOX_PCI_DEVFN_MAKE(uIommuDev, uIommuFn));
     Ivrs.IvhdType10.u16CapOffset       = 0;             /* 0=No multiple IOMMU functionality. */
     Ivrs.IvhdType10.u64BaseAddress     = 0xfeb80000;    /* MMIO base address: Taken from real hardware ACPI dumps. */
     Ivrs.IvhdType10.u16PciSegmentGroup = 0;
@@ -4581,8 +4585,8 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"SbIoApicAddress\""));
 
     /* Warn if the SB IOAPIC is not at the required address if an AMD IOMMU is configured. */
-    if (   pThis->u32IocPciAddress
-        && pThis->u32SbIoApicPciAddress != VBOX_PCI_BDF_SB_IOAPIC)
+    if (   pThis->u32IommuAmdPciAddress
+        && pThis->u32SbIoApicPciAddress != RT_MAKE_U32(VBOX_PCI_FN_SB_IOAPIC, VBOX_PCI_DEV_SB_IOAPIC))
     {
         /** @todo Maybe make this a VM startup failure later. */
         LogRel(("ACPI: Warning! Southbridge I/O APIC not at %#x:%#x:%#x when an AMD IOMMU is present.\n",
