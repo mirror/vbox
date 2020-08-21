@@ -165,5 +165,5 @@ typedef WINHDR *PWINHDR;
 #define BMP_HEADER_WIN3      40
 /** @} . */
 
-#endif /* !IPRT_INCLUDED_formats_bmp_h . */
+#endif /* !IPRT_INCLUDED_formats_bmp_h */
 
