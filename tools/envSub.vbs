@@ -242,51 +242,68 @@ function Main()
       EnvRemovePathItem "Path", DosSlashes(strPathDevTools & "\win." & str1) & "\bin", ";"
    next
 
-   ' Add some gnuwin32 tools to the end of the path.
-   EnvAppendPathItem "Path", DosSlashes(strPathDevTools & "\bin\win.x86\gnuwin32\r1\bin"), ";"
+   '
+   ' We skip the extra stuff like gnuwin32, windbg, cl.exe and mingw64 if
+   ' there is a command to execute.
+   '
+   if ArraySize(arrCmdToExec) = 0 then
+      ' Add some gnuwin32 tools to the end of the path.
+      EnvAppendPathItem "Path", DosSlashes(strPathDevTools & "\win.x86\gnuwin32\r1\bin"), ";"
 
-   ' Add the newest debugger we can find to the front of the path.
-   dim strDir, blnStop
-   bldExitLoop = false
-   for each str1 in arrArchitectures
-      for each strDir in GetSubdirsStartingWithRVerSorted(strPathDevTools & "\bin\win." & str1 & "\sdk", "v")
-         if FileExists(strWinDbgDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch) & "\windbg.exe") then
-            EnvPrependPathItem "Path", DosSlashes(strWinDbgDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch)), ";"
-            bldExitLoop = true
-            exit for
-         end if
-      next
-      if bldExitLoop then exit for
-   next
-
-   ' Add VCC to the end of the path.
-   dim str2, arrVccBinDirs
-   arrVccBinDirs = Array("\bin\Host" & XlateArchitectureToWin(strHostArch) & "\" & XlateArchitectureToWin(strTargetArch), _
-                         "\bin\" & strHostArch & "_" & strTargetArch, _
-                         "\bin\" & strTargetArch, _
-                         "\bin")
-   bldExitLoop = false
-   for each str1 in Array("amd64", "x86")
-      for each strDir in GetSubdirsStartingWithRVerSorted(strPathDevTools & "\bin\win." & str1 & "\vcc", "v")
-         for each str2 in arrVccBinDirs
-            if FileExists(strDir & str2 & "\cl.exe") then
-               EnvAppendPathItem "Path", DosSlashes(strDir & str2), ";"
-               if str2 = arrVccBinDirs(1) or str2 = arrVccBinDirs(2) then
-                  EnvAppendPathItem "Path", DosSlashes(strDir & "bin"), ";"
-               end if
+      ' Add the newest debugger we can find to the front of the path.
+      dim strDir, blnStop
+      bldExitLoop = false
+      for each str1 in arrArchitectures
+         for each strDir in GetSubdirsStartingWithRVerSorted(strPathDevTools & "\win." & str1 & "\sdk", "v")
+            if FileExists(strWinDbgDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch) & "\windbg.exe") then
+               EnvPrependPathItem "Path", DosSlashes(strWinDbgDir & "\Debuggers\" & XlateArchitectureToWin(strHostArch)), ";"
                bldExitLoop = true
                exit for
             end if
          next
          if bldExitLoop then exit for
       next
-      if bldExitLoop then exit for
-   next
 
-   ' Add mingw64 if it's still there.
-   if strHostArch = "amd64" or strTargetArch = "amd64" then
-      str1 = strPathDev & "win.amd64\mingw-64\r1\bin"
-      if DirExists(str1) then EnvAppendPathItem "Path", DosSlashes(str1), ";"
+      ' Add VCC to the end of the path.
+      dim str2, strDir2, arrVccOldBinDirs
+      arrVccOldBinDirs = Array("\bin\" & strHostArch & "_" & strTargetArch, "\bin\" & strTargetArch, "\bin")
+      bldExitLoop = false
+      for each str1 in Array("amd64", "x86")
+         for each strDir in GetSubdirsStartingWithRVerSorted(strPathDevTools & "\win." & str1 & "\vcc", "v")
+            strDir = strPathDevTools & "\win." & str1 & "\vcc\" & strDir
+            if DirExists(strDir & "\Tools\MSVC") then
+               for each strDir2 in GetSubdirsStartingWithRVerSorted(strDir & "\Tools\MSVC", "1")
+                  strDir2 = strDir & "\Tools\MSVC\" & strDir2 & "\bin\Host" & XlateArchitectureToWin(strHostArch) _
+                          & "\" & XlateArchitectureToWin(strTargetArch)
+                  if FileExists(strDir2 & "\cl.exe") then
+                     EnvAppendPathItem "Path", DosSlashes(strDir2), ";"
+                     if strTargetArch <> strHostArch then
+                        EnvAppendPathItem "Path", DosSlashes(PathStripFilename(strDir2) & "\" & XlateArchitectureToWin(strHostArch)), ";"
+                     end if
+                     bldExitLoop = true
+                     exit for
+                  end if
+               next
+            elseif DirExists(strDir & "\bin") then
+               for each str2 in arrVccOldBinDirs
+                  if FileExists(strDir & str2 & "\cl.exe") then
+                     EnvAppendPathItem "Path", DosSlashes(strDir & str2), ";"
+                     if str2 <> "\bin" then EnvAppendPathItem "Path", DosSlashes(strDir & "bin"), ";"
+                     bldExitLoop = true
+                     exit for
+                  end if
+               next
+            end if
+            if bldExitLoop then exit for
+         next
+         if bldExitLoop then exit for
+      next
+
+      ' Add mingw64 if it's still there.
+      if strHostArch = "amd64" or strTargetArch = "amd64" then
+         str1 = strPathDev & "win.amd64\mingw-64\r1\bin"
+         if DirExists(str1) then EnvAppendPathItem "Path", DosSlashes(str1), ";"
+      end if
    end if
 
    ' Add the output tools and bin directories to the fron of the path, taking PATH_OUT_BASE into account.
