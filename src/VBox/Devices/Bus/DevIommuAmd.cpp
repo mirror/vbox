@@ -4432,7 +4432,8 @@ static int iommuAmdLookupDeviceTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64
  *
  * @thread  Any.
  */
-static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbRead, PRTGCPHYS pGCPhysSpa)
+static DECLCALLBACK(int) iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbRead,
+                                               PRTGCPHYS pGCPhysSpa)
 {
     /* Validate. */
     Assert(pDevIns);
@@ -4468,7 +4469,8 @@ static int iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t u
  *
  * @thread  Any.
  */
-static int iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite, PRTGCPHYS pGCPhysSpa)
+static DECLCALLBACK(int) iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t uIova, size_t cbWrite,
+                                                PRTGCPHYS pGCPhysSpa)
 {
     /* Validate. */
     Assert(pDevIns);
@@ -4780,7 +4782,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
  * @param   pMsiIn      The source MSI.
  * @param   pMsiOut     Where to store the remapped MSI.
  */
-static int iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
+static DECLCALLBACK(int) iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDevId, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     /* Validate. */
     Assert(pDevIns);
