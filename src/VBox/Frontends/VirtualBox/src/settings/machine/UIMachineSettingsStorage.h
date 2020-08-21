@@ -29,6 +29,7 @@
 class QCheckBox;
 class QComboBox;
 class QGridLayout;
+class QHBoxLayout;
 class QLabel;
 class QSpinBox;
 class QStackedWidget;
@@ -104,9 +105,6 @@ protected:
 
     /** Performs final page polishing. */
     virtual void polishPage() /* override */;
-
-    /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
 
 private slots:
 
@@ -208,12 +206,20 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares storage tree. */
-    void prepareStorageTree();
-    /** Prepares storage toolbar. */
-    void prepareStorageToolbar();
-    /** Prepares storage widgets. */
-    void prepareStorageWidgets();
+    /** Prepares left pane. */
+    void prepareLeftPane();
+    /** Prepares tree view. */
+    void prepareTreeView();
+    /** Prepares toolbar. */
+    void prepareToolBar();
+    /** Prepares right pane. */
+    void prepareRightPane();
+    /** Prepares empty widget. */
+    void prepareEmptyWidget();
+    /** Prepares controller widget. */
+    void prepareControllerWidget();
+    /** Prepares attachment widget. */
+    void prepareAttachmentWidget();
     /** Prepares connections. */
     void prepareConnections();
 
@@ -275,8 +281,6 @@ private:
     /** Holds the machine guest OS type ID. */
     QString  m_strMachineGuestOSTypeId;
 
-    /** Holds the storage-tree instance. */
-    QITreeView   *m_pTreeStorage;
     /** Holds the storage-model instance. */
     StorageModel *m_pModelStorage;
 
@@ -301,8 +305,6 @@ private:
     /** Holds the medium ID wrapper instance. */
     UIMediumIDHolder *m_pMediumIdHolder;
 
-    /** Holds whether the page is polished. */
-    bool  m_fPolished;
     /** Holds whether the loading is in progress. */
     bool  m_fLoadingInProgress;
 
@@ -311,53 +313,100 @@ private:
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineStorage *m_pCache;
+
     /** @name Widgets
      * @{ */
-       QILabelSeparator *m_pLabelSeparatorLeftPane;
-       QILabelSeparator *m_pLabelSeparatorEmpty;
-       QILabelSeparator *m_pLabelSeparatorParameters;
-       QILabelSeparator *m_pLabelSeparatorAttributes;
-       QILabelSeparator *m_pLabelSeparatorInformation;
-       QLabel *m_pLabelInfo;
-       QLabel *m_pLabelName;
-       QLabel *m_pLabelType;
-       QLabel *m_pLabelPortCount;
-       QLabel *m_pLabelHDFormat;
-       QLabel *m_pLabelCDFDType;
-       QLabel *m_pLabelHDVirtualSize;
-       QLabel *m_pLabelHDActualSize;
-       QLabel *m_pLabelSize;
-       QLabel *m_pLabelHDDetails;
-       QLabel *m_pLabelLocation;
-       QLabel *m_pLabelUsage;
-       QLabel *m_pLabelEncryption;
-       QLabel *m_pLabelMedium;
-       QILabel *m_pLabelHDFormatValue;
-       QILabel *m_pLabelCDFDTypeValue;
-       QILabel *m_pLabelHDVirtualSizeValue;
-       QILabel *m_pLabelHDActualSizeValue;
-       QILabel *m_pLabelSizeValue;
-       QILabel *m_pLabelHDDetailsValue;
-       QILabel *m_pLabelLocationValue;
-       QILabel *m_pLabelUsageValue;
-       QILabel *m_pLabelEncryptionValue;
-       QLineEdit *m_pLineEditName;
-       QComboBox *m_pComboBoxType;
-       QComboBox *m_pComboBoxSlot;
-       QSpinBox *m_pSpinBoxPortCount;
-       QCheckBox *m_pCheckBoxIoCache;
-       QCheckBox *m_pCheckBoxPassthrough;
-       QCheckBox *m_pCheckBoxTempEject;
-       QCheckBox *m_pCheckBoxNonRotational;
-       QCheckBox *m_pCheckBoxHotPluggable;
-       QIToolButton *m_pToolButtonOpen;
-       UIToolBar *m_pToolBarStorageBar;
-       QGridLayout *m_pLayoutController;
-       QGridLayout *m_pLayoutEmpty;
-       QGridLayout *m_pLayoutAttachment;
-       QStackedWidget *mSwRightPane;
-       QVBoxLayout *m_pLayoutStorage;
-       QISplitter *m_pSplitter;
+        /** Holds the splitter instance. */
+        QISplitter       *m_pSplitter;
+        /** Holds the left pane instance. */
+        QWidget          *m_pWidgetLeftPane;
+        /** Holds the left pane separator instance. */
+        QILabelSeparator *m_pLabelSeparatorLeftPane;
+        /** Holds the tree-view layout instance. */
+        QVBoxLayout      *m_pLayoutTreeView;
+        /** Holds the tree-view instance. */
+        QITreeView       *m_pTreeStorage;
+        /** Holds the toolbar layout instance. */
+        QHBoxLayout      *m_pLayoutToolBar;
+        /** Holds the tree-view instance. */
+        UIToolBar        *m_pToolBar;
+
+        /** Holds the right pane instance. */
+        QStackedWidget   *m_pStackRightPane;
+        /** Holds the right pane empty widget separator instance. */
+        QILabelSeparator *m_pLabelSeparatorEmpty;
+        /** Holds the info label instance. */
+        QLabel           *m_pLabelInfo;
+        /** Holds the right pane controller widget separator instance. */
+        QILabelSeparator *m_pLabelSeparatorParameters;
+        /** Holds the name label instance. */
+        QLabel           *m_pLabelName;
+        /** Holds the name editor instance. */
+        QLineEdit        *m_pEditorName;
+        /** Holds the type label instance. */
+        QLabel           *m_pLabelType;
+        /** Holds the type combo instance. */
+        QComboBox        *m_pComboType;
+        /** Holds the port count label instance. */
+        QLabel           *m_pLabelPortCount;
+        /** Holds the port count spinbox instance. */
+        QSpinBox         *m_pSpinBoxPortCount;
+        /** Holds the IO cache check-box instance. */
+        QCheckBox        *m_pCheckBoxIoCache;
+        /** Holds the right pane attachment widget separator instance. */
+        QILabelSeparator *m_pLabelSeparatorAttributes;
+        /** Holds the medium label instance. */
+        QLabel           *m_pLabelMedium;
+        /** Holds the slot combo instance. */
+        QComboBox        *m_pComboSlot;
+        /** Holds the open tool-button instance. */
+        QIToolButton     *m_pToolButtonOpen;
+        /** Holds the passthrough check-box instance. */
+        QCheckBox        *m_pCheckBoxPassthrough;
+        /** Holds the temporary eject check-box instance. */
+        QCheckBox        *m_pCheckBoxTempEject;
+        /** Holds the non-rotational check-box instance. */
+        QCheckBox        *m_pCheckBoxNonRotational;
+        /** Holds the hot-pluggable check-box instance. */
+        QCheckBox        *m_pCheckBoxHotPluggable;
+        /** Holds the right pane attachment widget separator instance. */
+        QILabelSeparator *m_pLabelSeparatorInformation;
+        /** Holds the HD format label instance. */
+        QLabel           *m_pLabelHDFormat;
+        /** Holds the HD format field instance. */
+        QILabel          *m_pFieldHDFormat;
+        /** Holds the CD/FD type label instance. */
+        QLabel           *m_pLabelCDFDType;
+        /** Holds the CD/FD type field instance. */
+        QILabel          *m_pFieldCDFDType;
+        /** Holds the HD virtual size label instance. */
+        QLabel           *m_pLabelHDVirtualSize;
+        /** Holds the HD virtual size field instance. */
+        QILabel          *m_pFieldHDVirtualSize;
+        /** Holds the HD actual size label instance. */
+        QLabel           *m_pLabelHDActualSize;
+        /** Holds the HD actual size field instance. */
+        QILabel          *m_pFieldHDActualSize;
+        /** Holds the CD/FD size label instance. */
+        QLabel           *m_pLabelCDFDSize;
+        /** Holds the CD/FD size field instance. */
+        QILabel          *m_pFieldCDFDSize;
+        /** Holds the HD details label instance. */
+        QLabel           *m_pLabelHDDetails;
+        /** Holds the HD details field instance. */
+        QILabel          *m_pFieldHDDetails;
+        /** Holds the location label instance. */
+        QLabel           *m_pLabelLocation;
+        /** Holds the location field instance. */
+        QILabel          *m_pFieldLocation;
+        /** Holds the usage label instance. */
+        QLabel           *m_pLabelUsage;
+        /** Holds the usage field instance. */
+        QILabel          *m_pFieldUsage;
+        /** Holds the encryption label instance. */
+        QLabel           *m_pLabelEncryption;
+        /** Holds the encryption field instance. */
+        QILabel          *m_pFieldEncryption;
    /** @} */
 };
 
