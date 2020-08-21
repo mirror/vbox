@@ -30,6 +30,9 @@
 # pragma once
 #endif
 
+#include <iprt/types.h>
+#include <iprt/assertcompile.h>
+
 #pragma pack(1)
 
 /** BMP File Format Bitmap Header. */
