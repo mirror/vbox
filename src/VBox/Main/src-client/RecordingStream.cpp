@@ -23,41 +23,14 @@
 
 #include <iprt/path.h>
 
+#if VBOX_RECORDING_DUMP
+# include <iprt/formats/bmp.h>
+#endif
+
 #include "Recording.h"
 #include "RecordingUtils.h"
 #include "WebMWriter.h"
 
-#ifdef VBOX_RECORDING_DUMP
-#pragma pack(push)
-#pragma pack(1)
-typedef struct
-{
-    uint16_t uMagic;
-    uint32_t uSize;
-    uint16_t uReserved1;
-    uint16_t uReserved2;
-    uint32_t uOffBits;
-} RECORDINGBMPHDR, *PRECORDINGBMPHDR;
-AssertCompileSize(RECORDINGBMPHDR, 14);
-
-typedef struct
-{
-    uint32_t uSize;
-    uint32_t uWidth;
-    uint32_t uHeight;
-    uint16_t uPlanes;
-    uint16_t uBitCount;
-    uint32_t uCompression;
-    uint32_t uSizeImage;
-    uint32_t uXPelsPerMeter;
-    uint32_t uYPelsPerMeter;
-    uint32_t uClrUsed;
-    uint32_t uClrImportant;
-} RECORDINGBMPDIBHDR, *PRECORDINGBMPDIBHDR;
-AssertCompileSize(RECORDINGBMPDIBHDR, 40);
-
-#pragma pack(pop)
-#endif /* VBOX_RECORDING_DUMP */
 
 RecordingStream::RecordingStream(RecordingContext *a_pCtx)
     : pCtx(a_pCtx)
@@ -663,23 +636,23 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
         uint32_t offDst = (destY * this->ScreenSettings.Video.ulWidth + destX) * uBytesPerPixel;
 
 #ifdef VBOX_RECORDING_DUMP
-        RECORDINGBMPHDR bmpHdr;
+        BMPINFO bmpHdr;
         RT_ZERO(bmpHdr);
 
-        RECORDINGBMPDIBHDR bmpDIBHdr;
+        WINHDR bmpDIBHdr;
         RT_ZERO(bmpDIBHdr);
 
-        bmpHdr.uMagic   = 0x4d42; /* Magic */
-        bmpHdr.uSize    = (uint32_t)(sizeof(RECORDINGBMPHDR) + sizeof(RECORDINGBMPDIBHDR) + (w * h * uBytesPerPixel));
-        bmpHdr.uOffBits = (uint32_t)(sizeof(RECORDINGBMPHDR) + sizeof(RECORDINGBMPDIBHDR));
+        bmpHdr.Type     = BMP_HDR_MAGIC;
+        bmpHdr.FileSize = (uint32_t)(sizeof(BMPINFO) + sizeof(WINHDR) + (w * h * uBytesPerPixel));
+        bmpHdr.Offset   = (uint32_t)(sizeof(BMPINFO) + sizeof(WINHDR));
 
-        bmpDIBHdr.uSize          = sizeof(RECORDINGBMPDIBHDR);
-        bmpDIBHdr.uWidth         = w;
-        bmpDIBHdr.uHeight        = h;
-        bmpDIBHdr.uPlanes        = 1;
-        bmpDIBHdr.uBitCount      = uBPP;
-        bmpDIBHdr.uXPelsPerMeter = 5000;
-        bmpDIBHdr.uYPelsPerMeter = 5000;
+        bmpDIBHdr.Size          = sizeof(WINHDR);
+        bmpDIBHdr.Width         = w;
+        bmpDIBHdr.Height        = h;
+        bmpDIBHdr.Planes        = 1;
+        bmpDIBHdr.BitCount      = uBPP;
+        bmpDIBHdr.XPelsPerMeter = 5000;
+        bmpDIBHdr.YPelsPerMeter = 5000;
 
         char szFileName[RTPATH_MAX];
         RTStrPrintf2(szFileName, sizeof(szFileName), "/tmp/VideoRecFrame-%RU32.bmp", this->uScreenID);

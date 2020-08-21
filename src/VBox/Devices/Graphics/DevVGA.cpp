@@ -82,6 +82,8 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
+#include <iprt/formats/bmp.h>
+
 #include <VBox/VMMDev.h>
 #include <VBoxVideo.h>
 #include <VBox/bioslogo.h>
@@ -105,97 +107,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-#pragma pack(1)
-
-/** BMP File Format Bitmap Header. */
-typedef struct
-{
-    uint16_t      Type;           /* File Type Identifier       */
-    uint32_t      FileSize;       /* Size of File               */
-    uint16_t      Reserved1;      /* Reserved (should be 0)     */
-    uint16_t      Reserved2;      /* Reserved (should be 0)     */
-    uint32_t      Offset;         /* Offset to bitmap data      */
-} BMPINFO;
-
-/** Pointer to a bitmap header*/
-typedef BMPINFO *PBMPINFO;
-
-/** OS/2 1.x Information Header Format. */
-typedef struct
-{
-    uint32_t      Size;           /* Size of Remaining Header   */
-    uint16_t      Width;          /* Width of Bitmap in Pixels  */
-    uint16_t      Height;         /* Height of Bitmap in Pixels */
-    uint16_t      Planes;         /* Number of Planes           */
-    uint16_t      BitCount;       /* Color Bits Per Pixel       */
-} OS2HDR;
-
-/** Pointer to a OS/2 1.x header format */
-typedef OS2HDR *POS2HDR;
-
-/** OS/2 2.0 Information Header Format. */
-typedef struct
-{
-    uint32_t      Size;           /* Size of Remaining Header         */
-    uint32_t      Width;          /* Width of Bitmap in Pixels        */
-    uint32_t      Height;         /* Height of Bitmap in Pixels       */
-    uint16_t      Planes;         /* Number of Planes                 */
-    uint16_t      BitCount;       /* Color Bits Per Pixel             */
-    uint32_t      Compression;    /* Compression Scheme (0=none)      */
-    uint32_t      SizeImage;      /* Size of bitmap in bytes          */
-    uint32_t      XPelsPerMeter;  /* Horz. Resolution in Pixels/Meter */
-    uint32_t      YPelsPerMeter;  /* Vert. Resolution in Pixels/Meter */
-    uint32_t      ClrUsed;        /* Number of Colors in Color Table  */
-    uint32_t      ClrImportant;   /* Number of Important Colors       */
-    uint16_t      Units;          /* Resolution Measurement Used      */
-    uint16_t      Reserved;       /* Reserved FIelds (always 0)       */
-    uint16_t      Recording;      /* Orientation of Bitmap            */
-    uint16_t      Rendering;      /* Halftone Algorithm Used on Image */
-    uint32_t      Size1;          /* Halftone Algorithm Data          */
-    uint32_t      Size2;          /* Halftone Algorithm Data          */
-    uint32_t      ColorEncoding;  /* Color Table Format (always 0)    */
-    uint32_t      Identifier;     /* Misc. Field for Application Use  */
-} OS22HDR;
-
-/** Pointer to a OS/2 2.0 header format */
-typedef OS22HDR *POS22HDR;
-
-/** Windows 3.x Information Header Format. */
-typedef struct
-{
-    uint32_t      Size;           /* Size of Remaining Header         */
-    uint32_t      Width;          /* Width of Bitmap in Pixels        */
-    uint32_t      Height;         /* Height of Bitmap in Pixels       */
-    uint16_t      Planes;         /* Number of Planes                 */
-    uint16_t      BitCount;       /* Bits Per Pixel                   */
-    uint32_t      Compression;    /* Compression Scheme (0=none)      */
-    uint32_t      SizeImage;      /* Size of bitmap in bytes          */
-    uint32_t      XPelsPerMeter;  /* Horz. Resolution in Pixels/Meter */
-    uint32_t      YPelsPerMeter;  /* Vert. Resolution in Pixels/Meter */
-    uint32_t      ClrUsed;        /* Number of Colors in Color Table  */
-    uint32_t      ClrImportant;   /* Number of Important Colors       */
-} WINHDR;
-
-/** Pointer to a Windows 3.x header format */
-typedef WINHDR *PWINHDR;
-
-#pragma pack()
-
-#define BMP_ID               0x4D42
-
-/** @name BMP compressions.
- * @{ */
-#define BMP_COMPRESS_NONE    0
-#define BMP_COMPRESS_RLE8    1
-#define BMP_COMPRESS_RLE4    2
-/** @} */
-
-/** @name BMP header sizes.
- * @{ */
-#define BMP_HEADER_OS21      12
-#define BMP_HEADER_OS22      64
-#define BMP_HEADER_WIN3      40
-/** @} */
 
 /** The BIOS boot menu text position, X. */
 #define LOGO_F12TEXT_X       304
@@ -3962,7 +3873,7 @@ static int vbeR3ParseBitmap(PVGASTATECC pThisCC)
     PBMPINFO pBmpInfo = (PBMPINFO)(pThisCC->pbLogo + sizeof(LOGOHDR));
     PWINHDR  pWinHdr  = (PWINHDR)(pThisCC->pbLogo + sizeof(LOGOHDR) + sizeof(BMPINFO));
 
-    if (pBmpInfo->Type == BMP_ID)
+    if (pBmpInfo->Type == BMP_HDR_MAGIC)
     {
         switch (pWinHdr->Size)
         {

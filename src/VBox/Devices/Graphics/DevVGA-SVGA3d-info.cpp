@@ -28,6 +28,9 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/formats/bmp.h>
+#endif
 
 #include <VBox/vmm/pgm.h> /* required by DevVGA.h */
 #include <VBoxVideo.h> /* required by DevVGA.h */
@@ -1798,38 +1801,6 @@ static DECLCALLBACK(int) vmsvga3dInfoSharedObjectCallback(PAVLU32NODECORE pNode,
 }
 #endif /* VMSVGA3D_DIRECT3D */
 
-#ifndef RT_OS_WINDOWS
-typedef uint16_t WORD;
-typedef uint32_t DWORD;
-typedef int32_t LONG;
-
-#pragma pack(2)
-typedef struct
-{
-    WORD    bfType;
-    DWORD   bfSize;
-    WORD    bfReserved1;
-    WORD    bfReserved2;
-    DWORD   bfOffBits;
-} BITMAPFILEHEADER, *PBITMAPFILEHEADER, *LPBITMAPFILEHEADER;
-
-typedef struct
-{
-    DWORD biSize;
-    LONG  biWidth;
-    LONG  biHeight;
-    WORD  biPlanes;
-    WORD  biBitCount;
-    DWORD biCompression;
-    DWORD biSizeImage;
-    LONG  biXPelsPerMeter;
-    LONG  biYPelsPerMeter;
-    DWORD biClrUsed;
-    DWORD biClrImportant;
-} BITMAPINFOHEADER, *PBITMAPINFOHEADER, *LPBITMAPINFOHEADER;
-#pragma pack()
-#endif
-
 static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int w, int h, uint32_t cbPixel, uint32_t u32Mask)
 {
     if (   cbPixel != 4
@@ -1870,12 +1841,11 @@ static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int
         // bh.bV4GammaGreen    = 0;
         // bh.bV4GammaBlue     = 0;
 
-        BITMAPFILEHEADER bf;
-        bf.bfType = 'MB';
-        bf.bfSize = sizeof(bf) + sizeof(bh) + cbBitmap;
-        bf.bfReserved1 = 0;
-        bf.bfReserved2 = 0;
-        bf.bfOffBits = sizeof(bf) + sizeof(bh);
+        BMPINFO bf;
+        RT_ZERO(bf);
+        bf.Type     = BMP_HDR_MAGIC;
+        bf.FileSize = sizeof(bf) + sizeof(bh) + cbBitmap;
+        bf.Offset   = sizeof(bf) + sizeof(bh);
 
         fwrite(&bf, 1, sizeof(bf), f);
         fwrite(&bh, 1, sizeof(bh), f);
@@ -1883,25 +1853,20 @@ static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int
     else
 #endif
     {
-        BITMAPFILEHEADER bf;
-        bf.bfType = 0x4D42; //'MB'
-        bf.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + cbBitmap;
-        bf.bfReserved1 = 0;
-        bf.bfReserved2 = 0;
-        bf.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+        BMPINFO bf;
+        RT_ZERO(bf);
+        bf.Type     = BMP_HDR_MAGIC;
+        bf.FileSize = sizeof(BMPINFO) + sizeof(WINHDR) + cbBitmap;
+        bf.Offset   = sizeof(BMPINFO) + sizeof(WINHDR);
 
-        BITMAPINFOHEADER bi;
-        bi.biSize = sizeof(bi);
-        bi.biWidth = w;
-        bi.biHeight = -h;
-        bi.biPlanes = 1;
-        bi.biBitCount = 32;
-        bi.biCompression = 0;
-        bi.biSizeImage = cbBitmap;
-        bi.biXPelsPerMeter = 0;
-        bi.biYPelsPerMeter = 0;
-        bi.biClrUsed = 0;
-        bi.biClrImportant = 0;
+        WINHDR bi;
+        RT_ZERO(bi);
+        bi.Size      = sizeof(bi);
+        bi.Width     = w;
+        bi.Height    = -h;
+        bi.Planes    = 1;
+        bi.BitCount  = 32;
+        bi.SizeImage = cbBitmap;
 
         fwrite(&bf, 1, sizeof(bf), f);
         fwrite(&bi, 1, sizeof(bi), f);
