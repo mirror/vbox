@@ -521,7 +521,8 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         MSIMSG MsiOut;
         MSIMSG MsiIn;
         ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
-        Assert(PCIBDF_IS_VALID(uBusDevFn));
+        if (!PCIBDF_IS_VALID(uBusDevFn))
+            uBusDevFn = VBOX_PCI_BDF_SB_IOAPIC;
         int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, &MsiIn, &MsiOut);
         if (RT_SUCCESS(rcRemap))
             ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
