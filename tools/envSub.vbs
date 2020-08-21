@@ -220,13 +220,13 @@ function Main()
    '
    dim str1
 
-   EnvSet "KBUILD_PATH", strPathkBuild
-   EnvSet "KBUILD_DEVTOOLS", strPathDevTools
-   EnvSet "KBUILD_TYPE", strType
-   EnvSet "KBUILD_TARGET", strTarget
+   EnvSet "KBUILD_PATH",        UnixSlashes(strPathkBuild)
+   EnvSet "KBUILD_DEVTOOLS",    UnixSlashes(strPathDevTools)
+   EnvSet "KBUILD_TYPE",        strType
+   EnvSet "KBUILD_TARGET",      strTarget
    EnvSet "KBUILD_TARGET_ARCH", strTargetArch
-   EnvSet "KBUILD_HOST", strHost
-   EnvSet "KBUILD_HOST_ARCH", strHostArch
+   EnvSet "KBUILD_HOST",        strHost
+   EnvSet "KBUILD_HOST_ARCH",   strHostArch
 
    ' Remove legacy variables.
    dim arrObsolete
