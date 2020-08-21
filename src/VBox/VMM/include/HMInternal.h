@@ -451,8 +451,6 @@ typedef struct HM
     bool                        fNestedPaging;
     /** Set when we've initialized VMX or SVM. */
     bool                        fInitialized;
-    /** Set if nested paging is allowed. */
-    bool                        fAllowNestedPaging;
     /** Set if large pages are enabled (requires nested paging). */
     bool                        fLargePages;
     /** Set if we can support 64-bit guests or not. */
@@ -485,7 +483,7 @@ typedef struct HM
     /** Set if MDS related buffers should be cleared on EMT scheduling. */
     bool                        fMdsClearOnSched;
     /** Alignment padding. */
-    bool                        afPaddingMinus1[6];
+    bool                        afPaddingMinus1[7];
 
     /** Maximum ASID allowed. */
     uint32_t                    uMaxAsid;
@@ -517,12 +515,12 @@ typedef struct HM
         /** Set if unrestricted guest execution is in use (real and protected mode
          *  without paging). */
         bool                        fUnrestrictedGuest;
-        /** Set if unrestricted guest execution is allowed to be used. */
-        bool                        fAllowUnrestricted;
         /** Set if the preemption timer is in use or not. */
         bool                        fUsePreemptTimer;
         /** The shift mask employed by the VMX-Preemption timer. */
         uint8_t                     cPreemptTimerShift;
+        /** Padding. */
+        bool                        afPadding0;
 
         /** Virtual address of the APIC-access page. */
         R0PTRTYPE(uint8_t *)        pbApicAccess;

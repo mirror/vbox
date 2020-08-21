@@ -314,12 +314,14 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 
     /** @cfgm{/HM/EnableNestedPaging, bool, false}
      * Enables nested paging (aka extended page tables). */
-    rc = CFGMR3QueryBoolDef(pCfgHm, "EnableNestedPaging", &pVM->hm.s.fAllowNestedPaging, false);
+    bool fAllowNestedPaging = false;
+    rc = CFGMR3QueryBoolDef(pCfgHm, "EnableNestedPaging", &fAllowNestedPaging, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableUX, bool, true}
      * Enables the VT-x unrestricted execution feature. */
-    rc = CFGMR3QueryBoolDef(pCfgHm, "EnableUX", &pVM->hm.s.vmx.fAllowUnrestricted, true);
+    bool fAllowUnrestricted = true;
+    rc = CFGMR3QueryBoolDef(pCfgHm, "EnableUX", &fAllowUnrestricted, true);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableLargePages, bool, false}
@@ -567,27 +569,21 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
              * Disable nested paging and unrestricted guest execution now if they're
              * configured so that CPUM can make decisions based on our configuration.
              */
-            Assert(!pVM->hm.s.fNestedPaging);
-            if (pVM->hm.s.fAllowNestedPaging)
+            if (   fAllowNestedPaging
+                && (fCaps & SUPVTCAPS_NESTED_PAGING))
             {
-                if (fCaps & SUPVTCAPS_NESTED_PAGING)
-                    pVM->hm.s.fNestedPaging = true;
-                else
-                    pVM->hm.s.fAllowNestedPaging = false;
-            }
-
-            if (fCaps & SUPVTCAPS_VT_X)
-            {
-                Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
-                if (pVM->hm.s.vmx.fAllowUnrestricted)
+                pVM->hm.s.fNestedPaging = true;
+                if (fCaps & SUPVTCAPS_VT_X)
                 {
-                    if (   (fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST)
-                        && pVM->hm.s.fNestedPaging)
+                    if (   fAllowUnrestricted
+                        && (fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST))
                         pVM->hm.s.vmx.fUnrestrictedGuest = true;
                     else
-                        pVM->hm.s.vmx.fAllowUnrestricted = false;
+                        Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
                 }
             }
+            else
+                Assert(!pVM->hm.s.fNestedPaging);
         }
         else
         {
