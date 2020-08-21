@@ -579,8 +579,9 @@ void UIMachineSettingsGeneral::prepare()
     m_pCache = new UISettingsCacheMachineGeneral;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Prepare widgets: */
+    /* Prepare everything: */
     prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -601,7 +602,6 @@ void UIMachineSettingsGeneral::prepareWidgets()
             prepareTabAdvanced();
             prepareTabDescription();
             prepareTabEncryption();
-            prepareConnections();
 
             pLayoutMain->addWidget(m_pTabWidget);
         }

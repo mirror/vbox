@@ -808,8 +808,9 @@ void UIMachineSettingsSystem::prepare()
     m_pCache = new UISettingsCacheMachineSystem;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Prepare widgets: */
+    /* Prepare everything: */
     prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -829,7 +830,6 @@ void UIMachineSettingsSystem::prepareWidgets()
             prepareTabMotherboard();
             prepareTabProcessor();
             prepareTabAcceleration();
-            prepareConnections();
 
             pLayoutMain->addWidget(m_pTabWidget);
         }

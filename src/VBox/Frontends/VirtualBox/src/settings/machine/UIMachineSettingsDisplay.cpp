@@ -1046,8 +1046,9 @@ void UIMachineSettingsDisplay::prepare()
     m_pCache = new UISettingsCacheMachineDisplay;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Prepare widgets: */
+    /* Prepare everything: */
     prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -1067,7 +1068,6 @@ void UIMachineSettingsDisplay::prepareWidgets()
             prepareTabScreen();
             prepareTabRemoteDisplay();
             prepareTabRecording();
-            prepareConnections();
 
             pLayoutMain->addWidget(m_pTabWidget);
         }
