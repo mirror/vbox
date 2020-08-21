@@ -1048,6 +1048,9 @@ static DECLCALLBACK(int) pdmR0DevHlp_IommuSetUpContext(PPDMDEVINS pDevIns, PPDMI
     AssertPtrReturn(pIommuReg, VERR_INVALID_POINTER);
     AssertLogRelMsgReturn(pIommuReg->u32Version == PDM_IOMMUREGCC_VERSION,
                           ("%#x vs %#x\n", pIommuReg->u32Version, PDM_IOMMUREGCC_VERSION), VERR_VERSION_MISMATCH);
+    AssertPtrReturn(pIommuReg->pfnMemRead, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMemWrite, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIommuReg->pfnMsiRemap, VERR_INVALID_POINTER);
     AssertLogRelMsgReturn(pIommuReg->u32TheEnd == PDM_IOMMUREGCC_VERSION,
                           ("%#x vs %#x\n", pIommuReg->u32TheEnd, PDM_IOMMUREGCC_VERSION), VERR_VERSION_MISMATCH);
 
@@ -1078,6 +1081,9 @@ static DECLCALLBACK(int) pdmR0DevHlp_IommuSetUpContext(PPDMDEVINS pDevIns, PPDMI
     pIommuR0->idxIommu    = idxIommu;
     pIommuR0->uPadding0   = 0xdeaddead;
     pIommuR0->pDevInsR0   = pDevIns;
+    pIommuR0->pfnMemRead  = pIommuReg->pfnMemRead;
+    pIommuR0->pfnMemWrite = pIommuReg->pfnMemWrite;
+    pIommuR0->pfnMsiRemap = pIommuReg->pfnMsiRemap;
 
     *ppIommuHlp = &g_pdmR0IommuHlp;
 
@@ -1559,6 +1565,8 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16
     if (   pDevInsIommu
         && pDevInsIommu != pDevIns)
     {
+        AssertMsgReturn(VALID_PTR(pIommu->pfnMsiRemap),
+                        ("pdmR0IoApicHlp_IommuMsiRemap: pfnMsiRemap invalid!\n"), VERR_INVALID_POINTER);
         int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDevId, pMsiIn, pMsiOut);
         if (RT_FAILURE(rc))
         {
