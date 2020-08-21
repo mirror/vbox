@@ -23,7 +23,7 @@
 
 #include <iprt/path.h>
 
-#if VBOX_RECORDING_DUMP
+#ifdef VBOX_RECORDING_DUMP
 # include <iprt/formats/bmp.h>
 #endif
 

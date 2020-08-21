@@ -28,9 +28,8 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
-#ifdef RT_OS_WINDOWS
-# include <iprt/formats/bmp.h>
-#endif
+
+#include <iprt/formats/bmp.h>
 
 #include <VBox/vmm/pgm.h> /* required by DevVGA.h */
 #include <VBoxVideo.h> /* required by DevVGA.h */
