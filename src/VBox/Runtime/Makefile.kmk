@@ -907,6 +907,7 @@ RuntimeR3_SOURCES.win = \
 	r3/nt/RTProcQueryParent-r3-nt.cpp \
 	r3/win/env-win.cpp \
 	r3/win/RTCrStoreCreateSnapshotById-win.cpp \
+	r3/win/RTFileQuerySectorSize-win.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTLocaleQueryNormalizedBaseLocaleName-win.cpp \
 	r3/win/RTLocaleQueryUserCountryCode-win.cpp \
@@ -998,6 +999,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/time-linux.cpp \
 	r3/linux/thread-affinity-linux.cpp \
 	r3/linux/RTFileCopyPartEx-linux.cpp \
+	r3/linux/RTFileQuerySectorSize-linux.cpp \
 	r3/linux/RTFileSetAllocationSize-linux.cpp \
 	r3/linux/RTProcIsRunningByName-linux.cpp \
 	r3/linux/RTSystemFirmware-linux.cpp \
@@ -1078,6 +1080,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/fileio-sg-at-generic.cpp \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
+	generic/RTFileQuerySectorSize-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
@@ -1186,6 +1189,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTSystemFirmware-generic.cpp \
 	r3/darwin/RTCrStoreCreateSnapshotById-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
+	r3/darwin/RTFileQuerySectorSize-darwin.cpp \
 	r3/darwin/krnlmod-darwin.cpp \
 	r3/darwin/mp-darwin.cpp \
 	r3/darwin/pathhost-darwin.cpp \
@@ -1277,6 +1281,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/freebsd/fileaio-freebsd.cpp \
+	r3/freebsd/RTFileQuerySectorSize-freebsd.cpp \
 	r3/freebsd/mp-freebsd.cpp \
 	r3/freebsd/systemmem-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
@@ -1338,6 +1343,7 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
+	generic/RTFileQuerySectorSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
@@ -1490,6 +1496,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp \
 	r3/solaris/fileaio-solaris.cpp \
+	r3/solaris/RTFileQuerySectorSize-solaris.cpp \
 	r3/solaris/krnlmod-solaris.cpp \
 	r3/solaris/systemmem-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
@@ -1521,6 +1528,7 @@ RuntimeR3_SOURCES.haiku = \
 	generic/fileio-sg-at-generic.cpp \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
+	generic/RTFileQuerySectorSize-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \

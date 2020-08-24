@@ -593,6 +593,19 @@ RTDECL(int) RTFileQueryMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
 RTDECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
 
 /**
+ * Queries the sector size (/ logical block size) for a disk or similar.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_FUNCTION if not a disk/similar.  Could also be returned
+ *          if not really implemented.
+ * @param   hFile       Handle to the disk.  This must typically be a device
+ *                      rather than a file or directory, though this may vary
+ *                      from OS to OS.
+ * @param   pcbSector   Where to store the sector size.
+ */
+RTDECL(int) RTFileQuerySectorSize(RTFILE hFile, uint32_t *pcbSector);
+
+/**
  * Gets the current file position.
  *
  * @returns File offset.

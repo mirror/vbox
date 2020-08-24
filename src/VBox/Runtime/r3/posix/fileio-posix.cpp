@@ -679,9 +679,9 @@ RTR3DECL(int) RTFileQuerySize(RTFILE hFile, uint64_t *pcbSize)
     {
         *pcbSize = st.st_size;
         if (   st.st_size != 0
-#if defined(RT_OS_SOLARIS)
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
             || (!S_ISBLK(st.st_mode) && !S_ISCHR(st.st_mode))
-#elif defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
+#elif defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_DARWIN)
             || !S_ISCHR(st.st_mode)
 #else
             || !S_ISBLK(st.st_mode)
@@ -704,7 +704,11 @@ RTR3DECL(int) RTFileQuerySize(RTFILE hFile, uint64_t *pcbSize)
                 return VINF_SUCCESS;
             }
         }
-        /* must be a block device, fail on failure. */
+
+        /* Always fail block devices.  Character devices doesn't all need to be
+           /dev/rdisk* nodes, they should return ENOTTY but include EINVAL too. */
+        if (!S_ISBLK(st.st_mode) && (errno == ENOTTY || errno == EINVAL))
+            return VINF_SUCCESS;
 
 #elif defined(RT_OS_SOLARIS)
         struct dk_minfo MediaInfo;

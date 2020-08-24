@@ -964,6 +964,7 @@
 # define RTFileOpenTemp                                 RT_MANGLER(RTFileOpenTemp)
 # define RTFileQueryFsSizes                             RT_MANGLER(RTFileQueryFsSizes)
 # define RTFileQueryInfo                                RT_MANGLER(RTFileQueryInfo)
+# define RTFileQuerySectorSize                          RT_MANGLER(RTFileQuerySectorSize)
 # define RTFileQuerySize                                RT_MANGLER(RTFileQuerySize)
 # define RTFileRead                                     RT_MANGLER(RTFileRead)
 # define RTFileReadAll                                  RT_MANGLER(RTFileReadAll)
