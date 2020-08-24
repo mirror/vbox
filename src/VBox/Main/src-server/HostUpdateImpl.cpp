@@ -256,8 +256,6 @@ Utf8Str HostUpdate::i_platformInfo()
 
 HRESULT HostUpdate::i_checkForVBoxUpdate()
 {
-    HRESULT rc;
-
     // Default to no update required
     m_updateNeeded = FALSE;
 
@@ -265,60 +263,51 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     // Build up our query URL starting with the URL basename
     Utf8Str strUrl("https://update.virtualbox.org/query.php/?");
     Bstr platform;
-    rc = mVirtualBox->COMGETTER(PackageType)(platform.asOutParam());
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: IVirtualBox::packageType() failed: %Rrc"), __FUNCTION__, rc);
+    HRESULT rc = mVirtualBox->COMGETTER(PackageType)(platform.asOutParam());
+    AssertComRCReturn(rc, rc);
     strUrl.appendPrintf("platform=%ls", platform.raw()); // e.g. SOLARIS_64BITS_GENERIC
 
     // Get the complete current version string for the query URL
     Bstr versionNormalized;
     rc = mVirtualBox->COMGETTER(VersionNormalized)(versionNormalized.asOutParam());
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: IVirtualBox::versionNormalized() failed: %Rrc"), __FUNCTION__, rc);
+    AssertComRCReturn(rc, rc);
     strUrl.appendPrintf("&version=%ls", versionNormalized.raw()); // e.g. 6.1.1
     // strUrl.appendPrintf("&version=6.0.12"); // comment out previous line and uncomment this one for testing
 
-    ULONG revision;
+    ULONG revision = 0;
     rc = mVirtualBox->COMGETTER(Revision)(&revision);
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: IVirtualBox::revision() failed: %Rrc"), __FUNCTION__, rc);
+    AssertComRCReturn(rc, rc);
     strUrl.appendPrintf("_%u", revision); // e.g. 135618
 
     // acquire the System Properties interface
     ComPtr<ISystemProperties> ptrSystemProperties;
     rc = mVirtualBox->COMGETTER(SystemProperties)(ptrSystemProperties.asOutParam());
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: IVirtualBox::systemProperties() failed: %Rrc"), __FUNCTION__, rc);
+    AssertComRCReturn(rc, rc);
 
     // Update the VBoxUpdate setting 'VBoxUpdateLastCheckDate'
     RTTIME Time;
     RTTIMESPEC TimeNow;
     char szTimeStr[RTTIME_STR_LEN];
-
     RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&TimeNow)), szTimeStr, sizeof(szTimeStr));
     LogRelFunc(("VBox updating UpdateDate with TimeString = %s\n", szTimeStr));
     rc = ptrSystemProperties->COMSETTER(VBoxUpdateLastCheckDate)(Bstr(szTimeStr).raw());
-    if (FAILED(rc))
-        return rc; // ISystemProperties::setLastCheckDate calls setError() on failure
+    AssertComRCReturn(rc, rc);
 
     // Update the queryURL and the VBoxUpdate setting 'VBoxUpdateCount'
     ULONG cVBoxUpdateCount = 0;
     rc = ptrSystemProperties->COMGETTER(VBoxUpdateCount)(&cVBoxUpdateCount);
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: retrieving ISystemProperties::VBoxUpdateCount failed: %Rrc"), __FUNCTION__, rc);
+    AssertComRCReturn(rc, rc);
 
     cVBoxUpdateCount++;
 
     rc = ptrSystemProperties->COMSETTER(VBoxUpdateCount)(cVBoxUpdateCount);
-    if (FAILED(rc))
-        return rc; // ISystemProperties::setVBoxUpdateCount calls setError() on failure
+    AssertComRCReturn(rc, rc);
     strUrl.appendPrintf("&count=%u", cVBoxUpdateCount);
 
     // Update the query URL and the VBoxUpdate settings (if necessary) with the 'Target' information.
     VBoxUpdateTarget_T enmTarget = VBoxUpdateTarget_Stable; // default branch is 'stable'
     rc = ptrSystemProperties->COMGETTER(VBoxUpdateTarget)(&enmTarget);
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: retrieving ISystemProperties::Target failed: %Rrc"), __FUNCTION__, rc);
+    AssertComRCReturn(rc, rc);
 
     switch (enmTarget)
     {
@@ -335,8 +324,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
     }
 
     rc = ptrSystemProperties->COMSETTER(VBoxUpdateTarget)(enmTarget);
-    if (FAILED(rc))
-        return rc; // ISystemProperties::setTarget calls setError() on failure
+    AssertComRCReturn(rc, rc);
 
     LogRelFunc(("VBox update URL = %s\n", strUrl.c_str()));
 
@@ -345,8 +333,7 @@ HRESULT HostUpdate::i_checkForVBoxUpdate()
      */
     Bstr version;
     rc = mVirtualBox->COMGETTER(Version)(version.asOutParam()); // e.g. 6.1.0_RC1
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: IVirtualBox::version() failed: %Rrc"), __FUNCTION__, rc);
+    AssertComRCReturn(rc, rc);
 
     Utf8StrFmt const strUserAgent("VirtualBox %ls <%s>", version.raw(), HostUpdate::i_platformInfo().c_str());
     LogRelFunc(("userAgent = %s\n", strUserAgent.c_str()));
@@ -595,13 +582,11 @@ HRESULT HostUpdate::updateCheck(UpdateCheckType_T aCheckType,
     // Check whether VirtualBox updates have been disabled before spawning the task thread.
     ComPtr<ISystemProperties> pSystemProperties;
     HRESULT rc = mVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: IVirtualBox::systemProperties() failed: %Rrc"), __FUNCTION__, rc);
+    AssertComRCReturn(rc, rc);
 
     BOOL fVBoxUpdateEnabled = true;
     rc = pSystemProperties->COMGETTER(VBoxUpdateEnabled)(&fVBoxUpdateEnabled);
-    if (FAILED(rc))
-        return setErrorVrc(rc, tr("%s: retrieving ISystemProperties::VBoxUpdateEnabled failed: %Rrc"), __FUNCTION__, rc);
+    AssertComRCReturn(rc, rc);
 
     /** @todo r=bird: Not sure if this makes sense, it should at least have a
      * better status code and a proper error message.  Also, isn't this really
