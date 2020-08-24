@@ -291,9 +291,9 @@ typedef struct RTDVMFMTOPS
      *          where it wasn't present in the tables.
      * @retval  VERR_INVALID_FUNCTION if the @a enmProperty value is wrong.
      * @retval  VERR_INVALID_PARAMETER if the fixed buffer size is wrong. Correct
-     *          size in @a *pcbRet.
+     *          size in @a *pcbBuf.
      * @retval  VERR_BUFFER_OVERFLOW if the property doesn't have a fixed size
-     *          buffer and the buffer isn't big enough. Correct size in @a *pcbRet.
+     *          buffer and the buffer isn't big enough. Correct size in @a *pcbBuf.
      * @retval  VERR_INVALID_HANDLE if the handle is invalid.
      *
      * @param   hVolFmt     Handle to the volume.
@@ -306,7 +306,7 @@ typedef struct RTDVMFMTOPS
      *                      which case the user value is passed along as-is but it
      *                      is okay to return a smaller amount of data.  The common
      *                      code will make upcast the data.
-     * @param   pcbRet      Where to return the amount of data returned.  This must
+     * @param   pcbBuf      Where to return the amount of data returned.  This must
      *                      be set even for fixed type/sized data.
      * @sa RTDvmVolumeQueryProp, RTDvmVolumeGetPropU64
      */

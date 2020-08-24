@@ -481,8 +481,8 @@ typedef enum RTDVMVOLPROP
 /**
  * Query a generic volume property.
  *
- * This is an extensible interface for retriving mostly format specific
- * information, or information that's not commonly used.  (It's modelled after
+ * This is an extensible interface for retrieving mostly format specific
+ * information, or information that's not commonly used.  (It's modeled after
  * RTLdrQueryPropEx.)
  *
  * @returns IPRT status code.
@@ -492,16 +492,16 @@ typedef enum RTDVMVOLPROP
  *          where it wasn't present in the tables.
  * @retval  VERR_INVALID_FUNCTION if the @a enmProperty value is wrong.
  * @retval  VERR_INVALID_PARAMETER if the fixed buffer size is wrong. Correct
- *          size in @a *pcbRet.
+ *          size in @a *pcbBuf.
  * @retval  VERR_BUFFER_OVERFLOW if the property doesn't have a fixed size
- *          buffer and the buffer isn't big enough. Correct size in @a *pcbRet.
+ *          buffer and the buffer isn't big enough. Correct size in @a *pcbBuf.
  * @retval  VERR_INVALID_HANDLE if the handle is invalid.
  * @param   hVol        Handle to the volume.
  * @param   enmProperty The property to query.
  * @param   pvBuf       Pointer to the input / output buffer.  In most cases
  *                      it's only used for returning data.
  * @param   cbBuf       The size of the buffer.
- * @param   pcbRet      Where to return the amount of data returned.  On
+ * @param   pcbBuf      Where to return the amount of data returned.  On
  *                      buffer size errors, this is set to the correct size.
  *                      Optional.
  * @sa      RTDvmVolumeGetPropU64
