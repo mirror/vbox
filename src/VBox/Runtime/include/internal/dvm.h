@@ -137,6 +137,16 @@ typedef struct RTDVMFMTOPS
                                               bool *pfUsed));
 
     /**
+     * Optional: Query the uuid of the current disk if applicable.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_NOT_SUPPORTED if the partition scheme doesn't do UUIDs.
+     * @param   hVolMgrFmt      The format specific volume manager handle.
+     * @param   pUuid           Where to return the UUID.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryDiskUuid,(RTDVMFMT hVolMgrFmt, PRTUUID pUuid));
+
+    /**
      * Gets the number of valid volumes in the map.
      *
      * @returns Number of valid volumes in the map or UINT32_MAX on failure.
@@ -245,6 +255,65 @@ typedef struct RTDVMFMTOPS
                                                            uint64_t *pcbIntersect));
 
     /**
+     * Queries the range of the partition table the volume belongs to on the underlying medium.
+     *
+     * @returns IPRT status code.
+     * @param   hVolFmt         The format specific volume handle.
+     * @param   poffTable       Where to return the byte offset on the underlying
+     *                          media of the (partition/volume/whatever) table.
+     * @param   pcbTable        Where to return the table size in bytes.  This
+     *                          typically includes alignment padding.
+     * @sa RTDvmVolumeQueryTableLocation
+     */
+    DECLCALLBACKMEMBER(int, pfnVolumeQueryTableLocation,(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffLast));
+
+    /**
+     * Gets the tiven index for the specified volume.
+     *
+     * @returns The requested index. UINT32_MAX on failure.
+     * @param   hVolFmt         The format specific volume handle.
+     * @param   enmIndex        The index to get.
+     * @sa RTDvmVolumeGetIndex
+     */
+    DECLCALLBACKMEMBER(uint32_t, pfnVolumeGetIndex,(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLIDX enmIndex));
+
+    /**
+     * Query a generic volume property.
+     *
+     * This is an extensible interface for retriving mostly format specific
+     * information, or information that's not commonly used.  (It's modelled after
+     * RTLdrQueryPropEx.)
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_NOT_SUPPORTED if the property query isn't supported (either all
+     *          or that specific property).  The caller  must  handle this result.
+     * @retval  VERR_NOT_FOUND is currently not returned, but intended for cases
+     *          where it wasn't present in the tables.
+     * @retval  VERR_INVALID_FUNCTION if the @a enmProperty value is wrong.
+     * @retval  VERR_INVALID_PARAMETER if the fixed buffer size is wrong. Correct
+     *          size in @a *pcbRet.
+     * @retval  VERR_BUFFER_OVERFLOW if the property doesn't have a fixed size
+     *          buffer and the buffer isn't big enough. Correct size in @a *pcbRet.
+     * @retval  VERR_INVALID_HANDLE if the handle is invalid.
+     *
+     * @param   hVolFmt     Handle to the volume.
+     * @param   enmProperty The property to query.
+     * @param   pvBuf       Pointer to the input / output buffer.  In most cases
+     *                      it's only used for returning data.
+     * @param   cbBuf       The size of the buffer.  This is validated by the common
+     *                      code for all fixed typed & sized properties.  The
+     *                      interger properties may have several supported sizes, in
+     *                      which case the user value is passed along as-is but it
+     *                      is okay to return a smaller amount of data.  The common
+     *                      code will make upcast the data.
+     * @param   pcbRet      Where to return the amount of data returned.  This must
+     *                      be set even for fixed type/sized data.
+     * @sa RTDvmVolumeQueryProp, RTDvmVolumeGetPropU64
+     */
+    DECLCALLBACKMEMBER(int, pfnVolumeQueryProp,(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLPROP enmProperty,
+                                                void *pvBuf, size_t cbBuf, size_t *pcbBuf));
+
+    /**
      * Read data from the given volume.
      *
      * @returns IPRT status code.
@@ -299,6 +368,7 @@ DECLINLINE(uint64_t) rtDvmDiskGetSectors(PCRTDVMDISK pDisk)
  * @param   off      Start offset.
  * @param   pvBuf    Destination buffer.
  * @param   cbRead   How much to read.
+ * @sa      rtDvmDiskReadUnaligned
  */
 DECLINLINE(int) rtDvmDiskRead(PCRTDVMDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
 {
@@ -307,8 +377,14 @@ DECLINLINE(int) rtDvmDiskRead(PCRTDVMDISK pDisk, uint64_t off, void *pvBuf, size
     AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
     AssertReturn(off + cbRead <= pDisk->cbDisk, VERR_INVALID_PARAMETER);
 
+    /* Use RTVfsFileReadAt if these triggers: */
+    Assert(!(cbRead % pDisk->cbSector));
+    Assert(!(off    % pDisk->cbSector));
+
     return RTVfsFileReadAt(pDisk->hVfsFile, off, pvBuf, cbRead, NULL /*pcbRead*/);
 }
+
+DECLHIDDEN(int) rtDvmDiskReadUnaligned(PCRTDVMDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead);
 
 /**
  * Write to the disk at the given offset.
@@ -325,6 +401,10 @@ DECLINLINE(int) rtDvmDiskWrite(PCRTDVMDISK pDisk, uint64_t off, const void *pvBu
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbWrite > 0, VERR_INVALID_PARAMETER);
     AssertReturn(off + cbWrite <= pDisk->cbDisk, VERR_INVALID_PARAMETER);
+
+    /* Write RTVfsFileReadAt if these triggers: */
+    Assert(!(cbWrite % pDisk->cbSector));
+    Assert(!(off     % pDisk->cbSector));
 
     return RTVfsFileWriteAt(pDisk->hVfsFile, off, pvBuf, cbWrite, NULL /*pcbWritten*/);
 }

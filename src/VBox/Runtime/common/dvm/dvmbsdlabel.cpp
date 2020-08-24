@@ -52,7 +52,6 @@
 /**
  * A BSD disk label partition.
  */
-#pragma pack(1)
 typedef struct BsdLabelPartition
 {
     /** Number of sectors in the partition. */
@@ -68,7 +67,6 @@ typedef struct BsdLabelPartition
     /** Filesystem cylinders per group. */
     uint16_t             cFsCylPerGroup;
 } BsdLabelPartition;
-#pragma pack()
 AssertCompileSize(BsdLabelPartition, 16);
 /** Pointer to a BSD disklabel partition structure. */
 typedef BsdLabelPartition *PBsdLabelPartition;
@@ -76,7 +74,6 @@ typedef BsdLabelPartition *PBsdLabelPartition;
 /**
  * On disk BSD label structure.
  */
-#pragma pack(1)
 typedef struct BsdLabel
 {
     /** Magic identifying the BSD disk label. */
@@ -138,7 +135,6 @@ typedef struct BsdLabel
     /** The partition array. */
     BsdLabelPartition    aPartitions[RTDVM_BSDLBL_MAX_PARTITIONS];
 } BsdLabel;
-#pragma pack()
 AssertCompileSize(BsdLabel, 148 + RTDVM_BSDLBL_MAX_PARTITIONS * 16);
 /** Pointer to a BSD disklabel structure. */
 typedef BsdLabel *PBsdLabel;
@@ -284,7 +280,7 @@ static DECLCALLBACK(int) rtDvmFmtBsdLblProbe(PCRTDVMDISK pDisk, uint32_t *puScor
     if (pDisk->cbDisk >= sizeof(BsdLabel))
     {
         /* Read from the disk and check for the disk label structure. */
-        rc = rtDvmDiskRead(pDisk, RTDVM_BSDLBL_LBA2BYTE(1, pDisk), &DiskLabel, sizeof(BsdLabel));
+        rc = rtDvmDiskReadUnaligned(pDisk, RTDVM_BSDLBL_LBA2BYTE(1, pDisk), &DiskLabel, sizeof(BsdLabel));
         if (   RT_SUCCESS(rc)
             && rtDvmFmtBsdLblDiskLabelDecode(&DiskLabel))
             *puScore = RTDVM_MATCH_SCORE_PERFECT;
@@ -304,7 +300,7 @@ static DECLCALLBACK(int) rtDvmFmtBsdLblOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMg
         pThis->cPartitions = 0;
 
         /* Read from the disk and check for the disk label structure. */
-        rc = rtDvmDiskRead(pDisk, RTDVM_BSDLBL_LBA2BYTE(1, pDisk), &pThis->DiskLabel, sizeof(BsdLabel));
+        rc = rtDvmDiskReadUnaligned(pDisk, RTDVM_BSDLBL_LBA2BYTE(1, pDisk), &pThis->DiskLabel, sizeof(BsdLabel));
         if (   RT_SUCCESS(rc)
             && rtDvmFmtBsdLblDiskLabelDecode(&pThis->DiskLabel))
         {
@@ -339,7 +335,7 @@ static DECLCALLBACK(void) rtDvmFmtBsdLblClose(RTDVMFMT hVolMgrFmt)
 
     pThis->pDisk       = NULL;
     pThis->cPartitions = 0;
-    memset(&pThis->DiskLabel, 0, sizeof(BsdLabel));
+    RT_ZERO(pThis->DiskLabel);
     RTMemFree(pThis);
 }
 
@@ -508,6 +504,65 @@ static DECLCALLBACK(bool) rtDvmFmtBsdLblVolumeIsRangeIntersecting(RTDVMVOLUMEFMT
     return fIntersect;
 }
 
+/** @copydoc RTDVMFMTOPS::pfnVolumeQueryTableLocation */
+static DECLCALLBACK(int) rtDvmFmtBsdLblVolumeQueryTableLocation(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffTable, uint64_t *pcbTable)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    *poffTable = RTDVM_BSDLBL_LBA2BYTE(1, pVol->pVolMgr->pDisk);
+    *pcbTable  = RT_ALIGN_Z(sizeof(BsdLabel), pVol->pVolMgr->pDisk->cbSector);
+    return VINF_SUCCESS;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnVolumeGetIndex */
+static DECLCALLBACK(uint32_t) rtDvmFmtBsdLblVolumeGetIndex(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLIDX enmIndex)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    switch (enmIndex)
+    {
+        case RTDVMVOLIDX_USER_VISIBLE:
+        case RTDVMVOLIDX_ALL:
+        case RTDVMVOLIDX_LINUX:
+            return pVol->idxEntry + 1;
+        case RTDVMVOLIDX_IN_TABLE:
+            return pVol->idxEntry;
+
+        case RTDVMVOLIDX_INVALID:
+        case RTDVMVOLIDX_END:
+        case RTDVMVOLIDX_32BIT_HACK:
+            break;
+        /* no default! */
+    }
+    AssertFailed();
+    return UINT32_MAX;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnVolumeQueryProp */
+static DECLCALLBACK(int) rtDvmFmtBsdLblVolumeQueryProp(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLPROP enmProperty,
+                                                       void *pvBuf, size_t cbBuf, size_t *pcbBuf)
+{
+    switch (enmProperty)
+    {
+        case RTDVMVOLPROP_MBR_FIRST_CYLINDER:
+        case RTDVMVOLPROP_MBR_FIRST_HEAD:
+        case RTDVMVOLPROP_MBR_FIRST_SECTOR:
+        case RTDVMVOLPROP_MBR_LAST_CYLINDER:
+        case RTDVMVOLPROP_MBR_LAST_HEAD:
+        case RTDVMVOLPROP_MBR_LAST_SECTOR:
+        case RTDVMVOLPROP_MBR_TYPE:
+        case RTDVMVOLPROP_GPT_TYPE:
+        case RTDVMVOLPROP_GPT_UUID:
+            return VERR_NOT_SUPPORTED;
+
+        case RTDVMVOLPROP_INVALID:
+        case RTDVMVOLPROP_END:
+        case RTDVMVOLPROP_32BIT_HACK:
+            break;
+        /* no default! */
+    }
+    RT_NOREF(hVolFmt, pvBuf, cbBuf, pcbBuf);
+    return VERR_NOT_SUPPORTED;
+}
+
 static DECLCALLBACK(int) rtDvmFmtBsdLblVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -540,6 +595,8 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtBsdLbl =
     rtDvmFmtBsdLblClose,
     /* pfnQueryRangeUse */
     rtDvmFmtBsdLblQueryRangeUse,
+    /* pfnQueryDiskUuid */
+    NULL,
     /* pfnGetValidVolumes */
     rtDvmFmtBsdLblGetValidVolumes,
     /* pfnGetMaxVolumes */
@@ -562,6 +619,12 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtBsdLbl =
     rtDvmFmtBsdLblVolumeQueryRange,
     /* pfnVolumeIsRangeIntersecting */
     rtDvmFmtBsdLblVolumeIsRangeIntersecting,
+    /* pfnVolumeQueryTableLocation */
+    rtDvmFmtBsdLblVolumeQueryTableLocation,
+    /* pfnVolumeGetIndex */
+    rtDvmFmtBsdLblVolumeGetIndex,
+    /* pfnVolumeQueryProp */
+    rtDvmFmtBsdLblVolumeQueryProp,
     /* pfnVolumeRead */
     rtDvmFmtBsdLblVolumeRead,
     /* pfnVolumeWrite */

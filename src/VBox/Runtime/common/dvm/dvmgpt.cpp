@@ -251,7 +251,7 @@ static DECLCALLBACK(int) rtDvmFmtGptProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
     if (rtDvmDiskGetSectors(pDisk) >= 2)
     {
         /* Read from the disk and check for the signature. */
-        rc = rtDvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(1, pDisk), &Hdr, sizeof(GPTHDR));
+        rc = rtDvmDiskReadUnaligned(pDisk, RTDVM_GPT_LBA2BYTE(1, pDisk), &Hdr, sizeof(GPTHDR));
         if (   RT_SUCCESS(rc)
             && !strncmp(&Hdr.abSignature[0], RTDVM_GPT_SIGNATURE, RT_ELEMENTS(Hdr.abSignature))
             && RT_LE2H_U32(Hdr.u32Revision) == 0x00010000
@@ -274,7 +274,7 @@ static DECLCALLBACK(int) rtDvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
         pThis->cPartitions = 0;
 
         /* Read the complete GPT header and convert to host endianess. */
-        rc = rtDvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(1, pDisk), &pThis->HdrRev1, sizeof(pThis->HdrRev1));
+        rc = rtDvmDiskReadUnaligned(pDisk, RTDVM_GPT_LBA2BYTE(1, pDisk), &pThis->HdrRev1, sizeof(pThis->HdrRev1));
         if (RT_SUCCESS(rc))
         {
             pThis->HdrRev1.Hdr.u32Revision        = RT_LE2H_U32(pThis->HdrRev1.Hdr.u32Revision);
@@ -292,11 +292,12 @@ static DECLCALLBACK(int) rtDvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
 
             if (pThis->HdrRev1.cbPartitionEntry == sizeof(GPTENTRY))
             {
-                pThis->paGptEntries = (PGPTENTRY)RTMemAllocZ(pThis->HdrRev1.cPartitionEntries * pThis->HdrRev1.cbPartitionEntry);
+                size_t cbAlignedGptEntries = RT_ALIGN_Z(pThis->HdrRev1.cPartitionEntries * pThis->HdrRev1.cbPartitionEntry, pDisk->cbSector);
+                pThis->paGptEntries = (PGPTENTRY)RTMemAllocZ(cbAlignedGptEntries);
                 if (pThis->paGptEntries)
                 {
                     rc = rtDvmDiskRead(pDisk, RTDVM_GPT_LBA2BYTE(pThis->HdrRev1.u64LbaPartitionEntries, pDisk),
-                                     pThis->paGptEntries, pThis->HdrRev1.cPartitionEntries * pThis->HdrRev1.cbPartitionEntry);
+                                       pThis->paGptEntries, cbAlignedGptEntries);
                     if (RT_SUCCESS(rc))
                     {
                         /* Count the occupied entries. */
@@ -313,22 +314,22 @@ static DECLCALLBACK(int) rtDvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
 
                                 pThis->cPartitions++;
                             }
-                    }
 
-                    if (RT_FAILURE(rc))
-                        RTMemFree(pThis->paGptEntries);
+                        if (RT_SUCCESS(rc))
+                        {
+                            *phVolMgrFmt = pThis;
+                            return rc;
+                        }
+                    }
+                    RTMemFree(pThis->paGptEntries);
                 }
                 else
                     rc = VERR_NO_MEMORY;
             }
             else
                 rc = VERR_NOT_SUPPORTED;
-
-            if (RT_SUCCESS(rc))
-                *phVolMgrFmt = pThis;
-            else
-                RTMemFree(pThis);
         }
+        RTMemFree(pThis);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -347,10 +348,11 @@ static DECLCALLBACK(void) rtDvmFmtGptClose(RTDVMFMT hVolMgrFmt)
     PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
 
     pThis->pDisk = NULL;
-    memset(&pThis->HdrRev1, 0, sizeof(pThis->HdrRev1));
-    RTMemFree(pThis->paGptEntries);
+    RT_ZERO(pThis->HdrRev1);
 
+    RTMemFree(pThis->paGptEntries);
     pThis->paGptEntries = NULL;
+
     RTMemFree(pThis);
 }
 
@@ -367,6 +369,15 @@ static DECLCALLBACK(int) rtDvmFmtGptQueryRangeUse(RTDVMFMT hVolMgrFmt,
     else
         *pfUsed = false;
 
+    return VINF_SUCCESS;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnQueryDiskUuid */
+static DECLCALLBACK(int) rtDvmFmtGptQueryDiskUuid(RTDVMFMT hVolMgrFmt, PRTUUID pUuid)
+{
+    PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
+
+    *pUuid = pThis->HdrRev1.DiskUuid;
     return VINF_SUCCESS;
 }
 
@@ -520,6 +531,81 @@ static DECLCALLBACK(bool) rtDvmFmtGptVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hV
     return false;
 }
 
+/** @copydoc RTDVMFMTOPS::pfnVolumeQueryTableLocation */
+static DECLCALLBACK(int) rtDvmFmtGptVolumeQueryTableLocation(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffTable, uint64_t *pcbTable)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    PRTDVMFMTINTERNAL pVolMgr = pVol->pVolMgr;
+    *poffTable = RTDVM_GPT_LBA2BYTE(1, pVolMgr->pDisk);
+    *pcbTable  = RTDVM_GPT_LBA2BYTE(pVolMgr->HdrRev1.u64LbaPartitionEntries, pVolMgr->pDisk)
+               + RT_ALIGN_Z(pVolMgr->HdrRev1.cPartitionEntries * pVolMgr->HdrRev1.cbPartitionEntry, pVolMgr->pDisk->cbSector)
+               - *poffTable;
+    return VINF_SUCCESS;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnVolumeGetIndex */
+static DECLCALLBACK(uint32_t) rtDvmFmtGptVolumeGetIndex(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLIDX enmIndex)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    switch (enmIndex)
+    {
+        case RTDVMVOLIDX_USER_VISIBLE:
+        case RTDVMVOLIDX_ALL:
+        case RTDVMVOLIDX_LINUX:
+            return pVol->idxEntry + 1;
+
+        case RTDVMVOLIDX_IN_TABLE:
+            return pVol->idxEntry;
+
+        case RTDVMVOLIDX_32BIT_HACK:
+        case RTDVMVOLIDX_INVALID:
+        case RTDVMVOLIDX_END:
+            break;
+        /* no default! */
+    }
+    AssertFailed();
+    return UINT32_MAX;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnVolumeQueryProp */
+static DECLCALLBACK(int) rtDvmFmtGptVolumeQueryProp(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLPROP enmProperty,
+                                                    void *pvBuf, size_t cbBuf, size_t *pcbBuf)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    switch (enmProperty)
+    {
+        case RTDVMVOLPROP_MBR_FIRST_CYLINDER:
+        case RTDVMVOLPROP_MBR_FIRST_HEAD:
+        case RTDVMVOLPROP_MBR_FIRST_SECTOR:
+        case RTDVMVOLPROP_MBR_LAST_CYLINDER:
+        case RTDVMVOLPROP_MBR_LAST_HEAD:
+        case RTDVMVOLPROP_MBR_LAST_SECTOR:
+        case RTDVMVOLPROP_MBR_TYPE:
+            return VERR_NOT_SUPPORTED;
+
+        case RTDVMVOLPROP_GPT_TYPE:
+            *pcbBuf = sizeof(RTUUID);
+            Assert(cbBuf >= *pcbBuf);
+            *(PRTUUID)pvBuf = pVol->pGptEntry->UuidType;
+            return VINF_SUCCESS;
+
+        case RTDVMVOLPROP_GPT_UUID:
+            *pcbBuf = sizeof(RTUUID);
+            Assert(cbBuf >= *pcbBuf);
+            *(PRTUUID)pvBuf = pVol->pGptEntry->UuidPartition;
+            return VINF_SUCCESS;
+
+        case RTDVMVOLPROP_INVALID:
+        case RTDVMVOLPROP_END:
+        case RTDVMVOLPROP_32BIT_HACK:
+            break;
+        /* not default! */
+    }
+    AssertFailed();
+    RT_NOREF(cbBuf);
+    return VERR_NOT_SUPPORTED;
+}
+
 static DECLCALLBACK(int) rtDvmFmtGptVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -552,6 +638,8 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtGpt =
     rtDvmFmtGptClose,
     /* pfnQueryRangeUse */
     rtDvmFmtGptQueryRangeUse,
+    /* pfnQueryDiskUuid */
+    rtDvmFmtGptQueryDiskUuid,
     /* pfnGetValidVolumes */
     rtDvmFmtGptGetValidVolumes,
     /* pfnGetMaxVolumes */
@@ -574,6 +662,12 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtGpt =
     rtDvmFmtGptVolumeQueryRange,
     /* pfnVolumeIsRangeIntersecting */
     rtDvmFmtGptVolumeIsRangeIntersecting,
+    /* pfnVolumeQueryTableLocation */
+    rtDvmFmtGptVolumeQueryTableLocation,
+    /* pfnVolumeGetIndex */
+    rtDvmFmtGptVolumeGetIndex,
+    /* pfnVolumeQueryProp */
+    rtDvmFmtGptVolumeQueryProp,
     /* pfnVolumeRead */
     rtDvmFmtGptVolumeRead,
     /* pfnVolumeWrite */

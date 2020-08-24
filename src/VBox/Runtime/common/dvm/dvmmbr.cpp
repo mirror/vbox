@@ -36,6 +36,7 @@
 #include <iprt/list.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 #include "internal/dvm.h"
 
 
@@ -51,6 +52,27 @@
 *********************************************************************************************************************************/
 /** Pointer to a MBR sector. */
 typedef struct RTDVMMBRSECTOR *PRTDVMMBRSECTOR;
+
+
+/** The on-disk Cylinder/Head/Sector (CHS) info. */
+typedef struct MBRCHSADDR
+{
+    uint8_t uHead;
+    uint8_t uSector : 6;
+    uint8_t uCylinderH : 2;
+    uint8_t uCylinderL;
+} MBRCHSADDR;
+AssertCompileSize(MBRCHSADDR, 3);
+
+
+/** A decoded cylinder/head/sector address. */
+typedef struct RTDVMMBRCHSADDR
+{
+    uint16_t uCylinder;
+    uint8_t  uHead;
+    uint8_t  uSector;
+} RTDVMMBRCHSADDR;
+
 
 /**
  * MBR entry.
@@ -73,6 +95,23 @@ typedef struct RTDVMMBRENTRY
     uint8_t             fFlags;
     /** Bad entry. */
     bool                fBad;
+    /** RTDVMVOLIDX_IN_TABLE - Zero-based index within the table in pSector.
+     * (Also the index into RTDVMMBRSECTOR::aEntries.) */
+    uint8_t             idxTable;
+    /** RTDVMVOLIDX_ALL - One-based index.  All primary entries are included,
+     *  whether they are used or not.  In the extended table chain, only USED
+     *  entries are counted (but we include RTDVMMBR_IS_EXTENDED entries). */
+    uint8_t             idxAll;
+    /** RTDVMVOLIDX_USER_VISIBLE - One-base index.  Skips all unused entries
+     *  and RTDVMMBR_IS_EXTENDED. */
+    uint8_t             idxVisible;
+    /** RTDVMVOLIDX_LINUX - One-based index following the /dev/sdaX scheme. */
+    uint8_t             idxLinux;
+    uint8_t             bUnused;
+    /** The first CHS address of this partition */
+    RTDVMMBRCHSADDR     FirstChs;
+    /** The last CHS address of this partition */
+    RTDVMMBRCHSADDR     LastChs;
 } RTDVMMBRENTRY;
 /** Pointer to an MBR entry. */
 typedef RTDVMMBRENTRY *PRTDVMMBRENTRY;
@@ -99,8 +138,11 @@ typedef struct RTDVMMBRSECTOR
     /** The extended entry we're following (we only follow one, except when
      *  fIsPrimary is @c true). UINT8_MAX if none. */
     uint8_t             idxExtended;
+#if ARCH_BITS == 64
+    uint32_t            uAlignmentPadding;
+#endif
     /** The raw data. */
-    uint8_t             abData[512];
+    uint8_t             abData[RT_FLEXIBLE_ARRAY_NESTED];
 } RTDVMMBRSECTOR;
 
 /**
@@ -113,6 +155,9 @@ typedef struct RTDVMFMTINTERNAL
     /** Head of the list of in-use RTDVMMBRENTRY structures.  This excludes
      *  extended partition table entries. */
     RTLISTANCHOR        PartitionHead;
+    /** The sector size to use when doing address calculation based on partition
+     *  table sector addresses and counts. */
+    uint32_t            cbSector;
     /** The total number of partitions, not counting extended ones. */
     uint32_t            cPartitions;
     /** The actual primary MBR sector. */
@@ -180,19 +225,28 @@ static const struct RTDVMMBRFS2VOLTYPE
     { 0xfd, RTDVMVOLTYPE_LINUX_SOFTRAID }
 };
 
+
 static DECLCALLBACK(int) rtDvmFmtMbrProbe(PCRTDVMDISK pDisk, uint32_t *puScore)
 {
     int rc = VINF_SUCCESS;
     *puScore = RTDVM_MATCH_SCORE_UNSUPPORTED;
-    if (pDisk->cbDisk >= 512)
+    if (pDisk->cbDisk > RT_MAX(512, pDisk->cbSector))
     {
         /* Read from the disk and check for the 0x55aa signature at the end. */
-        uint8_t abMbr[512];
-        rc = rtDvmDiskRead(pDisk, 0, &abMbr[0], sizeof(abMbr));
-        if (   RT_SUCCESS(rc)
-            && abMbr[510] == 0x55
-            && abMbr[511] == 0xaa)
-            *puScore = RTDVM_MATCH_SCORE_SUPPORTED; /* Not perfect because GPTs have a protective MBR. */
+        size_t cbAlignedSize = RT_MAX(512, pDisk->cbSector);
+        uint8_t *pbMbr = (uint8_t *)RTMemTmpAllocZ(cbAlignedSize);
+        if (pbMbr)
+        {
+            rc = rtDvmDiskRead(pDisk, 0, pbMbr, cbAlignedSize);
+            if (   RT_SUCCESS(rc)
+                && pbMbr[510] == 0x55
+                && pbMbr[511] == 0xaa)
+                *puScore = RTDVM_MATCH_SCORE_SUPPORTED; /* Not perfect because GPTs have a protective MBR. */
+            /* @todo this could easily confuser a DOS, OS/2 or NT boot sector with a MBR... */
+            RTMemTmpFree(pbMbr);
+        }
+        else
+            rc = VERR_NO_TMP_MEMORY;
     }
 
     return rc;
@@ -228,7 +282,21 @@ static void rtDvmFmtMbrDestroy(PRTDVMFMTINTERNAL pThis)
 }
 
 
-static int rtDvmFmtMbrReadExtended(PRTDVMFMTINTERNAL pThis, PRTDVMMBRENTRY pPrimaryEntry)
+/**
+ * Decodes the on-disk cylinder/head/sector info and stores it the
+ * destination structure.
+ */
+DECLINLINE(void) rtDvmFmtMbrDecodeChs(RTDVMMBRCHSADDR *pDst, uint8_t *pbRaw)
+{
+    MBRCHSADDR *pRawChs = (MBRCHSADDR *)pbRaw;
+    pDst->uCylinder = RT_MAKE_U16(pRawChs->uCylinderL, pRawChs->uCylinderH);
+    pDst->uSector   = pRawChs->uSector;
+    pDst->uHead     = pRawChs->uHead;
+}
+
+
+static int rtDvmFmtMbrReadExtended(PRTDVMFMTINTERNAL pThis, PRTDVMMBRENTRY pPrimaryEntry,
+                                   uint8_t *pidxAll, uint8_t *pidxVisible, uint8_t *pidxLinux)
 {
     uint64_t const  cbExt       = pPrimaryEntry->cbPart;
     uint64_t const  offExtBegin = pPrimaryEntry->offPart;
@@ -269,7 +337,8 @@ static int rtDvmFmtMbrReadExtended(PRTDVMFMTINTERNAL pThis, PRTDVMMBRENTRY pPrim
         /*
          * Allocate a new sector entry and read the sector with the table.
          */
-        PRTDVMMBRSECTOR pNext = (PRTDVMMBRSECTOR)RTMemAllocZ(sizeof(*pNext));
+        size_t const    cbMbr = RT_MAX(512, pThis->pDisk->cbSector);
+        PRTDVMMBRSECTOR pNext = (PRTDVMMBRSECTOR)RTMemAllocZVar(RT_UOFFSETOF_DYN(RTDVMMBRSECTOR, abData[cbMbr]));
         if (!pNext)
             return VERR_NO_MEMORY;
         pNext->offOnDisk    = offCurBegin;
@@ -279,16 +348,17 @@ static int rtDvmFmtMbrReadExtended(PRTDVMFMTINTERNAL pThis, PRTDVMMBRENTRY pPrim
         //pNext->cExtended  = 0;
         pNext->idxExtended  = UINT8_MAX;
 
-        int rc = rtDvmDiskRead(pThis->pDisk, pNext->offOnDisk, &pNext->abData[0], sizeof(pNext->abData));
+        uint8_t *pabData = &pNext->abData[0];
+        int rc = rtDvmDiskReadUnaligned(pThis->pDisk, pNext->offOnDisk, pabData, cbMbr);
         if (   RT_FAILURE(rc)
-            || pNext->abData[510] != 0x55
-            || pNext->abData[511] != 0xaa)
+            || pabData[510] != 0x55
+            || pabData[511] != 0xaa)
         {
             if (RT_FAILURE(rc))
                 LogRel(("rtDvmFmtMbrReadExtended: Error reading extended partition table at sector %#RX64: %Rrc\n", offCurBegin, rc));
             else
                 LogRel(("rtDvmFmtMbrReadExtended: Extended partition table at sector %#RX64 does not have a valid DOS signature: %#x %#x\n",
-                        offCurBegin, pNext->abData[510], pNext->abData[511]));
+                        offCurBegin, pabData[510], pabData[511]));
             RTMemFree(pNext);
             pCurEntry->fBad = true;
             return rc;
@@ -303,29 +373,42 @@ static int rtDvmFmtMbrReadExtended(PRTDVMFMTINTERNAL pThis, PRTDVMMBRENTRY pPrim
          * here anyway.
          */
         PRTDVMMBRENTRY pEntry     = &pNext->aEntries[0];
-        uint8_t       *pbMbrEntry = &pNext->abData[446];
+        uint8_t       *pbMbrEntry = &pabData[446];
         for (unsigned i = 0; i < 4; i++, pEntry++, pbMbrEntry += 16)
         {
-            uint8_t const bType  = pbMbrEntry[4];
-            pEntry->pSector = pNext;
+            pEntry->pSector  = pNext;
+            pEntry->idxTable = (uint8_t)i;
             RTListInit(&pEntry->ListEntry);
+
+            uint8_t const bType  = pbMbrEntry[4];
             if (bType != 0)
             {
                 pEntry->bType    = bType;
                 pEntry->fFlags   = pbMbrEntry[0];
-                pEntry->offPart  = RT_MAKE_U32_FROM_U8(pbMbrEntry[0x08],
+                pEntry->idxAll   = *pidxAll;
+                *pidxAll += 1;
+
+                rtDvmFmtMbrDecodeChs(&pEntry->FirstChs, &pbMbrEntry[1]);
+                rtDvmFmtMbrDecodeChs(&pEntry->LastChs,  &pbMbrEntry[5]);
+
+                pEntry->offPart  = RT_MAKE_U32_FROM_U8(pbMbrEntry[0x08 + 0],
                                                        pbMbrEntry[0x08 + 1],
                                                        pbMbrEntry[0x08 + 2],
                                                        pbMbrEntry[0x08 + 3]);
-                pEntry->offPart *= 512;
-                pEntry->cbPart   = RT_MAKE_U32_FROM_U8(pbMbrEntry[0x0c],
+                pEntry->offPart *= pThis->cbSector;
+                pEntry->cbPart   = RT_MAKE_U32_FROM_U8(pbMbrEntry[0x0c + 0],
                                                        pbMbrEntry[0x0c + 1],
                                                        pbMbrEntry[0x0c + 2],
                                                        pbMbrEntry[0x0c + 3]);
-                pEntry->cbPart  *= 512;
+                pEntry->cbPart  *= pThis->cbSector;
                 if (!RTDVMMBR_IS_EXTENDED(bType))
                 {
-                    pEntry->offPart += offCurBegin;
+                    pEntry->offPart    += offCurBegin;
+                    pEntry->idxVisible  = *pidxVisible;
+                    *pidxVisible += 1;
+                    pEntry->idxLinux    = *pidxLinux;
+                    *pidxLinux += 1;
+
                     pThis->cPartitions++;
                     RTListAppend(&pThis->PartitionHead, &pEntry->ListEntry);
                     Log2(("rtDvmFmtMbrReadExtended: %#012RX64::%u: vol%u bType=%#04x fFlags=%#04x offPart=%#012RX64 cbPart=%#012RX64\n",
@@ -367,7 +450,8 @@ static int rtDvmFmtMbrReadExtended(PRTDVMFMTINTERNAL pThis, PRTDVMMBRENTRY pPrim
 static DECLCALLBACK(int) rtDvmFmtMbrOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
     int rc;
-    PRTDVMFMTINTERNAL pThis = (PRTDVMFMTINTERNAL)RTMemAllocZ(sizeof(RTDVMFMTINTERNAL));
+    size_t const      cbMbr = RT_MAX(512, pDisk->cbSector);
+    PRTDVMFMTINTERNAL pThis = (PRTDVMFMTINTERNAL)RTMemAllocZVar(RT_UOFFSETOF_DYN(RTDVMFMTINTERNAL, Primary.abData[cbMbr]));
     if (pThis)
     {
         pThis->pDisk            = pDisk;
@@ -380,41 +464,63 @@ static DECLCALLBACK(int) rtDvmFmtMbrOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
         //pThis->Primary.cExtended   = 0;
         pThis->Primary.idxExtended   = UINT8_MAX;
 
+        /* We'll use the sector size reported by the disk.
+
+           Though, giiven that the MBR was hardwired to 512 byte sectors, we probably
+           should do some probing when the sector size differs from 512, but that can
+           wait till there is a real need for it and we've got some semi reliable
+           heuristics for doing that. */
+        pThis->cbSector = (uint32_t)pDisk->cbSector;
+        AssertLogRelMsgStmt(   pThis->cbSector >= 512
+                            && pThis->cbSector <= _64K,
+                            ("cbSector=%#x\n", pThis->cbSector),
+                            pThis->cbSector = 512);
+
         /*
          * Read the primary MBR.
          */
-        rc = rtDvmDiskRead(pDisk, 0, &pThis->Primary.abData[0], sizeof(pThis->Primary.abData));
+        uint8_t *pabData = &pThis->Primary.abData[0];
+        rc = rtDvmDiskRead(pDisk, 0, pabData, cbMbr);
         if (RT_SUCCESS(rc))
         {
-            Assert(pThis->Primary.abData[510] == 0x55 && pThis->Primary.abData[511] == 0xaa);
+            Assert(pabData[510] == 0x55 && pabData[511] == 0xaa);
 
             /*
              * Setup basic data for the 4 entries.
              */
             PRTDVMMBRENTRY pEntry     = &pThis->Primary.aEntries[0];
-            uint8_t       *pbMbrEntry = &pThis->Primary.abData[446];
+            uint8_t       *pbMbrEntry = &pabData[446];
+            uint8_t        idxVisible = 1;
             for (unsigned i = 0; i < 4; i++, pEntry++, pbMbrEntry += 16)
             {
-                pEntry->pSector = &pThis->Primary;
+                pEntry->pSector  = &pThis->Primary;
+                pEntry->idxTable = (uint8_t)i;
                 RTListInit(&pEntry->ListEntry);
 
-                uint8_t const bType = pbMbrEntry[4];
+                uint8_t const bType  = pbMbrEntry[4];
                 if (bType != 0)
                 {
+                    pEntry->bType    = bType;
+                    pEntry->fFlags   = pbMbrEntry[0];
+                    pEntry->idxAll   = (uint8_t)(i + 1);
+
+                    rtDvmFmtMbrDecodeChs(&pEntry->FirstChs, &pbMbrEntry[1]);
+                    rtDvmFmtMbrDecodeChs(&pEntry->LastChs,  &pbMbrEntry[5]);
+
                     pEntry->offPart  = RT_MAKE_U32_FROM_U8(pbMbrEntry[0x08 + 0],
                                                            pbMbrEntry[0x08 + 1],
                                                            pbMbrEntry[0x08 + 2],
                                                            pbMbrEntry[0x08 + 3]);
-                    pEntry->offPart *= 512;
+                    pEntry->offPart *= pThis->cbSector;
                     pEntry->cbPart   = RT_MAKE_U32_FROM_U8(pbMbrEntry[0x0c + 0],
                                                            pbMbrEntry[0x0c + 1],
                                                            pbMbrEntry[0x0c + 2],
                                                            pbMbrEntry[0x0c + 3]);
-                    pEntry->cbPart  *= 512;
-                    pEntry->bType    = bType;
-                    pEntry->fFlags   = pbMbrEntry[0];
+                    pEntry->cbPart  *= pThis->cbSector;
                     if (!RTDVMMBR_IS_EXTENDED(bType))
                     {
+                        pEntry->idxVisible = idxVisible++;
+                        pEntry->idxLinux   = (uint8_t)(i + 1);
                         pThis->cPartitions++;
                         RTListAppend(&pThis->PartitionHead, &pEntry->ListEntry);
                         Log2(("rtDvmFmtMbrOpen: %u: vol%u bType=%#04x fFlags=%#04x offPart=%#012RX64 cbPart=%#012RX64\n",
@@ -438,22 +544,26 @@ static DECLCALLBACK(int) rtDvmFmtMbrOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
              * deal with recursion.
              */
             if (pThis->Primary.cExtended > 0)
+            {
+                uint8_t idxAll   = 5;
+                uint8_t idxLinux = 5;
                 for (unsigned i = 0; i < 4; i++)
                     if (RTDVMMBR_IS_EXTENDED(pThis->Primary.aEntries[i].bType))
                     {
                         if (pThis->Primary.idxExtended == UINT8_MAX)
                             pThis->Primary.idxExtended = (uint8_t)i;
-                        rc = rtDvmFmtMbrReadExtended(pThis, &pThis->Primary.aEntries[i]);
+                        rc = rtDvmFmtMbrReadExtended(pThis, &pThis->Primary.aEntries[i], &idxAll, &idxVisible, &idxLinux);
                         if (RT_FAILURE(rc))
                             break;
                     }
+            }
             if (RT_SUCCESS(rc))
             {
                 *phVolMgrFmt = pThis;
                 return rc;
             }
-
         }
+        rtDvmFmtMbrDestroy(pThis);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -464,7 +574,8 @@ static DECLCALLBACK(int) rtDvmFmtMbrOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
 static DECLCALLBACK(int) rtDvmFmtMbrInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
     int rc;
-    PRTDVMFMTINTERNAL pThis = (PRTDVMFMTINTERNAL)RTMemAllocZ(sizeof(RTDVMFMTINTERNAL));
+    size_t const cbMbr = RT_MAX(512, pDisk->cbSector);
+    PRTDVMFMTINTERNAL pThis = (PRTDVMFMTINTERNAL)RTMemAllocZVar(RT_UOFFSETOF_DYN(RTDVMFMTINTERNAL, Primary.abData[cbMbr]));
     if (pThis)
     {
         pThis->pDisk            = pDisk;
@@ -478,9 +589,11 @@ static DECLCALLBACK(int) rtDvmFmtMbrInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVo
         pThis->Primary.idxExtended   = UINT8_MAX;
 
         /* Setup a new MBR and write it to the disk. */
-        pThis->Primary.abData[510] = 0x55;
-        pThis->Primary.abData[511] = 0xaa;
-        rc = rtDvmDiskWrite(pDisk, 0, &pThis->Primary.abData[0], sizeof(pThis->Primary.abData));
+        uint8_t *pabData = &pThis->Primary.abData[0];
+        RT_BZERO(pabData, 512);
+        pabData[510] = 0x55;
+        pabData[511] = 0xaa;
+        rc = rtDvmDiskWrite(pDisk, 0, pabData, cbMbr);
         if (RT_SUCCESS(rc))
         {
             pThis->pDisk = pDisk;
@@ -541,6 +654,23 @@ static DECLCALLBACK(int) rtDvmFmtMbrQueryRangeUse(RTDVMFMT hVolMgrFmt, uint64_t 
     /* Not in use. */
     *pfUsed = false;
     return VINF_SUCCESS;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnQueryDiskUuid */
+static DECLCALLBACK(int) rtDvmFmtMbrQueryDiskUuid(RTDVMFMT hVolMgrFmt, PRTUUID pUuid)
+{
+    PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
+    uint32_t idDisk = RT_MAKE_U32_FROM_U8(pThis->Primary.abData[440],
+                                          pThis->Primary.abData[441],
+                                          pThis->Primary.abData[442],
+                                          pThis->Primary.abData[443]);
+    if (idDisk != 0)
+    {
+        RTUuidClear(pUuid);
+        pUuid->Gen.u32TimeLow = idDisk;
+        return VINF_NOT_SUPPORTED;
+    }
+    return VERR_NOT_SUPPORTED;
 }
 
 static DECLCALLBACK(uint32_t) rtDvmFmtMbrGetValidVolumes(RTDVMFMT hVolMgrFmt)
@@ -669,6 +799,100 @@ static DECLCALLBACK(bool) rtDvmFmtMbrVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hV
     return false;
 }
 
+/** @copydoc RTDVMFMTOPS::pfnVolumeQueryTableLocation */
+static DECLCALLBACK(int) rtDvmFmtMbrVolumeQueryTableLocation(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffTable, uint64_t *pcbTable)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    *poffTable = pVol->pEntry->pSector->offOnDisk;
+    *pcbTable  = RT_MAX(512, pVol->pVolMgr->pDisk->cbSector);
+    return VINF_SUCCESS;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnVolumeGetIndex */
+static DECLCALLBACK(uint32_t) rtDvmFmtMbrVolumeGetIndex(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLIDX enmIndex)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    switch (enmIndex)
+    {
+        case RTDVMVOLIDX_USER_VISIBLE:
+            return pVol->pEntry->idxVisible;
+        case RTDVMVOLIDX_ALL:
+            return pVol->pEntry->idxAll;
+        case RTDVMVOLIDX_IN_TABLE:
+            return pVol->pEntry->idxTable;
+        case RTDVMVOLIDX_LINUX:
+            return pVol->pEntry->idxLinux;
+
+        case RTDVMVOLIDX_INVALID:
+        case RTDVMVOLIDX_END:
+        case RTDVMVOLIDX_32BIT_HACK:
+            break;
+        /* no default! */
+    }
+    return UINT32_MAX;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnVolumeQueryProp */
+static DECLCALLBACK(int) rtDvmFmtMbrVolumeQueryProp(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLPROP enmProperty,
+                                                    void *pvBuf, size_t cbBuf, size_t *pcbBuf)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    switch (enmProperty)
+    {
+        case RTDVMVOLPROP_MBR_FIRST_CYLINDER:
+            *pcbBuf = sizeof(uint16_t);
+            Assert(cbBuf >= *pcbBuf);
+            *(uint16_t *)pvBuf = pVol->pEntry->FirstChs.uCylinder;
+            return VINF_SUCCESS;
+        case RTDVMVOLPROP_MBR_LAST_CYLINDER:
+            *pcbBuf = sizeof(uint16_t);
+            Assert(cbBuf >= *pcbBuf);
+            *(uint16_t *)pvBuf = pVol->pEntry->LastChs.uCylinder;
+            return VINF_SUCCESS;
+
+        case RTDVMVOLPROP_MBR_FIRST_HEAD:
+            *pcbBuf = sizeof(uint8_t);
+            Assert(cbBuf >= *pcbBuf);
+            *(uint8_t *)pvBuf = pVol->pEntry->FirstChs.uHead;
+            return VINF_SUCCESS;
+        case RTDVMVOLPROP_MBR_LAST_HEAD:
+            *pcbBuf = sizeof(uint8_t);
+            Assert(cbBuf >= *pcbBuf);
+            *(uint8_t *)pvBuf = pVol->pEntry->LastChs.uHead;
+            return VINF_SUCCESS;
+
+        case RTDVMVOLPROP_MBR_FIRST_SECTOR:
+            *pcbBuf = sizeof(uint8_t);
+            Assert(cbBuf >= *pcbBuf);
+            *(uint8_t *)pvBuf = pVol->pEntry->FirstChs.uSector;
+            return VINF_SUCCESS;
+        case RTDVMVOLPROP_MBR_LAST_SECTOR:
+            *pcbBuf = sizeof(uint8_t);
+            Assert(cbBuf >= *pcbBuf);
+            *(uint8_t *)pvBuf = pVol->pEntry->LastChs.uSector;
+            return VINF_SUCCESS;
+
+        case RTDVMVOLPROP_MBR_TYPE:
+            *pcbBuf = sizeof(uint8_t);
+            Assert(cbBuf >= *pcbBuf);
+            *(uint8_t *)pvBuf = pVol->pEntry->bType;
+            return VINF_SUCCESS;
+
+        case RTDVMVOLPROP_GPT_TYPE:
+        case RTDVMVOLPROP_GPT_UUID:
+            return VERR_NOT_SUPPORTED;
+
+        case RTDVMVOLPROP_INVALID:
+        case RTDVMVOLPROP_END:
+        case RTDVMVOLPROP_32BIT_HACK:
+            break;
+        /* not default! */
+    }
+    RT_NOREF(cbBuf);
+    AssertFailed();
+    return VERR_NOT_SUPPORTED;
+}
+
 static DECLCALLBACK(int) rtDvmFmtMbrVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -701,6 +925,8 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtMbr =
     rtDvmFmtMbrClose,
     /* pfnQueryRangeUse */
     rtDvmFmtMbrQueryRangeUse,
+    /* pfnQueryDiskUuid */
+    rtDvmFmtMbrQueryDiskUuid,
     /* pfnGetValidVolumes */
     rtDvmFmtMbrGetValidVolumes,
     /* pfnGetMaxVolumes */
@@ -723,6 +949,12 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtMbr =
     rtDvmFmtMbrVolumeQueryRange,
     /* pfnVOlumeIsRangeIntersecting */
     rtDvmFmtMbrVolumeIsRangeIntersecting,
+    /* pfnVolumeQueryTableLocation */
+    rtDvmFmtMbrVolumeQueryTableLocation,
+    /* pfnVolumeGetIndex */
+    rtDvmFmtMbrVolumeGetIndex,
+    /* pfnVolumeQueryProp */
+    rtDvmFmtMbrVolumeQueryProp,
     /* pfnVolumeRead */
     rtDvmFmtMbrVolumeRead,
     /* pfnVolumeWrite */
