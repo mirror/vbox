@@ -32,7 +32,7 @@
 #include <iprt/file.h>
 
 #include <iprt/assert.h>
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 
 #include <iprt/win/windows.h>
@@ -55,7 +55,7 @@ RTDECL(int) RTFileQuerySectorSize(RTFILE hFile, uint32_t *pcbSector)
         return VINF_SUCCESS;
     }
     int rc = RTErrConvertFromWin32(GetLastError());
-    AssertMsgFailed(("%d / %Rrc\n", GetLastError(), rc));
+    AssertMsg(rc == VERR_IO_NOT_READY, ("%d / %Rrc\n", GetLastError(), rc));
     return rc;
 }
 
