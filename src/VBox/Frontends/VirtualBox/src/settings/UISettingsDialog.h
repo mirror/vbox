@@ -29,15 +29,16 @@
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UISettingsDefs.h"
-#include "UISettingsDialog.gen.h"
 
 /* Forward declarations: */
 class QEvent;
 class QObject;
+class QLabel;
 class QProgressBar;
 class QShowEvent;
 class QStackedWidget;
 class QTimer;
+class QIDialogButtonBox;
 class UIPageValidator;
 class UISettingsPage;
 class UISettingsSelector;
@@ -49,7 +50,7 @@ using namespace UISettingsDefs;
 
 /** QIMainDialog aubclass used as
   * base dialog class for both Global & VM settings which encapsulates most of their common functionality. */
-class SHARED_LIBRARY_STUFF UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>, public Ui::UISettingsDialog
+class SHARED_LIBRARY_STUFF UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>
 {
     Q_OBJECT;
 
@@ -163,7 +164,8 @@ private:
 
     /** Prepares all. */
     void prepare();
-
+    /** Prepares widgets. */
+    void prepareWidgets();
     /** Assigns validater for passed @a pPage. */
     void assignValidator(UISettingsPage *pPage);
 
@@ -208,6 +210,13 @@ private:
     /** Holds the list of settings page sizes for animation purposes. */
     QList<QSize>  m_sizeList;
 #endif
+
+    /** @name Widgets
+     * @{ */
+       QLabel *m_pLabelTitle;
+       QIDialogButtonBox *m_pButtonBox;
+       QWidget *m_pWidgetStackHandler;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_UISettingsDialog_h */

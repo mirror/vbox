@@ -28,8 +28,10 @@
 #ifndef VBOX_WS_WIN
 # include <QRegExp>
 #endif
+# include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIDialogButtonBox.h"
 #include "QIFileDialog.h"
 #include "UIActionPoolManager.h"
 #include "UICloudConsoleManager.h"

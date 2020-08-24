@@ -20,9 +20,6 @@
 TEMPLATE	= app
 LANGUAGE	= C++
 
-FORMS = \
-    src/settings/UISettingsDialog.ui
-
 TRANSLATIONS = \
 	nls/VirtualBox_bg.ts \
 	nls/VirtualBox_ca.ts \

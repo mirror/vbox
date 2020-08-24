@@ -17,12 +17,15 @@
 
 /* Qt includes: */
 #include <QCloseEvent>
+#include <QGridLayout>
+#include <QLabel>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QTimer>
 
 /* GUI includes: */
+#include "QIDialogButtonBox.h"
 #include "QIWidgetValidator.h"
 #include "UICommon.h"
 #include "UIConverter.h"
@@ -60,6 +63,9 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     , m_fValid(true)
     , m_fSilent(true)
     , m_pWhatsThisTimer(new QTimer(this))
+    , m_pLabelTitle(0)
+    , m_pButtonBox(0)
+    , m_pWidgetStackHandler(0)
 {
     /* Prepare: */
     prepare();
@@ -150,7 +156,7 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle(title());
 #else
-    m_pLbTitle->setText(m_pSelector->itemText(cId));
+    m_pLabelTitle->setText(m_pSelector->itemText(cId));
 #endif
 }
 
@@ -240,8 +246,9 @@ bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 
 void UISettingsDialog::retranslateUi()
 {
-    /* Translate generated stuff: */
-    Ui::UISettingsDialog::retranslateUi(this);
+    setWhatsThis(tr("<i>Select a settings category from the list on the left-hand side and move the mouse over a settings "
+                    "item to get more information.</i>"));
+    m_pLabelTitle->setText(QString());
 
     /* Translate warning stuff: */
     m_strWarningHint = tr("Invalid settings detected");
@@ -250,7 +257,7 @@ void UISettingsDialog::retranslateUi()
 
 #ifndef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     /* Retranslate current page headline: */
-    m_pLbTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
+    m_pLabelTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
 #endif
 
     /* Retranslate all validators: */
@@ -588,17 +595,16 @@ void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus)
 
 void UISettingsDialog::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UISettingsDialog::setupUi(this);
+    prepareWidgets();
 
     /* Configure title: */
-    if (m_pLbTitle)
+    if (m_pLabelTitle)
     {
         /* Page-title font is bold and larger but derived from the system font: */
         QFont pageTitleFont = font();
         pageTitleFont.setBold(true);
         pageTitleFont.setPointSize(pageTitleFont.pointSize() + 2);
-        m_pLbTitle->setFont(pageTitleFont);
+        m_pLabelTitle->setFont(pageTitleFont);
     }
 
     /* Prepare selector: */
@@ -608,7 +614,7 @@ void UISettingsDialog::prepare()
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
 
         /* No page-title with tool-bar: */
-        m_pLbTitle->hide();
+        m_pLabelTitle->hide();
 
         /* Create modern tool-bar selector: */
         m_pSelector = new UISettingsSelectorToolBar(this);
@@ -644,10 +650,10 @@ void UISettingsDialog::prepare()
     }
 
     /* Prepare stack-handler: */
-    if (m_pWtStackHandler)
+    if (m_pWidgetStackHandler)
     {
         /* Create page-stack layout: */
-        QVBoxLayout *pStackLayout = new QVBoxLayout(m_pWtStackHandler);
+        QVBoxLayout *pStackLayout = new QVBoxLayout(m_pWidgetStackHandler);
         if (pStackLayout)
         {
             /* Confugre page-stack layout: */
@@ -719,6 +725,61 @@ void UISettingsDialog::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UISettingsDialog::prepareWidgets()
+{
+    if (objectName().isEmpty())
+        setObjectName(QStringLiteral("UISettingsDialog"));
+    resize(550, 450);
+    QWidget *pCentralWidget = new QWidget(this);
+    pCentralWidget->setObjectName(QStringLiteral("pCentralWidget"));
+    QGridLayout *pMainLayout = new QGridLayout(pCentralWidget);
+    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
+    m_pLabelTitle = new QLabel(pCentralWidget);
+    m_pLabelTitle->setObjectName(QStringLiteral("m_pLabelTitle"));
+    QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pLabelTitle->sizePolicy().hasHeightForWidth());
+    m_pLabelTitle->setSizePolicy(sizePolicy);
+    QPalette palette;
+    QBrush brush(QColor(255, 255, 255, 255));
+    brush.setStyle(Qt::SolidPattern);
+    palette.setBrush(QPalette::Active, QPalette::Window, brush);
+    palette.setBrush(QPalette::Inactive, QPalette::Window, brush);
+    palette.setBrush(QPalette::Disabled, QPalette::Window, brush);
+    m_pLabelTitle->setPalette(palette);
+    QFont font;
+    font.setFamily(QStringLiteral("Sans Serif"));
+    font.setPointSize(11);
+    font.setBold(true);
+    font.setWeight(75);
+    m_pLabelTitle->setFont(font);
+    m_pLabelTitle->setAutoFillBackground(true);
+    m_pLabelTitle->setFrameShape(QFrame::Box);
+    m_pLabelTitle->setFrameShadow(QFrame::Sunken);
+    m_pLabelTitle->setMargin(7);
+    pMainLayout->addWidget(m_pLabelTitle, 0, 1, 1, 1);
+
+    m_pWidgetStackHandler = new QWidget(pCentralWidget);
+    m_pWidgetStackHandler->setObjectName(QStringLiteral("m_pWidgetStackHandler"));
+    QSizePolicy sizePolicy1(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    sizePolicy1.setHorizontalStretch(0);
+    sizePolicy1.setVerticalStretch(0);
+    sizePolicy1.setHeightForWidth(m_pWidgetStackHandler->sizePolicy().hasHeightForWidth());
+    m_pWidgetStackHandler->setSizePolicy(sizePolicy1);
+    pMainLayout->addWidget(m_pWidgetStackHandler, 1, 1, 1, 1);
+
+    m_pButtonBox = new QIDialogButtonBox(pCentralWidget);
+    m_pButtonBox->setObjectName(QStringLiteral("m_pButtonBox"));
+    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok);
+    pMainLayout->addWidget(m_pButtonBox, 2, 0, 1, 2);
+
+    setCentralWidget(pCentralWidget);
+
+    QObject::connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::reject);
+    QObject::connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
 }
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)
