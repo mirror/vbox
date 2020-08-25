@@ -1515,7 +1515,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
     if (!pszPartitions)
     {
         RawDescriptor.uFlags = VDISKRAW_DISK;
-        RawDescriptor.pszRawDisk = rawdisk.c_str();
+        RawDescriptor.pszRawDisk = (char *)rawdisk.c_str();
     }
     else
     {
@@ -1563,7 +1563,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             goto out;
         }
 
-        RawDescriptor.uPartitioningType = partitions.uPartitioningType;
+        RawDescriptor.enmPartitioningType = partitions.uPartitioningType;
 
         for (unsigned i = 0; i < partitions.cPartitions; i++)
         {
@@ -1604,7 +1604,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
                  * any case the clipping is adjusted later after sorting, to
                  * prevent overlapping data areas on the resulting image. */
                 pPartDesc->cbData = RT_MIN(partitions.aPartitions[i].cPartDataSectors, 63) * 512;
-                pPartDesc->uStart = partitions.aPartitions[i].uPartDataStart * 512;
+                pPartDesc->offStartInVDisk = partitions.aPartitions[i].uPartDataStart * 512;
                 Assert(pPartDesc->cbData - (size_t)pPartDesc->cbData == 0);
                 void *pPartData = RTMemAlloc((size_t)pPartDesc->cbData);
                 if (!pPartData)
@@ -1729,15 +1729,15 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
                 }
 
                 pPartDesc->pszRawDevice = pszRawName;
-                pPartDesc->uStartOffset = uStartOffset;
+                pPartDesc->offStartInDevice = uStartOffset;
             }
             else
             {
                 pPartDesc->pszRawDevice = NULL;
-                pPartDesc->uStartOffset = 0;
+                pPartDesc->offStartInDevice = 0;
             }
 
-            pPartDesc->uStart = partitions.aPartitions[i].uStart * 512;
+            pPartDesc->offStartInVDisk = partitions.aPartitions[i].uStart * 512;
             pPartDesc->cbData = partitions.aPartitions[i].uSize * 512;
         }
 
@@ -1745,13 +1745,13 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
         for (unsigned i = 0; i < RawDescriptor.cPartDescs-1; i++)
         {
             unsigned uMinIdx = i;
-            uint64_t uMinVal = RawDescriptor.pPartDescs[i].uStart;
+            uint64_t uMinVal = RawDescriptor.pPartDescs[i].offStartInVDisk;
             for (unsigned j = i + 1; j < RawDescriptor.cPartDescs; j++)
             {
-                if (RawDescriptor.pPartDescs[j].uStart < uMinVal)
+                if (RawDescriptor.pPartDescs[j].offStartInVDisk < uMinVal)
                 {
                     uMinIdx = j;
-                    uMinVal = RawDescriptor.pPartDescs[j].uStart;
+                    uMinVal = RawDescriptor.pPartDescs[j].offStartInVDisk;
                 }
             }
             if (uMinIdx != i)
@@ -1771,10 +1771,12 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
         {
             if (RawDescriptor.pPartDescs[i].pvPartitionData)
             {
-                RawDescriptor.pPartDescs[i].cbData = RT_MIN(RawDescriptor.pPartDescs[i+1].uStart - RawDescriptor.pPartDescs[i].uStart, RawDescriptor.pPartDescs[i].cbData);
+                RawDescriptor.pPartDescs[i].cbData = RT_MIN(  RawDescriptor.pPartDescs[i+1].offStartInVDisk
+                                                            - RawDescriptor.pPartDescs[i].offStartInVDisk,
+                                                            RawDescriptor.pPartDescs[i].cbData);
                 if (!RawDescriptor.pPartDescs[i].cbData)
                 {
-                    if (RawDescriptor.uPartitioningType == VDISKPARTTYPE_MBR)
+                    if (RawDescriptor.enmPartitioningType == VDISKPARTTYPE_MBR)
                     {
                         RTMsgError("MBR/EPT overlaps with data area");
                         vrc = VERR_INVALID_PARAMETER;

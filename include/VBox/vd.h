@@ -129,7 +129,7 @@ RT_C_DECLS_BEGIN
 #define VD_VFSFILE_FLAGS_MASK                   (VD_VFSFILE_DESTROY_ON_RELEASE)
 /** @} */
 
-/** @name VBox raw disk or partition flags
+/** @name VDISKRAW_XXX - VBox raw disk or partition flags
  * @{
  */
 /** No special treatment. */
@@ -143,10 +143,11 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 /**
- * Auxiliary type for describing partitions on raw disks. The entries must be
- * in ascending order (as far as uStart is concerned), and must not overlap.
- * Note that this does not correspond 1:1 to partitions, it is describing the
- * general meaning of contiguous areas on the disk.
+ * Auxiliary type for describing partitions on raw disks.
+ *
+ * The entries must be in ascending order (as far as uStart is concerned), and
+ * must not overlap. Note that this does not correspond 1:1 to partitions, it is
+ * describing the general meaning of contiguous areas on the disk.
  */
 typedef struct VDISKRAWPARTDESC
 {
@@ -160,18 +161,17 @@ typedef struct VDISKRAWPARTDESC
      * partition data overlay. */
     const void      *pvPartitionData;
     /** Offset where the data starts in this device. */
-    uint64_t        uStartOffset;
+    uint64_t        offStartInDevice;
     /** Offset where the data starts in the disk. */
-    uint64_t        uStart;
+    uint64_t        offStartInVDisk;
     /** Size of the data area. */
     uint64_t        cbData;
-    /** Flags for special treatment, see VDISKRAW_FLAGS_*. */
+    /** Flags for special treatment, see VDISKRAW_XXX. */
     uint32_t        uFlags;
 } VDISKRAWPARTDESC, *PVDISKRAWPARTDESC;
 
 /**
- * Auxiliary data structure for difference between GPT and MBR
- * disks.
+ * Auxiliary data structure for difference between GPT and MBR disks.
  */
 typedef enum VDISKPARTTYPE
 {
@@ -187,19 +187,17 @@ typedef struct VDISKRAW
     /** Signature for structure. Must be 'R', 'A', 'W', '\\0'. Actually a trick
      * to make logging of the comment string produce sensible results. */
     char            szSignature[4];
-    /** Flags for special treatment, see VDISKRAW_FLAGS_*. */
-    /** Flag whether access to full disk should be given (ignoring the
-     * partition information below). */
+    /** Flags for special treatment, see VDISKRAW_XXX. */
     uint32_t        uFlags;
     /** Filename for the raw disk. Ignored for partitioned raw disks.
      * For Linux e.g. /dev/sda, and for Windows e.g. //./PhysicalDisk0. */
-    const char      *pszRawDisk;
+    char           *pszRawDisk;
+    /** Partitioning type of the disk */
+    VDISKPARTTYPE   enmPartitioningType;
     /** Number of entries in the partition descriptor array. */
-    unsigned        cPartDescs;
+    uint32_t        cPartDescs;
     /** Pointer to the partition descriptor array. */
     PVDISKRAWPARTDESC pPartDescs;
-    /** Partitioning type of the disk */
-    VDISKPARTTYPE uPartitioningType;
 } VDISKRAW, *PVDISKRAW;
 
 
