@@ -413,6 +413,10 @@ typedef enum RTDVMVOLIDX
 {
     /** Invalid zero value. */
     RTDVMVOLIDX_INVALID = 0,
+    /** Index matching the host's volume numbering.
+     * This is a pseudo index, that gets translated to one of the others depending
+     * on which host we're running on. */
+    RTDVMVOLIDX_HOST,
     /** Only consider user visible ones, i.e. don't count MBR extended partition
      *  entries and such like. */
     RTDVMVOLIDX_USER_VISIBLE,

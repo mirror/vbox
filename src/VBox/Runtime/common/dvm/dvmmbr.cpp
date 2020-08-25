@@ -824,6 +824,7 @@ static DECLCALLBACK(uint32_t) rtDvmFmtMbrVolumeGetIndex(RTDVMVOLUMEFMT hVolFmt, 
             return pVol->pEntry->idxLinux;
 
         case RTDVMVOLIDX_INVALID:
+        case RTDVMVOLIDX_HOST:
         case RTDVMVOLIDX_END:
         case RTDVMVOLIDX_32BIT_HACK:
             break;

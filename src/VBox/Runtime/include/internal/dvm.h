@@ -272,7 +272,7 @@ typedef struct RTDVMFMTOPS
      *
      * @returns The requested index. UINT32_MAX on failure.
      * @param   hVolFmt         The format specific volume handle.
-     * @param   enmIndex        The index to get.
+     * @param   enmIndex        The index to get. Never RTDVMVOLIDX_HOST.
      * @sa RTDvmVolumeGetIndex
      */
     DECLCALLBACKMEMBER(uint32_t, pfnVolumeGetIndex,(RTDVMVOLUMEFMT hVolFmt, RTDVMVOLIDX enmIndex));

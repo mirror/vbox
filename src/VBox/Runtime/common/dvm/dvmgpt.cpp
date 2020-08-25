@@ -557,9 +557,10 @@ static DECLCALLBACK(uint32_t) rtDvmFmtGptVolumeGetIndex(RTDVMVOLUMEFMT hVolFmt, 
         case RTDVMVOLIDX_IN_TABLE:
             return pVol->idxEntry;
 
-        case RTDVMVOLIDX_32BIT_HACK:
         case RTDVMVOLIDX_INVALID:
+        case RTDVMVOLIDX_HOST:
         case RTDVMVOLIDX_END:
+        case RTDVMVOLIDX_32BIT_HACK:
             break;
         /* no default! */
     }
