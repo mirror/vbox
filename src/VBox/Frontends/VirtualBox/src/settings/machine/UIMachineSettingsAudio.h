@@ -75,6 +75,8 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
+    /** Prepares connections. */
+    void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 
@@ -84,18 +86,26 @@ private:
     /** Holds the page data cache instance. */
     UISettingsCacheMachineAudio *m_pCache;
 
-    QCheckBox *m_pCheckBoxAudio;
-    QCheckBox *m_pCheckBoxAudioOutput;
-    QCheckBox *m_pCheckBoxAudioInput;
-
     /** @name Widgets
      * @{ */
-        QLabel *m_pAudioHostDriverLabel;
-        QLabel *m_pAudioControllerLabel;
-        QLabel *m_pLabelAudioExtended;
-        QWidget *m_pContainerAudioSubOptions;
+        /** Holds the audio check-box instance. */
+        QCheckBox               *m_pCheckBoxAudio;
+        /** Holds the audio settings widget instance. */
+        QWidget                 *m_pWidgetAudioSettings;
+        /** Holds the host audio driver label instance. */
+        QLabel                  *m_pAudioHostDriverLabel;
+        /** Holds the host audio driver editor instance. */
         UIAudioHostDriverEditor *m_pAudioHostDriverEditor;
+        /** Holds the host audio controller label instance. */
+        QLabel                  *m_pAudioControllerLabel;
+        /** Holds the host audio controller instance instance. */
         UIAudioControllerEditor *m_pAudioControllerEditor;
+        /** Holds the audio extended label instance. */
+        QLabel                  *m_pLabelAudioExtended;
+        /** Holds the audio output check-box instance. */
+        QCheckBox               *m_pCheckBoxAudioOutput;
+        /** Holds the audio input check-box instance. */
+        QCheckBox               *m_pCheckBoxAudioInput;
     /** @} */
 };
 

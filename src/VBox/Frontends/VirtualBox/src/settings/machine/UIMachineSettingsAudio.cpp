@@ -75,12 +75,15 @@ struct UIDataSettingsMachineAudio
 
 UIMachineSettingsAudio::UIMachineSettingsAudio()
     : m_pCache(0)
+    , m_pCheckBoxAudio(0)
+    , m_pWidgetAudioSettings(0)
     , m_pAudioHostDriverLabel(0)
-    , m_pAudioControllerLabel(0)
-    , m_pLabelAudioExtended(0)
-    , m_pContainerAudioSubOptions(0)
     , m_pAudioHostDriverEditor(0)
+    , m_pAudioControllerLabel(0)
     , m_pAudioControllerEditor(0)
+    , m_pLabelAudioExtended(0)
+    , m_pCheckBoxAudioOutput(0)
+    , m_pCheckBoxAudioInput(0)
 {
     /* Prepare: */
     prepare();
@@ -207,35 +210,18 @@ void UIMachineSettingsAudio::polishPage()
     m_pLabelAudioExtended->setEnabled(isMachineInValidMode());
     m_pCheckBoxAudioOutput->setEnabled(isMachineInValidMode());
     m_pCheckBoxAudioInput->setEnabled(isMachineInValidMode());
-    m_pContainerAudioSubOptions->setEnabled(m_pCheckBoxAudio->isChecked());
+    m_pWidgetAudioSettings->setEnabled(m_pCheckBoxAudio->isChecked());
 }
 
 void UIMachineSettingsAudio::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineAudio;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Layout created in the .ui file. */
-    {
-        /* Audio host-driver label & editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pAudioHostDriverLabel);
-        AssertPtrReturnVoid(m_pAudioHostDriverEditor);
-        {
-            /* Configure label & editor: */
-            m_pAudioHostDriverLabel->setBuddy(m_pAudioHostDriverEditor->focusProxy());
-        }
-
-        /* Audio controller label & editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pAudioControllerLabel);
-        AssertPtrReturnVoid(m_pAudioControllerEditor);
-        {
-            /* Configure label & editor: */
-            m_pAudioControllerLabel->setBuddy(m_pAudioControllerEditor->focusProxy());
-        }
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -243,73 +229,87 @@ void UIMachineSettingsAudio::prepare()
 
 void UIMachineSettingsAudio::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIMachineSettingsAudio"));
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
-    QWidget *pContainerAudioOptions = new QWidget();
-    pContainerAudioOptions->setObjectName(QStringLiteral("pContainerAudioOptions"));
-    QGridLayout *pContainerLayoutAudioOptions = new QGridLayout(pContainerAudioOptions);
-    pContainerLayoutAudioOptions->setObjectName(QStringLiteral("pContainerLayoutAudioOptions"));
-    pContainerLayoutAudioOptions->setContentsMargins(0, 0, 0, 0);
-    m_pCheckBoxAudio = new QCheckBox(pContainerAudioOptions);
-    m_pCheckBoxAudio->setObjectName(QStringLiteral("m_pCheckBoxAudio"));
-    pContainerLayoutAudioOptions->addWidget(m_pCheckBoxAudio, 0, 0, 1, 2);
+    /* Prepare main layout: */
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    if (pMainLayout)
+    {
+        pMainLayout->setRowStretch(2, 1);
 
-    QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    pContainerLayoutAudioOptions->addItem(pSpacerItem, 1, 0, 1, 1);
+        /* Prepare audio check-box: */
+        m_pCheckBoxAudio = new QCheckBox(this);
+        if (m_pCheckBoxAudio)
+            pMainLayout->addWidget(m_pCheckBoxAudio, 0, 0, 1, 2);
 
-    m_pContainerAudioSubOptions = new QWidget(pContainerAudioOptions);
-    m_pContainerAudioSubOptions->setObjectName(QStringLiteral("m_pContainerAudioSubOptions"));
-    QGridLayout *pContainerLayoutAudioSubOptions = new QGridLayout(m_pContainerAudioSubOptions);
-    pContainerLayoutAudioSubOptions->setContentsMargins(0, 0, 0, 0);
-    pContainerLayoutAudioSubOptions->setObjectName(QStringLiteral("pContainerLayoutAudioSubOptions"));
-    pContainerLayoutAudioSubOptions->setContentsMargins(0, 0, 0, 0);
-    m_pAudioHostDriverLabel = new QLabel(m_pContainerAudioSubOptions);
-    m_pAudioHostDriverLabel->setObjectName(QStringLiteral("m_pAudioHostDriverLabel"));
-    m_pAudioHostDriverLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutAudioSubOptions->addWidget(m_pAudioHostDriverLabel, 0, 0, 1, 1);
+        /* Prepare 20-px shifting spacer: */
+        QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        if (pSpacerItem)
+            pMainLayout->addItem(pSpacerItem, 1, 0);
 
-    m_pAudioHostDriverEditor = new UIAudioHostDriverEditor(m_pContainerAudioSubOptions);
-    m_pAudioHostDriverEditor->setObjectName(QStringLiteral("m_pAudioHostDriverEditor"));
-    pContainerLayoutAudioSubOptions->addWidget(m_pAudioHostDriverEditor, 0, 1, 1, 1);
+        /* Prepare audio settings widget: */
+        m_pWidgetAudioSettings = new QWidget(this);
+        if (m_pWidgetAudioSettings)
+        {
+            /* Prepare audio settings widget layout: */
+            QGridLayout *pLayoutAudioSettings = new QGridLayout(m_pWidgetAudioSettings);
+            if (pLayoutAudioSettings)
+            {
+                pLayoutAudioSettings->setContentsMargins(0, 0, 0, 0);
 
-    m_pAudioControllerLabel = new QLabel(m_pContainerAudioSubOptions);
-    m_pAudioControllerLabel->setObjectName(QStringLiteral("m_pAudioControllerLabel"));
-    m_pAudioControllerLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutAudioSubOptions->addWidget(m_pAudioControllerLabel, 1, 0, 1, 1);
+                /* Prepare host driver label: */
+                m_pAudioHostDriverLabel = new QLabel(m_pWidgetAudioSettings);
+                if (m_pAudioHostDriverLabel)
+                {
+                    m_pAudioHostDriverLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutAudioSettings->addWidget(m_pAudioHostDriverLabel, 0, 0);
+                }
+                /* Prepare host driver editor: */
+                m_pAudioHostDriverEditor = new UIAudioHostDriverEditor(m_pWidgetAudioSettings);
+                if (m_pAudioHostDriverEditor)
+                {
+                    m_pAudioHostDriverLabel->setBuddy(m_pAudioHostDriverEditor->focusProxy());
+                    pLayoutAudioSettings->addWidget(m_pAudioHostDriverEditor, 0, 1);
+                }
 
-    m_pAudioControllerEditor = new UIAudioControllerEditor(m_pContainerAudioSubOptions);
-    m_pAudioControllerEditor->setObjectName(QStringLiteral("m_pAudioControllerEditor"));
-    pContainerLayoutAudioSubOptions->addWidget(m_pAudioControllerEditor, 1, 1, 1, 1);
+                /* Prepare host controller label: */
+                m_pAudioControllerLabel = new QLabel(m_pWidgetAudioSettings);
+                if (m_pAudioControllerLabel)
+                {
+                    m_pAudioControllerLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutAudioSettings->addWidget(m_pAudioControllerLabel, 1, 0);
+                }
+                /* Prepare host controller editor: */
+                m_pAudioControllerEditor = new UIAudioControllerEditor(m_pWidgetAudioSettings);
+                if (m_pAudioControllerEditor)
+                {
+                    m_pAudioControllerLabel->setBuddy(m_pAudioControllerEditor->focusProxy());
+                    pLayoutAudioSettings->addWidget(m_pAudioControllerEditor, 1, 1);
+                }
 
-    m_pLabelAudioExtended = new QLabel(m_pContainerAudioSubOptions);
-    m_pLabelAudioExtended->setObjectName(QStringLiteral("m_pLabelAudioExtended"));
-    m_pLabelAudioExtended->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutAudioSubOptions->addWidget(m_pLabelAudioExtended, 2, 0, 1, 1);
+                /* Prepare extended label: */
+                m_pLabelAudioExtended = new QLabel(m_pWidgetAudioSettings);
+                if (m_pLabelAudioExtended)
+                {
+                    m_pLabelAudioExtended->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutAudioSettings->addWidget(m_pLabelAudioExtended, 2, 0);
+                }
+                /* Prepare output check-box: */
+                m_pCheckBoxAudioOutput = new QCheckBox(m_pWidgetAudioSettings);
+                if (m_pCheckBoxAudioOutput)
+                    pLayoutAudioSettings->addWidget(m_pCheckBoxAudioOutput, 2, 1);
+                /* Prepare input check-box: */
+                m_pCheckBoxAudioInput = new QCheckBox(m_pWidgetAudioSettings);
+                if (m_pCheckBoxAudioInput)
+                    pLayoutAudioSettings->addWidget(m_pCheckBoxAudioInput, 3, 1);
 
-    m_pCheckBoxAudioOutput = new QCheckBox(m_pContainerAudioSubOptions);
-    m_pCheckBoxAudioOutput->setObjectName(QStringLiteral("m_pCheckBoxAudioOutput"));
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-    sizePolicy.setHorizontalStretch(1);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pCheckBoxAudioOutput->sizePolicy().hasHeightForWidth());
-    m_pCheckBoxAudioOutput->setSizePolicy(sizePolicy);
-    pContainerLayoutAudioSubOptions->addWidget(m_pCheckBoxAudioOutput, 2, 1, 1, 1);
+                pMainLayout->addWidget(m_pWidgetAudioSettings, 1, 1, 1, 1);
+            }
+        }
+    }
+}
 
-    m_pCheckBoxAudioInput = new QCheckBox(m_pContainerAudioSubOptions);
-    m_pCheckBoxAudioInput->setObjectName(QStringLiteral("m_pCheckBoxAudioInput"));
-    sizePolicy.setHeightForWidth(m_pCheckBoxAudioInput->sizePolicy().hasHeightForWidth());
-    m_pCheckBoxAudioInput->setSizePolicy(sizePolicy);
-    pContainerLayoutAudioSubOptions->addWidget(m_pCheckBoxAudioInput, 3, 1, 1, 1);
-
-    pContainerLayoutAudioOptions->addWidget(m_pContainerAudioSubOptions, 1, 1, 1, 1);
-    pMainLayout->addWidget(pContainerAudioOptions);
-
-    QSpacerItem *pSpacerItem1 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pMainLayout->addItem(pSpacerItem1);
-
-    QObject::connect(m_pCheckBoxAudio, &QCheckBox::toggled, m_pContainerAudioSubOptions, &QWidget::setEnabled);
+void UIMachineSettingsAudio::prepareConnections()
+{
+    QObject::connect(m_pCheckBoxAudio, &QCheckBox::toggled, m_pWidgetAudioSettings, &QWidget::setEnabled);
 }
 
 void UIMachineSettingsAudio::cleanup()
