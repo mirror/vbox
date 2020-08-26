@@ -310,16 +310,16 @@ function Main()
    dim strOutDir
    strOutDir = EnvGetDef("PATH_OUT_BASE", strRootDir & "\out")
    strOutDir = strOutDir & "\" & strTarget & "." & strTargetArch & "\" & strType
-   EnvPrependPathItem "Path", DosSlashes(strOutDir & "bin\tools"), ";"
-   EnvPrependPathItem "Path", DosSlashes(strOutDir & "bin"), ";"
+   EnvPrependPathItem "Path", DosSlashes(strOutDir & "\bin\tools"), ";"
+   EnvPrependPathItem "Path", DosSlashes(strOutDir & "\bin"), ";"
 
    ' Add kbuild binary directory to the front the the path.
    EnvPrependPathItem "Path", DosSlashes(strPathkBuild & "\bin\win." & strHostArch), ";"
 
    ' Finally, add the relevant tools/**/bin directories to the front of the path.
    EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\bin"), ";"
-   if strHostArch = "amd64" then EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\bin\win.x86"), ";"
-   EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\bin\win." & strHostArch), ";"
+   if strHostArch = "amd64" then EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\win.x86\bin"), ";"
+   EnvPrependPathItem "Path", DosSlashes(strPathDevTools & "\win." & strHostArch) & "\bin", ";"
 
    '
    ' Export if we are not executing a program.
