@@ -155,11 +155,11 @@ typedef struct VDISKRAWPARTDESC
      * the offset field is set appropriately. If this is NULL, then this
      * partition will not be accessible to the guest. The size of the data area
      * must still be set correctly. */
-    const char      *pszRawDevice;
+    char           *pszRawDevice;
     /** Pointer to the partitioning info. NULL means this is a regular data
      * area on disk, non-NULL denotes data which should be copied to the
      * partition data overlay. */
-    const void      *pvPartitionData;
+    void           *pvPartitionData;
     /** Offset where the data starts in this device. */
     uint64_t        offStartInDevice;
     /** Offset where the data starts in the disk. */

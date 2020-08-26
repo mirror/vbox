@@ -1728,7 +1728,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
 #endif
                 }
 
-                pPartDesc->pszRawDevice = pszRawName;
+                pPartDesc->pszRawDevice = (char *)pszRawName;
                 pPartDesc->offStartInDevice = uStartOffset;
             }
             else
