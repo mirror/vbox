@@ -16,8 +16,11 @@
  */
 
 /* Qt includes: */
+#include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QHeaderView>
+#include <QMenu>
 #include <QVBoxLayout>
 #include <QTableWidget>
 #include <QTimer>
@@ -69,6 +72,7 @@ public:
     void updateVRDE();
     void updateClipboardMode(KClipboardMode enmMode = KClipboardMode_Max);
     void updateDnDMode(KDnDMode enmMode = KDnDMode_Max);
+    QString tableData();
 
 protected:
 
@@ -142,6 +146,7 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     , m_iMinimumWidth(0)
     , m_pTimer(0)
 {
+    setContextMenuPolicy(Qt::CustomContextMenu);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setAlternatingRowColors(true);
     m_iFontHeight = QFontMetrics(font()).height();
@@ -410,6 +415,27 @@ void UIRuntimeInfoWidget::updateDnDMode(KDnDMode enmMode /* = KDnDMode_Max */)
                       gpConverter->toString(enmMode));
 }
 
+QString UIRuntimeInfoWidget::tableData()
+{
+    QStringList stringData;
+    for (int i = 0; i < rowCount(); ++i)
+    {
+        /* Skip the first column as it is used for icon: */
+        for (int j = 1; j < columnCount(); ++j)
+        {
+            QTableWidgetItem *pItem = item(i, j);
+            if (!pItem || pItem->text().isEmpty())
+                continue;
+            stringData << pItem->text();
+            if (j == 1)
+                stringData << ": ";
+        }
+        stringData << "\n";
+    }
+    return stringData.join(QString());
+}
+
+
 void UIRuntimeInfoWidget::updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1)
 {
     QTableWidgetItem *pItem = 0;
@@ -463,6 +489,7 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     , m_console(console)
     , m_pMainLayout(0)
     , m_pRuntimeInfoWidget(0)
+    , m_pCopyWholeTableAction(0)
 {
     if (!m_console.isNull())
         m_comGuest = m_console.GetGuest();
@@ -478,6 +505,8 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
 
 void UIInformationRuntime::retranslateUi()
 {
+    if (m_pCopyWholeTableAction)
+        m_pCopyWholeTableAction->setText(QApplication::translate("UIVMInformationDialog", "Copy All"));
 }
 
 void UIInformationRuntime::prepareObjects()
@@ -488,8 +517,14 @@ void UIInformationRuntime::prepareObjects()
     m_pMainLayout->setSpacing(0);
 
     m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
+    AssertReturnVoid(m_pRuntimeInfoWidget);
+    connect(m_pRuntimeInfoWidget, &UIRuntimeInfoWidget::customContextMenuRequested,
+            this, &UIInformationRuntime::sltHandleTableContextMenuRequest);
     m_pMainLayout->addWidget(m_pRuntimeInfoWidget);
     m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+
+    m_pCopyWholeTableAction = new QAction(this);
+    connect(m_pCopyWholeTableAction, &QAction::triggered, this, &UIInformationRuntime::sltHandleCopyWholeTable);
 }
 
 void UIInformationRuntime::sltGuestAdditionsStateChange()
@@ -522,6 +557,27 @@ void UIInformationRuntime::sltDnDModeChange(KDnDMode enmMode)
 {
     if (m_pRuntimeInfoWidget)
         m_pRuntimeInfoWidget->updateDnDMode(enmMode);
+}
+
+void UIInformationRuntime::sltHandleTableContextMenuRequest(const QPoint &position)
+{
+    if (!m_pCopyWholeTableAction)
+        return;
+
+    QMenu menu(this);
+    menu.addAction(m_pCopyWholeTableAction);
+    menu.exec(mapToGlobal(position));
+}
+
+void UIInformationRuntime::sltHandleCopyWholeTable()
+{
+    QClipboard *pClipboard = QApplication::clipboard();
+    if (!pClipboard)
+        return;
+    if (!m_pRuntimeInfoWidget)
+        return;
+
+    pClipboard->setText(m_pRuntimeInfoWidget->tableData(), QClipboard::Clipboard);
 }
 
 #include "UIInformationRuntime.moc"

@@ -34,6 +34,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QAction;
 class QVBoxLayout;
 class UISession;
 class UIRuntimeInfoWidget;
@@ -65,6 +66,8 @@ private slots:
         void sltClipboardChange(KClipboardMode enmMode);
         void sltDnDModeChange(KDnDMode enmMode);
     /** @} */
+    void sltHandleTableContextMenuRequest(const QPoint &position);
+    void sltHandleCopyWholeTable();
 
 private:
 
@@ -77,6 +80,7 @@ private:
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;
     UIRuntimeInfoWidget *m_pRuntimeInfoWidget;
+    QAction *m_pCopyWholeTableAction;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h */
