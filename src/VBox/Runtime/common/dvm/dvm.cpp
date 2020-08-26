@@ -626,6 +626,38 @@ RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb, b
     return rc;
 }
 
+RTDECL(int) RTDvmMapQueryTableLocations(RTDVM hVolMgr, uint32_t fFlags,
+                                        PRTDVMTABLELOCATION paLocations, size_t cLocations, size_t *pcActual)
+{
+    PRTDVMINTERNAL pThis = hVolMgr;
+
+    /*
+     * Input validation.
+     */
+    if (cLocations)
+    {
+        AssertPtrReturn(paLocations, VERR_INVALID_POINTER);
+        if (pcActual)
+        {
+            AssertPtrReturn(pcActual, VERR_INVALID_POINTER);
+            *pcActual = 0;
+        }
+    }
+    else
+    {
+        AssertPtrReturn(pcActual, VERR_INVALID_POINTER);
+        *pcActual = 0;
+    }
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTDVM_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!(fFlags & ~RTDVMMAPQTABLOC_F_VALID_MASK), VERR_INVALID_FLAGS);
+
+    /*
+     * Pass it down to the format backend.
+     */
+    return pThis->pDvmFmtOps->pfnQueryTableLocations(pThis->hVolMgrFmt, fFlags, paLocations, cLocations, pcActual);
+}
+
 RTDECL(uint32_t) RTDvmVolumeRetain(RTDVMVOLUME hVol)
 {
     PRTDVMVOLUMEINTERNAL pThis = hVol;

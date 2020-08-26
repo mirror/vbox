@@ -833,6 +833,7 @@
 # define RTDvmMapQueryFirstVolume                       RT_MANGLER(RTDvmMapQueryFirstVolume)
 # define RTDvmMapQueryNextVolume                        RT_MANGLER(RTDvmMapQueryNextVolume)
 # define RTDvmMapQueryDiskUuid                          RT_MANGLER(RTDvmMapQueryDiskUuid)
+# define RTDvmMapQueryTableLocations                    RT_MANGLER(RTDvmMapQueryTableLocations)
 # define RTDvmVolumeRetain                              RT_MANGLER(RTDvmVolumeRetain)
 # define RTDvmVolumeRelease                             RT_MANGLER(RTDvmVolumeRelease)
 # define RTDvmVolumeGetIndex                            RT_MANGLER(RTDvmVolumeGetIndex)

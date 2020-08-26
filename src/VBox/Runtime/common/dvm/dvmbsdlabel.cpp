@@ -441,6 +441,68 @@ static DECLCALLBACK(int) rtDvmFmtBsdLblQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDV
     return rc;
 }
 
+/** @copydoc RTDVMFMTOPS::pfnQueryTableLocations */
+static DECLCALLBACK(int) rtDvmFmtBsdLblQueryTableLocations(RTDVMFMT hVolMgrFmt, uint32_t fFlags, PRTDVMTABLELOCATION paLocations,
+                                                           size_t cLocations, size_t *pcActual)
+{
+    PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
+
+    /*
+     * The MBR if requested.
+     */
+    int     rc = VINF_SUCCESS;
+    size_t  iLoc = 0;
+    if (fFlags & RTDVMMAPQTABLOC_F_INCLUDE_LEGACY)
+    {
+        if (cLocations > 0)
+        {
+            paLocations[iLoc].off       = 0;
+            paLocations[iLoc].cb        = RTDVM_BSDLBL_LBA2BYTE(1, pThis->pDisk);
+            paLocations[iLoc].cbPadding = 0;
+        }
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+        iLoc++;
+    }
+
+    /*
+     * The BSD lable.
+     */
+    if (cLocations > iLoc)
+    {
+        paLocations[iLoc].off = RTDVM_BSDLBL_LBA2BYTE(1, pThis->pDisk);
+        paLocations[iLoc].cb  = (sizeof(BsdLabel) + pThis->pDisk->cbSector - 1) / pThis->pDisk->cbSector * pThis->pDisk->cbSector;
+
+        uint32_t offFirstSector = pThis->pDisk->cbDisk / pThis->pDisk->cbSector;
+        for (unsigned i = 0; i < pThis->DiskLabel.cPartitions; i++)
+            if (   pThis->DiskLabel.aPartitions[i].cSectors
+                && pThis->DiskLabel.aPartitions[i].offSectorStart < offFirstSector)
+                offFirstSector =  pThis->DiskLabel.aPartitions[i].offSectorStart;
+
+        uint64_t offEnd = paLocations[iLoc].off + paLocations[iLoc].cb;
+        paLocations[iLoc].cbPadding = (uint64_t)offFirstSector * pThis->DiskLabel.cbSector;
+        if (paLocations[iLoc].cbPadding > offEnd)
+            paLocations[iLoc].cbPadding -= offEnd;
+        else
+            AssertFailedStmt(paLocations[iLoc].cbPadding = 0);
+    }
+    else
+        rc = VERR_BUFFER_OVERFLOW;
+    iLoc++;
+
+    /*
+     * Return values.
+     */
+    if (pcActual)
+        *pcActual = iLoc;
+    else if (cLocations != iLoc && RT_SUCCESS(rc))
+    {
+        RT_BZERO(&paLocations[iLoc], (cLocations - iLoc) * sizeof(paLocations[0]));
+        rc = VERR_BUFFER_UNDERFLOW;
+    }
+    return rc;
+}
+
 static DECLCALLBACK(void) rtDvmFmtBsdLblVolumeClose(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -606,6 +668,8 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtBsdLbl =
     rtDvmFmtBsdLblQueryFirstVolume,
     /* pfnQueryNextVolume */
     rtDvmFmtBsdLblQueryNextVolume,
+    /* pfnQueryTableLocations */
+    rtDvmFmtBsdLblQueryTableLocations,
     /* pfnVolumeClose */
     rtDvmFmtBsdLblVolumeClose,
     /* pfnVolumeGetSize */

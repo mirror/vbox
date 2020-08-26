@@ -731,6 +731,99 @@ static DECLCALLBACK(int) rtDvmFmtMbrQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVO
     return VERR_DVM_MAP_EMPTY;
 }
 
+/**
+ * Helper for rtDvmFmtMbrQueryTableLocations that calculates the padding and/or
+ * free space at @a off.
+ *
+ * Because nothing need to be sorted by start offset, we have to traverse all
+ * partition tables to determine this.
+ */
+static uint64_t rtDvmFmtMbrCalcTablePadding(PRTDVMFMTINTERNAL pThis, uint64_t off)
+{
+    uint64_t offNext = pThis->pDisk->cbDisk;
+    for (unsigned i = 0; i < 4; i++)
+    {
+        /* Check this primary entry */
+        uint64_t offCur = pThis->Primary.aEntries[i].offPart;
+        if (offCur >= off && offCur < offNext && pThis->Primary.aEntries[i].bType != 0)
+            offNext = offCur;
+
+        /* If it's an extended partition, check the chained ones too. */
+        for (PRTDVMMBRSECTOR pCur = pThis->Primary.aEntries[i].pChain;
+             pCur != NULL;
+             pCur->idxExtended != UINT8_MAX ? pCur->aEntries[pCur->idxExtended].pChain : NULL)
+        {
+            for (unsigned j = 0; j < 4; j++)
+            {
+                offCur = pCur->aEntries[j].offPart;
+                if (offCur >= off && offCur < offNext && pCur->aEntries[j].bType != 0)
+                    offNext = offCur;
+            }
+        }
+    }
+    Assert(offNext >= off);
+    return offNext - off;
+}
+
+/** @copydoc RTDVMFMTOPS::pfnQueryTableLocations */
+static DECLCALLBACK(int) rtDvmFmtMbrQueryTableLocations(RTDVMFMT hVolMgrFmt, uint32_t fFlags, PRTDVMTABLELOCATION paLocations,
+                                                        size_t cLocations, size_t *pcActual)
+{
+    PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
+    RT_NOREF(fFlags);
+
+    /*
+     * The MBR.
+     */
+    int     rc = VINF_SUCCESS;
+    size_t  iLoc = 0;
+    if (cLocations > 0)
+    {
+        paLocations[iLoc].off       = pThis->Primary.offOnDisk;
+        paLocations[iLoc].cb        = pThis->cbSector;
+        paLocations[iLoc].cbPadding = rtDvmFmtMbrCalcTablePadding(pThis, 0 + pThis->cbSector);
+    }
+    else
+        rc = VERR_BUFFER_OVERFLOW;
+    iLoc++;
+
+    /*
+     * Now do the extended partitions.
+     *
+     * Remember, we only support multiple in the primary MBR, only the first
+     * one is honored in the chained ones.
+     */
+    for (unsigned i = 0; i < 4; i++)
+    {
+        for (PRTDVMMBRSECTOR pCur = pThis->Primary.aEntries[i].pChain;
+             pCur != NULL;
+             pCur->idxExtended != UINT8_MAX ? pCur->aEntries[pCur->idxExtended].pChain : NULL)
+        {
+            if (cLocations > iLoc)
+            {
+                paLocations[iLoc].off       = pCur->offOnDisk;
+                paLocations[iLoc].cb        = pThis->cbSector;
+                paLocations[iLoc].cbPadding = rtDvmFmtMbrCalcTablePadding(pThis, pCur->offOnDisk + pThis->cbSector);
+            }
+            else
+                rc = VERR_BUFFER_OVERFLOW;
+            iLoc++;
+        }
+    }
+
+    /*
+     * Return values.
+     */
+    if (pcActual)
+        *pcActual = iLoc;
+    else if (cLocations != iLoc && RT_SUCCESS(rc))
+    {
+        RT_BZERO(&paLocations[iLoc], (cLocations - iLoc) * sizeof(paLocations[0]));
+        rc = VERR_BUFFER_UNDERFLOW;
+    }
+    return rc;
+}
+
 static DECLCALLBACK(void) rtDvmFmtMbrVolumeClose(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -936,6 +1029,8 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtMbr =
     rtDvmFmtMbrQueryFirstVolume,
     /* pfnQueryNextVolume */
     rtDvmFmtMbrQueryNextVolume,
+    /* pfnQueryTableLocations */
+    rtDvmFmtMbrQueryTableLocations,
     /* pfnVolumeClose */
     rtDvmFmtMbrVolumeClose,
     /* pfnVolumeGetSize */

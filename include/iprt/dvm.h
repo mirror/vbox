@@ -297,7 +297,7 @@ RTDECL(int) RTDvmMapQueryNextVolume(RTDVM hVolMgr, RTDVMVOLUME hVol, PRTDVMVOLUM
  * Returns whether the given block on the disk is in use.
  *
  * @returns IPRT status code.
- * @param   hVolMgr         The volume manager handler.
+ * @param   hVolMgr         The volume manager handle.
  * @param   off             The start offset to check for.
  * @param   cb              The range in bytes to check.
  * @param   pfAllocated     Where to store the in-use status on success.
@@ -305,6 +305,56 @@ RTDECL(int) RTDvmMapQueryNextVolume(RTDVM hVolMgr, RTDVMVOLUME hVol, PRTDVMVOLUM
  * @remark This method will return true even if a part of the range is not in use.
  */
 RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb, bool *pfAllocated);
+
+/**
+ * Partition/map table location information.
+ * @sa RTDvmMapQueryTableLocations
+ */
+typedef struct RTDVMTABLELOCATION
+{
+    /** The byte offset on the underlying media. */
+    uint64_t    off;
+    /** The table size in bytes. */
+    uint64_t    cb;
+    /** Number of padding bytes / free space between the actual table and
+     *  first partition. */
+    uint64_t    cbPadding;
+} RTDVMTABLELOCATION;
+/** Pointer to partition table location info. */
+typedef RTDVMTABLELOCATION *PRTDVMTABLELOCATION;
+/** Pointer to const partition table location info. */
+typedef RTDVMTABLELOCATION const *PCRTDVMTABLELOCATION;
+
+
+/** @name RTDVMMAPQTABLOC_F_XXX - Flags for RTDvmMapQueryTableLocations
+ * @{ */
+/** Make sure GPT includes the protective MBR. */
+#define RTDVMMAPQTABLOC_F_INCLUDE_LEGACY    RT_BIT_32(0)
+/** Valid flags.   */
+#define RTDVMMAPQTABLOC_F_VALID_MASK        UINT32_C(1)
+/** @} */
+
+/**
+ * Query the partition table locations.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the table is too small, @a *pcActual will be
+ *          set to the required size.
+ * @retval  VERR_BUFFER_UNDERFLOW if the table is too big and @a pcActual is
+ *          NULL.
+ * @param   hVolMgr         The volume manager handle.
+ * @param   fFlags          Flags, see RTDVMMAPQTABLOC_F_XXX.
+ * @param   paLocations     Where to return the info.  This can be NULL if @a
+ *                          cLocations is zero and @a pcActual is given.
+ * @param   cLocations      The size of @a paLocations in items.
+ * @param   pcActual        Where to return the actual number of locations, or
+ *                          on VERR_BUFFER_OVERFLOW the necessary table size.
+ *                          Optional, when not specified the cLocations value
+ *                          must match exactly or it fails with
+ *                          VERR_BUFFER_UNDERFLOW.
+ */
+RTDECL(int) RTDvmMapQueryTableLocations(RTDVM hVolMgr, uint32_t fFlags,
+                                        PRTDVMTABLELOCATION paLocations, size_t cLocations, size_t *pcActual);
 
 /**
  * Retains a valid volume handle.

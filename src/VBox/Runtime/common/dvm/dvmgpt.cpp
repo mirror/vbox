@@ -462,6 +462,70 @@ static DECLCALLBACK(int) rtDvmFmtGptQueryNextVolume(RTDVMFMT hVolMgrFmt, RTDVMVO
     return VERR_DVM_MAP_NO_VOLUME;
 }
 
+/** @copydoc RTDVMFMTOPS::pfnQueryTableLocations */
+static DECLCALLBACK(int) rtDvmFmtGptQueryTableLocations(RTDVMFMT hVolMgrFmt, uint32_t fFlags, PRTDVMTABLELOCATION paLocations,
+                                                        size_t cLocations, size_t *pcActual)
+{
+    PRTDVMFMTINTERNAL pThis = hVolMgrFmt;
+
+    /*
+     * The MBR if requested.
+     */
+    int     rc = VINF_SUCCESS;
+    size_t  iLoc = 0;
+    if (fFlags & RTDVMMAPQTABLOC_F_INCLUDE_LEGACY)
+    {
+        if (cLocations > 0)
+        {
+            paLocations[iLoc].off       = 0;
+            paLocations[iLoc].cb        = RTDVM_GPT_LBA2BYTE(1, pThis->pDisk);
+            paLocations[iLoc].cbPadding = 0;
+        }
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+        iLoc++;
+    }
+
+    /*
+     * The GPT.
+     */
+    if (cLocations > iLoc)
+    {
+        uint64_t const offEnd = (pThis->HdrRev1.cPartitionEntries * pThis->HdrRev1.cbPartitionEntry + pThis->pDisk->cbSector - 1)
+                              / pThis->pDisk->cbSector
+                              * pThis->pDisk->cbSector;
+        paLocations[iLoc].off       = RTDVM_GPT_LBA2BYTE(1, pThis->pDisk);
+        paLocations[iLoc].cb        = offEnd - paLocations[iLoc].off;
+
+        uint64_t uLbaFirstPart = pThis->pDisk->cbDisk / pThis->pDisk->cbSector;
+        for (unsigned i = 0; i < pThis->HdrRev1.cPartitionEntries; i++)
+            if (   pThis->paGptEntries[i].u64LbaFirst < uLbaFirstPart
+                && !RTUuidIsNull(&pThis->paGptEntries[i].UuidType))
+                uLbaFirstPart = pThis->paGptEntries[i].u64LbaFirst;
+
+        paLocations[iLoc].cbPadding = RTDVM_GPT_LBA2BYTE(uLbaFirstPart, pThis->pDisk);
+        if (paLocations[iLoc].cbPadding > offEnd)
+            paLocations[iLoc].cbPadding -= offEnd;
+        else
+            AssertFailedStmt(paLocations[iLoc].cbPadding = 0);
+    }
+    else
+        rc = VERR_BUFFER_OVERFLOW;
+    iLoc++;
+
+    /*
+     * Return values.
+     */
+    if (pcActual)
+        *pcActual = iLoc;
+    else if (cLocations != iLoc && RT_SUCCESS(rc))
+    {
+        RT_BZERO(&paLocations[iLoc], (cLocations - iLoc) * sizeof(paLocations[0]));
+        rc = VERR_BUFFER_UNDERFLOW;
+    }
+    return rc;
+}
+
 static DECLCALLBACK(void) rtDvmFmtGptVolumeClose(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -649,6 +713,8 @@ DECL_HIDDEN_CONST(const RTDVMFMTOPS) g_rtDvmFmtGpt =
     rtDvmFmtGptQueryFirstVolume,
     /* pfnQueryNextVolume */
     rtDvmFmtGptQueryNextVolume,
+    /* pfnQueryTableLocations */
+    rtDvmFmtGptQueryTableLocations,
     /* pfnVolumeClose */
     rtDvmFmtGptVolumeClose,
     /* pfnVolumeGetSize */
