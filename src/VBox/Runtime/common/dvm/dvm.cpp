@@ -740,7 +740,11 @@ RTDECL(uint32_t) RTDvmVolumeGetIndex(RTDVMVOLUME hVol, RTDVMVOLIDX enmIndex)
     {
 #ifdef RT_OS_WINDOWS
         enmIndex = RTDVMVOLIDX_USER_VISIBLE;
-#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
+#elif defined(RT_OS_LINUX) \
+   || defined(RT_OS_FREEBSD) \
+   || defined(RT_OS_SOLARIS) \
+   || defined(RT_OS_DARWIN) \
+   || defined(RT_OS_OS2) /*whatever*/
 /** @todo verify darwin, solaris and freebsd matches the linux algo. Check the linux index matching actual linux. */
         enmIndex = RTDVMVOLIDX_LINUX;
 #else
