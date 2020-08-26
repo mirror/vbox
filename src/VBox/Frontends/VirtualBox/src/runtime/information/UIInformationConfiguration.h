@@ -59,6 +59,8 @@ protected:
 private slots:
 
     void sltMachineDataChanged();
+    void sltHandleTableContextMenuRequest(const QPoint &position);
+    void sltCopyTableToClipboard();
 
 private:
 
@@ -70,11 +72,14 @@ private:
                        const QFontMetrics &fontMetrics, int &iMaxColumn1Length);
     void resetTable();
     QString removeHtmlFromString(const QString &strOriginal);
+    QString tableData() const;
 
     CMachine m_machine;
     CConsole m_console;
     QVBoxLayout *m_pMainLayout;
     QTableWidget *m_pTableWidget;
+    QAction *m_pCopyWholeTableAction;
+
     const int m_iColumCount;
     const int m_iRowLeftMargin;
     const int m_iRowTopMargin;

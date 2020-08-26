@@ -72,7 +72,7 @@ public:
     void updateVRDE();
     void updateClipboardMode(KClipboardMode enmMode = KClipboardMode_Max);
     void updateDnDMode(KDnDMode enmMode = KDnDMode_Max);
-    QString tableData();
+    QString tableData() const;
 
 protected:
 
@@ -415,26 +415,25 @@ void UIRuntimeInfoWidget::updateDnDMode(KDnDMode enmMode /* = KDnDMode_Max */)
                       gpConverter->toString(enmMode));
 }
 
-QString UIRuntimeInfoWidget::tableData()
+QString UIRuntimeInfoWidget::tableData() const
 {
-    QStringList stringData;
+    AssertReturn(columnCount() == 3, QString());
+    QStringList data;
     for (int i = 0; i < rowCount(); ++i)
     {
-        /* Skip the first column as it is used for icon: */
-        for (int j = 1; j < columnCount(); ++j)
-        {
-            QTableWidgetItem *pItem = item(i, j);
-            if (!pItem || pItem->text().isEmpty())
-                continue;
-            stringData << pItem->text();
-            if (j == 1)
-                stringData << ": ";
-        }
-        stringData << "\n";
+        /* Skip the first column as it contains only icon and no text: */
+        QTableWidgetItem *pItem = item(i, 1);
+        QString strColumn1 = pItem ? pItem->text() : QString();
+        pItem = item(i, 2);
+        QString strColumn2 = pItem ? pItem->text() : QString();
+        if (strColumn2.isEmpty())
+            data << strColumn1;
+        else
+            data << strColumn1 << ": " << strColumn2;
+        data << "\n";
     }
-    return stringData.join(QString());
+    return data.join(QString());
 }
-
 
 void UIRuntimeInfoWidget::updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1)
 {

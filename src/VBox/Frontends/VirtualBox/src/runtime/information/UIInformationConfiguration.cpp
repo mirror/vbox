@@ -18,8 +18,11 @@
 /* COM includes: */
 
 /* Qt includes: */
+#include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QHeaderView>
+#include <QMenu>
 #include <QTableWidget>
 #include <QTextDocument>
 #include <QVBoxLayout>
@@ -38,6 +41,7 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
     , m_console(console)
     , m_pMainLayout(0)
     , m_pTableWidget(0)
+    , m_pCopyWholeTableAction(0)
     , m_iColumCount(3)
     , m_iRowLeftMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin))
     , m_iRowTopMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin))
@@ -57,6 +61,24 @@ void UIInformationConfiguration::sltMachineDataChanged()
     createTableItems();
 }
 
+void UIInformationConfiguration::sltHandleTableContextMenuRequest(const QPoint &position)
+{
+    if (!m_pCopyWholeTableAction)
+        return;
+
+    QMenu menu(this);
+    menu.addAction(m_pCopyWholeTableAction);
+    menu.exec(mapToGlobal(position));
+}
+
+void UIInformationConfiguration::sltCopyTableToClipboard()
+{
+    QClipboard *pClipboard = QApplication::clipboard();
+    if (!pClipboard)
+        return;
+    pClipboard->setText(tableData(), QClipboard::Clipboard);
+}
+
 void UIInformationConfiguration::retranslateUi()
 {
     m_strGeneralTitle = QApplication::translate("UIVMInformationDialog", "General");
@@ -68,6 +90,8 @@ void UIInformationConfiguration::retranslateUi()
     m_strSerialPortsTitle = QApplication::translate("UIVMInformationDialog", "Serial Ports");
     m_strUSBTitle = QApplication::translate("UIVMInformationDialog", "USB");
     m_strSharedFoldersTitle = QApplication::translate("UIVMInformationDialog", "Shared Folders");
+    if (m_pCopyWholeTableAction)
+        m_pCopyWholeTableAction->setText(QApplication::translate("UIVMInformationDialog", "Copy All"));
     createTableItems();
 }
 
@@ -159,8 +183,14 @@ void UIInformationConfiguration::prepareObjects()
         m_pTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         m_pTableWidget->setFocusPolicy(Qt::NoFocus);
         m_pTableWidget->setSelectionMode(QAbstractItemView::NoSelection);
+        m_pTableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(m_pTableWidget, &QTableWidget::customContextMenuRequested,
+            this, &UIInformationConfiguration::sltHandleTableContextMenuRequest);
         m_pMainLayout->addWidget(m_pTableWidget);
     }
+    m_pCopyWholeTableAction = new QAction(this);
+    connect(m_pCopyWholeTableAction, &QAction::triggered,
+            this, &UIInformationConfiguration::sltCopyTableToClipboard);
 }
 
 void UIInformationConfiguration::insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics, int &iMaxColumn1Length)
@@ -215,4 +245,25 @@ QString UIInformationConfiguration::removeHtmlFromString(const QString &strOrigi
     QTextDocument textDocument;
     textDocument.setHtml(strOriginal);
     return textDocument.toPlainText();
+}
+
+QString UIInformationConfiguration::tableData() const
+{
+    AssertReturn(m_pTableWidget, QString());
+    AssertReturn(m_pTableWidget->columnCount() == 3, QString());
+    QStringList data;
+    for (int i = 0; i < m_pTableWidget->rowCount(); ++i)
+    {
+        /* Skip the first column as it contains only icon and no text: */
+        QTableWidgetItem *pItem = m_pTableWidget->item(i, 1);
+        QString strColumn1 = pItem ? pItem->text() : QString();
+        pItem = m_pTableWidget->item(i, 2);
+        QString strColumn2 = pItem ? pItem->text() : QString();
+        if (strColumn2.isEmpty())
+            data << strColumn1;
+        else
+            data << strColumn1 << ": " << strColumn2;
+        data << "\n";
+    }
+    return data.join(QString());
 }
