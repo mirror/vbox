@@ -455,7 +455,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /** @name Miscellaneous IOMMU defines.
  * @{ */
 /** Log prefix string. */
-#define IOMMU_LOG_PFX                               "AMD_IOMMU"
+#define IOMMU_LOG_PFX                               "IOMMU-AMD"
 /** The current saved state version. */
 #define IOMMU_SAVED_STATE_VERSION                   1
 /** AMD's vendor ID. */
@@ -2594,11 +2594,15 @@ static void iommuAmdSetPciTargetAbort(PPDMDEVINS pDevIns)
 static void iommuAmdCmdThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 {
     IOMMU_ASSERT_LOCKED(pDevIns);
+    LogFlowFunc(("\n"));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     if (   !ASMAtomicXchgBool(&pThis->fCmdThreadSignaled, true)
         &&  ASMAtomicReadBool(&pThis->fCmdThreadSleeping))
+    {
+        LogFlowFunc(("Signaling command thread\n"));
         PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
+    }
 }
 
 
@@ -4441,6 +4445,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemRead(PPDMDEVINS pDevIns, uint16_t uDev
     Assert(cbRead > 0);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbRead=%u\n", uDevId, uIova, cbRead));
 
     /* Addresses are forwarded without translation when the IOMMU is disabled. */
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
@@ -4478,6 +4483,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDe
     Assert(cbWrite > 0);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    LogFlowFunc(("uDevId=%#x uIova=%#RX64 cbWrite=%u\n", uDevId, uIova, cbWrite));
 
     /* Addresses are forwarded without translation when the IOMMU is disabled. */
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
@@ -4790,6 +4796,7 @@ static DECLCALLBACK(int) iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDe
     Assert(pMsiOut);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    LogFlowFunc(("uDevId=%#x\n", uDevId));
 
     /* Interrupts are forwarded with remapping when the IOMMU is disabled. */
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
@@ -4814,6 +4821,8 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioWrite(PPDMDEVINS pDevIns, void *pv
     Assert(cb == 4 || cb == 8);
     Assert(!(off & (cb - 1)));
 
+    LogFlowFunc(("off=%RGp cb=%u\n", off, cb));
+
     uint64_t const uValue = cb == 8 ? *(uint64_t const *)pv : *(uint32_t const *)pv;
     return iommuAmdWriteRegister(pDevIns, off, cb, uValue);
 }
@@ -4827,6 +4836,8 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
     NOREF(pvUser);
     Assert(cb == 4 || cb == 8);
     Assert(!(off & (cb - 1)));
+
+    LogFlowFunc(("off=%RGp cb=%u\n", off, cb));
 
     uint64_t uResult;
     VBOXSTRICTRC rcStrict = iommuAmdReadRegister(pDevIns, off, &uResult);
@@ -5086,7 +5097,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
 static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     RT_NOREF(pThread);
-
+    LogFlowFunc(("\n"));
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
 }
@@ -5098,6 +5109,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREA
 static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
                                                           unsigned cb, uint32_t *pu32Value)
 {
+    LogFlowFunc(("\n"));
     /** @todo IOMMU: PCI config read stat counter. */
     VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
     Log3((IOMMU_LOG_PFX ": Reading PCI config register %#x (cb=%u) -> %#x %Rrc\n", uAddress, cb, *pu32Value,
@@ -5113,6 +5125,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
                                                            unsigned cb, uint32_t u32Value)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    LogFlowFunc(("\n"));
 
     /*
      * Discard writes to read-only registers that are specific to the IOMMU.
@@ -5148,7 +5161,8 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
             pThis->IommuBar.au32[0] = u32Value & IOMMU_BAR_VALID_MASK;
             if (pThis->IommuBar.n.u1Enable)
             {
-                Assert(pThis->hMmio == NIL_IOMMMIOHANDLE);
+                Assert(pThis->hMmio != NIL_IOMMMIOHANDLE);
+                Assert(PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio) == NIL_RTGCPHYS);
                 Assert(!pThis->ExtFeat.n.u1PerfCounterSup); /* Base is 16K aligned when performance counters aren't supported. */
                 RTGCPHYS const GCPhysMmioBase = RT_MAKE_U64(pThis->IommuBar.au32[0] & 0xffffc000, pThis->IommuBar.au32[1]);
                 rcStrict = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
@@ -5750,6 +5764,7 @@ static DECLCALLBACK(int) iommuAmdR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     /** @todo IOMMU: Save state. */
     RT_NOREF2(pDevIns, pSSM);
+    LogFlowFunc(("\n"));
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -5761,6 +5776,7 @@ static DECLCALLBACK(int) iommuAmdR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 {
     /** @todo IOMMU: Load state. */
     RT_NOREF4(pDevIns, pSSM, uVersion, uPass);
+    LogFlowFunc(("\n"));
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -5779,6 +5795,8 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     PIOMMU     pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    LogFlowFunc(("\n"));
 
     memset(&pThis->aDevTabBaseAddrs[0], 0, sizeof(pThis->aDevTabBaseAddrs));
 
@@ -5843,6 +5861,17 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0);
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0);
+
+    /*
+     * I ASSUME all MMIO regions mapped by a PDM device are automatically unmapped
+     * on VM reset. If not, we need to enable the following...
+     */
+#if 0
+    /* Unmap the MMIO region on reset if it has been mapped previously. */
+    Assert(pThis->hMmio != NIL_IOMMMIOHANDLE);
+    if (PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio) != NIL_RTGCPHYS)
+        PDMDevHlpMmioUnmap(pDevIns, pThis->hMmio);
+#endif
 }
 
 
@@ -5852,7 +5881,7 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     LogFlowFunc(("\n"));
 
     /* Close the command thread semaphore. */
@@ -5871,12 +5900,13 @@ static DECLCALLBACK(int) iommuAmdR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    RT_NOREF2(iInstance, pCfg);
-    LogFlowFunc(("\n"));
+    RT_NOREF(pCfg);
 
     PIOMMU   pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     PIOMMUCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUCC);
     pThisCC->pDevInsR3 = pDevIns;
+
+    LogFlowFunc(("iInstance=%d\n", iInstance));
 
     /*
      * Register the IOMMU with PDM.
@@ -6033,8 +6063,11 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Create the command thread and its event semaphore.
      */
+    char szDevIommu[64];
+    RT_ZERO(szDevIommu);
+    RTStrPrintf(szDevIommu, sizeof(szDevIommu), "IOMMU-%u", iInstance);
     rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->pCmdThread, pThis, iommuAmdR3CmdThread, iommuAmdR3CmdThreadWakeUp,
-                               0 /* cbStack */, RTTHREADTYPE_IO, "AMD-IOMMU");
+                               0 /* cbStack */, RTTHREADTYPE_IO, szDevIommu);
     AssertLogRelRCReturn(rc, rc);
 
     rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEvtCmdThread);
