@@ -364,6 +364,227 @@ static bool rtR0DbgKrnlNtParseModule(PRTDBGNTKRNLMODINFO pModInfo, uint8_t const
 
 
 /**
+ * Searches the given module information from the kernel for the NT kernel module, the
+ * HAL module, and optionally one more module.
+ *
+ * If the NT kernel or HAL modules have already been found, they'll be skipped.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_LDR_GENERAL_FAILURE if we failed to parse the NT kernel or HAL.
+ * @retval  VERR_BAD_EXE_FORMAT if we failed to parse @a pModInfo.
+ * @retval  VERR_MODULE_NOT_FOUND if @a pModInfo wasn't found.
+ *
+ * @param   pInfo               Pointer to the module information.
+ * @param   cModules            Number of valid module entries in the module information pointer. 
+ * @param   pModInfo            Custom module to search for.  Optional.
+ */
+static int rtR0DbgKrnlNtSearchForModuleWorker(PRTL_PROCESS_MODULES pInfo, uint32_t cModules, PRTDBGNTKRNLMODINFO pModInfo)
+{
+    AssertPtrReturn(pInfo, VERR_INVALID_PARAMETER);
+    AssertReturn(cModules >= 2, VERR_INVALID_PARAMETER);
+
+    /*
+     * Search the info.  The information is ordered with the kernel bits first,
+     * we expect aleast two modules to be returned to us (kernel + hal)!
+     */
+    int rc = VINF_SUCCESS;
+#if ARCH_BITS == 32
+    uintptr_t const uMinKernelAddr = _2G; /** @todo resolve MmSystemRangeStart */
+#else
+    uintptr_t const uMinKernelAddr = (uintptr_t)MM_SYSTEM_RANGE_START;
+#endif
+
+    for (uint32_t iModule = 0; iModule < cModules; iModule++)
+        RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: [%u]= %p LB %#x %s\n", iModule, pInfo->Modules[iModule].ImageBase,
+                              pInfo->Modules[iModule].ImageSize, pInfo->Modules[iModule].FullPathName));
+
+    /*
+     * First time around we serch for the NT kernel and HAL.  We'll look for NT
+     * kerneland HAL in the first 16 entries, and if not found, use the first
+     * and second entry respectively.
+     */
+    if (   !g_NtOsKrnlInfo.pbImageBase
+        && !g_HalInfo.pbImageBase)
+    {
+        /* Find them. */
+        RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Looking for kernel and hal...\n"));
+        uint32_t const cMaxModules = RT_MIN(cModules, 16);
+        uint32_t       idxNtOsKrnl = UINT32_MAX;
+        uint32_t       idxHal      = UINT32_MAX;
+        for (uint32_t iModule = 0; iModule < cMaxModules; iModule++)
+        {
+            RTL_PROCESS_MODULE_INFORMATION const * const pModule = &pInfo->Modules[iModule];
+            if (   (uintptr_t)pModule->ImageBase >= uMinKernelAddr
+                && (uintptr_t)pModule->ImageSize >= _4K)
+            {
+                const char *pszName = (const char *)&pModule->FullPathName[pModule->OffsetToFileName];
+                if (   idxNtOsKrnl == UINT32_MAX
+                    && RTStrICmpAscii(pszName, g_NtOsKrnlInfo.szName) == 0)
+                {
+                    idxNtOsKrnl = iModule;
+                    if (idxHal != UINT32_MAX)
+                        break;
+                }
+                else if (   idxHal == UINT32_MAX
+                         && RTStrICmpAscii(pszName, g_HalInfo.szName) == 0)
+                {
+                    idxHal = iModule;
+                    if (idxHal != UINT32_MAX)
+                        break;
+                }
+            }
+        }
+        RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: idxNtOsKrnl=%#x idxHal=%#x\n", idxNtOsKrnl, idxHal));
+        if (idxNtOsKrnl == UINT32_MAX)
+        {
+            idxNtOsKrnl = 0;
+            RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: 'ntoskrnl.exe' not found, picking '%s' instead\n",
+                                  pInfo->Modules[idxNtOsKrnl].FullPathName));
+        }
+        if (idxHal == UINT32_MAX)
+        {
+            idxHal = 1;
+            RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: 'hal.dll' not found, picking '%s' instead\n",
+                                  pInfo->Modules[idxHal].FullPathName));
+        }
+
+        /* Parse them. */
+        //RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Parsing NT kernel...\n"));
+        __try
+        {
+            g_NtOsKrnlInfo.fOkay = rtR0DbgKrnlNtParseModule(&g_NtOsKrnlInfo,
+                                                            (uint8_t const *)pInfo->Modules[idxNtOsKrnl].ImageBase,
+                                                            pInfo->Modules[idxNtOsKrnl].ImageSize);
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            g_NtOsKrnlInfo.fOkay = false;
+            RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: Exception in rtR0DbgKrnlNtParseModule parsing ntoskrnl.exe...\n"));
+        }
+
+        //RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Parsing HAL...\n"));
+        __try
+        {
+            g_HalInfo.fOkay = rtR0DbgKrnlNtParseModule(&g_HalInfo, (uint8_t const *)pInfo->Modules[idxHal].ImageBase,
+                                                       pInfo->Modules[idxHal].ImageSize);
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            g_HalInfo.fOkay = false;
+            RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: Exception in rtR0DbgKrnlNtParseModule parsing hal.dll...\n"));
+        }
+        if (!g_NtOsKrnlInfo.fOkay || !g_HalInfo.fOkay)
+            rc = VERR_LDR_GENERAL_FAILURE;
+
+        /*
+         * Resolve symbols we may need in the NT kernel (provided it parsed successfully)
+         */
+        if (g_NtOsKrnlInfo.fOkay)
+        {
+            if (!g_pfnMmGetSystemRoutineAddress)
+            {
+                //RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Looking up 'MmGetSystemRoutineAddress'...\n"));
+                rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, "MmGetSystemRoutineAddress", 0,
+                                            (void **)&g_pfnMmGetSystemRoutineAddress);
+            }
+        }
+    }
+
+    /*
+     * If we're still good, search for the given module (optional).
+     */
+    if (RT_SUCCESS(rc) && pModInfo)
+    {
+        RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Locating module '%s'...\n", pModInfo->szName));
+        rc = VERR_MODULE_NOT_FOUND;
+        for (uint32_t iModule = 0; iModule < cModules; iModule++)
+        {
+            RTL_PROCESS_MODULE_INFORMATION const * const pModule = &pInfo->Modules[iModule];
+            if (   (uintptr_t)pModule->ImageBase >= uMinKernelAddr
+                && (uintptr_t)pModule->ImageSize >= _4K)
+            {
+                const char *pszName = (const char *)&pModule->FullPathName[pModule->OffsetToFileName];
+                if (   pModInfo->pbImageBase == NULL
+                    && RTStrICmpAscii(pszName, pModInfo->szName) == 0)
+                {
+                    /*
+                     * Found the module, try parse it.
+                     */
+                    __try
+                    {
+                        pModInfo->fOkay = rtR0DbgKrnlNtParseModule(pModInfo, (uint8_t const *)pModule->ImageBase,
+                                                                   pModule->ImageSize);
+                        rc = VINF_SUCCESS;
+                    }
+                    __except(EXCEPTION_EXECUTE_HANDLER)
+                    {
+                        pModInfo->fOkay = false;
+                        rc = VERR_BAD_EXE_FORMAT;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Queries the given maximum amount of modules and returns a pointer to the
+ * allocation holding the modules.
+ *
+ * @returns IPRT status code.
+ * @param   ppInfo              Where to store the pointer to the module information structure on success.
+ *                              Free with RTMemFree() when done.
+ * @param   cModulesMax         Maximum number of modules to return.
+ * @param   pcModules           Where to store the amount of modules returned upon success,
+ *                              can be lower than the requested maximum.
+ */
+static int rtR0DbgKrnlNtQueryModules(PRTL_PROCESS_MODULES *ppInfo, uint32_t cModulesMax, uint32_t *pcModules)
+{
+    *ppInfo = NULL;
+    *pcModules = 0;
+
+    ULONG                   cbInfo   = RT_UOFFSETOF_DYN(RTL_PROCESS_MODULES, Modules[cModulesMax]);
+    PRTL_PROCESS_MODULES    pInfo    = (PRTL_PROCESS_MODULES)RTMemAllocZ(cbInfo);
+    if (!pInfo)
+    {
+        cModulesMax = cModulesMax / 4;
+        cbInfo      = RT_UOFFSETOF_DYN(RTL_PROCESS_MODULES, Modules[cModulesMax]);
+        pInfo       = (PRTL_PROCESS_MODULES)RTMemAllocZ(cbInfo);
+        if (!pInfo)
+        {
+            RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtQueryModules: Out of memory!\n"));
+            return VERR_NO_MEMORY;
+        }
+    }
+
+    int      rc;
+    ULONG    cbActual = 0;
+    NTSTATUS rcNt = ZwQuerySystemInformation(SystemModuleInformation, pInfo, cbInfo, &cbActual);
+    RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtQueryModules: ZwQuerySystemInformation returned %#x and NumberOfModules=%#x\n",
+                          rcNt, pInfo->NumberOfModules));
+    if (   NT_SUCCESS(rcNt)
+        || rcNt == STATUS_INFO_LENGTH_MISMATCH)
+    {
+        *ppInfo    = pInfo;
+        *pcModules = RT_MIN(cModulesMax, pInfo->NumberOfModules);
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        RTMemFree(pInfo);
+        RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtQueryModules: ZwQuerySystemInformation failed: %#x\n", rcNt));
+        rc = RTErrConvertFromNtStatus(rcNt);
+    }
+
+    return rc;
+}
+
+
+/**
  * Searches the module information from the kernel for the NT kernel module, the
  * HAL module, and optionally one more module.
  *
@@ -397,189 +618,41 @@ static int rtR0DbgKrnlNtInit(PRTDBGNTKRNLMODINFO pModInfo)
      * Note! ZwQuerySystemInformation requires NT4.  For 3.51 we could possibly emit
      *       the syscall ourselves, if we cared.
      */
-    uint32_t                cModules = pModInfo ? 110 /*32KB*/ : 27 /*8KB*/;
-    ULONG                   cbInfo   = RT_UOFFSETOF_DYN(RTL_PROCESS_MODULES, Modules[cModules]);
-    PRTL_PROCESS_MODULES    pInfo    = (PRTL_PROCESS_MODULES)RTMemAllocZ(cbInfo);
-    if (!pInfo)
-    {
-        cModules = cModules / 4;
-        cbInfo   = RT_UOFFSETOF_DYN(RTL_PROCESS_MODULES, Modules[cModules]);
-        pInfo    = (PRTL_PROCESS_MODULES)RTMemAllocZ(cbInfo);
-        if (!pInfo)
-        {
-            RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: Out of memory!\n"));
-            return VERR_NO_MEMORY;
-        }
-    }
-
-    int      rc;
-    ULONG    cbActual = 0;
-    NTSTATUS rcNt = ZwQuerySystemInformation(SystemModuleInformation, pInfo, cbInfo, &cbActual);
-    RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: ZwQuerySystemInformation returned %#x and NumberOfModules=%#x\n",
-                          rcNt, pInfo->NumberOfModules));
-    if (   NT_SUCCESS(rcNt)
-        || rcNt == STATUS_INFO_LENGTH_MISMATCH)
-        rc = VINF_SUCCESS;
-    else
-    {
-        RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: ZwQuerySystemInformation failed: %#x\n", rcNt));
-        rc = RTErrConvertFromNtStatus(rcNt);
-    }
+    uint32_t             cModules = 0;
+    PRTL_PROCESS_MODULES pInfo    = NULL;
+    int rc = rtR0DbgKrnlNtQueryModules(&pInfo, pModInfo ? 110 /*32KB*/ : 27 /*8KB*/, &cModules);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Search the info.  The information is ordered with the kernel bits first,
-         * we expect aleast two modules to be returned to us (kernel + hal)!
-         */
-#if ARCH_BITS == 32
-        uintptr_t const uMinKernelAddr = _2G; /** @todo resolve MmSystemRangeStart */
-#else
-        uintptr_t const uMinKernelAddr = (uintptr_t)MM_SYSTEM_RANGE_START;
-#endif
-        if (pInfo->NumberOfModules < cModules)
-            cModules = pInfo->NumberOfModules;
-        if (cModules < 2)
+        if (cModules >= 2)
         {
+            rc = rtR0DbgKrnlNtSearchForModuleWorker(pInfo, cModules, pModInfo);
+            if (   rc == VERR_MODULE_NOT_FOUND
+                && pInfo->NumberOfModules > cModules
+                && pModInfo)
+            {
+                /* Module not found in the first round, reallocate array to maximum size and rerun. */
+                cModules = pInfo->NumberOfModules;
+
+                RTMemFree(pInfo);
+                pInfo = NULL;
+
+                rc = rtR0DbgKrnlNtQueryModules(&pInfo, cModules, &cModules);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = rtR0DbgKrnlNtSearchForModuleWorker(pInfo, cModules, pModInfo);
+                    RTMemFree(pInfo);
+                }
+            }
+        }
+        else
+        {
+            RTMemFree(pInfo);
             RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: Error! Only %u module(s) returned!\n", cModules));
             rc = VERR_BUFFER_UNDERFLOW;
-        }
-        for (uint32_t iModule = 0; iModule < cModules; iModule++)
-            RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: [%u]= %p LB %#x %s\n", iModule, pInfo->Modules[iModule].ImageBase,
-                                  pInfo->Modules[iModule].ImageSize, pInfo->Modules[iModule].FullPathName));
-
-        /*
-         * First time around we serch for the NT kernel and HAL.  We'll look for NT
-         * kerneland HAL in the first 16 entries, and if not found, use the first
-         * and second entry respectively.
-         */
-        if (   RT_SUCCESS(rc)
-            && !g_NtOsKrnlInfo.pbImageBase
-            && !g_HalInfo.pbImageBase)
-        {
-            /* Find them. */
-            RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Looking for kernel and hal...\n"));
-            uint32_t const cMaxModules = RT_MIN(cModules, 16);
-            uint32_t       idxNtOsKrnl = UINT32_MAX;
-            uint32_t       idxHal      = UINT32_MAX;
-            for (uint32_t iModule = 0; iModule < cMaxModules; iModule++)
-            {
-                RTL_PROCESS_MODULE_INFORMATION const * const pModule = &pInfo->Modules[iModule];
-                if (   (uintptr_t)pModule->ImageBase >= uMinKernelAddr
-                    && (uintptr_t)pModule->ImageSize >= _4K)
-                {
-                    const char *pszName = (const char *)&pModule->FullPathName[pModule->OffsetToFileName];
-                    if (   idxNtOsKrnl == UINT32_MAX
-                        && RTStrICmpAscii(pszName, g_NtOsKrnlInfo.szName) == 0)
-                    {
-                        idxNtOsKrnl = iModule;
-                        if (idxHal != UINT32_MAX)
-                            break;
-                    }
-                    else if (   idxHal == UINT32_MAX
-                             && RTStrICmpAscii(pszName, g_HalInfo.szName) == 0)
-                    {
-                        idxHal = iModule;
-                        if (idxHal != UINT32_MAX)
-                            break;
-                    }
-                }
-            }
-            RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: idxNtOsKrnl=%#x idxHal=%#x\n", idxNtOsKrnl, idxHal));
-            if (idxNtOsKrnl == UINT32_MAX)
-            {
-                idxNtOsKrnl = 0;
-                RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: 'ntoskrnl.exe' not found, picking '%s' instead\n",
-                                      pInfo->Modules[idxNtOsKrnl].FullPathName));
-            }
-            if (idxHal == UINT32_MAX)
-            {
-                idxHal = 1;
-                RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: 'hal.dll' not found, picking '%s' instead\n",
-                                      pInfo->Modules[idxHal].FullPathName));
-            }
-
-            /* Parse them. */
-            //RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Parsing NT kernel...\n"));
-            __try
-            {
-                g_NtOsKrnlInfo.fOkay = rtR0DbgKrnlNtParseModule(&g_NtOsKrnlInfo,
-                                                                (uint8_t const *)pInfo->Modules[idxNtOsKrnl].ImageBase,
-                                                                pInfo->Modules[idxNtOsKrnl].ImageSize);
-            }
-            __except(EXCEPTION_EXECUTE_HANDLER)
-            {
-                g_NtOsKrnlInfo.fOkay = false;
-                RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: Exception in rtR0DbgKrnlNtParseModule parsing ntoskrnl.exe...\n"));
-            }
-
-            //RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Parsing HAL...\n"));
-            __try
-            {
-                g_HalInfo.fOkay = rtR0DbgKrnlNtParseModule(&g_HalInfo, (uint8_t const *)pInfo->Modules[idxHal].ImageBase,
-                                                           pInfo->Modules[idxHal].ImageSize);
-            }
-            __except(EXCEPTION_EXECUTE_HANDLER)
-            {
-                g_HalInfo.fOkay = false;
-                RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlNtInit: Exception in rtR0DbgKrnlNtParseModule parsing hal.dll...\n"));
-            }
-            if (!g_NtOsKrnlInfo.fOkay || !g_HalInfo.fOkay)
-                rc = VERR_LDR_GENERAL_FAILURE;
-
-            /*
-             * Resolve symbols we may need in the NT kernel (provided it parsed successfully)
-             */
-            if (g_NtOsKrnlInfo.fOkay)
-            {
-                if (!g_pfnMmGetSystemRoutineAddress)
-                {
-                    //RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Looking up 'MmGetSystemRoutineAddress'...\n"));
-                    rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, "MmGetSystemRoutineAddress", 0,
-                                                (void **)&g_pfnMmGetSystemRoutineAddress);
-                }
-            }
-        }
-
-        /*
-         * If we're still good, search for the given module (optional).
-         */
-        if (RT_SUCCESS(rc) && pModInfo)
-        {
-            RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Locating module '%s'...\n", pModInfo->szName));
-            rc = VERR_MODULE_NOT_FOUND;
-            for (uint32_t iModule = 0; iModule < cModules; iModule++)
-            {
-                RTL_PROCESS_MODULE_INFORMATION const * const pModule = &pInfo->Modules[iModule];
-                if (   (uintptr_t)pModule->ImageBase >= uMinKernelAddr
-                    && (uintptr_t)pModule->ImageSize >= _4K)
-                {
-                    const char *pszName = (const char *)&pModule->FullPathName[pModule->OffsetToFileName];
-                    if (   pModInfo->pbImageBase == NULL
-                        && RTStrICmpAscii(pszName, pModInfo->szName) == 0)
-                    {
-                        /*
-                         * Found the module, try parse it.
-                         */
-                        __try
-                        {
-                            pModInfo->fOkay = rtR0DbgKrnlNtParseModule(pModInfo, (uint8_t const *)pModule->ImageBase,
-                                                                       pModule->ImageSize);
-                            rc = VINF_SUCCESS;
-                        }
-                        __except(EXCEPTION_EXECUTE_HANDLER)
-                        {
-                            pModInfo->fOkay = false;
-                            rc = VERR_BAD_EXE_FORMAT;
-                        }
-                        break;
-                    }
-                }
-            }
         }
     }
 
     RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: returns %d\n", rc));
-    RTMemFree(pInfo);
     return rc;
 }
 
