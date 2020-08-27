@@ -4295,6 +4295,11 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
         return S_OK;
     }
 
+    // if the caller has not supplied a snapshot ID, then we're attaching
+    // to a machine a medium which represents the machine's current state,
+    // so set the flag
+
+    if (aSnapshotId.isZero())
     {
         // Allow MediumType_Readonly mediums and DVD in particular to be attached twice.
         AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
@@ -4304,14 +4309,7 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
             m->backRefs.push_back(ref);
             return S_OK;
         }
-    }
 
-    // if the caller has not supplied a snapshot ID, then we're attaching
-    // to a machine a medium which represents the machine's current state,
-    // so set the flag
-
-    if (aSnapshotId.isZero())
-    {
         /* sanity: no duplicate attachments */
         if (it->fInCurState)
             return setError(VBOX_E_OBJECT_IN_USE,
@@ -4326,14 +4324,17 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
 
     // otherwise: a snapshot medium is being attached
 
-    /* sanity: no duplicate attachments */
+    /* sanity: no duplicate attachments except MediumType_Readonly (DVD) */
     for (GuidList::const_iterator jt = it->llSnapshotIds.begin();
          jt != it->llSnapshotIds.end();
          ++jt)
     {
         const Guid &idOldSnapshot = *jt;
 
-        if (idOldSnapshot == aSnapshotId)
+        if (   idOldSnapshot == aSnapshotId
+            && m->type != MediumType_Readonly
+            && m->devType != DeviceType_DVD
+           )
         {
 #ifdef DEBUG
             i_dumpBackRefs();
