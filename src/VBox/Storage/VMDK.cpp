@@ -20,18 +20,30 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD_VMDK
+#include <VBox/log.h>           /* before VBox/vd-ifs.h */
 #include <VBox/vd-plugin.h>
 #include <VBox/err.h>
 
-#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
+#include <iprt/base64.h>
+#include <iprt/ctype.h>
+#include <iprt/crc.h>
+#include <iprt/dvm.h>
 #include <iprt/uuid.h>
 #include <iprt/path.h>
-#include <iprt/string.h>
 #include <iprt/rand.h>
+#include <iprt/string.h>
+#include <iprt/sort.h>
 #include <iprt/zip.h>
 #include <iprt/asm.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/utf16.h>
+# include <iprt/uni.h>
+# include <iprt/uni.h>
+# include <iprt/nt/nt-and-windows.h>
+# include <winioctl.h>
+#endif
 
 #include "VDBackends.h"
 
@@ -529,6 +541,19 @@ static const VDFILEEXTENSION s_aVmdkFileExtensions[] =
 {
     {"vmdk", VDTYPE_HDD},
     {NULL, VDTYPE_INVALID}
+};
+
+/** NULL-terminated array of configuration option. */
+static const VDCONFIGINFO s_aVmdkConfigInfo[] =
+{
+    /* Options for VMDK raw disks */
+    { "RawDrive",                       NULL,                             VDCFGVALUETYPE_STRING,       0 },
+    { "Partitions",                     NULL,                             VDCFGVALUETYPE_STRING,       0 },
+    { "BootSector",                     NULL,                             VDCFGVALUETYPE_BYTES,        0 },
+    { "Relative",                       NULL,                             VDCFGVALUETYPE_INTEGER,      0 },
+
+    /* End of options list */
+    { NULL,                             NULL,                             VDCFGVALUETYPE_INTEGER,      0 }
 };
 
 
@@ -3411,6 +3436,1073 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
 }
 
 /**
+ * Frees a raw descriptor.
+ * @internal
+ */
+static int vmdkRawDescFree(PVDISKRAW pRawDesc)
+{
+    if (!pRawDesc)
+        return VINF_SUCCESS;
+
+    RTStrFree(pRawDesc->pszRawDisk);
+    pRawDesc->pszRawDisk = NULL;
+
+    /* Partitions: */
+    for (unsigned i = 0; i < pRawDesc->cPartDescs; i++)
+    {
+        RTStrFree(pRawDesc->pPartDescs[i].pszRawDevice);
+        pRawDesc->pPartDescs[i].pszRawDevice = NULL;
+
+        RTMemFree(pRawDesc->pPartDescs[i].pvPartitionData);
+        pRawDesc->pPartDescs[i].pvPartitionData = NULL;
+    }
+
+    RTMemFree(pRawDesc->pPartDescs);
+    pRawDesc->pPartDescs = NULL;
+
+    RTMemFree(pRawDesc);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Helper that grows the raw partition descriptor table by @a cToAdd entries,
+ * returning the pointer to the first new entry.
+ * @internal
+ */
+static int vmdkRawDescAppendPartDesc(PVMDKIMAGE pImage, PVDISKRAW pRawDesc, uint32_t cToAdd, PVDISKRAWPARTDESC *ppRet)
+{
+    uint32_t const    cOld = pRawDesc->cPartDescs;
+    uint32_t const    cNew   = cOld + cToAdd;
+    PVDISKRAWPARTDESC paNew = (PVDISKRAWPARTDESC)RTMemReallocZ(pRawDesc->pPartDescs,
+                                                               cOld * sizeof(pRawDesc->pPartDescs[0]),
+                                                               cNew * sizeof(pRawDesc->pPartDescs[0]));
+    if (paNew)
+    {
+        pRawDesc->cPartDescs = cNew;
+        pRawDesc->pPartDescs = paNew;
+
+        *ppRet = &paNew[cOld];
+        return VINF_SUCCESS;
+    }
+    *ppRet = NULL;
+    return vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                     N_("VMDK: Image path: '%s'. Out of memory growing the partition descriptors (%u -> %u)."),
+                     pImage->pszFilename, cOld, cNew);
+}
+
+/**
+ * @callback_method_impl{FNRTSORTCMP}
+ */
+static DECLCALLBACK(int) vmdkRawDescPartComp(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    int64_t const iDelta = ((PVDISKRAWPARTDESC)pvElement1)->offStartInVDisk - ((PVDISKRAWPARTDESC)pvElement2)->offStartInVDisk;
+    return iDelta < 0 ? -1 : iDelta > 0 ? 1 : 0;
+}
+
+/**
+ * Post processes the partition descriptors.
+ *
+ * Sorts them and check that they don't overlap.
+ */
+static int vmdkRawDescPostProcessPartitions(PVMDKIMAGE pImage, PVDISKRAW pRawDesc, uint64_t cbSize)
+{
+    /*
+     * Sort data areas in ascending order of start.
+     */
+    RTSortShell(pRawDesc->pPartDescs, pRawDesc->cPartDescs, sizeof(pRawDesc->pPartDescs[0]), vmdkRawDescPartComp, NULL);
+
+    /*
+     * Check that we don't have overlapping descriptors.  If we do, that's an
+     * indication that the drive is corrupt or that the RTDvm code is buggy.
+     */
+    VDISKRAWPARTDESC const *paPartDescs = pRawDesc->pPartDescs;
+    for (uint32_t i = 0; i < pRawDesc->cPartDescs; i++)
+    {
+        uint64_t offLast = paPartDescs[i].offStartInVDisk + paPartDescs[i].cbData;
+        if (offLast <= paPartDescs[i].offStartInVDisk)
+            return vdIfError(pImage->pIfError, VERR_FILESYSTEM_CORRUPT /*?*/, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Bogus partition descriptor #%u (%#RX64 LB %#RX64%s): Wrap around or zero"),
+                             pImage->pszFilename, i, paPartDescs[i].offStartInVDisk, paPartDescs[i].cbData,
+                             paPartDescs[i].pvPartitionData ? " (data)" : "");
+        offLast -= 1;
+
+        if (i + 1 < pRawDesc->cPartDescs && offLast >= paPartDescs[i + 1].offStartInVDisk)
+            return vdIfError(pImage->pIfError, VERR_FILESYSTEM_CORRUPT /*?*/, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Partition descriptor #%u (%#RX64 LB %#RX64%s) overlaps with the next (%#RX64 LB %#RX64%s)"),
+                             pImage->pszFilename, i, paPartDescs[i].offStartInVDisk, paPartDescs[i].cbData,
+                             paPartDescs[i].pvPartitionData ? " (data)" : "", paPartDescs[i + 1].offStartInVDisk,
+                             paPartDescs[i + 1].cbData, paPartDescs[i + 1].pvPartitionData ? " (data)" : "");
+        if (offLast >= cbSize)
+            return vdIfError(pImage->pIfError, VERR_FILESYSTEM_CORRUPT /*?*/, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Partition descriptor #%u (%#RX64 LB %#RX64%s) goes beyond the end of the drive (%#RX64)"),
+                             pImage->pszFilename, i, paPartDescs[i].offStartInVDisk, paPartDescs[i].cbData,
+                             paPartDescs[i].pvPartitionData ? " (data)" : "", cbSize);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Attempts to verify the raw partition path.
+ *
+ * We don't want to trust RTDvm and the partition device node morphing blindly.
+ */
+static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC pPartDesc, uint32_t idxPartition,
+                                          const char *pszRawDrive, RTFILE hRawDrive, uint32_t cbSector, RTDVMVOLUME hVol)
+{
+    RT_NOREF(pImage, pPartDesc, idxPartition, pszRawDrive, hRawDrive, cbSector, hVol);
+
+    /*
+     * Try open the raw partition device.
+     */
+    RTFILE hRawPart = NIL_RTFILE;
+    int rc = RTFileOpen(&hRawPart, pPartDesc->pszRawDevice, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(rc))
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. Failed to open partition #%u on '%s' via '%s' (%Rrc)"),
+                         pImage->pszFilename, idxPartition, pszRawDrive, pPartDesc->pszRawDevice, rc);
+
+    /*
+     * Compare the partition UUID if we can get it.
+     */
+#ifdef RT_OS_WINDOWS
+    DWORD cbReturned;
+
+    /* 1. Get the device numbers for both handles, they should have the same disk. */
+    STORAGE_DEVICE_NUMBER DevNum1;
+    RT_ZERO(DevNum1);
+    if (!DeviceIoControl((HANDLE)RTFileToNative(hRawDrive), IOCTL_STORAGE_GET_DEVICE_NUMBER,
+                         NULL /*pvInBuffer*/, 0 /*cbInBuffer*/, &DevNum1, sizeof(DevNum1), &cbReturned, NULL /*pOverlapped*/))
+        rc = vdIfError(pImage->pIfError, RTErrConvertFromWin32(GetLastError()), RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. IOCTL_STORAGE_GET_DEVICE_NUMBER failed on '%s': %u"),
+                       pImage->pszFilename, pszRawDrive, GetLastError());
+
+    STORAGE_DEVICE_NUMBER DevNum2;
+    RT_ZERO(DevNum2);
+    if (!DeviceIoControl((HANDLE)RTFileToNative(hRawPart), IOCTL_STORAGE_GET_DEVICE_NUMBER,
+                         NULL /*pvInBuffer*/, 0 /*cbInBuffer*/, &DevNum2, sizeof(DevNum2), &cbReturned, NULL /*pOverlapped*/))
+        rc = vdIfError(pImage->pIfError, RTErrConvertFromWin32(GetLastError()), RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. IOCTL_STORAGE_GET_DEVICE_NUMBER failed on '%s': %u"),
+                       pImage->pszFilename, pPartDesc->pszRawDevice, GetLastError());
+    if (   RT_SUCCESS(rc)
+        && (   DevNum1.DeviceNumber != DevNum2.DeviceNumber
+            || DevNum1.DeviceType   != DevNum2.DeviceType))
+        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s' (%#x != %#x || %#x != %#x)"),
+                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
+                       DevNum1.DeviceNumber, DevNum2.DeviceNumber, DevNum1.DeviceType, DevNum2.DeviceType);
+    if (RT_SUCCESS(rc))
+    {
+        /* Get the partitions from the raw drive and match up with the volume info
+           from RTDvm.  The partition number is found in DevNum2. */
+        DWORD cbNeeded = 0;
+        if (   DeviceIoControl((HANDLE)RTFileToNative(hRawDrive), IOCTL_DISK_GET_DRIVE_LAYOUT_EX,
+                               NULL /*pvInBuffer*/, 0 /*cbInBuffer*/, NULL, 0, &cbNeeded, NULL /*pOverlapped*/)
+            || cbNeeded < RT_UOFFSETOF_DYN(DRIVE_LAYOUT_INFORMATION_EX, PartitionEntry[1]))
+            cbNeeded = RT_UOFFSETOF_DYN(DRIVE_LAYOUT_INFORMATION_EX, PartitionEntry[64]);
+        cbNeeded += sizeof(PARTITION_INFORMATION_EX) * 2; /* just in case */
+        DRIVE_LAYOUT_INFORMATION_EX *pLayout = (DRIVE_LAYOUT_INFORMATION_EX *)RTMemTmpAllocZ(cbNeeded);
+        if (pLayout)
+        {
+            cbReturned = 0;
+            if (DeviceIoControl((HANDLE)RTFileToNative(hRawDrive), IOCTL_DISK_GET_DRIVE_LAYOUT_EX,
+                                NULL /*pvInBuffer*/, 0 /*cbInBuffer*/, pLayout, cbNeeded, &cbReturned, NULL /*pOverlapped*/))
+            {
+                /* Find the entry with the given partition number (it's not an index, array contains empty MBR entries ++). */
+                unsigned iEntry = 0;
+                while (   iEntry < pLayout->PartitionCount
+                       && pLayout->PartitionEntry[iEntry].PartitionNumber != DevNum2.PartitionNumber)
+                    iEntry++;
+                if (iEntry < pLayout->PartitionCount)
+                {
+                    /* Compare the basics */
+                    PARTITION_INFORMATION_EX const * const pLayoutEntry = &pLayout->PartitionEntry[iEntry];
+                    if (pLayoutEntry->StartingOffset.QuadPart != (int64_t)pPartDesc->offStartInVDisk)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': StartingOffset %RU64, expected %RU64"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
+                                       pLayoutEntry->StartingOffset.QuadPart, pPartDesc->offStartInVDisk);
+                    else if (pLayoutEntry->PartitionLength.QuadPart != (int64_t)pPartDesc->cbData)
+                        rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': PartitionLength %RU64, expected %RU64"),
+                                       pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
+                                       pLayoutEntry->PartitionLength.QuadPart, pPartDesc->cbData);
+                    /** @todo We could compare the MBR type, GPT type and ID. */
+                    RT_NOREF(hVol);
+                }
+                else
+                    rc = vdIfError(pImage->pIfError, VERR_MISMATCH, RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s': PartitionCount (%#x vs %#x)"),
+                                   pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
+                                   DevNum2.PartitionNumber, pLayout->PartitionCount);
+# ifndef LOG_ENABLED
+                if (RT_FAILURE(rc))
+# endif
+                {
+                    LogRel(("VMDK: Windows reports %u partitions for '%s':\n", pLayout->PartitionCount, pszRawDrive));
+                    PARTITION_INFORMATION_EX const *pEntry = &pLayout->PartitionEntry[0];
+                    for (DWORD i = 0; i < pLayout->PartitionCount; i++, pEntry++)
+                    {
+                        LogRel(("VMDK: #%u/%u: %016RU64 LB %016RU64 style=%d rewrite=%d",
+                                i, pEntry->PartitionNumber, pEntry->StartingOffset.QuadPart, pEntry->PartitionLength.QuadPart,
+                                pEntry->PartitionStyle, pEntry->RewritePartition));
+                        if (pEntry->PartitionStyle == PARTITION_STYLE_MBR)
+                            LogRel((" type=%#x boot=%d rec=%d hidden=%u\n", pEntry->Mbr.PartitionType, pEntry->Mbr.BootIndicator,
+                                    pEntry->Mbr.RecognizedPartition, pEntry->Mbr.HiddenSectors));
+                        else if (pEntry->PartitionStyle == PARTITION_STYLE_GPT)
+                            LogRel((" type=%RTuuid id=%RTuuid aatrib=%RX64 name=%.36ls\n", &pEntry->Gpt.PartitionType,
+                                    &pEntry->Gpt.PartitionId, pEntry->Gpt.Attributes, &pEntry->Gpt.Name[0]));
+                        else
+                            LogRel(("\n"));
+                    }
+                    LogRel(("VMDK: Looked for partition #%u (%u, '%s') at %RU64 LB %RU64\n", DevNum2.PartitionNumber,
+                            idxPartition, pPartDesc->pszRawDevice, pPartDesc->offStartInVDisk, pPartDesc->cbData));
+               }
+            }
+            else
+                rc = vdIfError(pImage->pIfError, RTErrConvertFromWin32(GetLastError()), RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. IOCTL_DISK_GET_DRIVE_LAYOUT_EX failed on '%s': %u (cb %u, cbRet %u)"),
+                               pImage->pszFilename, pPartDesc->pszRawDevice, GetLastError(), cbNeeded, cbReturned);
+            RTMemTmpFree(pLayout);
+        }
+        else
+            rc = VERR_NO_TMP_MEMORY;
+    }
+#else
+    RT_NOREF(hVol); /* PORTME */
+#endif
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Compare the first 32 sectors of the partition.
+         *
+         * This might not be conclusive, but for partitions formatted with the more
+         * common file systems it should be as they have a superblock copy at or near
+         * the start of the partition (fat, fat32, ntfs, and ext4 does at least).
+         */
+        size_t const cbToCompare = (size_t)RT_MIN(pPartDesc->cbData / cbSector, 32) * cbSector;
+        uint8_t *pbSector1 = (uint8_t *)RTMemTmpAlloc(cbToCompare * 2);
+        if (pbSector1 != NULL)
+        {
+            uint8_t *pbSector2 = pbSector1 + cbToCompare;
+
+            /* Do the comparing, we repeat if it fails and the data might be volatile. */
+            uint64_t uPrevCrc1 = 0;
+            uint64_t uPrevCrc2 = 0;
+            uint32_t cStable   = 0;
+            for (unsigned iTry = 0; iTry < 256; iTry++)
+            {
+                rc = RTFileReadAt(hRawDrive, pPartDesc->offStartInVDisk, pbSector1, cbToCompare, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTFileReadAt(hRawPart, pPartDesc->offStartInDevice, pbSector2, cbToCompare, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (memcmp(pbSector1, pbSector2, cbToCompare) != 0)
+                        {
+                            rc = VERR_MISMATCH;
+
+                            /* Do data stability checks before repeating: */
+                            uint64_t const uCrc1 = RTCrc64(pbSector1, cbToCompare);
+                            uint64_t const uCrc2 = RTCrc64(pbSector2, cbToCompare);
+                            if (   uPrevCrc1 != uCrc1
+                                || uPrevCrc2 != uCrc2)
+                                cStable = 0;
+                            else if (++cStable > 4)
+                                break;
+                            uPrevCrc1 = uCrc1;
+                            uPrevCrc2 = uCrc2;
+                            continue;
+                        }
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Error reading %zu bytes from '%s' at offset %RU64 (%Rrc)"),
+                                       pImage->pszFilename, cbToCompare, pPartDesc->pszRawDevice, pPartDesc->offStartInDevice, rc);
+                }
+                else
+                    rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Error reading %zu bytes from '%s' at offset %RU64 (%Rrc)"),
+                                   pImage->pszFilename, cbToCompare, pszRawDrive, pPartDesc->offStartInVDisk, rc);
+                break;
+            }
+            if (rc == VERR_MISMATCH)
+            {
+                /* Find the first mismatching bytes: */
+                size_t offMissmatch = 0;
+                while (offMissmatch < cbToCompare && pbSector1[offMissmatch] == pbSector2[offMissmatch])
+                    offMissmatch++;
+                int cbSample = (int)RT_MIN(cbToCompare - offMissmatch, 16);
+
+                if (cStable > 0)
+                    rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s' (cStable=%s @%#zx: %.*Rhxs vs %.*Rhxs)"),
+                                   pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cStable,
+                                   cbSample, &pbSector1[offMissmatch], cbSample, &pbSector2[offMissmatch]);
+                else
+                {
+                    LogRel(("VMDK: Image path: '%s'. Partition #%u path ('%s') verification undecided on '%s' because of unstable data! (@%#zx: %.*Rhxs vs %.*Rhxs)\n",
+                            pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
+                            cbSample, &pbSector1[offMissmatch], cbSample, &pbSector2[offMissmatch]));
+                    rc = -rc;
+                }
+            }
+
+            RTMemTmpFree(pbSector1);
+        }
+        else
+            rc = vdIfError(pImage->pIfError, VERR_NO_TMP_MEMORY, RT_SRC_POS,
+                           N_("VMDK: Image path: '%s'. Failed to allocate %zu bytes for a temporary read buffer\n"),
+                           pImage->pszFilename, cbToCompare * 2);
+    }
+    RTFileClose(hRawPart);
+    return rc;
+}
+
+#ifdef RT_OS_WINDOWS
+/**
+ * Transform the physical drive device name into the one for the given partition.
+ */
+static int vmdkRawDescWinMakePartitionName(PVMDKIMAGE pImage, const char *pszRawDrive, RTFILE hRawDrive, uint32_t idxPartition,
+                                           char **ppszRawPartition)
+{
+    /*
+     * First variant is \\.\PhysicalDriveX -> \\.\HarddiskXPartition{idxPartition}
+     *
+     * Find the start of the digits and validate name prefix before using the digit
+     * portition to construct the partition device node name.
+     */
+    size_t offDigits = strlen(pszRawDrive);
+    if (offDigits > 0 && RT_C_IS_DIGIT(pszRawDrive[offDigits - 1]))
+    {
+        do
+            offDigits--;
+        while (offDigits > 0 && RT_C_IS_DIGIT(pszRawDrive[offDigits - 1]));
+        static const char s_szBaseName[] = "PhysicalDrive";
+        if (   offDigits > sizeof(s_szBaseName)
+            && RTPATH_IS_SLASH(pszRawDrive[offDigits - sizeof(s_szBaseName)])
+            && RTStrNICmp(&pszRawDrive[offDigits - sizeof(s_szBaseName) + 1], RT_STR_TUPLE(s_szBaseName)) == 0)
+        {
+            RTStrAPrintf(ppszRawPartition, "\\\\.\\Harddisk%sPartition%u", &pszRawDrive[offDigits], idxPartition);
+            return VINF_SUCCESS;
+        }
+    }
+
+    /*
+     * Query the name.  We should then get "\Device\HarddiskX\DRy" back and we can parse
+     * the X out of that and use it to construct the \\.\HarddiskXPartition{idxPartition}.
+     */
+    UNICODE_STRING NtName;
+    int rc = RTNtPathFromHandle(&NtName, (HANDLE)RTFileToNative(hRawDrive), 0 /*cwcExtra*/);
+    if (RT_SUCCESS(rc))
+    {
+        Log(("RTNtPathFromHandle: pszRawDrive=%s; NtName=%ls\n", pszRawDrive, NtName.Buffer));
+        static const char s_szBaseName[] = "\\Device\\Harddisk";
+        if (   RTUtf16NCmpAscii(NtName.Buffer, s_szBaseName, sizeof(s_szBaseName) - 1) == 0
+            && RTUniCpIsDecDigit(NtName.Buffer[sizeof(s_szBaseName) - 1])) /* A bit HACKY as words in UTF-16 != codepoint. */
+        {
+            offDigits = sizeof(s_szBaseName) - 1;
+            size_t offEndDigits = offDigits + 1;
+            while (RTUniCpIsDecDigit(NtName.Buffer[offEndDigits]))
+                offEndDigits++;
+            if (   NtName.Buffer[offEndDigits] == '\\'
+                && NtName.Buffer[offEndDigits + 1] == 'D'
+                && NtName.Buffer[offEndDigits + 2] == 'R'
+                && RTUniCpIsDecDigit(NtName.Buffer[offEndDigits + 3]))
+            {
+                RTStrAPrintf(ppszRawPartition, "\\\\.\\Harddisk%.*lsPartition%u",
+                             offEndDigits - offDigits, &NtName.Buffer[offDigits], idxPartition);
+                RTNtPathFree(&NtName, NULL);
+                return VINF_SUCCESS;
+            }
+        }
+        rc = vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. Do not know how to translate '%s' ('%ls') into a name for partition #%u"),
+                       pImage->pszFilename, pszRawDrive, NtName.Buffer, idxPartition);
+        RTNtPathFree(&NtName, NULL);
+    }
+    else
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. Failed to get the NT path for '%s' and therefore unable to determin path to partition #%u (%Rrc)"),
+                       pImage->pszFilename, pszRawDrive, idxPartition, rc);
+    return rc;
+}
+#endif /* RT_OS_WINDOWS */
+
+/**
+ * Worker for vmdkMakeRawDescriptor that adds partition descriptors when the
+ * 'Partitions' configuration value is present.
+ *
+ * @returns VBox status code, error message has been set on failure.
+ *
+ * @note    Caller is assumed to clean up @a pRawDesc and release
+ *          @a *phVolToRelease.
+ * @internal
+ */
+static int vmdkRawDescDoPartitions(PVMDKIMAGE pImage, RTDVM hVolMgr, PVDISKRAW pRawDesc,
+                                   RTFILE hRawDrive, const char *pszRawDrive, uint32_t cbSector,
+                                   uint32_t fPartitions, uint32_t fPartitionsReadOnly, bool fRelative,
+                                   PRTDVMVOLUME phVolToRelease)
+{
+    *phVolToRelease = NIL_RTDVMVOLUME;
+
+    /* Check sanity/understanding. */
+    Assert(fPartitions);
+    Assert((fPartitions & fPartitionsReadOnly) == fPartitionsReadOnly); /* RO should be a sub-set */
+
+    /*
+     * Allocate on descriptor for each volume up front.
+     */
+    uint32_t const cVolumes = RTDvmMapGetValidVolumes(hVolMgr);
+
+    PVDISKRAWPARTDESC paPartDescs = NULL;
+    int rc = vmdkRawDescAppendPartDesc(pImage, pRawDesc, cVolumes, &paPartDescs);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Enumerate the partitions (volumes) on the disk and create descriptors for each of them.
+     */
+    uint32_t    fPartitionsLeft = fPartitions;
+    RTDVMVOLUME hVol            = NIL_RTDVMVOLUME; /* the current volume, needed for getting the next. */
+    for (uint32_t i = 0; i < cVolumes; i++)
+    {
+        /*
+         * Get the next/first volume and release the current.
+         */
+        RTDVMVOLUME hVolNext = NIL_RTDVMVOLUME;
+        if (i == 0)
+            rc = RTDvmMapQueryFirstVolume(hVolMgr, &hVolNext);
+        else
+            rc = RTDvmMapQueryNextVolume(hVolMgr, hVol, &hVolNext);
+        if (RT_FAILURE(rc))
+            return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Volume enumeration failed at volume #%u on '%s' (%Rrc)"),
+                             pImage->pszFilename, i, pszRawDrive, rc);
+        uint32_t cRefs = RTDvmVolumeRelease(hVol);
+        Assert(cRefs != UINT32_MAX); RT_NOREF(cRefs);
+        *phVolToRelease = hVol = hVolNext;
+
+        /*
+         * Depending on the fPartitions selector and associated read-only mask,
+         * the guest either gets read-write or read-only access (bits set)
+         * or no access (selector bit clear, access directed to the VMDK).
+         */
+        paPartDescs[i].cbData = RTDvmVolumeGetSize(hVol);
+
+        uint64_t offVolumeEndIgnored = 0;
+        rc = RTDvmVolumeQueryRange(hVol, &paPartDescs[i].offStartInVDisk, &offVolumeEndIgnored);
+        if (RT_FAILURE(rc))
+            return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Failed to get location of volume #%u on '%s' (%Rrc)"),
+                             pImage->pszFilename, i, pszRawDrive, rc);
+        Assert(paPartDescs[i].cbData == offVolumeEndIgnored + 1 - paPartDescs[i].offStartInVDisk);
+
+        /* Note! The index must match IHostDrivePartition::number. */
+        uint32_t idxPartition = RTDvmVolumeGetIndex(hVol, RTDVMVOLIDX_HOST);
+        if (   idxPartition < 32
+            && (fPartitions & RT_BIT_32(idxPartition)))
+        {
+            fPartitionsLeft &= ~RT_BIT_32(idxPartition);
+            if (fPartitionsReadOnly & RT_BIT_32(idxPartition))
+                paPartDescs[i].uFlags |= VDISKRAW_READONLY;
+
+            if (!fRelative)
+            {
+                /*
+                 * Accessing the drive thru the main device node (pRawDesc->pszRawDisk).
+                 */
+                paPartDescs[i].offStartInDevice = paPartDescs[i].offStartInVDisk;
+                paPartDescs[i].pszRawDevice     = RTStrDup(pszRawDrive);
+                AssertPtrReturn(paPartDescs[i].pszRawDevice, VERR_NO_STR_MEMORY);
+            }
+            else
+            {
+                /*
+                 * Relative means access the partition data via the device node for that
+                 * partition, allowing the sysadmin/OS to allow a user access to individual
+                 * partitions without necessarily being able to compromise the host OS.
+                 * Obviously, the creation of the VMDK requires read access to the main
+                 * device node for the drive, but that's a one-time thing and can be done
+                 * by the sysadmin.   Here data starts at offset zero in the device node.
+                 */
+                paPartDescs[i].offStartInDevice = 0;
+
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+                /* /dev/rdisk1 -> /dev/rdisk1s2 (s=slice) */
+                RTStrAPrintf(&paPartDescs[i].pszRawDevice, "%ss%u", pszRawDrive, idxPartition);
+#elif defined(RT_OS_LINUX)
+                /* Two naming schemes here: /dev/nvme0n1 -> /dev/nvme0n1p1;  /dev/sda -> /dev/sda1 */
+                RTStrAPrintf(&paPartDescs[i].pszRawDevice,
+                             RT_C_IS_DIGIT(pszRawDrive[strlen(pszRawDrive) - 1]) ? "%sp%u" : "%s%u", pszRawDrive, idxPartition);
+#elif defined(RT_OS_WINDOWS)
+                rc = vmdkRawDescWinMakePartitionName(pImage, pszRawDrive, hRawDrive, idxPartition, &paPartDescs[i].pszRawDevice);
+                AssertRCReturn(rc, rc);
+#else
+                AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* The option parsing code should have prevented this - PORTME */
+#endif
+                AssertPtrReturn(paPartDescs[i].pszRawDevice, VERR_NO_STR_MEMORY);
+
+                rc = vmdkRawDescVerifyPartitionPath(pImage, &paPartDescs[i], idxPartition, pszRawDrive, hRawDrive, cbSector, hVol);
+                AssertRCReturn(rc, rc);
+            }
+        }
+        else
+        {
+            /* Not accessible to the guest. */
+            paPartDescs[i].offStartInDevice = 0;
+            paPartDescs[i].pszRawDevice     = NULL;
+        }
+    } /* for each volume */
+
+    RTDvmVolumeRelease(hVol);
+    *phVolToRelease = NIL_RTDVMVOLUME;
+
+    /*
+     * Check that we found all the partitions the user selected.
+     */
+    if (fPartitionsLeft)
+    {
+        char   szLeft[3 * sizeof(fPartitions) * 8];
+        size_t cchLeft = 0;
+        for (unsigned i = 0; i < sizeof(fPartitions) * 8; i++)
+            if (fPartitionsLeft & RT_BIT_32(i))
+                cchLeft += RTStrPrintf(&szLeft[cchLeft], sizeof(szLeft) - cchLeft, cchLeft ? "%u" : ",%u", i);
+        return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Not all the specified partitions for drive '%s' was found: %s"),
+                             pImage->pszFilename, pszRawDrive, szLeft);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Worker for vmdkMakeRawDescriptor that adds partition descriptors with copies
+ * of the partition tables and associated padding areas when the 'Partitions'
+ * configuration value is present.
+ *
+ * The guest is not allowed access to the partition tables, however it needs
+ * them to be able to access the drive.  So, create descriptors for each of the
+ * tables and attach the current disk content.  vmdkCreateRawImage() will later
+ * write the content to the VMDK.  Any changes the guest later makes to the
+ * partition tables will then go to the VMDK copy, rather than the host drive.
+ *
+ * @returns VBox status code, error message has been set on failure.
+ *
+ * @note    Caller is assumed to clean up @a pRawDesc
+ * @internal
+ */
+static int vmdkRawDescDoCopyPartitionTables(PVMDKIMAGE pImage, RTDVM hVolMgr, PVDISKRAW pRawDesc,
+                                            const char *pszRawDrive, RTFILE hRawDrive, void *pvBootSector, size_t cbBootSector)
+{
+    /*
+     * Query the locations.
+     */
+    /* Determin how many locations there are: */
+    size_t cLocations = 0;
+    int rc = RTDvmMapQueryTableLocations(hVolMgr, RTDVMMAPQTABLOC_F_INCLUDE_LEGACY, NULL, 0, &cLocations);
+    if (rc != VERR_BUFFER_OVERFLOW)
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. RTDvmMapQueryTableLocations failed on '%s' (%Rrc)"),
+                         pImage->pszFilename, pszRawDrive, rc);
+    AssertReturn(cLocations > 0 && cLocations < _16M, VERR_INTERNAL_ERROR_5);
+
+    /* We can allocate the partition descriptors here to save an intentation level. */
+    PVDISKRAWPARTDESC paPartDescs = NULL;
+    rc = vmdkRawDescAppendPartDesc(pImage, pRawDesc, (uint32_t)cLocations, &paPartDescs);
+    AssertRCReturn(rc, rc);
+
+    /* Allocate the result table and repeat the location table query: */
+    PRTDVMTABLELOCATION paLocations = (PRTDVMTABLELOCATION)RTMemAllocZ(sizeof(paLocations[0]) * cLocations);
+    if (!paLocations)
+        return vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS, N_("VMDK: Image path: '%s'. Failed to allocate %zu bytes"),
+                         pImage->pszFilename, sizeof(paLocations[0]) * cLocations);
+    rc = RTDvmMapQueryTableLocations(hVolMgr, RTDVMMAPQTABLOC_F_INCLUDE_LEGACY, paLocations, cLocations, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Translate them into descriptors.
+         *
+         * We restrict the amount of partition alignment padding to 4MiB as more
+         * will just be a waste of space.  The use case for including the padding
+         * are older boot loaders and boot manager (including one by a team member)
+         * that put data and code in the 62 sectors between the MBR and the first
+         * partition (total of 63).  Later CHS was abandond and partition started
+         * being aligned on power of two sector boundraries (typically 64KiB or
+         * 1MiB depending on the media size).
+         */
+        for (size_t i = 0; i < cLocations && RT_SUCCESS(rc); i++)
+        {
+            Assert(paLocations[i].cb > 0);
+            if (paLocations[i].cb <= _64M)
+            {
+                /* Create the partition descriptor entry: */
+                //paPartDescs[i].pszRawDevice      = NULL;
+                //paPartDescs[i].offStartInDevice  = 0;
+                //paPartDescs[i].uFlags            = 0;
+                paPartDescs[i].offStartInVDisk   = paLocations[i].off;
+                paPartDescs[i].cbData            = paLocations[i].cb;
+                if (paPartDescs[i].cbData < _4M)
+                    paPartDescs[i].cbData = RT_MIN(paPartDescs[i].cbData + paLocations[i].cbPadding, _4M);
+                paPartDescs[i].pvPartitionData = RTMemAllocZ((size_t)paPartDescs[i].cbData);
+                if (paPartDescs[i].pvPartitionData)
+                {
+                    /* Read the content from the drive: */
+                    rc = RTFileReadAt(hRawDrive, paPartDescs[i].offStartInVDisk, paPartDescs[i].pvPartitionData,
+                                      (size_t)paPartDescs[i].cbData, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Do we have custom boot sector code? */
+                        if (pvBootSector && cbBootSector && paPartDescs[i].offStartInVDisk == 0)
+                        {
+                            /* Note! Old code used to quietly drop the bootsector if it was considered too big.
+                                     Instead we fail as we weren't able to do what the user requested us to do.
+                                     Better if the user knows than starts questioning why the guest isn't
+                                     booting as expected. */
+                            if (cbBootSector <= paPartDescs[i].cbData)
+                                memcpy(paPartDescs[i].pvPartitionData, pvBootSector, cbBootSector);
+                            else
+                                rc = vdIfError(pImage->pIfError, VERR_TOO_MUCH_DATA, RT_SRC_POS,
+                                               N_("VMDK: Image path: '%s'. The custom boot sector is too big: %zu bytes, %RU64 bytes available"),
+                                               pImage->pszFilename, cbBootSector, paPartDescs[i].cbData);
+                        }
+                    }
+                    else
+                        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                       N_("VMDK: Image path: '%s'. Failed to read partition at off %RU64 length %zu from '%s' (%Rrc)"),
+                                       pImage->pszFilename, paPartDescs[i].offStartInVDisk,
+                                       (size_t)paPartDescs[i].cbData, pszRawDrive, rc);
+                }
+                else
+                    rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                   N_("VMDK: Image path: '%s'. Failed to allocate %zu bytes for copying the partition table at off %RU64"),
+                                      pImage->pszFilename, (size_t)paPartDescs[i].cbData, paPartDescs[i].offStartInVDisk);
+            }
+            else
+                rc = vdIfError(pImage->pIfError, VERR_TOO_MUCH_DATA, RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. Partition table #%u at offset %RU64 in '%s' is to big: %RU64 bytes"),
+                                  pImage->pszFilename, i, paLocations[i].off, pszRawDrive, paLocations[i].cb);
+        }
+    }
+    else
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. RTDvmMapQueryTableLocations failed on '%s' (%Rrc)"),
+                          pImage->pszFilename, pszRawDrive, rc);
+    RTMemFree(paLocations);
+    return rc;
+}
+
+/**
+ * Opens the volume manager for the raw drive when in selected-partition mode.
+ *
+ * @param   pImage      The VMDK image (for errors).
+ * @param   hRawDrive   The raw drive handle.
+ * @param   pszRawDrive The raw drive device path (for errors).
+ * @param   cbSector    The sector size.
+ * @param   phVolMgr    Where to return the handle to the volume manager on
+ *                      success.
+ * @returns VBox status code, errors have been reported.
+ * @internal
+ */
+static int vmdkRawDescOpenVolMgr(PVMDKIMAGE pImage, RTFILE hRawDrive, const char *pszRawDrive, uint32_t cbSector, PRTDVM phVolMgr)
+{
+    *phVolMgr = NIL_RTDVM;
+
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    int rc = RTVfsFileFromRTFile(hRawDrive, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, true /*fLeaveOpen*/, &hVfsFile);
+    if (RT_FAILURE(rc))
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'.  RTVfsFileFromRTFile failed for '%s' handle (%Rrc)"),
+                         pImage->pszFilename, pszRawDrive, rc);
+
+    RTDVM hVolMgr = NIL_RTDVM;
+    rc = RTDvmCreate(&hVolMgr, hVfsFile, cbSector, 0 /*fFlags*/);
+
+    RTVfsFileRelease(hVfsFile);
+
+    if (RT_FAILURE(rc))
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. Failed to create volume manager instance for '%s' (%Rrc)"),
+                         pImage->pszFilename, pszRawDrive, rc);
+
+    rc = RTDvmMapOpen(hVolMgr);
+    if (RT_SUCCESS(rc))
+    {
+        *phVolMgr = hVolMgr;
+        return VINF_SUCCESS;
+    }
+    RTDvmRelease(hVolMgr);
+    return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: Image path: '%s'. RTDvmMapOpen failed for '%s' (%Rrc)"),
+                     pImage->pszFilename, pszRawDrive, rc);
+}
+
+/**
+ * Opens the raw drive device and get the sizes for it.
+ *
+ * @param   pImage          The image (for error reporting).
+ * @param   pszRawDrive     The device/whatever to open.
+ * @param   phRawDrive      Where to return the file handle.
+ * @param   pcbRawDrive     Where to return the size.
+ * @param   pcbSector       Where to return the sector size.
+ * @returns IPRT status code, errors have been reported.
+ * @internal
+ */
+static int vmkdRawDescOpenDevice(PVMDKIMAGE pImage, const char *pszRawDrive,
+                                 PRTFILE phRawDrive, uint64_t *pcbRawDrive, uint32_t *pcbSector)
+{
+    /*
+     * Open the device for the raw drive.
+     */
+    RTFILE hRawDrive = NIL_RTFILE;
+    int rc = RTFileOpen(&hRawDrive, pszRawDrive, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(rc))
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. Failed to open the raw drive '%s' for reading (%Rrc)"),
+                         pImage->pszFilename, pszRawDrive, rc);
+
+    /*
+     * Get the sector size.
+     */
+    uint32_t cbSector = 0;
+    rc = RTFileQuerySectorSize(hRawDrive, &cbSector);
+    if (RT_SUCCESS(rc))
+    {
+        /* sanity checks */
+        if (   cbSector >= 512
+            && cbSector <= _64K
+            && RT_IS_POWER_OF_TWO(cbSector))
+        {
+            /*
+             * Get the size.
+             */
+            uint64_t cbRawDrive = 0;
+            rc = RTFileQuerySize(hRawDrive, &cbRawDrive);
+            if (RT_SUCCESS(rc))
+            {
+                /* Check whether cbSize is actually sensible. */
+                if (cbRawDrive > cbSector && (cbRawDrive % cbSector) == 0)
+                {
+                    *phRawDrive  = hRawDrive;
+                    *pcbRawDrive = cbRawDrive;
+                    *pcbSector   = cbSector;
+                    return VINF_SUCCESS;
+                }
+                rc = vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'.  Got a bogus size for the raw drive '%s': %RU64 (sector size %u)"),
+                               pImage->pszFilename, pszRawDrive, cbRawDrive, cbSector);
+            }
+            else
+                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. Failed to query size of the drive '%s' (%Rrc)"),
+                               pImage->pszFilename, pszRawDrive, rc);
+        }
+        else
+            rc = vdIfError(pImage->pIfError, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                           N_("VMDK: Image path: '%s'. Unsupported sector size for '%s': %u (%#x)"),
+                           pImage->pszFilename, pszRawDrive, cbSector, cbSector);
+    }
+    else
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. Failed to get the sector size for '%s' (%Rrc)"),
+                       pImage->pszFilename, pszRawDrive, rc);
+    RTFileClose(hRawDrive);
+    return rc;
+}
+
+/**
+ * Reads the raw disk configuration, leaving initalization and cleanup to the
+ * caller (regardless of return status).
+ *
+ * @returns VBox status code, errors properly reported.
+ * @internal
+ */
+static int vmdkRawDescParseConfig(PVMDKIMAGE pImage, char **ppszRawDrive,
+                                  uint32_t *pfPartitions, uint32_t *pfPartitionsReadOnly,
+                                  void **ppvBootSector, size_t *pcbBootSector, bool *pfRelative,
+                                  char **ppszFreeMe)
+{
+    PVDINTERFACECONFIG pImgCfg = VDIfConfigGet(pImage->pVDIfsImage);
+    if (!pImgCfg)
+        return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. Getting config interface failed"), pImage->pszFilename);
+
+    /*
+     * RawDrive = path
+     */
+    int rc = VDCFGQueryStringAlloc(pImgCfg, "RawDrive", ppszRawDrive);
+    if (RT_FAILURE(rc))
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. Getting 'RawDrive' configuration failed (%Rrc)"), pImage->pszFilename, rc);
+    AssertPtrReturn(*ppszRawDrive, VERR_INTERNAL_ERROR_3);
+
+    /*
+     * Partitions=n[r][,...]
+     */
+    uint32_t const cMaxPartitionBits = sizeof(*pfPartitions) * 8 /* ASSUMES 8 bits per char */;
+    *pfPartitions = *pfPartitionsReadOnly = 0;
+
+    rc = VDCFGQueryStringAlloc(pImgCfg, "Partitions", ppszFreeMe);
+    if (RT_SUCCESS(rc))
+    {
+        char *psz = *ppszFreeMe;
+        while (*psz != '\0')
+        {
+            char *pszNext;
+            uint32_t u32;
+            rc = RTStrToUInt32Ex(psz, &pszNext, 0, &u32);
+            if (rc == VWRN_NUMBER_TOO_BIG || rc == VWRN_NEGATIVE_UNSIGNED)
+                rc = -rc;
+            if (RT_FAILURE(rc))
+                return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                 N_("VMDK: Image path: '%s'. Parsing 'Partitions' config value failed. Incorrect value (%Rrc): %s"),
+                                 pImage->pszFilename, rc, psz);
+            if (u32 >= cMaxPartitionBits)
+                return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                 N_("VMDK: Image path: '%s'. 'Partitions' config sub-value out of range: %RU32, max %RU32"),
+                                 pImage->pszFilename, u32, cMaxPartitionBits);
+            *pfPartitions |= RT_BIT_32(u32);
+            psz = pszNext;
+            if (*psz == 'r')
+            {
+                *pfPartitionsReadOnly |= RT_BIT_32(u32);
+                psz++;
+            }
+            if (*psz == ',')
+                psz++;
+            else if (*psz != '\0')
+                return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                 N_("VMDK: Image path: '%s'. Malformed 'Partitions' config value, expected separator: %s"),
+                                 pImage->pszFilename, psz);
+        }
+
+        RTStrFree(*ppszFreeMe);
+        *ppszFreeMe = NULL;
+    }
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. Getting 'Partitions' configuration failed (%Rrc)"), pImage->pszFilename, rc);
+
+    /*
+     * BootSector=base64
+     */
+    rc = VDCFGQueryStringAlloc(pImgCfg, "BootSector", ppszFreeMe);
+    if (RT_SUCCESS(rc))
+    {
+        ssize_t cbBootSector = RTBase64DecodedSize(*ppszFreeMe, NULL);
+        if (cbBootSector < 0)
+            return vdIfError(pImage->pIfError, VERR_INVALID_BASE64_ENCODING, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. BASE64 decoding failed on the custom bootsector for '%s'"),
+                             pImage->pszFilename, *ppszRawDrive);
+        if (cbBootSector == 0)
+            return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Custom bootsector for '%s' is zero bytes big"),
+                             pImage->pszFilename, *ppszRawDrive);
+        if (cbBootSector > _4M) /* this is just a preliminary max */
+            return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Custom bootsector for '%s' is way too big: %zu bytes, max 4MB"),
+                             pImage->pszFilename, *ppszRawDrive, cbBootSector);
+
+        /* Refuse the boot sector if whole-drive.  This used to be done quietly,
+           however, bird disagrees and thinks the user should be told that what
+           he/she/it tries to do isn't possible.  There should be less head
+           scratching this way when the guest doesn't do the expected thing. */
+        if (!*pfPartitions)
+            return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Custom bootsector for '%s' is not supported for whole-drive configurations, only when selecting partitions"),
+                             pImage->pszFilename, *ppszRawDrive);
+
+        *pcbBootSector = (size_t)cbBootSector;
+        *ppvBootSector = RTMemAlloc((size_t)cbBootSector);
+        if (!*ppvBootSector)
+            return vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. Failed to allocate %zd bytes for the custom bootsector for '%s'"),
+                             pImage->pszFilename, cbBootSector, *ppszRawDrive);
+
+        rc = RTBase64Decode(*ppszFreeMe, *ppvBootSector, cbBootSector, NULL /*pcbActual*/, NULL /*ppszEnd*/);
+        if (RT_FAILURE(rc))
+            return  vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                              N_("VMDK: Image path: '%s'. Base64 decoding of the custom boot sector for '%s' failed (%Rrc)"),
+                              pImage->pszFilename, *ppszRawDrive, rc);
+
+        RTStrFree(*ppszFreeMe);
+        *ppszFreeMe = NULL;
+    }
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. Getting 'BootSector' configuration failed (%Rrc)"), pImage->pszFilename, rc);
+
+    /*
+     * Relative=0/1
+     */
+    *pfRelative = false;
+    rc = VDCFGQueryBool(pImgCfg, "Relative", pfRelative);
+    if (RT_SUCCESS(rc))
+    {
+        if (!*pfPartitions && *pfRelative != false)
+            return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. The 'Relative' option is not supported for whole-drive configurations, only when selecting partitions"),
+                             pImage->pszFilename);
+#if !defined(RT_OS_DARWIN) && !defined(RT_OS_LINUX) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_WINDOWS) /* PORTME */
+        if (*pfRelative == true)
+            return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                             N_("VMDK: Image path: '%s'. The 'Relative' option is not supported on this host OS"),
+                             pImage->pszFilename);
+#endif
+    }
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                         N_("VMDK: Image path: '%s'. Getting 'Relative' configuration failed (%Rrc)"), pImage->pszFilename, rc);
+    else
+#ifdef RT_OS_DARWIN /* different default on macOS, see ticketref:1461 (comment 20). */
+        *pfRelative = true;
+#else
+        *pfRelative = false;
+#endif
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Creates a raw drive (nee disk) descriptor.
+ *
+ * This was originally done in VBoxInternalManage.cpp, but was copied (not move)
+ * here much later.  That's one of the reasons why we produce a descriptor just
+ * like it does, rather than mixing directly into the vmdkCreateRawImage code.
+ *
+ * @returns VBox status code.
+ * @param   pImage      The image.
+ * @param   ppRaw       Where to return the raw drive descriptor.  Caller must
+ *                      free it using vmdkRawDescFree regardless of the status
+ *                      code.
+ * @internal
+ */
+static int vmdkMakeRawDescriptor(PVMDKIMAGE pImage, PVDISKRAW *ppRaw)
+{
+    /* Make sure it's NULL. */
+    *ppRaw = NULL;
+
+    /*
+     * Read the configuration.
+     */
+    char       *pszRawDrive         = NULL;
+    uint32_t    fPartitions         = 0;    /* zero if whole-drive */
+    uint32_t    fPartitionsReadOnly = 0;    /* (subset of fPartitions) */
+    void       *pvBootSector        = NULL;
+    size_t      cbBootSector        = 0;
+    bool        fRelative           = false;
+    char       *pszFreeMe           = NULL; /* lazy bird cleanup. */
+    int rc = vmdkRawDescParseConfig(pImage, &pszRawDrive, &fPartitions, &fPartitionsReadOnly,
+                                    &pvBootSector, &cbBootSector, &fRelative, &pszFreeMe);
+    RTStrFree(pszFreeMe);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Open the device, getting the sector size and drive size.
+         */
+        uint64_t  cbSize    = 0;
+        uint32_t  cbSector  = 0;
+        RTFILE    hRawDrive = NIL_RTFILE;
+        rc = vmkdRawDescOpenDevice(pImage, pszRawDrive, &hRawDrive, &cbSize, &cbSector);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Create the raw-drive descriptor
+             */
+            PVDISKRAW pRawDesc = (PVDISKRAW)RTMemAllocZ(sizeof(*pRawDesc));
+            if (pRawDesc)
+            {
+                pRawDesc->szSignature[0] = 'R';
+                pRawDesc->szSignature[1] = 'A';
+                pRawDesc->szSignature[2] = 'W';
+                //pRawDesc->szSignature[3] = '\0';
+                if (!fPartitions)
+                {
+                    /*
+                     * It's simple for when doing the whole drive.
+                     */
+                    pRawDesc->uFlags = VDISKRAW_DISK;
+                    rc = RTStrDupEx(&pRawDesc->pszRawDisk, pszRawDrive);
+                }
+                else
+                {
+                    /*
+                     * In selected partitions mode we've got a lot more work ahead of us.
+                     */
+                    pRawDesc->uFlags = VDISKRAW_NORMAL;
+                    //pRawDesc->pszRawDisk = NULL;
+                    //pRawDesc->cPartDescs = 0;
+                    //pRawDesc->pPartDescs = NULL;
+
+                    /* We need to parse the partition map to complete the descriptor: */
+                    RTDVM hVolMgr = NIL_RTDVM;
+                    rc = vmdkRawDescOpenVolMgr(pImage, hRawDrive, pszRawDrive, cbSector, &hVolMgr);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTDVMFORMATTYPE enmFormatType = RTDvmMapGetFormatType(hVolMgr);
+                        if (   enmFormatType == RTDVMFORMATTYPE_MBR
+                            || enmFormatType == RTDVMFORMATTYPE_GPT)
+                        {
+                            pRawDesc->enmPartitioningType = enmFormatType == RTDVMFORMATTYPE_MBR
+                                                          ? VDISKPARTTYPE_MBR : VDISKPARTTYPE_GPT;
+
+                            /* Add copies of the partition tables:  */
+                            rc = vmdkRawDescDoCopyPartitionTables(pImage, hVolMgr, pRawDesc, pszRawDrive, hRawDrive,
+                                                                  pvBootSector, cbBootSector);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /* Add descriptors for the partitions/volumes, indicating which
+                                   should be accessible and how to access them: */
+                                RTDVMVOLUME hVolRelease = NIL_RTDVMVOLUME;
+                                rc = vmdkRawDescDoPartitions(pImage, hVolMgr, pRawDesc, hRawDrive, pszRawDrive, cbSector,
+                                                             fPartitions, fPartitionsReadOnly, fRelative, &hVolRelease);
+                                RTDvmVolumeRelease(hVolRelease);
+
+                                /* Finally, sort the partition and check consistency (overlaps, etc): */
+                                if (RT_SUCCESS(rc))
+                                    rc = vmdkRawDescPostProcessPartitions(pImage, pRawDesc, cbSize);
+                            }
+                        }
+                        else
+                            rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                           N_("VMDK: Image path: '%s'. Unsupported partitioning for the disk '%s': %s"),
+                                           pImage->pszFilename, pszRawDrive, RTDvmMapGetFormatType(hVolMgr));
+                        RTDvmRelease(hVolMgr);
+                    }
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * We succeeded.
+                     */
+                    *ppRaw = pRawDesc;
+                    Log(("vmdkMakeRawDescriptor: fFlags=%#x enmPartitioningType=%d cPartDescs=%u pszRawDisk=%s\n",
+                         pRawDesc->uFlags, pRawDesc->enmPartitioningType, pRawDesc->cPartDescs, pRawDesc->pszRawDisk));
+                    if (pRawDesc->cPartDescs)
+                    {
+                        Log(("#      VMDK offset         Length  Device offset  PartDataPtr  Device\n"));
+                        for (uint32_t i = 0; i < pRawDesc->cPartDescs; i++)
+                            Log(("%2u  %14RU64 %14RU64 %14RU64 %#18p %s\n", i, pRawDesc->pPartDescs[i].offStartInVDisk,
+                                 pRawDesc->pPartDescs[i].cbData, pRawDesc->pPartDescs[i].offStartInDevice,
+                                 pRawDesc->pPartDescs[i].pvPartitionData, pRawDesc->pPartDescs[i].pszRawDevice));
+                    }
+                }
+                else
+                    vmdkRawDescFree(pRawDesc);
+            }
+            else
+                rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                               N_("VMDK: Image path: '%s'. Failed to allocate %u bytes for the raw drive descriptor"),
+                               pImage->pszFilename, sizeof(*pRawDesc));
+            RTFileClose(hRawDrive);
+        }
+    }
+    RTStrFree(pszRawDrive);
+    RTMemFree(pvBootSector);
+    return rc;
+}
+
+/**
  * Internal: create VMDK images for raw disk/partition access.
  */
 static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVDISKRAW pRaw,
@@ -4008,15 +5100,16 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
                                   &pImage->Descriptor);
     if (RT_SUCCESS(rc))
     {
-        if (    (uImageFlags & VD_IMAGE_FLAGS_FIXED)
-            &&  (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK))
+        if (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
         {
             /* Raw disk image (includes raw partition). */
-            const PVDISKRAW pRaw = (const PVDISKRAW)pszComment;
-            /* As the comment is misused, zap it so that no garbage comment
-             * is set below. */
-            pszComment = NULL;
+            PVDISKRAW pRaw = NULL;
+            rc = vmdkMakeRawDescriptor(pImage, &pRaw);
+            if (RT_FAILURE(rc))
+                return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could get raw descriptor for '%s'"), pImage->pszFilename);
+
             rc = vmdkCreateRawImage(pImage, pRaw, cbSize);
+            vmdkRawDescFree(pRaw);
         }
         else if (uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
         {
@@ -5361,8 +6454,9 @@ static DECLCALLBACK(int) vmdkCreate(const char *pszFilename, uint64_t cbSize,
         return VERR_VD_INVALID_TYPE;
 
     /* Check size. Maximum 256TB-64K for sparse images, otherwise unlimited. */
-    if (    !cbSize
-        ||  (!(uImageFlags & VD_IMAGE_FLAGS_FIXED) && cbSize >= _1T * 256 - _64K))
+    if (   !(uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
+        && (   !cbSize
+            || (!(uImageFlags & VD_IMAGE_FLAGS_FIXED) && cbSize >= _1T * 256 - _64K)))
         return VERR_VD_INVALID_SIZE;
 
     /* Check image flags for invalid combinations. */
@@ -6517,7 +7611,7 @@ const VDIMAGEBACKEND g_VmdkBackend =
     /* paFileExtensions */
     s_aVmdkFileExtensions,
     /* paConfigInfo */
-    NULL,
+    s_aVmdkConfigInfo,
     /* pfnProbe */
     vmdkProbe,
     /* pfnOpen */
