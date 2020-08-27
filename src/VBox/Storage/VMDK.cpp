@@ -3738,14 +3738,14 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
 
                 if (cStable > 0)
                     rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
-                                   N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s' (cStable=%s @%#zx: %.*Rhxs vs %.*Rhxs)"),
+                                   N_("VMDK: Image path: '%s'. Partition #%u path ('%s') verification failed on '%s' (cStable=%d @%#zx: %.*Rhxs vs %.*Rhxs)"),
                                    pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive, cStable,
-                                   cbSample, &pbSector1[offMissmatch], cbSample, &pbSector2[offMissmatch]);
+                                   offMissmatch, cbSample, &pbSector1[offMissmatch], cbSample, &pbSector2[offMissmatch]);
                 else
                 {
                     LogRel(("VMDK: Image path: '%s'. Partition #%u path ('%s') verification undecided on '%s' because of unstable data! (@%#zx: %.*Rhxs vs %.*Rhxs)\n",
                             pImage->pszFilename, idxPartition, pPartDesc->pszRawDevice, pszRawDrive,
-                            cbSample, &pbSector1[offMissmatch], cbSample, &pbSector2[offMissmatch]));
+                            offMissmatch, cbSample, &pbSector1[offMissmatch], cbSample, &pbSector2[offMissmatch]));
                     rc = -rc;
                 }
             }
