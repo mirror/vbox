@@ -1367,7 +1367,7 @@ protected:
     /** Returns standard shortcut. */
     virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
     {
-        return QKeySequence(QKeySequence::Refresh);
+        return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Refresh);
     }
 
     /** Handles translation event. */
