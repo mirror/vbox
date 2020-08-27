@@ -751,7 +751,7 @@ static uint64_t rtDvmFmtMbrCalcTablePadding(PRTDVMFMTINTERNAL pThis, uint64_t of
         /* If it's an extended partition, check the chained ones too. */
         for (PRTDVMMBRSECTOR pCur = pThis->Primary.aEntries[i].pChain;
              pCur != NULL;
-             pCur->idxExtended != UINT8_MAX ? pCur->aEntries[pCur->idxExtended].pChain : NULL)
+             pCur = pCur->idxExtended != UINT8_MAX ? pCur->aEntries[pCur->idxExtended].pChain : NULL)
         {
             for (unsigned j = 0; j < 4; j++)
             {
@@ -797,7 +797,7 @@ static DECLCALLBACK(int) rtDvmFmtMbrQueryTableLocations(RTDVMFMT hVolMgrFmt, uin
     {
         for (PRTDVMMBRSECTOR pCur = pThis->Primary.aEntries[i].pChain;
              pCur != NULL;
-             pCur->idxExtended != UINT8_MAX ? pCur->aEntries[pCur->idxExtended].pChain : NULL)
+             pCur = pCur->idxExtended != UINT8_MAX ? pCur->aEntries[pCur->idxExtended].pChain : NULL)
         {
             if (cLocations > iLoc)
             {
