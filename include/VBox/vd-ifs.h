@@ -302,6 +302,12 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(6, 7) vdIfError(PVDINTERFACEERROR pIfError, 
     if (pIfError)
         pIfError->pfnError(pIfError->Core.pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
+
+#if defined(LOG_ENABLED) && defined(Log)
+    va_start(va, pszFormat);
+    Log(("vdIfError: %N\n", pszFormat, &va));
+    va_end(va);
+#endif
     return rc;
 }
 
@@ -321,6 +327,12 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) vdIfErrorMessage(PVDINTERFACEERROR pIf
     if (pIfError && pIfError->pfnMessage)
         rc = pIfError->pfnMessage(pIfError->Core.pvUser, pszFormat, va);
     va_end(va);
+
+#if defined(LOG_ENABLED) && defined(Log)
+    va_start(va, pszFormat);
+    Log(("vdIfErrorMessage: %N\n", pszFormat, &va));
+    va_end(va);
+#endif
     return rc;
 }
 
