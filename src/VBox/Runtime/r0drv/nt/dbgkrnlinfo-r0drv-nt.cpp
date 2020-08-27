@@ -375,7 +375,7 @@ static bool rtR0DbgKrnlNtParseModule(PRTDBGNTKRNLMODINFO pModInfo, uint8_t const
  * @retval  VERR_MODULE_NOT_FOUND if @a pModInfo wasn't found.
  *
  * @param   pInfo               Pointer to the module information.
- * @param   cModules            Number of valid module entries in the module information pointer. 
+ * @param   cModules            Number of valid module entries in the module information pointer.
  * @param   pModInfo            Custom module to search for.  Optional.
  */
 static int rtR0DbgKrnlNtSearchForModuleWorker(PRTL_PROCESS_MODULES pInfo, uint32_t cModules, PRTDBGNTKRNLMODINFO pModInfo)
