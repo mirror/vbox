@@ -38,7 +38,7 @@
 
 RTDECL(void) RTSortShell(void *pvArray, size_t cElements, size_t cbElement, PFNRTSORTCMP pfnCmp, void *pvUser)
 {
-    Assert(cbElement <= 32);
+    Assert(cbElement <= 128);
 
     /* Anything worth sorting? */
     if (cElements < 2)
