@@ -3763,16 +3763,11 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
 
 #ifdef RT_OS_WINDOWS
 /**
- * Transform the physical drive device name into the one for the given partition.
+ * Construct the device name for the given partition number.
  */
 static int vmdkRawDescWinMakePartitionName(PVMDKIMAGE pImage, const char *pszRawDrive, RTFILE hRawDrive, uint32_t idxPartition,
                                            char **ppszRawPartition)
 {
-# if 1
-    /*
-     * Ask the drive handle for its device number rather than mess about extracting
-     * it from the path (discovered this later when doing the path verification).
-     */
     int                   rc         = VINF_SUCCESS;
     DWORD                 cbReturned = 0;
     STORAGE_DEVICE_NUMBER DevNum;
@@ -3785,69 +3780,6 @@ static int vmdkRawDescWinMakePartitionName(PVMDKIMAGE pImage, const char *pszRaw
                        N_("VMDK: Image path: '%s'. IOCTL_STORAGE_GET_DEVICE_NUMBER failed on '%s': %u"),
                        pImage->pszFilename, pszRawDrive, GetLastError());
     return rc;
-
-# else
-    /*
-     * First variant is \\.\PhysicalDriveX -> \\.\HarddiskXPartition{idxPartition}
-     *
-     * Find the start of the digits and validate name prefix before using the digit
-     * portition to construct the partition device node name.
-     */
-    size_t offDigits = strlen(pszRawDrive);
-    if (offDigits > 0 && RT_C_IS_DIGIT(pszRawDrive[offDigits - 1]))
-    {
-        do
-            offDigits--;
-        while (offDigits > 0 && RT_C_IS_DIGIT(pszRawDrive[offDigits - 1]));
-        static const char s_szBaseName[] = "PhysicalDrive";
-        if (   offDigits > sizeof(s_szBaseName)
-            && RTPATH_IS_SLASH(pszRawDrive[offDigits - sizeof(s_szBaseName)])
-            && RTStrNICmp(&pszRawDrive[offDigits - sizeof(s_szBaseName) + 1], RT_STR_TUPLE(s_szBaseName)) == 0)
-        {
-            RTStrAPrintf(ppszRawPartition, "\\\\.\\Harddisk%sPartition%u", &pszRawDrive[offDigits], idxPartition);
-            return VINF_SUCCESS;
-        }
-    }
-
-    /*
-     * Query the name.  We should then get "\Device\HarddiskX\DRy" back and we can parse
-     * the X out of that and use it to construct the \\.\HarddiskXPartition{idxPartition}.
-     */
-    UNICODE_STRING NtName;
-    int rc = RTNtPathFromHandle(&NtName, (HANDLE)RTFileToNative(hRawDrive), 0 /*cwcExtra*/);
-    if (RT_SUCCESS(rc))
-    {
-        Log(("RTNtPathFromHandle: pszRawDrive=%s; NtName=%ls\n", pszRawDrive, NtName.Buffer));
-        static const char s_szBaseName[] = "\\Device\\Harddisk";
-        if (   RTUtf16NCmpAscii(NtName.Buffer, s_szBaseName, sizeof(s_szBaseName) - 1) == 0
-            && RTUniCpIsDecDigit(NtName.Buffer[sizeof(s_szBaseName) - 1])) /* A bit HACKY as words in UTF-16 != codepoint. */
-        {
-            offDigits = sizeof(s_szBaseName) - 1;
-            size_t offEndDigits = offDigits + 1;
-            while (RTUniCpIsDecDigit(NtName.Buffer[offEndDigits]))
-                offEndDigits++;
-            if (   NtName.Buffer[offEndDigits] == '\\'
-                && NtName.Buffer[offEndDigits + 1] == 'D'
-                && NtName.Buffer[offEndDigits + 2] == 'R'
-                && RTUniCpIsDecDigit(NtName.Buffer[offEndDigits + 3]))
-            {
-                RTStrAPrintf(ppszRawPartition, "\\\\.\\Harddisk%.*lsPartition%u",
-                             offEndDigits - offDigits, &NtName.Buffer[offDigits], idxPartition);
-                RTNtPathFree(&NtName, NULL);
-                return VINF_SUCCESS;
-            }
-        }
-        rc = vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                       N_("VMDK: Image path: '%s'. Do not know how to translate '%s' ('%ls') into a name for partition #%u"),
-                       pImage->pszFilename, pszRawDrive, NtName.Buffer, idxPartition);
-        RTNtPathFree(&NtName, NULL);
-    }
-    else
-        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
-                       N_("VMDK: Image path: '%s'. Failed to get the NT path for '%s' and therefore unable to determin path to partition #%u (%Rrc)"),
-                       pImage->pszFilename, pszRawDrive, idxPartition, rc);
-    return rc;
-# endif
 }
 #endif /* RT_OS_WINDOWS */
 
