@@ -536,7 +536,7 @@ public:
     int onX11MotionNotify(const XEvent &e);
     int onX11SelectionClear(const XEvent &e);
     int onX11SelectionNotify(const XEvent &e);
-    int onX11SelectionRequest(const XEvent &e);
+    int onX11SelectionRequest(const XEvent &evReq);
     int onX11Event(const XEvent &e);
     int  waitForStatusChange(uint32_t enmState, RTMSINTERVAL uTimeoutMS = 30000);
     bool waitForX11Msg(XEvent &evX, int iType, RTMSINTERVAL uTimeoutMS = 100);
@@ -1255,7 +1255,7 @@ int DragInstance::onX11SelectionNotify(const XEvent &e)
  * to retrieve the data required to complete the actual drag'n drop operation.
  *
  * @returns IPRT status code.
- * @param   e                       X11 event to handle.
+ * @param   evReq               X11 event to handle.
  */
 int DragInstance::onX11SelectionRequest(const XEvent &evReq)
 {
