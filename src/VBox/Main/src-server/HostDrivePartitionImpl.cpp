@@ -52,7 +52,7 @@ HRESULT HostDrivePartition::initFromDvmVol(RTDVMVOLUME hVol)
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     /* Common attributes: */
-    m.number = RTDvmVolumeGetIndex(hVol, RTDVMVOLIDX_ALL); /** @todo r=bird: who can use this one? The host specific index would be better. */
+    m.number = RTDvmVolumeGetIndex(hVol, RTDVMVOLIDX_HOST);
     m.cbVol  = (LONG64)RTDvmVolumeGetSize(hVol);
     if (m.cbVol < 0)
         m.cbVol = INT64_MAX;
