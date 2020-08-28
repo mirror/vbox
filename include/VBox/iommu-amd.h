@@ -2085,7 +2085,7 @@ typedef enum EVT_INVALID_DEV_REQ_TYPE_T
     /* Translation Request. */
     kInvalidDevReqType_TrAccessInvalid,
     kInvalidDevReqType_TrDisabled,
-    kInvalidDevReqType_DevIdInvalid,
+    kInvalidDevReqType_DevIdInvalid
 } EVT_INVALID_DEV_REQ_TYPE_T;
 
 /**
