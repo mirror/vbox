@@ -59,7 +59,7 @@ vboxsf: vboxguest
 	    echo; \
 	fi
 
-vboxvideo:
+vboxvideo: vboxguest
 	+ $(VBOX_QUIET_SH)if [ -d vboxvideo ]; then \
 	    if [ -f vboxguest/Module.symvers ]; then \
 	        cp vboxguest/Module.symvers vboxvideo; \
@@ -74,45 +74,56 @@ vboxvideo:
 	    echo; \
 	fi
 
-install:
+install_vboxguest:
 	+ $(VBOX_QUIET)$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest install
+
+install_vboxsf:
 	+ $(VBOX_QUIET_SH)if [ -d vboxsf ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxsf install; \
 	fi
+
+install_vboxvideo:
 	+ $(VBOX_QUIET_SH)if [ -d vboxvideo ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo install; \
 	fi
 
-clean-vboxdrv:
-	+ $(VBOX_QUIET)$(MAKE) -C vboxguest clean
+install: install_vboxguest install_vboxsf install_vboxvideo
 
-clean-vboxsf:
+clean_vboxguest:
+	+ $(VBOX_QUIET)$(MAKE) -C vboxguest clean
+	rm -f vboxguest.*o
+
+clean_vboxsf:
 	+ $(VBOX_QUIET_SH)if [ -d vboxsf ]; then \
 	    $(MAKE) -C vboxsf clean; \
 	fi
+	rm -f vboxsf.*o
 
-clean-vboxvideo:
+clean_vboxvideo:
 	+ $(VBOX_QUIET_SH)if [ -d vboxvideo ]; then \
 	    $(MAKE) -C vboxvideo clean; \
 	fi
+	rm -f vboxvideo.*o
 
-clean-misc:
-	rm -f vboxguest.*o vboxsf.*o vboxvideo.*o
-
-clean: clean-vboxdrv clean-vboxsf clean-vboxvideo clean-misc
+clean: clean_vboxguest clean_vboxsf clean_vboxvideo
 
 check:
 	$(VBOX_QUIET)$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest check
 
-load:
+unload:
 	$(VBOX_QUIET)/sbin/rmmod vboxvideo || true
 	$(VBOX_QUIET)/sbin/rmmod vboxvfs || true
 	$(VBOX_QUIET)/sbin/rmmod vboxsf || true
 	$(VBOX_QUIET)/sbin/rmmod vboxguest || true
+
+load: unload
 	$(VBOX_QUIET)/sbin/insmod vboxguest.ko
 	$(VBOX_QUIET)if [ -f vboxsf.ko ]; then /sbin/insmod vboxsf.ko; fi
 	$(VBOX_QUIET)if [ -f vboxvideo.ko ]; then /sbin/insmod vboxvideo.ko; fi
 
-.PHONY: vboxguest vboxsf vboxvideo all install clean check load
+.PHONY: all install clean check unload load \
+    vboxguest vboxsf vboxvideo \
+    install_vboxguest install_vboxsf install_vboxvideo \
+    clean_vboxguest clean_vboxsf clean_vboxvideo
 
 endif # ! KERNELRELEASE
