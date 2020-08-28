@@ -936,11 +936,15 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
             if (   e.xclient.message_type == xAtom(XA_XdndStatus)
                 && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndStatusWindow]))
             {
-                bool fAcceptDrop     = ASMBitTest   (&e.xclient.data.l[XdndStatusFlags], 0); /* Does the target accept the drop? */
-                RTCString strActions = xAtomToString( e.xclient.data.l[XdndStatusAction]);
-#ifdef LOG_ENABLED
-                bool fWantsPosition  = ASMBitTest   (&e.xclient.data.l[XdndStatusFlags], 1); /* Does the target want XdndPosition messages? */
-                char *pszWndName = wndX11GetNameA(e.xclient.data.l[XdndStatusWindow]);
+                Window wndTarget = static_cast<Window>(e.xclient.data.l[XdndStatusWindow]);
+
+                /* Does the target accept the drop? */
+                const bool fAcceptDrop    = e.xclient.data.l[XdndStatusFlags] & VBOX_XDND_STATUS_FLAG_ACCEPT;
+                /* Does the target want XdndPosition messages? */
+                const bool fWantsPosition = e.xclient.data.l[XdndStatusFlags] & VBOX_XDND_STATUS_FLAG_WANTS_POS;
+                RT_NOREF(fWantsPosition);
+
+                char *pszWndName = wndX11GetNameA(m_wndCur);
                 AssertPtr(pszWndName);
 
                 /*
@@ -948,50 +952,62 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                  * event and with which action. We immediately send this info down to
                  * the host as a response of a previous DnD message.
                  */
-                LogFlowThisFunc(("XA_XdndStatus: wnd=%#x ('%s'), fAcceptDrop=%RTbool, fWantsPosition=%RTbool, strActions=%s\n",
-                                 e.xclient.data.l[XdndStatusWindow], pszWndName, fAcceptDrop, fWantsPosition, strActions.c_str()));
+                RTCString strActions = xAtomToString(e.xclient.data.l[XdndStatusAction]);
+
+                VBClLogInfo("Target window %#x ('%s') %s accept data with actions '%s'\n",
+                            wndTarget, pszWndName, fAcceptDrop ? "does" : "does not", strActions.c_str());
+
+                const uint16_t x  = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgXY]);
+                const uint16_t y  = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgXY]);
+                const uint16_t cx = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
+                const uint16_t cy = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
+
+                if (cx && cy)
+                {
+                    VBClLogInfo("Target window %#x ('%s') reported dead area at %RU16,%RU16 (%RU16 x %RU16)\n",
+                                wndTarget, pszWndName, x, y, cx, cy);
+                    /** @todo Save dead area and don't send XdndPosition messages anymore into it. */
+                }
+
+                if (m_wndCur == wndTarget)
+                {
+                    VBOXDNDACTION dndAction = VBOX_DND_ACTION_IGNORE; /* Default is ignoring. */
+                    /** @todo Compare this with the allowed actions. */
+                    if (fAcceptDrop)
+                        dndAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[XdndStatusAction]));
+
+                    rc = VbglR3DnDHGSendAckOp(&m_dndCtx, dndAction);
+                }
+                else
+                    VBClLogInfo("Target window %#x ('%s') is not our current window, skipping\n", wndTarget, pszWndName);
 
                 RTStrFree(pszWndName);
-
-                uint16_t x  = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgXY]);
-                uint16_t y  = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgXY]);
-                uint16_t cx = RT_HI_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
-                uint16_t cy = RT_LO_U16((uint32_t)e.xclient.data.l[XdndStatusNoMsgWH]);
-                LogFlowThisFunc(("\tReported dead area: x=%RU16, y=%RU16, cx=%RU16, cy=%RU16\n", x, y, cx, cy));
-#endif
-                VBOXDNDACTION dndAction = VBOX_DND_ACTION_IGNORE; /* Default is ignoring. */
-                /** @todo Compare this with the allowed actions. */
-                if (fAcceptDrop)
-                    dndAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[XdndStatusAction]));
-
-                rc = VbglR3DnDHGSendAckOp(&m_dndCtx, dndAction);
             }
             else if (e.xclient.message_type == xAtom(XA_XdndFinished))
             {
-#ifdef LOG_ENABLED
-                bool fSucceeded = ASMBitTest(&e.xclient.data.l[XdndFinishedFlags], 0);
+                Window wndTarget = static_cast<Window>(e.xclient.data.l[XdndFinishedWindow]);
 
-                char *pszWndName = wndX11GetNameA(e.xclient.data.l[XdndFinishedWindow]);
+                const bool fSucceeded = e.xclient.data.l[XdndFinishedFlags] & VBOX_XDND_FINISHED_FLAG_SUCCEEDED;
+
+                char *pszWndName = wndX11GetNameA(wndTarget);
                 AssertPtr(pszWndName);
+
+                const char *pcszAction = xAtomToString(e.xclient.data.l[XdndFinishedAction]).c_str();
 
                 /* This message is sent on an un/successful DnD drop request. */
                 LogFlowThisFunc(("XA_XdndFinished: wnd=%#x ('%s'), success=%RTbool, action=%s\n",
-                                 e.xclient.data.l[XdndFinishedWindow], pszWndName, fSucceeded,
-                                 xAtomToString(e.xclient.data.l[XdndFinishedAction]).c_str()));
+                                 wndTarget, pszWndName, fSucceeded, pcszAction));
+
+                VBClLogInfo("Target window %#x ('%s') has %s the data with action '%s'\n",
+                            wndTarget, pszWndName, fSucceeded ? "accepted" : "rejected", pcszAction ? "<None>" : pcszAction);
 
                 RTStrFree(pszWndName);
-#endif
 
                 reset();
             }
             else
             {
-                char *pszWndName = wndX11GetNameA(e.xclient.data.l[0]);
-                AssertPtr(pszWndName);
-                LogFlowThisFunc(("Unhandled: wnd=%#x ('%s'), msg=%s\n",
-                                 e.xclient.data.l[0], pszWndName, xAtomToString(e.xclient.message_type).c_str()));
-                RTStrFree(pszWndName);
-
+                LogFlowThisFunc(("Unhandled client message '%s'\n", xAtomToString(e.xclient.message_type).c_str()));
                 rc = VERR_NOT_SUPPORTED;
             }
 
