@@ -3260,7 +3260,7 @@ HRESULT Host::i_getFixedDrivesFromHal(std::list<std::pair<com::Utf8Str, com::Utf
                                 Utf8Str strDescription;
                                 if (pszProduct != NULL && pszProduct[0] != '\0')
                                 {
-                                    int rc;
+                                    int vrc;
                                     if (pszVendor != NULL && pszVendor[0] != '\0')
                                         vrc = strDescription.printfNoThrow("%s %s", pszVendor, pszProduct);
                                     else
