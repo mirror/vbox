@@ -3846,20 +3846,20 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
     /* Header. */
-    PDMPciDevSetVendorId(pPciDev,           IOMMU_PCI_VENDOR_ID);      /* AMD */
-    PDMPciDevSetDeviceId(pPciDev,           IOMMU_PCI_DEVICE_ID);      /* VirtualBox IOMMU device */
-    PDMPciDevSetCommand(pPciDev,            0);                        /* Command */
-    PDMPciDevSetStatus(pPciDev,             VBOX_PCI_STATUS_CAP_LIST); /* Status - CapList supported */
-    PDMPciDevSetRevisionId(pPciDev,         IOMMU_PCI_REVISION_ID);    /* VirtualBox specific device implementation revision */
-    PDMPciDevSetClassBase(pPciDev,          0x08);                     /* System Base Peripheral */
-    PDMPciDevSetClassSub(pPciDev,           0x06);                     /* IOMMU */
-    PDMPciDevSetClassProg(pPciDev,          0x00);                     /* IOMMU Programming interface */
-    PDMPciDevSetHeaderType(pPciDev,         0x00);                     /* Single function, type 0. */
-    PDMPciDevSetSubSystemId(pPciDev,        IOMMU_PCI_DEVICE_ID);      /* AMD */
-    PDMPciDevSetSubSystemVendorId(pPciDev,  IOMMU_PCI_VENDOR_ID);      /* VirtualBox IOMMU device */
-    PDMPciDevSetCapabilityList(pPciDev,     IOMMU_PCI_OFF_CAP_HDR);    /* Offset into capability registers. */
-    PDMPciDevSetInterruptPin(pPciDev,       0x01);                     /* INTA#. */
-    PDMPciDevSetInterruptLine(pPciDev,      0x00);                     /* For software compatibility; no effect on hardware. */
+    PDMPciDevSetVendorId(pPciDev,          IOMMU_PCI_VENDOR_ID);       /* AMD */
+    PDMPciDevSetDeviceId(pPciDev,          IOMMU_PCI_DEVICE_ID);       /* VirtualBox IOMMU device */
+    PDMPciDevSetCommand(pPciDev,           0);                         /* Command */
+    PDMPciDevSetStatus(pPciDev,            VBOX_PCI_STATUS_CAP_LIST);  /* Status - CapList supported */
+    PDMPciDevSetRevisionId(pPciDev,        IOMMU_PCI_REVISION_ID);     /* VirtualBox specific device implementation revision */
+    PDMPciDevSetClassBase(pPciDev,         VBOX_PCI_CLASS_SYSTEM);     /* System Base Peripheral */
+    PDMPciDevSetClassSub(pPciDev,          VBOX_PCI_SUB_SYSTEM_IOMMU); /* IOMMU */
+    PDMPciDevSetClassProg(pPciDev,         0x00);                      /* IOMMU Programming interface */
+    PDMPciDevSetHeaderType(pPciDev,        0x00);                      /* Single function, type 0. */
+    PDMPciDevSetSubSystemId(pPciDev,       IOMMU_PCI_DEVICE_ID);       /* AMD */
+    PDMPciDevSetSubSystemVendorId(pPciDev, IOMMU_PCI_VENDOR_ID);       /* VirtualBox IOMMU device */
+    PDMPciDevSetCapabilityList(pPciDev,    IOMMU_PCI_OFF_CAP_HDR);     /* Offset into capability registers. */
+    PDMPciDevSetInterruptPin(pPciDev,      0x01);                      /* INTA#. */
+    PDMPciDevSetInterruptLine(pPciDev,     0x00);                      /* For software compatibility; no effect on hardware. */
 
     /* Capability Header. */
     /* NOTE! Fields (e.g, EFR) must match what we expose in the ACPI tables. */
