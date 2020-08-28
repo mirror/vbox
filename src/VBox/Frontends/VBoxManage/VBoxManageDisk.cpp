@@ -253,51 +253,50 @@ static const RTGETOPTDEF g_aCreateMediumOptions[] =
     { "--property-file",'P', RTGETOPT_REQ_STRING },
 };
 
+class MediumProperty
+{
+public:
+    const char *m_pszKey;
+    const char *m_pszValue; /**< Can be binary too. */
+    size_t      m_cbValue;
+    char       *m_pszFreeValue;
+    MediumProperty() : m_pszKey(NULL), m_pszValue(NULL), m_cbValue(0), m_pszFreeValue(NULL) { }
+    MediumProperty(MediumProperty const &a_rThat)
+        : m_pszKey(a_rThat.m_pszKey)
+        , m_pszValue(a_rThat.m_pszValue)
+        , m_cbValue(a_rThat.m_cbValue)
+        , m_pszFreeValue(NULL)
+    {
+        Assert(a_rThat.m_pszFreeValue == NULL); /* not expected here! */
+    }
+    ~MediumProperty()
+    {
+        RTMemFree(m_pszFreeValue);
+        m_pszFreeValue = NULL;
+    }
+
+private:
+    MediumProperty &operator=(MediumProperty const &a_rThat)
+    {
+        m_pszKey = a_rThat.m_pszKey;
+        m_pszValue = a_rThat.m_pszValue;
+        m_cbValue = a_rThat.m_cbValue;
+        m_pszFreeValue = a_rThat.m_pszFreeValue;
+        if (a_rThat.m_pszFreeValue != NULL)
+        {
+            m_pszFreeValue = (char *)RTMemDup(m_pszValue, m_cbValue + 1);
+            if (!m_pszFreeValue)
+            {
+                RTMsgError("Out of memory copying '%s'", m_pszValue);
+                throw std::bad_alloc();
+            }
+        }
+        return *this;
+    }
+};
+
 RTEXITCODE handleCreateMedium(HandlerArg *a)
 {
-    class MediumProperty
-    {
-    public:
-        const char *m_pszKey;
-        const char *m_pszValue; /**< Can be binary too. */
-        size_t      m_cbValue;
-        char       *m_pszFreeValue;
-        MediumProperty() : m_pszKey(NULL), m_pszValue(NULL), m_cbValue(0), m_pszFreeValue(NULL) { }
-        MediumProperty(MediumProperty const &a_rThat)
-            : m_pszKey(a_rThat.m_pszKey)
-            , m_pszValue(a_rThat.m_pszValue)
-            , m_cbValue(a_rThat.m_cbValue)
-            , m_pszFreeValue(NULL)
-        {
-            Assert(a_rThat.m_pszFreeValue == NULL); /* not expected here! */
-        }
-        ~MediumProperty()
-        {
-            RTMemFree(m_pszFreeValue);
-            m_pszFreeValue = NULL;
-        }
-
-    private:
-        MediumProperty &operator=(MediumProperty const &a_rThat)
-        {
-            m_pszKey = a_rThat.m_pszKey;
-            m_pszValue = a_rThat.m_pszValue;
-            m_cbValue = a_rThat.m_cbValue;
-            m_pszFreeValue = a_rThat.m_pszFreeValue;
-            if (a_rThat.m_pszFreeValue != NULL)
-            {
-                m_pszFreeValue = (char *)RTMemAlloc(m_cbValue + 1);
-                if (m_pszFreeValue)
-                {
-                    memcpy(m_pszFreeValue, m_pszValue, m_cbValue + 1);
-                    m_pszValue = m_pszFreeValue;
-                }
-                else
-                    RTMsgError("Out of memory copying '%s'", m_pszValue);
-            }
-            return *this;
-        }
-    };
     std::list<MediumProperty> lstProperties;
 
     HRESULT rc;
