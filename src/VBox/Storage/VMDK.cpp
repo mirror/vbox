@@ -3768,6 +3768,25 @@ static int vmdkRawDescVerifyPartitionPath(PVMDKIMAGE pImage, PVDISKRAWPARTDESC p
 static int vmdkRawDescWinMakePartitionName(PVMDKIMAGE pImage, const char *pszRawDrive, RTFILE hRawDrive, uint32_t idxPartition,
                                            char **ppszRawPartition)
 {
+# if 1
+    /*
+     * Ask the drive handle for its device number rather than mess about extracting
+     * it from the path (discovered this later when doing the path verification).
+     */
+    int                   rc         = VINF_SUCCESS;
+    DWORD                 cbReturned = 0;
+    STORAGE_DEVICE_NUMBER DevNum;
+    RT_ZERO(DevNum);
+    if (DeviceIoControl((HANDLE)RTFileToNative(hRawDrive), IOCTL_STORAGE_GET_DEVICE_NUMBER,
+                        NULL /*pvInBuffer*/, 0 /*cbInBuffer*/, &DevNum, sizeof(DevNum), &cbReturned, NULL /*pOverlapped*/))
+        RTStrAPrintf(ppszRawPartition, "\\\\.\\Harddisk%uPartition%u", DevNum.DeviceNumber, idxPartition);
+    else
+        rc = vdIfError(pImage->pIfError, RTErrConvertFromWin32(GetLastError()), RT_SRC_POS,
+                       N_("VMDK: Image path: '%s'. IOCTL_STORAGE_GET_DEVICE_NUMBER failed on '%s': %u"),
+                       pImage->pszFilename, pszRawDrive, GetLastError());
+    return rc;
+
+# else
     /*
      * First variant is \\.\PhysicalDriveX -> \\.\HarddiskXPartition{idxPartition}
      *
@@ -3828,6 +3847,7 @@ static int vmdkRawDescWinMakePartitionName(PVMDKIMAGE pImage, const char *pszRaw
                        N_("VMDK: Image path: '%s'. Failed to get the NT path for '%s' and therefore unable to determin path to partition #%u (%Rrc)"),
                        pImage->pszFilename, pszRawDrive, idxPartition, rc);
     return rc;
+# endif
 }
 #endif /* RT_OS_WINDOWS */
 
