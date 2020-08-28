@@ -1535,6 +1535,204 @@
     </const>
   </enum>
 
+  <enum
+    name="PartitioningType"
+    uuid="64c4c806-8908-4c0b-9a51-2d7a0151321f"
+    >
+    <desc>
+      The type of the disk partition.
+    </desc>
+
+    <const name="MBR"     value="0"/>
+    <const name="GPT"     value="1"/>
+  </enum>
+
+  <enum
+    name="PartitionType"
+    uuid="84a6629c-8e9c-474c-adbb-21995671597f"
+    >
+    <desc></desc>
+
+    <!-- MBR partition IDs using the same value: -->
+    <const name="Empty"                 value="0"><desc>Empty partition entry</desc></const>
+    <const name="FAT12"                 value="1">  <desc>FAT12 if partition size less than 65536 sectors</desc></const>
+    <const name="FAT16"                 value="4">  <desc>FAT16 if partition size less than 65536 sectors</desc></const>
+    <const name="FAT"                   value="6">  <desc>FAT12 or FAT16 if partition size greater or equal than 65536 sectors</desc></const>
+    <const name="IFS"                   value="7">  <desc>NT and OS/2 installable file system, e.g. NTFS, exFAT, HPFS.</desc></const>
+    <const name="FAT32CHS"              value="11"> <desc>The FAT32 with CHS addressing.</desc></const>
+    <const name="FAT32LBA"              value="12"> <desc>The FAT32 with LBA addressing.</desc></const>
+    <const name="FAT16B"                value="14"> <desc>The FAT16 with LBA addressing.</desc></const>
+    <const name="Extended"              value="15"> <desc>The extended partition with LBA addressing.</desc></const>
+    <const name="WindowsRE"             value="39"> <desc>Windows Recovery Environment (RE) partition (hidden NTFS partition).</desc></const>
+    <const name="LinuxSwapOld"          value="66"> <desc>The linux swap partition (old versions).</desc></const>
+    <const name="LinuxOld"              value="67"> <desc>The linux native partition (old versions).</desc></const>
+    <const name="DragonFlyBSDSlice"     value="108"><desc>The BSD slice.</desc></const>
+    <const name="LinuxSwap"             value="130"><desc>The linux swap partition.</desc></const>
+    <const name="Linux"                 value="131"><desc>The linux native partition.</desc></const>
+    <const name="LinuxExtended"         value="133"><desc>The linux extended partition.</desc></const>
+    <const name="LinuxLVM"              value="142"><desc>The linux LVM partition.</desc></const>
+    <const name="BSDSlice"              value="165"><desc>The BSD slice.</desc></const>
+    <const name="AppleUFS"              value="168"><desc>The Apple UFS partition.</desc></const>
+    <const name="AppleHFS"              value="175"><desc>The Apple HFS partition.</desc></const>
+    <const name="Solaris"               value="191"><desc>The Apple HFS partition.</desc></const>
+    <const name="GPT"                   value="238"><desc>The GPT protective MBR partition.</desc></const>
+    <const name="EFI"                   value="239"><desc>The EFI system partition.</desc></const>
+
+    <!-- Dummy value: -->
+    <const name="Unknown"               value="256"><desc>Unknown partition type.</desc></const>
+
+    <!-- GPT partition types: -->
+    <const name="MBR"                   value="257"><desc>MBR partition scheme.</desc></const>
+    <const name="iFFS"                  value="258"><desc>Intel Fast Flash (iFFS) partition.</desc></const>
+    <const name="SonyBoot"              value="259"><desc>Sony boot partition.</desc></const>
+    <const name="LenovoBoot"            value="260"><desc>Lenovo boot partition.</desc></const>
+
+    <const name="WindowsMSR"            value="270"><desc>Microsoft Reserved Partition (MSR).</desc></const>
+    <const name="WindowsBasicData"      value="271"><desc>Windows Basic data partition</desc></const>
+    <const name="WindowsLDMMeta"        value="272"><desc>Windows Logical Disk Manager (LDM) metadata partition.</desc></const>
+    <const name="WindowsLDMData"        value="273"><desc>Windows Logical Disk Manager data partition.</desc></const>
+    <const name="WindowsRecovery"       value="274"><desc>Windows Recovery Environment.</desc></const>
+    <const name="WindowsStorageSpaces"  value="276"><desc>Windows Storage Spaces partition.</desc></const>
+    <const name="WindowsStorageReplica" value="277"><desc>Windows Storage Replica partition.</desc></const>
+    <const name="IBMGPFS"               value="275"><desc>IBM General Parallel File System (GPFS) partition.</desc></const>
+
+    <const name="LinuxData"             value="300"><desc>Linux filesystem data.</desc></const>
+    <const name="LinuxRAID"             value="301"><desc>Linux RAID partition.</desc></const>
+    <const name="LinuxRootX86"          value="302"><desc>Linux root partition for x86.</desc></const>
+    <const name="LinuxRootAMD64"        value="303"><desc>Linux root partition for AMD64.</desc></const>
+    <const name="LinuxRootARM32"        value="304"><desc>Linux root partition for ARM32.</desc></const>
+    <const name="LinuxRootARM64"        value="305"><desc>Linux root partition for ARM64 / AArch64.</desc></const>
+    <const name="LinuxHome"             value="306"><desc>Linux /home partition.</desc></const>
+    <const name="LinuxSrv"              value="307"><desc>Linux /srv partition..</desc></const>
+    <const name="LinuxPlainDmCrypt"     value="308"><desc>Linux plain dm-crypt partition.</desc></const>
+    <const name="LinuxLUKS"             value="309"><desc>Linux unitified key setup (LUKS) partition.</desc></const>
+    <const name="LinuxReserved"         value="310"><desc>Linux reserved partition.</desc></const>
+
+    <const name="FreeBSDBoot"           value="330"><desc>FreeBSD boot partition.</desc></const>
+    <const name="FreeBSDData"           value="331"><desc>FreeBSD data partition.</desc></const>
+    <const name="FreeBSDSwap"           value="332"><desc>FreeBSD swap partition.</desc></const>
+    <const name="FreeBSDUFS"            value="333"><desc>FreeBSD unix file system (UFS) partition.</desc></const>
+    <const name="FreeBSDVinum"          value="334"><desc>FreeBSD Vinum volume manager partition.</desc></const>
+    <const name="FreeBSDZFS"            value="335"><desc>FreeBSD ZFS partition.</desc></const>
+    <const name="FreeBSDUnknown"        value="359"><desc>Unknown FreeBSD partition.</desc></const>
+
+    <const name="AppleHFSPlus"          value="360"><desc>Apple hierarchical file system plus (HFS+) partition.</desc></const>
+    <const name="AppleAPFS"             value="361"><desc>Apple APFS/FileFault container partition.</desc></const>
+    <const name="AppleRAID"             value="362"><desc>Apple RAID partition.</desc></const>
+    <const name="AppleRAIDOffline"      value="363"><desc>Apple RAID partition, offline.</desc></const>
+    <const name="AppleBoot"             value="364"><desc>Apple boot partition.</desc></const>
+    <const name="AppleLabel"            value="365"><desc>Apple label.</desc></const>
+    <const name="AppleTvRecovery"       value="366"><desc>Apple TV recovery partition.</desc></const>
+    <const name="AppleCoreStorage"      value="367"><desc>Apple Core Storage Containe.</desc></const>
+    <const name="SoftRAIDStatus"        value="370"><desc>SoftRAID status.</desc></const>
+    <const name="SoftRAIDScratch"       value="371"><desc>SoftRAID scratch.</desc></const>
+    <const name="SoftRAIDVolume"        value="372"><desc>SoftRAID volume.</desc></const>
+    <const name="SoftRAIDCache"         value="373"><desc>SoftRAID cache.</desc></const>
+    <const name="AppleUnknown"          value="389"><desc>Unknown Apple partition.</desc></const>
+
+    <const name="SolarisBoot"           value="390"><desc>Solaris boot partition.</desc></const>
+    <const name="SolarisRoot"           value="391"><desc>Solaris root partition.</desc></const>
+    <const name="SolarisSwap"           value="392"><desc>Solaris swap partition.</desc></const>
+    <const name="SolarisBackup"         value="393"><desc>Solaris backup partition.</desc></const>
+    <const name="SolarisUsr"            value="394"><desc>Solaris /usr partition.</desc></const>
+    <const name="SolarisVar"            value="395"><desc>Solaris /var partition.</desc></const>
+    <const name="SolarisHome"           value="396"><desc>Solaris /home partition.</desc></const>
+    <const name="SolarisAltSector"      value="397"><desc>Solaris alternate sector.</desc></const>
+    <const name="SolarisReserved"       value="398"><desc>Solaris reserved partition.</desc></const>
+    <const name="SolarisUnknown"        value="419"><desc>Unknown Solaris partition.</desc></const>
+
+    <const name="NetBSDSwap"            value="420"><desc>NetBSD swap partition.</desc></const>
+    <const name="NetBSDFFS"             value="421"><desc>NetBSD fast file system (FFS) partition.</desc></const>
+    <const name="NetBSDLFS"             value="422"><desc>NetBSD log structured file system (LFS) partition.</desc></const>
+    <const name="NetBSDRAID"            value="423"><desc>NetBSD RAID partition.</desc></const>
+    <const name="NetBSDConcatenated"    value="424"><desc>NetBSD concatenated partition.</desc></const>
+    <const name="NetBSDEncrypted"       value="425"><desc>NetBSD encrypted partition.</desc></const>
+    <const name="NetBSDUnknown"         value="449"><desc>Unknown NetBSD partition.</desc></const>
+
+    <const name="ChromeOSKernel"        value="450"><desc>Chrome OS kernel partition.</desc></const>
+    <const name="ChromeOSRootFS"        value="451"><desc>Chrome OS root file system partition.</desc></const>
+    <const name="ChromeOSFuture"        value="452"><desc>Chrome OS partition reserved for future.</desc></const>
+
+    <const name="ContLnxUsr"            value="480"><desc>Container Linux /usr partition.</desc></const>
+    <const name="ContLnxRoot"           value="481"><desc>Container Linux resizable root filesystem partition.</desc></const>
+    <const name="ContLnxReserved"       value="482"><desc>Container Linux OEM customization partition.</desc></const>
+    <const name="ContLnxRootRAID"       value="483"><desc>Container Linux root filesystem on RAID partition.</desc></const>
+
+    <const name="HaikuBFS"              value="510"><desc>Haiku BFS</desc></const>
+
+    <const name="MidntBSDBoot"          value="540"><desc>MidnightBSD boot partition.</desc></const>
+    <const name="MidntBSDData"          value="541"><desc>MidnightBSD data partition.</desc></const>
+    <const name="MidntBSDSwap"          value="542"><desc>MidnightBSD swap partition.</desc></const>
+    <const name="MidntBSDUFS"           value="543"><desc>MidnightBSD unix file system (UFS) partition.</desc></const>
+    <const name="MidntBSDVium"          value="544"><desc>MidnightBSD Vinum volume manager partition.</desc></const>
+    <const name="MidntBSDZFS"           value="545"><desc>MidnightBSD ZFS partition.</desc></const>
+    <const name="MidntBSDUnknown"       value="569"><desc>Unknown MidnightBSD partition.</desc></const>
+
+    <const name="OpenBSDData"           value="570"><desc>OpenBSD data partition.</desc></const>
+
+    <const name="QNXPowerSafeFS"        value="600"><desc>QNX power-safe file system partition.</desc></const>
+
+    <const name="Plan9"                 value="630"><desc>Plan 9 partition.</desc></const>
+
+    <const name="VMWareVMKCore"         value="660"><desc>VMWare ESX coredump partition.</desc></const>
+    <const name="VMWareVMFS"            value="661"><desc>VMWare ESX virtual machine file system (VMFS) partition.</desc></const>
+    <const name="VMWareReserved"        value="662"><desc>VMWare ESX reserved partition.</desc></const>
+    <const name="VMWareUnknown"         value="689"><desc>Unknown VMWare partition.</desc></const>
+
+    <const name="AndroidX86Bootloader"  value="690"><desc>Android x86 bootloader partition.</desc></const>
+    <const name="AndroidX86Bootloader2" value="691"><desc>Android x86 bootloader2 partition.</desc></const>
+    <const name="AndroidX86Boot"        value="692"><desc>Android x86 boot partition.</desc></const>
+    <const name="AndroidX86Recovery"    value="693"><desc>Android x86 recovery partition.</desc></const>
+    <const name="AndroidX86Misc"        value="694"><desc>Android x86 misc partition.</desc></const>
+    <const name="AndroidX86Metadata"    value="695"><desc>Android x86 metadata partition.</desc></const>
+    <const name="AndroidX86System"      value="696"><desc>Android x86 system partition.</desc></const>
+    <const name="AndroidX86Cache"       value="697"><desc>Android x86 cache partition.</desc></const>
+    <const name="AndroidX86Data"        value="698"><desc>Android x86 data partition.</desc></const>
+    <const name="AndroidX86Persistent"  value="699"><desc>Android x86 persistent data partition.</desc></const>
+    <const name="AndroidX86Vendor"      value="700"><desc>Android x86 vendor partition.</desc></const>
+    <const name="AndroidX86Config"      value="701"><desc>Android x86 config partition.</desc></const>
+    <const name="AndroidX86Factory"     value="702"><desc>Android x86 factory partition.</desc></const>
+    <const name="AndroidX86FactoryAlt"  value="703"><desc>Android x86 alternative factory partition.</desc></const>
+    <const name="AndroidX86Fastboot"    value="704"><desc>Android x86 fastboot partition.</desc></const>
+    <const name="AndroidX86OEM"         value="705"><desc>Android x86 OEM partition.</desc></const>
+
+    <const name="AndroidARMMeta"        value="720"><desc>Android ARM meta partition.</desc></const>
+    <const name="AndroidARMExt"         value="721"><desc>Android ARM EXT partition.</desc></const>
+
+    <const name="ONIEBoot"              value="750"><desc>Open Network Install Environment (ONIE) boot partition.</desc></const>
+    <const name="ONIEConfig"            value="751"><desc>Open Network Install Environment (ONIE) config partition.</desc></const>
+
+    <const name="PowerPCPrep"           value="780"><desc>PowerPC PReP boot partition.</desc></const>
+
+    <const name="XDGShrBootConfig"      value="810"><desc>freedesktop.org shared boot loader configuration partition.</desc></const>
+
+    <const name="CephBlock"             value="830"><desc>Ceph block partition.</desc></const>
+    <const name="CephBlockDB"           value="831"><desc>Ceph block DB partition.</desc></const>
+    <const name="CephBlockDBDmc"        value="832"><desc>Ceph dm-crypt block DB partition.</desc></const>
+    <const name="CephBlockDBDmcLUKS"    value="833"><desc>Ceph dm-crypt Linux unitified key setup (LUKS) block DB partition.</desc></const>
+    <const name="CephBlockDmc"          value="834"><desc>Ceph dm-crypt block partition.</desc></const>
+    <const name="CephBlockDmcLUKS"      value="835"><desc>Ceph dm-crypt Linux unitified key setup (LUKS) block partition.</desc></const>
+    <const name="CephBlockWALog"        value="836"><desc>Ceph block write-ahead log partition.</desc></const>
+    <const name="CephBlockWALogDmc"     value="837"><desc>Ceph dm-crypt block write-ahead log partition.</desc></const>
+    <const name="CephBlockWALogDmcLUKS" value="838"><desc>Ceph dm-crypt Linux unitified key setup (LUKS) block write-ahead log partition.</desc></const>
+    <const name="CephDisk"              value="839"><desc>Ceph disk in creation partition.</desc></const>
+    <const name="CephDiskDmc"           value="840"><desc>Ceph dm-crypt disk in creation partition.</desc></const>
+    <const name="CephJournal"           value="841"><desc>Ceph Journal partition.</desc></const>
+    <const name="CephJournalDmc"        value="842"><desc>Ceph dm-crypt journal partition.</desc></const>
+    <const name="CephJournalDmcLUKS"    value="843"><desc>Ceph dm-crypt Linux unitified key setup (LUKS) journal partition.</desc></const>
+    <const name="CephLockbox"           value="844"><desc>Ceph Lockbox for dm-crypt keys partition.</desc></const>
+    <const name="CephMultipathBlock1"   value="845"><desc>Ceph multipath block 1 partition.</desc></const>
+    <const name="CephMultipathBlock2"   value="846"><desc>Ceph multipath block 2 partition.</desc></const>
+    <const name="CephMultipathBlockDB"  value="847"><desc>Ceph multipath block DB partition.</desc></const>
+    <const name="CephMultipathBLockWALog" value="848"><desc>Ceph multipath block write-ahead log partition.</desc></const>
+    <const name="CephMultipathJournal"  value="849"><desc>Ceph multipath journal partition.</desc></const>
+    <const name="CephMultipathOSD"      value="851"><desc>Ceph multipath object storage deamon (OSD) partition.</desc></const>
+    <const name="CephOSD"               value="852"><desc>Ceph object storage deamon (OSD) partition.</desc></const>
+    <const name="CephOSDDmc"            value="853"><desc>Ceph dm-crypt object storage deamon (OSD) partition.</desc></const>
+    <const name="CephOSDDmcLUKS"        value="854"><desc>Ceph dm-crypt Linux unitified key setup (LUKS) object storage deamon (OSD) partition.</desc></const>
+  </enum>
+
+
   <!--
   // IVirtualBoxErrorInfo
   /////////////////////////////////////////////////////////////////////////
@@ -10299,8 +10497,173 @@
   </interface>
 
   <interface
+    name="IHostDrivePartition" extends="$unknown"
+    uuid="4f529a14-ace3-407c-9c49-066e8e8027f0"
+    wsmap="struct"
+    >
+    <desc>
+      The IHostDrivePartition interface represents the partition of the host drive.
+      To enumerate all available drives partitions in the host, use the
+      <link to="IHost::hostDrives"/> attribute.
+    </desc>
+
+    <attribute name="number" type="unsigned long" readonly="yes">
+      <desc>
+        The number of the partition.
+        <!-- @todo r=bird: This is weird numbering scheme for MBR disk as it goes 1,2,3,4,5,7,9,11,...
+             And has no practical use.  It would be better to use the system specific device node numbering here. -->
+      </desc>
+    </attribute>
+
+    <attribute name="size" type="long long" readonly="yes">
+      <desc>
+        The partition size in bytes.
+      </desc>
+    </attribute>
+
+    <attribute name="start" type="long long" readonly="yes">
+      <desc>
+        The start byte offset of this partition in bytes relative to the
+        beginning of the hard disk.
+      </desc>
+    </attribute>
+
+    <attribute name="type" type="PartitionType" readonly="yes">
+      <desc>
+        A translation of <link to="IHostDrivePartition::typeMBR"/> and
+        <link to="IHostDrivePartition::typeUuid"/> when possible, otherwise
+        set to <link to="PartitionType::Unknown" />.
+      </desc>
+    </attribute>
+
+    <attribute name="active" type="boolean" readonly="yes">
+      <desc>
+        The partition is bootable when TRUE.
+      </desc>
+    </attribute>
+
+    <!-- MBR: -->
+
+    <attribute name="typeMBR" type="unsigned long" readonly="yes">
+      <desc>
+        The raw MBR partition type, 0 for non-MBR disks.
+      </desc>
+    </attribute>
+
+    <attribute name="startCylinder" type="unsigned long" readonly="yes">
+      <desc>
+        The cylinder (0..1023) of the first sector in the partition on an MBR disk, zero for not an MBR disk.
+      </desc>
+    </attribute>
+
+    <attribute name="startHead" type="unsigned long" readonly="yes">
+      <desc>
+        The head (0..255) of the first sector in the partition on an MBR disk, zero for not an MBR disk.
+      </desc>
+    </attribute>
+
+    <attribute name="startSector" type="unsigned long" readonly="yes">
+      <desc>
+        The sector (0..63) of the first sector in the partition on an MBR disk, zero for not an MBR disk.
+      </desc>
+    </attribute>
+
+    <attribute name="endCylinder" type="unsigned long" readonly="yes">
+      <desc>
+        The cylinder (0..1023) of the last sector (inclusive) in the partition on an MBR disk, zero for not an MBR disk.
+      </desc>
+    </attribute>
+
+    <attribute name="endHead" type="unsigned long" readonly="yes">
+      <desc>
+        The head (0..255) of the last sector (inclusive) in the partition on an MBR disk, zero for not an MBR disk.
+      </desc>
+    </attribute>
+
+    <attribute name="endSector" type="unsigned long" readonly="yes">
+      <desc>
+        The sector (1..63) of the last sector (inclusive) in the partition on an MBR disk, zero for not an MBR disk.
+      </desc>
+    </attribute>
+
+    <!-- GPT: -->
+    <attribute name="typeUuid" type="uuid" mod="string" readonly="yes">
+    <!-- @todo r=bird: Not sure about the casing here. typeUUID Klaus? -->
+      <desc>
+        The partition type when GUID partitioning scheme is used, NULL UUID value for not a GPT disks.
+      </desc>
+    </attribute>
+
+    <attribute name="uuid" type="uuid" mod="string" readonly="yes">
+      <desc>
+        The GUID of the partition when GUID partitioning scheme is used, NULL UUID value for not a GPT disks.
+      </desc>
+    </attribute>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        The name of the partition if GPT partitioning is used, empty if not a GPT disk.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IHostDrive" extends="$unknown"
+    uuid="70e2e0c3-332c-4d72-b822-2db16e2cb31b"
+    wsmap="managed"
+    >
+    <desc>
+      The IHostDrive interface represents the drive of the physical machine.
+      It is not complete medium description and, therefore, it is not IMedium
+      based. The interface is used just for getting a host drive partitions info.
+    </desc>
+
+    <attribute name="drivePath" type="wstring" readonly="yes" wrap-hint-server="limitedcaller">
+      <desc>
+        The path of the drive. Platform dependent.
+      </desc>
+    </attribute>
+
+    <attribute name="partitioningType" type="PartitioningType" readonly="yes">
+     <desc>
+       The scheme of the partitions the disk has.
+     </desc>
+    </attribute>
+
+    <attribute name="uuid" type="uuid" mod="string" readonly="yes">
+      <desc>
+        The GUID of the disk.
+      </desc>
+    </attribute>
+
+    <attribute name="sectorSize" type="unsigned long" readonly="yes">
+     <desc>
+       The size of the sector in bytes.
+     </desc>
+    </attribute>
+
+    <attribute name="size" type="long long" readonly="yes">
+     <desc>
+       The size of the disk in bytes.
+     </desc>
+    </attribute>
+
+    <attribute name="model" type="wstring" readonly="yes">
+     <desc>
+       The model string of the drive if available.
+     </desc>
+    </attribute>
+
+    <attribute name="partitions" type="IHostDrivePartition" readonly="yes" safearray="yes">
+      <desc>List of partitions available on the host drive.</desc>
+    </attribute>
+
+  </interface>
+
+  <interface
     name="IHost" extends="$unknown"
-    uuid="16ced992-5fdc-4aba-aff5-6a39bbd7c38b"
+    uuid="fc0759a6-a5e2-41e1-93ca-64776335eb2d"
     wsmap="managed"
     reservedMethods="6" reservedAttributes="12"
     >
@@ -10390,6 +10753,10 @@
 
     <attribute name="processorOnlineCoreCount" type="unsigned long" readonly="yes">
       <desc>Number of physical processor cores online in the host system.</desc>
+    </attribute>
+
+    <attribute name="hostDrives" type="IHostDrive" readonly="yes" safearray="yes">
+      <desc>List of the host drive available to use in the VirtualBox.</desc>
     </attribute>
 
     <method name="getProcessorSpeed">

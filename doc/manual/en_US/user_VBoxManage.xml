@@ -482,6 +482,15 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
         </para>
       </listitem>
 
+      <listitem>
+        <para>
+          <command>hostdrives</command>: Displays a list of host fixed
+          drives with their partitions.  If you also specify
+          <option>--long</option> or <option>-l</option> the sizes and
+          offsets will be in bytes.
+        </para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
@@ -5293,7 +5302,11 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
                             [--size &lt;megabytes&gt;|--sizebyte &lt;bytes&gt;]
                             [--diffparent &lt;uuid&gt;|&lt;filename&gt;
                             [--format VDI|VMDK|VHD] (default: VDI)
-                            [--variant Standard,Fixed,Split2G,Stream,ESX]</screen>
+                            [--variant Standard,Fixed,Split2G,Stream,ESX,RawDisk]
+                            [[--property &lt;name&gt;=&lt;value&gt;]
+                             --property &lt;name&gt;=&lt;value&gt;]...
+                            [[--property-file &lt;name&gt;=&lt;/path/to/file/with/value&gt;]
+                             --property-file &lt;name&gt;=&lt;/path/to/file/with/value&gt;]...</screen>
 
     <para>
       The parameters are as follows:
@@ -5368,6 +5381,33 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             Options are Standard,Fixed,Split2G,Stream,ESX. Not all
             combinations are supported, and specifying mutually
             incompatible flags results in an error message. Optional.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <computeroutput>--property &lt;name&gt;=&lt;value&gt;</computeroutput>
+        </term>
+
+        <listitem>
+          <para>
+            Specifies any required file format dependent parameters in
+            <literal>key=value</literal> form. Optional.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <computeroutput>--property-file &lt;name&gt;=&lt;/path/to/file/with/value&gt;</computeroutput>
+        </term>
+
+        <listitem>
+          <para>
+            Specifies any required file format dependent parameters in
+            <literal>key=file/with/value</literal> form. The value is
+            taken from the file. Optional.
           </para>
         </listitem>
       </varlistentry>

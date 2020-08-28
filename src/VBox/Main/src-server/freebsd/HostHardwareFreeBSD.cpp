@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Classes for handling hardware detection under FreeBSD.
+ * VirtualBox Main - Code for handling hardware detection under FreeBSD, VBoxSVC.
  */
 
 /*
@@ -15,14 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP LOG_GROUP_MAIN
-
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
-#include <HostHardwareLinux.h>
+#define LOG_GROUP LOG_GROUP_MAIN
+#include "HostHardwareLinux.h"
 
 #include <VBox/log.h>
 
@@ -34,63 +32,70 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 
-#ifdef RT_OS_FREEBSD
-# include <sys/param.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <unistd.h>
-# include <stdio.h>
-# include <sys/ioctl.h>
-# include <fcntl.h>
-# include <cam/cam.h>
-# include <cam/cam_ccb.h>
-# include <cam/scsi/scsi_pass.h>
-#endif /* RT_OS_FREEBSD */
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <cam/cam.h>
+#include <cam/cam_ccb.h>
+#include <camlib.h>
+#include <cam/scsi/scsi_pass.h>
+
 #include <vector>
 
 
 /*********************************************************************************************************************************
 *   Typedefs and Defines                                                                                                         *
 *********************************************************************************************************************************/
+typedef enum DriveType_T
+{
+    Fixed,
+    DVD,
+    Any
+} DriveType_T;
 
-static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList,
-                               bool isDVD, bool *pfSuccess);
-static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess);
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList, bool isDVD, bool *pfSuccess) RT_NOTHROW_PROTP;
+static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, bool *pfSuccess) RT_NOTHROW_PROTP;
+
 
 /** Find the length of a string, ignoring trailing non-ascii or control
- * characters */
-static size_t strLenStripped(const char *pcsz)
+ * characters
+ * @note Code duplicated in HostHardwareLinux.cpp  */
+static size_t strLenStripped(const char *pcsz) RT_NOTHROW_DEF
 {
     size_t cch = 0;
     for (size_t i = 0; pcsz[i] != '\0'; ++i)
-        if (pcsz[i] > 32 && pcsz[i] < 127)
+        if (pcsz[i] > 32 /*space*/ && pcsz[i] < 127 /*delete*/)
             cch = i;
     return cch + 1;
 }
 
-static void strLenRemoveTrailingWhiteSpace(char *psz, size_t cchStr)
-{
-    while (   (cchStr > 0)
-           && (psz[cchStr -1] == ' '))
-        psz[--cchStr] = '\0';
-}
 
 /**
- * Initialise the device description for a DVD drive based on
- * vendor and model name strings.
- * @param pcszVendor  the vendor ID string
- * @param pcszModel   the product ID string
- * @param pszDesc    where to store the description string (optional)
- * @param cchDesc    the size of the buffer in @pszDesc
+ * Initialize the device description for a drive based on vendor and model name
+ * strings.
+ *
+ * @param   pcszVendor  The raw vendor ID string.
+ * @param   pcszModel   The raw product ID string.
+ * @param   pszDesc     Where to store the description string (optional)
+ * @param   cbDesc      The size of the buffer in @pszDesc
+ *
+ * @note    Used for disks as well as DVDs.
  */
 /* static */
-void dvdCreateDeviceString(const char *pcszVendor, const char *pcszModel,
-                            char *pszDesc, size_t cchDesc)
+void dvdCreateDeviceString(const char *pcszVendor, const char *pcszModel, char *pszDesc, size_t cbDesc) RT_NOTHROW_DEF
 {
     AssertPtrReturnVoid(pcszVendor);
     AssertPtrReturnVoid(pcszModel);
     AssertPtrNullReturnVoid(pszDesc);
-    AssertReturnVoid(!pszDesc || cchDesc > 0);
+    AssertReturnVoid(!pszDesc || cbDesc > 0);
     size_t cchVendor = strLenStripped(pcszVendor);
     size_t cchModel = strLenStripped(pcszModel);
 
@@ -98,32 +103,30 @@ void dvdCreateDeviceString(const char *pcszVendor, const char *pcszModel,
     if (pszDesc)
     {
         if (cchVendor > 0)
-            RTStrPrintf(pszDesc, cchDesc, "%.*s %s", cchVendor, pcszVendor,
+            RTStrPrintf(pszDesc, cbDesc, "%.*s %s", cchVendor, pcszVendor,
                         cchModel > 0 ? pcszModel : "(unknown drive model)");
         else
-            RTStrPrintf(pszDesc, cchDesc, "%s", pcszModel);
+            RTStrPrintf(pszDesc, cbDesc, "%s", pcszModel);
+        RTStrPurgeEncoding(pszDesc);
     }
 }
 
 
-int VBoxMainDriveInfo::updateDVDs ()
+int VBoxMainDriveInfo::updateDVDs() RT_NOEXCEPT
 {
     LogFlowThisFunc(("entered\n"));
-    int rc = VINF_SUCCESS;
-    bool fSuccess = false;  /* Have we succeeded in finding anything yet? */
-
+    int rc;
     try
     {
-        mDVDList.clear ();
+        mDVDList.clear();
         /* Always allow the user to override our auto-detection using an
          * environment variable. */
+        bool fSuccess = false;  /* Have we succeeded in finding anything yet? */
+        rc = getDriveInfoFromEnv("VBOX_CDROM", &mDVDList, true /* isDVD */, &fSuccess);
         if (RT_SUCCESS(rc) && !fSuccess)
-            rc = getDriveInfoFromEnv("VBOX_CDROM", &mDVDList, true /* isDVD */,
-                                     &fSuccess);
-        if (RT_SUCCESS(rc) && !fSuccess)
-            rc = getDVDInfoFromCAM(&mDVDList, &fSuccess);
+            rc = getDriveInfoFromCAM(&mDVDList, DVD, &fSuccess);
     }
-    catch(std::bad_alloc &e)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -131,43 +134,186 @@ int VBoxMainDriveInfo::updateDVDs ()
     return rc;
 }
 
-int VBoxMainDriveInfo::updateFloppies ()
+int VBoxMainDriveInfo::updateFloppies() RT_NOEXCEPT
 {
     LogFlowThisFunc(("entered\n"));
-    int rc = VINF_SUCCESS;
-    bool fSuccess = false;  /* Have we succeeded in finding anything yet? */
-
+    int rc;
     try
     {
-        mFloppyList.clear ();
-        /* Always allow the user to override our auto-detection using an
-         * environment variable. */
-        if (RT_SUCCESS(rc) && !fSuccess)
-            rc = getDriveInfoFromEnv("VBOX_FLOPPY", &mFloppyList, false /* isDVD */,
-                                     &fSuccess);
+        /* Only got the enviornment variable here... */
+        mFloppyList.clear();
+        bool fSuccess = false;  /* ignored */
+        rc = getDriveInfoFromEnv("VBOX_FLOPPY", &mFloppyList, false /* isDVD */, &fSuccess);
     }
-    catch(std::bad_alloc &e)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
     LogFlowThisFunc(("rc=%Rrc\n", rc));
     return rc;
 }
+
+int VBoxMainDriveInfo::updateFixedDrives() RT_NOEXCEPT
+{
+    LogFlowThisFunc(("entered\n"));
+    int rc;
+    try
+    {
+        mFixedDriveList.clear();
+        bool fSuccess = false;  /* ignored */
+        rc = getDriveInfoFromCAM(&mFixedDriveList, Fixed, &fSuccess);
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+    LogFlowThisFunc(("rc=%Rrc\n", rc));
+    return rc;
+}
+
+static void strDeviceStringSCSI(device_match_result *pDevResult, char *pszDesc, size_t cbDesc) RT_NOTHROW_DEF
+{
+    char szVendor[128];
+    cam_strvis((uint8_t *)szVendor, (const uint8_t *)pDevResult->inq_data.vendor,
+               sizeof(pDevResult->inq_data.vendor), sizeof(szVendor));
+    char szProduct[128];
+    cam_strvis((uint8_t *)szProduct, (const uint8_t *)pDevResult->inq_data.product,
+               sizeof(pDevResult->inq_data.product), sizeof(szProduct));
+    dvdCreateDeviceString(szVendor, szProduct, pszDesc, cbDesc);
+}
+
+static void strDeviceStringATA(device_match_result *pDevResult, char *pszDesc, size_t cbDesc) RT_NOTHROW_DEF
+{
+    char szProduct[256];
+    cam_strvis((uint8_t *)szProduct, (const uint8_t *)pDevResult->ident_data.model,
+               sizeof(pDevResult->ident_data.model), sizeof(szProduct));
+    dvdCreateDeviceString("", szProduct, pszDesc, cbDesc);
+}
+
+static void strDeviceStringSEMB(device_match_result *pDevResult, char *pszDesc, size_t cbDesc) RT_NOTHROW_DEF
+{
+    sep_identify_data *pSid = (sep_identify_data *)&pDevResult->ident_data;
+
+    char szVendor[128];
+    cam_strvis((uint8_t *)szVendor, (const uint8_t *)pSid->vendor_id,
+               sizeof(pSid->vendor_id), sizeof(szVendor));
+    char szProduct[128];
+    cam_strvis((uint8_t *)szProduct, (const uint8_t *)pSid->product_id,
+               sizeof(pSid->product_id), sizeof(szProduct));
+    dvdCreateDeviceString(szVendor, szProduct, pszDesc, cbDesc);
+}
+
+static void strDeviceStringMMCSD(device_match_result *pDevResult, char *pszDesc, size_t cbDesc)  RT_NOTHROW_DEF
+{
+    struct cam_device *pDev = cam_open_btl(pDevResult->path_id, pDevResult->target_id,
+                                           pDevResult->target_lun, O_RDWR, NULL);
+    if (pDev == NULL)
+    {
+        Log(("Error while opening drive device. Error: %s\n", cam_errbuf));
+        return;
+    }
+
+    union ccb *pCcb = cam_getccb(pDev);
+    if (pCcb != NULL)
+    {
+        struct mmc_params mmcIdentData;
+        RT_ZERO(mmcIdentData);
+
+        struct ccb_dev_advinfo *pAdvi = &pCcb->cdai;
+        pAdvi->ccb_h.flags = CAM_DIR_IN;
+        pAdvi->ccb_h.func_code = XPT_DEV_ADVINFO;
+        pAdvi->flags = CDAI_FLAG_NONE;
+        pAdvi->buftype = CDAI_TYPE_MMC_PARAMS;
+        pAdvi->bufsiz = sizeof(mmcIdentData);
+        pAdvi->buf = (uint8_t *)&mmcIdentData;
+
+        if (cam_send_ccb(pDev, pCcb) >= 0)
+        {
+            if (strlen((char *)mmcIdentData.model) > 0)
+                dvdCreateDeviceString("", (const char *)mmcIdentData.model, pszDesc, cbDesc);
+            else
+                dvdCreateDeviceString("", mmcIdentData.card_features & CARD_FEATURE_SDIO ? "SDIO card" : "Unknown card",
+                                      pszDesc, cbDesc);
+        }
+        else
+            Log(("error sending XPT_DEV_ADVINFO CCB\n"));
+
+        cam_freeccb(pCcb);
+    }
+    else
+        Log(("Could not allocate CCB\n"));
+    cam_close_device(pDev);
+}
+
+/** @returns boolean success indicator (true/false). */
+static int nvmeGetCData(struct cam_device *pDev, struct nvme_controller_data *pCData) RT_NOTHROW_DEF
+{
+    bool fSuccess = false;
+    union ccb *pCcb = cam_getccb(pDev);
+    if (pCcb != NULL)
+    {
+        struct ccb_dev_advinfo *pAdvi = &pCcb->cdai;
+        pAdvi->ccb_h.flags = CAM_DIR_IN;
+        pAdvi->ccb_h.func_code = XPT_DEV_ADVINFO;
+        pAdvi->flags = CDAI_FLAG_NONE;
+        pAdvi->buftype = CDAI_TYPE_NVME_CNTRL;
+        pAdvi->bufsiz = sizeof(struct nvme_controller_data);
+        pAdvi->buf = (uint8_t *)pCData;
+        RT_BZERO(pAdvi->buf, pAdvi->bufsiz);
+
+        if (cam_send_ccb(pDev, pCcb) >= 0)
+        {
+            if (pAdvi->ccb_h.status == CAM_REQ_CMP)
+                fSuccess = true;
+            else
+                Log(("Got CAM error %#x\n", pAdvi->ccb_h.status));
+        }
+        else
+            Log(("Error sending XPT_DEV_ADVINFO CC\n"));
+        cam_freeccb(pCcb);
+    }
+    else
+        Log(("Could not allocate CCB\n"));
+    return fSuccess;
+}
+
+static void strDeviceStringNVME(device_match_result *pDevResult, char *pszDesc, size_t cbDesc) RT_NOTHROW_DEF
+{
+    struct cam_device *pDev = cam_open_btl(pDevResult->path_id, pDevResult->target_id,
+                                           pDevResult->target_lun, O_RDWR, NULL);
+    if (pDev)
+    {
+        struct nvme_controller_data CData;
+        if (nvmeGetCData(pDev, &CData))
+        {
+            char szVendor[128];
+            cam_strvis((uint8_t *)szVendor, CData.mn, sizeof(CData.mn), sizeof(szVendor));
+            char szProduct[128];
+            cam_strvis((uint8_t *)szProduct, CData.fr, sizeof(CData.fr), sizeof(szProduct));
+            dvdCreateDeviceString(szVendor, szProduct, pszDesc, cbDesc);
+        }
+        else
+            Log(("Error while getting NVME drive info\n"));
+        cam_close_device(pDev);
+    }
+    else
+        Log(("Error while opening drive device. Error: %s\n", cam_errbuf));
+}
+
 
 /**
- * Search for available CD/DVD drives using the CAM layer.
+ * Search for available drives using the CAM layer.
  *
  * @returns iprt status code
- * @param   pList      the list to append the drives found to
- * @param   pfSuccess  this will be set to true if we found at least one drive
- *                     and to false otherwise.  Optional.
+ * @param   pList         the list to append the drives found to
+ * @param   enmDriveType  search drives of specified type
+ * @param   pfSuccess     this will be set to true if we found at least one drive
+ *                        and to false otherwise.  Optional.
  */
-static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
+static int getDriveInfoFromCAM(DriveInfoList *pList, DriveType_T enmDriveType, bool *pfSuccess) RT_NOTHROW_DEF
 {
-    int rc = VINF_SUCCESS;
-    RTFILE FileXpt;
-
-    rc = RTFileOpen(&FileXpt, "/dev/xpt0", RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    RTFILE hFileXpt = NIL_RTFILE;
+    int rc = RTFileOpen(&hFileXpt, "/dev/xpt0", RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         union ccb DeviceCCB;
@@ -195,7 +341,8 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
 #else
  #define INQ_PAT inq_pat
 #endif
-        DeviceMatchPattern.pattern.device_pattern.INQ_PAT.type = T_CDROM;
+        DeviceMatchPattern.pattern.device_pattern.INQ_PAT.type = enmDriveType == Fixed ? T_DIRECT
+                                                               : enmDriveType == DVD   ? T_CDROM : T_ANY;
         DeviceMatchPattern.pattern.device_pattern.INQ_PAT.media_type  = SIP_MEDIA_REMOVABLE | SIP_MEDIA_FIXED;
         DeviceMatchPattern.pattern.device_pattern.INQ_PAT.vendor[0]   = '*'; /* Matches anything */
         DeviceMatchPattern.pattern.device_pattern.INQ_PAT.product[0]  = '*'; /* Matches anything */
@@ -219,7 +366,7 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
 
             do
             {
-                rc = RTFileIoCtl(FileXpt, CAMIOCOMMAND, &DeviceCCB, sizeof(union ccb), NULL);
+                rc = RTFileIoCtl(hFileXpt, CAMIOCOMMAND, &DeviceCCB, sizeof(union ccb), NULL);
                 if (RT_FAILURE(rc))
                 {
                     Log(("Error while querying available CD/DVD devices rc=%Rrc\n", rc));
@@ -230,6 +377,14 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
                 {
                     if (paMatches[i].type == DEV_MATCH_DEVICE)
                     {
+                        /*
+                         * The result list can contain some empty entries with DEV_RESULT_UNCONFIGURED
+                         * flag set, e.g. in case of T_DIRECT. Ignore them.
+                         */
+                        if (   (paMatches[i].result.device_result.flags & DEV_RESULT_UNCONFIGURED)
+                            == DEV_RESULT_UNCONFIGURED)
+                            continue;
+
                         /* We have the drive now but need the appropriate device node */
                         struct device_match_result *pDevResult = &paMatches[i].result.device_result;
                         union ccb PeriphCCB;
@@ -253,7 +408,8 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
                         PeriphMatchPattern.pattern.periph_pattern.path_id    = paMatches[i].result.device_result.path_id;
                         PeriphMatchPattern.pattern.periph_pattern.target_id  = paMatches[i].result.device_result.target_id;
                         PeriphMatchPattern.pattern.periph_pattern.target_lun = paMatches[i].result.device_result.target_lun;
-                        PeriphMatchPattern.pattern.periph_pattern.flags      = (periph_pattern_flags)(  PERIPH_MATCH_PATH | PERIPH_MATCH_TARGET
+                        PeriphMatchPattern.pattern.periph_pattern.flags      = (periph_pattern_flags)(  PERIPH_MATCH_PATH
+                                                                                                      | PERIPH_MATCH_TARGET
                                                                                                       | PERIPH_MATCH_LUN);
                         PeriphCCB.cdm.num_patterns    = 1;
                         PeriphCCB.cdm.pattern_buf_len = sizeof(struct dev_match_result);
@@ -264,7 +420,7 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
 
                         do
                         {
-                            rc = RTFileIoCtl(FileXpt, CAMIOCOMMAND, &PeriphCCB, sizeof(union ccb), NULL);
+                            rc = RTFileIoCtl(hFileXpt, CAMIOCOMMAND, &PeriphCCB, sizeof(union ccb), NULL);
                             if (RT_FAILURE(rc))
                             {
                                 Log(("Error while querying available periph devices rc=%Rrc\n", rc));
@@ -273,8 +429,9 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
 
                             for (iPeriphMatch = 0; iPeriphMatch < PeriphCCB.cdm.num_matches; iPeriphMatch++)
                             {
-                                if (   (aPeriphMatches[iPeriphMatch].type == DEV_MATCH_PERIPH)
-                                    && (!strcmp(aPeriphMatches[iPeriphMatch].result.periph_result.periph_name, "cd")))
+                                /* Ignore "passthrough mode" paths */
+                                if (   aPeriphMatches[iPeriphMatch].type == DEV_MATCH_PERIPH
+                                    && strcmp(aPeriphMatches[iPeriphMatch].result.periph_result.periph_name, "pass"))
                                 {
                                     pPeriphResult = &aPeriphMatches[iPeriphMatch].result.periph_result;
                                     break; /* We found the periph device */
@@ -284,50 +441,61 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
                             if (iPeriphMatch < PeriphCCB.cdm.num_matches)
                                 break;
 
-                        } while (   (DeviceCCB.ccb_h.status == CAM_REQ_CMP)
-                                 && (DeviceCCB.cdm.status == CAM_DEV_MATCH_MORE));
+                        } while (   DeviceCCB.ccb_h.status == CAM_REQ_CMP
+                                 && DeviceCCB.cdm.status == CAM_DEV_MATCH_MORE);
 
                         if (pPeriphResult)
                         {
                             char szPath[RTPATH_MAX];
-                            char szDesc[256];
-
                             RTStrPrintf(szPath, sizeof(szPath), "/dev/%s%d",
                                         pPeriphResult->periph_name, pPeriphResult->unit_number);
 
-                            /* Remove trailing white space. */
-                            strLenRemoveTrailingWhiteSpace(pDevResult->inq_data.vendor,
-                                                            sizeof(pDevResult->inq_data.vendor));
-                            strLenRemoveTrailingWhiteSpace(pDevResult->inq_data.product,
-                                                            sizeof(pDevResult->inq_data.product));
+                            char szDesc[256] = { 0 };
+                            switch (pDevResult->protocol)
+                            {
+                                case PROTO_SCSI:  strDeviceStringSCSI( pDevResult, szDesc, sizeof(szDesc)); break;
+                                case PROTO_ATA:   strDeviceStringATA(  pDevResult, szDesc, sizeof(szDesc)); break;
+                                case PROTO_MMCSD: strDeviceStringMMCSD(pDevResult, szDesc, sizeof(szDesc)); break;
+                                case PROTO_SEMB:  strDeviceStringSEMB( pDevResult, szDesc, sizeof(szDesc)); break;
+                                case PROTO_NVME:  strDeviceStringNVME( pDevResult, szDesc, sizeof(szDesc)); break;
+                                default: break;
+                            }
 
-                            dvdCreateDeviceString(pDevResult->inq_data.vendor,
-                                                    pDevResult->inq_data.product,
-                                                    szDesc, sizeof(szDesc));
-
-                            pList->push_back(DriveInfo(szPath, "", szDesc));
+                            try
+                            {
+                                pList->push_back(DriveInfo(szPath, "", szDesc));
+                            }
+                            catch (std::bad_alloc &)
+                            {
+                                pList->clear();
+                                rc = VERR_NO_MEMORY;
+                                break;
+                            }
                             if (pfSuccess)
                                 *pfSuccess = true;
                         }
                     }
                 }
-            } while (   (DeviceCCB.ccb_h.status == CAM_REQ_CMP)
-                     && (DeviceCCB.cdm.status == CAM_DEV_MATCH_MORE));
+            } while (   DeviceCCB.ccb_h.status == CAM_REQ_CMP
+                     && DeviceCCB.cdm.status == CAM_DEV_MATCH_MORE
+                     && RT_SUCCESS(rc));
 
             RTMemFree(paMatches);
         }
         else
             rc = VERR_NO_MEMORY;
 
-        RTFileClose(FileXpt);
+        RTFileClose(hFileXpt);
     }
 
     return rc;
 }
 
+
 /**
  * Extract the names of drives from an environment variable and add them to a
  * list if they are valid.
+ *
  * @returns iprt status code
  * @param   pcszVar     the name of the environment variable.  The variable
  *                     value should be a list of device node names, separated
@@ -336,45 +504,42 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
  * @param   isDVD      are we looking for DVD drives or for floppies?
  * @param   pfSuccess  this will be set to true if we found at least one drive
  *                     and to false otherwise.  Optional.
+ *
+ * @note    This is duplicated in HostHardwareLinux.cpp.
  */
-static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList,
-                               bool isDVD, bool *pfSuccess)
+static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList, bool isDVD, bool *pfSuccess) RT_NOTHROW_DEF
 {
     AssertPtrReturn(pcszVar, VERR_INVALID_POINTER);
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER);
-    LogFlowFunc(("pcszVar=%s, pList=%p, isDVD=%d, pfSuccess=%p\n", pcszVar,
-                 pList, isDVD, pfSuccess));
+    LogFlowFunc(("pcszVar=%s, pList=%p, isDVD=%d, pfSuccess=%p\n", pcszVar, pList, isDVD, pfSuccess));
     int rc = VINF_SUCCESS;
     bool success = false;
     char *pszFreeMe = RTEnvDupEx(RTENV_DEFAULT, pcszVar);
 
     try
     {
-        const char *pcszCurrent = pszFreeMe;
-        while (pcszCurrent && *pcszCurrent != '\0')
+        char *pszCurrent = pszFreeMe;
+        while (pszCurrent && *pszCurrent != '\0')
         {
-            const char *pcszNext = strchr(pcszCurrent, ':');
-            char szPath[RTPATH_MAX], szReal[RTPATH_MAX];
-            char szDesc[256], szUdi[256];
-            if (pcszNext)
-                RTStrPrintf(szPath, sizeof(szPath), "%.*s",
-                            pcszNext - pcszCurrent - 1, pcszCurrent);
-            else
-                RTStrPrintf(szPath, sizeof(szPath), "%s", pcszCurrent);
-            if (RT_SUCCESS(RTPathReal(szPath, szReal, sizeof(szReal))))
+            char *pszNext = strchr(pszCurrent, ':');
+            if (pszNext)
+                *pszNext++ = '\0';
+
+            char szReal[RTPATH_MAX];
+            char szDesc[1] = "", szUdi[1] = ""; /* differs on freebsd because no devValidateDevice */
+            if (   RT_SUCCESS(RTPathReal(pszCurrent, szReal, sizeof(szReal)))
+                /*&& devValidateDevice(szReal, isDVD, NULL, szDesc, sizeof(szDesc), szUdi, sizeof(szUdi)) - linux only */)
             {
-                szUdi[0] = '\0'; /** @todo r=bird: missing a call to devValidateDevice() here and szUdi wasn't
-                                  *        initialized because of that.  Need proper fixing. */
                 pList->push_back(DriveInfo(szReal, szUdi, szDesc));
                 success = true;
             }
-            pcszCurrent = pcszNext ? pcszNext + 1 : NULL;
+            pszCurrent = pszNext;
         }
         if (pfSuccess != NULL)
             *pfSuccess = success;
     }
-    catch(std::bad_alloc &e)
+    catch (std::bad_alloc &)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -382,3 +547,4 @@ static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList,
     LogFlowFunc(("rc=%Rrc, success=%d\n", rc, success));
     return rc;
 }
+

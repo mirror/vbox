@@ -332,6 +332,19 @@ public:
     void setLimited() { mResult = Limited; }
 
     /**
+     * Sets the initialization status to Succeeded to indicate limited
+     * (partly successful) initialization but also adds the initialization
+     * error if required for further reporting. The AutoInitSpan destructor
+     * will place the managed VirtualBoxBase object to the Limited state.
+     */
+    void setLimited(HRESULT rc)
+    {
+        mResult = Limited;
+        mFailedRC = rc;
+        mpFailedEI = new ErrorInfo();
+    }
+
+    /**
      * Sets the initialization status to Failure to indicates failed
      * initialization. The AutoInitSpan destructor will place the managed
      * VirtualBoxBase object to the InitFailed state and will automatically

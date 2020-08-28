@@ -28,6 +28,7 @@
 #include <VBox/com/VirtualBox.h>
 
 #include <iprt/asm.h>
+#include <iprt/base64.h>
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
@@ -37,6 +38,8 @@
 #include <iprt/getopt.h>
 #include <VBox/log.h>
 #include <VBox/vd.h>
+
+#include <list>
 
 #include "VBoxManage.h"
 using namespace com;
@@ -95,6 +98,9 @@ static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
                 uMediumVariant |= MediumVariant_VmdkESX;
             else if (!RTStrNICmp(psz, "formatted", len))
                 uMediumVariant |= MediumVariant_Formatted;
+            else if (   !RTStrNICmp(psz, "raw", len)
+                     || !RTStrNICmp(psz, "rawdisk", len))
+                uMediumVariant |= MediumVariant_VmdkRawDisk;
             else
                 rc = VERR_PARSE_ERROR;
         }
@@ -243,23 +249,62 @@ static const RTGETOPTDEF g_aCreateMediumOptions[] =
     { "-static",        'F', RTGETOPT_REQ_NOTHING },    // deprecated
     { "--variant",      'm', RTGETOPT_REQ_STRING },
     { "-variant",       'm', RTGETOPT_REQ_STRING },     // deprecated
-    { "--property",     'p', RTGETOPT_REQ_STRING }
+    { "--property",     'p', RTGETOPT_REQ_STRING },
+    { "--property-file",'P', RTGETOPT_REQ_STRING },
 };
 
 RTEXITCODE handleCreateMedium(HandlerArg *a)
 {
+    class MediumProperty
+    {
+    public:
+        const char *m_pszKey;
+        const char *m_pszValue; /**< Can be binary too. */
+        size_t      m_cbValue;
+        char       *m_pszFreeValue;
+        MediumProperty() : m_pszKey(NULL), m_pszValue(NULL), m_cbValue(0), m_pszFreeValue(NULL) { }
+        MediumProperty(MediumProperty const &a_rThat)
+            : m_pszKey(a_rThat.m_pszKey)
+            , m_pszValue(a_rThat.m_pszValue)
+            , m_cbValue(a_rThat.m_cbValue)
+            , m_pszFreeValue(NULL)
+        {
+            Assert(a_rThat.m_pszFreeValue == NULL); /* not expected here! */
+        }
+        ~MediumProperty()
+        {
+            RTMemFree(m_pszFreeValue);
+            m_pszFreeValue = NULL;
+        }
+
+    private:
+        MediumProperty &operator=(MediumProperty const &a_rThat)
+        {
+            m_pszKey = a_rThat.m_pszKey;
+            m_pszValue = a_rThat.m_pszValue;
+            m_cbValue = a_rThat.m_cbValue;
+            m_pszFreeValue = a_rThat.m_pszFreeValue;
+            if (a_rThat.m_pszFreeValue != NULL)
+            {
+                m_pszFreeValue = (char *)RTMemAlloc(m_cbValue + 1);
+                if (m_pszFreeValue)
+                {
+                    memcpy(m_pszFreeValue, m_pszValue, m_cbValue + 1);
+                    m_pszValue = m_pszFreeValue;
+                }
+                else
+                    RTMsgError("Out of memory copying '%s'", m_pszValue);
+            }
+            return *this;
+        }
+    };
+    std::list<MediumProperty> lstProperties;
+
     HRESULT rc;
     int vrc;
     const char *filename = NULL;
     const char *diffparent = NULL;
     uint64_t size = 0;
-    typedef struct MEDIUMPROPERTY_LIST
-    {
-        struct MEDIUMPROPERTY_LIST *next;
-        const char *key;
-        const char *value;
-    } MEDIUMPROPERTY, *PMEDIUMPROPERTY;
-    PMEDIUMPROPERTY pMediumProps = NULL;
     enum
     {
         CMD_NONE,
@@ -321,30 +366,57 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 break;
 
             case 'p':   // --property
+            case 'P':   // --property-file
             {
                 /* allocate property kvp, parse, and append to end of singly linked list */
-# define PROP_MAXLEN 256
-                PMEDIUMPROPERTY pNewProp = (PMEDIUMPROPERTY)RTMemAlloc(sizeof(MEDIUMPROPERTY));
-                if (!pNewProp)
-                    return errorArgument("Can't allocate memory for property '%s'", ValueUnion.psz);
-                size_t cchKvp = RTStrNLen(ValueUnion.psz, PROP_MAXLEN);
-                char *pszEqual = (char *)memchr(ValueUnion.psz, '=', cchKvp);
-                if (pszEqual)
+                char *pszValue = (char *)strchr(ValueUnion.psz, '=');
+                if (!pszValue)
+                    return RTMsgErrorExitFailure("Invalid key value pair: No '='.");
+
+                lstProperties.push_back(MediumProperty());
+                MediumProperty &rNewProp = lstProperties.back();
+                *pszValue++ = '\0';       /* Warning! Modifies argument string. */
+                rNewProp.m_pszKey = ValueUnion.psz;
+                if (c == 'p')
                 {
-                    *pszEqual = '\0';       /* Warning! Modifies argument string. */
-                    pNewProp->next = NULL;
-                    pNewProp->key = (char *)ValueUnion.psz;
-                    pNewProp->value = pszEqual + 1;
+                    rNewProp.m_pszValue = pszValue;
+                    rNewProp.m_cbValue  = strlen(pszValue);
                 }
-                if (pMediumProps)
+                else // 'P'
                 {
-                    PMEDIUMPROPERTY pProp;
-                    for (pProp = pMediumProps; pProp->next; pProp = pProp->next)
-                        continue;
-                    pProp->next = pNewProp;
+                    RTFILE hValueFile = NIL_RTFILE;
+                    vrc = RTFileOpen(&hValueFile, pszValue, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+                    if (RT_FAILURE(vrc))
+                        return RTMsgErrorExitFailure("Cannot open replacement value file '%s': %Rrc", pszValue, vrc);
+
+                    uint64_t cbValue = 0;
+                    vrc = RTFileQuerySize(hValueFile, &cbValue);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        if (cbValue <= _16M)
+                        {
+                            rNewProp.m_cbValue  = (size_t)cbValue;
+                            rNewProp.m_pszValue = rNewProp.m_pszFreeValue = (char *)RTMemAlloc(rNewProp.m_cbValue + 1);
+                            if (rNewProp.m_pszFreeValue)
+                            {
+                                vrc = RTFileReadAt(hValueFile, 0, rNewProp.m_pszFreeValue, cbValue, NULL);
+                                if (RT_SUCCESS(vrc))
+                                    rNewProp.m_pszFreeValue[rNewProp.m_cbValue] = '\0';
+                                else
+                                    RTMsgError("Error reading replacement MBR file '%s': %Rrc", pszValue, vrc);
+                            }
+                            else
+                                vrc = RTMsgErrorRc(VERR_NO_MEMORY, "Out of memory reading '%s': %Rrc", pszValue, vrc);
+                        }
+                        else
+                            vrc = RTMsgErrorRc(VERR_OUT_OF_RANGE, "Replacement value file '%s' is to big: %Rhcb, max 16MiB", pszValue, cbValue);
+                    }
+                    else
+                        RTMsgError("Cannot get the size of the value file '%s': %Rrc", pszValue, vrc);
+                    RTFileClose(hValueFile);
+                    if (RT_FAILURE(vrc))
+                        return RTEXITCODE_FAILURE;
                 }
-                else
-                    pMediumProps = pNewProp;
                 break;
             }
 
@@ -388,10 +460,10 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     ComPtr<IMedium> pParentMedium;
     if (fBase)
     {
-        if (   !filename
-            || !*filename
-            || size == 0)
-            return errorSyntax(USAGE_CREATEMEDIUM, "Parameters --filename and --size are required");
+        if (!filename || !*filename)
+            return errorSyntax(USAGE_CREATEMEDIUM, "Parameters --filename is required");
+        if ((enmMediumVariant & MediumVariant_VmdkRawDisk) == 0 && size == 0)
+            return errorSyntax(USAGE_CREATEMEDIUM, "Parameters --size is required");
         if (!format || !*format)
         {
             if (cmd == CMD_DISK)
@@ -481,14 +553,49 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
 
     if (SUCCEEDED(rc) && pMedium)
     {
-        if (pMediumProps)
-            for (PMEDIUMPROPERTY pProp = pMediumProps; pProp;)
+        if (lstProperties.size() > 0)
+        {
+            ComPtr<IMediumFormat> pMediumFormat;
+            CHECK_ERROR2I_RET(pMedium, COMGETTER(MediumFormat)(pMediumFormat.asOutParam()), RTEXITCODE_FAILURE);
+            com::SafeArray<BSTR> propertyNames;
+            com::SafeArray<BSTR> propertyDescriptions;
+            com::SafeArray<DataType_T> propertyTypes;
+            com::SafeArray<ULONG> propertyFlags;
+            com::SafeArray<BSTR> propertyDefaults;
+            CHECK_ERROR2I_RET(pMediumFormat,
+                              DescribeProperties(ComSafeArrayAsOutParam(propertyNames),
+                                                 ComSafeArrayAsOutParam(propertyDescriptions),
+                                                 ComSafeArrayAsOutParam(propertyTypes),
+                                                 ComSafeArrayAsOutParam(propertyFlags),
+                                                 ComSafeArrayAsOutParam(propertyDefaults)),
+                              RTEXITCODE_FAILURE);
+
+            for (std::list<MediumProperty>::iterator it = lstProperties.begin();
+                 it != lstProperties.end();
+                 ++it)
             {
-                CHECK_ERROR(pMedium, SetProperty(Bstr(pProp->key).raw(), Bstr(pProp->value).raw()));
-                PMEDIUMPROPERTY next = pProp->next;
-                RTMemFree(pProp);
-                pProp = next;
+                const char * const pszKey = it->m_pszKey;
+                bool fBinary = true;
+                for (size_t i = 0; i < propertyNames.size(); ++i)
+                    if (RTUtf16CmpUtf8(propertyNames[i], pszKey) == 0)
+                    {
+                        fBinary = propertyTypes[i] == DataType_Int8;
+                        break;
+                    }
+                if (!fBinary)
+                    CHECK_ERROR2I_RET(pMedium, SetProperty(Bstr(pszKey).raw(), Bstr(it->m_pszValue).raw()),
+                                      RTEXITCODE_FAILURE);
+                else
+                {
+                    com::Bstr bstrBase64Value;
+                    HRESULT hrc = bstrBase64Value.base64Encode(it->m_pszValue, it->m_cbValue);
+                    if (FAILED(hrc))
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Base64 encoding of the property %s failed. (%Rhrc)",
+                                              pszKey, hrc);
+                    CHECK_ERROR2I_RET(pMedium, SetProperty(Bstr(pszKey).raw(), bstrBase64Value.raw()), RTEXITCODE_FAILURE);
+                }
             }
+        }
 
         ComPtr<IProgress> pProgress;
         com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);

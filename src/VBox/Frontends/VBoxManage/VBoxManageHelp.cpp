@@ -479,9 +479,9 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            usbhost|usbfilters|systemproperties|extpacks|\n"
                      "                            groups|webcams|screenshotformats|cloudproviders|\n"
 #if defined(VBOX_WITH_CLOUD_NET)
-                     "                            cloudprofiles|cloudnets|cpu-profiles\n"
+                     "                            cloudprofiles|cloudnets|cpu-profiles|hostdrives\n"
 #else
-                     "                            cloudprofiles|cpu-profiles\n"
+                     "                            cloudprofiles|cpu-profiles|hostdrives\n"
 #endif
                      "\n", SEP);
 
@@ -1010,8 +1010,9 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--diffparent <uuid>|<filename>]\n"
                      "                            [--format VDI|VMDK|VHD] (default: VDI)]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX,\n"
-                     "                                       Formatted]\n"
-                     "                            [[--property <name>=<value>] --property <name>=<value]...\n"
+                     "                                       Formatted,RawDisk]\n"
+                     "                            [[--property <name>=<value>] --property <name>=<value>\n"
+                     "                              --property-file <name>=</path/to/file/with/value>]...\n"
                      "\n", SEP);
 
     if (enmCommand == USAGE_MODIFYMEDIUM || enmCommand == USAGE_S_ALL)

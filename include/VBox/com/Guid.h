@@ -323,6 +323,10 @@ public:
     bool operator<(const GUID &guid) const { return ::RTUuidCompare(&mUuid, (PRTUUID)&guid) < 0; }
     bool operator<(const RTUUID &guid) const { return ::RTUuidCompare(&mUuid, &guid) < 0; }
 
+    /** Compare with a UUID string representation.
+     * @note Not an operator as that could lead to confusion.  */
+    bool equalsString(const char *pszUuid2) const { return ::RTUuidCompareStr(&mUuid, pszUuid2) == 0; }
+
     /**
      * To directly copy the contents to a GUID, or for passing it as an input
      * parameter of type (const GUID *), the compiler converts. */

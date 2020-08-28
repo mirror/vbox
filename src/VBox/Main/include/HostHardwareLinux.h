@@ -68,14 +68,21 @@ public:
      * until the first time this method is called.
      * @returns iprt status code
      */
-    int updateFloppies();
+    int updateFloppies() RT_NOEXCEPT;
 
     /**
      * Search for host DVD drives and rebuild the list, which remains empty
      * until the first time this method is called.
      * @returns iprt status code
      */
-    int updateDVDs();
+    int updateDVDs() RT_NOEXCEPT;
+
+    /**
+     * Search for fixed disks (HDDs) and rebuild the list, which remains empty until
+     * the first time this method is called.
+     * @returns iprt status code
+     */
+    int updateFixedDrives() RT_NOEXCEPT;
 
     /** Get the first element in the list of floppy drives. */
     DriveInfoList::const_iterator FloppyBegin()
@@ -100,11 +107,25 @@ public:
     {
         return mDVDList.end();
     }
+
+    /** Get the first element in the list of fixed drives. */
+    DriveInfoList::const_iterator FixedDriveBegin()
+    {
+        return mFixedDriveList.begin();
+    }
+
+    /** Get the last element in the list of fixed drives. */
+    DriveInfoList::const_iterator FixedDriveEnd()
+    {
+        return mFixedDriveList.end();
+    }
 private:
     /** The list of currently available floppy drives */
     DriveInfoList mFloppyList;
     /** The list of currently available DVD drives */
     DriveInfoList mDVDList;
+    /** The list of currently available fixed drives */
+    DriveInfoList mFixedDriveList;
 };
 
 /** Convenience typedef. */

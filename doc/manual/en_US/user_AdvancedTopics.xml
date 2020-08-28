@@ -1420,8 +1420,8 @@ vga = 864</screen>
           following command:
         </para>
 
-<screen>$ VBoxManage internalcommands createrawvmdk -filename \
-/path/to/file.vmdk -rawdisk /dev/sda</screen>
+<screen>$ VBoxManage createmedium disk --filename /path/to/file.vmdk --format=VMDK
+ --variant RawDisk --property RawDrive=/dev/sda</screen>
 
         <para>
           This creates the
@@ -1434,8 +1434,8 @@ vga = 864</screen>
           On a Windows host, instead of the above device specification,
           for example use <filename>\\.\PhysicalDrive0</filename>. On a
           Mac OS X host, instead of the above device specification use
-          for example <filename>/dev/disk1</filename>. Note that on Mac
-          OS X you can only get access to an entire disk if no volume is
+          for example <filename>/dev/rdisk1</filename>. Note that on Mac
+          OS X you can only get access to entire disk if no volume is
           mounted from it.
         </para>
 
@@ -1487,14 +1487,15 @@ vga = 864</screen>
           command:
         </para>
 
-<screen>$ VBoxManage internalcommands createrawvmdk -filename \
-/path/to/file.vmdk -rawdisk /dev/sda -partitions 1,5</screen>
+<screen>$ VBoxManage createmedium disk --filename /path/to/file.vmdk --format=VMDK
+--variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5</screen>
 
         <para>
           The command is identical to the one for full hard disk access,
-          except for the additional <option>-partitions</option>
+          except for the additional
+          <option>--property Partitions=1,5</option>
           parameter. This example would create the image
-          <filename>/<replaceable>path-to-file</replaceable>.vmdk</filename>,
+          <filename>/path/to/file.vmdk</filename>,
           which must be absolute, and partitions 1 and 5 of
           <filename>/dev/sda</filename> would be made accessible to the
           guest.
@@ -1511,10 +1512,11 @@ vga = 864</screen>
           On a Windows host, instead of the above device specification,
           use for example <filename>\\.\PhysicalDrive0</filename>. On a
           Mac OS X host, instead of the above device specification use
-          <filename>/dev/disk1</filename>, for example. Note that on OS
-          X you can only use partitions which are not mounted. Eject the
-          respective volume first. Partition numbers are the same on
-          Linux, Windows, and Mac OS X hosts.
+          <filename>/dev/rdisk1</filename>, for example. Note that on OS
+          X you can only use partitions which are not mounted. Unmount
+          the respective disk first using
+          <emphasis>diskutil unmountDisk <filename>/dev/diskX</filename></emphasis>.
+          Partition numbers are the same on Linux, Windows, and Mac OS X hosts.
         </para>
 
         <para>
@@ -1522,12 +1524,12 @@ vga = 864</screen>
           output of the following command:
         </para>
 
-<screen>$ VBoxManage internalcommands listpartitions -rawdisk /dev/sda</screen>
+<screen>$ VBoxManage list hostdrives</screen>
 
         <para>
-          The output lists the partition types and sizes to give the
-          user enough information to identify the partitions necessary
-          for the guest.
+          The output lists available drives and their partitions with
+          the partition types and sizes to give the user enough information
+          to identify the partitions necessary for the guest.
         </para>
 
         <para>
@@ -1547,8 +1549,9 @@ vga = 864</screen>
           image, use:
         </para>
 
-<screen>$ VBoxManage internalcommands createrawvmdk -filename \
-/path/to/file.vmdk -rawdisk /dev/sda -partitions 1,5 -relative</screen>
+<screen>$ VBoxManage createmedium disk --filename /path/to/file.vmdk --format=VMDK
+--variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5
+--property Relative=1</screen>
 
         <para>
           When used from a virtual machine, the image will then refer
@@ -1567,15 +1570,17 @@ vga = 864</screen>
           boot loader that is used on the host by another boot loader.
           This enables for example the guest to boot directly to
           Windows, while the host boots Linux from the "same" disk. For
-          this purpose the <option>-mbr</option> option is provided. It
-          specifies a file name from which to take the MBR code. The
-          partition table is not modified at all, so a MBR file from a
-          system with totally different partitioning can be used. An
-          example of this is:
+          this purpose the <option>--property-file
+          BootSector=/path/to/file/with/boot_sector</option>
+          parameter is provided. It specifies a file name from which to
+          take the MBR code. The partition table is not modified at all,
+          so a MBR file from a system with totally different
+          partitioning can be used. An example of this is:
         </para>
 
-<screen>$ VBoxManage internalcommands createrawvmdk -filename
-/path/to/file.vmdk -rawdisk /dev/sda -partitions 1,5 -mbr winxp.mbr</screen>
+<screen>$ VBoxManage createmedium disk --filename /path/to/file.vmdk --format=VMDK
+--variant RawDisk --property RawDrive=/dev/sda --property Partitions=1,5
+--property-file BootSector=winxp.mbr</screen>
 
         <para>
           The modified MBR will be stored inside the image, not on the

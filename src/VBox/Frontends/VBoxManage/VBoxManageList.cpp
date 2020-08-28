@@ -1414,6 +1414,347 @@ static HRESULT listCPUProfiles(const ComPtr<IVirtualBox> &ptrVirtualBox, bool fO
 
 
 /**
+ * Translates PartitionType_T to a string if possible.
+ * @returns read-only string if known value, @a pszUnknown if not.
+ */
+static const char *PartitionTypeToString(PartitionType_T enmType, const char *pszUnknown)
+{
+#define MY_CASE_STR(a_Type) case RT_CONCAT(PartitionType_,a_Type): return #a_Type
+    switch (enmType)
+    {
+        MY_CASE_STR(Empty);
+        MY_CASE_STR(FAT12);
+        MY_CASE_STR(FAT16);
+        MY_CASE_STR(FAT);
+        MY_CASE_STR(IFS);
+        MY_CASE_STR(FAT32CHS);
+        MY_CASE_STR(FAT32LBA);
+        MY_CASE_STR(FAT16B);
+        MY_CASE_STR(Extended);
+        MY_CASE_STR(WindowsRE);
+        MY_CASE_STR(LinuxSwapOld);
+        MY_CASE_STR(LinuxOld);
+        MY_CASE_STR(DragonFlyBSDSlice);
+        MY_CASE_STR(LinuxSwap);
+        MY_CASE_STR(Linux);
+        MY_CASE_STR(LinuxExtended);
+        MY_CASE_STR(LinuxLVM);
+        MY_CASE_STR(BSDSlice);
+        MY_CASE_STR(AppleUFS);
+        MY_CASE_STR(AppleHFS);
+        MY_CASE_STR(Solaris);
+        MY_CASE_STR(GPT);
+        MY_CASE_STR(EFI);
+        MY_CASE_STR(Unknown);
+        MY_CASE_STR(MBR);
+        MY_CASE_STR(iFFS);
+        MY_CASE_STR(SonyBoot);
+        MY_CASE_STR(LenovoBoot);
+        MY_CASE_STR(WindowsMSR);
+        MY_CASE_STR(WindowsBasicData);
+        MY_CASE_STR(WindowsLDMMeta);
+        MY_CASE_STR(WindowsLDMData);
+        MY_CASE_STR(WindowsRecovery);
+        MY_CASE_STR(WindowsStorageSpaces);
+        MY_CASE_STR(WindowsStorageReplica);
+        MY_CASE_STR(IBMGPFS);
+        MY_CASE_STR(LinuxData);
+        MY_CASE_STR(LinuxRAID);
+        MY_CASE_STR(LinuxRootX86);
+        MY_CASE_STR(LinuxRootAMD64);
+        MY_CASE_STR(LinuxRootARM32);
+        MY_CASE_STR(LinuxRootARM64);
+        MY_CASE_STR(LinuxHome);
+        MY_CASE_STR(LinuxSrv);
+        MY_CASE_STR(LinuxPlainDmCrypt);
+        MY_CASE_STR(LinuxLUKS);
+        MY_CASE_STR(LinuxReserved);
+        MY_CASE_STR(FreeBSDBoot);
+        MY_CASE_STR(FreeBSDData);
+        MY_CASE_STR(FreeBSDSwap);
+        MY_CASE_STR(FreeBSDUFS);
+        MY_CASE_STR(FreeBSDVinum);
+        MY_CASE_STR(FreeBSDZFS);
+        MY_CASE_STR(FreeBSDUnknown);
+        MY_CASE_STR(AppleHFSPlus);
+        MY_CASE_STR(AppleAPFS);
+        MY_CASE_STR(AppleRAID);
+        MY_CASE_STR(AppleRAIDOffline);
+        MY_CASE_STR(AppleBoot);
+        MY_CASE_STR(AppleLabel);
+        MY_CASE_STR(AppleTvRecovery);
+        MY_CASE_STR(AppleCoreStorage);
+        MY_CASE_STR(SoftRAIDStatus);
+        MY_CASE_STR(SoftRAIDScratch);
+        MY_CASE_STR(SoftRAIDVolume);
+        MY_CASE_STR(SoftRAIDCache);
+        MY_CASE_STR(AppleUnknown);
+        MY_CASE_STR(SolarisBoot);
+        MY_CASE_STR(SolarisRoot);
+        MY_CASE_STR(SolarisSwap);
+        MY_CASE_STR(SolarisBackup);
+        MY_CASE_STR(SolarisUsr);
+        MY_CASE_STR(SolarisVar);
+        MY_CASE_STR(SolarisHome);
+        MY_CASE_STR(SolarisAltSector);
+        MY_CASE_STR(SolarisReserved);
+        MY_CASE_STR(SolarisUnknown);
+        MY_CASE_STR(NetBSDSwap);
+        MY_CASE_STR(NetBSDFFS);
+        MY_CASE_STR(NetBSDLFS);
+        MY_CASE_STR(NetBSDRAID);
+        MY_CASE_STR(NetBSDConcatenated);
+        MY_CASE_STR(NetBSDEncrypted);
+        MY_CASE_STR(NetBSDUnknown);
+        MY_CASE_STR(ChromeOSKernel);
+        MY_CASE_STR(ChromeOSRootFS);
+        MY_CASE_STR(ChromeOSFuture);
+        MY_CASE_STR(ContLnxUsr);
+        MY_CASE_STR(ContLnxRoot);
+        MY_CASE_STR(ContLnxReserved);
+        MY_CASE_STR(ContLnxRootRAID);
+        MY_CASE_STR(HaikuBFS);
+        MY_CASE_STR(MidntBSDBoot);
+        MY_CASE_STR(MidntBSDData);
+        MY_CASE_STR(MidntBSDSwap);
+        MY_CASE_STR(MidntBSDUFS);
+        MY_CASE_STR(MidntBSDVium);
+        MY_CASE_STR(MidntBSDZFS);
+        MY_CASE_STR(MidntBSDUnknown);
+        MY_CASE_STR(OpenBSDData);
+        MY_CASE_STR(QNXPowerSafeFS);
+        MY_CASE_STR(Plan9);
+        MY_CASE_STR(VMWareVMKCore);
+        MY_CASE_STR(VMWareVMFS);
+        MY_CASE_STR(VMWareReserved);
+        MY_CASE_STR(VMWareUnknown);
+        MY_CASE_STR(AndroidX86Bootloader);
+        MY_CASE_STR(AndroidX86Bootloader2);
+        MY_CASE_STR(AndroidX86Boot);
+        MY_CASE_STR(AndroidX86Recovery);
+        MY_CASE_STR(AndroidX86Misc);
+        MY_CASE_STR(AndroidX86Metadata);
+        MY_CASE_STR(AndroidX86System);
+        MY_CASE_STR(AndroidX86Cache);
+        MY_CASE_STR(AndroidX86Data);
+        MY_CASE_STR(AndroidX86Persistent);
+        MY_CASE_STR(AndroidX86Vendor);
+        MY_CASE_STR(AndroidX86Config);
+        MY_CASE_STR(AndroidX86Factory);
+        MY_CASE_STR(AndroidX86FactoryAlt);
+        MY_CASE_STR(AndroidX86Fastboot);
+        MY_CASE_STR(AndroidX86OEM);
+        MY_CASE_STR(AndroidARMMeta);
+        MY_CASE_STR(AndroidARMExt);
+        MY_CASE_STR(ONIEBoot);
+        MY_CASE_STR(ONIEConfig);
+        MY_CASE_STR(PowerPCPrep);
+        MY_CASE_STR(XDGShrBootConfig);
+        MY_CASE_STR(CephBlock);
+        MY_CASE_STR(CephBlockDB);
+        MY_CASE_STR(CephBlockDBDmc);
+        MY_CASE_STR(CephBlockDBDmcLUKS);
+        MY_CASE_STR(CephBlockDmc);
+        MY_CASE_STR(CephBlockDmcLUKS);
+        MY_CASE_STR(CephBlockWALog);
+        MY_CASE_STR(CephBlockWALogDmc);
+        MY_CASE_STR(CephBlockWALogDmcLUKS);
+        MY_CASE_STR(CephDisk);
+        MY_CASE_STR(CephDiskDmc);
+        MY_CASE_STR(CephJournal);
+        MY_CASE_STR(CephJournalDmc);
+        MY_CASE_STR(CephJournalDmcLUKS);
+        MY_CASE_STR(CephLockbox);
+        MY_CASE_STR(CephMultipathBlock1);
+        MY_CASE_STR(CephMultipathBlock2);
+        MY_CASE_STR(CephMultipathBlockDB);
+        MY_CASE_STR(CephMultipathBLockWALog);
+        MY_CASE_STR(CephMultipathJournal);
+        MY_CASE_STR(CephMultipathOSD);
+        MY_CASE_STR(CephOSD);
+        MY_CASE_STR(CephOSDDmc);
+        MY_CASE_STR(CephOSDDmcLUKS);
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case PartitionType_32BitHack: break;
+#endif
+        /* no default! */
+    }
+#undef MY_CASE_STR
+    return pszUnknown;
+}
+
+
+/**
+ * List all available host drives with their partitions.
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox pointer.
+ * @param   fOptLong            Long listing or human readable.
+ */
+static HRESULT listHostDrives(const ComPtr<IVirtualBox> pVirtualBox, bool fOptLong)
+{
+    HRESULT rc = S_OK;
+    ComPtr<IHost> pHost;
+    CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(Host)(pHost.asOutParam()), hrcCheck);
+    com::SafeIfaceArray<IHostDrive> apHostDrives;
+    CHECK_ERROR2I_RET(pHost, COMGETTER(HostDrives)(ComSafeArrayAsOutParam(apHostDrives)), hrcCheck);
+    for (size_t i = 0; i < apHostDrives.size(); ++i)
+    {
+        ComPtr<IHostDrive> pHostDrive = apHostDrives[i];
+
+        com::Bstr bstrDrivePath;
+        CHECK_ERROR(pHostDrive,COMGETTER(DrivePath)(bstrDrivePath.asOutParam()));
+        RTPrintf("%sDrive:       %ls\n", i > 0 ? "\n" : "", bstrDrivePath.raw());
+
+        com::Bstr bstrModel;
+        com::Bstr bstrUuidDisk;
+        ULONG cbSectorSize = 0;
+        LONG64 cbSize = 0;
+        PartitioningType_T partitioningType;
+        HRESULT hrc;
+        if (   SUCCEEDED(hrc = pHostDrive->COMGETTER(Model)(bstrModel.asOutParam()))
+            && SUCCEEDED(hrc = pHostDrive->COMGETTER(Uuid)(bstrUuidDisk.asOutParam()))
+            && SUCCEEDED(hrc = pHostDrive->COMGETTER(SectorSize)(&cbSectorSize))
+            && SUCCEEDED(hrc = pHostDrive->COMGETTER(Size)(&cbSize))
+            && SUCCEEDED(hrc = pHostDrive->COMGETTER(PartitioningType)(&partitioningType)))
+        {
+            if (bstrModel.isNotEmpty())
+                RTPrintf("Model:       %ls\n", bstrModel.raw());
+            else
+                RTPrintf("Model:       Unknown\n");
+
+            if (partitioningType == PartitioningType_GPT || com::Guid(bstrUuidDisk).isZero())
+                RTPrintf("UUID:        %ls\n", bstrUuidDisk.raw());
+            if (fOptLong)
+                RTPrintf("Size:        %llu bytes (%Rhcb)\n", cbSize, cbSize);
+            else
+                RTPrintf("Size:        %Rhcb\n", cbSize);
+            RTPrintf("Sector Size: %u bytes\n", cbSectorSize);
+            RTPrintf("Scheme:      %s\n", partitioningType == PartitioningType_MBR ? "MBR" : "GPT");
+
+            com::SafeIfaceArray<IHostDrivePartition> apHostDrivesPartitions;
+            CHECK_ERROR(pHostDrive, COMGETTER(Partitions)(ComSafeArrayAsOutParam(apHostDrivesPartitions)));
+
+            if (partitioningType == PartitioningType_MBR)
+            {
+                if (fOptLong)
+                    RTPrintf("Partitions:                              First         Last\n"
+                             "##  Type      Byte Size     Byte Offset  Cyl/Head/Sec  Cyl/Head/Sec Active\n");
+                else
+                    RTPrintf("Partitions:                   First         Last\n"
+                             "##  Type  Size      Start     Cyl/Head/Sec  Cyl/Head/Sec Active\n");
+                for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
+                {
+                    ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
+
+                    ULONG idx = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Number)(&idx));
+                    ULONG uType = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(TypeMBR)(&uType));
+                    ULONG uStartCylinder = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(StartCylinder)(&uStartCylinder));
+                    ULONG uStartHead = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(StartHead)(&uStartHead));
+                    ULONG uStartSector = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(StartSector)(&uStartSector));
+                    ULONG uEndCylinder = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(EndCylinder)(&uEndCylinder));
+                    ULONG uEndHead = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(EndHead)(&uEndHead));
+                    ULONG uEndSector = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(EndSector)(&uEndSector));
+                    cbSize = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Size)(&cbSize));
+                    LONG64 offStart = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Start)(&offStart));
+                    BOOL fActive = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Active)(&fActive));
+                    PartitionType_T enmType = PartitionType_Unknown;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
+
+                    /* Max size & offset  here is around 16TiB with 4KiB sectors. */
+                    if (fOptLong) /* cb/off: max 16TiB; idx: max 64. */
+                        RTPrintf("%2u   %02x  %14llu  %14llu  %4u/%3u/%2u   %4u/%3u/%2u    %s   %s\n",
+                                 idx, uType, cbSize, offStart,
+                                 uStartCylinder, uStartHead, uStartSector, uEndCylinder, uEndHead, uEndSector,
+                                 fActive ? "yes" : "no", PartitionTypeToString(enmType, ""));
+                    else
+                        RTPrintf("%2u   %02x   %8Rhcb  %8Rhcb  %4u/%3u/%2u   %4u/%3u/%2u   %s   %s\n",
+                                 idx, uType, (uint64_t)cbSize, (uint64_t)offStart,
+                                 uStartCylinder, uStartHead, uStartSector, uEndCylinder, uEndHead, uEndSector,
+                                 fActive ? "yes" : "no", PartitionTypeToString(enmType, ""));
+                }
+            }
+            else /* GPT */
+            {
+                /* Determin the max partition type length to try reduce the table width: */
+                size_t cchMaxType = 0;
+                for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
+                {
+                    ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
+                    PartitionType_T enmType = PartitionType_Unknown;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
+                    size_t const cchTypeNm = strlen(PartitionTypeToString(enmType, "e530bf6d-2754-4e9d-b260-60a5d0b80457"));
+                    cchMaxType = RT_MAX(cchTypeNm, cchMaxType);
+                }
+                cchMaxType = RT_MIN(cchMaxType, RTUUID_STR_LENGTH);
+
+                if (fOptLong)
+                    RTPrintf("Partitions:\n"
+                             "## %-*s Uuid                                           Byte Size         Byte Offset Active Name\n",
+                             (int)cchMaxType, "Type");
+                else
+                    RTPrintf("Partitions:\n"
+                             "##  %-*s  Uuid                                   Size      Start   Active Name\n",
+                             (int)cchMaxType, "Type");
+
+                for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
+                {
+                    ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
+
+                    ULONG idx = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Number)(&idx));
+                    com::Bstr bstrUuidType;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(TypeUuid)(bstrUuidType.asOutParam()));
+                    com::Bstr bstrUuidPartition;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Uuid)(bstrUuidPartition.asOutParam()));
+                    cbSize = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Size)(&cbSize));
+                    LONG64 offStart = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Start)(&offStart));
+                    BOOL fActive = 0;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Active)(&fActive));
+                    com::Bstr bstrName;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Name)(bstrName.asOutParam()));
+
+                    PartitionType_T enmType = PartitionType_Unknown;
+                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
+
+                    Utf8Str strTypeConv;
+                    const char *pszTypeNm = PartitionTypeToString(enmType, NULL);
+                    if (!pszTypeNm)
+                        pszTypeNm = (strTypeConv = bstrUuidType).c_str();
+                    else if (strlen(pszTypeNm) >= RTUUID_STR_LENGTH /* includes '\0' */)
+                        pszTypeNm -= RTUUID_STR_LENGTH - 1 - strlen(pszTypeNm);
+
+                    if (fOptLong)
+                        RTPrintf("%2u %-*s %36ls %19llu %19llu   %-3s  %ls\n", idx, cchMaxType, pszTypeNm,
+                                 bstrUuidPartition.raw(), cbSize, offStart, fActive ? "on" : "off", bstrName.raw());
+                    else
+                        RTPrintf("%2u  %-*s  %36ls  %8Rhcb  %8Rhcb  %-3s   %ls\n", idx, cchMaxType, pszTypeNm,
+                                 bstrUuidPartition.raw(), cbSize, offStart, fActive ? "on" : "off", bstrName.raw());
+                }
+            }
+        }
+        else
+            RTPrintf("Partitions and disk info for the drive %ls are not available. Error %Rhrc (%#RX32)\n",
+                     bstrDrivePath.raw(), hrc, hrc);
+    }
+    return rc;
+}
+
+
+/**
  * The type of lists we can produce.
  */
 enum ListType_T
@@ -1449,7 +1790,8 @@ enum ListType_T
     kListScreenShotFormats,
     kListCloudProviders,
     kListCloudProfiles,
-    kListCPUProfiles
+    kListCPUProfiles,
+    kListHostDrives
 };
 
 
@@ -1806,6 +2148,9 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
             rc = listCPUProfiles(pVirtualBox, fOptLong, fOptSorted);
             break;
 
+        case kListHostDrives:
+            rc = listHostDrives(pVirtualBox, fOptLong);
+            break;
         /* No default here, want gcc warnings. */
 
     } /* end switch */
@@ -1864,6 +2209,7 @@ RTEXITCODE handleList(HandlerArg *a)
         { "cloudproviders",     kListCloudProviders,     RTGETOPT_REQ_NOTHING },
         { "cloudprofiles",      kListCloudProfiles,      RTGETOPT_REQ_NOTHING },
         { "cpu-profiles",       kListCPUProfiles,        RTGETOPT_REQ_NOTHING },
+        { "hostdrives",         kListHostDrives,         RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -1921,6 +2267,7 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListCloudProviders:
             case kListCloudProfiles:
             case kListCPUProfiles:
+            case kListHostDrives:
                 enmOptCommand = (enum ListType_T)ch;
                 if (fOptMultiple)
                 {

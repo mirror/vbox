@@ -28,6 +28,8 @@ class USBProxyService;
 class SessionMachine;
 class Progress;
 class PerformanceCollector;
+class HostDrive;
+class HostDrivePartition;
 
 namespace settings
 {
@@ -108,6 +110,7 @@ private:
     HRESULT getProcessorOnlineCount(ULONG *aProcessorOnlineCount);
     HRESULT getProcessorCoreCount(ULONG *aProcessorCoreCount);
     HRESULT getProcessorOnlineCoreCount(ULONG *aProcessorOnlineCoreCount);
+    HRESULT getHostDrives(std::vector<ComPtr<IHostDrive> > &aHostDrives);
     HRESULT getMemorySize(ULONG *aMemorySize);
     HRESULT getMemoryAvailable(ULONG *aMemoryAvailable);
     HRESULT getOperatingSystem(com::Utf8Str &aOperatingSystem);
@@ -176,12 +179,14 @@ private:
 #if defined(RT_OS_SOLARIS) && defined(VBOX_USE_LIBHAL)
     bool i_getDVDInfoFromHal(std::list< ComObjPtr<Medium> > &list);
     bool i_getFloppyInfoFromHal(std::list< ComObjPtr<Medium> > &list);
+    HRESULT i_getFixedDrivesFromHal(std::list<std::pair<com::Utf8Str, com::Utf8Str> > &list) RT_NOEXCEPT;
 #endif
 
 #if defined(RT_OS_SOLARIS)
     void i_getDVDInfoFromDevTree(std::list< ComObjPtr<Medium> > &list);
     void i_parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &list);
     bool i_validateDevice(const char *deviceNode, bool isCDROM);
+    HRESULT i_getFixedDrivesFromDevTree(std::list<std::pair<com::Utf8Str, com::Utf8Str> > &list) RT_NOEXCEPT;
 #endif
 
     HRESULT i_updateNetIfList();
@@ -197,6 +202,8 @@ private:
     void i_registerDiskMetrics(PerformanceCollector *aCollector);
     void i_unregisterMetrics(PerformanceCollector *aCollector);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
+    HRESULT i_getDrivesPathsList(std::list<std::pair<com::Utf8Str, com::Utf8Str> > &aDriveList) RT_NOEXCEPT;
 
     struct Data;        // opaque data structure, defined in HostImpl.cpp
     Data *m;

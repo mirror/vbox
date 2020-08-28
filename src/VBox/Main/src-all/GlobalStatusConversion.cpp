@@ -107,6 +107,7 @@ Global::vboxStatusCodeToCOM(int aVBoxStatus)
         case VERR_UNRESOLVED_ERROR:             return E_FAIL;
         case VERR_NOT_EQUAL:                    return VBOX_E_FILE_ERROR;
         case VERR_FILE_NOT_FOUND:               return VBOX_E_OBJECT_NOT_FOUND;
+        case VERR_IO_NOT_READY:                 return VBOX_E_INVALID_OBJECT_STATE;
 
         /* Guest Control errors. */
         case VERR_GSTCTL_MAX_CID_OBJECTS_REACHED: return VBOX_E_MAXIMUM_REACHED;

@@ -293,12 +293,13 @@ void ObjectState::autoInitSpanDestructor(State aNewState, HRESULT aFailedRC, com
         RTSemEventMultiSignal(mInitUninitSem);
     }
 
-    if (aNewState == InitFailed)
+    if (aNewState == InitFailed || aNewState == Limited)
     {
         mFailedRC = aFailedRC;
-        /* apFailedEI may be NULL, when there is no explicit setFailed() call,
-         * which also implies that aFailedRC is S_OK. This case is used by
-         * objects (the majority) which don't want delayed error signalling. */
+        /* apFailedEI may be NULL, when there is no explicit setFailed() or
+         * setLimited() call, which also implies that aFailedRC is S_OK.
+         * This case is used by objects (the majority) which don't want
+         * delayed error signalling. */
         mpFailedEI = apFailedEI;
     }
     else

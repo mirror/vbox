@@ -30,15 +30,21 @@
 
 #include <mach/mach.h>
 #include <Carbon/Carbon.h>
+#include <CoreFoundation/CFBase.h>
 #include <IOKit/IOKitLib.h>
+#include <IOKit/IOBSD.h>
 #include <IOKit/storage/IOStorageDeviceCharacteristics.h>
+#include <IOKit/storage/IOBlockStorageDevice.h>
+#include <IOKit/storage/IOMedia.h>
+#include <IOKit/storage/IOCDMedia.h>
 #include <IOKit/scsi/SCSITaskLib.h>
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <mach/mach_error.h>
+#include <sys/param.h>
+#include <paths.h>
 #ifdef VBOX_WITH_USB
 # include <IOKit/usb/IOUSBLib.h>
 # include <IOKit/IOCFPlugIn.h>
-# include <IOKit/storage/IOMedia.h>
 #endif
 
 #include <VBox/log.h>
@@ -1569,6 +1575,170 @@ PDARWINDVD DarwinGetDVDDrives(void)
     }
 
     IOObjectRelease(DVDServices);
+
+    return pHead;
+}
+
+
+/**
+ * Enumerate the fixed drives (HDDs, SSD, ++) returning a FIFO of device paths
+ * strings and model strings separated by ':'.
+ *
+ * @returns Pointer to the head.
+ *          The caller is responsible for calling RTMemFree() on each of the nodes.
+ */
+PDARWINFIXEDDRIVE DarwinGetFixedDrives(void)
+{
+    AssertReturn(darwinOpenMasterPort(), NULL);
+
+    /*
+     * Create a matching dictionary for searching drives in the IOKit.
+     *
+     * The idea is to find all the IOMedia objects with "Whole"="True" which identify the disks but
+     * not partitions.
+     */
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IOMedia");
+    AssertReturn(RefMatchingDict, NULL);
+    CFDictionaryAddValue(RefMatchingDict, CFSTR(kIOMediaWholeKey), kCFBooleanTrue);
+
+    /*
+     * Perform the search and get a collection of IOMedia objects.
+     */
+    io_iterator_t MediaServices = IO_OBJECT_NULL;
+    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &MediaServices);
+    AssertMsgReturn(rc == kIOReturnSuccess, ("rc=%d\n", rc), NULL);
+    RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
+
+    /*
+     * Enumerate the matching services.
+     * (This enumeration must be identical to the one performed in DrvHostBase.cpp.)
+     */
+    PDARWINFIXEDDRIVE pHead = NULL;
+    PDARWINFIXEDDRIVE pTail = NULL;
+    unsigned i = 0;
+    io_object_t MediaService;
+    while ((MediaService = IOIteratorNext(MediaServices)) != IO_OBJECT_NULL)
+    {
+        DARWIN_IOKIT_DUMP_OBJ(MediaService);
+
+        /*
+         * Find the IOMedia parents having the IOBlockStorageDevice type and check they have "device-type" = "Generic".
+         * If the IOMedia object hasn't IOBlockStorageDevices with such device-type in parents the one is not general
+         * disk but either CDROM-like device or some another device which has no interest for the function.
+         */
+
+        /*
+         * Just avoid parents enumeration if the IOMedia is IOCDMedia, i.e. CDROM-like disk
+         */
+        if (IOObjectConformsTo(MediaService, kIOCDMediaClass))
+        {
+            IOObjectRelease(MediaService);
+            continue;
+        }
+
+        bool fIsGenericStorage = false;
+        io_registry_entry_t ChildEntry = MediaService;
+        io_registry_entry_t ParentEntry = IO_OBJECT_NULL;
+        kern_return_t krc = KERN_SUCCESS;
+        while (   !fIsGenericStorage
+               && (krc = IORegistryEntryGetParentEntry(ChildEntry, kIOServicePlane, &ParentEntry)) == KERN_SUCCESS)
+        {
+            if (!IOObjectIsEqualTo(ChildEntry, MediaService))
+                IOObjectRelease(ChildEntry);
+
+            DARWIN_IOKIT_DUMP_OBJ(ParentEntry);
+            if (IOObjectConformsTo(ParentEntry, kIOBlockStorageDeviceClass))
+            {
+                CFTypeRef DeviceTypeValueRef = IORegistryEntryCreateCFProperty(ParentEntry,
+                                                                               CFSTR("device-type"),
+                                                                               kCFAllocatorDefault, 0);
+                if (   DeviceTypeValueRef
+                    && CFGetTypeID(DeviceTypeValueRef) == CFStringGetTypeID()
+                    && CFStringCompare((CFStringRef)DeviceTypeValueRef, CFSTR("Generic"),
+                                       kCFCompareCaseInsensitive) == kCFCompareEqualTo)
+                    fIsGenericStorage = true;
+
+                if (DeviceTypeValueRef != NULL)
+                    CFRelease(DeviceTypeValueRef);
+            }
+            ChildEntry = ParentEntry;
+        }
+        if (ChildEntry != IO_OBJECT_NULL && !IOObjectIsEqualTo(ChildEntry, MediaService))
+            IOObjectRelease(ChildEntry);
+
+        if (!fIsGenericStorage)
+        {
+            IOObjectRelease(MediaService);
+            continue;
+        }
+
+        CFTypeRef DeviceName;
+        DeviceName = IORegistryEntryCreateCFProperty(MediaService,
+                                                     CFSTR(kIOBSDNameKey),
+                                                     kCFAllocatorDefault,0);
+        if (DeviceName)
+        {
+            char szDeviceFilePath[MAXPATHLEN];
+            strcpy(szDeviceFilePath, _PATH_DEV);
+            size_t cchPathSize = strlen(szDeviceFilePath);
+            if (CFStringGetCString((CFStringRef)DeviceName,
+                                   &szDeviceFilePath[cchPathSize],
+                                   (CFIndex)(sizeof(szDeviceFilePath) - cchPathSize),
+                                   kCFStringEncodingUTF8))
+            {
+                PDARWINFIXEDDRIVE pDuplicate = pHead;
+                while (pDuplicate && strcmp(szDeviceFilePath, pDuplicate->szName) != 0)
+                    pDuplicate = pDuplicate->pNext;
+                if (pDuplicate == NULL)
+                {
+                    /* Get model for the IOMedia object.
+                     *
+                     * Due to vendor and product property names are different and
+                     * depend on interface and device type, the best way to get a drive
+                     * model is get IORegistry name for the IOMedia object. Usually,
+                     * it takes "<vendor> <product> <revision> Media" form. Noticed,
+                     * such naming are used by only IOMedia objects having
+                     * "Whole" = True and "BSDName" properties set.
+                     */
+                    io_name_t szEntryName = { 0 };
+                    if ((krc = IORegistryEntryGetName(MediaService, szEntryName)) == KERN_SUCCESS)
+                    {
+                        /* remove " Media" from the end of the name */
+                        char *pszMedia = strrchr(szEntryName, ' ');
+                        if (   pszMedia != NULL
+                            && (uintptr_t)pszMedia < (uintptr_t)&szEntryName[sizeof(szEntryName)]
+                            && strcmp(pszMedia, " Media") == 0)
+                        {
+                            *pszMedia = '\0';
+                            RTStrPurgeEncoding(szEntryName);
+                        }
+                    }
+                    /* Create the device path and model name in form "/device/path:model". */
+                    cchPathSize = strlen(szDeviceFilePath);
+                    size_t const cchModelSize = strlen(szEntryName);
+                    size_t const cbExtra = cchPathSize + 1 + cchModelSize + !!cchModelSize;
+                    PDARWINFIXEDDRIVE pNew = (PDARWINFIXEDDRIVE)RTMemAlloc(RT_UOFFSETOF_DYN(DARWINFIXEDDRIVE, szName[cbExtra]));
+                    if (pNew)
+                    {
+                        pNew->pNext = NULL;
+                        memcpy(pNew->szName, szDeviceFilePath, cchPathSize + 1);
+                        pNew->pszModel = NULL;
+                        if (cchModelSize)
+                            pNew->pszModel = (const char *)memcpy(&pNew->szName[cchPathSize + 1], szEntryName, cchModelSize + 1);
+
+                        if (pTail)
+                            pTail = pTail->pNext = pNew;
+                        else
+                            pTail = pHead = pNew;
+                    }
+                }
+            }
+            CFRelease(DeviceName);
+        }
+        IOObjectRelease(MediaService);
+        i++;
+    }
+    IOObjectRelease(MediaServices);
 
     return pHead;
 }
