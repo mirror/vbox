@@ -36,8 +36,14 @@
 # include <iprt/string.h>
 # include <iprt/uuid.h>
 #endif /* IN_RING3 */
+#ifdef VBOX_WITH_IOMMU_AMD
+# include <VBox/iommu-amd.h>
+#endif
 
 #include "VBoxDD.h"
+#ifdef VBOX_WITH_IOMMU_AMD
+# include "../Bus/DevIommuAmd.h"
+#endif
 
 #ifdef LOG_ENABLED
 # define DEBUG_ACPI
@@ -783,456 +789,6 @@ struct ACPITBLHPET
 AssertCompileSize(ACPITBLHPET, 56);
 
 #ifdef VBOX_WITH_IOMMU_AMD
-/** @name IVRS format revision field.
- * In accordance with the AMD spec.
- * @{ */
-/** Fixed: Supports only pre-assigned device IDs and type 10h and 11h IVHD
- *  blocks. */
-#define ACPI_IVRS_FMT_REV_FIXED                         0x1
-/** Mixed: Supports pre-assigned and ACPI HID device naming and all IVHD blocks. */
-#define ACPI_IVRS_FMT_REV_MIXED                         0x2
-/** @} */
-
-/** @name IVHD special device entry variety field.
- * In accordance with the AMD spec.
- * @{ */
-/** I/O APIC. */
-#define ACPI_IVHD_VARIETY_IOAPIC                        0x1
-/** HPET. */
-#define ACPI_IVHD_VARIETY_HPET                          0x2
-/** @} */
-
-/** @name IVHD device entry type codes.
- * In accordance with the AMD spec.
- * @{ */
-/** Reserved. */
-#define ACPI_IVHD_DEVENTRY_TYPE_RSVD                    0x0
-/** All: DTE setting applies to all Device IDs. */
-#define ACPI_IVHD_DEVENTRY_TYPE_ALL                     0x1
-/** Select: DTE setting applies to the device specified in DevId field. */
-#define ACPI_IVHD_DEVENTRY_TYPE_SELECT                  0x2
-/** Start of range: DTE setting applies to all devices from start of range specified
- *  by the DevId field. */
-#define ACPI_IVHD_DEVENTRY_TYPE_START_RANGE             0x3
-/** End of range: DTE setting from previous type 3 entry applies to all devices
- *  incl. DevId specified by this entry. */
-#define ACPI_IVHD_DEVENTRY_TYPE_END_RANGE               0x4
-/** @} */
-
-/** @name IVHD DTE (Device Table Entry) Settings.
- * In accordance with the AMD spec.
- * @{ */
-/** INITPass: Identifies a device able to assert INIT interrupts. */
-#define ACPI_IVHD_DTE_INIT_PASS_SHIFT                   0
-#define ACPI_IVHD_DTE_INIT_PASS_MASK                    UINT8_C(0x01)
-/** EIntPass: Identifies a device able to assert ExtInt interrupts. */
-#define ACPI_IVHD_DTE_EXTINT_PASS_SHIFT                 1
-#define ACPI_IVHD_DTE_EXTINT_PASS_MASK                  UINT8_C(0x02)
-/** NMIPass: Identifies a device able to assert NMI interrupts. */
-#define ACPI_IVHD_DTE_NMI_PASS_SHIFT                    2
-#define ACPI_IVHD_DTE_NMI_PASS_MASK                     UINT8_C(0x04)
-/** Bit 3 reserved. */
-#define ACPI_IVHD_DTE_RSVD_3_SHIFT                      3
-#define ACPI_IVHD_DTE_RSVD_3_MASK                       UINT8_C(0x08)
-/** SysMgt: Identifies a device able to assert system management messages. */
-#define ACPI_IVHD_DTE_SYS_MGT_SHIFT                     4
-#define ACPI_IVHD_DTE_SYS_MGT_MASK                      UINT8_C(0x30)
-/** Lint0Pass: Identifies a device able to assert LINT0 interrupts. */
-#define ACPI_IVHD_DTE_LINT0_PASS_SHIFT                  6
-#define ACPI_IVHD_DTE_LINT0_PASS_MASK                   UINT8_C(0x40)
-/** Lint0Pass: Identifies a device able to assert LINT1 interrupts. */
-#define ACPI_IVHD_DTE_LINT1_PASS_SHIFT                  7
-#define ACPI_IVHD_DTE_LINT1_PASS_MASK                   UINT8_C(0x80)
-RT_BF_ASSERT_COMPILE_CHECKS(ACPI_IVHD_DTE_, UINT8_C(0), UINT8_MAX,
-                            (INIT_PASS, EXTINT_PASS, NMI_PASS, RSVD_3, SYS_MGT, LINT0_PASS, LINT1_PASS));
-/** @} */
-
-/** AMD IOMMU: IVHD (I/O Virtualization Hardware Definition) Device Entry
- *  (4-byte). In accordance with the AMD spec. */
-typedef struct ACPIIVHDDEVENTRY4
-{
-    uint8_t         u8DevEntryType;     /**< Device entry type. */
-    uint16_t        u16DevId;           /**< Device ID. */
-    uint8_t         u8DteSetting;       /**< DTE (Device Table Entry) setting. */
-} ACPIIVHDDEVENTRY4;
-AssertCompileSize(ACPIIVHDDEVENTRY4, 4);
-
-/** AMD IOMMU: IVHD (I/O Virtualization Hardware Definition) Device Entry
- *  (8-byte). In accordance with the AMD spec. */
-typedef struct ACPIIVHDDEVENTRY8
-{
-    uint8_t         u8DevEntryType;     /**< Device entry type. */
-    union
-    {
-        /** Reserved: When u8DevEntryType is 0x40, 0x41, 0x44 or 0x45 (or 0x49-0x7F). */
-        struct
-        {
-            uint8_t     au8Rsvd0[7];        /**< Reserved (MBZ). */
-        } rsvd;
-        /** Alias Select: When u8DevEntryType is 0x42 or 0x43. */
-        struct
-        {
-            uint16_t    u16DevIdA;          /**< Device ID A. */
-            uint8_t     u8DteSetting;       /**< DTE (Device Table Entry) setting. */
-            uint8_t     u8Rsvd0;            /**< Reserved (MBZ). */
-            uint16_t    u16DevIdB;          /**< Device ID B. */
-            uint8_t     u8Rsvd1;            /**< Reserved (MBZ). */
-        } alias;
-        /** Extended Select: When u8DevEntryType is 0x46 or 0x47. */
-        struct
-        {
-            uint16_t    u16DevId;           /**< Device ID. */
-            uint8_t     u8DteSetting;       /**< DTE (Device Table Entry) setting. */
-            uint32_t    u32ExtDteSetting;   /**< Extended DTE setting. */
-        } ext;
-        /** Special Device: When u8DevEntryType is 0x48. */
-        struct
-        {
-            uint16_t    u16Rsvd0;           /**< Reserved (MBZ). */
-            uint8_t     u8DteSetting;       /**< DTE (Device Table Entry) setting. */
-            uint8_t     u8Handle;           /**< Handle contains I/O APIC ID or HPET number. */
-            uint16_t    u16DevIdB;          /**< Device ID B (I/O APIC or HPET). */
-            uint8_t     u8Variety;          /**< Whether this is the HPET or I/O APIC. */
-        } special;
-    } u;
-} ACPIIVHDDEVENTRY8;
-AssertCompileSize(ACPIIVHDDEVENTRY8, 8);
-
-/** @name IVHD Type 10h Flags.
- * In accordance with the AMD spec.
- * @{ */
-/** Peripheral page request support. */
-#define ACPI_IVHD_10H_F_PPR_SUP                         RT_BIT(7)
-/** Prefetch IOMMU pages command support. */
-#define ACPI_IVHD_10H_F_PREF_SUP                        RT_BIT(6)
-/** Coherent control. */
-#define ACPI_IVHD_10H_F_COHERENT                        RT_BIT(5)
-/** Remote IOTLB support. */
-#define ACPI_IVHD_10H_F_IOTLB_SUP                       RT_BIT(4)
-/** Isochronous control. */
-#define ACPI_IVHD_10H_F_ISOC                            RT_BIT(3)
-/** Response Pass Posted Write. */
-#define ACPI_IVHD_10H_F_RES_PASS_PW                     RT_BIT(2)
-/** Pass Posted Write. */
-#define ACPI_IVHD_10H_F_PASS_PW                         RT_BIT(1)
-/** HyperTransport Tunnel. */
-#define ACPI_IVHD_10H_F_HT_TUNNEL                       RT_BIT(0)
-/** @} */
-
-/** @name IVRS IVinfo field.
- * In accordance with the AMD spec.
- * @{ */
-/** EFRSup: Extended Feature Support. */
-#define ACPI_IVINFO_BF_EFR_SUP_SHIFT                    0
-#define ACPI_IVINFO_BF_EFR_SUP_MASK                     UINT32_C(0x00000001)
-/** DMA Remap Sup: DMA remapping support (pre-boot DMA protection with
- *  mandatory remapping of device accessed memory). */
-#define ACPI_IVINFO_BF_DMA_REMAP_SUP_SHIFT              1
-#define ACPI_IVINFO_BF_DMA_REMAP_SUP_MASK               UINT32_C(0x00000002)
-/** Bits 4:2 reserved. */
-#define ACPI_IVINFO_BF_RSVD_2_4_SHIFT                   2
-#define ACPI_IVINFO_BF_RSVD_2_4_MASK                    UINT32_C(0x0000001c)
-/** GVASize: Guest virtual-address size. */
-#define ACPI_IVINFO_BF_GVA_SIZE_SHIFT                   5
-#define ACPI_IVINFO_BF_GVA_SIZE_MASK                    UINT32_C(0x000000e0)
-/** PASize: System physical address size. */
-#define ACPI_IVINFO_BF_PA_SIZE_SHIFT                    8
-#define ACPI_IVINFO_BF_PA_SIZE_MASK                     UINT32_C(0x00007f00)
-/** VASize: Virtual address size. */
-#define ACPI_IVINFO_BF_VA_SIZE_SHIFT                    15
-#define ACPI_IVINFO_BF_VA_SIZE_MASK                     UINT32_C(0x003f8000)
-/** HTAtsResv: HyperTransport ATS-response address translation range reserved. */
-#define ACPI_IVINFO_BF_HT_ATS_RESV_SHIFT                22
-#define ACPI_IVINFO_BF_HT_ATS_RESV_MASK                 UINT32_C(0x00400000)
-/** Bits 31:23 reserved. */
-#define ACPI_IVINFO_BF_RSVD_23_31_SHIFT                 23
-#define ACPI_IVINFO_BF_RSVD_23_31_MASK                  UINT32_C(0xff800000)
-RT_BF_ASSERT_COMPILE_CHECKS(ACPI_IVINFO_BF_, UINT32_C(0), UINT32_MAX,
-                            (EFR_SUP, DMA_REMAP_SUP, RSVD_2_4, GVA_SIZE, PA_SIZE, VA_SIZE, HT_ATS_RESV, RSVD_23_31));
-/** @} */
-
-/** @name IVHD IOMMU info flags.
- * In accordance with the AMD spec.
- * @{ */
-/** MSI message number for the event log. */
-#define ACPI_IOMMU_INFO_BF_MSI_NUM_SHIFT                0
-#define ACPI_IOMMU_INFO_BF_MSI_NUM_MASK                 UINT16_C(0x001f)
-/** Bits 7:5 reserved. */
-#define ACPI_IOMMU_INFO_BF_RSVD_5_7_SHIFT               5
-#define ACPI_IOMMU_INFO_BF_RSVD_5_7_MASK                UINT16_C(0x00e0)
-/** IOMMU HyperTransport Unit ID number. */
-#define ACPI_IOMMU_INFO_BF_UNIT_ID_SHIFT                8
-#define ACPI_IOMMU_INFO_BF_UNIT_ID_MASK                 UINT16_C(0x1f00)
-/** Bits 15:13 reserved. */
-#define ACPI_IOMMU_INFO_BF_RSVD_13_15_SHIFT             13
-#define ACPI_IOMMU_INFO_BF_RSVD_13_15_MASK              UINT16_C(0xe000)
-RT_BF_ASSERT_COMPILE_CHECKS(ACPI_IOMMU_INFO_BF_, UINT16_C(0), UINT16_MAX,
-                            (MSI_NUM, RSVD_5_7, UNIT_ID, RSVD_13_15));
-/** @} */
-
-/** @name IVHD IOMMU feature reporting field.
- * In accordance with the AMD spec.
- * @{ */
-/** x2APIC supported for peripherals. */
-#define ACPI_IOMMU_FEAT_BF_XT_SUP_SHIFT                 0
-#define ACPI_IOMMU_FEAT_BF_XT_SUP_MASK                  UINT32_C(0x00000001)
-/** NX supported for I/O. */
-#define ACPI_IOMMU_FEAT_BF_NX_SUP_SHIFT                 1
-#define ACPI_IOMMU_FEAT_BF_NX_SUP_MASK                  UINT32_C(0x00000002)
-/** GT (Guest Translation) supported. */
-#define ACPI_IOMMU_FEAT_BF_GT_SUP_SHIFT                 2
-#define ACPI_IOMMU_FEAT_BF_GT_SUP_MASK                  UINT32_C(0x00000004)
-/** GLX (Number of guest CR3 tables) supported. */
-#define ACPI_IOMMU_FEAT_BF_GLX_SUP_SHIFT                3
-#define ACPI_IOMMU_FEAT_BF_GLX_SUP_MASK                 UINT32_C(0x00000018)
-/** IA (INVALIDATE_IOMMU_ALL) command supported. */
-#define ACPI_IOMMU_FEAT_BF_IA_SUP_SHIFT                 5
-#define ACPI_IOMMU_FEAT_BF_IA_SUP_MASK                  UINT32_C(0x00000020)
-/** GA (Guest virtual APIC) supported. */
-#define ACPI_IOMMU_FEAT_BF_GA_SUP_SHIFT                 6
-#define ACPI_IOMMU_FEAT_BF_GA_SUP_MASK                  UINT32_C(0x00000040)
-/** HE (Hardware error) registers supported. */
-#define ACPI_IOMMU_FEAT_BF_HE_SUP_SHIFT                 7
-#define ACPI_IOMMU_FEAT_BF_HE_SUP_MASK                  UINT32_C(0x00000080)
-/** PASMax (maximum PASID) supported. Ignored if PPRSup=0. */
-#define ACPI_IOMMU_FEAT_BF_PAS_MAX_SHIFT                8
-#define ACPI_IOMMU_FEAT_BF_PAS_MAX_MASK                 UINT32_C(0x00001f00)
-/** PNCounters (Number of performance counters per counter bank) supported. */
-#define ACPI_IOMMU_FEAT_BF_PN_COUNTERS_SHIFT            13
-#define ACPI_IOMMU_FEAT_BF_PN_COUNTERS_MASK             UINT32_C(0x0001e000)
-/** PNBanks (Number of performance counter banks) supported. */
-#define ACPI_IOMMU_FEAT_BF_PN_BANKS_SHIFT               17
-#define ACPI_IOMMU_FEAT_BF_PN_BANKS_MASK                UINT32_C(0x007e0000)
-/** MSINumPPR (MSI number for peripheral page requests). */
-#define ACPI_IOMMU_FEAT_BF_MSI_NUM_PPR_SHIFT            23
-#define ACPI_IOMMU_FEAT_BF_MSI_NUM_PPR_MASK             UINT32_C(0x0f800000)
-/** GATS (Guest address translation size). MBZ when GTSup=0. */
-#define ACPI_IOMMU_FEAT_BF_GATS_SHIFT                   28
-#define ACPI_IOMMU_FEAT_BF_GATS_MASK                    UINT32_C(0x30000000)
-/** HATS (Host address translation size). */
-#define ACPI_IOMMU_FEAT_BF_HATS_SHIFT                   30
-#define ACPI_IOMMU_FEAT_BF_HATS_MASK                    UINT32_C(0xc0000000)
-RT_BF_ASSERT_COMPILE_CHECKS(ACPI_IOMMU_FEAT_BF_, UINT32_C(0), UINT32_MAX,
-                            (XT_SUP, NX_SUP, GT_SUP, GLX_SUP, IA_SUP, GA_SUP, HE_SUP, PAS_MAX, PN_COUNTERS, PN_BANKS,
-                             MSI_NUM_PPR, GATS, HATS));
-/** @} */
-
-/** @name IOMMU Extended Feature Register (PCI/MMIO/ACPI).
- * In accordance with the AMD spec.
- * @{ */
-/** PreFSup: Prefetch support (RO).   */
-#define IOMMU_EXT_FEAT_BF_PREF_SUP_SHIFT                0
-#define IOMMU_EXT_FEAT_BF_PREF_SUP_MASK                 UINT64_C(0x0000000000000001)
-/** PPRSup: Peripheral Page Request (PPR) support (RO). */
-#define IOMMU_EXT_FEAT_BF_PPR_SUP_SHIFT                 1
-#define IOMMU_EXT_FEAT_BF_PPR_SUP_MASK                  UINT64_C(0x0000000000000002)
-/** XTSup: x2APIC support (RO). */
-#define IOMMU_EXT_FEAT_BF_X2APIC_SUP_SHIFT              2
-#define IOMMU_EXT_FEAT_BF_X2APIC_SUP_MASK               UINT64_C(0x0000000000000004)
-/** NXSup: No Execute (PMR and PRIV) support (RO). */
-#define IOMMU_EXT_FEAT_BF_NO_EXEC_SUP_SHIFT             3
-#define IOMMU_EXT_FEAT_BF_NO_EXEC_SUP_MASK              UINT64_C(0x0000000000000008)
-/** GTSup: Guest Translation support (RO). */
-#define IOMMU_EXT_FEAT_BF_GT_SUP_SHIFT                  4
-#define IOMMU_EXT_FEAT_BF_GT_SUP_MASK                   UINT64_C(0x0000000000000010)
-/** Bit 5 reserved. */
-#define IOMMU_EXT_FEAT_BF_RSVD_5_SHIFT                  5
-#define IOMMU_EXT_FEAT_BF_RSVD_5_MASK                   UINT64_C(0x0000000000000020)
-/** IASup: INVALIDATE_IOMMU_ALL command support (RO). */
-#define IOMMU_EXT_FEAT_BF_IA_SUP_SHIFT                  6
-#define IOMMU_EXT_FEAT_BF_IA_SUP_MASK                   UINT64_C(0x0000000000000040)
-/** GASup: Guest virtual-APIC support (RO). */
-#define IOMMU_EXT_FEAT_BF_GA_SUP_SHIFT                  7
-#define IOMMU_EXT_FEAT_BF_GA_SUP_MASK                   UINT64_C(0x0000000000000080)
-/** HESup: Hardware error registers support (RO). */
-#define IOMMU_EXT_FEAT_BF_HE_SUP_SHIFT                  8
-#define IOMMU_EXT_FEAT_BF_HE_SUP_MASK                   UINT64_C(0x0000000000000100)
-/** PCSup: Performance counters support (RO). */
-#define IOMMU_EXT_FEAT_BF_PC_SUP_SHIFT                  9
-#define IOMMU_EXT_FEAT_BF_PC_SUP_MASK                   UINT64_C(0x0000000000000200)
-/** HATS: Host Address Translation Size (RO). */
-#define IOMMU_EXT_FEAT_BF_HATS_SHIFT                    10
-#define IOMMU_EXT_FEAT_BF_HATS_MASK                     UINT64_C(0x0000000000000c00)
-/** GATS: Guest Address Translation Size (RO). */
-#define IOMMU_EXT_FEAT_BF_GATS_SHIFT                    12
-#define IOMMU_EXT_FEAT_BF_GATS_MASK                     UINT64_C(0x0000000000003000)
-/** GLXSup: Guest CR3 root table level support  (RO). */
-#define IOMMU_EXT_FEAT_BF_GLX_SUP_SHIFT                 14
-#define IOMMU_EXT_FEAT_BF_GLX_SUP_MASK                  UINT64_C(0x000000000000c000)
-/** SmiFSup: SMI filter register support  (RO). */
-#define IOMMU_EXT_FEAT_BF_SMI_FLT_SUP_SHIFT             16
-#define IOMMU_EXT_FEAT_BF_SMI_FLT_SUP_MASK              UINT64_C(0x0000000000030000)
-/** SmiFRC: SMI filter register count  (RO). */
-#define IOMMU_EXT_FEAT_BF_SMI_FLT_REG_CNT_SHIFT         18
-#define IOMMU_EXT_FEAT_BF_SMI_FLT_REG_CNT_MASK          UINT64_C(0x00000000001c0000)
-/** GAMSup: Guest virtual-APIC modes support (RO). */
-#define IOMMU_EXT_FEAT_BF_GAM_SUP_SHIFT                 21
-#define IOMMU_EXT_FEAT_BF_GAM_SUP_MASK                  UINT64_C(0x0000000000e00000)
-/** DualPprLogSup: Dual PPR Log support (RO). */
-#define IOMMU_EXT_FEAT_BF_DUAL_PPR_LOG_SUP_SHIFT        24
-#define IOMMU_EXT_FEAT_BF_DUAL_PPR_LOG_SUP_MASK         UINT64_C(0x0000000003000000)
-/** Bits 27:26 reserved. */
-#define IOMMU_EXT_FEAT_BF_RSVD_26_27_SHIFT              26
-#define IOMMU_EXT_FEAT_BF_RSVD_26_27_MASK               UINT64_C(0x000000000c000000)
-/** DualEventLogSup: Dual Event Log support (RO). */
-#define IOMMU_EXT_FEAT_BF_DUAL_EVT_LOG_SUP_SHIFT        28
-#define IOMMU_EXT_FEAT_BF_DUAL_EVT_LOG_SUP_MASK         UINT64_C(0x0000000030000000)
-/** Bits 31:30 reserved. */
-#define IOMMU_EXT_FEAT_BF_RSVD_30_31_SHIFT              30
-#define IOMMU_EXT_FEAT_BF_RSVD_30_31_MASK               UINT64_C(0x00000000c0000000)
-/** PASMax: Maximum PASID support (RO). */
-#define IOMMU_EXT_FEAT_BF_PASID_MAX_SHIFT               32
-#define IOMMU_EXT_FEAT_BF_PASID_MAX_MASK                UINT64_C(0x0000001f00000000)
-/** USSup: User/Supervisor support (RO). */
-#define IOMMU_EXT_FEAT_BF_US_SUP_SHIFT                  37
-#define IOMMU_EXT_FEAT_BF_US_SUP_MASK                   UINT64_C(0x0000002000000000)
-/** DevTblSegSup: Segmented Device Table support (RO). */
-#define IOMMU_EXT_FEAT_BF_DEV_TBL_SEG_SUP_SHIFT         38
-#define IOMMU_EXT_FEAT_BF_DEV_TBL_SEG_SUP_MASK          UINT64_C(0x000000c000000000)
-/** PprOverflwEarlySup: PPR Log Overflow Early warning support (RO). */
-#define IOMMU_EXT_FEAT_BF_PPR_OVERFLOW_EARLY_SHIFT      40
-#define IOMMU_EXT_FEAT_BF_PPR_OVERFLOW_EARLY_MASK       UINT64_C(0x0000010000000000)
-/** PprAutoRspSup: PPR Automatic Response support (RO). */
-#define IOMMU_EXT_FEAT_BF_PPR_AUTO_RES_SUP_SHIFT        41
-#define IOMMU_EXT_FEAT_BF_PPR_AUTO_RES_SUP_MASK         UINT64_C(0x0000020000000000)
-/** MarcSup: Memory Access and Routing (MARC) support (RO). */
-#define IOMMU_EXT_FEAT_BF_MARC_SUP_SHIFT                42
-#define IOMMU_EXT_FEAT_BF_MARC_SUP_MASK                 UINT64_C(0x00000c0000000000)
-/** BlkStopMrkSup: Block StopMark message support (RO). */
-#define IOMMU_EXT_FEAT_BF_BLKSTOP_MARK_SUP_SHIFT        44
-#define IOMMU_EXT_FEAT_BF_BLKSTOP_MARK_SUP_MASK         UINT64_C(0x0000100000000000)
-/** PerfOptSup: IOMMU Performance Optimization support (RO). */
-#define IOMMU_EXT_FEAT_BF_PERF_OPT_SUP_SHIFT            45
-#define IOMMU_EXT_FEAT_BF_PERF_OPT_SUP_MASK             UINT64_C(0x0000200000000000)
-/** MsiCapMmioSup: MSI-Capability Register MMIO access support (RO). */
-#define IOMMU_EXT_FEAT_BF_MSI_CAP_MMIO_SUP_SHIFT        46
-#define IOMMU_EXT_FEAT_BF_MSI_CAP_MMIO_SUP_MASK         UINT64_C(0x0000400000000000)
-/** Bit 47 reserved. */
-#define IOMMU_EXT_FEAT_BF_RSVD_47_SHIFT                 47
-#define IOMMU_EXT_FEAT_BF_RSVD_47_MASK                  UINT64_C(0x0000800000000000)
-/** GIoSup: Guest I/O Protection support (RO). */
-#define IOMMU_EXT_FEAT_BF_GST_IO_PROT_SUP_SHIFT         48
-#define IOMMU_EXT_FEAT_BF_GST_IO_PROT_SUP_MASK          UINT64_C(0x0001000000000000)
-/** HASup: Host Access support (RO). */
-#define IOMMU_EXT_FEAT_BF_HST_ACCESS_SUP_SHIFT          49
-#define IOMMU_EXT_FEAT_BF_HST_ACCESS_SUP_MASK           UINT64_C(0x0002000000000000)
-/** EPHSup: Enhandled PPR Handling support (RO). */
-#define IOMMU_EXT_FEAT_BF_ENHANCED_PPR_SUP_SHIFT        50
-#define IOMMU_EXT_FEAT_BF_ENHANCED_PPR_SUP_MASK         UINT64_C(0x0004000000000000)
-/** AttrFWSup: Attribute Forward support (RO). */
-#define IOMMU_EXT_FEAT_BF_ATTR_FW_SUP_SHIFT             51
-#define IOMMU_EXT_FEAT_BF_ATTR_FW_SUP_MASK              UINT64_C(0x0008000000000000)
-/** HDSup: Host Dirty Support (RO). */
-#define IOMMU_EXT_FEAT_BF_HST_DIRTY_SUP_SHIFT           52
-#define IOMMU_EXT_FEAT_BF_HST_DIRTY_SUP_MASK            UINT64_C(0x0010000000000000)
-/** Bit 53 reserved. */
-#define IOMMU_EXT_FEAT_BF_RSVD_53_SHIFT                 53
-#define IOMMU_EXT_FEAT_BF_RSVD_53_MASK                  UINT64_C(0x0020000000000000)
-/** InvIotlbTypeSup: Invalidate IOTLB type support (RO). */
-#define IOMMU_EXT_FEAT_BF_INV_IOTLB_TYPE_SUP_SHIFT      54
-#define IOMMU_EXT_FEAT_BF_INV_IOTLB_TYPE_SUP_MASK       UINT64_C(0x0040000000000000)
-/** Bits 60:55 reserved. */
-#define IOMMU_EXT_FEAT_BF_RSVD_55_60_SHIFT              55
-#define IOMMU_EXT_FEAT_BF_RSVD_55_60_MASK               UINT64_C(0x1f80000000000000)
-/** GAUpdateDisSup: Support disabling hardware update on guest page table access
- *  (RO). */
-#define IOMMU_EXT_FEAT_BF_GA_UPDATE_DIS_SUP_SHIFT       61
-#define IOMMU_EXT_FEAT_BF_GA_UPDATE_DIS_SUP_MASK        UINT64_C(0x2000000000000000)
-/** ForcePhysDestSup: Force Physical Destination Mode for Remapped Interrupt
- *  support (RO). */
-#define IOMMU_EXT_FEAT_BF_FORCE_PHYS_DST_SUP_SHIFT      62
-#define IOMMU_EXT_FEAT_BF_FORCE_PHYS_DST_SUP_MASK       UINT64_C(0x4000000000000000)
-/** Bit 63 reserved. */
-#define IOMMU_EXT_FEAT_BF_RSVD_63_SHIFT                 63
-#define IOMMU_EXT_FEAT_BF_RSVD_63_MASK                  UINT64_C(0x8000000000000000)
-RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_EXT_FEAT_BF_, UINT64_C(0), UINT64_MAX,
-                            (PREF_SUP, PPR_SUP, X2APIC_SUP, NO_EXEC_SUP, GT_SUP, RSVD_5, IA_SUP, GA_SUP, HE_SUP, PC_SUP,
-                             HATS, GATS, GLX_SUP, SMI_FLT_SUP, SMI_FLT_REG_CNT, GAM_SUP, DUAL_PPR_LOG_SUP, RSVD_26_27,
-                             DUAL_EVT_LOG_SUP, RSVD_30_31, PASID_MAX, US_SUP, DEV_TBL_SEG_SUP, PPR_OVERFLOW_EARLY,
-                             PPR_AUTO_RES_SUP, MARC_SUP, BLKSTOP_MARK_SUP, PERF_OPT_SUP, MSI_CAP_MMIO_SUP, RSVD_47,
-                             GST_IO_PROT_SUP, HST_ACCESS_SUP, ENHANCED_PPR_SUP, ATTR_FW_SUP, HST_DIRTY_SUP, RSVD_53,
-                             INV_IOTLB_TYPE_SUP, RSVD_55_60, GA_UPDATE_DIS_SUP, FORCE_PHYS_DST_SUP, RSVD_63));
-/** @} */
-
-/** IVHD (I/O Virtualization Hardware Definition) Type 10h.
- *  In accordance with the AMD spec. */
-typedef struct ACPIIVHDTYPE10
-{
-    uint8_t         u8Type;                 /**< Type: Must be 0x10. */
-    uint8_t         u8Flags;                /**< Flags (see ACPI_IVHD_10H_F_XXX). */
-    uint16_t        u16Length;              /**< Length of IVHD including IVHD device entries. */
-    uint16_t        u16DeviceId;            /**< Device ID of the IOMMU. */
-    uint16_t        u16CapOffset;           /**< Offset in Capability space for control fields of IOMMU. */
-    uint64_t        u64BaseAddress;         /**< Base address of IOMMU control registers in MMIO space. */
-    uint16_t        u16PciSegmentGroup;     /**< PCI segment group number. */
-    uint16_t        u16IommuInfo;           /**< Interrupt number and Unit ID. */
-    uint32_t        u32Features;            /**< IOMMU feature reporting. */
-    /* IVHD device entry block follows. */
-} ACPIIVHDTYPE10;
-AssertCompileSize(ACPIIVHDTYPE10, 24);
-
-/** @name IVHD Type 11h Flags.
- * In accordance with the AMD spec.
- * @{ */
-/** Coherent control. */
-#define ACPI_IVHD_11H_F_COHERENT                        RT_BIT(5)
-/** Remote IOTLB support. */
-#define ACPI_IVHD_11H_F_IOTLB_SUP                       RT_BIT(4)
-/** Isochronous control. */
-#define ACPI_IVHD_11H_F_ISOC                            RT_BIT(3)
-/** Response Pass Posted Write. */
-#define ACPI_IVHD_11H_F_RES_PASS_PW                     RT_BIT(2)
-/** Pass Posted Write. */
-#define ACPI_IVHD_11H_F_PASS_PW                         RT_BIT(1)
-/** HyperTransport Tunnel. */
-#define ACPI_IVHD_11H_F_HT_TUNNEL                       RT_BIT(0)
-/** @} */
-
-/** @name IVHD IOMMU Type 11 Attributes field.
- * In accordance with the AMD spec.
- * @{ */
-/** Bits 12:0 reserved. */
-#define ACPI_IOMMU_ATTR_BF_RSVD_0_12_SHIFT              0
-#define ACPI_IOMMU_ATTR_BF_RSVD_0_12_MASK               UINT32_C(0x00001fff)
-/** PNCounters: Number of performance counters per counter bank. */
-#define ACPI_IOMMU_ATTR_BF_PN_COUNTERS_SHIFT            13
-#define ACPI_IOMMU_ATTR_BF_PN_COUNTERS_MASK             UINT32_C(0x0001e000)
-/** PNBanks: Number of performance counter banks. */
-#define ACPI_IOMMU_ATTR_BF_PN_BANKS_SHIFT               17
-#define ACPI_IOMMU_ATTR_BF_PN_BANKS_MASK                UINT32_C(0x007e0000)
-/** MSINumPPR: MSI number for peripheral page requests (PPR). */
-#define ACPI_IOMMU_ATTR_BF_MSI_NUM_PPR_SHIFT            23
-#define ACPI_IOMMU_ATTR_BF_MSI_NUM_PPR_MASK             UINT32_C(0x0f800000)
-/** Bits 31:28 reserved. */
-#define ACPI_IOMMU_ATTR_BF_RSVD_28_31_SHIFT             28
-#define ACPI_IOMMU_ATTR_BF_RSVD_28_31_MASK              UINT32_C(0xf0000000)
-RT_BF_ASSERT_COMPILE_CHECKS(ACPI_IOMMU_ATTR_BF_, UINT32_C(0), UINT32_MAX,
-                            (RSVD_0_12, PN_COUNTERS, PN_BANKS, MSI_NUM_PPR, RSVD_28_31));
-/** @} */
-
-/** AMD IOMMU: IVHD (I/O Virtualization Hardware Definition) Type 11h.
- *  In accordance with the AMD spec. */
-typedef struct ACPIIVHDTYPE11
-{
-    uint8_t         u8Type;                 /**< Type: Must be 0x11. */
-    uint8_t         u8Flags;                /**< Flags. */
-    uint16_t        u16Length;              /**< Length: Size starting from Type fields incl. IVHD device entries. */
-    uint16_t        u16DeviceId;            /**< Device ID of the IOMMU. */
-    uint16_t        u16CapOffset;           /**< Offset in Capability space for control fields of IOMMU. */
-    uint64_t        u64BaseAddress;         /**< Base address of IOMMU control registers in MMIO space. */
-    uint16_t        u16PciSegmentGroup;     /**< PCI segment group number. */
-    uint16_t        u16IommuInfo;           /**< Interrupt number and unit ID. */
-    uint32_t        u32IommuAttr;           /**< IOMMU info. not reported in EFR. */
-    uint64_t        u64EfrRegister;         /**< Extended Feature Register (must be identical to its MMIO shadow). */
-    uint64_t        u64Rsvd0;               /**< Reserved for future. */
-    /* IVHD device entry block follows. */
-} ACPIIVHDTYPE11;
-AssertCompileSize(ACPIIVHDTYPE11, 40);
-
-/** AMD IOMMU: IVHD (I/O Virtualization Hardware Definition) Type 40h.
- *  In accordance with the AMD spec. */
-typedef struct ACPIIVHDTYPE11 ACPIIVHDTYPE40;
-
 /** AMD IOMMU: IVRS (I/O Virtualization Reporting Structure).
  *  In accordance with the AMD spec. */
 typedef struct ACPIIVRS
@@ -3640,7 +3196,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
                                        + sizeof(Ivrs.IvhdType10Hpet);
     Ivrs.IvhdType10.u16DeviceId        = PCIBDF_MAKE(uIommuBus, VBOX_PCI_DEVFN_MAKE(uIommuDev, uIommuFn));
     Ivrs.IvhdType10.u16CapOffset       = 0;             /* 0=No multiple IOMMU functionality. */
-    Ivrs.IvhdType10.u64BaseAddress     = 0xfeb80000;    /* MMIO base address: Taken from real hardware ACPI dumps. */
+    Ivrs.IvhdType10.u64BaseAddress     = IOMMU_MMIO_BASE_ADDR;
     Ivrs.IvhdType10.u16PciSegmentGroup = 0;
     /* NOTE! Subfields in the following fields must match any corresponding field in PCI/MMIO registers of the IOMMU device. */
     Ivrs.IvhdType10.u8Flags            = 0; /* Remote IOTLB, Prefetch IOMMU pages features etc. - currently none supported. */
@@ -3659,7 +3215,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
                                        | RT_BF_MAKE(ACPI_IOMMU_FEAT_BF_PN_COUNTERS, 0)
                                        | RT_BF_MAKE(ACPI_IOMMU_FEAT_BF_MSI_NUM_PPR, 0)
                                        | RT_BF_MAKE(ACPI_IOMMU_FEAT_BF_GATS,        0)
-                                       | RT_BF_MAKE(ACPI_IOMMU_FEAT_BF_HATS,        6 & 3); /* IOMMU_MAX_HOST_PT_LEVEL & 3*/
+                                       | RT_BF_MAKE(ACPI_IOMMU_FEAT_BF_HATS,        IOMMU_MAX_HOST_PT_LEVEL & 3);
     /* Start range from BDF (00:01:00). */
     Ivrs.IvhdType10Start.u8DevEntryType = ACPI_IVHD_DEVENTRY_TYPE_START_RANGE;
     Ivrs.IvhdType10Start.u16DevId       = PCIBDF_MAKE(0, VBOX_PCI_DEVFN_MAKE(1, 0));
@@ -3717,7 +3273,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_GA_SUP,             0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_HE_SUP,             1)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_PC_SUP,             0)
-                                       | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_HATS,               6 /* IOMMU_MAX_HOST_PT_LEVEL */ & 3)
+                                       | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_HATS,               IOMMU_MAX_HOST_PT_LEVEL & 3)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_GATS,               0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_GLX_SUP,            0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_SMI_FLT_SUP,        0)
@@ -3727,7 +3283,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_DUAL_EVT_LOG_SUP,   0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_PASID_MAX,          0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_US_SUP,             0)
-                                       | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_DEV_TBL_SEG_SUP,    3 /* IOMMU_MAX_DEV_TAB_SEGMENTS */)
+                                       | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_DEV_TBL_SEG_SUP,    IOMMU_MAX_DEV_TAB_SEGMENTS)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_PPR_OVERFLOW_EARLY, 0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_PPR_AUTO_RES_SUP,   0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_MARC_SUP,           0)

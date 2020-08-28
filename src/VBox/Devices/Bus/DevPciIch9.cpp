@@ -42,6 +42,9 @@
 
 #include <VBox/AssertGuest.h>
 #include <VBox/msi.h>
+#ifdef VBOX_WITH_IOMMU_AMD
+# include <VBox/iommu-amd.h>
+#endif
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/mm.h>
 #include <iprt/asm.h>
@@ -56,6 +59,9 @@
 #include "VBoxDD.h"
 #include "MsiCommon.h"
 #include "DevPciInternal.h"
+#ifdef VBOX_WITH_IOMMU_AMD
+# include "../Bus/DevIommuAmd.h"
+#endif
 
 
 /*********************************************************************************************************************************
@@ -2249,10 +2255,11 @@ static void ich9pciBiosInitAllDevicesOnBus(PPDMDEVINS pDevIns, PDEVPCIROOT pPciR
             {
                 /* IOMMU. */
                 uint16_t const uVendorId = devpciR3GetWord(pPciDev, VBOX_PCI_VENDOR_ID);
-                if (uVendorId == 0x1022 /* IOMMU_PCI_VENDOR_ID => AMD. */)
+                if (uVendorId == IOMMU_PCI_VENDOR_ID)
                 {
                     /* AMD. */
-                    devpciR3SetDWord(pDevIns, pPciDev, 0x44, 0xfeb80001); /* set MMIO region address + enable (bit 0). */
+                    devpciR3SetDWord(pDevIns, pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO,
+                                     IOMMU_MMIO_BASE_ADDR | RT_BIT(0)); /* enable base address (bit 0). */
                 }
                 break;
             }
