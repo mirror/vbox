@@ -1395,9 +1395,9 @@ VBoxControl sharedfolder list</screen>
     <para>
       In the context of using drag and drop, the origin of the data is
       called the <emphasis>source</emphasis>. That is, where the actual
-      data comes from and is specified. The <emphasis>target</emphasis>
+      data comes from and is specified. The <emphasis>destination</emphasis>
       specifies where the data from the source should go to.
-      Transferring data from the source to the target can be done in
+      Transferring data from the source to the destination can be done in
       various ways, such as copying, moving, or linking.
     </para>
 
@@ -1410,9 +1410,9 @@ VBoxControl sharedfolder list</screen>
 
     <para>
       When transferring data from the host to the guest OS, the host in
-      this case is the source, whereas the guest OS is the target.
+      this case is the source, whereas the guest OS is the destination.
       However, when transferring data from the guest OS to the host, the
-      guest OS this time became the source and the host is the target.
+      guest OS this time became the source and the host is the destination.
     </para>
 
     <para>
@@ -1495,7 +1495,7 @@ VBoxControl sharedfolder list</screen>
       <para>
         As &product-name; can run on a variety of host operating systems
         and also supports a wide range of guests, certain data formats
-        must be translated after transfer. This is so that the target
+        must be translated after transfer. This is so that the destination
         operating system, which receiving the data, is able to handle
         them in an appropriate manner.
       </para>
