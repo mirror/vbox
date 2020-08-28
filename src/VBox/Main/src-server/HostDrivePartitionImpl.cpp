@@ -19,7 +19,7 @@
 #include "HostDrivePartitionImpl.h"
 #include "LoggingNew.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 /*
  * HostDrivePartition implementation.
