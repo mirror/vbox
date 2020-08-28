@@ -577,8 +577,8 @@ public:
     int wndXDnDSetFormatList(Window wndThis, Atom atmProp, const VBoxDnDAtomList &lstFormats) const;
 
     /* Atom / HGCM formatting helpers. */
-    int             appendToAtomList(const RTCList<RTCString> &lstFormats, VBoxDnDAtomList &lstAtoms) const;
-    int             appendToAtomList(const void *pvData, uint32_t cbData, VBoxDnDAtomList &lstAtoms) const;
+    int             appendFormatsToList(const RTCList<RTCString> &lstFormats, VBoxDnDAtomList &lstAtoms) const;
+    int             appendDataToList(const void *pvData, uint32_t cbData, VBoxDnDAtomList &lstAtoms) const;
     static Atom     toAtomAction(VBOXDNDACTION dndAction);
     static int      toAtomActions(VBOXDNDACTIONLIST dndActionList, VBoxDnDAtomList &lstAtoms);
     static uint32_t toHGCMAction(Atom atom);
@@ -606,9 +606,9 @@ protected:
      *  source/target window is using. */
     long                        m_curVer;
     /** List of (Atom) formats the source window supports. */
-    VBoxDnDAtomList             m_lstFormats;
+    VBoxDnDAtomList             m_lstAtomFormats;
     /** List of (Atom) actions the source window supports. */
-    VBoxDnDAtomList             m_lstActions;
+    VBoxDnDAtomList             m_lstAtomActions;
     /** Buffer for answering the target window's selection request. */
     void                       *m_pvSelReqData;
     /** Size (in bytes) of selection request data buffer. */
@@ -746,9 +746,16 @@ void DragInstance::reset(void)
         wndXDnDClearFormatList(m_wndProxy.hWnd);
         wndXDnDClearActionList(m_wndProxy.hWnd);
 
-        /* Reset the internal state. */
-        m_lstActions.clear();
-        m_lstFormats.clear();
+        m_lstAtomActions.clear();
+
+        /* First, clear the formats list. */
+        m_lstAtomFormats.clear();
+        /* Append default targets we support.
+         * Note: The order is sorted by preference; be careful when changing this. */
+        m_lstAtomFormats.append(xAtom(XA_TARGETS));
+        m_lstAtomFormats.append(xAtom(XA_MULTIPLE));
+        /** @todo Support INC (incremental transfers). */
+
         m_wndCur    = 0;
         m_curVer    = -1;
         m_enmState  = Initialized;
@@ -1044,13 +1051,13 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                         for (int i = 2; i < 5; i++)
                         {
                             LogFlowThisFunc(("\t%s\n", gX11->xAtomToString(e.xclient.data.l[i]).c_str()));
-                            m_lstFormats.append(e.xclient.data.l[i]);
+                            m_lstAtomFormats.append(e.xclient.data.l[i]);
                         }
                     }
                     else
                     {
                         /* More than 3 format types supported. */
-                        rc = wndXDnDGetFormatList(wndSelection, m_lstFormats);
+                        rc = wndXDnDGetFormatList(wndSelection, m_lstAtomFormats);
                     }
 
                     /*
@@ -1060,10 +1067,10 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                     {
                         if (m_curVer >= 2) /* More than one action allowed since protocol version 2. */
                         {
-                            rc = wndXDnDGetActionList(wndSelection, m_lstActions);
+                            rc = wndXDnDGetActionList(wndSelection, m_lstAtomActions);
                         }
                         else /* Only "copy" action allowed on legacy applications. */
-                            m_lstActions.append(XA_XdndActionCopy);
+                            m_lstAtomActions.append(XA_XdndActionCopy);
                     }
 
                     if (RT_SUCCESS(rc))
@@ -1295,8 +1302,8 @@ int DragInstance::onX11SelectionRequest(const XEvent &evReq)
 
 #ifdef DEBUG
             LogFlowFunc(("Supported formats:\n"));
-            for (size_t i = 0; i < m_lstFormats.size(); i++)
-                LogFlowFunc(("\t%s\n", xAtomToString(m_lstFormats.at(i)).c_str()));
+            for (size_t i = 0; i < m_lstAtomFormats.size(); i++)
+                LogFlowFunc(("\t%s\n", xAtomToString(m_lstAtomFormats.at(i)).c_str()));
 #endif
             /* Is the requestor asking for the possible MIME types? */
             if (pEvReq->target == xAtom(XA_TARGETS))
@@ -1305,12 +1312,12 @@ int DragInstance::onX11SelectionRequest(const XEvent &evReq)
 
                 /* If so, set the window property with the formats on the requestor
                  * window. */
-                rc = wndXDnDSetFormatList(pEvReq->requestor, pEvReq->property, m_lstFormats);
+                rc = wndXDnDSetFormatList(pEvReq->requestor, pEvReq->property, m_lstAtomFormats);
                 if (RT_SUCCESS(rc))
                     pEvResp->property = pEvReq->property;
             }
             /* Is the requestor asking for a specific MIME type (we support)? */
-            else if (m_lstFormats.contains(pEvReq->target))
+            else if (m_lstAtomFormats.contains(pEvReq->target))
             {
                 VBClLogInfo("Target window %#x ('%s') is asking for data as '%s'\n",
                             pEvReq->requestor, pszWndName, xAtomToString(pEvReq->target).c_str());
@@ -1627,20 +1634,15 @@ int DragInstance::hgEnter(const RTCList<RTCString> &lstFormats, uint32_t dndList
     {
         /* Check if the VM session has changed and reconnect to the HGCM service if necessary. */
         rc = checkForSessionChange();
-        if (RT_FAILURE(rc))
-            break;
+        AssertRCBreak(rc);
 
-        rc = appendToAtomList(lstFormats, m_lstFormats);
-        if (RT_FAILURE(rc))
-            break;
+        /* Append all actual (MIME) formats we support to the list.
+         * These must come last, after the default Atoms above. */
+        rc = appendFormatsToList(lstFormats, m_lstAtomFormats);
+        AssertRCBreak(rc);
 
-        /* If we have more than 3 formats we have to use the type list extension. */
-        if (m_lstFormats.size() > 3)
-        {
-            rc = wndXDnDSetFormatList(m_wndProxy.hWnd, xAtom(XA_XdndTypeList), m_lstFormats);
-            if (RT_FAILURE(rc))
-                break;
-        }
+        rc = wndXDnDSetFormatList(m_wndProxy.hWnd, xAtom(XA_XdndTypeList), m_lstAtomFormats);
+        AssertRCBreak(rc);
 
         /* Announce the possible actions. */
         VBoxDnDAtomList lstActions;
@@ -1811,14 +1813,14 @@ int DragInstance::hgMove(uint32_t uPosX, uint32_t uPosY, VBOXDNDACTION dndAction
         m.data.l[XdndEnterWindow] = m_wndProxy.hWnd;
         m.data.l[XdndEnterFlags]  = RT_MAKE_U32_FROM_U8(
                                     /* Bit 0 is set if the source supports more than three data types. */
-                                    m_lstFormats.size() > 3 ? RT_BIT(0) : 0,
+                                    m_lstAtomFormats.size() > 3 ? RT_BIT(0) : 0,
                                     /* Reserved for future use. */
                                     0, 0,
                                     /* Protocol version to use. */
                                     RT_MIN(VBOX_XDND_VERSION, newVer));
-        m.data.l[XdndEnterType1]  = m_lstFormats.value(0, None); /* First data type to use. */
-        m.data.l[XdndEnterType2]  = m_lstFormats.value(1, None); /* Second data type to use. */
-        m.data.l[XdndEnterType3]  = m_lstFormats.value(2, None); /* Third data type to use. */
+        m.data.l[XdndEnterType1]  = m_lstAtomFormats.value(0, None); /* First data type to use. */
+        m.data.l[XdndEnterType2]  = m_lstAtomFormats.value(1, None); /* Second data type to use. */
+        m.data.l[XdndEnterType3]  = m_lstAtomFormats.value(2, None); /* Third data type to use. */
 
         xRc = XSendEvent(m_pDisplay, wndCursor, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
         if (xRc == 0)
@@ -2164,13 +2166,13 @@ int DragInstance::ghIsDnDPending(void)
     int rc2 = RTCritSectEnter(&m_dataCS);
     if (RT_SUCCESS(rc2))
     {
-        RTCString strFormatsCur = gX11->xAtomListToString(m_lstFormats);
+        RTCString strFormatsCur = gX11->xAtomListToString(m_lstAtomFormats);
         if (!strFormatsCur.isEmpty())
         {
             strFormats   = strFormatsCur;
             dndActionDefault = VBOX_DND_ACTION_COPY; /** @todo Handle default action! */
             dndActionList    = VBOX_DND_ACTION_COPY; /** @todo Ditto. */
-            dndActionList   |= toHGCMActions(m_lstActions);
+            dndActionList   |= toHGCMActions(m_lstAtomActions);
         }
 
         RTCritSectLeave(&m_dataCS);
@@ -2815,11 +2817,6 @@ int DragInstance::wndXDnDSetFormatList(Window wndThis, Atom atmProp, const VBoxD
     if (lstFormats.isEmpty())
         return VERR_INVALID_PARAMETER;
 
-    /* We support TARGETS and the data types. */
-    VBoxDnDAtomList lstFormatsExt(lstFormats.size() + 1);
-    lstFormatsExt.append(xAtom(XA_TARGETS));
-    lstFormatsExt.append(lstFormats);
-
     /* Add the property with the property data to the window. */
     XChangeProperty(m_pDisplay, wndThis, atmProp,
                     XA_ATOM, 32, PropModeReplace,
@@ -2836,7 +2833,7 @@ int DragInstance::wndXDnDSetFormatList(Window wndThis, Atom atmProp, const VBoxD
  * @param   lstFormats              Reference to RTCString list to convert.
  * @param   lstAtoms                Reference to VBoxDnDAtomList list to store results in.
  */
-int DragInstance::appendToAtomList(const RTCList<RTCString> &lstFormats, VBoxDnDAtomList &lstAtoms) const
+int DragInstance::appendFormatsToList(const RTCList<RTCString> &lstFormats, VBoxDnDAtomList &lstAtoms) const
 {
     for (size_t i = 0; i < lstFormats.size(); ++i)
         lstAtoms.append(XInternAtom(m_pDisplay, lstFormats.at(i).c_str(), False));
@@ -2852,7 +2849,7 @@ int DragInstance::appendToAtomList(const RTCList<RTCString> &lstFormats, VBoxDnD
  * @param   cbData                  Size (in bytes) to convert.
  * @param   lstAtoms                Reference to VBoxDnDAtomList list to store results in.
  */
-int DragInstance::appendToAtomList(const void *pvData, uint32_t cbData, VBoxDnDAtomList &lstAtoms) const
+int DragInstance::appendDataToList(const void *pvData, uint32_t cbData, VBoxDnDAtomList &lstAtoms) const
 {
     RT_NOREF1(lstAtoms);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
