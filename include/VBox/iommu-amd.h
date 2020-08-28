@@ -465,9 +465,9 @@ typedef union
 {
     struct
     {
-        uint16_t    u3Function : 3;  /**< Bits 2:0   - Function. */
-        uint16_t    u9Device : 9;    /**< Bits 11:3  - Device. */
-        uint16_t    u4Bus : 4;       /**< Bits 15:12 - Bus. */
+        RT_GCC_EXTENSION uint16_t  u3Function : 3;  /**< Bits 2:0   - Function. */
+        RT_GCC_EXTENSION uint16_t  u9Device : 9;    /**< Bits 11:3  - Device. */
+        RT_GCC_EXTENSION uint16_t  u4Bus : 4;       /**< Bits 15:12 - Bus. */
     } n;
     /** The unsigned integer view. */
     uint16_t        u;
@@ -916,21 +916,21 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
-        uint16_t    u4PasidHi : 4;          /**< Bits 19:16  - PASID: Process Address-Space ID (Hi). */
-        uint16_t    u12Rsvd0 : 12;          /**< Bits 31:20  - Reserved. */
-        uint16_t    u16PasidLo;             /**< Bits 47:32  - PASID: Process Address-Space ID (Lo). */
-        uint16_t    u1GuestOrNested : 1;    /**< Bit  48     - GN: Guest (GPA) or Nested (GVA). */
-        uint16_t    u2Rsvd0 : 2;            /**< Bits 50:49  - Reserved. */
-        uint16_t    u1Interrupt : 1;        /**< Bit  51     - I: Interrupt. */
-        uint16_t    u1Rsvd0 : 1;            /**< Bit  52     - Reserved. */
-        uint16_t    u1ReadWrite : 1;        /**< Bit  53     - RW: Read/Write. */
-        uint16_t    u1Rsvd1 : 1;            /**< Bit  54     - Reserved. */
-        uint16_t    u1RsvdNotZero : 1;      /**< Bit  55     - RZ: Reserved bit not Zero (0=invalid level encoding). */
-        uint16_t    u1Translation : 1;      /**< Bit  56     - TN: Translation. */
-        uint16_t    u3Rsvd0 : 3;            /**< Bits 59:57  - Reserved. */
-        uint16_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
-        uint64_t    u64Addr;                /**< Bits 127:64 - Address: I/O Virtual Address (IOVA). */
+                         uint16_t  u16DevId;            /**< Bits 15:0   - Device ID. */
+        RT_GCC_EXTENSION uint16_t  u4PasidHi : 4;       /**< Bits 19:16  - PASID: Process Address-Space ID (Hi). */
+        RT_GCC_EXTENSION uint16_t  u12Rsvd0 : 12;       /**< Bits 31:20  - Reserved. */
+                         uint16_t  u16PasidLo;          /**< Bits 47:32  - PASID: Process Address-Space ID (Lo). */
+        RT_GCC_EXTENSION uint16_t  u1GuestOrNested : 1; /**< Bit  48     - GN: Guest (GPA) or Nested (GVA). */
+        RT_GCC_EXTENSION uint16_t  u2Rsvd0 : 2;         /**< Bits 50:49  - Reserved. */
+        RT_GCC_EXTENSION uint16_t  u1Interrupt : 1;     /**< Bit  51     - I: Interrupt. */
+        RT_GCC_EXTENSION uint16_t  u1Rsvd0 : 1;         /**< Bit  52     - Reserved. */
+        RT_GCC_EXTENSION uint16_t  u1ReadWrite : 1;     /**< Bit  53     - RW: Read/Write. */
+        RT_GCC_EXTENSION uint16_t  u1Rsvd1 : 1;         /**< Bit  54     - Reserved. */
+        RT_GCC_EXTENSION uint16_t  u1RsvdNotZero : 1;   /**< Bit  55     - RZ: Reserved bit not Zero (0=invalid level encoding). */
+        RT_GCC_EXTENSION uint16_t  u1Translation : 1;   /**< Bit  56     - TN: Translation. */
+        RT_GCC_EXTENSION uint16_t  u3Rsvd0 : 3;         /**< Bits 59:57  - Reserved. */
+        RT_GCC_EXTENSION uint16_t  u4EvtCode : 4;       /**< Bits 63:60  - Event code. */
+                         uint64_t  u64Addr;             /**< Bits 127:64 - Address: I/O Virtual Address (IOVA). */
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
@@ -951,21 +951,21 @@ typedef union
 {
     struct
     {
-        uint16_t    u16DevId;               /**< Bits 15:0   - Device ID. */
-        uint16_t    u4PasidHi : 4;          /**< Bits 19:16  - PASID: Process Address-Space ID (Hi). */
-        uint16_t    u16DomainOrPasidLo;     /**< Bits 47:32  - D/P: Domain ID or Process Address-Space ID (Lo). */
-        uint16_t    u1GuestOrNested : 1;    /**< Bit  48     - GN: Guest (GPA) or Nested (GVA). */
-        uint16_t    u1NoExecute : 1;        /**< Bit  49     - NX: No Execute. */
-        uint16_t    u1User : 1;             /**< Bit  50     - US: User/Supervisor. */
-        uint16_t    u1Interrupt : 1;        /**< Bit  51     - I: Interrupt. */
-        uint16_t    u1Present : 1;          /**< Bit  52     - PR: Present. */
-        uint16_t    u1ReadWrite : 1;        /**< Bit  53     - RW: Read/Write. */
-        uint16_t    u1PermDenied : 1;       /**< Bit  54     - PE: Permission Indicator. */
-        uint16_t    u1RsvdNotZero : 1;      /**< Bit  55     - RZ: Reserved bit not Zero (0=invalid level encoding). */
-        uint16_t    u1Translation : 1;      /**< Bit  56     - TN: Translation. */
-        uint16_t    u3Rsvd0 : 3;            /**< Bit  59:57  - Reserved. */
-        uint16_t    u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
-        uint64_t    u64Addr;                /**< Bits 127:64 - Address: I/O Virtual Address (IOVA). */
+                         uint16_t  u16DevId;               /**< Bits 15:0   - Device ID. */
+        RT_GCC_EXTENSION uint16_t  u4PasidHi : 4;          /**< Bits 19:16  - PASID: Process Address-Space ID (Hi). */
+        RT_GCC_EXTENSION uint16_t  u16DomainOrPasidLo;     /**< Bits 47:32  - D/P: Domain ID or Process Address-Space ID (Lo). */
+        RT_GCC_EXTENSION uint16_t  u1GuestOrNested : 1;    /**< Bit  48     - GN: Guest (GPA) or Nested (GVA). */
+        RT_GCC_EXTENSION uint16_t  u1NoExecute : 1;        /**< Bit  49     - NX: No Execute. */
+        RT_GCC_EXTENSION uint16_t  u1User : 1;             /**< Bit  50     - US: User/Supervisor. */
+        RT_GCC_EXTENSION uint16_t  u1Interrupt : 1;        /**< Bit  51     - I: Interrupt. */
+        RT_GCC_EXTENSION uint16_t  u1Present : 1;          /**< Bit  52     - PR: Present. */
+        RT_GCC_EXTENSION uint16_t  u1ReadWrite : 1;        /**< Bit  53     - RW: Read/Write. */
+        RT_GCC_EXTENSION uint16_t  u1PermDenied : 1;       /**< Bit  54     - PE: Permission Indicator. */
+        RT_GCC_EXTENSION uint16_t  u1RsvdNotZero : 1;      /**< Bit  55     - RZ: Reserved bit not Zero (0=invalid level encoding). */
+        RT_GCC_EXTENSION uint16_t  u1Translation : 1;      /**< Bit  56     - TN: Translation. */
+        RT_GCC_EXTENSION uint16_t  u3Rsvd0 : 3;            /**< Bit  59:57  - Reserved. */
+        RT_GCC_EXTENSION uint16_t  u4EvtCode : 4;          /**< Bits 63:60  - Event code. */
+                         uint64_t  u64Addr;                /**< Bits 127:64 - Address: I/O Virtual Address (IOVA). */
     } n;
     /** The 32-bit unsigned integer view.  */
     uint32_t    au32[4];
