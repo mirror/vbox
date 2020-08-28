@@ -59,13 +59,10 @@ vboxsf: vboxguest
 	    echo; \
 	fi
 
-vboxvideo: vboxguest
+vboxvideo:
 	+ $(VBOX_QUIET_SH)if [ -d vboxvideo ]; then \
-	    if [ -f vboxguest/Module.symvers ]; then \
-	        cp vboxguest/Module.symvers vboxvideo; \
-	    fi; \
 	    echo "=== Building 'vboxvideo' module ==="; \
-	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) KBUILD_EXTRA_SYMBOLS=$(abspath vboxvideo/Module.symvers) -C vboxvideo || exit 1; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo || exit 1; \
 	    if [ -f vboxvideo/vboxvideo.ko ]; then \
 	        cp vboxvideo/vboxvideo.ko .; \
 	    elif [ -f vboxvideo/vboxvideo.o ]; then \
