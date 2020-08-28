@@ -110,6 +110,8 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  #
  vbox-img_TEMPLATE = VBoxR3Static
  vbox-img_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
+ vbox-img_INCS += \
+	../../Main/include
  vbox-img_SOURCES = \
 	vbox-img.cpp \
 	../VD.cpp \

@@ -6225,6 +6225,14 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
     {
         /* sanity check */
         AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pszBackend, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pszFilename, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pPCHSGeometry, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pLCHSGeometry, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pUuid, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pVDIfsImage, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pVDIfsOperation, rc = VERR_INVALID_PARAMETER);
+
         AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         /* Check arguments. */
@@ -6234,10 +6242,10 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
         AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
                            ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
                            rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cbSize,
+        AssertMsgBreakStmt(cbSize || (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK),
                            ("cbSize=%llu\n", cbSize),
                            rc = VERR_INVALID_PARAMETER);
-        if (cbSize % 512)
+        if (cbSize % 512 && !(uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK))
         {
             rc = vdError(pDisk, VERR_VD_INVALID_SIZE, RT_SRC_POS,
                          N_("VD: The given disk size %llu is not aligned on a sector boundary (512 bytes)"), cbSize);
@@ -6247,8 +6255,12 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
                            || ((uImageFlags & (VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF)) != VD_IMAGE_FLAGS_FIXED),
                            ("uImageFlags=%#x\n", uImageFlags),
                            rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(   !(uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
+                           || !(uImageFlags & ~(VD_VMDK_IMAGE_FLAGS_RAWDISK | VD_IMAGE_FLAGS_FIXED)),
+                           ("uImageFlags=%#x\n", uImageFlags),
+                           rc = VERR_INVALID_PARAMETER);
         /* The PCHS geometry fields may be 0 to leave it for later. */
-        AssertMsgBreakStmt(   VALID_PTR(pPCHSGeometry)
+        AssertMsgBreakStmt(   VALID_PTR(pPCHSGeometry) /** @todo r=bird: will crash in assert message formatting if invalid. duh. */
                            && pPCHSGeometry->cHeads <= 16
                            && pPCHSGeometry->cSectors <= 63,
                            ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
@@ -6256,7 +6268,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
                             pPCHSGeometry->cSectors),
                            rc = VERR_INVALID_PARAMETER);
         /* The LCHS geometry fields may be 0 to leave it to later autodetection. */
-        AssertMsgBreakStmt(   VALID_PTR(pLCHSGeometry)
+        AssertMsgBreakStmt(   VALID_PTR(pLCHSGeometry) /** @todo r=bird: will crash in assert message formatting if invalid. duh. */
                            && pLCHSGeometry->cHeads <= 255
                            && pLCHSGeometry->cSectors <= 63,
                            ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
@@ -6335,7 +6347,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
         }
         if (   (   (uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G)
                 && !(pImage->Backend->uBackendCaps & VD_CAP_CREATE_SPLIT_2G))
-            || (   (uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+            || (   (uImageFlags & (  VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
+                                   | VD_VMDK_IMAGE_FLAGS_RAWDISK))
                 && RTStrICmp(pszBackend, "VMDK")))
         {
             rc =  vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
