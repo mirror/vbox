@@ -29,8 +29,8 @@
 # pragma once
 #endif
 
+#include <iprt/types.h>
 #include <iprt/assertcompile.h>
-#include <iprt/stdint.h>
 
 /**
  * @name PCI configuration register offsets.
