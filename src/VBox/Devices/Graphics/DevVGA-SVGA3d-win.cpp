@@ -5152,6 +5152,35 @@ int vmsvga3dDrawPrimitives(PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertex
     AssertReturn(numRanges && numRanges <= SVGA3D_MAX_DRAW_PRIMITIVE_RANGES, VERR_INVALID_PARAMETER);
     AssertReturn(!cVertexDivisor || cVertexDivisor == numVertexDecls, VERR_INVALID_PARAMETER);
 
+#if 0
+    /* Dump render target to a bitmap. */
+    if (pContext->state.aRenderTargets[SVGA3D_RT_COLOR0] != SVGA3D_INVALID_ID)
+    {
+        vmsvga3dUpdateHeapBuffersForSurfaces(pThisCC, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0]);
+        PVMSVGA3DSURFACE pSurface;
+        int rc2 = vmsvga3dSurfaceFromSid(pState, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], &pSurface);
+        if (RT_SUCCESS(rc2))
+            vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpd3d", "rt", "-pre");
+    }
+    for (int iTex = 0; iTex < SVGA3D_MAX_SAMPLERS_PS; ++iTex)
+    {
+        IDirect3DBaseTexture9 *pBaseTexture = 0;
+        hr = pContext->pDevice->GetTexture(iTex, &pBaseTexture);
+        if (hr == S_OK && pBaseTexture)
+        {
+            D3DSURFACE_DESC surfDesc;
+            RT_ZERO(surfDesc);
+
+            IDirect3DTexture9 *pTexture = (IDirect3DTexture9 *)pBaseTexture;
+            pTexture->GetLevelDesc(0, &surfDesc);
+
+            Log(("Texture[%d]: %dx%d\n",
+                 iTex, surfDesc.Width, surfDesc.Height));
+            D3D_RELEASE(pBaseTexture);
+        }
+    }
+#endif
+
     /*
      * Process all vertex declarations. Each vertex buffer surface is represented by one stream source id.
      */
@@ -5347,8 +5376,9 @@ int vmsvga3dDrawPrimitives(PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertex
             }
 
             /* Render with an index buffer */
-            Log(("DrawIndexedPrimitive %x startindex=%d numVertices=%d, primitivecount=%d index format=%s index bias=%d stride=%d\n",
-                 PrimitiveTypeD3D, pVertexDecl[0].rangeHint.first,  numVertices, pRange[iPrimitive].primitiveCount,
+            Log(("DrawIndexedPrimitive %x startindex=%d (indexArray.offset 0x%x) range [%d:%d) numVertices=%d, primitivecount=%d index format=%s index bias=%d stride=%d\n",
+                 PrimitiveTypeD3D, pRange[iPrimitive].indexArray.offset / pRange[iPrimitive].indexWidth, pRange[iPrimitive].indexArray.offset,
+                 pVertexDecl[0].rangeHint.first, pVertexDecl[0].rangeHint.last, numVertices, pRange[iPrimitive].primitiveCount,
                  (pRange[iPrimitive].indexWidth == sizeof(uint16_t)) ? "D3DFMT_INDEX16" : "D3DFMT_INDEX32",
                  pRange[iPrimitive].indexBias, strideVertex));
 
@@ -5423,13 +5453,17 @@ int vmsvga3dDrawPrimitives(PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertex
         if (RT_SUCCESS(rc2))
             vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpd3d", "rt", "-post");
 # if 0
-        /* Stage 0 texture. */
-        if (pContext->aSidActiveTextures[0] != SVGA3D_INVALID_ID)
+        for (i = 0; i < SVGA3D_MAX_SAMPLERS_PS; ++i)
         {
-            vmsvga3dUpdateHeapBuffersForSurfaces(pThisCC, pContext->aSidActiveTextures[0]);
-            rc2 = vmsvga3dSurfaceFromSid(pState, pContext->aSidActiveTextures[0], &pSurface);
-            if (RT_SUCCESS(rc2))
-                vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpd3d", "rt", "-post-tx");
+            if (pContext->aSidActiveTextures[i] != SVGA3D_INVALID_ID)
+            {
+                char szSuffix[32];
+                RTStrPrintf2(szSuffix, sizeof(szSuffix), "-tx%d", i);
+                vmsvga3dUpdateHeapBuffersForSurfaces(pThisCC, pContext->aSidActiveTextures[i]);
+                rc2 = vmsvga3dSurfaceFromSid(pState, pContext->aSidActiveTextures[i], &pSurface);
+                if (RT_SUCCESS(rc2))
+                    vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpd3d", "rt", szSuffix);
+            }
         }
 # endif
     }
@@ -5477,7 +5511,7 @@ int vmsvga3dShaderDefine(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA3
     PVMSVGA3DSTATE        pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
 
-    Log(("vmsvga3dShaderDefine %x shid=%x type=%s cbData=%x\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", cbData));
+    Log(("vmsvga3dShaderDefine %x shid=%d type=%s cbData=%d\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", cbData));
 
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
@@ -5584,7 +5618,7 @@ int vmsvga3dShaderDestroy(PVGASTATECC pThisCC, uint32_t cid, uint32_t shid, SVGA
     AssertReturn(pState, VERR_NO_MEMORY);
     PVMSVGA3DSHADER       pShader = NULL;
 
-    Log(("vmsvga3dShaderDestroy %x shid=%x type=%s\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL"));
+    Log(("vmsvga3dShaderDestroy %x shid=%d type=%s\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL"));
 
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
