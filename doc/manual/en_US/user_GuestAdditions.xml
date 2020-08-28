@@ -1564,7 +1564,7 @@ VBoxControl sharedfolder list</screen>
         data while the drag operation still is in progress (e.g. on LXDE
         using the PCManFM file manager). This currently is not supported.
 
-        As a workaround, a different file manager (e.g. Nautilus) can 
+        As a workaround, a different file manager (e.g. Nautilus) can
         be used instead.
       </para>
 
