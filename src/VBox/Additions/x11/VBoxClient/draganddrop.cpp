@@ -933,8 +933,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
              * Client messages are used to inform us about the status of a XdndAware
              * window, in response of some events we send to them.
              */
-            if (   e.xclient.message_type == xAtom(XA_XdndStatus)
-                && m_wndCur               == static_cast<Window>(e.xclient.data.l[XdndStatusWindow]))
+            if (e.xclient.message_type == xAtom(XA_XdndStatus))
             {
                 Window wndTarget = static_cast<Window>(e.xclient.data.l[XdndStatusWindow]);
 
@@ -1667,6 +1666,13 @@ int DragInstance::hgEnter(const RTCList<RTCString> &lstFormats, uint32_t dndList
 
         rc = wndXDnDSetActionList(m_wndProxy.hWnd, lstActions);
         AssertRCBreak(rc);
+
+        Atom atmEnabled = 1;
+        XChangeProperty(m_pDisplay, m_wndProxy.hWnd, xAtom(XA_XdndActionAsk), XA_ATOM, 32, PropModeReplace,
+                        reinterpret_cast<unsigned char*>(&atmEnabled), 1);
+
+        XChangeProperty(m_pDisplay, m_wndProxy.hWnd, xAtom(XA_XdndActionDescription), XA_STRING, 8, PropModeReplace,
+                        (const unsigned char *)"VBox DnD", sizeof("VBox DnD"));
 
         /* Set the DnD selection owner to our window. */
         /** @todo Don't use CurrentTime -- according to ICCCM section 2.1. */
