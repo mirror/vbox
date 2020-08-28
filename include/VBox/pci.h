@@ -38,6 +38,31 @@
  * @{
  */
 
+/** @name PCI device classes.
+ * @{ */
+#define VBOX_PCI_CLASS_UNCLASSIFIED             0x00
+#define VBOX_PCI_CLASS_MASS_STORAGE             0x01
+#define VBOX_PCI_CLASS_NETWORK                  0x02
+#define VBOX_PCI_CLASS_DISPLAY                  0x03
+#define VBOX_PCI_CLASS_MULTI_MEDIA              0x04
+#define VBOX_PCI_CLASS_MEMORY                   0x05
+#define VBOX_PCI_CLASS_BRIDGE                   0x06
+#define VBOX_PCI_CLASS_COMM                     0x07
+#define VBOX_PCI_CLASS_SYSTEM                   0x08
+#define VBOX_PCI_CLASS_INPUT                    0x09
+#define VBOX_PCI_CLASS_DOCKING_STATION          0x0a
+#define VBOX_PCI_CLASS_PROCESSOR                0x0b
+#define VBOX_PCI_CLASS_SERIAL_BUS               0x0c
+#define VBOX_PCI_CLASS_WIRELESS                 0x0d
+#define VBOX_PCI_CLASS_INTELLIGENT              0x0e
+#define VBOX_PCI_CLASS_SAT_COMM                 0x0f
+#define VBOX_PCI_CLASS_ENCRYPTION               0x10
+#define VBOX_PCI_CLASS_SIG_PROC                 0x11
+#define VBOX_PCI_CLASS_PROC_ACCEL               0x12
+#define VBOX_PCI_CLASS_NON_ESS_INSTR            0x13
+#define VBOX_PCI_CLASS_CO_PROCESSOR             0x40
+#define VBOX_PCI_CLASS_UNASSIGNED               0xff
+/** @} */
 
 /**
  * PCI configuration word 4 (command) and word 6 (status).
