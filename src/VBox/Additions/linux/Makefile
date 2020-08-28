@@ -71,38 +71,38 @@ vboxvideo:
 	    echo; \
 	fi
 
-install_vboxguest:
+install-vboxguest:
 	+ $(VBOX_QUIET)$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest install
 
-install_vboxsf:
+install-vboxsf:
 	+ $(VBOX_QUIET_SH)if [ -d vboxsf ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxsf install; \
 	fi
 
-install_vboxvideo:
+install-vboxvideo:
 	+ $(VBOX_QUIET_SH)if [ -d vboxvideo ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo install; \
 	fi
 
-install: install_vboxguest install_vboxsf install_vboxvideo
+install: install-vboxguest install-vboxsf install-vboxvideo
 
-clean_vboxguest:
+clean-vboxguest:
 	+ $(VBOX_QUIET)$(MAKE) -C vboxguest clean
 	rm -f vboxguest.*o
 
-clean_vboxsf:
+clean-vboxsf:
 	+ $(VBOX_QUIET_SH)if [ -d vboxsf ]; then \
 	    $(MAKE) -C vboxsf clean; \
 	fi
 	rm -f vboxsf.*o
 
-clean_vboxvideo:
+clean-vboxvideo:
 	+ $(VBOX_QUIET_SH)if [ -d vboxvideo ]; then \
 	    $(MAKE) -C vboxvideo clean; \
 	fi
 	rm -f vboxvideo.*o
 
-clean: clean_vboxguest clean_vboxsf clean_vboxvideo
+clean: clean-vboxguest clean-vboxsf clean-vboxvideo
 
 check:
 	$(VBOX_QUIET)$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest check
@@ -120,7 +120,7 @@ load: unload
 
 .PHONY: all install clean check unload load \
     vboxguest vboxsf vboxvideo \
-    install_vboxguest install_vboxsf install_vboxvideo \
-    clean_vboxguest clean_vboxsf clean_vboxvideo
+    install-vboxguest install-vboxsf install-vboxvideo \
+    clean-vboxguest clean-vboxsf clean-vboxvideo
 
 endif # ! KERNELRELEASE

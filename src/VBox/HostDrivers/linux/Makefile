@@ -47,8 +47,8 @@ KBUILD_VERBOSE ?=
 KERN_VER ?= $(shell uname -r)
 .PHONY: all install clean check unload load \
     vboxdrv vboxnetflt vboxnetadp vboxpci \
-    install_vboxdrv install_vboxnetflt install_vboxnetadp install_vboxpci \
-    clean_vboxdrv clean_vboxnetflt clean_vboxnetadp clean_vboxpci
+    install-vboxdrv install-vboxnetflt install-vboxnetadp install-vboxpci \
+    clean-vboxdrv clean-vboxnetflt clean-vboxnetadp clean-vboxpci
 
 all: vboxdrv vboxnetflt vboxnetadp vboxpci
 
@@ -94,25 +94,25 @@ vboxpci: vboxdrv
 	    echo; \
 	fi
 
-install_vboxdrv:
+install-vboxdrv:
 	+@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxdrv install
 
-install_vboxnetflt:
+install-vboxnetflt:
 	+@if [ -d vboxnetflt ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetflt install; \
 	fi
 
-install_vboxnetadp:
+install-vboxnetadp:
 	+@if [ -d vboxnetadp ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetadp install; \
 	fi
 
-install_vboxpci:
+install-vboxpci:
 	+@if [ -d vboxpci ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxpci install; \
 	fi
 
-install: install_vboxdrv install_vboxnetflt install_vboxnetadp install_vboxpci
+install: install-vboxdrv install-vboxnetflt install-vboxnetadp install-vboxpci
 
 else
 
@@ -124,29 +124,29 @@ install:
 
 endif
 
-clean_vboxdrv:
+clean-vboxdrv:
 	+@$(MAKE) -C vboxdrv clean
 	rm -rf vboxdrv.ko
 
-clean_vboxnetflt:
+clean-vboxnetflt:
 	+@if [ -d vboxnetflt ]; then \
 	    $(MAKE) -C vboxnetflt clean; \
 	fi
 	rm -rf vboxnetflt.ko
 
-clean_vboxnetadp:
+clean-vboxnetadp:
 	+@if [ -d vboxnetadp ]; then \
 	    $(MAKE) -C vboxnetadp clean; \
 	fi
 	rm -rf vboxnetadp.ko
 
-clean_vboxpci:
+clean-vboxpci:
 	+@if [ -d vboxpci ]; then \
 	    $(MAKE) -C vboxpci clean; \
 	fi
 	rm -f vboxpci.ko
 
-clean: clean_vboxdrv clean_vboxnetflt clean_vboxnetadp clean_vboxpci
+clean: clean-vboxdrv clean-vboxnetflt clean-vboxnetadp clean-vboxpci
 
 check:
 	+@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxdrv check
