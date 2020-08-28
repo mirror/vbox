@@ -49,6 +49,20 @@
 //# define VBOX_DND_DEBUG_WND
 #endif
 
+/* Enable this to handle drag'n drop "promises".
+ * This is needed for supporting certain applications (i.e. PcManFM on LXDE),
+ * which require the drag'n drop meta data a lot earlier than actually needed.
+ * That behavior is similar to macOS' drag'n drop promises, hence the name.
+ *
+ * Those applications query the data right while dragging over them (see GtkWidget::drag-motion),
+ * instead of when the source dropped the data (GtkWidget::drag-drop).
+ *
+ * This might be entirely implementation-specific, so not being a bug in GTK/GDK. Also see #9820.
+ */
+#ifdef VBOX_WITH_DRAG_AND_DROP_PROMISES
+# undef VBOX_WITH_DRAG_AND_DROP_PROMISES
+#endif
+
 /**
  * For X11 guest Xdnd is used. See http://www.acc.umu.se/~vatten/XDND.html for
  * a walk trough.
@@ -1337,6 +1351,9 @@ int DragInstance::onX11SelectionRequest(const XEvent &evReq)
                 VBClLogInfo("Target window %#x ('%s') is asking for data as '%s'\n",
                             pEvReq->requestor, pszWndName, xAtomToString(pEvReq->target).c_str());
 
+#ifdef VBOX_WITH_DRAG_AND_DROP_PROMISES
+# error "Implement me!"
+#else
                 /* Did we not drop our stuff to the guest yet? Bail out. */
                 if (m_enmState != Dropped)
                 {
@@ -1346,6 +1363,7 @@ int DragInstance::onX11SelectionRequest(const XEvent &evReq)
                 /* Did we not store the requestor's initial selection request yet? Then do so now. */
                 else
                 {
+#endif /* VBOX_WITH_DRAG_AND_DROP_PROMISES */
                     /* Get the data format the requestor wants from us. */
                     RTCString strFormat = xAtomToString(pEvReq->target);
                     Assert(strFormat.isNotEmpty());
@@ -1372,7 +1390,9 @@ int DragInstance::onX11SelectionRequest(const XEvent &evReq)
                                  pEvReq->requestor,
                                  gX11->xErrorToString(xRc).c_str()));
                     RT_NOREF(xRc);
+#ifndef VBOX_WITH_DRAG_AND_DROP_PROMISES
                 }
+#endif
             }
             /* Anything else. */
             else
