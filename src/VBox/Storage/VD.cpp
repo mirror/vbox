@@ -6219,21 +6219,19 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
                  pLCHSGeometry->cHeads, pLCHSGeometry->cSectors, pUuid,
                  uOpenFlags, pVDIfsImage, pVDIfsOperation));
 
+    AssertPtrReturn(pVDIfsOperation, VERR_INVALID_PARAMETER);
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     do
     {
+        /** @todo r=bird: there is no particular reason why this validation has to be
+         *        done inside the do-break-while-goto-is-false loop.  (pIfProgress is
+         *        only called on success.)  Could just AssertMsgReturn, rather than
+         *        complicated AssertMsgBreakStmt. */
         /* sanity check */
         AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertPtrBreakStmt(pszBackend, rc = VERR_INVALID_PARAMETER);
-        AssertPtrBreakStmt(pszFilename, rc = VERR_INVALID_PARAMETER);
-        AssertPtrBreakStmt(pPCHSGeometry, rc = VERR_INVALID_PARAMETER);
-        AssertPtrBreakStmt(pLCHSGeometry, rc = VERR_INVALID_PARAMETER);
-        AssertPtrBreakStmt(pUuid, rc = VERR_INVALID_PARAMETER);
-        AssertPtrBreakStmt(pVDIfsImage, rc = VERR_INVALID_PARAMETER);
-        AssertPtrBreakStmt(pVDIfsOperation, rc = VERR_INVALID_PARAMETER);
-
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+        AssertMsgBreakStmt(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature), 
+                           rc = VERR_INVALID_MAGIC);
 
         /* Check arguments. */
         AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
@@ -6260,20 +6258,16 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
                            ("uImageFlags=%#x\n", uImageFlags),
                            rc = VERR_INVALID_PARAMETER);
         /* The PCHS geometry fields may be 0 to leave it for later. */
-        AssertMsgBreakStmt(   VALID_PTR(pPCHSGeometry) /** @todo r=bird: will crash in assert message formatting if invalid. duh. */
-                           && pPCHSGeometry->cHeads <= 16
+        AssertPtrBreakStmt(pPCHSGeometry, rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(   pPCHSGeometry->cHeads <= 16
                            && pPCHSGeometry->cSectors <= 63,
-                           ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
-                            pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
-                            pPCHSGeometry->cSectors),
+                           ("PCHS=%u/%u/%u\n", pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors),
                            rc = VERR_INVALID_PARAMETER);
         /* The LCHS geometry fields may be 0 to leave it to later autodetection. */
-        AssertMsgBreakStmt(   VALID_PTR(pLCHSGeometry) /** @todo r=bird: will crash in assert message formatting if invalid. duh. */
-                           && pLCHSGeometry->cHeads <= 255
+        AssertPtrBreakStmt(pLCHSGeometry, rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(   pLCHSGeometry->cHeads <= 255
                            && pLCHSGeometry->cSectors <= 63,
-                           ("pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pLCHSGeometry,
-                            pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads,
-                            pLCHSGeometry->cSectors),
+                           ("LCHS=%u/%u/%u\n", pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors),
                            rc = VERR_INVALID_PARAMETER);
         /* The UUID may be NULL. */
         AssertMsgBreakStmt(pUuid == NULL || VALID_PTR(pUuid),
@@ -6282,6 +6276,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
         AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
+
+        AssertPtrBreakStmt(pVDIfsImage, rc = VERR_INVALID_PARAMETER);
 
         /* Check state. Needs a temporary read lock. Holding the write lock
          * all the time would be blocking other activities for too long. */
