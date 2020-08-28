@@ -50,9 +50,9 @@ VBOXMOD_OBJS += \
 	math/gcc/umoddi3.o
 endif
 VBOXMOD_INCL = \
-	$(VBOXNETADPT_DIR) \
-	$(VBOXNETADPT_DIR)include \
-	$(VBOXNETADPT_DIR)r0drv/linux
+	$(VBOXNETADP_DIR) \
+	$(VBOXNETADP_DIR)include \
+	$(VBOXNETADP_DIR)r0drv/linux
 VBOXMOD_DEFS = \
 	RT_OS_LINUX \
 	IN_RING0 \
@@ -62,7 +62,7 @@ VBOXMOD_DEFS = \
 	RT_WITH_VBOX \
 	VBOX_WITH_HARDENING \
 	VBOX_WITH_64_BITS_GUESTS # <-- must be consistent with Config.kmk!
-VBOXMOD_CFLAGS = -include $(VBOXNETADPT_DIR)include/VBox/SUPDrvMangling.h -fno-pie -Wno-declaration-after-statement
+VBOXMOD_CFLAGS = -include $(VBOXNETADP_DIR)include/VBox/SUPDrvMangling.h -fno-pie -Wno-declaration-after-statement
 
 include $(obj)/Makefile-footer.gmk
 
