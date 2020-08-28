@@ -50,4 +50,3 @@
 #define IOMMU_DEVSPEC_STATUS_MINOR_VERSION          0x0
 
 #endif /* VBOX_INCLUDED_SRC_Bus_DevIommuAmd_h */
-
