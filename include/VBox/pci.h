@@ -64,6 +64,137 @@
 #define VBOX_PCI_CLASS_UNASSIGNED               0xff
 /** @} */
 
+/** @name PCI device sub-classes.
+ * @{ */
+#define VBOX_PCI_SUB_UNCLASSIFIED_NON_VGA       0x00
+#define VBOX_PCI_SUB_UNCLASSIFIED_VGA           0x01
+
+#define VBOX_PCI_SUB_MASS_STORAGE_SCSI_BUS      0x00
+#define VBOX_PCI_SUB_MASS_STORAGE_IDE           0x01
+#define VBOX_PCI_SUB_MASS_STORAGE_FLOPPY        0x02
+#define VBOX_PCI_SUB_MASS_STORAGE_IPI_BUS       0x03
+#define VBOX_PCI_SUB_MASS_STORAGE_RAID          0x04
+#define VBOX_PCI_SUB_MASS_STORAGE_ATA           0x05
+#define VBOX_PCI_SUB_MASS_STORAGE_SATA          0x06
+#define VBOX_PCI_SUB_MASS_STORAGE_SCSI          0x07
+#define VBOX_PCI_SUB_MASS_STORAGE_NVME          0x08
+#define VBOX_PCI_SUB_MASS_STORAGE_OTHER         0x80
+
+#define VBOX_PCI_SUB_NETWORK_ETHERNET           0x00
+#define VBOX_PCI_SUB_NETWORK_TOKEN_RING         0x01
+#define VBOX_PCI_SUB_NETWORK_FDDI               0x02
+#define VBOX_PCI_SUB_NETWORK_ATM                0x03
+#define VBOX_PCI_SUB_NETWORK_ISDN               0x04
+#define VBOX_PCI_SUB_NETWORK_WORLD_FIP          0x05
+#define VBOX_PCI_SUB_NETWORK_PICMG              0x06
+#define VBOX_PCI_SUB_NETWORK_INFINIBAND         0x07
+#define VBOX_PCI_SUB_NETWORK_FABRIC             0x08
+#define VBOX_PCI_SUB_NETWORK_OTHER              0x80
+
+#define VBOX_PCI_SUB_DISPLAY_VGA                0x00
+#define VBOX_PCI_SUB_DISPLAY_XGA                0x01
+#define VBOX_PCI_SUB_DISPLAY_3D                 0x02
+#define VBOX_PCI_SUB_DISPLAY_OTHER              0x80
+
+#define VBOX_PCI_SUB_MULTI_MEDIA_MM_VIDEO       0x00
+#define VBOX_PCI_SUB_MULTI_MEDIA_MM_AUDIO       0x01
+#define VBOX_PCI_SUB_MULTI_MEDIA_TELE           0x02
+#define VBOX_PCI_SUB_MULTI_MEDIA_AUDIO          0x03
+#define VBOX_PCI_SUB_MULTI_MEDIA_OTHER          0x80
+
+#define VBOX_PCI_SUB_MEMORY_RAM                 0x00
+#define VBOX_PCI_SUB_MEMORY_FLASH               0x01
+#define VBOX_PCI_SUB_MEMORY_OTHER               0x80
+
+#define VBOX_PCI_SUB_BRIDGE_HOST                0x00
+#define VBOX_PCI_SUB_BRIDGE_ISA                 0x01
+#define VBOX_PCI_SUB_BRIDGE_EISA                0x02
+#define VBOX_PCI_SUB_BRIDGE_MCA                 0x03
+#define VBOX_PCI_SUB_BRIDGE_PCI                 0x04
+#define VBOX_PCI_SUB_BRIDGE_PCMCIA              0x05
+#define VBOX_PCI_SUB_BRIDGE_NUBUS               0x06
+#define VBOX_PCI_SUB_BRIDGE_CARDBUS             0x07
+#define VBOX_PCI_SUB_BRIDGE_RACEWAY             0x08
+#define VBOX_PCI_SUB_BRIDGE_SEMI_PCI            0x09
+#define VBOX_PCI_SUB_BRIDGE_INFINIBAND_PCI      0x0a
+#define VBOX_PCI_SUB_BRIDGE_OTHER               0x80
+
+#define VBOX_PCI_SUB_COMM_SERIAL                0x00
+#define VBOX_PCI_SUB_COMM_PARALLEL              0x01
+#define VBOX_PCI_SUB_COMM_MULTIPORT_SERIAL      0x02
+#define VBOX_PCI_SUB_COMM_MODEM                 0x03
+#define VBOX_PCI_SUB_COMM_GBIP                  0x04
+#define VBOX_PCI_SUB_COMM_SMART_CARD            0x05
+#define VBOX_PCI_SUB_COMM_OTHER                 0x80
+
+#define VBOX_PCI_SUB_SYSTEM_PIC                 0x00
+#define VBOX_PCI_SUB_SYSTEM_DMA                 0x01
+#define VBOX_PCI_SUB_SYSTEM_TIMER               0x02
+#define VBOX_PCI_SUB_SYSTEM_RTC                 0x03
+#define VBOX_PCI_SUB_SYSTEM_PCI_HOTPLUG         0x04
+#define VBOX_PCI_SUB_SYSTEM_SD_HOST             0x05
+#define VBOX_PCI_SUB_SYSTEM_IOMMU               0x06
+#define VBOX_PCI_SUB_SYSTEM_OTHER               0x80
+
+#define VBOX_PCI_SUB_INPUT_KEYBOARD             0x00
+#define VBOX_PCI_SUB_INPUT_PEN                  0x01
+#define VBOX_PCI_SUB_INPUT_MOUSE                0x02
+#define VBOX_PCI_SUB_INPUT_SCANNER              0x03
+#define VBOX_PCI_SUB_INPUT_GAMEPORT             0x04
+#define VBOX_PCI_SUB_INPUT_OTHER                0x80
+
+#define VBOX_PCI_SUB_DOCKING_ST_GENERIC         0x00
+#define VBOX_PCI_SUB_DOCKING_ST_OTHER           0x80
+
+#define VBOX_PCI_SUB_PROCESSOR_386              0x00
+#define VBOX_PCI_SUB_PROCESSOR_486              0x01
+#define VBOX_PCI_SUB_PROCESSOR_PENTIUM          0x02
+#define VBOX_PCI_SUB_PROCESSOR_PENTIUM_PRO      0x03
+#define VBOX_PCI_SUB_PROCESSOR_ALPHA            0x10
+#define VBOX_PCI_SUB_PROCESSOR_POWERPC          0x20
+#define VBOX_PCI_SUB_PROCESSOR_MIPS             0x30
+#define VBOX_PCI_SUB_PROCESSOR_CO_PROC          0x40
+#define VBOX_PCI_SUB_PROCESSOR_OTHER            0x80
+
+#define VBOX_PCI_SUB_SERIAL_BUS_FIREWIRE        0x00
+#define VBOX_PCI_SUB_SERIAL_BUS_ACCESS          0x01
+#define VBOX_PCI_SUB_SERIAL_BUS_SSA             0x02
+#define VBOX_PCI_SUB_SERIAL_BUS_USB             0x03
+#define VBOX_PCI_SUB_SERIAL_BUS_FIBRE           0x04
+#define VBOX_PCI_SUB_SERIAL_BUS_SMBUS           0x05
+#define VBOX_PCI_SUB_SERIAL_BUS_INFINIBAND      0x06
+#define VBOX_PCI_SUB_SERIAL_BUS_IPMI            0x07
+#define VBOX_PCI_SUB_SERIAL_BUS_SERCOS          0x08
+#define VBOX_PCI_SUB_SERIAL_BUS_CANBUS          0x09
+#define VBOX_PCI_SUB_SERIAL_BUS_OTHER           0x80
+
+#define VBOX_PCI_SUB_WIRELESS_IRDA              0x00
+#define VBOX_PCI_SUB_WIRELESS_IR                0x01
+#define VBOX_PCI_SUB_WIRELESS_RF                0x10
+#define VBOX_PCI_SUB_WIRELESS_BLUETOOTH         0x11
+#define VBOX_PCI_SUB_WIRELESS_BROADBAND         0x12
+#define VBOX_PCI_SUB_WIRELESS_ETH_8021A         0x20
+#define VBOX_PCI_SUB_WIRELESS_ETH_8021B         0x21
+#define VBOX_PCI_SUB_WIRELESS_OTHER             0x80
+
+#define VBOX_PCI_SUB_INTELLIGENT_I20            0x00
+
+#define VBOX_PCI_SUB_SAT_COMM_TV                0x01
+#define VBOX_PCI_SUB_SAT_COMM_AUDIO             0x02
+#define VBOX_PCI_SUB_SAT_COMM_VOICE             0x03
+#define VBOX_PCI_SUB_SAT_COMM_DATA              0x04
+
+#define VBOX_PCI_SUB_ENCRYPT_NETWORK            0x00
+#define VBOX_PCI_SUB_ENCRYPT_ENTERTAINMENT      0x01
+#define VBOX_PCI_SUB_ENCRYPT_OTHER              0x80
+
+#define VBOX_PCI_SUB_SIG_PROC_DPIO              0x00
+#define VBOX_PCI_SUB_SIG_PROC_PERF_COUNTERS     0x01
+#define VBOX_PCI_SUB_SIG_PROC_COMM_SYNC         0x10
+#define VBOX_PCI_SUB_SIG_PROC_MANAGEMENT        0x20
+#define VBOX_PCI_SUB_SIG_PROC_OTHER             0x80
+/** @} */
+
 /**
  * PCI configuration word 4 (command) and word 6 (status).
  */
