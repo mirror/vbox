@@ -26,7 +26,9 @@
 
 /* Forward declarations: */
 class QCheckBox;
+class QHBoxLayout;
 class QRadioButton;
+class QVBoxLayout;
 class QTreeWidgetItem;
 class QILabelSeparator;
 class QITreeWidget;
@@ -119,9 +121,11 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares USB filters tree. */
-    void prepareFiltersTree();
-    /** Prepares USB filters toolbar. */
+    /** Prepares radio-buttons. */
+    void prepareRadioButtons();
+    /** Prepares filters tree-widget. */
+    void prepareFiltersTreeWidget();
+    /** Prepares filters toolbar. */
     void prepareFiltersToolbar();
     /** Prepares connections. */
     void prepareConnections();
@@ -142,38 +146,48 @@ private:
     /** Creates USB filter at passed @a iPosition of the @a filtersObject using the @a filterData. */
     bool createUSBFilter(CUSBDeviceFilters &comFiltersObject, int iPosition, const UIDataSettingsMachineUSBFilter &filterData);
 
-    /** Holds the toolbar instance. */
-    UIToolBar   *m_pToolBar;
-    /** Holds the New action instance. */
-    QAction     *m_pActionNew;
-    /** Holds the Add action instance. */
-    QAction     *m_pActionAdd;
-    /** Holds the Edit action instance. */
-    QAction     *m_pActionEdit;
-    /** Holds the Remove action instance. */
-    QAction     *m_pActionRemove;
-    /** Holds the Move Up action instance. */
-    QAction     *m_pActionMoveUp;
-    /** Holds the Move Down action instance. */
-    QAction     *m_pActionMoveDown;
-    /** Holds the USB devices menu instance. */
-    VBoxUSBMenu *m_pMenuUSBDevices;
-
     /** Holds the "New Filter %1" translation tag. */
     QString  m_strTrUSBFilterName;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineUSB *m_pCache;
+
     /** @name Widgets
      * @{ */
-       QCheckBox *m_pCheckBoxUSB;
-       QITreeWidget *m_pTreeWidgetFilters;
-       QRadioButton *m_pRadioButtonUSB1;
-       QRadioButton *m_pRadioButtonUSB2;
-       QRadioButton *m_pRadioButtonUSB3;
-       QILabelSeparator *m_pCheckBoxUSBFilters;
-       QWidget *m_pUSBChild;
-       UIToolBar *m_pFiltersToolBar;
+        /** Holds the USB check-box instance. */
+        QCheckBox        *m_pCheckBoxUSB;
+        /** Holds the USB settings widget instance. */
+        QWidget          *m_pWidgetUSBSettings;
+        /** Holds the USB settings widget layout instance. */
+        QVBoxLayout      *m_pLayoutUSBSettings;
+        /** Holds the USB1 radio-button instance. */
+        QRadioButton     *m_pRadioButtonUSB1;
+        /** Holds the USB2 radio-button instance. */
+        QRadioButton     *m_pRadioButtonUSB2;
+        /** Holds the USB3 radio-button instance. */
+        QRadioButton     *m_pRadioButtonUSB3;
+        /** Holds the USB widget separator instance. */
+        QILabelSeparator *m_pLabelSeparatorFilters;
+        /** Holds the USB filters layout instance. */
+        QHBoxLayout      *m_pLayoutFilters;
+        /** Holds the USB filters tree-widget instance. */
+        QITreeWidget     *m_pTreeWidgetFilters;
+        /** Holds the USB filters toolbar instance. */
+        UIToolBar        *m_pToolBarFilters;
+        /** Holds the New action instance. */
+        QAction          *m_pActionNew;
+        /** Holds the Add action instance. */
+        QAction          *m_pActionAdd;
+        /** Holds the Edit action instance. */
+        QAction          *m_pActionEdit;
+        /** Holds the Remove action instance. */
+        QAction          *m_pActionRemove;
+        /** Holds the Move Up action instance. */
+        QAction          *m_pActionMoveUp;
+        /** Holds the Move Down action instance. */
+        QAction          *m_pActionMoveDown;
+        /** Holds the USB devices menu instance. */
+        VBoxUSBMenu      *m_pMenuUSBDevices;
     /** @} */
 };
 

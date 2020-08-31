@@ -331,23 +331,23 @@ private:
 
 
 UIMachineSettingsUSB::UIMachineSettingsUSB()
-    : m_pToolBar(0)
-    , m_pActionNew(0),
-      m_pActionAdd(0),
-      m_pActionEdit(0),
-      m_pActionRemove(0)
-    , m_pActionMoveUp(0),
-      m_pActionMoveDown(0)
-    , m_pMenuUSBDevices(0)
-    , m_pCache(0)
+    : m_pCache(0)
     , m_pCheckBoxUSB(0)
-    , m_pTreeWidgetFilters(0)
+    , m_pWidgetUSBSettings(0)
     , m_pRadioButtonUSB1(0)
     , m_pRadioButtonUSB2(0)
     , m_pRadioButtonUSB3(0)
-    , m_pCheckBoxUSBFilters(0)
-    , m_pUSBChild(0)
-    , m_pFiltersToolBar(0)
+    , m_pLabelSeparatorFilters(0)
+    , m_pLayoutFilters(0)
+    , m_pTreeWidgetFilters(0)
+    , m_pToolBarFilters(0)
+    , m_pActionNew(0)
+    , m_pActionAdd(0)
+    , m_pActionEdit(0)
+    , m_pActionRemove(0)
+    , m_pActionMoveUp(0)
+    , m_pActionMoveDown(0)
+    , m_pMenuUSBDevices(0)
 {
     /* Prepare: */
     prepare();
@@ -569,7 +569,7 @@ void UIMachineSettingsUSB::retranslateUi()
     m_pRadioButtonUSB3->setWhatsThis(tr("When chosen, enables the virtual USB xHCI controller of "
                                         "this machine. The USB xHCI controller provides USB 3.0 support."));
     m_pRadioButtonUSB3->setText(tr("USB &3.0 (xHCI) Controller"));
-    m_pCheckBoxUSBFilters->setText(tr("USB Device &Filters"));
+    m_pLabelSeparatorFilters->setText(tr("USB Device &Filters"));
     QTreeWidgetItem *pQtreewidgetitem = m_pTreeWidgetFilters->headerItem();
     pQtreewidgetitem->setText(0, tr("[filter]"));
     m_pTreeWidgetFilters->setWhatsThis(tr("Lists all USB filters of this machine. The checkbox "
@@ -606,7 +606,7 @@ void UIMachineSettingsUSB::polishPage()
 {
     /* Polish USB page availability: */
     m_pCheckBoxUSB->setEnabled(isMachineOffline());
-    m_pUSBChild->setEnabled(isMachineInValidMode() && m_pCheckBoxUSB->isChecked());
+    m_pWidgetUSBSettings->setEnabled(isMachineInValidMode() && m_pCheckBoxUSB->isChecked());
     m_pRadioButtonUSB1->setEnabled(isMachineOffline() && m_pCheckBoxUSB->isChecked());
     m_pRadioButtonUSB2->setEnabled(isMachineOffline() && m_pCheckBoxUSB->isChecked());
     m_pRadioButtonUSB3->setEnabled(isMachineOffline() && m_pCheckBoxUSB->isChecked());
@@ -615,7 +615,7 @@ void UIMachineSettingsUSB::polishPage()
 void UIMachineSettingsUSB::sltHandleUsbAdapterToggle(bool fEnabled)
 {
     /* Enable/disable USB children: */
-    m_pUSBChild->setEnabled(isMachineInValidMode() && fEnabled);
+    m_pWidgetUSBSettings->setEnabled(isMachineInValidMode() && fEnabled);
     m_pRadioButtonUSB1->setEnabled(isMachineOffline() && fEnabled);
     m_pRadioButtonUSB2->setEnabled(isMachineOffline() && fEnabled);
     m_pRadioButtonUSB3->setEnabled(isMachineOffline() && fEnabled);
@@ -846,26 +846,13 @@ void UIMachineSettingsUSB::sltMoveFilterDown()
 
 void UIMachineSettingsUSB::prepare()
 {
-    prepareWidgets();
-
-    /* Hide radio-button initially: */
-    m_pRadioButtonUSB1->setVisible(false);
-    m_pRadioButtonUSB2->setVisible(false);
-    m_pRadioButtonUSB3->setVisible(false);
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineUSB;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Layout created in the .ui file. */
-    {
-        /* Prepare USB Filters tree: */
-        prepareFiltersTree();
-        /* Prepare USB Filters toolbar: */
-        prepareFiltersToolbar();
-        /* Prepare connections: */
-        prepareConnections();
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -873,157 +860,159 @@ void UIMachineSettingsUSB::prepare()
 
 void UIMachineSettingsUSB::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIMachineSettingsUSB"));
-    resize(468, 328);
+    /* Prepare main layout: */
     QGridLayout *pMainLayout = new QGridLayout(this);
-    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
-    m_pCheckBoxUSB = new QCheckBox();
-    m_pCheckBoxUSB->setObjectName(QStringLiteral("m_pCheckBoxUSB"));
-    m_pCheckBoxUSB->setChecked(true);
-    pMainLayout->addWidget(m_pCheckBoxUSB, 0, 0, 1, 2);
-    QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    pMainLayout->addItem(pSpacerItem, 1, 0, 1, 1);
+    if (pMainLayout)
+    {
+        pMainLayout->setRowStretch(2, 1);
+        pMainLayout->setColumnStretch(1, 1);
 
-    m_pUSBChild = new QWidget();
-    m_pUSBChild->setObjectName(QStringLiteral("m_pUSBChild"));
-    QVBoxLayout *pVboxLayout = new QVBoxLayout(m_pUSBChild);
-    pVboxLayout->setObjectName(QStringLiteral("pVboxLayout"));
-    pVboxLayout->setContentsMargins(0, 0, 0, 0);
-    QWidget *pRadioButtonContainer = new QWidget(m_pUSBChild);
-    pRadioButtonContainer->setObjectName(QStringLiteral("pRadioButtonContainer"));
-    QVBoxLayout *vboxLayout1 = new QVBoxLayout(pRadioButtonContainer);
-    vboxLayout1->setObjectName(QStringLiteral("vboxLayout1"));
-    vboxLayout1->setContentsMargins(0, 0, 0, 0);
+        /* Prepare USB check-box: */
+        m_pCheckBoxUSB = new QCheckBox;
+        if (m_pCheckBoxUSB)
+            pMainLayout->addWidget(m_pCheckBoxUSB, 0, 0, 1, 2);
 
-    m_pRadioButtonUSB1 = new QRadioButton(pRadioButtonContainer);
-    m_pRadioButtonUSB1->setObjectName(QStringLiteral("pRadioButtonUSB1"));
-    vboxLayout1->addWidget(m_pRadioButtonUSB1);
+        /* Prepare 20-px shifting spacer: */
+        QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        if (pSpacerItem)
+            pMainLayout->addItem(pSpacerItem, 1, 0);
 
-    m_pRadioButtonUSB2 = new QRadioButton(pRadioButtonContainer);
-    m_pRadioButtonUSB2->setObjectName(QStringLiteral("m_pRadioButtonUSB2"));
-    vboxLayout1->addWidget(m_pRadioButtonUSB2);
+        /* Prepare USB settings widget: */
+        m_pWidgetUSBSettings = new QWidget(this);
+        if (m_pWidgetUSBSettings)
+        {
+            /* Prepare USB settings widget layout: */
+            m_pLayoutUSBSettings = new QVBoxLayout(m_pWidgetUSBSettings);
+            if (m_pLayoutUSBSettings)
+            {
+                m_pLayoutUSBSettings->setContentsMargins(0, 0, 0, 0);
 
-    m_pRadioButtonUSB3 = new QRadioButton(pRadioButtonContainer);
-    m_pRadioButtonUSB3->setObjectName(QStringLiteral("m_pRadioButtonUSB3"));
-    vboxLayout1->addWidget(m_pRadioButtonUSB3);
-    pVboxLayout->addWidget(pRadioButtonContainer);
+                /* Prepare USB radio-buttons: */
+                prepareRadioButtons();
 
-    m_pCheckBoxUSBFilters = new QILabelSeparator(m_pUSBChild);
-    m_pCheckBoxUSBFilters->setObjectName(QStringLiteral("m_pCheckBoxUSBFilters"));
-    pVboxLayout->addWidget(m_pCheckBoxUSBFilters);
+                /* Prepare separator: */
+                m_pLabelSeparatorFilters = new QILabelSeparator(m_pWidgetUSBSettings);
+                if (m_pLabelSeparatorFilters)
+                    m_pLayoutUSBSettings->addWidget(m_pLabelSeparatorFilters);
 
-    QWidget *pFilterHandler = new QWidget(m_pUSBChild);
-    pFilterHandler->setObjectName(QStringLiteral("pFilterHandler"));
-    QHBoxLayout *pHBoxLayout = new QHBoxLayout(pFilterHandler);
-    pHBoxLayout->setSpacing(3);
-    pHBoxLayout->setObjectName(QStringLiteral("pHBoxLayout"));
-    pHBoxLayout->setContentsMargins(0, 0, 0, 0);
-    m_pTreeWidgetFilters = new QITreeWidget(pFilterHandler);
-    m_pTreeWidgetFilters->setObjectName(QStringLiteral("m_pTreeWidgetFilters"));
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pTreeWidgetFilters->sizePolicy().hasHeightForWidth());
-    m_pTreeWidgetFilters->setSizePolicy(sizePolicy);
-    m_pTreeWidgetFilters->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_pTreeWidgetFilters->setRootIsDecorated(false);
-    pHBoxLayout->addWidget(m_pTreeWidgetFilters);
+                /* Prepare USB filters layout: */
+                m_pLayoutFilters = new QHBoxLayout;
+                if (m_pLayoutFilters)
+                {
+                    m_pLayoutFilters->setContentsMargins(0, 0, 0, 0);
+                    m_pLayoutFilters->setSpacing(3);
 
-    m_pFiltersToolBar = new UIToolBar(pFilterHandler);
-    m_pFiltersToolBar->setObjectName(QStringLiteral("m_pFiltersToolBar"));
-    pHBoxLayout->addWidget(m_pFiltersToolBar);
+                    /* Prepare USB filters tree-widget: */
+                    prepareFiltersTreeWidget();
+                    /* Prepare USB filters toolbar: */
+                    prepareFiltersToolbar();
 
-    pVboxLayout->addWidget(pFilterHandler);
-    pMainLayout->addWidget(m_pUSBChild, 1, 1, 1, 2);
+                    m_pLayoutUSBSettings->addLayout(m_pLayoutFilters);
+                }
+            }
 
-    pMainLayout->setColumnStretch(1, 1);
-    m_pCheckBoxUSBFilters->setBuddy(m_pTreeWidgetFilters);
+            pMainLayout->addWidget(m_pWidgetUSBSettings, 1, 1, 1, 2);
+        }
+    }
 }
 
-void UIMachineSettingsUSB::prepareFiltersTree()
+void UIMachineSettingsUSB::prepareRadioButtons()
 {
-    /* USB Filters tree-widget created in the .ui file. */
-    AssertPtrReturnVoid(m_pTreeWidgetFilters);
+    /* Prepare USB1 radio-button: */
+    m_pRadioButtonUSB1 = new QRadioButton(m_pWidgetUSBSettings);
+    if (m_pRadioButtonUSB1)
     {
-        /* Configure tree-widget: */
+        m_pRadioButtonUSB1->setVisible(false);
+        m_pLayoutUSBSettings->addWidget(m_pRadioButtonUSB1);
+    }
+    /* Prepare USB2 radio-button: */
+    m_pRadioButtonUSB2 = new QRadioButton(m_pWidgetUSBSettings);
+    if (m_pRadioButtonUSB2)
+    {
+        m_pRadioButtonUSB2->setVisible(false);
+        m_pLayoutUSBSettings->addWidget(m_pRadioButtonUSB2);
+    }
+    /* Prepare USB3 radio-button: */
+    m_pRadioButtonUSB3 = new QRadioButton(m_pWidgetUSBSettings);
+    if (m_pRadioButtonUSB3)
+    {
+        m_pRadioButtonUSB3->setVisible(false);
+        m_pLayoutUSBSettings->addWidget(m_pRadioButtonUSB3);
+    }
+}
+
+void UIMachineSettingsUSB::prepareFiltersTreeWidget()
+{
+    /* Prepare USB filters tree-widget: */
+    m_pTreeWidgetFilters = new QITreeWidget(m_pWidgetUSBSettings);
+    if (m_pTreeWidgetFilters)
+    {
+        if (m_pLabelSeparatorFilters)
+            m_pLabelSeparatorFilters->setBuddy(m_pTreeWidgetFilters);
         m_pTreeWidgetFilters->header()->hide();
+        m_pTreeWidgetFilters->setRootIsDecorated(false);
+        m_pTreeWidgetFilters->setContextMenuPolicy(Qt::CustomContextMenu);
+
+        m_pLayoutFilters->addWidget(m_pTreeWidgetFilters);
     }
 }
 
 void UIMachineSettingsUSB::prepareFiltersToolbar()
 {
-    /* USB Filters toolbar created in the .ui file. */
-    AssertPtrReturnVoid(m_pFiltersToolBar);
+    /* Prepare USB filters toolbar: */
+    m_pToolBarFilters = new UIToolBar(m_pWidgetUSBSettings);
+    if (m_pToolBarFilters)
     {
-        /* Configure toolbar: */
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        m_pFiltersToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pFiltersToolBar->setOrientation(Qt::Vertical);
+        m_pToolBarFilters->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBarFilters->setOrientation(Qt::Vertical);
 
-        /* Create USB devices menu: */
-        m_pMenuUSBDevices = new VBoxUSBMenu(this);
-        AssertPtrReturnVoid(m_pMenuUSBDevices);
-
-        /* Create 'New USB Filter' action: */
-        m_pActionNew = m_pFiltersToolBar->addAction(UIIconPool::iconSet(":/usb_new_16px.png",
+        /* Prepare 'New USB Filter' action: */
+        m_pActionNew = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_new_16px.png",
                                                                         ":/usb_new_disabled_16px.png"),
                                                     QString(), this, SLOT(sltNewFilter()));
-        AssertPtrReturnVoid(m_pActionNew);
-        {
-            /* Configure action: */
+        if (m_pActionNew)
             m_pActionNew->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
-        }
 
-        /* Create 'Add USB Filter' action: */
-        m_pActionAdd = m_pFiltersToolBar->addAction(UIIconPool::iconSet(":/usb_add_16px.png",
+        /* Prepare 'Add USB Filter' action: */
+        m_pActionAdd = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_add_16px.png",
                                                                         ":/usb_add_disabled_16px.png"),
                                                     QString(), this, SLOT(sltAddFilter()));
-        AssertPtrReturnVoid(m_pActionAdd);
-        {
-            /* Configure action: */
+        if (m_pActionAdd)
             m_pActionAdd->setShortcuts(QList<QKeySequence>() << QKeySequence("Alt+Ins") << QKeySequence("Ctrl+A"));
-        }
 
-        /* Create 'Edit USB Filter' action: */
-        m_pActionEdit = m_pFiltersToolBar->addAction(UIIconPool::iconSet(":/usb_filter_edit_16px.png",
+        /* Prepare 'Edit USB Filter' action: */
+        m_pActionEdit = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_filter_edit_16px.png",
                                                                          ":/usb_filter_edit_disabled_16px.png"),
                                                      QString(), this, SLOT(sltEditFilter()));
-        AssertPtrReturnVoid(m_pActionEdit);
-        {
-            /* Configure action: */
+        if (m_pActionEdit)
             m_pActionEdit->setShortcuts(QList<QKeySequence>() << QKeySequence("Alt+Return") << QKeySequence("Ctrl+Return"));
-        }
 
-        /* Create 'Remove USB Filter' action: */
-        m_pActionRemove = m_pFiltersToolBar->addAction(UIIconPool::iconSet(":/usb_remove_16px.png",
+        /* Prepare 'Remove USB Filter' action: */
+        m_pActionRemove = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_remove_16px.png",
                                                                            ":/usb_remove_disabled_16px.png"),
                                                        QString(), this, SLOT(sltRemoveFilter()));
-        AssertPtrReturnVoid(m_pActionRemove);
-        {
-            /* Configure action: */
+        if (m_pActionRemove)
             m_pActionRemove->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
-        }
 
-        /* Create 'Move USB Filter Up' action: */
-        m_pActionMoveUp = m_pFiltersToolBar->addAction(UIIconPool::iconSet(":/usb_moveup_16px.png",
+        /* Prepare 'Move USB Filter Up' action: */
+        m_pActionMoveUp = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_moveup_16px.png",
                                                                            ":/usb_moveup_disabled_16px.png"),
                                                        QString(), this, SLOT(sltMoveFilterUp()));
-        AssertPtrReturnVoid(m_pActionMoveUp);
-        {
-            /* Configure action: */
+        if (m_pActionMoveUp)
             m_pActionMoveUp->setShortcuts(QList<QKeySequence>() << QKeySequence("Alt+Up") << QKeySequence("Ctrl+Up"));
-        }
 
-        /* Create 'Move USB Filter Down' action: */
-        m_pActionMoveDown = m_pFiltersToolBar->addAction(UIIconPool::iconSet(":/usb_movedown_16px.png",
+        /* Prepare 'Move USB Filter Down' action: */
+        m_pActionMoveDown = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_movedown_16px.png",
                                                                              ":/usb_movedown_disabled_16px.png"),
                                                          QString(), this, SLOT(sltMoveFilterDown()));
-        AssertPtrReturnVoid(m_pActionMoveDown);
-        {
-            /* Configure action: */
+        if (m_pActionMoveDown)
             m_pActionMoveDown->setShortcuts(QList<QKeySequence>() << QKeySequence("Alt+Down") << QKeySequence("Ctrl+Down"));
-        }
+
+        /* Prepare USB devices menu: */
+        m_pMenuUSBDevices = new VBoxUSBMenu(this);
+
+        m_pLayoutFilters->addWidget(m_pToolBarFilters);
     }
 }
 
