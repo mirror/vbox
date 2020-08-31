@@ -1413,12 +1413,15 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     /*
      * Validate APIC settings.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Mode|IOAPIC|NumCPUs", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Mode|IOAPIC|NumCPUs|MacOSWorkaround", "");
 
+    /** @devcfgm{apic, IOAPIC, bool, true}
+     * Indicates whether an I/O APIC is present in the system. */
     int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IOAPIC", &pApic->fIoApicPresent, true);
     AssertLogRelRCReturn(rc, rc);
 
-    /* Max APIC feature level. */
+    /** @devcfgm{apic, Mode, PDMAPICMODE, APIC(2)}
+     * Max APIC feature level. */
     uint8_t uMaxMode;
     rc = pHlp->pfnCFGMQueryU8Def(pCfg, "Mode", &uMaxMode, PDMAPICMODE_APIC);
     AssertLogRelRCReturn(rc, rc);
@@ -1433,6 +1436,18 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
             return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode %d unknown.", uMaxMode);
     }
     pApic->enmMaxMode = (PDMAPICMODE)uMaxMode;
+
+    /** @devcfgm{apic, MacOSWorkaround, bool, false}
+     * Enables a workaround for incorrect MSR_IA32_X2APIC_ID handling in macOS.
+     *
+     * Vital code in osfmk/i386/i386_init.c's vstart() routine incorrectly applies a
+     * 24 right shift to the ID register value (correct for legacy APIC, but
+     * entirely wrong for x2APIC), with the consequence that all CPUs use the same
+     * per-cpu data and things panic pretty quickly.   There are some shifty ID
+     * reads in lapic_native.c too, but they are for either harmless (assuming boot
+     * CPU has ID 0) or are for logging/debugging purposes only. */
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "MacOSWorkaround", &pApic->fMacOSWorkaround, false);
+    AssertLogRelRCReturn(rc, rc);
 
     /*
      * Disable automatic PDM locking for this device.
