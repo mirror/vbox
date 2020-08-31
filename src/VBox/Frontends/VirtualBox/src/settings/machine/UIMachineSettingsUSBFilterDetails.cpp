@@ -102,9 +102,13 @@ void UIMachineSettingsUSBFilterDetails::prepare()
     /* Apply language settings: */
     retranslateUi();
 
-    /* Adjust size: */
-    resize(minimumSize());
+    /* Adjust dialog size: */
+    adjustSize();
+
+#ifdef VBOX_WS_MAC
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setFixedSize(minimumSize());
+#endif /* VBOX_WS_MAC */
 }
 
 void UIMachineSettingsUSBFilterDetails::prepareWidgets()
