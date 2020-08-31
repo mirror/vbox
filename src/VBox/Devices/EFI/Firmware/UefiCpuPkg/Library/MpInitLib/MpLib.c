@@ -9,6 +9,10 @@
 **/
 
 #include "MpLib.h"
+#ifdef VBOX
+# include <Library/IoLib.h>
+# include "../../../../DevEFI.h"
+#endif
 
 EFI_GUID mCpuInitMpLibHobGuid = CPU_INIT_MP_LIB_HOB_GUID;
 
@@ -475,6 +479,24 @@ GetProcessorNumber (
   return EFI_NOT_FOUND;
 }
 
+#ifdef VBOX
+/*
+ *   @todo move this function to the library.
+ */
+UINT32 VBoxGetVmVariable(UINT32 Variable, CHAR8* Buffer, UINT32 Size)
+{
+    UINT32 VarLen, i;
+
+    IoWrite32(EFI_INFO_PORT, Variable);
+    VarLen = IoRead32(EFI_INFO_PORT);
+
+    for (i = 0; i < VarLen && i < Size; i++)
+        Buffer[i] = IoRead8(EFI_INFO_PORT);
+
+    return VarLen;
+}
+#endif
+
 /**
   This function will get CPU count in the system.
 
@@ -490,6 +512,9 @@ CollectProcessorCount (
   UINTN                  Index;
   CPU_INFO_IN_HOB        *CpuInfoInHob;
   BOOLEAN                X2Apic;
+#ifdef VBOX
+  CHAR8                  u8ApicMode;
+#endif
 
   //
   // Send 1st broadcast IPI to APs to wakeup APs
@@ -526,6 +551,12 @@ CollectProcessorCount (
       }
     }
   }
+#ifdef VBOX
+  /* Force x2APIC mode if the VM config forces it. */
+  VBoxGetVmVariable(EFI_INFO_INDEX_APIC_MODE, &u8ApicMode, sizeof(u8ApicMode));
+  if (u8ApicMode == EFI_APIC_MODE_X2APIC)
+    X2Apic = TRUE;
+#endif
 
   if (X2Apic) {
     DEBUG ((DEBUG_INFO, "Force x2APIC mode!\n"));
