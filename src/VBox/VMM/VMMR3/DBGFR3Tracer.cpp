@@ -57,7 +57,7 @@
 static const RTTRACELOGEVTDESC g_EvtSrcRegisterEvtDesc =
 {
     "EvtSrc.Register",
-    "An event soruce was registered",
+    "An event source was registered",
     RTTRACELOGEVTSEVERITY_DEBUG,
     0,
     NULL
@@ -67,7 +67,7 @@ static const RTTRACELOGEVTDESC g_EvtSrcRegisterEvtDesc =
 static const RTTRACELOGEVTDESC g_EvtSrcDeregisterEvtDesc =
 {
     "EvtSrc.Deregister",
-    "An event soruce was de-registered",
+    "An event source was de-registered",
     RTTRACELOGEVTSEVERITY_DEBUG,
     0,
     NULL
@@ -125,7 +125,7 @@ static const RTTRACELOGEVTDESC g_DevMmioUnmapEvtDesc =
 
 static const RTTRACELOGEVTITEMDESC g_DevMmioRwEvtItems[] =
 {
-    {"hMmioRegion",    "The MMIO region handle being unmapped",                 RTTRACELOGTYPE_UINT64,  0},
+    {"hMmioRegion",    "The MMIO region handle being accessed",                 RTTRACELOGTYPE_UINT64,  0},
     {"offMmio",        "The offset in the MMIO region being accessed",          RTTRACELOGTYPE_UINT64,  0},
     {"cbXfer",         "Number of bytes being transfered",                      RTTRACELOGTYPE_UINT64,  0},
     {"u64Val",         "The value read or written",                             RTTRACELOGTYPE_UINT64,  0},
