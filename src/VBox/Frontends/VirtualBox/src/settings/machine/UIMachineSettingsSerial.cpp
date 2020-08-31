@@ -376,20 +376,20 @@ void UIMachineSettingsSerial::prepare()
 void UIMachineSettingsSerial::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
     {
-        pMainLayout->setRowStretch(2, 1);
+        pLayoutMain->setRowStretch(2, 1);
 
         /* Prepare port check-box: */
         m_pCheckBoxPort = new QCheckBox(this);
         if (m_pCheckBoxPort)
-            pMainLayout->addWidget(m_pCheckBoxPort, 0, 0, 1, 2);
+            pLayoutMain->addWidget(m_pCheckBoxPort, 0, 0, 1, 2);
 
         /* Prepare 20-px shifting spacer: */
         QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         if (pSpacerItem)
-            pMainLayout->addItem(pSpacerItem, 1, 0);
+            pLayoutMain->addItem(pSpacerItem, 1, 0);
 
         /* Prepare adapter settings widget: */
         m_pWidgetPortSettings = new QWidget(this);
@@ -482,7 +482,7 @@ void UIMachineSettingsSerial::prepareWidgets()
                 }
             }
 
-            pMainLayout->addWidget(m_pWidgetPortSettings, 1, 1);
+            pLayoutMain->addWidget(m_pWidgetPortSettings, 1, 1);
         }
     }
 }
@@ -767,8 +767,8 @@ void UIMachineSettingsSerialPage::prepare()
     AssertPtrReturnVoid(m_pCache);
 
     /* Create main layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    AssertPtrReturnVoid(pMainLayout);
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    AssertPtrReturnVoid(pLayoutMain);
     {
         /* Creating tab-widget: */
         m_pTabWidget = new QITabWidget;
@@ -790,7 +790,7 @@ void UIMachineSettingsSerialPage::prepare()
             }
 
             /* Add tab-widget into layout: */
-            pMainLayout->addWidget(m_pTabWidget);
+            pLayoutMain->addWidget(m_pTabWidget);
         }
     }
 }

@@ -861,21 +861,21 @@ void UIMachineSettingsUSB::prepare()
 void UIMachineSettingsUSB::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
     {
-        pMainLayout->setRowStretch(2, 1);
-        pMainLayout->setColumnStretch(1, 1);
+        pLayoutMain->setRowStretch(2, 1);
+        pLayoutMain->setColumnStretch(1, 1);
 
         /* Prepare USB check-box: */
         m_pCheckBoxUSB = new QCheckBox;
         if (m_pCheckBoxUSB)
-            pMainLayout->addWidget(m_pCheckBoxUSB, 0, 0, 1, 2);
+            pLayoutMain->addWidget(m_pCheckBoxUSB, 0, 0, 1, 2);
 
         /* Prepare 20-px shifting spacer: */
         QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         if (pSpacerItem)
-            pMainLayout->addItem(pSpacerItem, 1, 0);
+            pLayoutMain->addItem(pSpacerItem, 1, 0);
 
         /* Prepare USB settings widget: */
         m_pWidgetUSBSettings = new QWidget(this);
@@ -911,7 +911,7 @@ void UIMachineSettingsUSB::prepareWidgets()
                 }
             }
 
-            pMainLayout->addWidget(m_pWidgetUSBSettings, 1, 1, 1, 2);
+            pLayoutMain->addWidget(m_pWidgetUSBSettings, 1, 1, 1, 2);
         }
     }
 }

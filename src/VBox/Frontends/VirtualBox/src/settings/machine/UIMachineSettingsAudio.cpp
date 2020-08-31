@@ -230,20 +230,20 @@ void UIMachineSettingsAudio::prepare()
 void UIMachineSettingsAudio::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
     {
-        pMainLayout->setRowStretch(2, 1);
+        pLayoutMain->setRowStretch(2, 1);
 
         /* Prepare audio check-box: */
         m_pCheckBoxAudio = new QCheckBox(this);
         if (m_pCheckBoxAudio)
-            pMainLayout->addWidget(m_pCheckBoxAudio, 0, 0, 1, 2);
+            pLayoutMain->addWidget(m_pCheckBoxAudio, 0, 0, 1, 2);
 
         /* Prepare 20-px shifting spacer: */
         QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         if (pSpacerItem)
-            pMainLayout->addItem(pSpacerItem, 1, 0);
+            pLayoutMain->addItem(pSpacerItem, 1, 0);
 
         /* Prepare audio settings widget: */
         m_pWidgetAudioSettings = new QWidget(this);
@@ -301,7 +301,7 @@ void UIMachineSettingsAudio::prepareWidgets()
                 if (m_pCheckBoxAudioInput)
                     pLayoutAudioSettings->addWidget(m_pCheckBoxAudioInput, 3, 1);
 
-                pMainLayout->addWidget(m_pWidgetAudioSettings, 1, 1, 1, 1);
+                pLayoutMain->addWidget(m_pWidgetAudioSettings, 1, 1, 1, 1);
             }
         }
     }
