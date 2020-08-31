@@ -31,133 +31,46 @@
 
 
 UIMachineSettingsSFDetails::UIMachineSettingsSFDetails(SFDialogType type,
-                                                       bool fEnableSelector, /* for "permanent" checkbox */
+                                                       bool fUsePermanent,
                                                        const QStringList &usedNames,
                                                        QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QIDialog>(pParent)
     , m_type(type)
-    , m_fUsePermanent(fEnableSelector)
+    , m_fUsePermanent(fUsePermanent)
     , m_usedNames(usedNames)
-    , m_pPathSelector(0)
-    , m_pPermanentCheckBox(0)
-    , m_pNameLineEdit(0)
+    , m_pCache(0)
+    , m_pLabelPath(0)
+    , m_pSelectorPath(0)
+    , m_pLabelName(0)
+    , m_pEditorName(0)
+    , m_pLabelAutoMountPoint(0)
+    , m_pEditorAutoMountPoint(0)
     , m_pReadonlyCheckBox(0)
     , m_pAutoMountCheckBox(0)
-    , m_pAutoMountPointLineEdit(0)
-    , m_pPathLabel(0)
-    , m_pNameLabel(0)
-    , m_pAutoMountPointLabel(0)
+    , m_pPermanentCheckBox(0)
     , m_pButtonBox(0)
 {
-    prepareWidgets();
-
-    /* Setup widgets: */
-    m_pPathSelector->setResetEnabled(false);
-    m_pPathSelector->setHomeDir(QDir::homePath());
-    m_pPermanentCheckBox->setHidden(!fEnableSelector);
-
-    /* Setup connections: */
-    connect(m_pPathSelector, static_cast<void(UIFilePathSelector::*)(int)>(&UIFilePathSelector::currentIndexChanged),
-            this, &UIMachineSettingsSFDetails::sltSelectPath);
-    connect(m_pPathSelector, &UIFilePathSelector::pathChanged, this, &UIMachineSettingsSFDetails::sltSelectPath);
-    connect(m_pNameLineEdit, &QLineEdit::textChanged, this, &UIMachineSettingsSFDetails::sltValidate);
-    if (fEnableSelector)
-        connect(m_pPermanentCheckBox, &QCheckBox::toggled, this, &UIMachineSettingsSFDetails::sltValidate);
-
-     /* Applying language settings: */
-    retranslateUi();
-
-    /* Validate the initial field values: */
-    sltValidate();
-
-    /* Adjust dialog size: */
-    adjustSize();
-
-#ifdef VBOX_WS_MAC
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    setFixedSize(minimumSize());
-#endif /* VBOX_WS_MAC */
+    prepare();
 }
-
-void UIMachineSettingsSFDetails::prepareWidgets()
-{
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIMachineSettingsSFDetails"));
-    resize(218, 196);
-    QGridLayout *gridLayout = new QGridLayout(this);
-    gridLayout->setObjectName(QStringLiteral("gridLayout"));
-    m_pPathLabel = new QLabel;
-    m_pPathLabel->setObjectName(QStringLiteral("m_pPathLabel"));
-    m_pPathLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-    gridLayout->addWidget(m_pPathLabel, 0, 0, 1, 1);
-
-    m_pPathSelector = new UIFilePathSelector;
-    m_pPathSelector->setObjectName(QStringLiteral("m_pPathSelector"));
-    gridLayout->addWidget(m_pPathSelector, 0, 1, 1, 1);
-
-    m_pNameLabel = new QLabel;
-    m_pNameLabel->setObjectName(QStringLiteral("m_pNameLabel"));
-    m_pNameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pNameLabel, 1, 0, 1, 1);
-
-    m_pNameLineEdit = new QLineEdit;
-    m_pNameLineEdit->setObjectName(QStringLiteral("m_pNameLineEdit"));
-    gridLayout->addWidget(m_pNameLineEdit, 1, 1, 1, 1);
-
-    m_pReadonlyCheckBox = new QCheckBox;
-    m_pReadonlyCheckBox->setObjectName(QStringLiteral("m_pReadonlyCheckBox"));
-    gridLayout->addWidget(m_pReadonlyCheckBox, 2, 1, 1, 1);
-
-    m_pAutoMountCheckBox = new QCheckBox;
-    m_pAutoMountCheckBox->setObjectName(QStringLiteral("m_pAutoMountCheckBox"));
-    gridLayout->addWidget(m_pAutoMountCheckBox, 3, 1, 1, 1);
-
-    m_pAutoMountPointLabel = new QLabel;
-    m_pAutoMountPointLabel->setObjectName(QStringLiteral("m_pAutoMountPointLabel"));
-    m_pAutoMountPointLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pAutoMountPointLabel, 4, 0, 1, 1);
-
-    m_pAutoMountPointLineEdit = new QLineEdit;
-    m_pAutoMountPointLineEdit->setObjectName(QStringLiteral("m_pAutoMountPointLineEdit"));
-    gridLayout->addWidget(m_pAutoMountPointLineEdit, 4, 1, 1, 1);
-
-    m_pPermanentCheckBox = new QCheckBox;
-    m_pPermanentCheckBox->setObjectName(QStringLiteral("m_pPermanentCheckBox"));
-    gridLayout->addWidget(m_pPermanentCheckBox, 5, 1, 1, 1);
-
-    QSpacerItem *spacerItem = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    gridLayout->addItem(spacerItem, 6, 1, 1, 1);
-
-    m_pButtonBox = new QIDialogButtonBox;
-    m_pButtonBox->setObjectName(QStringLiteral("m_pButtonBox"));
-    m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok);
-    gridLayout->addWidget(m_pButtonBox, 7, 0, 1, 2);
-
-
-    QObject::connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIMachineSettingsSFDetails::accept);
-    QObject::connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIMachineSettingsSFDetails::reject);
-}
-
 
 void UIMachineSettingsSFDetails::setPath(const QString &strPath)
 {
-    m_pPathSelector->setPath(strPath);
+    m_pSelectorPath->setPath(strPath);
 }
 
 QString UIMachineSettingsSFDetails::path() const
 {
-    return m_pPathSelector->path();
+    return m_pSelectorPath->path();
 }
 
 void UIMachineSettingsSFDetails::setName(const QString &strName)
 {
-    m_pNameLineEdit->setText(strName);
+    m_pEditorName->setText(strName);
 }
 
 QString UIMachineSettingsSFDetails::name() const
 {
-    return m_pNameLineEdit->text();
+    return m_pEditorName->text();
 }
 
 void UIMachineSettingsSFDetails::setWriteable(bool fWritable)
@@ -182,12 +95,12 @@ bool UIMachineSettingsSFDetails::isAutoMounted() const
 
 void UIMachineSettingsSFDetails::setAutoMountPoint(const QString &strAutoMountPoint)
 {
-    m_pAutoMountPointLineEdit->setText(strAutoMountPoint);
+    m_pEditorAutoMountPoint->setText(strAutoMountPoint);
 }
 
 QString UIMachineSettingsSFDetails::autoMountPoint() const
 {
-    return m_pAutoMountPointLineEdit->text();
+    return m_pEditorAutoMountPoint->text();
 }
 
 void UIMachineSettingsSFDetails::setPermanent(bool fPermanent)
@@ -202,15 +115,15 @@ bool UIMachineSettingsSFDetails::isPermanent() const
 
 void UIMachineSettingsSFDetails::retranslateUi()
 {
-    m_pPathLabel->setText(tr("Folder Path:"));
-    m_pNameLabel->setText(tr("Folder Name:"));
-    m_pNameLineEdit->setToolTip(tr("Holds the name of the shared folder (as it will be seen by the guest OS)."));
+    m_pLabelPath->setText(tr("Folder Path:"));
+    m_pLabelName->setText(tr("Folder Name:"));
+    m_pEditorName->setToolTip(tr("Holds the name of the shared folder (as it will be seen by the guest OS)."));
     m_pReadonlyCheckBox->setToolTip(tr("When checked, the guest OS will not be able to write to the specified shared folder."));
     m_pReadonlyCheckBox->setText(tr("&Read-only"));
     m_pAutoMountCheckBox->setToolTip(tr("When checked, the guest OS will try to automatically mount the shared folder on startup."));
     m_pAutoMountCheckBox->setText(tr("&Auto-mount"));
-    m_pAutoMountPointLabel->setText(tr("Mount point:"));
-    m_pAutoMountPointLineEdit->setToolTip(tr("Where to automatically mount the folder in the guest.  A drive letter (e.g. 'G:') for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting."));
+    m_pLabelAutoMountPoint->setText(tr("Mount point:"));
+    m_pEditorAutoMountPoint->setToolTip(tr("Where to automatically mount the folder in the guest.  A drive letter (e.g. 'G:') for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting."));
     m_pPermanentCheckBox->setToolTip(tr("When checked, this shared folder will be permanent."));
     m_pPermanentCheckBox->setText(tr("&Make Permanent"));
 
@@ -229,43 +142,151 @@ void UIMachineSettingsSFDetails::retranslateUi()
 
 void UIMachineSettingsSFDetails::sltValidate()
 {
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!m_pPathSelector->path().isEmpty() &&
-                                                         QDir(m_pPathSelector->path()).exists() &&
-                                                         !m_pNameLineEdit->text().trimmed().isEmpty() &&
-                                                         !m_pNameLineEdit->text().contains(" ") &&
-                                                         !m_usedNames.contains(m_pNameLineEdit->text()));
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!m_pSelectorPath->path().isEmpty() &&
+                                                         QDir(m_pSelectorPath->path()).exists() &&
+                                                         !m_pEditorName->text().trimmed().isEmpty() &&
+                                                         !m_pEditorName->text().contains(" ") &&
+                                                         !m_usedNames.contains(m_pEditorName->text()));
 }
 
 void UIMachineSettingsSFDetails::sltSelectPath()
 {
-    if (!m_pPathSelector->isPathSelected())
+    if (!m_pSelectorPath->isPathSelected())
         return;
 
-    QString strFolderName(m_pPathSelector->path());
+    QString strFolderName(m_pSelectorPath->path());
 #if defined (VBOX_WS_WIN) || defined (Q_OS_OS2)
     if (strFolderName[0].isLetter() && strFolderName[1] == ':' && strFolderName[2] == 0)
     {
         /* UIFilePathSelector returns root path as 'X:', which is invalid path.
          * Append the trailing backslash to get a valid root path 'X:\': */
         strFolderName += "\\";
-        m_pPathSelector->setPath(strFolderName);
+        m_pSelectorPath->setPath(strFolderName);
     }
 #endif /* VBOX_WS_WIN || Q_OS_OS2 */
     QDir folder(strFolderName);
     if (!folder.isRoot())
     {
         /* Processing non-root folder */
-        m_pNameLineEdit->setText(folder.dirName().replace(' ', '_'));
+        m_pEditorName->setText(folder.dirName().replace(' ', '_'));
     }
     else
     {
         /* Processing root folder: */
 #if defined (VBOX_WS_WIN) || defined (Q_OS_OS2)
-        m_pNameLineEdit->setText(strFolderName.toUpper()[0] + "_DRIVE");
+        m_pEditorName->setText(strFolderName.toUpper()[0] + "_DRIVE");
 #elif defined (VBOX_WS_X11)
-        m_pNameLineEdit->setText("ROOT");
+        m_pEditorName->setText("ROOT");
 #endif
     }
     /* Validate the field values: */
     sltValidate();
+}
+
+void UIMachineSettingsSFDetails::prepare()
+{
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
+
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Validate the initial field values: */
+    sltValidate();
+
+    /* Adjust dialog size: */
+    adjustSize();
+
+#ifdef VBOX_WS_MAC
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setFixedSize(minimumSize());
+#endif /* VBOX_WS_MAC */
+}
+
+void UIMachineSettingsSFDetails::prepareWidgets()
+{
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setRowStretch(6, 1);
+
+        /* Prepare path label: */
+        m_pLabelPath = new QLabel;
+        if (m_pLabelPath)
+        {
+            m_pLabelPath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelPath, 0, 0);
+        }
+        /* Prepare path selector: */
+        m_pSelectorPath = new UIFilePathSelector;
+        if (m_pSelectorPath)
+        {
+            m_pSelectorPath->setResetEnabled(false);
+            m_pSelectorPath->setHomeDir(QDir::homePath());
+
+            pLayoutMain->addWidget(m_pSelectorPath, 0, 1);
+        }
+
+        /* Prepare name label: */
+        m_pLabelName = new QLabel;
+        if (m_pLabelName)
+        {
+            m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelName, 1, 0);
+        }
+        /* Prepare name editor: */
+        m_pEditorName = new QLineEdit;
+        if (m_pEditorName)
+            pLayoutMain->addWidget(m_pEditorName, 1, 1);
+
+        /* Prepare auto-mount point: */
+        m_pLabelAutoMountPoint = new QLabel;
+        if (m_pLabelAutoMountPoint)
+        {
+            m_pLabelAutoMountPoint->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelAutoMountPoint, 2, 0);
+        }
+        /* Prepare auto-mount editor: */
+        m_pEditorAutoMountPoint = new QLineEdit;
+        if (m_pEditorAutoMountPoint)
+            pLayoutMain->addWidget(m_pEditorAutoMountPoint, 2, 1);
+
+        /* Prepare read-only check-box: */
+        m_pReadonlyCheckBox = new QCheckBox;
+        if (m_pReadonlyCheckBox)
+            pLayoutMain->addWidget(m_pReadonlyCheckBox, 3, 1);
+        /* Prepare auto-mount check-box: */
+        m_pAutoMountCheckBox = new QCheckBox;
+        if (m_pAutoMountCheckBox)
+            pLayoutMain->addWidget(m_pAutoMountCheckBox, 4, 1);
+        /* Prepare permanent check-box: */
+        m_pPermanentCheckBox = new QCheckBox;
+        if (m_pPermanentCheckBox)
+        {
+            m_pPermanentCheckBox->setHidden(!m_fUsePermanent);
+            pLayoutMain->addWidget(m_pPermanentCheckBox, 5, 1);
+        }
+
+        /* Prepare button-box: */
+        m_pButtonBox = new QIDialogButtonBox;
+        if (m_pButtonBox)
+        {
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+            pLayoutMain->addWidget(m_pButtonBox, 7, 0, 1, 2);
+        }
+    }
+}
+
+void UIMachineSettingsSFDetails::prepareConnections()
+{
+    connect(m_pSelectorPath, static_cast<void(UIFilePathSelector::*)(int)>(&UIFilePathSelector::currentIndexChanged),
+            this, &UIMachineSettingsSFDetails::sltSelectPath);
+    connect(m_pSelectorPath, &UIFilePathSelector::pathChanged, this, &UIMachineSettingsSFDetails::sltSelectPath);
+    connect(m_pEditorName, &QLineEdit::textChanged, this, &UIMachineSettingsSFDetails::sltValidate);
+    if (m_fUsePermanent)
+        connect(m_pPermanentCheckBox, &QCheckBox::toggled, this, &UIMachineSettingsSFDetails::sltValidate);
+    connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIMachineSettingsSFDetails::accept);
+    connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIMachineSettingsSFDetails::reject);
 }

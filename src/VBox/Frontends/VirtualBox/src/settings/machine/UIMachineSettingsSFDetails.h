@@ -46,7 +46,7 @@ public:
     };
 
     UIMachineSettingsSFDetails(SFDialogType type,
-                               bool fEnableSelector, /* for "permanent" checkbox */
+                               bool fUsePermanent,
                                const QStringList &usedNames,
                                QWidget *pParent = 0);
 
@@ -79,7 +79,12 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Prepares widgets. */
     void prepareWidgets();
+    /** Prepares connections. */
+    void prepareConnections();
 
     SFDialogType  m_type;
     bool          m_fUsePermanent;
@@ -88,16 +93,26 @@ private:
 
     /** @name Widgets
       * @{ */
-        UIFilePathSelector *m_pPathSelector;
-        QCheckBox *m_pPermanentCheckBox;
-        QLineEdit *m_pNameLineEdit;
-        QCheckBox *m_pReadonlyCheckBox;
-        QCheckBox *m_pAutoMountCheckBox;
-        QLineEdit *m_pAutoMountPointLineEdit;
-        QLabel *m_pPathLabel;
-        QLabel *m_pNameLabel;
-        QLabel *m_pAutoMountPointLabel;
-        QIDialogButtonBox *m_pButtonBox;
+        /** Holds the path label instance. */
+        QLabel             *m_pLabelPath;
+        /** Holds the path selector instance. */
+        UIFilePathSelector *m_pSelectorPath;
+        /** Holds the name label instance. */
+        QLabel             *m_pLabelName;
+        /** Holds the name editor instance. */
+        QLineEdit          *m_pEditorName;
+        /** Holds the auto-mount point label instance. */
+        QLabel             *m_pLabelAutoMountPoint;
+        /** Holds the auto-mount point editor instance. */
+        QLineEdit          *m_pEditorAutoMountPoint;
+        /** Holds the read-only check-box instance. */
+        QCheckBox          *m_pReadonlyCheckBox;
+        /** Holds the auto-mount check-box instance. */
+        QCheckBox          *m_pAutoMountCheckBox;
+        /** Holds the permanent check-box instance. */
+        QCheckBox          *m_pPermanentCheckBox;
+        /** Holds the button-box instance. */
+        QIDialogButtonBox  *m_pButtonBox;
     /** @} */
 };
 
