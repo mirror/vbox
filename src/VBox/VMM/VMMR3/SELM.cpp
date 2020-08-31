@@ -567,7 +567,7 @@ VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC Desc, RTSEL Sel, const char *pszMsg
 static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /** @todo SMP support! */
-    PVMCPU      pVCpu = pVM->apCpusR3[0];
+    PVMCPU      pVCpu = VMMGetCpu(pVM);
 
     VBOXGDTR    GDTR;
     CPUMGetGuestGDTR(pVCpu, &GDTR);
@@ -610,7 +610,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /** @todo SMP support! */
-    PVMCPU   pVCpu = pVM->apCpusR3[0];
+    PVMCPU   pVCpu = VMMGetCpu(pVM);
 
     uint64_t GCPtrLdt;
     uint32_t cbLdt;
