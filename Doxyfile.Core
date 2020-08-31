@@ -130,39 +130,39 @@ ALIASES                += \
 
 # The following is for device configuration options.
 ALIASES                += \
-	devcfgm{6}="\xrefitem lst_cfgm \"Device Config: \1\" \"VM Configuration Values\" \
-<b>Name:</b> [Device Instance]/\1 <br> \
-<b>Type:</b> \2 <br> \
-<b>Unit:</b> \6 <br> \
-<b>Min:</b> \3 <br> \
-<b>Max:</b> \4 <br> \
-<b>Default:</b> \5 <br> \
+	devcfgm{7}="\xrefitem lst_cfgm \"Device Config: \1/\2\" \"VM Configuration Values\" \
+<b>Name:</b> /Devices/\1/#/Config/\2 <br> \
+<b>Type:</b> \3 <br> \
+<b>Unit:</b> \7 <br> \
+<b>Min:</b> \4 <br> \
+<b>Max:</b> \5 <br> \
+<b>Default:</b> \6 <br> \
 "
 ALIASES                += \
-	devcfgm{5}="\xrefitem lst_cfgm \"Device Config: \1\" \"VM Configuration Values\" \
-<b>Name:</b> [Device Instance]/\1 <br> \
-<b>Type:</b> \2 <br> \
-<b>Min:</b> \3 <br> \
-<b>Max:</b> \4 <br> \
-<b>Default:</b> \5 <br> \
+	devcfgm{6}="\xrefitem lst_cfgm \"Device Config: \1/\2\" \"VM Configuration Values\" \
+<b>Name:</b> /Devices/\1/#1/Config/\2 <br> \
+<b>Type:</b> \3 <br> \
+<b>Min:</b> \4 <br> \
+<b>Max:</b> \5 <br> \
+<b>Default:</b> \6 <br> \
 "
 ALIASES                += \
-	devcfgm{4}="\xrefitem lst_cfgm \"Device Config: \1\" \"VM Configuration Values\" \
-<b>Name:</b> [Device Instance]/\1 <br> \
-<b>Type:</b> \2 <br> \
-<b>Min:</b> \3 <br> \
-<b>Max:</b> \4 <br> \
+	devcfgm{5}="\xrefitem lst_cfgm \"Device Config: \1/\2\" \"VM Configuration Values\" \
+<b>Name:</b> /Devices\1/#1/Config/\2 <br> \
+<b>Type:</b> \3 <br> \
+<b>Min:</b> \4 <br> \
+<b>Max:</b> \5 <br> \
 "
 ALIASES                += \
-	devcfgm{3}="\xrefitem lst_cfgm \"Device Config: \1\" \"VM Configuration Values\" \
-<b>Name:</b> [Device Instance]/\1 <br> \
-<b>Type:</b> \2 <br> \
-<b>Default:</b> \3 <br> \
+	devcfgm{4}="\xrefitem lst_cfgm \"Device Config: \1/\2\" \"VM Configuration Values\" \
+<b>Name:</b> /Devices\1/#1/Config/\2 <br> \
+<b>Type:</b> \3 <br> \
+<b>Default:</b> \4 <br> \
 "
 ALIASES                += \
-	devcfgm{2}="\xrefitem lst_cfgm \"Device Config: \1\" \"VM Configuration Values\" \
-<b>Name:</b> [Device Instance]/\1 <br> \
-<b>Type:</b> \2 <br> \
+	devcfgm{3}="\xrefitem lst_cfgm \"Device Config: \1/\2\" \"VM Configuration Values\" \
+<b>Name:</b> /Devices\1/#1/Config/\2 <br> \
+<b>Type:</b> \3 <br> \
 "
 
 # The following is for driver configuration options.
