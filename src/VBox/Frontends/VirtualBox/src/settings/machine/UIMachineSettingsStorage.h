@@ -328,7 +328,7 @@ private:
         QITreeView       *m_pTreeStorage;
         /** Holds the toolbar layout instance. */
         QHBoxLayout      *m_pLayoutToolBar;
-        /** Holds the tree-view instance. */
+        /** Holds the toolbar instance. */
         UIToolBar        *m_pToolBar;
 
         /** Holds the right pane instance. */
