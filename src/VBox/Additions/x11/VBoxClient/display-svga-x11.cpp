@@ -677,11 +677,32 @@ static bool isXwayland(void)
     return false;
 }
 
+/**
+ * We start VBoxDRMClient from VBoxService in case  some guest property is set.
+ * We check the same guest property here and dont start this service in case
+ * it (guest property) is set.
+ */
+static bool checkDRMClient()
+{
+    return false;
+    // uint32_t uGuestPropSvcClientID;
+    // int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+    // if (RT_SUCCESS(rc))
+    // {
+    //     rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/DRMResize");
+    //     if (RT_SUCCESS(rc))
+    //         return true;
+    // }
+    // return false;
+}
+
 static bool init()
 {
+    /* If DRM client is already running don't start this service. */
+    if (checkDRMClient())
+        return false;
     if (isXwayland())
     {
-        VBClLogInfo("The parent session seems to be running on Wayland. Starting DRM client\n");
         char* argv[] = {NULL};
         char* env[] = {NULL};
         char szDRMClientPath[RTPATH_MAX];
@@ -1254,17 +1275,16 @@ static const char *getPidFilePath()
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
     RT_NOREF(ppInterface, fDaemonised);
-    int rc;
-    uint32_t events;
+    if (!init())
+        return VERR_NOT_AVAILABLE;
+
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
     bool fAck = false;
     bool fFirstRun = true;
-    if (!init())
-        return VERR_NOT_AVAILABLE;
     static struct VMMDevDisplayDef aMonitors[VMW_MAX_HEADS];
 
-    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
+    int rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
         VBClLogFatalError("Failed to request display change events, rc=%Rrc\n", rc);
     rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
@@ -1337,6 +1357,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                 fFirstRun = false;
             }
         }
+        uint32_t events;
         do
         {
             rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &events);

@@ -77,6 +77,7 @@
 #ifdef DEBUG
 # include <iprt/memtracker.h>
 #endif
+#include <iprt/env.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
@@ -90,6 +91,7 @@
 #include <VBox/log.h>
 
 #include "VBoxServiceInternal.h"
+#include "VBoxServiceUtils.h"
 #ifdef VBOX_WITH_VBOXSERVICE_CONTROL
 # include "VBoxServiceControl.h"
 #endif
@@ -891,6 +893,34 @@ static RTEXITCODE vbglInitFailure(int rcVbgl)
     return RTMsgErrorExit(RTEXITCODE_FAILURE, "VbglR3Init failed with rc=%Rrc\n", rcVbgl);
 }
 
+#ifdef RT_OS_LINUX
+/**
+ * Check for a guest property and start VBoxDRMClient if it exists.
+ *
+ */
+static void startDRMResize(void)
+{
+    uint32_t uGuestPropSvcClientID;
+    int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/DRMResize");
+        if (RT_SUCCESS(rc))
+        {
+            RTMsgInfo("Starting DRM resize service");
+            char szDRMClientPath[RTPATH_MAX];
+            RTPathExecDir(szDRMClientPath, RTPATH_MAX);
+            RTPathStripSuffix(szDRMClientPath);
+            RTPathAppend(szDRMClientPath, RTPATH_MAX, "VBoxDRMClient");
+            const char *apszArgs[1] = { NULL };
+            rc = RTProcCreate("VBoxDRMClient", apszArgs, RTENV_DEFAULT,
+                              RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SEARCH_PATH, NULL);
+            if (rc == -1)
+                RTMsgError("Could not start DRM resize service");
+        }
+    }
+}
+#endif
 
 int main(int argc, char **argv)
 {
@@ -1156,6 +1186,10 @@ int main(int argc, char **argv)
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
+#ifdef RT_OS_LINUX
+    startDRMResize();
+#endif
+
 #ifdef RT_OS_WINDOWS
     /*
      * Make sure only one instance of VBoxService runs at a time.  Create a
@@ -1283,4 +1317,3 @@ int main(int argc, char **argv)
 
     return rcExit;
 }
-
