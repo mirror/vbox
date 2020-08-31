@@ -757,35 +757,35 @@ void UIMachineSettingsUSB::sltEditFilter()
 
     /* Configure USB filter details dialog: */
     UIMachineSettingsUSBFilterDetails dlgFilterDetails(this);
-    dlgFilterDetails.m_pLineEditName->setText(pItem->m_strName);
-    dlgFilterDetails.m_pLineEditVendorID->setText(pItem->m_strVendorId);
-    dlgFilterDetails.m_pLineEditProductID->setText(pItem->m_strProductId);
-    dlgFilterDetails.m_pLineEditRevision->setText(pItem->m_strRevision);
-    dlgFilterDetails.m_pLineEditPort->setText(pItem->m_strPort);
-    dlgFilterDetails.m_pLineEditManufacturer->setText(pItem->m_strManufacturer);
-    dlgFilterDetails.m_pLineEditProduct->setText(pItem->m_strProduct);
-    dlgFilterDetails.m_pLineEditSerialNo->setText(pItem->m_strSerialNumber);
+    dlgFilterDetails.m_pEditorName->setText(pItem->m_strName);
+    dlgFilterDetails.m_pEditorVendorID->setText(pItem->m_strVendorId);
+    dlgFilterDetails.m_pEditorProductID->setText(pItem->m_strProductId);
+    dlgFilterDetails.m_pEditorRevision->setText(pItem->m_strRevision);
+    dlgFilterDetails.m_pEditorPort->setText(pItem->m_strPort);
+    dlgFilterDetails.m_pEditorManufacturer->setText(pItem->m_strManufacturer);
+    dlgFilterDetails.m_pEditorProduct->setText(pItem->m_strProduct);
+    dlgFilterDetails.m_pEditorSerialNo->setText(pItem->m_strSerialNumber);
     const QString strRemote = pItem->m_strRemote.toLower();
     if (strRemote == "yes" || strRemote == "true" || strRemote == "1")
-        dlgFilterDetails.m_pComboBoxRemote->setCurrentIndex(ModeOn);
+        dlgFilterDetails.m_pComboRemote->setCurrentIndex(ModeOn);
     else if (strRemote == "no" || strRemote == "false" || strRemote == "0")
-        dlgFilterDetails.m_pComboBoxRemote->setCurrentIndex(ModeOff);
+        dlgFilterDetails.m_pComboRemote->setCurrentIndex(ModeOff);
     else
-        dlgFilterDetails.m_pComboBoxRemote->setCurrentIndex(ModeAny);
+        dlgFilterDetails.m_pComboRemote->setCurrentIndex(ModeAny);
 
     /* Run USB filter details dialog: */
     if (dlgFilterDetails.exec() == QDialog::Accepted)
     {
         /* Update edited tree-widget item: */
-        pItem->m_strName = dlgFilterDetails.m_pLineEditName->text().isEmpty() ? QString() : dlgFilterDetails.m_pLineEditName->text();
-        pItem->m_strVendorId = dlgFilterDetails.m_pLineEditVendorID->text().isEmpty() ? QString() : dlgFilterDetails.m_pLineEditVendorID->text();
-        pItem->m_strProductId = dlgFilterDetails.m_pLineEditProductID->text().isEmpty() ? QString() : dlgFilterDetails.m_pLineEditProductID->text();
-        pItem->m_strRevision = dlgFilterDetails.m_pLineEditRevision->text().isEmpty() ? QString() : dlgFilterDetails.m_pLineEditRevision->text();
-        pItem->m_strManufacturer = dlgFilterDetails.m_pLineEditManufacturer->text().isEmpty() ? QString() : dlgFilterDetails.m_pLineEditManufacturer->text();
-        pItem->m_strProduct = dlgFilterDetails.m_pLineEditProduct->text().isEmpty() ? QString() : dlgFilterDetails.m_pLineEditProduct->text();
-        pItem->m_strSerialNumber = dlgFilterDetails.m_pLineEditSerialNo->text().isEmpty() ? QString() : dlgFilterDetails.m_pLineEditSerialNo->text();
-        pItem->m_strPort = dlgFilterDetails.m_pLineEditPort->text().isEmpty() ? QString() : dlgFilterDetails.m_pLineEditPort->text();
-        switch (dlgFilterDetails.m_pComboBoxRemote->currentIndex())
+        pItem->m_strName = dlgFilterDetails.m_pEditorName->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorName->text();
+        pItem->m_strVendorId = dlgFilterDetails.m_pEditorVendorID->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorVendorID->text();
+        pItem->m_strProductId = dlgFilterDetails.m_pEditorProductID->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorProductID->text();
+        pItem->m_strRevision = dlgFilterDetails.m_pEditorRevision->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorRevision->text();
+        pItem->m_strManufacturer = dlgFilterDetails.m_pEditorManufacturer->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorManufacturer->text();
+        pItem->m_strProduct = dlgFilterDetails.m_pEditorProduct->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorProduct->text();
+        pItem->m_strSerialNumber = dlgFilterDetails.m_pEditorSerialNo->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorSerialNo->text();
+        pItem->m_strPort = dlgFilterDetails.m_pEditorPort->text().isEmpty() ? QString() : dlgFilterDetails.m_pEditorPort->text();
+        switch (dlgFilterDetails.m_pComboRemote->currentIndex())
         {
             case ModeAny: pItem->m_strRemote = QString(); break;
             case ModeOn:  pItem->m_strRemote = QString::number(1); break;

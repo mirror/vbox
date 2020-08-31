@@ -29,198 +29,243 @@
 
 UIMachineSettingsUSBFilterDetails::UIMachineSettingsUSBFilterDetails(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QIDialog>(pParent, Qt::Sheet)
-    , m_pComboBoxRemote(0)
-    , m_pLineEditName(0)
-    , m_pLineEditVendorID(0)
-    , m_pLineEditProductID(0)
-    , m_pLineEditRevision(0)
-    , m_pLineEditPort(0)
-    , m_pLineEditManufacturer(0)
-    , m_pLineEditProduct(0)
-    , m_pLineEditSerialNo(0)
-    , m_pLabelPort(0)
-    , m_pLabelRemote(0)
-    , m_pLabelProductID(0)
+    , m_pLayoutMain(0)
     , m_pLabelName(0)
+    , m_pEditorName(0)
     , m_pLabelVendorID(0)
+    , m_pEditorVendorID(0)
+    , m_pLabelProductID(0)
+    , m_pEditorProductID(0)
     , m_pLabelRevision(0)
+    , m_pEditorRevision(0)
     , m_pLabelManufacturer(0)
+    , m_pEditorManufacturer(0)
     , m_pLabelProduct(0)
+    , m_pEditorProduct(0)
     , m_pLabelSerialNo(0)
-    , gridLayout(0)
+    , m_pEditorSerialNo(0)
+    , m_pLabelPort(0)
+    , m_pEditorPort(0)
+    , m_pLabelRemote(0)
+    , m_pComboRemote(0)
+    , m_pButtonBox(0)
 {
-    prepareWidgets();
-
-    m_pComboBoxRemote->insertItem (UIMachineSettingsUSB::ModeAny, ""); /* Any */
-    m_pComboBoxRemote->insertItem (UIMachineSettingsUSB::ModeOn,  ""); /* Yes */
-    m_pComboBoxRemote->insertItem (UIMachineSettingsUSB::ModeOff, ""); /* No */
-
-    m_pLineEditName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
-    m_pLineEditVendorID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
-    m_pLineEditProductID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
-    m_pLineEditRevision->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
-    m_pLineEditPort->setValidator (new QRegExpValidator (QRegExp ("[0-9]*"), this));
-
-    /* Applying language settings */
-    retranslateUi();
-
-    resize (minimumSize());
-    setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
+    prepare();
 }
 
 void UIMachineSettingsUSBFilterDetails::retranslateUi()
 {
     setWindowTitle(tr("USB Filter Details"));
+
     m_pLabelName->setText(tr("&Name:"));
-    m_pLineEditName->setToolTip(tr("Holds the filter name."));
+    m_pEditorName->setToolTip(tr("Holds the filter name."));
     m_pLabelVendorID->setText(tr("&Vendor ID:"));
-    m_pLineEditVendorID->setToolTip(tr("Holds the vendor ID filter. The "
+    m_pEditorVendorID->setToolTip(tr("Holds the vendor ID filter. The "
                                        "<i>exact match</i> string format is <tt>XXXX</tt> where <tt>X</tt> is a "
                                        "hexadecimal digit. An empty string will match any value."));
     m_pLabelProductID->setText(tr("&Product ID:"));
-    m_pLineEditProductID->setToolTip(tr("Holds the product ID filter. The "
+    m_pEditorProductID->setToolTip(tr("Holds the product ID filter. The "
                                         "<i>exact match</i> string format is <tt>XXXX</tt> where <tt>X</tt> is a "
                                         "hexadecimal digit. An empty string will match any value."));
     m_pLabelRevision->setText(tr("&Revision:"));
-    m_pLineEditRevision->setToolTip(tr("Holds the revision number filter. The "
+    m_pEditorRevision->setToolTip(tr("Holds the revision number filter. The "
                                        "<i>exact match</i> string format is <tt>IIFF</tt> where <tt>I</tt> is a decimal "
                                        "digit of the integer part and <tt>F</tt> is a decimal digit of the fractional "
                                        "part. An empty string will match any value."));
     m_pLabelManufacturer->setText(tr("&Manufacturer:"));
-    m_pLineEditManufacturer->setToolTip(tr("Holds the manufacturer filter as an "
+    m_pEditorManufacturer->setToolTip(tr("Holds the manufacturer filter as an "
                                            "<i>exact match</i> string. An empty string will match any value."));
     m_pLabelProduct->setText(tr("Pro&duct:"));
-    m_pLineEditProduct->setToolTip(tr("Holds the product name filter as an "
+    m_pEditorProduct->setToolTip(tr("Holds the product name filter as an "
                                       "<i>exact match</i> string. An empty string will match any value."));
     m_pLabelSerialNo->setText(tr("&Serial No.:"));
-    m_pLineEditSerialNo->setToolTip(tr("Holds the serial number filter as an "
+    m_pEditorSerialNo->setToolTip(tr("Holds the serial number filter as an "
                                        "<i>exact match</i> string. An empty string will match any value."));
     m_pLabelPort->setText(tr("Por&t:"));
-    m_pLineEditPort->setToolTip(tr("Holds the host USB port filter as an "
+    m_pEditorPort->setToolTip(tr("Holds the host USB port filter as an "
                                    "<i>exact match</i> string. An empty string will match any value."));
     m_pLabelRemote->setText(tr("R&emote:"));
-    m_pComboBoxRemote->setToolTip(tr("Holds whether this filter applies to USB "
+    m_pComboRemote->setToolTip(tr("Holds whether this filter applies to USB "
                                      "devices attached locally to the host computer (<i>No</i>), to a VRDP client's "
                                      "computer (<i>Yes</i>), or both (<i>Any</i>)."));
 
-    m_pComboBoxRemote->setItemText (UIMachineSettingsUSB::ModeAny, tr ("Any", "remote"));
-    m_pComboBoxRemote->setItemText (UIMachineSettingsUSB::ModeOn,  tr ("Yes", "remote"));
-    m_pComboBoxRemote->setItemText (UIMachineSettingsUSB::ModeOff, tr ("No",  "remote"));
+    m_pComboRemote->setItemText(UIMachineSettingsUSB::ModeAny, tr("Any", "remote"));
+    m_pComboRemote->setItemText(UIMachineSettingsUSB::ModeOn,  tr("Yes", "remote"));
+    m_pComboRemote->setItemText(UIMachineSettingsUSB::ModeOff, tr("No",  "remote"));
 }
 
+void UIMachineSettingsUSBFilterDetails::prepare()
+{
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
+
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Adjust size: */
+    resize(minimumSize());
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+}
 
 void UIMachineSettingsUSBFilterDetails::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIMachineSettingsUSBFilterDetails"));
-    resize(350, 363);
-    setMinimumSize(QSize(350, 0));
-    gridLayout = new QGridLayout(this);
-    gridLayout->setObjectName(QStringLiteral("gridLayout"));
-    m_pLabelName = new QLabel();
-    m_pLabelName->setObjectName(QStringLiteral("m_pLabelName"));
-    m_pLabelName->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelName, 0, 0, 1, 1);
+    m_pLayoutMain = new QGridLayout(this);
+    if (m_pLayoutMain)
+    {
+        m_pLayoutMain->setRowStretch(9, 1);
 
-    m_pLineEditName = new QLineEdit();
-    m_pLineEditName->setObjectName(QStringLiteral("m_pLineEditName"));
-    gridLayout->addWidget(m_pLineEditName, 0, 1, 1, 1);
+        m_pLabelName = new QLabel(this);
+        if (m_pLabelName)
+        {
+            m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelName, 0, 0);
+        }
+        m_pEditorName = new QLineEdit(this);
+        if (m_pEditorName)
+        {
+            if (m_pLabelName)
+                m_pLabelName->setBuddy(m_pEditorName);
+            m_pEditorName->setValidator(new QRegExpValidator(QRegExp(".+"), this));
 
-    m_pLabelVendorID = new QLabel();
-    m_pLabelVendorID->setObjectName(QStringLiteral("m_pLabelVendorID"));
-    m_pLabelVendorID->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelVendorID, 1, 0, 1, 1);
+            m_pLayoutMain->addWidget(m_pEditorName, 0, 1);
+        }
 
-    m_pLineEditVendorID = new QLineEdit();
-    m_pLineEditVendorID->setObjectName(QStringLiteral("m_pLineEditVendorID"));
-    gridLayout->addWidget(m_pLineEditVendorID, 1, 1, 1, 1);
+        m_pLabelVendorID = new QLabel(this);
+        if (m_pLabelVendorID)
+        {
+            m_pLabelVendorID->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelVendorID, 1, 0);
+        }
+        m_pEditorVendorID = new QLineEdit(this);
+        if (m_pEditorVendorID)
+        {
+            if (m_pLabelVendorID)
+                m_pLabelVendorID->setBuddy(m_pEditorVendorID);
+            m_pEditorVendorID->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
 
-    m_pLabelProductID = new QLabel();
-    m_pLabelProductID->setObjectName(QStringLiteral("m_pLabelProductID"));
-    m_pLabelProductID->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelProductID, 2, 0, 1, 1);
+            m_pLayoutMain->addWidget(m_pEditorVendorID, 1, 1);
+        }
 
-    m_pLineEditProductID = new QLineEdit();
-    m_pLineEditProductID->setObjectName(QStringLiteral("m_pLineEditProductID"));
-    gridLayout->addWidget(m_pLineEditProductID, 2, 1, 1, 1);
+        m_pLabelProductID = new QLabel(this);
+        if (m_pLabelProductID)
+        {
+            m_pLabelProductID->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelProductID, 2, 0);
+        }
+        m_pEditorProductID = new QLineEdit(this);
+        if (m_pEditorProductID)
+        {
+            if (m_pLabelProductID)
+                m_pLabelProductID->setBuddy(m_pEditorProductID);
+            m_pEditorProductID->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
 
-    m_pLabelRevision = new QLabel();
-    m_pLabelRevision->setObjectName(QStringLiteral("m_pLabelRevision"));
-    m_pLabelRevision->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelRevision, 3, 0, 1, 1);
+            m_pLayoutMain->addWidget(m_pEditorProductID, 2, 1);
+        }
 
-    m_pLineEditRevision = new QLineEdit();
-    m_pLineEditRevision->setObjectName(QStringLiteral("m_pLineEditRevision"));
-    gridLayout->addWidget(m_pLineEditRevision, 3, 1, 1, 1);
+        m_pLabelRevision = new QLabel(this);
+        if (m_pLabelRevision)
+        {
+            m_pLabelRevision->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelRevision, 3, 0);
+        }
+        m_pEditorRevision = new QLineEdit(this);
+        if (m_pEditorRevision)
+        {
+            if (m_pLabelRevision)
+                m_pLabelRevision->setBuddy(m_pEditorRevision);
+            m_pEditorRevision->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
 
-    m_pLabelManufacturer = new QLabel();
-    m_pLabelManufacturer->setObjectName(QStringLiteral("m_pLabelManufacturer"));
-    m_pLabelManufacturer->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelManufacturer, 4, 0, 1, 1);
+            m_pLayoutMain->addWidget(m_pEditorRevision, 3, 1);
+        }
 
-    m_pLineEditManufacturer = new QLineEdit();
-    m_pLineEditManufacturer->setObjectName(QStringLiteral("m_pLineEditManufacturer"));
-    gridLayout->addWidget(m_pLineEditManufacturer, 4, 1, 1, 1);
+        m_pLabelManufacturer = new QLabel(this);
+        if (m_pLabelManufacturer)
+        {
+            m_pLabelManufacturer->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelManufacturer, 4, 0);
+        }
+        m_pEditorManufacturer = new QLineEdit(this);
+        if (m_pEditorManufacturer)
+        {
+            if (m_pLabelManufacturer)
+                m_pLabelManufacturer->setBuddy(m_pEditorManufacturer);
+            m_pLayoutMain->addWidget(m_pEditorManufacturer, 4, 1);
+        }
 
-    m_pLabelProduct = new QLabel();
-    m_pLabelProduct->setObjectName(QStringLiteral("m_pLabelProduct"));
-    m_pLabelProduct->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelProduct, 5, 0, 1, 1);
+        m_pLabelProduct = new QLabel(this);
+        if (m_pLabelProduct)
+        {
+            m_pLabelProduct->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelProduct, 5, 0);
+        }
+        m_pEditorProduct = new QLineEdit(this);
+        if (m_pEditorProduct)
+        {
+            if (m_pLabelProduct)
+                m_pLabelProduct->setBuddy(m_pEditorProduct);
+            m_pLayoutMain->addWidget(m_pEditorProduct, 5, 1);
+        }
 
-    m_pLineEditProduct = new QLineEdit();
-    m_pLineEditProduct->setObjectName(QStringLiteral("m_pLineEditProduct"));
-    gridLayout->addWidget(m_pLineEditProduct, 5, 1, 1, 1);
+        m_pLabelSerialNo = new QLabel(this);
+        if (m_pLabelSerialNo)
+        {
+            m_pLabelSerialNo->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelSerialNo, 6, 0);
+        }
+        m_pEditorSerialNo = new QLineEdit(this);
+        if (m_pEditorSerialNo)
+        {
+            if (m_pLabelSerialNo)
+                m_pLabelSerialNo->setBuddy(m_pEditorSerialNo);
+            m_pLayoutMain->addWidget(m_pEditorSerialNo, 6, 1);
+        }
 
-    m_pLabelSerialNo = new QLabel();
-    m_pLabelSerialNo->setObjectName(QStringLiteral("m_pLabelSerialNo"));
-    m_pLabelSerialNo->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelSerialNo, 6, 0, 1, 1);
+        m_pLabelPort = new QLabel(this);
+        if (m_pLabelPort)
+        {
+            m_pLabelPort->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelPort, 7, 0);
+        }
+        m_pEditorPort = new QLineEdit(this);
+        if (m_pEditorPort)
+        {
+            if (m_pLabelPort)
+                m_pLabelPort->setBuddy(m_pEditorPort);
+            m_pEditorPort->setValidator(new QRegExpValidator(QRegExp("[0-9]*"), this));
 
-    m_pLineEditSerialNo = new QLineEdit();
-    m_pLineEditSerialNo->setObjectName(QStringLiteral("m_pLineEditSerialNo"));
-    gridLayout->addWidget(m_pLineEditSerialNo, 6, 1, 1, 1);
+            m_pLayoutMain->addWidget(m_pEditorPort, 7, 1);
+        }
 
-    m_pLabelPort = new QLabel();
-    m_pLabelPort->setObjectName(QStringLiteral("m_pLabelPort"));
-    m_pLabelPort->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelPort, 7, 0, 1, 1);
+        m_pLabelRemote = new QLabel(this);
+        if (m_pLabelRemote)
+        {
+            m_pLabelRemote->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutMain->addWidget(m_pLabelRemote, 8, 0);
+        }
+        m_pComboRemote = new QComboBox(this);
+        if (m_pComboRemote)
+        {
+            if (m_pLabelRemote)
+                m_pLabelRemote->setBuddy(m_pComboRemote);
+            m_pComboRemote->insertItem(UIMachineSettingsUSB::ModeAny, QString()); /* Any */
+            m_pComboRemote->insertItem(UIMachineSettingsUSB::ModeOn,  QString()); /* Yes */
+            m_pComboRemote->insertItem(UIMachineSettingsUSB::ModeOff, QString()); /* No */
 
-    m_pLineEditPort = new QLineEdit();
-    m_pLineEditPort->setObjectName(QStringLiteral("m_pLineEditPort"));
-    gridLayout->addWidget(m_pLineEditPort, 7, 1, 1, 1);
+            m_pLayoutMain->addWidget(m_pComboRemote, 8, 1);
+        }
 
-    m_pLabelRemote = new QLabel();
-    m_pLabelRemote->setObjectName(QStringLiteral("m_pLabelRemote"));
-    m_pLabelRemote->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    gridLayout->addWidget(m_pLabelRemote, 8, 0, 1, 1);
+        m_pButtonBox = new QIDialogButtonBox(this);
+        if (m_pButtonBox)
+        {
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+            m_pLayoutMain->addWidget(m_pButtonBox, 10, 0, 1, 2);
+        }
+    }
+}
 
-    m_pComboBoxRemote = new QComboBox();
-    m_pComboBoxRemote->setObjectName(QStringLiteral("m_pComboBoxRemote"));
-    QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pComboBoxRemote->sizePolicy().hasHeightForWidth());
-    m_pComboBoxRemote->setSizePolicy(sizePolicy);
-    gridLayout->addWidget(m_pComboBoxRemote, 8, 1, 1, 1);
-
-    QSpacerItem *pSpacerItem = new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    gridLayout->addItem(pSpacerItem, 9, 1, 1, 1);
-
-    QIDialogButtonBox *pButtonBox = new QIDialogButtonBox();
-    pButtonBox->setObjectName(QStringLiteral("pButtonBox"));
-    pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok);
-    gridLayout->addWidget(pButtonBox, 10, 0, 1, 2);
-
-    m_pLabelName->setBuddy(m_pLineEditName);
-    m_pLabelVendorID->setBuddy(m_pLineEditVendorID);
-    m_pLabelProductID->setBuddy(m_pLineEditProductID);
-    m_pLabelRevision->setBuddy(m_pLineEditRevision);
-    m_pLabelManufacturer->setBuddy(m_pLineEditManufacturer);
-    m_pLabelProduct->setBuddy(m_pLineEditProduct);
-    m_pLabelSerialNo->setBuddy(m_pLineEditSerialNo);
-    m_pLabelPort->setBuddy(m_pLineEditPort);
-    m_pLabelRemote->setBuddy(m_pComboBoxRemote);
-
-    QObject::connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIMachineSettingsUSBFilterDetails::accept);
-    QObject::connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIMachineSettingsUSBFilterDetails::reject);
+void UIMachineSettingsUSBFilterDetails::prepareConnections()
+{
+    connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIMachineSettingsUSBFilterDetails::accept);
+    connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIMachineSettingsUSBFilterDetails::reject);
 }

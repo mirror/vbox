@@ -30,6 +30,7 @@ class QComboBox;
 class QGridLayout;
 class QLabel;
 class QLineEdit;
+class QIDialogButtonBox;
 
 class SHARED_LIBRARY_STUFF UIMachineSettingsUSBFilterDetails : public QIWithRetranslateUI2<QIDialog>
 {
@@ -39,32 +40,62 @@ public:
 
     UIMachineSettingsUSBFilterDetails(QWidget *pParent = 0);
 
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Prepares widgets. */
     void prepareWidgets();
-    void retranslateUi();
+    /** Prepares connections. */
+    void prepareConnections();
 
     /** @name Widgets
      * @{ */
-       QComboBox *m_pComboBoxRemote;
-       QLineEdit *m_pLineEditName;
-       QLineEdit *m_pLineEditVendorID;
-       QLineEdit *m_pLineEditProductID;
-       QLineEdit *m_pLineEditRevision;
-       QLineEdit *m_pLineEditPort;
-       QLineEdit *m_pLineEditManufacturer;
-       QLineEdit *m_pLineEditProduct;
-       QLineEdit *m_pLineEditSerialNo;
-       QLabel *m_pLabelPort;
-       QLabel *m_pLabelRemote;
-       QLabel *m_pLabelProductID;
-       QLabel *m_pLabelName;
-       QLabel *m_pLabelVendorID;
-       QLabel *m_pLabelRevision;
-       QLabel *m_pLabelManufacturer;
-       QLabel *m_pLabelProduct;
-       QLabel *m_pLabelSerialNo;
-       QGridLayout *gridLayout;
+        /** Holds the main layout instance. */
+        QGridLayout       *m_pLayoutMain;
+        /** Holds the name label instance. */
+        QLabel            *m_pLabelName;
+        /** Holds the name editor instance. */
+        QLineEdit         *m_pEditorName;
+        /** Holds the vendor ID label instance. */
+        QLabel            *m_pLabelVendorID;
+        /** Holds the vendor ID editor instance. */
+        QLineEdit         *m_pEditorVendorID;
+        /** Holds the product ID label instance. */
+        QLabel            *m_pLabelProductID;
+        /** Holds the product ID editor instance. */
+        QLineEdit         *m_pEditorProductID;
+        /** Holds the revision label instance. */
+        QLabel            *m_pLabelRevision;
+        /** Holds the revision editor instance. */
+        QLineEdit         *m_pEditorRevision;
+        /** Holds the manufacturer label instance. */
+        QLabel            *m_pLabelManufacturer;
+        /** Holds the manufacturer editor instance. */
+        QLineEdit         *m_pEditorManufacturer;
+        /** Holds the product label instance. */
+        QLabel            *m_pLabelProduct;
+        /** Holds the product editor instance. */
+        QLineEdit         *m_pEditorProduct;
+        /** Holds the serial NO label instance. */
+        QLabel            *m_pLabelSerialNo;
+        /** Holds the serial NO editor instance. */
+        QLineEdit         *m_pEditorSerialNo;
+        /** Holds the port label instance. */
+        QLabel            *m_pLabelPort;
+        /** Holds the port editor instance. */
+        QLineEdit         *m_pEditorPort;
+        /** Holds the remote label instance. */
+        QLabel            *m_pLabelRemote;
+        /** Holds the remote combo instance. */
+        QComboBox         *m_pComboRemote;
+        /** Holds the button-box instance. */
+        QIDialogButtonBox *m_pButtonBox;
     /** @} */
 
     friend class UIMachineSettingsUSB;
