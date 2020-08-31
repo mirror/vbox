@@ -1032,9 +1032,9 @@ typedef struct APICCPU
     uint32_t                    uAlignment4;
     /** @} */
 
-#ifdef VBOX_WITH_STATISTICS
     /** @name APIC statistics.
      * @{ */
+#ifdef VBOX_WITH_STATISTICS
     /** Number of MMIO reads in RZ. */
     STAMCOUNTER                 StatMmioReadRZ;
     /** Number of MMIO reads in R3. */
@@ -1084,8 +1084,12 @@ typedef struct APICCPU
     STAMCOUNTER                 StatIcrFullWrite;
     /** Number of times the APIC-ID MSR is read. */
     STAMCOUNTER                 StatIdMsrRead;
-    /** @} */
 #endif
+    /** Number of apicPostInterrupt() calls. */
+    STAMCOUNTER                 StatPostIntrCnt;
+    /** Number of interrupts broken down by vector. */
+    STAMCOUNTER                 aStatVectors[256];
+    /** @} */
 } APICCPU;
 /** Pointer to APIC VMCPU instance data. */
 typedef APICCPU *PAPICCPU;

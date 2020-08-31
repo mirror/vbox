@@ -1523,14 +1523,13 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     DBGFR3InfoRegisterInternalEx(pVM, "apiclvt",   "Dumps APIC LVT information.",   apicR3InfoLvt,   DBGFINFO_FLAGS_ALL_EMTS);
     DBGFR3InfoRegisterInternalEx(pVM, "apictimer", "Dumps APIC timer information.", apicR3InfoTimer, DBGFINFO_FLAGS_ALL_EMTS);
 
-#ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
      */
 #define APIC_REG_COUNTER(a_pvReg, a_pszNameFmt, a_pszDesc) \
         PDMDevHlpSTAMRegisterF(pDevIns, a_pvReg, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, \
                                STAMUNIT_OCCURENCES, a_pszDesc, a_pszNameFmt, idCpu)
-# define APIC_PROF_COUNTER(a_pvReg, a_pszNameFmt, a_pszDesc) \
+#define APIC_PROF_COUNTER(a_pvReg, a_pszNameFmt, a_pszDesc) \
         PDMDevHlpSTAMRegisterF(pDevIns, a_pvReg, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, \
                                STAMUNIT_TICKS_PER_CALL, a_pszDesc, a_pszNameFmt, idCpu)
 
@@ -1539,6 +1538,12 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
         PVMCPU   pVCpu     = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpu);
 
+        APIC_REG_COUNTER(&pApicCpu->StatPostIntrCnt,   "%u",  "APIC/VCPU stats / number of apicPostInterrupt calls.");
+        for (size_t i = 0; i < RT_ELEMENTS(pApicCpu->aStatVectors); i++)
+            PDMDevHlpSTAMRegisterF(pDevIns, &pApicCpu->aStatVectors[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                                   "Number of APICPostInterrupt calls for the vector.", "%u/Vectors/%02x", idCpu, i);
+
+#ifdef VBOX_WITH_STATISTICS
         APIC_REG_COUNTER(&pApicCpu->StatMmioReadRZ,    "%u/RZ/MmioRead",    "Number of APIC MMIO reads in RZ.");
         APIC_REG_COUNTER(&pApicCpu->StatMmioWriteRZ,   "%u/RZ/MmioWrite",   "Number of APIC MMIO writes in RZ.");
         APIC_REG_COUNTER(&pApicCpu->StatMsrReadRZ,     "%u/RZ/MsrRead",     "Number of APIC MSR reads in RZ.");
@@ -1567,11 +1572,11 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
         APIC_PROF_COUNTER(&pApicCpu->StatUpdatePendingIntrs,
                                                        "/PROF/CPU%u/APIC/UpdatePendingInterrupts", "Profiling of APICUpdatePendingInterrupts");
         APIC_PROF_COUNTER(&pApicCpu->StatPostIntr,     "/PROF/CPU%u/APIC/PostInterrupt",  "Profiling of APICPostInterrupt");
+#endif
     }
 
 # undef APIC_PROF_COUNTER
 # undef APIC_REG_ACCESS_COUNTER
-#endif
 
     return VINF_SUCCESS;
 }
