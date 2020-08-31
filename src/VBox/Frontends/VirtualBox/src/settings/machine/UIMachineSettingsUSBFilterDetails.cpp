@@ -29,7 +29,6 @@
 
 UIMachineSettingsUSBFilterDetails::UIMachineSettingsUSBFilterDetails(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QIDialog>(pParent, Qt::Sheet)
-    , m_pLayoutMain(0)
     , m_pLabelName(0)
     , m_pEditorName(0)
     , m_pLabelVendorID(0)
@@ -110,17 +109,20 @@ void UIMachineSettingsUSBFilterDetails::prepare()
 
 void UIMachineSettingsUSBFilterDetails::prepareWidgets()
 {
-    m_pLayoutMain = new QGridLayout(this);
-    if (m_pLayoutMain)
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
     {
-        m_pLayoutMain->setRowStretch(9, 1);
+        pLayoutMain->setRowStretch(9, 1);
 
+        /* Prepare name label: */
         m_pLabelName = new QLabel(this);
         if (m_pLabelName)
         {
             m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelName, 0, 0);
+            pLayoutMain->addWidget(m_pLabelName, 0, 0);
         }
+        /* Prepare name editor: */
         m_pEditorName = new QLineEdit(this);
         if (m_pEditorName)
         {
@@ -128,15 +130,17 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
                 m_pLabelName->setBuddy(m_pEditorName);
             m_pEditorName->setValidator(new QRegExpValidator(QRegExp(".+"), this));
 
-            m_pLayoutMain->addWidget(m_pEditorName, 0, 1);
+            pLayoutMain->addWidget(m_pEditorName, 0, 1);
         }
 
+        /* Prepare vendor ID label: */
         m_pLabelVendorID = new QLabel(this);
         if (m_pLabelVendorID)
         {
             m_pLabelVendorID->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelVendorID, 1, 0);
+            pLayoutMain->addWidget(m_pLabelVendorID, 1, 0);
         }
+        /* Prepare vendor ID editor: */
         m_pEditorVendorID = new QLineEdit(this);
         if (m_pEditorVendorID)
         {
@@ -144,15 +148,17 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
                 m_pLabelVendorID->setBuddy(m_pEditorVendorID);
             m_pEditorVendorID->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
 
-            m_pLayoutMain->addWidget(m_pEditorVendorID, 1, 1);
+            pLayoutMain->addWidget(m_pEditorVendorID, 1, 1);
         }
 
+        /* Prepare product ID label: */
         m_pLabelProductID = new QLabel(this);
         if (m_pLabelProductID)
         {
             m_pLabelProductID->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelProductID, 2, 0);
+            pLayoutMain->addWidget(m_pLabelProductID, 2, 0);
         }
+        /* Prepare product ID editor: */
         m_pEditorProductID = new QLineEdit(this);
         if (m_pEditorProductID)
         {
@@ -160,15 +166,17 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
                 m_pLabelProductID->setBuddy(m_pEditorProductID);
             m_pEditorProductID->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
 
-            m_pLayoutMain->addWidget(m_pEditorProductID, 2, 1);
+            pLayoutMain->addWidget(m_pEditorProductID, 2, 1);
         }
 
+        /* Prepare revision label: */
         m_pLabelRevision = new QLabel(this);
         if (m_pLabelRevision)
         {
             m_pLabelRevision->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelRevision, 3, 0);
+            pLayoutMain->addWidget(m_pLabelRevision, 3, 0);
         }
+        /* Prepare revision editor: */
         m_pEditorRevision = new QLineEdit(this);
         if (m_pEditorRevision)
         {
@@ -176,57 +184,65 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
                 m_pLabelRevision->setBuddy(m_pEditorRevision);
             m_pEditorRevision->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
 
-            m_pLayoutMain->addWidget(m_pEditorRevision, 3, 1);
+            pLayoutMain->addWidget(m_pEditorRevision, 3, 1);
         }
 
+        /* Prepare manufacturer label: */
         m_pLabelManufacturer = new QLabel(this);
         if (m_pLabelManufacturer)
         {
             m_pLabelManufacturer->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelManufacturer, 4, 0);
+            pLayoutMain->addWidget(m_pLabelManufacturer, 4, 0);
         }
+        /* Prepare manufacturer editor: */
         m_pEditorManufacturer = new QLineEdit(this);
         if (m_pEditorManufacturer)
         {
             if (m_pLabelManufacturer)
                 m_pLabelManufacturer->setBuddy(m_pEditorManufacturer);
-            m_pLayoutMain->addWidget(m_pEditorManufacturer, 4, 1);
+            pLayoutMain->addWidget(m_pEditorManufacturer, 4, 1);
         }
 
+        /* Prepare product label: */
         m_pLabelProduct = new QLabel(this);
         if (m_pLabelProduct)
         {
             m_pLabelProduct->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelProduct, 5, 0);
+            pLayoutMain->addWidget(m_pLabelProduct, 5, 0);
         }
+        /* Prepare product editor: */
         m_pEditorProduct = new QLineEdit(this);
         if (m_pEditorProduct)
         {
             if (m_pLabelProduct)
                 m_pLabelProduct->setBuddy(m_pEditorProduct);
-            m_pLayoutMain->addWidget(m_pEditorProduct, 5, 1);
+            pLayoutMain->addWidget(m_pEditorProduct, 5, 1);
         }
 
+        /* Prepare serial NO label: */
         m_pLabelSerialNo = new QLabel(this);
         if (m_pLabelSerialNo)
         {
             m_pLabelSerialNo->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelSerialNo, 6, 0);
+            pLayoutMain->addWidget(m_pLabelSerialNo, 6, 0);
         }
+        /* Prepare serial NO editor: */
         m_pEditorSerialNo = new QLineEdit(this);
         if (m_pEditorSerialNo)
         {
             if (m_pLabelSerialNo)
                 m_pLabelSerialNo->setBuddy(m_pEditorSerialNo);
-            m_pLayoutMain->addWidget(m_pEditorSerialNo, 6, 1);
+            pLayoutMain->addWidget(m_pEditorSerialNo, 6, 1);
         }
 
+        /* Prepare port label: */
         m_pLabelPort = new QLabel(this);
         if (m_pLabelPort)
         {
             m_pLabelPort->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelPort, 7, 0);
+            pLayoutMain->addWidget(m_pLabelPort, 7, 0);
         }
+        /* Prepare port editor: */
         m_pEditorPort = new QLineEdit(this);
         if (m_pEditorPort)
         {
@@ -234,15 +250,17 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
                 m_pLabelPort->setBuddy(m_pEditorPort);
             m_pEditorPort->setValidator(new QRegExpValidator(QRegExp("[0-9]*"), this));
 
-            m_pLayoutMain->addWidget(m_pEditorPort, 7, 1);
+            pLayoutMain->addWidget(m_pEditorPort, 7, 1);
         }
 
+        /* Prepare remote label: */
         m_pLabelRemote = new QLabel(this);
         if (m_pLabelRemote)
         {
             m_pLabelRemote->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutMain->addWidget(m_pLabelRemote, 8, 0);
+            pLayoutMain->addWidget(m_pLabelRemote, 8, 0);
         }
+        /* Prepare remote combo: */
         m_pComboRemote = new QComboBox(this);
         if (m_pComboRemote)
         {
@@ -252,14 +270,15 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
             m_pComboRemote->insertItem(UIMachineSettingsUSB::ModeOn,  QString()); /* Yes */
             m_pComboRemote->insertItem(UIMachineSettingsUSB::ModeOff, QString()); /* No */
 
-            m_pLayoutMain->addWidget(m_pComboRemote, 8, 1);
+            pLayoutMain->addWidget(m_pComboRemote, 8, 1);
         }
 
+        /* Prepare button-box: */
         m_pButtonBox = new QIDialogButtonBox(this);
         if (m_pButtonBox)
         {
             m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-            m_pLayoutMain->addWidget(m_pButtonBox, 10, 0, 1, 2);
+            pLayoutMain->addWidget(m_pButtonBox, 10, 0, 1, 2);
         }
     }
 }

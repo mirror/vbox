@@ -27,7 +27,6 @@
 
 /* Forward declarations: */
 class QComboBox;
-class QGridLayout;
 class QLabel;
 class QLineEdit;
 class QIDialogButtonBox;
@@ -56,8 +55,6 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the main layout instance. */
-        QGridLayout       *m_pLayoutMain;
         /** Holds the name label instance. */
         QLabel            *m_pLabelName;
         /** Holds the name editor instance. */
