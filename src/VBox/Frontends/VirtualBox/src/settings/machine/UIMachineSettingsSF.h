@@ -28,6 +28,7 @@
 #include "CSharedFolder.h"
 
 /* Forward declarations: */
+class QHBoxLayout;
 class QTreeWidgetItem;
 class QITreeWidget;
 class QILabelSeparator;
@@ -111,10 +112,10 @@ private:
     void prepare();
     /** Prepares Widgets. */
     void prepareWidgets();
-    /** Prepares shared folders tree. */
-    void prepareFoldersTree();
+    /** Prepares shared folders tree-wdget. */
+    void prepareTreeWidget();
     /** Prepares shared folders toolbar. */
-    void prepareFoldersToolbar();
+    void prepareToolbar();
     /** Prepares connections. */
     void prepareConnections();
     /** Cleanups all. */
@@ -149,21 +150,25 @@ private:
     /** Creates shared folder defined by a @a folderCache. */
     bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
 
-    /** Holds the Add action instance. */
-    QAction *m_pActionAdd;
-    /** Holds the Edit action instance. */
-    QAction *m_pActionEdit;
-    /** Holds the Remove action instance. */
-    QAction *m_pActionRemove;
-
     /** Holds the page data cache instance. */
     UISettingsCacheSharedFolders *m_pCache;
 
     /** @name Widgets
       * @{ */
-        QITreeWidget *m_pFoldersTreeWidget;
-        QILabelSeparator *m_pNameSeparator;
-        UIToolBar *m_pFoldersToolBar;
+        /** Holds the widget separator instance. */
+        QILabelSeparator *m_pLabelSeparator;
+        /** Holds the tree layout instance. */
+        QHBoxLayout      *m_pLayoutTree;
+        /** Holds the tree-widget instance. */
+        QITreeWidget     *m_pTreeWidget;
+        /** Holds the toolbar instance. */
+        UIToolBar        *m_pToolBar;
+        /** Holds the Add action instance. */
+        QAction          *m_pActionAdd;
+        /** Holds the Edit action instance. */
+        QAction          *m_pActionEdit;
+        /** Holds the Remove action instance. */
+        QAction          *m_pActionRemove;
     /** @} */
 };
 
