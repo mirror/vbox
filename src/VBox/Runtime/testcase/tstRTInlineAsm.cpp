@@ -414,6 +414,8 @@ void tstASMCpuId(void)
                 RTTestIPrintf(RTTESTLVL_ALWAYS, " %d", iBit);
         RTTestIPrintf(RTTESTLVL_ALWAYS, "\n");
     }
+    if (ASMCpuId_EAX(0) >= 0xb)
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "APIC ID(Ext 0b):                 %#010x\n", ASMGetApicIdExt0B());
 
     /*
      * Extended.
@@ -651,6 +653,8 @@ void tstASMCpuId(void)
                        s.uEAX & 0xff, s.uEAX & 0xff,
                        s.uEBX, s.uEBX);
      }
+     if (ASMCpuId_EAX(UINT32_C(0x80000000)) >= UINT32_C(0x8000001E))
+         RTTestIPrintf(RTTESTLVL_ALWAYS, "APIC ID(Ext 8000001b):           %#010x\n", ASMGetApicIdExt8000001E());
 }
 
 # if 0
