@@ -4127,9 +4127,16 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
         default:                pcszModel = "Unknown";                  break;
     }
     pHlp->pfnPrintf(pHlp,
-                    "pcnet #%d: port=%RTiop mmio=%RX32 mac-cfg=%RTmac %s%s%s\n", pDevIns->iInstance,
-                    pThis->IOPortBase, PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmioPci),
+                    "pcnet #%d: port=%RTiop", pDevIns->iInstance, pThis->IOPortBase);
+    if (PCNET_IS_ISA(pThis))
+        pHlp->pfnPrintf(pHlp, " irq=%RX32", pThis->uIsaIrq);
+    else
+        pHlp->pfnPrintf(pHlp, " mmio=%RX32", PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmioPci));
+
+    pHlp->pfnPrintf(pHlp,
+                    " mac-cfg=%RTmac %s%s%s\n",
                     &pThis->MacConfigured, pcszModel, pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
+
 
     PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
 
@@ -4235,7 +4242,7 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
 
     if (pThis->uDevType == DEV_AM79C970A || pThis->uDevType == DEV_AM79C973)
     {
-        /* Print the Burst and Bus Control Register;  the DWIO bit is quite important. */
+        /* Print the Burst and Bus Control Register; the DWIO bit is quite important. */
         pHlp->pfnPrintf(pHlp,
                         "BCR18=%#04x: ROMTMG=%u MEMCMD=%u EXTREQ=%u\n"
                         "              DWIO=%u BREADE=%u BWRITE=%u\n",
