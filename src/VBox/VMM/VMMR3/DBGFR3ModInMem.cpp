@@ -508,16 +508,19 @@ static int dbgfR3ModInMemMachO(PUVM pUVM, PCDBGFADDRESS pImageAddr, uint32_t fFl
                 RTLDRMOD hLdrMod;
                 rc = dbgfModInMemCommon_Init(pThis, pUVM, pImageAddr, puBuf->aMappings, cMappings,
                                              pszName, enmArch, &hLdrMod, pErrInfo);
-                if (RT_FAILURE(rc))
+                if (RT_SUCCESS(rc)) /* Don't bother if we don't have a handle. */
+                {
+                    RTDBGMOD hMod;
+                    rc = RTDbgModCreateFromMachOImage(&hMod, pszFilename ? pszFilename : pszName, pszName, enmArch,
+                                                      &hLdrMod, 0 /*cbImage*/, 0, NULL, &Uuid, DBGFR3AsGetConfig(pUVM), fFlags);
+                    if (RT_SUCCESS(rc))
+                        *phDbgMod = hMod;
+                }
+                else
                     hLdrMod = NIL_RTLDRMOD;
 
-                RTDBGMOD hMod;
-                rc = RTDbgModCreateFromMachOImage(&hMod, pszFilename ? pszFilename : pszName, pszName, enmArch,
-                                                  &hLdrMod, 0 /*cbImage*/, 0, NULL, &Uuid, DBGFR3AsGetConfig(pUVM), fFlags);
-                if (RT_SUCCESS(rc))
-                    *phDbgMod = hMod;
 #if 0 /** @todo later */
-                else if (!(fFlags & DBGFMODINMEM_F_NO_CONTAINER_FALLBACK))
+                if (RT_FAILURE(rc) && !(fFlags & DBGFMODINMEM_F_NO_CONTAINER_FALLBACK))
                 {
                     /*
                      * Fallback is a container module.
