@@ -261,6 +261,8 @@ typedef struct IOAPIC
      *  APIC(s). */
     STAMCOUNTER             StatEoiReceived;
 #endif
+    /** Per-vector stats. */
+    STAMCOUNTER             aStatVectors[256];
 } IOAPIC;
 AssertCompileMemberAlignment(IOAPIC, au64RedirTable, 8);
 /** Pointer to shared IOAPIC data. */
@@ -916,6 +918,9 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
     /*
      * Deliver to the local APIC via the system/3-wire-APIC bus.
      */
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
+    STAM_REL_COUNTER_INC(&pThis->aStatVectors[ApicIntr.u8Vector]);
+
     int rc = pThisCC->pIoApicHlp->pfnApicBusDeliver(pDevIns,
                                                     ApicIntr.u8Dest,
                                                     ApicIntr.u8DestMode,
@@ -1472,6 +1477,9 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLevelIrqSent, STAMTYPE_COUNTER, "LevelIntr/Sent", STAMUNIT_OCCURENCES, "Number of level-triggered interrupts sent to the local APIC(s).");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEoiReceived,  STAMTYPE_COUNTER, "LevelIntr/Recv", STAMUNIT_OCCURENCES, "Number of EOIs received for level-triggered interrupts from the local APIC(s).");
 # endif
+    for (size_t i = 0; i < RT_ELEMENTS(pThis->aStatVectors); i++)
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatVectors, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                               "Number of ioapicSendMsi/pfnApicBusDeliver calls for the vector.", "Vectors/%02x", i);
 
     /*
      * Init. the device state.
