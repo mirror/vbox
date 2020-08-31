@@ -1201,7 +1201,7 @@ static size_t rtTraceLogRdrEvtItemGetSz(PRTTRACELOGRDRINT pThis, PCRTTRACELOGEVT
  * @param   pcbEvtData          Where to store the size of the size of the event data.
  * @param   ppEvtItemDesc       Where to store the event item descriptor.
  */
-static int rtTraceLogRdrEvtResolveData(PRTTRACELOGRDREVTINT pEvt, const char *pszName, uint32_t *poffData,
+static int rtTraceLogRdrEvtResolveData(PCRTTRACELOGRDREVTINT pEvt, const char *pszName, uint32_t *poffData,
                                        size_t *pcbEvtData, PPCRTTRACELOGEVTITEMDESC ppEvtItemDesc)
 {
     PCRTTRACELOGRDREVTDESC pEvtDesc = pEvt->pEvtDesc;
@@ -1237,11 +1237,11 @@ static int rtTraceLogRdrEvtResolveData(PRTTRACELOGRDREVTINT pEvt, const char *ps
  * @param   pEvtItemDesc        The event item descriptor.
  * @param   pVal                The value to fill.
  */
-static int rtTraceLogRdrEvtFillVal(PRTTRACELOGRDREVTINT pEvt, uint32_t offData, size_t cbData, PCRTTRACELOGEVTITEMDESC pEvtItemDesc,
+static int rtTraceLogRdrEvtFillVal(PCRTTRACELOGRDREVTINT pEvt, uint32_t offData, size_t cbData, PCRTTRACELOGEVTITEMDESC pEvtItemDesc,
                                    PRTTRACELOGEVTVAL pVal)
 {
     PRTTRACELOGRDRINT pThis = pEvt->pRdr;
-    uint8_t *pbData = &pEvt->abEvtData[offData];
+    const uint8_t *pbData = &pEvt->abEvtData[offData];
 
     pVal->pItemDesc = pEvtItemDesc;
     switch (pEvtItemDesc->enmType)
@@ -1454,6 +1454,80 @@ static int rtTraceLogRdrEvtFillVal(PRTTRACELOGRDREVTINT pEvt, uint32_t offData, 
 }
 
 
+/**
+ * Finds the mapping descriptor for the given event.
+ *
+ * @returns Pointer to the mapping descriptor or NULL if not found.
+ * @param   paMapDesc           Pointer to the array of mapping descriptors.
+ * @param   pEvt                The event to look for the matching mapping descriptor.
+ */
+static PCRTTRACELOGRDRMAPDESC rtTraceLogRdrMapDescFindForEvt(PCRTTRACELOGRDRMAPDESC paMapDesc, PCRTTRACELOGRDREVTINT pEvt)
+{
+    AssertPtrReturn(paMapDesc, NULL);
+    AssertPtrReturn(pEvt, NULL);
+
+    while (paMapDesc->pszEvtId)
+    {
+        if (!RTStrCmp(paMapDesc->pszEvtId, pEvt->pEvtDesc->EvtDesc.pszId))
+            return paMapDesc;
+
+        paMapDesc++;
+    }
+
+    return NULL;
+}
+
+
+/**
+ * Fills the given event header with data from the given event using the matching mapping descriptor.
+ *
+ * @returns IPRT statsu code.
+ * @param   pEvtHdr             The event header to fill.
+ * @param   pMapDesc            The mapping descriptor to use.
+ * @param   pEvt                The raw event to get the data from.
+ */
+static int rtTraceLogRdrMapFillEvt(PRTTRACELOGRDREVTHDR pEvtHdr, PCRTTRACELOGRDRMAPDESC pMapDesc, PCRTTRACELOGRDREVTINT pEvt)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Fill in the status parts. */
+    pEvtHdr->pEvtMapDesc = pMapDesc;
+    pEvtHdr->pEvtDesc    = &pEvt->pEvtDesc->EvtDesc;
+    pEvtHdr->idSeqNo     = pEvt->u64SeqNo;
+    pEvtHdr->tsEvt       = pEvt->u64Ts;
+    pEvtHdr->paEvtItems  = NULL;
+
+    /* Now the individual items if any. */
+    if (pMapDesc->cEvtItems)
+    {
+        /* Allocate values for the items. */
+        pEvtHdr->paEvtItems = (PCRTTRACELOGEVTVAL)RTMemAllocZ(pMapDesc->cEvtItems * sizeof(RTTRACELOGEVTVAL));
+        if (RT_LIKELY(pEvtHdr->paEvtItems))
+        {
+            for (uint32_t i = 0; (i < pMapDesc->cEvtItems) && RT_SUCCESS(rc); i++)
+            {
+                uint32_t offData = 0;
+                size_t cbData = 0;
+                PCRTTRACELOGEVTITEMDESC pEvtItemDesc = NULL;
+                rc = rtTraceLogRdrEvtResolveData(pEvt, pMapDesc->paMapItems[i].pszName, &offData, &cbData, &pEvtItemDesc);
+                if (RT_SUCCESS(rc))
+                    rc = rtTraceLogRdrEvtFillVal(pEvt, offData, cbData, pEvtItemDesc, (PRTTRACELOGEVTVAL)&pEvtHdr->paEvtItems[i]);
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                RTMemFree((void *)pEvtHdr->paEvtItems);
+                pEvtHdr->paEvtItems = NULL;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
 RTDECL(int) RTTraceLogRdrCreate(PRTTRACELOGRDR phTraceLogRdr, PFNRTTRACELOGRDRSTREAM pfnStreamIn,
                                 PFNRTTRACELOGSTREAMCLOSE pfnStreamClose, void *pvUser)
 {
@@ -1615,6 +1689,91 @@ RTDECL(int) RTTraceLogRdrQueryIterator(RTTRACELOGRDR hTraceLogRdr, PRTTRACELOGRD
         rc = VERR_NO_MEMORY;
 
     return rc;
+}
+
+
+RTDECL(int) RTTraceLogRdrEvtMapToStruct(RTTRACELOGRDR hTraceLogRdr, uint32_t fFlags, uint32_t cEvts,
+                                        PCRTTRACELOGRDRMAPDESC paMapDesc, PCRTTRACELOGRDREVTHDR *ppaEvtHdr,
+                                        uint32_t *pcEvts)
+{
+    RT_NOREF(fFlags);
+
+    PRTTRACELOGRDRINT pThis = hTraceLogRdr;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(paMapDesc, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppaEvtHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcEvts, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+    uint32_t cEvtsAlloc = cEvts != UINT32_MAX ? cEvts : _4K;
+    PRTTRACELOGRDREVTHDR paEvtHdr = (PRTTRACELOGRDREVTHDR)RTMemAllocZ(cEvtsAlloc * sizeof(*paEvtHdr));
+    if (RT_LIKELY(paEvtHdr))
+    {
+        uint32_t cEvtsRecv = 0;
+
+        while (   RT_SUCCESS(rc)
+               && cEvtsRecv < cEvts)
+        {
+            RTTRACELOGRDRPOLLEVT enmEvt = RTTRACELOGRDRPOLLEVT_INVALID;
+            rc = RTTraceLogRdrEvtPoll(pThis, &enmEvt, 0 /*cMsTimeout*/);
+            if (   RT_SUCCESS(rc)
+                && enmEvt == RTTRACELOGRDRPOLLEVT_TRACE_EVENT_RECVD)
+            {
+                /* Find the mapping descriptor. */
+                PRTTRACELOGRDREVTINT pEvt = NULL;
+                rc = RTTraceLogRdrQueryLastEvt(hTraceLogRdr, &pEvt);
+                if (RT_SUCCESS(rc))
+                {
+                    PCRTTRACELOGRDRMAPDESC pMapDesc = rtTraceLogRdrMapDescFindForEvt(paMapDesc, pEvt);
+                    if (pMapDesc)
+                    {
+                        if (cEvtsRecv == cEvtsAlloc)
+                        {
+                            Assert(cEvts == UINT32_MAX);
+                            PRTTRACELOGRDREVTHDR paEvtHdrNew = (PRTTRACELOGRDREVTHDR)RTMemRealloc(paEvtHdr, (cEvtsAlloc + _4K) * sizeof(*paEvtHdr));
+                            if (RT_LIKELY(paEvtHdrNew))
+                            {
+                                paEvtHdr = paEvtHdrNew;
+                                cEvtsAlloc += _4K;
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
+                        }
+
+                        if (RT_SUCCESS(rc))
+                            rc = rtTraceLogRdrMapFillEvt(&paEvtHdr[cEvtsRecv++], pMapDesc, pEvt);
+                        cEvtsRecv++;
+                    }
+                    else
+                        rc = VERR_NOT_FOUND;
+                }
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            *ppaEvtHdr = paEvtHdr;
+            *pcEvts    = cEvtsRecv;
+        }
+        else
+            RTTraceLogRdrEvtMapFree(paEvtHdr, cEvtsRecv);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+
+RTDECL(void) RTTraceLogRdrEvtMapFree(PCRTTRACELOGRDREVTHDR paEvtHdr, uint32_t cEvts)
+{
+    for (uint32_t i = 0; i < cEvts; i++)
+    {
+        if (paEvtHdr[i].paEvtItems)
+            RTMemFree((void *)paEvtHdr[i].paEvtItems);
+    }
+
+    RTMemFree((void *)paEvtHdr);
 }
 
 

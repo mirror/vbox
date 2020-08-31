@@ -213,6 +213,62 @@ typedef RTTRACELOGEVTVAL *PRTTRACELOGEVTVAL;
 typedef const RTTRACELOGEVTVAL *PCRTTRACELOGEVTVAL;
 
 
+/**
+ * Item mapping descriptor.
+ */
+typedef struct RTTRACELOGRDRMAPITEM
+{
+    /** The item name. */
+    const char                  *pszName;
+    /** The value type to map the item to. */
+    RTTRACELOGTYPE              enmType;
+} RTTRACELOGRDRMAPITEM;
+/** Pointer to a mapping item descriptor. */
+typedef RTTRACELOGRDRMAPITEM *PRTTRACELOGRDRMAPITEM;
+/** Pointer to a const mapping item descriptor. */
+typedef const RTTRACELOGRDRMAPITEM *PCRTTRACELOGRDRMAPITEM;
+
+
+/**
+ * Event item to value mapping descriptor for RTTraceLogRdrEvtMapToStruct().
+ */
+typedef struct RTTRACELOGRDRMAPDESC
+{
+    /** The event ID this mapping describes. */
+    const char                  *pszEvtId;
+    /** Number of event items to extract. */
+    uint32_t                    cEvtItems;
+    /** Pointer to the event items to extract (in the given order). */
+    PCRTTRACELOGRDRMAPITEM      paMapItems;
+} RTTRACELOGRDRMAPDESC;
+/** Pointer to a event mapping descriptor. */
+typedef RTTRACELOGRDRMAPDESC *PRTTRACELOGRDRMAPDESC;
+/** Pointer to a const event mapping descriptor. */
+typedef const RTTRACELOGRDRMAPDESC *PCRTTRACELOGRDRMAPDESC;
+
+
+/**
+ * Header for an event mapped to a binary.
+ */
+typedef struct RTTRACELOGRDREVTHDR
+{
+    /** The mapping descriptor this event was mapped to. */
+    PCRTTRACELOGRDRMAPDESC      pEvtMapDesc;
+    /** The event descriptor as extracted from the event log. */
+    PCRTTRACELOGEVTDESC         pEvtDesc;
+    /** Sequence number of the descriptor. */
+    uint64_t                    idSeqNo;
+    /** The timestamp of the event. */
+    uint64_t                    tsEvt;
+    /** Pointer to the event data items. */
+    PCRTTRACELOGEVTVAL          paEvtItems;
+} RTTRACELOGRDREVTHDR;
+/** Pointer to an event header. */
+typedef RTTRACELOGRDREVTHDR *PRTTRACELOGRDREVTHDR;
+/** Pointer to a const event header. */
+typedef const RTTRACELOGRDREVTHDR *PCRTTRACELOGRDREVTHDR;
+
+
 /** Event group ID. */
 typedef uint64_t                   RTTRACELOGEVTGRPID;
 /** Pointer to the event group ID. */
@@ -513,6 +569,33 @@ RTDECL(int) RTTraceLogRdrQueryLastEvt(RTTRACELOGRDR hTraceLogRdr, PRTTRACELOGRDR
  * @param   phIt                Where to store the handle to iterator on success.
  */
 RTDECL(int) RTTraceLogRdrQueryIterator(RTTRACELOGRDR hTraceLogRdr, PRTTRACELOGRDRIT phIt);
+
+
+/**
+ * Extracts the given number of events from the given trace log reader instance returning
+ * and array of events with the values filled in from the mapping descriptor.
+ *
+ * @returns IPRT status code.
+ * @param   hTraceLogRdr        The trace log reader instance handle.
+ * @param   fFlags              Flags controlling the behavior, MBZ.
+ * @param   cEvts               Number of events to extract, UINT32_MAX to map all immediately available events.
+ * @param   paMapDesc           Pointer to an array of mapping descriptors describing how to map events.
+ * @param   ppaEvtHdr           Where to return the pointer to the allocated array of event headers on success.
+ * @param   pcEvts              Where to store the returned number of events on success.
+ */
+RTDECL(int) RTTraceLogRdrEvtMapToStruct(RTTRACELOGRDR hTraceLogRdr, uint32_t fFlags, uint32_t cEvts,
+                                        PCRTTRACELOGRDRMAPDESC paMapDesc, PCRTTRACELOGRDREVTHDR *ppaEvtHdr,
+                                        uint32_t *pcEvts);
+
+
+/**
+ * Frees all resources of the given array of event headers as allocated by RTTraceLogRdrEvtMapToStruct().
+ *
+ * @returns nothing.
+ * @param   paEvtHdr            Pointer to the array of events as returned by RTTraceLogRdrEvtMapToStruct().
+ * @param   cEvts               Number of events as returned by RTTraceLogRdrEvtMapToStruct().
+ */
+RTDECL(void) RTTraceLogRdrEvtMapFree(PCRTTRACELOGRDREVTHDR paEvtHdr, uint32_t cEvts);
 
 
 /**
