@@ -143,13 +143,13 @@ UIMachineSettingsInterface::UIMachineSettingsInterface(const QUuid &uMachineId)
     : m_uMachineId(uMachineId)
     , m_pActionPool(0)
     , m_pCache(0)
-    , m_pStatusBarEditor(0)
-    , m_pMenuBarEditor(0)
-    , m_pCheckBoxShowMiniToolBar(0)
-    , m_pComboToolBarAlignment(0)
+    , m_pEditorMenuBar(0)
     , m_pLabelVisualState(0)
-    , m_pVisualStateEditor(0)
+    , m_pEditorVisualState(0)
     , m_pLabelMiniToolBar(0)
+    , m_pCheckBoxShowMiniToolBar(0)
+    , m_pCheckBoxToolBarAlignment(0)
+    , m_pEditorStatusBar(0)
 {
     /* Prepare: */
     prepare();
@@ -216,31 +216,31 @@ void UIMachineSettingsInterface::getFromCache()
     const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
 
     /* Load old interface data from the cache: */
-    m_pStatusBarEditor->setStatusBarEnabled(oldInterfaceData.m_fStatusBarEnabled);
-    m_pStatusBarEditor->setStatusBarConfiguration(oldInterfaceData.m_statusBarRestrictions,
+    m_pEditorStatusBar->setStatusBarEnabled(oldInterfaceData.m_fStatusBarEnabled);
+    m_pEditorStatusBar->setStatusBarConfiguration(oldInterfaceData.m_statusBarRestrictions,
                                                   oldInterfaceData.m_statusBarOrder);
 #ifndef VBOX_WS_MAC
-    m_pMenuBarEditor->setMenuBarEnabled(oldInterfaceData.m_fMenuBarEnabled);
+    m_pEditorMenuBar->setMenuBarEnabled(oldInterfaceData.m_fMenuBarEnabled);
 #endif
-    m_pMenuBarEditor->setRestrictionsOfMenuBar(oldInterfaceData.m_restrictionsOfMenuBar);
-    m_pMenuBarEditor->setRestrictionsOfMenuApplication(oldInterfaceData.m_restrictionsOfMenuApplication);
-    m_pMenuBarEditor->setRestrictionsOfMenuMachine(oldInterfaceData.m_restrictionsOfMenuMachine);
-    m_pMenuBarEditor->setRestrictionsOfMenuView(oldInterfaceData.m_restrictionsOfMenuView);
-    m_pMenuBarEditor->setRestrictionsOfMenuInput(oldInterfaceData.m_restrictionsOfMenuInput);
-    m_pMenuBarEditor->setRestrictionsOfMenuDevices(oldInterfaceData.m_restrictionsOfMenuDevices);
+    m_pEditorMenuBar->setRestrictionsOfMenuBar(oldInterfaceData.m_restrictionsOfMenuBar);
+    m_pEditorMenuBar->setRestrictionsOfMenuApplication(oldInterfaceData.m_restrictionsOfMenuApplication);
+    m_pEditorMenuBar->setRestrictionsOfMenuMachine(oldInterfaceData.m_restrictionsOfMenuMachine);
+    m_pEditorMenuBar->setRestrictionsOfMenuView(oldInterfaceData.m_restrictionsOfMenuView);
+    m_pEditorMenuBar->setRestrictionsOfMenuInput(oldInterfaceData.m_restrictionsOfMenuInput);
+    m_pEditorMenuBar->setRestrictionsOfMenuDevices(oldInterfaceData.m_restrictionsOfMenuDevices);
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    m_pMenuBarEditor->setRestrictionsOfMenuDebug(oldInterfaceData.m_restrictionsOfMenuDebug);
+    m_pEditorMenuBar->setRestrictionsOfMenuDebug(oldInterfaceData.m_restrictionsOfMenuDebug);
 #endif
 #ifdef VBOX_WS_MAC
-    m_pMenuBarEditor->setRestrictionsOfMenuWindow(oldInterfaceData.m_restrictionsOfMenuWindow);
+    m_pEditorMenuBar->setRestrictionsOfMenuWindow(oldInterfaceData.m_restrictionsOfMenuWindow);
 #endif
-    m_pMenuBarEditor->setRestrictionsOfMenuHelp(oldInterfaceData.m_restrictionsOfMenuHelp);
+    m_pEditorMenuBar->setRestrictionsOfMenuHelp(oldInterfaceData.m_restrictionsOfMenuHelp);
 #ifndef VBOX_WS_MAC
     m_pCheckBoxShowMiniToolBar->setChecked(oldInterfaceData.m_fShowMiniToolBar);
-    m_pComboToolBarAlignment->setChecked(oldInterfaceData.m_fMiniToolBarAtTop);
+    m_pCheckBoxToolBarAlignment->setChecked(oldInterfaceData.m_fMiniToolBarAtTop);
 #endif
-    m_pVisualStateEditor->setMachineId(m_machine.GetId());
-    m_pVisualStateEditor->setValue(oldInterfaceData.m_enmVisualState);
+    m_pEditorVisualState->setMachineId(m_machine.GetId());
+    m_pEditorVisualState->setValue(oldInterfaceData.m_enmVisualState);
 
     /* Polish page finally: */
     polishPage();
@@ -255,30 +255,30 @@ void UIMachineSettingsInterface::putToCache()
     UIDataSettingsMachineInterface newInterfaceData;
 
     /* Gather new interface data: */
-    newInterfaceData.m_fStatusBarEnabled = m_pStatusBarEditor->isStatusBarEnabled();
-    newInterfaceData.m_statusBarRestrictions = m_pStatusBarEditor->statusBarIndicatorRestrictions();
-    newInterfaceData.m_statusBarOrder = m_pStatusBarEditor->statusBarIndicatorOrder();
+    newInterfaceData.m_fStatusBarEnabled = m_pEditorStatusBar->isStatusBarEnabled();
+    newInterfaceData.m_statusBarRestrictions = m_pEditorStatusBar->statusBarIndicatorRestrictions();
+    newInterfaceData.m_statusBarOrder = m_pEditorStatusBar->statusBarIndicatorOrder();
 #ifndef VBOX_WS_MAC
-    newInterfaceData.m_fMenuBarEnabled = m_pMenuBarEditor->isMenuBarEnabled();
+    newInterfaceData.m_fMenuBarEnabled = m_pEditorMenuBar->isMenuBarEnabled();
 #endif
-    newInterfaceData.m_restrictionsOfMenuBar = m_pMenuBarEditor->restrictionsOfMenuBar();
-    newInterfaceData.m_restrictionsOfMenuApplication = m_pMenuBarEditor->restrictionsOfMenuApplication();
-    newInterfaceData.m_restrictionsOfMenuMachine = m_pMenuBarEditor->restrictionsOfMenuMachine();
-    newInterfaceData.m_restrictionsOfMenuView = m_pMenuBarEditor->restrictionsOfMenuView();
-    newInterfaceData.m_restrictionsOfMenuInput = m_pMenuBarEditor->restrictionsOfMenuInput();
-    newInterfaceData.m_restrictionsOfMenuDevices = m_pMenuBarEditor->restrictionsOfMenuDevices();
+    newInterfaceData.m_restrictionsOfMenuBar = m_pEditorMenuBar->restrictionsOfMenuBar();
+    newInterfaceData.m_restrictionsOfMenuApplication = m_pEditorMenuBar->restrictionsOfMenuApplication();
+    newInterfaceData.m_restrictionsOfMenuMachine = m_pEditorMenuBar->restrictionsOfMenuMachine();
+    newInterfaceData.m_restrictionsOfMenuView = m_pEditorMenuBar->restrictionsOfMenuView();
+    newInterfaceData.m_restrictionsOfMenuInput = m_pEditorMenuBar->restrictionsOfMenuInput();
+    newInterfaceData.m_restrictionsOfMenuDevices = m_pEditorMenuBar->restrictionsOfMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    newInterfaceData.m_restrictionsOfMenuDebug = m_pMenuBarEditor->restrictionsOfMenuDebug();
+    newInterfaceData.m_restrictionsOfMenuDebug = m_pEditorMenuBar->restrictionsOfMenuDebug();
 #endif
 #ifdef VBOX_WS_MAC
-    newInterfaceData.m_restrictionsOfMenuWindow = m_pMenuBarEditor->restrictionsOfMenuWindow();
+    newInterfaceData.m_restrictionsOfMenuWindow = m_pEditorMenuBar->restrictionsOfMenuWindow();
 #endif
-    newInterfaceData.m_restrictionsOfMenuHelp = m_pMenuBarEditor->restrictionsOfMenuHelp();
+    newInterfaceData.m_restrictionsOfMenuHelp = m_pEditorMenuBar->restrictionsOfMenuHelp();
 #ifndef VBOX_WS_MAC
     newInterfaceData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
-    newInterfaceData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
+    newInterfaceData.m_fMiniToolBarAtTop = m_pCheckBoxToolBarAlignment->isChecked();
 #endif
-    newInterfaceData.m_enmVisualState = m_pVisualStateEditor->value();
+    newInterfaceData.m_enmVisualState = m_pEditorVisualState->value();
 
     /* Cache new interface data: */
     m_pCache->cacheCurrentData(newInterfaceData);
@@ -298,126 +298,118 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
 
 void UIMachineSettingsInterface::retranslateUi()
 {
-    m_pMenuBarEditor->setWhatsThis(tr("Allows to modify VM menu-bar contents."));
+    m_pEditorMenuBar->setWhatsThis(tr("Allows to modify VM menu-bar contents."));
     m_pLabelVisualState->setText(tr("Visual State:"));
-    m_pVisualStateEditor->setWhatsThis(tr("Selects the visual state. If machine is running it will be applied as soon as possible,"
+    m_pEditorVisualState->setWhatsThis(tr("Selects the visual state. If machine is running it will be applied as soon as possible,"
                                           "otherwise desired one will be defined."));
     m_pLabelMiniToolBar->setText(tr("Mini ToolBar:"));
     m_pCheckBoxShowMiniToolBar->setWhatsThis(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
     m_pCheckBoxShowMiniToolBar->setText(tr("Show in &Full-screen/Seamless"));
-    m_pComboToolBarAlignment->setWhatsThis(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in its"
+    m_pCheckBoxToolBarAlignment->setWhatsThis(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in its"
                                               "default position at the bottom of the screen."));
-    m_pComboToolBarAlignment->setText(tr("Show at &Top of Screen"));
-    m_pStatusBarEditor->setWhatsThis(tr("Allows to modify VM status-bar contents."));
+    m_pCheckBoxToolBarAlignment->setText(tr("Show at &Top of Screen"));
+    m_pEditorStatusBar->setWhatsThis(tr("Allows to modify VM status-bar contents."));
 }
 
 void UIMachineSettingsInterface::polishPage()
 {
     /* Polish interface page availability: */
-    m_pMenuBarEditor->setEnabled(isMachineInValidMode());
+    m_pEditorMenuBar->setEnabled(isMachineInValidMode());
 #ifdef VBOX_WS_MAC
     m_pLabelMiniToolBar->hide();
     m_pCheckBoxShowMiniToolBar->hide();
-    m_pComboToolBarAlignment->hide();
+    m_pCheckBoxToolBarAlignment->hide();
 #else /* !VBOX_WS_MAC */
     m_pLabelMiniToolBar->setEnabled(isMachineInValidMode());
     m_pCheckBoxShowMiniToolBar->setEnabled(isMachineInValidMode());
-    m_pComboToolBarAlignment->setEnabled(isMachineInValidMode() && m_pCheckBoxShowMiniToolBar->isChecked());
+    m_pCheckBoxToolBarAlignment->setEnabled(isMachineInValidMode() && m_pCheckBoxShowMiniToolBar->isChecked());
 #endif /* !VBOX_WS_MAC */
-    m_pStatusBarEditor->setEnabled(isMachineInValidMode());
-}
-
-void UIMachineSettingsInterface::prepareWidgets()
-{
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIMachineSettingsInterface"));
-    resize(350, 300);
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    pLayoutMain->setObjectName(QStringLiteral("pLayoutMain"));
-    m_pMenuBarEditor = new UIMenuBarEditorWidget(this);
-    m_pMenuBarEditor->setObjectName(QStringLiteral("m_pMenuBarEditor"));
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pMenuBarEditor->sizePolicy().hasHeightForWidth());
-    m_pMenuBarEditor->setSizePolicy(sizePolicy);
-    pLayoutMain->addWidget(m_pMenuBarEditor, 0, 0, 1, 3);
-
-    m_pLabelVisualState = new QLabel;
-    m_pLabelVisualState->setObjectName(QStringLiteral("m_pLabelVisualState"));
-    m_pLabelVisualState->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutMain->addWidget(m_pLabelVisualState, 1, 0, 1, 1);
-
-    m_pVisualStateEditor = new UIVisualStateEditor;
-    m_pVisualStateEditor->setObjectName(QStringLiteral("m_pVisualStateEditor"));
-    pLayoutMain->addWidget(m_pVisualStateEditor, 1, 1, 1, 2);
-
-    m_pLabelMiniToolBar = new QLabel;
-    m_pLabelMiniToolBar->setObjectName(QStringLiteral("m_pLabelMiniToolBar"));
-    m_pLabelMiniToolBar->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pLayoutMain->addWidget(m_pLabelMiniToolBar, 2, 0, 1, 1);
-
-    m_pCheckBoxShowMiniToolBar = new QCheckBox;
-    m_pCheckBoxShowMiniToolBar->setObjectName(QStringLiteral("m_pCheckBoxShowMiniToolBar"));
-    sizePolicy.setHeightForWidth(m_pCheckBoxShowMiniToolBar->sizePolicy().hasHeightForWidth());
-    m_pCheckBoxShowMiniToolBar->setSizePolicy(sizePolicy);
-    m_pCheckBoxShowMiniToolBar->setChecked(true);
-    pLayoutMain->addWidget(m_pCheckBoxShowMiniToolBar, 2, 1, 1, 2);
-
-    m_pComboToolBarAlignment = new QCheckBox;
-    m_pComboToolBarAlignment->setObjectName(QStringLiteral("m_pComboToolBarAlignment"));
-    sizePolicy.setHeightForWidth(m_pComboToolBarAlignment->sizePolicy().hasHeightForWidth());
-    m_pComboToolBarAlignment->setSizePolicy(sizePolicy);
-    m_pComboToolBarAlignment->setChecked(false);
-    pLayoutMain->addWidget(m_pComboToolBarAlignment, 3, 1, 1, 2);
-
-    QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pLayoutMain->addItem(pSpacer, 4, 0, 1, 3);
-
-    m_pStatusBarEditor = new UIStatusBarEditorWidget(this);
-    m_pStatusBarEditor->setObjectName(QStringLiteral("m_pStatusBarEditor"));
-    sizePolicy.setHeightForWidth(m_pStatusBarEditor->sizePolicy().hasHeightForWidth());
-    m_pStatusBarEditor->setSizePolicy(sizePolicy);
-    pLayoutMain->addWidget(m_pStatusBarEditor, 5, 0, 1, 3);
-
-    QObject::connect(m_pCheckBoxShowMiniToolBar, &QCheckBox::toggled,
-                     m_pComboToolBarAlignment, &UIMachineSettingsInterface::setEnabled);
+    m_pEditorStatusBar->setEnabled(isMachineInValidMode());
 }
 
 void UIMachineSettingsInterface::prepare()
 {
-    prepareWidgets();
+    /* Prepare action-pool: */
+    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineInterface;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Layout created in the .ui file. */
-    {
-        /* Menu-bar editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pMenuBarEditor);
-        {
-            /* Configure editor: */
-            m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
-            m_pMenuBarEditor->setActionPool(m_pActionPool);
-            m_pMenuBarEditor->setMachineID(m_uMachineId);
-        }
-
-        /* Status-bar editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pStatusBarEditor);
-        {
-            /* Configure editor: */
-            m_pStatusBarEditor->setMachineID(m_uMachineId);
-        }
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
 }
 
+void UIMachineSettingsInterface::prepareWidgets()
+{
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setColumnStretch(1, 1);
+        pLayoutMain->setRowStretch(4, 1);
+
+        /* Prepare menu-bar editor: */
+        m_pEditorMenuBar = new UIMenuBarEditorWidget(this);
+        if (m_pEditorMenuBar)
+        {
+            m_pEditorMenuBar->setActionPool(m_pActionPool);
+            m_pEditorMenuBar->setMachineID(m_uMachineId);
+
+            pLayoutMain->addWidget(m_pEditorMenuBar, 0, 0, 1, 2);
+        }
+
+        /* Prepare visual-state label: */
+        m_pLabelVisualState = new QLabel(this);
+        if (m_pLabelVisualState)
+        {
+            m_pLabelVisualState->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelVisualState, 1, 0);
+        }
+        /* Prepare visual-state editor: */
+        m_pEditorVisualState = new UIVisualStateEditor(this);
+        if (m_pEditorVisualState)
+            pLayoutMain->addWidget(m_pEditorVisualState, 1, 1);
+
+        /* Prepare mini-toolbar label: */
+        m_pLabelMiniToolBar = new QLabel(this);
+        if (m_pLabelMiniToolBar)
+        {
+            m_pLabelMiniToolBar->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelMiniToolBar, 2, 0);
+        }
+        /* Prepare show mini-toolbar check-box: */
+        m_pCheckBoxShowMiniToolBar = new QCheckBox(this);
+        if (m_pCheckBoxShowMiniToolBar)
+            pLayoutMain->addWidget(m_pCheckBoxShowMiniToolBar, 2, 1);
+        /* Prepare mini-toolbar alignment check-box: */
+        m_pCheckBoxToolBarAlignment = new QCheckBox(this);
+        if (m_pCheckBoxToolBarAlignment)
+            pLayoutMain->addWidget(m_pCheckBoxToolBarAlignment, 3, 1);
+
+        /* Prepare status-bar editor: */
+        m_pEditorStatusBar = new UIStatusBarEditorWidget(this);
+        if (m_pEditorStatusBar)
+        {
+            m_pEditorStatusBar->setMachineID(m_uMachineId);
+            pLayoutMain->addWidget(m_pEditorStatusBar, 5, 0, 1, 2);
+        }
+    }
+}
+
+void UIMachineSettingsInterface::prepareConnections()
+{
+    connect(m_pCheckBoxShowMiniToolBar, &QCheckBox::toggled,
+            m_pCheckBoxToolBarAlignment, &UIMachineSettingsInterface::setEnabled);
+}
+
 void UIMachineSettingsInterface::cleanup()
 {
-    /* Destroy personal action-pool: */
+    /* Cleanup action-pool: */
     UIActionPool::destroy(m_pActionPool);
 
     /* Cleanup cache: */
