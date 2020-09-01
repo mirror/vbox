@@ -55,6 +55,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
@@ -678,29 +679,78 @@ static bool isXwayland(void)
 }
 
 /**
+ * An abbreviated copy of the VGSvcReadProp from VBoxServiceUtils.cpp
+ */
+static int readGuestProperty(uint32_t u32ClientId, const char *pszPropName)
+{
+    AssertPtrReturn(pszPropName, VERR_INVALID_POINTER);
+
+    uint32_t    cbBuf = _1K;
+    void       *pvBuf = NULL;
+    int         rc    = VINF_SUCCESS;  /* MSC can't figure out the loop */
+
+    for (unsigned cTries = 0; cTries < 10; cTries++)
+    {
+        /*
+         * (Re-)Allocate the buffer and try read the property.
+         */
+        RTMemFree(pvBuf);
+        pvBuf = RTMemAlloc(cbBuf);
+        if (!pvBuf)
+        {
+            VBClLogError("Guest Property: Failed to allocate %zu bytes\n", cbBuf);
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        char    *pszValue;
+        char    *pszFlags;
+        uint64_t uTimestamp;
+        rc = VbglR3GuestPropRead(u32ClientId, pszPropName, pvBuf, cbBuf, &pszValue, &uTimestamp, &pszFlags, NULL);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_BUFFER_OVERFLOW)
+            {
+                /* try again with a bigger buffer. */
+                cbBuf *= 2;
+                continue;
+            }
+            else
+                break;
+        }
+        else
+            break;
+    }
+
+    if (pvBuf)
+        RTMemFree(pvBuf);
+    return rc;
+}
+
+/**
  * We start VBoxDRMClient from VBoxService in case  some guest property is set.
  * We check the same guest property here and dont start this service in case
  * it (guest property) is set.
  */
 static bool checkDRMClient()
 {
-    return false;
-    // uint32_t uGuestPropSvcClientID;
-    // int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
-    // if (RT_SUCCESS(rc))
-    // {
-    //     rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/DRMResize");
-    //     if (RT_SUCCESS(rc))
-    //         return true;
-    // }
-    // return false;
+   uint32_t uGuestPropSvcClientID;
+   int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+   if (RT_FAILURE(rc))
+       return false;
+   rc = readGuestProperty(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/DRMResize" /*pszPropName*/);
+   if (RT_FAILURE(rc))
+       return false;
+   return true;
 }
 
 static bool init()
 {
     /* If DRM client is already running don't start this service. */
     if (checkDRMClient())
+    {
+        VBClLogFatalError("DRM resizing is already running. Exiting this service\n");
         return false;
+    }
     if (isXwayland())
     {
         char* argv[] = {NULL};
