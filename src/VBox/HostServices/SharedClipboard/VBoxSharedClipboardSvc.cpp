@@ -1292,7 +1292,7 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
 /**
  * Notifies that clipboard data from the guest has been received.
  *
- * @returns VBox status code.
+ * @returns VBox status code. Returns VERR_NOT_FOUND when related event ID was not found.
  * @param   pClient             Client the guest clipboard data was received for.
  * @param   pCmdCtx             Client command context to use.
  * @param   uFormat             Clipboard format of data received.
@@ -1319,6 +1319,9 @@ int ShClSvcGuestDataReceived(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     }
     else
         idEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
+
+    if (idEvent == NIL_SHCLEVENTID) /* Event not found? Bail out early. */
+        return VERR_NOT_FOUND;
 
     int rc = VINF_SUCCESS;
 
