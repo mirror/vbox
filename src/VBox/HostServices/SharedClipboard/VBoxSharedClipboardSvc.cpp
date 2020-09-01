@@ -1337,7 +1337,7 @@ int ShClSvcGuestDataReceived(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
         if (RT_FAILURE(rc))
             ShClPayloadFree(pPayload);
 
-        /* No one holding a reference to the event event anymore? Unregister it. */
+        /* No one holding a reference to the event anymore? Unregister it. */
         if (ShClEventGetRefs(&pClient->EventSrc, idEvent) == 0)
         {
             int rc2 = ShClEventUnregister(&pClient->EventSrc, idEvent);
@@ -1354,7 +1354,7 @@ int ShClSvcGuestDataReceived(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
  * Reports available VBox clipboard formats to the guest.
  *
  * @returns VBox status code.
- * @param   pClient             Client to request to read data form.
+ * @param   pClient             Client to report clipboard formats to.
  * @param   fFormats            The formats to report (VBOX_SHCL_FMT_XXX), zero
  *                              is okay (empty the clipboard).
  */
