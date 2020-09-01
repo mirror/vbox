@@ -174,6 +174,7 @@ void ShClEventSourceReset(PSHCLEVENTSOURCE pSource);
  */
 SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource);
 SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource);
+uint32_t ShClEventGetRefs(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 uint32_t ShClEventRetain(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 uint32_t ShClEventRelease(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, PSHCLEVENTPAYLOAD pPayload);

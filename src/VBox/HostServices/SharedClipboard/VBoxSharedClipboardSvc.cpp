@@ -1336,6 +1336,14 @@ int ShClSvcGuestDataReceived(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
         RTCritSectLeave(&pClient->CritSect);
         if (RT_FAILURE(rc))
             ShClPayloadFree(pPayload);
+
+        /* No one holding a reference to the event event anymore? Unregister it. */
+        if (ShClEventGetRefs(&pClient->EventSrc, idEvent) == 0)
+        {
+            int rc2 = ShClEventUnregister(&pClient->EventSrc, idEvent);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
     }
 
     LogFlowFuncLeaveRC(rc);

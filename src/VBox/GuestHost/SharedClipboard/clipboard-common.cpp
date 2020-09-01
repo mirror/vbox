@@ -262,6 +262,23 @@ SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource)
 }
 
 /**
+ * Returns the current reference count for a specific event.
+ *
+ * @returns Reference count.
+ * @param   pSource             Event source the specific event is part of.
+ * @param   idEvent             Event ID to return reference count for.
+ */
+uint32_t ShClEventGetRefs(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
+{
+    PSHCLEVENT pEvent = shclEventGet(pSource, idEvent);
+    if (pEvent)
+        return pEvent->cRefs;
+
+    AssertMsgFailed(("No event with %RU32\n", idEvent));
+    return 0;
+}
+
+/**
  * Detaches a payload from an event, internal version.
  *
  * @param   pEvent              Event to detach payload for.
