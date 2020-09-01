@@ -240,7 +240,7 @@ int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     /*
      * Now, request the data from the guest.
      */
-    return ShClSvcDataReadRequest(pClient, fFormats, NULL /* pidEvent */);
+    return ShClSvcGuestDataRequest(pClient, fFormats, NULL /* pidEvent */);
 }
 
 int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT fFormat,

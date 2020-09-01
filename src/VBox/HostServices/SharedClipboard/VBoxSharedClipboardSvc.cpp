@@ -1193,7 +1193,7 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient)
  * @param   pidEvent            Event ID for waiting for new data. Optional.
  *                              Must be released by the caller with ShClEventRelease() before unregistering then.
  */
-int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENTID pidEvent)
+int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENTID pidEvent)
 {
     LogFlowFuncEnter();
     if (pidEvent)
@@ -1289,8 +1289,18 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT
     return rc;
 }
 
-int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                          SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
+/**
+ * Notifies that clipboard data from the guest has been received.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client the guest clipboard data was received for.
+ * @param   pCmdCtx             Client command context to use.
+ * @param   uFormat             Clipboard format of data received.
+ * @param   pvData              Pointer to clipboard data received.
+ * @param   cbData              Size (in bytes) of clipboard data received.
+ */
+int ShClSvcGuestDataReceived(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                             SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
@@ -1657,7 +1667,7 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     }
     else
     {
-        /** @todo supply CID from client state? Setting it in ShClSvcDataReadRequest? */
+        /** @todo supply CID from client state? Setting it in ShClSvcGuestDataRequest? */
     }
     if (cParms == VBOX_SHCL_CPARMS_DATA_WRITE_61B)
     {
@@ -2451,7 +2461,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
 
             /* The service extension wants read data from the guest. */
             case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
-                rc = ShClSvcDataReadRequest(pClient, u32Format, NULL /* pidEvent */);
+                rc = ShClSvcGuestDataRequest(pClient, u32Format, NULL /* pidEvent */);
                 break;
 
             default:

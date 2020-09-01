@@ -243,7 +243,7 @@ int ShClBackendWriteData(PSHCLCLIENT pClient,
     LogFlowFunc(("pClient=%p, pv=%p, cb=%RU32, uFormat=%02X\n",
                  pClient, pvData, cbData, uFormat));
 
-    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, uFormat, pvData, cbData);
+    int rc = ShClSvcGuestDataReceived(pClient, pCmdCtx, uFormat, pvData, cbData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -348,7 +348,7 @@ DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT
     {
         /* Request data from the guest. */
         SHCLEVENTID idEvent;
-        rc = ShClSvcDataReadRequest(pCtx->pClient, fFormat, &idEvent);
+        rc = ShClSvcGuestDataRequest(pCtx->pClient, fFormat, &idEvent);
         if (RT_SUCCESS(rc))
         {
             PSHCLEVENTPAYLOAD pPayload;
