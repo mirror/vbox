@@ -269,13 +269,15 @@ int ShClBackendWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFOR
 {
     RT_NOREF(pCmdCtx);
 
+    LogFlowFuncEnter();
+
     ShClSvcLock();
 
     writeToPasteboard(pClient->State.pCtx->hPasteboard, pClient->State.pCtx->idGuestOwnership, pvData, cbData, fFormat);
 
     ShClSvcUnlock();
 
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS

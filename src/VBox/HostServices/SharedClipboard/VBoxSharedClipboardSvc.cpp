@@ -1726,7 +1726,14 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
         rc = VINF_SUCCESS;
     }
     else
+    {
+        /* Let the backend implementation know. */
         rc = ShClBackendWriteData(pClient, &cmdCtx, uFormat, pvData, cbData);
+
+        int rc2; /* Don't return internals back to the guest. */
+        rc2 = ShClSvcGuestDataReceived(pClient, &cmdCtx, uFormat, pvData, cbData); /* To complete pending events, if any. */
+        AssertRC(rc2);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
