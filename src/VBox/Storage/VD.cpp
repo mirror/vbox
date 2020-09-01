@@ -6219,7 +6219,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
                  pLCHSGeometry->cHeads, pLCHSGeometry->cSectors, pUuid,
                  uOpenFlags, pVDIfsImage, pVDIfsOperation));
 
-    AssertPtrReturn(pVDIfsOperation, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pVDIfsOperation, VERR_INVALID_PARAMETER);
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     do
