@@ -278,6 +278,7 @@ int ShClBackendWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFOR
     ShClSvcUnlock();
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
