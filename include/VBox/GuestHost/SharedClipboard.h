@@ -180,8 +180,6 @@ uint32_t ShClEventRelease(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, PSHCLEVENTPAYLOAD pPayload);
 int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload);
-
-void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 /** @} */
 
 /**

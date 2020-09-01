@@ -281,16 +281,20 @@ uint32_t ShClEventGetRefs(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
 /**
  * Detaches a payload from an event, internal version.
  *
+ * @returns Pointer to the detached payload. Can be NULL if the payload has no payload.
  * @param   pEvent              Event to detach payload for.
  */
-static void shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
+static PSHCLEVENTPAYLOAD shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
 {
-    /** @todo r=bird: This should return pPayload.  It should also not need
-     *        assert the validity of pEvent in non-strict builds, given that this
-     *        is an static + internal function, that's a complete waste of time. */
-    AssertPtrReturnVoid(pEvent);
+#ifdef VBOX_STRICT
+    AssertPtrReturn(pEvent, NULL);
+#endif
+
+    PSHCLEVENTPAYLOAD pPayload = pEvent->pPayload;
 
     pEvent->pPayload = NULL;
+
+    return pPayload;
 }
 
 /**
@@ -357,10 +361,8 @@ int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeo
         {
             if (ppPayload)
             {
-                *ppPayload = pEvent->pPayload;
-
                 /* Make sure to detach payload here, as the caller now owns the data. */
-                shclEventPayloadDetachInternal(pEvent);
+                *ppPayload = shclEventPayloadDetachInternal(pEvent);
             }
         }
     }
@@ -446,34 +448,6 @@ int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
 
     LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-/**
- * Detaches a payload from an event.
- *
- * @returns VBox status code.
- * @param   pSource             Event source of event to detach payload for.
- * @param   uID                 Event ID to detach payload for.
- */
-void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
-{
-    /** @todo r=bird: This API is not needed, it either is a no-op as it
-     *        replicates work done by ShClEventWait or it leaks the payload as
-     *        ShClEventWait is the only way to get it as far as I can tell. */
-
-    AssertPtrReturnVoid(pSource);
-
-    LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
-
-    PSHCLEVENT pEvent = shclEventGet(pSource, uID);
-    if (pEvent)
-    {
-        shclEventPayloadDetachInternal(pEvent);
-    }
-#ifdef DEBUG_andy
-    else
-        AssertMsgFailed(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
-#endif
 }
 
 int ShClUtf16LenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen)
