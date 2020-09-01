@@ -2258,7 +2258,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
     /* Paranoia. */
     Assert(pGuestMsrLoad);
 
-    LogFlowFunc(("pVCpu=%p idMsr=%#RX32 uGestMsrValue=%#RX64\n", pVCpu, idMsr, uGuestMsrValue));
+    LogFlowFunc(("pVCpu=%p idMsr=%#RX32 uGuestMsrValue=%#RX64\n", pVCpu, idMsr, uGuestMsrValue));
 
     /* Check if the MSR already exists in the VM-entry MSR-load area. */
     for (i = 0; i < cMsrs; i++)
@@ -7286,6 +7286,16 @@ static void hmR0VmxImportGuestSegReg(PVMCPUCC pVCpu, uint8_t iSegReg)
 {
     Assert(iSegReg < X86_SREG_COUNT);
 
+/** @todo r=bird: Aren't these translation tables a complete wast of time and
+ *        memory accesses?  As far as I can tell, the constants are in segment
+ *        order with a 2+ stepping.  Adding 4 macro functions to hm_vmx.h that
+ *        does the translation, like: @code
+ * #define VMX_VMCS_GUEST_SEG_BASE(a_iSegReg) \ 
+ *      (VMX_VMCS_GUEST_ES_BASE + (a_iSegReg) * 2)
+ *        @endcode
+ * The tables are in two different cache lines two, due to their size, so not 
+ * great for locality either. 
+ */
     uint32_t const idxSel   = g_aVmcsSegSel[iSegReg];
     uint32_t const idxLimit = g_aVmcsSegLimit[iSegReg];
     uint32_t const idxAttr  = g_aVmcsSegAttr[iSegReg];
@@ -7304,6 +7314,10 @@ static void hmR0VmxImportGuestSegReg(PVMCPUCC pVCpu, uint8_t iSegReg)
     pSelReg->ValidSel = u16Sel;
     pSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
     pSelReg->u32Limit = u32Limit;
+#ifdef DEBUG_bird
+    if (pSelReg->u64Base != u64Base)
+        Log7(("HM: %.2s: base %RX64 -> %RX64\n", "ESCSSSDSFSGS" + iSegReg * 2, pSelReg->u64Base, u64Base));
+#endif
     pSelReg->u64Base  = u64Base;
     pSelReg->Attr.u   = u32Attr;
     if (u32Attr & X86DESCATTR_UNUSABLE)
@@ -15125,7 +15139,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     else
-        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_READ, ("Unexpected IEMExecDecodedRdmsr rc (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_READ || rcStrict == VINF_EM_TRIPLE_FAULT,
+                  ("Unexpected IEMExecDecodedRdmsr rc (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     return rcStrict;
 }
@@ -15268,7 +15283,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     else
-        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_WRITE, ("Unexpected IEMExecDecodedWrmsr rc (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_WRITE || rcStrict == VINF_EM_TRIPLE_FAULT,
+                  ("Unexpected IEMExecDecodedWrmsr rc (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     return rcStrict;
 }
