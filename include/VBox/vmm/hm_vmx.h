@@ -1756,6 +1756,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS16_GUEST_DS_SEL                                 0x0806
 #define VMX_VMCS16_GUEST_FS_SEL                                 0x0808
 #define VMX_VMCS16_GUEST_GS_SEL                                 0x080a
+#define VMX_VMCS16_GUEST_SEG_SEL(a_iSegReg)                     (VMX_VMCS16_GUEST_ES_SEL + (a_iSegReg) * 2)
 #define VMX_VMCS16_GUEST_LDTR_SEL                               0x080c
 #define VMX_VMCS16_GUEST_TR_SEL                                 0x080e
 #define VMX_VMCS16_GUEST_INTR_STATUS                            0x0810
@@ -1893,6 +1894,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS32_GUEST_DS_LIMIT                               0x4806
 #define VMX_VMCS32_GUEST_FS_LIMIT                               0x4808
 #define VMX_VMCS32_GUEST_GS_LIMIT                               0x480a
+#define VMX_VMCS32_GUEST_SEG_LIMIT(a_iSegReg)                   (VMX_VMCS32_GUEST_ES_LIMIT + (a_iSegReg) * 2)
 #define VMX_VMCS32_GUEST_LDTR_LIMIT                             0x480c
 #define VMX_VMCS32_GUEST_TR_LIMIT                               0x480e
 #define VMX_VMCS32_GUEST_GDTR_LIMIT                             0x4810
@@ -1903,6 +1905,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                       0x481a
 #define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                       0x481c
 #define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                       0x481e
+#define VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(a_iSegReg)           (VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS + (a_iSegReg) * 2)
 #define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS                     0x4820
 #define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS                       0x4822
 #define VMX_VMCS32_GUEST_INT_STATE                              0x4824
@@ -1942,6 +1945,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS_GUEST_DS_BASE                                  0x680c
 #define VMX_VMCS_GUEST_FS_BASE                                  0x680e
 #define VMX_VMCS_GUEST_GS_BASE                                  0x6810
+#define VMX_VMCS_GUEST_SEG_BASE(a_iSegReg)                      (VMX_VMCS_GUEST_ES_BASE + (a_iSegReg) * 2)
 #define VMX_VMCS_GUEST_LDTR_BASE                                0x6812
 #define VMX_VMCS_GUEST_TR_BASE                                  0x6814
 #define VMX_VMCS_GUEST_GDTR_BASE                                0x6816

@@ -690,6 +690,7 @@ static const uint32_t g_aVmcsFields[] =
 };
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
+#ifdef VBOX_STRICT
 static const uint32_t g_aVmcsSegBase[] =
 {
     VMX_VMCS_GUEST_ES_BASE,
@@ -730,6 +731,7 @@ AssertCompile(RT_ELEMENTS(g_aVmcsSegSel)   == X86_SREG_COUNT);
 AssertCompile(RT_ELEMENTS(g_aVmcsSegLimit) == X86_SREG_COUNT);
 AssertCompile(RT_ELEMENTS(g_aVmcsSegBase)  == X86_SREG_COUNT);
 AssertCompile(RT_ELEMENTS(g_aVmcsSegAttr)  == X86_SREG_COUNT);
+#endif /* VBOX_STRICT */
 
 #ifdef HMVMX_USE_FUNCTION_TABLE
 /**
@@ -6261,24 +6263,12 @@ static void hmR0VmxValidateSegmentRegs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestSegReg(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t iSegReg, PCCPUMSELREG pSelReg)
+static int hmR0VmxExportGuestSegReg(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uint32_t iSegReg, PCCPUMSELREG pSelReg)
 {
     Assert(iSegReg < X86_SREG_COUNT);
-    uint32_t const idxSel   = g_aVmcsSegSel[iSegReg];
-    uint32_t const idxLimit = g_aVmcsSegLimit[iSegReg];
-    uint32_t const idxBase  = g_aVmcsSegBase[iSegReg];
-    uint32_t const idxAttr  = g_aVmcsSegAttr[iSegReg];
 
     uint32_t u32Access = pSelReg->Attr.u;
-    if (pVmcsInfo->RealMode.fRealOnV86Active)
-    {
-        /* VT-x requires our real-using-v86 mode hack to override the segment access-right bits. */
-        u32Access = 0xf3;
-        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
-        Assert(PDMVmmDevHeapIsEnabled(pVCpu->CTX_SUFF(pVM)));
-        RT_NOREF_PV(pVCpu);
-    }
-    else
+    if (!pVmcsInfo->RealMode.fRealOnV86Active)
     {
         /*
          * The way to differentiate between whether this is really a null selector or was just
@@ -6287,21 +6277,35 @@ static int hmR0VmxExportGuestSegReg(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uin
          * should -not- mark it as an unusable segment. Both the recompiler & VT-x ensures
          * NULL selectors loaded in protected-mode have their attribute as 0.
          */
-        if (!u32Access)
+        if (u32Access)
+        { }
+        else
             u32Access = X86DESCATTR_UNUSABLE;
+    }
+    else
+    {
+        /* VT-x requires our real-using-v86 mode hack to override the segment access-right bits. */
+        u32Access = 0xf3;
+        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
+        Assert(PDMVmmDevHeapIsEnabled(pVCpu->CTX_SUFF(pVM)));
+        RT_NOREF_PV(pVCpu);
     }
 
     /* Validate segment access rights. Refer to Intel spec. "26.3.1.2 Checks on Guest Segment Registers". */
     AssertMsg((u32Access & X86DESCATTR_UNUSABLE) || (u32Access & X86_SEL_TYPE_ACCESSED),
-              ("Access bit not set for usable segment. idx=%#x sel=%#x attr %#x\n", idxBase, pSelReg, pSelReg->Attr.u));
+              ("Access bit not set for usable segment. %.2s sel=%#x attr %#x\n", "ESCSSSDSFSGS" + iSegReg * 2, pSelReg, pSelReg->Attr.u));
 
     /*
      * Commit it to the VMCS.
      */
-    int rc = VMXWriteVmcs32(idxSel,   pSelReg->Sel);        AssertRC(rc);
-    rc     = VMXWriteVmcs32(idxLimit, pSelReg->u32Limit);   AssertRC(rc);
-    rc     = VMXWriteVmcsNw(idxBase,  pSelReg->u64Base);    AssertRC(rc);
-    rc     = VMXWriteVmcs32(idxAttr,  u32Access);           AssertRC(rc);
+    Assert((uint32_t)VMX_VMCS16_GUEST_SEG_SEL(iSegReg)           == g_aVmcsSegSel[iSegReg]);
+    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_LIMIT(iSegReg)         == g_aVmcsSegLimit[iSegReg]);
+    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(iSegReg) == g_aVmcsSegAttr[iSegReg]);
+    Assert((uint32_t)VMX_VMCS_GUEST_SEG_BASE(iSegReg)            == g_aVmcsSegBase[iSegReg]);
+    int rc = VMXWriteVmcs32(VMX_VMCS16_GUEST_SEG_SEL(iSegReg),           pSelReg->Sel);      AssertRC(rc);
+    rc     = VMXWriteVmcs32(VMX_VMCS32_GUEST_SEG_LIMIT(iSegReg),         pSelReg->u32Limit); AssertRC(rc);
+    rc     = VMXWriteVmcsNw(VMX_VMCS_GUEST_SEG_BASE(iSegReg),            pSelReg->u64Base);  AssertRC(rc);
+    rc     = VMXWriteVmcs32(VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(iSegReg), u32Access);         AssertRC(rc);
     return VINF_SUCCESS;
 }
 
@@ -7226,9 +7230,9 @@ DECLINLINE(void) hmR0VmxSetPendingXcptSS(PVMCPUCC pVCpu, uint32_t u32ErrCode)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pSelReg     The segment register that needs fixing.
- * @param   idxSel      The VMCS field for the corresponding segment register.
+ * @param   pszRegName  The register name (for logging and assertions).
  */
-static void hmR0VmxFixUnusableSegRegAttr(PVMCPUCC pVCpu, PCPUMSELREG pSelReg, uint32_t idxSel)
+static void hmR0VmxFixUnusableSegRegAttr(PVMCPUCC pVCpu, PCPUMSELREG pSelReg, const char *pszRegName)
 {
     Assert(pSelReg->Attr.u & X86DESCATTR_UNUSABLE);
 
@@ -7260,16 +7264,16 @@ static void hmR0VmxFixUnusableSegRegAttr(PVMCPUCC pVCpu, PCPUMSELREG pSelReg, ui
 
 #ifdef VBOX_STRICT
     VMMRZCallRing3Disable(pVCpu);
-    Log4Func(("Unusable %#x: sel=%#x attr=%#x -> %#x\n", idxSel, pSelReg->Sel, uAttr, pSelReg->Attr.u));
+    Log4Func(("Unusable %s: sel=%#x attr=%#x -> %#x\n", pszRegName, pSelReg->Sel, uAttr, pSelReg->Attr.u));
 # ifdef DEBUG_bird
     AssertMsg((uAttr & ~X86DESCATTR_P) == pSelReg->Attr.u,
-              ("%#x: %#x != %#x (sel=%#x base=%#llx limit=%#x)\n",
-               idxSel, uAttr, pSelReg->Attr.u, pSelReg->Sel, pSelReg->u64Base, pSelReg->u32Limit));
+              ("%s: %#x != %#x (sel=%#x base=%#llx limit=%#x)\n",
+               pszRegName, uAttr, pSelReg->Attr.u, pSelReg->Sel, pSelReg->u64Base, pSelReg->u32Limit));
 # endif
     VMMRZCallRing3Enable(pVCpu);
     NOREF(uAttr);
 #endif
-    RT_NOREF2(pVCpu, idxSel);
+    RT_NOREF2(pVCpu, pszRegName);
 }
 
 
@@ -7282,46 +7286,31 @@ static void hmR0VmxFixUnusableSegRegAttr(PVMCPUCC pVCpu, PCPUMSELREG pSelReg, ui
  *
  * @remarks Called with interrupts and/or preemption disabled.
  */
-static void hmR0VmxImportGuestSegReg(PVMCPUCC pVCpu, uint8_t iSegReg)
+static void hmR0VmxImportGuestSegReg(PVMCPUCC pVCpu, uint32_t iSegReg)
 {
     Assert(iSegReg < X86_SREG_COUNT);
-
-/** @todo r=bird: Aren't these translation tables a complete wast of time and
- *        memory accesses?  As far as I can tell, the constants are in segment
- *        order with a 2+ stepping.  Adding 4 macro functions to hm_vmx.h that
- *        does the translation, like: @code
- * #define VMX_VMCS_GUEST_SEG_BASE(a_iSegReg) \ 
- *      (VMX_VMCS_GUEST_ES_BASE + (a_iSegReg) * 2)
- *        @endcode
- * The tables are in two different cache lines two, due to their size, so not 
- * great for locality either. 
- */
-    uint32_t const idxSel   = g_aVmcsSegSel[iSegReg];
-    uint32_t const idxLimit = g_aVmcsSegLimit[iSegReg];
-    uint32_t const idxAttr  = g_aVmcsSegAttr[iSegReg];
-    uint32_t const idxBase  = g_aVmcsSegBase[iSegReg];
-
-    uint16_t u16Sel;
-    uint64_t u64Base;
-    uint32_t u32Limit, u32Attr;
-    int rc = VMXReadVmcs16(idxSel,   &u16Sel);      AssertRC(rc);
-    rc     = VMXReadVmcs32(idxLimit, &u32Limit);    AssertRC(rc);
-    rc     = VMXReadVmcs32(idxAttr,  &u32Attr);     AssertRC(rc);
-    rc     = VMXReadVmcsNw(idxBase,  &u64Base);     AssertRC(rc);
+    Assert((uint32_t)VMX_VMCS16_GUEST_SEG_SEL(iSegReg)           == g_aVmcsSegSel[iSegReg]);
+    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_LIMIT(iSegReg)         == g_aVmcsSegLimit[iSegReg]);
+    Assert((uint32_t)VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(iSegReg) == g_aVmcsSegAttr[iSegReg]);
+    Assert((uint32_t)VMX_VMCS_GUEST_SEG_BASE(iSegReg)            == g_aVmcsSegBase[iSegReg]);
 
     PCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
+
+    uint16_t u16Sel;
+    int rc = VMXReadVmcs16(VMX_VMCS16_GUEST_SEG_SEL(iSegReg), &u16Sel);   AssertRC(rc);
     pSelReg->Sel      = u16Sel;
     pSelReg->ValidSel = u16Sel;
-    pSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
-    pSelReg->u32Limit = u32Limit;
-#ifdef DEBUG_bird
-    if (pSelReg->u64Base != u64Base)
-        Log7(("HM: %.2s: base %RX64 -> %RX64\n", "ESCSSSDSFSGS" + iSegReg * 2, pSelReg->u64Base, u64Base));
-#endif
-    pSelReg->u64Base  = u64Base;
+
+    rc     = VMXReadVmcs32(VMX_VMCS32_GUEST_SEG_LIMIT(iSegReg), &pSelReg->u32Limit); AssertRC(rc);
+    rc     = VMXReadVmcsNw(VMX_VMCS_GUEST_SEG_BASE(iSegReg), &pSelReg->u64Base);     AssertRC(rc);
+
+    uint32_t u32Attr;
+    rc     = VMXReadVmcs32(VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(iSegReg), &u32Attr);   AssertRC(rc);
     pSelReg->Attr.u   = u32Attr;
     if (u32Attr & X86DESCATTR_UNUSABLE)
-        hmR0VmxFixUnusableSegRegAttr(pVCpu, pSelReg, idxSel);
+        hmR0VmxFixUnusableSegRegAttr(pVCpu, pSelReg, "ES\0CS\0SS\0DS\0FS\0GS" + iSegReg * 3);
+
+    pSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
 }
 
 
@@ -7349,7 +7338,7 @@ static void hmR0VmxImportGuestLdtr(PVMCPUCC pVCpu)
     pVCpu->cpum.GstCtx.ldtr.u64Base  = u64Base;
     pVCpu->cpum.GstCtx.ldtr.Attr.u   = u32Attr;
     if (u32Attr & X86DESCATTR_UNUSABLE)
-        hmR0VmxFixUnusableSegRegAttr(pVCpu, &pVCpu->cpum.GstCtx.ldtr, VMX_VMCS16_GUEST_LDTR_SEL);
+        hmR0VmxFixUnusableSegRegAttr(pVCpu, &pVCpu->cpum.GstCtx.ldtr, "LDTR");
 }
 
 
