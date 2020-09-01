@@ -65,12 +65,12 @@ struct UIDataSettingsGlobalGeneral
 
 UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     : m_pCache(0)
-    , m_pSelectorMachineFolder(0)
-    , m_pSelectorVRDPLibName(0)
-    , m_pCheckBoxHostScreenSaver(0)
     , m_pLabelMachineFolder(0)
-    , m_pLabelHostScreenSaver(0)
+    , m_pSelectorMachineFolder(0)
     , m_pLabelVRDPLibName(0)
+    , m_pSelectorVRDPLibName(0)
+    , m_pLabelHostScreenSaver(0)
+    , m_pCheckBoxHostScreenSaver(0)
 {
     /* Prepare: */
     prepare();
@@ -156,28 +156,12 @@ void UIGlobalSettingsGeneral::retranslateUi()
 
 void UIGlobalSettingsGeneral::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalGeneral;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Layout/widgets created in the .ui file. */
-    AssertPtrReturnVoid(m_pLabelHostScreenSaver);
-    AssertPtrReturnVoid(m_pCheckBoxHostScreenSaver);
-    AssertPtrReturnVoid(m_pSelectorMachineFolder);
-    AssertPtrReturnVoid(m_pSelectorVRDPLibName);
-    {
-        /* Configure host screen-saver check-box: */
-        // Hide checkbox for now.
-        m_pLabelHostScreenSaver->hide();
-        m_pCheckBoxHostScreenSaver->hide();
-
-        /* Configure other widgets: */
-        m_pSelectorMachineFolder->setHomeDir(uiCommon().homeFolder());
-        m_pSelectorVRDPLibName->setHomeDir(uiCommon().homeFolder());
-        m_pSelectorVRDPLibName->setMode(UIFilePathSelector::Mode_File_Open);
-    }
+    /* Prepare everything: */
+    prepareWidgets();
 
     /* Apply language settings: */
     retranslateUi();
@@ -185,51 +169,69 @@ void UIGlobalSettingsGeneral::prepare()
 
 void UIGlobalSettingsGeneral::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIGlobalSettingsGeneral"));
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
-    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
-    m_pLabelMachineFolder = new QLabel();
-    m_pLabelMachineFolder->setObjectName(QStringLiteral("m_pLabelMachineFolder"));
-    m_pLabelMachineFolder->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pMainLayout->addWidget(m_pLabelMachineFolder, 0, 0, 1, 1);
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setContentsMargins(0, 0, 0, 0);
+        pLayoutMain->setColumnStretch(1, 1);
+        pLayoutMain->setRowStretch(3, 1);
 
-    m_pSelectorMachineFolder = new UIFilePathSelector();
-    m_pSelectorMachineFolder->setObjectName(QStringLiteral("m_pSelectorMachineFolder"));
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pSelectorMachineFolder->sizePolicy().hasHeightForWidth());
-    m_pSelectorMachineFolder->setSizePolicy(sizePolicy);
-    pMainLayout->addWidget(m_pSelectorMachineFolder, 0, 1, 1, 2);
+        /* Prepare machine folder label: */
+        m_pLabelMachineFolder = new QLabel(this);
+        if (m_pLabelMachineFolder)
+        {
+            m_pLabelMachineFolder->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelMachineFolder, 0, 0);
+        }
+        /* Prepare machine folder selector: */
+        m_pSelectorMachineFolder = new UIFilePathSelector(this);
+        if (m_pSelectorMachineFolder)
+        {
+            if (m_pLabelMachineFolder)
+                m_pLabelMachineFolder->setBuddy(m_pSelectorMachineFolder);
+            m_pSelectorMachineFolder->setHomeDir(uiCommon().homeFolder());
 
-    m_pLabelVRDPLibName = new QLabel();
-    m_pLabelVRDPLibName->setObjectName(QStringLiteral("m_pLabelVRDPLibName"));
-    m_pLabelVRDPLibName->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pMainLayout->addWidget(m_pLabelVRDPLibName, 1, 0, 1, 1);
+            pLayoutMain->addWidget(m_pSelectorMachineFolder, 0, 1, 1, 2);
+        }
 
-    m_pSelectorVRDPLibName = new UIFilePathSelector();
-    m_pSelectorVRDPLibName->setObjectName(QStringLiteral("m_pSelectorVRDPLibName"));
-    sizePolicy.setHeightForWidth(m_pSelectorVRDPLibName->sizePolicy().hasHeightForWidth());
-    m_pSelectorVRDPLibName->setSizePolicy(sizePolicy);
-    pMainLayout->addWidget(m_pSelectorVRDPLibName, 1, 1, 1, 2);
+        /* Prepare VRDP library name label: */
+        m_pLabelVRDPLibName = new QLabel(this);
+        if (m_pLabelVRDPLibName)
+        {
+            m_pLabelVRDPLibName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelVRDPLibName, 1, 0);
+        }
+        /* Prepare VRDP library name selector: */
+        m_pSelectorVRDPLibName = new UIFilePathSelector(this);
+        if (m_pSelectorVRDPLibName)
+        {
+            if (m_pLabelVRDPLibName)
+                m_pLabelVRDPLibName->setBuddy(m_pSelectorVRDPLibName);
+            m_pSelectorVRDPLibName->setHomeDir(uiCommon().homeFolder());
+            m_pSelectorVRDPLibName->setMode(UIFilePathSelector::Mode_File_Open);
 
-    m_pLabelHostScreenSaver = new QLabel();
-    m_pLabelHostScreenSaver->setObjectName(QStringLiteral("m_pLabelHostScreenSaver"));
-    m_pLabelHostScreenSaver->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pMainLayout->addWidget(m_pLabelHostScreenSaver, 2, 0, 1, 1);
+            pLayoutMain->addWidget(m_pSelectorVRDPLibName, 1, 1, 1, 2);
+        }
 
-    m_pCheckBoxHostScreenSaver = new QCheckBox();
-    m_pCheckBoxHostScreenSaver->setObjectName(QStringLiteral("m_pCheckBoxHostScreenSaver"));
-    pMainLayout->addWidget(m_pCheckBoxHostScreenSaver, 2, 1, 1, 1);
-
-    QSpacerItem *pSpacerItem = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pMainLayout->addItem(pSpacerItem, 3, 0, 1, 3);
-
-    m_pLabelMachineFolder->setBuddy(m_pSelectorMachineFolder);
-    m_pLabelVRDPLibName->setBuddy(m_pSelectorVRDPLibName);
-    m_pLabelHostScreenSaver->setBuddy(m_pCheckBoxHostScreenSaver);
+        /* Prepare screen-saver label: */
+        m_pLabelHostScreenSaver = new QLabel(this);
+        if (m_pLabelHostScreenSaver)
+        {
+            m_pLabelHostScreenSaver->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLabelHostScreenSaver->hide();
+            pLayoutMain->addWidget(m_pLabelHostScreenSaver, 2, 0);
+        }
+        /* Prepare screen-saver check-box: */
+        m_pCheckBoxHostScreenSaver = new QCheckBox(this);
+        if (m_pCheckBoxHostScreenSaver)
+        {
+            if (m_pLabelHostScreenSaver)
+                m_pLabelHostScreenSaver->setBuddy(m_pCheckBoxHostScreenSaver);
+            m_pCheckBoxHostScreenSaver->hide();
+            pLayoutMain->addWidget(m_pCheckBoxHostScreenSaver, 2, 1);
+        }
+    }
 }
 
 void UIGlobalSettingsGeneral::cleanup()

@@ -79,12 +79,18 @@ private:
 
     /** @name Widgets
      * @{ */
-       UIFilePathSelector *m_pSelectorMachineFolder;
-       UIFilePathSelector *m_pSelectorVRDPLibName;
-       QCheckBox *m_pCheckBoxHostScreenSaver;
-       QLabel *m_pLabelMachineFolder;
-       QLabel *m_pLabelHostScreenSaver;
-       QLabel *m_pLabelVRDPLibName;
+        /** Holds machine folder label instance. */
+        QLabel             *m_pLabelMachineFolder;
+        /** Holds machine folder selector instance. */
+        UIFilePathSelector *m_pSelectorMachineFolder;
+        /** Holds VRDP library name label instance. */
+        QLabel             *m_pLabelVRDPLibName;
+        /** Holds VRDP library name selector instance. */
+        UIFilePathSelector *m_pSelectorVRDPLibName;
+        /** Holds screen-saver label instance. */
+        QLabel             *m_pLabelHostScreenSaver;
+        /** Holds disable screen-saver check-box instance. */
+        QCheckBox          *m_pCheckBoxHostScreenSaver;
     /** @} */
 };
 
