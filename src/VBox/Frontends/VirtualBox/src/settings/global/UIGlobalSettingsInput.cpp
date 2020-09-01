@@ -883,12 +883,13 @@ void UIHotKeyTable::prepare()
 *********************************************************************************************************************************/
 
 UIGlobalSettingsInput::UIGlobalSettingsInput()
-    : m_pTabWidget(0)
-    , m_pSelectorFilterEditor(0), m_pSelectorModel(0), m_pSelectorTable(0)
-    , m_pMachineFilterEditor(0), m_pMachineModel(0), m_pMachineTable(0)
+    : m_pModelSelector(0)
+    , m_pModelMachine(0)
     , m_pCache(0)
-    , m_pEnableAutoGrabCheckbox(0)
-    , m_pMainLayout(0)
+    , m_pTabWidget(0)
+    , m_pEditorSelectorFilter(0), m_pTableSelector(0)
+    , m_pMachineFilterEditor(0), m_pTableMachine(0)
+    , m_pCheckBoxEnableAutoGrab(0)
 {
     /* Prepare: */
     prepare();
@@ -912,7 +913,7 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     UIDataSettingsGlobalInput oldInputData;
 
     /* Gather old input data: */
-    oldInputData.shortcuts() << UIDataShortcutRow(m_pMachineTable,
+    oldInputData.shortcuts() << UIDataShortcutRow(m_pTableMachine,
                                                   UIHostCombo::hostComboCacheKey(),
                                                   QString(),
                                                   tr("Host Key Combination"),
@@ -923,8 +924,8 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     foreach (const QString &strShortcutKey, shortcutKeys)
     {
         const UIShortcut &shortcut = shortcuts[strShortcutKey];
-        QITableView *pParent = strShortcutKey.startsWith(GUI_Input_MachineShortcuts) ? m_pMachineTable :
-                               strShortcutKey.startsWith(GUI_Input_SelectorShortcuts) ? m_pSelectorTable : 0;
+        QITableView *pParent = strShortcutKey.startsWith(GUI_Input_MachineShortcuts) ? m_pTableMachine :
+                               strShortcutKey.startsWith(GUI_Input_SelectorShortcuts) ? m_pTableSelector : 0;
         AssertPtr(pParent);
         oldInputData.shortcuts() << UIDataShortcutRow(pParent,
                                                       strShortcutKey,
@@ -948,9 +949,9 @@ void UIGlobalSettingsInput::getFromCache()
     const UIDataSettingsGlobalInput &oldInputData = m_pCache->base();
 
     /* Load old input data from the cache: */
-    m_pSelectorModel->load(oldInputData.shortcuts());
-    m_pMachineModel->load(oldInputData.shortcuts());
-    m_pEnableAutoGrabCheckbox->setChecked(oldInputData.autoCapture());
+    m_pModelSelector->load(oldInputData.shortcuts());
+    m_pModelMachine->load(oldInputData.shortcuts());
+    m_pCheckBoxEnableAutoGrab->setChecked(oldInputData.autoCapture());
 
     /* Revalidate: */
     revalidate();
@@ -962,9 +963,9 @@ void UIGlobalSettingsInput::putToCache()
     UIDataSettingsGlobalInput newInputData = m_pCache->base();
 
     /* Gather new input data: */
-    m_pSelectorModel->save(newInputData.shortcuts());
-    m_pMachineModel->save(newInputData.shortcuts());
-    newInputData.setAutoCapture(m_pEnableAutoGrabCheckbox->isChecked());
+    m_pModelSelector->save(newInputData.shortcuts());
+    m_pModelMachine->save(newInputData.shortcuts());
+    newInputData.setAutoCapture(m_pCheckBoxEnableAutoGrab->isChecked());
 
     /* Cache new input data: */
     m_pCache->cacheCurrentData(newInputData);
@@ -988,7 +989,7 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
     bool fPass = true;
 
     /* Check VirtualBox Manager page for unique shortcuts: */
-    if (!m_pSelectorModel->isAllShortcutsUnique())
+    if (!m_pModelSelector->isAllShortcutsUnique())
     {
         UIValidationMessage message;
         message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Selector));
@@ -998,7 +999,7 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
     }
 
     /* Check Virtual Machine page for unique shortcuts: */
-    if (!m_pMachineModel->isAllShortcutsUnique())
+    if (!m_pModelMachine->isAllShortcutsUnique())
     {
         UIValidationMessage message;
         message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Machine));
@@ -1014,55 +1015,39 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
 void UIGlobalSettingsInput::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pTabWidget);
-    setTabOrder(m_pTabWidget, m_pSelectorFilterEditor);
-    setTabOrder(m_pSelectorFilterEditor, m_pSelectorTable);
-    setTabOrder(m_pSelectorTable, m_pMachineFilterEditor);
-    setTabOrder(m_pMachineFilterEditor, m_pMachineTable);
-    setTabOrder(m_pMachineTable, m_pEnableAutoGrabCheckbox);
+    setTabOrder(m_pTabWidget, m_pEditorSelectorFilter);
+    setTabOrder(m_pEditorSelectorFilter, m_pTableSelector);
+    setTabOrder(m_pTableSelector, m_pMachineFilterEditor);
+    setTabOrder(m_pMachineFilterEditor, m_pTableMachine);
+    setTabOrder(m_pTableMachine, m_pCheckBoxEnableAutoGrab);
 }
 
 void UIGlobalSettingsInput::retranslateUi()
 {
-    m_pEnableAutoGrabCheckbox->setWhatsThis(tr("When checked, the keyboard is automatically captured every time the VM window "
+    m_pCheckBoxEnableAutoGrab->setWhatsThis(tr("When checked, the keyboard is automatically captured every time the VM window "
                                                "is activated. When the keyboard is captured, all keystrokes (including system ones "
                                                "like Alt-Tab) are directed to the VM."));
-    m_pEnableAutoGrabCheckbox->setText(tr("&Auto Capture Keyboard"));
+    m_pCheckBoxEnableAutoGrab->setText(tr("&Auto Capture Keyboard"));
 
 
     /* Translate tab-widget labels: */
     m_pTabWidget->setTabText(UIHotKeyTableIndex_Selector, tr("&VirtualBox Manager"));
     m_pTabWidget->setTabText(UIHotKeyTableIndex_Machine, tr("Virtual &Machine"));
-    m_pSelectorTable->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
-    m_pMachineTable->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
-    m_pSelectorFilterEditor->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
+    m_pTableSelector->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
+    m_pTableMachine->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
+    m_pEditorSelectorFilter->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
     m_pMachineFilterEditor->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
 }
 
 void UIGlobalSettingsInput::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalInput;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Create tab-widget: */
-    m_pTabWidget = new QTabWidget(this);
-    AssertPtrReturnVoid(m_pTabWidget);
-    {
-        /* Configure tab-widget: */
-        m_pTabWidget->setMinimumWidth(400);
-
-        /* Prepare 'Selector UI' tab: */
-        prepareTabSelector();
-        /* Prepare 'Runtime UI' tab: */
-        prepareTabMachine();
-        /* Prepare connections: */
-        prepareConnections();
-
-        /* Add tab-widget into layout: */
-        m_pMainLayout->addWidget(m_pTabWidget, 0, 0, 1, 2);
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -1070,56 +1055,62 @@ void UIGlobalSettingsInput::prepare()
 
 void UIGlobalSettingsInput::prepareWidgets()
 {
+    /* Prepare main layout: */
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    if (pMainLayout)
+    {
+        /* Prepare tab-widget: */
+        m_pTabWidget = new QTabWidget(this);
+        if (m_pTabWidget)
+        {
+            m_pTabWidget->setMinimumWidth(400);
 
+            /* Prepare 'Selector UI' tab: */
+            prepareTabSelector();
+            /* Prepare 'Runtime UI' tab: */
+            prepareTabMachine();
 
+            /* Add tab-widget into layout: */
+            pMainLayout->addWidget(m_pTabWidget, 0, 0, 1, 2);
+        }
 
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIGlobalSettingsInput"));
-    m_pMainLayout = new QGridLayout(this);
-    m_pMainLayout->setObjectName(QStringLiteral("m_pMainLayout"));
-    m_pEnableAutoGrabCheckbox = new QCheckBox(this);
-    m_pEnableAutoGrabCheckbox->setObjectName(QStringLiteral("m_pEnableAutoGrabCheckbox"));
-    m_pMainLayout->addWidget(m_pEnableAutoGrabCheckbox, 1, 0, 1, 1);
+        /* Prepare enable auto-grab check-box: */
+        m_pCheckBoxEnableAutoGrab = new QCheckBox(this);
+        if (m_pCheckBoxEnableAutoGrab)
+            pMainLayout->addWidget(m_pCheckBoxEnableAutoGrab, 1, 0);
+    }
 }
 
 void UIGlobalSettingsInput::prepareTabSelector()
 {
-    /* Create Selector UI tab: */
+    /* Prepare Selector UI tab: */
     QWidget *pSelectorTab = new QWidget;
-    AssertPtrReturnVoid(pSelectorTab);
+    if (pSelectorTab)
     {
-        /* Create Selector UI layout: */
+        /* Prepare Selector UI layout: */
         QVBoxLayout *pSelectorLayout = new QVBoxLayout(pSelectorTab);
-        AssertPtrReturnVoid(pSelectorLayout);
+        if (pSelectorLayout)
         {
-            /* Configure Selector UI layout: */
             pSelectorLayout->setSpacing(1);
 #ifdef VBOX_WS_MAC
-            /* On Mac OS X and X11 we can do a bit of smoothness. */
+            /* On Mac OS X and X11 we can do a bit of smoothness: */
             pSelectorLayout->setContentsMargins(0, 0, 0, 0);
 #endif
 
-            /* Create Selector UI filter editor: */
-            m_pSelectorFilterEditor = new QLineEdit(pSelectorTab);
-            AssertPtrReturnVoid(m_pSelectorFilterEditor);
-            {
-                /* Add filter editor into layout: */
-                pSelectorLayout->addWidget(m_pSelectorFilterEditor);
-            }
+            /* Prepare Selector UI filter editor: */
+            m_pEditorSelectorFilter = new QLineEdit(pSelectorTab);
+            if (m_pEditorSelectorFilter)
+                pSelectorLayout->addWidget(m_pEditorSelectorFilter);
 
-            /* Create Selector UI model: */
-            m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Manager);
+            /* Prepare Selector UI model: */
+            m_pModelSelector = new UIHotKeyTableModel(this, UIActionPoolType_Manager);
 
-            /* Create Selector UI table: */
-            m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel, "m_pSelectorTable");
-            AssertPtrReturnVoid(m_pSelectorTable);
-            {
-                /* Add table into layout: */
-                pSelectorLayout->addWidget(m_pSelectorTable);
-            }
+            /* Prepare Selector UI table: */
+            m_pTableSelector = new UIHotKeyTable(pSelectorTab, m_pModelSelector, "m_pTableSelector");
+            if (m_pTableSelector)
+                pSelectorLayout->addWidget(m_pTableSelector);
         }
 
-        /* Add tab into tab-widget: */
         m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, pSelectorTab, QString());
     }
 }
@@ -1128,40 +1119,32 @@ void UIGlobalSettingsInput::prepareTabMachine()
 {
     /* Create Runtime UI tab: */
     QWidget *pMachineTab = new QWidget;
-    AssertPtrReturnVoid(pMachineTab);
+    if (pMachineTab)
     {
-        /* Create Runtime UI layout: */
+        /* Prepare Runtime UI layout: */
         QVBoxLayout *pMachineLayout = new QVBoxLayout(pMachineTab);
-        AssertPtrReturnVoid(pMachineLayout);
+        if (pMachineLayout)
         {
-            /* Configure Runtime UI layout: */
             pMachineLayout->setSpacing(1);
 #ifdef VBOX_WS_MAC
             /* On Mac OS X and X11 we can do a bit of smoothness. */
             pMachineLayout->setContentsMargins(0, 0, 0, 0);
 #endif
 
-            /* Create Runtime UI filter editor: */
+            /* Prepare Runtime UI filter editor: */
             m_pMachineFilterEditor = new QLineEdit(pMachineTab);
-            AssertPtrReturnVoid(m_pMachineFilterEditor);
-            {
-                /* Add filter editor into layout: */
+            if (m_pMachineFilterEditor)
                 pMachineLayout->addWidget(m_pMachineFilterEditor);
-            }
 
-            /* Create Runtime UI model: */
-            m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
+            /* Prepare Runtime UI model: */
+            m_pModelMachine = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
 
             /* Create Runtime UI table: */
-            m_pMachineTable = new UIHotKeyTable(pMachineTab, m_pMachineModel, "m_pMachineTable");
-            AssertPtrReturnVoid(m_pMachineTable);
-            {
-                /* Add table into layout: */
-                pMachineLayout->addWidget(m_pMachineTable);
-            }
+            m_pTableMachine = new UIHotKeyTable(pMachineTab, m_pModelMachine, "m_pTableMachine");
+            if (m_pTableMachine)
+                pMachineLayout->addWidget(m_pTableMachine);
         }
 
-        /* Add tab into tab-widget: */
         m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
 
         /* In the VM process we start by displaying the Runtime UI tab: */
@@ -1173,14 +1156,14 @@ void UIGlobalSettingsInput::prepareTabMachine()
 void UIGlobalSettingsInput::prepareConnections()
 {
     /* Configure 'Selector UI' connections: */
-    connect(m_pSelectorFilterEditor, &QLineEdit::textChanged,
-            m_pSelectorModel, &UIHotKeyTableModel::sltHandleFilterTextChange);
-    connect(m_pSelectorModel, &UIHotKeyTableModel::sigRevalidationRequired, this, &UIGlobalSettingsInput::revalidate);
+    connect(m_pEditorSelectorFilter, &QLineEdit::textChanged,
+            m_pModelSelector, &UIHotKeyTableModel::sltHandleFilterTextChange);
+    connect(m_pModelSelector, &UIHotKeyTableModel::sigRevalidationRequired, this, &UIGlobalSettingsInput::revalidate);
 
     /* Configure 'Runtime UI' connections: */
     connect(m_pMachineFilterEditor, &QLineEdit::textChanged,
-            m_pMachineModel, &UIHotKeyTableModel::sltHandleFilterTextChange);
-    connect(m_pMachineModel, &UIHotKeyTableModel::sigRevalidationRequired, this, &UIGlobalSettingsInput::revalidate);
+            m_pModelMachine, &UIHotKeyTableModel::sltHandleFilterTextChange);
+    connect(m_pModelMachine, &UIHotKeyTableModel::sigRevalidationRequired, this, &UIGlobalSettingsInput::revalidate);
 }
 
 void UIGlobalSettingsInput::cleanup()

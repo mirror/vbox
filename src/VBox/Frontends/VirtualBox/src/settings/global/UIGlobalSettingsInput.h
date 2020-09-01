@@ -26,7 +26,6 @@
 
 /* Forward declartions: */
 class QCheckBox;
-class QGridLayout;
 class QLineEdit;
 class QTabWidget;
 class UIDataSettingsGlobalInput;
@@ -92,28 +91,29 @@ private:
     /** Saves existing input data from the cache. */
     bool saveInputData();
 
-    /** Holds the tab-widget instance. */
-    QTabWidget         *m_pTabWidget;
-    /** Holds the Selector UI shortcuts filter instance. */
-    QLineEdit          *m_pSelectorFilterEditor;
     /** Holds the Selector UI shortcuts model instance. */
-    UIHotKeyTableModel *m_pSelectorModel;
-    /** Holds the Selector UI shortcuts table instance. */
-    UIHotKeyTable      *m_pSelectorTable;
-    /** Holds the Runtime UI shortcuts filter instance. */
-    QLineEdit          *m_pMachineFilterEditor;
+    UIHotKeyTableModel *m_pModelSelector;
     /** Holds the Runtime UI shortcuts model instance. */
-    UIHotKeyTableModel *m_pMachineModel;
-    /** Holds the Runtime UI shortcuts table instance. */
-    UIHotKeyTable      *m_pMachineTable;
+    UIHotKeyTableModel *m_pModelMachine;
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalInput *m_pCache;
 
-    /** Holds the grab checkbox instance. */
-    QCheckBox *m_pEnableAutoGrabCheckbox;
-    /** Holds the main layout. */
-    QGridLayout *m_pMainLayout;
+    /** @name Widgets
+     * @{ */
+        /** Holds the tab-widget instance. */
+        QTabWidget    *m_pTabWidget;
+        /** Holds the Selector UI shortcuts filter instance. */
+        QLineEdit     *m_pEditorSelectorFilter;
+        /** Holds the Selector UI shortcuts table instance. */
+        UIHotKeyTable *m_pTableSelector;
+        /** Holds the Runtime UI shortcuts filter instance. */
+        QLineEdit     *m_pMachineFilterEditor;
+        /** Holds the Runtime UI shortcuts table instance. */
+        UIHotKeyTable *m_pTableMachine;
+        /** Holds the enable auto-grab checkbox instance. */
+        QCheckBox     *m_pCheckBoxEnableAutoGrab;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsInput_h */
