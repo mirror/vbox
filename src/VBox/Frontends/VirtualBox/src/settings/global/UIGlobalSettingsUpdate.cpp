@@ -68,18 +68,17 @@ struct UIDataSettingsGlobalUpdate
 
 
 UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
-    : m_pLastChosenRadio(0)
-    , m_pCache(0)
-    , m_pUpdateDateText(0)
-    , m_pUpdateDateLabel(0)
-    , m_pUpdatePeriodLabel(0)
-    , m_pUpdateFilterLabel(0)
+    : m_pCache(0)
     , m_pCheckBoxUpdate(0)
-    , m_pComboBoxUpdatePeriod(0)
-    , m_pRadioUpdateFilterBetas(0)
-    , m_pRadioUpdateFilterEvery(0)
+    , m_pWidgetUpdateSettings(0)
+    , m_pLabelUpdatePeriod(0)
+    , m_pComboUpdatePeriod(0)
+    , m_pLabelUpdateDate(0)
+    , m_pFieldUpdateDate(0)
+    , m_pLabelUpdateFilter(0)
     , m_pRadioUpdateFilterStable(0)
-    , m_pContainerUpdate(0)
+    , m_pRadioUpdateFilterEvery(0)
+    , m_pRadioUpdateFilterBetas(0)
 {
     /* Prepare: */
     prepare();
@@ -125,7 +124,7 @@ void UIGlobalSettingsUpdate::getFromCache()
     m_pCheckBoxUpdate->setChecked(oldUpdateData.m_fCheckEnabled);
     if (m_pCheckBoxUpdate->isChecked())
     {
-        m_pComboBoxUpdatePeriod->setCurrentIndex(oldUpdateData.m_periodIndex);
+        m_pComboUpdatePeriod->setCurrentIndex(oldUpdateData.m_periodIndex);
         if (oldUpdateData.m_branchIndex == VBoxUpdateData::BranchWithBetas)
             m_pRadioUpdateFilterBetas->setChecked(true);
         else if (oldUpdateData.m_branchIndex == VBoxUpdateData::BranchAllRelease)
@@ -133,7 +132,7 @@ void UIGlobalSettingsUpdate::getFromCache()
         else
             m_pRadioUpdateFilterStable->setChecked(true);
     }
-    m_pUpdateDateText->setText(oldUpdateData.m_strDate);
+    m_pFieldUpdateDate->setText(oldUpdateData.m_strDate);
     sltHandleUpdateToggle(oldUpdateData.m_fCheckEnabled);
 }
 
@@ -166,8 +165,8 @@ void UIGlobalSettingsUpdate::setOrderAfter(QWidget *pWidget)
 {
     /* Configure navigation: */
     setTabOrder(pWidget, m_pCheckBoxUpdate);
-    setTabOrder(m_pCheckBoxUpdate, m_pComboBoxUpdatePeriod);
-    setTabOrder(m_pComboBoxUpdatePeriod, m_pRadioUpdateFilterStable);
+    setTabOrder(m_pCheckBoxUpdate, m_pComboUpdatePeriod);
+    setTabOrder(m_pComboUpdatePeriod, m_pRadioUpdateFilterStable);
     setTabOrder(m_pRadioUpdateFilterStable, m_pRadioUpdateFilterEvery);
     setTabOrder(m_pRadioUpdateFilterEvery, m_pRadioUpdateFilterBetas);
 }
@@ -178,12 +177,12 @@ void UIGlobalSettingsUpdate::retranslateUi()
                                        "periodically connect to the VirtualBox website and check whether a "
                                        "new VirtualBox version is available."));
     m_pCheckBoxUpdate->setText(tr("&Check for Updates"));
-    m_pUpdatePeriodLabel->setText(tr("&Once per:"));
-    m_pComboBoxUpdatePeriod->setWhatsThis(tr("Selects how often the new version "
+    m_pLabelUpdatePeriod->setText(tr("&Once per:"));
+    m_pComboUpdatePeriod->setWhatsThis(tr("Selects how often the new version "
                                              "check should be performed. Note that if you want to completely "
                                              "disable this check, just clear the above check box."));
-    m_pUpdateDateLabel->setText(tr("Next Check:"));
-    m_pUpdateFilterLabel->setText(tr("Check for:"));
+    m_pLabelUpdateDate->setText(tr("Next Check:"));
+    m_pLabelUpdateFilter->setText(tr("Check for:"));
     m_pRadioUpdateFilterStable->setWhatsThis(tr("<p>Choose this if you only wish to "
                                                 "be notified about stable updates to VirtualBox.</p>"));
     m_pRadioUpdateFilterStable->setText(tr("&Stable Release Versions"));
@@ -194,57 +193,45 @@ void UIGlobalSettingsUpdate::retranslateUi()
                                                "all new VirtualBox releases and pre-release versions of VirtualBox.</p>"));
     m_pRadioUpdateFilterBetas->setText(tr("All New Releases and &Pre-Releases"));
 
-    /* Retranslate m_pComboBoxUpdatePeriod combobox: */
-    int iCurrenIndex = m_pComboBoxUpdatePeriod->currentIndex();
-    m_pComboBoxUpdatePeriod->clear();
+    /* Retranslate m_pComboUpdatePeriod combobox: */
+    int iCurrenIndex = m_pComboUpdatePeriod->currentIndex();
+    m_pComboUpdatePeriod->clear();
     VBoxUpdateData::populate();
-    m_pComboBoxUpdatePeriod->insertItems(0, VBoxUpdateData::list());
-    m_pComboBoxUpdatePeriod->setCurrentIndex(iCurrenIndex == -1 ? 0 : iCurrenIndex);
+    m_pComboUpdatePeriod->insertItems(0, VBoxUpdateData::list());
+    m_pComboUpdatePeriod->setCurrentIndex(iCurrenIndex == -1 ? 0 : iCurrenIndex);
 }
 
 void UIGlobalSettingsUpdate::sltHandleUpdateToggle(bool fEnabled)
 {
     /* Update activity status: */
-    m_pContainerUpdate->setEnabled(fEnabled);
+    m_pWidgetUpdateSettings->setEnabled(fEnabled);
 
     /* Update time of next check: */
     sltHandleUpdatePeriodChange();
 
-    /* Temporary remember branch type if was switched off: */
-    if (!fEnabled)
-    {
-        m_pLastChosenRadio = m_pRadioUpdateFilterBetas->isChecked() ? m_pRadioUpdateFilterBetas :
-                             m_pRadioUpdateFilterEvery->isChecked() ? m_pRadioUpdateFilterEvery : m_pRadioUpdateFilterStable;
-    }
-
-    /* Check/uncheck last selected radio depending on activity status: */
-    if (m_pLastChosenRadio)
-        m_pLastChosenRadio->setChecked(fEnabled);
+    /* Choose stable branch if nothing chosen: */
+    if (   fEnabled
+        && !m_pRadioUpdateFilterStable->isChecked()
+        && !m_pRadioUpdateFilterEvery->isChecked()
+        && !m_pRadioUpdateFilterBetas->isChecked())
+        m_pRadioUpdateFilterStable->setChecked(true);
 }
 
 void UIGlobalSettingsUpdate::sltHandleUpdatePeriodChange()
 {
     const VBoxUpdateData data(periodType(), branchType());
-    m_pUpdateDateText->setText(data.date());
+    m_pFieldUpdateDate->setText(data.date());
 }
 
 void UIGlobalSettingsUpdate::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalUpdate;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Layout/widgets created in the .ui file. */
-    AssertPtrReturnVoid(m_pCheckBoxUpdate);
-    AssertPtrReturnVoid(m_pComboBoxUpdatePeriod);
-    {
-        /* Configure widgets: */
-        connect(m_pCheckBoxUpdate, &QCheckBox::toggled, this, &UIGlobalSettingsUpdate::sltHandleUpdateToggle);
-        connect(m_pComboBoxUpdatePeriod, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
-                this, &UIGlobalSettingsUpdate::sltHandleUpdatePeriodChange);
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -252,77 +239,96 @@ void UIGlobalSettingsUpdate::prepare()
 
 void UIGlobalSettingsUpdate::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIGlobalSettingsUpdate"));
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
-    pMainLayout->setObjectName(QStringLiteral("gridLayout"));
-    m_pCheckBoxUpdate = new QCheckBox();
-    m_pCheckBoxUpdate->setObjectName(QStringLiteral("m_pCheckBoxUpdate"));
-    pMainLayout->addWidget(m_pCheckBoxUpdate, 0, 0, 1, 2);
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setRowStretch(2, 1);
 
-    QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    pMainLayout->addItem(pSpacerItem, 1, 0, 1, 1);
+        /* Prepare update check-box: */
+        m_pCheckBoxUpdate = new QCheckBox(this);
+        if (m_pCheckBoxUpdate)
+            pLayoutMain->addWidget(m_pCheckBoxUpdate, 0, 0, 1, 2);
 
-    m_pContainerUpdate = new QWidget();
-    m_pContainerUpdate->setObjectName(QStringLiteral("m_pContainerUpdate"));
-    QGridLayout *pContainerLayoutUpdate = new QGridLayout(m_pContainerUpdate);
-    pContainerLayoutUpdate->setContentsMargins(0, 0, 0, 0);
-    pContainerLayoutUpdate->setObjectName(QStringLiteral("pContainerLayoutUpdate"));
-    pContainerLayoutUpdate->setContentsMargins(0, 0, 0, 0);
-    m_pUpdatePeriodLabel = new QLabel(m_pContainerUpdate);
-    m_pUpdatePeriodLabel->setObjectName(QStringLiteral("m_pUpdatePeriodLabel"));
-    m_pUpdatePeriodLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutUpdate->addWidget(m_pUpdatePeriodLabel, 0, 0, 1, 1);
+        /* Prepare 20-px shifting spacer: */
+        QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        if (pSpacerItem)
+            pLayoutMain->addItem(pSpacerItem, 1, 0);
 
-    QHBoxLayout *pHBoxLayout = new QHBoxLayout();
-    pHBoxLayout->setObjectName(QStringLiteral("pHBoxLayout"));
-    m_pComboBoxUpdatePeriod = new QComboBox(m_pContainerUpdate);
-    m_pComboBoxUpdatePeriod->setObjectName(QStringLiteral("m_pComboBoxUpdatePeriod"));
-    QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pComboBoxUpdatePeriod->sizePolicy().hasHeightForWidth());
-    m_pComboBoxUpdatePeriod->setSizePolicy(sizePolicy);
-    pHBoxLayout->addWidget(m_pComboBoxUpdatePeriod);
+        /* Prepare update settings widget: */
+        m_pWidgetUpdateSettings = new QWidget(this);
+        if (m_pWidgetUpdateSettings)
+        {
+            /* Prepare update settings widget layout: */
+            QGridLayout *pLayoutUpdateSettings = new QGridLayout(m_pWidgetUpdateSettings);
+            if (pLayoutUpdateSettings)
+            {
+                pLayoutUpdateSettings->setContentsMargins(0, 0, 0, 0);
+                pLayoutUpdateSettings->setColumnStretch(2, 1);
+                pLayoutUpdateSettings->setRowStretch(5, 1);
 
-    QSpacerItem *pSpacerItem1 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    pHBoxLayout->addItem(pSpacerItem1);
+                /* Prepare update period label: */
+                m_pLabelUpdatePeriod = new QLabel(m_pWidgetUpdateSettings);
+                if (m_pLabelUpdatePeriod)
+                {
+                    m_pLabelUpdatePeriod->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutUpdateSettings->addWidget(m_pLabelUpdatePeriod, 0, 0);
+                }
+                /* Prepare update period combo: */
+                m_pComboUpdatePeriod = new QComboBox(m_pWidgetUpdateSettings);
+                if (m_pComboUpdatePeriod)
+                {
+                    if (m_pLabelUpdatePeriod)
+                        m_pLabelUpdatePeriod->setBuddy(m_pComboUpdatePeriod);
+                    m_pComboUpdatePeriod->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+                    m_pComboUpdatePeriod->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
-    pContainerLayoutUpdate->addLayout(pHBoxLayout, 0, 1, 1, 1);
+                    pLayoutUpdateSettings->addWidget(m_pComboUpdatePeriod, 0, 1);
+                }
 
-    m_pUpdateDateLabel = new QLabel(m_pContainerUpdate);
-    m_pUpdateDateLabel->setObjectName(QStringLiteral("m_pUpdateDateLabel"));
-    m_pUpdateDateLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutUpdate->addWidget(m_pUpdateDateLabel, 1, 0, 1, 1);
+                /* Prepare update date label: */
+                m_pLabelUpdateDate = new QLabel(m_pWidgetUpdateSettings);
+                if (m_pLabelUpdateDate)
+                {
+                    m_pLabelUpdateDate->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutUpdateSettings->addWidget(m_pLabelUpdateDate, 1, 0);
+                }
+                /* Prepare update date field: */
+                m_pFieldUpdateDate = new QLabel(m_pWidgetUpdateSettings);
+                if (m_pFieldUpdateDate)
+                    pLayoutUpdateSettings->addWidget(m_pFieldUpdateDate, 1, 1);
 
-    m_pUpdateDateText = new QLabel(m_pContainerUpdate);
-    m_pUpdateDateText->setObjectName(QStringLiteral("m_pUpdateDateText"));
-    pContainerLayoutUpdate->addWidget(m_pUpdateDateText, 1, 1, 1, 1);
+                /* Prepare update date label: */
+                m_pLabelUpdateFilter = new QLabel(m_pWidgetUpdateSettings);
+                if (m_pLabelUpdateFilter)
+                {
+                    m_pLabelUpdateFilter->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutUpdateSettings->addWidget(m_pLabelUpdateFilter, 2, 0);
+                }
+                /* Prepare 'stable' radio-button: */
+                m_pRadioUpdateFilterStable = new QRadioButton(m_pWidgetUpdateSettings);
+                if (m_pRadioUpdateFilterStable)
+                    pLayoutUpdateSettings->addWidget(m_pRadioUpdateFilterStable, 2, 1);
+                /* Prepare 'every' radio-button: */
+                m_pRadioUpdateFilterEvery = new QRadioButton(m_pWidgetUpdateSettings);
+                if (m_pRadioUpdateFilterEvery)
+                    pLayoutUpdateSettings->addWidget(m_pRadioUpdateFilterEvery, 3, 1);
+                /* Prepare 'betas' radio-button: */
+                m_pRadioUpdateFilterBetas = new QRadioButton(m_pWidgetUpdateSettings);
+                if (m_pRadioUpdateFilterBetas)
+                    pLayoutUpdateSettings->addWidget(m_pRadioUpdateFilterBetas, 4, 1);
+            }
 
-    m_pUpdateFilterLabel = new QLabel(m_pContainerUpdate);
-    m_pUpdateFilterLabel->setObjectName(QStringLiteral("m_pUpdateFilterLabel"));
-    m_pUpdateFilterLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pContainerLayoutUpdate->addWidget(m_pUpdateFilterLabel, 2, 0, 1, 1);
+            pLayoutMain->addWidget(m_pWidgetUpdateSettings, 1, 1);
+        }
+    }
+}
 
-    m_pRadioUpdateFilterStable = new QRadioButton(m_pContainerUpdate);
-    m_pRadioUpdateFilterStable->setObjectName(QStringLiteral("m_pRadioUpdateFilterStable"));
-    pContainerLayoutUpdate->addWidget(m_pRadioUpdateFilterStable, 2, 1, 1, 1);
-
-    m_pRadioUpdateFilterEvery = new QRadioButton(m_pContainerUpdate);
-    m_pRadioUpdateFilterEvery->setObjectName(QStringLiteral("m_pRadioUpdateFilterEvery"));
-    pContainerLayoutUpdate->addWidget(m_pRadioUpdateFilterEvery, 3, 1, 1, 1);
-
-    m_pRadioUpdateFilterBetas = new QRadioButton(m_pContainerUpdate);
-    m_pRadioUpdateFilterBetas->setObjectName(QStringLiteral("m_pRadioUpdateFilterBetas"));
-    pContainerLayoutUpdate->addWidget(m_pRadioUpdateFilterBetas, 4, 1, 1, 1);
-
-    pMainLayout->addWidget(m_pContainerUpdate, 1, 1, 1, 1);
-
-    QSpacerItem *pSpacerItem2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pMainLayout->addItem(pSpacerItem2, 2, 0, 1, 2);
-
-    m_pUpdatePeriodLabel->setBuddy(m_pComboBoxUpdatePeriod);
+void UIGlobalSettingsUpdate::prepareConnections()
+{
+    connect(m_pCheckBoxUpdate, &QCheckBox::toggled, this, &UIGlobalSettingsUpdate::sltHandleUpdateToggle);
+    connect(m_pComboUpdatePeriod, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, &UIGlobalSettingsUpdate::sltHandleUpdatePeriodChange);
 }
 
 void UIGlobalSettingsUpdate::cleanup()
@@ -335,7 +341,7 @@ void UIGlobalSettingsUpdate::cleanup()
 VBoxUpdateData::PeriodType UIGlobalSettingsUpdate::periodType() const
 {
     const VBoxUpdateData::PeriodType result = m_pCheckBoxUpdate->isChecked() ?
-        (VBoxUpdateData::PeriodType)m_pComboBoxUpdatePeriod->currentIndex() : VBoxUpdateData::PeriodNever;
+        (VBoxUpdateData::PeriodType)m_pComboUpdatePeriod->currentIndex() : VBoxUpdateData::PeriodNever;
     return result == VBoxUpdateData::PeriodUndefined ? VBoxUpdateData::Period1Day : result;
 }
 
