@@ -3446,8 +3446,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
             pHlp->pfnPrintf(pHlp, "    Destination mode                        = %#x\n",    MsiAddr.n.u1DestMode);
             pHlp->pfnPrintf(pHlp, "    Redirection hint                        = %#x\n",    MsiAddr.n.u1RedirHint);
             pHlp->pfnPrintf(pHlp, "    Destination Id                          = %#x\n",    MsiAddr.n.u8DestId);
-            pHlp->pfnPrintf(pHlp, "    Address                                 = %#Rx32\n", MsiAddr.n.u12Addr);
-            pHlp->pfnPrintf(pHlp, "    Address (Hi) / Rsvd?                    = %#Rx32\n", MsiAddr.n.u32Rsvd0);
+            pHlp->pfnPrintf(pHlp, "    Address                                 = %#RX32\n", MsiAddr.n.u12Addr);
+            pHlp->pfnPrintf(pHlp, "    Address (Hi) / Rsvd?                    = %#RX32\n", MsiAddr.n.u32Rsvd0);
         }
     }
     /* MSI Data. */
@@ -3496,7 +3496,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
             pHlp->pfnPrintf(pHlp, "    Interrupt destination                   = %#RX64\n",
                             RT_MAKE_U64(XtGenIntrCtrl.n.u24X2ApicIntrDstLo, XtGenIntrCtrl.n.u7X2ApicIntrDstHi));
             pHlp->pfnPrintf(pHlp, "    Interrupt vector                        = %#x\n", XtGenIntrCtrl.n.u8X2ApicIntrVector);
-            pHlp->pfnPrintf(pHlp, "    Interrupt delivery mode                 = %#x\n",
+            pHlp->pfnPrintf(pHlp, "    Interrupt delivery mode                 = %s\n",
                             !XtGenIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
         }
     }
@@ -3511,7 +3511,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
             pHlp->pfnPrintf(pHlp, "   Interrupt destination                    = %#RX64\n",
                             RT_MAKE_U64(XtPprIntrCtrl.n.u24X2ApicIntrDstLo, XtPprIntrCtrl.n.u7X2ApicIntrDstHi));
             pHlp->pfnPrintf(pHlp, "   Interrupt vector                         = %#x\n", XtPprIntrCtrl.n.u8X2ApicIntrVector);
-            pHlp->pfnPrintf(pHlp, "   Interrupt delivery mode                  = %#x\n",
+            pHlp->pfnPrintf(pHlp, "   Interrupt delivery mode                  = %s\n",
                             !XtPprIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
         }
     }
@@ -3526,7 +3526,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
             pHlp->pfnPrintf(pHlp, "    Interrupt destination                   = %#RX64\n",
                             RT_MAKE_U64(XtGALogIntrCtrl.n.u24X2ApicIntrDstLo, XtGALogIntrCtrl.n.u7X2ApicIntrDstHi));
             pHlp->pfnPrintf(pHlp, "    Interrupt vector                        = %#x\n", XtGALogIntrCtrl.n.u8X2ApicIntrVector);
-            pHlp->pfnPrintf(pHlp, "    Interrupt delivery mode                 = %#x\n",
+            pHlp->pfnPrintf(pHlp, "    Interrupt delivery mode                 = %s\n",
                             !XtGALogIntrCtrl.n.u8X2ApicIntrVector ? "fixed" : "arbitrated");
         }
     }
