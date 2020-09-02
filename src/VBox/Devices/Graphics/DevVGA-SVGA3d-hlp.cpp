@@ -23,7 +23,8 @@
 #include <iprt/errcore.h>
 #include <iprt/types.h>
 
-#include "DevVGA-SVGA.h"
+#include "vmsvga/svga3d_reg.h"
+#include "vmsvga/svga3d_shaderdefs.h"
 
 typedef struct VMSVGA3DSHADERPARSECONTEXT
 {
@@ -96,11 +97,11 @@ static int vmsvga3dShaderParseSrcToken(VMSVGA3DSHADERPARSECONTEXT *pCtx, uint32_
     SVGA3dShaderSrcToken src;
     src.value = *pToken;
 
-    SVGA3dShaderRegType const regType = (SVGA3dShaderRegType)(src.type_upper << 3 | src.type_lower);
+    SVGA3dShaderRegType const regType = (SVGA3dShaderRegType)(src.s.type_upper << 3 | src.s.type_lower);
     Log3(("Src: type %d, r0 %d, srcMod %d, swizzle 0x%x, r1 %d, relAddr %d, num %d\n",
-          regType, src.reserved0, src.srcMod, src.swizzle, src.reserved1, src.relAddr, src.num));
+          regType, src.s.reserved0, src.s.srcMod, src.s.swizzle, src.s.reserved1, src.s.relAddr, src.s.num));
 
-    return vmsvga3dShaderParseRegOffset(pCtx, true, regType, src.num);
+    return vmsvga3dShaderParseRegOffset(pCtx, true, regType, src.s.num);
 }
 #endif
 
@@ -111,11 +112,11 @@ static int vmsvga3dShaderParseDestToken(VMSVGA3DSHADERPARSECONTEXT *pCtx, uint32
     SVGA3dShaderDestToken dest;
     dest.value = *pToken;
 
-    SVGA3dShaderRegType const regType = (SVGA3dShaderRegType)(dest.type_upper << 3 | dest.type_lower);
+    SVGA3dShaderRegType const regType = (SVGA3dShaderRegType)(dest.s.type_upper << 3 | dest.s.type_lower);
     Log3(("Dest: type %d, r0 %d, shfScale %d, dstMod %d, mask 0x%x, r1 %d, relAddr %d, num %d\n",
-          regType, dest.reserved0, dest.shfScale, dest.dstMod, dest.mask, dest.reserved1, dest.relAddr, dest.num));
+          regType, dest.s.reserved0, dest.s.shfScale, dest.s.dstMod, dest.s.mask, dest.s.reserved1, dest.s.relAddr, dest.s.num));
 
-    return vmsvga3dShaderParseRegOffset(pCtx, false, regType, dest.num);
+    return vmsvga3dShaderParseRegOffset(pCtx, false, regType, dest.s.num);
 }
 
 static int vmsvga3dShaderParseDclArgs(VMSVGA3DSHADERPARSECONTEXT *pCtx, uint32_t const *pToken)
@@ -124,7 +125,7 @@ static int vmsvga3dShaderParseDclArgs(VMSVGA3DSHADERPARSECONTEXT *pCtx, uint32_t
     a.values[0] = pToken[0]; // declaration
     a.values[1] = pToken[1]; // dst
 
-    return vmsvga3dShaderParseDestToken(pCtx, (uint32_t *)&a.dst);
+    return vmsvga3dShaderParseDestToken(pCtx, (uint32_t *)&a.s2.dst);
 }
 
 /* Parse the shader code
@@ -158,11 +159,11 @@ int vmsvga3dShaderParse(uint32_t cbShaderData, uint32_t const *pShaderData)
 
     /* "The first token must be a version token." */
     SVGA3dShaderVersion const *pVersion = (SVGA3dShaderVersion const *)paTokensStart;
-    ASSERT_GUEST_RETURN(   pVersion->type == SVGA3D_VS_TYPE
-                        || pVersion->type == SVGA3D_PS_TYPE, VERR_PARSE_ERROR);
+    ASSERT_GUEST_RETURN(   pVersion->s.type == SVGA3D_VS_TYPE
+                        || pVersion->s.type == SVGA3D_PS_TYPE, VERR_PARSE_ERROR);
 
     VMSVGA3DSHADERPARSECONTEXT ctx;
-    ctx.type = pVersion->type;
+    ctx.type = pVersion->s.type;
 
     /* Scan the tokens. Immediately return an error code on any unexpected data. */
     const uint32_t *paTokensEnd = &paTokensStart[cTokens];
@@ -173,23 +174,23 @@ int vmsvga3dShaderParse(uint32_t cbShaderData, uint32_t const *pShaderData)
 
         /* Figure out the instruction length, which is how many tokens follow the instruction token. */
         uint32_t cInstLen;
-        if (token.op == SVGA3DOP_COMMENT)
-            cInstLen = token.comment_size;
+        if (token.s1.op == SVGA3DOP_COMMENT)
+            cInstLen = token.s.comment_size;
         else
-            cInstLen = token.size;
+            cInstLen = token.s1.size;
 
-        Log3(("op %d, cInstLen %d\n", token.op, cInstLen));
+        Log3(("op %d, cInstLen %d\n", token.s1.op, cInstLen));
 
         ASSERT_GUEST_RETURN(cInstLen < paTokensEnd - pToken, VERR_PARSE_ERROR);
 
-        if (token.op == SVGA3DOP_END)
+        if (token.s1.op == SVGA3DOP_END)
         {
             ASSERT_GUEST_RETURN(token.value == 0x0000FFFF, VERR_PARSE_ERROR);
             break;
         }
 
         int rc;
-        switch (token.op)
+        switch (token.s1.op)
         {
             case SVGA3DOP_DCL:
                 ASSERT_GUEST_RETURN(cInstLen == 2, VERR_PARSE_ERROR);

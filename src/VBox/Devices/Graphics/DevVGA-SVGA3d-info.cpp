@@ -72,7 +72,7 @@ static const VMSVGAINFOENUM g_aSVGA3dSurfaceFormats[] =
     { SVGA3D_BUMPU8V8           , "BUMPU8V8" },
     { SVGA3D_BUMPL6V5U5         , "BUMPL6V5U5" },
     { SVGA3D_BUMPX8L8V8U8       , "BUMPX8L8V8U8" },
-    { SVGA3D_FORMAT_DEAD1       , "FORMAT_DEAD1" },
+    { SVGA3D_BUMPL8V8U8         , "BUMPL8V8U8" },
     { SVGA3D_ARGB_S10E5         , "ARGB_S10E5" },
     { SVGA3D_ARGB_S23E8         , "ARGB_S23E8" },
     { SVGA3D_A2R10G10B10        , "A2R10G10B10" },
@@ -95,8 +95,8 @@ static const VMSVGAINFOENUM g_aSVGA3dSurfaceFormats[] =
     { SVGA3D_YUY2               , "YUY2" },
     { SVGA3D_NV12               , "NV12" },
     { SVGA3D_AYUV               , "AYUV" },
-    { SVGA3D_ATI1               , "ATI1" },
-    { SVGA3D_ATI2               , "ATI2" },
+    { SVGA3D_BC4_UNORM          , "BC4_UNORM" },
+    { SVGA3D_BC5_UNORM          , "BC5_UNORM" },
     { SVGA3D_Z_DF16             , "Z_DF16" },
     { SVGA3D_Z_DF24             , "Z_DF24" },
     { SVGA3D_Z_D24S8_INT        , "Z_D24S8_INT" },
@@ -681,8 +681,7 @@ const char *vmsvgaLookupEnum(int32_t iValue, PCVMSVGAINFOENUMMAP pEnumMap)
     {
         *pEnumMap->pfAsserted = true;
         for (uint32_t i = 1; i < pEnumMap->cValues; i++)
-            AssertMsg(paValues[i - 1].iValue <= paValues[i].iValue,
-                      ("i = %d: %d followed by %d", i, paValues[i - 1].iValue, paValues[i].iValue));
+            Assert(paValues[i - 1].iValue <= paValues[i].iValue);
     }
 #endif
 
@@ -1010,7 +1009,7 @@ void vmsvga3dAsciiPrint(PFNVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
             case SVGA3D_BUMPU8V8:
             case SVGA3D_BUMPL6V5U5:
             case SVGA3D_BUMPX8L8V8U8:
-            case SVGA3D_FORMAT_DEAD1:
+            case SVGA3D_BUMPL8V8U8:
             case SVGA3D_ARGB_S10E5:
             case SVGA3D_ARGB_S23E8:
             case SVGA3D_V8U8:
@@ -1028,8 +1027,8 @@ void vmsvga3dAsciiPrint(PFNVMSVGAASCIIPRINTLN pfnPrintLine, void *pvUser, void c
             case SVGA3D_YUY2:
             case SVGA3D_NV12:
             case SVGA3D_AYUV:
-            case SVGA3D_ATI1:
-            case SVGA3D_ATI2:
+            case SVGA3D_BC4_UNORM:
+            case SVGA3D_BC5_UNORM:
             case SVGA3D_Z_DF16:
             case SVGA3D_Z_DF24:
             case SVGA3D_Z_D24S8_INT:
@@ -1226,6 +1225,7 @@ char *vmsvga3dFormatRenderState(char *pszBuffer, size_t cbBuffer, SVGA3dRenderSt
        "b" "DSTBLENDALPHA",                 /*  SVGA3dBlendOp  */
        "e" "BLENDEQUATIONALPHA",            /*  SVGA3dBlendEquation  */
        "*" "TRANSPARENCYANTIALIAS",         /*  SVGA3dTransparencyAntialiasType  */
+       "f" "LINEAA",                        /*  SVGA3dBool  */
        "r" "LINEWIDTH",                     /*  float  */
     };
 
@@ -1264,7 +1264,7 @@ char *vmsvga3dFormatRenderState(char *pszBuffer, size_t cbBuffer, SVGA3dRenderSt
                     break;
                 case 'c': //SVGA3dColor, SVGA3dColorMask
                     RTStrPrintf(pszBuffer, cbBuffer, "%s = RGBA(%d,%d,%d,%d) (%#x)", pszName,
-                                uValue.Color.red, uValue.Color.green, uValue.Color.blue, uValue.Color.alpha, uValue.u);
+                                uValue.Color.s.red, uValue.Color.s.green, uValue.Color.s.blue, uValue.Color.s.alpha, uValue.u);
                     break;
                 case 'w': //SVGA3dWrapFlags
                     RTStrPrintf(pszBuffer, cbBuffer, "%s = %#x%s", pszName, uValue.u,
@@ -1391,7 +1391,7 @@ char *vmsvga3dFormatTextureState(char *pszBuffer, size_t cbBuffer, SVGA3dTexture
 
                 case 'c': //SVGA3dColor, SVGA3dColorMask
                     RTStrPrintf(pszBuffer, cbBuffer, "%s = RGBA(%d,%d,%d,%d) (%#x)", pszName,
-                                uValue.Color.red, uValue.Color.green, uValue.Color.blue, uValue.Color.alpha, uValue.u);
+                                uValue.Color.s.red, uValue.Color.s.green, uValue.Color.s.blue, uValue.Color.s.alpha, uValue.u);
                     break;
 
                 case 'e': //SVGA3dTextureAddress

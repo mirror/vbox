@@ -86,6 +86,7 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
 # define VBOX_VMSVGA3D_GL_HACK_LEVEL 0x103
 #endif
 
+#include "vmsvga/svga3d_shaderdefs.h"
 #ifdef VMSVGA3D_OPENGL
 # include "vmsvga_glext/glext.h"
 # include "shaderlib/shaderlib.h"
@@ -861,9 +862,7 @@ typedef struct VMSVGA3DCONTEXT
         SVGA3dTextureState      aTextureStates[SVGA3D_MAX_SAMPLERS][SVGA3D_TS_MAX];
         VMSVGATRANSFORMSTATE    aTransformState[SVGA3D_TRANSFORM_MAX];
         VMSVGAMATERIALSTATE     aMaterial[SVGA3D_FACE_MAX];
-        /* The aClipPlane array has a wrong (greater) size. Keep it for now because the array is a part of the saved state. */
-        /** @todo Replace SVGA3D_CLIPPLANE_5 with SVGA3D_NUM_CLIPPLANES and increase the saved state version. */
-        VMSVGACLIPPLANESTATE    aClipPlane[SVGA3D_CLIPPLANE_5];
+        VMSVGACLIPPLANESTATE    aClipPlane[SVGA3D_CLIPPLANE_MAX];
         VMSVGALIGHTSTATE        aLightData[SVGA3D_MAX_LIGHTS];
 
         uint32_t                aRenderTargets[SVGA3D_RT_MAX];

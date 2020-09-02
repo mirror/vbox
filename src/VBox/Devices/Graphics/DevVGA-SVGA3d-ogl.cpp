@@ -1096,8 +1096,8 @@ int vmsvga3dPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
    SVGA3D_DEVCAP_SURFACEFMT_Z_DF16                 = 79,
    SVGA3D_DEVCAP_SURFACEFMT_Z_DF24                 = 80,
    SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8_INT            = 81,
-   SVGA3D_DEVCAP_SURFACEFMT_ATI1                   = 82,
-   SVGA3D_DEVCAP_SURFACEFMT_ATI2                   = 83,
+   SVGA3D_DEVCAP_SURFACEFMT_BC4_UNORM              = 82,
+   SVGA3D_DEVCAP_SURFACEFMT_BC5_UNORM              = 83,
 #endif
 
     LogRel(("VMSVGA3d: Capabilities:\n"));
@@ -1623,8 +1623,8 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, uint32_t idx3dCaps, uint32_t *pu32Val
         break;
 
     /* Linux: Not referenced in current sources. */
-    case SVGA3D_DEVCAP_SURFACEFMT_ATI1:
-    case SVGA3D_DEVCAP_SURFACEFMT_ATI2:
+    case SVGA3D_DEVCAP_SURFACEFMT_BC4_UNORM:
+    case SVGA3D_DEVCAP_SURFACEFMT_BC5_UNORM:
         Log(("CAPS: Unknown CAP %s\n", vmsvga3dGetCapString(idx3dCaps)));
         rc = VERR_INVALID_PARAMETER;
         *pu32Val = 0;
@@ -1811,7 +1811,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         return D3DFMT_L6V5U5;
     case SVGA3D_BUMPX8L8V8U8:
         return D3DFMT_X8L8V8U8;
-    case SVGA3D_FORMAT_DEAD1:
+    case SVGA3D_BUMPL8V8U8:
         /* No corresponding D3D9 equivalent. */
         AssertFailedReturn(D3DFMT_UNKNOWN);
     /* signed bump-map formats */
@@ -1962,8 +1962,8 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
     case SVGA3D_AYUV:
         return (D3DFORMAT)MAKEFOURCC('A', 'Y', 'U', 'V');
 
-    case SVGA3D_ATI1:
-    case SVGA3D_ATI2:
+    case SVGA3D_BC4_UNORM:
+    case SVGA3D_BC5_UNORM:
         /* Unknown; only in DX10 & 11 */
         break;
 #endif
@@ -4478,7 +4478,8 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
 
         case SVGA3D_RS_CLIPPLANEENABLE:        /* SVGA3dClipPlanes */
         {
-            for (uint32_t j = 0; j < SVGA3D_NUM_CLIPPLANES; j++)
+            AssertCompile(SVGA3D_CLIPPLANE_MAX == (1 << 5));
+            for (uint32_t j = 0; j <= 5; j++)
             {
                 if (pRenderState[i].uintValue & RT_BIT(j))
                     glEnable(GL_CLIP_PLANE0 + j);
@@ -4526,7 +4527,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
             mode.uintValue = pRenderState[i].uintValue;
 
             enableCap = GL_FOG_MODE;
-            switch (mode.function)
+            switch (mode.s.function)
             {
             case SVGA3D_FOGFUNC_EXP:
                 val = GL_EXP;
@@ -4538,15 +4539,15 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 val = GL_LINEAR;
                 break;
             default:
-                AssertMsgFailedReturn(("Unexpected fog function %d\n", mode.function), VERR_INTERNAL_ERROR);
+                AssertMsgFailedReturn(("Unexpected fog function %d\n", mode.s.function), VERR_INTERNAL_ERROR);
                 break;
             }
 
             /** @todo how to switch between vertex and pixel fog modes??? */
-            Assert(mode.type == SVGA3D_FOGTYPE_PIXEL);
+            Assert(mode.s.type == SVGA3D_FOGTYPE_PIXEL);
 #if 0
             /* The fog type determines the render state. */
-            switch (mode.type)
+            switch (mode.s.type)
             {
             case SVGA3D_FOGTYPE_VERTEX:
                 renderState = D3DRS_FOGVERTEXMODE;
@@ -4555,13 +4556,13 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 renderState = D3DRS_FOGTABLEMODE;
                 break;
             default:
-                AssertMsgFailedReturn(("Unexpected fog type %d\n", mode.type), VERR_INTERNAL_ERROR);
+                AssertMsgFailedReturn(("Unexpected fog type %d\n", mode.s.type), VERR_INTERNAL_ERROR);
                 break;
             }
 #endif
 
             /* Set the fog base to depth or range. */
-            switch (mode.base)
+            switch (mode.s.base)
             {
             case SVGA3D_FOGBASE_DEPTHBASED:
                 glFogi(GL_FOG_COORD_SRC, GL_FRAGMENT_DEPTH);
@@ -4573,7 +4574,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 break;
             default:
                 /* ignore */
-                AssertMsgFailed(("Unexpected fog base %d\n", mode.base));
+                AssertMsgFailed(("Unexpected fog base %d\n", mode.s.base));
                 break;
             }
             break;
@@ -4585,7 +4586,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
 
             mode.uintValue = pRenderState[i].uintValue;
 
-            switch (mode.mode)
+            switch (mode.s.mode)
             {
             case SVGA3D_FILLMODE_POINT:
                 val = GL_POINT;
@@ -4597,11 +4598,11 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 val = GL_FILL;
                 break;
             default:
-                AssertMsgFailedReturn(("Unexpected fill mode %d\n", mode.mode), VERR_INTERNAL_ERROR);
+                AssertMsgFailedReturn(("Unexpected fill mode %d\n", mode.s.mode), VERR_INTERNAL_ERROR);
                 break;
             }
             /* Only front and back faces. Also recent Mesa guest drivers initialize the 'face' to zero. */
-            ASSERT_GUEST(mode.face == SVGA3D_FACE_FRONT_BACK || mode.face == SVGA3D_FACE_INVALID);
+            ASSERT_GUEST(mode.s.face == SVGA3D_FACE_FRONT_BACK || mode.s.face == SVGA3D_FACE_INVALID);
             glPolygonMode(GL_FRONT_AND_BACK, val);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
@@ -4637,7 +4638,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
             */
             break;
 
-        case SVGA3D_RS_ANTIALIASEDLINEENABLE:  /* SVGA3dBool */
+        case SVGA3D_RS_LINEAA:                 /* SVGA3dBool */
             enableCap = GL_LINE_SMOOTH;
             val = pRenderState[i].uintValue;
             break;
@@ -5040,10 +5041,10 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
 
             mask.uintValue = pRenderState[i].uintValue;
 
-            red     = mask.red;
-            green   = mask.green;
-            blue    = mask.blue;
-            alpha   = mask.alpha;
+            red     = mask.s.red;
+            green   = mask.s.green;
+            blue    = mask.s.blue;
+            alpha   = mask.s.alpha;
 
             glColorMask(red, green, blue, alpha);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -5113,6 +5114,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
             break;
 
         case SVGA3D_RS_MULTISAMPLEMASK:        /* uint32_t */
+        case SVGA3D_RS_ANTIALIASEDLINEENABLE:  /* SVGA3dBool */
             Log(("vmsvga3dSetRenderState: WARNING not applicable??!!\n"));
             break;
 
@@ -6201,7 +6203,7 @@ int vmsvga3dSetClipPlane(PVGASTATECC pThisCC, uint32_t cid,  uint32_t index, flo
     double                oglPlane[4];
 
     Log(("vmsvga3dSetClipPlane cid=%u %d (%d,%d)(%d,%d)\n", cid, index, (unsigned)(plane[0] * 100.0), (unsigned)(plane[1] * 100.0), (unsigned)(plane[2] * 100.0), (unsigned)(plane[3] * 100.0)));
-    AssertReturn(index < SVGA3D_NUM_CLIPPLANES, VERR_INVALID_PARAMETER);
+    AssertReturn(index < SVGA3D_CLIPPLANE_MAX, VERR_INVALID_PARAMETER);
 
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
@@ -6803,7 +6805,7 @@ static int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATECC pThisCC, PVMSVGA
                                                   (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-                GLuint divisor = paVertexDivisors && paVertexDivisors[index].instanceData ? 1 : 0;
+                GLuint divisor = paVertexDivisors && paVertexDivisors[index].s.instanceData ? 1 : 0;
                 pState->ext.glVertexAttribDivisor(index, divisor);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
@@ -7067,16 +7069,16 @@ int vmsvga3dDrawPrimitives(PVGASTATECC pThisCC, uint32_t cid, uint32_t numVertex
     uint32_t cInstances = 0;
     for (uint32_t iVertexDivisor = 0; iVertexDivisor < cVertexDivisor; ++iVertexDivisor)
     {
-        if (pVertexDivisor[iVertexDivisor].indexedData)
+        if (pVertexDivisor[iVertexDivisor].s.indexedData)
         {
             if (cInstances == 0)
-                cInstances = pVertexDivisor[iVertexDivisor].count;
+                cInstances = pVertexDivisor[iVertexDivisor].s.count;
             else
-                Assert(cInstances == pVertexDivisor[iVertexDivisor].count);
+                Assert(cInstances == pVertexDivisor[iVertexDivisor].s.count);
         }
-        else if (pVertexDivisor[iVertexDivisor].instanceData)
+        else if (pVertexDivisor[iVertexDivisor].s.instanceData)
         {
-            Assert(pVertexDivisor[iVertexDivisor].count == 1);
+            Assert(pVertexDivisor[iVertexDivisor].s.count == 1);
         }
     }
 
@@ -7580,9 +7582,6 @@ int vmsvga3dShaderSetConst(PVGASTATECC pThisCC, uint32_t cid, uint32_t reg, SVGA
             case SVGA3D_CONST_TYPE_BOOL:
                 Log(("ConstantB %d: value=%d, %d, %d, %d\n", reg + i, pValues[i*4 + 0], pValues[i*4 + 1], pValues[i*4 + 2], pValues[i*4 + 3]));
                 break;
-
-            default:
-                AssertFailedReturn(VERR_INVALID_PARAMETER);
         }
 #endif
         vmsvga3dSaveShaderConst(pContext, reg + i, type, ctype, pValues[i*4 + 0], pValues[i*4 + 1], pValues[i*4 + 2], pValues[i*4 + 3]);

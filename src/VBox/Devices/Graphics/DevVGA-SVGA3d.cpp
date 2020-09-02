@@ -157,6 +157,7 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
     case SVGA3D_BUMPU8V8:
     case SVGA3D_BUMPL6V5U5:
     case SVGA3D_BUMPX8L8V8U8:
+    case SVGA3D_BUMPL8V8U8:
     case SVGA3D_V8U8:
     case SVGA3D_Q8W8V8U8:
     case SVGA3D_CxV8U8:
@@ -191,8 +192,8 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, uint32_t surfaceFla
     case SVGA3D_YUY2:
     case SVGA3D_NV12:
     case SVGA3D_AYUV:
-    case SVGA3D_ATI1:
-    case SVGA3D_ATI2:
+    case SVGA3D_BC4_UNORM:
+    case SVGA3D_BC5_UNORM:
         break;
 
     /*
@@ -480,7 +481,7 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dSurfac
  * @param   cCopyBoxes          .
  * @param   paBoxes             .
  */
-int vmsvga3dSurfaceDMA(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAGuestImage guest, SVGA3dSurfaceImageId host,
+int vmsvga3dSurfaceDMA(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dGuestImage guest, SVGA3dSurfaceImageId host,
                        SVGA3dTransferType transfer, uint32_t cCopyBoxes, SVGA3dCopyBox *paBoxes)
 {
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
@@ -850,7 +851,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t i
     AssertReturn(destRect.right - destRect.left == srcRect.right - srcRect.left && destRect.bottom - destRect.top == srcRect.bottom - srcRect.top, VERR_INVALID_PARAMETER);
 
     SVGA3dCopyBox    box;
-    SVGAGuestImage dest;
+    SVGA3dGuestImage dest;
 
     box.srcz = 0;
     box.z    = 0;

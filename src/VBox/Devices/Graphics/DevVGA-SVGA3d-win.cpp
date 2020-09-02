@@ -798,8 +798,8 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, uint32_t idx3dCaps, uint32_t *pu32Val
         *pu32Val = vmsvga3dGetSurfaceFormatSupport(pState, idx3dCaps, (D3DFORMAT)MAKEFOURCC('A', 'Y', 'U', 'V'));
         break;
 
-    case SVGA3D_DEVCAP_SURFACEFMT_ATI1:
-    case SVGA3D_DEVCAP_SURFACEFMT_ATI2:
+    case SVGA3D_DEVCAP_SURFACEFMT_BC4_UNORM:
+    case SVGA3D_DEVCAP_SURFACEFMT_BC5_UNORM:
         /* Unknown; only in DX10 & 11 */
         Log(("CAPS: Unknown CAP %s\n", vmsvga3dGetCapString(idx3dCaps)));
         rc = VERR_INVALID_PARAMETER;
@@ -991,7 +991,7 @@ D3DFORMAT vmsvga3dSurfaceFormat2D3D(SVGA3dSurfaceFormat format)
         return D3DFMT_L6V5U5;
     case SVGA3D_BUMPX8L8V8U8:
         return D3DFMT_X8L8V8U8;
-    case SVGA3D_FORMAT_DEAD1:
+    case SVGA3D_BUMPL8V8U8:
         /* No corresponding D3D9 equivalent. */
         AssertFailedReturn(D3DFMT_UNKNOWN);
     /* signed bump-map formats */
@@ -1063,15 +1063,13 @@ D3DFORMAT vmsvga3dSurfaceFormat2D3D(SVGA3dSurfaceFormat format)
     case SVGA3D_R16G16_UNORM:
         return D3DFMT_G16R16;
 
-    case SVGA3D_ATI1:
-    case SVGA3D_ATI2:
+    case SVGA3D_BC4_UNORM:
+    case SVGA3D_BC5_UNORM:
         /* Unknown; only in DX10 & 11 */
         break;
 
     case SVGA3D_FORMAT_MAX:     /* shut up MSC */
     case SVGA3D_FORMAT_INVALID:
-        break;
-    default: /** @todo Other formats. Avoid MSC warning for now. */
         break;
     }
     AssertFailedReturn(D3DFMT_UNKNOWN);
@@ -3409,7 +3407,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
             SVGA3dFogMode mode;
             mode.uintValue = pRenderState[i].uintValue;
 
-            switch (mode.function)
+            switch (mode.s.function)
             {
             case SVGA3D_FOGFUNC_INVALID:
                 val = D3DFOG_NONE;
@@ -3427,12 +3425,12 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 AssertMsgFailedReturn(("Unsupported fog function SVGA3D_FOGFUNC_PER_VERTEX\n"), VERR_INTERNAL_ERROR);
                 break;
             default:
-                AssertMsgFailedReturn(("Unexpected fog function %d\n", mode.function), VERR_INTERNAL_ERROR);
+                AssertMsgFailedReturn(("Unexpected fog function %d\n", mode.s.function), VERR_INTERNAL_ERROR);
                 break;
             }
 
             /* The fog type determines the render state. */
-            switch (mode.type)
+            switch (mode.s.type)
             {
             case SVGA3D_FOGTYPE_VERTEX:
                 renderState = D3DRS_FOGVERTEXMODE;
@@ -3441,12 +3439,12 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 renderState = D3DRS_FOGTABLEMODE;
                 break;
             default:
-                AssertMsgFailedReturn(("Unexpected fog type %d\n", mode.type), VERR_INTERNAL_ERROR);
+                AssertMsgFailedReturn(("Unexpected fog type %d\n", mode.s.type), VERR_INTERNAL_ERROR);
                 break;
             }
 
             /* Set the fog base to depth or range. */
-            switch (mode.base)
+            switch (mode.s.base)
             {
             case SVGA3D_FOGBASE_DEPTHBASED:
                 hr = pContext->pDevice->SetRenderState(D3DRS_RANGEFOGENABLE, FALSE);
@@ -3458,7 +3456,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 break;
             default:
                 /* ignore */
-                AssertMsgFailed(("Unexpected fog base %d\n", mode.base));
+                AssertMsgFailed(("Unexpected fog base %d\n", mode.s.base));
                 break;
             }
             break;
@@ -3470,7 +3468,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
 
             mode.uintValue = pRenderState[i].uintValue;
 
-            switch (mode.mode)
+            switch (mode.s.mode)
             {
             case SVGA3D_FILLMODE_POINT:
                 val = D3DFILL_POINT;
@@ -3482,7 +3480,7 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
                 val = D3DFILL_SOLID;
                 break;
             default:
-                AssertMsgFailedReturn(("Unexpected fill mode %d\n", mode.mode), VERR_INTERNAL_ERROR);
+                AssertMsgFailedReturn(("Unexpected fill mode %d\n", mode.s.mode), VERR_INTERNAL_ERROR);
                 break;
             }
             /** @todo ignoring face for now. */
@@ -3897,6 +3895,11 @@ int vmsvga3dSetRenderState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cRenderSt
             renderState = D3DRS_TRANSPARENCYANTIALIAS;
             val = pRenderState[i].uintValue;
             */
+            break;
+
+        case SVGA3D_RS_LINEAA:                 /* SVGA3dBool */
+            renderState = D3DRS_ANTIALIASEDLINEENABLE;
+            val = pRenderState[i].uintValue;
             break;
 
         case SVGA3D_RS_LINEWIDTH:              /* float */
@@ -4598,8 +4601,6 @@ int vmsvga3dSetTextureState(PVGASTATECC pThisCC, uint32_t cid, uint32_t cTexture
         case SVGA3D_TS_INVALID:
         case SVGA3D_TS_BIND_TEXTURE:
             AssertFailedBreak();
-        default: /** @todo Remaining TSs. Avoid MSC warning for now. */
-            break;
         }
 
         const uint32_t currentStage = pTextureState[i].stage;
@@ -4827,7 +4828,7 @@ int vmsvga3dSetClipPlane(PVGASTATECC pThisCC, uint32_t cid, uint32_t index, floa
     AssertReturn(pState, VERR_NO_MEMORY);
 
     Log(("vmsvga3dSetClipPlane %x %d (%d,%d)(%d,%d)\n", cid, index, (unsigned)(plane[0] * 100.0), (unsigned)(plane[1] * 100.0), (unsigned)(plane[2] * 100.0), (unsigned)(plane[3] * 100.0)));
-    AssertReturn(index < SVGA3D_NUM_CLIPPLANES, VERR_INVALID_PARAMETER);
+    AssertReturn(index < SVGA3D_CLIPPLANE_MAX, VERR_INVALID_PARAMETER);
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
@@ -5759,9 +5760,6 @@ int vmsvga3dShaderSetConst(PVGASTATECC pThisCC, uint32_t cid, uint32_t reg, SVGA
             case SVGA3D_CONST_TYPE_BOOL:
                 Log(("ConstantB %d: value=%d, %d, %d, %d\n", reg + i, pValues[i*4 + 0], pValues[i*4 + 1], pValues[i*4 + 2], pValues[i*4 + 3]));
                 break;
-
-            default:
-                AssertFailedReturn(VERR_INVALID_PARAMETER);
         }
 #endif
         vmsvga3dSaveShaderConst(pContext, reg + i, type, ctype, pValues[i*4 + 0], pValues[i*4 + 1], pValues[i*4 + 2], pValues[i*4 + 3]);
