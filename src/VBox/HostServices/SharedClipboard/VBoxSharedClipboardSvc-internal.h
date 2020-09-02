@@ -173,7 +173,7 @@ typedef struct _SHCLCLIENT
     /** The client's message queue (SHCLCLIENTMSG). */
     RTLISTANCHOR                MsgQueue;
     /** Number of allocated messages (updated atomically, not under critsect). */
-    uint32_t volatile           cAllocatedMessages;
+    uint32_t volatile           cMsgAllocated;
     /** Legacy cruft we have to keep to support old(er) Guest Additions. */
     SHCLCLIENTLEGACYSTATE       Legacy;
     /** The client's own event source.

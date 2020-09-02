@@ -381,7 +381,7 @@ void shClSvcMsgQueueReset(PSHCLCLIENT pClient)
         PSHCLCLIENTMSG pMsg = RTListRemoveFirst(&pClient->MsgQueue, SHCLCLIENTMSG, ListEntry);
         shClSvcMsgFree(pClient, pMsg);
     }
-    /** @todo r=andy Don't we also need to reset pClient->cAllocatedMessages here? */
+    pClient->cMsgAllocated = 0;
 
     while (!RTListIsEmpty(&pClient->Legacy.lstCID))
     {
@@ -405,7 +405,7 @@ PSHCLCLIENTMSG shClSvcMsgAlloc(PSHCLCLIENT pClient, uint32_t idMsg, uint32_t cPa
     PSHCLCLIENTMSG pMsg = (PSHCLCLIENTMSG)RTMemAllocZ(RT_UOFFSETOF_DYN(SHCLCLIENTMSG, aParms[cParms]));
     if (pMsg)
     {
-        uint32_t cAllocated = ASMAtomicIncU32(&pClient->cAllocatedMessages);
+        uint32_t cAllocated = ASMAtomicIncU32(&pClient->cMsgAllocated);
         if (cAllocated <= 4096)
         {
             RTListInit(&pMsg->ListEntry);
@@ -414,7 +414,7 @@ PSHCLCLIENTMSG shClSvcMsgAlloc(PSHCLCLIENT pClient, uint32_t idMsg, uint32_t cPa
             return pMsg;
         }
         AssertMsgFailed(("Too many messages allocated for client %u! (%u)\n", pClient->State.uClientID, cAllocated));
-        ASMAtomicDecU32(&pClient->cAllocatedMessages);
+        ASMAtomicDecU32(&pClient->cMsgAllocated);
         RTMemFree(pMsg);
     }
     return NULL;
@@ -435,7 +435,7 @@ void shClSvcMsgFree(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
         pMsg->idMsg = UINT32_C(0xdeadface);
         RTMemFree(pMsg);
 
-        uint32_t cAllocated = ASMAtomicDecU32(&pClient->cAllocatedMessages);
+        uint32_t cAllocated = ASMAtomicDecU32(&pClient->cMsgAllocated);
         Assert(cAllocated < UINT32_MAX / 2);
         RT_NOREF(cAllocated);
     }
@@ -567,7 +567,7 @@ int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
     pClient->State.uClientID = uClientID;
 
     RTListInit(&pClient->MsgQueue);
-    pClient->cAllocatedMessages = 0;
+    pClient->cMsgAllocated = 0;
 
     RTListInit(&pClient->Legacy.lstCID);
     pClient->Legacy.cCID = 0;
@@ -2374,15 +2374,10 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     AssertRCReturn(rc, rc);
 
     /* Serialize the client's internal message queue. */
-    /** @todo r=andy Why not using pClient->cAllocatedMessages here? */
-    uint32_t cMsgs = 0;
-    PSHCLCLIENTMSG pMsg;
-    RTListForEach(&pClient->MsgQueue, pMsg, SHCLCLIENTMSG, ListEntry)
-        cMsgs += 1;
-
-    rc = SSMR3PutU64(pSSM, cMsgs);
+    rc = SSMR3PutU64(pSSM, pClient->cMsgAllocated);
     AssertRCReturn(rc, rc);
 
+    PSHCLCLIENTMSG pMsg;
     RTListForEach(&pClient->MsgQueue, pMsg, SHCLCLIENTMSG, ListEntry)
     {
         SSMR3PutStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
