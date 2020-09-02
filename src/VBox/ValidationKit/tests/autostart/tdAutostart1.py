@@ -1127,7 +1127,7 @@ class tdAutostartOsWin(tdAutostartOs):
             reporter.error('Upload the installing into guest VM failed');
         else:
             if self.sTestBuild.endswith('.msi'):
-                sLogFile = 'C:\\Temp\\VBoxInstallLog.txt';
+                sLogFile = 'C:/Temp/VBoxInstallLog.txt';
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
                                                         240 * 1000, 'C:\\Windows\\System32\\msiexec.exe',
                                                         ['msiexec', '/quiet', '/norestart', '/i',
@@ -1137,7 +1137,7 @@ class tdAutostartOsWin(tdAutostartOs):
                 if not fRc:
                     reporter.error('Installing the VBox from msi installer failed');
             else:
-                sLogFile = 'C:\\Temp\\Virtualbox\\VBoxInstallLog.txt';
+                sLogFile = 'C:/Temp/Virtualbox/VBoxInstallLog.txt';
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
                                                         240 * 1000, 'C:\\Temp\\' + os.path.basename(self.sTestBuild),
                                                         ['C:\\Temp\\' + os.path.basename(self.sTestBuild), '-vvvv',
