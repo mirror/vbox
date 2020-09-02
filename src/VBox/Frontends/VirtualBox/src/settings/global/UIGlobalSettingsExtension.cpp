@@ -17,8 +17,8 @@
 
 /* Qt includes: */
 #include <QHeaderView>
-#include <QGridLayout>
 #include <QMenu>
+#include <QVBoxLayout>
 #ifdef VBOX_WS_WIN
 # include <QTextStream>
 #endif
@@ -172,11 +172,13 @@ private:
 
 
 UIGlobalSettingsExtension::UIGlobalSettingsExtension()
-    : m_pActionAdd(0), m_pActionRemove(0)
-    , m_pCache(0)
-    , m_pPackagesTree(0)
-    , m_pEntensionLabel(0)
-    , m_pPackagesToolbar(0)
+    : m_pCache(0)
+    , m_pLabelSeparator(0)
+    , m_pLayoutPackages(0)
+    , m_pTreeWidget(0)
+    , m_pToolbar(0)
+    , m_pActionAdd(0)
+    , m_pActionRemove(0)
 {
     /* Prepare: */
     prepare();
@@ -223,12 +225,12 @@ void UIGlobalSettingsExtension::getFromCache()
 
     /* Load old extension data from the cache: */
     foreach (const UIDataSettingsGlobalExtensionItem &item, oldExtensionData.m_items)
-        new UIExtensionPackageItem(m_pPackagesTree, item);
+        new UIExtensionPackageItem(m_pTreeWidget, item);
     /* If at least one item present: */
-    if (m_pPackagesTree->topLevelItemCount())
-        m_pPackagesTree->setCurrentItem(m_pPackagesTree->topLevelItem(0));
+    if (m_pTreeWidget->topLevelItemCount())
+        m_pTreeWidget->setCurrentItem(m_pTreeWidget->topLevelItem(0));
     /* Update action's availability: */
-    sltHandleCurrentItemChange(m_pPackagesTree->currentItem());
+    sltHandleCurrentItemChange(m_pTreeWidget->currentItem());
 }
 
 void UIGlobalSettingsExtension::putToCache()
@@ -249,15 +251,15 @@ void UIGlobalSettingsExtension::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsExtension::retranslateUi()
 {
-    m_pEntensionLabel->setText(tr("&Extension Packages"));
-    QTreeWidgetItem *pTreeWidgetItem = m_pPackagesTree->headerItem();
+    m_pLabelSeparator->setText(tr("&Extension Packages"));
+    QTreeWidgetItem *pTreeWidgetItem = m_pTreeWidget->headerItem();
     if (pTreeWidgetItem)
     {
         pTreeWidgetItem->setText(2, tr("Version"));
         pTreeWidgetItem->setText(1, tr("Name"));
         pTreeWidgetItem->setText(0, tr("Active"));
     }
-    m_pPackagesTree->setWhatsThis(tr("Lists all installed packages."));
+    m_pTreeWidget->setWhatsThis(tr("Lists all installed packages."));
 
     /* Translate actions: */
     m_pActionAdd->setText(tr("Add Package"));
@@ -279,7 +281,7 @@ void UIGlobalSettingsExtension::sltHandleCurrentItemChange(QTreeWidgetItem *pCur
 void UIGlobalSettingsExtension::sltHandleContextMenuRequest(const QPoint &position)
 {
     QMenu menu;
-    if (m_pPackagesTree->itemAt(position))
+    if (m_pTreeWidget->itemAt(position))
     {
         menu.addAction(m_pActionAdd);
         menu.addAction(m_pActionRemove);
@@ -288,7 +290,7 @@ void UIGlobalSettingsExtension::sltHandleContextMenuRequest(const QPoint &positi
     {
         menu.addAction(m_pActionAdd);
     }
-    menu.exec(m_pPackagesTree->viewport()->mapToGlobal(position));
+    menu.exec(m_pTreeWidget->viewport()->mapToGlobal(position));
 }
 
 void UIGlobalSettingsExtension::sltAddPackage()
@@ -336,10 +338,10 @@ void UIGlobalSettingsExtension::sltAddPackage()
             }
 
             /* Remove it from the tree: */
-            const int cItems = m_pPackagesTree->topLevelItemCount();
+            const int cItems = m_pTreeWidget->topLevelItemCount();
             for (int i = 0; i < cItems; i++)
             {
-                UIExtensionPackageItem *pItem = static_cast<UIExtensionPackageItem*>(m_pPackagesTree->topLevelItem(i));
+                UIExtensionPackageItem *pItem = static_cast<UIExtensionPackageItem*>(m_pTreeWidget->topLevelItem(i));
                 if (!strExtPackName.compare(pItem->name(), Qt::CaseInsensitive))
                 {
                     delete pItem;
@@ -356,9 +358,9 @@ void UIGlobalSettingsExtension::sltAddPackage()
                 loadData(package, item);
                 m_pCache->data().m_items << item;
 
-                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_pCache->data().m_items.last());
-                m_pPackagesTree->setCurrentItem(pItem);
-                m_pPackagesTree->sortByColumn(1, Qt::AscendingOrder);
+                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pTreeWidget, m_pCache->data().m_items.last());
+                m_pTreeWidget->setCurrentItem(pItem);
+                m_pTreeWidget->sortByColumn(1, Qt::AscendingOrder);
             }
         }
     }
@@ -367,9 +369,9 @@ void UIGlobalSettingsExtension::sltAddPackage()
 void UIGlobalSettingsExtension::sltRemovePackage()
 {
     /* Get current item: */
-    UIExtensionPackageItem *pItem = m_pPackagesTree &&
-                                    m_pPackagesTree->currentItem() ?
-                                    static_cast<UIExtensionPackageItem*>(m_pPackagesTree->currentItem()) : 0;
+    UIExtensionPackageItem *pItem = m_pTreeWidget &&
+                                    m_pTreeWidget->currentItem() ?
+                                    static_cast<UIExtensionPackageItem*>(m_pTreeWidget->currentItem()) : 0;
 
     /* Uninstall chosen package: */
     if (pItem)
@@ -421,48 +423,13 @@ void UIGlobalSettingsExtension::sltRemovePackage()
 
 void UIGlobalSettingsExtension::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalExtension;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Layout created in the .ui file. */
-    {
-        /* Tree-widget created in the .ui file. */
-        AssertPtrReturnVoid(m_pPackagesTree);
-        {
-            /* Configure tree-widget: */
-            m_pPackagesTree->header()->setStretchLastSection(false);
-            m_pPackagesTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-            m_pPackagesTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
-            m_pPackagesTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-            m_pPackagesTree->setContextMenuPolicy(Qt::CustomContextMenu);
-            connect(m_pPackagesTree, &QITreeWidget::currentItemChanged,
-                    this, &UIGlobalSettingsExtension::sltHandleCurrentItemChange);
-            connect(m_pPackagesTree, &QITreeWidget::customContextMenuRequested,
-                    this, &UIGlobalSettingsExtension::sltHandleContextMenuRequest);
-        }
-
-        /* Tool-bar created in the .ui file. */
-        AssertPtrReturnVoid(m_pPackagesToolbar);
-        {
-            /* Configure toolbar: */
-            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-            m_pPackagesToolbar->setOrientation(Qt::Vertical);
-            m_pPackagesToolbar->setIconSize(QSize(iIconMetric, iIconMetric));
-
-            /* Create 'Add Package' action: */
-            m_pActionAdd = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
-                                                                             ":/extension_pack_install_disabled_16px.png"),
-                                                         QString(), this, SLOT(sltAddPackage()));
-
-            /* Create 'Remove Package' action: */
-            m_pActionRemove = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_uninstall_16px.png",
-                                                                                ":/extension_pack_uninstall_disabled_16px.png"),
-                                                            QString(), this, SLOT(sltRemovePackage()));
-        }
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -470,39 +437,84 @@ void UIGlobalSettingsExtension::prepare()
 
 void UIGlobalSettingsExtension::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIGlobalSettingsExtension"));
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
-    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
-    m_pEntensionLabel = new QILabelSeparator();
-    m_pEntensionLabel->setObjectName(QStringLiteral("m_pEntensionLabel"));
-    pMainLayout->addWidget(m_pEntensionLabel, 0, 0, 1, 1);
+    /* Prepare main layout: */
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
-    QWidget *pExtensionPackContainer = new QWidget();
-    pExtensionPackContainer->setObjectName(QStringLiteral("pExtensionPackContainer"));
-    QHBoxLayout *pLayout1 = new QHBoxLayout(pExtensionPackContainer);
-    pLayout1->setSpacing(3);
-    pLayout1->setContentsMargins(0, 0, 0, 0);
-    pLayout1->setObjectName(QStringLiteral("pLayout1"));
-    m_pPackagesTree = new QITreeWidget(pExtensionPackContainer);
-    m_pPackagesTree->setObjectName(QStringLiteral("m_pPackagesTree"));
-    m_pPackagesTree->setColumnCount(3);
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pPackagesTree->sizePolicy().hasHeightForWidth());
-    m_pPackagesTree->setSizePolicy(sizePolicy);
-    m_pPackagesTree->setMinimumSize(QSize(0, 150));
-    m_pPackagesTree->setRootIsDecorated(false);
-    pLayout1->addWidget(m_pPackagesTree);
+        /* Prepare separator: */
+        m_pLabelSeparator = new QILabelSeparator(this);
+        if (m_pLabelSeparator)
+            pLayoutMain->addWidget(m_pLabelSeparator);
 
-    m_pPackagesToolbar = new UIToolBar(pExtensionPackContainer);
-    m_pPackagesToolbar->setObjectName(QStringLiteral("m_pPackagesToolbar"));
-    pLayout1->addWidget(m_pPackagesToolbar);
+        /* Prepare packages layout: */
+        m_pLayoutPackages = new QHBoxLayout;
+        if (m_pLayoutPackages)
+        {
+            m_pLayoutPackages->setSpacing(3);
 
-    pMainLayout->addWidget(pExtensionPackContainer, 1, 0, 1, 1);
-    m_pEntensionLabel->setBuddy(m_pPackagesTree);
+            /* Prepare tree-widget: */
+            prepareTreeWidget();
+            /* Prepare toolbar: */
+            prepareToolbar();
+
+            pLayoutMain->addLayout(m_pLayoutPackages);
+        }
+    }
+}
+
+void UIGlobalSettingsExtension::prepareTreeWidget()
+{
+    /* Prepare tree-widget: */
+    m_pTreeWidget = new QITreeWidget(this);
+    if (m_pTreeWidget)
+    {
+        if (m_pLabelSeparator)
+            m_pLabelSeparator->setBuddy(m_pTreeWidget);
+        m_pTreeWidget->setColumnCount(3);
+        m_pTreeWidget->setRootIsDecorated(false);
+        m_pTreeWidget->header()->setStretchLastSection(false);
+        m_pTreeWidget->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+        m_pTreeWidget->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+        m_pTreeWidget->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+        m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+
+        m_pLayoutPackages->addWidget(m_pTreeWidget);
+    }
+}
+
+void UIGlobalSettingsExtension::prepareToolbar()
+{
+    /* Prepare toolbar: */
+    m_pToolbar = new UIToolBar(this);
+    if (m_pToolbar)
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pToolbar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolbar->setOrientation(Qt::Vertical);
+
+        /* Prepare 'Add Package' action: */
+        m_pActionAdd = m_pToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
+                                                                 ":/extension_pack_install_disabled_16px.png"),
+                                             QString(), this, SLOT(sltAddPackage()));
+
+        /* Prepare 'Remove Package' action: */
+        m_pActionRemove = m_pToolbar->addAction(UIIconPool::iconSet(":/extension_pack_uninstall_16px.png",
+                                                                    ":/extension_pack_uninstall_disabled_16px.png"),
+                                                QString(), this, SLOT(sltRemovePackage()));
+
+        m_pLayoutPackages->addWidget(m_pToolbar);
+    }
+}
+
+void UIGlobalSettingsExtension::prepareConnections()
+{
+    connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
+            this, &UIGlobalSettingsExtension::sltHandleCurrentItemChange);
+    connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
+            this, &UIGlobalSettingsExtension::sltHandleContextMenuRequest);
 }
 
 void UIGlobalSettingsExtension::cleanup()
