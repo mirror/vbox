@@ -30,6 +30,7 @@
 class QCheckBox;
 class QLabel;
 class QLineEdit;
+class QIDialogButtonBox;
 
 /** Global settings: Network page: NAT network data structure. */
 struct UIDataSettingsGlobalNetworkNAT
@@ -109,8 +110,12 @@ private slots:
 
 private:
 
+    /* Prepares all. */
+    void prepare();
     /* Prepares widgets. */
     void prepareWidgets();
+    /* Prepares connections. */
+    void prepareConnections();
 
     /* Helpers: Load/Save stuff: */
     void load();
@@ -126,17 +131,30 @@ private:
 
     /** @name Widgets
      * @{ */
-       QCheckBox *m_pCheckboxNetwork;
-       QLabel *m_pLabelNetworkName;
-       QLabel *m_pLabelNetworkCIDR;
-       QLabel *m_pLabelOptionsAdvanced;
-       QLineEdit *m_pEditorNetworkName;
-       QLineEdit *m_pEditorNetworkCIDR;
-       QCheckBox *m_pCheckboxSupportsDHCP;
-       QCheckBox *m_pCheckboxSupportsIPv6;
-       QCheckBox *m_pCheckboxAdvertiseDefaultIPv6Route;
-       QPushButton *m_pButtonPortForwarding;
-       QWidget *m_pContainerOptions;
+        /** Holds the network check-box instance. */
+        QCheckBox         *m_pCheckboxNetwork;
+        /** Holds the settings widget instance. */
+        QWidget           *m_pWidgetSettings;
+        /** Holds the network name label instance. */
+        QLabel            *m_pLabelNetworkName;
+        /** Holds the network name editor instance. */
+        QLineEdit         *m_pEditorNetworkName;
+        /** Holds the network CIDR label instance. */
+        QLabel            *m_pLabelNetworkCIDR;
+        /** Holds the network CIDR editor instance. */
+        QLineEdit         *m_pEditorNetworkCIDR;
+        /** Holds the extended label instance. */
+        QLabel            *m_pLabelExtended;
+        /** Holds the 'supports DHCP' check-box instance. */
+        QCheckBox         *m_pCheckboxSupportsDHCP;
+        /** Holds the 'supports IPv6' check-box instance. */
+        QCheckBox         *m_pCheckboxSupportsIPv6;
+        /** Holds the 'advertise default IPv6 route' check-box instance. */
+        QCheckBox         *m_pCheckboxAdvertiseDefaultIPv6Route;
+        /** Holds the port forwarding button instance. */
+        QPushButton       *m_pButtonPortForwarding;
+        /** Holds the dialog button-box instance. */
+        QIDialogButtonBox *m_pButtonBox;
     /** @} */
 };
 

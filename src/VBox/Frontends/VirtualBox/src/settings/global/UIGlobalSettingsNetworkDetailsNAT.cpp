@@ -39,21 +39,29 @@ UIGlobalSettingsNetworkDetailsNAT::UIGlobalSettingsNetworkDetailsNAT(QWidget *pP
     , m_ipv4rules(ipv4rules)
     , m_ipv6rules(ipv6rules)
     , m_pCheckboxNetwork(0)
+    , m_pWidgetSettings(0)
     , m_pLabelNetworkName(0)
-    , m_pLabelNetworkCIDR(0)
-    , m_pLabelOptionsAdvanced(0)
     , m_pEditorNetworkName(0)
+    , m_pLabelNetworkCIDR(0)
     , m_pEditorNetworkCIDR(0)
+    , m_pLabelExtended(0)
     , m_pCheckboxSupportsDHCP(0)
     , m_pCheckboxSupportsIPv6(0)
     , m_pCheckboxAdvertiseDefaultIPv6Route(0)
     , m_pButtonPortForwarding(0)
-    , m_pContainerOptions(0)
+    , m_pButtonBox(0)
 {
-    prepareWidgets();
+    prepare();
+}
 
+void UIGlobalSettingsNetworkDetailsNAT::prepare()
+{
     /* Setup dialog: */
     setWindowIcon(QIcon(":/guesttools_16px.png"));
+
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -61,86 +69,121 @@ UIGlobalSettingsNetworkDetailsNAT::UIGlobalSettingsNetworkDetailsNAT(QWidget *pP
     /* Load: */
     load();
 
-    /* Fix minimum possible size: */
-    resize(minimumSizeHint());
-    setFixedSize(minimumSizeHint());
+    /* Adjust dialog size: */
+    adjustSize();
+
+#ifdef VBOX_WS_MAC
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setFixedSize(minimumSize());
+#endif /* VBOX_WS_MAC */
 }
 
 void UIGlobalSettingsNetworkDetailsNAT::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIGlobalSettingsNetworkDetailsNAT"));
-    QGridLayout *pGridLayout = new QGridLayout(this);
-    pGridLayout->setObjectName(QStringLiteral("pGridLayout"));
-    m_pCheckboxNetwork = new QCheckBox();
-    m_pCheckboxNetwork->setObjectName(QStringLiteral("m_pCheckboxNetwork"));
-    pGridLayout->addWidget(m_pCheckboxNetwork, 0, 0, 1, 1);
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setRowStretch(2, 1);
 
-    m_pContainerOptions = new QWidget();
-    m_pContainerOptions->setObjectName(QStringLiteral("m_pContainerOptions"));
-    QGridLayout *pGridLayout1 = new QGridLayout(m_pContainerOptions);
-    pGridLayout1->setObjectName(QStringLiteral("pGridLayout1"));
-    pGridLayout1->setContentsMargins(0, 0, 0, 0);
-    QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    pGridLayout1->addItem(pSpacerItem, 0, 0, 1, 1);
+        /* Prepare network check-box: */
+        m_pCheckboxNetwork = new QCheckBox(this);
+        pLayoutMain->addWidget(m_pCheckboxNetwork, 0, 0, 1, 2);
 
-    m_pLabelNetworkName = new QLabel(m_pContainerOptions);
-    m_pLabelNetworkName->setObjectName(QStringLiteral("m_pLabelNetworkName"));
-    m_pLabelNetworkName->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pGridLayout1->addWidget(m_pLabelNetworkName, 0, 1, 1, 1);
+        /* Prepare 20-px shifting spacer: */
+        QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        if (pSpacerItem)
+            pLayoutMain->addItem(pSpacerItem, 1, 0);
 
-    m_pEditorNetworkName = new QLineEdit(m_pContainerOptions);
-    m_pEditorNetworkName->setObjectName(QStringLiteral("m_pEditorNetworkName"));
-    pGridLayout1->addWidget(m_pEditorNetworkName, 0, 2, 1, 2);
+        /* Prepare settings widget: */
+        m_pWidgetSettings = new QWidget(this);
+        if (m_pWidgetSettings)
+        {
+            /* Prepare settings widget layout: */
+            QGridLayout *pLayoutSettings = new QGridLayout(m_pWidgetSettings);
+            if (pLayoutSettings)
+            {
+                pLayoutSettings->setContentsMargins(0, 0, 0, 0);
+                pLayoutSettings->setColumnStretch(3, 1);
 
-    m_pLabelNetworkCIDR = new QLabel(m_pContainerOptions);
-    m_pLabelNetworkCIDR->setObjectName(QStringLiteral("m_pLabelNetworkCIDR"));
-    m_pLabelNetworkCIDR->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pGridLayout1->addWidget(m_pLabelNetworkCIDR, 1, 1, 1, 1);
+                /* Prepare network name label: */
+                m_pLabelNetworkName = new QLabel(m_pWidgetSettings);
+                if (m_pLabelNetworkName)
+                {
+                    m_pLabelNetworkName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutSettings->addWidget(m_pLabelNetworkName, 0, 0);
+                }
+                /* Prepare network name editor: */
+                m_pEditorNetworkName = new QLineEdit(m_pWidgetSettings);
+                if (m_pEditorNetworkName)
+                {
+                    if (m_pLabelNetworkName)
+                        m_pLabelNetworkName->setBuddy(m_pEditorNetworkName);
+                    pLayoutSettings->addWidget(m_pEditorNetworkName, 0, 1, 1, 3);
+                }
 
-    m_pEditorNetworkCIDR = new QLineEdit(m_pContainerOptions);
-    m_pEditorNetworkCIDR->setObjectName(QStringLiteral("m_pEditorNetworkCIDR"));
-    pGridLayout1->addWidget(m_pEditorNetworkCIDR, 1, 2, 1, 2);
+                /* Prepare network CIDR label: */
+                m_pLabelNetworkCIDR = new QLabel(m_pWidgetSettings);
+                if (m_pLabelNetworkCIDR)
+                {
+                    m_pLabelNetworkCIDR->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutSettings->addWidget(m_pLabelNetworkCIDR, 1, 0);
+                }
+                /* Prepare network CIDR editor: */
+                m_pEditorNetworkCIDR = new QLineEdit(m_pWidgetSettings);
+                if (m_pEditorNetworkCIDR)
+                {
+                    if (m_pLabelNetworkCIDR)
+                        m_pLabelNetworkCIDR->setBuddy(m_pEditorNetworkCIDR);
+                    pLayoutSettings->addWidget(m_pEditorNetworkCIDR, 1, 1, 1, 3);
+                }
 
-    m_pLabelOptionsAdvanced = new QLabel(m_pContainerOptions);
-    m_pLabelOptionsAdvanced->setObjectName(QStringLiteral("m_pLabelOptionsAdvanced"));
-    m_pLabelOptionsAdvanced->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignTop);
-    pGridLayout1->addWidget(m_pLabelOptionsAdvanced, 2, 1, 1, 1);
+                /* Prepare extended label: */
+                m_pLabelExtended = new QLabel(m_pWidgetSettings);
+                if (m_pLabelExtended)
+                {
+                    m_pLabelExtended->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutSettings->addWidget(m_pLabelExtended, 2, 0);
+                }
+                /* Prepare 'supports DHCP' check-box: */
+                m_pCheckboxSupportsDHCP = new QCheckBox(m_pWidgetSettings);
+                if (m_pCheckboxSupportsDHCP)
+                    pLayoutSettings->addWidget(m_pCheckboxSupportsDHCP, 2, 1, 1, 2);
+                /* Prepare 'supports IPv6' check-box: */
+                m_pCheckboxSupportsIPv6 = new QCheckBox(m_pWidgetSettings);
+                if (m_pCheckboxSupportsIPv6)
+                    pLayoutSettings->addWidget(m_pCheckboxSupportsIPv6, 3, 1, 1, 2);
+                /* Prepare 'advertise default IPv6 route' check-box: */
+                m_pCheckboxAdvertiseDefaultIPv6Route = new QCheckBox(m_pWidgetSettings);
+                if (m_pCheckboxAdvertiseDefaultIPv6Route)
+                    pLayoutSettings->addWidget(m_pCheckboxAdvertiseDefaultIPv6Route, 4, 1, 1, 2);
 
-    m_pCheckboxSupportsDHCP = new QCheckBox(m_pContainerOptions);
-    m_pCheckboxSupportsDHCP->setObjectName(QStringLiteral("m_pCheckboxSupportsDHCP"));
-    pGridLayout1->addWidget(m_pCheckboxSupportsDHCP, 2, 2, 1, 1);
+                /* Prepare port forwarding button: */
+                m_pButtonPortForwarding = new QPushButton(m_pWidgetSettings);
+                if (m_pButtonPortForwarding)
+                    pLayoutSettings->addWidget(m_pButtonPortForwarding, 5, 1);
+            }
 
-    m_pCheckboxSupportsIPv6 = new QCheckBox(m_pContainerOptions);
-    m_pCheckboxSupportsIPv6->setObjectName(QStringLiteral("m_pCheckboxSupportsIPv6"));
-    pGridLayout1->addWidget(m_pCheckboxSupportsIPv6, 3, 2, 1, 1);
+            pLayoutMain->addWidget(m_pWidgetSettings, 1, 1);
+        }
 
-    m_pCheckboxAdvertiseDefaultIPv6Route = new QCheckBox(m_pContainerOptions);
-    m_pCheckboxAdvertiseDefaultIPv6Route->setObjectName(QStringLiteral("m_pCheckboxAdvertiseDefaultIPv6Route"));
-    pGridLayout1->addWidget(m_pCheckboxAdvertiseDefaultIPv6Route, 4, 2, 1, 1);
+        /* Prepare dialog button-box button: */
+        m_pButtonBox = new QIDialogButtonBox(this);
+        if (m_pButtonBox)
+        {
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+            pLayoutMain->addWidget(m_pButtonBox, 3, 0, 1, 2);
+        }
+    }
+}
 
-    m_pButtonPortForwarding = new QPushButton(m_pContainerOptions);
-    m_pButtonPortForwarding->setObjectName(QStringLiteral("m_pButtonPortForwarding"));
-    pGridLayout1->addWidget(m_pButtonPortForwarding, 5, 2, 1, 1);
-    pGridLayout->addWidget(m_pContainerOptions, 1, 0, 1, 2);
-
-    QSpacerItem *pSpacerItem1 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pGridLayout->addItem(pSpacerItem1, 2, 0, 1, 2);
-
-    QIDialogButtonBox *pButtonBox = new QIDialogButtonBox();
-    pButtonBox->setObjectName(QStringLiteral("pButtonBox"));
-    pButtonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok);
-    pGridLayout->addWidget(pButtonBox, 3, 0, 1, 2);
-
-    m_pLabelNetworkName->setBuddy(m_pEditorNetworkName);
-    m_pLabelNetworkCIDR->setBuddy(m_pEditorNetworkCIDR);
-
-    QObject::connect(m_pCheckboxNetwork, &QCheckBox::toggled, m_pContainerOptions, &QWidget::setEnabled);
-    QObject::connect(m_pCheckboxSupportsIPv6, &QCheckBox::toggled, m_pCheckboxAdvertiseDefaultIPv6Route, &QCheckBox::setEnabled);
-    QObject::connect(m_pButtonPortForwarding, &QPushButton::clicked, this, &UIGlobalSettingsNetworkDetailsNAT::sltEditPortForwarding);
-    QObject::connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIGlobalSettingsNetworkDetailsNAT::accept);
-    QObject::connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIGlobalSettingsNetworkDetailsNAT::reject);
-
+void UIGlobalSettingsNetworkDetailsNAT::prepareConnections()
+{
+    connect(m_pCheckboxNetwork, &QCheckBox::toggled, m_pWidgetSettings, &QWidget::setEnabled);
+    connect(m_pCheckboxSupportsIPv6, &QCheckBox::toggled, m_pCheckboxAdvertiseDefaultIPv6Route, &QCheckBox::setEnabled);
+    connect(m_pButtonPortForwarding, &QPushButton::clicked, this, &UIGlobalSettingsNetworkDetailsNAT::sltEditPortForwarding);
+    connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIGlobalSettingsNetworkDetailsNAT::accept);
+    connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIGlobalSettingsNetworkDetailsNAT::reject);
 }
 
 void UIGlobalSettingsNetworkDetailsNAT::retranslateUi()
@@ -152,7 +195,7 @@ void UIGlobalSettingsNetworkDetailsNAT::retranslateUi()
     m_pEditorNetworkName->setToolTip(tr("Holds the name for this network."));
     m_pLabelNetworkCIDR->setText(tr("Network &CIDR:"));
     m_pEditorNetworkCIDR->setToolTip(tr("Holds the CIDR for this network."));
-    m_pLabelOptionsAdvanced->setText(tr("Network Options:"));
+    m_pLabelExtended->setText(tr("Network Options:"));
     m_pCheckboxSupportsDHCP->setText(tr("Supports &DHCP"));
     m_pCheckboxSupportsDHCP->setToolTip(tr("When checked, this network will support DHCP."));
     m_pCheckboxSupportsIPv6->setText(tr("Supports &IPv6"));
@@ -170,7 +213,7 @@ void UIGlobalSettingsNetworkDetailsNAT::polishEvent(QShowEvent *pEvent)
 
     /* Update availability: */
     m_pCheckboxAdvertiseDefaultIPv6Route->setEnabled(m_pCheckboxSupportsIPv6->isChecked());
-    m_pContainerOptions->setEnabled(m_pCheckboxNetwork->isChecked());
+    m_pWidgetSettings->setEnabled(m_pCheckboxNetwork->isChecked());
 }
 
 void UIGlobalSettingsNetworkDetailsNAT::sltEditPortForwarding()
