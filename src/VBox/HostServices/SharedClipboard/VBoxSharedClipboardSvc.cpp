@@ -1306,7 +1306,7 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
 }
 
 /**
- * Notifies that clipboard data from the guest has been received.
+ * Signals that clipboard data from the guest has been received.
  *
  * @returns VBox status code. Returns VERR_NOT_FOUND when related event ID was not found.
  * @param   pClient             Client the guest clipboard data was received for.
@@ -1315,8 +1315,8 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
  * @param   pvData              Pointer to clipboard data received.
  * @param   cbData              Size (in bytes) of clipboard data received.
  */
-int ShClSvcGuestDataReceived(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                             SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
+int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                           SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
@@ -1754,7 +1754,7 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
         rc = ShClBackendWriteData(pClient, &cmdCtx, uFormat, pvData, cbData);
 
         int rc2; /* Don't return internals back to the guest. */
-        rc2 = ShClSvcGuestDataReceived(pClient, &cmdCtx, uFormat, pvData, cbData); /* To complete pending events, if any. */
+        rc2 = ShClSvcGuestDataSignal(pClient, &cmdCtx, uFormat, pvData, cbData); /* To complete pending events, if any. */
         AssertRC(rc2);
     }
 
