@@ -573,7 +573,7 @@
 <xsd:simpleType name="TCPUCount">
   <xsd:restriction base="xsd:unsignedInt">
     <xsd:minInclusive value="1"/>
-    <xsd:maxInclusive value="32"/>
+    <xsd:maxInclusive value="64"/>
   </xsd:restriction>
 </xsd:simpleType>
 
