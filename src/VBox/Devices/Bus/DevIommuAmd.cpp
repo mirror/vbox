@@ -3131,14 +3131,19 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
     LogFlowFunc(("pThis=%p pszArgs=%s\n", pThis, pszArgs));
-    bool const fVerbose = !strncmp(pszArgs, RT_STR_TUPLE("verbose")) ? true : false;
+    bool fVerbose;
+    if (   pszArgs
+        && !strncmp(pszArgs, RT_STR_TUPLE("verbose")))
+        fVerbose = true;
+    else
+        fVerbose = false;
 
     pHlp->pfnPrintf(pHlp, "AMD-IOMMU:\n");
     /* Device Table Base Addresses (all segments). */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDevTabBaseAddrs); i++)
     {
         DEV_TAB_BAR_T const DevTabBar = pThis->aDevTabBaseAddrs[i];
-        pHlp->pfnPrintf(pHlp, "  Device Table BAR [%u]                   = %#RX64\n", i, DevTabBar.u64);
+        pHlp->pfnPrintf(pHlp, "  Device Table BAR %u                      = %#RX64\n", i, DevTabBar.u64);
         if (fVerbose)
         {
             pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabBar.n.u9Size,
@@ -3152,7 +3157,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint8_t const  uEncodedLen = CmdBufBar.n.u4Len;
         uint32_t const cEntries    = iommuAmdGetBufMaxEntries(uEncodedLen);
         uint32_t const cbBuffer    = iommuAmdGetTotalBufLength(uEncodedLen);
-        pHlp->pfnPrintf(pHlp, "  Command buffer BAR                      = %#RX64\n", CmdBufBar.u64);
+        pHlp->pfnPrintf(pHlp, "  Command Buffer BAR                      = %#RX64\n", CmdBufBar.u64);
         if (fVerbose)
         {
             pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", CmdBufBar.n.u40Base << X86_PAGE_4K_SHIFT);
@@ -3166,7 +3171,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         uint8_t const  uEncodedLen = EvtLogBar.n.u4Len;
         uint32_t const cEntries    = iommuAmdGetBufMaxEntries(uEncodedLen);
         uint32_t const cbBuffer    = iommuAmdGetTotalBufLength(uEncodedLen);
-        pHlp->pfnPrintf(pHlp, "  Event log BAR                           = %#RX64\n", EvtLogBar.u64);
+        pHlp->pfnPrintf(pHlp, "  Event Log BAR                           = %#RX64\n", EvtLogBar.u64);
         if (fVerbose)
         {
             pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", EvtLogBar.n.u40Base << X86_PAGE_4K_SHIFT);
@@ -3243,9 +3248,9 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     {
         IOMMU_EXT_FEAT_T ExtFeat = pThis->ExtFeat;
         pHlp->pfnPrintf(pHlp, "  Extended Feature Register               = %#RX64\n", ExtFeat.u64);
-        pHlp->pfnPrintf(pHlp, "    Prefetch support                        = %RTbool\n", ExtFeat.n.u1PrefetchSup);
         if (fVerbose)
         {
+            pHlp->pfnPrintf(pHlp, "    Prefetch support                        = %RTbool\n", ExtFeat.n.u1PrefetchSup);
             pHlp->pfnPrintf(pHlp, "    PPR support                             = %RTbool\n",  ExtFeat.n.u1PprSup);
             pHlp->pfnPrintf(pHlp, "    x2APIC support                          = %RTbool\n",  ExtFeat.n.u1X2ApicSup);
             pHlp->pfnPrintf(pHlp, "    NX and privilege level support          = %RTbool\n",  ExtFeat.n.u1NoExecuteSup);
@@ -3307,7 +3312,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         }
     }
     /* Hardware Event (Lo) Register. */
-    pHlp->pfnPrintf(pHlp, "  Hardware Event (Lo)                         = %#RX64\n", pThis->HwEvtLo);
+    pHlp->pfnPrintf(pHlp, "  Hardware Event (Lo)                     = %#RX64\n", pThis->HwEvtLo);
     /* Hardware Event Status. */
     {
         IOMMU_HW_EVT_STATUS_T HwEvtStatus = pThis->HwEvtStatus;
@@ -3392,7 +3397,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     /* Device-Specific Status Extension Register. */
     {
         DEV_SPECIFIC_STATUS_T const DevSpecificStatus = pThis->DevSpecificStatus;
-        pHlp->pfnPrintf(pHlp, "  Device-specific Control                 = %#RX64\n",   DevSpecificStatus.u64);
+        pHlp->pfnPrintf(pHlp, "  Device-specific Status                  = %#RX64\n",   DevSpecificStatus.u64);
         if (fVerbose)
         {
             pHlp->pfnPrintf(pHlp, "    Status                                  = %#RX32\n", DevSpecificStatus.n.u24DevSpecStatus);
@@ -3543,30 +3548,30 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         }
     }
     /* Reserved Register. */
-    pHlp->pfnPrintf(pHlp, "  Reserved Register                           = %#RX64\n", pThis->RsvdReg);
+    pHlp->pfnPrintf(pHlp, "  Reserved Register                       = %#RX64\n", pThis->RsvdReg);
     /* Command Buffer Head Pointer Register. */
     {
         CMD_BUF_HEAD_PTR_T const CmdBufHeadPtr = pThis->CmdBufHeadPtr;
-        pHlp->pfnPrintf(pHlp, "  Command Buffer Head Pointer             = %#RX64\n", CmdBufHeadPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  CmdBufHeadPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  Command Buffer Head Pointer             = %#RX64 (off: %#x)\n", CmdBufHeadPtr.u64,
+                        CmdBufHeadPtr.n.off);
     }
     /* Command Buffer Tail Pointer Register. */
     {
         CMD_BUF_HEAD_PTR_T const CmdBufTailPtr = pThis->CmdBufTailPtr;
-        pHlp->pfnPrintf(pHlp, "  Command Buffer Tail Pointer             = %#RX64\n", CmdBufTailPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  CmdBufTailPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  Command Buffer Tail Pointer             = %#RX64 (off: %#x)\n", CmdBufTailPtr.u64,
+                        CmdBufTailPtr.n.off);
     }
     /* Event Log Head Pointer Register. */
     {
         EVT_LOG_HEAD_PTR_T const EvtLogHeadPtr = pThis->EvtLogHeadPtr;
-        pHlp->pfnPrintf(pHlp, "  Event Log Head Pointer                  = %#RX64\n", EvtLogHeadPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  EvtLogHeadPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  Event Log Head Pointer                  = %#RX64 (off: %#x)\n", EvtLogHeadPtr.u64,
+                        EvtLogHeadPtr.n.off);
     }
     /* Event Log Tail Pointer Register. */
     {
         EVT_LOG_TAIL_PTR_T const EvtLogTailPtr = pThis->EvtLogTailPtr;
-        pHlp->pfnPrintf(pHlp, "  Event Log Head Pointer                  = %#RX64\n", EvtLogTailPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  EvtLogTailPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  Event Log Head Pointer                  = %#RX64 (off: %#x)\n", EvtLogTailPtr.u64,
+                        EvtLogTailPtr.n.off);
     }
     /* Status Register. */
     {
@@ -3595,50 +3600,50 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     /* PPR Log Head Pointer. */
     {
         PPR_LOG_HEAD_PTR_T const PprLogHeadPtr = pThis->PprLogHeadPtr;
-        pHlp->pfnPrintf(pHlp, "  PPR Log Head Pointer                    = %#RX64\n", PprLogHeadPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  PprLogHeadPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  PPR Log Head Pointer                    = %#RX64 (off: %#x)\n", PprLogHeadPtr.u64,
+                        PprLogHeadPtr.n.off);
     }
     /* PPR Log Tail Pointer. */
     {
         PPR_LOG_TAIL_PTR_T const PprLogTailPtr = pThis->PprLogTailPtr;
-        pHlp->pfnPrintf(pHlp, "  PPR Log Tail Pointer                    = %#RX64\n", PprLogTailPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  PprLogTailPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  PPR Log Tail Pointer                    = %#RX64 (off: %#x)\n", PprLogTailPtr.u64,
+                        PprLogTailPtr.n.off);
     }
     /* Guest Virtual-APIC Log Head Pointer. */
     {
         GALOG_HEAD_PTR_T const GALogHeadPtr = pThis->GALogHeadPtr;
-        pHlp->pfnPrintf(pHlp, "  Guest Virtual-APIC Log Head Pointer     = %#RX64\n", GALogHeadPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  GALogHeadPtr.n.u12GALogPtr);
+        pHlp->pfnPrintf(pHlp, "  Guest Virtual-APIC Log Head Pointer     = %#RX64 (off: %#x)\n", GALogHeadPtr.u64,
+                        GALogHeadPtr.n.u12GALogPtr);
     }
     /* Guest Virtual-APIC Log Tail Pointer. */
     {
         GALOG_HEAD_PTR_T const GALogTailPtr = pThis->GALogTailPtr;
-        pHlp->pfnPrintf(pHlp, "  Guest Virtual-APIC Log Tail Pointer     = %#RX64\n", GALogTailPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  GALogTailPtr.n.u12GALogPtr);
+        pHlp->pfnPrintf(pHlp, "  Guest Virtual-APIC Log Tail Pointer     = %#RX64 (off: %#x)\n", GALogTailPtr.u64,
+                        GALogTailPtr.n.u12GALogPtr);
     }
     /* PPR Log B Head Pointer. */
     {
         PPR_LOG_B_HEAD_PTR_T const PprLogBHeadPtr = pThis->PprLogBHeadPtr;
-        pHlp->pfnPrintf(pHlp, "  PPR Log B Head Pointer                  = %#RX64\n", PprLogBHeadPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  PprLogBHeadPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  PPR Log B Head Pointer                  = %#RX64 (off: %#x)\n", PprLogBHeadPtr.u64,
+                        PprLogBHeadPtr.n.off);
     }
     /* PPR Log B Tail Pointer. */
     {
         PPR_LOG_B_TAIL_PTR_T const PprLogBTailPtr = pThis->PprLogBTailPtr;
-        pHlp->pfnPrintf(pHlp, "  PPR Log B Tail Pointer                  = %#RX64\n", PprLogBTailPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  PprLogBTailPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  PPR Log B Tail Pointer                  = %#RX64 (off: %#x)\n", PprLogBTailPtr.u64,
+                        PprLogBTailPtr.n.off);
     }
     /* Event Log B Head Pointer. */
     {
         EVT_LOG_B_HEAD_PTR_T const EvtLogBHeadPtr = pThis->EvtLogBHeadPtr;
-        pHlp->pfnPrintf(pHlp, "  Event Log B Head Pointer                = %#RX64\n", EvtLogBHeadPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  EvtLogBHeadPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  Event Log B Head Pointer                = %#RX64 (off: %#x)\n", EvtLogBHeadPtr.u64,
+                        EvtLogBHeadPtr.n.off);
     }
     /* Event Log B Tail Pointer. */
     {
         EVT_LOG_B_TAIL_PTR_T const EvtLogBTailPtr = pThis->EvtLogBTailPtr;
-        pHlp->pfnPrintf(pHlp, "  Event Log B Tail Pointer                = %#RX64\n", EvtLogBTailPtr.u64);
-        pHlp->pfnPrintf(pHlp, "    Pointer                                 = %#x\n",  EvtLogBTailPtr.n.off);
+        pHlp->pfnPrintf(pHlp, "  Event Log B Tail Pointer                = %#RX64 (off: %#x)\n", EvtLogBTailPtr.u64,
+                        EvtLogBTailPtr.n.off);
     }
     /* PPR Log Auto Response Register. */
     {
@@ -3859,18 +3864,18 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Header. */
     PDMPciDevSetVendorId(pPciDev,          IOMMU_PCI_VENDOR_ID);       /* AMD */
     PDMPciDevSetDeviceId(pPciDev,          IOMMU_PCI_DEVICE_ID);       /* VirtualBox IOMMU device */
-    PDMPciDevSetCommand(pPciDev,           VBOX_PCI_COMMAND_MASTER);   /* Enable bus master (as we write to main memory). */
-    PDMPciDevSetStatus(pPciDev,            VBOX_PCI_STATUS_CAP_LIST);  /* Status - CapList supported */
+    PDMPciDevSetCommand(pPciDev,           VBOX_PCI_COMMAND_MASTER);   /* Enable bus master (as we write to main memory) */
+    PDMPciDevSetStatus(pPciDev,            VBOX_PCI_STATUS_CAP_LIST);  /* Capability list supported */
     PDMPciDevSetRevisionId(pPciDev,        IOMMU_PCI_REVISION_ID);     /* VirtualBox specific device implementation revision */
     PDMPciDevSetClassBase(pPciDev,         VBOX_PCI_CLASS_SYSTEM);     /* System Base Peripheral */
     PDMPciDevSetClassSub(pPciDev,          VBOX_PCI_SUB_SYSTEM_IOMMU); /* IOMMU */
-    PDMPciDevSetClassProg(pPciDev,         0x00);                      /* IOMMU Programming interface */
-    PDMPciDevSetHeaderType(pPciDev,        0x00);                      /* Single function, type 0. */
+    PDMPciDevSetClassProg(pPciDev,         0x0);                       /* IOMMU Programming interface */
+    PDMPciDevSetHeaderType(pPciDev,        0x0);                       /* Single function, type 0 */
     PDMPciDevSetSubSystemId(pPciDev,       IOMMU_PCI_DEVICE_ID);       /* AMD */
     PDMPciDevSetSubSystemVendorId(pPciDev, IOMMU_PCI_VENDOR_ID);       /* VirtualBox IOMMU device */
-    PDMPciDevSetCapabilityList(pPciDev,    IOMMU_PCI_OFF_CAP_HDR);     /* Offset into capability registers. */
-    PDMPciDevSetInterruptPin(pPciDev,      0x01);                      /* INTA#. */
-    PDMPciDevSetInterruptLine(pPciDev,     0x00);                      /* For software compatibility; no effect on hardware. */
+    PDMPciDevSetCapabilityList(pPciDev,    IOMMU_PCI_OFF_CAP_HDR);     /* Offset into capability registers */
+    PDMPciDevSetInterruptPin(pPciDev,      0x1);                       /* INTA#. */
+    PDMPciDevSetInterruptLine(pPciDev,     0x0);                       /* For software compatibility; no effect on hardware */
 
     /* Capability Header. */
     /* NOTE! Fields (e.g, EFR) must match what we expose in the ACPI tables. */
@@ -3885,14 +3890,12 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                       | RT_BF_MAKE(IOMMU_BF_CAPHDR_EFR_SUP,   0x1)     /* RO - Extended Feature Register support */
                       | RT_BF_MAKE(IOMMU_BF_CAPHDR_CAP_EXT,   0x1));   /* RO - Misc. Information Register support */
 
-    /* Base Address Low Register. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0x0);   /* RW - Base address (Lo) and enable bit. */
-
-    /* Base Address High Register. */
+    /* Base Address Register. */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0x0);   /* RW - Base address (Lo) and enable bit */
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0x0);   /* RW - Base address (Hi) */
 
     /* IOMMU Range Register. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);          /* RW - Range register (implemented as RO by us). */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_RANGE_REG, 0x0);          /* RW - Range register (implemented as RO by us) */
 
     /* Misc. Information Register. */
     /* NOTE! Fields (e.g, GVA size) must match what we expose in the ACPI tables. */
@@ -3917,11 +3920,11 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* MSI Address (Lo, Hi) and MSI data are read-write PCI config registers handled by our generic PCI config space code. */
 #if 0
     /* MSI Address Lo. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO, 0);         /* RW - MSI message address (Lo). */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_LO, 0);         /* RW - MSI message address (Lo) */
     /* MSI Address Hi. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI, 0);         /* RW - MSI message address (Hi). */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_ADDR_HI, 0);         /* RW - MSI message address (Hi) */
     /* MSI Data. */
-    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA, 0);            /* RW - MSI data. */
+    PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_MSI_DATA, 0);            /* RW - MSI data */
 #endif
 
 #if 0
@@ -4012,14 +4015,14 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->ExtFeat.n.u1PerfCounterSup        = 0;
     AssertCompile((IOMMU_MAX_HOST_PT_LEVEL & 0x3) < 3);
     pThis->ExtFeat.n.u2HostAddrTranslateSize = (IOMMU_MAX_HOST_PT_LEVEL & 0x3);
-    pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup. */
-    pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u2GstAddrTranslateSize  = 0;   /* Requires GstTranslateSup */
+    pThis->ExtFeat.n.u2GstCr3RootTblLevel    = 0;   /* Requires GstTranslateSup */
     pThis->ExtFeat.n.u2SmiFilterSup          = 0;
     pThis->ExtFeat.n.u3SmiFilterCount        = 0;
     pThis->ExtFeat.n.u3GstVirtApicModeSup    = 0;   /* Requires GstVirtApicSup */
     pThis->ExtFeat.n.u2DualPprLogSup         = 0;
     pThis->ExtFeat.n.u2DualEvtLogSup         = 0;
-    pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup. */
+    pThis->ExtFeat.n.u5MaxPasidSup           = 0;   /* Requires GstTranslateSup */
     pThis->ExtFeat.n.u1UserSupervisorSup     = 0;
     AssertCompile(IOMMU_MAX_DEV_TAB_SEGMENTS <= 3);
     pThis->ExtFeat.n.u2DevTabSegSup          = IOMMU_MAX_DEV_TAB_SEGMENTS;
