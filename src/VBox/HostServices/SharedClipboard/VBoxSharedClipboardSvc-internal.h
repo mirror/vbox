@@ -98,6 +98,18 @@ typedef struct SHCLCLIENTPODSTATE
 /** @} */
 
 /**
+ * Strucutre for keeping legacy state, required for keeping backwards compatibility
+ * to old(er) Guest Additions.
+ */
+typedef struct SHCLCLIENTLEGACYSTATE
+{
+    /** Context ID required for an incoming VBOX_SHCL_GUEST_FN_DATA_WRITE call. Set to UINT64_MAX if not in use.
+     *  Required for:
+     *      - Guest Additions < 6.1. */
+    uint64_t idCtxWriteData;
+} SHCLCLIENTLEGACYSTATE;
+
+/**
  * Structure for keeping generic client state data within the Shared Clipboard host service.
  * This structure needs to be serializable by SSM (must be a POD type).
  */
@@ -122,6 +134,8 @@ typedef struct SHCLCLIENTSTATE
     SHCLSOURCE              enmSource;
     /** Client state flags of type SHCLCLIENTSTATE_FLAGS_. */
     uint32_t                fFlags;
+    /** Legacy cruft we have to keep to support old(er) Guest Additions. */
+    SHCLCLIENTLEGACYSTATE   Legacy;
     /** POD (plain old data) state. */
     SHCLCLIENTPODSTATE      POD;
     /** The client's transfers state. */
@@ -148,7 +162,7 @@ typedef struct _SHCLCLIENT
     SHCLEVENTSOURCE             EventSrc;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Transfer contextdata. */
-    SHCLTRANSFERCTX          TransferCtx;
+    SHCLTRANSFERCTX             TransferCtx;
 #endif
     /** Structure for keeping the client's pending (deferred return) state.
      *  A client is in a deferred state when it asks for the next HGCM message,

@@ -1242,24 +1242,40 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
             {
                 LogFlowFunc(("fFormats=%#x -> fFormat=%#x, idEvent=%#x\n", fFormats, fFormat, idEvent));
 
-                /*
-                 * Format the message.
-                 */
-                if (pMsg->idMsg == VBOX_SHCL_HOST_MSG_READ_DATA_CID)
-                    HGCMSvcSetU64(&pMsg->aParms[0],
-                                  VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID, idEvent));
-                else
-                    HGCMSvcSetU32(&pMsg->aParms[0], VBOX_SHCL_HOST_MSG_READ_DATA);
-                HGCMSvcSetU32(&pMsg->aParms[1], fFormat);
-
-                shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+                const uint64_t uCID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID, idEvent);
 
                 rc = VINF_SUCCESS;
+
+                /* Save the context ID in our legacy cruft if we have to deal with old(er) Guest Additions (< 6.1.). */
+                if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID))
+                {
+                    /* Only one data request at a time is supported. */
+                    AssertStmt(pClient->State.Legacy.idCtxWriteData == UINT64_MAX, rc = VERR_WRONG_ORDER);
+                    if (RT_SUCCESS(rc))
+                        pClient->State.Legacy.idCtxWriteData = uCID;
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Format the message.
+                     */
+                    if (pMsg->idMsg == VBOX_SHCL_HOST_MSG_READ_DATA_CID)
+                        HGCMSvcSetU64(&pMsg->aParms[0], uCID);
+                    else
+                        HGCMSvcSetU32(&pMsg->aParms[0], VBOX_SHCL_HOST_MSG_READ_DATA);
+                    HGCMSvcSetU32(&pMsg->aParms[1], fFormat);
+
+                    shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+                }
             }
             else
                 rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
             RTCritSectLeave(&pClient->CritSect);
+
+            if (RT_FAILURE(rc))
+                shClSvcMsgFree(pClient, pMsg);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -1310,18 +1326,14 @@ int ShClSvcGuestDataReceived(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 
     LogFlowFuncEnter();
 
-    SHCLEVENTID idEvent;
-    if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy, Guest Additions < 6.1. */
-    {
-        /* Older Guest Additions (<= VBox 6.0) did not have any context ID handling, so we ASSUME that the last event registered
-         * is the one we want to handle (as this all was a synchronous protocol anyway). */
-        idEvent = ShClEventGetLast(&pClient->EventSrc);
-    }
-    else
-        idEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
+    const SHCLEVENTID idEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
 
-    if (idEvent == NIL_SHCLEVENTID) /* Event not found? Bail out early. */
-        return VERR_NOT_FOUND;
+    AssertMsgReturn(idEvent != NIL_SHCLEVENTID,
+                    ("Event %RU64 empty within supplied context ID\n", idEvent), VERR_WRONG_ORDER);
+#ifdef VBOX_STRICT
+    AssertMsgReturn(ShClEventGet(&pClient->EventSrc, idEvent) != NULL,
+                    ("Event %RU64 not found, even if context ID was around\n", idEvent), VERR_NOT_FOUND);
+#endif
 
     int rc = VINF_SUCCESS;
 
@@ -1669,17 +1681,20 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     {
         ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
         cmdCtx.uContextID = paParms[iParm].u.uint64;
-        uint64_t const idCtxExpected = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID,
-                                                                VBOX_SHCL_CONTEXTID_GET_EVENT(cmdCtx.uContextID));
-        ASSERT_GUEST_MSG_RETURN(cmdCtx.uContextID == idCtxExpected,
-                                ("Wrong context ID: %#RX64, expected %#RX64\n", cmdCtx.uContextID, idCtxExpected),
-                                VERR_INVALID_CONTEXT);
         iParm++;
     }
-    else
+    else /* Older Guest Additions (< 6.1) did not supply a context ID. Dig it out of our legacy cruft. */
     {
-        /** @todo supply CID from client state? Setting it in ShClSvcGuestDataRequest? */
+        cmdCtx.uContextID = pClient->State.Legacy.idCtxWriteData;
+        pClient->State.Legacy.idCtxWriteData = UINT64_MAX; /* Reset. */
     }
+
+    uint64_t const idCtxExpected = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID,
+                                                            VBOX_SHCL_CONTEXTID_GET_EVENT(cmdCtx.uContextID));
+    ASSERT_GUEST_MSG_RETURN(cmdCtx.uContextID == idCtxExpected,
+                            ("Wrong context ID: %#RX64, expected %#RX64\n", cmdCtx.uContextID, idCtxExpected),
+                            VERR_INVALID_CONTEXT);
+
     if (cParms == VBOX_SHCL_CPARMS_DATA_WRITE_61B)
     {
         ASSERT_GUEST_RETURN(paParms[iParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
@@ -2109,7 +2124,7 @@ void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
     pClientState->Transfers.enmTransferDir = SHCLTRANSFERDIR_UNKNOWN;
 #endif
 
-
+    pClientState->Legacy.idCtxWriteData    = UINT64_MAX;
 }
 
 /*
