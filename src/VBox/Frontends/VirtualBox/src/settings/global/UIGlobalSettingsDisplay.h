@@ -75,6 +75,8 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
+    /** Prepares connections. */
+    void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 
@@ -89,16 +91,26 @@ private:
 
     /** @name Widgets
      * @{ */
-       QComboBox *m_pMaxResolutionCombo;
-       QSpinBox *m_pResolutionWidthSpin;
-       QSpinBox *m_pResolutionHeightSpin;
-       QCheckBox *m_pCheckBoxActivateOnMouseHover;
-       QLabel *m_pMaxResolutionLabel;
-       QLabel *m_pResolutionWidthLabel;
-       QLabel *m_pResolutionHeightLabel;
-       QLabel *m_pLabelGuestScreenScaleFactorEditor;
-       QLabel *m_pLabelMachineWindow;
-       UIScaleFactorEditor *m_pScaleFactorEditor;
+        /** Holds the max guest screen size label instance. */
+        QLabel              *m_pLabelMaxGuestScreenSize;
+        /** Holds the max guest screen size combo instance. */
+        QComboBox           *m_pComboMaxGuestScreenSize;
+        /** Holds the max guest screen width label instance. */
+        QLabel              *m_pLabelMaxGuestScreenWidth;
+        /** Holds the max guest screen width spinbox instance. */
+        QSpinBox            *m_pSpinboxMaxGuestScreenWidth;
+        /** Holds the max guest screen height label instance. */
+        QLabel              *m_pLabelMaxGuestScreenHeight;
+        /** Holds the max guest screen height spinbox instance. */
+        QSpinBox            *m_pSpinboxMaxGuestScreenHeight;
+        /** Holds the scale-factor label instance. */
+        QLabel              *m_pLabelScaleFactor;
+        /** Holds the scale-factor editor instance. */
+        UIScaleFactorEditor *m_pEditorScaleFactor;
+        /** Holds the 'machine-windows' label instance. */
+        QLabel              *m_pLabelMachineWindows;
+        /** Holds the 'activate on mouse hover' check-box instance. */
+        QCheckBox           *m_pCheckBoxActivateOnMouseHover;
     /** @} */
 };
 

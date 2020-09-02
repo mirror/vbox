@@ -69,6 +69,16 @@ struct UIDataSettingsGlobalDisplay
 
 UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     : m_pCache(0)
+    , m_pLabelMaxGuestScreenSize(0)
+    , m_pComboMaxGuestScreenSize(0)
+    , m_pLabelMaxGuestScreenWidth(0)
+    , m_pSpinboxMaxGuestScreenWidth(0)
+    , m_pLabelMaxGuestScreenHeight(0)
+    , m_pSpinboxMaxGuestScreenHeight(0)
+    , m_pLabelScaleFactor(0)
+    , m_pEditorScaleFactor(0)
+    , m_pLabelMachineWindows(0)
+    , m_pCheckBoxActivateOnMouseHover(0)
 {
     /* Prepare: */
     prepare();
@@ -111,15 +121,15 @@ void UIGlobalSettingsDisplay::getFromCache()
     const UIDataSettingsGlobalDisplay &oldDisplayData = m_pCache->base();
 
     /* Load old display data from the cache: */
-    m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData((int)oldDisplayData.m_enmMaxGuestResolution));
+    m_pComboMaxGuestScreenSize->setCurrentIndex(m_pComboMaxGuestScreenSize->findData((int)oldDisplayData.m_enmMaxGuestResolution));
     if (oldDisplayData.m_enmMaxGuestResolution == MaxGuestResolutionPolicy_Fixed)
     {
-        m_pResolutionWidthSpin->setValue(oldDisplayData.m_maxGuestResolution.width());
-        m_pResolutionHeightSpin->setValue(oldDisplayData.m_maxGuestResolution.height());
+        m_pSpinboxMaxGuestScreenWidth->setValue(oldDisplayData.m_maxGuestResolution.width());
+        m_pSpinboxMaxGuestScreenHeight->setValue(oldDisplayData.m_maxGuestResolution.height());
     }
     m_pCheckBoxActivateOnMouseHover->setChecked(oldDisplayData.m_fActivateHoveredMachineWindow);
-    m_pScaleFactorEditor->setScaleFactors(oldDisplayData.m_scaleFactors);
-    m_pScaleFactorEditor->setMonitorCount(gpDesktop->screenCount());
+    m_pEditorScaleFactor->setScaleFactors(oldDisplayData.m_scaleFactors);
+    m_pEditorScaleFactor->setMonitorCount(gpDesktop->screenCount());
 }
 
 void UIGlobalSettingsDisplay::putToCache()
@@ -128,11 +138,11 @@ void UIGlobalSettingsDisplay::putToCache()
     UIDataSettingsGlobalDisplay newDisplayData = m_pCache->base();
 
     /* Gather new display data: */
-    newDisplayData.m_enmMaxGuestResolution = (MaxGuestResolutionPolicy)m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toInt();
+    newDisplayData.m_enmMaxGuestResolution = (MaxGuestResolutionPolicy)m_pComboMaxGuestScreenSize->itemData(m_pComboMaxGuestScreenSize->currentIndex()).toInt();
     if (newDisplayData.m_enmMaxGuestResolution == MaxGuestResolutionPolicy_Fixed)
-        newDisplayData.m_maxGuestResolution = QSize(m_pResolutionWidthSpin->value(), m_pResolutionHeightSpin->value());
+        newDisplayData.m_maxGuestResolution = QSize(m_pSpinboxMaxGuestScreenWidth->value(), m_pSpinboxMaxGuestScreenHeight->value());
     newDisplayData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
-    newDisplayData.m_scaleFactors = m_pScaleFactorEditor->scaleFactors();
+    newDisplayData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
 
     /* Cache new display data: */
     m_pCache->cacheCurrentData(newDisplayData);
@@ -152,14 +162,14 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsDisplay::retranslateUi()
 {
-    m_pMaxResolutionLabel->setText(tr("Maximum Guest Screen &Size:"));
-    m_pResolutionWidthLabel->setText(tr("&Width:"));
-    m_pResolutionWidthSpin->setWhatsThis(tr("Holds the maximum width which we would like the guest to use."));
-    m_pResolutionHeightLabel->setText(tr("&Height:"));
-    m_pResolutionHeightSpin->setWhatsThis(tr("Holds the maximum height which we would like the guest to use."));
-    m_pLabelGuestScreenScaleFactorEditor->setText(tr("Scale Factor:"));
-    m_pScaleFactorEditor->setWhatsThis(tr("Controls the guest screen scale factor."));
-    m_pLabelMachineWindow->setText(tr("Machine Windows:"));
+    m_pLabelMaxGuestScreenSize->setText(tr("Maximum Guest Screen &Size:"));
+    m_pLabelMaxGuestScreenWidth->setText(tr("&Width:"));
+    m_pSpinboxMaxGuestScreenWidth->setWhatsThis(tr("Holds the maximum width which we would like the guest to use."));
+    m_pLabelMaxGuestScreenHeight->setText(tr("&Height:"));
+    m_pSpinboxMaxGuestScreenHeight->setWhatsThis(tr("Holds the maximum height which we would like the guest to use."));
+    m_pLabelScaleFactor->setText(tr("Scale Factor:"));
+    m_pEditorScaleFactor->setWhatsThis(tr("Controls the guest screen scale factor."));
+    m_pLabelMachineWindows->setText(tr("Machine Windows:"));
     m_pCheckBoxActivateOnMouseHover->setWhatsThis(tr("When checked, machine windows will be raised when the mouse pointer moves over them."));
     m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse"));
 
@@ -170,44 +180,29 @@ void UIGlobalSettingsDisplay::retranslateUi()
 void UIGlobalSettingsDisplay::sltHandleMaximumGuestScreenSizePolicyChange()
 {
     /* Get current resolution-combo tool-tip data: */
-    const QString strCurrentComboItemTip = m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex(), Qt::ToolTipRole).toString();
-    m_pMaxResolutionCombo->setWhatsThis(strCurrentComboItemTip);
+    const QString strCurrentComboItemTip = m_pComboMaxGuestScreenSize->itemData(m_pComboMaxGuestScreenSize->currentIndex(), Qt::ToolTipRole).toString();
+    m_pComboMaxGuestScreenSize->setWhatsThis(strCurrentComboItemTip);
 
     /* Get current resolution-combo item data: */
-    const MaxGuestResolutionPolicy enmPolicy = (MaxGuestResolutionPolicy)m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toInt();
+    const MaxGuestResolutionPolicy enmPolicy = (MaxGuestResolutionPolicy)m_pComboMaxGuestScreenSize->itemData(m_pComboMaxGuestScreenSize->currentIndex()).toInt();
     /* Should be combo-level widgets enabled? */
     const bool fComboLevelWidgetsEnabled = enmPolicy == MaxGuestResolutionPolicy_Fixed;
     /* Enable/disable combo-level widgets: */
-    m_pResolutionWidthLabel->setEnabled(fComboLevelWidgetsEnabled);
-    m_pResolutionWidthSpin->setEnabled(fComboLevelWidgetsEnabled);
-    m_pResolutionHeightLabel->setEnabled(fComboLevelWidgetsEnabled);
-    m_pResolutionHeightSpin->setEnabled(fComboLevelWidgetsEnabled);
+    m_pLabelMaxGuestScreenWidth->setEnabled(fComboLevelWidgetsEnabled);
+    m_pSpinboxMaxGuestScreenWidth->setEnabled(fComboLevelWidgetsEnabled);
+    m_pLabelMaxGuestScreenHeight->setEnabled(fComboLevelWidgetsEnabled);
+    m_pSpinboxMaxGuestScreenHeight->setEnabled(fComboLevelWidgetsEnabled);
 }
 
 void UIGlobalSettingsDisplay::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalDisplay;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Layout/widgets created in the .ui file. */
-    AssertPtrReturnVoid(m_pResolutionWidthSpin);
-    AssertPtrReturnVoid(m_pResolutionHeightSpin);
-    AssertPtrReturnVoid(m_pMaxResolutionCombo);
-    {
-        /* Configure widgets: */
-        const int iMinWidth = 640;
-        const int iMinHeight = 480;
-        const int iMaxSize = 16 * _1K;
-        m_pResolutionWidthSpin->setMinimum(iMinWidth);
-        m_pResolutionWidthSpin->setMaximum(iMaxSize);
-        m_pResolutionHeightSpin->setMinimum(iMinHeight);
-        m_pResolutionHeightSpin->setMaximum(iMaxSize);
-        connect(m_pMaxResolutionCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
-                this, &UIGlobalSettingsDisplay::sltHandleMaximumGuestScreenSizePolicyChange);
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -215,81 +210,101 @@ void UIGlobalSettingsDisplay::prepare()
 
 void UIGlobalSettingsDisplay::prepareWidgets()
 {
-   if (objectName().isEmpty())
-       setObjectName(QStringLiteral("UIGlobalSettingsDisplay"));
-   QGridLayout *pMainLayout = new QGridLayout(this);
-   pMainLayout->setContentsMargins(0, 0, 0, 0);
-   pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
-   m_pMaxResolutionLabel = new QLabel();
-   m_pMaxResolutionLabel->setObjectName(QStringLiteral("m_pMaxResolutionLabel"));
-   m_pMaxResolutionLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-   pMainLayout->addWidget(m_pMaxResolutionLabel, 0, 0, 1, 1);
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setContentsMargins(0, 0, 0, 0);
+        pLayoutMain->setRowStretch(6, 1);
 
-   m_pMaxResolutionCombo = new QComboBox();
-   m_pMaxResolutionCombo->setObjectName(QStringLiteral("m_pMaxResolutionCombo"));
-   QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-   sizePolicy.setHorizontalStretch(1);
-   sizePolicy.setVerticalStretch(0);
-   sizePolicy.setHeightForWidth(m_pMaxResolutionCombo->sizePolicy().hasHeightForWidth());
-   m_pMaxResolutionCombo->setSizePolicy(sizePolicy);
-   pMainLayout->addWidget(m_pMaxResolutionCombo, 0, 1, 1, 1);
+        const int iMinWidth = 640;
+        const int iMinHeight = 480;
+        const int iMaxSize = 16 * _1K;
 
-   m_pResolutionWidthLabel = new QLabel();
-   m_pResolutionWidthLabel->setObjectName(QStringLiteral("m_pResolutionWidthLabel"));
-   m_pResolutionWidthLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-   pMainLayout->addWidget(m_pResolutionWidthLabel, 1, 0, 1, 1);
+        /* Prepare max guest screen size label: */
+        m_pLabelMaxGuestScreenSize = new QLabel(this);
+        if (m_pLabelMaxGuestScreenSize)
+        {
+           m_pLabelMaxGuestScreenSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+           pLayoutMain->addWidget(m_pLabelMaxGuestScreenSize, 0, 0);
+        }
+        /* Prepare max guest screen size combo: */
+        m_pComboMaxGuestScreenSize = new QComboBox(this);
+        if (m_pComboMaxGuestScreenSize)
+        {
+            if (m_pLabelMaxGuestScreenSize)
+                m_pLabelMaxGuestScreenSize->setBuddy(m_pComboMaxGuestScreenSize);
+            pLayoutMain->addWidget(m_pComboMaxGuestScreenSize, 0, 1);
+        }
 
-   m_pResolutionWidthSpin = new QSpinBox();
-   m_pResolutionWidthSpin->setObjectName(QStringLiteral("m_pResolutionWidthSpin"));
-   QSizePolicy sizePolicy1(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-   sizePolicy1.setHorizontalStretch(1);
-   sizePolicy1.setVerticalStretch(0);
-   sizePolicy1.setHeightForWidth(m_pResolutionWidthSpin->sizePolicy().hasHeightForWidth());
-   m_pResolutionWidthSpin->setSizePolicy(sizePolicy1);
-   pMainLayout->addWidget(m_pResolutionWidthSpin, 1, 1, 1, 1);
+        /* Prepare max guest screen width label: */
+        m_pLabelMaxGuestScreenWidth = new QLabel(this);
+        if (m_pLabelMaxGuestScreenWidth)
+        {
+            m_pLabelMaxGuestScreenWidth->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelMaxGuestScreenWidth, 1, 0);
+        }
+        /* Prepare max guest screen width spinbox: */
+        m_pSpinboxMaxGuestScreenWidth = new QSpinBox(this);
+        if (m_pSpinboxMaxGuestScreenWidth)
+        {
+            if (m_pLabelMaxGuestScreenWidth)
+                m_pLabelMaxGuestScreenWidth->setBuddy(m_pSpinboxMaxGuestScreenWidth);
+            m_pSpinboxMaxGuestScreenWidth->setMinimum(iMinWidth);
+            m_pSpinboxMaxGuestScreenWidth->setMaximum(iMaxSize);
 
-   m_pResolutionHeightLabel = new QLabel();
-   m_pResolutionHeightLabel->setObjectName(QStringLiteral("m_pResolutionHeightLabel"));
-   m_pResolutionHeightLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-   pMainLayout->addWidget(m_pResolutionHeightLabel, 2, 0, 1, 1);
+            pLayoutMain->addWidget(m_pSpinboxMaxGuestScreenWidth, 1, 1);
+        }
 
-   m_pResolutionHeightSpin = new QSpinBox();
-   m_pResolutionHeightSpin->setObjectName(QStringLiteral("m_pResolutionHeightSpin"));
-   sizePolicy1.setHeightForWidth(m_pResolutionHeightSpin->sizePolicy().hasHeightForWidth());
-   m_pResolutionHeightSpin->setSizePolicy(sizePolicy1);
-   pMainLayout->addWidget(m_pResolutionHeightSpin, 2, 1, 1, 1);
+        /* Prepare max guest screen height label: */
+        m_pLabelMaxGuestScreenHeight = new QLabel(this);
+        if (m_pLabelMaxGuestScreenHeight)
+        {
+            m_pLabelMaxGuestScreenHeight->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelMaxGuestScreenHeight, 2, 0);
+        }
+        /* Prepare max guest screen width spinbox: */
+        m_pSpinboxMaxGuestScreenHeight = new QSpinBox(this);
+        if (m_pSpinboxMaxGuestScreenHeight)
+        {
+            if (m_pLabelMaxGuestScreenHeight)
+                m_pLabelMaxGuestScreenHeight->setBuddy(m_pSpinboxMaxGuestScreenHeight);
+            m_pSpinboxMaxGuestScreenHeight->setMinimum(iMinHeight);
+            m_pSpinboxMaxGuestScreenHeight->setMaximum(iMaxSize);
 
-   m_pLabelGuestScreenScaleFactorEditor = new QLabel();
-   m_pLabelGuestScreenScaleFactorEditor->setObjectName(QStringLiteral("m_pLabelGuestScreenScaleFactorEditor"));
-   m_pLabelGuestScreenScaleFactorEditor->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-   pMainLayout->addWidget(m_pLabelGuestScreenScaleFactorEditor, 3, 0, 1, 1);
+            pLayoutMain->addWidget(m_pSpinboxMaxGuestScreenHeight, 2, 1);
+        }
 
-   m_pScaleFactorEditor = new UIScaleFactorEditor(this);
-   m_pScaleFactorEditor->setObjectName(QStringLiteral("m_pScaleFactorEditor"));
-   QSizePolicy sizePolicy2(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-   sizePolicy2.setHorizontalStretch(0);
-   sizePolicy2.setVerticalStretch(0);
-   sizePolicy2.setHeightForWidth(m_pScaleFactorEditor->sizePolicy().hasHeightForWidth());
-   m_pScaleFactorEditor->setSizePolicy(sizePolicy2);
-   pMainLayout->addWidget(m_pScaleFactorEditor, 3, 1, 2, 1);
+        /* Prepare scale-factor label: */
+        m_pLabelScaleFactor = new QLabel(this);
+        if (m_pLabelScaleFactor)
+        {
+            m_pLabelScaleFactor->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelScaleFactor, 3, 0);
+        }
+        /* Prepare scale-factor editor: */
+        m_pEditorScaleFactor = new UIScaleFactorEditor(this);
+        if (m_pEditorScaleFactor)
+            pLayoutMain->addWidget(m_pEditorScaleFactor, 3, 1, 2, 1);
 
-   m_pLabelMachineWindow = new QLabel();
-   m_pLabelMachineWindow->setObjectName(QStringLiteral("m_pLabelMachineWindow"));
-   m_pLabelMachineWindow->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-   pMainLayout->addWidget(m_pLabelMachineWindow, 5, 0, 1, 1);
+        /* Prepare 'machine-windows' label: */
+        m_pLabelMachineWindows = new QLabel(this);
+        if (m_pLabelMachineWindows)
+        {
+            m_pLabelMachineWindows->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelMachineWindows, 5, 0);
+        }
+        /* Prepare 'activate on mouse hover' check-box: */
+        m_pCheckBoxActivateOnMouseHover = new QCheckBox(this);
+        if (m_pCheckBoxActivateOnMouseHover)
+            pLayoutMain->addWidget(m_pCheckBoxActivateOnMouseHover, 5, 1);
+    }
+}
 
-   m_pCheckBoxActivateOnMouseHover = new QCheckBox();
-   m_pCheckBoxActivateOnMouseHover->setObjectName(QStringLiteral("m_pCheckBoxActivateOnMouseHover"));
-   sizePolicy2.setHeightForWidth(m_pCheckBoxActivateOnMouseHover->sizePolicy().hasHeightForWidth());
-   m_pCheckBoxActivateOnMouseHover->setSizePolicy(sizePolicy2);
-   pMainLayout->addWidget(m_pCheckBoxActivateOnMouseHover, 5, 1, 1, 1);
-
-   QSpacerItem *spacerItem = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-   pMainLayout->addItem(spacerItem, 6, 0, 1, 2);
-
-   m_pMaxResolutionLabel->setBuddy(m_pMaxResolutionCombo);
-   m_pResolutionWidthLabel->setBuddy(m_pResolutionWidthSpin);
-   m_pResolutionHeightLabel->setBuddy(m_pResolutionHeightSpin);
+void UIGlobalSettingsDisplay::prepareConnections()
+{
+    connect(m_pComboMaxGuestScreenSize, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, &UIGlobalSettingsDisplay::sltHandleMaximumGuestScreenSizePolicyChange);
 }
 
 void UIGlobalSettingsDisplay::cleanup()
@@ -302,34 +317,34 @@ void UIGlobalSettingsDisplay::cleanup()
 void UIGlobalSettingsDisplay::reloadMaximumGuestScreenSizePolicyComboBox()
 {
     /* Remember current position: */
-    int iCurrentPosition = m_pMaxResolutionCombo->currentIndex();
+    int iCurrentPosition = m_pComboMaxGuestScreenSize->currentIndex();
     if (iCurrentPosition == -1)
         iCurrentPosition = 0;
 
     /* Clear combo-box: */
-    m_pMaxResolutionCombo->clear();
+    m_pComboMaxGuestScreenSize->clear();
 
     /* Create corresponding items: */
-    m_pMaxResolutionCombo->addItem(tr("Automatic", "Maximum Guest Screen Size"),
+    m_pComboMaxGuestScreenSize->addItem(tr("Automatic", "Maximum Guest Screen Size"),
                                    QVariant((int)MaxGuestResolutionPolicy_Automatic));
-    m_pMaxResolutionCombo->setItemData(m_pMaxResolutionCombo->count() - 1,
+    m_pComboMaxGuestScreenSize->setItemData(m_pComboMaxGuestScreenSize->count() - 1,
                                        tr("Suggest a reasonable maximum screen size to the guest. "
                                           "The guest will only see this suggestion when guest additions are installed."),
                                        Qt::ToolTipRole);
-    m_pMaxResolutionCombo->addItem(tr("None", "Maximum Guest Screen Size"),
+    m_pComboMaxGuestScreenSize->addItem(tr("None", "Maximum Guest Screen Size"),
                                    QVariant((int)MaxGuestResolutionPolicy_Any));
-    m_pMaxResolutionCombo->setItemData(m_pMaxResolutionCombo->count() - 1,
+    m_pComboMaxGuestScreenSize->setItemData(m_pComboMaxGuestScreenSize->count() - 1,
                                        tr("Do not attempt to limit the size of the guest screen."),
                                        Qt::ToolTipRole);
-    m_pMaxResolutionCombo->addItem(tr("Hint", "Maximum Guest Screen Size"),
+    m_pComboMaxGuestScreenSize->addItem(tr("Hint", "Maximum Guest Screen Size"),
                                    QVariant((int)MaxGuestResolutionPolicy_Fixed));
-    m_pMaxResolutionCombo->setItemData(m_pMaxResolutionCombo->count() - 1,
+    m_pComboMaxGuestScreenSize->setItemData(m_pComboMaxGuestScreenSize->count() - 1,
                                        tr("Suggest a maximum screen size to the guest. "
                                           "The guest will only see this suggestion when guest additions are installed."),
                                        Qt::ToolTipRole);
 
     /* Choose previous position: */
-    m_pMaxResolutionCombo->setCurrentIndex(iCurrentPosition);
+    m_pComboMaxGuestScreenSize->setCurrentIndex(iCurrentPosition);
     sltHandleMaximumGuestScreenSizePolicyChange();
 }
 
