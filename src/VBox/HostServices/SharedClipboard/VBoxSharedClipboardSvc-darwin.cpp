@@ -203,6 +203,7 @@ int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     LogFlowFunc(("fFormats=%02X\n", fFormats));
 
     /** @todo r=bird: BUGBUG: The following is probably a mistake. */
+    /** @todo r=andy: BUGBUG: Has been there since forever; needs investigation first before removing. */
     if (fFormats == VBOX_SHCL_FMT_NONE)
     {
         /* This is just an automatism, not a genuine announcement */
