@@ -28,7 +28,7 @@
 
 #ifndef VBOX
 #include "pipe/p_compiler.h"
-#else /* VBOX
+#else /* VBOX */
 
 /* Include only what is required. */
 #include <iprt/types.h>
