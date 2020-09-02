@@ -638,6 +638,12 @@ VBoxDbgConsole::~VBoxDbgConsole()
     m_pFocusToInput = NULL;
     delete m_pFocusToOutput;
     m_pFocusToOutput = NULL;
+
+    if (m_pszOutputBuf)
+    {
+        RTMemFree(m_pszOutputBuf);
+        m_pszOutputBuf = NULL;
+    }
 }
 
 
