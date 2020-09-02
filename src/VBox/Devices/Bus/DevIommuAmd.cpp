@@ -506,8 +506,8 @@ static void iommuAmdCmdThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
     LogFlowFunc(("\n"));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
-    if (   !ASMAtomicXchgBool(&pThis->fCmdThreadSignaled, true)
-        &&  ASMAtomicReadBool(&pThis->fCmdThreadSleeping))
+    IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
+    if (Status.n.u1CmdBufRunning)
     {
         LogFlowFunc(("Signaling command thread\n"));
         PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
@@ -646,11 +646,14 @@ static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iR
     /* Update the register. */
     ASMAtomicWriteU64(&pThis->Ctrl.u64, NewCtrl.u64);
 
+    bool const fNewIommuEn = NewCtrl.n.u1IommuEn;
+    bool const fOldIommuEn = OldCtrl.n.u1IommuEn;
+
     /* Enable or disable event logging when the bit transitions. */
-    bool const fNewIommuEn  = NewCtrl.n.u1IommuEn;
     bool const fOldEvtLogEn = OldCtrl.n.u1EvtLogEn;
     bool const fNewEvtLogEn = NewCtrl.n.u1EvtLogEn;
-    if (fOldEvtLogEn != fNewEvtLogEn)
+    if (   fOldEvtLogEn != fNewEvtLogEn
+        || fOldIommuEn != fNewIommuEn)
     {
         if (   fNewIommuEn
             && fNewEvtLogEn)
@@ -665,16 +668,23 @@ static VBOXSTRICTRC iommuAmdCtrl_w(PPDMDEVINS pDevIns, PIOMMU pThis, uint32_t iR
     /* Enable or disable command buffer processing when the bit transitions. */
     bool const fOldCmdBufEn = OldCtrl.n.u1CmdBufEn;
     bool const fNewCmdBufEn = NewCtrl.n.u1CmdBufEn;
-    if (fOldCmdBufEn != fNewCmdBufEn)
+    if (   fOldCmdBufEn != fNewCmdBufEn
+        || fOldIommuEn != fNewIommuEn)
     {
-        if (   fNewIommuEn
-            && fNewCmdBufEn)
+        if (   fNewCmdBufEn
+            && fNewIommuEn)
+        {
             ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_CMD_BUF_RUNNING);
-        else
-            ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
+            LogFunc(("Command buffer enabled\n"));
 
-        /* Wake up the command thread to start or stop processing commands. */
-        iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
+            /* Wake up the command thread to start processing commands. */
+            iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
+        }
+        else
+        {
+            ASMAtomicAndU64(&pThis->Status.u64, ~IOMMU_STATUS_CMD_BUF_RUNNING);
+            LogFunc(("Command buffer disabled\n"));
+        }
     }
 
     return VINF_SUCCESS;
@@ -1474,7 +1484,9 @@ static void iommuAmdSetHwError(PPDMDEVINS pDevIns, PCEVT_GENERIC_T pEvent)
         pThis->HwEvtStatus.n.u1Valid = 1;
         pThis->HwEvtHi.u64 = RT_MAKE_U64(pEvent->au32[0], pEvent->au32[1]);
         pThis->HwEvtLo     = RT_MAKE_U64(pEvent->au32[2], pEvent->au32[3]);
-        Assert(pThis->HwEvtHi.n.u4EvtCode == IOMMU_EVT_DEV_TAB_HW_ERROR);
+        Assert(   pThis->HwEvtHi.n.u4EvtCode == IOMMU_EVT_DEV_TAB_HW_ERROR
+               || pThis->HwEvtHi.n.u4EvtCode == IOMMU_EVT_PAGE_TAB_HW_ERROR
+               || pThis->HwEvtHi.n.u4EvtCode == IOMMU_EVT_COMMAND_HW_ERROR);
     }
 }
 
@@ -2770,6 +2782,8 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 {
     IOMMU_ASSERT_NOT_LOCKED(pDevIns);
 
+    LogFlowFunc(("\n"));
+
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     uint8_t const bCmd = pCmd->n.u4Opcode;
     switch (bCmd)
@@ -2935,6 +2949,8 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
         IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
         if (Status.n.u1CmdBufRunning)
         {
+            LogFlowFunc(("Command buffer running\n"));
+
             /* Get the offset we need to read the command from memory (circular buffer offset). */
             uint32_t const cbCmdBuf = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
             uint32_t offHead = pThis->CmdBufHeadPtr.n.off;
@@ -3843,7 +3859,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Header. */
     PDMPciDevSetVendorId(pPciDev,          IOMMU_PCI_VENDOR_ID);       /* AMD */
     PDMPciDevSetDeviceId(pPciDev,          IOMMU_PCI_DEVICE_ID);       /* VirtualBox IOMMU device */
-    PDMPciDevSetCommand(pPciDev,           0);                         /* Command */
+    PDMPciDevSetCommand(pPciDev,           VBOX_PCI_COMMAND_MASTER);   /* Enable bus master (as we write to main memory). */
     PDMPciDevSetStatus(pPciDev,            VBOX_PCI_STATUS_CAP_LIST);  /* Status - CapList supported */
     PDMPciDevSetRevisionId(pPciDev,        IOMMU_PCI_REVISION_ID);     /* VirtualBox specific device implementation revision */
     PDMPciDevSetClassBase(pPciDev,         VBOX_PCI_CLASS_SYSTEM);     /* System Base Peripheral */
