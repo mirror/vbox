@@ -98,15 +98,34 @@ typedef struct SHCLCLIENTPODSTATE
 /** @} */
 
 /**
+ * Strucutre needed to support backwards compatbility for old(er) Guest Additions (< 6.1),
+ * which did not know the context ID concept then.
+ */
+typedef struct SHCLCLIENTLEGACYCID
+{
+    /** List node. */
+    RTLISTNODE Node;
+    /** The actual context ID. */
+    uint64_t   uCID;
+    /** Not used yet; useful to have it in the saved state though. */
+    uint32_t   enmType;
+    /** @todo Add an union here as soon as we utilize \a enmType. */
+    SHCLFORMAT uFormat;
+} SHCLCLIENTLEGACYCID;
+/** Pointer to a SHCLCLIENTLEGACYCID struct. */
+typedef SHCLCLIENTLEGACYCID *PSHCLCLIENTLEGACYCID;
+
+/**
  * Strucutre for keeping legacy state, required for keeping backwards compatibility
  * to old(er) Guest Additions.
  */
 typedef struct SHCLCLIENTLEGACYSTATE
 {
-    /** Context ID required for an incoming VBOX_SHCL_GUEST_FN_DATA_WRITE call. Set to UINT64_MAX if not in use.
-     *  Required for:
-     *      - Guest Additions < 6.1. */
-    uint64_t idCtxWriteData;
+    /** List of context IDs (of type SHCLCLIENTLEGACYCID) for older Guest Additions which (< 6.1)
+     *  which did not know the concept of context IDs. */
+    RTLISTANCHOR lstCID;
+    /** Number of context IDs currently in \a lstCID. */
+    uint16_t     cCID;
 } SHCLCLIENTLEGACYSTATE;
 
 /**
@@ -134,8 +153,6 @@ typedef struct SHCLCLIENTSTATE
     SHCLSOURCE              enmSource;
     /** Client state flags of type SHCLCLIENTSTATE_FLAGS_. */
     uint32_t                fFlags;
-    /** Legacy cruft we have to keep to support old(er) Guest Additions. */
-    SHCLCLIENTLEGACYSTATE   Legacy;
     /** POD (plain old data) state. */
     SHCLCLIENTPODSTATE      POD;
     /** The client's transfers state. */
@@ -157,6 +174,8 @@ typedef struct _SHCLCLIENT
     RTLISTANCHOR                MsgQueue;
     /** Number of allocated messages (updated atomically, not under critsect). */
     uint32_t volatile           cAllocatedMessages;
+    /** Legacy cruft we have to keep to support old(er) Guest Additions. */
+    SHCLCLIENTLEGACYSTATE       Legacy;
     /** The client's own event source.
      *  Needed for events which are not bound to a specific transfer. */
     SHCLEVENTSOURCE             EventSrc;

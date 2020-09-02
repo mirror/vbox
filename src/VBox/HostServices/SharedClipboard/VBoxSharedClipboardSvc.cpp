@@ -250,7 +250,9 @@ using namespace HGCM;
  *
  * @{ */
 /** The current saved state version. */
-#define VBOX_SHCL_SAVED_STATE_VER_CURRENT   VBOX_SHCL_SAVED_STATE_VER_6_1RC1
+#define VBOX_SHCL_SAVED_STATE_VER_CURRENT   VBOX_SHCL_SAVED_STATE_LEGACY_CID
+/** Adds the legacy context ID list. */
+#define VBOX_SHCL_SAVED_STATE_LEGACY_CID    UINT32_C(0x80000005)
 /** Adds the client's POD state and client state flags.
  * @since 6.1 RC1 */
 #define VBOX_SHCL_SAVED_STATE_VER_6_1RC1    UINT32_C(0x80000004)
@@ -379,6 +381,14 @@ void shClSvcMsgQueueReset(PSHCLCLIENT pClient)
         PSHCLCLIENTMSG pMsg = RTListRemoveFirst(&pClient->MsgQueue, SHCLCLIENTMSG, ListEntry);
         shClSvcMsgFree(pClient, pMsg);
     }
+    /** @todo r=andy Don't we also need to reset pClient->cAllocatedMessages here? */
+
+    while (!RTListIsEmpty(&pClient->Legacy.lstCID))
+    {
+        PSHCLCLIENTLEGACYCID pCID = RTListRemoveFirst(&pClient->Legacy.lstCID, SHCLCLIENTLEGACYCID, Node);
+        RTMemFree(pCID);
+    }
+    pClient->Legacy.cCID = 0;
 }
 
 /**
@@ -555,8 +565,12 @@ int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
 
     /* Assign the client ID. */
     pClient->State.uClientID = uClientID;
+
     RTListInit(&pClient->MsgQueue);
     pClient->cAllocatedMessages = 0;
+
+    RTListInit(&pClient->Legacy.lstCID);
+    pClient->Legacy.cCID = 0;
 
     LogFlowFunc(("[Client %RU32]\n", pClient->State.uClientID));
 
@@ -1206,6 +1220,7 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
 
     SHCLEVENTID idEvent = NIL_SHCLEVENTID;
 
+    /* Generate a separate message for every (valid) format we support. */
     while (fFormats)
     {
         /* Pick the next format to get from the mask: */
@@ -1246,13 +1261,22 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
 
                 rc = VINF_SUCCESS;
 
-                /* Save the context ID in our legacy cruft if we have to deal with old(er) Guest Additions (< 6.1.). */
+                /* Save the context ID in our legacy cruft if we have to deal with old(er) Guest Additions (< 6.1). */
                 if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID))
                 {
-                    /* Only one data request at a time is supported. */
-                    AssertStmt(pClient->State.Legacy.idCtxWriteData == UINT64_MAX, rc = VERR_WRONG_ORDER);
+                    AssertStmt(pClient->Legacy.cCID < 4096, rc = VERR_TOO_MUCH_DATA);
                     if (RT_SUCCESS(rc))
-                        pClient->State.Legacy.idCtxWriteData = uCID;
+                    {
+                        PSHCLCLIENTLEGACYCID pCID = (PSHCLCLIENTLEGACYCID)RTMemAlloc(sizeof(SHCLCLIENTLEGACYCID));
+                        if (pCID)
+                        {
+                            pCID->uCID = uCID;
+                            RTListAppend(&pClient->Legacy.lstCID, &pCID->Node);
+                            pClient->Legacy.cCID++;
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
                 }
 
                 if (RT_SUCCESS(rc))
@@ -1663,13 +1687,15 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     else
         return VERR_ACCESS_DENIED;
 
+    const bool fReportsContextID = RT_BOOL(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID);
+
     /*
      * Digest parameters.
      *
      * There are 3 different format here, formatunately no parameters have been
      * switch around so it's plain sailing compared to the DATA_READ message.
      */
-    ASSERT_GUEST_RETURN(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID
+    ASSERT_GUEST_RETURN(fReportsContextID
                         ? cParms == VBOX_SHCL_CPARMS_DATA_WRITE || cParms == VBOX_SHCL_CPARMS_DATA_WRITE_61B
                         : cParms == VBOX_SHCL_CPARMS_DATA_WRITE_OLD,
                         VERR_WRONG_PARAMETER_COUNT);
@@ -1683,17 +1709,11 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
         cmdCtx.uContextID = paParms[iParm].u.uint64;
         iParm++;
     }
-    else /* Older Guest Additions (< 6.1) did not supply a context ID. Dig it out of our legacy cruft. */
+    else
     {
-        cmdCtx.uContextID = pClient->State.Legacy.idCtxWriteData;
-        pClient->State.Legacy.idCtxWriteData = UINT64_MAX; /* Reset. */
+        /* Older Guest Additions (< 6.1) did not supply a context ID.
+         * We dig it out from our saved context ID list then a bit down below. */
     }
-
-    uint64_t const idCtxExpected = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID,
-                                                            VBOX_SHCL_CONTEXTID_GET_EVENT(cmdCtx.uContextID));
-    ASSERT_GUEST_MSG_RETURN(cmdCtx.uContextID == idCtxExpected,
-                            ("Wrong context ID: %#RX64, expected %#RX64\n", cmdCtx.uContextID, idCtxExpected),
-                            VERR_INVALID_CONTEXT);
 
     if (cParms == VBOX_SHCL_CPARMS_DATA_WRITE_61B)
     {
@@ -1719,6 +1739,34 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     cbData = paParms[iParm].u.pointer.size;
     iParm++;
     Assert(iParm == cParms);
+
+    /*
+     * Handle / check context ID.
+     */
+    if (!fReportsContextID) /* Do we have to deal with old(er) GAs (< 6.1) which don't support context IDs? Dig out the context ID then. */
+    {
+        PSHCLCLIENTLEGACYCID pCID = NULL;
+        RTListForEach(&pClient->Legacy.lstCID, pCID, SHCLCLIENTLEGACYCID, Node) /* Slow, but does the job for now. */
+        {
+            if (pCID->uFormat == uFormat)
+                break;
+        }
+
+        ASSERT_GUEST_MSG_RETURN(pCID != NULL, ("Context ID for format %#x not found\n", uFormat), VERR_INVALID_CONTEXT);
+        cmdCtx.uContextID = pCID->uCID;
+
+        /* Not needed anymore; clean up. */
+        Assert(pClient->Legacy.cCID);
+        pClient->Legacy.cCID--;
+        RTListNodeRemove(&pCID->Node);
+        RTMemFree(pCID);
+    }
+
+    uint64_t const idCtxExpected = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID,
+                                                            VBOX_SHCL_CONTEXTID_GET_EVENT(cmdCtx.uContextID));
+    ASSERT_GUEST_MSG_RETURN(cmdCtx.uContextID == idCtxExpected,
+                            ("Wrong context ID: %#RX64, expected %#RX64\n", cmdCtx.uContextID, idCtxExpected),
+                            VERR_INVALID_CONTEXT);
 
     /*
      * For some reason we need to do this (makes absolutely no sense to bird).
@@ -2123,8 +2171,6 @@ void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     pClientState->Transfers.enmTransferDir = SHCLTRANSFERDIR_UNKNOWN;
 #endif
-
-    pClientState->Legacy.idCtxWriteData    = UINT64_MAX;
 }
 
 /*
@@ -2212,6 +2258,20 @@ static DECLCALLBACK(int) svcHostCall(void *,
 }
 
 #ifndef UNIT_TEST
+
+/**
+ * SSM descriptor table for the SHCLCLIENTLEGACYCID structure.
+ *
+ * @note Saving the ListEntry attribute is not necessary, as this gets used on runtime only.
+ */
+static SSMFIELD const s_aShClSSMClientLegacyCID[] =
+{
+    SSMFIELD_ENTRY(SHCLCLIENTLEGACYCID, uCID),
+    SSMFIELD_ENTRY(SHCLCLIENTLEGACYCID, enmType),
+    SSMFIELD_ENTRY(SHCLCLIENTLEGACYCID, uFormat),
+    SSMFIELD_ENTRY_TERM()
+};
+
 /**
  * SSM descriptor table for the SHCLCLIENTSTATE structure.
  *
@@ -2314,12 +2374,11 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     AssertRCReturn(rc, rc);
 
     /* Serialize the client's internal message queue. */
+    /** @todo r=andy Why not using pClient->cAllocatedMessages here? */
     uint32_t cMsgs = 0;
     PSHCLCLIENTMSG pMsg;
     RTListForEach(&pClient->MsgQueue, pMsg, SHCLCLIENTMSG, ListEntry)
-    {
         cMsgs += 1;
-    }
 
     rc = SSMR3PutU64(pSSM, cMsgs);
     AssertRCReturn(rc, rc);
@@ -2333,6 +2392,15 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
             HGCMSvcSSMR3Put(&pMsg->aParms[iParm], pSSM);
     }
 
+    rc = SSMR3PutU64(pSSM, pClient->Legacy.cCID);
+    AssertRCReturn(rc, rc);
+
+    PSHCLCLIENTLEGACYCID pCID;
+    RTListForEach(&pClient->Legacy.lstCID, pCID, SHCLCLIENTLEGACYCID, Node)
+    {
+        rc = SSMR3PutStructEx(pSSM, pCID, sizeof(SHCLCLIENTLEGACYCID), 0 /*fFlags*/, &s_aShClSSMClientLegacyCID[0], NULL);
+        AssertRCReturn(rc, rc);
+    }
 #else  /* UNIT_TEST */
     RT_NOREF3(u32ClientID, pvClient, pSSM);
 #endif /* UNIT_TEST */
@@ -2443,6 +2511,23 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             }
 
             shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+        }
+
+        if (lenOrVer >= VBOX_SHCL_SAVED_STATE_LEGACY_CID)
+        {
+            uint64_t cCID;
+            rc = SSMR3GetU64(pSSM, &cCID);
+            AssertRCReturn(rc, rc);
+            AssertLogRelMsgReturn(cCID < _16K, ("Too many context IDs: %u (%x)\n", cCID, cCID), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+            for (uint64_t i = 0; i < cCID; i++)
+            {
+                PSHCLCLIENTLEGACYCID pCID = (PSHCLCLIENTLEGACYCID)RTMemAlloc(sizeof(SHCLCLIENTLEGACYCID));
+                AssertPtrReturn(pCID, VERR_NO_MEMORY);
+
+                SSMR3GetStructEx(pSSM, pCID, sizeof(SHCLCLIENTLEGACYCID), 0 /* fFlags */, &s_aShClSSMClientLegacyCID[0], NULL);
+                RTListAppend(&pClient->Legacy.lstCID, &pCID->Node);
+            }
         }
     }
     else
