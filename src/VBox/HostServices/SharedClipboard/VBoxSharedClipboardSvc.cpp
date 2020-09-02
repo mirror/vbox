@@ -1270,7 +1270,9 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
                         PSHCLCLIENTLEGACYCID pCID = (PSHCLCLIENTLEGACYCID)RTMemAlloc(sizeof(SHCLCLIENTLEGACYCID));
                         if (pCID)
                         {
-                            pCID->uCID = uCID;
+                            pCID->uCID    = uCID;
+                            pCID->enmType = 0; /* Not used yet. */
+                            pCID->uFormat = fFormat;
                             RTListAppend(&pClient->Legacy.lstCID, &pCID->Node);
                             pClient->Legacy.cCID++;
                         }
@@ -1746,10 +1748,14 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     if (!fReportsContextID) /* Do we have to deal with old(er) GAs (< 6.1) which don't support context IDs? Dig out the context ID then. */
     {
         PSHCLCLIENTLEGACYCID pCID = NULL;
-        RTListForEach(&pClient->Legacy.lstCID, pCID, SHCLCLIENTLEGACYCID, Node) /* Slow, but does the job for now. */
+        PSHCLCLIENTLEGACYCID pCIDIter;
+        RTListForEach(&pClient->Legacy.lstCID, pCIDIter, SHCLCLIENTLEGACYCID, Node) /* Slow, but does the job for now. */
         {
-            if (pCID->uFormat == uFormat)
+            if (pCIDIter->uFormat == uFormat)
+            {
+                pCID = pCIDIter;
                 break;
+            }
         }
 
         ASSERT_GUEST_MSG_RETURN(pCID != NULL, ("Context ID for format %#x not found\n", uFormat), VERR_INVALID_CONTEXT);
