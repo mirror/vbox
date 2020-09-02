@@ -93,8 +93,8 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares NAT network tree. */
-    void prepareNATNetworkTree();
+    /** Prepares NAT network tree-widget. */
+    void prepareNATNetworkTreeWidget();
     /** Prepares NAT network toolbar. */
     void prepareNATNetworkToolbar();
     /** Prepares connections. */
@@ -126,22 +126,25 @@ private:
     /** Returns whether the NAT network described by the @a cache could be updated or recreated otherwise. */
     bool isNetworkCouldBeUpdated(const UISettingsCacheGlobalNetworkNAT &cache) const;
 
-    /** Holds the Add NAT network action instance. */
-    QAction *m_pActionAddNATNetwork;
-    /** Holds the Remove NAT network action instance. */
-    QAction *m_pActionRemoveNATNetwork;
-    /** Holds the Edit NAT network action instance. */
-    QAction *m_pActionEditNATNetwork;
-
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalNetwork *m_pCache;
 
     /** @name Widgets
      * @{ */
-       QITreeWidget *m_pTreeNetworkNAT;
-       QILabelSeparator *m_pNetworkLabel;
-       QHBoxLayout *m_pLayoutNAT;
-       UIToolBar *m_pToolbarNetworkNAT;
+        /** Holds the separator label instance. */
+        QILabelSeparator *m_pLabelSeparator;
+        /** Holds the NAT networt layout instance. */
+        QHBoxLayout      *m_pLayoutNATNetwork;
+        /** Holds the NAT networt tree-widget instance. */
+        QITreeWidget     *m_pTreeWidgetNATNetwork;
+        /** Holds the NAT networt toolbar instance. */
+        UIToolBar        *m_pToolbarNetworkNAT;
+        /** Holds the Add NAT network action instance. */
+        QAction          *m_pActionAddNATNetwork;
+        /** Holds the Remove NAT network action instance. */
+        QAction          *m_pActionRemoveNATNetwork;
+        /** Holds the Edit NAT network action instance. */
+        QAction          *m_pActionEditNATNetwork;
     /** @} */
 };
 

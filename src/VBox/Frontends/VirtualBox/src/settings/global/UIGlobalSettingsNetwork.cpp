@@ -216,12 +216,14 @@ QString UIItemNetworkNAT::defaultText() const
 *********************************************************************************************************************************/
 
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
-    : m_pActionAddNATNetwork(0), m_pActionRemoveNATNetwork(0), m_pActionEditNATNetwork(0)
-    , m_pCache(0)
-    , m_pTreeNetworkNAT(0)
-    , m_pNetworkLabel(0)
-    , m_pLayoutNAT(0)
+    : m_pCache(0)
+    , m_pLabelSeparator(0)
+    , m_pLayoutNATNetwork(0)
+    , m_pTreeWidgetNATNetwork(0)
     , m_pToolbarNetworkNAT(0)
+    , m_pActionAddNATNetwork(0)
+    , m_pActionRemoveNATNetwork(0)
+    , m_pActionEditNATNetwork(0)
 {
     /* Prepare: */
     prepare();
@@ -260,8 +262,8 @@ void UIGlobalSettingsNetwork::getFromCache()
     /* Load old network data from the cache: */
     for (int i = 0; i < m_pCache->childCount(); ++i)
         createTreeWidgetItemForNATNetwork(m_pCache->child(i));
-    m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
-    m_pTreeNetworkNAT->setCurrentItem(m_pTreeNetworkNAT->topLevelItem(0));
+    m_pTreeWidgetNATNetwork->sortByColumn(1, Qt::AscendingOrder);
+    m_pTreeWidgetNATNetwork->setCurrentItem(m_pTreeWidgetNATNetwork->topLevelItem(0));
     sltHandleCurrentItemChangeNATNetwork();
 
     /* Revalidate: */
@@ -274,9 +276,9 @@ void UIGlobalSettingsNetwork::putToCache()
     UIDataSettingsGlobalNetwork newNetworkData;
 
     /* Gather new network data: */
-    for (int i = 0; i < m_pTreeNetworkNAT->topLevelItemCount(); ++i)
+    for (int i = 0; i < m_pTreeWidgetNATNetwork->topLevelItemCount(); ++i)
     {
-        const UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(i));
+        const UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeWidgetNATNetwork->topLevelItem(i));
         m_pCache->child(pItem->m_strName).cacheCurrentData(*pItem);
         foreach (const UIDataPortForwardingRule &rule, pItem->ipv4rules())
             m_pCache->child(pItem->m_strName).child1(rule.name).cacheCurrentData(rule);
@@ -311,18 +313,18 @@ bool UIGlobalSettingsNetwork::validate(QList<UIValidationMessage> &messages)
         UIValidationMessage message;
 
         /* Validate items first: */
-        for (int i = 0; i < m_pTreeNetworkNAT->topLevelItemCount(); ++i)
+        for (int i = 0; i < m_pTreeWidgetNATNetwork->topLevelItemCount(); ++i)
         {
-            UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(i));
+            UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeWidgetNATNetwork->topLevelItem(i));
             if (!pItem->validate(message))
                 fPass = false;
         }
 
         /* And make sure item names are unique: */
         QList<QString> names;
-        for (int iItemIndex = 0; iItemIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iItemIndex)
+        for (int iItemIndex = 0; iItemIndex < m_pTreeWidgetNATNetwork->topLevelItemCount(); ++iItemIndex)
         {
-            UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(iItemIndex));
+            UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeWidgetNATNetwork->topLevelItem(iItemIndex));
             const QString strItemName(pItem->newName());
             if (strItemName.isEmpty())
                 continue;
@@ -347,11 +349,11 @@ bool UIGlobalSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 
 void UIGlobalSettingsNetwork::retranslateUi()
 {
-    m_pNetworkLabel->setText(tr("&NAT Networks"));
-    m_pTreeNetworkNAT->setWhatsThis(tr("Lists all available NAT networks."));
+    m_pLabelSeparator->setText(tr("&NAT Networks"));
+    m_pTreeWidgetNATNetwork->setWhatsThis(tr("Lists all available NAT networks."));
 
     /* Translate tree-widget columns: */
-    m_pTreeNetworkNAT->setHeaderLabels(QStringList()
+    m_pTreeWidgetNATNetwork->setHeaderLabels(QStringList()
                                        << tr("Active", "NAT network")
                                        << tr("Name"));
 
@@ -373,8 +375,8 @@ void UIGlobalSettingsNetwork::sltAddNATNetwork()
 {
     /* Compose a set of busy names: */
     QSet<QString> names;
-    for (int i = 0; i < m_pTreeNetworkNAT->topLevelItemCount(); ++i)
-        names << static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(i))->name();
+    for (int i = 0; i < m_pTreeWidgetNATNetwork->topLevelItemCount(); ++i)
+        names << static_cast<UIItemNetworkNAT*>(m_pTreeWidgetNATNetwork->topLevelItem(i))->name();
     /* Compose a map of busy indexes: */
     QMap<int, bool> presence;
     const QString strNameTemplate("NatNetwork%1");
@@ -405,13 +407,13 @@ void UIGlobalSettingsNetwork::sltAddNATNetwork()
 
     /* Create tree-widget item: */
     createTreeWidgetItemForNATNetwork(data, UIPortForwardingDataList(), UIPortForwardingDataList(), true);
-    m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
+    m_pTreeWidgetNATNetwork->sortByColumn(1, Qt::AscendingOrder);
 }
 
 void UIGlobalSettingsNetwork::sltRemoveNATNetwork()
 {
     /* Get network item: */
-    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
+    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeWidgetNATNetwork->currentItem());
     AssertPtrReturnVoid(pItem);
 
     /* Confirm network removal: */
@@ -425,7 +427,7 @@ void UIGlobalSettingsNetwork::sltRemoveNATNetwork()
 void UIGlobalSettingsNetwork::sltEditNATNetwork()
 {
     /* Get network item: */
-    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
+    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeWidgetNATNetwork->currentItem());
     AssertPtrReturnVoid(pItem);
 
     /* Edit current item data: */
@@ -459,7 +461,7 @@ void UIGlobalSettingsNetwork::sltHandleItemChangeNATNetwork(QTreeWidgetItem *pCh
 void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNATNetwork()
 {
     /* Get current item: */
-    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
+    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeWidgetNATNetwork->currentItem());
 
     /* Update availability: */
     m_pActionRemoveNATNetwork->setEnabled(pItem);
@@ -470,7 +472,7 @@ void UIGlobalSettingsNetwork::sltHandleContextMenuRequestNATNetwork(const QPoint
 {
     /* Compose temporary context-menu: */
     QMenu menu;
-    if (m_pTreeNetworkNAT->itemAt(position))
+    if (m_pTreeWidgetNATNetwork->itemAt(position))
     {
         menu.addAction(m_pActionEditNATNetwork);
         menu.addAction(m_pActionRemoveNATNetwork);
@@ -480,27 +482,18 @@ void UIGlobalSettingsNetwork::sltHandleContextMenuRequestNATNetwork(const QPoint
         menu.addAction(m_pActionAddNATNetwork);
     }
     /* And show it: */
-    menu.exec(m_pTreeNetworkNAT->mapToGlobal(position));
+    menu.exec(m_pTreeWidgetNATNetwork->mapToGlobal(position));
 }
 
 void UIGlobalSettingsNetwork::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalNetwork;
     AssertPtrReturnVoid(m_pCache);
 
-    /* NAT Network layout created in the .ui file. */
-    AssertPtrReturnVoid(m_pLayoutNAT);
-    {
-        /* Prepare network tree: */
-        prepareNATNetworkTree();
-        /* Prepare network toolbar: */
-        prepareNATNetworkToolbar();
-        /* Prepare connections: */
-        prepareConnections();
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -508,103 +501,97 @@ void UIGlobalSettingsNetwork::prepare()
 
 void UIGlobalSettingsNetwork::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIGlobalSettingsNetwork"));
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
-    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
-    m_pNetworkLabel = new QILabelSeparator();
-    m_pNetworkLabel->setObjectName(QStringLiteral("m_pNetworkLabel"));
-    pMainLayout->addWidget(m_pNetworkLabel);
+    /* Prepare main layout: */
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
-    m_pLayoutNAT = new QHBoxLayout();
-    m_pLayoutNAT->setSpacing(3);
-    m_pLayoutNAT->setObjectName(QStringLiteral("m_pLayoutNAT"));
-    m_pTreeNetworkNAT = new QITreeWidget();
-    m_pTreeNetworkNAT->setObjectName(QStringLiteral("m_pTreeNetworkNAT"));
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pTreeNetworkNAT->sizePolicy().hasHeightForWidth());
-    m_pTreeNetworkNAT->setSizePolicy(sizePolicy);
-    m_pTreeNetworkNAT->setMinimumSize(QSize(0, 150));
-    m_pTreeNetworkNAT->setRootIsDecorated(false);
-    m_pLayoutNAT->addWidget(m_pTreeNetworkNAT);
+        /* Prepare separator: */
+        m_pLabelSeparator = new QILabelSeparator(this);
+        if (m_pLabelSeparator)
+            pLayoutMain->addWidget(m_pLabelSeparator);
 
-    m_pToolbarNetworkNAT = new UIToolBar();
-    m_pToolbarNetworkNAT->setObjectName(QStringLiteral("m_pToolbarNetworkNAT"));
-    m_pLayoutNAT->addWidget(m_pToolbarNetworkNAT);
+        /* Prepare NAT network layout: */
+        m_pLayoutNATNetwork = new QHBoxLayout(this);
+        if (m_pLayoutNATNetwork)
+        {
+            m_pLayoutNATNetwork->setSpacing(3);
 
-    pMainLayout->addLayout(m_pLayoutNAT);
-    m_pNetworkLabel->setBuddy(m_pTreeNetworkNAT);
+            /* Prepare NAT network tree-widget: */
+            prepareNATNetworkTreeWidget();
+            /* Prepare NAT network toolbar: */
+            prepareNATNetworkToolbar();
+
+            pLayoutMain->addLayout(m_pLayoutNATNetwork);
+        }
+    }
 }
 
-void UIGlobalSettingsNetwork::prepareNATNetworkTree()
+void UIGlobalSettingsNetwork::prepareNATNetworkTreeWidget()
 {
-    /* NAT Network tree-widget created in the .ui file. */
-    AssertPtrReturnVoid(m_pTreeNetworkNAT);
+    /* Prepare NAT network tree-widget: */
+    m_pTreeWidgetNATNetwork = new QITreeWidget(this);
+    if (m_pTreeWidgetNATNetwork)
     {
-        /* Configure tree-widget: */
-        m_pTreeNetworkNAT->setColumnCount(2);
-        m_pTreeNetworkNAT->header()->setStretchLastSection(false);
-        m_pTreeNetworkNAT->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-        m_pTreeNetworkNAT->header()->setSectionResizeMode(1, QHeaderView::Stretch);
-        m_pTreeNetworkNAT->setContextMenuPolicy(Qt::CustomContextMenu);
+        if (m_pLabelSeparator)
+            m_pLabelSeparator->setBuddy(m_pTreeWidgetNATNetwork);
+        m_pTreeWidgetNATNetwork->setColumnCount(2);
+        m_pTreeWidgetNATNetwork->setRootIsDecorated(false);
+        m_pTreeWidgetNATNetwork->header()->setStretchLastSection(false);
+        m_pTreeWidgetNATNetwork->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+        m_pTreeWidgetNATNetwork->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+        m_pTreeWidgetNATNetwork->setContextMenuPolicy(Qt::CustomContextMenu);
+
+        m_pLayoutNATNetwork->addWidget(m_pTreeWidgetNATNetwork);
     }
 }
 
 void UIGlobalSettingsNetwork::prepareNATNetworkToolbar()
 {
-    /* NAT Network toolbar created in the .ui file. */
-    AssertPtrReturnVoid(m_pToolbarNetworkNAT);
+    /* Prepare NAT network toolbar: */
+    m_pToolbarNetworkNAT = new UIToolBar(this);
+    if (m_pToolbarNetworkNAT)
     {
-        /* Configure toolbar: */
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         m_pToolbarNetworkNAT->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolbarNetworkNAT->setOrientation(Qt::Vertical);
 
-        /* Create' Add NAT Network' action: */
+        /* Prepare 'Add NAT Network' action: */
         m_pActionAddNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_add_16px.png",
                                                                                      ":/host_iface_add_disabled_16px.png"),
                                                                  QString(), this, SLOT(sltAddNATNetwork()));
-        AssertPtrReturnVoid(m_pActionAddNATNetwork);
-        {
-            /* Configure action: */
+        if (m_pActionAddNATNetwork)
             m_pActionAddNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
-        }
 
-        /* Create 'Remove NAT Network' action: */
+        /* Prepare 'Remove NAT Network' action: */
         m_pActionRemoveNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_remove_16px.png",
                                                                                         ":/host_iface_remove_disabled_16px.png"),
                                                                     QString(), this, SLOT(sltRemoveNATNetwork()));
-        AssertPtrReturnVoid(m_pActionRemoveNATNetwork);
-        {
-            /* Configure action: */
+        if (m_pActionRemoveNATNetwork)
             m_pActionRemoveNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
-        }
 
-        /* Create 'Edit NAT Network' action: */
+        /* Prepare 'Edit NAT Network' action: */
         m_pActionEditNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_edit_16px.png",
                                                                                       ":/host_iface_edit_disabled_16px.png"),
                                                                   QString(), this, SLOT(sltEditNATNetwork()));
-        AssertPtrReturnVoid(m_pActionEditNATNetwork);
-        {
-            /* Configure action: */
+        if (m_pActionEditNATNetwork)
             m_pActionEditNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
-        }
+
+        m_pLayoutNATNetwork->addWidget(m_pToolbarNetworkNAT);
     }
 }
 
 void UIGlobalSettingsNetwork::prepareConnections()
 {
-    /* Configure 'NAT Network' connections: */
-    connect(m_pTreeNetworkNAT, &QITreeWidget::currentItemChanged,
+    /* Configure NAT network connections: */
+    connect(m_pTreeWidgetNATNetwork, &QITreeWidget::currentItemChanged,
             this, &UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNATNetwork);
-    connect(m_pTreeNetworkNAT, &QITreeWidget::customContextMenuRequested,
+    connect(m_pTreeWidgetNATNetwork, &QITreeWidget::customContextMenuRequested,
             this, &UIGlobalSettingsNetwork::sltHandleContextMenuRequestNATNetwork);
-    connect(m_pTreeNetworkNAT, &QITreeWidget::itemDoubleClicked,
+    connect(m_pTreeWidgetNATNetwork, &QITreeWidget::itemDoubleClicked,
             this, &UIGlobalSettingsNetwork::sltEditNATNetwork);
-    connect(m_pTreeNetworkNAT, &QITreeWidget::itemChanged,
+    connect(m_pTreeWidgetNATNetwork, &QITreeWidget::itemChanged,
             this, &UIGlobalSettingsNetwork::sltHandleItemChangeNATNetwork);
 }
 
@@ -1017,12 +1004,12 @@ void UIGlobalSettingsNetwork::createTreeWidgetItemForNATNetwork(const UIDataSett
         pItem->updateFields();
 
         /* Add item to the tree-widget: */
-        m_pTreeNetworkNAT->addTopLevelItem(pItem);
+        m_pTreeWidgetNATNetwork->addTopLevelItem(pItem);
     }
 
     /* And choose it as current if necessary: */
     if (fChooseItem)
-        m_pTreeNetworkNAT->setCurrentItem(pItem);
+        m_pTreeWidgetNATNetwork->setCurrentItem(pItem);
 }
 
 void UIGlobalSettingsNetwork::removeTreeWidgetItemOfNATNetwork(UIItemNetworkNAT *pItem)
