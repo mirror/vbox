@@ -91,7 +91,8 @@ tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC)/build \
 	$(VBOX_PATH_DEVICES_SRC)/Bus \
 	$(VBOX_DEVICES_TEST_OUT_DIR) \
-	$(VBOX_GRAPHICS_INCS)
+	$(VBOX_GRAPHICS_INCS) \
+	$(VBOX_PATH_VMSVGA_INC)
 tstDeviceStructSize_SOURCES  = tstDeviceStructSize.cpp
 tstDeviceStructSize_CLEAN    = \
 	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h \
