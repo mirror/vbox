@@ -24895,9 +24895,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IClipboardFileTransferModeChangedEvent">IClipboardFileTransferModeChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnCloudProviderRegistered" value="105">
+      <desc>
+        See <link to="ICloudProviderRegisteredEvent">ICloudProviderRegisteredEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="105">
+    <const name="Last" value="106">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -28235,6 +28240,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="provider" type="ICloudProvider" dir="return"/>
     </method>
 
+  </interface>
+
+  <interface name="ICloudProviderRegisteredEvent" extends="IEvent"
+    uuid="3d515696-eb98-11ea-96ac-8b4794b20214"
+    wsmap="managed" autogen="VBoxEvent"
+    id="OnCloudProviderRegistered" waitable="yes"
+    >
+    <!-- should be in ICloudProviderEvent if we ever have one -->
+    <attribute name="id" type="uuid" mod="string" readonly="yes"/>
+
+    <attribute name="registered" type="boolean" readonly="yes"/>
   </interface>
 
 

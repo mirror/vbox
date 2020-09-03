@@ -17,6 +17,7 @@
 
 
 #define LOG_GROUP LOG_GROUP_MAIN_CLOUDPROVIDERMANAGER
+#include <iprt/cpp/utils.h>
 #include <VBox/com/array.h>
 
 #include "VirtualBoxImpl.h"
@@ -32,6 +33,7 @@
 //
 // ////////////////////////////////////////////////////////////////////////////////
 CloudProviderManager::CloudProviderManager()
+  : m_pVirtualBox(NULL)
 {
 }
 
@@ -52,13 +54,14 @@ void CloudProviderManager::FinalRelease()
     BaseFinalRelease();
 }
 
-HRESULT CloudProviderManager::init()
+HRESULT CloudProviderManager::init(VirtualBox *aVirtualBox)
 {
     // Enclose the state transition NotReady->InInit->Ready.
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     m_apCloudProviders.clear();
+    unconst(m_pVirtualBox) = aVirtualBox;
 
     autoInitSpan.setSucceeded();
     return S_OK;
@@ -70,7 +73,13 @@ void CloudProviderManager::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    m_mapCloudProviderManagers.clear();
+    m_apCloudProviders.clear();
+
+    unconst(m_pVirtualBox) = NULL; // not a ComPtr, but be pedantic
 }
+
 
 #ifdef VBOX_WITH_EXTPACK
 
@@ -87,44 +96,72 @@ bool CloudProviderManager::i_canRemoveExtPack(IExtPack *aExtPack)
     // cloud providers into working shape.
 
     bool fRes = true;
-    Bstr bstrName;
-    aExtPack->COMGETTER(Name)(bstrName.asOutParam());
-    Utf8Str strName(bstrName);
-    ExtPackNameCloudProviderManagerMap::iterator it = m_mapCloudProviderManagers.find(strName);
+
+    Bstr bstrExtPackName;
+    aExtPack->COMGETTER(Name)(bstrExtPackName.asOutParam());
+    Utf8Str strExtPackName(bstrExtPackName);
+
+    /* is there a cloud provider in this extpack? */
+    ExtPackNameCloudProviderManagerMap::iterator it
+        = m_mapCloudProviderManagers.find(strExtPackName);
     if (it != m_mapCloudProviderManagers.end())
     {
-        ComPtr<ICloudProviderManager> pTmp(it->second);
+        // const ComPtr<ICloudProviderManager> pManager(it->second); /* unused */
 
+        /* loop over all providers checking for those from the aExtPack */
         Assert(m_astrExtPackNames.size() == m_apCloudProviders.size());
         for (size_t i = 0; i < m_astrExtPackNames.size(); )
         {
-            if (m_astrExtPackNames[i] != strName)
+            /* the horse it rode in on? */
+            if (m_astrExtPackNames[i] != strExtPackName)
             {
                 i++;
-                continue;
+                continue;     /* not the extpack we are looking for */
             }
 
-            // pTmpProvider will point to an object with refcount > 0 until
-            // the ComPtr is removed from m_apCloudProviders.
+            /* note the id of this provider to send an event later */
+            Bstr bstrProviderId;
+
+            /*
+             * pTmpProvider will point to an object with refcount > 0
+             * until the ComPtr is removed from m_apCloudProviders.
+             * PrepareUninstall checks that that is the only reference
+             */
             HRESULT hrc = S_OK;
             ULONG uRefCnt = 1;
             ICloudProvider *pTmpProvider(m_apCloudProviders[i]);
             if (pTmpProvider)
             {
+                /* do this before the provider goes over the rainbow bridge */
+                pTmpProvider->COMGETTER(Id)(bstrProviderId.asOutParam());
+
+                /**
+                 * @todo r=uwe We send the event @em before we even
+                 * try to uninstall the provider.  The GUI can get the
+                 * event and get rid of any references to the objects
+                 * related to this provider that it still has.  The
+                 * current uninstall attempt might fail, but the GUI
+                 * can then retry once and likely succeed.  Needs more
+                 * thought and feeback from dsen.
+                 */
+                m_pVirtualBox->i_onCloudProviderRegistered(bstrProviderId, FALSE);
+
                 hrc = pTmpProvider->PrepareUninstall();
-                // Sanity check the refcount, it should be 1 at this point.
                 pTmpProvider->AddRef();
                 uRefCnt = pTmpProvider->Release();
-                Assert(uRefCnt == 1);
             }
+
+            /* has PrepareUninstall uninited the provider? */
             if (SUCCEEDED(hrc) && uRefCnt == 1)
             {
                 m_astrExtPackNames.erase(m_astrExtPackNames.begin() + (ssize_t)i);
                 m_apCloudProviders.erase(m_apCloudProviders.begin() + (ssize_t)i);
+                /* NB: not advancing loop index */
             }
             else
             {
-                LogRel(("CloudProviderManager: provider '%s' blocks extpack uninstall, result=%Rhrc, refcount=%u\n", strName.c_str(), hrc, uRefCnt));
+                LogRel(("CloudProviderManager: provider '%s' blocks extpack uninstall, result=%Rhrc, refcount=%u\n",
+                        strExtPackName.c_str(), hrc, uRefCnt));
                 fRes = false;
                 i++;
             }
@@ -139,46 +176,67 @@ bool CloudProviderManager::i_canRemoveExtPack(IExtPack *aExtPack)
 
 void CloudProviderManager::i_addExtPack(IExtPack *aExtPack)
 {
-    AssertReturnVoid(aExtPack);
+    HRESULT hrc;
 
+    AssertReturnVoid(aExtPack);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Bstr bstrName;
-    aExtPack->COMGETTER(Name)(bstrName.asOutParam());
-    Utf8Str strName(bstrName);
+    Bstr bstrExtPackName;
+    aExtPack->COMGETTER(Name)(bstrExtPackName.asOutParam());
+    Utf8Str strExtPackName(bstrExtPackName);
+
+    /* get the extpack's cloud provider manager object if present */
     ComPtr<IUnknown> pObj;
-    std::vector<com::Utf8Str> astrExtPackNames;
     com::Guid idObj(COM_IIDOF(ICloudProviderManager));
-    HRESULT hrc = aExtPack->QueryObject(Bstr(idObj.toString()).raw(), pObj.asOutParam());
+    hrc = aExtPack->QueryObject(Bstr(idObj.toString()).raw(), pObj.asOutParam());
     if (FAILED(hrc))
         return;
-
-    ComPtr<ICloudProviderManager> pTmp(pObj);
-    if (pTmp.isNull())
+    const ComPtr<ICloudProviderManager> pManager(pObj);
+    if (pManager.isNull())
         return;
 
+    /* get the list of cloud providers */
     SafeIfaceArray<ICloudProvider> apProvidersFromCurrExtPack;
-    hrc = pTmp->COMGETTER(Providers)(ComSafeArrayAsOutParam(apProvidersFromCurrExtPack));
+    hrc = pManager->COMGETTER(Providers)(ComSafeArrayAsOutParam(apProvidersFromCurrExtPack));
     if (FAILED(hrc))
         return;
+    if (apProvidersFromCurrExtPack.size() == 0)
+        return;
 
-    m_mapCloudProviderManagers[strName] = pTmp;
+    m_mapCloudProviderManagers[strExtPackName] = pManager;
+
+    /* collect provider ids for bulk-sending the events */
+    std::vector<Utf8Str> aProviderIds;
+    aProviderIds.reserve(apProvidersFromCurrExtPack.size());
+
     for (unsigned i = 0; i < apProvidersFromCurrExtPack.size(); i++)
     {
-        // Sanity check each cloud provider by forcing a QueryInterface call,
-        // making sure that it implements the right interface.
-        ComPtr<ICloudProvider> pTmpCP1(apProvidersFromCurrExtPack[i]);
-        if (!pTmpCP1.isNull())
+        const ComPtr<ICloudProvider> pProvider(apProvidersFromCurrExtPack[i]);
+        if (!pProvider.isNull())
         {
-            ComPtr<ICloudProvider> pTmpCP2;
-            pTmpCP1.queryInterfaceTo(pTmpCP2.asOutParam());
-            if (!pTmpCP2.isNull())
+            // Sanity check each cloud provider by forcing a QueryInterface call,
+            // making sure that it implements the right interface.
+            ComPtr<ICloudProvider> pProviderCheck;
+            pProvider.queryInterfaceTo(pProviderCheck.asOutParam());
+            if (!pProviderCheck.isNull()) /* ok, seems legit */
             {
+                /* save the provider and the name of the extpack it came from */
                 Assert(m_astrExtPackNames.size() == m_apCloudProviders.size());
-                m_astrExtPackNames.push_back(strName);
-                m_apCloudProviders.push_back(apProvidersFromCurrExtPack[i]);
+                m_astrExtPackNames.push_back(strExtPackName);
+                m_apCloudProviders.push_back(pProvider);
+
+                /* note the id of this provider to send an event later */
+                Bstr bstrProviderId;
+                pProvider->COMGETTER(Id)(bstrProviderId.asOutParam());
+                aProviderIds.push_back(bstrProviderId);
             }
         }
+    }
+
+    /* bulk-send ICloudProviderRegisteredEvent's */
+    for (size_t i = 0; i < aProviderIds.size(); ++i)
+    {
+        m_pVirtualBox->i_onCloudProviderRegistered(aProviderIds[i], TRUE);
     }
 }
 

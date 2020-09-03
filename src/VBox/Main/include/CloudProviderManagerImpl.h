@@ -23,17 +23,17 @@
 
 #include "CloudProviderManagerWrap.h"
 
-
 class ATL_NO_VTABLE CloudProviderManager
     : public CloudProviderManagerWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(CloudProviderManager)
+    CloudProviderManager();
+    virtual ~CloudProviderManager();
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    HRESULT init();
+    HRESULT init(VirtualBox *aVirtualBox);
     void uninit();
 
 #ifdef VBOX_WITH_EXTPACK
@@ -56,12 +56,15 @@ private:
 #ifdef VBOX_WITH_EXTPACK
     typedef std::map<com::Utf8Str, ComPtr<ICloudProviderManager> > ExtPackNameCloudProviderManagerMap;
     ExtPackNameCloudProviderManagerMap m_mapCloudProviderManagers;
+
     typedef std::vector<com::Utf8Str> ExtPackNameVec;
     ExtPackNameVec m_astrExtPackNames;
 #endif
 
     typedef std::vector<ComPtr<ICloudProvider> > CloudProviderVec;
     CloudProviderVec m_apCloudProviders;
+
+    VirtualBox * const m_pVirtualBox;
 };
 
 #endif /* !MAIN_INCLUDED_CloudProviderManagerImpl_h */
