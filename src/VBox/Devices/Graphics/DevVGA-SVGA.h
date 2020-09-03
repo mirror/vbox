@@ -24,9 +24,103 @@
 # error "VBOX_WITH_VMSVGA is not defined"
 #endif
 
+#include <VBox/pci.h>
+#include <VBox/vmm/pdmifs.h>
 #include <VBox/vmm/pdmthread.h>
+#include <VBox/vmm/stam.h>
 
-#include "vmsvga/svga3d_reg.h"
+/*
+ * PCI device IDs.
+ */
+#ifndef PCI_VENDOR_ID_VMWARE
+# define PCI_VENDOR_ID_VMWARE            0x15AD
+#endif
+#ifndef PCI_DEVICE_ID_VMWARE_SVGA2
+# define PCI_DEVICE_ID_VMWARE_SVGA2      0x0405
+#endif
+
+/* For "svga_overlay.h" */
+#ifndef TRUE
+# define TRUE 1
+#endif
+#ifndef FALSE
+# define FALSE 0
+#endif
+
+/* GCC complains that 'ISO C++ prohibits anonymous structs' when "-Wpedantic" is enabled. */
+#ifdef __GNUC__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+/* VMSVGA headers from SVGA Gallium driver. */
+#include <svga3d_caps.h>
+#include <svga3d_reg.h>
+#include <svga3d_shaderdefs.h>
+#include <svga_escape.h>
+#include <svga_overlay.h>
+#ifdef __GNUC__
+# pragma GCC diagnostic pop
+#endif
+
+/* Deprecated commands. They are not included in the VMSVGA headers anymore. */
+#define SVGA_CMD_RECT_FILL             2
+#define SVGA_CMD_DISPLAY_CURSOR        20
+#define SVGA_CMD_MOVE_CURSOR           21
+
+/*
+ * SVGA_CMD_RECT_FILL --
+ *
+ *    Fill a rectangular area in the the GFB, and copy the result
+ *    to any screens which intersect it.
+ *
+ *    Deprecated?
+ *
+ * Availability:
+ *    SVGA_CAP_RECT_FILL
+ */
+
+typedef
+struct {
+   uint32_t pixel;
+   uint32_t destX;
+   uint32_t destY;
+   uint32_t width;
+   uint32_t height;
+} SVGAFifoCmdRectFill;
+
+/*
+ * SVGA_CMD_DISPLAY_CURSOR --
+ *
+ *    Turn the cursor on or off.
+ *
+ *    Deprecated.
+ *
+ * Availability:
+ *    SVGA_CAP_CURSOR?
+ */
+
+typedef
+struct {
+   uint32_t id;             // Reserved, must be zero.
+   uint32_t state;          // 0=off
+} SVGAFifoCmdDisplayCursor;
+
+/*
+ * SVGA_CMD_MOVE_CURSOR --
+ *
+ *    Set the cursor position.
+ *
+ *    Deprecated.
+ *
+ * Availability:
+ *    SVGA_CAP_CURSOR?
+ */
+
+typedef
+struct {
+    SVGASignedPoint     pos;
+} SVGAFifoCmdMoveCursor;
+
 
 /** Default FIFO size. */
 #define VMSVGA_FIFO_SIZE                _2M
