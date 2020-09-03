@@ -79,9 +79,9 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares 'Selector UI' tab. */
-    void prepareTabSelector();
-    /** Prepares 'Runtime UI' tab. */
+    /** Prepares Manager UI tab. */
+    void prepareTabManager();
+    /** Prepares Runtime UI tab. */
     void prepareTabMachine();
     /** Prepares connections. */
     void prepareConnections();
@@ -91,10 +91,10 @@ private:
     /** Saves existing input data from the cache. */
     bool saveInputData();
 
-    /** Holds the Selector UI shortcuts model instance. */
-    UIHotKeyTableModel *m_pModelSelector;
+    /** Holds the Manager UI shortcuts model instance. */
+    UIHotKeyTableModel *m_pModelManager;
     /** Holds the Runtime UI shortcuts model instance. */
-    UIHotKeyTableModel *m_pModelMachine;
+    UIHotKeyTableModel *m_pModelRuntime;
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalInput *m_pCache;
@@ -103,15 +103,15 @@ private:
      * @{ */
         /** Holds the tab-widget instance. */
         QTabWidget    *m_pTabWidget;
-        /** Holds the Selector UI shortcuts filter instance. */
-        QLineEdit     *m_pEditorSelectorFilter;
-        /** Holds the Selector UI shortcuts table instance. */
-        UIHotKeyTable *m_pTableSelector;
+        /** Holds the Manager UI shortcuts filter instance. */
+        QLineEdit     *m_pEditorManagerFilter;
+        /** Holds the Manager UI shortcuts table instance. */
+        UIHotKeyTable *m_pTableManager;
         /** Holds the Runtime UI shortcuts filter instance. */
-        QLineEdit     *m_pMachineFilterEditor;
+        QLineEdit     *m_pEditorRuntimeFilter;
         /** Holds the Runtime UI shortcuts table instance. */
-        UIHotKeyTable *m_pTableMachine;
-        /** Holds the enable auto-grab checkbox instance. */
+        UIHotKeyTable *m_pTableRuntime;
+        /** Holds the 'enable auto-grab' checkbox instance. */
         QCheckBox     *m_pCheckBoxEnableAutoGrab;
     /** @} */
 };

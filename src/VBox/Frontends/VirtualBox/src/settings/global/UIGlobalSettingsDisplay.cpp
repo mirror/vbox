@@ -214,7 +214,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
     QGridLayout *pLayoutMain = new QGridLayout(this);
     if (pLayoutMain)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
+        pLayoutMain->setColumnStretch(1, 1);
         pLayoutMain->setRowStretch(6, 1);
 
         const int iMinWidth = 640;
@@ -234,7 +234,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         {
             if (m_pLabelMaxGuestScreenSize)
                 m_pLabelMaxGuestScreenSize->setBuddy(m_pComboMaxGuestScreenSize);
-            pLayoutMain->addWidget(m_pComboMaxGuestScreenSize, 0, 1);
+            pLayoutMain->addWidget(m_pComboMaxGuestScreenSize, 0, 1, 1, 2);
         }
 
         /* Prepare max guest screen width label: */
@@ -253,7 +253,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
             m_pSpinboxMaxGuestScreenWidth->setMinimum(iMinWidth);
             m_pSpinboxMaxGuestScreenWidth->setMaximum(iMaxSize);
 
-            pLayoutMain->addWidget(m_pSpinboxMaxGuestScreenWidth, 1, 1);
+            pLayoutMain->addWidget(m_pSpinboxMaxGuestScreenWidth, 1, 1, 1, 2);
         }
 
         /* Prepare max guest screen height label: */
@@ -272,7 +272,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
             m_pSpinboxMaxGuestScreenHeight->setMinimum(iMinHeight);
             m_pSpinboxMaxGuestScreenHeight->setMaximum(iMaxSize);
 
-            pLayoutMain->addWidget(m_pSpinboxMaxGuestScreenHeight, 2, 1);
+            pLayoutMain->addWidget(m_pSpinboxMaxGuestScreenHeight, 2, 1, 1, 2);
         }
 
         /* Prepare scale-factor label: */
@@ -285,7 +285,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         /* Prepare scale-factor editor: */
         m_pEditorScaleFactor = new UIScaleFactorEditor(this);
         if (m_pEditorScaleFactor)
-            pLayoutMain->addWidget(m_pEditorScaleFactor, 3, 1, 2, 1);
+            pLayoutMain->addWidget(m_pEditorScaleFactor, 3, 1, 2, 2);
 
         /* Prepare 'machine-windows' label: */
         m_pLabelMachineWindows = new QLabel(this);

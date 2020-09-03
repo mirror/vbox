@@ -98,15 +98,25 @@ private:
 
     /** @name Widgets
      * @{ */
-        QCheckBox *m_pCheckBoxUpdate;
-        QWidget *m_pWidgetUpdateSettings;
-        QLabel *m_pLabelUpdatePeriod;
-        QComboBox *m_pComboUpdatePeriod;
-        QLabel *m_pLabelUpdateDate;
-        QLabel *m_pFieldUpdateDate;
-        QLabel *m_pLabelUpdateFilter;
+        /** Holds the update check-box instance. */
+        QCheckBox    *m_pCheckBoxUpdate;
+        /** Holds the update settings widget instance. */
+        QWidget      *m_pWidgetUpdateSettings;
+        /** Holds the update period label instance. */
+        QLabel       *m_pLabelUpdatePeriod;
+        /** Holds the update period combo instance. */
+        QComboBox    *m_pComboUpdatePeriod;
+        /** Holds the update date label instance. */
+        QLabel       *m_pLabelUpdateDate;
+        /** Holds the update date field instance. */
+        QLabel       *m_pFieldUpdateDate;
+        /** Holds the update filter label instance. */
+        QLabel       *m_pLabelUpdateFilter;
+        /** Holds the 'update to stable' radio-button instance. */
         QRadioButton *m_pRadioUpdateFilterStable;
+        /** Holds the 'update to every' radio-button instance. */
         QRadioButton *m_pRadioUpdateFilterEvery;
+        /** Holds the 'update to betas' radio-button instance. */
         QRadioButton *m_pRadioUpdateFilterBetas;
     /** @} */
 };

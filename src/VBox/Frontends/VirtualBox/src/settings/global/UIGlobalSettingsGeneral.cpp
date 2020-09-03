@@ -67,8 +67,8 @@ UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     : m_pCache(0)
     , m_pLabelMachineFolder(0)
     , m_pSelectorMachineFolder(0)
-    , m_pLabelVRDPLibName(0)
-    , m_pSelectorVRDPLibName(0)
+    , m_pLabelVRDPLibraryName(0)
+    , m_pSelectorVRDPLibraryName(0)
     , m_pLabelHostScreenSaver(0)
     , m_pCheckBoxHostScreenSaver(0)
 {
@@ -112,7 +112,7 @@ void UIGlobalSettingsGeneral::getFromCache()
 
     /* Load old general data from the cache: */
     m_pSelectorMachineFolder->setPath(oldGeneralData.m_strDefaultMachineFolder);
-    m_pSelectorVRDPLibName->setPath(oldGeneralData.m_strVRDEAuthLibrary);
+    m_pSelectorVRDPLibraryName->setPath(oldGeneralData.m_strVRDEAuthLibrary);
     m_pCheckBoxHostScreenSaver->setChecked(oldGeneralData.m_fHostScreenSaverDisabled);
 }
 
@@ -123,7 +123,7 @@ void UIGlobalSettingsGeneral::putToCache()
 
     /* Gather new general data: */
     newGeneralData.m_strDefaultMachineFolder = m_pSelectorMachineFolder->path();
-    newGeneralData.m_strVRDEAuthLibrary = m_pSelectorVRDPLibName->path();
+    newGeneralData.m_strVRDEAuthLibrary = m_pSelectorVRDPLibraryName->path();
     newGeneralData.m_fHostScreenSaverDisabled = m_pCheckBoxHostScreenSaver->isChecked();
 
     /* Cache new general data: */
@@ -147,8 +147,8 @@ void UIGlobalSettingsGeneral::retranslateUi()
     m_pLabelMachineFolder->setText(tr("Default &Machine Folder:"));
     m_pSelectorMachineFolder->setWhatsThis(tr("Holds the path to the default virtual machine folder. This folder is used, "
                                               "if not explicitly specified otherwise, when creating new virtual machines."));
-    m_pLabelVRDPLibName->setText(tr("V&RDP Authentication Library:"));
-    m_pSelectorVRDPLibName->setWhatsThis(tr("Holds the path to the library that provides authentication for Remote Display (VRDP) clients."));
+    m_pLabelVRDPLibraryName->setText(tr("V&RDP Authentication Library:"));
+    m_pSelectorVRDPLibraryName->setWhatsThis(tr("Holds the path to the library that provides authentication for Remote Display (VRDP) clients."));
     m_pLabelHostScreenSaver->setText(tr("Host Screensaver:"));
     m_pCheckBoxHostScreenSaver->setWhatsThis(tr("When checked, the host screensaver will be disabled whenever a virtual machine is running."));
     m_pCheckBoxHostScreenSaver->setText(tr("&Disable When Running Virtual Machines"));
@@ -173,7 +173,6 @@ void UIGlobalSettingsGeneral::prepareWidgets()
     QGridLayout *pLayoutMain = new QGridLayout(this);
     if (pLayoutMain)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
         pLayoutMain->setColumnStretch(1, 1);
         pLayoutMain->setRowStretch(3, 1);
 
@@ -196,22 +195,22 @@ void UIGlobalSettingsGeneral::prepareWidgets()
         }
 
         /* Prepare VRDP library name label: */
-        m_pLabelVRDPLibName = new QLabel(this);
-        if (m_pLabelVRDPLibName)
+        m_pLabelVRDPLibraryName = new QLabel(this);
+        if (m_pLabelVRDPLibraryName)
         {
-            m_pLabelVRDPLibName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelVRDPLibName, 1, 0);
+            m_pLabelVRDPLibraryName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pLabelVRDPLibraryName, 1, 0);
         }
         /* Prepare VRDP library name selector: */
-        m_pSelectorVRDPLibName = new UIFilePathSelector(this);
-        if (m_pSelectorVRDPLibName)
+        m_pSelectorVRDPLibraryName = new UIFilePathSelector(this);
+        if (m_pSelectorVRDPLibraryName)
         {
-            if (m_pLabelVRDPLibName)
-                m_pLabelVRDPLibName->setBuddy(m_pSelectorVRDPLibName);
-            m_pSelectorVRDPLibName->setHomeDir(uiCommon().homeFolder());
-            m_pSelectorVRDPLibName->setMode(UIFilePathSelector::Mode_File_Open);
+            if (m_pLabelVRDPLibraryName)
+                m_pLabelVRDPLibraryName->setBuddy(m_pSelectorVRDPLibraryName);
+            m_pSelectorVRDPLibraryName->setHomeDir(uiCommon().homeFolder());
+            m_pSelectorVRDPLibraryName->setMode(UIFilePathSelector::Mode_File_Open);
 
-            pLayoutMain->addWidget(m_pSelectorVRDPLibName, 1, 1, 1, 2);
+            pLayoutMain->addWidget(m_pSelectorVRDPLibraryName, 1, 1, 1, 2);
         }
 
         /* Prepare screen-saver label: */

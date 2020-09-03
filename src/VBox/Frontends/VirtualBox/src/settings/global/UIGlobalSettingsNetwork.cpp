@@ -220,7 +220,7 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     , m_pLabelSeparator(0)
     , m_pLayoutNATNetwork(0)
     , m_pTreeWidgetNATNetwork(0)
-    , m_pToolbarNetworkNAT(0)
+    , m_pToolbarNATNetwork(0)
     , m_pActionAddNATNetwork(0)
     , m_pActionRemoveNATNetwork(0)
     , m_pActionEditNATNetwork(0)
@@ -513,7 +513,7 @@ void UIGlobalSettingsNetwork::prepareWidgets()
             pLayoutMain->addWidget(m_pLabelSeparator);
 
         /* Prepare NAT network layout: */
-        m_pLayoutNATNetwork = new QHBoxLayout(this);
+        m_pLayoutNATNetwork = new QHBoxLayout;
         if (m_pLayoutNATNetwork)
         {
             m_pLayoutNATNetwork->setSpacing(3);
@@ -550,35 +550,35 @@ void UIGlobalSettingsNetwork::prepareNATNetworkTreeWidget()
 void UIGlobalSettingsNetwork::prepareNATNetworkToolbar()
 {
     /* Prepare NAT network toolbar: */
-    m_pToolbarNetworkNAT = new UIToolBar(this);
-    if (m_pToolbarNetworkNAT)
+    m_pToolbarNATNetwork = new UIToolBar(this);
+    if (m_pToolbarNATNetwork)
     {
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        m_pToolbarNetworkNAT->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolbarNetworkNAT->setOrientation(Qt::Vertical);
+        m_pToolbarNATNetwork->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolbarNATNetwork->setOrientation(Qt::Vertical);
 
-        /* Prepare 'Add NAT Network' action: */
-        m_pActionAddNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_add_16px.png",
+        /* Prepare 'add NAT network' action: */
+        m_pActionAddNATNetwork = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_add_16px.png",
                                                                                      ":/host_iface_add_disabled_16px.png"),
                                                                  QString(), this, SLOT(sltAddNATNetwork()));
         if (m_pActionAddNATNetwork)
             m_pActionAddNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
 
-        /* Prepare 'Remove NAT Network' action: */
-        m_pActionRemoveNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_remove_16px.png",
+        /* Prepare 'remove NAT network' action: */
+        m_pActionRemoveNATNetwork = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_remove_16px.png",
                                                                                         ":/host_iface_remove_disabled_16px.png"),
                                                                     QString(), this, SLOT(sltRemoveNATNetwork()));
         if (m_pActionRemoveNATNetwork)
             m_pActionRemoveNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
 
-        /* Prepare 'Edit NAT Network' action: */
-        m_pActionEditNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_edit_16px.png",
+        /* Prepare 'edit NAT network' action: */
+        m_pActionEditNATNetwork = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_edit_16px.png",
                                                                                       ":/host_iface_edit_disabled_16px.png"),
                                                                   QString(), this, SLOT(sltEditNATNetwork()));
         if (m_pActionEditNATNetwork)
             m_pActionEditNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
 
-        m_pLayoutNATNetwork->addWidget(m_pToolbarNetworkNAT);
+        m_pLayoutNATNetwork->addWidget(m_pToolbarNATNetwork);
     }
 }
 

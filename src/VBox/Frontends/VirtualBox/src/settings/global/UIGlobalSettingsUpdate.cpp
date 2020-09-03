@@ -305,15 +305,15 @@ void UIGlobalSettingsUpdate::prepareWidgets()
                     m_pLabelUpdateFilter->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                     pLayoutUpdateSettings->addWidget(m_pLabelUpdateFilter, 2, 0);
                 }
-                /* Prepare 'stable' radio-button: */
+                /* Prepare 'update to stable' radio-button: */
                 m_pRadioUpdateFilterStable = new QRadioButton(m_pWidgetUpdateSettings);
                 if (m_pRadioUpdateFilterStable)
                     pLayoutUpdateSettings->addWidget(m_pRadioUpdateFilterStable, 2, 1);
-                /* Prepare 'every' radio-button: */
+                /* Prepare 'update to every' radio-button: */
                 m_pRadioUpdateFilterEvery = new QRadioButton(m_pWidgetUpdateSettings);
                 if (m_pRadioUpdateFilterEvery)
                     pLayoutUpdateSettings->addWidget(m_pRadioUpdateFilterEvery, 3, 1);
-                /* Prepare 'betas' radio-button: */
+                /* Prepare 'update to betas' radio-button: */
                 m_pRadioUpdateFilterBetas = new QRadioButton(m_pWidgetUpdateSettings);
                 if (m_pRadioUpdateFilterBetas)
                     pLayoutUpdateSettings->addWidget(m_pRadioUpdateFilterBetas, 4, 1);

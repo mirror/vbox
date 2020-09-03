@@ -441,8 +441,6 @@ void UIGlobalSettingsExtension::prepareWidgets()
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
-
         /* Prepare separator: */
         m_pLabelSeparator = new QILabelSeparator(this);
         if (m_pLabelSeparator)
@@ -490,17 +488,16 @@ void UIGlobalSettingsExtension::prepareToolbar()
     m_pToolbar = new UIToolBar(this);
     if (m_pToolbar)
     {
-        /* Configure toolbar: */
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         m_pToolbar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolbar->setOrientation(Qt::Vertical);
 
-        /* Prepare 'Add Package' action: */
+        /* Prepare 'add package' action: */
         m_pActionAdd = m_pToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
                                                                  ":/extension_pack_install_disabled_16px.png"),
                                              QString(), this, SLOT(sltAddPackage()));
 
-        /* Prepare 'Remove Package' action: */
+        /* Prepare 'remove package' action: */
         m_pActionRemove = m_pToolbar->addAction(UIIconPool::iconSet(":/extension_pack_uninstall_16px.png",
                                                                     ":/extension_pack_uninstall_disabled_16px.png"),
                                                 QString(), this, SLOT(sltRemovePackage()));

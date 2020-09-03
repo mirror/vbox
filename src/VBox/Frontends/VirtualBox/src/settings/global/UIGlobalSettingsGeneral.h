@@ -84,9 +84,9 @@ private:
         /** Holds machine folder selector instance. */
         UIFilePathSelector *m_pSelectorMachineFolder;
         /** Holds VRDP library name label instance. */
-        QLabel             *m_pLabelVRDPLibName;
+        QLabel             *m_pLabelVRDPLibraryName;
         /** Holds VRDP library name selector instance. */
-        UIFilePathSelector *m_pSelectorVRDPLibName;
+        UIFilePathSelector *m_pSelectorVRDPLibraryName;
         /** Holds screen-saver label instance. */
         QLabel             *m_pLabelHostScreenSaver;
         /** Holds disable screen-saver check-box instance. */

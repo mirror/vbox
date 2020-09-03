@@ -252,7 +252,6 @@ void UIGlobalSettingsProxy::prepareWidgets()
     QGridLayout *pLayoutMain = new QGridLayout(this);
     if (pLayoutMain)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
         pLayoutMain->setRowStretch(4, 1);
 
         /* Prepare button-group: */

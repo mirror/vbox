@@ -138,12 +138,12 @@ private:
         /** Holds the NAT networt tree-widget instance. */
         QITreeWidget     *m_pTreeWidgetNATNetwork;
         /** Holds the NAT networt toolbar instance. */
-        UIToolBar        *m_pToolbarNetworkNAT;
-        /** Holds the Add NAT network action instance. */
+        UIToolBar        *m_pToolbarNATNetwork;
+        /** Holds the 'add NAT network' action instance. */
         QAction          *m_pActionAddNATNetwork;
-        /** Holds the Remove NAT network action instance. */
+        /** Holds the 'remove NAT network' action instance. */
         QAction          *m_pActionRemoveNATNetwork;
-        /** Holds the Edit NAT network action instance. */
+        /** Holds the 'edit NAT network' action instance. */
         QAction          *m_pActionEditNATNetwork;
     /** @} */
 };

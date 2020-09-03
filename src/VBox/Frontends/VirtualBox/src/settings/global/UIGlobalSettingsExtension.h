@@ -108,9 +108,9 @@ private:
         QITreeWidget     *m_pTreeWidget;
         /** Holds the toolbar instance. */
         UIToolBar        *m_pToolbar;
-        /** Holds the Add action instance. */
+        /** Holds the 'add package' action instance. */
         QAction          *m_pActionAdd;
-        /** Holds the Remove action instance. */
+        /** Holds the 'remove package' action instance. */
         QAction          *m_pActionRemove;
     /** @} */
 };
