@@ -179,111 +179,111 @@ typedef struct IOMMU
 
     /** @name PCI: Base capability block registers.
      * @{ */
-    IOMMU_BAR_T                 IommuBar;            /**< IOMMU base address register. */
+    IOMMU_BAR_T                 IommuBar;               /**< IOMMU base address register. */
     /** @} */
 
     /** @name MMIO: Control and status registers.
      * @{ */
-    DEV_TAB_BAR_T               aDevTabBaseAddrs[8]; /**< Device table base address registers. */
-    CMD_BUF_BAR_T               CmdBufBaseAddr;      /**< Command buffer base address register. */
-    EVT_LOG_BAR_T               EvtLogBaseAddr;      /**< Event log base address register. */
-    IOMMU_CTRL_T                Ctrl;                /**< IOMMU control register. */
-    IOMMU_EXCL_RANGE_BAR_T      ExclRangeBaseAddr;   /**< IOMMU exclusion range base register. */
-    IOMMU_EXCL_RANGE_LIMIT_T    ExclRangeLimit;      /**< IOMMU exclusion range limit. */
-    IOMMU_EXT_FEAT_T            ExtFeat;             /**< IOMMU extended feature register. */
+    DEV_TAB_BAR_T               aDevTabBaseAddrs[8];    /**< Device table base address registers. */
+    CMD_BUF_BAR_T               CmdBufBaseAddr;         /**< Command buffer base address register. */
+    EVT_LOG_BAR_T               EvtLogBaseAddr;         /**< Event log base address register. */
+    IOMMU_CTRL_T                Ctrl;                   /**< IOMMU control register. */
+    IOMMU_EXCL_RANGE_BAR_T      ExclRangeBaseAddr;      /**< IOMMU exclusion range base register. */
+    IOMMU_EXCL_RANGE_LIMIT_T    ExclRangeLimit;         /**< IOMMU exclusion range limit. */
+    IOMMU_EXT_FEAT_T            ExtFeat;                /**< IOMMU extended feature register. */
     /** @} */
 
     /** @name MMIO: PPR Log registers.
      * @{ */
-    PPR_LOG_BAR_T               PprLogBaseAddr;      /**< PPR Log base address register. */
-    IOMMU_HW_EVT_HI_T           HwEvtHi;             /**< IOMMU hardware event register (Hi). */
-    IOMMU_HW_EVT_LO_T           HwEvtLo;             /**< IOMMU hardware event register (Lo). */
-    IOMMU_HW_EVT_STATUS_T       HwEvtStatus;         /**< IOMMU hardware event status. */
+    PPR_LOG_BAR_T               PprLogBaseAddr;         /**< PPR Log base address register. */
+    IOMMU_HW_EVT_HI_T           HwEvtHi;                /**< IOMMU hardware event register (Hi). */
+    IOMMU_HW_EVT_LO_T           HwEvtLo;                /**< IOMMU hardware event register (Lo). */
+    IOMMU_HW_EVT_STATUS_T       HwEvtStatus;            /**< IOMMU hardware event status. */
     /** @} */
 
     /** @todo IOMMU: SMI filter. */
 
     /** @name MMIO: Guest Virtual-APIC Log registers.
      * @{ */
-    GALOG_BAR_T                 GALogBaseAddr;       /**< Guest Virtual-APIC Log base address register. */
-    GALOG_TAIL_ADDR_T           GALogTailAddr;       /**< Guest Virtual-APIC Log Tail address register. */
+    GALOG_BAR_T                 GALogBaseAddr;          /**< Guest Virtual-APIC Log base address register. */
+    GALOG_TAIL_ADDR_T           GALogTailAddr;          /**< Guest Virtual-APIC Log Tail address register. */
     /** @} */
 
     /** @name MMIO: Alternate PPR and Event Log registers.
      *  @{ */
-    PPR_LOG_B_BAR_T             PprLogBBaseAddr;     /**< PPR Log B base address register. */
-    EVT_LOG_B_BAR_T             EvtLogBBaseAddr;     /**< Event Log B base address register. */
+    PPR_LOG_B_BAR_T             PprLogBBaseAddr;        /**< PPR Log B base address register. */
+    EVT_LOG_B_BAR_T             EvtLogBBaseAddr;        /**< Event Log B base address register. */
     /** @} */
 
     /** @name MMIO: Device-specific feature registers.
      * @{ */
-    DEV_SPECIFIC_FEAT_T         DevSpecificFeat;     /**< Device-specific feature extension register (DSFX). */
-    DEV_SPECIFIC_CTRL_T         DevSpecificCtrl;     /**< Device-specific control extension register (DSCX). */
-    DEV_SPECIFIC_STATUS_T       DevSpecificStatus;   /**< Device-specific status extension register (DSSX). */
+    DEV_SPECIFIC_FEAT_T         DevSpecificFeat;        /**< Device-specific feature extension register (DSFX). */
+    DEV_SPECIFIC_CTRL_T         DevSpecificCtrl;        /**< Device-specific control extension register (DSCX). */
+    DEV_SPECIFIC_STATUS_T       DevSpecificStatus;      /**< Device-specific status extension register (DSSX). */
     /** @} */
 
     /** @name MMIO: MSI Capability Block registers.
      * @{ */
-    MSI_MISC_INFO_T             MiscInfo;            /**< MSI Misc. info registers / MSI Vector registers. */
+    MSI_MISC_INFO_T             MiscInfo;               /**< MSI Misc. info registers / MSI Vector registers. */
     /** @} */
 
     /** @name MMIO: Performance Optimization Control registers.
      *  @{ */
-    IOMMU_PERF_OPT_CTRL_T       PerfOptCtrl;         /**< IOMMU Performance optimization control register. */
+    IOMMU_PERF_OPT_CTRL_T       PerfOptCtrl;            /**< IOMMU Performance optimization control register. */
     /** @} */
 
     /** @name MMIO: x2APIC Control registers.
      * @{ */
-    IOMMU_XT_GEN_INTR_CTRL_T    XtGenIntrCtrl;       /**< IOMMU X2APIC General interrupt control register. */
-    IOMMU_XT_PPR_INTR_CTRL_T    XtPprIntrCtrl;       /**< IOMMU X2APIC PPR interrupt control register. */
-    IOMMU_XT_GALOG_INTR_CTRL_T  XtGALogIntrCtrl;     /**< IOMMU X2APIC Guest Log interrupt control register. */
+    IOMMU_XT_GEN_INTR_CTRL_T    XtGenIntrCtrl;          /**< IOMMU X2APIC General interrupt control register. */
+    IOMMU_XT_PPR_INTR_CTRL_T    XtPprIntrCtrl;          /**< IOMMU X2APIC PPR interrupt control register. */
+    IOMMU_XT_GALOG_INTR_CTRL_T  XtGALogIntrCtrl;        /**< IOMMU X2APIC Guest Log interrupt control register. */
     /** @} */
 
     /** @name MMIO: MARC registers.
      * @{ */
-    MARC_APER_T                 aMarcApers[4];       /**< MARC Aperture Registers. */
+    MARC_APER_T                 aMarcApers[4];          /**< MARC Aperture Registers. */
     /** @} */
 
     /** @name MMIO: Reserved register.
      *  @{ */
-    IOMMU_RSVD_REG_T            RsvdReg;             /**< IOMMU Reserved Register. */
+    IOMMU_RSVD_REG_T            RsvdReg;                /**< IOMMU Reserved Register. */
     /** @} */
 
     /** @name MMIO: Command and Event Log pointer registers.
      * @{ */
-    CMD_BUF_HEAD_PTR_T          CmdBufHeadPtr;       /**< Command buffer head pointer register. */
-    CMD_BUF_TAIL_PTR_T          CmdBufTailPtr;       /**< Command buffer tail pointer register. */
-    EVT_LOG_HEAD_PTR_T          EvtLogHeadPtr;       /**< Event log head pointer register. */
-    EVT_LOG_TAIL_PTR_T          EvtLogTailPtr;       /**< Event log tail pointer register. */
+    CMD_BUF_HEAD_PTR_T          CmdBufHeadPtr;          /**< Command buffer head pointer register. */
+    CMD_BUF_TAIL_PTR_T          CmdBufTailPtr;          /**< Command buffer tail pointer register. */
+    EVT_LOG_HEAD_PTR_T          EvtLogHeadPtr;          /**< Event log head pointer register. */
+    EVT_LOG_TAIL_PTR_T          EvtLogTailPtr;          /**< Event log tail pointer register. */
     /** @} */
 
     /** @name MMIO: Command and Event Status register.
      * @{ */
-    IOMMU_STATUS_T              Status;              /**< IOMMU status register. */
+    IOMMU_STATUS_T              Status;                 /**< IOMMU status register. */
     /** @} */
 
     /** @name MMIO: PPR Log Head and Tail pointer registers.
      * @{ */
-    PPR_LOG_HEAD_PTR_T          PprLogHeadPtr;       /**< IOMMU PPR log head pointer register. */
-    PPR_LOG_TAIL_PTR_T          PprLogTailPtr;       /**< IOMMU PPR log tail pointer register. */
+    PPR_LOG_HEAD_PTR_T          PprLogHeadPtr;          /**< IOMMU PPR log head pointer register. */
+    PPR_LOG_TAIL_PTR_T          PprLogTailPtr;          /**< IOMMU PPR log tail pointer register. */
     /** @} */
 
     /** @name MMIO: Guest Virtual-APIC Log Head and Tail pointer registers.
      * @{ */
-    GALOG_HEAD_PTR_T            GALogHeadPtr;        /**< Guest Virtual-APIC log head pointer register. */
-    GALOG_TAIL_PTR_T            GALogTailPtr;        /**< Guest Virtual-APIC log tail pointer register. */
+    GALOG_HEAD_PTR_T            GALogHeadPtr;           /**< Guest Virtual-APIC log head pointer register. */
+    GALOG_TAIL_PTR_T            GALogTailPtr;           /**< Guest Virtual-APIC log tail pointer register. */
     /** @} */
 
     /** @name MMIO: PPR Log B Head and Tail pointer registers.
      *  @{ */
-    PPR_LOG_B_HEAD_PTR_T        PprLogBHeadPtr;      /**< PPR log B head pointer register. */
-    PPR_LOG_B_TAIL_PTR_T        PprLogBTailPtr;      /**< PPR log B tail pointer register. */
+    PPR_LOG_B_HEAD_PTR_T        PprLogBHeadPtr;         /**< PPR log B head pointer register. */
+    PPR_LOG_B_TAIL_PTR_T        PprLogBTailPtr;         /**< PPR log B tail pointer register. */
     /** @} */
 
     /** @name MMIO: Event Log B Head and Tail pointer registers.
      * @{ */
-    EVT_LOG_B_HEAD_PTR_T        EvtLogBHeadPtr;      /**< Event log B head pointer register. */
-    EVT_LOG_B_TAIL_PTR_T        EvtLogBTailPtr;      /**< Event log B tail pointer register. */
+    EVT_LOG_B_HEAD_PTR_T        EvtLogBHeadPtr;         /**< Event log B head pointer register. */
+    EVT_LOG_B_TAIL_PTR_T        EvtLogBTailPtr;         /**< Event log B tail pointer register. */
     /** @} */
 
     /** @name MMIO: PPR Log Overflow protection registers.
@@ -295,7 +295,29 @@ typedef struct IOMMU
 
     /** @todo IOMMU: IOMMU Event counter registers. */
 
-    /** @todo IOMMU: Stat counters. */
+#ifdef VBOX_WITH_STATISTICS
+    /** @name IOMMU: Stat counters.
+     * @{ */
+    STAMCOUNTER             StatMmioReadR3;             /**< Number of MMIO reads in R3. */
+    STAMCOUNTER             StatMmioReadRZ;             /**< Number of MMIO reads in RZ. */
+
+    STAMCOUNTER             StatMmioWriteR3;            /**< Number of MMIO writes in R3. */
+    STAMCOUNTER             StatMmioWriteRZ;            /**< Number of MMIO writes in RZ. */
+
+    STAMCOUNTER             StatMsiRemapR3;             /**< Number of MSI remap requests in R3. */
+    STAMCOUNTER             StatMsiRemapRZ;             /**< Number of MSI remap requests in RZ. */
+
+    STAMCOUNTER             StatCmd;                    /**< Number of commands processed. */
+    STAMCOUNTER             StatCmdCompWait;            /**< Number of Completion Wait commands processed. */
+    STAMCOUNTER             StatCmdInvDte;              /**< Number of Invalidate DTE commands processed. */
+    STAMCOUNTER             StatCmdInvIommuPages;       /**< Number of Invalidate IOMMU pages commands processed. */
+    STAMCOUNTER             StatCmdInvIotlbPages;       /**< Number of Invalidate IOTLB pages commands processed. */
+    STAMCOUNTER             StatCmdInvIntrTable;        /**< Number of Invalidate Interrupt Table commands processed. */
+    STAMCOUNTER             StatCmdPrefIommuPages;      /**< Number of Prefetch IOMMU Pages commands processed. */
+    STAMCOUNTER             StatCmdCompletePprReq;      /**< Number of Complete PPR Requests commands processed. */
+    STAMCOUNTER             StatCmdInvIommuAll;         /**< Number of Invalidate IOMMU All commands processed. */
+    /** @} */
+#endif
 } IOMMU;
 /** Pointer to the IOMMU device state. */
 typedef struct IOMMU *PIOMMU;
@@ -503,13 +525,13 @@ static void iommuAmdSetPciTargetAbort(PPDMDEVINS pDevIns)
 static void iommuAmdCmdThreadWakeUpIfNeeded(PPDMDEVINS pDevIns)
 {
     IOMMU_ASSERT_LOCKED(pDevIns);
-    LogFlowFunc(("\n"));
+    Log5Func(("\n"));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
     if (Status.n.u1CmdBufRunning)
     {
-        LogFlowFunc(("Signaling command thread\n"));
+        Log5Func(("Signaling command thread\n"));
         PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtCmdThread);
     }
 }
@@ -2716,6 +2738,8 @@ static DECLCALLBACK(int) iommuAmdDeviceMsiRemap(PPDMDEVINS pDevIns, uint16_t uDe
     Assert(pMsiOut);
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMsiRemap));
+
     LogFlowFunc(("uDevId=%#x\n", uDevId));
 
     /* Interrupts are forwarded with remapping when the IOMMU is disabled. */
@@ -2741,6 +2765,9 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioWrite(PPDMDEVINS pDevIns, void *pv
     Assert(cb == 4 || cb == 8);
     Assert(!(off & (cb - 1)));
 
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioWrite)); NOREF(pThis);
+
     uint64_t const uValue = cb == 8 ? *(uint64_t const *)pv : *(uint32_t const *)pv;
     return iommuAmdWriteRegister(pDevIns, off, cb, uValue);
 }
@@ -2754,6 +2781,9 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdMmioRead(PPDMDEVINS pDevIns, void *pvU
     NOREF(pvUser);
     Assert(cb == 4 || cb == 8);
     Assert(!(off & (cb - 1)));
+
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioRead)); NOREF(pThis);
 
     uint64_t uResult;
     VBOXSTRICTRC rcStrict = iommuAmdReadRegister(pDevIns, off, &uResult);
@@ -2785,11 +2815,15 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
     LogFlowFunc(("\n"));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    STAM_COUNTER_INC(&pThis->StatCmd);
+
     uint8_t const bCmd = pCmd->n.u4Opcode;
     switch (bCmd)
     {
         case IOMMU_CMD_COMPLETION_WAIT:
         {
+            STAM_COUNTER_INC(&pThis->StatCmdCompWait);
+
             PCCMD_COMWAIT_T pCmdComWait = (PCCMD_COMWAIT_T)pCmd;
             AssertCompile(sizeof(*pCmdComWait) == sizeof(*pCmd));
 
@@ -2835,6 +2869,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
         {
             /** @todo IOMMU: Implement this once we implement IOTLB. Pretend success until
              *        then. */
+            STAM_COUNTER_INC(&pThis->StatCmdInvDte);
             return VINF_SUCCESS;
         }
 
@@ -2842,11 +2877,14 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
         {
             /** @todo IOMMU: Implement this once we implement IOTLB. Pretend success until
              *        then. */
+            STAM_COUNTER_INC(&pThis->StatCmdInvIommuPages);
             return VINF_SUCCESS;
         }
 
         case IOMMU_CMD_INV_IOTLB_PAGES:
         {
+            STAM_COUNTER_INC(&pThis->StatCmdInvIotlbPages);
+
             uint32_t const uCapHdr = PDMPciDevGetDWord(pDevIns->apPciDevs[0], IOMMU_PCI_OFF_CAP_HDR);
             if (RT_BF_GET(uCapHdr, IOMMU_BF_CAPHDR_IOTLB_SUP))
             {
@@ -2861,11 +2899,13 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
         {
             /** @todo IOMMU: Implement this once we implement IOTLB. Pretend success until
              *        then. */
+            STAM_COUNTER_INC(&pThis->StatCmdInvIntrTable);
             return VINF_SUCCESS;
         }
 
         case IOMMU_CMD_PREFETCH_IOMMU_PAGES:
         {
+            STAM_COUNTER_INC(&pThis->StatCmdPrefIommuPages);
             if (pThis->ExtFeat.n.u1PrefetchSup)
             {
                 /** @todo IOMMU: Implement prefetch. Pretend success until then. */
@@ -2877,6 +2917,8 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 
         case IOMMU_CMD_COMPLETE_PPR_REQ:
         {
+            STAM_COUNTER_INC(&pThis->StatCmdCompletePprReq);
+
             /* We don't support PPR requests yet. */
             Assert(!pThis->ExtFeat.n.u1PprSup);
             iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
@@ -2885,6 +2927,8 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 
         case IOMMU_CMD_INV_IOMMU_ALL:
         {
+            STAM_COUNTER_INC(&pThis->StatCmdInvIommuAll);
+
             if (pThis->ExtFeat.n.u1InvAllSup)
             {
                 /** @todo IOMMU: Invalidate all. Pretend success until then. */
@@ -2895,6 +2939,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
         }
     }
 
+    STAM_COUNTER_DEC(&pThis->StatCmd);
     LogFunc(("Cmd(%#x): Unrecognized\n", bCmd));
     iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
     return VERR_IOMMU_CMD_NOT_SUPPORTED;
@@ -2930,7 +2975,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                 AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
                 if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                     break;
-                LogFlowFunc(("Woken up with rc=%Rrc\n", rc));
+                Log5Func(("Woken up with rc=%Rrc\n", rc));
                 ASMAtomicWriteBool(&pThis->fCmdThreadSignaled, false);
             }
             ASMAtomicWriteBool(&pThis->fCmdThreadSleeping, false);
@@ -2949,8 +2994,6 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
         IOMMU_STATUS_T const Status = iommuAmdGetStatus(pThis);
         if (Status.n.u1CmdBufRunning)
         {
-            LogFlowFunc(("Command buffer running\n"));
-
             /* Get the offset we need to read the command from memory (circular buffer offset). */
             uint32_t const cbCmdBuf = iommuAmdGetTotalBufLength(pThis->CmdBufBaseAddr.n.u4Len);
             uint32_t offHead = pThis->CmdBufHeadPtr.n.off;
@@ -3982,6 +4025,30 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     rc = PDMDevHlpDBGFInfoRegister(pDevIns, "iommu", "Display IOMMU state.", iommuAmdR3DbgInfo);
     AssertLogRelRCReturn(rc, rc);
+
+# ifdef VBOX_WITH_STATISTICS
+    /*
+     * Statistics.
+     */
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadR3,  STAMTYPE_COUNTER, "R3/MmioReadR3",  STAMUNIT_OCCURENCES, "Number of MMIO reads in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioReadRZ,  STAMTYPE_COUNTER, "RZ/MmioReadRZ",  STAMUNIT_OCCURENCES, "Number of MMIO reads in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteR3, STAMTYPE_COUNTER, "R3/MmioWriteR3", STAMUNIT_OCCURENCES, "Number of MMIO writes in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMmioWriteRZ, STAMTYPE_COUNTER, "RZ/MmioWriteRZ", STAMUNIT_OCCURENCES, "Number of MMIO writes in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapR3, STAMTYPE_COUNTER, "R3/MsiRemapR3", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in R3.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMsiRemapRZ, STAMTYPE_COUNTER, "RZ/MsiRemapRZ", STAMUNIT_OCCURENCES, "Number of interrupt remap requests in RZ.");
+
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmd, STAMTYPE_COUNTER, "R3/Commands", STAMUNIT_OCCURENCES, "Number of commands processed (total).");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdCompWait, STAMTYPE_COUNTER, "R3/Commands/CompWait", STAMUNIT_OCCURENCES, "Number of Completion Wait commands processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdInvDte, STAMTYPE_COUNTER, "R3/Commands/InvDte", STAMUNIT_OCCURENCES, "Number of Invalidate DTE commands processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdInvIommuPages, STAMTYPE_COUNTER, "R3/Commands/InvIommuPages", STAMUNIT_OCCURENCES, "Number of Invalidate IOMMU Pages commands processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdInvIotlbPages, STAMTYPE_COUNTER, "R3/Commands/InvIotlbPages", STAMUNIT_OCCURENCES, "Number of Invalidate IOTLB Pages commands processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdInvIntrTable, STAMTYPE_COUNTER, "R3/Commands/InvIntrTable", STAMUNIT_OCCURENCES, "Number of Invalidate Interrupt Table commands processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdPrefIommuPages, STAMTYPE_COUNTER, "R3/Commands/PrefIommuPages", STAMUNIT_OCCURENCES, "Number of Prefetch IOMMU Pages commands processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdCompletePprReq, STAMTYPE_COUNTER, "R3/Commands/CompletePprReq", STAMUNIT_OCCURENCES, "Number of Complete PPR Requests commands processed.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCmdInvIommuAll, STAMTYPE_COUNTER, "R3/Commands/InvIommuAll", STAMUNIT_OCCURENCES, "Number of Invalidate IOMMU All commands processed.");
+# endif
 
     /*
      * Create the command thread and its event semaphore.
