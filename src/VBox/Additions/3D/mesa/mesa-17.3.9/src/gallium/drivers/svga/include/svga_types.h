@@ -32,7 +32,14 @@
 
 /* Include only what is required. */
 #include <iprt/types.h>
-#define inline _inline
+
+/* 'inline' keyword in C code for MSC older than VS2015. */
+#if !defined(__cplusplus)
+# if defined(_MSC_VER) && !RT_MSC_PREREQ(RT_MSC_VER_VS2015)
+#  define inline _inline
+# endif
+#endif
+
 /* Compute the size of an array */
 #ifndef ARRAY_SIZE
 #  define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
