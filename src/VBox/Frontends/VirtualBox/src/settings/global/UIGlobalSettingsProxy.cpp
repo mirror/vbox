@@ -67,12 +67,13 @@ struct UIDataSettingsGlobalProxy
 
 UIGlobalSettingsProxy::UIGlobalSettingsProxy()
     : m_pCache(0)
-    , m_pRadioProxyAuto(0)
-    , m_pRadioProxyDisabled(0)
-    , m_pRadioProxyEnabled(0)
-    , m_pHostEditor(0)
-    , m_pHostLabel(0)
-    , m_pContainerProxy(0)
+    , m_pButtonGroup(0)
+    , m_pRadioButtonProxyAuto(0)
+    , m_pRadioButtonProxyDisabled(0)
+    , m_pRadioButtonProxyEnabled(0)
+    , m_pWidgetSettings(0)
+    , m_pLabelHost(0)
+    , m_pEditorHost(0)
 {
     /* Prepare: */
     prepare();
@@ -114,12 +115,12 @@ void UIGlobalSettingsProxy::getFromCache()
     /* Load old proxy data from the cache: */
     switch (oldProxyData.m_enmProxyMode)
     {
-        case KProxyMode_System:  m_pRadioProxyAuto->setChecked(true); break;
-        case KProxyMode_NoProxy: m_pRadioProxyDisabled->setChecked(true); break;
-        case KProxyMode_Manual:  m_pRadioProxyEnabled->setChecked(true); break;
+        case KProxyMode_System:  m_pRadioButtonProxyAuto->setChecked(true); break;
+        case KProxyMode_NoProxy: m_pRadioButtonProxyDisabled->setChecked(true); break;
+        case KProxyMode_Manual:  m_pRadioButtonProxyEnabled->setChecked(true); break;
         case KProxyMode_Max:     break; /* (compiler warnings) */
     }
-    m_pHostEditor->setText(oldProxyData.m_strProxyHost);
+    m_pEditorHost->setText(oldProxyData.m_strProxyHost);
     sltHandleProxyToggle();
 
     /* Revalidate: */
@@ -132,9 +133,9 @@ void UIGlobalSettingsProxy::putToCache()
     UIDataSettingsGlobalProxy newProxyData = m_pCache->base();
 
     /* Gather new proxy data: */
-    newProxyData.m_enmProxyMode = m_pRadioProxyEnabled->isChecked()  ? KProxyMode_Manual
-                                : m_pRadioProxyDisabled->isChecked() ? KProxyMode_NoProxy : KProxyMode_System;
-    newProxyData.m_strProxyHost = m_pHostEditor->text();
+    newProxyData.m_enmProxyMode = m_pRadioButtonProxyEnabled->isChecked()  ? KProxyMode_Manual
+                                : m_pRadioButtonProxyDisabled->isChecked() ? KProxyMode_NoProxy : KProxyMode_System;
+    newProxyData.m_strProxyHost = m_pEditorHost->text();
 
     /* Cache new proxy data: */
     m_pCache->cacheCurrentData(newProxyData);
@@ -155,7 +156,7 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
 bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
 {
     /* Pass if proxy is disabled: */
-    if (!m_pRadioProxyEnabled->isChecked())
+    if (!m_pRadioButtonProxyEnabled->isChecked())
         return true;
 
     /* Pass by default: */
@@ -165,7 +166,7 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     UIValidationMessage message;
 
     /* Check for URL presence: */
-    if (m_pHostEditor->text().trimmed().isEmpty())
+    if (m_pEditorHost->text().trimmed().isEmpty())
     {
         message.second << tr("No proxy URL is currently specified.");
         fPass = false;
@@ -174,7 +175,7 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     else
 
     /* Check for URL validness: */
-    if (!QUrl(m_pHostEditor->text().trimmed()).isValid())
+    if (!QUrl(m_pEditorHost->text().trimmed()).isValid())
     {
         message.second << tr("Invalid proxy URL is currently specified.");
         fPass = true;
@@ -183,7 +184,7 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     else
 
     /* Check for password presence: */
-    if (!QUrl(m_pHostEditor->text().trimmed()).password().isEmpty())
+    if (!QUrl(m_pEditorHost->text().trimmed()).password().isEmpty())
     {
         message.second << tr("You have provided a proxy password. "
                              "Please be aware that the password will be saved in plain text. "
@@ -202,19 +203,19 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
 
 void UIGlobalSettingsProxy::retranslateUi()
 {
-    m_pRadioProxyAuto->setWhatsThis(tr("When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like "
+    m_pRadioButtonProxyAuto->setWhatsThis(tr("When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like "
                                        "downloading Guest Additions from the network or checking for updates."));
-    m_pRadioProxyAuto->setText(tr("&Auto-detect Host Proxy Settings"));
-    m_pRadioProxyDisabled->setWhatsThis(tr("When chosen, VirtualBox will use direct Internet connection for tasks like downloading "
+    m_pRadioButtonProxyAuto->setText(tr("&Auto-detect Host Proxy Settings"));
+    m_pRadioButtonProxyDisabled->setWhatsThis(tr("When chosen, VirtualBox will use direct Internet connection for tasks like downloading "
                                            "Guest Additions from the network or checking for updates."));
-    m_pRadioProxyDisabled->setText(tr("&Direct Connection to the Internet"));
-    m_pRadioProxyEnabled->setWhatsThis(tr("When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading "
+    m_pRadioButtonProxyDisabled->setText(tr("&Direct Connection to the Internet"));
+    m_pRadioButtonProxyEnabled->setWhatsThis(tr("When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading "
                                           "Guest Additions from the network or checking for updates."));
-    m_pRadioProxyEnabled->setText(tr("&Manual Proxy Configuration"));
-    m_pHostLabel->setText(tr("&URL:"));
+    m_pRadioButtonProxyEnabled->setText(tr("&Manual Proxy Configuration"));
+    m_pLabelHost->setText(tr("&URL:"));
 
     /* Translate proxy URL editor: */
-    m_pHostEditor->setWhatsThis(tr("Holds the proxy URL. "
+    m_pEditorHost->setWhatsThis(tr("Holds the proxy URL. "
                                    "The format is: "
                                    "<table cellspacing=0 style='white-space:pre'>"
                                    "<tr><td>[{type}://][{userid}[:{password}]@]{server}[:{port}]</td></tr>"
@@ -225,7 +226,7 @@ void UIGlobalSettingsProxy::retranslateUi()
 void UIGlobalSettingsProxy::sltHandleProxyToggle()
 {
     /* Update widgets availability: */
-    m_pContainerProxy->setEnabled(m_pRadioProxyEnabled->isChecked());
+    m_pWidgetSettings->setEnabled(m_pRadioButtonProxyEnabled->isChecked());
 
     /* Revalidate: */
     revalidate();
@@ -233,34 +234,13 @@ void UIGlobalSettingsProxy::sltHandleProxyToggle()
 
 void UIGlobalSettingsProxy::prepare()
 {
-    prepareWidgets();
-
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalProxy;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Layout created in the .ui file. */
-    {
-        /* Create button-group: */
-        QButtonGroup *pButtonGroup = new QButtonGroup(this);
-        AssertPtrReturnVoid(pButtonGroup);
-        {
-            /* Configure button-group: */
-            pButtonGroup->addButton(m_pRadioProxyAuto);
-            pButtonGroup->addButton(m_pRadioProxyDisabled);
-            pButtonGroup->addButton(m_pRadioProxyEnabled);
-            connect(pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-                    this, &UIGlobalSettingsProxy::sltHandleProxyToggle);
-        }
-
-        /* Host editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pHostEditor);
-        {
-            /* Configure editor: */
-            m_pHostEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pHostEditor));
-            connect(m_pHostEditor, &QILineEdit::textEdited, this, &UIGlobalSettingsProxy::revalidate);
-        }
-    }
+    /* Prepare everything: */
+    prepareWidgets();
+    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -268,51 +248,84 @@ void UIGlobalSettingsProxy::prepare()
 
 void UIGlobalSettingsProxy::prepareWidgets()
 {
-    if (objectName().isEmpty())
-        setObjectName(QStringLiteral("UIGlobalSettingsProxy"));
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    pMainLayout->setContentsMargins(0, 0, 0, 0);
-    pMainLayout->setObjectName(QStringLiteral("pMainLayout"));
-    m_pRadioProxyAuto = new QRadioButton();
-    m_pRadioProxyAuto->setObjectName(QStringLiteral("m_pRadioProxyAuto"));
-    pMainLayout->addWidget(m_pRadioProxyAuto, 0, 0, 1, 2);
+    /* Prepare main layout: */
+    QGridLayout *pLayoutMain = new QGridLayout(this);
+    if (pLayoutMain)
+    {
+        pLayoutMain->setContentsMargins(0, 0, 0, 0);
+        pLayoutMain->setRowStretch(4, 1);
 
-    m_pRadioProxyDisabled = new QRadioButton();
-    m_pRadioProxyDisabled->setObjectName(QStringLiteral("m_pRadioProxyDisabled"));
-    pMainLayout->addWidget(m_pRadioProxyDisabled, 1, 0, 1, 2);
+        /* Prepare button-group: */
+        m_pButtonGroup = new QButtonGroup(this);
+        if (m_pButtonGroup)
+        {
+            /* Prepare 'proxy auto' button: */
+            m_pRadioButtonProxyAuto = new QRadioButton(this);
+            if (m_pRadioButtonProxyAuto)
+            {
+                m_pButtonGroup->addButton(m_pRadioButtonProxyAuto);
+                pLayoutMain->addWidget(m_pRadioButtonProxyAuto, 0, 0, 1, 2);
+            }
+            /* Prepare 'proxy disabled' button: */
+            m_pRadioButtonProxyDisabled = new QRadioButton(this);
+            if (m_pRadioButtonProxyDisabled)
+            {
+                m_pButtonGroup->addButton(m_pRadioButtonProxyDisabled);
+                pLayoutMain->addWidget(m_pRadioButtonProxyDisabled, 1, 0, 1, 2);
+            }
+            /* Prepare 'proxy enabled' button: */
+            m_pRadioButtonProxyEnabled = new QRadioButton(this);
+            if (m_pRadioButtonProxyEnabled)
+            {
+                m_pButtonGroup->addButton(m_pRadioButtonProxyEnabled);
+                pLayoutMain->addWidget(m_pRadioButtonProxyEnabled, 2, 0, 1, 2);
+            }
+        }
 
-    m_pRadioProxyEnabled = new QRadioButton();
-    m_pRadioProxyEnabled->setObjectName(QStringLiteral("m_pRadioProxyEnabled"));
-    pMainLayout->addWidget(m_pRadioProxyEnabled, 2, 0, 1, 2);
+        /* Prepare 20-px shifting spacer: */
+        QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        if (pSpacerItem)
+            pLayoutMain->addItem(pSpacerItem, 3, 0);
 
-    QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-    pMainLayout->addItem(pSpacerItem, 3, 0, 1, 1);
+        /* Prepare settings widget: */
+        m_pWidgetSettings = new QWidget(this);
+        if (m_pWidgetSettings)
+        {
+            /* Prepare settings layout widget: */
+            QHBoxLayout *pLayoutSettings = new QHBoxLayout(m_pWidgetSettings);
+            if (pLayoutSettings)
+            {
+                pLayoutSettings->setContentsMargins(0, 0, 0, 0);
 
-    m_pContainerProxy = new QWidget();
-    m_pContainerProxy->setObjectName(QStringLiteral("m_pContainerProxy"));
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-    sizePolicy.setHorizontalStretch(1);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pContainerProxy->sizePolicy().hasHeightForWidth());
-    m_pContainerProxy->setSizePolicy(sizePolicy);
-    QHBoxLayout *pHBoxLayout = new QHBoxLayout(m_pContainerProxy);
-    pHBoxLayout->setContentsMargins(0, 0, 0, 0);
-    pHBoxLayout->setObjectName(QStringLiteral("pHBoxLayout"));
-    pHBoxLayout->setContentsMargins(0, 0, 0, 0);
-    m_pHostLabel = new QLabel(m_pContainerProxy);
-    m_pHostLabel->setObjectName(QStringLiteral("m_pHostLabel"));
-    m_pHostLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    pHBoxLayout->addWidget(m_pHostLabel);
+                /* Prepare host label: */
+                m_pLabelHost = new QLabel(m_pWidgetSettings);
+                if (m_pLabelHost)
+                {
+                    m_pLabelHost->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    pLayoutSettings->addWidget(m_pLabelHost);
+                }
+                /* Prepare host editor: */
+                m_pEditorHost = new QILineEdit(m_pWidgetSettings);
+                if (m_pEditorHost)
+                {
+                    if (m_pLabelHost)
+                        m_pLabelHost->setBuddy(m_pEditorHost);
+                    m_pEditorHost->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pEditorHost));
 
-    m_pHostEditor = new QILineEdit(m_pContainerProxy);
-    m_pHostEditor->setObjectName(QStringLiteral("m_pHostEditor"));
-    pHBoxLayout->addWidget(m_pHostEditor);
-    pMainLayout->addWidget(m_pContainerProxy, 3, 1, 1, 1);
+                    pLayoutSettings->addWidget(m_pEditorHost);
+                }
+            }
 
-    QSpacerItem *pSpacerItem1 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    pMainLayout->addItem(pSpacerItem1, 4, 0, 1, 2);
+            pLayoutMain->addWidget(m_pWidgetSettings, 3, 1);
+        }
+    }
+}
 
-    m_pHostLabel->setBuddy(m_pHostEditor);
+void UIGlobalSettingsProxy::prepareConnections()
+{
+    connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIGlobalSettingsProxy::sltHandleProxyToggle);
+    connect(m_pEditorHost, &QILineEdit::textEdited, this, &UIGlobalSettingsProxy::revalidate);
 }
 
 void UIGlobalSettingsProxy::cleanup()

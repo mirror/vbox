@@ -26,6 +26,7 @@
 #include "VBoxUtils.h"
 
 /* Forward declarations: */
+class QButtonGroup;
 class QLabel;
 class QRadioButton;
 class QILineEdit;
@@ -77,6 +78,8 @@ private:
     void prepare();
     /** Prepares wıdgets. */
     void prepareWidgets();
+    /** Prepares connections. */
+    void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 
@@ -88,12 +91,20 @@ private:
 
     /** @name Widgets
      * @{ */
-       QRadioButton *m_pRadioProxyAuto;
-       QRadioButton *m_pRadioProxyDisabled;
-       QRadioButton *m_pRadioProxyEnabled;
-       QILineEdit *m_pHostEditor;
-       QLabel *m_pHostLabel;
-       QWidget *m_pContainerProxy;
+        /** Holds the button-group instance. */
+        QButtonGroup *m_pButtonGroup;
+        /** Holds the 'proxy auto' radio-button instance. */
+        QRadioButton *m_pRadioButtonProxyAuto;
+        /** Holds the 'proxy disabled' radio-button instance. */
+        QRadioButton *m_pRadioButtonProxyDisabled;
+        /** Holds the 'proxy enabled' radio-button instance. */
+        QRadioButton *m_pRadioButtonProxyEnabled;
+        /** Holds the settings widget instance. */
+        QWidget      *m_pWidgetSettings;
+        /** Holds the host label instance. */
+        QLabel       *m_pLabelHost;
+        /** Holds the host editor instance. */
+        QILineEdit   *m_pEditorHost;
     /** @} */
 };
 
