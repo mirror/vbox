@@ -164,14 +164,16 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 
 static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest);
 static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest);
+static DECLCALLBACK(int) serialTestRunReadVerify(PSERIALTEST pSerialTest);
 static DECLCALLBACK(int) serialTestRunStsLines(PSERIALTEST pSerialTest);
 
 /** Implemented tests. */
 static const SERIALTESTDESC g_aSerialTests[] =
 {
-    {"readwrite", "Simple Read/Write test on the same serial port",       serialTestRunReadWrite },
-    {"write",     "Simple write test (verification done somewhere else)", serialTestRunWrite     },
-    {"stslines",  "Testing the status line setting and receiving",        serialTestRunStsLines  }
+    {"readwrite",  "Simple Read/Write test on the same serial port",       serialTestRunReadWrite  },
+    {"write",      "Simple write test (verification done somewhere else)", serialTestRunWrite      },
+    {"readverify", "Counterpart to write test (reads and verifies data)",  serialTestRunReadVerify },
+    {"stslines",   "Testing the status line setting and receiving",        serialTestRunStsLines   }
 };
 
 /** Verbosity value. */
@@ -344,7 +346,8 @@ static int serialTestRxBufRecv(RTSERIALPORT hSerialPort, PSERIALTESTTXRXBUFCNT p
  * @returns Flag whether verification failed.
  * @param   hTest               The test handle to report errors to.
  * @param   pSerBuf             The RX buffer pointer.
- * @param   iCntTx              The current TX counter value the RX buffer should never get ahead of.
+ * @param   iCntTx              The current TX counter value the RX buffer should never get ahead of,
+ *                              UINT32_MAX disables this check.
  */
 static bool serialTestRxBufVerify(RTTEST hTest, PSERIALTESTTXRXBUFCNT pSerBuf, uint32_t iCntTx)
 {
@@ -474,6 +477,55 @@ static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest)
 
         if (fEvts & RTSERIALPORT_EVT_F_DATA_TX)
             rc = serialTestTxBufSend(pSerialTest->hSerialPort, &SerBufTx);
+    }
+
+    uint64_t tsRuntime = RTTimeNanoTS() - tsStart;
+    size_t cNsPerByte = tsRuntime / g_cbTx;
+    uint64_t cbBytesPerSec = RT_NS_1SEC / cNsPerByte;
+    RTTestValue(pSerialTest->hTest, "Throughput", cbBytesPerSec, RTTESTUNIT_BYTES_PER_SEC);
+
+    return rc;
+}
+
+
+/**
+ * Runs the counterpart to the write test, reading and verifying data.
+ *
+ * @returns IPRT status code.
+ * @param   pSerialTest         The serial test configuration.
+ */
+static DECLCALLBACK(int) serialTestRunReadVerify(PSERIALTEST pSerialTest)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t tsStart = RTTimeNanoTS();
+    bool fFailed = false;
+    SERIALTESTTXRXBUFCNT SerBufRx;
+
+    serialTestRxBufInit(&SerBufRx, g_cbTx);
+
+    while (   RT_SUCCESS(rc)
+           && SerBufRx.cbTxRxLeft)
+    {
+        uint32_t fEvts = 0;
+        uint32_t fEvtsQuery = RTSERIALPORT_EVT_F_DATA_RX;
+
+        rc = RTSerialPortEvtPoll(pSerialTest->hSerialPort, fEvtsQuery, &fEvts, RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(rc))
+            break;
+
+        if (fEvts & RTSERIALPORT_EVT_F_DATA_RX)
+        {
+            rc = serialTestRxBufRecv(pSerialTest->hSerialPort, &SerBufRx);
+            if (RT_FAILURE(rc))
+                break;
+
+            bool fRes = serialTestRxBufVerify(pSerialTest->hTest, &SerBufRx, UINT32_MAX);
+            if (fRes && !fFailed)
+            {
+                fFailed = true;
+                serialTestFailed(pSerialTest->hTest, "Data corruption/loss detected\n");
+            }
+        }
     }
 
     uint64_t tsRuntime = RTTimeNanoTS() - tsStart;
