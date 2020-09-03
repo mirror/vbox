@@ -74,7 +74,9 @@ void CloudProviderManager::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
+#ifdef VBOX_WITH_EXTPACK
     m_mapCloudProviderManagers.clear();
+#endif
     m_apCloudProviders.clear();
 
     unconst(m_pVirtualBox) = NULL; // not a ComPtr, but be pedantic
