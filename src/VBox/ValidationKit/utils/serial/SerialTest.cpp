@@ -166,14 +166,16 @@ static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest);
 static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest);
 static DECLCALLBACK(int) serialTestRunReadVerify(PSERIALTEST pSerialTest);
 static DECLCALLBACK(int) serialTestRunStsLines(PSERIALTEST pSerialTest);
+static DECLCALLBACK(int) serialTestRunEcho(PSERIALTEST pSerialTest);
 
 /** Implemented tests. */
 static const SERIALTESTDESC g_aSerialTests[] =
 {
-    {"readwrite",  "Simple Read/Write test on the same serial port",       serialTestRunReadWrite  },
-    {"write",      "Simple write test (verification done somewhere else)", serialTestRunWrite      },
-    {"readverify", "Counterpart to write test (reads and verifies data)",  serialTestRunReadVerify },
-    {"stslines",   "Testing the status line setting and receiving",        serialTestRunStsLines   }
+    {"readwrite",  "Simple Read/Write test on the same serial port",                 serialTestRunReadWrite  },
+    {"write",      "Simple write test (verification done somewhere else)",           serialTestRunWrite      },
+    {"readverify", "Counterpart to write test (reads and verifies data)",            serialTestRunReadVerify },
+    {"stslines",   "Testing the status line setting and receiving",                  serialTestRunStsLines   },
+    {"echo",       "Echoes received data back to the sender (not real test)",        serialTestRunEcho       },
 };
 
 /** Verbosity value. */
@@ -681,6 +683,70 @@ static DECLCALLBACK(int) serialTestRunStsLines(PSERIALTEST pSerialTest)
     }
     else
         rc = VERR_NOT_IMPLEMENTED;
+
+    return rc;
+}
+
+
+/**
+ * Runs a simple echo service (not a real test on its own).
+ *
+ * @returns IPRT status code.
+ * @param   pSerialTest         The serial test configuration.
+ */
+static DECLCALLBACK(int) serialTestRunEcho(PSERIALTEST pSerialTest)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t tsStart = RTTimeNanoTS();
+    uint8_t abBuf[_1K];
+    size_t cbLeft = g_cbTx;
+    size_t cbInBuf = 0;
+
+    while (   RT_SUCCESS(rc)
+           && (   cbLeft
+               || cbInBuf))
+    {
+        uint32_t fEvts = 0;
+        uint32_t fEvtsQuery = 0;
+        if (cbInBuf)
+            fEvtsQuery |= RTSERIALPORT_EVT_F_DATA_TX;
+        if (cbLeft && cbInBuf < sizeof(abBuf))
+            fEvtsQuery |= RTSERIALPORT_EVT_F_DATA_RX;
+
+        rc = RTSerialPortEvtPoll(pSerialTest->hSerialPort, fEvtsQuery, &fEvts, RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(rc))
+            break;
+
+        if (fEvts & RTSERIALPORT_EVT_F_DATA_RX)
+        {
+            size_t cbThisRead = RT_MIN(cbLeft, sizeof(abBuf) - cbInBuf);
+            size_t cbRead = 0;
+            rc = RTSerialPortReadNB(pSerialTest->hSerialPort, &abBuf[cbInBuf], cbThisRead, &cbRead);
+            if (RT_SUCCESS(rc))
+            {
+                cbInBuf += cbRead;
+                cbLeft  -= cbRead;
+            }
+            else if (RT_FAILURE(rc))
+                break;
+        }
+
+        if (fEvts & RTSERIALPORT_EVT_F_DATA_TX)
+        {
+            size_t cbWritten = 0;
+            rc = RTSerialPortWriteNB(pSerialTest->hSerialPort, &abBuf[0], cbInBuf, &cbWritten);
+            if (RT_SUCCESS(rc))
+            {
+                memmove(&abBuf[0], &abBuf[cbWritten], cbInBuf - cbWritten);
+                cbInBuf -= cbWritten;
+            }
+        }
+    }
+
+    uint64_t tsRuntime = RTTimeNanoTS() - tsStart;
+    size_t cNsPerByte = tsRuntime / g_cbTx;
+    uint64_t cbBytesPerSec = RT_NS_1SEC / cNsPerByte;
+    RTTestValue(pSerialTest->hTest, "Throughput", cbBytesPerSec, RTTESTUNIT_BYTES_PER_SEC);
 
     return rc;
 }
