@@ -84,6 +84,7 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
                                   "|Allow64BitGuests"
 #ifdef RT_OS_WINDOWS
                                   "|UseRing0Runloop"
+                                  "|MaxPagesMappedBeforeUnmap"
 #endif
                                   ,
                                   "" /* pszValidNodes */, "NEM" /* pszWho */, 0 /* uInstance */);
@@ -120,6 +121,24 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgNem, "UseRing0Runloop", &fUseRing0Runloop, fUseRing0Runloop);
     AssertLogRelRCReturn(rc, rc);
     pVM->nem.s.fUseRing0Runloop = fUseRing0Runloop;
+
+    /** @cfgm{/NEM/MaxPagesMappedBeforeUnmap, bool, true}
+     * Maximum nuber of pages mapped before into the Hv partition before
+     * unmapping verything and starting from the beginning
+     * @bugref{9044}. */
+    uint32_t cMappedPagesMaxBeforeUnmap = 0;
+    rc = CFGMR3QueryU32Def(pCfgNem, "MaxPagesMappedBeforeUnmap", &cMappedPagesMaxBeforeUnmap, 0);
+    AssertLogRelRCReturn(rc, rc);
+
+    if (   cMappedPagesMaxBeforeUnmap < 4000
+        && cMappedPagesMaxBeforeUnmap != 0)
+    {
+        LogRel(("NEM: MaxPagesMappedBeforeUnmap too small %u, setting to 4000\n", cMappedPagesMaxBeforeUnmap));
+        cMappedPagesMaxBeforeUnmap = 4000;
+    }
+
+    LogRel(("NEM: cMappedPagesMaxBeforeUnmap=%u\n", cMappedPagesMaxBeforeUnmap));
+    pVM->nem.s.cMappedPagesMaxBeforeUnmap = cMappedPagesMaxBeforeUnmap;
 #endif
 
     return VINF_SUCCESS;
