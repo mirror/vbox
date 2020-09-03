@@ -933,16 +933,17 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
                 if (dwRet == ERROR_IO_PENDING)
                     rc = VINF_SUCCESS;
                 else
+                {
                     rc = RTErrConvertFromWin32(GetLastError());
+                    pThis->fEvtQueryPending = false;
+                }
             }
             else
                 pThis->fEvtQueryPending = false;
         }
 
-        Assert(RT_FAILURE(rc) || pThis->fEvtQueryPending);
-
         if (   RT_SUCCESS(rc)
-            || pThis->fEvtQueryPending)
+            && pThis->fEvtQueryPending)
             rc = rtSerialPortEvtWaitWorker(pThis, msTimeout);
 
         if (RT_SUCCESS(rc))
