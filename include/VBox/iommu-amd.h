@@ -509,7 +509,6 @@ typedef union
         RT_GCC_EXTENSION uint64_t  u2SysMgt : 2;                  /**< Bits 105:104 - SysMgt: System Management message enable. */
         RT_GCC_EXTENSION uint64_t  u1Rsvd1 : 1;                   /**< Bit  106     - Reserved. */
         RT_GCC_EXTENSION uint64_t  u21GstCr3TableRootPtrHi : 21;  /**< Bits 127:107 - GCR3 TRP: Guest CR3 Table Root Ptr (Hi). */
-
         RT_GCC_EXTENSION uint64_t  u1IntrMapValid : 1;            /**< Bit  128     - IV: Interrupt map Valid. */
         RT_GCC_EXTENSION uint64_t  u4IntrTableLength : 4;         /**< Bits 132:129 - IntTabLen: Interrupt Table Length. */
         RT_GCC_EXTENSION uint64_t  u1IgnoreUnmappedIntrs : 1;     /**< Bits 133     - IG: Ignore unmapped interrupts. */
@@ -522,7 +521,6 @@ typedef union
         RT_GCC_EXTENSION uint64_t  u2IntrCtrl : 2;                /**< Bits 189:188 - IntCtl: Interrupt Control. */
         RT_GCC_EXTENSION uint64_t  u1Lint0Passthru : 1;           /**< Bit  190     - Lint0Pass: LINT0 Pass-through. */
         RT_GCC_EXTENSION uint64_t  u1Lint1Passthru : 1;           /**< Bit  191     - Lint1Pass: LINT1 Pass-through. */
-
         RT_GCC_EXTENSION uint64_t  u32Rsvd0 : 32;                 /**< Bits 223:192 - Reserved. */
         RT_GCC_EXTENSION uint64_t  u22Rsvd0 : 22;                 /**< Bits 245:224 - Reserved. */
         RT_GCC_EXTENSION uint64_t  u1AttrOverride : 1;            /**< Bit  246     - AttrV: Attribute Override. */
@@ -561,7 +559,7 @@ typedef DTE_T const *PCDTE_T;
 /* Mask of all valid DTE bits (including all feature bits). */
 #define IOMMU_DTE_QWORD_0_VALID_MASK            UINT64_C(0x7fffffffffffff83)
 #define IOMMU_DTE_QWORD_1_VALID_MASK            UINT64_C(0xfffffbffffffffff)
-#define IOMMU_DTE_QWORD_2_VALID_MASK            UINT64_C(0xf70fffffffffffff)
+#define IOMMU_DTE_QWORD_2_VALID_MASK            UINT64_C(0xff0fffffffffffff)
 #define IOMMU_DTE_QWORD_3_VALID_MASK            UINT64_C(0xffc0000000000000)
 
 /* Mask of the interrupt table root pointer. */
