@@ -1980,6 +1980,8 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     uint16_t const offDte       = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
     RTGCPHYS const GCPhysDte    = GCPhysDevTab + offDte;
 
+    LogFlowFunc(("idxSegsEn=%#x GCPhysDevTab=%#RGp offDte=%#x GCPhysDte=%#RGp\n", idxSegsEn, GCPhysDevTab, offDte, GCPhysDte));
+
     Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
     int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDte, pDte, sizeof(*pDte));
     if (RT_FAILURE(rc))
@@ -2065,7 +2067,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         /** @todo r=ramshankar: I cannot make out from the AMD IOMMU spec. if I should be
          *        raising an ILLEGAL_DEV_TABLE_ENTRY event or an IO_PAGE_FAULT event here.
          *        I'm just going with I/O page fault. */
-        LogFunc(("Invalid root page table level %#x -> IOPF", uMaxLevel));
+        LogFunc(("Invalid root page table level %#x -> IOPF\n", uMaxLevel));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2080,7 +2082,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
     { /* likely */ }
     else
     {
-        LogFunc(("Permission denied (fAccess=%#x fRootPtePerm=%#x) -> IOPF", fAccess, fRootPtePerm));
+        LogFunc(("Permission denied (fAccess=%#x fRootPtePerm=%#x) -> IOPF\n", fAccess, fRootPtePerm));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                      true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2152,7 +2154,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry permission denied (fAccess=%#x fPtePerm=%#x) -> IOPF", fAccess, fPtePerm));
+            LogFunc(("Page table entry permission denied (fAccess=%#x fPtePerm=%#x) -> IOPF\n", fAccess, fPtePerm));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          true /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2189,7 +2191,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
                 return VINF_SUCCESS;
             }
 
-            LogFunc(("Page size invalid cShift=%#x -> IOPF", cShift));
+            LogFunc(("Page size invalid cShift=%#x -> IOPF\n", cShift));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2204,7 +2206,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
-            LogFunc(("Next level of PDE invalid uNextLevel=%#x -> IOPF", uNextLevel));
+            LogFunc(("Next level of PDE invalid uNextLevel=%#x -> IOPF\n", uNextLevel));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2221,7 +2223,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
-            LogFunc(("Next level (%#x) must be less than the current level (%#x) -> IOPF", uNextLevel, uLevel));
+            LogFunc(("Next level (%#x) must be less than the current level (%#x) -> IOPF\n", uNextLevel, uLevel));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2239,7 +2241,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
-            LogFunc(("IOVA of skipped levels are not zero %#RX64 (SkipMask=%#RX64) -> IOPF", uIova, uIovaSkipMask));
+            LogFunc(("IOVA of skipped levels are not zero %#RX64 (SkipMask=%#RX64) -> IOPF\n", uIova, uIovaSkipMask));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, true /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2532,7 +2534,7 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
                     return VINF_SUCCESS;
                 }
 
-                LogFunc(("Interrupt type (%#x) invalid -> IOPF", Irte.n.u3IntrType));
+                LogFunc(("Interrupt type (%#x) invalid -> IOPF\n", Irte.n.u3IntrType));
                 EVT_IO_PAGE_FAULT_T EvtIoPageFault;
                 iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                              true /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2540,7 +2542,7 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
                 return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
             }
 
-            LogFunc(("Guest mode not supported -> IOPF"));
+            LogFunc(("Guest mode not supported -> IOPF\n"));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                          true /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2548,7 +2550,7 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
             return VERR_IOMMU_ADDR_TRANSLATION_FAILED;
         }
 
-        LogFunc(("Remapping disabled -> IOPF"));
+        LogFunc(("Remapping disabled -> IOPF\n"));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, pMsiIn->Addr.u64, Irte.n.u1RemapEnable,
                                      false /* fRsvdNotZero */, false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2575,6 +2577,8 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
 static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, PCMSIMSG pMsiIn, PMSIMSG pMsiOut)
 {
     /* Read the device table entry from memory. */
+    LogFlowFunc(("uDevId=%#x enmOp=%u\n", uDevId, enmOp));
+
     DTE_T Dte;
     int rc = iommuAmdReadDte(pDevIns, uDevId, enmOp, &Dte);
     if (RT_SUCCESS(rc))
@@ -2672,7 +2676,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                         /* Paranoia. */
                         Assert(uIntrCtrl == IOMMU_INTR_CTRL_RSVD);
 
-                        LogFunc(("IntCtl mode invalid %#x -> Illegal DTE", uIntrCtrl));
+                        LogFunc(("IntCtl mode invalid %#x -> Illegal DTE\n", uIntrCtrl));
 
                         EVT_ILLEGAL_DTE_T Event;
                         iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, true /* fRsvdNotZero */, enmOp, &Event);
@@ -2687,7 +2691,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                     case VBOX_MSI_DELIVERY_MODE_EXT_INT:    fPassThru = Dte.n.u1ExtIntPassthru; break;
                     default:
                     {
-                        LogFunc(("MSI data delivery mode invalid %#x -> Target abort", u8DeliveryMode));
+                        LogFunc(("MSI data delivery mode invalid %#x -> Target abort\n", u8DeliveryMode));
                         iommuAmdSetPciTargetAbort(pDevIns);
                         return VERR_IOMMU_INTR_REMAP_FAILED;
                     }
@@ -2704,13 +2708,14 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
             }
             else
             {
-                LogFunc(("MSI address region invalid %#RX64.", pMsiIn->Addr.u64));
+                LogFunc(("MSI address region invalid %#RX64\n", pMsiIn->Addr.u64));
                 return VERR_IOMMU_INTR_REMAP_FAILED;
             }
         }
         else
         {
             /** @todo IOMMU: Add to interrupt remapping cache. */
+            LogFlowFunc(("DTE interrupt map not valid\n"));
             *pMsiOut = *pMsiIn;
             return VINF_SUCCESS;
         }
