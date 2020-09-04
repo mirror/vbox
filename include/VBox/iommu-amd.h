@@ -493,16 +493,16 @@ typedef union
         RT_GCC_EXTENSION uint64_t  u1GstIoValid : 1;              /**< Bit  54      - GIoV: Guest I/O Protection Valid. */
         RT_GCC_EXTENSION uint64_t  u1GstTranslateValid : 1;       /**< Bit  55      - GV: Guest translation Valid. */
         RT_GCC_EXTENSION uint64_t  u2GstMode : 2;                 /**< Bits 57:56   - GLX: Guest Paging mode levels. */
-        RT_GCC_EXTENSION uint64_t  u3GstCr3TableRootPtrLo : 2;    /**< Bits 60:58   - GCR3 TRP: Guest CR3 Table Root Ptr (Lo). */
+        RT_GCC_EXTENSION uint64_t  u3GstCr3TableRootPtrLo : 3;    /**< Bits 60:58   - GCR3 TRP: Guest CR3 Table Root Ptr (Lo). */
         RT_GCC_EXTENSION uint64_t  u1IoRead : 1;                  /**< Bit  61      - IR: I/O Read permission. */
         RT_GCC_EXTENSION uint64_t  u1IoWrite : 1;                 /**< Bit  62      - IW: I/O Write permission. */
         RT_GCC_EXTENSION uint64_t  u1Rsvd0 : 1;                   /**< Bit  63      - Reserved. */
-        RT_GCC_EXTENSION uint64_t  u16DomainId : 1;               /**< Bits 79:64   - Domain ID. */
+        RT_GCC_EXTENSION uint64_t  u16DomainId : 16;              /**< Bits 79:64   - Domain ID. */
         RT_GCC_EXTENSION uint64_t  u16GstCr3TableRootPtrMed : 16; /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Ptr (Mid). */
         RT_GCC_EXTENSION uint64_t  u1IoTlbEnable : 1;             /**< Bit  96      - I: IOTLB Enable. */
         RT_GCC_EXTENSION uint64_t  u1SuppressPfEvents : 1;        /**< Bit  97      - SE: Supress Page-fault events. */
         RT_GCC_EXTENSION uint64_t  u1SuppressAllPfEvents : 1;     /**< Bit  98      - SA: Supress All Page-fault events. */
-        RT_GCC_EXTENSION uint64_t  u2IoCtl : 1;                   /**< Bits 100:99  - IoCtl: Port I/O Control. */
+        RT_GCC_EXTENSION uint64_t  u2IoCtl : 2;                   /**< Bits 100:99  - IoCtl: Port I/O Control. */
         RT_GCC_EXTENSION uint64_t  u1Cache : 1;                   /**< Bit  101     - Cache: IOTLB Cache Hint. */
         RT_GCC_EXTENSION uint64_t  u1SnoopDisable : 1;            /**< Bit  102     - SD: Snoop Disable. */
         RT_GCC_EXTENSION uint64_t  u1AllowExclusion : 1;          /**< Bit  103     - EX: Allow Exclusion. */
@@ -512,8 +512,7 @@ typedef union
         RT_GCC_EXTENSION uint64_t  u1IntrMapValid : 1;            /**< Bit  128     - IV: Interrupt map Valid. */
         RT_GCC_EXTENSION uint64_t  u4IntrTableLength : 4;         /**< Bits 132:129 - IntTabLen: Interrupt Table Length. */
         RT_GCC_EXTENSION uint64_t  u1IgnoreUnmappedIntrs : 1;     /**< Bits 133     - IG: Ignore unmapped interrupts. */
-        RT_GCC_EXTENSION uint64_t  u26IntrTableRootPtr : 26;      /**< Bits 159:134 - Interrupt Root Table Pointer (Lo). */
-        RT_GCC_EXTENSION uint64_t  u20IntrTableRootPtr : 20;      /**< Bits 179:160 - Interrupt Root Table Pointer (Hi). */
+        RT_GCC_EXTENSION uint64_t  u46IntrTableRootPtr : 46;      /**< Bits 179:134 - Interrupt Root Table Pointer. */
         RT_GCC_EXTENSION uint64_t  u4Rsvd0 : 4;                   /**< Bits 183:180 - Reserved. */
         RT_GCC_EXTENSION uint64_t  u1InitPassthru : 1;            /**< Bits 184     - INIT Pass-through. */
         RT_GCC_EXTENSION uint64_t  u1ExtIntPassthru : 1;          /**< Bits 185     - External Interrupt Pass-through. */
@@ -526,7 +525,7 @@ typedef union
         RT_GCC_EXTENSION uint64_t  u22Rsvd0 : 22;                 /**< Bits 245:224 - Reserved. */
         RT_GCC_EXTENSION uint64_t  u1AttrOverride : 1;            /**< Bit  246     - AttrV: Attribute Override. */
         RT_GCC_EXTENSION uint64_t  u1Mode0FC: 1;                  /**< Bit  247     - Mode0FC. */
-        RT_GCC_EXTENSION uint64_t  u8SnoopAttr: 1;                /**< Bits 255:248 - Snoop Attribute. */
+        RT_GCC_EXTENSION uint64_t  u8SnoopAttr: 8;                /**< Bits 255:248 - Snoop Attribute. */
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t        au32[8];
