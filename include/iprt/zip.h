@@ -500,6 +500,21 @@ RTDECL(int) RTZipPkzipMemDecompress(void **ppvDst, size_t *pcbDst, const void *p
  */
 RTDECL(int) RTZipXarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
 
+/**
+ * Opens a CPIO filesystem stream.
+ *
+ * This is used to extract, list or check a CPIO archive.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hVfsIosIn           The input stream.  The reference is not
+ *                              consumed, instead another one is retained.
+ * @param   fFlags              Flags, MBZ.
+ * @param   phVfsFss            Where to return the handle to the CPIO
+ *                              filesystem stream.
+ */
+RTDECL(int) RTZipCpioFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
+
 /** @} */
 
 RT_C_DECLS_END

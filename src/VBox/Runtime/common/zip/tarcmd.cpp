@@ -74,7 +74,9 @@ typedef enum RTZIPTARCMDFORMAT
     /** TAR.  */
     RTZIPTARCMDFORMAT_TAR,
     /** XAR.  */
-    RTZIPTARCMDFORMAT_XAR
+    RTZIPTARCMDFORMAT_XAR,
+    /** CPIO. */
+    RTZIPTARCMDFORMAT_CPIO,
 } RTZIPTARCMDFORMAT;
 
 
@@ -817,6 +819,8 @@ static RTEXITCODE rtZipTarCmdOpenInputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSSTR
 #else
         rc = VERR_NOT_SUPPORTED;
 #endif
+    else if (pOpts->enmFormat == RTZIPTARCMDFORMAT_CPIO)
+        rc = RTZipCpioFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, phVfsFss);
     else /** @todo make RTZipTarFsStreamFromIoStream fail if not tar file! */
         rc = RTZipTarFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, phVfsFss);
     RTVfsIoStrmRelease(hVfsIos);
@@ -1605,9 +1609,11 @@ static void rtZipTarUsage(const char *pszProgName)
              "                  ustar (tar POSIX.1-1988), "
              "                  pax (tar POSIX.1-2001),\n"
              "                  xar\n"
-             "        Note! Because XAR/TAR detection isn't implemented yet, it\n"
+             "                  cpio\n"
+             "        Note! Because XAR/TAR/CPIO detection isn't implemented yet, it\n"
              "              is necessary to specifcy --format=xar when reading a\n"
-             "              XAR file.  Otherwise this option is only for creation.\n"
+             "              XAR file or --format=cpio for a CPIO file.\n"
+             "              Otherwise this option is only for creation.\n"
              "\n");
     RTPrintf("IPRT Options:\n"
              "    --prefix <dir-prefix>                 (-A, -c, -d, -r, -u)\n"
@@ -1860,6 +1866,8 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
                 }
                 else if (!strcmp(ValueUnion.psz, "xar"))
                     Opts.enmFormat    = RTZIPTARCMDFORMAT_XAR;
+                else if (!strcmp(ValueUnion.psz, "cpio"))
+                    Opts.enmFormat    = RTZIPTARCMDFORMAT_CPIO;
                 else
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown archive format: '%s'", ValueUnion.psz);
                 break;
