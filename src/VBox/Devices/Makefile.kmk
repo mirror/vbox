@@ -168,6 +168,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	PC/DevPcBios.cpp \
  	PC/DevFwCommon.cpp \
  	PC/DevPcArch.cpp \
+ 	PC/DevQemuFwCfg.cpp \
 	$(if $(VBOX_WITH_NEW_LPC_DEVICE),PC/DevLpc-new.cpp,) \
 	GIMDev/GIMDev.cpp \
 	GIMDev/DrvUDP.cpp \

@@ -105,6 +105,7 @@ extern const PDMDEVREG g_DeviceLPC;
 #ifdef VBOX_WITH_VIRTUALKD
 extern const PDMDEVREG g_DeviceVirtualKD;
 #endif
+extern const PDMDEVREG g_DeviceQemuFwCfg;
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
