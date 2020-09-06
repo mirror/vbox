@@ -321,7 +321,7 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmFileSz(PDEVQEMUFWCFG pThis, PCQEMUF
             RTVfsFileRelease(hVfsFile);
         }
         else
-            LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath));
+            LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
         MMR3HeapFree(pszFilePath);
     }
     else
@@ -403,7 +403,7 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmFile(PDEVQEMUFWCFG pThis, PCQEMUFWC
                 LogRel(("QemuFwCfg: Failed to query file size from \"%s\" -> %Rrc\n", pszFilePath, rc));
         }
         else
-            LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath));
+            LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
         MMR3HeapFree(pszFilePath);
     }
     else
