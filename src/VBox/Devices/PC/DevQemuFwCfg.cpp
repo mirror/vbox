@@ -343,7 +343,7 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmStrSz(PDEVQEMUFWCFG pThis, PCQEMUFW
     int rc = pHlp->pfnCFGMQueryString(pThis->pCfg, pItem->pszCfgmKey, &sz[0], sizeof(sz));
     if (RT_SUCCESS(rc))
     {
-        pThis->u.u32 = strlen(&sz[0]) + 1;
+        pThis->u.u32 = (uint32_t)strlen(&sz[0]) + 1;
         *pcbItem = sizeof(uint32_t);
     }
     else
@@ -364,7 +364,7 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmStr(PDEVQEMUFWCFG pThis, PCQEMUFWCF
     char sz[_4K];
     int rc = pHlp->pfnCFGMQueryString(pThis->pCfg, pItem->pszCfgmKey, &sz[0], sizeof(sz));
     if (RT_SUCCESS(rc))
-        *pcbItem = strlen(&sz[0]) + 1;
+        *pcbItem = (uint32_t)strlen(&sz[0]) + 1;
     else
         LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));
 
@@ -455,7 +455,7 @@ static DECLCALLBACK(int) qemuFwCfgR3ReadStr(PDEVQEMUFWCFG pThis, PCQEMUFWCFGITEM
     int rc = pHlp->pfnCFGMQueryString(pThis->pCfg, pItem->pszCfgmKey, &sz[0], sizeof(sz));
     if (RT_SUCCESS(rc))
     {
-        size_t cch = strlen(sz) + 1;
+        uint32_t cch = (uint32_t)strlen(sz) + 1;
         if (off < cch)
         {
             uint32_t cbRead = RT_MIN(cbToRead, off - cch);
