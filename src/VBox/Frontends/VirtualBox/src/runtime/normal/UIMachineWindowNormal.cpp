@@ -426,7 +426,6 @@ void UIMachineWindowNormal::saveSettings()
 {
     /* Save window geometry: */
     {
-        printf("UIMachineWindowNormal::saveSettings %d %d %d %d\n", m_normalGeometry.x(), m_normalGeometry.y(),
         m_normalGeometry.width(), m_normalGeometry.height());
         gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
                                                 m_uScreenId, m_normalGeometry,
