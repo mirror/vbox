@@ -148,7 +148,7 @@ UIMachineSettingsInterface::UIMachineSettingsInterface(const QUuid &uMachineId)
     , m_pEditorVisualState(0)
     , m_pLabelMiniToolBar(0)
     , m_pCheckBoxShowMiniToolBar(0)
-    , m_pCheckBoxToolBarAlignment(0)
+    , m_pCheckBoxMiniToolBarAlignment(0)
     , m_pEditorStatusBar(0)
 {
     /* Prepare: */
@@ -237,7 +237,7 @@ void UIMachineSettingsInterface::getFromCache()
     m_pEditorMenuBar->setRestrictionsOfMenuHelp(oldInterfaceData.m_restrictionsOfMenuHelp);
 #ifndef VBOX_WS_MAC
     m_pCheckBoxShowMiniToolBar->setChecked(oldInterfaceData.m_fShowMiniToolBar);
-    m_pCheckBoxToolBarAlignment->setChecked(oldInterfaceData.m_fMiniToolBarAtTop);
+    m_pCheckBoxMiniToolBarAlignment->setChecked(oldInterfaceData.m_fMiniToolBarAtTop);
 #endif
     m_pEditorVisualState->setMachineId(m_machine.GetId());
     m_pEditorVisualState->setValue(oldInterfaceData.m_enmVisualState);
@@ -276,7 +276,7 @@ void UIMachineSettingsInterface::putToCache()
     newInterfaceData.m_restrictionsOfMenuHelp = m_pEditorMenuBar->restrictionsOfMenuHelp();
 #ifndef VBOX_WS_MAC
     newInterfaceData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
-    newInterfaceData.m_fMiniToolBarAtTop = m_pCheckBoxToolBarAlignment->isChecked();
+    newInterfaceData.m_fMiniToolBarAtTop = m_pCheckBoxMiniToolBarAlignment->isChecked();
 #endif
     newInterfaceData.m_enmVisualState = m_pEditorVisualState->value();
 
@@ -305,9 +305,9 @@ void UIMachineSettingsInterface::retranslateUi()
     m_pLabelMiniToolBar->setText(tr("Mini ToolBar:"));
     m_pCheckBoxShowMiniToolBar->setWhatsThis(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
     m_pCheckBoxShowMiniToolBar->setText(tr("Show in &Full-screen/Seamless"));
-    m_pCheckBoxToolBarAlignment->setWhatsThis(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in its"
+    m_pCheckBoxMiniToolBarAlignment->setWhatsThis(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in its"
                                               "default position at the bottom of the screen."));
-    m_pCheckBoxToolBarAlignment->setText(tr("Show at &Top of Screen"));
+    m_pCheckBoxMiniToolBarAlignment->setText(tr("Show at &Top of Screen"));
     m_pEditorStatusBar->setWhatsThis(tr("Allows to modify VM status-bar contents."));
 }
 
@@ -318,11 +318,11 @@ void UIMachineSettingsInterface::polishPage()
 #ifdef VBOX_WS_MAC
     m_pLabelMiniToolBar->hide();
     m_pCheckBoxShowMiniToolBar->hide();
-    m_pCheckBoxToolBarAlignment->hide();
+    m_pCheckBoxMiniToolBarAlignment->hide();
 #else /* !VBOX_WS_MAC */
     m_pLabelMiniToolBar->setEnabled(isMachineInValidMode());
     m_pCheckBoxShowMiniToolBar->setEnabled(isMachineInValidMode());
-    m_pCheckBoxToolBarAlignment->setEnabled(isMachineInValidMode() && m_pCheckBoxShowMiniToolBar->isChecked());
+    m_pCheckBoxMiniToolBarAlignment->setEnabled(isMachineInValidMode() && m_pCheckBoxShowMiniToolBar->isChecked());
 #endif /* !VBOX_WS_MAC */
     m_pEditorStatusBar->setEnabled(isMachineInValidMode());
 }
@@ -360,7 +360,7 @@ void UIMachineSettingsInterface::prepareWidgets()
             m_pEditorMenuBar->setActionPool(m_pActionPool);
             m_pEditorMenuBar->setMachineID(m_uMachineId);
 
-            pLayoutMain->addWidget(m_pEditorMenuBar, 0, 0, 1, 2);
+            pLayoutMain->addWidget(m_pEditorMenuBar, 0, 0, 1, 3);
         }
 
         /* Prepare visual-state label: */
@@ -382,21 +382,21 @@ void UIMachineSettingsInterface::prepareWidgets()
             m_pLabelMiniToolBar->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
             pLayoutMain->addWidget(m_pLabelMiniToolBar, 2, 0);
         }
-        /* Prepare show mini-toolbar check-box: */
+        /* Prepare 'show mini-toolbar' check-box: */
         m_pCheckBoxShowMiniToolBar = new QCheckBox(this);
         if (m_pCheckBoxShowMiniToolBar)
             pLayoutMain->addWidget(m_pCheckBoxShowMiniToolBar, 2, 1);
-        /* Prepare mini-toolbar alignment check-box: */
-        m_pCheckBoxToolBarAlignment = new QCheckBox(this);
-        if (m_pCheckBoxToolBarAlignment)
-            pLayoutMain->addWidget(m_pCheckBoxToolBarAlignment, 3, 1);
+        /* Prepare 'mini-toolbar alignment' check-box: */
+        m_pCheckBoxMiniToolBarAlignment = new QCheckBox(this);
+        if (m_pCheckBoxMiniToolBarAlignment)
+            pLayoutMain->addWidget(m_pCheckBoxMiniToolBarAlignment, 3, 1);
 
         /* Prepare status-bar editor: */
         m_pEditorStatusBar = new UIStatusBarEditorWidget(this);
         if (m_pEditorStatusBar)
         {
             m_pEditorStatusBar->setMachineID(m_uMachineId);
-            pLayoutMain->addWidget(m_pEditorStatusBar, 5, 0, 1, 2);
+            pLayoutMain->addWidget(m_pEditorStatusBar, 5, 0, 1, 3);
         }
     }
 }
@@ -404,7 +404,7 @@ void UIMachineSettingsInterface::prepareWidgets()
 void UIMachineSettingsInterface::prepareConnections()
 {
     connect(m_pCheckBoxShowMiniToolBar, &QCheckBox::toggled,
-            m_pCheckBoxToolBarAlignment, &UIMachineSettingsInterface::setEnabled);
+            m_pCheckBoxMiniToolBarAlignment, &UIMachineSettingsInterface::setEnabled);
 }
 
 void UIMachineSettingsInterface::cleanup()

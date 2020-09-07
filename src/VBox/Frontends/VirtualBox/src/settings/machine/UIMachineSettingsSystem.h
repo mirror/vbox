@@ -243,7 +243,7 @@ private:
         /** Holds the paravirtualization provider combo instance. */
         QComboBox *m_pComboParavirtProvider;
         /** Holds the virtualization label instance. */
-        QLabel *m_pLabelVirtualization;
+        QLabel    *m_pLabelVirtualization;
         /** Holds the virtualization check-box instance. */
         QCheckBox *m_pCheckBoxVirtualization;
         /** Holds the nested paging check-box instance. */

@@ -111,10 +111,10 @@ private:
         UIVisualStateEditor     *m_pEditorVisualState;
         /** Holds the mini-toolbar label instance. */
         QLabel                  *m_pLabelMiniToolBar;
-        /** Holds the show mini-toolbar check-box instance. */
+        /** Holds the 'show mini-toolbar' check-box instance. */
         QCheckBox               *m_pCheckBoxShowMiniToolBar;
-        /** Holds the mini-toolbar alignment check-box instance. */
-        QCheckBox               *m_pCheckBoxToolBarAlignment;
+        /** Holds the 'mini-toolbar alignment' check-box instance. */
+        QCheckBox               *m_pCheckBoxMiniToolBarAlignment;
         /** Holds the status-bar editor instance. */
         UIStatusBarEditorWidget *m_pEditorStatusBar;
     /** @} */

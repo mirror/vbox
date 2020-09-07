@@ -2944,19 +2944,23 @@ const QString UIMachineSettingsStorage::s_strAttachmentMimeType = QString("appli
 
 UIMachineSettingsStorage::UIMachineSettingsStorage()
     : m_pModelStorage(0)
-    , m_pActionAddController(0), m_pActionRemoveController(0)
-    , m_pActionAddAttachment(0), m_pActionRemoveAttachment(0)
-    , m_pActionAddAttachmentHD(0), m_pActionAddAttachmentCD(0), m_pActionAddAttachmentFD(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
     , m_fLoadingInProgress(0)
     , m_pCache(0)
     , m_pSplitter(0)
     , m_pWidgetLeftPane(0)
     , m_pLabelSeparatorLeftPane(0)
-    , m_pLayoutTreeView(0)
-    , m_pTreeStorage(0)
-    , m_pLayoutToolBar(0)
-    , m_pToolBar(0)
+    , m_pLayoutTree(0)
+    , m_pTreeViewStorage(0)
+    , m_pLayoutToolbar(0)
+    , m_pToolbar(0)
+    , m_pActionAddController(0)
+    , m_pActionRemoveController(0)
+    , m_pActionAddAttachment(0)
+    , m_pActionRemoveAttachment(0)
+    , m_pActionAddAttachmentHD(0)
+    , m_pActionAddAttachmentCD(0)
+    , m_pActionAddAttachmentFD(0)
     , m_pStackRightPane(0)
     , m_pLabelSeparatorEmpty(0)
     , m_pLabelInfo(0)
@@ -2966,7 +2970,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     , m_pLabelType(0)
     , m_pComboType(0)
     , m_pLabelPortCount(0)
-    , m_pSpinBoxPortCount(0)
+    , m_pSpinboxPortCount(0)
     , m_pCheckBoxIoCache(0)
     , m_pLabelSeparatorAttributes(0)
     , m_pLabelMedium(0)
@@ -3165,7 +3169,7 @@ void UIMachineSettingsStorage::getFromCache()
 
     /* Choose first controller as current: */
     if (m_pModelStorage->rowCount(m_pModelStorage->root()) > 0)
-        m_pTreeStorage->setCurrentIndex(m_pModelStorage->index(0, 0, m_pModelStorage->root()));
+        m_pTreeViewStorage->setCurrentIndex(m_pModelStorage->index(0, 0, m_pModelStorage->root()));
 
     /* Fetch recent information: */
     sltHandleCurrentItemChange();
@@ -3355,7 +3359,7 @@ void UIMachineSettingsStorage::retranslateUi()
     m_pLabelType->setText(tr("&Type:"));
     m_pComboType->setWhatsThis(tr("Selects the sub-type of the storage controller currently selected in the Storage Tree."));
     m_pLabelPortCount->setText(tr("&Port Count:"));
-    m_pSpinBoxPortCount->setWhatsThis(tr("Selects the port count of the SATA storage controller currently selected in the"
+    m_pSpinboxPortCount->setWhatsThis(tr("Selects the port count of the SATA storage controller currently selected in the"
                                          "Storage Tree. This must be at least one more than the highest port number you need to use."));
     m_pCheckBoxIoCache->setWhatsThis(tr("When checked, allows to use host I/O caching capabilities."));
     m_pCheckBoxIoCache->setText(tr("Use Host I/O Cache"));
@@ -3385,7 +3389,7 @@ void UIMachineSettingsStorage::retranslateUi()
     m_pLabelEncryption->setText(tr("Encrypted with key:"));
 
     /* Translate storage-view: */
-    m_pTreeStorage->setWhatsThis(tr("Lists all storage controllers for this machine and "
+    m_pTreeViewStorage->setWhatsThis(tr("Lists all storage controllers for this machine and "
                                     "the virtual images and host drives attached to them."));
 
     /* Translate tool-bar: */
@@ -3427,12 +3431,12 @@ void UIMachineSettingsStorage::retranslateUi()
 void UIMachineSettingsStorage::polishPage()
 {
     /* Declare required variables: */
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
     const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
 
     /* Polish left pane availability: */
     m_pLabelSeparatorLeftPane->setEnabled(isMachineInValidMode());
-    m_pTreeStorage->setEnabled(isMachineInValidMode());
+    m_pTreeViewStorage->setEnabled(isMachineInValidMode());
 
     /* Polish empty information pane availability: */
     m_pLabelSeparatorEmpty->setEnabled(isMachineInValidMode());
@@ -3445,7 +3449,7 @@ void UIMachineSettingsStorage::polishPage()
     m_pLabelType->setEnabled(isMachineOffline());
     m_pComboType->setEnabled(isMachineOffline());
     m_pLabelPortCount->setEnabled(isMachineOffline());
-    m_pSpinBoxPortCount->setEnabled(isMachineOffline());
+    m_pSpinboxPortCount->setEnabled(isMachineOffline());
     m_pCheckBoxIoCache->setEnabled(isMachineOffline());
 
     /* Polish attachments pane availability: */
@@ -3603,7 +3607,7 @@ void UIMachineSettingsStorage::sltAddControllerVirtioSCSI()
 
 void UIMachineSettingsStorage::sltRemoveController()
 {
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
     if (!m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
         return;
 
@@ -3616,7 +3620,7 @@ void UIMachineSettingsStorage::sltRemoveController()
 
 void UIMachineSettingsStorage::sltAddAttachment()
 {
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
     Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
 
     const DeviceTypeList deviceTypeList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
@@ -3670,7 +3674,7 @@ void UIMachineSettingsStorage::sltAddAttachmentFD()
 
 void UIMachineSettingsStorage::sltRemoveAttachment()
 {
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
 
     const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
     /* Check if this would be the last DVD. If so let the user confirm this again. */
@@ -3699,7 +3703,7 @@ void UIMachineSettingsStorage::sltGetInformation()
 {
     m_fLoadingInProgress = true;
 
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
     if (!index.isValid() || index == m_pModelStorage->root())
     {
         /* Showing Initial Page: */
@@ -3737,11 +3741,11 @@ void UIMachineSettingsStorage::sltGetInformation()
 
                 const KStorageBus enmBus = m_pModelStorage->data(index, StorageModel::R_CtrBusType).value<KStorageBus>();
                 m_pLabelPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
-                m_pSpinBoxPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
+                m_pSpinboxPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
                 const uint uPortCount = m_pModelStorage->data(index, StorageModel::R_CtrPortCount).toUInt();
                 const uint uMaxPortCount = m_pModelStorage->data(index, StorageModel::R_CtrMaxPortCount).toUInt();
-                m_pSpinBoxPortCount->setMaximum(uMaxPortCount);
-                m_pSpinBoxPortCount->setValue(uPortCount);
+                m_pSpinboxPortCount->setMaximum(uMaxPortCount);
+                m_pSpinboxPortCount->setValue(uPortCount);
 
                 const bool fUseIoCache = m_pModelStorage->data(index, StorageModel::R_CtrIoCache).toBool();
                 m_pCheckBoxIoCache->setChecked(fUseIoCache);
@@ -3852,7 +3856,7 @@ void UIMachineSettingsStorage::sltGetInformation()
 
 void UIMachineSettingsStorage::sltSetInformation()
 {
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
     if (m_fLoadingInProgress || !index.isValid() || index == m_pModelStorage->root())
         return;
 
@@ -3876,8 +3880,8 @@ void UIMachineSettingsStorage::sltSetInformation()
                                              QVariant::fromValue(m_pComboType->currentData(StorageModel::R_CtrType).value<KStorageControllerType>()),
                                              StorageModel::R_CtrType);
             }
-            else if (pSender == m_pSpinBoxPortCount)
-                m_pModelStorage->setData(index, m_pSpinBoxPortCount->value(), StorageModel::R_CtrPortCount);
+            else if (pSender == m_pSpinboxPortCount)
+                m_pModelStorage->setData(index, m_pSpinboxPortCount->value(), StorageModel::R_CtrPortCount);
             else if (pSender == m_pCheckBoxIoCache)
                 m_pModelStorage->setData(index, m_pCheckBoxIoCache->isChecked(), StorageModel::R_CtrIoCache);
             break;
@@ -3892,7 +3896,7 @@ void UIMachineSettingsStorage::sltSetInformation()
                 m_pModelStorage->setData(index, QVariant::fromValue(attachmentStorageSlot), StorageModel::R_AttSlot);
                 QModelIndex theSameIndexAtNewPosition = m_pModelStorage->attachmentBySlot(controllerIndex, attachmentStorageSlot);
                 AssertMsg(theSameIndexAtNewPosition.isValid(), ("Current attachment disappears!\n"));
-                m_pTreeStorage->setCurrentIndex(theSameIndexAtNewPosition);
+                m_pTreeViewStorage->setCurrentIndex(theSameIndexAtNewPosition);
             }
             /* Setting Attachment Medium: */
             else if (pSender == m_pMediumIdHolder)
@@ -4053,7 +4057,7 @@ void UIMachineSettingsStorage::sltChooseRecentMedium()
 
 void UIMachineSettingsStorage::sltUpdateActionStates()
 {
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
 
     const bool fIDEPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreIDEControllersPossible).toBool();
     const bool fSATAPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreSATAControllersPossible).toBool();
@@ -4108,14 +4112,14 @@ void UIMachineSettingsStorage::sltHandleRowInsertion(const QModelIndex &parentIn
         case AbstractItem::Type_ControllerItem:
         {
             /* Select the newly created Controller Item: */
-            m_pTreeStorage->setCurrentIndex(index);
+            m_pTreeViewStorage->setCurrentIndex(index);
             break;
         }
         case AbstractItem::Type_AttachmentItem:
         {
             /* Expand parent if it is not expanded yet: */
-            if (!m_pTreeStorage->isExpanded(parentIndex))
-                m_pTreeStorage->setExpanded(parentIndex, true);
+            if (!m_pTreeViewStorage->isExpanded(parentIndex))
+                m_pTreeViewStorage->setExpanded(parentIndex, true);
             break;
         }
         default:
@@ -4129,7 +4133,7 @@ void UIMachineSettingsStorage::sltHandleRowInsertion(const QModelIndex &parentIn
 void UIMachineSettingsStorage::sltHandleRowRemoval()
 {
     if (m_pModelStorage->rowCount (m_pModelStorage->root()) == 0)
-        m_pTreeStorage->setCurrentIndex (m_pModelStorage->root());
+        m_pTreeViewStorage->setCurrentIndex (m_pModelStorage->root());
 
     sltUpdateActionStates();
     sltGetInformation();
@@ -4146,7 +4150,7 @@ void UIMachineSettingsStorage::sltHandleContextMenuRequest(const QPoint &positio
     /* Forget last mouse press position: */
     m_mousePressPosition = QPoint();
 
-    const QModelIndex index = m_pTreeStorage->indexAt(position);
+    const QModelIndex index = m_pTreeViewStorage->indexAt(position);
     if (!index.isValid())
         return sltAddController();
 
@@ -4185,7 +4189,7 @@ void UIMachineSettingsStorage::sltHandleContextMenuRequest(const QPoint &positio
             break;
     }
     if (!menu.isEmpty())
-        menu.exec(m_pTreeStorage->viewport()->mapToGlobal(position));
+        menu.exec(m_pTreeViewStorage->viewport()->mapToGlobal(position));
 }
 
 void UIMachineSettingsStorage::sltHandleDrawItemBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index)
@@ -4195,7 +4199,7 @@ void UIMachineSettingsStorage::sltHandleDrawItemBranches(QPainter *pPainter, con
 
     pPainter->save();
     QStyleOption options;
-    options.initFrom(m_pTreeStorage);
+    options.initFrom(m_pTreeViewStorage);
     options.rect = rect;
     options.state |= QStyle::State_Item;
     if (index.row() < m_pModelStorage->rowCount(index.parent()) - 1)
@@ -4215,8 +4219,8 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
 
-    const QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
-    const QRect indexRect = m_pTreeStorage->visualRect(index);
+    const QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
+    const QRect indexRect = m_pTreeViewStorage->visualRect(index);
 
     /* Expander tool-tip: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
@@ -4234,7 +4238,7 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
 
     /* Adder tool-tip: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool() &&
-        m_pTreeStorage->currentIndex() == index)
+        m_pTreeViewStorage->currentIndex() == index)
     {
         const DeviceTypeList devicesList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
         for (int i = 0; i < devicesList.size(); ++ i)
@@ -4307,7 +4311,7 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
         m_mousePressPosition = QPoint();
 
         /* Check what item we are hovering currently: */
-        QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
+        QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
         AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
         /* And make sure this is attachment item, we are supporting dragging for this kind only: */
         AttachmentItem *pItemAttachment = qobject_cast<AttachmentItem*>(pItem);
@@ -4343,8 +4347,8 @@ void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
     /* Remember last mouse press position: */
     m_mousePressPosition = pEvent->globalPos();
 
-    const QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
-    const QRect indexRect = m_pTreeStorage->visualRect(index);
+    const QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
+    const QRect indexRect = m_pTreeViewStorage->visualRect(index);
 
     /* Expander icon: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
@@ -4354,14 +4358,14 @@ void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
         if (expanderRect.contains(pEvent->pos()))
         {
             pEvent->setAccepted(true);
-            m_pTreeStorage->setExpanded(index, !m_pTreeStorage->isExpanded(index));
+            m_pTreeViewStorage->setExpanded(index, !m_pTreeViewStorage->isExpanded(index));
             return;
         }
     }
 
     /* Adder icons: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool() &&
-        m_pTreeStorage->currentIndex() == index)
+        m_pTreeViewStorage->currentIndex() == index)
     {
         const DeviceTypeList devicesList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
         for (int i = 0; i < devicesList.size(); ++ i)
@@ -4435,7 +4439,7 @@ void UIMachineSettingsStorage::sltHandleDragMove(QDragMoveEvent *pEvent)
     const QString strAttachmentId = pMimeData->data(UIMachineSettingsStorage::s_strAttachmentMimeType);
 
     /* Check what item we are hovering currently: */
-    QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
+    QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
     AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
@@ -4463,7 +4467,7 @@ void UIMachineSettingsStorage::sltHandleDragDrop(QDropEvent *pEvent)
     AssertPtrReturnVoid(pMimeData);
 
     /* Check what item we are hovering currently: */
-    QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
+    QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
     AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
@@ -4541,33 +4545,33 @@ void UIMachineSettingsStorage::prepareLeftPane()
                 pLayoutLeftPane->addWidget(m_pLabelSeparatorLeftPane);
 
             /* Prepare storage layout: */
-            m_pLayoutTreeView = new QVBoxLayout;
-            if (m_pLayoutTreeView)
+            m_pLayoutTree = new QVBoxLayout;
+            if (m_pLayoutTree)
             {
 #ifdef VBOX_WS_MAC
-                m_pLayoutTreeView->setContentsMargins(3, 0, 3, 0);
-                m_pLayoutTreeView->setSpacing(3);
+                m_pLayoutTree->setContentsMargins(3, 0, 3, 0);
+                m_pLayoutTree->setSpacing(3);
 #else
-                m_pLayoutTreeView->setContentsMargins(0, 0, 0, 0);
-                m_pLayoutTreeView->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 3);
+                m_pLayoutTree->setContentsMargins(0, 0, 0, 0);
+                m_pLayoutTree->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 3);
 #endif
 
                 /* Prepare tree-view: */
                 prepareTreeView();
 
                 /* Prepare toolbar layout: */
-                m_pLayoutToolBar = new QHBoxLayout;
-                if (m_pLayoutToolBar)
+                m_pLayoutToolbar = new QHBoxLayout;
+                if (m_pLayoutToolbar)
                 {
-                    m_pLayoutToolBar->addStretch();
+                    m_pLayoutToolbar->addStretch();
 
                     /* Prepare toolbar: */
                     prepareToolBar();
 
-                    m_pLayoutTreeView->addLayout(m_pLayoutToolBar);
+                    m_pLayoutTree->addLayout(m_pLayoutToolbar);
                 }
 
-                pLayoutLeftPane->addLayout(m_pLayoutTreeView);
+                pLayoutLeftPane->addLayout(m_pLayoutTree);
             }
         }
 
@@ -4578,49 +4582,49 @@ void UIMachineSettingsStorage::prepareLeftPane()
 void UIMachineSettingsStorage::prepareTreeView()
 {
     /* Prepare tree-view: */
-    m_pTreeStorage = new QITreeView;
-    if (m_pTreeStorage)
+    m_pTreeViewStorage = new QITreeView(m_pWidgetLeftPane);
+    if (m_pTreeViewStorage)
     {
         if (m_pLabelSeparatorLeftPane)
-            m_pLabelSeparatorLeftPane->setBuddy(m_pTreeStorage);
-        m_pTreeStorage->setMouseTracking(true);
-        m_pTreeStorage->setAcceptDrops(true);
-        m_pTreeStorage->setContextMenuPolicy(Qt::CustomContextMenu);
+            m_pLabelSeparatorLeftPane->setBuddy(m_pTreeViewStorage);
+        m_pTreeViewStorage->setMouseTracking(true);
+        m_pTreeViewStorage->setAcceptDrops(true);
+        m_pTreeViewStorage->setContextMenuPolicy(Qt::CustomContextMenu);
 
         /* Prepare storage model: */
-        m_pModelStorage = new StorageModel(m_pTreeStorage);
+        m_pModelStorage = new StorageModel(m_pTreeViewStorage);
         if (m_pModelStorage)
         {
-            m_pTreeStorage->setModel(m_pModelStorage);
-            m_pTreeStorage->setRootIndex(m_pModelStorage->root());
-            m_pTreeStorage->setCurrentIndex(m_pModelStorage->root());
+            m_pTreeViewStorage->setModel(m_pModelStorage);
+            m_pTreeViewStorage->setRootIndex(m_pModelStorage->root());
+            m_pTreeViewStorage->setCurrentIndex(m_pModelStorage->root());
         }
 
         /* Prepare storage delegate: */
-        StorageDelegate *pStorageDelegate = new StorageDelegate(m_pTreeStorage);
+        StorageDelegate *pStorageDelegate = new StorageDelegate(m_pTreeViewStorage);
         if (pStorageDelegate)
-            m_pTreeStorage->setItemDelegate(pStorageDelegate);
+            m_pTreeViewStorage->setItemDelegate(pStorageDelegate);
 
-        m_pLayoutTreeView->addWidget(m_pTreeStorage);
+        m_pLayoutTree->addWidget(m_pTreeViewStorage);
     }
 }
 
 void UIMachineSettingsStorage::prepareToolBar()
 {
     /* Prepare toolbar: */
-    m_pToolBar = new UIToolBar(m_pWidgetLeftPane);
-    if (m_pToolBar)
+    m_pToolbar = new UIToolBar(m_pWidgetLeftPane);
+    if (m_pToolbar)
     {
         /* Configure toolbar: */
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolbar->setIconSize(QSize(iIconMetric, iIconMetric));
 
         /* Prepare 'Add Controller' action: */
         m_pActionAddController = new QAction(this);
         if (m_pActionAddController)
         {
             m_pActionAddController->setIcon(iconPool()->icon(ControllerAddEn, ControllerAddDis));
-            m_pToolBar->addAction(m_pActionAddController);
+            m_pToolbar->addAction(m_pActionAddController);
         }
 
         /* Prepare 'Add PIIX3 Controller' action: */
@@ -4673,7 +4677,7 @@ void UIMachineSettingsStorage::prepareToolBar()
         if (m_pActionRemoveController)
         {
             m_pActionRemoveController->setIcon(iconPool()->icon(ControllerDelEn, ControllerDelDis));
-            m_pToolBar->addAction(m_pActionRemoveController);
+            m_pToolbar->addAction(m_pActionRemoveController);
         }
 
         /* Prepare 'Add Attachment' action: */
@@ -4681,7 +4685,7 @@ void UIMachineSettingsStorage::prepareToolBar()
         if (m_pActionAddAttachment)
         {
             m_pActionAddAttachment->setIcon(iconPool()->icon(AttachmentAddEn, AttachmentAddDis));
-            m_pToolBar->addAction(m_pActionAddAttachment);
+            m_pToolbar->addAction(m_pActionAddAttachment);
         }
 
         /* Prepare 'Add HD Attachment' action: */
@@ -4702,10 +4706,10 @@ void UIMachineSettingsStorage::prepareToolBar()
         if (m_pActionRemoveAttachment)
         {
             m_pActionRemoveAttachment->setIcon(iconPool()->icon(AttachmentDelEn, AttachmentDelDis));
-            m_pToolBar->addAction(m_pActionRemoveAttachment);
+            m_pToolbar->addAction(m_pActionRemoveAttachment);
         }
 
-        m_pLayoutToolBar->addWidget(m_pToolBar);
+        m_pLayoutToolbar->addWidget(m_pToolbar);
     }
 }
 
@@ -4747,7 +4751,7 @@ void UIMachineSettingsStorage::prepareEmptyWidget()
             if (m_pLabelInfo)
             {
                 m_pLabelInfo->setWordWrap(true);
-                pLayoutEmpty->addWidget(m_pLabelInfo, 1, 1, 1, 1);
+                pLayoutEmpty->addWidget(m_pLabelInfo, 1, 1);
             }
 
             pLayoutEmpty->setColumnMinimumWidth(0, 10);
@@ -4780,14 +4784,15 @@ void UIMachineSettingsStorage::prepareControllerWidget()
             if (m_pLabelName)
             {
                 m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutController->addWidget(m_pLabelName, 1, 1, 1, 1);
+                m_pLayoutController->addWidget(m_pLabelName, 1, 1);
             }
             /* Prepare name editor: */
             m_pEditorName = new QLineEdit(pWidgetController);
             if (m_pEditorName)
             {
-                m_pLabelName->setBuddy(m_pEditorName);
-                m_pLayoutController->addWidget(m_pEditorName, 1, 2, 1, 1);
+                if (m_pLabelName)
+                    m_pLabelName->setBuddy(m_pEditorName);
+                m_pLayoutController->addWidget(m_pEditorName, 1, 2);
             }
 
             /* Prepare type label: */
@@ -4795,15 +4800,16 @@ void UIMachineSettingsStorage::prepareControllerWidget()
             if (m_pLabelType)
             {
                 m_pLabelType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutController->addWidget(m_pLabelType, 2, 1, 1, 1);
+                m_pLayoutController->addWidget(m_pLabelType, 2, 1);
             }
             /* Prepare type combo: */
             m_pComboType = new QComboBox(pWidgetController);
             if (m_pComboType)
             {
-                m_pLabelType->setBuddy(m_pComboType);
+                if (m_pLabelType)
+                    m_pLabelType->setBuddy(m_pComboType);
                 m_pComboType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-                m_pLayoutController->addWidget(m_pComboType, 2, 2, 1, 1);
+                m_pLayoutController->addWidget(m_pComboType, 2, 2);
             }
 
             /* Prepare port count label: */
@@ -4811,20 +4817,21 @@ void UIMachineSettingsStorage::prepareControllerWidget()
             if (m_pLabelPortCount)
             {
                 m_pLabelPortCount->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutController->addWidget(m_pLabelPortCount, 3, 1, 1, 1);
+                m_pLayoutController->addWidget(m_pLabelPortCount, 3, 1);
             }
             /* Prepare port count spinbox: */
-            m_pSpinBoxPortCount = new QSpinBox(pWidgetController);
-            if (m_pSpinBoxPortCount)
+            m_pSpinboxPortCount = new QSpinBox(pWidgetController);
+            if (m_pSpinboxPortCount)
             {
-                m_pLabelPortCount->setBuddy(m_pSpinBoxPortCount);
-                m_pLayoutController->addWidget(m_pSpinBoxPortCount, 3, 2, 1, 1);
+                if (m_pLabelPortCount)
+                    m_pLabelPortCount->setBuddy(m_pSpinboxPortCount);
+                m_pLayoutController->addWidget(m_pSpinboxPortCount, 3, 2);
             }
 
             /* Prepare port count check-box: */
             m_pCheckBoxIoCache = new QCheckBox(pWidgetController);
             if (m_pCheckBoxIoCache)
-                m_pLayoutController->addWidget(m_pCheckBoxIoCache, 4, 2, 1, 1);
+                m_pLayoutController->addWidget(m_pCheckBoxIoCache, 4, 2);
 
             m_pLayoutController->setColumnMinimumWidth(0, 10);
         }
@@ -4917,7 +4924,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
                 if (m_pCheckBoxHotPluggable)
                     pLayoutAttachmentSettings->addWidget(m_pCheckBoxHotPluggable);
 
-                m_pLayoutAttachment->addLayout(pLayoutAttachmentSettings, 2, 2, 1, 1);
+                m_pLayoutAttachment->addLayout(pLayoutAttachmentSettings, 2, 2);
             }
 
             /* Prepare separator for attachment case: */
@@ -5076,25 +5083,25 @@ void UIMachineSettingsStorage::prepareConnections()
             this, &UIMachineSettingsStorage::sltHandleMediumDeleted);
 
     /* Configure tree-view: */
-    connect(m_pTreeStorage, &QITreeView::currentItemChanged,
+    connect(m_pTreeViewStorage, &QITreeView::currentItemChanged,
              this, &UIMachineSettingsStorage::sltHandleCurrentItemChange);
-    connect(m_pTreeStorage, &QITreeView::customContextMenuRequested,
+    connect(m_pTreeViewStorage, &QITreeView::customContextMenuRequested,
             this, &UIMachineSettingsStorage::sltHandleContextMenuRequest);
-    connect(m_pTreeStorage, &QITreeView::drawItemBranches,
+    connect(m_pTreeViewStorage, &QITreeView::drawItemBranches,
             this, &UIMachineSettingsStorage::sltHandleDrawItemBranches);
-    connect(m_pTreeStorage, &QITreeView::mouseMoved,
+    connect(m_pTreeViewStorage, &QITreeView::mouseMoved,
             this, &UIMachineSettingsStorage::sltHandleMouseMove);
-    connect(m_pTreeStorage, &QITreeView::mousePressed,
+    connect(m_pTreeViewStorage, &QITreeView::mousePressed,
             this, &UIMachineSettingsStorage::sltHandleMouseClick);
-    connect(m_pTreeStorage, &QITreeView::mouseReleased,
+    connect(m_pTreeViewStorage, &QITreeView::mouseReleased,
             this, &UIMachineSettingsStorage::sltHandleMouseRelease);
-    connect(m_pTreeStorage, &QITreeView::mouseDoubleClicked,
+    connect(m_pTreeViewStorage, &QITreeView::mouseDoubleClicked,
             this, &UIMachineSettingsStorage::sltHandleMouseClick);
-    connect(m_pTreeStorage, &QITreeView::dragEntered,
+    connect(m_pTreeViewStorage, &QITreeView::dragEntered,
             this, &UIMachineSettingsStorage::sltHandleDragEnter);
-    connect(m_pTreeStorage, &QITreeView::dragMoved,
+    connect(m_pTreeViewStorage, &QITreeView::dragMoved,
             this, &UIMachineSettingsStorage::sltHandleDragMove);
-    connect(m_pTreeStorage, &QITreeView::dragDropped,
+    connect(m_pTreeViewStorage, &QITreeView::dragDropped,
             this, &UIMachineSettingsStorage::sltHandleDragDrop);
 
     /* Create model: */
@@ -5131,7 +5138,7 @@ void UIMachineSettingsStorage::prepareConnections()
     /* Configure widgets: */
     connect(m_pMediumIdHolder, &UIMediumIDHolder::sigChanged,
             this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(m_pSpinBoxPortCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxPortCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsStorage::sltSetInformation);
     connect(m_pEditorName, &QLineEdit::textEdited,
             this, &UIMachineSettingsStorage::sltSetInformation);
@@ -5164,7 +5171,7 @@ void UIMachineSettingsStorage::cleanup()
 void UIMachineSettingsStorage::addControllerWrapper(const QString &strName, KStorageBus enmBus, KStorageControllerType enmType)
 {
 #ifdef RT_STRICT
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
     switch (enmBus)
     {
         case KStorageBus_IDE:
@@ -5202,7 +5209,7 @@ void UIMachineSettingsStorage::addControllerWrapper(const QString &strName, KSto
 
 void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDeviceType)
 {
-    const QModelIndex index = m_pTreeStorage->currentIndex();
+    const QModelIndex index = m_pTreeViewStorage->currentIndex();
     Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
     Assert(m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
     // const QString strControllerName(m_pModelStorage->data(index, StorageModel::R_CtrName).toString());

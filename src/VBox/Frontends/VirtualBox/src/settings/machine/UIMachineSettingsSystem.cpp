@@ -838,11 +838,11 @@ void UIMachineSettingsSystem::prepareWidgets()
 
 void UIMachineSettingsSystem::prepareTabMotherboard()
 {
-    /* Prepare Motherboard tab: */
+    /* Prepare 'Motherboard' tab: */
     m_pTabMotherboard = new QWidget;
     if (m_pTabMotherboard)
     {
-        /* Prepare Motherboard tab layout: */
+        /* Prepare 'Motherboard' tab layout: */
         QGridLayout *pLayoutMotherboard = new QGridLayout(m_pTabMotherboard);
         if (pLayoutMotherboard)
         {
@@ -860,7 +860,8 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pEditorBaseMemory = new UIBaseMemoryEditor(m_pTabMotherboard);
             if (m_pEditorBaseMemory)
             {
-                m_pLabelBaseMemory->setBuddy(m_pEditorBaseMemory->focusProxy());
+                if (m_pLabelBaseMemory)
+                    m_pLabelBaseMemory->setBuddy(m_pEditorBaseMemory->focusProxy());
                 m_pEditorBaseMemory->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
 
                 pLayoutMotherboard->addWidget(m_pEditorBaseMemory, 0, 1, 2, 4);
@@ -877,7 +878,8 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pEditorBootOrder = new UIBootOrderEditor(m_pTabMotherboard);
             if (m_pEditorBootOrder)
             {
-                m_pLabelBootOrder->setBuddy(m_pEditorBootOrder->focusProxy());
+                if (m_pLabelBootOrder)
+                    m_pLabelBootOrder->setBuddy(m_pEditorBootOrder->focusProxy());
                 m_pEditorBootOrder->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
                 pLayoutMotherboard->addWidget(m_pEditorBootOrder, 2, 1, 2, 2);
@@ -894,7 +896,8 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pComboChipset = new QComboBox(m_pTabMotherboard);
             if (m_pComboChipset)
             {
-                m_pLabelChipset->setBuddy(m_pComboChipset);
+                if (m_pLabelChipset)
+                    m_pLabelChipset->setBuddy(m_pComboChipset);
                 m_pComboChipset->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 m_pComboChipset->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
@@ -912,7 +915,8 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pComboPointingHID = new QComboBox(m_pTabMotherboard);
             if (m_pComboPointingHID)
             {
-                m_pLabelPointingHID->setBuddy(m_pComboPointingHID);
+                if (m_pLabelPointingHID)
+                    m_pLabelPointingHID->setBuddy(m_pComboPointingHID);
                 m_pComboPointingHID->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 m_pComboPointingHID->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
@@ -964,14 +968,15 @@ void UIMachineSettingsSystem::prepareTabProcessor()
     m_uMedGuestCPUExecCap = 40;
     m_uMaxGuestCPUExecCap = 100;
 
-    /* Prepare Processor tab: */
+    /* Prepare 'Processor' tab: */
     m_pTabProcessor = new QWidget;
     if (m_pTabProcessor)
     {
-        /* Prepare Processor tab layout: */
+        /* Prepare 'Processor' tab layout: */
         QGridLayout *pLayoutProcessor = new QGridLayout(m_pTabProcessor);
         if (pLayoutProcessor)
         {
+            pLayoutProcessor->setColumnStretch(1, 1);
             pLayoutProcessor->setRowStretch(6, 1);
 
             /* Prepare processor count label: */
@@ -1019,18 +1024,19 @@ void UIMachineSettingsSystem::prepareTabProcessor()
                     pLayoutProcessorCount->addLayout(m_pLayoutProcessorCountScale);
                 }
 
-                pLayoutProcessor->addLayout(pLayoutProcessorCount, 0, 1, 2, 1);
+                pLayoutProcessor->addLayout(pLayoutProcessorCount, 0, 1, 2, 2);
             }
             /* Prepare processor count spinbox: */
             m_pSpinboxProcessorCount = new QSpinBox(m_pTabProcessor);
             if (m_pSpinboxProcessorCount)
             {
-                m_pLabelProcessorCount->setBuddy(m_pSpinboxProcessorCount);
+                if (m_pLabelProcessorCount)
+                    m_pLabelProcessorCount->setBuddy(m_pSpinboxProcessorCount);
                 m_pSpinboxProcessorCount->setMinimum(m_uMinGuestCPU);
                 m_pSpinboxProcessorCount->setMaximum(m_uMaxGuestCPU);
                 uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxProcessorCount, 4);
 
-                pLayoutProcessor->addWidget(m_pSpinboxProcessorCount, 0, 2);
+                pLayoutProcessor->addWidget(m_pSpinboxProcessorCount, 0, 3);
             }
 
             /* Prepare processor exec cap label: */
@@ -1078,18 +1084,19 @@ void UIMachineSettingsSystem::prepareTabProcessor()
                     pLayoutProcessorExecCap->addLayout(m_pLayoutProcessorExecCapScale);
                 }
 
-                pLayoutProcessor->addLayout(pLayoutProcessorExecCap, 2, 1, 2, 1);
+                pLayoutProcessor->addLayout(pLayoutProcessorExecCap, 2, 1, 2, 2);
             }
             /* Prepare processor exec cap spinbox: */
             m_pSpinboxProcessorExecCap = new QSpinBox(m_pTabProcessor);
             if (m_pSpinboxProcessorExecCap)
             {
-                m_pLabelProcessorExecCap->setBuddy(m_pSpinboxProcessorExecCap);
+                if (m_pLabelProcessorExecCap)
+                    m_pLabelProcessorExecCap->setBuddy(m_pSpinboxProcessorExecCap);
                 m_pSpinboxProcessorExecCap->setMinimum(m_uMinGuestCPUExecCap);
                 m_pSpinboxProcessorExecCap->setMaximum(m_uMaxGuestCPUExecCap);
                 uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxProcessorExecCap, 4);
 
-                pLayoutProcessor->addWidget(m_pSpinboxProcessorExecCap, 2, 2);
+                pLayoutProcessor->addWidget(m_pSpinboxProcessorExecCap, 2, 3);
             }
 
             /* Prepare extended processor label: */
@@ -1102,11 +1109,11 @@ void UIMachineSettingsSystem::prepareTabProcessor()
             /* Prepare PAE check-box: */
             m_pCheckBoxPAE = new QCheckBox(m_pTabProcessor);
             if (m_pCheckBoxPAE)
-                pLayoutProcessor->addWidget(m_pCheckBoxPAE, 4, 1, 1, 2);
+                pLayoutProcessor->addWidget(m_pCheckBoxPAE, 4, 1);
             /* Prepare nested virtualization check-box: */
             m_pCheckBoxNestedVirtualization = new QCheckBox(m_pTabProcessor);
             if (m_pCheckBoxNestedVirtualization)
-                pLayoutProcessor->addWidget(m_pCheckBoxNestedVirtualization, 5, 1, 1, 2);
+                pLayoutProcessor->addWidget(m_pCheckBoxNestedVirtualization, 5, 1);
         }
 
         m_pTabWidget->addTab(m_pTabProcessor, QString());
@@ -1115,11 +1122,11 @@ void UIMachineSettingsSystem::prepareTabProcessor()
 
 void UIMachineSettingsSystem::prepareTabAcceleration()
 {
-    /* Prepare Acceleration tab: */
+    /* Prepare 'Acceleration' tab: */
     m_pTabAcceleration = new QWidget;
     if (m_pTabAcceleration)
     {
-        /* Prepare Acceleration tab layout: */
+        /* Prepare 'Acceleration' tab layout: */
         QGridLayout *pLayoutAcceleration = new QGridLayout(m_pTabAcceleration);
         if (pLayoutAcceleration)
         {
@@ -1137,11 +1144,12 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
             m_pComboParavirtProvider = new QComboBox(m_pTabAcceleration);
             if (m_pComboParavirtProvider)
             {
-                m_pLabelParavirtProvider->setBuddy(m_pComboParavirtProvider);
+                if (m_pLabelParavirtProvider)
+                    m_pLabelParavirtProvider->setBuddy(m_pComboParavirtProvider);
                 m_pComboParavirtProvider->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 m_pComboParavirtProvider->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
-                pLayoutAcceleration->addWidget(m_pComboParavirtProvider, 0, 1);
+                pLayoutAcceleration->addWidget(m_pComboParavirtProvider, 0, 1, 1, 2);
             }
 
             /* Prepare virtualization label layout: */

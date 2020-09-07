@@ -284,24 +284,6 @@ private:
     /** Holds the storage-model instance. */
     StorageModel *m_pModelStorage;
 
-    /** Holds the 'Add Controller' action instance. */
-    QAction *m_pActionAddController;
-    /** Holds the 'Remove Controller' action instance. */
-    QAction *m_pActionRemoveController;
-    /** Holds the map of add controller action instances. */
-    QMap<KStorageControllerType, QAction*> m_addControllerActions;
-
-    /** Holds the 'Add Attachment' action instance. */
-    QAction *m_pActionAddAttachment;
-    /** Holds the 'Remove Attachment' action instance. */
-    QAction *m_pActionRemoveAttachment;
-    /** Holds the 'Add HD Attachment' action instance. */
-    QAction *m_pActionAddAttachmentHD;
-    /** Holds the 'Add CD Attachment' action instance. */
-    QAction *m_pActionAddAttachmentCD;
-    /** Holds the 'Add FD Attachment' action instance. */
-    QAction *m_pActionAddAttachmentFD;
-
     /** Holds the medium ID wrapper instance. */
     UIMediumIDHolder *m_pMediumIdHolder;
 
@@ -317,19 +299,36 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds the splitter instance. */
-        QISplitter       *m_pSplitter;
+        QISplitter *m_pSplitter;
+
         /** Holds the left pane instance. */
-        QWidget          *m_pWidgetLeftPane;
+        QWidget                                *m_pWidgetLeftPane;
         /** Holds the left pane separator instance. */
-        QILabelSeparator *m_pLabelSeparatorLeftPane;
+        QILabelSeparator                       *m_pLabelSeparatorLeftPane;
         /** Holds the tree-view layout instance. */
-        QVBoxLayout      *m_pLayoutTreeView;
+        QVBoxLayout                            *m_pLayoutTree;
         /** Holds the tree-view instance. */
-        QITreeView       *m_pTreeStorage;
+        QITreeView                             *m_pTreeViewStorage;
         /** Holds the toolbar layout instance. */
-        QHBoxLayout      *m_pLayoutToolBar;
+        QHBoxLayout                            *m_pLayoutToolbar;
         /** Holds the toolbar instance. */
-        UIToolBar        *m_pToolBar;
+        UIToolBar                              *m_pToolbar;
+        /** Holds the 'Add Controller' action instance. */
+        QAction                                *m_pActionAddController;
+        /** Holds the 'Remove Controller' action instance. */
+        QAction                                *m_pActionRemoveController;
+        /** Holds the map of add controller action instances. */
+        QMap<KStorageControllerType, QAction*>  m_addControllerActions;
+        /** Holds the 'Add Attachment' action instance. */
+        QAction                                *m_pActionAddAttachment;
+        /** Holds the 'Remove Attachment' action instance. */
+        QAction                                *m_pActionRemoveAttachment;
+        /** Holds the 'Add HD Attachment' action instance. */
+        QAction                                *m_pActionAddAttachmentHD;
+        /** Holds the 'Add CD Attachment' action instance. */
+        QAction                                *m_pActionAddAttachmentCD;
+        /** Holds the 'Add FD Attachment' action instance. */
+        QAction                                *m_pActionAddAttachmentFD;
 
         /** Holds the right pane instance. */
         QStackedWidget   *m_pStackRightPane;
@@ -350,7 +349,7 @@ private:
         /** Holds the port count label instance. */
         QLabel           *m_pLabelPortCount;
         /** Holds the port count spinbox instance. */
-        QSpinBox         *m_pSpinBoxPortCount;
+        QSpinBox         *m_pSpinboxPortCount;
         /** Holds the IO cache check-box instance. */
         QCheckBox        *m_pCheckBoxIoCache;
         /** Holds the right pane attachment widget separator instance. */

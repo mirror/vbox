@@ -413,7 +413,8 @@ void UIMachineSettingsSerial::prepareWidgets()
                 m_pComboNumber = new QComboBox(m_pWidgetPortSettings);
                 if (m_pComboNumber)
                 {
-                    m_pLabelNumber->setBuddy(m_pComboNumber);
+                    if (m_pLabelNumber)
+                        m_pLabelNumber->setBuddy(m_pComboNumber);
                     m_pComboNumber->insertItem(0, uiCommon().toCOMPortName(0, 0));
                     m_pComboNumber->insertItems(0, uiCommon().COMPortNames());
                     pLayoutPortSettings->addWidget(m_pComboNumber, 0, 1);
@@ -426,7 +427,8 @@ void UIMachineSettingsSerial::prepareWidgets()
                 m_pLineEditIRQ = new QLineEdit(m_pWidgetPortSettings);
                 if (m_pLineEditIRQ)
                 {
-                    m_pLabelIRQ->setBuddy(m_pLineEditIRQ);
+                    if (m_pLabelIRQ)
+                        m_pLabelIRQ->setBuddy(m_pLineEditIRQ);
                     m_pLineEditIRQ->setFixedWidth(m_pLineEditIRQ->fontMetrics().width("8888"));
                     m_pLineEditIRQ->setValidator(new QIULongValidator(0, 255, this));
                     pLayoutPortSettings->addWidget(m_pLineEditIRQ, 0, 3);
@@ -439,7 +441,8 @@ void UIMachineSettingsSerial::prepareWidgets()
                 m_pLineEditIOPort = new QLineEdit(m_pWidgetPortSettings);
                 if (m_pLineEditIOPort)
                 {
-                    m_pLabelIOPort->setBuddy(m_pLineEditIOPort);
+                    if (m_pLabelIOPort)
+                        m_pLabelIOPort->setBuddy(m_pLineEditIOPort);
                     m_pLineEditIOPort->setFixedWidth(m_pLineEditIOPort->fontMetrics().width("8888888"));
                     m_pLineEditIOPort->setValidator(new QIULongValidator(0, 0xFFFF, this));
                     pLayoutPortSettings->addWidget(m_pLineEditIOPort, 0, 5);
@@ -456,7 +459,8 @@ void UIMachineSettingsSerial::prepareWidgets()
                 m_pComboMode = new QComboBox(m_pWidgetPortSettings);
                 if (m_pComboMode)
                 {
-                    m_pLabelMode->setBuddy(m_pComboMode);
+                    if (m_pLabelMode)
+                        m_pLabelMode->setBuddy(m_pComboMode);
                     pLayoutPortSettings->addWidget(m_pComboMode, 1, 1);
                 }
 
@@ -476,7 +480,8 @@ void UIMachineSettingsSerial::prepareWidgets()
                 m_pEditorPath = new QLineEdit(m_pWidgetPortSettings);
                 if (m_pEditorPath)
                 {
-                    m_pLabelPath->setBuddy(m_pEditorPath);
+                    if (m_pLabelPath)
+                        m_pLabelPath->setBuddy(m_pEditorPath);
                     m_pEditorPath->setValidator(new QRegExpValidator(QRegExp(".+"), this));
                     pLayoutPortSettings->addWidget(m_pEditorPath, 3, 1, 1, 6);
                 }

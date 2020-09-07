@@ -45,9 +45,9 @@ UIMachineSettingsSFDetails::UIMachineSettingsSFDetails(SFDialogType type,
     , m_pEditorName(0)
     , m_pLabelAutoMountPoint(0)
     , m_pEditorAutoMountPoint(0)
-    , m_pReadonlyCheckBox(0)
-    , m_pAutoMountCheckBox(0)
-    , m_pPermanentCheckBox(0)
+    , m_pCheckBoxReadonly(0)
+    , m_pCheckBoxAutoMount(0)
+    , m_pCheckBoxPermanent(0)
     , m_pButtonBox(0)
 {
     prepare();
@@ -75,22 +75,22 @@ QString UIMachineSettingsSFDetails::name() const
 
 void UIMachineSettingsSFDetails::setWriteable(bool fWritable)
 {
-    m_pReadonlyCheckBox->setChecked(!fWritable);
+    m_pCheckBoxReadonly->setChecked(!fWritable);
 }
 
 bool UIMachineSettingsSFDetails::isWriteable() const
 {
-    return !m_pReadonlyCheckBox->isChecked();
+    return !m_pCheckBoxReadonly->isChecked();
 }
 
 void UIMachineSettingsSFDetails::setAutoMount(bool fAutoMount)
 {
-    m_pAutoMountCheckBox->setChecked(fAutoMount);
+    m_pCheckBoxAutoMount->setChecked(fAutoMount);
 }
 
 bool UIMachineSettingsSFDetails::isAutoMounted() const
 {
-    return m_pAutoMountCheckBox->isChecked();
+    return m_pCheckBoxAutoMount->isChecked();
 }
 
 void UIMachineSettingsSFDetails::setAutoMountPoint(const QString &strAutoMountPoint)
@@ -105,12 +105,12 @@ QString UIMachineSettingsSFDetails::autoMountPoint() const
 
 void UIMachineSettingsSFDetails::setPermanent(bool fPermanent)
 {
-    m_pPermanentCheckBox->setChecked(fPermanent);
+    m_pCheckBoxPermanent->setChecked(fPermanent);
 }
 
 bool UIMachineSettingsSFDetails::isPermanent() const
 {
-    return m_fUsePermanent ? m_pPermanentCheckBox->isChecked() : true;
+    return m_fUsePermanent ? m_pCheckBoxPermanent->isChecked() : true;
 }
 
 void UIMachineSettingsSFDetails::retranslateUi()
@@ -118,14 +118,14 @@ void UIMachineSettingsSFDetails::retranslateUi()
     m_pLabelPath->setText(tr("Folder Path:"));
     m_pLabelName->setText(tr("Folder Name:"));
     m_pEditorName->setToolTip(tr("Holds the name of the shared folder (as it will be seen by the guest OS)."));
-    m_pReadonlyCheckBox->setToolTip(tr("When checked, the guest OS will not be able to write to the specified shared folder."));
-    m_pReadonlyCheckBox->setText(tr("&Read-only"));
-    m_pAutoMountCheckBox->setToolTip(tr("When checked, the guest OS will try to automatically mount the shared folder on startup."));
-    m_pAutoMountCheckBox->setText(tr("&Auto-mount"));
+    m_pCheckBoxReadonly->setToolTip(tr("When checked, the guest OS will not be able to write to the specified shared folder."));
+    m_pCheckBoxReadonly->setText(tr("&Read-only"));
+    m_pCheckBoxAutoMount->setToolTip(tr("When checked, the guest OS will try to automatically mount the shared folder on startup."));
+    m_pCheckBoxAutoMount->setText(tr("&Auto-mount"));
     m_pLabelAutoMountPoint->setText(tr("Mount point:"));
     m_pEditorAutoMountPoint->setToolTip(tr("Where to automatically mount the folder in the guest.  A drive letter (e.g. 'G:') for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting."));
-    m_pPermanentCheckBox->setToolTip(tr("When checked, this shared folder will be permanent."));
-    m_pPermanentCheckBox->setText(tr("&Make Permanent"));
+    m_pCheckBoxPermanent->setToolTip(tr("When checked, this shared folder will be permanent."));
+    m_pCheckBoxPermanent->setText(tr("&Make Permanent"));
 
     switch (m_type)
     {
@@ -254,19 +254,19 @@ void UIMachineSettingsSFDetails::prepareWidgets()
             pLayoutMain->addWidget(m_pEditorAutoMountPoint, 2, 1);
 
         /* Prepare read-only check-box: */
-        m_pReadonlyCheckBox = new QCheckBox;
-        if (m_pReadonlyCheckBox)
-            pLayoutMain->addWidget(m_pReadonlyCheckBox, 3, 1);
+        m_pCheckBoxReadonly = new QCheckBox;
+        if (m_pCheckBoxReadonly)
+            pLayoutMain->addWidget(m_pCheckBoxReadonly, 3, 1);
         /* Prepare auto-mount check-box: */
-        m_pAutoMountCheckBox = new QCheckBox;
-        if (m_pAutoMountCheckBox)
-            pLayoutMain->addWidget(m_pAutoMountCheckBox, 4, 1);
+        m_pCheckBoxAutoMount = new QCheckBox;
+        if (m_pCheckBoxAutoMount)
+            pLayoutMain->addWidget(m_pCheckBoxAutoMount, 4, 1);
         /* Prepare permanent check-box: */
-        m_pPermanentCheckBox = new QCheckBox;
-        if (m_pPermanentCheckBox)
+        m_pCheckBoxPermanent = new QCheckBox;
+        if (m_pCheckBoxPermanent)
         {
-            m_pPermanentCheckBox->setHidden(!m_fUsePermanent);
-            pLayoutMain->addWidget(m_pPermanentCheckBox, 5, 1);
+            m_pCheckBoxPermanent->setHidden(!m_fUsePermanent);
+            pLayoutMain->addWidget(m_pCheckBoxPermanent, 5, 1);
         }
 
         /* Prepare button-box: */
@@ -286,7 +286,7 @@ void UIMachineSettingsSFDetails::prepareConnections()
     connect(m_pSelectorPath, &UIFilePathSelector::pathChanged, this, &UIMachineSettingsSFDetails::sltSelectPath);
     connect(m_pEditorName, &QLineEdit::textChanged, this, &UIMachineSettingsSFDetails::sltValidate);
     if (m_fUsePermanent)
-        connect(m_pPermanentCheckBox, &QCheckBox::toggled, this, &UIMachineSettingsSFDetails::sltValidate);
+        connect(m_pCheckBoxPermanent, &QCheckBox::toggled, this, &UIMachineSettingsSFDetails::sltValidate);
     connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIMachineSettingsSFDetails::accept);
     connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIMachineSettingsSFDetails::reject);
 }

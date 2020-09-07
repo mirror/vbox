@@ -173,7 +173,7 @@ private:
         /** Holds the USB filters tree-widget instance. */
         QITreeWidget     *m_pTreeWidgetFilters;
         /** Holds the USB filters toolbar instance. */
-        UIToolBar        *m_pToolBarFilters;
+        UIToolBar        *m_pToolbarFilters;
         /** Holds the New action instance. */
         QAction          *m_pActionNew;
         /** Holds the Add action instance. */

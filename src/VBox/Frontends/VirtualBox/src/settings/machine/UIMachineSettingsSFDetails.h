@@ -106,11 +106,11 @@ private:
         /** Holds the auto-mount point editor instance. */
         QLineEdit          *m_pEditorAutoMountPoint;
         /** Holds the read-only check-box instance. */
-        QCheckBox          *m_pReadonlyCheckBox;
+        QCheckBox          *m_pCheckBoxReadonly;
         /** Holds the auto-mount check-box instance. */
-        QCheckBox          *m_pAutoMountCheckBox;
+        QCheckBox          *m_pCheckBoxAutoMount;
         /** Holds the permanent check-box instance. */
-        QCheckBox          *m_pPermanentCheckBox;
+        QCheckBox          *m_pCheckBoxPermanent;
         /** Holds the button-box instance. */
         QIDialogButtonBox  *m_pButtonBox;
     /** @} */

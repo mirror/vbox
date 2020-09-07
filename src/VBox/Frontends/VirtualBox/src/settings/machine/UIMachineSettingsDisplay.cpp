@@ -1079,11 +1079,11 @@ void UIMachineSettingsDisplay::prepareTabScreen()
     /* Prepare common variables: */
     const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
 
-    /* Prepare Screen tab: */
+    /* Prepare 'Screen' tab: */
     m_pTabScreen = new QWidget;
     if (m_pTabScreen)
     {
-        /* Prepare Screen tab layout: */
+        /* Prepare 'Screen' tab layout: */
         QGridLayout *pLayoutScreen = new QGridLayout(m_pTabScreen);
         if (pLayoutScreen)
         {
@@ -1100,7 +1100,8 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorVideoMemorySize = new UIVideoMemoryEditor(m_pTabScreen);
             if (m_pEditorVideoMemorySize)
             {
-                m_pLabelVideoMemorySize->setBuddy(m_pEditorVideoMemorySize->focusProxy());
+                if (m_pLabelVideoMemorySize)
+                    m_pLabelVideoMemorySize->setBuddy(m_pEditorVideoMemorySize->focusProxy());
                 pLayoutScreen->addWidget(m_pEditorVideoMemorySize, 0, 1, 2, 2);
             }
 
@@ -1161,7 +1162,8 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pSpinboxMonitorCount = new QSpinBox(m_pTabScreen);
             if (m_pSpinboxMonitorCount)
             {
-                m_pLabelMonitorCount->setBuddy(m_pSpinboxMonitorCount);
+                if (m_pLabelMonitorCount)
+                    m_pLabelMonitorCount->setBuddy(m_pSpinboxMonitorCount);
                 m_pSpinboxMonitorCount->setMinimum(1);
                 m_pSpinboxMonitorCount->setMaximum(comProperties.GetMaxGuestMonitors());
 
@@ -1179,7 +1181,8 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorScaleFactor = new UIScaleFactorEditor(m_pTabScreen);
             if (m_pEditorScaleFactor)
             {
-                m_pLabelScaleFactor->setBuddy(m_pEditorScaleFactor->focusProxy());
+                if (m_pLabelScaleFactor)
+                    m_pLabelScaleFactor->setBuddy(m_pEditorScaleFactor->focusProxy());
                 pLayoutScreen->addWidget(m_pEditorScaleFactor, 4, 1, 2, 2);
             }
 
@@ -1194,7 +1197,8 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorGraphicsController = new UIGraphicsControllerEditor(m_pTabScreen);
             if (m_pEditorGraphicsController)
             {
-                m_pLabelGraphicsController->setBuddy(m_pEditorGraphicsController->focusProxy());
+                if (m_pLabelGraphicsController)
+                    m_pLabelGraphicsController->setBuddy(m_pEditorGraphicsController->focusProxy());
                 pLayoutScreen->addWidget(m_pEditorGraphicsController, 6, 1, 1, 2);
             }
 
@@ -1217,25 +1221,25 @@ void UIMachineSettingsDisplay::prepareTabScreen()
 
 void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
 {
-    /* Prepare Remote Display tab: */
+    /* Prepare 'Remote Display' tab: */
     m_pTabRemoteDisplay = new QWidget;
     if (m_pTabRemoteDisplay)
     {
-        /* Prepare Remote Display tab layout: */
-        QGridLayout *pLayoutTabRemoteDisplay = new QGridLayout(m_pTabRemoteDisplay);
-        if (pLayoutTabRemoteDisplay)
+        /* Prepare 'Remote Display' tab layout: */
+        QGridLayout *pLayoutRemoteDisplay = new QGridLayout(m_pTabRemoteDisplay);
+        if (pLayoutRemoteDisplay)
         {
-            pLayoutTabRemoteDisplay->setRowStretch(2, 1);
+            pLayoutRemoteDisplay->setRowStretch(2, 1);
 
             /* Prepare remote display check-box: */
             m_pCheckboxRemoteDisplay = new QCheckBox(m_pTabRemoteDisplay);
             if (m_pCheckboxRemoteDisplay)
-                pLayoutTabRemoteDisplay->addWidget(m_pCheckboxRemoteDisplay, 0, 0, 1, 2);
+                pLayoutRemoteDisplay->addWidget(m_pCheckboxRemoteDisplay, 0, 0, 1, 2);
 
             /* Prepare 20-px shifting spacer: */
             QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
             if (pSpacerItem)
-                pLayoutTabRemoteDisplay->addItem(pSpacerItem, 1, 0);
+                pLayoutRemoteDisplay->addItem(pSpacerItem, 1, 0);
 
             /* Prepare remote display settings widget: */
             m_pWidgetRemoteDisplaySettings = new QWidget(m_pTabRemoteDisplay);
@@ -1258,7 +1262,8 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
                     m_pEditorRemoteDisplayPort = new QLineEdit(m_pWidgetRemoteDisplaySettings);
                     if (m_pEditorRemoteDisplayPort)
                     {
-                        m_pLabelRemoteDisplayPort->setBuddy(m_pEditorRemoteDisplayPort);
+                        if (m_pLabelRemoteDisplayPort)
+                            m_pLabelRemoteDisplayPort->setBuddy(m_pEditorRemoteDisplayPort);
                         m_pEditorRemoteDisplayPort->setValidator(new QRegExpValidator(
                             QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
 
@@ -1276,7 +1281,8 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
                     m_pComboRemoteDisplayAuthMethod = new QComboBox(m_pWidgetRemoteDisplaySettings);
                     if (m_pComboRemoteDisplayAuthMethod)
                     {
-                        m_pLabelRemoteDisplayAuthMethod->setBuddy(m_pComboRemoteDisplayAuthMethod);
+                        if (m_pLabelRemoteDisplayAuthMethod)
+                            m_pLabelRemoteDisplayAuthMethod->setBuddy(m_pComboRemoteDisplayAuthMethod);
                         m_pComboRemoteDisplayAuthMethod->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
                         pLayoutRemoteDisplaySettings->addWidget(m_pComboRemoteDisplayAuthMethod, 1, 1);
@@ -1293,7 +1299,8 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
                     m_pEditorRemoteDisplayTimeout = new QLineEdit(m_pWidgetRemoteDisplaySettings);
                     if (m_pEditorRemoteDisplayTimeout)
                     {
-                        m_pLabelRemoteDisplayTimeout->setBuddy(m_pEditorRemoteDisplayTimeout);
+                        if (m_pLabelRemoteDisplayTimeout)
+                            m_pLabelRemoteDisplayTimeout->setBuddy(m_pEditorRemoteDisplayTimeout);
                         m_pEditorRemoteDisplayTimeout->setValidator(new QIntValidator(this));
 
                         pLayoutRemoteDisplaySettings->addWidget(m_pEditorRemoteDisplayTimeout, 2, 1);
@@ -1312,7 +1319,7 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
                         pLayoutRemoteDisplaySettings->addWidget(m_pCheckboxMultipleConn, 3, 1);
                 }
 
-                pLayoutTabRemoteDisplay->addWidget(m_pWidgetRemoteDisplaySettings, 1, 1);
+                pLayoutRemoteDisplay->addWidget(m_pWidgetRemoteDisplaySettings, 1, 1);
             }
         }
 
@@ -1322,11 +1329,11 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
 
 void UIMachineSettingsDisplay::prepareTabRecording()
 {
-    /* Prepare Recording tab: */
+    /* Prepare 'Recording' tab: */
     m_pTabRecording = new QWidget;
     if (m_pTabRecording)
     {
-        /* Prepare Recording tab layout: */
+        /* Prepare 'Recording' tab layout: */
         QGridLayout *pLayoutRecording = new QGridLayout(m_pTabRecording);
         if (pLayoutRecording)
         {
@@ -1363,7 +1370,8 @@ void UIMachineSettingsDisplay::prepareTabRecording()
                     m_pComboRecordingMode = new QComboBox(m_pWidgetRecordingSettings);
                     if (m_pComboRecordingMode)
                     {
-                        m_pLabelRecordingMode->setBuddy(m_pComboRecordingMode);
+                        if (m_pLabelRecordingMode)
+                            m_pLabelRecordingMode->setBuddy(m_pComboRecordingMode);
                         m_pComboRecordingMode->insertItem(0, ""); /* UISettingsDefs::RecordingMode_VideoAudio */
                         m_pComboRecordingMode->insertItem(1, ""); /* UISettingsDefs::RecordingMode_VideoOnly */
                         m_pComboRecordingMode->insertItem(2, ""); /* UISettingsDefs::RecordingMode_AudioOnly */
@@ -1382,7 +1390,8 @@ void UIMachineSettingsDisplay::prepareTabRecording()
                     m_pEditorRecordingFilePath = new UIFilePathSelector(m_pWidgetRecordingSettings);
                     if (m_pEditorRecordingFilePath)
                     {
-                        m_pLabelRecordingFilePath->setBuddy(m_pEditorRecordingFilePath->focusProxy());
+                        if (m_pLabelRecordingFilePath)
+                            m_pLabelRecordingFilePath->setBuddy(m_pEditorRecordingFilePath->focusProxy());
                         m_pEditorRecordingFilePath->setEditable(false);
                         m_pEditorRecordingFilePath->setMode(UIFilePathSelector::Mode_File_Save);
 
@@ -1400,7 +1409,8 @@ void UIMachineSettingsDisplay::prepareTabRecording()
                     m_pComboRecordingFrameSize = new QComboBox(m_pWidgetRecordingSettings);
                     if (m_pComboRecordingFrameSize)
                     {
-                        m_pLabelRecordingFrameSize->setBuddy(m_pComboRecordingFrameSize);
+                        if (m_pLabelRecordingFrameSize)
+                            m_pLabelRecordingFrameSize->setBuddy(m_pComboRecordingFrameSize);
                         m_pComboRecordingFrameSize->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
                         m_pComboRecordingFrameSize->addItem(""); /* User Defined */
                         m_pComboRecordingFrameSize->addItem("320 x 200 (16:10)",   QSize(320, 200));
@@ -1507,7 +1517,8 @@ void UIMachineSettingsDisplay::prepareTabRecording()
                     m_pSpinboxRecordingFrameRate = new QSpinBox(m_pWidgetRecordingSettings);
                     if (m_pSpinboxRecordingFrameRate)
                     {
-                        m_pLabelRecordingFrameRate->setBuddy(m_pSpinboxRecordingFrameRate);
+                        if (m_pLabelRecordingFrameRate)
+                            m_pLabelRecordingFrameRate->setBuddy(m_pSpinboxRecordingFrameRate);
                         uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxRecordingFrameRate, 3);
                         m_pSpinboxRecordingFrameRate->setMinimum(1);
                         m_pSpinboxRecordingFrameRate->setMaximum(30);
@@ -1580,7 +1591,8 @@ void UIMachineSettingsDisplay::prepareTabRecording()
                     m_pSpinboxRecordingVideoQuality = new QSpinBox(m_pWidgetRecordingSettings);
                     if (m_pSpinboxRecordingVideoQuality)
                     {
-                        m_pLabelRecordingVideoQuality->setBuddy(m_pSpinboxRecordingVideoQuality);
+                        if (m_pLabelRecordingVideoQuality)
+                            m_pLabelRecordingVideoQuality->setBuddy(m_pSpinboxRecordingVideoQuality);
                         uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinboxRecordingVideoQuality, 5);
                         m_pSpinboxRecordingVideoQuality->setMinimum(VIDEO_CAPTURE_BIT_RATE_MIN);
                         m_pSpinboxRecordingVideoQuality->setMaximum(VIDEO_CAPTURE_BIT_RATE_MAX);
@@ -1609,7 +1621,8 @@ void UIMachineSettingsDisplay::prepareTabRecording()
                             m_pSliderRecordingAudioQuality = new QIAdvancedSlider(m_pWidgetRecordingAudioQualitySettings);
                             if (m_pSliderRecordingAudioQuality)
                             {
-                                m_pLabelRecordingAudioQuality->setBuddy(m_pSliderRecordingAudioQuality);
+                                if (m_pLabelRecordingAudioQuality)
+                                    m_pLabelRecordingAudioQuality->setBuddy(m_pSliderRecordingAudioQuality);
                                 m_pSliderRecordingAudioQuality->setOrientation(Qt::Horizontal);
                                 m_pSliderRecordingAudioQuality->setMinimum(1);
                                 m_pSliderRecordingAudioQuality->setMaximum(3);
@@ -1619,6 +1632,7 @@ void UIMachineSettingsDisplay::prepareTabRecording()
                                 m_pSliderRecordingAudioQuality->setSnappingEnabled(true);
                                 m_pSliderRecordingAudioQuality->setOptimalHint(1, 2);
                                 m_pSliderRecordingAudioQuality->setWarningHint(2, 3);
+
                                 pLayoutRecordingAudioQuality->addWidget(m_pSliderRecordingAudioQuality);
                             }
                             /* Prepare recording audio quality scale layout: */
@@ -1665,7 +1679,8 @@ void UIMachineSettingsDisplay::prepareTabRecording()
                     m_pScrollerRecordingScreens = new UIFilmContainer(m_pWidgetRecordingSettings);
                     if (m_pScrollerRecordingScreens)
                     {
-                        m_pLabelRecordingScreens->setBuddy(m_pScrollerRecordingScreens);
+                        if (m_pLabelRecordingScreens)
+                            m_pLabelRecordingScreens->setBuddy(m_pScrollerRecordingScreens);
                         pLayoutRecordingSettings->addWidget(m_pScrollerRecordingScreens, 10, 1, 1, 3);
                     }
                 }
@@ -1703,6 +1718,8 @@ void UIMachineSettingsDisplay::prepareConnections()
     /* Configure 'Recording' connections: */
     connect(m_pCheckboxRecording, &QCheckBox::toggled,
             this, &UIMachineSettingsDisplay::sltHandleRecordingCheckboxToggle);
+    connect(m_pComboRecordingMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIMachineSettingsDisplay::sltHandleRecordingComboBoxChange);
     connect(m_pComboRecordingFrameSize, static_cast<void(QComboBox::*)(int)>(&QComboBox:: currentIndexChanged),
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameSizeComboboxChange);
     connect(m_pSpinboxRecordingFrameWidth, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
@@ -1717,9 +1734,6 @@ void UIMachineSettingsDisplay::prepareConnections()
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoQualitySliderChange);
     connect(m_pSpinboxRecordingVideoQuality, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsDisplay::sltHandleRecordingVideoBitRateEditorChange);
-
-    connect(m_pComboRecordingMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                this, &UIMachineSettingsDisplay::sltHandleRecordingComboBoxChange);
 }
 
 void UIMachineSettingsDisplay::cleanup()

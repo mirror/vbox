@@ -282,7 +282,7 @@ UIMachineSettingsSF::UIMachineSettingsSF()
     , m_pLabelSeparator(0)
     , m_pLayoutTree(0)
     , m_pTreeWidget(0)
-    , m_pToolBar(0)
+    , m_pToolbar(0)
     , m_pActionAdd(0)
     , m_pActionEdit(0)
     , m_pActionRemove(0)
@@ -449,8 +449,8 @@ void UIMachineSettingsSF::polishPage()
 {
     /* Polish shared folders page availability: */
     m_pLabelSeparator->setEnabled(isMachineInValidMode());
-    m_pToolBar->setEnabled(isMachineInValidMode());
-    m_pToolBar->setEnabled(isMachineInValidMode());
+    m_pToolbar->setEnabled(isMachineInValidMode());
+    m_pToolbar->setEnabled(isMachineInValidMode());
 
     /* Update root items visibility: */
     updateRootItemsVisibility();
@@ -710,8 +710,6 @@ void UIMachineSettingsSF::prepareWidgets()
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
-
         /* Prepare separator: */
         m_pLabelSeparator = new QILabelSeparator(this);
         if (m_pLabelSeparator)
@@ -755,35 +753,35 @@ void UIMachineSettingsSF::prepareTreeWidget()
 void UIMachineSettingsSF::prepareToolbar()
 {
     /* Prepare shared folders toolbar: */
-    m_pToolBar = new UIToolBar(this);
-    if (m_pToolBar)
+    m_pToolbar = new UIToolBar(this);
+    if (m_pToolbar)
     {
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolBar->setOrientation(Qt::Vertical);
+        m_pToolbar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolbar->setOrientation(Qt::Vertical);
 
-        /* Prepare 'Add Shared Folder' action: */
-        m_pActionAdd = m_pToolBar->addAction(UIIconPool::iconSet(":/sf_add_16px.png",
-                                                                        ":/sf_add_disabled_16px.png"),
-                                                    QString(), this, SLOT(sltAddFolder()));
+        /* Prepare 'add shared folder' action: */
+        m_pActionAdd = m_pToolbar->addAction(UIIconPool::iconSet(":/sf_add_16px.png",
+                                                                 ":/sf_add_disabled_16px.png"),
+                                             QString(), this, SLOT(sltAddFolder()));
         if (m_pActionAdd)
             m_pActionAdd->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
 
-        /* Prepare 'Edit Shared Folder' action: */
-        m_pActionEdit = m_pToolBar->addAction(UIIconPool::iconSet(":/sf_edit_16px.png",
-                                                                         ":/sf_edit_disabled_16px.png"),
-                                                     QString(), this, SLOT(sltEditFolder()));
+        /* Prepare 'edit shared folder' action: */
+        m_pActionEdit = m_pToolbar->addAction(UIIconPool::iconSet(":/sf_edit_16px.png",
+                                                                  ":/sf_edit_disabled_16px.png"),
+                                              QString(), this, SLOT(sltEditFolder()));
         if (m_pActionEdit)
             m_pActionEdit->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
 
-        /* Prepare 'Remove Shared Folder' action: */
-        m_pActionRemove = m_pToolBar->addAction(UIIconPool::iconSet(":/sf_remove_16px.png",
-                                                                           ":/sf_remove_disabled_16px.png"),
-                                                       QString(), this, SLOT(sltRemoveFolder()));
+        /* Prepare 'remove shared folder' action: */
+        m_pActionRemove = m_pToolbar->addAction(UIIconPool::iconSet(":/sf_remove_16px.png",
+                                                                    ":/sf_remove_disabled_16px.png"),
+                                                QString(), this, SLOT(sltRemoveFolder()));
         if (m_pActionRemove)
             m_pActionRemove->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
 
-        m_pLayoutTree->addWidget(m_pToolBar);
+        m_pLayoutTree->addWidget(m_pToolbar);
     }
 }
 

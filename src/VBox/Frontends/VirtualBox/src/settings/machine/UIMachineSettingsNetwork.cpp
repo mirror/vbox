@@ -786,12 +786,15 @@ void UIMachineSettingsNetwork::prepareWidgets()
                 m_pEditorAttachmentType = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings);
                 if (m_pEditorAttachmentType)
                 {
-                    m_pLabelAttachmentType->setBuddy(m_pEditorAttachmentType->focusProxy1());
-                    m_pLabelAdapterName->setBuddy(m_pEditorAttachmentType->focusProxy2());
+                    if (m_pLabelAttachmentType)
+                        m_pLabelAttachmentType->setBuddy(m_pEditorAttachmentType->focusProxy1());
+                    if (m_pLabelAdapterName)
+                        m_pLabelAdapterName->setBuddy(m_pEditorAttachmentType->focusProxy2());
+
                     pLayoutAdapterSettings->addWidget(m_pEditorAttachmentType, 0, 1, 2, 3);
                 }
 
-                /* Prepare advanced arraow button: */
+                /* Prepare advanced arrow button: */
                 m_pButtonAdvanced = new QIArrowButtonSwitch(m_pWidgetAdapterSettings);
                 if (m_pButtonAdvanced)
                 {
@@ -815,7 +818,8 @@ void UIMachineSettingsNetwork::prepareWidgets()
                 m_pComboAdapterType = new QComboBox(m_pWidgetAdapterSettings);
                 if (m_pComboAdapterType)
                 {
-                    m_pLabelAdapterType->setBuddy(m_pComboAdapterType);
+                    if (m_pLabelAdapterType)
+                        m_pLabelAdapterType->setBuddy(m_pComboAdapterType);
                     pLayoutAdapterSettings->addWidget(m_pComboAdapterType, 3, 1, 1, 3);
                 }
 
@@ -830,7 +834,8 @@ void UIMachineSettingsNetwork::prepareWidgets()
                 m_pComboPromiscuousMode = new QComboBox(m_pWidgetAdapterSettings);
                 if (m_pComboPromiscuousMode)
                 {
-                    m_pLabelPromiscuousMode->setBuddy(m_pComboPromiscuousMode);
+                    if (m_pLabelPromiscuousMode)
+                        m_pLabelPromiscuousMode->setBuddy(m_pComboPromiscuousMode);
                     pLayoutAdapterSettings->addWidget(m_pComboPromiscuousMode, 4, 1, 1, 3);
                 }
 
@@ -845,7 +850,8 @@ void UIMachineSettingsNetwork::prepareWidgets()
                 m_pEditorMAC = new QILineEdit(m_pWidgetAdapterSettings);
                 if (m_pEditorMAC)
                 {
-                    m_pLabelMAC->setBuddy(m_pEditorMAC);
+                    if (m_pLabelMAC)
+                        m_pLabelMAC->setBuddy(m_pEditorMAC);
                     m_pEditorMAC->setValidator(new QRegExpValidator(QRegExp("[0-9A-Fa-f]{12}"), this));
                     m_pEditorMAC->setMinimumWidthByText(QString().fill('0', 12));
 
@@ -874,7 +880,7 @@ void UIMachineSettingsNetwork::prepareWidgets()
                 /* Prepare cable connected check-box: */
                 m_pCheckBoxCableConnected = new QCheckBox(m_pWidgetAdapterSettings);
                 if (m_pCheckBoxCableConnected)
-                    pLayoutAdapterSettings->addWidget(m_pCheckBoxCableConnected, 7, 1, 1, 3);
+                    pLayoutAdapterSettings->addWidget(m_pCheckBoxCableConnected, 7, 1, 1, 2);
 
                 /* Prepare port forwarding button: */
                 m_pButtonPortForwarding = new QPushButton(m_pWidgetAdapterSettings);

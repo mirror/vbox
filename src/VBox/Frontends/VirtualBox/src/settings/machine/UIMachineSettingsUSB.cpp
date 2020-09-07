@@ -340,7 +340,7 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
     , m_pLabelSeparatorFilters(0)
     , m_pLayoutFilters(0)
     , m_pTreeWidgetFilters(0)
-    , m_pToolBarFilters(0)
+    , m_pToolbarFilters(0)
     , m_pActionNew(0)
     , m_pActionAdd(0)
     , m_pActionEdit(0)
@@ -960,50 +960,50 @@ void UIMachineSettingsUSB::prepareFiltersTreeWidget()
 void UIMachineSettingsUSB::prepareFiltersToolbar()
 {
     /* Prepare USB filters toolbar: */
-    m_pToolBarFilters = new UIToolBar(m_pWidgetUSBSettings);
-    if (m_pToolBarFilters)
+    m_pToolbarFilters = new UIToolBar(m_pWidgetUSBSettings);
+    if (m_pToolbarFilters)
     {
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        m_pToolBarFilters->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolBarFilters->setOrientation(Qt::Vertical);
+        m_pToolbarFilters->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolbarFilters->setOrientation(Qt::Vertical);
 
         /* Prepare 'New USB Filter' action: */
-        m_pActionNew = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_new_16px.png",
+        m_pActionNew = m_pToolbarFilters->addAction(UIIconPool::iconSet(":/usb_new_16px.png",
                                                                         ":/usb_new_disabled_16px.png"),
                                                     QString(), this, SLOT(sltNewFilter()));
         if (m_pActionNew)
             m_pActionNew->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
 
         /* Prepare 'Add USB Filter' action: */
-        m_pActionAdd = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_add_16px.png",
+        m_pActionAdd = m_pToolbarFilters->addAction(UIIconPool::iconSet(":/usb_add_16px.png",
                                                                         ":/usb_add_disabled_16px.png"),
                                                     QString(), this, SLOT(sltAddFilter()));
         if (m_pActionAdd)
             m_pActionAdd->setShortcuts(QList<QKeySequence>() << QKeySequence("Alt+Ins") << QKeySequence("Ctrl+A"));
 
         /* Prepare 'Edit USB Filter' action: */
-        m_pActionEdit = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_filter_edit_16px.png",
+        m_pActionEdit = m_pToolbarFilters->addAction(UIIconPool::iconSet(":/usb_filter_edit_16px.png",
                                                                          ":/usb_filter_edit_disabled_16px.png"),
                                                      QString(), this, SLOT(sltEditFilter()));
         if (m_pActionEdit)
             m_pActionEdit->setShortcuts(QList<QKeySequence>() << QKeySequence("Alt+Return") << QKeySequence("Ctrl+Return"));
 
         /* Prepare 'Remove USB Filter' action: */
-        m_pActionRemove = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_remove_16px.png",
+        m_pActionRemove = m_pToolbarFilters->addAction(UIIconPool::iconSet(":/usb_remove_16px.png",
                                                                            ":/usb_remove_disabled_16px.png"),
                                                        QString(), this, SLOT(sltRemoveFilter()));
         if (m_pActionRemove)
             m_pActionRemove->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
 
         /* Prepare 'Move USB Filter Up' action: */
-        m_pActionMoveUp = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_moveup_16px.png",
+        m_pActionMoveUp = m_pToolbarFilters->addAction(UIIconPool::iconSet(":/usb_moveup_16px.png",
                                                                            ":/usb_moveup_disabled_16px.png"),
                                                        QString(), this, SLOT(sltMoveFilterUp()));
         if (m_pActionMoveUp)
             m_pActionMoveUp->setShortcuts(QList<QKeySequence>() << QKeySequence("Alt+Up") << QKeySequence("Ctrl+Up"));
 
         /* Prepare 'Move USB Filter Down' action: */
-        m_pActionMoveDown = m_pToolBarFilters->addAction(UIIconPool::iconSet(":/usb_movedown_16px.png",
+        m_pActionMoveDown = m_pToolbarFilters->addAction(UIIconPool::iconSet(":/usb_movedown_16px.png",
                                                                              ":/usb_movedown_disabled_16px.png"),
                                                          QString(), this, SLOT(sltMoveFilterDown()));
         if (m_pActionMoveDown)
@@ -1012,7 +1012,7 @@ void UIMachineSettingsUSB::prepareFiltersToolbar()
         /* Prepare USB devices menu: */
         m_pMenuUSBDevices = new VBoxUSBMenu(this);
 
-        m_pLayoutFilters->addWidget(m_pToolBarFilters);
+        m_pLayoutFilters->addWidget(m_pToolbarFilters);
     }
 }
 

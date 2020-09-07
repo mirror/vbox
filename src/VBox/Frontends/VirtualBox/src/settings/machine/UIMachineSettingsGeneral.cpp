@@ -610,11 +610,11 @@ void UIMachineSettingsGeneral::prepareWidgets()
 
 void UIMachineSettingsGeneral::prepareTabBasic()
 {
-    /* Prepare Basic tab: */
+    /* Prepare 'Basic' tab: */
     m_pTabBasic = new QWidget;
     if (m_pTabBasic)
     {
-        /* Prepare Basic tab layout: */
+        /* Prepare 'Basic' tab layout: */
         QVBoxLayout *pLayoutBasic = new QVBoxLayout(m_pTabBasic);
         if (pLayoutBasic)
         {
@@ -636,11 +636,11 @@ void UIMachineSettingsGeneral::prepareTabBasic()
 
 void UIMachineSettingsGeneral::prepareTabAdvanced()
 {
-    /* Prepare Advanced tab: */
+    /* Prepare 'Advanced' tab: */
     m_pTabAdvanced = new QWidget;
     if (m_pTabAdvanced)
     {
-        /* Prepare Advanced tab layout: */
+        /* Prepare 'Advanced' tab layout: */
         QGridLayout *pLayoutAdvanced = new QGridLayout(m_pTabAdvanced);
         if (pLayoutAdvanced)
         {
@@ -702,11 +702,11 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
 
 void UIMachineSettingsGeneral::prepareTabDescription()
 {
-    /* Prepare Description tab: */
+    /* Prepare 'Description' tab: */
     m_pTabDescription = new QWidget;
     if (m_pTabDescription)
     {
-        /* Prepare Description tab layout: */
+        /* Prepare 'Description' tab layout: */
         QVBoxLayout *pLayoutDescription = new QVBoxLayout(m_pTabDescription);
         if (pLayoutDescription)
         {
@@ -730,11 +730,11 @@ void UIMachineSettingsGeneral::prepareTabDescription()
 
 void UIMachineSettingsGeneral::prepareTabEncryption()
 {
-    /* Prepare Encryption tab: */
+    /* Prepare 'Encryption' tab: */
     m_pTabEncryption = new QWidget;
     if (m_pTabEncryption)
     {
-        /* Prepare Encryption tab layout: */
+        /* Prepare 'Encryption' tab layout: */
         QGridLayout *pLayoutEncryption = new QGridLayout(m_pTabEncryption);
         if (pLayoutEncryption)
         {
@@ -771,12 +771,12 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                     m_pComboCipher = new QComboBox(m_pWidgetEncryptionSettings);
                     if (m_pComboCipher)
                     {
+                        if (m_pLabelCipher)
+                            m_pLabelCipher->setBuddy(m_pComboCipher);
                         m_encryptionCiphers << QString()
                                             << "AES-XTS256-PLAIN64"
                                             << "AES-XTS128-PLAIN64";
                         m_pComboCipher->addItems(m_encryptionCiphers);
-                        if (m_pLabelCipher)
-                            m_pLabelCipher->setBuddy(m_pComboCipher);
                         m_pLayoutEncryptionSettings->addWidget(m_pComboCipher, 0, 1);
                     }
 
@@ -791,9 +791,9 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                     m_pEditorEncryptionPassword = new QLineEdit(m_pWidgetEncryptionSettings);
                     if (m_pEditorEncryptionPassword)
                     {
-                        m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
                         if (m_pLabelEncryptionPassword)
                             m_pLabelEncryptionPassword->setBuddy(m_pEditorEncryptionPassword);
+                        m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
                         m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPassword, 1, 1);
                     }
 
@@ -808,9 +808,9 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
                     m_pEditorEncryptionPasswordConfirm = new QLineEdit(m_pWidgetEncryptionSettings);
                     if (m_pEditorEncryptionPasswordConfirm)
                     {
-                        m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
                         if (m_pLabelEncryptionPasswordConfirm)
                             m_pLabelEncryptionPasswordConfirm->setBuddy(m_pEditorEncryptionPasswordConfirm);
+                        m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
                         m_pLayoutEncryptionSettings->addWidget(m_pEditorEncryptionPasswordConfirm, 2, 1);
                     }
                 }
