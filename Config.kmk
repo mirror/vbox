@@ -5689,7 +5689,7 @@ if1of ($(KBUILD_TARGET),os2 win)
  	$(SDK_VBOX_ZLIB_STATIC_LIBS)
 else
  TEMPLATE_VBoxR3Static_LIBS        += \
- 	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
+ 	$(SDK_VBOX_LZF_LIBS) \
  	$(SDK_VBOX_ZLIB_LIBS)
  if1of ($(KBUILD_TARGET),darwin freebsd)
   TEMPLATE_VBoxR3Static_LIBS       += iconv
