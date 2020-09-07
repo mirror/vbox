@@ -24900,9 +24900,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ICloudProviderRegisteredEvent">ICloudProviderRegisteredEvent</link>.
       </desc>
     </const>
+    <const name="OnCloudProfileRegistered" value="106">
+      <desc>
+        See <link to="ICloudProfileRegisteredEvent"/>.
+      </desc>
+    </const>
+    <const name="OnCloudProfileChanged" value="107">
+      <desc>
+        See <link to="ICloudProfileChangedEvent"/>.
+      </desc>
+    </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="106">
+    <const name="Last" value="108">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -28247,9 +28257,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent"
     id="OnCloudProviderRegistered" waitable="yes"
     >
-    <!-- should be in ICloudProviderEvent if we ever have one -->
     <attribute name="id" type="uuid" mod="string" readonly="yes"/>
+    <attribute name="registered" type="boolean" readonly="yes"/>
+  </interface>
 
+  <interface name="ICloudProfileRegisteredEvent" extends="IEvent"
+    uuid="6a5e65ba-eeb9-11ea-ae38-73242bc0f172"
+    wsmap="managed"
+    id="OnCloudProfileRegistered" waitable="yes"
+    >
+    <attribute name="providerId" type="uuid" mod="string" readonly="yes"/>
+    <attribute name="name" type="wstring" readonly="yes"/>
     <attribute name="registered" type="boolean" readonly="yes"/>
   </interface>
 

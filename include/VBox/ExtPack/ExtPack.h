@@ -46,6 +46,8 @@ VBOXEXTPACK_IF_CS(IConsole);
 VBOXEXTPACK_IF_CS(IMachine);
 VBOXEXTPACK_IF_CS(IVirtualBox);
 VBOXEXTPACK_IF_CS(IProgress);
+VBOXEXTPACK_IF_CS(IEvent);
+VBOXEXTPACK_IF_CS(IEventSource);
 
 /**
  * Module kind for use with VBOXEXTPACKHLP::pfnFindModule.
@@ -311,6 +313,12 @@ typedef struct VBOXEXTPACKHLP
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnCompleteProgress,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
                                                         uint32_t uResultCode));
+
+
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCreateEvent,(PCVBOXEXTPACKHLP pHlp,
+                                                   VBOXEXTPACK_IF_CS(IEventSource) *aSource,
+                                                   /* VBoxEventType_T */ uint32_t aType, bool aWaitable,
+                                                   VBOXEXTPACK_IF_CS(IEvent) **ppEventOut));
 
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */

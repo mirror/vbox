@@ -173,6 +173,10 @@ protected:
                                                          uint32_t cTimeoutMS);
     static DECLCALLBACK(uint32_t) i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
                                                         uint32_t uResultCode);
+    static DECLCALLBACK(uint32_t) i_hlpCreateEvent(PCVBOXEXTPACKHLP pHlp,
+                                                   VBOXEXTPACK_IF_CS(IEventSource) *aSource,
+                                                   /* VBoxEventType_T */ uint32_t aType, bool aWaitable,
+                                                   VBOXEXTPACK_IF_CS(IEvent) **ppEventOut);
     static DECLCALLBACK(int)    i_hlpReservedN(PCVBOXEXTPACKHLP pHlp);
     /** @}  */
 
