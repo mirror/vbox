@@ -1219,6 +1219,14 @@ endif
   VBoxDDR0_DEFS         += VBOX_WITH_VMSVGA
   VBoxDDR0_SOURCES      += \
 	Graphics/DevVGA-SVGA.cpp
+  ifneq ($(KBUILD_TARGET),win)
+   if $(VBOX_GCC_VERSION_CXX) < 40600
+    # Disable "ISO C++ prohibits anonymous structs [-Werror=pedantic]" caused by Mesa VMSVGA driver headers
+    # For GCC >= 4.6.0 the warning is disabled in DevVGA_SVGA.h
+    Graphics/DevVGA.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA-SVGA.cpp_CXXFLAGS = -Wno-pedantic
+   endif
+  endif
  endif
  ifdef VBOX_WITH_VMSVGA3D
   VBoxDDR0_DEFS         += VBOX_WITH_VMSVGA3D
