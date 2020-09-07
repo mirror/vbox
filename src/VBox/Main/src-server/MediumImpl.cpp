@@ -1511,7 +1511,7 @@ void Medium::uninit()
     Assert(!pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     AutoWriteLock treeLock(pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-#if DEBUG
+#ifdef DEBUG
     if (!m->backRefs.empty())
         i_dumpBackRefs();
 #endif
