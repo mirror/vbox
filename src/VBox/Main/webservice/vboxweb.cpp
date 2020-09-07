@@ -944,7 +944,11 @@ static void doQueuesLoop()
                 if (rv == 0)
                     continue; // timeout, not necessary to bother gsoap
                 // r < 0, errno
+#if GSOAP_VERSION >= 208103
+                if (soap_socket_errno == SOAP_EINTR)
+#else
                 if (soap_socket_errno(soap.master) == SOAP_EINTR)
+#endif
                     rv = 0; // re-check if we should terminate
                 break;
             }
