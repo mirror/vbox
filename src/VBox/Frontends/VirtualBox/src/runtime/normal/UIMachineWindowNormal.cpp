@@ -599,6 +599,7 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResize
     /* Customer request: There should no be
      * machine-window resize/move on machine-view resize: */
     Q_UNUSED(fAdjustPosition);
+    Q_UNUSED(fResizeToGuestDisplay);
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
