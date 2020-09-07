@@ -23,6 +23,7 @@
 #include <QTimer>
 
 /* GUI includes: */
+#include "UIActionPoolRuntime.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
@@ -231,6 +232,13 @@ void UIMachineWindow::sendMachineViewSizeHint()
 {
     /* Send machine-view size-hint to the guest: */
     machineView()->resendSizeHint();
+}
+
+bool UIMachineWindow::shouldResizeToGuestDisplay() const
+{
+    return actionPool() &&
+           actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize) &&
+           actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked();
 }
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS

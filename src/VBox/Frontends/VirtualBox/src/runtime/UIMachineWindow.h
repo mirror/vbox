@@ -92,14 +92,18 @@ public:
 
     /** Adjusts machine-window size to correspond current machine-view size.
       * @param fAdjustPosition determines whether is it necessary to adjust position too.
+      * @param fResizeToGuestDisplay determines if is it necessary to resize the window to fit to guest display size.
       * @note  Reimplemented in sub-classes. Base implementation does nothing. */
-    virtual void normalizeGeometry(bool fAdjustPosition) { Q_UNUSED(fAdjustPosition); }
+    virtual void normalizeGeometry(bool fAdjustPosition, bool fResizeToGuestDisplay) { Q_UNUSED(fAdjustPosition); Q_UNUSED(fResizeToGuestDisplay);}
 
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
     /** Sends machine-view size-hint to the guest. */
     virtual void sendMachineViewSizeHint();
+
+    /** Returns true if the machine window should resize to fit to the guest display. Relevant only in normal (windowed) case. */
+    bool shouldResizeToGuestDisplay() const;
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
     /* Virtual caller for base class setMask: */
@@ -110,7 +114,7 @@ protected slots:
 
 #ifdef VBOX_WS_X11
     /** X11: Performs machine-window geometry normalization. */
-    void sltNormalizeGeometry() { normalizeGeometry(true /* adjust position */); }
+    void sltNormalizeGeometry() { normalizeGeometry(true /* adjust position */, shouldResizeToGuestDisplay()); }
 #endif /* VBOX_WS_X11 */
 
     /** Performs machine-window activation. */

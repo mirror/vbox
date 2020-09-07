@@ -154,7 +154,8 @@ void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QUuid &uMa
     updateMenu();
 
     /* Normalize geometry without moving: */
-    normalizeGeometry(false /* adjust position */);
+    normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
+
 }
 
 void UIMachineWindowNormal::sltHandleMenuBarContextMenuRequest(const QPoint &position)
@@ -188,7 +189,7 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QUuid &u
     m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
 
     /* Normalize geometry without moving: */
-    normalizeGeometry(false /* adjust position */);
+    normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
 }
 
 void UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest(const QPoint &position)
@@ -385,11 +386,10 @@ void UIMachineWindowNormal::loadSettings()
             /* If previous machine-state was NOT SAVED: */
             else
             {
-                /* Restore only window position: */
-                m_normalGeometry = QRect(geo.x(), geo.y(), width(), height());
+                m_normalGeometry = geo;
                 UICommon::setTopLevelGeometry(this, m_normalGeometry);
                 /* And normalize to the optimal-size: */
-                normalizeGeometry(false /* adjust position */);
+                normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
             }
 
             /* Maximize (if necessary): */
@@ -405,7 +405,7 @@ void UIMachineWindowNormal::loadSettings()
                                                  gpDesktop->availableGeometry(this);
 
             /* Normalize to the optimal size: */
-            normalizeGeometry(true /* adjust position */);
+            normalizeGeometry(true /* adjust position */, shouldResizeToGuestDisplay());
             /* Move newly created window to the screen-center: */
             m_normalGeometry = geometry();
             m_normalGeometry.moveCenter(availableGeo.center());
@@ -416,7 +416,7 @@ void UIMachineWindowNormal::loadSettings()
 #ifdef VBOX_WS_X11
         QTimer::singleShot(0, this, SLOT(sltNormalizeGeometry()));
 #else /* !VBOX_WS_X11 */
-        normalizeGeometry(true /* adjust position */);
+        normalizeGeometry(true /* adjust position */, shouldResizeToGuestDisplay());
 #endif /* !VBOX_WS_X11 */
     }
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
@@ -426,6 +426,8 @@ void UIMachineWindowNormal::saveSettings()
 {
     /* Save window geometry: */
     {
+        printf("UIMachineWindowNormal::saveSettings %d %d %d %d\n", m_normalGeometry.x(), m_normalGeometry.y(),
+        m_normalGeometry.width(), m_normalGeometry.height());
         gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
                                                 m_uScreenId, m_normalGeometry,
                                                 isMaximizedChecked(), uiCommon().managedVMUuid());
@@ -534,7 +536,7 @@ void UIMachineWindowNormal::showInNecessaryMode()
     show();
 
     /* Normalize machine-window geometry: */
-    normalizeGeometry(true /* adjust position */);
+    normalizeGeometry(true /* adjust position */, shouldResizeToGuestDisplay());
 
     /* Make sure machine-view have focus: */
     m_pMachineView->setFocus();
@@ -550,7 +552,7 @@ void UIMachineWindowNormal::restoreCachedGeometry()
     adjustMachineViewSize();
 }
 
-void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
+void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResizeToGuestDisplay)
 {
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
     /* Skip if maximized: */
@@ -565,24 +567,27 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
     const int dr = frGeo.right() - geo.right();
     const int db = frGeo.bottom() - geo.bottom();
 
-    /* Get the best size w/o scroll-bars: */
-    QSize sh = sizeHint();
-
-    /* If guest-screen auto-resize is not enabled
-     * or the guest-additions doesn't support graphics
-     * we should take scroll-bars size-hints into account: */
-    if (!machineView()->isGuestAutoresizeEnabled() || !uisession()->isGuestSupportsGraphics())
+    if (fResizeToGuestDisplay)
     {
-        if (machineView()->verticalScrollBar()->isVisible())
-            sh -= QSize(machineView()->verticalScrollBar()->sizeHint().width(), 0);
-        if (machineView()->horizontalScrollBar()->isVisible())
-            sh -= QSize(0, machineView()->horizontalScrollBar()->sizeHint().height());
-    }
+        /* Get the best size w/o scroll-bars: */
+        QSize sh = sizeHint();
 
-    /* Resize the frame to fit the contents: */
-    sh -= size();
-    frGeo.setRight(frGeo.right() + sh.width());
-    frGeo.setBottom(frGeo.bottom() + sh.height());
+        /* If guest-screen auto-resize is not enabled
+         * or the guest-additions doesn't support graphics
+         * we should take scroll-bars size-hints into account: */
+        if (!machineView()->isGuestAutoresizeEnabled() || !uisession()->isGuestSupportsGraphics())
+        {
+            if (machineView()->verticalScrollBar()->isVisible())
+                sh -= QSize(machineView()->verticalScrollBar()->sizeHint().width(), 0);
+            if (machineView()->horizontalScrollBar()->isVisible())
+                sh -= QSize(0, machineView()->horizontalScrollBar()->sizeHint().height());
+        }
+
+        /* Resize the frame to fit the contents: */
+        sh -= size();
+        frGeo.setRight(frGeo.right() + sh.width());
+        frGeo.setBottom(frGeo.bottom() + sh.height());
+    }
 
     /* Adjust position if necessary: */
     if (fAdjustPosition)
