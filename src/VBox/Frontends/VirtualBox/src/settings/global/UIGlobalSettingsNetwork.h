@@ -140,11 +140,11 @@ private:
         /** Holds the NAT networt toolbar instance. */
         UIToolBar        *m_pToolbarNATNetwork;
         /** Holds the 'add NAT network' action instance. */
-        QAction          *m_pActionAddNATNetwork;
+        QAction          *m_pActionAdd;
         /** Holds the 'remove NAT network' action instance. */
-        QAction          *m_pActionRemoveNATNetwork;
+        QAction          *m_pActionRemove;
         /** Holds the 'edit NAT network' action instance. */
-        QAction          *m_pActionEditNATNetwork;
+        QAction          *m_pActionEdit;
     /** @} */
 };
 

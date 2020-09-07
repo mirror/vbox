@@ -221,9 +221,9 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     , m_pLayoutNATNetwork(0)
     , m_pTreeWidgetNATNetwork(0)
     , m_pToolbarNATNetwork(0)
-    , m_pActionAddNATNetwork(0)
-    , m_pActionRemoveNATNetwork(0)
-    , m_pActionEditNATNetwork(0)
+    , m_pActionAdd(0)
+    , m_pActionRemove(0)
+    , m_pActionEdit(0)
 {
     /* Prepare: */
     prepare();
@@ -358,17 +358,17 @@ void UIGlobalSettingsNetwork::retranslateUi()
                                        << tr("Name"));
 
     /* Translate action text: */
-    m_pActionAddNATNetwork->setText(tr("Add NAT Network"));
-    m_pActionRemoveNATNetwork->setText(tr("Remove NAT Network"));
-    m_pActionEditNATNetwork->setText(tr("Edit NAT Network"));
+    m_pActionAdd->setText(tr("Add NAT Network"));
+    m_pActionRemove->setText(tr("Remove NAT Network"));
+    m_pActionEdit->setText(tr("Edit NAT Network"));
 
-    m_pActionAddNATNetwork->setWhatsThis(tr("Adds new NAT network."));
-    m_pActionRemoveNATNetwork->setWhatsThis(tr("Removes selected NAT network."));
-    m_pActionEditNATNetwork->setWhatsThis(tr("Edits selected NAT network."));
+    m_pActionAdd->setWhatsThis(tr("Adds new NAT network."));
+    m_pActionRemove->setWhatsThis(tr("Removes selected NAT network."));
+    m_pActionEdit->setWhatsThis(tr("Edits selected NAT network."));
 
-    m_pActionAddNATNetwork->setToolTip(m_pActionAddNATNetwork->whatsThis());
-    m_pActionRemoveNATNetwork->setToolTip(m_pActionRemoveNATNetwork->whatsThis());
-    m_pActionEditNATNetwork->setToolTip(m_pActionEditNATNetwork->whatsThis());
+    m_pActionAdd->setToolTip(m_pActionAdd->whatsThis());
+    m_pActionRemove->setToolTip(m_pActionRemove->whatsThis());
+    m_pActionEdit->setToolTip(m_pActionEdit->whatsThis());
 }
 
 void UIGlobalSettingsNetwork::sltAddNATNetwork()
@@ -464,8 +464,8 @@ void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNATNetwork()
     UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeWidgetNATNetwork->currentItem());
 
     /* Update availability: */
-    m_pActionRemoveNATNetwork->setEnabled(pItem);
-    m_pActionEditNATNetwork->setEnabled(pItem);
+    m_pActionRemove->setEnabled(pItem);
+    m_pActionEdit->setEnabled(pItem);
 }
 
 void UIGlobalSettingsNetwork::sltHandleContextMenuRequestNATNetwork(const QPoint &position)
@@ -474,12 +474,12 @@ void UIGlobalSettingsNetwork::sltHandleContextMenuRequestNATNetwork(const QPoint
     QMenu menu;
     if (m_pTreeWidgetNATNetwork->itemAt(position))
     {
-        menu.addAction(m_pActionEditNATNetwork);
-        menu.addAction(m_pActionRemoveNATNetwork);
+        menu.addAction(m_pActionEdit);
+        menu.addAction(m_pActionRemove);
     }
     else
     {
-        menu.addAction(m_pActionAddNATNetwork);
+        menu.addAction(m_pActionAdd);
     }
     /* And show it: */
     menu.exec(m_pTreeWidgetNATNetwork->mapToGlobal(position));
@@ -558,25 +558,25 @@ void UIGlobalSettingsNetwork::prepareNATNetworkToolbar()
         m_pToolbarNATNetwork->setOrientation(Qt::Vertical);
 
         /* Prepare 'add NAT network' action: */
-        m_pActionAddNATNetwork = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_add_16px.png",
-                                                                                     ":/host_iface_add_disabled_16px.png"),
-                                                                 QString(), this, SLOT(sltAddNATNetwork()));
-        if (m_pActionAddNATNetwork)
-            m_pActionAddNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
+        m_pActionAdd = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_add_16px.png",
+                                                                           ":/host_iface_add_disabled_16px.png"),
+                                                       QString(), this, SLOT(sltAddNATNetwork()));
+        if (m_pActionAdd)
+            m_pActionAdd->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
 
         /* Prepare 'remove NAT network' action: */
-        m_pActionRemoveNATNetwork = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_remove_16px.png",
-                                                                                        ":/host_iface_remove_disabled_16px.png"),
-                                                                    QString(), this, SLOT(sltRemoveNATNetwork()));
-        if (m_pActionRemoveNATNetwork)
-            m_pActionRemoveNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
+        m_pActionRemove = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_remove_16px.png",
+                                                                              ":/host_iface_remove_disabled_16px.png"),
+                                                          QString(), this, SLOT(sltRemoveNATNetwork()));
+        if (m_pActionRemove)
+            m_pActionRemove->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
 
         /* Prepare 'edit NAT network' action: */
-        m_pActionEditNATNetwork = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_edit_16px.png",
-                                                                                      ":/host_iface_edit_disabled_16px.png"),
-                                                                  QString(), this, SLOT(sltEditNATNetwork()));
-        if (m_pActionEditNATNetwork)
-            m_pActionEditNATNetwork->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
+        m_pActionEdit = m_pToolbarNATNetwork->addAction(UIIconPool::iconSet(":/host_iface_edit_16px.png",
+                                                                            ":/host_iface_edit_disabled_16px.png"),
+                                                        QString(), this, SLOT(sltEditNATNetwork()));
+        if (m_pActionEdit)
+            m_pActionEdit->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
 
         m_pLayoutNATNetwork->addWidget(m_pToolbarNATNetwork);
     }
