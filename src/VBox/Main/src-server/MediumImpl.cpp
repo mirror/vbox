@@ -65,6 +65,36 @@ static const char g_szVDPlugin[] = "VDPluginCrypt";
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+struct SnapshotRef
+{
+    /** Equality predicate for stdc++. */
+    struct EqualsTo : public std::unary_function <SnapshotRef, bool>
+    {
+        explicit EqualsTo(const Guid &aSnapshotId) : snapshotId(aSnapshotId) {}
+
+        bool operator()(const argument_type &aThat) const
+        {
+            return aThat.snapshotId == snapshotId;
+        }
+
+        const Guid snapshotId;
+    };
+
+    SnapshotRef(const Guid &aSnapshotId,
+                const int &aRefCnt = 1)
+        : snapshotId(aSnapshotId),
+          iRefCnt(aRefCnt) {}
+
+    Guid snapshotId;
+    /*
+     * The number of attachments of the medium in the same snapshot.
+     * Used for MediumType_Readonly. It is always equal to 1 for other types.
+     * Usual int is used because any changes in the BackRef are guarded by
+     * AutoWriteLock.
+     */
+    int  iRefCnt;
+};
+
 /** Describes how a machine refers to this medium. */
 struct BackRef
 {
@@ -84,15 +114,23 @@ struct BackRef
     BackRef(const Guid &aMachineId,
             const Guid &aSnapshotId = Guid::Empty)
         : machineId(aMachineId),
+          iRefCnt(1),
           fInCurState(aSnapshotId.isZero())
     {
         if (aSnapshotId.isValid() && !aSnapshotId.isZero())
-            llSnapshotIds.push_back(aSnapshotId);
+            llSnapshotIds.push_back(SnapshotRef(aSnapshotId));
     }
 
     Guid machineId;
+    /*
+     * The number of attachments of the medium in the same machine.
+     * Used for MediumType_Readonly. It is always equal to 1 for other types.
+     * Usual int is used because any changes in the BackRef are guarded by
+     * AutoWriteLock.
+     */
+    int iRefCnt;
     bool fInCurState : 1;
-    GuidList llSnapshotIds;
+    std::list<SnapshotRef> llSnapshotIds;
 };
 
 typedef std::list<BackRef> BackRefList;
@@ -1473,6 +1511,11 @@ void Medium::uninit()
     Assert(!pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     AutoWriteLock treeLock(pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+#if DEBUG
+    if (!m->backRefs.empty())
+        i_dumpBackRefs();
+#endif
+    Assert(m->backRefs.empty());
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -2137,8 +2180,8 @@ HRESULT Medium::getSnapshotIds(const com::Guid &aMachineId,
                 if (it->fInCurState)
                     aSnapshotIds[j++] = it->machineId.toUtf16();
 
-                for(GuidList::const_iterator jt = it->llSnapshotIds.begin(); jt != it->llSnapshotIds.end(); ++jt, ++j)
-                    aSnapshotIds[j] = (*jt);
+                for(std::list<SnapshotRef>::const_iterator jt = it->llSnapshotIds.begin(); jt != it->llSnapshotIds.end(); ++jt, ++j)
+                    aSnapshotIds[j] = jt->snapshotId;
             }
 
             break;
@@ -4294,6 +4337,11 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
 
         return S_OK;
     }
+    bool fDvd = false;
+    {
+        AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
+        fDvd = m->type == MediumType_Readonly || m->devType == DeviceType_DVD;
+    }
 
     // if the caller has not supplied a snapshot ID, then we're attaching
     // to a machine a medium which represents the machine's current state,
@@ -4302,11 +4350,10 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
     if (aSnapshotId.isZero())
     {
         // Allow MediumType_Readonly mediums and DVD in particular to be attached twice.
-        AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
-        if (m->type == MediumType_Readonly || m->devType == DeviceType_DVD)
+        // (the medium already had been added to back reference)
+        if (fDvd)
         {
-            BackRef ref(aMachineId, aSnapshotId);
-            m->backRefs.push_back(ref);
+            it->iRefCnt++;
             return S_OK;
         }
 
@@ -4324,18 +4371,20 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
 
     // otherwise: a snapshot medium is being attached
 
-    /* sanity: no duplicate attachments except MediumType_Readonly (DVD) */
-    for (GuidList::const_iterator jt = it->llSnapshotIds.begin();
+    /* sanity: no duplicate attachments */
+    for (std::list<SnapshotRef>::iterator jt = it->llSnapshotIds.begin();
          jt != it->llSnapshotIds.end();
          ++jt)
     {
-        const Guid &idOldSnapshot = *jt;
+        const Guid &idOldSnapshot = jt->snapshotId;
 
-        if (   idOldSnapshot == aSnapshotId
-            && m->type != MediumType_Readonly
-            && m->devType != DeviceType_DVD
-           )
+        if (idOldSnapshot == aSnapshotId)
         {
+            if (fDvd)
+            {
+                jt->iRefCnt++;
+                return S_OK;
+            }
 #ifdef DEBUG
             i_dumpBackRefs();
 #endif
@@ -4347,7 +4396,7 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
         }
     }
 
-    it->llSnapshotIds.push_back(aSnapshotId);
+    it->llSnapshotIds.push_back(SnapshotRef(aSnapshotId));
     // Do not touch fInCurState, as the image may be attached to the current
     // state *and* a snapshot, otherwise we lose the current state association!
 
@@ -4381,17 +4430,27 @@ HRESULT Medium::i_removeBackReference(const Guid &aMachineId,
 
     if (aSnapshotId.isZero())
     {
+        it->iRefCnt--;
+        if (it->iRefCnt > 0)
+            return S_OK;
+
         /* remove the current state attachment */
         it->fInCurState = false;
     }
     else
     {
         /* remove the snapshot attachment */
-        GuidList::iterator jt = std::find(it->llSnapshotIds.begin(),
-                                          it->llSnapshotIds.end(),
-                                          aSnapshotId);
+        std::list<SnapshotRef>::iterator jt =
+                std::find_if(it->llSnapshotIds.begin(),
+                             it->llSnapshotIds.end(),
+                             SnapshotRef::EqualsTo(aSnapshotId));
 
         AssertReturn(jt != it->llSnapshotIds.end(), E_FAIL);
+
+        jt->iRefCnt--;
+        if (jt->iRefCnt > 0)
+            return S_OK;
+
         it->llSnapshotIds.erase(jt);
     }
 
@@ -4450,7 +4509,7 @@ const Guid* Medium::i_getFirstMachineBackrefSnapshotId() const
     if (ref.llSnapshotIds.empty())
         return NULL;
 
-    return &ref.llSnapshotIds.front();
+    return &ref.llSnapshotIds.front().snapshotId;
 }
 
 size_t Medium::i_getMachineBackRefCount() const
@@ -4475,14 +4534,14 @@ void Medium::i_dumpBackRefs()
          ++it2)
     {
         const BackRef &ref = *it2;
-        LogFlowThisFunc(("  Backref from machine {%RTuuid} (fInCurState: %d)\n", ref.machineId.raw(), ref.fInCurState));
+        LogFlowThisFunc(("  Backref from machine {%RTuuid} (fInCurState: %d, iRefCnt: %d)\n", ref.machineId.raw(), ref.fInCurState, ref.iRefCnt));
 
-        for (GuidList::const_iterator jt2 = it2->llSnapshotIds.begin();
+        for (std::list<SnapshotRef>::const_iterator jt2 = it2->llSnapshotIds.begin();
              jt2 != it2->llSnapshotIds.end();
              ++jt2)
         {
-            const Guid &id = *jt2;
-            LogFlowThisFunc(("  Backref from snapshot {%RTuuid}\n", id.raw()));
+            const Guid &id = jt2->snapshotId;
+            LogFlowThisFunc(("  Backref from snapshot {%RTuuid} (iRefCnt = %d)\n", id.raw(), jt2->iRefCnt));
         }
     }
 }
