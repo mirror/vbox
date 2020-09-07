@@ -86,6 +86,10 @@ public:
     /** Returns the machine name. */
     const QString& machineName() const;
 
+    /** Returns whether the machine-window should resize to fit to the guest display.
+      * @note Relevant only to normal (windowed) case. */
+    bool shouldResizeToGuestDisplay() const;
+
     /** Restores cached window geometry.
       * @note Reimplemented in sub-classes. Base implementation does nothing. */
     virtual void restoreCachedGeometry() {}
@@ -94,16 +98,13 @@ public:
       * @param fAdjustPosition determines whether is it necessary to adjust position too.
       * @param fResizeToGuestDisplay determines if is it necessary to resize the window to fit to guest display size.
       * @note  Reimplemented in sub-classes. Base implementation does nothing. */
-    virtual void normalizeGeometry(bool fAdjustPosition, bool fResizeToGuestDisplay) { Q_UNUSED(fAdjustPosition); Q_UNUSED(fResizeToGuestDisplay);}
+    virtual void normalizeGeometry(bool fAdjustPosition, bool fResizeToGuestDisplay) { Q_UNUSED(fAdjustPosition); Q_UNUSED(fResizeToGuestDisplay); }
 
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
     /** Sends machine-view size-hint to the guest. */
     virtual void sendMachineViewSizeHint();
-
-    /** Returns true if the machine window should resize to fit to the guest display. Relevant only in normal (windowed) case. */
-    bool shouldResizeToGuestDisplay() const;
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
     /* Virtual caller for base class setMask: */

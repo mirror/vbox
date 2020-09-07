@@ -155,7 +155,6 @@ void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QUuid &uMa
 
     /* Normalize geometry without moving: */
     normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
-
 }
 
 void UIMachineWindowNormal::sltHandleMenuBarContextMenuRequest(const QPoint &position)
@@ -376,23 +375,15 @@ void UIMachineWindowNormal::loadSettings()
         /* If we do have proper geometry: */
         if (!geo.isNull())
         {
-            /* If previous machine-state was SAVED: */
-            if (machine().GetState() == KMachineState_Saved)
-            {
-                /* Restore window geometry: */
-                m_normalGeometry = geo;
-                UICommon::setTopLevelGeometry(this, m_normalGeometry);
-            }
-            /* If previous machine-state was NOT SAVED: */
-            else
-            {
-                m_normalGeometry = geo;
-                UICommon::setTopLevelGeometry(this, m_normalGeometry);
-                /* And normalize to the optimal-size: */
-                normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
-            }
+            /* Restore window geometry: */
+            m_normalGeometry = geo;
+            UICommon::setTopLevelGeometry(this, m_normalGeometry);
 
-            /* Maximize (if necessary): */
+            /* If previous machine-state was NOT SAVED => normalize window to the optimal-size: */
+            if (machine().GetState() != KMachineState_Saved)
+                normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
+
+            /* Maximize window (if necessary): */
             if (gEDataManager->machineWindowShouldBeMaximized(machineLogic()->visualStateType(),
                                                               m_uScreenId, uiCommon().managedVMUuid()))
                 setWindowState(windowState() | Qt::WindowMaximized);
@@ -400,15 +391,12 @@ void UIMachineWindowNormal::loadSettings()
         /* If we do NOT have proper geometry: */
         else
         {
-            /* Get available geometry, for screen with (x,y) coords if possible: */
-            QRect availableGeo = !geo.isNull() ? gpDesktop->availableGeometry(QPoint(geo.x(), geo.y())) :
-                                                 gpDesktop->availableGeometry(this);
-
-            /* Normalize to the optimal size: */
+            /* Normalize window to the optimal size: */
             normalizeGeometry(true /* adjust position */, shouldResizeToGuestDisplay());
-            /* Move newly created window to the screen-center: */
+
+            /* Move it to the screen-center: */
             m_normalGeometry = geometry();
-            m_normalGeometry.moveCenter(availableGeo.center());
+            m_normalGeometry.moveCenter(gpDesktop->availableGeometry(this).center());
             UICommon::setTopLevelGeometry(this, m_normalGeometry);
         }
 
