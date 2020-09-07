@@ -531,9 +531,9 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         else
         {
             if (rcRemap == VERR_IOMMU_INTR_REMAP_DENIED)
-                Log3(("IOAPIC: Interrupt (u8Vector=%#x) remapping denied. rc=%Rrc", ApicIntr.u8Vector, rcRemap));
+                Log3(("IOAPIC: Interrupt (u8Vector=%#x) remapping denied. rc=%Rrc\n", ApicIntr.u8Vector, rcRemap));
             else
-                Log(("IOAPIC: Interrupt (u8Vector=%#x) remapping failed. rc=%Rrc", ApicIntr.u8Vector, rcRemap));
+                Log(("IOAPIC: Interrupt (u8Vector=%#x) remapping failed. rc=%Rrc\n", ApicIntr.u8Vector, rcRemap));
             return;
         }
 #else
