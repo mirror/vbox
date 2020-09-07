@@ -756,6 +756,7 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
         /* pfnWaitOtherProgress = */ ExtPack::i_hlpWaitOtherProgress,
         /* pfnCompleteProgress  = */ ExtPack::i_hlpCompleteProgress,
         /* pfnCreateEvent       = */ ExtPack::i_hlpCreateEvent,
+        /* pfnCreateVetoEvent   = */ ExtPack::i_hlpCreateVetoEvent,
         /* pfnReserved1         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved2         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved3         = */ ExtPack::i_hlpReservedN,
@@ -1942,6 +1943,33 @@ ExtPack::i_hlpCreateEvent(PCVBOXEXTPACKHLP pHlp,
 
     /* default aSource to pVirtualBox? */
     hrc = pEvent->init(aSource, static_cast<VBoxEventType_T>(aType), aWaitable);
+    if (FAILED(hrc))
+        return hrc;
+
+    return pEvent.queryInterfaceTo(ppEventOut);
+}
+
+
+/*static*/ DECLCALLBACK(uint32_t)
+ExtPack::i_hlpCreateVetoEvent(PCVBOXEXTPACKHLP pHlp,
+                              VBOXEXTPACK_IF_CS(IEventSource) *aSource,
+                              /* VBoxEventType_T */ uint32_t aType,
+                              VBOXEXTPACK_IF_CS(IVetoEvent) **ppEventOut)
+{
+    HRESULT hrc;
+
+    AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
+    AssertPtrReturn(ppEventOut, (uint32_t)E_INVALIDARG);
+
+    ComObjPtr<VBoxVetoEvent> pEvent;
+
+    hrc = pEvent.createObject();
+    if (FAILED(hrc))
+        return hrc;
+
+    /* default aSource to pVirtualBox? */
+    hrc = pEvent->init(aSource, static_cast<VBoxEventType_T>(aType));
     if (FAILED(hrc))
         return hrc;
 

@@ -177,6 +177,10 @@ protected:
                                                    VBOXEXTPACK_IF_CS(IEventSource) *aSource,
                                                    /* VBoxEventType_T */ uint32_t aType, bool aWaitable,
                                                    VBOXEXTPACK_IF_CS(IEvent) **ppEventOut);
+    static DECLCALLBACK(uint32_t) i_hlpCreateVetoEvent(PCVBOXEXTPACKHLP pHlp,
+                                                       VBOXEXTPACK_IF_CS(IEventSource) *aSource,
+                                                       /* VBoxEventType_T */ uint32_t aType,
+                                                       VBOXEXTPACK_IF_CS(IVetoEvent) **ppEventOut);
     static DECLCALLBACK(int)    i_hlpReservedN(PCVBOXEXTPACKHLP pHlp);
     /** @}  */
 

@@ -320,6 +320,11 @@ typedef struct VBOXEXTPACKHLP
                                                    /* VBoxEventType_T */ uint32_t aType, bool aWaitable,
                                                    VBOXEXTPACK_IF_CS(IEvent) **ppEventOut));
 
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCreateVetoEvent,(PCVBOXEXTPACKHLP pHlp,
+                                                       VBOXEXTPACK_IF_CS(IEventSource) *aSource,
+                                                       /* VBoxEventType_T */ uint32_t aType,
+                                                       VBOXEXTPACK_IF_CS(IVetoEvent) **ppEventOut));
+
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
@@ -331,7 +336,7 @@ typedef struct VBOXEXTPACKHLP
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKHLP;
 /** Current version of the VBOXEXTPACKHLP structure.  */
-#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(3, 0)
+#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(4, 0)
 
 
 /** Pointer to the extension pack callback table. */
