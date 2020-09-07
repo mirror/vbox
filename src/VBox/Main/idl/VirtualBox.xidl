@@ -24907,7 +24907,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="OnCloudProfileChanged" value="107">
       <desc>
-        See <link to="ICloudProfileChangedEvent"/>.
+        See <!-- link to="ICloudProfileChangedEvent"/--> ICloudProfileChangedEvent.
       </desc>
     </const>
     <!-- End event marker -->
