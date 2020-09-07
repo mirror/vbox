@@ -175,8 +175,9 @@ void UIMachineWindowScale::restoreCachedGeometry()
     adjustMachineViewSize();
 }
 
-void UIMachineWindowScale::normalizeGeometry(bool fAdjustPosition)
+void UIMachineWindowScale::normalizeGeometry(bool fAdjustPosition, bool fResizeToGuestDisplay)
 {
+    Q_UNUSED(fResizeToGuestDisplay);
     /* Skip if maximized: */
     if (isMaximized())
         return;
@@ -255,4 +256,3 @@ bool UIMachineWindowScale::isMaximizedChecked()
     return isMaximized();
 #endif /* !VBOX_WS_MAC */
 }
-

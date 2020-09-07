@@ -116,7 +116,8 @@ private:
     virtual void restoreCachedGeometry() /* override */;
 
     /** Performs window geometry normalization according to guest-size and host's available geometry.
-      * @param  fAdjustPosition  Determines whether is it necessary to adjust position as well. */
+      * @param  fAdjustPosition  Determines whether is it necessary to adjust position as well.
+      * @param fResizeToGuestDisplay determines if is it necessary to resize the window to fit to guest display size. */
     virtual void normalizeGeometry(bool fAdjustPosition, bool fResizeToGuestDisplay) /* override */;
 
     /** Common update routine. */
@@ -144,4 +145,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_normal_UIMachineWindowNormal_h */
-
