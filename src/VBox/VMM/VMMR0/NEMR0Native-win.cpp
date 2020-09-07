@@ -449,16 +449,18 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysS
      */
     for (uint32_t iTries = 0;; iTries++)
     {
+        RTGCPHYS GCPhysSrcTmp = GCPhysSrc;
         HV_INPUT_MAP_GPA_PAGES *pMapPages = (HV_INPUT_MAP_GPA_PAGES *)pGVCpu->nemr0.s.HypercallData.pbPage;
         AssertPtrReturn(pMapPages, VERR_INTERNAL_ERROR_3);
         pMapPages->TargetPartitionId    = pGVM->nemr0.s.idHvPartition;
         pMapPages->TargetGpaBase        = GCPhysDst >> X86_PAGE_SHIFT;
         pMapPages->MapFlags             = fFlags;
         pMapPages->u32ExplicitPadding   = 0;
-        for (uint32_t iPage = 0; iPage < cPages; iPage++, GCPhysSrc += X86_PAGE_SIZE)
+
+        for (uint32_t iPage = 0; iPage < cPages; iPage++, GCPhysSrcTmp += X86_PAGE_SIZE)
         {
             RTHCPHYS HCPhys = NIL_RTGCPHYS;
-            int rc = PGMPhysGCPhys2HCPhys(pGVM, GCPhysSrc, &HCPhys);
+            int rc = PGMPhysGCPhys2HCPhys(pGVM, GCPhysSrcTmp, &HCPhys);
             AssertRCReturn(rc, rc);
             pMapPages->PageList[iPage] = HCPhys >> X86_PAGE_SHIFT;
         }
@@ -466,7 +468,7 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysS
         uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallMapGpaPages | ((uint64_t)cPages << 32),
                                                    pGVCpu->nemr0.s.HypercallData.HCPhysPage, 0);
         Log6(("NEMR0MapPages: %RGp/%RGp L %u prot %#x -> %#RX64\n",
-              GCPhysDst, GCPhysSrc - cPages * X86_PAGE_SIZE, cPages, fFlags, uResult));
+              GCPhysDst, GCPhysSrcTmp - cPages * X86_PAGE_SIZE, cPages, fFlags, uResult));
         if (uResult == ((uint64_t)cPages << 32))
             return VINF_SUCCESS;
 
