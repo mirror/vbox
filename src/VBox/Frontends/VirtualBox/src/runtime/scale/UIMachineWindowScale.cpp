@@ -121,7 +121,7 @@ void UIMachineWindowScale::loadSettings()
 #ifdef VBOX_WS_X11
         QTimer::singleShot(0, this, SLOT(sltNormalizeGeometry()));
 #else /* !VBOX_WS_X11 */
-        normalizeGeometry(true /* adjust position */);
+        normalizeGeometry(true /* adjust position */, true /* resize to fit guest display. ignored in scaled case */);
 #endif /* !VBOX_WS_X11 */
     }
 }
