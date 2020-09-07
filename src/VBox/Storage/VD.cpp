@@ -6277,8 +6277,6 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
 
-        AssertPtrBreakStmt(pVDIfsImage, rc = VERR_INVALID_PARAMETER);
-
         /* Check state. Needs a temporary read lock. Holding the write lock
          * all the time would be blocking other activities for too long. */
         rc2 = vdThreadStartRead(pDisk);
