@@ -426,7 +426,6 @@ void UIMachineWindowNormal::saveSettings()
 {
     /* Save window geometry: */
     {
-        m_normalGeometry.width(), m_normalGeometry.height());
         gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
                                                 m_uScreenId, m_normalGeometry,
                                                 isMaximizedChecked(), uiCommon().managedVMUuid());
