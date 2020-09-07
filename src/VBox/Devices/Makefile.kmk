@@ -289,6 +289,16 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   VBoxDD_DEFS           += VBOX_WITH_VMSVGA
   VBoxDD_INCS           += $(VBOX_PATH_VMSVGA_INC)
   VBoxDD_SOURCES        += Graphics/DevVGA-SVGA.cpp
+  ifneq ($(KBUILD_TARGET),win)
+   if $(VBOX_GCC_VERSION_CXX) < 40600
+    # Disable "ISO C++ prohibits anonymous structs [-Werror=pedantic]" caused by Mesa VMSVGA driver headers
+    # For GCC >= 4.6.0 the warning is disabled in DevVGA_SVGA.h
+    Graphics/DevVGA.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA-SVGA.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA_VBVA.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA_VDMA.cpp_CXXFLAGS = -Wno-pedantic
+   endif
+  endif
  endif
  ifdef VBOX_WITH_VMSVGA3D
   if1of ($(KBUILD_TARGET), linux win)
@@ -352,6 +362,19 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin        = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
   else if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.14 10.15 10.16 11.0)
    Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin        = $(VBOX_GCC_Wno-deprecated-declarations)
+  endif
+  ifneq ($(KBUILD_TARGET),win)
+   if $(VBOX_GCC_VERSION_CXX) < 40600
+    # Disable "ISO C++ prohibits anonymous structs [-Werror=pedantic]" caused by Mesa VMSVGA driver headers
+    # For GCC >= 4.6.0 the warning is disabled in DevVGA_SVGA.h
+    Graphics/DevVGA-SVGA3d.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA-SVGA3d-glHlp.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA-SVGA3d-hlp.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA-SVGA3d-info.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA-SVGA3d-savedstate.cpp_CXXFLAGS = -Wno-pedantic
+    Graphics/DevVGA-SVGA3d-shared.cpp_CXXFLAGS = -Wno-pedantic
+   endif
   endif
  endif
 

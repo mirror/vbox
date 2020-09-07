@@ -94,6 +94,13 @@ tstDeviceStructSize_INCS     = \
 	$(VBOX_GRAPHICS_INCS) \
 	$(VBOX_PATH_VMSVGA_INC)
 tstDeviceStructSize_SOURCES  = tstDeviceStructSize.cpp
+ifneq ($(KBUILD_TARGET),win)
+ if $(VBOX_GCC_VERSION_CXX) < 40600
+  # Disable "ISO C++ prohibits anonymous structs [-Werror=pedantic]" caused by Mesa VMSVGA driver headers
+  # For GCC >= 4.6.0 the warning is disabled in DevVGA_SVGA.h
+tstDeviceStructSize.cpp_CXXFLAGS = -Wno-pedantic
+ endif
+endif
 tstDeviceStructSize_CLEAN    = \
 	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h \
 	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
