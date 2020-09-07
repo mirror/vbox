@@ -191,8 +191,6 @@ typedef struct NEM
 
     /** Number of currently mapped pages. */
     uint32_t volatile           cMappedPages;
-    /** Maximum number of mappd pages before unmapping everything, 0 disables this. */
-    uint32_t                    cMappedPagesMaxBeforeUnmap;
 
     /** Info about the VidGetHvPartitionId I/O control interface. */
     NEMWINIOCTL                 IoCtlGetHvPartitionId;
