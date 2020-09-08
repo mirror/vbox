@@ -2346,6 +2346,7 @@ ifeq ($(KBUILD_TARGET),darwin)
    		) /. )
   endif
  else
+  # VBOX_WITH_EVEN_NEWER_XCODE ends up here.
   include $(KBUILD_PATH)/tools/$(VBOX_GCC_TOOL).kmk
   include $(KBUILD_PATH)/sdks/MACOSX$(VBOX_DEF_MACOSX_VERSION_MIN_NO_DOT).kmk
   ifndef VBOX_PATH_MACOSX_SDK
@@ -2353,14 +2354,6 @@ ifeq ($(KBUILD_TARGET),darwin)
   endif
   VBOX_PATH_MACOSX_SDK_ROOT = $(dir $(VBOX_PATH_MACOSX_SDK))
  endif
-
-# Where to search for SDKs.
-VBOX_PATH_MACOSX_SDK_ROOT_DIRS ?= \
-	$(VBOX_PATH_MACOSX_SDK_ROOT) \
-	$(KBUILD_DEVTOOLS)/darwin.x86/SDKs/ \
-	$(KBUILD_DEVTOOLS)/darwin.amd64/SDKs/ \
-	$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1/SDKs \
-	$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v3.2.6/SDKs
 
  # Figure the default SDK location and obsolete linker tricks.
  ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
@@ -2374,6 +2367,12 @@ VBOX_PATH_MACOSX_SDK_ROOT_DIRS ?= \
   endif
  endif
  if !defined(VBOX_PATH_MACOSX_SDK) && !defined(VBOX_WITH_EVEN_NEWER_XCODE) # newer xcode handles this above
+VBOX_PATH_MACOSX_SDK_ROOT_DIRS ?= \
+	$(VBOX_PATH_MACOSX_SDK_ROOT) \
+	$(KBUILD_DEVTOOLS)/darwin.x86/SDKs/ \
+	$(KBUILD_DEVTOOLS)/darwin.amd64/SDKs/ \
+	$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1/SDKs \
+	$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v3.2.6/SDKs
   ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
 VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk, $(VBOX_PATH_MACOSX_SDK_ROOT_DIRS))) \
 	$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk )
@@ -2383,8 +2382,10 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
   endif
  endif
 
- ## The Xcode version.
- ifeq ($(KBUILD_HOST),darwin)
+ ## The Xcode version (not relevant for command line tools, so we skip this in VBOX_WITH_EVEN_NEWER_XCODE mode).
+ ifdef VBOX_WITH_EVEN_NEWER_XCODE
+  VBOX_XCODE_VERSION ?= 10.98## Just a high non-existing version number.
+ else ifeq ($(KBUILD_HOST),darwin)
   ifndef VBOX_XCODE_VERSION
    if1of ($(VBOX_GCC_TOOL), VBoxXcode62)
     VBOX_XCODE_VERSION := $(shell exec $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/xcodebuild -version 2>&1)
@@ -2425,20 +2426,18 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    VBOX_DARWIN_NO_COMPACT_LINKEDIT ?= $(VBOX_LD_no_compact_linkedit)
    TOOL_GXX4MACHO_SUFFIX ?= -4.0
   endif
- else
-  if $(VBOX_XCODE_VERSION_MAJOR) < 4 && "$(VBOX_XCODE_VERSION)" != "3.2"
-   ifeq ($(PATH_CURRENT),$(PATH_ROOT)/tools)
-    $(warning VBox: 64-bit darwin builds require Xcode 3.2 or later, you have $(VBOX_XCODE_VERSION))
-   else
-    $(error VBox: 64-bit darwin builds require Xcode 3.2 or later, you have $(VBOX_XCODE_VERSION))
-   endif
+ else if $(VBOX_XCODE_VERSION_MAJOR) < 4 && "$(VBOX_XCODE_VERSION)" != "3.2"
+  ifeq ($(PATH_CURRENT),$(PATH_ROOT)/tools)
+   $(warning VBox: 64-bit darwin builds require Xcode 3.2 or later, you have $(VBOX_XCODE_VERSION))
+  else
+   $(error VBox: 64-bit darwin builds require Xcode 3.2 or later, you have $(VBOX_XCODE_VERSION))
   endif
  endif
  if1of ($(VBOX_GCC_TOOL), GXX4MACHO GXX42MACHO)
-  if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
+  if $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
    TOOL_GXX4MACHO_PREFIX ?= llvm-
   endif
-  if  $(VBOX_XCODE_VERSION_MAJOR) < 5
+  if $(VBOX_XCODE_VERSION_MAJOR) < 5
    TOOL_GXX4MACHO_SUFFIX ?= -4.2
   endif
   VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
@@ -2453,7 +2452,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    ifndef SVN  # must expand first so we won't be using old svn.
     SVN := $(firstword $(which svn) svn)
    endif
-   if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
+   if $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
     export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(VBOX_PATH_MACOSX_TOOLCHAIN_ROOT)/usr/bin:$(PATH)
     export DEVELOPER_DIR:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)
    else
@@ -2464,7 +2463,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    TOOL_GXX32_LD  = $(TOOL_GXX32_CXX)
    override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(TOOL_GCC4MACHO_PREFIX)cpp-4.2"
   endif
-  if  $(VBOX_XCODE_VERSION_MAJOR) < 5
+  if $(VBOX_XCODE_VERSION_MAJOR) < 5
    ## @todo WTF do we do the -m32/64 stuff here for these compilers? Also the visibility should be elsewhere...
    TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
    TOOL_GXX4MACHO_OBJCXX = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden -fvisibility-inlines-hidden
@@ -2476,7 +2475,7 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
    override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
   endif
   export PATH:=$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(PATH)
- else
+ else # effectively VBOX_WITH_EVEN_NEWER_XCODE
   override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(TOOL_$(VBOX_GCC_TOOL)_CC)"
  endif
 
@@ -2772,9 +2771,9 @@ ifeq ($(KBUILD_TARGET), darwin)
  VBOX_JAVADOC   = $(VBOX_JAVA_COMMANDS)/javadoc
  VBOX_WSIMPORT  = $(VBOX_JAVA_COMMANDS)/wsimport
  if $(VBOX_XCODE_VERSION_MAJOR) >= 4 # Lion (4.1-preview 5) has a broken CurrentJDK link.  Blindly applying it to 4.0.
-  VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers
+  VBOX_JAVA_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers
  else
-  VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Headers
+  VBOX_JAVA_INC = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Headers
  endif
 
 else # !darwin
