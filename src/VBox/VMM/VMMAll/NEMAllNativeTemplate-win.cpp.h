@@ -345,11 +345,11 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         ADD_REG128(WHvX64RegisterXmm8,  pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[ 8].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[ 8].uXmm.s.Hi);
         ADD_REG128(WHvX64RegisterXmm9,  pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[ 9].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[ 9].uXmm.s.Hi);
         ADD_REG128(WHvX64RegisterXmm10, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[10].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[10].uXmm.s.Hi);
-        ADD_REG128(WHvX64RegisterXmm10, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[11].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[11].uXmm.s.Hi);
-        ADD_REG128(WHvX64RegisterXmm10, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[12].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[12].uXmm.s.Hi);
-        ADD_REG128(WHvX64RegisterXmm10, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[13].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[13].uXmm.s.Hi);
-        ADD_REG128(WHvX64RegisterXmm10, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[14].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[14].uXmm.s.Hi);
-        ADD_REG128(WHvX64RegisterXmm10, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[15].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[15].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm11, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[11].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[11].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm12, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[12].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[12].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm13, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[13].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[13].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm14, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[14].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[14].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm15, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[15].uXmm.s.Lo, pVCpu->cpum.GstCtx.pXStateR3->x87.aXMM[15].uXmm.s.Hi);
     }
 
     /* MSRs */
