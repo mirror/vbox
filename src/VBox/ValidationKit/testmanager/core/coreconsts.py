@@ -51,7 +51,9 @@ g_kasCpuArchesAll   = g_kasCpuArches + [g_ksCpuArchAgnostic,];
 
 ## All known build types
 # See KBUILD_TYPE in kBuild/header.kmk for reference.
-g_kasBuildTypesAll  = [ 'release', 'strict', 'profile', 'debug' ];
+# @note 'blessed' is a special type used for release builds that has been notarized
+#        or attestation signed by the OS vendor.
+g_kasBuildTypesAll  = [ 'release', 'strict', 'profile', 'debug', 'blessed' ];
 
 ## OS and CPU architecture agnostic.
 g_ksOsDotArchAgnostic = 'os-agnostic.noarch';
