@@ -1129,7 +1129,7 @@ class tdAutostartOsWin(tdAutostartOs):
             if self.sTestBuild.endswith('.msi'):
                 sLogFile = 'C:/Temp/VBoxInstallLog.txt';
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
-                                                        240 * 1000, 'C:\\Windows\\System32\\msiexec.exe',
+                                                        600 * 1000, 'C:\\Windows\\System32\\msiexec.exe',
                                                         ['msiexec', '/quiet', '/norestart', '/i',
                                                          'C:\\Temp\\' + os.path.basename(self.sTestBuild),
                                                         '/lv', sLogFile],
@@ -1139,7 +1139,7 @@ class tdAutostartOsWin(tdAutostartOs):
             else:
                 sLogFile = 'C:/Temp/Virtualbox/VBoxInstallLog.txt';
                 (fRc, _, _, _) = self.guestProcessExecute(oGuestSession, 'Installing VBox',
-                                                        240 * 1000, 'C:\\Temp\\' + os.path.basename(self.sTestBuild),
+                                                        600 * 1000, 'C:\\Temp\\' + os.path.basename(self.sTestBuild),
                                                         ['C:\\Temp\\' + os.path.basename(self.sTestBuild), '-vvvv',
                                                          '--silent', '--logging',
                                                          '--msiparams', 'REBOOT=ReallySuppress'],
