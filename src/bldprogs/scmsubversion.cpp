@@ -722,11 +722,17 @@ static void scmSvnTryResolveFunctions(void)
 #  else
             { "../lib64/lib", ".so" },
             { "../lib64/lib", "-1.so" },
+#   ifdef RT_OS_SOLARIS
+            { "../lib/svn/amd64/lib", ".so" },
+            { "../lib/svn/amd64/lib", "-1.so" },
+            { "../apr/1.6/lib/amd64/lib", ".so" },
+            { "../apr/1.6/lib/amd64/lib", "-1.so" },
+#   endif
 #  endif
 #  ifdef RT_ARCH_X86
             { "../lib/i386-linux-gnu/lib", ".so" },
             { "../lib/i386-linux-gnu/lib", "-1.so" },
-#  else
+#  elif defined(RT_ARCH_AMD64)
             { "../lib/x86_64-linux-gnu/lib", ".so" },
             { "../lib/x86_64-linux-gnu/lib", "-1.so" },
 #  endif
@@ -768,6 +774,37 @@ static void scmSvnTryResolveFunctions(void)
                         }
                     }
                 }
+# ifdef RT_OS_SOLARIS
+                /*
+                 * HACK: Solaris may keep libapr.so separately from svn, so do a separate search for it.
+                 */
+                /** @todo It would make a lot more sense to use the dlfcn.h machinery to figure
+                 *        out which libapr*.so* file was loaded into the process together with
+                 *        the two svn libraries and get a dlopen handle for it.  We risk ending
+                 *        up with the completely wrong libapr here! */
+                if (iLib == RT_ELEMENTS(s_apszLibraries) - 1 && RT_FAILURE(rc))
+                {
+                    ahMods[iLib] = NIL_RTLDRMOD;
+                    for (unsigned iVar2 = 0; iVar2 < RT_ELEMENTS(s_aVariations) && ahMods[iLib] == NIL_RTLDRMOD; iVar2++)
+                        for (unsigned iSuff2 = 0; iSuff2 < RT_ELEMENTS(s_apszSuffixes) && ahMods[iLib] == NIL_RTLDRMOD; iSuff2++)
+                        {
+                            *pszEndPath = '\0';
+                            rc = RTPathAppend(szPath, sizeof(szPath), s_aVariations[iVar2].pszPrefix);
+                            if (RT_SUCCESS(rc))
+                                rc = RTStrCat(szPath, sizeof(szPath), s_apszLibraries[iLib]);
+                            if (RT_SUCCESS(rc))
+                                rc = RTStrCat(szPath, sizeof(szPath), s_aVariations[iVar2].pszSuffix);
+                            if (RT_SUCCESS(rc))
+                                rc = RTStrCat(szPath, sizeof(szPath), s_apszSuffixes[iSuff2]);
+                            if (RT_SUCCESS(rc))
+                                rc = RTLdrLoadEx(szPath, &ahMods[iLib], RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR, NULL);
+                            if (RT_SUCCESS(rc))
+                                RTMEM_WILL_LEAK(ahMods[iLib]);
+                            else
+                                ahMods[iLib] = NIL_RTLDRMOD;
+                        }
+                }
+# endif /* RT_OS_SOLARIS */
             }
             if (iLib == RT_ELEMENTS(s_apszLibraries) && RT_SUCCESS(rc))
             {
