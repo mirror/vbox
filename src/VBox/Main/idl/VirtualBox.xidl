@@ -28264,7 +28264,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface name="ICloudProfileRegisteredEvent" extends="IEvent"
     uuid="6a5e65ba-eeb9-11ea-ae38-73242bc0f172"
     wsmap="managed"
-    id="OnCloudProfileRegistered" waitable="yes"
+    id="OnCloudProfileRegistered"
     >
     <attribute name="providerId" type="uuid" mod="string" readonly="yes"/>
     <attribute name="name" type="wstring" readonly="yes"/>
