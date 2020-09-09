@@ -95,6 +95,10 @@ signals:
         void sigSnapshotChange(const QUuid &uId, const QUuid &uSnapshotId);
         /** Notifies about snapshot with @a uSnapshotId was restored for the machine with @a uId. */
         void sigSnapshotRestore(const QUuid &uId, const QUuid &uSnapshotId);
+        /** Notifies about request to uninstall cloud provider with @a uId. */
+        void sigCloudProviderUninstall(const QUuid &uId);
+        /** Notifies about cloud provider list changed. */
+        void sigCloudProviderListChanged();
     /** @} */
 
     /** @name VirtualBox Extra-data related signals

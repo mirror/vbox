@@ -688,6 +688,33 @@ void UIChooserAbstractModel::sltSnapshotChanged(const QUuid &uMachineId, const Q
     invisibleRoot()->updateAllNodes(uMachineId);
 }
 
+void UIChooserAbstractModel::sltHandleCloudProviderListChanged()
+{
+    /* Reload cloud tree: */
+    reloadCloudTree();
+}
+
+void UIChooserAbstractModel::sltHandleCloudProviderUninstall(const QUuid &uId)
+{
+    /* Search for top-level provider node: */
+    foreach (UIChooserNode *pNode, m_pInvisibleRootNode->nodes(UIChooserNodeType_Group))
+    {
+        /* Skip unrelated nodes: */
+        AssertPtrReturnVoid(pNode);
+        UIChooserNodeGroup *pGroupNode = pNode->toGroupNode();
+        AssertPtrReturnVoid(pGroupNode);
+        if (pGroupNode->groupType() != UIChooserNodeGroupType_Provider)
+            continue;
+        const QUuid uIteratedId = pGroupNode->property("id").toUuid();
+        AssertReturnVoid(!uIteratedId.isNull());
+        if (uIteratedId != uId)
+            continue;
+
+        /* Remove found provider node: */
+        delete pNode;
+    }
+}
+
 void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
 {
     /* Remove machine-items with passed id: */
@@ -797,6 +824,10 @@ void UIChooserAbstractModel::prepareConnections()
             this, &UIChooserAbstractModel::sltSnapshotChanged);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore,
             this, &UIChooserAbstractModel::sltSnapshotChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderListChanged,
+            this, &UIChooserAbstractModel::sltHandleCloudProviderListChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProviderUninstall,
+            this, &UIChooserAbstractModel::sltHandleCloudProviderUninstall);
 
     /* Setup group saving connections: */
     connect(this, &UIChooserAbstractModel::sigStartGroupSaving,
@@ -880,6 +911,11 @@ void UIChooserAbstractModel::reloadCloudTree()
         if (comCloudProvider.isNull())
             continue;
 
+        /* Acquire provider id: */
+        QUuid uProviderId;
+        if (!cloudProviderId(comCloudProvider, uProviderId))
+            continue;
+
         /* Acquire provider short name: */
         QString strProviderShortName;
         if (!cloudProviderShortName(comCloudProvider, strProviderShortName))
@@ -906,6 +942,7 @@ void UIChooserAbstractModel::reloadCloudTree()
                                                            strProviderShortName),
                                    strProviderShortName,
                                    UIChooserNodeGroupType_Provider);
+        pProviderNode->setProperty("id", uProviderId);
 
         /* Iterate through provider's profiles: */
         foreach (CCloudProfile comCloudProfile, profiles)

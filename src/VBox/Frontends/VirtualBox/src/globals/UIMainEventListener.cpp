@@ -28,6 +28,8 @@
 #include "COMEnums.h"
 #include "CCanShowWindowEvent.h"
 #include "CClipboardModeChangedEvent.h"
+#include "CCloudProviderListChangedEvent.h"
+#include "CCloudProviderUninstallEvent.h"
 #include "CCursorPositionChangedEvent.h"
 #include "CDnDModeChangedEvent.h"
 #include "CEvent.h"
@@ -284,6 +286,17 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             CSnapshotRestoredEvent comEventSpecific(pEvent);
             emit sigSnapshotRestore(comEventSpecific.GetMachineId(), comEventSpecific.GetSnapshotId());
+            break;
+        }
+        case KVBoxEventType_OnCloudProviderListChanged:
+        {
+            emit sigCloudProviderListChanged();
+            break;
+        }
+        case KVBoxEventType_OnCloudProviderUninstall:
+        {
+            CCloudProviderUninstallEvent comEventSpecific(pEvent);
+            emit sigCloudProviderUninstall(comEventSpecific.GetId());
             break;
         }
 

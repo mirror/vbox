@@ -153,6 +153,10 @@ protected slots:
         virtual void sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmState);
         /** Handles snapshot change for machine/snapshot with certain @a uMachineId / @a uSnapshotId. */
         virtual void sltSnapshotChanged(const QUuid &uMachineId, const QUuid &uSnapshotId);
+        /** Handles event about cloud provider list changed. */
+        virtual void sltHandleCloudProviderListChanged();
+        /** Handles event about cloud provider with @a uId being uninstalled. */
+        virtual void sltHandleCloudProviderUninstall(const QUuid &uId);
     /** @} */
 
     /** @name Children stuff.
