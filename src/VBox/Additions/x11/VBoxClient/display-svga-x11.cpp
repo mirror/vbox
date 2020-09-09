@@ -743,6 +743,21 @@ static bool checkDRMClient()
    return true;
 }
 
+static bool startDRMClient()
+{
+    char* argv[] = {NULL};
+    char* env[] = {NULL};
+    char szDRMClientPath[RTPATH_MAX];
+    RTPathExecDir(szDRMClientPath, RTPATH_MAX);
+    RTPathAppend(szDRMClientPath, RTPATH_MAX, "VBoxDRMClient");
+    VBClLogInfo("Starting DRM client.\n");
+    int rc = execve(szDRMClientPath, argv, env);
+    if (rc == -1)
+        VBClLogFatalError("execve for % returns the following error %d %s\n", szDRMClientPath, errno, strerror(errno));
+    /* This is reached only when execve fails. */
+    return false;
+}
+
 static bool init()
 {
     /* If DRM client is already running don't start this service. */
@@ -752,18 +767,8 @@ static bool init()
         return false;
     }
     if (isXwayland())
-    {
-        char* argv[] = {NULL};
-        char* env[] = {NULL};
-        char szDRMClientPath[RTPATH_MAX];
-        RTPathExecDir(szDRMClientPath, RTPATH_MAX);
-        RTPathAppend(szDRMClientPath, RTPATH_MAX, "VBoxDRMClient");
-        int rc = execve(szDRMClientPath, argv, env);
-        if (rc == -1)
-            VBClLogFatalError("execve for % returns the following error %d %s\n", szDRMClientPath, errno, strerror(errno));
-        /* This is reached only when execve fails. */
-        return false;
-    }
+        return startDRMClient();
+
     x11Connect();
     if (x11Context.pDisplay == NULL)
         return false;
@@ -1224,12 +1229,9 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
 static void setXrandrTopology(struct RANDROUTPUT *paOutputs)
 {
     XGrabServer(x11Context.pDisplay);
-    /* In 32-bit guests GAs build on our release machines causes an xserver lock during vmware_ctrl extention
-     * if we do the call withing XGrab. So we disabled this call for 32-bit GAs. */
-#if ARCH_BITS != 32
     if (x11Context.fWmwareCtrlExtention)
         callVMWCTRL(paOutputs);
-#endif
+
 #ifdef WITH_DISTRO_XRAND_XINERAMA
     x11Context.pScreenResources = XRRGetScreenResources(x11Context.pDisplay, x11Context.rootWindow);
 #else
@@ -1325,6 +1327,14 @@ static const char *getPidFilePath()
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
     RT_NOREF(ppInterface, fDaemonised);
+
+    /* In 32-bit guests GAs build on our release machines causes an xserver hang.
+     * So for 32-bit GAs we use our DRM client. */
+#if ARCH_BITS == 32
+    startDRMClient();
+    return VERR_NOT_AVAILABLE;
+#endif
+
     if (!init())
         return VERR_NOT_AVAILABLE;
 
