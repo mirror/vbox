@@ -508,6 +508,7 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
         }
 
         XAPICINTR ApicIntr;
+        RT_ZERO(ApicIntr);
         ApicIntr.u8Vector       = IOAPIC_RTE_GET_VECTOR(u64Rte);
         ApicIntr.u8Dest         = IOAPIC_RTE_GET_DEST(u64Rte);
         ApicIntr.u8DestMode     = IOAPIC_RTE_GET_DEST_MODE(u64Rte);
@@ -522,10 +523,13 @@ static void ioapicSignalIntrForRte(PPDMDEVINS pDevIns, PIOAPIC pThis, PIOAPICCC 
          */
         MSIMSG MsiOut;
         MSIMSG MsiIn;
+        RT_ZERO(MsiOut);
+        RT_ZERO(MsiIn);
         ioapicGetMsiFromApicIntr(&ApicIntr, &MsiIn);
         if (!PCIBDF_IS_VALID(uBusDevFn))
             uBusDevFn = VBOX_PCI_BDF_SB_IOAPIC;
         int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, &MsiIn, &MsiOut);
+        LogFlow(("IOAPIC: IOMMU Remap. rc=%Rrc VectorIn=%#x VectorOut=%#x\n", rcRemap, MsiIn.Data.n.u8Vector, MsiOut.Data.n.u8Vector));
         if (RT_SUCCESS(rcRemap))
             ioapicGetApicIntrFromMsi(&MsiOut, &ApicIntr);
         else
@@ -652,15 +656,19 @@ static VBOXSTRICTRC ioapicSetRedirTableEntry(PPDMDEVINS pDevIns, PIOAPIC pThis, 
             pThis->au64RedirTable[idxRte]   = u64RteNewHi | u32RteLo;
         }
 
+        LogFlow(("IOAPIC: ioapicSetRedirTableEntry: uIndex=%#RX32 idxRte=%u uValue=%#RX32\n", uIndex, idxRte, uValue));
+
         /*
          * Signal the next pending interrupt for this RTE.
          */
         uint32_t const uPinMask = UINT32_C(1) << idxRte;
         if (pThis->uIrr & uPinMask)
+        {
+            LogFlow(("IOAPIC: ioapicSetRedirTableEntry: Signalling pending interrupt. idxRte=%u\n", idxRte));
             ioapicSignalIntrForRte(pDevIns, pThis, pThisCC, VBOX_PCI_BDF_SB_IOAPIC, idxRte);
+        }
 
         IOAPIC_UNLOCK(pDevIns, pThis, pThisCC);
-        LogFlow(("IOAPIC: ioapicSetRedirTableEntry: uIndex=%#RX32 idxRte=%u uValue=%#RX32\n", uIndex, idxRte, uValue));
     }
     else
         STAM_COUNTER_INC(&pThis->StatSetRteContention);
@@ -898,6 +906,7 @@ static DECLCALLBACK(void) ioapicSendMsi(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, PC
      * The MSI may need to be remapped (or discarded) if an IOMMU is present.
      */
     MSIMSG MsiOut;
+    RT_ZERO(MsiOut);
     Assert(PCIBDF_IS_VALID(uBusDevFn));
     int rcRemap = pThisCC->pIoApicHlp->pfnIommuMsiRemap(pDevIns, uBusDevFn, pMsi, &MsiOut);
     if (RT_SUCCESS(rcRemap))

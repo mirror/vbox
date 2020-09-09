@@ -165,7 +165,9 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
         RTGCPHYS GCPhysOut;
         uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemRead(pDevInsIommu, uDeviceId, GCPhys, cbRead, &GCPhysOut);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+            GCPhys = GCPhysOut;
+        else
         {
             Log(("pdmR0DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
                  GCPhys, cbRead, rc));
@@ -217,7 +219,9 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
         RTGCPHYS GCPhysOut;
         uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemWrite(pDevInsIommu, uDeviceId, GCPhys, cbWrite, &GCPhysOut);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+            GCPhys = GCPhysOut;
+        else
         {
             Log(("pdmR0DevHlp_PCIPhysWrite: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
                  GCPhys, cbWrite, rc));
@@ -1568,17 +1572,17 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_IommuMsiRemap(PPDMDEVINS pDevIns, uint16
         AssertMsgReturn(VALID_PTR(pIommu->pfnMsiRemap),
                         ("pdmR0IoApicHlp_IommuMsiRemap: pfnMsiRemap invalid!\n"), VERR_INVALID_POINTER);
         int rc = pIommu->pfnMsiRemap(pDevInsIommu, uDevId, pMsiIn, pMsiOut);
-        if (RT_FAILURE(rc))
-        {
-            Log(("pdmR0IoApicHlp_IommuMsiRemap: IOMMU MSI remap failed. uDevId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n",
-                 uDevId, pMsiIn->Addr.u64, pMsiIn->Data.u32, rc));
+        if (RT_SUCCESS(rc))
             return rc;
-        }
+
+        Log(("pdmR0IoApicHlp_IommuMsiRemap: IOMMU MSI remap failed. uDevId=%#x pMsiIn=(%#RX64, %#RU32) rc=%Rrc\n",
+             uDevId, pMsiIn->Addr.u64, pMsiIn->Data.u32, rc));
     }
 #else
     RT_NOREF(pDevIns, uDevId);
-    *pMsiOut = *pMsiIn;
 #endif
+
+    *pMsiOut = *pMsiIn;
     return VINF_SUCCESS;
 }
 

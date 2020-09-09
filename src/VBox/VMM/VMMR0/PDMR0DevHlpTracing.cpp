@@ -326,7 +326,9 @@ pdmR0DevHlpTracing_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS 
         RTGCPHYS GCPhysOut;
         uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemRead(pDevInsIommu, uDeviceId, GCPhys, cbRead, &GCPhysOut);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+            GCPhys = GCPhysOut;
+        else
         {
             Log(("pdmR0DevHlp_PCIPhysRead: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
                  GCPhys, cbRead, rc));
@@ -378,7 +380,9 @@ pdmR0DevHlpTracing_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS
         RTGCPHYS GCPhysOut;
         uint16_t const uDeviceId = PCIBDF_MAKE(pBus->iBus, pPciDev->uDevFn);
         int rc = pIommu->pfnMemWrite(pDevInsIommu, uDeviceId, GCPhys, cbWrite, &GCPhysOut);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+            GCPhys = GCPhysOut;
+        else
         {
             Log(("pdmR0DevHlp_PCIPhysWrite: IOMMU translation failed. uDeviceId=%#x GCPhys=%#RGp cb=%u rc=%Rrc\n", uDeviceId,
                  GCPhys, cbWrite, rc));
