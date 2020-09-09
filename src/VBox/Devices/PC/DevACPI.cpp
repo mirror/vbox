@@ -3179,11 +3179,12 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
     /* IVRS header. */
     acpiR3PrepareHeader(pThis, &Ivrs.Hdr.header, "IVRS", sizeof(Ivrs), ACPI_IVRS_FMT_REV_FIXED);
     /* NOTE! The values here must match what we expose via MMIO/PCI config. space in the IOMMU device code. */
-    Ivrs.Hdr.u32IvInfo = RT_BF_MAKE(ACPI_IVINFO_BF_EFR_SUP,   1)
-                       | RT_BF_MAKE(ACPI_IVINFO_BF_GVA_SIZE,  0)
-                       | RT_BF_MAKE(ACPI_IVINFO_BF_GVA_SIZE,  2)    /* Guest Virt. Addr size (2=48 bits) */
-                       | RT_BF_MAKE(ACPI_IVINFO_BF_PA_SIZE,  48)    /* Physical Addr size (48 bits) */
-                       | RT_BF_MAKE(ACPI_IVINFO_BF_VA_SIZE,  64);   /* Virt. Addr size (64 bits) */
+    Ivrs.Hdr.u32IvInfo = RT_BF_MAKE(ACPI_IVINFO_BF_EFR_SUP,       1)
+                       | RT_BF_MAKE(ACPI_IVINFO_BF_DMA_REMAP_SUP, 0)   /* Pre-boot DMA remap support not supported. */
+                       | RT_BF_MAKE(ACPI_IVINFO_BF_GVA_SIZE,      2)   /* Guest Virt. Addr size (2=48 bits) */
+                       | RT_BF_MAKE(ACPI_IVINFO_BF_PA_SIZE,      48)   /* Physical Addr size (48 bits) */
+                       | RT_BF_MAKE(ACPI_IVINFO_BF_VA_SIZE,      64)   /* Virt. Addr size (64 bits) */
+                       | RT_BF_MAKE(ACPI_IVINFO_BF_HT_ATS_RESV,   0);  /* ATS response range reserved (only applicable for HT) */
 
     /* IVHD type 10 definition block. */
     Ivrs.IvhdType10.u8Type             = 0x10;
@@ -3199,7 +3200,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
     Ivrs.IvhdType10.u64BaseAddress     = IOMMU_MMIO_BASE_ADDR;
     Ivrs.IvhdType10.u16PciSegmentGroup = 0;
     /* NOTE! Subfields in the following fields must match any corresponding field in PCI/MMIO registers of the IOMMU device. */
-    Ivrs.IvhdType10.u8Flags            = 0; /* Remote IOTLB, Prefetch IOMMU pages features etc. - currently none supported. */
+    Ivrs.IvhdType10.u8Flags            = ACPI_IVHD_10H_F_COHERENT; /* Remote IOTLB etc. not supported. */
     Ivrs.IvhdType10.u16IommuInfo       = RT_BF_MAKE(ACPI_IOMMU_INFO_BF_MSI_NUM, 0)
                                        | RT_BF_MAKE(ACPI_IOMMU_INFO_BF_UNIT_ID, 0);
     Ivrs.IvhdType10.u32Features        = RT_BF_MAKE(ACPI_IOMMU_FEAT_BF_XT_SUP,      0)
@@ -3258,7 +3259,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
     Ivrs.IvhdType11.u16CapOffset       = Ivrs.IvhdType10.u16CapOffset;
     Ivrs.IvhdType11.u64BaseAddress     = Ivrs.IvhdType10.u64BaseAddress;
     Ivrs.IvhdType11.u16PciSegmentGroup = Ivrs.IvhdType10.u16PciSegmentGroup;
-    Ivrs.IvhdType11.u8Flags            = Ivrs.IvhdType10.u8Flags;
+    Ivrs.IvhdType11.u8Flags            = ACPI_IVHD_11H_F_COHERENT;
     Ivrs.IvhdType11.u16IommuInfo       = Ivrs.IvhdType10.u16IommuInfo;
     Ivrs.IvhdType11.u32IommuAttr       = RT_BF_MAKE(ACPI_IOMMU_ATTR_BF_PN_COUNTERS, 0)
                                        | RT_BF_MAKE(ACPI_IOMMU_ATTR_BF_PN_BANKS,    0)
