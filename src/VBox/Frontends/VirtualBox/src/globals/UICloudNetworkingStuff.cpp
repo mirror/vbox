@@ -251,6 +251,21 @@ QVector<CCloudProvider> UICloudNetworkingStuff::listCloudProviders(QString &strE
     return QVector<CCloudProvider>();
 }
 
+bool UICloudNetworkingStuff::cloudProviderId(const CCloudProvider &comCloudProvider,
+                                             QUuid &uResult,
+                                             QWidget *pParent /* = 0 */)
+{
+    const QUuid uId = comCloudProvider.GetId();
+    if (!comCloudProvider.isOk())
+        msgCenter().cannotAcquireCloudProviderParameter(comCloudProvider, pParent);
+    else
+    {
+        uResult = uId;
+        return true;
+    }
+    return false;
+}
+
 bool UICloudNetworkingStuff::cloudProviderShortName(const CCloudProvider &comCloudProvider,
                                                     QString &strResult,
                                                     QWidget *pParent /* = 0 */)
