@@ -2817,8 +2817,6 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
 {
     IOMMU_ASSERT_NOT_LOCKED(pDevIns);
 
-    LogFlowFunc(("\n"));
-
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     STAM_COUNTER_INC(&pThis->StatCmd);
 
@@ -2835,7 +2833,7 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
             /* Validate reserved bits in the command. */
             if (!(pCmdComWait->au64[0] & ~IOMMU_CMD_COM_WAIT_QWORD_0_VALID_MASK))
             {
-                /* If Completion Store is requested, write the StoreData to the specified address.*/
+                /* If Completion Store is requested, write the StoreData to the specified address. */
                 if (pCmdComWait->n.u1Store)
                 {
                     RTGCPHYS const GCPhysStore = RT_MAKE_U64(pCmdComWait->n.u29StoreAddrLo << 3, pCmdComWait->n.u20StoreAddrHi);
@@ -2850,20 +2848,19 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                     }
                 }
 
-                IOMMU_LOCK(pDevIns);
-
-                /* Indicate that this command has completed. */
-                ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
-
                 /* If the command requests an interrupt and completion wait interrupts are enabled, raise it. */
                 if (pCmdComWait->n.u1Interrupt)
                 {
+                    IOMMU_LOCK(pDevIns);
+                    ASMAtomicOrU64(&pThis->Status.u64, IOMMU_STATUS_COMPLETION_WAIT_INTR);
                     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
-                    if (Ctrl.n.u1CompWaitIntrEn)
+                    bool const fRaiseInt = Ctrl.n.u1CompWaitIntrEn;
+                    IOMMU_UNLOCK(pDevIns);
+
+                    if (fRaiseInt)
                         iommuAmdRaiseMsiInterrupt(pDevIns);
                 }
 
-                IOMMU_UNLOCK(pDevIns);
                 return VINF_SUCCESS;
             }
             iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
