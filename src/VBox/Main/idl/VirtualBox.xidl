@@ -24466,7 +24466,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="d5d15e38-808d-11e9-aaac-4bc5d973ca37"
+    uuid="2ab7c196-f232-11ea-a5d2-83b96bc30bcc"
     >
 
     <desc>
@@ -24895,24 +24895,34 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IClipboardFileTransferModeChangedEvent">IClipboardFileTransferModeChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnCloudProviderRegistered" value="105">
+    <const name="OnCloudProviderListChanged" value="105">
       <desc>
-        See <link to="ICloudProviderRegisteredEvent">ICloudProviderRegisteredEvent</link>.
+        See <link to="ICloudProviderListChangedEvent"/>.
       </desc>
     </const>
-    <const name="OnCloudProfileRegistered" value="106">
+    <const name="OnCloudProviderRegistered" value="106">
+      <desc>
+        See <link to="ICloudProviderRegisteredEvent"/>.
+      </desc>
+    </const>
+    <const name="OnCloudProviderUninstall" value="107">
+      <desc>
+        See <link to="ICloudProviderUninstallEvent"/>.
+      </desc>
+    </const>
+    <const name="OnCloudProfileRegistered" value="108">
       <desc>
         See <link to="ICloudProfileRegisteredEvent"/>.
       </desc>
     </const>
-    <const name="OnCloudProfileChanged" value="107">
+    <const name="OnCloudProfileChanged" value="109">
       <desc>
         See <!-- link to="ICloudProfileChangedEvent"/--> ICloudProfileChangedEvent.
       </desc>
     </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="108">
+    <const name="Last" value="110">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -28252,13 +28262,48 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   </interface>
 
-  <interface name="ICloudProviderRegisteredEvent" extends="IEvent"
-    uuid="3d515696-eb98-11ea-96ac-8b4794b20214"
+  <interface name="ICloudProviderListChangedEvent" extends="IEvent"
+    uuid="a54d9cca-f23f-11ea-9755-efd0f1f792d9"
     wsmap="managed" autogen="VBoxEvent"
-    id="OnCloudProviderRegistered" waitable="yes"
+    id="OnCloudProviderListChanged"
     >
+    <desc>
+      Each individual provider that is installed or uninstalled is
+      reported as an <link to="ICloudProviderRegisteredEvent"/>.  When
+      the batch is done this event is sent and listerns can get the
+      new list.
+    </desc>
+    <attribute name="registered" type="boolean" readonly="yes"/>
+  </interface>
+
+  <interface name="ICloudProviderRegisteredEvent" extends="IEvent"
+    uuid="e28e227a-f231-11ea-9641-9b500c6d5365"
+    wsmap="managed" autogen="VBoxEvent"
+    id="OnCloudProviderRegistered"
+    >
+    <desc>
+      A cloud provider was installed or uninstalled.
+      See also <link to="ICloudProviderListChangedEvent"/>.
+    </desc>
     <attribute name="id" type="uuid" mod="string" readonly="yes"/>
     <attribute name="registered" type="boolean" readonly="yes"/>
+  </interface>
+
+  <interface name="ICloudProviderUninstallEvent" extends="IEvent"
+    uuid="f01f1066-f231-11ea-8eee-33bb2afb0b6e"
+    wsmap="managed" autogen="VBoxEvent"
+    id="OnCloudProviderCanUninstall" waitable="yes"
+    >
+    <desc>
+      A cloud provider is about to be uninstalled.
+      Unlike <link to="ICloudProviderRegisteredEvent"/> this one is
+      waitable and is sent <i>before</i> an attempt is made to
+      uninstall a provider.  Listerns should release references to the
+      provider and related objects if they have any, or the
+      uninstallation of the provider is going to fail because it's
+      still in use.
+    </desc>
+    <attribute name="id" type="uuid" mod="string" readonly="yes"/>
   </interface>
 
   <interface name="ICloudProfileRegisteredEvent" extends="IEvent"

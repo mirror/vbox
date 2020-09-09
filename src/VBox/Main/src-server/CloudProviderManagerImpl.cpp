@@ -135,18 +135,16 @@ bool CloudProviderManager::i_canRemoveExtPack(IExtPack *aExtPack)
             if (pTmpProvider)
             {
                 /* do this before the provider goes over the rainbow bridge */
-                pTmpProvider->COMGETTER(Id)(bstrProviderId.asOutParam());
+                hrc = pTmpProvider->COMGETTER(Id)(bstrProviderId.asOutParam());
 
-                /**
-                 * @todo r=uwe We send the event @em before we even
-                 * try to uninstall the provider.  The GUI can get the
-                 * event and get rid of any references to the objects
-                 * related to this provider that it still has.  The
-                 * current uninstall attempt might fail, but the GUI
-                 * can then retry once and likely succeed.  Needs more
-                 * thought and feeback from dsen.
+                /*
+                 * We send this event @em before we try to uninstall
+                 * the provider.  The GUI can get the event and get
+                 * rid of any references to the objects related to
+                 * this provider that it still has.
                  */
-                m_pVirtualBox->i_onCloudProviderRegistered(bstrProviderId, FALSE);
+                if (bstrProviderId.isNotEmpty())
+                    m_pVirtualBox->i_onCloudProviderUninstall(bstrProviderId);
 
                 hrc = pTmpProvider->PrepareUninstall();
                 pTmpProvider->AddRef();
@@ -158,6 +156,10 @@ bool CloudProviderManager::i_canRemoveExtPack(IExtPack *aExtPack)
             {
                 m_astrExtPackNames.erase(m_astrExtPackNames.begin() + (ssize_t)i);
                 m_apCloudProviders.erase(m_apCloudProviders.begin() + (ssize_t)i);
+
+                if (bstrProviderId.isNotEmpty())
+                    m_pVirtualBox->i_onCloudProviderRegistered(bstrProviderId, FALSE);
+
                 /* NB: not advancing loop index */
             }
             else
@@ -171,6 +173,12 @@ bool CloudProviderManager::i_canRemoveExtPack(IExtPack *aExtPack)
 
         if (fRes)
             m_mapCloudProviderManagers.erase(it);
+
+        /**
+         * Tell listeners we are done and they can re-read the new
+         * list of providers.
+         */
+        m_pVirtualBox->i_onCloudProviderListChanged(FALSE);
     }
 
     return fRes;
@@ -207,10 +215,6 @@ void CloudProviderManager::i_addExtPack(IExtPack *aExtPack)
 
     m_mapCloudProviderManagers[strExtPackName] = pManager;
 
-    /* collect provider ids for bulk-sending the events */
-    std::vector<Utf8Str> aProviderIds;
-    aProviderIds.reserve(apProvidersFromCurrExtPack.size());
-
     for (unsigned i = 0; i < apProvidersFromCurrExtPack.size(); i++)
     {
         const ComPtr<ICloudProvider> pProvider(apProvidersFromCurrExtPack[i]);
@@ -227,19 +231,19 @@ void CloudProviderManager::i_addExtPack(IExtPack *aExtPack)
                 m_astrExtPackNames.push_back(strExtPackName);
                 m_apCloudProviders.push_back(pProvider);
 
-                /* note the id of this provider to send an event later */
                 Bstr bstrProviderId;
                 pProvider->COMGETTER(Id)(bstrProviderId.asOutParam());
-                aProviderIds.push_back(bstrProviderId);
+                if (bstrProviderId.isNotEmpty())
+                    m_pVirtualBox->i_onCloudProviderRegistered(bstrProviderId, TRUE);
             }
         }
     }
 
-    /* bulk-send ICloudProviderRegisteredEvent's */
-    for (size_t i = 0; i < aProviderIds.size(); ++i)
-    {
-        m_pVirtualBox->i_onCloudProviderRegistered(aProviderIds[i], TRUE);
-    }
+    /**
+     * Tell listeners we are done and they can re-read the new list of
+     * providers.
+     */
+    m_pVirtualBox->i_onCloudProviderListChanged(TRUE);
 }
 
 #endif  /* VBOX_WITH_EXTPACK */

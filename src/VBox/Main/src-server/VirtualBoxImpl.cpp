@@ -3818,18 +3818,30 @@ int VirtualBox::i_natNetworkRefDec(const Utf8Str &aNetworkName)
 }
 
 
-void VirtualBox::i_onCloudProviderRegistered(const Utf8Str &aId, BOOL aRegistered)
+void VirtualBox::i_onCloudProviderListChanged(BOOL aRegistered)
+{
+    ::FireCloudProviderListChangedEvent(m->pEventSource, aRegistered);
+}
+
+
+void VirtualBox::i_onCloudProviderRegistered(const Utf8Str &aProviderId, BOOL aRegistered)
+{
+    ::FireCloudProviderRegisteredEvent(m->pEventSource, aProviderId, aRegistered);
+}
+
+
+void VirtualBox::i_onCloudProviderUninstall(const Utf8Str &aProviderId)
 {
     HRESULT hrc;
 
     ComPtr<IEvent> pEvent;
-    hrc = CreateCloudProviderRegisteredEvent(pEvent.asOutParam(), m->pEventSource,
-                                             aId, aRegistered);
+    hrc = CreateCloudProviderUninstallEvent(pEvent.asOutParam(),
+                                            m->pEventSource, aProviderId);
     if (FAILED(hrc))
         return;
 
     BOOL fDelivered = FALSE;
-    hrc = m->pEventSource->FireEvent(pEvent, 10000, &fDelivered); // XXX: timeout
+    hrc = m->pEventSource->FireEvent(pEvent, /* :timeout */ 10000, &fDelivered);
     if (FAILED(hrc))
         return;
 }
