@@ -1398,6 +1398,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
  * @param   pDevIns     The IOMMU device instance.
  *
  * @thread  Any.
+ * @remarks The IOMMU lock may or may not be held.
  */
 static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
 {
@@ -1412,6 +1413,7 @@ static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
  * @param   pDevIns     The IOMMU device instance.
  *
  * @thread  Any.
+ * @remarks The IOMMU lock may or may not be held.
  */
 static void iommuAmdClearMsiInterrupt(PPDMDEVINS pDevIns)
 {
@@ -2860,7 +2862,6 @@ static int iommuAmdR3ProcessCmd(PPDMDEVINS pDevIns, PCCMD_GENERIC_T pCmd, RTGCPH
                     if (fRaiseInt)
                         iommuAmdRaiseMsiInterrupt(pDevIns);
                 }
-
                 return VINF_SUCCESS;
             }
             iommuAmdInitIllegalCmdEvent(GCPhysCmd, (PEVT_ILLEGAL_CMD_ERR_T)pEvtError);
@@ -4078,7 +4079,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->ExtFeat.n.u1X2ApicSup             = 0;
     pThis->ExtFeat.n.u1NoExecuteSup          = 0;
     pThis->ExtFeat.n.u1GstTranslateSup       = 0;
-    pThis->ExtFeat.n.u1InvAllSup             = 0;
+    pThis->ExtFeat.n.u1InvAllSup             = 1;
     pThis->ExtFeat.n.u1GstVirtApicSup        = 0;
     pThis->ExtFeat.n.u1HwErrorSup            = 1;
     pThis->ExtFeat.n.u1PerfCounterSup        = 0;

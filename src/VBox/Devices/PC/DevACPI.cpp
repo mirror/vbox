@@ -3196,7 +3196,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
                                        + sizeof(Ivrs.IvhdType10IoApic)
                                        + sizeof(Ivrs.IvhdType10Hpet);
     Ivrs.IvhdType10.u16DeviceId        = PCIBDF_MAKE(uIommuBus, VBOX_PCI_DEVFN_MAKE(uIommuDev, uIommuFn));
-    Ivrs.IvhdType10.u16CapOffset       = 0;             /* 0=No multiple IOMMU functionality. */
+    Ivrs.IvhdType10.u16CapOffset       = IOMMU_PCI_OFF_CAP_HDR;
     Ivrs.IvhdType10.u64BaseAddress     = IOMMU_MMIO_BASE_ADDR;
     Ivrs.IvhdType10.u16PciSegmentGroup = 0;
     /* NOTE! Subfields in the following fields must match any corresponding field in PCI/MMIO registers of the IOMMU device. */
@@ -3270,7 +3270,7 @@ static void acpiR3SetupIommuAmd(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_X2APIC_SUP,         0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_NO_EXEC_SUP,        0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_GT_SUP,             0)
-                                       | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_IA_SUP,             0)
+                                       | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_IA_SUP,             1)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_GA_SUP,             0)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_HE_SUP,             1)
                                        | RT_BF_MAKE(IOMMU_EXT_FEAT_BF_PC_SUP,             0)
