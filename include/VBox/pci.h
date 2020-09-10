@@ -612,7 +612,7 @@ typedef enum PCIADDRESSSPACE
 #define VBOX_PCI_MAX_FUNCTIONS      8
 /** Number of devices per bus. */
 #define VBOX_PCI_MAX_DEVICES        32
-/** The device number shift count for a device+function number. */
+/** The function number mask for a device+function number. */
 #define VBOX_PCI_DEVFN_FUN_MASK     0x7
 /** The device number shift count for a device+function number. */
 #define VBOX_PCI_DEVFN_DEV_SHIFT    3
@@ -623,7 +623,8 @@ typedef enum PCIADDRESSSPACE
 /** The bus number mask a bus+device+function number. */
 #define VBOX_PCI_BUS_MASK           0xff
 /** Make a device+function number.   */
-#define VBOX_PCI_DEVFN_MAKE(a_uPciDevNo, a_uPciFunNo) (((a_uPciDevNo) << VBOX_PCI_DEVFN_DEV_SHIFT) | (a_uPciFunNo))
+#define VBOX_PCI_DEVFN_MAKE(a_uPciDevNo, a_uPciFunNo) (  ((a_uPciDevNo) << VBOX_PCI_DEVFN_DEV_SHIFT) \
+                                                       | ((a_uPciFunNo) & VBOX_PCI_DEVFN_FUN_MASK))
 
 /** Checks whether the PCIBDF is valid. */
 #define PCIBDF_IS_VALID(a_uBusDevFn)    (!((a_uBusDevFn) & PCI_BDF_F_INVALID))
