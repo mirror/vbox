@@ -52,7 +52,6 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     : QIWithRetranslateUI<QIMainDialog>(pParent)
     , m_pSelector(0)
     , m_pStack(0)
-    , m_fPolished(false)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pSerializeProcess(0)
     , m_fSerializationIsInProgress(false)
@@ -267,22 +266,10 @@ void UISettingsDialog::retranslateUi()
     revalidate();
 }
 
-void UISettingsDialog::showEvent(QShowEvent *pEvent)
+void UISettingsDialog::polishEvent(QShowEvent *pEvent)
 {
-    /* Base-class processing: */
-    QIMainDialog::showEvent(pEvent);
-
-    /* One may think that QWidget::polish() is the right place to do things
-     * below, but apparently, by the time when QWidget::polish() is called,
-     * the widget style & layout are not fully done, at least the minimum
-     * size hint is not properly calculated. Since this is sometimes necessary,
-     * we provide our own "polish" implementation. */
-    if (m_fPolished)
-        return;
-
-    m_fPolished = true;
-
-    int iMinWidth = m_pSelector->minWidth();
+    /* Check what's the minimum selector size: */
+    const int iMinWidth = m_pSelector->minWidth();
 
 #ifdef VBOX_WS_MAC
 
@@ -336,6 +323,9 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
     resize(s);
 
 #endif /* VBOX_WS_MAC */
+
+    /* Call to base-class: */
+    QIWithRetranslateUI<QIMainDialog>::polishEvent(pEvent);
 }
 
 void UISettingsDialog::loadData(QVariant &data)
