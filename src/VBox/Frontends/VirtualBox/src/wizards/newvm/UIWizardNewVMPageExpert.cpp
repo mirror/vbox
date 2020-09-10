@@ -30,7 +30,6 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
-#include "UIBaseMemorySlider.h"
 #include "UIBaseMemoryEditor.h"
 #include "UIFilePathSelector.h"
 #include "UIIconPool.h"

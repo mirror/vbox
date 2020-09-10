@@ -837,7 +837,6 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIAudioControllerEditor.h \
 	src/settings/editors/UIAudioHostDriverEditor.h \
 	src/settings/editors/UIBaseMemoryEditor.h \
-	src/settings/editors/UIBaseMemorySlider.h \
 	src/settings/editors/UIBootOrderEditor.h \
 	src/settings/editors/UIGraphicsControllerEditor.h \
 	src/settings/editors/UIHostComboEditor.h \
@@ -988,6 +987,7 @@ UICommon_QT_MOCSRCS = \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/medium/viso/UIVisoBrowserBase.cpp \
+	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
@@ -1350,7 +1350,6 @@ UICommon_SOURCES = \
 	src/settings/editors/UIAudioControllerEditor.cpp \
 	src/settings/editors/UIAudioHostDriverEditor.cpp \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
-	src/settings/editors/UIBaseMemorySlider.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
 	src/settings/editors/UIGraphicsControllerEditor.cpp \
 	src/settings/editors/UIHostComboEditor.cpp \
