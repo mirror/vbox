@@ -402,6 +402,12 @@ static uint8_t const g_acDevTabSegs[] = { 0, 2, 4, 8 };
 static uint16_t const g_auDevTabSegMasks[] = { 0x0, 0x8000, 0xc000, 0xe000 };
 
 /**
+ * An array of the shift values to select the device table segment index from a
+ * device ID.
+ */
+static uint8_t const g_auDevTabSegShifts[] = { 0, 15, 14, 13 };
+
+/**
  * The maximum size (inclusive) of each device table segment (0 to 7).
  * Indexed by the device table segment index.
  */
@@ -1973,13 +1979,14 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     IOMMU_CTRL_T const Ctrl = iommuAmdGetCtrl(pThis);
 
     uint8_t const idxSegsEn = Ctrl.n.u3DevTabSegEn;
+    Assert(idxSegsEn < RT_ELEMENTS(g_auDevTabSegShifts));
     Assert(idxSegsEn < RT_ELEMENTS(g_auDevTabSegMasks));
 
-    uint8_t const idxSeg = uDevId & g_auDevTabSegMasks[idxSegsEn] >> 13;
+    uint8_t const idxSeg = (uDevId & g_auDevTabSegMasks[idxSegsEn]) >> g_auDevTabSegShifts[idxSegsEn];
     Assert(idxSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
 
     RTGCPHYS const GCPhysDevTab = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
-    uint16_t const offDte       = uDevId & ~g_auDevTabSegMasks[idxSegsEn];
+    uint16_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) * sizeof(DTE_T);
     RTGCPHYS const GCPhysDte    = GCPhysDevTab + offDte;
 
     LogFlowFunc(("idxSegsEn=%#x GCPhysDevTab=%#RGp offDte=%#x GCPhysDte=%#RGp\n", idxSegsEn, GCPhysDevTab, offDte, GCPhysDte));
