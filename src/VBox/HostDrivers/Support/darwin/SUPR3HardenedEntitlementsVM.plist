@@ -5,7 +5,12 @@
     <!-- <key>com.apple.security.cs.allow-jit</key>                          <true/> -->
     <!-- <key>com.apple.security.cs.allow-unsigned-executable-memory</key>   <true/> -->
     <!-- <key>com.apple.security.cs.disable-executable-page-protection</key> <true/> -->
+    <!-- For audio input -->
     <key>com.apple.security.device.audio-input</key>                    <true/>
+    <!-- For emulated webcam -->
+    <key>com.apple.security.device.camera</key>                         <true/>
+    <!-- For HID input monitoring -->
+    <key>com.apple.security.device.usb</key>                            <true/>
 </dict>
 </plist>
 
