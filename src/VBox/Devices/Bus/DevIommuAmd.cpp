@@ -26,6 +26,7 @@
 #include <VBox/AssertGuest.h>
 
 #include <iprt/x86.h>
+#include <iprt/alloc.h>
 #include <iprt/string.h>
 
 #include "VBoxDD.h"
@@ -3183,7 +3184,6 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    LogFlowFunc(("pThis=%p pszArgs=%s\n", pThis, pszArgs));
     bool fVerbose;
     if (   pszArgs
         && !strncmp(pszArgs, RT_STR_TUPLE("verbose")))
@@ -3733,6 +3733,86 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 }
 
 
+static void iommuAmdR3DbgInfoDte(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, PCDTE_T pDte, const char *pszPrefix)
+{
+    RT_NOREF(pDevIns);
+    pHlp->pfnPrintf(pHlp, " %sValid               = %RTbool\n", pszPrefix, pDte->n.u1Valid);
+    pHlp->pfnPrintf(pHlp, " %sInterrupt Map Valid = %RTbool\n", pszPrefix, pDte->n.u1IntrMapValid);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) iommuAmdR3DbgInfoDevTabs(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+
+    PCIOMMU    pThis   = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    uint8_t cTables = 0;
+    for (uint8_t i = 0; i < RT_ELEMENTS(pThis->aDevTabBaseAddrs); i++)
+    {
+        DEV_TAB_BAR_T  DevTabBar    = pThis->aDevTabBaseAddrs[i];
+        RTGCPHYS const GCPhysDevTab = DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT;
+        if (GCPhysDevTab)
+            ++cTables;
+    }
+
+    pHlp->pfnPrintf(pHlp, "AMD-IOMMU Device Tables:\n");
+    pHlp->pfnPrintf(pHlp, " Tables active: %u\n", cTables);
+    if (!cTables)
+        return;
+
+    for (uint8_t i = 0; i < RT_ELEMENTS(pThis->aDevTabBaseAddrs); i++)
+    {
+        DEV_TAB_BAR_T  DevTabBar    = pThis->aDevTabBaseAddrs[i];
+        RTGCPHYS const GCPhysDevTab = DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT;
+        if (GCPhysDevTab)
+        {
+            uint32_t const cbDevTab = IOMMU_GET_DEV_TAB_SIZE(DevTabBar.n.u9Size);
+            uint32_t const cDtes    = cbDevTab / sizeof(DTE_T);
+            pHlp->pfnPrintf(pHlp, " Table %u (base=%#RGp size=%u bytes entries=%u):\n", i, GCPhysDevTab, cbDevTab, cDtes);
+
+            void *pvDevTab = RTMemAllocZ(cbDevTab);
+            if (RT_LIKELY(pvDevTab))
+            {
+                int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDevTab, pvDevTab, cbDevTab);
+                if (RT_SUCCESS(rc))
+                {
+                    for (uint32_t idxDte = 0; idxDte < cDtes; idxDte++)
+                    {
+                        PCDTE_T pDte = (PCDTE_T)((char *)pvDevTab + idxDte * sizeof(DTE_T));
+                        if (   pDte->n.u1Valid
+                            || pDte->n.u1IntrMapValid)
+                        {
+                            pHlp->pfnPrintf(pHlp, " DTE %u:\n", idxDte);
+                            iommuAmdR3DbgInfoDte(pDevIns, pHlp, pDte, " ");
+                        }
+                    }
+                    pHlp->pfnPrintf(pHlp, "\n");
+                }
+                else
+                {
+                    pHlp->pfnPrintf(pHlp, " Failed to read table at %#RGp of size %u bytes. rc=%Rrc!\n", GCPhysDevTab,
+                                    cbDevTab, rc);
+                }
+
+                RTMemFree(pvDevTab);
+            }
+            else
+            {
+                pHlp->pfnPrintf(pHlp, " Allocating %u bytes for reading the device table failed!\n", cbDevTab);
+                return;
+            }
+        }
+    }
+
+}
+
+
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
@@ -4031,10 +4111,10 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     AssertLogRelRCReturn(rc, rc);
 
     /*
-     * Register debugger info item.
+     * Register debugger info items.
      */
-    rc = PDMDevHlpDBGFInfoRegister(pDevIns, "iommu", "Display IOMMU state.", iommuAmdR3DbgInfo);
-    AssertLogRelRCReturn(rc, rc);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "iommu",        "Display IOMMU state.", iommuAmdR3DbgInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "iommudevtabs", "Display IOMMU device tables.", iommuAmdR3DbgInfoDevTabs);
 
 # ifdef VBOX_WITH_STATISTICS
     /*
