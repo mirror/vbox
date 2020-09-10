@@ -281,6 +281,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/runtime/information \
 	./src/guestctrl \
 	./src/settings \
+	./src/settings/editors \
 	./src/settings/global \
 	./src/settings/machine \
 	./src/softkeyboard \
@@ -833,6 +834,20 @@ UICommon_QT_MOCHDRS = \
 	src/settings/UISettingsPage.h \
 	src/settings/UISettingsSelector.h \
 	src/settings/UISettingsSerializer.h \
+	src/settings/editors/UIAudioControllerEditor.h \
+	src/settings/editors/UIAudioHostDriverEditor.h \
+	src/settings/editors/UIBaseMemoryEditor.h \
+	src/settings/editors/UIBaseMemorySlider.h \
+	src/settings/editors/UIBootOrderEditor.h \
+	src/settings/editors/UIGraphicsControllerEditor.h \
+	src/settings/editors/UIHostComboEditor.h \
+	src/settings/editors/UIHotKeyEditor.h \
+	src/settings/editors/UINameAndSystemEditor.h \
+	src/settings/editors/UINetworkAttachmentEditor.h \
+	src/settings/editors/UIScaleFactorEditor.h \
+	src/settings/editors/UIVideoMemoryEditor.h \
+	src/settings/editors/UIVirtualCPUEditor.h \
+	src/settings/editors/UIVisualStateEditor.h \
 	src/settings/global/UIGlobalSettingsExtension.h \
 	src/settings/global/UIGlobalSettingsGeneral.h \
 	src/settings/global/UIGlobalSettingsInput.h \
@@ -855,22 +870,12 @@ UICommon_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsUSB.h \
 	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
-	src/widgets/UIAudioControllerEditor.h \
-	src/widgets/UIAudioHostDriverEditor.h \
-	src/widgets/UIBaseMemoryEditor.h \
-	src/widgets/UIBaseMemorySlider.h \
-	src/widgets/UIBootOrderEditor.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
-	src/widgets/UIGraphicsControllerEditor.h \
-	src/widgets/UIHostComboEditor.h \
-	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UIMediaComboBox.h \
 	src/widgets/UIMediumSizeEditor.h \
 	src/widgets/UIMenuBar.h \
 	src/widgets/UIMenuBarEditorWindow.h \
-	src/widgets/UINameAndSystemEditor.h \
-	src/widgets/UINetworkAttachmentEditor.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
 	src/widgets/UIPopupPaneButtonPane.h \
@@ -880,15 +885,11 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIPopupStackViewport.h \
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
-	src/widgets/UIScaleFactorEditor.h \
 	src/widgets/UISlidingToolBar.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UISearchLineEdit.h \
 	src/widgets/UIToolBar.h \
-	src/widgets/UIVideoMemoryEditor.h \
-	src/widgets/UIVirtualCPUEditor.h \
-	src/widgets/UIVisualStateEditor.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -987,6 +988,8 @@ UICommon_QT_MOCSRCS = \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/medium/viso/UIVisoBrowserBase.cpp \
+	src/settings/editors/UIBootOrderEditor.cpp \
+	src/settings/editors/UIHotKeyEditor.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/global/UIGlobalSettingsLanguage.cpp \
@@ -997,9 +1000,7 @@ UICommon_QT_MOCSRCS = \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
-	src/widgets/UIBootOrderEditor.cpp \
 	src/widgets/UIFilmContainer.cpp \
-	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp
 
@@ -1346,6 +1347,20 @@ UICommon_SOURCES = \
 	src/settings/UISettingsPage.cpp \
 	src/settings/UISettingsSelector.cpp \
 	src/settings/UISettingsSerializer.cpp \
+	src/settings/editors/UIAudioControllerEditor.cpp \
+	src/settings/editors/UIAudioHostDriverEditor.cpp \
+	src/settings/editors/UIBaseMemoryEditor.cpp \
+	src/settings/editors/UIBaseMemorySlider.cpp \
+	src/settings/editors/UIBootOrderEditor.cpp \
+	src/settings/editors/UIGraphicsControllerEditor.cpp \
+	src/settings/editors/UIHostComboEditor.cpp \
+	src/settings/editors/UIHotKeyEditor.cpp \
+	src/settings/editors/UINameAndSystemEditor.cpp \
+	src/settings/editors/UINetworkAttachmentEditor.cpp \
+	src/settings/editors/UIScaleFactorEditor.cpp \
+	src/settings/editors/UIVideoMemoryEditor.cpp \
+	src/settings/editors/UIVirtualCPUEditor.cpp \
+	src/settings/editors/UIVisualStateEditor.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsGeneral.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
@@ -1368,22 +1383,12 @@ UICommon_SOURCES = \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
-	src/widgets/UIAudioControllerEditor.cpp \
-	src/widgets/UIAudioHostDriverEditor.cpp \
-	src/widgets/UIBaseMemoryEditor.cpp \
-	src/widgets/UIBaseMemorySlider.cpp \
-	src/widgets/UIBootOrderEditor.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
-	src/widgets/UIGraphicsControllerEditor.cpp \
-	src/widgets/UIHostComboEditor.cpp \
-	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIMediaComboBox.cpp \
 	src/widgets/UIMediumSizeEditor.cpp \
 	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIMenuBarEditorWindow.cpp \
-	src/widgets/UINameAndSystemEditor.cpp \
-	src/widgets/UINetworkAttachmentEditor.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
 	src/widgets/UIPopupPaneButtonPane.cpp \
@@ -1393,15 +1398,11 @@ UICommon_SOURCES = \
 	src/widgets/UIPopupStackViewport.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
-	src/widgets/UIScaleFactorEditor.cpp \
 	src/widgets/UISearchLineEdit.cpp \
 	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBar.cpp \
-	src/widgets/UIVideoMemoryEditor.cpp \
-	src/widgets/UIVirtualCPUEditor.cpp \
-	src/widgets/UIVisualStateEditor.cpp \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
