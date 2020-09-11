@@ -1309,7 +1309,7 @@ Report was written to '2019-03-26-13-32-02-bugreport.tgz'</screen>
 
   <sect1 id="ts_lin-x11-guests">
 
-    <title>Linux and X11 Guests</title>
+    <title>Linux and X11/Wayland Guests</title>
 
     <sect2 id="ts_linux-guest-high-cpu">
 
@@ -1385,10 +1385,10 @@ apic=debug and send a report.  Then try booting with the 'noapic' option</screen
 
     <sect2 id="ts_linux-guest-x11-services">
 
-      <title>Shared Clipboard, Auto-Resizing, and Seamless Desktop in X11 Guests</title>
+      <title>Shared Clipboard, Auto-Resizing, and Seamless Desktop in X11/Wayland Guests</title>
 
       <para>
-        Guest desktop services in guests running the X11 window system
+        Guest desktop services in guests running the X11/Wayland window system
         such as Oracle Solaris and Linux, are provided by a guest
         service called <command>VBoxClient</command>, which runs under
         the ID of the user who started the desktop session and is
@@ -1399,7 +1399,8 @@ apic=debug and send a report.  Then try booting with the 'noapic' option</screen
 
 <screen>$ VBoxClient --clipboard
 $ VBoxClient --display
-$ VBoxClient --seamless</screen>
+$ VBoxClient --seamless
+$ VBoxClient --vmsvga</screen>
 
       <para>
         If a particular desktop service is not working correctly, it is
