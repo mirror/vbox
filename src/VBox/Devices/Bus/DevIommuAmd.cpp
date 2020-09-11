@@ -1990,8 +1990,6 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     uint16_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) * sizeof(DTE_T);
     RTGCPHYS const GCPhysDte    = GCPhysDevTab + offDte;
 
-    LogFlowFunc(("idxSegsEn=%#x GCPhysDevTab=%#RGp offDte=%#x GCPhysDte=%#RGp\n", idxSegsEn, GCPhysDevTab, offDte, GCPhysDte));
-
     Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
     int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysDte, pDte, sizeof(*pDte));
     if (RT_FAILURE(rc))
@@ -2003,7 +2001,6 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
         iommuAmdRaiseDevTabHwErrorEvent(pDevIns, enmOp, &EvtDevTabHwErr);
         return VERR_IOMMU_IPE_1;
     }
-
 
     return rc;
 }
@@ -2042,7 +2039,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
          *        places in the spec. it seems early page walk terminations (starting with
          *        the DTE) return the state computed so far and raises an I/O page fault. So
          *        returning an invalid translation rather than skipping translation. */
-        LogFunc(("Translation valid bit not set -> IOPF"));
+        LogFunc(("Translation valid bit not set -> IOPF\n"));
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2150,7 +2147,7 @@ static int iommuAmdWalkIoPageTable(PPDMDEVINS pDevIns, uint16_t uDevId, uint64_t
         { /* likely */ }
         else
         {
-            LogFunc(("Page table entry not present -> IOPF"));
+            LogFunc(("Page table entry not present -> IOPF\n"));
             EVT_IO_PAGE_FAULT_T EvtIoPageFault;
             iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, uIova, false /* fPresent */, false /* fRsvdNotZero */,
                                          false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -3200,7 +3197,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         if (fVerbose)
         {
             pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabBar.n.u9Size,
-                            IOMMU_GET_DEV_TAB_SIZE(DevTabBar.n.u9Size));
+                            IOMMU_GET_DEV_TAB_LEN(DevTabBar));
             pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT);
         }
     }
@@ -3733,14 +3730,107 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 }
 
 
-static void iommuAmdR3DbgInfoDte(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, PCDTE_T pDte, const char *pszPrefix)
+/**
+ * Dumps the DTE via the info callback helper.
+ *
+ * @param   pHlp        The info helper.
+ * @param   pDte        The device table entry.
+ * @param   pszPrefix   The string prefix.
+ */
+static void iommuAmdR3DbgInfoDteWorker(PCDBGFINFOHLP pHlp, PCDTE_T pDte, const char *pszPrefix)
 {
-    RT_NOREF(pDevIns);
-    pHlp->pfnPrintf(pHlp, " %sValid               = %RTbool\n", pszPrefix, pDte->n.u1Valid);
-    pHlp->pfnPrintf(pHlp, " %sInterrupt Map Valid = %RTbool\n", pszPrefix, pDte->n.u1IntrMapValid);
+    AssertReturnVoid(pHlp);
+    AssertReturnVoid(pDte);
+    AssertReturnVoid(pszPrefix);
+
+    pHlp->pfnPrintf(pHlp, "%sValid                      = %RTbool\n", pszPrefix, pDte->n.u1Valid);
+    pHlp->pfnPrintf(pHlp, "%sTranslation Valid          = %RTbool\n", pszPrefix, pDte->n.u1TranslationValid);
+    pHlp->pfnPrintf(pHlp, "%sHost Access Dirty          = %#x\n",     pszPrefix, pDte->n.u2Had);
+    pHlp->pfnPrintf(pHlp, "%sPaging Mode                = %u\n",      pszPrefix, pDte->n.u3Mode);
+    pHlp->pfnPrintf(pHlp, "%sPage Table Root Ptr        = %#RX64 (addr=%#RGp)\n", pszPrefix, pDte->n.u40PageTableRootPtrLo,
+                    pDte->n.u40PageTableRootPtrLo << 12);
+    pHlp->pfnPrintf(pHlp, "%sPPR enable                 = %RTbool\n", pszPrefix, pDte->n.u1Ppr);
+    pHlp->pfnPrintf(pHlp, "%sGuest PPR Resp w/ PASID    = %RTbool\n", pszPrefix, pDte->n.u1GstPprRespPasid);
+    pHlp->pfnPrintf(pHlp, "%sGuest I/O Prot Valid       = %RTbool\n", pszPrefix, pDte->n.u1GstIoValid);
+    pHlp->pfnPrintf(pHlp, "%sGuest Translation Valid    = %RTbool\n", pszPrefix, pDte->n.u1GstTranslateValid);
+    pHlp->pfnPrintf(pHlp, "%sGuest Levels Translated    = %#x\n",     pszPrefix, pDte->n.u2GstMode);
+    pHlp->pfnPrintf(pHlp, "%sGuest Root Page Table Ptr  = %#x %#x %#x (addr=%#RGp)\n", pszPrefix,
+                    pDte->n.u3GstCr3TableRootPtrLo, pDte->n.u16GstCr3TableRootPtrMid, pDte->n.u21GstCr3TableRootPtrHi,
+                      (pDte->n.u21GstCr3TableRootPtrHi  << 31)
+                    | (pDte->n.u16GstCr3TableRootPtrMid << 15)
+                    | (pDte->n.u3GstCr3TableRootPtrLo   << 12));
+    pHlp->pfnPrintf(pHlp, "%sI/O Read                   = %s\n",      pszPrefix, pDte->n.u1IoRead ? "allowed" : "denied");
+    pHlp->pfnPrintf(pHlp, "%sI/O Write                  = %s\n",      pszPrefix, pDte->n.u1IoWrite ? "allowed" : "denied");
+    pHlp->pfnPrintf(pHlp, "%sReserved (MBZ)             = %#x\n",     pszPrefix, pDte->n.u1Rsvd0);
+    pHlp->pfnPrintf(pHlp, "%sDomain ID                  = %u (%#x)\n", pszPrefix, pDte->n.u16DomainId, pDte->n.u16DomainId);
+    pHlp->pfnPrintf(pHlp, "%sIOTLB Enable               = %RTbool\n", pszPrefix, pDte->n.u1IoTlbEnable);
+    pHlp->pfnPrintf(pHlp, "%sSuppress I/O PFs           = %RTbool\n", pszPrefix, pDte->n.u1SuppressPfEvents);
+    pHlp->pfnPrintf(pHlp, "%sSuppress all I/O PFs       = %RTbool\n", pszPrefix, pDte->n.u1SuppressAllPfEvents);
+    pHlp->pfnPrintf(pHlp, "%sPort I/O Control           = %#x\n",     pszPrefix, pDte->n.u2IoCtl);
+    pHlp->pfnPrintf(pHlp, "%sIOTLB Cache Hint           = %s\n",      pszPrefix, pDte->n.u1Cache ? "no caching" : "cache");
+    pHlp->pfnPrintf(pHlp, "%sSnoop Disable              = %RTbool\n", pszPrefix, pDte->n.u1SnoopDisable);
+    pHlp->pfnPrintf(pHlp, "%sAllow Exclusion            = %RTbool\n", pszPrefix, pDte->n.u1AllowExclusion);
+    pHlp->pfnPrintf(pHlp, "%sSysMgt Message Enable      = %RTbool\n", pszPrefix, pDte->n.u2SysMgt);
+    pHlp->pfnPrintf(pHlp, "\n");
+
+    pHlp->pfnPrintf(pHlp, "%sInterrupt Map Valid        = %RTbool\n", pszPrefix, pDte->n.u1IntrMapValid);
+    if (pDte->n.u4IntrTableLength < 12)
+    {
+        uint32_t const cEntries = 1U << pDte->n.u4IntrTableLength;
+        pHlp->pfnPrintf(pHlp, "%sInterrupt Table Length     = %#x (%u entries, %u bytes)\n", pszPrefix,
+                        pDte->n.u4IntrTableLength, cEntries, cEntries << IOMMU_IRTE_SIZE_SHIFT);
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "%sInterrupt Table Length     = %#x (invalid)\n", pszPrefix, pDte->n.u4IntrTableLength);
+    pHlp->pfnPrintf(pHlp, "%sIgnore Unmapped Interrupts = %RTbool\n", pszPrefix, pDte->n.u1IgnoreUnmappedIntrs);
+    pHlp->pfnPrintf(pHlp, "%sInterrupt Table Root Ptr   = %#RX64 (addr=%#RGp)\n", pszPrefix,
+                    pDte->n.u46IntrTableRootPtr, pDte->au64[2] & IOMMU_DTE_IRTE_ROOT_PTR_MASK);
+    pHlp->pfnPrintf(pHlp, "%sReserved (MBZ)             = %#x\n",     pszPrefix, pDte->n.u4Rsvd0);
+    pHlp->pfnPrintf(pHlp, "%sINIT passthru              = %RTbool\n", pszPrefix, pDte->n.u1InitPassthru);
+    pHlp->pfnPrintf(pHlp, "%sExtInt passthru            = %RTbool\n", pszPrefix, pDte->n.u1ExtIntPassthru);
+    pHlp->pfnPrintf(pHlp, "%sNMI passthru               = %RTbool\n", pszPrefix, pDte->n.u1NmiPassthru);
+    pHlp->pfnPrintf(pHlp, "%sReserved (MBZ)             = %#x\n",     pszPrefix, pDte->n.u1Rsvd2);
+    pHlp->pfnPrintf(pHlp, "%sInterrupt Control          = %#x\n",     pszPrefix, pDte->n.u2IntrCtrl);
+    pHlp->pfnPrintf(pHlp, "%sLINT0 passthru             = %RTbool\n", pszPrefix, pDte->n.u1Lint0Passthru);
+    pHlp->pfnPrintf(pHlp, "%sLINT1 passthru             = %RTbool\n", pszPrefix, pDte->n.u1Lint1Passthru);
+    pHlp->pfnPrintf(pHlp, "%sReserved (MBZ)             = %#x\n",     pszPrefix, pDte->n.u32Rsvd0);
+    pHlp->pfnPrintf(pHlp, "%sReserved (MBZ)             = %#x\n",     pszPrefix, pDte->n.u22Rsvd0);
+    pHlp->pfnPrintf(pHlp, "%sAttribute Override Valid   = %RTbool\n", pszPrefix, pDte->n.u1AttrOverride);
+    pHlp->pfnPrintf(pHlp, "%sMode0FC                    = %#x\n",     pszPrefix, pDte->n.u1Mode0FC);
+    pHlp->pfnPrintf(pHlp, "%sSnoop Attribute            = %#x\n",     pszPrefix, pDte->n.u8SnoopAttr);
 }
 
 
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) iommuAmdR3DbgInfoDte(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    if (pszArgs)
+    {
+        uint16_t uDevId = 0;
+        int rc = RTStrToUInt16Full(pszArgs, 0 /* uBase */, &uDevId);
+        if (RT_SUCCESS(rc))
+        {
+            DTE_T Dte;
+            rc = iommuAmdReadDte(pDevIns, uDevId, IOMMUOP_TRANSLATE_REQ,  &Dte);
+            if (RT_SUCCESS(rc))
+            {
+                iommuAmdR3DbgInfoDteWorker(pHlp, &Dte, " ");
+                return;
+            }
+
+            pHlp->pfnPrintf(pHlp, "Failed to read DTE for device ID %u (%#x). rc=%Rrc\n", uDevId, uDevId, rc);
+        }
+        else
+            pHlp->pfnPrintf(pHlp, "Failed to parse a valid 16-bit device ID. rc=%Rrc\n", rc);
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "Missing device ID.\n");
+}
+
+
+#if 0
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
@@ -3772,7 +3862,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDevTabs(PPDMDEVINS pDevIns, PCDBGFINF
         RTGCPHYS const GCPhysDevTab = DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT;
         if (GCPhysDevTab)
         {
-            uint32_t const cbDevTab = IOMMU_GET_DEV_TAB_SIZE(DevTabBar.n.u9Size);
+            uint32_t const cbDevTab = IOMMU_GET_DEV_TAB_LEN(DevTabBar);
             uint32_t const cDtes    = cbDevTab / sizeof(DTE_T);
             pHlp->pfnPrintf(pHlp, " Table %u (base=%#RGp size=%u bytes entries=%u):\n", i, GCPhysDevTab, cbDevTab, cDtes);
 
@@ -3789,7 +3879,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDevTabs(PPDMDEVINS pDevIns, PCDBGFINF
                             || pDte->n.u1IntrMapValid)
                         {
                             pHlp->pfnPrintf(pHlp, " DTE %u:\n", idxDte);
-                            iommuAmdR3DbgInfoDte(pDevIns, pHlp, pDte, " ");
+                            iommuAmdR3DbgInfoDteWorker(pHlp, pDte, " ");
                         }
                     }
                     pHlp->pfnPrintf(pHlp, "\n");
@@ -3809,9 +3899,8 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDevTabs(PPDMDEVINS pDevIns, PCDBGFINF
             }
         }
     }
-
 }
-
+#endif
 
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
@@ -4113,8 +4202,11 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Register debugger info items.
      */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "iommu",        "Display IOMMU state.", iommuAmdR3DbgInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "iommu",    "Display IOMMU state.", iommuAmdR3DbgInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "iommudte", "Display the DTE for a device. Arguments: DeviceID.", iommuAmdR3DbgInfoDte);
+#if 0
     PDMDevHlpDBGFInfoRegister(pDevIns, "iommudevtabs", "Display IOMMU device tables.", iommuAmdR3DbgInfoDevTabs);
+#endif
 
 # ifdef VBOX_WITH_STATISTICS
     /*

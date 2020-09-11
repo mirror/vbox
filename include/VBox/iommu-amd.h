@@ -453,9 +453,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 /**
- * Gets the device table size given the size field.
+ * Gets the device table length (in bytes) given the size field.
  */
-#define IOMMU_GET_DEV_TAB_SIZE(a_uSize)     (((a_uSize) + 1) << X86_PAGE_4K_SHIFT)
+#define IOMMU_GET_DEV_TAB_LEN(a_DevTab)     (((a_DevTab.n.u9Size) + 1) << X86_PAGE_4K_SHIFT)
 
 /**
  * The Device ID.
@@ -498,7 +498,7 @@ typedef union
         RT_GCC_EXTENSION uint64_t  u1IoWrite : 1;                 /**< Bit  62      - IW: I/O Write permission. */
         RT_GCC_EXTENSION uint64_t  u1Rsvd0 : 1;                   /**< Bit  63      - Reserved. */
         RT_GCC_EXTENSION uint64_t  u16DomainId : 16;              /**< Bits 79:64   - Domain ID. */
-        RT_GCC_EXTENSION uint64_t  u16GstCr3TableRootPtrMed : 16; /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Ptr (Mid). */
+        RT_GCC_EXTENSION uint64_t  u16GstCr3TableRootPtrMid : 16; /**< Bits 95:80   - GCR3 TRP: Guest CR3 Table Root Ptr (Mid). */
         RT_GCC_EXTENSION uint64_t  u1IoTlbEnable : 1;             /**< Bit  96      - I: IOTLB Enable. */
         RT_GCC_EXTENSION uint64_t  u1SuppressPfEvents : 1;        /**< Bit  97      - SE: Supress Page-fault events. */
         RT_GCC_EXTENSION uint64_t  u1SuppressAllPfEvents : 1;     /**< Bit  98      - SA: Supress All Page-fault events. */
@@ -524,8 +524,8 @@ typedef union
         RT_GCC_EXTENSION uint64_t  u32Rsvd0 : 32;                 /**< Bits 223:192 - Reserved. */
         RT_GCC_EXTENSION uint64_t  u22Rsvd0 : 22;                 /**< Bits 245:224 - Reserved. */
         RT_GCC_EXTENSION uint64_t  u1AttrOverride : 1;            /**< Bit  246     - AttrV: Attribute Override. */
-        RT_GCC_EXTENSION uint64_t  u1Mode0FC: 1;                  /**< Bit  247     - Mode0FC. */
-        RT_GCC_EXTENSION uint64_t  u8SnoopAttr: 8;                /**< Bits 255:248 - Snoop Attribute. */
+        RT_GCC_EXTENSION uint64_t  u1Mode0FC : 1;                 /**< Bit  247     - Mode0FC. */
+        RT_GCC_EXTENSION uint64_t  u8SnoopAttr : 8;               /**< Bits 255:248 - Snoop Attribute. */
     } n;
     /** The 32-bit unsigned integer view. */
     uint32_t        au32[8];
@@ -564,6 +564,10 @@ typedef DTE_T const *PCDTE_T;
 
 /* Mask of the interrupt table root pointer. */
 #define IOMMU_DTE_IRTE_ROOT_PTR_MASK            UINT64_C(0x000fffffffffffc0)
+/* Number of bits to shift to get the interrupt root table pointer at
+   qword 2 (qword 0 being the first one) - 128-byte aligned. */
+#define IOMMU_DTE_IRTE_ROOT_PTR_SHIFT           6
+
 
 /**
  * I/O Page Translation Entry.
