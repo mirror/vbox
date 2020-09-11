@@ -90,12 +90,6 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedMachineSettingsPages;
     /** @} */
 
-    /** @name Settings: General
-      * @{ */
-        /** Holds whether host screen-saver should be disabled. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_HostScreenSaverDisabled;
-    /** @} */
-
     /** @name Settings: Language
       * @{ */
         /** Holds GUI language ID. */

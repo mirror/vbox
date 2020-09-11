@@ -2430,18 +2430,6 @@ QList<MachineSettingsPageType> UIExtraDataManager::restrictedMachineSettingsPage
     return result;
 }
 
-bool UIExtraDataManager::hostScreenSaverDisabled()
-{
-    /* 'False' unless feature allowed: */
-    return isFeatureAllowed(GUI_HostScreenSaverDisabled);
-}
-
-void UIExtraDataManager::setHostScreenSaverDisabled(bool fDisabled)
-{
-    /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_HostScreenSaverDisabled, toFeatureAllowed(fDisabled));
-}
-
 QString UIExtraDataManager::languageId()
 {
     /* Load language ID: */

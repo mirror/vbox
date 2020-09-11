@@ -16,7 +16,6 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
 #include <QDir>
 #include <QGridLayout>
 #include <QLabel>
@@ -36,7 +35,6 @@ struct UIDataSettingsGlobalGeneral
     UIDataSettingsGlobalGeneral()
         : m_strDefaultMachineFolder(QString())
         , m_strVRDEAuthLibrary(QString())
-        , m_fHostScreenSaverDisabled(false)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -45,7 +43,6 @@ struct UIDataSettingsGlobalGeneral
         return true
                && (m_strDefaultMachineFolder == other.m_strDefaultMachineFolder)
                && (m_strVRDEAuthLibrary == other.m_strVRDEAuthLibrary)
-               && (m_fHostScreenSaverDisabled == other.m_fHostScreenSaverDisabled)
                ;
     }
 
@@ -58,8 +55,6 @@ struct UIDataSettingsGlobalGeneral
     QString m_strDefaultMachineFolder;
     /** Holds the VRDE authentication library name. */
     QString m_strVRDEAuthLibrary;
-    /** Holds whether host screen-saver should be disabled. */
-    bool m_fHostScreenSaverDisabled;
 };
 
 
@@ -69,8 +64,6 @@ UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     , m_pSelectorMachineFolder(0)
     , m_pLabelVRDPLibraryName(0)
     , m_pSelectorVRDPLibraryName(0)
-    , m_pLabelHostScreenSaver(0)
-    , m_pCheckBoxHostScreenSaver(0)
 {
     /* Prepare: */
     prepare();
@@ -96,7 +89,6 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Gather old general data: */
     oldGeneralData.m_strDefaultMachineFolder = m_properties.GetDefaultMachineFolder();
     oldGeneralData.m_strVRDEAuthLibrary = m_properties.GetVRDEAuthLibrary();
-    oldGeneralData.m_fHostScreenSaverDisabled = gEDataManager->hostScreenSaverDisabled();
 
     /* Cache old general data: */
     m_pCache->cacheInitialData(oldGeneralData);
@@ -113,7 +105,6 @@ void UIGlobalSettingsGeneral::getFromCache()
     /* Load old general data from the cache: */
     m_pSelectorMachineFolder->setPath(oldGeneralData.m_strDefaultMachineFolder);
     m_pSelectorVRDPLibraryName->setPath(oldGeneralData.m_strVRDEAuthLibrary);
-    m_pCheckBoxHostScreenSaver->setChecked(oldGeneralData.m_fHostScreenSaverDisabled);
 }
 
 void UIGlobalSettingsGeneral::putToCache()
@@ -124,7 +115,6 @@ void UIGlobalSettingsGeneral::putToCache()
     /* Gather new general data: */
     newGeneralData.m_strDefaultMachineFolder = m_pSelectorMachineFolder->path();
     newGeneralData.m_strVRDEAuthLibrary = m_pSelectorVRDPLibraryName->path();
-    newGeneralData.m_fHostScreenSaverDisabled = m_pCheckBoxHostScreenSaver->isChecked();
 
     /* Cache new general data: */
     m_pCache->cacheCurrentData(newGeneralData);
@@ -149,9 +139,6 @@ void UIGlobalSettingsGeneral::retranslateUi()
                                               "if not explicitly specified otherwise, when creating new virtual machines."));
     m_pLabelVRDPLibraryName->setText(tr("V&RDP Authentication Library:"));
     m_pSelectorVRDPLibraryName->setWhatsThis(tr("Holds the path to the library that provides authentication for Remote Display (VRDP) clients."));
-    m_pLabelHostScreenSaver->setText(tr("Host Screensaver:"));
-    m_pCheckBoxHostScreenSaver->setWhatsThis(tr("When checked, the host screensaver will be disabled whenever a virtual machine is running."));
-    m_pCheckBoxHostScreenSaver->setText(tr("&Disable When Running Virtual Machines"));
 }
 
 void UIGlobalSettingsGeneral::prepare()
@@ -212,24 +199,6 @@ void UIGlobalSettingsGeneral::prepareWidgets()
 
             pLayoutMain->addWidget(m_pSelectorVRDPLibraryName, 1, 1, 1, 2);
         }
-
-        /* Prepare screen-saver label: */
-        m_pLabelHostScreenSaver = new QLabel(this);
-        if (m_pLabelHostScreenSaver)
-        {
-            m_pLabelHostScreenSaver->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLabelHostScreenSaver->hide();
-            pLayoutMain->addWidget(m_pLabelHostScreenSaver, 2, 0);
-        }
-        /* Prepare screen-saver check-box: */
-        m_pCheckBoxHostScreenSaver = new QCheckBox(this);
-        if (m_pCheckBoxHostScreenSaver)
-        {
-            if (m_pLabelHostScreenSaver)
-                m_pLabelHostScreenSaver->setBuddy(m_pCheckBoxHostScreenSaver);
-            m_pCheckBoxHostScreenSaver->hide();
-            pLayoutMain->addWidget(m_pCheckBoxHostScreenSaver, 2, 1);
-        }
     }
 }
 
@@ -270,10 +239,6 @@ bool UIGlobalSettingsGeneral::saveGeneralData()
         /* Show error message if necessary: */
         if (!fSuccess)
             notifyOperationProgressError(UIErrorString::formatErrorInfo(m_properties));
-
-        /* Save new general data from the cache: */
-        if (newGeneralData.m_fHostScreenSaverDisabled != oldGeneralData.m_fHostScreenSaverDisabled)
-            gEDataManager->setHostScreenSaverDisabled(newGeneralData.m_fHostScreenSaverDisabled);
     }
     /* Return result: */
     return fSuccess;
