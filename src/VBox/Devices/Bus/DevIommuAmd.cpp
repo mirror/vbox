@@ -2501,7 +2501,7 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
 
 
 /**
- * Remap the interrupt using the interrupt remapping table.
+ * Remaps the interrupt using the interrupt remapping table.
  *
  * @returns VBox status code.
  * @param   pDevIns     The IOMMU instance data.
@@ -2526,7 +2526,7 @@ static int iommuAmdRemapIntr(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, 
         {
             if (!Irte.n.u1GuestMode)
             {
-                if (Irte.n.u3IntrType < VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
+                if (Irte.n.u3IntrType <= VBOX_MSI_DELIVERY_MODE_LOWEST_PRIO)
                 {
                     /* Preserve all bits from the source MSI address that don't map 1:1 from the IRTE. */
                     pMsiOut->Addr.u64 = pMsiIn->Addr.u64;
