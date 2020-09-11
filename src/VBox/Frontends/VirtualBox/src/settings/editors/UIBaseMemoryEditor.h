@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIBaseMemoryEditor_h
-#define FEQT_INCLUDED_SRC_widgets_UIBaseMemoryEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIBaseMemoryEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIBaseMemoryEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -94,4 +94,4 @@ private:
     QSpinBox           *m_pSpinBox;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIBaseMemoryEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIBaseMemoryEditor_h */

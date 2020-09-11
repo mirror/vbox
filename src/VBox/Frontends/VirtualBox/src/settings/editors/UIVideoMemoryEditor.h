@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIVideoMemoryEditor_h
-#define FEQT_INCLUDED_SRC_widgets_UIVideoMemoryEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIVideoMemoryEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIVideoMemoryEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -139,4 +139,4 @@ private:
     QSpinBox         *m_pSpinBox;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIVideoMemoryEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIVideoMemoryEditor_h */

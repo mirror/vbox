@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UINetworkAttachmentEditor_h
-#define FEQT_INCLUDED_SRC_widgets_UINetworkAttachmentEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UINetworkAttachmentEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UINetworkAttachmentEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -146,4 +146,4 @@ private:
     QIComboBox *m_pComboName;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UINetworkAttachmentEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UINetworkAttachmentEditor_h */

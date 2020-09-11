@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIScaleFactorEditor_h
-#define FEQT_INCLUDED_SRC_widgets_UIScaleFactorEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIScaleFactorEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIScaleFactorEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -108,4 +108,4 @@ private:
     double         m_dDefaultScaleFactor;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIScaleFactorEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIScaleFactorEditor_h */
