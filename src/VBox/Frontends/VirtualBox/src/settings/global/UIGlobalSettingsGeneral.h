@@ -26,7 +26,8 @@
 
 /* Forward declarations: */
 class QLabel;
-class UIFilePathSelector;
+class UIDefaultMachineFolderEditor;
+class UIVRDEAuthLibraryEditor;
 struct UIDataSettingsGlobalGeneral;
 typedef UISettingsCache<UIDataSettingsGlobalGeneral> UISettingsCacheGlobalGeneral;
 
@@ -79,13 +80,13 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds 'default machine folder' label instance. */
-        QLabel             *m_pLabelDefaultMachineFolder;
-        /** Holds 'default machine folder' selector instance. */
-        UIFilePathSelector *m_pSelectorDefaultMachineFolder;
+        QLabel                       *m_pLabelDefaultMachineFolder;
+        /** Holds 'default machine folder' editor instance. */
+        UIDefaultMachineFolderEditor *m_pEditorDefaultMachineFolder;
         /** Holds 'VRDE auth library' label instance. */
-        QLabel             *m_pLabelVRDEAuthLibrary;
-        /** Holds 'VRDE auth library' selector instance. */
-        UIFilePathSelector *m_pSelectorVRDEAuthLibrary;
+        QLabel                       *m_pLabelVRDEAuthLibrary;
+        /** Holds 'VRDE auth library' editor instance. */
+        UIVRDEAuthLibraryEditor      *m_pEditorVRDEAuthLibrary;
     /** @} */
 };
 

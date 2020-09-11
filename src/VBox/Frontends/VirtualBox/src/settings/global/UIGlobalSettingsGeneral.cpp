@@ -16,15 +16,15 @@
  */
 
 /* Qt includes: */
-#include <QDir>
 #include <QGridLayout>
 #include <QLabel>
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIDefaultMachineFolderEditor.h"
 #include "UIErrorString.h"
-#include "UIFilePathSelector.h"
 #include "UIGlobalSettingsGeneral.h"
+#include "UIVRDEAuthLibraryEditor.h"
 
 
 /** Global settings: General page data structure. */
@@ -60,9 +60,9 @@ struct UIDataSettingsGlobalGeneral
 UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     : m_pCache(0)
     , m_pLabelDefaultMachineFolder(0)
-    , m_pSelectorDefaultMachineFolder(0)
+    , m_pEditorDefaultMachineFolder(0)
     , m_pLabelVRDEAuthLibrary(0)
-    , m_pSelectorVRDEAuthLibrary(0)
+    , m_pEditorVRDEAuthLibrary(0)
 {
     prepare();
 }
@@ -94,8 +94,8 @@ void UIGlobalSettingsGeneral::getFromCache()
 {
     /* Load old data from cache: */
     const UIDataSettingsGlobalGeneral &oldData = m_pCache->base();
-    m_pSelectorDefaultMachineFolder->setPath(oldData.m_strDefaultMachineFolder);
-    m_pSelectorVRDEAuthLibrary->setPath(oldData.m_strVRDEAuthLibrary);
+    m_pEditorDefaultMachineFolder->setValue(oldData.m_strDefaultMachineFolder);
+    m_pEditorVRDEAuthLibrary->setValue(oldData.m_strVRDEAuthLibrary);
 }
 
 void UIGlobalSettingsGeneral::putToCache()
@@ -104,8 +104,8 @@ void UIGlobalSettingsGeneral::putToCache()
     UIDataSettingsGlobalGeneral newData = m_pCache->base();
 
     /* Cache new data: */
-    newData.m_strDefaultMachineFolder = m_pSelectorDefaultMachineFolder->path();
-    newData.m_strVRDEAuthLibrary = m_pSelectorVRDEAuthLibrary->path();
+    newData.m_strDefaultMachineFolder = m_pEditorDefaultMachineFolder->value();
+    newData.m_strVRDEAuthLibrary = m_pEditorVRDEAuthLibrary->value();
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -123,12 +123,8 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsGeneral::retranslateUi()
 {
-    m_pLabelDefaultMachineFolder->setText(tr("Default &Machine Folder:"));
-    m_pSelectorDefaultMachineFolder->setWhatsThis(tr("Holds the path to the default virtual machine folder. This folder is used, "
-                                                     "if not explicitly specified otherwise, when creating new virtual machines."));
-    m_pLabelVRDEAuthLibrary->setText(tr("V&RDP Authentication Library:"));
-    m_pSelectorVRDEAuthLibrary->setWhatsThis(tr("Holds the path to the library that provides "
-                                                "authentication for Remote Display (VRDP) clients."));
+    m_pLabelDefaultMachineFolder->setText(UIDefaultMachineFolderEditor::tr("Default &Machine Folder:"));
+    m_pLabelVRDEAuthLibrary->setText(UIVRDEAuthLibraryEditor::tr("V&RDP Authentication Library:"));
 }
 
 void UIGlobalSettingsGeneral::prepare()
@@ -161,14 +157,12 @@ void UIGlobalSettingsGeneral::prepareWidgets()
             pLayoutMain->addWidget(m_pLabelDefaultMachineFolder, 0, 0);
         }
         /* Prepare 'default machine folder' editor: */
-        m_pSelectorDefaultMachineFolder = new UIFilePathSelector(this);
-        if (m_pSelectorDefaultMachineFolder)
+        m_pEditorDefaultMachineFolder = new UIDefaultMachineFolderEditor(this);
+        if (m_pEditorDefaultMachineFolder)
         {
             if (m_pLabelDefaultMachineFolder)
-                m_pLabelDefaultMachineFolder->setBuddy(m_pSelectorDefaultMachineFolder);
-            m_pSelectorDefaultMachineFolder->setHomeDir(uiCommon().homeFolder());
-
-            pLayoutMain->addWidget(m_pSelectorDefaultMachineFolder, 0, 1, 1, 2);
+                m_pLabelDefaultMachineFolder->setBuddy(m_pEditorDefaultMachineFolder);
+            pLayoutMain->addWidget(m_pEditorDefaultMachineFolder, 0, 1, 1, 2);
         }
 
         /* Prepare 'VRDE auth library' label: */
@@ -179,15 +173,12 @@ void UIGlobalSettingsGeneral::prepareWidgets()
             pLayoutMain->addWidget(m_pLabelVRDEAuthLibrary, 1, 0);
         }
         /* Prepare 'VRDE auth library' editor: */
-        m_pSelectorVRDEAuthLibrary = new UIFilePathSelector(this);
-        if (m_pSelectorVRDEAuthLibrary)
+        m_pEditorVRDEAuthLibrary = new UIVRDEAuthLibraryEditor(this);
+        if (m_pEditorVRDEAuthLibrary)
         {
             if (m_pLabelVRDEAuthLibrary)
-                m_pLabelVRDEAuthLibrary->setBuddy(m_pSelectorVRDEAuthLibrary);
-            m_pSelectorVRDEAuthLibrary->setHomeDir(uiCommon().homeFolder());
-            m_pSelectorVRDEAuthLibrary->setMode(UIFilePathSelector::Mode_File_Open);
-
-            pLayoutMain->addWidget(m_pSelectorVRDEAuthLibrary, 1, 1, 1, 2);
+                m_pLabelVRDEAuthLibrary->setBuddy(m_pEditorVRDEAuthLibrary);
+            pLayoutMain->addWidget(m_pEditorVRDEAuthLibrary, 1, 1, 1, 2);
         }
     }
 }

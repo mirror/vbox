@@ -838,6 +838,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIAudioHostDriverEditor.h \
 	src/settings/editors/UIBaseMemoryEditor.h \
 	src/settings/editors/UIBootOrderEditor.h \
+	src/settings/editors/UIDefaultMachineFolderEditor.h \
 	src/settings/editors/UIGraphicsControllerEditor.h \
 	src/settings/editors/UIHostComboEditor.h \
 	src/settings/editors/UIHotKeyEditor.h \
@@ -847,6 +848,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIVideoMemoryEditor.h \
 	src/settings/editors/UIVirtualCPUEditor.h \
 	src/settings/editors/UIVisualStateEditor.h \
+	src/settings/editors/UIVRDEAuthLibraryEditor.h \
 	src/settings/global/UIGlobalSettingsExtension.h \
 	src/settings/global/UIGlobalSettingsGeneral.h \
 	src/settings/global/UIGlobalSettingsInput.h \
@@ -1351,6 +1353,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIAudioHostDriverEditor.cpp \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
+	src/settings/editors/UIDefaultMachineFolderEditor.cpp \
 	src/settings/editors/UIGraphicsControllerEditor.cpp \
 	src/settings/editors/UIHostComboEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \
@@ -1360,6 +1363,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIVideoMemoryEditor.cpp \
 	src/settings/editors/UIVirtualCPUEditor.cpp \
 	src/settings/editors/UIVisualStateEditor.cpp \
+	src/settings/editors/UIVRDEAuthLibraryEditor.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsGeneral.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
