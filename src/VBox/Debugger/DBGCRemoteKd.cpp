@@ -981,7 +981,7 @@ DECLINLINE(int) dbgcKdCtxWrite(PKDCTX pThis, const void *pvPkt, size_t cbPkt)
  * @param   pThis               The KD context.
  * @param   idCpu               The CPU to query the context for.
  * @param   pNtCtx              The NT context structure to fill in.
- * @param   pCtxFlags           Combination of NTCONTEXT_F_XXX determining what to fill in.
+ * @param   fCtxFlags           Combination of NTCONTEXT_F_XXX determining what to fill in.
  */
 static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCtx, uint32_t fCtxFlags)
 {
@@ -1078,8 +1078,8 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
  * @returns VBox status code.
  * @param   pThis               The KD context.
  * @param   idCpu               The CPU to query the context for.
- * @param   pNtCtx              The NT context structure to fill in.
- * @param   pCtxFlags           Combination of NTCONTEXT_F_XXX determining what to fill in.
+ * @param   pKNtCtx             The NT context structure to fill in.
+ * @param   fCtxFlags           Combination of NTCONTEXT_F_XXX determining what to fill in.
  */
 static int dbgcKdCtxQueryNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT64 pKNtCtx, uint32_t fCtxFlags)
 {
@@ -1322,7 +1322,6 @@ static int dbgcKdCtxPktWaitForAck(PKDCTX pThis, RTMSINTERVAL msWait, bool *pfRes
  * @param   pThis               The KD context.
  * @param   u32Signature        The signature to send.
  * @param   u16SubType          The sub type to send.
- * @param   idPacket            Packet ID to send.
  * @param   paSegs              Pointer to the array of segments to send in the body, optional.
  * @param   cSegs               Number of segments.
  * @param   fAck                Flag whether to wait for an acknowledge.
