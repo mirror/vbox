@@ -31,6 +31,7 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
+#include <iprt/file.h>
 #include <iprt/env.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
@@ -76,6 +77,7 @@ static FNDBGCCMD dbgcCmdHarakiri;
 static FNDBGCCMD dbgcCmdEcho;
 static FNDBGCCMD dbgcCmdRunScript;
 static FNDBGCCMD dbgcCmdWriteCore;
+static FNDBGCCMD dbgcCmdWriteGstMem;
 
 
 /*********************************************************************************************************************************
@@ -262,6 +264,14 @@ static const DBGCVARDESC    g_aArgWriteCore[] =
     {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "path",         "Filename string." },
 };
 
+/** writegstmem arguments. */
+static const DBGCVARDESC    g_aArgWriteGstMem[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "filename",     "Filename string." },
+    {  1,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "The guest address." }
+};
+
 
 
 /** Command descriptors for the basic commands. */
@@ -309,6 +319,7 @@ const DBGCCMD    g_aDbgcCmds[] =
     { "unloadplugin", 1,     ~0U,       &g_aArgPlugIn[0],    RT_ELEMENTS(g_aArgPlugIn),    0, dbgcCmdUnloadPlugIn, "<plugin1> [plugin2..N]", "Unloads one or more plugins." },
     { "unset",      1,       ~0U,       &g_aArgUnset[0],     RT_ELEMENTS(g_aArgUnset),     0, dbgcCmdUnset,     "<var1> [var1..[varN]]",  "Unsets (delete) one or more global variables." },
     { "writecore",  1,        1,        &g_aArgWriteCore[0], RT_ELEMENTS(g_aArgWriteCore), 0, dbgcCmdWriteCore,   "<filename>",           "Write core to file." },
+    { "writegstmem",  2,      2,        &g_aArgWriteGstMem[0], RT_ELEMENTS(g_aArgWriteGstMem), 0, dbgcCmdWriteGstMem, "<filename> <address>",           "Load data from the given file and write it to guest memory at the given start address." },
 };
 /** The number of native commands. */
 const uint32_t      g_cDbgcCmds = RT_ELEMENTS(g_aDbgcCmds);
@@ -1936,5 +1947,94 @@ static DECLCALLBACK(int) dbgcCmdWriteCore(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "DBGFR3WriteCore failed. rc=%Rrc\n", rc);
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'writegstmem' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdWriteGstMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    LogFunc(("\n"));
+
+    /*
+     * Validate the parsing and make sense of the input.
+     * This is a mess as usual because we don't trust the parser yet.
+     */
+    AssertReturn(    cArgs == 2
+                 &&  paArgs[0].enmType == DBGCVAR_TYPE_STRING
+                 &&  DBGCVAR_ISPOINTER(paArgs[1].enmType),
+                 VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+
+    const char *pszFile = paArgs[0].u.pszString;
+    if (!pszFile)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Missing file path.\n");
+
+    DBGFADDRESS     LoadAddress;
+    int rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[1], &LoadAddress);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "pfnVarToDbgfAddr: %Dv\n", &paArgs[1]);
+
+    RTFILE hFile = NIL_RTFILE;
+    rc = RTFileOpen(&hFile, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t cbFile;
+        rc = RTFileQuerySize(hFile, &cbFile);
+        if (RT_SUCCESS(rc))
+        {
+            void *pvBuf = RTMemTmpAlloc(_16K);
+            if (RT_LIKELY(pvBuf))
+            {
+                size_t cbLeft = cbFile;
+
+                while (   cbLeft
+                       && RT_SUCCESS(rc))
+                {
+                    uint64_t cbThisCopy = RT_MIN(cbFile, _16K);
+
+                    rc = RTFileRead(hFile, pvBuf, cbThisCopy, NULL /*pcbRead*/);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = DBGFR3MemWrite(pUVM, pDbgc->idCpu, &LoadAddress, pvBuf, cbThisCopy);
+                        if (RT_SUCCESS(rc))
+                            DBGFR3AddrAdd(&LoadAddress, cbThisCopy);
+                        else
+                        {
+                            DBGCVAR VarCur;
+                            rc = DBGCCmdHlpVarFromDbgfAddr(pCmdHlp, &LoadAddress, &VarCur);
+                            if (RT_SUCCESS(rc))
+                                rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3MemWrite(,,%DV,,%RX64) failed. rc=%Rrc\n", &VarCur, cbThisCopy, rc);
+                            else
+                                rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGCCmdHlpVarFromDbgfAddr\n");
+                        }
+                    }
+                    else
+                        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "RTFileRead() failed. rc=%Rrc\n", rc);
+
+                    cbLeft -= cbThisCopy;
+                }
+
+                if (RT_SUCCESS(rc))
+                    DBGCCmdHlpPrintf(pCmdHlp, "Wrote 0x%RX64 (%RU64) bytes to %Dv\n", cbFile, cbFile, &paArgs[1]);
+
+                RTMemTmpFree(pvBuf);
+            }
+            else
+            {
+                rc = VERR_NO_MEMORY;
+                rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "RTMemTmpAlloc() failed. rc=%Rrc\n", rc);
+            }
+        }
+        else
+            rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "RTFileQuerySize() failed. rc=%Rrc\n", rc);
+
+        RTFileClose(hFile);
+    }
+    else
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "RTFileOpen(,%s,) failed. rc=%Rrc\n", pszFile, rc);
+
+    return rc;
 }
 
