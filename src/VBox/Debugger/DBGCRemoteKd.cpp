@@ -1682,7 +1682,7 @@ static int dbgcKdCtxPktManipulate64ReadCtrlSpace(PKDCTX pThis, PCKDPACKETMANIPUL
     KDPACKETMANIPULATEHDR RespHdr;
     KDPACKETMANIPULATE_XFERCTRLSPACE64 XferCtrlSpace64;
     uint8_t abResp[sizeof(NTKCONTEXT64)];
-    size_t cbData = 0;
+    uint32_t cbData = 0;
     RT_ZERO(RespHdr); RT_ZERO(XferCtrlSpace64);
     RT_ZERO(abResp);
 
