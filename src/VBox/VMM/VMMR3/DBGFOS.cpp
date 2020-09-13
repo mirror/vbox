@@ -70,6 +70,8 @@ typedef struct DBGFOSEMTWRAPPER
         void                    *pv;
         /** DBGFOSINTERFACE_DMESG.*/
         PDBGFOSIDMESG           pDmesg;
+        /** DBGFOSINTERFACE_WINNT.*/
+        PDBGFOSIWINNT           pWinNt;
     } uDigger;
     /** The user mode VM handle. */
     PUVM                        pUVM;
@@ -78,6 +80,8 @@ typedef struct DBGFOSEMTWRAPPER
     {
         /** DBGFOSINTERFACE_DMESG.*/
         DBGFOSIDMESG            Dmesg;
+        /** DBGFOSINTERFACE_WINNT.*/
+        DBGFOSIWINNT            WinNt;
     } uWrapper;
 } DBGFOSEMTWRAPPER;
 /** Pointer to an EMT interface wrapper.   */
@@ -531,6 +535,69 @@ static DECLCALLBACK(int) dbgfR3OSEmtIDmesg_QueryKernelLog(PDBGFOSIDMESG pThis, P
 
 
 /**
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion, Generic EMT wrapper.}
+ */
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryVersion(PDBGFOSIWINNT pThis, PUVM pUVM, uint32_t *puVersMajor, uint32_t *puVersMinor)
+{
+    PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
+
+    return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
+                                   (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryVersion, 4,
+                                    pWrapper->uDigger.pWinNt, pUVM, puVersMajor, puVersMinor);
+}
+
+
+/**
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion, Generic EMT wrapper.}
+ */
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryKernelPtrs(PDBGFOSIWINNT pThis, PUVM pUVM,
+                                                           PRTGCUINTPTR pGCPtrKernBase, PRTGCUINTPTR pGCPtrPsLoadedModuleList)
+{
+    PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
+
+    return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
+                                   (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryKernelPtrs, 4,
+                                    pWrapper->uDigger.pWinNt, pUVM, pGCPtrKernBase, pGCPtrPsLoadedModuleList);
+}
+
+
+/**
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryKpcrForVCpu, Generic EMT wrapper.}
+ */
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryKpcrForVCpu(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
+                                                            PRTGCUINTPTR pKpcr, PRTGCUINTPTR pKpcrb)
+{
+    PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
+
+    return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
+                                    (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryKpcrForVCpu, 5,
+                                    pWrapper->uDigger.pWinNt, pUVM, idCpu, pKpcr, pKpcrb);
+}
+
+
+/**
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryCurThrdForVCpu, Generic EMT wrapper.}
+ */
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryCurThrdForVCpu(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
+                                                               PRTGCUINTPTR pCurThrd)
+{
+    PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
+
+    return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
+                                    (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryCurThrdForVCpu, 4,
+                                    pWrapper->uDigger.pWinNt, pUVM, idCpu, pCurThrd);
+}
+
+
+/**
  * EMT worker for DBGFR3OSQueryInterface.
  *
  * @param   pUVM            The user mode VM handle.
@@ -589,6 +656,14 @@ static DECLCALLBACK(void) dbgfR3OSQueryInterface(PUVM pUVM, DBGFOSINTERFACE enmI
                     pWrapper->uWrapper.Dmesg.u32Magic          = DBGFOSIDMESG_MAGIC;
                     pWrapper->uWrapper.Dmesg.pfnQueryKernelLog = dbgfR3OSEmtIDmesg_QueryKernelLog;
                     pWrapper->uWrapper.Dmesg.u32EndMagic       = DBGFOSIDMESG_MAGIC;
+                    break;
+                case DBGFOSINTERFACE_WINNT:
+                    pWrapper->uWrapper.WinNt.u32Magic               = DBGFOSIWINNT_MAGIC;
+                    pWrapper->uWrapper.WinNt.pfnQueryVersion        = dbgfR3OSEmtIWinNt_QueryVersion;
+                    pWrapper->uWrapper.WinNt.pfnQueryKernelPtrs     = dbgfR3OSEmtIWinNt_QueryKernelPtrs;
+                    pWrapper->uWrapper.WinNt.pfnQueryKpcrForVCpu    = dbgfR3OSEmtIWinNt_QueryKpcrForVCpu;
+                    pWrapper->uWrapper.WinNt.pfnQueryCurThrdForVCpu = dbgfR3OSEmtIWinNt_QueryCurThrdForVCpu;
+                    pWrapper->uWrapper.WinNt.u32EndMagic            = DBGFOSIWINNT_MAGIC;
                     break;
                 default:
                     AssertFailed();

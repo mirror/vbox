@@ -2172,6 +2172,8 @@ typedef enum DBGFOSINTERFACE
     DBGFOSINTERFACE_THREAD,
     /** Kernel message log - DBGFOSIDMESG. */
     DBGFOSINTERFACE_DMESG,
+    /** Windows NT specifics (for the communication with the KD debugger stub). */
+    DBGFOSINTERFACE_WINNT,
     /** The end of the valid entries. */
     DBGFOSINTERFACE_END,
     /** The usual 32-bit type blowup. */
@@ -2360,6 +2362,72 @@ typedef struct DBGFOSIDMESG
 typedef DBGFOSIDMESG *PDBGFOSIDMESG;
 /** Magic value for DBGFOSIDMESG::32Magic and DBGFOSIDMESG::u32EndMagic. (Kenazburo Oe) */
 #define DBGFOSIDMESG_MAGIC UINT32_C(0x19350131)
+
+
+/**
+ * Interface for querying Windows NT guest specifics (DBGFOSINTERFACE_WINNT).
+ */
+typedef struct DBGFOSIWINNT
+{
+    /** Trailing magic (DBGFOSIWINNT_MAGIC). */
+    uint32_t    u32Magic;
+
+    /**
+     * Queries version information.
+     *
+     * @returns VBox status code.
+     * @param   pThis                           Pointer to the interface structure.
+     * @param   pUVM                            The user mode VM handle.
+     * @param   puVersMajor                     Where to store the major version part.
+     * @param   puVersMinor                     Where to store the minor version part.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryVersion,(struct DBGFOSIWINNT *pThis, PUVM pUVM,
+                                             uint32_t *puVersMajor, uint32_t *puVersMinor));
+
+    /**
+     * Queries some base kernel pointers.
+     *
+     * @returns VBox status code.
+     * @param   pThis                           Pointer to the interface structure.
+     * @param   pUVM                            The user mode VM handle.
+     * @param   pGCPtrKernBase                  Where to store the kernel base on success.
+     * @param   pGCPtrPsLoadedModuleList        Where to store the pointer to the laoded module list head on success.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryKernelPtrs,(struct DBGFOSIWINNT *pThis, PUVM pUVM,
+                                                PRTGCUINTPTR pGCPtrKernBase, PRTGCUINTPTR pGCPtrPsLoadedModuleList));
+
+    /**
+     * Queries KPCR and KPCRB pointers for the given vCPU.
+     *
+     * @returns VBox status code.
+     * @param   pThis                           Pointer to the interface structure.
+     * @param   pUVM                            The user mode VM handle.
+     * @param   idCpu                           The vCPU to query the KPCR/KPCRB for.
+     * @param   pKpcr                           Where to store the KPCR pointer on success, optional.
+     * @param   pKpcrb                          Where to store the KPCR pointer on success, optional.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryKpcrForVCpu,(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
+                                                 PRTGCUINTPTR pKpcr, PRTGCUINTPTR pKpcrb));
+
+    /**
+     * Queries the current thread for the given vCPU.
+     *
+     * @returns VBox status code.
+     * @param   pThis                           Pointer to the interface structure.
+     * @param   pUVM                            The user mode VM handle.
+     * @param   idCpu                           The vCPU to query the KPCR/KPCRB for.
+     * @param   pCurThrd                        Where to store the CurrentThread pointer on success.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryCurThrdForVCpu,(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
+                                                    PRTGCUINTPTR pCurThrd));
+
+    /** Trailing magic (DBGFOSIWINNT_MAGIC). */
+    uint32_t    u32EndMagic;
+} DBGFOSIWINNT;
+/** Pointer to the interface for query kernel log messages (DBGFOSINTERFACE_WINNT). */
+typedef DBGFOSIWINNT *PDBGFOSIWINNT;
+/** Magic value for DBGFOSIWINNT::32Magic and DBGFOSIWINNT::u32EndMagic. (Dave Cutler) */
+#define DBGFOSIWINNT_MAGIC UINT32_C(0x19420313)
 
 
 VMMR3DECL(int)      DBGFR3OSRegister(PUVM pUVM, PCDBGFOSREG pReg);
