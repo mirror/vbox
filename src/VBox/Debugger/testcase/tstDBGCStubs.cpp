@@ -567,6 +567,12 @@ VMMR3DECL(int) DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, size_t cbDetail
     return VERR_INTERNAL_ERROR;
 }
 
+VMMR3DECL(PDBGFADDRESS) DBGFR3AddrAdd(PDBGFADDRESS pAddress, RTGCUINTPTR uAddend)
+{
+    RT_NOREF(uAddend);
+    return pAddress;
+}
+
 #include <VBox/vmm/cfgm.h>
 VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
                                     const char *pszValidValues, const char *pszValidNodes,
