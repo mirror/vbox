@@ -222,10 +222,10 @@ static DECLCALLBACK(int) dbgcTcpConnection(RTSOCKET Sock, void *pvUser)
 
     PUVM pUVM = (PUVM)pvUser;
     PCFGMNODE pKey = CFGMR3GetChild(CFGMR3GetRootU(pUVM), "DBGC");
-    bool fGdbStub = false;
-    int rc = CFGMR3QueryBoolDef(pKey, "GdbStub", &fGdbStub, false);
+    char *pszStubType = NULL;
+    int rc = CFGMR3QueryStringAllocDef(pKey, "StubType", &pszStubType, "Native");
     if (RT_FAILURE(rc))
-        return VM_SET_ERROR_U(pUVM, rc, "Configuration error: Failed querying \"DBGC/GdbStub\"");
+        return VM_SET_ERROR_U(pUVM, rc, "Configuration error: Failed querying \"DBGC/StubType\"");
 
     /*
      * Start the console.
@@ -233,17 +233,28 @@ static DECLCALLBACK(int) dbgcTcpConnection(RTSOCKET Sock, void *pvUser)
     DBGCTCP    DbgcTcp;
     DbgcTcp.Back.pfnInput     = dbgcTcpBackInput;
     DbgcTcp.Back.pfnRead      = dbgcTcpBackRead;
-    if (fGdbStub)
-        DbgcTcp.Back.pfnWrite = dbgcTcpBackWriteRaw;
-    else
-        DbgcTcp.Back.pfnWrite = dbgcTcpBackWrite;
     DbgcTcp.Back.pfnSetReady  = dbgcTcpBackSetReady;
     DbgcTcp.fAlive = true;
     DbgcTcp.Sock   = Sock;
-    if (fGdbStub)
+
+    if (!RTStrICmp(pszStubType, "gdb"))
+    {
+        DbgcTcp.Back.pfnWrite = dbgcTcpBackWriteRaw;
         rc = dbgcGdbStubCreate(pUVM, &DbgcTcp.Back, 0);
-    else
+    }
+    else if (!RTStrICmp(pszStubType, "kd"))
+    {
+        DbgcTcp.Back.pfnWrite = dbgcTcpBackWriteRaw;
+        rc = dbgcKdStubCreate(pUVM, &DbgcTcp.Back, 0);
+    }
+    else if (!RTStrICmp(pszStubType, "native"))
+    {
+        DbgcTcp.Back.pfnWrite = dbgcTcpBackWrite;
         rc = DBGCCreate(pUVM, &DbgcTcp.Back, 0);
+    }
+    else
+        rc = VM_SET_ERROR_U(pUVM, VERR_INVALID_PARAMETER, "Configuration error: \"DBGC/StubType\" contains an invalid type");
+
     LogFlow(("dbgcTcpConnection: disconnect rc=%Rrc\n", rc));
     return rc;
 }

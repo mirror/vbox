@@ -602,6 +602,7 @@ DECLHIDDEN(const char *) dbgcGetEventCtx(DBGFEVENTCTX enmCtx);
 DECLHIDDEN(PCDBGCSXEVT) dbgcEventLookup(DBGFEVENTTYPE enmType);
 
 DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags);
+DECLHIDDEN(int) dbgcKdStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags);
 
 
 /*******************************************************************************

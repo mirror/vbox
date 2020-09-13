@@ -1052,7 +1052,7 @@ static int dbgcReadConfig(PDBGC pDbgc, PUVM pUVM)
                                   "HistoryFile|"
                                   "LocalInitScript|"
                                   "GlobalInitScript|"
-                                  "GdbStub",
+                                  "StubType",
                                   "", "DBGC", 0);
     AssertRCReturn(rc, rc);
 
