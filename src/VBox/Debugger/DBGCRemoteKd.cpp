@@ -797,6 +797,7 @@ typedef PKDCTX *PPKDCTX;
 *********************************************************************************************************************************/
 
 
+#ifdef LOG_ENABLED
 /**
  * Returns a human readable string of the given packet sub type.
  *
@@ -956,6 +957,7 @@ static void dbgcKdPktDump(PCKDPACKETHDR pPktHdr, PCRTSGSEG paSegs, uint32_t cSeg
             break;
     }
 }
+#endif
 
 
 /**
@@ -1342,7 +1344,9 @@ static int dbgcKdCtxPktSendSg(PKDCTX pThis, uint32_t u32Signature, uint16_t u16S
     Hdr.idPacket     = pThis->idPktNext;
     Hdr.u32ChkSum    = u32ChkSum;
 
+#ifdef LOG_ENABLED
     dbgcKdPktDump(&Hdr, paSegs, cSegs, false /*fRx*/);
+#endif
 
     while (cRetriesLeft--)
     {
