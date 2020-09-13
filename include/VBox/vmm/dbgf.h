@@ -489,6 +489,10 @@ typedef struct DBGFEVENT
     DBGFEVENTTYPE   enmType;
     /** Context */
     DBGFEVENTCTX    enmCtx;
+    /** The vCPU/EMT which generated the event. */
+    VMCPUID         idCpu;
+    /** Reserved. */
+    uint32_t        uReserved;
     /** Type specific data. */
     union
     {
@@ -533,17 +537,18 @@ typedef struct DBGFEVENT
         {
             /** Number of arguments. */
             uint8_t                 cArgs;
-            /** Alignmnet padding. */
+            /** Alignment padding. */
             uint8_t                 uPadding[7];
             /** Arguments. */
-            uint64_t                auArgs[6];
+            uint64_t                auArgs[5];
         } Generic;
 
         /** Padding for ensuring that the structure is 8 byte aligned. */
-        uint64_t        au64Padding[7];
+        uint64_t        au64Padding[6];
     } u;
 } DBGFEVENT;
 AssertCompileSizeAlignment(DBGFEVENT, 8);
+AssertCompileSize(DBGFEVENT, 64);
 /** Pointer to VMM Debug Event. */
 typedef DBGFEVENT *PDBGFEVENT;
 /** Pointer to const VMM Debug Event. */
@@ -582,11 +587,11 @@ VMMR3_INT_DECL(int)     DBGFR3PrgStep(PVMCPU pVCpu);
 
 VMMR3DECL(int)          DBGFR3Attach(PUVM pUVM);
 VMMR3DECL(int)          DBGFR3Detach(PUVM pUVM);
-VMMR3DECL(int)          DBGFR3EventWait(PUVM pUVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEvent);
-VMMR3DECL(int)          DBGFR3Halt(PUVM pUVM);
-VMMR3DECL(bool)         DBGFR3IsHalted(PUVM pUVM);
+VMMR3DECL(int)          DBGFR3EventWait(PUVM pUVM, RTMSINTERVAL cMillies, PDBGFEVENT pEvent);
+VMMR3DECL(int)          DBGFR3Halt(PUVM pUVM, VMCPUID idCpu);
+VMMR3DECL(bool)         DBGFR3IsHalted(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)          DBGFR3QueryWaitable(PUVM pUVM);
-VMMR3DECL(int)          DBGFR3Resume(PUVM pUVM);
+VMMR3DECL(int)          DBGFR3Resume(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)          DBGFR3InjectNMI(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)          DBGFR3Step(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)          DBGFR3StepEx(PUVM pUVM, VMCPUID idCpu, uint32_t fFlags, PCDBGFADDRESS pStopPcAddr,

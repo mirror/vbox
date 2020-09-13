@@ -681,6 +681,18 @@ typedef struct DBGCCMDHLP
      */
     DECLCALLBACKMEMBER(CPUMMODE, pfnGetCpuMode,(PDBGCCMDHLP pCmdHlp));
 
+    /**
+     * Prints the register set of the given CPU.
+     *
+     * @returns VBox status code.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   idCpu       The CPU ID to print the register set of.
+     * @param   f64BitMode  True to dump 64-bit state, false to dump 32-bit state,
+     *                      -1 to use the current CPU mode.
+     * @param   fTerse      Flag to indicate whether to dump the complete register set.
+     */
+    DECLCALLBACKMEMBER(int, pfnRegPrintf, (PDBGCCMDHLP pCmdHlp, VMCPUID idCpu, int f64BitMode, bool fTerse));
+
     /** End marker (DBGCCMDHLP_MAGIC). */
     uint32_t                u32EndMarker;
 } DBGCCMDHLP;
@@ -981,6 +993,14 @@ DECLINLINE(VMCPUID) DBGCCmdHlpGetCurrentCpu(PDBGCCMDHLP pCmdHlp)
 DECLINLINE(CPUMMODE) DBGCCmdHlpGetCpuMode(PDBGCCMDHLP pCmdHlp)
 {
     return pCmdHlp->pfnGetCpuMode(pCmdHlp);
+}
+
+/**
+ * @copydoc DBGCCMDHLP::pfnRegPrintf
+ */
+DECLINLINE(int) DBGCCmdHlpRegPrintf(PDBGCCMDHLP pCmdHlp, VMCPUID idCpu, int f64BitMode, bool fTerse)
+{
+    return pCmdHlp->pfnRegPrintf(pCmdHlp, idCpu, f64BitMode, fTerse);
 }
 
 #endif /* IN_RING3 */

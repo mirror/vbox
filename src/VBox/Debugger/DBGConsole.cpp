@@ -647,6 +647,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
     pDbgc->iArg       = 0;
     bool fPrintPrompt = true;
     int rc = VINF_SUCCESS;
+    VMCPUID const idCpuSaved = pDbgc->idCpu;
     switch (pEvent->enmType)
     {
         /*
@@ -654,10 +655,12 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
          */
         case DBGFEVENT_HALT_DONE:
         {
-            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: VM %p is halted! (%s)\n",
-                                         pDbgc->pVM, dbgcGetEventCtx(pEvent->enmCtx));
+            /** @todo add option to suppress this on CPUs that aren't selected (like
+             *        fRegTerse). */
+            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: CPU %u has halted! (%s)\n",
+                                         pEvent->idCpu, pEvent->idCpu, dbgcGetEventCtx(pEvent->enmCtx));
             if (RT_SUCCESS(rc))
-                rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+                rc = DBGCCmdHlpRegPrintf(&pDbgc->CmdHlp, pEvent->idCpu, -1, pDbgc->fRegTerse);
             break;
         }
 
@@ -667,10 +670,11 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
          */
         case DBGFEVENT_FATAL_ERROR:
         {
-            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbf event: Fatal error! (%s)\n",
-                                         dbgcGetEventCtx(pEvent->enmCtx));
+            pDbgc->idCpu = pEvent->idCpu;
+            rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbf event/%u: Fatal error! (%s)\n",
+                                         pEvent->idCpu, dbgcGetEventCtx(pEvent->enmCtx));
             if (RT_SUCCESS(rc))
-                rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+                rc = DBGCCmdHlpRegPrintf(&pDbgc->CmdHlp, pEvent->idCpu, -1, pDbgc->fRegTerse);
             break;
         }
 
@@ -679,50 +683,54 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         case DBGFEVENT_BREAKPOINT_MMIO:
         case DBGFEVENT_BREAKPOINT_HYPER:
         {
+            pDbgc->idCpu = pEvent->idCpu;
             rc = dbgcBpExec(pDbgc, pEvent->u.Bp.iBp);
             switch (rc)
             {
                 case VERR_DBGC_BP_NOT_FOUND:
-                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Unknown breakpoint %u! (%s)\n",
-                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: Unknown breakpoint %u! (%s)\n",
+                                                 pEvent->idCpu, pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 case VINF_DBGC_BP_NO_COMMAND:
-                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Breakpoint %u! (%s)\n",
-                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: Breakpoint %u! (%s)\n",
+                                                 pEvent->idCpu, pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 case VINF_BUFFER_OVERFLOW:
-                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Breakpoint %u! Command too long to execute! (%s)\n",
-                                                 pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: Breakpoint %u! Command too long to execute! (%s)\n",
+                                                 pEvent->idCpu, pEvent->u.Bp.iBp, dbgcGetEventCtx(pEvent->enmCtx));
                     break;
 
                 default:
                     break;
             }
-            if (RT_SUCCESS(rc) && DBGFR3IsHalted(pDbgc->pUVM))
+            if (RT_SUCCESS(rc) && DBGFR3IsHalted(pDbgc->pUVM, pEvent->idCpu))
             {
-                rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+                rc = DBGCCmdHlpRegPrintf(&pDbgc->CmdHlp, pEvent->idCpu, -1, pDbgc->fRegTerse);
 
                 /* Set the resume flag to ignore the breakpoint when resuming execution. */
                 if (   RT_SUCCESS(rc)
                     && pEvent->enmType == DBGFEVENT_BREAKPOINT)
                     rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r eflags.rf = 1");
             }
+            else
+                pDbgc->idCpu = idCpuSaved;
             break;
         }
 
         case DBGFEVENT_STEPPED:
         case DBGFEVENT_STEPPED_HYPER:
         {
-            if (!pDbgc->cMultiStepsLeft)
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Single step! (%s)\n", dbgcGetEventCtx(pEvent->enmCtx));
+            if (!pDbgc->cMultiStepsLeft || pEvent->idCpu != idCpuSaved)
+                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: Single step! (%s)\n",
+                                             pEvent->idCpu, dbgcGetEventCtx(pEvent->enmCtx));
             else
                 pDbgc->cMultiStepsLeft -= 1;
             if (RT_SUCCESS(rc))
             {
                 if (pDbgc->fStepTraceRegs)
-                    rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+                    rc = DBGCCmdHlpRegPrintf(&pDbgc->CmdHlp, pEvent->idCpu, -1, pDbgc->fRegTerse);
                 else
                 {
                     char szCmd[80];
@@ -738,7 +746,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
             }
 
             /* If multi-stepping, take the next step: */
-            if (pDbgc->cMultiStepsLeft > 0)
+            if (pDbgc->cMultiStepsLeft > 0 && pEvent->idCpu != idCpuSaved)
             {
                 int rc2 = DBGFR3StepEx(pDbgc->pUVM, pDbgc->idCpu, DBGF_STEP_F_INTO, NULL, NULL, 0, pDbgc->uMultiStepStrideLength);
                 if (RT_SUCCESS(rc2))
@@ -746,32 +754,38 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                 else
                     DBGCCmdHlpFailRc(&pDbgc->CmdHlp, pDbgc->pMultiStepCmd, rc2, "DBGFR3StepEx(,,DBGF_STEP_F_INTO,) failed");
             }
+            else
+                pDbgc->idCpu = pEvent->idCpu;
             break;
         }
 
         case DBGFEVENT_ASSERTION_HYPER:
         {
+            pDbgc->idCpu = pEvent->idCpu;
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
-                                         "\ndbgf event: Hypervisor Assertion! (%s)\n"
+                                         "\ndbgf event/%u: Hypervisor Assertion! (%s)\n"
                                          "%s"
                                          "%s"
                                          "\n",
+                                         pEvent->idCpu,
                                          dbgcGetEventCtx(pEvent->enmCtx),
                                          pEvent->u.Assert.pszMsg1,
                                          pEvent->u.Assert.pszMsg2);
             if (RT_SUCCESS(rc))
-                rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+                rc = DBGCCmdHlpRegPrintf(&pDbgc->CmdHlp, pEvent->idCpu, -1, pDbgc->fRegTerse);
             break;
         }
 
         case DBGFEVENT_DEV_STOP:
         {
+            pDbgc->idCpu = pEvent->idCpu;
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
                                          "\n"
-                                         "dbgf event: DBGFSTOP (%s)\n"
+                                         "dbgf event/%u: DBGFSTOP (%s)\n"
                                          "File:     %s\n"
                                          "Line:     %d\n"
                                          "Function: %s\n",
+                                         pEvent->idCpu,
                                          dbgcGetEventCtx(pEvent->enmCtx),
                                          pEvent->u.Src.pszFile,
                                          pEvent->u.Src.uLine,
@@ -781,7 +795,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                                              "Message:  %s\n",
                                              pEvent->u.Src.pszMessage);
             if (RT_SUCCESS(rc))
-                rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+                rc = DBGCCmdHlpRegPrintf(&pDbgc->CmdHlp, pEvent->idCpu, -1, pDbgc->fRegTerse);
             break;
         }
 
@@ -815,8 +829,8 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                 {
                     Assert(pEvtDesc->pszDesc);
                     Assert(pEvent->u.Generic.cArgs == 1);
-                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s no %#llx! (%s)\n",
-                                                 pEvtDesc->pszDesc, pEvent->u.Generic.auArgs[0], pEvtDesc->pszName);
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: %s no %#llx! (%s)\n",
+                                                 pEvent->idCpu, pEvtDesc->pszDesc, pEvent->u.Generic.auArgs[0], pEvtDesc->pszName);
                 }
                 else if (pEvtDesc->fFlags & DBGCSXEVT_F_BUGCHECK)
                 {
@@ -825,9 +839,9 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                     DBGFR3FormatBugCheck(pDbgc->pUVM, szDetails, sizeof(szDetails), pEvent->u.Generic.auArgs[0],
                                          pEvent->u.Generic.auArgs[1], pEvent->u.Generic.auArgs[2],
                                          pEvent->u.Generic.auArgs[3], pEvent->u.Generic.auArgs[4]);
-                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s %s%s!\n%s", pEvtDesc->pszName,
-                                                 pEvtDesc->pszDesc ? "- " : "", pEvtDesc->pszDesc ? pEvtDesc->pszDesc : "",
-                                                 szDetails);
+                    rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: %s %s%s!\n%s", pEvent->idCpu,
+                                                 pEvtDesc->pszName, pEvtDesc->pszDesc ? "- " : "",
+                                                 pEvtDesc->pszDesc ? pEvtDesc->pszDesc : "", szDetails);
                 }
                 else if (   (pEvtDesc->fFlags & DBGCSXEVT_F_TAKE_ARG)
                          || pEvent->u.Generic.cArgs > 1
@@ -835,10 +849,11 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                              && pEvent->u.Generic.auArgs[0] != 0))
                 {
                     if (pEvtDesc->pszDesc)
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s - %s!",
-                                                     pEvtDesc->pszName, pEvtDesc->pszDesc);
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: %s - %s!",
+                                                     pEvent->idCpu, pEvtDesc->pszName, pEvtDesc->pszDesc);
                     else
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s!", pEvtDesc->pszName);
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: %s!",
+                                                     pEvent->idCpu, pEvtDesc->pszName);
                     if (pEvent->u.Generic.cArgs <= 1)
                         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " arg=%#llx\n", pEvent->u.Generic.auArgs[0]);
                     else
@@ -851,14 +866,16 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                 else
                 {
                     if (pEvtDesc->pszDesc)
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s - %s!\n",
-                                                     pEvtDesc->pszName, pEvtDesc->pszDesc);
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: %s - %s!\n",
+                                                     pEvent->idCpu, pEvtDesc->pszName, pEvtDesc->pszDesc);
                     else
-                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: %s!\n", pEvtDesc->pszName);
+                        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event/%u: %s!\n",
+                                                     pEvent->idCpu, pEvtDesc->pszName);
                 }
             }
             else
-                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Unknown event %d!\n", pEvent->enmType);
+                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Unknown event %d on CPU %u!\n",
+                                             pEvent->enmType, pEvent->idCpu);
             break;
         }
     }
@@ -868,6 +885,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
      */
     if (fPrintPrompt && RT_SUCCESS(rc))
     {
+        /** @todo add CPU indicator to the prompt if an SMP VM? */
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
         pDbgc->fReady = true;
         if (RT_SUCCESS(rc))
@@ -937,11 +955,11 @@ int dbgcRun(PDBGC pDbgc)
             /*
              * Wait for a debug event.
              */
-            PCDBGFEVENT pEvent;
-            rc = DBGFR3EventWait(pDbgc->pUVM, pDbgc->fLog ? 1 : 32, &pEvent);
+            DBGFEVENT Event;
+            rc = DBGFR3EventWait(pDbgc->pUVM, pDbgc->fLog ? 1 : 32, &Event);
             if (RT_SUCCESS(rc))
             {
-                rc = dbgcProcessEvent(pDbgc, pEvent);
+                rc = dbgcProcessEvent(pDbgc, &Event);
                 if (RT_FAILURE(rc))
                     break;
             }

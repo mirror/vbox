@@ -239,6 +239,14 @@ static const DBGCVARDESC    g_aArgEditMem[] =
 };
 
 
+/** 'g' arguments. */
+static const DBGCVARDESC    g_aArgGo[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "idCpu",        "CPU ID." },
+};
+
+
 /** 'lm' arguments. */
 static const DBGCVARDESC    g_aArgListMods[] =
 {
@@ -424,7 +432,7 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "ew",         2,        2,        &g_aArgEditMem[0],  RT_ELEMENTS(g_aArgEditMem),     0,       dbgcCmdEditMem,     "<addr> <value>",       "Write a 2-byte value to memory." },
     { "ed",         2,        2,        &g_aArgEditMem[0],  RT_ELEMENTS(g_aArgEditMem),     0,       dbgcCmdEditMem,     "<addr> <value>",       "Write a 4-byte value to memory." },
     { "eq",         2,        2,        &g_aArgEditMem[0],  RT_ELEMENTS(g_aArgEditMem),     0,       dbgcCmdEditMem,     "<addr> <value>",       "Write a 8-byte value to memory." },
-    { "g",          0,        0,        NULL,               0,                              0,       dbgcCmdGo,          "",                     "Continue execution." },
+    { "g",          0,        1,        &g_aArgGo[0],       RT_ELEMENTS(g_aArgGo),          0,       dbgcCmdGo,          "[idCpu]",              "Continue execution of all or the specified CPU. (The latter is not recommended unless you know exactly what you're doing.)" },
     { "gu",         0,        0,        NULL,               0,                              0,       dbgcCmdGoUp,        "",                     "Go up - continue execution till after return." },
     { "k",          0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack." },
     { "kv",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Verbose callstack." },
@@ -650,17 +658,34 @@ static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUV
     DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
-     * Check if the VM is halted or not before trying to resume it.
+     * Parse arguments.
      */
-    if (!DBGFR3IsHalted(pUVM))
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "The VM is already running");
+    VMCPUID idCpu = VMCPUID_ALL;
+    if (cArgs == 1)
+    {
+        VMCPUID cCpus = DBGFR3CpuGetCount(pUVM);
+        if (paArgs[0].u.u64Number >= cCpus)
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "idCpu %RU64 is out of range! Highest valid ID is %u.\n",
+                                  paArgs[0].u.u64Number, cCpus - 1);
+        idCpu = (VMCPUID)paArgs[0].u.u64Number;
+    }
+    else
+        Assert(cArgs == 0);
 
-    int rc = DBGFR3Resume(pUVM);
-    if (RT_FAILURE(rc))
-        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3Resume");
-
-    NOREF(paArgs); NOREF(cArgs);
-    return VINF_SUCCESS;
+    /*
+     * Try resume the VM or CPU.
+     */
+    int rc = DBGFR3Resume(pUVM, idCpu);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(rc == VINF_SUCCESS || rc == VWRN_DBGF_ALREADY_RUNNING);
+        if (rc != VWRN_DBGF_ALREADY_RUNNING)
+            return VINF_SUCCESS;
+        if (idCpu == VMCPUID_ALL)
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "The VM is already running");
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "CPU %u is already running", idCpu);
+    }
+    return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3Resume");
 }
 
 
@@ -2465,87 +2490,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
         bool const  f64BitMode = !strcmp(pCmd->pszCmd, "rg64")
                               || (   strcmp(pCmd->pszCmd, "rg32") != 0
                                   && DBGFR3CpuIsIn64BitCode(pUVM, pDbgc->idCpu));
-        char        szDisAndRegs[8192];
-        int         rc;
-
-        if (pDbgc->fRegTerse)
-        {
-            if (f64BitMode)
-                rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu, &szDisAndRegs[0], sizeof(szDisAndRegs),
-                                     "u %016VR{rip} L 0\n"
-                                     "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
-                                     "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
-                                     "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
-                                     "r14=%016VR{r14} r15=%016VR{r15} %VRF{rflags}\n"
-                                     "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
-                                     "cs=%04VR{cs} ds=%04VR{ds} es=%04VR{es} fs=%04VR{fs} gs=%04VR{gs} ss=%04VR{ss}                     rflags=%08VR{rflags}\n");
-            else
-                rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu, szDisAndRegs, sizeof(szDisAndRegs),
-                                     "u %04VR{cs}:%08VR{eip} L 0\n"
-                                     "eax=%08VR{eax} ebx=%08VR{ebx} ecx=%08VR{ecx} edx=%08VR{edx} esi=%08VR{esi} edi=%08VR{edi}\n"
-                                     "eip=%08VR{eip} esp=%08VR{esp} ebp=%08VR{ebp} %VRF{eflags}\n"
-                                     "cs=%04VR{cs} ds=%04VR{ds} es=%04VR{es} fs=%04VR{fs} gs=%04VR{gs} ss=%04VR{ss}               eflags=%08VR{eflags}\n");
-        }
-        else
-        {
-            if (f64BitMode)
-                rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu, &szDisAndRegs[0], sizeof(szDisAndRegs),
-                                     "u %016VR{rip} L 0\n"
-                                     "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
-                                     "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
-                                     "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
-                                     "r14=%016VR{r14} r15=%016VR{r15} %VRF{rflags}\n"
-                                     "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
-                                     "cs={%04VR{cs} base=%016VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} cr0=%016VR{cr0}\n"
-                                     "ds={%04VR{ds} base=%016VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} cr2=%016VR{cr2}\n"
-                                     "es={%04VR{es} base=%016VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} cr3=%016VR{cr3}\n"
-                                     "fs={%04VR{fs} base=%016VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr4=%016VR{cr4}\n"
-                                     "gs={%04VR{gs} base=%016VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr8=%016VR{cr8}\n"
-                                     "ss={%04VR{ss} base=%016VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
-                                     "dr0=%016VR{dr0} dr1=%016VR{dr1} dr2=%016VR{dr2} dr3=%016VR{dr3}\n"
-                                     "dr6=%016VR{dr6} dr7=%016VR{dr7}\n"
-                                     "gdtr=%016VR{gdtr_base}:%04VR{gdtr_lim}  idtr=%016VR{idtr_base}:%04VR{idtr_lim}  rflags=%08VR{rflags}\n"
-                                     "ldtr={%04VR{ldtr} base=%016VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%08VR{ldtr_attr}}\n"
-                                     "tr  ={%04VR{tr} base=%016VR{tr_base} limit=%08VR{tr_lim} flags=%08VR{tr_attr}}\n"
-                                     "    sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
-                                     "        efer=%016VR{efer}\n"
-                                     "         pat=%016VR{pat}\n"
-                                     "     sf_mask=%016VR{sf_mask}\n"
-                                     "krnl_gs_base=%016VR{krnl_gs_base}\n"
-                                     "       lstar=%016VR{lstar}\n"
-                                     "        star=%016VR{star} cstar=%016VR{cstar}\n"
-                                     "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
-                                     );
-            else
-                rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu, szDisAndRegs, sizeof(szDisAndRegs),
-                                     "u %04VR{cs}:%08VR{eip} L 0\n"
-                                     "eax=%08VR{eax} ebx=%08VR{ebx} ecx=%08VR{ecx} edx=%08VR{edx} esi=%08VR{esi} edi=%08VR{edi}\n"
-                                     "eip=%08VR{eip} esp=%08VR{esp} ebp=%08VR{ebp} %VRF{eflags}\n"
-                                     "cs={%04VR{cs} base=%08VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} dr0=%08VR{dr0} dr1=%08VR{dr1}\n"
-                                     "ds={%04VR{ds} base=%08VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} dr2=%08VR{dr2} dr3=%08VR{dr3}\n"
-                                     "es={%04VR{es} base=%08VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} dr6=%08VR{dr6} dr7=%08VR{dr7}\n"
-                                     "fs={%04VR{fs} base=%08VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr0=%08VR{cr0} cr2=%08VR{cr2}\n"
-                                     "gs={%04VR{gs} base=%08VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr3=%08VR{cr3} cr4=%08VR{cr4}\n"
-                                     "ss={%04VR{ss} base=%08VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}} cr8=%08VR{cr8}\n"
-                                     "gdtr=%08VR{gdtr_base}:%04VR{gdtr_lim}  idtr=%08VR{idtr_base}:%04VR{idtr_lim}  eflags=%08VR{eflags}\n"
-                                     "ldtr={%04VR{ldtr} base=%08VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%04VR{ldtr_attr}}\n"
-                                     "tr  ={%04VR{tr} base=%08VR{tr_base} limit=%08VR{tr_lim} flags=%04VR{tr_attr}}\n"
-                                     "sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
-                                     "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
-                                     );
-        }
-        if (RT_FAILURE(rc))
-            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegPrintf failed");
-        char *pszRegs = strchr(szDisAndRegs, '\n');
-        *pszRegs++ = '\0';
-        rc = DBGCCmdHlpPrintf(pCmdHlp, "%s", pszRegs);
-
-        /*
-         * Disassemble one instruction at cs:[r|e]ip.
-         */
-        if (!f64BitMode && strstr(pszRegs, " vm ")) /* a bit ugly... */
-            return pCmdHlp->pfnExec(pCmdHlp, "uv86 %s", szDisAndRegs + 2);
-        return pCmdHlp->pfnExec(pCmdHlp, "%s", szDisAndRegs);
+        return DBGCCmdHlpRegPrintf(pCmdHlp, pDbgc->idCpu, f64BitMode, pDbgc->fRegTerse);
     }
     return dbgcCmdRegCommon(pCmd, pCmdHlp, pUVM, paArgs, cArgs, "");
 }

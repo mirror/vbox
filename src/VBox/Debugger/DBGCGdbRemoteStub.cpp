@@ -1564,8 +1564,8 @@ static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessVCont(PGDBSTUBCTX pThis, const 
     {
         case 'c':
         {
-            if (DBGFR3IsHalted(pThis->Dbgc.pUVM))
-                DBGFR3Resume(pThis->Dbgc.pUVM);
+            if (DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+                DBGFR3Resume(pThis->Dbgc.pUVM, VMCPUID_ALL);
             break;
         }
         case 's':
@@ -1580,8 +1580,8 @@ static DECLCALLBACK(int) dbgcGdbStubCtxPktProcessVCont(PGDBSTUBCTX pThis, const 
         }
         case 't':
         {
-            if (!DBGFR3IsHalted(pThis->Dbgc.pUVM))
-                rc = DBGFR3Halt(pThis->Dbgc.pUVM);
+            if (!DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+                rc = DBGFR3Halt(pThis->Dbgc.pUVM, VMCPUID_ALL);
             /* The reply will be send in the event loop. */
             break;
         }
@@ -1731,8 +1731,8 @@ static int dbgcGdbStubCtxPktProcess(PGDBSTUBCTX pThis)
             }
             case 'c': /* Continue, no response */
             {
-                if (DBGFR3IsHalted(pThis->Dbgc.pUVM))
-                    DBGFR3Resume(pThis->Dbgc.pUVM);
+                if (DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+                    DBGFR3Resume(pThis->Dbgc.pUVM, VMCPUID_ALL);
                 break;
             }
             case 'H':
@@ -2173,8 +2173,8 @@ static int dbgcGdbStubCtxPktBufSearchStart(PGDBSTUBCTX pThis, size_t cbData, siz
         if (memchr(pThis->pbPktBuf, GDBSTUB_OOB_INTERRUPT, cbData) != NULL)
         {
             /* Stop target and send packet to indicate the target has stopped. */
-            if (!DBGFR3IsHalted(pThis->Dbgc.pUVM))
-                rc = DBGFR3Halt(pThis->Dbgc.pUVM);
+            if (!DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+                rc = DBGFR3Halt(pThis->Dbgc.pUVM, VMCPUID_ALL);
             /* The reply will be send in the event loop. */
         }
 
@@ -2402,7 +2402,7 @@ static int dbgcGdbStubCtxProcessEvent(PGDBSTUBCTX pThis, PCDBGFEVENT pEvent)
                 default:
                     break;
             }
-            if (RT_SUCCESS(rc) && DBGFR3IsHalted(pDbgc->pUVM))
+            if (RT_SUCCESS(rc) && DBGFR3IsHalted(pDbgc->pUVM, VMCPUID_ALL))
             {
                 rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
 
@@ -2588,11 +2588,11 @@ int dbgcGdbStubRun(PGDBSTUBCTX pThis)
             /*
              * Wait for a debug event.
              */
-            PCDBGFEVENT pEvent;
-            rc = DBGFR3EventWait(pThis->Dbgc.pUVM, 32, &pEvent);
+            DBGFEVENT Event;
+            rc = DBGFR3EventWait(pThis->Dbgc.pUVM, 32, &Event);
             if (RT_SUCCESS(rc))
             {
-                rc = dbgcGdbStubCtxProcessEvent(pThis, pEvent);
+                rc = dbgcGdbStubCtxProcessEvent(pThis, &Event);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -2839,8 +2839,8 @@ DECLHIDDEN(int) dbgcGdbStubCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
         dbgcEventInit(&pThis->Dbgc);
         //dbgcRunInitScripts(pDbgc); Not yet
 
-        if (!DBGFR3IsHalted(pThis->Dbgc.pUVM))
-            rc = DBGFR3Halt(pThis->Dbgc.pUVM);
+        if (!DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+            rc = DBGFR3Halt(pThis->Dbgc.pUVM, VMCPUID_ALL);
 
         /*
          * Run the debugger main loop.

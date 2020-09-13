@@ -577,14 +577,7 @@ typedef enum DBGFCMD
     /** Resume execution. */
     DBGFCMD_GO,
     /** Single step execution - stepping into calls. */
-    DBGFCMD_SINGLE_STEP,
-    /** Detaches the debugger.
-     * Disabling all breakpoints, watch points and the like. */
-    DBGFCMD_DETACH_DEBUGGER,
-    /** Detached the debugger.
-     * The isn't a command as such, it's just that it's necessary for the
-     * detaching protocol to be racefree. */
-    DBGFCMD_DETACHED_DEBUGGER
+    DBGFCMD_SINGLE_STEP
 } DBGFCMD;
 
 /**
@@ -806,37 +799,6 @@ typedef struct DBGF
      */
     bool volatile               fAttached;
 
-    /** Stopped in the Hypervisor.
-     * Set if we're stopped on a trace, breakpoint or assertion inside
-     * the hypervisor and have to restrict the available operations.
-     */
-    bool volatile               fStoppedInHyper;
-
-    /**
-     * Ping-Pong construct where the Ping side is the VMM and the Pong side
-     * the Debugger.
-     */
-    RTPINGPONG                  PingPong;
-    RTHCUINTPTR                 uPtrPadding; /**< Alignment padding. */
-
-    /** The Event to the debugger.
-     * The VMM will ping the debugger when the event is ready. The event is
-     * either a response to a command or to a break/watch point issued
-     * previously.
-     */
-    DBGFEVENT                   DbgEvent;
-
-    /** The Command to the VMM.
-     * Operated in an atomic fashion since the VMM will poll on this.
-     * This means that a the command data must be written before this member
-     * is set. The VMM will reset this member to the no-command state
-     * when it have processed it.
-     */
-    DBGFCMD volatile            enmVMMCmd;
-    /** The Command data.
-     * Not all commands take data. */
-    DBGFCMDDATA                 VMMCmdData;
-
     /** Stepping filtering. */
     struct
     {
@@ -905,7 +867,6 @@ typedef struct DBGF
         uint64_t                auParameters[4];
     } BugCheck;
 } DBGF;
-AssertCompileMemberAlignment(DBGF, DbgEvent, 8);
 AssertCompileMemberAlignment(DBGF, aHwBreakpoints, 8);
 AssertCompileMemberAlignment(DBGF, bmHardIntBreakpoints, 8);
 /** Pointer to DBGF Data. */
@@ -1064,6 +1025,26 @@ typedef struct DBGFUSERPERVM
     /** The configured tracer. */
     PDBGFTRACERINSR3            pTracerR3;
 
+    /** @name VM -> Debugger event communication.
+     * @{ */
+    /** The event semaphore the debugger waits on for new events to arrive. */
+    RTSEMEVENT                  hEvtWait;
+    /** Multi event semaphore the vCPUs wait on in case the debug event ringbuffer is
+     * full and require growing (done from the thread waiting for events). */
+    RTSEMEVENTMULTI             hEvtRingBufFull;
+    /** Fast mutex protecting the event ring from concurrent write accesses by multiple vCPUs. */
+    RTSEMFASTMUTEX              hMtxDbgEvtWr;
+    /** Ringbuffer of events, dynamically allocated based on the number of available vCPUs
+     * (+ some safety entries). */
+    PDBGFEVENT                  paDbgEvts;
+    /** Number of entries in the event ring buffer. */
+    uint32_t                    cDbgEvtMax;
+    /** Next free entry to write to (vCPU thread). */
+    volatile uint32_t           idxDbgEvtWrite;
+    /** Next event entry to from (debugger thread). */
+    volatile uint32_t           idxDbgEvtRead;
+    /** @} */
+
     /** The type database lock. */
     RTSEMRW                     hTypeDbLock;
     /** String space for looking up types.  (Protected by hTypeDbLock.) */
@@ -1083,9 +1064,26 @@ typedef DBGFUSERPERVM const *PCDBGFUSERPERVM;
 typedef struct DBGFUSERPERVMCPU
 {
     /** The guest register set for this CPU.  Can be NULL. */
-    R3PTRTYPE(struct DBGFREGSET *) pGuestRegSet;
+    R3PTRTYPE(struct DBGFREGSET *)  pGuestRegSet;
     /** The hypervisor register set for this CPU.  Can be NULL. */
-    R3PTRTYPE(struct DBGFREGSET *) pHyperRegSet;
+    R3PTRTYPE(struct DBGFREGSET *)  pHyperRegSet;
+
+    /** @name Debugger -> vCPU command communication.
+     * @{ */
+    /** Flag whether this vCPU is currently stopped waiting in the debugger. */
+    bool volatile                   fStopped;
+    /** The Command to the vCPU.
+     * Operated in an atomic fashion since the vCPU will poll on this.
+     * This means that a the command data must be written before this member
+     * is set. The VMM will reset this member to the no-command state
+     * when it have processed it.
+     */
+    DBGFCMD volatile                enmDbgfCmd;
+    /** The Command data.
+     * Not all commands take data. */
+    DBGFCMDDATA                     DbgfCmdData;
+    /** @} */
+
 } DBGFUSERPERVMCPU;
 
 

@@ -68,7 +68,7 @@ struc VMCPU
     .vmm                    resb 896
     .pdm                    resb 256
     .iom                    resb 512
-    .dbgf                   resb 256
+    .dbgf                   resb 512
     .gim                    resb 512
     .apic                   resb 3840
 

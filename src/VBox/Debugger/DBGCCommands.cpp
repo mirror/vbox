@@ -234,6 +234,13 @@ static const DBGCVARDESC    g_aArgSet[] =
     {  1,           1,          DBGCVAR_CAT_ANY,        0,                              "value",        "Value to assign to the variable." },
 };
 
+/** 'stop' arguments */
+static const DBGCVARDESC    g_aArgStop[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "idCpu",        "CPU ID." },
+};
+
 /** loadplugin, unloadplugin. */
 static const DBGCVARDESC    g_aArgUnload[] =
 {
@@ -297,7 +304,7 @@ const DBGCCMD    g_aDbgcCmds[] =
                                                                                                                                         "(after removing blanks) are comment. blank lines are ignored. Stops on failure." },
     { "set",        2,        2,        &g_aArgSet[0],       RT_ELEMENTS(g_aArgSet),       0, dbgcCmdSet,       "<var> <value>",        "Sets a global variable." },
     { "showvars",   0,        0,        NULL,                0,                            0, dbgcCmdShowVars,  "",                     "List all the defined variables." },
-    { "stop",       0,        0,        NULL,                0,                            0, dbgcCmdStop,      "",                     "Stop execution." },
+    { "stop",       0,        1,        &g_aArgStop[0],      RT_ELEMENTS(g_aArgStop),      0, dbgcCmdStop,      "[idCpu]",              "Stop execution either of all or the specified CPU. (The latter is not recommended unless you know exactly what you're doing.)" },
     { "unload",     1,       ~0U,       &g_aArgUnload[0],    RT_ELEMENTS(g_aArgUnload),    0, dbgcCmdUnload,    "<modname1> [modname2..N]", "Unloads one or more modules in the current address space." },
     { "unloadplugin", 1,     ~0U,       &g_aArgPlugIn[0],    RT_ELEMENTS(g_aArgPlugIn),    0, dbgcCmdUnloadPlugIn, "<plugin1> [plugin2..N]", "Unloads one or more plugins." },
     { "unset",      1,       ~0U,       &g_aArgUnset[0],     RT_ELEMENTS(g_aArgUnset),     0, dbgcCmdUnset,     "<var1> [var1..[varN]]",  "Unsets (delete) one or more global variables." },
@@ -937,22 +944,40 @@ static DECLCALLBACK(int) dbgcCmdQuit(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
  */
 static DECLCALLBACK(int) dbgcCmdStop(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    /*
-     * Check if the VM is halted or not before trying to halt it.
-     */
-    int rc;
-    if (DBGFR3IsHalted(pUVM))
-        rc = DBGCCmdHlpPrintf(pCmdHlp, "warning: The VM is already halted...\n");
-    else
-    {
-        rc = DBGFR3Halt(pUVM);
-        if (RT_SUCCESS(rc))
-            rc = VWRN_DBGC_CMD_PENDING;
-        else
-            rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "Executing DBGFR3Halt().");
-    }
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
-    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
+    /*
+     * Parse arguments.
+     */
+    VMCPUID idCpu = VMCPUID_ALL;
+    if (cArgs == 1)
+    {
+        VMCPUID cCpus = DBGFR3CpuGetCount(pUVM);
+        if (paArgs[0].u.u64Number >= cCpus)
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "idCpu %RU64 is out of range! Highest valid ID is %u.\n",
+                                  paArgs[0].u.u64Number, cCpus - 1);
+        idCpu = (VMCPUID)paArgs[0].u.u64Number;
+    }
+    else
+        Assert(cArgs == 0);
+
+    /*
+     * Try halt the VM or VCpu.
+     */
+    int rc = DBGFR3Halt(pUVM, idCpu);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(rc == VINF_SUCCESS || rc == VWRN_DBGF_ALREADY_HALTED);
+        if (rc != VWRN_DBGF_ALREADY_HALTED)
+            rc = VWRN_DBGC_CMD_PENDING;
+        else if (idCpu == VMCPUID_ALL)
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "warning: The VM is already halted...\n");
+        else
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "warning: CPU %u is already halted...\n", idCpu);
+    }
+    else
+        rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "Executing DBGFR3Halt().");
+
     return rc;
 }
 

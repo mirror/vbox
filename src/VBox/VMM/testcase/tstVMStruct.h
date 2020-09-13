@@ -274,11 +274,6 @@
     GEN_CHECK_OFF(DBGF, cSoftIntBreakpoints);
     GEN_CHECK_OFF(DBGF, cSelectedEvents);
     GEN_CHECK_OFF(DBGF, fAttached);
-    GEN_CHECK_OFF(DBGF, fStoppedInHyper);
-    GEN_CHECK_OFF(DBGF, PingPong);
-    GEN_CHECK_OFF(DBGF, DbgEvent);
-    GEN_CHECK_OFF(DBGF, enmVMMCmd);
-    GEN_CHECK_OFF(DBGF, VMMCmdData);
     //GEN_CHECK_OFF(DBGF, pInfoFirst);
     //GEN_CHECK_OFF(DBGF, InfoCritSect);
     GEN_CHECK_OFF(DBGF, cEnabledHwBreakpoints);

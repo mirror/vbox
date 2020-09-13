@@ -275,8 +275,7 @@
 /** Someone (including the caller) was already attached as
  * debugger to the VM. */
 #define VERR_DBGF_ALREADY_ATTACHED          (-1201)
-/** Tried to halt a debugger which was already halted.
- * (This is a warning and not an error.) */
+/** Tried to halt a VM or CPU that was already halted. */
 #define VWRN_DBGF_ALREADY_HALTED            1202
 /** The DBGF has no more free breakpoint slots. */
 #define VERR_DBGF_NO_MORE_BP_SLOTS          (-1203)
@@ -322,6 +321,8 @@
 #define VERR_DBGF_NO_TRACE_BUFFER           (-1220)
 /** Internal processing error \#1 in the DBGF event tracing code. */
 #define VERR_DBGF_TRACER_IPE_1              (-1221)
+/** Tried to resume a VM or CPU that is already fully running. */
+#define VWRN_DBGF_ALREADY_RUNNING           (-1222)
 /** @} */
 
 
