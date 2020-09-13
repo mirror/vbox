@@ -344,7 +344,7 @@ static void dbgDiggerWinNtResolveKpcr(PDBGDIGGERWINNT pThis, PUVM pUVM)
                 rc = DBGFR3RegCpuQueryU64(pUVM, idCpu, DBGFREG_GS_BASE, &GCPtrTmp);
                 if (RT_SUCCESS(rc))
                 {
-                    LogFlow(("DigWinNt/KPCR[%u]: GS Base %RGv\n", GCPtrTmp));
+                    LogFlow(("DigWinNt/KPCR[%u]: GS Base %RGv\n", idCpu, GCPtrTmp));
                     DBGFR3AddrFromFlat(pUVM, pKpcrAddr, GCPtrTmp);
 
                     rc = DBGFR3RegCpuQueryU64(pUVM, idCpu, DBGFREG_GDTR_BASE, &GCPtrTmp);
@@ -389,7 +389,7 @@ static void dbgDiggerWinNtResolveKpcr(PDBGDIGGERWINNT pThis, PUVM pUVM)
 
             if (RT_FAILURE(rc))
             {
-                LogRel(("DigWinNt/KPCR: Failed to detmine KPCR and KPCRB\n", rc));
+                LogRel(("DigWinNt/KPCR: Failed to detmine KPCR and KPCRB rc=%Rrc\n", rc));
                 RTMemFree(pThis->paKpcrAddr);
                 pThis->paKpcrAddr  = NULL;
                 pThis->paKpcrbAddr = NULL;
