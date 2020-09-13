@@ -221,6 +221,14 @@ typedef struct DBGDIGGERWINNT
     DBGFADDRESS         KernelMteAddr;
     /** The address of PsLoadedModuleList. */
     DBGFADDRESS         PsLoadedModuleListAddr;
+
+    /** Array of detected KPCR addresses for each vCPU. */
+    PDBGFADDRESS        paKpcrAddr;
+    /** Array of detected KPCRB addresses for each vCPU. */
+    PDBGFADDRESS        paKpcrbAddr;
+
+    /** The Windows NT specifics interface. */
+    DBGFOSIWINNT        IWinNt;
 } DBGDIGGERWINNT;
 /** Pointer to the linux guest OS digger instance data. */
 typedef DBGDIGGERWINNT *PDBGDIGGERWINNT;
@@ -295,6 +303,102 @@ static const RTUTF16 g_wszKernelNames[][WINNT_KERNEL_BASE_NAME_LEN + 1] =
     { 'n', 't', 'o', 's', 'k', 'r', 'n', 'l', '.', 'e', 'x', 'e' }
 };
 
+
+
+/**
+ * Tries to resolve the KPCR and KPCRB addresses for each vCPU.
+ *
+ * @returns nothing.
+ * @param   pThis           The instance data.
+ * @param   pUVM            The user mode VM handle.
+ */
+static void dbgDiggerWinNtResolveKpcr(PDBGDIGGERWINNT pThis, PUVM pUVM)
+{
+    if (pThis->f32Bit)
+    { /** @todo */ }
+    else
+    {
+        /*
+         * Getting at the KPCR and KPCRB is explained here:
+         *     https://www.geoffchappell.com/studies/windows/km/ntoskrnl/structs/kprcb/amd64.htm
+         * Together with the available offsets from:
+         *     https://github.com/tpn/winsdk-10/blob/master/Include/10.0.16299.0/shared/ksamd64.inc#L883
+         * we can verify that the found addresses are valid by cross checking that the GDTR and self reference
+         * match what we expect.
+         */
+        VMCPUID cCpus = DBGFR3CpuGetCount(pUVM);
+        pThis->paKpcrAddr = (PDBGFADDRESS)RTMemAllocZ(cCpus * 2 * sizeof(DBGFADDRESS));
+        if (RT_LIKELY(pThis->paKpcrAddr))
+        {
+            pThis->paKpcrbAddr = &pThis->paKpcrAddr[cCpus];
+
+            /* Work each CPU, unexpected values in each CPU make the whole thing fail to play safe. */
+            int rc = VINF_SUCCESS;
+            for (VMCPUID idCpu = 0; (idCpu < cCpus) && RT_SUCCESS(rc); idCpu++)
+            {
+                PDBGFADDRESS pKpcrAddr = &pThis->paKpcrAddr[idCpu];
+                PDBGFADDRESS pKpcrbAddr = &pThis->paKpcrbAddr[idCpu];
+
+                /* Read GS base which points to the base of the KPCR for each CPU. */
+                RTGCUINTPTR GCPtrTmp = 0;
+                rc = DBGFR3RegCpuQueryU64(pUVM, idCpu, DBGFREG_GS_BASE, &GCPtrTmp);
+                if (RT_SUCCESS(rc))
+                {
+                    LogFlow(("DigWinNt/KPCR[%u]: GS Base %RGv\n", GCPtrTmp));
+                    DBGFR3AddrFromFlat(pUVM, pKpcrAddr, GCPtrTmp);
+
+                    rc = DBGFR3RegCpuQueryU64(pUVM, idCpu, DBGFREG_GDTR_BASE, &GCPtrTmp);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Read the start of the KPCR (@todo Probably move this to a global header)
+                         * and verify its content.
+                         */
+                        struct
+                        {
+                            RTGCUINTPTR GCPtrGdt;
+                            RTGCUINTPTR GCPtrTss;
+                            RTGCUINTPTR GCPtrUserRsp;
+                            RTGCUINTPTR GCPtrSelf;
+                            RTGCUINTPTR GCPtrCurrentPrcb;
+                        } Kpcr;
+
+                        rc = DBGFR3MemRead(pUVM, idCpu, pKpcrAddr, &Kpcr, sizeof(Kpcr));
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (   Kpcr.GCPtrGdt == GCPtrTmp
+                                && Kpcr.GCPtrSelf == pKpcrAddr->FlatPtr
+                                /** @todo && TSS */ )
+                            {
+                                DBGFR3AddrFromFlat(pUVM, pKpcrbAddr, Kpcr.GCPtrCurrentPrcb);
+                                LogRel(("DigWinNt/KPCR[%u]: KPCR=%RGv KPCRB=%RGv\n", idCpu, pKpcrAddr->FlatPtr, pKpcrbAddr->FlatPtr));
+                            }
+                            else
+                                LogRel(("DigWinNt/KPCR[%u]: KPCR validation error GDT=(%RGv vs %RGv) KPCRB=(%RGv vs %RGv)\n", idCpu,
+                                        Kpcr.GCPtrGdt, GCPtrTmp, Kpcr.GCPtrSelf, pKpcrAddr->FlatPtr));
+                        }
+                        else
+                            LogRel(("DigWinNt/KPCR[%u]: Reading KPCR start at %RGv failed with %Rrc\n", idCpu, pKpcrAddr->FlatPtr, rc));
+                    }
+                    else
+                        LogRel(("DigWinNt/KPCR[%u]: Getting GDT base register failed with %Rrc\n", idCpu, rc));
+                }
+                else
+                    LogRel(("DigWinNt/KPCR[%u]: Getting GS base register failed with %Rrc\n", idCpu, rc));
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("DigWinNt/KPCR: Failed to detmine KPCR and KPCRB\n", rc));
+                RTMemFree(pThis->paKpcrAddr);
+                pThis->paKpcrAddr  = NULL;
+                pThis->paKpcrbAddr = NULL;
+            }
+        }
+        else
+            LogRel(("DigWinNt/KPCR: Failed to allocate %u entries for the KPCR/KPCRB addresses\n", cCpus * 2));
+    }
+}
 
 
 /**
@@ -398,6 +502,76 @@ static const char *dbgDiggerWintNtFilenameToModuleName(const char *pszFilename, 
     }
     pszName[off] = '\0';
     return pszName;
+}
+
+
+/**
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion}
+ */
+static DECLCALLBACK(int) dbgDiggerWinNtIWinNt_QueryVersion(struct DBGFOSIWINNT *pThis, PUVM pUVM,
+                                                           uint32_t *puVersMajor, uint32_t *puVersMinor)
+{
+    RT_NOREF(pUVM);
+    PDBGDIGGERWINNT pData = RT_FROM_MEMBER(pThis, DBGDIGGERWINNT, IWinNt);
+
+    *puVersMajor = pData->NtMajorVersion;
+    *puVersMinor = pData->NtMinorVersion;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion}
+ */
+static DECLCALLBACK(int) dbgDiggerWinNtIWinNt_QueryKernelPtrs(struct DBGFOSIWINNT *pThis, PUVM pUVM,
+                                                              PRTGCUINTPTR pGCPtrKernBase, PRTGCUINTPTR pGCPtrPsLoadedModuleList)
+{
+    RT_NOREF(pUVM);
+    PDBGDIGGERWINNT pData = RT_FROM_MEMBER(pThis, DBGDIGGERWINNT, IWinNt);
+
+    *pGCPtrKernBase           = pData->KernelAddr.FlatPtr;
+    *pGCPtrPsLoadedModuleList = pData->PsLoadedModuleListAddr.FlatPtr;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryKpcrForVCpu}
+ */
+static DECLCALLBACK(int) dbgDiggerWinNtIWinNt_QueryKpcrForVCpu(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
+                                                               PRTGCUINTPTR pKpcr, PRTGCUINTPTR pKpcrb)
+{
+    PDBGDIGGERWINNT pData = RT_FROM_MEMBER(pThis, DBGDIGGERWINNT, IWinNt);
+
+    if (!pData->paKpcrAddr)
+        return VERR_NOT_SUPPORTED;
+
+    AssertReturn(idCpu < DBGFR3CpuGetCount(pUVM), VERR_INVALID_PARAMETER);
+
+    if (pKpcr)
+        *pKpcr = pData->paKpcrAddr[idCpu].FlatPtr;
+    if (pKpcrb)
+        *pKpcrb = pData->paKpcrbAddr[idCpu].FlatPtr;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryCurThrdForVCpu}
+ */
+static DECLCALLBACK(int) dbgDiggerWinNtIWinNt_QueryCurThrdForVCpu(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
+                                                                  PRTGCUINTPTR pCurThrd)
+{
+    PDBGDIGGERWINNT pData = RT_FROM_MEMBER(pThis, DBGDIGGERWINNT, IWinNt);
+
+    if (!pData->paKpcrAddr)
+        return VERR_NOT_SUPPORTED;
+
+    AssertReturn(idCpu < DBGFR3CpuGetCount(pUVM), VERR_INVALID_PARAMETER);
+
+    DBGFADDRESS AddrCurThrdPtr = pData->paKpcrbAddr[idCpu];
+    DBGFR3AddrAdd(&AddrCurThrdPtr, 0x08); /** @todo Make this prettier. */
+    return DBGFR3MemRead(pUVM, idCpu, &AddrCurThrdPtr, pCurThrd, sizeof(*pCurThrd));
 }
 
 
@@ -545,8 +719,16 @@ static DECLCALLBACK(int) dbgDiggerWinNtStackUnwindAssist(PUVM pUVM, void *pvData
  */
 static DECLCALLBACK(void *) dbgDiggerWinNtQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
 {
-    RT_NOREF3(pUVM, pvData, enmIf);
-    return NULL;
+    RT_NOREF(pUVM);
+    PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
+
+    switch (enmIf)
+    {
+        case DBGFOSINTERFACE_WINNT:
+            return &pThis->IWinNt;
+        default:
+            return NULL;
+    }
 }
 
 
@@ -604,6 +786,13 @@ static DECLCALLBACK(void)  dbgDiggerWinNtTerm(PUVM pUVM, void *pvData)
         }
         RTDbgAsRelease(hDbgAs);
     }
+
+    if (pThis->paKpcrAddr)
+        RTMemFree(pThis->paKpcrAddr);
+    /* pThis->paKpcrbAddr comes from the same allocation as pThis->paKpcrAddr. */
+
+    pThis->paKpcrAddr  = NULL;
+    pThis->paKpcrbAddr = NULL;
 
     pThis->fValid = false;
 }
@@ -758,6 +947,9 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
         DBGFR3AddrFromFlat(pUVM, &Addr, WINNT_UNION(pThis, &Mte, InLoadOrderLinks.Flink));
     } while (   Addr.FlatPtr != pThis->KernelMteAddr.FlatPtr
              && Addr.FlatPtr != pThis->PsLoadedModuleListAddr.FlatPtr);
+
+    /* Try resolving the KPCR and KPCRB addresses for each vCPU. */
+    dbgDiggerWinNtResolveKpcr(pThis, pUVM);
 
     pThis->fValid = true;
     return VINF_SUCCESS;
@@ -1065,9 +1257,17 @@ static DECLCALLBACK(int)  dbgDiggerWinNtConstruct(PUVM pUVM, void *pvData)
 {
     RT_NOREF1(pUVM);
     PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
-    pThis->fValid = false;
-    pThis->f32Bit = false;
-    pThis->enmVer = DBGDIGGERWINNTVER_UNKNOWN;
+    pThis->fValid      = false;
+    pThis->f32Bit      = false;
+    pThis->enmVer      = DBGDIGGERWINNTVER_UNKNOWN;
+
+    pThis->IWinNt.u32Magic               = DBGFOSIWINNT_MAGIC;
+    pThis->IWinNt.pfnQueryVersion        = dbgDiggerWinNtIWinNt_QueryVersion;
+    pThis->IWinNt.pfnQueryKernelPtrs     = dbgDiggerWinNtIWinNt_QueryKernelPtrs;
+    pThis->IWinNt.pfnQueryKpcrForVCpu    = dbgDiggerWinNtIWinNt_QueryKpcrForVCpu;
+    pThis->IWinNt.pfnQueryCurThrdForVCpu = dbgDiggerWinNtIWinNt_QueryCurThrdForVCpu;
+    pThis->IWinNt.u32EndMagic            = DBGFOSIWINNT_MAGIC;
+
     return VINF_SUCCESS;
 }
 
