@@ -323,6 +323,8 @@
 #define VERR_DBGF_TRACER_IPE_1              (-1221)
 /** Tried to resume a VM or CPU that is already fully running. */
 #define VWRN_DBGF_ALREADY_RUNNING           (-1222)
+/** Internal processing error \#1 in the DBGF core code. */
+#define VERR_DBGF_IPE_1                     (-1223)
 /** @} */
 
 
