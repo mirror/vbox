@@ -135,6 +135,28 @@ static int drvTcpPollerKick(PDRVTCP pThis, uint8_t bReason)
 
 
 /**
+ * Closes the connection.
+ *
+ * @returns nothing.
+ * @param   pThis                  The TCP driver instance.
+ */
+static void drvTcpConnectionClose(PDRVTCP pThis)
+{
+    Assert(pThis->hTcpSock != NIL_RTSOCKET);
+
+    int rc = RTPollSetRemove(pThis->hPollSet, DRVTCP_POLLSET_ID_SOCKET);
+    AssertRC(rc);
+
+    if (pThis->fIsServer)
+        RTTcpServerDisconnectClient2(pThis->hTcpSock);
+    else
+        RTSocketClose(pThis->hTcpSock);
+    pThis->hTcpSock = NIL_RTSOCKET;
+    ASMAtomicDecU32(&pThis->cConnections);
+}
+
+
+/**
  * Checks the wakeup pipe for events.
  *
  * @returns VBox status code.
@@ -259,18 +281,7 @@ static DECLCALLBACK(int) drvTcpPoll(PPDMISTREAM pInterface, uint32_t fEvts, uint
 
                     /* On error we close the socket here. */
                     if (fEvtsRecv & RTPOLL_EVT_ERROR)
-                    {
-                        rc = RTPollSetRemove(pThis->hPollSet, DRVTCP_POLLSET_ID_SOCKET);
-                        AssertRC(rc);
-
-                        if (pThis->fIsServer)
-                            RTTcpServerDisconnectClient2(pThis->hTcpSock);
-                        else
-                            RTSocketClose(pThis->hTcpSock);
-                        pThis->hTcpSock = NIL_RTSOCKET;
-                        ASMAtomicDecU32(&pThis->cConnections);
-                        /* Continue with polling. */
-                    }
+                        drvTcpConnectionClose(pThis); /* Continue with polling afterwards. */
                     else
                     {
                         if (fEvtsRecv & RTPOLL_EVT_WRITE)
@@ -327,14 +338,7 @@ static DECLCALLBACK(int) drvTcpRead(PPDMISTREAM pInterface, void *pvBuf, size_t 
         {
             if (!cbRead && rc != VINF_TRY_AGAIN)
             {
-                rc = RTPollSetRemove(pThis->hPollSet, DRVTCP_POLLSET_ID_SOCKET);
-                AssertRC(rc);
-
-                if (pThis->fIsServer)
-                    RTTcpServerDisconnectClient2(pThis->hTcpSock);
-                else
-                    RTSocketClose(pThis->hTcpSock);
-                pThis->hTcpSock = NIL_RTSOCKET;
+                drvTcpConnectionClose(pThis);
                 rc = VINF_SUCCESS;
             }
             *pcbRead = cbRead;
