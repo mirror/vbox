@@ -550,7 +550,7 @@ static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryVersion(PDBGFOSIWINNT pThis, PUV
 
 
 /**
- * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion, Generic EMT wrapper.}
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryKernelPtrs, Generic EMT wrapper.}
  */
 static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryKernelPtrs(PDBGFOSIWINNT pThis, PUVM pUVM,
                                                            PRTGCUINTPTR pGCPtrKernBase, PRTGCUINTPTR pGCPtrPsLoadedModuleList)
