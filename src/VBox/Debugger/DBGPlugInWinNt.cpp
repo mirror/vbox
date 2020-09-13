@@ -521,7 +521,7 @@ static DECLCALLBACK(int) dbgDiggerWinNtIWinNt_QueryVersion(struct DBGFOSIWINNT *
 
 
 /**
- * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion}
+ * @interface_method_impl{DBGFOSIWINNT,pfnQueryKernelPtrs}
  */
 static DECLCALLBACK(int) dbgDiggerWinNtIWinNt_QueryKernelPtrs(struct DBGFOSIWINNT *pThis, PUVM pUVM,
                                                               PRTGCUINTPTR pGCPtrKernBase, PRTGCUINTPTR pGCPtrPsLoadedModuleList)
