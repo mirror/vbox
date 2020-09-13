@@ -236,7 +236,7 @@ typedef struct NTCONTEXT64
 } NTCONTEXT64;
 AssertCompileSize(NTCONTEXT64, 1232);
 AssertCompileMemberOffset(NTCONTEXT64, FxSave, 0x100);
-AssertCompileMemberOffset(NTCONTEXT64, aRegsVec[0], 0x300);
+AssertCompileMemberOffset(NTCONTEXT64, aRegsVec, 0x300);
 /** Pointer to an amd64 NT context. */
 typedef NTCONTEXT64 *PNTCONTEXT64;
 /** Pointer to a const amd64 NT context. */
