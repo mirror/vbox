@@ -72,7 +72,7 @@ private:
     void cleanup();
 
     /** Saves existing data from cache. */
-    bool saveGeneralData();
+    bool saveData();
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalGeneral *m_pCache;

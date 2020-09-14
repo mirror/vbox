@@ -39,10 +39,10 @@ struct UIDataSettingsGlobalGeneral
     /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsGlobalGeneral &other) const
     {
-        return true
+        return    true
                && (m_strDefaultMachineFolder == other.m_strDefaultMachineFolder)
                && (m_strVRDEAuthLibrary == other.m_strVRDEAuthLibrary)
-               ;
+                  ;
     }
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -51,9 +51,9 @@ struct UIDataSettingsGlobalGeneral
     bool operator!=(const UIDataSettingsGlobalGeneral &other) const { return !equal(other); }
 
     /** Holds the 'default machine folder' path. */
-    QString m_strDefaultMachineFolder;
+    QString  m_strDefaultMachineFolder;
     /** Holds the 'VRDE auth library' name. */
-    QString m_strVRDEAuthLibrary;
+    QString  m_strVRDEAuthLibrary;
 };
 
 
@@ -115,7 +115,7 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Update data and failing state: */
-    setFailed(!saveGeneralData());
+    setFailed(!saveData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -190,7 +190,7 @@ void UIGlobalSettingsGeneral::cleanup()
     m_pCache = 0;
 }
 
-bool UIGlobalSettingsGeneral::saveGeneralData()
+bool UIGlobalSettingsGeneral::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
