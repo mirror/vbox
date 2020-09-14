@@ -343,8 +343,18 @@ AssertCompileSizeAlignment(VMCPU, 4096);
                   ("enmState=%d  enmExpectedState=%d idCpu=%u\n", \
                   enmState, enmExpectedState, (pVCpu)->idCpu)); \
     } while (0)
+
+# define VMCPU_ASSERT_STATE_2(pVCpu, enmExpectedState, a_enmExpectedState2) \
+    do { \
+        VMCPUSTATE enmState = VMCPU_GET_STATE(pVCpu); \
+        AssertMsg(   enmState == (enmExpectedState) \
+                  || enmState == (a_enmExpectedState2), \
+                  ("enmState=%d  enmExpectedState=%d enmExpectedState2=%d idCpu=%u\n", \
+                  enmState, enmExpectedState, a_enmExpectedState2, (pVCpu)->idCpu)); \
+    } while (0)
 #else
 # define VMCPU_ASSERT_STATE(pVCpu, enmExpectedState) do { } while (0)
+# define VMCPU_ASSERT_STATE_2(pVCpu, enmExpectedState, a_enmExpectedState2) do { } while (0)
 #endif
 /** Tests if the state means that the CPU is started. */
 #define VMCPUSTATE_IS_STARTED(enmState)     ( (enmState) > VMCPUSTATE_STOPPED )
