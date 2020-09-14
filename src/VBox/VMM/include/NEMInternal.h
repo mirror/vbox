@@ -306,6 +306,8 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatExitException;
     STAMCOUNTER                 StatExitExceptionBp;
     STAMCOUNTER                 StatExitExceptionDb;
+    STAMCOUNTER                 StatExitExceptionGp;
+    STAMCOUNTER                 StatExitExceptionGpMesa;
     STAMCOUNTER                 StatExitExceptionUd;
     STAMCOUNTER                 StatExitExceptionUdHandled;
     STAMCOUNTER                 StatExitUnrecoverable;

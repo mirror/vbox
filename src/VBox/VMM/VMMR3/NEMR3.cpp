@@ -108,7 +108,7 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
     pVM->nem.s.fAllow64BitGuests = false;
 #endif
 
-    /** @cfgm{/HM/LovelyMesaDrvWorkaround,bool}
+    /** @cfgm{/NEM/LovelyMesaDrvWorkaround, bool, false}
      * Workaround for mesa vmsvga 3d driver making incorrect assumptions about
      * the hypervisor it is running under. */
     bool f;

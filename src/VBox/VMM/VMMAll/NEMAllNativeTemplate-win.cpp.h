@@ -3345,23 +3345,31 @@ nemHCWinHandleMessageException(PVMCPUCC pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAG
                   pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),  pMsg->InstructionByteCount, pMsg->InstructionBytes ));
             break;
 
+        /*
+         * Workaround the lovely mesa driver assuming that vmsvga means vmware
+         * hypervisor and tries to log stuff to the host.
+         */
         case X86_XCPT_GP:
-        {
-            PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionGp);
+            /** @todo r=bird: Need workaround in IEM for this, right?
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_GP),
+                             pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC()); */
             if (   !pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv
-                || !nemHcWinIsMesaDrvGp(pVCpu, pCtx, pMsg->InstructionBytes, pMsg->InstructionByteCount))
+                || !nemHcWinIsMesaDrvGp(pVCpu, &pVCpu->cpum.GstCtx, pMsg->InstructionBytes, pMsg->InstructionByteCount))
             {
-                /** @todo Need to emulate instruction or we get a triple fault when trying to inject the #GP... */
+# if 1 /** @todo Need to emulate instruction or we get a triple fault when trying to inject the #GP... */
                 rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pMsg->Header.Rip,
                                                         pMsg->InstructionBytes, pMsg->InstructionByteCount);
                 Log4(("XcptExit/%u: %04x:%08RX64/%s: #GP -> emulated -> %Rrc\n",
                       pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
                       nemHCWinExecStateToLogStr(&pMsg->Header), VBOXSTRICTRC_VAL(rcStrict) ));
-                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUdHandled);
                 return rcStrict;
+# else
+                break;
+# endif
             }
-            return nemHcWinHandleMesaDrvGp(pVCpu, pCtx);
-        }
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionGpMesa);
+            return nemHcWinHandleMesaDrvGp(pVCpu, &pVCpu->cpum.GstCtx);
 
         /*
          * Filter debug exceptions.
@@ -3463,14 +3471,20 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVC
                   pExit->VpException.InstructionByteCount, pExit->VpException.InstructionBytes ));
             break;
 
+        /*
+         * Workaround the lovely mesa driver assuming that vmsvga means vmware
+         * hypervisor and tries to log stuff to the host.
+         */
         case X86_XCPT_GP:
-        {
-            PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionGp);
+            /** @todo r=bird: Need workaround in IEM for this, right?
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_GP),
+                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC()); */
             if (   !pVCpu->nem.s.fTrapXcptGpForLovelyMesaDrv
-                || !nemHcWinIsMesaDrvGp(pVCpu, pCtx, pExit->VpException.InstructionBytes,
+                || !nemHcWinIsMesaDrvGp(pVCpu, &pVCpu->cpum.GstCtx, pExit->VpException.InstructionBytes,
                                         pExit->VpException.InstructionByteCount))
             {
-                /** @todo Need to emulate instruction or we get a triple fault when trying to inject the #GP... */
+# if 1 /** @todo Need to emulate instruction or we get a triple fault when trying to inject the #GP... */
                 rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pExit->VpContext.Rip,
                                                         pExit->VpException.InstructionBytes,
                                                         pExit->VpException.InstructionByteCount);
@@ -3479,9 +3493,12 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVC
                       nemR3WinExecStateToLogStr(&pExit->VpContext), VBOXSTRICTRC_VAL(rcStrict) ));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUdHandled);
                 return rcStrict;
+# else
+                break;
+# endif
             }
-            return nemHcWinHandleMesaDrvGp(pVCpu, pCtx);
-        }
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionGpMesa);
+            return nemHcWinHandleMesaDrvGp(pVCpu, &pVCpu->cpum.GstCtx);
 
         /*
          * Filter debug exceptions.
