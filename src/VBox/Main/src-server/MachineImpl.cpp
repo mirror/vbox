@@ -3515,8 +3515,9 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
     AutoWriteLock mediumLock(medium COMMA_LOCKVAL_SRC_POS);
 
     if (    (pAttachTemp = i_findAttachment(*mMediumAttachments.data(), medium))
-         && !medium.isNull() && medium->i_getType() != MediumType_Readonly
-         &&  medium->i_getDeviceType() != DeviceType_DVD
+         && !medium.isNull()
+         && (   medium->i_getType() != MediumType_Readonly
+             || medium->i_getDeviceType() != DeviceType_DVD)
        )
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Medium '%s' is already attached to this virtual machine"),

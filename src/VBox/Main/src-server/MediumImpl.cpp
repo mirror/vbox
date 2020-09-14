@@ -4340,7 +4340,11 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
     bool fDvd = false;
     {
         AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
-        fDvd = m->type == MediumType_Readonly || m->devType == DeviceType_DVD;
+        /*
+         *  Check the medium is DVD and readonly. It's for the case if DVD
+         *  will be able to be writable sometime in the future.
+         */
+        fDvd = m->type == MediumType_Readonly && m->devType == DeviceType_DVD;
     }
 
     // if the caller has not supplied a snapshot ID, then we're attaching
@@ -4349,7 +4353,7 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
 
     if (aSnapshotId.isZero())
     {
-        // Allow MediumType_Readonly mediums and DVD in particular to be attached twice.
+        // Allow DVD having MediumType_Readonly to be attached twice.
         // (the medium already had been added to back reference)
         if (fDvd)
         {
