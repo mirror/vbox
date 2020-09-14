@@ -3170,6 +3170,88 @@ DECLINLINE(void) nemR3WinCopyStateFromExceptionMessage(PVMCPUCC pVCpu, WHV_RUN_V
 #endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
+/**
+ * Advances the guest RIP by the number of bytes specified in @a cb.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cb          RIP increment value in bytes.
+ */
+DECLINLINE(void) nemHcWinAdvanceRip(PVMCPUCC pVCpu, uint32_t cb)
+{
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    pCtx->rip += cb;
+
+    /* Update interrupt shadow. */
+    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+}
+
+
+/**
+ * Hacks its way around the lovely mesa driver's backdoor accesses.
+ *
+ * @sa hmR0VmxHandleMesaDrvGp
+ * @sa hmR0SvmHandleMesaDrvGp
+ */
+static int nemHcWinHandleMesaDrvGp(PVMCPUCC pVCpu, PCPUMCTX pCtx)
+{
+    Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK)));
+
+    /* For now we'll just skip the instruction. */
+    nemHcWinAdvanceRip(pVCpu, 1);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks if the \#GP'ing instruction is the mesa driver doing it's lovely
+ * backdoor logging w/o checking what it is running inside.
+ *
+ * This recognizes an "IN EAX,DX" instruction executed in flat ring-3, with the
+ * backdoor port and magic numbers loaded in registers.
+ *
+ * @returns true if it is, false if it isn't.
+ * @sa      hmR0VmxIsMesaDrvGp
+ * @sa      hmR0SvmIsMesaDrvGp
+ */
+DECLINLINE(bool) nemHcWinIsMesaDrvGp(PVMCPUCC pVCpu, PCPUMCTX pCtx, const uint8_t *pbInsn, uint32_t cbInsn)
+{
+    /* #GP(0) is already checked by caller. */
+
+    /* Check magic and port. */
+    Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RAX)));
+    if (pCtx->dx != UINT32_C(0x5658))
+        return false;
+    if (pCtx->rax != UINT32_C(0x564d5868))
+        return false;
+
+    /* Flat ring-3 CS. */
+    if (CPUMGetGuestCPL(pVCpu) != 3)
+        return false;
+    if (pCtx->cs.u64Base != 0)
+        return false;
+
+    /* 0xed:  IN eAX,dx */
+    if (cbInsn < 1) /* Play safe (shouldn't happen). */
+    {
+        uint8_t abInstr[1];
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, abInstr, pCtx->rip, sizeof(abInstr));
+        if (RT_FAILURE(rc))
+            return false;
+        if (abInstr[0] != 0xed)
+            return false;
+    }
+    else
+    {
+        if (pbInsn[0] != 0xed)
+            return false;
+    }
+
+    return true;
+}
+
+
 #ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Deals with exception intercept message (HvMessageTypeX64ExceptionIntercept).
@@ -3261,6 +3343,24 @@ nemHCWinHandleMessageException(PVMCPUCC pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAG
             Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD [%.*Rhxs] -> re-injected\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
                   pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),  pMsg->InstructionByteCount, pMsg->InstructionBytes ));
             break;
+
+        case X86_XCPT_GP:
+        {
+            PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+            if (   !pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv
+                || !nemHcWinIsMesaDrvGp(pVCpu, pCtx, pMsg->InstructionBytes, pMsg->InstructionByteCount))
+            {
+                /** @todo Need to emulate instruction or we get a triple fault when trying to inject the #GP... */
+                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pMsg->Header.Rip,
+                                                        pMsg->InstructionBytes, pMsg->InstructionByteCount);
+                Log4(("XcptExit/%u: %04x:%08RX64/%s: #GP -> emulated -> %Rrc\n",
+                      pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
+                      nemHCWinExecStateToLogStr(&pMsg->Header), VBOXSTRICTRC_VAL(rcStrict) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUdHandled);
+                return rcStrict;
+            }
+            return nemHcWinHandleMesaDrvGp(pVCpu, pCtx);
+        }
 
         /*
          * Filter debug exceptions.
@@ -3361,6 +3461,26 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVC
                   pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
                   pExit->VpException.InstructionByteCount, pExit->VpException.InstructionBytes ));
             break;
+
+        case X86_XCPT_GP:
+        {
+            PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+            if (   !pVCpu->nem.s.fTrapXcptGpForLovelyMesaDrv
+                || !nemHcWinIsMesaDrvGp(pVCpu, pCtx, pExit->VpException.InstructionBytes,
+                                        pExit->VpException.InstructionByteCount))
+            {
+                /** @todo Need to emulate instruction or we get a triple fault when trying to inject the #GP... */
+                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pExit->VpContext.Rip,
+                                                        pExit->VpException.InstructionBytes,
+                                                        pExit->VpException.InstructionByteCount);
+                Log4(("XcptExit/%u: %04x:%08RX64/%s: #GP -> emulated -> %Rrc\n",
+                      pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip,
+                      nemR3WinExecStateToLogStr(&pExit->VpContext), VBOXSTRICTRC_VAL(rcStrict) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUdHandled);
+                return rcStrict;
+            }
+            return nemHcWinHandleMesaDrvGp(pVCpu, pCtx);
+        }
 
         /*
          * Filter debug exceptions.

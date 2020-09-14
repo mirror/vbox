@@ -1356,6 +1356,12 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     Property.ExceptionExitBitmap = RT_BIT_64(WHvX64ExceptionTypeDebugTrapOrFault)
                                  | RT_BIT_64(WHvX64ExceptionTypeBreakpointTrap)
                                  | RT_BIT_64(WHvX64ExceptionTypeInvalidOpcodeFault);
+
+    /* Intercept #GP to workaround the buggy mesa vmwgfx driver. */
+    PVMCPU pVCpu = pVM->apCpusR3[0]; /** @todo In theory per vCPU, in practice same for all. */
+    if (pVCpu->nem.s.fTrapXcptGpForLovelyMesaDrv)
+        Property.ExceptionExitBitmap |= RT_BIT_64(WHvX64ExceptionTypeGeneralProtectionFault);
+
     hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeExceptionExitBitmap, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
@@ -1418,7 +1424,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        pVCpu = pVM->apCpusR3[idCpu];
 
         pVCpu->nem.s.hNativeThreadHandle = (RTR3PTR)RTThreadGetNativeHandle(VMR3GetThreadHandle(pVCpu->pUVCpu));
         Assert((HANDLE)pVCpu->nem.s.hNativeThreadHandle != INVALID_HANDLE_VALUE);
