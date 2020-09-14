@@ -210,9 +210,6 @@ typedef struct GIMKVM
     uint8_t                     abPadding[5];
     /** The TSC frequency (in HZ) reported to the guest. */
     uint64_t                    cTscTicksPerSecond;
-    /** Spinlock used for protecting GIMKVMCPU::uTsc and
-     *  GIMKVMCPU::uVirtNanoTS. */
-    RTSPINLOCK                  hSpinlockR0;
 } GIMKVM;
 /** Pointer to per-VM GIM KVM instance data. */
 typedef GIMKVM *PGIMKVM;
@@ -246,12 +243,6 @@ typedef GIMKVMCPU const *PCGIMKVMCPU;
 
 RT_C_DECLS_BEGIN
 
-#ifdef IN_RING0
-VMMR0_INT_DECL(int)             gimR0KvmInitVM(PVMCC pVM);
-VMMR0_INT_DECL(int)             gimR0KvmTermVM(PVMCC pVM);
-VMMR0_INT_DECL(int)             gimR0KvmUpdateSystemTime(PVMCC pVM, PVMCPUCC pVCpu);
-#endif /* IN_RING0 */
-
 #ifdef IN_RING3
 VMMR3_INT_DECL(int)             gimR3KvmInit(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3KvmInitCompleted(PVM pVM);
@@ -262,7 +253,7 @@ VMMR3_INT_DECL(int)             gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM);
 
 VMMR3_INT_DECL(int)             gimR3KvmDisableSystemTime(PVM pVM);
-VMMR3_INT_DECL(int)             gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu);
+VMMR3_INT_DECL(int)             gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, uint64_t uMsrSystemTime);
 VMMR3_INT_DECL(int)             gimR3KvmEnableWallClock(PVM pVM, RTGCPHYS GCPhysSysTime);
 #endif /* IN_RING3 */
 
@@ -274,7 +265,6 @@ VMM_INT_DECL(VBOXSTRICTRC)      gimKvmWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, P
 VMM_INT_DECL(bool)              gimKvmShouldTrapXcptUD(PVM pVM);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);
-
 
 RT_C_DECLS_END
 

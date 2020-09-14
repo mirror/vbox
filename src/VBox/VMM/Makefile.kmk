@@ -477,7 +477,6 @@ VMMR0_SOURCES   = \
 	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR0/DBGFR0Tracer.cpp,) \
 	VMMR0/GIMR0.cpp \
 	VMMR0/GIMR0Hv.cpp \
-	VMMR0/GIMR0Kvm.cpp \
 	VMMR0/GMMR0.cpp \
 	VMMR0/GVMMR0.cpp \
 	VMMR0/EMR0.cpp \

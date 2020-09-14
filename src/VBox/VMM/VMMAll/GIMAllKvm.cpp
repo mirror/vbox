@@ -229,70 +229,23 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
 VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
     NOREF(pRange);
-    PVMCC      pVM  = pVCpu->CTX_SUFF(pVM);
-    PGIMKVMCPU pKvmCpu = &pVCpu->gim.s.u.KvmCpu;
-
     switch (idMsr)
     {
         case MSR_GIM_KVM_SYSTEM_TIME:
         case MSR_GIM_KVM_SYSTEM_TIME_OLD:
         {
-            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_KVM_SYSTEM_TIME_ENABLE_BIT);
 #ifndef IN_RING3
-            gimR0KvmUpdateSystemTime(pVM, pVCpu);
-            if (   fEnable
-                && MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr)
-                && MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue) == pKvmCpu->GCPhysSystemTime)
-            {
-                /*
-                 * Guest is asking for an update of the system-time struct. We only
-                 * need to update the TSC and system time fields, the rest stays unchanged.
-                 * We have to write the version twice in case another VCPU is reading the
-                 * system-time struct concurrently. Making the version number odd indicates
-                 * that the data is being updated.
-                 */
-                GIMKVMSYSTEMTIME SystemTime;
-                SystemTime.u32Version  = ++pKvmCpu->u32SystemTimeVersion;
-                SystemTime.u32Padding0 = 0;
-                SystemTime.u64NanoTS   = pKvmCpu->uVirtNanoTS;
-                SystemTime.u64Tsc      = pKvmCpu->uTsc;
-                AssertCompile(RT_UOFFSETOF(GIMKVMSYSTEMTIME, u32TscScale) == 3 * sizeof(uint64_t));
-                int rc2 = PGMPhysSimpleWriteGCPhys(pVM, pKvmCpu->GCPhysSystemTime, &SystemTime, RT_UOFFSETOF(GIMKVMSYSTEMTIME, u32TscScale));
-                if (RT_FAILURE(rc2))
-                    return rc2;
-
-                /* Make the version number even again to indicate the data is consistent. */
-                ++pKvmCpu->u32SystemTimeVersion;
-                rc2 = PGMPhysSimpleWriteGCPhys(pVM, pKvmCpu->GCPhysSystemTime, &pKvmCpu->u32SystemTimeVersion, sizeof(pKvmCpu->u32SystemTimeVersion));
-                if (RT_FAILURE(rc2))
-                    return rc2;
-                return VINF_SUCCESS;
-            }
+            RT_NOREF2(pVCpu, uRawValue);
+            return VINF_CPUM_R3_MSR_WRITE;
+#else
+            PVMCC      pVM = pVCpu->CTX_SUFF(pVM);
+            PGIMKVMCPU pKvmCpu = &pVCpu->gim.s.u.KvmCpu;
+            if (uRawValue & MSR_GIM_KVM_SYSTEM_TIME_ENABLE_BIT)
+                gimR3KvmEnableSystemTime(pVM, pVCpu, uRawValue);
             else
-                return VINF_CPUM_R3_MSR_WRITE;
-#else /* IN_RING3 */
-            if (!fEnable)
-            {
                 gimR3KvmDisableSystemTime(pVM);
-                pKvmCpu->u64SystemTimeMsr = uRawValue;
-                return VINF_SUCCESS;
-            }
 
-            /* We ASSUME that ring-0/raw-mode have updated these. */
-            /** @todo Get logically atomic NanoTS/TSC pairs in ring-3. */
-            Assert(pKvmCpu->uTsc);
-            Assert(pKvmCpu->uVirtNanoTS);
-
-            /* Enable and populate the system-time struct. */
-            pKvmCpu->u64SystemTimeMsr      = uRawValue;
-            pKvmCpu->GCPhysSystemTime      = MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue);
-            pKvmCpu->u32SystemTimeVersion += 2;
-            int rc = gimR3KvmEnableSystemTime(pVM, pVCpu);
-            if (RT_FAILURE(rc))
-            {
-                pKvmCpu->u64SystemTimeMsr = 0;
-                /* We shouldn't throw a #GP(0) here for buggy guests (neither does KVM apparently), see @bugref{8627}. */
-            }
+            pKvmCpu->u64SystemTimeMsr = uRawValue;
             return VINF_SUCCESS;
 #endif /* IN_RING3 */
         }
@@ -301,12 +254,14 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUM
         case MSR_GIM_KVM_WALL_CLOCK_OLD:
         {
 #ifndef IN_RING3
+            RT_NOREF2(pVCpu, uRawValue);
             return VINF_CPUM_R3_MSR_WRITE;
 #else
             /* Enable the wall-clock struct. */
             RTGCPHYS GCPhysWallClock = MSR_GIM_KVM_WALL_CLOCK_GUEST_GPA(uRawValue);
             if (RT_LIKELY(RT_ALIGN_64(GCPhysWallClock, 4) == GCPhysWallClock))
             {
+                PVMCC pVM = pVCpu->CTX_SUFF(pVM);
                 int rc = gimR3KvmEnableWallClock(pVM, GCPhysWallClock);
                 if (RT_SUCCESS(rc))
                 {
