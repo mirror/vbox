@@ -237,8 +237,9 @@ VBoxDbgGui::updateDesktopSize()
 void
 VBoxDbgGui::adjustRelativePos(int x, int y, unsigned cx, unsigned cy)
 {
-    /* Disregard a width less than 640 since it will mess up the console. */
-    if (cx < 640)
+    /* Disregard a width less than 640 since it will mess up the console,
+     * but only if previos width was already initialized.. */
+    if ((cx < 640) && (m_cx > 0))
         cx = m_cx;
 
     const bool fResize = cx != m_cx || cy != m_cy;
