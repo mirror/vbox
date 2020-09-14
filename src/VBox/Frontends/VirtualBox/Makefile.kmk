@@ -836,6 +836,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/UISettingsSerializer.h \
 	src/settings/editors/UIAudioControllerEditor.h \
 	src/settings/editors/UIAudioHostDriverEditor.h \
+	src/settings/editors/UIAutoCaptureKeyboardEditor.h \
 	src/settings/editors/UIBaseMemoryEditor.h \
 	src/settings/editors/UIBootOrderEditor.h \
 	src/settings/editors/UIDefaultMachineFolderEditor.h \
@@ -845,6 +846,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UINameAndSystemEditor.h \
 	src/settings/editors/UINetworkAttachmentEditor.h \
 	src/settings/editors/UIScaleFactorEditor.h \
+	src/settings/editors/UIShortcutConfigurationEditor.h \
 	src/settings/editors/UIVideoMemoryEditor.h \
 	src/settings/editors/UIVirtualCPUEditor.h \
 	src/settings/editors/UIVisualStateEditor.h \
@@ -992,8 +994,8 @@ UICommon_QT_MOCSRCS = \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \
+	src/settings/editors/UIShortcutConfigurationEditor.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
-	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/global/UIGlobalSettingsLanguage.cpp \
 	src/settings/global/UIGlobalSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
@@ -1351,6 +1353,7 @@ UICommon_SOURCES = \
 	src/settings/UISettingsSerializer.cpp \
 	src/settings/editors/UIAudioControllerEditor.cpp \
 	src/settings/editors/UIAudioHostDriverEditor.cpp \
+	src/settings/editors/UIAutoCaptureKeyboardEditor.cpp \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
 	src/settings/editors/UIDefaultMachineFolderEditor.cpp \
@@ -1360,6 +1363,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UINameAndSystemEditor.cpp \
 	src/settings/editors/UINetworkAttachmentEditor.cpp \
 	src/settings/editors/UIScaleFactorEditor.cpp \
+	src/settings/editors/UIShortcutConfigurationEditor.cpp \
 	src/settings/editors/UIVideoMemoryEditor.cpp \
 	src/settings/editors/UIVirtualCPUEditor.cpp \
 	src/settings/editors/UIVisualStateEditor.cpp \

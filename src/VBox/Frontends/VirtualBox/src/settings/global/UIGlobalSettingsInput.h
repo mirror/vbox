@@ -24,13 +24,11 @@
 /* GUI includes: */
 #include "UISettingsPage.h"
 
-/* Forward declartions: */
-class QCheckBox;
-class QLineEdit;
-class QTabWidget;
-class UIDataSettingsGlobalInput;
-class UIHotKeyTable;
-class UIHotKeyTableModel;
+/* Forward declarations: */
+class QLabel;
+class UIAutoCaptureKeyboardEditor;
+class UIShortcutConfigurationEditor;
+struct UIDataSettingsGlobalInput;
 typedef UISettingsCache<UIDataSettingsGlobalInput> UISettingsCacheGlobalInput;
 
 /** Global settings: Input page. */
@@ -38,15 +36,12 @@ class SHARED_LIBRARY_STUFF UIGlobalSettingsInput : public UISettingsPageGlobal
 {
     Q_OBJECT;
 
-    /** Hot-key table indexes. */
-    enum { UIHotKeyTableIndex_Selector, UIHotKeyTableIndex_Machine };
-
 public:
 
-    /** Constructs Input settings page. */
+    /** Constructs settings page. */
     UIGlobalSettingsInput();
-    /** Destructs Input settings page. */
-    ~UIGlobalSettingsInput();
+    /** Destructs settings page. */
+    virtual ~UIGlobalSettingsInput() /* override */;
 
 protected:
 
@@ -67,9 +62,6 @@ protected:
     /** Performs validation, updates @a messages list if something is wrong. */
     virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
 
-    /** Defines TAB order for passed @a pWidget. */
-    virtual void setOrderAfter(QWidget *pWidget) /* override */;
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
@@ -79,40 +71,25 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares Manager UI tab. */
-    void prepareTabManager();
-    /** Prepares Runtime UI tab. */
-    void prepareTabMachine();
     /** Prepares connections. */
     void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 
-    /** Saves existing input data from the cache. */
-    bool saveInputData();
-
-    /** Holds the Manager UI shortcuts model instance. */
-    UIHotKeyTableModel *m_pModelManager;
-    /** Holds the Runtime UI shortcuts model instance. */
-    UIHotKeyTableModel *m_pModelRuntime;
+    /** Saves existing data from the cache. */
+    bool saveData();
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalInput *m_pCache;
 
     /** @name Widgets
      * @{ */
-        /** Holds the tab-widget instance. */
-        QTabWidget    *m_pTabWidget;
-        /** Holds the Manager UI shortcuts filter instance. */
-        QLineEdit     *m_pEditorManagerFilter;
-        /** Holds the Manager UI shortcuts table instance. */
-        UIHotKeyTable *m_pTableManager;
-        /** Holds the Runtime UI shortcuts filter instance. */
-        QLineEdit     *m_pEditorRuntimeFilter;
-        /** Holds the Runtime UI shortcuts table instance. */
-        UIHotKeyTable *m_pTableRuntime;
-        /** Holds the 'enable auto-grab' checkbox instance. */
-        QCheckBox     *m_pCheckBoxEnableAutoGrab;
+        /** Holds the 'shortcut configuration' editor instance. */
+        UIShortcutConfigurationEditor *m_pEditorShortcutConfiguration;
+        /** Holds the input extended label instance. */
+        QLabel                        *m_pLabelInputExtended;
+        /** Holds the 'auto capture keyboard' editor instance. */
+        UIAutoCaptureKeyboardEditor   *m_pEditorAutoCaptureKeyboard;
     /** @} */
 };
 
