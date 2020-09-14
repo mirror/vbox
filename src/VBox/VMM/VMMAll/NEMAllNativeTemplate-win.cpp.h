@@ -3197,6 +3197,7 @@ DECLINLINE(void) nemHcWinAdvanceRip(PVMCPUCC pVCpu, uint32_t cb)
 static int nemHcWinHandleMesaDrvGp(PVMCPUCC pVCpu, PCPUMCTX pCtx)
 {
     Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK)));
+    RT_NOREF(pCtx);
 
     /* For now we'll just skip the instruction. */
     nemHcWinAdvanceRip(pVCpu, 1);
