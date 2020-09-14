@@ -2467,16 +2467,22 @@ static DECLCALLBACK(int) iommuAmdDeviceMemWrite(PPDMDEVINS pDevIns, uint16_t uDe
 static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, RTGCPHYS GCPhysIn, uint32_t uDataIn,
                             IOMMUOP enmOp, PIRTE_T pIrte)
 {
+    /* Ensure the IRTE length is valid. */
+    Assert(pDte->n.u4IntrTableLength < IOMMU_DTE_INTR_TAB_LEN_MAX);
+
     RTGCPHYS const GCPhysIntrTable = pDte->au64[2] & IOMMU_DTE_IRTE_ROOT_PTR_MASK;
+    uint16_t const cbIntrTable     = IOMMU_GET_INTR_TAB_LEN(pDte);
     uint16_t const offIrte         = (uDataIn & IOMMU_MSI_DATA_IRTE_OFFSET_MASK) << IOMMU_IRTE_SIZE_SHIFT;
     RTGCPHYS const GCPhysIrte      = GCPhysIntrTable + offIrte;
 
-    /* Ensure the IRTE offset is within the specified table size. */
-    Assert(pDte->n.u4IntrTableLength < 12);
-    if (offIrte + sizeof(IRTE_T) <= (1U << pDte->n.u4IntrTableLength) << IOMMU_IRTE_SIZE_SHIFT)
+    /* Ensure the IRTE falls completely within the interrupt table. */
+    if (offIrte + sizeof(IRTE_T) <= cbIntrTable)
     { /* likely */ }
     else
     {
+        LogFunc(("IRTE exceeds table length (GCPhysIntrTable=%#RGp cbIntrTable=%u offIrte=%#x uDataIn=%#x) -> IOPF\n",
+                 GCPhysIntrTable, cbIntrTable, offIrte, uDataIn));
+
         EVT_IO_PAGE_FAULT_T EvtIoPageFault;
         iommuAmdInitIoPageFaultEvent(uDevId, pDte->n.u16DomainId, GCPhysIn, false /* fPresent */, false /* fRsvdNotZero */,
                                      false /* fPermDenied */, enmOp, &EvtIoPageFault);
@@ -2656,8 +2662,8 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                         if (uIntrCtrl == IOMMU_INTR_CTRL_REMAP)
                         {
                             /* Validate the encoded interrupt table length when IntCtl specifies remapping. */
-                            uint32_t const uIntTabLen = Dte.n.u4IntrTableLength;
-                            if (Dte.n.u4IntrTableLength < 12)
+                            uint8_t const uIntrTabLen = Dte.n.u4IntrTableLength;
+                            if (uIntrTabLen < IOMMU_DTE_INTR_TAB_LEN_MAX)
                             {
                                 /*
                                  * We don't support guest interrupt remapping yet. When we do, we'll need to
@@ -2673,7 +2679,7 @@ static int iommuAmdLookupIntrTable(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP 
                                 return iommuAmdRemapIntr(pDevIns, uDevId, &Dte, enmOp, pMsiIn, pMsiOut);
                             }
 
-                            LogFunc(("Invalid interrupt table length %#x -> Illegal DTE\n", uIntTabLen));
+                            LogFunc(("Invalid interrupt table length %#x -> Illegal DTE\n", uIntrTabLen));
                             EVT_ILLEGAL_DTE_T Event;
                             iommuAmdInitIllegalDteEvent(uDevId, pMsiIn->Addr.u64, false /* fRsvdNotZero */, enmOp, &Event);
                             iommuAmdRaiseIllegalDteEvent(pDevIns, enmOp, &Event, kIllegalDteType_RsvdIntTabLen);
@@ -3197,7 +3203,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
         if (fVerbose)
         {
             pHlp->pfnPrintf(pHlp, "    Size                                    = %#x (%u bytes)\n", DevTabBar.n.u9Size,
-                            IOMMU_GET_DEV_TAB_LEN(DevTabBar));
+                            IOMMU_GET_DEV_TAB_LEN(&DevTabBar));
             pHlp->pfnPrintf(pHlp, "    Base address                            = %#RX64\n", DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT);
         }
     }
@@ -3774,14 +3780,16 @@ static void iommuAmdR3DbgInfoDteWorker(PCDBGFINFOHLP pHlp, PCDTE_T pDte, const c
     pHlp->pfnPrintf(pHlp, "\n");
 
     pHlp->pfnPrintf(pHlp, "%sInterrupt Map Valid        = %RTbool\n", pszPrefix, pDte->n.u1IntrMapValid);
-    if (pDte->n.u4IntrTableLength < 12)
+    uint8_t const uIntrTabLen = pDte->n.u4IntrTableLength;
+    if (uIntrTabLen < IOMMU_DTE_INTR_TAB_LEN_MAX)
     {
-        uint32_t const cEntries = 1U << pDte->n.u4IntrTableLength;
-        pHlp->pfnPrintf(pHlp, "%sInterrupt Table Length     = %#x (%u entries, %u bytes)\n", pszPrefix,
-                        pDte->n.u4IntrTableLength, cEntries, cEntries << IOMMU_IRTE_SIZE_SHIFT);
+        uint16_t const cEntries    = IOMMU_GET_INTR_TAB_ENTRIES(pDte);
+        uint16_t const cbIntrTable = IOMMU_GET_INTR_TAB_LEN(pDte);
+        pHlp->pfnPrintf(pHlp, "%sInterrupt Table Length     = %#x (%u entries, %u bytes)\n", pszPrefix, uIntrTabLen, cEntries,
+                        cbIntrTable);
     }
     else
-        pHlp->pfnPrintf(pHlp, "%sInterrupt Table Length     = %#x (invalid)\n", pszPrefix, pDte->n.u4IntrTableLength);
+        pHlp->pfnPrintf(pHlp, "%sInterrupt Table Length     = %#x (invalid!)\n", pszPrefix, uIntrTabLen);
     pHlp->pfnPrintf(pHlp, "%sIgnore Unmapped Interrupts = %RTbool\n", pszPrefix, pDte->n.u1IgnoreUnmappedIntrs);
     pHlp->pfnPrintf(pHlp, "%sInterrupt Table Root Ptr   = %#RX64 (addr=%#RGp)\n", pszPrefix,
                     pDte->n.u46IntrTableRootPtr, pDte->au64[2] & IOMMU_DTE_IRTE_ROOT_PTR_MASK);
@@ -3862,7 +3870,7 @@ static DECLCALLBACK(void) iommuAmdR3DbgInfoDevTabs(PPDMDEVINS pDevIns, PCDBGFINF
         RTGCPHYS const GCPhysDevTab = DevTabBar.n.u40Base << X86_PAGE_4K_SHIFT;
         if (GCPhysDevTab)
         {
-            uint32_t const cbDevTab = IOMMU_GET_DEV_TAB_LEN(DevTabBar);
+            uint32_t const cbDevTab = IOMMU_GET_DEV_TAB_LEN(&DevTabBar);
             uint32_t const cDtes    = cbDevTab / sizeof(DTE_T);
             pHlp->pfnPrintf(pHlp, " Table %u (base=%#RGp size=%u bytes entries=%u):\n", i, GCPhysDevTab, cbDevTab, cDtes);
 

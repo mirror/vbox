@@ -452,10 +452,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(IOMMU_BF_MSI_MAP_CAPHDR_, UINT32_C(0), UINT32_MAX,
 #define IOMMU_INTR_CTRL_RSVD                        (3)
 /** @} */
 
-/**
- * Gets the device table length (in bytes) given the size field.
- */
-#define IOMMU_GET_DEV_TAB_LEN(a_DevTab)     (((a_DevTab.n.u9Size) + 1) << X86_PAGE_4K_SHIFT)
+/** Gets the device table length (in bytes) given the device table pointer. */
+#define IOMMU_GET_DEV_TAB_LEN(a_pDevTab)            (((a_pDevTab)->n.u9Size + 1) << X86_PAGE_4K_SHIFT)
 
 /**
  * The Device ID.
@@ -547,27 +545,33 @@ typedef DTE_T const *PCDTE_T;
 #define IOMMU_DTE_QWORD_0_FEAT_GTSUP_MASK       UINT64_C(0x1f80000000000000)
 #define IOMMU_DTE_QWORD_1_FEAT_GTSUP_MASK       UINT64_C(0x00000000ffff0000)
 
-/* Mask of valid bits for GIoSup (Guest I/O Protection Support) feature (bit 54). */
+/** Mask of valid bits for GIoSup (Guest I/O Protection Support) feature (bit 54). */
 #define IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK      UINT64_C(0x0040000000000000)
 
-/* Mask of valid DTE feature bits. */
+/** Mask of valid DTE feature bits. */
 #define IOMMU_DTE_QWORD_0_FEAT_MASK             (  IOMMU_DTE_QWORD_0_FEAT_EPHSUP_MASK \
                                                  | IOMMU_DTE_QWORD_0_FEAT_GTSUP_MASK  \
                                                  | IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK)
 #define IOMMU_DTE_QWORD_1_FEAT_MASK             (IOMMU_DTE_QWORD_0_FEAT_GIOSUP_MASK)
 
-/* Mask of all valid DTE bits (including all feature bits). */
+/** Mask of all valid DTE bits (including all feature bits). */
 #define IOMMU_DTE_QWORD_0_VALID_MASK            UINT64_C(0x7fffffffffffff83)
 #define IOMMU_DTE_QWORD_1_VALID_MASK            UINT64_C(0xfffffbffffffffff)
 #define IOMMU_DTE_QWORD_2_VALID_MASK            UINT64_C(0xff0fffffffffffff)
 #define IOMMU_DTE_QWORD_3_VALID_MASK            UINT64_C(0xffc0000000000000)
 
-/* Mask of the interrupt table root pointer. */
+/** Mask of the interrupt table root pointer. */
 #define IOMMU_DTE_IRTE_ROOT_PTR_MASK            UINT64_C(0x000fffffffffffc0)
-/* Number of bits to shift to get the interrupt root table pointer at
+/** Number of bits to shift to get the interrupt root table pointer at
    qword 2 (qword 0 being the first one) - 128-byte aligned. */
 #define IOMMU_DTE_IRTE_ROOT_PTR_SHIFT           6
 
+/** Maximum encoded IRTE length (exclusive). */
+#define IOMMU_DTE_INTR_TAB_LEN_MAX              12
+/** Gets the interrupt table entries (in bytes) given the DTE pointer. */
+#define IOMMU_GET_INTR_TAB_ENTRIES(a_pDte)      ((1U << (a_pDte)->n.u4IntrTableLength))
+/** Gets the interrupt table length (in bytes) given the DTE pointer. */
+#define IOMMU_GET_INTR_TAB_LEN(a_pDte)          (IOMMU_GET_INTR_TAB_ENTRIES(a_pDte) << IOMMU_IRTE_SIZE_SHIFT)
 
 /**
  * I/O Page Translation Entry.
