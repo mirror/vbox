@@ -376,12 +376,12 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_CLOUDNETWORKGATEWAYINFO,
     /** Main group, ICloudProfile. */
     LOG_GROUP_MAIN_CLOUDPROFILE,
+    /** Main group, ICloudProfileRegisteredEvent. */
+    LOG_GROUP_MAIN_CLOUDPROFILEREGISTEREDEVENT,
     /** Main group, ICloudProvider. */
     LOG_GROUP_MAIN_CLOUDPROVIDER,
     /** Main group, ICloudProviderManager. */
     LOG_GROUP_MAIN_CLOUDPROVIDERMANAGER,
-    /** Main group, ICloudProfileRegisteredEvent. */
-    LOG_GROUP_MAIN_CLOUDPROFILEREGISTEREDEVENT,
     /** Main group, IConsole. */
     LOG_GROUP_MAIN_CONSOLE,
     /** Main group, ICPUProfile. */
@@ -940,9 +940,9 @@ typedef enum VBOXLOGGROUP
     "MAIN_CLOUDNETWORKENVIRONMENTINFO", \
     "MAIN_CLOUDNETWORKGATEWAYINFO", \
     "MAIN_CLOUDPROFILE", \
+    "MAIN_CLOUDPROFILEREGISTEREDEVENT",   \
     "MAIN_CLOUDPROVIDER", \
     "MAIN_CLOUDPROVIDERMANAGER", \
-    "MAIN_CLOUDPROFILEREGISTEREDEVENT",   \
     "MAIN_CONSOLE", \
     "MAIN_CPUPROFILE", \
     "MAIN_DATAMODEL", \
