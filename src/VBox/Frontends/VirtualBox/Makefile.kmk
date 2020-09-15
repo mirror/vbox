@@ -847,6 +847,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UINetworkAttachmentEditor.h \
 	src/settings/editors/UIScaleFactorEditor.h \
 	src/settings/editors/UIShortcutConfigurationEditor.h \
+	src/settings/editors/UIUpdateSettingsEditor.h \
 	src/settings/editors/UIVideoMemoryEditor.h \
 	src/settings/editors/UIVirtualCPUEditor.h \
 	src/settings/editors/UIVisualStateEditor.h \
@@ -1364,6 +1365,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UINetworkAttachmentEditor.cpp \
 	src/settings/editors/UIScaleFactorEditor.cpp \
 	src/settings/editors/UIShortcutConfigurationEditor.cpp \
+	src/settings/editors/UIUpdateSettingsEditor.cpp \
 	src/settings/editors/UIVideoMemoryEditor.cpp \
 	src/settings/editors/UIVirtualCPUEditor.cpp \
 	src/settings/editors/UIVisualStateEditor.cpp \
