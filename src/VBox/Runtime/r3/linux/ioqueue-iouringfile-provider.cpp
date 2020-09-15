@@ -88,7 +88,7 @@
 /** The syscall number of io_uring_register(). */
 #define LNX_IOURING_SYSCALL_REGISTER  427
 /** eventfd2() syscall not associated with io_uring but used for kicking waiters. */
-#define LNX_SYSCALL_EVENTFD2           19
+#define LNX_SYSCALL_EVENTFD2          290
 
 
 /*********************************************************************************************************************************
@@ -771,6 +771,7 @@ static DECLCALLBACK(int) rtIoQueueLnxIoURingFileProv_ReqPrepare(RTIOQUEUEPROV hI
     pSqe->i32Fd           = (int32_t)RTFileToNative(pHandle->u.hFile);
     pSqe->u64OffStart     = off;
     pSqe->u64AddrBufIoVec = (uint64_t)(uintptr_t)pIoVec;
+    pSqe->u32BufIoVecSz   = 1;
     pSqe->u64User         = (uint64_t)(uintptr_t)pvUser;
 
     switch (enmOp)
