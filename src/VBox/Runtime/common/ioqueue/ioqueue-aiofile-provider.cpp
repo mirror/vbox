@@ -128,6 +128,14 @@ static DECLCALLBACK(void) rtIoQueueAioFileProv_QueueDestroy(RTIOQUEUEPROV hIoQue
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
 
     RTFileAioCtxDestroy(pThis->hAioCtx);
+
+    while (pThis->cReqsFree--)
+    {
+        RTFILEAIOREQ hReq = pThis->pahReqsFree[pThis->cReqsFree];
+        RTFileAioReqDestroy(hReq);
+        pThis->pahReqsFree[pThis->cReqsFree] = NULL;
+    }
+
     RTMemFree(pThis->pahReqsFree);
     RTMemFree(pThis->pahReqsToCommit);
     RT_BZERO(pThis, sizeof(*pThis));
