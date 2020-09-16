@@ -10615,8 +10615,15 @@
     >
     <desc>
       The IHostDrive interface represents the drive of the physical machine.
-      It is not complete medium description and, therefore, it is not IMedium
-      based. The interface is used just for getting a host drive partitions info.
+      It is not a complete medium description and, therefore, it is not IMedium
+      based. The interface is used to get information about a host drive and
+      its partitioning.
+      <note>
+        The object operates in limited mode if the user cannot open the drive
+        and parse the partition table.  In limited mode on the
+        <link to="IHostDrive::drivePath" /> and <link to="IHostDrive::model" />
+        attributes can be accessed, the rest will fail with E_ACCESSDENIED.
+      </note>
     </desc>
 
     <attribute name="drivePath" type="wstring" readonly="yes" wrap-hint-server="limitedcaller">
