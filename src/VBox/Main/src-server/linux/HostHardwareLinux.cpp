@@ -401,6 +401,7 @@ static void dvdCreateDeviceStrings(const char *pcszVendor, const char *pcszModel
     }
 }
 
+
 /**
  * Check whether the device is the NVME device.
  * @returns true on success, false if the name was not available (i.e. the
@@ -824,6 +825,7 @@ public:
         return mszNode;
     }
 };
+
 
 /**
  * Helper function to query the sysfs subsystem for information about DVD
