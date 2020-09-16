@@ -39,11 +39,6 @@
 #include <linux/major.h>
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
-# include <linux/nvme_ioctl.h>
-#else
-# include <linux/nvme.h>
-#endif
 #include <scsi/scsi.h>
 
 #include <iprt/linux/sysfs.h>
@@ -67,6 +62,14 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/sysmacros.h>
+
+/*
+ * Define NVME constant here to allow building
+ * on several kernel versions even if the
+ * building host doesn't contain certain NVME
+ * includes
+ */
+#define NVME_IOCTL_ID _IO('N', 0x40)
 
 
 /*********************************************************************************************************************************
