@@ -39,11 +39,7 @@
 #include <linux/major.h>
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
-# include <linux/nvme_ioctl.h>
-#else
-# include <linux/nvme.h>
-#endif
+#include <linux/nvme_ioctl.h>
 #include <scsi/scsi.h>
 
 #include <iprt/linux/sysfs.h>
