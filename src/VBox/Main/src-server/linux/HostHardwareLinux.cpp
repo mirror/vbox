@@ -37,6 +37,13 @@
 #include <linux/cdrom.h>
 #include <linux/fd.h>
 #include <linux/major.h>
+
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
+# include <linux/nvme_ioctl.h>
+#else
+# include <linux/nvme.h>
+#endif
 #include <scsi/scsi.h>
 
 #include <iprt/linux/sysfs.h>
@@ -348,8 +355,20 @@ static void dvdCreateDeviceStrings(const char *pcszVendor, const char *pcszModel
     AssertPtrNullReturnVoid(pszUdi);
     AssertReturnVoid(!pszUdi || cbUdi > 0);
 
-    size_t cchVendor = strLenStripped(pcszVendor);
     size_t cchModel = strLenStripped(pcszModel);
+    /*
+     * Vendor and Model strings can contain trailing spaces.
+     * Create trimmed copy of them because we should not modify
+     * original strings.
+     */
+    char* pszStartTrimmed = RTStrStripL(pcszVendor);
+    char* pszVendor = RTStrDup(pszStartTrimmed);
+    RTStrStripR(pszVendor);
+    pszStartTrimmed = RTStrStripL(pcszModel);
+    char* pszModel = RTStrDup(pszStartTrimmed);
+    RTStrStripR(pszModel);
+
+    size_t cbVendor = strlen(pszVendor);
 
     /* Create a cleaned version of the model string for the UDI string. */
     char szCleaned[128];
@@ -364,13 +383,13 @@ static void dvdCreateDeviceStrings(const char *pcszVendor, const char *pcszModel
     /* Construct the description string as "Vendor Product" */
     if (pszDesc)
     {
-        if (cchVendor > 0)
+        if (cbVendor > 0)
         {
-            RTStrPrintf(pszDesc, cbDesc, "%.*s %s", cchVendor, pcszVendor, cchModel > 0 ? pcszModel : "(unknown drive model)");
+            RTStrPrintf(pszDesc, cbDesc, "%.*s %s", cbVendor, pszVendor, strlen(pszModel) > 0 ? pszModel : "(unknown drive model)");
             RTStrPurgeEncoding(pszDesc);
         }
         else
-            RTStrCopy(pszDesc, cbDesc, pcszModel);
+            RTStrCopy(pszDesc, cbDesc, pszModel);
     }
     /* Construct the UDI string */
     if (pszUdi)
@@ -382,6 +401,27 @@ static void dvdCreateDeviceStrings(const char *pcszVendor, const char *pcszModel
     }
 }
 
+/**
+ * Check whether the device is the NVME device.
+ * @returns true on success, false if the name was not available (i.e. the
+ *          device was not readable, or the file name wasn't a NVME device)
+ * @param  pcszNode     the path to the device node for the device
+ */
+static bool probeNVME(const char *pcszNode) RT_NOTHROW_DEF
+{
+    AssertPtrReturn(pcszNode, false);
+    RTFILE File;
+    int rc = RTFileOpen(&File, pcszNode, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK);
+    if (RT_SUCCESS(rc))
+    {
+        int rcIoCtl;
+        rc = RTFileIoCtl(File, NVME_IOCTL_ID, NULL, 0, &rcIoCtl);
+        RTFileClose(File);
+        if (RT_SUCCESS(rc) && rcIoCtl >= 0)
+            return true;
+    }
+    return false;
+}
 
 /**
  * Check whether a device node points to a valid device and create a UDI and
@@ -735,20 +775,30 @@ private:
          */
         int64_t type = 0;
         int rc = RTLinuxSysFsReadIntFile(10, &type, "block/%s/device/type", mpcszName);
-        if (RT_SUCCESS(rc) && type != TYPE_DISK)
-            return;
+        if (!RT_SUCCESS(rc) || type != TYPE_DISK)
+        {
+            if (noProbe() || !probeNVME(mszNode))
+            {
+                char szDriver[16];
+                rc = RTLinuxSysFsGetLinkDest(szDriver, sizeof(szDriver), NULL, "block/%s/%s",
+                                                 mpcszName, "device/device/driver");
+                if (RT_FAILURE(rc) || RTStrCmp(szDriver, "nvme"))
+                        return;
+            }
+        }
         char szVendor[128];
-        rc = RTLinuxSysFsReadStrFile(szVendor, sizeof(szVendor), NULL, "block/%s/device/vendor", mpcszName);
+        char szModel[128];
+        size_t cbRead = 0;
+        rc = RTLinuxSysFsReadStrFile(szVendor, sizeof(szVendor), &cbRead, "block/%s/device/vendor", mpcszName);
+        szVendor[cbRead] = '\0';
+        /* Assume the model is always present. Vendor is not present for NVME disks */
+        cbRead = 0;
+        rc = RTLinuxSysFsReadStrFile(szModel, sizeof(szModel), &cbRead, "block/%s/device/model", mpcszName);
+        szModel[cbRead] = '\0';
         if (RT_SUCCESS(rc))
         {
-            char szModel[128];
-            rc = RTLinuxSysFsReadStrFile(szModel, sizeof(szModel), NULL, "block/%s/device/model", mpcszName);
-            if (RT_SUCCESS(rc))
-            {
-                misValid = true;
-                dvdCreateDeviceStrings(szVendor, szModel, mszDesc, sizeof(mszDesc), mszUdi, sizeof(mszUdi));
-                return;
-            }
+            misValid = true;
+            dvdCreateDeviceStrings(szVendor, szModel, mszDesc, sizeof(mszDesc), mszUdi, sizeof(mszUdi));
         }
     }
 

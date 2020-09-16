@@ -1601,28 +1601,32 @@ static HRESULT listHostDrives(const ComPtr<IVirtualBox> pVirtualBox, bool fOptLo
     for (size_t i = 0; i < apHostDrives.size(); ++i)
     {
         ComPtr<IHostDrive> pHostDrive = apHostDrives[i];
-
+        /*
+         * The drive path and the model are obtained using different way
+         * outside of the IHostDrive object, therefore, they are defined
+         * even if another info is not available.
+         */
         com::Bstr bstrDrivePath;
         CHECK_ERROR(pHostDrive,COMGETTER(DrivePath)(bstrDrivePath.asOutParam()));
         RTPrintf("%sDrive:       %ls\n", i > 0 ? "\n" : "", bstrDrivePath.raw());
 
         com::Bstr bstrModel;
+        CHECK_ERROR(pHostDrive,COMGETTER(Model)(bstrModel.asOutParam()));
+        if (bstrModel.isNotEmpty())
+            RTPrintf("Model:       %ls\n", bstrModel.raw());
+        else
+            RTPrintf("Model:       Unknown\n");
+
         com::Bstr bstrUuidDisk;
         ULONG cbSectorSize = 0;
         LONG64 cbSize = 0;
         PartitioningType_T partitioningType;
         HRESULT hrc;
-        if (   SUCCEEDED(hrc = pHostDrive->COMGETTER(Model)(bstrModel.asOutParam()))
-            && SUCCEEDED(hrc = pHostDrive->COMGETTER(Uuid)(bstrUuidDisk.asOutParam()))
+        if (   SUCCEEDED(hrc = pHostDrive->COMGETTER(Uuid)(bstrUuidDisk.asOutParam()))
             && SUCCEEDED(hrc = pHostDrive->COMGETTER(SectorSize)(&cbSectorSize))
             && SUCCEEDED(hrc = pHostDrive->COMGETTER(Size)(&cbSize))
             && SUCCEEDED(hrc = pHostDrive->COMGETTER(PartitioningType)(&partitioningType)))
         {
-            if (bstrModel.isNotEmpty())
-                RTPrintf("Model:       %ls\n", bstrModel.raw());
-            else
-                RTPrintf("Model:       Unknown\n");
-
             if (partitioningType == PartitioningType_GPT || com::Guid(bstrUuidDisk).isZero())
                 RTPrintf("UUID:        %ls\n", bstrUuidDisk.raw());
             if (fOptLong)

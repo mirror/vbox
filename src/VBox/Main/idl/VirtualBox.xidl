@@ -10649,7 +10649,7 @@
      </desc>
     </attribute>
 
-    <attribute name="model" type="wstring" readonly="yes">
+    <attribute name="model" type="wstring" readonly="yes" wrap-hint-server="limitedcaller">
      <desc>
        The model string of the drive if available.
      </desc>
