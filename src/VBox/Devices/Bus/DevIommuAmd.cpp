@@ -1987,7 +1987,7 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     Assert(idxSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
 
     RTGCPHYS const GCPhysDevTab = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
-    uint16_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) << IOMMU_DTE_SIZE_SHIFT;
+    uint16_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) * sizeof(DTE_T);
     RTGCPHYS const GCPhysDte    = GCPhysDevTab + offDte;
 
     Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));
@@ -2472,7 +2472,7 @@ static int iommuAmdReadIrte(PPDMDEVINS pDevIns, uint16_t uDevId, PCDTE_T pDte, R
 
     RTGCPHYS const GCPhysIntrTable = pDte->au64[2] & IOMMU_DTE_IRTE_ROOT_PTR_MASK;
     uint16_t const cbIntrTable     = IOMMU_GET_INTR_TAB_LEN(pDte);
-    uint16_t const offIrte         = (uDataIn & IOMMU_MSI_DATA_IRTE_OFFSET_MASK) << IOMMU_IRTE_SIZE_SHIFT;
+    uint16_t const offIrte         = (uDataIn & IOMMU_MSI_DATA_IRTE_OFFSET_MASK) * sizeof(IRTE_T);
     RTGCPHYS const GCPhysIrte      = GCPhysIntrTable + offIrte;
 
     /* Ensure the IRTE falls completely within the interrupt table. */

@@ -560,10 +560,6 @@ typedef DTE_T const *PCDTE_T;
 #define IOMMU_DTE_QWORD_2_VALID_MASK            UINT64_C(0xff0fffffffffffff)
 #define IOMMU_DTE_QWORD_3_VALID_MASK            UINT64_C(0xffc0000000000000)
 
-/** The number of bits to shift the DTE offset to get the DTE. */
-#define IOMMU_DTE_SIZE_SHIFT                    5
-AssertCompile(1 << IOMMU_DTE_SIZE_SHIFT == sizeof(DTE_T));
-
 /** Mask of the interrupt table root pointer. */
 #define IOMMU_DTE_IRTE_ROOT_PTR_MASK            UINT64_C(0x000fffffffffffc0)
 /** Number of bits to shift to get the interrupt root table pointer at
@@ -573,9 +569,9 @@ AssertCompile(1 << IOMMU_DTE_SIZE_SHIFT == sizeof(DTE_T));
 /** Maximum encoded IRTE length (exclusive). */
 #define IOMMU_DTE_INTR_TAB_LEN_MAX              12
 /** Gets the interrupt table entries (in bytes) given the DTE pointer. */
-#define IOMMU_GET_INTR_TAB_ENTRIES(a_pDte)      ((1U << (a_pDte)->n.u4IntrTableLength))
+#define IOMMU_GET_INTR_TAB_ENTRIES(a_pDte)      (UINT64_C(1) << (a_pDte)->n.u4IntrTableLength)
 /** Gets the interrupt table length (in bytes) given the DTE pointer. */
-#define IOMMU_GET_INTR_TAB_LEN(a_pDte)          (IOMMU_GET_INTR_TAB_ENTRIES(a_pDte) << IOMMU_IRTE_SIZE_SHIFT)
+#define IOMMU_GET_INTR_TAB_LEN(a_pDte)          (IOMMU_GET_INTR_TAB_ENTRIES(a_pDte) * sizeof(IRTE_T))
 
 /**
  * I/O Page Translation Entry.
@@ -687,10 +683,6 @@ AssertCompileSize(IRTE_T, 4);
 typedef IRTE_T *PIRTE_T;
 /** Pointer to a const IRTE_T struct. */
 typedef IRTE_T const *PCIRTE_T;
-
-/** The number of bits to shift the IRTE offset to get the IRTE. */
-#define IOMMU_IRTE_SIZE_SHIFT               2
-AssertCompile(1 << IOMMU_IRTE_SIZE_SHIFT == sizeof(IRTE_T));
 
 /** The IRTE offset corresponds directly to bits 10:0 of the originating MSI
  *  interrupt message. See AMD IOMMU spec. 2.2.5 "Interrupt Remapping Tables". */
