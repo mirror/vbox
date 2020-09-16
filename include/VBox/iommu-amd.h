@@ -2501,6 +2501,15 @@ typedef struct ACPIIVHDTYPE10
     /* IVHD device entry block follows. */
 } ACPIIVHDTYPE10;
 AssertCompileSize(ACPIIVHDTYPE10, 24);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u8Type,               0);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u8Flags,              1);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u16Length,            2);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u16DeviceId,          4);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u16CapOffset,         6);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u64BaseAddress,       8);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u16PciSegmentGroup,   16);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u16IommuInfo,         18);
+AssertCompileMemberOffset(ACPIIVHDTYPE10, u32Features,          20);
 
 /** @name IVHD Type 11h Flags.
  * In accordance with the AMD spec.
@@ -2561,6 +2570,17 @@ typedef struct ACPIIVHDTYPE11
     /* IVHD device entry block follows. */
 } ACPIIVHDTYPE11;
 AssertCompileSize(ACPIIVHDTYPE11, 40);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u8Type,               0);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u8Flags,              1);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u16Length,            2);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u16DeviceId,          4);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u16CapOffset,         6);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u64BaseAddress,       8);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u16PciSegmentGroup,   16);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u16IommuInfo,         18);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u32IommuAttr,         20);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u64EfrRegister,       24);
+AssertCompileMemberOffset(ACPIIVHDTYPE11, u64Rsvd0,             32);
 
 /**
  * AMD IOMMU: IVHD (I/O Virtualization Hardware Definition) Type 40h.
