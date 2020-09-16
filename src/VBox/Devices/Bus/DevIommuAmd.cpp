@@ -1848,7 +1848,7 @@ static void iommuAmdRaiseIoPageFaultEvent(PPDMDEVINS pDevIns, PCDTE_T pDte, PCIR
 
         if (   !fSuppressEvtLogging
             && pIrte)
-            fSuppressEvtLogging = pIrte->n.u1SuppressPf;
+            fSuppressEvtLogging = pIrte->n.u1SuppressIoPf;
     }
     /* else: Events are never suppressed for commands. */
 
@@ -1987,7 +1987,7 @@ static int iommuAmdReadDte(PPDMDEVINS pDevIns, uint16_t uDevId, IOMMUOP enmOp, P
     Assert(idxSeg < RT_ELEMENTS(pThis->aDevTabBaseAddrs));
 
     RTGCPHYS const GCPhysDevTab = pThis->aDevTabBaseAddrs[idxSeg].n.u40Base << X86_PAGE_4K_SHIFT;
-    uint16_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) * sizeof(DTE_T);
+    uint16_t const offDte       = (uDevId & ~g_auDevTabSegMasks[idxSegsEn]) << IOMMU_DTE_SIZE_SHIFT;
     RTGCPHYS const GCPhysDte    = GCPhysDevTab + offDte;
 
     Assert(!(GCPhysDevTab & X86_PAGE_4K_OFFSET_MASK));

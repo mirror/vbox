@@ -560,6 +560,10 @@ typedef DTE_T const *PCDTE_T;
 #define IOMMU_DTE_QWORD_2_VALID_MASK            UINT64_C(0xff0fffffffffffff)
 #define IOMMU_DTE_QWORD_3_VALID_MASK            UINT64_C(0xffc0000000000000)
 
+/** The number of bits to shift the DTE offset to get the DTE. */
+#define IOMMU_DTE_SIZE_SHIFT                    5
+AssertCompile(1 << IOMMU_DTE_SIZE_SHIFT == sizeof(DTE_T));
+
 /** Mask of the interrupt table root pointer. */
 #define IOMMU_DTE_IRTE_ROOT_PTR_MASK            UINT64_C(0x000fffffffffffc0)
 /** Number of bits to shift to get the interrupt root table pointer at
@@ -658,7 +662,7 @@ typedef IOPTENTITY_T const *PCIOPTENTITY_T;
 #define IOMMU_PTENTITY_ADDR_MASK     UINT64_C(0x000ffffffffff000)
 
 /**
- * Interrupt Remapping Table Entry (IRTE).
+ * Interrupt Remapping Table Entry (IRTE) - Basic Format.
  * In accordance with the AMD spec.
  */
 typedef union
@@ -666,8 +670,8 @@ typedef union
     struct
     {
         uint32_t    u1RemapEnable : 1;      /**< Bit  0     - RemapEn: Remap Enable. */
-        uint32_t    u1SuppressPf : 1;       /**< Bit  1     - SupIOPF: Supress I/O Page Fault. */
-        uint32_t    u3IntrType : 1;         /**< Bits 4:2   - IntType: Interrupt Type. */
+        uint32_t    u1SuppressIoPf : 1;     /**< Bit  1     - SupIOPF: Supress I/O Page Fault. */
+        uint32_t    u3IntrType : 3;         /**< Bits 4:2   - IntType: Interrupt Type. */
         uint32_t    u1ReqEoi : 1;           /**< Bit  5     - RqEoi: Request EOI. */
         uint32_t    u1DestMode : 1;         /**< Bit  6     - DM: Destination Mode. */
         uint32_t    u1GuestMode : 1;        /**< Bit  7     - GuestMode. */
@@ -679,12 +683,14 @@ typedef union
     uint32_t        u32;
 } IRTE_T;
 AssertCompileSize(IRTE_T, 4);
-/** The number of bits to shift the IRTE offset to get the IRTE. */
-#define IOMMU_IRTE_SIZE_SHIFT   (2)
 /** Pointer to an IRTE_T struct. */
 typedef IRTE_T *PIRTE_T;
 /** Pointer to a const IRTE_T struct. */
 typedef IRTE_T const *PCIRTE_T;
+
+/** The number of bits to shift the IRTE offset to get the IRTE. */
+#define IOMMU_IRTE_SIZE_SHIFT               2
+AssertCompile(1 << IOMMU_IRTE_SIZE_SHIFT == sizeof(IRTE_T));
 
 /** The IRTE offset corresponds directly to bits 10:0 of the originating MSI
  *  interrupt message. See AMD IOMMU spec. 2.2.5 "Interrupt Remapping Tables". */
