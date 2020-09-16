@@ -1601,158 +1601,194 @@ static HRESULT listHostDrives(const ComPtr<IVirtualBox> pVirtualBox, bool fOptLo
     for (size_t i = 0; i < apHostDrives.size(); ++i)
     {
         ComPtr<IHostDrive> pHostDrive = apHostDrives[i];
-        /*
-         * The drive path and the model are obtained using different way
-         * outside of the IHostDrive object, therefore, they are defined
-         * even if another info is not available.
-         */
+
+        /* The drivePath and model attributes are accessible even when the object
+           is in 'limited' mode. */
         com::Bstr bstrDrivePath;
         CHECK_ERROR(pHostDrive,COMGETTER(DrivePath)(bstrDrivePath.asOutParam()));
-        RTPrintf("%sDrive:       %ls\n", i > 0 ? "\n" : "", bstrDrivePath.raw());
+        if (SUCCEEDED(rc))
+            RTPrintf("%sDrive:       %ls\n", i > 0 ? "\n" : "", bstrDrivePath.raw());
+        else
+            RTPrintf("%sDrive:       %Rhrc\n", i > 0 ? "\n" : "", rc);
 
         com::Bstr bstrModel;
         CHECK_ERROR(pHostDrive,COMGETTER(Model)(bstrModel.asOutParam()));
-        if (bstrModel.isNotEmpty())
-            RTPrintf("Model:       %ls\n", bstrModel.raw());
+        if (FAILED(rc))
+            RTPrintf("Model:       %Rhrc\n", rc);
+        else if (bstrModel.isNotEmpty())
+            RTPrintf("Model:       \"%ls\"\n", bstrModel.raw());
         else
-            RTPrintf("Model:       Unknown\n");
+            RTPrintf("Model:       unknown/inaccessible\n");
 
+        /* The other attributes are not accessible in limited mode and will fail
+           with E_ACCESSDENIED.  Typically means the user cannot read the drive. */
         com::Bstr bstrUuidDisk;
-        ULONG cbSectorSize = 0;
-        LONG64 cbSize = 0;
-        PartitioningType_T partitioningType;
-        HRESULT hrc;
-        if (   SUCCEEDED(hrc = pHostDrive->COMGETTER(Uuid)(bstrUuidDisk.asOutParam()))
-            && SUCCEEDED(hrc = pHostDrive->COMGETTER(SectorSize)(&cbSectorSize))
-            && SUCCEEDED(hrc = pHostDrive->COMGETTER(Size)(&cbSize))
-            && SUCCEEDED(hrc = pHostDrive->COMGETTER(PartitioningType)(&partitioningType)))
+        rc = pHostDrive->COMGETTER(Uuid)(bstrUuidDisk.asOutParam());
+        if (SUCCEEDED(rc) && !com::Guid(bstrUuidDisk).isZero())
+            RTPrintf("UUID:        %ls\n", bstrUuidDisk.raw());
+        else if (rc == E_ACCESSDENIED)
         {
-            if (partitioningType == PartitioningType_GPT || com::Guid(bstrUuidDisk).isZero())
-                RTPrintf("UUID:        %ls\n", bstrUuidDisk.raw());
-            if (fOptLong)
-                RTPrintf("Size:        %llu bytes (%Rhcb)\n", cbSize, cbSize);
-            else
-                RTPrintf("Size:        %Rhcb\n", cbSize);
+            RTPrintf("Further disk and partitioning information is not available for drive \"%ls\". (E_ACCESSDENIED)\n",
+                     bstrDrivePath.raw());
+            continue;
+        }
+        else if (FAILED(rc))
+        {
+            RTPrintf("UUID:        %Rhrc\n", rc);
+            com::GlueHandleComErrorNoCtx(pHostDrive, rc);
+        }
+
+        LONG64 cbSize = 0;
+        rc = pHostDrive->COMGETTER(Size)(&cbSize);
+        if (SUCCEEDED(rc) && fOptLong)
+            RTPrintf("Size:        %llu bytes (%Rhcb)\n", cbSize, cbSize);
+        else if (SUCCEEDED(rc))
+            RTPrintf("Size:        %Rhcb\n", cbSize);
+        else
+        {
+            RTPrintf("Size:        %Rhrc\n", rc);
+            com::GlueHandleComErrorNoCtx(pHostDrive, rc);
+        }
+
+        ULONG cbSectorSize = 0;
+        rc = pHostDrive->COMGETTER(SectorSize)(&cbSectorSize);
+        if (SUCCEEDED(rc))
             RTPrintf("Sector Size: %u bytes\n", cbSectorSize);
+        else
+        {
+            RTPrintf("Sector Size: %Rhrc\n", rc);
+            com::GlueHandleComErrorNoCtx(pHostDrive, rc);
+        }
+
+        PartitioningType_T partitioningType = (PartitioningType_T)9999;
+        rc = pHostDrive->COMGETTER(PartitioningType)(&partitioningType);
+        if (SUCCEEDED(rc))
             RTPrintf("Scheme:      %s\n", partitioningType == PartitioningType_MBR ? "MBR" : "GPT");
+        else
+        {
+            RTPrintf("Scheme:      %Rhrc\n", rc);
+            com::GlueHandleComErrorNoCtx(pHostDrive, rc);
+        }
 
-            com::SafeIfaceArray<IHostDrivePartition> apHostDrivesPartitions;
-            CHECK_ERROR(pHostDrive, COMGETTER(Partitions)(ComSafeArrayAsOutParam(apHostDrivesPartitions)));
-
-            if (partitioningType == PartitioningType_MBR)
+        com::SafeIfaceArray<IHostDrivePartition> apHostDrivesPartitions;
+        rc = pHostDrive->COMGETTER(Partitions)(ComSafeArrayAsOutParam(apHostDrivesPartitions));
+        if (FAILED(rc))
+        {
+            RTPrintf("Partitions:  %Rhrc\n", rc);
+            com::GlueHandleComErrorNoCtx(pHostDrive, rc);
+        }
+        else if (apHostDrivesPartitions.size() == 0)
+            RTPrintf("Partitions:  None (or not able to grok them).\n");
+        else if (partitioningType == PartitioningType_MBR)
+        {
+            if (fOptLong)
+                RTPrintf("Partitions:                              First         Last\n"
+                         "##  Type      Byte Size     Byte Offset  Cyl/Head/Sec  Cyl/Head/Sec Active\n");
+            else
+                RTPrintf("Partitions:                   First         Last\n"
+                         "##  Type  Size      Start     Cyl/Head/Sec  Cyl/Head/Sec Active\n");
+            for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
             {
-                if (fOptLong)
-                    RTPrintf("Partitions:                              First         Last\n"
-                             "##  Type      Byte Size     Byte Offset  Cyl/Head/Sec  Cyl/Head/Sec Active\n");
+                ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
+
+                ULONG idx = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Number)(&idx));
+                ULONG uType = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(TypeMBR)(&uType));
+                ULONG uStartCylinder = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(StartCylinder)(&uStartCylinder));
+                ULONG uStartHead = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(StartHead)(&uStartHead));
+                ULONG uStartSector = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(StartSector)(&uStartSector));
+                ULONG uEndCylinder = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(EndCylinder)(&uEndCylinder));
+                ULONG uEndHead = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(EndHead)(&uEndHead));
+                ULONG uEndSector = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(EndSector)(&uEndSector));
+                cbSize = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Size)(&cbSize));
+                LONG64 offStart = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Start)(&offStart));
+                BOOL fActive = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Active)(&fActive));
+                PartitionType_T enmType = PartitionType_Unknown;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
+
+                /* Max size & offset  here is around 16TiB with 4KiB sectors. */
+                if (fOptLong) /* cb/off: max 16TiB; idx: max 64. */
+                    RTPrintf("%2u   %02x  %14llu  %14llu  %4u/%3u/%2u   %4u/%3u/%2u    %s   %s\n",
+                             idx, uType, cbSize, offStart,
+                             uStartCylinder, uStartHead, uStartSector, uEndCylinder, uEndHead, uEndSector,
+                             fActive ? "yes" : "no", PartitionTypeToString(enmType, ""));
                 else
-                    RTPrintf("Partitions:                   First         Last\n"
-                             "##  Type  Size      Start     Cyl/Head/Sec  Cyl/Head/Sec Active\n");
-                for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
-                {
-                    ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
-
-                    ULONG idx = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Number)(&idx));
-                    ULONG uType = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(TypeMBR)(&uType));
-                    ULONG uStartCylinder = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(StartCylinder)(&uStartCylinder));
-                    ULONG uStartHead = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(StartHead)(&uStartHead));
-                    ULONG uStartSector = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(StartSector)(&uStartSector));
-                    ULONG uEndCylinder = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(EndCylinder)(&uEndCylinder));
-                    ULONG uEndHead = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(EndHead)(&uEndHead));
-                    ULONG uEndSector = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(EndSector)(&uEndSector));
-                    cbSize = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Size)(&cbSize));
-                    LONG64 offStart = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Start)(&offStart));
-                    BOOL fActive = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Active)(&fActive));
-                    PartitionType_T enmType = PartitionType_Unknown;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
-
-                    /* Max size & offset  here is around 16TiB with 4KiB sectors. */
-                    if (fOptLong) /* cb/off: max 16TiB; idx: max 64. */
-                        RTPrintf("%2u   %02x  %14llu  %14llu  %4u/%3u/%2u   %4u/%3u/%2u    %s   %s\n",
-                                 idx, uType, cbSize, offStart,
-                                 uStartCylinder, uStartHead, uStartSector, uEndCylinder, uEndHead, uEndSector,
-                                 fActive ? "yes" : "no", PartitionTypeToString(enmType, ""));
-                    else
-                        RTPrintf("%2u   %02x   %8Rhcb  %8Rhcb  %4u/%3u/%2u   %4u/%3u/%2u   %s   %s\n",
-                                 idx, uType, (uint64_t)cbSize, (uint64_t)offStart,
-                                 uStartCylinder, uStartHead, uStartSector, uEndCylinder, uEndHead, uEndSector,
-                                 fActive ? "yes" : "no", PartitionTypeToString(enmType, ""));
-                }
-            }
-            else /* GPT */
-            {
-                /* Determin the max partition type length to try reduce the table width: */
-                size_t cchMaxType = 0;
-                for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
-                {
-                    ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
-                    PartitionType_T enmType = PartitionType_Unknown;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
-                    size_t const cchTypeNm = strlen(PartitionTypeToString(enmType, "e530bf6d-2754-4e9d-b260-60a5d0b80457"));
-                    cchMaxType = RT_MAX(cchTypeNm, cchMaxType);
-                }
-                cchMaxType = RT_MIN(cchMaxType, RTUUID_STR_LENGTH);
-
-                if (fOptLong)
-                    RTPrintf("Partitions:\n"
-                             "## %-*s Uuid                                           Byte Size         Byte Offset Active Name\n",
-                             (int)cchMaxType, "Type");
-                else
-                    RTPrintf("Partitions:\n"
-                             "##  %-*s  Uuid                                   Size      Start   Active Name\n",
-                             (int)cchMaxType, "Type");
-
-                for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
-                {
-                    ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
-
-                    ULONG idx = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Number)(&idx));
-                    com::Bstr bstrUuidType;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(TypeUuid)(bstrUuidType.asOutParam()));
-                    com::Bstr bstrUuidPartition;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Uuid)(bstrUuidPartition.asOutParam()));
-                    cbSize = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Size)(&cbSize));
-                    LONG64 offStart = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Start)(&offStart));
-                    BOOL fActive = 0;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Active)(&fActive));
-                    com::Bstr bstrName;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Name)(bstrName.asOutParam()));
-
-                    PartitionType_T enmType = PartitionType_Unknown;
-                    CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
-
-                    Utf8Str strTypeConv;
-                    const char *pszTypeNm = PartitionTypeToString(enmType, NULL);
-                    if (!pszTypeNm)
-                        pszTypeNm = (strTypeConv = bstrUuidType).c_str();
-                    else if (strlen(pszTypeNm) >= RTUUID_STR_LENGTH /* includes '\0' */)
-                        pszTypeNm -= RTUUID_STR_LENGTH - 1 - strlen(pszTypeNm);
-
-                    if (fOptLong)
-                        RTPrintf("%2u %-*s %36ls %19llu %19llu   %-3s  %ls\n", idx, cchMaxType, pszTypeNm,
-                                 bstrUuidPartition.raw(), cbSize, offStart, fActive ? "on" : "off", bstrName.raw());
-                    else
-                        RTPrintf("%2u  %-*s  %36ls  %8Rhcb  %8Rhcb  %-3s   %ls\n", idx, cchMaxType, pszTypeNm,
-                                 bstrUuidPartition.raw(), cbSize, offStart, fActive ? "on" : "off", bstrName.raw());
-                }
+                    RTPrintf("%2u   %02x   %8Rhcb  %8Rhcb  %4u/%3u/%2u   %4u/%3u/%2u   %s   %s\n",
+                             idx, uType, (uint64_t)cbSize, (uint64_t)offStart,
+                             uStartCylinder, uStartHead, uStartSector, uEndCylinder, uEndHead, uEndSector,
+                             fActive ? "yes" : "no", PartitionTypeToString(enmType, ""));
             }
         }
-        else
-            RTPrintf("Partitions and disk info for the drive %ls are not available. Error %Rhrc (%#RX32)\n",
-                     bstrDrivePath.raw(), hrc, hrc);
+        else /* GPT */
+        {
+            /* Determin the max partition type length to try reduce the table width: */
+            size_t cchMaxType = 0;
+            for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
+            {
+                ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
+                PartitionType_T enmType = PartitionType_Unknown;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
+                size_t const cchTypeNm = strlen(PartitionTypeToString(enmType, "e530bf6d-2754-4e9d-b260-60a5d0b80457"));
+                cchMaxType = RT_MAX(cchTypeNm, cchMaxType);
+            }
+            cchMaxType = RT_MIN(cchMaxType, RTUUID_STR_LENGTH);
+
+            if (fOptLong)
+                RTPrintf("Partitions:\n"
+                         "## %-*s Uuid                                           Byte Size         Byte Offset Active Name\n",
+                         (int)cchMaxType, "Type");
+            else
+                RTPrintf("Partitions:\n"
+                         "##  %-*s  Uuid                                   Size      Start   Active Name\n",
+                         (int)cchMaxType, "Type");
+
+            for (size_t j = 0; j < apHostDrivesPartitions.size(); ++j)
+            {
+                ComPtr<IHostDrivePartition> pHostDrivePartition = apHostDrivesPartitions[j];
+
+                ULONG idx = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Number)(&idx));
+                com::Bstr bstrUuidType;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(TypeUuid)(bstrUuidType.asOutParam()));
+                com::Bstr bstrUuidPartition;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Uuid)(bstrUuidPartition.asOutParam()));
+                cbSize = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Size)(&cbSize));
+                LONG64 offStart = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Start)(&offStart));
+                BOOL fActive = 0;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Active)(&fActive));
+                com::Bstr bstrName;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Name)(bstrName.asOutParam()));
+
+                PartitionType_T enmType = PartitionType_Unknown;
+                CHECK_ERROR(pHostDrivePartition, COMGETTER(Type)(&enmType));
+
+                Utf8Str strTypeConv;
+                const char *pszTypeNm = PartitionTypeToString(enmType, NULL);
+                if (!pszTypeNm)
+                    pszTypeNm = (strTypeConv = bstrUuidType).c_str();
+                else if (strlen(pszTypeNm) >= RTUUID_STR_LENGTH /* includes '\0' */)
+                    pszTypeNm -= RTUUID_STR_LENGTH - 1 - strlen(pszTypeNm);
+
+                if (fOptLong)
+                    RTPrintf("%2u %-*s %36ls %19llu %19llu   %-3s  %ls\n", idx, cchMaxType, pszTypeNm,
+                             bstrUuidPartition.raw(), cbSize, offStart, fActive ? "on" : "off", bstrName.raw());
+                else
+                    RTPrintf("%2u  %-*s  %36ls  %8Rhcb  %8Rhcb  %-3s   %ls\n", idx, cchMaxType, pszTypeNm,
+                             bstrUuidPartition.raw(), cbSize, offStart, fActive ? "on" : "off", bstrName.raw());
+            }
+        }
     }
     return rc;
 }
