@@ -50,6 +50,7 @@ void GluePrintErrorInfo(const com::ErrorInfo &info);
 void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t uLine);
 void GluePrintRCMessage(HRESULT rc);
 void GlueHandleComError(ComPtr<IUnknown> iface, const char *pcszContext, HRESULT rc, const char *pcszSourceFile, uint32_t uLine);
+void GlueHandleComErrorNoCtx(ComPtr<IUnknown> iface, HRESULT rc);
 void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszContext, HRESULT rc,
                                 const char *pcszSourceFile, uint32_t uLine);
 

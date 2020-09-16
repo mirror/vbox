@@ -134,7 +134,8 @@ static void glueHandleComErrorInternal(com::ErrorInfo &info,
     else
         GluePrintRCMessage(rc);
 
-    GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine);
+    if (pcszContext != NULL || pcszSourceFile != NULL)
+        GluePrintErrorContext(pcszContext, pcszSourceFile, ulLine);
 }
 
 void GlueHandleComError(ComPtr<IUnknown> iface,
@@ -153,6 +154,11 @@ void GlueHandleComError(ComPtr<IUnknown> iface,
                                pcszSourceFile,
                                ulLine);
 
+}
+
+void GlueHandleComErrorNoCtx(ComPtr<IUnknown> iface, HRESULT rc)
+{
+    GlueHandleComError(iface, NULL, rc, NULL, 0);
 }
 
 void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
