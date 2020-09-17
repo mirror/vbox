@@ -324,7 +324,7 @@ typedef struct NTKCONTEXT64
     /** Standard context. */
     NTCONTEXT64                 Ctx;
 } NTKCONTEXT64;
-AssertCompileMemberAlignment(NTKCONTEXT64, Ctx, 16);
+AssertCompileMemberOffset(NTKCONTEXT64, Ctx, 224);
 /** Pointer to an amd64 NT context. */
 typedef NTKCONTEXT64 *PNTKCONTEXT64;
 /** Pointer to a const amd64 NT context. */
@@ -698,6 +698,23 @@ typedef const KDPACKETMANIPULATE_CONTINUE2 *PCKDPACKETMANIPULATE_CONTINUE2;
 
 
 /**
+ * Set context manipulate payload.
+ */
+typedef struct KDPACKETMANIPULATE_SETCONTEXT
+{
+    /** Continue (status?). */
+    uint32_t                    u32CtxFlags;
+    /** Blows up the request to the required size. */
+    uint8_t                     abPad[36];
+} KDPACKETMANIPULATE_SETCONTEXT;
+AssertCompileSize(KDPACKETMANIPULATE_SETCONTEXT, 40);
+/** Pointer to a set context manipulate payload. */
+typedef KDPACKETMANIPULATE_SETCONTEXT *PKDPACKETMANIPULATE_SETCONTEXT;
+/** Pointer to a const set context manipulate payload. */
+typedef const KDPACKETMANIPULATE_SETCONTEXT *PCKDPACKETMANIPULATE_SETCONTEXT;
+
+
+/**
  * Manipulate request packet header (Same for 32bit and 64bit).
  */
 typedef struct KDPACKETMANIPULATEHDR
@@ -738,6 +755,8 @@ typedef struct KDPACKETMANIPULATE64
         KDPACKETMANIPULATE_CONTINUE        Continue;
         /** Continue2. */
         KDPACKETMANIPULATE_CONTINUE2       Continue2;
+        /** Set context. */
+        KDPACKETMANIPULATE_SETCONTEXT      SetContext;
         /** Read/Write control space. */
         KDPACKETMANIPULATE_XFERCTRLSPACE64 XferCtrlSpace;
         /** Restore breakpoint. */
@@ -748,6 +767,7 @@ typedef struct KDPACKETMANIPULATE64
         KDPACKETMANIPULATE_CONTEXTEX       ContextEx;
     } u;
 } KDPACKETMANIPULATE64;
+AssertCompileSize(KDPACKETMANIPULATE64, 16 + 40);
 /** Pointer to a 64bit manipulate state request packet. */
 typedef KDPACKETMANIPULATE64 *PKDPACKETMANIPULATE64;
 /** Pointer to a const 64bit manipulate state request packet. */
@@ -1220,6 +1240,98 @@ static int dbgcKdCtxQueryNtCtx64(PKDCTX pThis, VMCPUID idCpu, PNTCONTEXT64 pNtCt
 }
 
 
+#define KD_REG_INIT(a_pszName, a_enmType, a_ValMember, a_Val) \
+    do \
+    { \
+        aRegsSet[idxReg].pszName = a_pszName; \
+        aRegsSet[idxReg].enmType = a_enmType; \
+        aRegsSet[idxReg].Val.a_ValMember = a_Val; \
+        idxReg++; \
+    } while (0)
+#define KD_REG_INIT_DTR(a_pszName, a_Base, a_Limit) \
+    do \
+    { \
+        aRegsSet[idxReg].pszName = a_pszName; \
+        aRegsSet[idxReg].enmType = DBGFREGVALTYPE_DTR; \
+        aRegsSet[idxReg].Val.dtr.u64Base = a_Base; \
+        aRegsSet[idxReg].Val.dtr.u32Limit = a_Limit; \
+        idxReg++; \
+    } while (0)
+#define KD_REG_INIT_U16(a_pszName, a_Val) KD_REG_INIT(a_pszName, DBGFREGVALTYPE_U16, u16, a_Val)
+#define KD_REG_INIT_U32(a_pszName, a_Val) KD_REG_INIT(a_pszName, DBGFREGVALTYPE_U32, u32, a_Val)
+#define KD_REG_INIT_U64(a_pszName, a_Val) KD_REG_INIT(a_pszName, DBGFREGVALTYPE_U64, u64, a_Val)
+
+
+/**
+ * Writes the indicated values from the given context structure to the guests register set.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   idCpu               The CPU to query the context for.
+ * @param   pNtCtx              The NT context structure to set.
+ * @param   fCtxFlags           Combination of NTCONTEXT_F_XXX determining what to set.
+ */
+static int dbgcKdCtxSetNtCtx64(PKDCTX pThis, VMCPUID idCpu, PCNTCONTEXT64 pNtCtx, uint32_t fCtxFlags)
+{
+    uint32_t idxReg = 0;
+    DBGFREGENTRYNM aRegsSet[64]; /** @todo Verify that this is enough when fully implemented. */
+
+    KD_REG_INIT_U32("mxcsr", pNtCtx->u32RegMxCsr);
+
+    if (fCtxFlags & NTCONTEXT_F_CONTROL)
+    {
+#if 0 /** @todo CPUM returns VERR_NOT_IMPLEMENTED */
+        KD_REG_INIT_U16("cs", pNtCtx->u16SegCs);
+        KD_REG_INIT_U16("ss", pNtCtx->u16SegSs);
+#endif
+        KD_REG_INIT_U64("rip", pNtCtx->u64RegRip);
+        KD_REG_INIT_U64("rsp", pNtCtx->u64RegRsp);
+        KD_REG_INIT_U64("rbp", pNtCtx->u64RegRbp);
+        KD_REG_INIT_U32("rflags", pNtCtx->u32RegEflags);
+    }
+
+    if (fCtxFlags & NTCONTEXT_F_INTEGER)
+    {
+        KD_REG_INIT_U64("rax", pNtCtx->u64RegRax);
+        KD_REG_INIT_U64("rcx", pNtCtx->u64RegRcx);
+        KD_REG_INIT_U64("rdx", pNtCtx->u64RegRdx);
+        KD_REG_INIT_U64("rbx", pNtCtx->u64RegRbx);
+        KD_REG_INIT_U64("rsi", pNtCtx->u64RegRsi);
+        KD_REG_INIT_U64("rdi", pNtCtx->u64RegRdi);
+        KD_REG_INIT_U64("r8", pNtCtx->u64RegR8);
+        KD_REG_INIT_U64("r9", pNtCtx->u64RegR9);
+        KD_REG_INIT_U64("r10", pNtCtx->u64RegR10);
+        KD_REG_INIT_U64("r11", pNtCtx->u64RegR11);
+        KD_REG_INIT_U64("r12", pNtCtx->u64RegR12);
+        KD_REG_INIT_U64("r13", pNtCtx->u64RegR13);
+        KD_REG_INIT_U64("r14", pNtCtx->u64RegR14);
+        KD_REG_INIT_U64("r15", pNtCtx->u64RegR15);
+    }
+
+    if (fCtxFlags & NTCONTEXT_F_SEGMENTS)
+    {
+#if 0 /** @todo CPUM returns VERR_NOT_IMPLEMENTED */
+        KD_REG_INIT_U16("ds", pNtCtx->u16SegDs);
+        KD_REG_INIT_U16("es", pNtCtx->u16SegEs);
+        KD_REG_INIT_U16("fs", pNtCtx->u16SegFs);
+        KD_REG_INIT_U16("gs", pNtCtx->u16SegGs);
+#endif
+    }
+
+    if (fCtxFlags & NTCONTEXT_F_FLOATING_POINT)
+    {
+        /** @todo. */
+    }
+
+    if (fCtxFlags & NTCONTEXT_F_DEBUG)
+    {
+        /** @todo. */
+    }
+
+    return DBGFR3RegNmSetBatch(pThis->Dbgc.pUVM, idCpu, &aRegsSet[0], idxReg);
+}
+
+
 /**
  * Fills in the given 64bit NT kernel context structure with the requested values.
  *
@@ -1289,6 +1401,65 @@ static int dbgcKdCtxQueryNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PNTKCONTEXT64 pKN
 
     return rc;
 }
+
+
+/**
+ * Fills in the given 64bit NT kernel context structure with the requested values.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   idCpu               The CPU to query the context for.
+ * @param   pKNtCtx             The NT context structure to fill in.
+ * @param   cbSet               How many bytes of the context are valid.
+ */
+static int dbgcKdCtxSetNtKCtx64(PKDCTX pThis, VMCPUID idCpu, PCNTKCONTEXT64 pKNtCtx, size_t cbSet)
+{
+    AssertReturn(cbSet >= RT_UOFFSETOF(NTKCONTEXT64, Ctx), VERR_INVALID_PARAMETER);
+
+    uint32_t idxReg = 0;
+    DBGFREGENTRYNM aRegsSet[64]; /** @todo Verify that this is enough when fully implemented. */
+
+    KD_REG_INIT_U64("cr0", pKNtCtx->u64RegCr0);
+    KD_REG_INIT_U64("cr2", pKNtCtx->u64RegCr2);
+    KD_REG_INIT_U64("cr3", pKNtCtx->u64RegCr3);
+    KD_REG_INIT_U64("cr4", pKNtCtx->u64RegCr4);
+    KD_REG_INIT_U64("cr8", pKNtCtx->u64RegCr8);
+    KD_REG_INIT_U64("dr0", pKNtCtx->u64RegDr0);
+    KD_REG_INIT_U64("dr1", pKNtCtx->u64RegDr1);
+    KD_REG_INIT_U64("dr2", pKNtCtx->u64RegDr2);
+    KD_REG_INIT_U64("dr3", pKNtCtx->u64RegDr3);
+    KD_REG_INIT_U64("dr6", pKNtCtx->u64RegDr6);
+    KD_REG_INIT_U64("dr7", pKNtCtx->u64RegDr7);
+
+    KD_REG_INIT_DTR("gdtr", pKNtCtx->Gdtr.u64PtrBase, pKNtCtx->Gdtr.u16Limit);
+    KD_REG_INIT_DTR("idtr", pKNtCtx->Idtr.u64PtrBase, pKNtCtx->Idtr.u16Limit);
+
+#if 0 /** @todo CPUM returns VERR_NOT_IMPLEMENTED */
+    KD_REG_INIT_U16("tr", pKNtCtx->u16RegTr);
+    KD_REG_INIT_U16("ldtr", pKNtCtx->u16RegLdtr);
+#endif
+    KD_REG_INIT_U32("mxcsr", pKNtCtx->u32RegMxCsr);
+
+    KD_REG_INIT_U64("msr_gs_base", pKNtCtx->u64MsrGsBase);
+    KD_REG_INIT_U64("krnl_gs_base", pKNtCtx->u64MsrKernelGsBase);
+    KD_REG_INIT_U64("star", pKNtCtx->u64MsrStar);
+    KD_REG_INIT_U64("lstar", pKNtCtx->u64MsrLstar);
+    KD_REG_INIT_U64("cstar", pKNtCtx->u64MsrCstar);
+    KD_REG_INIT_U64("sf_mask", pKNtCtx->u64MsrSfMask);
+
+    int rc = DBGFR3RegNmSetBatch(pThis->Dbgc.pUVM, idCpu, &aRegsSet[0], idxReg);
+    if (   RT_SUCCESS(rc)
+        && cbSet > RT_UOFFSETOF(NTKCONTEXT64, Ctx)) /** @todo Probably wrong. */
+        rc = dbgcKdCtxSetNtCtx64(pThis, idCpu, &pKNtCtx->Ctx, pKNtCtx->Ctx.fContext);
+
+    return rc;
+}
+
+#undef KD_REG_INIT_64
+#undef KD_REG_INIT_32
+#undef KD_REG_INIT_16
+#undef KD_REG_INIT_DTR
+#undef KD_REG_INIT
 
 
 /**
@@ -1766,7 +1937,7 @@ static int dbgcKdCtxPktManipulate64GetVersion(PKDCTX pThis, PCKDPACKETMANIPULATE
 
 
 /**
- * Processes a read virtual memory 64 request.
+ * Processes a read memory 64 request.
  *
  * @returns VBox status code.
  * @param   pThis               The KD context.
@@ -1818,6 +1989,52 @@ static int dbgcKdCtxPktManipulate64ReadMem(PKDCTX pThis, PCKDPACKETMANIPULATE64 
 
 
 /**
+ * Processes a write memory 64 request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64WriteMem(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    KDPACKETMANIPULATEHDR RespHdr;
+    KDPACKETMANIPULATE_XFERMEM64 XferMem64;
+    RT_ZERO(RespHdr); RT_ZERO(XferMem64);
+
+    DBGFADDRESS AddrWrite;
+    const void *pv = &pThis->abBody[sizeof(*pPktManip)]; /* Data comes directly after the manipulate state body. */
+    uint32_t cbWrite = RT_MIN(sizeof(pThis->abBody) - sizeof(*pPktManip), pPktManip->u.XferMem.cbXferReq);
+    if (pPktManip->Hdr.idReq == KD_PACKET_MANIPULATE_REQ_WRITE_VIRT_MEM)
+        DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &AddrWrite, pPktManip->u.XferMem.u64PtrTarget);
+    else
+        DBGFR3AddrFromPhys(pThis->Dbgc.pUVM, &AddrWrite, pPktManip->u.XferMem.u64PtrTarget);
+
+    RTSGSEG aRespSegs[2];
+    uint32_t cSegs = 2;
+    RespHdr.idReq       = pPktManip->Hdr.idReq;
+    RespHdr.u16CpuLvl   = pPktManip->Hdr.u16CpuLvl;
+    RespHdr.idCpu       = pPktManip->Hdr.idCpu;
+    RespHdr.u32NtStatus = NTSTATUS_SUCCESS;
+
+    XferMem64.u64PtrTarget = pPktManip->u.XferMem.u64PtrTarget;
+    XferMem64.cbXferReq    = pPktManip->u.XferMem.cbXferReq;
+    XferMem64.cbXfered     = (uint32_t)cbWrite;
+
+    aRespSegs[0].pvSeg = &RespHdr;
+    aRespSegs[0].cbSeg = sizeof(RespHdr);
+    aRespSegs[1].pvSeg = &XferMem64;
+    aRespSegs[1].cbSeg = sizeof(XferMem64);
+
+    int rc = DBGFR3MemWrite(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, &AddrWrite, pv, cbWrite);
+    if (RT_FAILURE(rc))
+        RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL; /** @todo Convert to an appropriate NT status code. */
+
+    return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
+                              &aRespSegs[0], cSegs, true /*fAck*/);
+}
+
+
+/**
  * Processes a continue request.
  *
  * @returns VBox status code.
@@ -1860,6 +2077,44 @@ static int dbgcKdCtxPktManipulate64Continue2(PKDCTX pThis, PCKDPACKETMANIPULATE6
         rc = DBGFR3Resume(pThis->Dbgc.pUVM, VMCPUID_ALL);
 
     return rc;
+}
+
+
+/**
+ * Processes a set context request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64SetContext(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    KDPACKETMANIPULATEHDR RespHdr;
+    KDPACKETMANIPULATE_SETCONTEXT SetContext;
+    RT_ZERO(RespHdr); RT_ZERO(SetContext);
+
+    PCNTCONTEXT64 pNtCtx = (PCNTCONTEXT64)&pThis->abBody[sizeof(*pPktManip)]; /* Data comes directly after the manipulate state body. */
+
+    RTSGSEG aRespSegs[2];
+    uint32_t cSegs = 2;
+    RespHdr.idReq       = pPktManip->Hdr.idReq;
+    RespHdr.u16CpuLvl   = pPktManip->Hdr.u16CpuLvl;
+    RespHdr.idCpu       = pPktManip->Hdr.idCpu;
+    RespHdr.u32NtStatus = NTSTATUS_SUCCESS;
+
+    SetContext.u32CtxFlags = pPktManip->u.SetContext.u32CtxFlags;
+
+    aRespSegs[0].pvSeg = &RespHdr;
+    aRespSegs[0].cbSeg = sizeof(RespHdr);
+    aRespSegs[1].pvSeg = &SetContext;
+    aRespSegs[1].cbSeg = sizeof(SetContext);
+
+    int rc = dbgcKdCtxSetNtCtx64(pThis, pPktManip->Hdr.idCpu, pNtCtx, SetContext.u32CtxFlags);
+    if (RT_FAILURE(rc))
+        RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL; /** @todo Convert to an appropriate NT status code. */
+
+    return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
+                              &aRespSegs[0], cSegs, true /*fAck*/);
 }
 
 
@@ -1968,6 +2223,63 @@ static int dbgcKdCtxPktManipulate64ReadCtrlSpace(PKDCTX pThis, PCKDPACKETMANIPUL
 
     return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
                               &aRespSegs[0], cSegs, true /*fAck*/);
+}
+
+
+/**
+ * Processes a write control space 64 request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64WriteCtrlSpace(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    KDPACKETMANIPULATEHDR RespHdr;
+    KDPACKETMANIPULATE_XFERCTRLSPACE64 XferCtrlSpace64;
+    uint32_t cbData = 0;
+    RT_ZERO(RespHdr); RT_ZERO(XferCtrlSpace64);
+
+    RTSGSEG aRespSegs[2];
+    RespHdr.idReq       = KD_PACKET_MANIPULATE_REQ_WRITE_CTRL_SPACE;
+    RespHdr.u16CpuLvl   = pPktManip->Hdr.u16CpuLvl;
+    RespHdr.idCpu       = pPktManip->Hdr.idCpu;
+    RespHdr.u32NtStatus = NTSTATUS_SUCCESS;
+
+    XferCtrlSpace64.u64IdXfer = pPktManip->u.XferCtrlSpace.u64IdXfer;
+    XferCtrlSpace64.cbXferReq = pPktManip->u.XferCtrlSpace.cbXferReq;
+
+    aRespSegs[0].pvSeg = &RespHdr;
+    aRespSegs[0].cbSeg = sizeof(RespHdr);
+    aRespSegs[1].pvSeg = &XferCtrlSpace64;
+    aRespSegs[1].cbSeg = sizeof(XferCtrlSpace64);
+
+    int rc = VINF_SUCCESS;
+    switch (pPktManip->u.XferCtrlSpace.u64IdXfer)
+    {
+        case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KCTX:
+        {
+            PCNTKCONTEXT64 pNtKCtx = (PCNTKCONTEXT64)&pThis->abBody[sizeof(*pPktManip)]; /* Data comes directly after the manipulate state body. */
+            rc = dbgcKdCtxSetNtKCtx64(pThis, RespHdr.idCpu, pNtKCtx, XferCtrlSpace64.cbXferReq);
+            if (RT_SUCCESS(rc))
+                cbData = RT_MIN(XferCtrlSpace64.cbXferReq, sizeof(NTKCONTEXT64));
+            break;
+        }
+        case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KPCR:
+        case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KPCRB:
+        case KD_PACKET_MANIPULATE64_CTRL_SPACE_ID_KTHRD:
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    if (RT_FAILURE(rc))
+        RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL; /** @todo Convert to an appropriate NT status code. */
+    else
+        XferCtrlSpace64.cbXfered = cbData;
+
+    return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
+                              &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
 }
 
 
@@ -2116,6 +2428,12 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
             rc = dbgcKdCtxPktManipulate64ReadMem(pThis, pPktManip);
             break;
         }
+        case KD_PACKET_MANIPULATE_REQ_WRITE_VIRT_MEM:
+        case KD_PACKET_MANIPULATE_REQ_WRITE_PHYS_MEM:
+        {
+            rc = dbgcKdCtxPktManipulate64WriteMem(pThis, pPktManip);
+            break;
+        }
         case KD_PACKET_MANIPULATE_REQ_CONTINUE:
         {
             rc = dbgcKdCtxPktManipulate64Continue(pThis, pPktManip);
@@ -2126,9 +2444,19 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
             rc = dbgcKdCtxPktManipulate64Continue2(pThis, pPktManip);
             break;
         }
+        case KD_PACKET_MANIPULATE_REQ_SET_CONTEXT:
+        {
+            rc = dbgcKdCtxPktManipulate64SetContext(pThis, pPktManip);
+            break;
+        }
         case KD_PACKET_MANIPULATE_REQ_READ_CTRL_SPACE:
         {
             rc = dbgcKdCtxPktManipulate64ReadCtrlSpace(pThis, pPktManip);
+            break;
+        }
+        case KD_PACKET_MANIPULATE_REQ_WRITE_CTRL_SPACE:
+        {
+            rc = dbgcKdCtxPktManipulate64WriteCtrlSpace(pThis, pPktManip);
             break;
         }
         case KD_PACKET_MANIPULATE_REQ_RESTORE_BKPT:
