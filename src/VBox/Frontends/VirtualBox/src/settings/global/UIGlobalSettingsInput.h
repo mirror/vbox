@@ -76,7 +76,7 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Saves existing data from the cache. */
+    /** Saves existing data from cache. */
     bool saveData();
 
     /** Holds the page data cache instance. */
