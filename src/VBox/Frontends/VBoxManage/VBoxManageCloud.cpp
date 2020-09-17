@@ -2187,6 +2187,18 @@ static HRESULT getSystemProxyForUrl(const com::Utf8Str &strUrl, Bstr &strProxy)
 #endif /* VBOX_WITH_PROXY_INFO */
 }
 
+static HRESULT localGatewayImagePath(const Bstr &aDefaultMachineFolder, Bstr &aLgwImage)
+{
+    com::Utf8Str strPath(aDefaultMachineFolder);
+    int rc = RTPathAppendCxx(strPath, "gateways");
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppendCxx(strPath, "lgw.vdi");
+    if (RT_SUCCESS(rc))
+        aLgwImage = strPath;
+
+    return rc;
+}
+
 static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bstr& aGatewayIso, const Bstr& aGuestAdditionsIso, const Bstr& aProxy)
 {
     /* Check if the image already exists. */
@@ -2258,7 +2270,14 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     else
         guestAdditionsISO = aGuestAdditionsIso;
 
-    BstrFmt strGatewayImage("%ls\\gateways\\lgw.vdi", defaultMachineFolder.raw());
+    Bstr strGatewayImage;
+    int rc = localGatewayImagePath(defaultMachineFolder, strGatewayImage);
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(g_pStdErr, "Failed to compose a path to the local gateway image (%Rrc)", rc);
+        RTStrmFlush(g_pStdErr);
+        return E_FAIL;
+    }
     hrc = virtualBox->OpenMedium(strGatewayImage.raw(), DeviceType_HardDisk, AccessMode_ReadWrite, FALSE, hd.asOutParam());
     /* If the image is already in place, there is nothing for us to do. */
     if (SUCCEEDED(hrc))
@@ -2564,7 +2583,8 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
         { "--tunnel-network-range", 'r', RTGETOPT_REQ_STRING },
         { "--guest-additions-iso",  'a', RTGETOPT_REQ_STRING },
         { "--local-gateway-iso",    'l', RTGETOPT_REQ_STRING },
-        { "--proxy",                'p', RTGETOPT_REQ_STRING }
+        { "--proxy",                'p', RTGETOPT_REQ_STRING },
+        { "--compartment-id",       'c', RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -2579,6 +2599,7 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
     Bstr strLocalGatewayIso;
     Bstr strGuestAdditionsIso;
     Bstr strProxy;
+    Bstr strCompartmentId;
 
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
@@ -2609,6 +2630,9 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
             case 'p':
                 strProxy=ValueUnion.psz;
                 break;
+            case 'c':
+                strCompartmentId=ValueUnion.psz;
+                break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
@@ -2633,6 +2657,14 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
     RTPrintf("Setting up tunnel network in the cloud...\n");
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+
+    /* Use user-specified profile instead of default one. */
+    if (strCompartmentId.isNotEmpty())
+    {
+        CHECK_ERROR2_RET(hrc, pCloudProfile,
+                         SetProperty(Bstr("compartment").raw(), Bstr(strCompartmentId).raw()),
+                         RTEXITCODE_FAILURE);
+    }
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
