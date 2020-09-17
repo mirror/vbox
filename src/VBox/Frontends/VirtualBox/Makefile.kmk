@@ -843,6 +843,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIGraphicsControllerEditor.h \
 	src/settings/editors/UIHostComboEditor.h \
 	src/settings/editors/UIHotKeyEditor.h \
+	src/settings/editors/UILanguageSettingsEditor.h \
 	src/settings/editors/UINameAndSystemEditor.h \
 	src/settings/editors/UINetworkAttachmentEditor.h \
 	src/settings/editors/UIScaleFactorEditor.h \
@@ -995,9 +996,9 @@ UICommon_QT_MOCSRCS = \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \
+	src/settings/editors/UILanguageSettingsEditor.cpp \
 	src/settings/editors/UIShortcutConfigurationEditor.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
-	src/settings/global/UIGlobalSettingsLanguage.cpp \
 	src/settings/global/UIGlobalSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
@@ -1361,6 +1362,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIGraphicsControllerEditor.cpp \
 	src/settings/editors/UIHostComboEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \
+	src/settings/editors/UILanguageSettingsEditor.cpp \
 	src/settings/editors/UINameAndSystemEditor.cpp \
 	src/settings/editors/UINetworkAttachmentEditor.cpp \
 	src/settings/editors/UIScaleFactorEditor.cpp \

@@ -25,10 +25,7 @@
 #include "UISettingsPage.h"
 
 /* Forward declartions: */
-class QILabelSeparator;
-class QIRichTextLabel;
-class QITreeWidget;
-class QTreeWidgetItem;
+class UILanguageSettingsEditor;
 struct UIDataSettingsGlobalLanguage;
 typedef UISettingsCache<UIDataSettingsGlobalLanguage> UISettingsCacheGlobalLanguage;
 
@@ -42,7 +39,7 @@ public:
     /** Constructs Language settings page. */
     UIGlobalSettingsLanguage();
     /** Destructs Language settings page. */
-    ~UIGlobalSettingsLanguage();
+    virtual ~UIGlobalSettingsLanguage() /* override */;
 
 protected:
 
@@ -63,50 +60,25 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
-    /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
-    /** Performs final page polishing. */
-    virtual void polishEvent(QShowEvent *pEvent) /* override */;
-
-private slots:
-
-    /** Handles @a pItem painting with passed @a pPainter. */
-    void sltHandleItemPainting(QTreeWidgetItem *pItem, QPainter *pPainter);
-
-    /** Handles @a pCurrentItem change. */
-    void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
-
 private:
 
     /** Prepares all. */
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares connections. */
-    void prepareConnection();
     /** Cleanups all. */
     void cleanup();
 
-    /** Reloads language list, choosing item with @a strLanguageId as current. */
-    void reloadLanguageTree(const QString &strLanguageId);
-
-    /** Saves existing language data from the cache. */
-    bool saveLanguageData();
-
-    /** Holds whether the page is polished. */
-    bool  m_fPolished;
+    /** Saves existing data from cache. */
+    bool saveData();
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalLanguage *m_pCache;
 
     /** @name Widgets
      * @{ */
-        /** Holds the tree-widget instance. */
-        QITreeWidget     *m_pTreeWidget;
-        /** Holds the separator label instance. */
-        QILabelSeparator *m_pLabelSeparator;
-        /** Holds the info label instance. */
-        QIRichTextLabel  *m_pLabelInfo;
+        /** Holds the language settings editor instance. */
+        UILanguageSettingsEditor *m_pEditorLanguageSettings;
     /** @} */
 };
 
