@@ -589,12 +589,33 @@ typedef struct KDPACKETMANIPULATE_RESTOREBKPT64
 {
     /** The breakpoint handle to restore. */
     uint32_t                    u32HndBkpt;
+    /** Blows up the request to the required size. */
+    uint8_t                     abPad[36];
 } KDPACKETMANIPULATE_RESTOREBKPT64;
-AssertCompileSize(KDPACKETMANIPULATE_RESTOREBKPT64, 4);
+AssertCompileSize(KDPACKETMANIPULATE_RESTOREBKPT64, 40);
 /** Pointer to a 64bit restore breakpoint manipulate payload. */
 typedef KDPACKETMANIPULATE_RESTOREBKPT64 *PKDPACKETMANIPULATE_RESTOREBKPT64;
 /** Pointer to a const 64bit restore breakpoint manipulate payload. */
 typedef const KDPACKETMANIPULATE_RESTOREBKPT64 *PCKDPACKETMANIPULATE_RESTOREBKPT64;
+
+
+/**
+ * 64bit write breakpoint manipulate payload.
+ */
+typedef struct KDPACKETMANIPULATE_WRITEBKPT64
+{
+    /** Where to write the breakpoint. */
+    uint64_t                    u64PtrBkpt;
+    /** The breakpoint handle returned in the response. */
+    uint32_t                    u32HndBkpt;
+    /** Blows up the request to the required size. */
+    uint8_t                     abPad[28];
+} KDPACKETMANIPULATE_WRITEBKPT64;
+AssertCompileSize(KDPACKETMANIPULATE_WRITEBKPT64, 40);
+/** Pointer to a 64bit write breakpoint manipulate payload. */
+typedef KDPACKETMANIPULATE_WRITEBKPT64 *PKDPACKETMANIPULATE_WRITEBKPT64;
+/** Pointer to a const 64bit write breakpoint manipulate payload. */
+typedef const KDPACKETMANIPULATE_WRITEBKPT64 *PCKDPACKETMANIPULATE_WRITEBKPT64;
 
 
 /**
@@ -629,9 +650,9 @@ typedef struct KDPACKETMANIPULATE_CONTINUE
     uint8_t                     abPad[36];
 } KDPACKETMANIPULATE_CONTINUE;
 AssertCompileSize(KDPACKETMANIPULATE_CONTINUE, 40);
-/** Pointer to a context extended manipulate payload. */
+/** Pointer to a continue manipulate payload. */
 typedef KDPACKETMANIPULATE_CONTINUE *PKDPACKETMANIPULATE_CONTINUE;
-/** Pointer to a const context extended manipulate payload. */
+/** Pointer to a const continue manipulate payload. */
 typedef const KDPACKETMANIPULATE_CONTINUE *PCKDPACKETMANIPULATE_CONTINUE;
 
 
@@ -670,9 +691,9 @@ typedef struct KDPACKETMANIPULATE_CONTINUE2
     uint8_t                     abPad[8];
 } KDPACKETMANIPULATE_CONTINUE2;
 AssertCompileSize(KDPACKETMANIPULATE_CONTINUE2, 40);
-/** Pointer to a context extended manipulate payload. */
+/** Pointer to a continue 2 manipulate payload. */
 typedef KDPACKETMANIPULATE_CONTINUE2 *PKDPACKETMANIPULATE_CONTINUE2;
-/** Pointer to a const context extended manipulate payload. */
+/** Pointer to a const continue 2 manipulate payload. */
 typedef const KDPACKETMANIPULATE_CONTINUE2 *PCKDPACKETMANIPULATE_CONTINUE2;
 
 
@@ -721,6 +742,8 @@ typedef struct KDPACKETMANIPULATE64
         KDPACKETMANIPULATE_XFERCTRLSPACE64 XferCtrlSpace;
         /** Restore breakpoint. */
         KDPACKETMANIPULATE_RESTOREBKPT64   RestoreBkpt;
+        /** Write breakpoint. */
+        KDPACKETMANIPULATE_WRITEBKPT64     WriteBkpt;
         /** Context extended. */
         KDPACKETMANIPULATE_CONTEXTEX       ContextEx;
     } u;
@@ -970,6 +993,28 @@ static void dbgcKdPktDumpManipulate(PRTSGBUF pSgBuf)
                 }
                 else
                     Log3(("        Payload to small, expected %u, got %zu\n", sizeof(XferMem64), cbCopied));
+                break;
+            }
+            case KD_PACKET_MANIPULATE_REQ_RESTORE_BKPT:
+            {
+                KDPACKETMANIPULATE_RESTOREBKPT64 RestoreBkpt64;
+                cbCopied = RTSgBufCopyToBuf(pSgBuf, &RestoreBkpt64, sizeof(RestoreBkpt64));
+                if (cbCopied == sizeof(RestoreBkpt64))
+                    Log3(("        u32HndBkpt:   %RX32\n", RestoreBkpt64.u32HndBkpt));
+                else
+                    Log3(("        Payload to small, expected %u, got %zu\n", sizeof(RestoreBkpt64), cbCopied));
+                break;
+            }
+            case KD_PACKET_MANIPULATE_REQ_WRITE_BKPT:
+            {
+                KDPACKETMANIPULATE_WRITEBKPT64 WriteBkpt64;
+                cbCopied = RTSgBufCopyToBuf(pSgBuf, &WriteBkpt64, sizeof(WriteBkpt64));
+                if (cbCopied == sizeof(WriteBkpt64))
+                    Log3(("        u64PtrBkpt:   %RX64\n"
+                          "        u32HndBkpt:   %RX32\n",
+                          WriteBkpt64.u64PtrBkpt, WriteBkpt64.u32HndBkpt));
+                else
+                    Log3(("        Payload to small, expected %u, got %zu\n", sizeof(WriteBkpt64), cbCopied));
                 break;
             }
             case KD_PACKET_MANIPULATE_REQ_CONTINUE:
@@ -1952,7 +1997,48 @@ static int dbgcKdCtxPktManipulate64RestoreBkpt(PKDCTX pThis, PCKDPACKETMANIPULAT
     aRespSegs[1].pvSeg = &RestoreBkpt64;
     aRespSegs[1].cbSeg = sizeof(RestoreBkpt64);
 
-    /** @todo */
+    int rc = DBGFR3BpClear(pThis->Dbgc.pUVM, pPktManip->u.RestoreBkpt.u32HndBkpt);
+    if (   RT_FAILURE(rc)
+        && rc != VERR_DBGF_BP_NOT_FOUND)
+        RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL;
+
+    return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
+                              &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
+}
+
+
+/**
+ * Processes a write breakpoint 64 request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64WriteBkpt(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    KDPACKETMANIPULATEHDR RespHdr;
+    KDPACKETMANIPULATE_WRITEBKPT64 WriteBkpt64;
+    RT_ZERO(RespHdr); RT_ZERO(WriteBkpt64);
+
+    RTSGSEG aRespSegs[2];
+    RespHdr.idReq       = KD_PACKET_MANIPULATE_REQ_WRITE_BKPT;
+    RespHdr.u16CpuLvl   = pPktManip->Hdr.u16CpuLvl;
+    RespHdr.idCpu       = pPktManip->Hdr.idCpu;
+    RespHdr.u32NtStatus = NTSTATUS_SUCCESS;
+
+    aRespSegs[0].pvSeg = &RespHdr;
+    aRespSegs[0].cbSeg = sizeof(RespHdr);
+    aRespSegs[1].pvSeg = &WriteBkpt64;
+    aRespSegs[1].cbSeg = sizeof(WriteBkpt64);
+
+    WriteBkpt64.u64PtrBkpt = pPktManip->u.WriteBkpt.u64PtrBkpt;
+
+    DBGFADDRESS BpAddr;
+    DBGFR3AddrFromFlat(pThis->Dbgc.pUVM, &BpAddr, pPktManip->u.WriteBkpt.u64PtrBkpt);
+    int rc = DBGFR3BpSetInt3(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, &BpAddr,
+                             1 /*iHitTrigger*/, UINT64_MAX /*iHitDisable*/, &WriteBkpt64.u32HndBkpt);
+    if (RT_FAILURE(rc))
+        RespHdr.u32NtStatus = NTSTATUS_UNSUCCESSFUL;
 
     return dbgcKdCtxPktSendSg(pThis, KD_PACKET_HDR_SIGNATURE_DATA, KD_PACKET_HDR_SUB_TYPE_STATE_MANIPULATE,
                               &aRespSegs[0], RT_ELEMENTS(aRespSegs), true /*fAck*/);
@@ -2048,6 +2134,11 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
         case KD_PACKET_MANIPULATE_REQ_RESTORE_BKPT:
         {
             rc = dbgcKdCtxPktManipulate64RestoreBkpt(pThis, pPktManip);
+            break;
+        }
+        case KD_PACKET_MANIPULATE_REQ_WRITE_BKPT:
+        {
+            rc = dbgcKdCtxPktManipulate64WriteBkpt(pThis, pPktManip);
             break;
         }
         case KD_PACKET_MANIPULATE_REQ_CLEAR_ALL_INTERNAL_BKPT:
