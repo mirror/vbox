@@ -324,6 +324,7 @@ typedef struct NTKCONTEXT64
     /** Standard context. */
     NTCONTEXT64                 Ctx;
 } NTKCONTEXT64;
+AssertCompileMemberAlignment(NTKCONTEXT64, Ctx, 16);
 /** Pointer to an amd64 NT context. */
 typedef NTKCONTEXT64 *PNTKCONTEXT64;
 /** Pointer to a const amd64 NT context. */
@@ -516,7 +517,7 @@ typedef struct KDPACKETMANIPULATE_GETVERSION64
     /** Pointer of the debugger data list. */
     uint64_t                    u64PtrDebuggerDataList;
 } KDPACKETMANIPULATE_GETVERSION64;
-AssertCompileSize(KDPACKETMANIPULATE_GETVERSION64, 8 * 2 + 3 * 8);
+AssertCompileSize(KDPACKETMANIPULATE_GETVERSION64, 40);
 /** Pointer to a 64bit get version manipulate payload. */
 typedef KDPACKETMANIPULATE_GETVERSION64 *PKDPACKETMANIPULATE_GETVERSION64;
 /** Pointer to a const 64bit get version manipulate payload. */
@@ -537,7 +538,7 @@ typedef struct KDPACKETMANIPULATE_XFERMEM64
     /** Some padding?. */
     uint64_t                    au64Pad[3];
 } KDPACKETMANIPULATE_XFERMEM64;
-AssertCompileSize(KDPACKETMANIPULATE_XFERMEM64, 4 * 8 + 2 * 4);
+AssertCompileSize(KDPACKETMANIPULATE_XFERMEM64, 40);
 /** Pointer to a 64bit memory transfer manipulate payload. */
 typedef KDPACKETMANIPULATE_XFERMEM64 *PKDPACKETMANIPULATE_XFERMEM64;
 /** Pointer to a const 64bit memory transfer manipulate payload. */
@@ -561,7 +562,7 @@ typedef struct KDPACKETMANIPULATE_XFERCTRLSPACE64
     /** Some padding?. */
     uint64_t                    au64Pad[3];
 } KDPACKETMANIPULATE_XFERCTRLSPACE64;
-AssertCompileSize(KDPACKETMANIPULATE_XFERCTRLSPACE64, 4 * 8 + 2 * 4);
+AssertCompileSize(KDPACKETMANIPULATE_XFERCTRLSPACE64, 40);
 /** Pointer to a 64bit memory transfer manipulate payload. */
 typedef KDPACKETMANIPULATE_XFERCTRLSPACE64 *PKDPACKETMANIPULATE_XFERCTRLSPACE64;
 /** Pointer to a const 64bit memory transfer manipulate payload. */
@@ -597,7 +598,7 @@ typedef const KDPACKETMANIPULATE_RESTOREBKPT64 *PCKDPACKETMANIPULATE_RESTOREBKPT
 
 
 /**
- * context extended manipulate payload.
+ * Context extended manipulate payload.
  */
 typedef struct KDPACKETMANIPULATE_CONTEXTEX
 {
@@ -607,12 +608,72 @@ typedef struct KDPACKETMANIPULATE_CONTEXTEX
     uint32_t                    cbXfer;
     /** Number of bytes actually transfered. */
     uint32_t                    cbXfered;
+    /** Blows up the request to the required size. */
+    uint8_t                     abPad[28];
 } KDPACKETMANIPULATE_CONTEXTEX;
-AssertCompileSize(KDPACKETMANIPULATE_CONTEXTEX, 3 * 4);
+AssertCompileSize(KDPACKETMANIPULATE_CONTEXTEX, 40);
 /** Pointer to a context extended manipulate payload. */
 typedef KDPACKETMANIPULATE_CONTEXTEX *PKDPACKETMANIPULATE_CONTEXTEX;
 /** Pointer to a const context extended manipulate payload. */
 typedef const KDPACKETMANIPULATE_CONTEXTEX *PCKDPACKETMANIPULATE_CONTEXTEX;
+
+
+/**
+ * Continue manipulate payload.
+ */
+typedef struct KDPACKETMANIPULATE_CONTINUE
+{
+    /** Continue (status?). */
+    uint32_t                    u32NtContSts;
+    /** Blows up the request to the required size. */
+    uint8_t                     abPad[36];
+} KDPACKETMANIPULATE_CONTINUE;
+AssertCompileSize(KDPACKETMANIPULATE_CONTINUE, 40);
+/** Pointer to a context extended manipulate payload. */
+typedef KDPACKETMANIPULATE_CONTINUE *PKDPACKETMANIPULATE_CONTINUE;
+/** Pointer to a const context extended manipulate payload. */
+typedef const KDPACKETMANIPULATE_CONTINUE *PCKDPACKETMANIPULATE_CONTINUE;
+
+
+/**
+ * Continue 2 manipulate payload.
+ */
+typedef struct KDPACKETMANIPULATE_CONTINUE2
+{
+    /** Continue (status?). */
+    uint32_t                    u32NtContSts;
+    /** Trace flag. */
+    uint32_t                    fTrace;
+    /** Bitsize dependent data. */
+    union
+    {
+        /** 32bit. */
+        struct
+        {
+            /** DR7 value to continue with. */
+            uint32_t            u32RegDr7;
+            /** @todo (?) */
+            uint32_t            u32SymCurStart;
+            uint32_t            u32SymCurEnd;
+        } x86;
+        /** 64bit. */
+        struct
+        {
+            /** DR7 value to continue with. */
+            uint64_t            u64RegDr7;
+            /** @todo (?) */
+            uint64_t            u64SymCurStart;
+            uint64_t            u64SymCurEnd;
+        } amd64;
+    } u;
+    /** Blows up the request to the required size. */
+    uint8_t                     abPad[8];
+} KDPACKETMANIPULATE_CONTINUE2;
+AssertCompileSize(KDPACKETMANIPULATE_CONTINUE2, 40);
+/** Pointer to a context extended manipulate payload. */
+typedef KDPACKETMANIPULATE_CONTINUE2 *PKDPACKETMANIPULATE_CONTINUE2;
+/** Pointer to a const context extended manipulate payload. */
+typedef const KDPACKETMANIPULATE_CONTINUE2 *PCKDPACKETMANIPULATE_CONTINUE2;
 
 
 /**
@@ -652,6 +713,10 @@ typedef struct KDPACKETMANIPULATE64
         KDPACKETMANIPULATE_GETVERSION64    GetVersion;
         /** Read/Write memory. */
         KDPACKETMANIPULATE_XFERMEM64       XferMem;
+        /** Continue. */
+        KDPACKETMANIPULATE_CONTINUE        Continue;
+        /** Continue2. */
+        KDPACKETMANIPULATE_CONTINUE2       Continue2;
         /** Read/Write control space. */
         KDPACKETMANIPULATE_XFERCTRLSPACE64 XferCtrlSpace;
         /** Restore breakpoint. */
@@ -907,6 +972,28 @@ static void dbgcKdPktDumpManipulate(PRTSGBUF pSgBuf)
                     Log3(("        Payload to small, expected %u, got %zu\n", sizeof(XferMem64), cbCopied));
                 break;
             }
+            case KD_PACKET_MANIPULATE_REQ_CONTINUE:
+            {
+                KDPACKETMANIPULATE_CONTINUE Continue;
+                cbCopied = RTSgBufCopyToBuf(pSgBuf, &Continue, sizeof(Continue));
+                if (cbCopied == sizeof(Continue))
+                    Log3(("        u32NtContSts: %RX32\n", Continue.u32NtContSts));
+                else
+                    Log3(("        Payload to small, expected %u, got %zu\n", sizeof(Continue), cbCopied));
+                break;
+            }
+            case KD_PACKET_MANIPULATE_REQ_CONTINUE2:
+            {
+                KDPACKETMANIPULATE_CONTINUE2 Continue;
+                cbCopied = RTSgBufCopyToBuf(pSgBuf, &Continue, sizeof(Continue));
+                if (cbCopied == sizeof(Continue))
+                    Log3(("        u32NtContSts: %RX32\n"
+                          "        fTrace:       %RX32\n",
+                          Continue.u32NtContSts, Continue.fTrace));
+                else
+                    Log3(("        Payload to small, expected %u, got %zu\n", sizeof(Continue), cbCopied));
+                break;
+            }
             case KD_PACKET_MANIPULATE_REQ_READ_CTRL_SPACE:
             case KD_PACKET_MANIPULATE_REQ_WRITE_CTRL_SPACE:
             {
@@ -921,6 +1008,21 @@ static void dbgcKdPktDumpManipulate(PRTSGBUF pSgBuf)
                 }
                 else
                     Log3(("        Payload to small, expected %u, got %zu\n", sizeof(XferCtrlSpace64), cbCopied));
+                break;
+            }
+            case KD_PACKET_MANIPULATE_REQ_GET_CONTEXT_EX:
+            {
+                KDPACKETMANIPULATE_CONTEXTEX GetContextEx;
+                cbCopied = RTSgBufCopyToBuf(pSgBuf, &GetContextEx, sizeof(GetContextEx));
+                if (cbCopied == sizeof(GetContextEx))
+                {
+                    Log3(("        offStart:     %RX32\n"
+                          "        cbXferReq:    %RX32\n"
+                          "        cbXfered:     %RX32\n",
+                          GetContextEx.offStart, GetContextEx.cbXfer, GetContextEx.cbXfered));
+                }
+                else
+                    Log3(("        Payload to small, expected %u, got %zu\n", sizeof(GetContextEx), cbCopied));
                 break;
             }
             default:
@@ -1671,6 +1773,52 @@ static int dbgcKdCtxPktManipulate64ReadMem(PKDCTX pThis, PCKDPACKETMANIPULATE64 
 
 
 /**
+ * Processes a continue request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64Continue(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    RT_NOREF(pPktManip);
+    int rc = VINF_SUCCESS;
+
+    /* No response, just resume. */
+    if (DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+        rc = DBGFR3Resume(pThis->Dbgc.pUVM, VMCPUID_ALL);
+
+    return rc;
+}
+
+
+/**
+ * Processes a continue request.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The KD context.
+ * @param   pPktManip           The manipulate packet request.
+ */
+static int dbgcKdCtxPktManipulate64Continue2(PKDCTX pThis, PCKDPACKETMANIPULATE64 pPktManip)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Resume if not single stepping, the single step will get a state change when the VM stepped. */
+    if (pPktManip->u.Continue2.fTrace)
+    {
+        PDBGFADDRESS pStackPop  = NULL;
+        RTGCPTR      cbStackPop = 0;
+        rc = DBGFR3StepEx(pThis->Dbgc.pUVM, pThis->Dbgc.idCpu, DBGF_STEP_F_INTO, NULL,
+                          pStackPop, cbStackPop, 1 /*cMaxSteps*/);
+    }
+    else if (DBGFR3IsHalted(pThis->Dbgc.pUVM, VMCPUID_ALL))
+        rc = DBGFR3Resume(pThis->Dbgc.pUVM, VMCPUID_ALL);
+
+    return rc;
+}
+
+
+/**
  * Processes a read control space 64 request.
  *
  * @returns VBox status code.
@@ -1880,6 +2028,16 @@ static int dbgcKdCtxPktManipulate64Process(PKDCTX pThis)
         case KD_PACKET_MANIPULATE_REQ_READ_PHYS_MEM:
         {
             rc = dbgcKdCtxPktManipulate64ReadMem(pThis, pPktManip);
+            break;
+        }
+        case KD_PACKET_MANIPULATE_REQ_CONTINUE:
+        {
+            rc = dbgcKdCtxPktManipulate64Continue(pThis, pPktManip);
+            break;
+        }
+        case KD_PACKET_MANIPULATE_REQ_CONTINUE2:
+        {
+            rc = dbgcKdCtxPktManipulate64Continue2(pThis, pPktManip);
             break;
         }
         case KD_PACKET_MANIPULATE_REQ_READ_CTRL_SPACE:
