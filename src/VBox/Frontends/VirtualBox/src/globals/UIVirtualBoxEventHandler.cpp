@@ -25,19 +25,14 @@
 #include "CEventListener.h"
 #include "CEventSource.h"
 #include "CVirtualBox.h"
-#include "CVirtualBoxClient.h"
 
 
-/** Private QObject extension
-  * providing UIVirtualBoxEventHandler with the CVirtualBoxClient and CVirtualBox event-sources. */
+/** Private QObject extension providing UIVirtualBoxEventHandler with CVirtualBox event-source. */
 class UIVirtualBoxEventHandlerProxy : public QObject
 {
     Q_OBJECT;
 
 signals:
-
-    /** Notifies about the VBoxSVC become @a fAvailable. */
-    void sigVBoxSVCAvailabilityChange(bool fAvailable);
 
     /** Notifies about @a state change event for the machine with @a uId. */
     void sigMachineStateChange(const QUuid &uId, const KMachineState state);
@@ -148,31 +143,16 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
     m_pQtListener->init(new UIMainEventListener, this);
     m_comEventListener = CEventListener(m_pQtListener);
 
-    /* Get VirtualBoxClient: */
-    const CVirtualBoxClient comVBoxClient = uiCommon().virtualBoxClient();
-    AssertWrapperOk(comVBoxClient);
-    /* Get VirtualBoxClient event source: */
-    CEventSource comEventSourceVBoxClient = comVBoxClient.GetEventSource();
-    AssertWrapperOk(comEventSourceVBoxClient);
-
     /* Get VirtualBox: */
     const CVirtualBox comVBox = uiCommon().virtualBox();
     AssertWrapperOk(comVBox);
     /* Get VirtualBox event source: */
-    CEventSource comEventSourceVBox = comVBox.GetEventSource();
-    AssertWrapperOk(comEventSourceVBox);
-
-    /* Create event source aggregator: */
-    m_comEventSource = comEventSourceVBoxClient.CreateAggregator(QVector<CEventSource>()
-                                                                 << comEventSourceVBoxClient
-                                                                 << comEventSourceVBox);
+    m_comEventSource = comVBox.GetEventSource();
+    AssertWrapperOk(m_comEventSource);
 
     /* Enumerate all the required event-types: */
     QVector<KVBoxEventType> eventTypes;
     eventTypes
-        /* For VirtualBoxClient: */
-        << KVBoxEventType_OnVBoxSVCAvailabilityChanged
-        /* For VirtualBox: */
         << KVBoxEventType_OnMachineStateChanged
         << KVBoxEventType_OnMachineDataChanged
         << KVBoxEventType_OnMachineRegistered
@@ -206,9 +186,6 @@ void UIVirtualBoxEventHandlerProxy::prepareConnections()
 {
     /* Create direct (sync) connections for signals of main event listener.
      * Keep in mind that the abstract Qt4 connection notation should be used here. */
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
-            this, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
-            Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
             this, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
             Qt::DirectConnection);
@@ -325,9 +302,6 @@ void UIVirtualBoxEventHandler::prepareConnections()
 {
     /* Create queued (async) connections for signals of event proxy object.
      * Keep in mind that the abstract Qt4 connection notation should be used here. */
-    connect(m_pProxy, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
-            this, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
-            Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
             this, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
             Qt::QueuedConnection);

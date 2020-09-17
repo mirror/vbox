@@ -35,16 +35,12 @@
 /* Forward declarations: */
 class UIVirtualBoxEventHandlerProxy;
 
-/** Singleton QObject extension
-  * providing GUI with the CVirtualBoxClient and CVirtualBox event-sources. */
+/** Singleton QObject extension providing GUI with CVirtualBox event-source. */
 class SHARED_LIBRARY_STUFF UIVirtualBoxEventHandler : public QObject
 {
     Q_OBJECT;
 
 signals:
-
-    /** Notifies about the VBoxSVC become @a fAvailable. */
-    void sigVBoxSVCAvailabilityChange(bool fAvailable);
 
     /** Notifies about @a state change event for the machine with @a uId. */
     void sigMachineStateChange(const QUuid &uId, const KMachineState state);

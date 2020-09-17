@@ -77,6 +77,7 @@
 #include "UIModalWindowManager.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UIVirtualBoxClientEventHandler.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIVisoCreator.h"
 #include "UIWizardNewVD.h"
@@ -4109,7 +4110,7 @@ void UICommon::prepare()
     comWrappersReinit();
 
     /* Watch for the VBoxSVC availability changes: */
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigVBoxSVCAvailabilityChange,
+    connect(gVBoxClientEvents, &UIVirtualBoxClientEventHandler::sigVBoxSVCAvailabilityChange,
             this, &UICommon::sltHandleVBoxSVCAvailabilityChange);
 
     /* Prepare thread-pool instances: */
@@ -4573,9 +4574,10 @@ void UICommon::cleanup()
     /* Finishing medium-enumerator cleanup: */
     m_meCleanupProtectionToken.unlock();
 
-    /* Destroy the global (VirtualBox) Main event handler
-     * which is used in both Selector and Runtime UI. */
+    /* Destroy the global (VirtualBox and VirtualBoxClient) Main event
+     * handlers which are used in both Manager and Runtime UIs. */
     UIVirtualBoxEventHandler::destroy();
+    UIVirtualBoxClientEventHandler::destroy();
 
     /* Destroy the extra-data manager finally after everything
      * above which could use it already destroyed: */
@@ -4695,9 +4697,11 @@ void UICommon::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
             {
                 /* Recreate Main event listeners: */
                 UIVirtualBoxEventHandler::destroy();
+                UIVirtualBoxClientEventHandler::destroy();
                 UIExtraDataManager::destroy();
                 UIExtraDataManager::instance();
                 UIVirtualBoxEventHandler::instance();
+                UIVirtualBoxClientEventHandler::instance();
                 /* Ask UIStarter to restart UI: */
                 emit sigAskToRestartUI();
             }
