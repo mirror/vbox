@@ -925,7 +925,7 @@ static VBOXSTRICTRC iommuAmdCmdBufHeadPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
 
     iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
 
-    LogFlowFunc(("Set CmdBufHeadPtr to %#RX32\n", offBuf));
+    Log5Func(("Set CmdBufHeadPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
 
@@ -966,7 +966,7 @@ static VBOXSTRICTRC iommuAmdCmdBufTailPtr_w(PPDMDEVINS pDevIns, PIOMMU pThis, ui
 
     iommuAmdCmdThreadWakeUpIfNeeded(pDevIns);
 
-    LogFlowFunc(("Set CmdBufTailPtr to %#RX32\n", offBuf));
+    Log5Func(("Set CmdBufTailPtr to %#RX32\n", offBuf));
     return VINF_SUCCESS;
 }
 
@@ -1103,7 +1103,7 @@ static VBOXSTRICTRC iommuAmdWriteRegister(PPDMDEVINS pDevIns, uint32_t off, uint
     Assert(cb == 4 || cb == 8);
     Assert(!(off & (cb - 1)));
 
-    LogFlowFunc(("off=%#x cb=%u uValue=%#RX64\n", off, cb, uValue));
+    Log5Func(("off=%#x cb=%u uValue=%#RX64\n", off, cb, uValue));
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     switch (off)
@@ -1250,7 +1250,7 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
     PCPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    LogFlowFunc(("off=%#x\n", off));
+    Log5Func(("off=%#x\n", off));
 
     /** @todo IOMMU: fine-grained locking? */
     uint64_t uReg;
@@ -1409,8 +1409,12 @@ static VBOXSTRICTRC iommuAmdReadRegister(PPDMDEVINS pDevIns, uint32_t off, uint6
  */
 static void iommuAmdRaiseMsiInterrupt(PPDMDEVINS pDevIns)
 {
+    LogFlowFunc(("\n"));
     if (iommuAmdIsMsiEnabled(pDevIns))
+    {
+        LogFunc(("Raising MSI\n"));
         PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_HIGH);
+    }
 }
 
 
@@ -3041,6 +3045,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                         else if (rc == VERR_IOMMU_CMD_HW_ERROR)
                         {
                             Assert(EvtError.n.u4EvtCode == IOMMU_EVT_COMMAND_HW_ERROR);
+                            LogFunc(("Raising command hardware error. Cmd=%#x -> COMMAND_HW_ERROR\n", Cmd.n.u4Opcode));
                             iommuAmdRaiseCmdHwErrorEvent(pDevIns, (PCEVT_CMD_HW_ERR_T)&EvtError);
                         }
                         break;
@@ -3048,6 +3053,7 @@ static DECLCALLBACK(int) iommuAmdR3CmdThread(PPDMDEVINS pDevIns, PPDMTHREAD pThr
                 }
                 else
                 {
+                    LogFunc(("Failed to read command at %#RGp. rc=%Rrc -> COMMAND_HW_ERROR\n", GCPhysCmd, rc));
                     EVT_CMD_HW_ERR_T EvtCmdHwErr;
                     iommuAmdInitCmdHwErrorEvent(GCPhysCmd, &EvtCmdHwErr);
                     iommuAmdRaiseCmdHwErrorEvent(pDevIns, &EvtCmdHwErr);
@@ -3088,8 +3094,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigRead(PPDMDEVINS pDevIns, PP
 {
     /** @todo IOMMU: PCI config read stat counter. */
     VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
-    Log3Func(("Reading PCI config register %#x (cb=%u) -> %#x %Rrc\n", uAddress, cb, *pu32Value,
-              VBOXSTRICTRC_VAL(rcStrict)));
+    Log3Func(("uAddress=%#x (cb=%u) -> %#x. rc=%Rrc\n", uAddress, cb, *pu32Value, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
 
@@ -3121,7 +3126,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
 
     IOMMU_LOCK(pDevIns);
 
-    VBOXSTRICTRC rcStrict = VERR_INVALID_FUNCTION;
+    VBOXSTRICTRC rcStrict = VERR_IOMMU_IPE_3;
     switch (uAddress)
     {
         case IOMMU_PCI_OFF_BASE_ADDR_REG_LO:
@@ -3136,14 +3141,42 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
             pThis->IommuBar.au32[0] = u32Value & IOMMU_BAR_VALID_MASK;
             if (pThis->IommuBar.n.u1Enable)
             {
-                Assert(pThis->hMmio != NIL_IOMMMIOHANDLE);
-                Assert(PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio) == NIL_RTGCPHYS);
+                Assert(pThis->hMmio != NIL_IOMMMIOHANDLE);  /* Paranoia. Ensure we have a valid IOM MMIO handle. */
                 Assert(!pThis->ExtFeat.n.u1PerfCounterSup); /* Base is 16K aligned when performance counters aren't supported. */
-                RTGCPHYS const GCPhysMmioBase = RT_MAKE_U64(pThis->IommuBar.au32[0] & 0xffffc000, pThis->IommuBar.au32[1]);
+                RTGCPHYS const GCPhysMmioBase     = RT_MAKE_U64(pThis->IommuBar.au32[0] & 0xffffc000, pThis->IommuBar.au32[1]);
+                RTGCPHYS const GCPhysMmioBasePrev = PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio);
+
+                /* If the MMIO region is already mapped at the specified address, we're done. */
+                Assert(GCPhysMmioBase != NIL_RTGCPHYS);
+                if (GCPhysMmioBasePrev == GCPhysMmioBase)
+                {
+                    rcStrict = VINF_SUCCESS;
+                    break;
+                }
+
+                /* Unmap the previous MMIO region (which is at a different address). */
+                if (GCPhysMmioBasePrev != NIL_RTGCPHYS)
+                {
+                    LogFlowFunc(("Unmapping previous MMIO region at %#RGp\n", GCPhysMmioBasePrev));
+                    rcStrict = PDMDevHlpMmioUnmap(pDevIns, pThis->hMmio);
+                    if (RT_FAILURE(rcStrict))
+                    {
+                        LogFunc(("Failed to unmap MMIO region at %#RGp. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                        break;
+                    }
+                }
+
+                /* Map the newly specified MMIO region. */
+                LogFlowFunc(("Mapping MMIO region at %#RGp\n", GCPhysMmioBase));
                 rcStrict = PDMDevHlpMmioMap(pDevIns, pThis->hMmio, GCPhysMmioBase);
                 if (RT_FAILURE(rcStrict))
-                    LogFunc(("Failed to map IOMMU MMIO region at %#RGp. rc=%Rrc\n", GCPhysMmioBase, rcStrict));
+                {
+                    LogFunc(("Failed to unmap MMIO region at %#RGp. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                    break;
+                }
             }
+            else
+                rcStrict = VINF_SUCCESS;
             break;
         }
 
@@ -3173,7 +3206,7 @@ static DECLCALLBACK(VBOXSTRICTRC) iommuAmdR3PciConfigWrite(PPDMDEVINS pDevIns, P
 
     IOMMU_UNLOCK(pDevIns);
 
-    Log3Func(("PCI config write: %#x -> To %#x (%u) %Rrc\n", u32Value, uAddress, cb, VBOXSTRICTRC_VAL(rcStrict)));
+    Log3Func(("uAddress=%#x (cb=%u) with %#x. rc=%Rrc\n", uAddress, cb, u32Value, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
 
@@ -3949,6 +3982,8 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
+    IOMMU_LOCK_NORET(pDevIns);
+
     LogFlowFunc(("\n"));
 
     memset(&pThis->aDevTabBaseAddrs[0], 0, sizeof(pThis->aDevTabBaseAddrs));
@@ -4014,19 +4049,13 @@ static DECLCALLBACK(void) iommuAmdR3Reset(PPDMDEVINS pDevIns)
     pThis->PprLogOverflowEarly.u64   = 0;
     pThis->PprLogBOverflowEarly.u64  = 0;
 
+    pThis->IommuBar.u64              = 0;
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_LO, 0);
     PDMPciDevSetDWord(pPciDev, IOMMU_PCI_OFF_BASE_ADDR_REG_HI, 0);
 
-    /*
-     * I ASSUME all MMIO regions mapped by a PDM device are automatically unmapped
-     * on VM reset. If not, we need to enable the following...
-     */
-#if 0
-    /* Unmap the MMIO region on reset if it has been mapped previously. */
-    Assert(pThis->hMmio != NIL_IOMMMIOHANDLE);
-    if (PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio) != NIL_RTGCPHYS)
-        PDMDevHlpMmioUnmap(pDevIns, pThis->hMmio);
-#endif
+    PDMPciDevSetCommand(pPciDev, VBOX_PCI_COMMAND_MASTER);
+
+    IOMMU_UNLOCK(pDevIns);
 }
 
 
@@ -4094,7 +4123,7 @@ static DECLCALLBACK(int) iommuAmdR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Header. */
     PDMPciDevSetVendorId(pPciDev,          IOMMU_PCI_VENDOR_ID);       /* AMD */
     PDMPciDevSetDeviceId(pPciDev,          IOMMU_PCI_DEVICE_ID);       /* VirtualBox IOMMU device */
-    PDMPciDevSetCommand(pPciDev,           VBOX_PCI_COMMAND_MASTER);   /* Enable bus master (as we write to main memory) */
+    PDMPciDevSetCommand(pPciDev,           VBOX_PCI_COMMAND_MASTER);   /* Enable bus master (as we directly access main memory) */
     PDMPciDevSetStatus(pPciDev,            VBOX_PCI_STATUS_CAP_LIST);  /* Capability list supported */
     PDMPciDevSetRevisionId(pPciDev,        IOMMU_PCI_REVISION_ID);     /* VirtualBox specific device implementation revision */
     PDMPciDevSetClassBase(pPciDev,         VBOX_PCI_CLASS_SYSTEM);     /* System Base Peripheral */
