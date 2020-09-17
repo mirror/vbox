@@ -170,6 +170,7 @@
       <arg>--tunnel-network-range=<replaceable>string</replaceable></arg>
       <arg>--guest-additions-iso=<replaceable>path</replaceable></arg>
       <arg>--proxy=<replaceable>string</replaceable></arg>
+      <arg>--compartment-id=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloud-network-create">
       <command>VBoxManage cloud</command>
@@ -538,6 +539,9 @@
         </varlistentry>
         <varlistentry>
           <term><option>--proxy</option></term><listitem><para>The proxy URL to be used in local gateway installation.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--compartment-id</option></term><listitem><para>The compartment to create the tunnel network in.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
